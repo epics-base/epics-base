@@ -9,10 +9,61 @@
 <body lang="en">
 
 <center>
-<h1>EPICS Release base 3.14.0beta2</h1>
+<h1>EPICS Release base 3.14.1</h1>
 
-<h1>Aug 01 2002</h1>
+<h1>Dec 16 2002</h1>
+
+<h2>Changes since beta2</h2>
 </center>
+
+<p><strong>Support for 64 bit long</strong></p>
+
+<p>Many changes were made to support architectures on which a long is a 64
+bit integer. The basic change was to change:</p>
+<ul>
+  <li>long =&gt; epicsInt32 for anything that might get transfered to/from
+    network buffers</li>
+  <li>unsigned long =&gt; epicsUInt32 for anything that might get transfered
+    to/from network buffers</li>
+</ul>
+
+<p>The changes include the following:</p>
+<ul>
+  <li>cvtFast</li>
+  <li>xxxRecord.h NOTE: In addition to the changes for long all enum fields
+    are now epicsEnum16</li>
+  <li>dbStaticLib</li>
+  <li>db_access</li>
+  <li>dbConvert and dbFastLinkConv</li>
+</ul>
+
+<p><span style="font-weight: bold">Hardware Link Definitions</span></p>
+
+<p>The various parts of hardware link definitions nor accept HEX values,
+e.g.</p>
+<pre>field(INP,"L0 A1 C0 S0xa @")
+</pre>
+
+<p>NOTES:</p>
+<ul>
+  <li>This may not be compatible with Database Configuration Tools</li>
+  <li>If records are written via dbStaticLib the falues will NOT be written
+    in HEX.</li>
+</ul>
+
+<p><span style="font-weight: bold">dbDumpFldDes</span></p>
+
+<p>A macro has been defined so that client code can be written that is
+compatible between 3.13 and 3.14.</p>
+
+<p><span style="font-weight: bold">epicsMutex for posix</span></p>
+<ul>
+  <li>No longer supports epicsMutexLockWithTimeout. This was done to allow a
+    more efficient posix implementation.</li>
+  <li>If PTHREAD_MUTEX_RECURSIVE is provided then the implementation uses
+    only pthread_mutex. This is much faster (2 to 3 times as fast) as the
+    previous implementation. </li>
+</ul>
 
 <center>
 <h2>Changes since beta1</h2>
@@ -26,8 +77,8 @@ DCTs.</p>
 <p><strong>errlog</strong></p>
 
 <p>errlog no longer contains an atexit that calls errlogFlush. This did not
-work on all operating systems. cantProceed, iocsh, and ca_task_exit all
-call errlogFlush. Other applications may also have to call if before
+work on all operating systems. cantProceed, iocsh, and ca_task_exit all call
+errlogFlush. Other applications may also have to call if before
 terminating.</p>
 
 <p><strong>mbboRecord</strong></p>
@@ -47,23 +98,19 @@ to DBF_USHORT.</p>
 
 <p>epicsTime.h now has the definitions:</p>
 <pre>#define epicsTimeEventBestTime -1
-#define epicsTimeEventDeviceTime -2
-
-</pre>
+#define epicsTimeEventDeviceTime -2</pre>
 
 <p>These are values for the TSE field of dbCommon.</p>
-
 <ul>
-<li><strong>epicsTimeEventBestTime</strong> means that code supplying the time
-stamp should get the most accurate time possible. Currently this only has
-meaning on vxWorks and if drvTS is supplying the time via some hardware
-timing system. It means get the latest time from the hardware system rather
-than from the vxWorks tick time. drvTs previously accepted a hardcoded value
-of -1.</li>
-
-<li><strong>epicsTimeEventDeviceTime</strong> means that
-recGblGetTimeStamp doesn't modify the time field.
-This allows device support to supply the time stamp.</li>
+  <li><strong>epicsTimeEventBestTime</strong> means that code supplying the
+    time stamp should get the most accurate time possible. Currently this
+    only has meaning on vxWorks and if drvTS is supplying the time via some
+    hardware timing system. It means get the latest time from the hardware
+    system rather than from the vxWorks tick time. drvTs previously accepted
+    a hardcoded value of -1.</li>
+  <li><strong>epicsTimeEventDeviceTime</strong> means that recGblGetTimeStamp
+    doesn't modify the time field. This allows device support to supply the
+    time stamp.</li>
 </ul>
 
 <p>If the <strong>TSEL</strong> field refers to the <strong>TIME</strong>
@@ -173,8 +220,8 @@ in the cdCommands file.</p>
 
 <p><strong>dbStaticLib</strong></p>
 
-<p>All routines with Recdes of Fielddes in their name are obsolete and removed.
-A new routine dbDumpField replaces dbDumpFldDes.</p>
+<p>All routines with Recdes of Fielddes in their name are obsolete and
+removed. A new routine dbDumpField replaces dbDumpFldDes.</p>
 
 <center>
 <h2>Changes since alpha2</h2>

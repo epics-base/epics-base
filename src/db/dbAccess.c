@@ -37,6 +37,7 @@
  *              		Fixed bug in special processing of SPC_MOD (100) 
  * .07  12-02-91	jba	Writing to PROC will always force record process
  * .08  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .09  03-02-92	jba	Added function dbrValueSize to replace db_value_size
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -98,15 +99,21 @@
  *	long	options;
  *	long	no_elements;
  * returns: number of bytes as a long
+ *
+ * dbrValueSize(dbr_type)
+ *      short     dbr_type;
+ * returns: sizeof DBR request type as a long
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<memLib.h>
 #include	<stdarg.h>
-#include	<fioLib.h>
-#include	<strLib.h>
+#include	<stdioLib.h>
+#include	<string.h>
 #include	<taskLib.h>
+#include	<vxLib.h>
+#include	<tickLib.h>
 
 #include	<fast_lock.h>
 #include	<alarm.h>
@@ -318,7 +325,7 @@ long dbNameToAddr(pname,paddr)
 	}
 	*precName = 0;
 	if (pvdGetRec(&recName[0],&(paddr->record_type),&record_number) < 0){
-		(long)(paddr->precord) = -1;
+		paddr->precord = (void *)-1;
 		paddr->record_type = -1;
 		return(S_db_notFound);
 	}
@@ -332,7 +339,7 @@ long dbNameToAddr(pname,paddr)
 	}
 	if (!(pfldDes=pvdGetFld(paddr->record_type,pfieldName))){
 		paddr->field_type = -1;
-		(long)(paddr->pfield) = -1;
+		paddr->pfield = (void *)-1;
 		paddr->field_size = -1;
 		return(S_db_notFound);
 	}
@@ -438,6 +445,26 @@ long dbPutField(
 	dbScanUnlock(paddr->precord);
 	return(status);
 }
+
+long dbrValueSize(
+	short     dbr_type
+)
+{
+     /* sizes for value associated with each DBR request type */
+     static long size[] = {
+        MAX_STRING_SIZE,                /* STRING       */
+        sizeof(char),                   /* CHAR         */
+        sizeof(unsigned char),          /* UCHAR        */
+        sizeof(short),                  /* SHORT        */
+        sizeof(unsigned short),         /* USHORT       */
+        sizeof(long),                   /* LONG         */
+        sizeof(unsigned long),          /* ULONG        */
+        sizeof(float),                  /* FLOAT        */
+        sizeof(double),                 /* DOUBLE       */
+        sizeof(unsigned short)};        /* ENUM         */
+
+     return(size[dbr_type]);
+}
 
 long dbBufferSize(
      short     dbr_type,
@@ -447,7 +474,7 @@ long dbBufferSize(
 {
     long nbytes=0;
 
-    nbytes += dbr_value_size[dbr_type] * no_elements;
+    nbytes += dbrValueSize(dbr_type) * no_elements;
     if(options & DBR_STATUS)	nbytes += dbr_status_size;
     if(options & DBR_UNITS)	nbytes += dbr_units_size;
     if(options & DBR_PRECISION) nbytes += dbr_precision_size;
@@ -3016,7 +3043,7 @@ void		*pflin
 	    if( prset && prset->get_units ){ 
 		(*prset->get_units)(paddr,pbuffer);
 	    } else {
-		bzero(pbuffer,dbr_units_size);
+		memset(pbuffer,'\0',dbr_units_size);
 		*options = (*options) ^ DBR_UNITS; /*Turn off DBR_UNITS*/
 	    }
 	    pbuffer += dbr_units_size;
@@ -3029,7 +3056,7 @@ void		*pflin
 		if(pdbr_precision->field_width<=0)
 			pdbr_precision->field_width = pdbr_precision->precision + 5;
 	    } else {
-		bzero(pbuffer,dbr_precision_size);
+		memset(pbuffer,'\0',dbr_precision_size);
 		*options = (*options) ^ DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
 	    pbuffer += dbr_precision_size;
@@ -3083,7 +3110,7 @@ GET_DATA:
 	if(pfl!=NULL) {
 	    struct dbAddr	localAddr;
 
-	    bcopy(paddr,&localAddr,sizeof(localAddr));
+	    memcpy(&localAddr,paddr,sizeof(localAddr));
 	    /*Use longest field size*/
 	    localAddr.pfield = (char *)&pfl->field;
 	    status=(*pconvert_routine)(&localAddr,pbuffer,*nRequest,
@@ -3112,7 +3139,7 @@ long		*options;
 	struct dbr_enumStrs	*pdbr_enumStrs=(struct dbr_enumStrs*)(*ppbuffer);
 	int			i;
 
-	bzero(pdbr_enumStrs,dbr_enumStrs_size);
+	memset(pdbr_enumStrs,'\0',dbr_enumStrs_size);
 	switch(field_type) {
 		case DBF_ENUM:
 		    if( prset && prset->get_enum_strs ) {
@@ -3185,10 +3212,8 @@ char		**ppbuffer;
 struct rset	*prset;
 long		*options;
 {
-	short			field_type=paddr->field_type;
 	struct			dbr_grDouble grd;
 	int			got_data=FALSE;
-	long	ltemp;/*vxWorks does not support double to unsigned long*/
 
 	if( prset && prset->get_graphic_double ) {
 		(*prset->get_graphic_double)(paddr,&grd);
@@ -3202,7 +3227,7 @@ long		*options;
 		    pgr->upper_disp_limit = grd.upper_disp_limit;
 		    pgr->lower_disp_limit = grd.lower_disp_limit;
 		} else {
-		    bzero(pbuffer,dbr_grLong_size);
+		    memset(pbuffer,'\0',dbr_grLong_size);
 		    *options = (*options) ^ DBR_GR_LONG; /*Turn off option*/
 		}
 		*ppbuffer += dbr_grLong_size;
@@ -3215,7 +3240,7 @@ long		*options;
 		    pgr->upper_disp_limit = grd.upper_disp_limit;
 		    pgr->lower_disp_limit = grd.lower_disp_limit;
 		} else {
-		    bzero(pbuffer,dbr_grDouble_size);
+		    memset(pbuffer,'\0',dbr_grDouble_size);
 		    *options = (*options) ^ DBR_GR_DOUBLE; /*Turn off option*/
 		}
 		*ppbuffer += dbr_grDouble_size;
@@ -3229,10 +3254,8 @@ char		**ppbuffer;
 struct rset	*prset;
 long		*options;
 {
-	short			field_type=paddr->field_type;
 	struct dbr_ctrlDouble	ctrld;
 	int			got_data=FALSE;
-	long	ltemp;/*vxWorks does not support double to unsigned long*/
 
 	if( prset && prset->get_control_double ) {
 		(*prset->get_control_double)(paddr,&ctrld);
@@ -3246,7 +3269,7 @@ long		*options;
 		    pctrl->upper_ctrl_limit = ctrld.upper_ctrl_limit;
 		    pctrl->lower_ctrl_limit = ctrld.lower_ctrl_limit;
 		} else {
-		    bzero(pbuffer,dbr_ctrlLong_size);
+		    memset(pbuffer,'\0',dbr_ctrlLong_size);
 		    *options = (*options) ^ DBR_CTRL_LONG; /*Turn off option*/
 		}
 		*ppbuffer += dbr_ctrlLong_size;
@@ -3259,7 +3282,7 @@ long		*options;
 		   pctrl->upper_ctrl_limit = ctrld.upper_ctrl_limit;
 		   pctrl->lower_ctrl_limit = ctrld.lower_ctrl_limit;
 		} else {
-		    bzero(pbuffer,dbr_ctrlDouble_size);
+		    memset(pbuffer,'\0',dbr_ctrlDouble_size);
 		    *options = (*options) ^ DBR_CTRL_DOUBLE; /*Turn off option*/
 		}
 		*ppbuffer += dbr_ctrlDouble_size;
@@ -3273,10 +3296,8 @@ char		**ppbuffer;
 struct rset	*prset;
 long		*options;
 {
-	short			field_type=paddr->field_type;
 	struct			dbr_alDouble ald;
 	int			got_data=FALSE;
-	long	ltemp;/*vxWorks does not support double to unsigned long*/
 
 	if( prset && prset->get_alarm_double ) {
 		(*prset->get_alarm_double)(paddr,&ald);
@@ -3292,7 +3313,7 @@ long		*options;
 		    pal->lower_warning_limit = ald.lower_warning_limit;
 		    pal->lower_alarm_limit = ald.lower_alarm_limit;
 		} else {
-		    bzero(pbuffer,dbr_alLong_size);
+		    memset(pbuffer,'\0',dbr_alLong_size);
 		    *options = (*options) ^ DBR_AL_LONG; /*Turn off option*/
 		}
 		*ppbuffer += dbr_alLong_size;
@@ -3307,7 +3328,7 @@ long		*options;
 		    pal->lower_warning_limit = ald.lower_warning_limit;
 		    pal->lower_alarm_limit = ald.lower_alarm_limit;
 		} else {
-		    bzero(pbuffer,dbr_alDouble_size);
+		    memset(pbuffer,'\0',dbr_alDouble_size);
 		    *options = (*options) ^ DBR_AL_DOUBLE; /*Turn off option*/
 		}
 		*ppbuffer += dbr_alDouble_size;

@@ -9,62 +9,8 @@
 </head>
 
 <body>
-<h1 style="text-align: center">EPICS base R3.14.0beta2: Known Problems</h1>
+<h1 style="text-align: center">EPICS base R3.14.1: Known Problems</h1>
 
-<h2>vxWorks TIMEZONE pentium</h2>
 
-<p>If the name of the timezone has more than a few characters a crash can
-occur on pentium vxWorks iocs. See ansiTime in the vxWorks reference manual
-for details about TIMEZONE.</p>
+</p><h3>No known problems.</h3>
 
-<h2>GNU make version</h2>
-
-<p>GNU make version 3.78.1 or later is required for builds. The README.html
-file specifies version 3.70 but this version does not support the call
-function.</p>
-
-<h2>Borland build</h2>
-
-<p>The borland-x86 build of base fails in src/ca because the Borland compiler
-v5.5 does not support C++ placement delete. A fix is to add the following
-code after the #include lines in ca/netIO.h and ca/syncGroup.h.</p>
-
-<blockquote>
-  <code>// does the local compiler support placement delete</code><br />
-  <code>#if defined (_MSC_VER)</code><br />
-  <code># if _MSC_VER &gt;= 1200</code><br />
-  <code># define NETIO_PLACEMENT_DELETE</code><br />
-  <code># endif</code><br />
-  <code>#elif defined ( __HP_aCC )</code><br />
-  <code># if _HP_aCC &gt; 033300</code><br />
-  <code># define NETIO_PLACEMENT_DELETE</code><br />
-  <code># endif</code><br />
-  <code>#elif defined ( __BORLANDC__ )</code><br />
-  <code># if __BORLANDC__ &gt; 0x550</code><br />
-  <code># define NETIO_PLACEMENT_DELETE</code><br />
-  <code># endif</code><br />
-  <code>#else</code><br />
-  <code># define NETIO_PLACEMENT_DELETE</code><br />
-  <code>#endif</code><br />
-</blockquote>
-
-<h2>Visual C++ 6.0 Build</h2>
-
-<p>The order of certain Microsoft header file includes must be rearranged as
-follows in base/src/osi/os/win32/osdMutex.c and possibly also
-base/src/libCom/osi/os/win32/osdEvent.c. This problem does not exist with
-Visual C++ 7.0 (visual C++ .net).</p>
-
-<p><code>// visual c++ 6.0 appears to be sensitive to the</code></p>
-
-<p><code>// order of the following four lines</code></p>
-
-<p><code>#define VC_EXTRALEAN</code></p>
-
-<p><code>#define _WIN32_WINNT 0x400</code> </p>
-
-<p><code>#include &lt;windows.h&gt;</code></p>
-
-<p><code>#include &lt;winsock2.h&gt;</code></p>
-</body>
-</html>

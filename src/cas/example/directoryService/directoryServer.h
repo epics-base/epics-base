@@ -121,11 +121,10 @@ private:
 //
 // directoryServer::removeAliasName()
 //
-inline void directoryServer::removeAliasName(pvEntry &entry)
+inline void directoryServer::removeAliasName ( pvEntry & entry )
 {
-    pvEntry *pE;
-    pE = this->stringResTbl.remove(entry);
-    assert(pE = &entry);
+    pvEntry * pE = this->stringResTbl.remove ( entry );
+    assert ( pE == & entry );
 }
 
 //

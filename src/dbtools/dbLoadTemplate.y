@@ -71,6 +71,13 @@ templ: templ_head O_BRACE subst C_BRACE
 	;
 
 templ_head: DBFILE WORD
+	{
+		var_count=0;
+		if(db_file_name) dbmfFree(db_file_name);
+		db_file_name = dbmfMalloc(strlen($2)+1);
+		strcpy(db_file_name,$2);
+		dbmfFree($2);
+	}
         | DBFILE QUOTE
 	{
 		var_count=0;

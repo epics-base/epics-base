@@ -72,7 +72,7 @@
 #include	<aiRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -121,39 +121,6 @@ struct aidset { /* analog input dset */
 void convert();
 void alarm();
 void monitor();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct aiRecord	*pai=(struct aiRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",pai->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(pai->inp))) return(-1);
-    if(fprintf(fp,"PREC %d\n",pai->prec)) return(-1);
-    if(recGblReportCvtChoice(fp,"LINR",pai->linr)) return(-1);
-    if(fprintf(fp,"EGUF %-12.4G EGUL %-12.4G  EGU %-8s\n",
-	pai->eguf,pai->egul,pai->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	pai->hopr,pai->lopr)) return(-1);
-    if(fprintf(fp,"AOFF %-12.4G ASLO %-12.4G SMOO %-12.4G\n",
-	pai->aoff,pai->aslo,pai->smoo)) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pai->flnk))) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	pai->hihi,pai->high,pai->low,pai->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,pai,"HHSV",pai->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,pai,"HSV ",pai->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,pai,"LSV ",pai->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,pai,"LLSV",pai->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
-	pai->hyst,pai->adel,pai->mdel,pai->eslo)) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",pai->rval)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	pai->lalm,pai->alst,pai->mlst)) return(-1);
-    if(fprintf(fp,"LBRK %d\n",pai->lbrk)) return(-1);
-    return(0);
-}
 
 static long init_record(pai)
     struct aiRecord	*pai;
@@ -216,7 +183,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pai);
 	/* process the forward scan link record */
-	if (pai->flnk.type==DB_LINK) dbScanPassive(&pai->flnk.value.db_link.pdbAddr);
+	if (pai->flnk.type==DB_LINK) dbScanPassive(pai->flnk.value.db_link.pdbAddr);
 
 	pai->init=FALSE;
 	pai->pact=FALSE;
@@ -453,9 +420,9 @@ struct aiRecord	*pai;
 	    /* find entry for increased value */
  	    while( (pnxtInt->raw) <= val ) {
 		if( lbrk >= number-1) {
-		    if(pai->nsev < MAJOR_ALARM) {
+		    if(pai->nsev < VALID_ALARM) {
 			pai->nsta = SOFT_ALARM;
-			pai->nsev = MAJOR_ALARM;
+			pai->nsev = VALID_ALARM;
 		    }
 		    break; /* out of while */
 		}
@@ -465,9 +432,9 @@ struct aiRecord	*pai;
 	    }
 	    while( (pInt->raw) > val) {
 		if(lbrk==0) {
-		    if(pai->nsev < MAJOR_ALARM) {
+		    if(pai->nsev < VALID_ALARM) {
 			pai->nsta = SOFT_ALARM;
-			pai->nsev = MAJOR_ALARM;
+			pai->nsev = VALID_ALARM;
 		    }
 		    break; /* out of while */
 		}

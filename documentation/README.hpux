@@ -99,18 +99,27 @@ internal path and/or environment variable later on in the binary without
 recompiling using the "chatr" (change attributes) command.
 
 
-Known Problems
---------------
+Known Possible Problems
+-----------------------
+
+ o There is a problem with some CA clients not detecting a network
+   connection going down. This only applies to clients that are trying
+   to write to the IOC at the moment the connection goes down. When the
+   IOC is up again, the client reconnect after a moment (~1 min.) - a
+   regular IOC reboot works. It's just in some cases that a client
+   (e.g. display manager) might not react as expected (e.g. turn
+   graphical elements white) while the connection is lost.
+
+ o The 3.13 compatibility mode has passed some general testing for both
+   native and GNU compilers with static and shared libraries and for
+   statically and dynamically linked builds. Not every combination has
+   been thoroughly tested. If the build system won't build your 3.13
+   application successfully, contact me.
 
  o Caveat: To be compatible with HP-UX 10, GCC defaults to use the DCE
    (user space) threads package. If you see messages like "errLogInit
    failed" when running a Channel Access client, you are probably
    linking against the old DCE threads library instead of libpthread.
-
- o There is a problem with a CA client not detecting a network
-   connection going down. This only happens with some clients, though.
-
- o The 3.13 compatibility mode isn't thoroughly tested yet.
 
 
 Please feel free to contact me if you encounter serious problems.

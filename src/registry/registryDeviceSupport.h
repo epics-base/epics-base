@@ -1,13 +1,16 @@
 #ifndef INCregistryDeviceSupporth
 #define INCregistryDeviceSupporth
 
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int registryDeviceSupportAdd(const char *name,struct dset *pdset);
-struct dset *registryDeviceSupportFind(const char *name);
+epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(
+    const char *name,struct dset *pdset);
+epicsShareFunc struct dset * epicsShareAPI registryDeviceSupportFind(
+    const char *name);
 
 #ifdef __cplusplus
 }

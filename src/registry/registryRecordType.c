@@ -13,18 +13,21 @@ of this distribution.
 
 #include "registry.h"
 #include "dbBase.h"
+#define epicsExportSharedSymbols
 #include "registryRecordType.h"
 
 const char *recordType = "record type";
 static void *registryID = &recordType;
 
 
-int registryRecordTypeAdd(const char *name,recordTypeLocation *prtl)
+epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
+    const char *name,recordTypeLocation *prtl)
 {
     return(registryAdd(registryID,name,(void *)prtl));
 }
 
-recordTypeLocation *registryRecordTypeFind(const char *name)
+epicsShareFunc recordTypeLocation * epicsShareAPI registryRecordTypeFind(
+    const char *name)
 {
     return((recordTypeLocation *)registryFind(registryID,name));
 }

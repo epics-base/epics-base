@@ -1,18 +1,21 @@
 #ifndef INCregistryh
 #define INCregistryh
 
+#include "shareLib.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DEFAULT_TABLE_SIZE 1024
 
-int registryAdd(void *registryID,const char *name,void *data);
-void *registryFind(void *registryID,const char *name);
+epicsShareFunc int epicsShareAPI registryAdd(
+    void *registryID,const char *name,void *data);
+epicsShareFunc void *epicsShareAPI registryFind(
+    void *registryID,const char *name);
 
-int registrySetTableSize(int size);
-void registryFree();
-int registryDump(void);
+epicsShareFunc int epicsShareAPI registrySetTableSize(int size);
+epicsShareFunc void epicsShareAPI registryFree();
+epicsShareFunc int epicsShareAPI registryDump(void);
 
 #ifdef __cplusplus
 }

@@ -14,18 +14,21 @@ of this distribution.
 #include "registry.h"
 #include "dbBase.h"
 #include "devSup.h"
+#define epicsExportSharedSymbols
 #include "registryDeviceSupport.h"
 
 const char *deviceSupport = "device support";
 static void *registryID = &deviceSupport;
 
 
-int registryDeviceSupportAdd(const char *name,struct dset *pdset)
+epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(
+    const char *name,struct dset *pdset)
 {
     return(registryAdd(registryID,name,(void *)pdset));
 }
 
-struct dset *registryDeviceSupportFind(const char *name)
+epicsShareFunc struct dset * epicsShareAPI registryDeviceSupportFind(
+    const char *name)
 {
     return((struct dset *)registryFind(registryID,name));
 }

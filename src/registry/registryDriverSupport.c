@@ -14,18 +14,21 @@ of this distribution.
 #include "registry.h"
 #include "dbBase.h"
 #include "drvSup.h"
+#define epicsExportSharedSymbols
 #include "registryDriverSupport.h"
 
 const char *driverSupport = "driver support";
 static void *registryID = &driverSupport;
 
 
-int registryDriverSupportAdd(const char *name,struct drvet *pdrvet)
+epicsShareFunc int epicsShareAPI registryDriverSupportAdd(
+    const char *name,struct drvet *pdrvet)
 {
     return(registryAdd(registryID,name,(void *)pdrvet));
 }
 
-struct drvet *registryDriverSupportFind(const char *name)
+epicsShareFunc struct drvet * epicsShareAPI registryDriverSupportFind(
+    const char *name)
 {
     return((struct drvet *)registryFind(registryID,name));
 }

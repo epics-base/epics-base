@@ -17,6 +17,7 @@ of this distribution.
 #include "cantProceed.h"
 #include "osiFindGlobalSymbol.h"
 #include "gpHash.h"
+#define epicsExportSharedSymbols
 #include "registry.h"
 
 static void *gphPvt = 0;
@@ -28,7 +29,7 @@ static void registryInit(int tableSize)
     if(!gphPvt) cantProceed("registry why did gphInitPvt fail\n");
 }
     
-int registrySetTableSize(int size)
+epicsShareFunc int epicsShareAPI registrySetTableSize(int size)
 {
     if(gphPvt) {
         printf("registryInit already called\n");
@@ -39,7 +40,8 @@ int registrySetTableSize(int size)
 }
     
 
-int registryAdd(void *registryID,const char *name,void *data)
+epicsShareFunc int epicsShareAPI registryAdd(
+    void *registryID,const char *name,void *data)
 {
     GPHENTRY *pentry;
     if(!gphPvt) registryInit(0);
@@ -49,7 +51,8 @@ int registryAdd(void *registryID,const char *name,void *data)
     return(TRUE);
 }
 
-void *registryFind(void *registryID,const char *name)
+epicsShareFunc void * epicsShareAPI registryFind(
+    void *registryID,const char *name)
 {
     GPHENTRY *pentry;
     if(name==0) return(0);
@@ -60,13 +63,13 @@ void *registryFind(void *registryID,const char *name)
     return(pentry->userPvt);
 }
 
-void registryFree()
+epicsShareFunc void epicsShareAPI registryFree()
 {
     if(!gphPvt) return;
     gphFreeMem(gphPvt);
 }
 
-int registryDump(void)
+epicsShareFunc int epicsShareAPI registryDump(void)
 {
     if(!gphPvt) return(0);
     gphDump(gphPvt);

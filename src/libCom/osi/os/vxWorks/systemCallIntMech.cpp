@@ -18,5 +18,5 @@
 enum epicsSocketSystemCallInterruptMechanismQueryInfo 
         epicsSocketSystemCallInterruptMechanismQuery ()
 {
-    return esscimqi_socketCloseRequired;
+    return esscimqi_socketBothShutdownRequired;
 }

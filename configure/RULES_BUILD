@@ -497,7 +497,8 @@ PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile.$(B_T) T_A=$(T_A) B_T=$(B_T) $@\
 	PRODNAME_RCS_$(OS_CLASS)="$($(basename $@)_RCS_$(OS_CLASS))"\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
-$(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+$(PROD): $(SRCS) $(PROD_OBJS) $(COND_PROD_SRCS) $(PROD_RESS) \
+	 $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 
 
 $(PROD):

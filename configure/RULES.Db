@@ -37,6 +37,34 @@ SOURCE_DB = $(wildcard $(file) $(SOURCE_DB_bbb) )
 SOURCE_DB_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DB_aaa)  )
 SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 
+COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
+
+
+##################################################### 
+
+ifndef T_A
+
+COMMON_DIR = .
+INSTALL_DBDS =
+INSTALL_DBS =
+COMMON_DBDS = $(DBD)
+COMMON_DBS = $(DB)
+COMMONS = $(DBD) $(DB)
+
+-include $(TOP)/configure/O.$(EPICS_HOST_ARCH)/CONFIG_APP_INCLUDE
+
+all:    install
+
+buildInstall : build
+
+install: buildInstall
+
+rebuild: clean install
+
+.PHONY: all inc depends build install clean rebuild buildInstall
+
+endif # T_A defined
+
 #####################################################  build dependancies, clean rule
 
 inc : $(COMMON_INC) $(INSTALL_INC)
@@ -45,12 +73,8 @@ build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS)
 
 clean:: 
-	@$(RM) $(COMMON_DIR)/*.dbd
-	@$(RM) $(COMMON_DIR)/*.db
-	@$(RM) $(COMMON_DIR)/*.h
+	@$(RM) $(COMMONS)
 	@$(RM) *_registerRecordDeviceDriver.cpp
-	@$(RM) $(COMMON_DIR)/*.substitutions
-	@$(RM) $(COMMON_DIR)/*.template
 
 ##################################################### "Foreign" templates
 
@@ -128,7 +152,16 @@ $(COMMON_DIR)/bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(MAKEBPT) $< $@
 
+$(COMMON_DIR)/bpt%.dbd: bpt%.data 
+	$(RM) $@
+	$(MAKEBPT) $< $@
+
 $(COMMON_DIR)/%.dbd: ../%Include.dbd 
+	@echo "Expanding dbd"
+	$(RM) $@
+	$(DBEXPAND) $(DBDFLAGS) $< > $@
+
+$(COMMON_DIR)/%.dbd: %Include.dbd 
 	@echo "Expanding dbd"
 	$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@

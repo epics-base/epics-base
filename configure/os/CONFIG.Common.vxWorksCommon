@@ -21,13 +21,16 @@ EXE =
 OBJ = .o
 LIB_PREFIX =
 LIB_SUFFIX = Library.o
-MUNCH_SUFFIX = Library.munch
+MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------
 # Library definition
 # Build both *.o and *.munch libraries
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
-MUNCHNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(MUNCH_SUFFIX))
+MUNCHNAME = $(LIBNAME:%$(OBJ)=%$(MUNCH_SUFFIX))
+LIBRARY_CTDT_SRCS = $(LIBNAME:%$(OBJ)=%_ctdt.c)
+LIBRARY_CTDT_OBJS = $(LIBNAME:%$(OBJ)=%_ctdt$(OBJ))
+LIBRARY_NM = $(LIBNAME:%$(OBJ)=%.nm)
 
 #--------------------------------------------------
 # Library install location override

@@ -40,6 +40,7 @@ typedef struct win32ThreadParam {
     void *parm;
     char *pName;
     DWORD id;
+    unsigned epicsPriority;
     char isSuspended;
 } win32ThreadParam;
 
@@ -224,7 +225,14 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
         }
     }
 
-    assert ( magnitude < stateCount );
+    if ( magnitude >= stateCount ) {
+        errlogPrintf ( 
+            "Unrecognized WIN32 thread priority level %d.\n", 
+            osdPriority );
+        errlogPrintf ( 
+            "Mapping to EPICS thread priority level epicsThreadPriorityMin.\n" );
+        return epicsThreadPriorityMin;
+    }
 
     return osiPriorityMagFromMagnitueOSD ( magnitude, stateCount );
 }
@@ -477,8 +485,13 @@ static win32ThreadParam * epicsThreadImplicitCreate ()
     sprintf ( name, "Implicit id=%x", id );
     pParm = epicsThreadParmCreate ( name );
     if ( pParm ) {
+        int win32ThreadPriority;
+
         pParm->handle = handle;
         pParm->id = id;
+        win32ThreadPriority = GetThreadPriority ( pParm->handle );
+        assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
+        pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
         success = TlsSetValue ( tlsIndexThreadLibraryEPICS, pParm );
         if ( ! success ) {
             epicsParmCleanupWIN32 ( pParm );
@@ -521,6 +534,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     }
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
+    pParmWIN32->epicsPriority = priority;
 
     pParmWIN32->handle = (HANDLE) _beginthreadex ( 0, stackSize, epicsWin32ThreadEntry, 
         pParmWIN32, CREATE_SUSPENDED, &pParmWIN32->id );
@@ -612,12 +626,7 @@ epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id) 
 { 
     win32ThreadParam *pParm = (win32ThreadParam *) id;
-    int win32ThreadPriority;
-
-    win32ThreadPriority = GetThreadPriority ( pParm->handle );
-    assert (win32ThreadPriority!=THREAD_PRIORITY_ERROR_RETURN);
- 
-    return epicsThreadGetOsiPriorityValue (win32ThreadPriority);
+    return pParm->epicsPriority;
 }
 
 /*
@@ -625,12 +634,20 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
 { 
-    int win32ThreadPriority;
-
-    win32ThreadPriority = GetThreadPriority ( GetCurrentThread () );
-    assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
- 
-    return epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
+    win32ThreadParam *pParm = (win32ThreadParam *) 
+        TlsGetValue ( tlsIndexThreadLibraryEPICS );
+    if ( ! pParm ) {
+        pParm = epicsThreadImplicitCreate ();
+    }
+    if ( pParm ) {
+        return pParm->epicsPriority;
+    }
+    else {
+        int win32ThreadPriority = 
+            GetThreadPriority ( GetCurrentThread () );
+        assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
+        return epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
+    }
 }
 
 /*
@@ -639,9 +656,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf ()
 epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
 {
     win32ThreadParam *pParm = (win32ThreadParam *) id;
-    BOOL stat;
-
-    stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
+    BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
     assert (stat);
 }
 

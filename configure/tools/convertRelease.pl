@@ -250,13 +250,18 @@ sub cdCommands {
     
     print OUT "startup = \"$startup\"\n";
     
+    $ioc = $cwd;
+    $ioc =~ s/^.*\///;	# iocname is last component of directory name
+    
+    print OUT "putenv \"ARCH=$arch\"\n";
+    print OUT "putenv \"IOC=$ioc\"\n";
+    
     foreach $app (@includes) {
 	$iocpath = $path = $macros{$app};
 	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
 	$app_lc = lc($app);
-	$app_uc = uc($app);
 	print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
-	print OUT "putenv \"$app_uc=$iocpath\"\n" if (-d $path);
+	print OUT "putenv \"$app=$iocpath\"\n" if (-d $path);
 	print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
     }
     close OUT;

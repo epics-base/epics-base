@@ -35,37 +35,37 @@
  * CA protocol number
  * TCP/UDP port number (bumped each major protocol change) 
  */
-#define CA_PROTOCOL_VERSION 4u
-#define CA_MINOR_VERSION    8u
-#define CA_VERSION_STRING   "4.8"
+#define CA_PROTOCOL_VERSION     4u
+#define CA_MINOR_VERSION        8u
+#define CA_VERSION_STRING       "4.8"
 #define CA_UKN_MINOR_VERSION    0u /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4u
-#define CA_V41(MAJOR,MINOR) ((MINOR)>=1u) 
-#define CA_V42(MAJOR,MINOR) ((MINOR)>=2u)
-#define CA_V43(MAJOR,MINOR) ((MINOR)>=3u)
-#define CA_V44(MAJOR,MINOR) ((MINOR)>=4u)
-#define CA_V45(MAJOR,MINOR) ((MINOR)>=5u)
-#define CA_V46(MAJOR,MINOR) ((MINOR)>=6u)
-#define CA_V47(MAJOR,MINOR) ((MINOR)>=7u)
-#define CA_V48(MAJOR,MINOR) ((MINOR)>=8u)
+#   define CA_V41(MAJOR,MINOR) ((MINOR)>=1u) 
+#   define CA_V42(MAJOR,MINOR) ((MINOR)>=2u)
+#   define CA_V43(MAJOR,MINOR) ((MINOR)>=3u)
+#   define CA_V44(MAJOR,MINOR) ((MINOR)>=4u)
+#   define CA_V45(MAJOR,MINOR) ((MINOR)>=5u)
+#   define CA_V46(MAJOR,MINOR) ((MINOR)>=6u)
+#   define CA_V47(MAJOR,MINOR) ((MINOR)>=7u)
+#   define CA_V48(MAJOR,MINOR) ((MINOR)>=8u)
 #elif CA_PROTOCOL_VERSION > 4u
-#define CA_V41(MAJOR,MINOR) ( 1u )
-#define CA_V42(MAJOR,MINOR) ( 1u )
-#define CA_V43(MAJOR,MINOR) ( 1u )
-#define CA_V44(MAJOR,MINOR) ( 1u )
-#define CA_V45(MAJOR,MINOR) ( 1u )
-#define CA_V46(MAJOR,MINOR) ( 1u )
-#define CA_V47(MAJOR,MINOR) ( 1u )
-#define CA_V48(MAJOR,MINOR) ( 1u )
+#   define CA_V41(MAJOR,MINOR) ( 1u )
+#   define CA_V42(MAJOR,MINOR) ( 1u )
+#   define CA_V43(MAJOR,MINOR) ( 1u )
+#   define CA_V44(MAJOR,MINOR) ( 1u )
+#   define CA_V45(MAJOR,MINOR) ( 1u )
+#   define CA_V46(MAJOR,MINOR) ( 1u )
+#   define CA_V47(MAJOR,MINOR) ( 1u )
+#   define CA_V48(MAJOR,MINOR) ( 1u )
 #else
-#define CA_V41(MAJOR,MINOR) ( 0u )
-#define CA_V42(MAJOR,MINOR) ( 0u )
-#define CA_V43(MAJOR,MINOR) ( 0u )
-#define CA_V44(MAJOR,MINOR) ( 0u )
-#define CA_V45(MAJOR,MINOR) ( 0u )
-#define CA_V46(MAJOR,MINOR) ( 0u )
-#define CA_V47(MAJOR,MINOR) ( 0u )
-#define CA_V48(MAJOR,MINOR) ( 0u )
+#   define CA_V41(MAJOR,MINOR) ( 0u )
+#   define CA_V42(MAJOR,MINOR) ( 0u )
+#   define CA_V43(MAJOR,MINOR) ( 0u )
+#   define CA_V44(MAJOR,MINOR) ( 0u )
+#   define CA_V45(MAJOR,MINOR) ( 0u )
+#   define CA_V46(MAJOR,MINOR) ( 0u )
+#   define CA_V47(MAJOR,MINOR) ( 0u )
+#   define CA_V48(MAJOR,MINOR) ( 0u )
 #endif 
 
 /*

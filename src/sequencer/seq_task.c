@@ -83,7 +83,7 @@ char		*ptask_name;	/* Parent task name */
 		  SPAWN_PRIORITY+pSS->task_priority,	/* priority */
 		  SPAWN_OPTIONS,			/* task options */
 		  stack_size,				/* stack size */
-		  (int)ss_entry,			/* entry point */
+		  (FUNCPTR)ss_entry,			/* entry point */
 		  (int)pSP,
 		  (int)pSS,				/* pass 2 parameters */
 		  0,0,0,0,0,0,0,0);

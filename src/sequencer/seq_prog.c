@@ -179,7 +179,7 @@ SPROG		*pSP;
 /*
  * seqProgListInit() - initialize the state program list.
  */
-LOCAL seqProgListInit()
+seqProgListInit()
 {
 	/* Init linked list */
 	lstInit(&seqProgList);

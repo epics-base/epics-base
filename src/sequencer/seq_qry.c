@@ -86,7 +86,7 @@ int	tid;
 	 ((pSP->options & OPT_REENT) != 0), ((pSP->options & OPT_CONN) != 0),
 	 ((pSP->options & OPT_NEWEF) != 0) );
 	printf("  log file fd=%d\n", pSP->logFd);
-	status = ioctl(pSP->logFd, FIOGETNAME, file_name);
+	status = ioctl(pSP->logFd, FIOGETNAME, (int)file_name);
 	if (status != ERROR)
 		printf("  log file name=\"%s\"\n", file_name);
 
@@ -298,7 +298,7 @@ int		type;
 }
 
 /* Find a state program associated with a given task id */
-LOCAL SPROG *seqQryFind(tid)
+SPROG *seqQryFind(tid)
 int		tid;
 {
 	SPROG		*pSP;
@@ -356,7 +356,7 @@ SPROG		*pSP;
 }
 
 /* Print a brief summary of all state programs */
-LOCAL seqShowAll()
+seqShowAll()
 {
 	SPROG		*pSP;
 

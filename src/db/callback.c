@@ -51,6 +51,7 @@
 static SEM_ID callbackSem[NUM_CALLBACK_PRIORITIES];
 static RING_ID callbackQ[NUM_CALLBACK_PRIORITIES];
 static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
+static int ringOverflow[NUM_CALLBACK_PRIORITIES];
 volatile int callbackRestart=FALSE;
 
 /* forward references */
@@ -82,10 +83,14 @@ void callbackRequest(CALLBACK *pcallback)
 	logMsg("callbackRequest called with invalid priority\n",0,0,0,0,0,0);
 	return;
     }
+    if(ringOverflow[priority]) return;
     lockKey = intLock();
     nput = rngBufPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
     intUnlock(lockKey);
-    if(nput!=sizeof(pcallback)) errMessage(-1,"callbackRequest ring buffer full");
+    if(nput!=sizeof(pcallback)){
+	logMsg("callbackRequest ring buffer full\n",0,0,0,0,0,0);
+	ringOverflow[priority] = TRUE;
+    }
     if((status=semGive(callbackSem[priority]))!=OK) {
 /*semGive randomly returns garbage value*/
 /*
@@ -102,6 +107,7 @@ void callbackRequest(CALLBACK *pcallback)
     volatile CALLBACK *pcallback;
     int nget;
 
+    ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
         if(semTake(callbackSem[priority],WAIT_FOREVER)!=OK ){
@@ -114,6 +120,7 @@ void callbackRequest(CALLBACK *pcallback)
 		errMessage(0,"rngBufGet failed in callbackTask");
 		taskSuspend(0);
 	    }
+	    ringOverflow[priority] = FALSE;
 	    (*pcallback->callback)(pcallback);
 	}
     }

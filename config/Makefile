@@ -20,6 +20,7 @@ CONFIGS += CONFIG.Host.UnixCommon
 CONFIGS += CONFIG_HOST_ARCH.UnixCommon
 
 CONFIGS += CONFIG.Vx
+CONFIGS += $(subst ../,,$(wildcard ../CONFIG.Vx.*))
 #CONFIGS += $(CROSS_COMPILER_TARGET_ARCHS:%=CONFIG.Vx.%)
 
 CONFIGS += CONFIG_SITE
@@ -32,6 +33,9 @@ CONFIGS += RULES.Vx
 CONFIGS += RULES_ARCHS
 CONFIGS += RULES_DIRS
 CONFIGS += RULES_TOP
+
+BIN_INSTALLS += $(wildcard ../tools/*.pl)
+BIN_INSTALLS += ../tools/installEpics
 
 include $(TOP)/configure/RULES_BUILD
 

@@ -29,6 +29,8 @@
  * .02	06-30-91	rac	installed in SCCS
  * .03	09-06-91	rac	change pprAreaErase to pprRegionErase; add
  *				documentation
+ * .04	10-01-91	rac	properly handle channels which aren't
+ *				connected yet
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -1512,66 +1514,70 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 	pSChan = pSlave->pSChan;
 	markNum = pSlave->markNum;
 
-	nEl = pSChan->elCount;
-
-	i = begin;
-	if (!incr)
-	    first = 1;
+	if (pSChan->pData == NULL || pSChan->dataChan == 0)
+	    ;		/* no action if never connected or not data channel */
 	else {
-	    first = pSlave->first;
-	    oldX = pSlave->oldX;
-	    oldY = pSlave->oldY;
-	    skip = pSlave->skip;
-	}
-	while (i >= 0) {
-	    if (pSChan->pFlags[i].missing)
-		skip = 1;
-	    else if (first || skip || pSChan->pFlags[i].restart) {
-		oldX = pSspec->pDeltaSec[i];
-		if (pMstr->wrapX) {
-		    while (oldX > pMstr->extentVal)
-			oldX -= pMstr->extentVal;
-		}
-		FetchIthValInto(pSChan, oldY)
-		if (markPlot)
-		    pprMarkD(pArea, oldX, oldY, markNum);
-		if (showStat && pSChan->pDataCodeR[i] != ' ') {
-		    pprChar(pArea, oldX, oldY, pSChan->pDataCodeR[i], 0., 0.);
-		}
-		else if (pointPlot)
-		    pprPointD(pArea, oldX, oldY);
-		skip = 0;
-	    }
-	    else if (pSChan->pFlags[i].filled)
-		;	/* no action */
+	    nEl = pSChan->elCount;
+
+	    i = begin;
+	    if (!incr)
+		first = 1;
 	    else {
-		newX = pSspec->pDeltaSec[i];
-		if (pMstr->wrapX) {
-		    while (newX > pMstr->extentVal)
-			newX -= pMstr->extentVal;
-		}
-		if (linePlot && dbr_type_is_ENUM(pSChan->dbrType)) {
-		    pprLineSegD(pArea, oldX, oldY, newX, oldY);
-		    oldX = newX;
-		}
-		FetchIthValInto(pSChan, newY)
-		if (linePlot)
-		    pprLineSegD(pArea, oldX, oldY, newX, newY);
-		if (markPlot)
-		    pprMarkD(pArea, newX, newY, markNum);
-		if (showStat && pSChan->pDataCodeR[i] != ' ') {
-		    pprChar(pArea, newX, newY, pSChan->pDataCodeR[i], 0., 0.);
-		}
-		else if (pointPlot)
-		    pprPointD(pArea, newX, newY);
-		oldX = newX;
-		oldY = newY;
+		first = pSlave->first;
+		oldX = pSlave->oldX;
+		oldY = pSlave->oldY;
+		skip = pSlave->skip;
 	    }
-	    if (i == end)
-		i = -1;
-	    else if (++i >= pSspec->dataDim)
-		i = 0;
-	    first = 0;
+	    while (i >= 0) {
+		if (pSChan->pFlags[i].missing)
+		    skip = 1;
+		else if (first || skip || pSChan->pFlags[i].restart) {
+		    oldX = pSspec->pDeltaSec[i];
+		    if (pMstr->wrapX) {
+			while (oldX > pMstr->extentVal)
+			    oldX -= pMstr->extentVal;
+		    }
+		    FetchIthValInto(pSChan, oldY)
+		    if (markPlot)
+			pprMarkD(pArea, oldX, oldY, markNum);
+		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			pprChar(pArea, oldX,oldY, pSChan->pDataCodeR[i],0.,0.);
+		    }
+		    else if (pointPlot)
+			pprPointD(pArea, oldX, oldY);
+		    skip = 0;
+		}
+		else if (pSChan->pFlags[i].filled)
+		    ;	/* no action */
+		else {
+		    newX = pSspec->pDeltaSec[i];
+		    if (pMstr->wrapX) {
+			while (newX > pMstr->extentVal)
+			    newX -= pMstr->extentVal;
+		    }
+		    if (linePlot && dbr_type_is_ENUM(pSChan->dbrType)) {
+			pprLineSegD(pArea, oldX, oldY, newX, oldY);
+			oldX = newX;
+		    }
+		    FetchIthValInto(pSChan, newY)
+		    if (linePlot)
+			pprLineSegD(pArea, oldX, oldY, newX, newY);
+		    if (markPlot)
+			pprMarkD(pArea, newX, newY, markNum);
+		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			pprChar(pArea, newX,newY, pSChan->pDataCodeR[i],0.,0.);
+		    }
+		    else if (pointPlot)
+			pprPointD(pArea, newX, newY);
+		    oldX = newX;
+		    oldY = newY;
+		}
+		if (i == end)
+		    i = -1;
+		else if (++i >= pSspec->dataDim)
+		    i = 0;
+		first = 0;
+	    }
 	}
 	pSlave->first = first;
 	pSlave->oldX = oldX;
@@ -1919,71 +1925,75 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
     while (pSlave != NULL) {
 	pArea = pSlave->pArea;
 	pSChan = pSlave->pSChan;
-	markNum = pSlave->markNum;
-
-	nEl = pSChanX->elCount;
-	if (nEl > pSChan->elCount)
-	    nEl = pSChan->elCount;
-
-	i = begin;
-	if (!incr)
-	    first = 1;
+	if (pSChan->pData == NULL || pSChan->dataChan == 0)
+	    ;		/* no action if never connected or not data channel */
 	else {
-	    first = pSlave->first;
-	    oldX = pSlave->oldX;
-	    oldY = pSlave->oldY;
-	    skip = pSlave->skip;
-	}
-	while (i >= 0) {
-	    if (pSChan->pFlags[i].missing || pSChanX->pFlags[i].missing)
-		skip = 1;
-	    else if (first || skip ||
-		    pSChan->pFlags[i].restart || pSChanX->pFlags[i].restart) {
-		if (nEl == 1) {
-		    FetchIthValInto(pSChanX, oldX)
-		    FetchIthValInto(pSChan, oldY)
-		    if (markPlot)
-			pprMarkD(pArea, oldX, oldY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea,
-				oldX, oldY, pSChan->pDataCodeR[i], 0., 0.);
-		    }
-		    else if (pointPlot)
-			pprPointD(pArea, oldX, oldY);
-		}
-		else {
-		    sydPlot_XYarray(pArea, pSChanX, pSChan, i);
-		}
-		skip = 0;
-	    }
-	    else if (pSChan->pFlags[i].filled)
-		;	/* no action */
+	    markNum = pSlave->markNum;
+
+	    nEl = pSChanX->elCount;
+	    if (nEl > pSChan->elCount)
+		nEl = pSChan->elCount;
+
+	    i = begin;
+	    if (!incr)
+		first = 1;
 	    else {
-		if (nEl == 1) {
-		    FetchIthValInto(pSChanX, newX)
-		    FetchIthValInto(pSChan, newY)
-		    if (linePlot)
-			pprLineSegD(pArea, oldX, oldY, newX, newY);
-		    if (markPlot)
-			pprMarkD(pArea, newX, newY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea,
-				newX, newY, pSChan->pDataCodeR[i], 0., 0.);
-		    }
-		    else if (pointPlot)
-			pprPointD(pArea, newX, newY);
-		    oldX = newX;
-		    oldY = newY;
-		}
-		else {
-		    sydPlot_XYarray(pArea, pSChanX, pSChan, i);
-		}
+		first = pSlave->first;
+		oldX = pSlave->oldX;
+		oldY = pSlave->oldY;
+		skip = pSlave->skip;
 	    }
-	    if (i == end)
-		i = -1;
-	    else if (++i >= pSspec->dataDim)
-		i = 0;
-	    first = 0;
+	    while (i >= 0) {
+		if (pSChan->pFlags[i].missing || pSChanX->pFlags[i].missing)
+		    skip = 1;
+		else if (first || skip || pSChan->pFlags[i].restart ||
+						pSChanX->pFlags[i].restart) {
+		    if (nEl == 1) {
+			FetchIthValInto(pSChanX, oldX)
+			FetchIthValInto(pSChan, oldY)
+			if (markPlot)
+			    pprMarkD(pArea, oldX, oldY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea,
+				oldX, oldY, pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, oldX, oldY);
+		    }
+		    else {
+			sydPlot_XYarray(pArea, pSChanX, pSChan, i);
+		    }
+		    skip = 0;
+		}
+		else if (pSChan->pFlags[i].filled)
+		    ;	/* no action */
+		else {
+		    if (nEl == 1) {
+			FetchIthValInto(pSChanX, newX)
+			FetchIthValInto(pSChan, newY)
+			if (linePlot)
+			    pprLineSegD(pArea, oldX, oldY, newX, newY);
+			if (markPlot)
+			    pprMarkD(pArea, newX, newY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea,
+				newX, newY, pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, newX, newY);
+			oldX = newX;
+			oldY = newY;
+		    }
+		    else {
+			sydPlot_XYarray(pArea, pSChanX, pSChan, i);
+		    }
+		}
+		if (i == end)
+		    i = -1;
+		else if (++i >= pSspec->dataDim)
+		    i = 0;
+		first = 0;
+	    }
 	}
 	pSlave->first = first;
 	pSlave->oldX = oldX;
@@ -2401,72 +2411,76 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
     while (pSlave != NULL) {
 	pArea = pSlave->pArea;
 	pSChan = pSlave->pSChan;
-	markNum = pSlave->markNum;
-
-	nEl = pSChan->elCount;
-
-	i = begin;
-	if (!incr)
-	    first = 1;
+	if (pSChan->pData == NULL || pSChan->dataChan == 0)
+	    ;		/* no action if never connected or not data channel */
 	else {
-	    first = pSlave->first;
-	    oldX = pSlave->oldX;
-	    oldY = pSlave->oldY;
-	    skip = pSlave->skip;
-	}
-	while (i >= 0) {
-	    if (pSChan->pFlags[i].missing)
-		skip = 1;
-	    else if (first || skip || pSChan->pFlags[i].restart) {
-		if (nEl == 1) {
-		    oldX = i;
-		    FetchIthValInto(pSChan, oldY)
-		    if (markPlot)
-			pprMarkD(pArea, oldX, oldY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea, oldX, oldY,
-						pSChan->pDataCodeR[i], 0., 0.);
-		    }
-		    else if (pointPlot)
-			pprPointD(pArea, oldX, oldY);
-		}
-		else {
-		    sydPlot_Yarray(pArea, pSChan, i);
-		}
-		skip = 0;
-	    }
-	    else if (pSChan->pFlags[i].filled)
-		;	/* no action */
+	    markNum = pSlave->markNum;
+
+	    nEl = pSChan->elCount;
+
+	    i = begin;
+	    if (!incr)
+		first = 1;
 	    else {
-		if (nEl == 1) {
-		    newX = i;
-		    if (linePlot && dbr_type_is_ENUM(pSChan->dbrType)) {
-			pprLineSegD(pArea, oldX, oldY, newX, oldY);
-			oldX = newX;
-		    }
-		    FetchIthValInto(pSChan, newY)
-		    if (linePlot)
-			pprLineSegD(pArea, oldX, oldY, newX, newY);
-		    if (markPlot)
-			pprMarkD(pArea, newX, newY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea, newX, newY,
-						pSChan->pDataCodeR[i], 0., 0.);
-		    }
-		    else if (pointPlot)
-			pprPointD(pArea, newX, newY);
-		    oldX = newX;
-		    oldY = newY;
-		}
-		else {
-		    sydPlot_Yarray(pArea, pSChan, i);
-		}
+		first = pSlave->first;
+		oldX = pSlave->oldX;
+		oldY = pSlave->oldY;
+		skip = pSlave->skip;
 	    }
-	    if (i == end)
-		i = -1;
-	    else if (++i >= pSspec->dataDim)
-		i = 0;
-	    first = 0;
+	    while (i >= 0) {
+		if (pSChan->pFlags[i].missing)
+		    skip = 1;
+		else if (first || skip || pSChan->pFlags[i].restart) {
+		    if (nEl == 1) {
+			oldX = i;
+			FetchIthValInto(pSChan, oldY)
+			if (markPlot)
+			    pprMarkD(pArea, oldX, oldY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea, oldX, oldY,
+						pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, oldX, oldY);
+		    }
+		    else {
+			sydPlot_Yarray(pArea, pSChan, i);
+		    }
+		    skip = 0;
+		}
+		else if (pSChan->pFlags[i].filled)
+		    ;	/* no action */
+		else {
+		    if (nEl == 1) {
+			newX = i;
+			if (linePlot && dbr_type_is_ENUM(pSChan->dbrType)) {
+			    pprLineSegD(pArea, oldX, oldY, newX, oldY);
+			    oldX = newX;
+			}
+			FetchIthValInto(pSChan, newY)
+			if (linePlot)
+			    pprLineSegD(pArea, oldX, oldY, newX, newY);
+			if (markPlot)
+			    pprMarkD(pArea, newX, newY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea, newX, newY,
+						pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, newX, newY);
+			oldX = newX;
+			oldY = newY;
+		    }
+		    else {
+			sydPlot_Yarray(pArea, pSChan, i);
+		    }
+		}
+		if (i == end)
+		    i = -1;
+		else if (++i >= pSspec->dataDim)
+		    i = 0;
+		first = 0;
+	    }
 	}
 	pSlave->first = first;
 	pSlave->oldX = oldX;

@@ -1,1 +1,0 @@
-BUILD_ARCHS=sun4 mv167 mv147

@@ -176,7 +176,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
 enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
     esscimqi_socketCloseRequired, 
     esscimqi_socketBothShutdownRequired,
-    esscimqi_socketSigurgRequired,
+    esscimqi_socketSigAlarmRequired,
     esscimqi_shuechanismImplemenedHerein
 };
 epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 

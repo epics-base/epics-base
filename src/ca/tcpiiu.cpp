@@ -702,7 +702,7 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, // 
                 }
             }
             break;
-        case esscimqi_socketSigurgRequired:
+        case esscimqi_socketSigAlarmRequired:
             this->recvThread.interruptSocketRecv ();
             this->sendThread.interruptSocketSend ();
             break;

@@ -29,6 +29,7 @@
 #define INCdevLibh 1
 
 #include <dbDefs.h>
+#include <osdVME.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -422,6 +423,11 @@ long devDisableInterruptLevel (epicsInterruptType intType, unsigned level);
  * in a future release.
  */
 long locationProbe (epicsAddressType addrType, char *pLocation);
+
+/*
+ * Some vxWorks convenience routines
+ */
+void bcopyLongs(char *source, char *destination, int nlongs);
 
 #ifdef __cplusplus
 }

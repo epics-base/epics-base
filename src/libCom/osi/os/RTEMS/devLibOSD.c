@@ -14,8 +14,10 @@
  *
  */
 
+#include <epicsStdio.h>
+#include <epicsExit.h>
 
-#if defined(__PPC__) && defined(mpc750)
+#if defined(__PPC__) /* && defined(mpc750) */
 
 #include <rtems.h>
 #include <bsp.h>
@@ -322,3 +324,21 @@ void unsolicitedHandlerEPICS(int vectorNumber)
 }
 
 #endif /* defined(__PPC__) && defined(mpc750) */
+
+/*
+ * Some vxWorks convenience routines
+ */
+void
+bcopyLongs(char *source, char *destination, int nlongs)
+{
+    const long *s = (long *)source;
+    long *d = (long *)destination;
+    while(nlongs--)
+        *d++ = *s++;
+}
+
+void
+rebootHookAdd(void (*funptr)())
+{
+    epicsAtExit(funptr,NULL);
+}

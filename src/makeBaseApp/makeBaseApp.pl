@@ -16,6 +16,9 @@ $app_top  = cwd();
 
 &GetUser;		# Ensure we know who's in charge
 &readRelease("configure/RELEASE", \%release, \@apps) if (-r "configure/RELEASE");
+&readRelease("configure/RELEASE.$ENV{EPICS_HOST_ARCH}", \%release, \@apps)
+   if (-r "configure/RELEASE.$ENV{EPICS_HOST_ARCH}");
+&expandRelease(\%release, \@apps);
 &get_commandline_opts;	# Check command-line options
 
 #
@@ -272,6 +275,11 @@ sub readRelease {
 	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
     }
     close IN;
+}
+
+sub expandRelease {
+    my ($Rmacros, $Rapps) = @_;
+    # $Rmacros is a reference to a hash, $Rapps a ref to an array
     
     # Expand any (possibly nested) macros that were defined after use
     while (($macro, $path) = each %$Rmacros) {

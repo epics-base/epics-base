@@ -54,16 +54,16 @@ template < class T > class tsSLIterConst;
 //
 template <class T>
 class tsSLNode {
-friend class tsSLList < T >;
-friend class tsSLIter < T >;
-friend class tsSLIterConst < T >;
 public:
     tsSLNode ();
     const tsSLNode < T > & operator = ( const tsSLNode < T > & ) const;
 private:
-    tsSLNode ( const tsSLNode < T > & );
     void removeNextItem (); // removes the item after this node
     T *pNext;
+    tsSLNode ( const tsSLNode < T > & );
+    friend class tsSLList < T >;
+    friend class tsSLIter < T >;
+    friend class tsSLIterConst < T >;
 };
 
 
@@ -82,8 +82,11 @@ public:
     void push ( T &item ); // same as add
     T * first () const;
     void remove ( T &itemBefore );
+    tsSLIterConst <T> firstIter () const;
+    tsSLIter <T> firstIter ();
 private:
-    tsSLList ( const tsSLList & ); // intentionally _not_ implemented
+    tsSLList ( const tsSLList & ); // dissallowed
+    const tsSLList < T > & operator = ( const tsSLList < T > & ) const;
 };
 
 //
@@ -92,37 +95,21 @@ private:
 template < class T >
 class tsSLIterConst {
 public:
-    tsSLIterConst ( const T *pInitialEntry );
-
-    tsSLIterConst<T> & operator = ( const T *pNewEntry );
-
-    tsSLIterConst<T> itemAfter ();
-
+    bool valid () const;
     bool operator == (const tsSLIterConst<T> &rhs) const;
     bool operator != (const tsSLIterConst<T> &rhs) const;
-
     const T & operator * () const;
     const T * operator -> () const;
-
-    tsSLIterConst<T> & operator ++ (); // prefix ++
-    tsSLIterConst<T> operator ++ (int); // postfix ++
-
-#   if defined(_MSC_VER) && _MSC_VER < 1200
-        tsSLIterConst (const class tsSLIterConst<T> &copyIn);
-#   endif
-
-    bool valid () const;
-
-    //
-    // end of the list constant
-    //
-    static const tsSLIterConst<T> eol ();
-
+    tsSLIterConst<T> & operator ++ ();
+    tsSLIterConst<T> operator ++ (int);
+    const T * pointer () const;
 protected:
     union {
         const T *pConstEntry;
         T *pEntry;
     };
+    tsSLIterConst ( const T *pInitialEntry );
+    friend class tsSLList < T >;
 };
 
 //
@@ -131,31 +118,17 @@ protected:
 template < class T >
 class tsSLIter : private tsSLIterConst<T> {
 public:
-    tsSLIter ( T *pInitialEntry );
-
-    tsSLIter <T> & operator = ( T *pNewEntry );
-
-    tsSLIter <T> itemAfter ();
-
+    bool valid () const;
     bool operator == (const tsSLIter<T> &rhs) const;
     bool operator != (const tsSLIter<T> &rhs) const;
-
     T & operator * () const;
     T * operator -> () const;
-
-    tsSLIter <T> & operator ++ (); // prefix ++
-    tsSLIter <T> operator ++ (int); // postfix ++
-
-#   if defined(_MSC_VER) && _MSC_VER < 1200
-        tsSLIter (class tsSLIter<T> &copyIn);
-#   endif
-
-    bool valid () const;
-
-    //
-    // end of the list constant
-    //
-    static const tsSLIter <T> eol ();
+    tsSLIter <T> & operator ++ ();
+    tsSLIter <T> operator ++ (int);
+    T * pointer () const;
+private:
+    tsSLIter ( T *pInitialEntry );
+    friend class tsSLList < T >;
 };
 
 //////////////////////////////////////////
@@ -272,11 +245,25 @@ inline T * tsSLList < T > :: first () const
 }
 
 template <class T>
-void tsSLList < T > :: remove ( T &itemBefore )
+inline void tsSLList < T > :: remove ( T &itemBefore )
 {
     tsSLNode < T > *pBeforeNode = &itemBefore;
     tsSLNode < T > *pAfterNode =  pBeforeNode->pNext;
     pBeforeNode->pNext = pAfterNode->pNext;
+}
+
+template <class T>
+inline tsSLIterConst <T> tsSLList < T > :: firstIter () const
+{
+    const tsSLNode < T > *pThisNode = this;
+    return tsSLIterConst <T> ( pThisNode->pNext );
+}
+
+template <class T>
+inline tsSLIter <T> tsSLList < T > :: firstIter ()
+{
+    tsSLNode < T > *pThisNode = this;
+    return tsSLIter <T> ( pThisNode->pNext );
 }
 
 //////////////////////////////////////////
@@ -292,17 +279,9 @@ inline tsSLIterConst<T>::tsSLIterConst ( const T *pInitialEntry ) :
 }
 
 template < class T >
-inline tsSLIterConst <T> & tsSLIterConst<T>::operator = ( const T *pNewEntry )
+inline bool tsSLIterConst<T>::valid () const
 {
-    this->pConstEntry = pNewEntry;
-    return *this;
-}
-
-template < class T >
-inline tsSLIterConst <T> tsSLIterConst<T>::itemAfter ()
-{
-    const tsSLNode < T > *pCurNode = this->pConstEntry;
-    return pCurNode->pNext;
+    return this->pConstEntry != 0;
 }
 
 template < class T >
@@ -346,28 +325,10 @@ inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ (int) // postfix ++
     return tmp;
 }
 
-
-#   if defined(_MSC_VER) && _MSC_VER < 1200
-template < class T >
-inline tsSLIterConst<T>::tsSLIterConst (const class tsSLIterConst<T> &copyIn) :
-    pConstEntry ( copyIn.pConstEntry )
+template <class T>
+inline const T * tsSLIterConst < T > :: pointer () const
 {
-}
-#   endif
-
-template < class T >
-inline bool tsSLIterConst<T>::valid () const
-{
-    return this->pConstEntry ? true : false;
-}
-
-//
-// end of the list constant
-//
-template < class T >
-inline const tsSLIterConst<T> tsSLIterConst<T>::eol ()
-{
-    return 0;
+    return this->pConstEntry;
 }
 
 //////////////////////////////////////////
@@ -383,17 +344,9 @@ inline tsSLIter<T>::tsSLIter ( T *pInitialEntry ) :
 }
 
 template < class T >
-inline tsSLIter <T> & tsSLIter<T>::operator = ( T *pNewEntry )
+inline bool tsSLIter<T>::valid () const
 {
-    tsSLIterConst<T>::operator = ( pNewEntry );
-    return *this;
-}
-
-template < class T >
-inline tsSLIter <T> tsSLIter<T>::itemAfter ()
-{
-    tsSLNode < T > *pCurNode = this->pEntry;
-    return pCurNode->pNext;
+    return this->pEntry != 0;
 }
 
 template < class T >
@@ -435,29 +388,10 @@ inline tsSLIter<T> tsSLIter<T>::operator ++ (int) // postfix ++
     return tmp;
 }
 
-
-#   if defined(_MSC_VER) && _MSC_VER < 1200
-template < class T >
-inline tsSLIter<T>::tsSLIter (const class tsSLIter<T> &copyIn) :
-    tsSLIterConst<T> ( copyIn )
+template <class T>
+inline T * tsSLIter < T > :: pointer () const
 {
+    return this->pEntry;
 }
-#   endif
-
-template < class T >
-inline bool tsSLIter<T>::valid () const
-{
-    return this->pEntry ? true : false;
-}
-
-//
-// end of the list constant
-//
-template < class T >
-inline const tsSLIter<T> tsSLIter<T>::eol ()
-{
-    return 0;
-}
-
 
 #endif // tsSLListh

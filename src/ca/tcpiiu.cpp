@@ -1958,9 +1958,10 @@ void tcpiiu::connectAllIO ( nciu &chan )
     epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         tsDLIterBD < baseNMIU > pNetIO = 
-            chan.tcpiiuPrivateListOfIO::eventq.first ();
+            chan.tcpiiuPrivateListOfIO::eventq.firstIter ();
         while ( pNetIO.valid () ) {
-            tsDLIterBD < baseNMIU > next = pNetIO.itemAfter ();
+            tsDLIterBD < baseNMIU > next = pNetIO;
+            next++;
             class netSubscription *pSubscr = pNetIO->isSubscription ();
             if ( pSubscr ) {
                 this->subscriptionRequest ( *pSubscr, false );
@@ -1984,9 +1985,10 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
     epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         tsDLIterBD < baseNMIU > pNetIO = 
-            chan.tcpiiuPrivateListOfIO::eventq.first ();
+            chan.tcpiiuPrivateListOfIO::eventq.firstIter ();
         while ( pNetIO.valid () ) {
-            tsDLIterBD < baseNMIU > next = pNetIO.itemAfter ();
+            tsDLIterBD < baseNMIU > next = pNetIO;
+            next++;
             class netSubscription *pSubscr = pNetIO->isSubscription ();
             this->ioTable.remove ( *pNetIO );
             if ( pSubscr ) {

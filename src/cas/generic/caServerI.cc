@@ -109,7 +109,7 @@ caServerI::~caServerI()
 	//
 	// delete all clients
 	//
-	tsDLIterBD <casStrmClient> iter ( this->clientList.first () );
+	tsDLIterBD <casStrmClient> iter = this->clientList.firstIter ();
     while ( iter.valid () ) {
 		tsDLIterBD <casStrmClient> tmp = iter;
 		++tmp;
@@ -245,7 +245,7 @@ void caServerI::sendBeacon()
 	// addresses.
 	// 
 	this->lock();
-	tsDLIterBD <casIntfOS> iter ( this->intfList.first () );
+	tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
 	while ( iter.valid () ) {
 		iter->sendBeacon ();
 		iter++;
@@ -271,7 +271,7 @@ double caServerI::getBeaconPeriod() const
 //
 void caServerI::show (unsigned level) const
 {
-    int			bytes_reserved;
+    int bytes_reserved;
     
     printf( "Channel Access Server Status V%d.%d\n",
         CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
@@ -279,13 +279,13 @@ void caServerI::show (unsigned level) const
     this->epicsMutex::show(level);
     
     this->lock();
-    tsDLIterBD<casStrmClient> iterCl( this->clientList.first () );
+    tsDLIterConstBD<casStrmClient> iterCl = this->clientList.firstIter ();
     while ( iterCl.valid () ) {
         iterCl->show (level);
         ++iterCl;
     }
     
-    tsDLIterBD<casIntfOS> iterIF ( this->intfList.first () );
+    tsDLIterConstBD<casIntfOS> iterIF = this->intfList.firstIter ();
     while ( iterIF.valid () ) {
         iterIF->casIntfOS::show ( level );
         ++iterIF;

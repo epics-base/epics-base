@@ -15,7 +15,7 @@ inline inetAddrID::inetAddrID (const struct sockaddr_in &addrIn) :
 {
 }
 
-inline bool inetAddrID::operator == (const inetAddrID &rhs)
+inline bool inetAddrID::operator == (const inetAddrID &rhs) const
 {
     if (this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr) {
         if (this->addr.sin_port == rhs.addr.sin_port) {

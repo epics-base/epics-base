@@ -50,9 +50,10 @@ dbChannelIO::~dbChannelIO ()
     /*
      * remove any subscriptions attached to this channel
      */
-    tsDLIterBD <dbSubscriptionIO> iter = this->eventq.first ();
+    tsDLIterBD <dbSubscriptionIO> iter = this->eventq.firstIter ();
     while ( iter.valid () ) {
-        tsDLIterBD <dbSubscriptionIO> next = iter.itemAfter ();
+        tsDLIterBD <dbSubscriptionIO> next = iter;
+        next++;
         iter->destroy ();
         iter = next;
     }
@@ -206,7 +207,7 @@ void dbChannelIO::show ( unsigned level ) const
         this->serviceIO.show ( level - 2u );
         printf ( "\tget callback cache at %p, with size %lu\n",
             this->pGetCallbackCache, this->getCallbackCacheSize );
-        tsDLIterConstBD < dbSubscriptionIO > pItem = this->eventq.first ();
+        tsDLIterConstBD < dbSubscriptionIO > pItem = this->eventq.firstIter ();
         while ( pItem.valid () ) {
             pItem->show ( level - 2u );
             pItem++;

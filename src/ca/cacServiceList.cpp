@@ -36,7 +36,7 @@ cacChannelIO * cacServiceList::createChannelIO ( const char *pName,
     cacChannelIO *pChanIO = 0;
 
     this->lock ();
-    tsDLIterBD < cacServiceIO > iter ( this->services.first () );
+    tsDLIterBD < cacServiceIO > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         pChanIO = iter->createChannelIO ( pName, cacCtx, chan );
         if ( pChanIO ) {
@@ -52,7 +52,7 @@ cacChannelIO * cacServiceList::createChannelIO ( const char *pName,
 void cacServiceList::show ( unsigned level ) const
 {
     this->lock ();
-    tsDLIterConstBD < cacServiceIO > iter ( this->services.first () );
+    tsDLIterConstBD < cacServiceIO > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         iter->show ( level );
         iter++;

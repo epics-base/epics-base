@@ -97,9 +97,10 @@ void ipAddrToAsciiEngine::show ( unsigned level ) const
     printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
         this, this->labor.count () );
     if ( level > 0u ) {
-        tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.first ();
+        tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();
         while ( pItem.valid () ) {
             pItem->show ( level - 1u );
+            pItem++;
         }
         printf ( "nextId = %u\n", this->nextId );
     }

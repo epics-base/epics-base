@@ -412,33 +412,35 @@ LOCAL void register_new_client ( osiSockAddr &from )
         }
     }
 
-    tsDLIterBD < repeaterClient > pclient = client_list.first ();
+    tsDLIterBD < repeaterClient > pclient = client_list.firstIter ();
     while ( pclient.valid () ) {
         if ( pclient->identicalPort ( from ) ) {
             break;
         }
-        pclient = pclient.itemAfter ();
-    }       
-
-    if ( ! pclient.valid () ) {
-        pclient = new repeaterClient ( from );
-        if ( ! pclient.valid () ) {
+        pclient++;
+    }      
+    
+    repeaterClient *pNewClient;
+    if ( pclient.valid () ) {
+        pNewClient = pclient.pointer ();
+    }
+    else {
+        repeaterClient *pNewClient = new repeaterClient ( from );
+        if ( ! pNewClient ) {
             ca_printf ( "%s: no memory for new client\n", __FILE__ );
             return;
         }
-
-        if ( ! pclient->connect () ) {
+        if ( ! pNewClient->connect () ) {
             pclient->destroy ();
             return;
         }
-
-        client_list.add ( *pclient ); 
+        client_list.add ( *pNewClient ); 
         newClient = true;
     }
 
-    if ( ! pclient->sendConfirm () ) {
-        client_list.remove (*pclient );
-        pclient->destroy ();
+    if ( ! pNewClient->sendConfirm () ) {
+        client_list.remove ( *pNewClient );
+        pNewClient->destroy ();
         debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
                     ntohs (from.ia.sin_port) ) );
     }

@@ -32,10 +32,10 @@ void netiiu::show ( unsigned level ) const
 
     printf ( "network IO base class\n" );
     if ( level > 1 ) {
-        tsDLIterConstBD < nciu > pChan ( this->channelList.first () );
+        tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
 	    while ( pChan.valid () ) {
             pChan->show ( level - 1u );
-            pChan = pChan.itemAfter ();
+            pChan++;
         }
     }
     if ( level > 2u ) {
@@ -78,9 +78,10 @@ void netiiu::disconnectAllChan ( netiiu & newiiu )
 
     {
         epicsAutoMutex autoMutex ( this->mutex );
-        tsDLIterBD < nciu > chan ( this->channelList.first () );
+        tsDLIterBD < nciu > chan = this->channelList.firstIter ();
         while ( chan.valid () ) {
-            tsDLIterBD < nciu > next = chan.itemAfter ();
+            tsDLIterBD < nciu > next = chan;
+            next++;
             this->clearChannelRequest ( *chan );
             this->channelList.remove ( *chan );
             chan->disconnect ( newiiu );
@@ -123,7 +124,7 @@ bool netiiu::destroyAllIO ( nciu &chan )
 void netiiu::connectTimeoutNotify ()
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    tsDLIterBD < nciu > chan ( this->channelList.first () );
+    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
     while ( chan.valid () ) {
         chan->connectTimeoutNotify ();
         chan++;
@@ -133,7 +134,7 @@ void netiiu::connectTimeoutNotify ()
 void netiiu::resetChannelRetryCounts ()
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    tsDLIterBD < nciu > chan ( this->channelList.first () );
+    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
     while ( chan.valid () ) {
         chan->resetRetryCount ();
         chan++;
@@ -146,12 +147,12 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    tsDLIterBD < nciu > chan = this->channelList.first ();
-    if ( chan.valid () ) {
-        status = chan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
+    nciu *pChan = this->channelList.first ();
+    if ( pChan ) {
+        status = pChan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
         if ( status ) {
-            this->channelList.remove ( *chan );
-            this->channelList.add ( *chan );
+            this->channelList.remove ( *pChan );
+            this->channelList.add ( *pChan );
         }
     }
     else {

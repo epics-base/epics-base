@@ -95,7 +95,7 @@ casStrmClient::~casStrmClient()
 	//
 	// delete all channel attached
 	//
-	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		//
 		// destroying the channel removes it from the list
@@ -975,7 +975,7 @@ caStatus casStrmClient::hostNameAction()
 	}
 	this->pHostName = pMalloc;
 
-	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->setOwner(this->pUserName, this->pHostName);
 		++iter;
@@ -1023,7 +1023,7 @@ caStatus casStrmClient::clientNameAction()
 	}
 	this->pUserName = pMalloc;
 
-	tsDLIterBD <casChannelI>	iter ( this->chanList.first () );
+	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->setOwner ( this->pUserName, this->pHostName );
 		++iter;
@@ -1495,11 +1495,11 @@ caStatus casStrmClient::clearChannelAction ()
 //
 caStatus casStrmClient::eventCancelAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg ();
-	void		*dp = this->ctx.getData ();
+	const caHdr *mp = this->ctx.getMsg ();
+	void *dp = this->ctx.getData ();
 	casChannelI *pciu;
-	caHdr		*reply;
-	int 	status;
+	caHdr *reply;
+	int status;
 	
 	/*
 	 * Verify the channel
@@ -1519,19 +1519,19 @@ caStatus casStrmClient::eventCancelAction ()
 	/*
 	 * verify the event (monitor)
 	 */
-    tsDLIterBD < casMonitor >	pMon = pciu->findMonitor ( mp->m_available );
+    tsDLIterBD <casMonitor> pMon = pciu->findMonitor ( mp->m_available );
 	if ( ! pMon.valid () ) {
 		//
 		// this indicates client or server library corruption
 		//
-		return logBadId (mp, dp, ECA_BADMONID, mp->m_cid);
+		return logBadId ( mp, dp, ECA_BADMONID, mp->m_cid );
 	}
 
 	/*
 	 * allocate delete confirmed message
 	 */
-	status = allocMsg (0u, &reply);
-	if (status) {
+	status = allocMsg ( 0u, &reply );
+	if ( status ) {
 		return status;
 	}
 	
@@ -1619,21 +1619,21 @@ caStatus casStrmClient::readSyncAction()
 	// a read.
 	//
 	this->lock();
-	tsDLIterBD<casChannelI> iter(this->chanList.first());
+	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->clearOutstandingReads ();
 		++iter;
 	}
 	this->unlock();
 
-	status = this->allocMsg(0u, &reply);
-	if(status){
+	status = this->allocMsg ( 0u, &reply );
+	if ( status ) {
 		return status;
 	}
 
 	*reply = *mp;
 
-	this->commitMsg();
+	this->commitMsg ();
 
 	return S_cas_success;
 }

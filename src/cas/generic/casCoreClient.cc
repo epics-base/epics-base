@@ -57,7 +57,7 @@ casCoreClient::~casCoreClient()
     }
 
 	this->lock();
-	tsDLIterBD<casAsyncIOI>   iterIO(this->ioInProgList.first());
+	tsDLIterBD<casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
 
 	//
 	// cancel any pending asynchronous IO

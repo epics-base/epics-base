@@ -59,7 +59,7 @@ int main ()
 
 	{
 		tsSLIter<fred> iter ( list.first() );
-		while ( iter.valid () ) {
+		while ( iter ) {
 			iter->show();
             ++iter;
 		}
@@ -72,7 +72,7 @@ int main ()
 
 	{
 		tsSLIter<jane> iter ( janeList.first() );
-		while ( iter.valid () ) {
+		while ( iter ) {
 			iter->show();
             ++iter;
 		}
@@ -80,7 +80,7 @@ int main ()
 
 	{
 		tsSLIter <fred> iter ( list.first () );
-		while ( iter.valid () ) {
+		while ( iter ) {
 			iter->show();
             iter++;
 		}
@@ -90,7 +90,7 @@ int main ()
 
 	{
 		tsSLIter<fred> iter (list.first());
-        assert ( iter == tsSLIter<fred>::eol() );
+        assert ( ! iter );
 	}
 
 	return 0;

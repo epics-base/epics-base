@@ -60,7 +60,7 @@ inline void casChannelI::postEvent (const casEventMask &select, const smartConst
 {
 	this->lock();
 
-    tsDLIterBD<casMonitor> iter(this->monitorList.first());
+    tsDLIterBD<casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
         iter->post (select, pEvent);
 	    ++iter;
@@ -105,7 +105,7 @@ inline void casChannelI::addMonitor(casMonitor &mon)
 inline tsDLIterBD <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
 {
 	this->lock ();
-	tsDLIterBD <casMonitor> iter ( this->monitorList.first () );
+	tsDLIterBD <casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
 		if ( clientIdIn == iter->getClientId () ) {
 			break;

@@ -80,7 +80,7 @@ int main ()
 
     tsDLIterConstBD<jane> bdIter ( janeList.first () );
     i = 0;
-    while ( bdIter != bdIter.eol () ) {
+    while ( bdIter ) {
         i++;
         bdIter++;
     }

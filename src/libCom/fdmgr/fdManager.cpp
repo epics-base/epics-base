@@ -163,7 +163,7 @@ epicsShareFunc void fdManager::process (double delay)
         minDelay = delay;
     }
 
-    tsDLIterBD<fdReg> iter (this->regList.first());
+    tsDLIterBD < fdReg > iter = this->regList.firstIter ();
     while ( iter.valid () ) {
         FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
         ioPending = 1;
@@ -216,7 +216,7 @@ epicsShareFunc void fdManager::process (double delay)
     //
     // Look for activity
     //
-    iter=this->regList.first();
+    iter=this->regList.firstIter ();
     while ( iter.valid () ) {
         tsDLIterBD<fdReg> tmp = iter;
         tmp++;

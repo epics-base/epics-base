@@ -100,79 +100,34 @@ template <class T, class ID> class resTableIter;
 //
 template <class T, class ID>
 class resTable {
-    friend class resTableIter<T,ID>;
 public:
-
+    resTable (unsigned nHashTableEntries);
+    virtual ~resTable();
+    // Call " void T::show (unsigned level)" for each entry
+    void show (unsigned level) const;
+    int add (T &res); // returns -1 (id exists in table), 0 (success)
+    T *remove (const ID &idIn); // remove entry
+    T *lookup (const ID &idIn) const; // locate entry
+    // Call (pT->*pCB) () for each entry
+    void traverse ( void (T::*pCB)() );
+    void traverseConst ( void (T::*pCB)() const ) const;
+    unsigned numEntriesInstalled () const;
     //
     // exceptions thrown
     //
     class epicsShareClass dynamicMemoryAllocationFailed {};
     class epicsShareClass sizeExceedsMaxIndexWidth {};
-
-    resTable (unsigned nHashTableEntries);
-
-    virtual ~resTable();
-
-    //
-    // Call (pT->show) (level) for each entry
-    // where pT is a pointer to type T. Show
-    // returns "void". Show dumps increasing
-    // diagnostics to std out with increasing 
-    // magnitude of the its level argument.
-    //
-    void show (unsigned level) const;
-
-    //
-    // add entry
-    //
-    // returns -1 if the id already exits in the table
-    // and zero if successful
-    //
-    int add (T &res);
-
-    T *remove (const ID &idIn); // remove entry
-
-    T *lookup (const ID &idIn) const; // locate entry
-
-#if defined(_MSC_VER) && _MSC_VER < 1100
-    //
-    // required by MS vis c++ 5.0 (but not by 4.0)
-    //
-    typedef void (T::*pSetMFArg_t)();
-#   define pSetMFArg(ARG) pSetMFArg_t ARG
-    typedef void (T::*pSetMFArgConst_t)() const;
-#   define pSetMFArgConst(ARG) pSetMFArgConst_t ARG
-#else
-    //
-    // required by gnu g++ 2.7.2
-    //
-#   define pSetMFArg(ARG) void (T:: * ARG)()
-#   define pSetMFArgConst(ARG) void (T:: * ARG)() const
-#endif
-
-    //
-    // Call (pT->*pCB) () for each entry
-    //
-    // where pT is a pointer to type T and pCB is
-    // a pointer to a member function of T with 
-    // no parameters that returns void
-    //
-    void traverse ( pSetMFArg(pCB) );
-    void traverseConst ( pSetMFArgConst(pCB) ) const;
-
-    unsigned numEntriesInstalled () const;
-
 private:
-    tsSLList<T>     *pTable;
-    unsigned        hashIdMask;
-    unsigned        hashIdNBits;
-    unsigned        nInUse;
-
+    tsSLList<T> *pTable;
+    unsigned hashIdMask;
+    unsigned hashIdNBits;
+    unsigned nInUse;
     resTableIndex hash (const ID & idIn) const;
     T *find (tsSLList<T> &list, const ID &idIn) const;
     T *findDelete (tsSLList<T> &list, const ID &idIn);
     resTable ( const resTable & );
     resTable & operator = ( const resTable & );
+    friend class resTableIter<T,ID>;
 };
 
 
@@ -229,7 +184,6 @@ public:
     static resTableIndex hashEngine (const T &id);
     static const unsigned maxIndexBitWidth ();
     static const unsigned minIndexBitWidth ();
-
 protected:
     T id;
 };
@@ -279,11 +233,6 @@ private:
 //
 class epicsShareClass stringId {
 public:
-
-    //
-    // exceptions
-    //
-    class epicsShareClass dynamicMemoryAllocationFailed {};
     enum allocationType {copyString, refString};
     stringId (const char * idIn, allocationType typeIn=copyString);
     virtual ~stringId();
@@ -293,7 +242,10 @@ public:
     void show (unsigned level) const;
     static const unsigned maxIndexBitWidth ();
     static const unsigned minIndexBitWidth ();
-
+    //
+    // exceptions
+    //
+    class epicsShareClass dynamicMemoryAllocationFailed {};
 private:
     stringId & operator = ( const stringId & );
     stringId ( const stringId &);
@@ -401,15 +353,14 @@ void resTable<T,ID>::show (unsigned level) const
         maxEntries = 0u;
         while ( pList < &this->pTable[this->hashIdMask+1] ) {
             unsigned count;
-            tsSLIter<T> pItem ( pList->first () );
-
+            tsSLIter<T> pItem = pList->firstIter ();
             count = 0;
             while ( pItem.valid () ) {
                 if ( level >= 3u ) {
                     pItem->show (level);
                 }
                 count++;
-                pItem = pItem.itemAfter ();
+                pItem++;
             }
             if ( count > 0u ) {
                 X += count;
@@ -433,17 +384,16 @@ void resTable<T,ID>::show (unsigned level) const
 // resTable<T,ID>::traverse
 //
 template <class T, class ID>
-void resTable<T,ID>::traverse (pSetMFArg(pCB)) 
+void resTable<T,ID>::traverse ( void (T::*pCB)() ) 
 {
     tsSLList<T> *pList;
 
     pList = this->pTable;
     while ( pList < &this->pTable[this->hashIdMask+1] ) {
-        tsSLIter<T> pItem ( pList->first () );
+        tsSLIter<T> pItem = pList->firstIter ();
         while ( pItem.valid () ) {
-            T * p = & ( *pItem );
-            pItem = pItem.itemAfter ();
-            (p->*pCB) ();
+            ( pItem.pointer ()->*pCB ) ();
+            pItem++;
         }
         pList++;
     }
@@ -453,17 +403,16 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB))
 // resTable<T,ID>::traverseConst
 //
 template <class T, class ID>
-void resTable<T,ID>::traverseConst (pSetMFArgConst(pCB)) const
+void resTable<T,ID>::traverseConst ( void (T::*pCB)() const ) const
 {
     const tsSLList<T> *pList;
 
     pList = this->pTable;
     while ( pList < &this->pTable[this->hashIdMask+1] ) {
-        tsSLIterConst<T> pItem ( pList->first () );
+        tsSLIterConst<T> pItem = pList->firstIter ();
         while ( pItem.valid () ) {
-            const T * p = & ( *pItem );
-            pItem = pItem.itemAfter ();
-            (p->*pCB) ();
+            ( pItem.pointer ()->*pCB ) ();
+            pItem++;
         }
         pList++;
     }
@@ -509,17 +458,15 @@ int resTable<T,ID>::add (T &res)
 template <class T, class ID>
 T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 {
-    tsSLIter <T> pItem ( list.first () );
-    ID *pId;
-
+    tsSLIter <T> pItem = list.firstIter ();
     while ( pItem.valid () ) {
-        pId = & (*pItem) ;
-        if ( *pId == idIn ) {
+        const ID &id = *pItem;
+        if ( id == idIn ) {
             break;
         }
-        pItem = pItem.itemAfter ();
+        pItem++;
     }
-    return & (*pItem);
+    return pItem.pointer ();
 }
 
 //
@@ -535,14 +482,13 @@ T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 template <class T, class ID>
 T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 {
-    tsSLIter <T> pItem ( list.first () );
-    tsSLIter <T> pPrev ( 0 );
-    ID *pId;
+    tsSLIter <T> pItem = list.firstIter ();
+    T *pPrev = 0;
 
     while ( pItem.valid () ) {
-        pId = & (*pItem);
-        if ( *pId == idIn ) {
-            if ( pPrev.valid () ) {
+        const ID &id = *pItem;
+        if ( id == idIn ) {
+            if ( pPrev ) {
                 list.remove ( *pPrev );
             }
             else {
@@ -551,10 +497,10 @@ T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
             this->nInUse--;
             break;
         }
-        pPrev = pItem;
-        pItem = pItem.itemAfter ();
+        pPrev = pItem.pointer ();
+        pItem++;
     }
-    return & (*pItem);
+    return pItem.pointer ();
 }
 
 //
@@ -585,8 +531,8 @@ inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) :
 template <class T, class ID> 
 T * resTableIter<T,ID>::next ()
 {
-    if ( this->iter.valid () ) {
-        T *p = & (*this->iter);
+    if ( this->iter ) {
+        T *p = this->iter;
         this->iter++;
         return p;
     }
@@ -595,8 +541,8 @@ T * resTableIter<T,ID>::next ()
             return 0;
         }
         this->iter = tsSLIter<T> ( this->table.pTable[this->index++].first () );
-        if ( this->iter.valid () ) {
-            T *p = & (*this->iter);
+        if ( this->iter ) {
+            T *p = this->iter;
             this->iter++;
             return p;
         }

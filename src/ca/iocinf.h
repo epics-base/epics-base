@@ -865,7 +865,7 @@ private:
 class inetAddrID {
 public:
     inetAddrID ( const struct sockaddr_in &addrIn );
-    bool operator == ( const inetAddrID & );
+    bool operator == ( const inetAddrID & ) const;
     resTableIndex hash ( unsigned nBitsHashIndex ) const;
     static unsigned maxIndexBitWidth ();
     static unsigned minIndexBitWidth ();

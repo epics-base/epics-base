@@ -156,9 +156,10 @@ cac::~cac ()
     {
         epicsAutoMutex autoMutex ( this->iiuListMutex );
 
-        tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
+        tsDLIterBD <tcpiiu> piiu = this->iiuList.firstIter ();
         while ( piiu.valid () ) {
-            tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
+            tsDLIterBD <tcpiiu> pnext = piiu;
+            pnext++;
             {
                 epicsAutoMutex autoMutexTmp ( this->defaultMutex );
                 piiu->disconnectAllChan ( limboIIU );
@@ -168,9 +169,10 @@ cac::~cac ()
             piiu = pnext;
         }
 
-        piiu = this->iiuListLimbo.first ();
+        piiu = this->iiuListLimbo.firstIter ();
         while ( piiu.valid () ) {
-            tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
+            tsDLIterBD <tcpiiu> pnext = piiu;
+            pnext++;
             piiu->suicide ();
             piiu = pnext;
         }
@@ -220,9 +222,10 @@ void cac::processRecvBacklog ()
 {
     epicsAutoMutex autoMutex ( this->iiuListMutex );
 
-    tsDLIterBD < tcpiiu > piiu ( this->iiuList.first () );
+    tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter ();
     while ( piiu.valid () ) {
-        tsDLIterBD < tcpiiu > pNext = piiu.itemAfter ();
+        tsDLIterBD < tcpiiu > pNext = piiu;
+        pNext++;
 
         if ( ! piiu->alive () ) {
             assert ( this->pudpiiu && this->pSearchTmr );
@@ -271,7 +274,7 @@ void cac::flush ()
      * set the push pending flag on all virtual circuits
      */
     epicsAutoMutex autoMutex ( this->iiuListMutex );
-    tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
+    tsDLIterBD <tcpiiu> piiu = this->iiuList.firstIter ();
     while ( piiu.valid () ) {
         piiu->flush ();
         piiu++;
@@ -292,7 +295,7 @@ void cac::show ( unsigned level ) const
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
         this, this->pUserName );
     if ( level > 0u ) {
-        tsDLIterConstBD < tcpiiu > piiu ( this->iiuList.first () );
+        tsDLIterConstBD < tcpiiu > piiu = this->iiuList.firstIter ();
         while ( piiu.valid () ) {
             piiu->show ( level - 1u );
             piiu++;

@@ -136,8 +136,6 @@ private:
 	nciu & operator = ( const nciu & );
     void * operator new ( size_t );
     void operator delete ( void * );
-    void * operator new [] ( size_t );
-    void operator delete [] ( void * );
 };
 
 inline void * nciu::operator new ( size_t size, 

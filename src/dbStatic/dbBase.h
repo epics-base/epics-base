@@ -73,9 +73,9 @@ typedef enum {ASL0,ASL1} asLevel;
 
 /*Breakpoint Tables */
 typedef struct brkInt{ /* breakpoint interval */
-	float	raw;		/*raw value for beginning of interval	*/
-	float	slope;		/*slope for interval			*/
-	float	eng;		/*converted value for beginning of interval*/
+	double	raw;		/*raw value for beginning of interval	*/
+	double	slope;		/*slope for interval			*/
+	double	eng;		/*converted value for beginning of interval*/
 }brkInt;
 
 typedef struct brkTable { /* breakpoint table */

@@ -149,7 +149,7 @@ do
 		T_A=$(HOST_ARCH)
 		include $(TOP)/config/CONFIG_APP
 		
-		include $(TOP)/config/RULES_DIRS
+		include $(TOP)/config/RULES.Db
 	END
     if [ -n "${EXAMPLES}" ]; then
     #if source starts with blank tab replace by tab

@@ -1,12 +1,9 @@
 
-
-#define epicsExportSharedSymbols
-#include <osiTime.h>
-
-
 #include <tickLib.h>
 #include <sysLib.h>
 
+#define epicsExportSharedSymbols
+#include "osiTime.h"
 
 //
 // osiTime::synchronize()

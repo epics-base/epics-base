@@ -48,25 +48,6 @@ if(status) { \
     errlogPrintf("%s failed: error %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
-
-static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
-{
-    struct timespec wait;
-    epicsTimeStamp stamp;
-
-    if(timeout<0.0) timeout = 0.0;
-    else if(timeout>3600.0) timeout = 3600.0;
-    epicsTimeGetCurrent(&stamp);
-    epicsTimeToTimespec(wakeTime, &stamp);
-    wait.tv_sec = timeout;
-    wait.tv_nsec = (long)((timeout - (double)wait.tv_sec) * 1e9);
-    wakeTime->tv_sec += wait.tv_sec;
-    wakeTime->tv_nsec += wait.tv_nsec;
-    if(wakeTime->tv_nsec>1000000000L) {
-        wakeTime->tv_nsec -= 1000000000L;
-        ++wakeTime->tv_sec;
-    }
-}
 
 epicsMutexId epicsMutexOsdCreate(void) {
     epicsMutexOSD *pmutex;
@@ -158,7 +139,9 @@ epicsMutexLockStatus epicsMutexLockWithTimeout(epicsMutexId pmutex, double timeo
     struct timespec wakeTime;
     int status,unlockStatus;
 
-    convertDoubleToWakeTime(timeout,&wakeTime);
+    status = convertDoubleToWakeTime(timeout,&wakeTime);
+    checkStatusQuit(status,"convertDoubleToWakeTime",
+        "epicsMutexLockWithTimeout");
     status = pthread_mutex_lock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexLockWithTimeout");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid)) {

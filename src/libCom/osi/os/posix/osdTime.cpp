@@ -14,7 +14,6 @@
 //
 extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
-#   ifdef _POSIX_TIMERS
         struct timespec ts;
         int status;
     
@@ -25,17 +24,6 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 
         *pDest = epicsTime (ts);
         return epicsTimeOK;
-#   else
-    	int status;
-    	struct timeval tv;
-    
-    	status = gettimeofday (&tv, NULL);
-        if (status) {
-            return epicsTimeERROR;
-        }
-    	*pDest = epicsTime (tv); 
-        return epicsTimeOK;
-#   endif
 }
 
 //
@@ -73,3 +61,23 @@ int epicsTime_localtime ( const time_t *clock, // X aCC 361
     }
 }
 
+extern "C" epicsShareFunc int epicsShareAPI
+    convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
+{
+    struct timespec wait;
+    int status;
+
+    if(timeout<0.0) timeout = 0.0;
+    else if(timeout>3600.0) timeout = 3600.0;
+    status = clock_gettime(CLOCK_REALTIME,wakeTime);
+    if(status) return epicsTimeERROR;
+    wait.tv_sec = timeout;
+    wait.tv_nsec = (long)((timeout - (double)wait.tv_sec) * 1e9);
+    wakeTime->tv_sec += wait.tv_sec;
+    wakeTime->tv_nsec += wait.tv_nsec;
+    if(wakeTime->tv_nsec>1000000000L) {
+        wakeTime->tv_nsec -= 1000000000L;
+        ++wakeTime->tv_sec;
+    }
+    return(0);
+}

@@ -111,7 +111,7 @@ epicsShareFunc void epicsShareAPI epicsEventSignal (epicsEventId id)
 /*
  * epicsEventLock ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventLock (epicsEventId id) 
+epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait (epicsEventId id) 
 { 
     eventSem *pSem = (eventSem *) id;
     DWORD status;

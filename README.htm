@@ -17,7 +17,7 @@ EPICS base</h2></center>
 
 <center>
 <h2>
-Release 3.14.0alpha3</h2></center>
+Release 3.14.0beta1</h2></center>
 
 <h3>
 What is EPICS base?</h3>
@@ -75,6 +75,7 @@ Cross compile target platforms (operating system - architecture)</h4>
 <br><tt>vxWorks-68040</tt>
 <br><tt>vxWorks-68040lc</tt>
 <br><tt>vxWorks-68060</tt>
+<br><tt>vxWorks-ppc603</tt>
 <br><tt>vxWorks-ppc604</tt>
 <br><tt>vxWorks-pentium</tt>
 <br><tt>RTEMS-gen68360</tt>
@@ -115,12 +116,9 @@ file. You will also need one or more board support packages. Consult the
 vxWorks documentation for details.
 <p><b>Optional GNU compiler requirement for solaris-sparc&nbsp; and win32-x86
 hosts</b>
-<br>If you wish to have the build automatically&nbsp; create header dependancy
-include files for c/c++ source code (HDEPENDS set to YES&nbsp;in CONFIG_SITE)
-, the gnu compilers gcc and&nbsp; g++ must be be in your path. Also, if
-you have state notation language source files (*.st files) which require
-c preprocessing before conversion to c source,&nbsp; gcc must be in your
-path.</blockquote>
+<br>If you have state notation language source files (*.st files) which
+require c preprocessing before conversion to c source,&nbsp; gcc must be
+in your path.</blockquote>
 
 <h3>
 Host system storage requirements</h3>
@@ -414,28 +412,41 @@ Building EPICS base (Unix and Win32)</h3>
 <blockquote><b>Unpack file</b>
 <blockquote>Unzip and untar the distribution file. Use WinZip on Windows
 systems.</blockquote>
-S<b>et environment variable</b>
-<blockquote>Before you can build or use EPICS R3.14, the environment variable
-EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
-base/startup directory has been provided to help set EPICS_HOST_ARCH. You
-should have EPICS_HOST_ARCH set to your host operating system followed
-by a dash and then your host architecture, e.g. solaris-sparc.
-<p>On WIN32, some versions of Perl require that&nbsp; the environment variable
-PERLLIB be set to &lt;perl directory location>.</blockquote>
-<b>Check path requirements</b>
-<blockquote>As already mentioned, you must have the perl executable and
-you may need C and C++ compilers in your search path. For building base
-you also must have echo in your search path. For Unix host builds you also
-need touch, cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod
-must exist. On some Unix systems you may also need ar and ranlib in your
-path, and the c compiler may require ld in your path.
-<p>If you plan to build EPICS base shared libraries instead of archive
+S<b>et environment variables</b>
+<blockquote>Files in the base/startup directory have been provided to help
+set required path and other environment variables .
+<p><b>EPICS_HOST_ARCH</b>
+<br>Before you can build or use EPICS R3.14, the environment variable EPICS_HOST_ARCH
+must be defined. A perl script EpicsHostArch.pl in the base/startup directory
+has been provided to help set EPICS_HOST_ARCH. You should have EPICS_HOST_ARCH
+set to your host operating system followed by a dash and then your host
+architecture, e.g. solaris-sparc. If you are not using the OS vendor's
+c/c++ compiler for host
+<br>builds, you will need another dash followed by the alternate compiler
+name (e.g. "-gnu" for GNU c/c++ compilers on a solaris host or "-borland"
+for Borland c/c++ compilers on a WIN32 host) .&nbsp; See configure/CONFIG_SITE
+for a list of supported EPICS_HOST_ARCH values.
+<p><b>PERLLIB</b>
+<br>On WIN32, some versions of Perl require that&nbsp; the environment
+variable PERLLIB be set to &lt;perl directory location>.</blockquote>
+
+<blockquote><b>PATH</b>
+<br>As already mentioned, you must have the perl executable and you may
+need C and C++ compilers in your search path. For building base you also
+must have echo in your search path. For Unix host builds you also need
+touch, cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod must
+exist. On some Unix systems you may also need ar and ranlib in your path,
+and the c compiler may require ld in your path.
+<p><b>LD_LIBRARY_PATH</b>
+<br>If you plan to build EPICS base shared libraries instead of archive
 libraries, on Unix systems you will need to add&nbsp; fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
-to your LD_LIBRARY_PATH environment variable. On WIN32 systems, building
-shared libraries is the default setting and you will need to add&nbsp;
-fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) to your path.
-Building shared libraries is determined by the value of the macro SHARED_LIBRARIES
-in CONFIG_SITE (either YES or NO).</blockquote>
+to your LD_LIBRARY_PATH environment variable.
+<p><b>PATH</b>
+<br>On WIN32 systems, building shared libraries is the default setting
+and you will need to add&nbsp; fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
+to your path. Building shared libraries is determined by the value of the
+macro SHARED_LIBRARIES in CONFIG_SITE (either YES or NO).
+<br>&nbsp;</blockquote>
 <b>Do site-specific build configuration</b>
 <blockquote><b>Site configuration</b>
 <br>To configure EPICS, you may want to modify the default definitions
@@ -443,11 +454,9 @@ in the following files:
 <blockquote><tt>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp; </tt>Build
 choices. Specify target archs.
 <br><tt>configure/CONFIG_SITE_ENV </tt>Environment variable&nbsp; defaults
-<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-</tt>TORNADO
+<br><tt>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </tt>TORNADO
 2 full path location</blockquote>
-
-<p><br><b>Host configuration</b>
+<b>Host configuration</b>
 <br>To configure each host system, you may override the default definitions
 by adding a new file with override definitions into the configure/os directory.
 The new file should have the same name as the distribution file to be overridden
@@ -468,7 +477,8 @@ settings</blockquote>
 <b>R3.13 compatibility configuration</b>
 <br>To configure EPICS base for building with R3.13 extensions and ioc
 applications , you must modify the default definitions in the base/config/CONFIG_SITE*&nbsp;
-files to agree with the definitions in your base/configure files.</blockquote>
+files to agree with definitions you made in base/configure and base/configure/os
+files.</blockquote>
 
 <h4>
 <b>Build EPICS base</b></h4>
@@ -500,7 +510,7 @@ which is the root directory in the distribution directory structure, base.
 Created object files are stored in O.&lt;arch> source subdirectories, This
 allows objects for multiple cross target architectures to be maintained
 at the same time. To build EPICS base for a specific host/target combination
-you must have the proper host/target c++ cross compiler and target header
+you must have the proper host/target c/c++ cross compiler and target header
 files and the base/configure/os directory must have the appropriate configure
 files.</blockquote>
 
@@ -508,20 +518,20 @@ files.</blockquote>
 Example application and extension</h3>
 
 <blockquote>A perl tool, makeBaseApp.pl is included in the distribution
-file. This script will create a sample application that then can be built
-and then executed to try out this release of base. Also, a perl script,
-makeBaseExt.pl, is included in the distribution file. This script will
-create a sample extension that can be built and executed. The makeBaseApp.pl
-and makeBaseExt.pl scripts are installed into the install location bin/&lt;hostarch>
-directory during the base build.</blockquote>
+file. This script will create a sample application that can be built and
+then executed to try out this release of base. Also, a perl script, makeBaseExt.pl,
+is included in the distribution file. This script will create a sample
+extension that can be built and executed. The makeBaseApp.pl and makeBaseExt.pl
+scripts are installed into the install location bin/&lt;hostarch> directory
+during the base build.</blockquote>
 
 <blockquote>Instructions for building and executing the 3.14 example application
 can be found in the section "Example Application" of Chapter 2, "New Features
-for 3.14", in the&nbsp; "IOC Application Developer's Guide R3.14.0alpha3"
-. The "Example Application"&nbsp; section briefly explains how to create
-and build an example application in a user created &lt;top> directory.
-It also explains how to run the example application on a vxWorks ioc or
-a host system and run an example channel access client on the host system.</blockquote>
+for 3.14", in the&nbsp; "IOC Application Developer's Guide R3.14.0beta1".
+The "Example Application" section briefly explains how to create and build
+an example application in a user created &lt;top> directory. It also explains
+how to run the example application on a vxWorks ioc or a host system and
+run an example channel access client on the host system.</blockquote>
 
 </body>
 </html>

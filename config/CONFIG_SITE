@@ -47,16 +47,17 @@ CROSS_COMPILER_TARGET_ARCHS=mv167
 #CROSS_COMPILER_HOST_ARCHS=sun4
 
 #  VxWorks directory
-#VX_DIR=/usr/csite/vw/5.1.1/vw
+#VX_DIR=$(VW)
 #VX_DIR=/usr/local/vw/vxV51.mm
 #VX_DIR=/usr/local/vw/vxV52/vw
 VX_DIR=/usr/local/vw/vxV52p1/vw
 
 #  Gnu directory for gcc
-#VX_GNU = $(VX_DIR)
+#VX_GNU = $(VX_GNU)
 VX_GNU = $(VX_DIR)/../vxgccV2.2.3.1
 
 #  Gnu directory for g++
+#GNU_DIR = $(LOCAL_GNU)
 GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
 GNU_BIN = $(GNU_DIR)/bin
 GNU_LIB = $(GNU_DIR)/lib

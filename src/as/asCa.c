@@ -19,33 +19,32 @@ of this distribution.
  */
 
 /*This module is separate from asDbLib because CA uses old database access*/
-#include <vxWorks.h>
-#include <taskLib.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <semLib.h>
+#include <string.h>
 
 #include "dbDefs.h"
+#include "osiThread.h"
+#include "osiSem.h"
+#include "cantProceed.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "asDbLib.h"
 #include "cadef.h"
 #include "caerr.h"
 #include "caeventmask.h"
-#include "task_params.h"
 #include "alarm.h"
 
 int asCaDebug = 0;
 extern ASBASE volatile *pasbase;
 LOCAL int firstTime = TRUE;
-LOCAL int taskid=0;
+LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;
-LOCAL SEM_ID asCaTaskLock;		/*lock access to task */
-LOCAL SEM_ID asCaTaskWait;		/*Wait for task to respond*/
-LOCAL SEM_ID asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
-LOCAL SEM_ID asCaTaskClearChannels;	/*Tell asCaTask to clear channels*/
+LOCAL semId asCaTaskLock;		/*lock access to task */
+LOCAL semId asCaTaskWait;		/*Wait for task to respond*/
+LOCAL semId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
+LOCAL semId asCaTaskClearChannels;	/*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;
@@ -133,13 +132,10 @@ LOCAL void asCaTask(void)
     CAPVT	*pcapvt;
     int		status;
 
-    taskwdInsert(taskIdSelf(),NULL,NULL);
+    taskwdInsert(threadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     while(TRUE) { 
-        if(semTake(asCaTaskAddChannels,WAIT_FOREVER)!=OK) {
-	    epicsPrintf("asCa semTake error for asCaTaskClearChannels\n");
-	    taskSuspend(0);
-	}
+        semBinaryTakeAssert(asCaTaskAddChannels);
 	caInitializing = TRUE;
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
 	while(pasg) {
@@ -168,9 +164,9 @@ LOCAL void asCaTask(void)
 	asComputeAllAsg();
 	caInitializing = FALSE;
 	if(asCaDebug) printf("asCaTask initialized\n");
-	semGive(asCaTaskWait);
+	semBinaryGive(asCaTaskWait);
 	while(TRUE) {
-	    if(semTake(asCaTaskClearChannels,NO_WAIT)==OK) break;
+	    if(semBinaryTakeNoWait(asCaTaskClearChannels)==semTakeOK) break;
 	    ca_pend_event(2.0);
 	}
 	pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -190,7 +186,7 @@ LOCAL void asCaTask(void)
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
 	}
 	if(asCaDebug) printf("asCaTask has cleared all channels\n");
-	semGive(asCaTaskWait);
+	semBinaryGive(asCaTaskWait);
     }
 }
     
@@ -199,38 +195,36 @@ void asCaStart(void)
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
 	firstTime = FALSE;
-        if((asCaTaskLock=semBCreate(SEM_Q_FIFO,SEM_FULL))==NULL)
-	    epicsPrintf("asCa semBCreate failure\n");
-        if((asCaTaskWait=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	    epicsPrintf("asCa semBCreate failure\n");
-        if((asCaTaskAddChannels=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	    epicsPrintf("asCa semBCreate failure\n");
-        if((asCaTaskClearChannels=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	    epicsPrintf("asCa semBCreate failure\n");
-	taskid = taskSpawn("asCaTask",CA_CLIENT_PRI-1,VX_FP_TASK,
-	    CA_CLIENT_STACK, (FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
-	if(taskid==ERROR) {
+        if((asCaTaskLock=semMutexCreate())==0)
+	    cantProceed("asCa semMutexCreate failure\n");
+        if((asCaTaskWait=semBinaryCreate(semEmpty))==0)
+	    cantProceed("asCa semBinaryCreate failure\n");
+        if((asCaTaskAddChannels=semBinaryCreate(semEmpty))==0)
+	    cantProceed("asCa semBinaryCreate failure\n");
+        if((asCaTaskClearChannels=semBinaryCreate(semEmpty))==0)
+	    cantProceed("asCa semBCreate failure\n");
+        threadid = threadCreate("asCaTask",
+            (threadPriorityScanLow - 3),
+            threadGetStackSize(threadStackBig),
+            (THREADFUNC)asCaTask,0);
+	if(threadid==0) {
 	    errMessage(0,"asCaStart: taskSpawn Failure\n");
 	}
     }
-    if(semTake(asCaTaskLock,WAIT_FOREVER)!=OK)
-	epicsPrintf("asCa semTake error\n");
-    semGive(asCaTaskAddChannels);
-    if(semTake(asCaTaskWait,WAIT_FOREVER)!=OK)
-	epicsPrintf("asCa semTake error\n");
+    semMutexTakeAssert(asCaTaskLock);
+    semBinaryGive(asCaTaskAddChannels);
+    semBinaryTakeAssert(asCaTaskWait);
     if(asCaDebug) printf("asCaStart done\n");
-    semGive(asCaTaskLock);
+    semMutexGive(asCaTaskLock);
 }
 
 void asCaStop(void)
 {
-    if(taskid==0 || taskid==ERROR) return;
+    if(threadid==0) return;
     if(asCaDebug) printf("asCaStop called\n");
-    if(semTake(asCaTaskLock,WAIT_FOREVER)!=OK)
-	epicsPrintf("asCa semTake error\n");
-    semGive(asCaTaskClearChannels);
-    if(semTake(asCaTaskWait,WAIT_FOREVER)!=OK)
-	epicsPrintf("asCa semTake error\n");
+    semMutexTakeAssert(asCaTaskLock);
+    semBinaryGive(asCaTaskClearChannels);
+    semBinaryTakeAssert(asCaTaskWait);
     if(asCaDebug) printf("asCaStop done\n");
-    semGive(asCaTaskLock);
+    semMutexGive(asCaTaskLock);
 }

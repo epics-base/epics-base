@@ -18,14 +18,14 @@ of this distribution.
  * .01  02-11-94	mrk	Initial Implementation
  */
 
-#include <vxWorks.h>
-#include <taskLib.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "dbDefs.h"
+#include "cantProceed.h"
+#include "osiThread.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "alarm.h"
@@ -38,13 +38,12 @@ of this distribution.
 #include "dbCommon.h"
 #include "recSup.h"
 #include "subRecord.h"
-#include "task_params.h"
 
 extern struct dbBase *pdbbase;
 
 static char	*pacf=NULL;
 static char	*psubstitutions=NULL;
-static int	initTaskId=0;
+static threadId	asInitTheadId=0;
 static int	firstTime = TRUE;
 
 static long asDbAddRecords(void)
@@ -148,23 +147,21 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
-    taskwdInsert(taskIdSelf(),wdCallback,pcallback);
+    taskwdInsert(threadGetIdSelf(),wdCallback,pcallback);
     status = asInitCommon();
-    taskwdRemove(taskIdSelf());
-    initTaskId = 0;
+    taskwdRemove(threadGetIdSelf());
+    asInitTheadId = 0;
     if(pcallback) {
 	pcallback->status = status;
 	callbackRequest(&pcallback->callback);
     }
-    status = taskDelete(taskIdSelf());
-    if(status) errMessage(0,"asInitTask: taskDelete Failure");
+    threadDestroy(threadGetIdSelf());
 }
 
 int asInitAsyn(ASDBCALLBACK *pcallback)
 {
-
     if(!pacf) return(0);
-    if(initTaskId) {
+    if(asInitTheadId) {
 	errMessage(-1,"asInit: asInitTask already active");
 	if(pcallback) {
 	    pcallback->status = S_asLib_InitFailed;
@@ -172,15 +169,17 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
 	}
 	return(-1);
     }
-    initTaskId = taskSpawn("asInitTask",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
-	(FUNCPTR)asInitTask,(int)pcallback,0,0,0,0,0,0,0,0,0);
-    if(initTaskId==ERROR) {
-	errMessage(0,"asInit: taskSpawn Error");
+    asInitTheadId = threadCreate("asInitTask",
+        (threadPriorityChannelAccessServer + 9),
+        threadGetStackSize(threadStackBig),
+        (THREADFUNC)asInitTask,(void *)pcallback);
+    if(asInitTheadId==0) {
+	errMessage(0,"asInit: threadCreate Error");
 	if(pcallback) {
 	    pcallback->status = S_asLib_InitFailed;
 	    callbackRequest(&pcallback->callback);
 	}
-	initTaskId = 0;
+	asInitTheadId = 0;
     }
     return(0);
 }
@@ -208,7 +207,8 @@ long asSubInit(subRecord *precord,int pass)
 {
     ASDBCALLBACK *pcallback;
 
-    pcallback = (ASDBCALLBACK *)calloc(1,sizeof(ASDBCALLBACK));
+    pcallback = (ASDBCALLBACK *)callocMustSucceed(
+        1,sizeof(ASDBCALLBACK),"asSubInit");
     precord->dpvt = (void *)pcallback;
     callbackSetCallback(myCallback,&pcallback->callback);
     callbackSetUser(precord,&pcallback->callback);

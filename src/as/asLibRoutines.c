@@ -19,16 +19,14 @@ of this distribution.
  * .01  10-15-93	mrk	Initial Implementation
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
-#endif
-#include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
+#include "cantProceed.h"
+#include "osiSem.h"
 #include "epicsPrint.h"
 #include "gpHash.h"
 #include "freeList.h"
@@ -37,16 +35,9 @@ of this distribution.
 #include <errMdef.h>
 #include <ellLib.h>
  
-#ifdef vxWorks
-#include <semLib.h>
-static SEM_ID asLock;
-#define LOCK semTake(asLock,WAIT_FOREVER)
-#define UNLOCK semGive(asLock);
-#else
-/*This only works in a single threaded environment */
-#define LOCK 
-#define UNLOCK 
-#endif
+static semId asLock;
+#define LOCK semMutexTakeAssert(asLock)
+#define UNLOCK semMutexGive(asLock)
 
 #define epicsExportSharedSymbols
 #include "shareLib.h"
@@ -105,13 +96,10 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     HAGNAME	*phagname;
 
     if(asLockInit) {
-#ifdef vxWorks
-	asLock  = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	asLock  = semMutexCreate();
 	if(!asLock) {
-	    errMessage(0,"asInitialize semMCreate failed\n");
-	    exit(-1);
+            cantProceed("asInitialize semMCreate failed\n");
 	}
-#endif
 	asLockInit = FALSE;
     }
     LOCK;
@@ -809,14 +797,8 @@ void * asCalloc(size_t nobj,size_t size)
 {
     void *p;
 
-    p=calloc(nobj,size);
-    if(p) return(p);
-#ifdef vxWorks
-    taskSuspend(0);
-#else
-    abort();
-#endif
-    return(NULL);
+    p=callocMustSucceed(nobj,size,"asCalloc");
+    return(p);
 }
 
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,char *asgName)

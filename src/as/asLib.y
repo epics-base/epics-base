@@ -225,7 +225,7 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     if (!FirstFlag) {
 	line_num=1;
 	yyFailed = FALSE;
-	yyreset(NULL);
+	yyreset();
 	yyrestart(NULL);
     }
     FirstFlag = 0;

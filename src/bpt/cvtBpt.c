@@ -32,17 +32,15 @@
  * -----------------
  * 01	04OCT95	mrk	Taken from old bldCvtTable
  */
-#include     <vxWorks.h>
-#include     <stdlib.h>
-#include     <stdio.h>
-#include     <string.h>
-#include     <ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-#include     <ellLib.h>
-#include     <dbBase.h>
-#include     <dbStaticLib.h>
-#include     <cvtTable.h>
-#include     <epicsPrint.h>
+#include "ellLib.h"
+#include "dbBase.h"
+#include "dbStaticLib.h"
+#include "cvtTable.h"
+#include "epicsPrint.h"
 
 extern struct dbBase *pdbbase;
 

@@ -1,7 +1,40 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+USR_CFLAGS += -D_NO_PROTO
+
+INC := asDbLib.h asLib.h
+
+#	build lib As from asLib.c:
+#
+LIBSRCS := asLib.c
+LIBRARY := As
+
+
+#	All systems link the libs As, Com, Db (and again Com ??),
+#	generic Unix needs also lib m:
+#
+SYS_PROD_LIBS_DEFAULT := m
+SYS_PROD_LIBS_WIN32   := -nil-
+PROD_LIBS         := As Com Db Com Osi
+
+PROD := ascheck
+
+asLibrary_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+
+asLibrary_SRCS = asDbLib.c asCa.c asLib.c
+
+IOC_LIBRARY_vxWorks = asLibrary
+
+include $(TOP)/configure/RULES_BUILD
+
+# Extra rule since asLib_lex.c is included in asLib.c
+#   In my opinion, these objects should really be built
+#   independently.
+asLib$(OBJ): asLib_lex.c ../asLibRoutines.c
+
+clean::
+	@$(RM) asLib.c asLib_lex.c 
 

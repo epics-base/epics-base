@@ -196,6 +196,43 @@ void osiTimer::reschedule (double newDelay)
     this->queue.timerLists[this->curState].remove (*this);
     this->curState = stateLimbo;
     this->arm (newDelay);
+
+    this->queue.mutex.unlock ();
+}
+
+//
+// Start the timer with delay this->delay() if inactive
+// 
+epicsShareFunc void osiTimer::activate ()
+{
+    this->activate ( this->delay () );
+}
+
+//
+// Start the timer with delay newDelay if inactive
+// 
+epicsShareFunc void osiTimer::activate ( double newDelay )
+{
+    if ( this->curState == stateLimbo ) {
+        return; // queue was destroyed
+    }
+
+    this->queue.mutex.lock ();
+
+    if ( this->curState == stateIdle ) {
+	    //
+	    // signal the timer queue if this
+	    // occurring during the expire call
+	    // back
+	    //	    
+        if ( this == this->queue.pExpireTmr ) {
+		    this->queue.pExpireTmr = 0;
+	    }
+        this->queue.timerLists[this->curState].remove (*this);
+        this->curState = stateLimbo;
+        this->arm (newDelay);
+    }
+
     this->queue.mutex.unlock ();
 }
 

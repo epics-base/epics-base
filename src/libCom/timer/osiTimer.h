@@ -76,6 +76,16 @@ public:
     epicsShareFunc void reschedule ();
 
     /*
+     * Start the timer with delay newDelay if inactive.
+     */ 
+    epicsShareFunc void activate ( double newDelay );
+
+    /*
+     * Start the timer with delay this->delay() if inactive.
+     */ 
+    epicsShareFunc void activate ();
+
+    /*
      * inactivate the timer and call the virtual destroy()
      * member function
      */

@@ -790,7 +790,7 @@ public:
     
     casEventRegistry () :  
         resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize), 
-        allocator(0) {}
+        maskBitAllocator(0) {}
     
     virtual ~casEventRegistry();
     
@@ -799,7 +799,7 @@ public:
     void show (unsigned level) const;
     
 private:
-    unsigned allocator;
+    unsigned maskBitAllocator;
     
     casEventMask maskAllocator();
 };

@@ -27,51 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.14  1999/08/09 20:18:43  jhill
- * back out stringIdentifier class
- *
- * Revision 1.13  1999/08/07 01:02:31  jhill
- * solaris compiler issues
- *
- * Revision 1.12  1999/08/07 00:55:35  jhill
- * solaris compiler issues
- *
- * Revision 1.11  1999/08/04 23:53:20  jhill
- * elimated init flag and init routine
- *
- * Revision 1.10  1998/12/01 23:32:15  jhill
- * removed inline frm evt msk alloc
- *
- * Revision 1.9  1998/10/27 18:28:20  jhill
- * fixed warnings
- *
- * Revision 1.8  1998/05/05 16:26:31  jhill
- * fixed warnings
- *
- * Revision 1.7  1997/08/05 00:47:07  jhill
- * fixed warnings
- *
- * Revision 1.6  1997/04/10 19:34:07  jhill
- * API changes
- *
- * Revision 1.5  1996/12/11 01:01:56  jhill
- * casEventMaskEntry constr does res tbl add
- *
- * Revision 1.4  1996/12/06 22:32:11  jhill
- * force virtual destructor
- *
- * Revision 1.3  1996/11/02 00:54:10  jhill
- * many improvements
- *
- * Revision 1.2  1996/09/04 20:20:44  jhill
- * removed sizeof(casEventMask::mask) for MSVISC++
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 #include <stdio.h>
@@ -129,8 +84,8 @@ casEventMask casEventRegistry::maskAllocator()
 {
 	casEventMask    evMask;
  
-	if (this->allocator<CHAR_BIT*sizeof(evMask.mask)) {
-		evMask.mask = 1u<<(this->allocator++);
+	if (this->maskBitAllocator<CHAR_BIT*sizeof(evMask.mask)) {
+		evMask.mask = 1u<<(this->maskBitAllocator++);
 	}
 	return evMask;
 }
@@ -195,7 +150,7 @@ void casEventRegistry::show(unsigned level) const
 {
 	if (level>1u) {
 		printf ("casEventRegistry: bit allocator = %d\n", 
-				this->allocator);
+				this->maskBitAllocator);
 	}
 	this->resTable <casEventMaskEntry, stringId>::show(level);
 }

@@ -1,177 +1,222 @@
 #RULES.Db
 
-ifndef T_A
+#####################################################  vpath
 
-include $(CONFIG)/RULES_ARCHS
+vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
+vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
+vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
-else  #T_A
+##################################################### dbdflags
 
-MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
-DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
-DBST		= dbst
-MAKEDBDEPENDS	= $(PERL) $(TOOLS)/makeDbDepends.pl
-REPLACEVAR	= $(PERL) $(TOOLS)/replaceVAR.pl
+# dbExpand
+INSTALL_DBDFLAGS += -I $(INSTALL_LOCATION)/dbd
+USR_DBDFLAGS =
+DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 
-INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
-INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
-INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
-INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
+#####################################################  Targets
 
-all:	install
+DBD += $(DBDNAME)
+DBD += $(addsuffix .dbd,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
+INC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
 
-inc:	$(INSTALL_DBS)
+INSTALL_DBDS += $(DBD:%= $(INSTALL_DBD)/%)
 
-rebuild: clean install
+COMMON_DBDS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DBD), \
+    $(firstword  $(SOURCE_DBD) $(COMMON_DIR)/$(file) ) ) )
+SOURCE_DBD = $(wildcard $(file) $(SOURCE_DBD_bbb) )
+SOURCE_DBD_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DBD_aaa)  )
+SOURCE_DBD_aaa = $(addsuffix /$(file), $(dir) )
 
-install: inc buildInstall 
+INSTALL_DBS += $(addprefix $(INSTALL_DB)/,$(notdir $(DB)))
 
-buildInstall: build $(INSTALL_BPTS) $(INSTALL_DATA)
+COMMON_DBS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DB), \
+    $(firstword  $(SOURCE_DB) $(COMMON_DIR)/$(file) ) ) )
+SOURCE_DB = $(wildcard $(file) $(SOURCE_DB_bbb) )
+SOURCE_DB_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DB_aaa)  )
+SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 
-clean::
-	@echo "Cleaning"
-	@$(RM) $(DB) *.template *.substitutions *.db.raw \
-	*.db-stamp *.edf esiread.cnf
+#####################################################  build dependancies, clean rule
 
-depends:
+inc : $(COMMON_INC) $(INSTALL_INC)
+
+build : $(COMMON_DBDS) $(COMMON_DBS) \
+	$(INSTALL_DBDS) $(INSTALL_DBS)
+
+clean:: 
+	@$(RM) $(COMMON_DIR)/*.dbd
+	@$(RM) $(COMMON_DIR)/*.db
+	@$(RM) $(COMMON_DIR)/*.h
+	@$(RM) *_registerRecordDeviceDriver.cpp
+	@$(RM) $(COMMON_DIR)/*.substitutions
+	@$(RM) $(COMMON_DIR)/*.template
 
 ##################################################### "Foreign" templates
 
 TEMPLATE_LINKS	= $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
 TEMPLATE_FILES	= $(filter     $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
-DB_STAMP	= $(patsubst %.db, %.db-stamp, $(DB))
-DB_REALTARGET	= $(patsubst %.db-stamp, %.db, $@)
+COMMON_TEMPLATES=$(addsuffix $(COMMON_DIR)/,$(notdir $(TEMPLATE_LINKS)))
 
 ifneq '$(TEMPLATE_LINKS)' ''
 build: $(notdir $(TEMPLATE_LINKS))
 endif
-build: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
+build: $(TEMPLATE_FILES)
 
-$(notdir $(TEMPLATE_LINKS)): %.template:
+$(COMMON_TEMPLATES): $(COMMON_DIR)/%.template: 
 ifndef WIN32
 	@$(RM) $(notdir $(TEMPLATE_LINKS))
-	ln -s $(TEMPLATE_LINKS) .
+	ln -s $(TEMPLATE_LINKS) 
 else
 	@$(RM) $(notdir $(TEMPLATE_LINKS))
-	$(CP) $(TEMPLATE_LINKS) .
+	$(CP) $(TEMPLATE_LINKS) 
 endif
-
-##################################################### Inflated or plain databases
-
-$(INSTALL_DB)/%.db: %.db-stamp
-	@echo "Installing database $@"
-	@$(INSTALL) -d -m 644 $(patsubst %.db-stamp, %.db, $<) $(@D)
-
-# Must have DBDNAME defined to use dbst optimization
-ifndef DBDNAME
-DB_OPT = NO
-endif
-
-# dbst based database optimization
-ifeq '$(DB_OPT)' 'YES'
-.PRECIOUS: %.db.raw
-%.db-stamp: %.db.raw $(INSTALL_DBDNAME)
-	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBDNAME) $< -d > $(DB_REALTARGET)
-	@$(TOUCH) $@
-%.db-stamp: %.t.db.raw $(INSTALL_DBDNAME)
-	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBDNAME) $< -d > $(DB_REALTARGET)
-	@$(TOUCH) $@
-else
-# NO optimization => move it and keep a stamp
-%.db-stamp: %.db.raw
-	@$(MV) $< $(DB_REALTARGET)
-	@$(TOUCH) $@
-	@$(TOUCH) $<
-%.db-stamp: %.t.db.raw
-	@$(MV) $< $(DB_REALTARGET)
-	@$(TOUCH) $@
-	@$(TOUCH) $<
-endif
-
-%.t.db.raw: %.substitutions
-	@echo "Inflating database from $<"
-	@$(RM) $@
-	$(MSI) -S $< $*.template > $@
 
 ##################################################### CapFast filter
 
-%.edf: ../%.sch $(DEPSCHS)
+$(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS) 
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
 ##################################################### Substitution files
 
-$(INSTALL_DB)/%.substitutions: %.substitutions
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $(@F) $(@D)
+#$(COMMON_DIR)/%.substitutions: ../%.substitutions $(COMMON_DIR)/%.template 
+#	@$(CP) $< $@
 
-%.substitutions: ../%.substitutions %.template
-	@$(CP) $< $@
+#  WARNING: CREATESUBSTITUTIONS script need output dir on command line
 
 ifdef CREATESUBSTITUTIONS
-%.substitutions:
-	@$(CREATESUBSTITUTIONS) $*
+$(COMMON_DIR)/%.substitutions:
+	@$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
 endif
 
-# Better make it PRECIOUS (to get around make bug)
-.PRECIOUS: %.substitutions %.template
+.PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.substitutions)
 
-##################################################### Template databases
+##################################################### Template files
 
-# Installed template files (dbLoadTemplate() on IOC side)
-$(INSTALL_DB)/%.template: %.template
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $(@F) $(@D)
+#$(COMMON_DIR)/%.template: ../%.template 
+#	@$(CP) $< $@
 
-%.template: ../%.template
-	@$(CP) $< $@
-
-%.template:
+$(COMMON_DIR)/%.template: 
 	@$(TOUCH) $@
 
-%.template: %.edf
+$(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
-##################################################### Flat databases
-
-%.db.raw: ../%.db
-	$(CP) $< $@
-
-%.db.raw: %.edf
+$(COMMON_DIR)/%.template: ../%.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
-##################################################### DBD stuff
+.PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.template)
 
-$(INSTALL_DBD)/%: %
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+##################################################### INC files
 
-$(INSTALL_DBD)/%: ../%
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+$(COMMON_DIR)/%Record.h: ../%Record.dbd
+	@$(RM) $@
+	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+ 
+$(COMMON_DIR)/menu%.h: ../menu%.dbd
+	@$(RM) $@
+	$(DBTOMENUH) $< $@
+ 
+##################################################### DBD files
 
-$(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
+$(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
 	$(RM) $@
 	$(MAKEBPT) $< $@
 
-ifdef DBDEXPAND
-$(INSTALL_DBD)/$(DBDNAME): $(addprefix ../,$(DBDEXPAND))
+$(COMMON_DIR)/%.dbd: ../%Include.dbd 
 	@echo "Expanding dbd"
+	$(RM) $@
+	$(DBEXPAND) $(DBDFLAGS) $< > $@
+
+$(INSTALL_DBD)/%: $(COMMON_DIR)/%
+	@echo "Installing dbd file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_DBD)/%: ../%
+	@echo "Installing dbd file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+.PRECIOUS: $(COMMON_DBDS)
+
+##################################################### DB files
+
+$(COMMON_DIR)/%.db$(RAW): ../%.db 
+	$(CP) $< $@
+
+$(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
+	@$(REPLACEVAR) < $@.VAR > $@
+	@$(RM) $@.VAR
+
+$(COMMON_DIR)/%.db$(RAW): ../%.edf 
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
+	@$(REPLACEVAR) < $@.VAR > $@
+	@$(RM) $@.VAR
+
+$(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
+	@echo "Inflating database from $<"
 	@$(RM) $@
-	$(DBEXPAND) $(USR_DBDFLAGS) $^ > $@
+	$(MSI) -S $^  > $@
+
+# dbst based database optimization
+ifeq '$(DB_OPT)' 'YES'
+
+$(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
+	@echo "Optimizing database $@"
+	$(DBST) . $< -d > $@
+
+RAW=.raw
+
+.PRECIOUS: $(DB:%=$(COMMON_DIR)/%$(RAW))
+else
+
+$(INSTALL_DB)/%: %
+	@echo "Installing db file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
 endif
 
-##################################################### Dependencies
+$(INSTALL_DB)/%: $(COMMON_DIR)/%
+	@echo "Installing db file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
-DEPENDS: $(filter $(patsubst %.db, ../%.substitutions, $(DB)), $(wildcard ../*.substitutions))
+.PRECIOUS: $(COMMON_DBS)
+
+##################################################### register record,device,driver support
+
+%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
+	$(RM) $@
+	$(REGISTERRECORDDEVICEDRIVER) $< > $@
+
+%_registerRecordDeviceDriver.cpp: ../%.dbd 
+	$(RM) $@
+	$(REGISTERRECORDDEVICEDRIVER) $< > $@
+
+##################################################### DB dependancies
+
+ifneq (,$(COMMON_DBS))
+DBDEPENDS: $(COMMON_DBS:$(COMMON_DIR)/%.db=%.substitutions) $(COMMON_DBS:$(COMMON_DIR)/%.db=%.template)
+	@echo 'Creating DB dependancy file $@'
 	@echo "Making template database dependencies"
 	@$(MAKEDBDEPENDS) $^
 
--include DEPENDS
-
+-include DBDEPENDS
 endif
+
+##################################################### DBD dependancies
+
+ifneq (,$(wildcard $(patsubst %.dbd,../%Include.dbd,$(notdir $(COMMON_DBDS)))))
+DBDDEPENDS_%: ../%Include.dbd
+	@echo 'Creating DBD dependancy file $@'
+	@$(RM) $@
+	$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $@
+	
+-include $(patsubst ../%Include.dbd,DBDDEPENDS_%,$(wildcard $(patsubst %.dbd,../%Include.dbd,$(notdir $(COMMON_DBDS)))))
+endif
+
+##################################################### END OF FILE
+

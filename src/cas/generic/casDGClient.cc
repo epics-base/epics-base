@@ -369,7 +369,7 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
 
     bufSizeT totalBytes = 0;
     while ( totalBytes < nBytesNeedToBeSent ) {
-        cadg *pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
+        cadg *pHdr = reinterpret_cast < cadg * > ( & pBufIn[totalBytes] );
 
         assert ( totalBytes <= bufSizeT_MAX-pHdr->cadg_nBytes );
         assert ( totalBytes + pHdr->cadg_nBytes <= nBytesAvailableToSend );
@@ -414,9 +414,9 @@ inBufClient::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRe
     cadg *pHdr;
 
     while (pAfter-pCurBuf >= static_cast<int>(MAX_UDP_RECV+sizeof(cadg))) {
-        pHdr = reinterpret_cast<cadg *>(pCurBuf);
-	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP_RECV, parm, 
-            nDGBytesRecv, pHdr->cadg_addr);
+        pHdr = reinterpret_cast < cadg * > ( pCurBuf );
+	    stat = this->osdRecv ( reinterpret_cast < char * > ( pHdr + 1 ), 
+            MAX_UDP_RECV, parm, nDGBytesRecv, pHdr->cadg_addr);
 	    if (stat==casFillProgress) {
             pHdr->cadg_nBytes = nDGBytesRecv + sizeof(*pHdr);
             pCurBuf += pHdr->cadg_nBytes;
@@ -468,7 +468,7 @@ caStatus casDGClient::asyncSearchResponse ( const caNetAddr & outAddr,
         return S_cas_sendBlocked;
     }
 
-    cadg * pRespHdr = reinterpret_cast<cadg *> ( pRaw );
+    cadg * pRespHdr = static_cast < cadg * > ( pRaw );
 
     // insert version header at the start of the reply message
     this->sendVersion ();
@@ -502,7 +502,7 @@ caStatus casDGClient::processDG ()
 	status = S_cas_success;
     while ( ( bytesLeft = this->in.bytesPresent() ) ) {
         bufSizeT dgInBytesConsumed;
-        const cadg * pReqHdr = reinterpret_cast<cadg *> ( this->in.msgPtr () );
+        const cadg * pReqHdr = reinterpret_cast < cadg * > ( this->in.msgPtr () );
 
         if (bytesLeft<sizeof(*pReqHdr)) {
             this->in.removeMsg (bytesLeft);
@@ -527,7 +527,7 @@ caStatus casDGClient::processDG ()
         // insert version header at the start of the reply message
         this->sendVersion ();
         
-        cadg * pRespHdr = reinterpret_cast <cadg *> (pRaw);
+        cadg * pRespHdr = static_cast < cadg * > ( pRaw );
         
         //
         // select the next DG in the input stream and start processing it
@@ -593,7 +593,7 @@ caStatus casDGClient::processDG ()
                 {
                     cadg *pReqHdrMove;
                     cadg copy = *pReqHdr;
-                    pReqHdrMove = reinterpret_cast <cadg *> ( this->in.msgPtr () );
+                    pReqHdrMove = reinterpret_cast < cadg * > ( this->in.msgPtr () );
                     pReqHdrMove->cadg_addr = copy.cadg_addr;
                     pReqHdrMove->cadg_nBytes = copy.cadg_nBytes - dgInBytesConsumed;
                 }

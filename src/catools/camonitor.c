@@ -28,8 +28,9 @@
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
 
 static unsigned long reqElems = 0;
-static int nConn = 0;                                     /* Number of connected PVs */
 static unsigned long eventMask = DBE_VALUE | DBE_ALARM;   /* Event mask used */
+static int floatAsString = 0;                             /* Flag: fetch floats as string */
+static int nConn = 0;                                     /* Number of connected PVs */
 
 
 void usage (void)
@@ -55,6 +56,7 @@ void usage (void)
     "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
     "  -f <nr>: Use %%f format, with a precision of <nr> digits\n"
     "  -g <nr>: Use %%g format, with a precision of <nr> digits\n"
+    "  -s:      Get value as string (may honour server-side precision)\n"
     "Integer number format:\n"
     "  Default: Print as decimal number\n"
     "  -0x: Print as hex number\n"
@@ -122,12 +124,20 @@ void connection_handler ( struct connection_handler_args args )
             if (enumAsNr) dbrType = DBR_TIME_INT;
             else          dbrType = DBR_TIME_STRING;
         }
+        
+        else if (floatAsString &&
+                 (dbr_type_is_FLOAT(dbrType) || dbr_type_is_DOUBLE(dbrType)))
+        {
+            dbrType = DBR_TIME_STRING;
+        }
                                 /* Adjust array count */
         if (reqElems == 0 || ppv->nElems < reqElems)
             reqElems = ppv->nElems;
                                 /* Remember dbrType and reqElems */
         ppv->dbrType  = dbrType;
         ppv->reqElems = reqElems;
+
+        ppv->onceConnected = 1;
         nConn++;
                                 /* Issue CA request */
                                 /* ---------------- */
@@ -187,7 +197,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,0);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhriIm:e:f:g:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhriIm:se:f:g:#:d:0:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -237,6 +247,9 @@ int main (int argc, char *argv[])
                         err = 1;
                     }
             }
+            break;
+        case 's':               /* Select string dbr for floating type data */
+            floatAsString = 1;
             break;
         case 'e':               /* Select %e/%f/%g format, using <arg> digits */
         case 'f':
@@ -309,7 +322,6 @@ int main (int argc, char *argv[])
     for (n = 0; optind < argc; n++, optind++)
     {
         pvs[n].name   = argv[optind];
-        pvs[n].status = ECA_NEWCONN;
     }
                                       /* Create CA connections */
     returncode = create_pvs(pvs, nPvs, connection_handler);
@@ -320,7 +332,7 @@ int main (int argc, char *argv[])
     ca_pend_event(caTimeout);
     for (n = 0; n < nPvs; n++)
     {
-        if (pvs[n].status == ECA_NEWCONN)
+        if (!pvs[n].onceConnected)
             print_time_val_sts(&pvs[n], pvs[n].reqElems);
     }
 

@@ -37,6 +37,7 @@ typedef enum { get, callback } RequestT;
 
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
+static int floatAsString = 0;   /* Flag: fetch floats as string */
 
 
 void usage (void)
@@ -64,7 +65,7 @@ void usage (void)
     " DBR_STS_SHORT  8  DBR_TIME_ENUM   17  DBR_GR_DOUBLE   27\n"
     " DBR_STS_INT    8  DBR_TIME_CHAR   18  DBR_CTRL_STRING 28\n"
     "Enum format:\n"
-    "  -n: Print DBF_ENUM values as numbers (default are enum strings)\n"
+    "  -n: Print DBF_ENUM value as number (default is enum string)\n"
     "Arrays: Value format: print number of requested values, then list of values\n"
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
@@ -73,6 +74,7 @@ void usage (void)
     "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
     "  -f <nr>: Use %%f format, with a precision of <nr> digits\n"
     "  -g <nr>: Use %%g format, with a precision of <nr> digits\n"
+    "  -s:      Get value as string (may honour server-side precision)\n"
     "Integer number format:\n"
     "  Default: Print as decimal number\n"
     "  -0x: Print as hex number\n"
@@ -98,14 +100,15 @@ void usage (void)
 
 void event_handler (evargs args)
 {
-    pv* pv = args.usr;
+    pv* ppv = args.usr;
 
-    pv->status = args.status;
+    ppv->status = args.status;
     if (args.status == ECA_NORMAL)
     {
-        pv->dbrType = args.type;
-        pv->value   = calloc(1, dbr_size_n(args.type, args.count));
-        memcpy(pv->value, args.dbr, dbr_size_n(args.type, args.count));
+        ppv->dbrType = args.type;
+        ppv->value   = calloc(1, dbr_size_n(args.type, args.count));
+        memcpy(ppv->value, args.dbr, dbr_size_n(args.type, args.count));
+        ppv->onceConnected = 1;
         nRead++;
     }
 }
@@ -154,6 +157,11 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 if (enumAsNr) dbrType = DBR_TIME_INT;
                 else          dbrType = DBR_TIME_STRING;
             }
+            else if (floatAsString &&
+                     (dbr_type_is_FLOAT(dbrType) || dbr_type_is_DOUBLE(dbrType)))
+            {
+                dbrType = DBR_TIME_STRING;
+            }
         }
                                 /* Adjust array count */
         if (reqElems == 0 || pvs[n].nElems < reqElems)
@@ -168,6 +176,7 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
         if (ca_state(pvs[n].chid) == cs_conn)
         {
             nConn++;
+            pvs[n].onceConnected = 1;
             if (request == callback)
             {                          /* Event handler will allocate value */
                 result = ca_array_get_callback(dbrType,
@@ -319,7 +328,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,0);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhe:f:g:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhse:f:g:#:d:0:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -355,7 +364,7 @@ int main (int argc, char *argv[])
             }
             break;
         case 'n':               /* Print ENUM as index numbers */
-            enumAsNr=1;
+            enumAsNr = 1;
             break;
         case 'w':               /* Set CA timeout value */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
@@ -372,6 +381,9 @@ int main (int argc, char *argv[])
                         "- ignored. ('caget -h' for help.)\n", optarg);
                 count = 0;
             }
+            break;
+        case 's':               /* Select string dbr for floating type data */
+            floatAsString = 1;
             break;
         case 'e':               /* Select %e/%f/%g format, using <arg> digits */
         case 'f':

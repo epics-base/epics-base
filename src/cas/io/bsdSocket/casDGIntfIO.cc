@@ -167,7 +167,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     // always fill in this interface's address as the reply 
     // address.
     // 
-#if !defined(_WIN32) || 1
+#if !defined(_WIN32)
 	if (serverAddr.sin_addr.s_addr != htonl(INADDR_ANY)) {
 
         this->bcastRecvSock = casDGIntfIO::makeSockDG ();
@@ -337,7 +337,7 @@ bufSizeT casDGIntfIO::incommingBytesPresent () const
 //
 // casDGIntfIO::sendBeacon()
 // 
-void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint32 &m_ipa, aitUint16 &m_port) 
+void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &m_port) 
 {
 	caAddrNode		*pAddr;
 	int 			status;
@@ -348,9 +348,7 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint32 &m_ipa, ai
 	//
 	for (pAddr = (caAddrNode *)ellFirst(&this->beaconAddrList);
 				pAddr; pAddr = (caAddrNode *)ellNext(&pAddr->node)) {
-					
-		m_ipa = pAddr->srcAddr.in.sin_addr.s_addr;
-		m_port = htons(this->dgPort);
+		m_port = htons (this->dgPort);
 		status = sendto (this->sock, &msg, length, 0,
 					&pAddr->destAddr.sa, sizeof(pAddr->destAddr.sa));
 		if (status < 0) {

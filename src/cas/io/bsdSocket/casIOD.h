@@ -32,7 +32,7 @@ public:
     bool validBCastFD () const;
 
 	void xSetNonBlocking ();
-	void sendBeaconIO (char &msg, bufSizeT length, aitUint32 &m_ipa, aitUint16 &m_port);
+	void sendBeaconIO (char &msg, bufSizeT length, aitUint16 &m_port);
 	casIOState state () const;
 
 	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,

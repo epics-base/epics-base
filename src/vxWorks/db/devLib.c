@@ -79,12 +79,16 @@ LOCAL LIST addrFree[atLast];
 LOCAL void	*addrLast[atLast] = {
 			(void *) 0xffff,
 			(void *) 0xffffff,
-			(void *) 0xffffffff};
+			(void *) 0xffffffff,
+			(void *) 0xffffff
+			};
 
 LOCAL long	addrFail[atLast] = {
 			S_dev_badA16,
 			S_dev_badA24,
-			S_dev_badA32};
+			S_dev_badA32,
+			S_dev_badA24
+			};
 
 LOCAL FAST_LOCK	addrListLock;
 LOCAL char	addrListInit;
@@ -421,27 +425,34 @@ void			**ppLocalAddress)
 		int 	s1;
 		int 	s2;
 
-		s1 = sysBusToLocalAdrs(
+		if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
+		{
+			*ppLocalAddress = pFirst;
+		}
+		else
+		{
+			s1 = sysBusToLocalAdrs(
 	               	        EPICStovxWorksAddrType[addrType],
 	                        pLast,
 	                        &pAddr);
-        	s2 = sysBusToLocalAdrs(
+			s2 = sysBusToLocalAdrs(
 	               	        EPICStovxWorksAddrType[addrType],
 	                        pFirst,
 	                        &pAddr);
-		if(s1 || s2){
-			errPrintf(
-				S_dev_vxWorksAddrMapFail,
-				__FILE__,
-				__LINE__,
-				"%s base=0X %X size = 0X %X",
-				epicsAddressTypeName[addrType],
-				pFirst,
-				pLast-pFirst+1);
-               	 	return S_dev_vxWorksAddrMapFail;
-		}
+			if(s1 || s2){
+				errPrintf(
+					S_dev_vxWorksAddrMapFail,
+					__FILE__,
+					__LINE__,
+					"%s base=0X %X size = 0X %X",
+					epicsAddressTypeName[addrType],
+					pFirst,
+					pLast-pFirst+1);
+				return S_dev_vxWorksAddrMapFail;
+			}
 
-		*ppLocalAddress = (void *) pAddr;
+			*ppLocalAddress = (void *) pAddr;
+		}
 	}
 
 	/*
@@ -1175,12 +1186,19 @@ char			*pLocation
 	 * every byte in the block must 
 	 * map to a physical address
 	 */
-	s = sysBusToLocalAdrs(
+	if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
+	{
+		pPhysical = pLocation;
+	}
+	else
+	{
+		s = sysBusToLocalAdrs(
              	        EPICStovxWorksAddrType[addrType],
 			pLocation,
                         &pPhysical);
-	if(s<0){
-		return S_dev_vxWorksAddrMapFail;
+		if(s<0){
+			return S_dev_vxWorksAddrMapFail;
+		}
 	}
 
 

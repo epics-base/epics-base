@@ -70,7 +70,8 @@ typedef enum {
 		atVMEA16,
 		atVMEA24,
 		atVMEA32,
-		atLast /* atLast must be the last enum in this list */
+		atISA,	/* memory mapped ISA access (until now only on PC) */
+		atLast	/* atLast must be the last enum in this list */
 		} epicsAddressType;
 	
 #ifdef devLibGlobal
@@ -78,7 +79,8 @@ char	*epicsAddressTypeName[]
 		= {
 		"VME A16",
 		"VME A24",
-		"VME A32"
+		"VME A32",
+		"ISA"
 	};
 #endif
 
@@ -90,13 +92,15 @@ char	*epicsAddressTypeName[]
  * we assume that the BSP are configured to use these
  * address modes by default
  */
+#define EPICSAddrTypeNoConvert        -1
 #ifdef devLibGlobal
 int EPICStovxWorksAddrType[] 
                 = {
                 VME_AM_SUP_SHORT_IO,
                 VME_AM_STD_SUP_DATA,
-                VME_AM_EXT_SUP_DATA
-                };
+                VME_AM_EXT_SUP_DATA,
+                EPICSAddrTypeNoConvert
+	        };
 #endif
 
 long	devAddressMap(void); /* print an address map */

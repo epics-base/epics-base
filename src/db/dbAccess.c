@@ -326,6 +326,9 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	pcommon = (dbCommon *)(paddr->precord);
 	if( (*options) & DBR_STATUS ) {
 	    if(pfl!=NULL) {
+		/* This gives warning:
+		 * ANSI C forbids use of cast expressions as lvalues
+		 */
 		*((unsigned short *)pbuffer)++ = pfl->stat;
 		*((unsigned short *)pbuffer)++ = pfl->sevr;
 	    } else {

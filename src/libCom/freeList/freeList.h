@@ -57,11 +57,19 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc void epicsShareAPI freeListInitPvt(void **ppvt,int size,int nmalloc);
 epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt);
 epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt);
 epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem);
 epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt);
 epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCfreeListh*/

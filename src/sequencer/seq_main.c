@@ -101,7 +101,7 @@ int		stack_size;	/* optional stack size (bytes) */
 
 #ifdef	DEBUG
 	print_sp_info(pSP_orig);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Spawn the sequencer auxillary task */
 	if (seqAuxTaskId == 0)
@@ -220,7 +220,7 @@ SPROG	*pSP_orig;	/* original state program structure */
 	 user_size, mac_size, scr_size);
 	printf("  size=%d=0x%x\n", size, size);
 	printf("  dyn_ptr=%d=0x%x\n", dyn_ptr, dyn_ptr);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	/* Set ptrs in the PROG structure */
 	pSP_new = (SPROG *)dyn_ptr;

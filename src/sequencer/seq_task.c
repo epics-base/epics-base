@@ -338,7 +338,7 @@ int		tid;
 	/* Remove tasks' watchdog & suspend all state set tasks except self */
 #ifdef	DEBUG
 	logMsg("   Suspending state set tasks:\n");
-#endif	DEBUG
+#endif	/*DEBUG */
 	pSS = pSP->sscb;
 	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
@@ -351,7 +351,7 @@ int		tid;
 		{
 #ifdef	DEBUG
 			logMsg("    suspend task: tid=%d\n", tid_ss);
-#endif	DEBUG
+#endif	/*DEBUG */
 			taskSuspend(tid_ss);
 		}
 	}
@@ -364,7 +364,7 @@ int		tid;
 	{
 #ifdef	DEBUG
 		logMsg("   Call exit function\n");
-#endif	DEBUG
+#endif	/*DEBUG */
 		pSP->exit_func(pSP, pSP->user_area);
 	}
 
@@ -382,7 +382,7 @@ int		tid;
 	{
 #ifdef	DEBUG
 		logMsg("Closing log fd=%d\n", pSP->logFd);
-#endif	DEBUG
+#endif	/*DEBUG */
 		close(pSP->logFd);
 		pSP->logFd = ioGlobalStdGet(1);
 	}
@@ -399,7 +399,7 @@ int		tid;
 		{
 #ifdef	DEBUG
 			logMsg("   delete ss task: tid=%d\n", tid_ss);
-#endif	DEBUG
+#endif	/*DEBUG */
 			taskDelete(tid_ss);
 		}
 
@@ -417,7 +417,7 @@ int		tid;
 	/* Free the memory that was allocated for the task area */
 #ifdef	DEBUG
 	logMsg("free pSP->dyn_ptr=0x%x\n", pSP->dyn_ptr);
-#endif	DEBUG
+#endif	/*DEBUG */
 	taskDelay(5);
 	free(pSP->dyn_ptr);
 	

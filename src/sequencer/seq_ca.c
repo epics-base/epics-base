@@ -68,7 +68,7 @@ SPROG		*pSP;
 	{
 #ifdef	DEBUG
 		printf("connect to \"%s\"\n", pDB->db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 		/* Connect to it */
 		status = ca_build_and_connect(
 			pDB->db_name,		/* DB channel name */
@@ -155,7 +155,7 @@ SPROG		*pSP;
 	{
 #ifdef	DEBUG
 		printf("disconnect \"%s\"\n", pDB->db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 		/* Disconnect this channel */
 		status = ca_clear_channel(pDB->chid);
 
@@ -206,7 +206,7 @@ struct connection_handler_args	args;
 		pSP->conn_count--;
 #ifdef	DEBUG
 		seq_log(pSP, "Channel \"%s\" disconnected\n", pDB->db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 	else
 	{
@@ -214,14 +214,14 @@ struct connection_handler_args	args;
 		pSP->conn_count++;
 #ifdef	DEBUG
 		seq_log(pSP, "Channel \"%s\" connected\n", pDB->db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 		if (pDB->count > ca_element_count(args.chid))
 		{
 			pDB->count = ca_element_count(args.chid);
 #ifdef	DEBUG
 			seq_log(pSP, "\"%s\": reset count to %d\n",
 			 pDB->db_name, pDB->count);
-#endif	DEBUG
+#endif	/* DEBUG */
 		}
 	}
 
@@ -404,7 +404,7 @@ CHAN	*pDB;	/* ptr to channel struct */
 		 pDB->db_name, status);
 		seq_log(pSP, "  put_type=%d\n", pDB->put_type);
 		seq_log(pSP, "  size=%d, count=%d\n", pDB->size, pDB->count);
-#endif	DEBUG
+#endif	/* DEBUG */
 	}
 
 	return status;
@@ -422,7 +422,7 @@ CHAN	*pDB;	/* ptr to channel struct */
 
 #ifdef	DEBUG
 	printf("monitor \"%s\"\n", pDB->db_name);
-#endif	DEBUG
+#endif	/* DEBUG */
 
 	if (pDB->monitored)
 		return;

@@ -131,7 +131,7 @@ reconcile_variables()
 	{
 #ifdef	DEBUG
 		fprintf(stderr, "reconcile_variables: ss=%s\n", ssp->value);
-#endif	DEBUG
+#endif	/* DEBUG */
 		traverseExprTree(ssp, E_VAR, 0, connect_variable, 0);
 	}
 

@@ -27,7 +27,7 @@
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	TRUE
+#endif	/* TRUE */
 
 int	debug_print_opt = 0;	/* Debug level (set by source file) */
 
@@ -166,7 +166,7 @@ char	*db_name;	/* ptr to db name */
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign_stmt: name=%s, db_name=%s\n", name, db_name);
-#endif	DEBUG
+#endif	 /* DEBUG */
 	/* Find the variable */
 	vp = (Var *)findVar(name);
 	if (vp == 0)
@@ -366,7 +366,7 @@ Expr		*prog_list;
 	ss_list = prog_list;
 #ifdef	DEBUG
 	fprintf(stderr, "----Phase2---\n");
-#endif	DEBUG
+#endif	/* DEBUG */
 	phase2(ss_list);
 
 	exit(0);
@@ -442,7 +442,7 @@ Expr		*ep2;	/* beginning 2-nd (append it to 1-st) */
 			break;
 	}
 	fprintf(stderr, ")\n");	
-#endif	DEBUG
+#endif	/* DEBUG */
 	return ep1;
 }
 

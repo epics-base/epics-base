@@ -36,7 +36,7 @@
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	TRUE
+#endif	/* TRUE */
 
 extern	int line_num; /* input file line no. */
 %}

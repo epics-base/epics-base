@@ -26,6 +26,7 @@ SRCS += verbose.c
 SRCS += warshall.c
 
 PROD_HOST = antelope
+PROD_LIBS = Com
 
 include $(TOP)/configure/RULES
 

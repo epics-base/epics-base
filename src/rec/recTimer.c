@@ -49,6 +49,8 @@
  * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .18  10-10-92        jba     replaced get of trdl from torg code with recGblGetLinkValue call
+ * .19  09-02-93        mcn     Changed DSET structure for timers, moved code that bypassed
+ *                              device support into new device support (major improvement).
  */
 
 #include	<vxWorks.h>
@@ -105,24 +107,33 @@ struct rset timerRSET={
 	get_control_double,
 	get_alarm_double };
 
-/* because the driver does all the work just declare device support here*/
-struct dset devTmMizar8310={4,NULL,NULL,NULL,NULL};
-struct dset devTmDg535={4,NULL,NULL,NULL,NULL};
-struct dset devTmAt5Vxi={4,NULL,NULL,NULL,NULL};
+struct tmdset { /* timer dset */
+        long            number;
+        DEVSUPFUN       dev_report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record;
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN	read;
+        DEVSUPFUN	write;
+};
 
-extern int	post_event();
+/* The one remaining definition for still unimplemented DG535 */
+/* so iocInit shuts up */
+struct dset devTmDg535={4,NULL,NULL,NULL,NULL};
+
+extern int post_event();
 
 static void monitor();
-static void read_timer();
+static long read_timer();
 static void convert_timer();
-static void write_timer();
+static long write_timer();
 
-static long init_record(ptimer,pass)
+static long init_record(ptimer, pass)
     struct timerRecord	*ptimer;
     int pass;
 {
-/* Added for Channel Access Links */
     long status;
+/* Added for Channel Access Links */
 
     if (pass==0) return(0);
 
@@ -136,20 +147,19 @@ static long init_record(ptimer,pass)
 	if(status) return(status);
     } /* endif */
 
-
     /* read to maintain time pulses over a restart */
-    read_timer(ptimer);
-    return(0);
+    return read_timer(ptimer);
 }
 
 static long process(ptimer)
 	struct timerRecord	*ptimer;
 {
+        long status;
 
 	ptimer->pact=TRUE;
 
 	/* write the new value */
-	write_timer(ptimer);
+	status = write_timer(ptimer);
 	ptimer->udf=FALSE;
 	tsLocalTime(&ptimer->time);
 
@@ -159,7 +169,7 @@ static long process(ptimer)
         recGblFwdLink(ptimer);
 
         ptimer->pact=FALSE;
-        return(0);
+        return status;
 }
 
 static long get_value(ptimer,pvdes)
@@ -173,19 +183,19 @@ static long get_value(ptimer,pvdes)
 }
 
 static void monitor(ptimer)
-    struct timerRecord *ptimer;
+struct timerRecord *ptimer;
 {
-        unsigned short  monitor_mask;
-
-        monitor_mask = recGblResetAlarms(ptimer);
-	monitor_mask |= (DBE_VALUE | DBE_LOG);
-	db_post_events(ptimer,&ptimer->val,monitor_mask);
-	db_post_events(ptimer,&ptimer->t1wd,monitor_mask);
-	db_post_events(ptimer,&ptimer->t1ld,monitor_mask);
-	db_post_events(ptimer,&ptimer->t1td,monitor_mask);
-	return;
+  unsigned short  monitor_mask;
+	     
+  monitor_mask = recGblResetAlarms(ptimer);
+  monitor_mask |= (DBE_VALUE | DBE_LOG);
+  db_post_events(ptimer,&ptimer->val,monitor_mask);
+  db_post_events(ptimer,&ptimer->t1wd,monitor_mask);
+  db_post_events(ptimer,&ptimer->t1ld,monitor_mask);
+  db_post_events(ptimer,&ptimer->t1td,monitor_mask);
+  return;
 }
-
+
 /*
  * These constants are indexed by the time units field in the timer record.
  * Values are converted to seconds.
@@ -243,104 +253,71 @@ struct timerRecord	*ptimer;
 	ptimer->t5ld = ptimer->dut5 + ptimer->trdl;   /* leading edge delay */
 	ptimer->t5td = ptimer->t5ld + ptimer->opw5;   /* trailing edge delay */
 }
-
-/*
- * WRITE_TIMER
- *
- * convert the value and write it 
- */
-static void write_timer(ptimer)
-struct timerRecord	*ptimer;
+
+static long read_timer(struct timerRecord *ptimer)
 {
-	struct vmeio	*pvmeio;
-	long status,options,nRequest;
+   struct tmdset *pdset;
+   double constant;
 
-	/* get the delay from trigger source */
-	if (ptimer->torg.type == DB_LINK) {
-		options=0;
-		nRequest=1;
-		status=recGblGetLinkValue(&(ptimer->torg),(void *)ptimer,DBR_FLOAT,
-			&(ptimer->trdl),&options,&nRequest);
-		if (!RTN_SUCCESS(status)) return;
-        }
+   /* initiate the write */
+   if (ptimer->out.type != VME_IO) {
+           recGblRecordError(S_dev_badOutType,(void *)ptimer,"read_timer");
+           return S_dev_badOutType;
+   }
 
-	if (ptimer->out.type != VME_IO) {
-                recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
-		return;
-	}
-	pvmeio = (struct vmeio *)(&ptimer->out.value);
+   pdset = (struct tmdset *) ptimer->dset;
+   if (pdset == NULL) {
+         recGblRecordError(S_dev_noDSET,(void *)pdset, "timer: process");
+         return S_dev_noDSET;
+   }
 
-        /* should we maintain through a reboot */
-        if (ptimer->main && ptimer->rdt1 && ptimer->rpw1){
-                ptimer->dut1 = ptimer->rdt1 - ptimer->trdl;
-                ptimer->opw1 = ptimer->rpw1;
-                ptimer->main = 0;       /* only kept on the first write */
-        }
+   /* call device support */
+   (pdset->read)(ptimer);
 
-
-	/* convert the value */
-	convert_timer(ptimer);
-
-	/* put the value to the ao driver */
-	if (time_driver((int)pvmeio->card, /* card number */
-	  (int)pvmeio->signal,		/* signal number */
-	  (int)ptimer->dtyp,		/* card type */
-	  (int)ptimer->tsrc,		/* trigger source */
-	  (int)ptimer->ptst,		/* pre-trigger state */
-	  &ptimer->t1dl,		/* delay/width array */
-	  1,				/* number of pulses */
-	  ((ptimer->tevt == 0)?0:post_event),	/* addr of event post routine */
-	  (int)ptimer->tevt)		/* event to post on trigger */
-	    != 0){
-                recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
-	}
-	return;
+   return 0;
 }
-
-/*
- * READ_TIMER
- *
- * read the current timer pulses and convert them to engineering units 
- */
-static void read_timer(ptimer)
-struct timerRecord	*ptimer;
+
+static long write_timer(struct timerRecord *ptimer)
 {
-	struct vmeio	*pvmeio;
-	int			source;
-	int			ptst;
-	int			no_pulses;
-	double			time_pulse[2];	/* delay and width */
-	double			constant;
+   struct tmdset *pdset;
+   long status,options,nRequest; 
 
-	/* initiate the write */
-	if (ptimer->out.type != VME_IO) {
-		recGblRecordError(S_dev_badOutType,(void *)ptimer,"read_timer");
-		return;
-	}
+   /* get the delay from trigger source */
+   if (ptimer->torg.type == DB_LINK) {
+           options=0;
+           nRequest=1;
+           status=recGblGetLinkValue(&(ptimer->torg),(void *)ptimer,DBR_FLOAT,
+                   &(ptimer->trdl),&options,&nRequest);
+           if (!RTN_SUCCESS(status)) return status;
+   }
+ 
+   if (ptimer->out.type != VME_IO) {
+           recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
+           return 0;
+   }
 
-	/* only supports a one channel VME timer module !!!! */
+   /* should we maintain through a reboot */
+   if (ptimer->main && ptimer->rdt1 && ptimer->rpw1){
+           ptimer->dut1 = ptimer->rdt1 - ptimer->trdl;
+           ptimer->opw1 = ptimer->rpw1;
+           ptimer->main = 0;       /* only kept on the first write */
+   }
+ 
+   /* convert the value */
+   convert_timer(ptimer);
 
-	pvmeio = (struct vmeio *)(&ptimer->out.value);
+   pdset = (struct tmdset *) ptimer->dset;
+   if (pdset == NULL) {
+         recGblRecordError(S_dev_noDSET,(void *)pdset, "timer: process");
+         return S_dev_noDSET;
+   }
 
-	/* put the value to the ao driver */
-	if (time_driver_read((int)pvmeio->card, /* card number */
-	  (int)pvmeio->signal,			/* signal number */
-	  (int)ptimer->dtyp,			/* card type */
-	  &source,				/* trigger source */
-	  &ptst,				/* pre-trigger state */
-	  &time_pulse[0],			/* delay/width */
-	  &no_pulses,				/* number pulses found */
-	  1) < 0) return;
+   /* call device support */
+   if ((pdset->write)(ptimer) != OK) {
+         recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
+         return 0;
+   }
 
-	if (no_pulses == 0) return;
-
-	/* convert according to time units */
-	constant = constants[ptimer->timu];
-
-	/* timing pulse 1 is currently active				   */
-	/* put its parameters into the database so that it will not change */
-	/* when the timer record is written				   */
-	ptimer->rdt1 = time_pulse[0] * constant;	/* delay to trigger */
-	ptimer->rpw1 = time_pulse[1] * constant;	/* pulse width */
-	return;
+   return 0;
 }
+

@@ -92,7 +92,6 @@ int main ()
 	//
 #if 0
 	while (1) {
-		osiTime::synchronize();
 		osiSleep (10 /* sec */, 0 /* uSec */);
 	}
 #endif

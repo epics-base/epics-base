@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "fdmgr.h"
-#include "osiTime.h"
+#include "tsStamp.h"
 #include "cadef.h"
 #include "epicsAssert.h"
 

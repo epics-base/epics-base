@@ -593,10 +593,12 @@ int	link;
 	  }
 	  
 	  if (rxDpvtHead == NULL) {
-	    printf("xvmeRxTask(%d): msg from node %d unsolicited!\n", 
-		   link, rxHead[4]);
-	    printf("contents: %02.2x %02.2x %02.2x %02.2x %02.2x\n",rxHead[2],
-		   rxHead[3],rxHead[4],rxHead[5],rxHead[6]);
+	    if (bbDebug > 9) {
+	      printf("xvmeRxTask(%d): msg from node %d unsolicited!\n", 
+		     link, rxHead[4]);
+	      printf("contents: %02.2x %02.2x %02.2x %02.2x %02.2x\n",rxHead[2],
+		     rxHead[3],rxHead[4],rxHead[5],rxHead[6]);
+	    }
 	    semGive(pXvmeLink[link]->pbbLink->busyList.sem);
 	    rxState = BBRX_IGN;	              /* nothing waiting... toss it */
 	  }
@@ -847,7 +849,7 @@ int	link;
 
 	  semTake(plink->queue[BB_Q_HIGH].sem, WAIT_FOREVER);
 	  listAddHead(&(plink->queue[BB_Q_HIGH]), &offlnNode); 
-	  listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
+/*	  listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);  */
 	  semGive(plink->queue[BB_Q_HIGH].sem);
 
 	  semGive(plink->linkEventSem); /* Tell TxTask to send the messages */

@@ -30,14 +30,6 @@
 #define min(A,B) ((A)>(B)?(B):(A))
 #endif
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
 #ifndef NELEMENTS
 #define NELEMENTS(A) ( sizeof (A) / sizeof (A[0]) )
 #endif
@@ -1313,12 +1305,20 @@ void arrayTest ( chid chan )
      * read back the array as strings
      */
     {
+        char *pRS;
         /* clip to 16k message buffer limit */
         unsigned maxElem = ( ( 1 << 14 ) - 16 ) / MAX_STRING_SIZE;
-        unsigned nElem = min ( maxElem, ca_element_count (chan) );
-        char *pRS = malloc ( nElem * MAX_STRING_SIZE );
+        unsigned nElem;
 
-        assert (pRS);
+        if ( maxElem > ca_element_count (chan) ) {
+            nElem = ca_element_count (chan);
+        }
+        else {
+            nElem = maxElem;
+        }
+
+        pRS = malloc ( nElem * MAX_STRING_SIZE );
+        assert ( pRS );
         status = ca_array_get ( DBR_STRING, nElem, chan, pRS ); 
         SEVCHK  ( status, "array read request failed" );
         status = ca_pend_io ( 30.0 );
@@ -1418,6 +1418,12 @@ void updateTestEvent ( struct event_handler_args args )
     pET->count++;
 }
 
+dbr_float_t performMonitorUpdateTestPattern ( unsigned iter )
+{
+    return ( (float) iter ) * 10.12345f + 10.7f;
+}
+
+
 /*
  * performMonitorUpdateTest
  *
@@ -1502,7 +1508,7 @@ void performMonitorUpdateTest ( chid chan )
         }
 
         for ( j = 0; j <= i; j++ ) {
-            temp = ( (float) j ) * 10.12345f + 10.7f;
+            temp = performMonitorUpdateTestPattern ( j );
             SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
         }
 
@@ -1537,9 +1543,22 @@ void performMonitorUpdateTest ( chid chan )
                 break;
             }
             if ( passCount == prevPassCount ) {
-                assert ( tries++ < 50 );
-                printf ( "-" );
-                fflush ( stdout );
+                assert ( tries++ < 500 );
+                if ( tries % 50 ) {
+                    for ( j = 0; j <= i; j++ ) {
+                        temp = performMonitorUpdateTestPattern ( j );
+                        if ( temp == test[0].lastValue ) {
+                            break;
+                        }
+                    }
+                    if ( j <= i) {
+                        printf ( "-(%d)", j );
+                    }
+                    else {
+                        printf ( "." );
+                    }
+                    fflush ( stdout );
+                }
             }
             prevPassCount = passCount;
         }

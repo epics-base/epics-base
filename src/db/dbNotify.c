@@ -359,7 +359,7 @@ static void dbtpnCallback(PUTNOTIFY *ppn)
     free(ppn);
 }
 
-long dbtpn(char	*pname,char *pvalue)
+long epicsShareAPI dbtpn(char	*pname,char *pvalue)
 {
     long	status;
     DBADDR	*pdbaddr=NULL;

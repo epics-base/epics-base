@@ -64,6 +64,7 @@ epicsShareFunc void epicsShareAPI dbNotifyCancel(PUTNOTIFY *pputnotify);
 epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 
 epicsShareFunc long epicsShareAPI dbPutNotify(PUTNOTIFY *pputnotify);
+epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
 
 #ifdef __cplusplus
 }

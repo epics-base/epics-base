@@ -110,8 +110,7 @@ void syncGroupWriteNotify::show (
     ::printf ( "pending write sg op\n" );
     if ( level > 0u ) {
         ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
-            this->chan->pName(guard), this->magic, 
-            static_cast < void * > ( &this->sg ) );
+            this->magic, static_cast < void * > ( &this->sg ) );
     }
 }
 

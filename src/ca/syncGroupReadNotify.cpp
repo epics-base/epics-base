@@ -119,9 +119,8 @@ void syncGroupReadNotify::show (
 {
     ::printf ( "pending sg read op: pVal=%p\n", this->pValue );
     if ( level > 0u ) {
-        ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
-            this->chan->pName(guard), this->magic, 
-            static_cast < void * > ( & this->sg ) );
+        ::printf ( "pending sg op: magic=%u sg=%p\n",
+            this->magic, static_cast < void * > ( & this->sg ) );
     }
 }
 

@@ -42,6 +42,7 @@
  *				cvtLongToHex, cvtLongToOctal routines, fix
  *				calls to gcvt, etc.
  * .03	joh	03-30-93	added bit field extract/ insert routines
+ * .04	mrk	01-28-94	replaced gcvt by e conversion
  */
 
 #include <stdlib.h>
@@ -75,10 +76,9 @@ int cvtFloatToString(flt_value,pstr_value,precision)
 	char		*startAddr;
 
 	/* can this routine handle this conversion */
-	if (precision > 8 || flt_value > 10000000.0) {
-		gcvt((double)flt_value,10,pstr_value);
+	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
+		sprintf(pstr_value,"%12.5e\0",(double)flt_value);
 		return((int)strlen(pstr_value));
-		/* gcvt from XPG2*/
 	}
 	startAddr = pstr_value;
 
@@ -159,10 +159,9 @@ int cvtDoubleToString(flt_value,pstr_value,precision)
 	char		*startAddr;
 
 	/* can this routine handle this conversion */
-	if (precision > 8 || flt_value>10000000.0) {
-		gcvt((double)flt_value,10,pstr_value);
+	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
+		sprintf(pstr_value,"%12.5e\0",flt_value);
 		return((int)strlen(pstr_value));
-		/* gcvt from XPG2*/
 	}
 	startAddr = pstr_value;
 

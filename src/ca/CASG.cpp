@@ -95,7 +95,7 @@ int CASG::block ( double timeout )
         }
 
         remaining = timeout - delay;
-        if ( remaining <= CAC_SIGNIFICANT_SELECT_DELAY ) {
+        if ( remaining <= CAC_SIGNIFICANT_DELAY ) {
             /*
              * Make sure that we take care of
              * recv backlog at least once

@@ -538,7 +538,7 @@ int cac::pendIO ( const double &timeout )
         this->flushRequestPrivate ();
    
         while ( this->pndRecvCnt > 0 ) {
-            if ( remaining < CAC_SIGNIFICANT_SELECT_DELAY ) {
+            if ( remaining < CAC_SIGNIFICANT_DELAY ) {
                 status = ECA_TIMEOUT;
                 break;
             }
@@ -597,12 +597,15 @@ int cac::pendEvent ( const double &timeout )
                     epicsThreadSleep ( 60.0 );
                 }
             }
-            else if ( timeout >= CAC_SIGNIFICANT_SELECT_DELAY ) {
+            else if ( timeout >= CAC_SIGNIFICANT_DELAY ) {
                 epicsThreadSleep ( timeout );
             }
-            // give up the processor if there is recv processing to be done
-            else if ( this->recvProcessPending ) {
-                epicsThreadSleep ( timeout );
+            else {
+                // give up the processor while 
+                // there is recv processing to be done
+                while ( this->recvProcessPending ) {
+                    epicsThreadSleep ( CAC_SIGNIFICANT_DELAY );
+                }
             }
         }
 

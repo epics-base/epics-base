@@ -39,11 +39,10 @@
 #define USEC_PER_SEC    1000000L
 
 
-#if defined (CLOCKS_PER_SEC)
-#   define CAC_SIGNIFICANT_SELECT_DELAY ( 1.0 / CLOCKS_PER_SEC )
+#if defined ( CLOCKS_PER_SEC )
+#   define CAC_SIGNIFICANT_DELAY ( 1.0 / CLOCKS_PER_SEC )
 #else
-/* on sunos4 GNU does not provide CLOCKS_PER_SEC */
-#   define CAC_SIGNIFICANT_SELECT_DELAY (1.0 / 1000000u)
+#   define CAC_SIGNIFICANT_DELAY (1.0 / 1000000u)
 #endif
 
 /*

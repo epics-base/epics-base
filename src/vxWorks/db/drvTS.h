@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.5  1999/11/18 13:30:07  mrk
+ * new makefile method; moved drvTS.h to vxWorks specific code
+ *
  * Revision 1.3  1998/09/29 14:11:03  mrk
  * TSsetClockFromUnix was made global
  *
@@ -73,7 +76,7 @@ of this distribution.
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include <tsDefs.h>
+#include <osiTime.h>
 
 #ifdef TS_DRIVER
 #define TS_EXTERN

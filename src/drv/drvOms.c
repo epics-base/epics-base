@@ -1,4 +1,3 @@
-
 /* drvOms.c */
 /* share/src/drv $Id$ */
 /*
@@ -61,6 +60,10 @@
  */
 
 /* data requests are made from the oms_task at
+ * a rate of 10Hz when a motor is active
+ * post every .1 second or not moving
+ * requests are sent at 10Hz in oms_task
+ */
 
 /* drvOms.c -  Driver Support Routines for Oms */
 #include	<vxWorks.h>
@@ -155,7 +158,7 @@ register short	card;
     /* pointer to this motor */
     if ((pmotor = oms_motor_present[card]) == 0){
 	intUnlock(key);
-	return;
+	return(0);
     }
     pinx = &resp_inx[card];
 
@@ -193,6 +196,7 @@ register short	card;
 	}
     }
     intUnlock(key);
+    return(0);
 }
 
 /*
@@ -202,7 +206,7 @@ short		oms_channel[MAX_OMS_CARDS];
 short		oms_state[MAX_OMS_CARDS];
 char		off_msg[40];
 int		oms_debug = 0;
-int		oms_compare = 2;
+int		oms_compare = 3;
 oms_resp_task()
 {
     unsigned char		resp[OMS_MSG_SZ*4];
@@ -299,7 +303,7 @@ oms_resp_task()
 			    (*psmcb_routine)(pmotor_data_array,poms_motor_array->callback_arg);
 			}
 			if (pmotor_data_array->moving){
-			    poms_motor_array->update_count = 0;
+			    poms_motor_array->update_count = 2;
 			}else{
 			    poms_motor_array->update_count = 0;
 			}
@@ -329,6 +333,7 @@ oms_task()
 	motor_active = TRUE;
 	while (motor_active){
 	    motor_active = FALSE;
+	    taskDelay(2);
 	    for (channel = 0; channel < MAX_OMS_CHANNELS; channel++){
 		pmotor = oms_motor_present[0];
 		for (card = 0; card < MAX_OMS_CARDS; card++,pmotor++){
@@ -345,7 +350,6 @@ oms_task()
 			oms_send_msg(oms_motor_present[card],oms_msg);
 		    }
 		}
-		taskDelay(2);
 	    }
 	}
     }
@@ -373,7 +377,7 @@ oms_driver_init(){
         status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,sm_addrs[OMS_6AXIS], &localaddr);
         if (status != OK){ 
            logMsg("Addressing error in oms driver\n");
-           return ERROR;
+           return(ERROR);
         }
         rebootHookAdd(oms_reset);  
         pmotor = (struct vmex_motor *)localaddr;
@@ -438,6 +442,7 @@ oms_driver_init(){
                          }
 		}
 	}
+	return(0);
 }
 
 /*
@@ -519,7 +524,7 @@ int		arg2;
 		if (arg1 == 0){
 			oms_move_msg[1] = oms_motor_specifier[channel];
 		}else{
-			return;
+			return(0);
 		}
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
@@ -566,6 +571,7 @@ int		arg2;
 
 		break;
 	}
+	return(0);
 }
 
 char	last_msg[80];
@@ -594,7 +600,8 @@ i = 0;
 				oms_icount++;
 				if ((oms_icount % 5) == 0){
 					oms_isleep++;
-					taskDelay(1);
+/* A taskDelay makes a 68040 wait frequently */
+					/*taskDelay(1);*/
 				}
 			}
 			pmotor->data = 0x19;	/* reset */
@@ -603,7 +610,8 @@ i = 0;
 				oms_count++;
 				if ((oms_count % 5) == 0){
 					oms_sleep++;
-					taskDelay(1);
+/* A taskDelay makes a 68040 wait frequently */
+					/*taskDelay(1);*/
 				}
 			}
 			pmotor->data = *pmsg;

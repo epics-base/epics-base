@@ -21,7 +21,7 @@
 epicsMutex ipAddrToAsciiEngine::mutex;
 
 ipAddrToAsciiEngine::ipAddrToAsciiEngine ( const char *pName ) :
-    thread(*(new epicsThread(*this,pName,0x1000,epicsThreadPriorityLow))),
+    thread ( * new epicsThread ( *this, pName, 0x1000, epicsThreadPriorityLow ) ),
     nextId ( 0u ), exitFlag ( false )
 {
     this->thread.start (); // start the thread

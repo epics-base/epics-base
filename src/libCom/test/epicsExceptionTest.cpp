@@ -101,7 +101,7 @@ void myThread::waitForCompletion ()
     }
 }
 
-void epicsExceptionTest ()
+extern "C" void epicsExceptionTest ()
 {
     myThread athread;
 

@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-void epicsExceptionTest ();
+extern "C" void epicsExceptionTest ();
 
 int main ()
 {

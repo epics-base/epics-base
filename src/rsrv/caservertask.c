@@ -477,6 +477,10 @@ void epicsShareAPI casr (unsigned level)
     size_t bytes_reserved;
     struct client *client;
 
+    if ( ! clientQlock ) {
+        return;
+    }
+
     printf ("Channel Access Server V%d.%d\n",
         CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
 

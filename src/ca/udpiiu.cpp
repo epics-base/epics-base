@@ -984,8 +984,10 @@ bool udpiiu::searchMsg ( unsigned short retrySeqNumber, unsigned & retryNoForThi
 
 void udpiiu::installChannel ( nciu & chan )
 {
-    epicsGuard < udpMutex> guard ( this->mutex );
-    this->channelList.add ( chan );
+    {
+        epicsGuard < udpMutex> guard ( this->mutex );
+        this->channelList.add ( chan );
+    }
     this->resetSearchPeriod ( 0.0 );
 }
 

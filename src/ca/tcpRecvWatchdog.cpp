@@ -19,7 +19,7 @@
 // the recv watchdog timer is active when this object is created
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
+    ( tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
         iiu ( iiuIn ), responsePending ( false ),
         beaconAnomaly ( true )

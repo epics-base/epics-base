@@ -330,6 +330,23 @@ osiTimerQueue::~osiTimerQueue()
 {
 	osiTimer *pTmr;
 
+    this->terminateFlag = true;
+    this->rescheduleEvent.signal ();
+    this->exitEvent.wait (0.1);
+    if ( ! this->exitFlag && ! this->isSuspended () ) {
+        static const unsigned maxCount = 25;
+        static const double delay = 0.25;
+        unsigned count = 0;
+        printf ("waiting %f seconds for timer queue to shut down", 
+            delay * maxCount);
+        while ( ! this->exitFlag && ! this->isSuspended () && count < 10) {
+            this->exitEvent.wait (delay);
+            printf (".");
+            count++;
+        }
+        printf ("\n");
+    }
+
     this->mutex.lock ();
 
 	//
@@ -347,11 +364,6 @@ osiTimerQueue::~osiTimerQueue()
 		pTmr->curState = osiTimer::stateLimbo;
 		pTmr->destroy ();
 	}
-    this->terminateFlag = true;
-    this->rescheduleEvent.signal ();
-    while (!this->exitFlag) {
-        this->exitEvent.wait ();
-    }
 }
 
 //

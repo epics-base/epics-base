@@ -312,7 +312,12 @@ epicsShareFunc int epicsShareAPI threadIsSuspended (threadId id)
     
     stat = GetExitCodeThread (pParm->handle, &exitCode);
     if (stat) {
-        return pParm->isSuspended;
+        if (exitCode!=STILL_ACTIVE) {
+            return 1;
+        }
+        else {
+            return pParm->isSuspended;
+        }
     }
     else {
         return 1;

@@ -119,7 +119,7 @@ epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg
     int status;
     status = pthread_kill ( SIGPIPE, epicsThreadGetPosixThreadIdSelf ( threadId ) );
     if ( status ) {
-        errlogPrintf ( "failed to send signal to another thread because %s\n", 
+        errlogPrintf ( "failed to send signal to another thread because - errno=\"%s\"\n", 
             strerror ( errno ) );
     }
 }

@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_INCLUDES = -I../../drv
+USR_INCLUDES = -I../../drv/old -I../../drv/ansi
 
 #	SRCS.c += ../recAai.c
 #	SRCS.c += ../recAao.c

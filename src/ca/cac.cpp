@@ -1619,26 +1619,24 @@ void cac::waitUntilNoRecvThreadsPending ()
         {
             fd_set mask;
             FD_ZERO ( & mask );
-            int count = 0;
+            SOCKET maxFD = 0;
             epicsGuard < cacMutex > guard ( this->mutex );
             tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
             if ( this->pudpiiu ) {
-                this->pudpiiu->fdMaskSet ( mask );
-                count++;
+                this->pudpiiu->fdMaskSet ( mask, maxFD );
             }
             while ( iter.valid() ) {
-                iter->fdMaskSet ( mask );
-                count++;
+                iter->fdMaskSet ( mask, maxFD );
                 iter++;
             }
 
             struct timeval delay = { 0, 0 };
-            int status = select ( count, & mask, 0, 0, & delay );
+            int status = select ( maxFD+1, & mask, 0, 0, & delay );
             if ( status <= 0 ) {
                 return;
             }
             this->nRecvThreadsPending = 
-                static_cast < unsigned > ( count );
+                static_cast < unsigned > ( status );
         }
 
         this->recvThreadActivityComplete.wait ( 0.1 );

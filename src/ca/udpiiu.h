@@ -36,6 +36,7 @@
 #include "epicsThread.h"
 #include "epicsMemory.h"
 #include "epicsTime.h"
+#include "tsMinMax.h"
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -98,7 +99,7 @@ public:
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     void shutdown ();
     double roundTripDelayEstimate () const;
-    void fdMaskSet ( fd_set & mask ) const;
+    void fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const;
 
     // exceptions
     class noSocket {};
@@ -222,8 +223,9 @@ inline double udpiiu::roundTripDelayEstimate () const
     return this->rtteMean;
 }
 
-inline void udpiiu::fdMaskSet ( fd_set & mask ) const
+inline void udpiiu::fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const
 {
+    maxFD = tsMax ( this->sock, maxFD );
     FD_SET ( this->sock, & mask );
 }
 

@@ -28,6 +28,7 @@
 
 #include "epicsMemory.h"
 #include "tsDLList.h"
+#include "tsMinMax.h"
 
 #include "comBuf.h"
 #include "caServerID.h"
@@ -133,7 +134,7 @@ public:
 
     bool bytesArePendingInOS () const;
 
-    void fdMaskSet ( fd_set & ) const;
+    void fdMaskSet ( fd_set &, SOCKET & maxFd ) const;
 
 private:
     hostNameCache hostNameCacheInstance;
@@ -249,8 +250,9 @@ inline unsigned tcpiiu::channelCount ()
     return this->channelList.count ();
 }
 
-inline void tcpiiu::fdMaskSet ( fd_set & mask ) const
+inline void tcpiiu::fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const
 {
+    maxFD = tsMax ( this->sock, maxFD );
     FD_SET ( this->sock, & mask );
 }
 

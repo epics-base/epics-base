@@ -19,7 +19,25 @@ $! Arguments : 	optional source file name
 $!
 $! Created  	16-NOV-1993   	Mark L. Rivers
 $!		05-MAY-1994	Jeff O. Hill	Updated for EPICS 3.12
+$!		07-MAR-1995	Jeff O. Hill	Added FTP script	
 $!
+$!========================================================================
+$!
+$! Example FTP script moves sources from UNIX to VMS
+$! (remove "$!" comment delimeters)
+$!
+$! user XXXXXXX 
+$! cd [.ca]
+$! prompt
+$! lcd ~/epics/base/src/ca
+$! mput *.c
+$! mput *.h
+$! put BUILD_VMS.COM
+$! lcd ../libCom
+$! mput *.c
+$! mput *.h
+$! lcd ../../include
+$! mput *.h
 $!========================================================================
 $!
 $ define /nolog sys multinet_root:[multinet.include.sys]

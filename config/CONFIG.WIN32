@@ -48,7 +48,7 @@ MKDIR=mkdir
 RMDIR=rm -rf
 
 # Include files
-HOST_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)	\
+HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(EPICS_BASE_INCLUDE)	\
 		-I$(EPICS_BASE_INCLUDE)/os/$(ARCH_CLASS)
  
 #	Operating system flags (from win32.mak)
@@ -87,7 +87,7 @@ WIN32LDFLAGS := $(WIN32SYSTEMLIBS) -nologo -subsystem:windows -dll\
 HOST_LDLIBS:=$(WIN32SYSTEMLIBS)
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
-HOST_CFLAGS = $(HOST_SFLAGS) $(USR_INCLUDES) $(HOST_INCLUDES) $(OP_SYS_FLAGS)
+HOST_CFLAGS = $(HOST_SFLAGS) $(HOST_INCLUDES) $(OP_SYS_FLAGS)
  
 HOST_CXXFLAGS = $(HOST_CFLAGS)
  
@@ -124,4 +124,4 @@ LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -Fe$@
 #	if you need different rules for .c and .cc,
 #	that script has to figure out what to call.
 #
-DEPENDS_RULE = @echo no DEPENDS_RULE defined in CONFIG.Host.WIN32
+DEPENDS_RULE = @echo no DEPENDS_RULE defined in CONFIG.WIN32

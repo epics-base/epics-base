@@ -29,7 +29,7 @@ VX_OPT_NO =
 VX_OPT_FLAGS = $(VX_OPT_$(VX_OPT))
  
 #    Include files
-VX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE) \
+VX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(EPICS_BASE_INCLUDE) \
 	-I$(EPICS_BASE_INCLUDE)/os/vxWorks -I$(VX_INCLUDE)
 
 #    Warnings
@@ -43,7 +43,7 @@ VX_WARN_FLAGS = $(VX_WARN_$(VX_WARN))
 VX_OP_SYS_FLAGS = -DvxWorks -DV5_vxWorks
  
 #    Arch dependent flags are set in CONFIG_ARCH.*
-VX_CFLAGS = $(VX_OPT_FLAGS) $(VX_WARN_FLAGS) $(USR_INCLUDES) \
+VX_CFLAGS = $(VX_OPT_FLAGS) $(VX_WARN_FLAGS) \
         $(VX_INCLUDES) $(VX_OP_SYS_FLAGS)
  
 #VX_LDFLAGS = -T$(EPICS_BASE)/src/libvxWorks/vxldscript.MRI -o
@@ -64,7 +64,7 @@ LINK.c = $(LD) $(LDFLAGS)
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.cc = $(LD) $(LDFLAGS) 
 
-CPPSNCFLAGS = $(USR_INCLUDES) $(VX_INCLUDES)
+CPPSNCFLAGS = $(VX_INCLUDES)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = -$(COMPILE.cc) -M $(SRCS.cc) > .DEPENDS 

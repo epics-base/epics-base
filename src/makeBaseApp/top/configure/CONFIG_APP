@@ -15,5 +15,3 @@ endif
 
 # dbst based database optimization (default: NO)
 DB_OPT = NO
-# May be overridden if not all databases should be installed
-INSTALLDB = $(DB)

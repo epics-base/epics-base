@@ -1,5 +1,5 @@
 /* db_access.c */
-/* share/src/db	$Id$ */
+/* base/src/db	$Id$ */
 /* db_access.c - Interface between old database access and new */
 /*
  *      Author:          Bob Dalesio

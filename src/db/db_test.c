@@ -1,4 +1,4 @@
-/* share/src/db  $Id$ */
+/* base/src/db  $Id$ */
 /*      database access subroutines */
 /*
  *      Author: Bob Dalesio

@@ -1,5 +1,5 @@
 /* taskwd.c */
-/* share/src/db  $Id$ */
+/* base/src/db  $Id$ */
 
 /* tasks and subroutines for a general purpose task watchdog */
 /*
@@ -50,7 +50,10 @@ struct task_list {
 	ELLNODE		node;
 	VOIDFUNCPTR	callback;
 	void		*arg;
-	int		tid;
+	union {
+		int	tid;
+		void	*userpvt;
+	} id;
 	int		suspended;
 };
 
@@ -91,20 +94,20 @@ void taskwdInsert(int tid,VOIDFUNCPTR callback,void *arg)
     pt = allocList();
     ellAdd(&list,(void *)pt);
     pt->suspended = FALSE;
-    pt->tid = tid;
+    pt->id.tid = tid;
     pt->callback = callback;
     pt->arg = arg;
     FASTUNLOCK(&lock);
 }
 
-void taskwdAnyInsert(int tid,VOIDFUNCPTR callback,void *arg)
+void taskwdAnyInsert(void *userpvt,VOIDFUNCPTR callback,void *arg)
 {
     struct task_list *pt;
 
     FASTLOCK(&anylock);
     pt = allocList();
     ellAdd(&anylist,(void *)pt);
-    pt->tid = tid;
+    pt->id.userpvt = userpvt;
     pt->callback = callback;
     pt->arg = arg;
     FASTUNLOCK(&anylock);
@@ -117,7 +120,7 @@ void taskwdRemove(int tid)
     FASTLOCK(&lock);
     pt = (struct task_list *)ellFirst(&list);
     while(pt!=NULL) {
-	if (tid == pt->tid) {
+	if (tid == pt->id.tid) {
 	    ellDelete(&list,(void *)pt);
 	    freeList(pt);
 	    FASTUNLOCK(&lock);
@@ -129,14 +132,14 @@ void taskwdRemove(int tid)
     errMessage(-1,"taskwdRemove failed");
 }
 
-void taskwdAnyRemove(int tid)
+void taskwdAnyRemove(void *userpvt)
 {
     struct task_list *pt;
 
     FASTLOCK(&anylock);
     pt = (struct task_list *)ellFirst(&anylist);
     while(pt!=NULL) {
-	if (tid == pt->tid) {
+	if (userpvt == pt->id.userpvt) {
 	    ellDelete(&anylist,(void *)pt);
 	    freeList(pt);
 	    FASTUNLOCK(&anylock);
@@ -158,20 +161,20 @@ static void taskwdTask(void)
 	    pt = (struct task_list *)ellFirst(&list);
 	    while(pt) {
 		next = (struct task_list *)ellNext((void *)pt);
-		if(taskIsSuspended(pt->tid)) {
+		if(taskIsSuspended(pt->id.tid)) {
 		    char *pname;
 		    char message[100];
 
-		    pname = taskName(pt->tid);
+		    pname = taskName(pt->id.tid);
 		    if(!pt->suspended) {
 			struct task_list *ptany,*anynext;
 
 			pt->suspended = TRUE;
-			sprintf(message,"task %x %s suspended",pt->tid,pname);
+			sprintf(message,"task %x %s suspended",pt->id.tid,pname);
 			errMessage(-1,message);
 			ptany = (struct task_list *)ellFirst(&anylist);
 			while(ptany) {
-			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->tid);
+			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->id.tid);
 			    ptany = (struct task_list *)ellNext((ELLNODE *)ptany);
 			}
 			if(pt->callback) {
@@ -185,6 +188,8 @@ static void taskwdTask(void)
 				break;
 			}
 		    }
+		} else {
+		    pt->suspended = FALSE;
 		}
 		pt = next;
 	    }

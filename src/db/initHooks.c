@@ -1,5 +1,5 @@
 /* initHooks.c	ioc initialization hooks */ 
-/* share/src/db $Id$ */
+/* base/src/db $Id$ */
 /*
  *      Author:		Marty Kraimer
  *      Date:		06-01-91

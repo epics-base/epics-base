@@ -1,5 +1,5 @@
 /* recGbl.c - Global record processing routines */
-/* share/src/db/recGbl.c	$Id$ */
+/* base/src/db $Id$ */
 
 /*
  *      Author:          Marty Kraimer
@@ -38,6 +38,7 @@
  * .08  09-15-92        jba     changed error parm in recGblRecordError calls
  * .09  09-17-92        jba     ANSI C changes
  * .10  01-27-93        jba     set pact to true during calls to dbPutLink
+ * .11  03-21-94        mcn     Added fast link routines
  */
 
 #include	<vxWorks.h>
@@ -475,3 +476,136 @@ double		*prangeValue;
         }
         return;
 }
+
+/*  Fast link initialization routines  */
+/*
+ *  Get and Put conversion routine lookup tables
+ */
+extern long (*get_cvt_table[DBF_DEVCHOICE+1][DBR_ENUM+1])();
+extern long (*put_cvt_table[DBR_ENUM+1][DBF_DEVCHOICE+1])();
+ 
+/*
+ *  String if bad database request type chosen
+ */
+static char *bad_in_req_type = "recGblInitFastInLink:  Bad database request type";
+static char *bad_out_req_type = "recGblInitFastInLink:  Bad database request type";
+ 
+/*
+ *  Initialize fast input links.
+ */
+long recGblInitFastInLink(
+     struct link *plink,
+     void *precord,
+     short dbrType,
+     char *fld_name)
+{
+  long status = 0;
+  struct db_link *pdb_link = &(plink->value.db_link);
+  struct dbAddr *pdb_addr = (struct dbAddr *) (pdb_link->pdbAddr);
+  long (*cvt_func)();
+ 
+ /*
+  *  Check for CA_LINK
+  */
+  if (plink->type == PV_LINK) {
+      status = dbCaAddInlink(plink, (struct dbCommon *) precord, fld_name);
+      return(status);
+  }
+ 
+ /*
+  *  Return if not database link (A constant link, for example)
+  */
+  if (plink->type != DB_LINK)
+      return(0);
+ 
+ /*
+  *  Check for legal conversion range...
+  */
+  if ((pdb_addr->field_type < DBF_STRING) ||
+      (pdb_addr->field_type > DBF_DEVCHOICE) ||
+      (       dbrType       < DBR_STRING) ||
+      (       dbrType       > DBR_ENUM)) {
+ 
+      pdb_link->conversion = cvt_dummy;
+      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_in_req_type);
+      return(S_db_badDbrtype);
+  }
+ 
+ /*
+  *  Lookup conversion function
+  */
+  cvt_func = get_cvt_table[pdb_addr->field_type][dbrType];
+ 
+  if (cvt_func == NULL) {
+      pdb_link->conversion = cvt_dummy;
+      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_in_req_type);
+      return(S_db_badDbrtype);
+  }
+ 
+ /*
+  *  Put function it into conversion field (Run Time Link)
+  */
+  pdb_link->conversion = cvt_func;
+ 
+  return(0);
+}
+ 
+/*
+ *  Initialize fast output links.
+ */
+long recGblInitFastOutLink(
+     struct link *plink,
+     void *precord,
+     short dbrType,
+     char *fld_name)
+{
+  long status = 0;
+  struct db_link *pdb_link = &(plink->value.db_link);
+  struct dbAddr *pdb_addr = (struct dbAddr *) (pdb_link->pdbAddr);
+  long (*cvt_func)();
+ 
+ /*
+  *  Check for CA_LINK
+  */
+  if (plink->type == PV_LINK) {
+      status = dbCaAddOutlink(plink, (struct dbCommon *) precord, fld_name);
+      return(status);
+  }
+ 
+ /*
+  *  Return if not database link (A constant link, for example)
+  */
+  if (plink->type != DB_LINK)
+      return(0);
+ 
+ /*
+  *  Check for legal conversion range...
+  */
+  if ((pdb_addr->field_type < DBF_STRING) ||
+      (pdb_addr->field_type > DBF_DEVCHOICE) ||
+      (       dbrType       < DBR_STRING) ||
+      (       dbrType       > DBR_ENUM)) {
+ 
+      pdb_link->conversion = cvt_dummy;
+      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_out_req_type);
+      return(S_db_badDbrtype);
+  }
+ /*
+  *  Lookup conversion function
+  */
+  cvt_func = put_cvt_table[dbrType][pdb_addr->field_type];
+ 
+  if (cvt_func == NULL) {
+      pdb_link->conversion = cvt_dummy;
+      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_out_req_type);
+      return(S_db_badDbrtype);
+  }
+ 
+ /*
+  *  Put function it into conversion field (Run Time Link)
+  */
+  pdb_link->conversion = cvt_func;
+ 
+  return(0);
+}
+

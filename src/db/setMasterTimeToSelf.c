@@ -1,5 +1,5 @@
 /* setMasterTimeToSelf.c	ioc initialization */ 
-/* share/src/db $Id$ */
+/* base/src/db $Id$ */
 /*
  *      Author:		Bob Zieman
  *      Date:		09-11-92

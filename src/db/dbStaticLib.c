@@ -1,5 +1,5 @@
 /*dbStaticLib.c*/
-/* share/src/db $Id$ */
+/* base/src/db $Id$ */
 /*
  *
  *     Authors:	Marty Kraimer

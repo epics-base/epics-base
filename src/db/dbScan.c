@@ -1,5 +1,5 @@
 /* dbScan.c */
-/* share/src/db  $Id$ */
+/* base/src/db  $Id$ */
 
 /* tasks and subroutines to scan the database */
 /*

@@ -1,5 +1,5 @@
 /* dbTest.c */
-/* share/src/db  $Id$ */
+/* base/src/db  $Id$ */
 /*	database access test subroutines */
 /*
  *      Original Author: Bob Dalesio
@@ -39,6 +39,7 @@
  * .08  07-21-92        jba	ansi c changes
  * .09  09-24-93        jbk 	adjusted dbpr to print vxi links correctly
  * .10  02-02-94	mrk	added dbtpn (test dbPutNotify)
+ * .11	03-18-94	mcn	added dbgrep and timing routines.
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -51,6 +52,9 @@
  *
  * dbl(ptypeName)		list record names.
  *	char	*ptypeName;	Record type. If null all record types
+ *
+ * dbgrep(pmask)                list record names that match the mask
+ *      char	*pmask;
  *
  * dbgf(pname)			get field
  *	char	*pname;
@@ -84,6 +88,10 @@
  *
  * dblls(ptypeName)		list lock sets
  *	char	*ptypeName;	Record type. If null all record types
+ *
+ * dbt(record_name)		time 100 executions of "record_name"
+ *                              (includes what records are processed
+ *                                   as a result of that record)
  *
  */
 
@@ -229,6 +237,105 @@ long dbl(char	*precdesname)
 	status = dbNextRecdes(pdbentry);
     }
     dbFinishEntry(pdbentry);
+    return(0);
+}
+
+static int specified_by(char *ptest, char *pspec)
+{
+    short               inx;
+    short               wild_card_start;
+ 
+        /* check if the specification begins with a wild card */
+        if (*pspec == '*') wild_card_start = TRUE;
+        else wild_card_start = FALSE;
+ 
+        /* check for specification */
+        while (TRUE) {
+                /* skip any wild cards */
+                while (*pspec == '*') pspec++;
+ 
+                /* find the specification chars to compare */
+                inx = 0;
+                while ( (*(pspec+inx) != '*') && (*(pspec+inx)) )
+                        inx++;
+ 
+                /* check for specification ending with wildcard */
+                if (inx == 0) return(TRUE);
+ 
+                /* find the spec chars in the test string */
+                while ((strlen(ptest) >= inx)
+                  && (strncmp(ptest,pspec,inx) != 0) ) {
+ 
+                        /* check variable beginning */
+                        if (!wild_card_start) return(FALSE);
+                        else ptest++;
+                }
+ 
+                /* check segment found */
+                if (strlen(ptest) < inx) return(FALSE);
+ 
+                /* adjust pointers and wild card indication */
+                wild_card_start = TRUE;
+                ptest += inx;
+                pspec += inx;
+ 
+                /* check for end of specification */
+                if (*pspec == NULL) {
+                        if (*ptest == NULL) return(TRUE);
+                        else return(FALSE);
+                }
+        }
+}
+ 
+long dbgrep(char *pmask)
+{
+    int                 rectype, beg, end;
+    struct recLoc       *precLoc;
+    struct dbCommon     *precord;
+    char                *pstr;
+    char                name[PVNAME_SZ+1];
+    struct recType      *precType;
+    struct recHeader    *precHeader;
+    RECNODE             *precNode;
+ 
+    if (!pdbBase) {
+        printf("No database\n");
+        return(0);
+    }
+ 
+    if (!(precType = pdbBase->precType))
+       return(0);
+ 
+    if (!(precHeader = pdbBase->precHeader))
+       return(0);
+ 
+    beg = 0;
+    end = precHeader->number - 1;
+ 
+    for (rectype = beg; rectype <= end; rectype++) {
+ 
+        if (!(precLoc = GET_PRECLOC(precHeader, rectype)))
+                continue;
+ 
+       /*
+        *  Check if there are any record instances defined.
+        */
+        if (precLoc->preclist == NULL)
+                continue;
+ 
+        precNode = (RECNODE *) ellFirst(precLoc->preclist);
+ 
+        for (; precNode != NULL; precNode = (RECNODE *) ellNext(&precNode->node)) {
+                precord = precNode->precord;
+                if (precord == NULL) continue;
+                if (precord->name == NULL) continue;
+                if (precord->name[0] == 0) continue; /* deleted record */
+ 
+                if (specified_by(precord->name, pmask)) {
+                        printf("%s\n", precord->name);
+                }
+        }
+    }
     return(0);
 }
 
@@ -1660,3 +1767,53 @@ static struct recTypDes *dbprGetRecTypDes(short type)
 	return (NULL);
     return (precTypDes);
 }
+
+/*
+ *  Call dbProcess() 100 times to make
+ *   sure Measurement is accurate, since
+ *   timexN() makes use of the 60Hz clock
+ */
+static void timing_routine(precord)
+struct dbCommon *precord;
+{
+   int i;
+ 
+   for (i = 0; i <100; i++) {
+      dbProcess(precord);
+   }
+}
+ 
+/*
+ *  Time execution of record "record_name"
+ */
+long dbt(record_name)
+char *record_name;
+{
+  struct dbAddr address;
+  struct dbCommon *precord;
+  long status = 0;
+ 
+ /*
+  *  Convert Name To Address
+  */
+  status = dbNameToAddr(record_name, &address);
+ 
+  if (status != 0) {
+       printf("Cannot locate %s.\n", record_name);
+       return(status);
+  }
+ 
+  precord = address.precord;
+ 
+  printf("!! Time for 100 executions of %s: !!\n", record_name);
+ 
+ /*
+  *  Time the record
+  */
+  dbScanLock(precord);
+  timexN(timing_routine, precord);
+  dbScanUnlock(precord);
+ 
+  return(0);
+}
+

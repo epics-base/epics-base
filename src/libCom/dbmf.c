@@ -1,214 +1,222 @@
-
 /*
- * $Id$
- * $Log$
- * Revision 1.1  1997/04/07 20:16:41  jbk
- * Added a simple library for doing malloc/free from a buffer pool
- *
- *
- * Author: Jim Kowalkowski
+ * Author: Jim Kowalkowski and Marty Kraimer
  * Date:   4/97
  *
- * Intended for applications that create small strings over and over again
- *
- * I use a 1 byte indentifier in the front of the allocated chunk to tell
- * if it is managed by me or not.  This limited the applications that can
- * use this library to just strings because the block I return will not
- * be aligned on a 4 or 8 byte boundary.  Increasing it to 4 or 8 bytes
- * seems wasteful.  I really need to identify the chunks as mine or malloced.
+ * Intended for applications that create and free requently
  *
  */
 
 #include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include "ellLib.h"
 
 #ifdef vxWorks
+#include <vxWorks.h>
 #include <semLib.h>
 #else
 #define SEM_ID int
-#define semGive(x) ;
-#define semTake(x,y) ;
+#define semGive(x) 
+#define semTake(x,y) 
 #define semBCreate(x,y) 0
+#define SEM_Q_PRIORITY 0
+#define SEM_FULL 0
 #endif
 
 #include "dbmf.h"
 
-#define MAKE_TEST_PROGRAM 0
-#define DBMF_OWNED	0x01
-#define DBMF_SIZE	55
-#define DBMF_ALIGN	1
-#define DBMF_POOL	4
+/*Default values for dblfInit */
+#define DBMF_SIZE		64
+#define DBMF_INITIAL_ITEMS	10
 
-struct _chunk
+typedef struct chunkNode {/*control block for each set of chunkItems*/
+    ELLNODE    node;
+    void       *pchunk;
+    int        nNotFree;
+}chunkNode;
+
+typedef struct itemHeader{
+    void       *pnextFree;
+    chunkNode  *pchunkNode;
+}itemHeader;
+
+typedef struct dbmfPrivate {
+    ELLLIST    chunkList;
+    SEM_ID     sem;
+    size_t     size;
+    size_t     allocSize;
+    int        chunkItems;
+    size_t     chunkSize;
+    int        nAlloc;
+    int        nFree;
+    int        nGtSize;
+    void       *freeList;
+} dbmfPrivate;
+dbmfPrivate dbmfPvt;
+static dbmfPrivate *pdbmfPvt = NULL;
+int dbmfDebug=0;
+
+int dbmfInit(size_t size, int chunkItems)
 {
-	size_t chunk_size;	/* size of my chunk */
-	size_t user_size;	/* size the user wants managed (this or less) */
-	size_t group_size;	/* bytes in group */
-	size_t total;		/* allocate chunks in groups of this number */
-	size_t align;
-	char* free_list;
-	SEM_ID sem;
-};
-typedef struct _chunk chunk;
-
-static chunk* def=NULL; /* default buffer pool - when handle to malloc() NULL */
-
-/* returns handle to user */
-void* epicsShareAPI dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
+    if(pdbmfPvt) {
+        printf("dbmfInit: Already initialized\n");
+        return(-1);
+    }
+    pdbmfPvt = &dbmfPvt;
+    ellInit(&pdbmfPvt->chunkList);
+    pdbmfPvt->sem = semBCreate(SEM_Q_PRIORITY,SEM_FULL);
+    /*allign to at least a double*/
+    pdbmfPvt->size = size + size%sizeof(double);
+    pdbmfPvt->allocSize = pdbmfPvt->size + sizeof(itemHeader);
+    pdbmfPvt->chunkItems = chunkItems;
+    pdbmfPvt->chunkSize = pdbmfPvt->allocSize * pdbmfPvt->chunkItems;
+    pdbmfPvt->nAlloc = 0;
+    pdbmfPvt->nFree = 0;
+    pdbmfPvt->nGtSize = 0;
+    pdbmfPvt->freeList = NULL;
+    return(0);
+}
+
+void* dbmfMalloc(size_t size)
 {
-	chunk* c = (chunk*)malloc(sizeof(chunk));
+    void      **pnextFree;
+    void      **pfreeList;
+    char       *pmem = NULL;
+    chunkNode  *pchunkNode;
+    itemHeader *pitemHeader;
 
-	if(c)
-	{
-		c->user_size=size;
-		c->chunk_size=((c->user_size/alignment)*alignment)+alignment;
-		c->total=init_num_free_list_items;
-		c->group_size=c->chunk_size*c->total;
-		c->align=alignment;
-		c->free_list=NULL;
-		c->sem=semBCreate(SEM_Q_PRIORITY,SEM_FULL);
+    if(!pdbmfPvt) dbmfInit(DBMF_SIZE,DBMF_INITIAL_ITEMS);
+    semTake(pdbmfPvt->sem,WAIT_FOREVER);
+    pfreeList = &pdbmfPvt->freeList;
+    if(*pfreeList == NULL) {
+        int         i;
+	size_t      nbytesTotal;
+
+        if(dbmfDebug) printf("dbmfMalloc allocating new storage\n");
+	nbytesTotal = pdbmfPvt->chunkSize + sizeof(chunkNode);
+        pmem = (char *)malloc(nbytesTotal);
+	if(!pmem) {
+            semGive(pdbmfPvt->sem);
+	    printf("dbmfMalloc malloc failed\n");
+	    return(NULL);
 	}
+	pchunkNode = (chunkNode *)(pmem + pdbmfPvt->chunkSize);
+	pchunkNode->pchunk = pmem;
+	pchunkNode->nNotFree=0;
+	ellAdd(&pdbmfPvt->chunkList,&pchunkNode->node);
+	for(i=0; i<pdbmfPvt->chunkItems; i++) {
+	    pitemHeader = (itemHeader *)pmem;
+	    pitemHeader->pchunkNode = pchunkNode;
+	    pnextFree = &pitemHeader->pnextFree;
+	    *pnextFree = *pfreeList; *pfreeList = (void *)pmem;
+	    pdbmfPvt->nFree++;
+	    pmem += pdbmfPvt->allocSize; 
+	}
+    }
+    if(size<=pdbmfPvt->size) {
+        pnextFree = *pfreeList; *pfreeList = *pnextFree;
+	pmem = (void *)pnextFree;
+        pdbmfPvt->nAlloc++; pdbmfPvt->nFree--;
+	pitemHeader = (itemHeader *)pnextFree;
+	pitemHeader->pchunkNode->nNotFree += 1;
+    } else {
+	pmem = malloc(sizeof(itemHeader) + size); pdbmfPvt->nAlloc++;
+	pdbmfPvt->nGtSize++;
+	pitemHeader = (itemHeader *)pmem;
+	pitemHeader->pchunkNode = NULL;
+	if(dbmfDebug) printf("dbmfMalloc: size %d mem %p\n",size,pmem);
+    }
+    semGive(pdbmfPvt->sem);
+    return((void *)(pmem + sizeof(itemHeader)));
+}
+
+void dbmfFree(void* mem)
+{
+    char       *pmem = (char *)mem;
+    chunkNode  *pchunkNode;
+    itemHeader *pitemHeader;
 
-	return c;
+    if(!mem) return;
+    if(!pdbmfPvt) {
+	printf("dbmfFree called but dbmfInit never called\n");
+	return;
+    }
+    pmem -= sizeof(itemHeader);
+    semTake(pdbmfPvt->sem,WAIT_FOREVER);
+    pitemHeader = (itemHeader *)pmem;
+    if(!pitemHeader->pchunkNode) {
+	if(dbmfDebug) printf("dbmfGree: mem %p\n",pmem);
+	free((void *)pmem); pdbmfPvt->nAlloc--;
+    }else {
+        void **pfreeList = &pdbmfPvt->freeList;
+        void **pnextFree = &pitemHeader->pnextFree;
+
+        pchunkNode = pitemHeader->pchunkNode;
+	pchunkNode->nNotFree--;
+        *pnextFree = *pfreeList; *pfreeList = pnextFree;
+	pdbmfPvt->nAlloc--; pdbmfPvt->nFree++;
+    }
+    semGive(pdbmfPvt->sem);
+}
+
+int  dbmfShow(int level)
+{
+    if(pdbmfPvt==NULL) {
+	printf("Never initialized\n");
+	return(0);
+    }
+    printf("size %d allocSize %d chunkItems %d ",
+	pdbmfPvt->size,pdbmfPvt->allocSize,pdbmfPvt->chunkItems);
+    printf("nAlloc %d nFree %d nChunks %d nGtSize %d\n",
+	pdbmfPvt->nAlloc,pdbmfPvt->nFree,
+	ellCount(&pdbmfPvt->chunkList),pdbmfPvt->nGtSize);
+    if(level>0) {
+        chunkNode  *pchunkNode;
+
+        pchunkNode = (chunkNode *)ellFirst(&pdbmfPvt->chunkList);
+        while(pchunkNode) {
+	    printf("pchunkNode %p nNotFree %d\n",
+		pchunkNode,pchunkNode->nNotFree);
+	    pchunkNode = (chunkNode *)ellNext(&pchunkNode->node);
+	}
+    }
+    if(level>1) {
+	void **pnextFree;;
+
+	semTake(pdbmfPvt->sem,WAIT_FOREVER);
+	pnextFree = (void**)pdbmfPvt->freeList;
+	while(pnextFree) {
+	    printf("%p\n",*pnextFree);
+	    pnextFree = (void**)*pnextFree;
+	}
+        semGive(pdbmfPvt->sem);
+    }
+    return(0);
 }
 
-void* epicsShareAPI dbmfMalloc(void* handle,size_t x)
+void  dbmfFreeChunks(void)
 {
-	chunk* c = (chunk*)handle;
-	char** addr;
-	char *node,*rc;
-	int i;
+    chunkNode  *pchunkNode;
+    chunkNode  *pnext;;
 
-	if(c==NULL)
-	{
-		if(def==NULL)
-			def=dbmfInit(DBMF_SIZE,DBMF_ALIGN,DBMF_POOL);
-		c=def;
-	}
-
-	if(c->free_list==NULL)
-	{
-		node=(char*)malloc(c->group_size);
-		if(node)
-		{
-			semTake(c->sem,WAIT_FOREVER);
-			for(i=0;i<c->total;i++)
-			{
-				/* yuck */
-				addr=(char**)node;
-				*addr=c->free_list;
-				c->free_list=node;
-				node+=c->chunk_size;
-			}
-			semGive(c->sem);
-		}
-		else
-			rc=NULL;
-	}
-	if(x<=c->user_size)
-	{
-		semTake(c->sem,WAIT_FOREVER);
-		node=c->free_list;
-		if(node)
-		{
-			addr=(char**)node;
-			c->free_list=*addr;
-			node[0]=DBMF_OWNED;
-		}
-		semGive(c->sem);
-	}
-	else
-	{
-		node=(char*)malloc(x+c->align);
-		node[0]=0x00;
-	}
-
-	return (void*)(&node[c->align]);
+    if(!pdbmfPvt) {
+	printf("dbmfFreeChunks called but dbmfInit never called\n");
+	return;
+    }
+    semTake(pdbmfPvt->sem,WAIT_FOREVER);
+    if(pdbmfPvt->nFree
+    != (pdbmfPvt->chunkItems * ellCount(&pdbmfPvt->chunkList))) {
+	printf("dbmfFinish: not all free\n");
+        semGive(pdbmfPvt->sem);
+	return;
+    }
+    pchunkNode = (chunkNode *)ellFirst(&pdbmfPvt->chunkList);
+    while(pchunkNode) {
+	pnext = (chunkNode *)ellNext(&pchunkNode->node);
+	ellDelete(&pdbmfPvt->chunkList,&pchunkNode->node);
+	free(pchunkNode->pchunk);
+	pchunkNode = pnext;
+    }
+    pdbmfPvt->nFree = 0; pdbmfPvt->freeList = NULL;
+    semGive(pdbmfPvt->sem);
 }
-
-void epicsShareAPI dbmfFree(void* handle,void* x)
-{
-	chunk* c = (chunk*)handle;
-	char* p = (char*)x;
-	char** addr;
-
-	/* kind-of goofy, bad if buffer not malloc'ed using dbmfMalloc() */
-	if(c==NULL)
-	{
-		if(def==NULL)
-			def=dbmfInit(DBMF_SIZE,DBMF_ALIGN,DBMF_POOL);
-		c=def;
-	}
-
-	p-=c->align;
-	if(*p!=DBMF_OWNED)
-		free(p);
-	else
-	{
-		addr=(char**)p;
-		semTake(c->sem,WAIT_FOREVER);
-		*addr=c->free_list;
-		c->free_list=p;
-		semGive(c->sem);
-	}
-}
-
-#if MAKE_TEST_PROGRAM
-#include <stdio.h>
-
-int main()
-{
-	char* x[10];
-	int i;
-	void* handle;
-
-	handle=dbStrInit(20,1,5);
-
-	printf("ALLOCATE\n");
-	for(i=0;i<10;i++)
-	{
-		x[i]=(char*)dbStrMalloc(i);
-		printf("x[%d]=%8.8x\n",i,(int)x[i]);
-	}
-	printf("FREE\n");
-	for(i=0;i<10;i++) dbStrFree(x[i]);
-
-	printf("ALLOCATE\n");
-	for(i=0;i<10;i++)
-	{
-		x[i]=(char*)dbStrMalloc(i);
-		printf("x[%d]=%8.8x\n",i,(int)x[i]);
-	}
-	printf("FREE\n");
-	for(i=0;i<10;i++) dbStrFree(x[i]);
-
-	printf("ALLOCATE BIGGER\n");
-	for(i=0;i<10;i++)
-	{
-		x[i]=(char*)dbStrMalloc(i+15);
-		printf("x[%d]=%8.8x\n",i,(int)x[i]);
-	}
-	printf("FREE\n");
-	for(i=0;i<10;i++) dbStrFree(x[i]);
-
-	printf("ALLOCATE BIGGER\n");
-	for(i=0;i<10;i++)
-	{
-		x[i]=(char*)dbStrMalloc(i+15);
-		printf("x[%d]=%8.8x\n",i,(int)x[i]);
-	}
-	printf("FREE\n");
-	for(i=0;i<10;i++) dbStrFree(x[i]);
-
-	printf("ALLOCATE BIGGER\n");
-	for(i=0;i<10;i++)
-	{
-		x[i]=(char*)dbStrMalloc(i+15);
-		fprintf(stderr,"x[%d]=%8.8x\n",i,(int)x[i]);
-	}
-	fprintf(stderr,"FREE\n");
-	for(i=0;i<10;i++)
-		{ fprintf(stderr,"free %8.8x\n",(int)x[i]); dbStrFree(x[i]); }
-
-	return 0;
-}
-#endif

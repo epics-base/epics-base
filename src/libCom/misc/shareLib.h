@@ -8,48 +8,66 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- * Use compiler specific key words to set up shareable library
- * external symbols and entry points
+ * Compiler specific key words to set up external symbols and entry points
  *
- * Right now this is only necessary for WIN32 DLL, and to a lesser extent VAXC.
- * The approach should be general enough for future systems, however.
- *
+ * Currently this is only necessary for WIN32 DLLs and for VAXC on VMS but
+ * other systems with similar requirements could be supported.
  *
  * USAGE:
+ * There are two distinct classes of keywords in this file:
  *
- * In header files, declare variables, classes and functions
- * to be __exported__ like this:
+ * 1) epicsShareAPI - specifies a multi-language calling mechanism. On windows 
+ * this is the pascal calling convention which is used by visual basic and other
+ * high level tools. This is only necessaru if a C/C++ function needs to be called
+ * from other languages or from high level tools. The epicsShareAPI keyword
+ * must be present between the function's returned data type and the function's 
+ * name. All compilers targeting windows accept the __stdcall keyword in this 
+ * location. Functions with variable argument lists should not use the epicsShareAPI
+ * keyword because __stdcall (pascal) calling convention cannot support variable
+ * lengthed argument lists.
  *
- *  epicsShareFunc int epicsShareAPI 
- *          a_func (int arg);   function prototype
- * or
- *  epicsShareFunc int epicsShareAPIV 
- *          a_func (int arg, ...);  variable args function prototype
- *                                                (using either ... or va_list)
- *  epicsShareExtern  int a_var;        reference variable
- *                                                (reference declaration)
- *  epicsShareDef int a_var= 4;         create variable instance
- *                                                (definition declaration)
- *  class epicsShareClass a_class;      reference a class 
+ * int epicsShareAPI myExtFunc ( int arg );   
+ * int epicsShareAPI myExtFunc ( int arg ) {}
  *
- * Usually the epicsShare... macros expand to
- *  "import this from a DLL"  (on WIN32, on Unix it's a NOOP)
+ * 2) epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL) 
+ * export/import related information in the source code. On windows these keywords 
+ * allow faster dispatching of calls to DLLs because more is known at compile time. 
+ * It is also not necessary to maintain a linker input files specifying the DLL
+ * entry points. This maintenance can be more labourious with C++ decorated symbol 
+ * names. These keywords are only necessay if the address of a function or data 
+ * internal to a shareable library (DLL) needs to be visible outside of this shareable 
+ * library (DLL). All compilers targeting windows accept the __declspec(dllexport)
+ * and __declspec(dllimport) keywords.
+ *
+ * In header files declare references to externally visible variables, classes and 
+ * functions like this:
+ *
+ * #include "shareLib.h"
+ * epicsShareFunc int myExtFunc ( int arg );   
+ * epicsShareExtern int myExtVar; 
+ * class epicsShareClass myClass { int func ( void ); };
  *
  * In the implementation file, however, you write:
  *
- * #include <routines_imported.h>
- * #include <routines_imported_from_other_dlls.h>
+ * #include <interfaces_imported_from_other_shareable_libraries.h>
  * #define epicsExportSharedSymbols
- * ! no more includes specifying routines outside this DLLs from here on ! 
- * #include <in_this_dll_but_not_implemented_in_this_file.h>
- * #include <what_I_implement_in_this_file.h>
+ * #include <interfaces_implemented_in_this_shareable_library.h>
  *
- * The point is: define epicsExportSharedSymbols only
- * right before you include the prototypes for what you implement!
- * You must include shareLib.h again because this is where they get changed,
- * but this usually occurs as a side effect of including the header file.
- * This time the epicsShare... macros expand to
- *  "export this from the DLL that we are building". (again only on WIN32)
+ * epicsShareDef int myExtVar = 4;       
+ * int myExtFunc ( int arg ) {} 
+ * int myClass::func ( void ) {}
+ *
+ * By default shareLib.h sets the DLL import / export keywords to import from
+ * a DLL so that, for DLL consumers (users), nothing special must be done. However,
+ * DLL implementors must set epicsExportSharedSymbols as above to specify
+ * which functions are exported from the DLL and which of them are imported
+ * from other DLLs.
+ *
+ * You must first #include what you import and then define epicsExportSharedSymbols 
+ * only right before you #include the prototypes for what you implement! You must 
+ * include shareLib.h again each time that the state of the import/ export keywords 
+ * changes, but this usually occurs as a side effect of including the shareabke
+ * libraries header file(s).
  *
  * Frequently a header file for a shareable library exported interface will
  * have some preprocessor switches like this if this header file must also  
@@ -68,22 +86,12 @@
  * #   include "shareLib.h"
  * #endif
  *
- * Alternatively, you can force header files describing interfaces outside of your 
- * library to be included before setting epicsExportSharedSymbols by including them
- * before setting epicsExportSharedSymbols. Since all well written header files have 
- * "ifdef" guards against multiple inclusion this will prevent these interfaces from 
- * being included again after epicsExportSharedSymbols is set. 
+ * epicsShareFunc int myExtFunc ( int arg );   
+ * epicsShareExtern int myExtVar; 
+ * class epicsShareClass myClass {};
  *
  * Fortunately, the above is only the concern of library authors and will have no 
- * impact on persons using routines from a library.
- *
- * 8-22-96 -kuk-
- *
- * NOTE:
- * When we phase out support for VAXC C (and only support the ansi compliant
- * DEC C) then we can remove all epicsShareDef instances from base.
- * 
- * 1-17-02 -joh-
+ * impact on persons using functiions and or external data from a library.
  */
 
 #undef epicsShareExtern
@@ -91,14 +99,9 @@
 #undef epicsShareClass
 #undef epicsShareFunc
 #undef epicsShareAPI
-#undef epicsShareAPIV
 #undef READONLY
 
 /*
- * if its WIN32 and it isnt the Cygnus GNU environment
- * (I am assuming Borlund and other MS Vis C++ competitors
- * support these MS VisC++ defacto standard keywords???? If not
- * then we should just switch on defined(_MSC_VER) here)
  *
  * Also check for "EPICS_DLL_NO" not defined so that we will not use these
  * keywords if it is an object library build of base under WIN32.
@@ -116,7 +119,7 @@
 #           define epicsShareFunc  __declspec(dllexport)
 #       endif
 #   else
-#       if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
+#       if defined(_DLL) /* this indicates that we are being compiled to call DLLs */
 #           define epicsShareExtern __declspec(dllimport) extern 
 #           define epicsShareClass  __declspec(dllimport) 
 #           define epicsShareFunc  __declspec(dllimport)
@@ -126,20 +129,8 @@
 #           define epicsShareFunc
 #       endif
 #   endif
-    /*
-     * Subroutine removes arguments 
-     * (Bill does not allow __stdcall to be next to
-     * __declspec(xxxx))
-     */
-#   define epicsShareAPI __stdcall
-    /*
-     * Variable args functions cannot be __stdcall
-     * Use this for variable args functions
-     * (Those using either ... or va_list arguments)
-     */
-#   define epicsShareAPIV __cdecl
-
 #   define epicsShareDef 
+#   define epicsShareAPI __stdcall /* function removes arguments */
 #   define READONLY const
 /*
  * if its the old VAX C Compiler (not DEC C)
@@ -162,7 +153,6 @@
 #   define epicsShareClass
 #   define epicsShareFunc
 #   define epicsShareAPI
-#   define epicsShareAPIV
 
 #else
 
@@ -170,7 +160,6 @@
 
 #   define epicsShareExtern extern
 #   define epicsShareAPI
-#   define epicsShareAPIV
 #   define epicsShareClass
 #   define epicsShareDef
 

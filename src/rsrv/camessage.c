@@ -47,6 +47,7 @@
 #include "asLib.h"
 #include "callback.h"
 #include "asDbLib.h"
+#include "net_convert.h"
 
 #include "server.h"
 

@@ -36,6 +36,8 @@
 #include "osiSock.h"
 #include "tsStamp.h"
 #include "errlog.h"
+#include "net_convert.h"
+
 #include "server.h"
 
 /*

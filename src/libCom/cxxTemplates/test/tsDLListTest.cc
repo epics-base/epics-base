@@ -78,9 +78,9 @@ int main ()
         pFredBack->show();
     }
 
-    tsDLIterConstBD<jane> bdIter ( janeList.first () );
+    tsDLIterBD < jane > bdIter = janeList.firstIter ();
     i = 0;
-    while ( bdIter ) {
+    while ( bdIter.valid () ) {
         i++;
         bdIter++;
     }

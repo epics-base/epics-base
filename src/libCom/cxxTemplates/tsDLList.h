@@ -421,7 +421,7 @@ int tsDLList < T > :: find ( const T &item ) const
     tsDLIterConstBD < T > iter ( this->first () );
     int itemNo = 0;
 
-    while ( iter ) {
+    while ( iter.valid () ) {
         if ( iter == thisItem ) {
             return itemNo;
         }

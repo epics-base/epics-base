@@ -34,12 +34,11 @@ int main ()
 	list.add(*pFred);
 	list.add(*pFredII);
 	{
-        tsSLIter<fred> iter1( pFredII );
-		tsSLIter<fred> iter2( list.first () );
-		tsSLIter<fred> iter3( pFred );
-		assert ( iter1 == iter2 );
-		iter2++;
-		assert ( iter3 == iter2 );
+        tsSLIter<fred> iter1 = list.firstIter ();
+		tsSLIter<fred> iter2 = iter1;
+		tsSLIter<fred> iter3 = iter1;
+		assert ( iter1 == iter3++ );
+		assert ( iter3 == ++iter2 );
         list.remove ( *pFredII ); // removes pFred
 	}
 	list.add ( *pFred );
@@ -58,8 +57,8 @@ int main ()
 	list.add(* new fred("D"));
 
 	{
-		tsSLIter<fred> iter ( list.first() );
-		while ( iter ) {
+		tsSLIter < fred > iter = list.firstIter();
+		while ( iter.valid () ) {
 			iter->show();
             ++iter;
 		}
@@ -71,17 +70,17 @@ int main ()
 	janeList.add(*pJane);	
 
 	{
-		tsSLIter<jane> iter ( janeList.first() );
-		while ( iter ) {
+		tsSLIter < jane > iter = janeList.firstIter ();
+		while ( iter.valid () ) {
 			iter->show();
             ++iter;
 		}
 	}
 
 	{
-		tsSLIter <fred> iter ( list.first () );
-		while ( iter ) {
-			iter->show();
+		tsSLIter < fred > iter = list.firstIter ();
+		while ( iter.valid () ) {
+			iter->show ();
             iter++;
 		}
 	}
@@ -89,8 +88,8 @@ int main ()
     while ( list.get () );
 
 	{
-		tsSLIter<fred> iter (list.first());
-        assert ( ! iter );
+		tsSLIter < fred > iter = list.firstIter ();
+        assert ( ! iter.valid () );
 	}
 
 	return 0;

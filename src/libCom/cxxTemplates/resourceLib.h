@@ -526,7 +526,7 @@ resTable<T,ID>::~resTable()
 //
 template <class T, class ID>
 inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
-    iter ( tableIn.pTable[0].first () ), index (1), table ( tableIn ) {} 
+    iter ( tableIn.pTable[0].firstIter () ), index (1), table ( tableIn ) {} 
 
 //
 // resTableIter<T,ID>::next ()
@@ -534,8 +534,8 @@ inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) :
 template <class T, class ID> 
 T * resTableIter<T,ID>::next ()
 {
-    if ( this->iter ) {
-        T *p = this->iter;
+    if ( this->iter.valid () ) {
+        T *p = this->iter.pointer ();
         this->iter++;
         return p;
     }
@@ -543,9 +543,9 @@ T * resTableIter<T,ID>::next ()
         if ( this->index >= (1u<<this->table.hashIdNBits) ) {
             return 0;
         }
-        this->iter = tsSLIter<T> ( this->table.pTable[this->index++].first () );
-        if ( this->iter ) {
-            T *p = this->iter;
+        this->iter = tsSLIter<T> ( this->table.pTable[this->index++].firstIter () );
+        if ( this->iter.valid () ) {
+            T *p = this->iter.pointer ();
             this->iter++;
             return p;
         }

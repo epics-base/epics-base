@@ -45,8 +45,8 @@ int main ()
 
 	clk = clock();
 	{
-		tsSLIter <fred> iter ( list.first () );
-		while ( iter ) {
+		tsSLIter <fred> iter ( list.firstIter () );
+		while ( iter.valid () ) {
 			iter->inc ();
             iter++;
 		}
@@ -60,7 +60,7 @@ int main ()
 	pFred = new fred();
 	clk = clock();
 	{
-		tsSLIter <fred>	iter ( list.first () );
+		tsSLIter <fred>	iter ( list.firstIter () );
 		for ( i=0; i<LOOPCOUNT; i++ ) {
 			iter->inc();
 		}

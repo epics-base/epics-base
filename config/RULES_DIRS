@@ -1,65 +1,42 @@
 #
 #  $Id$
 #
-# Top level rules For Subdirectory Recursions
-#
-# $Log$
-#
+ 
+
+ARCHS= $(BUILD_ARCHS) host cross
+ACTIONS = clean inc install depends
+ 
+dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
+actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)
+ 
+dirActionArchTargets = $(foreach dir, $(DIRS), \
+                       $(foreach action, $(ACTIONS),\
+                       $(foreach arch, $(ARCHS), \
+                       $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
+dirArchTargets += $(foreach dir, $(DIRS), \
+                  $(foreach arch, $(ARCHS),\
+                  $(dir)$(DIVIDER)$(arch)))
+dirActionTargets += $(foreach dir, $(DIRS), \
+                    $(foreach action, $(ACTIONS),\
+                    $(dir)$(DIVIDER)$(action)))
+actionArchTargets = $(foreach action, $(ACTIONS),\
+                    $(foreach arch, $(ARCHS), \
+                    $(action)$(DIVIDER)$(arch)))
 
 
 all:: inc install
 
-rebuild:: clean uninstall all 
-
-$(DIRS) ::
-	$(MAKE) -C $@ 
-
-DO_X += inc
-DO_X += install
-DO_X += build 
-
-dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
-actionPart = $(word 2, $(subst $(DIVIDER), ,$@))
-buildPart = $(word 3, $(subst $(DIVIDER), ,$@))
+rebuild:: clean uninstall all
  
-hostDirTargets = $(foreach x, $(DO_X),\
-	 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)host))
-crossDirTargets += $(foreach x, $(DO_X),\
-		$(foreach dir, $(DIRS), $(dir)$(DIVIDER)$(x)$(DIVIDER)cross))
+$(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
+	$(MAKE) -C $(dirPart) $(actionArchPart)
 
-host :: $(hostDirTargets)
-
-cross :: $(crossDirTargets)
-
-$(hostDirTargets) $(crossDirTargets) ::
-	$(MAKE) -C $(dirPart) $(actionPart)$(DIVIDER)$(buildPart)
-
-fakeHost =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)host)
-fakeCross =  $(foreach dir, $(DIRS), $(dir)$(DIVIDER)<fake>$(DIVIDER)cross)
-
-inc:: inc$(DIVIDER)host inc$(DIVIDER)cross
-inc$(DIVIDER)host :: $(subst <fake>,inc,$(fakeHost)) 
-inc$(DIVIDER)cross :: $(subst <fake>,inc,$(fakeCross)) 
-
-install :: install$(DIVIDER)host install$(DIVIDER)cross
-install$(DIVIDER)host :: $(subst <fake>,install,$(fakeHost)) 
-install$(DIVIDER)cross :: $(subst <fake>,install,$(fakeCross)) 
-
-build :: build$(DIVIDER)host build$(DIVIDER)cross
-build$(DIVIDER)host :: $(subst <fake>,build,$(fakeHost)) 
-build$(DIVIDER)cross :: $(subst <fake>,build,$(fakeCross)) 
-
-clean :: $(addsuffix $(DIVIDER)clean, $(DIRS)) 
-%$(DIVIDER)clean:
-	$(MAKE) -C $* clean 
-
-depends :: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)depends)
-%$(DIVIDER)depends :
-	$(MAKE) -C $* depends
+$(ARCHS) $(ACTIONS) $(actionArchTargets):%: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
+ 
 
 .PHONY : $(DIRS)
-.PHONY : host cross
-.PHONY : $(hostDirTargets) $(crossDirTargets)
-.PHONY : $(DO_X)
-.PHONY : all clean depends
+.PHONY : $(ARCHS) $(ACTIONS)
+.PHONY : $(dirActionTargets) $(dirArchTargets)
+.PHONY : $(dirActionArchTargets)
+.PHONY : $(actionArchTargets)
 

@@ -65,9 +65,12 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 /* (epicsThreadId)0 is guaranteed to be an invalid thread id */
 typedef struct epicsThreadOSD *epicsThreadId;
 
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm);
+epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
+    const char * name, unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void * parm );
+epicsShareFunc epicsThreadId epicsShareAPI epicsThreadMustCreate (
+    const char * name, unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void * parm ); 
 epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadResume(epicsThreadId id);
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPriority(
@@ -116,16 +119,14 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet(epicsThreadPrivateId);
 
 #ifdef __cplusplus
 
-#include "locationException.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 
-class epicsThreadRunable {
+class epicsShareClass epicsThreadRunable {
 public:
-    epicsShareFunc virtual ~epicsThreadRunable ();
+    virtual ~epicsThreadRunable () = 0;
     virtual void run () = 0;
-    epicsShareFunc virtual void stop ();
-    epicsShareFunc virtual void show ( unsigned int level ) const;
+    virtual void show ( unsigned int level ) const;
 };
 
 extern "C" void epicsThreadCallEntryPoint ( void * );
@@ -134,29 +135,28 @@ class epicsShareClass epicsThread {
 public:
     epicsThread ( epicsThreadRunable &,const char *name, unsigned int stackSize,
         unsigned int priority=epicsThreadPriorityLow );
-    ~epicsThread ();
-    void start();
-    void exitWait ();
-    bool exitWait (const double delay ); 
-    void exitWaitRelease (); /* noop if not called by managed thread */
+    ~epicsThread () throw ();
+    void start () throw ();
+    void exitWait () throw ();
+    bool exitWait ( const double delay ) throw (); 
     static void exit ();
-    void resume ();
-    void getName ( char * name, size_t size ) const;
-    epicsThreadId getId () const;
-    unsigned int getPriority () const;
-    void setPriority (unsigned int);
-    bool priorityIsEqual (const epicsThread &otherThread) const;
-    bool isSuspended () const;
-    bool isCurrentThread () const;
-    bool operator == (const epicsThread &rhs) const;
+    void resume () throw ();
+    void getName ( char * name, size_t size ) const throw ();
+    epicsThreadId getId () const throw ();
+    unsigned int getPriority () const throw ();
+    void setPriority ( unsigned int ) throw ();
+    bool priorityIsEqual ( const epicsThread & ) const throw ();
+    bool isSuspended () const throw ();
+    bool isCurrentThread () const throw ();
+    bool operator == ( const epicsThread & ) const throw ();
     /* these operate on the current thread */
-    static void suspendSelf ();
-    static void sleep (double seconds);
+    static void suspendSelf () throw ();
+    static void sleep (double seconds) throw ();
     /* static epicsThread & getSelf (); */
-    static const char * getNameSelf ();
-    static bool isOkToBlock () ;
-    static void setOkToBlock(bool isOkToBlock) ;
-    class mustBeCalledByManagedThread {}; /* exception */
+    static const char * getNameSelf () throw ();
+    static bool isOkToBlock () throw ();
+    static void setOkToBlock ( bool isOkToBlock ) throw ();
+    class unableToCreateThread; /* exception payload */
 private:
     epicsThreadRunable & runable;
     epicsThreadId id;
@@ -168,22 +168,29 @@ private:
     bool cancel;
     bool terminated;
 
-    bool beginWait ();
+    bool beginWait () throw ();
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
 
-    class exitException {};
+    class exitException; /* exception payload */
+};
+
+class epicsShareClass epicsThreadPrivateBase {
+public:
+    class unableToCreateThreadPrivate; /* exception */
+protected:
+    static void throwUnableToCreateThreadPrivate ();
 };
 
 template < class T >
-class epicsThreadPrivate {
+class epicsThreadPrivate : 
+    private epicsThreadPrivateBase {
 public:
     epicsThreadPrivate ();
     ~epicsThreadPrivate ();
-    T * get () const;
-    void set (T *);
-    class unableToCreateThreadPrivate {}; /* exception */
+    T * get () const throw ();
+    void set (T *) throw ();
 private:
     epicsThreadPrivateId id;
 };
@@ -198,8 +205,8 @@ template <class T>
 inline epicsThreadPrivate<T>::epicsThreadPrivate ()
 {
     this->id = epicsThreadPrivateCreate ();
-    if (this->id == 0) {
-        throwWithLocation ( unableToCreateThreadPrivate () );
+    if ( this->id == 0 ) {
+        epicsThreadPrivateBase::throwUnableToCreateThreadPrivate ();
     }
 }
 

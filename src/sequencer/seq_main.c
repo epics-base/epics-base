@@ -41,6 +41,7 @@ LOCAL	VOID copy_sprog(SPROG *, SPROG *);
 LOCAL	VOID init_sprog(SPROG *);
 LOCAL	VOID init_sscb(SPROG *);
 LOCAL	VOID seq_logInit(SPROG *);
+LOCAL	VOID seq_log(SPROG *);
 
 #else
 /* Archaic (i.e. Sun) functional prototypes */
@@ -49,6 +50,7 @@ LOCAL	VOID copy_sprog();
 LOCAL	VOID init_sprog();
 LOCAL	VOID init_sscb();
 LOCAL	VOID seq_logInit();
+LOCAL	VOID seq_log();
 #endif
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)
@@ -472,7 +474,7 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	/* If this is an NSF file flush the buffer */
 	if (fd != ioGlobalStdGet(1) )
 	{
-		ioctl(fd, FIOSYNC);
+		ioctl(fd, FIOSYNC, 0);
 	}
 	semGive(pSP->logSemId);
 	return;
@@ -546,7 +548,7 @@ SPROG		*pSP;
 	printf("  task pri=%d\n", pSP->task_priority);
 	printf("  number of state sets=%d\n", pSP->nss);
 	printf("  number of channels=%d\n", pSP->nchan);
-	printf("  options:
+	printf("  options:");
 	printf("    async=%d, debug=%d, conn=%d, reent=%d, newef=%d\n",
 	 seq_optGet(pSP, 'a'), seq_optGet(pSP, 'd'), seq_optGet(pSP, 'c'),
 	 seq_optGet(pSP, 'r'), seq_optGet(pSP, 'e'));

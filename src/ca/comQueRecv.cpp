@@ -14,8 +14,8 @@
  *	johill@lanl.gov
  */
 
-#include <iocinf.h>
-#include <comBuf_IL.h>
+#include "iocinf.h"
+#include "comBuf_IL.h"
 
 comQueRecv::~comQueRecv ()
 {

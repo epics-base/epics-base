@@ -220,11 +220,6 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 
     piiu->versionMessage ( piiu->priority() );
 
-    {
-        callbackAutoMutex autoMutex ( *piiu->pCAC() );
-        piiu->pCAC()->notifyNewFD ( piiu->sock );
-    }
-
     if ( piiu->state == iiu_connected ) {
         unsigned priorityOfSend = cac::lowestPriorityLevelAbove 
             ( piiu->pCAC()->getInitializingThreadsPriority() );
@@ -468,19 +463,33 @@ tcpiiu::tcpiiu ( cac & cac, double connectionTimeout,
     }
 
     memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
+}
+
+// this must always be called by the udp thread when it holds 
+// the callback lock.
+bool tcpiiu::start ()
+{
+    // notify before recv thread starts because tcpiiu can
+    // vanish at any time after that. Also, we must register
+    // now from the udp thread while we hold the callback
+    // lock so that single threaded codes that dont poll will
+    // call ca_pend_event() when claim messages come back
+    //
+    // this is always called by the udp thread when it holds 
+    // the callback lock.
+    this->pCAC()->notifyNewFD ( this->sock );
 
     unsigned priorityOfRecv = cac::highestPriorityLevelBelow 
         ( this->pCAC()->getInitializingThreadsPriority() );
 
     epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-recv", priorityOfRecv,
             epicsThreadGetStackSize ( epicsThreadStackBig ), 
-            cacRecvThreadTCP, this);
+            cacRecvThreadTCP, this );
     if ( tid == 0 ) {
         this->printf ("CA: unable to create CA client receive thread\n");
-        cac.releaseSmallBufferTCP ( this->pCurData );
-        socket_close ( this->sock );
-        throw std::bad_alloc ();
+        return false;
     }
+    return true;
 }
 
 /*
@@ -677,11 +686,6 @@ tcpiiu::~tcpiiu ()
             this->pCAC()->releaseLargeBufferTCP ( this->pCurData );
         }
     }
-}
-
-void tcpiiu::destroy ()
-{
-    delete this;
 }
 
 bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const

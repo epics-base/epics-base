@@ -159,8 +159,8 @@ public:
 
     cacChannel ( cacChannelNotify & );
     cacChannelNotify & notify () const;
-    virtual ~cacChannel () = 0;
-    virtual const char *pName () const = 0;
+    virtual void destroy () = 0;
+    virtual const char * pName () const = 0; // not thread safe
     virtual void show ( unsigned level ) const = 0;
     virtual void initiateConnect () = 0;
     virtual ioStatus read ( unsigned type, arrayElementCount count, 
@@ -181,8 +181,7 @@ public:
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
     virtual void hostName (
-        char *pBuf, unsigned bufLength ) const; // defaults to local host name
-
+        char * pBuf, unsigned bufLength ) const; // defaults to local host name
     virtual const char * pHostName () const; 
 
     // exceptions
@@ -198,10 +197,17 @@ public:
     class msgBodyCacheTooSmall {}; // hopefully this one goes away in the future
     class requestTimedOut {};
 
+protected:
+    virtual ~cacChannel () = 0;
+
 private:
     cacChannelNotify & callback;
 	cacChannel ( const cacChannel & );
 	cacChannel & operator = ( const cacChannel & );
+    void * operator new ( size_t );
+    void * operator new [] ( size_t );
+    void operator delete ( void * );
+    void operator delete [] ( void * );
 };
 
 class cacNotify { // X aCC 655
@@ -244,7 +250,7 @@ private:
 };
 
 template < class T > class epicsSingleton;
-epicsShareExtern epicsSingleton < cacServiceList > pGlobalServiceListCAC;
+epicsShareExtern epicsSingleton < cacServiceList > globalServiceListCAC;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService );
 

@@ -24,11 +24,11 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
-
-epicsSingleton < tsFreeList < class getCallback, 1024 > > getCallback::pFreeList;
 
 getCallback::getCallback ( oldChannelNotify &chanIn, 
     caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
@@ -43,7 +43,7 @@ getCallback::~getCallback ()
 void getCallback::completion (
     unsigned type, arrayElementCount count, const void *pData )
 {
-    struct event_handler_args   args;
+    struct event_handler_args args;
     args.usr = this->pPrivate;
     args.chid = &this->chan;
     args.type = type;
@@ -51,7 +51,7 @@ void getCallback::completion (
     args.status = ECA_NORMAL;
     args.dbr = pData;
     ( *this->pFunc ) ( args );
-    delete this;
+    this->chan.getClientCtx().destroyGetCallback ( *this );
 }
 
 void getCallback::exception (
@@ -59,7 +59,7 @@ void getCallback::exception (
     unsigned type, arrayElementCount count )
 {
     if ( status != ECA_CHANDESTROY ) {
-        struct event_handler_args   args;
+        struct event_handler_args args;
         args.usr = this->pPrivate;
         args.chid = &this->chan;
         args.type = type;
@@ -68,6 +68,13 @@ void getCallback::exception (
         args.dbr = 0;
         ( *this->pFunc ) ( args );
     }
-    delete this;
+    this->chan.getClientCtx().destroyGetCallback ( *this );
 }
+
+void getCallback::operator delete ( void *pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
+
 

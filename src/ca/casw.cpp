@@ -31,8 +31,29 @@
 #include "udpiiu.h"
 #include "inetAddrID.h"
 
+// using a wrapper class around the free list avoids
+// Tornado 2.0.1 GNU compiler bugs
+class bheFreeStoreMgr : public bheMemoryManager {
+public:
+    void * allocate ( size_t );
+    void release ( void * );
+private:
+    tsFreeList < class bhe, 0x100 > freeList;
+};
+
+void * bheFreeStoreMgr::allocate ( size_t size )
+{
+    return freeList.allocate ( size );
+}
+
+void bheFreeStoreMgr::release ( void * pCadaver )
+{
+    freeList.release ( pCadaver );
+}
+
 int main ( int argc, char ** argv )
 {
+    bheFreeStoreMgr bheFreeList;
     epicsTime programBeginTime = epicsTime::getCurrent ();
     bool validCommandLine = false;
     unsigned interest = 0u;
@@ -230,10 +251,12 @@ int main ( int argc, char ** argv )
                      * time that we have seen a server's beacon
                      * shortly after the program started up)
                      */
-                    pBHE = new bhe ( currentTime, beaconNumber, ina );
+                    pBHE = new ( bheFreeList ) 
+                        bhe ( currentTime, beaconNumber, ina );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
-                            pBHE->destroy ();
+                            pBHE->~bhe ();
+                            bheFreeList.release ( pBHE );
                         }
                     }
                 }

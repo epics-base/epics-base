@@ -19,7 +19,7 @@
  *  Author: Jeff Hill
  */
 
-
+#include <stdexcept>
 #include <limits.h>
 #include <float.h>
 
@@ -29,18 +29,6 @@
 #include "iocinf.h"
 #include "virtualCircuit.h"
 #include "bhe.h"
-
-epicsSingleton < tsFreeList < class bhe, 1024 > > bhe::pFreeList;
-
-void * bhe::operator new ( size_t size )
-{ 
-    return bhe::pFreeList->allocate ( size );
-}
-
-void bhe::operator delete ( void *pCadaver, size_t size )
-{ 
-    bhe::pFreeList->release ( pCadaver, size );
-}
 
 /*
  * set average to -1.0 so that when the next beacon
@@ -236,12 +224,7 @@ void bhe::show ( unsigned /* level */ ) const
         static_cast <const void *> ( this ), this->averagePeriod );
 }
 
-void bhe::destroy ()
-{
-    delete this;
-}
-
-double bhe::period () const
+double bhe::period () const throw ()
 {
     return this->averagePeriod;
 }
@@ -262,4 +245,23 @@ void bhe::unregisterIIU ( tcpiiu & iiu )
     this->timeStamp = epicsTime();
     this->averagePeriod = - DBL_MAX;
 }
+
+void bhe::operator delete ( void * )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete?" );
+}
+
+void * bheFreeStore::allocate ( size_t size )
+{
+    return freeList.allocate ( size );
+}
+
+void bheFreeStore::release ( void * pCadaver )
+{
+    freeList.release ( pCadaver );
+}
+
+epicsShareFunc bheMemoryManager::~bheMemoryManager () {}
+
 

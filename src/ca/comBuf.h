@@ -32,148 +32,164 @@
 #include "epicsAssert.h"
 #include "epicsTypes.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 #include "tsDLList.h"
 #include "osiWireFormat.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 static const unsigned comBufSize = 0x4000;
 
-class wireSendAdapter {         // X aCC 655
+// this wrapper avoids Tornado 2.0.1 compiler bugs
+class comBufMemoryManager {
 public:
-    virtual unsigned sendBytes ( const void *pBuf, 
-        unsigned nBytesInBuf ) = 0;
+    virtual ~comBufMemoryManager ();
+    virtual void * allocate ( size_t ) 
+        throw ( std::bad_alloc ) = 0;
+    virtual void release ( void * ) 
+        throw () = 0;
 };
 
-class wireRecvAdapter {         // X aCC 655
+class wireSendAdapter { // X aCC 655
+public:
+    virtual unsigned sendBytes ( const void *pBuf, 
+        unsigned nBytesInBuf ) throw () = 0;
+};
+
+class wireRecvAdapter { // X aCC 655
 public:
     virtual unsigned recvBytes ( void *pBuf, 
-        unsigned nBytesInBuf ) = 0;
+        unsigned nBytesInBuf ) throw () = 0;
 };
 
 class comBuf : public tsDLNode < comBuf > {
 public:
-    comBuf ();
-    void destroy ();
-    unsigned unoccupiedBytes () const;
-    unsigned occupiedBytes () const;
-    unsigned uncommittedBytes () const;
-    static unsigned capacityBytes ();
-    void clear ();
-    unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
-    unsigned push ( comBuf & );
-    bool push ( const epicsInt8 & value );
-    bool push ( const epicsUInt8 & value );
-    bool push ( const epicsInt16 & value );
-    bool push ( const epicsUInt16 & value );
-    bool push ( const epicsInt32 & value );
-    bool push ( const epicsUInt32 & value );
-    bool push ( const epicsFloat32 & value );
-    bool push ( const epicsFloat64 & value );
-    bool push ( const epicsOldString & value );
-    unsigned push ( const epicsInt8 *pValue, unsigned nElem );
-    unsigned push ( const epicsUInt8 *pValue, unsigned nElem );
-    unsigned push ( const epicsInt16 *pValue, unsigned nElem );
-    unsigned push ( const epicsUInt16 *pValue, unsigned nElem );
-    unsigned push ( const epicsInt32 *pValue, unsigned nElem );
-    unsigned push ( const epicsUInt32 *pValue, unsigned nElem );
-    unsigned push ( const epicsFloat32 *pValue, unsigned nElem );
-    unsigned push ( const epicsFloat64 *pValue, unsigned nElem );
-    unsigned push ( const epicsOldString *pValue, unsigned nElem );
-    void commitIncomming ();
-    void clearUncommittedIncomming ();
-    bool copyInAllBytes ( const void *pBuf, unsigned nBytes );
-    unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
-    bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
-    unsigned removeBytes ( unsigned nBytes );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-    bool flushToWire ( wireSendAdapter & );
-    unsigned fillFromWire ( wireRecvAdapter & );
-    epicsUInt8 popUInt8 ();
-    epicsUInt16 popUInt16 ();
-    epicsUInt32 popUInt32 ();
-    static void throwInsufficentBytesException ();
     class insufficentBytesAvailable {};
-protected:
-    ~comBuf ();
+    comBuf () throw();
+    unsigned unoccupiedBytes () const throw();
+    unsigned occupiedBytes () const throw();
+    unsigned uncommittedBytes () const throw();
+    static unsigned capacityBytes () throw();
+    void clear () throw ();
+    unsigned copyInBytes ( const void *pBuf, unsigned nBytes ) throw();
+    unsigned push ( comBuf & ) throw();
+    bool push ( const epicsInt8 & value ) throw();
+    bool push ( const epicsUInt8 & value ) throw();
+    bool push ( const epicsInt16 & value ) throw();
+    bool push ( const epicsUInt16 & value ) throw();
+    bool push ( const epicsInt32 & value ) throw();
+    bool push ( const epicsUInt32 & value ) throw();
+    bool push ( const epicsFloat32 & value ) throw();
+    bool push ( const epicsFloat64 & value ) throw();
+    bool push ( const epicsOldString & value ) throw();
+    unsigned push ( const epicsInt8 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsUInt8 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsInt16 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsUInt16 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsInt32 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsUInt32 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsFloat32 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsFloat64 *pValue, unsigned nElem ) throw();
+    unsigned push ( const epicsOldString *pValue, unsigned nElem ) throw();
+    void commitIncomming () throw();
+    void clearUncommittedIncomming () throw();
+    bool copyInAllBytes ( const void *pBuf, unsigned nBytes ) throw();
+    unsigned copyOutBytes ( void *pBuf, unsigned nBytes ) throw();
+    bool copyOutAllBytes ( void *pBuf, unsigned nBytes ) throw();
+    unsigned removeBytes ( unsigned nBytes ) throw();
+    bool flushToWire ( wireSendAdapter & ) throw ();
+    unsigned fillFromWire ( wireRecvAdapter & ) throw ();
+    epicsUInt8 popUInt8 ()
+        throw ( comBuf::insufficentBytesAvailable );
+    epicsUInt16 popUInt16 ()
+        throw ( comBuf::insufficentBytesAvailable );
+    epicsUInt32 popUInt32 () 
+        throw ( comBuf::insufficentBytesAvailable );
+    static void throwInsufficentBytesException ()
+        throw ( comBuf::insufficentBytesAvailable );
+    void * operator new ( size_t size, 
+        comBufMemoryManager  & ) throw ( std::bad_alloc );
+#   ifdef CXX_PLACEMENT_DELETE
+    void operator delete ( void *, 
+        comBufMemoryManager & ) throw ();
+#   endif
 private:
     unsigned commitIndex;
     unsigned nextWriteIndex;
     unsigned nextReadIndex;
     epicsUInt8 buf [ comBufSize ];
-    unsigned unoccupiedElem ( unsigned elemSize, unsigned nElem );
-    unsigned occupiedElem ( unsigned elemSize, unsigned nElem );
-    static epicsSingleton < tsFreeList < class comBuf, 0x20 > > pFreeList;
+    unsigned unoccupiedElem ( unsigned elemSize, unsigned nElem ) throw ();
+    unsigned occupiedElem ( unsigned elemSize, unsigned nElem ) throw ();
+    void * operator new ( size_t size ) throw ( std::bad_alloc );
+    void operator delete ( void * ) throw ( std::logic_error );
+    void * operator new [] ( size_t size ) throw ( std::bad_alloc );
+    void operator delete [] ( void * ) throw ( std::logic_error );
 };
 
-inline comBuf::comBuf () : commitIndex ( 0u ),
+inline void * comBuf::operator new ( size_t size, 
+    comBufMemoryManager & mgr ) 
+        throw ( std::bad_alloc )
+{
+    return mgr.allocate ( size );
+}
+    
+#ifdef CXX_PLACEMENT_DELETE
+inline void comBuf::operator delete ( void * pCadaver, 
+    comBufMemoryManager & mgr ) throw ()
+{
+    mgr.release ( pCadaver );
+}
+#endif
+
+inline comBuf::comBuf () throw () : commitIndex ( 0u ),
     nextWriteIndex ( 0u ), nextReadIndex ( 0u )
 {
 }
 
-inline comBuf::~comBuf ()
-{
-}
-
-inline void comBuf::destroy ()
-{
-    delete this;
-}
-
-inline void comBuf::clear ()
+inline void comBuf::clear () throw ()
 {
     this->commitIndex = 0u;
     this->nextWriteIndex = 0u;
     this->nextReadIndex = 0u;
 }
 
-inline void * comBuf::operator new ( size_t size )
-{
-    return comBuf::pFreeList->allocate ( size );
-}
-    
-inline void comBuf::operator delete ( void *pCadaver, size_t size )
-{
-    comBuf::pFreeList->release ( pCadaver, size );
-}
-
-inline unsigned comBuf::unoccupiedBytes () const
+inline unsigned comBuf::unoccupiedBytes () const throw ()
 {
     return sizeof ( this->buf ) - this->nextWriteIndex;
 }
 
-inline unsigned comBuf::occupiedBytes () const
+inline unsigned comBuf::occupiedBytes () const throw ()
 {
     return this->commitIndex - this->nextReadIndex;
 }
 
-inline unsigned comBuf::uncommittedBytes () const
+inline unsigned comBuf::uncommittedBytes () const throw ()
 {
     return this->nextWriteIndex - this->commitIndex;
 }
 
-inline unsigned comBuf::push ( comBuf & bufIn )
+inline unsigned comBuf::push ( comBuf & bufIn ) throw ()
 {
-    unsigned nBytes = this->copyInBytes ( &bufIn.buf[bufIn.nextReadIndex], 
-                                bufIn.commitIndex - bufIn.nextReadIndex );
+    unsigned nBytes = this->copyInBytes ( 
+        & bufIn.buf[ bufIn.nextReadIndex ], 
+        bufIn.commitIndex - bufIn.nextReadIndex );
     bufIn.nextReadIndex += nBytes;
     return nBytes;
 }
 
-inline unsigned comBuf::capacityBytes ()
+inline unsigned comBuf::capacityBytes () throw ()
 {
     return comBufSize;
 }
 
-inline unsigned comBuf::fillFromWire ( wireRecvAdapter & wire )
+inline unsigned comBuf::fillFromWire ( wireRecvAdapter & wire ) throw ()
 {
-    unsigned nNewBytes = wire.recvBytes ( &this->buf[this->nextWriteIndex], 
-                    sizeof ( this->buf ) - this->nextWriteIndex );
+    unsigned nNewBytes = wire.recvBytes ( 
+        & this->buf[this->nextWriteIndex], 
+        sizeof ( this->buf ) - this->nextWriteIndex );
     this->nextWriteIndex += nNewBytes;
     return nNewBytes;
 }
 
-inline unsigned comBuf::unoccupiedElem ( unsigned elemSize, unsigned nElem )
+inline unsigned comBuf::unoccupiedElem ( unsigned elemSize, unsigned nElem ) throw ()
 {
     unsigned avail = this->unoccupiedBytes ();
     if ( elemSize * nElem > avail ) {
@@ -182,7 +198,7 @@ inline unsigned comBuf::unoccupiedElem ( unsigned elemSize, unsigned nElem )
     return nElem;
 }
 
-inline bool comBuf::push ( const epicsInt8 & value )
+inline bool comBuf::push ( const epicsInt8 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -192,7 +208,7 @@ inline bool comBuf::push ( const epicsInt8 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt8 & value )
+inline bool comBuf::push ( const epicsUInt8 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -201,7 +217,7 @@ inline bool comBuf::push ( const epicsUInt8 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsInt16 & value )
+inline bool comBuf::push ( const epicsInt16 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -213,7 +229,7 @@ inline bool comBuf::push ( const epicsInt16 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt16 & value )
+inline bool comBuf::push ( const epicsUInt16 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
          return false;
@@ -225,7 +241,7 @@ inline bool comBuf::push ( const epicsUInt16 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsInt32 & value )
+inline bool comBuf::push ( const epicsInt32 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -241,7 +257,7 @@ inline bool comBuf::push ( const epicsInt32 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsUInt32 & value )
+inline bool comBuf::push ( const epicsUInt32 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -257,7 +273,7 @@ inline bool comBuf::push ( const epicsUInt32 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsFloat32 & value )
+inline bool comBuf::push ( const epicsFloat32 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
          return false;
@@ -268,7 +284,7 @@ inline bool comBuf::push ( const epicsFloat32 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsFloat64 & value )
+inline bool comBuf::push ( const epicsFloat64 & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -279,7 +295,7 @@ inline bool comBuf::push ( const epicsFloat64 & value )
     return true;
 }
 
-inline bool comBuf::push ( const epicsOldString & value )
+inline bool comBuf::push ( const epicsOldString & value ) throw ()
 {
     if ( this->unoccupiedBytes () < sizeof ( value ) ) {
         return false;
@@ -289,17 +305,17 @@ inline bool comBuf::push ( const epicsOldString & value )
     return true;
 }
 
-inline unsigned comBuf::push ( const epicsInt8 *pValue, unsigned nElem )
+inline unsigned comBuf::push ( const epicsInt8 *pValue, unsigned nElem ) throw ()
 {
     return copyInBytes ( pValue, nElem );
 }
 
-inline unsigned comBuf::push ( const epicsUInt8 *pValue, unsigned nElem )
+inline unsigned comBuf::push ( const epicsUInt8 *pValue, unsigned nElem ) throw ()
 {
     return copyInBytes ( pValue, nElem );
 }
 
-inline unsigned comBuf::push ( const epicsOldString *pValue, unsigned nElem )
+inline unsigned comBuf::push ( const epicsOldString *pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     unsigned size = nElem * sizeof ( *pValue );
@@ -308,7 +324,7 @@ inline unsigned comBuf::push ( const epicsOldString *pValue, unsigned nElem )
     return nElem;
 }
 
-inline unsigned comBuf::occupiedElem ( unsigned elemSize, unsigned nElem )
+inline unsigned comBuf::occupiedElem ( unsigned elemSize, unsigned nElem ) throw ()
 {
     unsigned avail = this->occupiedBytes ();
     if ( elemSize * nElem > avail ) {
@@ -317,17 +333,17 @@ inline unsigned comBuf::occupiedElem ( unsigned elemSize, unsigned nElem )
     return nElem;
 }
 
-inline void comBuf::commitIncomming ()
+inline void comBuf::commitIncomming () throw ()
 {
     this->commitIndex = this->nextWriteIndex;
 }
 
-inline void comBuf::clearUncommittedIncomming ()
+inline void comBuf::clearUncommittedIncomming () throw ()
 {
     this->nextWriteIndex = this->commitIndex;
 }
 
-inline bool comBuf::copyInAllBytes ( const void *pBuf, unsigned nBytes )
+inline bool comBuf::copyInAllBytes ( const void *pBuf, unsigned nBytes ) throw ()
 {
     if ( nBytes <= this->unoccupiedBytes () ) {
         memcpy ( & this->buf[this->nextWriteIndex], pBuf, nBytes );
@@ -337,7 +353,7 @@ inline bool comBuf::copyInAllBytes ( const void *pBuf, unsigned nBytes )
     return false;
 }
 
-inline unsigned comBuf::copyInBytes ( const void *pBuf, unsigned nBytes )
+inline unsigned comBuf::copyInBytes ( const void *pBuf, unsigned nBytes ) throw ()
 {
     if ( nBytes > 0u ) {
         unsigned available = this->unoccupiedBytes ();
@@ -350,7 +366,7 @@ inline unsigned comBuf::copyInBytes ( const void *pBuf, unsigned nBytes )
     return nBytes;
 }
 
-inline bool comBuf::copyOutAllBytes ( void * pBuf, unsigned nBytes )
+inline bool comBuf::copyOutAllBytes ( void * pBuf, unsigned nBytes ) throw ()
 {
     if ( nBytes <= this->occupiedBytes () ) {
         memcpy ( pBuf, &this->buf[this->nextReadIndex], nBytes);
@@ -360,7 +376,7 @@ inline bool comBuf::copyOutAllBytes ( void * pBuf, unsigned nBytes )
     return false;
 }
 
-inline unsigned comBuf::copyOutBytes ( void *pBuf, unsigned nBytes )
+inline unsigned comBuf::copyOutBytes ( void *pBuf, unsigned nBytes ) throw ()
 {
     unsigned occupied = this->occupiedBytes ();
     if ( nBytes > occupied ) {
@@ -371,7 +387,7 @@ inline unsigned comBuf::copyOutBytes ( void *pBuf, unsigned nBytes )
     return nBytes;
 }
 
-inline unsigned comBuf::removeBytes ( unsigned nBytes )
+inline unsigned comBuf::removeBytes ( unsigned nBytes ) throw ()
 {
     unsigned occupied = this->occupiedBytes ();
     if ( nBytes > occupied ) {
@@ -382,6 +398,7 @@ inline unsigned comBuf::removeBytes ( unsigned nBytes )
 }
 
 inline epicsUInt8 comBuf::popUInt8 ()
+    throw ( comBuf::insufficentBytesAvailable )
 {
     if ( this->occupiedBytes () < 1u ) {
         comBuf::throwInsufficentBytesException ();
@@ -390,6 +407,7 @@ inline epicsUInt8 comBuf::popUInt8 ()
 }
 
 inline epicsUInt16 comBuf::popUInt16 ()
+    throw ( comBuf::insufficentBytesAvailable )
 {
     if ( this->occupiedBytes () < 2u ) {
         comBuf::throwInsufficentBytesException ();
@@ -399,7 +417,8 @@ inline epicsUInt16 comBuf::popUInt16 ()
     return static_cast < epicsUInt16 > ( byte1 << 8u | byte2 );
 }
 
-inline epicsUInt32 comBuf::popUInt32 ()
+inline epicsUInt32 comBuf::popUInt32 () 
+    throw ( comBuf::insufficentBytesAvailable )
 {
     if ( this->occupiedBytes () < 4u ) {
         comBuf::throwInsufficentBytesException ();

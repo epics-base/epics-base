@@ -14,6 +14,8 @@
  *              (505) 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -24,17 +26,10 @@
 #include "cac.h"
 #include "sgAutoPtr.h"
 
-epicsSingleton < tsFreeList < struct CASG, 128 > > CASG::pFreeList;
-
 CASG::CASG ( ca_client_context &cacIn ) :
     client ( cacIn ), magic ( CASG_MAGIC )
 {
     client.installCASG ( *this );
-}
-
-void CASG::destroy ()
-{
-    delete this;
 }
 
 CASG::~CASG ()
@@ -243,24 +238,14 @@ void CASG::completionNotify ( syncGroupNotify & notify )
     }
 }
 
-void CASG::recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io )
+void CASG::recycleSyncGroupWriteNotify ( syncGroupWriteNotify & io )
 {
-    this->freeListWriteOP.release ( &io, sizeof ( io ) );
+    this->freeListWriteOP.release ( & io );
 }
 
-void CASG::recycleSyncGroupReadNotify ( syncGroupReadNotify &io )
+void CASG::recycleSyncGroupReadNotify ( syncGroupReadNotify & io )
 {
-    this->freeListReadOP.release ( &io, sizeof ( io ) );
-}
-
-void * CASG::operator new (size_t size)
-{
-    return CASG::pFreeList->allocate ( size );
-}
-
-void CASG::operator delete (void *pCadaver, size_t size)
-{
-    CASG::pFreeList->release ( pCadaver, size );
+    this->freeListReadOP.release ( & io );
 }
 
 int CASG::printf ( const char *pformat, ... )
@@ -289,6 +274,12 @@ void CASG::exception ( int status, const char *pContext,
 {
     this->client.exception ( status, pContext, pFileName, 
         lineNo, chan, type, count, op );
+}
+
+void CASG::operator delete ( void * pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
 

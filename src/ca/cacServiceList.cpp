@@ -30,7 +30,7 @@
 #include "epicsGuard.h"
 #include "cacIO.h"
 
-epicsShareDef epicsSingleton < cacServiceList > pGlobalServiceListCAC;
+epicsShareDef epicsSingleton < cacServiceList > globalServiceListCAC;
 
 cacServiceList::cacServiceList ()
 {

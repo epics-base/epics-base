@@ -30,8 +30,8 @@
 
 #include "tsDLList.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 #include "epicsTime.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -42,33 +42,74 @@
 #include "caProto.h"
 
 class tcpiiu;
+class bheMemoryManager;
+
+// using a pure abstract wrapper class around the free list avoids
+// Tornado 2.0.1 GNU compiler bugs
+class bheMemoryManager {
+public:
+    epicsShareFunc virtual ~bheMemoryManager ();
+    virtual void * allocate ( size_t ) = 0;
+    virtual void release ( void * ) = 0;
+};
 
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
-    epicsShareFunc bhe ( const epicsTime &initialTimeStamp, 
-        unsigned initialBeaconNumber, const inetAddrID &addr );
+    epicsShareFunc bhe ( const epicsTime & initialTimeStamp, 
+        unsigned initialBeaconNumber, const inetAddrID & addr ) throw ();
     epicsShareFunc ~bhe (); 
-    epicsShareFunc void destroy ();
-    epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
-                        const epicsTime & currentTime, ca_uint32_t beaconNumber, 
-                        unsigned protocolRevision );
-    epicsShareFunc double period () const;
+    epicsShareFunc bool updatePeriod ( 
+        const epicsTime & programBeginTime, 
+        const epicsTime & currentTime, ca_uint32_t beaconNumber, 
+        unsigned protocolRevision );
+    epicsShareFunc double period () const throw ();
     epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void registerIIU ( tcpiiu & );
     epicsShareFunc void unregisterIIU ( tcpiiu & );
-    epicsShareFunc void * operator new ( size_t size );
-    epicsShareFunc void operator delete ( void *pCadaver, size_t size );
+    epicsShareFunc void * operator new ( size_t size, 
+        bheMemoryManager & );
+#ifdef CXX_PLACEMENT_DELETE
+    epicsShareFunc void operator delete ( void *, 
+        bheMemoryManager & );
+#endif
 private:
     tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;
     double averagePeriod;
     ca_uint32_t lastBeaconNumber;
     void beaconAnomalyNotify ();
-    static epicsSingleton < tsFreeList < class bhe, 1024 > > pFreeList;
 	bhe ( const bhe & );
 	bhe & operator = ( const bhe & );
+    void * operator new ( size_t size );
+    epicsShareFunc void operator delete ( void * );
+    void * operator new [] ( size_t size );
+    void operator delete [] ( void * );
 };
+
+// using a wrapper class around the free list avoids
+// Tornado 2.0.1 GNU compiler bugs
+class bheFreeStore : public bheMemoryManager {
+public:
+    void * allocate ( size_t );
+    void release ( void * );
+private:
+    tsFreeList < class bhe, 0x100 > freeList;
+};
+
+inline void * bhe::operator new ( size_t size, 
+        bheMemoryManager & mgr )
+{ 
+    return mgr.allocate ( size );
+}
+
+#ifdef CXX_PLACEMENT_DELETE
+inline void bhe::operator delete ( void * pCadaver, 
+        bheMemoryManager & mgr )
+{ 
+    mgr.release ( pCadaver );
+}
+#endif
 
 #endif // ifdef bheh
 

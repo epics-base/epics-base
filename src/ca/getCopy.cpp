@@ -24,14 +24,14 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
-
-epicsSingleton < tsFreeList < class getCopy, 1024 > > getCopy::pFreeList;
 
 getCopy::getCopy ( ca_client_context &cacCtxIn, oldChannelNotify &chanIn, 
                   unsigned typeIn, arrayElementCount countIn, void *pValueIn ) :
@@ -50,11 +50,6 @@ void getCopy::cancel ()
     this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
 }
 
-void getCopy::destroy ()
-{
-    delete this;
-}
-
 void getCopy::completion ( unsigned typeIn, 
     arrayElementCount countIn, const void *pDataIn )
 {
@@ -68,7 +63,7 @@ void getCopy::completion ( unsigned typeIn,
             "bad data type match in get copy back response",
             typeIn, countIn);
     }
-    delete this;
+    this->cacCtx.destroyGetCopy ( *this );
 }
 
 void getCopy::exception (
@@ -79,7 +74,7 @@ void getCopy::exception (
             __FILE__, __LINE__, this->chan, this->type, 
             this->count, CA_OP_GET );
     }
-    delete this;
+    this->cacCtx.destroyGetCopy ( *this );
 }
 
 void getCopy::show ( unsigned level ) const
@@ -92,3 +87,10 @@ void getCopy::show ( unsigned level ) const
             this->ioSeqNo, static_cast <const void *> ( this->pValue ) );
     }
 }
+
+void getCopy::operator delete ( void *pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
+

@@ -36,6 +36,7 @@
 #include "comQueRecv.h"
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
+#include "hostNameCache.h"
 
 // a modified ca header with capacity for large arrays
 struct  caHdrLargeArray {
@@ -58,6 +59,7 @@ public:
     virtual ~tcpRecvThread ();
     void start ();
     void exitWait ();
+    void interruptSocketRecv ();
 private:
     epicsThread thread;
     class tcpiiu & iiu;
@@ -73,6 +75,7 @@ public:
     void start ();
     void exitWait ();
     void exitWaitRelease ();
+   void interruptSocketSend ();
 private:
     class tcpiiu & iiu;
     epicsThread thread;
@@ -84,9 +87,9 @@ class tcpiiu :
         public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
 public:
-    tcpiiu ( cac &cac, callbackMutex & cbMutex, double connectionTimeout, 
+    tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout, 
         epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
-        unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
+        comBufMemoryManager &, unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ( epicsGuard < callbackMutex > & );
@@ -126,7 +129,10 @@ public:
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
     void initiateCleanShutdown ( epicsGuard < cacMutex > & );
 
+    bool bytesArePendingInOS () const;
+
 private:
+    hostNameCache hostNameCacheInstance;
     tcpRecvThread recvThread;
     tcpSendThread sendThread;
     tcpRecvWatchdog recvDog;
@@ -137,7 +143,7 @@ private:
     caHdrLargeArray curMsg;
     arrayElementCount curDataMax;
     arrayElementCount curDataBytes;
-    epics_auto_ptr < hostNameCache > pHostNameCache;
+    comBufMemoryManager & comBufMemMgr;
     cac & cacRef;
     char * pCurData;
     unsigned minorProtocolVersion;
@@ -233,6 +239,16 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
 inline unsigned tcpiiu::channelCount ()
 {
     return this->channelList.count ();
+}
+
+inline void tcpRecvThread::interruptSocketRecv ()
+{
+    epicsSocketInterruptSystemCall ( this->thread.getId() );
+}
+
+inline void tcpSendThread::interruptSocketSend ()
+{
+    epicsSocketInterruptSystemCall ( this->thread.getId() );
 }
 
 #endif // ifdef virtualCircuith

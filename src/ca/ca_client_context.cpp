@@ -46,6 +46,56 @@ ca_client_context::~ca_client_context ()
     delete & this->clientCtx;
 }
 
+void ca_client_context::destroyChannel ( oldChannelNotify & chan )
+{
+    chan.~oldChannelNotify ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        oldChannelNotify::operator delete ( & chan, this->oldChannelNotifyFreeList );
+#   else
+        this->oldChannelNotifyFreeList.release ( & chan );
+#   endif
+}
+
+void ca_client_context::destroyGetCopy ( getCopy & gc )
+{
+    gc.~getCopy ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        getCopy::operator delete ( & gc, this->getCopyFreeList );
+#   else
+        this->getCopyFreeList.release ( & gc );
+#   endif
+}
+
+void ca_client_context::destroyGetCallback ( getCallback & gcb )
+{
+    gcb.~getCallback ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        getCallback::operator delete ( & gcb, this->getCallbackFreeList );
+#   else
+        this->getCallbackFreeList.release ( & gcb );
+#   endif
+}
+
+void ca_client_context::destroyPutCallback ( putCallback & pcb )
+{
+    pcb.~putCallback ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        putCallback::operator delete ( & pcb, this->putCallbackFreeList );
+#   else
+        this->putCallbackFreeList.release ( & pcb );
+#   endif
+}
+
+void ca_client_context::destroySubscription ( oldSubscription & os )
+{
+    os.~oldSubscription ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        oldSubscription::operator delete ( & os, this->subscriptionFreeList );
+#   else
+        this->subscriptionFreeList.release ( & os );
+#   endif
+}
+
 void ca_client_context::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
 {
     epicsGuard < ca_client_context_mutex > guard ( this->mutex );
@@ -225,21 +275,15 @@ void ca_client_context::attachToClientCtx ()
 
 void ca_client_context::incrementOutstandingIO ( unsigned ioSeqNoIn )
 {
+    epicsGuard < ca_client_context_mutex > guard ( this->mutex );
     if ( this->ioSeqNo == ioSeqNoIn ) {
-        epicsGuard < ca_client_context_mutex > guard ( this->mutex );
-        if ( this->ioSeqNo == ioSeqNoIn ) {
-            assert ( this->pndRecvCnt < UINT_MAX );
-            this->pndRecvCnt++;
-        }
+        assert ( this->pndRecvCnt < UINT_MAX );
+        this->pndRecvCnt++;
     }
 }
 
 void ca_client_context::decrementOutstandingIO ( unsigned ioSeqNoIn )
 {
-    if ( this->ioSeqNo != ioSeqNoIn ) {
-        return;
-    }
-
     bool signalNeeded;
     {
         epicsGuard < ca_client_context_mutex > guard ( this->mutex ); 

@@ -23,11 +23,10 @@
 
 #include <new>
 
-#include "epicsMemory.h"
 #include "epicsGuard.h"
 #include "epicsVersion.h"
 #include "osiProcess.h"
-#include "osiSigPipeIgnore.h"
+#include "epicsSignal.h"
 #include "envDefs.h"
 
 #define epicsExportSharedSymbols
@@ -43,6 +42,7 @@
 #include "udpiiu.h"
 #include "bhe.h"
 #include "net_convert.h"
+#include "autoPtrDestroy.h"
 
 static const char *id = "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" __DATE__;
 
@@ -137,6 +137,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
     cbMutex ( ! enablePreemptiveCallbackIn ),
+    globalServiceList ( globalServiceListCAC ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
     pUserName ( 0 ),
@@ -158,7 +159,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     try {
 	    long status;
 
-        installSigPipeIgnore ();
+        epicsSignalInstallSigPipeIgnore ();
 
         {
             char tmp[256];
@@ -272,7 +273,16 @@ cac::~cac ()
 
     delete [] this->pUserName;
 
-    this->beaconTable.traverse ( &bhe::destroy );
+    tsSLList < bhe > tmpBeaconList;
+    this->beaconTable.removeAll ( tmpBeaconList ); 
+    while ( bhe * pBHE = tmpBeaconList.get() ) {
+        pBHE->~bhe ();
+#       if defined ( CXX_PLACEMENT_DELETE ) && 0
+            bhe::operator delete ( pBHE, this->bheFreeList );
+#       else
+            this->bheFreeList.release ( pBHE );
+#       endif
+    }
 
     osiSockRelease ();
 
@@ -401,10 +411,16 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
          * time that we have seen a server's beacon
          * shortly after the program started up)
          */
-        pBHE = new bhe ( currentTime, beaconNumber, addr );
+        pBHE = new ( this->bheFreeList )
+                bhe ( currentTime, beaconNumber, addr );
         if ( pBHE ) {
             if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                pBHE->destroy ();
+                pBHE->~bhe ();
+#               if defined ( CXX_PLACEMENT_DELETE ) && 0
+                    bhe::operator delete ( pBHE, this->bheFreeList );
+#               else
+                    this->bheFreeList.release ( pBHE );
+#               endif
             }
         }
         return;
@@ -453,8 +469,6 @@ void cac::registerService ( cacService & service )
 cacChannel & cac::createChannel ( const char * pName, 
     cacChannelNotify & chan, cacChannel::priLev pri )
 {
-    cacChannel *pIO;
-
     if ( pri > cacChannel::priorityMax ) {
         throw cacChannel::badPriority ();
     }
@@ -463,24 +477,23 @@ cacChannel & cac::createChannel ( const char * pName,
         throw cacChannel::badString ();
     }
 
-    pIO = this->services.createChannel ( pName, chan, pri );
-    if ( ! pIO ) {
-        pIO = pGlobalServiceListCAC->createChannel ( pName, chan, pri );
-        if ( ! pIO ) {
-            if ( ! this->pudpiiu ) {
-                epicsGuard < cacMutex > guard ( this->mutex );
-                if ( ! this->pudpiiu ) {
-                    this->pudpiiu = new udpiiu ( this->timerQueue, this->cbMutex, *this );
-                }
-            }
+    autoPtrDestroy < cacChannel > 
+        pIO ( this->services.createChannel ( pName, chan, pri ) );
+    if ( pIO.get() == 0 ) {
+        pIO = this->globalServiceList->createChannel ( pName, chan, pri );
+        if ( pIO.get() == 0 ) {
             epicsGuard < cacMutex > guard ( this->mutex );
-            epics_auto_ptr < nciu > pNetChan 
-                ( new nciu ( *this, *this->pudpiiu, chan, pName, pri ) );
+            if ( ! this->pudpiiu ) {
+                this->pudpiiu = new udpiiu ( this->timerQueue, this->cbMutex, *this );
+            }
+            autoPtrDestroy < nciu > pNetChan 
+                ( new ( this->channelFreeList ) 
+                    nciu ( *this, *this->pudpiiu, chan, pName, pri ) );
             this->chanTable.add ( *pNetChan );
-            return *pNetChan.release ();
+            return * pNetChan.release ();
         }
     }
-    return *pIO;
+    return * pIO.release ();
 }
 
 void cac::repeaterSubscribeConfirmNotify ()
@@ -524,11 +537,10 @@ bool cac::lookupChannelAndTransferToTCP (
             if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
                 char acc[64];
                 pChan->getPIIU()->hostName ( acc, sizeof ( acc ) );
-                msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
-                    this->cbMutex, *this, pChan->pName (), acc, addr );
-                if ( pMsg ) {
-                    this->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
-                }
+                msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
+                    msgForMultiplyDefinedPV ( 
+                        this->cbMutex, *this, pChan->pName (), acc, addr );
+                this->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
             }
             return true;
         }
@@ -547,23 +559,13 @@ bool cac::lookupChannelAndTransferToTCP (
             try {
                 epics_auto_ptr < tcpiiu > pnewiiu ( new tcpiiu ( 
                             *this, this->cbMutex, this->connTMO, this->timerQueue,
-                            addr, minorVersionNumber, this->ipToAEngine,
-                            pChan->getPriority() ) );
-                if ( pnewiiu.get() == 0 ) {
-                    return true;
-                }
+                            addr, this->comBufMemMgr, minorVersionNumber, 
+                            this->ipToAEngine, pChan->getPriority() ) );
                 bhe * pBHE = this->beaconTable.lookup ( addr.ia );
                 if ( ! pBHE ) {
-                    epics_auto_ptr < bhe > pNewBHE ( new bhe ( epicsTime (), 0u, addr.ia ) );
-                    if ( pNewBHE.get () ) {
-                        if ( this->beaconTable.add ( *pNewBHE ) >= 0 ) {
-                            pBHE = pNewBHE.release ();
-                        }
-                        else {
-                            return true;
-                        }
-                    } 
-                    else {
+                    pBHE = new ( this->bheFreeList ) 
+                                        bhe ( epicsTime (), 0u, addr.ia );
+                    if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                         return true;
                     }
                 }
@@ -572,8 +574,11 @@ bool cac::lookupChannelAndTransferToTCP (
                 piiu = pnewiiu.release ();
                 newIIU = true;
             }
+            catch ( std::bad_alloc & ) {
+                return true;
+            }
             catch ( ... ) {
-                this->printf ( "CAC: Exception during virtual circuit creation\n" );
+                this->printf ( "CAC: Unexpected exception during virtual circuit creation\n" );
                 return true;
             }
         }
@@ -625,7 +630,7 @@ bool cac::lookupChannelAndTransferToTCP (
     return true;
 }
 
-void cac::uninstallChannel ( nciu & chan )
+void cac::destroyChannel ( nciu & chan )
 {
     tsDLList < baseNMIU > tmpList;
 
@@ -707,6 +712,14 @@ void cac::uninstallChannel ( nciu & chan )
             chan.getPIIU()->uninstallChan ( guard, chan );
         }
     }
+
+    // run channel's destructor and return it to the free list
+    chan.~nciu ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+        nciu::operator delete ( & chan, this->channelFreeList );
+#   else
+        this->channelFreeList.release ( & chan );
+#   endif
 }
 
 int cac::printf ( const char *pformat, ... ) const
@@ -1043,17 +1056,17 @@ void cac::disconnectAllIO ( epicsGuard < cacMutex > &locker, nciu & chan, bool e
 
 void cac::recycleReadNotifyIO ( netReadNotifyIO &io )
 {
-    this->freeListReadNotifyIO.release ( &io, sizeof ( io ) );
+    this->freeListReadNotifyIO.release ( & io );
 }
 
 void cac::recycleWriteNotifyIO ( netWriteNotifyIO &io )
 {
-    this->freeListWriteNotifyIO.release ( &io, sizeof ( io ) );
+    this->freeListWriteNotifyIO.release ( & io );
 }
 
 void cac::recycleSubscription ( netSubscription &io )
 {
-    this->freeListSubscription.release ( &io, sizeof ( io ) );
+    this->freeListSubscription.release ( & io );
 }
 
 cacChannel::ioid
@@ -1572,5 +1585,15 @@ void cac::initiateConnect ( nciu & chan )
 {
     assert ( this->pudpiiu );
     this->pudpiiu->installChannel ( chan );
+}
+
+void *cacComBufMemoryManager::allocate ( size_t size ) throw ( std::bad_alloc )
+{
+    return this->freeList.allocate ( size );
+}
+
+void cacComBufMemoryManager::release ( void * pCadaver ) throw ()
+{
+    return this->freeList.release ( pCadaver );
 }
 

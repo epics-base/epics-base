@@ -22,14 +22,14 @@
  *	johill@lanl.gov
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
 #include "comBuf.h"
 
-epicsSingleton < tsFreeList < class comBuf, 0x20 > > comBuf::pFreeList;
-
-bool comBuf::flushToWire ( wireSendAdapter & wire )
+bool comBuf::flushToWire ( wireSendAdapter & wire ) throw ()
 {
     unsigned occupied = this->occupiedBytes ();
     while ( occupied ) {
@@ -44,7 +44,7 @@ bool comBuf::flushToWire ( wireSendAdapter & wire )
     return true;
 }
 
-unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -56,7 +56,7 @@ unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -68,23 +68,7 @@ unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsInt32 * pValue, unsigned nElem )
-{
-    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
-    for ( unsigned i = 0u; i < nElem; i++ ) {
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
-    }
-    return nElem;
-}
-
-unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsInt32 * pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -100,7 +84,23 @@ unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem ) throw ()
+{
+    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
+    for ( unsigned i = 0u; i < nElem; i++ ) {
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
+    }
+    return nElem;
+}
+
+unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -111,7 +111,7 @@ unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem ) throw ()
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -124,7 +124,17 @@ unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem )
 
 // throwing the exception from a function that isnt inline 
 // shrinks the GNU compiled object code
-void comBuf::throwInsufficentBytesException ()
+void comBuf::throwInsufficentBytesException () 
+    throw ( insufficentBytesAvailable )
 {
     throw insufficentBytesAvailable ();
 }
+
+void comBuf::operator delete ( void *pCadaver ) 
+    throw ( std::logic_error )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
+
+comBufMemoryManager::~comBufMemoryManager () {}

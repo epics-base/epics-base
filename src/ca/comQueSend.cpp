@@ -80,29 +80,36 @@ const char cacNillBytes [] =
     0, 0, 0, 0
 };
 
-comQueSend::comQueSend ( wireSendAdapter & wireIn ) :
-    wire ( wireIn ), nBytesPending ( 0u )
+comQueSend::comQueSend ( wireSendAdapter & wireIn, 
+    comBufMemoryManager & comBufMemMgrIn ) throw () :
+        comBufMemMgr ( comBufMemMgrIn ), wire ( wireIn ), 
+            nBytesPending ( 0u )
 {
 }
 
-comQueSend::~comQueSend ()
+comQueSend::~comQueSend () throw ()
 {
     this->clear ();
 }
 
-void comQueSend::clear ()
+void comQueSend::clear () throw ()
 {
     comBuf *pBuf;
 
     while ( ( pBuf = this->bufs.get () ) ) {
         this->nBytesPending -= pBuf->occupiedBytes ();
-        pBuf->destroy ();
+        pBuf->~comBuf ();
+#       if defined ( CXX_PLACEMENT_DELETE ) && 0
+            comBuf::operator delete ( pBuf, this->comBufMemMgr );
+#       else
+            this->comBufMemMgr.release ( pBuf );
+#       endif
     }
     this->pFirstUncommited = tsDLIter < comBuf > ();
     assert ( this->nBytesPending == 0 );
 }
 
-void comQueSend::clearUncommitted ()
+void comQueSend::clearUncommitted () throw ()
 {
     while ( this->pFirstUncommited.valid() ) {
         tsDLIter < comBuf > next = this->pFirstUncommited;
@@ -110,38 +117,44 @@ void comQueSend::clearUncommitted ()
         this->pFirstUncommited->clearUncommittedIncomming ();
         if ( this->pFirstUncommited->occupiedBytes() == 0u ) {
             this->bufs.remove ( *this->pFirstUncommited );
-            this->pFirstUncommited->destroy ();
+            this->pFirstUncommited->~comBuf ();
+#           if defined ( CXX_PLACEMENT_DELETE ) && 0
+                comBuf::operator delete 
+                    ( this->pFirstUncommited.pointer(), this->comBufMemMgr );
+#           else
+                this->comBufMemMgr.release ( this->pFirstUncommited.pointer() );
+#           endif
         }
         this->pFirstUncommited = next;
     }
 }
 
-void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_string_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_short_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_float_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_char_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_long_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem )
+void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem ) throw ()
 {
     this->push ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
@@ -188,7 +201,7 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
     0  // DBR_CLASS_NAME
 };
 
-comBuf * comQueSend::popNextComBufToSend ()
+comBuf * comQueSend::popNextComBufToSend () throw ()
 {
     comBuf *pBuf = this->bufs.get ();
     if ( pBuf ) {
@@ -211,7 +224,8 @@ comBuf * comQueSend::popNextComBufToSend ()
 void comQueSend::insertRequestHeader (
     ca_uint16_t request, ca_uint32_t payloadSize, 
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
-    ca_uint32_t requestDependent, bool v49Ok )
+    ca_uint32_t requestDependent, bool v49Ok ) 
+        throw ( cacChannel::outOfBounds )
 {
     this->beginMsg ();
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
@@ -240,7 +254,7 @@ void comQueSend::insertRequestHeader (
 void comQueSend::insertRequestWithPayLoad (
     ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
     ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-    bool v49Ok )
+    bool v49Ok ) throw ( cacChannel::outOfBounds )
 {
     if ( ! this->dbr_type_ok ( dataType ) ) {
         throw cacChannel::badType();
@@ -285,7 +299,7 @@ void comQueSend::insertRequestWithPayLoad (
     this->commitMsg ();
 }
 
-void comQueSend::commitMsg ()
+void comQueSend::commitMsg () throw ()
 {
     while ( this->pFirstUncommited.valid() ) {
         this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();

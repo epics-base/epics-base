@@ -41,11 +41,12 @@
 #   include "shareLib.h"
 #endif
 
-
 #include "nciu.h"
+#include "comBuf.h"
 #include "bhe.h"
 #include "cacIO.h"
 #include "netIO.h"
+#include "localHostName.h"
 
 class netWriteNotifyIO;
 class netReadNotifyIO;
@@ -94,6 +95,15 @@ private:
     epicsMutex mutex;
 };
 
+class cacComBufMemoryManager : public comBufMemoryManager
+{
+public:
+    void * allocate ( size_t ) throw ( std::bad_alloc );
+    void release ( void * ) throw ();
+private:
+    tsFreeList < class comBuf, 0x20 > freeList;
+};
+
 class cacDisconnectChannelPrivate { // X aCC 655
 public:
     virtual void disconnectChannel ( epicsGuard < callbackMutex > &, 
@@ -128,7 +138,7 @@ public:
             unsigned minorVersionNumber, const osiSockAddr &, 
             const epicsTime & currentTime );
 
-    void uninstallChannel ( nciu & );
+    void destroyChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, 
         cacChannelNotify &chan, cacChannel::priLev pri );
     void registerService ( cacService &service );
@@ -188,10 +198,10 @@ public:
     void uninstallIIU ( tcpiiu & ); 
 
 private:
-    ipAddrToAsciiEngine         ipToAEngine;
-    cacServiceList              services;
-    chronIntIdResTable
-        < nciu >                chanTable;
+    localHostName hostNameCache;
+    ipAddrToAsciiEngine ipToAEngine;
+    cacServiceList services;
+    chronIntIdResTable < nciu > chanTable;
     //
     // !!!! There is at this point no good reason
     // !!!! to maintain one IO table for all types of
@@ -204,41 +214,46 @@ private:
     // !!!! approach would also probably be safer in 
     // !!!! terms of detecting damaged protocol.
     //
-    chronIntIdResTable 
-        < baseNMIU >            ioTable;
-    chronIntIdResTable
-        < CASG >                sgTable;
-    resTable 
-        < bhe, inetAddrID >     beaconTable;
-    resTable 
-        < tcpiiu, caServerID >  serverTable;
+    chronIntIdResTable < baseNMIU > ioTable;
+    chronIntIdResTable < CASG > sgTable;
+    resTable < bhe, inetAddrID > beaconTable;
+    resTable < tcpiiu, caServerID > serverTable;
     tsFreeList 
         < class netReadNotifyIO, 1024, epicsMutexNOOP > 
-                                freeListReadNotifyIO;
+            freeListReadNotifyIO;
     tsFreeList 
         < class netWriteNotifyIO, 1024, epicsMutexNOOP > 
-                                freeListWriteNotifyIO;
+            freeListWriteNotifyIO;
     tsFreeList 
         < class netSubscription, 1024, epicsMutexNOOP > 
-                                freeListSubscription;
-    epicsTime                   programBeginTime;
-    double                      connTMO;
+            freeListSubscription;
+    tsFreeList < class nciu, 1024 > channelFreeList;
+    tsFreeList 
+        < class msgForMultiplyDefinedPV, 16 > 
+            mdpvFreeList;
+    cacComBufMemoryManager comBufMemMgr;
+    bheFreeStore bheFreeList;
+    epicsTime programBeginTime;
+    double connTMO;
     // **** lock hierarchy ****
     // callback lock must always be acquired before
     // the primary mutex if both locks are needed
-    callbackMutex               cbMutex;
-    mutable cacMutex            mutex; 
-    epicsEvent                  iiuUninstall;
-    epicsTimerQueueActive       & timerQueue;
-    char                        * pUserName;
-    class udpiiu                * pudpiiu;
-    void                        * tcpSmallRecvBufFreeList;
-    void                        * tcpLargeRecvBufFreeList;
-    cacNotify                   & notify;
-    epicsThreadId               initializingThreadsId;
-    unsigned                    initializingThreadsPriority;
-    unsigned                    maxRecvBytesTCP;
-    bool                        preemptiveCallbackEnabled;
+    callbackMutex cbMutex;
+    mutable cacMutex mutex; 
+    epicsEvent iiuUninstall;
+    epicsSingleton 
+        < cacServiceList >::reference
+            globalServiceList;
+    epicsTimerQueueActive & timerQueue;
+    char * pUserName;
+    class udpiiu * pudpiiu;
+    void * tcpSmallRecvBufFreeList;
+    void * tcpLargeRecvBufFreeList;
+    cacNotify & notify;
+    epicsThreadId initializingThreadsId;
+    unsigned initializingThreadsPriority;
+    unsigned maxRecvBytesTCP;
+    bool preemptiveCallbackEnabled;
 
     void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
     void run ();

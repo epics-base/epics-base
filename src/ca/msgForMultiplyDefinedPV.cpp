@@ -24,6 +24,8 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
@@ -33,9 +35,6 @@
 #define epicsExportSharedSymbols
 #include "caerr.h" // for ECA_DBLCHNL
 #undef epicsExportSharedSymbols
-
-epicsSingleton < tsFreeList < class msgForMultiplyDefinedPV, 16 > >
-	msgForMultiplyDefinedPV::pFreeList;
 
 msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
     callbackMutex & mutexIn, cac & cacRefIn, 
@@ -60,3 +59,10 @@ void msgForMultiplyDefinedPV::ioCompletionNotify ( const char * pHostNameRej )
     }
     delete this;
 }
+
+void msgForMultiplyDefinedPV::operator delete ( void *pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
+

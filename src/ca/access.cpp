@@ -68,11 +68,9 @@ extern "C" void ca_init_client_context ( void * )
  */
 int fetchClientContext ( ca_client_context **ppcac )
 {
+    epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
     if ( caClientContextId == 0 ) {
-        epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
-        if ( caClientContextId == 0 ) {
-            return ECA_ALLOCMEM;
-        }
+        return ECA_ALLOCMEM;
     }
 
     int status;
@@ -233,18 +231,20 @@ int epicsShareAPI ca_search_and_connect (
 
 // extern "C"
 int epicsShareAPI ca_create_channel (
-     const char *name_str, caCh * conn_func, void * puser,
+     const char * name_str, caCh * conn_func, void * puser,
      capri priority, chid * chanptr )
 {
-    ca_client_context *pcac;
-    int caStatus = fetchClientContext ( &pcac );
+    ca_client_context * pcac;
+    int caStatus = fetchClientContext ( & pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
     try {
-        oldChannelNotify * pChanNotify = new oldChannelNotify ( 
-            * pcac, name_str, conn_func, puser, priority );
+        oldChannelNotify * pChanNotify = 
+            new ( pcac->oldChannelNotifyFreeList ) 
+                oldChannelNotify ( *pcac, name_str, 
+                    conn_func, puser, priority );
         // make sure that their chan pointer is set prior to
         // calling connection call backs
         *chanptr = pChanNotify;
@@ -272,9 +272,11 @@ int epicsShareAPI ca_create_channel (
 // extern "C"
 int epicsShareAPI ca_clear_channel ( chid pChan )
 {
-    pChan->destroy ();
+    ca_client_context & cac = pChan->getClientCtx ();
+    cac.destroyChannel ( *pChan );
     return ECA_NORMAL;
 }
+#include "autoPtrFreeList.h"
 
 /*
  * ca_array_get ()
@@ -283,24 +285,17 @@ int epicsShareAPI ca_clear_channel ( chid pChan )
 int epicsShareAPI ca_array_get ( chtype type, 
             arrayElementCount count, chid pChan, void *pValue )
 {
-    ca_client_context *pcac;
-    int caStatus = fetchClientContext ( &pcac );
-    if ( caStatus != ECA_NORMAL ) {
-        return caStatus;
-    }
-
-    if ( type < 0 ) {
-        return ECA_BADTYPE;
-    }
-    unsigned tmpType = static_cast < unsigned > ( type );
-
-    autoPtrDestroy < getCopy > pNotify 
-        ( new getCopy ( *pcac, *pChan, tmpType, count, pValue ) );
-    if ( ! pNotify.get() ) {
-        return ECA_ALLOCMEM;
-    }
-
+    int caStatus;
     try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        unsigned tmpType = static_cast < unsigned > ( type );
+        autoPtrFreeList < getCopy > pNotify 
+            ( pChan->getClientCtx().getCopyFreeList,
+                new ( pChan->getClientCtx().getCopyFreeList ) 
+                    getCopy ( pChan->getClientCtx(), *pChan, 
+                                tmpType, count, pValue ) );
         pChan->read ( type, count, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
@@ -355,19 +350,16 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
             arrayElementCount count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg )
 {
-    if ( type < 0 ) {
-        return ECA_BADTYPE;
-    }
-    unsigned tmpType = static_cast < unsigned > ( type );
-
-    autoPtrDestroy < getCallback > pNotify 
-        ( new getCallback ( *pChan, pfunc, arg ) );
-    if ( ! pNotify.get() ) {
-        return ECA_ALLOCMEM;
-    }
-
     int caStatus;
     try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        unsigned tmpType = static_cast < unsigned > ( type );
+
+        autoPtrDestroy < getCallback > pNotify 
+            ( new ( pChan->getClientCtx().getCallbackFreeList )
+                getCallback ( *pChan, pfunc, arg ) );
         pChan->read ( tmpType, count, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
@@ -421,19 +413,16 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
 int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count, 
     chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
-    if ( type < 0 ) {
-        return ECA_BADTYPE;
-    }
-    unsigned tmpType = static_cast < unsigned > ( type );
-
-    autoPtrDestroy < putCallback > pNotify
-            ( new putCallback ( *pChan, pfunc, usrarg ) );
-    if ( ! pNotify.get() ) {
-        return ECA_ALLOCMEM;
-    }
-
     int caStatus;
     try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        unsigned tmpType = static_cast < unsigned > ( type );
+        autoPtrFreeList < putCallback > pNotify
+                ( pChan->getClientCtx().putCallbackFreeList,
+                    new ( pChan->getClientCtx().putCallbackFreeList )
+                        putCallback ( *pChan, pfunc, usrarg ) );
         pChan->write ( tmpType, count, pValue, *pNotify );
         pNotify.release ();
         caStatus = ECA_NORMAL;
@@ -601,21 +590,19 @@ int epicsShareAPI ca_add_masked_array_event (
     }
 
     try {
-        autoPtrDestroy < oldSubscription > pSubsr
-            ( new oldSubscription  ( *pChan, pCallBack, pCallBackArg ) );
-        if ( pSubsr.get () ) {
-            evid pTmp = pSubsr.release ();
-            if ( monixptr ) {
-                *monixptr = pTmp;
-            }
-            pTmp->begin ( tmpType, count, mask );
-            // dont touch pTmp after this because
-            // the first callback might have canceled it
-            return ECA_NORMAL;
+        autoPtrFreeList < oldSubscription > pSubsr
+            ( pChan->getClientCtx().subscriptionFreeList,
+                new ( pChan->getClientCtx().subscriptionFreeList )
+                    oldSubscription  ( *pChan, 
+                        pCallBack, pCallBackArg ) );
+        evid pTmp = pSubsr.release ();
+        if ( monixptr ) {
+            *monixptr = pTmp;
         }
-        else {
-            return ECA_ALLOCMEM;
-        }
+        pTmp->begin ( tmpType, count, mask );
+        // dont touch pTmp after this because
+        // the first callback might have canceled it
+        return ECA_NORMAL;
     }
     catch ( cacChannel::badType & )
     {
@@ -656,7 +643,10 @@ int epicsShareAPI ca_add_masked_array_event (
 // extern "C"
 int epicsShareAPI ca_clear_event ( evid pMon )
 {
-    pMon->destroy ();
+    oldChannelNotify & chan = pMon->channel ();
+    ca_client_context & cac = chan.getClientCtx ();
+    pMon->ioCancel ();
+    cac.destroySubscription ( *pMon );
     return ECA_NORMAL;
 }
 

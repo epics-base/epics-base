@@ -27,25 +27,27 @@
 #include "iocinf.h"
 #include "virtualCircuit.h"
 
-comQueRecv::comQueRecv (): nBytesPending ( 0u )
+comQueRecv::comQueRecv ( comBufMemoryManager & comBufMemoryManagerIn ) throw () : 
+    comBufMemMgr ( comBufMemoryManagerIn ), nBytesPending ( 0u ) 
 {
 }
 
-comQueRecv::~comQueRecv ()
+comQueRecv::~comQueRecv () throw ()
 {
     this->clear ();
 }
 
-void comQueRecv::clear ()
+void comQueRecv::clear () throw ()
 {
     comBuf *pBuf;
     while ( ( pBuf = this->bufs.get () ) ) {
-        pBuf->destroy ();
+        pBuf->~comBuf ();
+        this->comBufMemMgr.release ( pBuf );
     }
     this->nBytesPending = 0u;
 }
 
-unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
+unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes ) throw ()
 {
     unsigned totalBytes = 0u;
     do {
@@ -57,7 +59,8 @@ unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
         totalBytes += pComBuf->copyOutBytes ( &pBuf[totalBytes], nBytes - totalBytes );
         if ( pComBuf->occupiedBytes () == 0u ) {
             this->bufs.remove ( *pComBuf );
-            pComBuf->destroy ();
+            pComBuf->~comBuf ();
+            this->comBufMemMgr.release ( pComBuf );
         }
     }
     while ( totalBytes < nBytes );
@@ -65,7 +68,7 @@ unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
     return totalBytes;
 }
 
-unsigned comQueRecv::removeBytes ( unsigned nBytes )
+unsigned comQueRecv::removeBytes ( unsigned nBytes ) throw ()
 {
     unsigned totalBytes = 0u;
     unsigned bytesLeft = nBytes;
@@ -78,7 +81,8 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
         unsigned nBytesThisTime = pComBuf->removeBytes ( bytesLeft );
         if ( pComBuf->occupiedBytes () == 0u ) {
             this->bufs.remove ( *pComBuf );
-            pComBuf->destroy ();
+            pComBuf->~comBuf ();
+            this->comBufMemMgr.release ( pComBuf );
         }
         if ( nBytesThisTime == 0u) {
             break;
@@ -91,6 +95,7 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
 }
 
 void comQueRecv::popString ( epicsOldString *pStr )
+    throw ( comBuf::insufficentBytesAvailable )
 {
     for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
         pStr[0][i] = this->popInt8 ();
@@ -98,6 +103,7 @@ void comQueRecv::popString ( epicsOldString *pStr )
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
+    throw ()
 {
     bufIn.commitIncomming ();
     comBuf * pComBuf = this->bufs.last ();
@@ -113,7 +119,8 @@ void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
         this->bufs.add ( bufIn );
     }
     else {
-        bufIn.destroy ();
+        bufIn.~comBuf ();
+        this->comBufMemMgr.release ( & bufIn );
     }
 }
 
@@ -121,6 +128,7 @@ void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 // 2) using canonical unsigned tmp avoids ANSI C conversions to int
 // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
 epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
+    throw ( comBuf::insufficentBytesAvailable )
 {
     epicsUInt16 tmp;
     if ( this->occupiedBytes() >= sizeof (tmp) ) {
@@ -139,6 +147,7 @@ epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
 // 2) using canonical unsigned temporary avoids ANSI C conversions to int
 // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
 epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
+    throw ( comBuf::insufficentBytesAvailable )
 {
     epicsUInt32 tmp;
     if ( this->occupiedBytes() >= sizeof (tmp) ) {
@@ -159,8 +168,9 @@ epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
     return tmp;
 }
 
-void comQueRecv::removeAndDestroyBuf ( comBuf & buf )
+void comQueRecv::removeAndDestroyBuf ( comBuf & buf ) throw ()
 {
     this->bufs.remove ( buf );
-    buf.destroy ();
+    buf.~comBuf ();
+    this->comBufMemMgr.release ( & buf );
 }

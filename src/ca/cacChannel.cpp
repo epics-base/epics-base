@@ -20,6 +20,7 @@
  *  Author: Jeff Hill
  */
 
+#include <stdexcept>
 #include <float.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -72,7 +73,9 @@ bool cacChannel::connected () const
 void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
-        pLocalHostNameAtLoadTime->copy ( pBuf, bufLength );
+        epicsSingleton < localHostName >::reference 
+                ref ( localHostNameAtLoadTime );
+        ref->copy ( pBuf, bufLength );
     }
 }
 
@@ -80,7 +83,22 @@ void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const
 // the default is to assume that it is a locally hosted channel
 const char * cacChannel::pHostName () const
 {
-    return pLocalHostNameAtLoadTime->pointer ();
+    epicsSingleton < localHostName >::reference 
+            ref ( localHostNameAtLoadTime );
+    return ref->pointer ();
+}
+
+// ms visual c++ 7.0 appears to require these when they
+// are not called?
+void cacChannel::operator delete ( void * )
+{
+    throw std::logic_error ( 
+        "why is the compiler calling cacChannel::operator delete?" );
+}
+void cacChannel::operator delete [] ( void * )
+{
+    throw std::logic_error ( 
+        "why is the compiler calling cacChannel::operator delete?" );
 }
 
 

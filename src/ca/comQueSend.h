@@ -40,53 +40,56 @@
 //
 class comQueSend {
 public:
-    comQueSend ( wireSendAdapter & );
-    ~comQueSend ();
-    void clear ();
-    void beginMsg ();
-    void commitMsg ();
-    unsigned occupiedBytes () const;
-    bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
-    bool flushBlockThreshold ( unsigned nBytesThisMsg ) const;
-    bool dbr_type_ok ( unsigned type );
-    void pushUInt16 ( const ca_uint16_t value );
-    void pushUInt32 ( const ca_uint32_t value );
-    void pushFloat32 ( const ca_float32_t value );
-    void pushString ( const char *pVal, unsigned nChar );
+    comQueSend ( wireSendAdapter &, comBufMemoryManager & ) throw ();
+    ~comQueSend () throw ();
+    void clear () throw ();
+    void beginMsg () throw ();
+    void commitMsg () throw ();
+    unsigned occupiedBytes () const throw ();
+    bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const throw ();
+    bool flushBlockThreshold ( unsigned nBytesThisMsg ) const throw ();
+    bool dbr_type_ok ( unsigned type ) throw ();
+    void pushUInt16 ( const ca_uint16_t value ) throw ();
+    void pushUInt32 ( const ca_uint32_t value ) throw ();
+    void pushFloat32 ( const ca_float32_t value ) throw ();
+    void pushString ( const char *pVal, unsigned nChar ) throw ();
     void insertRequestHeader (
         ca_uint16_t request, ca_uint32_t payloadSize, 
         ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
-        ca_uint32_t requestDependent, bool v49Ok );
+        ca_uint32_t requestDependent, bool v49Ok ) 
+            throw ( cacChannel::outOfBounds );
     void insertRequestWithPayLoad (
         ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
-        ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-        bool v49Ok );
-    void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem );
-    comBuf * popNextComBufToSend ();
+        ca_uint32_t cid, ca_uint32_t requestDependent, 
+        const void * pPayload, bool v49Ok ) 
+            throw ( cacChannel::outOfBounds );
+    void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem ) throw ();
+    comBuf * popNextComBufToSend () throw ();
 private:
+    comBufMemoryManager & comBufMemMgr;
     tsDLList < comBuf > bufs;
     tsDLIter < comBuf > pFirstUncommited;
     wireSendAdapter & wire;
     unsigned nBytesPending;
-    void copy_dbr_string ( const void *pValue, unsigned nElem );
-    void copy_dbr_short ( const void *pValue, unsigned nElem );
-    void copy_dbr_float ( const void *pValue, unsigned nElem );
-    void copy_dbr_char ( const void *pValue, unsigned nElem );
-    void copy_dbr_long ( const void *pValue, unsigned nElem );
-    void copy_dbr_double ( const void *pValue, unsigned nElem );
-    void pushComBuf ( comBuf & );
+    void copy_dbr_string ( const void *pValue, unsigned nElem ) throw ();
+    void copy_dbr_short ( const void *pValue, unsigned nElem ) throw ();
+    void copy_dbr_float ( const void *pValue, unsigned nElem ) throw ();
+    void copy_dbr_char ( const void *pValue, unsigned nElem ) throw ();
+    void copy_dbr_long ( const void *pValue, unsigned nElem ) throw ();
+    void copy_dbr_double ( const void *pValue, unsigned nElem ) throw ();
+    void pushComBuf ( comBuf & ) throw ();
     typedef void ( comQueSend::*copyFunc_t ) (  
         const void *pValue, unsigned nElem );
     static const copyFunc_t dbrCopyVector [39];
 
-    void clearUncommitted ();
+    void clearUncommitted () throw ();
 
     //
-    // visual C++ version 6.0 does not allow out of 
+    // visual C++ versions 6 & 7 do not allow out of 
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T *pVal, const unsigned nElem )
+    inline void push ( const T *pVal, const unsigned nElem ) throw ()
     {
         comBuf * pLastBuf = this->bufs.last ();
         unsigned nCopied;
@@ -97,36 +100,37 @@ private:
             nCopied = 0u;
         }
         while ( nElem > nCopied ) {
-            comBuf * pComBuf = new comBuf;
-            unsigned nNew = pComBuf->push ( &pVal[nCopied], nElem - nCopied );
+            comBuf * pComBuf = new ( this->comBufMemMgr ) comBuf;
+            unsigned nNew = pComBuf->push 
+                        ( &pVal[nCopied], nElem - nCopied );
             nCopied += nNew;
             this->pushComBuf ( *pComBuf );
         }
     }
 
     //
-    // visual C++ version 6.0 does not allow out of 
+    // visual C++ versions 6 and 7 do not allow out of 
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T & val )
+    inline void push ( const T & val ) throw ()
     {
-        register comBuf * pComBuf = this->bufs.last ();
+        comBuf * pComBuf = this->bufs.last ();
         if ( pComBuf && pComBuf->push ( val ) ) {
             return;
         }
-        pComBuf = new comBuf;
+        pComBuf = new ( this->comBufMemMgr ) comBuf;
         assert ( pComBuf->push ( val ) );
         this->pushComBuf ( *pComBuf );
     }
 
-	comQueSend ( const comQueSend & );
-	comQueSend & operator = ( const comQueSend & );
+	comQueSend ( const comQueSend & ) throw ();
+	comQueSend & operator = ( const comQueSend & ) throw ();
 };
 
 extern const char cacNillBytes[];
 
-inline bool comQueSend::dbr_type_ok ( unsigned type )
+inline bool comQueSend::dbr_type_ok ( unsigned type ) throw ()
 {
     if ( type >= ( sizeof ( this->dbrCopyVector ) / sizeof ( this->dbrCopyVector[0] )  ) ) {
         return false;
@@ -137,34 +141,34 @@ inline bool comQueSend::dbr_type_ok ( unsigned type )
     return true;
 }
 
-inline void comQueSend::pushUInt16 ( const ca_uint16_t value )
+inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) throw ()
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushUInt32 ( const ca_uint32_t value )
+inline void comQueSend::pushUInt32 ( const ca_uint32_t value ) throw ()
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushFloat32 ( const ca_float32_t value )
+inline void comQueSend::pushFloat32 ( const ca_float32_t value ) throw ()
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
+inline void comQueSend::pushString ( const char *pVal, unsigned nChar ) throw ()
 {
     this->push ( pVal, nChar );
 }
 
 // it is assumed that dbr_type_ok() was called prior to calling this routine
 // to check the type code
-inline void comQueSend::push_dbr_type ( unsigned type, const void *pVal, unsigned nElem )
+inline void comQueSend::push_dbr_type ( unsigned type, const void *pVal, unsigned nElem ) throw ()
 {
     ( this->*dbrCopyVector [type] ) ( pVal, nElem );
 }
 
-inline void comQueSend::pushComBuf ( comBuf & cb )
+inline void comQueSend::pushComBuf ( comBuf & cb ) throw ()
 {
     this->bufs.add ( cb );
     if ( ! this->pFirstUncommited.valid() ) {
@@ -172,22 +176,22 @@ inline void comQueSend::pushComBuf ( comBuf & cb )
     }
 }
 
-inline unsigned comQueSend::occupiedBytes () const
+inline unsigned comQueSend::occupiedBytes () const throw ()
 {
     return this->nBytesPending;
 }
 
-inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const
+inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const throw ()
 {
     return ( this->nBytesPending + nBytesThisMsg > 16 * comBuf::capacityBytes () );
 }
 
-inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const
+inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const throw ()
 {
     return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
 }
 
-inline void comQueSend::beginMsg ()
+inline void comQueSend::beginMsg () throw ()
 {
     if ( this->pFirstUncommited.valid() ) {
         this->clearUncommitted ();

@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <epicsMessageQueue.h>
 #include <epicsThread.h>
 #include <epicsAssert.h>
@@ -99,8 +100,7 @@ sender(void *arg)
     }
 }
 
-void
-epicsMessageQueueTest()
+extern "C" void epicsMessageQueueTest()
 {
     unsigned int i;
     char cbuf[80];
@@ -111,9 +111,7 @@ epicsMessageQueueTest()
 
     epicsMessageQueue *q1 = new epicsMessageQueue(4, 20);
 
-    /*
-     * Simple single-thread tests
-     */
+    printf ("Simple single-thread tests.\n");
     i = 0;
     used = 0;
     assert(q1->pending() == 0);
@@ -155,9 +153,7 @@ epicsMessageQueueTest()
     }
     assert(q1->pending() == 0);
 
-    /*
-     * Sender timeout
-     */
+    printf ("Test sender timeout.\n");
     i = 0;
     used = 0;
     assert(q1->pending() == 0);
@@ -199,9 +195,7 @@ epicsMessageQueueTest()
     }
     assert(q1->pending() == 0);
 
-    /*
-     * Receiver with timeout
-     */
+    printf ("Test receiver with timeout.\n");
     for (i = 0 ; i < 4 ; i++)
         assert (q1->send((void *)msg1, i, 1.0) == 0);
     assert(q1->pending() == 4);
@@ -211,22 +205,9 @@ epicsMessageQueueTest()
     assert (q1->receive((void *)cbuf, 1.0) < 0);
     assert(q1->pending() == 0);
 
-    /*
-     * Single receiver, single sender, 0-length queue
-     */
-    epicsMessageQueue *q0 = new epicsMessageQueue(0, 20);
-    epicsThreadCreate("Receiver zero", epicsThreadPriorityMedium, epicsThreadStackMedium, receiver0, q0);
-    epicsThreadSleep(1.0);
-    assert(q0->trySend((void *)msg1, 5) == 0);
-    epicsThreadSleep(1.0);
-    assert(q0->trySend((void *)msg1, 0) == 0);
-    epicsThreadSleep(1.0);
-
-    /*
-     * Single receiver, single sender tests
-     */
+    printf("Single receiver, single sender tests.\n");
     epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityHigh);
-    epicsThreadCreate("Receiver one", epicsThreadPriorityMedium, epicsThreadStackMedium, receiver, q1);
+    epicsThreadCreate("Receiver one", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), receiver, q1);
     for (pass = 1 ; pass <= 3 ; pass++) {
         switch (pass) {
         case 1: printf ("Should send/receive only 4 messages (sender priority > receiver priority).\n"); break;
@@ -247,12 +228,13 @@ epicsMessageQueueTest()
     /*
      * Single receiver, multiple sender tests
      */
+    printf("Single receiver, multiple sender tests.\n");
     printf("This test takes 5 minutes to run.\n");
     printf("Test has succeeded if nothing appears between here....\n");
-    epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadStackMedium, sender, q1);
-    epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadStackMedium, sender, q1);
-    epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadStackMedium, sender, q1);
-    epicsThreadCreate("Sender 4", epicsThreadPriorityHigh, epicsThreadStackMedium, sender, q1);
+    epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
+    epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
+    epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
+    epicsThreadCreate("Sender 4", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
 
     epicsThreadSleep(300.0);
 

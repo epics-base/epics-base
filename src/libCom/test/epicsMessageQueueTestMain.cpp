@@ -15,7 +15,7 @@
  *              630 252 4793
  */
 
-void epicsMessageQueueTest ( void );
+extern "C" void epicsMessageQueueTest ( void );
 
 int main ( int /* argc */, char /* *argv[] */ )
 {

@@ -93,9 +93,9 @@ void limboiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & gua
 }
 
 void limboiiu::blockUntilSendBacklogIsReasonable 
-    ( epicsGuard < callbackMutex > * pCBGuard, epicsGuard < cacMutex > & guard )
+    ( cacNotify & notify, epicsGuard < cacMutex > & guard )
 {
-    netiiu::blockUntilSendBacklogIsReasonable ( pCBGuard, guard );
+    netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 
 void limboiiu::requestRecvProcessPostponedFlush ()
@@ -108,10 +108,10 @@ osiSockAddr limboiiu::getNetworkAddress () const
     return netiiu::getNetworkAddress ();
 }
 
-void limboiiu::uninstallChannel ( epicsGuard < callbackMutex > & cbGuard, 
-                               epicsGuard < cacMutex > & guard, nciu & chan )
+class tcpiiu * limboiiu::uninstallChanAndReturnDestroyPtr 
+        ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
-    netiiu::uninstallChannel ( cbGuard, guard, chan );
+    return netiiu::uninstallChanAndReturnDestroyPtr ( guard, chan );
 }
 
 

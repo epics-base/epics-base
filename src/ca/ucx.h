@@ -6,6 +6,8 @@
  *
  *      GeG	09-DEC-1992	initial edit
  *      CJM     13-Jul-1994     add fd_set etc for R3.12
+ *      CJM     09-Dec-1994     define fd_set etc. so it will compile for
+ *                              both DEC C and Vax C
  *
  */
 #ifndef _UCX_H_
@@ -70,13 +72,14 @@ typedef long fd_mask ;
 #define howmany(x, y)  (((x)+((y)-1))/(y))
 #endif
 
-typedef struct fd_set {
-        fd_mask fds_bits[howmany(FD_SETSIZE, NFDBITS)] ;
-} fd_set ;
+/*
+ * Both DEC C and VAX C only allow 32 fd's at once
+ */
+typedef int fd_set ;
 
-#define FD_SET(n, p)    ((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define FD_CLR(n, p)    ((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define FD_ISSET(n, p)  ((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define FD_SET(n, p)    (*(p) |= (1 << ((n) % NFDBITS)))
+#define FD_CLR(n, p)    (*(p) &= ~(1 << ((n) % NFDBITS)))
+#define FD_ISSET(n, p)  (*(p) & (1 << ((n) % NFDBITS)))
 #define FD_ZERO(p)      bzero((char *)(p), sizeof (*(p)))
 
 #include <iodef.h>

@@ -134,6 +134,7 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 #include	"net_convert.h"
+#include	<stdarg.h> /* for VMS old CC include order madness */
 
 
 /****************************************************************/
@@ -141,19 +142,6 @@ static char *sccsId = "@(#) $Id$";
 /****************************************************************/
 #define EXTMSGPTR(PIIU)\
  	((struct extmsg *) &(PIIU)->send.buf[(PIIU)->send.wtix])
-
-/*
- * Performs worst case message alignment
- */
-#define CAC_ADD_MSG(PIIU) \
-{ \
-	unsigned long	size; \
-	struct extmsg *mp = EXTMSGPTR(PIIU); \
-	size = mp->m_postsize = CA_MESSAGE_ALIGN(mp->m_postsize); \
-	mp->m_postsize = htons(mp->m_postsize); \
-	CAC_RING_BUFFER_WRITE_ADVANCE( \
-		&(PIIU)->send, sizeof(struct extmsg) + size); \
-}
 
 
 
@@ -189,12 +177,14 @@ static struct extmsg	nullmsg;
 /*
  * local functions
  */
-
+#if 0
 LOCAL int cac_alloc_msg(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
 struct extmsg		**ppMsg
 );
+#endif
+
 LOCAL int cac_alloc_msg_no_flush(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
@@ -230,6 +220,8 @@ struct extmsg		*pmsg,
 void			*pext
 );
 
+LOCAL void cac_add_msg (IIU *piiu);
+
 #ifdef CONVERSION_REQUIRED 
 LOCAL void *malloc_put_convert(unsigned long size);
 LOCAL void free_put_convert(void *pBuf);
@@ -253,15 +245,15 @@ void			*pext
 )
 {
 	struct extmsg	msg;
-	unsigned long	bytesAvailable;
-	unsigned long	actualextsize;
-	unsigned long	extsize;
-	unsigned long	bytesSent;
+	unsigned 	bytesAvailable;
+	unsigned 	actualextsize;
+	unsigned 	extsize;
+	unsigned 	bytesSent;
 
 	msg = *pmsg;
 	actualextsize = pmsg->m_postsize;
 	extsize = CA_MESSAGE_ALIGN(pmsg->m_postsize);
-	msg.m_postsize = htons(extsize);
+	msg.m_postsize = htons((ca_uint16_t)extsize);
 
 
 	LOCK;
@@ -347,8 +339,8 @@ void			*pext
 	 * if present
 	 */
 	{
-		static 	nullBuff[32];
-		int	n;
+		static 		nullBuff[32];
+		unsigned	n;
 
 		n = extsize-actualextsize;
 		if(n){
@@ -421,6 +413,7 @@ struct extmsg		**ppMsg
  *	LOCK should be on
  *
  */ 
+#if 0
 LOCAL int cac_alloc_msg(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
@@ -480,13 +473,33 @@ struct extmsg		**ppMsg
 
 	return ECA_NORMAL;
 }
+#endif
 
 
 /*
- *
+ * cac_add_msg ()
+ */
+LOCAL void cac_add_msg (IIU *piiu)
+{
+	unsigned long	size; 
+	struct extmsg 	*mp = EXTMSGPTR(piiu); 
+
+	/*
+	 * Performs worst case message alignment
+	 */
+	mp->m_postsize = (unsigned short) 
+		CA_MESSAGE_ALIGN(mp->m_postsize); 
+	size = mp->m_postsize;
+	mp->m_postsize = htons(mp->m_postsize); 
+	CAC_RING_BUFFER_WRITE_ADVANCE( 
+		&piiu->send, 
+		sizeof(struct extmsg) + size); 
+}
+
+
+
+/*
  *	CA_TASK_INITIALIZE
- *
- *
  */
 int APIENTRY ca_task_initialize(void)
 {
@@ -518,6 +531,8 @@ int ca_os_independent_init (void)
 	ca_static->ca_exception_func = ca_default_exception_handler;
 	ca_static->ca_exception_arg = NULL;
 
+	caSetDefaultPrintfHandler();
+
 	/* record a default user name */
 	ca_static->ca_pUserName = localUserName();
 	if(!ca_static->ca_pUserName){
@@ -541,10 +556,10 @@ int ca_os_independent_init (void)
 	 */
 	ca_static->ca_search_retry = 0;
 	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
-	sec = CA_RECAST_DELAY;
+	sec = (unsigned) CA_RECAST_DELAY;
 	ca_static->ca_conn_retry_delay.tv_sec = sec;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-	(CA_RECAST_DELAY-sec)*USEC_PER_SEC;
+		(long) (CA_RECAST_DELAY-sec)*USEC_PER_SEC;
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -597,8 +612,6 @@ int ca_os_independent_init (void)
  */
 LOCAL void create_udp_fd()
 {
-	int     pri;
-	char	name[64];
 	int	status;
 
 	if(ca_static->ca_piiuCast){
@@ -615,38 +628,43 @@ LOCAL void create_udp_fd()
 	}
 
 #ifdef vxWorks
-	status = taskPriorityGet(VXTASKIDSELF, &pri);
-	if(status<0)
-		ca_signal(ECA_INTERNAL,NULL);
+	{
+		int     pri;
+		char	name[64];
 
-	strcpy(name,"RD ");
-	strncat(
-		name,
-		taskName(VXTHISTASKID),
-		sizeof(name)-strlen(name)-1);
+		status = taskPriorityGet(VXTASKIDSELF, &pri);
+		if(status<0)
+			ca_signal(ECA_INTERNAL,NULL);
 
-	status = taskSpawn(
-				name,
-                           	pri-1,
-                               	VX_FP_TASK,
-                                4096,
-                                (FUNCPTR)cac_recv_task,
-                                (int)taskIdCurrent,
-                                0,
-                                0,
-                                0,
-                                0,
-                                0,
-                                0,
-                                0,
-                                0,
-                                0);
-	if (status<0) {
-		ca_signal(ECA_INTERNAL,NULL);
+		strcpy(name,"RD ");
+		strncat(
+			name,
+			taskName(VXTHISTASKID),
+			sizeof(name)-strlen(name)-1);
+
+		status = taskSpawn(
+					name,
+					pri-1,
+					VX_FP_TASK,
+					4096,
+					(FUNCPTR)cac_recv_task,
+					(int)taskIdCurrent,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0);
+		if (status<0) {
+			ca_signal(ECA_INTERNAL,NULL);
+		}
+
+		ca_static->recv_tid = status;
+
 	}
-
-	ca_static->recv_tid = status;
-
 #endif
 }
 
@@ -1072,7 +1090,7 @@ int APIENTRY ca_search_and_connect
 	chix->pConnFunc = conn_func;
 	chix->type = TYPENOTCONN; /* invalid initial type 	 */
 	chix->count = 0; 	/* invalid initial count	 */
-	chix->id.sid = ~0L;	/* invalid initial server id 	 */
+	chix->id.sid = ~0U;	/* invalid initial server id 	 */
 
 	chix->state = cs_never_conn;
 	ellInit(&chix->eventq);
@@ -1088,10 +1106,10 @@ int APIENTRY ca_search_and_connect
 	 */
 	ca_static->ca_search_retry = 0;
 	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
-	sec = CA_RECAST_DELAY;
+	sec = (int) CA_RECAST_DELAY;
 	ca_static->ca_conn_retry_delay.tv_sec = sec;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-		(CA_RECAST_DELAY-sec)*USEC_PER_SEC;
+		(long) (CA_RECAST_DELAY-sec)*USEC_PER_SEC;
 
 	UNLOCK;
 
@@ -1152,7 +1170,7 @@ int             reply_type
 	mptr++;
 	strncpy((char *)mptr, (char *)(chix + 1), size);
 
-	CAC_ADD_MSG(piiu);
+	cac_add_msg(piiu);
 
 	/*
 	 * increment the number of times we have tried this
@@ -1721,7 +1739,7 @@ void				*pvalue
 	struct extmsg		hdr;
   	int  			postcnt;
   	unsigned		size_of_one;
-  	int 			i;
+  	unsigned		i;
 #	ifdef CONVERSION_REQUIRED 
 	void			*pCvrtBuf;
   	void			*pdest;
@@ -1777,6 +1795,8 @@ void				*pvalue
 
       		case	DBR_ENUM:
       		case	DBR_SHORT:
+		case	DBR_PUT_ACKT:
+		case	DBR_PUT_ACKS:
 #		if DBR_INT != DBR_SHORT
       		case	DBR_INT:
 #		endif /*DBR_INT != DBR_SHORT*/
@@ -1812,10 +1832,10 @@ void				*pvalue
 
     	hdr.m_cmmd 		= htons(cmd);
    	hdr.m_type		= htons(type);
-    	hdr.m_count 		= htons(count);
+    	hdr.m_count 		= htons((ca_uint16_t)count);
     	hdr.m_cid 		= chix->id.sid;
     	hdr.m_available 	= id;
-	hdr.m_postsize 		= postcnt;
+	hdr.m_postsize 		= (ca_uint16_t) postcnt;
 
 	status = cac_push_msg(piiu, &hdr, pvalue);
 
@@ -2033,7 +2053,6 @@ long		mask
 {
   	evid		monix;
   	int		status;
-  	int		size;
 
   	INITCHK;
   	LOOSECHIXCHK(chix);
@@ -2063,7 +2082,8 @@ long		mask
 
   	if (!chix->piiu) {
 # 		ifdef vxWorks
-    		static int			dbevsize;
+  		int		size;
+    		static int	dbevsize;
 
       		if(!dbevsize){
         		dbevsize = db_sizeof_event_block();
@@ -2098,7 +2118,7 @@ long		mask
   	monix->p_delta	= p_delta;
   	monix->n_delta	= n_delta;
   	monix->timeout	= timeout;
-  	monix->mask	= mask;
+  	monix->mask	= (unsigned short) mask;
 
 # 	ifdef vxWorks
 	if(!chix->piiu){
@@ -2169,8 +2189,10 @@ int ca_request_event(evid monix)
 	unsigned        	count;
 	struct monops		msg;
 	struct ioc_in_use	*piiu;
+	ca_float32_t		p_delta;
+	ca_float32_t		n_delta;
+	ca_float32_t		tmo;
 	
-
 	piiu = chix->piiu;
 
   	/* 
@@ -2201,9 +2223,12 @@ int ca_request_event(evid monix)
 	msg.m_header.m_postsize = sizeof(msg.m_info);
 
 	/* msg body	 */
-	htonf(&monix->p_delta, &msg.m_info.m_hval);
-	htonf(&monix->n_delta, &msg.m_info.m_lval);
-	htonf(&monix->timeout, &msg.m_info.m_toval);
+	p_delta = (ca_float32_t) monix->p_delta;
+	n_delta = (ca_float32_t) monix->n_delta;
+	tmo = (ca_float32_t) monix->timeout;
+	htonf(&p_delta, &msg.m_info.m_hval);
+	htonf(&n_delta, &msg.m_info.m_lval);
+	htonf(&tmo, &msg.m_info.m_toval);
 	msg.m_info.m_mask = htons(monix->mask);
 
 	status = cac_push_msg(piiu, &msg.m_header, &msg.m_info);
@@ -2563,9 +2588,9 @@ int APIENTRY ca_clear_channel (chid chix)
 	/* msg header	 */
 	hdr.m_cmmd = htons(IOC_CLEAR_CHANNEL);
 	hdr.m_available = chix->cid;
+	hdr.m_cid = chix->id.sid;
 	hdr.m_type = htons(0);
 	hdr.m_count = htons(0);
-	hdr.m_cid = chix->id.sid;
 	hdr.m_postsize = 0;
 	
 	status = cac_push_msg(piiu, &hdr, NULL);
@@ -2697,11 +2722,11 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 			/*
 			 * Allow for CA background labor
 			 */
-			remaining = min(SELECT_POLL, remaining);
+			remaining = (long) min(SELECT_POLL, remaining);
   		}    
 
-		tmo.tv_sec = remaining;
-		tmo.tv_usec = (remaining-tmo.tv_sec)*USEC_PER_SEC;
+		tmo.tv_sec = (long) remaining;
+		tmo.tv_usec = (long) (remaining-tmo.tv_sec)*USEC_PER_SEC;
 		cac_block_for_io_completion(&tmo);
 	}
 }
@@ -3015,7 +3040,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	phdr->m_available = htons(0);
 	phdr->m_postsize = 0;
 
-	CAC_ADD_MSG(piiu);
+	cac_add_msg(piiu);
 	
 	piiu->echoPending = TRUE;
 	piiu->send_needed = TRUE;
@@ -3214,7 +3239,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 	 */
 	LOCK;
 	sprintf(sprintf_buf, 
-		"%s - with request chan=%s op=%d data type=%s count=%d\n", 
+		"%s - with request chan=%s op=%d data type=%s count=%d", 
 		args.ctx,
 		pName,
 		args.op,
@@ -3265,7 +3290,7 @@ int ca_defunct()
  *	currently implemented as a function 
  *	(may be implemented as a MACRO in the future)
  */
-char APIENTRY *ca_host_name_function(chid chix)
+char * APIENTRY ca_host_name_function(chid chix)
 {
 	IIU	*piiu;
 
@@ -3353,3 +3378,69 @@ int ca_channel_status(int tid)
 	return ECA_NORMAL;
 }
 #endif /*vxWorks*/
+
+
+/*
+ * ca_replace_printf_handler ()
+ */
+int APIENTRY ca_replace_printf_handler (
+int (*ca_printf_func)(char *pformat, va_list args)
+)
+{
+	if (ca_printf_func) {
+		ca_static->ca_printf_func = ca_printf_func;
+	}
+	else {
+		/*
+		 * os dependent
+		 */
+		caSetDefaultPrintfHandler();
+	}
+
+	return ECA_NORMAL;
+}
+
+
+/*
+ *      ca_printf()
+ */
+int ca_printf(char *pformat, ...)
+{
+	int		(*ca_printf_func)(char *pformat, va_list args);
+	va_list		theArgs;
+	int		status;
+
+	va_start(theArgs, pformat);
+
+	ca_printf_func = ca_default_printf;
+	if (ca_static) {
+		if (ca_static->ca_printf_func) {
+			ca_printf_func = ca_static->ca_printf_func;
+		}
+	}
+
+	status = (*ca_printf_func) (pformat, theArgs);
+
+	va_end(theArgs);
+
+	return status;
+}
+
+
+/*
+ *      ca_default_printf()
+ *	(this default is replaced under vxWorks
+ *	- see vxWorks_depen.c)
+ */
+int ca_default_printf(char *pformat, va_list args)
+{
+        int             status;
+
+        status = vfprintf(
+                        stderr,
+                        pformat,
+                        args);
+        return status;
+}
+
+

@@ -73,7 +73,6 @@ static char *sccsId = "@(#) $Id$";
 #define		CA_GLBLSOURCE
 #include	"iocinf.h"
 #include	"net_convert.h"
-#include	<netinet/tcp.h>
 
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
 LOCAL void 	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
@@ -188,6 +187,7 @@ int			net_proto
 			UNLOCK;
 			return ECA_ALLOCMEM;
 		}
+      		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
   		pNode->destAddr.inetAddr.sin_family = AF_INET;
 		pNode->destAddr.inetAddr.sin_addr = *pnet_addr;
   		pNode->destAddr.inetAddr.sin_port = 
@@ -641,6 +641,8 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 
 	pNode = (caAddrNode *) piiu->destAddr.node.next;
 	while(pNode){
+		unsigned long	actualSendCnt;
+
 		status = sendto(
 				piiu->sock_chan,
 				&piiu->send.buf[piiu->send.rdix],	
@@ -649,18 +651,23 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 				&pNode->destAddr.sockAddr,
 				sizeof(pNode->destAddr.sockAddr));
 		if(status<0){
-			if(	MYERRNO != EWOULDBLOCK && 
-				MYERRNO != ENOBUFS && 
-				MYERRNO != EINTR){
+			int	localErrno;
+
+			localErrno = MYERRNO;
+
+			if(	localErrno != EWOULDBLOCK && 
+				localErrno != ENOBUFS && 
+				localErrno != EINTR){
 				ca_printf(
 					"CAC: error on socket send() %s\n",
-					strerror(MYERRNO));
+					strerror(localErrno));
 			}
 
 			TAG_CONN_DOWN(piiu);
 			break;
 		}
-		assert(status == sendCnt);
+		actualSendCnt = (unsigned long) status;
+		assert (actualSendCnt == sendCnt);
 		pNode = (caAddrNode *) pNode->node.next;
 	}
 
@@ -687,6 +694,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 {
 	unsigned long	sendCnt;
   	int		status;
+	int		localError;
 
 	/*
 	 * check for shutdown in progress
@@ -715,8 +723,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 			sendCnt,
 			0);
 	if(status>=0){
-		assert(status<=sendCnt);
-
 		piiu->sendPending = FALSE;
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 		
@@ -729,9 +735,11 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		return;
 	}
 
-	if(	MYERRNO == EWOULDBLOCK ||
-		MYERRNO == ENOBUFS ||
-		MYERRNO == EINTR){
+	localError = MYERRNO;
+
+	if(	localError == EWOULDBLOCK ||
+		localError == ENOBUFS ||
+		localError == EINTR){
 			UNLOCK;
 			if(!piiu->sendPending){
 				cac_gettimeval(&piiu->timeAtSendBlock);
@@ -740,12 +748,12 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 			return;
 	}
 
-	if(	MYERRNO != EPIPE && 
-		MYERRNO != ECONNRESET &&
-		MYERRNO != ETIMEDOUT){
+	if(	localError != EPIPE && 
+		localError != ECONNRESET &&
+		localError != ETIMEDOUT){
 		ca_printf(	
 			"CAC: error on socket send() %s\n",
-			strerror(MYERRNO));
+			strerror(localError));
 	}
 
 	TAG_CONN_DOWN(piiu);
@@ -889,7 +897,6 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 		UNLOCK;
 		return;
     	}
-
 
   	if(status>MAX_MSG_SIZE){
     		ca_printf(	"CAC: recv_msg(): message overflow %l\n",
@@ -1174,15 +1181,15 @@ void close_ioc (struct ioc_in_use *piiu)
 		chix = (chid) &piiu->chidlist.node.next;
 		while (chix = (chid) chix->node.next) {
 			chix->type = TYPENOTCONN;
-			chix->count = 0;
+			chix->count = 0U;
 			chix->state = cs_prev_conn;
-			chix->id.sid = ~0L;
+			chix->id.sid = ~0U;
 			chix->ar.read_access = FALSE;
 			chix->ar.write_access = FALSE;
 			/*
 			 * try to reconnect
 			 */
-			chix->retry = 0;
+			chix->retry = 0U;
 		}
 
 		if (piiu->chidlist.count) {
@@ -1564,6 +1571,7 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 	}
 
         while(pToken = getToken(&pStr)){
+      		memset((char *)&addr,0,sizeof(addr));
 		addr.inetAddr.sin_family = AF_INET;
   		addr.inetAddr.sin_port = htons(port);
                 addr.inetAddr.sin_addr.s_addr = inet_addr(pToken);
@@ -1654,31 +1662,37 @@ void caPrintAddrList(ELLLIST *pList)
 /*
  * caFetchPortConfig()
  */
-unsigned caFetchPortConfig(ENV_PARAM *pEnv, unsigned defaultPort)
+int caFetchPortConfig(ENV_PARAM *pEnv, int defaultPort)
 {
 	long		longStatus;
-	long		port;
+	long		epicsParam;
+	int 		port;
 
-	longStatus = envGetLongConfigParam(pEnv, &port);
+	longStatus = envGetLongConfigParam(pEnv, &epicsParam);
 	if (longStatus!=0) {
-		port = defaultPort;
+		epicsParam = defaultPort;
 		ca_printf ("EPICS \"%s\" integer fetch failed\n", pEnv->name);
-		ca_printf ("setting \"%s\" = %ld\n", pEnv->name, port);
+		ca_printf ("setting \"%s\" = %ld\n", pEnv->name, epicsParam);
 	}
 
 	/*
-	 * Thus must be a server port that will fit in a signed
+	 * This must be a server port that will fit in a signed
 	 * short
 	 */
-	if (port <= IPPORT_USERRESERVED || port>SHRT_MAX) {
+	if (epicsParam<=IPPORT_USERRESERVED || epicsParam>SHRT_MAX) {
 		ca_printf ("EPICS \"%s\" out of range\n", pEnv->name);
 		/*
 		 * Quit if the port is wrong due CA coding error
 		 */
-		assert (port != defaultPort);
-		port = defaultPort;
-		ca_printf ("Setting \"%s\" = %ld\n", pEnv->name, port);
+		assert (epicsParam != defaultPort);
+		epicsParam = defaultPort;
+		ca_printf ("Setting \"%s\" = %ld\n", pEnv->name, epicsParam);
 	}
+
+	/*
+	 * ok to clip to int here because we checked the range
+	 */
+	port = (int) epicsParam;
 
 	return port;
 }

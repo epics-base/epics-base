@@ -35,11 +35,6 @@ static char	*sccsId = "@(#) $Id$";
 #include	"iocinf.h"
 #include	"net_convert.h"
 
-void htond(double *pHost, double *pNet);
-void ntohd(double *pNet, double *pHost);
-void htonf(float *pHost, float *pNet);
-void ntohf(float *pNet, float *pHost);
-
 /*
  * if hton is true then it is a host to network conversion
  * otherwise vise-versa
@@ -1374,7 +1369,7 @@ unsigned long	num			/* number of values		*/
 }
 
 
-#ifdef CA_FLOAT_MIT
+#if defined(CA_FLOAT_MIT) 
 /************************************************************************/
 /*      double convert 				                        */
 /*      (THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)        */
@@ -1383,7 +1378,7 @@ unsigned long	num			/* number of values		*/
 /* (this includes mapping of fringe reals to zero or infinity) */
 /* (byte swaps included in conversion */
 
-struct ieeedbl{
+struct ieeedbl {
         unsigned int    mant2 : 32;
         unsigned int    mant1 : 20;
         unsigned int    exp   : 11;
@@ -1396,7 +1391,7 @@ struct ieeedbl{
 /*      -1022<exp<1024  with mantissa of form 1.mant                    */
 #define DBLEXPMINIEEE   -1022   /* min for norm # IEEE exponent */
 
-struct mitdbl{
+struct mitdbl {
         unsigned int    mant1 : 7;
         unsigned int    exp   : 8;
         unsigned int    sign  : 1;
@@ -1412,7 +1407,6 @@ struct mitdbl{
   /*    -128<exp<126    with mantissa of form 1.mant                    */
 #define        DBLEXPMAXMIT    126     /* max MIT exponent             */
 #define        DBLEXPMINMIT    -128    /* min MIT exponent             */
-
 
 void htond(double *pHost, double *pNet)
 {
@@ -1538,19 +1532,19 @@ struct mitflt{
 
 void htonf(float *pHost, float *pNet)
 {
-	struct mitflt	*pMIT = pHost;
-	struct ieeeflt	*pIEEE = pNet;
+	struct mitflt	*pMIT = (struct mitflt *) pHost;
+	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
     	long  		exp,mant,sign;
 
-    	sign = pHost->sign;
+    	sign = pMIT->sign;
 
-	if( (short)(pMIT->exp < EXPMINIEEE + MIT_SB){
+	if( ((int)pMIT->exp) < EXPMINIEEE + MIT_SB){
 		exp       = 0;
 		mant      = 0;
 		sign      = 0;
 	}
 	else{
-		exp = (short)pMIT->exp-MIT_SB+IEEE_SB;
+		exp = ((int)pMIT->exp)-MIT_SB+IEEE_SB;
 		mant = (pMIT->mant1<<16) | pMIT->mant2;
     	}
     	pIEEE->mant   = mant;
@@ -1566,12 +1560,12 @@ void htonf(float *pHost, float *pNet)
  */
 void ntohf(float *pNet, float *pHost)
 {
-	struct mitflt	*pMIT = pHost;
-	struct ieeeflt	*pIEEE = pNet;
+	struct mitflt	*pMIT = (struct mitflt *) pHost;
+	struct ieeeflt	*pIEEE = (struct ieeeflt *) pNet;
   	long  		exp,mant2,mant1,sign;
 
     	*(ca_uint32_t *)pIEEE = ntohl(*(ca_uint32_t *)pIEEE);
-    	if( (short) pIEEE->exp > EXPMAXMIT + IEEE_SB){
+    	if( ((int)pIEEE->exp) > EXPMAXMIT + IEEE_SB){
 		sign      = pIEEE->sign;
 		exp       = EXPMAXMIT + MIT_SB;
 		mant2     = ~0;
@@ -1598,7 +1592,7 @@ void ntohf(float *pNet, float *pHost)
 
 #endif /*CA_FLOAT_MIT*/
 
-#ifndef CA_FLOAT_MIT
+#if !defined(CA_FLOAT_MIT) 
 
 /*
  * htond ()

@@ -39,6 +39,9 @@ static char	*sccsId = "@(#) $Id$";
 #include <string.h>
 #include <assert.h>
 
+#ifdef _WINDOWS
+#include <winsock.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -55,7 +58,7 @@ void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
         struct hostent  *ent;
 
         ent = gethostbyaddr(
-                        pnet_addr,
+                        (char *) pnet_addr,
                         sizeof(*pnet_addr),
                         AF_INET);
         if(ent){

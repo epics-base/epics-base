@@ -31,14 +31,6 @@
  *
  */
 
-/*
- * ANSI includes
- */
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/param.h>
@@ -98,12 +90,10 @@ void cac_mux_io(struct timeval  *ptimeout)
                         timeout.tv_sec = 0;
                 }
                 while(count>0);
-
                 ca_process_input_queue();
 
         }
         while(newInput);
-
 }
 
 log_time(char *pStr)
@@ -281,25 +271,14 @@ void ca_spawn_repeater()
 	exit(0);
 }
 
-
 
 /*
- *      ca_printf()
+ * caSetDefaultPrintfHandler ()
+ * use the normal default here
+ * ( see access.c )
  */
-int ca_printf(char *pformat, ...)
+void caSetDefaultPrintfHandler ()
 {
-        va_list         args;
-        int             status;
-
-        va_start(args, pformat);
-
-        status = vfprintf(
-                        stderr,
-                        pformat,
-                        args);
-
-        va_end(args);
-
-        return status;
+        ca_static->ca_printf_func = ca_default_printf;
 }
 

@@ -1,29 +1,24 @@
 /*
+ *
+ *	CA performance test 
+ *
+ *	History 
+ *	joh	09-12-89 Initial release
+ *	joh	12-20-94 portability
+ *
+ * 
+ */
 
-
-	CA performance test 
-
-	History 
-	joh	09-12-89	Initial release
-
-
-
-*/
-
-#ifdef VMS
-#include <LIB$ROUTINES.H>
-#endif
-
-
-/*	System includes		*/
-#ifdef vxWorks
-#include		<vxWorks.h>
-#include		<taskLib.h>
-#endif
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <stdlib.h>
 
 #include 		<cadef.h>
-#include 		<caerr.h>
-#include		<db_access.h>
+
+#ifndef LOCAL
+#define LOCAL static
+#endif
 
 #ifndef OK
 #define OK 0
@@ -41,17 +36,44 @@
 #define NELEMENTS(A) (sizeof (A) / sizeof ((A) [0]))
 #endif
 
-#define NUM 1
 #define ITERATION_COUNT 10000
 
 #define WAIT_FOR_ACK
 
-chid chan_list[min(10000,ITERATION_COUNT)];
+typedef struct testItem {
+	chid 			chix;
+	char 			name[40];
+	int 			type;
+	int			count;
+	union db_access_val	val;	
+}ti;
+
+ti itemList[ITERATION_COUNT];
+
+int catime(char *channelName);
+
+typedef void tf (ti *pItems, unsigned iterations);
+
+LOCAL void test (
+	ti		*pItems,
+	unsigned	iterations
+);
+
+LOCAL tf 	test_search;
+LOCAL tf	test_free;
+LOCAL tf	test_wait;
+LOCAL tf	test_put;
+LOCAL tf	test_wait;
+LOCAL tf	test_get;
+
+void timeIt(
+	tf		*pfunc,
+	ti		*pItem,
+	unsigned	iterations
+);
 
 #ifndef vxWorks
-main(argc, argv)
-int	argc;
-char	**argv;
+int main(int argc, char **argv)
 {
 	char	*pname;
 
@@ -61,167 +83,251 @@ char	**argv;
 	}
 	else{
 		printf("usage: %s <channel name>", argv[0]);
+		return -1;
 	}
+	return 0;
 }
 #endif
 
-catime(channelName)
-char     *channelName;
+
+/*
+ * catime ()
+ */
+int catime (char *channelName)
 {
-  chid			ai_1;
+	long		status;
+  	long		i,j;
+	unsigned 	strsize;
 
-  long			status;
-  long			i,j;
-  void			*ptr;
-  int			test_search(), test_free();
+  	SEVCHK (ca_task_initialize(),"Unable to initialize");
 
-  SEVCHK(ca_task_initialize(),"Unable to initialize");
+	strsize = sizeof(itemList[i].name)-1;
+	for (i=0; i<NELEMENTS(itemList); i++) {
+		strncpy (
+			itemList[i].name, 
+			channelName, 
+			strsize);
+		itemList[i].name[strsize]= '\0';
+		itemList[i].count = 1;
+	}
 
+	printf ("search test\n");
+	timeIt (test_search, itemList, NELEMENTS(itemList));
 
-  SEVCHK(ca_search(channelName,&ai_1),NULL);
-  status = ca_pend_io(5.0);
-  SEVCHK(status,NULL);
-  if(status == ECA_TIMEOUT)
-    exit(OK);
+  	printf (
+		"channel name=%s, native type=%d, native count=%d\n",
+		ca_name(itemList[0].chix),
+		ca_field_type(itemList[0].chix),
+		ca_element_count(itemList[0].chix));
 
-  ptr = (void *) malloc(NUM*sizeof(union db_access_val)+NUM*MAX_STRING_SIZE);
-  if(!ptr)
-    exit(OK);
+  	for (i=0; i<NELEMENTS(itemList); i++) {
+		itemList[i].val.fltval = 0.0;
+		itemList[i].type = DBR_FLOAT; 
+  	}
+	printf ("float test\n");
+  	test (itemList, NELEMENTS(itemList));
 
-  printf("channel name %s native type %d native count %d\n",ai_1+1,ai_1->type,ai_1->count);
-  printf("search test\n");
-  timex(test_search,channelName);
-  printf("free test\n");
-  timex(test_free,ai_1);
+  	for (i=0; i<NELEMENTS(itemList); i++) {
+    		strcpy(itemList[i].val.strval, "0.0");
+		itemList[i].type = DBR_STRING; 
+	}
+	printf ("string test\n");
+  	test (itemList, NELEMENTS(itemList));
 
+  	for (i=0; i<NELEMENTS(itemList); i++) {
+		itemList[i].val.intval = 0;
+		itemList[i].type = DBR_INT; 
+	}
+	printf ("interger test\n");
+  	test (itemList, NELEMENTS(itemList));
 
-  for(i=0;i<NUM;i++)
-    ((float *)ptr)[i] = 0.0;
-  test(ai_1, "DBR_FLOAT", DBR_FLOAT, NUM, ptr);
+  	printf ("free test\n");
+	timeIt (test_free, itemList, NELEMENTS(itemList));
 
-  for(i=0;i<NUM;i++)
-    strcpy((char *)ptr+(MAX_STRING_SIZE*i),"0.0");
-  test(ai_1, "DBR_STRING", DBR_STRING, NUM, ptr);
-
-  for(i=0;i<NUM;i++)
-    ((int *)ptr)[i]=0;
-  test(ai_1, "DBR_INT", DBR_INT, NUM, ptr);
-
-  free(ptr);
-
-  exit(OK);
+  	return OK;
 }
 
 
-test(chix, name, type, count, ptr)
-chid chix;
-char *name;
-int type,count;
-void *ptr;
+
+/*
+ * test ()
+ */
+LOCAL void test (
+	ti		*pItems,
+	unsigned	iterations
+)
 {
-  int test_put(), test_get(), test_wait();
-
-  printf("%s\n",name);
-  timex(test_put,chix, name, type, count, ptr);
-  timex(test_get,chix, name, type, count, ptr);
-  timex(test_wait,chix, name, type, count, ptr);
+	printf ("\tasync put test\n");
+  	timeIt(test_put, pItems, iterations);
+	printf ("\tasync get test\n");
+  	timeIt(test_get, pItems, iterations);
+	printf ("\tsynch get test\n");
+  	timeIt(test_wait, pItems, iterations);
 }
 
-#ifndef vxWorks
-timex(pfunc, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
-void (*pfunc)(); 
-int arg1;
-int arg2; 
-int arg3; 
-int arg4; 
-int arg5; 
-int arg6; 
-int arg7;
+
+/*
+ * timeIt ()
+ */
+void timeIt(
+	tf		*pfunc,
+	ti		*pItems,
+	unsigned	iterations
+)
 {
-	(*pfunc)(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+	TS_STAMP	end_time;
+	TS_STAMP	start_time;
+	double		delay;
+	int		status;
 
-}
-#endif
-
-test_search(name)
-char *name;
-{
-  int i;
-
-  for(i=0; i< NELEMENTS(chan_list);i++){
-    SEVCHK(ca_search(name,&chan_list[i]),NULL);
-  }
-  SEVCHK(ca_pend_io(0.0),NULL);
+	status = tsLocalTime(&start_time);
+	assert (status == S_ts_OK);
+	(*pfunc) (pItems, iterations);
+	status = tsLocalTime(&end_time);
+	assert (status == S_ts_OK);
+	TsDiffAsDouble(&delay,&end_time,&start_time);
+	printf ("Elapsed Per Item = %f\n", delay/iterations);
 }
 
-test_free(chix)
-chid chix;
+
+/*
+ * test_search ()
+ */
+LOCAL void test_search(
+ti		*pItems,
+unsigned	iterations
+)
 {
-  int 			i;
-  union db_access_val	ival;
+  	int 	i;
+	int	status;
+	chid	chan;
 
-  for(i=0; i< NELEMENTS(chan_list);i++){
-    SEVCHK(ca_clear_channel(chan_list[i]),NULL);
-  }
+	status = ca_search (
+			pItems[0].name, 
+			&chan);
+    	SEVCHK (status, NULL);
+	status = ca_pend_io(0.0);
+
+  	for (i=0; i< iterations;i++) {
+		pItems[i].chix = chan;
+  	}
+
+    	SEVCHK (status, NULL);
+}
+
+
+/*
+ * test_free ()
+ */
+LOCAL void test_free(
+ti		*pItems,
+unsigned	iterations
+)
+{
+  	int 		i;
+	int		status;
+	dbr_int_t	val;
+
+	status = ca_clear_channel (pItems[0].chix);
+    	SEVCHK (status, NULL);
+
+#if 0
 #ifdef WAIT_FOR_ACK
-  SEVCHK(ca_array_get(DBR_INT,1,chix,&ival),NULL);
-  SEVCHK(ca_pend_io(0.0),NULL);
-#else
-  SEVCHK(ca_flush_io(),NULL);
+	status = ca_array_get (DBR_INT, 1, pItems[0].chix, &val);
+    	SEVCHK (status, NULL);
+  	status = ca_pend_io(100.0);
+    	SEVCHK (status, NULL);
+#endif
+
+	status = ca_clear_channel (pItems[0].chix);
+    	SEVCHK (status, NULL);
+  	status = ca_flush_io();
+    	SEVCHK (status, NULL);
 #endif
 }
 
-test_put(chix, name, type, count, ptr)
-chid chix;
-char *name;
-int type,count;
-void *ptr;
+
+/*
+ * test_put ()
+ */
+LOCAL void test_put(
+ti		*pItems,
+unsigned	iterations
+)
 {
-  int i;
+  	int 		i;
+	int		status;
+	dbr_int_t	val;
   
-  for(i=0; i< ITERATION_COUNT;i++){
-    SEVCHK(ca_array_put(type,count,chix,ptr),NULL);
-#if 0
-    ca_flush_io();
-#endif
-  }
+  	for (i=1; i<iterations; i++) {
+		status = ca_array_put(
+				pItems[i].type,
+				pItems[i].count,
+				pItems[i].chix,
+				&pItems[i].val);
+    		SEVCHK (status, NULL);
+  	}
 #ifdef WAIT_FOR_ACK
-  SEVCHK(ca_array_get(type,count,chix,ptr),NULL);
-  SEVCHK(ca_pend_io(0.0),NULL);
-#else
-  SEVCHK(ca_flush_io(),NULL);
+	status = ca_array_get (DBR_INT, 1, pItems[0].chix, &val);
+    	SEVCHK (status, NULL);
+  	status = ca_pend_io(100.0);
 #endif
+	status = ca_array_put(
+			pItems[0].type,
+			pItems[0].count,
+			pItems[0].chix,
+			&pItems[0].val);
+    	SEVCHK (status, NULL);
+  	status = ca_flush_io();
+    	SEVCHK (status, NULL);
 }
 
-test_get(chix, name, type, count, ptr)
-chid chix;
-char *name;
-int type,count;
-void *ptr;
+
+/*
+ * test_get ()
+ */
+LOCAL void test_get(
+ti		*pItems,
+unsigned	iterations
+)
 {
-  int i;
-
-  for(i=0; i< ITERATION_COUNT;i++){
-    SEVCHK(ca_array_get(type,count,chix,ptr),NULL);
-#if 0
-    ca_flush_io();
-#endif
-  }
-  SEVCHK(ca_pend_io(0.0),NULL);
+  	int 	i;
+	int	status;
+  
+  	for (i=0; i<iterations; i++) {
+		status = ca_array_get(
+				pItems[i].type,
+				pItems[i].count,
+				pItems[i].chix,
+				&pItems[i].val);
+    		SEVCHK (status, NULL);
+  	}
+  	status = ca_pend_io(100.0);
+    	SEVCHK (status, NULL);
 }
 
 
-test_wait(chix, name, type, count, ptr)
-chid chix;
-char *name;
-int type,count;
-void *ptr;
+
+/*
+ * test_wait ()
+ */
+LOCAL void test_wait (
+ti		*pItems,
+unsigned	iterations
+)
 {
-  int i;
-
-  for(i=0; i< ITERATION_COUNT;i++){
-    SEVCHK(ca_array_get(type,count,chix,ptr),NULL);
-    SEVCHK(ca_pend_io(0.0),NULL);
-  }
+  	int 	i;
+	int	status;
+  
+  	for (i=1; i<iterations; i++) {
+		status = ca_array_get(
+				pItems[i].type,
+				pItems[i].count,
+				pItems[i].chix,
+				&pItems[i].val);
+    		SEVCHK (status, NULL);
+		status = ca_pend_io(100.0);
+		SEVCHK (status, NULL);
+  	}
 }
 

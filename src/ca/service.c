@@ -688,7 +688,7 @@ struct in_addr  	*pnet_addr
 		}
 
 		if (CA_V44(CA_PROTOCOL_VERSION,piiu->minor_version_number)) {
-        		chan->id.sid = ntohl (piiu->curMsg.m_available);
+        		chan->id.sid = piiu->curMsg.m_available;
 		}
 		reconnect_channel(piiu, chan);
 		break;

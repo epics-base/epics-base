@@ -10,11 +10,12 @@ DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libca.a\
 	$(DEPLIBS_BASE)/libCom.a
 
+
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
-	../flow_control.c ../repeater.c ../conn.c ../acctst.c \
+	../flow_control.c ../repeater.c ../conn.c \
 	../syncgrp.c ../if_depen.c ../netdb_depen.c ../bsd_depen.c \
-	../posix_depen.c ../caRepeater.c ../acctst.c
+	../posix_depen.c ../caRepeater.c ../acctst.c ../catime.c
 
 OBJS = caRepeater.o 
 
@@ -34,4 +35,10 @@ acctst: acctst.o $(DEPLIBS_BASE)/libCom.a libca.a
 
 acctst.o: ../acctst.c
 	$(COMPILE.c) $<
+
+catime: catime.o $(DEPLIBS_BASE)/libCom.a libca.a
+
+catime.o: ../catime.c
+	$(COMPILE.c) $<
+
 

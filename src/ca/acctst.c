@@ -10,6 +10,7 @@ static char *sccsId = "@(#) $Id$";
 #endif
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<assert.h>
 
 #include	"os_depen.h"

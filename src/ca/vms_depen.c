@@ -32,15 +32,6 @@
  */
 
 /*
- * ANSI includes
- */
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <stdLib.h>
-#include <stdarg.h>
-
-/*
  * VMS includes
  */
 #include <stsdef.h>
@@ -147,7 +138,7 @@ void os_specific_sg_io_complete(CASG *pcasg)
 /*
  * cac_block_for_sg_completion()
  */
-void cac_block_for_sg_completion(pTV)
+void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
 	cac_mux_io(pTV);
 }
@@ -335,19 +326,12 @@ void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
 
 
 /*
- *      ca_printf()
+ * caSetDefaultPrintfHandler ()
+ * use the normal default here
+ * ( see access.c )
  */
-int ca_printf(char *pformat, ...)
+void caSetDefaultPrintfHandler ()
 {
-        va_list         args;
-        int             status;
-
-        va_start(args, pformat);
-
-        status = vfprintf(stderr, pformat, args);
-
-        va_end(args);
-
-        return status;
+        ca_static->ca_printf_func = ca_default_printf;
 }
 

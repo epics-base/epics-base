@@ -68,7 +68,7 @@ void manage_conn(int silent)
 	IIU		*piiu;
 	ca_time		current;
 	ca_real		delay;
-	unsigned long	idelay;
+	long		idelay;
 
 	/*
 	 * prevent recursion
@@ -214,10 +214,10 @@ void manage_conn(int silent)
 	idelay = idelay << ca_static->ca_search_retry;
 	delay = idelay * CA_RECAST_DELAY; /* sec */	
 	delay = min (CA_RECAST_PERIOD, delay);
-	idelay = delay;
+	idelay = (long) delay;
 	ca_static->ca_conn_retry_delay.tv_sec = idelay;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-		(delay-idelay)*USEC_PER_SEC;
+		(long) ((delay-idelay)*USEC_PER_SEC);
 	ca_static->ca_conn_next_retry = 
 		cac_time_sum (
 			&current,
@@ -347,12 +347,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
 
 
 /*
- *
- *
  *	MARK_SERVER_AVAILABLE
- *
- *
- *
  */
 void mark_server_available(struct in_addr *pnet_addr)
 {
@@ -465,16 +460,16 @@ void mark_server_available(struct in_addr *pnet_addr)
 	{
 		ca_real		diff;
 		ca_real		delay;
-		unsigned	idelay;
+		long		idelay;
 		ca_time		ca_delay;
 		ca_time		next;
 
 		delay = (port&CA_RECAST_PORT_MASK);
 		delay /= MSEC_PER_SEC;
 		delay += CA_RECAST_DELAY;
-		idelay = delay;
+		idelay = (long) delay;
 		ca_delay.tv_sec = idelay;
-		ca_delay.tv_usec = (delay-idelay) * USEC_PER_SEC; 
+		ca_delay.tv_usec = (long) (delay-idelay) * USEC_PER_SEC; 
 		next = cac_time_sum(&currentTime, &ca_delay);
 
 		diff = cac_time_diff(
@@ -484,10 +479,10 @@ void mark_server_available(struct in_addr *pnet_addr)
 			ca_static->ca_conn_next_retry = next;
 			LOGRETRYINTERVAL 
 		}
-		idelay = CA_RECAST_DELAY;
+		idelay = (long) CA_RECAST_DELAY;
 		ca_static->ca_conn_retry_delay.tv_sec = idelay;
 		ca_static->ca_conn_retry_delay.tv_usec = 
-			(CA_RECAST_DELAY-idelay) * USEC_PER_SEC;
+			(long) ((CA_RECAST_DELAY-idelay) * USEC_PER_SEC);
 		ca_static->ca_search_retry = 0;
 	}
 

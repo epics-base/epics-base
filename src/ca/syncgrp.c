@@ -97,7 +97,7 @@ void ca_sg_shutdown(struct ca_static *ca_temp)
 /*
  * ca_sg_create()
  */
-int ca_sg_create(CA_SYNC_GID *pgid)
+int APIENTRY ca_sg_create(CA_SYNC_GID *pgid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -162,7 +162,7 @@ int ca_sg_create(CA_SYNC_GID *pgid)
 /*
  * ca_sg_delete()
  */
-int ca_sg_delete(CA_SYNC_GID gid)
+int APIENTRY ca_sg_delete(CA_SYNC_GID gid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -200,7 +200,7 @@ int ca_sg_delete(CA_SYNC_GID gid)
 /*
  * ca_sg_block()
  */
-int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
+int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
 	struct timeval	beg_time;
 	struct timeval	cur_time;
@@ -270,8 +270,8 @@ int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 		/*
 		 * wait for asynch notification
 		 */
-		tmo.tv_sec = remaining;
-		tmo.tv_usec = (remaining-tmo.tv_sec)*USEC_PER_SEC;
+		tmo.tv_sec = (long) remaining;
+		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_sg_completion (pcasg, &tmo);
 	}
 	pcasg->opPendCount = 0;
@@ -283,7 +283,7 @@ int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 /*
  * ca_sg_reset
  */
-int ca_sg_reset(CA_SYNC_GID gid)
+int APIENTRY ca_sg_reset(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -305,7 +305,7 @@ int ca_sg_reset(CA_SYNC_GID gid)
 /*
  * ca_sg_test
  */
-int ca_sg_test(CA_SYNC_GID gid)
+int APIENTRY ca_sg_test(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -331,7 +331,7 @@ int ca_sg_test(CA_SYNC_GID gid)
 /*
  * ca_sg_array_put()
  */
-int     ca_sg_array_put(
+int APIENTRY ca_sg_array_put(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 
@@ -396,7 +396,7 @@ void 		*pvalue)
 /*
  * ca_sg_array_get()
  */
-int     ca_sg_array_get(
+int APIENTRY ca_sg_array_get(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 

@@ -24,6 +24,7 @@
  *			pairs reside at the same C bracket level
  *      .11 GeG 120992	support VMS/UCX
  *      .12 CJM 130794  define MYERRNO properly for UCX
+ *	.13 CJM 311094  mods to support DEC C compiler
  *
  */
 
@@ -46,6 +47,7 @@ static char *os_depenhSccsId = "$Id$";
 #	include <sys/param.h>
 #	include <sys/socket.h>
 #	include <netinet/in.h>
+#	include <netinet/tcp.h>
 #	include <net/if.h>
 #	define CA_OS_CONFIGURED
 #endif
@@ -57,6 +59,7 @@ static char *os_depenhSccsId = "$Id$";
 #	include <sys/ioctl.h>
 #	include <sys/socket.h>
 #	include <netinet/in.h>
+#	include <netinet/tcp.h>
 #	include <net/if.h>
 
 #	include <systime.h>
@@ -93,9 +96,13 @@ static char *os_depenhSccsId = "$Id$";
 #	include <sys/types.h>
 #	include <sys/socket.h>
 #	include <netinet/in.h>
-#       define  __TIME_LOADED /* dont include VMS CC time.h under MULTINET */
+#	include <netinet/tcp.h>
+#if !defined(UCX) 
 #	include <sys/time.h>
-#       include <tcp/errno.h>
+#	include <tcp/errno.h>
+#else
+#       include <errno>
+#endif
 #	include <ssdef>
 #	include <stsdef>
 #	include <iodef.h>
@@ -104,12 +111,12 @@ static char *os_depenhSccsId = "$Id$";
 #       include <descrip.h>
 #	define MAXHOSTNAMELEN 75
 #ifdef UCX /* GeG 09-DEC-1992 */
-#       include         <sys/ucx$inetdef.h>
-#       include         <ucx.h>
+#       include <sys/ucx$inetdef.h>
+#       include <ucx.h>
 #else
-#	include		<net/if.h>
-#       include         <vms/inetiodef.h>
-#       include         <sys/ioctl.h>
+#	include	<net/if.h>
+#       include <vms/inetiodef.h>
+#       include <sys/ioctl.h>
 #endif
 #	define CA_OS_CONFIGURED
 #endif /*VMS*/
@@ -123,7 +130,7 @@ static char *os_depenhSccsId = "$Id$";
 #endif /*_WINDOWS*/
 
 #ifndef CA_OS_CONFIGURED
-#error Please define one of vxWorks, UNIX or VMS 
+#error Please define one of vxWorks, UNIX VMS, or _WINDOWS
 #endif
 
 /*
@@ -139,10 +146,10 @@ static char *os_depenhSccsId = "$Id$";
 #elif defined(_X86_)
 #	define CA_FLOAT_IEEE
 #	define CA_LITTLE_ENDIAN
-#elif (defined(__ALPHA) || defined(__alpha)) && defined(VMS)
+#elif (defined(__ALPHA) && defined(VMS) || defined(__alpha)) && defined(VMS)
 #	define CA_FLOAT_MIT
 #	define CA_LITTLE_ENDIAN
-#elif (defined(__ALPHA) || defined(__alpha)) && defined(UNIX)
+#elif (defined(__ALPHA) && defined(UNIX) || defined(__alpha)) && defined(UNIX)
 #	define CA_FLOAT_IEEE
 #	define CA_LITTLE_ENDIAN
 #else
@@ -269,7 +276,6 @@ static char *os_depenhSccsId = "$Id$";
 #	else
 #           ifdef UCX
 #               define MYERRNO errno
-                extern volatile int noshare errno ;
 #           else
 # 		define MYERRNO	socket_errno
 #           endif
@@ -286,6 +292,12 @@ static char *os_depenhSccsId = "$Id$";
 #endif
 
 #ifdef _WINDOWS
+#  	define LOCK
+#  	define UNLOCK  
+#  	define LOCKEVENTS
+#  	define UNLOCKEVENTS
+#	define EVENTLOCKTEST		(post_msg_active)
+#	define MAXHOSTNAMELEN 		75
 #	define IPPORT_USERRESERVED	5000
 #	define EWOULDBLOCK		WSAEWOULDBLOCK
 #	define ENOBUFS			WSAENOBUFS

@@ -63,10 +63,30 @@
 #  	endif
 #endif
 
-#if !defined(MIT_FLOAT) && !defined(CA_LITTLE_ENDIAN)
-#define htond(IEEEhost, IEEEnet) (*(double *)(IEEEnet) = *(double *)(IEEEhost))
-#define ntohd(IEEEnet, IEEEhost) (*(double *)(IEEEhost) = *(double *)(IEEEnet))
-#define htonf(IEEEhost, IEEEnet) (*(float *)(IEEEnet) = *(float *)(IEEEhost))
-#define ntohf(IEEEnet, IEEEhost) (*(float *)(IEEEhost) = *(float *)(IEEEnet))
+#if defined(CA_FLOAT_IEEE) && !defined(CA_LITTLE_ENDIAN)
+#	define htond(IEEEhost, IEEEnet) \
+		(*(double *)(IEEEnet) = *(double *)(IEEEhost))
+#	define ntohd(IEEEnet, IEEEhost) \
+		(*(double *)(IEEEhost) = *(double *)(IEEEnet))
+#	define htonf(IEEEhost, IEEEnet) \
+		(*(float *)(IEEEnet) = *(float *)(IEEEhost))
+#	define ntohf(IEEEnet, IEEEhost) \
+		(*(float *)(IEEEhost) = *(float *)(IEEEnet))
+#elif defined(CA_FLOAT_IEEE) && defined(CA_LITTLE_ENDIAN)
+#	define ntohf(NET,HOST)  \
+		{*((u_long *)(HOST)) = ntohl(*((u_long *)(NET )));}
+#	define htonf(HOST,NET) \
+		{*((u_long *)(NET) ) = htonl(*((u_long *)(HOST)));}
+#	define ntohd(NET,HOST) \
+		{ ((u_long *)(HOST))[1] = ntohl(((u_long *)(NET))[0]) ; \
+		((u_long *)(HOST))[0] = ntohl(((u_long *)(NET))[1]) ;}
+#	define htond(HOST,NET) \
+		{ ((u_long *)(NET))[1] = htonl(((u_long *)(HOST))[0]) ; \
+		((u_long *)(NET))[0] = htonl(((u_long *)(HOST))[1]) ;}
+#else
+	void htond(double *pHost, double *pNet);
+	void ntohd(double *pNet, double *pHost);
+	void htonf(float *pHost, float *pNet);
+	void ntohf(float *pNet, float *pHost);
 #endif
 

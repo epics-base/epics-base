@@ -82,7 +82,7 @@ typedef float           ca_float32_t;
 #define IOC_WRITE		4	/* write a channel value */
 #define IOC_SNAPSHOT		5	/* snapshot of the system */
 #define	IOC_SEARCH		6	/* IOC channel search */
-/*				7				*/
+#define IOC_BUILD		7	/* build - obsolete */
 #define IOC_EVENTS_OFF		8	/* flow control */ 
 #define IOC_EVENTS_ON		9	/* flow control */ 
 #define IOC_READ_SYNC		10	/* purge old reads */ 
@@ -91,7 +91,7 @@ typedef float           ca_float32_t;
 #define IOC_RSRV_IS_UP		13	/* CA server has joined the net */
 #define IOC_NOT_FOUND		14	/* channel not found */
 #define IOC_READ_NOTIFY		15	/* add a one shot event */
-/*				16				*/
+#define IOC_READ_BUILD		16	/* read and build - obsolete */
 #define REPEATER_CONFIRM	17	/* registration confirmation */
 #define IOC_CLAIM_CIU		18	/* client claims resource in server */
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */

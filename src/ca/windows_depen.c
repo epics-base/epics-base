@@ -1,6 +1,6 @@
 /*
  *	$Id$	
- *      Author: Jeffrey O. Hill
+ *      Author: Jeffrey O. Hill, Chris Timossi
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93
@@ -30,14 +30,6 @@
  *      -----------------
  *
  */
-
-/*
- * ANSI includes
- */
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
 
 #include "iocinf.h"
 
@@ -145,7 +137,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 {
         int status;
 
-	ca_static = ca_temp;
+	ca_static = pcas;
 
 	/*
 	 * dont allow disconnect to terminate process
@@ -229,26 +221,59 @@ void ca_spawn_repeater()
 	}
 }
 
+
+/*
+ * caSetDefaultPrintfHandler ()
+ * use the normal default here
+ * ( see access.c )
+ */
+void caSetDefaultPrintfHandler ()
+{
+        ca_static->ca_printf_func = ca_default_printf;
+}
 
 
 
 /*
- *      ca_printf()
+ * DllMain ()
  */
-int ca_printf(char *pformat, ...)
+BOOL APIENTRY DllMain (HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-        va_list         args;
-        int             status;
+	int status;
+	WSADATA WsaData;
 
-        va_start(args, pformat);
+	switch (dwReason)  {
 
-        status = vfprintf(
-                        stderr,
-                        pformat,
-                        args);
+	case DLL_PROCESS_ATTACH:
 
-        va_end(args);
+		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0)
+			return FALSE;
+		if (AllocConsole())	{
+			SetConsoleTitle("Channel Access Status");
+    		freopen( "CONOUT$", "a", stderr );
+			fprintf(stderr, "Process attached to ca.dll R12\n");
+		}
+		break;
 
-        return status;
+	case DLL_PROCESS_DETACH:
+		
+		if ((status = WSACleanup()) !=0)
+			return FALSE;
+		break;
+
+	case DLL_THREAD_ATTACH:
+		fprintf(stderr, "Thread attached to ca.dll R12\n");
+		break;
+
+	case DLL_THREAD_DETACH:
+		fprintf(stderr, "Thread detached from ca.dll R12\n");
+		break;
+
+	default:
+		break;
+	}
+
+return TRUE;
+
 }
 

@@ -15,7 +15,7 @@ $!             - You are using Multinet for TCP/IP access. If not, the logical
 $!               name definitions below will need to be changed
 $!              
 $!
-$! Arguments : None
+$! Arguments : 	optional source file name 
 $!
 $! Created  	16-NOV-1993   	Mark L. Rivers
 $!		05-MAY-1994	Jeff O. Hill	Updated for EPICS 3.12
@@ -30,11 +30,13 @@ $ define /nolog arpa multinet_root:[multinet.include.arpa]
 $ define /nolog tcp multinet_root:[multinet.include]
 $!
 $! Compile the functions and test programs
+$! Define symbol for the CC command
+$ call set_cc_command
 $ if (p1 .nes. "")
 $ then
-$ cc /defines=(__STDC__)/include=([]) 'p1' 
+$ cc_command 'p1'
 $ else 
-$ cc /defines=(__STDC__)/include=([])  -
+$ cc_command -
 ACCESS, -
 CONN, -  
 CONVERT, -  
@@ -50,7 +52,10 @@ IF_DEPEN, -
 VMS_DEPEN, -
 ELLLIB, - 
 BUCKETLIB, -
+NEXTFIELDSUBR, -
 ENVSUBR, -
+TSSUBR, -
+GENSUBR, -
 CATIME, - 
 ACCTST 
 $ endif
@@ -71,7 +76,10 @@ IF_DEPEN, -
 VMS_DEPEN, -
 BSD_DEPEN, -
 BUCKETLIB, -
+NEXTFIELDSUBR, -
+TSSUBR, -
 ENVSUBR, -
+GENSUBR, -
 ELLLIB
 $! Link the test programs
 $ call link acctst
@@ -84,10 +92,32 @@ $ catime == "$ EPICS_EXE:catime.exe"
 $
 $!
 $ link: subroutine
-$ link 'p1', sys$input/options
-channel_access/lib
-multinet_socket_library/share
-sys$share:vaxcrtl/share
+$! Link differently for VAX and AXP
+$ if f$getsyi("HW_MODEL") .ge. 1024
+$ then
+$   link 'p1', sys$input/options
+    channel_access/lib
+    multinet_socket_library/share
+$ else
+$   link 'p1', sys$input/options
+    channel_access/lib
+    multinet_socket_library/share
+    sys$share:vaxcrtl/share
+$ endif
+$ endsubroutine
+$
+$
+$! This subroutine sets up "cc_command" to use different switches for 
+$! VAX (assumes VAX C compiler) and AXP (DEC C compiler).
+$ set_cc_command : subroutine
+$ if f$getsyi("HW_MODEL") .ge. 1024
+$ then
+$! turn of no prototype messages because MULTINET does not
+$! supply prototypes.
+$ cc_command:== cc /warn=(disable=IMPLICITFUNC)/float=d_float /include=([], [-.include], [-.libcom]) 
+$ else
+$ cc_command:== cc /include=([], [-.include], [-.libcom]) 
+$ endif
 $ endsubroutine
 $! ************************************************************
 

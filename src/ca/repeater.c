@@ -20,11 +20,11 @@
  *	Los Alamos National Laboratory
  *
  *	Direct inqueries to:
- *	Andy Kozubal, AT-8, Mail Stop H820
+ *	Jeff HIll, AT-8, Mail Stop H820
  *	Los Alamos National Laboratory
  *	Los Alamos, New Mexico 87545
- *	Phone: (505) 667-6508
- *	E-mail: kozubal@k2.lanl.gov
+ *	Phone: (505) 665-1831
+ *	E-mail: johill@lanl.gov
  *
  *	PURPOSE:
  *	Broadcasts fan out over the LAN, but UDP does not allow
@@ -141,8 +141,9 @@ void ca_repeater()
 
 	status = local_addr(sock, &local);
 	if(status != OK){
-		ca_printf("CA Repeater: no inet interfaces online?\n");
-		assert(0);
+		ca_printf(
+	"CA Repeater: failed during initialization - no local IP address\n");
+		exit (0);
 	}
 
 #ifdef DEBUG

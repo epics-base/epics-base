@@ -85,6 +85,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <signal.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdarg.h>
 
 
 /*
@@ -168,8 +169,8 @@ struct pending_io_event{
 typedef struct timeval ca_time;
 
 #define LD_CA_TIME(FLOAT_TIME,PCATIME) \
-((PCATIME)->tv_sec = (FLOAT_TIME), \
-(PCATIME)->tv_usec = ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC)
+((PCATIME)->tv_sec = (long) (FLOAT_TIME), \
+(PCATIME)->tv_usec = (long) ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC)
 
 /*
  * dont adjust
@@ -409,6 +410,7 @@ struct  ca_static{
 	void		(*ca_connection_func)
 				(struct connection_handler_args);
 	void		*ca_connection_arg;
+	int		(*ca_printf_func)(char *pformat, va_list args);
 	void		(*ca_fd_register_func)
 				(void *, SOCKET, int);
 	void		*ca_fd_register_arg;
@@ -591,6 +593,8 @@ ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(evid pIOBlock);
 void clearChannelResources(unsigned id);
+void caSetDefaultPrintfHandler ();
+int ca_default_printf(char *pformat, va_list args);
 
 /*
  * !!KLUDGE!!

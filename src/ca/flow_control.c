@@ -50,8 +50,8 @@ static char	*sccsId = "@(#) $Id$";
 void flow_control(struct ioc_in_use *piiu)
 {
 	unsigned        nbytes;
-	register int    status;
-	register int    busy = piiu->client_busy;
+	int    		status;
+	int    		busy = piiu->client_busy;
 
 	LOCK;
 

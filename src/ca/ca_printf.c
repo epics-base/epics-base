@@ -52,12 +52,7 @@ static char *sccsId = "@(#) $Id$";
  *	Dump error messages to the appropriate place
  *
  */
-#ifdef __STDC__
 int ca_printf(char *pformat, ...)
-#else
-int ca_printf(va_alist)
-va_dcl
-#endif
 {
 	va_list		args;
 	int		status;
@@ -65,29 +60,9 @@ va_dcl
 	va_start(args, pformat);
 
 #if defined(vxWorks)
-	{
-		int	logMsgArgs[6];
-		int	i;
-
-		for(i=0; i< NELEMENTS(logMsgArgs); i++){
-			logMsgArgs[i] = va_arg(args, int);	
-		}
-
-		status = logMsg(
-				pformat,
-				logMsgArgs[0],
-				logMsgArgs[1],
-				logMsgArgs[2],
-				logMsgArgs[3],
-				logMsgArgs[4],
-				logMsgArgs[5]);
-			
-	}
+	status = mprintf(pformat, args);
 #else
-	status = vfprintf(
-			stderr,
-			pformat,
-			args);
+	status = vfprintf(stderr, pformat, args);
 #endif 
 
 	va_end(args);

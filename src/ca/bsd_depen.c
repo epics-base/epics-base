@@ -45,9 +45,8 @@ int cac_select_io(struct timeval *ptimeout, int flags)
         long            status;
         IIU             *piiu;
         unsigned long   freespace;
-	int		maxfd;
+	SOCKET		maxfd;
 	caFDInfo	*pfdi;
-
 
         LOCK;
 	pfdi = (caFDInfo *) ellGet(&ca_static->fdInfoFreeList);

@@ -79,7 +79,9 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	ifconf.ifc_req = ifreq;
 	status = socket_ioctl(s, SIOCGIFCONF, &ifconf);
 	if (status < 0 || ifconf.ifc_len == 0) {
-		ca_printf("CAC: ioctl failed %s\n", strerror(MYERRNO));
+		ca_printf(
+			"CAC: ioctl failed because \"%s\"\n", 
+			strerror(MYERRNO));
 		ifconf.ifc_len = 0;
 	}
 
@@ -145,7 +147,7 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 
 #if 0
 /*
- * An alternate sloution
+ * An alternate solution
  * for os without the if routines
  */
 /*

@@ -31,11 +31,10 @@
  *
  */
 
-#include <stdarg.h>
-
 #include <callback.h>
 #include "iocinf.h"
 #include "remLib.h"
+#include <mprintf.h>
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
@@ -378,6 +377,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 	if (status != ECA_NORMAL){
 		return status;
 	}
+
 
 	evuser = (void *) db_init_events();
 	assert(evuser);
@@ -881,40 +881,17 @@ void cac_recv_task(int  tid)
 
 
 /*
+ * caSetDefaultPrintfHandler()
  *
+ * replace the default printf handler with a 
+ * vxWorks specific one that calls logMsg ()
+ * so that:
  *
- *      ca_printf()
- *
- *
+ * o messages go to the log file
+ * o messages dont get intermixed
  */
-int ca_printf(char *pformat, ...)
+void caSetDefaultPrintfHandler ()
 {
-        va_list         args;
-        int             status;
-
-        va_start(args, pformat);
-
-        {
-                int     logMsgArgs[6];
-                int     i;
-
-                for(i=0; i< NELEMENTS(logMsgArgs); i++){
-                        logMsgArgs[i] = va_arg(args, int);
-                }
-
-                status = logMsg(
-                                pformat,
-                                logMsgArgs[0],
-                                logMsgArgs[1],
-                                logMsgArgs[2],
-                                logMsgArgs[3],
-                                logMsgArgs[4],
-                                logMsgArgs[5]);
-
-        }
-
-        va_end(args);
-
-        return status;
+	ca_static->ca_printf_func = vmprintf;
 }
 

@@ -6,4 +6,4 @@
 
 #define epicsIsNAN(D) isnan(D)
 
-#endif /* epicsMathh
+#endif /* epicsMathh */

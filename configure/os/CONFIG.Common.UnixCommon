@@ -17,6 +17,10 @@ VALID_BUILDS = Host Ioc
 GNU_DIR = /usr/local
 
 #-------------------------------------------------------
+SHRLIB_SEARCH_DIRS := $(foreach dir,$(SHRLIB_SEARCH_DIRS), \
+  $(shell perl $(TOOLS)/fullPathName.pl $(dir)))
+
+#-------------------------------------------------------
 # Unix prefix and suffix definitions
 EXE =
 OBJ = .o

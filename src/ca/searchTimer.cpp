@@ -47,7 +47,7 @@ void searchTimer::reset ( double delayToNextTry )
         delayToNextTry = CA_RECAST_DELAY;
     }
 
-    LOCK (this->iiu.pcas);
+    this->iiu.pcas->lock ();
     this->retry = 0;
     if ( this->period > delayToNextTry ) {
         reschedule = true;
@@ -56,7 +56,7 @@ void searchTimer::reset ( double delayToNextTry )
         reschedule = false;
     }
     this->period = CA_RECAST_DELAY;
-    UNLOCK (this->iiu.pcas);
+    this->iiu.pcas->unlock ();
 
     if ( reschedule ) {
         this->reschedule ( delayToNextTry );
@@ -76,7 +76,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
     unsigned idelay;
     double delay;
 
-    LOCK (this->iiu.pcas);
+    this->iiu.pcas->lock ();
 
     /*
      * set the retry number
@@ -93,7 +93,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
      */
     this->period = min (CA_RECAST_PERIOD, delay);
 
-    UNLOCK (this->iiu.pcas);
+    this->iiu.pcas->unlock ();
 
     debugPrintf ( ("new CA search period is %f sec\n", this->period) );
 }
@@ -107,7 +107,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
 //
 void searchTimer::notifySearchResponse (nciu *pChan)
 {
-    LOCK (this->iiu.pcas);
+    this->iiu.pcas->lock ();
 
     if ( this->retrySeqNoAtListBegin <= pChan->retrySeqNo ) {
         if ( this->searchResponses < ULONG_MAX ) {
@@ -115,7 +115,7 @@ void searchTimer::notifySearchResponse (nciu *pChan)
         }
     }    
         
-    UNLOCK (this->iiu.pcas);
+    this->iiu.pcas->unlock ();
 
     if ( pChan->retrySeqNo == this->retrySeqNo ) {
         this->reschedule (0.0);
@@ -139,7 +139,7 @@ void searchTimer::expire ()
         return;
     }   
     
-    LOCK ( this->iiu.pcas );
+    this->iiu.pcas->lock ();
  
     /*
      * increment the retry sequence number
@@ -314,7 +314,7 @@ void searchTimer::expire ()
         }
     }
     
-    UNLOCK (this->iiu.pcas);
+    this->iiu.pcas->unlock ();
 
     // flush out the search request buffer
     this->iiu.flush ();

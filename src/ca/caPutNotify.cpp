@@ -57,9 +57,9 @@ LOCAL void caExtraEventLabor (void *pArg)
 			args.status = ECA_NORMAL;
 		}
 		
-		LOCK (pcac);
+		pcac->lock ();
 		(*ppnb->caUserCallback) (args);
-		UNLOCK (pcac);
+		pcac->unlock ();
 		
 		ppnb->busy = FALSE;
 	}

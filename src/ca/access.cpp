@@ -112,6 +112,11 @@ extern "C" void ca_default_exception_handler (struct exception_handler_args args
  */
 int epicsShareAPI ca_task_initialize (void)
 {
+    return ca_context_create ( false );
+}
+
+epicsShareFunc int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
+{
     cac *pcac;
 
     threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
@@ -125,7 +130,7 @@ int epicsShareAPI ca_task_initialize (void)
 		return ECA_NORMAL;
 	}
 
-    pcac = new cac;
+    pcac = new cac ( preemptiveCallBackEnable ? true : false );
 	if ( ! pcac ) {
 		return ECA_ALLOCMEM;
 	}
@@ -179,12 +184,7 @@ int epicsShareAPI ca_modify_user_name (const char *)
 }
 
 
-/*
- *  ca_task_exit()
- *
- *  releases all resources alloc to a channel access client
- */
-epicsShareFunc int epicsShareAPI ca_task_exit (void)
+epicsShareFunc int epicsShareAPI ca_context_destroy (void)
 {
     cac   *pcac;
 
@@ -197,6 +197,16 @@ epicsShareFunc int epicsShareAPI ca_task_exit (void)
     }
 
     return ECA_NORMAL;
+}
+
+/*
+ *  ca_task_exit()
+ *
+ *  releases all resources alloc to a channel access client
+ */
+epicsShareFunc int epicsShareAPI ca_task_exit (void)
+{
+    return ca_context_destroy ();
 }
 
 /*
@@ -323,13 +333,13 @@ int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
     cac *pcac;
     int caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
     
-    LOCK (pcac);
-    if (pfunc) {
+    pcac->lock ();
+    if ( pfunc ) {
         pcac->ca_exception_func = pfunc;
         pcac->ca_exception_arg = arg;
     }
@@ -337,7 +347,7 @@ int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
         pcac->ca_exception_func = ca_default_exception_handler;
         pcac->ca_exception_arg = NULL;
     }
-    UNLOCK (pcac);
+    pcac->unlock ();
 
     return ECA_NORMAL;
 }
@@ -515,9 +525,9 @@ void genLocalExcepWFL (cac *pcac, long stat, const char *ctx, const char *pFile,
     else if (pcac->ca_exception_func!=NULL) {
         args.usr = pcac->ca_exception_arg;
 
-        LOCK (pcac);
+        pcac->lock ();
         (*pcac->ca_exception_func) (args);
-        UNLOCK (pcac);
+        pcac->unlock ();
     }
 }
 
@@ -626,20 +636,17 @@ void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm,
  *  (for a manager of the select system call under UNIX)
  *
  */
-int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, void *arg)
+int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
 {
-    cac       *pcac;
-    int             caStatus;
+    cac *pcac;
+    int caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    LOCK (pcac);
-    pcac->ca_fd_register_func = func;
-    pcac->ca_fd_register_arg = arg;
-    UNLOCK (pcac);
+    pcac->registerForFileDescriptorCallBack ( func, arg );
 
     return ECA_NORMAL;
 }
@@ -703,14 +710,14 @@ int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
         return caStatus;
     }
 
-    LOCK (pcac);
+    pcac->lock ();
     if (ca_printf_func) {
         pcac->ca_printf_func = ca_printf_func;
     }
     else {
         pcac->ca_printf_func = epicsVprintf;
     }
-    UNLOCK (pcac);
+    pcac->unlock ();
 
     return ECA_NORMAL;
 }
@@ -844,14 +851,12 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-void netiiu::show (unsigned /* level */) const
+void netiiu::show ( unsigned /* level */ ) const
 {
-	nciu *pChan;
+    this->pcas->lock ();
 
-    LOCK (this->pcas);
-
-    tsDLIter<nciu> iter (this->pcas->pudpiiu->chidList);
-	while ( ( pChan = iter () ) ) {
+    tsDLIterConstBD <nciu> pChan ( this->chidList.first () );
+	while ( pChan != pChan.eol () ) {
         char hostName [256];
 		printf(	"%s native type=%d ", 
 			pChan->pName (), pChan->nativeType () );
@@ -877,7 +882,8 @@ void netiiu::show (unsigned /* level */) const
 		printf("\n");
 	}
 
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
+
 }
 
 epicsShareFunc int epicsShareAPI ca_channel_status (threadId /* tid */)

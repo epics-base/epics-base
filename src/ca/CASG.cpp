@@ -89,6 +89,7 @@ int CASG::block ( double timeout )
     if ( p ) {
         return ECA_EVDISALLOW;
     }
+
     threadPrivateSet (cacRecursionLock, &cacRecursionLock);
 
     cur_time = osiTime::getCurrent ();
@@ -97,6 +98,8 @@ int CASG::block ( double timeout )
 
     beg_time = cur_time;
     delay = 0.0;
+
+    this->client.enableCallbackPreemption ();
 
     status = ECA_NORMAL;
     while ( 1 ) {
@@ -135,9 +138,6 @@ int CASG::block ( double timeout )
             break;
         }
 
-        /*
-         * wait for asynch notification
-         */
         this->sem.wait ( remaining );
 
         /*
@@ -147,6 +147,8 @@ int CASG::block ( double timeout )
 
         delay = cur_time - beg_time;
     }
+
+    this->client.disableCallbackPreemption ();
 
     threadPrivateSet (cacRecursionLock, NULL);
 

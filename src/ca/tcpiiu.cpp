@@ -145,23 +145,23 @@ LOCAL void retryPendingClaims (tcpiiu *piiu)
 {
     bool success;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     tsDLIterBD<nciu> chan ( piiu->chidList.first () );
     while ( chan != chan.eol () ) {
-        if (!chan->claimPending) {
+        if ( ! chan->claimPending ) {
             piiu->claimRequestsPending = false;
             piiu->flush ();
             break;
         }
         // this moves the channel to the end of the list
-        success = chan->claimMsg (piiu);
+        success = chan->claimMsg ( piiu );
         if ( ! success ) {
             piiu->flush ();
             break;
         }
         chan = piiu->chidList.first ();
     }
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 }
 
 /*
@@ -291,8 +291,15 @@ void tcpiiu::recvMsg ()
     
     assert ( ( (unsigned) status ) <= writeSpace );
     totalBytes = (unsigned) status;
+
+    if ( writeSpace == totalBytes ) {
+        this->flowControlOn ();
+    }
+    else {
+        this->flowControlOff ();
+    }
     
-    cacRingBufferWriteCommit (&this->recv, totalBytes);
+    cacRingBufferWriteCommit ( &this->recv, totalBytes );
     // cacRingBufferWriteFlush (&this->recv);
 
     this->messageArrivalNotify (); // reschedule connection activity watchdog
@@ -508,7 +515,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
  */
 void tcpiiu::shutdown ()
 {
-    LOCK ( this->pcas );
+    this->pcas->lock ();
     if ( this->state != iiu_disconnected ) {
         int status;
 
@@ -522,7 +529,7 @@ void tcpiiu::shutdown ()
         cacRingBufferShutDown ( &this->recv );
         this->pcas->signalRecvActivityIIU ( *this );
     }
-    UNLOCK ( this->pcas );
+    this->pcas->unlock ();
 }
 
 //
@@ -540,7 +547,7 @@ tcpiiu::~tcpiiu ()
 
     this->shutdown ();
 
-    LOCK (this->pcas);
+    this->pcas->lock ();
 
     chanDisconnectCount = ellCount (&this->chidList);
     if ( chanDisconnectCount ) {
@@ -554,7 +561,7 @@ tcpiiu::~tcpiiu ()
         iter = next;
     }
 
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 
     // wait for send and recv threads to exit
     semBinaryMustTake ( this->sendThreadExitSignal );
@@ -566,10 +573,6 @@ tcpiiu::~tcpiiu ()
 
     this->pcas->removeBeaconInetAddr ( this->dest.ia );
 
-    if ( this->pcas->ca_fd_register_func ) {
-        (*this->pcas->ca_fd_register_func) 
-            ((void *)this->pcas->ca_fd_register_arg, this->sock, FALSE);
-    }
     socket_close (this->sock);
 
     cacRingBufferDestroy (&this->recv);
@@ -596,12 +599,12 @@ bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
         char rej[64];
 
         ipAddrToA ( &addr, rej, sizeof (rej) );
-        LOCK ( this->pcas );
+        this->pcas->lock ();
         sprintf ( this->pcas->ca_sprintf_buf, 
                 "Channel: %s Accepted: %s Rejected: %s ",
                 chan.pName (), this->host_name_str, rej );
         genLocalExcep (this->pcas, ECA_DBLCHNL, this->pcas->ca_sprintf_buf);
-        UNLOCK ( this->pcas );
+        this->pcas->unlock ();
     }
     return true;
 }
@@ -781,7 +784,7 @@ LOCAL void write_notify_resp_action (tcpiiu *piiu)
 {
     baseNMIU *monix;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
     if (monix) {
         int status = ntohl (piiu->curMsg.m_cid);
@@ -793,7 +796,7 @@ LOCAL void write_notify_resp_action (tcpiiu *piiu)
         }
         monix->destroy ();
     }
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 }
 
 /*
@@ -803,7 +806,7 @@ LOCAL void read_notify_resp_action ( tcpiiu *piiu )
 {
     baseNMIU *monix;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
 
     if (monix) {
@@ -849,7 +852,7 @@ LOCAL void read_notify_resp_action ( tcpiiu *piiu )
         monix->destroy ();
     }
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -864,7 +867,7 @@ LOCAL void event_resp_action (tcpiiu *piiu)
     /*
      * run the user's event handler 
      */
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
     if ( monix ) {
         int v41;
@@ -877,7 +880,7 @@ LOCAL void event_resp_action (tcpiiu *piiu)
          */
         if ( ! piiu->curMsg.m_postsize ) {
             monix->destroy ();
-            UNLOCK (piiu->pcas);
+            piiu->pcas->unlock ();
             return;
         }
 
@@ -920,7 +923,7 @@ LOCAL void event_resp_action (tcpiiu *piiu)
         }
     }
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -932,7 +935,7 @@ LOCAL void read_resp_action (tcpiiu *piiu)
 {
     baseNMIU *pIOBlock;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
 
     /*
      * verify the event id
@@ -948,7 +951,7 @@ LOCAL void read_resp_action (tcpiiu *piiu)
         pIOBlock->destroy ();
     }
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -979,7 +982,7 @@ LOCAL void exception_resp_action (tcpiiu *piiu)
         sprintf (context, "detected by: %s", piiu->host_name_str);
     }
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     switch ( ntohs (req->m_cmmd) ) {
     case CA_PROTO_READ_NOTIFY:
         monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
@@ -1048,7 +1051,7 @@ LOCAL void exception_resp_action (tcpiiu *piiu)
         break;
     }
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -1061,14 +1064,14 @@ LOCAL void access_rights_resp_action (tcpiiu *piiu)
     int ar;
     nciu *chan;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
     if ( ! chan ) {
         /*
          * end up here if they delete the channel
          * prior to connecting
          */
-        UNLOCK (piiu->pcas);
+        piiu->pcas->unlock ();
         return;
     }
 
@@ -1078,7 +1081,7 @@ LOCAL void access_rights_resp_action (tcpiiu *piiu)
 
     chan->accessRightsNotify (chan->ar);
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
     return;
 }
 
@@ -1090,11 +1093,11 @@ LOCAL void claim_ciu_resp_action (tcpiiu *piiu)
     unsigned sid;
     nciu *chan;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
 
     chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
     if ( ! chan ) {
-        UNLOCK (piiu->pcas);
+        piiu->pcas->unlock ();
         return;
     }
 
@@ -1107,7 +1110,7 @@ LOCAL void claim_ciu_resp_action (tcpiiu *piiu)
 
     chan->connect (*piiu, piiu->curMsg.m_dataType, piiu->curMsg.m_count, sid);
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -1119,14 +1122,14 @@ LOCAL void verifyAndDisconnectChan (tcpiiu *piiu)
 {
     nciu *chan;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
     if (!chan) {
         /*
          * end up here if they delete the channel
          * prior to this response 
          */
-        UNLOCK (piiu->pcas);
+        piiu->pcas->unlock ();
         return;
     }
 
@@ -1138,7 +1141,7 @@ LOCAL void verifyAndDisconnectChan (tcpiiu *piiu)
      * count goes to zero
      */
     chan->disconnect ();
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
     return;
 }
 
@@ -1189,9 +1192,6 @@ LOCAL const pProtoStubTCP tcpJumpTableCAC[] =
 
 /*
  * post_tcp_msg ()
- *
- * LOCK should be applied when calling this routine
- *
  */
 int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
 {
@@ -1271,7 +1271,7 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
              */
             cacheSize = max ( this->curMsg.m_postsize, MAX_STRING_SIZE );
             pData = (void *) calloc (1u, cacheSize);
-            if (!pData) {
+            if ( ! pData ) {
                 return ECA_ALLOCMEM;
             }
             if (this->pCurData) {
@@ -1333,27 +1333,25 @@ void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 
 bool tcpiiu::ca_v42_ok () const
 {
-    return CA_V42 (CA_PROTOCOL_VERSION,
-                this->minor_version_number);
+    return CA_V42 (CA_PROTOCOL_VERSION, this->minor_version_number);
 }
 
 bool tcpiiu::ca_v41_ok () const
 {
-    return CA_V41 (CA_PROTOCOL_VERSION,
-                this->minor_version_number);
+    return CA_V41 (CA_PROTOCOL_VERSION, this->minor_version_number);
 }
 
 /*
  *  tcpiiu::pushStreamMsg ()
  */ 
-int tcpiiu::pushStreamMsg (const caHdr *pmsg, 
-                                   const void *pext, bool BlockingOk)
+int tcpiiu::pushStreamMsg ( const caHdr *pmsg, 
+                                   const void *pext, bool BlockingOk )
 {
     caHdr           msg;
     ca_uint16_t     actualextsize;
     ca_uint16_t     extsize;
     unsigned        msgsize;
-    unsigned        bytesSent;
+    int             status;
 
     if ( pext == NULL ) {
         extsize = actualextsize = 0;
@@ -1367,25 +1365,38 @@ int tcpiiu::pushStreamMsg (const caHdr *pmsg,
     }
 
     msg = *pmsg;
-    msg.m_postsize = htons (extsize);
-    msgsize = extsize + sizeof (msg);
+    msg.m_postsize = htons ( extsize );
+    msgsize = extsize + sizeof ( msg );
 
-    if ( ! cacRingBufferWriteLockNoBlock ( &this->send, msgsize ) ) {
-        if ( BlockingOk ) {
-            this->armSendWatchdog ();
-            cacRingBufferWriteLock ( &this->send );
-        }
-        else {
-            return ECA_OPWILLBLOCK;
-        }
+    if ( cacRingBufferWriteLockNoBlock ( &this->send, msgsize ) ) {
+        status = this->pushStreamMsgPrivate ( &msg, pext, extsize, actualextsize );
+        cacRingBufferWriteUnlock ( &this->send );
+        return status;
     }
+    else if ( BlockingOk ) {
+        this->armSendWatchdog ();
+        this->pcas->enableCallbackPreemption ();
+        cacRingBufferWriteLock ( &this->send );
+        status = this->pushStreamMsgPrivate ( &msg, pext, extsize, actualextsize );
+        cacRingBufferWriteUnlock ( &this->send );
+        this->pcas->disableCallbackPreemption ();
+        return status;
+    }
+    else {
+        return ECA_OPWILLBLOCK;
+    }
+}
+
+int tcpiiu::pushStreamMsgPrivate ( const caHdr *pmsg, const void *pext, 
+               unsigned extsize, unsigned actualextsize )
+{
+    unsigned bytesSent;
 
     /*
      * push the header onto the ring 
      */
-    bytesSent = cacRingBufferWrite ( &this->send, &msg, sizeof (msg) );
-    if ( bytesSent != sizeof (msg) ) {
-        cacRingBufferWriteUnlock ( &this->send );
+    bytesSent = cacRingBufferWrite ( &this->send, pmsg, sizeof ( *pmsg ) );
+    if ( bytesSent != sizeof ( *pmsg ) ) {
         return ECA_DISCONNCHID;
     }
 
@@ -1397,7 +1408,6 @@ int tcpiiu::pushStreamMsg (const caHdr *pmsg,
     if ( extsize > 0u ) {
         bytesSent = cacRingBufferWrite ( &this->send, pext, actualextsize );
         if ( bytesSent != actualextsize ) {
-            cacRingBufferWriteUnlock ( &this->send );
             return ECA_DISCONNCHID;
         }
         /*
@@ -1408,19 +1418,15 @@ int tcpiiu::pushStreamMsg (const caHdr *pmsg,
             unsigned long n;
 
             n = extsize-actualextsize;
-            if (n) {
+            if ( n ) {
                 assert ( n <= sizeof (nullBuff) );
                 bytesSent = cacRingBufferWrite ( &this->send, nullBuff, n );
                 if ( bytesSent != n ) {
-                    cacRingBufferWriteUnlock ( &this->send );
                     return ECA_DISCONNCHID;
                 }
             }
         }
     }
-
-    cacRingBufferWriteUnlock ( &this->send );
-
     return ECA_NORMAL;
 }
 
@@ -1437,19 +1443,19 @@ int tcpiiu::pushDatagramMsg (const caHdr * /* pMsg */,
  */
 void tcpiiu::addToChanList (nciu *chan)
 {
-    LOCK (this->pcas);
+    this->pcas->lock ();
     chan->claimPending = TRUE;
     this->chidList.push (*chan);
     chan->piiu = this;
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 }
 
 void tcpiiu::removeFromChanList (nciu *chan)
 {
-    LOCK (this->pcas);
+    this->pcas->lock ();
     this->chidList.remove (*chan);
     chan->piiu = NULL;
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 
     if ( this->chidList.count () == 0 ) {
         this->shutdown ();
@@ -1458,7 +1464,7 @@ void tcpiiu::removeFromChanList (nciu *chan)
 
 void tcpiiu::disconnect (nciu *chan)
 {
-    LOCK (this->pcas);
+    this->pcas->lock ();
     this->removeFromChanList (chan);
     /*
      * try to reconnect
@@ -1466,5 +1472,70 @@ void tcpiiu::disconnect (nciu *chan)
     assert (this->pcas->pudpiiu);
     this->pcas->pudpiiu->addToChanList ( chan );
     this->pcas->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
+}
+
+SOCKET tcpiiu::getSock () const
+{
+    return this->sock;
+}
+
+/*
+ * FLOW CONTROL
+ * 
+ * Keep track of how many times messages have 
+ * come with out a break in between and 
+ * suppress monitors if we are behind
+ * (an update is sent when we catch up)
+ */
+void tcpiiu::flowControlOn ()
+{
+    int status;
+
+    this->pcas->lock ();
+
+    /*  
+     * I prefer to avoid going into flow control 
+     * as this impacts the performance of batched fetches
+     */
+    if ( this->contiguous_msg_count >= MAX_CONTIGUOUS_MSG_COUNT ) {
+        if ( ! this->client_busy ) {
+            status = this->busyRequestMsg ();
+            if ( status == ECA_NORMAL ) {
+                assert ( this->pcas->ca_number_iiu_in_fc < UINT_MAX );
+                this->pcas->ca_number_iiu_in_fc++;
+                this->client_busy = TRUE;
+#               if defined(DEBUG) 
+                    printf("fc on\n");
+#               endif
+            }
+        }
+    }
+    else {
+        this->contiguous_msg_count++;
+    }
+
+    this->pcas->unlock ();
+}
+
+void tcpiiu::flowControlOff ()
+{
+    int status;
+
+    this->pcas->lock ();
+
+    this->contiguous_msg_count = 0;
+    if ( this->client_busy ) {
+        status = this->readyRequestMsg ();
+        if ( status == ECA_NORMAL ) {
+            assert ( this->pcas->ca_number_iiu_in_fc > 0u );
+            this->pcas->ca_number_iiu_in_fc--;
+            this->client_busy = FALSE;
+#           if defined (DEBUG) 
+                printf("fc off\n");
+#           endif
+        }
+    }
+
+    this->pcas->unlock ();
 }

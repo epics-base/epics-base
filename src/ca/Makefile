@@ -22,7 +22,6 @@ LIBSRCS += cacServiceList.cpp
 LIBSRCS += access.cpp
 LIBSRCS += processThread.cpp
 LIBSRCS += iocinf.cpp
-LIBSRCS += flow_control.cpp
 LIBSRCS += convert.cpp
 LIBSRCS += test_event.cpp
 LIBSRCS += repeater.cpp
@@ -73,9 +72,11 @@ Com_DIR = $(INSTALL_LIB)
 caRepeater_SRCS = caRepeater.cpp
 PROD += caRepeater
 
-PROD += catime acctst 
+PROD_DEFAULT += catime acctst 
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
+
+PROD_vxWorks = catime acctst
 
 include $(TOP)/configure/RULES
 

@@ -108,9 +108,6 @@
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_SEC    1000000L
 
-#define LOCK(PCAC) semMutexMustTake ( (PCAC)->ca_client_lock ); 
-#define UNLOCK(PCAC) semMutexGive ( (PCAC)->ca_client_lock );
-
 /*
  * catch when they use really large strings
  */
@@ -429,6 +426,7 @@ public:
     int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void flush ();
+    SOCKET getSock () const;
 
     osiTime                 recvTime;
     char                    xmitBuf[MAX_UDP];   
@@ -437,7 +435,6 @@ public:
     repeaterSubscribeTimer  repeaterSubscribeTmr;
     semMutexId              xmitBufLock;
     ELLLIST                 dest;
-    SOCKET                  sock;
     semBinaryId             recvThreadExitSignal;
     unsigned                nBytesInXmitBuf;
     unsigned short          repeaterPort;
@@ -446,7 +443,8 @@ public:
     // exceptions
     class noSocket {};
     class noMemory {};
-private:    
+private:
+    SOCKET                  sock;
     bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
 };
 
@@ -496,6 +494,8 @@ private:
     const double period;
 };
 
+extern "C" void cacSendThreadTCP ( void *pParam );
+
 class tcpiiu : public tcpRecvWatchdog, public tcpSendWatchdog,
         public netiiu, public tsDLNode <tcpiiu> {
 public:
@@ -520,6 +520,7 @@ public:
     void flush ();
     virtual void show (unsigned level) const;
     osiSockAddr ipAddress () const;
+    SOCKET getSock () const;
 
     void noopRequestMsg ();
     void echoRequestMsg ();
@@ -542,7 +543,6 @@ public:
     unsigned                minor_version_number;
     unsigned                contiguous_msg_count;
     unsigned                curMsgBytes;
-    SOCKET                  sock;
     iiu_conn_state          state;
     bool                    client_busy;
     bool                    echoRequestPending; 
@@ -554,9 +554,16 @@ public:
 private:
     bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
     int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
+    int pushStreamMsgPrivate ( const caHdr *pmsg, const void *pext, 
+               unsigned extsize, unsigned actualextsize );
+    void flowControlOn ();
+    void flowControlOff ();
 
+    SOCKET sock;
     bool fc;
     static tsFreeList < class tcpiiu, 16 > freeList;
+
+    friend void cacSendThreadTCP ( void *pParam );
 };
 
 class inetAddrID {
@@ -614,9 +621,23 @@ public:
     ~processThread ();
     void entryPoint ();
     void signalShutDown ();
+    void enable ();
+    void disable ();
 private:
+    //
+    // The additional complexity associated with
+    // "processingDone" event and the "processing" flag
+    // avoid complex locking hierarchy constraints
+    // and therefore reduces the chance of creating
+    // a deadlock window during code maintenance.
+    //
     class cac *pcac;
     osiEvent exit;
+    osiEvent processingDone;
+    osiMutex mutex;
+    unsigned enableRefCount;
+    unsigned blockingForCompletion;
+    bool processing;
     bool shutDown;
 };
 
@@ -683,7 +704,7 @@ private:
 
 class cac : public caClient {
 public:
-    cac ();
+    cac ( bool enablePreemptiveCallback = false );
     virtual ~cac ();
     void safeDestroyNMIU (unsigned id);
     void processRecvBacklog ();
@@ -721,8 +742,11 @@ public:
     void uninstallCASG (CASG &);
     void registerService ( cacServiceIO &service );
     bool createChannelIO (const char *name_str, cacChannel &chan);
+    void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
     void lock () const;
     void unlock () const;
+    void enableCallbackPreemption ();
+    void disableCallbackPreemption ();
 
     osiTimerQueue           *pTimerQueue;
     ELLLIST                 activeCASGOP;
@@ -735,8 +759,6 @@ public:
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
     caPrintfFunc            *ca_printf_func;
-    CAFDHANDLER             *ca_fd_register_func;
-    void                    *ca_fd_register_arg;
     char                    *ca_pUserName;
     char                    *ca_pHostName;
     resTable 
@@ -745,8 +767,6 @@ public:
     semBinaryId             ca_io_done_sem;
     osiEvent                recvActivity;
     semBinaryId             ca_blockSem;
-    semMutexId              ca_client_lock;
-    processThread           *pProcThread;
     unsigned                readSeq;
     unsigned                ca_nextSlowBucketId;
     unsigned                ca_number_iiu_in_fc;
@@ -769,7 +789,12 @@ private:
         < nciu >            chanTable;
     chronIntIdResTable
         < CASG >            sgTable;
+    processThread           *pProcThread;
+    CAFDHANDLER             *fdRegFunc;
+    void                    *fdRegArg;
     unsigned                pndrecvcnt;
+    bool                    enablePreemptiveCallback;
+
     int pendPrivate (double timeout, int early);
 };
 
@@ -782,8 +807,6 @@ int ca_defunct (void);
 int ca_printf (const char *pformat, ...);
 int ca_vPrintf (const char *pformat, va_list args);
 void manage_conn (cac *pcac);
-void flow_control_on (tcpiiu *piiu);
-void flow_control_off (tcpiiu *piiu);
 epicsShareFunc void epicsShareAPI ca_repeater (void);
 int cac_select_io (cac *pcac, double maxDelay, int flags);
 

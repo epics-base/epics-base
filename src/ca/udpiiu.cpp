@@ -184,7 +184,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
             errnoCpy != SOCK_ECONNREFUSED ) {
             ca_printf (
                 "CAC: error sending to repeater was \"%s\"\n", 
-                SOCKERRSTR(errnoCpy));
+                SOCKERRSTR (errnoCpy) );
         }
     }
 }
@@ -354,7 +354,7 @@ udpiiu::udpiiu ( cac *pcac ) :
             priorityOfRecv = priorityOfSelf;
         }
 
-        tid = threadCreate ("CAC-UDP-recv", priorityOfRecv,
+        tid = threadCreate ("CAC-UDP", priorityOfRecv,
                 threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this);
         if (tid==0) {
             ca_printf ("CA: unable to create UDP receive thread\n");
@@ -363,10 +363,6 @@ udpiiu::udpiiu ( cac *pcac ) :
             socket_close (this->sock);
             throwWithLocation ( noMemory () );
         }
-    }
-
-    if ( pcac->ca_fd_register_func ) {
-        ( *pcac->ca_fd_register_func ) ( pcac->ca_fd_register_arg, this->sock, TRUE );
     }
 
     if ( ! repeater_installed (this) ) {
@@ -380,24 +376,16 @@ udpiiu::udpiiu ( cac *pcac ) :
 	     */
         osptr = osiSpawnDetachedProcess ("CA Repeater", "caRepeater");
         if ( osptr == osiSpawnDetachedProcessNoSupport ) {
-            unsigned priorityOfSelf = threadGetPrioritySelf ();
-            unsigned priorityOfRepeater;
             threadId tid;
-            threadBoolStatus tbs;
 
-            tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfRepeater );
-            if ( tbs != tbsSuccess ) {
-                priorityOfRepeater = priorityOfSelf;
-            }
-
-            tid = threadCreate ( "CAC-repeater", priorityOfRepeater,
+            tid = threadCreate ( "CAC-repeater", threadPriorityLow,
                     threadGetStackSize (threadStackMedium), caRepeaterThread, 0);
-            if (tid==0) {
+            if ( tid == 0 ) {
                 ca_printf ("CA: unable to create CA repeater daemon thread\n");
             }
         }
-        else if (osptr==osiSpawnDetachedProcessFail) {
-            ca_printf ("CA: unable to start CA repeater daemon detached process\n");
+        else if ( osptr == osiSpawnDetachedProcessFail ) {
+            ca_printf ( "CA: unable to start CA repeater daemon detached process\n" );
         }
     }
 }
@@ -409,10 +397,12 @@ udpiiu::~udpiiu ()
 {
     nciu *pChan, *pNext;
 
+    this->searchTmr.cancel ();
+
     // closes the udp socket
     this->shutdown ();
 
-    LOCK (this->pcas);
+    this->pcas->lock ();
     tsDLIter<nciu> iter (this->chidList);
     pChan = iter ();
     while (pChan) {
@@ -420,19 +410,15 @@ udpiiu::~udpiiu ()
         pChan->destroy ();
         pChan = pNext;
     }
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 
     // wait for recv threads to exit
     semBinaryMustTake (this->recvThreadExitSignal);
 
     semMutexDestroy (this->xmitBufLock);
     semBinaryDestroy (this->recvThreadExitSignal);
-    ellFree (&this->dest);
 
-    if (this->pcas->ca_fd_register_func) {
-        (*this->pcas->ca_fd_register_func) 
-            (this->pcas->ca_fd_register_arg, this->sock, FALSE);
-    }
+    ellFree (&this->dest);
 }
 
 /*
@@ -440,7 +426,7 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    LOCK (this->pcas);
+    this->pcas->lock ();
     if ( ! this->shutdownCmd ) {
         int status;
 
@@ -455,7 +441,7 @@ void udpiiu::shutdown ()
                 SOCKERRSTR (SOCKERRNO) );
         }
     }
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 }
 
 /*
@@ -495,10 +481,10 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
      * 
      * lock required around use of the sprintf buffer
      */
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
     chan = piiu->pcas->lookupChan (pMsg->m_available);
-    if (!chan) {
-        UNLOCK (piiu->pcas);
+    if ( ! chan ) {
+        piiu->pcas->unlock ();
         return;
     }
 
@@ -546,13 +532,13 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
      * Ignore duplicate search replies
      */
     if ( chan->piiu->compareIfTCP (*chan, *pnet_addr) ) {
-        UNLOCK (piiu->pcas);
+        piiu->pcas->unlock ();
         return;
     }
 
     allocpiiu = constructTCPIIU (piiu->pcas, &ina, minorVersion);
     if ( ! allocpiiu ) {
-        UNLOCK (piiu->pcas);
+        piiu->pcas->unlock ();
         return;
     }
 
@@ -607,7 +593,8 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
     
     chan->claimMsg ( allocpiiu );
     cacRingBufferWriteFlush ( &allocpiiu->send );
-    UNLOCK ( piiu->pcas );
+    
+    piiu->pcas->unlock ();
 }
 
 
@@ -619,7 +606,7 @@ LOCAL void beacon_action ( udpiiu * piiu,
 {
     struct sockaddr_in ina;
 
-    LOCK (piiu->pcas);
+    piiu->pcas->lock ();
         
     /* 
      * this allows a fan-out server to potentially
@@ -654,7 +641,7 @@ LOCAL void beacon_action ( udpiiu * piiu,
     }
     piiu->pcas->beaconNotify (ina);
 
-    UNLOCK (piiu->pcas);
+    piiu->pcas->unlock ();
 
     return;
 }
@@ -738,9 +725,6 @@ LOCAL const pProtoStubUDP udpJumpTableCAC[] =
 
 /*
  * post_udp_msg ()
- *
- * LOCK should be applied when calling this routine
- *
  */
 int udpiiu::post_msg (const struct sockaddr_in *pnet_addr, 
               char *pInBuf, unsigned long blockSize)
@@ -832,7 +816,8 @@ bool udpiiu::compareIfTCP (nciu &, const sockaddr_in &) const
  */
 void udpiiu::addToChanList (nciu *chan)
 {
-    LOCK (this->pcas);
+    this->pcas->lock ();
+
     /*
      * add to the beginning of the list so that search requests for
      * this channel will be sent first (since the retry count is zero)
@@ -847,14 +832,14 @@ void udpiiu::addToChanList (nciu *chan)
     chan->retry = 0u;
     this->chidList.push (*chan);
     chan->piiu = this;
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 }
 
 void udpiiu::removeFromChanList (nciu *chan)
 {
     tsDLIterBD<nciu> iter (chan);
 
-    LOCK (this->pcas);
+    this->pcas->lock ();
     if ( chan->piiu->pcas->endOfBCastList == iter ) {
         if ( iter.itemBefore () != tsDLIterBD<nciu>::eol () ) {
             chan->piiu->pcas->endOfBCastList = iter.itemBefore ();
@@ -866,7 +851,7 @@ void udpiiu::removeFromChanList (nciu *chan)
     }
     chan->piiu->chidList.remove (*chan);
     chan->piiu = NULL;
-    UNLOCK (this->pcas);
+    this->pcas->unlock ();
 }
 
 void udpiiu::disconnect ( nciu * /* chan */ )
@@ -981,4 +966,9 @@ int udpiiu::pushStreamMsg ( const caHdr * /* pmsg */,
 {
     ca_printf ("in pushStreamMsg () for a udp iiu?\n");
     return ECA_DISCONNCHID;
+}
+
+SOCKET udpiiu::getSock () const
+{
+    return this->sock;
 }

@@ -678,11 +678,10 @@ void nciu::disconnect ()
  */
 int nciu::searchMsg ()
 {
-    udpiiu      *pudpiiu = this->piiu->pcas->pudpiiu;
     int         status;
     caHdr       msg;
 
-    if ( this->piiu != static_cast<netiiu *> (pudpiiu) ) {
+    if ( this->piiu != static_cast<netiiu *> (this->piiu->pcas->pudpiiu) ) {
         return ECA_INTERNAL;
     }
 
@@ -690,10 +689,10 @@ int nciu::searchMsg ()
         return ECA_STRTOBIG;
     }
 
-    msg.m_cmmd = htons (CA_PROTO_SEARCH);
+    msg.m_cmmd = htons ( CA_PROTO_SEARCH );
     msg.m_available = this->getId ();
-    msg.m_dataType = htons (DONTREPLY);
-    msg.m_count = htons (CA_MINOR_VERSION);
+    msg.m_dataType = htons ( DONTREPLY );
+    msg.m_count = htons ( CA_MINOR_VERSION );
     msg.m_cid = this->getId ();
 
     status = this->piiu->pushDatagramMsg (&msg, this->pNameStr, this->nameLength);
@@ -704,7 +703,7 @@ int nciu::searchMsg ()
     /*
      * increment the number of times we have tried to find this thisnel
      */
-    if (this->retry<MAXCONNTRIES) {
+    if ( this->retry < MAXCONNTRIES ) {
         this->retry++;
     }
 
@@ -891,14 +890,12 @@ int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn,
     msg.m_info.m_mask = htons ( maskIn );
     msg.m_info.m_pad = 0; /* allow future use */    
 
-    this->lock ();
     if ( this->f_connected ) {
         status = this->piiu->pushStreamMsg ( &msg.m_header, &msg.m_info, true );
     }
     else {
         status = ECA_NORMAL;
     }
-    this->unlock ();
 
     return status;
 }

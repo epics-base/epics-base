@@ -331,7 +331,6 @@ void cacRingBufferWriteLock (ringBuffer *pBuf)
 bool cacRingBufferWriteLockNoBlock (ringBuffer *pBuf, unsigned bytesRequired)
 {
     semMutexMustTake (pBuf->writeLock);
-
     if ( cacRingBufferWriteSize (pBuf) < bytesRequired ) {
         semMutexGive (pBuf->writeLock);
         return false;

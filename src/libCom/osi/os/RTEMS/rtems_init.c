@@ -347,6 +347,7 @@ Init (rtems_task_argument ignored)
      */
     printf ("***** Executing EPICS startup script *****\n");
     ioccrfrRegister ();
+    registerRecordDeviceDriverRegister ();
     runScriptRTEMS ("st.cmd");
 
     /*

@@ -21,7 +21,7 @@ typedef void (*pProtoStubUDP) (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
 //
 //  udpiiu::recvMsg ()
 //
-int udpiiu::recvMsg ()
+void udpiiu::recvMsg ()
 {
     osiSockAddr         src;
     int                 src_size = sizeof (src);
@@ -29,25 +29,25 @@ int udpiiu::recvMsg ()
 
     status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                         &src.sa, &src_size );
-    if (status < 0) {
+    if ( status <= 0 ) {
+
+        if ( status == 0 ) {
+            return;
+        }
+
         int errnoCpy = SOCKERRNO;
 
         if ( errnoCpy == SOCK_SHUTDOWN ) {
-            return -1;
+            return;
         }
         if ( errnoCpy == SOCK_ENOTSOCK ) {
-            return -1;
+            return;
         }
         if ( errnoCpy == SOCK_EBADF ) {
-            return -1;
+            return;
         }
         if ( errnoCpy == SOCK_EINTR ) {
-            if ( this->shutdownCmd ) {
-                return -1;
-            }
-            else {
-                return 0;
-            }
+            return;
         }
 #       ifdef linux
             /*
@@ -55,11 +55,11 @@ int udpiiu::recvMsg ()
              * in linux
              */
             if ( errnoCpy == SOCK_ECONNREFUSED ) {
-                return 0;
+                return;
             }
 #       endif
-        ca_printf (
-            "Unexpected UDP recv error %s\n", SOCKERRSTR(errnoCpy));
+        ca_printf ( "Unexpected UDP recv error was \"%s\"\n", 
+            SOCKERRSTR (errnoCpy) );
     }
     else if (status > 0) {
         status = this->post_msg ( &src.ia,
@@ -72,12 +72,11 @@ int udpiiu::recvMsg ()
             ca_printf (
                 "%s: bad UDP msg from %s because \"%s\"\n", __FILE__, 
                             buf, ca_message (status) );
-
-            return 0;
+            return;
         }
     }
     
-    return 0;
+    return;
 }
 
 /*
@@ -86,13 +85,12 @@ int udpiiu::recvMsg ()
 extern "C" void cacRecvThreadUDP (void *pParam)
 {
     udpiiu *piiu = (udpiiu *) pParam;
-    int status;
 
     do {
-        status = piiu->recvMsg ();
-    } while ( status == 0 );
+        piiu->recvMsg ();
+    } while ( ! piiu->shutdownCmd );
 
-    semBinaryGive (piiu->recvThreadExitSignal);
+    semBinaryGive ( piiu->recvThreadExitSignal );
 }
 
 /*
@@ -425,21 +423,11 @@ void udpiiu::shutdown ()
     if ( ! this->shutdownCmd ) {
         int status;
 
+        // this knocks the UDP input thread out of recv ()
         this->shutdownCmd = true;
-        //
-        // use of shutdown () for this purpose on UDP
-        // sockets does not work on certain OS (i.e. solaris)
-        // because the thread in recv() does not drop out of recv().
-        // On other OS (i.e. linux) shutdown() is required?
-        //
-        status = ::shutdown ( this->sock, SD_BOTH );
-        if ( status ) {
-            errlogPrintf ( "CAC UDP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-        }
         status = socket_close ( this->sock );
         if ( status ) {
-            errlogPrintf ( "CAC UDP socket close error was %s\n", 
+            errlogPrintf ( "CAC UDP socket close error was \"%s\"\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
     }

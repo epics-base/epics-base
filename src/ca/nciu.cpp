@@ -12,6 +12,11 @@
 
 #include "iocinf.h"
 
+#include "nciu_IL.h"
+#include "netReadNotifyIO_IL.h"
+#include "netWriteNotifyIO_IL.h"
+#include "netSubscription_IL.h"
+
 tsFreeList < class nciu, 1024 > nciu::freeList;
 
 struct putCvrtBuf {

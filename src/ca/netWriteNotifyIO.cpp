@@ -11,6 +11,7 @@
  */
 
 #include "iocinf.h"
+#include "netWriteNotifyIO_IL.h"
 
 tsFreeList < class netWriteNotifyIO, 1024 > netWriteNotifyIO::freeList;
 

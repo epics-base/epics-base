@@ -375,7 +375,7 @@ int epicsShareAPI ca_add_masked_array_event ( chtype type, unsigned long count, 
         return ECA_TOLARGE;
     }
 
-    pSubsr = new oldSubscription  (*pChan, pCallBack, pCallBackArg );
+    pSubsr = new oldSubscription  ( *pChan, pCallBack, pCallBackArg );
     if ( ! pSubsr ) {
         return ECA_ALLOCMEM;
     }
@@ -786,41 +786,6 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-void netiiu::show ( unsigned /* level */ ) const
-{
-    this->pcas->lock ();
-
-    tsDLIterConstBD <nciu> pChan ( this->chidList.first () );
-	while ( pChan.valid () ) {
-        char hostName [256];
-		printf(	"%s native type=%d ", 
-			pChan->pName (), pChan->nativeType () );
-        pChan->hostName ( hostName, sizeof (hostName) );
-		printf(	"N elements=%lu server=%s state=", 
-			pChan->nativeElementCount (), hostName );
-		switch ( pChan->state () ) {
-		case cs_never_conn:
-			printf ("never connected to an IOC");
-			break;
-		case cs_prev_conn:
-			printf ("disconnected from IOC");
-			break;
-		case cs_conn:
-			printf ("connected to an IOC");
-			break;
-		case cs_closed:
-			printf ("invalid channel");
-			break;
-		default:
-			break;
-		}
-		printf("\n");
-	}
-
-    this->pcas->unlock ();
-
-}
-
 epicsShareFunc int epicsShareAPI ca_channel_status (threadId /* tid */)
 {
     cac *pcac;
@@ -893,7 +858,7 @@ extern epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_STRING
 };
 
-extern epicsShareDef READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+extern epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT,
 	epicsInt16T,	
 	epicsFloat32T,	

@@ -12,8 +12,10 @@
  */
 
 #include "iocinf.h"
+
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
+#include "tcpiiu_IL.h"
 
 const caHdr cacnullmsg = {
     0,0,0,0,0,0
@@ -508,8 +510,8 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
         }
     }
 
-    bhe.bindToIIU (this);
-    pcac->installIIU (*this);
+    bhe.bindToIIU ( *this );
+    pcac->installIIU ( *this );
 
     this->fc = true;
 }
@@ -575,8 +577,6 @@ tcpiiu::~tcpiiu ()
 
     this->pcas->removeIIU ( *this );
 
-    this->pcas->removeBeaconInetAddr ( this->dest.ia );
-
     socket_close (this->sock);
 
     cacRingBufferDestroy (&this->recv);
@@ -608,13 +608,6 @@ bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
         genLocalExcep ( this->pcas, ECA_DBLCHNL, buf );
     }
     return true;
-}
-
-void tcpiiu::flush ()
-{
-    if ( cacRingBufferWriteFlush ( &this->send ) ) {
-        this->armSendWatchdog ();
-    }
 }
 
 void tcpiiu::show ( unsigned /* level */ ) const
@@ -1317,30 +1310,6 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
     return ECA_NORMAL;
 }
 
-void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
-{
-    if ( bufLength ) {
-        strncpy ( pBuf, this->host_name_str, bufLength );
-        pBuf[bufLength - 1u] = '\0';
-    }
-}
-
-// deprecated - please dont use
-const char * tcpiiu::pHostName () const
-{
-    return this->host_name_str;
-}
-
-bool tcpiiu::ca_v42_ok () const
-{
-    return CA_V42 (CA_PROTOCOL_VERSION, this->minor_version_number);
-}
-
-bool tcpiiu::ca_v41_ok () const
-{
-    return CA_V41 (CA_PROTOCOL_VERSION, this->minor_version_number);
-}
-
 /*
  *  tcpiiu::pushStreamMsg ()
  */ 
@@ -1470,11 +1439,6 @@ void tcpiiu::disconnect ( nciu &chan )
     this->pcas->unlock ();
 }
 
-SOCKET tcpiiu::getSock () const
-{
-    return this->sock;
-}
-
 /*
  * FLOW CONTROL
  * 
@@ -1497,8 +1461,6 @@ void tcpiiu::flowControlOn ()
         if ( ! this->client_busy ) {
             status = this->busyRequestMsg ();
             if ( status == ECA_NORMAL ) {
-                assert ( this->pcas->ca_number_iiu_in_fc < UINT_MAX );
-                this->pcas->ca_number_iiu_in_fc++;
                 this->client_busy = TRUE;
 #               if defined(DEBUG) 
                     printf("fc on\n");
@@ -1523,8 +1485,6 @@ void tcpiiu::flowControlOff ()
     if ( this->client_busy ) {
         status = this->readyRequestMsg ();
         if ( status == ECA_NORMAL ) {
-            assert ( this->pcas->ca_number_iiu_in_fc > 0u );
-            this->pcas->ca_number_iiu_in_fc--;
             this->client_busy = FALSE;
 #           if defined (DEBUG) 
                 printf("fc off\n");

@@ -13,8 +13,11 @@
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
 #include "iocinf.h"
+
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
+#include "tcpiiu_IL.h"
+#include "nciu_IL.h"
 
 extern "C" void cacRecursionLockExitHandler ()
 {
@@ -53,7 +56,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     static threadOnceId once = OSITHREAD_ONCE_INIT;
     unsigned abovePriority;
 
-    threadOnce ( &once, cacInitRecursionLock, 0);
+    threadOnce ( &once, cacInitRecursionLock, 0 );
 
     if ( cacInitRecursionLock == 0 ) {
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
@@ -78,24 +81,14 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 
-	ellInit (&this->ca_taskVarList);
 	ellInit (&this->putCvrtBuf);
-    ellInit (&this->fdInfoFreeList);
-    ellInit (&this->fdInfoList);
     this->ca_printf_func = errlogVprintf;
     this->ca_exception_func = ca_default_exception_handler;
     this->ca_exception_arg = NULL;
-    this->ca_number_iiu_in_fc = 0u;
     this->readSeq = 0u;
-
-    this->ca_io_done_sem = semBinaryCreate(semEmpty);
-    if (!this->ca_io_done_sem) {
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
-    }
 
     this->ca_blockSem = semBinaryCreate(semEmpty);
     if (!this->ca_blockSem) {
-        semBinaryDestroy (this->ca_io_done_sem);
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 
@@ -113,7 +106,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         len = strlen (tmp) + 1;
         this->ca_pUserName = (char *) malloc ( len );
         if ( ! this->ca_pUserName ) {
-            semBinaryDestroy (this->ca_io_done_sem);
             semBinaryDestroy (this->ca_blockSem);
             throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
         }
@@ -221,10 +213,6 @@ cac::~cac ()
     /* reclaim sync group resources */
     this->sgTable.destroyAllEntries ();
 
-    /* free select context lists */
-    ellFree ( &this->fdInfoFreeList );
-    ellFree ( &this->fdInfoList );
-
     /*
      * free user name string
      */
@@ -234,7 +222,6 @@ cac::~cac ()
 
     this->beaconTable.destroyAllEntries ();
 
-    semBinaryDestroy ( this->ca_io_done_sem );
     semBinaryDestroy ( this->ca_blockSem );
 
     osiSockRelease ();
@@ -428,6 +415,19 @@ void cac::signalRecvActivityIIU (tcpiiu &iiu)
 
 void cac::removeIIU (tcpiiu &iiu)
 {
+    this->defaultMutex.lock ();
+    osiSockAddr addr = iiu.address ();
+    if ( addr.sa.sa_family == AF_INET ) {
+        bhe *pBHE = this->lookupBeaconInetAddr ( addr.ia );
+        if ( pBHE ) {
+            pBHE->destroy ();
+        }
+    }
+    else {
+        errlogPrintf ( "CA server didnt have inet type address?\n" );
+    }
+    this->defaultMutex.unlock ();
+
     this->iiuListMutex.lock ();
 
     if ( iiu.recvPending ) {
@@ -449,7 +449,6 @@ void cac::removeIIU (tcpiiu &iiu)
 
 /*
  * cac::lookupBeaconInetAddr()
- *
  */
 bhe * cac::lookupBeaconInetAddr (const inetAddrID &ina)
 {
@@ -607,7 +606,7 @@ void cac::decrementOutstandingIO (unsigned seqNumber)
     }
     this->defaultMutex.unlock ();
     if ( this->pndrecvcnt == 0u ) {
-        semBinaryGive (this->ca_io_done_sem);
+        this->ioDone.signal ();
     }
 }
 
@@ -619,7 +618,7 @@ void cac::decrementOutstandingIO ()
     }
     this->defaultMutex.unlock ();
     if ( this->pndrecvcnt == 0u ) {
-        semBinaryGive (this->ca_io_done_sem);
+        this->ioDone.signal ();
     }
 }
 
@@ -711,7 +710,7 @@ int cac::pendPrivate (double timeout, int early)
             }
         }    
         
-        semBinaryTakeTimeout ( this->ca_io_done_sem, remaining );
+        this->ioDone.wait ( remaining );
 
         if ( this->pndrecvcnt == 0 && early ) {
             return ECA_NORMAL;

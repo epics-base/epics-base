@@ -11,6 +11,7 @@
  */
 
 #include "iocinf.h"
+#include "netSubscription_IL.h"
 
 tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 

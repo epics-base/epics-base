@@ -27,4 +27,39 @@ netiiu::~netiiu ()
 {
 }
 
+void netiiu::show ( unsigned /* level */ ) const
+{
+    this->pcas->lock ();
+
+    tsDLIterConstBD <nciu> pChan ( this->chidList.first () );
+	while ( pChan.valid () ) {
+        char hostName [256];
+		printf(	"%s native type=%d ", 
+			pChan->pName (), pChan->nativeType () );
+        pChan->hostName ( hostName, sizeof (hostName) );
+		printf(	"N elements=%lu server=%s state=", 
+			pChan->nativeElementCount (), hostName );
+		switch ( pChan->state () ) {
+		case cs_never_conn:
+			printf ("never connected to an IOC");
+			break;
+		case cs_prev_conn:
+			printf ("disconnected from IOC");
+			break;
+		case cs_conn:
+			printf ("connected to an IOC");
+			break;
+		case cs_closed:
+			printf ("invalid channel");
+			break;
+		default:
+			break;
+		}
+		printf("\n");
+	}
+
+    this->pcas->unlock ();
+
+}
+
 

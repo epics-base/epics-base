@@ -426,7 +426,7 @@ public:
     void addToChanList ( nciu &chan );
     void removeFromChanList ( nciu &chan );
     void disconnect ( nciu &chan );
-    int recvMsg ();
+    void recvMsg ();
     int post_msg (const struct sockaddr_in *pnet_addr, 
               char *pInBuf, unsigned long blockSize);
     int pushStreamMsg ( const caHdr *pmsg, const void *pext, bool BlockingOk );
@@ -526,7 +526,7 @@ public:
     void recvMsg ();
     void flush ();
     virtual void show (unsigned level) const;
-    osiSockAddr ipAddress () const;
+    osiSockAddr address () const;
     SOCKET getSock () const;
 
     void noopRequestMsg ();
@@ -589,7 +589,7 @@ class bhe : public tsSLNode <bhe>, public inetAddrID {
 public:
     bhe (class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr);
     tcpiiu *getIIU () const;
-    void bindToIIU (tcpiiu *);
+    void bindToIIU ( tcpiiu & );
     void destroy ();
     bool updateBeaconPeriod (osiTime programBeginTime);
 
@@ -765,8 +765,6 @@ public:
     osiTimerQueue           *pTimerQueue;
     ELLLIST                 activeCASGOP;
     ELLLIST                 putCvrtBuf;
-    ELLLIST                 fdInfoFreeList;
-    ELLLIST                 fdInfoList;
     osiTime                 programBeginTime;
     ca_real                 ca_connectTMO;
     caExceptionHandler      *ca_exception_func;
@@ -776,20 +774,18 @@ public:
     resTable 
         < bhe, inetAddrID > beaconTable;
     tsDLIterBD <nciu>       endOfBCastList;
-    semBinaryId             ca_io_done_sem;
     osiEvent                recvActivity;
     semBinaryId             ca_blockSem;
     unsigned                readSeq;
     unsigned                ca_nextSlowBucketId;
-    unsigned                ca_number_iiu_in_fc;
     unsigned short          ca_server_port;
     char                    ca_new_err_code_msg_buf[128u];
 
-    ELLLIST                 ca_taskVarList;
 private:
     cacServiceList          services;
     osiMutex                defaultMutex;
     osiMutex                iiuListMutex;
+    osiEvent                ioDone;
     tsDLList <tcpiiu>       iiuListIdle;
     tsDLList <tcpiiu>       iiuListRecvPending;
     tsDLList 
@@ -837,82 +833,6 @@ void cac_destroy (cac *pcac);
 int fetchClientContext (cac **ppcac);
 extern "C" void caRepeaterThread (void *pDummy);
 extern "C" void ca_default_exception_handler (struct exception_handler_args args);
-
-//
-// nciu inline member functions
-//
-
-inline void * nciu::operator new (size_t size)
-{ 
-    return nciu::freeList.allocate (size);
-}
-
-inline void nciu::operator delete (void *pCadaver, size_t size)
-{ 
-    nciu::freeList.release (pCadaver,size);
-}
-
-inline bool nciu::fullyConstructed () const
-{
-    return this->f_fullyConstructed;
-}
-
-//
-// netSubscription inline member functions
-//
-inline void * netSubscription::operator new (size_t size)
-{ 
-    return netSubscription::freeList.allocate (size);
-}
-
-inline void netSubscription::operator delete (void *pCadaver, size_t size)
-{ 
-    netSubscription::freeList.release (pCadaver,size);
-}
-
-//
-// netReadNotifyIO inline member functions
-//
-inline void * netReadNotifyIO::operator new (size_t size)
-{ 
-    return netReadNotifyIO::freeList.allocate (size);
-}
-
-inline void netReadNotifyIO::operator delete (void *pCadaver, size_t size)
-{ 
-    netReadNotifyIO::freeList.release (pCadaver,size);
-}
-
-//
-// netWriteNotifyIO inline member functions
-//
-inline void * netWriteNotifyIO::operator new (size_t size)
-{ 
-    return netWriteNotifyIO::freeList.allocate (size);
-}
-
-inline void netWriteNotifyIO::operator delete (void *pCadaver, size_t size)
-{ 
-    netWriteNotifyIO::freeList.release (pCadaver,size);
-}
-
-//
-// tcpiiu inline functions
-//
-inline void * tcpiiu::operator new (size_t size)
-{ 
-    return tcpiiu::freeList.allocate (size);
-}
-
-inline void tcpiiu::operator delete (void *pCadaver, size_t size)
-{ 
-    tcpiiu::freeList.release (pCadaver,size);
-}
-
-inline bool tcpiiu::fullyConstructed () const
-{
-    return this->fc;
-}
 
 /*
  * !!KLUDGE!!

@@ -57,10 +57,10 @@ inline tcpiiu *bhe::getIIU ()const
     return this->piiu;
 }
 
-inline void bhe::bindToIIU (tcpiiu *piiuIn)
+inline void bhe::bindToIIU ( tcpiiu &iiuIn )
 {
     assert ( this->piiu == 0 );
-    this->piiu = piiuIn;
+    this->piiu = &iiuIn;
 }
 
 inline void bhe::destroy ()

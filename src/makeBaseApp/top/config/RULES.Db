@@ -47,6 +47,8 @@ install:: inc buildInstall
 
 buildInstall:: build $(INSTALL_DATA)
 
+depends::
+
 clean::
 	@echo "Cleaning"
 	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \

@@ -25,3 +25,6 @@ ifndef HOME
 HOME = $(HOMEDRIVE)$(HOMEPATH)
 endif
 
+# Needed to find dlls for base installed build tools (antelope,eflex,...)
+PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
+

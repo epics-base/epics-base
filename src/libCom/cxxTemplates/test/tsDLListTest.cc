@@ -35,9 +35,9 @@ main ()
 
 	list.add(*pFred);
 	list.add(*pFredII);
-	pFredBack = list.first();
+	pFredBack = iter();
 	assert(pFredBack == pFred);
-	pFredBack = list.last();
+	pFredBack = iter();
 	assert(pFredBack == pFredII);
 	list.remove(*pFred);
 	list.add(*pFred);
@@ -51,6 +51,7 @@ main ()
 	list.add(* new fred("C"));
 	list.add(* new fred("D"));
 
+	iter.reset();
 	while (pFredBack = iter()) {
 		pFredBack->show();
 	}

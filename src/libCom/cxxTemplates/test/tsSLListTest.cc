@@ -3,6 +3,7 @@
 
 #include <tsSLList.h>
 #include <assert.h>
+#include <stdio.h>
 
 class fred : public tsSLNode<fred> {
 public:
@@ -36,12 +37,12 @@ main ()
 	list.add(*pFredII);
 	pFredBack = iter();
 	assert(pFredBack == pFredII);
-	list.remove(*pFred); // removes pFredII
-	list.add(*pFredII);
-	pFredBack = list.get();
-	assert (pFredBack == pFredII);
+	list.remove(*pFredII);  // removes *pFred !!
+	list.add(*pFred);
 	pFredBack = list.get();
 	assert (pFredBack == pFred);
+	pFredBack = list.get();
+	assert (pFredBack == pFredII);
 	list.add(*pFredII);
 	list.add(*pFred);
 	iter.reset();

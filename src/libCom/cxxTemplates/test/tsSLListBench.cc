@@ -3,6 +3,7 @@
 
 #include <tsSLList.h>
 #include <assert.h>
+#include <stdio.h>
 #include <time.h>
 
 class fred : public tsSLNode<fred> {

@@ -2,21 +2,21 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
-SRCS.c += ../resourceLibTest.cc
-SRCS.c += ../tsDLListBench.cc
-SRCS.c += ../tsDLListTest.cc
-SRCS.c += ../tsSLListBench.cc
-SRCS.c += ../tsSLListTest.cc
+SRCS.cc += ../resourceLibTest.cc
+SRCS.cc += ../tsDLListBench.cc
+SRCS.cc += ../tsDLListTest.cc
+SRCS.cc += ../tsSLListBench.cc
+SRCS.cc += ../tsSLListTest.cc
 
-TARGETS += resourceLibTest
-TARGETS += tsDLListBench
-TARGETS += tsDLListTest
-TARGETS += tsSLListTest
+TARGETS += buildHere
+#TARGETS += resourceLibTest
+#TARGETS += tsDLListBench
+#TARGETS += tsDLListTest
+#TARGETS += tsSLListTest
 
 include $(TOP)/config/RULES.Unix
 
-ifdef fred
-all: resourceLibTest tsDLListBench tsDLListTest tsSLListBench tsSLListTest
+buildHere: resourceLibTest tsDLListBench tsDLListTest tsSLListBench tsSLListTest
 
 resourceLibTest: resourceLibTest.o
 	$(LINK.cc) -o $@ $<
@@ -32,5 +32,4 @@ tsSLListBench: tsSLListBench.o
 
 tsSLListTest: tsSLListTest.o
 	$(LINK.cc) -o $@ $<
-endif
 

@@ -24,7 +24,7 @@ extern "C" void threadTest(int nthreads,int errVerbose);
 int main(int argc,char *argv[])
 {
     int nthreads = 2;
-    int errVerbose = 0;
+    int errVerboseIn = 0;
 
     if(argc>1) {
         if(isdigit(*argv[1])) {
@@ -36,13 +36,13 @@ int main(int argc,char *argv[])
     }
     if(argc>2) {
         if(isdigit(*argv[2])) {
-            sscanf(argv[2],"%d",&errVerbose);
-            printf("errVerbose %d\n",errVerbose);
+            sscanf(argv[2],"%d",&errVerboseIn);
+            printf("errVerbose %d\n",errVerboseIn);
         } else {
             printf("Illegal argument %s\n",argv[1]);
         }
     }
-    if(nthreads>0) threadTest(nthreads,errVerbose);
+    if(nthreads>0) threadTest(nthreads,errVerboseIn);
     printf("main terminating\n");
     return(0);
 }

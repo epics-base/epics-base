@@ -41,7 +41,7 @@ randBelow(int n)
     return (int)((double)n*rand()/(RAND_MAX+1.0));
 }
 
-static void
+extern "C" void
 receiver0(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
@@ -52,7 +52,7 @@ receiver0(void *arg)
     delete q;
 }
 
-static void
+extern "C" void
 receiver(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
@@ -84,7 +84,7 @@ receiver(void *arg)
     }
 }
 
-static void
+extern "C" void
 sender(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;

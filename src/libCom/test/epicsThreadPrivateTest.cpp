@@ -20,7 +20,7 @@ static epicsThreadPrivate < bool > priv;
 
 static bool doneFlag = false;
 
-void epicsThreadPrivateTestThread ( void * )
+extern "C" void epicsThreadPrivateTestThread ( void * )
 {
     assert ( 0 == priv.get () );
     static bool var;

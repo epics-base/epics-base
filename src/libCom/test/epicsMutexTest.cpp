@@ -28,14 +28,13 @@
 #include "epicsEvent.h"
 #include "errlog.h"
 
-
 typedef struct info {
     int        threadnum;
     epicsMutexId mutex;
     int        quit;
 }info;
 
-static void mutexThread ( void * arg )
+extern "C" void mutexThread ( void * arg )
 {
     info *pinfo = (info *)arg;
     time_t tp;
@@ -212,7 +211,7 @@ struct verifyTryLock {
     epicsEventId done;
 };
 
-static void verifyTryLockThread ( void *pArg )
+extern "C" void verifyTryLockThread ( void *pArg )
 {
     struct verifyTryLock *pVerify = 
         ( struct verifyTryLock * ) pArg;

@@ -75,35 +75,27 @@ void cac_gettimeval(struct timeval  *pt)
 void cac_mux_io(struct timeval  *ptimeout)
 {
         int                     count;
-        int                     newInput;
         struct timeval          timeout;
 
         cac_clean_iiu_list();
 
         timeout = *ptimeout;
         do{
-		/*
-		 * manage search timers and detect disconnects 
-		 */ 
-		manage_conn(TRUE); newInput = FALSE;
-
-                do{
-                        count = cac_select_io(
-					&timeout, 
-					CA_DO_RECVS | CA_DO_SENDS);
-                        if(count>0){
-                                newInput = TRUE;
-                        }
-                        timeout.tv_usec = 0;
-                        timeout.tv_sec = 0;
-                }
-                while(count>0);
+                count = cac_select_io(
+                                &timeout,
+                                CA_DO_RECVS | CA_DO_SENDS);
 
                 ca_process_input_queue();
 
-        }
-        while(newInput);
+                /*
+                 * manage search timers and detect disconnects
+                 */
+                manage_conn(TRUE);
 
+                timeout.tv_sec = 0;
+                timeout.tv_usec = 0;
+        }
+        while(count>0);
 }
 
 

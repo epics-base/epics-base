@@ -7,6 +7,9 @@
 # 	Experimental Physics and Industrial Control System (EPICS)
 # 
 # $Log$
+# Revision 1.7  1997/02/24 16:13:03  jba
+# Portability change /bin/pwd changed to pwd.
+#
 # Revision 1.6  1996/11/02 01:57:45  jhill
 # use correct form of #include
 #
@@ -52,7 +55,7 @@ TOOL=`basename $0`
 
 # Start by creating a list of the ENV_PARAM declarations
 PARAMS=`sed -n -e 's/;//' \
-	-e 's/^[	 ]*epicsShareExtern[	 ][	 ]*ENV_PARAM[	 ][	 ]*//p' \
+	-e 's/^[	 ]*epicsShareExtern[     ][      ]*const[	 ][	 ]*ENV_PARAM[	 ][	 ]*//p' \
 	${SRC}` 
 
 # Create a new header file
@@ -98,13 +101,13 @@ do
 
 	# Add this definition to the header file
 #	echo ${ENV} = ${DEFAULT}
-	echo ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
+	echo epicsShareDecl const ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
 done
 
 # Now create an array pointing to all parameters
 cat >>${OBJ} <<!EOF
 
-ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
+epicsShareDecl const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
 !EOF
 
 # Contents are the addresses of each parameter

@@ -86,6 +86,7 @@
 #include	<stdio.h>
 #include	<rebootLib.h>
 #include	<intLib.h>
+#include	<iv.h>
 #include	<vme.h>
 #include	<dbDefs.h>
 #include	<dbScan.h>
@@ -553,7 +554,7 @@ register short		***pppmem_present;
 	/* taken from the XYCOM-566 Manual. Figure 4-6  Page 4-19 */
 	pai566->int_vect = AI566_VNUM + i;
   
-	intConnect((AI566_VNUM + i) * 4, ai566_intr, i);
+	intConnect(INUM_TO_IVEC(AI566_VNUM + i), ai566_intr, i);
         sysIntEnable(XY566_INT_LEVEL); 
 
 	/* reset the Xycom 566 board */

@@ -76,6 +76,7 @@
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<intLib.h>
+#include	<iv.h>
 #include	<vxLib.h>
 #include	<rebootLib.h>
 #include	<taskLib.h>
@@ -418,7 +419,7 @@ int oms_driver_init(){
 
 			/* interrupt vector */
 			pmotor->vector = 0x80+i;
-			intConnect(((0x80+i)*4),oms_intr,i);
+			intConnect(INUM_TO_IVEC(0x80+i),oms_intr,i);
                         sysIntEnable(OMS_INT_LEV);
 
 			/* enable interrupt on input buffer full */

@@ -383,8 +383,8 @@ int __BBConfig(unsigned long Link,
     pBBLink[Link]->LinkType = LinkType;
   
     /* attach the interrupt handler routines */
-    intConnect((BB_IVEC_BASE + 1 + (Link*4)) * 4, xvmeIrqRcmd, Link);
-    intConnect((BB_IVEC_BASE + 3 + (Link*4)) * 4, xvmeIrqRdav, Link);
+    intConnect(INUM_TO_IVEC(BB_IVEC_BASE + 1 + (Link*4)), xvmeIrqRcmd, Link);
+    intConnect(INUM_TO_IVEC(BB_IVEC_BASE + 3 + (Link*4)), xvmeIrqRdav, Link);
   
     /* Start a task to manage the TX link */
     sprintf(nameTemp, "%s%d-xy", BBTXLINK_NAME, Link);

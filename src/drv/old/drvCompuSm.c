@@ -61,6 +61,7 @@
 #include <vme.h>
 #include <semLib.h>		/* library for semaphore support */
 #include <intLib.h>		/* library for semaphore support */
+#include <iv.h>
 #include <vxLib.h>		/* library for semaphore support */
 #include <rebootLib.h>		/* library for semaphore support */
 #include <wdLib.h>
@@ -599,7 +600,7 @@ compu_driver_init(){
         if (vxMemProbe(&pmtr->cm_cb,WRITE,1,&cok) != ERROR){
 	    none_found = FALSE;
             pcompu_motors[i] = pmtr;		/* ptr to interface */
-            intConnect((MD_INT_BASE+i)*4,compu_intr,i);	/* interrupt enable */
+            intConnect(INUM_TO_IVEC(MD_INT_BASE+i),compu_intr,i);	/* interrupt enable */
             sysIntEnable(COMPU_INT_LEVEL); 
 
             /* init interrupt receive buffers */

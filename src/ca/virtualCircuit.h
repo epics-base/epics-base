@@ -58,8 +58,7 @@ public:
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
-    void connect ();
-    void destroy ();
+    bool start ();
     void cleanShutdown ();
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
@@ -121,6 +120,7 @@ private:
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     void lastChannelDetachNotify ();
+    void connect ();
 
     // send protocol stubs
     void echoRequest ();

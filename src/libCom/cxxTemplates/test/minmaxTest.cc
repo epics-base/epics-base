@@ -1,7 +1,7 @@
 
 #include <assert.h>
 
-#include "minmax.h"
+#include "tsMinMax.h"
 
 main ()
 {

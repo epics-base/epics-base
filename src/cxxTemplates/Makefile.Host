@@ -6,7 +6,7 @@ INC += resourceLib.cc
 INC += tsDLList.h
 INC += tsSLList.h
 INC += tsBTree.h
-INC += minmax.h
+INC += tsMinMax.h
 
 include $(TOP)/config/RULES.Host
 

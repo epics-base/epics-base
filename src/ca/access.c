@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.87  1996/11/02 00:50:30  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.86  1996/09/16 16:41:47  jhill
  * local except => except handler & ca vers str routine
  *
@@ -946,13 +949,13 @@ void ca_process_exit()
  */
 int epicsShareAPI ca_build_and_connect
 (
- char *name_str,
- chtype get_type,
- unsigned long get_count,
- chid * chixptr,
- void *pvalue,
- void (*conn_func) (struct connection_handler_args),
- void *puser
+const char *name_str,
+chtype get_type,
+unsigned long get_count,
+chid * chixptr,
+void *pvalue,
+void (*conn_func) (struct connection_handler_args),
+void *puser
 )
 {
         if(get_type != TYPENOTCONN && pvalue!=0 && get_count!=0){

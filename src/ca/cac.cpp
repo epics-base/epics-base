@@ -1272,7 +1272,7 @@ bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
 bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu, 
                             const caHdrLargeArray & hdr, void * pMsgBdy )
 {
-    const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
+    const caHdr * pReq = static_cast < const caHdr * > ( pMsgBdy );
     unsigned bytesSoFar = sizeof ( *pReq );
     if ( hdr.m_postsize < bytesSoFar ) {
         return false;

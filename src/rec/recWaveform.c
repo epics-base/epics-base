@@ -267,7 +267,7 @@ static long get_precision(paddr,precision)
     struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
 
     *precision = pwf->prec;
-    if(paddr->pfield==(void *)&pwf->val) return(0);
+    if(paddr->pfield==(void *)pwf->bptr) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -278,7 +278,7 @@ static long get_graphic_double(paddr,pgd)
 {
     struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pwf->val){
+    if(paddr->pfield==(void *)pwf->bptr){
         pgd->upper_disp_limit = pwf->hopr;
         pgd->lower_disp_limit = pwf->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -290,7 +290,7 @@ static long get_control_double(paddr,pcd)
 {
     struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pwf->val){
+    if(paddr->pfield==(void *)pwf->bptr){
         pcd->upper_ctrl_limit = pwf->hopr;
         pcd->lower_ctrl_limit = pwf->lopr;
     } else recGblGetControlDouble(paddr,pcd);

@@ -284,7 +284,7 @@ static long get_precision(paddr,precision)
     struct compressRecord	*pcompress=(struct compressRecord *)paddr->precord;
 
     *precision = pcompress->prec;
-    if(paddr->pfield == (void *)pcompress->val) return(0);
+    if(paddr->pfield == (void *)pcompress->bptr) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -295,7 +295,7 @@ static long get_graphic_double(paddr,pgd)
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)pcompress->val){
+    if(paddr->pfield==(void *)pcompress->bptr){
         pgd->upper_disp_limit = pcompress->hopr;
         pgd->lower_disp_limit = pcompress->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -308,7 +308,7 @@ static long get_control_double(paddr,pcd)
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)pcompress->val){
+    if(paddr->pfield==(void *)pcompress->bptr){
         pcd->upper_ctrl_limit = pcompress->hopr;
         pcd->lower_ctrl_limit = pcompress->lopr;
     } else recGblGetControlDouble(paddr,pcd);

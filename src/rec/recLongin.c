@@ -183,7 +183,7 @@ static long get_graphic_double(paddr,pgd)
 {
     struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)plongin->val){
+    if(paddr->pfield==(void *)&plongin->val){
         pgd->upper_disp_limit = plongin->hopr;
         pgd->lower_disp_limit = plongin->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
@@ -196,7 +196,7 @@ static long get_control_double(paddr,pcd)
 {
     struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)plongin->val){
+    if(paddr->pfield==(void *)&plongin->val){
         pcd->upper_ctrl_limit = plongin->hopr;
         pcd->lower_ctrl_limit = plongin->lopr;
     } else recGblGetControlDouble(paddr,pcd);

@@ -6,9 +6,9 @@ PROD_LIBS += Com
 
 USR_LIBS_hpux += cma
 
-epicsListTest_SRCS += epicsListTest.cpp
-PROD += epicsListTest
-OBJS_IOC += epicsListTest
+#epicsListTest_SRCS += epicsListTest.cpp
+#PROD += epicsListTest
+#OBJS_IOC += epicsListTest
 
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 PROD += epicsAlgorithmTest

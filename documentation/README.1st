@@ -198,8 +198,6 @@ Directory Structure
      base/src/libCom/test         Test tools (timer, semBinary, semMutex,fdmgr, ?) 
      base/src/libCom/timer        Timer 
      base/src/libCom/tsDefs       R3.13 time stamp definitions and routines 
-     base/src/libCom/ring         ringPointer: First in first out circular buffers 
-     base/src/libCom/cppStd       epicsList: Lists of pointers to objects 
      base/src/makeBaseApp         Perl tool+templates to create ioc app dvl tree 
      base/src/makeBaseExt         Perl tool+templates to create extension dvl tree 
      base/src/misc                Miscellaneous (coreRelease, iocInit, asSub*) 
@@ -209,6 +207,9 @@ Directory Structure
      base/src/toolsComm           Code for the build tools antelope and e_flex 
      base/src/util                Utilities (ca_test, iocLogServer, startCArepeater) 
      base/src/vxWorks             R3.13 compatibility code specific to vxWorks 
+     base/src/catools             Channel access tools caget,cainfo,camonitor,caput
+     base/src/softIoc             Example softIoc
+     base/src/excas               Example channel access server
      base/startup                 Scripts for setting up path and environment 
 
      Install directories created by the build: 

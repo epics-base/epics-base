@@ -88,10 +88,10 @@ LogNetFatal (const char *msg, int err)
  ***********************************************************************
  */
 /*
- * Add TFTP server and target prefix to pathname
+ * Add TFTP server and target prefix to pathnames
  */
-static char *
-rtems_tftp_path (const char *name)
+static void
+rtems_set_directory (void)
 {
     char *path;
     int pathsize = 200;
@@ -99,33 +99,13 @@ rtems_tftp_path (const char *name)
 
     if ((path = malloc (pathsize)) == NULL)
         LogFatal ("Can't create TFTP path name -- no memory.\n");
-    strcpy (path, "/TFTP/");
+    strcpy (path, "/TFTP/BOOTP_HOST/epics/");
     l = strlen (path);
-    if (inet_ntop (AF_INET, &rtems_bsdnet_bootp_server_address, &path[l], pathsize - l) == NULL)
-        LogFatal ("Can't convert BOOTP server name");
-    l = strlen (path);
-    strcpy (&path[l], "/epics/");
-    l = strlen (path);
-    if (gethostname (&path[l], pathsize - l) || (path[l] == '\0'))
+    if (gethostname (&path[l], pathsize - l - 2) || (path[l] == '\0'))
         LogFatal ("Can't get host name");
-    l = strlen (path);
-    path[l++] = '/';
-    for (;;) {
-        if (name[0] == '.') {
-            if (name[1] == '/') {
-                name += 2;
-                continue;
-            }
-            if ((name[1] == '.') && (name[2] == '/')) {
-                name += 3;
-                continue;
-            }
-        }
-        break;
-    }
-    path = realloc (path, l + 1 + strlen (name));
-    strcpy (&path[l], name);
-    return path;
+    strcat (path, "/");
+    if (chdir (path) < 0)
+        LogFatal ("Can't set initial TFTP directory");
 }
 
 /*
@@ -168,24 +148,6 @@ static void iocshRegisterRTEMS (void)
 {
     iocshRegister(&netStatFuncDef, netStatCallFunc);
     iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
-}
-
-/*
- * Since RTEMS doesn't have NFS we fake it by making sure that
- * all paths refer to files in the TFTP area.
- */
-#ifdef fopen
-# undef fopen
-  extern FILE *fopen (const char *, const char *);
-#endif
-FILE *rtems_fopen (const char *name, const char *mode)
-{
-    FILE *fp;
-    char *cp = rtems_tftp_path (name);
-
-    fp = fopen (cp, mode);
-    free (cp);
-    return fp;
 }
 
 void
@@ -266,6 +228,7 @@ Init (rtems_task_argument ignored)
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");
+    rtems_set_directory ();
     iocshRegisterRTEMS ();
     iocsh ("st.cmd");
 

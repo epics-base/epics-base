@@ -379,7 +379,7 @@ LOCAL unsigned long at5vxiDriverID;
 #define AT5VXI_PCONFIG(CARD, PTR) \
 epvxiFetchPConfig(CARD, at5vxiDriverID, PTR)	
 
-#define AT5VXI_CORRECT_MAKE(PCSR) 	(VXIMAKE(PCSR)==VXI_MAKE_AT5)
+#define AT5VXI_CORRECT_MAKE(PCSR) 	(VXIMAKE(PCSR)==VXI_MAKE_LANSCE5)
 
 struct  at5vxi_model{
         char            *name;          /* AT5 VXI module name */
@@ -462,7 +462,7 @@ at5VxiStatus at5vxi_init(void)
 		epvxiDeviceSearchPattern  dsp;
 
 		dsp.flags = VXI_DSP_make;
-		dsp.make = VXI_MAKE_AT5;
+		dsp.make = VXI_MAKE_LANSCE5;
 		r0 = epvxiLookupLA(&dsp, at5vxi_init_card, (void *)NULL);
 		if(r0){
 			return r0;
@@ -486,7 +486,7 @@ LOCAL int	at5vxi_shutdown(void)
 	at5VxiStatus			s;
 
         dsp.flags = VXI_DSP_make;
-        dsp.make = VXI_MAKE_AT5;
+        dsp.make = VXI_MAKE_LANSCE5;
         s = epvxiLookupLA(&dsp, at5vxi_shutdown_card, (void *)NULL);
         if(s){
 		errMessage(s,"AT5VXI module shutdown failed");
@@ -698,7 +698,7 @@ void 	at5vxi_init_card(
 			errMessage(r0,NULL);
 		}
 
-		r0 = epvxiRegisterMakeName(VXI_MAKE_AT5, "LANL AT5");
+		r0 = epvxiRegisterMakeName(VXI_MAKE_LANSCE5, "LANL LANSCE-5");
 		if(r0){
 			errMessage(r0,NULL);
 		}
@@ -1080,7 +1080,7 @@ void 	at5vxi_stat(
   	if(r0 != OK)
     	  	return;
 
-	if(VXIMAKE(pcsr) != VXI_MAKE_AT5)
+	if(VXIMAKE(pcsr) != VXI_MAKE_LANSCE5)
 		return;
 
 	if(AT5VXI_VALID_MODEL(VXIMODEL(pcsr))){

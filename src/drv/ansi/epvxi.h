@@ -330,7 +330,7 @@ char	*vxi_device_class_names[]
 #define VXI_MAKE_HP	0xfff	/* Hewlett Packard */
 #define VXI_MAKE_RD	0xffb	/* Racal Dana */
 #define VXI_MAKE_NI	0xff6	/* National Instruments */
-#define VXI_MAKE_AT5	0xfa0	/* Los Alamos Natl Lab AT */
+#define VXI_MAKE_LANSCE5	0xfa0	/* Los Alamos Natl Lab LANSCE-5 */
 #define VXI_MAKE_KSC	0xf29	/* Kinetic Systems */
 struct vxi_vendor_info{
 	uint16_t	make;
@@ -349,7 +349,7 @@ struct vxi_vendor_info vxi_vi[]
 	{VXI_MAKE_HP, 	"Hewlett-Packard"},
 	{VXI_MAKE_RD, 	"Racal-Dana"},
 	{VXI_MAKE_NI, 	"National Instruments"},
-	{VXI_MAKE_AT5, 	"LANL AT5"},
+	{VXI_MAKE_LANSCE5, 	"LANL LANSCE-5"},
 	{VXI_MAKE_KSC, 	"Kinetic Systems"},
 }
 #endif

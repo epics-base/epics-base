@@ -127,7 +127,7 @@ EPVXISTAT	epvxiClose(
 EPVXISTAT	epvxiLookupLA(
 	epvxiDeviceSearchPattern
 			        *pdsp,
-	void			(*pfunc)(),
+	void			(*pfunc)(unsigned, void *),
 	void			*parg 
 );
 

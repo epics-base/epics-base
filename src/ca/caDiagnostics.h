@@ -18,9 +18,9 @@ extern "C" {
 #endif
 
 enum appendNumberFlag {appendNumber, dontAppendNumber};
-int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag appNF );
+int catime ( const char *channelName, unsigned channelCount, enum appendNumberFlag appNF );
 
-int acctst ( char *pname, unsigned logggingInterestLevel, 
+int acctst ( const char *pname, unsigned logggingInterestLevel, 
             unsigned channelCount, unsigned repititionCount, 
             enum ca_preemptive_callback_select select );
 

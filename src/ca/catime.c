@@ -494,7 +494,8 @@ LOCAL void test ( ti *pItems, unsigned iterations )
 /*
  * catime ()
  */
-int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag appNF )
+int catime ( const char * channelName, 
+    unsigned channelCount, enum appendNumberFlag appNF )
 {
     unsigned    i;
     unsigned    strsize;

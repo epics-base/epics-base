@@ -22,7 +22,7 @@ class epics_auto_ptr {
 public:	
     typedef T element_type;
     explicit epics_auto_ptr ( T * p = 0 ) throw ();
-    epics_auto_ptr ( const epics_auto_ptr<T,PT> & rhs ) throw ();
+    epics_auto_ptr ( epics_auto_ptr<T,PT> & rhs ) throw ();
 	~epics_auto_ptr() throw ();
     epics_auto_ptr<T,PT> & operator = ( epics_auto_ptr<T,PT> & rhs ) throw ();					
 	T & operator * () const throw ();
@@ -42,7 +42,7 @@ p ( pIn ) {}
 
 template < class T, epics_auto_ptr_type PT >
 inline epics_auto_ptr<T,PT>::
-    epics_auto_ptr ( const epics_auto_ptr<T,PT> & ap ) throw () : 
+    epics_auto_ptr ( epics_auto_ptr<T,PT> & ap ) throw () : 
     p ( ap.release() ) {}
 
 template < class T, epics_auto_ptr_type PT >

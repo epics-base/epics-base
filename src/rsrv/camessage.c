@@ -31,8 +31,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <limits.h>
 
 #include "osiSock.h"
+#include "osiPoolStatus.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -69,7 +71,7 @@ logBadIdWithFileAndLineno(CLIENT, MP, PPL, __FILE__, __LINE__)
  */
 LOCAL void *casMalloc(size_t size)
 {
-        if (!casSufficentSpaceInPool) {
+        if (!osiSufficentSpaceInPool(size)) {
                 return NULL;
         }
         return malloc(size);
@@ -83,10 +85,15 @@ LOCAL void *casMalloc(size_t size)
  */
 LOCAL void *casCalloc(size_t count, size_t size)
 {
-    if (!casSufficentSpaceInPool) {
+    if ( UINT_MAX / size >= count ) {
+        if (!osiSufficentSpaceInPool(size*count)) {
+            return NULL;
+        }
+        return calloc(count, size);
+    }
+    else {
         return NULL;
     }
-    return calloc(count, size);
 }
 
 /*
@@ -1628,7 +1635,7 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
      * stop further use of server if memory becomes scarse
      */
     spaceAvailOnFreeList = freeListItemsAvail ( rsrvEventFreeList ) > 0;
-    if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+    if ( osiSufficentSpaceInPool(sizeof(*pevext)) || spaceAvailOnFreeList ) { 
         pevext = (struct event_ext *) freeListCalloc (rsrvEventFreeList);
     }
     else {
@@ -1951,6 +1958,8 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
     ca_uint16_t     count;
     ca_uint16_t     type;
     int             spaceAvailOnFreeList;
+    size_t          spaceNeeded;
+    size_t          reasonableMonitorSpace = 10;
 
     /*
      * check the sanity of the message
@@ -1975,8 +1984,10 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
      * stop further use of server if memory becomes scarse
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
-                            && freeListItemsAvail ( rsrvEventFreeList ) > 10;
-    if ( ! ( casSufficentSpaceInPool || spaceAvailOnFreeList ) ) { 
+                            && freeListItemsAvail ( rsrvEventFreeList ) > reasonableMonitorSpace;
+    spaceNeeded = sizeof (struct channel_in_use) + 
+        reasonableMonitorSpace * sizeof (struct event_ext);
+    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
         SEND_LOCK(client);
         send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );
         SEND_UNLOCK(client);

@@ -37,6 +37,7 @@
 #include <errno.h>
 
 #include "osiSock.h"
+#include "osiPoolStatus.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsTime.h"
@@ -630,13 +631,15 @@ struct client * create_client ( SOCKET sock, int proto )
 {
     struct client *client;
     int           spaceAvailOnFreeList;
+    size_t        spaceNeeded;
 
     /*
      * stop further use of server if memory becomes scarse
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvClientFreeList ) > 0
                             && freeListItemsAvail ( rsrvSmallBufFreeListTCP ) > 0;
-    if ( ! ( casSufficentSpaceInPool || spaceAvailOnFreeList ) ) { 
+    spaceNeeded = sizeof (struct client) + MAX_TCP;
+    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
         epicsPrintf ("CAS: no space in pool for a new client (below max block thresh)\n");
         return NULL;
     }
@@ -714,7 +717,7 @@ void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
     if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP 
             && size <= rsrvSizeofLargeBufTCP ) {
         int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) { 
             char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
             if ( pNewBuf ) {
                 memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
@@ -732,7 +735,7 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
     if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
             && size <= rsrvSizeofLargeBufTCP) {
         int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( casSufficentSpaceInPool || spaceAvailOnFreeList ) { 
+        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) { 
             char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
             if ( pNewBuf ) {
                 assert ( pClient->recv.cnt >= pClient->recv.stk );

@@ -540,11 +540,11 @@ long dbProcess(dbCommon *precord)
 	unsigned char	tpro=precord->tpro;
 	unsigned long	lset;
 	long		status = 0;
-	static char 	trace=0;
-	static unsigned long trace_lset=0;
+        int             *ptrace;
 	int		set_trace=FALSE;
 	dbFldDes	*pdbFldDes;
 
+        ptrace = dbLockSetAddrTrace(precord);
 	lset = dbLockGetLockId(precord);
         /*
          *  Note that it is likely that if any changes are made
@@ -569,8 +569,8 @@ long dbProcess(dbCommon *precord)
     
 	/* check for trace processing*/
 	if (tpro) {
-		if (vxTas(&trace)) {
-			trace_lset = lset;
+		if(*ptrace==0) {
+			*ptrace = 1;
 			set_trace = TRUE;
 		}
 	}
@@ -579,8 +579,7 @@ long dbProcess(dbCommon *precord)
 	if (precord->pact) {
 		unsigned short	monitor_mask;
 
-		if (trace && trace_lset==lset)
-			printf("active:    %s\n",precord->name);
+		if (*ptrace) printf("active:    %s\n",precord->name);
 		/* raise scan alarm after MAX_LOCK times */
 		if (precord->stat==SCAN_ALARM) goto all_done;
 		if (precord->lcnt++ !=MAX_LOCK) goto all_done;
@@ -605,9 +604,7 @@ long dbProcess(dbCommon *precord)
 
 	/* if disabled check disable alarm severity and return success */
 	if (precord->disa == precord->disv) {
-		if (trace && trace_lset==lset)
-			printf("disabled:  %s\n",precord->name);
-
+		if(*ptrace) printf("disabled:  %s\n",precord->name);
 		/*take care of caching and notifyCompletion*/
 		precord->rpro = FALSE;
 		if (precord->ppn) dbNotifyCompletion(precord);
@@ -632,12 +629,10 @@ long dbProcess(dbCommon *precord)
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
 		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
 		status = S_db_noRSET;
-		if (trace && trace_lset == lset)
-			printf("failure:   %s\n", precord->name);
-
+		if (*ptrace) printf("failure:   %s\n", precord->name);
 		goto all_done;
 	}
-	if (trace && trace_lset==lset) printf("process:   %s\n", precord->name);
+	if(*ptrace) printf("process:   %s\n", precord->name);
 	/* process record */
 	status = (*prset->process)(precord);
         /* Print record's fields if PRINT_MASK set in breakpoint field */
@@ -645,10 +640,7 @@ long dbProcess(dbCommon *precord)
                 dbPrint(precord);
         }
 all_done:
-	if (set_trace) {
-		trace_lset = 0;
-		trace = 0;
-	}
+	if (set_trace) *ptrace = 0;
 	return(status);
 }
 

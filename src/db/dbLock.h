@@ -33,4 +33,7 @@ long dblsr(char *recordname,int level);/*Lock Set Report */
 /* If recordname NULL then all records*/
 /* level = (0,1,2) (lock set state, + recordname, +DB links) */
 
+/*KLUDGE to support field TPRO*/
+int *dbLockSetAddrTrace(struct dbCommon *precord);
+
 #endif /*INCdbLockh*/

@@ -100,6 +100,7 @@ typedef struct lockSet {
 	int		task_id;
 	dbCommon	*precord;
 	unsigned long	id;
+        int             trace; /*For field TPRO*/
 } lockSet;
 
 typedef struct lockRecord {
@@ -500,4 +501,12 @@ long dblsr(char *recordname,int level)
 	if(recordname) break;
     }
     return(0);
+}
+
+int *dbLockSetAddrTrace(dbCommon *precord)
+{
+    lockRecord *plockRecord = precord->lset;
+    lockSet    *plockSet = plockRecord->plockSet;
+
+    return(&plockSet->trace);
 }

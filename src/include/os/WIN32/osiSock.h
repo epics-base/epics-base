@@ -45,3 +45,7 @@ typedef int osiSocklen_t;
  *	fd can be used with FD_SET(), FD_CLR(), and FD_ISSET().
  */
 #define FD_IN_FDSET(FD) (1)
+
+#define ifreq_size(pifreq) sizeof(*pifreq)
+
+

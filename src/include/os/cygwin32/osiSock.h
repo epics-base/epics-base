@@ -80,5 +80,7 @@ typedef int osiSocklen_t;
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
 
+#define ifreq_size(pifreq) sizeof(*pifreq)
+
 #endif /*osiSockH*/
 

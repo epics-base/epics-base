@@ -58,6 +58,12 @@ typedef int osiSocklen_t;
 #define INADDR_LOOPBACK 0x7F000001
 #endif
 
+#if ( defined (BSD) && ( BSD >= 44 ) )
+#   define ifreq_size(pifreq) (pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name))
+#else
+#   define ifreq_size(pifreq) sizeof(*pifreq)
+#endif
+
 #endif /*osiSockH*/
  
 

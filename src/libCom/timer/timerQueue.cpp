@@ -97,6 +97,7 @@ double timerQueue::process ( const epicsTime & currentTime )
         unsigned N = 0u;
 #   endif
 
+    double delay = DBL_MAX;
     while ( true ) {
         epicsTimerNotify *pTmpNotify = this->pExpireTmr->pNotify;
         this->pExpireTmr->pNotify = 0;
@@ -112,31 +113,29 @@ double timerQueue::process ( const epicsTime & currentTime )
             expStat = pTmpNotify->expire ( currentTime );
         }
 
-        {
-            //
-            // only restart if they didnt cancel() the timer
-            // while the call back was running
-            //
-            if ( this->cancelPending ) {
+        //
+        // only restart if they didnt cancel() the timer
+        // while the call back was running
+        //
+        if ( this->cancelPending ) {
 
-                // 1) if another thread is canceling cancel() waits for this
-                // 2) if this thread is canceling in the timer callback then
-                // dont touch timer or notify here because the cancel might 
-                // have occurred because they destroyed the time rin the 
-                // callback
-                this->cancelPending = false;
-                this->cancelBlockingEvent.signal ();
-            }
-            // restart as nec
-            else {
-                this->pExpireTmr->curState = timer::stateLimbo;
-                if ( expStat.restart() ) {
-                    this->pExpireTmr->privateStart ( 
-                        *pTmpNotify, currentTime + expStat.expirationDelay() );
-                }
-            }
-            this->pExpireTmr = 0;
+            // 1) if another thread is canceling cancel() waits for this
+            // 2) if this thread is canceling in the timer callback then
+            // dont touch timer or notify here because the cancel might 
+            // have occurred because they destroyed the time rin the 
+            // callback
+            this->cancelPending = false;
+            this->cancelBlockingEvent.signal ();
         }
+        // restart as nec
+        else {
+            this->pExpireTmr->curState = timer::stateLimbo;
+            if ( expStat.restart() ) {
+                this->pExpireTmr->privateStart ( 
+                    *pTmpNotify, currentTime + expStat.expirationDelay() );
+            }
+        }
+        this->pExpireTmr = 0;
 
         if ( this->timerList.first () ) {
             if ( currentTime >= this->timerList.first ()->exp ) {
@@ -148,17 +147,18 @@ double timerQueue::process ( const epicsTime & currentTime )
 #               endif 
             }
             else {
-                double delay = this->timerList.first ()->exp - currentTime;
+                delay = this->timerList.first ()->exp - currentTime;
                 this->processThread = 0;
-                return delay;
+                break;
             }
         }
         else {
             this->processThread = 0;
-            return DBL_MAX;
+            delay = DBL_MAX;
+            break;
         }
     }
-    return DBL_MAX;		// Never here; compiler happy
+    return delay;
 }
 
 epicsTimer & timerQueue::createTimer ()

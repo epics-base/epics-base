@@ -25,7 +25,9 @@
  *      .11 GeG 120992	support VMS/UCX
  *      .12 CJM 130794  define MYERRNO properly for UCX
  *	.13 CJM 311094  mods to support DEC C compiler
- *
+ *	.14 joh 100695	removed UNIX include of filio.h and sockio.h
+ *			because they are include by ioctl.h under
+ *			BSD and SVR4 (and they dont exist under linux)
  */
 
 #ifndef INCos_depenh
@@ -52,8 +54,14 @@ static char *os_depenhSccsId = "$Id$";
 #	include <net/if.h>
 #	include <arpa/inet.h>
 #	include <netdb.h>
-#	include <sys/filio.h>
-#	include <sys/sockio.h>
+/* ioctl.h fetches in these under BSD and
+ * SVR4 and they dont exist under linux so I 
+ * took them out - joh 100695
+ */
+#	if 0 
+#		include <sys/filio.h>
+#		include <sys/sockio.h>
+#	endif
 #	define CA_OS_CONFIGURED
 #endif
 

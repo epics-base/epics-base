@@ -47,8 +47,20 @@ $(buildDirs):
 O.Common:
 	$(MKDIR) O.Common
 
-checkRelease: $(wildcard $(TOP)/configure/RELEASE*)
+#
+# RELEASE consistency checking
+
+# The RELEASE.$(EPICS_HOST_ARCH) files don't need to be included here:
+targetReleaseFiles = $(wildcard $(foreach arch, $(BUILD_ARCHS), \
+		$(TOP)/configure/RELEASE.Common.$(arch) \
+		$(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(arch)))
+checkReleaseTargets = $(addprefix checkRelease, $(suffix $(targetReleaseFiles)))
+
+checkRelease: $(checkReleaseTargets)
 	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
+
+$(checkReleaseTargets):checkRelease.%:
+	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) -a $* checkRelease
 
 #
 # special clean rule
@@ -66,5 +78,5 @@ realclean ::
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS)
 .PHONY : $(ACTIONS) clean realclean all
-.PHONY : checkRelease
+.PHONY : checkRelease $(checkReleaseTargets)
 

@@ -60,8 +60,6 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
  
-epicsShareDef int jbaint=88l;
-
 epicsShareDef struct rset aiRSET={
 	RSETNUMBER,
 	report,

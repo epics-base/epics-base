@@ -141,6 +141,7 @@ public:
     void uninstallIIU ( tcpiiu &iiu ); 
     bool preemptiveCallbackEnable () const;
     double beaconPeriod ( const nciu & chan ) const;
+    void udpWakeup ();
 
 private:
     ipAddrToAsciiEngine         ipToAEngine;
@@ -169,27 +170,28 @@ private:
     mutable epicsMutex          mutex; 
     epicsMutex                  callbackMutex; 
     epicsMutex                  serializePendIO; 
-    epicsMutex                  serializePendEvent; 
+    epicsMutex                  serializeCallbackMutexUsage; 
     epicsEvent                  ioDone;
     epicsEvent                  noRecvThreadsPending;
     epicsEvent                  iiuUninstal;
-    epicsTimerQueueActive       *pTimerQueue;
-    char                        *pUserName;
-    class udpiiu                *pudpiiu;
-    class searchTimer           *pSearchTmr;
+    epicsTimerQueueActive       * pTimerQueue;
+    char                        * pUserName;
+    class udpiiu                * pudpiiu;
+    class searchTimer           * pSearchTmr;
     class repeaterSubscribeTimer  
-                                *pRepeaterSubscribeTmr;
-    void                        *tcpSmallRecvBufFreeList;
-    void                        *tcpLargeRecvBufFreeList;
+                                * pRepeaterSubscribeTmr;
+    void                        * tcpSmallRecvBufFreeList;
+    void                        * tcpLargeRecvBufFreeList;
+    class callbackAutoMutex     * pCallbackLocker;
     cacNotify                   & notify;
     unsigned                    initializingThreadsPriority;
     unsigned                    maxRecvBytesTCP;
     unsigned                    pndRecvCnt;
     unsigned                    readSeq;
     unsigned                    recvThreadsPendingCount;
-    bool                        enablePreemptiveCallback;
 
     void flushRequestPrivate ();
+    void uninstallChannelPrivate ( nciu & );
     void run ();
     bool setupUDP ();
     void connectAllIO ( nciu &chan );
@@ -348,7 +350,7 @@ inline bool cac::ioComplete () const
 
 inline bool cac::preemptiveCallbackEnable () const
 {
-    return this->enablePreemptiveCallback;
+    return ! this->pCallbackLocker;
 }
 
 #endif // ifdef cach

@@ -17,7 +17,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
-#include "virtualCircuit.h"
+#include "hostNameCache.h"
 
 tsFreeList < hostNameCache, 16 > hostNameCache::freeList;
 epicsMutex hostNameCache::freeListMutex;

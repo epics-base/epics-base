@@ -199,7 +199,6 @@ udpiiu::~udpiiu ()
 //
 void udpiiu::recvMsg ()
 {
-    char peek;
     osiSockAddr src;
     int status;
 
@@ -212,6 +211,7 @@ void udpiiu::recvMsg ()
         // peek first at the message so that file descriptor managers will wake up
         // in single threaded applications
         osiSocklen_t src_size = sizeof ( src );
+        char peek;
         recvfrom ( this->sock, & peek, sizeof ( peek ), MSG_PEEK,
                             &src.sa, &src_size );
         status = 0;
@@ -486,36 +486,10 @@ void udpiiu::shutdown ()
     if ( this->shutdownCmd ) {
         return;
     }
+
     this->shutdownCmd = true;
 
-    caHdr msg;
-    msg.m_cmmd = htons ( CA_PROTO_VERSION );
-    msg.m_available = htonl ( 0u );
-    msg.m_dataType = htons ( 0u );
-    msg.m_count = htons ( 0u );
-    msg.m_cid = htonl ( 0u );
-    msg.m_postsize = htons ( 0u );
-
-    osiSockAddr addr;
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-    addr.ia.sin_port = htons ( this->localPort );
-
-    // send a wakeup msg so the UDP recv thread will exit
-    int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
-            sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-    if ( status < 0 ) {
-        // this knocks the UDP input thread out of recv ()
-        // on all os except linux
-        status = socket_close ( this->sock );
-        if ( status == 0 ) {
-            this->sockCloseCompleted = true;
-        }
-        else {
-            errlogPrintf ("CAC UDP socket close error was %s\n", 
-                SOCKERRSTR ( SOCKERRNO ) );
-        }
-    }
+    this->wakeupMsg ();
 
     // wait for recv threads to exit
     epicsEventMustWait ( this->recvThreadExitSignal );
@@ -528,7 +502,7 @@ bool udpiiu::badUDPRespAction ( const caHdr &msg,
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
     char date[64];
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
-    this->printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
+    this->printf ( "CAC: Undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
                 msg.m_cmmd, buf, date );
     return false;
 }
@@ -690,7 +664,7 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
             this->printf (
-                "%s: undecipherable (too small) UDP msg from %s ignored\n", 
+                "%s: Undecipherable (too small) UDP msg from %s ignored\n", 
                     __FILE__,  buf );
             return;
         }
@@ -725,7 +699,7 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
             this->printf (
-                "%s: undecipherable (payload too small) UDP msg from %s ignored\n", __FILE__, 
+                "%s: Undecipherable (payload too small) UDP msg from %s ignored\n", __FILE__, 
                             buf );
             return;
         }
@@ -744,7 +718,7 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
         if ( ! success ) {
             char buf[256];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            this->printf ( "CAC: undecipherable UDP message from %s\n", buf );
+            this->printf ( "CAC: Undecipherable UDP message from %s\n", buf );
             return;
         }
 
@@ -866,4 +840,37 @@ void udpiiu::show ( unsigned level ) const
         epicsEventShow ( this->recvThreadExitSignal, level-3u );
     }
 }
+
+void udpiiu::wakeupMsg ()
+{
+    caHdr msg;
+    msg.m_cmmd = htons ( CA_PROTO_VERSION );
+    msg.m_available = htonl ( 0u );
+    msg.m_dataType = htons ( 0u );
+    msg.m_count = htons ( 0u );
+    msg.m_cid = htonl ( 0u );
+    msg.m_postsize = htons ( 0u );
+
+    osiSockAddr addr;
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+    addr.ia.sin_port = htons ( this->localPort );
+
+    // send a wakeup msg so the UDP recv thread will exit
+    int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
+            sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
+    if ( status < 0 ) {
+        // this knocks the UDP input thread out of recv ()
+        // on all os except linux
+        status = socket_close ( this->sock );
+        if ( status == 0 ) {
+            this->sockCloseCompleted = true;
+        }
+        else {
+            errlogPrintf ("CAC UDP socket close error was %s\n", 
+                SOCKERRSTR ( SOCKERRNO ) );
+        }
+    }
+}
+
 

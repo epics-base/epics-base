@@ -87,6 +87,8 @@ void comQueSend::clear ()
         this->nBytesPending -= pBuf->occupiedBytes ();
         pBuf->destroy ();
     }
+    this->pFirstUncommited = tsDLIterBD < comBuf > ();
+    assert ( this->nBytesPending == 0 );
 }
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )
@@ -161,3 +163,29 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
     0  // DBR_CLASS_NAME
 };
 
+comBuf * comQueSend::popNextComBufToSend ()
+{
+    comBuf *pBuf = this->bufs.get ();
+    if ( pBuf ) {
+        unsigned nBytesThisBuf = pBuf->occupiedBytes ();
+        if ( nBytesThisBuf ) {
+            assert ( this->nBytesPending >= nBytesThisBuf );
+            this->nBytesPending -= nBytesThisBuf;
+        }
+        else {
+            this->bufs.push ( *pBuf );
+            pBuf = 0;
+        }
+    }
+    else {
+        assert ( this->nBytesPending == 0u );
+    }
+    return pBuf;
+}
+
+void comQueRecv::popString ( epicsOldString *pStr )
+{
+    for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
+        pStr[0][i] = this->popInt8 ();
+    }
+}

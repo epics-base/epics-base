@@ -84,10 +84,12 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 {
+    bufIn.commitIncomming ();
     comBuf * pComBuf = this->bufs.last ();
     if ( pComBuf ) {
         if ( pComBuf->unoccupiedBytes() ) {
             this->nBytesPending += pComBuf->copyIn ( bufIn );
+            pComBuf->commitIncomming ();
         }
     }
     unsigned bufBytes = bufIn.occupiedBytes();

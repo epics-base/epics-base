@@ -12,6 +12,8 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include <new>
+
 #include "epicsMemory.h"
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
@@ -124,20 +126,20 @@ extern "C" void cacOnceFunc ( void * )
 //
 // cac::cac ()
 //
-cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
+cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
     tcpSmallRecvBufFreeList ( 0 ),
     tcpLargeRecvBufFreeList ( 0 ),
+    pCallbackLocker ( 0 ),
     notify ( notifyIn ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
     maxRecvBytesTCP ( MAX_TCP ),
     pndRecvCnt ( 0u ), 
     readSeq ( 0u ),
-    recvThreadsPendingCount ( 0u ),
-    enablePreemptiveCallback ( enablePreemptiveCallbackIn )
+    recvThreadsPendingCount ( 0u )
 {
 	long status;
     unsigned abovePriority;
@@ -230,20 +232,26 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
         freeListCleanup ( this->tcpLargeRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
-    if ( ! this->enablePreemptiveCallback ) {
-        this->callbackMutex.lock ();
+
+    if ( ! enablePreemptiveCallbackIn ) {
+        this->pCallbackLocker = new ( std::nothrow ) callbackAutoMutex ( *this );
+        if ( ! this->pCallbackLocker ) {
+            osiSockRelease ();
+            free ( this->pUserName );
+            freeListCleanup ( this->tcpSmallRecvBufFreeList );
+            freeListCleanup ( this->tcpLargeRecvBufFreeList );
+            this->pTimerQueue->release ();
+            throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+        }
     }
 }
 
 cac::~cac ()
 {
     //
-    // make certain that process thread isnt deleting 
-    // tcpiiu objects at the same that this thread is
+    // release callback lock
     //
-    if ( ! this->enablePreemptiveCallback ) {
-        this->callbackMutex.unlock ();
-    }
+    delete this->pCallbackLocker;
 
     //
     // lock intentionally not held here so that we dont deadlock 
@@ -339,7 +347,7 @@ void cac::show ( unsigned level ) const
         this->serverTable.show ( level - 1u );
         ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
         ::printf ( "\tpreemptive calback is %s\n",
-            this->enablePreemptiveCallback ? "enabled" : "disabled" );
+            this->pCallbackLocker ? "disabled" : "enabled" );
         ::printf ( "list of installed services:\n" );
         this->services.show ( level - 1u );
     }
@@ -480,29 +488,31 @@ int cac::pendIO ( const double & timeout )
         this->flushRequestPrivate ();
     }
    
-    {
-        // serialize access the blocking mechanism below
-        epicsAutoMutex autoMutex ( this->serializePendIO );
+    while ( this->pndRecvCnt > 0 ) {
+        if ( remaining < CAC_SIGNIFICANT_DELAY ) {
+            status = ECA_TIMEOUT;
+            break;
+        }
 
-        while ( this->pndRecvCnt > 0 ) {
-            if ( remaining < CAC_SIGNIFICANT_DELAY ) {
-                status = ECA_TIMEOUT;
-                break;
-            }
-            if ( this->enablePreemptiveCallback ) {
-                this->ioDone.wait ( remaining );
-            }
-            else {
+        {
+            // serialize access the blocking mechanism below
+            epicsAutoMutex autoMutex ( this->serializePendIO );
+
+            if ( this->pCallbackLocker ) {
                 epicsAutoMutexRelease autoRelease ( this->callbackMutex );
                 this->ioDone.wait ( remaining );
             }
-            double delay = epicsTime::getCurrent () - beg_time;
-            if ( delay < timeout ) {
-                remaining = timeout - delay;
-            }
             else {
-                remaining = 0.0;
+                this->ioDone.wait ( remaining );
             }
+        }
+
+        double delay = epicsTime::getCurrent () - beg_time;
+        if ( delay < timeout ) {
+            remaining = timeout - delay;
+        }
+        else {
+            remaining = 0.0;
         }
     }
 
@@ -520,11 +530,13 @@ int cac::pendIO ( const double & timeout )
 
 int cac::blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout )
 {
-    if ( this->enablePreemptiveCallback ) {
+    epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
+
+    if ( this->pCallbackLocker ) {
+        epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
         event.wait ( timeout );
     }
     else {
-        epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
         event.wait ( timeout );
     }
 
@@ -548,13 +560,13 @@ int cac::pendEvent ( const double & timeout )
 
     {
         // serialize access the blocking mechanism below
-        epicsAutoMutex autoMutex ( this->serializePendEvent );
+        epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
 
         // process at least once if preemptive callback
         // isnt enabled
-        if ( ! this->enablePreemptiveCallback ) {
+        if ( this->pCallbackLocker ) {
             epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
-            while ( this->recvThreadsPendingCount ) {
+            while ( this->recvThreadsPendingCount > 1 ) {
                 this->noRecvThreadsPending.wait ();
             }
         }
@@ -571,11 +583,11 @@ int cac::pendEvent ( const double & timeout )
     }
 
     if ( delay >= CAC_SIGNIFICANT_DELAY ) {
-        if ( this->enablePreemptiveCallback ) {
+        if ( this->pCallbackLocker ) {
+            epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
             epicsThreadSleep ( delay );
         }
         else {
-            epicsAutoMutexRelease autoMutexRelease ( this->callbackMutex );
             epicsThreadSleep ( delay );
         }
     }
@@ -734,22 +746,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
                 return true;
             }
         }
-
-        bhe * pBHE = this->beaconTable.lookup ( addr.ia );
-        if ( ! pBHE ) {
-            pBHE = new bhe ( epicsTime (), addr.ia );
-            if ( pBHE ) {
-                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                    pBHE->destroy ();
-                    return true;
-                }
-            }
-            else {
-                return true;
-            }
-        }
-
-        if ( ! piiu ) {
+        else {
             try {
                 piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue,
                             addr, minorVersionNumber, this->ipToAEngine,
@@ -758,6 +755,19 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
                     return true;
                 }
                 this->serverTable.add ( *piiu );
+                bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+                if ( ! pBHE ) {
+                    pBHE = new bhe ( epicsTime (), addr.ia );
+                    if ( pBHE ) {
+                        if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                            pBHE->destroy ();
+                            return true;
+                        }
+                    }
+                    else {
+                        return true;
+                    }
+                }
                 pBHE->registerIIU ( *piiu );
             }
             catch ( ... ) {
@@ -814,19 +824,33 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
 void cac::uninstallChannel ( nciu & chan )
 {
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        nciu *pChan = this->chanTable.remove ( chan );
-        assert ( pChan = &chan );
-        // flush prior to taking the callback lock
-        this->flushIfRequired ( *chan.getPIIU() );
-        chan.getPIIU()->clearChannelRequest ( chan );
-        chan.getPIIU()->detachChannel ( chan );
-    }
+    //
+    // dont block on the call back lock if this isnt the 
+    // primary thread
+    this->udpWakeup ();
 
-    // taking this mutex guarantees that we will not delete 
-    // a channel out from under a callback
-    epicsAutoMutex autoCallbackMutex ( this->callbackMutex );
+    epicsAutoMutex autoMutex ( this->serializeCallbackMutexUsage );
+
+    if ( this->pCallbackLocker ) {
+        this->uninstallChannelPrivate ( chan );
+    }
+    else {
+        // taking this mutex guarantees that we will not delete 
+        // a channel out from under a callback
+        epicsAutoMutex autoCallbackMutex ( this->callbackMutex );
+        this->uninstallChannelPrivate ( chan );
+    }
+}
+
+void cac::uninstallChannelPrivate ( nciu & chan )
+{
+    epicsAutoMutex autoMutex ( this->mutex );
+    nciu * pChan = this->chanTable.remove ( chan );
+    assert ( pChan = &chan );
+    // flush prior to taking the callback lock
+    this->flushIfRequired ( *chan.getPIIU() );
+    chan.getPIIU()->clearChannelRequest ( chan );
+    chan.getPIIU()->detachChannel ( chan );
 }
 
 int cac::printf ( const char *pformat, ... ) const
@@ -858,12 +882,12 @@ void cac::flushIfRequired ( netiiu & iiu )
             // enable / disable of call back preemption must occur here
             // because the tcpiiu might disconnect while waiting and its
             // pointer to this cac might become invalid
-            if ( this->enablePreemptiveCallback ) {
-                iiu.blockUntilSendBacklogIsReasonable ( 0, this->mutex );
-            }
-            else {
+            if ( this->pCallbackLocker ) {
                 iiu.blockUntilSendBacklogIsReasonable 
                     ( &this->callbackMutex, this->mutex );
+            }
+            else {
+                iiu.blockUntilSendBacklogIsReasonable ( 0, this->mutex );
             }
         }
     }
@@ -919,13 +943,13 @@ cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type,
 void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
 {   
     if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
-        this->enablePreemptiveCallback ) {
-        // wait for any IO callbacks in progress to complete
-        // prior to destroying the IO object
-        epicsAutoMutex autoMutex ( this->callbackMutex );
+        this->pCallbackLocker ) {
         this->ioCancelPrivate ( chan, id );
     }
     else {
+        // wait for any IO callbacks in progress to complete
+        // prior to destroying the IO object
+        epicsAutoMutex autoMutex ( this->callbackMutex );
         this->ioCancelPrivate ( chan, id );
     }
 }
@@ -1172,13 +1196,13 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
 void cac::destroyAllIO ( nciu & chan )
 {
     if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
-        this->enablePreemptiveCallback ) {
-        // force any callbacks in progress to complete
-        // before deleting the IO
-        epicsAutoMutex autoMutex ( this->callbackMutex );
+        this->pCallbackLocker ) {
         this->privateDestroyAllIO ( chan );
     }
     else {
+        // force any callbacks in progress to complete
+        // before deleting the IO
+        epicsAutoMutex autoMutex ( this->callbackMutex );
         this->privateDestroyAllIO ( chan );
     }
 }
@@ -1692,14 +1716,14 @@ void cac::selfTest () const
 
 void cac::notifyNewFD ( SOCKET sock ) const
 {
-    if ( ! this->enablePreemptiveCallback ) {
+    if ( this->pCallbackLocker ) {
         this->notify.fdWasCreated ( sock );
     }
 }
 
 void cac::notifyDestroyFD ( SOCKET sock ) const
 {
-    if ( ! this->enablePreemptiveCallback ) {
+    if ( this->pCallbackLocker ) {
         this->notify.fdWasDestroyed ( sock );
     }
 }
@@ -1739,10 +1763,10 @@ void cac::uninstallIIU ( tcpiiu & iiu )
     this->iiuUninstal.signal();
 }
 
-void cac::preemptiveCallbackLock()
+void cac::preemptiveCallbackLock ()
 {
     // the count must be incremented prior to taking the lock
-    if ( ! this->enablePreemptiveCallback ) {
+    {
         epicsAutoMutex autoMutex ( this->mutex );
         assert ( this->recvThreadsPendingCount < UINT_MAX );
         this->recvThreadsPendingCount++;
@@ -1750,25 +1774,26 @@ void cac::preemptiveCallbackLock()
     this->callbackMutex.lock ();
 }
 
-void cac::preemptiveCallbackUnlock()
+void cac::preemptiveCallbackUnlock ()
 {
     this->callbackMutex.unlock ();
-    if ( ! this->enablePreemptiveCallback ) {
-        bool signalRequired;
-        {
-            epicsAutoMutex autoMutex ( this->mutex );
-            assert ( this->recvThreadsPendingCount > 0 );
-            this->recvThreadsPendingCount--;
-            if ( this->recvThreadsPendingCount == 0u ) {
+    bool signalRequired;
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        assert ( this->recvThreadsPendingCount > 0 );
+        this->recvThreadsPendingCount--;
+        unsigned noThreadsWaiting;
+        if ( this->pCallbackLocker ) {
+            if ( this->recvThreadsPendingCount == 1u ) {
                 signalRequired = true;
             }
             else {
                 signalRequired = false;
             }
         }
-        if ( signalRequired ) {
-            this->noRecvThreadsPending.signal ();
-        }
+    }
+    if ( signalRequired ) {
+        this->noRecvThreadsPending.signal ();
     }
 }
 
@@ -1789,3 +1814,10 @@ double cac::beaconPeriod ( const nciu & chan ) const
     return - DBL_MAX;
 }
 
+void cac::udpWakeup ()
+{
+    epicsAutoMutex locker ( this->mutex );
+    if ( this->pudpiiu ) {
+        this->pudpiiu->wakeupMsg ();
+    }
+}

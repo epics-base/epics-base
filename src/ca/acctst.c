@@ -1986,7 +1986,7 @@ void verifyOldPend ()
 {
     int status;
     /*
-     * at least verify that the old ca_pend() is in the symbol table
+     * verify that the old ca_pend() is in the symbol table
      */
     status = ca_pend ( 100000.0, 1 );
     assert ( status = ECA_NORMAL );

@@ -23,8 +23,8 @@ bool comBuf::flushToWire ( wireSendAdapter &wire )
 {
     unsigned occupied = this->occupiedBytes ();
     while ( occupied ) {
-        unsigned nBytes = wire.sendBytes ( &this->buf[this->nextReadIndex], 
-                occupied );
+        unsigned nBytes = wire.sendBytes ( 
+            &this->buf[this->nextReadIndex], occupied );
         if ( nBytes == 0u ) {
             return false;
         }

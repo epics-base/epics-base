@@ -19,6 +19,7 @@
 #include "cac.h"
 #include "netiiu.h"
 #include "msgForMultiplyDefinedPV.h"
+#include "hostNameCache.h"
 
 #define epicsExportSharedSymbols
 #include "net_convert.h"
@@ -266,44 +267,18 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // file manager call backs works correctly. This does not 
         // appear to impact performance.
         //
-        // We also use select() here because shutdown() does not
-        // unblock a thread in recv() on WIN32 and probably also on
-        // vxWorks. This is a problem even if preemptive callbacks
-        // are enabled.
-        //
-        while ( true ) {
-            fd_set recvInterest;
-            struct timeval tmo;
-            tmo.tv_sec = 5;   // seconds
-            tmo.tv_usec = 0;  // micro seconds
-            FD_ZERO ( & recvInterest );
-            FD_SET ( piiu->sock, & recvInterest );
-            int status = select ( piiu->sock + 1, 
-                & recvInterest, 0, 0, & tmo );
-            if ( piiu->state != iiu_connected ) {
-                break;
-            }
-            if ( status < 0 ) {
-                int localErrno = SOCKERRNO;
-                if ( localErrno == SOCK_EINTR ) {
-                    continue;
-                }
-                else if ( localErrno == SOCK_EBADF ) {
-                    piiu->state = iiu_disconnected;
-                    break;
-                }
-                else {
-                    errlogPrintf ( "Select error was %s\n",
-                        SOCKERRSTR ( localErrno ) );
-                    epicsThreadSleep ( 1.0 );
-                    continue;
-                }
-            }
-            else if ( status == 1 ) {
+        unsigned nBytesIn;
+        if ( piiu->pCAC()->preemptiveCallbackEnable() ) {
+            nBytesIn = pComBuf->fillFromWire ( *piiu );
+            if ( nBytesIn == 0u ) {
                 break;
             }
         }
-        
+        else {
+            char buf;
+            ::recv ( piiu->sock, &buf, 1, MSG_PEEK );
+        }
+ 
         if ( piiu->state != iiu_connected ) {
             break;
         }
@@ -311,16 +286,16 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // only one recv thread at a time may call callbacks
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
 
-        osiSockIoctl_t bytesPending = 0;
-        do {
-            unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
+        if ( ! piiu->pCAC()->preemptiveCallbackEnable() ) {
+            nBytesIn = pComBuf->fillFromWire ( *piiu );
             if ( nBytesIn == 0u ) {
                 // outer loop checks to see if state is connected
                 // ( properly set by fillFromWire() )
                 break;
             }
+        }
 
-            piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+        while ( true ) {
 
             if ( nBytesIn == pComBuf->capacityBytes () ) {
                 if ( piiu->contigRecvMsgCount >= 
@@ -337,6 +312,9 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             }         
             piiu->unacknowledgedSendBytes = 0u;
 
+            piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+            pComBuf = 0;
+
             // reschedule connection activity watchdog
             // but dont hold the lock for fear of deadlocking 
             // because cancel is blocking for the completion
@@ -344,20 +322,34 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             piiu->recvDog.messageArrivalNotify (); 
 
             // execute receive labor
-            piiu->processIncoming ();
+            bool noProtocolViolation = piiu->processIncoming ();
+            if ( ! noProtocolViolation ) {
+                piiu->state = iiu_disconnected;
+                break;
+            }
 
             // allocate a new com buf
             pComBuf = new ( std::nothrow ) comBuf;
             nBytesIn = 0u;
+            if ( ! pComBuf ) {
+                break;
+            }
 
             {
                 int status;
+                osiSockIoctl_t bytesPending = 0;
                 status = socket_ioctl ( piiu->sock, FIONREAD, & bytesPending );
-                if ( status ) {
-                    bytesPending = 0u;
+                if ( status || bytesPending == 0u ) {
+                    break;
+                }
+                nBytesIn = pComBuf->fillFromWire ( *piiu );
+                if ( nBytesIn == 0u ) {
+                    // outer loop checks to see if state is connected
+                    // ( properly set by fillFromWire() )
+                    break;
                 }
             }
-        } while ( bytesPending && pComBuf );
+        }
     }
 
     if ( pComBuf ) {
@@ -367,7 +359,6 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     {
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
         piiu->pCAC()->uninstallIIU ( *piiu );
-        piiu->pCAC()->notifyDestroyFD ( piiu->sock );
     }
     piiu->destroy ();
 }
@@ -556,60 +547,69 @@ void tcpiiu::connect ()
     }
 }
 
-/*
- *  tcpiiu::cleanShutdown ()
- */
-void tcpiiu::cleanShutdown ()
-{
-    epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
-    if ( this->state == iiu_connected || this->state == iiu_connecting ) {
-        int status;
-        /*
-         * on winsock and probably vxWorks shutdown() does not
-         * unblock a thread in recv() so we use close and introduce
-         * some complexity because we must unregister the fd early
-         */
-        status = shutdown ( this->sock, SD_BOTH );
-        if ( status ) {
-            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-            status = socket_close ( this->sock );
-            if ( status ) {
-                errlogPrintf ("CAC TCP socket close error was %s\n", 
-                    SOCKERRSTR (SOCKERRNO) );
-            }
-            else {
-                this->sockCloseCompleted = true;
-                this->state = iiu_disconnected;
-            }
-        }
-        else {
-            this->state = iiu_disconnected;
-        }
-        this->sendThreadFlushEvent.signal ();
-    }
-}
-
-/*
- *  tcpiiu::forcedShutdown ()
- */
 void tcpiiu::forcedShutdown ()
 {
-    epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
+    // generate some NOOP UDP traffic so that ca_pend_event()
+    // will get called in preemptive callback disabled 
+    // applications, and therefore the callback lock below
+    // will not block
+    this->pCAC()->udpWakeup ();
+    callbackAutoMutex autoMutexCB ( *this->pCAC() );
+    epicsAutoMutex autoMutexCAC ( this->pCAC()->mutexRef() );
+    this->shutdown ( true );
+}
 
-    if ( this->state != iiu_disconnected || this->state == iiu_connecting ) {
-        // force abortive shutdown sequence (discard outstanding sends
-        // and receives)
-        struct linger tmpLinger;
-        tmpLinger.l_onoff = true;
-        tmpLinger.l_linger = 0u;
-        int status = setsockopt ( this->sock, SOL_SOCKET, SO_LINGER, 
-            reinterpret_cast <char *> ( &tmpLinger ), sizeof (tmpLinger) );
-        if ( status != 0 ) {
-            errlogPrintf ( "CAC TCP socket linger set error was %s\n", 
+void tcpiiu::cleanShutdown ()
+{
+    // generate some NOOP UDP traffic so that ca_pend_event()
+    // will get called in preemptive callback disabled 
+    // applications, and therefore the callback lock below
+    // will not block
+    this->pCAC()->udpWakeup ();
+    callbackAutoMutex autoMutexCB ( *this->pCAC() );
+    epicsAutoMutex autoMutexCAC ( this->pCAC()->mutexRef() );
+    this->shutdown ( false );
+}
+
+//
+//  tcpiiu::shutdown ()
+//
+// caller must hold callback mutex and also primary cac mutex  
+// when calling this routine
+//
+void tcpiiu::shutdown ( bool discardPendingMessages )
+{
+    if ( ! this->sockCloseCompleted ) {
+        this->state = iiu_disconnected;
+        this->sockCloseCompleted = true;
+
+        this->pCAC()->notifyDestroyFD ( this->sock );
+
+        if ( discardPendingMessages ) {
+            // force abortive shutdown sequence 
+            // (discard outstanding sends and receives)
+            struct linger tmpLinger;
+            tmpLinger.l_onoff = true;
+            tmpLinger.l_linger = 0u;
+            int status = setsockopt ( this->sock, SOL_SOCKET, SO_LINGER, 
+                reinterpret_cast <char *> ( &tmpLinger ), sizeof (tmpLinger) );
+            if ( status != 0 ) {
+                errlogPrintf ( "CAC TCP socket linger set error was %s\n", 
+                    SOCKERRSTR (SOCKERRNO) );
+            }
+        }
+
+        //
+        // on winsock and probably vxWorks shutdown() does not
+        // unblock a thread in recv() so we use close and introduce
+        // some complexity because we must unregister the fd early
+        //
+        int status = socket_close ( this->sock );
+        if ( status ) {
+            errlogPrintf ("CAC TCP socket close error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
-        this->cleanShutdown ();
+        this->sendThreadFlushEvent.signal ();
     }
 }
 
@@ -768,7 +768,7 @@ bool tcpiiu::setEchoRequestPending ()
 //
 // tcpiiu::processIncoming()
 //
-void tcpiiu::processIncoming ()
+bool tcpiiu::processIncoming ()
 {
     while ( true ) {
 
@@ -781,7 +781,7 @@ void tcpiiu::processIncoming ()
             if ( ! this->oldMsgHeaderAvailable ) {
                 if ( nBytes < sizeof ( caHdr ) ) {
                     this->flushIfRecvProcessRequested ();
-                    return;
+                    return true;
                 } 
                 this->curMsg.m_cmmd = this->recvQue.popUInt16 ();
                 this->curMsg.m_postsize = this->recvQue.popUInt16 ();
@@ -796,7 +796,7 @@ void tcpiiu::processIncoming ()
                     sizeof ( this->curMsg.m_postsize ) + sizeof ( this->curMsg.m_count );
                 if ( this->recvQue.occupiedBytes () < annexSize ) {
                     this->flushIfRecvProcessRequested ();
-                    return;
+                    return true;
                 }
                 this->curMsg.m_postsize = this->recvQue.popUInt32 ();
                 this->curMsg.m_count = this->recvQue.popUInt32 ();
@@ -840,14 +840,13 @@ void tcpiiu::processIncoming ()
                             this->curMsg.m_postsize - this->curDataBytes );
                 if ( this->curDataBytes < this->curMsg.m_postsize ) {
                     this->flushIfRecvProcessRequested ();
-                    return;
+                    return true;
                 }
             }
             bool msgOK = this->pCAC()->executeResponse ( *this, 
                                 this->curMsg, this->pCurData );
             if ( ! msgOK ) {
-                this->cleanShutdown ();
-                return;
+                return false;
             }
         }
         else {
@@ -862,7 +861,7 @@ void tcpiiu::processIncoming ()
                     this->curMsg.m_postsize - this->curDataBytes );
             if ( this->curDataBytes < this->curMsg.m_postsize  ) {
                 this->flushIfRecvProcessRequested ();
-                return;
+                return true;
             }
         }
  
@@ -877,6 +876,7 @@ inline void insertRequestHeader (
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t requestDependent, bool v49Ok )
 {
+    sendQue.beginMsg ();
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
         sendQue.pushUInt16 ( request ); 
         sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( payloadSize ) ); 
@@ -920,6 +920,7 @@ void tcpiiu::hostNameSetRequest ()
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
 
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_HOST_NAME ); // cmd
     this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( postSize ) ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -928,6 +929,7 @@ void tcpiiu::hostNameSetRequest ()
     this->sendQue.pushUInt32 ( 0u ); // available 
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( nillBytes, postSize - size );
+    this->sendQue.commitMsg ();
 }
 
 /*
@@ -949,6 +951,7 @@ void tcpiiu::userNameSetRequest ()
     }
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef()  );
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
     this->sendQue.pushUInt16 ( postSize ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -957,6 +960,7 @@ void tcpiiu::userNameSetRequest ()
     this->sendQue.pushUInt32 ( 0u ); // available 
     this->sendQue.pushString ( pName, size );
     this->sendQue.pushString ( nillBytes, postSize - size );
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::disableFlowControlRequest ()
@@ -966,13 +970,14 @@ void tcpiiu::disableFlowControlRequest ()
     }
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef() );
-
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_ON ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::enableFlowControlRequest ()
@@ -982,13 +987,14 @@ void tcpiiu::enableFlowControlRequest ()
     }
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef()  );
-
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_OFF ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::versionMessage ( const cacChannel::priLev & priority )
@@ -1000,13 +1006,14 @@ void tcpiiu::versionMessage ( const cacChannel::priLev & priority )
     }
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef() );
-
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize ( old possize field )
     this->sendQue.pushUInt16 ( priority ); // old dataType field
     this->sendQue.pushUInt16 ( CA_MINOR_PROTOCOL_REVISION ); // old count field
     this->sendQue.pushUInt32 ( 0u ); // ( old cid field )
     this->sendQue.pushUInt32 ( 0u ); // ( old available field )
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::echoRequest ()
@@ -1016,13 +1023,14 @@ void tcpiiu::echoRequest ()
     }
 
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
-
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_ECHO ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
     this->sendQue.pushUInt16 ( 0u ); // count
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.commitMsg ();
 }
 
 inline void insertRequestWithPayLoad (
@@ -1069,7 +1077,9 @@ inline void insertRequestWithPayLoad (
     else {
         sendQue.push_dbr_type ( dataType, pPayload, nElem );  
     }
+    // set pad bytes to nill
     sendQue.pushString ( nillBytes, payloadSize - size );
+    sendQue.commitMsg ();
 }
 
 void tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *pValue )
@@ -1125,6 +1135,7 @@ void tcpiiu::readNotifyRequest ( nciu &chan, netReadNotifyIO &io,
         static_cast < ca_uint16_t > ( dataType ), 
         nElem, chan.getSID(), io.getID(), 
         CA_V49 ( this->minorProtocolVersion ) );
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::createChannelRequest ( nciu &chan )
@@ -1149,6 +1160,7 @@ void tcpiiu::createChannelRequest ( nciu &chan )
         throw cacChannel::unsupportedByService();
     }
 
+    this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_CLAIM_CIU ); // cmd
     this->sendQue.pushUInt16 ( postCnt ); // postsize
     this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -1166,17 +1178,20 @@ void tcpiiu::createChannelRequest ( nciu &chan )
     if ( postCnt > nameLength ) {
         this->sendQue.pushString ( nillBytes, postCnt - nameLength );
     }
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::clearChannelRequest ( nciu &chan )
 {
     if ( chan.connected () ) {
+        this->sendQue.beginMsg ();
         this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
         this->sendQue.pushUInt16 ( 0u ); // postsize
         this->sendQue.pushUInt16 ( 0u ); // dataType
         this->sendQue.pushUInt16 ( 0u ); // count
         this->sendQue.pushUInt32 ( chan.getSID () ); // cid
         this->sendQue.pushUInt32 ( chan.getCID () ); // available 
+        this->sendQue.commitMsg ();
     }
 }
 
@@ -1219,6 +1234,7 @@ void tcpiiu::subscriptionRequest ( nciu &chan, netSubscription & subscr )
     this->sendQue.pushFloat32 ( 0.0 ); // m_toval
     this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( mask ) ); // m_mask
     this->sendQue.pushUInt16 ( 0u ); // m_pad
+    this->sendQue.commitMsg ();
 }
 
 void tcpiiu::subscriptionCancelRequest ( nciu &chan, netSubscription &subscr )
@@ -1229,11 +1245,16 @@ void tcpiiu::subscriptionCancelRequest ( nciu &chan, netSubscription &subscr )
         static_cast < ca_uint16_t > ( subscr.getCount () ), 
         chan.getSID(), subscr.getID(), 
         CA_V49 ( this->minorProtocolVersion ) );
+    this->sendQue.commitMsg ();
 }
 
+// 
+// caller must hold both the callback mutex and
+// also the cac primary mutex
+//
 void tcpiiu::lastChannelDetachNotify ()
 {
-    this->cleanShutdown ();
+    this->shutdown ( false );
 }
 
 bool tcpiiu::flush ()
@@ -1334,6 +1355,19 @@ bool tcpiiu::ca_v42_ok () const
 void tcpiiu::requestRecvProcessPostponedFlush ()
 {
     this->recvProcessPostponedFlush = true;
+}
+
+void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
+{   
+    this->pHostNameCache->hostName ( pBuf, bufLength );
+}
+
+// deprecated - please dont use - this is _not_ thread safe
+const char * tcpiiu::pHostName () const
+{
+    static char nameBuf [128];
+    this->hostName ( nameBuf, sizeof ( nameBuf ) );
+    return nameBuf; // ouch !!
 }
 
 

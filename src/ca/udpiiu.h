@@ -47,14 +47,15 @@ public:
     virtual ~udpiiu ();
     void shutdown ();
     void recvMsg ();
-    void postMsg ( const osiSockAddr &net_addr, 
+    void postMsg ( const osiSockAddr & net_addr, 
               char *pInBuf, arrayElementCount blockSize,
-              const epicsTime &currenTime);
+              const epicsTime &currenTime );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void datagramFlush ();
     unsigned getPort () const;
     void show ( unsigned level ) const;
     bool isCurrentThread () const;
+    void wakeupMsg ();
 
     // exceptions
     class noSocket {};

@@ -111,14 +111,9 @@ int CASG::block ( double timeout )
             break;
         }
 
-        {
-            // serialize access the blocking mechanism below
-            epicsAutoMutex autoMutex ( this->serializeBlock );
-
-            status = this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
-            if ( status != ECA_NORMAL ) {
-                return status;
-            }
+        status = this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
+        if ( status != ECA_NORMAL ) {
+            return status;
         }
 
         /*

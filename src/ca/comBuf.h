@@ -33,7 +33,6 @@ class wireSendAdapter {
 public:
     virtual unsigned sendBytes ( const void *pBuf, 
         unsigned nBytesInBuf ) = 0;
-    virtual void forcedShutdown () = 0;
 };
 
 class wireRecvAdapter {
@@ -48,6 +47,7 @@ public:
     void destroy ();
     unsigned unoccupiedBytes () const;
     unsigned occupiedBytes () const;
+    unsigned uncommittedBytes () const;
     static unsigned capacityBytes ();
     void clear ();
     unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
@@ -61,6 +61,8 @@ public:
     unsigned copyIn ( const epicsFloat32 *pValue, unsigned nElem );
     unsigned copyIn ( const epicsFloat64 *pValue, unsigned nElem );
     unsigned copyIn ( const epicsOldString *pValue, unsigned nElem );
+    void commitIncomming ();
+    void clearUncommittedIncomming ();
     bool copyInAllBytes ( const void *pBuf, unsigned nBytes );
     unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
     bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
@@ -84,6 +86,7 @@ public:
 protected:
     ~comBuf ();
 private:
+    unsigned commitIndex;
     unsigned nextWriteIndex;
     unsigned nextReadIndex;
     epicsUInt8 buf [ comBufSize ];
@@ -93,7 +96,8 @@ private:
     static epicsMutex freeListMutex;
 };
 
-inline comBuf::comBuf () : nextWriteIndex ( 0u ), nextReadIndex ( 0u )
+inline comBuf::comBuf () : nextWriteIndex ( 0u ), 
+    nextReadIndex ( 0u ), commitIndex ( 0u )
 {
 }
 
@@ -108,6 +112,7 @@ inline void comBuf::destroy ()
 
 inline void comBuf::clear ()
 {
+    this->commitIndex = 0u;
     this->nextWriteIndex = 0u;
     this->nextReadIndex = 0u;
 }
@@ -131,8 +136,12 @@ inline unsigned comBuf::unoccupiedBytes () const
 
 inline unsigned comBuf::occupiedBytes () const
 {
-    // assert (this->nextWriteIndex >= this->nextReadIndex);
-    return this->nextWriteIndex - this->nextReadIndex;
+    return this->commitIndex - this->nextReadIndex;
+}
+
+inline unsigned comBuf::uncommittedBytes () const
+{
+    return this->nextWriteIndex - this->commitIndex;
 }
 
 inline bool comBuf::copyInAllBytes ( const void *pBuf, unsigned nBytes )
@@ -158,15 +167,15 @@ inline unsigned comBuf::copyInBytes ( const void *pBuf, unsigned nBytes )
     return nBytes;
 }
 
-inline unsigned comBuf::copyIn ( comBuf &bufIn )
+inline unsigned comBuf::copyIn ( comBuf & bufIn )
 {
     unsigned nBytes = this->copyInBytes ( &bufIn.buf[bufIn.nextReadIndex], 
-                                bufIn.nextWriteIndex - bufIn.nextReadIndex );
+                                bufIn.commitIndex - bufIn.nextReadIndex );
     bufIn.nextReadIndex += nBytes;
     return nBytes;
 }
 
-inline bool comBuf::copyOutAllBytes ( void *pBuf, unsigned nBytes )
+inline bool comBuf::copyOutAllBytes ( void * pBuf, unsigned nBytes )
 {
     if ( nBytes <= this->occupiedBytes () ) {
         memcpy ( pBuf, &this->buf[this->nextReadIndex], nBytes);
@@ -369,6 +378,16 @@ inline comBuf::statusPopUInt32 comBuf::popUInt32 ()
         tmp.success = false;
     }
     return tmp;
+}
+
+inline void comBuf::commitIncomming ()
+{
+    this->commitIndex = this->nextWriteIndex;
+}
+
+inline void comBuf::clearUncommittedIncomming ()
+{
+    this->nextWriteIndex = this->commitIndex;
 }
 
 #endif // ifndef comBufh

@@ -2,6 +2,9 @@
 include $(TOP)/config/RELEASE
 include $(EPICS_BASE)/config/CONFIG
 INSTALL_LOCATION = $(TOP)
+ifdef INSTALL_LOCATION_APP
+INSTALL_LOCATION = $(INSTALL_LOCATION_APP)
+endif
  
 #Other share areas can be added similar to following
 #ifdef <share_top>

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -108,6 +111,6 @@ casServerReg::~casServerReg()
 //
 int caServerOS::getFD()
 {
-	 return cas.caServerIO::getFD();
+	return cas.caServerIO::getFD();
 }
 

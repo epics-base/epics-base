@@ -11,10 +11,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <stdlib.h>
 
-#include 		<cadef.h>
+#include <epicsAssert.h>
+#include <cadef.h>
 
 #ifndef LOCAL
 #define LOCAL static

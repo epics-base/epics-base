@@ -14,12 +14,12 @@ static char *sccsId = "@(#) $Id$";
  */
 #include	<stdio.h>
 #include	<stdlib.h>
-#include	<assert.h>
 #include	<math.h>
 #include	<float.h>
 
 #include	"os_depen.h"
 
+#include	<epicsAssert.h>
 #include 	<cadef.h>
 
 #define EVENT_ROUTINE	null_event

@@ -80,7 +80,6 @@ HDRVERSIONID(iocinfh, "$Id$")
  */
 #include <ctype.h>
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -96,6 +95,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 /*
  * EPICS includes
  */
+#include <epicsAssert.h>
 #include <cadef.h>
 #include <bucketLib.h>
 #include <ellLib.h> 

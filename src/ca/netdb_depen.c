@@ -37,7 +37,6 @@ static char	*sccsId = "@(#) $Id$";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #ifdef _WINDOWS
 #	include <winsock.h>
@@ -48,6 +47,8 @@ static char	*sccsId = "@(#) $Id$";
 #	include <arpa/inet.h>
 #	include <netdb.h>
 #endif
+
+#include <epicsAssert.h>
 
 
 /*

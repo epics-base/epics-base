@@ -152,7 +152,7 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 #define ECA_NOSEARCHADDR DEFMSG(CA_K_WARNING,	49)
 #define ECA_NOCONVERT	 DEFMSG(CA_K_WARNING,	50)
 #define ECA_BADCHID		 DEFMSG(CA_K_ERROR,	51)
-
+#define ECA_BADFUNCPTR	 DEFMSG(CA_K_ERROR,	52)
 
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char	*ca_message_text[];
@@ -211,7 +211,8 @@ READONLY char	*ca_message_text[]
 "Sorry, that anachronistic feature of CA is no longer supported",
 "The search request/beacon address list was empty after initialization",
 "Data conversion between client's type and the server's type failed",
-"Invalid channel identifier"
+"Invalid channel identifier",
+"Invalid function pointer"
 };
 #endif
 

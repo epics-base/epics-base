@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.4  1994/10/28  20:15:10  jbk
+ * increased the USP packet time-out to 250ms, added a parm to the configure()
+ * routine to let user specify it.
+ *
  */
 
 /**************************************************************************
@@ -653,7 +657,23 @@ static void TSerrorHandler(int Card, int ErrorNum)
 		Could put the slave on the vxworks timer until next sync
 	*/
 
-	logMsg("***TSerrorHandler: error number %d=n",ErrorNum,0,0,0,0,0);
+	if(MAKE_DEBUG)
+	{
+		switch(ErrorNum)
+		{
+		case 1:
+		  logMsg("***TSerrorHandler: event system error: TAXI violation",0,0,0,0,0,0);
+		  break;
+		case 2:
+		  logMsg("***TSerrorHandler: event system error: lost heartbeat",0,0,0,0,0,0);
+		  break;
+		case 3:
+		  logMsg("***TSerrorHandler: event system error: lost events",0,0,0,0,0,0);
+		  break;
+		default:
+			logMsg("***TSerrorHandler: unknown error %d from event system", ErrorNum,0,0,0,0,0);
+		}
+	}
 	return;
 }
 

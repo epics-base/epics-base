@@ -224,11 +224,16 @@ LOCAL int cagft(char *pname)
  */
 LOCAL void printit(struct  event_handler_args args)
 {
-
-	print_returned(
-		args.type,
-		args.dbr,
-		args.count);
+	if (args.status == ECA_NORMAL) {
+		print_returned(
+			args.type,
+			args.dbr,
+			args.count);
+	}
+	else {
+		printf ("%s: err resp to get cb was \"%s\"\n",
+			__FILE__, ca_message(args.status));
+	}
 
 	outstanding--;
 }

@@ -13,12 +13,14 @@ of this distribution.
 #include <string.h>
 #include <stdio.h>
 
+#include "osiThread.h"
 void *pdbbase=NULL;
 
 void callbackTest(void);
 
 int main(int argc,char *argv[])
 {
+    threadInit();
     callbackTest();
     printf("main terminating\n");
     return(0);

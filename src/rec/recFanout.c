@@ -108,12 +108,12 @@ static long process(paddr)
     struct fanoutRecord	*pfanout=(struct fanoutRecord *)(paddr->precord);
 
 	pfanout->pact = TRUE;
-        if (pfanout->lnk1.type==DB_LINK) dbScanPassive(&pfanout->lnk1.value.db_link.pdbAddr);
-        if (pfanout->lnk2.type==DB_LINK) dbScanPassive(&pfanout->lnk2.value.db_link.pdbAddr);
-        if (pfanout->lnk3.type==DB_LINK) dbScanPassive(&pfanout->lnk3.value.db_link.pdbAddr);
-        if (pfanout->lnk4.type==DB_LINK) dbScanPassive(&pfanout->lnk4.value.db_link.pdbAddr);
-        if (pfanout->lnk5.type==DB_LINK) dbScanPassive(&pfanout->lnk5.value.db_link.pdbAddr);
-        if (pfanout->lnk6.type==DB_LINK) dbScanPassive(&pfanout->lnk6.value.db_link.pdbAddr);
+        if (pfanout->lnk1.type==DB_LINK) dbScanPassive(pfanout->lnk1.value.db_link.pdbAddr);
+        if (pfanout->lnk2.type==DB_LINK) dbScanPassive(pfanout->lnk2.value.db_link.pdbAddr);
+        if (pfanout->lnk3.type==DB_LINK) dbScanPassive(pfanout->lnk3.value.db_link.pdbAddr);
+        if (pfanout->lnk4.type==DB_LINK) dbScanPassive(pfanout->lnk4.value.db_link.pdbAddr);
+        if (pfanout->lnk5.type==DB_LINK) dbScanPassive(pfanout->lnk5.value.db_link.pdbAddr);
+        if (pfanout->lnk6.type==DB_LINK) dbScanPassive(pfanout->lnk6.value.db_link.pdbAddr);
 	pfanout->pact=FALSE;
 	return(0);
 }

@@ -120,6 +120,7 @@ if ($opt_i) {
     find(\&FCopyTree, "$top/$apptypename");
 
     foreach $ioc ( @ARGV ) {
+	($appname = $ioc) =~ s/App$//;
 	$ioc = "ioc" . $ioc unless ($ioc =~ /^ioc/);
         if (-d "iocBoot/$ioc") {
 	    print "iocBoot/$ioc exists, not modified.\n";

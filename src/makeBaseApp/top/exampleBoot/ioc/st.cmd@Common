@@ -1,7 +1,7 @@
-#!../../bin/_ARCH_/_IOC_
+#!../../bin/_ARCH_/_APPNAME_
 ## The names of the binary above and .dbd file below will be incorrect
 ## unless you used the same names for the ioc and the app directory.
-dbLoadDatabase("../../dbd/_IOC_.dbd",0,0)
+dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
 
 registerRecordDeviceDriver(pdbbase)
 

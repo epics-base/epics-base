@@ -12,7 +12,7 @@ typedef enum {
 
 #ifdef __cplusplus
 
-class epicsMutex {
+class epicsShareClass epicsMutex {
 public:
     epicsMutex ();
     ~epicsMutex ();
@@ -29,32 +29,6 @@ private:
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
 };
-
-// Automatically applies and releases the mutex.
-// This is for use in situations where C++ exceptions are possible.
-class epicsAutoMutex {
-public:
-    epicsAutoMutex ( epicsMutex & );
-    ~epicsAutoMutex ();
-private:
-    epicsMutex & rMutex;
-    epicsAutoMutex ( const epicsAutoMutex & );
-    epicsAutoMutex & operator = ( const epicsAutoMutex & );
-    friend class epicsAutoMutexRelease;
-};
-
-// Automatically releases and reapplies the mutex.
-// This is for use in situations where C++ exceptions are possible.
-class epicsAutoMutexRelease {
-public:
-    epicsAutoMutexRelease ( epicsAutoMutex & );
-    ~epicsAutoMutexRelease ();
-private:
-    epicsAutoMutex & autoMutex;
-    epicsAutoMutexRelease ( const epicsAutoMutexRelease & );
-    epicsAutoMutexRelease & operator = ( const epicsAutoMutexRelease & );
-};
-
 
 #endif /*__cplusplus*/
 
@@ -95,90 +69,5 @@ epicsShareFunc void epicsShareAPI epicsMutexShowAll(
 #endif
 
 #include "osdMutex.h"
-
-#ifdef __cplusplus
-
-#include "locationException.h"
-
-inline epicsMutex :: epicsMutex () :
-    id ( epicsMutexCreate () )
-{
-    if ( this->id == 0 ) {
-        throwWithLocation ( noMemory () );
-    }
-}
-
-inline epicsMutex ::~epicsMutex ()
-{
-    epicsMutexDestroy ( this->id );
-}
-
-inline void epicsMutex :: lock ()
-{
-    epicsMutexLockStatus status = epicsMutexLock ( this->id );
-    if ( status != epicsMutexLockOK ) {
-        throwWithLocation ( invalidSemaphore () );
-    }
-}
-
-inline bool epicsMutex :: lock ( double timeOut )
-{
-    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
-    if (status==epicsMutexLockOK) {
-        return true;
-    } else if (status==epicsMutexLockTimeout) {
-        return false;
-    } else {
-        throwWithLocation ( invalidSemaphore () );
-    }
-    return false; // never here, compiler is happy
-}
-
-inline bool epicsMutex :: tryLock ()
-{
-    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
-    if ( status == epicsMutexLockOK ) {
-        return true;
-    } else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } else {
-        throwWithLocation ( invalidSemaphore () );
-    }
-    return false; // never here, but compiler is happy
-}
-
-inline void epicsMutex :: unlock ()
-{
-    epicsMutexUnlock ( this->id );
-}
-
-inline void epicsMutex :: show ( unsigned level ) const
-{
-    epicsMutexShow ( this->id, level );
-}
-
-inline epicsAutoMutex :: epicsAutoMutex ( epicsMutex & mutexIn ) :
-    rMutex ( mutexIn )
-{
-    this->rMutex.lock ();
-}
-
-inline epicsAutoMutex :: ~epicsAutoMutex ()
-{
-    this->rMutex.unlock ();
-}
-
-inline epicsAutoMutexRelease :: epicsAutoMutexRelease ( epicsAutoMutex & autoMutexIn ) :
-    autoMutex ( autoMutexIn )
-{
-    this->autoMutex.rMutex.unlock ();
-}
-
-inline epicsAutoMutexRelease :: ~epicsAutoMutexRelease ()
-{
-    this->autoMutex.rMutex.lock ();
-}
-
-#endif /*__cplusplus*/
 
 #endif /* epicsMutexh */

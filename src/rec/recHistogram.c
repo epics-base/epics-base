@@ -39,6 +39,7 @@
 #include        <lstLib.h>
 #include	<strLib.h>
 #include	<math.h>
+#include	<limits.h>
 
 #include        <alarm.h>
 #include        <dbAccess.h>
@@ -56,7 +57,7 @@
 #define initialize NULL
 long init_record();
 long process();
-#define special NULL
+long special();
 long get_value();
 long cvt_dbaddr();
 long get_array_info();
@@ -100,22 +101,24 @@ static long put_count(phistogram)
 	unsigned long	*pdest;
 	int    i;
 
-	if(phistogram->lreg >= phistogram->ureg) {
+	if(phistogram->llim >= phistogram->ulim) {
                 if (phistogram->nsev<VALID_ALARM) {
                         phistogram->stat = SOFT_ALARM;
                         phistogram->sevr = VALID_ALARM;
                         return(-1);
                 }
         }
-	if(phistogram->sgnl<phistogram->lreg || phistogram->sgnl >= phistogram->ureg) return(0);
-	width=(phistogram->ureg-phistogram->lreg)/phistogram->nelm;
-	temp=phistogram->sgnl-phistogram->lreg;
+	if(phistogram->sgnl<phistogram->llim || phistogram->sgnl >= phistogram->ulim) return(0);
+	width=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
+	temp=phistogram->sgnl-phistogram->llim;
 	for (i=1;i<=phistogram->nelm;i++){
 	if (temp<=(double)i*width) break;
 	}
 	pdest=phistogram->bptr+i-1;
-	if ( *pdest==4294967294) *pdest=0.0;
+	if ( *pdest==ULONG_MAX) *pdest=0.0;
+	/*if ( *pdest==4294967294) *pdest=0.0;	*/
 	(*pdest)++;
+	phistogram->mcnt++;
 	return(0);
 }
 static long init_histogram(phistogram)
@@ -125,6 +128,7 @@ static long init_histogram(phistogram)
 	for (i=0;i<=phistogram->nelm-1;i++)
 	      *(phistogram->bptr+i)=0.0;
 	phistogram->init=0;
+	phistogram->mcnt=phistogram->mdel;
 	return(0);
 }
 static long init_record(phistogram)
@@ -164,14 +168,6 @@ static long process(paddr)
         long		options=0;
 	long		nRequest=1;
 
-	/* intialize the histogram array and return if init is nonzero */
-	if (phistogram->init != 0){
-		init_histogram(phistogram);
-		tsLocalTime(&phistogram->time);
-		monitor(phistogram);
-		return(0);
-	}
-
 	phistogram->pact = TRUE;
 
         /* fetch the array element number  */
@@ -200,6 +196,23 @@ static long process(paddr)
 	return(0);
 }
 
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int           after;
+{
+    struct histogramRecord   *phistogram = (struct histogramRecord *)(paddr->precord);
+    int                 special_type = paddr->special;
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_RESET):
+        init_histogram(phistogram);
+	return(0);
+    default:
+        recGblDbaddrError(S_db_badChoice,paddr,"histogram: special");
+        return(S_db_badChoice);
+    }
+}
 static void monitor(phistogram)
     struct histogramRecord             *phistogram;
 {
@@ -229,7 +242,15 @@ static void monitor(phistogram)
             db_post_events(phistogram,&phistogram->sevr,DBE_VALUE);
     }
 
-    monitor_mask |= (DBE_LOG|DBE_VALUE);
+    /* check for count change */
+    if(phistogram->mcnt - phistogram->mdel>=0){
+	/* post events for count change */
+	monitor_mask |= DBE_VALUE;
+	/* update last value monitored */
+	phistogram->mcnt = 0;
+    }
+
+    /* send out monitors connected to the value field */
     if(monitor_mask) db_post_events(phistogram,phistogram->bptr,monitor_mask);
     return;
 }
@@ -244,7 +265,6 @@ static long get_value(phistogram,pvdes)
     pvdes->field_type = DBF_ULONG;
     return(0);
 }
-
 
 static long cvt_dbaddr(paddr)
     struct dbAddr *paddr;

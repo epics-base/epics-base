@@ -1,4 +1,3 @@
-/* drvBitBus.c */
 /* share/src/drv $Id$ */
 /*
  *	Original Author: Ned Arnold
@@ -107,6 +106,7 @@ reportBB()
       if (pXvmeLink[i] != NULL)
       {
         printf("Link %d (address 0x%08.8X) present and initialized.\n", i, pXvmeLink[i]->bbRegs);
+	printf("                           %d mesages on busy list\n", pXvmeLink[i]->pbbLink->busyList.elements);
       }
       else
       {
@@ -199,12 +199,14 @@ initBB()
 	pXvmeLink[i]->pbbLink->queue[j].tail = NULL;
         FASTLOCKINIT(&(pXvmeLink[i]->pbbLink->queue[j].sem));
 	FASTUNLOCK(&(pXvmeLink[i]->pbbLink->queue[j].sem));
+	pXvmeLink[i]->pbbLink->queue[j].elements = 0;
       }
 
       /* init the busy message list */
       FASTLOCKINIT(&(pXvmeLink[i]->pbbLink->busyList.sem));
       pXvmeLink[i]->pbbLink->busyList.head = NULL;
       pXvmeLink[i]->pbbLink->busyList.tail = NULL;
+      pXvmeLink[i]->pbbLink->busyList.elements = 0;
 
       for (j=0; j<BB_APERLINK; j++)
       {
@@ -336,6 +338,8 @@ struct  dpvtBitBusHead  *pnode;
 
   plist->head = pnode;
 
+  plist->elements++;
+
   return(0);
 }
 /******************************************************************************
@@ -358,6 +362,8 @@ struct	dpvtBitBusHead	*pnode;
     plist->head = pnode;
 
   plist->tail = pnode;		/* this is the 'new' tail node */
+
+  plist->elements++;
 
   return(0);
 }
@@ -383,6 +389,8 @@ struct	dpvtBitBusHead	*pnode;
 
   if (plist->tail == pnode)
     plist->tail = pnode->prev;
+
+  plist->elements--;
 
   return(0);
 }
@@ -552,6 +560,7 @@ int	link;
                 wdCancel(pXvmeLink[link]->watchDogId);
           
 	      /* Wake up Link Task in case was waiting on "this" node */
+/* BUG -- this may require miving into the BB_RCMD state */
               semGive(pXvmeLink[link]->pbbLink->linkEventSem); 
 
 	      FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
@@ -935,7 +944,7 @@ int	link;
       printf("xvmeTxTask(%d): got an event\n", link);
 
     working = 1;
-    while ((working != 0) && (pXvmeLink[link]->abortFlag == 0))
+    while ((working != 0) && (pXvmeLink[link]->abortFlag == 0) && (plink->busyList.elements < BB_MAX_OUTSTANDING_MSGS))
     {
       working = 0;
 

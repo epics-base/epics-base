@@ -360,7 +360,7 @@ int		srqStatus;	/* The poll response from the device */
   int	status = IDLE;		/* assume device will be idle when finished */
 
   if (Dc5009Debug || ibSrqDebug)
-    logMsg("srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
+    printf("dc5009 srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
 
   switch (srqStatus & DC5009_GOODBITS) {
   case DC5009_OPC:
@@ -369,20 +369,20 @@ int		srqStatus;	/* The poll response from the device */
     if (phwpvt->srqCallback != NULL)
       status = ((*(phwpvt->srqCallback))(phwpvt->parm, srqStatus));
     else
-      logMsg("Unsolicited operation complete from DC5009 device support!\n");
+      printf("dc5009 srqHandler: Unsolicited operation complete from DC5009 device support!\n");
     break;
 /* BUG - I have to clear out the error status by doing an err? read operation */
 
   case DC5009_USER:
 
     /* user requested srq event is specific to the Dc5009 */
-      logMsg("Dc5009 User requested srq event link %d, device %d\n", phwpvt->link, phwpvt->device);
+      printf("dc5009 srqHandler: Dc5009 User requested srq event link %d, device %d\n", phwpvt->link, phwpvt->device);
       break;
 /* BUG - I have to clear out the error status by doing an err? read operation */
 
   case DC5009_PON:
 
-    logMsg("Power cycled on DC5009\n");
+    printf("dc5009 srqHandler: Power cycled on DC5009\n");
     break;
 /* BUG - I have to clear out the error status by doing an err? read operation */
 
@@ -392,7 +392,7 @@ int		srqStatus;	/* The poll response from the device */
     if (phwpvt->unsolicitedDpvt != NULL)
     {
       if(Dc5009Debug || ibSrqDebug)
-        logMsg("Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
+        printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
 
       ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.finishProc = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
@@ -401,7 +401,7 @@ int		srqStatus;	/* The poll response from the device */
     }
     else
     {
-      logMsg("Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
+      printf("dc5009 srqHandler: Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
     }
   }

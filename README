@@ -13,7 +13,7 @@ Notes:
 
 2. You must use GNU make (which is now THE supported make utility) for
    the build, gnumake.  Set your path so that a recent version (e.g.
-   V3.70) of gnumake is available (as make) before any system supplied makes.
+   V3.70) of gnumake is available.
 
 ----------------------------------------------------------------------------
    Part 1 - Configuring and Building EPICS Base
@@ -42,8 +42,8 @@ Notes:
 
    cd epics/base
    gnumake             - To build and install EPICS.
-   gnumake clean       - To clean temporary object files.  Clean will
-                       remove files from ALL O.ARCH dirs, not
+   gnumake clean       - To clean temporary object files.  Top level 
+                       clean will remove all the O.ARCH dirs, not
                        only those specified in BUILD_ARCHS.
 
 1.4  To create an EPICS release:
@@ -99,7 +99,9 @@ CONFIG_SITE - This file is meant to be changed only by the EPICS system
 manager.  It specifies:
 
 	HOST_ARCH: The system's host architecture (sun4/hp700/etc).
-	BUILD_ARCHS: List of architectures to be built.
+               This now come from an environment variable.
+	CROSS_COMPILER_HOST_ARCHS: List of unix architectures with cross_compilers. 
+	CROSS_COMPILER_TARGET_ARCHS: List of architectures to build epics for.
 	VX_DIR: Location of vxWorks.
 	STATIC_BUILD: Whether or not to build clients statically.
 	etc.

@@ -14,9 +14,6 @@
 
 char *banner[] =
 {
-    "#ifndef lint",
-    "static char yysccsid[] = \"@(#)yaccpar (JRW version from 1.9 (Berkeley) 02/21/93)\";",
-    "#endif",
     "#define YYBYACC 1",
     "#define YYMAJOR 1",
     "#define YYMINOR 9",
@@ -64,7 +61,9 @@ char *header[] =
     "#define YYMAXDEPTH 500",
     "#endif",
     "#endif",
+    "#if YYDEBUG",				/* MRK */
     "static int yydebug;",			/* JRW */
+    "#endif",					/* MRK */	
     "static int yynerrs;",			/* JRW */
     "static int yyerrflag;",			/* JRW */
     "static int yychar;",			/* JRW */
@@ -155,15 +154,7 @@ char *body[] =
     "        goto yyreduce;",
     "    }",
     "    if (yyerrflag) goto yyinrecovery;",
-    "#ifdef lint",
-    "    goto yynewerror;",
-    "#endif",
-    "yynewerror:",
     "    yyerror(\"syntax error\");",
-    "#ifdef lint",
-    "    goto yyerrlab;",
-    "#endif",
-    "yyerrlab:",
     "    ++yynerrs;",
     "yyinrecovery:",
     "    if (yyerrflag < 3)",

@@ -951,7 +951,7 @@ YY_DECL
 yy_match:
 	do
 	    {
-	    register YY_CHAR yy_c = yy_ec[*yy_cp];
+	    register YY_CHAR yy_c = yy_ec[(int)*yy_cp];
 	    if ( yy_accept[yy_current_state] )
 		{
 		yy_last_accepting_state = yy_current_state;
@@ -961,7 +961,7 @@ yy_match:
 		{
 		yy_current_state = yy_def[yy_current_state];
 		if ( yy_current_state >= 341 )
-		    yy_c = yy_meta[yy_c];
+		    yy_c = yy_meta[(int)yy_c];
 		}
 	    yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 	    ++yy_cp;
@@ -1953,7 +1953,7 @@ static yy_state_type yy_get_previous_state()
 
     for ( yy_cp = yytext + YY_MORE_ADJ; yy_cp < yy_c_buf_p; ++yy_cp )
 	{
-	register YY_CHAR yy_c = (*yy_cp ? yy_ec[*yy_cp] : 1);
+	register YY_CHAR yy_c = (*yy_cp ? yy_ec[(int)*yy_cp] : 1);
 	if ( yy_accept[yy_current_state] )
 	    {
 	    yy_last_accepting_state = yy_current_state;
@@ -1963,7 +1963,7 @@ static yy_state_type yy_get_previous_state()
 	    {
 	    yy_current_state = yy_def[yy_current_state];
 	    if ( yy_current_state >= 341 )
-		yy_c = yy_meta[yy_c];
+		yy_c = yy_meta[(int)yy_c];
 	    }
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 	}
@@ -1999,7 +1999,7 @@ register yy_state_type yy_current_state;
 	{
 	yy_current_state = yy_def[yy_current_state];
 	if ( yy_current_state >= 341 )
-	    yy_c = yy_meta[yy_c];
+	    yy_c = yy_meta[(int)yy_c];
 	}
     yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
     yy_is_jam = (yy_current_state == 340);

@@ -457,7 +457,7 @@ char *char_map;
 	printf( "if ( yy_current_state >= %d )\n", lastdfa + 2 );
 
 	indent_up();
-	indent_puts( "yy_c = yy_meta[yy_c];" );
+	indent_puts( "yy_c = yy_meta[(int)yy_c];" );
 	indent_down();
 	}
 
@@ -477,7 +477,7 @@ void gen_next_match()
     /* NOTE - changes in here should be reflected in gen_next_state() and
      * gen_NUL_trans()
      */
-    char *char_map = useecs ? "yy_ec[*yy_cp]" : "*yy_cp";
+    char *char_map = useecs ? "yy_ec[(int)*yy_cp]" : "*yy_cp";
     char *char_map_2 = useecs ? "yy_ec[*++yy_cp]" : "*++yy_cp";
     
     if ( fulltbl )
@@ -576,13 +576,13 @@ int worry_about_NULs;
     if ( worry_about_NULs && ! nultrans )
 	{
 	if ( useecs )
-	    (void) sprintf( char_map, "(*yy_cp ? yy_ec[*yy_cp] : %d)", NUL_ec );
+	    (void) sprintf( char_map, "(*yy_cp ? yy_ec[(int)*yy_cp] : %d)", NUL_ec );
 	else
 	    (void) sprintf( char_map, "(*yy_cp ? *yy_cp : %d)", NUL_ec );
 	}
 
     else
-	(void) strcpy( char_map, useecs ? "yy_ec[*yy_cp]" : "*yy_cp" );
+	(void) strcpy( char_map, useecs ? "yy_ec[(int)*yy_cp]" : "*yy_cp" );
 
     if ( worry_about_NULs && nultrans )
 	{

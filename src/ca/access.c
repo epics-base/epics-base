@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.108  1999/02/11 23:44:15  jhill
+ * fixed ca_put() for 64 bit machines
+ *
  * Revision 1.107  1998/10/27 00:43:27  jhill
  * eliminated warning
  *
@@ -2920,31 +2923,42 @@ double cac_fetch_poll_period(void)
  */
 ca_real cac_time_diff (ca_time *pTVA, ca_time *pTVB)
 {
-        ca_real         delay;
-        ca_real         udelay;
-
-        /*
-         * works with unsigned tv_sec in struct timeval
-         * under HPUX
-         */
-        if (pTVA->tv_sec>pTVB->tv_sec) {
-                delay = pTVA->tv_sec - pTVB->tv_sec;
-        }
-        else {
-                delay = pTVB->tv_sec - pTVA->tv_sec;
-                delay = -delay;
-        }
-
-        if(pTVA->tv_usec>pTVB->tv_usec){
-                udelay = pTVA->tv_usec - pTVB->tv_usec;
-        }
-        else{
-                delay -= 1.0;
-                udelay = (USEC_PER_SEC - pTVB->tv_usec) + pTVA->tv_usec;
-        }
-        delay += udelay / USEC_PER_SEC;
-
-        return delay;
+	ca_real         delay;
+	ca_real         udelay;
+	
+	/*
+	 * works with unsigned tv_sec in struct timeval
+	 * under HPUX
+	 */
+	if (pTVA->tv_sec>pTVB->tv_sec) {
+		delay = pTVA->tv_sec - pTVB->tv_sec;
+	}
+	/*
+	 * only assume an overflow has occurred when the 
+	 * delay 3/4 of the total range
+	 */
+	else if ( pTVB->tv_sec-pTVA->tv_sec < 3*(ULONG_MAX/4) ) {
+		/*
+		 * return a negative delay
+		 */
+		delay = pTVB->tv_sec - pTVA->tv_sec;
+		delay = -delay;
+	}
+	else {
+		delay = 1 +  ((unsigned long)pTVA->tv_sec);
+		delay += (ULONG_MAX - (unsigned long)pTVB->tv_sec);
+	}
+	
+	if(pTVA->tv_usec>pTVB->tv_usec){
+		udelay = pTVA->tv_usec - pTVB->tv_usec;
+	}
+	else{
+		delay -= 1.0;
+		udelay = (USEC_PER_SEC - pTVB->tv_usec) + pTVA->tv_usec + 1.0;
+	}
+	delay += udelay / USEC_PER_SEC;
+	
+	return delay;
 }
 
 
@@ -3540,7 +3554,11 @@ int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, const void *arg)
 {
 	INITCHK;
 
-	fd_register_func = func;
+	/*
+	 * external API is currently not allowed to know
+	 * about the abstract socket type
+	 */
+	fd_register_func = (void (*)(void *, SOCKET,int)) func;
 	fd_register_arg = arg;
 
   	return ECA_NORMAL;

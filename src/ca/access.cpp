@@ -201,7 +201,7 @@ int epicsShareAPI ca_context_create (
 	    }
 
         pcac = new ca_client_context ( 
-		premptiveCallbackSelect == ca_enable_preemptive_callback );
+            premptiveCallbackSelect == ca_enable_preemptive_callback );
 	    if ( ! pcac ) {
 		    return ECA_ALLOCMEM;
 	    }

@@ -68,7 +68,7 @@ typedef struct xxxset { /* xxx input dset */
 	DEVSUPFUN	read_xxx;
 }xxxdset;
 
-static void alarm(xxxRecord *pxxx);
+static void checkAlarms(xxxRecord *pxxx);
 static void monitor(xxxRecord *pxxx);
 
 static long init_record(void *precord,int pass)
@@ -116,7 +116,7 @@ static long process(void *precord)
 
 	recGblGetTimeStamp(pxxx);
 	/* check for alarms */
-	alarm(pxxx);
+	checkAlarms(pxxx);
 	/* check event list */
 	monitor(pxxx);
 	/* process the forward scan link record */
@@ -192,7 +192,7 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
     return(0);
 }
 
-static void alarm(xxxRecord *pxxx)
+static void checkAlarms(xxxRecord *pxxx)
 {
 	double		val;
 	float		hyst, lalm, hihi, high, low, lolo;

@@ -29,6 +29,11 @@
  * .01	07-30-91	rac	installed in SCCS
  * .02	08-14-91	rac	add guiNoticeName; add more documentation
  * .03	09-06-91	rac	add GuiCheckbox..., guiGetNameFromSeln
+ * .04	10-23-91	rac	allow window manager to position command
+ *				frames; add file selector routine; add
+ *				guiInit, guiFileSelect, guiShellCmd; add
+ *				guiTextswXxx; don't specify position for
+ *				frames
  *
  * make options
  *	-DXWINDOWS	to use xview/X Window System
@@ -56,17 +61,22 @@
 *       void guiCFshowPin_xvo(item)
 * Panel_item guiCheckbox(label,panel,nItems,pX,pY,pHt,proc,key1,val1,key2,val2)
 *       void guiCheckboxItem(label,checkbox,itemNum,dfltFlag,pX,pY,pHt)
+*      char *guiFileSelect(pGuiCtx, title, dir, file, dim, callback, pArg)
 *      Frame guiFrame(label, x, y, width, height, ppDisp, pServer)
 *      Frame guiFrameCmd(label, parentFrame, pPanel, resizeProc)
 *      char *guiGetNameFromSeln(pGuiCtx, textSw, headFlag, tailFlag)
-*      Icon  guiIconCreate(frame, iconBits)
+*       Icon guiIconCreate(frame, iconBits)
+*      Panel guiInit(pGuiCtx, pArgc, argv, label, x, y, width, height)
 *       Menu guiMenu(proc, key1, val1, key2, val2)
 *  Menu_item guiMenuItem(label, menu, proc, inact, dflt, key1,val1,key2,val2)
 * Panel_item guiMessage(label, panel, pX, pY, pHt)
 *       void guiNotice(pGuiCtx, msg)
 *       void guiNoticeFile(pGuiCtx, msg, fName)
 *       void guiNoticeName(pGuiCtx, msg, name)
+*       void guiShellCmd(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg)
 * Panel_item guiTextField(lab,pan,pX,pY,pHt,proc,nStr,nDsp,key1,val1,key2,val2)
+*      char *guiTextswGets(textsw, pBuf, dim, >pCharNum)
+*       void guiTextswReset(textsw)
 *
 * BUGS
 * o	although they provide some isolation, these routines are still heavily
@@ -81,22 +91,22 @@
 * #include <guiSubr.h>
 *
 *	GUI_CTX	guiContext;
-*	
-*	xv_init(XV_INIT_ARGC_PTR_ARGV, &argc, argv, 0);
-*	guiContext.baseFrame = guiFrame("ARR", 100, 100, 0, 0,
-*                &guiContext.pDisp, &guiContext.server);
-*	
-*	panel = (Panel)xv_create(guiContext.baseFrame, PANEL,
-*        XV_X, 0, XV_Y, 0, PANEL_LAYOUT, PANEL_HORIZONTAL, NULL);
+*	Panel	panel;
+*
+*	panel = guiInit(&guiContext, &argc, argv, "ARR", 100, 100, 0, 0);
 *
 *-***************************************************************************/
 
 #include <stdio.h>
+#include <sys/ioctl.h>	/* for use with notifier */
+#include <sys/wait.h>	/* for use with notifier */
+#include <signal.h>	/* for use with notifier */
 
 #if defined XWINDOWS
 #   include <xview/xview.h>
 #   include <xview/frame.h>
 #   include <xview/notice.h>
+#   include <xview/notify.h>
 #   include <xview/openmenu.h>
 #   include <xview/panel.h>
 #   include <xview/textsw.h>
@@ -106,6 +116,17 @@
 #endif
 
 #include <guiSubr.h>
+
+Notify_value	guiCmdRead(), guiCmdSigchld();
+static int	callbackNum=-1;
+struct callbackStruct {
+    Notify_client clientNum;
+    void	(*callbackFn)();
+    void	*callbackArg;
+    int		pipe_io;
+};
+static struct callbackStruct callback[100];
+
 
 /*+/subr**********************************************************************
 * NAME	guiBrowser - create a browsing text subwindow
@@ -265,19 +286,19 @@ Panel	panel;		/* I panel containing button(s) */
 *	guiButton("Dismiss", panel, ...
 *			guiCFdismiss_xvo, NULL, GUI_CF, cmdFrame, 0, NULL);
 *
-*	menu = guiMenu(..., GUI_PCTX, pCtx...);
+*	menu = guiMenu(..., GUI_PCTX, pGuiCtx...);
 *	menuItem = guiMenuItem("label", menu, guiCFshow_mi, ...,
 *							GUI_CF, frame...);
 *
 *	guiButton("Show...", panel, ..., guiCFshow_xvo, ...,
-*					 GUI_PCTX, pCtx, GUI_CF, frame);
+*					 GUI_PCTX, pGuiCtx, GUI_CF, frame);
 *
-*	menu = guiMenu(..., GUI_PCTX, pCtx...);
+*	menu = guiMenu(..., GUI_PCTX, pGuiCtx...);
 *	menuItem = guiMenuItem("label", menu, guiCFshowPin_mi, ...,
 *							GUI_CF, frame...);
 *
 *	guiButton("Show...", panel, ..., guiCFshowPin_xvo, ...,
-*					 GUI_PCTX, pCtx, GUI_CF, frame);
+*					 GUI_PCTX, pGuiCtx, GUI_CF, frame);
 *
 *-*/
 void
@@ -290,41 +311,31 @@ void
 guiCFshow_mi(menu, menuItem)
 Menu	menu;
 Menu_item menuItem;
-{   GUI_CTX	*pCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
-    Rect	*mXY;	/* mouse position */
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(menuItem, XV_KEY_DATA, GUI_CF);
-    mXY = (Rect *)xv_get(xv_get(pCtx->baseFrame, XV_ROOT), WIN_MOUSE_XY);
-    xv_set(frame, XV_X, mXY->r_left, XV_Y, mXY->r_top, XV_SHOW, TRUE, NULL);
+    xv_set(frame, XV_SHOW, TRUE, NULL);
 }
 void
 guiCFshowPin_mi(menu, menuItem)
 Menu	menu;
 Menu_item menuItem;
-{   GUI_CTX	*pCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
-    Rect	*mXY;	/* mouse position */
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(menuItem, XV_KEY_DATA, GUI_CF);
-    mXY = (Rect *)xv_get(xv_get(pCtx->baseFrame, XV_ROOT), WIN_MOUSE_XY);
-    xv_set(frame, XV_X, mXY->r_left, XV_Y, mXY->r_top, XV_SHOW, TRUE,
-		FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
 }
 void
 guiCFshow_xvo(item)
 Xv_opaque item;
-{   GUI_CTX	*pCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
-    Rect	*mXY;	/* mouse position */
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(item, XV_KEY_DATA, GUI_CF);
-    mXY = (Rect *)xv_get(xv_get(pCtx->baseFrame, XV_ROOT), WIN_MOUSE_XY);
-    xv_set(frame, XV_X, mXY->r_left, XV_Y, mXY->r_top, XV_SHOW, TRUE, NULL);
+    xv_set(frame, XV_SHOW, TRUE, NULL);
 }
 void
 guiCFshowPin_xvo(item)
 Xv_opaque item;
-{   GUI_CTX	*pCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
-    Rect	*mXY;	/* mouse position */
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(item, XV_KEY_DATA, GUI_CF);
-    mXY = (Rect *)xv_get(xv_get(pCtx->baseFrame, XV_ROOT), WIN_MOUSE_XY);
-    xv_set(frame, XV_X, mXY->r_left, XV_Y, mXY->r_top, XV_SHOW, TRUE,
-		FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
 }
 
 /*+/subr**********************************************************************
@@ -495,6 +506,177 @@ int	*pHt;		/* O ptr to height used by label, in pixels, or NULL */
 	xv_set(checkbox, PANEL_VALUE, itemNum, NULL);
 }
 
+
+void guiFileSelCan_pb();
+void guiFileSelCom_pb();
+void guiFileSelLs_pb();
+void guiFileSelLsDone();
+void guiFileSelResize();
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelect - select a file from a group
+*
+*-*/
+void guiFileSelect(pGuiCtx, title, dir, file, dim, callback, pArg)
+GUI_CTX	*pGuiCtx;
+char	*title;
+char	*dir;
+char	*file;
+int	dim;
+void	(*callback)();
+void	*pArg;
+{
+    Frame	frame;
+    Panel	panel;
+    Panel_item	item1, item2;
+    int		x=5, y=5, ht=0;
+    char	message[120];
+
+    if (pGuiCtx->fsFrame != NULL)
+	xv_destroy_safe(pGuiCtx->fsFrame);
+    pGuiCtx->fsCallFn = callback;
+    pGuiCtx->fsCallArg = pArg;
+
+    frame = guiFrameCmd(title, pGuiCtx->baseFrame, &panel, guiFileSelResize);
+    xv_set(frame, XV_KEY_DATA, GUI_PCTX, pGuiCtx, NULL);
+    pGuiCtx->fsFrame = frame;
+    pGuiCtx->fsDir_PT = guiTextField("Directory:",
+	    panel, &x,&y,&ht, NULL, dim-1, 59, GUI_PCTX, pGuiCtx, 0, NULL);
+    xv_set(pGuiCtx->fsDir_PT, PANEL_VALUE, dir, NULL);
+    guiButton("List", panel, &x,&y,&ht, guiFileSelLs_pb, NULL,
+			GUI_PCTX, pGuiCtx, 0, NULL);
+    y += ht + 10; x = 5; ht = 0;
+    pGuiCtx->fsFile_PT = guiTextField("File:",
+	    panel, &x,&y,&ht, NULL, dim-1, 59, GUI_PCTX, pGuiCtx, 0, NULL);
+    xv_set(pGuiCtx->fsFile_PT, PANEL_VALUE, file, NULL);
+    y += ht + 10; x = 5; ht = 0;
+    item1 = guiButton("Cancel", panel, &x,&y,&ht, guiFileSelCan_pb, NULL,
+			GUI_PCTX, pGuiCtx, 0, NULL);
+    item2 = guiButton("Commit", panel, &x,&y,&ht, guiFileSelCom_pb, NULL,
+			GUI_PCTX, pGuiCtx, 0, NULL);
+    y += ht + 10; x = 5; ht = 0;
+    pGuiCtx->fsStatus_PM = guiMessage(" ", panel, &x, &y, &ht);
+    y += ht + 5; x = 5; ht = 0;
+
+    window_fit(panel);
+    guiButtonCenter(item1, item2, panel);
+    pGuiCtx->fsTextsw = guiBrowser(frame, panel, 60, 30, NULL);
+    window_fit(frame);
+    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    sprintf(pGuiCtx->fsLsFile, "/tmp/guiFileSel%d.ls.tmp", getpid());
+    unlink(pGuiCtx->fsLsFile);
+    sprintf(message, "cd %s; ls -l * >%s", dir, pGuiCtx->fsLsFile);
+    guiShellCmd(pGuiCtx, message, GUI_FILE_SEL_CLIENT,
+					guiFileSelLsDone, pGuiCtx);
+    sprintf(message, "processing names in %s", dir);
+    xv_set(pGuiCtx->fsStatus_PM, PANEL_LABEL_STRING, message, NULL);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelCan_pb
+*
+*-*/
+static void
+guiFileSelCan_pb(item)
+Panel_item item;
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
+    char	path[240];
+    char	*dir, *file;
+
+    xv_set(pGuiCtx->fsFrame,
+		XV_SHOW, FALSE, FRAME_CMD_PUSHPIN_IN, FALSE, NULL);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelCom_pb
+*
+*-*/
+static void
+guiFileSelCom_pb(item)
+Panel_item item;
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
+    char	*pSel, *dir, *file, path[240];
+
+/*-----------------------------------------------------------------------------
+*	if there's selected text, use it for file name.  If it's in the
+*	window listing the files, get the file name from the end of the
+*	line containing the selected text.
+*----------------------------------------------------------------------------*/
+    pSel = guiGetNameFromSeln(pGuiCtx, pGuiCtx->fsTextsw, 0, 1);
+    if (pSel != NULL)
+	xv_set(pGuiCtx->fsFile_PT, PANEL_VALUE, pSel, NULL);
+
+    dir = (char *)xv_get(pGuiCtx->fsDir_PT, PANEL_VALUE);
+    file = (char *)xv_get(pGuiCtx->fsFile_PT, PANEL_VALUE);
+    if (strlen(file) > 0) {
+	sprintf(path, "%s/%s", dir, file);
+	pGuiCtx->fsCallFn(pGuiCtx->fsCallArg, path, dir, file);
+	xv_set(pGuiCtx->fsFrame,
+		XV_SHOW, FALSE, FRAME_CMD_PUSHPIN_IN, FALSE, NULL);
+    }
+    else
+	guiNotice(pGuiCtx, "file name is blank; select file or use Cancel");
+}
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelLs_pb
+*
+*-*/
+static void
+guiFileSelLs_pb(item)
+Panel_item item;
+{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
+    char	message[120];
+    char	*dir=(char *)xv_get(pGuiCtx->fsDir_PT, PANEL_VALUE);
+    unlink(pGuiCtx->fsLsFile);
+    sprintf(message, "cd %s; ls -l * >%s", dir, pGuiCtx->fsLsFile);
+    guiShellCmd(pGuiCtx, message, GUI_FILE_SEL_CLIENT,
+					guiFileSelLsDone, pGuiCtx);
+    sprintf(message, "processing names in %s", dir);
+    xv_set(pGuiCtx->fsStatus_PM, PANEL_LABEL_STRING, message, NULL);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelLsDone
+*
+*-*/
+static void
+guiFileSelLsDone(pGuiCtx)
+GUI_CTX	*pGuiCtx;
+{
+    char	*dir=(char *)xv_get(pGuiCtx->fsDir_PT, PANEL_VALUE);
+    char	message[120];
+    xv_set(pGuiCtx->fsTextsw, TEXTSW_FILE, pGuiCtx->fsLsFile, NULL);
+    unlink(pGuiCtx->fsLsFile);
+    if ((int)xv_get(pGuiCtx->fsTextsw, TEXTSW_LENGTH) <= 0)
+	sprintf(message, "there are no files in %s", dir);
+    else
+	sprintf(message, "size and modification date are shown");
+    xv_set(pGuiCtx->fsStatus_PM, PANEL_LABEL_STRING, message, NULL);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiFileSelResize
+*
+*-*/
+static void
+guiFileSelResize(window, event, arg)
+Xv_Window window;
+Event   *event;
+Notify_arg arg;
+{
+    Rect        rect;
+    int         y;
+    GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(window, XV_KEY_DATA, GUI_PCTX);
+
+    if (event_id(event) == WIN_RESIZE) {
+        rect = *(Rect *)xv_get(pGuiCtx->fsFrame, XV_RECT);
+        y = (int)xv_get(pGuiCtx->fsTextsw, XV_Y);
+        xv_set(pGuiCtx->fsTextsw, XV_WIDTH, rect.r_width,
+                                XV_HEIGHT, rect.r_height-y, NULL);
+    }
+}
+
 /*+/subr**********************************************************************
 * NAME	guiFrame - create a base frame
 *
@@ -571,14 +753,14 @@ void	(*resizeProc)();/* I function to handle resize, or NULL */
 
     if (resizeProc == NULL) {
 	frame = (Frame)xv_create(parentFrame, FRAME_CMD, FRAME_LABEL, label,
-				XV_X, 200, XV_Y, 200, XV_SHOW, FALSE, NULL);
+				XV_SHOW, FALSE, NULL);
     }
     else {
 	frame = (Frame)xv_create(parentFrame, FRAME_CMD, FRAME_LABEL, label,
 				FRAME_SHOW_RESIZE_CORNER, TRUE,
 				WIN_EVENT_PROC,		resizeProc,
 				WIN_CONSUME_EVENTS,	WIN_RESIZE, NULL,
-				XV_X, 200, XV_Y, 200, XV_SHOW, FALSE, NULL);
+				XV_SHOW, FALSE, NULL);
     }
     if (frame == NULL) {
 	(void)printf("error creating \"%s\" command frame\n", label);
@@ -753,6 +935,42 @@ short	*iconBits;	/* I array of bits for the icon (64 by 64 assuemd) */
     xv_set(frame, FRAME_ICON, icon, NULL);
 
     return icon;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiInit - initialize the gui routines
+*
+* DESCRIPTION
+*	Sets up for gui operations, including:
+*	o   connecting to X11
+*	o   assimilating X11 options from the command line
+*	o   creating a base frame
+*	o   creating a panel within the base framek
+*	o   initializing the gui context block
+*
+* RETURNS
+*	Panel handle
+*
+*-*/
+Panel
+guiInit(pGuiCtx, pArgc, argv, label, x, y, width, height)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
+int     *pArgc;		/* I pointer to number of command line args */
+char	*argv[];	/* I command line args */
+char	*label;		/* I label for frame and icon */
+int	x;		/* I x coordinate for frame, in pixels */
+int	y;		/* I y coordinate for frame, in pixels */
+int	width;		/* I width of frame, in pixels, or 0 */
+int	height;		/* I height of frame, in pixels, or 0 */
+{
+
+    xv_init(XV_INIT_ARGC_PTR_ARGV, pArgc, argv, 0);
+    pGuiCtx->baseFrame = guiFrame(label, x, y, width, height,
+		&pGuiCtx->pDisp, &pGuiCtx->server);
+    pGuiCtx->fsFrame = NULL;
+
+    return (Panel)xv_create(pGuiCtx->baseFrame, PANEL,
+	    XV_X, 0, XV_Y, 0, PANEL_LAYOUT, PANEL_HORIZONTAL, NULL);
 }
 
 /*+/subr**********************************************************************
@@ -936,29 +1154,29 @@ int	*pHt;		/* O ptr to height of message, in pixels, or NULL */
 *
 *-*/
 void
-guiNotice(pCtx, msg)
-GUI_CTX	*pCtx;
+guiNotice(pGuiCtx, msg)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
 char	*msg;
 {
-    notice_prompt(pCtx->baseFrame, NULL, NOTICE_MESSAGE_STRINGS, msg, NULL,
+    notice_prompt(pGuiCtx->baseFrame, NULL, NOTICE_MESSAGE_STRINGS, msg, NULL,
 	    NOTICE_BUTTON_YES,	"Continue", NULL);
     return;
 }
 void
-guiNoticeFile(pCtx, msg, fName)
-GUI_CTX	*pCtx;
+guiNoticeFile(pGuiCtx, msg, fName)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
 char	*msg;
 char	*fName;
 {
     perror(fName);
-    notice_prompt(pCtx->baseFrame, NULL,
+    notice_prompt(pGuiCtx->baseFrame, NULL,
 	    NOTICE_MESSAGE_STRINGS, msg, fName, NULL,
 	    NOTICE_BUTTON_YES,	"Continue", NULL);
     return;
 }
 void
-guiNoticeName(pCtx, msg, name)
-GUI_CTX	*pCtx;
+guiNoticeName(pGuiCtx, msg, name)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
 char	*msg;
 char	*name;
 {
@@ -969,10 +1187,161 @@ char	*name;
     }
     else
 	pName = name;
-    notice_prompt(pCtx->baseFrame, NULL,
+    notice_prompt(pGuiCtx->baseFrame, NULL,
 	    NOTICE_MESSAGE_STRINGS, msg, pName, NULL,
 	    NOTICE_BUTTON_YES,	"Continue", NULL);
     return;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiShellCmd - issue a shell command, cooperating with the notifier
+*
+* DESCRIPTION
+*	This routine issues a shell command under the auspices of the
+*	xview notifier.  The command is issued following a fork, with a
+*	popen call.  The critical issue is that the fork results in a
+*	SIGCHLD signal which the notifier must handle.
+*
+*	This routine (actually guiCmdSigchld) must be customized for each
+*	application.
+*
+*	This customization handles:
+*	o   doing a file load into sample set text subwindow of the file
+*	    containing a list of file names
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	when running under dbx, the child process always results in a
+*	core dump
+*
+*-*/
+void
+guiShellCmd(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
+char	*cmdBuf;	/* I the command string to give the shell */
+Notify_client clientNum;/* I a unique, arbitrary value to be used by
+				guiCmdSigchld when the child is done
+				processing the command */
+void	(*callbackFn)();/* I pointer to function for guiCmdSigchld to call */
+void	*callbackArg;	/* I arg to pass to callbackFn */
+{
+    FILE	*fp;
+    int		i, pid, cbNum;
+    char	resultBuf[80];
+    int		pipe_io[2][2];
+
+    cbNum = callbackNum;
+    while (cbNum >= 0 && callback[cbNum].clientNum != clientNum)
+	cbNum--;
+    if (cbNum < 0) {
+	if (++cbNum < 100) {
+	    callbackNum = cbNum;
+	    callback[cbNum].clientNum = clientNum;
+	}
+	else {
+	    guiNotice(pGuiCtx, "guiShellCmd: overflow of client number table");
+	    return;
+	}
+    }
+    callback[cbNum].callbackFn = callbackFn;
+    callback[cbNum].callbackArg = callbackArg;
+
+/*-----------------------------------------------------------------------------
+* blatantly stolen from "XView Programming Manual", Dan Heller, O'Reilly &
+*	Associates, Inc., July 1990, pp.386-389; section 19.8.2, Reading and
+*	Writing on Pipes; Example 19-4.  The ntfy_pipe.c program
+*
+*    child reads:  |<=========== pipe_io[0] <===========|  parent writes:
+*  pipe_io[0][0]                                           pipe_io[0][1]
+*
+*   parent reads:  |<=========== pipe_io[1] <===========|  child writes:
+*  pipe_io[1][0]                                           pipe_io[1][1]
+*----------------------------------------------------------------------------*/
+
+    pipe(pipe_io[0]);
+    pipe(pipe_io[1]);
+    if ((pid = fork()) == -1) {
+	perror("error executing shell command");
+	close(pipe_io[0][0]);
+	close(pipe_io[0][1]);
+	close(pipe_io[1][0]);
+	close(pipe_io[1][1]);
+	return;
+    }
+    else if (pid == 0) {				/* child process */
+	dup2(pipe_io[0][0], 0);		/* stdin */
+	dup2(pipe_io[1][1], 1);		/* stdout */
+	dup2(pipe_io[1][1], 2);		/* stderr */
+	for (i=getdtablesize(); i>2; i--)
+	    close(i);			/* close the pipe fd's */
+	for (i=0; i<NSIG; i++)
+	    signal(i, SIG_DFL);		/* don't need parent's sig masks */
+	if ((fp = popen(cmdBuf, "r")) == NULL) {
+	    perror("couldn't do popen to shell");
+	    return;
+	}
+	while ((i = fread(resultBuf, 1, sizeof(resultBuf), fp)) > 0)
+	    fwrite(resultBuf, 1, i, stdout);
+	_exit(0);
+    }
+    close(pipe_io[0][0]);
+    close(pipe_io[0][1]);
+    close(pipe_io[1][1]);
+    callback[cbNum].pipe_io = pipe_io[1][0];
+    notify_set_input_func(clientNum, guiCmdRead, pipe_io[1][0]);
+    notify_set_wait3_func(clientNum, guiCmdSigchld, pid);
+}
+Notify_value
+guiCmdRead(client, fd)
+Notify_client client;
+int		fd;
+{
+    char	buf[80];
+    int		nBytes, i;
+
+    if (ioctl(fd, FIONREAD, &nBytes) == 0) {
+	while (nBytes > 0) {
+	    if ((i = read(fd, buf, sizeof(buf))) > 0) {
+#if   0
+		textsw_insert(textsw, buf, i);
+		write(1, buf, i);
+#endif
+		nBytes -= i;
+	    }
+	}
+    }
+    return NOTIFY_DONE;
+}
+
+/*/subhead guiCmdSigchld-------------------------------------------------------
+*	When the child process gets done creating a file, it will die,
+*	producing SIGCHLD.  At that time, call the callback function.
+*----------------------------------------------------------------------------*/
+Notify_value
+guiCmdSigchld(client, pid, status)
+Notify_client client;
+int	pid;
+union wait *status;
+{
+    Notify_value i=NOTIFY_IGNORED;
+    int		j;
+
+    for (j=0; j<=callbackNum; j++) {
+	if (client == callback[j].clientNum) {
+	    if (WIFEXITED(*status)) {
+		notify_set_input_func(client, NOTIFY_FUNC_NULL,
+		    callback[j].pipe_io);
+		i = NOTIFY_DONE;
+	    }
+
+	    if (callback[j].callbackFn != NULL)
+		callback[j].callbackFn(callback[j].callbackArg);
+	    return i;
+	}
+    }
+    return i;
 }
 
 /*+/subr**********************************************************************
@@ -1039,4 +1408,69 @@ void	*val2;		/* I value associated with key */
     }
 
     return item;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiTextswGets - get the next '\n' terminated string from textsw
+*
+* DESCRIPTION
+*	Reads the next string from the text subwindow into the caller's
+*	buffer.  Reading stops when a newline is encountered or when the
+*	caller's buffer is full; the newline IS stored in the buffer.
+*	The string in the buffer is always null terminated.
+*
+*	The caller must supply the character index (starting with 0) of
+*	the position in the textsw where reading is to start.  On return,
+*	the caller's index is set to the next available character for
+*	reading.
+*
+* RETURNS
+*	pointer to string, or
+*	NULL if there are no more characters in text subwindow
+*
+*-*/
+char *
+guiTextswGets(textsw, pBuf, dim, pCharNum)
+Textsw	textsw;		/* I the text subwindow */
+char	*pBuf;		/* I pointer to buffer to receive string */
+int	dim;		/* I dimension of buffer */
+int	*pCharNum;	/* IO index of character to start reading */
+{
+    Textsw_index nextPos;
+    int		i;
+    char	*pStr;
+
+    nextPos = (Textsw_index)xv_get(textsw, TEXTSW_CONTENTS, *pCharNum,
+			pBuf, dim-1);
+    if (nextPos == *pCharNum)
+	return NULL;
+    for (i=0; i<dim-1; i++) {
+	if (*pCharNum >= nextPos) {
+	    pBuf[i] = '\0';
+	    return pBuf;
+	}
+	(*pCharNum)++;
+	if (pBuf[i] == '\n') {
+	    pBuf[i+1] = '\0';
+	    return pBuf;
+	}
+    }
+    pBuf[i] = '\0';
+    return pBuf;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiTextswReset - reset a text subwindow, discarding its contents
+*
+* DESCRIPTION
+*
+* RETURNS
+*	void
+*
+*-*/
+void
+guiTextswReset(textsw)
+Textsw	textsw;		/* I the text subwindow */
+{
+    textsw_reset(textsw, 0, 0);
 }

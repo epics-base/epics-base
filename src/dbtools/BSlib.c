@@ -30,7 +30,11 @@
 #ifdef linux
 #include <sys/socketio.h>
 #else
+#ifdef CYGWIN32
+#include <osisock.h>
+#else
 #include <sys/sockio.h>
+#endif
 #endif
 #endif
 #endif
@@ -76,7 +80,11 @@ static void get_child(int sig)
 #ifdef SOLARIS
 	while(waitpid(-1,(int*)NULL,WNOHANG)>0);
 #else
+#ifdef CYGWIN32
+      while(waitpid(-1,(int*)NULL,WNOHANG)>0);
+#else
     while(wait3((int *)NULL,WNOHANG,(struct rusage *)NULL)>0);
+#endif
 #endif
 
 #if defined linux || defined SOLARIS

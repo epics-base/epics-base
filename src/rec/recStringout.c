@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  10-24-91        jba     Removed unused code
  */ 
 
 
@@ -132,7 +132,6 @@ static long process(paddr)
     struct stringoutRecord	*pstringout=(struct stringoutRecord *)(paddr->precord);
 	struct stringoutdset	*pdset = (struct stringoutdset *)(pstringout->dset);
 	long		 status=0;
-	int		wait_time;
 
 	if( (pdset==NULL) || (pdset->write_stringout==NULL) ) {
 		pstringout->pact=TRUE;

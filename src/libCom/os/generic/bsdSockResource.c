@@ -90,11 +90,11 @@ void epicsShareAPI ipAddrToA
 		 * allow space for the port number
 		 */
 		if (bufSize>maxPortDigits+strlen(pString)) {
-			sprintf (pBuf, "%.*s:%u", bufSize-maxPortDigits-1, 
+			sprintf (pBuf, "%.*s:%hu", (int) (bufSize-maxPortDigits-1), 
 				pString, ntohs(paddr->sin_port));
 		}
 		else {
-			sprintf (pBuf, "%.*s", bufSize-1, pString);
+			sprintf (pBuf, "%.*s", (int) (bufSize-1), pString);
 		}
 	}
 }

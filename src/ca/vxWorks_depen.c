@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.3  2001/03/22 20:58:43  jhill
+ * fixed task names with spaces
+ *
  * Revision 1.39.4.2  1999/09/02 21:16:43  jhill
  * fixed missing paramter to checkConnWatchDogs() func
  *
@@ -276,8 +279,6 @@ LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp)
         static char             ca_installed;
         TVIU                    *ptviu;
         int                     status;
-
-        ca_check_for_fp();
 	
 #       ifdef DEBUG
                 ca_printf("CAC: adding task variable\n");
@@ -340,6 +341,11 @@ LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp)
 		 */
         ca_static = ca_temp;
         ellAdd(&ca_temp->ca_taskVarList, &ptviu->node);
+
+        /*
+         * care is taken to call this only after ca_static has a valid value
+         */
+        ca_check_for_fp();
 
         return ECA_NORMAL;
 }
@@ -711,8 +717,6 @@ int ca_import (int tid)
 	struct CA_STATIC *pcas;
 	TVIU *ptviu;
 
-	ca_check_for_fp();
-
 	/*
 	 * just return success if they have already done
 	 * a ca import for this task
@@ -754,6 +758,11 @@ int ca_import (int tid)
 	LOCK;
 	ellAdd(&ca_static->ca_taskVarList, &ptviu->node);
 	UNLOCK;
+
+    /*
+     * care is taken to call this only after ca_static has a valid value
+     */
+    ca_check_for_fp();
 
 	return ECA_NORMAL;
 }

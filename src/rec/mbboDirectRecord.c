@@ -191,13 +191,8 @@ static long process(pmbboDirect)
 	    recGblSetSevr(pmbboDirect,UDF_ALARM,INVALID_ALARM);
 	    goto CONTINUE;
 	}
-	/* convert val to rval */
-	convert(pmbboDirect);
-    }
-
-CONTINUE:
-    if (pmbboDirect->nsev < INVALID_ALARM ) {
-	if (pmbboDirect->sevr == INVALID_ALARM 
+	if(pmbboDirect->nsev < INVALID_ALARM
+	&& pmbboDirect->sevr == INVALID_ALARM
 	&& pmbboDirect->omsl == SUPERVISORY) {
 	    /* reload value field with B0 - B15 */
 	    int offset = 1, i;
@@ -209,9 +204,14 @@ CONTINUE:
 		    pmbboDirect->val &= ~offset;
 	    }
 	}
-	status=writeValue(pmbboDirect); /* write the new value */
+	/* convert val to rval */
+	convert(pmbboDirect);
     }
-    else {
+
+CONTINUE:
+    if (pmbboDirect->nsev < INVALID_ALARM )
+	status=writeValue(pmbboDirect); /* write the new value */
+    else
 	switch (pmbboDirect->ivoa) {
 	    case (menuIvoaContinue_normally) :
 		status=writeValue(pmbboDirect); /* write the new value */
@@ -230,7 +230,6 @@ CONTINUE:
 		recGblRecordError(S_db_badField,(void *)pmbboDirect,
 		    "mbboDirect: process Illegal IVOA field");
 	}
-    }
 
     /* check if device support set pact */
     if ( !pact && pmbboDirect->pact ) return(0);

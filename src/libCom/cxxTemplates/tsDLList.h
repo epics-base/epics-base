@@ -60,7 +60,7 @@ class tsDLNode {
     friend class tsDLBwdIter<T>; // deprecated
 public:
     tsDLNode();
-    void operator = (const tsDLNode<T> &) const;
+    tsDLNode<T> & operator = (const tsDLNode<T> &) const;
 private:
     T   *pNext;
     T   *pPrev;
@@ -146,7 +146,7 @@ class tsDLIterConstBD {
 public:
     tsDLIterConstBD (const T *pInitialEntry);
 
-    tsDLIterConstBD<T> operator = (const T *pNewEntry);
+    tsDLIterConstBD<T> & operator = (const T *pNewEntry);
 
     tsDLIterConstBD<T> itemAfter ();
     tsDLIterConstBD<T> itemBefore ();
@@ -190,7 +190,7 @@ class tsDLIterBD : private tsDLIterConstBD<T> {
 public:
     tsDLIterBD (T *pInitialEntry);
 
-    tsDLIterBD<T> operator = (T *pNewEntry);
+    tsDLIterBD<T> & operator = (T *pNewEntry);
 
     tsDLIterBD<T> itemAfter ();
     tsDLIterBD<T> itemBefore ();
@@ -234,11 +234,11 @@ inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 //
 // tsDLNode<T>::operator = ()
 //
-// when someone copies in a class deriving from this
+// when someone tries to copy another node into a node 
 // do _not_ change the node pointers
 //
 template <class T>
-inline void tsDLNode<T>::operator = (const tsDLNode<T> &) const {}
+inline tsDLNode<T> & tsDLNode<T>::operator = (const tsDLNode<T> &) const { return tsDLNode<T>() }
 
 //template <class T>
 //T * tsDLNode<T>::getNext (void) const
@@ -546,7 +546,7 @@ inline tsDLIterConstBD<T>::tsDLIterConstBD (const T * pInitialEntry) :
 #   endif
 
 template <class T>
-inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator = (const T *pNewEntry)
+inline tsDLIterConstBD<T> & tsDLIterConstBD<T>::operator = (const T *pNewEntry)
 {
     this->pConstEntry = pNewEntry;
     return *this;
@@ -673,7 +673,7 @@ inline tsDLIterBD<T>::tsDLIterBD (T * pInitialEntry) :
 #   endif
 
 template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator = (T *pNewEntry)
+inline tsDLIterBD<T> & tsDLIterBD<T>::operator = (T *pNewEntry)
 {
     tsDLIterConstBD<T>::operator = (pNewEntry);
     return *this;

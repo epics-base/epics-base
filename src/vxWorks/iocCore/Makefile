@@ -15,6 +15,7 @@ iocCore_OBJS += $(INSTALL_BIN)/dbtoolsIocLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/rsrvIocLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxComLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxDbLibrary.o
+iocCore_SRCS += registerRecordDeviceDriver.c
 
 include $(TOP)/configure/RULES
 

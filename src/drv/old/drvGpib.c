@@ -1,6 +1,3 @@
-/* drvGpib.c */
-/* share/src/drv/drvGpib.c %W% %G% */
-
 /******************************************************************************
  *
  * TODO:
@@ -87,6 +84,7 @@
  *
  */
 
+#define INCLUDE_HIDEOS_INTERFACE
 #include <vxWorks.h>
 #include <types.h>
 #include <iosLib.h>
@@ -98,19 +96,24 @@
 #include <vme.h>
 #include <wdLib.h>
 #include <rngLib.h>
+#include <symLib.h>
+#include <sysSymTbl.h>	/* idiots at WRS have undocumented stuff in here */
 
-#include <devLib.h>
-#include <ellLib.h>
-#include <task_params.h>
-#include <module_types.h>
-#include <drvSup.h>
-#include <dbDefs.h>
-#include <link.h>
-#include <fast_lock.h>
-#include <taskwd.h>
+#include "devLib.h"
+#include "ellLib.h"
+#include "task_params.h"
+#include "module_types.h"
+#include "drvSup.h"
+#include "dbDefs.h"
+#include "link.h"
+#include "fast_lock.h"
+#include "taskwd.h"
 
-#include <drvGpibInterface.h>
-#include <drvBitBusInterface.h>
+#ifdef INCLUDE_HIDEOS_INTERFACE
+#include "drvHiDEOSGpib.h"
+#endif
+#include "drvGpibInterface.h"
+#include "drvBitBusInterface.h"
 #include "drvGpib.h"
 
 #define STATIC /* static */
@@ -155,9 +158,6 @@ STATIC	int	defaultTimeout;		/* in 60ths, for GPIB timeouts */
 
 static	char	init_called = 0;	/* To insure that init is done first */
 STATIC	char	*short_base;		/* Base of short address space */
-#ifdef USE_OLD_XLATION
-STATIC	char	*ram_base;		/* Base of the ram on the CPU board */
-#endif
 
 STATIC  int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
 
@@ -271,6 +271,31 @@ struct  bbIbLink {
 };
 
 STATIC	struct	bbIbLink	*rootBBLink = NULL; /* Head of bitbus structures */
+
+#ifdef INCLUDE_HIDEOS_INTERFACE
+/******************************************************************************
+ *
+ ******************************************************************************/
+typedef struct HideosIbLinkStruct
+{
+	struct ibLink				ibLink;			/* Associated ibLink */
+	struct HideosIbLinkStruct	*pNext;			/* Next in struct list */
+	int							BoardId;		/* Hideos CPU board number */
+	char						TaskName[100];	/* Hideos GPIB task name */
+	void						*remote_td;
+
+}HideosIbLinkStruct;
+
+STATIC SEM_ID						RootHideosIbLinklock;
+STATIC HideosIbLinkStruct			*RootHideosIbLink = NULL;
+
+STATIC GPIB_HIDEOS_INIT_FUNC		LHideosInit = NULL;
+STATIC GPIB_HIDEOS_WRITE_FUNC		LHideosWrite = NULL;
+STATIC GPIB_HIDEOS_READ_FUNC		LHideosRead = NULL;
+STATIC GPIB_HIDEOS_WRITEREAD_FUNC	LHideosWriteRead = NULL;
+STATIC GPIB_HIDEOS_WRITECMD_FUNC	LHideosWriteCmd = NULL;
+
+#endif
 
 /******************************************************************************
  *
@@ -362,24 +387,20 @@ initGpib(void)
       logMsg("initGpib() driver already initialized!\n");
     return(OK);
   }
+
+#ifdef INCLUDE_HIDEOS_INTERFACE
+	RootHideosIbLinklock = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
+#endif
+
   defaultTimeout = sysClkRateGet();
 
   /* figure out where the short address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
 
-#ifdef USE_OLD_XLATION
-  /* figure out where the CPU memory is (when viewed from the backplane) */
-  sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &ram_base, &ram_base);
-  ram_base = (char *)((ram_base - (char *)&ram_base) & 0x00FFFFFF);
-#endif
-
   if (ibDebug)
   {
     logMsg("Gpib NI1014 driver initializing\n");
     logMsg("short_base            0x%08.8X\n", short_base);
-#ifdef USE_OLD_XLATION
-    logMsg("ram_base              0x%08.8X\n", ram_base);
-#endif
     logMsg("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
     logMsg("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
   }
@@ -1047,28 +1068,19 @@ int	time;		/* time to wait on the DMA operation */
   if(ibDebug > 5)
     logMsg("PhysIO: readying to xlate cc pointers at %8.8X and %8.8X\n", &(pNiLink[link]->DmaStuff->cc_byte), &pNiLink[link]->A24BounceBuffer[cnt - 1]);
 
-#ifdef USE_OLD_XLATION
-  pNiLink[link]->DmaStuff->cc_array.cc_ccb = &(pNiLink[link]->DmaStuff->cc_byte) + (long) ram_base;
-  pNiLink[link]->DmaStuff->cc_array.cc_n_1addr = &(pNiLink[link]->A24BounceBuffer[cnt - 1]) + (long)ram_base;
-#else
-
   if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->DmaStuff->cc_byte), &(pNiLink[link]->DmaStuff->cc_array.cc_ccb)) == ERROR)
     return(ERROR);
 
   if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->A24BounceBuffer[cnt - 1]), &(pNiLink[link]->DmaStuff->cc_array.cc_n_1addr)) == ERROR)
     return(ERROR);
 
-#endif
   if(ibDebug > 5)
     logMsg("PhysIO: &cc_byte=%8.8X, &pNiLink[link]->A24BounceBuffer[cnt-1]=%8.8X, ", pNiLink[link]->DmaStuff->cc_array.cc_ccb, pNiLink[link]->DmaStuff->cc_array.cc_n_1addr);
 
   cnt--;
-#ifdef USE_OLD_XLATION
-  temp_addr = (long) (&(pNiLink[link]->DmaStuff->cc_array)) + (long)ram_base;
-#else
   if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->DmaStuff->cc_array), &temp_addr) == ERROR)
     return(ERROR);
-#endif
+
   if(ibDebug > 5)
     logMsg("&cc_array=%8.8X, ", temp_addr);
 
@@ -1077,12 +1089,10 @@ int	time;		/* time to wait on the DMA operation */
 
   /* setup channel 0 (main transfer) */
   b->ch0.mtc = cnt ? cnt : 1;
-#ifdef USE_OLD_XLATION
-  temp_addr = (long) (pNiLink[link]->A24BounceBuffer) + (long) ram_base;
-#else
+
   if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, pNiLink[link]->A24BounceBuffer, &temp_addr) == ERROR)
     return(ERROR);
-#endif
+
   if(ibDebug > 5)
     logMsg("pNiLink[link]->A24BounceBuffer=%8.8X\n", temp_addr);
 
@@ -1399,45 +1409,50 @@ struct ibLink *plink;
  *
  ******************************************************************************/
 STATIC int
-ibLinkStart(plink)
-struct	ibLink *plink;
+ibLinkStart(struct ibLink *plink)
 {
-  int		j;
-  int   	taskId;
-  char		tName[20];
+	int		j;
+	int   	taskId;
+	char	tName[20];
 
-  if (ibDebug || bbibDebug)
-    logMsg("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
+	if (ibDebug || bbibDebug)
+		logMsg("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
 
-  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC, -1, NULL);/* fire out an interface clear */
-  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBREN, 1, NULL);/* turn on the REN line */
+	/* fire out an interface clear */
+	ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC, -1, NULL);
+	/* turn on the REN line */
+	ioctlIb(plink->linkType, plink->linkId, plink->bug, IBREN, 1, NULL);
 
 /* BUG -- why not just forget this & only poll registered devices? */
 /* BUG -- the pollinhibit array stuff has to be fixed! */
 
 
-  if ((plink->linkType == GPIB_IO) && (ibSrqLock == 0))
-  {
-    /* poll all available adresses to see if will respond */
-    speIb(plink);
-    for (j=1; j<31; j++)		/* poll 1 thru 31 (no 0 or 32) */
-    {
-      if (pollInhibit[plink->linkId][j] != 1);/* if user did not block it out */
-      {
-        if (pollIb(plink, j, 0, POLLTIME) == ERROR)
-          pollInhibit[plink->linkId][j] = 2;	/* address is not pollable */
-      }
-    }
+	if ((plink->linkType == GPIB_IO) && (ibSrqLock == 0))
+	{
+		/* poll all available adresses to see if will respond */
+		speIb(plink);
+		for (j=1; j<31; j++)		/* poll 1 thru 31 (no 0 or 32) */
+		{
+			if (pollInhibit[plink->linkId][j] != 1);/* User block it out ? */
+			{
+				if (pollIb(plink, j, 0, POLLTIME) == ERROR)
+					pollInhibit[plink->linkId][j] = 2;	/* not pollable */
+			}
+		}
+		spdIb(plink);
+	}
 
-    spdIb(plink);
-  }
-
-  if (plink->linkType == GPIB_IO)
-    sprintf(tName, "ib-%2.2d", plink->linkId);
-  else if (plink->linkType == BBGPIB_IO)
-    sprintf(tName, "bbib-%2.2d.%2.2d", plink->linkId, plink->bug);
-  else
-    strcpy(tName, GPIBLINK_NAME);
+	if (plink->linkType == GPIB_IO)
+	{
+		if (plink->linkId > NIGPIB_NUM_LINKS)
+			sprintf(tName, "hib-%2.2d", plink->linkId);
+		else
+			sprintf(tName, "ib-%2.2d", plink->linkId);
+	}
+	else if (plink->linkType == BBGPIB_IO)
+		sprintf(tName, "bbib-%2.2d.%2.2d", plink->linkId, plink->bug);
+	else
+		strcpy(tName, GPIBLINK_NAME);
 
   /* Start a task to manage the link */
   if ((taskId = taskSpawn(tName, GPIBLINK_PRI, GPIBLINK_OPT, GPIBLINK_STACK, ibLinkTask, plink)) == ERROR)
@@ -1727,25 +1742,33 @@ struct ibLink     *plink;
 STATIC int
 srqIntEnable(int linkType, int link, int bug)
 {
-  if (linkType == GPIB_IO)
-    return(niSrqIntEnable(link));
+	if (linkType == GPIB_IO)
+	{
+		if (link > NIGPIB_NUM_LINKS)
+			return(OK);
+		else
+			return(niSrqIntEnable(link));
+	}
+	if (linkType == BBGPIB_IO)
+		return(OK);		/* Bit Bus does not use interrupts for SRQ handeling */
 
-  if (linkType == BBGPIB_IO)
-    return(OK);		/* Bit Bus does not use interrupts for SRQ handeling */
-
-  return(ERROR);	/* Invalid link type specified on the call */
+	return(ERROR);	/* Invalid link type specified on the call */
 }
 
 STATIC int
 srqIntDisable(int linkType, int link, int bug)
 {
-  if (linkType == GPIB_IO)
-    return(niSrqIntDisable(link));
+	if (linkType == GPIB_IO)
+	{
+		if (link > NIGPIB_NUM_LINKS)
+			return(0);
+		else
+			return(niSrqIntDisable(link));
+	}
+	if (linkType == BBGPIB_IO)
+		return(0);          /* BitBus does not use interrupts for SRQs */
 
-  if (linkType == BBGPIB_IO)
-    return(0);          /* Bit Bus does not use interrupts for SRQ handeling */
-
-  return(ERROR);	/* Invlaid link type specified on the call */
+	return(ERROR);	/* Invlaid link type specified on the call */
 }
 
 /******************************************************************************
@@ -1755,14 +1778,15 @@ srqIntDisable(int linkType, int link, int bug)
  *
  ******************************************************************************/
 STATIC int
-checkLink(linkType, link, bug)
-int	linkType;
-int	link;
-int	bug;
+checkLink(int linkType, int link, int bug)
 {
-  if (linkType == GPIB_IO)
-    return(niCheckLink(link));
-
+	if (linkType == GPIB_IO)
+	{
+		if (link > NIGPIB_NUM_LINKS)
+			return(HiDEOSCheckLink(link));
+		else
+			return(niCheckLink(link));
+	}
   if (linkType == BBGPIB_IO)
     return(bbCheckLink(link, bug));
 
@@ -1788,31 +1812,33 @@ int	bug;
  *
  * BUG --
  * This could change if we decide to poll them during the second call to init()
- * when epics 3.3 is available.
  *
  ******************************************************************************/
-/* STATIC */ int 
-srqPollInhibit(linkType, link, bug, gpibAddr)
-int	linkType;	/* link type (defined in link.h) */
-int     link;           /* the link number the handler is related to */
-int     bug;            /* the bug node address if on a bitbus link */
-int     gpibAddr;       /* the device address the handler is for */
+int 
+srqPollInhibit(
+int		linkType,	/* link type (defined in link.h) */
+int     link,           /* the link number the handler is related to */
+int     bug,            /* the bug node address if on a bitbus link */
+int     gpibAddr)       /* the device address the handler is for */
 {
-  if (ibDebug || ibSrqDebug)
-    logMsg("srqPollInhibit(%d, %d, %d, %d): called\n", linkType, link, bug, gpibAddr);
+	if (ibDebug || ibSrqDebug)
+		logMsg("srqPollInhibit(%d, %d, %d, %d): called\n", linkType, link, bug, gpibAddr);
 
-  if (linkType == GPIB_IO)
-  {
-    return(niSrqPollInhibit(link, gpibAddr));
-  }
+	if (linkType == GPIB_IO)
+	{
+		if (link > NIGPIB_NUM_LINKS)
+			return(HiDEOSSrqPollInhibit(link, gpibAddr));
+		else
+			return(niSrqPollInhibit(link, gpibAddr));
+	}
 
-  if (linkType == BBGPIB_IO)
-  {
-    return(bbSrqPollInhibit(link, bug, gpibAddr));
-  }
+	if (linkType == BBGPIB_IO)
+	{
+		return(bbSrqPollInhibit(link, bug, gpibAddr));
+	}
 
-  logMsg("drvGpib: srqPollInhibit(%d, %d, %d, %d): invalid link type specified\n", linkType, link, bug, gpibAddr);
-  return(ERROR);
+	logMsg("drvGpib: srqPollInhibit(%d, %d, %d, %d): invalid link type specified\n", linkType, link, bug, gpibAddr);
+	return(ERROR);
 }
 
 /******************************************************************************
@@ -1825,18 +1851,18 @@ int     gpibAddr;       /* the device address the handler is for */
  *
  ******************************************************************************/
 STATIC int 
-registerSrqCallback(pibLink, device, handler, parm)
-struct	ibLink	*pibLink;
-int	device;
-int     (*handler)();   /* handler function to invoke upon SRQ detection */
-caddr_t	parm;		/* so caller can have a parm passed back */
+registerSrqCallback(
+struct ibLink	*pibLink,
+int				device,
+int				(*handler)(),	/* Function invoked upon SRQ detection */
+void			*parm)			/* So caller can have a parm passed back */
 {
-  if(ibDebug || ibSrqDebug)
-    logMsg("registerSrqCallback(%08.8X, %d, 0x%08.8X, %08.8X)\n", pibLink, device, handler, parm);
+	if(ibDebug || ibSrqDebug)
+		logMsg("registerSrqCallback(%08.8X, %d, 0x%08.8X, %08.8X)\n", pibLink, device, handler, parm);
 
-  pibLink->srqHandler[device] = handler;
-  pibLink->srqParm[device] = parm;
-  return(OK);
+	pibLink->srqHandler[device] = handler;
+	pibLink->srqParm[device] = parm;
+	return(OK);
 }
 
 /******************************************************************************
@@ -1847,26 +1873,30 @@ caddr_t	parm;		/* so caller can have a parm passed back */
  *
  ******************************************************************************/
 STATIC int
-ioctlIb(linkType, link, bug, cmd, v, p)
-int     linkType;	/* link type (defined in link.h) */
-int     link;		/* the link number to use */
-int	bug;		/* node number if is a bitbus -> gpib link */
-int	cmd;
-int	v;
-caddr_t	p;
+ioctlIb(
+	int     linkType,	/* link type (defined in link.h) */
+	int     link,		/* the link number to use */
+	int		bug,		/* node number if is a bitbus -> gpib link */
+	int		cmd,
+	int		v,
+	void	*p)
 {
-  int	stat;
+	int	stat;
 
-  if (linkType == GPIB_IO)
-    return(niGpibIoctl(link, cmd, v, p));/* link checked in niGpibIoctl */
-
-  if (linkType == BBGPIB_IO)
-    return(bbGpibIoctl(link, bug, cmd, v, p));/* link checked in bbGpibIoctl */
+	if (linkType == GPIB_IO)
+	{
+		if (link > NIGPIB_NUM_LINKS)
+			return(HiDEOSGpibIoctl(link, cmd, v, p));
+		else
+			return(niGpibIoctl(link, cmd, v, p));
+	}
+	if (linkType == BBGPIB_IO)
+		return(bbGpibIoctl(link, bug, cmd, v, p));
   
-  if (ibDebug || bbibDebug)
-    logMsg("ioctlIb(%d, %d, %d, %d, %08.8X, %08.8X): invalid link type\n", linkType, link, bug, cmd, v, p);
+	if (ibDebug || bbibDebug)
+		logMsg("ioctlIb(%d, %d, %d, %d, %08.8X, %08.8X): invalid link type\n", linkType, link, bug, cmd, v, p);
 
-  return(ERROR);
+	return(ERROR);
 }
 
 /******************************************************************************
@@ -1884,37 +1914,37 @@ caddr_t	p;
  *
  ******************************************************************************/
 STATIC int
-qGpibReq(pdpvt, prio)
-struct	dpvtGpibHead *pdpvt; /* pointer to the device private structure */
-int	prio;
+qGpibReq(
+struct dpvtGpibHead	*pdpvt, /* pointer to the device private structure */
+int					prio)
 {
 
-  if (pdpvt->pibLink == NULL)
-  {
-    logMsg("qGpibReq(%08.8X, %d): dpvt->pibLink == NULL!\n", pdpvt, prio);
-    return(ERROR);
-  }
+	if (pdpvt->pibLink == NULL)
+	{
+		logMsg("qGpibReq(%08.8X, %d): dpvt->pibLink == NULL!\n", pdpvt, prio);
+		return(ERROR);
+	}
 
-  switch (prio) {
-  case IB_Q_LOW:                /* low priority transaction request */
-    semTake(pdpvt->pibLink->loPriSem, WAIT_FOREVER);
-    ellAdd(&(pdpvt->pibLink->loPriList), pdpvt);
-    semGive(pdpvt->pibLink->loPriSem);
-    semGive(pdpvt->pibLink->linkEventSem);
-    break;
-  case IB_Q_HIGH:               /* high priority transaction request */
-    semTake(pdpvt->pibLink->hiPriSem, WAIT_FOREVER);
-    ellAdd(&(pdpvt->pibLink->hiPriList), pdpvt);
-    semGive(pdpvt->pibLink->hiPriSem);
-    semGive(pdpvt->pibLink->linkEventSem);
-    break;
-  default:              /* invalid priority */
-    logMsg("invalid priority requested in call to qgpibreq(%08.8X, %d)\n", pdpvt, prio);
-    return(ERROR);
-  }
-  if (ibDebug)
-    logMsg("qgpibreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
-  return(OK);
+	switch (prio) {
+	case IB_Q_LOW:                /* low priority transaction request */
+		semTake(pdpvt->pibLink->loPriSem, WAIT_FOREVER);
+		ellAdd(&(pdpvt->pibLink->loPriList), pdpvt);
+		semGive(pdpvt->pibLink->loPriSem);
+		semGive(pdpvt->pibLink->linkEventSem);
+		break;
+	case IB_Q_HIGH:               /* high priority transaction request */
+		semTake(pdpvt->pibLink->hiPriSem, WAIT_FOREVER);
+		ellAdd(&(pdpvt->pibLink->hiPriList), pdpvt);
+		semGive(pdpvt->pibLink->hiPriSem);
+		semGive(pdpvt->pibLink->linkEventSem);
+		break;
+	default:              /* invalid priority */
+		logMsg("invalid priority requested in call to qgpibreq(%08.8X, %d)\n", pdpvt, prio);
+		return(ERROR);
+	}
+	if (ibDebug)
+		logMsg("qgpibreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
+	return(OK);
 }
 
 /******************************************************************************
@@ -1931,43 +1961,44 @@ int	prio;
  *
  ******************************************************************************/
 STATIC int
-writeIb(pibLink, gpibAddr, data, length, time)
-struct	ibLink	*pibLink;
-int	gpibAddr;	/* the device number to write the data to */
-char	*data;		/* the data buffer to write out */
-int	length;		/* number of bytes to write out from the data buffer */
-int	time;
+writeIb(
+struct ibLink	*pibLink,
+int				gpibAddr,	/* The device number to write the data to */
+char			*data,		/* The data buffer to write out */
+int				length,		/* Number of bytes to write out */
+int				time)
 {
-  char	attnCmd[5];
-  int	stat;
+	char	attnCmd[5];
+	int		stat;
 
-  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-    logMsg("writeIb(%08.8X, %d, 0x%08.8X, %d, %d)\n", pibLink, gpibAddr, data, length, time);
+	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+		logMsg("writeIb(%08.8X, %d, 0x%08.8X, %d, %d)\n", pibLink, gpibAddr, data, length, time);
 
-  if (pibLink->linkType == GPIB_IO)
-  {
-    attnCmd[0] = '?';			/* global unlisten */
-    attnCmd[1] = '_';			/* global untalk */
-    attnCmd[2] = gpibAddr+LADBASE;	/* lad = gpibAddr */
-    attnCmd[3] = 0+TADBASE;		/* mta = 0 */
-    attnCmd[4] = '\0';			/* in case debugging prints it */
-
-    if (writeIbCmd(pibLink, attnCmd, 4) != 4)
-      return(ERROR);
-    stat = niGpibWrite(pibLink->linkId, data, length, time);
-
-    if (writeIbCmd(pibLink, attnCmd, 2) != 2)
-      return(ERROR);
-  }
-  else if (pibLink->linkType == BBGPIB_IO)
-  {
-    stat = bbGpibWrite(pibLink, gpibAddr, data, length, time);
-  }
-  else
-  {
-    return(ERROR);
-  }
-  return(stat);
+	if (pibLink->linkType == GPIB_IO)
+	{
+		if (pibLink->linkId > NIGPIB_NUM_LINKS)
+			return(HiDEOSGpibWrite(pibLink, gpibAddr, data, length, time));
+		else
+		{
+			attnCmd[0] = '?';			/* global unlisten */
+			attnCmd[1] = '_';			/* global untalk */
+			attnCmd[2] = gpibAddr+LADBASE;	/* lad = gpibAddr */
+			attnCmd[3] = 0+TADBASE;		/* mta = 0 */
+			attnCmd[4] = '\0';			/* in case debugging prints it */
+	
+			if (writeIbCmd(pibLink, attnCmd, 4) != 4)
+				return(ERROR);
+			stat = niGpibWrite(pibLink->linkId, data, length, time);
+	
+			if (writeIbCmd(pibLink, attnCmd, 2) != 2)
+				return(ERROR);
+		}
+	}
+	else if (pibLink->linkType == BBGPIB_IO)
+		stat = bbGpibWrite(pibLink, gpibAddr, data, length, time);
+	else
+		return(ERROR);
+	return(stat);
 }
 
 /******************************************************************************
@@ -1979,44 +2010,49 @@ int	time;
  *
  ******************************************************************************/
 STATIC int
-readIb(pibLink, gpibAddr, data, length, time)
-struct	ibLink	*pibLink;
-int	gpibAddr;	/* the device number to read the data from */
-char	*data;		/* the buffer to place the data into */
-int	length;		/* max number of bytes to place into the buffer */
-int	time;		/* max time to allow for read operation */
+readIb(
+struct ibLink	*pibLink,
+int				gpibAddr,	/* the device number to read the data from */
+char			*data,		/* the buffer to place the data into */
+int				length,		/* max number of bytes to place into the buffer */
+int				time)		/* max time to allow for read operation */
 {
-  char  attnCmd[5];
-  int   stat;
+	char  attnCmd[5];
+	int   stat;
 
-  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-    logMsg("readIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
+	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+		logMsg("readIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
 
-  if (pibLink->linkType == GPIB_IO)
-  {
-    attnCmd[0] = '_';                     /* global untalk */
-    attnCmd[1] = '?';                     /* global unlisten */
-    attnCmd[2] = gpibAddr+TADBASE;        /* tad = gpibAddr */
-    attnCmd[3] = 0+LADBASE;		/* mta = 0 */
-    attnCmd[4] = '\0';
-  
-    if (writeIbCmd(pibLink, attnCmd, 4) != 4)
-      return(ERROR);
+	if (pibLink->linkType == GPIB_IO)
+	{
+		if (pibLink->linkId > NIGPIB_NUM_LINKS)
+			return(HiDEOSGpibRead(pibLink, gpibAddr, data, length, time));
+		else
+		{
+			attnCmd[0] = '_';                     /* global untalk */
+			attnCmd[1] = '?';                     /* global unlisten */
+			attnCmd[2] = gpibAddr+TADBASE;        /* tad = gpibAddr */
+			attnCmd[3] = 0+LADBASE;		/* mta = 0 */
+			attnCmd[4] = '\0';
 
-    stat = niGpibRead(pibLink->linkId, data, length, time);
+			if (writeIbCmd(pibLink, attnCmd, 4) != 4)
+				return(ERROR);
 
-    if (writeIbCmd(pibLink, attnCmd, 2) != 2)
-      return(ERROR);
-  }
-  else if (pibLink->linkType == BBGPIB_IO)
-  {
-    stat = bbGpibRead(pibLink, gpibAddr, data, length, time);
-  }
-  else
-  { /* incorrect link type specified! */
-    return(ERROR);
-  }
-  return(stat);
+			stat = niGpibRead(pibLink->linkId, data, length, time);
+
+			if (writeIbCmd(pibLink, attnCmd, 2) != 2)
+				return(ERROR);
+		}
+	}
+	else if (pibLink->linkType == BBGPIB_IO)
+	{
+		stat = bbGpibRead(pibLink, gpibAddr, data, length, time);
+	}
+	else
+	{ /* incorrect link type specified! */
+		return(ERROR);
+	}
+	return(stat);
 }
 
 /******************************************************************************
@@ -2029,26 +2065,26 @@ int	time;		/* max time to allow for read operation */
  *
  ******************************************************************************/
 STATIC int
-writeIbCmd(pibLink, data, length)
-struct	ibLink	*pibLink;
-char    *data;  	/* the data buffer to write out */
-int     length; 	/* number of bytes to write out from the data buffer */
+writeIbCmd(
+struct ibLink	*pibLink,
+char			*data,  	/* The data buffer to write out */
+int				length) 	/* Number of bytes to write out */
 {
 
-  if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-    logMsg("writeIbCmd(%08.8X, %08.8X, %d)\n", pibLink, data, length);
+	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
+		logMsg("writeIbCmd(%08.8X, %08.8X, %d)\n", pibLink, data, length);
 
-  if (pibLink->linkType == GPIB_IO)
-  {
-    /* raw-write the data */
-    return(niGpibCmd(pibLink->linkId, data, length));
-  }
-  if (pibLink->linkType == BBGPIB_IO)
-  {
-    /* raw-write the data */
-    return(bbGpibCmd(pibLink, data, length));
-  }
-  return(ERROR);
+	if (pibLink->linkType == GPIB_IO)
+	{
+		if (pibLink->linkId > NIGPIB_NUM_LINKS)
+			return(HiDEOSGpibCmd(pibLink, data, length));
+		else
+			return(niGpibCmd(pibLink->linkId, data, length));
+	}
+	if (pibLink->linkType == BBGPIB_IO)
+		return(bbGpibCmd(pibLink, data, length));
+
+	return(ERROR);
 }
 
 /******************************************************************************
@@ -2386,11 +2422,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
   switch (cmd) {
   case IBTMO:		/* set timeout time for next transaction only */
     /* find the ibLink structure for the requested link & bug */
-#if 1
     if ((pbbIbLink = (struct bbIbLink *)&(findBBLink(link, bug)->ibLink)) != NULL)
-#else
-    if ((pbbIbLink = findBBLink(link, bug)) != NULL)
-#endif
     {
       /* build a TMO message to send to the bug */
       bbDpvt.txMsg.length = 7;
@@ -2425,11 +2457,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
 
   case IBIFC:		/* send an Interface Clear pulse */
     /* find the ibLink structure for the requested link & bug */
-#if 1
     if ((pbbIbLink = (struct bbIbLink *)&(findBBLink(link, bug)->ibLink)) != NULL)
-#else
-    if ((pbbIbLink = findBBLink(link, bug)) != NULL)
-#endif
     {
       /* build an IFC message to send to the bug */
       bbDpvt.txMsg.length = 7;
@@ -2588,11 +2616,206 @@ IBHistDump(int type, int link, int bug)
 }
 #endif
 
-#if 0
-/* A way to stop the CPU when idle... run from shell at prio 250 */
-cpuStopperThingy()
+/******************************************************************************
+ *
+ * These are the HiDEOS architecture specific functions.
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * Find a HiDEOS link structure given a link number.
+ *
+ ******************************************************************************/
+STATIC HideosIbLinkStruct *findHiDEOSIbLink(int link)
 {
-  while (1)
-  	asm(" stop #0x3000");
+	HideosIbLinkStruct	*pHideosIbLink;
+
+	pHideosIbLink = RootHideosIbLink;
+	pHideosIbLink->pNext = RootHideosIbLink;
+
+	while (pHideosIbLink != NULL)
+	{
+		if (pHideosIbLink->ibLink.linkId == link)
+			break;
+		else
+			pHideosIbLink = pHideosIbLink->pNext;
+	}
+	if (ibDebug)
+		logMsg("findHiDEOSIbLink(%d): returning %08.8X\n", link, pHideosIbLink);
+
+	return(pHideosIbLink);
 }
-#endif
+/******************************************************************************
+ *
+ * Read a GPIB message via the HiDEOS subsystem.
+ *
+ ******************************************************************************/
+STATIC int
+HiDEOSGpibRead(
+	struct ibLink *pibLink, 
+	int		DevAddr, 
+	char	*Buf, 
+	int		BufLen, 
+	int		time)
+{
+	int	Actual;
+	HideosIbLinkStruct  *pHLink = (HideosIbLinkStruct*)pibLink;
+
+	if (LHideosRead(pHLink->remote_td, Buf, BufLen, &Actual, DevAddr, time)==0)
+		return(Actual);
+
+	return(-1);
+}
+
+/******************************************************************************
+ *
+ * Write a GPIB message by way of the bitbus driver.
+ *
+ ******************************************************************************/
+STATIC int
+HiDEOSGpibWrite(
+	struct ibLink	*pibLink, 
+	int				DevAddr, 
+	char			*Buf, 
+	int				BufLen, 
+	int				time)
+{
+	HideosIbLinkStruct  *pHLink = (HideosIbLinkStruct*)pibLink;
+	return(LHideosWrite(pHLink->remote_td, Buf, BufLen, DevAddr, time));
+}
+
+/******************************************************************************/
+STATIC int
+HiDEOSGpibCmd(
+	struct ibLink	*pibLink, 
+	char			*Buf, 
+	int				BufLen)
+{
+	HideosIbLinkStruct	*pHLink = (HideosIbLinkStruct*)pibLink;
+	return(LHideosWriteCmd(pHLink->remote_td, Buf, BufLen, 100));
+}
+
+/******************************************************************************/
+STATIC int
+HiDEOSCheckLink(int link)
+{
+	if (findHiDEOSIbLink(link) != NULL)
+		return(OK);
+	else
+		return(ERROR);
+}
+
+/******************************************************************************/
+STATIC int
+HiDEOSSrqPollInhibit(int link, int gpibAddr)
+{
+	logMsg("HiDEOSSrqPollInhibit for link %d, device %d\n", link, gpibAddr);
+	return(ERROR);
+}
+
+/******************************************************************************
+ *
+ * Initialize all required structures and start an ibLinkTask() for use with
+ * a GPIB_IO based link to a HiDEOS interface.
+ *
+ ******************************************************************************/
+int
+HiDEOSLinkConfig(int link, int BoardId, char *TaskName)
+{
+	SYM_TYPE			stype;
+	HideosIbLinkStruct	*pHiDEOSIbLink;
+
+	if (ibDebug)
+		logMsg("HiDEOSLinkConfig(%d): entered\n", link);
+
+	/* First check to see if there is already a link set up */
+	pHiDEOSIbLink = findHiDEOSIbLink(link);
+
+	if (pHiDEOSIbLink != NULL)
+	{ /* Already have initialized the link for this guy...  */
+		if (ibDebug)
+			logMsg("HiDEOSLinkConfig(%d): link already initialized\n", link);
+
+		return(OK);
+	}
+	if ((pHiDEOSIbLink = (HideosIbLinkStruct *) malloc(sizeof(HideosIbLinkStruct))) == NULL)
+	{
+		logMsg("HiDEOSLinkConfig(%d): can't malloc memory for link structure\n", link);
+		return(ERROR);
+	}
+
+	if ((symFindByName(sysSymTbl,"_GpibHideosInit", (char**)&LHideosInit,&stype)==ERROR)
+		|| (symFindByName(sysSymTbl,"_GpibHideosWrite", (char**)&LHideosWrite,&stype)==ERROR)
+		|| (symFindByName(sysSymTbl,"_GpibHideosRead", (char**)&LHideosRead,&stype)==ERROR)
+		|| (symFindByName(sysSymTbl,"_GpibHideosWriteRead", (char**)&LHideosWriteRead,&stype)==ERROR)
+		|| (symFindByName(sysSymTbl,"_GpibHideosWriteCmd", (char**)&LHideosWriteCmd,&stype)==ERROR))
+	{
+		free (pHiDEOSIbLink);
+		logMsg("HiDEOSLinkConfig: Can not locate Hideos GPIB services\n");
+		return(-1);
+	}
+	/* get a logical connection into HiDEOS-land */
+	if ((pHiDEOSIbLink->remote_td = LHideosInit(BoardId, TaskName)) == NULL)
+	{
+		free (pHiDEOSIbLink);
+		logMsg("HiDEOSLinkConfig: Can not locate Hideos task %s\n", TaskName);
+		return(-1);
+	}
+
+	pHiDEOSIbLink->ibLink.linkType = GPIB_IO;
+	pHiDEOSIbLink->ibLink.linkId = link;
+	pHiDEOSIbLink->ibLink.bug = -1;
+	pHiDEOSIbLink->BoardId = BoardId;
+	strcpy(pHiDEOSIbLink->TaskName, TaskName);
+
+	ibLinkInit(&(pHiDEOSIbLink->ibLink));
+
+	semTake(RootHideosIbLinklock, WAIT_FOREVER);
+	pHiDEOSIbLink->pNext = RootHideosIbLink;
+	RootHideosIbLink = pHiDEOSIbLink;
+	semGive(RootHideosIbLinklock);
+
+	return(ibLinkStart(&(pHiDEOSIbLink->ibLink)));
+}
+
+/******************************************************************************
+ *
+ * IOCTL control function for BBGPIB_IO based links.
+ *
+ ******************************************************************************/
+STATIC int
+HiDEOSGpibIoctl(int link, int cmd, int v, void *p)
+{
+	int		stat = ERROR;
+
+	if (ibDebug)
+		logMsg("HiDEOSGpibIoctl(%d, %d, %08.8X, %08.8X): called\n", link, cmd, v, p);
+
+	switch (cmd) {
+	case IBTMO:		/* set timeout time for next transaction only */
+		/* Can't do this yet!!! */
+		stat = OK;
+		break;
+
+	case IBIFC:		/* send an Interface Clear pulse */
+		/* Can't do this yet!!! */
+		stat = OK;
+		break;
+
+	case IBREN:		/* turn the Remote Enable line on or off */
+	case IBGTS:		/* go to standby (ATN off etc... ) */
+	case IBGTA:		/* go to active (ATN on etc... ) */
+		stat = OK;
+		break;
+	case IBGENLINK:	/* Done manually in startup.cmd */
+		stat = OK;
+		break;
+	case IBGETLINK:	/* request the address of the ibLink structure */
+		*(struct ibLink **)p = &(findHiDEOSIbLink(link)->ibLink);
+		break;
+	default:
+		logMsg("HiDEOSGpibIoctl(%d, %d, %08.8X, %08.8X): invalid command requested\n", link, cmd, v, p);
+	}
+	return(stat);
+}

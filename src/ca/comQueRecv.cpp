@@ -172,3 +172,63 @@ void comQueRecv::removeAndDestroyBuf ( comBuf & buf )
     buf.~comBuf ();
     this->comBufMemMgr.release ( & buf );
 }
+
+epicsUInt8 comQueRecv::popUInt8 () 
+{
+    comBuf * pComBuf = this->bufs.first ();
+    if ( ! pComBuf ) {
+        comBuf::throwInsufficentBytesException ();
+    }
+    epicsUInt8 tmp;
+    comBuf::popStatus status = pComBuf->pop ( tmp );
+    if ( ! status.success ) {
+        comBuf::throwInsufficentBytesException ();
+    }
+    if ( status.nowEmpty ) {
+        this->removeAndDestroyBuf ( *pComBuf );
+    }
+    this->nBytesPending--;
+    return tmp;
+}
+
+epicsUInt16 comQueRecv::popUInt16 ()
+{
+    comBuf * pComBuf = this->bufs.first ();
+    if ( ! pComBuf ) {
+        comBuf::throwInsufficentBytesException ();
+    }
+    // try first for all in one buffer efficent version
+    // (double check here avoids slow C++ exception)
+    // (hopefully optimizer removes inside check)
+    epicsUInt16 tmp;
+    comBuf::popStatus status = pComBuf->pop ( tmp );
+    if ( status.success ) {
+        this->nBytesPending -= sizeof ( epicsUInt16 );
+        if ( status.nowEmpty ) {
+            this->removeAndDestroyBuf ( *pComBuf );
+        }
+        return tmp;
+    }
+    return this->multiBufferPopUInt16 ();
+}
+
+epicsUInt32 comQueRecv::popUInt32 ()
+{
+    comBuf *pComBuf = this->bufs.first ();
+    if ( ! pComBuf ) {
+        comBuf::throwInsufficentBytesException ();
+    }
+    // try first for all in one buffer efficent version
+    // (double check here avoids slow C++ exception)
+    // (hopefully optimizer removes inside check)
+    epicsUInt32 tmp;
+    comBuf::popStatus status = pComBuf->pop ( tmp );
+    if ( status.success ) {
+        this->nBytesPending -= sizeof ( epicsUInt32 );
+        if ( status.nowEmpty ) {
+            this->removeAndDestroyBuf ( *pComBuf );
+        }
+        return tmp;
+    }
+    return this->multiBufferPopUInt32 ();
+}

@@ -46,6 +46,8 @@ epicsShareFunc long epicsShareAPI dblsr(char *recordname,int level);
 /* If recordname NULL then all records*/
 /* level = (0,1,2) (lock set state, + recordname, +DB links) */
 
+epicsShareFunc long epicsShareAPI dbLockShowLocked(int level);
+
 #ifdef __cplusplus
 }
 #endif

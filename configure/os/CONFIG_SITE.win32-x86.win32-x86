@@ -5,8 +5,11 @@
 # This will to eliminate warnings about unknown options /GL, LTCG, and /44355.
 #OPT_CFLAGS_YES = /Ox
 #OPT_CXXFLAGS_YES = /Ox
+#OPT_CFLAGS_NO =  /Zi 
+#OPT_CXXFLAGS_NO =  /Zi 
 #LINK_OPT_FLAGS_YES = /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%)
 #WARN_CFLAGS_YES = /W3
+#WARN_CXXFLAGS_YES = /W3 
 
 
 

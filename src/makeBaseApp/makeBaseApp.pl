@@ -11,8 +11,11 @@ use File::Path;
 
 $app_top  = cwd();
 
+%release = (TOP => $app_top);
+@apps   = (TOP);
+
 &GetUser;		# Ensure we know who's in charge
-&ReadReleaseFile;	# Parse configure/RELEASE file into %release
+&readRelease("configure/RELEASE", \%release, \@apps);
 &get_commandline_opts;	# Check command-line options
 
 #
@@ -233,16 +236,49 @@ sub get_commandline_opts { #no args
 	. "EPICS-Base: $epics_base\n\n" if $opt_d;
 }
 
-sub ReadReleaseFile {
-    if (-r "configure/RELEASE") {
-	open(RELEASE, "configure/RELEASE") or die "Can't open configure/RELEASE: $!";
-	while (<RELEASE>) {
-	    chomp;
-	    s/\r$//;	# Shouldn't really need this, but sometimes we do...
-	    my ($variable,$value) = split /\s*=\s*/;
-	    $release{$variable} = $value;
+#
+# Parse a configure/RELEASE file.
+#
+# NB: This subroutine also appears in base/configure/tools/convertRelease.pl
+# If you make changes here, they will be needed there as well.
+#
+sub readRelease {
+    my ($file, $Rmacros, $Rapps) = @_;
+    # $Rmacros is a reference to a hash, $Rapps a ref to an array
+    my ($pre, $var, $post, $macro, $path);
+    local *IN;
+    open(IN, $file) or die "Can't open $file: $!\n";
+    while (<IN>) {
+	chomp;
+	s/\r$//;		# Shouldn't need this, but sometimes...
+	s/\s*#.*$//;		# Remove trailing comments
+        next if /^\s*$/;	# Skip blank lines
+	
+	# Expand all already-defined macros in the line:
+	while (($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
+	    last unless (exists $Rmacros->{$var});
+	    $_ = $pre . $Rmacros->{$var} . $post;
 	}
-	close RELEASE;
+	
+	# Handle "<macro> = <path>"
+	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
+	if ($macro ne "") {
+	    $Rmacros->{$macro} = $path;
+	    push @$Rapps, $macro;
+	    next;
+	}
+	# Handle "include <path>" syntax
+	($path) = /^\s*include\s+(.*)/;
+	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
+    }
+    close IN;
+    
+    # Expand any (possibly nested) macros that were defined after use
+    while (($macro, $path) = each %$Rmacros) {
+	while (($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
+	    $path = $pre . $Rmacros->{$var} . $post;
+	    $Rmacros->{$macro} = $path;
+	}
     }
 }
 

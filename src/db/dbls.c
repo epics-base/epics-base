@@ -438,11 +438,11 @@ CvtTable(fp, fflag)
 		    &cvtTable->papBrkTable[i]->number,
 		    cvtTable->papBrkTable[i]->number);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x\t\t  rawLow\t\t\t%-.5f",
+	    sprintf(buffer, "%8x\t\t  rawLow\t\t\t%-d",
 		    &cvtTable->papBrkTable[i]->rawLow,
 		    cvtTable->papBrkTable[i]->rawLow);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x\t\t  rawHigh\t\t\t%-.5f",
+	    sprintf(buffer, "%8x\t\t  rawHigh\t\t\t%-d",
 		    &cvtTable->papBrkTable[i]->rawHigh,
 		    cvtTable->papBrkTable[i]->rawHigh);
 	    bufOut(fp, fflag);
@@ -456,7 +456,7 @@ CvtTable(fp, fflag)
 			    &cvtTable->papBrkTable[i]->papBrkInt[j],
 			    cvtTable->papBrkTable[i]->papBrkInt[j], j);
 		    bufOut(fp, fflag);
-		    sprintf(buffer, "%8x\t\t      raw\t\t\t%-.5f",
+		    sprintf(buffer, "%8x\t\t      raw\t\t\t%-d",
 			    &cvtTable->papBrkTable[i]->papBrkInt[j]->raw,
 			    cvtTable->papBrkTable[i]->papBrkInt[j]->raw);
 		    bufOut(fp, fflag);

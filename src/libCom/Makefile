@@ -31,13 +31,10 @@ SRCS += epicsRingPointer.cpp
 SRCS += epicsRingBytes.c
 
 SRC_DIRS += $(LIBCOM)/calc
-#following needed for locating postfixPvt.h and sCalcPostfixPvt.h
+#following needed for locating postfixPvt.h
 INC += postfix.h
-INC += sCalcPostfix.h
 SRCS += postfix.c
 SRCS += calcPerform.c
-SRCS += sCalcPostfix.c
-SRCS += sCalcPerform.c
 
 SRC_DIRS += $(LIBCOM)/cvtFast
 INC += cvtFast.h

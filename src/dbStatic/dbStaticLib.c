@@ -30,7 +30,6 @@
 #include "gpHash.h"
 #include "dbmf.h"
 #include "postfix.h"
-#include "sCalcPostfix.h"
 #include "osiFileName.h"
 
 #define epicsExportSharedSymbols
@@ -1995,14 +1994,9 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 	strncpy((char *)pfield, pstring,pflddes->size);
 	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
-            char  *psCalcrpcl = 0;
 	    short error_number;
 
 	    status = postfix(pstring,rpcl,&error_number);
-            if(status) {
-                status = sCalcPostfix(pstring,&psCalcrpcl,&error_number);
-                free((void *)psCalcrpcl);
-            }
 	    if(status) status = S_dbLib_badField;
 	}
 	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
@@ -2375,15 +2369,10 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
 	    }
 	    if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 		char  rpcl[RPCL_LEN];
-                char  *psCalcrpcl = 0;
 		short error_number;
 		long  status;
 
 		status = postfix(pstring,rpcl,&error_number);
-                if(status) {
-                    status = sCalcPostfix(pstring,&psCalcrpcl,&error_number);
-                    free((void *)psCalcrpcl);
-                }
 		if(status)  {
 		    sprintf(message,"Illegal Calculation String");
 		    return(message);

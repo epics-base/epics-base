@@ -31,15 +31,23 @@ sub Usage
     exit 2;
 }
 
-while ( $errline = <> ) {
-  if ( $errline =~ m/^(Warning|Error)/ ) {
-    ($errno) = ($errline =~ m/.* ([0-9]+):/);
-    $codeline = <>;
-    $pointline = <>;
-    next if $codeline =~ m|/[/*]\s*X.*aCC[^a-zA-Z]*$errno|;
+if ( $ENV{"EPICS_HOST_ARCH"} =~ m/solaris-sparc/ ) {
+  while ( $errline = <> ) {
+    if ( $errline !~ m/invalid white space character in directive/ ) {
+      print $errline;
+    }
+  }
+} else {
+  while ( $errline = <> ) {
+    if ( $errline =~ m/^(Warning|Error)/ ) {
+      ($errno) = ($errline =~ m/.* ([0-9]+):/);
+      $codeline = <>;
+      $pointline = <>;
+      next if $codeline =~ m|/[/*]\s*X.*aCC[^a-zA-Z]*$errno|;
 
-    print wrap ("", "    ", $errline);
-    print $codeline;
-    print $pointline;
+      print wrap ("", "    ", $errline);
+      print $codeline;
+      print $pointline;
+    }
   }
 }

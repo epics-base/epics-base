@@ -307,7 +307,7 @@ bool repeaterClient::verify ()  // X aCC 361
                 sockErrBuf );
         }
     }
-    return success;
+    return ! success;
 }
 
 

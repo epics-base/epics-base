@@ -75,20 +75,8 @@ public:
 
 	resTableIndex hash (unsigned nBitsId) const;
 
-    //
-    // this must allow at least enough bits for all states 
-    // in type "fdRegType". The actual size of the table
-    // is used because it improves performance.
-    //
-    static unsigned minIndexBitWidth ()
-    {
-        return hashTableIndexBits; 
-    }
-
-    static unsigned maxIndexBitWidth ()
-    {
-        return sizeof(SOCKET)*CHAR_BIT;
-    }
+    static const unsigned minIndexBitWidth;
+    static const unsigned maxIndexBitWidth;
 
 	virtual void show (unsigned level) const;
 private:
@@ -193,9 +181,9 @@ inline resTableIndex fdRegId::hash (unsigned) const
 {
     resTableIndex hashid;
         
-    hashid = resTableIntHash
-        <SOCKET, hashTableIndexBits, sizeof(SOCKET)*CHAR_BIT> (this->fd);
-
+    hashid = intId<SOCKET, hashTableIndexBits, sizeof(SOCKET)*CHAR_BIT>
+        ::hashEngine(this->fd);
+ 
 	//
 	// also evenly distribute based on the type of fdRegType
 	//

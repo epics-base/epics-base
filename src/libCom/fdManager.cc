@@ -48,10 +48,7 @@
 #include <errno.h>
 #include <string.h>
 
-//	Both the functions in osiTimer and fdManager are
-//	implemented in this DLL -> define epicsExportSharesSymbols
 #define epicsExportSharedSymbols
-#define instantiateRecourceLib
 #include "osiTimer.h"
 #include "osiSleep.h"
 #include "tsMinMax.h"
@@ -77,6 +74,14 @@
 #endif
 
 epicsShareDef fdManager fileDescriptorManager;
+
+//
+// this must allow at least enough bits for all states 
+// in type "fdRegType". The actual size of the table
+// is used because it improves performance.
+//
+const unsigned fdRegId::minIndexBitWidth = hashTableIndexBits;
+const unsigned fdRegId::maxIndexBitWidth = sizeof(SOCKET)*CHAR_BIT;
 
 //
 // fdManager::fdManager()

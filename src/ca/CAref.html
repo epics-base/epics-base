@@ -2830,71 +2830,81 @@ and then output to the console.</p>
 <h2><a name="Return">Return Codes</a></h2>
 <dl>
   <dt>ECA_NORMAL</dt>
-    <dd>normal successful completion</dd>
-</dl>
-<dl>
+    <dd>Normal successful completion</dd>
   <dt>ECA_ALLOCMEM</dt>
-    <dd>unable to allocate memory</dd>
-</dl>
-<dl>
+    <dd>Unable to allocate additional dynamic memory</dd>
+  <dt>ECA_TOLARGE</dt>
+    <dd>The requested data transfer is greater than available memory or
+      EPICS_CA_MAX_ARRAY_BYTES</dd>
   <dt>ECA_BADTYPE</dt>
-    <dd>invalid DBR_XXXX type</dd>
-</dl>
-<dl>
-  <dt>ECA_STRTOBIG</dt>
-    <dd>unusually large string supplied</dd>
-</dl>
-<dl>
+    <dd>The data type specifed is invalid</dd>
+  <dt>ECA_BADSTR</dt>
+    <dd>Invalid string</dd>
   <dt>ECA_BADCHID</dt>
-    <dd>ivalid channel identifier</dd>
-</dl>
-<dl>
+    <dd>Ivalid channel identifier</dd>
   <dt>ECA_BADCOUNT</dt>
-    <dd>requested count larger than native element count</dd>
-</dl>
-<dl>
+    <dd>Invalid element count requested</dd>
   <dt>ECA_PUTFAIL</dt>
-    <dd>a write request failed in the server</dd>
-</dl>
-<dl>
+    <dd>Channel write request failed</dd>
   <dt>ECA_GETFAIL</dt>
-    <dd>a read request faile din the server</dd>
-</dl>
-<dl>
+    <dd>Channel read request failed</dd>
   <dt>ECA_ADDFAIL</dt>
     <dd>unable to instal subscription request</dd>
-</dl>
-<dl>
   <dt>ECA_TIMEOUT</dt>
-    <dd>requested operation timed out</dd>
-</dl>
-<dl>
+    <dd>User specified timeout on IO operation expired</dd>
   <dt>ECA_EVDISALLOW</dt>
     <dd>function called was inappropriate for use within a callback
     function</dd>
-</dl>
-<dl>
   <dt>ECA_IODONE</dt>
-    <dd>IO operations completed</dd>
-</dl>
-<dl>
+    <dd>IO operations have completed</dd>
   <dt>ECA_IOINPROGRESS</dt>
-    <dd>some IO operations still in progress</dd>
-</dl>
-<dl>
+    <dd>IO operations are in progress</dd>
   <dt>ECA_BADSYNCGRP</dt>
-    <dd>invalid synchronous group identifier</dd>
-</dl>
-<dl>
+    <dd>Invalid synchronous group identifier</dd>
   <dt>ECA_NORDACCESS</dt>
-    <dd>read access denied</dd>
-</dl>
-<dl>
+    <dd>Read access denied</dd>
   <dt>ECA_NOWTACCESS</dt>
-    <dd>write access denied</dd>
-</dl>
+    <dd>Write access denied</dd>
+  <dt>ECA_DISCONN</dt>
+    <dd>Virtual circuit disconnect"</dd>
+  <dt>ECA_DBLCHNL</dt>
+    <dd>Identical process variable name on multiple servers</dd>
+  <dt>ECA_EVDISALLOW</dt>
+    <dd>Request inappropriate within subscription (monitor) update
+    callback</dd>
+  <dt>ECA_BADMONID</dt>
+    <dd>Bad event subscription (monitor) identifier</dd>
+  <dt>ECA_BADMASK</dt>
+    <dd>Invalid event selection mask</dd>
+  <dt>ECA_PUTCBINPROG</dt>
+    <dd>Put callback timed out</dd>
+  <dt>ECA_PUTCBINPROG</dt>
+    <dd>Put callback timed out</dd>
+  <dt>ECA_ANACHRONISM</dt>
+    <dd>Requested feature is no longer supported</dd>
+  <dt>ECA_NOSEARCHADDR</dt>
+    <dd>Empty PV search address list</dd>
+  <dt>ECA_NOCONVERT</dt>
+    <dd>No reasonable data conversion between client and server types</dd>
+  <dt>ECA_BADFUNCPTR</dt>
+    <dd>Invalid function pointer</dd>
+  <dt>ECA_ISATTACHED</dt>
+    <dd>Thread is already attached to a client context</dd>
+  <dt>ECA_UNAVAILINSERV</dt>
+    <dd>Not supported by attached service</dd>
+  <dt>ECA_CHANDESTROY</dt>
+    <dd>User destroyed channel</dd>
+  <dt>ECA_BADPRIORITY</dt>
+    <dd>Invalid channel priority</dd>
+  <dt>ECA_NOTTHREADED</dt>
+    <dd>Preemptive callback not enabled - additional threads may not join
+      context</dd>
+  <dt>ECA_16KARRAYCLIENT</dt>
+    <dd>Client's protocol revision does not support transfers exceeding 16k
+      bytes</dd>
 
-<p><small>CVS Revision $Id: CAref.html,v 1.26 2002/08/08 15:37:05 jhill Exp
-$</small></p>
+  <p><small>CVS Revision $Id: CAref.html,v 1.26 2002/08/08 15:37:05 jhill Exp
+  $</small></p>
+</dl>
 </body>
 </html>

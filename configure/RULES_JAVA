@@ -1,0 +1,58 @@
+# $Id$
+#
+#---------------------------------------------------------------
+#     Java classes and packages
+#
+
+ifdef JAVA
+
+INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
+DIRECTORY_TARGETS += $(INSTALL_JAVA)
+ifdef PACKAGE
+DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
+endif #ifdef PACKAGE
+
+vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
+
+CLASSES += $(subst .java,.class,$(JAVA))
+TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
+INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/$(PACKAGE)/%)
+INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
+
+JAR_OPTIONS = cvf
+ifdef MANIFEST
+JAR_OPTIONS = cvmf
+endif
+JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+
+$(DIRECTORY_TARGETS) :
+#	$(MKDIR) -p $@
+
+build: $(TESTCLASSES) $(JAR)
+
+buildInstall : $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+
+clean::
+	@$(RM) $(TESTCLASSES) $(JAR)
+
+%.class:%.java
+	@echo Creating java class file $@
+	$(RM) $@
+	$(JAVACCMD) $< 
+
+$(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java
+	@echo Creating java class file $@
+	@$(RM) $@
+	$(JAVACCMD) -d $(INSTALL_JAVA) $< 
+
+$(JAR):%.jar:  $(JAR_DEPFILES)
+	@echo Creating java jar file $@
+	@$(RM) $@
+	$(JARCMD)
+
+$(INSTALL_JAVA)/%.jar: %.jar
+	@echo "Installing jar file $@"
+	$(INSTALL) -d -m 644 $< $(@D)
+
+endif  #ifdef JAVA
+

@@ -4,3 +4,4 @@
 
 #  Tornado directory
 VX_DIR = /usr/local/vw/tornado101
+#VX_DIR = /usr/local/vw/tornado20

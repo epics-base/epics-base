@@ -28,30 +28,27 @@ ifndef HOST_ARCH
 	HOST_ARCH=unsupported
 endif
 
-#  The architectures to build  for
+#  The architectures to build EPICS for
 #
 #  Currently Supporting:
-#       vxWorks-68040 (alias mv147, mv162, mv167)
-#       vxWorks-68040lc (alias mv162lc)
-#       vxWorks-ppc604 (alias ppc604)
-#
+#       mv167
+#       mv162
+#       mv162lc
+#       mv147
 #       hkv2f
-#	niCpu030
-#	pc486
-#	frc5ce
-#	hkbaja47
+#   niCpu030
+#   pc486
+#   frc5ce
+#   hkbaja47
 #
-#CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
-CROSS_COMPILER_TARGET_ARCHS= mv167 ppc604
-CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
+CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
+
 
 #  If only a subset of the host architectures perform
-#  the build for the CROSS_COMPILER_TARGET_ARCHS 
+#  the build for the CROSS_COMPILER_TARGET_ARCHS
 #  uncomment the following line and specify them.
 #
-#CROSS_COMPILER_HOST_ARCHS=sun4
-#CROSS_COMPILER_HOST_ARCHS=solaris
-#CROSS_COMPILER_HOST_ARCHS=hp700
+CROSS_COMPILER_HOST_ARCHS=solaris
 
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     GNU			(gcc -ansi)
@@ -97,16 +94,16 @@ STATIC_BUILD=NO
 
 #  Host build optimization
 #	must be either YES or NO
-Host_OPT=YES
+HOST_OPT=YES
 
 #  Ioc build optimization
 #	must be either YES or NO
-Ioc_OPT=YES
+IOC_OPT=YES
 
 #  Generate Verbose Compiler Warnings for Host builds
 #	must be either YES or NO
-Host_WARN=YES
+HOST_WARN=YES
 
 #  Generate Verbose Compiler Warnings for Ioc builds
 #	must be either YES or NO
-Ioc_WARN=YES
+IOC_WARN=YES

@@ -3,8 +3,8 @@
 include $(CONFIG)/RULES_ARCHS
 ifdef T_A
 
-MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
-DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)
+MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
+DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
 DBST		= dbst
 MAKEDBDEPENDS	= $(PERL) $(TOP)/configure/makeDbDepends.pl
 REPLACEVAR	= $(PERL) $(TOP)/configure/replaceVAR.pl

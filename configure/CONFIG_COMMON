@@ -5,46 +5,10 @@
 #
 #  This file is to be maintained by the community.
 #
-
-#-------------------------------------------------------
-# Common build type definitions
-#
-# Host means single-thread non-ioc
-# HostMT means multi-thread non-ioc
-# Ioc means multi-thread ioc
-# IocST means single-thread ioc
-
-# Default valid build types and include directory suffixes
-VALID_BUILDS = Host Ioc HostMT IocST
-Host_SUFFIX=
-HostMT_SUFFIX=MT
-Ioc_SUFFIX=Ioc
-IocST_SUFFIX=IocST
-
-B_T_SUFFIX = $($(B_T)_SUFFIX)
-
-# vpath directories
-OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
-            $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX) $(dir)/os/posix$(B_T_SUFFIX) \
-            $(dir)/os/$(OS_CLASS) $(dir)/os/posix \
-            $(dir)/generic$(B_T_SUFFIX) $(dir)/generic $(dir)) \
-            ../os/$(OS_CLASS)$(B_T_SUFFIX) ../os/posix$(B_T_SUFFIX) \
-            ../os/$(OS_CLASS) ../os/posix \
-            ../generic$(B_T_SUFFIX) ../generic 
-
-# compile line include directories
-SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS))
-INSTALL_INCLUDES += \
-       -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)$(B_T_SUFFIX) \
-       -I$(INSTALL_INCLUDE)/os/posix$(B_T_SUFFIX) \
-       -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
-       -I$(INSTALL_INCLUDE)/os/posix \
-       -I$(INSTALL_INCLUDE)/generic$(B_T_SUFFIX) \
-       -I$(INSTALL_INCLUDE)/generic \
-       -I$(INSTALL_INCLUDE)
-
-#-------------------------------------------------------
 # Common Configuration Information 
+
+#-------------------------------------------------------
+# Build architectures
 
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
@@ -55,7 +19,23 @@ CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARC
 
 BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
 
+#-------------------------------------------------------
+# Divider and suffix
+
+DIVIDER = .
+OBJ = .
+RES = .
+
+#-------------------------------------------------------
+# Default for perl if it's on the PATH,
+# otherwise override this in os/CONFIG_SITE.Host.<host_arch>
+PERL=perl
+
+#-------------------------------------------------------
+# Directories
+
 INSTALL_LOCATION            = $(TOP)
+TOOLS = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
@@ -69,39 +49,43 @@ INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
-DIVIDER = .
-OBJ = .
-RES = .
+INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
-# Default for perl if it's on the PATH,
-# otherwise override this in CONFIG_SITE.Host.<host_arch>
-PERL=perl
+ifdef T_A
 
-# install 
-TOOLS = $(CONFIG)/tools
+#-------------------------------------------------------
+# tools for installing libraries and products
 INSTALL = $(PERL) $(TOOLS)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)
 
-ifdef T_A
+#-------------------------------------------------------
+# vpath directories
+OS_SRC_DIRS += $(foreach dir, $(SRC_DIRS) .., \
+            $(dir)/os/$(OS_CLASS) $(dir) )
 
-INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
-INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
-INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
+#-------------------------------------------------------
+# compile line include directories
+SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS))
+INSTALL_INCLUDES += \
+       -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
+       -I$(INSTALL_INCLUDE)
 
 #--------------------------------------------------
 # GNU compiler defaults
 
 GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
 GCC_AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
-GCC_CPP = $(GNU_BIN)/cpp$(CMPLR_SUFFIX)
+GCC_CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -x c -E
 GCC_RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
 GCC_LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 
 NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
 MUNCH = $(GNU_BIN)/munch
 
-GCC_ANSI = $(GCC) -ansi
+GCC_ANSI = $(GCC) -ansi 
 GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_TRAD = $(GCC) -traditional
 GCC_WARN_YES = -Wall
@@ -211,14 +195,25 @@ TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
 INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
+# POSIX flags
+#####POSIX = YES
+#####POSIX_FLAGS_YES = -D_POSIX_C_SOURCE
+#####POSIX_FLAGS_NO = 
+#####POSIX_FLAGS = $(POSIX_FLAGS_$(POSIX))
+
+#--------------------------------------------------
 # Warnings flags  (CONFIG.<arch> will override)
-WARN_CFLAGS = $($(ANSI)_WARN_$($(B_T)_WARN))
-WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(B_T)_WARN))
+# final value determined in RULES_BUILD
+WARN=$(HOST_WARN)
+WARN_CFLAGS = $($(ANSI)_WARN_$(WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(WARN))
 
 #--------------------------------------------------
 # Optimization flags  (CONFIG.<arch> will override)
-OPT_CFLAGS = $($(ANSI)_OPT_$($(B_T)_OPT))
-OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(B_T)_OPT))
+# final value determined in RULES_BUILD
+OPT=$(HOST_OPT)
+OPT_CFLAGS = $($(ANSI)_OPT_$(OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(OPT))
 OPT_LDFLAGS =
 
 #--------------------------------------------------
@@ -234,12 +229,13 @@ ARCMD = $(AR) $(ARFLAGS) $@
 
 #--------------------------------------------------
 # depends definition 
-DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
+DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $^ > DEPENDS
 
 #--------------------------------------------------
 # Include files
 
-INCLUDES = -I. -I.. $(USR_INCLUDES) $(SRC_INCLUDES) $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = -I. $(USR_INCLUDES) $(SRC_INCLUDES) $(INSTALL_INCLUDES)\
+  $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
 #--------------------------------------------------
 # Flags
@@ -258,7 +254,7 @@ LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(ARCH_DEP_LDLIBS)\
  $(STATIC_LDLIBS) $(OP_SYS_LDLIBS)
 
-CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
+CPPFLAGS += $(EPICS_BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
 
 CPPSNCFLAGS = $(INCLUDES)
 
@@ -268,6 +264,67 @@ DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 # Build compile line here
 
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
-COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
+COMPILE.cpp = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
+
+
+
+#---------------------------------------------------------------
+# Man pages
+
+MANLIST = 1 2 3 4 5 6 7 8 9
+MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
+
+#---------------------------------------------------------------
+# Directory targets
+
+DIRECTORY_TARGETS += $(INSTALL_DBD) $(INSTALL_INCLUDE)
+
+#---------------------------------------------------------------
+# Names of installed items 
+#
+#	each list starts with the destination directory name(s)
+#	to make sure it's there
+
+INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
+INSTALL_LIBS= $(LIBNAME_IOC:%=$(INSTALL_LIB)/%)
+INSTALL_LIBS+= $(LIBNAME_HOST:%=$(INSTALL_LIB)/%)
+INSTALL_SHRLIBS= $(SHRLIBNAME_IOC:%=$(INSTALL_SHRLIB)/%)
+INSTALL_SHRLIBS+= $(SHRLIBNAME_HOST:%=$(INSTALL_SHRLIB)/%)
+INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME_IOC:%=$(INSTALL_LIB)/%)
+INSTALL_DLL_LINK_LIBS+=$(DLL_LINK_LIBNAME_HOST:%=$(INSTALL_LIB)/%)
+INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
+INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
+INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
+INSTALL_OBJS = $(OBJS:%= $(INSTALL_BIN)/%)
+
+INCREC +=$(RECTYPES) $(MENUS)
+INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
+INSTALL_MANS = $(foreach n, \
+        $(MANLIST), $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
+INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
+
+INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
+                   $(subst $(CONFIG),top/configure,$(TEMPLATES)))
+INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
+
+INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
+INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
+        $(RECTYPES:%.h= $(INSTALL_DBD)/%.dbd)\
+        $(MENUS:%.h= $(INSTALL_DBD)/%.dbd)
+
+INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
+
+INSTALL_INC += $(foreach inc,$(INC), \
+    $(addprefix $(INSTALL_INCLUDE)/, \
+    $(firstword  \
+    $(foreach dir,$(SRC_DIRS), \
+    $(subst $(dir)/, , \
+    $(wildcard \
+         $(dir)/os/$(OS_CLASS)/$(inc) \
+         $(dir)/$(inc)))) \
+    $(subst ../, ,$(wildcard ../os/$(OS_CLASS)/$(inc) ../$(inc) )) \
+    $(inc)))) 
+
 
 endif

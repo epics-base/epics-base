@@ -1,0 +1,255 @@
+# $Id#
+#
+#	check for add-on CFLAGS and CXXFLAGS
+#
+#	Rules:
+#	1) USR_CFLAGS is used
+#	2) if there is a special USR_CFLAGS_$(OS_CLASS), it's
+#	   appended to 1)
+#	3) if there is no special defined, but a generic USR_CFLAGS_DEFAULT,
+#	   this one is appended
+#	4) if you have the special case that your USR_CFLAGS_$(OS_CLASS) is
+#	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
+#		USR_CFLAGS = <defines for all systems>
+#		USR_CFLAGS_sun4 = -nil-
+#		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
+#
+#	These rules apply to these Makefile-variables:
+#	USR_CFLAGS	C flags
+#	USR_CXXFLAGS	C++ flags
+#	USR_CPPFLAGS	c preprocesser flags
+#	INC		include-files to install
+#	LIBSRCS		source files for building library
+#	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
+#	USR_LIBS	NONEPICS libs needed by PROD and TESTPROD
+#	USR_LDFLAGS	ld flags
+#	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
+#	PROD		products to build and install
+#	SCRIPTS		scripts to install
+#	USR_INCLUDES	include directories
+#
+#	Remark:
+#	If you define INC, e.g. INC = getopt.h, the source
+#	(getopt.h) must be in the source directory (..) and/or
+#	in one or more ../os/<OS_CLASS> directories.
+#	The INC source files cannot be created by the build.
+#
+
+ifneq ($(strip $(USR_CFLAGS_$(OS_CLASS))),)
+USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(OS_CLASS)))
+else
+ifdef USR_CFLAGS_DEFAULT
+USR_CFLAGS+=$(USR_CFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_INCLUDES_$(OS_CLASS))),)
+USR_INCLUDES+=$(subst -nil-,,$(USR_INCLUDES_$(OS_CLASS)))
+else
+ifdef USR_INCLUDES_DEFAULT
+USR_INCLUDES+=$(USR_INCLUDES_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_CXXFLAGS_$(OS_CLASS))),)
+USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(OS_CLASS)))
+else
+ifdef USR_CXXFLAGS_DEFAULT
+USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_CPPFLAGS_$(OS_CLASS))),)
+USR_CPPFLAGS+=$(subst -nil-,,$(USR_CPPFLAGS_$(OS_CLASS)))
+else
+ifdef USR_CPPFLAGS_DEFAULT
+USR_CPPFLAGS+=$(USR_CPPFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_LDFLAGS_$(OS_CLASS))),)
+USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(OS_CLASS)))
+else
+ifdef USR_LDFLAGS_DEFAULT
+USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
+endif
+endif
+
+#	check for special includes:
+#
+ifneq ($(strip $(INC_$(OS_CLASS))),)
+#	os-specific includes go to the include/os-directory:
+INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
+else
+ifdef INC_DEFAULT
+INC += $(INC_DEFAULT)
+endif
+endif
+
+#	concat specific library contents (if defined)
+#
+ifneq ($(strip $(LIBSRCS_$(OS_CLASS))),)
+LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(OS_CLASS)))
+else
+ifdef LIBSRCS_DEFAULT
+LIBSRCS+=$(LIBSRCS_DEFAULT)
+endif
+endif
+
+#	concat specific library contents (if defined)
+#
+ifneq ($(strip $(LIBSRCS_HOST_$(OS_CLASS))),)
+LIBSRCS_HOST += $(subst -nil-,,$(LIBSRCS_HOST_$(OS_CLASS)))
+else
+ifdef LIBSRCS_HOST_DEFAULT
+LIBSRCS_HOST+=$(LIBSRCS_HOST_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIBSRCS_IOC_$(OS_CLASS))),)
+LIBSRCS_IOC += $(subst -nil-,,$(LIBSRCS_IOC_$(OS_CLASS)))
+else
+ifdef LIBSRCS_IOC_DEFAULT
+LIBSRCS_IOC+=$(LIBSRCS_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
+BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
+else
+ifdef BIN_INSTALLS_DEFAULT
+BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
+LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
+else
+ifneq (,$(LIBRARY_DEFAULT))
+#ifdef LIBRARY_DEFAULT
+LIBRARY+=$(LIBRARY_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(OBJS_$(OS_CLASS))),)
+OBJS+=$(subst -nil-,,$(OBJS_$(OS_CLASS)))
+else
+ifneq (,$(OBJS_DEFAULT))
+#ifdef OBJS_DEFAULT
+OBJS+=$(OBJS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(OBJS_IOC_$(OS_CLASS))),)
+OBJS_IOC+=$(subst -nil-,,$(OBJS_IOC_$(OS_CLASS)))
+else
+ifneq (,$(OBJS_IOC_DEFAULT))
+#ifdef OBJS_IOC_DEFAULT
+OBJS_IOC+=$(OBJS_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(OBJS_HOST_$(OS_CLASS))),)
+OBJS_HOST+=$(subst -nil-,,$(OBJS_HOST_$(OS_CLASS)))
+else
+ifneq (,$(OBJS_HOST_DEFAULT))
+#ifdef OBJS_HOST_DEFAULT
+OBJS_HOST+=$(OBJS_HOST_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_$(OS_CLASS))),)
+LIB+=$(subst -nil-,,$(LIB_$(OS_CLASS)))
+else
+ifneq (,$(LIB_DEFAULT))
+#ifdef LIB_DEFAULT
+LIB+=$(LIB_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_IOC_$(OS_CLASS))),)
+LIB_IOC+=$(subst -nil-,,$(LIB_IOC_$(OS_CLASS)))
+else
+ifneq (,$(LIB_IOC_DEFAULT))
+#ifdef LIB_IOC_DEFAULT
+LIB_IOC+=$(LIB_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_HOST_$(OS_CLASS))),)
+LIB_HOST+=$(subst -nil-,,$(LIB_HOST_$(OS_CLASS)))
+else
+ifneq (,$(LIB_HOST_DEFAULT))
+#ifdef LIB_HOST_DEFAULT
+LIB_HOST+=$(LIB_HOST_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_LIBS_$(OS_CLASS))),)
+PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
+else
+ifdef PROD_LIBS_DEFAULT
+PROD_LIBS += $(PROD_LIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_LIBS_$(OS_CLASS))),)
+USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
+else
+ifdef USR_LIBS_DEFAULT
+USR_LIBS += $(USR_LIBS_DEFAULT)
+endif
+endif
+
+#
+#	concat specific library contents (if defined) to SYS_PROD_LIBS
+#
+ifneq ($(strip $(SYS_PROD_LIBS_$(OS_CLASS))),)
+SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(OS_CLASS)))
+else
+ifdef SYS_PROD_LIBS_DEFAULT
+SYS_PROD_LIBS += $(SYS_PROD_LIBS_DEFAULT)
+endif
+endif
+
+#
+#	concat specific products
+#
+ifneq ($(strip $(PROD_$(OS_CLASS))),)
+PROD += $(subst -nil-,,$(PROD_$(OS_CLASS)))
+else
+ifdef PROD_DEFAULT
+PROD += $(PROD_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PRODMT_$(OS_CLASS))),)
+PRODMT += $(subst -nil-,,$(PRODMT_$(OS_CLASS)))
+else
+ifdef PRODMT_DEFAULT
+PRODMT += $(PRODMT_DEFAULT)
+endif
+endif
+
+#
+#	concat specific scripts
+#
+ifneq ($(strip $(SCRIPTS_$(OS_CLASS))),)
+SCRIPTS += $(subst -nil-,,$(SCRIPTS_$(OS_CLASS)))
+else
+ifdef SCRIPTS_DEFAULT
+SCRIPTS += $(SCRIPTS_DEFAULT)
+endif
+endif
+
+#
+#	concat specific resource files
+#
+ifneq ($(strip $(RCS_$(OS_CLASS))),)
+RCS += $(subst -nil-,,$(RCS_$(OS_CLASS)))
+else
+ifdef RCS_DEFAULT
+RCS += $(RCS_DEFAULT)
+endif
+endif
+

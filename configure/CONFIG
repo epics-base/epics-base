@@ -28,8 +28,8 @@ include $(CONFIG)/CONFIG_SITE
 
 #  Host architecture specific definitions
 #
-include $(CONFIG)/CONFIG.Host.$(HOST_ARCH)
--include $(CONFIG)/CONFIG_SITE.Host.$(HOST_ARCH)
+include $(CONFIG)/os/CONFIG.Host.$(HOST_ARCH)
+-include $(CONFIG)/os/CONFIG_SITE.Host.$(HOST_ARCH)
 
 ifdef T_A
 
@@ -39,22 +39,24 @@ ifneq ($(HOST_ARCH),$(T_A))
 include $(CONFIG)/CONFIG.CrossCommon
 endif
 
-include $(CONFIG)/CONFIG.Target.$(T_A)
+include $(CONFIG)/os/CONFIG.Target.$(T_A)
 #
--include $(CONFIG)/CONFIG_SITE.Target.$(T_A)
+-include $(CONFIG)/os/CONFIG_SITE.Target.$(T_A)
 #
--include $(CONFIG)/CONFIG_SITE.$(HOST_ARCH).$(T_A)
+-include $(CONFIG)/os/CONFIG_SITE.$(HOST_ARCH).$(T_A)
 
 endif
 
 #  User specific definitions
 #
 -include $(HOME)/configure/CONFIG
--include $(HOME)/configure/CONFIG.Host.$(HOST_ARCH)
+-include $(HOME)/os/configure/CONFIG.Host.$(HOST_ARCH)
 ifdef T_A
 -include $(HOME)/configure/CONFIG.$(OS_CLASS)
 -include $(HOME)/configure/CONFIG.Target.$(T_A)
 -include $(HOME)/configure/CONFIG.$(HOST_ARCH).$(T_A)
+-include $(HOME)/configure/os/CONFIG.Target.$(T_A)
+-include $(HOME)/configure/os/CONFIG.$(HOST_ARCH).$(T_A)
 endif
 
 #  All options
@@ -65,13 +67,13 @@ endif
 #  Build client objects statically ?  must be either YES or NO
 #STATIC_BUILD=NO
 #  Host build optimization,   must be either YES or NO
-#Host_OPT=YES
+#HOST_OPT=YES
 #  Ioc build optimization,  must be either YES or NO
-#Ioc_OPT=YES
+#IOC_OPT=YES
 #  Generate Verbose Compiler Warnings for host build,  must be either YES or NO
-#Host_WARN=YES
+#HOST_WARN=YES
 #  Generate Verbose Compiler Warnings for ioc builds,  must be either YES or NO
-#Ioc_WARN=YES
+#IOC_WARN=YES
 #etc.
 
 #CROSS_COMPILER_TARGET_ARCHS=mv167

@@ -1,12 +1,11 @@
 #
 # $Id$
 #
+#  EPICS RULES_ARCH
+#       by Matthew Needes and Mike Bordua and Janet Anderson and Jeff Hill
+#
 
-ifndef T_A
-
-all: install
-
-rebuild: clean all
+all:: install
 
 ACTIONS += inc
 ACTIONS += build
@@ -18,34 +17,74 @@ ACTIONS += rebuild
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 
-actionArchTargets = $(foreach x, $(ACTIONS),\
-		$(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
+#
+# hostActionArchTargets
+#
+hostArchs = $(HOST_ARCHS)
+hostActionArchTargets = $(foreach x, $(ACTIONS),\
+		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
+ifeq (Makefile.Host, $(wildcard Makefile.Host))
+hostDirs = $(addprefix O.,$(hostArchs))
+$(hostActionArchTargets) : $(hostDirs)
+	$(MAKE) -C O.$(archPart) -f ../Makefile.Host TOP=$(TOP)/.. T_A=$(archPart) B_T=.Host $(actionPart)
+$(hostArchs) : % : O.% 
+	$(MAKE) -C O.$@ -f ../Makefile.Host TOP=$(TOP)/.. T_A=$@ B_T=.Host
+else
+$(hostActionArchTargets) :
+$(hostArchs) :
+endif
+
+#
+# iocActionArchTargets
+#
+iocArchs = $(IOC_ARCHS)
+iocActionArchTargets = $(foreach x, $(ACTIONS), \
+	$(foreach arch, $(iocArchs), $(x)$(DIVIDER)$(arch)))
+ifeq (Makefile.Ioc, $(wildcard Makefile.Ioc))
+iocDirs = $(addprefix O.,$(iocArchs))
+$(iocActionArchTargets) : $(iocDirs)
+	$(MAKE) -C O.$(archPart) -f ../Makefile.Ioc TOP=$(TOP)/.. T_A=$(archPart) B_T=.Ioc $(actionPart)
+$(iocArchs) : % : O.%
+	$(MAKE) -C O.$@ -f ../Makefile.Ioc TOP=$(TOP)/.. T_A=$@ B_T=.Ioc
+else
+$(iocActionArchTargets) :
+$(iocArchs) : 
+endif
+
+$(hostDirs) : 
+	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/.. .Host
+
+$(iocDirs) : 
+	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/.. .Ioc
+
+#
+# host/ioc action targets
+#
+$(ACTIONS) :: % : %$(DIVIDER)host %$(DIVIDER)ioc 
+HostActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)host)
+IocActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)ioc)
+$(HostActionTargets) : %$(DIVIDER)host : $(addprefix %$(DIVIDER), $(hostArchs))
+$(IocActionTargets) : %$(DIVIDER)ioc : $(addprefix %$(DIVIDER), $(iocArchs))
 
 
-$(actionArchTargets) : 
-	$(MAKE) -f Makefile T_A=$(archPart) $(actionPart)
-
-$(BUILD_ARCHS) : % : 
-	$(MAKE) -f Makefile T_A=$@
-
-$(ACTIONS):%: $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
+#
+# arch targets
+#
+host : $(hostArchs)
+ioc : $(iocArchs)
 
 #
 # special clean rule
 #
 clean ::
-	$(RMDIR) $(addsuffix *,$(addprefix O.,$(BUILD_ARCHS)))
+	$(RMDIR) $(hostDirs) $(iocDirs)
+clean$(DIVIDER)% : 
+	$(RMDIR) O.$*
 
-clean$(DIVIDER)% :: 
-	$(RMDIR) O.$**
+.PHONY :: $(HostActionTargets)
+.PHONY :: $(IocActionTargets)
+.PHONY :: $(iocActionArchTargets)
+.PHONY :: $(hostActionArchTargets)
+.PHONY :: $(hostArchs) $(iocArchs)
+.PHONY :: $(ACTIONS) clean all host ioc
 
-.PHONY : $(buildActionTargets)
-.PHONY : $(buildActionArchTargets)
-.PHONY : $(buildArchs)
-.PHONY : $(ACTIONS) clean all
-
-else  #T_A
-ifndef B_T
-include $(CONFIG)/RULES_BUILD_TYPE
-endif
-endif

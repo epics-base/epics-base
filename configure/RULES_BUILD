@@ -30,309 +30,94 @@
 
 
 ifdef T_A
-ifdef B_T
 
 vpath %.c $(USER_VPATH) $(OS_SRC_DIRS) .. .
 vpath %.cc $(USER_VPATH) $(OS_SRC_DIRS) .. .
+vpath %.cpp $(USER_VPATH) $(OS_SRC_DIRS) .. .
 vpath %.C $(USER_VPATH) $(OS_SRC_DIRS) .. .
 vpath %.rc $(USER_VPATH)$(OS_SRC_DIRS) .. .
 vpath %.h $(USER_VPATH) $(SRC_DIRS) .. .
 #	This prevents base/src/include/*.h from being installed. Why??
 #vpath %.h ../os/$(OS_CLASS)
 
-#	check for add-on CFLAGS and CXXFLAGS
-#
-#	Rules:
-#	1) USR_CFLAGS is used
-#	2) if there is a special USR_CFLAGS_$(OS_CLASS), it's
-#	   appended to 1)
-#	3) if there is no special defined, but a generic USR_CFLAGS_DEFAULT,
-#	   this one is appended
-#	4) if you have the special case that your USR_CFLAGS_$(OS_CLASS) is
-#	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
-#		USR_CFLAGS = <defines for all systems>
-#		USR_CFLAGS_sun4 = -nil-
-#		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
-#
-#	These rules apply to these Makefile-variables:
-#	USR_CFLAGS	C flags
-#	USR_CXXFLAGS	C++ flags
-#	USR_CPPFLAGS	c preprocesser flags
-#	INC		include-files to install
-#	LIBSRCS		source files for building library
-#	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
-#	USR_LIBS	NONEPICS libs needed by PROD and TESTPROD
-#	USR_LDFLAGS	ld flags
-#	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
-#	PROD		products to build and install
-#	SCRIPTS		scripts to install
-#	USR_INCLUDES	include directories
-#
-#	Remark:
-#	If you define INC, e.g. INC = getopt.h, the source
-#	(getopt.h) must be in the source directory (..) and/or
-#	in one or more ../os/<OS_CLASS> directories.
-#	The INC source files cannot be created by the build.
-#
-ifneq ($(strip $(USR_CFLAGS_$(OS_CLASS))),)
-USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(OS_CLASS)))
-else
-ifdef USR_CFLAGS_DEFAULT
-USR_CFLAGS+=$(USR_CFLAGS_DEFAULT)
-endif
-endif
+#---------------------------------------------------------------
 
-ifneq ($(strip $(USR_INCLUDES_$(OS_CLASS))),)
-USR_INCLUDES+=$(subst -nil-,,$(USR_INCLUDES_$(OS_CLASS)))
-else
-ifdef USR_INCLUDES_DEFAULT
-USR_INCLUDES+=$(USR_INCLUDES_DEFAULT)
-endif
-endif
+include $(TOP)/configure/CONFIG_ADDONS
 
-ifneq ($(strip $(USR_CXXFLAGS_$(OS_CLASS))),)
-USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(OS_CLASS)))
+#---------------------------------------------------------------
+# Set opt and warn
+ifeq ($(HOST_ARCH),$(T_A))
+OPT=$(HOST_OPT)
+WARN=$(HOST_WARN)
 else
-ifdef USR_CXXFLAGS_DEFAULT
-USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(USR_CPPFLAGS_$(OS_CLASS))),)
-USR_CPPFLAGS+=$(subst -nil-,,$(USR_CPPFLAGS_$(OS_CLASS)))
-else
-ifdef USR_CPPFLAGS_DEFAULT
-USR_CPPFLAGS+=$(USR_CPPFLAGS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(USR_LDFLAGS_$(OS_CLASS))),)
-USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(OS_CLASS)))
-else
-ifdef USR_LDFLAGS_DEFAULT
-USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
-endif
-endif
-
-#	check for special includes:
-#
-ifneq ($(strip $(INC_$(OS_CLASS))),)
-#	os-specific includes go to the include/os-directory:
-INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
-else
-ifdef INC_DEFAULT
-INC += $(INC_DEFAULT)
-endif
-endif
-
-#	concat specific library contents (if defined)
-#
-ifneq ($(strip $(LIBSRCS_$(OS_CLASS))),)
-LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(OS_CLASS)))
-else
-ifdef LIBSRCS_DEFAULT
-LIBSRCS+=$(LIBSRCS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
-BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
-else
-ifdef BIN_INSTALLS_DEFAULT
-BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
-LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
-else
-ifneq (,$(LIBRARY_DEFAULT))
-#ifdef LIBRARY_DEFAULT
-LIBRARY+=$(LIBRARY_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(PROD_LIBS_$(OS_CLASS))),)
-PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
-else
-ifdef PROD_LIBS_DEFAULT
-PROD_LIBS += $(PROD_LIBS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(USR_LIBS_$(OS_CLASS))),)
-USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
-else
-ifdef USR_LIBS_DEFAULT
-USR_LIBS += $(USR_LIBS_DEFAULT)
-endif
-endif
-
-#
-#	concat specific library contents (if defined) to SYS_PROD_LIBS
-#
-ifneq ($(strip $(SYS_PROD_LIBS_$(OS_CLASS))),)
-SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(OS_CLASS)))
-else
-ifdef SYS_PROD_LIBS_DEFAULT
-SYS_PROD_LIBS += $(SYS_PROD_LIBS_DEFAULT)
-endif
-endif
-
-#
-#	concat specific products
-#
-ifneq ($(strip $(PROD_$(OS_CLASS))),)
-PROD += $(subst -nil-,,$(PROD_$(OS_CLASS)))
-else
-ifdef PROD_DEFAULT
-PROD += $(PROD_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(PRODMT_$(OS_CLASS))),)
-PRODMT += $(subst -nil-,,$(PRODMT_$(OS_CLASS)))
-else
-ifdef PRODMT_DEFAULT
-PRODMT += $(PRODMT_DEFAULT)
-endif
-endif
-
-#
-#	concat specific scripts
-#
-ifneq ($(strip $(SCRIPTS_$(OS_CLASS))),)
-SCRIPTS += $(subst -nil-,,$(SCRIPTS_$(OS_CLASS)))
-else
-ifdef SCRIPTS_DEFAULT
-SCRIPTS += $(SCRIPTS_DEFAULT)
-endif
-endif
-
-#
-#	concat specific resource files
-#
-ifneq ($(strip $(RCS_$(OS_CLASS))),)
-RCS += $(subst -nil-,,$(RCS_$(OS_CLASS)))
-else
-ifdef RCS_DEFAULT
-RCS += $(RCS_DEFAULT)
-endif
+OPT=$(CROSS_OPT)
+WARN=$(CROSS_WARN)
 endif
 
 #---------------------------------------------------------------
-## LIBSRCS and LIBOBJS for LIBRARY
 
-LIBSRCS += $($(addsuffix _SRCS,$(LIBRARY)))
-
-ifneq ($(foreach lib,$(LIBRARY),$($(lib)_SRCS_$(OS_CLASS))),)
-LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY))))
-else
-LIBSRCS += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
-endif
-
-#	adjust object names for library contents
-#
-ifdef LIBSRCS
-LIBOBJS += $(addsuffix $(OBJ), $(basename $(LIBSRCS)))
-endif
-  
-#---------------------------------------------------------------
-PROD := $(addsuffix $(EXE),$(PROD))
-TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
-TARGETS := $(addsuffix $(EXE),$(TARGETS))
-  
-LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+##PROD := $(addsuffix $(EXE),$(PROD))
+##TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
+ 
+LIBTARGETS += $(LIBNAME_HOST) $(LIBNAME_IOC) $(INSTALL_LIBS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
+LIBTARGETS += $(SHRLIBNAME_HOST) $(SHRLIBNAME_IOC) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 endif # SHARED_LIBRARIES=YES
 
 #---------------------------------------------------------------
-#	----------------------------------------------------
-#	create names (lists) for installed things
-#	----------------------------------------------------
+# Set PROD, OBJS, LIB_HOST, and LIB_IOC
 
-#	each list starts with the destination directory name(s)
-#	to make sure it's there
+ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+PROD += $(PROD_HOST)
+LIB_HOST += $(LIB) $(LIBRARY)
+OBJS += $(OBJS_HOST)
+else 
+# PROD and TESTPROD not built for ioc only builds
+PROD = 
+TESTPROD = 
+LIB_IOC += $(LIB) $(LIBRARY)
+endif
 
+ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
+OBJS += $(OBJS_IOC)
+endif
+#---------------------------------------------------------------
 
-INCREC +=$(RECTYPES) $(MENUS)
-
-INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
-INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
-INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_SHRLIB)/%)
-INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
-INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
-INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
-INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
-
-INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
-MANLIST = 1 2 3 4 5 6 7 8 9
-INSTALL_MANS = $(foreach n, \
-        $(MANLIST), $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
-INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
-INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
 ifdef TEMPLATES_DIR
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 else
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
-INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
-                   $(subst $(CONFIG),top/configure,$(TEMPLATES)))
-INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
 
-INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
-INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
-        $(RECTYPES:%.h= $(INSTALL_DBD)/%.dbd)\
-        $(MENUS:%.h= $(INSTALL_DBD)/%.dbd)
-
-INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
-
-INSTALL_INC += $(foreach inc,$(INC), \
-    $(addprefix $(INSTALL_INCLUDE)/, \
-    $(firstword  \
-    $(foreach dir,$(SRC_DIRS), \
-    $(subst $(dir)/, , \
-    $(wildcard \
-         $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX)/$(inc) \
-         $(dir)/os/posix$(B_T_SUFFIX)/$(inc) \
-         $(dir)/os/$(OS_CLASS)/$(inc) \
-         $(dir)/os/posix/$(inc) \
-         $(dir)/generic$(B_T_SUFFIX)/$(inc) \
-         $(dir)/generic/$(inc) \
-         $(dir)/$(inc)))) \
-    $(subst ../, ,$(wildcard ../$(inc) ../os/$(OS_CLASS)/$(inc))) \
-    $(inc)))) 
-
-MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 #---------------------------------------------------------------
 # must use c++ linker if linking to shared libs with c++ code
-#ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-ifneq ($(strip $(CPLUSPLUS)),)
-LINK.c = $(LINK.cc)
-endif # CPLUSPLUS
-#endif # SHARED_LIBRARIES
+LINK.c = $(LINK.cpp)
 
 #---------------------------------------------------------------
-#	Libraries
+#   Libraries_HOST
 #
-#	if there are no objects LIBOBJS to include
-#	in this library (may be for e.g. base/src/libCompat
-#	on some archs), don't define (and build) any library!
+#   if there are no objects LIBOBJS_HOST to include
+#   in this library (may be for e.g. base/src/libCompat
+#   on some archs), don't define (and build) any library!
 
-# LIBRARY
+# LIB_HOST
 
-ifdef LIBRARY
+ifdef LIB_HOST
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 SHRLIB_LINKER = $(CXX)
-LIB_SRCS=$(LIBRARY_SRCS) $($(basename $(LIBRARY))_SRCS)
-LIBRARY_OBJS+=$(addsuffix $(OBJ), $(basename $(LIB_SRCS)))
-endif # LIBRARY
+LIBSRCS_HOST+=$(SRCS) $(LIBSRCS) $($(basename $(LIB_HOST))_SRCS)
+ifneq ($(foreach lib,$(LIB_HOST),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_HOST += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIB_HOST))))
+else
+LIBSRCS_HOST += $($(addsuffix _SRCS_DEFAULT,$(LIB_HOST)))
+endif
+LIBOBJS_HOST+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_HOST)))
+endif # LIB_HOST
 
 
-ifdef LIBNAME
-ifdef LIBOBJS
+ifdef LIBNAME_HOST
+ifdef LIBOBJS_HOST
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
@@ -340,16 +125,50 @@ CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 
 PROD_VERSION =$(SHRLIB_VERSION)
-ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
-SHRLIB_LINKER = $(CXX)
-else
-SHRLIB_LINKER = $(CC)
-endif
 
 endif # SHARED_LIBRARIES=YES
 
-endif # LIBOBJS
-endif # LIBNAME
+endif # LIBOBJS_HOST
+endif # LIBNAME_HOST
+
+
+#---------------------------------------------------------------
+#   Libraries_IOC
+#
+#   if there are no objects LIBOBJS_IOC to include
+#   in this library (may be for e.g. base/src/libCompat
+#   on some archs), don't define (and build) any library!
+
+# LIB_IOC
+
+ifdef LIB_IOC
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+SHRLIB_LINKER = $(CXX)
+LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(basename $(LIB_IOC))_SRCS)
+ifneq ($(foreach lib,$(LIB_IOC),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_IOC += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIB_IOC))))
+else
+LIBSRCS_IOC += $($(addsuffix _SRCS_DEFAULT,$(LIB_IOC)))
+endif
+LIBOBJS_IOC+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_IOC))) $(LIBOBJS)
+endif # LIB_IOC
+
+
+ifdef LIBNAME_IOC
+ifdef LIBOBJS_IOC
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+
+#  check if shared libraries requested
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+
+PROD_VERSION =$(SHRLIB_VERSION)
+
+endif # SHARED_LIBRARIES=YES
+
+endif # LIBOBJS_IOC
+endif # LIBNAME_IOC
 
 #---------------------------------------------------------------
 #	Main targets
@@ -364,7 +183,7 @@ build : inc
 
 rebuild: clean install
 
-inc: $(INSTALL_INC)
+inc: $(INSTALL_INC) $(INSTALL_OSINC)
 
 build: $(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS) \
 	$(MENUS) $(RECTYPES) $(BPTS)
@@ -376,6 +195,7 @@ endif
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
+	$(INSTALL_OBJS) \
 	$(INSTALL_MANS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
@@ -390,11 +210,12 @@ endif
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) \
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME_IOC)\
+	$(LIBNAME_HOST) $(SHRLIBNAME_IOC) $(SHRLIBNAME_HOST)\
 	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) \
 	$(DBDNAME) *.out
 ifdef BAF
-	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
+	@$(RM) $(PROD_BAF) $(LIB_BAF_IOC) $(LIB_BAF_HOST) *$(BOF)
 endif
 ifdef DBDEXPAND
 	@$(RM) $(DBDNAME)
@@ -405,13 +226,12 @@ endif
 # WIN95/NT source browser
 #ifdef BAF
 PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
-LIB_BAF = $(addsuffix $(BAF), $(basename $(LIBRARY)))
-browse: $(LIB_BAF) $(PROD_BAF)
+LIB_BAF_IOC = $(addsuffix $(BAF), $(basename $(LIB_IOC)))
+LIB_BAF_HOST = $(addsuffix $(BAF), $(basename $(LIB_HOST)))
+browse: $(LIB_BAF_IOC) $(LIB_BAF_HOST) $(PROD_BAF)
 #endif
 
 #---------------------------------------------------------------
-
-DIRECTORY_TARGETS += $(INSTALL_DBD) $(INSTALL_INCLUDE)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
@@ -448,11 +268,7 @@ $(PRODNAME): $(PROD_DEPLIBS) $(PRODNAME_DEPLIBS)
 
 ifdef PRODNAME_SRCS
 
-ifeq ($(findstring cc,$(suffix $(PRODNAME_SRCS))),cc)
-PRODNAME_LINKER = $(LINK.cc)
-else
-PRODNAME_LINKER = $(LINK.c)
-endif
+PRODNAME_LINKER = $(LINK.cpp)
 
 PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
@@ -487,7 +303,7 @@ PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
 
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
-PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile.$(B_T) T_A=$(T_A) B_T=$(B_T) $@\
+PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile$(B_T) TOP=$(TOP) T_A=$(T_A) $@\
 	PRODNAME=$(addsuffix $(EXE), $(basename $@))\
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
 	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
@@ -514,62 +330,6 @@ endif # PRODNAME notdefined
 endif # PROD defined
 
 #---------------------------------------------------------------
-#     Java classes and packages
-#
-
-ifdef JAVA
-
-INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
-DIRECTORY_TARGETS += $(INSTALL_JAVA)
-ifdef PACKAGE
-DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
-endif #ifdef PACKAGE
-
-vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
-
-CLASSES += $(subst .java,.class,$(JAVA))
-TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
-INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/$(PACKAGE)/%)
-INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
-
-JAR_OPTIONS = cvf
-ifdef MANIFEST
-JAR_OPTIONS = cvmf
-endif
-JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
-
-$(DIRECTORY_TARGETS) :
-#	$(MKDIR) -p $@
-
-build: $(TESTCLASSES) $(JAR)
-
-buildInstall : $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
-
-clean::
-	@$(RM) $(TESTCLASSES) $(JAR)
-
-%.class:%.java
-	@echo Creating java class file $@
-	$(RM) $@
-	$(JAVACCMD) $< 
-
-$(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java
-	@echo Creating java class file $@
-	@$(RM) $@
-	$(JAVACCMD) -d $(INSTALL_JAVA) $< 
-
-$(JAR):%.jar:  $(JAR_DEPFILES)
-	@echo Creating java jar file $@
-	@$(RM) $@
-	$(JARCMD)
-
-$(INSTALL_JAVA)/%.jar: %.jar
-	@echo "Installing jar file $@"
-	$(INSTALL) -d -m 644 $< $(@D)
-
-endif  #ifdef JAVA
-
-#---------------------------------------------------------------
 #---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that
 #	can be generated from a single source with same basename.
@@ -578,14 +338,14 @@ endif  #ifdef JAVA
 #	do not work because the $(OBJ)->$(EXE) rule wouldn't
 #	know if the original source was C or C++.
 #
-#	Hint: The $(subst...) construct removes the .c or .cc
+#	Hint: The $(subst...) construct removes the .c or .cpp
 #	      as well as the '../' from the filename and adds $(OBJ):
 #	      e.g.  $< = '../abc.c'   ->  'abc.o'
 #
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: $(LIBSRCS) $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
+depends: $(LIBSRCS_IOC) $(LIBSRCS_HOST) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
@@ -595,15 +355,20 @@ depends: $(LIBSRCS) $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(COMPILE.c)  $<
 	$(LINK.c)  $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
+%$(EXE): %.cpp
+	@$(RM) $@
+	$(COMPILE.cpp)  $<
+	$(LINK.cpp) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
+
 %$(EXE): %.cc
 	@$(RM) $@
-	$(COMPILE.cc)  $<
-	$(LINK.cc) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
+	$(COMPILE.cpp)  $<
+	$(LINK.cpp) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.3
 	@$(RM) $@
-	$(COMPILE.cc)  $<
-	$(LINK.cc) $(notdir ,$(basename $<))$(OBJ) $(LDLIBS)
+	$(COMPILE.cpp)  $<
+	$(LINK.cpp) $(notdir ,$(basename $<))$(OBJ) $(LDLIBS)
 
 # C++ munching for VxWorks
 %.out : %.o
@@ -620,11 +385,15 @@ depends: $(LIBSRCS) $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 
 %$(OBJ): %.cc
 	@$(RM) $@
-	$(COMPILE.cc)  $<
+	$(COMPILE.cpp)  $<
+
+%$(OBJ): %.cpp
+	@$(RM) $@
+	$(COMPILE.cpp)  $<
 
 %$(OBJ): %.C
 	@$(RM) $@
-	$(COMPILE.cc)  $<
+	$(COMPILE.cpp)  $<
 
 # WIN95/NT resource compiler
 %$(RES): %.rc
@@ -741,26 +510,44 @@ endif
 
 # WIN95/NT source browser
 ifdef BAF
-$(LIB_BAF): $(addsuffix $(BOF), $(basename $(LIBSRCS)))
+$(LIB_BAF_IOC): $(addsuffix $(BOF), $(basename $(LIBSRCS_IOC)))
+	@echo "Building source browser archive $@"
+	@$(RM) $@
+	$(BAFCMD) $^
+
+ifdef LIB_BAF_HOST
+$(LIB_BAF_HOST): $(addsuffix $(BOF), $(basename $(LIBSRCS_HOST)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
 endif
+endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))
-$(LIBNAME): ../baseLIBOBJS
+$(LIBNAME_IOC): ../baseLIBOBJS
 endif
 
 # rule for lib (archive of object files) creation
-$(LIBNAME): $(LIBOBJS)
+$(LIBNAME_IOC): $(LIBOBJS_IOC)
 	$(RM) $@
-	$(ARCMD) $(LIBOBJS)
+	$(ARCMD) $(LIBOBJS_IOC)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
 
-$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
-	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
+$(DLL_LINK_LIBNAME_IOC) $(SHRLIBNAME_IOC): $(LIBOBJS_IOC)
+	$(LINK.shrlib) $(LIBOBJS_IOC) $(DLL_LDLIBS_IOC)
+
+# rule for lib (archive of object files) creation
+$(LIBNAME_HOST): $(LIBOBJS_HOST)
+	$(RM) $@
+	$(ARCMD) $(LIBOBJS_HOST)
+ifneq ($(RANLIB)xx,xx)
+	$(RANLIB) $@;
+endif # RANLIB
+
+$(DLL_LINK_LIBNAME_HOST) $(SHRLIBNAME_HOST): $(LIBOBJS_HOST)
+	$(LINK.shrlib) $(LIBOBJS_HOST) $(DLL_LDLIBS_HOST)
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
@@ -868,7 +655,6 @@ else
 $(DBDNAME): $(RECTYPES:%.h=../%.dbd)
 endif
 
-endif # B_T defined
 endif # T_A defined
 
 #	EOF RULES.Host

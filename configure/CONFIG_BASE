@@ -2,7 +2,55 @@ ifndef EPICS_BASE
 EPICS_BASE = $(INSTALL_LOCATION)
 endif
 
+#---------------------------------------------------------------
+# Epics base directories
+
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+EPICS_BASE_INCLUDE  = $(EPICS_BASE)/include
+
+ifdef T_A
+EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
+EPICS_BASE_BIN      = $(EPICS_BASE)/bin/$(T_A)
+endif
+
+Db_DIR              = $(EPICS_BASE_LIB)
+Com_DIR             = $(EPICS_BASE_LIB)
+
+#---------------------------------------------------------------
+# For applications and extensions
+
+# add epics/base include directories
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+INSTALL_INCLUDES += \
+       -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) \
+       -I$(EPICS_BASE_INCLUDE)
+
+# add epics/base dbd directory
+INSTALL_DBDFLAGS += \
+       -I$(EPICS_BASE)/dbd
+endif
+endif
+
+#---------------------------------------------------------------
+# Version number for base shared libraries (and win32 products)
+
+ifeq ($(EPICS_BASE),$(TOP))
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+endif # EPICS_BASE
+
+#---------------------------------------------------------------
+# Epics base c preprocessor flags
+
+# c++ exceptions
+CXX_EXCEPTIONS = NO
+CXX_EXCEPTIONS_FLAGS_YES =
+CXX_EXCEPTIONS_FLAGS_NO = -DnoExceptionsFromCXX
+EPICS_BASE_CPPFLAGS = $(CXX_EXCEPTIONS_FLAGS_$(CXX_EXCEPTIONS))
+
+#---------------------------------------------------------------
+# Epics base build tools and tool flags
 
 # private versions of lex/yacc from EPICS
 EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)
@@ -12,41 +60,6 @@ LEX   = $(ELEX)
 
 # state notation language compiler (installed from base/src/sequencer)
 SNC = $(EPICS_BASE_HOST_BIN)/snc$(HOSTEXE)
-
-EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
-
-# build command line include directories
-ifneq ($(EPICS_BASE),$(TOP))
-ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-INSTALL_INCLUDES += \
-       -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)$(B_T_SUFFIX) \
-       -I$(EPICS_BASE_INCLUDE)/os/posix$(B_T_SUFFIX) \
-       -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) \
-       -I$(EPICS_BASE_INCLUDE)/os/posix \
-       -I$(EPICS_BASE_INCLUDE)/generic$(B_T_SUFFIX) \
-       -I$(EPICS_BASE_INCLUDE)/generic \
-       -I$(EPICS_BASE_INCLUDE)
-
-INSTALL_DBDFLAGS += \
-       -I$(EPICS_BASE)/dbd
-endif
-endif
-
-#---------------------------------------------------------------
-# Version number for base shared libraries (and win32 products)
-ifeq ($(EPICS_BASE),$(TOP))
-SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-endif # EPICS_BASE
-
-
-ifdef T_A
-EPICS_BASE_LIB          = $(EPICS_BASE)/lib/$(T_A)
-EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
-endif
-
-Db_DIR = $(EPICS_BASE_LIB)
-Com_DIR = $(EPICS_BASE_LIB)
 
 # adl2dl 
 ADL2DL = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl

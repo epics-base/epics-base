@@ -6,5 +6,16 @@ TOP=..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
+CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG*))
+
+CONFIGS += $(subst ../,,$(wildcard ../RELEASE*))
+CONFIGS += $(subst ../,,$(wildcard ../RULES*))
+
+CONFIGS += $(subst ../,,$(wildcard ../tools/*.pl))
+CONFIGS += tools/installEpics
+
+#####CONFIGS += tools/getrel
+
+include $(TOP)/configure/RULES
 

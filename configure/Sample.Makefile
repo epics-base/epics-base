@@ -34,13 +34,13 @@ USR_CFLAGS_SYSV    = -nil-
 #	.. for all other arch classes:
 USR_CFLAGS_DEFAULT = -DVERSION='generic Unix'
 
-#	CFLAGS that are only used to compile a_file.c or a_file.cc:
+#	CFLAGS that are only used to compile a_file.c or a_file.cpp:
 #
 a_file_CFLAGS      = -DIN_A_FILE
 a_file_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 
 #	---------------------------------------------------------
-#	general rule for all .c .cc .h .hh files and scripts:
+#	general rule for all .c .cpp .h .hh files and scripts:
 #
 #	In here you supply just the filename without '../' etc.
 #	While building in an O.xxx subdir, the
@@ -82,7 +82,7 @@ INC         = file.h
 #	.
 #	So usually only LIBSRCS should be sufficient!
 #
-LIBSRCS         = file_for_lib.c another_file.cc
+LIBSRCS         = file_for_lib.c another_file.cpp
 LIBSRCS_DEFAULT = posix.c
 LIBSRCS_WIN32   = win32_special.c
 LIBSRCS_BSD     = -nil-

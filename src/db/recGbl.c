@@ -227,7 +227,7 @@ int recGblReportLink(fp,pfield_name,plink)
     case VME_IO:
 	if(fprintf(fp,"%4s VME: card=%2d signal=%2d\n",
 	    pfield_name,
-	    plink->value.vmeio.card,plink->value.vmeio.card)<0) return(-1);
+	    plink->value.vmeio.card,plink->value.vmeio.signal)<0) return(-1);
 	break;
     case CAMAC_IO:
 	if(fprintf(fp,

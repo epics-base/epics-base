@@ -68,9 +68,9 @@
  *	long		*options;	addr of options
  *	long		*nRequest;	addr of number of elements
  *
- * dbPutLink(pdblink,pdest,dbrType,pbuffer,nRequest)
+ * dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
  *	struct db_link	*pdblink;
- *      struct dbCommon *pdest;
+ *      struct dbCommon *psource;
  *	short		dbrType;	DBR_xxx
  *	caddr_t		pbuffer;	addr of input data
  *	long		nRequest;
@@ -316,9 +316,7 @@ struct dbAddr	*paddr;
 	if(!(precLoc=GET_PRECLOC(paddr->record_type))
 	|| !(precord=GET_PRECORD(precLoc,record_number))
 	|| (paddr->field_size+field_offset) > (precLoc->rec_size)) {
-	    recGblDbaddrError(S_db_notFound,paddr,"field_spec_to_mem_loc");
-	    (long)(paddr->pfield) = -1;
-	    (long)(paddr->precord) = -1;
+	    recGblDbaddrError(S_db_notFound,paddr,"dbNameToAddr");
 	    return(S_db_notFound);
 	}
 	paddr->precord=precord;
@@ -363,24 +361,23 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	return(dbGetField(paddr,dbrType,pbuffer,options,nRequest));
 }
 
-long dbPutLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
+long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
 	struct db_link	*pdblink;
-	struct dbCommon *pdest;
+	struct dbCommon *psource;
 	short		dbrType;
 	caddr_t		pbuffer;
-	long		*options;
-	long		*nRequest;
+	long		nRequest;
 {
 	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
 	long	status;
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(pdblink->maximize_sevr) {
-		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
+		struct dbCommon *pto=(struct dbCommon*)(paddr->precord);
 
-		if(pfrom->sevr>pdest->sevr) {
-			pdest->nsev = pfrom->sevr;
-			pdest->nsta = LINK_ALARM;
+		if(pto->sevr<psource->sevr) {
+			pto->nsev = psource->sevr;
+			pto->nsta = LINK_ALARM;
 		}
 	}
 	if(!RTN_SUCCESS(status)) return(status);
@@ -5905,7 +5902,7 @@ long		nRequest;
 	    else {
 		if( prset && (pspecial = (prset->special))) {
 		    status=(*pspecial)(paddr,0);
-		    if(!RTN_SUCCESS(status)) goto all_done;
+		    if(!RTN_SUCCESS(status)) return(status);
 		} else {
 		    recGblRecSupError(S_db_noSupport,paddr,"dbPut",
 			"special");
@@ -5929,7 +5926,7 @@ long		nRequest;
 		status= (*prset->put_array_info)(paddr,nRequest);
 	}
 
-	if(!RTN_SUCCESS(status)) goto all_done;
+	if(!RTN_SUCCESS(status)) return(status);
 
 	/* check for special processing	is required */
 	if(special) {
@@ -5938,7 +5935,7 @@ long		nRequest;
 	    }
 	    else {
 		status=(*pspecial)(paddr,1);
-		if(!RTN_SUCCESS(status)) goto all_done;
+		if(!RTN_SUCCESS(status)) return(status);
 	    }
 	}
 
@@ -5949,8 +5946,6 @@ long		nRequest;
 	if(precord->mlis.count &&
 	((*pval != *pfield_name) || (!pfldDes->process_passive)))
 		db_post_events(precord,paddr->pfield,DBE_VALUE);
-
-all_done: 
 
 	return(status);
 }

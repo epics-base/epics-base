@@ -64,12 +64,13 @@ INSTALL_LIBRARY = $(INSTALL)
 #-------------------------------------------------------
 # vpath directories
 OS_SRC_DIRS += $(foreach dir, $(SRC_DIRS) .., \
-            $(dir)/os/$(OS_CLASS) $(dir) )
+            $(dir)/os//posix $(dir)/os/$(OS_CLASS) $(dir) )
 
 #-------------------------------------------------------
 # compile line include directories
 SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS))
 INSTALL_INCLUDES += \
+       -I$(INSTALL_INCLUDE)/os/posix \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
        -I$(INSTALL_INCLUDE)
 
@@ -321,9 +322,11 @@ INSTALL_INC += $(foreach inc,$(INC), \
     $(foreach dir,$(SRC_DIRS), \
     $(subst $(dir)/, , \
     $(wildcard \
+         $(dir)/os/posix/$(inc) \
          $(dir)/os/$(OS_CLASS)/$(inc) \
          $(dir)/$(inc)))) \
-    $(subst ../, ,$(wildcard ../os/$(OS_CLASS)/$(inc) ../$(inc) )) \
+    $(subst ../, ,$(wildcard ../os/posix/$(inc) \
+	 ../os/$(OS_CLASS)/$(inc) ../$(inc) )) \
     $(inc)))) 
 
 

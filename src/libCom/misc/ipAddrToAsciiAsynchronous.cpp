@@ -51,7 +51,7 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
         epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
         while ( ( pItem = this->labor.first () ) ) {
             pItem->pEngine = 0u;
-            sockAddrToA ( &pItem->addr.sa, this->nameTmp, 
+            sockAddrToDottedIP ( &pItem->addr.sa, this->nameTmp, 
                 sizeof ( this->nameTmp ) );
             pItem->ioCompletionNotify ( this->nameTmp );
         }
@@ -202,7 +202,7 @@ epicsShareFunc void ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine 
     }
     else {
         char autoNameTmp[256];
-        sockAddrToA ( &this->addr.sa, autoNameTmp, 
+        sockAddrToDottedIP ( &this->addr.sa, autoNameTmp, 
             sizeof ( autoNameTmp ) );
         this->ioCompletionNotify ( autoNameTmp );
     }
@@ -213,7 +213,7 @@ void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
     char ipAddr [64];
 
     epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
-    sockAddrToA ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
+    sockAddrToDottedIP ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
     printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
     if ( level > 0u ) {
         printf ( "\tengine %p\n",

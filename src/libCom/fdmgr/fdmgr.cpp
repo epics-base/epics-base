@@ -41,7 +41,6 @@
 #include "fdManager.h"
 #include "fdmgr.h"
  
-
 static const fdRegType fdiToFdRegType[] = {fdrRead, fdrWrite, fdrException};
 static const unsigned fdiToFdRegTypeNElements = sizeof (fdiToFdRegType) / sizeof (fdiToFdRegType[0]);
 
@@ -54,17 +53,17 @@ public:
     class doubleDelete {};
 
     epicsShareFunc fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
-		const bool onceOnly, fdManager &manager, void (*pFunc) (void *pParam), void *pParam);
+		const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
     epicsShareFunc ~fdRegForOldFdmgr ();
 
 private:
-    void (*pFunc) (void *pParam);
+    pCallBackFDMgr pFunc;
     void *pParam;
 	epicsShareFunc virtual void callBack ();
 };
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
-	const bool onceOnlyIn, fdManager &managerIn, void (*pFuncIn) (void *pParam), void *pParamIn) :
+	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
     fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
     pFunc (pFuncIn),
     pParam (pParamIn)
@@ -105,6 +104,7 @@ private:
     chronIntIdResTable <osiTimerForOldFdmgr> resTbl;
 };
 
+
 //
 // osiTimer
 //
@@ -119,7 +119,7 @@ public:
     //
     // create an active timer that will expire in delay seconds
     //
-	epicsShareFunc osiTimerForOldFdmgr (oldFdmgr &fdmgr, double delay, void (*pFunc) (void *pParam), void *pParam);
+	epicsShareFunc osiTimerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
 	epicsShareFunc ~osiTimerForOldFdmgr ();
 
 	//
@@ -134,13 +134,13 @@ public:
 
 private:
     oldFdmgr &fdmgr;
-    void (*pFunc) (void *pParam);
+    pCallBackFDMgr pFunc;
     void *pParam;
     unsigned id;
 };
 
 osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn, 
-    double delayIn, void (*pFuncIn) (void *pParam), void *pParamIn) :
+    double delayIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
     fdmgr (fdmgrIn), osiTimer (delayIn, fdmgrIn.timerQueueRef ()), 
     pFunc (pFuncIn), pParam(pParamIn)
 {
@@ -205,7 +205,7 @@ extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 }
 
 extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
-    fdctx *pfdctx, struct timeval *ptimeout, void (*pFunc)(void *pParam), void *pParam)
+    fdctx *pfdctx, struct timeval *ptimeout, pCallBackFDMgr pFunc, void *pParam)
 {
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <double> (osiTime::uSecPerSec);
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
@@ -221,7 +221,8 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
             pTimer = new osiTimerForOldFdmgr (*pfdm, delay, pFunc, pParam);
 #       else            
             try {
-                pTimer = new osiTimerForOldFdmgr (*pfdm, delay, pFunc, pParam);
+                pTimer = new osiTimerForOldFdmgr 
+			(*pfdm, delay, pFunc, pParam);
             }
             catch (...)
             {
@@ -273,7 +274,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, 
 }
 
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
-    fdctx *pfdctx, SOCKET fd, enum fdi_type fdi, void (*pFunc)(void *pParam), void *pParam)
+    fdctx *pfdctx, SOCKET fd, enum fdi_type fdi, pCallBackFDMgr pFunc, void *pParam)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     fdRegForOldFdmgr *pfdrbc;

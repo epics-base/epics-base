@@ -42,10 +42,6 @@
 #ifndef includeFdmgrH
 #define includeFdmgrH
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "ellLib.h"
 #include "bucketLib.h"
 #include "osiSock.h"
@@ -53,10 +49,15 @@ extern "C" {
 #include "osiThread.h"
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum fdi_type {fdi_read, fdi_write, fdi_excp};
 enum alarm_list_type {alt_invalid, alt_alarm, alt_expired, alt_free};
 
 typedef void fdctx;
+typedef void (*pCallBackFDMgr)(void *);
 
 /*
  * C "typedef" name "alarm" was changed to "fdmgrAlarm" to avoid collisions
@@ -82,7 +83,7 @@ typedef void fdctx;
 typedef unsigned fdmgrAlarmId;
 #define NEW_FDMGR_ALARMID
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
 
 /*
  *
@@ -101,8 +102,7 @@ epicsShareFunc fdctx * epicsShareAPI fdmgr_init(void);
 epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout(
 fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init()		*/
 struct timeval  *ptimeout,	/* relative delay from current time	*/
-void            (*func)(void *pParam),	
-				/* function (handler) to call 		*/
+pCallBackFDMgr  pfunc,		/* function (handler) to call 		*/
 void            *param		/* first parameter passed to the func	*/
 );
 
@@ -136,7 +136,7 @@ epicsShareFunc int epicsShareAPI fdmgr_add_callback(
 fdctx *pfdctx,			/* fd mgr ctx from fdmgr_init() 	*/
 SOCKET fd,				/* file descriptor			*/
 enum fdi_type fdi,		/* file descriptor interest type	*/	
-void (*pfunc)(void *pParam),	/* function (handler) to call			*/
+pCallBackFDMgr pfunc,		/* function (handler) to call 		*/
 void *param				/* first parameter passed to the func   */
 );
 
@@ -180,7 +180,7 @@ SOCKET	fd
 epicsShareFunc int epicsShareAPI fdmgr_add_fd(
 fdctx   *pfdctx,		/* fd mgr ctx from fdmgr_init() */
 SOCKET  fd,
-void    (*pfunc)(void *pParam),
+pCallBackFDMgr pfunc,		/* function (handler) to call 		*/
 void    *param
 );
 

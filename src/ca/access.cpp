@@ -1025,8 +1025,8 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
 // extern "C"
 int epicsShareAPI ca_channel_status ( epicsThreadId /* tid */ )
 {
-    ::printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
-    ::printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
+    ::printf ("The R3.14 EPICS OS abstraction API does not allow peeking at thread private storage of another thread.\n");
+    ::printf ("Please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
 	return ECA_ANACHRONISM;
 }
 

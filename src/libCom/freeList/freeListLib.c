@@ -95,66 +95,78 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-    void	*ptemp;
+#   ifdef EPICS_DEBUG
+        return callocMustSucceed(1,pfl->size,"freeList Debug Calloc");
+#   else
+        void	*ptemp;
 
-    ptemp = freeListMalloc(pvt);
-    if(ptemp) memset((char *)ptemp,0,pfl->size);
-    return(ptemp);
+        ptemp = freeListMalloc(pvt);
+        if(ptemp) memset((char *)ptemp,0,pfl->size);
+        return(ptemp);
+#   endif
 }
 
 epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-    void	*ptemp;
-    void	**ppnext;
-    allocMem	*pallocmem;
-    int		i;
+#   ifdef EPICS_DEBUG
+        return callocMustSucceed(1,pfl->size,"freeList Debug Malloc");
+#   else
+        void	*ptemp;
+        void	**ppnext;
+        allocMem	*pallocmem;
+        int		i;
 
-    epicsMutexMustLock(pfl->lock);
-    ptemp = pfl->head;
-    if(ptemp==0) {
-	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
-	if(ptemp==0) {
-	    epicsMutexUnlock(pfl->lock);
-	    return(0);
-	}
-	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
-	if(pallocmem==0) {
-	    epicsMutexUnlock(pfl->lock);
-	    free(ptemp);
-	    return(0);
-	}
-	pallocmem->memory = ptemp;
-	if(pfl->mallochead)
-	    pallocmem->next = pfl->mallochead;
-	pfl->mallochead = pallocmem;
-	for(i=0; i<pfl->nmalloc; i++) {
-	    ppnext = ptemp;
-	    *ppnext = pfl->head;
-	    pfl->head = ptemp;
-	    ptemp = ((char *)ptemp) + pfl->size;
-	}
-	ptemp = pfl->head;
-        pfl->nBlocksAvailable += pfl->nmalloc;
-    }
-    ppnext = pfl->head;
-    pfl->head = *ppnext;
-    pfl->nBlocksAvailable--;
-    epicsMutexUnlock(pfl->lock);
-    return(ptemp);
+        epicsMutexMustLock(pfl->lock);
+        ptemp = pfl->head;
+        if(ptemp==0) {
+	    ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
+	    if(ptemp==0) {
+	        epicsMutexUnlock(pfl->lock);
+	        return(0);
+	    }
+	    pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
+	    if(pallocmem==0) {
+	        epicsMutexUnlock(pfl->lock);
+	        free(ptemp);
+	        return(0);
+	    }
+	    pallocmem->memory = ptemp;
+	    if(pfl->mallochead)
+	        pallocmem->next = pfl->mallochead;
+	    pfl->mallochead = pallocmem;
+	    for(i=0; i<pfl->nmalloc; i++) {
+	        ppnext = ptemp;
+	        *ppnext = pfl->head;
+	        pfl->head = ptemp;
+	        ptemp = ((char *)ptemp) + pfl->size;
+	    }
+	    ptemp = pfl->head;
+            pfl->nBlocksAvailable += pfl->nmalloc;
+        }
+        ppnext = pfl->head;
+        pfl->head = *ppnext;
+        pfl->nBlocksAvailable--;
+        epicsMutexUnlock(pfl->lock);
+        return(ptemp);
+#   endif
 }
 
 epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
 {
-    FREELISTPVT	*pfl = pvt;
-    void	**ppnext;
+#   ifdef EPICS_DEBUG
+        free(pmem);
+#   else
+        FREELISTPVT	*pfl = pvt;
+        void	**ppnext;
 
-    epicsMutexMustLock(pfl->lock);
-    ppnext = pmem;
-    *ppnext = pfl->head;
-    pfl->head = pmem;
-    pfl->nBlocksAvailable++;
-    epicsMutexUnlock(pfl->lock);
+        epicsMutexMustLock(pfl->lock);
+        ppnext = pmem;
+        *ppnext = pfl->head;
+        pfl->head = pmem;
+        pfl->nBlocksAvailable++;
+        epicsMutexUnlock(pfl->lock);
+#   endif
 }
 
 epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)

@@ -1375,7 +1375,7 @@ void				*usrarg
 	/*
 	 * compound types not allowed
 	 */
-  	if(INVALID_DB_FIELD(type)){
+  	if(dbr_value_offset[type]){
     		return ECA_BADTYPE;
 	}
 
@@ -1574,7 +1574,7 @@ void				*pvalue
 	/*
 	 * compound types not allowed
 	 */
-  	if(INVALID_DB_FIELD(type)){
+  	if(dbr_value_offset[type]){
     		return ECA_BADTYPE;
 	}
 

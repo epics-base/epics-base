@@ -36,33 +36,37 @@ callbackMutex::~callbackMutex ()
 
 void callbackMutex::lock ()
 {
-    if ( ! this->primaryMutex.tryLock () ) {
-        // the count must be incremented prior to blocking for the lock
-        {
-            epicsGuard < epicsMutex > autoMutex ( this->countMutex );
-            assert ( this->recvThreadsPendingCount < UINT_MAX );
-            this->recvThreadsPendingCount++;
+    if ( this->threadsMayBeBlockingForRecvThreadsToFinish ) {
+        if ( ! this->primaryMutex.tryLock () ) {
+            // the count must be incremented prior to blocking for the lock
+            {
+                epicsGuard < epicsMutex > autoMutex ( this->countMutex );
+                assert ( this->recvThreadsPendingCount < UINT_MAX );
+                this->recvThreadsPendingCount++;
+            }
+            
+            this->primaryMutex.lock ();
+            
+            bool signalRequired;
+            {
+                epicsGuard < epicsMutex > autoMutex ( this->countMutex );
+                assert ( this->recvThreadsPendingCount > 0 );
+                this->recvThreadsPendingCount--;
+                if ( this->recvThreadsPendingCount == 0u  ) {
+                    signalRequired = true;
+                }
+                else {
+                    signalRequired = false;
+                }
+            }
+            
+            if ( signalRequired ) {
+                this->noRecvThreadsPending.signal ();
+            }
         }
-        
+    }
+    else {
         this->primaryMutex.lock ();
-        
-        bool signalRequired;
-        {
-            epicsGuard < epicsMutex > autoMutex ( this->countMutex );
-            assert ( this->recvThreadsPendingCount > 0 );
-            this->recvThreadsPendingCount--;
-            if ( this->recvThreadsPendingCount == 0u &&
-                this->threadsMayBeBlockingForRecvThreadsToFinish ) {
-                signalRequired = true;
-            }
-            else {
-                signalRequired = false;
-            }
-        }
-        
-        if ( signalRequired ) {
-            this->noRecvThreadsPending.signal ();
-        }
     }
 }
 
@@ -73,7 +77,9 @@ void callbackMutex::unlock ()
 
 void callbackMutex::waitUntilNoRecvThreadsPending () 
 {
+    epicsGuard < epicsMutex > autoMutex ( this->countMutex );
     while ( this->recvThreadsPendingCount > 0 ) {
+        epicsGuardRelease < epicsMutex > autoMutexRelease ( autoMutex );
         this->noRecvThreadsPending.wait ();
     }
 }

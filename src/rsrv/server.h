@@ -41,7 +41,7 @@
 #include "asLib.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
-#define CA_MINOR_PROTOCOL_REVISION 10
+#define CA_MINOR_PROTOCOL_REVISION 11
 #include "caProto.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -99,11 +99,12 @@ typedef struct client {
   void                  *evuser;
   char                  *pUserName;
   char                  *pHostName;
-  epicsEventId           blockSem; /* used whenever the client blocks */
+  epicsEventId          blockSem; /* used whenever the client blocks */
   SOCKET                sock;
   int                   proto;
   epicsThreadId         tid;
   unsigned              minor_version_number;
+  ca_uint32_t           seqNoOfReq; /* for udp  */
   unsigned              recvBytesToDrain;
   unsigned              priority;
   char                  disconnect; /* disconnect detected */
@@ -199,7 +200,8 @@ GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 #define UNLOCK_CLIENTQ  epicsMutexUnlock (clientQlock);
 
 void camsgtask (struct client *client);
-void cas_send_msg (struct client *pclient, int lock_needed);
+void cas_send_bs_msg ( struct client *pclient, int lock_needed );
+void cas_send_dg_msg ( struct client *pclient );
 int rsrv_online_notify_task (void);
 int cast_server (void);
 struct client *create_client ();
@@ -210,6 +212,7 @@ void casAttachThreadToClient ( struct client * );
 int camessage ( struct client *client );
 void write_notify_reply ( void *pArg );
 int rsrvCheckPut ( const struct channel_in_use *pciu );
+int rsrv_version_reply ( struct client *client );
 
 /*
  * inclming protocol maintetnance

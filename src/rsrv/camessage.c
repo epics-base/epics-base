@@ -507,7 +507,7 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
             "server unable to load read (or subscription update) response into protocol buffer PV=\"%s\" max bytes=%u",
             RECORD_NAME ( paddr ), rsrvSizeofLargeBufTCP );
         if ( ! eventsRemaining )
-            cas_send_msg ( pClient, ! pevext->send_lock );
+            cas_send_bs_msg ( pClient, ! pevext->send_lock );
         if ( pevext->send_lock )
             SEND_UNLOCK ( pClient );
         return;
@@ -519,7 +519,7 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
     if ( ! asCheckGet ( pciu->asClientPVT ) ) {
         no_read_access_event ( pClient, pevext );
         if ( ! eventsRemaining )
-            cas_send_msg ( pClient, !pevext->send_lock );
+            cas_send_bs_msg ( pClient, !pevext->send_lock );
         if ( pevext->send_lock ) {
             SEND_UNLOCK ( pClient );
         }
@@ -595,7 +595,7 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
      * them up like db requests when the OPI does not keep up.
      */
     if ( ! eventsRemaining )
-        cas_send_msg ( pClient, ! pevext->send_lock );
+        cas_send_bs_msg ( pClient, ! pevext->send_lock );
 
     if ( pevext->send_lock )
         SEND_UNLOCK ( pClient );
@@ -1459,7 +1459,7 @@ void write_notify_reply(void *pArg)
         ppnb->busy = FALSE;
     }
 
-    cas_send_msg ( pClient, FALSE );
+    cas_send_bs_msg ( pClient, FALSE );
 
     SEND_UNLOCK ( pClient );
 
@@ -1923,10 +1923,43 @@ LOCAL void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
 }
 
 /*
- * udp_noop_action()
+ * udp_version_action()
  */
-LOCAL int udp_noop_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+LOCAL int udp_version_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
+    if ( mp->m_count != 0 ) {
+        client->minor_version_number = mp->m_count;
+        if ( CA_V411 ( mp->m_count ) ) {
+            client->seqNoOfReq = mp->m_cid;
+        }
+        else {
+            client->seqNoOfReq = 0;
+        }
+    }
+    return RSRV_OK;
+}
+
+/*
+ *  rsrv_version_reply()
+ */
+int rsrv_version_reply ( struct client *client )
+{
+    int success;
+    SEND_LOCK ( client );
+    /*
+     * sequence number is specified zero when we copy in the
+     * header because we dont know it until we receive a datagram 
+     * from the client
+     */
+    success = cas_copy_in_header ( client, CA_PROTO_VERSION, 
+        0, 0, CA_MINOR_PROTOCOL_REVISION, 
+        0, 0, 0 );
+    if ( ! success ) {
+        SEND_UNLOCK ( client );
+        return RSRV_ERROR;
+    }        
+    cas_commit_msg ( client, 0 );
+    SEND_UNLOCK ( client );
     return RSRV_OK;
 }
 
@@ -2084,7 +2117,7 @@ LOCAL const pProtoStubTCP tcpJumpTable[] =
 typedef int (*pProtoStubUDP) (caHdrLargeArray *mp, void *pPayload, struct client *client);
 LOCAL const pProtoStubUDP udpJumpTable[] = 
 {
-    udp_noop_action,
+    udp_version_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,

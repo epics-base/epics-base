@@ -242,6 +242,11 @@ int cast_server(void)
     }
 
     casAttachThreadToClient ( prsrv_cast_client );
+
+    /*
+     * add placeholder for the first version message should it be needed
+     */
+    rsrv_version_reply ( prsrv_cast_client );
     
     while (TRUE) {
         status = recvfrom (
@@ -261,18 +266,21 @@ int cast_server(void)
             prsrv_cast_client->recv.stk = 0ul;
             epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
 
+            prsrv_cast_client->minor_version_number = 0;
+            prsrv_cast_client->seqNoOfReq = 0;
+
             /*
              * If we are talking to a new client flush to the old one 
              * in case we are holding UDP messages waiting to 
              * see if the next message is for this same client.
              */
-            if (prsrv_cast_client->send.stk) {
+            if (prsrv_cast_client->send.stk>sizeof(caHdr)) {
                 status = memcmp( (void *)&prsrv_cast_client->addr, (void *)&new_recv_addr, recv_addr_size);
                 if(status){     
                     /* 
                      * if the address is different 
                      */
-                    cas_send_msg(prsrv_cast_client, TRUE);
+                    cas_send_dg_msg(prsrv_cast_client);
                     prsrv_cast_client->addr = new_recv_addr;
                 }
             }
@@ -327,11 +335,11 @@ int cast_server(void)
         status = socket_ioctl(IOC_cast_sock, FIONREAD, &nchars);
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");
-            cas_send_msg (prsrv_cast_client, TRUE);
+            cas_send_dg_msg (prsrv_cast_client);
             clean_addrq ();
         }
         else if (nchars == 0) {
-            cas_send_msg (prsrv_cast_client, TRUE);
+            cas_send_dg_msg (prsrv_cast_client);
             clean_addrq ();
         }
     }

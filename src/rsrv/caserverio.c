@@ -44,11 +44,11 @@ typedef unsigned long arrayElementCount;
 #include "server.h"
 
 /*
- *  cas_send_msg()
+ *  cas_send_bs_msg()
  *
  *  (channel access server send message)
  */
-void cas_send_msg ( struct client *pclient, int lock_needed )
+void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 {
     int status;
 
@@ -69,8 +69,7 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
     }
 
     while ( pclient->send.stk ) {
-        status = sendto ( pclient->sock, pclient->send.buf, pclient->send.stk, 0,
-                        (struct sockaddr *)&pclient->addr, sizeof(pclient->addr) );
+        status = send ( pclient->sock, pclient->send.buf, pclient->send.stk, 0 );
         if ( status >= 0 ) {
             unsigned transferSize = (unsigned) status;
             if ( transferSize >= pclient->send.stk ) {
@@ -95,28 +94,17 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
 
             ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
 
-            if(pclient->proto == IPPROTO_TCP) {
-                if (    (anerrno!=SOCK_ECONNABORTED&&
-                        anerrno!=SOCK_ECONNRESET&&
-                        anerrno!=SOCK_EPIPE&&
-                        anerrno!=SOCK_ETIMEDOUT)||
-                        CASDEBUG>2){
+            if (    (anerrno!=SOCK_ECONNABORTED&&
+                    anerrno!=SOCK_ECONNRESET&&
+                    anerrno!=SOCK_EPIPE&&
+                    anerrno!=SOCK_ETIMEDOUT)||
+                    CASDEBUG>2){
 
-                    errlogPrintf (
-        "CAS: TCP send to \"%s\" failed because \"%s\"\n",
-                        buf, SOCKERRSTR(anerrno));
-                }
-                pclient->disconnect = TRUE;
+                errlogPrintf (
+    "CAS: TCP send to \"%s\" failed because \"%s\"\n",
+                    buf, SOCKERRSTR(anerrno));
             }
-            else if (pclient->proto == IPPROTO_UDP) {
-                errlogPrintf(
-        "CAS: UDP send to \"%s\" failed because \"%s\"\n",
-                        (int)buf,
-                        (int)SOCKERRSTR(anerrno));
-            }
-            else {
-                assert (0);
-            }
+            pclient->disconnect = TRUE;
             pclient->send.stk = 0u;
             break;
         }
@@ -125,6 +113,81 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
     if ( lock_needed ) {
         SEND_UNLOCK(pclient);
     }
+
+    DLOG ( 3, ( "------------------------------\n\n" ) );
+
+    return;
+}
+
+/*
+ *  cas_send_dg_msg()
+ *
+ *  (channel access server send udp message)
+ */
+void cas_send_dg_msg ( struct client * pclient )
+{
+    int status;
+    int sizeDG;
+    char * pDG; 
+    caHdr * pMsg;
+
+    if ( CASDEBUG > 2 && pclient->send.stk ) {
+        errlogPrintf ( "CAS: Sending a udp message of %d bytes\n", pclient->send.stk );
+    }
+
+    SEND_LOCK ( pclient );
+
+    if ( pclient->send.stk <= sizeof (caHdr) ) {
+        SEND_UNLOCK(pclient);
+        return;
+    }
+
+    pDG = pclient->send.buf;
+    pMsg = ( caHdr * ) pDG;
+    sizeDG = pclient->send.stk;
+    assert ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_VERSION );
+    if ( CA_V411 ( pclient->minor_version_number ) ) {
+        pMsg->m_cid = htonl ( pclient->seqNoOfReq );
+        pMsg->m_dataType = htons ( sequenceNoIsValid );
+    }
+    else {
+        pDG += sizeof (caHdr);
+        sizeDG -= sizeof (caHdr);
+    }
+
+    status = sendto ( pclient->sock, pDG, sizeDG, 0,
+       (struct sockaddr *)&pclient->addr, sizeof(pclient->addr) );
+    if ( status >= 0 ) {
+        unsigned transferSize = (unsigned) status;
+        if ( transferSize >= sizeDG ) {
+            epicsTimeGetCurrent ( &pclient->time_at_last_send );
+        }
+        else {
+            errlogPrintf ( 
+                "cas: system failed to send entire udp frame?\n" );
+        }
+    }
+    else {
+        int anerrno = SOCKERRNO;
+        char buf[64];
+
+        ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
+
+        errlogPrintf(
+                    "CAS: UDP send to \"%s\" "
+                    "failed because \"%s\"\n",
+                    (int)buf,
+                    (int)SOCKERRSTR(anerrno));
+    }
+
+    pclient->send.stk = 0u;
+
+    /*
+     * add placeholder for the first version message should it be needed
+     */
+    rsrv_version_reply ( prsrv_cast_client );
+
+    SEND_UNLOCK(pclient);
 
     DLOG ( 3, ( "------------------------------\n\n" ) );
 
@@ -177,7 +240,15 @@ int cas_copy_in_header (
             pclient->send.stk = 0;
         }
         else{
-            cas_send_msg ( pclient, FALSE );
+            if ( pclient->proto == IPPROTO_TCP) {
+                cas_send_bs_msg ( pclient, FALSE );
+            }
+            else if ( pclient->proto == IPPROTO_UDP ) {
+                cas_send_dg_msg ( pclient );
+            }
+            else {
+                return FALSE;
+            }
         }
     }
 

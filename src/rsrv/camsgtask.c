@@ -67,7 +67,7 @@ void camsgtask ( struct client *client )
         destroy_tcp_client ( client );
         return;
     }
-    cas_send_msg ( client, TRUE );
+    cas_send_bs_msg ( client, TRUE );
 
     while ( TRUE ) {
         client->recv.stk = 0;
@@ -143,10 +143,10 @@ void camsgtask ( struct client *client )
         if (status < 0) {
             errlogPrintf("CAS: io ctl err - %s\n",
                 SOCKERRSTR(SOCKERRNO));
-            cas_send_msg(client, TRUE);
+            cas_send_bs_msg(client, TRUE);
         }
         else if (nchars == 0){
-            cas_send_msg(client, TRUE);
+            cas_send_bs_msg(client, TRUE);
         }
     }
 

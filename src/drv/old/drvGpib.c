@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  1996/03/06 14:17:34  mrk
+ * Made STATIC static
+ *
  * Revision 1.4  1995/07/31  19:44:18  winans
  * Changed the parameter table and associated support routines to support
  * buffer length specifications of size long instead of short.
@@ -143,6 +146,7 @@ STATIC int	readIb();
 STATIC int	writeIbCmd();
 STATIC int	ioctlIb();
        int	srqPollInhibit();
+	   int	readIbEos();
 
 STATIC int	ibLinkInit();
 STATIC int	ibLinkStart();
@@ -185,13 +189,14 @@ STATIC char     testWrite;	/* test char to write to 1014 card */
  *
  ******************************************************************************/
 struct drvGpibSet drvGpib={
-  9,
+  10,
   reportGpib,
   initGpib,
   qGpibReq,
   registerSrqCallback,
   writeIb,
   readIb,
+  readIbEos,
   writeIbCmd,
   ioctlIb,
   srqPollInhibit
@@ -1943,9 +1948,9 @@ ioctlIb(
  * a GPIB message transaction.
  *
  * A work request represents a function that the ibLinkTask is to call (when
- * ready) to allow the user program access to the readIb, writeIb, and
- * writeIbCmd functions.  The user programs should never call these functions
- * at any other times.
+ * ready) to allow the user program access to the readIb, readIbEos, writeIb, 
+ * and writeIbCmd functions.  The user programs should never call these 
+ * functions at any other times.
  *
  * Returns OK, or ERROR.
  *
@@ -2045,6 +2050,10 @@ int				time)
  * This function returns the number of bytes read from the device, or ERROR
  * if the read operation failed.
  *
+ * This routine just calls readIbEos with the eos parameter=-1, which means
+ * ignore eos.  It is written this way to provide backwards compatibility
+ * since readIbEos was added later.
+ *
  ******************************************************************************/
 STATIC int
 readIb(
@@ -2053,6 +2062,29 @@ int				gpibAddr,	/* the device number to read the data from */
 char			*data,		/* the buffer to place the data into */
 int				length,		/* max number of bytes to place into the buffer */
 int				time)		/* max time to allow for read operation */
+{
+    return readIbEos(pibLink, gpibAddr, data, length, time, -1);
+}
+/******************************************************************************
+ *
+ * A device support callable entry point used to read data from GPIB devices.
+ *
+ * This function returns the number of bytes read from the device, or ERROR
+ * if the read operation failed.
+ *
+ * This routine can terminate a read on receipt of the end-of-string (Eos)
+ * character.  Note that this is presently only supported for HiDEOS. The
+ * EOS parameter is presently ignored by the NI and Bitbus routines. Support
+ * for EOS on these may be added in the future.
+ *
+ ******************************************************************************/
+int readIbEos(
+struct ibLink       *pibLink,
+int         gpibAddr,   /* the device number to read the data from */
+char            *data,      /* the buffer to place the data into */
+int         length,     /* max number of bytes to place into the buffer */
+int         time,       /* max time to allow for read operation */
+int         eos)        /* End-of-string character, -1 if none */
 {
 	char  attnCmd[5];
 	int   stat;
@@ -2063,7 +2095,7 @@ int				time)		/* max time to allow for read operation */
 	if (pibLink->linkType == GPIB_IO)
 	{
 		if (pibLink->linkId > NIGPIB_NUM_LINKS)
-			return(HiDEOSGpibRead(pibLink, gpibAddr, data, length, time));
+			return(HiDEOSGpibRead(pibLink, gpibAddr, data, length, time, eos));
 		else
 		{
 			attnCmd[0] = '_';                     /* global untalk */
@@ -2694,12 +2726,13 @@ HiDEOSGpibRead(
 	int		DevAddr, 
 	char	*Buf, 
 	int		BufLen, 
-	int		time)
+	int		time,
+	int		Eos)
 {
 	int	Actual;
 	HideosIbLinkStruct  *pHLink = (HideosIbLinkStruct*)pibLink;
 
-	if (LHideosRead(pHLink->remote_td, Buf, BufLen, &Actual, DevAddr, time)==0)
+	if (LHideosRead(pHLink->remote_td, Buf, BufLen, &Actual, DevAddr, time, Eos)==0)
 		return(Actual);
 
 	return(-1);

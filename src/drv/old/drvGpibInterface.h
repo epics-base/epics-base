@@ -31,6 +31,9 @@
  * .03	01-07-92	jrw	added a reference to ibLink in dpvtGpibHead
  *
  * $Log$
+ * Revision 1.1  1996/01/25 21:17:34  mrk
+ * moved include files from base/include
+ *
  * Revision 1.11  1995/03/17  21:25:58  winans
  * Got rid of the old bogus header in the dpvtGpibHead structure.
  *
@@ -110,6 +113,7 @@ struct	drvGpibSet {
   int           (*registerSrqCallback)();
   int           (*writeIb)();
   int           (*readIb)();
+  int           (*readIbEos)();
   int           (*writeIbCmd)();
   int           (*ioctl)();
   int		(*srqPollInhibit)();

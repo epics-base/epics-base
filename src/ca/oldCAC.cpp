@@ -152,7 +152,7 @@ void oldCAC::exception ( int status, const char *pContext,
     }
     else {
         this->clientCtx.signal ( status, pFileName, lineNo, 
-            "op=%u, channel=%s, type=%s, count=lu, ctx=\"%s\"", 
+            "op=%u, channel=%s, type=%s, count=%lu, ctx=\"%s\"", 
             op, ca_name ( &chan ), 
             dbr_type_to_text ( static_cast <int> ( type ) ), 
             count, pContext );

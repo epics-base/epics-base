@@ -29,6 +29,7 @@
 #include "guigroup.h"
 #include "special.h"
 #include "macLib.h"
+#include "epicsString.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"

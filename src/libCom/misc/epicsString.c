@@ -19,6 +19,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsString.h"
+#include "cantProceed.h"
 
 epicsShareFunc int epicsShareAPI dbTranslateEscape(char *to, const char *from)
 {

@@ -82,3 +82,13 @@ void  epicsShareAPI epicsSetStderr(FILE *fp)
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stderrThreadPrivateId,fp);
 }
+
+int epicsShareAPI epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
+{
+    va_list     pvar;
+    int         nchar;
+    va_start(pvar, pFormat);
+    nchar = vprintf(pFormat,pvar);
+    va_end (pvar);
+    return(nchar);
+}

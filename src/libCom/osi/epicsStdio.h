@@ -36,6 +36,9 @@ epicsShareFunc void  epicsShareAPI epicsSetStdin(FILE *);
 epicsShareFunc void  epicsShareAPI epicsSetStdout(FILE *);
 epicsShareFunc void  epicsShareAPI epicsSetStderr(FILE *);
 
+epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
+    const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
+
 #ifndef epicsStdioPVT
 #undef stdin
 #define stdin epicsGetStdin()
@@ -43,6 +46,8 @@ epicsShareFunc void  epicsShareAPI epicsSetStderr(FILE *);
 #define stdout epicsGetStdout()
 #undef stderr
 #define stderr epicsGetStderr()
+#undef printf
+#define printf epicsStdoutPrintf
 #endif /* epicsStdioPVT */
 
 

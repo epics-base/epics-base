@@ -74,6 +74,7 @@ inline epicsFloat32 comQueRecv::popFloat32 ()
 {
     epicsFloat32 tmp;
     epicsUInt8 wire[ sizeof ( tmp ) ];
+    // optimizer will unroll this loop
     for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
         wire[i] = this->popUInt8 ();
     }
@@ -85,6 +86,7 @@ inline epicsFloat64 comQueRecv::popFloat64 ()
 {
     epicsFloat64 tmp;
     epicsUInt8 wire[ sizeof ( tmp ) ];
+    // optimizer will unroll this loop
     for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
         wire[i] = this->popUInt8 ();
     }

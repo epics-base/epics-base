@@ -28,7 +28,6 @@
 #	vpath, of course, has the disadvantage that we need explicit rules
 #	for scripts or similar os-specific filed which have _no_ suffix...
 
-
 ifdef T_A
 
 vpath %.c $(USR_VPATH) $(ALL_SRC_DIRS)
@@ -137,7 +136,8 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) \
 	*.out MakefileInclude
-ifdef MUNCH
+
+ifdef MUNCHNAME
 	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o nm.out
 endif
 ifdef BAF
@@ -168,14 +168,16 @@ $(DIRECTORY_TARGETS) :
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
+depends: buildInstall $(SRC_FILES)
 	@$(RM) DEPENDS
-	touch DEPENDS
+	@touch DEPENDS
+ifneq (,$(strip $(SRC_FILES)))
 	$(DEPENDS_RULE)
+endif
 
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
-	$(LINK.cpp) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+	$(LINK.cpp)
 
 %$(OBJ): %.c
 	@$(RM) $@
@@ -329,24 +331,25 @@ endif
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX): $(LIBRARY_OBJS)
 	@$(RM) $@
-	$(ARCMD) $(LIBRARY_LD_OBJS)
+	$(ARCMD)
 ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
 endif # RANLIB
 
 $(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS) $(LIBRARY_RESS)
-	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS) $(LIBRARY_LD_RESS)
+	$(LINK.shrlib)
 
 $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
-	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS) $(LIBRARY_LD_RESS)
+	$(LINK.shrlib)
 
 # C++ munching for VxWorks
+
 $(MUNCHNAME):%.munch : %.o
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	$(MUNCH) < nm.out > ctdt.c
+	$(TOOLS)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
-	$(LINK.cpp) $< ctdt.o
+	$(GCC_LD) -o $@ $(LDFLAGS) $< ctdt.o
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

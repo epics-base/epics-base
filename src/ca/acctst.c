@@ -135,7 +135,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
 
     /*
      * verify that the first event arrives (w/o evid)
-     * and ehen channel initially disconnected
+     * and when channel initially disconnected
      */
     eventCount = 0u;
     waitCount = 0u;

@@ -35,7 +35,7 @@ private:
 
 #define LOOPCOUNT 10000u
 
-main ()
+int main ()
 {
 	unsigned i;
 	tsBTree<A> tree; 

@@ -197,13 +197,10 @@ extern char *header[];
 extern char *body[];
 extern char *trailer[];
 
-extern char *action_file_name;
 extern char *code_file_name;
 extern char *defines_file_name;
 extern char *input_file_name;
 extern char *output_file_name;
-extern char *text_file_name;
-extern char *union_file_name;
 extern char *verbose_file_name;
 
 extern FILE *action_file;

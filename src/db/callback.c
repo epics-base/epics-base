@@ -21,7 +21,7 @@ of this distribution.
 #include "epicsEvent.h"
 #include "epicsThread.h"
 #include "epicsInterrupt.h"
-#include "osiTimer.h"
+#include "epicsTimer.h"
 #include "epicsRingPointer.h"
 #include "errlog.h"
 #include "dbStaticLib.h"
@@ -49,13 +49,8 @@ volatile int callbackRestart=FALSE;
 static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
 
 /*for Delayed Requests */
-static void expire(void *pPrivate);
-static void destroy(void *pPrivate);
-static int again(void *pPrivate);
-static double delay(void *pPrivate);
-static void show(void *pPrivate, unsigned level);
-static osiTimerJumpTable jumpTable = { expire,destroy,again,delay,show};
-static osiTimerQueueId timerQueue;
+static void notify(void *pPrivate);
+static epicsTimerQueueId timerQueue;
 
 
 /* forward references */
@@ -73,7 +68,7 @@ static void callbackInitPvt(void *arg)
 {
     int i;
 
-    timerQueue = osiTimerQueueCreate(epicsThreadPriorityScanHigh);
+    timerQueue = epicsTimerQueueAllocate(0,epicsThreadPriorityScanHigh);
     for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
 	start(i);
     }
@@ -185,42 +180,21 @@ void epicsShareAPI callbackRequestProcessCallback(CALLBACK *pcallback,
     callbackRequest(pcallback);
 }
 
-void expire(void *pPrivate)
+void notify(void *pPrivate)
 {
     CALLBACK *pcallback = (CALLBACK *)pPrivate;
     callbackRequest(pcallback);
 }
 
-void destroy(void *pPrivate)
-{
-    return;
-}
-
-int again(void *pPrivate)
-{
-    return(0);
-}
-
-double delay(void *pPrivate)
-{
-    return(0.0);
-}
-
-void show(void *pPrivate, unsigned level)
-{
-    return;
-}
-
-
 void epicsShareAPI callbackRequestDelayed(CALLBACK *pcallback,double seconds)
 {
-    osiTimerId timer = (osiTimerId *)pcallback->timer;
+    epicsTimerId timer = (epicsTimerId)pcallback->timer;
 
     if(timer==0) {
-        timer = osiTimerCreate(&jumpTable,timerQueue,(void *)pcallback);
+        timer = epicsTimerQueueCreateTimer(timerQueue,notify,(void *)pcallback);
         pcallback->timer = timer;
     }
-    osiTimerArm(timer,seconds);
+    epicsTimerStartDelay(timer,seconds);
 }
 
 void epicsShareAPI callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/12/19 00:04:49  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.8  1997/08/05 00:46:56  jhill
  * fixed warnings
  *
@@ -88,7 +91,7 @@ epicsShareFunc caServer::caServer(unsigned pvCountEstimateIn) :
 		logEventMask(this->registerEvent("log")),
 		alarmEventMask(this->registerEvent("alarm"))
 {
-	static		init;
+	static int init;
 
 	if (!init) {
 		gddMakeMapDBR(gddApplicationTypeTable::app_table);

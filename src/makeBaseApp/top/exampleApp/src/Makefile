@@ -3,7 +3,6 @@ include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 
-USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd
@@ -34,11 +33,10 @@ LIBOBJS += $(EPICS_BASE_BIN)/seq
 #LIBOBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
 
 # or
-EXPANDED_DBD = exampleApp.dbd
-exampleLib_SRCS += registerRecordDeviceDriver.c
-#end choices
 
-DBD = exampleApp.dbd
+exampleLib_SRCS += registerRecordDeviceDriver.c
+
+#end choices
 
 -include ../baseLIBOBJS
 

@@ -3,5 +3,4 @@
 # NOTE: RELEASE.$(HOST_ARCH) files will override
 
 #  Tornado directory
-VX_DIR = /usr/local/vw/tornado101
-
+VX_DIR = /opt/csr/vw/tornado101

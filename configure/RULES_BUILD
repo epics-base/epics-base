@@ -31,9 +31,9 @@
 include $(CONFIG)/RULES_ARCHS
 ifdef T_A
 
-vpath %.h $(USER_VPATH)   
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic .. 
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic ..
+vpath %.C $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/$(OS_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
 #vpath %.h ../os/$(ARCH_CLASS) ../os/generic ..
@@ -146,7 +146,7 @@ endif
 ifdef LIBSRCS
 LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
 endif
-  
+
 IOC_LIBSRCS += $($(addsuffix _SRCS,$(IOC_LIBRARY)))
 
 ifneq ($($(addsuffix _SRCS_$(ARCH_CLASS),$(IOC_LIBRARY))),)
@@ -162,7 +162,7 @@ endif
 ifdef IOC_LIBSRCS
 IOC_LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(IOC_LIBSRCS)))
 endif
-  
+
 # compatibility
 IOC_LIB_OBJS+=$(LIBOBJS)
 
@@ -294,7 +294,7 @@ INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
                    $(subst $(CONFIG),top/configure,$(TEMPLATES)))
 #INSTALL_TEMPLATE = $($(subst $(CONFIG),top/configure,$(TEMPLATES)):%= $(INSTALL_TEMPLATES_SUBDIR)/%)
 INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
- 
+
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
 INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
         $(RECTYPES:%.h= $(INSTALL_DBD)/%.dbd)\
@@ -420,7 +420,8 @@ ifdef RUNTYPE
 ifeq ($(strip $(RUNTYPE)),IOC)
 build:: $(IOC_LIBTARGETS) $(IOC_PROD) $(IOC_SCRIPTS_$(OS_CLASS))
 
-buildInstall :: $(INSTALL_IOC_PROD)  $(INSTALL_IOC_SCRIPTS)
+buildInstall :: $(IOC_TARGETS) \
+	$(INSTALL_IOC_PROD)  $(INSTALL_IOC_SCRIPTS)
 endif
 
 ifeq ($(strip $(RUNTYPE)),NOTIOC)
@@ -443,7 +444,11 @@ build:: $(IOC_LIBTARGETS) $(IOC_PROD) $(IOC_SCRIPTS_$(OS_CLASS))
 buildInstall :: $(INSTALL_IOC_PROD)  $(INSTALL_IOC_SCRIPTS)
 endif
 
-build:: $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
+build:: $(MENUS) $(RECTYPES) $(BPTS)
+
+ifdef DBDEXPAND
+build::	$(DBDNAME)
+endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
@@ -699,7 +704,7 @@ endif
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
 	@$(RM) $*.st
-	
+
 # Capfast Rules:
 %.db: %.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
@@ -736,12 +741,12 @@ $(INSTALL_DBD)/%: ../%
 %Record.h: %Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-	        $(USER_DBDFLAGS)  $<
+	        $(DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-	        $(USER_DBDFLAGS)  $<
+	        $(DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
 	$(RM) $@
@@ -759,10 +764,12 @@ bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
  
+ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
-	@echo expanding dbd
+	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(IOC_LIBNAME): ../baseLIBOBJS
@@ -888,9 +895,11 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 .PHONY:: all inc depends build install clean rebuild buildInstall binInstalls \
 	iocBinInstalls
 
-
+ifneq (,$(wildcard ../base.dbd))
 $(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
+else
+$(DBDNAME): $(RECTYPES:%.h=../%.dbd)
+endif
 
 #	EOF RULES.Host
 endif
-

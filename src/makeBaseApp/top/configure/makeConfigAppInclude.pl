@@ -1,7 +1,7 @@
 # $Id$ 
 
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell; # makeIocCdCommands.pl
+    if $running_under_some_shell; # makeConfigAppInclude.pl
 
 use Cwd;
 
@@ -11,7 +11,7 @@ $top = $ARGV[2];
 
 unlink("${outfile}");
 open(OUT,">${outfile}") or die "$! opening ${outfile}";
-print OUT "#Do not modify thie file.\n";
+print OUT "#Do not modify this file.\n";
 print OUT "#This file is created during the build.\n";
 
 @files =();
@@ -49,10 +49,10 @@ foreach $file (@files) {
                 print OUT "${prefix}_LIB = $post/lib/${arch}\n";
             }
             if ( -d "$post/include") { #check that directory exists
-                print OUT "USR_INCLUDES += -I$post/include\n";
+                print OUT "INSTALL_INCLUDES += -I$post/include\n";
             }
             if ( -d "$post/dbd") { #check that directory exists
-                print OUT "USER_DBDFLAGS += -I$post/dbd\n";
+                print OUT "INSTALL_DBDFLAGS += -I $post/dbd\n";
             }
         }
     }

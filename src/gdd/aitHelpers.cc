@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.4  1996/08/22 21:05:38  jbk
+// More fixes to make strings and fixed string work better.
+//
 // Revision 1.3  1996/08/09 02:28:08  jbk
 // rewrite of aitString class - more intuitive now, I think
 //
@@ -55,15 +58,17 @@ aitIndex aitString::compact(aitString* array, aitIndex arraySize,
 	// copy the array first
 	pos=sizeof(aitString)*arraySize;
 	if(bufSize<pos) return 0;
-	memcpy(ptr,(char*)array,pos);
+
+	for(i=0;i<arraySize;i++) str[i].init();
 
 	for(i=0;i<arraySize;i++)
 	{
-		if(str[i].string())
+		if((pos+str[i].length())>bufSize) break; // quick exit from loop
+		if(array[i].string())
 		{
-			memcpy(&ptr[pos],str[i].string(),str[i].length()+1); // include NULL
-			str[i].init();
-			str[i]=&ptr[pos];
+			memcpy(&ptr[pos],array[i].string(),array[i].length()+1);
+			str[i].force(&ptr[pos]);
+			str[i].len=array[i].length();
 			pos+=str[i].length()+1;
 		}
 	}

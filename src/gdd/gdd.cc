@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.9  1996/08/22 21:05:40  jbk
+// More fixes to make strings and fixed string work better.
+//
 // Revision 1.8  1996/08/14 12:30:14  jbk
 // fixes for converting aitString to aitInt8* and back
 // fixes for managing the units field for the dbr types
@@ -621,7 +624,6 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 					// not very good way to do it, size info bad
 					aitString* str = (aitString*)dataPointer();
 					aitString::compact(str,getDataSizeElements(),&bnds[i],size);
-					str->forceConstant();
 				}
 				else
 					memcpy(&bnds[i],dataPointer(),getDataSizeBytes());
@@ -689,7 +691,6 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 						aitString* str = (aitString*)dd[i].dataPointer();
 						sz=aitString::compact(str,
 							dd[i].getDataSizeElements(),ptr,size);
-						str->forceConstant();
 					}
 					else
 					{

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.12  1996/08/22 21:05:43  jbk
+// More fixes to make strings and fixed string work better.
+//
 // Revision 1.11  1996/08/14 12:30:12  jbk
 // fixes for converting aitString to aitInt8* and back
 // fixes for managing the units field for the dbr types
@@ -900,18 +903,33 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 	gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
 	aitFixedString* str = menu;
 	aitFixedString* f = (aitFixedString*)db->strs;
+	aitIndex sz,i;
 
 	// int i;
 	// old way using aitString menu
 	// for(i=0;i<db->no_str;i++) str[i]=((const char*)&(db->strs[i][0]));
 
-	menu.putRef(f);
-	menu.setBound(0,0,db->no_str);
-	vdd.setStatSevr(db->status,db->severity);
+	if(menu.dataPointer()==NULL || !menu.isAtomic())
+	{
+		// need to copy the menu chunk from dbr to aitFixedString chunk
+		menu.setDimension(1);
+		sz=db->no_str;
+		str=new aitFixedString[db->no_str];
+		menu.putRef(str,new gddDestructor);
+	}
+	else
+	{
+		if((sz=menu.getDataSizeElements())>db->no_str)
+			sz=db->no_str;
+	}
+
+	for(i=0;i<sz;i++) strcpy(str[i].fixed_string,&(db->strs[i][0]));
+	menu.setBound(0,0,sz);
 
 	// should always be a scaler
 	if(vdd.dimension()) vdd.clear();
 	vdd=db->value;
+	vdd.setStatSevr(db->status,db->severity);
 	return dd;
 }
 
@@ -923,18 +941,33 @@ static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_enum_value];
 	aitFixedString* str = menu;
 	aitFixedString* f = (aitFixedString*)db->strs;
+	aitIndex sz,i;
 
 	// int i;
 	// old way using aitString menu
 	// for(i=0;i<db->no_str;i++) str[i]=((const char*)&(db->strs[i][0]));
 
-	menu.putRef(f);
-	menu.setBound(0,0,db->no_str);
-	vdd.setStatSevr(db->status,db->severity);
+	if(menu.dataPointer()==NULL || !menu.isAtomic())
+	{
+		// need to copy the menu chunk from dbr to aitFixedString chunk
+		menu.setDimension(1);
+		sz=db->no_str;
+		str=new aitFixedString[db->no_str];
+		menu.putRef(str,new gddDestructor);
+	}
+	else
+	{
+		if((sz=menu.getDataSizeElements())>db->no_str)
+			sz=db->no_str;
+	}
+
+	for(i=0;i<sz;i++) strcpy(str[i].fixed_string,&(db->strs[i][0]));
+	menu.setBound(0,0,sz);
 
 	// should always be a scaler
 	if(vdd.dimension()) vdd.clear();
 	vdd=db->value;
+	vdd.setStatSevr(db->status,db->severity);
 	return dd;
 }
 

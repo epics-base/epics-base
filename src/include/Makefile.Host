@@ -37,6 +37,3 @@ epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
 
 install: $(INSTALL_INCLUDE)/epicsVersion.h
 
-xxx:
-	@echo INSTALL_INC = $(INSTALL_INC)
-	@echo OS_SRC_DIRS = $(OS_SRC_DIRS)

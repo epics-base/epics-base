@@ -906,9 +906,11 @@ public:
 	epicsShareFunc virtual void destroy();
 
 private:
-	caHdrLargeArray const msg;
+	const caHdrLargeArray msg;
 	pvExistReturn retVal;
 	const caNetAddr dgOutAddr;
+    const ca_uint16_t protocolRevision;
+    const ca_uint32_t sequenceNumber;
 
 	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncPVExistIO ( const casAsyncPVExistIO & );

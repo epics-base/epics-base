@@ -29,7 +29,9 @@ casAsyncPVExistIO::casAsyncPVExistIO (const casCtx &ctx) :
 	casAsyncIOI ( *ctx.getClient () ),
 	msg ( *ctx.getMsg () ),
 	retVal (pverDoesNotExistHere),
-	dgOutAddr ( ctx.getClient ()->fetchLastRecvAddr () )
+	dgOutAddr ( ctx.getClient ()->fetchLastRecvAddr () ),
+    protocolRevision ( ctx.getClient ()->protocolRevision () ),
+    sequenceNumber ( ctx.getClient ()->datagramSequenceNumber () )
 {
 	this->client.installAsyncIO (*this);
 }
@@ -64,7 +66,8 @@ epicsShareFunc caStatus casAsyncPVExistIO::cbFuncAsyncIO()
         // pass output DG address parameters
         //
         status = this->client.asyncSearchResponse (
-            this->dgOutAddr, this->msg, this->retVal);
+            this->dgOutAddr, this->msg, this->retVal,
+            this->protocolRevision, this->sequenceNumber );
     }
     else {
         errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,

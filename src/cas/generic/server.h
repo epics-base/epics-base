@@ -456,7 +456,8 @@ public:
 	//
 	virtual caStatus asyncSearchResponse (
 		const caNetAddr & outAddr, 
-		const caHdrLargeArray &, const pvExistReturn & );
+		const caHdrLargeArray &, const pvExistReturn &,
+        ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber );
 	virtual caStatus createChanResponse (
 		const caHdrLargeArray &, const pvAttachReturn &);
 	virtual caStatus readResponse (
@@ -466,10 +467,13 @@ public:
 	virtual caStatus writeResponse (const caHdrLargeArray &, const caStatus);
 	virtual caStatus writeNotifyResponse (const caHdrLargeArray &, const caStatus);
 
+	virtual ca_uint16_t protocolRevision() const = 0;
+
 	//
 	// used only with DG clients 
 	// 
 	virtual caNetAddr fetchLastRecvAddr () const;
+    virtual ca_uint32_t datagramSequenceNumber () const;
 
 protected:
 	casCtx ctx;
@@ -496,9 +500,7 @@ public:
 	caStatus sendErr ( const caHdrLargeArray *, const int reportedStatus,
 			const char *pFormat, ... );
 
-    void sendVersion ();
-
-	unsigned getMinorVersion() const {return this->minor_version_number;}
+	ca_uint16_t protocolRevision() const {return this->minor_version_number;}
 
 	//
 	// find the channel associated with a resource id
@@ -507,10 +509,12 @@ public:
 
 	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
 
+    void sendVersion ();
+
 protected:
     inBuf in;
     outBuf out;
-	unsigned minor_version_number;
+	ca_uint16_t minor_version_number;
     unsigned incommingBytesToDrain;
 	epicsTime lastSendTS;
 	epicsTime lastRecvTS;
@@ -754,12 +758,14 @@ private:
 	//
 	// searchFailResponse()
 	//
-	caStatus searchFailResponse (const caHdrLargeArray *pMsg);
+	caStatus searchFailResponse ( const caHdrLargeArray *pMsg );
 
-	caStatus searchResponse (const caHdrLargeArray &, const pvExistReturn &);
+	caStatus searchResponse ( const caHdrLargeArray &,
+                                const pvExistReturn & retVal );
 
-	caStatus asyncSearchResponse ( const caNetAddr & outAddr, 
-		const caHdrLargeArray & msg, const pvExistReturn & );
+    caStatus asyncSearchResponse ( const caNetAddr & outAddr,
+	    const caHdrLargeArray & msg, const pvExistReturn & retVal,
+        ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber );
 
 	//
 	// IO depen
@@ -775,6 +781,8 @@ private:
 			fillParameter parm, bufSizeT &nBytesActual, caNetAddr & addr ) = 0;
 
     caStatus versionAction ();
+
+    ca_uint32_t datagramSequenceNumber () const;
 
     //
     // cadg

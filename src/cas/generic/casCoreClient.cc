@@ -93,7 +93,8 @@ void casCoreClient::show (unsigned level) const
 // asynchronous completion
 //
 caStatus casCoreClient::asyncSearchResponse (
-		const caNetAddr &, const caHdrLargeArray &, const pvExistReturn & )
+		const caNetAddr &, const caHdrLargeArray &, const pvExistReturn &,
+        ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber )
 {
 	return S_casApp_noSupport;
 }
@@ -153,6 +154,22 @@ void casCoreClient::removeChannel (casChannelI &)
 caNetAddr casCoreClient::fetchLastRecvAddr () const
 {
 	return caNetAddr(); // sets addr type to UDF
+}
+
+//
+// casCoreClient::datagramSequenceNumber ()
+//
+ca_uint32_t casCoreClient::datagramSequenceNumber () const
+{
+	return 0;
+}
+
+//
+// casCoreClient::protocolRevision ()
+//
+ca_uint16_t casCoreClient::protocolRevision() const
+{
+    return 0;
 }
 
 //

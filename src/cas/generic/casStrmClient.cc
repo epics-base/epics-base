@@ -936,7 +936,13 @@ caStatus casStrmClient::claimChannelAction()
 	 * starting with CA 4.1. The field was set to zero
 	 * prior to 4.1
 	 */
-	this->minor_version_number = mp->m_available;
+    if (mp->m_available < 0xffff ) {
+	    this->minor_version_number = 
+            static_cast < ca_uint16_t > ( mp->m_available );
+    }
+    else {
+	    this->minor_version_number = 0;
+    }
 
 	//
 	// We shouldnt be receiving a connect message from 
@@ -1949,5 +1955,4 @@ void casStrmClient::flush ()
 {
     this->out.flush ();
 }
-
 

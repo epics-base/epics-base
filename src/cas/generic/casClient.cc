@@ -390,7 +390,6 @@ void casClient::sendVersion ()
         this->out.commitMsg ();
     }
 }
-
 //
 //	casClient::sendErr()
 //

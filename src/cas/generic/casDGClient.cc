@@ -189,17 +189,8 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
                                      const pvExistReturn & retVal )
 {
     caStatus status;
-     
-    //
-    // normal search failure is ignored
-    //
-    if ( retVal.getStatus() == pverDoesNotExistHere ) {
-        return S_cas_success;
-    }
     
-    if (retVal.getStatus()!=pverExistsHere) {
-        fprintf(stderr, 
-            "async exist completion with invalid return code \"pverAsynchCompletion\"?\n");
+    if ( retVal.getStatus() != pverExistsHere ) {
         return S_cas_success;
     }
     
@@ -294,11 +285,12 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
     // is appended to the end of each search reply.
     // This value is ignored by earlier clients. 
     //
-    *pMinorVersion = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
+    if ( status == S_cas_success ) {
+        *pMinorVersion = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
+        this->out.commitMsg ();
+    }
     
-    this->out.commitMsg ();
-    
-    return S_cas_success;
+    return status;
 }
 
 //
@@ -378,23 +370,12 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
         cadg *pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
 
         assert ( totalBytes <= bufSizeT_MAX-pHdr->cadg_nBytes );
-        assert ( totalBytes+pHdr->cadg_nBytes <= nBytesAvailableToSend );
+        assert ( totalBytes + pHdr->cadg_nBytes <= nBytesAvailableToSend );
+
+        char * pDG = reinterpret_cast < char * > ( pHdr + 1 );
+        unsigned sizeDG = pHdr->cadg_nBytes - sizeof ( *pHdr );
 
         if ( pHdr->cadg_addr.isValid() ) {
-
-            char * pDG = reinterpret_cast < char * > ( pHdr + 1 );
-            unsigned sizeDG = pHdr->cadg_nBytes - sizeof ( *pHdr );
-            caHdr * pMsg = reinterpret_cast < caHdr * > ( pDG );
-            assert ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_VERSION );
-            if ( CA_V411 ( this->minor_version_number ) ) {
-                pMsg->m_cid = htonl ( this->seqNoOfReq );
-                pMsg->m_dataType = htons ( sequenceNoIsValid );
-            }
-            else {
-                pDG += sizeof (caHdr);
-                sizeDG -= sizeof (caHdr);
-            }
-
             outBufClient::flushCondition stat = 
                 this->osdSend ( pDG, sizeDG, pHdr->cadg_addr );	
 	        if ( stat != outBufClient::flushProgress ) {
@@ -465,9 +446,12 @@ inBufClient::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRe
 // isnt particularly efficient
 //
 caStatus casDGClient::asyncSearchResponse ( const caNetAddr & outAddr,
-	const caHdrLargeArray & msg, const pvExistReturn & retVal )
+	const caHdrLargeArray & msg, const pvExistReturn & retVal,
+    ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber )
 {
-	caStatus stat;
+    if ( retVal.getStatus() != pverExistsHere ) {
+        return S_cas_success;
+    }
 
     //
     // start a DG context in the output protocol stream
@@ -480,14 +464,22 @@ caStatus casDGClient::asyncSearchResponse ( const caNetAddr & outAddr,
         return S_cas_sendBlocked;
     }
 
+    cadg * pRespHdr = reinterpret_cast<cadg *> ( pRaw );
+
     // insert version header at the start of the reply message
     this->sendVersion ();
 
-    cadg * pRespHdr = reinterpret_cast<cadg *> ( pRaw );
-	stat = this->searchResponse ( msg, retVal );
+    caHdr * pMsg = reinterpret_cast < caHdr * > ( pRespHdr + 1 );
+    assert ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_VERSION );
+    if ( CA_V411 ( protocolRevision ) ) {
+        pMsg->m_cid = htonl ( sequenceNumber );
+        pMsg->m_dataType = htons ( sequenceNoIsValid );
+    }
 
-    pRespHdr->cadg_nBytes = this->out.popCtx (outctx);
-    if ( pRespHdr->cadg_nBytes > 0 ) {
+	caStatus stat = this->searchResponse ( msg, retVal );
+
+    pRespHdr->cadg_nBytes = this->out.popCtx (outctx) + sizeof ( *pRespHdr );
+    if ( pRespHdr->cadg_nBytes > sizeof ( *pRespHdr ) + sizeof (caHdr) ) {
         pRespHdr->cadg_addr = outAddr;
         this->out.commitRawMsg ( pRespHdr->cadg_nBytes );
     }
@@ -529,7 +521,7 @@ caStatus casDGClient::processDG ()
         // insert version header at the start of the reply message
         this->sendVersion ();
         
-        cadg *pRespHdr = reinterpret_cast <cadg *> (pRaw);
+        cadg * pRespHdr = reinterpret_cast <cadg *> (pRaw);
         
         //
         // select the next DG in the input stream and start processing it
@@ -550,8 +542,10 @@ caStatus casDGClient::processDG ()
         this->minor_version_number = 0;
 
         status = this->processMsg ();
+        pRespHdr->cadg_nBytes = this->out.popCtx ( outctx ) + sizeof ( *pRespHdr );
         dgInBytesConsumed = this->in.popCtx ( inctx );
-        if (dgInBytesConsumed>0) {
+
+        if ( dgInBytesConsumed > 0 ) {
 
             //
             // at this point processMsg() bailed out because:
@@ -561,11 +555,19 @@ caStatus casDGClient::processDG ()
             // In either case commit the DG to the protocol stream and 
             // release the send lock
             //
-            pRespHdr->cadg_nBytes = this->out.popCtx ( outctx ) + sizeof ( *pRespHdr );
             // if there are not additional messages passed the version header
             // then discard the message
             if ( pRespHdr->cadg_nBytes > sizeof ( *pRespHdr ) + sizeof (caHdr) ) {
                 pRespHdr->cadg_addr = pReqHdr->cadg_addr;
+
+                caHdr * pMsg = reinterpret_cast < caHdr * > ( pRespHdr + 1 );
+                assert ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_VERSION );
+
+                if ( CA_V411 ( this->minor_version_number ) ) {
+                    pMsg->m_cid = htonl ( this->seqNoOfReq );
+                    pMsg->m_dataType = htons ( sequenceNoIsValid );
+                }
+
                 this->out.commitRawMsg ( pRespHdr->cadg_nBytes );
             }
 
@@ -598,7 +600,7 @@ caStatus casDGClient::processDG ()
             }
         }
 
-        if (status!=S_cas_success) {
+        if ( status != S_cas_success ) {
             break;
         }
     }
@@ -619,6 +621,14 @@ unsigned casDGClient::getDebugLevel() const
 caNetAddr casDGClient::fetchLastRecvAddr () const
 {
 	return this->lastRecvAddr;
+}
+
+//
+// casDGClient::datagramSequenceNumber ()
+//
+ca_uint32_t casDGClient::datagramSequenceNumber () const
+{
+	return this->seqNoOfReq;
 }
 
 //

@@ -25,7 +25,23 @@ epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
 epicsShareFunc int epicsShareAPI epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
-epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void );
+epicsShareFunc void epicsShareAPI epicsTempName ( 
+	char * pNameBuf, size_t nameBufLength );
+epicsShareFunc FILE * epicsShareAPI epicsTempFile ();
+
+/*
+ * truncate to specified size (we dont use truncate()
+ * because it is not portable)
+ *
+ * pFileName - name (and optionally path) of file
+ * size - the new file size (if file is curretly larger)
+ * 
+ * returns TF_OK if the file is less than size bytes
+ * or if it was successfully truncated. Returns
+ * TF_ERROR if the file could not be truncated.
+ */
+enum TF_RETURN {TF_OK=0, TF_ERROR=1};
+epicsShareFunc enum TF_RETURN epicsShareAPI truncateFile ( const char *pFileName, unsigned size );
 
 #ifdef  __cplusplus
 }

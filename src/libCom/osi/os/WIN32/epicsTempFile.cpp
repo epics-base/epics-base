@@ -20,7 +20,29 @@
 #include <sys\stat.h>
 
 #define epicsExportSharedSymbols
-#include <epicsStdio.h>
+#include "epicsStdio.h"
+
+//
+// epicsTempName
+//
+// allow the teporary file directory to be set with the 
+// TMP environment varianble
+//
+extern "C"
+epicsShareFunc void epicsShareAPI epicsTempName ( 
+	char * pNameBuf, size_t nameBufLength )
+{
+    if ( nameBufLength ) {
+        pNameBuf[0] = '\0';
+        char * pName = _tempnam ( "c:\\tmp", "epics" );
+        if ( pName ) {
+            if ( nameBufLength > strlen ( pName ) ) {
+                strncpy ( pNameBuf, pName, nameBufLength );
+            }
+            free ( pName );
+        }
+    }
+}
 
 //
 // epicsTmpFile
@@ -29,10 +51,8 @@
 // TMP environment varianble
 //
 extern "C"
-epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void )
+epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
 {
-    // Allow the TMP env variable to set the location
-    // where temporary files live.
     char * pName = _tempnam ( "c:\\tmp", "epics" );
     if( ! pName ) {
         return 0;
@@ -59,13 +79,16 @@ epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void )
     const int openFlag = _O_CREAT | _O_EXCL | _O_RDWR | 
         _O_SHORT_LIVED | _O_BINARY | _O_TEMPORARY;
     int fd = open ( pName, openFlag, _S_IWRITE );
-    if ( fd < 0 ) {
+    FILE * pNewFile = 0;
+    if ( fd >=0 ) {
+        pNewFile = _fdopen ( fd, "w+bTD" );
+    }
+    else {
         printf ( 
             "Temporary file \"%s\" open failed because "
             "\"%s\"\n", pName, strerror ( errno ) );
-        return 0;
     }
     free ( pName );
-    return _fdopen ( fd, "w+bTD" );
+    return pNewFile;
 }
 

@@ -15,7 +15,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
-#include "truncateFile.h"
+#include "epicsStdio.h"
 
 #ifndef SEEK_END
 #define SEEK_END 2
@@ -27,9 +27,8 @@
  */
 epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName, unsigned size)
 {
-	char tmpName[L_tmpnam];
+	char tmpName[256>L_tmpnam?256:L_tmpnam];
 	long filePos;
-	char *pTmpFN;
 	FILE *pFile;
 	FILE *ptmp;
 	int status;
@@ -68,18 +67,18 @@ epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName
 		return TF_OK;
 	}
 
-	pTmpFN = tmpnam (tmpName);
-	if (!pTmpFN) {
+    epicsTempName ( tmpName, sizeof (tmpName) );
+	if ( tmpName[0] == '\0' ) {
 		fprintf (stderr,"Unable to create tmp file name?\n");
 		fclose (pFile);
 		return TF_ERROR;
 	}
 
-	ptmp = fopen (pTmpFN, "w");
+	ptmp = fopen (tmpName, "w");
 	if (!ptmp) {
 		fprintf (stderr,
 			"File access problems to `%s' because `%s'\n", 
-			pTmpFN,
+			tmpName,
 			strerror(errno));
 		fclose (pFile);
 		return TF_ERROR;
@@ -95,18 +94,18 @@ epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName
 				strerror(errno));
 			fclose (pFile);
 			fclose (ptmp);
-			remove (pTmpFN);
+			remove (tmpName);
 			return TF_ERROR;
 		}
 		status = putc (c, ptmp);
 		if (status==EOF) {
 			fprintf(stderr,
 				"File access problems to `%s' because `%s'\n", 
-				pTmpFN,
+				tmpName,
 				strerror(errno));
 			fclose (pFile);
 			fclose (ptmp);
-			remove (pTmpFN);
+			remove (tmpName);
 			return TF_ERROR;
 		}
 		charNo++;
@@ -119,17 +118,17 @@ epicsShareFunc enum TF_RETURN  epicsShareAPI truncateFile (const char *pFileName
 			"Unable to remove `%s' during truncate because `%s'\n", 
 			pFileName,
 			strerror(errno));
-		remove (pTmpFN);
+		remove (tmpName);
 		return TF_ERROR;
 	}
-	status = rename (pTmpFN, pFileName);
+	status = rename (tmpName, pFileName);
 	if (status!=TF_OK) {
 		fprintf (stderr,
 			"Unable to rename %s to `%s' because `%s'\n", 
-			pTmpFN,
+			tmpName,
 			pFileName,
 			strerror(errno));
-		remove (pTmpFN);
+		remove (tmpName);
 		return TF_ERROR;
 	}
 	return TF_OK;

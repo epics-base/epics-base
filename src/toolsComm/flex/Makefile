@@ -45,6 +45,7 @@ SRCS += tblcmp.c
 SRCS += parse.c
 
 PROD_HOST = e_flex
+PROD_LIBS = Com
 
 include $(TOP)/configure/RULES
 

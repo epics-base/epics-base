@@ -418,7 +418,7 @@ extern int yymore_really_used, reject_really_used;
 extern int datapos, dataline, linenum;
 extern FILE *skelfile, *yyin, *temp_action_file, *backtrack_file;
 extern char *infilename;
-extern char *action_file_name;
+extern char action_file_name[];
 extern char **input_files;
 extern int num_input_files;
 extern char *program_name;

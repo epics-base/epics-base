@@ -34,7 +34,7 @@
 #include 	"fdmgr.h"
 #include 	"envDefs.h"
 #include 	"osiSock.h"
-#include	"truncateFile.h"
+#include	"epicsStdio.h"
 
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;

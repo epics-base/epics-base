@@ -8,7 +8,23 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include <epicsStdio.h>
+#include "epicsStdio.h"
+
+extern "C"
+epicsShareFunc void epicsShareAPI epicsTempName ( 
+	char * pNameBuf, size_t nameBufLength )
+{
+    if ( nameBufLength ) {
+        pNameBuf[0] = '\0';
+        char nameBuf[L_tmpnam];
+        if ( tmpnam ( nameBuf ) ) {
+            if ( nameBufLength > strlen ( nameBuf ) ) {
+                strncpy ( pNameBuf, nameBuf, nameBufLength );
+            }
+        }
+    }
+}
+
 
 extern "C"
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void )

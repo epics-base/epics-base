@@ -8,8 +8,8 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include <epicsStdio.h>
-#include <osiUnistd.h>
+#include "epicsStdio.h"
+#include "osiUnistd.h"
 
 extern "C" {
 	

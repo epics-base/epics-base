@@ -88,8 +88,6 @@ private:
     syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
     void * operator new ( size_t );
     void operator delete ( void * );
-    void * operator new [] ( size_t );
-    void operator delete [] ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   if defined ( CXX_PLACEMENT_DELETE )
@@ -120,8 +118,6 @@ private:
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t );
     void operator delete ( void * );
-    void * operator new [] ( size_t );
-    void operator delete [] ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   if defined ( CXX_PLACEMENT_DELETE )
@@ -191,8 +187,6 @@ private:
 
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 
     friend class sgAutoPtr < syncGroupWriteNotify >;
     friend class sgAutoPtr < syncGroupReadNotify >;

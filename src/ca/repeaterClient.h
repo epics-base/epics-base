@@ -69,8 +69,6 @@ private:
     unsigned short port () const;
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 #endif // repeaterClienth

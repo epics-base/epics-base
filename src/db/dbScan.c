@@ -182,7 +182,7 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<interruptEvent.h>
-#include	<taskParams.h>
+#include	<task_params.h>
 #include	<module_types.h>
 #include	<fast_lock.h>
 
@@ -925,7 +925,7 @@ register short		lists;
 	short		scan_type;
 	short		phase;
 	short		event;
-	register short	status;
+	long		status;
 
 	/* get the list on which this record belongs */
 	scan_type = precord->scan;
@@ -1595,7 +1595,7 @@ short		*pcard_number;
 	if((precord->dset == NULL) ||(precord->dset->get_ioint_info == NULL ))
 		return(S_dev_noDevSup);
 	status=(*precord->dset->get_ioint_info)
-		(paddr,pio_type,pcard_type,pcard_number);
+		(precord,pio_type,pcard_type,pcard_number);
 	return(status);
 }
 

@@ -299,14 +299,12 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 
 bool repeaterClient::verify ()  // X aCC 361
 {
-    SOCKET sock;
-    if ( ! makeSocket ( this->port (), false, & sock ) ) {
-        return false;
+    SOCKET tmpSock;
+    bool success = makeSocket ( this->port (), false, & tmpSock );
+    if ( success ) {
+        socket_close ( tmpSock );
     }
     else {
-        /*
-         * win sock does not set SOCKERRNO when this fails
-         */
         if ( SOCKERRNO != SOCK_EADDRINUSE ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
@@ -314,8 +312,8 @@ bool repeaterClient::verify ()  // X aCC 361
             fprintf ( stderr, "CA Repeater: bind test err was \"%s\"\n", 
                 sockErrBuf );
         }
-        return true;
     }
+    return success;
 }
 
 

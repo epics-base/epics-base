@@ -61,6 +61,16 @@ int epicsTimeTest (void)
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
+    // test FILETIME conversion
+    {
+        epicsTime ts0 = epicsTime::getCurrent ();
+        FILETIME ft = ts0;
+        epicsTime ts1 = ft;
+        double diff = fabs ( ts0 - ts1 );
+        // we expect to loose 100 nS of precision when moving to and from win32 filetime
+        assert ( diff <= 100e-9 );
+    }
+
     for (int iTimes=0; iTimes < nTimes; ++iTimes) {
         for (i=0; i<wasteTime; i++) {
             useSomeCPU = epicsTime::getCurrent();
@@ -138,7 +148,7 @@ int epicsTimeTest (void)
             printf ("#%3d: Failed begin!=end\n",iTimes);
             errors += 1;
         }
-	const double diff2 = end - begin;
+        const double diff2 = end - begin;
         if (!(diff2==diff)) {
             printf ("#%3d: Failed end-begin==diff by %g\n",
                     iTimes, fabs(diff2-diff));
@@ -146,7 +156,7 @@ int epicsTimeTest (void)
         }
 
         epicsTime end2 = begin;
-	end2 += diff;
+	    end2 += diff;
         if (!(end2==end)) {
             printf ("#%3d: Failed (begin+=diff)==end by %12.9f\n",
                     iTimes, fabs(begin-end));
@@ -164,7 +174,7 @@ int epicsTimeTest (void)
         // test struct tm conversions
         //
         ansiDate = begin;
-	epicsTime beginANSI = ansiDate;
+	    epicsTime beginANSI = ansiDate;
         if (!(beginANSI+diff==end)) {
             printf ("#%3d: Failed begin+diff==end "
                     "after tm conversions by %12.9f\n",

@@ -49,7 +49,12 @@ typedef struct testItem {
     char                name[40];
     int                 type;
     int                 count;
-    union db_access_val val;    
+    union {   
+        dbr_double_t    doubleval;	
+	    dbr_float_t     fltval;
+        dbr_short_t     intval;		
+        dbr_string_t    strval;		
+    } val;
 } ti;
 
 typedef void tf ( ti *pItems, unsigned iterations, unsigned *pInlineIter );
@@ -554,7 +559,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
-        pItemList[i].val.fltval = 0.0f;
+        pItemList[i].val.doubleval = 0.0;
         pItemList[i].type = DBR_DOUBLE; 
     }
     printf ( "double test\n" );

@@ -335,72 +335,84 @@ recordtype(wait) {
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INBP,DBF_MENU) {
 		prompt("INPB causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INCP,DBF_MENU) {
 		prompt("INPC causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INDP,DBF_MENU) {
 		prompt("INPD causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INEP,DBF_MENU) {
 		prompt("INPE causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INFP,DBF_MENU) {
 		prompt("INPF causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INGP,DBF_MENU) {
 		prompt("INPG causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INHP,DBF_MENU) {
 		prompt("INPH causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INIP,DBF_MENU) {
 		prompt("INPI causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INJP,DBF_MENU) {
 		prompt("INPJ causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INKP,DBF_MENU) {
 		prompt("INPK causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(INLP,DBF_MENU) {
 		prompt("INPL causes I/O INTR")
 		promptgroup(GUI_CALC)
 		interest(1)
 		menu(waitINAP)
+		initial("1")
 	}
 	field(CALC,DBF_STRING) {
 		prompt("Calculation")

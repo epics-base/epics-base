@@ -64,6 +64,7 @@ recordtype(pulseCounter) {
 		promptgroup(GUI_PULSE)
 		interest(1)
 		menu(pulseCounterCSIZ)
+		initial("1")
 	}
 	field(CNTE,DBF_MENU) {
 		prompt("Counter Sounce Edge")

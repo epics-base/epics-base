@@ -67,6 +67,7 @@ recordtype(timer) {
 		pp(TRUE)
 		interest(1)
 		menu(menuYesNo)
+		initial("1")
 	}
 	field(RDT1,DBF_FLOAT) {
 		prompt("Reboot Delay of 1")

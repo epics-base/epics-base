@@ -140,6 +140,7 @@ recordtype(pulseDelay) {
 		pp(TRUE)
 		interest(1)
 		menu(pulseDelaySTV)
+		initial("1")
 	}
 	field(HOPR,DBF_FLOAT) {
 		prompt("High Operating Range")

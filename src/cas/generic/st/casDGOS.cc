@@ -22,7 +22,7 @@ public:
 private:
     epicsTimer  &timer;
 	casDGOS     &os;
-	expireStatus expire ();
+	expireStatus expire ( const epicsTime & currentTime );
 };
 
 //
@@ -55,7 +55,7 @@ void casDGEvWakeup::show(unsigned level) const
 //
 // casDGEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casDGEvWakeup::expire()
+epicsTimerNotify::expireStatus casDGEvWakeup::expire( const epicsTime & currentTime )
 {
 	casProcCond cond = this->os.eventSysProcess();
 	if ( cond != casProcOk ) {

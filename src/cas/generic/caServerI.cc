@@ -260,8 +260,8 @@ void caServerI::show (unsigned level) const
 {
     int bytes_reserved;
     
-    printf( "Channel Access Server Status V%d.%d\n",
-        CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
+    printf( "Channel Access Server Status V%s\n",
+        CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION ) );
     
     this->mutex.show(level);
     

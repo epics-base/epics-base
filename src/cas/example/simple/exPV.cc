@@ -22,7 +22,7 @@ class exFixedStringDestructor: public gddDestructor {
 // exPV::exPV()
 //
 exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) : 
-    timer ( this->getCAS()->timerQueue().createTimer(*this) ),
+    timer ( this->getCAS()->timerQueue().createTimer() ),
     info ( setup ),
     interest ( false ),
     preCreate ( preCreateFlag ),
@@ -39,7 +39,7 @@ exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
     // someone is watching the PV)
     //
     if ( this->scanOn && this->info.getScanPeriod () > 0.0 ) {
-        this->timer.start ( this->getScanPeriod() );
+        this->timer.start ( *this, this->getScanPeriod() );
     }
 }
 
@@ -97,7 +97,7 @@ caStatus exPV::update(smartConstGDDPointer pValueIn)
 //
 // exScanTimer::expire ()
 //
-epicsTimerNotify::expireStatus exPV::expire ()
+epicsTimerNotify::expireStatus exPV::expire ( const epicsTime & currentTime )
 {
     this->scan();
     if ( this->scanOn ) {
@@ -130,7 +130,7 @@ caStatus exPV::interestRegister()
     this->interest = true;
 
     if ( this->scanOn && this->getScanPeriod() < this->timer.getExpireDelay() ) {
-        this->timer.start ( this->getScanPeriod() );
+        this->timer.start ( *this, this->getScanPeriod() );
     }
 
     return S_casApp_success;

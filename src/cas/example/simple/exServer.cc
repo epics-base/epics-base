@@ -318,9 +318,9 @@ void exServer::show (unsigned level) const
 exAsyncExistIO::exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
         exServer &casIn ) :
     casAsyncPVExistIO ( ctxIn ), pvi ( pviIn ), 
-        timer ( casIn.timerQueue().createTimer ( *this ) ), cas ( casIn ) 
+        timer ( casIn.timerQueue().createTimer () ), cas ( casIn ) 
 {
-    this->timer.start ( 0.00001 );
+    this->timer.start ( *this, 0.00001 );
 }
 
 //
@@ -336,7 +336,7 @@ exAsyncExistIO::~exAsyncExistIO()
 // exAsyncExistIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncExistIO::expire ()
+epicsTimerNotify::expireStatus exAsyncExistIO::expire ( const epicsTime & currentTime )
 {
     //
     // post IO completion
@@ -352,10 +352,10 @@ epicsTimerNotify::expireStatus exAsyncExistIO::expire ()
 exAsyncCreateIO::exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
     const casCtx &ctxIn, bool scanOnIn ) :
     casAsyncPVAttachIO ( ctxIn ), pvi ( pviIn ), 
-        timer ( casIn.timerQueue().createTimer ( *this ) ), 
+        timer ( casIn.timerQueue().createTimer () ), 
         cas ( casIn ), scanOn ( scanOnIn ) 
 {
-    this->timer.start ( 0.00001 );
+    this->timer.start ( *this, 0.00001 );
 }
 
 //
@@ -371,7 +371,7 @@ exAsyncCreateIO::~exAsyncCreateIO()
 // exAsyncCreateIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncCreateIO::expire ()
+epicsTimerNotify::expireStatus exAsyncCreateIO::expire ( const epicsTime & currentTime )
 {
     exPV *pPV;
 

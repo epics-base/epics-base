@@ -217,7 +217,7 @@ caStatus casStrmClient::readAction ()
 	if (!pChan->readAccess()) {
 		int	v41;
 
-		v41 = CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number);
+		v41 = CA_V41(this->minor_version_number);
 		if(v41){
 			status = ECA_NORDACCESS;
 		}
@@ -330,7 +330,7 @@ caStatus casStrmClient::readNotifyAction ()
 	// verify read access
 	// 
 	if (!pChan->readAccess()) {
-		if (CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number)) {
+		if (CA_V41(this->minor_version_number)) {
 			return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, ECA_NORDACCESS);
 		}
 		else {
@@ -778,7 +778,7 @@ caStatus casStrmClient::writeAction()
 	if (!pChan->writeAccess()) {
 		int	v41;
 
-		v41 = CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number);
+		v41 = CA_V41(this->minor_version_number);
 		if (v41) {
 			status = ECA_NOWTACCESS;
 		}
@@ -852,7 +852,7 @@ caStatus casStrmClient::writeNotifyAction()
 	// verify write access
 	// 
 	if (!pChan->writeAccess()) {
-		if (CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+		if (CA_V41(this->minor_version_number)) {
 			return this->casStrmClient::writeNotifyResponseECA_XXX(
 					*mp, ECA_NOWTACCESS);
 		}
@@ -1062,7 +1062,7 @@ caStatus casStrmClient::claimChannelAction()
 	// an R3.11 client because we will not respond to their
 	// search requests (if so we disconnect)
 	//
-	if (!CA_V44(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+	if (!CA_V44(this->minor_version_number)) {
 		//
 		// old connect protocol was dropped when the
 		// new API was added to the server (they must
@@ -1266,7 +1266,7 @@ caStatus        createStatus)
 	else {
 		errMessage (createStatus, "- Server unable to create a new PV");
 	}
-	if (CA_V46(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+	if (CA_V46(this->minor_version_number)) {
 
 		status = allocMsg (0u, &reply);
 		if (status) {
@@ -1300,7 +1300,7 @@ caStatus casStrmClient::disconnectChan(caResId id)
 	caStatus createStatus;
 	caHdr *reply;
 
-	if (CA_V47(CA_PROTOCOL_VERSION,this->minor_version_number)) {
+	if (CA_V47(this->minor_version_number)) {
 
 		status = allocMsg (0u, &reply);
 		if (status) {
@@ -1661,7 +1661,7 @@ caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
     /*
     * noop if this is an old client
     */
-    v41 = CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number);
+    v41 = CA_V41(this->minor_version_number);
     if(!v41){
         return S_cas_success;
     }

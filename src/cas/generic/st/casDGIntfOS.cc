@@ -74,7 +74,7 @@ public:
 private:
     epicsTimer &timer;
 	casDGIntfOS	&os;
-	expireStatus expire();
+	expireStatus expire( const epicsTime & currentTime );
 };
 
 //
@@ -88,7 +88,7 @@ public:
 private:
     epicsTimer &timer;
 	casDGIntfOS	&os;
-	expireStatus expire();
+	expireStatus expire( const epicsTime & currentTime );
 };
 
 //
@@ -130,9 +130,9 @@ casDGIntfOS::~casDGIntfOS()
 // casDGEvWakeup::casDGEvWakeup()
 //
 casDGEvWakeup::casDGEvWakeup ( casDGIntfOS &osIn ) : 
-		timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+		timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
 {
-    this->timer.start ( 0.0 );
+    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -158,7 +158,7 @@ void casDGEvWakeup::show ( unsigned level ) const
 //
 // casDGEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casDGEvWakeup::expire()
+epicsTimerNotify::expireStatus casDGEvWakeup::expire( const epicsTime & currentTime )
 {
 	this->os.casEventSys::process();
     return noRestart;
@@ -168,9 +168,9 @@ epicsTimerNotify::expireStatus casDGEvWakeup::expire()
 // casDGIOWakeup::casDGIOWakeup()
 //
 casDGIOWakeup::casDGIOWakeup ( casDGIntfOS &osIn ) : 
-	timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+	timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
 {
-    this->timer.start ( 0.0 );
+    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -189,7 +189,7 @@ casDGIOWakeup::~casDGIOWakeup()
 // guarantees that we will not call processInput()
 // recursively
 //
-epicsTimerNotify::expireStatus casDGIOWakeup::expire()
+epicsTimerNotify::expireStatus casDGIOWakeup::expire( const epicsTime & currentTime )
 {
 	//
 	// in case there is something in the input buffer

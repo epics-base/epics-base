@@ -211,7 +211,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
     // Old versions expect alloc of channel in response
     // to a search request. This is no longer supported.
     //
-    if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
+    if ( !CA_V44(msg.m_count) ) {
         if (this->getCAS().getDebugLevel()>0u) {
             char pName[64u];
             this->clientHostName (pName, sizeof (pName));
@@ -248,7 +248,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
     // (this allows multiple CA servers on one
     // host)
     //
-    if (CA_V48(CA_PROTOCOL_VERSION,msg.m_count)) {        
+    if (CA_V48(msg.m_count)) {        
         if (retVal.addrIsValid()) {
             caNetAddr addr = retVal.getAddr();
             ina = addr.getSockIP();
@@ -298,7 +298,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
     // This value is ignored by earlier clients. 
     //
     pMinorVersion = (unsigned short *) (search_reply+1);
-    *pMinorVersion = htons (CA_MINOR_VERSION);
+    *pMinorVersion = htons ( CA_MINOR_PROTOCOL_REVISION );
     
     this->commitMsg();
     

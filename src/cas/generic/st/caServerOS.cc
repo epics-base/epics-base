@@ -23,13 +23,13 @@ public:
 private:
     epicsTimer  &timer;
     caServerOS  &os;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 casBeaconTimer::casBeaconTimer ( double delay, caServerOS &osIn ) :
-    timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+    timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
 {
-    this->timer.start ( delay );
+    this->timer.start ( *this, delay );
 }
 
 casBeaconTimer::~casBeaconTimer ()
@@ -61,7 +61,7 @@ caServerOS::~caServerOS()
 //
 // casBeaconTimer::expire()
 //
-epicsTimerNotify::expireStatus casBeaconTimer::expire()	
+epicsTimerNotify::expireStatus casBeaconTimer::expire( const epicsTime & currentTime )	
 {
 	os.sendBeacon ();
     return expireStatus ( restart, os.getBeaconPeriod() );

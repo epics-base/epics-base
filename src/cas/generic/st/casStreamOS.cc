@@ -115,16 +115,16 @@ public:
 private:
     epicsTimer &timer;
 	casStreamOS	&os;
-	expireStatus expire ();
+	expireStatus expire ( const epicsTime & currentTime );
 };
 
 //
 // casStreamEvWakeup()
 //
 casStreamEvWakeup::casStreamEvWakeup ( casStreamOS &osIn ) : 
-		timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os(osIn) 
+		timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os(osIn) 
 {
-    this->timer.start ( 0.0 );
+    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -150,7 +150,7 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 // casStreamEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casStreamEvWakeup::expire()
+epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & currentTime )
 {
 	casProcCond cond;
 	cond = this->os.casEventSys::process();
@@ -184,16 +184,16 @@ public:
 private:
     epicsTimer &timer;
 	casStreamOS	&os;
-	expireStatus expire ();
+	expireStatus expire ( const epicsTime & currentTime );
 };
 
 //
 // casStreamIOWakeup::casStreamIOWakeup()
 //
 casStreamIOWakeup::casStreamIOWakeup ( casStreamOS &osIn ) : 
-	timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os(osIn) 
+	timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os(osIn) 
 {
-    this->timer.start ( 0.0 );
+    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -239,7 +239,7 @@ inline void casStreamOS::armRecv()
 // guarantees that we will not call processInput()
 // recursively
 //
-epicsTimerNotify::expireStatus casStreamIOWakeup::expire ()
+epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & currentTime )
 {
 	//
 	// in case there is something in the input buffer

@@ -1,6 +1,9 @@
 
 // $Id$
 // $Log$
+// Revision 1.5  1998/12/19 00:04:48  jhill
+// renamed createPV() to pvAttach()
+//
 // Revision 1.4  1997/06/25 05:56:38  jhill
 // align with API changes
 //
@@ -289,9 +292,9 @@ void servPV::eventReady(void)
 //
 // scanTimer::expire ()
 //
-void scanTimer::expire ()
+void scanTimer::expire ( const epicsTime & currentTime )
 {
-        serv.scan();
+    serv.scan();
 }
 
 //

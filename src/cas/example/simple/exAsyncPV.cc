@@ -56,9 +56,9 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
     const gdd &valueIn ) :
 	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->timerQueue().createTimer ( *this ) ), pValue(valueIn)
+        timer ( pvIn.getCAS()->timerQueue().createTimer () ), pValue(valueIn)
 {
-    this->timer.start ( 0.1 );
+    this->timer.start ( *this, 0.1 );
 }
 
 //
@@ -74,7 +74,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
 // exAsyncWriteIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncWriteIO::expire () 
+epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & currentTime ) 
 {
 	caStatus status;
 	status = this->pv.update ( this->pValue );
@@ -88,9 +88,9 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::expire ()
 exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
     gdd &protoIn ) :
 	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->timerQueue().createTimer(*this) ), pProto ( protoIn )
+        timer ( pvIn.getCAS()->timerQueue().createTimer() ), pProto ( protoIn )
 {
-    this->timer.start ( 0.1 );
+    this->timer.start ( *this, 0.1 );
 }
 
 //
@@ -107,7 +107,7 @@ exAsyncReadIO::~exAsyncReadIO()
 // exAsyncReadIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncReadIO::expire ()
+epicsTimerNotify::expireStatus exAsyncReadIO::expire ( const epicsTime & currentTime )
 {
 	caStatus status;
 

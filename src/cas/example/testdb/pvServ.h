@@ -2,6 +2,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  1998/12/19 00:04:48  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.3  1997/06/13 09:15:48  jhill
  * connect proto changes
  *
@@ -61,12 +64,10 @@ public:
 	scanTimer (double delayIn, serv &servIn) : 
 		osiTimer(delayIn), serv(servIn),
 		period(delayIn) {}
-	void expire ();
-	osiBool again() const;
-	const osiTime delay() const;
 private:
 	serv	&serv;
 	double period;
+	void expire ( const epicsTime & currentTime );
 };
 
 class serv : public caServer

@@ -237,7 +237,7 @@ private:
     //
     // scan timer expire
     //
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 
     //
     // Std PV Attribute fetch support
@@ -397,7 +397,7 @@ private:
     exAsyncPV &pv;
     epicsTimer &timer;
     smartConstGDDPointer pValue;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 //
@@ -411,7 +411,7 @@ private:
     exAsyncPV &pv;
     epicsTimer &timer;
     smartGDDPointer pProto;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 //
@@ -427,7 +427,7 @@ private:
     const pvInfo &pvi;
     epicsTimer &timer;
     exServer &cas;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
  
@@ -445,7 +445,7 @@ private:
     epicsTimer  &timer;
     exServer    &cas;
     bool        scanOn;
-    expireStatus expire ();
+    expireStatus expire ( const epicsTime & currentTime );
 };
 
 //

@@ -89,10 +89,10 @@ int rsrv_online_notify_task()
 				&maxPeriod);
 	if (longStatus || maxPeriod<=0.0) {
 		maxPeriod = 15.0;
-		ca_printf (
+		epicsPrintf (
 			"EPICS \"%s\" float fetch failed\n",
 			EPICS_CA_BEACON_PERIOD.name);
-		ca_printf (
+		epicsPrintf (
 			"Setting \"%s\" = %f\n",
 			EPICS_CA_BEACON_PERIOD.name,
 			maxPeriod);

@@ -27,6 +27,7 @@
  * -----------------
  * .00	06-12-91	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -46,7 +47,7 @@
 #include <genDefs.h>
 #define SYD_PRIVATE
 #include <sydDefs.h>
-#include <fields.h>
+#include <alarm.h>
 #ifndef INCLcadefh
 #   include <cadef.h>
 #endif

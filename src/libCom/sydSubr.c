@@ -27,6 +27,7 @@
  * -----------------
  * .00	12-04-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -99,7 +100,7 @@
 #include <genDefs.h>
 #define SYD_PRIVATE
 #include <sydDefs.h>
-#include <fields.h>
+#include <alarm.h>
 #ifndef INC_tsDefs_h
 #   include <tsDefs.h>
 #endif
@@ -1343,9 +1344,9 @@ SYD_SPEC *pSspec;
 		pSChan->pDataCodeR[sub] = 'L';
 	    else if (alStat == LOW_ALARM)
 		pSChan->pDataCodeR[sub] = 'l';
-	    else if (alSev == MAJOR)
+	    else if (alSev == MAJOR_ALARM)
 		pSChan->pDataCodeR[sub] = 'M';
-	    else if (alSev == MINOR)
+	    else if (alSev == MINOR_ALARM)
 		pSChan->pDataCodeR[sub] = 'm';
 /*-----------------------------------------------------------------------------
 *	now go ahead and store the sample into the set.  Also adjust the

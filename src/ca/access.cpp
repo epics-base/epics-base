@@ -245,78 +245,82 @@ LOCAL void ca_default_exception_handler (struct exception_handler_args args)
     }
 }
 
-/*
- * default local pv interface entry points that always fail
- */
-LOCAL pvId pvNameToIdNoop (const char *) 
-{
-    return 0;
-}
-LOCAL int pvPutFieldNoop (pvId, int, 
-                         const void *, int)
-{
-    return -1;
-}
-LOCAL int pvGetFieldNoop (pvId, int,
-                    void *, int, void *)
-{
-    return -1;
-}
-LOCAL long pvPutNotifyInitiateNoop (pvId, 
-    unsigned, unsigned long, const void *, 
-    void (*)(void *), void *, putNotifyId *)
-{
-    return -1;
-}
-LOCAL void pvPutNotifyDestroyNoop (putNotifyId)
-{
-}
+extern "C" {
 
-LOCAL const char * pvNameNoop (pvId)
-{
-    return "";
-}
-LOCAL unsigned long pvNoElementsNoop (pvId)
-{
-    return 0u;
-}
-short pvTypeNoop (pvId)
-{
-    return -1;
-}
-LOCAL dbEventCtx pvEventQueueInitNoop ()
-{
-    return NULL;
-}
-LOCAL int pvEventQueueStartNoop (dbEventCtx, const char *, 
-        void (*)(void *), void *, int)
-{
-    return -1;
-}
-LOCAL void pvEventQueueCloseNoop (dbEventCtx)
-{
-}
-LOCAL dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
-        void (*)(void *, pvId, int, struct db_field_log *), 
-        void *, unsigned)
-{
-    return NULL;
-}
-LOCAL int pvEventQueuePostSingleEventNoop (dbEventSubscription)
-{
-    return -1;
-}
-LOCAL void pvEventQueueCancelEventNoop (dbEventSubscription)
-{
-}
-LOCAL int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
-        void (*)(void *), void *)
-{
-    return -1;
-}
-LOCAL int pvEventQueuePostExtraLaborNoop (dbEventCtx)
-{
-    return -1;
+    /*
+     * default local pv interface entry points that always fail
+     */
+    static pvId pvNameToIdNoop (const char *) 
+    {
+        return 0;
+    }
+    static int pvPutFieldNoop (pvId, int, 
+                             const void *, int)
+    {
+        return -1;
+    }
+    static int pvGetFieldNoop (pvId, int,
+                        void *, int, void *)
+    {
+        return -1;
+    }
+    static long pvPutNotifyInitiateNoop (pvId, 
+        unsigned, unsigned long, const void *, 
+        void (*)(void *), void *, putNotifyId *)
+    {
+        return -1;
+    }
+    static void pvPutNotifyDestroyNoop (putNotifyId)
+    {
+    }
+
+    static const char * pvNameNoop (pvId)
+    {
+        return "";
+    }
+    static unsigned long pvNoElementsNoop (pvId)
+    {
+        return 0u;
+    }
+    static short pvTypeNoop (pvId)
+    {
+        return -1;
+    }
+    static dbEventCtx pvEventQueueInitNoop ()
+    {
+        return NULL;
+    }
+    static int pvEventQueueStartNoop (dbEventCtx, const char *, 
+            void (*)(void *), void *, int)
+    {
+        return -1;
+    }
+    static void pvEventQueueCloseNoop (dbEventCtx)
+    {
+    }
+    static dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
+            void (*)(void *, pvId, int, struct db_field_log *), 
+            void *, unsigned)
+    {
+        return NULL;
+    }
+    static int pvEventQueuePostSingleEventNoop (dbEventSubscription)
+    {
+        return -1;
+    }
+    static void pvEventQueueCancelEventNoop (dbEventSubscription)
+    {
+    }
+    static int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
+            void (*)(void *), void *)
+    {
+        return -1;
+    }
+    static int pvEventQueuePostExtraLaborNoop (dbEventCtx)
+    {
+        return -1;
+    }
+
 }
 
 LOCAL const pvAdapter pvAdapterNOOP =

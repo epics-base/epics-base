@@ -155,8 +155,8 @@ SRCS_WIN32 := getopt.c
 SRCS_WIN32 += dllmain.cpp
 
 # For RTEMS CommandInterpreter
-INC_RTEMS := CommandInterpreter.h
-SRCS_RTEMS := CommandInterpreter.c
+INC_RTEMS += CommandInterpreter.h
+SRCS_RTEMS += CommandInterpreter.c rtems_init.c epics_commands.c
 HTMLS_RTEMS += osi/os/RTEMS/CommandInterpreter.html
 
 #       Library to build:

@@ -71,14 +71,33 @@ static double threadSleepMeasureDelayError ( const double & delay )
 
 static void threadSleepQuantumTest ()
 {
-    static const unsigned iterations = 100u;
+    static const unsigned iterations = 1000u;
     const double quantum = epicsThreadSleepQuantum ();
     double errorSum = 0.0;
+    printf ( "Estimating sleep quantum" );
+    fflush ( stdout );
     for ( unsigned i = 0u; i < iterations; i++ ) {
+        // try to gurantee a uniform probability density function
+        // by intentionally burning some CPU so we are hopefully
+        // less likely to be aligned with the schedualing clock
+        double interval = rand ();
+        interval /= RAND_MAX;
+        interval *= quantum;
+        epicsTime start = epicsTime::getCurrent ();
+        epicsTime current = start;
+        while ( current - start < interval ) {
+            current = epicsTime::getCurrent ();
+        }
         errorSum += 
-            threadSleepMeasureDelayError ( 1e-15 );
+            threadSleepMeasureDelayError ( quantum );
+        if ( i % ( iterations / 10 ) == 0 ) {
+            printf ( "." );
+            fflush ( stdout );
+        }
     }
-    double quantumEstimate = errorSum / iterations;
+    printf ( "done\n" );
+
+    double quantumEstimate = 2 * errorSum / iterations;
     double quantumError = fabs ( quantumEstimate - quantum ) / quantum;
     const char * pTol = 0;
     if ( quantumError > 0.1 ) {
@@ -86,9 +105,6 @@ static void threadSleepQuantumTest ()
     }
     else if ( quantumError > 0.01 ) {
         pTol = "1%";
-    }
-    else if ( quantumError > 0.001 ) {
-        pTol = ".1%";
     }
     if ( pTol ) {
         printf ( 

@@ -218,11 +218,14 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
         return;
     }
     plockSet->state = lockSetStateRecordLock;
-    while(plockSet->nWaiting) {
+    while(1) {
         epicsMutexUnlock(lockSetModifyLock);
-        epicsThreadSleep(.1);
+        epicsMutexMustLock(plockSet->lock);
         epicsMutexMustLock(lockSetModifyLock);
+        if(plockSet->nWaiting == 0) break;
+        epicsThreadSleep(.1);
     }
+    epicsMutexUnlock(plockSet->lock);
     ellDelete(&lockSetList[plockSet->type],&plockSet->node);
     ellAdd(&lockSetList[listTypeRecordLock],&plockSet->node);
     plockSet->type = listTypeRecordLock;

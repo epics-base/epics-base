@@ -645,7 +645,7 @@ int ca_defunct()
 /*
  * ca_get_host_name ()
  */
-const void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
+void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength )
 {
     pChan->hostName ( pBuf, bufLength );
 }

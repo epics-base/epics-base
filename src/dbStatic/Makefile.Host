@@ -4,7 +4,6 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-USR_CFLAGS := -DYY_USE_PROTOS
 
 #       includes to install from this sub-project
 #

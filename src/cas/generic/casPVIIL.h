@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1997/08/05 00:47:12  jhill
+ * fixed warnings
+ *
  * Revision 1.10  1997/04/10 19:34:16  jhill
  * API changes
  *
@@ -72,11 +75,11 @@
 #include "dbMapper.h"
 
 //
-// casPVI::getCAS() 
+// casPVI::getPCAS() 
 //
-inline caServerI &casPVI::getCAS() const
+inline caServerI *casPVI::getPCAS() const
 {
-	return this->cas;
+	return this->pCAS;
 }
 
 //
@@ -109,7 +112,12 @@ inline void casPVI::lock() const
 	// server's lock then look carefully at the 
 	// comment in casPVI::deleteSignal()
 	//
-	this->cas.osiLock();
+	if (this->pCAS) {
+		this->pCAS->osiLock();
+	}
+	else {
+		fprintf (stderr, "PV lock call when not attached to server?\n");
+	}
 }
 
 //
@@ -117,7 +125,12 @@ inline void casPVI::lock() const
 //
 inline void casPVI::unlock() const
 {
-	this->cas.osiUnlock();
+	if (this->pCAS) {
+		this->pCAS->osiUnlock();
+	}
+	else {
+		fprintf (stderr, "PV unlock call when not attached to server?\n");
+	}
 }
 
 //
@@ -154,30 +167,35 @@ inline void casPVI::unregisterIO()
 //
 inline void casPVI::deleteSignal()
 {
-	/* MSC cannot use the default constructor localCASRef(this->cas): */
-	caServerI	&localCASRef = this->cas;
+	caServerI *pLocalCAS = this->pCAS;
 
 	//
-	// We dont take the PV lock here because
-	// the PV may be destroyed and we must
-	// keep the lock unlock pairs consistent
-	// (because the PV's lock is really a ref
-	// to the server's lock)
+	// if we are not attached to a server then the
+	// following steps are not relevant
 	//
-	// This is safe to do because we take the PV
-	// lock when we add a new channel (and the
-	// PV lock is realy the server's lock)
-	//
-	localCASRef.osiLock();
+	if (pLocalCAS) {
+		//
+		// We dont take the PV lock here because
+		// the PV may be destroyed and we must
+		// keep the lock unlock pairs consistent
+		// (because the PV's lock is really a ref
+		// to the server's lock)
+		//
+		// This is safe to do because we take the PV
+		// lock when we add a new channel (and the
+		// PV lock is realy the server's lock)
+		//
+		pLocalCAS->osiLock();
 
-	if (this->chanList.count()==0u && !this->destroyInProgress) {
-		(*this)->destroy();
-		//
-		// !! dont access self after destroy !!
-		//
+		if (this->chanList.count()==0u && !this->destroyInProgress) {
+			(*this)->destroy();
+			//
+			// !! dont access self after destroy !!
+			//
+		}
+
+		pLocalCAS->osiUnlock();
 	}
-
-	localCASRef.osiUnlock();
 }
 
 //

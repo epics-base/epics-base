@@ -8,13 +8,13 @@
 #< ../nfsCommands
 
 cd topbin
-ld < example.munch
+ld < _APPNAME_.munch
 
 #The following uses drvTS for vxWorks. May be needed for hardware event systems
 #TSinit
 
 cd top
-dbLoadDatabase("dbd/example.dbd")
+dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase)
 dbLoadRecords("db/dbExample1.db","user=_USER_")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=1,scan=1 second")

@@ -1,4 +1,4 @@
-dbLoadDatabase("dbd/example.dbd",0,0)
+dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase) 
 dbLoadRecords("db/dbExample1.db","user=_USER_")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=1,scan=1 second")

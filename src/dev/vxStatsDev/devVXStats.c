@@ -222,7 +222,7 @@ static long ao_init_record(aoRecord* pr)
 
     if(pr->out.type!=INST_IO) {
 	recGblRecordError(S_db_badField,(void*)pr,
-		"devAiStats (init_record) Illegal OUT field");
+		"devAoStats (init_record) Illegal OUT field");
 	return S_db_badField;
     }
     parm = pr->out.value.instio.string;
@@ -231,10 +231,11 @@ static long ao_init_record(aoRecord* pr)
 		pvt=(devPvt*)malloc(sizeof(devPvt));
 		pvt->type=type;
 	}
+	pr->val = default_scan_rate[type];
     }
     if(pvt==NULL) {
 	recGblRecordError(S_db_badField,(void*)pr,
-		"devAiStats (init_record) Illegal INP parm field");
+		"devAoStats (init_record) Illegal OUT parm field");
 	return S_db_badField;
     }
     /* Make sure record processing routine does not perform any conversion*/

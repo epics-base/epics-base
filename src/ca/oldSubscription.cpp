@@ -19,6 +19,12 @@ oldSubscription::~oldSubscription ()
 {
 }
 
+// eliminates sun pro warning
+void oldSubscription::completionNotify ( cacChannelIO &io )
+{
+     this->cacNotify::completionNotify ( io );
+}
+
 void oldSubscription::completionNotify ( cacChannelIO &io, 
     unsigned type, unsigned long count, const void *pData)
 {
@@ -48,7 +54,7 @@ void oldSubscription::exceptionNotify ( cacChannelIO &io,
 }
     
 void oldSubscription::exceptionNotify ( cacChannelIO &io,
-    int status, const char *pContext, 
+    int status, const char * /* pContext */, 
     unsigned type, unsigned long count )
 {
     struct event_handler_args args;

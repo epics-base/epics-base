@@ -162,7 +162,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
 
     assert ( nBytesInBuf <= INT_MAX );
 
-    this->sendDog.arm ();
+    this->sendDog.start ();
 
     while ( true ) {
         status = ::send ( this->sock, 
@@ -527,7 +527,7 @@ void tcpiiu::connect ()
     /* 
      * attempt to connect to a CA server
      */
-    this->sendDog.arm ();
+    this->sendDog.start ();
     while ( ! this->sockCloseCompleted ) {
 
         int status = ::connect ( this->sock, &this->addr.sa, sizeof ( addr.sa ) );

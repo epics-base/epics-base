@@ -51,6 +51,7 @@ protected:
 private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
+    void completionNotify ( cacChannelIO & );
     void completionNotify ( cacChannelIO &, 
         unsigned type, unsigned long count, const void *pData);
     void exceptionNotify ( cacChannelIO &, 
@@ -92,6 +93,7 @@ protected:
 private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
+    void completionNotify ( cacChannelIO & );
     void completionNotify ( cacChannelIO &, 
         unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( cacChannelIO &, 

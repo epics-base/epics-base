@@ -43,7 +43,7 @@ void putCallback::completionNotify ( cacChannelIO &io )
 }
 
 void putCallback::completionNotify ( cacChannelIO &io, unsigned type, 
-    unsigned long count, const void *pData )
+    unsigned long count, const void * /* pData */ )
 {
     struct event_handler_args args;
 
@@ -71,7 +71,7 @@ void putCallback::exceptionNotify ( cacChannelIO &io,
 }
 
 void putCallback::exceptionNotify ( cacChannelIO &io, int status, 
-    const char *pContext, unsigned type, unsigned long count )
+    const char * /* pContext */, unsigned type, unsigned long count )
 {
     struct event_handler_args args;
 

@@ -684,7 +684,7 @@ class tcpSendWatchdog : private osiTimer {
 public:
     tcpSendWatchdog ( tcpiiu &, double periodIn, osiTimerQueue & queueIn );
     ~tcpSendWatchdog ();
-    void arm ();
+    void start ();
     void cancel ();
 private:
     void expire ();

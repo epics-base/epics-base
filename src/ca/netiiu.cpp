@@ -215,12 +215,12 @@ int netiiu::clearChannelRequest ( nciu & )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( netSubscription &subscr, bool )
+int netiiu::subscriptionRequest ( netSubscription &, bool )
 {
     return ECA_NORMAL;
 }
 
-void netiiu::subscriptionCancelRequest ( netSubscription &, bool userThread )
+void netiiu::subscriptionCancelRequest ( netSubscription &, bool )
 {
 }
 

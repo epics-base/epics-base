@@ -51,7 +51,7 @@ const char *tcpSendWatchdog::name () const
     return "TCP Send Watchdog";
 }
 
-void tcpSendWatchdog::arm ()
+void tcpSendWatchdog::start ()
 {
     this->osiTimer::reschedule ();
 }

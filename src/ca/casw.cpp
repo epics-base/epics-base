@@ -16,7 +16,7 @@
 #include "bhe_IL.h"
 #include "inetAddrID_IL.h"
 
-int main ( int argc, char **argv )
+int main ( int, char ** )
 {
     epicsTime programBeginTime = epicsTime::getCurrent ();
     SOCKET sock;

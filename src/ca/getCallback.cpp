@@ -29,6 +29,12 @@ void getCallback::release ()
     delete this;
 }
 
+// eliminates SUN PRO warning
+void getCallback::completionNotify ( cacChannelIO &io )
+{
+     this->cacNotify::completionNotify ( io );
+}
+
 void getCallback::completionNotify ( cacChannelIO &io, 
     unsigned type, unsigned long count, const void *pData )
 {
@@ -56,7 +62,7 @@ void getCallback::exceptionNotify ( cacChannelIO &io, int status,
 }
 
 void getCallback::exceptionNotify ( cacChannelIO &io, 
-    int status, const char *pContext, 
+    int status, const char * /* pContext */, 
     unsigned type, unsigned long count )
 {
     struct event_handler_args   args;

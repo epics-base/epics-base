@@ -12,7 +12,7 @@
 /*
  * event_handler()
  */
-void eventCallBack ( struct event_handler_args args )
+extern "C" void eventCallBack ( struct event_handler_args args )
 {
     unsigned *pCount = static_cast < unsigned * > ( args.usr );
     (*pCount)++;

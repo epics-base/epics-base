@@ -134,7 +134,7 @@ static long init_record(pwf)
 	pwf->bptr = (char *)malloc(pwf->nelm * sizeofTypes[pwf->ftvl]);
 	pwf->nord = 0;
 	/* must have read_wf function defined */
-	if( (pdset->number < 6) || (pdset->read_wf == NULL) ) {
+	if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
 	    recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
 	    return(S_dev_missingSup);
 	}

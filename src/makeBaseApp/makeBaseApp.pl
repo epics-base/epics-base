@@ -214,7 +214,7 @@ sub get_commandline_opts { #no args
 #
 sub ListAppTypes { # no args
     print "Valid application types are:\n";
-    find(\&Fapp_types, "$top/");
+    find(\&Fapp_types, "$top");
     for $type (keys %Types) {
 	printf "%-15s %-15s\n", $TypeNameA{$type}, $TypeNameE{$type};
     }
@@ -277,22 +277,14 @@ sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
 
     print <<EOF;
 Usage:
-$0 -i [options] ioc ...
-             create ioc boot directories
 $0 [options] app ...
              create application directories
+$0 -i [options] ioc ...
+             create ioc boot directories
 where
- app  Application name (the created directory will have \"App\" appended to this)
- ioc  IOC name (note: if -i is not specified, App directories will be created)
+ app  Application name (the created directory will have \"App\" appended to name))
+ ioc  IOC name (The created directory will have \"ioc\" prepended to name)
 
- -a arch  Set the IOC architecture (e.g. mv167)
-          If not specified, you will be prompted
- -b base  Set the location of EPICS base (full path)
-          If not specified, base path is taken from config/RELEASE
-          If config does not exist, base path is taken from command
- -d       Verbose output (useful for debugging)
- -e       Create example application
- -l       List valid application types for this installation
  -t type  Set the application type (-l for a list of valid types)
           If not specified, type is taken from environment
           If not found in environment, \"default\" is used
@@ -300,6 +292,14 @@ where
           If not specified, top path is taken from config/RELEASE
           If config does not exist, top path is taken from environment
           If not found in environment, the templates from EPICS base are used
+ -l       List valid application types for this installation
+	  If this is specified the other options are not used
+ -a arch  Set the IOC architecture (e.g. mv167)
+          If not specified, you will be prompted
+ -b base  Set the location of EPICS base (full path)
+          If not specified, base path is taken from config/RELEASE
+          If config does not exist, base path is taken from command
+ -d       Verbose output (useful for debugging)
 
 Environment:
 EPICS_MBA_DEF_APP_TYPE  The application type you want to use as default

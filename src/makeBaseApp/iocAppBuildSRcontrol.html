@@ -17,7 +17,7 @@ Source Release Control</H1></CENTER>
 <H2>
 Marty Kraimer and Janet Anderson&nbsp;<BR>
 Argonne National Laboratory, Advanced Photon Source&nbsp;<BR>
-April 28, 1998&nbsp;<BR>
+May 29, 1998&nbsp;<BR>
 EPICS Release 3.13.0.beta12</H2></CENTER>
 
 <CENTER>
@@ -26,8 +26,8 @@ Acknowledgements</H2></CENTER>
 Between release 3.13.0.beta11 and 3.13.0.beta12 makeBase App was changed
 from one very long perl script to a four page perl script plus template
 files. In addition other improvements were made including support for capfast.
-The following people contributed to this effort: Rozelle Wright (LANL,
-Ralph Lange (BESSY), and Thomas Birke (BESSY).
+The following people contributed to this effort: Ralph Lange (BESSY),&nbsp;
+Rozelle Wright (LANL, and Thomas Birke (BESSY).
 <CENTER>
 <H2>
 Quick Start</H2></CENTER>
@@ -35,24 +35,7 @@ If you are new to EPICS or are trying a new release, then follow the instruction
 in section <A HREF="#QuickStart">Quick Start</A>. Look at all the files
 that are generated. They give examples of how to manage each of the IOC
 components.
-<CENTER>
-<H2>
-FUTURE WORK</H2></CENTER>
-The procedures described in this document use soft links in two places.
-Since soft links are not supported on winXX some changes will be necessary
-to use the procedures on winXX.
-
-<P>This document discusses template files. In the future these will no
-longer be used. Our intention is to let makeBaseApp evolve such that template
-files are no longer necessary. For now the template files can be obtained
-via the WWW APS software distribution system.
-
-<P>Currently two versions of makeBaseApp exist: A bourne shell version
-and a perl version. For beta11, the bourne shell version is the primary
-version. In the next release of base only the perl version will be supported.
-Starting soon the perl version will be made available via the WWW as a
-separate product. Thus new versions can be distributed without waiting
-for new versions of base.
+<BR>&nbsp;
 <CENTER>
 <H2>
 Index</H2></CENTER>
@@ -119,7 +102,7 @@ State Notation Programs.</LI>
 New record types, device support, drivers.</LI>
 
 <LI>
-Access security configuration files</LI>
+Access security configuration files.</LI>
 
 <LI>
 Other code to be executed in an IOC.</LI>
@@ -156,15 +139,17 @@ by operations. The ascf directory <B>MUST</B> reside in the same directory
 as the &lt;<TT>top</TT>> areas that use it.</LI>
 
 <LI>
-Each application developer makes changes in a private copy of a subset
-of the directories, normally located in the developer's home directory.</LI>
+Each application developer makes changes in a private copy of one or more
+&lt;<TT>top</TT>> areas.</LI>
 
 <LI>
 <TT>cvs</TT> and <TT>gnumake</TT> are the only tools users execute to build
 applications.</LI>
 
 <LI>
-Template makefiles are provided for creating new application directories.</LI>
+Template are provided for creating new application directories. EPICS base
+provides two sets of templates: simple and example. Additional templates
+can be created.</LI>
 </UL>
 
 <H3>
@@ -217,7 +202,8 @@ Create example Application</H3>
 Execute the commands:
 <PRE>mkdir &lt;top>
 cd &lt;top>
-&lt;base>/bin/&lt;arch>/makeBaseApp.pl -e</PRE>
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl -t example example
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl -i -t example example</PRE>
 where:
 
 <P><TT>&lt;top></TT> - Is any directory name you chose
@@ -228,7 +214,8 @@ where:
 <PRE>cd
 mkdir myapp
 cd myapp
-/usr/local/epics/baseR3.13.0.beta11/bin/solaris/makeBaseApp.pl -e</PRE>
+/usr/local/epics/baseR3.13.0.beta11/bin/solaris/makeBaseApp.pl -t example example
+/usr/local/epics/baseR3.13.0.beta11/bin/solaris/makeBaseApp.pl -i -t example example</PRE>
 
 <H3>
 Inspect Files</H3>
@@ -253,7 +240,7 @@ for details.
 <PRE>boot device&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx
 <TT>processor number&nbsp;&nbsp;&nbsp;&nbsp; : 0
 host name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx
-file name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &lt;top>/iocBoot/iocexample/vxWorks
+file name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &lt;top>/bin/&lt;target_arch>/vxWorks
 inet on ethernet (e) : xxx.xxx.xxx.xxx:&lt;netmask>
 inet on backplane (b):
 host inet (h)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx.xxx.xxx.xxx
@@ -262,14 +249,8 @@ user (u)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 ftp password (pw) (blank = use rsh): xxx
 flags (f)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 0x0
 target name (tn)&nbsp;&nbsp;&nbsp;&nbsp; : &lt;hostid for channel access security>
-startup script (s)&nbsp;&nbsp; : st.cmd
+startup script (s)&nbsp;&nbsp; : &lt;top>/iocBoot/iocexample/st.cmd
 other (o)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :</TT></PRE>
-NOTE: For a winXX host the following are needed:
-<PRE><TT>file name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &lt;top>/bin/&lt;target_arch>/vxWorks</TT></PRE>
-
-<PRE><TT>...</TT></PRE>
-
-<PRE><TT>startup script (s)&nbsp;&nbsp; : &lt;top>/iocBoot/iocexample/st.cmd</TT></PRE>
 The actual values for each field are site and IOC dependent. Consult your
 EPICS system manager for help. Two fields that you can change at will are
 the vxWorks boot image and the location of the startup script.
@@ -409,12 +390,16 @@ The application directory structure appears as follows:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxSrc/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxDb/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...</PRE>
 Each &lt;<TT>top</TT>> area is a separately managed set of applications.
 Separately managed means that each &lt;<TT>top</TT>> can be using it's
 own release of software obtained from outside the application, e.g. a release
@@ -544,6 +529,8 @@ Structure</H3>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_ARCHS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_DIRS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_TOP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; makeIoccdcmds.pl
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; makeNfsCommands.pl
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/ or xxxSrc
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
@@ -579,7 +566,7 @@ Structure</H3>
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib/
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; man/</PRE>
 Files marked with an "*" are user created and/or edited. Each such file
-is discussed in this chapter.
+is discussed in this section.
 
 <P>Files marked with "**" are directories created by gnumake. Since <TT>gnumake
 uninstall</TT> removes all files in these directories, no permanent files
@@ -604,23 +591,22 @@ appended to the name because Makefile looks for it.</DD>
 
 <DL>
 <DT>
-<TT>src</TT> or <TT>xxxSrc</TT></DT>
+<TT>xxxsrc</TT> or&nbsp; <TT>xxxSrc</TT></DT>
 
 <DD>
 Directory containing source files. An arbitrary number of source directories
-can appear under each xxxApp. The names must be <TT>src</TT> or end in
-<TT>Src</TT>. A source directory is where C code, sequence programs, scripts,
-etc. are created and built.</DD>
+can appear under each xxxApp. The names must have the suffix <TT>src</TT>
+or <TT>Src</TT>. A source directory is where C code, sequence programs,
+scripts, etc. are created and built.</DD>
 
 <DT>
-<TT>xxxDb</TT></DT>
+<TT>xxxdb </TT>or<TT> xxxDb</TT></DT>
 
 <DD>
 Directory containing record instance files. An arbitrary number of Db directories
-can exist under each xxxApp, but each must have Db appended to the name
-because the Makefile looks for it. Each Db directory can contain record
-instance, template, and substitution files. The name Db, without any suffix,
-is also permitted.</DD>
+can exist under each xxxApp. The name must have the suffix <TT>db </TT>or
+Db. Each Db directory can contain record instance, template, and substitution
+files.</DD>
 </DL>
 
 <DT>
@@ -698,9 +684,9 @@ overriding this variables saves build time.
 CONFIG_APP</DT>
 
 <DD>
-You should not edit this file unless you are using external products besides
-<TT>epics_base</TT>,and&nbsp; <TT>share</TT>. If you are using additional
-external products follow the model used by the template file <TT>share/config/CONFIG_APP.</TT></DD>
+This file contains definitions for external products such as epics base
+and share. You should edit this file if you are using external products
+besides <TT>epics_base</TT>,and&nbsp; <TT>share</TT>.</DD>
 
 <DT>
 RELEASE</DT>

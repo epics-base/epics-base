@@ -2,6 +2,5 @@
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
 #SHARE=
-#HIDEOS=
-#EPICSHIDEOS=
+#MASTER_IOCAPPS only works if operating system supports soft links
 #MASTER_IOCAPPS=

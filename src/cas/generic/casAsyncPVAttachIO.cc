@@ -24,25 +24,25 @@
 // casAsyncPVAttachIO::casAsyncPVAttachIO()
 //
 casAsyncPVAttachIO::casAsyncPVAttachIO (const casCtx &ctx) :
-	casAsyncIOI (*ctx.getClient()),
-	msg (*ctx.getMsg()),
-	retVal (S_cas_badParameter)
+	casAsyncIOI ( ctx ),
+	msg ( *ctx.getMsg() ),
+	retVal ( S_cas_badParameter )
 {
-	this->client.installAsyncIO (*this);
+	this->client.installAsyncIO ( *this );
 }
 
 //
 // casAsyncPVAttachIO::~casAsyncPVAttachIO()
 //
-casAsyncPVAttachIO::~casAsyncPVAttachIO()
+casAsyncPVAttachIO::~casAsyncPVAttachIO ()
 {
-	this->client.removeAsyncIO (*this);
+	this->client.removeAsyncIO ( *this );
 }
 
 //
 // casAsyncPVAttachIO::postIOCompletion()
 //
-caStatus casAsyncPVAttachIO::postIOCompletion(const pvAttachReturn &retValIn)
+caStatus casAsyncPVAttachIO::postIOCompletion ( const pvAttachReturn & retValIn )
 {
 	this->retVal = retValIn; 
 	return this->postIOCompletionI ();
@@ -56,14 +56,14 @@ epicsShareFunc caStatus casAsyncPVAttachIO::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-	switch (this->msg.m_cmmd) {
+	switch ( this->msg.m_cmmd ) {
 	case CA_PROTO_CLAIM_CIU:
-		status = this->client.createChanResponse (this->msg, this->retVal);
+		status = this->client.createChanResponse ( this->msg, this->retVal );
 		break;
 
 	default:
-        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
-            " - client request type = %u", this->msg.m_cmmd);
+        errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
+            " - client request type = %u", this->msg.m_cmmd );
 		status = S_cas_invalidAsynchIO;
 		break;
 	}
@@ -82,15 +82,15 @@ void casAsyncPVAttachIO::destroy ()
 //
 // deprecated
 //
-casAsyncPVCreateIO::casAsyncPVCreateIO(const casCtx &ctx) : 
-		casAsyncPVAttachIO (ctx) 
+casAsyncPVCreateIO::casAsyncPVCreateIO ( const casCtx & ctx ) : 
+		casAsyncPVAttachIO ( ctx ) 
 {
 }
 
 //
 // deprecated
 //
-epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO()
+epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO ()
 {
 }
 

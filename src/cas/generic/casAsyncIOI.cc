@@ -25,22 +25,19 @@
 //
 // casAsyncIOI::casAsyncIOI()
 //
-casAsyncIOI::casAsyncIOI ( casCoreClient & clientIn ) :
-	client ( clientIn ), inTheEventQueue ( false ),
-	posted ( false ), ioComplete ( false ), serverDelete ( false )
+casAsyncIOI::casAsyncIOI ( const casCtx & ctx ) :
+	client ( *ctx.getClient() ), inTheEventQueue ( false ),
+	posted ( false ), ioComplete ( false ), 
+    serverDelete ( false ), duplicate ( false )
 {
 	//
 	// catch situation where they create more than one
 	// async IO object per request
 	//
-	if (client.asyncIOFlag) {
-		errMessage(S_cas_badParameter, 
-			"- duplicate async IO creation");
-		this->duplicate = TRUE;
-	}
-	else {
-		client.asyncIOFlag = TRUE;
-		this->duplicate = FALSE;
+	if ( ! client.okToStartAsynchIO () ) {
+		errMessage ( S_cas_badParameter, 
+			"- duplicate async IO creation" );
+		this->duplicate = true;
 	}
 }
 

@@ -60,5 +60,14 @@ inline void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
 	this->ctx.getServer()->ioBlockedList::signal();
 }
 
+inline bool casCoreClient::okToStartAsynchIO ()
+{
+    if ( ! this->asyncIOFlag ) {
+        this->asyncIOFlag = true;
+        return true;
+    }
+    return false;
+}
+
 #endif // casCoreClientIL_h
 

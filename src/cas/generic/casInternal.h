@@ -221,13 +221,13 @@ class casAsyncPVAttachIO;
 
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
-	casAsyncIOI (casCoreClient &client);
-	epicsShareFunc virtual ~casAsyncIOI();
+	casAsyncIOI ( const casCtx & ctx );
+	epicsShareFunc virtual ~casAsyncIOI ();
 
 	void serverDestroyIfReadOP ();
     void serverDestroy ();
 
-	caServer *getCAS() const;
+	caServer *getCAS () const;
 
 protected:
 	casCoreClient & client;
@@ -392,88 +392,48 @@ class casPVI :
 public:
     casPVI ();
     epicsShareFunc virtual ~casPVI (); 
-    
-    //
-    // for use by the server library
-    //
     caServerI *getPCAS () const;
-    
-    //
-    // attach to a server
-    //
-    caStatus attachToServer (caServerI &cas);
-    
-    //
-    // CA only does 1D arrays for now (and the new server
-    // temporarily does only scalars)
-    //
+    caStatus attachToServer ( caServerI & cas );
     aitIndex nativeCount ();
-    
-    //
-    // only for use by casMonitor
-    //
     caStatus registerEvent ();
     void unregisterEvent ();
-    
-    //
-    // only for use by casAsyncIOI 
-    //
     void unregisterIO ();
-    
-    //
-    // only for use by casChannelI
-    //
-    void installChannel (casPVListChan &chan);
-    
-    //
-    // only for use by casChannelI
-    //
-    void removeChannel (casPVListChan &chan);
-    
-    //
-    // check for none attached and delete self if so
-    //
+    void installChannel ( casPVListChan & chan );
+    void removeChannel ( casPVListChan & chan );
     void deleteSignal ();
-    
-    void postEvent (const casEventMask &select, const gdd &event);
-    
-    caServer *getExtServer () const;
-    
-    //
-    // bestDBRType()
-    //
-    caStatus bestDBRType (unsigned &dbrType);
-       
+    void postEvent ( const casEventMask & select, const gdd & event );
+    caServer * getExtServer () const;
+    caStatus bestDBRType ( unsigned & dbrType );
     epicsShareFunc virtual casResType resourceType () const;
-
     const gddEnumStringTable & enumStringTable () const;
-    void updateEnumStringTable ();
+    caStatus updateEnumStringTable ( casCtx & );
+    void updateEnumStringTableAsyncCompletion ( const gdd & resp );
 
     //
     // virtual functions in the public interface class
     //
-    epicsShareFunc virtual void show (unsigned level) const;
+    epicsShareFunc virtual void show ( unsigned level ) const;
     epicsShareFunc virtual caStatus interestRegister () = 0;
     epicsShareFunc virtual void interestDelete () = 0;
     epicsShareFunc virtual caStatus beginTransaction () = 0;
     epicsShareFunc virtual void endTransaction () = 0;
-    epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype) = 0;
-    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value) = 0;
-    epicsShareFunc virtual casChannel *createChannel (const casCtx &ctx,
-        const char * const pUserName, const char * const pHostName) = 0;
+    epicsShareFunc virtual caStatus read ( const casCtx & ctx, gdd & prototype ) = 0;
+    epicsShareFunc virtual caStatus write ( const casCtx & ctx, const gdd & value ) = 0;
+    epicsShareFunc virtual casChannel *createChannel (const casCtx & ctx,
+        const char * const pUserName, const char * const pHostName ) = 0;
     epicsShareFunc virtual aitEnum bestExternalType () const = 0;
     epicsShareFunc virtual unsigned maxDimension () const = 0; 
-    epicsShareFunc virtual aitIndex maxBound (unsigned dimension) const = 0;
+    epicsShareFunc virtual aitIndex maxBound ( unsigned dimension ) const = 0;
     epicsShareFunc virtual const char *getName () const = 0;
     epicsShareFunc casPV *apiPointer (); //retuns NULL if casPVI isnt a base of casPV
 
 private:
-    tsDLList<casPVListChan>     chanList;
-    gddEnumStringTable          enumStrTbl;
-    caServerI                   *pCAS;
-    unsigned                    nMonAttached;
-    unsigned                    nIOAttached;
-    bool                        destroyInProgress;
+    tsDLList < casPVListChan > chanList;
+    gddEnumStringTable enumStrTbl;
+    caServerI * pCAS;
+    unsigned nMonAttached;
+    unsigned nIOAttached;
+    bool destroyInProgress;
 
     epicsShareFunc virtual void destroy (); // casPVI destructor noop
 	casPVI ( const casPVI & );

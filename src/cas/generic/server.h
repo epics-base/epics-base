@@ -423,33 +423,22 @@ private:
 //
 class casCoreClient : public ioBlocked, 
 	public casEventSys {
-
-	//
-	// allows casAsyncIOI constructor to check for asynch IO duplicates
-	//
-	friend casAsyncIOI::casAsyncIOI(casCoreClient &clientIn);
-
 public:
-	casCoreClient(caServerI &serverInternal); 
+	casCoreClient ( caServerI &serverInternal ); 
 	virtual ~casCoreClient();
 	virtual void destroy();
-	virtual caStatus disconnectChan(caResId id);
-	virtual void show (unsigned level) const;
-	virtual void installChannel (casChannelI &);
-	virtual void removeChannel (casChannelI &);
+	virtual caStatus disconnectChan( caResId id );
+	virtual void show  (unsigned level ) const;
+	virtual void installChannel ( casChannelI & );
+	virtual void removeChannel ( casChannelI & );
 
-	void installAsyncIO(casAsyncIOI &ioIn);
+	void installAsyncIO( casAsyncIOI & ioIn );
 
-	void removeAsyncIO(casAsyncIOI &ioIn);
+	void removeAsyncIO( casAsyncIOI & ioIn );
 
-	casRes *lookupRes(const caResId &idIn, casResType type);
+	casRes * lookupRes ( const caResId &idIn, casResType type );
 
-	caServerI &getCAS() const;
-
-	virtual caStatus monitorResponse ( casChannelI &chan, const caHdrLargeArray &msg, 
-		const smartConstGDDPointer &pDesc, const caStatus status );
-
-	virtual caStatus accessRightsResponse(casChannelI *);
+	caServerI & getCAS () const;
 
     void lock ();
     void unlock ();
@@ -465,19 +454,28 @@ public:
 	virtual caStatus createChanResponse (
 		const caHdrLargeArray &, const pvAttachReturn &);
 	virtual caStatus readResponse (
-		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus); 
+		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus ); 
 	virtual caStatus readNotifyResponse (
-		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus);
-	virtual caStatus writeResponse (const caHdrLargeArray &, const caStatus);
-	virtual caStatus writeNotifyResponse (const caHdrLargeArray &, const caStatus);
+		casChannelI *, const caHdrLargeArray &, const smartConstGDDPointer &, const caStatus );
+	virtual caStatus writeResponse ( const caHdrLargeArray &, const caStatus );
+	virtual caStatus writeNotifyResponse ( const caHdrLargeArray &, const caStatus );
+	virtual caStatus monitorResponse ( casChannelI &chan, const caHdrLargeArray &msg, 
+		const smartConstGDDPointer & pDesc, const caStatus status );
+	virtual caStatus accessRightsResponse ( casChannelI * );
+    virtual caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
+        const caHdrLargeArray & hdr, unsigned dbrType );
+	virtual caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
+        caStatus createStatus );
 
-	virtual ca_uint16_t protocolRevision() const = 0;
+	virtual ca_uint16_t protocolRevision () const = 0;
 
 	//
 	// used only with DG clients 
 	// 
 	virtual caNetAddr fetchLastRecvAddr () const;
     virtual ca_uint32_t datagramSequenceNumber () const;
+
+    bool okToStartAsynchIO ();
 
 protected:
     epicsMutex mutex;
@@ -486,7 +484,6 @@ protected:
 
 private:
 	tsDLList < casAsyncIOI > ioInProgList;
-
 	casCoreClient ( const casCoreClient & );
 	casCoreClient & operator = ( const casCoreClient & );
 };
@@ -616,6 +613,10 @@ public:
 	caStatus writeNotifyResponse (const caHdrLargeArray &msg, const caStatus status);
 	caStatus monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
 		const smartConstGDDPointer & pDesc, const caStatus status );
+    caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
+        const caHdrLargeArray & hdr, unsigned dbrType );
+	caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
+        caStatus createStatus );
 
 	caStatus noReadAccessEvent( casClientMon * );
 
@@ -672,11 +673,6 @@ private:
 	//
 	caStatus read (smartGDDPointer &pDesc);
 	caStatus write ();
-
-	//
-	// channelCreateFailed()
-	//
-	caStatus channelCreateFailed ( const caHdrLargeArray *mp, caStatus createStatus );
 
 	caStatus writeArrayData();
 	caStatus writeScalarData();

@@ -1006,46 +1006,94 @@ caStatus casStrmClient::claimChannelAction()
 //
 // LOCK must be applied
 //
-caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvAttachReturn &pvar)
+caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const pvAttachReturn & pvar )
 {
-	casPVI *pPV;
-	casChannel *pChan;
-	casChannelI *pChanI;
-    bufSizeT nBytes;
-	caStatus status;
-
-	if (pvar.getStatus() != S_cas_success) {
-		return this->channelCreateFailed (&hdr, pvar.getStatus());
+	if ( pvar.getStatus() != S_cas_success ) {
+		return this->channelCreateFailedResp ( hdr, pvar.getStatus() );
 	}
 
-	pPV = pvar.getPV();
+	casPVI * pPV = pvar.getPV();
 
 	//
 	// If status is ok and the PV isnt set then guess that the
 	// pv isnt in this server
 	//
-	if (pPV == NULL) {
-		return this->channelCreateFailed (&hdr, S_casApp_pvNotFound);
+	if ( pPV == NULL ) {
+		return this->channelCreateFailedResp ( hdr, S_casApp_pvNotFound );
 	}
 
-    //
-    // fetch the native type
-    //
-	unsigned	nativeType;
-	status = pPV->bestDBRType(nativeType);
-	if (status) {
-		errMessage(status, "best external dbr type fetch failed");
-		return this->channelCreateFailed (&hdr, status);
+	unsigned nativeTypeDBR;
+	caStatus status = pPV->bestDBRType ( nativeTypeDBR );
+	if ( status ) {
+		errMessage ( status, "best external dbr type fetch failed" );
+		return this->channelCreateFailedResp ( hdr, status );
 	}
 
 	//
 	// attach the PV to this server
 	//
-	status = pPV->attachToServer (this->getCAS());
-	if (status) {
-		return this->channelCreateFailed (&hdr, status);
+	status = pPV->attachToServer ( this->getCAS() );
+	if ( status ) {
+		return this->channelCreateFailedResp ( hdr, status );
 	}
 
+	//
+	// create server tool XXX derived from casChannel
+	//
+	this->ctx.setPV ( pPV );
+	casChannel * pChan = pPV->createChannel ( this->ctx, this->pUserName, this->pHostName );
+	if ( ! pChan ) {
+		pPV->deleteSignal();
+		return this->channelCreateFailedResp ( hdr, S_cas_noMemory );
+	}
+
+    pChan->bindToClient ( *this, *pPV, hdr.m_cid );
+
+	casChannelI * pChanI = (casChannelI *) pChan;
+
+    //
+    // check to see if the enum table is empty and therefore
+    // an update is needed every time that a PV attaches 
+    // to the server in case the client disconnected before 
+    // an asynchronous IO to get the table comleted
+    //
+    if ( nativeTypeDBR == DBR_ENUM ) {
+        this->ctx.setPV ( pPV );
+        this->ctx.setChannel ( pChanI );
+        this->asyncIOFlag = false;
+        status = pPV->updateEnumStringTable ( this->ctx );
+	    if ( this->asyncIOFlag ) {
+		    if ( status != S_casApp_asyncCompletion ) {
+			    fprintf ( stderr, 
+                    "Application returned %d from casPV::read()"
+                    " - expected S_casApp_asyncCompletion\n", status);
+			    status = S_casApp_asyncCompletion;
+		    }
+	    }
+	    else if ( status == S_casApp_asyncCompletion)  {
+		    status = S_cas_badParameter;
+		    errMessage ( status, 
+		        "- expected asynch IO creation from casPV::read()");
+	    }
+        else if ( status == S_casApp_success ) {
+            status = enumPostponedCreateChanResponse ( *pChan, hdr, nativeTypeDBR );
+        }
+    }
+    else {
+        status = enumPostponedCreateChanResponse ( *pChan, hdr, nativeTypeDBR );
+    }
+
+    return status;
+}
+
+//
+// casStrmClient::enumPostponedCreateChanResponse()
+//
+// LOCK must be applied
+//
+caStatus casStrmClient::enumPostponedCreateChanResponse ( 
+    casChannelI & chan, const caHdrLargeArray & hdr, unsigned nativeTypeDBR )
+{
 	//
 	// We are allocating enough space for both the claim
 	// response and the access rights response so that we know for
@@ -1054,36 +1102,21 @@ caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvA
     void *pRaw;
     const outBufCtx outctx = this->out.pushCtx 
                     ( 0, 2 * sizeof ( caHdr ), pRaw );
-    if (outctx.pushResult()!=outBufCtx::pushCtxSuccess) {
+    if ( outctx.pushResult() != outBufCtx::pushCtxSuccess ) {
         return S_cas_sendBlocked;
     }
-
-	//
-	// create server tool XXX derived from casChannel
-	//
-	this->ctx.setPV (pPV);
-	pChan = pPV->createChannel (this->ctx, this->pUserName, this->pHostName);
-	if (!pChan) {
-        this->out.popCtx (outctx);
-		pPV->deleteSignal();
-		return this->channelCreateFailed (&hdr, S_cas_noMemory);
-	}
-
-    pChan->bindToClient ( *this, *pPV, hdr.m_cid );
-
-	pChanI = (casChannelI *) pChan;
 
 	//
 	// We are certain that the request will complete
 	// here because we allocated enough space for this
 	// and the claim response above.
 	//
-	status = casStrmClient::accessRightsResponse(pChanI);
-	if (status) {
-        this->out.popCtx (outctx);
-		errMessage(status, "incomplete channel create?");
-		pChanI->destroyNoClientNotify();
-		return this->channelCreateFailed(&hdr, status);
+	caStatus status = casStrmClient::accessRightsResponse ( & chan );
+	if ( status ) {
+        this->out.popCtx ( outctx );
+		errMessage ( status, "incomplete channel create?" );
+		chan.destroyNoClientNotify ();
+		return this->channelCreateFailedResp ( hdr, status );
 	}
 
 	//
@@ -1095,17 +1128,17 @@ caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvA
 	// here to be certain that we are at the correct place in
 	// the protocol buffer.
 	//
-	assert ( nativeType <= 0xffff );
-	unsigned nativeCount = pPV->nativeCount();
+	assert ( nativeTypeDBR <= 0xffff );
+	unsigned nativeCount = chan.getPVI().nativeCount();
     status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU, 0,
-        static_cast <ca_uint16_t> ( nativeType ), 
+        static_cast <ca_uint16_t> ( nativeTypeDBR ), 
         static_cast <ca_uint16_t> ( nativeCount ), 
-        hdr.m_cid, pChanI->getSID(), 0 );
+        hdr.m_cid, chan.getSID(), 0 );
     if ( status != S_cas_success ) {
         this->out.popCtx ( outctx );
 		errMessage ( status, "incomplete channel create?" );
-		pChanI->destroyNoClientNotify();
-		return this->channelCreateFailed ( &hdr, status );
+		chan.destroyNoClientNotify ();
+		return this->channelCreateFailedResp ( hdr, status );
 	}
 
     this->out.commitMsg ();
@@ -1113,7 +1146,7 @@ caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvA
     //
     // commit the message
     //
-    nBytes = this->out.popCtx (outctx);
+    bufSizeT nBytes = this->out.popCtx (outctx);
     assert ( nBytes == 2*sizeof(caHdr) );
     this->out.commitRawMsg (nBytes);
 
@@ -1126,8 +1159,8 @@ caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvA
  * If we are talking to an CA_V46 client then tell them when a channel
  * cant be created (instead of just disconnecting)
  */
-caStatus casStrmClient::channelCreateFailed (
-    const caHdrLargeArray *mp, caStatus createStatus )
+caStatus casStrmClient::channelCreateFailedResp (
+    const caHdrLargeArray & hdr, caStatus createStatus )
 {
     caStatus status;
  
@@ -1142,7 +1175,7 @@ caStatus casStrmClient::channelCreateFailed (
 	}
 	if ( CA_V46( this->minor_version_number ) ) {
         status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU_FAILED, 0,
-            0, 0, mp->m_cid, 0, 0 );
+            0, 0, hdr.m_cid, 0, 0 );
 		if ( status ) {
 			return status;
 		}
@@ -1150,7 +1183,7 @@ caStatus casStrmClient::channelCreateFailed (
 		createStatus = S_cas_success;
 	}
 	else {
-		status = this->sendErrWithEpicsStatus ( mp, createStatus, ECA_ALLOCMEM );
+		status = this->sendErrWithEpicsStatus ( & hdr, createStatus, ECA_ALLOCMEM );
 		if ( status ) {
 			return status;
 		}

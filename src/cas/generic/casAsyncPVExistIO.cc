@@ -25,7 +25,7 @@
 // casAsyncPVExistIO::casAsyncPVExistIO()
 //
 casAsyncPVExistIO::casAsyncPVExistIO (const casCtx &ctx) :
-	casAsyncIOI ( *ctx.getClient () ),
+	casAsyncIOI ( ctx ),
 	msg ( *ctx.getMsg () ),
 	retVal (pverDoesNotExistHere),
 	dgOutAddr ( ctx.getClient ()->fetchLastRecvAddr () ),

@@ -125,7 +125,17 @@ caStatus casCoreClient::monitorResponse ( casChannelI &, const caHdrLargeArray &
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::accessRightsResponse (casChannelI *)
+caStatus casCoreClient::accessRightsResponse ( casChannelI * )
+{
+	return S_casApp_noSupport;
+}
+caStatus casCoreClient::enumPostponedCreateChanResponse ( casChannelI &, 
+    const caHdrLargeArray &, unsigned )
+{
+	return S_casApp_noSupport;
+}
+caStatus casCoreClient::channelCreateFailedResp ( const caHdrLargeArray &, 
+    caStatus createStatus )
 {
 	return S_casApp_noSupport;
 }

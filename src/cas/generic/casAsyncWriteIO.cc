@@ -23,14 +23,14 @@
 //
 // casAsyncWriteIO::casAsyncWriteIO()
 //
-casAsyncWriteIO::casAsyncWriteIO(const casCtx &ctx) :
-	casAsyncIOI(*ctx.getClient()),
-	msg(*ctx.getMsg()), 
-	chan(*ctx.getChannel()),
-	completionStatus(S_cas_internal)
+casAsyncWriteIO::casAsyncWriteIO ( const casCtx & ctx ) :
+	casAsyncIOI ( ctx ),
+	msg ( *ctx.getMsg() ), 
+	chan ( *ctx.getChannel() ),
+	completionStatus ( S_cas_internal )
 {
-	assert (&this->chan);
-	this->chan.installAsyncIO(*this);
+	assert ( &this->chan );
+	this->chan.installAsyncIO ( *this );
 }
 
 //
@@ -39,40 +39,40 @@ casAsyncWriteIO::casAsyncWriteIO(const casCtx &ctx) :
 casAsyncWriteIO::~casAsyncWriteIO()
 {
     epicsGuard < casCoreClient > guard ( this->client );
-	this->chan.removeAsyncIO(*this);
+	this->chan.removeAsyncIO ( *this );
 }
 
 //
 // casAsyncWriteIO::postIOCompletion()
 //
-caStatus casAsyncWriteIO::postIOCompletion(caStatus completionStatusIn)
+caStatus casAsyncWriteIO::postIOCompletion ( caStatus completionStatusIn )
 {
 	this->completionStatus = completionStatusIn;
-	return this->postIOCompletionI();
+	return this->postIOCompletionI ();
 }
 
 //
 // casAsyncWriteIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncWriteIO::cbFuncAsyncIO()
+epicsShareFunc caStatus casAsyncWriteIO::cbFuncAsyncIO ()
 {
-    caStatus 	status;
+    caStatus status;
     
-    switch (this->msg.m_cmmd) {
+    switch ( this->msg.m_cmmd ) {
     case CA_PROTO_WRITE:
-        status = client.writeResponse(this->msg,
-            this->completionStatus);
+        status = client.writeResponse ( this->msg,
+            this->completionStatus );
         break;
         
     case CA_PROTO_WRITE_NOTIFY:
-        status = client.writeNotifyResponse(
-            this->msg, this->completionStatus);
+        status = client.writeNotifyResponse (
+            this->msg, this->completionStatus );
         break;
         
     default:
-        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
-            " - client request type = %u", this->msg.m_cmmd);
+        errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
+            " - client request type = %u", this->msg.m_cmmd );
 		status = S_cas_invalidAsynchIO;
         break;
     }

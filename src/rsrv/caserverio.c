@@ -33,6 +33,7 @@
  *	.03 joh	110491	improved diagnostics
  *	.04 joh	021292	improved diagnostics
  *	.05 joh	022092	improved diagnostics
+ *	.06 joh	031992	improved diagnostics
  */
 
 #include <vxWorks.h>
@@ -86,24 +87,32 @@ int		lock_needed;
 			NULL,
 			&pclient->addr,
 			sizeof(pclient->addr));
-		if(status < 0){
-			int	anerrno;
+		if(status != pclient->send.cnt){
+			if(status < 0){
+				int	anerrno;
 
-			anerrno = errnoGet(taskIdSelf());
+				anerrno = errnoGet(taskIdSelf());
 
-			if(     (anerrno!=ECONNABORTED&&
-				anerrno!=ECONNRESET&&
-				anerrno!=EPIPE&&
-				anerrno!=ETIMEDOUT)||
-				CASDEBUG>2){
+				if(     (anerrno!=ECONNABORTED&&
+					anerrno!=ECONNRESET&&
+					anerrno!=EPIPE&&
+					anerrno!=ETIMEDOUT)||
+					CASDEBUG>2){
 
-				logMsg(
-					"CAS: client unreachable (errno=%d)\n",
-					anerrno);	
+					logMsg(
+		"CAS: client unreachable (errno=%d)\n",
+						anerrno);	
+				}
+				pclient->disconnect = TRUE;
+				if(pclient==prsrv_cast_client){
+					taskSuspend(taskIdSelf());
+				}
 			}
-			pclient->disconnect = TRUE;
-			if(pclient==prsrv_cast_client){
-				taskSuspend(taskIdSelf());
+			else{
+				logMsg(
+		"CAS: blk sock partial send: req %d sent %d \n",
+					pclient->send.cnt,
+					status);
 			}
 		}
 

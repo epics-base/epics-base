@@ -123,6 +123,7 @@ epicsShareFunc const char * epicsShareAPI
 	envGetConfigParamPtr(const ENV_PARAM *pParam);
 epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
         (const ENV_PARAM *pEnv, unsigned short defaultPort);
+epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
 #else
 epicsShareFunc char * epicsShareAPI envGetConfigParam();
 epicsShareFunc char * epicsShareAPI envGetConfigParamPtr();

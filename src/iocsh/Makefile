@@ -15,6 +15,7 @@ INC += caTestRegister.h
 INC += dbAccessRegister.h
 INC += ioccrfRegister.h
 INC += asTestRegister.h
+INC += envRegister.h
 INC += registerRecordDeviceDriverRegister.h
 
 
@@ -35,6 +36,7 @@ LIBSRCS += caTestRegister.c
 LIBSRCS += dbAccessRegister.c
 LIBSRCS += ioccrfRegister.c
 LIBSRCS += asTestRegister.c
+LIBSRCS += envRegister.c
 LIBSRCS += iocUtil.c
 
 LIBRARY_IOC = iocsh

@@ -479,7 +479,7 @@ char		*value		/* I pointer to value string */
 *       epicsPrtEnvParams();
 *
 *-*/
-long
+long epicsShareAPI
 epicsPrtEnvParams()
 {
     const ENV_PARAM **ppParam = env_param_list;

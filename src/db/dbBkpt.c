@@ -70,7 +70,6 @@
 #include	<dbDefs.h>
 #include	<dbBase.h>
 #include	<dbAccess.h>
-#include	<dbManipulate.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>

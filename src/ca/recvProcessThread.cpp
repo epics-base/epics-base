@@ -36,7 +36,6 @@ recvProcessThread::~recvProcessThread ()
 {
     this->signalShutDown ();
     this->exit.wait ();
-    delete &thread;
 }
 
 void recvProcessThread::run ()

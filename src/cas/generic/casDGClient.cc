@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/08/13 22:54:20  jhill
+ * fixed little endian problem
+ *
  * Revision 1.3  1996/08/05 19:26:15  jhill
  * made os specific code smaller
  *
@@ -95,8 +98,7 @@ caStatus casDGClient::searchAction()
 	// longest PV name then just ignore this request
 	// (and let the client to try again later)
 	//
-// set correct appl type here !!!!
-	pCanonicalName = new gddAtomic(0u, aitEnumString, 1u);
+	pCanonicalName = new gddScalar(gddAppType_name, aitEnumString);
 	if (!pCanonicalName) {
 		return S_cas_success;
 	}
@@ -210,7 +212,7 @@ caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
 	*search_reply = msg;
 	search_reply->m_postsize = sizeof(*pMinorVersion);
 	search_reply->m_cid = ~0U;
-	search_reply->m_type = htons(this->ctx.getServer()->serverPortNumber());
+	search_reply->m_type = this->ctx.getServer()->serverPortNumber();
 	search_reply->m_count = 0ul;
 
 	/*

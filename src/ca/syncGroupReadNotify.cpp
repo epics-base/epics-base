@@ -39,7 +39,8 @@ syncGroupReadNotify * syncGroupReadNotify::factory (
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList, 
     struct CASG &sg, chid chan, void *pValueIn )
 {
-    return new ( freeList ) syncGroupReadNotify ( sg, chan, pValueIn);
+    return new ( freeList ) // X aCC 930
+        syncGroupReadNotify ( sg, chan, pValueIn );
 }
 
 void syncGroupReadNotify::destroy ( casgRecycle &recycle )

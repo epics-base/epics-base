@@ -208,7 +208,7 @@ inline netSubscription * netSubscription::factory (
     nciu &chan, unsigned type, arrayElementCount count, 
     unsigned mask, cacStateNotify &notify )
 {
-    return new ( freeList ) netSubscription ( chan, type, 
+    return new ( freeList ) netSubscription ( chan, type, // X aCC 930
                                 count, mask, notify );
 }
 
@@ -237,7 +237,7 @@ inline netReadNotifyIO * netReadNotifyIO::factory (
     tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacReadNotify &notify )
 {
-    return new ( freeList ) netReadNotifyIO ( chan, notify );
+    return new ( freeList ) netReadNotifyIO ( chan, notify ); // X aCC 930
 }
 
 inline void * netReadNotifyIO::operator new ( size_t size, 
@@ -268,7 +268,7 @@ inline netWriteNotifyIO * netWriteNotifyIO::factory (
     tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacWriteNotify &notify )
 {
-    return new ( freeList ) netWriteNotifyIO ( chan, notify );
+    return new ( freeList ) netWriteNotifyIO ( chan, notify ); // X aCC 930
 }
 
 inline void * netWriteNotifyIO::operator new ( size_t size, 

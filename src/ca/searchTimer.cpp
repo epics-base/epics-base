@@ -149,7 +149,8 @@ void searchTimer::recomputeTimerPeriod (
     epicsGuard < udpMutex > & guard, const unsigned retryNew ) // X aCC 431
 {
     this->retry = retryNew;
-    unsigned idelay = 1u << tsMin ( this->retry, CHAR_BIT * sizeof ( idelay ) - 1u );
+    unsigned idelay = 1u << tsMin ( this->retry,
+                                    (unsigned int) ( CHAR_BIT * sizeof ( idelay ) - 1u ) );
     double delayFactor = tsMax ( 
         this->iiu.roundTripDelayEstimate ( guard ) * 2.0, minSearchPeriod );
     this->period = idelay * delayFactor; /* sec */ 

@@ -7,7 +7,10 @@ include $(TOP)/config/CONFIG_BASE
 CXXCMPLR = STRICT
 
 PROD_LIBS := cas ca gdd Com
-SYS_PROD_LIBS_WIN32 := ws2_32
+#
+# Added winmm user32 for the non-dll build
+#
+SYS_PROD_LIBS_WIN32 := ws2_32 winmm user32
 
 SRCS += main.cc
 SRCS += directoryServer.cc

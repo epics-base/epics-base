@@ -44,7 +44,7 @@ extern "C" {
 #elif defined(_M_IX86) || defined(_X86_)
 #	define CA_FLOAT_IEEE
 #	define CA_LITTLE_ENDIAN
-#elif (defined(__ALPHA) && defined(VMS) || defined(__alpha)) && defined(VMS)
+#elif ( defined (__ALPHA) || defined (__alpha) ) && ( defined (VMS) || defined (__VMS) )
 #	define CA_FLOAT_MIT
 #	define CA_LITTLE_ENDIAN
 #elif (defined(__ALPHA) && defined(UNIX) || defined(__alpha)) && defined(UNIX)

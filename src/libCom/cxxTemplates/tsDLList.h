@@ -113,6 +113,7 @@ private:
 template <class T>
 class tsDLIterConstBD {
 public:
+    tsDLIterConstBD ();
     bool valid () const;
     bool operator == (const tsDLIterConstBD<T> &rhs) const;
     bool operator != (const tsDLIterConstBD<T> &rhs) const;
@@ -137,6 +138,7 @@ private:
 template <class T>
 class tsDLIterBD {
 public:
+    tsDLIterBD ();
     bool valid () const;
     bool operator == ( const tsDLIterBD<T> & rhs ) const;
     bool operator != ( const tsDLIterBD<T> & rhs ) const;
@@ -463,6 +465,10 @@ inline tsDLIterConstBD<T>::tsDLIterConstBD ( const T *pInitialEntry ) :
     pEntry ( pInitialEntry ) {}
 
 template <class T>
+inline tsDLIterConstBD<T>::tsDLIterConstBD () : 
+    pEntry ( 0 ) {}
+
+template <class T>
 inline bool tsDLIterConstBD<T>::valid () const
 {
     return this->pEntry != 0;
@@ -551,6 +557,10 @@ inline const T * tsDLIterConstBD<T>::pointer () const
 template <class T>
 inline tsDLIterBD<T>::tsDLIterBD ( T * pInitialEntry ) : 
     pEntry ( pInitialEntry ) {}
+
+template <class T>
+inline tsDLIterBD<T>::tsDLIterBD () : 
+    pEntry ( 0 ) {}
 
 template <class T>
 inline bool tsDLIterBD<T>::valid () const

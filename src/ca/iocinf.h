@@ -17,6 +17,8 @@
 /*	.06 082791 joh	added send message in progress flag		*/
 /*	.07 091691 joh	moved channel_state enum to cadef.h for export	*/
 /*	.08 102991 joh	added sprintf buffer				*/
+/*	.09 111891 joh	added event task id for vxWorks			*/
+/*	.10 111991 joh	mobe IODONESUB macro to service.c		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -79,20 +81,8 @@
 (CHID->build_count && CHID->build_type != TYPENOTCONN && CHID->build_value) 
 
 
-#define IODONESUB\
-{\
-  register struct pending_io_event	*pioe;\
-  LOCK;\
-  if(ioeventlist.count)\
-    while(pioe = (struct pending_io_event *) lstGet(&ioeventlist)){\
-      (*pioe->io_done_sub)(pioe->io_done_arg);\
-      if(free(pioe))abort();\
-    }\
-  UNLOCK;\
-}
-
-#define SETPENDRECV	{pndrecvcnt++;}
-#define CLRPENDRECV	{if(--pndrecvcnt<1){IODONESUB; POST_IO_EV;}}
+#define SETPENDRECV		{pndrecvcnt++;}
+#define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){cac_io_done(LOCK); POST_IO_EV;}}
 
 /************************************************************************/
 /*	Structures							*/
@@ -152,6 +142,7 @@ typedef unsigned long	ca_time;
 #	define local_chidlist	(ca_static->ca_local_chidlist)
 #	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
+#	define event_tid	(ca_static->ca_event_tid)
 #elif defined(VMS)
 #	define io_done_flag	(ca_static->ca_io_done_flag)
 #	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
@@ -193,6 +184,7 @@ struct  ca_static{
   LIST			ca_local_chidlist;
   LIST			ca_dbfree_ev_list;
   LIST			ca_lcl_buff_list;
+  int			ca_event_tid;
 #else
   DONT_COMPILE
 #endif
@@ -266,4 +258,6 @@ void		recv_msg_select();
 void		mark_server_available();
 void		issue_claim_channel();
 void		ca_request_event();
-#endif
+void		cac_io_done();
+
+#endif /* this must be the last line in this file */

@@ -7,6 +7,8 @@
  * Modification Log:
  * -----------------
  * .01	01-06-94	jbk	initial version
+ * .02	03-01-94	jbk	magic # in packets, network byte order check
+ * .03	03-02-94	jbk	current time always uses 1 tick watch dog update
  *
  ***********************************************************************/
 /*
@@ -114,6 +116,7 @@ static long TSgetData(char* buf, int buf_size, int soc,
 static void TSaddStamp(	struct timespec* result,
 						struct timespec* op1, struct timespec* op2);
 static void TSwdIncTime();
+static void TSwdIncTimeSync();
 static void TSstampServer();
 static void TSeventHandler(int Card,int EventNum,unsigned long Ticks);
 static void TSerrorHandler(int Card, int ErrorNum);
@@ -137,6 +140,7 @@ static long (*TSgetTicks)(int Card, unsigned long *Ticks);
 static long (*TShaveReceiver)(int Card);
 static long (*TSforceSync)(int Card);
 static long (*TSgetTime)(struct timespec*);
+static long (*TSsyncEvent)();
 
 static long TSreturnError() { return -1; }
 static long TShaveReceiverError(int i) { return -1; }
@@ -284,6 +288,7 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 	case TS_sync_master:
 		if(event_number==0)
 		{
+#ifdef USE_GOOD_TIME
 			struct timespec ts;
 			unsigned long ticks;
 
@@ -303,6 +308,9 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 				sp->tv_sec++;
 				sp->tv_nsec -= TS_BILLION;
 			}
+#else
+			*sp = TSdata.event_table[0]; /* one tick watch dog maintains */
+#endif
 		}
 		else if(TSdata.state==TS_master_dead)
 			TSgetTime(sp);
@@ -353,8 +361,12 @@ long TSinit()
 					(char**)&TSgetTime,&stype)==ERROR)
 		TSgetTime = TSgetCurrentTime;
 
-	/* this should be a symbol look up also */
-	TSdata.sync_event=ER_EVENT_RESET_TICK;
+	if(symFindByName(sysSymTbl,"_ErSyncEvent",
+					(char**)&TSsyncEvent,&stype)==ERROR)
+		TSdata.sync_event=ER_EVENT_RESET_TICK;
+	else
+		TSdata.sync_event=TSsyncEvent();
+
 	/* ------------------------------------------------------------- */
 
 	/* set all the known information about the system */
@@ -413,12 +425,16 @@ long TSinit()
 			return -1;
 		}
 	}
+#ifdef USE_GOOD_TIME
 	else
 	{
 		Debug(5,"TSinit() - starting soft clock\n",0);
 		TSstartSoftClock();
 		Debug(5,"TSinit() - started soft clock\n",0);
 	}
+#else
+	TSstartSoftClock();
+#endif
 
 	/* get time from boot server Unix system */
 	if(TSdata.master_timing_IOC)
@@ -508,7 +524,16 @@ static void TSstartSoftClock()
 	/* simple watch dog to fire off syncs to slaves */
 	Debug(5,"start watch dog at rate %d\n",sysClkRateGet()*TSdata.sync_rate);
 	wd = wdCreate();
-	wdStart(wd,1,(FUNCPTR)TSwdIncTime,NULL);
+	if(TSdata.has_event_system)
+	{
+		Debug(8,"Starting sync time watch dog\n",0);
+		wdStart(wd,1,(FUNCPTR)TSwdIncTimeSync,NULL);
+	}
+	else
+	{
+		Debug(8,"Starting async time watch dog\n",0);
+		wdStart(wd,1,(FUNCPTR)TSwdIncTime,NULL);
+	}
 	return;
 }
 
@@ -544,6 +569,12 @@ static void TSwdIncTime()
 	}
 	intUnlock(key);
 	return;
+}
+
+static void TSwdIncTimeSync()
+{
+	wdStart(wd,1, (FUNCPTR)TSwdIncTimeSync,NULL);
+	TSaccurateTimeStamp(&TSdata.event_table[0]);
 }
 
 /**********************************************************************/
@@ -689,13 +720,14 @@ static long TSgetUnixTime(struct timespec* ts)
 	{
 		int i;
 		/* this is ntp  - need to convert to ns */
-		ts->tv_sec=buf_ntp.transmit_ts.tv_sec;
+		ts->tv_sec=ntohl(buf_ntp.transmit_ts.tv_sec);
+		timeValue=ntohl(buf_ntp.transmit_ts.tv_nsec);
 		for(i=0,ts->tv_nsec=0;i<32;i++)
-			if(bit_pat[i]&buf_ntp.transmit_ts.tv_nsec) ts->tv_nsec+=ns_val[i];
+			if(bit_pat[i]&timeValue) ts->tv_nsec+=ns_val[i];
 
 		if(MAKE_DEBUG>=2)
 			errPrintf(FL,"got the NTP time %9.9lu.%9.9lu\n",
-				buf_ntp.transmit_ts.tv_sec,buf_ntp.transmit_ts.tv_nsec);
+				ts->tv_sec,timeValue);
 	}
 	close(soc);
 	return 0;
@@ -715,7 +747,7 @@ static long TSgetUnixTime(struct timespec* ts)
 static long TSgetMasterTime(struct timespec* tsp)
 {
 	TSstampTrans stran;
-	struct timespec tran_time,send_time,recv_time;
+	struct timespec curr_time,tran_time,send_time,recv_time;
 	struct sockaddr_in sin;
 	struct sockaddr fs;
 	int soc;
@@ -728,11 +760,20 @@ static long TSgetMasterTime(struct timespec* tsp)
 	sin.sin_port = TSdata.master_port;
 	memcpy(&TSdata.hunt,&sin,sizeof(sin));
 
-	stran.type=TS_time_request;
-	
+	stran.type=(TStype)htonl(TS_time_request);
+	stran.magic=htonl(TS_MAGIC);
+
 	if(TSgetData((char*)&stran,sizeof(stran),soc,
 		(struct sockaddr*)&sin,&fs,&tran_time)<0)
 		{ Debug(1,"no reply from master server\n",0); close(soc); return -1; }
+
+	/* check the magic number */
+	if(ntohl(stran.magic)!=(TS_MAGIC))
+	{
+		errPrintf(FL,"TSgetMasterTime: invalid packet received\n");
+		close(soc);
+		return -1;
+	}
 
 	/* we now have several pieces of information:
 		the master's address,
@@ -746,8 +787,8 @@ static long TSgetMasterTime(struct timespec* tsp)
 
 	if(TSdata.type==TS_sync_slave)
 	{
-		TSdata.clock_hz = stran.clock_hz;
-		TSdata.sync_rate = stran.sync_rate;
+		TSdata.clock_hz = ntohl(stran.clock_hz);
+		TSdata.sync_rate = ntohl(stran.sync_rate);
 		TSdata.clock_conv = TS_BILLION / TSdata.clock_hz;
 	}
 
@@ -766,7 +807,9 @@ static long TSgetMasterTime(struct timespec* tsp)
 	tran_time.tv_sec >>= 2;
 
 	/* add half the round trip estimate to the time stamp from master */
-	TSaddStamp(tsp,&stran.current_time,&tran_time);
+	curr_time.tv_sec = ntohl(stran.current_time.tv_sec);
+	curr_time.tv_nsec = ntohl(stran.current_time.tv_nsec);
+	TSaddStamp(tsp,&curr_time,&tran_time);
 
 	close(soc);
 	return 0;
@@ -992,9 +1035,10 @@ static void TSsyncServer()
 
 	sin.sin_port = TSdata.slave_port;
 
-	stran.type=TS_sync_msg;
-	stran.sync_rate=TSdata.sync_rate;
-	stran.clock_hz=TSdata.clock_hz;
+	stran.type=(TStype)htonl(TS_sync_msg);
+	stran.magic=htonl(TS_MAGIC);
+	stran.sync_rate=htonl(TSdata.sync_rate);
+	stran.clock_hz=htonl(TSdata.clock_hz);
 
 	while(1)
 	{
@@ -1019,13 +1063,16 @@ static void TSsyncServer()
 				TS_1900_TO_EPICS_EPOCH;
 			intUnlock(key);
 		}
-		stran.master_time=TSdata.event_table[TSdata.sync_event];
+		stran.master_time.tv_sec=
+			htonl(TSdata.event_table[TSdata.sync_event].tv_sec);
+		stran.master_time.tv_nsec=
+			htonl(TSdata.event_table[TSdata.sync_event].tv_nsec);
 	
 		if(sendto(soc,(char*)&stran,sizeof(stran),0,
 				(struct sockaddr*)&sin,sizeof(sin))<0)
 			{ perror("sendto failed"); }
-		Debug(8,"time send = %lu,",stran.master_time.tv_sec);
-		Debug(8,"%lu\n",stran.master_time.tv_nsec);
+		Debug(8,"time send secs  = %lu\n",stran.master_time.tv_sec);
+		Debug(8,"time send nsecs = %lu\n",stran.master_time.tv_nsec);
 	}
 
 	close(soc);
@@ -1057,8 +1104,9 @@ static long TSasyncClient()
 	TS_NTP buf_ntp;
 	struct sockaddr_in sin_unix,sin_bc,sin_master;
 	int count,soc_unix,soc_master,soc_bc,buf_size;
-	struct timespec ts,diff_time,cts;
+	struct timespec ts,diff_time,cts,curr_time;
 	char* host_addr;
+	unsigned long nsecs;
 
 	Debug(1,"in TSasyncClient()\n",0);
 
@@ -1095,10 +1143,10 @@ static long TSasyncClient()
 
 			while(TSdata.state==TS_master_alive)
 			{
-				/* correction_factor=0; */
 				/* sync with the master as long as it is up */
 				Debug(5,"async_client(): syncing with master\n",0);
-				stran.type=TS_time_request;
+				stran.type=(TStype)htonl(TS_time_request);
+				stran.magic=htonl(TS_MAGIC);
 
 			    if(TSgetData((char*)&stran,sizeof(stran),soc_master,
         			&TSdata.master,NULL,&diff_time)<0)
@@ -1109,14 +1157,22 @@ static long TSasyncClient()
 				}
 				else
 				{
-					/* sync the time with master's here - 2 ticks */
-					cts=TSdata.event_table[TSdata.sync_event];
-					TSsyncTheTime(&cts,&stran.current_time,
+					if(ntohl(stran.magic)==TS_MAGIC)
+					{
+						/* sync the time with master's here - 2 ticks */
+						cts=TSdata.event_table[TSdata.sync_event];
+						curr_time.tv_sec=ntohl(stran.current_time.tv_sec);
+						curr_time.tv_nsec=ntohl(stran.current_time.tv_nsec);
+						TSsyncTheTime(&cts,&curr_time,
 									1000000000/sysClkRateGet());
 
-					Debug(8,"master sec = %lu\n",stran.current_time.tv_sec);
-					Debug(8,"my sec = %lu\n", cts.tv_sec);
-
+						Debug(8,"master sec = %lu\n",curr_time.tv_sec);
+						Debug(8,"my sec = %lu\n", cts.tv_sec);
+					}
+					else
+					{
+						errPrintf(FL,"TSasyncClient: invalid packet recved\n");
+					}
 					taskDelay(sysClkRateGet()*TSdata.sync_rate);
 				}
 			}
@@ -1128,7 +1184,6 @@ static long TSasyncClient()
 			count=0;
 			while(TSdata.state==TS_master_dead)
 			{
-				/* correction_factor=0; */
 				Debug(5,"async_client(): syncing with unix\n",0);
 				memset(&buf_ntp,0,sizeof(buf_ntp));
 				buf_ntp.info[0]=0x0b;
@@ -1145,17 +1200,18 @@ static long TSasyncClient()
 					/* get the current time */
 					cts=TSdata.event_table[TSdata.sync_event];
 					/* adjust the ntp time */
-					ts.tv_sec = buf_ntp.transmit_ts.tv_sec -
+					ts.tv_sec = ntohl(buf_ntp.transmit_ts.tv_sec) -
 									TS_1900_TO_EPICS_EPOCH;
+					nsecs=ntohl(buf_ntp.transmit_ts.tv_nsec);
 					for(i=0,ts.tv_nsec=0;i<32;i++)
-						if(bit_pat[i]&buf_ntp.transmit_ts.tv_nsec)
-							ts.tv_nsec+=ns_val[i];
+						if(bit_pat[i]&nsecs) ts.tv_nsec+=ns_val[i];
 
 					TSsyncTheTime(&cts,&ts,1000000000/sysClkRateGet());
 				}
 				if(count==0)
 				{
-					stran.type=TS_time_request;
+					stran.type=(TStype)htonl(TS_time_request);
+					stran.magic=htonl(TS_MAGIC);
 			 
 					if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
@@ -1180,8 +1236,9 @@ static long TSasyncClient()
 			/* try to find a master */
 			while(TSdata.state==TS_master_dead)
 			{
-				stran.type=TS_time_request;
-			 
+				stran.type=(TStype)htonl(TS_time_request);
+				stran.magic=htonl(TS_MAGIC);
+
 				if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
 					{ Debug(1,"no reply from master server\n",0); }
@@ -1212,6 +1269,7 @@ static void TSsyncClient()
 	struct sockaddr_in sin;
 	struct sockaddr fs;
 	int num,mlen,soc,fl;
+	struct timespec mast_time;
 	fd_set readfds;
 	int key;
 
@@ -1238,36 +1296,40 @@ static void TSsyncClient()
 		to see if one is missed */
 
 		num=select(FD_SETSIZE,&readfds,(fd_set*)NULL,(fd_set*)NULL,NULL);
-		if(num==ERROR) { perror("select failed"); }
+		if(num==ERROR) { perror("select failed"); continue; }
 
-		if((mlen=recvfrom(soc,(char*)&stran,sizeof(stran),0,
-					&fs,&fl))<0)
-			{ perror("recvfrom failed"); }
+		if((mlen=recvfrom(soc,(char*)&stran,sizeof(stran),0,&fs,&fl))<0)
+			{ perror("recvfrom failed"); continue; }
+
+		if(ntohl(stran.magic)!=TS_MAGIC)
+		{
+			errPrintf(FL,"TSsyncClient: invalid packet received\n");
+			continue;
+		}
+
+		/* get the master time out of packet */
+		mast_time.tv_sec=ntohl(stran.master_time.tv_sec);
+		mast_time.tv_nsec=ntohl(stran.master_time.tv_nsec);
 
 		Debug(6,"Received sync request from master\n",0);
 		if(MAKE_DEBUG>=8)
 		{
 			errPrintf(FL,"time received=%9.9lu.%9.9lu\n",
-				stran.master_time.tv_sec,stran.master_time.tv_nsec);
+				mast_time.tv_sec,mast_time.tv_nsec);
 		}
 
 		/* verify the sync event with this one */
-		if( TSdata.event_table[TSdata.sync_event].tv_sec!=
-				stran.master_time.tv_sec ||
-			TSdata.event_table[TSdata.sync_event].tv_nsec!=
-				stran.master_time.tv_nsec)
+		if( TSdata.event_table[TSdata.sync_event].tv_sec!=mast_time.tv_sec ||
+			TSdata.event_table[TSdata.sync_event].tv_nsec!=mast_time.tv_nsec)
 		{
 			errPrintf(FL,"sync Slave not in sync: %lu,%lu != %lu,%lu\n",
 				TSdata.event_table[TSdata.sync_event].tv_sec,
 				TSdata.event_table[TSdata.sync_event].tv_nsec,
-				stran.master_time.tv_sec,
-				stran.master_time.tv_nsec);
+				mast_time.tv_sec, mast_time.tv_nsec);
 
 			key=intLock();
-			TSdata.event_table[TSdata.sync_event].tv_sec=
-				stran.master_time.tv_sec;
-			TSdata.event_table[TSdata.sync_event].tv_nsec=
-				stran.master_time.tv_nsec;
+			TSdata.event_table[TSdata.sync_event].tv_sec=mast_time.tv_sec;
+			TSdata.event_table[TSdata.sync_event].tv_nsec=mast_time.tv_nsec;
 			intUnlock(key);
 		}
 	}
@@ -1291,27 +1353,47 @@ static void TSstampServer()
 	TSstampTrans stran;
 	struct sockaddr_in sin;
 	struct sockaddr fs;
+	struct timespec ts;
 	int mlen,soc,fl;
+	TStype type;
 
 	if( (soc=TSgetSocket(TSdata.master_port,&sin)) <0)
 		{ Debug(1,"TSgetSocket failed\n",0); return; }
 
-	stran.type=TS_time_request;
+	stran.type=(TStype)htonl(TS_time_request);
+	stran.magic=htonl(TS_MAGIC);
 	
 	while(1)
 	{
 		fl=sizeof(fs);
 		if((mlen=recvfrom(soc,(char*)&stran,sizeof(stran),0,
 					&fs,&fl))<0)
-			{ perror("recvfrom failed"); }
+			{ perror("recvfrom failed"); continue; }
 
-		switch(stran.type)
+		if(ntohl(stran.magic)!=TS_MAGIC)
+		{
+			errPrintf(FL,"TSstampServer(): invalid packet received\n");
+			continue;
+		}
+
+		type=(TStype)ntohl(stran.type);
+		switch(type)
 		{
 		case TS_time_request:
-			TSgetTimeStamp(TSdata.sync_event,&stran.master_time);
-			TScurrentTimeStamp(&stran.current_time);
-			stran.sync_rate = TSdata.sync_rate;
-			stran.clock_hz = TSdata.clock_hz;
+			TSgetTimeStamp(TSdata.sync_event,&ts);
+			stran.master_time.tv_sec=htonl(ts.tv_sec);
+			stran.master_time.tv_nsec=htonl(ts.tv_nsec);
+
+			if(TSdata.has_event_system)
+				TSaccurateTimeStamp(&ts);
+			else
+				TScurrentTimeStamp(&ts);
+
+			stran.current_time.tv_sec=htonl(ts.tv_sec);
+			stran.current_time.tv_nsec=htonl(ts.tv_nsec);
+
+			stran.sync_rate = htonl(TSdata.sync_rate);
+			stran.clock_hz = htonl(TSdata.clock_hz);
 
 			Debug(4,"Slave requesting time\n",0);
 
@@ -1343,6 +1425,31 @@ static long TSsetCurrentTime(struct timespec* sp)
 long TScurrentTimeStamp(struct timespec* sp)
 {
 	TSgetTimeStamp(0,sp);
+	return 0;
+}
+
+/* get the current time from time stamp support software */
+long TSaccurateTimeStamp(struct timespec* sp)
+{
+	struct timespec ts;
+	unsigned long ticks;
+
+	TSgetTicks(0,&ticks); /* add in the board time */
+	*sp = TSdata.event_table[TSdata.sync_event];
+
+	/* calculate a time stamp from the tick count */
+	ts.tv_sec = ticks / TSdata.clock_hz;
+	ts.tv_nsec=(ticks-(ts.tv_sec*TSdata.clock_hz))*TSdata.clock_conv;
+
+	sp->tv_sec += ts.tv_sec;
+	sp->tv_nsec += ts.tv_nsec;
+
+	/* adjust seconds if needed */
+	if(sp->tv_nsec >= TS_BILLION)
+	{
+		sp->tv_sec++;
+		sp->tv_nsec -= TS_BILLION;
+	}
 	return 0;
 }
 
@@ -1530,6 +1637,8 @@ void TSprintCurrentTime()
 
 	TScurrentTimeStamp(&tp);
 	printf("Current Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
+	TSaccurateTimeStamp(&tp);
+	printf("Accurate Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
 	return;
 }
 

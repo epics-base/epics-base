@@ -40,7 +40,7 @@
 typedef void (*TASKWDFUNCPRR)(void *parm);
 typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
 #ifdef __STDC__
-void taskwdInit();
+void taskwdInit(void);
 void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
 void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
 void taskwdRemove(threadId tid);

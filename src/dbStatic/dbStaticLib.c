@@ -3598,15 +3598,15 @@ void  epicsShareAPI dbDumpPath(DBBASE *pdbbase)
     }
     ppathList = (ELLLIST *)pdbbase->pathPvt;
     if(!ppathList || !(pdbPathNode = (dbPathNode *)ellFirst(ppathList))) {
-	fprintf(stdout,"no path defined\n");
+	printf("no path defined\n");
 	return;
     }
     while(pdbPathNode) {
-	fprintf(stdout,"%s",pdbPathNode->directory);
+	printf("%s",pdbPathNode->directory);
 	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
-	if(pdbPathNode) fprintf(stdout,"%s", OSI_PATH_LIST_SEPARATOR);
+	if(pdbPathNode) printf("%s", OSI_PATH_LIST_SEPARATOR);
     }
-    fprintf(stdout,"\n");
+    printf("\n");
     return;
 }
 
@@ -3649,23 +3649,23 @@ void epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(stdout,"name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
+	printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
 	    pdbRecordType->name,pdbRecordType->no_fields,
 	    pdbRecordType->no_prompt,pdbRecordType->no_links);
-	fprintf(stdout,"index name\tsortind sortname\n");
+	printf("index name\tsortind sortname\n");
 	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    pdbFldDes = pdbRecordType->papFldDes[i];
-	    fprintf(stdout,"%5d %s\t%7d %s\n",
+	    printf("%5d %s\t%7d %s\n",
 		i,pdbFldDes->name,
 		pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
 	}
-	fprintf(stdout,"link_ind ");
+	printf("link_ind ");
 	for(i=0; i<pdbRecordType->no_links; i++)
-	    fprintf(stdout," %hd",pdbRecordType->link_ind[i]);
-	fprintf(stdout,"\n");
-	fprintf(stdout,"indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
+	    printf(" %hd",pdbRecordType->link_ind[i]);
+	printf("\n");
+	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
 	    pdbRecordType->pvalFldDes->name);
-	fprintf(stdout,"struct rset * %p rec_size %d\n",
+	printf("struct rset * %p rec_size %d\n",
 	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
 	if(recordTypeName) break;
     }
@@ -3693,69 +3693,69 @@ void  epicsShareAPI dbDumpField(
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(stdout,"recordtype(%s) \n",pdbRecordType->name);
+	printf("recordtype(%s) \n",pdbRecordType->name);
 	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    int	j;
 
 	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    if(fname && strcmp(fname,pdbFldDes->name)!=0) continue;
-	    fprintf(stdout,"    %s\n", pdbFldDes->name);
-            fprintf(stdout,"\t         prompt: %s\n",
+	    printf("    %s\n", pdbFldDes->name);
+            printf("\t         prompt: %s\n",
                 (pdbFldDes->prompt ? pdbFldDes->prompt : ""));
-            fprintf(stdout,"\t          extra: %s\n",
+            printf("\t          extra: %s\n",
                 (pdbFldDes->extra ? pdbFldDes->extra: ""));
-	    fprintf(stdout,"\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
-	    fprintf(stdout,"\t        special: %hd ",pdbFldDes->special);
+	    printf("\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
+	    printf("\t        special: %hd ",pdbFldDes->special);
 	    if(pdbFldDes->special) {
 		for(j=0; j<SPC_NTYPES; j++) {
 		    if(pamapspcType[j].value == pdbFldDes->special) {
-			fprintf(stdout,"%s",pamapspcType[j].strvalue);
+			printf("%s",pamapspcType[j].strvalue);
 			break;
 		    }
 		}
 	    }
-	    fprintf(stdout,"\n");
+	    printf("\n");
 	    for(j=0; j<DBF_NTYPES; j++) {
 		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
 	    }
 	    if(j>=DBF_NTYPES)
-		fprintf(stdout,"\t     field_type: %d\n", pdbFldDes->field_type);
+		printf("\t     field_type: %d\n", pdbFldDes->field_type);
 	    else
-		fprintf(stdout,"\t     field_type: %s\n", pamapdbfType[j].strvalue);
-	    fprintf(stdout,"\tprocess_passive: %hd\n",pdbFldDes->process_passive);
-	    fprintf(stdout,"\t           base: %hd\n",pdbFldDes->base);
+		printf("\t     field_type: %s\n", pamapdbfType[j].strvalue);
+	    printf("\tprocess_passive: %hd\n",pdbFldDes->process_passive);
+	    printf("\t           base: %hd\n",pdbFldDes->base);
 	    if(!pdbFldDes->promptgroup) {
-		fprintf(stdout,"\t    promptgroup: %d\n",pdbFldDes->promptgroup);
+		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);
 	    } else {
 		for(j=0; j<GUI_NTYPES; j++) {
 		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			fprintf(stdout,"\t    promptgroup: %s\n",
+			printf("\t    promptgroup: %s\n",
 				pamapguiGroup[j].strvalue);
 			break;
 		    }
 		}
 	    }
-	    fprintf(stdout,"\t       interest: %hd\n", pdbFldDes->interest);
-	    fprintf(stdout,"\t       as_level: %hd\n",pdbFldDes->as_level);
-            fprintf(stdout,"\t        initial: %s\n",
+	    printf("\t       interest: %hd\n", pdbFldDes->interest);
+	    printf("\t       as_level: %hd\n",pdbFldDes->as_level);
+            printf("\t        initial: %s\n",
                 (pdbFldDes->initial ? pdbFldDes->initial : ""));
 	    if(pdbFldDes->field_type==DBF_MENU) {
 		if(pdbFldDes->ftPvt)
-		    fprintf(stdout,"\t\t  menu: %s\n",
+		    printf("\t\t  menu: %s\n",
 			((dbMenu *)pdbFldDes->ftPvt)->name);
 		else
-		    fprintf(stdout,"\t\t  menu: NOT FOUND\n");
+		    printf("\t\t  menu: NOT FOUND\n");
 	    }
 	    if(pdbFldDes->field_type==DBF_DEVICE) {
-		fprintf(stdout,"\t          ftPvt: %p\n",pdbFldDes->ftPvt);
+		printf("\t          ftPvt: %p\n",pdbFldDes->ftPvt);
 	    }
-	    fprintf(stdout,"\t           size: %hd\n",pdbFldDes->size);
-	    fprintf(stdout,"\t         offset: %hd\n",pdbFldDes->offset);
+	    printf("\t           size: %hd\n",pdbFldDes->size);
+	    printf("\t         offset: %hd\n",pdbFldDes->offset);
 	}
 	pAttribute =
 	    (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
 	while(pAttribute) {
-	    fprintf(stdout,"Attribute: name %s value %s\n",
+	    printf("Attribute: name %s value %s\n",
 		pAttribute->name,pAttribute->value);
 	    pAttribute = (dbRecordAttribute *)ellNext(&pAttribute->node);
 	}
@@ -3785,13 +3785,13 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(stdout,"recordtype(%s) \n",pdbRecordType->name);
+	printf("recordtype(%s) \n",pdbRecordType->name);
 	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 	pdevSup; pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-	    fprintf(stdout,"\t     name: %s\n",pdevSup->name);
-	    fprintf(stdout,"\t   choice: %s\n",pdevSup->choice);
-	    fprintf(stdout,"\tlink_type: %d\n",pdevSup->link_type);
-	    fprintf(stdout,"\t    pdset: %p\n",(void *)pdevSup->pdset);
+	    printf("\t     name: %s\n",pdevSup->name);
+	    printf("\t   choice: %s\n",pdevSup->choice);
+	    printf("\tlink_type: %d\n",pdevSup->link_type);
+	    printf("\t    pdset: %p\n",(void *)pdevSup->pdset);
 	}
 	if(recordTypeName) break;
     }
@@ -3846,12 +3846,12 @@ void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)
     for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
 	if(name && strcmp(name,pbrkTable->name)!=0) continue;
-	fprintf(stdout,"breaktable(%s) {\n",pbrkTable->name);
+	printf("breaktable(%s) {\n",pbrkTable->name);
 	for(ind=0; ind<pbrkTable->number; ind++) {
 	    pbrkInt = pbrkTable->papBrkInt[ind];
-	    fprintf(stdout,"\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
+	    printf("\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
 	}
-	fprintf(stdout,"}\n");
+	printf("}\n");
     }
     return;
 }

@@ -15,6 +15,7 @@
 #define tsStamph
 
 #include <time.h>
+#include "osdTime.h"
 
 #include "shareLib.h"
 #include "epicsTypes.h"
@@ -22,11 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#ifndef HP_UX
-struct timespec;
-struct timeval;
-#endif
 
 #define tsStampOK 0
 #define tsStampERROR (-1)

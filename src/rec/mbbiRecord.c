@@ -206,15 +206,14 @@ static long process(pmbbi)
         	short  		i;
 		unsigned long rval = pmbbi->rval;
 
+		pmbbi->udf = FALSE;
 		if(pmbbi->shft>0) rval >>= pmbbi->shft;
 		if (pmbbi->sdef){
 			pstate_values = &(pmbbi->zrvl);
 			pmbbi->val = 65535;         /* initalize to unknown state*/
-			pmbbi->udf = TRUE;
 			for (i = 0; i < 16; i++){
 				if (*pstate_values == rval){
                                		pmbbi->val = i;
-                               		pmbbi->udf = FALSE;
                                		break;
 			    	}
 			    	pstate_values++;
@@ -222,7 +221,6 @@ static long process(pmbbi)
 		}else{
 			/* the raw value is the desired value */
 			pmbbi->val =  (unsigned short)rval;
-			pmbbi->udf =  FALSE;
 		}
 	}
 	else if(status == 2) status = 0;

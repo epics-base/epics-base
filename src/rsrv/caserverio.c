@@ -149,15 +149,16 @@ int cas_copy_in_header (
     ca_uint32_t responseSpecific, void **ppPayload )
 {
     unsigned    msgSize;
-    
+    ca_uint32_t alignedPayloadSize;
+
     if ( payloadSize > UINT_MAX - sizeof ( caHdr ) - 8u ) {
         return FALSE;
     }
 
-    payloadSize = CA_MESSAGE_ALIGN ( payloadSize );
+    alignedPayloadSize = CA_MESSAGE_ALIGN ( payloadSize );
 
-    msgSize = payloadSize + sizeof ( caHdr );
-    if ( payloadSize >= 0xffff || nElem >= 0xffff ) {
+    msgSize = alignedPayloadSize + sizeof ( caHdr );
+    if ( alignedPayloadSize >= 0xffff || nElem >= 0xffff ) {
         if ( ! CA_V49 ( pclient->minor_version_number ) ) {
             return FALSE;
         }
@@ -180,10 +181,10 @@ int cas_copy_in_header (
         }
     }
 
-    if ( payloadSize < 0xffff && nElem < 0xffff ) {
+    if ( alignedPayloadSize < 0xffff && nElem < 0xffff ) {
         caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];        
         pMsg->m_cmmd = htons ( response );   
-        pMsg->m_postsize = htons ( ( ( ca_uint16_t ) payloadSize ) ); 
+        pMsg->m_postsize = htons ( ( ( ca_uint16_t ) alignedPayloadSize ) ); 
         pMsg->m_dataType = htons ( dataType );  
         pMsg->m_count = htons ( ( ( ca_uint16_t ) nElem ) );      
         pMsg->m_cid = htonl ( cid );          
@@ -201,11 +202,18 @@ int cas_copy_in_header (
         pMsg->m_count = htons ( 0u );      
         pMsg->m_cid = htonl ( cid );          
         pMsg->m_available = htonl ( responseSpecific ); 
-        pW32[0] = htonl ( payloadSize );
+        pW32[0] = htonl ( alignedPayloadSize );
         pW32[1] = htonl ( nElem );
         if ( ppPayload ) {
             *ppPayload = ( void * ) ( pW32 + 2 );
         }
+    }
+
+    /* zero out pad bytes */
+    if ( alignedPayloadSize > payloadSize ) {
+        char *p = ( char * ) *ppPayload;
+        memset ( p + payloadSize, '\0', 
+            alignedPayloadSize - payloadSize );
     }
 
     return TRUE;

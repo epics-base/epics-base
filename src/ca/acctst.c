@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.52  1998/05/05 16:03:10  jhill
+ * use epicsAssert.h
+ *
  * Revision 1.51  1998/04/15 21:50:26  jhill
  * added array as string test
  *
@@ -374,47 +377,32 @@ int doacctst(char *pname)
 	if (ca_state(chix1)==cs_never_conn) {
 		status = ca_pend_io(1e-16);
 		if (status==ECA_TIMEOUT) {
-			/*
-			 * under vxWorks another thread may connect the
-			 * channel before this gets a chance to run
-			 */
-#ifndef vxWorks
-			assert(ca_state(chix1)==cs_never_conn);
-#endif
-			printf("waiting on pend io verify connect...");
-			fflush(stdout);
+
+			printf ("waiting on pend io verify connect...");
+			fflush (stdout);
 			while (ca_state(chix1)!=cs_conn) {
 				ca_pend_event(0.1);
 			}
-			printf("done\n");
+			printf ("done\n");
 
 			/*
 			 * we end up here if the channel isnt on the same host
 			 */
-			status = ca_search_and_connect(pname, &chix2, NULL, NULL);
-			SEVCHK(status, NULL);
+			status = ca_search_and_connect (pname, &chix2, NULL, NULL);
+			SEVCHK (status, NULL);
 			status = ca_pend_io(1e-16);
-			if (status==ECA_TIMEOUT) {
-				/*
-				 * under vxWorks another thread may connect the
-				 * channel before this gets a chance to run
-				 */
-#ifndef vxWorks
-				assert(ca_state(chix2)==cs_never_conn);
-#endif
-			}
-			else {
+			if (status!=ECA_TIMEOUT) {
 				assert(ca_state(chix2)==cs_conn);
 			}
-			status = ca_clear_channel(chix2);
-			SEVCHK(status, NULL);
+			status = ca_clear_channel (chix2);
+			SEVCHK (status, NULL);
 		}
 		else {
-			assert(ca_state(chix1)==cs_conn);
+			assert (ca_state(chix1)==cs_conn);
 		}
 	}
 	status = ca_clear_channel(chix1);
-	SEVCHK(status, NULL);
+	SEVCHK (status, NULL);
 
 	/*
 	 * verify connection handlers are working
@@ -513,8 +501,8 @@ int doacctst(char *pname)
 		dbr_float_t base;
 		unsigned long iter;
 
-		printf ("float test ...");
-		fflush(stdout);
+		printf ("float test ");
+		fflush (stdout);
 		epsil = FLT_EPSILON*4.0F;
 		base = FLT_MIN;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
@@ -526,6 +514,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		base = FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
@@ -537,6 +527,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		base = - FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
@@ -548,6 +540,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		printf ("done\n");
 	}
@@ -565,7 +559,7 @@ int doacctst(char *pname)
 		dbr_double_t base;
 		unsigned long iter;
 
-		printf ("double test ...");
+		printf ("double test ");
 		fflush(stdout);
 		epsil = DBL_EPSILON*4;
 		base = DBL_MIN;
@@ -578,6 +572,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		base = DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
@@ -589,6 +585,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		base = - DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
@@ -600,6 +598,8 @@ int doacctst(char *pname)
 				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
+			printf (".");
+			fflush (stdout);
 		}
 		printf ("done\n");
 	}
@@ -956,18 +956,6 @@ int doacctst(char *pname)
 		}
 	}
 
-	for (i = 0; i < NUM; i++) {
-		printf("Float value Returned from put/get %f\n", pfloat[i]);
-		printf("Double value Returned from put/get %f\n", pdouble[i]);
-		printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
-	}
-
-#if 0
-	for (i = 0; i < 10; i++)
-		ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
-#endif
-
-
 	SEVCHK(ca_modify_user_name("Willma"), NULL);
 	SEVCHK(ca_modify_host_name("Bed Rock"), NULL);
 
@@ -1121,7 +1109,9 @@ void null_event(struct event_handler_args args)
 	if (pInc) {
 		(*pInc)++;
 		if (*pInc%1000u == 0u) {
+#if 0
 			printf("1000 occurred\n");
+#endif
 		}
 	}
 #if 0
@@ -1161,14 +1151,14 @@ void write_event(struct event_handler_args args)
 
 void conn(struct connection_handler_args args)
 {
-
+#if 0
 	if (args.op == CA_OP_CONN_UP)
 		printf("Channel On Line [%s]\n", ca_name(args.chid));
 	else if (args.op == CA_OP_CONN_DOWN)
 		printf("Channel Off Line [%s]\n", ca_name(args.chid));
 	else
 		printf("Ukn conn ev\n");
-
+#endif
 	ca_get_callback(DBR_GR_FLOAT, args.chid, get_cb, NULL);
 }
 

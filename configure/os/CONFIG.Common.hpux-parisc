@@ -1,0 +1,11 @@
+# CONFIG.Common.hpux-68k
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for hpux-68k target archs
+# Sites may override these definitions in CONFIG_SITE.Common.hpux-68k
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.Common.UnixCommon

@@ -8,7 +8,7 @@
 #  Sites may override definitions in CONFIG_SITE.Common.UnixCommon
 #  or CONFIG_SITE.<host>.UnixCommon
 #-------------------------------------------------------
- 
+
 # Unix valid build types
 VALID_BUILDS = Host Ioc
 
@@ -71,4 +71,3 @@ LINK.shrlib = $(CXX) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS)
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.UnixCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).UnixCommon
-

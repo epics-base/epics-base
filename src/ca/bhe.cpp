@@ -15,9 +15,18 @@
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
 
+void * bhe::operator new ( size_t size )
+{ 
+    return bhe::freeList.allocate ( size );
+}
+
+void bhe::operator delete ( void *pCadaver, size_t size )
+{ 
+    bhe::freeList.release ( pCadaver, size );
+}
+
 bhe::~bhe ()
 {
-    this->cac.removeBeaconInetAddr (*this);
 }
 
 /*
@@ -25,7 +34,7 @@ bhe::~bhe ()
  *
  * updates beacon period, and looks for beacon anomalies
  */
-bool bhe::updateBeaconPeriod (osiTime programBeginTime)
+bool bhe::updateBeaconPeriod ( osiTime programBeginTime )
 {
     double currentPeriod;
     bool netChange = false;
@@ -149,7 +158,7 @@ void bhe::show ( unsigned level ) const
 {
     printf ( "CA beacon hash entry at %p with average period %f\n", this, this->averagePeriod );
     if ( level > 0u ) {
-        printf ( "network IO pointer %p, client pointer %p\n", this->piiu, &this->cac );
+        printf ( "network IO pointer %p\n", this->piiu );
     }
 }
 

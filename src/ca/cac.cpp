@@ -221,10 +221,9 @@ cac::~cac ()
     if ( this->pUserName ) {
         delete [] this->pUserName;
     }
-
-    this->sgTable.destroyAllEntries ();
-    this->beaconTable.destroyAllEntries ();
-    this->chanTable.destroyAllEntries ();
+    this->sgTable.traverse ( CASG::destroy );
+    this->beaconTable.traverse ( bhe::destroy );
+    this->chanTable.traverse ( nciu::destroy );
 
     osiSockRelease ();
 
@@ -262,6 +261,7 @@ void cac::processRecvBacklog ()
             this->iiuListLimbo.add ( *piiu );
 
             if ( pBHE ) {
+                this->beaconTable.remove ( *pBHE );
                 pBHE->destroy ();
             }
 
@@ -402,9 +402,9 @@ bhe *cac::createBeaconHashEntry (const inetAddrID &ina, const osiTime &initialTi
 
     pBHE = this->beaconTable.lookup ( ina );
     if ( !pBHE ) {
-        pBHE = new bhe (*this, initialTimeStamp, ina);
+        pBHE = new bhe ( initialTimeStamp, ina );
         if ( pBHE ) {
-            if ( this->beaconTable.add (*pBHE) < 0 ) {
+            if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                 pBHE->destroy ();
                 pBHE = 0;
             }
@@ -498,18 +498,6 @@ void cac::beaconNotify ( const inetAddrID &addr )
     }
 #   endif
 
-}
-
-/*
- * cac::removeBeaconInetAddr ()
- */
-void cac::removeBeaconInetAddr (const inetAddrID &ina)
-{
-    osiAutoMutex autoMutex ( this->defaultMutex );
-    bhe     *pBHE;
-
-    pBHE = this->beaconTable.remove ( ina );
-    assert (pBHE);
 }
 
 int cac::pend ( double timeout, int early )

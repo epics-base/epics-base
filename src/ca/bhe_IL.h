@@ -25,8 +25,8 @@
  * zero (so we can correctly compute the period
  * between the 1st and 2nd beacons)
  */
-inline bhe::bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr ) :
-    inetAddrID (addr), cac (cacIn), piiu (0), timeStamp (initialTimeStamp), averagePeriod (-1.0)
+inline bhe::bhe ( const osiTime &initialTimeStamp, const inetAddrID &addr ) :
+    inetAddrID (addr), piiu (0), timeStamp (initialTimeStamp), averagePeriod (-1.0)
 {
 #   ifdef DEBUG
     {
@@ -35,16 +35,6 @@ inline bhe::bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetA
         printf ("created beacon entry for %s\n", name);
     }
 #   endif
-}
-
-inline void * bhe::operator new ( size_t size )
-{ 
-    return bhe::freeList.allocate ( size );
-}
-
-inline void bhe::operator delete ( void *pCadaver, size_t size )
-{ 
-    bhe::freeList.release ( pCadaver, size );
 }
 
 inline tcpiiu *bhe::getIIU ()const

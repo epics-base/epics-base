@@ -66,8 +66,7 @@ CCC_SHRLIB_CFLAGS_YES = +Z
 # shared libs will be found by searching environment variable SHLIB_PATH,
 # then by searching the specified path (see below)
 CCC_SHRLIB_LDFLAGS_YES = -b
-
-CCC_DEPENDS_FLAG =
+CCC_DEPENDS_FLAG = +m
 
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines

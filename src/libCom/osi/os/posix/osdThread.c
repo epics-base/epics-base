@@ -136,6 +136,18 @@ static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
     return((int)oss);
 }
 
+static epicsThreadOSD * create_threadInfo(const char *name)
+{
+    epicsThreadOSD *pthreadInfo;
+    int status;
+
+    pthreadInfo = callocMustSucceed(1,sizeof(*pthreadInfo),"create_threadInfo");
+    pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);
+    pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"create_threadInfo");
+    strcpy(pthreadInfo->name,name);
+    return pthreadInfo;
+}
+
 static epicsThreadOSD * init_threadInfo(const char *name,
     unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void *parm)
@@ -143,7 +155,7 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     epicsThreadOSD *pthreadInfo;
     int status;
 
-    pthreadInfo = callocMustSucceed(1,sizeof(*pthreadInfo),"init_threadInfo");
+    pthreadInfo = create_threadInfo(name);
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
@@ -178,9 +190,6 @@ static epicsThreadOSD * init_threadInfo(const char *name,
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);
-    pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"epicsThreadCreate");
-    strcpy(pthreadInfo->name,name);
     return(pthreadInfo);
 }
 
@@ -481,11 +490,37 @@ void epicsThreadSleep(double seconds)
     nanosleep(&delayTime,&remainingTime);
 }
 
+/*
+ * Create dummy context for threads not created by epicsThreadCreate()
+ */
+static epicsThreadOSD *createImplicit(void)
+{
+    epicsThreadOSD *pthreadInfo;
+    char name[64];
+    pthread_t tid;
+    int status;
+
+    tid = pthread_self();
+    sprintf(name, "thr%lu", (unsigned long)tid);
+    pthreadInfo = create_threadInfo(name);
+    pthreadInfo->tid = tid;
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","createImplicit");
+    ellAdd(&pthreadList,&pthreadInfo->node);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","createImplicit");
+    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    checkStatusOnceQuit(status,"pthread_setspecific","createImplicit");
+    return pthreadInfo;
+}
+
 epicsThreadId epicsThreadGetIdSelf(void) {
     epicsThreadOSD *pthreadInfo;
 
     if(!epicsThreadInitCalled) epicsThreadInit();
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    if(pthreadInfo==NULL)
+        pthreadInfo = createImplicit();
     assert ( pthreadInfo );
     return(pthreadInfo);
 }

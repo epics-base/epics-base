@@ -1576,7 +1576,7 @@ void verifyReasonableBeaconPeriod ( chid chan )
     epicsThreadSleep ( expectedBeaconPeriod * 2 );
     beaconPeriod = ca_beacon_period ( chan );
     error = fabs ( beaconPeriod - expectedBeaconPeriod );
-    // expect less than a 10% error
+    /* expect less than a 10% error */
     assert ( error / expectedBeaconPeriod < 0.1 ); 
     printf ( "done\n" );
 }

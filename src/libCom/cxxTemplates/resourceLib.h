@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/04/10 19:43:09  jhill
+ * API changes
+ *
  * Revision 1.7  1996/12/06 22:26:36  jhill
  * added auto cleanup of installed classes to destroy
  *
@@ -64,7 +67,8 @@
 #include <string.h>
 #include <math.h>
 
-#include <tsSLList.h>
+#include "tsSLList.h"
+#include "shareLib.h"
 
 typedef int 		resLibStatus;
 typedef	unsigned 	resTableIndex;
@@ -342,6 +346,12 @@ private:
 };
 
 //
+// not in stringId static because of problems with
+// shareable libraries under win32
+//
+epicsShareExtern const unsigned char stringIdFastHash[256];
+
+//
 // character string identifier
 //
 // NOTE: to be robust in situations where the new()
@@ -409,13 +419,13 @@ public:
 			// odd 
 			//
 			if (i&1u) {
-				h1 = this->T[h1 ^ c];
+				h1 = stringIdFastHash[h1 ^ c];
 			}
 			//
 			// even 
 			//
 			else {
-				h0 = this->T[h0 ^ c];
+				h0 = stringIdFastHash[h0 ^ c];
 			}
 		}
 
@@ -458,7 +468,6 @@ public:
 private:
         const char * const pStr;
 	allocationType const allocType;
-	static unsigned char T[256];
 };
 
 #endif // INCresourceLibh

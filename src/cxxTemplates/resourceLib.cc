@@ -30,6 +30,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:43:08  jhill
+ * API changes
+ *
  * Revision 1.2  1996/12/06 22:26:34  jhill
  * added auto cleanup of installed classes to destroy
  *
@@ -44,8 +47,6 @@
 
 #ifndef INCresourceLibcc
 #define INCresourceLibcc
-
-#include <math.h>
 
 //
 // resTable<T,ID>::init()
@@ -194,14 +195,14 @@ void resTable<T,ID>::traverse (void (T::*pCB)())
 //
 // this needs to be instanciated only once (normally in libCom)
 //
-#ifdef INSTANCIATE_RES_LIB_STATIC 
+#ifdef instantiateStringIdFastHash 
 //
 // The hash algorithm is a modification of the algorithm described in
 // Fast Hashing of Variable Length Text Strings, Peter K. Pearson,
 // Communications of the ACM, June 1990
 // The modifications were designed by Marty Kraimer
 //
-unsigned char stringId::T[256] = {
+epicsShareExtern const unsigned char stringIdFastHash[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -219,7 +220,7 @@ unsigned char stringId::T[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
-#endif // INSTANCIATE_RES_LIB_STATIC
+#endif // instantiateStringIdFastHash 
 
 #endif // INCresourceLibcc
 

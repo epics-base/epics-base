@@ -249,4 +249,11 @@ epicsShareFunc long epicsShareAPI dbBufferSize(
     short dbrType,long options,long nRequest);
 epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
 
+epicsShareFunc int epicsShareAPI  dbLoadDatabase(
+    char *filename,char *path,char *substitutions);
+
+epicsShareFunc int epicsShareAPI dbLoadRecords(
+    char* pfilename, char* substitutions);
+
+
 #endif /*INCdbAccessDefsh*/

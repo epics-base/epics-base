@@ -738,6 +738,18 @@ long epicsShareAPI dbBufferSize(
     if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
     return(nbytes);
 }
+int epicsShareAPI dbLoadDatabase(char *filename,char *path,char *substitutions)
+{
+    int status;
+    status = dbReadDatabase(&pdbbase,filename,path,substitutions);
+    return(status);
+}
+
+int epicsShareAPI dbLoadRecords(char* pfilename, char* substitutions)
+{
+    return(dbReadDatabase(&pdbbase,pfilename,0,substitutions));
+}
+
 
 long epicsShareAPI dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 	long *poptions, long *pnRequest)

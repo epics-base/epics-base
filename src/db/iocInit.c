@@ -116,6 +116,7 @@ int iocInit()
     callbackInit();
     /* let threads start */
     threadSleep(.1);
+    registerRecordDeviceDriver(pdbbase);
     initHooks(initHookAfterCallbackInit);
     dbCaLinkInit(); initHooks(initHookAfterCaLinkInit);
     initDrvSup(); initHooks(initHookAfterInitDrvSup);
@@ -361,19 +362,3 @@ LOCAL void initialProcess(void)
     }
     return;
 }
-
-
-int dbLoadDatabase(char *filename,char *path,char *substitutions)
-{
-    int status;
-    status = dbReadDatabase(&pdbbase,filename,path,substitutions);
-    if(status) return(status);
-    status = registerRecordDeviceDriver(pdbbase);
-    return(status);
-}
-
-int dbLoadRecords(char* pfilename, char* substitutions)
-{
-    return(dbReadDatabase(&pdbbase,pfilename,0,substitutions));
-}
-

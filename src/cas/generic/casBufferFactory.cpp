@@ -30,8 +30,8 @@
 
 #include <new>
 
-#include "envdefs.h"
-#include "freelist.h"
+#include "envDefs.h"
+#include "freeList.h"
 
 #include "server.h"
 

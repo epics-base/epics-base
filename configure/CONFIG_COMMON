@@ -43,7 +43,6 @@ INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
 INSTALL_INCLUDE             = $(INSTALL_LOCATION)/include
 INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
 INSTALL_HTML                = $(INSTALL_LOCATION)/html
-INSTALL_MAN                 = $(INSTALL_LOCATION)/man
 INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
@@ -185,6 +184,10 @@ TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS) $($(basename $@)_CPPFLAGS_$(OS_CLAS
 TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLASS))
 
 #--------------------------------------------------
+# Objs filename definition
+OBJSNAME = $(addsuffix $(OBJ),$(OBJS))
+
+#--------------------------------------------------
 # Depends flag
 DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
 
@@ -264,13 +267,6 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
 COMPILE.cpp = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
 
 
-
-#---------------------------------------------------------------
-# Man pages
-
-MANLIST = 1 2 3 4 5 6 7 8 9
-MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
-
 #---------------------------------------------------------------
 # Directory targets
 
@@ -292,12 +288,10 @@ INSTALL_DLL_LINK_LIBS+=$(DLL_LINK_LIBNAME_HOST:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
-INSTALL_OBJS = $(OBJS:%= $(INSTALL_BIN)/%)
+INSTALL_OBJS = $(OBJSNAME:%= $(INSTALL_BIN)/%)
 
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
-INSTALL_MANS = $(foreach n, \
-        $(MANLIST), $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
 INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
 INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
 

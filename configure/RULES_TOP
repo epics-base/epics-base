@@ -20,7 +20,7 @@ distclean: clean uninstall
 
 uninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 	@$(RMDIR)  rec.bak rec
-	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
+	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
 		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES)
 	@$(MAKE) -f Makefile  cleandirs
 

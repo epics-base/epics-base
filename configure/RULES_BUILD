@@ -153,9 +153,9 @@ build : inc
 
 rebuild: clean install
 
-inc: $(INSTALL_INC) $(INSTALL_OSINC)
+inc: $(INSTALL_INC) $(INSTALL_OSINC) $(INSTALL_INCREC)
 
-build: $(MENUS) $(RECTYPES) $(BPTS) $(OBJS) \
+build: $(MENUS) $(RECTYPES) $(BPTS) $(OBJSNAME) \
 	$(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS)
 
 ifdef DBDEXPAND
@@ -166,13 +166,12 @@ buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
 	$(INSTALL_OBJS) \
-	$(INSTALL_MANS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_CONFIGS) \
 	$(INSTALL_DBS) $(INSTALL_BPTS) \
-	$(INSTALL_DBDNAME) $(INSTALL_INCREC)
+	$(INSTALL_DBDNAME)
 
 ifdef BIN_INSTALLS
 buildInstall : binInstalls
@@ -316,7 +315,7 @@ endif # PROD defined
 #  VERY IMPORTANT !!!!
 
 depends: $(LIBSRCS_IOC) $(LIBSRCS_HOST) $(SRCS) $(COND_PROD_SRCS)
-	$(RM) DEPENDS
+	@$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
 
@@ -373,7 +372,7 @@ depends: $(LIBSRCS_IOC) $(LIBSRCS_HOST) $(SRCS) $(COND_PROD_SRCS)
 # WIN95/NT source browser
 %.bsc: %.sbr
 	@echo "building source browser archive $@"
-	$(RM) $@
+	@$(RM) $@
 	$(BAFCMD) $<
 
 #
@@ -446,29 +445,29 @@ $(INSTALL_DBD)/%: ../%
 	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
  
 %Record.h: %Record.dbd
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
 	        $(DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
 	        $(DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
  
 menu%.h: ../menu%.dbd
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
  
 bpt%.dbd: bpt%.data
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
 
 bpt%.dbd: ../bpt%.data
-	$(RM) $@
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
 
 ifdef DBDEXPAND
@@ -499,7 +498,7 @@ endif
 
 # rule for lib (archive of object files) creation
 $(LIBNAME_IOC): $(LIBOBJS_IOC)
-	$(RM) $@
+	@$(RM) $@
 	$(ARCMD) $(LIBOBJS_IOC)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
@@ -510,7 +509,7 @@ $(DLL_LINK_LIBNAME_IOC) $(SHRLIBNAME_IOC): $(LIBOBJS_IOC)
 
 # rule for lib (archive of object files) creation
 $(LIBNAME_HOST): $(LIBOBJS_HOST)
-	$(RM) $@
+	@$(RM) $@
 	$(ARCMD) $(LIBOBJS_HOST)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
@@ -571,14 +570,6 @@ $(INSTALL_CONFIG)/%: %
 
 $(INSTALL_CONFIG)/%: ../%
 	@echo "Installing config file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
-
-$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
-	@echo "Installing man file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
-
-$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../% 
-	@echo "Installing man file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %

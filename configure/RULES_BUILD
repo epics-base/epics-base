@@ -392,15 +392,14 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-.PRECIOUS: %.o %.c %.nm %.cpp
+.PRECIOUS: %.i %.o %.c %.nm %.cpp
 .PRECIOUS: $(COMMON_INC)
 
 -include $(CONFIG)/RULES.Db
 
 -include DEPENDS
 
-.PHONY: all inc depends build install clean rebuild buildInstall binInstalls \
-	iocBinInstalls
+.PHONY: all inc depends build install clean rebuild buildInstall binInstalls
 
 #	EOF RULES_BUILD
 

@@ -1937,6 +1937,15 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
     return (message);
 }
 
+static void cvtDecimalOrHexToShort(char *from,short *value)
+{
+    if(strspn(from,"0x")==2 || strspn(from,"0X")==2) {
+        sscanf(from,"%hi",value);
+    } else {
+        sscanf(from,"%hd",value);
+    }
+}
+
 long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
@@ -2123,10 +2132,10 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.vmeio.card);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.vmeio.card);
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.vmeio.signal);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.vmeio.signal);
 		    status = putParmString(&plink->value.vmeio.parm,pstr);
 		}
 		break;
@@ -2137,24 +2146,24 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.b);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.b);
 		    if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.c);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.c);
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.n);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.n);
  		    if(!(end = strchr(pstr,'A')))  {
  			plink->value.camacio.a = 0;
  		    } else {
  		        pstr = end + 1;
- 		        sscanf(pstr,"%hd",&plink->value.camacio.a);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.camacio.a);
  		    }
  		    if(!(end = strchr(pstr,'F'))) {
  			plink->value.camacio.f = 0;
  		    } else {
  		        pstr = end + 1;
- 		        sscanf(pstr,"%hd",&plink->value.camacio.f);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.camacio.f);
  		    }
 		    status = putParmString(&plink->value.camacio.parm,pstr);
 		}
@@ -2166,16 +2175,16 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'R'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.rfio.cryo);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.cryo);
 		    if(!(end = strchr(pstr,'M'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.rfio.micro);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.micro);
 		    if(!(end = strchr(pstr,'D'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.rfio.dataset);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.dataset);
 		    if(!(end = strchr(pstr,'E'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.rfio.element);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.element);
 		}
 		break;
 	    case AB_IO: {
@@ -2185,30 +2194,30 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.abio.link);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.link);
 		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.abio.adapter);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.adapter);
 		    if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.abio.card);
-		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.abio.signal);
-		    status = putParmString(&plink->value.abio.parm,pstr);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.card);
+                    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
+                    pstr = end + 1;
+                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.signal);
+                    status = putParmString(&plink->value.abio.parm,pstr);
 		}
-		break;
-	    case GPIB_IO: {
-	    	    char	*end;
+                break;
+            case GPIB_IO: {
+                    char *end; 
 
 		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.gpibio.link);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.gpibio.link);
 		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.gpibio.addr);
+                    cvtDecimalOrHexToShort(pstr,&plink->value.gpibio.addr);
 		    status = putParmString(&plink->value.gpibio.parm,pstr);
 		}
 		break;
@@ -2223,19 +2232,19 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bitbusio.link=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bitbusio.node=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'P'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bitbusio.port=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bitbusio.signal=(unsigned char)tmp_val;
 		    status = putParmString(&plink->value.bitbusio.parm,pstr);
 		}
@@ -2251,15 +2260,15 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bbgpibio.link=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bbgpibio.bbaddr=(unsigned char)tmp_val;
 		    if(!(end = strchr(pstr,'G'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&tmp_val);
+                    cvtDecimalOrHexToShort(pstr,&tmp_val);
 		    plink->value.bbgpibio.gpibaddr=tmp_val;
 		    status = putParmString(&plink->value.bbgpibio.parm,pstr);
 		}
@@ -2275,19 +2284,19 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 			plink->value.vxiio.flag = VXISTATIC;
 		        if(!(end = strchr(pstr,'V'))) return (S_dbLib_badField);
 		        pstr = end + 1;
-		        sscanf(pstr,"%hd",&plink->value.vxiio.la);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.la);
 		    } else {
 			plink->value.vxiio.flag = VXIDYNAMIC;
 		        if(!(end = strchr(pstr,'V'))) return (S_dbLib_badField);
 		        pstr = end + 1;
-		        sscanf(pstr,"%hd",&plink->value.vxiio.frame);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.frame);
 		        if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
 		        pstr = end + 1;
-		        sscanf(pstr,"%hd",&plink->value.vxiio.slot);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.slot);
 		    }
 		    if((end = strchr(pstr,'S'))) {
 			pstr = end + 1;
-			sscanf(pstr,"%hd",&plink->value.vxiio.signal);
+                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.signal);
 		    } else {
 			plink->value.vxiio.signal = 0;
 		    }

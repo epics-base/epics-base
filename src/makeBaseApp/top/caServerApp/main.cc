@@ -19,7 +19,7 @@
 //
 extern int main (int argc, const char **argv)
 {
-    epicsTime     begin (epicsTime::getCurrent());
+    epicsTime   begin (epicsTime::getCurrent());
     exServer    *pCAS;
     unsigned    debugLevel = 0u;
     double      executionTime = 0.0;
@@ -90,16 +90,17 @@ extern int main (int argc, const char **argv)
     }
     else {
         double delay = epicsTime::getCurrent() - begin;
+
         //
         // loop here untill the specified execution time
         // expires
         //
         while ( delay < executionTime ) {
-            fileDescriptorManager.process ( delay );
+            fileDescriptorManager.process ( executionTime - delay );
             delay = epicsTime::getCurrent() - begin;
         }
     }
-    pCAS->show(2u);
+    //pCAS->show(2u);
     delete pCAS;
     errlogFlush ();
     return (0);

@@ -176,6 +176,30 @@ void threadSetPriority(threadId id,unsigned int osip)
     if(status) errlogPrintf("threadSetPriority failed\n");
 }
 
+threadBoolStatus threadHighestPriorityLevelBelow(
+    unsigned int priority, unsigned *pPriorityJustBelow)
+{
+    unsigned newPriority = priority - 1;
+    if (newPriority <= 99) {
+        *pPriorityJustBelow = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
+}
+
+threadBoolStatus threadLowestPriorityLevelAbove(
+    unsigned int priority, unsigned *pPriorityJustAbove)
+{
+    unsigned newPriority = priority + 1;
+
+    newPriority = priority + 1;
+    if (newPriority <= 99) {
+        *pPriorityJustAbove = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
+}
+
 int threadIsEqual(threadId id1, threadId id2)
 {
     return((id1==id2) ? 1 : 0);

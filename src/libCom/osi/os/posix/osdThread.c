@@ -344,6 +344,42 @@ void threadSetPriority(threadId id,unsigned int priority)
     if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
+
+threadBoolStatus threadHighestPriorityLevelBelow(
+    unsigned int priority, unsigned *pPriorityJustBelow)
+{
+    unsigned newPriority = priority - 1;
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
+    int diff;
+    diff = (double)pcommonAttr->maxPriority - (double)pcommonAttr->minPriority;
+    if(diff<0) diff = -diff;
+    if(diff>1 && diff <100) newPriority -=  100/(diff+1);
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    if (newPriority <= 99) {
+        *pPriorityJustBelow = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
+}
+
+threadBoolStatus threadLowestPriorityLevelAbove(
+    unsigned int priority, unsigned *pPriorityJustAbove)
+{
+    unsigned newPriority = priority + 1;
+
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
+    int diff;
+    diff = (double)pcommonAttr->maxPriority - (double)pcommonAttr->minPriority;
+    if(diff<0) diff = -diff;
+    if(diff>1 && diff <100) newPriority += 100/(diff+1);
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    newPriority = priority + 1;
+    if (newPriority <= 99) {
+        *pPriorityJustAbove = newPriority;
+        return tbsSuccess;
+    }
+    return tbsFail;
+}
 
 int threadIsEqual(threadId id1, threadId id2)
 {

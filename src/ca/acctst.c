@@ -2521,6 +2521,55 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
+verifyConnectWithDisconnectedChannels ( 
+    const char *pName, unsigned interestLevel )
+{
+    int status;
+    chid bogusChan[300];
+    chid validChan;
+    unsigned i;
+
+    showProgressBegin ( "verifyConnectWithDisconnectedChannels", interestLevel );
+
+    for ( i= 0u; i < NELEMENTS ( bogusChan ); i++ ) {
+        char buf[256];
+        sprintf ( buf, "aChannelThatShouldNeverNeverNeverExit%u", i );
+        status = ca_create_channel ( buf, 0, 0, 0, & bogusChan[i] );
+        assert ( status == ECA_NORMAL );
+    }
+
+    status = ca_pend_io ( 1.0 );
+    assert ( status == ECA_TIMEOUT );
+
+    /* wait a long time for the search interval to increase */
+    for ( i= 0u; i < 10; i++ ) {
+        epicsThreadSleep ( 1.0 );
+        showProgress ( interestLevel );
+    }
+
+    status = ca_create_channel ( pName, 0, 0, 0, & validChan );
+    assert ( status == ECA_NORMAL );
+
+    /* 
+     * we should be able to connect to a valid 
+     * channel within a reasonable delay even
+     * though there is one permanently 
+     * diasconnected channel 
+     */
+    status = ca_pend_io ( 1.0 );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_clear_channel ( validChan );
+    assert ( status == ECA_NORMAL );
+
+    for ( i= 0u; i < NELEMENTS ( bogusChan ); i++ ) {
+        status = ca_clear_channel ( bogusChan[i] );
+        assert ( status == ECA_NORMAL );
+    }
+
+    showProgressEnd ( interestLevel );
+}
+
 int acctst ( char *pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
@@ -2573,6 +2622,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
+    verifyConnectWithDisconnectedChannels ( pName, interestLevel );
     grEnumTest ( chan, interestLevel );
     test_sync_groups ( chan, interestLevel );
     verifyChannelPriorities ( pName, interestLevel );

@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.7.8.2  2001/03/06 00:18:36  jhill
+// fixed R3.13 for Linux's new socklen_t
+//
 // Revision 1.7.8.1  2001/03/06 00:10:29  jhill
 // fixed R3.13 for Linux's new socklen_t
 //
@@ -212,9 +215,9 @@ casIntfIO::~casIntfIO()
 casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
 	struct sockaddr	newAddr;
-        SOCKET          newSock;
-        osiSockLen_t             length;
-	casStreamOS	*pOS;
+        SOCKET newSock;
+        osiSocklen_t length;
+	casStreamOS *pOS;
  
         length = sizeof(newAddr);
         newSock = accept(this->sock, &newAddr, &length);

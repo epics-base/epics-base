@@ -334,10 +334,14 @@ iocsh (const char *pathname)
         lineno++;
 
         /*
-         * Ignore comment lines
+         * Ignore comment lines other than to echo
+         * them if they came from a script.
          */
-        if (*raw == '#')
+        if (*raw == '#') {
+            if (prompt == NULL)
+                puts(raw);
             continue;
+        }
 
         /*
          * Expand macros

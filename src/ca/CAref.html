@@ -853,7 +853,7 @@ Windows systems.</p>
 <p></p>
 
 <p>The above libraries are located in "&lt;EPICS
-base&gt;/lib/&lt;architechture&gt;". </p>
+base&gt;/lib/&lt;architechture&gt;".</p>
 
 <h3><a name="Compiler" id="Compiler">Compiler and System Specific Build
 Options</a></h3>
@@ -904,7 +904,7 @@ d:/user/R3.14.clean/epics/base/lib/WIN32-x86/</code></p>
 <p><code>/usr/local/xcomp/ppc/bin/ccppc -c -D_POSIX_SOURCE -DCPU=PPC603
 -DvxWorks -include /home/vx/tornado20/target/h/vxWorks.h -ansi -O3 -Wall
 -mcpu=603 -mstrict-align -fno-builtin -I. -I.. -I../../../include/os/vxWorks
--I../../../include -I/home/vx/tornado20/target/h ../acctst.c </code></p>
+-I../../../include -I/home/vx/tornado20/target/h ../acctst.c</code></p>
 
 <h4>Other Systems and Compilers</h4>
 
@@ -1572,6 +1572,15 @@ attempts were made to build a new circuit. This behavior could result in
 undesirable resource consumption resulting from periodic circuit setup and
 teardown overhead (thrashing) during periods of CPU / network / IP kernel
 buffer congestion.</p>
+
+<h3><a name="Requests" id="Requests">Put Requests Just Prior to Process
+Termination Appear to be Ignored</a></h3>
+
+<p>Short lived CA client applications that issue a CA put request and then
+immediately exit the process (return from <code>main</code> or call
+<code>exit</code>) may find that there request isn't executed. To guarantee
+that the request is sent call <code>ca_flush</code> followed by
+<code>ca_context_destroy</code> prior to terminating the process.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 
@@ -3827,7 +3836,7 @@ void * PDBR );</code></p>
       bytes</dd>
 </dl>
 
-<p><small>$Id$
+<p><small>$Id CAref.html,v 1.58.2.21 2004/06/08 15:58:10 jhill Exp $
 .</small></p>
 </body>
 </html>

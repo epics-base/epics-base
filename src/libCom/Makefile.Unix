@@ -2,7 +2,6 @@ EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
 T_ARCH = sun4
-OBDIR = O.$(T_ARCH)
 
 USR_LDFLAGS = -lm
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
@@ -40,21 +39,7 @@ all :: bld_errSym $(LIBNAME) $(PROD)
 bld_errSym:
 	$(EPICS_BASE)/tools/blderrSymTbl
 
-$(OBDIR)/%.o: %.c
-	$(COMPILE.c) -o $@ $<
-
-$(OBDIR)/%.a: $(OBJS)
-	$(LINK.c) -o $@ $<
-	$(AR) $(ARFLAGS) $@ $%
-	$(RM) $%
-
-install :: install_inc 
-
-install_inc : $(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a
-
-$(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a : $(OBDIR)/libCom.a
-	install -m 644 $(OBDIR)/libCom.a $@
-	ranlib -t $@
+install: $(EPICS_BASE_LIB)/$(T_ARCH)/libCom.a
 
 include $(EPICS)/config/RULES
 

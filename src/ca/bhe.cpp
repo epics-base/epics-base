@@ -15,14 +15,17 @@
 #include "tcpiiu_IL.h"
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
+epicsMutex bhe::freeListMutex;
 
 void * bhe::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( bhe::freeListMutex );
     return bhe::freeList.allocate ( size );
 }
 
 void bhe::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( bhe::freeListMutex );
     bhe::freeList.release ( pCadaver, size );
 }
 

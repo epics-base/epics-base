@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 epicsShareFunc int epicsShareAPI dbTranslateEscape(char *s,const char *ct);
-epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
-    const char *s1, const char *s2, int n);
+epicsShareFunc int epicsShareAPI epicsStrCaseCmp(const char *s1,const char *s2);
+epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(const char *s1,const char *s2, int n);
 epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s);
 epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
     FILE *fp, const char *s, int n);

@@ -39,6 +39,14 @@
 #include <osiTime.h>
 #include <envDefs.h>
 
+//
+// useful public constants
+//
+const unsigned osiTime::mSecPerSec = 1000u;
+const unsigned osiTime::uSecPerSec = 1000u*osiTime::mSecPerSec;
+const unsigned osiTime::nSecPerSec = 1000u*osiTime::uSecPerSec;
+const unsigned osiTime::nSecPerUSec = 1000u;
+const unsigned osiTime::secPerMin = 60u;
 
 //
 // this is defined by POSIX 1003.1b (POSIX real time) compilant OS

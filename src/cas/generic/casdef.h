@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.19  1998/06/18 00:09:39  jhill
+ * 	installed bwd compat casPV constructor
+ *
  * 	Revision 1.18  1998/06/16 02:34:14  jhill
  * 	allow PVs to exist without a server
  *
@@ -156,7 +159,6 @@ typedef aitUint32 caStatus;
 #define S_cas_badElementCount (M_cas | 6) /*Bad element count*/
 #define S_cas_noConvert (M_cas | 7) /*No conversion between src & dest types*/
 #define S_cas_badWriteType (M_cas | 8) /*Src type inappropriate for write*/
-#define S_cas_partialMessage (M_cas | 10) /*Partial message*/
 #define S_cas_noContext (M_cas | 11) /*Context parameter is required*/
 #define S_cas_disconnect (M_cas | 12) /*Lost connection to server*/
 #define S_cas_recvBlocked (M_cas | 13) /*Recv blocked*/

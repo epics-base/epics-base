@@ -1,4 +1,3 @@
-
 /* APSTATUSSYNC.C
  *****************************************************************
  * TODO - change the whole tool => almost DONE
@@ -51,6 +50,7 @@
 #include <sys/param.h>
 #include <dirent.h>
 #include <errno.h>
+#include <malloc.h>
 
 void            procDirEntries();
 int             processFile();
@@ -75,6 +75,9 @@ static int      lenDvlTop;
 static int      initScriptFile();
 static int      closeScriptFile();
 static int      appendToScriptFile();
+static FILE    *apRemoveScriptFp = (FILE*)NULL;
+static char    *pScriptFileName = "apRemoveScript";
+static    char           *plogname;	/* logname pointer */
 
 
 /****************************************************************************
@@ -88,6 +91,10 @@ main(argc, argv)
 	verbose = TRUE;
     else
 	verbose = FALSE;
+	if ((plogname = getenv("LOGNAME")) == 0) {
+	    fprintf(stdout, "apStatusSync: Can't get LOGNAME\n");
+	    return (-1);
+	}
 fprintf(stdout, "\n\n===========================================================\n");
 fprintf(stdout, "apStatusSync: Status Started  ==>> ==>> ==>> ==>> ==>>\n");
 fprintf(stdout, "===========================================================\n");
@@ -99,6 +106,67 @@ fprintf(stdout, "===========================================================\n")
 	return (-1);
     postAmble();
     return (0);
+}
+
+/****************************************************************************
+PROCLINKENTRIES
+   checks valid symbolic link for EPICS
+   at entry path is the name of a local link
+****************************************************************************/
+int
+procLinkEntries(path)
+    char           *path;
+{
+    char            resolved_path[MAXPATHLEN];
+    char            buf[MAXPATHLEN];
+    char            buf2[MAXPATHLEN];
+    char            buf3[MAXPATHLEN];
+    char            buffer[MAXNAMLEN];
+    void           *pt;
+    int             nchars;
+    resolved_path[0] = '\0';
+    if ((pt = (void *) realpath(path, resolved_path)) == NULL) {
+	fprintf(stdout, "FATAL ERROR - failed link component of %s\n\t= %s\n",
+		path, resolved_path);
+	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
+	if ((appendToScriptFile(buffer)) < 0)
+	    return (-1);	/* should not happen */
+	return (-1);
+    }
+    /* skip any link path with "/templates/" in it */
+    if ((strstr(resolved_path, "/templates/")) != NULL)
+	return;
+    /* skip any link path with "/vw/" in it */
+    if ((strstr(resolved_path, "/vw/")) != NULL)
+	return;
+    /* skip any link path with "/vxWorks" in it */
+    if ((strstr(resolved_path, "/vxWorks")) != NULL)
+	return;
+
+/* assume a relative link name doesn't begin with a '/' character */
+    buf[0] = '\0';
+    if ((nchars = readlink(path, buf, MAXPATHLEN)) < 0) {
+	fprintf(stdout, "\treadlink failed errno=%d\n", errno);
+	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
+	if ((appendToScriptFile(buffer)) < 0)
+	    return;
+    }
+    buf[nchars] = '\0';
+    strcpy(buf2, pAppSysTop);
+    strcat(buf2, "/");
+    strcat(buf2, path);
+    buf3[0] = '\0';
+    if ((strstr(resolved_path, pAppSysTop)) != NULL) {
+	return;
+    } else if ((strstr(resolved_path, pEpicsRelease)) != NULL) {
+	return;
+    } else if ((strstr(resolved_path, pDvlTop)) != NULL) {
+	return;
+    } else {
+	fprintf(stdout,
+		"FATAL ERROR - link '%s' should point to the application system area\n\tor the application shadow area or an EPICS release area\n\tdest='%s'\n", path, resolved_path);
+    }
+    return;
 }
 /****************************************************************************
 GETAPPSYSPATH
@@ -163,6 +231,37 @@ getAppSysPath()
     strcpy(pEpicsRelease, pt);
     return (0);
 }
+
+/****************************************************************************
+PROCDIRENTRIES
+    process directory entries
+****************************************************************************/
+void
+procDirEntries(name, dir)
+    char           *name;	/* entry name */
+    char           *dir;	/* current directory */
+{
+    struct stat     stbuf;
+
+    if (lstat(name, &stbuf) == -1) {
+	fprintf(stdout, "procDirEntries: can't access %s\n", name);
+	return;
+    }
+
+    if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
+	procLinkEntries(name);
+	return;
+    }
+    if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
+	processFile(name, dir);
+	return;
+    }
+    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+	dirwalk(name, procDirEntries);
+    }
+    return;
+}
+
 /****************************************************************************
 PROCESSFILE
     for each regular file:
@@ -183,13 +282,11 @@ processFile(name, dir)
     char           *pbeg;	/* beg of file pathname */
     char           *pend;	/* beg of filename */
     char           *pendm1;	/* beg of filename */
-    char           *plogname;	/* logname pointer */
-    char           *pUserDotName;	/* end of out-for-EDIT p.dot line */
-    char            udotname[80];	/* took file out-for-edit user name */
+    char            udotname[MAXNAMLEN+5];	/* took file out-for-edit user name */
     struct stat     stbuf;
     struct stat     lstbuf;
     FILE           *fp;
-    char            ibuf[MAXPATHLEN];	/* contents of 1st line of p.dot */
+    char            ibuf[MAXPATHLEN+5];	/* contents of 1st line of p.dot */
     int             hasSccsDir = FALSE;
     int             hasPdot = FALSE;
     int             hasSdot = FALSE;
@@ -247,17 +344,11 @@ processFile(name, dir)
 	    fprintf(stdout, "processFile: can't fopen %s\n", pdotName);
 	    return (-1);
 	}
-	if ((plogname = getenv("LOGNAME")) == 0) {
-	    fprintf(stdout, "apStatusSync: Can't get LOGNAME\n");
-	    return (-1);
-	}
 	if ((fgets(ibuf, MAXPATHLEN, fp)) != NULL) {
 	    /* is this the original sccs out-for-edit owner ??? */
 	    strcpy(udotname, ibuf);
-	    pUserDotName = strstr(udotname, plogname);
-	    strtok(pUserDotName, " ");
-	    if ((strcmp(pUserDotName, plogname)) != 0) {
-		/* yes - skip */
+	    if ((strstr(udotname, plogname))==NULL) {
+		fclose(fp);
 		return (0);
 	    }
 	    /* else print status */
@@ -273,7 +364,7 @@ processFile(name, dir)
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);	/* should not happen */
     } else if (!hasPdot && hasSdot) {
-	fprintf(stdout, "FATAL ERROR - file ./%s should be a link\n", name);
+	fprintf(stdout, "POSSIBLE FATAL ERROR - file ./%s should be a link\n", name);
 	sprintf(buffer, "#/bin/rm -f  ./%s\n", name);
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);
@@ -284,111 +375,6 @@ processFile(name, dir)
 	    return (-1);
     }
     return (0);
-}
-/****************************************************************************
-PROCDIRENTRIES
-    process directory entries
-****************************************************************************/
-void
-procDirEntries(name, dir)
-    char           *name;	/* entry name */
-    char           *dir;	/* current directory */
-{
-    struct stat     stbuf;
-
-    if (lstat(name, &stbuf) == -1) {
-	fprintf(stdout, "procDirEntries: can't access %s\n", name);
-	return;
-    }
-
-    if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
-	procLinkEntries(name);
-	return;
-    }
-    if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
-	processFile(name, dir);
-	return;
-    }
-    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-	dirwalk(name, procDirEntries);
-    }
-    return;
-}
-
-/****************************************************************************
-PROCLINKENTRIES
-   checks valid symbolic link for EPICS
-   at entry path is the name of a local link
-****************************************************************************/
-int
-procLinkEntries(path)
-    char           *path;
-{
-    char            resolved_path[MAXPATHLEN];
-    char            buf[MAXPATHLEN];
-    char            buf2[MAXPATHLEN];
-    char            buf3[MAXPATHLEN];
-    char            buffer[MAXNAMLEN];
-    void           *pt;
-    int             nchars;
-    resolved_path[0] = '\0';
-    if ((pt = (void *) realpath(path, resolved_path)) == NULL) {
-	fprintf(stdout, "FATAL ERROR - failed link component of %s\n\t= %s\n",
-		path, resolved_path);
-	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
-	if ((appendToScriptFile(buffer)) < 0)
-	    return (-1);	/* should not happen */
-	return(-1);
-    }
-    /* skip any link path with "/templates/" in it */
-    if ((strstr(resolved_path, "/templates/")) != NULL)
-	return;
-    /* skip any link path with "/vw/" in it */
-    if ((strstr(resolved_path, "/vw/")) != NULL)
-	return;
-
-/* assume a relative link name doesn't begin with a '/' character */
-    buf[0] = '\0';
-    if ((nchars = readlink(path, buf, MAXPATHLEN)) < 0) {
-	fprintf(stdout, "\treadlink failed errno=%d\n", errno);
-	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
-	if ((appendToScriptFile(buffer)) < 0)
-	    return ;
-    }
-    buf[nchars] = '\0';
-    if (buf[0] != '/') {
-	/*ensure that the equivalent link exists in the system area */
-	strcpy(buf2, pAppSysTop);
-	strcat(buf2, "/");
-	strcat(buf2, path);
-	buf3[0] = '\0';
-	if ((nchars = readlink(buf2, buf3, MAXPATHLEN)) < 0) {
-	    fprintf(stdout,
-		"\treadlink failed - local link '%s' sys link '%s'\n" ,path,  buf2);
-	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
-	if ((appendToScriptFile(buffer)) < 0)
-	    return (-1);
-	}
-	buf3[nchars] = '\0';
-	if ((strcmp(buf3, buf)) != 0) {
-	    fprintf(stdout, "\tA wrong relative link was detected\n");
-	    fprintf(stdout, "\t\tsrc '%s' dest '%s'\n", path, buf3);
-	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
-	if ((appendToScriptFile(buffer)) < 0)
-	    return (-1);
-	}
-    }
-    /* compare $epics or app SYS or beg of shadow with beg of dest */
-    /* if neither present in dest - fail */
-    if (((strncmp(pAppSysTop, resolved_path, lenApplSys)) == SAME)
-	  || ((strncmp(pEpicsRelease, resolved_path, lenEpicsPath)) == SAME)
-	    || ((strncmp(pDvlTop, resolved_path, lenDvlTop)) == SAME)) {
-	return;
-    } else {
-	fprintf(stdout,
-		"FATAL ERROR - link '%s' must point to the application system area\n\tor the application shadow area or an EPICS release area\n\tdest='%s'\n", path, resolved_path);
-    }
-    return;
 }
 /****************************************************************************
 DIRWALK applies a function to each file in a directory
@@ -411,7 +397,7 @@ dirwalk(dir, fcn)
     strcat(name, "/");
     strcat(name, dir);
     if ((stat(name, &sb) != 0)) {
-	sprintf(buffer, "#/bin/rm -fr  ./%s\t#private directory\n", dir);
+	sprintf(buffer, "#/bin/rm -fr  ./%s\n", dir);
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);
     }
@@ -459,8 +445,6 @@ processTopDir()
     return (0);
 }
 
-static FILE    *apRemoveScriptFp = NULL;
-static char    *pScriptFileName = "apRemoveScript";
 /****************************************************************************
 initScriptFile
 ****************************************************************************/

@@ -91,9 +91,9 @@ STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 # OS vendor c preprocessor
-#CPP = cl  /E
+CPP = cl /C /E
 #GNU c preprocessor
-CPP = gcc -x c -E
+#CPP = gcc -x c -E
 
 # Configure OS vendor C++ compiler
 #

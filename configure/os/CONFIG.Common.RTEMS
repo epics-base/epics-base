@@ -62,7 +62,6 @@ OS_CLASS = RTEMS
 
 #--------------------------------------------------
 # Operating system flags
-PROD_LIBS += iocsh
 OP_SYS_CPPFLAGS = -Dmain=rtems_main -DIOCSH_USE_READLINE
 OP_SYS_LDLIBS = -lreadline -lcurses
 OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/25 17:58:16  jhill
+ * fixed missing ref in list decl
+ *
  * Revision 1.2  1996/07/24 22:12:02  jhill
  * added remove() to iter class + made node's prev/next private
  *
@@ -164,7 +167,7 @@ public:
 		//
 		// T must derive from ID
 		//
-		tsSLList<T> &list(this->pTable[this->hash(res)]);
+		tsSLList<T> &list = this->pTable[this->hash(res)];
 		tsSLIter<T> iter(list);
 
 		this->find(iter, res);
@@ -179,13 +182,15 @@ public:
 	T *remove (const ID &idIn)
 	{
 		tsSLIter<T> iter(this->pTable[this->hash(idIn)]);
+		T *pCur;
 
 		this->find(iter, idIn);
-		if (iter.current()) {
+		pCur = iter.current();
+		if (pCur) {
 			this->nInUse--;
 			iter.remove();
 		}
-		return iter.current();
+		return pCur;
 	}
 
 

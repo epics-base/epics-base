@@ -3,13 +3,16 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)snc_main.c	1.2	4/17/91
+	$Id$
 	DESCRIPTION: Main program and miscellaneous routines for
 	State Notation Compiler.
 
 	ENVIRONMENT: UNIX
+	HISTORY:
+20nov91,ajk	Removed call to init_snc().
+20nov91,ajk	Removed some debug stuff.
 ***************************************************************************/
-extern	char *sncVersion;
+extern	char *sncVersion;	/* snc version and date created */
 
 #include	<stdio.h>
 
@@ -69,8 +72,6 @@ char	*argv[];
 		exit(1);
 	}
 
-#define	REDIRECT
-#ifdef	REDIRECT
 	/* Redirect output stream to specified file */
 	outfp = freopen(out_file, "w", stdout);
 	if (outfp == NULL)
@@ -78,7 +79,6 @@ char	*argv[];
 		perror(out_file);
 		exit(1);
 	}
-#endif	REDIRECT
 
 	/* src_file is used to mark the output file for snc & cc errors */
 	src_file = in_file;
@@ -88,9 +88,6 @@ char	*argv[];
 	setlinebuf(stderr);
 	
 	printf("/* %s: %s */\n\n", sncVersion, in_file);
-
-	/* Initialize parser */
-	init_snc();
 
 	/* Call the SNC parser */
 	yyparse();
@@ -120,13 +117,15 @@ char	*argv[];
 	if (argc < 2)
 	{
 		fprintf(stderr, "%s\n", sncVersion);
-		fprintf(stderr, "Usage: snc +/-flags infile\n");
+		fprintf(stderr, "usage: snc <options> <infile>\n");
+		fprintf(stderr, "options:\n");
 		fprintf(stderr, "  +a - do async. pvGet\n");
 		fprintf(stderr, "  -c - don't wait for all connects\n");
 		fprintf(stderr, "  +d - turn on debug run-time option\n");
 		fprintf(stderr, "  -l - supress line numbering\n");
 		fprintf(stderr, "  +r - make reentrant at run-time\n");
 		fprintf(stderr, "  -w - supress compiler warnings\n");
+		fprintf(stderr, "example:\n snc +a -c vacuum.st\n");
 		exit(1);
 	}
 

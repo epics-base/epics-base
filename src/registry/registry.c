@@ -7,10 +7,9 @@ This software was developed under a United States Government license
 described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
-#include <stddef.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "dbDefs.h"

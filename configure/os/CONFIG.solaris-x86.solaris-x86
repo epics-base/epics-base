@@ -31,8 +31,8 @@ ACC_WARN_NO = -w
 ACC_OPT_YES = -xO4
 ACC_OPT_NO = -g
 ACC_STATIC_LDFLAGS_YES= -Bstatic
-ACC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
-ACC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+ACC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -lrt -Bstatic -lXext -lX
+ACC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
 ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
 ACC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
 
@@ -49,8 +49,8 @@ CCC_WARN_NO =
 CCC_OPT_YES = -O
 CCC_OPT_NO = -g
 CCC_STATIC_LDFLAGS_YES= -Bstatic
-CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
-CCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -lrt -Bstatic -lXext -lX
+CCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
 CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
 CCC_DEPENDS_FLAG = -xM1
 CCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS_
@@ -64,6 +64,11 @@ GCC_CPP = $(GCC) -x c -E
 
 GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
 G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
+
+GCC_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread -lrt
+GCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
+G++_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread -lrt
+G++_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
 
 RANLIB =
 # required by sun's C++ compiler

@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -46,6 +46,7 @@
  * .08	12-08-91	rac	fix alignment for printing of channel names
  * .09	01-20-92	rac	add a code for VALID_ALARM and handle
  *				invalid values properly
+ * .10	02-04-92	rac	allow multiple chanOpen for same name
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -619,7 +620,6 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *				isn't treated as an error condition--the
 *				channel is open and added to sync set spec)
 *	S_syd_chanNotFound	channel not found
-*	S_syd_ERROR		if channel already exists in sync set spec
 *
 * BUGS
 * o	always places channel at end of list
@@ -685,6 +685,7 @@ int	trig;		/* I 0,1 if this is data,trigger channel */
     if (ppSChan != NULL)
 	*ppSChan = NULL;
 
+#if 0
     if ((pSChan = sydChanFind(pSspec, chanName)) != NULL) {
 	if (trig == 0) {
 	    if (pSChan->dataChan == 1)
@@ -700,6 +701,7 @@ int	trig;		/* I 0,1 if this is data,trigger channel */
 		return S_syd_ERROR;
 	}
     }
+#endif
 
 /*-----------------------------------------------------------------------------
 *    allocate and initialize an empty synchronous channel structure

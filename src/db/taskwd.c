@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01	07-24-91	mrk	Replacement for special purpose scan watchdog
+ * .02	05-04-94	mrk	Allow user callback to call taskwdRemove
  */
 
 #include	<vxWorks.h>
@@ -56,6 +57,8 @@ struct task_list {
 static ELLLIST list;
 static ELLLIST anylist;
 static FAST_LOCK lock;
+static FAST_LOCK anylock;
+static FAST_LOCK alloclock;
 static int taskwdid=0;
 volatile int taskwdOn=TRUE;
 struct freeList{
@@ -71,6 +74,8 @@ static void freeList(struct task_list *pt);
 void taskwdInit()
 {
     FASTLOCKINIT(&lock);
+    FASTLOCKINIT(&anylock);
+    FASTLOCKINIT(&alloclock);
     ellInit(&list);
     ellInit(&anylist);
     taskwdid = taskSpawn(TASKWD_NAME,TASKWD_PRI,
@@ -96,13 +101,13 @@ void taskwdAnyInsert(int tid,VOIDFUNCPTR callback,void *arg)
 {
     struct task_list *pt;
 
-    FASTLOCK(&lock);
+    FASTLOCK(&anylock);
     pt = allocList();
     ellAdd(&anylist,(void *)pt);
     pt->tid = tid;
     pt->callback = callback;
     pt->arg = arg;
-    FASTUNLOCK(&lock);
+    FASTUNLOCK(&anylock);
 }
 
 void taskwdRemove(int tid)
@@ -128,18 +133,18 @@ void taskwdAnyRemove(int tid)
 {
     struct task_list *pt;
 
-    FASTLOCK(&lock);
+    FASTLOCK(&anylock);
     pt = (struct task_list *)ellFirst(&anylist);
     while(pt!=NULL) {
 	if (tid == pt->tid) {
 	    ellDelete(&anylist,(void *)pt);
 	    freeList(pt);
-	    FASTUNLOCK(&lock);
+	    FASTUNLOCK(&anylock);
 	    return;
 	}
 	pt = (struct task_list *)ellNext((void *)pt);
     }
-    FASTUNLOCK(&lock);
+    FASTUNLOCK(&anylock);
     errMessage(-1,"taskwdanyRemove failed");
 }
 
@@ -161,16 +166,25 @@ static void taskwdTask(void)
 		    if(!pt->suspended) {
 			struct task_list *ptany,*anynext;
 
+			pt->suspended = TRUE;
 			sprintf(message,"task %x %s suspended",pt->tid,pname);
 			errMessage(-1,message);
-			if(pt->callback) (pt->callback)(pt->arg);
 			ptany = (struct task_list *)ellFirst(&anylist);
 			while(ptany) {
 			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->tid);
 			    ptany = (struct task_list *)ellNext((ELLNODE *)ptany);
 			}
+			if(pt->callback) {
+				VOIDFUNCPTR	pcallback = pt->callback;
+				void		*arg = pt->arg;
+
+				/*Must allow callback to call taskwdRemove*/
+				FASTUNLOCK(&lock);
+				(pcallback)(arg);
+				/*skip rest because we have unlocked*/
+				break;
+			}
 		    }
-		    pt->suspended = TRUE;
 		}
 		pt = next;
 	    }
@@ -185,6 +199,7 @@ static struct task_list *allocList(void)
 {
     struct task_list *pt;
 
+    FASTLOCK(&alloclock);
     if(freeHead) {
 	(void *)pt = (void *)freeHead;
 	freeHead = freeHead->next;
@@ -193,12 +208,15 @@ static struct task_list *allocList(void)
 	errMessage(0,"taskwd failed on call to calloc\n");
 	exit(1);
     }
+    FASTUNLOCK(&alloclock);
     return(pt);
 }
 
 static void freeList(struct task_list *pt)
 {
     
+    FASTLOCK(&alloclock);
     ((struct freeList *)pt)->next  = freeHead;
     freeHead = (struct freeList *)pt;
+    FASTUNLOCK(&alloclock);
 }

@@ -609,7 +609,7 @@ unsigned        bitFieldLength)
 }
 
 /* needed if not standard C */
-#ifndef __STDC__
+#ifndef vxWorks
 /*
  * 
  * strtoul 
@@ -708,4 +708,4 @@ strtoul(s, ptr, base)
     *ptr = (char *) ((did_conversion) ? (char *)s : (char *)start);
   return negate ? -total : total;
 }
-#endif	/*  __STDC__ */
+#endif	/*  vxWorks */

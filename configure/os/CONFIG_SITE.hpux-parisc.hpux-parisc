@@ -1,0 +1,25 @@
+# CONFIG_SITE.hpux-parisc.hpux-parisc
+#
+# $Id$
+#
+# Site Specific Configuration Information
+# Only the local epics system manager should modify this file
+
+# by default, build and use shared libraries
+SHARED_LIBRARIES=YES
+
+# where we expect to find shared libraries if not found elsewhere
+#DEFAULT_SHRLIB_SEARCH_PATH = /cs/lib/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL):$(INSTALL_LIB)
+DEFAULT_SHRLIB_SEARCH_PATH = /opt/epics/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)/support/base/$(EPICS_VERSION)-$(EPICS_REVISION)-$(EPICS_MODIFICATION)-$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL)/lib/hpux-parisc
+
+#No special action should be required to build or use shared libraries.
+#However, when a new shared library is built using the above configuration,
+#it should be copied into the location specified by DEFAULT_SHRLIB_SEARCH_PATH
+#which in this specific case is: /cs/lib/R3.13.1.1/
+
+# cal added this so that libraries can be built with position
+# independent code even if shared libraries aren't being built
+ifeq ($(RELOCATABLE), YES)
+    ARCH_DEP_CFLAGS     += +z
+    ARCH_DEP_CXXFLAGS   += +z
+endif

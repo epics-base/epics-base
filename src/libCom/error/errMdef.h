@@ -98,10 +98,10 @@ epicsShareFunc int epicsShareAPI UnixSymFind(long status, char *name, long *valu
 epicsShareFunc int epicsShareAPI ModSymFind(long status, char *name, long *value);
 epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
 epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
-epicsShareFunc int epicsShareAPI errSymBld();
+epicsShareFunc int epicsShareAPI errSymBld(void);
 epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
-epicsShareFunc void epicsShareAPI errSymDump();
-epicsShareFunc void epicsShareAPI tstErrSymFind();
+epicsShareFunc void epicsShareAPI errSymDump(void);
+epicsShareFunc void epicsShareAPI tstErrSymFind(void);
 
 #else /* errMDefUseProtoANSI */ 
 

@@ -11,7 +11,7 @@ $top = $ARGV[2];
 
 unlink("${outfile}");
 open(OUT,">${outfile}") or die "$! opening ${outfile}";
-print OUT "#Do not modify thie file.\n";
+print OUT "#Do not modify this file.\n";
 print OUT "#This file is created during the build.\n";
 
 @files =();
@@ -52,7 +52,7 @@ foreach $file (@files) {
                 print OUT "EPICS_INCLUDES += -I$post/include\n";
             }
             if ( -d "$post/dbd") { #check that directory exists
-                print OUT "EPICS_DBDFLAGS += -I$post/dbd\n";
+                print OUT "EPICS_DBDFLAGS += -I $post/dbd\n";
             }
         }
     }

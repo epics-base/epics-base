@@ -1154,10 +1154,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
        
         assert ( this->pudpiiu );
         iiu.removeAllChannels ( false, cbGuard, guard, *this->pudpiiu );
-    }
 
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
         this->serverTable.remove ( iiu );
         this->circuitList.remove ( iiu );
     }

@@ -50,7 +50,18 @@ epicsShareFunc int epicsShareAPI registryAdd(
     if(!gphPvt) registryInit(0);
     pentry = gphAdd(gphPvt,name,registryID);
     if(!pentry) return(FALSE);
-    pentry->userPvt = (void *)data;
+    pentry->userPvt = data;
+    return(TRUE);
+}
+
+epicsShareFunc int epicsShareAPI registryChange(
+    void *registryID,const char *name,void *data)
+{
+    GPHENTRY *pentry;
+    if(!gphPvt) registryInit(0);
+    pentry = gphFind(gphPvt,(char *)name,registryID);
+    if(!pentry) return(FALSE);
+    pentry->userPvt = data;
     return(TRUE);
 }
 

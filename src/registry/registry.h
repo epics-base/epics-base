@@ -21,6 +21,8 @@ epicsShareFunc int epicsShareAPI registryAdd(
     void *registryID,const char *name,void *data);
 epicsShareFunc void *epicsShareAPI registryFind(
     void *registryID,const char *name);
+epicsShareFunc int epicsShareAPI registryChange(
+    void *registryID,const char *name,void *data);
 
 epicsShareFunc int epicsShareAPI registrySetTableSize(int size);
 epicsShareFunc void epicsShareAPI registryFree();

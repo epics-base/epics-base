@@ -11,6 +11,7 @@ RM=rm -f
 CP=cp
 RMDIR=rm -rf
 MKDIR=mkdir
+CHMOD = "/bin/chmod"
 
 #	overrides defines in CONFIG_SITE that don't fit Tornado
 #
@@ -55,7 +56,7 @@ VX_OPT_NO = -O0
 VX_OPT_FLAGS = $(VX_OPT_$(VX_OPT))
  
 #    Include files
-VX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(EPICS_BASE_INCLUDE)	\
+VX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLUDE)	\
 	 -I$(EPICS_BASE_INCLUDE)/os/vxWorks -I$(VX_INCLUDE)
 
 #    Warnings

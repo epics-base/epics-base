@@ -31,13 +31,12 @@ LEX = $(ELEX)
 G++ = /opt/gnu/bin/g++
 CCC = /opt/SUNWspro/bin/CC
 
-RMDIR = rm -rf
-MKDIR = mkdir
 CP=cp
 MV=mv
 RM=rm -f
 MKDIR=mkdir
 RMDIR=rm -rf
+CHMOD = "/bin/chmod"
 EXE=
 OBJ=.o
 
@@ -118,7 +117,7 @@ OPTIM_NO =
 UNIX_OPT_FLAGS = $(OPTIM_$(UNIX_OPT))
 
 # Include files
-UNIX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(EPICS_BASE_INCLUDE) \
+UNIX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLUDE) \
                 -I$(EPICS_BASE_INCLUDE)/os/$(T_A)
  
 # Operating system flags

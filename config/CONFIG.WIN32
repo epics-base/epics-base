@@ -48,7 +48,7 @@ MKDIR=mkdir
 RMDIR=rm -rf
 
 # Include files
-HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(EPICS_BASE_INCLUDE)	\
+HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLUDE)	\
 		-I$(EPICS_BASE_INCLUDE)/os/$(ARCH_CLASS)
  
 #	Operating system flags (from win32.mak)

@@ -64,12 +64,15 @@ else
 # PROD and TESTPROD not built for ioc only builds
 PROD = 
 TESTPROD = 
+LIBRARY_HOST =
 LIBRARY_IOC += $(LIBRARY)
 endif
 
 
 ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
 OBJS += $(OBJS_IOC)
+else 
+LIBRARY_IOC =
 endif
 #---------------------------------------------------------------
 

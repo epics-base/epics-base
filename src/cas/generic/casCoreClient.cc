@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/06/13 09:15:55  jhill
+ * connect proto changes
+ *
  * Revision 1.5  1997/04/10 19:34:03  jhill
  * API changes
  *
@@ -68,63 +71,15 @@ caStatus casCoreClient::init()
 }
 
 //
-// static declartions for class casCoreClient
-//
-//int casCoreClient::msgHandlersInit;
-//pAsyncIoCallBack casCoreClient::asyncIOJumpTable[CA_PROTO_LAST_CMMD+1u];
- 
-
-//
 // casCoreClient::casCoreClient()
 //
-casCoreClient::casCoreClient(caServerI &serverInternal) : casEventSys(*this)
+casCoreClient::casCoreClient (caServerI &serverInternal) : casEventSys(*this)
 {
 	assert(&serverInternal);
 	ctx.setServer(&serverInternal);
 	ctx.setClient(this);
-
-	//
-	// static member init
-	//
-	//casCoreClient::loadProtoJumpTable();
 }
-
-#if 0
-//
-// casCoreClient::loadProtoJumpTable()
-//
-void casCoreClient::loadProtoJumpTable()
-{
-        //
-        // Load the static protocol handler tables
-        //
-        if (casCoreClient::msgHandlersInit) {
-                return;
-        }
  
-        //
-        // Asynch Response Protocol Jump Table
-        //
-        casCoreClient::asyncIOJumpTable[CA_PROTO_SEARCH] =
-                        casCoreClient::searchResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_CLAIM_CIU] =
-                        casCoreClient::createChanResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_READ] =
-                        casCoreClient::readResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_READ_NOTIFY] =
-                        casCoreClient::readNotifyResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_WRITE] =
-                        casCoreClient::writeResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_WRITE_NOTIFY] =
-                        casCoreClient::writeNotifyResponse;
-        casCoreClient::asyncIOJumpTable[CA_PROTO_EVENT_ADD] =
-                        casCoreClient::monitorResponse;
-
-        casCoreClient::msgHandlersInit = TRUE;
-}
-#endif
- 
-
 //
 // casCoreClient::~casCoreClient()
 //

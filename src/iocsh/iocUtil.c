@@ -11,11 +11,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <logClient.h>
 #include <envDefs.h>
 
 #include "osiUnistd.h"
 #include "epicsThread.h"
+#include "logClient.h"
 
 #define epicsExportSharedSymbols
 #include "iocsh.h"
@@ -143,6 +143,15 @@ static void iocLogInitCallFunc(const iocshArgBuf *args)
     iocLogInit ();
 }
 
+/* iocLogDisable */
+static const iocshArg iocLogDisableArg0 = {"(0,1)=>(false,true)",iocshArgInt};
+static const iocshArg * const iocLogDisableArgs[1] = {&iocLogDisableArg0};
+static const iocshFuncDef iocLogDisableFuncDef = {"setIocLogDisable",1,iocLogDisableArgs};
+static void iocLogDisableCallFunc(const iocshArgBuf *args)
+{
+    iocLogDisable = args[0].ival;
+}
+
 void epicsShareAPI iocUtilRegister(void)
 {
     iocshRegister(&runScriptFuncDef,runScriptCallFunc);
@@ -153,4 +162,5 @@ void epicsShareAPI iocUtilRegister(void)
     iocshRegister(&epicsParamShowFuncDef,epicsParamShowCallFunc);
     iocshRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
     iocshRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
+    iocshRegister(&iocLogDisableFuncDef,iocLogDisableCallFunc);
 }

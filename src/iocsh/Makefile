@@ -25,6 +25,7 @@ INC += dbAccessRegister.h
 INC += iocshRegisterCommon.h
 INC += asTestRegister.h
 INC += envRegister.h
+INC += iocCoreLimitsRegister.h
 
 
 #       general contents of library on all platforms
@@ -46,6 +47,7 @@ LIBSRCS += iocshRegisterCommon.c
 LIBSRCS += asTestRegister.c
 LIBSRCS += envRegister.c
 LIBSRCS += iocUtil.c
+LIBSRCS += iocCoreLimitsRegister.c
 
 LIBRARY_IOC = iocsh
 

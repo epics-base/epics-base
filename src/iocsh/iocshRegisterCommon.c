@@ -17,6 +17,7 @@
 #include <ctype.h>
 
 #define epicsExportSharedSymbols
+#include "iocCoreLimitsRegister.h"
 #include "dbStaticRegister.h"
 #include "iocUtilRegister.h"
 #include "dbTestRegister.h"
@@ -32,6 +33,7 @@
 
 void epicsShareAPI iocshRegisterCommon(void)
 {
+    iocCoreLimitsRegister();
     osiRegister();
     iocUtilRegister();
     dbStaticRegister();

@@ -167,11 +167,11 @@ int db_event_list(char *name)
 #ifdef DEBUG
 		printf(" ev %lx\n", (unsigned long) pevent);
 		printf(" ev que %lx\n", (unsigned long) pevent->ev_que);
-		printf(" ev user %lx\n", (unsigned long) pevent->ev_que->evuser);
+		printf(" ev user %lx\n", (unsigned long) pevent->ev_que->evUser);
 		printf("ring space %u\n", RNGSPACE(pevent->ev_que));
 #endif
 		printf(	"task %x select %x pfield %lx behind by %ld\n",
-			pevent->ev_que->evuser->taskid,
+			pevent->ev_que->evUser->taskid,
 			pevent->select,
 			(unsigned long) pevent->paddr->pfield,
 			pevent->npend);
@@ -193,7 +193,7 @@ int db_event_list(char *name)
  */
 struct event_user *db_init_events(void)
 {
-  	struct event_user	*evuser;
+  	struct event_user	*evUser;
 
 	if (!dbevEventUserFreeList) {
 		freeListInitPvt(&dbevEventUserFreeList, 
@@ -204,40 +204,40 @@ struct event_user *db_init_events(void)
 			sizeof(struct event_que),8);
 	}
 
-  	evuser = (struct event_user *) 
+  	evUser = (struct event_user *) 
 		freeListCalloc(dbevEventUserFreeList);
-  	if(!evuser)
+  	if(!evUser)
     		return NULL;
 
-  	evuser->firstque.evuser = evuser;
-	FASTLOCKINIT(&(evuser->firstque.writelock));
-	evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	if(!evuser->ppendsem){
-		FASTLOCKFREE(&(evuser->firstque.writelock));
-		freeListFree(dbevEventUserFreeList, evuser);
+  	evUser->firstque.evUser = evUser;
+	FASTLOCKINIT(&(evUser->firstque.writelock));
+	evUser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	if(!evUser->ppendsem){
+		FASTLOCKFREE(&(evUser->firstque.writelock));
+		freeListFree(dbevEventUserFreeList, evUser);
 		return NULL;
 	}
-	evuser->pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	if(!evuser->pflush_sem){
-		FASTLOCKFREE(&(evuser->firstque.writelock));
-		semDelete(evuser->ppendsem);
-		freeListFree(dbevEventUserFreeList, evuser);
+	evUser->pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	if(!evUser->pflush_sem){
+		FASTLOCKFREE(&(evUser->firstque.writelock));
+		semDelete(evUser->ppendsem);
+		freeListFree(dbevEventUserFreeList, evUser);
 		return NULL;
 	}
 
-  	return evuser;
+  	return evUser;
 }
 
 
 /*
  *	DB_CLOSE_EVENTS()
  *	
- *	evuser block and additional event queues
+ *	evUser block and additional event queues
  *	deallocated when the event thread terminates
  *	itself
  *
  */
-int	db_close_events(struct event_user *evuser)
+int	db_close_events(struct event_user *evUser)
 {
 	/*
 	 * Exit not forced on event blocks for now - this is left to channel
@@ -248,10 +248,10 @@ int	db_close_events(struct event_user *evuser)
 	 * hazardous to the system's health.
 	 */
 
-  	evuser->pendexit = TRUE;
+  	evUser->pendexit = TRUE;
 
   	/* notify the waiting task */
-  	semGive(evuser->ppendsem);
+  	semGive(evUser->ppendsem);
 
 
   	return OK;
@@ -279,7 +279,7 @@ unsigned db_sizeof_event_block(void)
  *
  */
 int db_add_event(
-struct event_user	*evuser,
+struct event_user	*evUser,
 struct dbAddr		*paddr,
 void			(*user_sub)(),
 void			*user_arg,
@@ -307,7 +307,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
 
   	/* find an event que block with enough quota */
   	/* otherwise add a new one to the list */
-  	ev_que = &evuser->firstque;
+  	ev_que = &evUser->firstque;
   	while (TRUE) {
     		if(ev_que->quota < EVENTQUESIZE - EVENTENTRIES)
       			break;
@@ -316,7 +316,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
 				freeListCalloc(dbevEventQueueFreeList);
       			if(!tmp_que) 
         			return ERROR;
-      			tmp_que->evuser = evuser;
+      			tmp_que->evUser = evUser;
 			FASTLOCKINIT(&(tmp_que->writelock));
       			ev_que->nextque = tmp_que;
       			ev_que = tmp_que;
@@ -457,7 +457,7 @@ int	db_cancel_event(struct event_block	*pevent)
   	if(pevent->npend){
     		struct event_block	flush_event;
 
-		pevu = pevent->ev_que->evuser;
+		pevu = pevent->ev_que->evUser;
 
     		flush_event = *pevent;
     		flush_event.user_sub = wake_cancel;
@@ -517,14 +517,14 @@ db_field_log 		*pfl)
  * Specify a routine to be executed for event que overflow condition
  */
 int db_add_overflow_event(
-struct event_user	*evuser,
+struct event_user	*evUser,
 OVRFFUNC		overflow_sub,
 void			*overflow_arg
 )
 {
 
-  	evuser->overflow_sub = overflow_sub;
-  	evuser->overflow_arg = overflow_arg;
+  	evUser->overflow_sub = overflow_sub;
+  	evUser->overflow_arg = overflow_arg;
 
   	return OK;
 }
@@ -536,10 +536,10 @@ void			*overflow_arg
  * waits for extra labor in progress to finish
  */
 int db_flush_extra_labor_event(
-struct event_user	*evuser
+struct event_user	*evUser
 )
 {
-	while(evuser->extra_labor){
+	while(evUser->extra_labor){
 		taskDelay(sysClkRateGet());
 	}
 
@@ -555,13 +555,13 @@ struct event_user	*evuser
  * event task
  */
 int db_add_extra_labor_event(
-struct event_user	*evuser,
+struct event_user	*evUser,
 EXTRALABORFUNC		func,
 void			*arg
 )
 {
-  	evuser->extralabor_sub = func;
-  	evuser->extralabor_arg = arg;
+  	evUser->extralabor_sub = func;
+  	evUser->extralabor_arg = arg;
 
   	return OK;
 }
@@ -570,13 +570,13 @@ void			*arg
 /*
  * 	DB_POST_EXTRA_LABOR()
  */
-int db_post_extra_labor(struct event_user *evuser)
+int db_post_extra_labor(struct event_user *evUser)
 {
 	int 	status;
 
     	/* notify the event handler of extra labor */
-	evuser->extra_labor = TRUE;
-    	status = semGive(evuser->ppendsem);
+	evUser->extra_labor = TRUE;
+    	status = semGive(evUser->ppendsem);
 	assert(status == OK);
 
 	return OK;
@@ -653,7 +653,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 	ev_que = event->ev_que;
 
 	/*
-	 * evuser ring buffer must be locked for the multiple
+	 * evUser ring buffer must be locked for the multiple
 	 * threads writing/reading it
 	 */
 
@@ -685,7 +685,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		/*
 		 * this should never occur if this is bug free 
 		 */
-		ev_que->evuser->queovr++;
+		ev_que->evUser->queovr++;
 		pLog = NULL;
 		updateFlag = 0;
 	}
@@ -720,7 +720,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		/* 
 		 * notify the event handler 
 		 */
-		semGive(ev_que->evuser->ppendsem);
+		semGive(ev_que->evUser->ppendsem);
 	}
 
 	if (pLog) {
@@ -737,19 +737,18 @@ LOCAL int db_post_single_event_private(struct event_block *event)
  *
  */
 int db_start_events(
-struct event_user	*evuser,
+struct event_user	*evUser,
 char			*taskname,	/* defaulted if NULL */
-void			(*init_func)(),
+int			(*init_func)(),
 int			init_func_arg,
 int			priority_offset
 )
 {
   	int		status;
 	int		taskpri;
-  	int		event_task();
 
-  	/* only one ca_pend_event thread may be started for each evuser ! */
-  	while(!vxTas(&evuser->pendlck))
+  	/* only one ca_pend_event thread may be started for each evUser ! */
+  	while(!vxTas(&evUser->pendlck))
     		return ERROR;
 
   	status = taskPriorityGet(taskIdSelf(), &taskpri);
@@ -758,7 +757,7 @@ int			priority_offset
  
   	taskpri += priority_offset;
 
-  	evuser->pendexit = FALSE;
+  	evUser->pendexit = FALSE;
 
   	if(!taskname)
     		taskname = EVENT_PEND_NAME;
@@ -769,14 +768,14 @@ int			priority_offset
 		EVENT_PEND_OPT,
 		EVENT_PEND_STACK,
 		event_task,
-		(int)evuser,
+		(int)evUser,
 		(int)init_func,
 		(int)init_func_arg,
 		0,0,0,0,0,0,0);
   	if(status == ERROR)
     		return ERROR;
 
-  	evuser->taskid = status;
+  	evUser->taskid = status;
 
   	return OK;
 }
@@ -788,33 +787,45 @@ int			priority_offset
  *
  */
 int event_task(
-struct event_user	*evuser,
-void			(*init_func)(),
+struct event_user	*evUser,
+int			(*init_func)(),
 int			init_func_arg
 )
 {
 	int			status;
   	struct event_que	*ev_que;
 
+  	/* init hook */
+  	if (init_func) {
+    		status = (*init_func)(init_func_arg);
+		if (status!=OK) {
+			logMsg("Unable to intialize the event system!\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+		}
+		semGive(evUser->ppendsem);
+  		evUser->pendexit = TRUE;
+	}
+
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
-  	/* init hook */
-  	if(init_func)
-    		(*init_func)(init_func_arg);
-
   	do{
-		semTake(evuser->ppendsem, WAIT_FOREVER);
+		semTake(evUser->ppendsem, WAIT_FOREVER);
 
 		/*
 		 * check to see if the caller has offloaded
 		 * labor to this task
 		 */
-		if(evuser->extra_labor && evuser->extralabor_sub){
-			evuser->extra_labor = FALSE;
-			(*evuser->extralabor_sub)(evuser->extralabor_arg);
+		if(evUser->extra_labor && evUser->extralabor_sub){
+			evUser->extra_labor = FALSE;
+			(*evUser->extralabor_sub)(evUser->extralabor_arg);
 		}
 
-    		for(	ev_que= &evuser->firstque; 
+    		for(	ev_que= &evUser->firstque; 
 			ev_que; 
 			ev_que = ev_que->nextque){
 
@@ -825,27 +836,27 @@ int			init_func_arg
 		 * The following do not introduce event latency since they
 		 * are not between notification and posting events.
 		 */
-    		if(evuser->queovr){
-      			if(evuser->overflow_sub)
-        			(*evuser->overflow_sub)(
-					evuser->overflow_arg, 
-					evuser->queovr);
+    		if(evUser->queovr){
+      			if(evUser->overflow_sub)
+        			(*evUser->overflow_sub)(
+					evUser->overflow_arg, 
+					evUser->queovr);
       			else
 				logMsg("Events lost, discard count was %d\n",
-					evuser->queovr,
+					evUser->queovr,
 					NULL,
 					NULL,
 					NULL,
 					NULL,
 					NULL);
-      			evuser->queovr = 0;
+      			evUser->queovr = 0;
     		}
 
-  	}while(!evuser->pendexit);
+  	}while(!evUser->pendexit);
 
-  	evuser->pendlck = FALSE;
+  	evUser->pendlck = FALSE;
 
-	if(FASTLOCKFREE(&evuser->firstque.writelock)<0)
+	if(FASTLOCKFREE(&evUser->firstque.writelock)<0)
 		logMsg("evtsk: fast lock free fail 1\n",
 			NULL,
 			NULL,
@@ -858,7 +869,7 @@ int			init_func_arg
   	{
     		struct event_que	*nextque;
 
-		ev_que = evuser->firstque.nextque;
+		ev_que = evUser->firstque.nextque;
     		while(ev_que){ 
 
       			nextque = ev_que->nextque;
@@ -875,7 +886,7 @@ int			init_func_arg
    		}
   	}
 
-	status = semDelete(evuser->ppendsem);
+	status = semDelete(evUser->ppendsem);
 	if(status != OK){
 		logMsg("evtsk: sem delete fail at exit\n",
 			NULL,
@@ -885,7 +896,7 @@ int			init_func_arg
 			NULL,
 			NULL);
 	}
-	status = semDelete(evuser->pflush_sem);
+	status = semDelete(evUser->pflush_sem);
 	if(status != OK){
 		logMsg("evtsk: flush sem delete fail at exit\n",
 			NULL,
@@ -896,7 +907,7 @@ int			init_func_arg
 			NULL);
 	}
 
-	freeListFree(dbevEventUserFreeList, evuser);
+	freeListFree(dbevEventUserFreeList, evUser);
 
 	taskwdRemove((int)taskIdCurrent);
 
@@ -915,7 +926,7 @@ LOCAL int event_read(struct event_que       *ev_que)
 	db_field_log		*pfl;
 
 	/*
-	 * evuser ring buffer must be locked for the multiple
+	 * evUser ring buffer must be locked for the multiple
 	 * threads writing/reading it
 	 */
       	LOCKEVQUE(ev_que)

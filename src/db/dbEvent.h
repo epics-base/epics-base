@@ -81,7 +81,7 @@ struct event_que{
         db_field_log            valque[EVENTQUESIZE];
         struct event_block      *evque[EVENTQUESIZE];
         struct event_que        *nextque;       /* in case que quota exceeded */
-        struct event_user       *evuser;        /* event user parent struct */
+        struct event_user       *evUser;        /* event user parent struct */
         unsigned short  putix;
         unsigned short  getix;
         unsigned short  quota;          /* the number of assigned entries*/
@@ -108,16 +108,16 @@ struct event_user{
 	unsigned char		extra_labor;	/* if set call extra labor func */
 };
 
-typedef void			OVRFFUNC(void *overflow_arg, unsigned count);
-typedef void			EXTRALABORFUNC(void *extralabor_arg);
+typedef void 		OVRFFUNC(void *overflow_arg, unsigned count);
+typedef void 		EXTRALABORFUNC(void *extralabor_arg);
 
 int 			db_event_list(char *name);
 struct event_user 	*db_init_events(void);
-int			db_close_events(struct event_user *evuser);
+int			db_close_events(struct event_user *evUser);
 unsigned		db_sizeof_event_block(void);
 
 int db_add_event(
-struct event_user       *evuser,
+struct event_user       *evUser,
 struct dbAddr           *paddr,
 EVENTFUNC		*user_sub,
 void                    *user_arg,
@@ -128,23 +128,23 @@ struct event_block      *pevent  /* ptr to event blk (not required) */
 int     		db_cancel_event(struct event_block      *pevent);
 
 int db_add_overflow_event(
-struct event_user       *evuser,
+struct event_user       *evUser,
 OVRFFUNC		*overflow_sub,
 void                    *overflow_arg 
 );
 
 int db_add_extra_labor_event(
-struct event_user       *evuser,
+struct event_user       *evUser,
 EXTRALABORFUNC		*func,
 void			*arg);
 
 int db_flush_extra_labor_event(
-struct event_user       *evuser
+struct event_user       *evUser
 );
 
 int 			db_post_single_event(struct event_block *pevent);
 
-int db_post_extra_labor(struct event_user *evuser);
+int db_post_extra_labor(struct event_user *evUser);
 
 int db_post_events(
 void			*precord,
@@ -153,16 +153,16 @@ unsigned int            select
 );
 
 int db_start_events(
-struct event_user       *evuser,
+struct event_user       *evUser,
 char                    *taskname,      /* defaulted if NULL */
-void                    (*init_func)(int),
+int			(*init_func)(int),
 int                     init_func_arg,
 int                     priority_offset
 );
 
 int event_task(
-struct event_user       *evuser,
-void                    (*init_func)(int),
+struct event_user       *evUser,
+int			(*init_func)(int),
 int                     init_func_arg
 );
 

@@ -300,7 +300,7 @@ printf("xact(%08.8X, %d): devRs232drv xact request entered\n", xact, prio);
   }
 
   FASTLOCK(&(pmsgLink->queue[prio].lock));
-  xactListAddTail(&(pmsgLink->queue[prio]), xact);
+  drvMsg_xactListAddTail(&(pmsgLink->queue[prio]), xact);
   FASTUNLOCK(&(pmsgLink->queue[prio].lock));
   semGive(pmsgLink->linkEventSem);
 
@@ -335,7 +335,7 @@ msgLink		*pmsgLink;
         FASTLOCK(&(pmsgLink->queue[prio].lock));
         if ((xact = pmsgLink->queue[prio].head) != NULL)
         {
-	  xactListDel(&(pmsgLink->queue[prio]), xact);
+	  drvMsg_xactListDel(&(pmsgLink->queue[prio]), xact);
 	  FASTUNLOCK(&(pmsgLink->queue[prio].lock));
         }
         else

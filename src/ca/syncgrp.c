@@ -29,6 +29,10 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.27  1999/07/16 17:08:05  jhill
+ * fixed bug occurring when connection dropped while waiting to send, and
+ * initialize new search gongestion thresh parm
+ *
  * Revision 1.26.6.1  1999/07/15 21:02:25  jhill
  * fixed bug where client disconnects while waiting to send TCP
  *
@@ -78,7 +82,7 @@ LOCAL void io_complete(struct event_handler_args args);
 /*
  * ca_sg_init()
  */
-void ca_sg_init(void)
+void ca_sg_init(CA_STATIC *ca_static)
 {
 	/*
 	 * init all sync group lists
@@ -93,7 +97,7 @@ void ca_sg_init(void)
 /*
  * ca_sg_shutdown()
  */
-void ca_sg_shutdown(struct CA_STATIC *ca_temp)
+void ca_sg_shutdown(CA_STATIC *ca_static)
 {
 	CASG 	*pcasg;
 	CASG 	*pnextcasg;
@@ -103,25 +107,25 @@ void ca_sg_shutdown(struct CA_STATIC *ca_temp)
 	 * free all sync group lists
 	 */
 	LOCK;
-	pcasg = (CASG *) ellFirst (&ca_temp->activeCASG);
+	pcasg = (CASG *) ellFirst (&ca_static->activeCASG);
 	while (pcasg) {
 		pnextcasg = (CASG *) ellNext (&pcasg->node);
 		status = ca_sg_delete (pcasg->id);
 		assert (status==ECA_NORMAL);
 		pcasg = pnextcasg;
 	}
-	assert (ellCount(&ca_temp->activeCASG)==0);
+	assert (ellCount(&ca_static->activeCASG)==0);
 
 	/*
 	 * per sync group
 	 */
-	freeListCleanup(ca_temp->ca_sgFreeListPVT);
+	freeListCleanup(ca_static->ca_sgFreeListPVT);
 
 	/*
 	 * per sync group op
 	 */
-	ellFree (&ca_temp->activeCASGOP);
-	freeListCleanup(ca_temp->ca_sgopFreeListPVT);
+	ellFree (&ca_static->activeCASGOP);
+	freeListCleanup(ca_static->ca_sgopFreeListPVT);
 
 	UNLOCK;
 
@@ -136,6 +140,7 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 {
 	int	status;
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * Force the CA client id bucket to
@@ -166,7 +171,10 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 	pcasg->opPendCount = 0;
 	pcasg->seqNo = 0;
 
-	os_specific_sg_create(pcasg);
+#ifdef iocCore
+	pcasg->sem = semBinaryCreate(semEmpty);
+	assert(pcasg->sem );
+#endif
 
 	do {
 		pcasg->id = CLIENT_SLOW_ID_ALLOC; 
@@ -208,6 +216,7 @@ int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid)
 {
 	int	status;
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * Force the CA client id bucket to
@@ -227,8 +236,9 @@ int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid)
 	status = bucketRemoveItemUnsignedId(pSlowBucket, &gid);
 	assert (status == S_bucket_success);
 
-	os_specific_sg_delete(pcasg);
-
+#ifdef iocCore
+	semBinaryDestroy(pcasg->sem);
+#endif
 	pcasg->magic = 0;
 	ellDelete(&ca_static->activeCASG, &pcasg->node);
 	UNLOCK;
@@ -248,6 +258,7 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 	ca_real		delay;
 	int		status;
 	CASG 		*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * Force the CA client id bucket to
@@ -310,7 +321,7 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 			 */
 			tmo.tv_sec = 0L;
 			tmo.tv_usec = 0L;
-			cac_mux_io (&tmo, TRUE);
+			cac_mux_io (ca_static, &tmo, TRUE);
 			status = ECA_TIMEOUT;
 			break;
 		}
@@ -318,15 +329,32 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 		/*
 		 * Allow for CA background labor
 		 */
-		remaining = min(cac_fetch_poll_period(), remaining);
+		remaining = min(cac_fetch_poll_period(ca_static), remaining);
 
 		/*
 		 * wait for asynch notification
 		 */
 		tmo.tv_sec = (long) remaining;
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
-		cac_block_for_sg_completion (pcasg, &tmo);
-
+#ifndef iocCore
+		cac_mux_io(ca_static,&tmo, TRUE);
+#else
+		{
+		    struct timeval  itimeout;
+		    double waitTime;
+		    itimeout.tv_usec = 0;
+		    itimeout.tv_sec = 0;
+		    cac_mux_io(ca_static,&itimeout, TRUE);
+		    waitTime = tmo.tv_sec + tmo.tv_usec/1000.0;
+		    if(waitTime>POLLDELAY) waitTime = POLLDELAY;
+		    semBinaryTakeTimeout(ca_static->ca_io_done_sem,waitTime);
+		    /*
+		     *force a time update because we are not
+		     *going to get one with a nill timeout in ca_mux_io()
+		     */
+		    cac_gettimeval (&ca_static->currentTime);
+		}
+#endif
 		delay = cac_time_diff (&ca_static->currentTime, &beg_time);
 	}
 	pcasg->opPendCount = 0;
@@ -341,6 +369,7 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	LOCK;
 	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
@@ -364,6 +393,7 @@ int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 	CASGOP	*pcasgop;
+	CA_OSD_GET_CA_STATIC
 
 	LOCK;
 	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
@@ -399,6 +429,7 @@ int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid)
 int epicsShareAPI ca_sg_test(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	LOCK;
 	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
@@ -430,6 +461,7 @@ const void 		*pvalue)
 	int	status;
 	CASGOP	*pcasgop;
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	/*
  	 * first look on a free list. If not there
@@ -493,6 +525,7 @@ void 			*pvalue)
 	int	status;
 	CASGOP	*pcasgop;
 	CASG 	*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	/*
  	 * first look on a free list. If not there
@@ -548,6 +581,7 @@ LOCAL void io_complete(struct event_handler_args args)
 	unsigned long	size;
 	CASGOP		*pcasgop;
 	CASG 		*pcasg;
+	CA_OSD_GET_CA_STATIC
 
 	pcasgop = args.usr;
 	assert(pcasgop->magic == CASG_MAGIC);
@@ -602,9 +636,10 @@ LOCAL void io_complete(struct event_handler_args args)
 	 *
 	 * occurs through select on UNIX
 	 */
+#ifdef iocCore
 	if(pcasg->opPendCount == 0){
-		os_specific_sg_io_complete(pcasg);
+		semBinaryGive(pcasg->sem);
 	}
-
+#endif
 	return;
 }

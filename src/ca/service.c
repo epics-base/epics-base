@@ -20,14 +20,14 @@
 extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
 
-typedef void (*pProtoStub) (IIU *piiu,
-    const struct sockaddr_in *pnet_addr);
+typedef void (*pProtoStub) ( IIU *piiu, const struct sockaddr_in *pnet_addr);
 
 /*
  * noop_action ()
  */
-LOCAL void noop_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void noop_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     return;
 }
@@ -35,8 +35,9 @@ LOCAL void noop_action (IIU *piiu,
 /*
  * echo_resp_action ()
  */
-LOCAL void echo_resp_action (IIU *piiu,
-        const struct sockaddr_in *pnet_addr)
+LOCAL void echo_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     piiu->echoPending = FALSE;
     piiu->beaconAnomaly = FALSE;
@@ -46,9 +47,11 @@ LOCAL void echo_resp_action (IIU *piiu,
 /*
  * write_notify_resp_action ()
  */
-LOCAL void write_notify_resp_action (IIU *piiu,
-        const struct sockaddr_in *pnet_addr)
+LOCAL void write_notify_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     struct event_handler_args args;
     miu monix;
 
@@ -85,7 +88,7 @@ LOCAL void write_notify_resp_action (IIU *piiu,
         (*monix->usr_func) (args);
     }
     ellDelete (&pend_write_list, &monix->node);
-    caIOBlockFree (monix);
+    caIOBlockFree (ca_static, monix);
     UNLOCK;
 
     return;
@@ -94,9 +97,11 @@ LOCAL void write_notify_resp_action (IIU *piiu,
 /*
  * read_notify_resp_action ()
  */
-LOCAL void read_notify_resp_action (IIU *piiu,
-        const struct sockaddr_in *pnet_addr)
+LOCAL void read_notify_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     miu monix;
     struct event_handler_args args;
 
@@ -159,7 +164,7 @@ LOCAL void read_notify_resp_action (IIU *piiu,
         (*monix->usr_func) (args);
     }
     ellDelete (&pend_read_list, &monix->node);
-    caIOBlockFree (monix);
+    caIOBlockFree (ca_static, monix);
     UNLOCK;
 
     return;
@@ -168,9 +173,11 @@ LOCAL void read_notify_resp_action (IIU *piiu,
 /*
  * event_resp_action ()
  */
-LOCAL void event_resp_action (IIU *piiu,
-        const struct sockaddr_in *pnet_addr)
+LOCAL void event_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     struct event_handler_args args;
     miu monix;
     int v41;
@@ -193,7 +200,7 @@ LOCAL void event_resp_action (IIU *piiu,
      */
     if (!piiu->curMsg.m_postsize) {
         ellDelete(&monix->chan->eventq, &monix->node);
-        caIOBlockFree(monix);
+        caIOBlockFree(ca_static, monix);
         UNLOCK;
         return;
     }
@@ -257,9 +264,11 @@ LOCAL void event_resp_action (IIU *piiu,
 /*
  * read_resp_action ()
  */
-LOCAL void read_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void read_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     miu pIOBlock;
 
     /*
@@ -313,7 +322,7 @@ LOCAL void read_resp_action (IIU *piiu,
         }
     }
     ellDelete (&pend_read_list, &pIOBlock->node);
-    caIOBlockFree (pIOBlock);
+    caIOBlockFree (ca_static, pIOBlock);
     UNLOCK;
 
     return;
@@ -322,9 +331,11 @@ LOCAL void read_resp_action (IIU *piiu,
 /*
  * search_resp_action ()
  */
-LOCAL void search_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void search_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     struct sockaddr_in  ina;
     char                rej[64];
     ciu                 chan;
@@ -425,7 +436,7 @@ LOCAL void search_resp_action (IIU *piiu,
         return;
     }
 
-    status = alloc_ioc (&ina, &allocpiiu);
+    status = alloc_ioc (ca_static, &ina, &allocpiiu);
     switch (status) {
 
     case ECA_NORMAL:
@@ -461,7 +472,7 @@ LOCAL void search_resp_action (IIU *piiu,
      */
     if (ellCount(&allocpiiu->chidlist)==0) {
         issue_identify_client(allocpiiu);
-        issue_client_host_name(allocpiiu);
+        issue_client_host_name( allocpiiu);
     }
 
     /*
@@ -490,7 +501,7 @@ LOCAL void search_resp_action (IIU *piiu,
      *
      * claim pending flag is set here
      */
-    addToChanList(chan, allocpiiu);
+    addToChanList( chan, allocpiiu);
     
     /*
      * Assume that we have access once connected briefly
@@ -537,8 +548,9 @@ LOCAL void search_resp_action (IIU *piiu,
 /*
  * read_sync_resp_action ()
  */
-LOCAL void read_sync_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void read_sync_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     piiu->read_seq++;
     return;
@@ -547,9 +559,11 @@ LOCAL void read_sync_resp_action (IIU *piiu,
 /*
  * beacon_action ()
  */
-LOCAL void beacon_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void beacon_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     struct sockaddr_in ina;
 
     LOCK;
@@ -585,7 +599,7 @@ LOCAL void beacon_action (IIU *piiu,
          */
         ina.sin_port = htons (ca_static->ca_server_port);
     }
-    mark_server_available(&ina);
+    mark_server_available(ca_static, &ina);
 
     UNLOCK;
 
@@ -595,9 +609,11 @@ LOCAL void beacon_action (IIU *piiu,
 /*
  * repeater_ack_action ()
  */
-LOCAL void repeater_ack_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void repeater_ack_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     ca_static->ca_repeater_contacted = TRUE;
 #   ifdef DEBUG
         ca_printf ("CAC: repeater confirmation recv\n");
@@ -608,8 +624,9 @@ LOCAL void repeater_ack_action (IIU *piiu,
 /*
  * not_here_resp_action ()
  */
-LOCAL void not_here_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void not_here_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     return;
 }
@@ -617,19 +634,23 @@ LOCAL void not_here_resp_action (IIU *piiu,
 /*
  * clear_channel_resp_action ()
  */
-LOCAL void clear_channel_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void clear_channel_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
-    clearChannelResources (piiu->curMsg.m_available);
+    CA_STATIC *ca_static = piiu->pcas;
+    clearChannelResources (ca_static, piiu->curMsg.m_available);
     return;
 }
 
 /*
  * exception_resp_action ()
  */
-LOCAL void exception_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void exception_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     ELLLIST *pList = NULL;
     miu monix;
     char nameBuf[64];
@@ -724,7 +745,7 @@ LOCAL void exception_resp_action (IIU *piiu,
         if (pList) {
             ellDelete(pList, &monix->node);
         }
-        caIOBlockFree(monix);
+        caIOBlockFree(ca_static, monix);
     }
 
     args.chid = bucketLookupItemUnsignedId
@@ -746,9 +767,11 @@ LOCAL void exception_resp_action (IIU *piiu,
 /*
  * access_rights_resp_action ()
  */
-LOCAL void access_rights_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void access_rights_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     int ar;
     ciu chan;
 
@@ -782,10 +805,12 @@ LOCAL void access_rights_resp_action (IIU *piiu,
 /*
  * claim_ciu_resp_action ()
  */
-LOCAL void claim_ciu_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void claim_ciu_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
-    cac_reconnect_channel (piiu->curMsg.m_cid, 
+    CA_STATIC *ca_static = piiu->pcas;
+    cac_reconnect_channel (ca_static, piiu->curMsg.m_cid, 
         piiu->curMsg.m_dataType, piiu->curMsg.m_count);
     return;
 }
@@ -793,9 +818,11 @@ LOCAL void claim_ciu_resp_action (IIU *piiu,
 /*
  * verifyAndDisconnectChan ()
  */
-LOCAL void verifyAndDisconnectChan (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void verifyAndDisconnectChan (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     ciu chan;
 
     LOCK;
@@ -825,8 +852,9 @@ LOCAL void verifyAndDisconnectChan (IIU *piiu,
 /*
  * bad_tcp_resp_action ()
  */
-LOCAL void bad_tcp_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void bad_tcp_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     ca_printf ("CAC: Bad response code in TCP message = %u\n", 
         piiu->curMsg.m_cmmd);
@@ -835,8 +863,9 @@ LOCAL void bad_tcp_resp_action (IIU *piiu,
 /*
  * bad_udp_resp_action ()
  */
-LOCAL void bad_udp_resp_action (IIU *piiu,
-    const struct sockaddr_in *pnet_addr)
+LOCAL void bad_udp_resp_action (
+IIU *piiu,
+const struct sockaddr_in *pnet_addr)
 {
     ca_printf ("CAC: Bad response code in UDP message = %u\n", 
         piiu->curMsg.m_cmmd);
@@ -845,7 +874,8 @@ LOCAL void bad_udp_resp_action (IIU *piiu,
 /*
  * cac_reconnect_channel()
  */
-void cac_reconnect_channel(caResId cid, short type, unsigned short count)
+void cac_reconnect_channel(CA_STATIC *ca_static, caResId cid,
+short type, unsigned short count)
 {
     IIU *piiu;
     evid pevent;
@@ -1039,6 +1069,7 @@ unsigned long               blockSize
 {
     unsigned long   size;
     pProtoStub      pStub;
+    CA_STATIC *ca_static = piiu->pcas;
 
     while (blockSize) {
 

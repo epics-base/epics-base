@@ -87,8 +87,7 @@ void timeIt(
 	ti		*pItem,
 	unsigned	iterations
 );
-
-#ifndef vxWorks
+#ifndef iocCore
 int main(int argc, char **argv)
 {
 	char	*pname;
@@ -110,7 +109,6 @@ printf("usage: %s <channel name> [<if 2nd arg present append number to pv name>]
 	return 0;
 }
 #endif
-
 
 /*
  * catime ()

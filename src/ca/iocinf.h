@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.80  1999/11/08 17:14:43  jhill
+ * added prenthesis around arguments to VALID_MSG macro
+ *
  * Revision 1.79  1999/11/08 17:01:43  jhill
  * fixed problem with VALID_MSG(PIIU) macro
  *
@@ -200,6 +203,7 @@ HDRVERSIONID(iocinfh, "$Id$")
  * OS dependent includes
  */
 #include "osiSock.h"
+#include "osiClock.h"
 #include "os_depen.h"
 
 /*
@@ -351,7 +355,7 @@ typedef struct timeval ca_time;
  *	and FD_ZERO (&writeMask)
  * 4 uS required to call cac_gettimeval()
  */
-#ifdef vxWorks
+#ifdef iocCore
 #define SELECT_POLL_SEARCH	(0.075) /* units sec - polls for search request (4 ticks)*/
 #else
 #define SELECT_POLL_SEARCH 	(0.025) /* units sec - polls for search request */
@@ -382,7 +386,7 @@ typedef struct timeval ca_time;
 #define N_REPEATER_TRIES_PRIOR_TO_MSG	50
 #define REPEATER_TRY_PERIOD		(1.0) 
 
-#ifdef vxWorks
+#ifdef iocCore
 typedef struct caclient_put_notify{
 	ELLNODE			node;
 	PUTNOTIFY		dbPutNotify;
@@ -392,7 +396,7 @@ typedef struct caclient_put_notify{
 	struct CA_STATIC	*pcas;
 	int			busy;
 }CACLIENTPUTNOTIFY;
-#endif /*vxWorks*/
+#endif /*iocCore*/
 
 /*
  * this determines the number of messages received
@@ -434,7 +438,8 @@ typedef struct caclient_put_notify{
 #define nextSlowBucketId (ca_static->ca_nextSlowBucketId)
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
 
-#if defined(vxWorks)
+#if defined(iocCore)
+#define POLLDELAY .05
 #	define io_done_sem      (ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
@@ -443,15 +448,6 @@ typedef struct caclient_put_notify{
 #	define lock_tid	(ca_static->ca_lock_tid)
 #	define lock_count (ca_static->ca_lock_count)
 #endif
-
-/*
- * one for each task that does a ca import
- */
-typedef struct task_var_list{
-	ELLNODE			node;
-	int			tid;
-}TVIU;
-
 
 /*
  * Ring buffering for both sends and recvs
@@ -512,7 +508,7 @@ typedef struct ioc_in_use{
 	void			*pCurData;
 	unsigned long   (*sendBytes)(struct ioc_in_use *);
 	unsigned long	(*recvBytes)(struct ioc_in_use *);
-	void			(*procInput)(struct ioc_in_use *);
+	void		(*procInput)(struct ioc_in_use *);
 	SOCKET			sock_chan;
 	int			sock_proto;
 	unsigned		minor_version_number;
@@ -558,7 +554,7 @@ typedef struct {
 	fd_set          writeMask;  
 }caFDInfo;
 
-struct  CA_STATIC {
+typedef struct  CA_STATIC {
 	ELLLIST		ca_iiuList;
 	ELLLIST		ca_ioeventlist;
 	ELLLIST		ca_pend_read_list;
@@ -612,23 +608,23 @@ struct  CA_STATIC {
 	unsigned 	ca_manage_conn_active:1; 
 	unsigned 	ca_repeater_contacted:1;
 	unsigned 	ca_flush_pending:1;
-#if defined(vxWorks)
-	SEM_ID		ca_io_done_sem;
-	SEM_ID		ca_blockSem;
-	SEM_ID		ca_client_lock; 
-	SEM_ID		ca_putNotifyLock;
+#if defined(iocCore)
+	semId		ca_io_done_sem;
+	semId		ca_blockSem;
+	semId		ca_client_lock; 
+	semId		ca_putNotifyLock;
 	ELLLIST		ca_local_chidlist;
 	ELLLIST		ca_lcl_buff_list;
 	ELLLIST		ca_putNotifyQue;
 	ELLLIST		ca_taskVarList;
 	void		*ca_evuser;
 	void		*ca_dbMonixFreeList;
-	int			ca_lock_tid;
+	threadId	ca_lock_tid;
 	unsigned	ca_lock_count;
-	int			ca_tid;
-	int			recv_tid;
+	threadId	ca_tid;
+	threadId	recv_tid;
 #endif
-};
+}CA_STATIC;
 
 
 
@@ -658,9 +654,9 @@ typedef struct{
         /*
          * Asynch Notification
          */
-#	ifdef vxWorks
-        SEM_ID          sem;
-#	endif /*vxWorks*/
+#	ifdef iocCore
+        semId          sem;
+#	endif /*iocCore*/
 }CASG;
 
 
@@ -669,40 +665,51 @@ typedef struct{
  *	There should only be one - add others to ca_static above -joh
  */
 
-GLBLTYPE
-struct CA_STATIC *ca_static;
+#include "caOsDependent.h"
+CA_OSD_CA_STATIC
 
 /*
  * CA internal functions
  *
  */
 
-void cac_send_msg(void);
-void cac_mux_io(struct timeval *ptimeout, unsigned iocCloseAllowed);
-int	repeater_installed(void);
-int	search_msg(ciu chix, int reply_type);
-int	ca_request_event(evid monix);
+void cac_mux_io(
+	CA_STATIC *ca_static,
+	struct timeval *ptimeout,
+	unsigned iocCloseAllowed);
+
+int	repeater_installed(CA_STATIC *ca_static);
+int	search_msg( ciu chix, int reply_type);
+int	ca_request_event( evid monix);
 int	ca_busy_message(struct ioc_in_use *piiu);
 int	ca_ready_message(struct ioc_in_use *piiu);
 void noop_msg(struct ioc_in_use *piiu);
-int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime);
+int echo_request( struct ioc_in_use *piiu, ca_time *pCurrentTime);
 int	issue_claim_channel(chid pchan);
 void issue_identify_client(struct ioc_in_use *piiu);
 void issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 epicsShareFunc int epicsShareAPI ca_printf (const char *pformat, ...);
 epicsShareFunc int epicsShareAPI ca_vPrintf (const char *pformat, va_list args);
-void manage_conn(void);
-void checkConnWatchdogs(unsigned closeAllowed);
-void mark_server_available(const struct sockaddr_in *pnet_addr);
+void manage_conn(CA_STATIC *ca_static);
+void checkConnWatchdogs(CA_STATIC *ca_static, unsigned closeAllowed);
+void mark_server_available(
+	CA_STATIC *ca_static,
+	const struct sockaddr_in *pnet_addr);
+
 void flow_control_on(struct ioc_in_use *piiu);
 void flow_control_off(struct ioc_in_use *piiu);
-int	broadcast_addr(struct in_addr *pcastaddr);
 epicsShareFunc void epicsShareAPI ca_repeater(void);
-void cac_recv_task(int tid);
-void ca_sg_init(void);
-void ca_sg_shutdown(struct CA_STATIC *ca_temp);
-int  cac_select_io(struct timeval *ptimeout, int flags);
+#ifdef iocCore
+typedef struct cac_recv_taskArgs {
+    CA_STATIC *pcas;
+    threadId  tcas;
+}cac_recv_taskArgs;
+void    cac_recv_task(cac_recv_taskArgs *args);
+#endif
+void ca_sg_init(CA_STATIC *ca_static);
+void ca_sg_shutdown(CA_STATIC *ca_static);
+int  cac_select_io(CA_STATIC *ca_static, struct timeval *ptimeout, int flags);
 int post_msg(
 	struct ioc_in_use       *piiu,
 	const struct sockaddr_in	*pnet_addr,
@@ -710,6 +717,7 @@ int post_msg(
 	unsigned long		blockSize
 );
 int alloc_ioc(
+	CA_STATIC *ca_static,
 	const struct sockaddr_in	*pina,
 	struct ioc_in_use		**ppiiu
 );
@@ -732,6 +740,7 @@ unsigned long cacRingBufferReadSize(
 	int 			contiguous);
 
 void caIOBlockListFree(
+	CA_STATIC *ca_static,
 	ELLLIST *pList,
 	chid    chan,
 	int     cbRequired,
@@ -742,53 +751,58 @@ char *localUserName(void);
 char *localHostName(void);
 
 int create_net_chan(
+CA_STATIC *ca_static,
 struct ioc_in_use       	**ppiiu,
 const struct sockaddr_in	*pina, /* only used by TCP connections */
 int                     	net_proto
 );
 
-void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port);
+void caSetupBCastAddrList ( ELLLIST *pList, SOCKET sock, unsigned short port);
 
-int ca_os_independent_init (void);
+int ca_os_independent_init (CA_STATIC *ca_static);
 
 void freeBeaconHash(struct CA_STATIC *ca_temp);
-void removeBeaconInetAddr(const struct sockaddr_in *pnet_addr);
-bhe *lookupBeaconInetAddr(const struct sockaddr_in *pnet_addr);
-bhe *createBeaconHashEntry(const struct sockaddr_in *pnet_addr, unsigned sawBeacon);
-void notify_ca_repeater(void);
-void cac_clean_iiu_list(void);
+void removeBeaconInetAddr(
+	CA_STATIC *ca_static,
+	const struct sockaddr_in *pnet_addr);
 
-void ca_process_input_queue(void);
-void cac_block_for_io_completion(struct timeval *pTV);
-void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
-void os_specific_sg_create(CASG *pcasg);
-void os_specific_sg_delete(CASG *pcasg);
-void os_specific_sg_io_complete(CASG *pcasg);
-void ca_process_exit(void);
+bhe *lookupBeaconInetAddr(
+	CA_STATIC *ca_static,
+	const struct sockaddr_in *pnet_addr);
+
+bhe *createBeaconHashEntry(
+	CA_STATIC *ca_static,
+	const struct sockaddr_in *pnet_addr,
+	unsigned sawBeacon);
+
+void notify_ca_repeater(CA_STATIC *ca_static);
+
+void ca_process_input_queue(CA_STATIC *ca_static);
+void cac_block_for_io_completion(CA_STATIC *ca_static,struct timeval *pTV);
+void ca_process_exit(CA_STATIC *ca_static);
 void ca_spawn_repeater(void);
 void cac_gettimeval(struct timeval  *pt);
 /* returns A - B in floating secs */
 ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 /* returns A + B in integer secs & integer usec */
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
-void caIOBlockFree(miu pIOBlock);
-void clearChannelResources(unsigned id);
-void caSetDefaultPrintfHandler (void);
-void cacDisconnectChannel(ciu chix);
-int caSendMsgPending(void);
-void genLocalExcepWFL(long stat, char *ctx, 
-	char *pFile, unsigned line);
+void caIOBlockFree(CA_STATIC *ca_static,miu pIOBlock);
+void clearChannelResources(CA_STATIC *ca_static,unsigned id);
+void caSetDefaultPrintfHandler (CA_STATIC *ca_static);
+void cacDisconnectChannel( ciu chix);
+int caSendMsgPending(CA_STATIC *ca_static);
+void genLocalExcepWFL(long stat, const char *ctx, 
+	const char *pFile, unsigned line);
 #define genLocalExcep(STAT, PCTX) \
 genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
-void cac_reconnect_channel(caResId id, short type, unsigned short count);
-void retryPendingClaims(IIU *piiu);
-void cacSetRetryInterval(unsigned retryNo);
+void cac_reconnect_channel(CA_STATIC *ca_static, caResId id, short type, unsigned short count);
+void retryPendingClaims( IIU *piiu);
+void cacSetRetryInterval(CA_STATIC *ca_static, unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);
 void removeFromChanList(ciu chan);
-void cac_create_udp_fd(void);
-double cac_fetch_poll_period(void);
-int caSockAddrFromHost(const char *pName, struct sockaddr *paddr);
-void cac_close_ioc (IIU *piiu);
+void cac_create_udp_fd(CA_STATIC *ca_static);
+double cac_fetch_poll_period(CA_STATIC *ca_static);
+void cac_close_ioc ( IIU *piiu);
 
 /*
  * !!KLUDGE!!

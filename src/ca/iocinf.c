@@ -1,5 +1,4 @@
-/*
- * $Id$
+/* * $Id$
  *
  *	        	      L O S  A L A M O S
  *		        Los Alamos National Laboratory
@@ -16,18 +15,20 @@ static char *sccsId = "@# $Id$";
 #include	"net_convert.h"
 #include	"bsdSocketResource.h"
 
+
 LOCAL void 	cac_set_iiu_non_blocking (struct ioc_in_use *piiu);
-LOCAL unsigned long tcp_recv_msg(struct ioc_in_use *piiu);
+LOCAL unsigned long tcp_recv_msg( struct ioc_in_use *piiu);
+
 LOCAL unsigned long cac_connect_iiu(struct ioc_in_use *piiu);
-LOCAL unsigned long	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
-LOCAL unsigned long cac_udp_send_msg_piiu(struct ioc_in_use *piiu);
-LOCAL unsigned long	udp_recv_msg(struct ioc_in_use *piiu);
+
+
+LOCAL unsigned long	cac_tcp_send_msg_piiu( struct ioc_in_use *piiu);
+LOCAL unsigned long cac_udp_send_msg_piiu( struct ioc_in_use *piiu);
+LOCAL unsigned long	udp_recv_msg( struct ioc_in_use *piiu);
 LOCAL void	ca_process_tcp(struct ioc_in_use *piiu);
 LOCAL void	ca_process_udp(struct ioc_in_use *piiu);
-LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, 
-				unsigned long size);
-LOCAL char 	*getToken(const char **ppString, char *pBuf, 
-				unsigned bufSize);
+LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
+LOCAL char 	*getToken(const char **ppString, char *pBuf, unsigned bufSize);
 
 
 /*
@@ -37,6 +38,7 @@ LOCAL char 	*getToken(const char **ppString, char *pBuf,
  *
  */
 int alloc_ioc(
+CA_STATIC *ca_static,
 const struct sockaddr_in	*pina,
 struct ioc_in_use		**ppiiu
 )
@@ -48,9 +50,9 @@ struct ioc_in_use		**ppiiu
 	 * look for an existing connection
 	 */
 	LOCK;
-	pBHE = lookupBeaconInetAddr(pina);
+	pBHE = lookupBeaconInetAddr(ca_static,pina);
 	if(!pBHE){
-		pBHE = createBeaconHashEntry(pina, FALSE);
+		pBHE = createBeaconHashEntry(ca_static, pina, FALSE);
 		if(!pBHE){
 			UNLOCK;
 			return ECA_ALLOCMEM;
@@ -68,6 +70,7 @@ struct ioc_in_use		**ppiiu
 	}
 	else{
   		status = create_net_chan(
+				ca_static,
 				ppiiu, 
 				pina,
 				IPPROTO_TCP);
@@ -86,6 +89,7 @@ struct ioc_in_use		**ppiiu
  *
  */
 int create_net_chan(
+CA_STATIC *ca_static,
 struct ioc_in_use 		**ppiiu,
 const struct sockaddr_in	*pina, /* only used by TCP connections */
 int				net_proto
@@ -375,7 +379,7 @@ int				net_proto
 			sizeof(saddr));
 		if(status<0){
 			ca_printf("CAC: bind (err=%s)\n",SOCKERRSTR(SOCKERRNO));
-			genLocalExcep (ECA_INTERNAL,"bind failed");
+			genLocalExcep ( ECA_INTERNAL,"bind failed");
 		}
 #endif
 
@@ -461,8 +465,10 @@ LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 /*
  * cac_connect_iiu()
  */
-LOCAL unsigned long cac_connect_iiu (struct ioc_in_use *piiu)
+LOCAL unsigned long cac_connect_iiu (
+struct ioc_in_use *piiu)
 {
+	CA_STATIC *ca_static = piiu->pcas;
 	caAddrNode *pNode;
 	int status;
 
@@ -573,7 +579,7 @@ LOCAL unsigned long cac_connect_iiu (struct ioc_in_use *piiu)
 /*
  * caSetupBCastAddrList()
  */
-void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
+void caSetupBCastAddrList ( ELLLIST *pList, SOCKET sock, unsigned short port)
 {
 	char			*pstr;
 	char			yesno[32u];
@@ -621,7 +627,7 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
 		port);
 
 	if (ellCount(pList)==0) {
-		genLocalExcep (ECA_NOSEARCHADDR, NULL);
+		genLocalExcep ( ECA_NOSEARCHADDR, NULL);
 	}
 }
 
@@ -634,7 +640,7 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
  *	1)	local communication only (no LAN traffic)
  *
  */
-void notify_ca_repeater()
+void notify_ca_repeater(CA_STATIC *ca_static)
 {
 	caHdr msg;
 	struct sockaddr_in saddr;
@@ -757,8 +763,9 @@ void notify_ca_repeater()
 /*
  *	CAC_UDP_SEND_MSG_PIIU()
  */
-LOCAL unsigned long cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
+LOCAL unsigned long cac_udp_send_msg_piiu( struct ioc_in_use *piiu)
 {
+	CA_STATIC	*ca_static = piiu->pcas;
 	caAddrNode	*pNode;
 	unsigned long	sendCnt;
     unsigned long   totalBytes = 0ul;
@@ -836,8 +843,9 @@ LOCAL unsigned long cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 /*
  *	CAC_TCP_SEND_MSG_PIIU()
  */
-LOCAL unsigned long cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
+LOCAL unsigned long cac_tcp_send_msg_piiu( struct ioc_in_use *piiu)
 {
+    CA_STATIC	*ca_static = piiu->pcas;
     unsigned long   sendCnt;
     unsigned long   totalBytes = 0ul;
     int             status;
@@ -922,11 +930,11 @@ LOCAL unsigned long cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 	UNLOCK;
 	return totalBytes;
 }
-
+
 /*
  * ca_process_input_queue()
  */
-void ca_process_input_queue()
+void ca_process_input_queue(CA_STATIC *ca_static)
 {
 	struct ioc_in_use 	*piiu;
 
@@ -947,11 +955,40 @@ void ca_process_input_queue()
 			continue;
 		}
 
-		(*piiu->procInput)(piiu);
+		(*piiu->procInput)( piiu);
 	}
 
 	UNLOCK;
 }
+
+/*
+ * cac_block_for_io_completion()
+ */
+void cac_block_for_io_completion(CA_STATIC *ca_static,struct timeval *pTV)
+{
+	struct timeval  itimeout;
+	double	waitTime;
+
+#ifndef iocCore
+	cac_mux_io(ca_static,pTV, TRUE);
+#else
+	/*flush outputs */
+	/*recv occurs in another thread*/
+	itimeout.tv_usec = 0;
+	itimeout.tv_sec = 0;
+	cac_mux_io (ca_static, &itimeout, TRUE);
+	waitTime = pTV->tv_sec + pTV->tv_usec/1000.0;
+	if(waitTime>POLLDELAY) waitTime = POLLDELAY;
+	semBinaryTakeTimeout(ca_static->ca_io_done_sem,waitTime);
+	/*
+	 *force a time update because we are not
+	 *going to get one with a nill timeout in
+	 * ca_mux_io()
+	 */
+	cac_gettimeval (&ca_static->currentTime);
+#endif
+}
+	
 
 /*
  * TCP_RECV_MSG()
@@ -959,6 +996,7 @@ void ca_process_input_queue()
  */
 LOCAL unsigned long tcp_recv_msg(struct ioc_in_use *piiu)
 {
+    CA_STATIC *ca_static = piiu->pcas;
     unsigned long   writeSpace;
     unsigned long   totalBytes = 0;
     int             status;
@@ -1031,8 +1069,9 @@ LOCAL unsigned long tcp_recv_msg(struct ioc_in_use *piiu)
  * ca_process_tcp()
  *
  */
-LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
+LOCAL void ca_process_tcp( struct ioc_in_use *piiu)
 {
+	CA_STATIC *ca_static = piiu->pcas;
 	caAddrNode *pNode;
 	int status;
 	long bytesToProcess;
@@ -1098,8 +1137,9 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
  *	UDP_RECV_MSG()
  *
  */
-LOCAL unsigned long udp_recv_msg(struct ioc_in_use *piiu)
+LOCAL unsigned long udp_recv_msg( struct ioc_in_use *piiu)
 {
+    CA_STATIC	*ca_static = piiu->pcas;
     int                 status;
     int                 reply_size;
     struct udpmsglog    *pmsglog;
@@ -1184,8 +1224,9 @@ LOCAL unsigned long udp_recv_msg(struct ioc_in_use *piiu)
  *	CA_PROCESS_UDP()
  *
  */
-LOCAL void ca_process_udp(struct ioc_in_use *piiu)
+LOCAL void ca_process_udp( struct ioc_in_use *piiu)
 {
+	CA_STATIC		*ca_static = piiu->pcas;
   	int			status;
 	struct udpmsglog	*pmsglog;
 	char			*pBuf;
@@ -1265,6 +1306,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
  */
 void cac_close_ioc (IIU *piiu)
 {
+	CA_STATIC	*ca_static;
 	caAddrNode	*pNode;
   	ciu		chix;
 	int		status;
@@ -1274,6 +1316,7 @@ void cac_close_ioc (IIU *piiu)
 	 * dont close twice
 	 */
   	assert (piiu->sock_chan!=INVALID_SOCKET);
+	ca_static = piiu->pcas;
 
 	LOCK;
 
@@ -1299,7 +1342,7 @@ void cac_close_ioc (IIU *piiu)
 		 */
 		pNode = (caAddrNode *) piiu->destAddr.node.next;
 		assert (pNode);
-		removeBeaconInetAddr (&pNode->destAddr.in);
+		removeBeaconInetAddr (ca_static, &pNode->destAddr.in);
 
 		chix = (ciu) ellFirst(&piiu->chidlist);
 		while (chix) {
@@ -1330,7 +1373,7 @@ void cac_close_ioc (IIU *piiu)
 	ellFree (&piiu->destAddr);
 
 	if (chanDisconnectCount) {
-		genLocalExcep (ECA_DISCONN, piiu->host_name_str);
+		genLocalExcep ( ECA_DISCONN, piiu->host_name_str);
 	}
 
 	free (piiu);
@@ -1343,6 +1386,8 @@ void cac_close_ioc (IIU *piiu)
  */
 void cacDisconnectChannel(ciu chix)
 {
+	IIU *piiu = (IIU *)chix->piiu;
+	CA_STATIC *ca_static = piiu->pcas;
 	LOCK;
 
 	/*
@@ -1351,7 +1396,7 @@ void cacDisconnectChannel(ciu chix)
 	 * need to take care of freeing the remaing channel resources here
 	 */
 	if (chix->state == cs_closed) {
-		clearChannelResources (chix->cid);
+		clearChannelResources (ca_static, chix->cid);
 		UNLOCK;
 		return;
 	}
@@ -1373,13 +1418,13 @@ void cacDisconnectChannel(ciu chix)
 		/*
 		 * clear outstanding get call backs 
 		 */
-		caIOBlockListFree (&pend_read_list, chix, 
+		caIOBlockListFree (ca_static, &pend_read_list, chix, 
 				TRUE, ECA_DISCONN);
 
 		/*
 		 * clear outstanding put call backs 
 		 */
-		caIOBlockListFree (&pend_write_list, chix, 
+		caIOBlockListFree (ca_static, &pend_write_list, chix, 
 				TRUE, ECA_DISCONN);
 
 		/*
@@ -1397,7 +1442,7 @@ void cacDisconnectChannel(ciu chix)
 			 */
 			if (monix->usr_func == NULL) {
 				ellDelete (&chix->eventq, &monix->node);
-				caIOBlockFree (monix);
+				caIOBlockFree (ca_static, monix);
 			}
 		}
 
@@ -1422,7 +1467,7 @@ void cacDisconnectChannel(ciu chix)
 	 */
 	assert (piiuCast);
 	addToChanList(chix, piiuCast);
-	cacSetRetryInterval(0u);
+	cacSetRetryInterval(ca_static, 0u);
 	UNLOCK;
 }
 
@@ -1450,7 +1495,7 @@ void cacDisconnectChannel(ciu chix)
  *
  * 	072392 - problem solved by using SO_REUSEADDR
  */
-int repeater_installed()
+int repeater_installed(CA_STATIC *ca_static)
 {
   	int			status;
   	SOCKET			sock;
@@ -1824,7 +1869,10 @@ unsigned short epicsShareAPI caFetchPortConfig
 /*
  *      CAC_MUX_IO()
  */
-void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
+void cac_mux_io(
+	CA_STATIC *ca_static,
+	struct timeval  *ptimeout,
+	unsigned iocCloseAllowed)
 {
 	int                     count;
 	struct timeval          timeout;
@@ -1848,17 +1896,17 @@ void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 		 * of what is requested here if piiu->pushPending
 		 * is set
 		 */
-		count = cac_select_io(&timeout, CA_DO_RECVS);
+		count = cac_select_io(ca_static, &timeout, CA_DO_RECVS);
 		if (count<=0) {
 			break;
 		}
-		ca_process_input_queue();
+		ca_process_input_queue(ca_static);
     }
 
 	/*
 	 * manage search timers and detect disconnects
 	 */
-	manage_conn();
+	manage_conn(ca_static);
 
 	/*
 	 * next check for pending writes's with the specified time out 
@@ -1869,7 +1917,7 @@ void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 	countDown = 512u;
     timeout = *ptimeout;
     while (TRUE) {
-		count = cac_select_io(&timeout, CA_DO_RECVS|CA_DO_SENDS);
+		count = cac_select_io(ca_static, &timeout, CA_DO_RECVS|CA_DO_SENDS);
 		countDown--;
 		if (count<=0 || countDown==0u) {
 			/*
@@ -1885,9 +1933,9 @@ void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 					break;
 				}
 				else {
-					if (caSendMsgPending()) {
+					if (caSendMsgPending(ca_static)) {
 						countDown = 512u;
-						LD_CA_TIME (cac_fetch_poll_period(), &timeout);
+						LD_CA_TIME (cac_fetch_poll_period(ca_static), &timeout);
 					}
 					else {
 						ca_static->ca_flush_pending = FALSE;
@@ -1902,17 +1950,17 @@ void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 		else {
 			CLR_CA_TIME (&timeout);
 		}
-		ca_process_input_queue();
+		ca_process_input_queue(ca_static);
 
     }
 
-	checkConnWatchdogs(iocCloseAllowed);
+	checkConnWatchdogs(ca_static, iocCloseAllowed);
 }
 
 /*
  * caSendMsgPending()
  */
-int caSendMsgPending()
+int caSendMsgPending(CA_STATIC *ca_static)
 {
 	int                     pending = FALSE;
 	unsigned long           bytesPending;

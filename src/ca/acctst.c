@@ -75,44 +75,7 @@ void performGrEnumTest (chid chan);
 
 void performCtrlDoubleTest (chid chan);
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include <taskLib.h>
 int acctst(char *pname)
-{
-
-	return taskSpawn(
-			"acctst", 
-			200, 
-			VX_FP_TASK, 
-			20000, 
-			doacctst,
-			(int)pname,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-}
-#else /* not vxWorks */
-int main(int argc, char **argv)
-{
-	if(argc == 2){
-		doacctst(argv[1]);
-	}
-	else{
-		printf("usage: %s <chan name>\n", argv[0]);
-	}
-	return 0;
-}
-#endif /*vxWorks*/
-
-
-int doacctst(char *pname)
 {
 	chid            chix1;
 	chid            chix2;
@@ -1009,6 +972,19 @@ int doacctst(char *pname)
 
 	return(0);
 }
+
+#ifndef iocCore
+int main(int argc, char **argv)
+{
+	if(argc == 2){
+		acctst(argv[1]);
+	}
+	else{
+		printf("usage: %s <chan name>\n", argv[0]);
+	}
+	return 0;
+}
+#endif /*iocCore */
 
 /*
  * pend_event_delay_test()

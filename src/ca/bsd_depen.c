@@ -39,7 +39,7 @@
  * NOTE: on multithreaded systems this assumes that the
  * local implementation of select is reentrant
  */
-int cac_select_io (struct timeval *ptimeout, int flags)
+int cac_select_io (CA_STATIC *ca_static, struct timeval *ptimeout, int flags)
 {
 	/*
 	 * Use auto timeout so there is no chance of

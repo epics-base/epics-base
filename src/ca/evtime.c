@@ -1,17 +1,18 @@
 
+#include <stdio.h>
 #include "cadef.h"
 #include "dbDefs.h"
+#include "osiClock.h"
 
 void event_handler(struct event_handler_args args);
-int main(int argc, char **argv);
 int evtime(char *pname);
 
 static unsigned 	iteration_count;
 static unsigned		last_time;
 static double		rate;
 
-#ifndef vxWorks
-main(int argc, char **argv)
+#ifndef iocCore
+int main(int argc, char **argv)
 {
         char    *pname;
 
@@ -22,11 +23,9 @@ main(int argc, char **argv)
         else{
                 printf("usage: %s <channel name>", argv[0]);
         }
+	return(0);
 }
 #endif
-
-
-
 
 /*
  * evtime()
@@ -45,7 +44,7 @@ int evtime(char *pname)
 		return OK;
 	}
 
-	rate = sysClkRateGet();
+	rate = clockGetRate();
 
 	status = ca_add_event(
 			DBR_FLOAT,
@@ -72,7 +71,7 @@ void event_handler(struct event_handler_args args)
 	double			delay;
 
 	if(iteration_count%COUNT == 0){
-		current_time = tickGet();
+		current_time = clockGetCurrentTick();
 		if(last_time != 0){
 			interval = current_time - last_time;
 			delay = interval/(rate*COUNT);

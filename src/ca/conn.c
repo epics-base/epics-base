@@ -31,6 +31,11 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.45  1999/09/02 21:44:48  jhill
+ * improved the way that socket error numbers are converted to strings,
+ * changed () to (void) in func proto, and fixed missing parameter to
+ * checkConnWatchdogs() bug resulting from this
+ *
  * Revision 1.44  1999/07/16 16:38:59  jhill
  * added congestion thresh parm to search alg
  *
@@ -92,14 +97,14 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno);
 #define LOGRETRYINTERVAL 
 #endif
 
-LOCAL void retrySearchRequest();
-LOCAL unsigned bhtHashIP(const struct sockaddr_in *pina);
-LOCAL int updateBeaconPeriod (bhe *pBHE);
+LOCAL void retrySearchRequest(CA_STATIC *ca_static);
+LOCAL unsigned bhtHashIP(CA_STATIC *ca_static, const struct sockaddr_in *pina);
+LOCAL int updateBeaconPeriod (CA_STATIC *ca_static, bhe *pBHE);
 
 /*
  *	checkConnWatchdogs()
  */
-void checkConnWatchdogs(unsigned closeAllowed)
+void checkConnWatchdogs(CA_STATIC *ca_static, unsigned closeAllowed)
 {
 	IIU *piiu;
 	ca_real delay;
@@ -159,7 +164,7 @@ void checkConnWatchdogs(unsigned closeAllowed)
  *
  *
  */
-void manage_conn()
+void manage_conn(CA_STATIC *ca_static)
 {
 	IIU *piiu;
 	ca_real delay;
@@ -228,7 +233,7 @@ void manage_conn()
 				&ca_static->ca_last_repeater_try);
 		if (delay > REPEATER_TRY_PERIOD) {
 			ca_static->ca_last_repeater_try = ca_static->currentTime;
-			notify_ca_repeater();
+			notify_ca_repeater(ca_static);
 		}
 	}
 
@@ -256,7 +261,7 @@ void manage_conn()
 	 * number of tries)
 	 */
 	if (delay <= 0.0 && ca_static->ca_search_retry < MAXCONNTRIES) {
-		retrySearchRequest ();
+		retrySearchRequest (ca_static);
 	}
 
 	ca_static->ca_manage_conn_active = FALSE;
@@ -265,7 +270,7 @@ void manage_conn()
 /*
  * retrySearchRequest ()
  */
-LOCAL void retrySearchRequest ()
+LOCAL void retrySearchRequest (CA_STATIC *ca_static)
 {
     ciu		chan;
     ciu		firstChan;
@@ -385,7 +390,7 @@ LOCAL void retrySearchRequest ()
 #if 0
                 printf ("increasing search try interval\n");
 #endif
-                cacSetRetryInterval(ca_static->ca_min_retry+1u);
+                cacSetRetryInterval(ca_static, ca_static->ca_min_retry+1u);
             }
             
             ca_static->ca_min_retry = UINT_MAX;
@@ -496,7 +501,7 @@ LOCAL void retrySearchRequest ()
  * cacSetRetryInterval()
  * (sets the interval between search tries)
  */
-void cacSetRetryInterval(unsigned retryNo)
+void cacSetRetryInterval(CA_STATIC *ca_static, unsigned retryNo)
 {
 	unsigned idelay;
 	ca_real	delay;
@@ -536,6 +541,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
 {
 	ca_time currentTime;
 	ca_real	delay;
+	CA_OSD_GET_CA_STATIC
 
 	assert(ca_static->ca_conn_next_retry.tv_usec<USEC_PER_SEC);
 	cac_gettimeval(&currentTime);
@@ -561,7 +567,9 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
 /*
  *	MARK_SERVER_AVAILABLE
  */
-void mark_server_available (const struct sockaddr_in *pnet_addr)
+void mark_server_available (
+	CA_STATIC *ca_static,
+	const struct sockaddr_in *pnet_addr)
 {
 	ciu chan;
 	bhe *pBHE;
@@ -576,10 +584,10 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 	/*
 	 * look for it in the hash table
 	 */
-	pBHE = lookupBeaconInetAddr(pnet_addr);
+	pBHE = lookupBeaconInetAddr(ca_static, pnet_addr);
 	if (pBHE) {
 
-		netChange = updateBeaconPeriod (pBHE);
+		netChange = updateBeaconPeriod (ca_static, pBHE);
 
 		/*
 		 * update state of health for active virtual circuits 
@@ -601,7 +609,7 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 		 * shortly after the program started up)
 		 */
 		netChange = FALSE;
-		createBeaconHashEntry (pnet_addr, TRUE);
+		createBeaconHashEntry (ca_static,pnet_addr, TRUE);
 	}
 
 	if(!netChange){
@@ -662,7 +670,7 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 	 * set retry count of all disconnected channels
 	 * to zero
 	 */
-	cacSetRetryInterval(0u);
+	cacSetRetryInterval(ca_static, 0u);
 	chan = (ciu) ellFirst(&piiuCast->chidlist);
 	while (chan) {
 		chan->retry = 0u;
@@ -686,7 +694,7 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
  *
  * updates beacon period, and looks for beacon anomalies
  */
-LOCAL int updateBeaconPeriod (bhe *pBHE)
+LOCAL int updateBeaconPeriod (CA_STATIC *ca_static, bhe *pBHE)
 {
 	ca_real currentPeriod;
 	int netChange = FALSE;
@@ -853,17 +861,20 @@ LOCAL int updateBeaconPeriod (bhe *pBHE)
  *
  * LOCK must be applied
  */
-bhe *createBeaconHashEntry(const struct sockaddr_in *pina, unsigned sawBeacon)
+bhe *createBeaconHashEntry(
+CA_STATIC *ca_static,
+const struct sockaddr_in *pina,
+unsigned sawBeacon)
 {
 	bhe		*pBHE;
 	unsigned	index;
 
-	pBHE = lookupBeaconInetAddr(pina);
+	pBHE = lookupBeaconInetAddr(ca_static, pina);
 	if(pBHE){
 		return pBHE;
 	}
 
-	index = bhtHashIP(pina);
+	index = bhtHashIP(ca_static,pina);
 
 	pBHE = (bhe *)calloc(1,sizeof(*pBHE));
 	if(!pBHE){
@@ -924,12 +935,14 @@ bhe *createBeaconHashEntry(const struct sockaddr_in *pina, unsigned sawBeacon)
  *
  * LOCK must be applied
  */
-bhe *lookupBeaconInetAddr (const struct sockaddr_in *pina)
+bhe *lookupBeaconInetAddr (
+CA_STATIC *ca_static,
+const struct sockaddr_in *pina)
 {
 	bhe		*pBHE;
 	unsigned	index;
 
-	index = bhtHashIP(pina);
+	index = bhtHashIP(ca_static,pina);
 
 	pBHE = ca_static->ca_beaconHash[index];
 	while (pBHE) {
@@ -949,13 +962,15 @@ bhe *lookupBeaconInetAddr (const struct sockaddr_in *pina)
  *
  * LOCK must be applied
  */
-void removeBeaconInetAddr (const struct sockaddr_in *pina)
+void removeBeaconInetAddr (
+CA_STATIC *ca_static,
+const struct sockaddr_in *pina)
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;
 	unsigned	index;
 
-	index = bhtHashIP(pina);
+	index = bhtHashIP(ca_static,pina);
 
 	ppBHE = &ca_static->ca_beaconHash[index];
 	pBHE = *ppBHE;
@@ -975,7 +990,7 @@ void removeBeaconInetAddr (const struct sockaddr_in *pina)
 /*
  * bhtHashIP()
  */
-LOCAL unsigned bhtHashIP(const struct sockaddr_in *pina)
+LOCAL unsigned bhtHashIP(CA_STATIC *ca_static, const struct sockaddr_in *pina)
 {
 	unsigned index;
 
@@ -1035,6 +1050,7 @@ void retryPendingClaims(IIU *piiu)
 {
 	chid chan;
 	int status;
+	CA_STATIC *ca_static = piiu->pcas;
 
 	LOCK;
 	while ( (chan= (ciu) ellFirst (&piiu->chidlist)) ) {
@@ -1057,6 +1073,7 @@ void retryPendingClaims(IIU *piiu)
  */
 void addToChanList(ciu chan, IIU *piiu)
 {
+	CA_STATIC *ca_static = piiu->pcas;
 	if (piiu==piiuCast) {
 		/*
 		 * add to the beginning of the list so that search requests for
@@ -1092,6 +1109,7 @@ void addToChanList(ciu chan, IIU *piiu)
 void removeFromChanList (ciu chan)
 {
 	IIU *piiu = (IIU *) chan->piiu;
+	CA_STATIC *ca_static = piiu->pcas;
 
 	if (piiu==piiuCast) {
 		if (ca_static->ca_pEndOfBCastList == chan) {

@@ -50,7 +50,9 @@ static char	*sccsId = "@(#) $Id$";
 void flow_control_on(struct ioc_in_use *piiu)
 {
 	int status;
+	CA_STATIC *ca_static;
 
+	ca_static = piiu->pcas;
 	LOCK;
 
 	/*	
@@ -81,7 +83,9 @@ void flow_control_on(struct ioc_in_use *piiu)
 void flow_control_off(struct ioc_in_use *piiu)
 {
 	int    		status;
+	CA_STATIC *ca_static;
 
+	ca_static = piiu->pcas;
 	LOCK;
 
 	piiu->contiguous_msg_count = 0;

@@ -35,7 +35,7 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"freeList.h"
 
-#ifdef vxWorks
+#ifdef iocCore
 #include 	"dbEvent.h"
 #endif
 
@@ -86,7 +86,7 @@ LOCAL int	issue_get_callback(
 evid 		monix, 
 ca_uint16_t 	cmmd
 );
-#ifdef vxWorks
+#ifdef iocCore
 LOCAL void ca_event_handler(
 void		*usrArg,
 struct dbAddr	*paddr,
@@ -127,7 +127,7 @@ LOCAL void *malloc_put_convert(unsigned long size);
 LOCAL void free_put_convert(void *pBuf);
 #endif
 
-LOCAL miu caIOBlockCreate(void);
+LOCAL miu caIOBlockCreate(CA_STATIC *ca_static);
 
 LOCAL int check_a_dbr_string(const char *pStr, const unsigned count);
 
@@ -142,6 +142,7 @@ caHdr			*pmsg,
 const void		*pext
 )
 {
+	CA_STATIC	*ca_static = piiu->pcas;
 	int		contig = piiu->sock_proto != IPPROTO_TCP;
 	caHdr		msg;
 	unsigned 	bytesAvailable;
@@ -220,8 +221,8 @@ const void		*pext
 
 			UNLOCK;
 
-			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
-			cac_mux_io (&itimeout, FALSE);
+			LD_CA_TIME (cac_fetch_poll_period(ca_static), &itimeout);
+			cac_mux_io (ca_static,&itimeout, FALSE);
 
 			LOCK;
 
@@ -298,6 +299,7 @@ struct ioc_in_use 	*piiu,
 caHdr			*pmsg,
 const void		*pext)
 {
+	CA_STATIC	*ca_static = piiu->pcas;
 	int		contig = piiu->sock_proto != IPPROTO_TCP;
 	caHdr		msg;
 	unsigned 	bytesAvailable;
@@ -458,7 +460,7 @@ LOCAL void cac_add_msg (IIU *piiu)
 /*
  *	ca_os_independent_init ()
  */
-int ca_os_independent_init (void)
+int ca_os_independent_init (CA_STATIC *ca_static)
 {
 	long		status;
 
@@ -467,7 +469,7 @@ int ca_os_independent_init (void)
 	ca_static->ca_exception_func = ca_default_exception_handler;
 	ca_static->ca_exception_arg = NULL;
 
-	caSetDefaultPrintfHandler();
+	caSetDefaultPrintfHandler(ca_static);
 
 	/* record a default user name */
 	ca_static->ca_pUserName = localUserName();
@@ -486,7 +488,7 @@ int ca_os_independent_init (void)
 	ca_static->programBeginTime = ca_static->currentTime;
 
 	/* init sync group facility */
-	ca_sg_init();
+	ca_sg_init(ca_static);
 
 	/*
 	 * init broadcasted search counters
@@ -499,7 +501,7 @@ int ca_os_independent_init (void)
 	ca_static->ca_seq_no_at_list_begin = 0u;
 	ca_static->ca_frames_per_try = INITIALTRIESPERFRAME;
 	ca_static->ca_conn_next_retry = ca_static->currentTime;
-	cacSetRetryInterval (0u);
+	cacSetRetryInterval (ca_static,0u);
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -541,7 +543,7 @@ int ca_os_independent_init (void)
 	ca_static->ca_server_port = 
 		caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
-	if (repeater_installed()==FALSE) {
+	if (repeater_installed(ca_static)==FALSE) {
 		ca_spawn_repeater();
 	}
 
@@ -555,7 +557,7 @@ int ca_os_independent_init (void)
 /*
  * create_udp_fd
  */
-void cac_create_udp_fd()
+void cac_create_udp_fd(CA_STATIC *ca_static)
 {
 	int	status;
 
@@ -564,6 +566,7 @@ void cac_create_udp_fd()
 	}
 
 	status = create_net_chan(
+			ca_static,
 			&ca_static->ca_piiuCast,
 			NULL,
 			IPPROTO_UDP);
@@ -572,43 +575,33 @@ void cac_create_udp_fd()
 		return;
 	}
 
-#ifdef vxWorks
+#ifdef iocCore
 	{
 		int     pri;
+		threadId tid;
 		char	name[64];
+		cac_recv_taskArgs *pcac_recv_taskArgs;
 
-		status = taskPriorityGet(VXTASKIDSELF, &pri);
-		if(status<0)
-			genLocalExcep (ECA_INTERNAL,NULL);
-
-		strcpy(name,"RD ");
+		pri = threadGetPriority(threadGetIdSelf());
+		strcpy(name,"RD");
 		strncat(
 			name,
-			taskName(VXTHISTASKID),
+			threadGetName(threadGetIdSelf()),
 			sizeof(name)-strlen(name)-1);
 
-		status = taskSpawn(
-					name,
-					pri+1,
-					VX_FP_TASK,
-					4096,
-					(FUNCPTR)cac_recv_task,
-					(int)taskIdCurrent,
-					0,
-					0,
-					0,
-					0,
-					0,
-					0,
-					0,
-					0,
-					0);
-		if (status==ERROR) {
+		/*the new thread MUST free cac_recv_taskArgs */
+		pcac_recv_taskArgs = calloc(1,sizeof(cac_recv_taskArgs));
+		pcac_recv_taskArgs->pcas = ca_static;
+		pcac_recv_taskArgs->tcas = threadGetIdSelf();
+		tid = threadCreate(name,
+			pri-1,
+			threadGetStackSize(threadStackMedium),
+			(THREADFUNC)cac_recv_task,
+			(void *)pcac_recv_taskArgs);
+		if (tid==0) {
 			genLocalExcep (ECA_INTERNAL,NULL);
 		}
-
-		ca_static->recv_tid = status;
-
+		ca_static->recv_tid = tid;
 	}
 #endif
 }
@@ -649,7 +642,7 @@ int epicsShareAPI ca_modify_user_name(const char *pClientName)
  *	before calling this routine.
  *
  */
-void ca_process_exit()
+void ca_process_exit(CA_STATIC *ca_static)
 {
 	chid chix;
 	chid chixNext;
@@ -690,7 +683,7 @@ void ca_process_exit()
 		chix = (chid) ellFirst(&piiu->chidlist);
 		while (chix) {
 			chixNext = (chid) ellNext (&chix->node);
-			clearChannelResources (chix->cid);
+			clearChannelResources (ca_static,chix->cid);
 			chix = chixNext;
 		}
 
@@ -712,10 +705,12 @@ void ca_process_exit()
 	}
 
 	/* remove any pending read blocks */
-	caIOBlockListFree (&ca_static->ca_pend_read_list, NULL, FALSE, ECA_INTERNAL);
+	caIOBlockListFree (ca_static, &ca_static->ca_pend_read_list,
+		NULL, FALSE, ECA_INTERNAL);
 
 	/* remove any pending write blocks */
-	caIOBlockListFree (&ca_static->ca_pend_write_list, NULL, FALSE, ECA_INTERNAL);
+	caIOBlockListFree (ca_static, &ca_static->ca_pend_write_list,
+		NULL, FALSE, ECA_INTERNAL);
 
 	/* remove any pending io event blocks */
 	ellFree(&ca_static->ca_ioeventlist);
@@ -806,6 +801,7 @@ int epicsShareAPI ca_search_and_connect
 	long    status;
 	ciu	chix;
 	int     strcnt;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * make sure that chix is NULL on fail
@@ -824,7 +820,7 @@ int epicsShareAPI ca_search_and_connect
 	/* 
 	 * only for IOCs 
 	 */
-#ifdef vxWorks
+#ifdef iocCore
 	{
 		struct dbAddr  tmp_paddr;
 
@@ -884,7 +880,7 @@ int epicsShareAPI ca_search_and_connect
 #endif
 
 	if (!ca_static->ca_piiuCast) {
-		cac_create_udp_fd();
+		cac_create_udp_fd(ca_static);
 		if(!ca_static->ca_piiuCast){
 			return ECA_NOCAST;
 		}
@@ -934,7 +930,7 @@ int epicsShareAPI ca_search_and_connect
 	 * reset broadcasted search counters
 	 */
 	ca_static->ca_conn_next_retry = ca_static->currentTime;
-	cacSetRetryInterval (0u);
+	cacSetRetryInterval (ca_static,0u);
 
 	/*
 	 * Connection Management takes care 
@@ -959,9 +955,11 @@ int	reply_type
 	int			status;
 	int    			size;
 	caHdr			*mptr;
-	struct ioc_in_use	*piiu;
+	IIU			*piiu;
+	CA_STATIC		*ca_static;
 
 	piiu = chix->piiu;
+        ca_static = piiu->pcas;
 
 	if (piiu!=piiuCast) {
 		return ECA_INTERNAL;
@@ -1029,6 +1027,7 @@ void 		*pvalue
 {
 	int	status;
 	miu	monix;
+	CA_STATIC *ca_static;
 
 	CHIXCHK(chix);
 
@@ -1043,7 +1042,7 @@ void 		*pvalue
 		return ECA_BADCOUNT;
 	}
 
-#ifdef vxWorks
+#ifdef iocCore
 	{
 		int             status;
 
@@ -1067,8 +1066,9 @@ void 		*pvalue
 	 * so that we are not deleted without
 	 * reclaiming the resource
 	 */
+	ca_static = ((IIU *)chix->piiu)->pcas;
 	LOCK;
-	monix = caIOBlockCreate();
+	monix = caIOBlockCreate(ca_static);
 	if (monix) {
 
 		monix->chan = chix;
@@ -1087,7 +1087,7 @@ void 		*pvalue
 		else {
 			if (ca_state(chix)==cs_conn) {
 				ellDelete (&pend_read_list, &monix->node);
-				caIOBlockFree (monix);
+				caIOBlockFree (ca_static,monix);
 			}
 		}
 	} 
@@ -1112,6 +1112,7 @@ const void *arg
 {
 	int	status;
 	miu	monix;
+	CA_STATIC *ca_static;
 
 	CHIXCHK(chix);
 
@@ -1129,7 +1130,7 @@ const void *arg
 		return ECA_NORDACCESS;
 	}
 
-#ifdef vxWorks
+#ifdef iocCore
 	if (!chix->piiu) {
 		struct pending_event ev;
 
@@ -1148,8 +1149,9 @@ const void *arg
 	 * so that we are not deleted without
 	 * reclaiming the resource
 	 */
+	ca_static = ((IIU *)chix->piiu)->pcas;
 	LOCK;
-	monix = caIOBlockCreate();
+	monix = caIOBlockCreate(ca_static);
 	if (monix) {
 
 		monix->chan = chix;
@@ -1162,11 +1164,11 @@ const void *arg
 	}
 
 	if (monix) {
-		status = issue_get_callback (monix, CA_PROTO_READ_NOTIFY);
+		status = issue_get_callback(monix, CA_PROTO_READ_NOTIFY);
 		if (status != ECA_NORMAL) {
 			if (ca_state(chix)==cs_conn) {
 				ellDelete (&pend_read_list, &monix->node);
-				caIOBlockFree (monix);
+				caIOBlockFree (ca_static,monix);
 			}
 		}
 	} 
@@ -1179,9 +1181,9 @@ const void *arg
 }
 
 /*
- * caIOBlockCreate()
+ * caIOBlockCreate(ca_static)
  */
-LOCAL miu caIOBlockCreate(void)
+LOCAL miu caIOBlockCreate(CA_STATIC *ca_static)
 {
 	int	status;
 	miu	pIOBlock;
@@ -1213,7 +1215,7 @@ LOCAL miu caIOBlockCreate(void)
 /*
  * caIOBlockFree()
  */
-void caIOBlockFree(miu pIOBlock)
+void caIOBlockFree(CA_STATIC *ca_static,miu pIOBlock)
 {
 	int	status;
 
@@ -1231,6 +1233,7 @@ void caIOBlockFree(miu pIOBlock)
  * Free all io blocks on the list attached to the specified channel
  */
 void caIOBlockListFree(
+CA_STATIC *ca_static,
 ELLLIST *pList, 
 chid 	chan, 
 int 	cbRequired, 
@@ -1257,7 +1260,7 @@ int 	status)
 			args.status = 	status;
 			args.dbr = 	NULL;
 
-			caIOBlockFree (monix);
+			caIOBlockFree (ca_static, monix);
 
 			if (cbRequired && monix->usr_func) {
 				(*monix->usr_func) (args);
@@ -1271,7 +1274,9 @@ int 	status)
  *	ISSUE_GET_CALLBACK()
  *	(lock must be on)
  */
-LOCAL int issue_get_callback(evid monix, ca_uint16_t cmmd)
+LOCAL int issue_get_callback(
+evid monix,
+ca_uint16_t cmmd)
 {
 	int			status;
 	chid   			chix = monix->chan;
@@ -1329,6 +1334,7 @@ const void			*usrarg
 	IIU	*piiu;
 	int	status;
 	miu 	monix;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * valid channel id test
@@ -1372,7 +1378,7 @@ const void			*usrarg
 		}
 	}
 
-#ifdef vxWorks
+#ifdef iocCore
 	if (!piiu) {
 		/* cast removes const */
 		ciu			pChan = (ciu) chix; 
@@ -1389,10 +1395,10 @@ const void			*usrarg
 			 */
 			if(ppn->busy){
 				UNLOCK;
-				status = semTake(
+				status = semBinaryTakeTimeout(
 					ca_static->ca_blockSem,
-					sysClkRateGet()*60);
-				if(status != OK){
+					60.0);
+				if(status != semTakeOK){
 					return ECA_PUTCBINPROG;
 				}
 				LOCK;
@@ -1445,7 +1451,7 @@ const void			*usrarg
 		}
 		return ECA_NORMAL;
 	}
-#endif /*vxWorks*/
+#endif /*iocCore*/
 
 	/*
 	 * lock around io block create and list add
@@ -1453,7 +1459,7 @@ const void			*usrarg
 	 * reclaiming the resource
 	 */
 	LOCK;
-	monix = caIOBlockCreate();
+	monix = caIOBlockCreate(ca_static);
 	if (!monix) {
 		UNLOCK;
 		return ECA_ALLOCMEM;
@@ -1478,7 +1484,7 @@ const void			*usrarg
 		LOCK;
 		if (ca_state(chix)==cs_conn) {
 			ellDelete (&pend_write_list, &monix->node);
-			caIOBlockFree(monix);
+			caIOBlockFree(ca_static, monix);
 		}
 		UNLOCK;
 		return status;
@@ -1491,7 +1497,7 @@ const void			*usrarg
 /*
  * 	CA_PUT_NOTIFY_ACTION
  */
-#ifdef vxWorks
+#ifdef iocCore
 LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
 {
 	CACLIENTPUTNOTIFY	*pcapn;
@@ -1505,10 +1511,10 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
 	 */
 	chix = (chid) ppn->usrPvt;
 	if(!chix){
-		taskSuspend(0);
+		threadSuspend(threadGetIdSelf());
 	}
 	if(!chix->ppn){
-		taskSuspend(0);
+		threadSuspend(threadGetIdSelf());
 	}
 
 	piiu = chix->piiu;
@@ -1521,9 +1527,9 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
          * the database (or indirectly blocking
          * one client on another client).
          */
-        semTake(pcas->ca_putNotifyLock, WAIT_FOREVER);
+        semMutexTakeAssert(pcas->ca_putNotifyLock);
         ellAdd(&pcas->ca_putNotifyQue, &pcapn->node);
-        semGive(pcas->ca_putNotifyLock);
+        semMutexGive(pcas->ca_putNotifyLock);
 
         /*
          * offload the labor for this to the
@@ -1533,7 +1539,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
         db_post_extra_labor(pcas->ca_evuser);
 
 }
-#endif /*vxWorks*/
+#endif /*iocCore*/
 
 /*
  *	CA_ARRAY_PUT()
@@ -1577,7 +1583,7 @@ int epicsShareAPI ca_array_put (
 		}
 	}
 
-#ifdef vxWorks
+#ifdef iocCore
 	/*
 	 * If channel is on this client's host then
 	 * call the database directly
@@ -1594,7 +1600,7 @@ int epicsShareAPI ca_array_put (
       		else
         		return ECA_PUTFAIL;
   	}
-#endif /*vxWorks*/
+#endif /*iocCore*/
 
 	return issue_ca_array_put(CA_PROTO_WRITE, ~0U, type, count, chix, pvalue);
 }
@@ -1745,6 +1751,7 @@ const void	*pvalue
 LOCAL void *malloc_put_convert(unsigned long size)
 {
 	struct putCvrtBuf	*pBuf;
+	CA_OSD_GET_CA_STATIC
 
 	LOCK;
 	pBuf = (struct putCvrtBuf *) ellFirst(&ca_static->putCvrtBuf);
@@ -1780,6 +1787,7 @@ LOCAL void *malloc_put_convert(unsigned long size)
 LOCAL void free_put_convert(void *pBuf)
 {
 	struct putCvrtBuf	*pBufHdr;
+	CA_OSD_GET_CA_STATIC
 
 	pBufHdr = (struct putCvrtBuf *)pBuf;
 	pBufHdr -= 1;
@@ -1804,6 +1812,7 @@ void 		(*pfunc)(struct connection_handler_args)
 )
 {
 	ciu	pChan = (ciu) chix; /* remove const */
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
   	LOOSECHIXCHK(pChan);
@@ -1835,6 +1844,7 @@ void    (*pfunc)(struct access_rights_handler_args))
 {
 	ciu pChan = (ciu) chan; /* remove const */
 	struct access_rights_handler_args 	args;
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
   	LOOSECHIXCHK(pChan);
@@ -1863,6 +1873,7 @@ int epicsShareAPI ca_add_exception_event
 	const void 	*arg
 )
 {
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
   	LOCK;
@@ -1901,6 +1912,7 @@ long		mask
 	ciu 	pChan = (ciu) chix; /* remove const */
   	miu	monix;
   	int	status;
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
   	LOOSECHIXCHK(pChan);
@@ -1937,14 +1949,14 @@ long		mask
   	LOCK;
 
   	if (!pChan->piiu) {
-# 		ifdef vxWorks
+# 		ifdef iocCore
 			monix = freeListMalloc (ca_static->ca_dbMonixFreeList);
 # 		else
 		return ECA_INTERNAL;
 # 			endif
   	}
 	else {
-		monix = caIOBlockCreate();
+		monix = caIOBlockCreate(ca_static);
 	}
 
   	if(!monix){
@@ -1967,7 +1979,7 @@ long		mask
   	monix->timeout	= timeout;
   	monix->mask	= (unsigned short) mask;
 
-# 	ifdef vxWorks
+# 	ifdef iocCore
 	if(!pChan->piiu){
 		status = db_add_event(	
 				evuser,
@@ -2017,7 +2029,7 @@ long		mask
 			LOCK;
 			if (ca_state(pChan)==cs_conn) {
 				ellDelete (&pChan->eventq, &monix->node);
-				caIOBlockFree(monix);
+				caIOBlockFree(ca_static, monix);
 			}
 			UNLOCK
 		}
@@ -2089,10 +2101,10 @@ int ca_request_event(evid monix)
 /*
  *
  *	CA_EVENT_HANDLER()
- *	(only for local (for now vxWorks) clients)
+ *	(only for local (for now iocCore) clients)
  *
  */
-#ifdef vxWorks
+#ifdef iocCore
 LOCAL void ca_event_handler(
 void		*usrArg,
 struct dbAddr	*paddr,
@@ -2111,6 +2123,7 @@ db_field_log	*pfl
 		unsigned size;
 	};
 	struct tmp_buff *pbuf = NULL;
+	CA_OSD_GET_CA_STATIC
 
   	/*
   	 * clip to the native count
@@ -2250,6 +2263,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 	int	status;
 	caHdr 	hdr;
 	evid	lkup;
+	CA_OSD_GET_CA_STATIC
 
 	/*
 	 * is it a valid channel ?
@@ -2273,7 +2287,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 	/* disable any further events from this event block */
 	pMon->usr_func = NULL;
 
-#ifdef vxWorks
+#ifdef iocCore
 	if (!chix->piiu) {
 		register int    status;
 
@@ -2288,7 +2302,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 
 		return ECA_NORMAL;
 	}
-#endif /*vxWorks*/
+#endif /*iocCore*/
 
 	/*
 	 * dont send the message if the conn is down (just delete from the
@@ -2319,7 +2333,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 	else{
 		LOCK;
 		ellDelete(&chix->eventq, &pMon->node);
-		caIOBlockFree(pMon);
+		caIOBlockFree(ca_static, pMon);
 		UNLOCK;
 		status = ECA_NORMAL;
 	}
@@ -2350,6 +2364,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	caHdr 			hdr;
 	caCh			*pold_ch;
 	enum channel_state	old_chan_state;
+	CA_OSD_GET_CA_STATIC
 
 	if (pChan->piiu) {
 		pChan = bucketLookupItemUnsignedId
@@ -2390,7 +2405,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 		if (monix->chan == pChan)
 			monix->usr_func = NULL;
 
-#ifdef vxWorks
+#ifdef iocCore
 	if (!pChan->piiu) {
 		CACLIENTPUTNOTIFY	*ppn;
 		int             	status;
@@ -2443,7 +2458,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	 */
 	if (old_chan_state != cs_conn) {
 		UNLOCK;
-		clearChannelResources (pChan->cid);
+		clearChannelResources (ca_static,pChan->cid);
 		return ECA_NORMAL;
 	}
 
@@ -2473,17 +2488,9 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 }
 
 /*
- * ca_cidToChid()
- */
-chid epicsShareAPI ca_cidToChid(unsigned id)
-{
-	return (chid) bucketLookupItemUnsignedId(ca_static->ca_pSlowBucket, &id);
-}
-
-/*
  * clearChannelResources()
  */
-void clearChannelResources(unsigned id)
+void clearChannelResources(CA_STATIC *ca_static,unsigned id)
 {
 	struct ioc_in_use       *piiu;
 	ciu			chix;
@@ -2503,17 +2510,19 @@ void clearChannelResources(unsigned id)
 	/*
 	 * remove any orphaned get callbacks for this channel
 	 */
-	caIOBlockListFree (&ca_static->ca_pend_read_list, chix, FALSE, ECA_INTERNAL);
+	caIOBlockListFree (ca_static, &ca_static->ca_pend_read_list, chix,
+		FALSE, ECA_INTERNAL);
 
 	/*
 	 * remove any orphaned put callbacks for this channel
 	 */
-	caIOBlockListFree (&ca_static->ca_pend_write_list, chix, FALSE, ECA_INTERNAL);
+	caIOBlockListFree (ca_static, &ca_static->ca_pend_write_list, chix,
+		FALSE, ECA_INTERNAL);
 
 	/*
 	 * remove any monitors still attached to this channel
 	 */
-	caIOBlockListFree (&chix->eventq, NULL, FALSE, ECA_INTERNAL);
+	caIOBlockListFree (ca_static, &chix->eventq, NULL, FALSE, ECA_INTERNAL);
 
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
@@ -2538,6 +2547,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 	struct timeval	beg_time;
 	ca_real		delay;
 	struct timeval	tmo;
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
 
@@ -2559,7 +2569,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo, TRUE);
+		cac_mux_io(ca_static,&tmo, TRUE);
         	return ECA_NORMAL;
 	}
 
@@ -2568,7 +2578,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo, TRUE);
+		cac_mux_io(ca_static,&tmo, TRUE);
 		return ECA_TIMEOUT;
 	}
 
@@ -2582,18 +2592,18 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			 * force the flush
 			 */
 			CLR_CA_TIME (&tmo);
-			cac_mux_io(&tmo, TRUE);
+			cac_mux_io(ca_static,&tmo, TRUE);
         	return ECA_NORMAL;
 		}
     	if(timeout == 0.0){
-			remaining = cac_fetch_poll_period();
+			remaining = cac_fetch_poll_period(ca_static);
 		}
 		else{
 			remaining = timeout-delay;
 			/*
 			 * Allow for CA background labor
 			 */
-			remaining = min(cac_fetch_poll_period(), remaining);
+			remaining = min(cac_fetch_poll_period(ca_static), remaining);
   		}    
 
 
@@ -2631,12 +2641,12 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			 * for ECA_TIMEOUT to be returned when the IO completed
 			 * during the pend io timeout clean up phase.
 			 */
-			cac_block_for_io_completion (&tmo);
+			cac_block_for_io_completion (ca_static,&tmo);
 			return ECA_TIMEOUT;
 		}
 		tmo.tv_sec = (long) remaining;
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
-		cac_block_for_io_completion (&tmo);
+		cac_block_for_io_completion (ca_static,&tmo);
 
 		if (timeout != 0.0) {
 			delay = cac_time_diff (&ca_static->currentTime, 
@@ -2648,7 +2658,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 /*
  * cac_fetch_poll_period()
  */
-double cac_fetch_poll_period(void)
+double cac_fetch_poll_period(CA_STATIC *ca_static)
 {
 	if (!piiuCast) {
 		return SELECT_POLL_NO_SEARCH;
@@ -2661,6 +2671,19 @@ double cac_fetch_poll_period(void)
 	}
 }
 
+
+void cac_gettimeval(struct timeval  *pt)
+{
+    TS_STAMP ts;
+    int status;
+
+    status = clockGetCurrentTime(&ts);
+    assert(status==0);
+    pt->tv_sec = ts.secPastEpoch;
+    pt->tv_usec = ts.nsec/1000;
+}
+
+    
 /*
  * cac_time_diff()
  */
@@ -2747,6 +2770,7 @@ LOCAL void ca_pend_io_cleanup()
 {
 	struct ioc_in_use *piiu;
 	ciu pchan;
+	CA_OSD_GET_CA_STATIC
 
 	LOCK;
 	pchan = (ciu) ellFirst (&piiuCast->chidlist);
@@ -2784,6 +2808,7 @@ LOCAL void ca_pend_io_cleanup()
 int epicsShareAPI ca_flush_io()
 {
 	struct timeval  	timeout;
+	CA_OSD_GET_CA_STATIC
 
   	INITCHK;
 
@@ -2793,7 +2818,7 @@ int epicsShareAPI ca_flush_io()
 	 */
 	ca_static->ca_flush_pending = TRUE;
 	CLR_CA_TIME (&timeout);
-	cac_mux_io (&timeout, TRUE);
+	cac_mux_io (ca_static,&timeout, TRUE);
 
   	return ECA_NORMAL;
 }
@@ -2804,6 +2829,7 @@ int epicsShareAPI ca_flush_io()
  */
 int epicsShareAPI ca_test_io()
 {
+	CA_OSD_GET_CA_STATIC
     	if(pndrecvcnt==0u){
         	return ECA_IODONE;
 	}
@@ -2816,9 +2842,11 @@ int epicsShareAPI ca_test_io()
  * genLocalExcepWFL ()
  * (generate local exception with file and line number)
  */
-void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
+void genLocalExcepWFL (long stat, const char *ctx,
+const char *pFile, unsigned lineNo)
 {
 	struct exception_handler_args args;
+	CA_OSD_GET_CA_STATIC
 
 	args.usr = (void *) ca_static->ca_exception_arg;
 	args.chid = NULL;
@@ -2953,6 +2981,7 @@ int ca_busy_message(struct ioc_in_use *piiu)
 {
 	caHdr hdr;
 	int status;
+	CA_OSD_GET_CA_STATIC
 
 	if(!piiu){
 		return ECA_INTERNAL;
@@ -2983,10 +3012,12 @@ int ca_ready_message(struct ioc_in_use *piiu)
 {
 	caHdr hdr;
 	int status;
+	CA_STATIC *ca_static;
 
 	if(!piiu){
 		return ECA_INTERNAL;
 	}
+	ca_static = piiu->pcas;
 
   	/* 
 	 * dont broadcast
@@ -3010,7 +3041,9 @@ int ca_ready_message(struct ioc_in_use *piiu)
  * echo_request (lock must be on)
  * 
  */
-int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
+int echo_request(
+	struct ioc_in_use *piiu,
+	ca_time *pCurrentTime)
 {
 	caHdr  		hdr;
 	int 		status;
@@ -3047,7 +3080,9 @@ void noop_msg(struct ioc_in_use *piiu)
 {
 	caHdr  	hdr;
 	int 	status;
+	CA_STATIC *ca_static;
 
+	ca_static = piiu->pcas;
 	hdr.m_cmmd = htons(CA_PROTO_NOOP);
 	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
@@ -3066,15 +3101,17 @@ void noop_msg(struct ioc_in_use *piiu)
  * (lock must be on)
  * 
  */
-void issue_client_host_name(struct ioc_in_use *piiu)
+void issue_client_host_name( struct ioc_in_use *piiu)
 {
 	unsigned	size;
 	caHdr  	hdr;
 	char		*pName;
+	CA_STATIC *ca_static;
 
 	if(!piiu){
 		return;
 	}
+	ca_static = piiu->pcas;
 
   	/* 
 	 * dont broadcast client identification protocol
@@ -3115,10 +3152,12 @@ void issue_identify_client(struct ioc_in_use *piiu)
 	unsigned	size;
 	caHdr  	hdr;
 	char		*pName;
+	CA_STATIC *ca_static;
 
 	if(!piiu){
 		return;
 	}
+	ca_static = piiu->pcas;
 
   	/* 
 	 * dont broadcast client identification protocol
@@ -3160,15 +3199,16 @@ int issue_claim_channel (chid pchan)
 	unsigned	size;
 	const char 	*pStr;
 	int		status;
+	CA_STATIC	*ca_static;
 
-	LOCK;
 
 	if (!piiu) {
 		ca_printf("CAC: nill piiu claim attempted?\n");
-		UNLOCK;
 		return ECA_INTERNAL;
 	}
+	ca_static = piiu->pcas;
 
+	LOCK;
   	/* 
 	 * dont broadcast
 	 */
@@ -3231,7 +3271,7 @@ int issue_claim_channel (chid pchan)
 		ellAdd (&piiu->chidlist, &pchan->node);
 
 		if (!CA_V42(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
-			cac_reconnect_channel(pchan->cid, TYPENOTCONN, 0);
+			cac_reconnect_channel(ca_static, pchan->cid, TYPENOTCONN, 0);
 		}
 	}
 	else {
@@ -3281,6 +3321,7 @@ LOCAL void ca_default_exception_handler (struct exception_handler_args args)
  */
 int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, const void *arg)
 {
+	CA_OSD_GET_CA_STATIC
 	INITCHK;
 
 	fd_register_func = func;
@@ -3348,70 +3389,13 @@ READONLY char * epicsShareAPI ca_version()
 }
 
 /*
- *
- * 	CA_CHANNEL_STATUS
- *
- */
-#ifdef vxWorks
-int ca_channel_status(int tid)
-{
-	chid			chix;
-	IIU			*piiu;
-	struct CA_STATIC	*pcas;
-
-	pcas = (struct CA_STATIC *) 
-		taskVarGet(tid, (int *)&ca_static);
-
-	if (pcas == (struct CA_STATIC *) ERROR)
-		return ECA_NOCACTX;
-
-#	define ca_static pcas
-		LOCK
-#	undef ca_static
-	piiu = (struct ioc_in_use *) pcas->ca_iiuList.node.next;
-	while(piiu){
-		chix = (chid) &piiu->chidlist.node;
-		while ( (chix = (chid) chix->node.next) ){
-			printf(	"%s native type=%d ", 
-				ca_name(chix),
-				ca_field_type(chix));
-			printf(	"N elements=%d IOC=%s state=", 
-				ca_element_count(chix),
-				piiu->host_name_str);
-			switch(ca_state(chix)){
-			case cs_never_conn:
-				printf("never connected to an IOC");
-				break;
-			case cs_prev_conn:
-				printf("disconnected from IOC");
-				break;
-			case cs_conn:
-				printf("connected to an IOC");
-				break;
-			case cs_closed:
-				printf("invalid channel");
-				break;
-			default:
-				break;
-			}
-			printf("\n");
-		}
-		piiu = (struct ioc_in_use *)piiu->node.next;
-	}
-#	define ca_static pcas
-		UNLOCK
-#	undef ca_static
-	return ECA_NORMAL;
-}
-#endif /*vxWorks*/
-
-/*
  * ca_replace_printf_handler ()
  */
 int epicsShareAPI ca_replace_printf_handler (
 int (*ca_printf_func)(const char *pformat, va_list args)
 )
 {
+	CA_OSD_GET_CA_STATIC
 	INITCHK;
 
 	if (ca_printf_func) {
@@ -3421,7 +3405,7 @@ int (*ca_printf_func)(const char *pformat, va_list args)
 		/*
 		 * os dependent
 		 */
-		caSetDefaultPrintfHandler();
+		caSetDefaultPrintfHandler(ca_static);
 	}
 
 	return ECA_NORMAL;
@@ -3450,6 +3434,7 @@ int epicsShareAPI ca_printf (const char *pformat, ...)
 int epicsShareAPI ca_vPrintf (const char *pformat, va_list args)
 {
     int		(*ca_printf_func)(const char *pformat, va_list args);
+    CA_OSD_GET_CA_STATIC
     
     if (ca_static) {
         if (ca_static->ca_printf_func) {
@@ -3502,6 +3487,7 @@ unsigned short epicsShareAPI ca_get_element_count (chid chan)
 unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
 	unsigned count;
+	CA_OSD_GET_CA_STATIC
 
 	INITCHK;
 

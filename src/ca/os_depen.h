@@ -39,24 +39,9 @@ static char *os_depenhSccsId = "$Id$";
 #	define CA_OS_CONFIGURED
 #endif
 
-#ifdef vxWorks
-#	include <vxWorks.h>
-#	include <ioLib.h>
-#	include <tickLib.h>
-#	include <taskHookLib.h>
-#	include <selectLib.h>
-#       include <errnoLib.h>
-#       include <sysLib.h>
-#       include <taskVarLib.h>
-#       include <hostLib.h>
-#       include <logLib.h>
-#       include <usrLib.h>
-#       include <dbgLib.h>
-#	include <inetLib.h>
-#	include <taskLib.h>
-#	include <vxLib.h>
-
-#	include "task_params.h"
+#ifdef iocCore
+#	include "osiSem.h"
+#	include "osiThread.h"
 #	include "taskwd.h"
 
 #	define CA_OS_CONFIGURED
@@ -71,39 +56,23 @@ static char *os_depenhSccsId = "$Id$";
 #endif /*_WIN32*/
 
 #ifndef CA_OS_CONFIGURED
-#error Please define one of vxWorks, UNIX, VMS, or _WIN32 
+#error Please define one of iocCore, UNIX, VMS, or _WIN32 
 #endif
 
-#if defined(vxWorks)
-#  	define POST_IO_EV semGive(io_done_sem)
+#if defined(iocCore)
+#  	define POST_IO_EV semBinaryGive(io_done_sem)
 #	define VXTASKIDNONE 0
-#  	define LOCK {assert(semTake(client_lock, WAIT_FOREVER)==OK); lock_count++; lock_tid=(int)taskIdCurrent;}
-#  	define UNLOCK {if(--lock_count==0u) lock_tid=VXTASKIDNONE; assert(semGive(client_lock)==OK);}
-#	define EVENTLOCKTEST (lock_tid==(int)taskIdCurrent)
-#	define VXTHISTASKID taskIdSelf()
-#	define abort() taskSuspend(VXTHISTASKID)
-#endif
-
-#if defined(UNIX)
+#  	define LOCK semMutexTakeAssert(client_lock); 
+#  	define UNLOCK semMutexGive(client_lock);
+#	define EVENTLOCKTEST (lock_tid==threadGetIdSelf())
+#	define VXTHISTASKID threadGetIdSelf();
+#	define abort() threadSuspend(threadGetIdSelf())
+#else
 #  	define POST_IO_EV 
 #  	define LOCK
 #  	define UNLOCK  
 #	define EVENTLOCKTEST	(post_msg_active)
-#endif
-
-#if defined(VMS)
-#  	define POST_IO_EV 
-#	define LOCK
-#	define UNLOCK
-#	define EVENTLOCKTEST	(post_msg_active)
-#endif
-
-#ifdef _WIN32 
-#	define POST_IO_EV
-#  	define LOCK
-#  	define UNLOCK  
-#	define EVENTLOCKTEST	(post_msg_active)
-#endif /*_WIN32*/
+#endif /*defined(iocCore) */
 
 #endif /* INCos_depenh */
 

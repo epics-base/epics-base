@@ -18,13 +18,13 @@
  *
  * 1) epicsShareAPI - specifies a multi-language calling mechanism. On windows 
  * this is the pascal calling convention which is used by visual basic and other
- * high level tools. This is only necessaru if a C/C++ function needs to be called
+ * high level tools. This is only necessary if a C/C++ function needs to be called
  * from other languages or from high level tools. The epicsShareAPI keyword
  * must be present between the function's returned data type and the function's 
  * name. All compilers targeting windows accept the __stdcall keyword in this 
  * location. Functions with variable argument lists should not use the epicsShareAPI
  * keyword because __stdcall (pascal) calling convention cannot support variable
- * lengthed argument lists.
+ * length ed argument lists.
  *
  * int epicsShareAPI myExtFunc ( int arg );   
  * int epicsShareAPI myExtFunc ( int arg ) {}
@@ -33,8 +33,8 @@
  * export/import related information in the source code. On windows these keywords 
  * allow faster dispatching of calls to DLLs because more is known at compile time. 
  * It is also not necessary to maintain a linker input files specifying the DLL
- * entry points. This maintenance can be more labourious with C++ decorated symbol 
- * names. These keywords are only necessay if the address of a function or data 
+ * entry points. This maintenance can be more laborious with C++ decorated symbol 
+ * names. These keywords are only necessary if the address of a function or data 
  * internal to a shareable library (DLL) needs to be visible outside of this shareable 
  * library (DLL). All compilers targeting windows accept the __declspec(dllexport)
  * and __declspec(dllimport) keywords.
@@ -66,7 +66,7 @@
  * You must first #include what you import and then define epicsExportSharedSymbols 
  * only right before you #include the prototypes for what you implement! You must 
  * include shareLib.h again each time that the state of the import/ export keywords 
- * changes, but this usually occurs as a side effect of including the shareabke
+ * changes, but this usually occurs as a side effect of including the shareable
  * libraries header file(s).
  *
  * Frequently a header file for a shareable library exported interface will
@@ -91,7 +91,7 @@
  * class epicsShareClass myClass {};
  *
  * Fortunately, the above is only the concern of library authors and will have no 
- * impact on persons using functiions and or external data from a library.
+ * impact on persons using functions and or external data from a library.
  */
 
 #undef epicsShareExtern

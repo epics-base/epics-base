@@ -1506,11 +1506,18 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
     epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
     epicsGuard < cacMutex > guard ( this->mutex );
+
     // Disconnect all channels immediately from the timer thread
-    // because on certain OS such as HPUX its difficult to 
+    // because on certain OS such as HPUX it's difficult to 
     // unblock a blocking send() call, and we need immediate 
     // disconnect notification.
+    if ( iiu.channelCount() ) {
+        char hostNameTmp[64];
+        iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
+    }
     iiu.removeAllChannels ( cbGuard, guard, *this );
+
     iiu.initiateAbortShutdown ( cbGuard, guard );
 }
 

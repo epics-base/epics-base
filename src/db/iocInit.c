@@ -256,9 +256,7 @@ static long initDevSup() /* Locate all device support entry tables */
     long	status=0;
     long	rtnval;
     STATUS	vxstatus;
-    struct recLoc	*precLoc;
     struct devSup	*pdevSup;
-    struct dbCommon	*precord;
     
     if(!devSup) {
 	status = S_dev_noDevSup;
@@ -284,18 +282,6 @@ static long initDevSup() /* Locate all device support entry tables */
 	    if(!(pdevSup->papDset[j]->init)) continue;
 	    rtnval = (*(pdevSup->papDset[j]->init))(0);
 	    if(status==0) status = rtnval;
-	}
-    
-	/* Now initialize dset for each record */
-	if(!(precLoc = dbRecords->papRecLoc[i]))continue;
-	if(!(pdevSup=GET_DEVSUP(i))) continue;
-	for(j=0, ((char *)precord) = precLoc->pFirst;
-	    j<precLoc->no_records;
-	    j++, ((char *)precord) += precLoc->rec_size ) {
-	        /* If NAME is null then skip this record*/
-		if(!(precord->name[0])) continue;
-		/* Init DSET NOTE that result may be NULL*/
-		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 	}
     }
     return(status);
@@ -336,6 +322,7 @@ static long initDatabase()
     struct dbCommon	*precord;
     struct dbAddr	dbAddr;
     struct link		*plink;
+    struct devSup	*pdevSup;
     
     if(!dbRecords) {
 	status = S_record_noRecords;
@@ -354,23 +341,37 @@ static long initDatabase()
 	    continue;
 	}
 	precTypDes = dbRecDes->papRecTypDes[i];
+	pdevSup = GET_DEVSUP(i);
 	for(j=0, ((char *)precord) = precLoc->pFirst;
 	    j<precLoc->no_records;
 	    j++, ((char *)precord) += precLoc->rec_size ) {
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
-
 		/*initialize fields rset*/
 		(struct rset *)(precord->rset) = prset;
-
 	        /* initialize mlok and mlis*/
 		FASTLOCKINIT(&precord->mlok);
 		lstInit(&(precord->mlis));
 		precord->pact=FALSE;
-
 		/* set lset=0 See determine lock set below*/
 		precord->lset = 0;
-
+		/* Init DSET NOTE that result may be NULL*/
+		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
+		/* call record support init_record routine - First pass */
+		if(!(recSup->papRset[i]->init_record)) continue;
+		rtnval = (*(recSup->papRset[i]->init_record))(precord,0);
+		if(status==0) status = rtnval;
+	}
+    }
+    /* Second pass to resolve links*/
+    for(i=0; i< (dbRecords->number); i++) {
+	if(!(precLoc = dbRecords->papRecLoc[i]))continue;
+	precTypDes = dbRecDes->papRecTypDes[i];
+	for(j=0, ((char *)precord) = precLoc->pFirst;
+	    j<precLoc->no_records;
+	    j++, ((char *)precord) += precLoc->rec_size ) {
+	        /* If NAME is null then skip this record*/
+		if(!(precord->name[0])) continue;
 		/* Convert all PV_LINKs to DB_LINKs or CA_LINKs*/
 		for(k=0; k<precTypDes->no_links; k++) {
 		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
@@ -417,10 +418,21 @@ static long initDatabase()
 			}
 		    }
 		}
+	}
+    }
+    /* Call init_record for second time */
+    for(i=0; i< (dbRecords->number); i++) {
+	if(!(precLoc = dbRecords->papRecLoc[i]))continue;
+	precTypDes = dbRecDes->papRecTypDes[i];
+	for(j=0, ((char *)precord) = precLoc->pFirst;
+	    j<precLoc->no_records;
+	    j++, ((char *)precord) += precLoc->rec_size ) {
+	        /* If NAME is null then skip this record*/
+		if(!(precord->name[0])) continue;
 
-		/* call record support init_record routine */
+		/* call record support init_record routine - Second pass */
 		if(!(recSup->papRset[i]->init_record)) continue;
-		rtnval = (*(recSup->papRset[i]->init_record))(precord);
+		rtnval = (*(recSup->papRset[i]->init_record))(precord,1);
 		if(status==0) status = rtnval;
 	}
     }

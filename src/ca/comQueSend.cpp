@@ -88,6 +88,20 @@ void comQueSend::clear ()
     assert ( this->nBytesPending == 0 );
 }
 
+void comQueSend::clearUncommitted ()
+{
+    while ( this->pFirstUncommited.valid() ) {
+        tsDLIterBD < comBuf > next = this->pFirstUncommited;
+        next++;
+        this->pFirstUncommited->clearUncommittedIncomming ();
+        if ( this->pFirstUncommited->occupiedBytes() == 0u ) {
+            this->bufs.remove ( *this->pFirstUncommited );
+            this->pFirstUncommited->destroy ();
+        }
+        this->pFirstUncommited = next;
+    }
+}
+
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )
 {
     this->copyIn ( static_cast <const dbr_string_t *> ( pValue ), nElem );

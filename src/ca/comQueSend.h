@@ -61,12 +61,14 @@ private:
         const void *pValue, unsigned nElem );
     static const copyFunc_t dbrCopyVector [39];
 
+    void clearUncommitted ();
+
     //
     // visual C++ version 6.0 does not allow out of 
     // class member template function definition
     //
     template < class T >
-    inline void copyIn ( const T *pVal, unsigned nElem )
+    inline void copyIn ( const T *pVal, const unsigned nElem )
     {
         comBuf * pLastBuf = this->bufs.last ();
         unsigned nCopied;
@@ -173,14 +175,8 @@ inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const
 
 inline void comQueSend::beginMsg ()
 {
-    while ( this->pFirstUncommited.valid() ) {
-        tsDLIterBD < comBuf > next = this->pFirstUncommited;
-        next++;
-        this->pFirstUncommited->clearUncommittedIncomming ();
-        if ( this->pFirstUncommited->occupiedBytes() == 0u ) {
-            this->bufs.remove ( *this->pFirstUncommited );
-        }
-        this->pFirstUncommited = next;
+    if ( this->pFirstUncommited.valid() ) {
+        this->clearUncommitted ();
     }
     this->pFirstUncommited = this->bufs.lastIter ();
 }

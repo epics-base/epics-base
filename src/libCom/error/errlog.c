@@ -95,7 +95,7 @@ LOCAL struct {
 LOCAL int tvsnPrint(char *str, size_t size, const char *format, va_list ap)
 {
     int nchar;
-    static const char tmsg[] = "<<TRUNCATED>>";
+    static const char tmsg[] = "<<TRUNCATED>>\n";
 
     nchar = epicsVsnprintf(str, size, format?format:"", ap);
     if(nchar >= size) {
@@ -144,18 +144,7 @@ epicsShareFunc int errlogVprintf(
 
 epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
 {
-    char *pbuffer;
-
-    if(epicsInterruptIsInterruptContext()) {
-	epicsInterruptContextMessage
-            ("errlogMessage called from interrupt level\n");
-	return 0;
-    }
-    errlogInit(0);
-    pbuffer = msgbufGetFree(0);
-    if(!pbuffer) return(0);
-    strcpy(pbuffer,message);
-    msgbufSetSize(strlen(message));
+    errlogPrintf("%s", message);
     return 0;
 }
 
@@ -232,10 +221,12 @@ epicsShareFunc int errlogSevVprintf(
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
-    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE-1,pFormat,pvar);
+    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE-totalChar-1,pFormat,pvar);
     pnext += nchar; totalChar += nchar;
-    strcpy(pnext,"\n");
-    totalChar++; /*include \n */
+    if(pnext[-1] != '\n') {
+        strcpy(pnext,"\n");
+        totalChar++;
+    }
     msgbufSetSize(totalChar);
     return(nchar);
 }

@@ -39,6 +39,11 @@ extern "C" {
 int putenv (char *);
 char *strdup (const char *);
 
+int snprintf(char *str, size_t size, const char *format, ...);
+#include <stdarg.h>
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -65,7 +65,8 @@ static char *ptypename[DBF_NTYPES] = {
 	"DBF_NOACCESS"
 };
 
-static char *pguigroup[] = {
+#define NGUIDEFS 26
+static char *pguigroup[NGUIDEFS] = {
 	"",
 	"GUI_COMMON",
 	"GUI_ALARMS",
@@ -308,7 +309,10 @@ gen_rectype:
 	    fprintf(fp,"\t\tprompt(\"%s\")\n",pfldDes->prompt);
 	}
 	if(pfldDes->promptflag) {
-	    fprintf(fp,"\t\tpromptgroup(%s)\n",pguigroup[pfldDes->promptflag]);
+	    if(pfldDes->promptflag<0 || pfldDes->promptflag>=NGUIDEFS)
+		fprintf(fp,"\t\tpromptgroup(%s)\n",pguigroup[9]);/*GUI_DISPLAY*/
+	    else
+	        fprintf(fp,"\t\tpromptgroup(%s)\n",pguigroup[pfldDes->promptflag]);
 	}
 	if(pfldDes->as_level == 0) fprintf(fp,"\t\tasl(ASL0)\n");
 	if(pfldDes->special) {

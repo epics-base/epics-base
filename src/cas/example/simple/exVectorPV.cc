@@ -63,7 +63,7 @@ void exVectorPV::scan()
 	// throughput under sunos4 because gettimeofday() is
 	// slow)
 	//
-	this->currentTime = osiTime::getCurrent();
+	this->currentTime = osiTime::getCurrentEPICS();
  
 	pDD = new gddAtomic (gddAppType_value, aitEnumFloat32, 
 			1u, this->info.getElementCount());

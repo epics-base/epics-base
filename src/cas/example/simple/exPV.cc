@@ -67,7 +67,6 @@ void exPV::destroy()
 //
 caStatus exPV::update(gdd &valueIn)
 {
-	unsigned epochSecPast1970 = 7305*86400; /* 1/1/90 20 yr (5 leap) of seconds */
 	caServer *pCAS = this->getCAS();
 	//
 	// gettimeofday() is very slow under sunos4
@@ -86,10 +85,7 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	//
-	// this converts from a POSIX time stamp to an EPICS time stamp
-	//
-	t.tv_sec = (time_t) cur.getSecTruncToLong () - epochSecPast1970;
+	t.tv_sec = (time_t) cur.getSecTruncToLong ();
 	t.tv_nsec = cur.getNSecTruncToLong ();
 	this->pValue->setTimeStamp(&t);
 	this->pValue->setStat (epicsAlarmNone);
@@ -286,12 +282,8 @@ inline aitTimeStamp exPV::getTS()
 		this->pValue->getTimeStamp(&ts);
 	}
 	else {
-		unsigned epochSecPast1970 = 7305*86400; /* 1/1/90 20 yr (5 leap) of seconds */
-		osiTime cur(osiTime::getCurrent());
-		//
-		// this converts from a POSIX time stamp to an EPICS time stamp
-		//
-		ts.tv_sec = (time_t) cur.getSecTruncToLong () - epochSecPast1970;
+		osiTime cur(osiTime::getCurrentEPICS());
+		ts.tv_sec = (time_t) cur.getSecTruncToLong ();
 		ts.tv_nsec = cur.getNSecTruncToLong ();
 	}
 	return ts;
@@ -368,6 +360,7 @@ caStatus exPV::getEnums (gdd &enums)
 {
 	unsigned nStr = 2;
 	aitFixedString *str;
+	gddDestructor *pDes;
 
 	enums.setDimension(1);
 	str = new aitFixedString[nStr];
@@ -375,7 +368,13 @@ caStatus exPV::getEnums (gdd &enums)
 		return S_casApp_noMemory;
 	}
 
-	enums.putRef (str,new gddDestructor);
+	pDes = new gddDestructor;
+	if (!pDes) {
+		delete [] str;
+		return S_casApp_noMemory;
+	}
+
+	enums.putRef (str, pDes);
 
 	strncpy (str[0].fixed_string, "off", sizeof(str[0].fixed_string));
 	strncpy (str[1].fixed_string, "on", sizeof(str[1].fixed_string));

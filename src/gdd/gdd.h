@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.28  1999/05/11 00:31:34  jhill
+ * removed redun gdd:
+ *
  * Revision 1.27  1999/05/10 23:42:25  jhill
  * fixed many const releated problems
  *
@@ -139,7 +142,6 @@ class gddArray;
 class gddScalar;
 
 struct TS_STAMP;
-class osiTime;
 struct timespec;
 
 // Not Complete in this prototype:
@@ -242,12 +244,10 @@ public:
 	void getTimeStamp(struct timespec* const ts) const;
 	void getTimeStamp(aitTimeStamp* const ts) const;
 	void getTimeStamp(struct TS_STAMP* const ts) const;
-	void getTimeStamp(osiTime* const ts) const;
 
 	void setTimeStamp(const struct timespec* const ts);
 	void setTimeStamp(const aitTimeStamp* const ts);
 	void setTimeStamp(const struct TS_STAMP* const ts);
-	void setTimeStamp(const osiTime* const ts);
 
 	void setStatus(aitUint32);
 	void setStatus(aitUint16 high, aitUint16 low);
@@ -306,8 +306,8 @@ public:
 	// The only way for a user to get rid of a DD is to Unreference it.
 	// NoReferencing() means that the DD cannot be referenced.
 	gddStatus noReferencing(void);
-	gddStatus reference(void);
-	gddStatus unreference(void);
+	gddStatus reference(void) const;
+	gddStatus unreference(void) const;
 
 	gdd& operator=(const gdd& v);
 
@@ -577,7 +577,7 @@ protected:
 	aitType data;				// array pointer or scaler data
 	gddBounds* bounds;			// array of bounds information length dim
 	gdd* nextgdd;
-	gddDestructor* destruct;	// NULL=none supplied, use remove
+	mutable gddDestructor* destruct;	// NULL=none supplied, use remove
 	aitTimeStamp time_stamp;
 	aitStatus status;
 	aitUint16 appl_type;		// application type code
@@ -586,7 +586,7 @@ protected:
 
 	gdd_NEWDEL_DATA		// required for using generic new and remove
 private:
-	aitUint16 ref_cnt;
+	mutable aitUint16 ref_cnt;
 	aitUint8 flags;
 
 	const gdd* indexDD (aitIndex index) const;

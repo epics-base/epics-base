@@ -192,7 +192,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     return nBytes;
 }
 
-unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
+unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
 {
     if ( this->state != iiucs_connected && 
             this->state != iiucs_clean_shutdown ) {
@@ -203,6 +203,14 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
 
     int status = ::recv ( this->sock, static_cast <char *> ( pBuf ), 
         static_cast <int> ( nBytesInBuf ), 0 );
+
+    // if the circuit was aborted then supress warning message about
+    // bad file descriptor
+    if ( this->state != iiucs_connected && 
+            this->state != iiucs_clean_shutdown ) {
+        return 0u;
+    } 
+
     if ( status <= 0 ) {
         int localErrno = SOCKERRNO;
 

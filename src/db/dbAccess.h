@@ -191,14 +191,12 @@ struct dbr_alDouble     {DBRalDouble};
 
 /* Global Database Access Routines*/
 #define dbGetLink(PLNK,DBRTYPE,PBUFFER,OPTIONS,NREQUEST) \
-    (((((PLNK)->type == CONSTANT)&&(!(NREQUEST))) ||\
-	(! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
-    ? 0\
-    : dbGetLinkValue((PLNK),(DBRTYPE), \
-	(void *)(PBUFFER),(OPTIONS),(NREQUEST)))
+    ((((PLNK)->type == CONSTANT) && (!(NREQUEST) &&(!OPTIONS))) \
+      ? 0\
+      : dbGetLinkValue((PLNK),(DBRTYPE), \
+        (void *)(PBUFFER),(OPTIONS),(NREQUEST)))
 #define dbPutLink(PLNK,DBRTYPE,PBUFFER,NREQUEST) \
-    ((((PLNK)->type == CONSTANT) ||\
-	(! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
+    (((PLNK)->type == CONSTANT) \
     ? 0\
     : dbPutLinkValue((PLNK),(DBRTYPE),(void *)(PBUFFER),(NREQUEST)))
 #define dbGetPdbAddrFromLink(PLNK) \

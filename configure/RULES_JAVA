@@ -29,11 +29,6 @@ CLASSPATH=-classpath $(INSTALL_JAVA)$(addprefix :,$(USR_CLASSPATH))
 SOURCEPATH=-sourcepath .:..:../..
 
 #-------------------------------------------------------
-# Java directory
-
-JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)
-
-#-------------------------------------------------------
 # Java native method C header files
 
 JAVAHFLAGS += $(USR_JAVAHFLAGS)
@@ -86,7 +81,7 @@ buildInstall : build
 
 rebuild: clean install
 
-inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(COMMON_JAVAINC)
+inc:  $(INSTALL_CLASSES) $(COMMON_JAVAINC)
 
 build: inc
 
@@ -100,7 +95,7 @@ clean::
 	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
 
-$(JAVA_DIRECTORY_TARGETS):
+$(INSTALL_JAVA):
 	$(MKDIR) -p $@
 
 $(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
@@ -113,12 +108,12 @@ $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
 	@$(RM) $@
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
-$(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
+$(INSTALL_CLASSES): $(INSTALL_JAVA) $(addprefix ../,$(DEPJAVA))
 	@echo Creating java class files 
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^
 
-$(INSTALL_JAVADOC): $(addprefix ../,$(DEPJAVA))
+$(INSTALL_JAVADOC): $(INSTALL_JAVA) $(addprefix ../,$(DEPJAVA))
 	@echo Creating java class files 
 	@$(RM) $@
 	$(JAVADOCCMD) -d $(INSTALL_JAVA) $^
@@ -128,7 +123,7 @@ $(COMMON_DIR)/%.jar: $(JARDEPFILES)
 	@$(RM) $@
 	$(JARCMD)
 
-$(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
+$(INSTALL_JAVA)/%.jar: $(INSTALL_JAVA) $(COMMON_DIR)/%.jar
 	@echo "Installing java jar file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 

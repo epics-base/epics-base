@@ -61,10 +61,10 @@ epicsShareFunc extern void epicsShareAPI
 
 #ifdef epicsAssertAuthor
 #define assert(exp) \
-( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, #exp, epicsAssertAuthor ) )
+( (exp) ? ( void ) 0 : epicsAssert( __FILE__, __LINE__, #exp, epicsAssertAuthor ) )
 #else /* epicsAssertAuthor */
 #define assert(exp) \
-( (exp) ? ( void ) : epicsAssert( __FILE__, __LINE__, #exp, 0 ) )
+( (exp) ? ( void ) 0 : epicsAssert( __FILE__, __LINE__, #exp, 0 ) )
 #endif /* epicsAssertAuthor */
 
 #else /*__STDC__ or __cplusplus*/

@@ -116,7 +116,7 @@ static registryFunctionRef subRef[] = {
     {"exampleAppleScriptProcess",(REGISTRYFUNCTION)exampleAppleScriptProcess}
 };
 
-void registerExampleAppleScript(void)
+static void registerExampleAppleScript(void)
 {
     registryFunctionRefAdd(subRef,NELEMENTS(subRef));
 }

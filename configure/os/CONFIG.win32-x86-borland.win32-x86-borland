@@ -215,7 +215,7 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
 #   x.exp: what you need to build the dll (in no variable)
 #
 LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk c0d32.obj
-LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS)
+LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS))
 
 
 #	adjust names of libraries to build

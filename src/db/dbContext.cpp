@@ -242,7 +242,7 @@ void dbContext::subscribe (
         dbSubscriptionIO ( guard, this->mutex, *this, chan, 
             addr, notifyIn, type, count, mask, this->ctx );
     chan.dbContextPrivateListOfIO::eventq.add ( subscr );
-    this->ioTable.add ( subscr );
+    this->ioTable.idAssignAdd ( subscr );
 
     if ( pId ) {
         *pId = subscr.getId ();
@@ -260,7 +260,7 @@ void dbContext::initiatePutNotify (
         chan.dbContextPrivateListOfIO::pBlocker = 
             new ( this->dbPutNotifyBlockerFreeList ) 
                 dbPutNotifyBlocker ( this->mutex );
-        this->ioTable.add ( *chan.dbContextPrivateListOfIO::pBlocker );
+        this->ioTable.idAssignAdd ( *chan.dbContextPrivateListOfIO::pBlocker );
     }
     chan.dbContextPrivateListOfIO::pBlocker->initiatePutNotify ( 
         guard, notifyIn, addr, type, count, pValue );

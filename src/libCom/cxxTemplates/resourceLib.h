@@ -229,7 +229,7 @@ class chronIntIdResTable : public resTable<ITEM, chronIntId> {
 public:
     chronIntIdResTable ();
     virtual ~chronIntIdResTable ();
-    void add ( ITEM & item );
+    void idAssignAdd ( ITEM & item );
 private:
     unsigned allocId;
 	chronIntIdResTable ( const chronIntIdResTable & );
@@ -961,7 +961,7 @@ chronIntIdResTable<ITEM>::~chronIntIdResTable() {}
 // resources with the same id.
 //
 template <class ITEM>
-inline void chronIntIdResTable<ITEM>::add (ITEM &item)
+inline void chronIntIdResTable<ITEM>::idAssignAdd (ITEM &item)
 {
     int status;
     do {

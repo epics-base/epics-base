@@ -63,10 +63,10 @@ DEPTESTJAVA += $(subst .class,.java,$(TESTCLASSES))
 #-------------------------------------------------------
 # Java jar file
 
-INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR))
+INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR) $(JAR_INPUT))
 JARMANIFEST += $(firstword $(MANIFEST) $(JAR_MANIFEST))
-JARINPUT += $(subst .java,.class,$(JAR_INPUT))
-JARDEPFILES += $(addprefix $(INSTALL_JAVA)/,$(subst .java,.class,$(JAVA))) $(JARINPUT)
+JARDEPFILES += $(addprefix $(INSTALL_JAVA)/,$(subst .java,.class,$(JAVA)) $(JAR_INPUT))
+JARINPUT += $(foreach inp,$(JAR_INPUT),-C $(INSTALL_JAVA) $(subst .java,.class,$(inp)))
 JARPACKAGES += $(foreach pkg,$(JAR_PACKAGES),-C $(INSTALL_JAVA) $(subst .,/,$(pkg)))
 PACKAGEDIRS += $(foreach pkg,$(JAR_PACKAGES),$(addprefix $(INSTALL_JAVA)/,$(subst .,/,$(pkg))))
 
@@ -145,6 +145,10 @@ $(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
 
 $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing java jar file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(addprefix $(INSTALL_JAVA)/, $(JARINPUT)): $(INSTALL_JAVA)/%: ../%
+	@echo "Installing jar input file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PHONY: all install buildInstall rebuild clean build inc

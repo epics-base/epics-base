@@ -662,6 +662,18 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 
 	LOCKEVQUE(ev_que)
 
+	/*
+	 * if we have an event on the queue and we are
+	 * not saving the current value (because this is a
+	 * string or an array) then ignore duplicate 
+	 * events (saving them without the current valuye
+	 * serves no purpose)
+	 */
+	if (!event->valque && event->npend>0u) {
+		UNLOCKEVQUE(ev_que)
+		return OK;
+	}
+
 	/* 
 	 * add to task local event que 
 	 */
@@ -672,7 +684,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 	 * then replace the last event on the queue (for this monitor)
 	 */
 	rngSpace = RNGSPACE(ev_que);
-	if ( event->pLastLog && 
+	if ( event->npend>0u && 
 		(ev_que->evUser->flowCtrlMode || rngSpace<=EVENTSPERQUE) ) {
 		/*
 		 * replace last event if no space is left
@@ -692,10 +704,10 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		
 		pLog = &ev_que->valque[ev_que->putix];
 		ev_que->evque[ev_que->putix] = event;
-		event->npend++;
-		if (event->pLastLog!=NULL) {
+		if (event->npend>0u) {
 			ev_que->evUser->nDuplicates++;
 		}
+		event->npend++;
 		/* 
 		 * if the ring buffer was empty before 
 		 * adding this event 
@@ -1016,11 +1028,11 @@ LOCAL int event_read (struct event_que *ev_que)
 		/*
 		 * remove event from the queue
 		 */
-		if (event->pLastLog==pqfl) {
-			assert (event->npend<=1u);
+		if (event->npend==1u) {
 			event->pLastLog = NULL;
 		}
 		else {
+			assert (event->npend>1u);
 			assert (ev_que->evUser->nDuplicates>=1u);
 			ev_que->evUser->nDuplicates--;
 		}

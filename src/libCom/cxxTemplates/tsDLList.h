@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/05/05 18:06:57  jhill
+ * rearranged to allow compilation by g++ 2.8.1
+ *
  * Revision 1.10  1998/02/05 23:28:21  jhill
  * fixed hp sompiler warnings
  *
@@ -67,7 +70,9 @@
 #ifndef tsDLListH_include
 #define tsDLListH_include
 
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 
 template <class T> class tsDLList;
 template <class T> class tsDLIterBD;

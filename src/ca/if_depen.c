@@ -184,7 +184,7 @@ int local_addr (int s, struct sockaddr_in *plcladdr)
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, int socket, int port,
+void caDiscoverInterfaces(ELLLIST *pList, int socket, unsigned short port,
 	struct in_addr matchAddr)
 {
 	struct sockaddr_in 	localAddr;

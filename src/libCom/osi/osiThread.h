@@ -121,7 +121,7 @@ inline void osiThread::resume ()
 
 inline void osiThread::getName (char *name, size_t size) const
 {
-    return threadGetName (this->id, name, size);
+    threadGetName (this->id, name, size);
 }
 
 inline unsigned osiThread::getPriority () const

@@ -10,6 +10,8 @@
 #--------------------------------------------------
 # GNU compiler defaults
 
+GNU = YES
+
 GNU_BIN = $(GNU_DIR)/bin
 GNU_LIB = $(GNU_DIR)/lib
 

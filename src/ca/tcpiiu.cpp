@@ -1342,7 +1342,7 @@ void tcpiiu::flushRequest ()
 
 void tcpiiu::blockUntilBytesArePendingInOS ()
 {
-#if 1
+#if 0
     FD_SET readBits;
     FD_ZERO ( & readBits );
     while ( this->state == tcpiiu::iiucs_connected ) {
@@ -1412,7 +1412,7 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
 
 bool tcpiiu::bytesArePendingInOS () const
 {
-#if 1
+#if 0
     FD_SET readBits;
     FD_ZERO ( & readBits );
     FD_SET ( this->sock, & readBits );

@@ -13,7 +13,7 @@ threadInit()
 
 cd top
 dbLoadDatabase("dbd/exampleApp.dbd")
-registerRecordDeviceDriver(pdbbase)
+registerRecordDeviceDriverBase(pdbbase)
 dbLoadRecords("db/dbExample1.db","user=_USER_")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=1,scan=1 second")
 dbLoadRecords("db/dbExample2.db","user=_USER_,no=2,scan=2 second")

@@ -54,11 +54,11 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     epicsMutexMustLock(epicsMutexGlobalLock);
     id = epicsMutexOsdCreate();
     if(id) {
-        pmutexNode = (mutexNode *)ellFirst(&freeList);
+        pmutexNode = reinterpret_cast < mutexNode * > ( ellFirst(&freeList) );
         if(pmutexNode) {
             ellDelete(&freeList,&pmutexNode->node);
         } else {
-            pmutexNode = static_cast <mutexNode *> ( calloc(1,sizeof(mutexNode)) );
+            pmutexNode = static_cast < mutexNode * > ( calloc(1,sizeof(mutexNode)) );
         }
         pmutexNode->id = id;
         pmutexNode->pFileName = pFileName;
@@ -82,7 +82,7 @@ void epicsShareAPI epicsMutexDestroy(epicsMutexId id)
     mutexNode *pmutexNode;
 
     epicsMutexMustLock(epicsMutexGlobalLock);
-    pmutexNode = (mutexNode *)ellLast(&mutexList);
+    pmutexNode = reinterpret_cast < mutexNode * > ( ellLast(&mutexList) );
     while(pmutexNode) {
         if(id==pmutexNode->id) {
             ellDelete(&mutexList,&pmutexNode->node);
@@ -91,7 +91,8 @@ void epicsShareAPI epicsMutexDestroy(epicsMutexId id)
             epicsMutexUnlock(epicsMutexGlobalLock);
             return;
         }
-        pmutexNode = (mutexNode *)ellPrevious(&pmutexNode->node);
+        pmutexNode =
+            reinterpret_cast < mutexNode * > ( ellPrevious(&pmutexNode->node) );
     }
     epicsMutexUnlock(epicsMutexGlobalLock);
     errlogPrintf("epicsMutexDestroy Did not find epicsMutexId\n");
@@ -105,21 +106,23 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
         ellCount(&mutexList),ellCount(&freeList));
     epicsMutexMustLock(epicsMutexGlobalLock);
-    pmutexNode = (mutexNode *)ellFirst(&mutexList);
+    pmutexNode = reinterpret_cast < mutexNode * > ( ellFirst(&mutexList) );
     while(pmutexNode) {
         if(onlyLocked) {
             epicsMutexLockStatus status;
             status = epicsMutexTryLock(pmutexNode->id);
             if(status==epicsMutexLockOK) {
                 epicsMutexUnlock(pmutexNode->id);
-                pmutexNode = (mutexNode *)ellNext(&pmutexNode->node);
+                pmutexNode =
+                    reinterpret_cast < mutexNode * > ( ellNext(&pmutexNode->node) );
                 continue;
             }
         }
         printf("epicsMutexId %p source %s line %d\n",
             (void *)pmutexNode->id,pmutexNode->pFileName,pmutexNode->lineno);
         epicsMutexShow(pmutexNode->id,level);
-        pmutexNode = (mutexNode *)ellNext(&pmutexNode->node);
+        pmutexNode =
+            reinterpret_cast < mutexNode * > ( ellNext(&pmutexNode->node) );
     }
     epicsMutexUnlock(epicsMutexGlobalLock);
 }

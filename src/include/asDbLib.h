@@ -30,7 +30,6 @@ typedef struct {
 
 int asSetFilename(char *acf);
 int asSetSubstitutions(char *substitutions);
-int asInit(void);
 int asInitAsyn(ASDBCALLBACK *pcallback);
 int asDbGetAsl( void *paddr);
 ASMEMBERPVT  asDbGetMemberPvt( void *paddr);

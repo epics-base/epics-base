@@ -175,7 +175,10 @@ unsigned	extsize;	/* extension size */
 	unsigned	msgsize;
 	unsigned	newstack;
 	
+	extsize = CA_MESSAGE_ALIGN(extsize);
+
 	msgsize = extsize + sizeof(struct extmsg);
+
 	newstack = pclient->send.stk + msgsize;
 	if(newstack > pclient->send.maxstk){
 		if(pclient->disconnect){

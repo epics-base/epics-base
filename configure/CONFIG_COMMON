@@ -221,6 +221,10 @@ ARFLAGS =
 ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 
 #--------------------------------------------------
+# ld default
+LDCMD = $(LD) -o $@ $^
+
+#--------------------------------------------------
 # snc (state notation language) flags
 # Use C++ constructors to register commands/programs (snc +i option)
 TARGET_SNCFLAGS += +i

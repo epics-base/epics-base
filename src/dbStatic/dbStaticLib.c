@@ -43,9 +43,7 @@ of this distribution.
 #include "osiFileName.h"
 
 #define epicsExportSharedSymbols
-#define LINK_GBLSOURCE
 #include "link.h"
-#undef LINK_GBLSOURCE
 #include "devSup.h"
 #include "drvSup.h"
 #include "special.h"
@@ -61,6 +59,23 @@ int dbStaticDebug = 0;
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[2]={"NMS","MS"};
+
+epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
+	{"CONSTANT",CONSTANT},
+	{"PV_LINK",PV_LINK},
+	{"VME_IO",VME_IO},
+	{"CAMAC_IO",CAMAC_IO},
+	{"AB_IO",AB_IO},
+	{"GPIB_IO",GPIB_IO},
+	{"BITBUS_IO",BITBUS_IO},
+	{"MACRO_LINK",MACRO_LINK},
+	{"DB_LINK",DB_LINK},
+	{"CA_LINK",CA_LINK},
+	{"INST_IO",INST_IO},
+	{"BBGPIB_IO",BBGPIB_IO},
+	{"RF_IO",RF_IO},
+	{"VXI_IO",VXI_IO}
+};
 
 static int mapDBFtoDCT[DBF_NOACCESS+1] = {
 	DCT_STRING,

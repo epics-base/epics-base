@@ -35,10 +35,10 @@ of this distribution.
 #include "freeList.h"
 #include "guigroup.h"
 #include "special.h"
-#include "link.h"
 #include "macLib.h"
 
 #define epicsExportSharedSymbols
+#include "link.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 

@@ -38,6 +38,7 @@
  */
 
 #include "dbDefs.h"
+#include "shareLib.h"
 
 #ifndef INClinkh
 #define INClinkh 1
@@ -64,24 +65,6 @@ typedef struct maplinkType{
 }maplinkType;
 
 epicsShareExtern maplinkType pamaplinkType[];
-#ifdef LINK_GBLSOURCE
-epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
-	{"CONSTANT",CONSTANT},
-	{"PV_LINK",PV_LINK},
-	{"VME_IO",VME_IO},
-	{"CAMAC_IO",CAMAC_IO},
-	{"AB_IO",AB_IO},
-	{"GPIB_IO",GPIB_IO},
-	{"BITBUS_IO",BITBUS_IO},
-	{"MACRO_LINK",MACRO_LINK},
-	{"DB_LINK",DB_LINK},
-	{"CA_LINK",CA_LINK},
-	{"INST_IO",INST_IO},
-	{"BBGPIB_IO",BBGPIB_IO},
-	{"RF_IO",RF_IO},
-	{"VXI_IO",VXI_IO}
-};
-#endif /*LINK_GBLSOURCE*/
 
 #define VXIDYNAMIC	0
 #define VXISTATIC	1

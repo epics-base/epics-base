@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.5  1996/06/19 17:14:12  jhill
+ * print out the EPICS release when there is an assert failure
+ *
  * Revision 1.4  1995/12/19  19:40:07  jhill
  * added author name
  *
@@ -75,7 +78,8 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
 		taskId);
 
         	epicsPrintf (	
-"to \"%s\" (the author of this software) or \"tech-talk@aps.anl.gov\"\n", pAuthorName);
+"to \"%s\" (the author of this call to assert()) or \"tech-talk@aps.anl.gov\"\n", 
+		pAuthorName);
 
 	}
 	else {

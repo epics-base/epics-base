@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.17  1996/11/02 01:16:43  jhill
+ * added byte swapping for pc arch
+ *
  *
  * added net-host conversions   kuk
  *
@@ -317,6 +320,11 @@ long TSreport()
 	TSprintf("Slave communications port = %d\n",TSdata.slave_port);
 	TSprintf("Total events supported = %d\n",TSdata.total_events);
 	TSprintf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
+
+	TSprintf("Broadcast address: %s\n",
+		((struct sockaddr_in*)&TSdata.hunt)->sin_addr);
+	TSprintf("Master address: %s\n",
+		((struct sockaddr_in*)&TSdata.master)->sin_addr);
 
 	if(TSdata.UserRequestedType)
 		TSprintf("\nForced to not use the event system\n");

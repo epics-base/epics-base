@@ -132,12 +132,12 @@ case $HOST_ARCH in
     solaris)
 	# use -xM option of ACC to list dependencies
 
-	#CC=`$EPICS/base/bin/$HOST_ARCH/GetVar $EPICS $MAKE ACC $HOST_ARCH`
-	CC=`GetVar $TOP $MAKE ACC $HOST_ARCH`
+	#CC=`$EPICS/base/bin/$HOST_ARCH/GetVar $EPICS "$MAKE" ACC $HOST_ARCH`
+	CC=`GetVar $TOP "$MAKE" ACC $HOST_ARCH`
 	FILES=`$CC -xM -D$DEF $INCLUDEH ../errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
-	CXX=`GetVar $TOP $MAKE CXX $HOST_ARCH`
+	CXX=`GetVar $TOP "$MAKE" CXX $HOST_ARCH`
 	FILESCXX=`$CXX -xM -D$DEF $INCLUDEH ../errIncCXX.cc \
 	| grep "errIncCXX.o" | grep -v "errIncCXX.cc" \
 	| sed -e 's/errIncCXX\.o *://'`
@@ -145,14 +145,14 @@ case $HOST_ARCH in
     sun4)
 	# use -M option of Sun compiler to list make dependencies
 
-	FILES=`cc -M -D$DEF $INCLUDEH errInc.c 2>/dev/null \
+	FILES=`cc -M -D$DEF $INCLUDEH ../errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
 
-	CXX=`GetVar $TOP $MAKE CXX $HOST_ARCH`
-	FILESCXX=`cc -xM -D$DEF $INCLUDEH errIncCXX.cc 2>/dev/null \
+	CXX=`GetVar $TOP "$MAKE" CXX $HOST_ARCH`
+	FILESCXX=`$CXX -xM -D$DEF $INCLUDEH ../errIncCXX.cc \
 	| grep "errIncCXX.o" | grep -v "errIncCXX.cc" \
-	| sed -e 's/errIncCXX\.o://'`
+	| sed -e 's/errIncCXX\.o *://'`
 	;;
     *)
 	# Unrecognised host architecture

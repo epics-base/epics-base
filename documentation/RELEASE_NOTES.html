@@ -8,7 +8,7 @@
 
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.7<br>
-27 August 2004</h1>
+25 October 2004</h1>
 
 <h2 align="center">Changes since 3.14.6</h2>
 
@@ -30,9 +30,14 @@ threads os most systems.</p>
 <p>dbNotifyCancel now waits if the userCallback is active when dbNotifyCancel
 is called. Previously it just returned. NOTE CAREFULLY. This means
 that the userCallback must not free the putNotify structure.</p>
-mean that 
-<h4>POSIX signals</h4>
 
+<h4>CA commandline tools</h4>
+<p>caget and camonitor now have an additional "-s" option to explicitly
+request server-side string conversion, which - in case of the regular CA
+server - leads to "precision" info (e.g. the PREC field of an EPICS
+record) being honoured.</p>
+
+<h4>POSIX signals</h4>
 <p>Signals are blocked in all but the main thread.  Applications/drivers
 which require signal delivery to a subthread will need to be modified.</p>
 

@@ -111,18 +111,16 @@ exServer::exServer ( const char * const pvPrefix,
 //
 exServer::~exServer()
 {
-    pvInfo *pPVI;
-    pvInfo *pPVAfter = 
-        &exServer::pvList[NELEMENTS(exServer::pvList)];
-
-    //
-    // delete all pre-created PVs (eliminate bounds-checker warnings)
-    //
-    for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
-        pPVI->deletePV ();
-    }
-    
+    this->destroyAllPV ();   
     this->stringResTbl.traverse ( &pvEntry::destroy );
+}
+
+void exServer::destroyAllPV ()
+{
+    for ( unsigned i = 0; 
+            i < NELEMENTS(exServer::pvList); i++ ) {
+        exServer::pvList[i].deletePV ();
+    }
 }
 
 //

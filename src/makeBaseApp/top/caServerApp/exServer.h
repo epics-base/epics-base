@@ -286,6 +286,8 @@ public:
     class epicsTimer & createTimer ();
 	void setDebugLevel ( unsigned level );
 
+    void destroyAllPV ();
+
 private:
     resTable < pvEntry, stringId > stringResTbl;
     epicsTimerQueueActive * pTimerQueue;

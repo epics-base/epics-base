@@ -6,24 +6,28 @@ README file for the EPICS Channel Access Server
 Author Jeff Hill johill@lanl.gov 
 
 $Log$
+Revision 1.1.1.1  1996/06/20 00:28:06  jhill
+ca server installation
+
 
 Directory Structure
 -------------------
-o example - 	example server tool
-o generic - 	generic server lib source code 
-o os -		os dependnet server lib source code
-o io -		io dependnet server lib source code
-o build -	server lib object code
+o example - 		example server tool
+o generic - 		generic server lib source code 
+o os -			os dependnet server lib source code
+o io -			io dependnet server lib source code
+o build/singleThread -	server lib object code for single threaded use 
+o build/multiThread -	server lib object code for multi threaded use 
 
 Internal Source Code Naming Conventions
 ---------------------------------------
 o API class X will almost always have associated internal (usually 
 	private base) class named XI
-o for class X there will be
-	o X.h - the class declaration (and simple inlines)
-	o XIL.h - complex inline functions (that will not
-		compile with until the compiler has seen
+o for class X there will 
+	o sometimes be X.h - the class declaration (and simple inlines)
+	o sometimes be XIL.h - complex inline functions (that will not
+		compile unless the compiler has seen
 		the declarations of other classes)
-	o X.cc - all other source code for the class
+	o be X.cc - all other source code for the class
 
 

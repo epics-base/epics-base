@@ -1,8 +1,9 @@
 
 
 
-Changes between epics 3.13 Beta 3 and 3.13 Beta 4 
-**** API Changes ****
+Changes between epics 3.13 Beta 4 and 3.13 Beta 5 
+
+**** API Change ****
 o The canonical PV name is returned from caServer::pvExistTest()
 in the supplied buffer and not in a gdd data descriptor. See
 "casdef.h".
@@ -21,7 +22,7 @@ old API:
         // the server tool
         //
         // The server tool returns the unique canonical name for
-        // the pv into the gdd. A gdd is used here becuase this
+        // the pv into the gdd. A gdd is used here because this
         // operation is allowed to complete asynchronously.
         //
         virtual caStatus pvExistTest (const casCtx &ctx, const char *pPVName,
@@ -32,7 +33,7 @@ new API:
         //
         // The server tool is encouraged to accept multiple PV name
         // aliases for the same PV here. However, one unique canonical name
-        // must be selected by the srever tool and returned to the
+        // must be selected by the server tool and returned to the
         // server lib for each PV. The server will use this canonical
         // name to prevent internal duplication of data structures for
         // process variables that have multiple aliases.
@@ -57,6 +58,7 @@ new API:
         virtual pvExistReturn pvExistTest (const casCtx &ctx,
 				const char *pPVName)=0;
 
+**** API Change ****
 o The server tool must now use one of class casAsyncReadIO, casAsyncWriteIO, or
 casAsyncPVExistIO in place of casAsyncIO. See "casdef.h". 
 

@@ -49,7 +49,7 @@ SYS_DLL_LIBS_Linux += pthread readline curses rt
 
 # Runtime ldflags
 RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH))
+ $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH)
 RUNTIME_LDFLAGS = $(RUNTIME_LIBS:%=-Wl,-rpath,%)
 
 

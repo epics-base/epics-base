@@ -37,3 +37,9 @@ endif
 
 #Allow R3.13 built extensions to load R3.14 shared libs
 SYS_SHRLIB_LIBS += pthread rt
+
+
+# Command-line input support
+COMMANDLINE_LIBRARY = READLINE
+LDLIBS_READLINE = -lreadline -lncurses
+

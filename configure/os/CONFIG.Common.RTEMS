@@ -97,5 +97,10 @@ CONFORM_CFLAGS_STRICT = -ansi
 CONFORM_CXXFLAGS_STRICT = -ansi
 
 #--------------------------------------------------
+# Command-line input support
+COMMANDLINE_LIBRARY = READLINE
+LDLIBS_READLINE = -lreadline -lncurses
+
+#--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.RTEMS

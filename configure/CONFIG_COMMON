@@ -165,6 +165,11 @@ PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
 LIB_BAF=$(addsuffix $(BAF),$(basename $(LIBRARY)))
 
 #--------------------------------------------------
+#  Command-line input support default
+COMMANDLINE_LIBRARY = EPICS
+OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
+
+#--------------------------------------------------
 # C preprocessor, compiler, and linker flag defaults
 
 # Target architecture specific (solaris,sun4,mv167,...) flags
@@ -371,9 +376,4 @@ SOURCE_INC = $(wildcard $(file) $(SOURCE_INC_bbb) )
 SOURCE_INC_bbb = $(foreach dir, $(ALL_SRC_DIRS), $(SOURCE_INC_aaa)  )
 SOURCE_INC_aaa = $(addsuffix /$(file), $(dir) )
  
-# Command-line input support
-OP_SYS_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
-
-OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
-
 endif

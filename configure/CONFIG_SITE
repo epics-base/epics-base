@@ -125,12 +125,3 @@ CROSS_WARN=YES
 #  Installation directory
 INSTALL_LOCATION=$(TOP)
 
-#  Command-line input support
-#
-#  Currently Supporting:
-#   EPICS    - Built-in EPICS routines (no command-line editing/history)
-#   READLINE - GNU readline library
-#   LIBTECLA - LIBTECLA library
-#
-#COMMANDLINE_LIBRARY=
-COMMANDLINE_LIBRARY=READLINE

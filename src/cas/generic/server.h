@@ -26,102 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.31  1998/12/19 00:04:53  jhill
- * renamed createPV() to pvAttach()
- *
- * Revision 1.30  1998/12/01 18:54:45  jhill
- * Use EPICS_CA_BEACON_PERIOD
- *
- * Revision 1.29  1998/10/28 23:51:01  jhill
- * server nolonger throws exception when a poorly formed get/put call back
- * request arrives. Instead a get/put call back response is sent which includes
- * unsuccessful status
- *
- * Revision 1.28  1998/10/27 18:28:20  jhill
- * fixed warnings
- *
- * Revision 1.27  1998/10/23 00:28:21  jhill
- * fixed HP-UX warnings
- *
- * Revision 1.26  1998/09/24 20:41:49  jhill
- * supply resource id to logBadIdWithFileAndLineno()
- *
- * Revision 1.25  1998/07/08 15:38:08  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.24  1998/06/16 03:41:16  jhill
- * fixed prototype
- *
- * Revision 1.23  1998/06/16 02:13:59  jhill
- * use smart gdd ptr
- *
- * Revision 1.22  1998/04/20 18:14:57  jhill
- * made clientHostName virtual in casDGClient
- *
- * Revision 1.21  1998/02/18 22:46:47  jhill
- * fixed warning
- *
- * Revision 1.20  1998/02/05 23:05:27  jhill
- * removed static members
- *
- * Revision 1.19  1997/08/05 00:47:16  jhill
- * fixed warnings
- *
- * Revision 1.18  1997/06/30 22:54:30  jhill
- * use %p with pointers
- *
- * Revision 1.17  1997/06/13 09:16:06  jhill
- * connect proto changes
- *
- * Revision 1.16  1997/04/10 19:34:23  jhill
- * API changes
- *
- * Revision 1.15  1997/01/10 21:18:05  jhill
- * code around gnu g++ inline bug when -O isnt used
- *
- * Revision 1.14  1996/12/11 00:57:56  jhill
- * moved casEventMaskEntry here
- *
- * Revision 1.13  1996/12/06 22:36:30  jhill
- * use destroyInProgress flag now functional nativeCount()
- *
- * Revision 1.12  1996/11/02 00:54:31  jhill
- * many improvements
- *
- * Revision 1.11  1996/09/16 18:24:09  jhill
- * vxWorks port changes
- *
- * Revision 1.10  1996/09/04 20:27:02  jhill
- * doccasdef.h
- *
- * Revision 1.9  1996/08/13 22:56:14  jhill
- * added init for mutex class
- *
- * Revision 1.8  1996/08/05 23:22:58  jhill
- * gddScaler => gddScalar
- *
- * Revision 1.7  1996/08/05 19:27:28  jhill
- * added process()
- *
- * Revision 1.5  1996/07/24 22:00:50  jhill
- * added pushOnToEventQueue()
- *
- * Revision 1.4  1996/07/09 22:51:14  jhill
- * store copy of msg in ctx
- *
- * Revision 1.3  1996/06/26 21:19:04  jhill
- * now matches gdd api revisions
- *
- * Revision 1.2  1996/06/21 02:30:58  jhill
- * solaris port
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 #ifndef INCLserverh
@@ -587,8 +491,8 @@ public:
 
 protected:
 	unsigned	minor_version_number;
-	osiTime		elapsedAtLastSend;
-	osiTime		elapsedAtLastRecv;
+	osiTime		lastSendTS;
+	osiTime		lastRecvTS;
 
 	caStatus processMsg();
 
@@ -863,29 +767,29 @@ private:
 	casEventRegistry        &reg;
 };
 
+static const unsigned casEventRegistryHashTableSize = 256u;
+
 //
 // casEventRegistry
 //
 class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
-	friend class casEventMaskEntry;
+    friend class casEventMaskEntry;
 public:
-	casEventRegistry(osiMutex &mutexIn) : 
-		mutex(mutexIn), allocator(0), hasBeenInitialized(0) {}
-
-	int initRegistry();
-
-	virtual ~casEventRegistry();
-
-	casEventMask registerEvent (const char *pName);
-
-	void show (unsigned level) const;
-
+    
+    casEventRegistry (osiMutex &mutexIn) : mutex(mutexIn), allocator(0), 
+        resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize) {}
+    
+    virtual ~casEventRegistry();
+    
+    casEventMask registerEvent (const char *pName);
+    
+    void show (unsigned level) const;
+    
 private:
-	osiMutex &mutex;
-	unsigned allocator;
-	unsigned char hasBeenInitialized;
-
-	casEventMask maskAllocator();
+    osiMutex &mutex;
+    unsigned allocator;
+    
+    casEventMask maskAllocator();
 };
 
 #include "casIOD.h" // IO dependent
@@ -902,7 +806,7 @@ class caServerI :
 	public caServerOS, 
 	public caServerIO, 
 	public ioBlockedList, 
-	private uintResTable<casRes>,
+	private chronIntIdResTable<casRes>,
 	public casEventRegistry {
 public:
 	caServerI (caServer &tool, unsigned pvCountEstimate);
@@ -942,7 +846,7 @@ public:
 	unsigned getDebugLevel() const { return debugLevel; }
 	inline void setDebugLevel(unsigned debugLevelIn);
 
-	osiTime getBeaconPeriod() const { return this->beaconPeriod; }
+	double getBeaconPeriod() const { return this->beaconPeriod; }
 
 	void show(unsigned level) const;
 
@@ -950,7 +854,7 @@ public:
 
 	inline caServer *getAdapter();
 
-	inline void installItem(casRes &res);
+	inline void installItem (casRes &res);
 
 	inline casRes *removeItem(casRes &res);
 
@@ -968,19 +872,15 @@ public:
 private:
 	void advanceBeaconPeriod();
 
-	casDGOS				dgClient;
-	//casCtx				ctx;
-	tsDLList<casStrmClient>		clientList;
-	tsDLList<casIntfOS>		intfList;
-	osiTime				maxBeaconInterval;
-	osiTime 			beaconPeriod;
-	caServer			&adapter;
-	unsigned 			debugLevel;
-
-	// the estimated number of proces variables default = 1024u 
-	const unsigned 			pvCountEstimate;
-
-	unsigned char			haveBeenInitialized;
+	casDGOS                 dgClient;
+	//casCtx                ctx;
+	tsDLList<casStrmClient> clientList;
+	tsDLList<casIntfOS>     intfList;
+	double                  maxBeaconInterval;
+	double                  beaconPeriod;
+	caServer                &adapter;
+	unsigned                debugLevel;
+	unsigned char           haveBeenInitialized;
 };
 
 #define CAServerConnectPendQueueSize 10

@@ -126,7 +126,7 @@ static void waitAdd(struct dbCommon *precord,PUTNOTIFY *ppn)
 
 
 
-long dbPutNotify(PUTNOTIFY *ppn)
+long epicsShareAPI dbPutNotify(PUTNOTIFY *ppn)
 {
     long	status;
     DBADDR	*paddr = ppn->paddr;

@@ -1,7 +1,6 @@
-/* recAo.c */
 /* base/src/rec  $Id$ */
   
-/* recAo.c - Record Support Routines for Analog Output records */
+/* aoRecord.c - Record Support Routines for Analog Output records */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -98,7 +97,7 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
+static long init_record(struct aoRecord *pao, int pass);
 static long process();
 static long special();
 #define get_value NULL
@@ -152,12 +151,10 @@ static void convert();
 static void monitor();
 static long writeValue();
 
-static long init_record(pao,pass)
-    struct aoRecord	*pao;
-    int pass;
+static long init_record(struct aoRecord *pao, int pass)
 {
     struct aodset *pdset;
-    long	status=0;
+    double 	eoff = pao->eoff, eslo = pao->eslo;
     double	value;
 
     if (pass==0) return(0);
@@ -183,10 +180,16 @@ static long init_record(pao,pass)
 	return(S_dev_missingSup);
     }
     pao->init = TRUE;
-    pao->eoff = pao->egul;
+    if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	pao->eoff = pao->egul;
+    }
 
     if (pdset->init_record) {
-        status=(*pdset->init_record)(pao);
+	long status=(*pdset->init_record)(pao);
+	if (pao->linr == menuConvertSLOPE) {
+	    pao->eoff = eoff;
+	    pao->eslo = eslo;
+	}
         switch(status){
         case(0): /* convert */
 	    value = (double)pao->rval + (double)pao->roff;
@@ -194,8 +197,9 @@ static long init_record(pao,pass)
 	    value += pao->aoff;
             if (pao->linr == menuConvertNO_CONVERSION){
 		; /*do nothing*/
-            }else if (pao->linr == menuConvertLINEAR){
-                     value = value*pao->eslo + pao->eoff;
+            } else if ((pao->linr == menuConvertLINEAR) ||
+		      (pao->linr == menuConvertSLOPE)) {
+                value = value*pao->eslo + pao->eoff;
             }else{
                 if(cvtRawToEngBpt(&value,pao->linr,pao->init,
 			(void *)&pao->pbrk,&pao->lbrk)!=0) break;
@@ -300,9 +304,19 @@ static long special(paddr,after)
             return(S_db_noMod);
         }
 	pao->init=TRUE;
-	pao->eoff = pao->egul;
-        if(!(pdset->special_linconv)) return(0);
-        return((*pdset->special_linconv)(pao,after));
+        if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	    double eoff = pao->eoff;
+	    double eslo = pao->eslo;
+	    long status;
+	    pao->eoff = pao->egul;
+	    status = (*pdset->special_linconv)(pao,after);
+	    if (eoff != pao->eoff)
+		db_post_events(pao, &pao->eoff, DBE_VALUE|DBE_LOG);
+            if (eslo != pao->eslo)
+		db_post_events(pao, &pao->eslo, DBE_VALUE|DBE_LOG);
+	    return (status);
+	}
+	return (0);
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"ao: special");
         return(S_db_badChoice);
@@ -483,18 +497,19 @@ static void convert(pao,value)
 	pao->oval = value;
 
         /* convert */
-        if (pao->linr == menuConvertNO_CONVERSION) {
-                ; /* do nothing*/
-        } else if (pao->linr == menuConvertLINEAR){
-              if (pao->eslo == 0.0) value = 0;
-              else {
-                   value = (value - pao->eoff) / pao->eslo;
-              }
-        }else{
-	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
-                   recGblSetSevr(pao,SOFT_ALARM,MAJOR_ALARM);
-		   return;
-	     }
+        switch (pao->linr) {
+        case menuConvertNO_CONVERSION:
+            break; /* do nothing*/
+        case menuConvertLINEAR:
+        case menuConvertSLOPE:
+            if (pao->eslo == 0.0) value = 0;
+            else value = (value - pao->eoff) / pao->eslo;
+            break;
+        default:
+            if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
+                recGblSetSevr(pao,SOFT_ALARM,MAJOR_ALARM);
+                return;
+            }
         }
 	value -= pao->aoff;
 	if(pao->aslo!=0.0) value /= pao->aslo;

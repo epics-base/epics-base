@@ -80,11 +80,8 @@ static char *fracFormat (const char *pFormat, unsigned long *width);
 //
 // osiTime (const unsigned long secIn, const unsigned long nSecIn)
 //
-inline osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn) 
-{
-	this->secPastEpoch = nSecIn/nSecPerSec + secIn;
-	this->nSec = nSecIn%nSecPerSec;
-}
+inline osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn) :
+    secPastEpoch ( nSecIn / nSecPerSec + secIn ), nSec ( nSecIn % nSecPerSec ) {}
 
 //
 // osiTimeLoadTimeInit

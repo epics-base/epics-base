@@ -167,10 +167,10 @@ private:
     unsigned        nInUse;
 
     resTableIndex hash (const ID & idIn) const;
-
     T *find (tsSLList<T> &list, const ID &idIn) const;
-
     T *findDelete (tsSLList<T> &list, const ID &idIn);
+    resTable ( const resTable & );
+    resTable & operator = ( const resTable & );
 };
 
 
@@ -284,7 +284,7 @@ public:
     class epicsShareClass dynamicMemoryAllocationFailed {};
     enum allocationType {copyString, refString};
     stringId (const char * idIn, allocationType typeIn=copyString);
-    ~ stringId();
+    virtual ~stringId();
     resTableIndex hash (unsigned nBitsIndex) const;
     bool operator == (const stringId &idIn) const;
     const char * resourceName() const; // return the pointer to the string
@@ -294,6 +294,7 @@ public:
 
 private:
     stringId & operator = ( const stringId & );
+    stringId ( const stringId &);
     const char * pStr;
     const allocationType allocType;
     static const unsigned char fastHashPermutedIndexSpace[256];
@@ -307,8 +308,8 @@ private:
 // resTable::resTable (unsigned nHashTableEntries)
 //
 template <class T, class ID>
-resTable<T,ID>::resTable (unsigned nHashTableEntries) :
-    nInUse (0) 
+resTable<T,ID>::resTable ( unsigned nHashTableEntries ) :
+    pTable ( 0 ), hashIdMask ( 0 ), hashIdNBits ( 0 ), nInUse ( 0 ) 
 {
     unsigned nbits, mask = 0u;
 

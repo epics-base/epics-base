@@ -17,6 +17,8 @@ template <class T>
 class sourceFileLocation : public T {
 public:
     sourceFileLocation (const T &parm, const char *fileName, unsigned lineNumber);
+    sourceFileLocation ( const sourceFileLocation & );
+    sourceFileLocation & operator = ( const sourceFileLocation & );
     const char *fileName () const;
     unsigned lineNumber () const;
 private:
@@ -26,9 +28,23 @@ private:
 
 template <class T>
 inline sourceFileLocation<T>::sourceFileLocation (const T &parm, const char *fileName, unsigned lineNumber) :
-    T (parm), pFileName (fileName) , lineNumberCopy(lineNumber) {}
+    T ( parm ), pFileName ( fileName ) , lineNumberCopy ( lineNumber ) {}
 
 template <class T>
+inline sourceFileLocation<T>::sourceFileLocation ( const sourceFileLocation<T> &in ) :
+    T ( in ), pFileName ( in.pFileName ), lineNumberCopy ( in.lineNumberCopy )
+{
+}
+
+template < class T >
+inline sourceFileLocation<T> & sourceFileLocation<T>::operator = ( const sourceFileLocation<T> &in )
+{
+    this->pFileName = in.pFileName;
+    this->lineNumberCopy = in.lineNumberCopy;
+    return *this;
+}
+
+template < class T >
 inline unsigned sourceFileLocation<T>::lineNumber () const
 {
     return this->lineNumberCopy;

@@ -139,7 +139,7 @@ public:
 	//
 	operator TS_STAMP () const;
 	osiTime (const TS_STAMP &ts);
-	osiTime operator = (const TS_STAMP &rhs);
+	osiTime & operator = (const TS_STAMP &rhs);
 
 	//
 	// convert to and from ANSI C's "time_t"
@@ -150,42 +150,42 @@ public:
 	//
 	operator time_t_wrapper () const;
 	osiTime (const time_t_wrapper &tv);
-	osiTime operator = (const time_t_wrapper &rhs);
+	osiTime & operator = (const time_t_wrapper &rhs);
 
 	//
 	// convert to and from ANSI C's "struct tm" (with nano seconds)
 	//
 	operator tm_nano_sec () const;
 	osiTime (const tm_nano_sec &ts);
-	osiTime operator = (const tm_nano_sec &rhs);
+	osiTime & operator = (const tm_nano_sec &rhs);
 
 	//
 	// convert to and from POSIX RT's "struct timespec"
 	//
 	operator struct timespec () const;
 	osiTime (const struct timespec &ts);
-	osiTime operator = (const struct timespec &rhs);
+	osiTime & operator = (const struct timespec &rhs);
 
 	//
 	// convert to and from BSD's "struct timeval"
 	//
 	operator struct timeval () const;
 	osiTime (const struct timeval &ts);
-	osiTime operator = (const struct timeval &rhs);
+	osiTime & operator = (const struct timeval &rhs);
 
     //
     // convert to and from NTP timestamp format
     //
 	operator ntpTimeStamp () const;
 	osiTime (const ntpTimeStamp &ts);
-	osiTime operator = (const ntpTimeStamp &rhs);
+	osiTime & operator = (const ntpTimeStamp &rhs);
 
 	//
 	// convert to and from GDD's aitTimeStamp format
 	//
 	operator aitTimeStamp () const;
 	osiTime (const aitTimeStamp &ts);
-	osiTime operator = (const aitTimeStamp &rhs);
+	osiTime & operator = (const aitTimeStamp &rhs);
 
 	//
 	// arithmetic operators
@@ -193,8 +193,8 @@ public:
 	double operator- (const osiTime &rhs) const; // returns seconds
 	osiTime operator+ (const double &rhs) const; // add rhs seconds
 	osiTime operator- (const double &rhs) const; // subtract rhs seconds
-	osiTime operator+= (const double &rhs); // add rhs seconds
-	osiTime operator-= (const double &rhs); // subtract rhs seconds
+	osiTime & operator+= (const double &rhs); // add rhs seconds
+	osiTime & operator-= (const double &rhs); // subtract rhs seconds
 
 	//
 	// comparison operators
@@ -249,11 +249,8 @@ private:
 // type osiTime inline member functions
 //
 
-inline osiTime::osiTime (const TS_STAMP &ts) 
-{
-	this->secPastEpoch = ts.secPastEpoch;
-	this->nSec = ts.nsec;
-}
+inline osiTime::osiTime (const TS_STAMP &ts) :
+    secPastEpoch ( ts.secPastEpoch ), nSec ( ts.nsec ) {}
 
 //
 // getCurrent ()
@@ -295,13 +292,13 @@ inline osiTime osiTime::operator - (const double &rhs) const
 	return osiTime::operator + (-rhs);
 }
 
-inline osiTime osiTime::operator += (const double &rhs)
+inline osiTime & osiTime::operator += (const double &rhs)
 {
 	*this = osiTime::operator + (rhs);
 	return *this;
 }
 
-inline osiTime osiTime::operator -= (const double &rhs)
+inline osiTime & osiTime::operator -= (const double &rhs)
 {
 	*this = osiTime::operator + (-rhs);
 	return *this;
@@ -332,24 +329,24 @@ inline bool osiTime::operator > (const osiTime &rhs) const
 	return ! ( *this <= rhs );
 }
 
-inline osiTime osiTime::operator = (const tm_nano_sec &rhs)
+inline osiTime & osiTime::operator = (const tm_nano_sec &rhs)
 {
 	return *this = osiTime (rhs);
 }
 
-inline osiTime osiTime::operator = (const struct timespec &rhs)
+inline osiTime & osiTime::operator = (const struct timespec &rhs)
 {
 	*this = osiTime (rhs);
 	return *this;
 }
 
-inline osiTime osiTime::operator = (const aitTimeStamp &rhs)
+inline osiTime & osiTime::operator = (const aitTimeStamp &rhs)
 {
 	*this = osiTime (rhs);
 	return *this;
 }
 
-inline osiTime osiTime::operator = (const TS_STAMP &rhs)
+inline osiTime & osiTime::operator = (const TS_STAMP &rhs)
 {
 	*this = osiTime (rhs);
 	return *this;
@@ -364,14 +361,14 @@ inline osiTime::operator TS_STAMP () const
 }
 
 #ifdef NTP_SUPPORT
-inline osiTime osiTime::operator = (const ntpTimeStamp &rhs)
+inline osiTime & osiTime::operator = (const ntpTimeStamp &rhs)
 {
     *this = osiTime (rhs);
     return *this;
 }
 #endif
 
-inline osiTime osiTime::operator = (const time_t_wrapper &rhs)
+inline osiTime & osiTime::operator = (const time_t_wrapper &rhs)
 {
 	*this = osiTime (rhs);
 	return *this;

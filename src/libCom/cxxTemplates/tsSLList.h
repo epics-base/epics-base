@@ -59,8 +59,9 @@ friend class tsSLIter < T >;
 friend class tsSLIterConst < T >;
 public:
     tsSLNode ();
-    void operator = ( const tsSLNode < T > & ) const;
+    const tsSLNode < T > & operator = ( const tsSLNode < T > & ) const;
 private:
+    tsSLNode ( const tsSLNode < T > & );
     void removeNextItem (); // removes the item after this node
     T *pNext;
 };
@@ -103,8 +104,8 @@ public:
     const T & operator * () const;
     const T * operator -> () const;
 
-    tsSLIterConst<T> operator ++ (); // prefix ++
-    tsSLIterConst<T> operator ++ (int); // postfix ++
+    tsSLIterConst<T> & operator ++ (); // prefix ++
+    tsSLIterConst<T> & operator ++ (int); // postfix ++
 
 #   if defined(_MSC_VER) && _MSC_VER < 1200
         tsSLIterConst (const class tsSLIterConst<T> &copyIn);
@@ -142,8 +143,8 @@ public:
     T & operator * () const;
     T * operator -> () const;
 
-    tsSLIter <T> operator ++ (); // prefix ++
-    tsSLIter <T> operator ++ (int); // postfix ++
+    tsSLIter <T> & operator ++ (); // prefix ++
+    tsSLIter <T> & operator ++ (int); // postfix ++
 
 #   if defined(_MSC_VER) && _MSC_VER < 1200
         tsSLIter (class tsSLIter<T> &copyIn);
@@ -176,7 +177,10 @@ tsSLNode < T > ::tsSLNode () : pNext ( 0 ) {}
 // do _not_ change the node pointers
 //
 template < class T >
-inline void tsSLNode < T >::operator = ( const tsSLNode < T > & ) const {}
+inline const tsSLNode < T > &  tsSLNode < T >::operator = ( const tsSLNode < T > & ) const 
+{
+    return *this;
+}
 
 //
 // removeNextItem ()
@@ -326,7 +330,7 @@ inline const T * tsSLIterConst<T>::operator -> () const
 }
 
 template < class T >
-inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ () // prefix ++
+inline tsSLIterConst<T> & tsSLIterConst<T>::operator ++ () // prefix ++
 {
     const tsSLNode < T > *pCurNode = this->pConstEntry;
     this->pConstEntry = pCurNode->pNext;
@@ -334,7 +338,7 @@ inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ () // prefix ++
 }
 
 template < class T >
-inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ (int) // postfix ++
+inline tsSLIterConst<T> & tsSLIterConst<T>::operator ++ (int) // postfix ++
 {
     tsSLIterConst<T> tmp = *this;
     tsSLNode < T > *pCurNode = this->pConstEntry;
@@ -417,14 +421,14 @@ inline T * tsSLIter<T>::operator -> () const
 }
 
 template < class T >
-inline tsSLIter<T> tsSLIter<T>::operator ++ () // prefix ++
+inline tsSLIter<T> & tsSLIter<T>::operator ++ () // prefix ++
 {
     this->tsSLIterConst<T>::operator ++ ();
     return *this;
 }
 
 template < class T >
-inline tsSLIter<T> tsSLIter<T>::operator ++ (int) // postfix ++
+inline tsSLIter<T> & tsSLIter<T>::operator ++ (int) // postfix ++
 {
     tsSLIter<T> tmp = *this;
     this->tsSLIterConst<T>::operator ++ ();

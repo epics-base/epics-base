@@ -806,9 +806,9 @@ int			init_func_arg
 				NULL,
 				NULL,
 				NULL);
+			semGive(evUser->ppendsem);
+  			evUser->pendexit = TRUE;
 		}
-		semGive(evUser->ppendsem);
-  		evUser->pendexit = TRUE;
 	}
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -219,7 +222,7 @@ caStatus casCoreClient::asyncIOCompletion(casChannelI *pChan,
         pAsyncIoCallBack        pCB;
  
         pCB = casCoreClient::asyncIOJumpTable[msg.m_cmmd];
-        if (!pCB) {
+        if (pCB==NULL) {
                 return S_casApp_noSupport;
         }
  

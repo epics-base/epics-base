@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/01 19:56:09  jhill
+ * one last update prior to first release
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
  * ca server installation
  *
@@ -57,7 +60,7 @@ casChannel::~casChannel()
 
 casPV *casChannel::getPV()
 {
-	casPVI &pvi(this->casChannelI::getPVI());
+	casPVI pvi = this->casChannelI::getPVI();
 
 	if (&pvi!=NULL) {
 		return pvi.intefaceObjectPointer();

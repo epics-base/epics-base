@@ -203,3 +203,8 @@ LIBOBJS += $(EPICS_BASE_BIN)/drvHp1404a.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvXy240.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvXy566.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvVmic2534.o
+#
+#from src/devOpt
+#
+#LIBOBJS += $(EPICS_BASE_BIN)/devBBInteract.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devGpibInteract.o

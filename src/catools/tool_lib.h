@@ -19,12 +19,14 @@
 #ifndef INCLtool_libh
 #define INCLtool_libh
 
+#include <tsDefs.h>
+
 /* Convert status and severity to strings */
-#define stat_to_str(stat)                                               \
+#define stat_to_str(stat)                                       \
         ((stat) >= 0 && (stat) <= (signed)lastEpicsAlarmCond) ? \
         epicsAlarmConditionStrings[stat] : "??"
 
-#define sevr_to_str(stat)                                               \
+#define sevr_to_str(stat)                                       \
         ((stat) >= 0 && (stat) <= (signed)lastEpicsAlarmSev) ?  \
         epicsAlarmSeverityStrings[stat] : "??"
 
@@ -33,8 +35,8 @@
 #define DEFAULT_TIMEOUT 1.0     /* Default CA timeout */
 
 
-/* Type of timestamp (absolute, relative, incremental) */
-typedef enum { absTime, relTime, incTime } TimeT;
+/* Type of timestamp */
+typedef enum { absolute, relative, incremental, incrementalByChan } TimeT;
 
 /* Output formats for integer data types */
 typedef enum { dec, bin, oct, hex } IntFormatT;
@@ -50,10 +52,12 @@ typedef struct
     unsigned long reqElems;
     int status;
     void* value;
+    TS_STAMP tsPrevious;
+    int firstStampPrinted;
 } pv;
 
 
-extern TimeT tsType;        /* Timestamp type flag (-q or -Q option) */
+extern TimeT tsType;        /* Timestamp type flag (-r -i -I options) */
 extern IntFormatT outType;  /* Flag used for -0.. output format option */
 extern int charAsNr;        /* Used for -n option (get DBF_CHAR as number) */
 extern double timeout;      /* Wait time default (see -w option) */
@@ -62,7 +66,7 @@ extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option)
 
 extern char *val2str (const void *v, unsigned type, int index);
 extern char *dbr2str (const void *value, unsigned type);
-extern void print_time_val_sts (const pv *pv, int nElems);
+extern void print_time_val_sts (pv *pv, int nElems);
 extern int  connect_pvs (pv *pvs, int nPvs);
 
 /*

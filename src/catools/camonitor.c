@@ -29,9 +29,8 @@
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
 
-static int nConn = 0;            /* Number of connected PVs */
-                                 /* Event mask used */
-static unsigned long eventMask = DBE_VALUE | DBE_ALARM;
+static int nConn = 0;                                     /* Number of connected PVs */
+static unsigned long eventMask = DBE_VALUE | DBE_ALARM;   /* Event mask used */
 
 
 void usage (void)
@@ -42,6 +41,11 @@ void usage (void)
     "  -w <sec>:  Wait time, specifies longer CA timeout, default is %f second\n"
     "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n"
     "             'v' (value), 'a' (alarm), 'l' (log). Default: va\n"
+    "Timestamps:\n"
+    "  Default: Print absolute timestamps (as reported by CA)\n"
+    "  -r: Relative timestamps (time elapsed since start of program)\n"
+    "  -i: Incremental timestamps (time elapsed since last update)\n"
+    "  -I: Incremental timestamps (time elapsed since last update for this channel)\n"
     "Enum format:\n"
     "  -n: Print DBF_ENUM values as number (default are enum string values)\n"
     "Arrays: Value format: print number of requested values, then list of values\n"
@@ -196,13 +200,22 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,0);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhm:e:f:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhriIm:e:f:#:d:0:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
             return 0;
         case 'n':               /* Print ENUM as index numbers */
             charAsNr=1;
+            break;
+        case 'r':               /* Select relative timestamps */
+            tsType = relative;
+            break;
+        case 'i':               /* Select incremental timestamps */
+            tsType = incremental;
+            break;
+        case 'I':               /* Select incremental timestamps (by channel) */
+            tsType = incrementalByChan;
             break;
         case 'w':               /* Set CA timeout value */
             if(sscanf(optarg,"%lf", &timeout) != 1)

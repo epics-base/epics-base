@@ -28,14 +28,14 @@
 
 #include "tool_lib.h"
 
-/* Time stamps for program start, previous value (used for differential
- * times with monitors) */
-static TS_STAMP tsStart, tsPrev;
+/* Time stamps for program start, previous value (used for relative resp.
+ * incremental times with monitors) */
+static TS_STAMP tsStart, tsPrevious;
 
 static int tsInit = 0;               /* Flag: Timestamps init'd */
 static int firstStampPrinted = 0;    /* Flag: First timestamp already printed */
 
-TimeT tsType = absTime;              /* Timestamp type flag (-q or -Q option) */
+TimeT tsType = absolute;             /* Timestamp type flag (-q or -Q option) */
 IntFormatT outType = dec;            /* For -0.. output format option */
 
 char dblFormatStr[30] = "%g"; /* Format string to print doubles (see -e -f option) */
@@ -370,36 +370,53 @@ double tsDiffDbl(TS_STAMP *ts1, TS_STAMP * ts2)
  
 #define PRN_TIME_VAL_STS(TYPE,TYPE_ENUM)                                        \
     if (!tsInit)                                                                \
-    {                           /* Initialise reference timestamp */            \
-        tsStart = tsPrev = ((struct TYPE *)value)->stamp;                       \
+    {                           /* Initialize start timestamp */                \
+        tsStart = tsPrevious = ((struct TYPE *)value)->stamp;                   \
         tsInit = 1;                                                             \
     }                                                                           \
-                             /* Print Timestamp */                              \
-    if (!firstStampPrinted)                                                     \
-    {                              /* First stamp is always absolute */         \
-        printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),           \
-                                    TS_TEXT_MMDDYY, timeText));                 \
-        firstStampPrinted = 1;                                                  \
-    } else {                                                                    \
-        switch (tsType) {                                                       \
-        case incTime:              /* The following can be incremental, */      \
-            printf("%10.4fs ",                                                  \
-                   tsDiffDbl( &(((struct TYPE *)value)->stamp),                 \
-                              &tsPrev) );                                       \
-            break;                                                              \
-        case relTime:              /* relative, */                              \
-            printf("%10.4fs ",                                                  \
-                   tsDiffDbl( &(((struct TYPE *)value)->stamp),                 \
-                              &tsStart));                                       \
-            break;                                                              \
-        default :                  /* or also absolute */                       \
-            printf("%s ",                                                       \
-                   tsStampToText( &(((struct TYPE *)value)->stamp),             \
-                                  TS_TEXT_MMDDYY, timeText));                   \
-            break;                                                              \
+                                                                                \
+    switch (tsType) {                                                           \
+    case relative:                                                              \
+        if (pv->firstStampPrinted)                                              \
+        {                                                                       \
+            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
+                                          &tsStart) );                          \
+        } else {                    /* First stamp is always absolute */        \
+            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
+                                        TS_TEXT_MMDDYY, timeText));             \
+            pv->firstStampPrinted = 1;                                          \
         }                                                                       \
+        break;                                                                  \
+    case incremental:                                                           \
+        if (firstStampPrinted)                                                  \
+        {                                                                       \
+            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
+                                          &tsPrevious) );                       \
+        } else {                    /* First stamp is always absolute */        \
+            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
+                                        TS_TEXT_MMDDYY, timeText));             \
+            firstStampPrinted = 1;                                              \
+        }                                                                       \
+        break;                                                                  \
+    case incrementalByChan:                                                     \
+        if (pv->firstStampPrinted)                                              \
+        {                                                                       \
+            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
+                                          &pv->tsPrevious) );                   \
+        } else {                    /* First stamp is always absolute */        \
+            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
+                                        TS_TEXT_MMDDYY, timeText));             \
+            pv->firstStampPrinted = 1;                                          \
+        }                                                                       \
+        pv->tsPrevious = ((struct TYPE *)value)->stamp;                         \
+        break;                                                                  \
+    default : /* Absolute */                                                    \
+        printf("%s ", tsStampToText( &(((struct TYPE *)value)->stamp),          \
+                                     TS_TEXT_MMDDYY, timeText));                \
+        break;                                                                  \
     }                                                                           \
-    tsPrev = ((struct TYPE *)value)->stamp;                                     \
+                                                                                \
+    tsPrevious = ((struct TYPE *)value)->stamp;                                 \
                              /* Print Values */                                 \
     for (i=0; i<nElems; ++i) {                                                  \
         printf ("%s ", val2str(value, TYPE_ENUM, i));                           \
@@ -415,7 +432,7 @@ double tsDiffDbl(TS_STAMP *ts1, TS_STAMP * ts2)
     }
 
 
-void print_time_val_sts (const pv* pv, int nElems)
+void print_time_val_sts (pv* pv, int nElems)
 {
     char timeText[28];
     int i;

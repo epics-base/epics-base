@@ -55,7 +55,6 @@
  * joh	10	112790	source cleanup
  */
 
-
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<wdLib.h>
@@ -333,7 +332,7 @@ db_event_get_field(paddr, buffer_type, pbuffer, no_elements, pfl)
   int status;
   char * pfield_save;
 
-  if(no_elements>1) return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
+  if(pfl==NULL) return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
   pfield_save = paddr->pfield;
   if(buffer_type>=DBR_INT && buffer_type<=DBR_DOUBLE) {
 	if(pfl!=NULL)paddr->pfield = (char *)(&pfl->field);
@@ -587,19 +586,21 @@ register struct event_block		*pevent;
 
     		pevent->npend++;
     		ev_que->evque[putix] = pevent;
-		ev_que->valque[putix].stat = precord->stat;
-		sevr = precord->sevr;
-		ev_que->valque[putix].sevr = sevr;
-		ev_que->valque[putix].time = precord->time;
-		/*
-		 * use bcopy to avoid a bus error on
-		 * union copy of char in the db at an odd 
-		 * address
-		 */
-		bcopy(	pevent->paddr->pfield,
-			&ev_que->valque[putix].field,
-			dbr_size[pevent->paddr->field_type]);
-
+		if(pevent->valque) {
+			ev_que->valque[putix].stat = precord->stat;
+			sevr = precord->sevr;
+			ev_que->valque[putix].sevr = sevr;
+			ev_que->valque[putix].time = precord->time;
+			/*
+		 	* use bcopy to avoid a bus error on
+		 	* union copy of char in the db at an odd 
+		 	* address
+		 	*/
+			bcopy(	pevent->paddr->pfield,
+				&ev_que->valque[putix].field,
+				dbr_size[pevent->paddr->field_type]);
+	
+		}
     		/* notify the event handler */
     		semGive(&ev_que->evuser->pendsem);
     		ev_que->putix = RNGINC(putix);
@@ -662,20 +663,22 @@ register unsigned int		select;
 
 				event->npend++;
         			ev_que->evque[putix] = event;
-				ev_que->valque[putix].stat = precord->stat;
-				sevr = precord->sevr;
-				ev_que->valque[putix].sevr = sevr;
-				ev_que->valque[putix].time = precord->time;
+				if(event->valque) {
+					ev_que->valque[putix].stat = precord->stat;
+					sevr = precord->sevr;
+					ev_que->valque[putix].sevr = sevr;
+					ev_que->valque[putix].time = precord->time;
 
-				/*
-				 * use bcopy to avoid a bus error on
-				 * union copy of char in the db at an odd 
-				 * address
-				 */
-				bcopy(	pvalue,
-					&ev_que->valque[putix].field,
-					dbr_size[event->paddr->field_type]);
+					/*
+				 	* use bcopy to avoid a bus error on
+				 	* union copy of char in the db at an odd 
+				 	* address
+				 	*/
+					bcopy(	pvalue,
+						&ev_que->valque[putix].field,
+						dbr_size[event->paddr->field_type]);
 
+				}
         			/* notify the event handler */
         			semGive(&ev_que->evuser->pendsem);
 

@@ -35,7 +35,7 @@ public:
     bool tryWait (); /* false if empty */
     void show ( unsigned level ) const;
 
-    class invalidSemaphore {}; /* exception */
+    class invalidSemaphore; /* exception payload */
 private:
     epicsEvent ( const epicsEvent & );
     epicsEvent & operator = ( const epicsEvent & );

@@ -12,10 +12,24 @@
 /*	Author: Jeff Hill */
 
 #include <new>
+#include <exception>
 
 #define epicsExportSharedSymbols
 #include "epicsEvent.h"
 #include "epicsStdioRedirect.h"
+
+/* 
+ * exception payload
+ */
+class epicsEvent::invalidSemaphore : public std::exception
+{
+    const char * what () const;
+}; 
+
+const char * epicsEvent::invalidSemaphore:: what () const 
+{
+    return "epicsEvent::invalidSemaphore()";
+}
 
 //
 // Its probably preferable to not make these inline because they are in 

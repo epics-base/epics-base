@@ -198,7 +198,7 @@ public:
 	// 
 	// const pvAttachReturn &operator = (casPV &pvIn)
 	//
-	// The above assignement operator is not included 
+	// The above assignment operator is not included 
 	// because it does not match the strict definition of an 
 	// assignement operator unless "const casPV &"
 	// is passed in, and we cant use a const PV
@@ -225,7 +225,7 @@ private:
 };
 
 //
-// pvCreateReturn (depricated)
+// pvCreateReturn (deprecated)
 // (the class "pvCreateReturn" will be deleted in a future release)
 //
 class epicsShareClass pvCreateReturn : public pvAttachReturn {
@@ -590,7 +590,7 @@ private:
 
 public:
     //
-    // This constructor has been depricated, and is preserved for 
+    // This constructor has been deprecated, and is preserved for 
     // backwards compatibility only. Please do not use it.
     //
     epicsShareFunc casPV (caServer &);

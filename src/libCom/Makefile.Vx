@@ -1,5 +1,6 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
+USR_CFLAGS += -Wall -pedantic
 
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c
@@ -21,6 +22,7 @@ SRCS.c += ../errPrintfVX.c
 SRCS.c += ../assertVX.c
 SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
+SRCS.c += ../impLib.c
 
 LIBOBJS += calcPerform.o
 LIBOBJS += cvtFast.o
@@ -41,6 +43,7 @@ LIBOBJS += errPrintfVX.o
 LIBOBJS += assertVX.o
 LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
+LIBOBJS += impLib.o
 
 LIBNAME = libCom
 

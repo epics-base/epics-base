@@ -3,6 +3,13 @@ include $(TOP)/config/CONFIG_BASE
 CMPLR = STRICT
 
 USR_CFLAGS = -D_NO_PROTO
+USR_LDLIBS += -lCom
+USR_LDFLAGS += -L.
+#USR_CFLAGS = -v -g
+#CC = $(PURIFYHOME)/purify $(C_$(CMPLR))
+
+DEPLIBS_BASE = $(INSTALL_LIB)
+DEPLIBS += $(DEPLIBS_BASE)/libCom.a
 
 INC += cvtFast.h
 INC += ellLib.h
@@ -22,6 +29,7 @@ INC += fdManager.h
 INC += osiTime.h
 INC += osiTimer.h
 INC += macLib.h
+INC += impLib.h
 
 SRCS.c += ../bucketLib.c
 SRCS.c += ../calcPerform.c
@@ -47,6 +55,8 @@ SRCS.c += ../osiTimer.cc
 SRCS.c += ../osiTimeOSD.cc
 SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
+SRCS.c += ../impLib.c
+SRCS.c += ../impExpand.c
 
 LIBOBJS += bucketLib.o
 LIBOBJS += calcPerform.o
@@ -72,10 +82,13 @@ LIBOBJS += osiTimer.o
 LIBOBJS += osiTimeOSD.o
 LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
+LIBOBJS += impLib.o
+LIBOBJS += impExpand.o
 
 LIBNAME = libCom.a
 
 #TARGETS = tsTest 
+PROD += impExpand
 
 MAN3 = gpHash.3 freeList.3
 

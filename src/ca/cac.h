@@ -283,7 +283,6 @@ private:
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
     unsigned beaconAnomalyCount;
-    unsigned circuitsInstalled;
 
     void run ();
     void recycleReadNotifyIO ( 

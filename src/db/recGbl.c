@@ -271,6 +271,7 @@ unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
     struct dbCommon *pdbc = precord;
     unsigned short mask,stat,sevr,nsta,nsev,ackt,acks;
+    unsigned short stat_mask=0;
 
     mask = 0;
     stat=pdbc->stat; sevr=pdbc->sevr;
@@ -278,14 +279,16 @@ unsigned short epicsShareAPI recGblResetAlarms(void *precord)
     pdbc->stat=nsta; pdbc->sevr=nsev;
     pdbc->nsta=0; pdbc->nsev=0;
     /* alarm condition changed this scan?*/
-    if (stat!=nsta) {
-	mask = DBE_ALARM;
-	db_post_events(pdbc,&pdbc->stat,DBE_VALUE);
-    }
     if (sevr!=nsev) {
-	mask = DBE_ALARM;
-	db_post_events(pdbc,&pdbc->sevr,DBE_VALUE);
+        stat_mask = mask = DBE_ALARM;
+        db_post_events(pdbc,&pdbc->sevr,DBE_VALUE);
     }
+    if(stat!=nsta) {
+        stat_mask |= DBE_VALUE;
+        mask = DBE_ALARM;
+    }
+    if(stat_mask)
+        db_post_events(pdbc,&pdbc->stat,stat_mask);
     if(sevr!=nsev || stat!=nsta) {
 	ackt = pdbc->ackt; acks = pdbc->acks;
 	if(!ackt || nsev>=acks){

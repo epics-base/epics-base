@@ -6,7 +6,7 @@ extern "C" {
 #include "shareLib.h"
 
 /*
- * needs to be consolodated with other os independent stuff ...
+ * obviously needs to be consolodated with other os independent stuff ...
  */
 epicsShareFunc void epicsShareAPI osiSleep (unsigned sec, unsigned uSec);
 

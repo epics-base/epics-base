@@ -43,18 +43,23 @@
  * .06 091192 joh	now uses SO_KEEPALIVE
  * .07 091192 joh	added SCCS ID
  * .08 092292 joh	improved message sent to the log
- * .09 050494 pg	HPUX port changes.
+ * .08 092292 joh	improved message sent to the log
+ * .09 050494 pg        HPUX port changes.
+ * .10 021694 joh	ANSI C	
  */
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
 #include	<stdio.h>
 #include	<string.h>
+#include	<errno.h>
+
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/socket.h>
 #include	<netinet/in.h>
 #include        <netdb.h>
+
 #include 	<envDefs.h>
 
 static long 		ioc_log_port;
@@ -70,13 +75,6 @@ static char		ioc_log_file_name[64];
 #define	FALSE			0
 #endif
 
-void	acceptNewClient();
-void	readFromClient();
-void	logTime();
-int	getConfig();
-int	openLogFile();
-void	handleLogFileError();
-void	envFailureNotify();
 
 struct iocLogClient {
 	int			insock;
@@ -95,8 +93,6 @@ struct ioc_log_server {
 	void   		*pfdctx;
 };
 
-extern int errno;
-
 #ifndef ERROR
 #define ERROR -1
 #endif
@@ -104,6 +100,14 @@ extern int errno;
 #ifndef OK
 #define OK 0
 #endif
+
+static void acceptNewClient (struct ioc_log_server *pserver);
+static void readFromClient (struct iocLogClient *pclient);
+static void logTime (struct iocLogClient *pclient);
+static int getConfig(void);
+static int openLogFile(struct ioc_log_server *pserver);
+static void handleLogFileError(void);
+static void envFailureNotify(ENV_PARAM *pparam);
 
 
 /*
@@ -204,9 +208,7 @@ main()
  *	openLogFile()
  *
  */
-static int
-openLogFile(pserver)
-struct ioc_log_server	*pserver;
+static int openLogFile(struct ioc_log_server *pserver)
 {
 	if(pserver->poutfile){
 		pserver->poutfile = freopen(
@@ -228,13 +230,12 @@ struct ioc_log_server	*pserver;
  *	handleLogFileError()
  *
  */
-static void
-handleLogFileError(pserver)
-struct ioc_log_server	*pserver;
+static void handleLogFileError(void)
 {
 	int status;
 
-	printf("iocLogServer: log file access problem (errno=%d)\n", errno);
+	printf("iocLogServer: log file access problem (errno=%s)\n", 
+		strerror(errno));
 	exit();
 
 }
@@ -245,9 +246,7 @@ struct ioc_log_server	*pserver;
  *	acceptNewClient()
  *
  */
-static void
-acceptNewClient(pserver)
-struct ioc_log_server	*pserver;
+static void acceptNewClient(struct ioc_log_server *pserver)
 {
 	struct iocLogClient	*pclient;
 	int			size;
@@ -341,9 +340,7 @@ struct ioc_log_server	*pserver;
  */
 #define NITEMS 1
 
-static void
-readFromClient(pclient)
-	struct iocLogClient *pclient;
+static void readFromClient(struct iocLogClient *pclient)
 {
 	int             status;
 	int             length;
@@ -480,9 +477,7 @@ readFromClient(pclient)
  *	logTime()
  *
  */
-static void
-logTime(pclient)
-	struct iocLogClient *pclient;
+static void logTime(struct iocLogClient *pclient)
 {
 	time_t		sec;
 	char		*pcr;
@@ -506,8 +501,7 @@ logTime(pclient)
  *
  *
  */
-static int
-getConfig()
+static int getConfig(void)
 {
 	char	inet_address_string[64];
 	int	status;
@@ -558,9 +552,7 @@ getConfig()
  *
  *
  */
-static void
-envFailureNotify(pparam)
-ENV_PARAM       *pparam;
+static void envFailureNotify(ENV_PARAM *pparam)
 {
 	printf(	"iocLogServer: EPICS environment variable `%s' undefined\n",
 		pparam->name);

@@ -57,28 +57,24 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stddef.h>
 #include <freeList.h>
 
-static void *myCalloc(size_t nobj,size_t size)
-{
-    void *p;
-
-    p=calloc(nobj,size);
-    if(p) return(p);
-#ifdef vxWorks
-    taskSuspend(0);
-#else
-    abort();
-#endif
-    return(NULL);
-}
-
 void freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT	*pfl;
-    pfl = myCalloc(1, sizeof(FREELISTPVT));
-    *ppvt = (void *)pfl;
+    pfl = (void *)calloc((size_t)1,(size_t)sizeof(FREELISTPVT));
+    if(!pfl) {
+#ifdef vxWorks
+	taskSuspend(0);
+#else
+	abort();
+#endif
+    }
     pfl->size = size;
     pfl->nmalloc = nmalloc;
     pfl->head = NULL;
+#ifdef vxWorks
+    FASTLOCKINIT(&pfl->lock);
+#endif
+    *ppvt = (void *)pfl;
     return;
 }
 
@@ -88,19 +84,29 @@ void *freeListCalloc(void *pvt)
     void	*ptemp;
 
     ptemp = freeListMalloc(pvt);
-    memset((char *)ptemp,0,pfl->size);
+    if(ptemp) memset((char *)ptemp,0,pfl->size);
     return(ptemp);
 }
-
+
 void *freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-    void	*ptemp = pfl->head;
+    void	*ptemp;
     void	**ppnext;
     int		i;
 
+#ifdef vxWorks
+    FASTLOCK(&pfl->lock);
+#endif
+    ptemp = pfl->head;
     if(!ptemp) {
-	ptemp = myCalloc(pfl->nmalloc,pfl->size);
+	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
+	if(!ptemp) {
+#ifdef vxWorks
+	    FASTUNLOCK(&pfl->lock);
+#endif
+	    return(ptemp);
+	}
 	for(i=0; i<pfl->nmalloc; i++) {
 	    ppnext = ptemp;
 	    *ppnext = pfl->head;
@@ -111,6 +117,9 @@ void *freeListMalloc(void *pvt)
     }
     ppnext = pfl->head;
     pfl->head = *ppnext;
+#ifdef vxWorks
+    FASTUNLOCK(&pfl->lock);
+#endif
     return(ptemp);
 }
 
@@ -119,7 +128,13 @@ void freeListFree(void *pvt,void*pmem)
     FREELISTPVT	*pfl = pvt;
     void	**ppnext;
 
+#ifdef vxWorks
+    FASTLOCK(&pfl->lock);
+#endif
     ppnext = pmem;
     *ppnext = pfl->head;
     pfl->head = pmem;
+#ifdef vxWorks
+    FASTUNLOCK(&pfl->lock);
+#endif
 }

@@ -122,6 +122,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_flush_io">flush outstanding requests to the server</a></li>
   <li><a href="#ca_add_exception_event">replace the default exception
     handler</a></li>
+  <li><a href="#ca_dump_db">dump dbr type to standard out</a></li>
 </ul>
 
 <h3><a href="#Function Call Reference">Function Call Interface Index</a></h3>
@@ -136,6 +137,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_context_destroy">ca_context_destroy</a></li>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
+  <li><a href="#ca_dump_db">ca_dump_dbr()</a></li>
   <li><a href="#ca_element_count">ca_element_count</a></li>
   <li><a href="#L6925">ca_field_type</a></li>
   <li><a href="#ca_flush_io">ca_flush_io</a></li>
@@ -2938,6 +2940,25 @@ preemptively from more than one thread.</p>
 <h4>See Also</h4>
 
 <p>ca_current_context()</p>
+
+<h3><a name="ca_dump_db">ca_dump_dbr()</a></h3>
+
+<p><code>void ca_dump_dbr ( </code><code>chtype TYPE, unsigned COUNT, const
+void * PDBR );</code></p>
+
+<h4>Description</h4>
+
+<p>Dumps the specified dbr data type to standard out.</p>
+
+<h4>Arguments</h4>
+<dl>
+  <dt><code>TYPE</code></dt>
+    <dd>The data type (from the DBR_XXX set described in db_access.h).</dd>
+  <dt><code>COUNT</code></dt>
+    <dd>The array element count</dd>
+  <dt><code>PDBR</code></dt>
+    <dd>A pointer to data of the specified count and number.</dd>
+</dl>
 
 <h2><a name="Return">Return Codes</a></h2>
 <dl>

@@ -889,6 +889,9 @@ ca_sg_array_put (gid, type, 1u, chan, pValue)
  */
 epicsShareFunc int epicsShareAPI ca_sg_stat (CA_SYNC_GID gid);
 
+epicsShareFunc void epicsShareAPI ca_dump_dbr (chtype type, unsigned count, const void * pbuffer);
+
+
 /*
  * ca_v42_ok()
  *

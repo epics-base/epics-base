@@ -13,21 +13,18 @@
  *      Author: Bob Dalesio
  *      Date:   4/15/88
  */
-#include	<stddef.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include        "dbDefs.h"
-#include        "errlog.h"
-#include        "db_access.h"
+#include "dbDefs.h"
+#include "errlog.h"
+#include "cadef.h"
 #define epicsExportSharedSymbols
-#include        "db_access_routines.h"
-#include        "dbNotify.h"
-#include        "db_test.h"
-
-/* function declarations */
-static void print_returned();
+#include "db_access_routines.h"
+#include "dbNotify.h"
+#include "db_test.h"
 
 
 #define		MAX_ELEMS	10
@@ -70,7 +67,7 @@ int epicsShareAPI gft(char *pname)
 		if(db_get_field(paddr,i,tgf_buffer,number_elements,NULL)<0)
 			printf("\t%s Failed\n",dbr_text[i]);
 		else
-			print_returned(i,tgf_buffer,number_elements);
+			ca_dump_dbr (i,number_elements,tgf_buffer);
 	}
 	return(0);
 }
@@ -114,7 +111,7 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 	printf("   No Elements: %ld\n",addr.no_elements);
 	if (db_put_field(paddr,DBR_STRING,pvalue,1) < 0) printf("\n\t failed ");
 	if (db_get_field(paddr,DBR_STRING,buffer,1,NULL) < 0) printf("\n\tfailed");
-	else print_returned(DBR_STRING,buffer,1);
+	else ca_dump_dbr(DBR_STRING,1,buffer);
 	if(addr.dbr_field_type<=DBF_STRING || addr.dbr_field_type==DBF_ENUM)
 	  return(0);
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
@@ -122,21 +119,21 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 		printf("\n\t SHORT failed ");
 	  if (db_get_field(paddr,DBR_SHORT,buffer,1,NULL) < 0) 
 		printf("\n\t SHORT GET failed");
-	  else print_returned(DBR_SHORT,buffer,1);
+	  else ca_dump_dbr(DBR_SHORT,1,buffer);
 	}
 	if(sscanf(pvalue,"%ld",&longvalue)==1) {
 	  if (db_put_field(paddr,DBR_LONG,&longvalue,1) < 0) 
 		printf("\n\t LONG failed ");
 		if (db_get_field(paddr,DBR_LONG,buffer,1,NULL) < 0) 
 		  printf("\n\t LONG GET failed");
-		else print_returned(DBR_LONG,buffer,1);
+		else ca_dump_dbr(DBR_LONG,1,buffer);
 	}
 	if(sscanf(pvalue,"%f",&floatvalue)==1) {
 	  if (db_put_field(paddr,DBR_FLOAT,&floatvalue,1) < 0) 
 		printf("\n\t FLOAT failed ");
 	  if (db_get_field(paddr,DBR_FLOAT,buffer,1,NULL) < 0) 
 		printf("\n\t FLOAT GET failed");
-	  else print_returned(DBR_FLOAT,buffer,1);
+	  else ca_dump_dbr(DBR_FLOAT,1,buffer);
 	}
 	if(sscanf(pvalue,"%f",&floatvalue)==1) {
 	  doublevalue=floatvalue;
@@ -144,7 +141,7 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 			printf("\n\t DOUBLE failed ");
 	  if (db_get_field(paddr,DBR_DOUBLE,buffer,1,NULL) < 0) 
 		printf("\n\t DOUBLE GET failed");
-	  else print_returned(DBR_DOUBLE,buffer,1);
+	  else ca_dump_dbr(DBR_DOUBLE,1,buffer);
 	}
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  charvalue=(unsigned char)shortvalue;
@@ -152,25 +149,26 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 		printf("\n\t CHAR failed ");
 	  if (db_get_field(paddr,DBR_CHAR,buffer,1,NULL) < 0) 
 		printf("\n\t CHAR GET failed");
-	  else print_returned(DBR_CHAR,buffer,1);
+	  else ca_dump_dbr(DBR_CHAR,1,buffer);
 	}
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_ENUM,&shortvalue,1) < 0) 
 		printf("\n\t ENUM failed ");
 	  if (db_get_field(paddr,DBR_ENUM,buffer,1,NULL) < 0) 
 		printf("\n\t ENUM GET failed");
-	  else print_returned(DBR_ENUM,buffer,1);
+	  else ca_dump_dbr(DBR_ENUM,1,buffer);
 	}
 	printf("\n");
 	return(0);
 }
-
+
+#if 0
 /*
  * PRINT_RETURNED
  *
  * print out the values in a database access interface structure
  */
-static void print_returned(type,pbuffer,count)
+static void print_returned(type,count,pbuffer)
   short	type;
   char	*pbuffer;
   short		count;
@@ -633,7 +631,8 @@ static void print_returned(type,pbuffer,count)
     }
     printf("\n");
 }
-
+#endif
+
 static void tpnCallback(putNotify *ppn)
 {
     struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;

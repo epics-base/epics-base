@@ -113,7 +113,7 @@ static long get_ioint_info(cmd,pai,io_type,card_type,card_number)
     short               *card_type;
     short               *card_number;
 {
-    *cmd=0;
+    *cmd=-1;
     if(pai->inp.type != VME_IO) return(S_dev_badInpType);
     *io_type = IO_AI;
     *card_type = XY566DIL;

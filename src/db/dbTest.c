@@ -32,6 +32,7 @@
  * .01  08-13-91	mrk	Added extra NULL arg to dbGetField calls
  * .02  10-23-91	mrk	Changed dbior so it also reports device support
  * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
+ * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -89,7 +90,6 @@
 #include	<special.h>
 #include	<dbRecDes.h>
 #include	<dbPvd.h>
-#include	<link.h>
 
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
@@ -308,7 +308,7 @@ long dbtr(pname)	/* test record and print*/
         printf("record locked\n");
         return(1);
     }
-    status=dbProcess(&addr);
+    status=dbProcess(precord);
     if(!(RTN_SUCCESS(status)))
 	recGblRecSupError(S_db_noSupport,&addr,"dbtr","process");
     dbpr(pname,3);

@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -40,11 +41,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
 
@@ -106,7 +106,7 @@ static long read_mbbi(pmbbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_ULONG,
+        status = dbGetLink(&(pmbbi->inp.value.db_link),(struct dbCommon *)pmbbi,DBR_ULONG,
                 &(pmbbi->rval),&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pmbbi,LINK_ALARM,VALID_ALARM);

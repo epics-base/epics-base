@@ -51,10 +51,14 @@
 #include	<stdioLib.h>
 #include	<strLib.h>
 
+#include	<sdrHeader.h>
 #include	<fast_lock.h>
 #include	<choice.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbScan.h>
+#include	<taskwd.h>
+#include	<callback.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>
@@ -63,11 +67,14 @@
 #include	<devSup.h>
 #include	<drvSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<envDefs.h>
 
 static initialized=FALSE;
+
+/* The following is for use by interrupt routines */
+int interruptAccept=FALSE;
+extern short wakeup_init; /*old IO_EVENT_SCAN*/
 
 /* define forward references*/
 extern long sdrLoad();
@@ -89,7 +96,7 @@ char * pResourceFilename;
     char name[40];
     long rtnval;
     void (*pdbUserExit)();
-    UTINY type;
+    SYM_TYPE type;
 
     if(initialized) {
 	logMsg("iocInit can only be called once\n");
@@ -113,6 +120,7 @@ char * pResourceFilename;
         logMsg("iocInit Failed to Initialize Ioc Log Client \n");
     }
     initialized = TRUE;
+    taskwdInit();
     if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n");
     if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n");
     if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
@@ -123,13 +131,16 @@ char * pResourceFilename;
     /* if user exit exists call it */
     strcpy(name,"_");
     strcat(name,"dbUserExit");
-    rtnval = symFindByName(sysSymTbl,name,&pdbUserExit,&type);
+    rtnval = symFindByName(sysSymTbl,name,(void *)&pdbUserExit,&type);
     if(rtnval==OK && (type&N_TEXT!=0)) {
 	(*pdbUserExit)();
 	logMsg("User Exit was called\n");
     }
+    callbackInit();
+    scanInit();
+    interruptAccept=TRUE;
+    wakeup_init=TRUE; /*old IO_EVENT_SCAN*/
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
-    scan_init();
     rsrv_init();
     logMsg("iocInit: All initialization complete\n");
 
@@ -141,10 +152,11 @@ static long initDrvSup() /* Locate all driver support entry tables */
     char	*pname;
     char	name[40];
     int		i;
-    UTINY	type;
+    SYM_TYPE	type;
     char	message[100];
-    long	status;
-    long	rtnval=0;
+    long	status=0;
+    long	rtnval;
+    STATUS	vxstatus;
     
     if(!drvSup) {
 	status = S_drv_noDrvSup;
@@ -155,30 +167,30 @@ static long initDrvSup() /* Locate all driver support entry tables */
 	if(!(pname = drvSup->drvetName[i])) continue;
 	strcpy(name,"_");
 	strcat(name,pname);
-	rtnval = symFindByName(sysSymTbl,name,&(drvSup->papDrvet[i]),&type);
-	if( rtnval!=OK || ( type&N_TEXT == 0) ) {
+	vxstatus = symFindByName(sysSymTbl,name,(void *)&(drvSup->papDrvet[i]),&type);
+	if( vxstatus!=OK || ( type&N_TEXT == 0) ) {
 	    strcpy(message,"driver entry table not found for ");
 	    strcat(message,pname);
 	    status = S_drv_noDrvet;
 	    errMessage(status,message);
-	    if(rtnval==OK) rtnval=status;
 	    continue;
 	}
 	if(!(drvSup->papDrvet[i]->init)) continue;
-	status = (*(drvSup->papDrvet[i]->init))();
-	if(rtnval==OK) rtnval=status;
+	rtnval = (*(drvSup->papDrvet[i]->init))();
+	if(status==0) status = rtnval;
     }
-    return(rtnval);
+    return(status);
 }
 
 static long initRecSup()
 {
     char	name[40];
     int		i;
-    UTINY	type;
+    SYM_TYPE	type;
     char	message[100];
-    long	status;
-    long	rtnval=0; /*rtnval will be 0 or first error found*/
+    long	status=0;
+    long	rtnval;
+    STATUS	vxstatus;
     int		nbytes;
     
     if(!dbRecType) {
@@ -187,7 +199,7 @@ static long initRecSup()
 	return(status);
     }
     nbytes = sizeof(struct recSup) + dbRecType->number*sizeof(caddr_t);
-    recSup = (struct recSup *)calloc(1,nbytes);
+    recSup = calloc(1,nbytes);
     recSup->number = dbRecType->number;
     (long)recSup->papRset = (long)recSup + (long)sizeof(struct recSup);
     for(i=0; i< (recSup->number); i++) {
@@ -195,22 +207,22 @@ static long initRecSup()
 	strcpy(name,"_");
 	strcat(name,dbRecType->papName[i]);
 	strcat(name,"RSET");
-	rtnval = symFindByName(sysSymTbl,name,&(recSup->papRset[i]),&type);
-	if( rtnval!=OK || ( type&N_TEXT == 0) ) {
+	vxstatus = symFindByName(sysSymTbl,name,
+            (void *)(&recSup->papRset[i]),&type);
+	if( vxstatus!=OK || ( type&N_TEXT == 0) ) {
 	    strcpy(message,"record support entry table not found for ");
 	    strcat(message,name);
 	    status = S_rec_noRSET;
 	    errMessage(status,message);
-	    if(rtnval==OK)rtnval=status;
 	    continue;
 	}
 	if(!(recSup->papRset[i]->init)) continue;
 	else {
-	    status = (*(recSup->papRset[i]->init))();
-	    if(rtnval==OK)rtnval=status;
+	    rtnval = (*(recSup->papRset[i]->init))();
+	    if(status==0) status = rtnval;
 	}
     }
-    return(rtnval);
+    return(status);
 }
 
 static long initDevSup() /* Locate all device support entry tables */
@@ -218,10 +230,11 @@ static long initDevSup() /* Locate all device support entry tables */
     char	*pname;
     char	name[40];
     int		i,j;
-    UTINY	type;
+    SYM_TYPE	type;
     char	message[100];
-    long	status;
-    long	rtnval=0; /*rtnval will be 0 or first error found*/
+    long	status=0;
+    long	rtnval;
+    STATUS	vxstatus;
     struct recLoc	*precLoc;
     struct devSup	*pdevSup;
     struct dbCommon	*precord;
@@ -237,20 +250,19 @@ static long initDevSup() /* Locate all device support entry tables */
 	    if(!(pname = pdevSup->dsetName[j])) continue;
 	    strcpy(name,"_");
 	    strcat(name,pname);
-	    rtnval = (long)symFindByName(sysSymTbl,name,
-		&(pdevSup->papDset[j]),&type);
-	    if( rtnval!=OK || ( type&N_TEXT == 0) ) {
+	    vxstatus = (long)symFindByName(sysSymTbl,name,
+		(void *)&(pdevSup->papDset[j]),&type);
+	    if( vxstatus!=OK || ( type&N_TEXT == 0) ) {
                 pdevSup->papDset[j]=NULL;
 		strcpy(message,"device support entry table not found for ");
 		strcat(message,pname);
 		status = S_dev_noDSET;
 		errMessage(status,message);
-		if(rtnval==OK)rtnval=status;
 		continue;
 	    }
 	    if(!(pdevSup->papDset[j]->init)) continue;
-	    status = (*(pdevSup->papDset[j]->init))(0);
-	    if(rtnval==OK)rtnval=status;
+	    rtnval = (*(pdevSup->papDset[j]->init))(0);
+	    if(status==0) status = rtnval;
 	}
     
 	/* Now initialize dset for each record */
@@ -265,7 +277,7 @@ static long initDevSup() /* Locate all device support entry tables */
 		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 	}
     }
-    return(rtnval);
+    return(status);
 }
 
 static long finishDevSup() 
@@ -292,8 +304,8 @@ static long initDatabase()
     char	name[PVNAME_SZ+FLDNAME_SZ+2];
     short	i,j,k;
     char	message[120];
-    long	status;
-    long	rtnval=0; /*rtnval will be 0 or first error found*/
+    long	status=0;
+    long	rtnval;
     short	nset=0;
     short	lookAhead;
     struct recLoc	*precLoc;
@@ -318,7 +330,6 @@ static long initDatabase()
 	    strcat(message,name);
 	    status = S_rec_noRSET;
 	    errMessage(status,message);
-	    if(rtnval==OK) rtnval = status;
 	    continue;
 	}
 	precTypDes = dbRecDes->papRecTypDes[i];
@@ -328,17 +339,8 @@ static long initDatabase()
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
 
-		/*initialize fields rset and pdba*/
+		/*initialize fields rset*/
 		(struct rset *)(precord->rset) = prset;
-		precord->pdba = (struct dbAddr *)calloc(1,sizeof(struct dbAddr));
-		strncpy(name,precord->name,PVNAME_SZ);
-		name[PVNAME_SZ]=0;
-		strcat(name,".VAL");
-		if(dbNameToAddr(name,precord->pdba)) {
-			status = S_db_notFound;
-			errMessage(status,
-				"initDatbase logic error: dbNameToAddr failed");
-		}
 
 	        /* initialize mlok and mlis*/
 		FASTLOCKINIT(&precord->mlok);
@@ -366,7 +368,7 @@ static long initDatabase()
 			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
-				(caddr_t)calloc(1,sizeof(struct dbAddr));
+				calloc(1,sizeof(struct dbAddr));
 			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
 			}
 			else {
@@ -380,15 +382,14 @@ static long initDatabase()
 			    strcat(message," not found");
 			    status = S_db_notFound;
 			    errMessage(status,message);
-			    if(rtnval==OK) rtnval=status;
 			}
 		    }
 		}
 
 		/* call record support init_record routine */
 		if(!(recSup->papRset[i]->init_record)) continue;
-		status = (*(recSup->papRset[i]->init_record))(precord);
-		if(rtnval==OK)rtnval=status;
+		rtnval = (*(recSup->papRset[i]->init_record))(precord);
+		if(status==0) status = rtnval;
 	}
     }
 
@@ -410,12 +411,13 @@ static long initDatabase()
 		if(precord->lset > 0) continue; /*already in a lock set */
 		lookAhead = ( (precord->lset == -1) ? TRUE : FALSE);
 		nset++;
-		status = addToSet(precord,i,lookAhead,i,j,nset);
+		rtnval = addToSet(precord,i,lookAhead,i,j,nset);
+		if(status==0) status=rtnval;
 		if(status) return(status);
 	}
     }    
     dbScanLockInit(nset);
-    return(rtnval);
+    return(status);
 }
 
 static long addToSet(precord,record_type,lookAhead,i,j,lset)
@@ -522,7 +524,7 @@ static long initialProcess()
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
 		if(!precord->pini) continue;
-		(void)dbProcess(precord->pdba);
+		(void)dbProcess(precord);
 	}
     }
     return(0);
@@ -543,6 +545,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     char           *fname;
 {
     int             fd;
+    int             fd2;
     int             len;
     int             len2;
     int             lineNum = 0;
@@ -563,6 +566,28 @@ static long getResources(fname) /* Resource Definition File interpreter */
     long            n_long;
     float           n_float;
     double          n_double;
+     if (sdrSum) {
+ 	if ((fd2 = open("default.sdrSum", READ, 0x0)) < 0) {
+ 	    errMessage(0L, "Can't open default.sdrSum file");
+ 	    return (-1);
+ 	}
+ 	fioRdString(fd2, buff, MAX);
+ 	close(fd2);
+ 	len2 = strlen(sdrSum->allSdrSums);
+ 
+ 	if ((strncmp(sdrSum->allSdrSums, buff, len2)) != SAME) {
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(0L, "THIS DATABASE IS OUT_OF_DATE");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    return (-1);
+ 	}
+     } else {
+ 	logMsg("Skipping Check for an out-of-date database\n");
+     }
     if (!fname) return (0);
     if ((fd = open(fname, READ, 0x0)) < 0) {
 	errMessage(0L, "getResources: No such Resource file");

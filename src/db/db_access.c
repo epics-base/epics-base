@@ -31,6 +31,7 @@
  * .01	06-25-91 joh	inserted the RISC aligned db_access.h structures
  * .02	08-06-91 mrk	Make extra values 0
  * .03	08-13-91 mrk	Add pfl argument to dbGetField calls
+ * .04  02-05-92 jba	Changed function arguments from paddr to precord 
  */
 
 
@@ -43,6 +44,7 @@
 #include        <vxWorks.h>
 #include        <types.h>
 
+#include        <stdarg.h>
 #include        <fioLib.h>
 #include        <strLib.h>
 #include        <dbDefs.h>
@@ -485,7 +487,7 @@ register struct db_addr *pdb_addr;
 {
         long    status;
 
-        status=dbProcess(pdb_addr);
+        status=dbProcess((void *)pdb_addr->precord);
         if(!RTN_SUCCESS(status)) errMessage(status,"db_process failed");
         return;
 }

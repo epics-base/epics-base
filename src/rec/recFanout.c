@@ -1,5 +1,4 @@
-/* recFanout.c */
-/* share/src/rec $Id$ */
+/* recFanout.c */ /* share/src/rec $Id$ */
 
 /* recFanout.c - Record Support Routines for Fanout records */
 /*
@@ -40,6 +39,8 @@
  * .08  09-25-91        jba     added input link for seln
  * .09  09-26-91        jba     added select_mask option
  * .10  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .11  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .12  02-05-92	jba	Added FWD scan link 
  */
 
 #include        <vxWorks.h>
@@ -48,11 +49,10 @@
 #include        <lstLib.h>
 
 #include        <alarm.h>
-#include        <dbAccess.h>
 #include        <dbDefs.h>
+#include        <dbAccess.h>
 #include        <dbFldTypes.h>
 #include        <errMdef.h>
-#include        <link.h>
 #include        <recSup.h>
 #include        <fanoutRecord.h>
 
@@ -111,10 +111,9 @@ static long init_record(pfanout)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr        *paddr;
+static long process(pfanout)
+    struct fanoutRecord     *pfanout;
 {
-    struct fanoutRecord        *pfanout=(struct fanoutRecord *)(paddr->precord);
     short           stat,sevr,nsta,nsev;
 
 
@@ -129,7 +128,7 @@ static long process(paddr)
 
     /* fetch link selection  */
     if(pfanout->sell.type == DB_LINK){
-         status=dbGetLink(&(pfanout->sell.value.db_link),pfanout,DBR_USHORT,
+         status=dbGetLink(&(pfanout->sell.value.db_link),(struct dbCommon *)pfanout,DBR_USHORT,
          &(pfanout->seln),&options,&nRequest);
          if(status!=0) {
 		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
@@ -137,12 +136,18 @@ static long process(paddr)
     }
     switch (pfanout->selm){
     case (SELECT_ALL):
-        if (pfanout->lnk1.type==DB_LINK) dbScanPassive(pfanout->lnk1.value.db_link.pdbAddr);
-        if (pfanout->lnk2.type==DB_LINK) dbScanPassive(pfanout->lnk2.value.db_link.pdbAddr);
-        if (pfanout->lnk3.type==DB_LINK) dbScanPassive(pfanout->lnk3.value.db_link.pdbAddr);
-        if (pfanout->lnk4.type==DB_LINK) dbScanPassive(pfanout->lnk4.value.db_link.pdbAddr);
-        if (pfanout->lnk5.type==DB_LINK) dbScanPassive(pfanout->lnk5.value.db_link.pdbAddr);
-        if (pfanout->lnk6.type==DB_LINK) dbScanPassive(pfanout->lnk6.value.db_link.pdbAddr);
+        if (pfanout->lnk1.type==DB_LINK) 
+		dbScanPassive(((struct dbAddr *)pfanout->lnk1.value.db_link.pdbAddr)->precord);
+        if (pfanout->lnk2.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->lnk2.value.db_link.pdbAddr)->precord);
+        if (pfanout->lnk3.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->lnk3.value.db_link.pdbAddr)->precord);
+        if (pfanout->lnk4.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->lnk4.value.db_link.pdbAddr)->precord);
+        if (pfanout->lnk5.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->lnk5.value.db_link.pdbAddr)->precord);
+        if (pfanout->lnk6.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->lnk6.value.db_link.pdbAddr)->precord);
         break;
     case (SELECTED):
         if(pfanout->seln<0 || pfanout->seln>6) {
@@ -154,7 +159,7 @@ static long process(paddr)
         }
         plink=&(pfanout->lnk1);
         plink += (pfanout->seln-1);
-        dbScanPassive(plink->value.db_link.pdbAddr);
+        dbScanPassive(((struct dbAddr *)plink->value.db_link.pdbAddr)->precord);
         break;
     case (SELECT_MASK):
         if(pfanout->seln==0) {
@@ -167,7 +172,8 @@ static long process(paddr)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(state & 1 && plink->type==DB_LINK) dbScanPassive(plink->value.db_link.pdbAddr);
+            if(state & 1 && plink->type==DB_LINK)
+			dbScanPassive(((struct dbAddr *)plink->value.db_link.pdbAddr)->precord);
         }
         break;
     default:
@@ -182,6 +188,10 @@ static long process(paddr)
         db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
         db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
     }
+    /* process the forward scan link record */
+    if (pfanout->flnk.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pfanout->flnk.value.db_link.pdbAddr)->precord);
+
     pfanout->pact=FALSE;
     return(0);
 }

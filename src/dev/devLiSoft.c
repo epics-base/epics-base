@@ -38,11 +38,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<longinRecord.h>
 
@@ -105,7 +104,7 @@ static long read_longin(plongin)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(plongin->inp.value.db_link),plongin,DBR_LONG,
+        status = dbGetLink(&(plongin->inp.value.db_link),(struct dbCommon *)plongin,DBR_LONG,
                &plongin->val,&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(plongin,LINK_ALARM,VALID_ALARM);

@@ -31,6 +31,7 @@
  * -----------------
  * .01  10-24-91        jba     New device support changes
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  */ 
 
 #include     <vxWorks.h>
@@ -39,13 +40,12 @@
 #include     <lstLib.h>
 
 #include        <alarm.h>
-#include     <dbAccess.h>
 #include     <dbDefs.h>
+#include     <dbAccess.h>
 #include     <dbRecDes.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
-#include     <link.h>
 #include     <recSup.h>
 #include     <pulseTrainRecord.h>
 
@@ -138,10 +138,9 @@ static long init_record(ppt)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr     *paddr;
+static long process(ppt)
+    struct pulseTrainRecord     *ppt;
 {
-    struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)(paddr->precord);
     struct ptdset     *pdset = (struct ptdset *)(ppt->dset);
     long              status=0;
     long              options,nRequest;
@@ -161,7 +160,7 @@ static long process(paddr)
               options=0;
               nRequest=1;
               ppt->pact = TRUE;
-              status=dbGetLink(&ppt->sgl.value.db_link,ppt,DBR_SHORT,
+              status=dbGetLink(&ppt->sgl.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,
                    &ppt->sgv,&options,&nRequest);
               ppt->pact = FALSE;
               if(status!=0) {
@@ -201,7 +200,7 @@ static long process(paddr)
      monitor(ppt);
 
      /* process the forward scan link record */
-     if (ppt->flnk.type==DB_LINK) dbScanPassive(ppt->flnk.value.db_link.pdbAddr);
+     if (ppt->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppt->flnk.value.db_link.pdbAddr)->precord);
 
      ppt->pact=FALSE;
      return(status);

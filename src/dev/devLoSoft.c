@@ -37,11 +37,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<longoutRecord.h>
 
@@ -75,7 +74,7 @@ static long write_longout(plongout)
     case (CONSTANT) :
 	break;
     case (DB_LINK) :
-	status = dbPutLink(&plongout->out.value.db_link,plongout,DBR_LONG,
+	status = dbPutLink(&plongout->out.value.db_link,(struct dbCommon *)plongout,DBR_LONG,
 	               &plongout->val,1L);
         if(status!=0) {
                 recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);

@@ -33,6 +33,7 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  12-02-91        jba     Added cmd control to io-interrupt processing
  * .03  12-12-91        jba     Set cmd to zero in io-interrupt processing
+ * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -88,7 +89,7 @@ static void myCallback(pcallback,no_read,pdata)
 	long   i;
 
 	if(!pwf->busy) return;
-        dbScanLock(pwf);
+        dbScanLock((struct dbCommon *)pwf);
 	pwf->busy = FALSE;
 	if(no_read>pwf->nelm)no_read = pwf->nelm;
 	if(ftvl==DBF_CHAR || ftvl==DBF_UCHAR) {
@@ -110,8 +111,8 @@ static void myCallback(pcallback,no_read,pdata)
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}
-	(pcallback->process)(&pcallback->dbAddr);
-        dbScanUnlock(pwf);
+	(pcallback->process)(pwf);
+        dbScanUnlock((struct dbCommon *)pwf);
 }
 
 static long get_ioint_info(cmd,pwf,io_type,card_type,card_number)
@@ -121,7 +122,7 @@ static long get_ioint_info(cmd,pwf,io_type,card_type,card_number)
     short               *card_type;
     short               *card_number;
 {
-    *cmd=0;
+    *cmd=-1;
     if(pwf->inp.type != VME_IO) return(S_dev_badInpType);
     *io_type = IO_WF;
     *card_type = JGVTR1;

@@ -72,12 +72,11 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<steppermotorRecord.h>
@@ -158,10 +157,9 @@ static long init_record(psm)
 }
 
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(psm)
+	struct steppermotorRecord	*psm;
 {
-	struct steppermotorRecord	*psm=(struct steppermotorRecord *)(paddr->precord);
 
 	/* intialize the stepper motor record when the init bit is 0 */
 	/* the init is set when the readback returns */
@@ -185,7 +183,7 @@ static long process(paddr)
 	monitor(psm);
 
 	/* process the forward scan link record */
-	if (psm->flnk.type==DB_LINK) dbScanPassive(psm->flnk.value.db_link.pdbAddr);
+	if (psm->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)psm->flnk.value.db_link.pdbAddr)->precord);
 
 	psm->pact=FALSE;
 	return(0);
@@ -367,9 +365,9 @@ psm_data->accel
 );
 */
     if(not_init_record) {
-	dbScanLock(psm);
+	dbScanLock((struct dbCommon *)psm);
 	if(psm->pact) {
-	    dbScanUnlock(psm);
+	    dbScanUnlock((struct dbCommon *)psm);
 	    return;
 	}
 	psm->pact = TRUE;
@@ -493,7 +491,7 @@ psm_data->accel
     }
     if(not_init_record) {
 	psm->pact = FALSE;
-	dbScanUnlock(psm);
+	dbScanUnlock((struct dbCommon *)psm);
     }
     return;
 }
@@ -635,7 +633,8 @@ struct steppermotorRecord	*psm;
 		long options=0;
 		long nRequest=1;
 
-		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
+		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
+			&(psm->val),&options,&nRequest)){
 			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf = FALSE;
@@ -737,7 +736,8 @@ struct steppermotorRecord	*psm;
 		long options=0;
 		long nRequest=1;
 
-		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
+		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
+			&(psm->val),&options,&nRequest)) {
 			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf=FALSE;
@@ -822,7 +822,8 @@ short                           moving;
 
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
-	if(dbGetLink(&(psm->rdbl.value.db_link),psm,DBR_FLOAT,&new_pos,&options,&nRequest)){
+	if(dbGetLink(&(psm->rdbl.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
+		&new_pos,&options,&nRequest)){
 		recGblSetSevr(psm,READ_ALARM,VALID_ALARM);
 		psm->init = reset;
 		return;

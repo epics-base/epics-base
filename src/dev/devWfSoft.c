@@ -104,7 +104,7 @@ static long read_wf(pwf)
     case (DB_LINK) :
 	options=0;
 	nRequest=pwf->nelm;
-	if(dbGetLink(&(pwf->inp.value.db_link),pwf,pwf->ftvl,
+	if(dbGetLink(&(pwf->inp.value.db_link),(struct dbCommon *)pwf,pwf->ftvl,
 		pwf->bptr,&options,&nRequest)!=0){
                        recGblSetSevr(pwf,LINK_ALARM,VALID_ALARM);
                 }

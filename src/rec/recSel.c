@@ -34,6 +34,7 @@
  *                              the previous value
  * .02  10-12-90	mrk	changes for new record support
  * .03  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -42,11 +43,10 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<selRecord.h>
 
@@ -118,10 +118,9 @@ static long init_record(psel)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(psel)
+	struct selRecord	*psel;
 {
-	struct selRecord	*psel=(struct selRecord *)(paddr->precord);
 
 	psel->pact = TRUE;
 	if(fetch_values(psel)==0) {
@@ -140,7 +139,7 @@ static long process(paddr)
 
 	/* process the forward scan link record */
 	if (psel->flnk.type==DB_LINK)
-		dbScanPassive(psel->flnk.value.db_link.pdbAddr);
+		dbScanPassive(((struct dbAddr *)psel->flnk.value.db_link.pdbAddr)->precord);
 
 	psel->pact=FALSE;
 	return(0);
@@ -388,7 +387,7 @@ struct selRecord *psel;
 	        if(psel->nvl.type == DB_LINK ){
 			options=0;
 			nRequest=1;
-			if(dbGetLink(&(psel->nvl.value.db_link),psel,DBR_USHORT,
+			if(dbGetLink(&(psel->nvl.value.db_link),(struct dbCommon *)psel,DBR_USHORT,
 				&(psel->seln),&options,&nRequest)!=NULL) {
 		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);
@@ -398,7 +397,8 @@ struct selRecord *psel;
 		pvalue += psel->seln;
                 if(plink->type==DB_LINK) {
 		        nRequest=1;
-		        status=dbGetLink(&plink->value.db_link,psel,DBR_DOUBLE,pvalue,&options,&nRequest);
+		        status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,
+				pvalue,&options,&nRequest);
 			if(status!=0) {
 		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);
@@ -410,7 +410,8 @@ struct selRecord *psel;
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
 		if(plink->type==DB_LINK) {
 			nRequest=1;
-			status = dbGetLink(&plink->value.db_link,psel,DBR_DOUBLE,pvalue,&options,&nRequest);
+			status = dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,
+				pvalue,&options,&nRequest);
 			if(status!=0) {
 		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);

@@ -40,11 +40,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<biRecord.h>
 
@@ -108,7 +107,7 @@ static long read_bi(pbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_USHORT,
+        status = dbGetLink(&(pbi->inp.value.db_link),(struct dbCommon *)pbi,DBR_USHORT,
                 &pbi->val,&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pbi,LINK_ALARM,VALID_ALARM);

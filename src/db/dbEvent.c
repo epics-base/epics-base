@@ -409,7 +409,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	lstAdd(&precord->mlis, pevent);
+  	lstAdd((LIST*)&precord->mlis,(NODE*) pevent);
   	UNLOCKREC(precord);
 
   	return OK;
@@ -440,9 +440,9 @@ register struct event_block	*pevent;
 
   	LOCKREC(precord);
   	/* dont let a misplaced event corrupt the queue */
-  	status = lstFind( &precord->mlis, pevent);
+  	status = lstFind((LIST*)&precord->mlis,(NODE*)pevent);
   	if(status!=ERROR)
-    		lstDelete( &precord->mlis, pevent);
+    		lstDelete((LIST*)&precord->mlis,(NODE*)pevent);
   	UNLOCKREC(precord);
   	if(status == ERROR)
     		return ERROR;

@@ -31,6 +31,8 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -41,6 +43,7 @@
 #include	<wdLib.h>
 
 #include	<alarm.h>
+#include	<callback.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -82,11 +85,11 @@ static void myCallback(pcallback)
     struct callback *pcallback;
 {
     struct aoRecord *pao=(struct aoRecord *)(pcallback->prec);
-     struct rset     *prset=(struct rset *)(pao->rset);
+    struct rset     *prset=(struct rset *)(pao->rset);
 
-    dbScanLock(pao);
-    (*prset->process)(pao->pdba);
-    dbScanUnlock(pao);
+    dbScanLock((struct dbCommon *)pao);
+    (*prset->process)(pao);
+    dbScanUnlock((struct dbCommon *)pao);
 }
     
     
@@ -134,7 +137,7 @@ static long write_ao(pao)
 		wait_time = (int)(pao->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pao->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);
 	}
     default :

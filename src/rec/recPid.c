@@ -32,6 +32,7 @@
  * -----------------
  * .01  10-15-90	mrk	changes for new record support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -42,11 +43,10 @@
 unsigned long tickGet();
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<pidRecord.h>
 
@@ -106,10 +106,9 @@ static long init_record(ppid)
 	return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(ppid)
+	struct pidRecord	*ppid;
 {
-    struct pidRecord	*ppid=(struct pidRecord *)(paddr->precord);
 	long		 status;
 
 	ppid->pact = TRUE;
@@ -128,7 +127,7 @@ static long process(paddr)
 	monitor(ppid);
 
 	/* process the forward scan link record */
-	if (ppid->flnk.type==DB_LINK) dbScanPassive(ppid->flnk.value.db_link.pdbAddr);
+	if (ppid->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppid->flnk.value.db_link.pdbAddr)->precord);
 
 	ppid->pact=FALSE;
 	return(status);
@@ -342,7 +341,7 @@ struct pidRecord     *ppid;
 	}
         options=0;
         nRequest=1;
-        if(dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
+        if(dbGetLink(&(ppid->cvl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
 	&cval,&options,&nRequest)!=NULL) {
                 recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
                 return(0);
@@ -351,7 +350,7 @@ struct pidRecord     *ppid;
         if(ppid->stpl.type == DB_LINK && ppid->smsl == CLOSED_LOOP){
         	options=0;
         	nRequest=1;
-        	if(dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
+        	if(dbGetLink(&(ppid->stpl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
                         recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
                         return(0);

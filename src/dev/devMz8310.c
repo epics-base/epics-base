@@ -31,40 +31,44 @@
  * -----------------
  * .01  10-22-91	mrk	Initial Implementation
  * .02  11-26-91	jba	Initialized clockDiv to 0
- * .03  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .03  12-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .04  01-14-92        mrk	Added interrupt support
  *      ...
  */
-
-/* In order to understand the code in the file you must first	*/
+
+
+/* In order to understand the code in this file you must first	*/
 /* understand the MIZAR 8310 Users Manual.			*/
 /* You must also understand Chapter 1 of the 			*/
 /* the Advanced Micro Devices Am9513 Technical Manual		*/
-
+
 #include	<vxWorks.h>
 #include	<vme.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<68k/iv.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbRecType.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbCommon.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
+#include	<dbScan.h>
 #include	<special.h>
 #include	<module_types.h>
+#include	<eventRecord.h>
 #include	<pulseCounterRecord.h>
 #include	<pulseDelayRecord.h>
 #include	<pulseTrainRecord.h>
-
 /* Create the dsets for devMz8310 */
 long report();
 long init();
 long init_pc();
 long init_pd();
 long init_pt();
+long get_ioint_info();
 long cmd_pc();
 long write_pd();
 long write_pt();
@@ -76,35 +80,60 @@ typedef struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write;} MZDSET;
-MZDSET devPcMz8310={ 5, report, init, init_pc, NULL, cmd_pc};
-MZDSET devPdMz8310={ 5,   NULL, NULL, init_pd, NULL, write_pd};
-MZDSET devPtMz8310={ 5,   NULL, NULL, init_pt, NULL, write_pt};
+/*It doesnt matter who honors report or init thus let 1st devSup do it*/
+MZDSET devEventMz8310=	{ 5, report, init,    NULL, get_ioint_info, NULL};
+MZDSET devPcMz8310=	{ 5,   NULL, NULL, init_pc,            NULL, cmd_pc};
+MZDSET devPdMz8310=	{ 5,   NULL, NULL, init_pd,            NULL, write_pd};
+MZDSET devPtMz8310=	{ 5,   NULL, NULL, init_pt,            NULL, write_pt};
 
+/*forward references			*/
+void mz8310_int_service(IOSCANPVT);
+
+volatile int mz8310Debug=0;
+
+static unsigned short *shortaddr;
+/* definitions related to fields of records*/
 /* defs for gsrc and csrc fields */
 #define INTERNAL 0
 #define EXTERNAL 1
 #define SOFTWARE 1
-
 /* defs for counter commands */
 #define CTR_READ	0
 #define CTR_CLEAR	1
 #define CTR_START	2
 #define CTR_STOP	3
 #define CTR_SETUP	4
-
+
 /* defines specific to mz8310*/
 
-#define MAXCARDS	4
 static unsigned short BASE;
+#define MAXCARDS	4
 #define CARDSIZE	0x00000100
-
+#define NUMINTVEC	4
 #define CHIPSIZE	0x20
 #define CHANONCHIP	5
 #define NCHIP		2
 
-/*static*/
- unsigned short *shortaddr;
-int mz8310Debug=0;
+static struct {
+    unsigned char irq_lev;	/*interrupt request level  */
+    unsigned char vec_addr;	/*offset from base register*/
+}mz8310_strap_info[NUMINTVEC] = {
+    {1,0x41},{3,0x61},{5,0x81},{6,0xA1}};
+
+/*keep information needed for reporting*/
+static int ncards=0;
+static struct mz8310_info {
+    short present;
+    struct {
+	short connected;
+	short nrec_using;
+	IOSCANPVT ioscanpvt;
+    } int_info[NUMINTVEC];
+    struct {
+	short nrec_using;
+    } chan_info[NCHIP][CHANONCHIP];
+}mz8310_info[MAXCARDS];
+
 
 #define PCMDREG(CARD,CHIP) \
 ( (unsigned char *)\
@@ -112,6 +141,14 @@ int mz8310Debug=0;
 #define PDATAREG(CARD,CHIP) \
 ( (unsigned short *)\
  ((unsigned char*)shortaddr + BASE + (CARD)*CARDSIZE + (CHIP)*CHIPSIZE))
+#define MZ8310INTVEC(CARD,INTVEC) \
+( (unsigned char) \
+ (MZ8310_INT_VEC_BASE + (CARD)*NUMINTVEC + (INTVEC)))
+#define PVECREG(CARD,INTVEC) \
+( (unsigned char *)\
+ ((unsigned char*)shortaddr + BASE + (CARD)*CARDSIZE + mz8310_strap_info[(INTVEC)].vec_addr))
+
+/*definitions for am9513 stc chip */
 
 /* Internal clock rate and rate divisor */
 #define INT_CLOCK_RATE	4e6
@@ -145,7 +182,7 @@ int mz8310Debug=0;
 #define ENAPRE		0xf8
 #define DISPRE		0xf9
 #define RESET		0xff
-
+
 /* Count Source Selection */
 #define SRC1	0x0100
 #define SRC2	0x0200
@@ -159,19 +196,7 @@ static unsigned short externalCountSource[] = {SRC1,SRC2,SRC3,SRC4,SRC5};
 #define F4	0x0e00
 #define F5	0x0f00
 static unsigned short internalCountSource[] = {F1,F2,F3,F4,F5};
-
-/*static*/
- int ncards=0;
-/*static*/
- struct mz8310_info {
-    short present;
-    struct {
-	short used;
-	short type;
-    } chan_info[NCHIP][CHANONCHIP];
-}mz8310_info[MAXCARDS];
-
-
+
 /*The following are used to communicate with the mz8310.		*/
 /*The mz8310 can not keep up when commands are sent as rapidly as possible.*/
 
@@ -210,11 +235,9 @@ getData(preg,pdata)
 static long init(after)
     short after;
 {
-    int card,chip,channel;
-/*volatile*/
-    unsigned char  *pcmd;
-/*volatile*/
-    unsigned short *pdata;
+    int card,chip,channel,intvec;
+    volatile unsigned char  *pcmd;
+    volatile unsigned short *pdata;
     unsigned short data;
     int dummy;
 
@@ -248,6 +271,12 @@ static long init(after)
 		}
 	    }
 	}
+	/*Initialize I/O scanning for each interrupt vector		*/
+	/*Note that interrupt vectors are not initialized until the	*/
+	/*first record is attached via get_ioint_info.			*/
+	if(mz8310_info[card].present) for(intvec=0; intvec<NUMINTVEC; intvec++) {
+	    scanIoInit(&mz8310_info[card].int_info[intvec].ioscanpvt);
+	}
     }
     return(0);
 }
@@ -256,8 +285,7 @@ static long report(fp,interest)
     FILE *fp;
     int  interest;
 {
-    int card,chip,channel,type;
-    char *pstr;
+    int card,chip,channel,intvec;
 
     for(card=0; card<MAXCARDS; card++) {
 	if(!mz8310_info[card].present) continue;
@@ -265,16 +293,22 @@ static long report(fp,interest)
 	if(interest==0)continue;
 	for(chip=0; chip<NCHIP; chip++) {
 	    for(channel=0; channel<CHANONCHIP; channel++) {
-		short used;
+		short nrec_using;
 
-		used = mz8310_info[card].chan_info[chip][channel].used;
-		if(used==0) continue;
-		type = mz8310_info[card].chan_info[chip][channel].type;
-		pstr = GET_PRECTYPE(type);
-		if(!pstr) fprintf(fp,"    Illegal record type\n");
-		else fprintf(fp,"   chip: %d channel: %d used: %d recType: %s\n",
-			chip,channel,used,pstr);
+		nrec_using = mz8310_info[card].chan_info[chip][channel].nrec_using;
+		if(nrec_using==0) continue;
+		fprintf(fp,"   chip: %d channel: %d nrec_using: %d\n",
+			chip,channel,nrec_using);
 	    }
+	}
+	for(intvec=0; intvec<NUMINTVEC; intvec++) {
+	    short nrec_using,connected;
+
+	    nrec_using = mz8310_info[card].int_info[intvec].nrec_using;
+	    connected = mz8310_info[card].int_info[intvec].connected;
+	    if(nrec_using==0 && !connected) continue;
+	    fprintf(fp,"  intvec: %d connected: %d nrec_using: %d  eventRecord\n",
+			intvec,connected,nrec_using);
 	}
     }
 }
@@ -316,16 +350,13 @@ static long init_common(pdbCommon,pout,nchan)
     }
     chip = (signal>=CHANONCHIP ? 1 : 0);
     channel = signal - chip*CHANONCHIP;
-    if((mz8310_info[card].chan_info[chip][channel].used +=1)>1) 
+    if((mz8310_info[card].chan_info[chip][channel].nrec_using +=1)>1) 
 	recGblRecordError(S_dev_Conflict,pdbCommon,
 		"devMz8310 (init_record) signal already used");
-    mz8310_info[card].chan_info[chip][channel].type = pdbCommon->pdba->record_type;
     if(nchan==2) {
-	if((mz8310_info[card].chan_info[chip][channel+1].used +=1)>1)
+	if((mz8310_info[card].chan_info[chip][channel+1].nrec_using +=1)>1)
 	    recGblRecordError(S_dev_Conflict,pdbCommon,
 		"devMz8310 (init_record) signal already used");
-	mz8310_info[card].chan_info[chip][channel+1].type
-		= pdbCommon->pdba->record_type;
     }
     return(0);
  }
@@ -360,6 +391,64 @@ static long init_pt(pr)
     /*just use dpvt as flag that initialization succeeded*/
     pr->dpvt = (void *)pr;
     return(0);
+}
+
+static void mz8310_int_service(IOSCANPVT ioscanpvt)
+{
+	scanIoRequest(ioscanpvt);
+}
+
+static long get_ioint_info(
+	short			*cmd,
+	struct eventRecord	*pr,
+	IOSCANPVT		*ppvt)
+{
+	struct vmeio *pvmeio = (struct vmeio *)(&pr->inp.value);
+	unsigned int	card,intvec;
+
+	*ppvt = NULL;	/*initialize pvt to null*/
+	card = pvmeio->card;
+	intvec = pvmeio->signal;
+	if(card>=MAXCARDS){
+	    recGblRecordError(S_dev_badCard,pr,
+		"devMz8310 (get_ioint_info) exceeded maximum supported cards");
+	    return(0);
+	}
+	if(intvec>=NUMINTVEC) {
+	    recGblRecordError(S_dev_badSignal,pr,
+		"devMz8310 (get_ioint_info) Illegal SIGNAL field");
+	    return(0);
+	}
+	if(!mz8310_info[card].present){
+	    recGblRecordError(S_dev_badCard,pr,
+		"devMz8310 (get_ioint_info) card not found");
+	     return(0);
+	}
+	*ppvt = mz8310_info[card].int_info[intvec].ioscanpvt;
+	if(*cmd!=0) {
+	    if(*cmd==1) mz8310_info[card].int_info[intvec].nrec_using -= 1;
+	    return(0);
+	}
+	mz8310_info[card].int_info[intvec].nrec_using +=1;
+	if(!mz8310_info[card].int_info[intvec].connected) {
+	    unsigned char vector;
+	    unsigned char *pvecreg;
+
+	    vector=MZ8310INTVEC(card,intvec);
+	    if(intConnect(INUM_TO_IVEC(vector),(FUNCPTR)mz8310_int_service,
+	    (int)mz8310_info[card].int_info[intvec].ioscanpvt)!=OK) {
+		recGblRecordError(0,pr,"devMz8310 (get_ioint_info) intConnect failed");
+		return(0);
+	    }
+	    pvecreg = PVECREG(card,intvec);
+	    if(vxMemProbe(pvecreg,WRITE,sizeof(char),&vector)!=OK) {
+		recGblRecordError(0,pr,"devMz8310 (get_ioint_info) vxMemProbe failed");
+		return(0);
+	    }
+	    sysIntEnable(mz8310_strap_info[intvec].irq_lev);
+	    mz8310_info[card].int_info[intvec].connected = TRUE;
+	}
+	return(0);
 }
 
 static long cmd_pc(pr)

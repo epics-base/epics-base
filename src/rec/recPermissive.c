@@ -32,6 +32,7 @@
  * -----------------
  * .01  10-10-90	mrk	extensible record and device support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -39,11 +40,10 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<permissiveRecord.h>
 
@@ -88,17 +88,16 @@ struct rset permissiveRSET={
 
 void monitor();
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(ppermissive)
+    struct permissiveRecord     *ppermissive;
 {
-    struct permissiveRecord    *ppermissive=(struct permissiveRecord *)(paddr->precord);
 
     ppermissive->pact=TRUE;
     ppermissive->udf=FALSE;
     tsLocalTime(&ppermissive->time);
     monitor(ppermissive);
     if (ppermissive->flnk.type==DB_LINK)
-        dbScanPassive(ppermissive->flnk.value.db_link.pdbAddr);
+        dbScanPassive(((struct dbAddr *)ppermissive->flnk.value.db_link.pdbAddr)->precord);
     ppermissive->pact=FALSE;
     return(0);
 }

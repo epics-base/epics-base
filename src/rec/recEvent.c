@@ -38,12 +38,12 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
+#include	<dbScan.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<module_types.h>
 #include	<eventRecord.h>
@@ -101,43 +101,27 @@ static long init_record(pevent)
     struct eventRecord	*pevent;
 {
     struct eventdset *pdset;
-    long status;
+    long status=0;
 
-    if(!(pdset = (struct eventdset *)(pevent->dset))) {
-	recGblRecordError(S_dev_noDSET,pevent,"event: init_record");
-	return(S_dev_noDSET);
-    }
-    /* must have read_event function defined */
-    if( (pdset->number < 5) || (pdset->read_event == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pevent,"event: init_record");
-	return(S_dev_missingSup);
-    }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pevent,process))) return(status);
-    }
-    return(0);
+    if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
+		status=(*pdset->init_record)(pevent,process);
+    return(status);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pevent)
+        struct eventRecord     *pevent;
 {
-    struct eventRecord	*pevent=(struct eventRecord *)(paddr->precord);
 	struct eventdset	*pdset = (struct eventdset *)(pevent->dset);
-	long		 status;
+	long		 status=0;
 
-	if( (pdset==NULL) || (pdset->read_event==NULL) ) {
-		pevent->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pevent,"read_event");
-		return(S_dev_missingSup);
-	}
-
-	status=(*pdset->read_event)(pevent); /* read the new value */
+	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
+		status=(*pdset->read_event)(pevent); /* read the new value */
 	pevent->pact = TRUE;
 
 	/* status is one if an asynchronous record is being processed*/
 	if (status==1) return(0);
  
-	if(pevent->enum>0) post_event(enum);
+	if(pevent->val>0) post_event((int)pevent->val);
 
 	tsLocalTime(&pevent->time);
 
@@ -145,7 +129,7 @@ static long process(paddr)
 	monitor(pevent);
 
 	/* process the forward scan link record */
-	if (pevent->flnk.type==DB_LINK) dbScanPassive(pevent->flnk.value.db_link.pdbAddr);
+	if (pevent->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pevent->flnk.value.db_link.pdbAddr)->precord);
 
 	pevent->pact=FALSE;
 	return(status);
@@ -156,9 +140,9 @@ static long get_value(pevent,pvdes)
     struct eventRecord             *pevent;
     struct valueDes     *pvdes;
 {
-    pvdes->field_type = DBF_SHORT;
+    pvdes->field_type = DBF_USHORT;
     pvdes->no_elements=1;
-    pvdes->pvalue = (caddr_t)(&pevent->val;
+    pvdes->pvalue = (caddr_t)(&pevent->val);
     return(0);
 }
 
@@ -184,6 +168,6 @@ static void monitor(pevent)
             db_post_events(pevent,&pevent->sevr,DBE_VALUE);
     }
 
-    db_post_events(pevent,&(pevent->enum,monitor_mask|DBE_VALUE);
+    db_post_events(pevent,&pevent->val,monitor_mask|DBE_VALUE);
     return;
 }

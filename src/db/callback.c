@@ -36,6 +36,7 @@
 #include	<stdlib.h>
 #include	<types.h>
 #include	<semLib.h>
+#include	<rngLib.h>
 #include 	<lstLib.h>
 
 #include	<dbDefs.h>
@@ -43,14 +44,14 @@
 #include	<taskwd.h>
 #include	<task_params.h>
 
+#define QUEUESIZE 1000
 static SEM_ID callbackSem[NUM_CALLBACK_PRIORITIES];
+static RING_ID callbackQ[NUM_CALLBACK_PRIORITIES];
 static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
 volatile int callbackRestart=FALSE;
-static volatile CALLBACK *head[NUM_CALLBACK_PRIORITIES];
-static volatile CALLBACK *tail[NUM_CALLBACK_PRIORITIES];
 
 /* forward references */
-void wdCallback();	/*callback from taskwd*/
+void wdCallback(long);	/*callback from taskwd*/
 void start();		/*start or restart a callbackTask*/
 
 /*public routines */
@@ -66,41 +67,50 @@ long callbackInit()
 
 /* Routine which places requests into callback queue*/
 /* This routine can be called from interrupt routine*/
-long callbackRequest(struct callback *pcallback)
+void callbackRequest(CALLBACK *pcallback)
 {
     int priority = pcallback->priority;
     int lockKey;
+    int nput;
+    static int status;
 
     if(priority<0 || priority>(NUM_CALLBACK_PRIORITIES)) {
 	logMsg("callbackRequest called with invalid priority");
-	return(-1);
+	return;
     }
     lockKey = intLock();
-    pcallback->next = NULL;
-    tail[priority]->next = pcallback;
-    if(head[priority]==NULL) head[priority] = pcallback;
+    nput = rngBufPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
     intUnlock(lockKey);
-    if(semGive(callbackSem[priority])!=OK)
+    if(nput!=sizeof(pcallback)) logMsg("callbackRequest ring buffer full");
+    if((status=semGive(callbackSem[priority]))!=OK) {
+/*semGive randomly returns garbage value*/
+/*
 		logMsg("semGive returned error in callbackRequest\n");
-    return(0);
+logMsg("status=%d\n",status);
+*/
+    }
+    return;
 }
 
 /* General purpose callback task */
-static void callbackTask(int priority)
+/*static*/
+ void callbackTask(int priority)
 {
-    volatile CALLBACK *pcallback,*next;
-    int lockKey;
+    volatile CALLBACK *pcallback;
+    int nget;
 
     while(TRUE) {
 	/* wait for somebody to wake us up */
-        if(semTake(callbackSem[priority],WAIT_FOREVER)!=OK )
-		logMsg("semTake returned error in callbackRequest\n");
-
-	while(TRUE) {
-	    lockKey = intLock();
-	    if((pcallback=head[priority])==NULL) break;
-	    if((head[priority]=pcallback->next)==NULL) tail[priority]=NULL;
-	    intUnlock(lockKey);
+        if(semTake(callbackSem[priority],WAIT_FOREVER)!=OK ){
+		errMessage(0,"semTake returned error in callbackTask\n");
+		taskSuspend(0);
+	}
+	while(rngNBytes(callbackQ[priority])>=sizeof(pcallback)) {
+	    nget = rngBufGet(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
+	    if(nget!=sizeof(pcallback)) {
+		errMessage(0,"rngBufGet failed in callbackTask");
+		taskSuspend(0);
+	    }
 	    (*pcallback->callback)(pcallback);
 	}
     }
@@ -108,21 +118,20 @@ static void callbackTask(int priority)
 
 static void start(int ind)
 {
-    char    name[100];
     int     priority;
 
-    head[ind] = tail[ind] = 0;
     if((callbackSem[ind] = semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
-	logMsg("semBcreate failed while starting a callback task\n");
-    sprintf(name,"%s%2.2d",CALLBACK_NAME,ind);
+	errMessage(0,"semBcreate failed while starting a callback task\n");
     if(ind==0) priority = CALLBACK_PRI_LOW;
     else if(ind==1) priority = CALLBACK_PRI_MEDIUM;
     else if(ind==2) priority = CALLBACK_PRI_HIGH;
     else {
-	logMsg("semBcreate failed while starting a callback task\n");
+	errMessage(0,"semBcreate failed while starting a callback task\n");
 	return;
     }
-    callbackTaskId[ind] = taskSpawn(name,priority,
+    if((callbackQ[ind] = rngCreate(sizeof(CALLBACK *) * QUEUESIZE)) == NULL) 
+	errMessage(0,"rngCreate failed while starting a callback task");
+    callbackTaskId[ind] = taskSpawn(CALLBACK_NAME,priority,
     			CALLBACK_OPT,CALLBACK_STACK,
     			(FUNCPTR)callbackTask,ind);
     if(callbackTaskId[ind]==ERROR) {
@@ -138,8 +147,9 @@ static void wdCallback(long ind)
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
     if(taskDelete(callbackTaskId[ind])!=OK)
-	logMsg("taskDelete failed while restarting a callback task\n");
-    if(semFlush(callbackSem[ind])!=OK)
-	logMsg("semFlush failed while restarting a callback task\n");
+	errMessage(0,"taskDelete failed while restarting a callback task\n");
+    if(semDelete(callbackSem[ind])!=OK)
+	errMessage(0,"semDelete failed while restarting a callback task\n");
+    rngDelete(callbackQ[ind]);
     start(ind);
 }

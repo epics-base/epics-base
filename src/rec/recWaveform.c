@@ -49,6 +49,8 @@
  *                              value was not initialized
  * .10  10-11-90	mrk	Made changes for new record support
  * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .12  12-18-91        jba     Changed E_IO_INTERRUPT to SCAN_IO_EVENT, added dbScan.h
+ * .13  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -57,12 +59,12 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
+#include	<dbScan.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<waveformRecord.h>
 
@@ -120,8 +122,6 @@ static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 void monitor();
 
 
-/* The following is taken from dbScan.c */
-#define E_IO_INTERRUPT  7
 /*Following from timing system          */
 extern unsigned int     gts_trigger_counter;
 
@@ -159,10 +159,9 @@ static long init_record(pwf)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pwf)
+	struct waveformRecord	*pwf;
 {
-	struct waveformRecord	*pwf=(struct waveformRecord *)(paddr->precord);
         struct wfdset   *pdset = (struct wfdset *)(pwf->dset);
 	long		 status;
 
@@ -172,7 +171,7 @@ static long process(paddr)
                 return(S_dev_missingSup);
         }
         /* event throttling */
-        if (pwf->scan == E_IO_INTERRUPT){
+        if (pwf->scan == SCAN_IO_EVENT){
                 if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pwf->evnt) != 0){
         			status=(*pdset->read_wf)(pwf);
@@ -191,7 +190,7 @@ static long process(paddr)
 
 	monitor(pwf);
         /* process the forward scan link record */
-        if (pwf->flnk.type==DB_LINK) dbScanPassive(pwf->flnk.value.db_link.pdbAddr);
+        if (pwf->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pwf->flnk.value.db_link.pdbAddr)->precord);
 
         pwf->pact=FALSE;
         return(0);

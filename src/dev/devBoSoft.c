@@ -40,11 +40,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<boRecord.h>
 
@@ -79,7 +78,7 @@ static long write_bo(pbo)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        status = dbPutLink(&pbo->out.value.db_link,pbo,DBR_USHORT,&pbo->val,1L);
+        status = dbPutLink(&pbo->out.value.db_link,(struct dbCommon *)pbo,DBR_USHORT,&pbo->val,1L);
         if(status!=0) {
                 recGblSetSevr(pbo,LINK_ALARM,VALID_ALARM);
         }

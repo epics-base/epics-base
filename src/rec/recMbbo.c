@@ -50,6 +50,7 @@
  * .15  04-11-90        lrd     make locals static
  * .16  10-11-90	mrk	make changes for new record and device support
  * .17  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .18  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -59,12 +60,11 @@
 #include	<strLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<mbboRecord.h>
@@ -199,10 +199,9 @@ static long init_record(pmbbo)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pmbbo)
+    struct mbboRecord     *pmbbo;
 {
-    struct mbboRecord	*pmbbo=(struct mbboRecord *)(paddr->precord);
     struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
     long		status=0;
     unsigned short	rbv;
@@ -221,7 +220,7 @@ static long process(paddr)
 	    unsigned short val;
 
 	    pmbbo->pact = TRUE;
-	    status = dbGetLink(&pmbbo->dol.value.db_link,pmbbo,DBR_USHORT,
+	    status = dbGetLink(&pmbbo->dol.value.db_link,(struct dbCommon *)pmbbo,DBR_USHORT,
 			&val,&options,&nRequest);
 	    pmbbo->pact = FALSE;
 	    if(status==0) {
@@ -261,7 +260,7 @@ DONT_WRITE:
     monitor(pmbbo);
     /* process the forward scan link record */
     if(pmbbo->flnk.type==DB_LINK)
-	dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
+	dbScanPassive(((struct dbAddr *)pmbbo->flnk.value.db_link.pdbAddr)->precord);
     pmbbo->pact=FALSE;
     return(status);
 }

@@ -31,6 +31,7 @@
  * -----------------
  * .01  10-24-91        jba     Removed unused code
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  */ 
 
 
@@ -41,12 +42,11 @@
 #include	<strLib.h>
 
 #include        <alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<stringoutRecord.h>
 
@@ -127,10 +127,9 @@ static long init_record(pstringout)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pstringout)
+	struct stringoutRecord	*pstringout;
 {
-    struct stringoutRecord	*pstringout=(struct stringoutRecord *)(paddr->precord);
 	struct stringoutdset	*pdset = (struct stringoutdset *)(pstringout->dset);
 	long		 status=0;
 
@@ -145,7 +144,8 @@ static long process(paddr)
 			long nRequest=1;
 
 			pstringout->pact = TRUE;
-			status = dbGetLink(&pstringout->dol.value.db_link,pstringout,
+			status = dbGetLink(&pstringout->dol.value.db_link,
+				(struct dbCommon *)pstringout,
 				DBR_STRING,pstringout->val,&options,&nRequest);
 			pstringout->pact = FALSE;
 			if(!status==0){
@@ -168,7 +168,8 @@ static long process(paddr)
 	monitor(pstringout);
 
 	/* process the forward scan link record */
-	if (pstringout->flnk.type==DB_LINK) dbScanPassive(pstringout->flnk.value.db_link.pdbAddr);
+	if (pstringout->flnk.type==DB_LINK)
+		dbScanPassive(((struct dbAddr *)pstringout->flnk.value.db_link.pdbAddr)->precord);
 
 	pstringout->pact=FALSE;
 	return(status);

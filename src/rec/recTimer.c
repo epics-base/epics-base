@@ -44,6 +44,7 @@
  * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .12  12-02-91        jba     Added cmd control to io-interrupt processing
  * .13  12-12-91        jba     Set cmd to zero in io-interrupt processing
+ * .14  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -52,12 +53,11 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<module_types.h>
 #include	<timerRecord.h>
@@ -113,7 +113,7 @@ static long get_ioint_info(cmd,ptimer,io_type,card_type,card_number)
     short               *card_type;
     short               *card_number;
 {
-    *cmd=0;
+    *cmd=-1;
     if(ptimer->out.type != VME_IO) return(S_dev_badInpType);
     *io_type = IO_TIMER;
     if(ptimer->dtyp==0)
@@ -148,10 +148,9 @@ static long init_record(ptimer)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(ptimer)
+	struct timerRecord	*ptimer;
 {
-	struct timerRecord	*ptimer=(struct timerRecord *)(paddr->precord);
 
 	ptimer->pact=TRUE;
 
@@ -163,7 +162,7 @@ static long process(paddr)
         /* check event list */
         monitor(ptimer);
         /* process the forward scan link record */
-        if (ptimer->flnk.type==DB_LINK) dbScanPassive(ptimer->flnk.value.db_link.pdbAddr);
+        if (ptimer->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ptimer->flnk.value.db_link.pdbAddr)->precord);
 
         ptimer->pact=FALSE;
         return(0);
@@ -281,7 +280,7 @@ struct timerRecord	*ptimer;
 	if (ptimer->torg.type == DB_LINK) {
 		options=0;
 		nRequest=1;
-		status = dbGetLink(&(ptimer->torg.value.db_link),ptimer,DBR_FLOAT,
+		status = dbGetLink(&(ptimer->torg.value.db_link),(struct dbCommon *)ptimer,DBR_FLOAT,
                 &(ptimer->trdl),&options,&nRequest);
                 if(status!=0){
                        recGblSetSevr(ptimer,LINK_ALARM,VALID_ALARM);

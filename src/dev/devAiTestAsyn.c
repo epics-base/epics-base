@@ -30,6 +30,8 @@
  *
  * Modification Log:
  * -----------------
+ * .01  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -39,6 +41,7 @@
 #include	<wdLib.h>
 
 #include	<alarm.h>
+#include	<callback.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -83,9 +86,9 @@ static void myCallback(pcallback)
     struct aiRecord *pai=(struct aiRecord *)(pcallback->prec);
     struct rset     *prset=(struct rset *)(pai->rset);
 
-    dbScanLock(pai);
-    (*prset->process)(pai->pdba);
-    dbScanUnlock(pai);
+    dbScanLock((struct dbCommon *)pai);
+    (*prset->process)(pai);
+    dbScanUnlock((struct dbCommon *)pai);
 }
     
     
@@ -135,7 +138,7 @@ static long read_ai(pai)
 		wait_time = (int)(pai->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pai->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 		return(1);
 	}
     default :

@@ -40,11 +40,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
 
@@ -107,7 +106,7 @@ static long read_mbbi(pmbbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_USHORT,
+        status = dbGetLink(&(pmbbi->inp.value.db_link),(struct dbCommon *)pmbbi,DBR_USHORT,
                 &(pmbbi->val),&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pmbbi,LINK_ALARM,VALID_ALARM);

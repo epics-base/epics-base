@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 
@@ -39,12 +40,11 @@
 #include        <lstLib.h>
 
 #include        <alarm.h>
-#include        <dbAccess.h>
 #include        <dbDefs.h>
+#include        <dbAccess.h>
 #include        <dbFldTypes.h>
 #include        <devSup.h>
 #include        <errMdef.h>
-#include        <link.h>
 #include        <recSup.h>
 #include	<longinRecord.h>
 
@@ -120,10 +120,9 @@ static long init_record(plongin)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(plongin)
+	struct longinRecord     *plongin;
 {
-    struct longinRecord	*plongin=(struct longinRecord *)(paddr->precord);
 	struct longindset	*pdset = (struct longindset *)(plongin->dset);
 	long		 status;
 
@@ -147,7 +146,7 @@ static long process(paddr)
 	monitor(plongin);
 
 	/* process the forward scan link record */
-	if (plongin->flnk.type==DB_LINK) dbScanPassive(plongin->flnk.value.db_link.pdbAddr);
+	if (plongin->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)plongin->flnk.value.db_link.pdbAddr)->precord);
 
 	plongin->pact=FALSE;
 	return(status);

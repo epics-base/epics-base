@@ -52,6 +52,8 @@
  * .16  05-02-90        lrd     fix initial value set in the DOL field
  * .17  10-10-90	mrk	Changes for record and device support
  * .18  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .19  01-08-92        jba     Added cast in call to wdStart to remove compile warning message
+ * .20  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -62,12 +64,12 @@
 #include	<wdLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
+#include	<callback.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<boRecord.h>
@@ -141,10 +143,10 @@ static void myCallback(pcallback)
     short	value=0;
     struct boRecord *pbo = (struct boRecord *)(pcallback->dbAddr.precord);
 
-    dbScanLock(pbo);
+    dbScanLock((struct dbCommon *)pbo);
     pbo->val = 0;
-    (void)process(&(pcallback->dbAddr));
-    dbScanUnlock(pbo); 
+    (void)process(pbo);
+    dbScanUnlock((struct dbCommon *)pbo);
 }
 
 static long init_record(pbo)
@@ -188,10 +190,9 @@ static long init_record(pbo)
     return(status);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pbo)
+	struct boRecord     *pbo;
 {
-    struct boRecord	*pbo=(struct boRecord *)(paddr->precord);
 	struct bodset	*pdset = (struct bodset *)(pbo->dset);
 	long		 status=0;
 	int		wait_time;
@@ -208,7 +209,7 @@ static long process(paddr)
 			unsigned short val;
 
 			pbo->pact = TRUE;
-			status = dbGetLink(&pbo->dol.value.db_link,pbo,
+			status = dbGetLink(&pbo->dol.value.db_link,(struct dbCommon *)pbo,
 				DBR_USHORT,&val,&options,&nRequest);
 			pbo->pact = FALSE;
 			if(status==0){
@@ -236,14 +237,14 @@ static long process(paddr)
 	
 		pcallback = (struct callback *)(pbo->dpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
-               	wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+               	wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 	}
 	/* check for alarms */
 	alarm(pbo);
 	/* check event list */
 	monitor(pbo);
 	/* process the forward scan link record */
-	if (pbo->flnk.type==DB_LINK) dbScanPassive(pbo->flnk.value.db_link.pdbAddr);
+	if (pbo->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pbo->flnk.value.db_link.pdbAddr)->precord);
 
 	pbo->pact=FALSE;
 	return(status);

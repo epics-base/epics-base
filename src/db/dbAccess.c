@@ -36,6 +36,7 @@
  * .06  11-26-91	jba	Added return to dbGetLink
  *              		Fixed bug in special processing of SPC_MOD (100) 
  * .07  12-02-91	jba	Writing to PROC will always force record process
+ * .08  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -43,21 +44,21 @@
 /* Global Database Access Routines
  *
  * dbScanLock(precord)		Lock for scanning records
- *	caddr_t		precord;
+ *	struct dbCommon		precord;
  * returns void
  *
  * dbScanUnlock(precord)	Unlock for scanning records
- *	caddr_t		precord;
+ *	struct dbCommon		precord;
  * returns void
  *
  * dbScanLockInit(nset)		Initialize scan lock
  *	int		nset;
  *
- * dbScanPassive(paddr)	process if record is passively scanned
- *	struct dbAddr *paddr;	pointer to database address structure
+ * dbScanPassive(precord)	process if record is passively scanned
+ *	struct dbCommon		precord;
  *
- * dbProcess(paddr)		process a database record
- *	struct dbAddr *paddr;	pointer to database address structure
+ * dbProcess(precord)		process a database record
+ *	struct dbCommon		precord;
  *
  * dbNameToAddr(pname,paddr) Given "pv<.field>" compute dbAddr
  *	char		*pname
@@ -65,17 +66,17 @@
  *
  * dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
  *	struct db_link	*pdblink;
- *      struct dbCommon *pdest;
+ *      struct dbCommon	*pdest;
  *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of returned data
+ *	void		pbuffer;	addr of returned data
  *	long		*options;	addr of options
  *	long		*nRequest;	addr of number of elements
  *
  * dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
  *	struct db_link	*pdblink;
- *      struct dbCommon *psource;
+ *      struct dbCommon	*psource;
  *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of input data
+ *	void		pbuffer;	addr of input data
  *	long		nRequest;
  *
  * dbGetField(paddr,dbrType,pbuffer,options,nRequest,pfl)
@@ -102,6 +103,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<memLib.h>
+#include	<stdarg.h>
 #include	<fioLib.h>
 #include	<strLib.h>
 #include	<taskLib.h>
@@ -111,6 +113,7 @@
 #include	<choice.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbScan.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>
@@ -118,7 +121,6 @@
 #include	<dbRecords.h>
 #include	<db_field_log.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 
@@ -142,8 +144,7 @@ static struct {
 	struct scanLock *pscanLock;	/*addr of array of struct scanLock */
 } dbScanPvt;
 
-void dbScanLock(precord)
-	caddr_t	precord;
+void dbScanLock(struct dbCommon *precord)
 {
 	struct scanLock *pscanLock;
 	short		lset=((struct dbCommon *)precord)->lset - 1;
@@ -156,12 +157,11 @@ void dbScanLock(precord)
 	FASTLOCK(&pscanLock->lock);
 	pscanLock->start_time = tickGet();
 	pscanLock->task_id = taskIdSelf();
-	pscanLock->precord = precord;
+	pscanLock->precord = (void *)precord;
 	return;
 }
 
-void dbScanUnlock(precord)
-	caddr_t	precord;
+void dbScanUnlock(struct dbCommon *precord)
 {
 	struct scanLock *pscanLock;
 	short		lset=((struct dbCommon *)precord)->lset - 1;
@@ -177,13 +177,13 @@ void dbScanUnlock(precord)
 }
 
 void dbScanLockInit(nset)
-	int	nset;
+	int nset;
 {
 	struct scanLock	*pscanLock;
 	int i;
 
 	dbScanPvt.nset = nset;
-	pscanLock = (struct scanLock *)calloc((size_t)nset,
+	pscanLock = calloc((size_t)nset,
 		(size_t)sizeof(struct scanLock));
 	dbScanPvt.pscanLock = pscanLock;
 	for (i=0; i<nset; i++, pscanLock++) {
@@ -195,23 +195,19 @@ void dbScanLockInit(nset)
 	return;
 }
 
-long dbScanPassive(paddr)
-	struct dbAddr *paddr;
+long dbScanPassive(struct dbCommon *precord)
 {
-	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	
-	/* if not passive and field not PROC just return success */
-	if(precord->scan != 0 && paddr->pfield != (caddr_t)&precord->proc) return(0);
+	/* if not passive just return success */
+	if(precord->scan != 0) return(0);
 
 	/* return result of process */
-	return(dbProcess(paddr));
+	return(dbProcess(precord));
 }
 
-long dbProcess(paddr)
-	struct dbAddr *paddr;
+long dbProcess(struct dbCommon *precord)
 {
 	struct rset	*prset;
-	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	unsigned char	tpro=precord->tpro;
 	short		lset = precord->lset;
 	long		status = 0;
@@ -244,7 +240,7 @@ long dbProcess(paddr)
 		if(precord->mlis.count==0) goto all_done;
 		db_post_events(precord,&precord->stat,DBE_VALUE);
 		db_post_events(precord,&precord->sevr,DBE_VALUE);
-	        prset=GET_PRSET(paddr->record_type);
+	        prset=(struct rset *)precord->rset;
 		if( prset && prset->get_value ){
 			(*prset->get_value)(precord,&valueDes);
 			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM);
@@ -259,7 +255,7 @@ long dbProcess(paddr)
 
 		status = dbGetLink(&precord->sdis.value.db_link,precord,
 			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
-		if(!RTN_SUCCESS(status)) recGblDbaddrError(status,paddr,"dbProcess");
+		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
 	}
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
@@ -269,9 +265,9 @@ long dbProcess(paddr)
 	}
 
 	/* locate record processing routine */
-	if(!(prset=GET_PRSET(paddr->record_type)) || !(prset->process)) {
+	if(!(prset=(struct rset *)precord->rset) || !(prset->process)) {
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
-		recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
+		recGblRecSupError(S_db_noRSET,precord,"dbProcess");
 		status = S_db_noRSET;
 		if(trace && trace_lset==lset)
 			printf("failure:   %s\n",precord->name);
@@ -281,7 +277,7 @@ long dbProcess(paddr)
 	/* process record */
 	if(trace && trace_lset==lset)
 		printf("process:   %s\n",precord->name);
-	status = (*prset->process)(paddr);
+	status = (*prset->process)(precord);
 
 all_done:
 	if(set_trace) {
@@ -296,8 +292,8 @@ all_done:
 struct fldDes *pvdGetFld();
 
 long dbNameToAddr(pname,paddr)
-char		*pname;
-struct dbAddr	*paddr;
+	char          *pname;
+	struct dbAddr *paddr;
 {
 	char		*precName;
 	char		recName[PVNAME_SZ+1];
@@ -355,7 +351,7 @@ struct dbAddr	*paddr;
 	    recGblDbaddrError(S_db_notFound,paddr,"dbNameToAddr");
 	    return(S_db_notFound);
 	}
-	paddr->precord=precord;
+	paddr->precord=(void *)precord;
 	paddr->pfield=precord+field_offset;
 
 	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
@@ -370,65 +366,59 @@ struct dbAddr	*paddr;
 	return(status);
 }
 
-long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
-	struct db_link	*pdblink;
-	struct dbCommon *pdest;
-	short		dbrType;
-	caddr_t		pbuffer;
-	long		*options;
-	long		*nRequest;
+long dbGetLink(
+	struct db_link	*pdblink,
+	struct dbCommon	*pdest,
+	short  		dbrType,
+	void		*pbuffer,
+	long		*options,
+	long		*nRequest
+)
 {
 	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
+	struct dbCommon *psource=paddr->precord;
 	long	status;
 
 	if(pdblink->process_passive) {
-		status=dbScanPassive(paddr);
+		status=dbScanPassive(psource);
 		if(!RTN_SUCCESS(status)) return(status);
 	}
-	if(pdblink->maximize_sevr) {
-		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
-
-		if(pfrom->sevr>pdest->nsev) {
-			pdest->nsev = pfrom->sevr;
-			pdest->nsta = LINK_ALARM;
-		}
+	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
 	
-	}
 	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest,NULL);
 	if(status) recGblRecordError(status,pdest,"dbGetLink");
         return(status);
 }
 
-long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
-	struct db_link	*pdblink;
-	struct dbCommon *psource;
-	short		dbrType;
-	caddr_t		pbuffer;
-	long		nRequest;
+long dbPutLink(
+	struct db_link	*pdblink,
+	struct dbCommon	*psource,
+	short		dbrType,
+	void   		*pbuffer,
+	long		nRequest
+)
 {
 	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
+	struct dbCommon *pdest=paddr->precord;
+	struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
 	long	status;
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
-	if(pdblink->maximize_sevr) {
-		struct dbCommon *pto=(struct dbCommon*)(paddr->precord);
-
-		if(pto->nsev<psource->sevr) {
-			pto->nsev = psource->sevr;
-			pto->nsta = LINK_ALARM;
-		}
-	}
+	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
 	if(!RTN_SUCCESS(status)) return(status);
-	if(pdblink->process_passive) status=dbScanPassive(paddr);
+
+        if(paddr->pfield==(void *)&pdest->proc) status=dbProcess(pdest);
+	else if (pfldDes->process_passive) status=dbScanPassive(pdest);
 	if(status) recGblRecordError(status,psource,"dbPutLink");
 	return(status);
 }
 
-long dbPutField(paddr,dbrType,pbuffer,nRequest)
-	struct dbAddr	*paddr;
-	short		dbrType;
-	caddr_t		pbuffer;
-	long		nRequest;
+long dbPutField(
+       struct dbAddr   *paddr,
+       short           dbrType,
+       void            *pbuffer,
+       long            nRequest
+)
 {
 	long	status;
 	struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
@@ -441,15 +431,19 @@ long dbPutField(paddr,dbrType,pbuffer,nRequest)
 	dbScanLock(paddr->precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
-	if(RTN_SUCCESS(status) && pfldDes->process_passive) (void)dbScanPassive(paddr);
+	if(RTN_SUCCESS(status)){
+		if(paddr->pfield==(void *)precord->proc) status=dbProcess(precord);
+		else if (pfldDes->process_passive) status=dbScanPassive(precord);
+	}
 	dbScanUnlock(paddr->precord);
 	return(status);
 }
 
-long dbBufferSize(dbr_type,options,no_elements)
-    short	dbr_type;
-    long	options;
-    long	no_elements;
+long dbBufferSize(
+     short     dbr_type,
+     long      options,
+     long      no_elements
+)
 {
     long nbytes=0;
 
@@ -484,9 +478,9 @@ long dbBufferSize(dbr_type,options,no_elements)
  *
  */
 static void f_to_str(flt_value,pstr_value,precision)
-double	flt_value;
-char	*pstr_value;
-int	precision;
+	double	flt_value;
+	char	*pstr_value;
+	int	precision;
 {
 	unsigned short	got_one;
 	double		place;
@@ -566,8 +560,8 @@ int	precision;
 static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
 
 static void char_to_str(source,pdest)
-    char 	source;
-    char	*pdest;
+	char source;
+	char *pdest;
 {
     unsigned char val,temp;
     char	  digit[3];
@@ -2981,14 +2975,16 @@ void get_graphics();
 void get_control();
 void get_alarm();
 
-long dbGetField(paddr,dbrType,pbuffer,options,nRequest,pfl)
-struct dbAddr	*paddr;
-short		dbrType;
-caddr_t		pbuffer;
-long		*options;
-long		*nRequest;
-db_field_log	*pfl;
+long dbGetField(
+struct dbAddr	*paddr,
+short		dbrType,
+void		*pbuffer,
+long		*options,
+long		*nRequest,
+void		*pflin
+)
 {
+	db_field_log	*pfl= (db_field_log *)pflin;
 	long		no_elements=paddr->no_elements;
 	long 		offset;
 	struct rset	*prset;
@@ -5801,7 +5797,7 @@ long		nRequest;
 	if(special) {
 	    if(special<100) { /*global processing*/
 		if(special==SPC_NOMOD) return(S_db_noMod);
-		if(special==SPC_SCAN) delete_from_scan_list(paddr);
+		if(special==SPC_SCAN) scanDelete(precord);
 	    }
 	    else {
 		if( prset && (pspecial = (prset->special))) {
@@ -5835,7 +5831,7 @@ long		nRequest;
 	/* check for special processing	is required */
 	if(special) {
 	    if(special<100) { /*global processing*/
-		if(special==SPC_SCAN) add_to_scan_list(paddr,0xffff);
+		if(special==SPC_SCAN) scanAdd(precord);
 	    }
 	    else {
 		status=(*pspecial)(paddr,1);

@@ -47,6 +47,7 @@
  * .12  02-08-90        lrd     add Allen-Bradley PLC support
  * .13  10-31-90	mrk	changes for new record and device support
  * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .15  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -56,12 +57,11 @@
 #include	<strLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<mbbiRecord.h>
@@ -162,10 +162,9 @@ static long init_record(pmbbi)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pmbbi)
+        struct mbbiRecord     *pmbbi;
 {
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)(paddr->precord);
 	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
 	long		status;
 
@@ -213,7 +212,7 @@ static long process(paddr)
 	monitor(pmbbi);
 
 	/* process the forward scan link record */
-	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(pmbbi->flnk.value.db_link.pdbAddr);
+	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pmbbi->flnk.value.db_link.pdbAddr)->precord);
 
 	pmbbi->pact=FALSE;
 	return(status);

@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  */ 
 
 #include     <vxWorks.h>
@@ -38,13 +39,12 @@
 #include     <lstLib.h>
 
 #include        <alarm.h>
-#include     <dbAccess.h>
 #include     <dbDefs.h>
+#include     <dbAccess.h>
 #include     <dbRecDes.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
-#include     <link.h>
 #include     <recSup.h>
 #include     <pulseCounterRecord.h>
 
@@ -137,10 +137,9 @@ static long init_record(ppc)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr     *paddr;
+static long process(ppc)
+    struct pulseCounterRecord        *ppc;
 {
-    struct pulseCounterRecord     *ppc=(struct pulseCounterRecord *)(paddr->precord);
     struct pcdset     *pdset = (struct pcdset *)(ppc->dset);
     long           status=0;
     long             options,nRequest;
@@ -159,7 +158,7 @@ static long process(paddr)
               options=0;
               nRequest=1;
               ppc->pact = TRUE;
-              status=dbGetLink(&ppc->sgl.value.db_link,ppc,DBR_SHORT,
+              status=dbGetLink(&ppc->sgl.value.db_link,(struct dbCommon *)ppc,DBR_SHORT,
                    &ppc->sgv,&options,&nRequest);
               ppc->pact = FALSE;
               if(status!=0) {
@@ -203,7 +202,7 @@ static long process(paddr)
      monitor(ppc);
 
      /* process the forward scan link record */
-     if (ppc->flnk.type==DB_LINK) dbScanPassive(ppc->flnk.value.db_link.pdbAddr);
+     if (ppc->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppc->flnk.value.db_link.pdbAddr)->precord);
 
      ppc->pact=FALSE;
      return(status);

@@ -39,11 +39,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<pulseTrainRecord.h>
 
@@ -78,7 +77,7 @@ static long write_pt(ppt)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        status = dbPutLink(&ppt->out.value.db_link,ppt,DBR_SHORT,&ppt->val,1L);
+        status = dbPutLink(&ppt->out.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,&ppt->val,1L);
         if(status!=0) {
                 recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
         } else ppt->udf=FALSE;

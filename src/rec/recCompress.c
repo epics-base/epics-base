@@ -49,6 +49,7 @@
  *                              value was not initialized
  * .10  10-11-90	mrk	Made changes for new record support
  * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .12  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -58,11 +59,10 @@
 #include	<math.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<special.h>
 #include	<recSup.h>
 #include	<compressRecord.h>
@@ -139,11 +139,10 @@ static long init_record(pcompress)
 }
 
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pcompress)
+	struct compressRecord     *pcompress;
 {
-    struct compressRecord *pcompress=(struct compressRecord *)(paddr->precord);
-    long		 status=0;
+	long		 status=0;
 
 	pcompress->pact = TRUE;
 
@@ -159,8 +158,8 @@ static long process(paddr)
 		long		no_elements=pdbAddr->no_elements;
 		int			alg=pcompress->alg;
 
-		if(dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_DOUBLE,pcompress->wptr,
-				&options,&no_elements)!=0){
+		if(dbGetLink(&pcompress->inp.value.db_link,(struct dbCommon *)pcompress,
+			DBR_DOUBLE,pcompress->wptr,&options,&no_elements)!=0){
 				recGblSetSevr(pcompress,LINK_ALARM,VALID_ALARM);
                         }
 
@@ -182,7 +181,8 @@ static long process(paddr)
 		tsLocalTime(&pcompress->time);	
 		monitor(pcompress);
 		/* process the forward scan link record */
-		if (pcompress->flnk.type==DB_LINK) dbScanPassive(pcompress->flnk.value.db_link.pdbAddr);
+		if (pcompress->flnk.type==DB_LINK) 
+                        dbScanPassive(((struct dbAddr *)pcompress->flnk.value.db_link.pdbAddr)->precord);
 	}
 
 	pcompress->pact=FALSE;

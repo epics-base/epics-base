@@ -46,6 +46,7 @@
  * .12  10-10-90	mrk	Made changes for new record and device support
  * .13  10-24-91	jba	Moved comment
  * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .15  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -55,12 +56,11 @@
 #include	<strLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<biRecord.h>
@@ -135,10 +135,9 @@ static long init_record(pbi)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pbi)
+	struct biRecord     *pbi;
 {
-    struct biRecord	*pbi=(struct biRecord *)(paddr->precord);
 	struct bidset	*pdset = (struct bidset *)(pbi->dset);
 	long		 status;
 
@@ -164,7 +163,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pbi);
 	/* process the forward scan link record */
-	if (pbi->flnk.type==DB_LINK) dbScanPassive(pbi->flnk.value.db_link.pdbAddr);
+	if (pbi->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pbi->flnk.value.db_link.pdbAddr)->precord);
 
 	pbi->pact=FALSE;
 	return(status);

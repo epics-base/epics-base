@@ -107,7 +107,7 @@ static long read_histogram(phistogram)
     case (DB_LINK) :
 	options=0;
 	nRequest=1;
-	status = dbGetLink(&(phistogram->svl.value.db_link),phistogram,DBR_DOUBLE,
+	status = dbGetLink(&(phistogram->svl.value.db_link),(struct dbCommon *)phistogram,DBR_DOUBLE,
 		&(phistogram->sgnl),&options,&nRequest);
 	if(status!=0) {
 		if(phistogram->nsev<VALID_ALARM) {

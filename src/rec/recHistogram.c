@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  10-14-91        jba     Added dev sup  crtl fld and wd timer
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include     <vxWorks.h>
@@ -42,12 +43,12 @@
 #include     <wdLib.h>
 
 #include     <alarm.h>
-#include     <dbAccess.h>
+#include     <callback.h>
 #include     <dbDefs.h>
+#include     <dbAccess.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
-#include     <link.h>
 #include     <special.h>
 #include     <recSup.h>
 #include     <histogramRecord.h>
@@ -56,7 +57,7 @@
 #define report NULL
 #define initialize NULL
 long init_record();
-long process();
+static long process();
 long special();
 long get_value();
 long cvt_dbaddr();
@@ -127,17 +128,17 @@ static void wdCallback(pcallback)
 
      /* force post events for any count change */
      if(phistogram->mcnt>0){
-          dbScanLock(phistogram);
+          dbScanLock((struct dbCommon *)phistogram);
           tsLocalTime(&phistogram->time);
           db_post_events(phistogram,&phistogram->bptr,DBE_VALUE);
           phistogram->mcnt=0;
-          dbScanUnlock(phistogram);
+          dbScanUnlock((struct dbCommon *)phistogram);
      }
 
      if(phistogram->sdel>0) {
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+          wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
      }
 
      return;
@@ -169,7 +170,7 @@ static long init_record(phistogram)
  
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+          wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
      }
 
      /* allocate space for histogram array */
@@ -198,10 +199,9 @@ static long init_record(phistogram)
      return(0);
 }
 
-static long process(paddr)
-    struct dbAddr     *paddr;
+static long process(phistogram)
+     struct histogramRecord     *phistogram;
 {
-    struct histogramRecord     *phistogram=(struct histogramRecord *)(paddr->precord);
      struct histogramdset     *pdset = (struct histogramdset *)(phistogram->dset);
      long           status;
 
@@ -227,7 +227,7 @@ static long process(paddr)
      monitor(phistogram);
 
      /* process the forward scan link record */
-     if (phistogram->flnk.type==DB_LINK) dbScanPassive(phistogram->flnk.value.db_link.pdbAddr);
+     if (phistogram->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)phistogram->flnk.value.db_link.pdbAddr)->precord);
 
      phistogram->pact=FALSE;
      return(status);

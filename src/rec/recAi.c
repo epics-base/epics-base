@@ -57,6 +57,8 @@
  * .17  09-18-91	jba	fixed bug in break point table conversion
  * .18  09-30-91	jba	Moved break point table conversion to libCom
  * .19  11-11-91	jba	Moved set and reset of alarm stat and sevr to macros
+ * .20  12-18-91	jba	Changed E_IO_INTERRUPT to SCAN_IO_EVENT
+ * .21  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -65,12 +67,12 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
+#include	<dbScan.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<aiRecord.h>
@@ -127,8 +129,6 @@ struct aidset { /* analog input dset */
 };
 
 
-/*NOTE FOLLOWING IS TAKEN FROM dbScan.c */
-#define E_IO_INTERRUPT  7
 /*Following from timing system		*/
 extern unsigned int     gts_trigger_counter;
 
@@ -160,10 +160,9 @@ static long init_record(pai)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pai)
+	struct aiRecord	*pai;
 {
-    struct aiRecord	*pai=(struct aiRecord *)(paddr->precord);
 	struct aidset	*pdset = (struct aidset *)(pai->dset);
 	long		 status;
 
@@ -174,7 +173,7 @@ static long process(paddr)
 	}
 
         /* event throttling */
-        if (pai->scan == E_IO_INTERRUPT){
+        if (pai->scan == SCAN_IO_EVENT){
                 if ((pai->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pai->evnt) != 0){
                                 return(0);
@@ -196,7 +195,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pai);
 	/* process the forward scan link record */
-	if (pai->flnk.type==DB_LINK) dbScanPassive(pai->flnk.value.db_link.pdbAddr);
+	if (pai->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pai->flnk.value.db_link.pdbAddr)->precord);
 
 	pai->init=FALSE;
 	pai->pact=FALSE;

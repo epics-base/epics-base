@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -78,7 +79,7 @@ static long write_ao(pao)
     case (CONSTANT) :
 	break;
     case (DB_LINK) :
-	status = dbPutLink(&pao->out.value.db_link,pao,DBR_DOUBLE,
+	status = dbPutLink(&pao->out.value.db_link,(struct dbCommon *)pao,DBR_DOUBLE,
 		&pao->oval,1L);
         if(status!=0) {
                 recGblSetSevr(pao,LINK_ALARM,VALID_ALARM);

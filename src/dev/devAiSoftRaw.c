@@ -107,7 +107,7 @@ static long read_ai(pai)
     case (DB_LINK) :
 	options=0;
 	nRequest=1;
-	status = dbGetLink(&(pai->inp.value.db_link),pai,DBR_LONG,
+	status = dbGetLink(&(pai->inp.value.db_link),(struct dbCommon *)pai,DBR_LONG,
 		&(pai->rval),&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pai,LINK_ALARM,VALID_ALARM);

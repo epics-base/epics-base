@@ -1,5 +1,5 @@
 /* devEventSoft.c */
-/* share/src/dev @(#)devEvent.c	1.1     12/17/91 */
+/* share/src/dev  $Id$ */
 
 /* devEventSoft.c - Device Support Routines for Soft Event Input */
 /*
@@ -38,11 +38,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<eventRecord.h>
 
@@ -76,7 +75,7 @@ static long init_record(pevent)
     switch (pevent->inp.type) {
     case (CONSTANT) :
 	if(pevent->inp.value.value!=0.0){
-	        pevent->enum=pevent->inp.value.value;
+	        pevent->val=pevent->inp.value.value;
 		}
 	pevent->udf= FALSE;
         break;
@@ -108,8 +107,8 @@ static long read_event(pevent)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pevent->inp.value.db_link),pevent,DBR_SHORT,
-                pevent->enum,&options,&nRequest);
+        status = dbGetLink(&(pevent->inp.value.db_link),(struct dbCommon *)pevent,DBR_USHORT,
+                &pevent->val,&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pevent,LINK_ALARM,VALID_ALARM);
         } else pevent->udf = FALSE;

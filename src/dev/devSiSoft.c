@@ -38,11 +38,10 @@
 #include	<stdioLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<link.h>
 #include	<module_types.h>
 #include	<stringinRecord.h>
 
@@ -109,7 +108,7 @@ static long read_stringin(pstringin)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pstringin->inp.value.db_link),pstringin,DBR_STRING,
+        status = dbGetLink(&(pstringin->inp.value.db_link),(struct dbCommon *)pstringin,DBR_STRING,
                 pstringin->val,&options,&nRequest);
         if(status!=0) {
                 recGblSetSevr(pstringin,LINK_ALARM,VALID_ALARM);

@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  *      ...
  */
 
@@ -84,7 +85,7 @@ static void myCallback(pcallback,no_read,pdata)
 	short ftvl = pwf->ftvl;
 
 	if(!pwf->busy) return;
-        dbScanLock(pwf);
+        dbScanLock((struct dbCommon *)pwf);
 	pwf->busy = FALSE;
 	if(ftvl==DBF_SHORT || ftvl==DBF_USHORT) {
        		bcopy(pdata,pwf->bptr,no_read*2);
@@ -94,8 +95,8 @@ static void myCallback(pcallback,no_read,pdata)
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}
-	(pcallback->process)(&pcallback->dbAddr);
-        dbScanUnlock(pwf);
+	(pcallback->process)(pwf);
+        dbScanUnlock((struct dbCommon *)pwf);
 }
 
 static long init_record(pwf,process)

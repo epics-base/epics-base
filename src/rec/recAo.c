@@ -52,6 +52,7 @@
  * .19  10-10-90	mrk	extensible record and device support
  * .20  09-25-91	jba	added breakpoint table conversion
  * .21  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .22  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -60,12 +61,11 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<special.h>
 #include	<recSup.h>
 #include	<aoRecord.h>
@@ -185,10 +185,9 @@ static long init_record(pao)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pao)
+	struct aoRecord     *pao;
 {
-	struct aoRecord	*pao=(struct aoRecord *)(paddr->precord);
 	struct aodset	*pdset = (struct aodset *)(pao->dset);
 	long		 status=0;
 
@@ -215,7 +214,7 @@ static long process(paddr)
 	monitor(pao);
 
 	/* process the forward scan link record */
-	if (pao->flnk.type==DB_LINK) dbScanPassive(pao->flnk.value.db_link.pdbAddr);
+	if (pao->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pao->flnk.value.db_link.pdbAddr)->precord);
 
 	pao->init=FALSE;
 	pao->pact=FALSE;
@@ -369,7 +368,7 @@ static int convert(pao)
 		pao->pact = TRUE;
 		/* don't allow dbputs to val field */
 		pao->val=pao->pval;
-                status = dbGetLink(&pao->dol.value.db_link,pao,DBR_DOUBLE,
+                status = dbGetLink(&pao->dol.value.db_link,(struct dbCommon *)pao,DBR_DOUBLE,
 			&value,&options,&nRequest);
 		pao->pact = save_pact;
 		if(status) {

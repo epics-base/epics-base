@@ -37,11 +37,10 @@
 #include	<strLib.h>
 
 #include	<choice.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbRecType.h>
 #include	<dbRecDes.h>
-#include	<link.h>
+#include	<dbAccess.h>
 #include	<devSup.h>
 #include	<dbCommon.h>
 

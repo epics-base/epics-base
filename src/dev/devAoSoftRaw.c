@@ -77,7 +77,7 @@ static long write_ao(pao)
     case (CONSTANT) :
 	break;
     case (DB_LINK) :
-	status = dbPutLink(&pao->out.value.db_link,pao,DBR_LONG,
+	status = dbPutLink(&pao->out.value.db_link,(struct dbCommon *)pao,DBR_LONG,
 		&pao->rval,1L);
         if(status!=0) {
                 recGblSetSevr(pao,LINK_ALARM,VALID_ALARM);

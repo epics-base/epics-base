@@ -137,7 +137,7 @@ static void taskwdTask()
 
 		    pname = taskName(pt->tid);
 		    if(!pt->suspended) {
-			sprintf(message,"task %d %s suspended",pt->tid,pname);
+			sprintf(message,"task %x %s suspended",pt->tid,pname);
 			errMessage(-1,message);
 			if(pt->callback) (pt->callback)(pt->arg);
 		    }
@@ -159,7 +159,7 @@ struct task_list *allocList()
     if(freeHead) {
 	(void *)pt = (void *)freeHead;
 	freeHead = freeHead->next;
-    } else pt = calloc(1,sizeof(struct task_list *));
+    } else pt = calloc(1,sizeof(struct task_list));
     if(pt==NULL) {
 	errMessage(0,"taskwd failed on call to calloc\n");
 	exit(1);

@@ -59,6 +59,7 @@
  *				Note that all calc specific details moved
  *				to libCalc
  * .19  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .20  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -67,11 +68,10 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
 #include	<calcRecord.h>
@@ -143,10 +143,9 @@ static long init_record(pcalc)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pcalc)
+	struct calcRecord     *pcalc;
 {
-    struct calcRecord	*pcalc=(struct calcRecord *)(paddr->precord);
 
 	pcalc->pact = TRUE;
 	if(fetch_values(pcalc)==0) {
@@ -160,7 +159,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pcalc);
 	/* process the forward scan link record */
-	if (pcalc->flnk.type==DB_LINK) dbScanPassive(pcalc->flnk.value.db_link.pdbAddr);
+	if (pcalc->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pcalc->flnk.value.db_link.pdbAddr)->precord);
 	pcalc->pact = FALSE;
 	return(0);
 }
@@ -364,7 +363,7 @@ struct calcRecord *pcalc;
 		if(plink->type!=DB_LINK) continue;
 		options=0;
 		nRequest=1;
-		status = dbGetLink(&plink->value.db_link,pcalc,DBR_DOUBLE,
+		status = dbGetLink(&plink->value.db_link,(struct dbCommon *)pcalc,DBR_DOUBLE,
 			pvalue,&options,&nRequest);
 		if(status!=0) {
 			recGblSetSevr(pcalc,LINK_ALARM,VALID_ALARM);

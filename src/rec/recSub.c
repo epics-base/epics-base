@@ -32,6 +32,9 @@
  * -----------------
  * .01  10-10-90	mrk	Made changes for new record support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  01-08-92        jba     Added casts in symFindByName to avoid compile warning messages
+ * .04  02-05-92	jba	Changed function arguments from paddr to precord 
+
  */
 
 #include	<vxWorks.h>
@@ -43,11 +46,10 @@
 #include        <a_out.h>       /* for N_TEXT */
 
 #include	<alarm.h>
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<subRecord.h>
 
@@ -120,7 +122,7 @@ static long init_record(psub)
 	strcpy(temp,"_");
     }
     strcat(temp,psub->inam);
-    ret = symFindByName(sysSymTbl,temp,&psub->sadr,&sub_type);
+    ret = symFindByName(sysSymTbl,temp,&psub->sadr,(void *)&sub_type);
     if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
 	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
 	return(S_db_BadSub);
@@ -137,7 +139,7 @@ static long init_record(psub)
     	strcpy(temp,"_");
     }
     strcat(temp,psub->snam);
-    ret = symFindByName(sysSymTbl,temp,&psub->sadr,&sub_type);
+    ret = symFindByName(sysSymTbl,temp,&psub->sadr,(void *)&sub_type);
     if ((ret < 0) || ((sub_type & N_TEXT) == 0)){
 	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
 	return(S_db_BadSub);
@@ -146,10 +148,9 @@ static long init_record(psub)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(psub)
+	struct subRecord *psub;
 {
-	struct subRecord *psub=(struct subRecord *)(paddr->precord);
 	long		 status=0;
 
         if(!psub->pact){
@@ -166,7 +167,7 @@ static long process(paddr)
         /* check event list */
         monitor(psub);
         /* process the forward scan link record */
-        if (psub->flnk.type==DB_LINK) dbScanPassive(psub->flnk.value.db_link.pdbAddr);
+        if (psub->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)psub->flnk.value.db_link.pdbAddr)->precord);
         psub->pact = FALSE;
         return(0);
 }
@@ -346,7 +347,7 @@ struct subRecord *psub;
                 if(plink->type!=DB_LINK) continue;
                 options=0;
                 nRequest=1;
-                status=dbGetLink(&plink->value.db_link,psub,DBR_DOUBLE,
+                status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psub,DBR_DOUBLE,
                         pvalue,&options,&nRequest);
                 if(status!=0) {
                 	recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);

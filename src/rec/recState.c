@@ -32,6 +32,7 @@
  * -----------------
  * .01  10-10-90	mrk	extensible record and device support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  */
 
 #include	<vxWorks.h>
@@ -39,12 +40,11 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 
-#include	<dbAccess.h>
 #include	<dbDefs.h>
+#include	<dbAccess.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<errMdef.h>
-#include	<link.h>
 #include	<recSup.h>
 #include	<stateRecord.h>
 
@@ -89,17 +89,16 @@ struct rset stateRSET={
 
 void monitor();
 
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long process(pstate)
+	struct stateRecord	*pstate;
 {
-	struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
 
 	pstate->udf = FALSE;
         pstate->pact=TRUE;
 	tsLocalTime(&pstate->time);
 	monitor(pstate);
         /* process the forward scan link record */
-        if (pstate->flnk.type==DB_LINK) dbScanPassive(pstate->flnk.value.db_link.pdbAddr);
+        if (pstate->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pstate->flnk.value.db_link.pdbAddr)->precord);
         pstate->pact=FALSE;
 	return(0);
 }

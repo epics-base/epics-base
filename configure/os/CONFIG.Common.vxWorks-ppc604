@@ -17,5 +17,6 @@ ARCH_CLASS = ppc
 
 # Architecture specific build flags
 ARCH_DEP_CPPFLAGS = -DCPU=PPC604
-ARCH_DEP_CFLAGS = -mcpu=604 -mstrict-align -mlongcall
+#ARCH_DEP_CFLAGS = -mcpu=604 -mstrict-align -mlongcall
+ARCH_DEP_CFLAGS = -mcpu=604 -mstrict-align
 

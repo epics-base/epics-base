@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.8  1997/08/05 00:51:05  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.7  1997/06/25 06:17:33  jhill
 // fixed warnings
 //
@@ -34,7 +37,7 @@
 
 void aitString::mallocFailure(void)
 {
-	str="";
+	str=(char *)"";
 	len=0u;
 	bufLen=1u;
 	type=aitStrRefConstImortal;

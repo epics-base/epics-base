@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.15  1998/04/14 00:51:33  jhill
+ * code around ms sizeof() bug V5.0
+ *
  * Revision 1.14  1997/08/05 00:51:06  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -285,7 +288,7 @@ private:
 
 inline void aitString::init(void) 
 { 
-	this->str="";
+	this->str=(char *)"";
 	this->len=0u;
 	this->bufLen=1u;
 	this->type=aitStrRefConstImortal;

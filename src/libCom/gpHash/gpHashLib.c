@@ -55,7 +55,7 @@ static unsigned char T[256] = {
 };
 
 #define NSIZES 9
-static int allowSize[NSIZES] = {256,512,1024,2048,4096,8192,16384,32768,65636};
+static int allowSize[NSIZES] = {256,512,1024,2048,4096,8192,16384,32768,65536};
 
 static void *myCalloc(size_t nobj,size_t size)
 {

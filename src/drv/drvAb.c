@@ -174,7 +174,8 @@
  * .47	06-10-92	 bg	combined drvAb.c and ab_driver.c    
  * .48	06-26-92	 bg	added level to the ab_io_report in 
  *				the drvSup structure          
- * .49	06--29-92	joh	removed FILE pointer argument to io report
+ * .49	06-29-92	joh	removed FILE pointer argument to io report
+ * .50	06-29-92	joh	moved ab reset here
  */
 
 /*
@@ -296,6 +297,7 @@
 #include	<drvSup.h>
 #include	<module_types.h>
 #include	<ab_driver.h>
+
 
 		/* AllenBradley serial link and ai,ao,bi and bo cards */
 #define LOCK -2
@@ -484,9 +486,21 @@ char	ab_firmware_info[AB_MAX_LINKS][96];
 
 static char *ab_stdaddr;
 
+/*
+ *
+ * support for ab reset
+ *
+ *
+ */
+unsigned short 		ab_reset_wait;
+unsigned short		reset_code[100];
+unsigned short		reset_cnt = 0;
+
 /* forward references */
-void wtrans();
-int abScanTask();
+void 	wtrans();
+int 	abScanTask();
+void	ab_reset_task();
+int	ab_reset();
 
 
 /*
@@ -2286,4 +2300,67 @@ int	boot_type;
 			taskDelay(20);
 		}
 	}
+}
+
+
+
+
+/*
+ *
+ * ab_reset_task()
+ *
+ *
+ *
+ */
+void
+ab_reset_task()
+{
+	struct ab_region	*pab_region;
+
+	/* keep track of the status and frequency */
+	if (reset_cnt < 100){
+		reset_code[reset_cnt] = pab_region->mail.conf_stat;
+		reset_cnt++;
+	}
+
+	/* disable scanning during reset */
+	ab_disable = 1;
+	printf("Disable AB Scanner Task");
+	taskDelay(60);
+
+	/* Signal the Scanner to Reset */
+	pab_region = p6008s[0];
+
+	pab_region->sys_fail_set2 = 0xa0a0;
+	pab_region->sys_fail_set1 = 0x0080;
+	printf("Card %d Reset\n",0);
+
+	while(pab_region->mail.conf_stat != SCANNER_POWERUP){
+		taskDelay(1);
+		ab_reset_wait++;
+	}
+
+	/* Reinitialize the Link */
+	printf("Link Power Up After %d Ticks",ab_reset_wait);
+	ab_driver_init();
+
+	/* enable the scanner */
+	ab_disable = 0;
+}
+
+
+
+
+/*
+ *
+ * ab_reset()
+ *
+ */
+int
+ab_reset()
+{
+	int status;
+
+	status = taskSpawn("ab_reset",38,0,8000,ab_reset_task);
+	return status;
 }

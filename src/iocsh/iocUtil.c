@@ -15,7 +15,7 @@
 #include "iocUtilRegister.h"
 
 /* < (runScript) command */
-static const ioccrfArg runScriptArg0 = { "file name",ioccrfArgString};
+static const ioccrfArg runScriptArg0 = { "command file name",ioccrfArgString};
 static const ioccrfArg * const runScriptArgs[1] = {&runScriptArg0};
 static const ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
 static void runScriptCallFunc(const ioccrfArgBuf *args)

@@ -119,6 +119,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#define INC_tsDefs_h
 #if defined(vxWorks)
 #   include <vxWorks.h>
 #   include "drvTS.h"
@@ -138,6 +139,7 @@
 #include "epicsAssert.h"
 #include "envDefs.h"
 #define createTSSubrGlobals
+#undef INC_tsDefs_h
 #include "tsDefs.h"
 
 

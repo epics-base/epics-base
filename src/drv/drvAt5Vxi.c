@@ -450,10 +450,10 @@ struct  at5vxi_model{
 #define AT5VXI_MODEL_FROM_INDEX(INDEX) ((unsigned)((INDEX)|0xf00))
 
 /*
-        NOTE: The macro AT5VXI_INDEX_FROM_MODEL(MODEL) defined above
-        should return an index into the correct data given the
-        VXI device's model code.
-*/
+ *       NOTE: The macro AT5VXI_INDEX_FROM_MODEL(MODEL) defined above
+ *       should return an index into the correct data given the
+ *       VXI device's model code.
+ */
 struct at5vxi_model at5vxi_models[] = {
         {"INTERFACE SIMULATOR",         "112Y-280158"},
         {"I CONTROLLER",                "112Y-280176"},
@@ -477,6 +477,16 @@ struct at5vxi_model at5vxi_models[] = {
         {"DOWNCONVERTER",               "112Y-280456"},
         {"COAX MONITOR TRANSMITTER",    "112Y-280587"},
         {"CAVITY SIMULATOR",            "112Y-280232"},
+	{"CABLE CONTROLLER (2 CHANNEL)","112Y-280539"},
+	{"BREADBOARD",			"112Y-280358"},
+	{"I/O INTERFACE",		"112Y-280359"},
+	{"DIAGNOSTIC - BPM",		"112Y-280422-1"},
+	{"FAST ENVELOPE DETECTOR",	"112Y-280421"},
+	{"DIAGNOSTIC - CM",		"112Y-280422-2"},
+	{"DIAGNOSTIC - MISC",		"112Y-280422-3"},
+	{"FAST VECTOR DETECTOR",	"112Y-280651"},
+	{"SINGLE-WIDE VECTOR DETECTOR",	"112Y-280672"},
+	{"FM / AM",			"112Y-280xxx"}
 };
 
 #define AT5VXI_VALID_MODEL(MODEL) \

@@ -17,7 +17,7 @@ MENUS += menuScan.h
 MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
-USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
+USER_DBDFLAGS += -I ..
 
 DBDINSTALL +=  dbCommonRecord.dbd 
 DBDINSTALL +=  menuGlobal.dbd

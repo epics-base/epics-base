@@ -4,10 +4,6 @@
 GNU_BIN = $(GNU_DIR)/bin
 GNU_LIB = $(GNU_DIR)/lib
 
-ifneq ($(EPICS_HOST_ARCH),$(T_A))
-export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
-endif
-
 CC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 CCC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 AR = $(GNU_BIN)/$(CMPLR_PREFIX)ar$(CMPLR_SUFFIX) -rc

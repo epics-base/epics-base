@@ -21,283 +21,146 @@
 #include "gdd.h"
 #include "shareLib.h"
 
-//
-// smartConstGDDPointer
-//
-// smart pointer class which auto ref/unrefs a const GDD
-//
-class smartConstGDDPointer {
+template < class T >
+class smartGDDPointerTemplate {
 public:
-
-	smartConstGDDPointer ();
-	smartConstGDDPointer (const gdd &valueIn);
-	smartConstGDDPointer (const gdd *pValueIn);
-	smartConstGDDPointer (const smartConstGDDPointer &ptrIn);
-	~smartConstGDDPointer ();
-	epicsShareFunc void set (const gdd *pNewValue);
-	smartConstGDDPointer operator = (const gdd *rhs);
-	smartConstGDDPointer operator = (const smartConstGDDPointer &rhs) ;
-	const gdd *operator -> () const;
-	const gdd & operator * () const;
+	smartGDDPointerTemplate ();
+	smartGDDPointerTemplate ( T & valueIn );
+	smartGDDPointerTemplate ( T * pValueIn );
+	smartGDDPointerTemplate ( const smartGDDPointerTemplate & ptrIn );
+	~smartGDDPointerTemplate ();
+	smartGDDPointerTemplate < T > & operator = ( T * rhs );
+	smartGDDPointerTemplate < T > & operator = ( const smartGDDPointerTemplate & rhs );
+    operator smartGDDPointerTemplate < const T > () const;
+    void set ( T * pNewValue );
+    T * get () const;
+	T * operator -> () const;
+	T & operator * () const;
 	bool operator ! () const;
     bool valid () const;
+    void swap ( smartGDDPointerTemplate < T > & );
     //
     // see Meyers, "more effective C++", for explanation on
     // why conversion to dumb pointer is ill advised here
     //
 	//operator const gdd * () const;
-protected:
-    union {
-	    gdd *pValue;
-	    const gdd *pConstValue;
-    };
+protected: 
+	T * pValue;
 };
 
-//
-// smartGDDPointer
-//
-// smart pointer class which auto ref/unrefs the GDD
-//
-class smartGDDPointer : public smartConstGDDPointer {
-public:
-    smartGDDPointer ();
-	smartGDDPointer ( gdd &valueIn );
-	smartGDDPointer ( gdd *pValueIn );
-	smartGDDPointer ( const smartGDDPointer &ptrIn );
-	void set ( gdd *pNewValue );
-	smartGDDPointer operator = ( gdd *rhs );
-	smartGDDPointer operator = ( const smartGDDPointer &rhs );
-	gdd *operator -> () const;
-	gdd & operator * () const;
-    //
-    // see Meyers, "more effective C++", for explanation on
-    // why conversion to dumb pointer is ill advised here
-    //
-	//operator gdd * () const;
-};
+typedef smartGDDPointerTemplate < gdd > smartGDDPointer;
+typedef smartGDDPointerTemplate < const gdd > smartConstGDDPointer;
 
-//
-// smartConstGDDReference
-//
-// smart reference class which auto ref/unrefs a const GDD
-//
-// Notes: 
-// 1) must be used with "->" operator and not "." operator
-// 2) must be used with "*" operator as an L-value
-//
-class smartConstGDDReference {
-public:
-	smartConstGDDReference (const gdd *pValueIn);
-	smartConstGDDReference (const gdd &valueIn);
-	smartConstGDDReference (const smartConstGDDReference &refIn);
-	~smartConstGDDReference ();
-    const gdd *operator -> () const;
-	const gdd & operator * () const;
-protected:
-    union {
-	    gdd *pValue;
-	    const gdd *pConstValue;
-    };
-};
+template < class T >
+inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate () :
+	pValue (0) {}
 
-//
-// smartGDDReference
-//
-// smart reference class which auto ref/unrefs a const GDD
-//
-// Notes: 
-// 1) must be used with "->" operator and not "." operator
-// 2) must be used with "*" operator as an L-value
-//
-class smartGDDReference : public smartConstGDDReference {
-public:
-	smartGDDReference (gdd *pValueIn);
-    smartGDDReference (gdd &valueIn);
-	smartGDDReference (const smartGDDReference &refIn);
-	gdd *operator -> () const;
-	gdd & operator * () const;
-};
-
-inline smartConstGDDPointer::smartConstGDDPointer () :
-	pConstValue (0) {}
-
-inline smartConstGDDPointer::smartConstGDDPointer (const gdd &valueIn) :
-	pConstValue (&valueIn)
+template < class T >
+inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T & valueIn ) :
+	pValue ( & valueIn )
 {
-	gddStatus status;
-	status = this->pConstValue->reference ();
-	assert (!status);
+	assert ( ! this->pValue->reference () );
 }
 
-inline smartConstGDDPointer::smartConstGDDPointer (const gdd *pValueIn) :
-	pConstValue (pValueIn)
+template < class T >
+inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T * pValueIn ) :
+	pValue ( pValueIn )
 {
-	if ( this->pConstValue != NULL ) {
-		gddStatus status;
-		status = this->pConstValue->reference ();
-		assert (!status);
+	if ( this->pValue != NULL ) {
+		assert ( ! this->pValue->reference () );
 	}
 }
 
-inline smartConstGDDPointer::smartConstGDDPointer (const smartConstGDDPointer &ptrIn) :
-	pConstValue (ptrIn.pConstValue)
+template < class T >
+inline smartGDDPointerTemplate < T > :: 
+        smartGDDPointerTemplate ( const smartGDDPointerTemplate < T > & ptrIn ) :
+	pValue ( ptrIn.pValue )
 {
-	if ( this->pConstValue != NULL ) {
-		gddStatus status;
-		status = this->pConstValue->reference();
-		assert(!status);
+	if ( this->pValue != NULL ) {
+		assert ( ! this->pValue->reference () );
 	}
 }
 
-inline smartConstGDDPointer::~smartConstGDDPointer ()
+template < class T >
+inline smartGDDPointerTemplate < T > :: ~smartGDDPointerTemplate ()
 {
-	if ( this->pConstValue != NULL ) {
-		gddStatus status;
-		status = this->pConstValue->unreference();
-		assert (!status);
+	if ( this->pValue != NULL ) {
+		assert ( ! this->pValue->unreference () );
 	}
 }
 
-inline smartConstGDDPointer smartConstGDDPointer::operator = (const gdd *rhs) 
+template < class T >
+inline void smartGDDPointerTemplate < T > :: set ( T * pNewValue ) 
 {
-	this->set (rhs);
-	return *this;
-}
-
-inline smartConstGDDPointer smartConstGDDPointer::operator = (const smartConstGDDPointer &rhs) 
-{
-	this->set (rhs.pConstValue);
-	return *this;
-}
-
-inline const gdd *smartConstGDDPointer::operator -> () const
-{
-	return this->pConstValue;
-}
-
-inline const gdd & smartConstGDDPointer::operator * () const
-{
-	return *this->pConstValue;
-}
-
-inline bool smartConstGDDPointer::operator ! () const // X aCC 361
-{
-    if (this->pConstValue) {
-        return false;
-    }
-    else {
-        return true;
+    if ( this->pValue != pNewValue ) {
+        if ( pNewValue ) {
+            assert ( ! pNewValue->reference () );
+        }
+        if ( this->pValue ) {
+            this->pValue->unreference ();
+        }
+        this->pValue = pNewValue;
     }
 }
 
-inline bool smartConstGDDPointer::valid () const // X aCC 361
+template < class T >
+inline T * smartGDDPointerTemplate < T > :: get () const
 {
-    if ( this->pConstValue ) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return this->pValue;
 }
 
-inline smartGDDPointer::smartGDDPointer () : 
-    smartConstGDDPointer () {}
-
-inline smartGDDPointer::smartGDDPointer (gdd &valueIn) :
-    smartConstGDDPointer (valueIn) {}
-
-inline smartGDDPointer::smartGDDPointer (gdd *pValueIn) :
-    smartConstGDDPointer (pValueIn) {}
-
-inline smartGDDPointer::smartGDDPointer (const smartGDDPointer &ptrIn) :
-    smartConstGDDPointer (ptrIn) {}
-
-inline void smartGDDPointer::set (gdd *pNewValue) 
+template < class T >
+inline smartGDDPointerTemplate < T > & 
+    smartGDDPointerTemplate < T >::operator = ( T * rhs ) 
 {
-    this->smartConstGDDPointer::set (pNewValue);
-}
-
-inline smartGDDPointer smartGDDPointer::operator = (gdd *rhs) 
-{
-    this->smartGDDPointer::set (rhs);
+    this->set ( rhs );
 	return *this;
 }
 
-inline smartGDDPointer smartGDDPointer::operator = (const smartGDDPointer &rhs) 
+template < class T >
+inline smartGDDPointerTemplate < T > &
+    smartGDDPointerTemplate < T >::operator = ( const smartGDDPointerTemplate < T > & rhs ) 
 {
-    this->smartGDDPointer::set (rhs.pValue);
+    this->set ( rhs.pValue );
 	return *this;
 }
 
-inline gdd *smartGDDPointer::operator -> () const
+template < class T >
+inline T * smartGDDPointerTemplate < T > :: operator -> () const
 {
 	return this->pValue;
 }
 
-inline gdd & smartGDDPointer::operator * () const
+template < class T >
+inline T & smartGDDPointerTemplate < T > :: operator * () const
 {
-	return *this->pValue;
+	return * this->pValue;
 }
 
-inline smartConstGDDReference::smartConstGDDReference (const gdd *pValueIn) :
-	pConstValue (pValueIn)
+template < class T >
+inline bool smartGDDPointerTemplate < T > :: operator ! () const // X aCC 361
 {
-    assert (this->pConstValue);
-	gddStatus status;
-	status = this->pConstValue->reference ();
-	assert (!status);
+    return this->pValue ? false : true;
 }
 
-inline smartConstGDDReference::smartConstGDDReference (const gdd &valueIn) :
-	pConstValue (&valueIn)
+template < class T >
+inline bool smartGDDPointerTemplate < T > :: valid () const // X aCC 361
 {
-	gddStatus status;
-	status = this->pConstValue->reference ();
-	assert (!status);
+    return this->pValue ? true : false;
 }
 
-inline smartConstGDDReference::smartConstGDDReference (const smartConstGDDReference &refIn) :
-	pConstValue (refIn.pConstValue)
+template < class T >
+inline void smartGDDPointerTemplate < T > :: swap ( smartGDDPointerTemplate < T > &  in )
 {
-	gddStatus status;
-	status = this->pConstValue->reference();
-	assert (!status);
+    T * pTmp = this->pValue;
+    this->pValue = in.pValue;
+    in.pValue = pTmp;
 }
 
-inline smartConstGDDReference::~smartConstGDDReference ()
+template < class T >
+smartGDDPointerTemplate < T > :: operator smartGDDPointerTemplate < const T > () const
 {
-	gddStatus status;
-	status = this->pConstValue->unreference();
-	assert (!status);
-}
-
-inline const gdd *smartConstGDDReference::operator -> () const
-{
-	return this->pConstValue;
-}
-
-inline const gdd & smartConstGDDReference::operator * () const
-{
-	return *this->pConstValue;
-}
-
-inline smartGDDReference::smartGDDReference (gdd *pValueIn) :
-  smartConstGDDReference (pValueIn) {}
-
-inline smartGDDReference::smartGDDReference (gdd &valueIn) :
-    smartConstGDDReference (valueIn) {}
-
-inline smartGDDReference::smartGDDReference (const smartGDDReference &refIn) :
-    smartConstGDDReference (refIn) {}
-
-inline gdd *smartGDDReference::operator -> () const
-{
-	return this->pValue;
-}
-
-inline gdd & smartGDDReference::operator * () const
-{
-	return *this->pValue;
+    return smartGDDPointerTemplate < const T > ( this->pValue );
 }
 
 #endif // smartGDDPointer_h

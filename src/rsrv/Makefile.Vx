@@ -1,3 +1,4 @@
+
 EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
@@ -12,13 +13,9 @@ OBJS = \
 	caserverio.o caservertask.o camsgtask.o camessage.o \
 	rsrv_init.o cast_server.o online_notify.o globalsource.o
 
-PROD = dbgLib rsrvLib
+PROD = rsrvLib
 
 include $(EPICS)/config/RULES.Vx
-
-dbgLib: $(OBJS) globalsource.o
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) globalsource.o $(LDLIBS)
 
 rsrvLib: $(OBJS)
 	$(RM) $@

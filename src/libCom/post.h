@@ -32,7 +32,6 @@
  * .05  03-06-92        jba     added multiple conditional expressions ?
  * .06  04-02-92        jba     added CONSTANT for floating pt constants in expression
  * .07  05-11-94        jba     added CONST_PI, CONST_D2R, and CONST_R2D
-
  */
 
 /*	defines for element table      */
@@ -111,4 +110,5 @@
 #define		CONST_PI	72
 #define		CONST_D2R	73
 #define		CONST_R2D	74
+#define		NINT		75
 #define		END_STACK	-1

@@ -33,7 +33,6 @@
 
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
-#include "tsDefs.h"
 #include "envDefs.h"
 #include "osiTime.h"
 
@@ -63,6 +62,18 @@ const unsigned osiTime::secPerMin = 60u;
 	struct tm *gmtime_r (const time_t *, struct tm *);
 	struct tm *localtime_r (const time_t *, struct tm *);
 #endif
+    
+#if 0
+struct TS_STAMP {
+    epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
+    epicsUInt32    nsec;           /* nanoseconds within second */
+};
+#endif
+
+static const unsigned ntpEpochYear = 1900;
+static const unsigned ntpEpocMonth = 0; // January
+static const unsigned ntpEpocDayOfTheMonth = 1; // the 1st day of the month
+static const long double ULONG_MAX_PLUS_ONE = (static_cast<long double>(ULONG_MAX) + 1.0);
 
 //
 // force this module to include code that can convert
@@ -76,6 +87,7 @@ public:
 };
 
 static const unsigned tmStructEpochYear = 1900;
+
 static const unsigned epicsEpochYear = 1990;
 static const unsigned epicsEpocMonth = 0; // January
 static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
@@ -83,20 +95,10 @@ static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
 //
 // osiTime (const unsigned long secIn, const unsigned long nSecIn)
 //
-osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn) 
+inline osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn) 
 {
-	if (nSecIn<nSecPerSec) {
-		this->sec = secIn;
-		this->nSec = nSecIn;
-	}
-	else if (nSecIn<(nSecPerSec*2)){
-		this->sec = secIn + 1u;
-		this->nSec = nSecIn-nSecPerSec;
-	}
-	else {
-		this->sec = nSecIn/nSecPerSec + secIn;
-		this->nSec = nSecIn%nSecPerSec;
-	}
+	this->sec = nSecIn/nSecPerSec + secIn;
+	this->nSec = nSecIn%nSecPerSec;
 }
 
 //
@@ -128,8 +130,11 @@ class loadTimeInit {
 public:
 	loadTimeInit ();
 
-	long epicsEpochOffset; // integer seconds
-	long double time_tTicksPerSec;
+	long double epicsEpochOffset; // seconds
+#ifdef NTP_SUPPORT
+    long double ntpEpochOffset; // seconds
+#endif
+	long double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
 };
 
 static const loadTimeInit lti;
@@ -139,7 +144,8 @@ static const loadTimeInit lti;
 //
 loadTimeInit::loadTimeInit ()
 {
-	long secWest;
+    static const time_t ansiEpoch = 0;
+	long double secWest;
 
 	{
 		time_t current = time (NULL);
@@ -148,19 +154,19 @@ loadTimeInit::loadTimeInit ()
 
 		gmtime_r (&current, &date);
 		error = mktime (&date);
-		secWest = static_cast<long> (difftime (error, current));
+		assert (error!=(time_t)-1);
+		secWest =  difftime (error, current);
 	}
 	
 	{
 		time_t first = static_cast<time_t> (0);
 		time_t last = static_cast<time_t> (1);
-		this->time_tTicksPerSec = 1.0 / difftime (last, first);
+		this->time_tSecPerTick = difftime (last, first);
 	}
 
 	{
 		struct tm tmEpicsEpoch;
 		time_t epicsEpoch;
-		time_t ansiEpoch = 0;
 
 		tmEpicsEpoch.tm_sec = 0;
 		tmEpicsEpoch.tm_min = 0;
@@ -171,35 +177,88 @@ loadTimeInit::loadTimeInit ()
 		tmEpicsEpoch.tm_isdst = -1; // dont know if its daylight savings time
 
 		epicsEpoch = mktime (&tmEpicsEpoch);
-		//
-		// when this happens we will need to write the code which
-		// subtract the tm structures ourselves
-		//
 		assert (epicsEpoch!=(time_t)-1);
-			
-		this->epicsEpochOffset = static_cast<long> (difftime (epicsEpoch, ansiEpoch));
-		this->epicsEpochOffset -= secWest;
+		this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
 	}
+
+#ifdef NTP_SUPPORT
+    /* unfortunately, on NT mktime cant calculate a time_t for a date before 1970 */
+	{
+		struct tm tmEpochNTP;
+		time_t ntpEpoch;
+
+        tmEpochNTP.tm_sec = 0;
+		tmEpochNTP.tm_min = 0;
+		tmEpochNTP.tm_hour = 0;
+		tmEpochNTP.tm_mday = ntpEpocDayOfTheMonth;
+		tmEpochNTP.tm_mon = ntpEpocMonth;
+		tmEpochNTP.tm_year = ntpEpochYear-tmStructEpochYear;
+		tmEpochNTP.tm_isdst = -1; // dont know if its daylight savings time
+
+		ntpEpoch = mktime (&tmEpochNTP);
+		assert (ntpEpoch!=(time_t)-1);
+
+        this->ntpEpochOffset = static_cast<long> (difftime (ansiEpoch, ntpEpoch) + this->epicsEpochOffset - secWest);
+	}
+#endif
 }
 
 //
-// ansiSecToInternalSec ()
+// osiTime::addNanoSec ()
 //
-unsigned long osiTime::time_tToInternalSec (const time_t &ansiTimeTicks)
+// many of the UNIX timestamp formats have nano sec stored as a long
+//
+inline void osiTime::addNanoSec (long nSecAdj)
 {
-	unsigned long sec;
+    //
+    // for now assume that they dont allow negative nanoseconds
+    // on UNIX platforms (this could be a mistake)
+    //
+    if ( nSecAdj < 0 ) {
+        throw negNanoSecInTimeStampFromUNIX ();
+    }
 
-	sec = static_cast<unsigned long> (ansiTimeTicks / lti.time_tTicksPerSec);
+    unsigned long offset = static_cast<unsigned long> (nSecAdj);
 
-	// expect over / under flow
-	if (lti.epicsEpochOffset>=0) {
-		sec -= static_cast<unsigned long>(lti.epicsEpochOffset);
-	}
-	else {
-		sec += static_cast<unsigned long>(-lti.epicsEpochOffset);
-	}
+    if ( offset >= nSecPerSec ) {
+        throw nanoSecFieldIsTooLarge ();
+    }
 
-	return sec;
+    //
+    // no need to worry about overflow here because
+    // offset + this->nSec will be less than ULONG_MAX/2
+    //
+    *this = osiTime (this->sec, this->nSec + offset);
+}
+
+//
+// osiTime (const time_t_wrapper &tv)
+//
+osiTime::osiTime (const time_t_wrapper &ansiTimeTicks)
+{
+    static long double uLongMax = static_cast<long double>(ULONG_MAX);
+	long double sec;
+
+    //
+    // map time_t, which ansi C defines as some arithmetic type, into "long double"  
+    //
+	sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
+
+    //
+    // map into the the EPICS time stamp range (which allows rollover)
+    //
+    if (sec < 0.0) {
+        if (sec < -uLongMax) {
+            sec = sec + static_cast<unsigned long>(-sec/uLongMax)*uLongMax;
+        }
+        sec += uLongMax;
+    }
+    else if (sec > uLongMax) {
+        sec = sec - static_cast<unsigned long>(sec/uLongMax)*uLongMax;
+    }
+
+    this->sec = static_cast <unsigned long> (sec);
+	this->nSec = static_cast <unsigned long> ( (sec-this->sec) * nSecPerSec );
 }
 
 //
@@ -208,19 +267,16 @@ unsigned long osiTime::time_tToInternalSec (const time_t &ansiTimeTicks)
 osiTime::operator time_t_wrapper () const
 {
 	long double tmp;
-	unsigned long newSec;
 	time_t_wrapper wrap;
 
-	// expect over/under flow and allow it to occur befor proceeding
-	if (lti.epicsEpochOffset>=0) {
-		newSec = this->sec + static_cast<unsigned long>(lti.epicsEpochOffset);
-	}
-	else {
-		newSec = this->sec + static_cast<unsigned long>(-lti.epicsEpochOffset);
-	}
-	tmp = newSec * lti.time_tTicksPerSec;
-	tmp += (this->nSec * lti.time_tTicksPerSec) / nSecPerSec;
-	wrap.ts = static_cast<time_t> (tmp);
+    tmp = (this->sec + lti.epicsEpochOffset) / lti.time_tSecPerTick;
+	tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
+
+    //
+    // map "long double" into time_t which ansi C defines as some arithmetic type
+    //
+    wrap.ts = static_cast <time_t> (tmp);
+
 	return wrap;
 }
 
@@ -229,32 +285,43 @@ osiTime::operator time_t_wrapper () const
 //
 osiTime::operator tm_nano_sec () const
 {
-	struct tm_nano_sec tm;
+	tm_nano_sec tm;
 	time_t_wrapper ansiTimeTicks;
+    struct tm *p;
 
 	ansiTimeTicks = *this;
 
-	// from POSIX RT
-	localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
+	// reentrant version of localtime() - from POSIX RT
+    // WRS prototype is incorrect ?
+	p = localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
+    if (p != &tm.ansi_tm) {
+        throw internalFailure ();
+    }
 
-	tm.nsec = this->nSec;
+	tm.nSec = this->nSec;
 
 	return tm;
 }
 
 //
-// osiTime (const struct tm_nano_sec &tm)
+// osiTime (const tm_nano_sec &tm)
 //
-osiTime::osiTime (const struct tm_nano_sec &tm)
+osiTime::osiTime (const tm_nano_sec &tm)
 {
-	time_t ansiTimeTicks;
+	time_t_wrapper ansiTimeTicks;
 	struct tm tmp = tm.ansi_tm;
 
-	ansiTimeTicks = mktime (&tmp);
-	assert (ansiTimeTicks!=(time_t)-1);
+	ansiTimeTicks.ts = mktime (&tmp);
+    if (ansiTimeTicks.ts==(time_t)-1) {
+        throw formatProblemWithStructTM ();
+    }
 
-	this->sec = osiTime::time_tToInternalSec (ansiTimeTicks);
-	this->nSec = tm.nsec;
+    *this = osiTime (ansiTimeTicks);
+
+    if (tm.nSec>=nSecPerSec) {
+        throw nanoSecFieldIsTooLarge ();
+    }
+    *this = osiTime (this->sec, this->nSec + tm.nSec);
 }
 
 //
@@ -276,16 +343,37 @@ osiTime::operator struct timespec () const
 //
 osiTime::osiTime (const struct timespec &ts)
 {
-	this->sec = osiTime::time_tToInternalSec (ts.tv_sec);
-	assert (ts.tv_nsec>=0);
-	unsigned long nSecIn = static_cast<unsigned long> (ts.tv_nsec);
-	if (nSecIn<nSecPerSec) {
-		this->nSec = nSecIn;
-	}
-	else {
-		this->sec += nSecIn / nSecPerSec;
-		this->nSec = nSecIn % nSecPerSec;
-	}
+	time_t_wrapper ansiTimeTicks;
+
+    ansiTimeTicks.ts = ts.tv_sec;
+    *this = osiTime (ansiTimeTicks);
+    this->addNanoSec (ts.tv_nsec);
+}
+
+//
+// operator struct timeval ()
+//
+osiTime::operator struct timeval () const
+{
+	struct timeval ts;
+	time_t_wrapper ansiTimeTicks;
+
+	ansiTimeTicks = *this;
+	ts.tv_sec = ansiTimeTicks.ts;
+    ts.tv_usec = static_cast<long> (this->nSec / nSecPerUSec);
+	return ts;
+}
+
+//
+// osiTime (const struct timeval &ts)
+//
+osiTime::osiTime (const struct timeval &ts)
+{
+	time_t_wrapper ansiTimeTicks;
+
+    ansiTimeTicks.ts = ts.tv_sec;
+    *this = osiTime (ansiTimeTicks);
+    this->addNanoSec (ts.tv_usec * nSecPerUSec);
 }
 
 //
@@ -307,15 +395,15 @@ osiTime::operator aitTimeStamp () const
 //
 osiTime::osiTime (const aitTimeStamp &ts) 
 {
-	this->sec = osiTime::time_tToInternalSec (ts.tv_sec);
+    time_t_wrapper ansiTimeTicks;
 
-	if (ts.tv_nsec<nSecPerSec) {
-		this->nSec = ts.tv_nsec;
-	}
-	else {
-		this->sec += ts.tv_nsec / nSecPerSec;
-		this->nSec = ts.tv_nsec % nSecPerSec;
-	}
+    ansiTimeTicks.ts = ts.tv_sec;
+    *this = osiTime (ansiTimeTicks);
+
+    if ( ts.tv_nsec>=nSecPerSec ) {
+        throw nanoSecFieldIsTooLarge ();
+    }
+    *this = osiTime ( this->sec, this->nSec + ts.tv_nsec );
 }
 
 //
@@ -339,6 +427,53 @@ osiTime::osiTime (const struct TS_STAMP &ts)
 }
 
 //
+// osiTime::ntpTimeStamp ()
+//
+#ifdef NTP_SUPPORT
+osiTime::operator ntpTimeStamp () const
+{
+    ntpTimeStamp ts;
+
+    if (lti.ntpEpochOffset>=0) {
+        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
+        // underflow expected
+        ts.l_ui = this->sec - offset;
+    }
+    else {
+        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
+        // overflow expected
+        ts.l_ui = this->sec + offset;
+    }
+
+    ts.l_uf = static_cast<unsigned long> ( ( this->nSec * ULONG_MAX_PLUS_ONE ) / nSecPerSec );
+
+    return ts;
+}
+#endif
+
+//
+// osiTime::osiTime (const ntpTimeStamp &ts)
+//
+#ifdef NTP_SUPPORT
+osiTime::osiTime (const ntpTimeStamp &ts)
+{
+
+    if (lti.ntpEpochOffset>=0) {
+        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
+        // overflow expected
+        this->sec = ts.l_ui + this->sec + offset;
+    }
+    else {
+        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
+        // underflow expected
+        this->sec = ts.l_ui + this->sec - offset;
+    }
+
+    this->nSec = static_cast<unsigned long> ( ( ts.l_uf / ULONG_MAX_PLUS_ONE ) * nSecPerSec );
+}
+#endif
+
+//
 // osiTime::show (unsigned)
 //
 void osiTime::show (unsigned) const
@@ -349,8 +484,8 @@ void osiTime::show (unsigned) const
 
 	status = strftime (bigBuffer, sizeof(bigBuffer), "%a %b %d %H:%M:%S %Y", &tmns.ansi_tm);
 	if (status>0) {
-		printf ("osiTime: %s %f\n", bigBuffer, 
-			static_cast <double> (tmns.nsec) / nSecPerSec);
+		printf ("osiTime: %s %g\n", bigBuffer, 
+			static_cast <double> (tmns.nSec) / nSecPerSec);
 	}
 }
 
@@ -366,7 +501,7 @@ osiTime osiTime::operator + (const long double &rhs) const
 
 	if (rhs >= 0) {
 		secOffset = static_cast <unsigned long> (rhs);
-		fnsec = rhs - static_cast <long double> (secOffset);
+		fnsec = rhs - secOffset;
 		nSecOffset = static_cast <unsigned long> (fnsec * nSecPerSec);
 
 		newSec = this->sec + secOffset; // overflow expected
@@ -378,7 +513,7 @@ osiTime osiTime::operator + (const long double &rhs) const
 	}
 	else {
 		secOffset = static_cast <unsigned long> (-rhs);
-		fnsec = rhs + static_cast <long double> (secOffset);
+		fnsec = rhs + secOffset;
 		nSecOffset = static_cast <unsigned long> (-fnsec * nSecPerSec);
 
 		newSec = this->sec - secOffset; // underflow expected
@@ -568,3 +703,139 @@ bool osiTime::operator < (const osiTime &rhs) const
 	return rc;
 }
 
+extern "C" {
+    /*
+     * ANSI C interface
+     *
+     * its too bad that these cant be implemented with inline functions 
+     * at least when running the GNU compiler
+     */
+    epicsShareFunc void osiTimeGetCurrent (osiTime *pDest)
+    {
+        *pDest = osiTime::getCurrent();
+    }
+    epicsShareFunc void osiTimeSynchronize ()
+    {
+        osiTime::synchronize ();
+    }
+    epicsShareFunc int osiTimeToTS_STAMP (TS_STAMP *pDest, const osiTime *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeFromTS_STAMP (osiTime *pDest, const TS_STAMP *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeToTime_t (time_t *pDest, const osiTime *pSrc)
+    {
+        try {
+            time_t_wrapper dst;
+            dst = *pSrc;
+            *pDest = dst.ts;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeFromTime_t (osiTime *pDest, time_t src)
+    {
+        try {
+            time_t_wrapper dst;
+            dst.ts = src;
+            *pDest = dst;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeToTM (tm_nano_sec *pDest, const osiTime *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeFromTM (osiTime *pDest, const tm_nano_sec *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeToTimespec (struct timespec *pDest, const osiTime *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc int osiTimeFromTimespec (osiTime *pDest, const struct timespec *pSrc)
+    {
+        try {
+            *pDest = *pSrc;
+        }
+        catch (...) {
+            return -1;
+        }
+        return 0;
+    }
+    epicsShareFunc long double osiTimeDiffInSeconds (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft - *pRight;
+    }
+    epicsShareFunc void osiTimeAddSeconds (osiTime *pDest, long double seconds)
+    {
+        *pDest += seconds;
+    }
+    epicsShareFunc int osiTimeEqual (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft == *pRight;
+    }
+    epicsShareFunc int osiTimeNotEqual (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft != *pRight;
+    }
+    epicsShareFunc int osiTimeLessThan (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft < *pRight;
+    }
+    epicsShareFunc int osiTimeLessThanEqual (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft <= *pRight;
+    }
+    epicsShareFunc int osiTimeGreaterThan (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft > *pRight;
+    }
+    epicsShareFunc int osiTimeGreaterThanEqual (const osiTime *pLeft, const osiTime *pRight)
+    {
+        return *pLeft >= *pRight;
+    }
+    epicsShareFunc void osiTimeShow (const osiTime *pTS, unsigned interestLevel)
+    {
+        pTS->show (interestLevel);
+    }
+}

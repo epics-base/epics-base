@@ -247,30 +247,35 @@ caStatus exPV::getUnits(gdd &units)
 // and therefore this isnt appropriate in an
 // analog context ...
 //
-caStatus exPV::getEnums (gdd &enums)
+caStatus exPV::getEnums ( gdd & enumsIn )
 {
-    static const unsigned nStr = 2;
-    aitFixedString *str;
-    exFixedStringDestructor *pDes;
+    if ( this->info.getType () == aitEnumEnum16 ) {
+        static const unsigned nStr = 2;
+        aitFixedString *str;
+        exFixedStringDestructor *pDes;
 
-    enums.setDimension(1);
-    str = new aitFixedString[nStr];
-    if (!str) {
-        return S_casApp_noMemory;
+        str = new aitFixedString[nStr];
+        if (!str) {
+            return S_casApp_noMemory;
+        }
+
+        pDes = new exFixedStringDestructor;
+        if (!pDes) {
+            delete [] str;
+            return S_casApp_noMemory;
+        }
+
+        strncpy (str[0].fixed_string, "off", 
+            sizeof(str[0].fixed_string));
+        strncpy (str[1].fixed_string, "on", 
+            sizeof(str[1].fixed_string));
+
+        enumsIn.setDimension(1);
+        enumsIn.setBound (0,0,nStr);
+        enumsIn.putRef (str, pDes);
+
+        return S_cas_success;
     }
-
-    pDes = new exFixedStringDestructor;
-    if (!pDes) {
-        delete [] str;
-        return S_casApp_noMemory;
-    }
-
-    enums.putRef (str, pDes);
-
-    strncpy (str[0].fixed_string, "off", sizeof(str[0].fixed_string));
-    strncpy (str[1].fixed_string, "on", sizeof(str[1].fixed_string));
-
-    enums.setBound (0,0,nStr);
 
     return S_cas_success;
 }
@@ -286,7 +291,7 @@ caStatus exPV::getValue(gdd &value)
         gddStatus gdds;
 
         gdds = gddApplicationTypeTable::
-            app_table.smartCopy (&value, & (*this->pValue) );
+            app_table.smartCopy ( &value, & (*this->pValue) );
         if (gdds) {
             status = S_cas_noConvert;   
         }

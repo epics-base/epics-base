@@ -26,7 +26,9 @@
 #  Modification Log:
 #  -----------------
 #  .01	mm-dd-yy	iii	Comment
-#  .02	mm-dd-yy	iii	Comment
+#  .02  08-16-93	rcz	moving most of these pre-builds back to the
+#		 Imakefile and add DependTarget($(EARLYSRC))
+#
 #  	...
 #
 
@@ -47,7 +49,4 @@ seqsource:
 
 devtestsource:
 	cd toolsComm/devtest ; /bin/sh build.it
-
-camathsource:
-	cd toolsComm/math; /bin/sh build.it
 

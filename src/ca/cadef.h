@@ -25,15 +25,17 @@
 extern "C" {
 #define CAC_ANSI_FUNC_PROTO
 #endif
+
 #ifdef __STDC__ 
-#ifndef CAC_ANSI_FUNC_PROTO
-#define CAC_ANSI_FUNC_PROTO
+#   ifndef CAC_ANSI_FUNC_PROTO
+#       define CAC_ANSI_FUNC_PROTO
+#   endif
 #endif
-#endif
+
 #ifndef CA_DONT_INCLUDE_STDARGH
-#ifdef CAC_ANSI_FUNC_PROTO 
-#include <stdarg.h>
-#endif
+#   ifdef CAC_ANSI_FUNC_PROTO 
+#       include <stdarg.h>
+#   endif
 #endif
 
 #include "ellLib.h"

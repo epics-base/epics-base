@@ -1,0 +1,9 @@
+To start the ioc from this directory execute the command
+    ../../bin/_ARCH_/<appname> st.cmd
+
+Alternatively make the st.cmd file directly executable with
+    chmod +x st.cmd
+and check the executable name on the first line of the st.cmd file 
+
+You may need to change the name of the .dbd file given in the
+st.cmd's dbLoadDatabase() command before starting the ioc.

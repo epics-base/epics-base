@@ -1,0 +1,6 @@
+Copy the startup script (st.cmd) and top level db and dbd directories and
+contents to
+<<TFTP_ROOT>>/epics/<<IOC hostname>>/
+
+Then load the executable into the IOC (floppy disk, network boot, debugger,
+etc.) and start it.

@@ -99,6 +99,11 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.79  1995/10/12  01:30:10  jhill
+ * new ca_flush_io() mechanism prevents deadlock when they call
+ * ca_flush_io() from within an event routine. Also forces early
+ * transmission of leading search UDP frames.
+ *
  * Revision 1.78  1995/09/29  21:47:33  jhill
  * alignment fix for SPARC IOC client and changes to prevent running of
  * access rights or connection handlers when the connection is lost just
@@ -326,6 +331,22 @@ void			*pext
 			struct timeval	itimeout;
 
 			/*
+			 * record the time if we end up blocking so that
+			 * we can time out
+			 */
+			if (bytesAvailable>=msgsize){
+				piiu->sendPending = FALSE;
+				break;
+			}
+			else {
+				if (!piiu->sendPending) {
+					piiu->timeAtSendBlock = 
+						ca_static->currentTime;
+					piiu->sendPending = TRUE;
+				}
+			}
+
+			/*
 			 * if connection drops request
 			 * cant be completed
 			 */
@@ -344,21 +365,6 @@ void			*pext
 			bytesAvailable = cacRingBufferWriteSize(
 						&piiu->send, 
 						FALSE);
-			/*
-			 * record the time if we end up blocking so that
-			 * we can time out
-			 */
-			if (bytesAvailable>=extsize+sizeof(msg)) {
-				piiu->sendPending = FALSE;
-				break;
-			}
-			else {
-				if (!piiu->sendPending) {
-					piiu->timeAtSendBlock = 
-						ca_static->currentTime;
-					piiu->sendPending = TRUE;
-				}
-			}
 		}
 	}
 
@@ -625,7 +631,7 @@ LOCAL void create_udp_fd()
 
 		status = taskSpawn(
 					name,
-					pri-1,
+					pri+1,
 					VX_FP_TASK,
 					4096,
 					(FUNCPTR)cac_recv_task,

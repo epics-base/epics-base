@@ -1,39 +1,37 @@
-
 /* oms_sm_driver.h */
 /* share/src/drv @(#)oms_sm_driver.h	1.1     10/17/90 */
-
 /*
- * oms_sm_driver.h
- *
  * headers that are used to interface to the 
  * Oregon Micro Systems six axis stepper motor drivers
  *
- * Author:      Bob Dalesio
- * Date:        02-25-90
+ * 	Author:      Bob Dalesio
+ * 	Date:        02-25-90
  *
- *      Control System Software for the GTA Project
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *      Copyright 1988, 1989, 1990 the Regents of the University of California.
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
  *
- *      This software was produced under a U.S. Government contract
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *      operated by the University of California for the U.S. Department
- *      of Energy.
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
- *      Developed by the Controls and Automation Group (AT-8)
- *      Accelerator Technology Division
- *      Los Alamos National Laboratory
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
  *
- *      Direct inqueries to:
- *      Bob Dalesio, AT-8, Mail Stop H820
- *      Los Alamos National Laboratory
- *      Los Alamos, New Mexico 87545
- *      Phone: (505) 667-3414
- *      E-mail: dalesio@luke.lanl.gov
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
  * .01	04-12-90	lrd	only allow one connection to each motor
+ * .02	11-13-90	lrd	add status bit definitions for encoder commands
  */
 #define	MAX_OMS_CARDS		8
 #define	MAX_OMS_CHANNELS	6
@@ -50,10 +48,12 @@ short	stop_count;
 
 #define SM_BASE_ADDR	0xfffc00
 
-#define	MIRQE	0x80
+#define	MIRQE			0x80
 #define	TRANSMIT_BUFFER_EMPTY	0x40
 #define	INPUT_BUFFER_FULL	0x20
-#define	MDONE	0x10
+#define	MDONE			0x10
+#define	OMS_ENCODER		0x04
+#define	OMS_CMD_ERROR		0x01
 
 struct vmex_motor{
 	char	unused0;

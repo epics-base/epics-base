@@ -69,12 +69,12 @@ osiTime osiTime::getCurrent ()
 	// get millisecs, timeGetTime gives DWORD
 	now = timeGetTime ();
 	if (prev_time > now)	/* looks like a DWORD overflow */
-		offset_secs +=  4294967; /* 0x100000000 / 1000 */
+		offset_secs +=  4294967ul; /* 0x100000000 / 1000 */
  
 	prev_time = now;
 
 	// compute secs and nanosecs from millisecs:
-        return osiTime (now / 1000L + offset_secs, (now % 1000L) * 1000000L);
+        return osiTime (now / 1000ul + offset_secs, (now % 1000ul) * 1000000ul);
 }
 
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/10 19:45:41  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.4  1996/11/02 02:06:00  jhill
  * const param => #define
  *
@@ -68,17 +71,17 @@
 #include "shareLib.h"
 
 class epicsShareClass osiTime {
-	static friend inline osiTime operator+ 
+	friend inline osiTime operator+ 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend inline osiTime operator- 
+	friend inline osiTime operator- 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend inline int operator>= 
+	friend inline int operator>= 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend inline int operator> 
+	friend inline int operator> 
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend inline int operator<=
+	friend inline int operator<=
 		(const osiTime &lhs, const osiTime &rhs);
-	static friend inline int operator< 
+	friend inline int operator< 
 		(const osiTime &lhs, const osiTime &rhs);
 public:
 	osiTime () : sec(0u), nSec(0u) {}
@@ -98,6 +101,7 @@ public:
 			this->nSec = nSecIn%nSecPerSec;
 		}
 	}
+
 	osiTime (double t) 
 	{
 		double intPart;
@@ -110,54 +114,51 @@ public:
 	}
 
 	//
-	// fetched as fields so this file is not required 
-	// to include os dependent struct timeval
+	// fetch value as an integer
 	//
-	void getTV(long &secOut, long &uSecOut) const
+	unsigned long getSec() const
+	{
+		return this->sec;
+	}
+	unsigned long getUSec() const
+	{	
+		return (this->nSec/nSecPerUSec);
+	}
+	unsigned long getNSec() const
+	{	
+		return this->nSec;
+	}
+
+	//
+	// non standard calls for the many strange
+	// time formats that still exist
+	//
+	long getSecTruncToLong() const
 	{
 		assert (this->sec<=LONG_MAX);
-		secOut = (long) this->sec;
+		return (long) this->sec;
+	}
+	long getUSecTruncToLong() const
+	{	
+		return (long) (this->nSec/nSecPerUSec);
+	}
+	long getNSecTruncToLong() const
+	{	
 		assert (this->nSec<=LONG_MAX);
-		uSecOut = (long) this->nSec/nSecPerUSec;
+		return (long) this->nSec;
 	}
-	//
-	//
-	void get(long &secOut, long &nSecOut) const
-	{
-		assert(this->sec <= LONG_MAX);
-		secOut = (long) this->sec;
-		assert(this->nSec <= LONG_MAX);
-		nSecOut = (long) this->nSec;
-	}
-	void get(unsigned long &secOut, unsigned long &nSecOut) const
-	{
-		secOut = this->sec;
-		nSecOut = this->nSec;
-	}
-	void get(unsigned &secOut, unsigned &nSecOut) const
-	{
-		secOut = this->sec;
-		nSecOut = this->nSec;
-	}
-	//
-	// for the goofy vxWorks 5.2 time spec
-	// (which has unsigned sec and long nano-sec)
-	//
-	void get(unsigned long &secOut, long &nSecOut) const
-	{
-		secOut = this->sec;
-		assert(this->nSec <= LONG_MAX);
-		nSecOut = this->nSec;
-	}
+
 
 	operator double() const
 	{
 		return ((double)this->nSec)/nSecPerSec+this->sec;
 	}
+
 	operator float() const
 	{
 		return ((float)this->nSec)/nSecPerSec+this->sec;
 	}
+
 	static osiTime getCurrent();
 
 	osiTime operator+= (const osiTime &rhs);

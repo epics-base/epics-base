@@ -363,7 +363,6 @@ $(MUNCHNAME):%.munch : %.o
 	$(NM) $< | $(MUNCH) > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(LINK.c) $< ctdt.o
-	#@ $(RM) ctdt.c ctdt.o
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

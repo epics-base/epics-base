@@ -197,10 +197,6 @@ static long queue_ca_array_put();
 static long queue_ca_build_and_connect();
 static long queue_ca_search();
 static long task_initialize_channel_access();
-
-/* diagnostic tools */
-static void stat_to_string();
-static void severity_to_string();
 
 /****************************************************************
 *
@@ -644,7 +640,6 @@ long rc;
 *     0                - Success
 *     S_dbCa_nullarg   - received a NULL pointer in one of the input args
 *     S_dbCa_foundnull - found a NULL pointer where one should not be
-*     S_dbCa_notFound  - could not find source_pvarname in shared list
 *     any rc from dbPut()
 *
 * Notes:
@@ -705,14 +700,14 @@ long rc;
 	}
 	else
 	{
-	    rc = S_dbCa_nullarg;
-	    errMessage(S_dbCa_nullarg, "ERROR: dbCaGetLink() got NULL pi");
+	    rc = S_dbCa_foundnull;
+	    errMessage(S_dbCa_foundnull, "ERROR: dbCaGetLink() got NULL pi");
 	} /* endif */
     }
     else
     {
-	rc = S_dbCa_foundnull;
-	errMessage(S_dbCa_foundnull, "ERROR: dbCaGetLink() found NULL plink");
+	rc = S_dbCa_nullarg;
+	errMessage(S_dbCa_nullarg, "ERROR: dbCaGetLink() found NULL plink");
     } /* endif */
 
 /* printf("EXIT dbCaGetLink()\n"); */
@@ -1011,7 +1006,6 @@ BOOL done;
 * Returns:
 *     0                - Success or raised alarm
 *     S_dbCa_nullarg   - received a NULL pointer in one of the input args
-*     S_dbCa_notFound  - could not find source_pvarname in shared list
 *     S_dbCa_foundnull - found a NULL pointer where one should not be
 *     any rc from dbGetField()
 *
@@ -1607,10 +1601,6 @@ char print_line[500];
 
 		    FASTUNLOCK(&(pi->lock));
 
-/* severity_to_string(pi->source_severity, sevr_buff); */
-/* sprintf(buff, "SEVR >%s< to dest >%s<", sevr_buff, pi->dest_name); */
-/* strcat(print_line, buff); */
-/* printf("%s\n", print_line); */
 		}
 		else
 		{
@@ -2373,61 +2363,3 @@ long rc;
     return rc;
 
 } /* end task_initialize_channel_access() */
-
-/****************************************************************
-*
-* FOR DEBUGGING
-*
-****************************************************************/
-
-static void severity_to_string(sevr, buff)
-unsigned short sevr;
-char *buff;
-{
-    
-    if (buff)
-    {
-	switch (sevr)
-	{
-	    case NO_ALARM:    strcpy(buff, "NO_ALARM");          break;
-	    case MINOR_ALARM: strcpy(buff, "MINOR_ALARM");       break;
-	    case MAJOR_ALARM: strcpy(buff, "MAJOR_ALARM");       break;
-	    case VALID_ALARM: strcpy(buff, "VALID_ALARM");       break;
-	    default:          sprintf(buff, "UNKNOWN %d", sevr); break;
-	} /* end switch() */
-    } /* endif */
-
-} /* end severity_to_string() */
-
-static void stat_to_string(stat, buff)
-unsigned short stat;
-char *buff;
-{
-
-    if (buff)
-    {
-	switch (stat)
-	{
-	    case READ_ALARM:     strcpy(buff, "READ_ALARM"); break;
-	    case WRITE_ALARM:    strcpy(buff, "WRITE_ALARM"); break;
-	    case HIHI_ALARM:     strcpy(buff, "HIHI_ALARM"); break;
-	    case HIGH_ALARM:     strcpy(buff, "HIGH_ALARM"); break;
-	    case LOLO_ALARM:     strcpy(buff, "LOLO_ALARM"); break;
-	    case LOW_ALARM:      strcpy(buff, "LOW_ALARM"); break;
-	    case STATE_ALARM:    strcpy(buff, "STATE_ALARM"); break;
-	    case COS_ALARM:      strcpy(buff, "COS_ALARM"); break;
-	    case COMM_ALARM:     strcpy(buff, "COMM_ALARM"); break;
-	    case TIMEOUT_ALARM:  strcpy(buff, "TIMEOUT_ALARM"); break;
-	    case HW_LIMIT_ALARM: strcpy(buff, "HW_LIMIT_ALARM"); break;
-	    case CALC_ALARM:     strcpy(buff, "CALC_ALARM"); break;
-	    case SCAN_ALARM:     strcpy(buff, "SCAN_ALARM"); break;
-	    case LINK_ALARM:     strcpy(buff, "LINK_ALARM"); break;
-	    case SOFT_ALARM:     strcpy(buff, "SOFT_ALARM"); break;
-	    case BAD_SUB_ALARM:  strcpy(buff, "BAD_SUB_ALARM"); break;
-	    case UDF_ALARM:      strcpy(buff, "UDF_ALARM"); break;
-	    default:             sprintf(buff, "UNKNOWN %d", stat); break;
-	} /* end switch() */
-    } /* endif */
-
-} /* end stat_to_string() */
-

@@ -40,6 +40,8 @@
  *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
  *	.07 joh	021292	Better diagnostics
  *	.08 joh	021492	use lstFind() to verify chanel in clear_channel()
+ *	.09 joh 031692	dont send exeception to the client if bad msg
+ *			detected- just disconnect instead
  */
 
 #include <vxWorks.h>
@@ -319,10 +321,22 @@ camessage(client, recv)
 			UNLOCK_CLIENT(client);
 			break;
 		default:
+			logMsg("CAS: bad msg detected\n");
 			log_header(mp, nmsg);
+#if 0	
+			/* 
+			 *	most clients dont recover
+			 *	from this
+			 */
 			LOCK_CLIENT(client);
 			send_err(mp, ECA_INTERNAL, client, "Invalid Msg");
 			UNLOCK_CLIENT(client);
+#endif
+			/*
+			 * returning ERROR here disconnects
+			 * the client with the bad message
+			 */
+			logMsg("CAS: forcing disconnect ...\n");
 			return ERROR;
 		}
 

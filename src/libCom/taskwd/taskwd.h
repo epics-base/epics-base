@@ -40,12 +40,18 @@
 
 typedef void (*TASKWDFUNCPRR)(void *parm);
 typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
+#ifdef __cplusplus
+extern "C" {
+#endif
 epicsShareFunc void taskwdInit(void);
 epicsShareFunc void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
 epicsShareFunc void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
 epicsShareFunc void taskwdRemove(threadId tid);
 epicsShareFunc void taskwdAnyRemove(void *userpvt);
+#ifdef __cplusplus
+}
+#endif
 #else
 epicsShareFunc void taskwdInit();
 epicsShareFunc void taskwdInsert();

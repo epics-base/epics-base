@@ -119,16 +119,14 @@ long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 
     if(options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr))return(-1);
     if(!inpTaskId) recDynLinkStartInput();
-    pdynLinkPvt = precDynLink->pdynLinkPvt;
+    if(precDynLink->pdynLinkPvt) recDynLinkClear(precDynLink);
+    pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
     if(!pdynLinkPvt) {
-	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
-	if(!pdynLinkPvt) {
 	    printf("recDynLinkAddInput can't allocate storage");
 	    taskSuspend(0);
-	}
-	FASTLOCKINIT(&pdynLinkPvt->lock);
-	precDynLink->pdynLinkPvt = pdynLinkPvt;
     }
+    FASTLOCKINIT(&pdynLinkPvt->lock);
+    precDynLink->pdynLinkPvt = pdynLinkPvt;
     pdynLinkPvt->pvname = pvname;
     pdynLinkPvt->dbrType = dbrType;
     pdynLinkPvt->searchCallback = searchCallback;
@@ -154,16 +152,14 @@ long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 
     if(options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr))return(-1);
     if(!outTaskId) recDynLinkStartOutput();
-    pdynLinkPvt = precDynLink->pdynLinkPvt;
+    if(precDynLink->pdynLinkPvt) recDynLinkClear(precDynLink);
+    pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
     if(!pdynLinkPvt) {
-	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
-	if(!pdynLinkPvt) {
-	    printf("recDynLinkAddInput can't allocate storage");
+	    printf("recDynLinkAddOutput can't allocate storage");
 	    taskSuspend(0);
-	}
-	FASTLOCKINIT(&pdynLinkPvt->lock);
-	precDynLink->pdynLinkPvt = pdynLinkPvt;
     }
+    FASTLOCKINIT(&pdynLinkPvt->lock);
+    precDynLink->pdynLinkPvt = pdynLinkPvt;
     pdynLinkPvt->pvname = pvname;
     pdynLinkPvt->dbrType = dbrType;
     pdynLinkPvt->searchCallback = searchCallback;

@@ -110,11 +110,12 @@
  * SPARC	octal rounding 
  */
 #define CAC_ADD_MSG(PIIU) \
-	EXTMSGPTR(PIIU)->m_postsize = \
-		CA_MESSAGE_ALIGN(EXTMSGPTR(PIIU)->m_postsize),\
-	(PIIU)->send->stk += sizeof(struct extmsg) + \
-		EXTMSGPTR(PIIU)->m_postsize, \
-	EXTMSGPTR(PIIU)->m_postsize = htons(EXTMSGPTR(PIIU)->m_postsize);
+{ \
+	struct extmsg *mp = EXTMSGPTR(PIIU); \
+	mp->m_postsize = CA_MESSAGE_ALIGN(mp->m_postsize); \
+	(PIIU)->send->stk += sizeof(struct extmsg) + mp->m_postsize; \
+	mp->m_postsize = htons(mp->m_postsize); \
+}
 
 
 

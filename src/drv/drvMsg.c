@@ -106,6 +106,31 @@ static long (*(msgSupFun[]))() = {
  *
  ******************************************************************************/
 struct drvet drvMsg = { 2, drvMsg_reportMsg, drvMsg_initMsg };
+
+
+#if FALSE
+mb(address)
+unsigned char   *address;
+{
+  unsigned char	c;
+  unsigned int	val;
+  unsigned char	s[100];
+
+  c = *address;
+
+  printf("%08.8X: %02.2X \n", address, c);
+  while (gets(s) != NULL)
+  {
+    if (sscanf(s, "%x", &val) == 1)
+    {
+      c = val;
+      *address = c;
+      return(c);
+    }
+  }
+  return(-1);
+}
+#endif
 
 /******************************************************************************
  *
@@ -220,7 +245,7 @@ struct dbCommon	*prec;
 {
   msgXact 		*pmsgXact;
   msgDrvGenXParm	genXactParm;
-  char			message[100];
+  char			message[200];
 
   /* allocate and fill in msg specific part */
   if ((pmsgXact = malloc(sizeof (msgXact))) == NULL)
@@ -241,6 +266,46 @@ struct dbCommon	*prec;
     /* free-up the xact structure and clean up */
     return(NULL);
   }
+  /* Verify that the parm number is within range */
+  if (pmsgXact->parm >= pparmBlock->numCmds)
+  {
+    sprintf(message, "(Message driver) %s parm number %d invalid\n", prec->name, pmsgXact->parm);
+    errMessage(S_db_badField, message);
+    return(NULL);
+  }
+
+  /* Make a simple check to see if the parm entry makes sense */
+  if ((pparmBlock->pcmds[pmsgXact->parm].flags & READ_DEFER) && (pparmBlock->pcmds[pmsgXact->parm].readOp.p == NULL))
+  {
+    sprintf(message, "(Message driver) %s parm number %d specifies a deferred read, but no read operation\n", prec->name, pmsgXact->parm);
+    errMessage(S_db_badField, message);
+    return(NULL);
+  }
+
+  /* Deal with the multi-parm chain buffers if necessary */
+  if (pparmBlock->pcmds[pmsgXact->parm].flags & (MP_HEAD|MP_TAIL))
+  { /* The Head and Tail parms are not valid for use by database records. */
+    sprintf(message, "(Message driver) %s parm number %d is an MP marker\n", prec->name, pmsgXact->parm);
+    errMessage(S_db_badField, message);
+    return(NULL);
+  }
+  if (pparmBlock->pcmds[pmsgXact->parm].flags & MP_MEMBER)
+  { /* parm represents a multi-parm chain member, deal with buffer alloc */
+printf("%s is an MP member\n", prec->name);
+
+    /* Create the msgMPParm to hold the attributes for this xact */
+
+    /* Figure out the command number of the header */
+
+    /* See if there is already a buffer created for this MP group */
+
+      /* No buffer for this MP group, create a new one */
+
+    /* Put xact into the chain in correct place */
+  }
+  else
+    pmsgXact->pmp = NULL;
+
   return(pmsgXact);
 }
 
@@ -370,14 +435,6 @@ char            *recTyp;
   if (prec->dpvt != NULL)
   {
     parm = ((msgXact *)(prec->dpvt))->parm;
-    if (parm >= ((msgXact *)(prec->dpvt))->pparmBlock->numCmds)
-    {
-      sprintf(message, "Message driver-checkParm:%s parm number %d invalid\n", prec->name,
-parm);
-      errMessage(S_db_badField, message);
-      prec->pact = TRUE;
-      return(S_db_badField);
-    }
     if ((((msgXact *)(prec->dpvt))->pparmBlock->pcmds)[parm].recTyp != (struct msgDset *)(prec->dset))
     {
       sprintf(message, "Message driver-checkParm: %s parm number %d not valid for %s record type\n", prec->name, parm, recTyp);
@@ -535,7 +592,7 @@ msgLink		*pmsgLink;
 
       if ((xact->status == XACT_OK) && (pmsgCmd->readOp.op != MSG_OP_NOP))
       { /* There is a read opertaion spec'd, check to see if I can do it now */
-        if ((pmsgCmd->readDef == 0)||(event & MSG_EVENT_READ))
+        if (((pmsgCmd->flags & READ_DEFER) == 0)||(event & MSG_EVENT_READ))
 	{ /* Not a deferred readback parm -or- it is and is time to read */
           (*(xact->pparmBlock->doOp))(xact, &(pmsgCmd->readOp));
 
@@ -873,7 +930,7 @@ msgFoParm	*pfoParm;
 
 /******************************************************************************
  *
- * NOTE:  The formatting of the MBBO value uses the rval field so that the
+ * NOTE:  The formatting of the MBBO value uses the RVAL field so that the
  * conversion from VAL to RVAL in the record (the movement of one of the
  * onvl, twvl,... fields to the rval field during record processing.)
  *
@@ -945,14 +1002,14 @@ void		*parm;
 
 /******************************************************************************
  *
- * The following functions are called from record support.  They are used to
- * queue a record's DPVT (xact structure) for processing by the message
- * driver.
+ * The following functions are called from record support.  
+ * They are used to initialize a record's DPVT (xact structure) for 
+ * processing by the message driver later when the record is processed.
  *
  ******************************************************************************/
 /******************************************************************************
  *
- * init record routine for AI
+ * Init record routine for AI
  *
  ******************************************************************************/
 long
@@ -1261,6 +1318,8 @@ struct waveformRecord *pwf;
 
 /******************************************************************************
  *
+ * These functions are called by record support.
+ * 
  * Service routines to process a input records.
  *
  ******************************************************************************/
@@ -1303,6 +1362,8 @@ struct waveformRecord *pwf;
 
 /******************************************************************************
  *
+ * These functions are called by record support.
+ * 
  * Service routine to process output records.
  *
  * It does not make sense to return a conversion code to record support from 
@@ -1342,9 +1403,15 @@ struct stringoutRecord *pso;
 
 /******************************************************************************
  *
- * Service routine to process a record.
+ * Generic service routine to process a record.
  *
  ******************************************************************************/
+
+/* 
+ * BUG -- I should probably defigure out the return code from the conversion
+ *        routine.  Not from a hard-coded value passed in from above.
+ */
+
 static long
 drvMsg_proc(prec, ret)
 struct dbCommon	*prec;	/* record to process */

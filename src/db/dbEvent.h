@@ -63,7 +63,7 @@ typedef void OVRFFUNC (void *overflow_arg, unsigned count);
 typedef void EXTRALABORFUNC (void *extralabor_arg);
 epicsShareFunc dbEventCtx epicsShareAPI db_init_events (void);
 epicsShareFunc int epicsShareAPI db_start_events (
-    dbEventCtx ctx, const char *taskname, void (*init_func)(epicsThreadId id), 
+    dbEventCtx ctx, const char *taskname, void (*init_func)(void *), 
     void *init_func_arg, unsigned osiPriority );
 epicsShareFunc void epicsShareAPI db_close_events (dbEventCtx ctx);
 epicsShareFunc void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx);

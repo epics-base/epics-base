@@ -209,7 +209,7 @@ void oldCAC::show ( unsigned level ) const
 
 void oldCAC::attachToClientCtx ()
 {
-    int status = ca_attach_context ( this );
+    int status = ca_attach_context ( reinterpret_cast<struct ca_client_context *>(this) );
     SEVCHK ( status, "error in virtual attach to client context" );
 }
 

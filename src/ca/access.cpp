@@ -88,10 +88,11 @@ int fetchClientContext ( oldCAC **ppcac )
  */
 extern "C" int epicsShareAPI ca_task_initialize ( void )
 {
-    return ca_context_create ( false );
+    return ca_context_create ( ca_disable_preemptive_callback );
 }
 
-extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
+extern "C" int epicsShareAPI ca_context_create ( 
+            ca_preemptive_callback_select premptiveCallbackSelect )
 {
     oldCAC *pcac;
 
@@ -106,7 +107,9 @@ extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
 		    return ECA_NORMAL;
 	    }
 
-        pcac = new oldCAC ( preemptiveCallBackEnable ? true : false );
+        bool enablePreemptiveCallback = 
+            premptiveCallbackSelect == ca_enable_preemptive_callback;
+        pcac = new oldCAC ( enablePreemptiveCallback );
 	    if ( ! pcac ) {
 		    return ECA_ALLOCMEM;
 	    }
@@ -158,7 +161,7 @@ extern "C" int epicsShareAPI ca_modify_user_name ( const char * )
 //
 // ca_context_destroy ()
 //
-extern "C" int epicsShareAPI ca_context_destroy ()
+extern "C" void epicsShareAPI ca_context_destroy ()
 {
     oldCAC   *pcac;
 
@@ -169,8 +172,6 @@ extern "C" int epicsShareAPI ca_context_destroy ()
             epicsThreadPrivateSet ( caClientContextId, 0 );
         }
     }
-
-    return ECA_NORMAL;
 }
 
 /*
@@ -180,7 +181,8 @@ extern "C" int epicsShareAPI ca_context_destroy ()
  */
 extern "C" int epicsShareAPI ca_task_exit ()
 {
-    return ca_context_destroy ();
+    ca_context_destroy ();
+    return ECA_NORMAL;
 }
 
 /*
@@ -941,21 +943,17 @@ extern "C" int epicsShareAPI ca_client_status ( unsigned level )
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" int epicsShareAPI ca_current_context ( caClientCtx *pCurrentContext )
+extern "C" struct ca_client_context * epicsShareAPI ca_current_context ()
 {
+    struct ca_client_context *pCtx;
     if ( caClientContextId ) {
-        void *pCtx = epicsThreadPrivateGet ( caClientContextId );
-        if (pCtx) {
-            *pCurrentContext = pCtx;
-            return ECA_NORMAL;
-        }
-        else {
-            return ECA_NOCACTX;
-        }
+        pCtx = ( struct ca_client_context * ) 
+            epicsThreadPrivateGet ( caClientContextId );
     }
     else {
-        return ECA_NOCACTX;
+        pCtx = 0;
     }
+    return pCtx;
 }
 
 /*
@@ -964,13 +962,13 @@ extern "C" int epicsShareAPI ca_current_context ( caClientCtx *pCurrentContext )
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-extern "C" int epicsShareAPI ca_attach_context ( caClientCtx context )
+extern "C" int epicsShareAPI ca_attach_context ( struct ca_client_context *pCtx )
 {
     oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
-    if ( pcac && context != 0 ) {
+    if ( pcac && pCtx != 0 ) {
         return ECA_ISATTACHED;
     }
-    epicsThreadPrivateSet ( caClientContextId, context );
+    epicsThreadPrivateSet ( caClientContextId, pCtx );
     return ECA_NORMAL;
 }
 

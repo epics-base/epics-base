@@ -181,9 +181,7 @@ void dbServiceIO::callStateNotify ( struct dbAddr &addr,
 
 extern "C" void cacAttachClientCtx ( void * pPrivate )
 {
-    int status;
-    caClientCtx clientCtx = pPrivate;
-    status = ca_attach_context ( clientCtx );
+    int status = ca_attach_context ( (struct ca_client_context *) pPrivate );
     assert ( status == ECA_NORMAL );
 }
 
@@ -192,13 +190,6 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbChannelIO &c
 {
     dbEventSubscription es;
     int status;
-
-    caClientCtx clientCtx;
-
-    status = ca_current_context ( &clientCtx );
-    if ( status != ECA_NORMAL ) {
-        return 0;
-    }
 
     {
         epicsAutoMutex locker ( this->mutex );
@@ -215,7 +206,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbChannelIO &c
                 above = selfPriority;
             }
             status = db_start_events ( this->ctx, "CAC-event", 
-                0/*cacAttachClientCtx*/, 0/*clientCtx*/, above );
+                cacAttachClientCtx, ca_current_context (), above );
             if ( status ) {
                 db_close_events ( this->ctx );
                 this->ctx = 0;

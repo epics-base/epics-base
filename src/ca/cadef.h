@@ -194,7 +194,9 @@ epicsShareFunc enum channel_state epicsShareAPI ca_state (chid chan);
 /*  Must be called once before calling any of the other routines        */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_initialize (void);
-epicsShareFunc int epicsShareAPI ca_context_create (int preemptiveCallBackEnable);
+enum ca_preemptive_callback_select 
+{ ca_disable_preemptive_callback, ca_enable_preemptive_callback };
+epicsShareFunc int epicsShareAPI ca_context_create (enum ca_preemptive_callback_select select);
 
 /************************************************************************/
 /*  Remove CA facility from your task                                   */
@@ -202,7 +204,7 @@ epicsShareFunc int epicsShareAPI ca_context_create (int preemptiveCallBackEnable
 /*  Normally called automatically at task exit                          */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_exit (void);
-epicsShareFunc int epicsShareAPI ca_context_destroy (void);
+epicsShareFunc void epicsShareAPI ca_context_destroy (void);
 
 /************************************************************************
  * anachronistic entry points                                           *
@@ -922,9 +924,8 @@ epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-typedef void * caClientCtx;
-epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext);
-epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
+epicsShareFunc struct ca_client_context * epicsShareAPI ca_current_context ();
+epicsShareFunc int epicsShareAPI ca_attach_context (struct ca_client_context *context);
 
 
 epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);

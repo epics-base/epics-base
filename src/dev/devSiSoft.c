@@ -1,7 +1,7 @@
-/* devStringinSoft.c */
-/* share/src/dev @(#)devStringinSoft.c	1.3     6/7/91  */
+/* devSiSoft.c */
+ /* share/src/dev   $Id$ */
 
-/* devStringinSoft.c - Device Support Routines for Soft String Input */
+/* devSiSoft.c - Device Support Routines for Soft String Input */
 /*
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
@@ -46,7 +46,7 @@
 #include	<stringinRecord.h>
 
 
-/* Create the dset for devStringinSoft */
+/* Create the dset for devSiSoft */
 long init_record();
 long read_stringin();
 
@@ -57,7 +57,7 @@ struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_stringin;
-}devStringinSoft={
+}devSiSoft={
 	5,
 	NULL,
 	NULL,
@@ -87,7 +87,7 @@ static long init_record(pstringin)
         break;
     default :
 	strcpy(message,pstringin->name);
-	strcat(message,": devStringinSoft (init_record) Illegal INP field");
+	strcat(message,": devSiSoft (init_record) Illegal INP field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
@@ -124,7 +124,7 @@ static long read_stringin(pstringin)
                 pstringin->nsta = SOFT_ALARM;
                 if(pstringin->stat!=SOFT_ALARM) {
                         strcpy(message,pstringin->name);
-                        strcat(message,": devStringinSoft (read_stringin) Illegal INP field");
+                        strcat(message,": devSiSoft (read_stringin) Illegal INP field");
                         errMessage(S_db_badField,message);
                 }
         }

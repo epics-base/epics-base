@@ -1,7 +1,7 @@
-/* devStringoutSoft.c */
+/* devSoSoft.c */
  /* share/src/dev   $Id$ */
 
-/* devStringoutSoft.c - Device Support Routines for Soft String Output */
+/* devSoSoft.c - Device Support Routines for Soft String Output */
 /*
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
@@ -44,7 +44,7 @@
 #include	<module_types.h>
 #include	<stringoutRecord.h>
 
-/* Create the dset for devStringoutSoft */
+/* Create the dset for devSoSoft */
 long write_stringout();
 
 struct {
@@ -54,7 +54,7 @@ struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_stringout;
-}devStringoutSoft={
+}devSoSoft={
 	5,
 	NULL,
 	NULL,
@@ -91,7 +91,7 @@ static long write_stringout(pstringout)
 		pstringout->nsta = SOFT_ALARM;
 		if(pstringout->stat!=SOFT_ALARM) {
 			strcpy(message,pstringout->name);
-			strcat(message,": devStringoutSoft (write_stringout) Illegal OUT field");
+			strcat(message,": devSoSoft (write_stringout) Illegal OUT field");
 			errMessage(S_db_badField,message);
 		}
 	}

@@ -1,7 +1,7 @@
-/* devStringinTestAsyn.c */
+/* devSiTestAsyn.c */
  /* share/src/dev   $Id$ */
 
-/* devStringinTestAsyn.c - Device Support Routines for testing asynchronous processing*/
+/* devSiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*
  *      Author:          Janet Anderson
  *      Date:            5-1-91
@@ -48,7 +48,7 @@
 #include	<link.h>
 #include	<stringinRecord.h>
 
-/* Create the dset for devStringinTestAsyn */
+/* Create the dset for devSiTestAsyn */
 long init_record();
 long read_stringin();
 struct {
@@ -59,7 +59,7 @@ struct {
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_stringin;
 	DEVSUPFUN	special_linconv;
-}devStringinTestAsyn={
+}devSiTestAsyn={
 	6,
 	NULL,
 	NULL,
@@ -106,7 +106,7 @@ static long init_record(pstringin,process)
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
 	if(dbNameToAddr(pstringin->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devStringinTestAsyn\n");
+		logMsg("dbNameToAddr failed in init_record for devSiTestAsyn\n");
 		exit(1);
 	}
 	pcallback->wd_id = wdCreate();
@@ -118,7 +118,7 @@ static long init_record(pstringin,process)
 	break;
     default :
 	strcpy(message,pstringin->name);
-	strcat(message,": devStringinTestAsyn (init_record) Illegal INP field");
+	strcat(message,": devSiTestAsyn (init_record) Illegal INP field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
@@ -152,7 +152,7 @@ static long read_stringin(pstringin)
 		pstringin->nsta = SOFT_ALARM;
 		if(pstringin->stat!=SOFT_ALARM) {
 			strcpy(message,pstringin->name);
-			strcat(message,": devStringinTestAsyn (read_stringin) Illegal INP field");
+			strcat(message,": devSiTestAsyn (read_stringin) Illegal INP field");
 			errMessage(S_db_badField,message);
 		}
 	}

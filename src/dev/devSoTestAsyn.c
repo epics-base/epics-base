@@ -1,7 +1,7 @@
-/* devStringoutTestAsyn.c */
+/* devSoTestAsyn.c */
  /* share/src/dev   $Id$ */
 
-/* devStringoutTestAsyn.c - Device Support Routines for testing asynchronous processing*/
+/* devSoTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 /*
  *      Author:          Janet Anderson
  *      Date:            5-1-91
@@ -49,7 +49,7 @@
 #include	<link.h>
 #include	<stringoutRecord.h>
 
-/* Create the dset for devStringoutTestAsyn */
+/* Create the dset for devSoTestAsyn */
 long init_record();
 long write_stringout();
 struct {
@@ -60,7 +60,7 @@ struct {
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_stringout;
 	DEVSUPFUN	special_linconv;
-}devStringoutTestAsyn={
+}devSoTestAsyn={
 	6,
 	NULL,
 	NULL,
@@ -106,7 +106,7 @@ static long init_record(pstringout,process)
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
 	if(dbNameToAddr(pstringout->name,&(pcallback->dbAddr))) {
-		logMsg("dbNameToAddr failed in init_record for devStringoutTestAsyn\n");
+		logMsg("dbNameToAddr failed in init_record for devSoTestAsyn\n");
 		exit(1);
 	}
 	pcallback->wd_id = wdCreate();
@@ -114,7 +114,7 @@ static long init_record(pstringout,process)
 	break;
     default :
 	strcpy(message,pstringout->name);
-	strcat(message,": devStringoutTestAsyn (init_record) Illegal OUT field");
+	strcat(message,": devSoTestAsyn (init_record) Illegal OUT field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
@@ -148,7 +148,7 @@ static long write_stringout(pstringout)
 		pstringout->nsta = SOFT_ALARM;
 		if(pstringout->stat!=SOFT_ALARM) {
 			strcpy(message,pstringout->name);
-			strcat(message,": devStringoutTestAsyn (read_stringout) Illegal OUT field");
+			strcat(message,": devSoTestAsyn (read_stringout) Illegal OUT field");
 			errMessage(S_db_badField,message);
 		}
 	}

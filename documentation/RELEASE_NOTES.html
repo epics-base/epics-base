@@ -18,6 +18,14 @@
 <h2>Changes since 3.14.2</h2>
 </center>
 
+<h4>dbExpand <code>-o outfile</code> option</h4>
+
+<p>A commandline option <code>-o</code> has been added to the dbExpand
+program to allow the name of its output file to be specified. If there are
+any errors in the input file(s) the output file will not be generated or
+modified at all. The rules to expand DBD files have been changed to make use
+of this.</p>
+
 <h4>New keyword <code>variable()</code> supported in dbd files</h4>
 
 <p>Database definition (.dbd) files can now contain declarations of simple

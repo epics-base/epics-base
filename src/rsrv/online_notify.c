@@ -176,8 +176,10 @@ int rsrv_online_notify_task()
             pNode = (caAddrNode *)pNode->node.next;
         }
         threadSleep(delay);
-	delay *= 2.0;
-	if(delay>=maxdelay) delay = maxdelay;
+	if (delay<maxdelay) {
+		delay *= 2.0;
+		if(delay>maxdelay) delay = maxdelay;
+	}
     }
 }
 

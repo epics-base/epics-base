@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107  1998/10/27 00:43:27  jhill
+ * eliminated warning
+ *
  * Revision 1.106  1998/09/25 00:20:56  jhill
  * fixed warnings
  *
@@ -440,7 +443,7 @@ const void		*pext
 			}
 
 			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
-			cac_mux_io (&itimeout);
+			cac_mux_io (&itimeout, FALSE);
 
 			LOCK;
 
@@ -706,11 +709,12 @@ int ca_os_independent_init (void)
 	 * init broadcasted search counters
 	 * (current time must be initialized before calling this)
 	 */
+    ca_static->ca_search_tries_congest_thresh = UINT_MAX;
 	ca_static->ca_search_responses = 0u;
 	ca_static->ca_search_tries = 0u;
 	ca_static->ca_search_retry_seq_no = 0u;
 	ca_static->ca_seq_no_at_list_begin = 0u;
-	ca_static->ca_frames_per_try = TRIESPERFRAME;
+	ca_static->ca_frames_per_try = INITIALTRIESPERFRAME;
 	ca_static->ca_conn_next_retry = ca_static->currentTime;
 	cacSetRetryInterval (0u);
 
@@ -2809,7 +2813,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo);
+		cac_mux_io(&tmo, TRUE);
         	return ECA_NORMAL;
 	}
 
@@ -2818,7 +2822,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		 * force the flush
 		 */
 		CLR_CA_TIME (&tmo);
-		cac_mux_io(&tmo);
+		cac_mux_io(&tmo, TRUE);
 		return ECA_TIMEOUT;
 	}
 
@@ -2832,7 +2836,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			 * force the flush
 			 */
 			CLR_CA_TIME (&tmo);
-			cac_mux_io(&tmo);
+			cac_mux_io(&tmo, TRUE);
         	return ECA_NORMAL;
 		}
     	if(timeout == 0.0){
@@ -3036,7 +3040,7 @@ int epicsShareAPI ca_flush_io()
 	 */
 	ca_static->ca_flush_pending = TRUE;
 	CLR_CA_TIME (&timeout);
-	cac_mux_io (&timeout);
+	cac_mux_io (&timeout, TRUE);
 
   	return ECA_NORMAL;
 }

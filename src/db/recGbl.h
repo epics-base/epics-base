@@ -31,7 +31,6 @@
 #ifndef INCrecGblh
 #define INCrecGblh 1
 
-
 #include "shareLib.h"
 
 /*************************************************************************/

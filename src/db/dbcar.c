@@ -41,11 +41,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
-#include "shareLib.h"
 #define epicsExportSharedSymbols
-
-/*define DB_TEXT_GLBLSOURCE temporily; ca will do this later */
-#define DB_TEXT_GLBLSOURCE
 
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE

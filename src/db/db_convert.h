@@ -20,6 +20,7 @@ of this distribution.
 extern "C" {
 #endif
 
+#include "shareLib.h"
 #include "dbAddr.h"
 
 epicsShareExtern struct dbBase *pdbbase;

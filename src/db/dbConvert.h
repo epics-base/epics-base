@@ -14,8 +14,9 @@ of this distribution.
 #ifndef INCdbConverth
 #define INCdbConverth
 
-#include "shareLib.h"
 #include "dbFldTypes.h"
+#include "shareLib.h"
+
 epicsShareExtern long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
     (DBADDR *paddr, void *pbuffer,long nRequest, long no_elements, long offset);
 epicsShareExtern long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])

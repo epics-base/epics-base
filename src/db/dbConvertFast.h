@@ -14,8 +14,8 @@ of this distribution.
 #ifndef INCdbConvertFasth
 #define INCdbConvertFasth
 
-#include "shareLib.h"
 #include "dbFldTypes.h"
+#include "shareLib.h"
 
 epicsShareExtern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
 epicsShareExtern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();

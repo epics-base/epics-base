@@ -32,7 +32,7 @@ tcpRecvWatchdog::tcpRecvWatchdog
     ( callbackMutex & cbMutexIn, epicsMutex & mutexIn, tcpiiu & iiuIn, 
             double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        iiu ( iiuIn ), cbMutex ( cbMutexIn ), mutex ( mutexIn ), 
+        cbMutex ( cbMutexIn ), mutex ( mutexIn ), iiu ( iiuIn ), 
         probeResponsePending ( false ), beaconAnomaly ( true ), 
         probeTimeoutDetected ( false )
 {

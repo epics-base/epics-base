@@ -560,13 +560,15 @@ void nciu::sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & guard )
         tsDLIter < baseNMIU > next = pNetIO;
         next++;
         class netSubscription * pSubscr = pNetIO->isSubscription ();
-        // disconnected channels should have only subscription IO attached
-        assert ( pSubscr );
-        try {
-            pSubscr->subscriptionUpdateIfRequired ( guard, *this );
-        }
-        catch ( ... ) {
-            errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
+        // the channel becomes connected while subscription update requests
+        // are pending so IO types other than subscription IO might be attached
+        if ( pSubscr ) {
+            try {
+                pSubscr->subscriptionUpdateIfRequired ( guard, *this );
+            }
+            catch ( ... ) {
+                errlogPrintf ( "CAC: failed to send subscription request during channel connect\n" );
+            }
         }
         pNetIO = next;
     }

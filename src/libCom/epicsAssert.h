@@ -64,6 +64,7 @@ extern void epicsAssert ();
 #define assert(exp) \
 {if (!(exp)) epicsAssert (__FILE__, __LINE__, "", epicsAssertAuthor);}
 #else /* epicsAssertAuthor */
+#define assert(exp) \
 {if (!(exp)) epicsAssert (__FILE__, __LINE__, "", 0);}
 #endif /* epicsAssertAuthor */
 

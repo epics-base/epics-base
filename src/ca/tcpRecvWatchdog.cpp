@@ -12,12 +12,6 @@
 
 #include "iocinf.h"
 
-#ifdef DEBUG
-#   define debugPrintf(argsInParen) printf argsInParen
-#else 
-#   define debugPrintf(argsInParen)
-#endif
-
 //
 // the recv watchdog timer is active when this object is created
 //

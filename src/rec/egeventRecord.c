@@ -123,7 +123,6 @@ STATIC long EgEventInitRec(struct egeventRecord *pRec, int pass)
 {
   EgDsetStruct	*pDset = (EgDsetStruct *) pRec->dset;
 
-printf("EgEventInitRec(%s, %d)\n", pRec->name, pass);
   if (pass == 1)
   {
     /* Init the card via driver calls */

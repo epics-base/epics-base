@@ -29,7 +29,11 @@
 /*	.12 110194 joh	improved search scheduling			*/
 /*			(dont send all chans in a block)		*/
 /*									*/
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.41  1998/09/24 21:22:51  jhill
+ * detect reconnect faster when IOC reboots quickly
+ *
  * Revision 1.40  1997/08/04 23:30:53  jhill
  * detect IOC reboot faster that EPICS_CA_CONN_TMO
  *

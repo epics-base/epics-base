@@ -31,7 +31,11 @@
 /*	.19 012094 joh	added minor version (for each server)		*/
 /************************************************************************/
 
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.73  1998/09/24 21:22:53  jhill
+ *  CLR_CA_TIME() now correctly zeros the delay
+ *
  * Revision 1.72  1998/06/16 01:07:56  jhill
  * removed caHostFromInetAddr
  *

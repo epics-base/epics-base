@@ -46,7 +46,11 @@
 /*	021794	joh	turn on SO_REUSEADDR only after the test for	*/
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
-/* $Log$
+/*
+ * $Log$
+ * Revision 1.82  1998/09/24 21:22:53  jhill
+ *  subtle changes related to efficency when checking connection timers
+ *
  * Revision 1.81  1998/07/07 23:04:00  jhill
  * cosmetic changes
  *

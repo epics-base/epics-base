@@ -21,11 +21,12 @@ DIRS += db
 DIRS += db/test
 DIRS += as
 DIRS += util
-DIRS += misc
 DIRS += dbtools
 DIRS += rsrv
 DIRS += rec
 DIRS += dev
+DIRS += iocsh
+DIRS += misc
 #Following are optional
 ifeq ($(findstring vxWorks,$(BUILD_ARCHS)),vxWorks)
 DIRS += vxWorks

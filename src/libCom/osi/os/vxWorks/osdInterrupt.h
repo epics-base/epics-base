@@ -12,13 +12,13 @@ of this distribution.
 #include <intLib.h>
 #include <logLib.h>
 
-INLINE int  interruptLock() {return(intLock());}
+epicsShareFunc INLINE int  interruptLock() {return(intLock());}
 
-INLINE void  interruptUnlock(int key) {intUnlock(key);}
+epicsShareFunc INLINE void  interruptUnlock(int key) {intUnlock(key);}
 
-INLINE int  interruptIsInterruptContext() {return(intContext());}
+epicsShareFunc INLINE int  interruptIsInterruptContext() {return(intContext());}
 
-INLINE void  interruptContextMessage(const char *message)
+epicsShareFunc INLINE void  interruptContextMessage(const char *message)
 {
     logMsg((char *)message,0,0,0,0,0,0);
 }

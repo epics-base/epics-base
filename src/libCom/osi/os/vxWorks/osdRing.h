@@ -11,52 +11,52 @@ of this distribution.
 #include <vxWorks.h>
 #include <rngLib.h>
 
-INLINE ringId ringCreate(int nbytes)
+epicsShareFunc INLINE ringId ringCreate(int nbytes)
 {
     return((ringId)rngCreate(nbytes));
 }
 
-INLINE void ringDelete(ringId id)
+epicsShareFunc INLINE void ringDelete(ringId id)
 {
     rngDelete((RING_ID)id);
 }
 
-INLINE int ringGet(ringId id, char *value,int nbytes)
+epicsShareFunc INLINE int ringGet(ringId id, char *value,int nbytes)
 {
     return(rngBufGet((RING_ID)id,value,nbytes);
 }
 
-INLINE int ringPut(ringId id, char *value,int nbytes)
+epicsShareFunc INLINE int ringPut(ringId id, char *value,int nbytes)
 {
     return(rngBufPut((RING_ID)id,value,nbytes));
 }
 
-INLINE void ringFlush(ringId id)
+epicsShareFunc INLINE void ringFlush(ringId id)
 {
     ringFlush((RING_ID)id);
 }
 
-INLINE int ringFreeBytes(ringId id)
+epicsShareFunc INLINE int ringFreeBytes(ringId id)
 {
     return(rngFreeBytes((RING_ID)id));
 }
 
-INLINE int ringUsedBytes(ringId id)
+epicsShareFunc INLINE int ringUsedBytes(ringId id)
 {
     return(rngNBytes((RING_ID)id));
 }
 
-INLINE int ringSize(ringId id)
+epicsShareFunc INLINE int ringSize(ringId id)
 {
     return((rngFreeBytes((RING_ID)id) + rngNBytes((RING_ID)id)));
 }
 
-INLINE int ringIsEmpty(ringId id)
+epicsShareFunc INLINE int ringIsEmpty(ringId id)
 {
     return(rngIsEmpty((RING_ID)id));
 }
 
-INLINE int ringIsFull(ringId id)
+epicsShareFunc INLINE int ringIsFull(ringId id)
 {
     return(rngIsFull((RING_ID)id));
 }

@@ -14,29 +14,29 @@ of this distribution.
 #include <objLib.h>
 #include <sysLib.h>
 
-INLINE semBinaryId semBinaryCreate(int initialState)
+epicsShareFunc INLINE semBinaryId semBinaryCreate(int initialState)
 {
   return((semBinaryId)semBCreate(SEM_Q_FIFO,(semEmpty ? SEM_EMPTY : SEM_FULL)));
 }
 
-INLINE void semBinaryDestroy(semBinaryId id)
+epicsShareFunc INLINE void semBinaryDestroy(semBinaryId id)
 {
     semDelete((SEM_ID)id);
 }
 
-INLINE void semBinaryGive(semBinaryId id)
+epicsShareFunc INLINE void semBinaryGive(semBinaryId id)
 {
     semGive((SEM_ID)id);
 }
 
-INLINE semTakeStatus semBinaryTake(semBinaryId id)
+epicsShareFunc INLINE semTakeStatus semBinaryTake(semBinaryId id)
 {
     int status;
     status = semTake((SEM_ID)id,WAIT_FOREVER);
     return((status==OK ? semTakeOK : semTakeError));
 }
 
-INLINE semTakeStatus semBinaryTakeTimeout(
+epicsShareFunc INLINE semTakeStatus semBinaryTakeTimeout(
     semBinaryId id, double timeOut)
 {
     int status;
@@ -48,7 +48,7 @@ INLINE semTakeStatus semBinaryTakeTimeout(
     return(semTakeError);
 }
 
-INLINE semTakeStatus semBinaryTakeNoWait(semBinaryId id)
+epicsShareFunc INLINE semTakeStatus semBinaryTakeNoWait(semBinaryId id)
 {
     int status;
     status = semTake((SEM_ID)id,NO_WAIT);
@@ -57,35 +57,35 @@ INLINE semTakeStatus semBinaryTakeNoWait(semBinaryId id)
     return(semTakeError);
 }
 
-INLINE void semBinaryShow(semBinaryId id)
+epicsShareFunc INLINE void semBinaryShow(semBinaryId id)
 {
     semShow((SEM_ID)id,1);
 }
 
-INLINE semMutexId semMutexCreate(void)
+epicsShareFunc INLINE semMutexId semMutexCreate(void)
 {
     return((semMutexId)
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY));
 }
 
-INLINE void semMutexDestroy(semMutexId id)
+epicsShareFunc INLINE void semMutexDestroy(semMutexId id)
 {
     semDelete((SEM_ID)id);
 }
 
-INLINE void semMutexGive(semMutexId id)
+epicsShareFunc INLINE void semMutexGive(semMutexId id)
 {
     semGive((SEM_ID)id);
 }
 
-INLINE semTakeStatus semMutexTake(semMutexId id)
+epicsShareFunc INLINE semTakeStatus semMutexTake(semMutexId id)
 {
     int status;
     status = semTake((SEM_ID)id,WAIT_FOREVER);
     return((status==OK ? semTakeOK : semTakeError));
 }
 
-INLINE semTakeStatus semMutexTakeTimeout(
+epicsShareFunc INLINE semTakeStatus semMutexTakeTimeout(
     semMutexId id, double timeOut)
 {
     int status;
@@ -95,7 +95,7 @@ INLINE semTakeStatus semMutexTakeTimeout(
     return(semTakeError);
 }
 
-INLINE semTakeStatus semMutexTakeNoWait(semMutexId id);
+epicsShareFunc INLINE semTakeStatus semMutexTakeNoWait(semMutexId id)
 {
     int status;
     status = semTake((SEM_ID)id,NO_WAIT);
@@ -104,7 +104,7 @@ INLINE semTakeStatus semMutexTakeNoWait(semMutexId id);
     return(semTakeError);
 }
 
-INLINE void semMutexShow(semMutexId id);
+epicsShareFunc INLINE void semMutexShow(semMutexId id)
 {
     semShow((SEM_ID)id,1);
 }

@@ -198,11 +198,6 @@ void ca_spawn_repeater()
 		ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
 		ca_printf("because of errno = \"%s\"\n", strerror(errno));
 		ca_printf("You may need to modify your PATH environment variable.\n");
-		ca_printf("Creating CA repeater with fork() system call.\n");
-		ca_printf("Repeater will inherit parents process name and resources.\n");
-		ca_printf("Duplicate resource consumption may occur.\n");
-		ca_repeater();
-		assert(0);
 	}
 	exit(0);
 }

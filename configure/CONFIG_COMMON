@@ -29,7 +29,8 @@ CONFIG_INSTALLS += ../RULES_BUILD
 BUILD_CLASS = HOST
 
 #-------------------------------------------------------
-# Divider and suffix
+# Prefix and suffix
+DEP=.depends
 DIVIDER = .
 OBJ = .
 RES = .
@@ -163,6 +164,7 @@ TARGET_LDFLAGS = $($(basename $@)_LDFLAGS_$(OS_CLASS)) $($(basename $@)_LDFLAGS)
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS_$(OS_CLASS)) $($(basename $@)_CPPFLAGS)
 
 # Level of ansi conformance flags
+CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(CMPLR))
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
 CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
 
@@ -210,8 +212,8 @@ LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
 LDLIBS = $(DEPLIB_LDLIBS) $(STATIC_LDLIBS)\
  $(POSIX_LDLIBS) $(ARCH_DEP_LDLIBS) $(OP_SYS_LDLIBS)
 
-CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
- $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
+CPPFLAGS += $(CONFORM_CPPFLAGS) $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS)\
+ $(EPICS_BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
 #--------------------------------------------------
@@ -232,16 +234,19 @@ COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(SOURCE_CXXFLAG)
 #--------------------------------------------------
 # Build depends command here
 
-DEPENDS.cpp = $(CCC)
-DEPENDSFLAGS += $(CPPFLAGS) $(INCLUDES) $(DEPENDS_FLAG)
-DEPENDS_CMD.cpp = -$(DEPENDS.cpp) $(DEPENDSFLAGS) $(DEPENDS_SRC_FILES) > DEPENDS
+HDEPENDS.c = $(CC)
+HDEPENDS.cpp = $(CCC)
+HDEPENDS_CMD.c   = -$(HDEPENDS.c) $(HDEPENDS_CFLAGS) $(HDEPENDSFLAGS) $< > $*$(DEP)
+HDEPENDS_CMD.cpp = -$(HDEPENDS.cpp) $(HDEPENDS_CXXFLAGS) $(HDEPENDSFLAGS) $< > $*$(DEP)
+HDEPENDS_TARGETS_CMD = @$(PERL) $(TOOLS)/makeDependsTargets.pl $*$(DEP)
+HDEPENDSFLAGS += $(CPPFLAGS) $(INCLUDES) $(HDEPENDS_FLAGS)
 
 #--------------------------------------------------
 # depends definition
+
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
-SRC_FILES = $(foreach src, $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS) , \
-    $(firstword  $(wildcard $(addsuffix /$(src),$(ALL_SRC_DIRS))) $(src)))
-DEPENDS_SRC_FILES = $(SRC_FILES)
+SRC_FILES =  $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS)
+HDEPENDS_FILES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 
 #---------------------------------------------------------------
 # Names of installed items

@@ -88,6 +88,15 @@ SHARED_LIBRARIES=NO
 #        must be either YES or NO
 STATIC_BUILD=NO
 
+#  Should header dependancy files be automatically generated
+#  for each C/C++ source code file?
+#        must be either YES or NO
+#
+#  Note: On solaris and WIN32 hosts, the gnu compilers gcc and g++ are
+#        used to generate the dependancy files, and they must be in
+#        your path.
+HDEPENDS=YES
+
 #  Host build optimization
 #	must be either YES or NO
 HOST_OPT=YES

@@ -72,6 +72,14 @@ endif
 
 all:	install
 
+-include $(CONFIG)/RULES.Db
+
+ifeq ($(HDEPENDS),YES)
+ifneq (,$(strip $(HDEPENDS_FILES)))
+-include $(HDEPENDS_FILES)
+endif
+endif
+
 #---------------------------------------------------------------
 # Create included Makefile for prod,testprod, and library targets
 
@@ -142,7 +150,7 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) \
 	*.out MakefileInclude \
-	$(COMMON_INC)
+	$(COMMON_INC) $(HDEPENDS_FILES)
 ifdef MUNCHNAME
 	@$(RM) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 endif
@@ -174,13 +182,6 @@ $(DIRECTORY_TARGETS) :
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: inc $(DEPENDS_SRC_FILES)
-	@$(RM) DEPENDS
-	@touch DEPENDS
-ifneq (,$(strip $(DEPENDS_SRC_FILES)))
-	$(DEPENDS_CMD.cpp)
-endif
-
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
 	$(LINK.cpp)
@@ -195,18 +196,38 @@ $(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)
 	$(COMPILE.c) -traditional $<
 
 %$(OBJ): %.c
+ifeq ($(HDEPENDS),YES)
+	@$(RM) $*$(DEP)
+	@$(HDEPENDS_CMD.c)
+	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
+endif
 	@$(RM) $@
 	$(COMPILE.c)  $<
 
 %$(OBJ): %.cc
+ifeq ($(HDEPENDS),YES)
+	@$(RM) $*$(DEP)
+	@$(HDEPENDS_CMD.cpp)
+	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
+endif
 	@$(RM) $@
 	$(COMPILE.cpp)  $<
 
 %$(OBJ): %.cpp
+ifeq ($(HDEPENDS),YES)
+	@$(RM) $*$(DEP)
+	@$(HDEPENDS_CMD.cpp)
+	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
+endif
 	@$(RM) $@
 	$(COMPILE.cpp)  $<
 
 %$(OBJ): %.C
+ifeq ($(HDEPENDS),YES)
+	@$(RM) $*$(DEP)
+	@$(HDEPENDS_CMD.cpp)
+	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
+endif
 	@$(RM) $@
 	$(COMPILE.cpp)  $<
 
@@ -407,14 +428,10 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-.PRECIOUS: %.i %.o %.c %.nm %.cpp
+.PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
--include $(CONFIG)/RULES.Db
-
--include DEPENDS
-
-.PHONY: all inc depends build install clean rebuild buildInstall binInstalls
+.PHONY: all inc build install clean rebuild buildInstall binInstalls
 
 #	EOF RULES_BUILD
 

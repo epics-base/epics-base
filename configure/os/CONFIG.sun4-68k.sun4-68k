@@ -46,5 +46,5 @@ STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS_YES = -assert pure-text -h $@
 
-DEPENDS_FLAG = -xM1
+HDEPENDS_FLAGS = -xM1
 

@@ -4,7 +4,7 @@
  
 
 ARCHS += $(BUILD_ARCHS)
-ACTIONS += inc build install buildInstall depends clean
+ACTIONS += inc build install buildInstall clean
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
 actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$@)), \

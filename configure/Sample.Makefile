@@ -8,33 +8,35 @@
 TOP = ../../..
 include $(TOP)/configure/CONFIG
 
-#	Add-on CFLAGS that are needed by this Makefile.
+#	Add-on CPPFLAGS that are needed by this Makefile.
 #	(If possible, all system specific flags should be
 #	 defined in configure/os/CONFIG.<host>.<target>
 #
-#       These CFLAGS rules also apply to these Makefile-variables:
+#       These CPPFLAGS rules also apply to these Makefile-variables:
+#		CPPFLAGS    C preprocessor flags
+#		CFLAGS      C flags
 #		CXXFLAGS    C++ flags
 #		LDFLAGS     link flags
 #
 #	This is used on all systems:
-USR_CFLAGS         = -DVAR=value -Ddefine_for_all_systems
+USR_CPPFLAGS         = -DVAR=value -Ddefine_for_all_systems
 #	..only for WIN32:
-USR_CFLAGS_WIN32   = -DVERSION='WIN32 port'
+USR_CPPFLAGS_WIN32   = -DVERSION='WIN32 port'
 #
 #	-nil- is special:
-#	if USR_CFLAGS_WIN32 was undefined or empty, .._DEFAULT would have
+#	if USR_CPPFLAGS_WIN32 was undefined or empty, .._DEFAULT would have
 #	been used.
 #	To indicate
-#		"yes, there is a special USR_CFLAGS for WIN32, but it's empty"
+#		"yes, there is a special USR_CPPFLAGS for WIN32, but it's empty"
 #	you have to set it to -nil-:
-USR_CFLAGS_WIN32    = -nil-
+USR_CPPFLAGS_WIN32    = -nil-
 #	.. for all other arch classes:
-USR_CFLAGS_DEFAULT = -DVERSION='generic Unix'
+USR_CPPFLAGS_DEFAULT = -DVERSION='generic Unix'
 
-#	CFLAGS that are only used to compile a_file.c or a_file.cpp:
+#	CPPFLAGS that are only used to compile a_file.c or a_file.cpp:
 #
-a_file_CFLAGS      = -DIN_A_FILE
-a_file_CFLAGS_WIN32   = -DVERSION='WIN32 port'
+a_file_CPPFLAGS      = -DIN_A_FILE
+a_file_CPPFLAGS_WIN32   = -DVERSION='WIN32 port'
 
 #	---------------------------------------------------------
 #	general rule for all .c .cpp .h .hh files and scripts:

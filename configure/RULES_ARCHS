@@ -10,7 +10,6 @@ ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall 
-ACTIONS += depends 
 ACTIONS += browse 
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))

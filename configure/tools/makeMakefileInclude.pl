@@ -69,8 +69,6 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "${name}_OBJS+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_SRCS)))\n";
 	print OUT "\n";
-	print OUT "depends: \$(${name}_SRCS)\n";
-	print OUT "\n";
 	print OUT "ifeq (\$(filter ${name},\$(TESTPROD)),${name})\n";
 	print OUT "ifeq (,\$(strip \$(${name}_OBJS) \$(PRODUCT_OBJS)))\n";
 	print OUT "${name}_OBJS+=${name}\$(OBJ)\n";

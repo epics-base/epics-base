@@ -29,10 +29,10 @@ ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
 
 BAFCMD = bscmake /nologo /o $@
 
-#DEPENDS_RULE =  @echo depends target not supported
-#GNU depends flag
-DEPENDS.cpp = g++
-DEPENDS_FLAG = -MM
+# gnu compiler used to create depends files (not available in Visual C++)
+HDEPENDS_FLAGS = -MM  $(addprefix -I,$(subst ;, ,$(INCLUDE)))
+HDEPENDS.c = gcc
+HDEPENDS.cpp = g++
 
 #
 # Configure OS vendor C compiler

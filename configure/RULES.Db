@@ -61,7 +61,7 @@ install: buildInstall
 
 rebuild: clean install
 
-.PHONY: all inc depends build install clean rebuild buildInstall
+.PHONY: all inc build install clean rebuild buildInstall
 
 endif # T_A defined
 
@@ -143,6 +143,14 @@ $(COMMON_DIR)/%Record.h: ../%Record.dbd
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
  
 $(COMMON_DIR)/menu%.h: ../menu%.dbd
+	@$(RM) $@
+	$(DBTOMENUH) $< $@
+ 
+$(COMMON_DIR)/%Record.h: %Record.dbd
+	@$(RM) $@
+	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+ 
+$(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
  

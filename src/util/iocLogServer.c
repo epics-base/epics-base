@@ -157,7 +157,7 @@ main()
         }
 
 	/* Zero the sock_addr structure */
-	memset(&serverAddr, 0, sizeof serverAddr);
+	memset((void *)&serverAddr, 0, sizeof serverAddr);
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(ioc_log_port);
 
@@ -275,7 +275,7 @@ struct ioc_log_server	*pserver;
 
 	pname = "<ukn>";
         size = sizeof addr;
-	memset(&addr, 0, sizeof addr);
+	memset((void *)&addr, 0, sizeof addr);
         status = getpeername(
                         pclient->insock,
                         &addr, 
@@ -484,7 +484,7 @@ static void
 logTime(pclient)
 	struct iocLogClient *pclient;
 {
-	unsigned	sec;
+	time_t		sec;
 	char		*pcr;
 
 	sec = time(NULL);

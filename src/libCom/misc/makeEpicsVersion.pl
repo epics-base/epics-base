@@ -15,6 +15,7 @@ while (<VARS>)
 	if (/EPICS_UPDATE_NAME=(.*)/)	{ $upd_name = $1; }
 	if (/EPICS_UPDATE_LEVEL=(.*)/)	{ $upd_level = $1; }
 	if (/CVS_DATE="\\(.*)"/)	{ $cvs_date = $1; }
+	if (/CVS_TAG="\\(.*)"/)	{ $cvs_tag = $1; }
 }
 
 $ver_str = "$ver.$rev.$mod";
@@ -31,7 +32,7 @@ print OUT "#define BASE_MODIFICATION   $mod\n";
 print OUT "#define BASE_UPDATE_NAME    $upd_name\n";
 print OUT "#define BASE_UPDATE_LEVEL   $upd_level\n";
 print OUT "#define BASE_VERSION_STRING \"EPICS Version $ver_str\"\n";
-print OUT "#define epicsReleaseVersion \"@(#)Version R$ver_str $cvs_date\"\n";
+print OUT "#define epicsReleaseVersion \"@(#)Version R$ver_str $cvs_tag $cvs_date\"\n";
 
 # EPICS_* defs are only for backward compatibility. 
 # They will be removed at some future date.
@@ -40,7 +41,7 @@ print OUT "#define EPICS_REVISION       $rev\n";
 print OUT "#define EPICS_MODIFICATION   $mod\n";
 print OUT "#define EPICS_UPDATE_NAME    $upd_name\n";
 print OUT "#define EPICS_UPDATE_LEVEL   $upd_level\n";
-print OUT "#define EPICS_VERSION_STRING \"EPICS Version $ver_str\"\n";
+print OUT "#define EPICS_VERSION_STRING \"EPICS Version R$ver_str $cvs_tag\"\n";
 
 close OUT;
 

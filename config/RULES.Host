@@ -339,6 +339,13 @@ endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
+# WIN95/NT source browser
+#ifdef BAF
+PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
+LIB_BAF = $(addsuffix $(BAF), $(basename $(LIBRARY)))
+browse: $(LIB_BAF) $(PROD_BAF)
+#endif
+
 rebuild:: clean install
 
 install:: inc buildInstall 
@@ -358,6 +365,9 @@ clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) \
 	*$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS)
+ifdef BAF
+	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
+endif
 ifdef DBDEXPAND
 	@$(RM) $(DBDNAME)
 endif
@@ -403,11 +413,25 @@ endif
 PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
+BROWSE_OBJECTS = $(addsuffix $(BOF), $(basename $(PRODNAME_SRCS)))
+
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(PRODNAME_RESS) $(LDLIBS)
 
+else  # ifdef PRODNAME_SRCS
+
+BROWSE_OBJECTS = $(addsuffix $(BOF), $(basename $(PRODNAME)))
+
 endif  # ifdef PRODNAME_SRCS
+
+# WIN95/NT source browser
+ifdef BAF
+$(addsuffix $(BAF), $(basename $(PRODNAME))): $(BROWSE_OBJECTS)
+	@echo "Building source browser archive $@"
+	@$(RM) $@
+	$(BAFCMD) $^
+endif
 
 else # PRODNAME not defined
 
@@ -420,7 +444,7 @@ PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
 PROD_MAKE_COMMAND=$(MAKE) $@\
-	PRODNAME="$@"\
+	PRODNAME=$(addsuffix $(EXE), $(basename $@)) \
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
 	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
 	PRODNAME_SRCS_$(ARCH_CLASS)="$($(basename $@)_SRCS_$(ARCH_CLASS))"\
@@ -432,6 +456,8 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 $(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 	@$(PROD_MAKE_COMMAND)
 
+$(PROD_BAF): $(PROD)
+	@$(PROD_MAKE_COMMAND)
 endif
 endif  #ifdef PRODNAME
 
@@ -640,6 +666,14 @@ $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+endif
+
+# WIN95/NT source browser
+ifdef BAF
+$(LIB_BAF): $(addsuffix $(BOF), $(basename $(LIBSRCS)))
+	@echo "Building source browser archive $@"
+	@$(RM) $@
+	$(BAFCMD) $^
 endif
 
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)

@@ -24,6 +24,8 @@ RCCMD = rc -l 0x409  -fo $@ $<
 
 ARCMD = lib /nologo /verbose /out:$@
 
+BAFCMD = bscmake /nologo /o $@
+
 #
 # Configure OS vendor C compiler
 ACC = cl 
@@ -146,6 +148,8 @@ WIN32=1
 EXE=.exe
 OBJ=.obj
 RES=.res
+BAF=.bsc
+BOF=.sbr
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #       we have to compile xx.cc  using the flag -Tp xx.cc,

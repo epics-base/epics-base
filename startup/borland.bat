@@ -53,7 +53,7 @@ REM set MAKEFLAGS=-w
 REM    --------------- EPICS Channel Access --------------
 REM    Uncomment and modify the following lines
 REM    to override the base/configure/CONFIG_ENV defaults
-REM set EPICS_CA_ADDR_LIST=164.54.188.65 164.54.5.255
+REM set EPICS_CA_ADDR_LIST= n.n.n.n n.n.n.n
 REM set EPICS_CA_AUTO_ADDR_LIST=YES
 
 REM    --------------- cygwin vim ------------------------

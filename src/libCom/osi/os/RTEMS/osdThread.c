@@ -153,6 +153,13 @@ threadWrapper (rtems_task_argument arg)
 }
 
 /*
+ * The task wrapper takes care of cleanup
+ */
+void threadExitMain (void)
+{
+}
+
+/*
  * Report initialization failures
  */
 static void

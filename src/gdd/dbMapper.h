@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1999/04/30 15:24:53  jhill
+ * fixed improper container index bug
+ *
  * Revision 1.4  1997/08/05 00:51:10  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -58,7 +61,7 @@ typedef struct gddDbrMapFuncTable gddDbrMapFuncTable;
 struct gddDbrToAitTable {
 	aitEnum		type;
 	aitUint16	app;
-	char*		app_name;
+	const char*	app_name;
 };
 typedef struct gddDbrToAitTable gddDbrToAitTable;
 

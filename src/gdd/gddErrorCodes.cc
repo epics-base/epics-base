@@ -4,10 +4,13 @@
 //
 // $Id$
 // $Log$
+// Revision 1.1  1997/03/21 01:56:07  jbk
+// *** empty log message ***
+//
 
 // -------------------------- Error messages -------------------------
 
-char* gddErrorMessages[]=
+const char* gddErrorMessages[]=
 {
 	"Invalid",
 	"TypeMismatch",

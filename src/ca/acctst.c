@@ -1246,6 +1246,105 @@ void eventClearTest ( chid chan )
     SEVCHK ( status, NULL);
 }
 
+unsigned acctstExceptionCount = 0u;
+void acctstExceptionNotify ( struct exception_handler_args args )
+{
+    acctstExceptionCount++;
+}
+
+static unsigned arrayReadExceptionNotifyComplete = 0;
+void arrayReadExceptionNotify ( struct event_handler_args args )
+{
+    if ( args.status != ECA_NORMAL ) {
+        arrayReadExceptionNotifyComplete = 1;
+    }
+}
+void exceptionTest ( chid chan )
+{
+    int status;
+
+    showProgressBegin ();
+
+    /*
+     * force a read exception to occur
+     */
+    {
+        dbr_put_ackt_t *pRS;
+
+        acctstExceptionCount = 0u;
+        status = ca_add_exception_event ( acctstExceptionNotify, 0 );
+        SEVCHK ( status, "exception notify install failed" );
+
+        pRS = malloc ( ca_element_count (chan) * sizeof (*pRS) );
+        assert ( pRS );
+        status = ca_array_get ( DBR_PUT_ACKT, 
+            ca_element_count (chan), chan, pRS ); 
+        SEVCHK  ( status, "array read request failed" );
+        ca_pend_event ( 0.1 );
+        while ( acctstExceptionCount < 1u ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+        status = ca_add_exception_event ( 0, 0 );
+        SEVCHK ( status, "exception notify install failed" );
+        free ( pRS );
+    }
+
+    /*
+     * force a subscription exception to occur
+     */
+    {
+        evid id;
+
+        arrayReadExceptionNotifyComplete = 0u;
+        status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
+                        chan, arrayReadExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
+        SEVCHK ( status, "array subscription notify install failed" );
+
+        ca_pend_event ( 0.1 );
+        while ( ! arrayReadExceptionNotifyComplete ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+        status = ca_clear_event ( id );
+        SEVCHK ( status, "subscription clear failed" );
+    }
+
+    /*
+     * force a write exception to occur
+     */
+    /* this does not cause db_put_field() to return -1 */
+    {
+        dbr_string_t *pWS;
+        unsigned i;
+
+        acctstExceptionCount = 0u;
+        status = ca_add_exception_event ( acctstExceptionNotify, 0 );
+        SEVCHK ( status, "exception notify install failed" );
+
+        pWS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
+        assert ( pWS );
+        for ( i = 0; i < ca_element_count (chan); i++ ) {
+            strcpy ( pWS[i], "@#$%" );
+        }
+        status = ca_array_put ( DBR_STRING, 
+            ca_element_count (chan), chan, pWS ); 
+        SEVCHK  ( status, "array write request failed" );
+
+        ca_pend_event ( 0.1 );
+        while ( acctstExceptionCount < 1u ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+        status = ca_add_exception_event ( 0, 0 );
+        SEVCHK ( status, "exception notify install failed" );
+        free ( pWS );
+    }
+    showProgressEnd ();
+}
 
 /*
  * array test
@@ -1271,11 +1370,7 @@ void arrayWriteNotify ( struct event_handler_args args )
 {
     arrayWriteNotifyComplete = 1;
 }
-unsigned acctstExceptionCount = 0u;
-void acctstExceptionNotify ( struct exception_handler_args args )
-{
-    acctstExceptionCount++;
-}
+
 void arrayTest ( chid chan )
 {
     dbr_double_t *pRF, *pWF;
@@ -1375,34 +1470,6 @@ void arrayTest ( chid chan )
     }
     status = ca_clear_event ( id );
     SEVCHK ( status, "clear event request failed" );
-
-    /*
-     * force a write exception to occcur
-     */
-    {
-        dbr_string_t *pWS;
-
-        acctstExceptionCount = 0u;
-        status = ca_add_exception_event ( acctstExceptionNotify, 0 );
-        SEVCHK ( status, "exception notify install failed" );
-
-        pWS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
-        assert ( pWS );
-        for ( i = 0; i < ca_element_count (chan); i++ ) {
-            strcpy ( pWS[i], "@#$%" );
-        }
-        status = ca_array_put ( DBR_STRING, 
-            ca_element_count (chan), chan, pWS ); 
-        SEVCHK  ( status, "array write request failed" );
-
-        ca_pend_event ( 0.1 );
-        while ( acctstExceptionCount < 1u ) {
-            printf ( "." );
-            fflush ( stdout );
-            ca_pend_event ( 0.5 );
-        }
-        free ( pWS );
-    }
 
     free ( pRF );
     free ( pWF );
@@ -1743,6 +1810,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     }
 
     verifyOldPend ();
+    exceptionTest ( chan );
     arrayTest ( chan ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( chan );

@@ -87,14 +87,9 @@ INC += caerr.h
 INC += caeventmask.h
 INC += cantProceed.h
 INC += dbDefs.h
-INC += devSup.h
-INC += drvSup.h
 INC += epicsString.h
 INC += epicsTypes.h
 INC += gsd_sync_defs.h
-INC += registryDeviceSupport.h
-INC += registryDriverSupport.h
-INC += registryRecordType.h
 INC += shareLib.h
 INC += truncateFile.h
 INC += unixFileName.h
@@ -189,11 +184,11 @@ SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 
 #	for bldErrSymTbl:
 #
-ERR_S_FILES += $(LIBCOM)/misc/asLib.h
+ERR_S_FILES += $(TOP)/src/as/asLib.h
 ERR_S_FILES += $(TOP)/src/db/dbAccess.h
-ERR_S_FILES += $(LIBCOM)/misc/devSup.h
-ERR_S_FILES += $(LIBCOM)/misc/drvSup.h
-ERR_S_FILES += $(TOP)/src/db/recSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/devSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/drvSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/recSup.h
 ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
 ERR_S_FILES += $(LIBCOM)/error/errMdef.h
 ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h

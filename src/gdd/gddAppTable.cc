@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.4  1996/09/07 13:03:07  jbk
+// fixes to destroyData function
+//
 // Revision 1.3  1996/08/27 13:05:08  jbk
 // final repairs to string functions, put() functions, and error code printing
 //
@@ -260,7 +263,7 @@ gddStatus gddApplicationTypeTable::registerApplicationType(
 		}
 	}
 
-	attr_table[group][app].app_name=strdup(name);
+	attr_table[group][app].app_name=strDup(name);
 	attr_table[group][app].type=gddApplicationTypeNormal;
 	attr_table[group][app].proto=NULL;
 	attr_table[group][app].free_list=NULL;

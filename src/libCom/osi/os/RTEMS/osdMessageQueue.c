@@ -189,7 +189,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
     void *message,
     unsigned int size)
 {
-    return receiveMesssage(id, message, size, RTEMS_NO_WAIT, 0);
+    return receiveMessage(id, message, size, RTEMS_NO_WAIT, 0);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
@@ -197,7 +197,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     void *message,
     unsigned int size)
 {
-    return receiveMesssage(id, message, size, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
+    return receiveMessage(id, message, size, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
@@ -223,7 +223,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
         if (delay == 0)
             delay++;
     }
-    return receiveMesssage(id, message, size, wait, delay);
+    return receiveMessage(id, message, size, wait, delay);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueuePending(

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.20  1998/09/24 20:40:56  jhill
+ * 	new error message
+ *
  * 	Revision 1.19  1998/06/18 00:09:39  jhill
  * 	installed bwd compat casPV constructor
  *
@@ -336,6 +339,10 @@ public:
 	//
 	// pvExistTest()
 	//
+	// This function is called by the server library when it needs to 
+	// determine if a named PV exists (or could be created) in the 
+	// server tool.
+	//
 	// The request is allowed to complete asynchronously
 	// (see Asynchronous IO Classes below).
 	//
@@ -356,17 +363,19 @@ public:
 		const char *pPVAliasName);
 
 	//
-	// createPV() is called _every_ time that a PV is attached to
-	// by a client. The name supplied here may be a PV canonical
-	// (base) name or it may instead be a PV alias name.
+	// createPV() 
+	//
+	// This function is called _every_ time that a PV is attached to
+	// by a client. The name supplied here will be either a canonical PV  
+	// name or an alias PV name.
 	//	
 	// The request is allowed to complete asynchronously
 	// (see Asynchronous IO Classes below).
 	//
 	// IMPORTANT: 
-	// It is a responsability of the server tool 
+	// It is a responsibility of the server tool 
 	// to detect attempts by the server lib to create a 2nd PV with 
-	// the same name as an existing PV. It is also the responsability 
+	// the same name as an existing PV. It is also the responsibility 
 	// of the server tool to detect attempts by the server lib to 
 	// create a 2nd PV with a name that is an alias of an existing PV. 
 	// In these situations the server tool should avoid PV duplication 

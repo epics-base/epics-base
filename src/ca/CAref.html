@@ -81,15 +81,13 @@ height="31" width="88"></a></p>
   <li><a href="#ca_get">read from a channel</a></li>
   <li><a href="#ca_add_event">subscribe for state change updates</a></li>
   <li><a href="#ca_clear_event">cancel a subscription</a></li>
-  <li><a href="#ca_pend_io">procedural block for certain requests to
-    complete</a></li>
+  <li><a href="#ca_pend_io">block for certain requests to complete</a></li>
   <li><a href="#ca_test_io">test to see if certain requests have
   completed</a></li>
-  <li><a href="#ca_pend_event">process CA client library background
-    activities</a></li>
-  <li><a href="#ca_flush_io">flush outstanding requests to the server</a></li>
-  <li><a href="#ca_add_exception_event">replace the default exception
-    handler</a></li>
+  <li><a href="#L3249">process CA client library background
+  activities</a></li>
+  <li><a href="#L3251">flush outstanding requests to the server</a></li>
+  <li><a href="#L3253">replace the default exception handler</a></li>
 </ul>
 
 <h3><a
@@ -106,8 +104,8 @@ Call Interface Index</a></h3>
   <li><a href="#ca_clear_event">ca_clear_event</a></li>
   <li><a href="#ca_pend_io">ca_pend_io</a></li>
   <li><a href="#ca_test_io">ca_test_io</a></li>
-  <li><a href="#ca_pend_event">ca_pend_event</a></li>
-  <li><a href="#ca_flush_io">ca_flush_io</a></li>
+  <li><a href="#L3249">ca_pend_event</a></li>
+  <li><a href="#L3251">ca_flush_io</a></li>
   <li><a href="#ca_signal">ca_signal</a></li>
   <li><a href="#ca_addException_event">ca_add_exception_event</a></li>
   <li><a href="#ca_replace_printf_handler ">ca_replace_printf_handler</a></li>
@@ -1308,7 +1306,7 @@ ca_pend_io() or CA context initialization whichever is later.</p>
 
 <p><a href="#ca_pend_io">ca_pend_io</a>()</p>
 
-<h3><code>ca_pend_event()</code></h3>
+<h3><code><a name="L3249">ca_pend_event()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;</pre>
 <pre>int ca_pend_event ( double TIMEOUT ); </pre>
 <pre>int ca_poll (); </pre>
@@ -1340,7 +1338,7 @@ channel access labor has been processed.</p>
 <p>ECA_EVDISALLOW - Function inappropriate for use within a call back
 handler</p>
 
-<h3><code>ca_flush_io()</code></h3>
+<h3><code><a name="L3251">ca_flush_io()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;</pre>
 <pre>int ca_flush_io(); </pre>
 
@@ -1401,7 +1399,7 @@ for this purpose.</p>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<h3><code>ca_add_exception_event()</code></h3>
+<h3><code><a name="L3253">ca_add_exception_event()</a></code></h3>
 <pre>#include &lt;cadef.h&gt; </pre>
 <pre>typedef void (*pCallback) ( struct exception_handler_args HANDLERARGS );</pre>
 <pre>int ca_add_exception_event ( pCallback  USERFUNC, void *USERARG );</pre>

@@ -90,6 +90,8 @@
  * .32  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue
  * .33  01-05-93        jbk     force recalc of velo and accel each time rec processed
  * .34  07-20-93        jbk     fixed accel of zero causing divide by zero
+ * .35  08-06-93	mrk	vel mode: Call recGblFwdLink only when motor
+ *				Stops
  */
 
 #include	<vxWorks.h>
@@ -230,19 +232,21 @@ static long process(psm)
 	}
 
 	psm->pact = TRUE;
-	if(psm->cmod == POSITION)
+	if(psm->cmod == POSITION) {
 		positional_sm(psm);
-	else
+		if(!psm->dmov) {
+			psm->pact=FALSE;
+			return(0);
+		}
+	}
+	else {
 		velocity_sm(psm);
-
-
+	}
 	tsLocalTime(&psm->time);
 	/* check event list */
 	monitor(psm);
-
 	/* process the forward scan link record */
 	recGblFwdLink(psm);
-
 	psm->pact=FALSE;
 	return(0);
 }
@@ -609,9 +613,11 @@ struct steppermotorRecord	*psm;
                         db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
 
                 /* check for deviation from desired value */
+		tsLocalTime(&psm->time);
                 alarm(psm);
 		monitor(psm);
-
+		/* process the forward scan link record */
+		recGblFwdLink(psm);
 	}
     }
     if(intAccept) {

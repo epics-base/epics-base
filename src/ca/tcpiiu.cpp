@@ -357,9 +357,9 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         pComBuf->destroy ();
     }
 
-    piiu->pCAC()->uninstallIIU ( *piiu );
+    piiu->stopThreads ();
 
-    piiu->destroy ();
+    piiu->pCAC()->uninstallIIU ( *piiu );
 }
 
 //
@@ -618,15 +618,12 @@ void tcpiiu::shutdown ( bool discardPendingMessages )
     }
 }
 
-//
-// tcpiiu::~tcpiiu ()
-//
-tcpiiu::~tcpiiu ()
+void tcpiiu::stopThreads ()
 {
+    this->cleanShutdown ();
+
     this->sendDog.cancel ();
     this->recvDog.cancel ();
-
-    this->cleanShutdown ();
 
     // wait for send thread to exit
     static const double shutdownDelay = 15.0;
@@ -650,6 +647,22 @@ tcpiiu::~tcpiiu ()
         }
     }
 
+    // wakeup user threads blocking for send backlog to be reduced
+    // and wait for them to stop using this IIU
+    this->flushBlockEvent.signal ();
+    while ( this->blockingForFlush ) {
+        epicsThreadSleep ( 0.1 );
+    }
+
+    this->sendDog.cancel ();
+    this->recvDog.cancel ();
+}
+
+//
+// tcpiiu::~tcpiiu ()
+//
+tcpiiu::~tcpiiu ()
+{
     if ( ! this->sockCloseCompleted ) {
         int status = socket_close ( this->sock );
         if ( status ) {
@@ -669,13 +682,6 @@ tcpiiu::~tcpiiu ()
         else {
             this->pCAC()->releaseLargeBufferTCP ( this->pCurData );
         }
-    }
-
-    // wakeup user threads blocking for send backlog to be reduced
-    // and wait for them to stop using this IIU
-    this->flushBlockEvent.signal ();
-    while ( this->blockingForFlush ) {
-        epicsThreadSleep ( 0.1 );
     }
 }
 

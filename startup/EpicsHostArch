@@ -22,6 +22,14 @@ case $sysname in
 		esac
 		echo ${os}-${cpu}${suffix}
         ;;
+    Darwin )
+        os=darwin
+	cpu=`uname -m`
+        case "$cpu" in
+            "Power Macintosh") cpu=ppc ;;
+        esac
+	echo ${os}-${cpu}${suffix}
+        ;;
     HP-UX )
         os=hpux
 		cpu=`uname -m`

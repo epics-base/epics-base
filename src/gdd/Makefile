@@ -47,6 +47,8 @@ genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
 PROD_HOST = aitGen genApps
 
+# i386-rtems-gcc version 2.95.2 can't compile this with optimization.
+# Remove the following line once a better version of gcc is available.
 aitConvert_OPT_RTEMS-pc386 = NO
 
 gdd_RCS_WIN32 = gdd.rc

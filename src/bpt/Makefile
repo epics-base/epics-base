@@ -10,7 +10,7 @@ MENUS += menuConvert.h
 
 bptLibrary_SRCS += cvtBpt.c
 
-LIB_IOC = bptLibrary
+LIBRARY_IOC = bptLibrary
 
 BPTS += bptTypeJdegC.dbd
 BPTS += bptTypeJdegF.dbd

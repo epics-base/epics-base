@@ -24,8 +24,8 @@ dbStatic_SRCS += dbStaticRun.c
 
 #       Library to build:
 #
-LIB_HOST += Db
-LIB_IOC += dbStatic
+LIBRARY_HOST += Db
+LIBRARY_IOC += dbStatic
 
 #       Products to build:
 #

@@ -128,7 +128,7 @@ USR_CFLAGS = -D_NO_PROTO
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
-LIB=Com
+LIBRARY=Com
 
 
 #	for bldErrSymTbl:

@@ -1,5 +1,5 @@
 /*
- *	$Id$	
+ *	$Id$
  *      Author: Jeffrey O. Hill, Chris Timossi
  *              hill@luke.lanl.gov
  *		CATimossi@lbl.gov
@@ -32,26 +32,8 @@
  *      Modification Log:
  *      -----------------
  * $Log$
- * Revision 1.30  1997/08/04 23:37:20  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.28  1997/06/13 09:14:29  jhill
- * connect/search proto changes
- *
- * Revision 1.27  1997/05/01 19:46:32  jhill
- * fixed unintialized variable bug
- *
- * Revision 1.26  1997/04/11 20:36:00  jhill
- * kay's perl branch
- *
- * Revision 1.25  1997/04/10 19:26:20  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.24  1997/01/09 22:14:26  jhill
- * installed changes on hostBuild branch
- *
- * Revision 1.23.2.1  1996/11/25 16:29:18  jhill
- * stuct=>struct and added debug msg
+ * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
+ * 	Interim release from jeff hill
  *
  * Revision 1.23  1996/11/02 00:51:12  jhill
  * many pc port, const in API, and other changes
@@ -65,31 +47,46 @@
  * Revision 1.20  1995/12/19  19:36:20  jhill
  * function prototype changes
  *
+ * Revision 1.19  1995/11/29  19:15:42  jhill
+ * added $Log$
+ * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
+ * 	Interim release from jeff hill
+ *
+ * added Revision 1.23  1996/11/02 00:51:12  jhill
+ * added many pc port, const in API, and other changes
+ * added
+ * added Revision 1.22  1996/09/16 16:40:13  jhill
+ * added make EPICS version be the console title
+ * added
+ * added Revision 1.21  1996/08/05 19:20:29  jhill
+ * added removed incorrect ver number
+ * added
+ * Revision 1.20  1995/12/19  19:36:20  jhill
+ * function prototype changes
+ * to the header
+ *
  */
 
 /*
  * Windows includes
  */
-#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <process.h>
 #include <mmsystem.h>
 
 #include "epicsVersion.h"
-
 #include "iocinf.h"
 
 #ifndef _WIN32
-#error This source is specific to _WIN32 
+#error This source is specific to WIN32
 #endif
 
 long offset_time;  /* time diff (sec) between 1970 and when windows started */
-DWORD prev_time;   
+DWORD prev_time;
+static WSADATA WsaData; /* version of winsock */
 
 static void init_timers();
-static int get_subnet_mask ( char SubNetMaskStr[256]);
-static int RegTcpParams (char IpAddr[256], char SubNetMask[256]);
-static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName, 
-                      LPDWORD lpdwType, LPBYTE lpbData, LPDWORD lpcbData );
 
 
 /*
@@ -98,12 +95,12 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
 void cac_gettimeval(struct timeval  *pt)
 {
     /**
-	The multi-media timers used here should be good to a millisecond 
-	resolution. However, since the timer rolls back to 0 every 49.7 
-	days (2^32 ms, 4,294,967.296 sec), it's not very good for 
-	time stamping over long periods (if Windows is restarted more 
-	often than 49 days, it wont be a problem).  An attempt is made 
-	to keep the time returned increasing, but there is no guarantee 
+	The multi-media timers used here should be good to a millisecond
+	resolution. However, since the timer rolls back to 0 every 49.7
+	days (2^32 ms, 4,294,967.296 sec), it's not very good for
+	time stamping over long periods (if Windows is restarted more
+	often than 49 days, it wont be a problem).  An attempt is made
+	to keep the time returned increasing, but there is no guarantee
 	the UTC time is right after 49 days.
 	**/
 
@@ -163,11 +160,11 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	ca_static = pcas;
 
 	/* DllMain does most OS dependent init & cleanup */
-
 	status = ca_os_independent_init ();
 	if (status!=ECA_NORMAL) {
 		return status;
 	}
+
 	/*
 	 * select() under WIN32 gives us grief
 	 * if we delay with out interest in at
@@ -179,7 +176,7 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	if(!ca_static->ca_piiuCast){
 		return ECA_NOCAST;
 	}
-    	return ECA_NORMAL;
+    return ECA_NORMAL;
 }
 
 
@@ -240,17 +237,19 @@ void ca_spawn_repeater()
 	 * if here
 	 */
 	pImageName = "caRepeater.exe";
-	//status = system(pImageName);
-	//Need to check if repeater is already loaded
-	//For now, start Repeater from a command line, not here
-	status = 0;
-	//status = _spawnlp(_P_DETACH,pImageName,"");
 
-	if(status<0){	
-		ca_printf("!!WARNING!!\n");
-		ca_printf("Unable to locate the executable \"%s\".\n", 
+	//
+	// This is not called if the repeater is known to be 
+	// already running. (in the event of a race condition 
+	// the 2nd repeater exits when unable to attach to the 
+	// repeater's port)
+	//
+	status = _spawnlp (_P_DETACH, pImageName, pImageName, NULL);
+	if (status<0) {
+		ca_printf ("!!WARNING!!\n");
+		ca_printf ("Unable to locate the EPICS executable \"%s\".\n",
 			pImageName);
-		ca_printf("You may need to modify your environment.\n");
+		ca_printf ("You may need to modify your environment.\n");
 	}
 }
 
@@ -306,222 +305,177 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
  *      in the address node to the port supplied in the argument
  *      list.
  *
- * 	LOCK should be applied here for (pList)
- * 	(this is also called from the server)
+ * 		LOCK should be applied here for (pList)
+ * 		(this is also called from the server)
  */
-void epicsShareAPI caDiscoverInterfaces
-	(ELLLIST *pList, SOCKET socket, unsigned short port, 
-		struct in_addr matchAddr)
+void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, 
+			unsigned short port, struct in_addr matchAddr)
 {
-	struct in_addr bcast_addr;
-	caAddrNode	*pNode;
-
-	pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
-	if(!pNode){
-		return;
-	}
-	broadcast_addr(&bcast_addr);
-	pNode->destAddr.in.sin_addr.s_addr = bcast_addr.s_addr;	//broadcast addr
-	pNode->destAddr.in.sin_port = htons(port);
-	pNode->destAddr.in.sin_family = AF_INET;
-	//pNode->srcAddr.in = 0 ;//localAddr;
+	struct sockaddr_in 	localAddr;
+	struct sockaddr_in 	*pInetAddr;
+	struct sockaddr_in 	*pInetNetMask;
+	caAddrNode			*pNode;
+	int             	status;
+	LPINTERFACE_INFO    pIfinfo;
+	LPINTERFACE_INFO    pIfinfoList;
+	unsigned			nelem;
+	int					numifs;
+	DWORD				cbBytesReturned;
+	char				wsaInBuffer[1024];
 
 	/*
-	 * LOCK applied externally
+	 * use pool so that we avoid using to much stack space
+	 * under vxWorks
+	 *
+	 * nelem is set to the maximum interfaces 
+	 * on one machine here
 	 */
-	 ellAdd(pList, &pNode->node);
-}
 
-int
-broadcast_addr( struct in_addr *pcastaddr )
-{
-	char netmask[256], lhostname[80];
-	static struct in_addr castaddr;
-	int status;
-	static char     	init = FALSE;
-	struct hostent *phostent;
-	unsigned long laddr;
-
-	if (init) {
-		*pcastaddr = castaddr;
-		return OK;
-	}
-   gethostname(lhostname,sizeof(lhostname));
-   phostent = gethostbyname(lhostname);
-   if (!phostent) {
-   		return SOCKERRNO;
-   }
-
-   if (status = get_subnet_mask(netmask))
-   		return ERROR;
-
-   laddr = *( (unsigned long *) phostent->h_addr_list[0]);
-   castaddr.s_addr = (laddr & inet_addr(netmask)) | ~inet_addr(netmask);
-
-	if (!init){
-		init = TRUE;
-		*pcastaddr = castaddr;
-	}
-	return OK;
-}
-
-static int get_subnet_mask ( char SubNetMaskStr[256])
-{
-   char localadr[256];
-   
-   return RegTcpParams (localadr, SubNetMaskStr);
-}
-
-	   /* For NT 3.51, enumerates network interfaces returns the ip address */
-	   /* and subnet mask for the LAST interface found. This needs to be changed */
-	   /* to work in conjuction with caDiscoverInterfaces to add all the */
-	   /* add all the interfaces to the elist. Also could be more efficient in
-calling */
-	   /* RegKeyOpen                                                            */
-
-static int RegTcpParams (char IpAddrStr[256], char SubNetMaskStr[256])
-{
-#define MAX_VALUE_NAME              128
-  static CHAR   ValueName[MAX_VALUE_NAME];
-  static CHAR   RegPath[256];
-  DWORD  cbDataLen;
-  CHAR   cbData[256];
-  DWORD  dwType;
-  int status, i, card_cnt;
-  char *pNetCard[16], *pData;
-
-	static char IpAddr[256], SubNetMask[256];
-
-	cbDataLen = sizeof(cbData);
-
-	/****
-	strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\NetworkCards\\1");
-	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType,
-cbData, &cbDataLen);
-	if (status) {
-		strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\NetworkCards\\01");
-		status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType,
-cbData, &cbDataLen);
-		if (status)
-			return status;
-	}
-	****/
-
-	strcpy(RegPath,"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Linkage");
-	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "Route", &dwType, cbData,
-&cbDataLen);
-	if (status) {
-		return status;
+	/* only valid for winsock 2 and above */
+	if ( LOBYTE( WsaData.wVersion ) < 2 ) {
+		fprintf(stderr, "Need to set EPICS_CA_AUTO_ADDR_LIST=NO for winsock 1\n");
+		return;
 	}
 
-	i=0; card_cnt = 0; pData = cbData;	/* enumerate network interfaces */
+	nelem = 10;
+	pIfinfoList = (LPINTERFACE_INFO)calloc(nelem, sizeof(INTERFACE_INFO));
+	if(!pIfinfoList){
+		return;
+	}
 
-	while( i < 16 && (pNetCard[i]=strtok(pData,"\""))  ) {
-		strcpy(RegPath,"SYSTEM\\CurrentControlSet\\Services\\");
-		strcat(RegPath,pNetCard[i]);
-		strcat(RegPath,"\\Parameters\\Tcpip");
+	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, 
+						wsaInBuffer, sizeof(wsaInBuffer),
+						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
+						&cbBytesReturned, NULL, NULL);
 
-   		cbDataLen = sizeof(IpAddr);
-   		status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "IPAddress", &dwType,
-IpAddr, &cbDataLen);
-   		if (status == 0)  {
-   			cbDataLen = sizeof(SubNetMask);
-   			status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "SubnetMask",
-&dwType, SubNetMask, &cbDataLen);
-   			if (status)
-      			return status;
-			card_cnt++;
+	if (status != 0 || cbBytesReturned == 0) {
+		fprintf(stderr, "WSAIoctl failed %d\n",WSAGetLastError());
+		free(pIfinfoList);		
+		return;
+	}
+
+	numifs = cbBytesReturned/sizeof(INTERFACE_INFO);
+	for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
+
+		/*
+		 * dont bother with interfaces that have been disabled
+		 */
+		if (!(pIfinfo->iiFlags & IFF_UP)) {
+			continue;
 		}
-		pData += strlen(pNetCard[i])+3;
-		i++;
-   } 
 
-   if (card_cnt == 0)
-   		return 1;
+		/*
+		 * dont use the loop back interface
+		 */
+		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+			continue;
+		}
 
-   strcpy(IpAddrStr,IpAddr);
-   
-   strcpy(SubNetMaskStr,SubNetMask);
+		/*
+		 * If its not an internet inteface 
+		 * then dont use it. But for MS Winsock2
+		 * assume 0 means internet.
+		 */
+		if (pIfinfo->iiAddress.sa_family != AF_INET) {
+			if (pIfinfo->iiAddress.sa_family == 0)
+				pIfinfo->iiAddress.sa_family = AF_INET;
+			else
+				continue;
+		}
 
-   return 0;
+		/*
+		 * save the interface's IP address
+		 */
+		pInetAddr = (struct sockaddr_in *)&pIfinfo->iiAddress;
+		pInetNetMask = (struct sockaddr_in *)&pIfinfo->iiNetmask;
+		localAddr = *pInetAddr;
+
+		/*
+		 * if it isnt a wildcarded interface then look for
+		 * an exact match
+		 */
+		if (matchAddr.s_addr != INADDR_ANY) {
+			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
+				continue;
+			}
+		}
+
+		/*
+		 * If this is an interface that supports
+		 * broadcast fetch the broadcast address.
+		 *
+		 * Otherwise if this is a point to point 
+		 * interface then use the destination address.
+		 *
+		 * Otherwise CA will not query through the 
+		 * interface.
+		 */
+		if (pIfinfo->iiFlags & IFF_BROADCAST) {
+			//pInetAddr = (struct sockaddr_in *)&pIfinfo->iiBroadcastAddress;
+			pInetAddr->sin_addr.s_addr = 
+				(localAddr.sin_addr.s_addr & pInetNetMask->sin_addr.s_addr) | ~pInetNetMask->sin_addr.s_addr;
+		}
+		else if(pIfinfo->iiFlags & IFF_POINTTOPOINT){
+			//pInetAddr = (struct sockaddr_in *)&pIfinfo->iiBroadcastAddress;
+		}
+		else{
+			continue;
+		}
+
+		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
+		if(!pNode){
+			continue;
+		}
+
+		pNode->destAddr.in = *pInetAddr;
+		pNode->destAddr.in.sin_port = htons(port);
+		pNode->srcAddr.in = localAddr;
+		
+
+		/*
+		 * LOCK applied externally
+		 */
+		ellAdd(pList, &pNode->node);
+	}
+
+	free(pIfinfoList);
 }
-
-
-static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName, 
-                      LPDWORD lpdwType, LPBYTE lpbData, LPDWORD lpcbData )
-  {
-  HKEY   hKey;
-   DWORD  retCode;
-
-  DWORD  dwcClassLen = MAX_PATH;
-
-  // OPEN THE KEY.
-
-  retCode = RegOpenKeyEx (hKeyRoot,    // Key handle at root level.
-                          RegPath,     // Path name of child key.
-                          0,           // Reserved.
-                          KEY_QUERY_VALUE, // Requesting read access.
-                          &hKey);      // Address of key to be returned.
-
-  if (retCode)
-    {
-    //wsprintf (Buf, "Error: RegOpenKeyEx = %d", retCode);
-    return -1;
-    }
-
-
-  retCode = RegQueryValueEx (hKey,        // Key handle returned from
-                          lpzValueName,   // Name of value.
-                          NULL,        // Reserved, dword = NULL.
-                          lpdwType,     // Type of data.
-                          lpbData,       // Data buffer.
-                          lpcbData);    // Size of data buffer.
-
-   if (retCode)
-    {
-    //wsprintf (Buf, "Error: RegQIK = %d, %d", retCode, __LINE__);
-    return -2;
-    }
-
-   return 0;
-
- }
-
-#define NO_PROCESS_MSG
 
 BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
-	WSADATA WsaData;
 	TIMECAPS tc;
-	static UINT wTimerRes;
+	static UINT     wTimerRes;
 
 	switch (dwReason)  {
 
 	case DLL_PROCESS_ATTACH:
-						
+
 #if _DEBUG			  /* for gui applications, setup console for error messages */
 		if (AllocConsole())	{
 			SetConsoleTitle(BASE_VERSION_STRING);
     		freopen( "CONOUT$", "a", stderr );
 		}
-#ifndef NO_PROCESS_MSG
-		fprintf(stderr, "Process attached to ca.dll\n");
-#endif
-#endif
-		/* 
-		 * init. winsock 
-		 * The winsock I & II docs dont completely agree on this
-		 */
-		if ((status = WSAStartup(MAKEWORD(2,0), &WsaData)) != 0) { 
-			if ((status = WSAStartup(MAKEWORD(1,0), &WsaData)) != 0) { 
-				fprintf(stderr,
-				"Unable to attach to winsock version 2.0 or lower\n");
-				return FALSE;
+		fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
+#endif	 			  /* init. winsock */
+		if ((status = WSAStartup(MAKEWORD(/*major*/2,/*minor*/2), &WsaData)) != 0) {
+			/*
+			 * The winsock I & II doc indicate that these steps are not required,
+			 * but experience at some sites proves otherwise. Perhaps some vendors 
+			 * do not follow the protocol described in the doc.
+			 */
+			if ((status = WSAStartup(MAKEWORD(/*major*/1,/*minor*/1), &WsaData)) != 0) {
+				if ((status = WSAStartup(MAKEWORD(/*major*/1,/*minor*/0), &WsaData)) != 0) {
+					WSACleanup();
+					fprintf(stderr,"Unable to attach to winsock version 2.2 or lower\n");
+					return FALSE;
+				}
 			}
 		}
+		
+#if _DEBUG			  
+		fprintf(stderr, "EPICS ca.dll attached to winsock version %s\n", WsaData.szDescription);
+#endif	 	
 					   /* setup multi-media timer */
 		if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
 			fprintf(stderr,"cant get timer info \n");
@@ -529,7 +483,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		}
 					  /* set for 1 ms resoulution */
 		wTimerRes = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
-		status = timeBeginPeriod(wTimerRes); 
+		status = timeBeginPeriod(wTimerRes);
 		if (status != TIMERR_NOERROR)
 			fprintf(stderr,"timer setup failed\n");
 		offset_time = (long)time(NULL) - (long)timeGetTime()/1000;
@@ -538,26 +492,22 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		break;
 
 	case DLL_PROCESS_DETACH:
-		
+
 		timeEndPeriod(wTimerRes);
-		 
+
 		if ((status = WSACleanup()) !=0)
 			return FALSE;
 		break;
 
 	case DLL_THREAD_ATTACH:
 #if _DEBUG
-#ifndef NO_PROCESS_MSG
 		fprintf(stderr, "Thread attached to ca.dll\n");
-#endif
 #endif
 		break;
 
 	case DLL_THREAD_DETACH:
 #if _DEBUG
-#ifndef NO_PROCESS_MSG
 		fprintf(stderr, "Thread detached from ca.dll\n");
-#endif
 #endif
 		break;
 
@@ -569,5 +519,6 @@ return TRUE;
 
 
 }
+
 
 

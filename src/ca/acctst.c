@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.29  1995/08/22  00:16:34  jhill
+ * Added test of the duration of ca_pend_event()
+ *
  */
 
 #ifdef VMS
@@ -103,13 +106,13 @@ int doacctst(char *pname)
 	chid            chix4;
 	struct dbr_gr_float *ptr = NULL;
 	struct dbr_gr_float *pgrfloat = NULL;
-	float          *pfloat = NULL;
-	double         *pdouble = NULL;
+	dbr_float_t	*pfloat = NULL;
+	dbr_double_t	*pdouble = NULL;
 	long            status;
 	long            i, j;
 	evid            monix;
 	char            pstring[NUM][MAX_STRING_SIZE];
-
+	unsigned	size;
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
 
@@ -123,9 +126,9 @@ int doacctst(char *pname)
 	{
 		TS_STAMP	end_time;
 		TS_STAMP	start_time;
-		double		delay;
-		double		request = 0.5;
-		double		accuracy;
+		dbr_double_t		delay;
+		dbr_double_t		request = 0.5;
+		dbr_double_t		accuracy;
 
 		tsLocalTime(&start_time);
 		status = ca_pend_event(request);
@@ -140,8 +143,8 @@ int doacctst(char *pname)
 		assert (abs(accuracy) < 10.0);
 	}
 
-	ptr = (struct dbr_gr_float *)
-		malloc(dbr_size_n(DBR_GR_FLOAT, NUM));  
+	size = dbr_size_n(DBR_GR_FLOAT, NUM);
+	ptr = (struct dbr_gr_float *) malloc(size);  
 
 	for (i = 0; i < 10; i++) {
 
@@ -264,9 +267,9 @@ int doacctst(char *pname)
 		ca_read_access(chix1) && 
 		ca_write_access(chix1)){
 
-		double incr;
-		double epsil;
-		double base;
+		dbr_double_t incr;
+		dbr_double_t epsil;
+		dbr_double_t base;
 		unsigned long iter;
 
 		printf ("float test ...");
@@ -328,7 +331,7 @@ int doacctst(char *pname)
 	 * solicitations
 	 */
 	if(ca_read_access(chix4)){
-		float	temp;
+		dbr_float_t	temp;
 
 		printf("Performing multiple get test...");
 		fflush(stdout);
@@ -349,7 +352,7 @@ int doacctst(char *pname)
 		printf("Performing multiple put test...");
 		fflush(stdout);
 		for(i=0; i<10000; i++){
-			double fval = 3.3;
+			dbr_double_t fval = 3.3;
 			status = ca_put(DBR_DOUBLE, chix4, &fval);
 			SEVCHK(status, NULL);
 		}
@@ -396,7 +399,7 @@ int doacctst(char *pname)
 		printf("Performing multiple put callback test...");
 		fflush(stdout);
 		for(i=0; i<10000; i++){
-			float fval = 3.3;
+			dbr_float_t	fval = 3.3F;
 			status = ca_array_put_callback(
 					DBR_FLOAT, 
 					1,
@@ -420,8 +423,8 @@ int doacctst(char *pname)
 	printf("Performing multiple monitor test...");
 	fflush(stdout);
 	{
-		evid	mid[1000];
-		float	temp;
+		evid		mid[1000];
+		dbr_float_t	temp;
 
 		for(i=0; i<NELEMENTS(mid); i++){
 			SEVCHK(ca_add_event(DBR_GR_FLOAT, chix4, null_event,
@@ -499,8 +502,8 @@ int doacctst(char *pname)
 		SEVCHK(status, NULL);
 	}
 
-	pfloat = (float *) calloc(sizeof(float),NUM);
-	pdouble = (double *) calloc(sizeof(double),NUM);
+	pfloat = (dbr_float_t *) calloc(sizeof(*pfloat),NUM);
+	pdouble = (dbr_double_t *) calloc(sizeof(*pdouble),NUM);
 	pgrfloat = (struct dbr_gr_float *) calloc(sizeof(*pgrfloat),NUM);
 
 	if (VALID_DB_REQ(chix1->type))
@@ -654,9 +657,15 @@ void null_event(struct event_handler_args args)
 void write_event(struct event_handler_args args)
 {
 	int		status;
-	float           a = *(float *) args.dbr;
+	dbr_float_t	*pFloat = (dbr_float_t *) args.dbr;
+	dbr_float_t     a;
 
-	a += 10.1;
+	if (!args.dbr) {
+		return;
+	}
+
+	a = *pFloat;
+	a += 10.1F;
 
 	status = ca_array_put(
 			DBR_FLOAT, 
@@ -745,10 +754,10 @@ void test_sync_groups(chid chix)
  */
 void multiple_sg_requests(chid chix, CA_SYNC_GID gid)
 {
-	int		status;
-	unsigned	i;
-	static float 	fvalput	 = 3.3;
-	static float	fvalget;
+	int			status;
+	unsigned		i;
+	static dbr_float_t	fvalput	 = 3.3F;
+	static dbr_float_t	fvalget;
 
 	for(i=0; i<1000; i++){
 		if(ca_write_access(chix)){

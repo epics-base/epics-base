@@ -44,11 +44,3 @@ include $(EPICS_BASE)/config/CONFIG.$(T_A)
 #VX_WARN=YES
 #etc.
 #
-
-#UNIX_OPT_FLAGS = -g
-#CMPLR=STRICT
-#CPLUSPLUS=G++
-#INSTALL_LOCATION = /home/phoebus/JBA/epics/testinstall
-
-# OPTIM_YES = -g
-

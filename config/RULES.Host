@@ -280,12 +280,6 @@ clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC)
 
-
-# PROD dependanies
-# Do not put dependancy files on an implicit rule line
-$(PROD): $(PRODDEPLIBS)
-
-
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
 
@@ -313,7 +307,7 @@ endif
 
 PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
 
-$(PROD): $(PROD_OBJS)
+$(PROD): $(PROD_OBJS) $(PRODDEPLIBS)
 	@$(RM) $@
 	$(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
 endif 
@@ -345,17 +339,12 @@ endif
 #	Hint: The $(subst...) construct removes the .c or .cc
 #	      as well as the '../' from the filename and adds $(OBJ):
 #	      e.g.  $< = '../abc.c'   ->  'abc.o'
-%$(EXE): %.c
+%$(EXE): %.c $(PRODDEPLIBS)
 	@$(RM) $@
 	$(COMPILE.c)  $<
 	$(LINK.c)  $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
-%$(EXE): %.cc
-	@$(RM) $@
-	$(COMPILE.cc)  $<
-	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
-
-%$(EXE): %.C
+%$(EXE): %.cc $(PRODDEPLIBS)
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
@@ -365,10 +354,6 @@ endif
 	$(COMPILE.c)  $<
 
 %$(OBJ): %.cc
-	@$(RM) $@
-	$(COMPILE.cc)  $<
-
-%$(OBJ): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 
@@ -415,7 +400,7 @@ endif
 %.db: ../%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
 
-%.edf: ../%.sch
+%.edf: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 

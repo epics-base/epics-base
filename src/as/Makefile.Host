@@ -17,6 +17,7 @@ SYS_PROD_LIBS_WIN32   := -nil-
 PROD_LIBS         := As Db Com
 
 PROD := ascheck
+ascheck_SRCS=ascheck.c
 
 As_RCS_WIN32 = As.rc
 

@@ -203,10 +203,21 @@ bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
  
+# Patch for old applications
+ifdef USER_DBDFLAGS
+DBDFLAGS = $(USER_DBDFLAGS)
+endif
+
+ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand $(DBDFLAGS) $< > $@
+
+ifneq (,$(wildcard ../base.dbd))
+$(DBDNAME): ../base.dbd
+endif
+endif
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@

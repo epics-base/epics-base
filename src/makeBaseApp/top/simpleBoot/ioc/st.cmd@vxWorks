@@ -6,7 +6,7 @@
  
 #< ../nfsCommands
 
-cd appbin
+cd topbin
 #ld < _APPNAME_Lib
 
 cd startup

@@ -128,14 +128,21 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     FASTLOCK(&pfl->lock);
 #endif
     ptemp = pfl->head;
-    if(!ptemp) {
+    if(ptemp==0) {
 	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
-	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
-	if(!ptemp || !pallocmem) {
+	if(ptemp==0) {
 #ifdef vxWorks
 	    FASTUNLOCK(&pfl->lock);
 #endif
-	    return(ptemp);
+	    return(0);
+	}
+	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
+	if(pallocmem==0) {
+#ifdef vxWorks
+	    FASTUNLOCK(&pfl->lock);
+#endif
+	    free(ptemp);
+	    return(0);
 	}
 	pallocmem->memory = ptemp;
 	if(pfl->mallochead)

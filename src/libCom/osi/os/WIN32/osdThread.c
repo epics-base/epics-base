@@ -403,10 +403,17 @@ static void epicsThreadInit ( void )
         }
 
         /* 
-         * not supported on W95 but supported by Borland 551
+         * not supported on W95 but supported by all other versions of
+         * windows and by Borland 551, and probably required by 64 bit 
+         * windows
          */
-        if ( InterlockedCompareExchangePointer ( &win32ThreadGlobalMutex, 
+#   if _WIN32_WINDOWS >= 0x0410 && WINVER >= 0x0400
+        if ( InterlockedCompareExchangePointer ( & win32ThreadGlobalMutex, 
             win32ThreadGlobalMutexTmp, 0 ) != 0) {
+#   else
+        if ( InterlockedCompareExchange ( & win32ThreadGlobalMutex, 
+            win32ThreadGlobalMutexTmp, 0 ) != 0 ) {
+#   endif
             CloseHandle (win32ThreadGlobalMutexTmp);
             /* wait for init to complete */
             status = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );

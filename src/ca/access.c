@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.95  1997/06/13 09:14:06  jhill
+ * connect/search proto changes
+ *
  * Revision 1.94  1997/05/05 04:40:29  jhill
  * send_needed replaced by pushPending flag
  *
@@ -3599,10 +3602,10 @@ int ca_channel_status(int tid)
 	IIU			*piiu;
 	struct CA_STATIC	*pcas;
 
-	pcas = (struct ca_static *) 
+	pcas = (struct CA_STATIC *) 
 		taskVarGet(tid, (int *)&ca_static);
 
-	if (pcas == (struct ca_static *) ERROR)
+	if (pcas == (struct CA_STATIC *) ERROR)
 		return ECA_NOCACTX;
 
 #	define ca_static pcas

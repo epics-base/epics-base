@@ -1,0 +1,72 @@
+
+# Author: Jim Kowalkowski
+# Date: 9/9/96
+#
+# $Id$
+#
+# $Log$
+#
+
+DEPENDS_FLAG = -M # -xM
+CCFLAGS = -g -DGDDAUTOPRINT
+CXXFLAGS = $(CCFLAGS)
+CFLAGS = $(CCFLAGS)
+# CCC=purify CC
+# CC=purify cc
+
+AR = ar
+
+SRCS = aitGen.c aitTypes.c aitHelpers.cc \
+       gdd.cc gddAppDefs.cc gddAppTable.cc gddNewDel.cc \
+       gddTest.cc genApps.cc
+
+MY_OBJS = gdd.o gddTest.o gddAppTable.o gddNewDel.o gddAppDefs.o \
+		  aitTypes.o aitConvert.o aitHelpers.o
+
+LIBOBJS = $(MY_OBJS) dbMapper.o
+LIBNAME = libgdd.a
+
+all: $(LIBNAME) dbMapper.o
+
+$(LIBNAME): $(LIBOBJS)
+	$(AR) r $(LIBNAME) $@
+
+# cannot generate dependencies for aitConvert automatically
+
+gdd.o: gdd.cc
+gddTest.o: gddTest.cc
+gddAppTable.o: gddAppTable.cc
+gddAppDefs.o: gddAppDefs.cc
+gddNewDel.o: gddNewDel.cc
+aitHelpers.o: aitHelpers.cc
+aitTypes.o: aitTypes.c
+aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
+
+aitConvertGenerated.cc: aitGen aitTypes.h
+	./aitGen
+
+aitGen: aitGen.o aitTypes.o
+	$(LINK.c) -o $@ $^ $(LDLIBS)
+
+# cannot generate dependencies for dbMapper.o automatically
+
+dbMapper.o: dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
+	$(COMPILE.cc) -I$(HOME)/include $<
+	$(AR) r $(LIBNAME) $@
+
+gddApps.h: genApps
+	./genApps $@
+
+genApps: genApps.o $(MY_OBJS)
+	$(LINK.cc) -o $@ $^ $(LDLIBS)
+
+depends:
+	-$(COMPILE.cc) $(DEPENDS_FLAG) $(SRCS) >> .DEPENDS
+
+clean:
+	/bin/rm -f aitConvertGenerated.cc aitGen genApps *.o *.a
+
+.DEPENDS:
+	touch .DEPENDS
+
+include .DEPENDS

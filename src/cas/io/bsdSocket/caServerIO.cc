@@ -140,7 +140,8 @@ inline void caServerIO::staticInit()
 //
 void caServerIO::show (unsigned /* level */) const
 {
-	printf ("caServerIO at %p\n", this);
+	printf ( "caServerIO at %p\n", 
+        static_cast <const void *> ( this ) );
 }
 
 //

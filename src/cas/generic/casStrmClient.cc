@@ -188,7 +188,8 @@ inline casClientMon *caServerI::resIdToClientMon (const caResId &idIn)
 void casStrmClient::show (unsigned level) const
 {
 	this->casClient::show (level);
-	printf ("casStrmClient at %p\n", this);
+	printf ( "casStrmClient at %p\n", 
+        static_cast <const void *> ( this ) );
 	if (level > 1u) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
 	}

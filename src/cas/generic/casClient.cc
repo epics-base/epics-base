@@ -180,7 +180,8 @@ casClient::~casClient ()
 //
 void casClient::show (unsigned level) const
 {
-	printf ("casClient at %p\n", this);
+	printf ( "casClient at %p\n", 
+        static_cast <const void *> ( this ) );
 	this->casCoreClient::show (level);
 	this->inBuf::show (level);
 	this->outBuf::show (level);

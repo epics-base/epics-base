@@ -665,7 +665,7 @@ epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level)
 
     if (level>1) {
         printf ("iocLogClient: address=%p, sock=%s, connect tries=%u, connect cycles = %u\n",
-            pClient, pClient->sock==INVALID_SOCKET?"INVALID":"OK",
+            (void *) pClient, pClient->sock==INVALID_SOCKET?"INVALID":"OK",
             pClient->connectTries, pClient->connectCount);
     }
 }

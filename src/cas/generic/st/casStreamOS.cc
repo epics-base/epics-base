@@ -21,14 +21,12 @@
 //
 class casStreamReadReg : public fdReg {
 public:
-        inline casStreamReadReg (casStreamOS &osIn);
-	inline ~casStreamReadReg ();
- 
-        void show (unsigned level) const;
+    inline casStreamReadReg (casStreamOS &osIn);
+    inline ~casStreamReadReg ();
+    void show (unsigned level) const;
 private:
-        casStreamOS     &os;
- 
-        void callBack ();
+    casStreamOS     &os;
+    void callBack ();
 };
 
 //
@@ -38,11 +36,11 @@ inline casStreamReadReg::casStreamReadReg (casStreamOS &osIn) :
 	fdReg (osIn.getFD(), fdrRead), os (osIn)
 {
 #	if defined(DEBUG) 
-		printf ("Read on %d\n", this->os.getFD());
-		printf ("Recv backlog %u\n", 
-			this->os.inBuf::bytesPresent());
-		printf ("Send backlog %u\n", 
-			this->os.outBuf::bytesPresent());
+        printf ("Read on %d\n", this->os.getFD());
+        printf ("Recv backlog %u\n", 
+	        this->os.inBuf::bytesPresent());
+        printf ("Send backlog %u\n", 
+	        this->os.outBuf::bytesPresent());
 #	endif		
 }
 
@@ -148,7 +146,8 @@ const char *casStreamEvWakeup::name() const
 //
 void casStreamEvWakeup::show(unsigned level) const
 {
-	printf ("casStreamEvWakeup at %p {\n", this);
+	printf ( "casStreamEvWakeup at %p {\n", 
+        static_cast <const void *> ( this ) );
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -218,7 +217,8 @@ const char *casStreamIOWakeup::name() const
 //
 void casStreamIOWakeup::show(unsigned level) const
 {
-	printf ("casStreamIOWakeup at %p {\n", this);
+	printf ( "casStreamIOWakeup at %p {\n", 
+        static_cast <const void *> ( this ) );
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -385,7 +385,8 @@ casStreamOS::~casStreamOS()
 void casStreamOS::show(unsigned level) const
 {
 	this->casStrmClient::show(level);
-	printf("casStreamOS at %p\n", this);
+	printf("casStreamOS at %p\n", 
+        static_cast <const void *> ( this ) );
 	printf("\tsendBlocked = %d\n", this->sendBlocked);
 	if (this->pWtReg) {
 		this->pWtReg->show(level);
@@ -407,7 +408,8 @@ void casStreamOS::show(unsigned level) const
 void casStreamReadReg::show(unsigned level) const
 {
 	this->fdReg::show(level);
-	printf ("casStreamReadReg at %p\n", this);
+	printf ( "casStreamReadReg at %p\n", 
+        static_cast <const void *> ( this ) );
 }
 
 //
@@ -479,7 +481,8 @@ void casStreamOS::sendBlockSignal()
 void casStreamWriteReg::show(unsigned level) const
 {
 	this->fdReg::show (level);
-	printf ("casStreamWriteReg at %p\n", this);
+	printf ( "casStreamWriteReg at %p\n", 
+        static_cast <const void *> ( this ) );
 }
 
 //

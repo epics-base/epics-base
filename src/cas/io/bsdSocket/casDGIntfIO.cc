@@ -244,7 +244,8 @@ casDGIntfIO::~casDGIntfIO()
 //
 void casDGIntfIO::show (unsigned level) const
 {
-	printf ("casDGIntfIO at %p\n", this);
+	printf ( "casDGIntfIO at %p\n", 
+        static_cast <const void *> ( this ) );
     printChannelAccessAddressList (&this->beaconAddrList);
     this->casDGClient::show (level);
 }

@@ -44,7 +44,8 @@
 //
 void casEventSys::show(unsigned level) const
 {
-	printf ("casEventSys at %p\n", this);
+	printf ( "casEventSys at %p\n", 
+        static_cast <const void *> ( this ) );
 	if (level>=1u) {
 		printf ("\tnumEventBlocks = %u, maxLogEntries = %u\n",
 			this->numEventBlocks, this->maxLogEntries);	

@@ -95,7 +95,7 @@ void ipAddrToAsciiEngine::show ( unsigned level ) const
 {
     this->mutex.lock ();
     printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
-        this, this->labor.count () );
+        static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
         tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();
         while ( pItem.valid () ) {
@@ -163,7 +163,8 @@ void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
     sockAddrToA ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
     printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
     if ( level > 0u ) {
-        printf ( "\tidentifier %u, engine %p\n", this->id, this->pEngine );
+        printf ( "\tidentifier %u, engine %p\n", this->id, 
+            static_cast <void *> (this->pEngine) );
     }
     ipAddrToAsciiEngine::mutex.unlock ();
 }

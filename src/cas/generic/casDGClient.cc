@@ -71,7 +71,8 @@ void casDGClient::destroy()
 //
 void casDGClient::show (unsigned level) const
 {
-	printf("casDGClient at %p\n", this);
+	printf ( "casDGClient at %p\n", 
+        static_cast <const void *> ( this ) );
 	if (level>=1u) {
 		char buf[64];
 		this->clientHostName (buf, sizeof(buf));

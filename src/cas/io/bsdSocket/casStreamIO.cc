@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.20  2000/04/28 02:23:34  jhill
+// many, many changes
+//
 // Revision 1.19  1999/09/02 21:50:28  jhill
 // o changed UDP to non-blocking IO
 // o cleaned up (consolodated) UDP interface class structure
@@ -234,7 +237,8 @@ inBuf::fillCondition casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes,
 //
 void casStreamIO::osdShow (unsigned level) const
 {
-	printf ("casStreamIO at %p\n", this);
+	printf ( "casStreamIO at %p\n", 
+        static_cast <const void *> ( this ) );
 	if (level>1u) {
 		char buf[64];
 		ipAddrToA(&this->addr, buf, sizeof(buf));

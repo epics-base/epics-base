@@ -353,7 +353,7 @@ void osiTimer::show (unsigned level) const
 {
 	epicsTime	cur = epicsTime::getCurrent ();
 	printf ("osiTimer at %p for \"%s\" with again = %d\n", 
-		this, this->name(), this->again());
+		static_cast <const void *> (this), this->name(), this->again());
 	if (level>=1u) {
 	    double delay = this->exp - cur;
 		printf ("\tdelay to expire = %f, state = %d\n", 

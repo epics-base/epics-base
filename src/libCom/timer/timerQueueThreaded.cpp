@@ -99,7 +99,8 @@ void timerQueueThreaded::reschedule ()
 
 void timerQueueThreaded::show ( unsigned int level ) const
 {
-    printf ( "EPICS threaded timer queue at %p\n", this );
+    printf ( "EPICS threaded timer queue at %p\n", 
+        static_cast <const void *> ( this ) );
     if ( level >=1u ) {
         this->queue.show ( level - 1u );
         printf ( "reschedule event\n" );

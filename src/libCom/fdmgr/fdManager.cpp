@@ -296,12 +296,13 @@ epicsShareFunc void fdReg::show(unsigned level) const
 //
 // fdRegId::show()
 //
-void fdRegId::show(unsigned level) const
+void fdRegId::show ( unsigned level ) const
 {
-    printf ("fdRegId at %p\n", this);
-    if (level>1u) {
-        printf ("\tfd = %d, type = %d\n",
-            this->fd, this->type);
+    printf ( "fdRegId at %p\n", 
+        static_cast <const void *> ( this ) );
+    if ( level > 1u ) {
+        printf ( "\tfd = %d, type = %d\n",
+            this->fd, this->type );
     }
 }
 

@@ -159,7 +159,8 @@ const char *casDGEvWakeup::name() const
 //
 void casDGEvWakeup::show(unsigned level) const
 {
-	printf ("casDGEvWakeup at %p {\n", this);
+	printf ( "casDGEvWakeup at %p {\n", 
+        static_cast <const void *> ( this ) );
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -214,7 +215,8 @@ const char *casDGIOWakeup::name() const
 //
 void casDGIOWakeup::show(unsigned level) const
 {
-	printf ("casDGIOWakeup at %p {\n", this);
+	printf ( "casDGIOWakeup at %p {\n", 
+        static_cast <const void *> ( this ) );
 	this->osiTimer::show(level);
 	printf ("}\n");
 }
@@ -332,8 +334,9 @@ void casDGIntfOS::eventFlush()
 //
 void casDGIntfOS::show(unsigned level) const
 {
-	printf ("casDGIntfOS at %p\n", this);
-	if (this->pRdReg) {
+	printf ( "casDGIntfOS at %p\n", 
+        static_cast <const void *> ( this ) );
+    if (this->pRdReg) { 
 		this->pRdReg->show (level);
 	}
 	if (this->pWtReg) {
@@ -398,7 +401,8 @@ casDGBCastReadReg::~casDGBCastReadReg()
 void casDGBCastReadReg::show(unsigned level) const
 {
 	this->fdReg::show(level);
-	printf("casDGBCastReadReg at %p\n", this);
+	printf ( "casDGBCastReadReg at %p\n", 
+        static_cast <const void *> ( this ) );
 }
 
 //
@@ -428,7 +432,8 @@ void casDGWriteReg::callBack()
 void casDGWriteReg::show(unsigned level) const
 {
 	this->fdReg::show (level);
-	printf ("casDGWriteReg: at %p\n", this);
+	printf ( "casDGWriteReg: at %p\n", 
+        static_cast <const void *> ( this ) );
 }
 
 //

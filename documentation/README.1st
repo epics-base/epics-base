@@ -321,7 +321,8 @@ Building EPICS base (Unix and Win32)
          If you plan to build EPICS base shared libraries instead of
          archive libraries, on Unix systems you will need to add 
          fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) to
-         your LD_LIBRARY_PATH environment variable. 
+         your LD_LIBRARY_PATH environment variable.  On Linux systems,
+         building shared libraries is the default setting.
 
          Win32 PATH
          On WIN32 systems, building shared libraries is the default

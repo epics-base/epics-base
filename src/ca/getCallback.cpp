@@ -71,7 +71,7 @@ void getCallback::exception (
     this->chan.getClientCtx().destroyGetCallback ( *this );
 }
 
-void getCallback::operator delete ( void *pCadaver )
+void getCallback::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

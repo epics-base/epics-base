@@ -276,7 +276,7 @@ void CASG::exception ( int status, const char *pContext,
         lineNo, chan, type, count, op );
 }
 
-void CASG::operator delete ( void * pCadaver )
+void CASG::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

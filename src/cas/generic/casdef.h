@@ -30,6 +30,12 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.10  1996/12/06 22:36:26  jhill
+ * 	use destroyInProgress flag now functional nativeCount()
+ *
+ * 	Revision 1.9.2.1  1996/11/25 16:30:55  jhill
+ * 	WIN32 pragma warning (disable:4355) added
+ *
  * 	Revision 1.9  1996/11/22 19:52:24  jhill
  * 	doc
  *
@@ -101,6 +107,14 @@
 #include "alarm.h"		// EPICS alarm severity/condition 
 #include "errMdef.h"		// EPICS error codes 
 #include "gdd.h" 		// EPICS data descriptors 
+
+//
+// This eliminates a warning resulting from passing *this
+// to a base class during derived class construction.
+//
+#ifdef WIN32
+#	pragma warning (disable:4355)
+#endif
 
 typedef aitUint32 caStatus;
 

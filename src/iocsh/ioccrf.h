@@ -17,7 +17,6 @@ of this distribution.
 extern "C" {
 #endif
 
-
 typedef enum {
     ioccrfArgInt,
     ioccrfArgDouble,
@@ -43,7 +42,7 @@ epicsShareFunc void epicsShareAPI ioccrfRegister(
     ioccrfFuncDef *pioccrfFuncDef,ioccrfCallFunc func);
 
 
-epicsShareFunc void epicsShareAPI ioccrf(FILE *);
+epicsShareFunc void epicsShareAPI ioccrf(FILE *, const char *filename);
 
 #ifdef __cplusplus
 }

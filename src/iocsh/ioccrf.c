@@ -1,5 +1,6 @@
 /* ioccrf.c */
 /* Author:  Marty Kraimer Date: 27APR2000 */
+/* Heavily modified by Eric Norum   Date: 03MAY2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
 This software was developed under a United States Government license
@@ -19,176 +20,373 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
 
-#define MAX_BUFFER_SIZE 120
-
-static char *ioccrfID = "ioccrf";
-static char inline[MAX_BUFFER_SIZE];
-
 typedef struct argvalue {
     struct argvalue *next;
     union type {
         int ival;
         double dval;
     } type;
-}argvalue;
-
-argvalue *argvalueHead = 0;
+} argvalue;
 
 typedef struct ioccrfFunc {
     ioccrfFuncDef *pioccrfFuncDef;
     ioccrfCallFunc func;
-}ioccrfFunc;
+} ioccrfFunc;
 
-static int cvtArg(char **pnextchar,argvalue *pargvalue,ioccrfArg *pioccrfArg)
+static char ioccrfID[] = "ioccrf";
+
+#ifdef IOCSH_USE_READLINE
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#else
+
+/*
+ * Fake versions of some readline/history routines
+ */
+#define stifle_history(n) do { } while(0)
+#define add_history(l) do { } while(0)
+#define rl_bind_key(c,f) do { } while(0)
+
+#endif
+
+/*
+ * Register a command
+ */
+void epicsShareAPI ioccrfRegister (ioccrfFuncDef *pioccrfFuncDef, ioccrfCallFunc func)
 {
-    char *p = *pnextchar;
-    char *argend;
+    ioccrfFunc *pioccrfFunc;
+
+    pioccrfFunc = callocMustSucceed (1, sizeof(ioccrfFunc), "ioccrfRegister");
+    pioccrfFunc->pioccrfFuncDef = pioccrfFuncDef;
+    pioccrfFunc->func = func;
+    if (!registryAdd(ioccrfID, pioccrfFuncDef->name, (void *)pioccrfFunc))
+        errlogPrintf ("ioccrfRegister failed to add %s\n", pioccrfFuncDef->name);
+}
+
+/*
+ * Read a line of input
+ */
+static char *
+my_readline (FILE *fp, const char *prompt)
+{
+    char c;
+    char *line = NULL;
+    int linelen = 0;
+    int linesize = 50;
+
+#ifdef IOCSH_USE_READLINE
+    if (fp == stdin)
+        return readline (prompt);
+#endif
+    line = malloc (linesize * sizeof *line);
+    if (line == NULL) {
+        printf ("Out of memory!\n");
+        return NULL;
+    }
+    if (prompt)
+        printf ("%s", prompt);
+    while ((c = getc (fp)) !=  '\n') {
+        if (c == EOF) {
+            free (line);
+            return NULL;
+        }
+        if ((linelen + 1) >= linesize) {
+            char *cp;
+
+            linesize += 50;
+            cp = realloc (line, linesize * sizeof *line);
+            if (cp == NULL) {
+                printf ("Out of memory!\n");
+                free (line);
+                return NULL;
+            }
+            line = cp;
+        }
+        line[linelen++] = c;
+    }
+    line[linelen] = '\0';
+    return line;
+}
+
+/*
+ * Report an error
+ */
+static void
+showError (const char *name, int lineno, const char *msg, ...)
+{
+    va_list ap;
+
+    va_start (ap, msg);
+    if (name)
+        printf ("%s -- Line %d -- ", name, lineno);
+    vprintf (msg, ap);
+    printf ("\n");
+    va_end (ap);
+}
+
+static int
+cvtArg (const char *filename, int lineno, char *arg, argvalue *pargvalue, ioccrfArg *pioccrfArg)
+{
     char *endp;
-    /*skip leading whitespace */
-    while(*p && (isspace(*p))) ++p;
-    argend = p;
-    /* look for , or ) */
-    while(*argend && (*argend!=',') && (*argend!=')') ) {
-        /* If quote then look for matching quote */
-        if(*argend == '\"') {
-            ++argend;
-            while(*argend && (*argend!='\"') ) ++argend;
-            if(!*argend) {
-                printf("Illegal string: %s\n",p);
-                return(0);
+
+    switch (pioccrfArg->type) {
+    case ioccrfArgInt:
+        if (arg && *arg) {
+            pargvalue->type.ival = strtol (arg, &endp, 0);
+            if (*endp) {
+                showError (filename, lineno, "Illegal integer `%s'", arg);
+                return 0;
             }
         }
-        ++argend;
-    }
-    if(*argend) {
-        *argend = 0;
-        *pnextchar = argend + 1;
-    }
-    /*remove trailing spaces*/
-    while(*p && isspace(p[strlen(p)-1])) p[strlen(p)-1] = 0;
-    switch(pioccrfArg->type) {
-    case ioccrfArgInt:
-        if(*p) {
-            pargvalue->type.ival = strtol(p,&endp,0);
-            if(*endp) {
-                printf("Illegal integer %s\n",p);
-                return(0);
-            }
-        } else {
+        else {
             pargvalue->type.ival = 0;
         }
         pioccrfArg->value = &pargvalue->type.ival;
         break;
+
     case ioccrfArgDouble:
-        if(*p) {
-            pargvalue->type.dval = strtod(p,&endp);;
-            if(*endp) {
-                printf("Illegal double %s\n",p);
-                return(0);
+        if (arg && *arg) {
+            pargvalue->type.dval = strtod (arg, &endp);
+            if (*endp) {
+                showError (filename, lineno, "Illegal double `%s'", arg);
+                return 0;
             }
-        } else {
-            pargvalue->type.ival = 0.0;
+        }
+        else {
+            pargvalue->type.dval = 0.0;
         }
         pioccrfArg->value = &pargvalue->type.dval;
         break;
+
     case ioccrfArgString:
-        /*if argument is missing just assume null*/
-        if(!*p) {
-            pioccrfArg->value = 0;
-            break;
-        }
-        /*first and last char should be quote */
-        if( (*p != '\"') || (p[strlen(p)-1] != '\"') ) {
-            /*if just character 0 accept it*/
-            if(strcmp(p,"0")==0) {
-                pioccrfArg->value = 0;
-                break;
-            }
-            printf("Illegal string argument %s\n",p);
-            return(0);
-        }
-        /* strip off trailing quote */
-        p[strlen(p)-1] = 0;
-        pioccrfArg->value = p+1;
+        pioccrfArg->value = arg;
         break;
+
     case ioccrfArgPdbbase:
-        /*field must missing or 0 or pdbbase*/
-        if( !*p || (*p == '0') || (strcmp(p,"pdbbase")==0) ) {
+        /* Argumenmt must be missing or 0 or pdbbase */
+        if(!arg || !*arg || (*arg == '0') || (strcmp(arg, "pdbbase") == 0)) {
             pioccrfArg->value = pdbbase;
             break;
         }
-        printf("Expecting pdbbase; got %s\n",p);
-        return(0);
+        showError (filename, lineno, "Expecting `pdbbase' got `%s'", arg);
+        return 0;
+
     default:
-        printf("Illegal argument type\n");
-        return(0);
+        showError (filename, lineno, "Illegal argument type %d", pioccrfArg->type);
+        return 0;
     }
-    return(1);
-}
-    
-
-void epicsShareAPI ioccrfRegister(ioccrfFuncDef *pioccrfFuncDef,ioccrfCallFunc func)
-{
-    ioccrfFunc *pioccrfFunc;
-
-    pioccrfFunc = callocMustSucceed(1,sizeof(ioccrfFunc),"ioccrfRegister");
-    pioccrfFunc->pioccrfFuncDef = pioccrfFuncDef;
-    pioccrfFunc->func = func;
-    if(!registryAdd((void *)ioccrfID,pioccrfFuncDef->name,(void *)pioccrfFunc))
-        errlogPrintf("ioccrfRegister failed to add %s\n", pioccrfFuncDef->name);
+    return 1;
 }
 
-void epicsShareAPI ioccrf(FILE *fp)
+/*
+ * The body of the command interpreter
+ */
+void epicsShareAPI
+ioccrf (FILE *fp, const char *filename)
 {
-    char *p;
-    char *command = 0;
+    int icin, icout;
+    int c, quote, inword, backslash;
+    char *line = NULL;
+    int lineno = 0;
+    int argc;
+    char **argv = NULL;
+    int argvsize = 0;
+    int sep;
+    const char *prompt;
+    const char *ifs;
+    const char *historySize;
     ioccrfFunc *pioccrfFunc;
     ioccrfFuncDef *pioccrfFuncDef;
-    argvalue *pargvalue;
-    ioccrfArg *pioccrfArg;
-    argvalue *prevArgvalue;
     int arg;
+    argvalue *pargvalue, *prevargvalue, *argvalueHead = NULL;
+    ioccrfArg *pioccrfArg;
+    
+    /*
+     * Pick up items from environment
+     */
+    if ((prompt = getenv ("PS1")) == NULL)
+        prompt = "-> ";
+    if ((ifs = getenv ("IFS")) == NULL)
+        ifs = " \t(),";
 
-    while(1) {
-        if(fp==stdin) printf("ioccrf: ");
-        p= fgets(inline,MAX_BUFFER_SIZE-1,fp);
-        if(!p) break;
-        if(strlen(p)==1) continue; /* null line */
-        inline[strlen(inline)-1] = 0; /*strip newline*/
-        if(fp!=stdin) printf("%s\n",inline);
-        if(strncmp(p,"exit",4)==0) break;
-        /*skip whitespace at beginning of line*/
-        while(*p && (isspace(*p))) ++p;
-        if(!p) continue;
-        command = p;
-        /*look for ( and replace with null*/
-        while(*p && (*p != '(') ) ++p;
-        if(*p) *p++ = 0;
-        /*remove trailing spaces from command*/
-        while(isspace(command[strlen(command)-1]))
-            command[strlen(command)-1]=0;
-        pioccrfFunc = (ioccrfFunc *)registryFind(ioccrfID,command);
-        if(!pioccrfFunc) {
-            printf("command %s not found\n",command);
+    /*
+     * See if command interpreter is interactive
+     */
+    if (fp == NULL)
+        fp = stdin;
+    if (fp == stdin) {
+        filename = NULL;
+        if ((historySize = getenv ("HISTSIZE")) == NULL)
+            historySize="10";
+        stifle_history (atoi (historySize));
+        /*
+         * FIXME: Could enable tab-completion of commands here
+         */
+        rl_bind_key ('\t', rl_insert);
+    }
+    else {
+        prompt = NULL;
+    }
+
+    /*
+     * Read commands till EOF
+     */
+    for (;;) {
+        /*
+         * Get a line
+         */
+        lineno++;
+        free (line);
+        line = my_readline (fp, prompt);
+        if (line == NULL)
+            break;
+
+        /*
+         * If interactive, add non-blank lines to history
+         */
+        if ((fp == stdin) && *line)
+            add_history (line);
+
+        /*
+         * Ignore comment lines
+         */
+        if (*line == '#')
+            continue;
+
+        /*
+         * Break line into words
+         */
+        icout = icin = 0;
+        inword = 0;
+        quote = EOF;
+        backslash = 0;
+        argc = 0;
+        for (;;) {
+            if (argc >= argvsize) {
+                char **av;
+                argvsize += 50;
+                av = realloc (argv, argvsize * sizeof *argv);
+                if (av == NULL) {
+                    printf ("Out of memory!\n");
+                    argc = -1;
+                    break;
+                }
+                argv = av;
+            }
+            c = line[icin++];
+            if (c == '\0')
+                break;
+            if ((quote == EOF) && !backslash && (strchr (ifs, c)))
+                sep = 1;
+            else
+                sep = 0;
+            if ((quote == EOF) && (c == '\\') && !backslash) {
+                backslash = 1;
+                continue;
+            }
+            if (inword) {
+                if (c == quote) {
+                    quote = EOF;
+                }
+                else {
+                    if ((quote == EOF) && !backslash) {
+                        if (sep) {
+                            inword = 0;
+                            line[icout++] = '\0';
+                        }
+                        else if ((c == '"') || (c == '\'')) {
+                            quote = c;
+                        }
+                        else {
+                            line[icout++] = c;
+                        }
+                    }
+                    else {
+                        line[icout++] = c;
+                    }
+                }
+            }
+            else {
+                if (!sep) {
+                    if (((c == '"') || (c == '\'')) && !backslash)
+                        quote = c;
+                    argv[argc++] = line + icout;
+                    if (quote == EOF)
+                        line[icout++] = c;
+                    inword = 1;
+                }
+            }
+            backslash = 0;
+        }
+        if (argc < 0)
+            break;
+        if (quote != EOF) {
+            showError (filename, lineno, "Unbalanced quote.");
             continue;
         }
-        pioccrfFuncDef = pioccrfFunc->pioccrfFuncDef;
-        pargvalue = argvalueHead;
-        prevArgvalue = 0;
-        for(arg=0;arg<pioccrfFuncDef->nargs; arg++) {
-            pioccrfArg = pioccrfFuncDef->arg[arg];
-            if(!pargvalue) {
-                pargvalue = callocMustSucceed(1,sizeof(argvalue),"ioccrf");
-                if(prevArgvalue) prevArgvalue->next = pargvalue;
-                argvalueHead = pargvalue;
-            }
-            if(!cvtArg(&p,pargvalue,pioccrfArg)) goto badline;
-            prevArgvalue = pargvalue;
-            pargvalue = prevArgvalue->next;
+        if (backslash) {
+            showError (filename, lineno, "Trailing backslash.");
+            continue;
         }
-        (*pioccrfFunc->func)(pioccrfFuncDef->arg);
-        continue;
-badline:
-        printf("illegal line\n");
+        if (inword)
+            line[icout++] = '\0';
+        argv[argc] = NULL;
+
+        /*
+         * Look up command
+         */
+        if (argc) {
+            /*
+             * Special command?
+             */
+            if (strncmp (argv[0], "exit", 4) == 0)
+                break;
+
+             /*
+              * Look up command
+              */
+            pioccrfFunc = (ioccrfFunc *)registryFind (ioccrfID, argv[0]);
+            if (!pioccrfFunc) {
+                showError (filename, lineno, "Command %s not found.", argv[0]);
+                continue;
+            }
+
+            /*
+             * Process arguments
+             */
+            pioccrfFuncDef = pioccrfFunc->pioccrfFuncDef;
+            pargvalue = argvalueHead;
+            prevargvalue = NULL;
+            for (arg = 0 ; ; arg++) {
+                char *p = (arg < argc) ? argv[arg+1] : NULL;
+
+                if (arg == pioccrfFuncDef->nargs) {
+                    (*pioccrfFunc->func)(pioccrfFuncDef->arg);
+                    break;
+                }
+                pioccrfArg = pioccrfFuncDef->arg[arg];
+                if (!pargvalue) {
+                    pargvalue = callocMustSucceed(1, sizeof(argvalue), "ioccrf");
+                    if(prevargvalue)
+                        prevargvalue->next = pargvalue;
+                    argvalueHead = pargvalue;
+                }
+                if (!cvtArg (filename, lineno, p, pargvalue, pioccrfArg))
+                    break;
+                prevargvalue = pargvalue;
+                pargvalue = prevargvalue->next;
+            }
+        }
+    }
+    free (line);
+    free (argv);
+    while (argvalueHead) {
+        pargvalue = argvalueHead->next;
+        free (argvalueHead);
+        argvalueHead = pargvalue;
     }
 }
+
+/* Readline automatic completion code could go here! */

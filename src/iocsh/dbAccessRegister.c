@@ -19,6 +19,11 @@ of this distribution.
 #include "dbAccessRegister.h"
 #include "ioccrf.h"
 
+#ifdef __rtems__
+# define dbLoadDatabase dbLoadDatabaseRTEMS
+# define dbLoadRecords dbLoadRecordsRTEMS
+#endif
+
 /* dbLoadDatabase */
 static ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString,0};
 static ioccrfArg dbLoadDatabaseArg1 = { "path",ioccrfArgString,0};

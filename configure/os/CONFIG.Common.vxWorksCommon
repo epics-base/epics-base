@@ -94,7 +94,12 @@ OP_SYS_INCLUDE_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
 #--------------------------------------------------
 # code flags
 CODE_CFLAGS =
-CODE_CXXFLAGS = 
+#
+# WRS still uses an old gnu compiler with a broken -frepo and 
+# otherwise no automatic template instantiation mechanism as
+# is the defacto standard approach today. If we remove this 
+# flag certain ppc targets will not build. 
+CODE_CXXFLAGS = -fno-implicit-templates
 
 #--------------------------------------------------
 # posix c preprocessor flags

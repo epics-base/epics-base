@@ -179,11 +179,11 @@ extern "C" void cacSendThreadTCP (void *pParam)
         pOutBuf = static_cast <char *> ( cacRingBufferReadReserveNoBlock (&piiu->send, &sendCnt) );
         while ( ! pOutBuf ) {
             piiu->cancelSendWatchdog ();
-            pOutBuf = (char *) cacRingBufferReadReserve (&piiu->send, &sendCnt);
             if ( piiu->state != iiu_connected ) {
                 semBinaryGive ( piiu->sendThreadExitSignal );
                 return;
             }
+            pOutBuf = (char *) cacRingBufferReadReserve (&piiu->send, &sendCnt);
         }
 
         assert ( sendCnt <= INT_MAX );
@@ -248,14 +248,17 @@ void tcpiiu::recvMsg ()
         return;
     }
               
-    pProto = (char *) cacRingBufferWriteReserve (&this->recv, &writeSpace);
-    
+    pProto = (char *) cacRingBufferWriteReserve ( &this->recv, &writeSpace );
+    if ( ! pProto ) {
+        return;
+    }
+
     assert ( writeSpace <= INT_MAX );
     status = ::recv ( this->sock, pProto, (int) writeSpace, 0);
     if ( status <= 0 ) {
         int localErrno = SOCKERRNO;
 
-        cacRingBufferWriteCommit (&this->recv, 0);
+        cacRingBufferWriteCommit ( &this->recv, 0 );
 
         if ( status == 0 ) {
             this->shutdown ();
@@ -270,8 +273,19 @@ void tcpiiu::recvMsg ()
             return;
         }
         
-        ca_printf ( "Disconnecting from CA server because: %s\n", SOCKERRSTR (localErrno) );
+        if ( localErrno == SOCK_ECONNABORTED ) {
+            return;
+        }
+
+        {
+            char name[64];
+            this->hostName ( name, sizeof (name) );
+            ca_printf ( "Disconnecting from CA server %s because: %s\n", 
+                name, SOCKERRSTR (localErrno) );
+        }
+
         this->shutdown ();
+
         return;
     }
     

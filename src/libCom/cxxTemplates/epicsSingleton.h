@@ -39,13 +39,15 @@ inline epicsSingleton<TYPE>::epicsSingleton () : pSingleton ( 0 )
 template < class TYPE >
 inline epicsSingleton<TYPE>::~epicsSingleton ()
 {
-    delete this->pSingleton;
+    // this causes problems when there are file scope objects that reference the
+    // singleton in their destructors
+    // delete this->pSingleton;
 }
 
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 
 template < class TYPE >
-void epicsSingleton<TYPE>::factory ()
+inline void epicsSingleton<TYPE>::factory ()
 {
     epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
     if ( ! this->pSingleton ) {

@@ -108,7 +108,7 @@ public:
 
     // beacon management
     void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime, 
-        unsigned beaconNumber, unsigned protocolRevision );
+        ca_uint32_t beaconNumber, unsigned protocolRevision );
     void repeaterSubscribeConfirmNotify ();
 
     // IO management

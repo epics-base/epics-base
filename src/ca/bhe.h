@@ -39,7 +39,7 @@
 #endif
 
 #include "inetAddrID.h"
-
+#include "caProto.h"
 
 class tcpiiu;
 
@@ -50,7 +50,7 @@ public:
     epicsShareFunc ~bhe (); 
     epicsShareFunc void destroy ();
     epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
-                        const epicsTime & currentTime, unsigned beaconNumber, 
+                        const epicsTime & currentTime, ca_uint32_t beaconNumber, 
                         unsigned protocolRevision );
     epicsShareFunc double period () const;
     epicsShareFunc epicsTime updateTime () const;
@@ -63,7 +63,7 @@ private:
     tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;
     double averagePeriod;
-    unsigned lastBeaconNumber;
+    ca_uint32_t lastBeaconNumber;
     void beaconAnomalyNotify ();
     static epicsSingleton < tsFreeList < class bhe, 1024 > > pFreeList;
 	bhe ( const bhe & );

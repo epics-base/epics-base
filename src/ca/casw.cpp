@@ -195,7 +195,7 @@ int main ( int argc, char ** argv )
                     ina.sin_port = epicsNTOH16 ( serverPort );
                 }
 
-                unsigned beaconNumber = ntohl ( pCurMsg->m_cid );
+                ca_uint32_t beaconNumber = ntohl ( pCurMsg->m_cid );
                 unsigned protocolRevision = ntohs ( pCurMsg->m_dataType );
 
                 epicsTime currentTime = epicsTime::getCurrent();

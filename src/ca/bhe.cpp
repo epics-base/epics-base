@@ -89,7 +89,7 @@ void bhe::beaconAnomalyNotify ()
  * updates beacon period, and looks for beacon anomalies
  */
 bool bhe::updatePeriod ( const epicsTime & programBeginTime, 
-    const epicsTime & currentTime, unsigned beaconNumber, 
+    const epicsTime & currentTime, ca_uint32_t beaconNumber, 
     unsigned protocolRevision )
 {
     //
@@ -115,11 +115,28 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         return false;
     }
 
-    // detect beacon duplications due to IP redundant packet routes
+    // 1) detect beacon duplications due to redundant routes
+    // 2) detect lost beacons due to input queue overrun or damage
     if ( CA_V410 ( protocolRevision ) ) {
-        unsigned lastBeaconNumberSave = this->lastBeaconNumber;
+        unsigned beaconSeqAdvance;
+        if ( beaconNumber > this->lastBeaconNumber ) {
+            beaconSeqAdvance = beaconNumber - this->lastBeaconNumber;
+        }
+        else {
+            beaconSeqAdvance = ( ca_uint32_max - this->lastBeaconNumber ) + beaconNumber;
+        }
         this->lastBeaconNumber = beaconNumber;
-        if ( beaconNumber != lastBeaconNumberSave + 1 ) {
+
+        // throw out sequence numbers just prior to, or the same as, the last one received 
+        // (this situation is probably caused by a temporary duplicate route )
+        if ( beaconSeqAdvance == 0 ||  beaconSeqAdvance > ca_uint32_max - 256 ) {
+            return false;
+        }
+
+        // throw out sequence numbers that jump forward by only a few numbers 
+        // (this situation is probably caused by a duplicate route 
+        // or a beacon due to input queue overun)
+        if ( beaconSeqAdvance > 1 &&  beaconSeqAdvance < 4 ) {
             return false;
         }
     }

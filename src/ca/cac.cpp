@@ -372,7 +372,7 @@ void cac::show ( unsigned level ) const
  *  cac::beaconNotify
  */
 void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
-                        unsigned beaconNumber, unsigned protocolRevision  )
+                        ca_uint32_t beaconNumber, unsigned protocolRevision  )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
 

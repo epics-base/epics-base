@@ -684,7 +684,7 @@ bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg,
         ina.sin_port = epicsHTON16 ( this->serverPort );
     }
     unsigned protocolRevision = msg.m_dataType;
-    unsigned beaconNumber = msg.m_cid;
+    ca_uint32_t beaconNumber = msg.m_cid;
 
     this->cacRef.beaconNotify ( ina, currentTime, 
         beaconNumber, protocolRevision );

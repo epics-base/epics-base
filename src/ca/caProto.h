@@ -101,6 +101,8 @@ typedef unsigned int    ca_uint32_t;
 typedef float           ca_float32_t;
 typedef ca_uint32_t     caResId;
 
+#define ca_uint32_max 0xffffffff
+
         /* values for m_cmmd */
 #define CA_PROTO_VERSION        0u  /* set minor version and priority (used to be NOOP cmd) */
 #define CA_PROTO_EVENT_ADD      1u  /* add an event */

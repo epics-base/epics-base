@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.18  1995/11/27  22:49:36  jhill
+ * included <arpa/inet.h>
+ *
  * Revision 1.17  1995/11/13  16:55:03  jba
  * Added filio.h include for solaris build.
  *
@@ -445,22 +448,27 @@ static void readFromClient(void *pParam)
 		      0);
 	if (length <= 0) {
 		if (length<0) {
-			if (errno != EWOULDBLOCK) {
-				fprintf(stderr, 
-					"%s:%d socket=%d addr=%x size=%d read error=%s\n",
-					__FILE__, __LINE__, pclient->insock, 
-					pclient->ptopofstack, size, strerror(errno));
-				freeLogClient(pclient);
+			if (errno==EWOULDBLOCK || errno==EINTR) {
+				return;
 			}
-			return;
+			if (	errno != ECONNRESET &&
+				errno != ECONNABORTED &&
+				errno != EPIPE &&
+				errno != ETIMEDOUT
+				) {
+				fprintf(stderr, 
+		"%s:%d socket=%d addr=%x size=%d read error=%s errno=%d\n",
+					__FILE__, __LINE__, pclient->insock, 
+					pclient->ptopofstack, size, 
+					strerror(errno), errno);
+			}
 		}
-		else {
-			/*
-			 * disconnect
-			 */
-			freeLogClient(pclient);
-			return;
-		}
+		/*
+		 * disconnect
+		 */
+		freeLogClient(pclient);
+		return;
+	
 	}
 
 	pclient->ptopofstack[length] = NULL;

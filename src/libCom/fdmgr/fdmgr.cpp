@@ -35,6 +35,7 @@
 // 2) This library is _not_ thread safe
 //
 
+#include <stddef.h>
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "osiTimer.h"

@@ -192,3 +192,8 @@ in a visual C++ make file project: "kill caRepeater.exe&make -C ..". Be careful
 not to introduce additional spaces around the &. The kill.exe command is in the
 NT resource kit.
 
+6) When compiling applications that link with EPICS base you will need to
+include from <epics>\base\include, include from <epics>\base\include\os\win32,
+and augment the link path with <epics>\base\lib\win32-x86. If the visual C++
+/Za option is not used then you will also need to define __STDC__ to be zero 
+on the command line.

@@ -203,7 +203,6 @@ int APIENTRY ca_sg_delete(CA_SYNC_GID gid)
 int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
 	struct timeval	beg_time;
-	struct timeval	cur_time;
 	ca_real		delay;
 	int		status;
 	CASG 		*pcasg;
@@ -244,7 +243,12 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	 */
 	ca_flush_io();
 
-	cac_gettimeval(&beg_time);
+        /*
+         * the current time set within ca_flush_io()
+         * above.
+         */
+        beg_time = ca_static->currentTime;
+        delay = 0.0;
 
 	status = ECA_NORMAL;
 	while(pcasg->opPendCount){
@@ -254,8 +258,6 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 		/*
 		 * Exit if the timeout has expired
 		 */
-		cac_gettimeval (&cur_time);
-		delay = cac_time_diff (&cur_time, &beg_time);
 		remaining = timeout-delay;
 		if (remaining<=0.0) {
 			status = ECA_TIMEOUT;
@@ -273,6 +275,12 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 		tmo.tv_sec = (long) remaining;
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_sg_completion (pcasg, &tmo);
+
+                /*
+                 * the current time set within cac_block_for_sg_completion()
+                 * above.
+                 */
+		delay = cac_time_diff (&ca_static->currentTime, &beg_time);
 	}
 	pcasg->opPendCount = 0;
 	pcasg->seqNo++;

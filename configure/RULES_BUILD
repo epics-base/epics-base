@@ -537,7 +537,7 @@ ifneq ($(RANLIB)xx,xx)
 endif # RANLIB
 
 $(DLL_LINK_LIBNAME_IOC) $(SHRLIBNAME_IOC): $(LIBOBJS_IOC)
-	$(LINK.shrlib) $(LIBOBJS_IOC) $(DLL_LDLIBS_IOC)
+	$(LINK.shrlib_IOC) $(LIBOBJS_IOC) $(DLL_LDLIBS)
 
 # rule for lib (archive of object files) creation
 $(LIBNAME_HOST): $(LIBOBJS_HOST)
@@ -549,7 +549,7 @@ endif # RANLIB
 
 
 $(DLL_LINK_LIBNAME_HOST) $(SHRLIBNAME_HOST): $(LIBOBJS_HOST)
-	$(LINK.shrlib) $(LIBOBJS_HOST) $(DLL_LDLIBS_HOST)
+	$(LINK.shrlib_HOST) $(LIBOBJS_HOST) $(DLL_LDLIBS)
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

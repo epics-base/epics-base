@@ -124,14 +124,18 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 unsigned int
 epicsThreadGetStackSize (epicsThreadStackSizeClass size)
 {
+    unsigned int stackSize = 11000*ARCH_STACK_FACTOR;
     switch(size) {
-    case epicsThreadStackSmall:  return( 4000*ARCH_STACK_FACTOR);
-    case epicsThreadStackMedium: return( 6000*ARCH_STACK_FACTOR);
-    case epicsThreadStackBig:    return(11000*ARCH_STACK_FACTOR);
+    case epicsThreadStackSmall:  stackSize = 4000*ARCH_STACK_FACTOR; break;
+    case epicsThreadStackMedium: stackSize = 6000*ARCH_STACK_FACTOR; break;
+    case epicsThreadStackBig:                                        break;
     default:
         errlogPrintf("epicsThreadGetStackSize illegal argument");
+        break;
     }
-    return(11000*ARCH_STACK_FACTOR);
+    if (stackSize < RTEMS_MINIMUM_STACK_SIZE)
+        stackSize = RTEMS_MINIMUM_STACK_SIZE;
+    return stackSize;
 }
 
 /*
@@ -266,8 +270,8 @@ epicsThreadCreate (const char *name,
 
     if (!initialized) epicsThreadInit();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
-        errlogPrintf ("epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
-        return 0;
+        errlogPrintf ("Warning: epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
+        stackSize = RTEMS_MINIMUM_STACK_SIZE;
     }
     strncpy (c, name, sizeof c);
     sc = rtems_task_create (rtems_build_name (c[0], c[1], c[2], c[3]),

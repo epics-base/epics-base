@@ -30,6 +30,8 @@ LIBSRCS += registryFunction.c
 LIBRARY_IOC = registryIoc
 registryIoc_DLL_LIBS  = Com
 
+registryIoc_RCS_WIN32 = registryIoc.rc
+
 OBJS_IOC = registerRecordDeviceDriver
 
 include $(TOP)/configure/RULES

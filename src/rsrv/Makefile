@@ -18,4 +18,6 @@ LIBRARY_IOC = rsrvIoc
 rsrvIoc_DLL_LIBS = asIoc dbIoc ca Com 
 SYS_DLL_LIBS := ws2_32
 
+rsrvIoc_RCS_WIN32 = rsrvIoc.rc
+
 include $(TOP)/configure/RULES

@@ -17,4 +17,7 @@ rsrvIoc_DIR=$(EPICS_BASE_LIB)
 asIoc_DIR=$(EPICS_BASE_LIB)
 registryIoc_DIR=$(EPICS_BASE_LIB)
 
+misc_RCS_WIN32 = misc.rc
+
 include $(TOP)/configure/RULES
+

@@ -478,21 +478,8 @@ void cac::beaconNotify ( const inetAddrID &addr )
      * look for it in the hash table
      */
     pBHE = this->lookupBeaconInetAddr ( addr );
-    if (pBHE) {
-
-        netChange = pBHE->updateBeaconPeriod (this->programBeginTime);
-
-        /*
-         * update state of health for active virtual circuits 
-         * (only if we are not suspicious about past beacon changes
-         * until the next echo reply)
-         */
-        tcpiiu *piiu = pBHE->getIIU ();
-        if ( piiu ) {
-            if ( ! piiu->beaconAnomaly ) {
-                piiu->rescheduleRecvTimer (); // reset connection activity watchdog
-            }
-        }
+    if ( pBHE ) {
+        netChange = pBHE->updateBeaconPeriod ( this->programBeginTime );
     }
     else {
         /*
@@ -503,7 +490,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
          * shortly after the program started up)
          */
         netChange = FALSE;
-        this->createBeaconHashEntry (addr, osiTime::getCurrent () );
+        this->createBeaconHashEntry ( addr, osiTime::getCurrent () );
     }
 
     if ( ! netChange ) {

@@ -19,9 +19,16 @@ tcpSendWatchdog::tcpSendWatchdog
 {
 }
 
+tcpSendWatchdog::~tcpSendWatchdog ()
+{
+}
+
 void tcpSendWatchdog::expire ()
 {
-    ca_printf ( "Request was pending for %f sec. Disconnecting from CA server.\n", this->period);
+    char hostName[128];
+    this->hostName ( hostName, sizeof (hostName) );
+    ca_printf ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
+        hostName, this->period);
     this->shutdown ();
 }
 
@@ -45,7 +52,12 @@ const char *tcpSendWatchdog::name () const
     return "TCP Send Watchdog";
 }
 
-void tcpSendWatchdog::rescheduleSendTimer ()
+void tcpSendWatchdog::armSendWatchdog ()
 {
     this->reschedule ();
+}
+
+void tcpSendWatchdog::cancelSendWatchdog ()
+{
+    this->cancel ();
 }

@@ -26,6 +26,11 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
     osiTime current = osiTime::getCurrent ();
 
     if ( this->timeStamp == osiTime () ) {
+
+        if ( this->piiu ) {
+            this->piiu->beaconAnomalyNotify ();
+        }
+
         /* 
          * this is the 1st beacon seen - the beacon time stamp
          * was not initialized during BHE create because
@@ -33,17 +38,6 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
          * (nothing to do but set the beacon time stamp and return)
          */
         this->timeStamp = current;
-
-        /*
-         * be careful about using beacons to reset the connection
-         * time out watchdog until we have received a ping response 
-         * from the IOC (this makes the software detect reconnects
-         * faster when the server is rebooted twice in rapid 
-         * succession before a 1st or 2nd beacon has been received)
-         */
-        if (this->piiu) {
-            this->piiu->beaconAnomaly = TRUE;
-        }
 
         return netChange;
     }
@@ -55,23 +49,16 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
     if ( this->averagePeriod < 0.0 ) {
         ca_real totalRunningTime;
 
+        if ( this->piiu ) {
+            this->piiu->beaconAnomalyNotify ();
+        }
+
         /*
          * this is the 2nd beacon seen. We cant tell about
          * the change in period at this point so we just
          * initialize the average period and return.
          */
         this->averagePeriod = currentPeriod;
-
-        /*
-         * be careful about using beacons to reset the connection
-         * time out watchdog until we have received a ping response 
-         * from the IOC (this makes the software detect reconnects
-         * faster when the server is rebooted twice in rapid 
-         * succession before a 2nd beacon has been received)
-         */
-        if (this->piiu) {
-            this->piiu->beaconAnomaly = TRUE;
-        }
 
         /*
          * ignore beacons seen for the first time shortly after
@@ -82,16 +69,6 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
         totalRunningTime = this->timeStamp - programBeginTime;
         if ( currentPeriod <= totalRunningTime ) {
             netChange = true;
-#           ifdef DEBUG
-            {
-                char name[64];
-
-                ipAddrToA ( &this->inetAddr, name, sizeof (name) );
-                ca_printf ( 
-                    "new beacon from %s with period=%f running time to first beacon=%f\n", 
-                        name, currentPeriod, totalRunningTime );
-            }
-#           endif
         }
     }
     else {
@@ -107,12 +84,12 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
          */
         if ( currentPeriod >= this->averagePeriod * 1.25 ) {
 
+            /* 
+             * trigger on any missing beacon 
+             * if connected to this server
+             */    
             if ( this->piiu ) {
-                /* 
-                 * trigger on any missing beacon 
-                 * if connected to this server
-                 */
-                this->piiu->beaconAnomaly = true;
+                this->piiu->beaconAnomalyNotify ();
             }
 
             if ( currentPeriod >= this->averagePeriod * 3.25 ) {
@@ -123,18 +100,6 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
                 netChange = true;
             }
         }
-
-
-#       ifdef   DEBUG
-            if (netChange) {
-                char name[64];
-
-                ipAddrToA (&pBHE->inetAddr, name, sizeof(name));
-                ca_printf (
-                    "net resume seen %s cur=%f avg=%f\n", 
-                    name, currentPeriod, pBHE->averagePeriod);
-            }
-#       endif
 
         /*
          * Is this an IOC seen because of an IOC reboot
@@ -147,20 +112,19 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
          * problems because the echo response will tell us 
          * that the server is available
          */
-        if ( currentPeriod <= this->averagePeriod * 0.80 ) {
-#           ifdef DEBUG
-            {
-                char name[64];
-
-                ipAddrToA ( &this->inetAddr, name, sizeof (name) );
-                ca_printf (
-                    "reboot seen %s cur=%f avg=%f\n", 
-                    name, currentPeriod, this->averagePeriod);
-            }
-#           endif
-            netChange = true;
+        else if ( currentPeriod <= this->averagePeriod * 0.80 ) {
             if ( this->piiu ) {
-                this->piiu->beaconAnomaly = true;
+                this->piiu->beaconAnomalyNotify ();
+            }
+            netChange = true;
+        }
+        else {
+            /*
+             * update state of health for active virtual circuits 
+             * if the beacon looks ok
+             */
+            if ( this->piiu ) {
+                piiu->beaconArrivalNotify (); // reset connection activity watchdog
             }
         }
     

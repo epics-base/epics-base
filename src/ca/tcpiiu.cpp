@@ -93,37 +93,24 @@ void tcpiiu::connect ()
     /* 
      * attempt to connect to a CA server
      */
+    this->armSendWatchdog ();
     while (1) {
         int errnoCpy;
 
         status = ::connect ( this->sock, &this->dest.sa,
                 sizeof ( this->dest.sa ) );
         if ( status == 0 ) {
-            break;
+            this->cancelSendWatchdog ();
+            // put the iiu into the connected state
+            this->state = iiu_connected;
+            // start connection activity watchdog
+            this->connectNotify (); 
+            return;
         }
 
         errnoCpy = SOCKERRNO;
-        if ( errnoCpy == SOCK_EISCONN ) {
-            /*
-             * called connect after we are already connected 
-             * (this appears to be how they provide 
-             * connect completion notification)
-             */
-            break;
-        }
-        else if ( errnoCpy == SOCK_EALREADY ) {
-            return; 
-        }
-#ifdef _WIN32
-        /*
-         * including this with vxWorks appears to
-         * cause trouble
-         */
-        else if ( errnoCpy == SOCK_EINVAL ) { /* a SOCK_EALREADY alias used by early WINSOCK */
-            return; 
-        }
-#endif
-        else if ( errnoCpy == SOCK_EINTR ) {
+
+        if ( errnoCpy == SOCK_EINTR ) {
             if ( this->state == iiu_disconnected ) {
                 return;
             }
@@ -135,21 +122,13 @@ void tcpiiu::connect ()
             return;
         }
         else {  
+            this->cancelSendWatchdog ();
             ca_printf ( "Unable to connect because %d=\"%s\"\n", 
                 errnoCpy, SOCKERRSTR (errnoCpy) );
             this->shutdown ();
             return;
         }
     }
-
-    /*
-     * put the iiu into the connected state
-     */
-    this->state = iiu_connected;
-
-    this->rescheduleRecvTimer (); // reset connection activity watchdog
-
-    return;
 }
 
 /*
@@ -199,7 +178,7 @@ extern "C" void cacSendThreadTCP (void *pParam)
 
         pOutBuf = static_cast <char *> ( cacRingBufferReadReserveNoBlock (&piiu->send, &sendCnt) );
         while ( ! pOutBuf ) {
-            piiu->tcpSendWatchdog::cancel ();
+            piiu->cancelSendWatchdog ();
             pOutBuf = (char *) cacRingBufferReadReserve (&piiu->send, &sendCnt);
             if ( piiu->state != iiu_connected ) {
                 semBinaryGive ( piiu->sendThreadExitSignal );
@@ -302,7 +281,7 @@ void tcpiiu::recvMsg ()
     cacRingBufferWriteCommit (&this->recv, totalBytes);
     // cacRingBufferWriteFlush (&this->recv);
 
-    this->rescheduleRecvTimer (); // reschedule connection activity watchdog
+    this->messageArrivalNotify (); // reschedule connection activity watchdog
 
     return;
 }
@@ -419,7 +398,6 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     this->echoRequestPending = false;
     this->sendPending = false;
     this->pushPending = false;
-    this->beaconAnomaly = false;
     this->curDataMax = 0ul;
     this->curMsgBytes = 0ul;
     this->curDataBytes = 0ul;
@@ -607,7 +585,7 @@ bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
 void tcpiiu::flush ()
 {
     if ( cacRingBufferWriteFlush ( &this->send ) ) {
-        this->rescheduleSendTimer ();
+        this->armSendWatchdog ();
     }
 }
 
@@ -769,8 +747,6 @@ LOCAL void tcp_noop_action (tcpiiu * /* piiu */)
  */
 LOCAL void echo_resp_action (tcpiiu *piiu)
 {
-    piiu->echoResponseNotify ();
-    piiu->beaconAnomaly = false;
     return;
 }
 
@@ -1372,7 +1348,7 @@ int tcpiiu::pushStreamMsg (const caHdr *pmsg,
 
     if ( ! cacRingBufferWriteLockNoBlock ( &this->send, msgsize ) ) {
         if ( BlockingOk ) {
-            this->rescheduleSendTimer ();
+            this->armSendWatchdog ();
             cacRingBufferWriteLock ( &this->send );
         }
         else {

@@ -454,8 +454,13 @@ private:
 class tcpRecvWatchdog : public osiTimer {
 public:
     tcpRecvWatchdog (double periodIn, osiTimerQueue & queueIn, bool echoProtocolAcceptedIn);
-    void echoResponseNotify ();
+    ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
+    void messageArrivalNotify ();
+    void beaconArrivalNotify ();
+    void beaconAnomalyNotify ();
+    void connectNotify ();
+
 private:
     void expire ();
 	void destroy ();
@@ -465,16 +470,21 @@ private:
     virtual void shutdown () = 0;
     virtual void noopRequestMsg () = 0;
     virtual void echoRequestMsg () = 0;
+    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
     const bool echoProtocolAccepted;
-    bool echoResponsePending;
+    bool responsePending;
+    bool beaconAnomaly;
+    bool dead;
 };
 
 class tcpSendWatchdog : public osiTimer {
 public:
     tcpSendWatchdog (double periodIn, osiTimerQueue & queueIn);
-    void rescheduleSendTimer ();
+    ~tcpSendWatchdog ();
+    void armSendWatchdog ();
+    void cancelSendWatchdog ();
 private:
     void expire ();
 	void destroy ();
@@ -482,6 +492,7 @@ private:
 	double delay () const;
 	const char *name () const;
     virtual void shutdown () = 0;
+    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
 };
@@ -531,19 +542,17 @@ public:
     unsigned                contiguous_msg_count;
     unsigned                curMsgBytes;
     SOCKET                  sock;
-    unsigned char           state;   /* for use with iiu_conn_state enum */
+    iiu_conn_state          state;
     bool                    client_busy;
     bool                    echoRequestPending; 
     bool                    claimRequestsPending; 
     bool                    sendPending;
     bool                    recvPending;
     bool                    pushPending;
-    bool                    beaconAnomaly;
 
     virtual void show (unsigned level) const;
 
 private:
-
     bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
     int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
 

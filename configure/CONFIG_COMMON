@@ -188,6 +188,26 @@ TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLAS
 OBJSNAME = $(addsuffix $(OBJ),$(OBJS))
 
 #--------------------------------------------------
+# Product specific obj and resource(WIN32) files
+
+PRODNAME = $(addsuffix $(EXE),$(PROD))
+TESTPRODNAME = $(addsuffix $(EXE),$(TESTPROD))
+
+# Product dependancies
+PROD_OBJS=$(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS)))
+PROD_RESS=$(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS)))
+
+# Product obj and ress files for link line
+LD_OBJS=$($*_OBJS) $(PROD_OBJS)
+LD_RESS=$($*_RESS) $(PROD_RESS)
+
+#--------------------------------------------------
+# Library specific obj files
+
+LIBRARY_OBJS=$(addsuffix $(OBJ),$(basename $(SRCS) $(LIBSRCS)))
+LIBRARY_LD_OBJS=$($*_OBJS) $(LIBRARY_OBJS)
+
+#--------------------------------------------------
 # Depends flag
 DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
 
@@ -227,6 +247,12 @@ STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
 #--------------------------------------------------
 # ar definition default
 ARCMD = $(AR) $(ARFLAGS) $@
+
+#--------------------------------------------------
+# WIN95/NT source browser
+PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
+LIB_BAF_IOC=$(addsuffix $(BAF),$(basename $(LIBRARY_IOC)))
+LIB_BAF_HOST=$(addsuffix $(BAF),$(basename $(LIBRARY_HOST)))
 
 #--------------------------------------------------
 # depends definition 
@@ -278,13 +304,10 @@ DIRECTORY_TARGETS += $(INSTALL_DBD) $(INSTALL_INCLUDE)
 #	each list starts with the destination directory name(s)
 #	to make sure it's there
 
-INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
-INSTALL_LIBS= $(LIBNAME_IOC:%=$(INSTALL_LIB)/%)
-INSTALL_LIBS+= $(LIBNAME_HOST:%=$(INSTALL_LIB)/%)
-INSTALL_SHRLIBS= $(SHRLIBNAME_IOC:%=$(INSTALL_SHRLIB)/%)
-INSTALL_SHRLIBS+= $(SHRLIBNAME_HOST:%=$(INSTALL_SHRLIB)/%)
-INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME_IOC:%=$(INSTALL_LIB)/%)
-INSTALL_DLL_LINK_LIBS+=$(DLL_LINK_LIBNAME_HOST:%=$(INSTALL_LIB)/%)
+INSTALL_PROD= $(PRODNAME:%= $(INSTALL_BIN)/%)
+INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
+INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_SHRLIB)/%)
+INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)

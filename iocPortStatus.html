@@ -1,0 +1,250 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+</head>
+<body>
+
+<center>
+<h1>
+Status of iocCore port</h1></center>
+
+<center>Marty Kraimer
+<br>Nov 18, 1999</center>
+
+<p>This is a brief status of the iocCore port, what has changed since my
+last commit, and what needs to be done before we can run iocCore on something
+besides vxWorks.
+<p>In the following I state things as though the only remaining thing to
+do is implement osiSem and osiThread for other posixIOC. I realize that
+a bunck of problems will arise elsewhere when this is done but I really
+hope any such problems are minor.
+<p>Note also that I have only built for solaris and vxWorks.
+<h2>
+makeBaseApp</h2>
+The example does not work with the configure rules. We are working on this
+problem.
+<h2>
+Make</h2>
+Trying to build everything via a single Makefile in each source directory
+became too complicated. Janet has redone the build using Makefile.Host
+and Makefile.Ioc
+<p>We still are not handling single vs multithreaded properly. For now
+Makefile.Host is single threaded, Makefile.Ioc is multithreaded.
+<h2>
+libCom</h2>
+The osiXXX routines are very similar to what was previously checked in.
+Janet has implemented a generic version of osiWatchDog using Jeff's osiTimer.
+Thus for ports to other operating systems only osiSem and osiThread need
+to be implemented.
+<p>osiSem has changed since the last commit:
+<ul>
+<li>
+&nbsp;semXXXShow functions were added. It is permissible to make these
+empty functions.</li>
+
+<li>
+semMutexFlush no longer exists.</li>
+</ul>
+Some comments for Jeff
+<ul>
+<li>
+What is osiPoolStatus.c ? Look at libCom/os/vxworks/osiPoolStatus.c Is
+this a problem?</li>
+
+<li>
+Are any of you msi routine going to cause a problem for other operating
+systems? My guess is that a posix or generic version of most will suffice.
+This includes&nbsp; osiTime, osiTimer, osiSleep, osiSock, osiFilename.</li>
+
+<li>
+I will let you decide how to move osiXXX things&nbsp; from libCom/misc/...
+to libCom/osi/...</li>
+
+<li>
+osiMutex - This caused a problem building the new way. For now we are not
+referencing it in the Makefiles. It looks like only cas uses it. Can we
+just move it to cas?</li>
+</ul>
+ToDo before demonstration of iocCore of something besides vxWorks
+<ul>
+<li>
+osiSem.c and osiThread.c must be created in libCom/osi/os/posixIOC</li>
+
+<li>
+Make up application that properly runs. The key is a main program that
+does what is currenlt done in the st.cmd file.</li>
+</ul>
+
+<h2>
+Channel Access</h2>
+In ca/os/posixIOC I have created files caOsDependent.h and caOsDependent..c.
+I hope that these are close to what is needed for a pthreads version of
+iocCore. Until osiSem and osiThread are implemented for posix this code
+can not be tested. See details about channel access below.
+<br>&nbsp;
+<h2>
+CASR</h2>
+I deleted caswatchdog.c. It was not being built.
+<h2>
+src/vxWorks</h2>
+All vxWorks specific code is moved to src/vxWorks. If you are building
+for something besides vxWorks just comment out the build for vxWorks in
+src/Makefile.
+<h2>
+Sequencer</h2>
+The old sequencer has been moved to src/vxWorks. This is for compatibilty
+for existing vxWorks applications.
+<p>This version of the sequencer will not work on IOCS using the posixIOC
+version of Channel Access. The reason is the calls to ca_import and ca_import_cancel.
+The technique used for vxWorks will not work (at least easily) for pthreads
+since pthreads does not have task variables like vxWorks. Thus this needs
+to be rethought. Perhaps William already has solved this problem in his
+unbundled version of the sequencer.
+<h2>
+RTMS</h2>
+The following needs&nbsp; to be done.
+<ul>
+<li>
+Definitions added to configure</li>
+
+<li>
+If pthreads are supported then that is all; otherwise</li>
+
+<ul>
+<li>
+osiSem and osiThread must be created in libCom/osi/os/rtms</li>
+
+<li>
+caOsDependent.h and caOsDependent.c must be created in ca/os/rtms. Start
+with the version in ca/os/posixIOC</li>
+</ul>
+</ul>
+
+<h2>
+Details of CA conversion</h2>
+This is mainly of interest to Jeff. I will guess that Jeff will want to
+restructure the code so these are notes about what I did.
+<p>As we knew up frount, the biggest problem was the use of the vxWorks
+task variable facility. This is used because ca clients do not have to
+call ca_initialize or pass a ca private pointer to each ca_xxx library
+routine.&nbsp; I looked at what pthreads supports and came up with the
+following solution.
+<p>iocinf.h previously had the statements
+<blockquote>
+<pre>GLBLTYPE struct CA_STATIC *ca_static;</pre>
+</blockquote>
+This is replaced by the statements
+<blockquote>
+<pre>#include "caOsDependent.h"
+CA_OSD_CA_STATIC</pre>
+</blockquote>
+caOsDependent.h is created in each ca/os/xxx directory. For posix (single
+threaded), vms, vxWorks, and win32 it just nhas the definitions:
+<blockquote>
+<pre>#define CA_OSD_CA_STATIC \
+&nbsp;GLBLTYPE CA_STATIC *ca_static;
+#define CA_OSD_GET_CA_STATIC</pre>
+</blockquote>
+For posixIOC it is defined as:
+<blockquote>
+<pre>#include &lt;pthread.h>
+#define CA_OSD_CA_STATIC \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; extern pthread_key_t *pca_key;
+#define CA_OSD_GET_CA_STATIC \
+&nbsp; CA_STATIC *ca_static=(CA_STATIC *)pthread_getspecific(*pca_key);</pre>
+</blockquote>
+Then each ca public routine (those defined in cadef.h) that use ca_static
+have
+<blockquote>
+<pre>CA_OSD_GET_CA_STATIC</pre>
+</blockquote>
+as the last definition at the start of the routine. A look at ca_task_initialize
+in ca/os/posixIOC/caOsDependent.c shows how things are initialized for
+a pthread implementation.
+<p>Most of the private ca routines (defined internally or in iocinf.h)
+that use ca_static were modified to have ca_static as their first argument.
+<p>Now for some details
+<p>V5_vxWorks_patch.c seemed to be obsolete code. It is gone.
+<p>The following are no longer part of the os specific code.
+<ul>
+<li>
+cac_gettimeval is now implemented in access.c</li>
+
+<li>
+cac_block_for_io_completion is now implemented in iocinf.c</li>
+
+<li>
+cac_block_for_sg_completion is no longer needed.</li>
+
+<li>
+os_specific_sg_io_complete is no longer needed</li>
+
+<li>
+os_specific_sg_create is no longer needed</li>
+
+<li>
+os_specific_sg_delete is no longer needed</li>
+
+<li>
+cac_add_task_variable is no longer supported. See vxWorks below.</li>
+</ul>
+The following should not be part of the os specific code. Can we put them
+somewhere else? Maybe ca/bsd_depen.c ?
+<ul>
+<li>
+max_unix_fd</li>
+
+<li>
+caSetDefaultPrintfHandler</li>
+</ul>
+
+<p><br>vxWorks_depen.c is now ca/os/vxWorks/caOsDependent.c. In addition
+<ul>
+<li>
+It's functionality should be the same as previously. I moved the LOCAL
+routines to the end so that it was easier to understand what was needed.</li>
+
+<li>
+Some suggestions</li>
+
+<ul>
+<li>
+Can ca_channel_status be made a non os specific routine? The argument will
+not easily work for posixIOC.&nbsp; For now I am ignoring this problem.
+It is just not implemented for posixIOC</li>
+
+<li>
+Can the ca/os/posixIOC routines localUseName and&nbsp; caSetDefaultPrintfHandler
+be put in bsd_depen.c</li>
+</ul>
+
+<li>
+Problems</li>
+
+<ul>
+<li>
+ca_import and ca_import_cancel are a problem. These can NOT be easily implemented
+for posixIOC. Since it appears that they exist mainly for the sequencer,
+perhaps this is not a problem. I dont know what William is doing in the
+new sequencer. Note that definitions for ca_import and ca_import_cancel
+were removed from cadef.h</li>
+</ul>
+</ul>
+posix_depen.c is now ca/os/posix/caOsDependent.c.
+<br>&nbsp;
+<p>ca/os/posixIOC/caOsDependent is the os specific code for a pthread implementation.
+Since osiSem and osiThread are not implemented for pthread I can not test
+this code. I hope it is close to ,what is needed.
+<p>vms_depen.c is now /home/phoebus/MRK/epics/base/src/ca/os/vms/caOsDependent.c.
+I removed the routines no longer needed. I can not test this.
+<p>windows_depen.c is now ca/os/win32/caOsDependent.c. I removed the routines
+no longer needed. I can not test this. Note that you will also want an
+IOC version.
+<br>&nbsp;
+<br>&nbsp;
+<blockquote>&nbsp;</blockquote>
+
+</body>
+</html>

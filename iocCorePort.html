@@ -1,0 +1,705 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+</head>
+<body>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<h1>
+Porting iocCore</h1>
+
+<blockquote>
+<h3>
+Nov 17, 1999</h3>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+iocCore includes the following components of epics base:
+<ul>
+<li>
+Database locking, scanning, and processing</li>
+
+<li>
+Channel access client and server support</li>
+
+<li>
+Standard record types and soft device support</li>
+
+<li>
+Access security</li>
+
+<li>
+Other non-hardware support presently packaged with base</li>
+</ul>
+
+<p><br>The port is based on the following assumptions:
+<ul>
+<li>
+All hardware support&nbsp; is unbundled from base and thus does not need
+to be ported.</li>
+
+<li>
+For iocCore a multithreaded environment is necessary.</li>
+
+<li>
+osi&nbsp; components are defined such that</li>
+
+<ul>
+<li>
+vxWorks implementation has minimal overhead compared to vxWorks specific
+calls</li>
+
+<li>
+The components can be implemented via a combination of POSIX, POSIX.4 (posix
+real time), and POSIX threads (pthreads).</li>
+</ul>
+
+<li>
+For components that require different implementation for different environments</li>
+
+<ul>
+<li>
+The implementation may be via header and/or source files as long as user
+code can use the "prototype" header files.</li>
+</ul>
+</ul>
+
+<blockquote>
+<blockquote>
+<h2>
+Overview of Changes</h2>
+</blockquote>
+</blockquote>
+
+<h2>
+Replacements for existing vxWorks and epics components</h2>
+The following Operating System Independent libraries replace vxWorks specific
+libraries.
+<ul>
+<li>
+osiClock</li>
+
+<br>replaces tickGet, sysClockRateGet, TSgetTimeStamp and TSgetCurrentTime.
+<br>A generic and a vxWorks version is available
+<li>
+osiFindGlobalSymbol</li>
+
+<br>A generic version is provided that always returns failure.
+<br>a vxWorks version is provided that calls symFindByName.
+<li>
+osiInterrupt</li>
+
+<br>Replaces intLib
+<br>A generic version is provided that uses a global semaphore. It can
+be used for winXX, Unix, Linux, etc.
+<br>A vxWorks specific version is provided.
+<li>
+osiRing</li>
+
+<br>Replaces rngLib.
+<br>A generic version usable on all platforms is provided.
+<br>A vxWorks specific version is provided.
+<li>
+osiSem</li>
+
+<br>replaces semLib.h
+<br>A vxWorks version is provided.
+<br>No version has been written for other platforms.
+<li>
+osiThread</li>
+
+<br>replaces taskLib.h
+<br>A vxWorks version is provided.
+<br>No version exists for other platforms.
+<li>
+osiWatchdog</li>
+
+<br>replaces wdLib.h
+<br>A vxWorks version is provided.
+<br>No version exists for other platforms.</ul>
+In addition the following new base components are provided
+<ul>
+<li>
+cantProceed</li>
+
+<br>This is called by code that doesnt know what to do when an error occurs.
+<li>
+registry</li>
+
+<br>replaces symFindByName</ul>
+
+<h2>
+Registry</h2>
+It is not possible to expect every environment to supply an environment
+that makes it easy to implement&nbsp; vxWorks symFindByName. Instead a
+facility to register and find pointers to functions and structures is provided.
+This leaves the problem of registering everything currently located via
+calls to symFindByName. The following solves the problem:
+<ul>
+<li>
+Each "ioc" loads a single dbd file defining the complete set of record
+types, device support, and drivers for that "ioc". A utility is provided
+that reads this dbd file and generates a C routine registerRecordDeviceDriver,
+which registers the record,&nbsp; device, and driver support.</li>
+
+<li>
+dbLoadDatabase calls registerRecordDeviceDriver after loading the database.</li>
+
+<li>
+A version of registerRecordDeviceSupport is also provided which calls osiFindGlobalSymbol.
+If the underlying operating system properly implements&nbsp; osiFindGlobalSymbol,
+this version can be used without running the utility that generates the
+special version. For example this version works on vxWorks</li>
+
+<li>
+Nothing has been done to support things like subroutine records. It should
+not be hard.</li>
+</ul>
+
+<h2>
+Build Environment (Everyone's favorite subject :-)</h2>
+The build environment is different. The principal features are:
+<ul>
+<li>
+In source directories Makefile.Ioc replaces Makefile.Vx</li>
+
+<li>
+The new configuration files are located in base/configure</li>
+
+<li>
+At least for awhile base/config is still present so that old applications
+still build without major changes</li>
+</ul>
+
+<h2>
+task_params.h</h2>
+This will go away.
+<ul>
+<li>
+Thread names are determined by code that calls threadCreate</li>
+
+<li>
+Priorites and stack sizes are handled as described below in the description
+of thread</li>
+
+<li>
+Task creation options are&nbsp; determined by each platform specific version
+of thread.</li>
+</ul>
+
+<h2>
+module_types.h</h2>
+This goes away.
+<h2>
+vxWorks shell</h2>
+If the target is not for vxWorks, the vxWorks target shell is not available.
+IocInit, dbLoadRecords, etc&nbsp; must be&nbsp; called directly by main
+or the equivalent. The "nice" vxWorks debugging environment is not available
+although a nicer one using xgdb may be available.
+<p>How do we run dbpr, dbgf, etc?
+<h2>
+Interrupt Level</h2>
+The vxWorks intLock/intUnlock routines are an essential part of base. For
+example any code, including interrupt routines, can call callbackRequest.
+osiInterrupt is provided to solve this problem. For operating systems like
+vxWorks, in which everything runs in a shared memory, multithreaded kernel
+environment, an osi specific version must be provided. For other operating
+systems, e.g. winxx, Unix, Linux, a generic version is provided. The only
+restriction is that kernel code MUST not call any of the osi routines.
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<h2>
+Status Of Port</h2>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+The following has been done:
+<ul>
+<li>
+All code except the Sequencer and vxWorks dependent device and driver support
+has been converted to use the new libraries</li>
+
+<li>
+The registry has been implemented</li>
+
+<li>
+The example generated by makeBaseApp has been successfully tested on vxWorks.</li>
+
+<li>
+A separate subdirectory base/src/vxWorks has been created and all vxWorks
+specific code moved to this subdirectory. This makes it possible for existing
+vxWorks ioc applications to use the new system with only minor changes
+to the applications. The sequencer has also been moved to src/vxWorks.
+The version supplied will only run on vxWorks</li>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<h2>
+Work Remaining</h2>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+
+<li>
+Implement osiSem and osiThread for other platforms. If the implementation
+is done via posix (including posix real time and posix threads) then many
+platforms should be supported.</li>
+
+<li>
+Convert the sequencer to use osi calls. William Lupton has already implemented
+an alpha version. Also the sequencer will be unbundled from base.</li>
+
+<li>
+Finish the config and Makefile Changes.</li>
+
+<li>
+Modify makeBaseApp so that it uses the new method of building</li>
+
+<li>
+TEST TEST TEST</li>
+
+<blockquote>
+<blockquote>
+<h2>
+Prototype Definitions</h2>
+</blockquote>
+</blockquote>
+</ul>
+This section contains prototype definitions of what needs to be implemented
+for each port of iocCore.
+<p>A particular implementation may implement each function as desired BUT
+the final result must appear to user code like the definitions in this
+section. For example&nbsp; functions can be implemented via macros defined
+in a header file that replace the generic header file.
+<br>&nbsp;
+<h2>
+osiClock</h2>
+
+<pre>unsigned long clockGetCurrentTick();
+int clockGetRate();
+int clockGetEventTime(int event_number,TS_STAMP *ts);
+int clockGetCurrentTime(TS_STAMP* ts);</pre>
+A vxWorks specific version is provided that provides exactly the same semantics
+as 3.13.
+<p>A generic version is provided that should work on most platforms.
+<p>Perhaps it should be implemented via libCom/osiTime.
+<h2>
+osiFindGlobalSymbol</h2>
+
+<pre>void * osiFindGlobalSymbol(const char *name);</pre>
+A vxWorks version is provided that calls symFindByName. It is called by
+the registry if a name is not found in the registry itself.
+<p>A generic version is provided that always returns failure. If the generic
+version is used then all external symbols must be registered, See the registry
+for details.
+<h2>
+osiInterrupt</h2>
+
+<pre>int interruptLock();
+void interruptUnlock(int key);
+int interruptIsInterruptContext();
+void interruptContextMessage(const char *message);</pre>
+To lock the following must be done:
+<blockquote>
+<pre>int key;
+...
+key = interruptLock();
+...
+interruptUnlock(key);</pre>
+</blockquote>
+A vxWorks specific version is provided. It maps directly to intLib calls.
+<p>A generic version is provided that uses a global semaphore to lock.
+This version is intended for operating systems in which iocCore will run
+as a multithreaded process. The global semaphore is thus only global within
+the process.
+<h2>
+osiRing</h2>
+
+<pre>ringId&nbsp; ringCreate(int nbytes);
+void&nbsp;&nbsp;&nbsp; ringDelete(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringGet(ringId id, char *value,int nbytes);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringPut(ringId id, char *value,int nbytes);
+void&nbsp;&nbsp;&nbsp; ringFlush(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringFreeBytes(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringUsedBytes(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringSize(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringIsEmpty(ringId id);
+int&nbsp;&nbsp;&nbsp;&nbsp; ringIsFull(ringId id);</pre>
+A vxWorks specific version is provided that maps directly to rngLib calls.
+<p>A generic version is provided that works on all platforms.&nbsp; This
+version is currently 1.5 times slower than the vxWorks specific version.
+Perhaps some clever thought can make it as fast as rngLib.
+<p>osiRing has the following properties.
+<ul>
+<li>
+For a single writer it is not necessary to lock puts</li>
+
+<li>
+For a single reader it is not necessary to lock gets</li>
+
+<br>ringFlush should only be used if both gets and puts are locked.</ul>
+
+<h2>
+osiSem.h</h2>
+
+<pre>typedef void *semId;
+typedef enum {semTakeOK,semTakeTimeout,semTakeError} semTakeStatus;
+typedef enum {semEmpty,semFull} semInitialState;
+
+semId semBinaryCreate(int initialState);
+void semBinaryDestroy(semId id);
+void semBinaryGive(semId id);
+semTakeStatus semBinaryTake(semId id);
+void semBinaryTakeAssert(semId id);
+semTakeStatus semBinaryTakeTimeout(semId id, double timeOut);
+semTakeStatus semBinaryTakeNoWait(semId id);
+void semBinaryFlush(semId id);
+void semBinaryShow(semId id);
+
+semId semMutexCreate(void);
+void semMutexDestroy(semId id);
+void semMutexGive(semId id);
+semTakeStatus semMutexTake(semId id);
+void semMutexTakeAssert(semId id);
+semTakeStatus semMutexTakeTimeout(semId id, double timeOut);
+semTakeStatus semMutexTakeNoWait(semId id);
+void semMutexShow(semId id);
+
+</pre>
+
+<p><br>Mutual exclusion semaphores
+<ul>
+<li>
+MUST implement recursive locking</li>
+
+<li>
+SHOULD implement priority inheritance and be deletion safe</li>
+</ul>
+For POSIX
+<ul>
+<li>
+Binary can be implemented easily as a condition variable</li>
+
+<li>
+Mutex can be implemented via various POSIX facilities. Takes careful thought.
+A pthread mutex is not sufficient.</li>
+</ul>
+For vxWorks
+<ul>
+<li>
+the entire implementation of&nbsp; Binary and Mutex is via macros in a
+vxWorks specific header file.</li>
+</ul>
+
+<p><br>On a single threaded environment
+<ul>
+<li>
+Mutex and context are implemented as though the caller always has access
+to the resource.</li>
+
+<li>
+Binary issues an error message and terminates if an attempt is made to
+create an instance.</li>
+</ul>
+
+<h2>
+osiThread</h2>
+
+<pre>#define threadPriorityMax 99
+#define threadPriorityMin&nbsp; 0
+
+/*some generic values */
+#define threadPriorityLow 10
+#define threadPriorityMedium 50
+#define threadPriorityHigh 90
+
+
+/*some iocCore specific values */
+#define threadPriorityChannelAccessClient 10
+#define threadPriorityChannelAccessServer 20
+#define threadPriorityScanLow 60
+#define threadPriorityScanHigh 70
+
+/*
+&nbsp;*The following functions convert to/from osi (operating system independent)
+&nbsp;* and oss (operating system specific) priority values
+&nbsp;* NOTE THAT ALL OTHER CALLS USE osi priority values
+*/
+
+int threadGetOsiPriorityValue(int ossPriority);
+int threadGetOssPriorityValue(int osiPriority);
+
+/* stack sizes for each stackSizeClass are implementation and CPU dependent */
+typedef enum {
+&nbsp;&nbsp;&nbsp; threadStackSmall, threadStackMedium, threadStackBig
+} threadStackSizeClass;
+
+unsigned int threadGetStackSize(threadStackSizeClass size);
+
+typedef void *threadId;
+threadId threadCreate(const char *name,
+&nbsp;&nbsp;&nbsp; unsigned int priority, unsigned int stackSize,
+&nbsp;&nbsp;&nbsp; THREADFUNC funptr,void *parm);
+void threadDestroy(threadId id);
+void threadSuspend(threadId id);
+void threadResume(threadId id);
+int threadGetPriority(threadId id);
+void threadSetPriority(threadId id,int priority);
+void threadSetDestroySafe(threadId id);
+void threadSetDestroyUnsafe(threadId id);
+const char *threadGetName(threadId id);
+int threadIsEqual(threadId id1, threadId id2);
+int threadIsReady(threadId id);
+int threadIsSuspended(threadId id);
+void threadSleep(double seconds);
+threadId threadGetIdSelf(void);
+void threadLockContextSwitch(void);
+void threadUnlockContextSwitch(void);
+threadId threadNameToId(const char *name);</pre>
+Thread priorities are assigned a value from 0 to 99. A higher value means
+higher priority
+<p>Thread stack values are handled as follows:
+<ul>
+<li>
+threadGetStackSize cal be called to get one of three default sizes. Thus
+should be done whenever possible.</li>
+
+<li>
+Code can just set any size it desires. Such code is not portable.</li>
+</ul>
+For vxWorks osiThread is implement via calls to taskLib
+<p>For posix it should be possible (I hope)&nbsp; to implement thread via
+a combination of:
+<ul>
+<li>
+osiSem</li>
+
+<li>
+pthread and POSIX.4</li>
+
+<li>
+Special code</li>
+</ul>
+Thread is not implemented for a single threaded environment.
+<h2>
+osiWatchdog</h2>
+
+<pre>typedef void *watchdogId;
+typedef void (*WATCHDOGFUNC)(void *parm);
+
+watchdogId watchdogCreate ();
+void watchdogDestroy (watchdogId id);
+void watchdogStart(watchdogId id, int delaySeconds,WATCHDOGFUNC funptr,*parm);
+void watchdogCancel(watchdogId id);</pre>
+A vxWorks version is provided that maps directly into wdLib calls. A generic
+version is provided.
+<h2>
+c++ osi classes created by Jeff Hill</h2>
+
+<ul>
+<li>
+<b>osiTime</b></li>
+
+<li>
+<b>osiPoolStatus</b></li>
+
+<li>
+<b>osiSleep</b></li>
+
+<li>
+<b>osiTimer</b></li>
+</ul>
+
+<blockquote>
+<blockquote>
+<blockquote>
+<h2>
+New base supplied component</h2>
+</blockquote>
+</blockquote>
+</blockquote>
+
+<h2>
+cantProceed</h2>
+
+<pre>void cantProceed(const char *errorMessage);
+void *callocMustSucceed(size_t count, size_t size, const char *errorMessage);
+void *mallocMustSucceed(size_t size, const char *errorMessage);</pre>
+cantProceed prints error message and then
+<ul>
+<li>
+For a threaded environment suspends. This is for debugging purposes.</li>
+
+<li>
+For a non-threaded environment exits.</li>
+</ul>
+callocMustSucceed is like calloc except that it does not return if storage
+is not available. A lot of iocCore is initialized by iocInit. If memory
+allocation fails during iocInit it is not possible to recover. mallocMustSucceed
+is like malloc except that it does not return if storage is not available.
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<h1>
+REGISTRY</h1>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+iocCore currently uses symFindByName to dynamically bind the following:
+<ul>
+<li>
+record/device/driver support.</li>
+
+<br>The registration facility provides a safe and easy to use alternative
+to symFindByName
+<li>
+subroutine record subroutines.</li>
+
+<br>An easy to use solution must be developed.
+<li>
+initHooks</li>
+
+<br>A new implementation of initHooks is now provided. It provides a routine
+initHookRegister. This MUST be called by any routine that wants to be called
+during initialization.
+<li>
+devLib</li>
+
+<br>This has been moved to base/src/vxWorks. Thus for now it is only supported
+on vxWorks
+<li>
+drvTS.c</li>
+
+<br>This has been moved to base/src/vxWorks. Thus for now it is only supported
+on vxWorks
+<li>
+errSymLib.c</li>
+
+<br>This was rewritten to be independent of vxWorks.
+<li>
+epicsDynLink - obsolete. Gone.</li>
+
+<li>
+dev/symbDev</li>
+
+<br>Moved to base/src/vxWorks. Thus for now it is only supported on vxWorks.
+<li>
+any hardware related component</li>
+
+<br>Either moved to base/src/vxWorks. or unbundled from base.</ul>
+This only the first two items need a solution. The existing implementation
+solves the first problem. No solution has been provided for the subroutine
+records but it will not be hard implement.
+<h3>
+Overview</h3>
+The basic idea is to provide a registration facility. Any storage meant
+to be "globally" accessable must be registered before it can be accessed
+by other code.
+<p>A perl script is provided that reads the xxxApp.dbd file and produces
+a c file containing a routine registerRecordDeviceDriver, which registers
+all record/device/driver support defined in the xxxApp.dbd file.
+<h3>
+registry</h3>
+
+<blockquote>
+<pre>int registryAdd(void *registryID,const char *name,void *data);
+void *registryFind(void *registryID,const char *name);</pre>
+
+<pre>int registrySetTableSize(int size);
+void registryFree();
+int registryDump(void);</pre>
+</blockquote>
+This is the code which does the work. Each different set of things to register
+must have it's own unique ID. Everything to be registered is stored in
+the same gpHash table.
+<p>Routine registrySetTableSize is provided in case the default hash table
+size (1024 entries)&nbsp; is not sufficient.
+<h2>
+registryRecordType.h</h2>
+
+<blockquote>
+<pre>typedef int (*computeSizeOffset)(dbRecordType *pdbRecordType);
+
+typedef struct recordTypeLocation {
+&nbsp;&nbsp;&nbsp; struct rset *prset;
+&nbsp;&nbsp;&nbsp; computeSizeOffset sizeOffset;
+}recordTypeLocation;
+
+
+int registryRecordTypeAdd(const char *name,recordTypeLocation *prtl);
+recordTypeLocation *registryRecordTypeFind(const char *name);</pre>
+</blockquote>
+Some features:
+<ul>
+<li>
+Access to both the record support entry table and to the routine which
+computes the size and offset of each field are provided</li>
+
+<li>
+Type safe access is provided.</li>
+</ul>
+
+<h2>
+registryDeviceSupport</h2>
+
+<blockquote>
+<pre>int registryDeviceSupportAdd(const char *name,struct dset *pdset)
+struct dset *registryDeviceSupportFind(const char *name);</pre>
+</blockquote>
+This provides access to the device support entry table.
+<h3>
+registryDriverSupport</h3>
+
+<blockquote>
+<pre>int registryDriverSupportAdd(const char *name,struct drvet *pdrvet);
+struct drvet *registryDriverSupportFind(const char *name);
+
+/* The following function is generated by registerRecordDeviceDriver/pl */
+int registerRecordDeviceDriver(DBBASE *pdbbase);</pre>
+</blockquote>
+This provides access to the driver support entry table.
+<br>&nbsp;
+<h3>
+registerRecordDeviceDriver.pl</h3>
+This is the perl script which creates a c source file that registers record/device/driver
+support. Make rules are provided that
+<ul>
+<li>
+execute this script using the dbd file created by dbExpand</li>
+
+<li>
+compile the resulting C file</li>
+
+<li>
+Make the object file part of the xxxLib file</li>
+</ul>
+
+<h2>
+registerRecordDeviceDriver.c</h2>
+A version of this is provided for vxWorks. This version makes it unnecessary
+to use registerRecordDeviceDriver.pl or register other external names.
+Thus for vxWorks everything can work almost exactly like it did in release
+3.13.x
+</body>
+</html>

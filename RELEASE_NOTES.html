@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.51 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
    <title>EPICS Release baseR3.13.0.beta12
 </title>
 </head>
@@ -11,6 +11,31 @@
 <h1>
 EPICS Release baseR3.13.1</h1>
 
+<h4>
+November 20, 1998</h4>
+
+<h3>
+Changes since 3.13.1</h3>
+<b>dbStaticLib</b>
+<p>The DTYP field is always written. The NoRun version now keeps record
+instances keeps all records of each type in alphabetical order.
+<p><b>breakpoint tables</b>
+<p>Tables names were previously forced to be alphanumeric. This restriction
+is removed.
+<p><b>dbNotify</b>
+<p>If&nbsp; dbPutNotify called dbProcess and dbProcess returned an error
+the notify completion callback was called twice. This bug is fixed.
+<p><b>drvBB232</b>
+<p>This support was defining storage twice. A bug in the current gcc compiler
+supplied with tornado does not properl;y compile such code. The extra definitions
+are removed.
+<p><b>aiRecord and aoRecord</b>
+<p>eoff was not being reinitialized when conversion related fields were
+dynamically modified.
+<p><b>mbbiDirectRecord</b>
+<p>When just the record's severity changed, only monitors on the VAL fields
+were posted, no monitors on the single bit fields.
+<br>&nbsp;
 <h3>
 Changes between beta12 and 3.13.1</h3>
 <b><tt>iocLogClient</tt></b>

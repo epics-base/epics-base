@@ -47,7 +47,8 @@
  * .09	06-25-92        bg	Combined drvCompuSm.c and compu_sm_driver.c
  * .10	06-26-92        bg	Added level to compu_sm_io_report in drvCompuSm 
  *                              structure   
-*/
+ * .11	06-29-92	joh	took file ptr arg out of io report
+ */
 #include <vxWorks.h>
 #include <vme.h>
 #include <sysLib.h>
@@ -79,11 +80,9 @@ struct {
 	report,
 	init};
 
-static long report(fp)
-    FILE	*fp;
+static long report(level)
+int	level;
 {
-    register int i;
-
       compu_sm_io_report(level);
 }
 

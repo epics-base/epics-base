@@ -26,7 +26,7 @@ caStatus casMonEvent::cbFunc (
     casCoreClient & client, epicsGuard < epicsMutex > & guard )
 {
     return this->monitor.executeEvent ( 
-        client, * this, this->pValue, guard );
+        client, * this, *this->pValue, guard );
 }
 
 void casMonEvent::assign ( const gdd & valueIn )

@@ -25,6 +25,7 @@
 #endif
 
 #include "tsFreeList.h"
+#include "smartGDDPointer.h"
 
 #ifdef epicsExportSharedSymbols_casMonEventh
 #   define epicsExportSharedSymbols

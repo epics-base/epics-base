@@ -34,16 +34,16 @@ public:
 	//
 	virtual caStatus createChanResponse ( 
             const caHdrLargeArray &, const pvAttachReturn & );
-	caStatus readResponse ( casChannelI *pChan, const caHdrLargeArray &msg,
-			const smartConstGDDPointer &pDesc, const caStatus status);
-	caStatus readNotifyResponse ( casChannelI *pChan, const caHdrLargeArray &msg,
-			const smartConstGDDPointer &pDesc, const caStatus status);
+	caStatus readResponse ( casChannelI * pChan, const caHdrLargeArray & msg,
+			const gdd & desc, const caStatus status );
+	caStatus readNotifyResponse ( casChannelI *pChan, const caHdrLargeArray & msg,
+			const gdd & desc, const caStatus status );
 	caStatus writeResponse ( casChannelI &, 
             const caHdrLargeArray & msg, const caStatus status );
 	caStatus writeNotifyResponse ( casChannelI &, 
             const caHdrLargeArray &, const caStatus status );
 	caStatus monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
-		const smartConstGDDPointer & pDesc, const caStatus status );
+		const gdd & desc, const caStatus status );
     caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
         const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
@@ -91,12 +91,12 @@ private:
 	//
 	// accessRightsResponse()
 	//
-	caStatus accessRightsResponse (casChannelI *pciu);
+	caStatus accessRightsResponse ( casChannelI * pciu );
 
 	//
 	// these prepare the gdd based on what is in the ca hdr
 	//
-	caStatus read ( smartGDDPointer & pDesc );
+	caStatus read ( const gdd * & pDesc );
 	caStatus write ();
 
 	caStatus writeArrayData();
@@ -128,7 +128,7 @@ private:
 			const caStatus status );
 
 	caStatus casMonitorCallBack ( casMonitor &,
-        const smartConstGDDPointer & pValue );
+        const gdd & );
 
 	casStrmClient ( const casStrmClient & );
 	casStrmClient & operator = ( const casStrmClient & );

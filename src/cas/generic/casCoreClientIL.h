@@ -51,7 +51,7 @@ inline bool casCoreClient::okToStartAsynchIO ()
 }
 
 inline casMonEvent & casCoreClient::casMonEventFactory ( casMonitor & monitor, 
-        const smartConstGDDPointer & pNewValue )
+        const gdd & pNewValue )
 {
     return this->ctx.getServer()->casMonEventFactory ( monitor, pNewValue );
 }

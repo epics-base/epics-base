@@ -29,7 +29,6 @@
 //
 #include "errMdef.h"            // EPICS error codes 
 #include "gdd.h"                // EPICS data descriptors 
-#include "smartGDDPointer.h"    // auto ref gdd pointer
 #include "alarm.h"              // EPICS alarm severity/condition 
 
 #ifdef epicsExportSharedSymbols_casdefh

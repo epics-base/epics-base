@@ -70,12 +70,12 @@ caStatus casCoreClient::createChanResponse ( const caHdrLargeArray &, const pvAt
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::readResponse ( casChannelI *, const caHdrLargeArray &, 
-	    const smartConstGDDPointer &, const caStatus )
+	    const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::readNotifyResponse ( casChannelI *, const caHdrLargeArray &, 
-	    const smartConstGDDPointer &, const caStatus )
+	    const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
@@ -90,7 +90,7 @@ caStatus casCoreClient::writeNotifyResponse ( casChannelI &,
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::monitorResponse ( casChannelI &, const caHdrLargeArray &, 
-	const smartConstGDDPointer &, const caStatus )
+	const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
@@ -132,7 +132,7 @@ void casCoreClient::eventSignal()
 }
 
 caStatus casCoreClient::casMonitorCallBack ( casMonitor &,
-    const smartConstGDDPointer & )
+    const gdd & )
 {
     return S_cas_internal;
 }

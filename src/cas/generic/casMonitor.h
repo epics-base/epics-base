@@ -39,7 +39,7 @@
 class casMonitorCallbackInterface { // X aCC 655
 public:
 	virtual caStatus casMonitorCallBack ( class casMonitor &,
-        const smartConstGDDPointer & pValue ) = 0;
+        const gdd & ) = 0;
 };
 
 class casEvent;
@@ -56,11 +56,11 @@ public:
         tsDLList < casEvent > & eventLogQue, 
         casMonEvent * pLog, const gdd & event );
     caStatus response ( casCoreClient & client,
-        const smartConstGDDPointer & value );
+        const gdd & value );
     void show ( unsigned level ) const;
     bool selected ( const casEventMask & select ) const;
 	caStatus executeEvent ( casCoreClient &, 
-        casMonEvent &, smartConstGDDPointer &,
+        casMonEvent &, const gdd &,
         epicsGuard < epicsMutex > & );
     bool matchingClientId ( caResId clientIdIn ) const;
     unsigned numEventsQueued () const;

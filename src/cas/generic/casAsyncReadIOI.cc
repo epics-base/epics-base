@@ -63,13 +63,13 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO ()
 
 	case CA_PROTO_READ_NOTIFY:
 		status = client.readNotifyResponse ( &this->chan, 
-				this->msg, this->pDD, 
+				this->msg, *this->pDD, 
 				this->completionStatus);
         break;
 
 	case CA_PROTO_EVENT_ADD:
 		status = client.monitorResponse ( this->chan,
-				this->msg, this->pDD,
+				this->msg, *this->pDD,
 				this->completionStatus);
 		break;
 

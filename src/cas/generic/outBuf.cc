@@ -52,7 +52,10 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
     msgsize = CA_MESSAGE_ALIGN ( msgsize );
 
     if ( msgsize > this->bufSize ) {
-        return S_cas_hugeRequest;
+        this->expandBuffer ();
+        if ( msgsize > this->bufSize ) {
+            return S_cas_hugeRequest;
+        }
     }
 
     stackNeeded = this->bufSize - msgsize;
@@ -62,7 +65,7 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
         //
         // Try to flush the output queue
         //
-        this->flush ( this->stack-stackNeeded );
+        this->flush ( this->stack - stackNeeded );
 
         //
         // If this failed then the fd is nonblocking 
@@ -82,48 +85,47 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
     return S_cas_success;
 }
 
+// code size is allowed to increase here somewhat in the
+// interest of efficency since this is a very frequently
+// called function
 caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t responseSpecific, void **ppPayload )
 {
     ca_uint32_t alignedPayloadSize = CA_MESSAGE_ALIGN ( payloadSize );
-    ca_uint32_t hdrSize;
+    char * pPayload;
 
     if ( alignedPayloadSize < 0xffff && nElem < 0xffff ) {
-        hdrSize = sizeof ( caHdr );
-    }
-    else {
-        hdrSize = sizeof ( caHdr ) + 2 * sizeof (ca_uint32_t);
-    }
-
-    caHdr * pHdr;
-    caStatus status = this->allocRawMsg ( hdrSize + alignedPayloadSize,
-                                          reinterpret_cast < void ** > ( & pHdr ) );
-    if ( status != S_cas_success ) {
-        if ( status == S_cas_hugeRequest ) {
-            this->expandBuffer ();
-            status = this->allocRawMsg ( hdrSize + alignedPayloadSize, 
-                                         reinterpret_cast < void ** > ( & pHdr ) );
-            if ( status != S_cas_success ) {
-                return status;
-            }
-        }
-        else {
+        ca_uint32_t msgSize = sizeof ( caHdr ) + alignedPayloadSize;
+        caHdr * pHdr;
+        caStatus status = this->allocRawMsg ( 
+            msgSize, reinterpret_cast < void ** > ( & pHdr ) );
+        if ( status != S_cas_success ) {
             return status;
         }
-    }
 
-    pHdr->m_cmmd = epicsHTON16 ( response );
-    pHdr->m_dataType = epicsHTON16 ( dataType );
-    pHdr->m_cid = epicsHTON32 ( cid );
-    pHdr->m_available = epicsHTON32 ( responseSpecific );
-    char * pPayload;
-    if ( hdrSize == sizeof ( caHdr ) ) {
+        pHdr->m_cmmd = epicsHTON16 ( response );
+        pHdr->m_dataType = epicsHTON16 ( dataType );
+        pHdr->m_cid = epicsHTON32 ( cid );
+        pHdr->m_available = epicsHTON32 ( responseSpecific );
         pHdr->m_postsize = epicsHTON16 ( static_cast < epicsUInt16 > ( alignedPayloadSize ) );
         pHdr->m_count = epicsHTON16 ( static_cast < epicsUInt16 > ( nElem ) );
         pPayload = reinterpret_cast < char * > ( pHdr + 1 );
     }
     else {
+        ca_uint32_t msgSize = sizeof ( caHdr ) + 
+            2 * sizeof (ca_uint32_t) + alignedPayloadSize;
+        caHdr * pHdr;
+        caStatus status = this->allocRawMsg ( 
+            msgSize, reinterpret_cast < void ** > ( & pHdr ) );
+        if ( status != S_cas_success ) {
+            return status;
+        }
+
+        pHdr->m_cmmd = epicsHTON16 ( response );
+        pHdr->m_dataType = epicsHTON16 ( dataType );
+        pHdr->m_cid = epicsHTON32 ( cid );
+        pHdr->m_available = epicsHTON32 ( responseSpecific );
         pHdr->m_postsize = epicsHTON16 ( 0xffff );
         pHdr->m_count = epicsHTON16 ( 0 );
         ca_uint32_t * pLW = reinterpret_cast < ca_uint32_t * > ( pHdr + 1 );
@@ -142,7 +144,7 @@ caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
         *ppPayload = pPayload;
     }
 
-    return status;
+    return S_cas_success;
 }
 
 //

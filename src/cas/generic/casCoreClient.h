@@ -57,16 +57,16 @@ public:
 		const caHdrLargeArray &, const pvAttachReturn &);
 	virtual caStatus readResponse (
 		casChannelI *, const caHdrLargeArray &, 
-        const smartConstGDDPointer &, const caStatus ); 
+        const gdd &, const caStatus ); 
 	virtual caStatus readNotifyResponse (
 		casChannelI *, const caHdrLargeArray &, 
-        const smartConstGDDPointer &, const caStatus );
+        const gdd &, const caStatus );
 	virtual caStatus writeResponse ( casChannelI &, 
         const caHdrLargeArray &, const caStatus );
 	virtual caStatus writeNotifyResponse ( casChannelI &, 
         const caHdrLargeArray &, const caStatus );
 	virtual caStatus monitorResponse ( casChannelI &, 
-        const caHdrLargeArray &, const smartConstGDDPointer &, 
+        const caHdrLargeArray &, const gdd &, 
         const caStatus status );
 	virtual caStatus accessRightsResponse ( casChannelI * );
     virtual caStatus enumPostponedCreateChanResponse ( 
@@ -97,7 +97,7 @@ public:
     void enableEvents ();
     void disableEvents ();
     caStatus casMonitorCallBack ( casMonitor &,
-        const smartConstGDDPointer & );
+        const gdd & );
     void postEvent ( tsDLList <casMonitor > &, 
         const casEventMask &select, const gdd &event );
 

@@ -137,7 +137,7 @@ inline void caServerI::unlock () const
 }
 
 inline casMonEvent & caServerI::casMonEventFactory ( casMonitor & monitor, 
-            const smartConstGDDPointer & pNewValue )
+            const gdd & pNewValue )
 {
     return * new ( this->casMonEventFreeList ) casMonEvent ( monitor, pNewValue );
 }

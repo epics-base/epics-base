@@ -46,7 +46,7 @@ casMonitor::~casMonitor()
 }
 
 caStatus casMonitor::response ( casCoreClient & client,
-                               const smartConstGDDPointer & value )
+                               const gdd & value )
 {
     if ( this->pChannel ) {
         // reconstruct request header
@@ -101,15 +101,13 @@ void casMonitor::installNewEventLog (
 }
 
 caStatus casMonitor::executeEvent ( casCoreClient & client, 
-    casMonEvent & ev, smartConstGDDPointer & pValue,
+    casMonEvent & ev, const gdd & value,
     epicsGuard < epicsMutex > & guard )
 {
-    assert ( pValue.valid() );
-
     if ( this->pChannel ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         caStatus status = this->callBackIntf.casMonitorCallBack ( 
-                *this, pValue );
+                *this, value );
 	    if ( status != S_cas_success ) {
             return status;
         }

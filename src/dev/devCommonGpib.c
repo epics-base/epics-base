@@ -670,6 +670,8 @@ struct link	*plink;
     pdpvt = (struct gpibDpvt *) malloc(sizeof(struct gpibDpvt));
     prec->dpvt = (void *) pdpvt;
 
+    pdpvt->head.dmaTimeout = parmBlock->dmaTimeout;
+
     pdpvt->precord = prec;
     pdpvt->parm = -1;     /* In case the sscanf fails */
     pdpvt->linkType = plink->type;
@@ -2097,8 +2099,8 @@ unsigned short	val;	/* used for EFAST operations only */
     switch (cmdType) {
     case GPIBWRITE:		/* write the message to the GPIB listen adrs */
 
-        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode,
-				pdpvt->msg, strlen(pdpvt->msg));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, pdpvt->msg, 
+				strlen(pdpvt->msg), pdpvt->head.dmaTimeout);
 
 
 	if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
@@ -2108,8 +2110,8 @@ unsigned short	val;	/* used for EFAST operations only */
 	      taskDelay(parmBlock->respond2Writes);
 	    }
 
-	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
-				pdpvt->rsp, pCmd->rspLen);
+	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, pdpvt->rsp, 
+				pCmd->rspLen, pdpvt->head.dmaTimeout);
 
             /* if user specified a secondary convert routine, call it */
 
@@ -2121,8 +2123,8 @@ unsigned short	val;	/* used for EFAST operations only */
     case GPIBREAD:		/* write the command string */
     case GPIBEFASTI:
 
-        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
-				pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, pCmd->cmd, 
+				strlen(pCmd->cmd), pdpvt->head.dmaTimeout);
         if (status == ERROR)
         {
 	    break;
@@ -2142,8 +2144,8 @@ unsigned short	val;	/* used for EFAST operations only */
     case GPIBRAWREAD:   /* for SRQs, read the data w/o a sending a command */
 
 	/* read the instrument  */
-	status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
-				pdpvt->msg, pCmd->msgLen);
+	status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, pdpvt->msg, 
+				pCmd->msgLen, pdpvt->head.dmaTimeout);
 	if (status == ERROR)
 	{
 	    break;
@@ -2162,13 +2164,13 @@ unsigned short	val;	/* used for EFAST operations only */
 
     case GPIBREADW:		/* for SRQs, write the command first */
     case GPIBEFASTIW:
-        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
-				pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, pCmd->cmd, 
+				strlen(pCmd->cmd), pdpvt->head.dmaTimeout);
 	break;
 
     case GPIBCMD:		/* write the cmd to the GPIB listen adrs */
-        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
-				pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, pCmd->cmd, 
+				strlen(pCmd->cmd), pdpvt->head.dmaTimeout);
 
         if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
         {   /* device responds to write commands, read the response */
@@ -2178,8 +2180,8 @@ unsigned short	val;	/* used for EFAST operations only */
             }
 
 
-	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
-				pdpvt->rsp, pCmd->rspLen);
+	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, pdpvt->rsp, 
+				pCmd->rspLen, pdpvt->head.dmaTimeout);
 
             /* if user specified a secondary convert routine, call it */
 
@@ -2194,8 +2196,8 @@ unsigned short	val;	/* used for EFAST operations only */
     case GPIBEFASTO:		/* write the enumerated cmd from the P3 array */
         if (pCmd->P3[val] != NULL)
 	{
-	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode, 
-				pCmd->P3[val], strlen(pCmd->P3[val]));
+	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode, pCmd->P3[val], 
+				strlen(pCmd->P3[val]), pdpvt->head.dmaTimeout);
 
             if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
             {   /* device responds to write commands, read the response */
@@ -2205,7 +2207,7 @@ unsigned short	val;	/* used for EFAST operations only */
                 }
     
 	        status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
-				pdpvt->rsp, pCmd->rspLen);
+				pdpvt->rsp, pCmd->rspLen, pdpvt->head.dmaTimeout);
     
                 /* if user specified a secondary convert routine, call it */
     

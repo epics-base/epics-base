@@ -360,7 +360,6 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 {
 	int		nss;
 	SSCB		*pSS;
-	extern int	ca_static; /* CA static variable */
 
 #ifdef	DEBUG_CLEANUP
 	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n", pSP->pProgName, pSP, pSP, tid);
@@ -416,8 +415,8 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 #ifdef	DEBUG_CLEANUP
 		logMsg("   ca_import_cancel(0x%x)\n", pSS->taskId);
 #endif	/*DEBUG_CLEANUP*/
-		/*ca_import_cancel(pSS->taskId);*/
-		taskVarDelete(pSS->taskId, &ca_static);
+		SEVCHK(ca_import_cancel(pSS->taskId), 
+				"CA import cancel failed!");
 	}
 
 	/* Close the log file */

@@ -193,7 +193,6 @@ long seq_disconnect(SPROG *pSP)
 {
 	CHAN		*pDB;
 	STATUS		status;
-	extern int	ca_static;
 	int		i;
 	extern int	seqAuxTaskId;
 	SPROG		*pMySP; /* will be NULL if this task is not a sequencer task */
@@ -239,7 +238,7 @@ long seq_disconnect(SPROG *pSP)
 #ifdef	DEBUG_DISCONNECT
 		logMsg("seq_disconnect: ca_import_cancel\n");
 #endif	/*DEBUG_DISCONNECT*/
-		SEVCHK(ca_import_cancel(taskIdSelf(), 
+		SEVCHK(ca_import_cancel(taskIdSelf()), 
 			"seq_disconnect: ca_import_cancel() failed?");
 	}
 

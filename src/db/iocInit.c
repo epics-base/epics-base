@@ -98,6 +98,8 @@
 #include	<envDefs.h>
 #include	<dbStaticLib.h>
 #include	<initHooks.h>
+#include	<drvTS.h>
+#include	<asLib.h>
 
 /*This module will declare and initilize module_type variables*/
 #define MODULE_TYPES_INIT 1

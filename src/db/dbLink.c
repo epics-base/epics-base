@@ -87,6 +87,7 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<special.h>
+#include	<asLib.h>
 
 extern struct dbBase *pdbBase;
 
@@ -5835,7 +5836,7 @@ long dbPut(
 		if(special==SPC_SCAN) {
 		    scanAdd(precord);
 		} else if(special==SPC_AS) {
-		    asChangeGroup(&precord->asp,precord->asg);
+		    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
 		}
 	    }
 	    else {

@@ -703,7 +703,7 @@ DbRecDes(fp, fflag)
 	    for (j = 0; j < endNumJ; j++) {
 		printf("%3d %4.4s",
 		       precDes->papRecTypDes[begNumI]->sortFldInd[j],
-		       &precDes->papRecTypDes[begNumI]->sortFldName[j]);
+		       (char *)&precDes->papRecTypDes[begNumI]->sortFldName[j]);
 		if (!((j + 1) % 8))
 		    printf("\n");
 	    }

@@ -1761,4 +1761,56 @@ char *record_name;
  
   return(0);
 }
+
+int dbllsdblinks(int lset)
+{
+    int			i,link;
+    struct recLoc	*precLoc;
+    struct recDes	*precDes;
+    struct recTypDes	*precTypDes;
+    struct recHeader	*precHeader;
+    RECNODE		*precNode;
+    struct fldDes	*pfldDes;
+    struct dbCommon	*precord;
+    struct link		*plink;
+    
+    if(!(precHeader = pdbBase->precHeader)) return(-1);
+    if(!(precDes = pdbBase->precDes)) return(-1);
+    for(i=0; i< (precHeader->number); i++) {
+	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
+	precTypDes = precDes->papRecTypDes[i];
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
+	    precord = precNode->precord;
+	    /* If NAME is null then skip this record*/
+	    if(!(precord->name[0])) continue;
+	    if(precord->lset != lset) continue; 
+	    printf("%s\n",precord->name);
+	    for(link=0; (link<precTypDes->no_links) ; link++) {
+		    struct dbAddr	*pdbAddr;
 
+		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
+                   /*
+                    *  Find link structure, which is at an offset in the record
+                    */
+		    plink = (struct link *)((char *)precord + pfldDes->offset);
+                   /* Ignore link if type is constant, channel access, or hardware specific */
+		    if(plink->type != DB_LINK) continue;
+		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+		    if(pfldDes->field_type==DBF_INLINK) {
+			printf("\t INLINK");
+		    } else if(pfldDes->field_type==DBF_OUTLINK) {
+			printf("\tOUTLINK");
+		    } else if(pfldDes->field_type==DBF_FWDLINK) {
+			printf("\tFWDLINK");
+		    }
+		    printf(" %s %s",
+			((plink->value.db_link.process_passive)?" PP":"NPP"),
+			((plink->value.db_link.maximize_sevr)?" MS":"NMS"));
+		    printf(" %s\n",pdbAddr->precord->name);
+	    }
+	}
+    }
+    return(0);
+}

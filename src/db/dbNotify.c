@@ -38,6 +38,7 @@
 #include	<string.h>
 #include	<taskLib.h>
 #include	<semLib.h>
+#include	<sysLib.h>
 
 #include	<dbDefs.h>
 #include	<fast_lock.h>

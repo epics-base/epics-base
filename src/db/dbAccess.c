@@ -94,6 +94,7 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<special.h>
+#include	<asLib.h>
 
 extern struct dbBase *pdbBase;
 extern long lset_stack_not_empty;
@@ -679,7 +680,7 @@ long dbFastLinkPut(
                   }
                }
                else if (special == SPC_AS) {
-                   asChangeGroup(&pdest->asp, pdest->asg);
+                   asChangeGroup((ASMEMBERPVT *)&pdest->asp, pdest->asg);
                }
           }
           else {

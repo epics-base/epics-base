@@ -38,6 +38,7 @@
 #include	<stdio.h>
 #include 	<ellLib.h>
 #include 	<taskLib.h>
+#include 	<sysLib.h>
 
 #include        <dbDefs.h>
 #include        <errMdef.h>

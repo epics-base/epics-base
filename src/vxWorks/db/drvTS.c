@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.12  1995/08/17  20:35:09  jbk
+ * fixed all the -pendantic errors (pain)
+ *
  * Revision 1.11  1995/08/17  19:43:04  jbk
  * Completed the accurate time stamp change.  event number 0 is current time
  * updated at 60HZ, event -1 is the best time that can be provided (1000Hz in
@@ -188,7 +191,7 @@ static long (*TSdriverInit)();
 #ifdef __cplusplus
 extern "C" {
 #endif
-long TSinit();		/* called by iocInit currently */
+long TSinit(void);		/* called by iocInit currently */
 long TSreport();	/* callable from vxWorks shell */
 
 /* test functions */
@@ -427,7 +430,7 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 /*	
 	TSinit() - initialize the driver, determine mode.
 */
-long TSinit()
+long TSinit(void)
 {
 	SYM_TYPE stype;
 	char tz[100],min_west[20];

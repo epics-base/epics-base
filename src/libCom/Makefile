@@ -94,11 +94,13 @@ INC += shareLib.h
 INC += truncateFile.h
 INC += unixFileName.h
 INC += locationException.h
+INC += ipAddrToAsciiAsynchronous.h
 SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c
 SRCS += epicsString.c
 SRCS += truncateFile.c
+SRCS += ipAddrToAsciiAsynchronous.cpp
 
 # From osi
 SRC_DIRS += $(LIBCOM)/osi
@@ -127,6 +129,7 @@ INC += osiMutex.h
 INC += osiEvent.h
 INC += osiProcess.h
 INC += osiUnistd.h
+INC += osiWireFormat.h
 
 SRCS += osdSock.c
 SRCS += osiSock.c

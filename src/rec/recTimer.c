@@ -41,6 +41,8 @@
  * .08  07-03-89        lrd     add processing a forward link
  * .09  08-15-89        lrd     add post events for timing pulse 1 fields
  * .10  10-15-90	mrk	extensible record and device support
+ * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
+ * .12  12-02-91        jba     Added cmd control to io-interrupt processing
  */
 
 #include	<vxWorks.h>
@@ -103,7 +105,8 @@ long get_ioint_info();
 struct dset devTmMizar8310={4,NULL,NULL,NULL,get_ioint_info};
 struct dset devTmDg535={4,NULL,NULL,NULL,get_ioint_info};
 struct dset devTmVxiAt5={4,NULL,NULL,NULL,get_ioint_info};
-static long get_ioint_info(ptimer,io_type,card_type,card_number)
+static long get_ioint_info(cmd,ptimer,io_type,card_type,card_number)
+    short               *cmd;
     struct timerRecord     *ptimer;
     short               *io_type;
     short               *card_type;
@@ -181,15 +184,7 @@ static void monitor(ptimer)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=ptimer->stat;
-        sevr=ptimer->sevr;
-        nsta=ptimer->nsta;
-        nsev=ptimer->nsev;
-        /*set current stat and sevr*/
-        ptimer->stat = nsta;
-        ptimer->sevr = nsev;
-        ptimer->nsta = 0;
-        ptimer->nsev = 0;
+        recGblResetSevr(ptimer,stat,sevr,nsta,nsev);
 
         /* Flags which events to fire on the value field */
         monitor_mask = 0;
@@ -287,18 +282,12 @@ struct timerRecord	*ptimer;
 		status = dbGetLink(&(ptimer->torg.value.db_link),ptimer,DBR_FLOAT,
                 &(ptimer->trdl),&options,&nRequest);
                 if(status!=0){
-                       if(ptimer->nsev < VALID_ALARM) {
-                               ptimer->nsev = VALID_ALARM;
-                               ptimer->nsta = LINK_ALARM;
-                       }
+                       recGblSetSevr(ptimer,LINK_ALARM,VALID_ALARM);
                        return;
                 }
         }
 	if (ptimer->out.type != VME_IO) {
-		if(ptimer->nsev<VALID_ALARM) {
-			ptimer->nsta = WRITE_ALARM;
-			ptimer->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(ptimer,WRITE_ALARM,VALID_ALARM);
 		return;
 	}
 	pvmeio = (struct vmeio *)(&ptimer->out.value);
@@ -325,10 +314,7 @@ struct timerRecord	*ptimer;
 	  ((ptimer->tevt == 0)?0:post_event),	/* addr of event post routine */
 	  (int)ptimer->tevt)		/* event to post on trigger */
 	    != 0){
-		if (ptimer->nsev<VALID_ALARM) {
-			ptimer->nsta = WRITE_ALARM;
-			ptimer->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(ptimer,WRITE_ALARM,VALID_ALARM);
 	}
 	return;
 }

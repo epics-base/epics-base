@@ -585,7 +585,7 @@ sent to the UDP port specified in the EPICS_CA_REPEATER_PORT parameter and
 fans any beacons received out to any CA client program running on the same
 host that have registered themselves with the CA Repeater. If the CA Repeater
 is not already running on a workstation, then the "caRepeater" program must
-be in your path before using the CA client library for the first time. </p>
+be in your path before using the CA client library for the first time.</p>
 
 <p>If a host based IOC is run on the same workstation with standalone CA
 client processes, then it is probably best to start the caRepeater process
@@ -741,16 +741,21 @@ Interval</a>.</p>
 
 <p>CA servers build a list of addresses to send beacons to during
 initialization. If EPICS_CAS_AUTO_BEACON_ADDR_LIST has the value "YES" then
-the beacon address list will contain at least the broadcast address of all
-LAN interfaces found in the host and the destination address of all
-point-to-point interfaces found in the host.</p>
+the beacon address list will be automatically configured to contain the
+broadcast addresses of all LAN interfaces found in the host and the
+destination address of all point-to-point interfaces found in the host.
+However, if the user also defines EPICS_CAS_INTF_ADDR_LIST then beacon
+address list automatic configuration is constrained to the network interfaces
+specified therein, and therefore only the broadcast addresses of the
+specified LAN interfaces, and the destination addresses of all specified
+point-to-point links, will be automatically configured.</p>
 
 <p>If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents will be used to
-augment this list. Individual entries in EPICS_CAS_BEACON_ADDR_LIST may
-override the destination port number if ":nnn" follows the host name or IP
-address there. Alternatively, if EPICS_CAS_BEACON_ADDR_LIST is not defined,
-EPICS_CA_ADDR_LIST is defined, and EPICS_CAS_INTF_ADDR_LIST is not defined,
-then the contents of EPICS_CA_ADDR_LIST will be used to augment the list.
+augment any automatic configuration of the beacon address list. Individual
+entries in EPICS_CAS_BEACON_ADDR_LIST may override the destination port
+number if ":nnn" follows the host name or IP address there. Alternatively,
+when both EPICS_CAS_BEACON_ADDR_LIST and EPICS_CAS_INTF_ADDR_LIST are not
+defined then the contents of EPICS_CA_ADDR_LIST is used to augment the list.
 Otherwise, the list is not augmented.</p>
 
 <p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for

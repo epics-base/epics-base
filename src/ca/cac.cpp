@@ -171,9 +171,10 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
             tmp[0] = '\0';
         }
         len = strlen ( tmp ) + 1;
-        this->pUserName = new char [len];
+        // Tornado II doesnt like new ( std::nothrow )
+        this->pUserName = new /*( std::nothrow )*/ char [ len ];
         if ( ! this->pUserName ) {
-            throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
+            throw std::bad_alloc ();
         }
         strncpy ( this->pUserName, tmp, len );
     }
@@ -234,7 +235,8 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     }
 
     if ( ! enablePreemptiveCallbackIn ) {
-        this->pCallbackLocker = new ( std::nothrow ) callbackAutoMutex ( *this );
+        // Tornado II doesnt like new ( std::nothrow )
+        this->pCallbackLocker = new /*( std::nothrow )*/ callbackAutoMutex ( *this );
         if ( ! this->pCallbackLocker ) {
             osiSockRelease ();
             delete [] this->pUserName;

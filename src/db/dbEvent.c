@@ -1,5 +1,5 @@
 /* dbEvent.c */
-/* share/src/db  $Id$ */
+/* $Id$ */
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
  * 	Author: 	Jeffrey O. Hill 
@@ -192,10 +192,14 @@ struct event_user *db_init_events(void)
   	evUser = (struct event_user *) 
 		freeListCalloc(dbevEventUserFreeList);
   	if(!evUser)
-    		return NULL;
+        return NULL;
 
   	evUser->firstque.evUser = evUser;
-        evUser->firstque.writelock = semMutexCreate();
+    evUser->firstque.writelock = semMutexCreate();
+    if (!evUser->firstque.writelock) {
+        freeListFree (dbevEventUserFreeList, evUser);
+        return NULL;
+    }
 	evUser->ppendsem = semBinaryCreate(semEmpty);
 	if(!evUser->ppendsem){
                 semMutexDestroy(evUser->firstque.writelock);
@@ -210,7 +214,6 @@ struct event_user *db_init_events(void)
 		return NULL;
 	}
 	evUser->flowCtrlMode = FALSE;
-	evUser->nDuplicates = 0u;
 
   	return evUser;
 }
@@ -304,7 +307,12 @@ struct event_block	*pevent /* ptr to event blk (not required) */
       			if(!tmp_que) 
         			return ERROR;
       			tmp_que->evUser = evUser;
-                        tmp_que->writelock = semMutexCreate();
+                tmp_que->writelock = semMutexCreate();
+                if (!tmp_que->writelock) {
+                    freeListFree (dbevEventQueueFreeList, tmp_que);
+                    return ERROR;
+                }
+      			tmp_que->nDuplicates = 0u;
       			ev_que->nextque = tmp_que;
       			ev_que = tmp_que;
       			break;
@@ -642,7 +650,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		pLog = &ev_que->valque[ev_que->putix];
 		ev_que->evque[ev_que->putix] = event;
 		if (event->npend>0u) {
-			ev_que->evUser->nDuplicates++;
+			ev_que->nDuplicates++;
 		}
 		event->npend++;
 		/* 
@@ -780,35 +788,26 @@ void event_task( struct event_user *evUser)
 			(*evUser->extralabor_sub)(evUser->extralabor_arg);
 		}
 
-		/*
-		 * if in flow control mode drain duplicates and then
-		 * suspend processing events until flow control
-		 * mode is over
-		 */
-		if (evUser->flowCtrlMode!=TRUE || evUser->nDuplicates>0u) {
-
-			for(	ev_que= &evUser->firstque; 
-				ev_que; 
-				ev_que = ev_que->nextque){
-				event_read(ev_que);
-			}
-
-			/*
-			 * The following do not introduce event latency since they
-			 * are not between notification and posting events.
-			 */
-			if(evUser->queovr){
-				if(evUser->overflow_sub)
-					(*evUser->overflow_sub)(
-						evUser->overflow_arg, 
-						evUser->queovr);
-				else
-					errlogPrintf("Events lost, discard count was %d\n",
-						evUser->queovr);
-				evUser->queovr = 0;
-			}
+		for(	ev_que= &evUser->firstque; 
+			ev_que; 
+			ev_que = ev_que->nextque){
+			event_read(ev_que);
 		}
 
+		/*
+		 * The following do not introduce event latency since they
+		 * are not between notification and posting events.
+		 */
+		if(evUser->queovr){
+			if(evUser->overflow_sub)
+				(*evUser->overflow_sub)(
+					evUser->overflow_arg, 
+					evUser->queovr);
+			else
+				errlogPrintf("Events lost, discard count was %d\n",
+					evUser->queovr);
+			evUser->queovr = 0;
+		}
   	}while(!evUser->pendexit);
 
   	evUser->pendlck = FALSE;
@@ -852,12 +851,24 @@ LOCAL int event_read (struct event_que *ev_que)
 	void (*user_sub) (void *user_arg, struct dbAddr *paddr, 
 			int eventsRemaining, db_field_log *pfl);
 
+
+    
 	/*
 	 * evUser ring buffer must be locked for the multiple
 	 * threads writing/reading it
 	 */
       	LOCKEVQUE(ev_que)
-
+      	
+	/*
+	 * if in flow control mode drain duplicates and then
+	 * suspend processing events until flow control
+	 * mode is over
+	 */
+    if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
+	    UNLOCKEVQUE(ev_que);
+        return OK;
+    }
+    
 	/*
 	 * Fetch fast register copy
 	 */
@@ -895,8 +906,8 @@ LOCAL int event_read (struct event_que *ev_que)
 		}
 		else {
 			assert (event->npend>1u);
-			assert (ev_que->evUser->nDuplicates>=1u);
-			ev_que->evUser->nDuplicates--;
+			assert (ev_que->nDuplicates>=1u);
+			ev_que->nDuplicates--;
 		}
  
 		/*

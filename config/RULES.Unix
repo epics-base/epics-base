@@ -179,29 +179,29 @@ $(INSTALL_DBD)/%: ../%
  
 %Record.h: %Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH \
 	        $(DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH \
 	        $(DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH $<
  
 menu%.h: ../menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH $<
  
 bpt%.dbd: bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt $<
  
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt $<
  
 # Patch for old applications
 ifdef USER_DBDFLAGS
@@ -212,7 +212,7 @@ ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand $(DBDFLAGS) $< > $@
+	$(EPICS_BASE_HOST_BIN)/dbExpand $(DBDFLAGS) $< > $@
 
 ifneq (,$(wildcard ../base.dbd))
 $(DBDNAME): ../base.dbd

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.21  1999/08/04 23:54:51  jhill
+ * chronIntIdRes name change
+ *
  * Revision 1.20  1999/04/30 15:37:31  jhill
  * doc
  *
@@ -395,7 +398,7 @@ public:
 	//
 	// place notification of IO completion on the event queue
 	//
-	epicsShareFunc caStatus postIOCompletion(const pvExistReturn retVal);
+	epicsShareFunc caStatus postIOCompletion(const pvExistReturn &retVal);
 
 	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();

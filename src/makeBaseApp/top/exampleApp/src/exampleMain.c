@@ -31,6 +31,5 @@ int main(int argc,char *argv[])
         threadSleep(.2);
     }
     ioccrf(NULL);
-    threadExitMain();
     return(0);
 }

@@ -150,7 +150,12 @@ registrar: tokenREGISTRAR '(' tokenSTRING ')'
 variable: tokenVARIABLE '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("variable %s\n",$3);
-	dbVariable($3); dbmfFree($3);
+	dbVariable($3,"int"); dbmfFree($3);
+}
+        | tokenVARIABLE '(' tokenSTRING ',' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("variable %s, %s\n",$3,$5);
+	dbVariable($3,$5); dbmfFree($3); dbmfFree($5);
 };
 
 break_head: '(' tokenSTRING ')'

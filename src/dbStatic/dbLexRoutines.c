@@ -64,7 +64,7 @@ static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
 static void dbDriver(char *name);
 static void dbRegistrar(char *name);
-static void dbVariable(char *name);
+static void dbVariable(char *name, char *type);
 
 static void dbBreakHead(char *name);
 static void dbBreakItem(char *value);
@@ -758,23 +758,24 @@ static void dbRegistrar(char *name)
     ellAdd(&pdbbase->registrarList,&ptext->node);
 }
 
-static void dbVariable(char *name)
+static void dbVariable(char *name, char *type)
 {
-    dbText	*ptext;
+    dbVariableDef	*pvar;
     GPHENTRY	*pgphentry;
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->variableList);
     if(pgphentry) {
 	return;
     }
-    ptext = dbCalloc(1,sizeof(dbText));
-    ptext->text = epicsStrDup(name);
-    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->variableList);
+    pvar = dbCalloc(1,sizeof(dbVariableDef));
+    pvar->name = epicsStrDup(name);
+    pvar->type = epicsStrDup(type);
+    pgphentry = gphAdd(pdbbase->pgpHash,pvar->name,&pdbbase->variableList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
     } 
-    pgphentry->userPvt = ptext;
-    ellAdd(&pdbbase->variableList,&ptext->node);
+    pgphentry->userPvt = pvar;
+    ellAdd(&pdbbase->variableList,&pvar->node);
 }
 
 static void dbBreakHead(char *name)

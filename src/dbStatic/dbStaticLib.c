@@ -567,6 +567,8 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
     devSup		*pdevSupNext;
     dbText		*ptext;
     dbText		*ptextNext;
+    dbVariableDef       *pvar;
+    dbVariableDef       *pvarNext;
     drvSup		*pdrvSup;
     drvSup		*pdrvSupNext;
     brkTable		*pbrkTable;
@@ -674,13 +676,14 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
 	free((void *)ptext);
 	ptext = ptextNext;
     }
-    ptext = (dbText *)ellFirst(&pdbbase->variableList);
-    while(ptext) {
-	ptextNext = (dbText *)ellNext(&ptext->node);
-	ellDelete(&pdbbase->variableList,&ptext->node);
-	free((void *)ptext->text);
-	free((void *)ptext);
-	ptext = ptextNext;
+    pvar = (dbVariableDef *)ellFirst(&pdbbase->variableList);
+    while(pvar) {
+	pvarNext = (dbVariableDef *)ellNext(&pvar->node);
+	ellDelete(&pdbbase->variableList,&pvar->node);
+	free((void *)pvar->name);
+        free((void *)pvar->type);
+	free((void *)pvar);
+	pvar = pvarNext;
     }
     pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     while(pbrkTable) {
@@ -1175,15 +1178,15 @@ long epicsShareAPI dbWriteRegistrarFP(DBBASE *pdbbase,FILE *fp)
 
 long epicsShareAPI dbWriteVariableFP(DBBASE *pdbbase,FILE *fp)
 {
-    dbText	*ptext;
+    dbVariableDef	*pvar;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
-    for(ptext = (dbText *)ellFirst(&pdbbase->variableList);
-    ptext; ptext = (dbText *)ellNext(&ptext->node)) {
-	fprintf(fp,"variable(%s)\n",ptext->text);
+    for(pvar = (dbVariableDef *)ellFirst(&pdbbase->variableList);
+        pvar; pvar = (dbVariableDef *)ellNext(&pvar->node)) {
+	fprintf(fp,"variable(%s,%s)\n",pvar->name,pvar->type);
     }
     return(0);
 }

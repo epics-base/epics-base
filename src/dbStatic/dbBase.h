@@ -119,6 +119,13 @@ typedef struct dbText {
 	char		*text;
 }dbText;
 
+typedef struct dbVariableDef {
+	ELLNODE		node;
+	char		*name;
+        char            *type;
+        
+}dbVariableDef;
+
 typedef struct dbRecordType {
 	ELLNODE		node;
 	ELLLIST		attributeList;	/*LIST head of attributes*/

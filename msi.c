@@ -47,8 +47,10 @@ static void substituteOpen(void *substitutePvt,char *substitutionName);
 static char *substituteGetReplacements(void *substitutePvt);
 #define USAGEEXIT \
 {\
-    fprintf(stderr,"usage: msi -V -Idir ... -Msub ... -Ssubfile  template \n");\
-    exit(1);\
+   fprintf(stderr,"usage: msi -V -Ipath ... -Msub ... -Ssubfile  template \n");\
+   fprintf(stderr,"    Specifying path will replace the default '.'\n");\
+   fprintf(stderr,"    stdin is used if template is not given\n");\
+   exit(1);\
 }
 
 int main(int argc,char **argv)
@@ -219,7 +221,6 @@ typedef struct inputData {
     char	inputBuffer[MAX_BUFFER_SIZE];
 }inputData;
 
-
 static char *inputOpenFile(inputData *pinputData,char *filename);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
@@ -256,20 +257,32 @@ static void inputAddPath(void *pvt, char *path)
     const char	*pcolon;
     const char	*pdir;
     int		len;
+    int		emptyName;
 
     pdir = path;
-    while(pdir) {
-	if(*pdir == ':') {
-	    pdir++;
-	    continue;
-	}
+    /*an empty name at beginning, middle, or end means current directory*/
+    while(pdir && *pdir) {
+	emptyName = ((*pdir == ':') ? TRUE : FALSE);
+	if(emptyName) ++pdir;
 	ppathNode = (pathNode *)calloc(1,sizeof(pathNode));
 	ellAdd(ppathList,&ppathNode->node);
-	pcolon = strchr(pdir,':');
-	len = (pcolon ? (pcolon - pdir) : strlen(pdir));
-	ppathNode->directory = (char *)calloc(1,len+1);
-	strncpy(ppathNode->directory,pdir,len);
-	pdir = (pcolon ? (pcolon+1) : 0);
+	if(!emptyName) {
+	    pcolon = strchr(pdir,':');
+	    len = (pcolon ? (pcolon - pdir) : strlen(pdir));
+	    if(len>0)  {
+	        ppathNode->directory = (char *)calloc(len+1,sizeof(char));
+	        strncpy(ppathNode->directory,pdir,len);
+		pdir = pcolon;
+		/*unless at end skip past first colon*/
+		if(pdir && *(pdir+1)!=0) ++pdir;
+	    } else { /*must have been trailing : */
+		emptyName=TRUE;
+	    }
+	}
+	if(emptyName) {
+	    ppathNode->directory = (char *)calloc(2,sizeof(char));
+	    strcpy(ppathNode->directory,".");
+	}
     }
     return;
 }
@@ -406,6 +419,7 @@ typedef enum {
 }tokenType;
 
 typedef struct subFile {
+    char	*substitutionName;
     FILE	*fp;
     int		lineNum;
     char	inputBuffer[MAX_BUFFER_SIZE];
@@ -473,6 +487,7 @@ static void substituteOpen(void *pvt,char *substitutionName)
 	fprintf(stderr,"Could not open %s\n",substitutionName);
 	exit(1);
     }
+    psubFile->substitutionName = substitutionName;
     psubFile->fp = fp;
     psubFile->lineNum = 0;
     psubFile->inputBuffer[0] = 0;
@@ -517,9 +532,10 @@ static char *substituteGetReplacements(void *pvt)
 
     pNext = &psubInfo->macroReplacements[0];
     psubInfo->macroReplacements[0] = 0;
-    if(psubFile->token!=tokenLBrace)
-	while(subGetNextToken(psubFile)==tokenSeparater);
-    if(psubFile->token==tokenEOF) return(0);
+    while(psubFile->token!=tokenLBrace) {
+	if(psubFile->token==tokenEOF) return(0);
+	subGetNextToken(psubFile);
+    }
     if(psubFile->token!=tokenLBrace) {
 	subFileErrPrint(psubFile,"Expecting {");
 	exit(1);
@@ -588,7 +604,8 @@ static char *subGetNextLine(subFile *psubFile)
 
 static void subFileErrPrint(subFile *psubFile,char * message)
 {
-    fprintf(stderr,"substitution file line %d: %s",
+    fprintf(stderr,"substitution file %s line %d: %s",
+	psubFile->substitutionName,
 	psubFile->lineNum,psubFile->inputBuffer);
     fprintf(stderr,"%s\n",message);
 }
@@ -604,7 +621,9 @@ static tokenType subGetNextToken(subFile *psubFile)
     if(*p==0 || *p=='\n') {
 	p = subGetNextLine(psubFile);
 	if(!p) return(tokenEOF);
+	else return(tokenSeparater);
     }
+    while(isspace(*p)) p++;
     if(*p=='{') {
 	psubFile->token = tokenLBrace;
 	psubFile->pnextChar = ++p;

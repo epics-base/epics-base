@@ -1,0 +1,11 @@
+TOP = ../../..
+include $(TOP)/config/CONFIG_EXTENSIONS
+
+
+PROD_LIBS += Com
+
+SRCS.c= ../msi.c
+PROD = msi
+
+include $(TOP)/config/RULES.Host
+

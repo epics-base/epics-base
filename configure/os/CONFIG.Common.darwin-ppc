@@ -14,11 +14,6 @@ OS_CLASS = Darwin
 ARCH_CLASS = ppc
 
 #
-# Don't try building shared libraries on Darwin for now
-#
-SHARED_LIBRARIES=NO
-
-#
 # Special flags for Darwin
 #   No common blocks (as required when going to shared libraries)
 #

@@ -131,7 +131,12 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
             int errnoCpy = SOCKERRNO;
 
             ipAddrToA (&this->addr, buf, sizeof(buf));
-            if ( errnoCpy != SOCK_ECONNRESET ) {
+
+            if (  
+                errnoCpy != SOCK_ECONNABORTED &&
+                errnoCpy != SOCK_ECONNRESET &&
+                errnoCpy != SOCK_EPIPE &&
+                errnoCpy != SOCK_ETIMEDOUT ) {
 			    errlogPrintf(
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
 				    buf, SOCKERRSTR(errnoCpy));
@@ -167,12 +172,16 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
             return casFillNone;
         }
         else  {
-            if ( myerrno != SOCK_ECONNRESET ) {
+            if (
+                myerrno != SOCK_ECONNABORTED &&
+                myerrno != SOCK_ECONNRESET &&
+                myerrno != SOCK_EPIPE &&
+                myerrno != SOCK_ETIMEDOUT ) {
                 ipAddrToA (&this->addr, buf, sizeof(buf));
                 errlogPrintf(
 		    "CAS: client %s disconnected because \"%s\"\n",
                     buf, SOCKERRSTR(myerrno));
-                }
+            }
             return casFillDisconnect;
         }
     }

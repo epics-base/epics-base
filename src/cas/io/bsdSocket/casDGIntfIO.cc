@@ -391,8 +391,16 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 
 	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
 	if ( status < 0 ) {
-		errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
-			SOCKERRSTR ( SOCKERRNO ) );
+        int localError = SOCKERRNO;
+        if (
+            localError != SOCK_ECONNABORTED &&
+            localError != SOCK_ECONNRESET &&
+            localError != SOCK_EPIPE &&
+            localError != SOCK_ETIMEDOUT ) 
+        {
+		    errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
+			    SOCKERRSTR ( localError ) );
+        }
 		return 0u;
 	}
 	else if ( nchars < 0 ) {

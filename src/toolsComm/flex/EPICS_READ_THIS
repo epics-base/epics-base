@@ -13,6 +13,10 @@ that are used by yacc programs anyway.
 
 --John Winans  11-18-93
 
+The file Unix/share/bin/flex.skel.static has been moved to
+include/flex.skel.static.
+
+--Mike Bordua  07/12/94
 (NOTE TO EPICS SYSTEM MAINTATNERS... the only thing different about this flex 
 and the GNU distribution is the Makefile->Imakefile transition, and the 
 modification of the skeleton file.  It should be easy enough to start over

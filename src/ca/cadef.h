@@ -124,7 +124,7 @@ epicsShareFunc void epicsShareAPI ca_test_event
 #endif /*CAC_ANSI_FUNC_PROTO*/
 );
 
-/* Format for the arguments to user exception handlers          */
+/* Format for the arguments to user exception handlers */
 struct exception_handler_args {
     void            *usr;   /* User argument supplied when event added  */
     chanId          chid;   /* Channel id (may be NULL)                 */
@@ -216,55 +216,6 @@ ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
 #define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
 ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
 
-
-/************************************************************************/
-/*  Return a channel identification for the supplied channel name       */
-/*  (and attempt to create a virtual circuit)                           */
-/************************************************************************/
-
-/*
- * ca_search()
- *
- * a preferred search request API 
- *
- * pChanName    R   channel name string
- * pChanID  RW  channel id written here
- */
-#define ca_search(pChanName, pChanID)\
-ca_search_and_connect (pChanName, pChanID, 0, 0)
-
-
-/*
- * ca_search_and_connect()
- *
- * a preferred search request API 
- *
- * pChanName    R   channel name string
- * pChanID  RW  channel id written here
- * pFunc    R   address of connection call-back function
- * pArg     R   placed in the channel's puser field
- *          (fetched later by ca_puser(CHID))
- *          (passed as void * arg to (*pFunc)() above)
- */
-epicsShareFunc int epicsShareAPI ca_search_and_connect
-(
-     const char     *pChanName, 
-     chid           *pChanID, 
-     caCh           *pFunc, 
-     void           *pArg
-);
-    
-/*
- * anachronistic entry point
- * **** Fetching a value while searching no longer supported **** 
- *
- * pChanName    R   channel name string
- * pChanID  RW  channel id written here
- * pFunc    R   address of connection call-back function
- * pArg     R   placed in the channel's puser field
- *          (fetched later by ca_puser(CHID))
- *          (passed as void * arg to (*pFunc)() above)
- */
 epicsShareFunc int epicsShareAPI ca_build_and_connect
 (
      const char         *pChanName, 
@@ -274,6 +225,51 @@ epicsShareFunc int epicsShareAPI ca_build_and_connect
      void *             , /* pass NULL */
      caCh *             pFunc,
      void *             pArg
+);
+
+#define ca_search(pChanName, pChanID)\
+ca_search_and_connect (pChanName, pChanID, 0, 0)
+
+epicsShareFunc int epicsShareAPI ca_search_and_connect
+(
+     const char     *pChanName, 
+     chid           *pChanID, 
+     caCh           *pFunc, 
+     void           *pArg
+);
+
+/************************************************************************/
+/*  End of anachronistic entry points                                   */
+/************************************************************************/
+
+typedef unsigned capri; 
+#define CA_PRIORITY_MAX 100
+#define CA_PRIORITY_MIN 0
+#define CA_PRIORITY_DEFAULT CA_PRIORITY_MIN
+
+#define CA_PRIORITY_DB_LINKS CA_PRIORITY_MAX
+#define CA_PRIORITY_ARCHIVE ( ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) / 2 )
+#define CA_PRIORITY_OPI 0
+
+/*
+ * ca_create_channel ()
+ *
+ * pChanName            R   channel name string
+ * pConnStateCallback   R   address of connection state change 
+ *                          callback function
+ * pUserPrivate         R   placed in the channel's user private field
+ *                          o can be fetched later by ca_puser(CHID)
+ *                          o passed as void * arg to *pConnectCallback above
+ * priority             R   priority level in the server 0 - 100
+ * pChanID              RW  channel id written here
+ */
+epicsShareFunc int epicsShareAPI ca_create_channel
+(
+     const char     *pChanName, 
+     caCh           *pConnStateCallback, 
+     void           *pUserPrivate,
+     capri          priority,
+     chid           *pChanID
 );
 
 /*

@@ -57,9 +57,12 @@
  * .13  03-02-95  nda     Post .val field when a new point is complete during a
  *                        scan. This will assist in poin by point plots.
  * .14  03-02-95  nda     Bug fix on filling PxRA's. ALWAYS CALL CHCK_MOTORS.
+ * .15  03-15-95  nda     If no readback PV (RxPV) is specified, copy desired
+ *                        value (PxDV) to current value (RxCV). Now, plotting
+ *                        programs can always monitor RxCV.
  */
 
-#define VERSION 1.14
+#define VERSION 1.15
 
 
 
@@ -1056,6 +1059,7 @@ struct scanRecord *pscan;
                 abortScan = 1;
             }
         } else {
+            pscan->r1cv = pscan->p1dv;
             pscan->p1ra[pscan->cpt] = pscan->p1dv;
         }
         if(!pscan->r2nv) {
@@ -1071,6 +1075,7 @@ struct scanRecord *pscan;
                 abortScan = 1;
             }
         } else {  /* no readback PV, stuff with desired value */
+            pscan->r2cv = pscan->p2dv;
             pscan->p2ra[pscan->cpt] = pscan->p2dv;
         }
         if(!pscan->r3nv) {
@@ -1086,6 +1091,7 @@ struct scanRecord *pscan;
                 abortScan = 1;
             }
         } else {  /* no readback PV, stuff with desired value */
+            pscan->r3cv = pscan->p3dv;
             pscan->p3ra[pscan->cpt] = pscan->p3dv;
         }
         if(!pscan->r4nv) {
@@ -1101,6 +1107,7 @@ struct scanRecord *pscan;
                 abortScan = 1;
             }
         } else {  /* no readback PV, stuff with desired value */
+            pscan->r4cv = pscan->p4dv;
             pscan->p4ra[pscan->cpt] = pscan->p4dv;
         }
 

@@ -362,7 +362,7 @@ gen_ss_array()
 
 		printf("\t/* ss name */            \"%s\",\n", ssp->value);
 
-		printf("\t/* ptr to state block */ state_%s%,\n", ssp->value);
+		printf("\t/* ptr to state block */ state_%s,\n", ssp->value);
 
 		nstates = exprCount(ssp->left);
 		printf("\t/* number of states */   %d,\n", nstates, ssp->value);

@@ -137,8 +137,8 @@ LOCAL long init_1771Ofe(struct aoRecord *prec)
 			"devAiAb1771Ife (init_record) startScan");
 		break;
 	    }
-	    /*wait for up to 1 seconds*/
-	    for(failed=0; failed<10; failed++) {
+	    /*wait for up to 3 seconds*/
+	    for(failed=0; failed<30; failed++) {
 		taskDelay(vxTicksPerSecond/10);
 	        drvStatus = (*pabDrv->getStatus)(drvPvt);
 		if(drvStatus==abSuccess) {

@@ -52,8 +52,8 @@
 
 
 /* Create the dset for devAiMbboMpv902 */
-long init_record();
-long write_mbbo();
+static long init_record();
+static long write_mbbo();
 
 struct {
 	long		number;
@@ -73,7 +73,7 @@ struct {
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    unsigned long value;
+    unsigned int value,mask;
     struct vmeio *pvmeio;
     int		status=0;
 
@@ -83,7 +83,8 @@ static long init_record(pmbbo)
 	pvmeio = &(pmbbo->out.value.vmeio);
 	pmbbo->shft = pvmeio->signal;
 	pmbbo->mask <<= pmbbo->shft;
-	status = bb902_read(pvmeio->card,pmbbo->mask,&value);
+	mask = pmbbo->mask;
+	status = bb902_read(pvmeio->card,mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
 	else status = 2;
 	break;
@@ -100,14 +101,16 @@ static long write_mbbo(pmbbo)
 {
 	struct vmeio *pvmeio;
 	int	    status;
-	unsigned long value;
+	unsigned int value,mask;
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);
 
-	status = bb902_driver(pvmeio->card,pmbbo->rval,pmbbo->mask);
+	value = pmbbo->rval;
+	mask = pmbbo->mask;
+	status = bb902_driver(pvmeio->card,value,mask);
 	if(status==0) {
-		status = bb902_read(pvmeio->card,pmbbo->mask,&value);
+		status = bb902_read(pvmeio->card,mask,&value);
 		if(status==0) pmbbo->rbv = value;
                 else recGblSetSevr(pmbbo,READ_ALARM,INVALID_ALARM);
 	} else {

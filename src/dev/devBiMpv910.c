@@ -51,8 +51,8 @@
 
 
 /* Create the dset for devAiBiMpv910 */
-long init_record();
-long read_bi();
+static long init_record();
+static long read_bi();
 
 struct {
 	long		number;
@@ -92,13 +92,14 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-	struct vmeio *pvmeio;
-	int	    status;
-	long	    value;
+	struct vmeio 	*pvmeio;
+	int	    	status;
+	unsigned int    value,mask;
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
-	status = bb910_driver(pvmeio->card,pbi->mask,&value);
+	mask = pbi->mask;
+	status = bb910_driver(pvmeio->card,mask,&value);
 	if(status==0) {
 		pbi->rval = value;
 		return(0);

@@ -52,8 +52,8 @@
 
 
 /* Create the dset for devAiMbbiMpv910 */
-long init_record();
-long read_mbbi();
+static long init_record();
+static long read_mbbi();
 
 struct {
 	long		number;
@@ -93,11 +93,12 @@ static long read_mbbi(pmbbi)
 {
 	struct vmeio	*pvmeio;
 	int		status;
-	unsigned long	value;
+	unsigned int	value,mask;
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
-	status = bb910_driver(pvmeio->card,pmbbi->mask,&value);
+	mask = pmbbi->mask;
+	status = bb910_driver(pvmeio->card,&value);
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {

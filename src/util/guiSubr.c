@@ -73,6 +73,8 @@
 *            void addExtrasFn(pGuiCtx, pEdit, panel, pX,pY,pHt, addExtrasArg)
 *       void guiEditorNewEntry_pb(item)
 *       void guiEditorShowCF(pEditor)
+*       void guiEditorShowCF_mi(menu, menuItem)
+*       void guiEditorShowCF_xvo(item)
 *      char *guiFileSelect(pGuiCtx, title, dir, file, dim, callbackFn, pArg)
 *               void callbackFn(pArg, newPath, newDir, newFileName);
 *      Frame guiFrame(label, x, y, width, height, >ppDisp, >pServer)
@@ -1037,11 +1039,12 @@ GUI_EDIT *pEdit;
 *		== Mar 06, 1992 07:27:31  userName ==
 *
 *
+*	TEST_CTX	*pCtx;
 *	GUI_CTX		*pGui;
 *	GUI_EDIT	*pEdit;
 *	void		extra();
 *
-*	pEdit = guiEditor(pGui, ".", NULL, NULL, extra, NULL);
+*	pEdit = guiEditor(pGui, ".", NULL, NULL, extra, pCtx);
 *
 *
 *
@@ -1057,7 +1060,7 @@ GUI_EDIT *pEdit;
 *                    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEditor);
 * }
 *-*/
-static void
+void
 guiEditorNewEntry_pb(item)
 Panel_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
@@ -1166,15 +1169,46 @@ Panel_item item;
     }
 }
 
-/*+/subr**********************************************************************
+#if 0
+/*+/macros********************************************************************
 * NAME	guiEditorShowCF - show the command frame containing the editor
 *
+* DESCRIPTION
+*	Make an editor command frame visible.  There are several versions
+*	of this routine available, to accomodate the different methods of
+*	calling it:
+*
+*	void guiEditorShowCF(pEdit)		call directly
+*		GUI_EDIT *pEdit;	/* I pointer to editor context */
+*
+*	void guiEditorShowCF_mi(menu, item)	call from a menu item
+*		Menu	menu;		/* I menu handle */
+*		Menu_item item;		/* I menu item handle--must have
+*					XV_KEY_DATA of GUI_PEDIT, pEdit */
+*
+*	void guiEditorShowCF_xvo(item)	call from a button item
+*		Xv_opaque item;		/* I item handle--must have
+*					XV_KEY_DATA of GUI_PEDIT, pEdit */
 *-*/
+#endif
 void
 guiEditorShowCF(pEdit)
 GUI_EDIT *pEdit;	/* I pointer to editor context */
 {
     xv_set(pEdit->edit_CF, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+}
+void
+guiEditorShowCF_mi(menu, menuItem)
+Menu	menu;
+Menu_item menuItem;
+{   GUI_EDIT *pEdit=(GUI_EDIT *)xv_get(menuItem, XV_KEY_DATA, GUI_PEDIT);
+    guiEditorShowCF(pEdit);
+}
+void
+guiEditorShowCF_xvo(item)
+Xv_opaque item;
+{   GUI_EDIT *pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
+    guiEditorShowCF(pEdit);
 }
 
 /*+/internal******************************************************************
@@ -2226,15 +2260,28 @@ void	*callbackArg;	/* I arg to pass to callbackFn */
     guiShellCmd_work(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg, 0);
 }
 void
-guiShellCmd_work(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg, mode)
+guiShellCmd_execv_argv(pGuiCtx, argv, clientNum, callbackFn, callbackArg)
 GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
-char	*cmdBuf;	/* I the command string to give the shell */
+char	*argv;		/* I arguments to give the shell */
 Notify_client clientNum;/* I a unique value in the range 100 to 200 to
 				be used by guiCmdSigchld when the child
 				is done processing the command */
 void	(*callbackFn)();/* I pointer to function for guiCmdSigchld to call */
 void	*callbackArg;	/* I arg to pass to callbackFn */
-int	mode;		/* I 0,1 for popen, execvp */
+{
+    guiShellCmd_work(pGuiCtx, argv, clientNum, callbackFn, callbackArg, 2);
+}
+void
+guiShellCmd_work(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg, mode)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
+char	*cmdBuf;	/* I the command string to give the shell (or
+				pointer to argv list if mode==2)*/
+Notify_client clientNum;/* I a unique value in the range 100 to 200 to
+				be used by guiCmdSigchld when the child
+				is done processing the command */
+void	(*callbackFn)();/* I pointer to function for guiCmdSigchld to call */
+void	*callbackArg;	/* I arg to pass to callbackFn */
+int	mode;		/* I 0,1,2 for popen,execvp,execvp_with_argv */
 {
     FILE	*fp;
     int		i, pid, cbNum;
@@ -2304,11 +2351,26 @@ int	mode;		/* I 0,1 for popen, execvp */
 	for (i=0; i<NSIG; i++)
 	    signal(i, SIG_DFL);		/* don't need parent's sig masks */
 	if (mode == 1) {
-	    execvp(*argv, argv);
+	    if (strncmp(*argv, "/bin/sh", 7) == 0)
+		execvp("/bin/sh", argv);
+	    else
+		execvp(*argv, argv);
 	    if (errno == ENOENT)
 		printf("%s: command not found.\n", *argv);
 	    else
 		perror(*argv);
+	    perror("execvp");
+	    _exit(-1);
+	}
+	if (mode == 2) {
+	    if (strncmp(*cmdBuf, "/bin/sh", 7) == 0)
+		execvp("/bin/sh", cmdBuf);
+	    else
+		execvp(*cmdBuf, cmdBuf);
+	    if (errno == ENOENT)
+		printf("%s: command not found.\n", *cmdBuf);
+	    else
+		perror(*cmdBuf);
 	    perror("execvp");
 	    _exit(-1);
 	}

@@ -8,11 +8,16 @@ RANLIB = $(VX_GNU_BIN)/ranlib68k
 YACC = $(EYACC)
 LEX = $(ELEX)
 CC = $(VX_GNU_BIN)/cc68k -B$(VX_GNU_LIB)/gcc-lib/ -nostdinc
+CXX = $(VX_GNU_BIN)/cc68k -B$(VX_GNU_LIB)/gcc-lib/ -nostdinc
 CPP = $(VX_GNU_BIN)/cpp68k -nostdinc
 #CPP = $(CC) -E
 GCC = $(CC)
 LD = $(VX_GNU_BIN)/ld68k -r
 EPICS_LDLIBS =
+MV=mv
+RM=rm -f
+MKDIR=mkdir
+RMDIR=rm -rf
 
 # special c library requirements
 SPECIAL_LANG =
@@ -48,14 +53,18 @@ TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS)
 TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 
 CFLAGS = $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VX_CFLAGS)
+CXXFLAGS = $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VX_CFLAGS)
 LDFLAGS = $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(VX_LDFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
  
 # Build compile line here
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c = $(LD) $(LDFLAGS)
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
+LINK.cc = $(LD) $(LDFLAGS)
 
 CPPSNCFLAGS = $(USR_INCLUDES) $(VX_INCLUDES)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
-DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Vx.68k
+DEPENDS_RULE.cc = -$(COMPILE.cc) -M $(SRCS.cc) > .DEPENDS 
+

@@ -1,13 +1,24 @@
+
 //
-// osiTime.cc
+// $Id$
 //
 // Author: Jeff Hill
 //
 //
 
+//
+// ANSI C
+//
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#ifndef assert // allow other versions of assert
+#include <assert.h>
+#endif
 
+//
+// WIN32
+//
 #include <winsock2.h>
 
 /*
@@ -16,6 +27,9 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 
+//
+// EPICS
+//
 #define epicsExportSharedSymbols
 #include <osiTime.h>
 
@@ -46,7 +60,7 @@ static const SYSTEMTIME epicsEpochST = {
 
 static LONGLONG epicsEpoch;
 
-#define FILE_TIME_TICKS_PER_SEC 10000000L
+static LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
 
 /*
  * synchronize()
@@ -239,4 +253,70 @@ osiTime osiTime::osdGetCurrent ()
 	sec = (unsigned long) (time_sec%ULONG_MAX);
 	nsec = (unsigned long) ((time_remainder*nSecPerSec)/perf_freq);
 	return osiTime (sec, nsec);
+}
+
+//
+// gmtime_r ()
+//
+// from posix real time
+//
+struct tm *gmtime_r (const time_t *pAnsiTime, struct tm *pTM)
+{
+	HANDLE thisThread = GetCurrentThread ();
+	struct tm *p;
+	int oldPriority;
+	BOOL win32Success;
+
+	oldPriority = GetThreadPriority (thisThread);
+	if (oldPriority==THREAD_PRIORITY_ERROR_RETURN) {
+		return NULL;
+	}
+
+	win32Success = SetThreadPriority (thisThread, THREAD_PRIORITY_TIME_CRITICAL);
+	if (!win32Success) {
+		return NULL;
+	}
+
+	p = gmtime (pAnsiTime);
+	if (p!=NULL) {
+		*pTM = *p;
+	}
+
+	win32Success = SetThreadPriority (thisThread, oldPriority);
+	assert (win32Success);
+	
+	return p;
+}
+
+//
+// localtime_r ()
+//
+// from posix real time
+//
+struct tm *localtime_r (const time_t *pAnsiTime, struct tm *pTM)
+{
+	HANDLE thisThread = GetCurrentThread ();
+	struct tm *p;
+	int oldPriority;
+	BOOL win32Success;
+
+	oldPriority = GetThreadPriority (thisThread);
+	if (oldPriority==THREAD_PRIORITY_ERROR_RETURN) {
+		return NULL;
+	}
+
+	win32Success = SetThreadPriority (thisThread, THREAD_PRIORITY_TIME_CRITICAL);
+	if (!win32Success) {
+		return NULL;
+	}
+
+	p = localtime (pAnsiTime);
+	if (p!=NULL) {
+		*pTM = *p;
+	}
+
+	win32Success = SetThreadPriority (thisThread, oldPriority);
+	assert (win32Success);
+	
+	return p;
 }

@@ -32,7 +32,7 @@
  * .00  12-13-91        jba     Initial definition
  * .02	03-13-92	jba	ANSI C changes
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
- * .04  03-03-94	mrk	Dont move constant link value to val
+ * .04  03-03-94	mrk	Move constant link value to val only if val is zero
 */
 
 
@@ -79,7 +79,9 @@ static long init_record(pevent)
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
     case (CONSTANT) :
-	/*User cal initialize val field via DCT*/
+	if(pevent->inp.value.value!=0.0 && pevent->val == 0.0){
+	        pevent->val=pevent->inp.value.value;
+		}
 	pevent->udf= FALSE;
         break;
     case (PV_LINK) :

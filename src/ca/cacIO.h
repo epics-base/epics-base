@@ -41,7 +41,7 @@ class epicsShareClass cacNotifyIO {
 public:
     cacNotifyIO ( cacNotify & );
     virtual ~cacNotifyIO () = 0;
-    virtual void destroy () = 0;
+    virtual void uninstall () = 0;
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );

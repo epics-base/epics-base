@@ -1,7 +1,7 @@
 # Example vxWorks startup file
 
-# Following must be added for many board support packages
-#cd <full path to target bin directory>
+# Following will be needed for many board support packages
+#cd _TOP_/iocBoot/_IOC_
 
 < cdCommands
 

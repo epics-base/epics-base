@@ -1,0 +1,6 @@
+# Simple startup script
+dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
+registerRecordDeviceDriver(pdbbase) 
+dbLoadRecords("../../db/_APPNAME_.db","user=_USER_Host")
+iocInit()
+#seq snc_APPNAME_,"user=_USER_Host"

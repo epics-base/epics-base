@@ -708,6 +708,7 @@ evid	/* 	EVID	R	Event id returned by add event		*/
 /*	early is TRUE then ca_pend() will return immediately without	*/
 /* 	processing outstanding CA labor if no queries are outstanding	*/
 /************************************************************************/
+#define ca_poll() ca_pend((1e-12), 0/*FALSE*/)
 #define ca_pend_event(TIMEOUT) ca_pend((TIMEOUT), 0/*FALSE*/)
 #define ca_pend_io(TIMEOUT) ca_pend((TIMEOUT), 1/*TRUE*/)
 
@@ -796,6 +797,9 @@ chid	/*	CHID	R	Channel ID				*/
  *      call their function with their argument whenever 
  *	a new fd is added or removed
  *      (for use with a manager of the select system call under UNIX)
+ *
+ *	if (opened) then fd was created
+ *	if (!opened) then fd was deleted
  *
  */
 #ifdef CAC_FUNC_PROTO
@@ -933,6 +937,11 @@ void *  /*      PVALUE  R       pointer to new channel value of type    */
         /*                      specified.                              */
 #endif /*CAC_FUNC_PROTO*/
 	);
+
+/*
+ * print status of a sync group
+ */
+int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid);
 
 /*
  * CA_MODIFY_USER_NAME()

@@ -29,6 +29,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -100,7 +101,7 @@ static long init_record(struct dfanoutRecord *pdfanout, int pass)
     recGblInitConstantLink(&pdfanout->sell,DBF_USHORT,&pdfanout->seln);
     /* get the initial value dol is a constant*/
     if(recGblInitConstantLink(&pdfanout->dol,DBF_DOUBLE,&pdfanout->val))
-	    pdfanout->udf=FALSE;
+	    pdfanout->udf = isnan(pdfanout->val);
     return(0);
 }
 
@@ -113,7 +114,7 @@ static long process(struct dfanoutRecord *pdfanout)
     && (pdfanout->omsl == menuOmslclosed_loop)){
 	status = dbGetLink(&(pdfanout->dol),DBR_DOUBLE,&(pdfanout->val),0,0);
 	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status))
-            pdfanout->udf=FALSE;
+            pdfanout->udf = isnan(pdfanout->val);
     }
     pdfanout->pact = TRUE;
     recGblGetTimeStamp(pdfanout);
@@ -208,7 +209,7 @@ static void checkAlarms(struct dfanoutRecord *pdfanout)
 	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(pdfanout->udf == TRUE ){
+	if (pdfanout->udf) {
  		recGblSetSevr(pdfanout,UDF_ALARM,INVALID_ALARM);
 		return;
 	}

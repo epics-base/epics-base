@@ -25,6 +25,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -89,6 +90,9 @@ static int do_sel();
 static int fetch_values();
 static void monitor();
 
+/* This needed to prevent the MS optimizer from barfing */
+static double divide(double num, double den) { return num / den; }
+
 
 static long init_record(psel,pass)
     struct selRecord	*psel;
@@ -97,6 +101,7 @@ static long init_record(psel,pass)
     struct link *plink;
     int i;
     double *pvalue;
+    double NaN = divide(0.0, 0.0);
 
     if (pass==0) return(0);
 
@@ -108,7 +113,7 @@ static long init_record(psel,pass)
     plink = &psel->inpa;
     pvalue = &psel->a;
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-        *pvalue = 1e+30;
+        *pvalue = NaN;
 	if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
@@ -260,7 +265,7 @@ static void checkAlarms(psel)
 	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(psel->udf == TRUE ){
+	if (psel->udf){
  		recGblSetSevr(psel,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
@@ -358,16 +363,16 @@ struct selRecord *psel;  /* pointer to selection record  */
 		val = *(pvalue+psel->seln);
 		break;
 	case (SELECT_HIGH):
-		val = -1e+30;
+		val = divide(-1.0, 0.0); /* Start at -Inf */
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (val < *pvalue && *pvalue != 1e+30)
+			if (!isnan(*pvalue) && val < *pvalue)
 				val = *pvalue;
 		}
 		break;
 	case (SELECT_LOW):
-		val = 1e+30;
+		val = divide(1.0, 0.0); /* Start at +Inf */
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
-			if (val > *pvalue && *pvalue != 1e+30)
+			if (!isnan(*pvalue) && val > *pvalue)
 				val = *pvalue;
 		}
 		break;
@@ -375,7 +380,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 		plink = &psel->inpa;
 		order_inx = 0;
 		for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){
-			if (*pvalue != 1e+30){
+			if (!isnan(*pvalue)){
 				j = order_inx;
 				while ((order[j-1] > *pvalue) && (j > 0)){
 					order[j] = order[j-1];
@@ -391,9 +396,9 @@ struct selRecord *psel;  /* pointer to selection record  */
 		recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
 		return(-1);
 	}
-	if (val != 1e+30 && val != -1e+30 ){
+	if (!isinf(val)){
 		psel->val=val;
-		psel->udf=FALSE;
+		psel->udf=isnan(psel->val);
 	}  else {
             recGblSetSevr(psel,UDF_ALARM,MAJOR_ALARM);
             /* If UDF is TRUE this alarm will be overwritten by checkAlarms*/

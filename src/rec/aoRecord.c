@@ -25,6 +25,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "cvtTable.h"
 #include "dbAccess.h"
@@ -121,7 +122,7 @@ static long init_record(struct aoRecord *pao, int pass)
     /* get the initial value if dol is a constant*/
     if (pao->dol.type == CONSTANT) {
 	if(recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val))
-	    pao->udf = FALSE;
+	    pao->udf = isnan(pao->val);
     }
 
     /* must have write_ao function defined */
@@ -156,7 +157,7 @@ static long init_record(struct aoRecord *pao, int pass)
 			(void *)&pao->pbrk,&pao->lbrk)!=0) break;
             }
 	    pao->val = value;
-	    pao->udf=FALSE;
+	    pao->udf = isnan(value);
         break;
         case(2): /* no convert */
         break;
@@ -193,6 +194,7 @@ static long process(pao)
                     value = pao->val;
                 }
 		if(!status) convert(pao, value);
+		pao->udf = isnan(pao->val);
 	}
 
 	/* check for alarms */
@@ -356,7 +358,7 @@ static void checkAlarms(pao)
 	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(pao->udf == TRUE ){
+	if (pao->udf) {
  		recGblSetSevr(pao,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
@@ -413,7 +415,6 @@ static long fetch_value(pao,pvalue)
            recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
            return(status);
 	}
-        pao->udf = FALSE;
 
         if (pao->oif == aoOIF_Incremental)
            *pvalue += pao->val;

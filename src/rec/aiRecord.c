@@ -25,6 +25,7 @@
 
 #include "dbDefs.h"
 #include "errlog.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "cvtTable.h"
 #include "dbAccess.h"
@@ -285,7 +286,7 @@ static void checkAlarms(aiRecord *pai)
 	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(pai->udf == TRUE ){
+	if (pai->udf) {
  		recGblSetSevr(pai,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
@@ -355,7 +356,7 @@ static void convert(aiRecord *pai)
 	}else{
 	    pai->val = val;
 	}
-	pai->udf = FALSE;
+	pai->udf = isnan(pai->val);
 	return;
 }
 
@@ -419,7 +420,7 @@ static long readValue(aiRecord *pai)
 		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
 		if (status==0){
 			 pai->val=pai->sval;
-			 pai->udf=FALSE;
+			 pai->udf=isnan(pai->val);
 		}
                 status=2; /* dont convert */
 	} else {

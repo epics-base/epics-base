@@ -25,6 +25,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "registryFunction.h"
 #include "alarm.h"
 #include "callback.h"
@@ -267,7 +268,7 @@ static void checkAlarms(psub)
 	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(psub->udf == TRUE ){
+	if (psub->udf) {
  		recGblSetSevr(psub,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
@@ -378,6 +379,6 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 	status = (*psubroutine)(psub);
 	if(status < 0){
                	recGblSetSevr(psub,SOFT_ALARM,psub->brsv);
-	} else psub->udf = FALSE;
+	} else psub->udf = isnan(psub->val);
 	return(status);
 }

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/06/13 09:31:46  jhill
+ * fixed warnings
+ *
  * Revision 1.5  1997/04/10 19:45:41  jhill
  * API changes and include with  not <>
  *
@@ -161,6 +164,22 @@ public:
 
 	static osiTime getCurrent();
 
+	//
+	// return time stamp with EPICS epoch
+	//
+	static osiTime getCurrentEPICS()
+	{
+		//
+		// 1/1/90 20 yr (5 leap) of seconds
+		//
+		static const unsigned epicsEpochSecPast1970 = 7305 * 86400; 
+
+		osiTime ts(osiTime::getCurrent());
+		assert (ts.sec>=epicsEpochSecPast1970);
+		ts.sec -= epicsEpochSecPast1970;
+		return ts;
+	}
+
 	osiTime operator+= (const osiTime &rhs);
 	osiTime operator-= (const osiTime &rhs);
 
@@ -197,7 +216,7 @@ inline osiTime operator- (const osiTime &lhs, const osiTime &rhs)
 		//
 		// wrap around
 		//
-		sec = lhs.sec + (ULONG_MAX - rhs.sec);
+		sec = 1 + lhs.sec + (ULONG_MAX - rhs.sec);
 	}
 	else {
 		sec = lhs.sec - rhs.sec;
@@ -207,7 +226,7 @@ inline osiTime operator- (const osiTime &lhs, const osiTime &rhs)
 		//
 		// Borrow
 		//
-		nSec = lhs.nSec + (nSecPerSec - rhs.nSec);	
+		nSec = 1 + lhs.nSec + (nSecPerSec - rhs.nSec);	
 		sec--;
 	}
 	else {

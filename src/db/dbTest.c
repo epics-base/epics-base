@@ -988,7 +988,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     pRecordName = &RecordName[0];
     pName = pname;
     n = 0;
-    while (*pName && (*pName != '.') && n < sizeof(RecordName)) {
+    while (*pName && (*pName != '.') && (n < PVNAME_SZ)) {
 	*pRecordName = *pName;
 	pName++;
 	pRecordName++;
@@ -1418,6 +1418,7 @@ static int dbprReportGblChoice(pMsgBuff,precord,pfield_name,choice_value, tab_si
     char *pmsg = pMsgBuff->message;
 
     strncpy(name,precord->name,PVNAME_SZ);
+    name[PVNAME_SZ]=0;
     strcat(name,".");
     strncat(name,pfield_name,FLDNAME_SZ);
     if(dbNameToAddr(name,&dbAddr)) {
@@ -1452,6 +1453,7 @@ static void dbprReportRecChoice(pMsgBuff,precord,pfield_name,choice_value,tab_si
     char *pmsg = pMsgBuff->message;
 
     strncpy(name,precord->name,PVNAME_SZ);
+    name[PVNAME_SZ]=0;
     strcat(name,".");
     strncat(name,pfield_name,FLDNAME_SZ);
     if(dbNameToAddr(name,&dbAddr)) {
@@ -1499,7 +1501,8 @@ static void dbprReportDevChoice(pMsgBuff,paddr,pfield_name, tab_size)
         return;
     }
     strncpy(buff,pdevChoice->pchoice,MAX_STRING_SIZE);
-	sprintf(pmsg,"%4s: %s",
+    buff[MAX_STRING_SIZE] = 0;
+    sprintf(pmsg,"%4s: %s",
             pfield_name,
             buff);
 	dbpr_msgOut(pMsgBuff,tab_size);

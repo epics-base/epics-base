@@ -82,7 +82,6 @@ static long read_bi(pbi)
                         pbi->nsev = VALID_ALARM;
                         pbi->nsta = LINK_ALARM;
                 }
-		return(2);
         }
         break;
     case (CA_LINK) :

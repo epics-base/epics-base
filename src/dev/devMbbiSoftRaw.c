@@ -71,7 +71,6 @@ static long read_mbbi(pmbbi)
     /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
-	return(2);
         break;
     case (DB_LINK) :
         options=0;
@@ -83,7 +82,6 @@ static long read_mbbi(pmbbi)
                         pmbbi->nsev = VALID_ALARM;
                         pmbbi->nsta = LINK_ALARM;
                 }
-		return(2);
         }
         break;
     case (CA_LINK) :
@@ -98,7 +96,6 @@ static long read_mbbi(pmbbi)
                         errMessage(S_db_badField,message);
                 }
         }
-	return(2);
     }
     return(0);
 }

@@ -1,6 +1,7 @@
 
+
 /* dbAccess.c */
-/* share/src/db $Id$ */
+ /* share/src/db $Id$ */
 
 
 /*dbAccess.c 
@@ -287,8 +288,9 @@ long dbNameToAddr(pname,paddr)
 char		*pname;
 struct dbAddr	*paddr;
 {
-	char		*pbuffer;
-	char		buffer[PVNAME_SZ+FLDNAME_SZ+2];
+	char		*precName;
+	char		recName[PVNAME_SZ+1];
+	char		*pfieldName;
 	short		field_offset;
 	short		record_number;
 	short		n;
@@ -299,24 +301,29 @@ struct dbAddr	*paddr;
 	struct fldDes	*pfldDes;
 
 	/* convert the record name */
-	pbuffer = &buffer[0];
+	precName = &recName[0];
 	n=0;
-	while(*pname && (*pname != '.') && n<sizeof(buffer) ){
-		*pbuffer = *pname;
+	while(*pname && (*pname != '.') && (n<PVNAME_SZ) ){
+		*precName = *pname;
 		pname++;
-		pbuffer++;
+		precName++;
 		n++;
 	}
-	*pbuffer = 0;
-	if (pvdGetRec(&buffer[0],&(paddr->record_type),&record_number) < 0){
+	*precName = 0;
+	if (pvdGetRec(&recName[0],&(paddr->record_type),&record_number) < 0){
 		(long)(paddr->precord) = -1;
 		paddr->record_type = -1;
 		return(S_db_notFound);
 	}
 
 	/* convert the field name */
-	if (*pname) pname++;
-	if (!(pfldDes=pvdGetFld(paddr->record_type,pname))){
+	if(*pname=='.') pfieldName = pname +1;
+	else if(n==PVNAME_SZ && *(pname+1)=='.') pfieldName = pname+2;
+	else {/*Field name was not given. Use recName as a work area*/
+		recName[0] = 0;
+		pfieldName = &recName[0];
+	}
+	if (!(pfldDes=pvdGetFld(paddr->record_type,pfieldName))){
 		paddr->field_type = -1;
 		(long)(paddr->pfield) = -1;
 		paddr->field_size = -1;
@@ -753,13 +760,18 @@ long		offset;
     char  *psrc=paddr->pfield;
     short size=paddr->field_size;
 
+    /* always force result string to be null terminated*/
+    if(size>=MAX_STRING_SIZE) size = MAX_STRING_SIZE-1;
+
     if(nRequest==1 && offset==0) {
 	strncpy(pbuffer,psrc,size);
+	*(pbuffer+size) = 0;
 	return(0);
     }
     psrc+= (size*offset);
     while (nRequest) {
         strncpy(pbuffer,psrc,size);
+	*(pbuffer+size) = 0;
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=paddr->pfield;
@@ -3178,11 +3190,12 @@ choice_common:
 		    pdbr_enumStrs->no_str = no_str;
 		    ptemp = &(pdbr_enumStrs->strs[0][0]);
 		    for (i=0; i<no_str; i++) {
-			if(pchoiceSet->papChoice[i]==NULL)
-			    *ptemp=0;
-			else
-			    strncpy(ptemp,pchoiceSet->papChoice[i],26);
-			ptemp += 26;
+			if(pchoiceSet->papChoice[i]==NULL) *ptemp=0;
+			else {
+			    strncpy(ptemp,pchoiceSet->papChoice[i],sizeof(pdbr_enumStrs->strs[0]));
+			    *(ptemp+sizeof(pdbr_enumStrs->strs[0])-1) = 0;
+			}
+			ptemp += sizeof(pdbr_enumStrs->strs[0]);
 		    }
 		    break;
 		case DBF_DEVCHOICE:
@@ -3200,9 +3213,11 @@ choice_common:
 			pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,i);
 			if(pdevChoice==NULL || pdevChoice->pchoice==NULL)
 			    *ptemp=0;
-			else
-			    strncpy(ptemp,pdevChoice->pchoice,26);
-			ptemp += 26;
+			else {
+			    strncpy(ptemp,pdevChoice->pchoice,sizeof(pdbr_enumStrs->strs[0]));
+			    *(ptemp+sizeof(pdbr_enumStrs->strs[0])-1) = 0;
+			}
+			ptemp += sizeof(pdbr_enumStrs->strs[0]);
 		    }
 		    break;
 		default:
@@ -3363,11 +3378,13 @@ long		offset;
 
     if(nRequest==1 && offset==0) {
 	strncpy(pdest,pbuffer,size);
+	*(pdest+size-1) = 0;
 	return(0);
     }
     pdest+= (size*offset);
     while (nRequest) {
         strncpy(pdest,pbuffer,size);
+	*(pdest+size-1) = 0;
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		pdest=paddr->pfield;

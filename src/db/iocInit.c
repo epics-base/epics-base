@@ -1,5 +1,6 @@
+
 /* iocInit.c	ioc initialization */ 
-/* share/src/db @(#)iocInit.c	1.7     3/6/91 */
+/* share/src/db $Id$ */
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -64,13 +65,10 @@ char * pfilename;
     if(initDrvSup()==0) logMsg("Drivers Initialized\n");
     if(initRecSup()==0) logMsg("Record Support Initialized\n");
     if(initDevSup()==0) logMsg("Device Support Initialized\n");
+    ts_init(); logMsg("Time Stamp Driver Initialized\n");
     if(initDatabase()==0) logMsg("Database Initialized\n");
-    scan_init();
-    logMsg("Scanners Initialized\n");
-    rsrv_init();
-    logMsg("Channel Access Servers Initialized\n");
-    ts_init();
-    logMsg("Time Stamp Driver Initialized\n");
+    scan_init(); logMsg("Scanners Initialized\n");
+    rsrv_init(); logMsg("Channel Access Servers Initialized\n");
     logMsg("iocInit: All initialization complete\n");
 
     return(0);
@@ -275,6 +273,7 @@ long initDatabase()
 		    plink = (struct link *)((char *)precord + pfldDes->offset);
 		    if(plink->type == PV_LINK) {
 			strncpy(name,plink->value.pv_link.pvname,PVNAME_SZ);
+			name[PVNAME_SZ]=0;
 			strcat(name,".");
 			strncat(name,plink->value.pv_link.fldname,FLDNAME_SZ);
 			if(dbNameToAddr(name,&dbAddr) == 0) {
@@ -289,6 +288,7 @@ long initDatabase()
 			else {
 			    /*This will be replaced by channel access call*/
 			    strncpy(message,precord->name,PVNAME_SZ);
+			    message[PVNAME_SZ]=0;
 			    strcat(message,".");
 			    strncat(message,pfldDes->fldname,FLDNAME_SZ);
 			    strcat(message,": link process variable =");

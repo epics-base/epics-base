@@ -519,7 +519,7 @@ new_alarm(){
 /*
  * DB_NAME_TO_ADDR
  */
-static short mapNewToOld[]={0,1,1,1,1,5,5,2,6,3,7};
+static short mapNewToOld[]={0,4,4,1,1,5,5,2,6,3};
 
 db_name_to_addr(pname,paddr)
   char           *pname;
@@ -531,11 +531,11 @@ db_name_to_addr(pname,paddr)
         status=dbNameToAddr(pname,paddr);
         if(RTN_SUCCESS(status)) {
 	    ftype = paddr->dbr_field_type;
-	    if(ftype<0 || ftype> (sizeof(mapNewToOld)/sizeof(short))) {
-		printf("db_name_to_addr: Illegal dbr_field_type\n");
-		exit(-1);
+	    if(INVALID_DB_REQ(ftype)) {
+	        recGblDbaddrError(S_db_badDbrtype,paddr,"db_name_to_addr error");
+		return(-2);
 	    }
-	    paddr->dbr_field_type = mapNewToOld[paddr->dbr_field_type];
+	    paddr->dbr_field_type = mapNewToOld[ftype];
             return(0);
 	}
         else

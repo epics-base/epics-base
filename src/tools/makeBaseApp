@@ -100,8 +100,6 @@ if [ ! -d config ]; then
 		#RULES.Vx
 		include $(EPICS_BASE)/config/RULES.Vx
 		inc:: $(INSTALL_INCREC)
-		$(LIBNAME): ../baseLIBOBJS
-		$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 	END
 	cat > config/RULES.ioc <<-\END
 		#RULES.ioc

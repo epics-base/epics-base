@@ -1,0 +1,11 @@
+#
+# $Id$
+# Author: W. Eric Norum
+#         Canadian Light Source
+#         eric@cls.usask.ca
+#
+# All RTEMS targets use the same Makefile fragment
+#
+RTEMS_TARGET_CPU=powerpc
+ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
+include $(CONFIG)/os/CONFIG.Common.RTEMS

@@ -1,0 +1,4 @@
+#
+# Site-specific information for all RTEMS targets
+#
+OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=aps.anl.gov

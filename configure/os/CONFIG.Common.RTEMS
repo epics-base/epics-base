@@ -69,6 +69,10 @@ $(BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
 CROSS_CPPFLAGS =
 CROSS_LDFLAGS =
 SHRLIB_CFLAGS =
+OPT_CFLAGS_YES   = $(CFLAGS_OPTIMIZE_V)
+OPT_CXXFLAGS_YES = $(CFLAGS_OPTIMIZE_V)
+OPT_CFLAGS_NO    = $(CFLAGS_DEBUG_V)
+OPT_CXXFLAGS_NO  = $(CFLAGS_DEBUG_V)
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)

@@ -323,7 +323,11 @@ void *threadPrivateGet(threadPrivateId id)
             "threadPrivateSet");
         papTSD[0] = (void *)(indpthreadPrivate);
     }
-    assert((int)id <= (int)papTSD[0]);
-    data = papTSD[(int)id];
+    if ( (int) id <= (int) papTSD[0] ) {
+        data = 0;
+    }
+    else {
+        data = papTSD[(int)id];
+    }
     return(data);
 }

@@ -72,13 +72,13 @@ typedef struct msgNode {
 
 LOCAL struct {
     epicsEventId errlogTaskWaitForWork;
-    epicsEventId errlogStopWaitForStop;
+    epicsEventId errlogFlushWaitForFlush;
     epicsMutexId msgQueueLock;
     epicsMutexId listenerLock;
     ELLLIST      listenerList;
     ELLLIST      msgQueue;
     msgNode      *pnextSend;
-    int          stopNow;
+    int          flushNow;
     int	         errlogInitFailed;
     int	         buffersize;
     int	         sevToLog;
@@ -312,7 +312,7 @@ static void errlogInitPvt(void *arg)
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
     pvtData.errlogTaskWaitForWork = epicsEventMustCreate(epicsEventEmpty);
-    pvtData.errlogStopWaitForStop = epicsEventMustCreate(epicsEventEmpty);
+    pvtData.errlogFlushWaitForFlush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.listenerLock = epicsMutexMustCreate();
     pvtData.msgQueueLock = epicsMutexMustCreate();
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
@@ -336,11 +336,11 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
     return(0);
 }
 
-epicsShareFunc void epicsShareAPI errlogStop(void)
+epicsShareFunc void epicsShareAPI errlogFlush(void)
 {
-    pvtData.stopNow = 1;
+    pvtData.flushNow = 1;
     epicsEventSignal(pvtData.errlogTaskWaitForWork);
-    epicsEventMustWait(pvtData.errlogStopWaitForStop);
+    epicsEventMustWait(pvtData.errlogFlushWaitForFlush);
 }
 
 LOCAL void errlogTask(void)
@@ -362,11 +362,9 @@ LOCAL void errlogTask(void)
             epicsMutexUnlock(pvtData.listenerLock);
 	    msgbufFreeSend();
 	}
-        if(!pvtData.stopNow) continue;
+        if(!pvtData.flushNow) continue;
         epicsThreadSleep(.2); /*just wait an extra .2 seconds*/
-        /*SHOULD HAVE WAY OF NOTIFYING LISTENERS*/
-        epicsEventSignal(pvtData.errlogStopWaitForStop);
-        break;
+        epicsEventSignal(pvtData.errlogFlushWaitForFlush);
     }
 }
 

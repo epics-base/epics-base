@@ -78,6 +78,28 @@ typedef struct TS_STAMP {
     epicsUInt32    nsec;           /* nanoseconds within second */
 } TS_STAMP;
 
+/*---------------------------------------------------------------------------
+*    tsDetail
+*    breakdown structure for working with secPastEpoch
+*----------------------------------------------------------------------------*/
+
+typedef struct tsDetail {
+    int         year;           /* 4 digit year */
+    int         dayYear;        /* day number in year; 0 = Jan 1 */
+    int         monthNum;       /* month number; 0 = Jan */
+    int         dayMonth;       /* day number; 0 = 1st of month */
+    int         hours;          /* hours within day */
+    int         minutes;        /* minutes within hour */
+    int         seconds;        /* seconds within minute */
+    int         dayOfWeek;      /* weekday number; 0 = Sun */
+    int         leapYear;       /* (0, 1) for year (isn't, is) a leap year */
+    char	dstOverlapChar;	/* indicator for distinguishing duplicate
+				times in the `switch to standard' time period:
+				':'--time isn't ambiguous;
+				's'--time is standard time
+				'd'--time is daylight time */
+} TS_DETAIL;
+
 /*----------------------------------------------------------------------------
 * TS_TEXT_xxx text type codes for converting between text and time stamp
 *
@@ -160,6 +182,16 @@ enum tsTextType{
 
 #if defined(__STDC__) || defined(__cplusplus)
 
+epicsShareFunc void epicsShareAPI tsStampFromLocal(
+TS_STAMP *pStamp,
+struct tsDetail *pT
+);
+
+epicsShareFunc void epicsShareAPI tsStampToLocal(
+TS_STAMP stamp,
+struct tsDetail *pT
+);
+
 epicsShareFunc long epicsShareAPI tsLocalTime (TS_STAMP *pStamp);
 
 epicsShareFunc void epicsShareAPI tsAddDouble(
@@ -201,6 +233,8 @@ char    **pText         /* IO ptr to ptr to string containing time and date */
 
 #else /* !defined(__STDC__) && !defined(__cplusplus) */
 
+epicsShareFunc void epicsShareAPI tsStampFromLocal();
+epicsShareFunc void epicsShareAPI tsStampToLocal();
 epicsShareFunc long epicsShareAPI tsLocalTime ();
 epicsShareFunc void epicsShareAPI tsAddDouble();
 epicsShareFunc int epicsShareAPI tsCmpStamps();

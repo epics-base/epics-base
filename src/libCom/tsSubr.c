@@ -91,6 +91,8 @@
 *  long  tsLocalTime(      >pStamp					)
 *  long  tsRoundDownLocal(<>pStamp,       intervalUL			)
 *  long  tsRoundUpLocal(  <>pStamp,       intervalUL			)
+*  void  tsStampFromLocal( >pStamp,       detail                        )
+*  void  tsStampToLocal(    pStamp,      >detail                        )
 *  char *tsStampToText(     pStamp,       textType,      >textBuffer	)
 *					 TS_TEXT_MONDDYYYY   buf[32]
 *					 TS_TEXT_MMDDYY      buf[28]
@@ -186,29 +188,7 @@
 #define TS_MAX_YEAR TS_EPOCH_YEAR+134	/* ULONG can handle 135 years */
 #define TS_TRUNC 1000000	/* truncate to milli-second significance */
 
-/*/subhead struct tsDetail----------------------------------------------------
-*    breakdown structure for working with secPastEpoch
-*----------------------------------------------------------------------------*/
-
-struct tsDetail {
-    int         year;           /* 4 digit year */
-    int         dayYear;        /* day number in year; 0 = Jan 1 */
-    int         monthNum;       /* month number; 0 = Jan */
-    int         dayMonth;       /* day number; 0 = 1st of month */
-    int         hours;          /* hours within day */
-    int         minutes;        /* minutes within hour */
-    int         seconds;        /* seconds within minute */
-    int         dayOfWeek;      /* weekday number; 0 = Sun */
-    int         leapYear;       /* (0, 1) for year (isn't, is) a leap year */
-    char	dstOverlapChar;	/* indicator for distinguishing duplicate
-				times in the `switch to standard' time period:
-				':'--time isn't ambiguous;
-				's'--time is standard time
-				'd'--time is daylight time */
-};
 
-static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT);
-static void tsStampToLocal(TS_STAMP stamp,struct tsDetail *pT);
 static void tsStampToLocalZone(TS_STAMP *pStamp,struct tsDetail *pT);
 static void tsInitMinWest(void);
 
@@ -846,7 +826,7 @@ long epicsShareAPI tsRoundUpLocal(TS_STAMP *pStamp, unsigned long interval)
     return retStat;
 }
 
-/*+/internal******************************************************************
+/*+/subr**********************************************************************
 * NAME	tsStampFromLocal - convert time stamp to local time
 *
 * DESCRIPTION
@@ -860,7 +840,7 @@ long epicsShareAPI tsRoundUpLocal(TS_STAMP *pStamp, unsigned long interval)
 * o	doesn't handle 0 time stamps for time zones west of Greenwich
 *
 *-*/
-static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT)
+void epicsShareAPI tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT)
 {
     long	retStat=S_ts_OK;/* return status to caller */
 
@@ -936,7 +916,7 @@ static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT)
     *pStamp = stamp;
 }
 
-/*+/internal******************************************************************
+/*+/subr**********************************************************************
 * NAME	tsStampToLocal - convert time stamp to local time
 *
 * DESCRIPTION
@@ -950,7 +930,7 @@ static void tsStampFromLocal(TS_STAMP *pStamp, struct tsDetail *pT)
 * o	doesn't handle 0 time stamps for time zones west of Greenwich
 *
 *-*/
-static void tsStampToLocal(TS_STAMP stamp,struct tsDetail *pT)
+void epicsShareAPI tsStampToLocal(TS_STAMP stamp,struct tsDetail *pT)
 {
     int		dstBegin;	/* day DST begins */
     int		dstEnd;		/* day DST ends */

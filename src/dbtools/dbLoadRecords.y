@@ -308,7 +308,7 @@ int dbLoadRecords(char* pfilename, char* pattern)
 static void sub_pvname(char* type, char* name)
 {
 #ifdef vxWorks
-		if( dbFindRecdes(pdbentry,type) )
+		if( dbFindRecordType(pdbentry,type) )
 			fprintf(stderr,"Cannot find record type %s\n",type);
 #endif
 

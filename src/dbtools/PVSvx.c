@@ -196,7 +196,7 @@ static void handle_reclist(BS* bs)
 	dbInitEntry(pdbbase,&db);
 	names_len=0;
 
-	for(rc=dbFirstRecdes(&db);rc==0;rc=dbNextRecdes(&db))
+	for(rc=dbFirstRecordType(&db);rc==0;rc=dbNextRecordType(&db))
 	{
 		for(rc=dbFirstRecord(&db);rc==0;rc=dbNextRecord(&db))
 		{

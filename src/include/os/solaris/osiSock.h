@@ -49,14 +49,8 @@ typedef int SOCKET;
 #define socket_ioctl(A,B,C) ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 
-/* 
- * this requires emulation of SUN PRO's -D__`uname -s`_`uname -r` 
- * on 3rd party compilers
- */
-#if      defined ( __SunOS_5_0 ) || defined ( __SunOS_5_1 ) \
-      || defined ( __SunOS_5_2 ) || defined ( __SunOS_5_3 ) \
-      || defined ( __SunOS_5_4 ) || defined ( __SunOS_5_5 ) \
-      || defined ( __SunOS_5_6 )
+#if SOLARIS <= 6 
+    typedef int osiSocklen_t;
 #else 
     typedef uint32_t osiSocklen_t;
 #endif

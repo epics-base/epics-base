@@ -331,8 +331,8 @@ void subscriptionStateChange ( struct event_handler_args args )
 void noopSubscriptionStateChange ( struct event_handler_args args )
 {
     if ( args.status != ECA_NORMAL ) {
-	        printf("subscription update failed for \"%s\" because \"%s\"", 
-                ca_name ( args.chid ), ca_message ( args.status ) );
+        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+            ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
 
@@ -358,7 +358,6 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
     unsigned i, j;
 
     showProgressBegin ();
-
 
     for ( i = 0; i < repetitionCount; i++ ) {
         subscriptionUpdateCount = 0u;

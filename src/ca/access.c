@@ -676,10 +676,12 @@ ca_process_exit()
 
 		UNLOCK;
 
+#if defined(vxWorks)
 		if(FASTLOCKFREE(&client_lock) < 0)
 			ca_signal(ECA_INTERNAL, "couldnt free memory");
 		if(FASTLOCKFREE(&event_lock) < 0)
 			ca_signal(ECA_INTERNAL, "couldnt free memory");
+#endif
 		if (free((char *)ca_temp) < 0)
 			ca_signal(ECA_INTERNAL, "couldnt free memory");
 

@@ -80,8 +80,8 @@ static long init_record(phistogram)
     /* histogram.svl must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (phistogram->svl.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl);
-	phistogram->udf = FALSE;
+    if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
+		phistogram->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :

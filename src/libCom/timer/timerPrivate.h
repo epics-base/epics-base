@@ -96,7 +96,7 @@ private:
     friend class timerQueueActiveMgr;
 };
 
-class timerQueueActive : public epicsTimerQueue, 
+class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueActiveMgrPrivate {
 public:
@@ -119,29 +119,29 @@ private:
     void reschedule ();
 };
 
-struct epicsTimerQueueForC : public timerQueueActive, 
-    public tsDLNode < epicsTimerQueueForC > {
+struct epicsTimerQueueActiveForC : public timerQueueActive, 
+    public tsDLNode < epicsTimerQueueActiveForC > {
 public:
-    epicsTimerQueueForC ( bool okToShare, unsigned priority );
+    epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
     void release ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
-    virtual ~epicsTimerQueueForC ();
+    virtual ~epicsTimerQueueActiveForC ();
 private:
-    static tsFreeList < epicsTimerQueueForC > freeList;
+    static tsFreeList < epicsTimerQueueActiveForC > freeList;
     static epicsMutex freeListMutex;
 };
 
 class timerQueueActiveMgr {
 public:
     ~timerQueueActiveMgr ();
-    epicsTimerQueueForC & allocate ( bool okToShare, 
+    epicsTimerQueueActiveForC & allocate ( bool okToShare, 
         int threadPriority = epicsThreadPriorityMin + 10 );
-    void release ( epicsTimerQueueForC & );
+    void release ( epicsTimerQueueActiveForC & );
 private:
     epicsMutex mutex;
-    tsDLList < epicsTimerQueueForC > sharedQueueList;
+    tsDLList < epicsTimerQueueActiveForC > sharedQueueList;
 };
 
 extern timerQueueActiveMgr queueMgr;
@@ -223,16 +223,16 @@ inline timerQueue & timerQueuePassive::getTimerQueue ()
     return this->queue;
 }
 
-inline void * epicsTimerQueueForC::operator new ( size_t size )
+inline void * epicsTimerQueueActiveForC::operator new ( size_t size )
 { 
-    epicsAutoMutex locker ( epicsTimerQueueForC::freeListMutex );
-    return epicsTimerQueueForC::freeList.allocate ( size );
+    epicsAutoMutex locker ( epicsTimerQueueActiveForC::freeListMutex );
+    return epicsTimerQueueActiveForC::freeList.allocate ( size );
 }
 
-inline void epicsTimerQueueForC::operator delete ( void *pCadaver, size_t size )
+inline void epicsTimerQueueActiveForC::operator delete ( void *pCadaver, size_t size )
 { 
-    epicsAutoMutex locker ( epicsTimerQueueForC::freeListMutex );
-    epicsTimerQueueForC::freeList.release ( pCadaver, size );
+    epicsAutoMutex locker ( epicsTimerQueueActiveForC::freeListMutex );
+    epicsTimerQueueActiveForC::freeList.release ( pCadaver, size );
 }
 
 #endif // epicsTimerPrivate_h

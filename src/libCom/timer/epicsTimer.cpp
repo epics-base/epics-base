@@ -101,19 +101,19 @@ epicsTimerNotify::expireStatus epicsTimerForC::expire ()
     return noRestart;
 }
 
-tsFreeList < epicsTimerQueueForC > epicsTimerQueueForC::freeList;
-epicsMutex epicsTimerQueueForC::freeListMutex;
+tsFreeList < epicsTimerQueueActiveForC > epicsTimerQueueActiveForC::freeList;
+epicsMutex epicsTimerQueueActiveForC::freeListMutex;
 
-epicsTimerQueueForC::epicsTimerQueueForC ( bool okToShare, unsigned priority ) :
+epicsTimerQueueActiveForC::epicsTimerQueueActiveForC ( bool okToShare, unsigned priority ) :
     timerQueueActive ( okToShare, priority )
 {
 }
 
-epicsTimerQueueForC::~epicsTimerQueueForC ()
+epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 {
 }
 
-void epicsTimerQueueForC::release ()
+void epicsTimerQueueActiveForC::release ()
 {
     queueMgr.release ( *this );
 }
@@ -205,7 +205,7 @@ extern "C" epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsTimerQueueForC &tmr = queueMgr.allocate ( okToShare ? true : false, threadPriority );
+        epicsTimerQueueActiveForC &tmr = queueMgr.allocate ( okToShare ? true : false, threadPriority );
         return &tmr;
     }
     catch ( ... ) {

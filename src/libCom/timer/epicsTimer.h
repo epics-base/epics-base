@@ -51,13 +51,19 @@ public:
 
 class epicsTimerQueue {
 public:
-    static epicsShareFunc epicsTimerQueue & allocate (
-        bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
-    virtual void release () = 0; 
     virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
     virtual ~epicsTimerQueue () = 0;
+};
+
+class epicsTimerQueueActive : public epicsTimerQueue {
+public:
+    static epicsShareFunc epicsTimerQueueActive & allocate (
+        bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
+    virtual void release () = 0; 
+protected:
+    virtual ~epicsTimerQueueActive () = 0;
 };
 
 class epicsTimerQueueNotify {
@@ -67,14 +73,12 @@ public:
     virtual void reschedule () = 0;
 };
 
-class epicsTimerQueuePassive {
+class epicsTimerQueuePassive : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
     virtual ~epicsTimerQueuePassive () = 0;
-    virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
     virtual void process () = 0;
     virtual double getNextExpireDelay () const = 0;
-    virtual void show ( unsigned int level ) const = 0;
 };
 
 inline epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
@@ -108,7 +112,7 @@ typedef struct epicsTimerForC * epicsTimerId;
 typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 
 /* thread managed timer queue */
-typedef struct epicsTimerQueueForC * epicsTimerQueueId;
+typedef struct epicsTimerQueueActiveForC * epicsTimerQueueId;
 epicsShareFunc epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority );
 epicsShareFunc void epicsShareAPI 

@@ -38,12 +38,12 @@ timerQueueActiveMgr::~timerQueueActiveMgr ()
     epicsAutoMutex locker ( this->mutex );
 }
     
-epicsTimerQueueForC & timerQueueActiveMgr::allocate (
+epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
         bool okToShare, int threadPriority )
 {
     epicsAutoMutex locker ( this->mutex );
     if ( okToShare ) {
-        tsDLIterBD < epicsTimerQueueForC > iter = this->sharedQueueList.firstIter ();
+        tsDLIterBD < epicsTimerQueueActiveForC > iter = this->sharedQueueList.firstIter ();
         while ( iter.valid () ) {
             if ( iter->threadPriority () == threadPriority ) {
                 assert ( iter->timerQueueActiveMgrPrivate::referenceCount < UINT_MAX );
@@ -52,7 +52,7 @@ epicsTimerQueueForC & timerQueueActiveMgr::allocate (
             }
         }
     }
-    epicsTimerQueueForC *pQueue = new epicsTimerQueueForC ( okToShare, threadPriority );
+    epicsTimerQueueActiveForC *pQueue = new epicsTimerQueueActiveForC ( okToShare, threadPriority );
     if ( ! pQueue ) {
         throwWithLocation ( timer::noMemory () );
     }
@@ -63,7 +63,7 @@ epicsTimerQueueForC & timerQueueActiveMgr::allocate (
     return *pQueue;
 }
 
-void timerQueueActiveMgr::release ( epicsTimerQueueForC &queue )
+void timerQueueActiveMgr::release ( epicsTimerQueueActiveForC &queue )
 {
     epicsAutoMutex locker ( this->mutex );
     assert ( queue.timerQueueActiveMgrPrivate::referenceCount > 0u );

@@ -31,6 +31,8 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+epicsTimerQueue::~epicsTimerQueue () {}
+
 timerQueue::timerQueue ( epicsTimerQueueNotify &notifyIn ) :
     notify ( notifyIn ), pExpireTmr ( 0 ),  
         processThread ( 0 ), cancelPending ( false )

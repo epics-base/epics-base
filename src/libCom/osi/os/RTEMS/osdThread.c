@@ -192,12 +192,6 @@ threadIsSuspended (threadId id)
     }
 }
 
-int
-threadIsReady (threadId id)
-{
-    return !threadIsSuspended(id);
-}
-
 void
 threadSleep (double seconds)
 {

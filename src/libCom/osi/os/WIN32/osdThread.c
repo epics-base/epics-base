@@ -320,14 +320,6 @@ epicsShareFunc int epicsShareAPI threadIsSuspended (threadId id)
 }
 
 /*
- * threadIsReady ()
- */
-epicsShareFunc int epicsShareAPI threadIsReady (threadId id) 
-{
-    return !threadIsSuspended (id);
-}
-
-/*
  * threadSleep ()
  */
 epicsShareFunc void epicsShareAPI threadSleep (double seconds)

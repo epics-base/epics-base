@@ -17,7 +17,6 @@ of this distribution.
 #include "osiThread.h"
 #include "osiTimer.h"
 #include "errlog.h"
-#include "taskwd.h"
 #include "tsStamp.h"
 
 static void expire(void *pPrivate);

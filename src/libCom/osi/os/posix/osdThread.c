@@ -260,13 +260,9 @@ int threadIsEqual(threadId id1, threadId id2)
     return(pthread_equal(p1->tid,p2->tid));
 }
 
-int threadIsReady(threadId id) {
-    threadInfo *pthreadInfo = (threadInfo *)id;
-    return(pthreadInfo->isSuspended ? 0 : 1);
-}
-
 int threadIsSuspended(threadId id) {
-    return(threadIsReady(id) ? 0 : 1);
+    threadInfo *pthreadInfo = (threadInfo *)id;
+    return(pthreadInfo->isSuspended ? 1 : 0);
 }
 
 void threadSleep(double seconds)
@@ -289,4 +285,45 @@ threadId threadGetIdSelf(void) {
     checkStatusQuit(status,"pthread_once","threadGetIdSelf");
     pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     return((threadId)pthreadInfo);
+}
+
+threadVarId threadPrivateCreate(void)
+{
+    pthread_key_t *key;
+    int status;
+
+    key = callocMustSucceed(1,sizeof(pthread_key_t),"threadPrivateCreate");
+    status = pthread_key_create(key,0);
+    checkStatusQuit(status,"pthread_key_create","threadPrivateCreate");
+    return((threadVarId)key);
+}
+
+void threadPrivateDelete(threadVarId id)
+{
+    pthread_key_t *key = (pthread_key_t *)id;
+    int status;
+
+    status = pthread_key_delete(*key);
+    checkStatusQuit(status,"pthread_key_delete","threadPrivateDelete");
+}
+
+void threadPrivateSet (threadVarId id, void *value)
+{
+    pthread_key_t *key = (pthread_key_t *)id;
+    int status;
+
+    status = pthread_setspecific(*key,value);
+    checkStatusQuit(status,"pthread_setspecific","threadPrivateSet");
+}
+
+void *threadPrivateGet(threadVarId id)
+{
+    pthread_key_t *key = (pthread_key_t *)id;
+    int status;
+    void *value;
+
+    value = pthread_getspecific(*key);
+    if(!value)
+        errlogPrintf("threadPrivateGet: pthread_getspecific returned 0\n");
+    return(value);
 }

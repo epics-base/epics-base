@@ -59,6 +59,7 @@ public:
     void add ( tsDLList<T> & addList ); // add to end of list - addList left empty
     void push ( T & item ); // add item to beginning of list
     void remove ( T & item ); // remove item from list
+    void removeAll ( tsDLList <T> & destination );
     T * get (); // removes first item on list
     T * pop (); // same as get ()
     void insertAfter ( T & item, T & itemBefore ); // insert item immediately after itemBefore
@@ -237,6 +238,21 @@ inline void tsDLList<T>::remove ( T &item )
     }
     
     this->itemCount--;
+}
+
+//
+// tsDLList<T>::removeAll ()
+//
+template <class T>
+inline void tsDLList<T>::removeAll ( 
+        tsDLList <T> & destination )
+{
+    destination.pFirst = this->pFirst;
+    destination.pLast = this->pLast;
+    destination.itemCount = this->itemCount;
+    this->pFirst = 0;
+    this->pLast = 0;
+    this->itemCount = 0;
 }
 
 //

@@ -98,8 +98,8 @@ CONFORM_CXXFLAGS_STRICT = -ansi
 
 #--------------------------------------------------
 # Command-line input support
-COMMANDLINE_LIBRARY = LIBTECLA
 LDLIBS_LIBTECLA = -ltecla_r -lncurses
+LDLIBS_READLINE = -lreadline -lncurses
 
 #--------------------------------------------------
 # Allow site overrides

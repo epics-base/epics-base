@@ -246,6 +246,7 @@ private:
        int status, const char *pContext );
     void ioExceptionNotifyAndDestroy ( unsigned id, 
        int status, const char *pContext, unsigned type, arrayElementCount count );
+    bool blockForIOCallbackCompletion ( const cacChannel::ioid & id );
 
     // recv protocol stubs
     bool noopAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );

@@ -144,7 +144,7 @@ exit 0;				# END OF SCRIPT
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    getopts("a:b:dhilT:t:") and @ARGV or Cleanup(1);
+    getopts("a:b:dhilT:t:") or Cleanup(1);
     
     # Options help
     Cleanup(0) if $opt_h;
@@ -184,6 +184,8 @@ sub get_commandline_opts { #no args
 	&ListAppTypes;
 	exit 0;			# finished for -l command
     }
+    
+    Cleanup(1) if @ARGV;
 
     # ioc architecture
     if ($opt_i) {
@@ -247,15 +249,18 @@ sub ReadReleaseFile {
 # List application types
 #
 sub ListAppTypes { # no args
+    opendir TYPES, "$top" or die "Can't open $top: $!";
+    my @allfiles = readdir TYPES;
+    closedir TYPES;
+    my @apps = grep /.*App$/, @allfiles;
+    my @boots = grep /.*Boot$/, @allfiles;
     print "Valid application types are:\n";
-    foreach $name (<$top/*App>) {
-	$name =~ s|$top/||;
+    foreach $name (@apps) {
 	$name =~ s|App||;
 	printf "\t$name\n" if ($name && -r "$top/$name" . "App");
     }
     print "Valid iocBoot types are:\n";
-    foreach $name (<$top/*Boot>) {
-	$name =~ s|$top/||;
+    foreach $name (@boots) {
 	$name =~ s|Boot||;
 	printf "\t$name\n" if ($name && -r "$top/$name" . "Boot");;
     }

@@ -59,6 +59,11 @@
  *
  *
  * $Log$
+ * Revision 1.9.8.2  2001/08/30 21:16:48  anj
+ * Changes to get working on PowerPC - struct alignment issues mainly,
+ * plus a problem with the maximum message length check...
+ * Also removed lots of warnings, although this was a bit of a waste of time.
+ *
  * Revision 1.9.8.1  1999/12/08 22:02:43  mrk
  * all mallocs changed to callocs. This is needed for the new unbundled bitbus support.
  *
@@ -126,6 +131,7 @@
 #include <semLib.h>
 #include <iv.h>
 #include <vme.h>
+#include <cacheLib.h>
 #include <wdLib.h>
 #include <rngLib.h>
 #include <logLib.h>
@@ -1135,6 +1141,7 @@ niPhysIo(
   {
     /* We will be writing, copy data into the bounce buffer */
     memcpy(pNiLink[link]->A24BounceBuffer, buffer, cnt);
+    cacheFlush(DATA_CACHE, pNiLink[link]->A24BounceBuffer, cnt);
 
     if (cnt != 1)
       pNiLink[link]->DmaStuff->cc_byte = AUX_SEOI; /* send EOI with last byte */
@@ -1163,6 +1170,7 @@ niPhysIo(
     return(ERROR);
   pNiLink[link]->DmaStuff->cc_array.cc_n_1addr_HI = temp_addr >> 16;
   pNiLink[link]->DmaStuff->cc_array.cc_n_1addr_LO = temp_addr & 0xffff;
+  cacheFlush (DATA_CACHE, &pNiLink[link]->DmaStuff->cc_array, sizeof(struct cc_ary));
   
   if(ibDebug > 5)
     logMsg("PhysIO: &cc_byte=%8.8X, &pNiLink[link]->A24BounceBuffer[cnt-1]=%4.4X%4.4X, ",
@@ -1321,6 +1329,7 @@ niPhysIo(
 
   if (dir == READ)
   { /* Copy data from the bounce buffer to the user's buffer */
+    cacheInvalidate(DATA_CACHE, pNiLink[link]->A24BounceBuffer, cnt);
     memcpy(buffer, pNiLink[link]->A24BounceBuffer, cnt);
   }
 #ifdef NI_GPIB_LOOP_LENGTH

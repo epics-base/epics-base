@@ -60,6 +60,8 @@ if ($hostarch) {
     $relfile .= ".$hostarch";
     &readRelease($relfile, \%macros, \@apps) if (-r $relfile);
 }
+&expandRelease(\%macros, \@apps);
+
 
 # This is a perl switch statement:
 for ($outfile) {
@@ -106,7 +108,10 @@ sub readRelease {
 	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
     }
     close IN;
-    
+}
+
+sub expandRelease {
+    my ($Rmacros, $Rapps) = @_;
     # Expand any (possibly nested) macros that were defined after use
     while (($macro, $path) = each %$Rmacros) {
 	while (($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
@@ -197,7 +202,6 @@ sub cdCommands {
     }
     close OUT;
 }
-
 sub checkRelease {
     $status = 0;
     delete $macros{TOP};
@@ -212,6 +216,7 @@ sub checkRelease {
 	    $relfile .= ".$hostarch";
 	    &readRelease($relfile, \%check, \@order) if (-r $relfile);
 	}
+	&expandRelease(\%check, \@order);
 	delete $check{TOP};
 	
 	while (($parent, $ppath) = each %check) {

@@ -143,6 +143,7 @@ int epicsShareAPI iocInit()
 
    /* Enable scan tasks and some driver support functions.  */
     interruptAccept=TRUE; initHooks(initHookAfterInterruptAccept);
+    epicsThreadSleep(1.0);
 
     initialProcess(); initHooks(initHookAfterInitialProcess);
 

@@ -6,6 +6,10 @@
  *
  *
  * $Log$
+ * Revision 1.8  1999/09/02 21:50:23  jhill
+ * o changed UDP to non-blocking IO
+ * o cleaned up (consolodated) UDP interface class structure
+ *
  * Revision 1.7  1999/08/05 00:07:56  jhill
  * osiTimer constructor now requires delay of type double
  *

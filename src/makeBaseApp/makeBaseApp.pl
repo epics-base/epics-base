@@ -27,11 +27,13 @@ if(!("opt_i" || "opt_e") && "opt_a") {
 #locate epics_base
 if($opt_b) { #first choice is -b base
     $epics_base = $opt_b;
-} elsif(-d config) { #second choice is config/RELEASE
+} elsif(-r "config/RELEASE") { #second choice is config/RELEASE
     open(IN,"config/RELEASE") or die "Cannot open config/RELEASE";
     while ($line = <IN>) {
+	chomp($line);
 	if($line =~ /EPICS_BASE/) {
-	    $epics_base = ($line =~ s/EPICS_BASE=//);
+            $line =~ s/EPICS_BASE=//;
+	    $epics_base = $line;
 	    break;
 	}
     }
@@ -94,7 +96,7 @@ if($opt_i || $opt_e) { #Create ioc directories
 	    print "What architecture do you want to use for your IOC,";
 	    print "e.g. pc486, mv167 ? ";
 	    $arch=<STDIN>;
-	    chomp $arch;
+	    chomp($arch);
 	}
         open(IN,"${fromDir}/Makefile") or die "Cannot open ${fromDir}/Makefile";
         open OUT, ">${toDir}/Makefile" or die "Cannot create ${toDir}/Makefile";

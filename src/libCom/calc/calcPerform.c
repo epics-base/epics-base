@@ -145,7 +145,7 @@ char   *post;
 /* DEBUG print statements
 for (i=0;i<184;i++){
 printf ("%d_",post[i]);
-if ( post[i] == -1 ) break;
+if ( post[i] == END_STACK ) break;
 if ( post[i] == 71 ) i=i+8;
 }
 printf ("*FINISHED*\n");
@@ -490,7 +490,7 @@ printf ("*FINISHED*\n");
 			++post;
 			if ( post == NULL ) {
 				++post;
-				printf("%.7s bad constant in expression\n",*post);
+				printf("%.7s bad constant in expression\n",post);
 				break;
 			}
 			memcpy((void *)pstacktop,post,8);

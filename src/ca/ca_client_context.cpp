@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*  
  *  $Id$
  *
@@ -50,8 +59,8 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 
     {
         osiSockIoctl_t yes = true;
-        int status = socket_ioctl ( this->sock, 
-                FIONBIO, & yes); // X aCC 392
+        int status = socket_ioctl ( this->sock, // X aCC 392
+                                    FIONBIO, & yes);
         if ( status < 0 ) {
             char sockErrBuf[64];
             convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );

@@ -18,7 +18,7 @@ epicsShareFunc int epicsShareAPI dbmfShow(int level);
 /* Rules:
  * 1) Size is always made a multiple of 8.
  * 2) if dbmfInit is not called before one of the other routines then it
- *    is automatically called with size=64 and initial_items=10
+ *    is automatically called with size=64 and chunkItems=10
  * 3) These routines should only be used to allocate storage that will
  *    shortly thereafter be freed. 
  * 4) dbmfFreeChunks can only free chunks that contain only free items

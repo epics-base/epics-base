@@ -39,11 +39,11 @@
  */
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<wdLib.h>
 #include	<memLib.h>
-#include	<string.h>
 
 #include	<alarm.h>
 #include	<callback.h>
@@ -129,7 +129,7 @@ static long read_ai(pai)
     switch (pai->inp.type) {
     case (CONSTANT) :
 	if(pai->pact) {
-		printf("%Completed asynchronous processing: %s\n",pai->name);
+		printf("Completed asynchronous processing: %s\n",pai->name);
 		return(2); /* don`t convert*/
 	} else {
 		wait_time = (int)(pai->disv * vxTicksPerSecond);

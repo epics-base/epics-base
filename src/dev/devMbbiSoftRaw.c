@@ -35,8 +35,8 @@
  *      ...
  */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -68,7 +68,6 @@ struct {
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    long status;
 
     if (pmbbi->inp.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);

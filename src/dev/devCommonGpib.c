@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.33  1997/04/09 19:50:39  mrk
+ * Forgot to compile before committing
+ *
  * Revision 1.32  1997/04/09 19:35:56  mrk
  * makesure GPIBFASTO has val in range
  *
@@ -95,13 +98,12 @@
 #define SCAN_IO_EVENT 0		/* This should be in an epicsH header file */
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<taskLib.h>
 #include	<tickLib.h>
 #include	<rngLib.h>
-#include	<types.h>
-#include	<string.h>
-#include	<stdioLib.h>
-#include	<stdlib.h>
 
 #include	<devLib.h>
 #include	<alarm.h>
@@ -157,6 +159,8 @@ extern struct drvGpibSet drvGpib;
 #endif
 
 extern int	ibSrqDebug;
+
+int checkEnums(char *msg, char **enums);
 
 /******************************************************************************
  *
@@ -2352,10 +2356,7 @@ short             status;
  * is not considered in the comparison.
  *
  ******************************************************************************/
-int
-checkEnums(msg, enums)
-char	*msg;
-char	**enums;
+int checkEnums(char *msg, char **enums)
 {
     int		i;
     int		j;

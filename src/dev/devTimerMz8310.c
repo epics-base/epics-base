@@ -33,8 +33,8 @@
 
 #include	<vxWorks.h>
 #include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	<iv.h>
 

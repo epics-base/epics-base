@@ -35,11 +35,13 @@
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
+#include	<taskLib.h>
 
 #include	<dbDefs.h>
 #include	<alarm.h>
 #include	<cvtTable.h>
 #include	<dbAccess.h>
+#include	<epicsPrint.h>
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>

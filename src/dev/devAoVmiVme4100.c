@@ -39,8 +39,8 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>

@@ -84,10 +84,11 @@
  /*********************************************************************/
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<sysLib.h>
 #include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<intLib.h>
 #include	<string.h>
 #include        <iv.h>
 
@@ -110,7 +111,6 @@
 #define STATIC static
 
 STATIC long init();
-STATIC long report();
 STATIC long init_bo_record();
 STATIC long init_bi_record();
 STATIC long init_mbbo_record();
@@ -288,7 +288,7 @@ STATIC int devAvme9440Report()
 	{
 		if (cards[LinkNum].card != NULL)
 		{
-			printf("    Link %02.2d at 0x%4.4X, IRQ 0x%2.2X, input 0x%04.4X, output 0x%04.4X\n", 
+			printf("    Link %2.2d at 0x%4.4X, IRQ 0x%2.2X, input 0x%4.4X, output 0x%4.4X\n", 
 					LinkNum, 
 					CardBase, 
 					IntVec, 
@@ -317,6 +317,7 @@ int	intvecbase;
     BASEADD = a16base;
     INT_VEC_BASE = intvecbase;
     init(0);
+    return(0);
 }
 
 STATIC long
@@ -324,7 +325,7 @@ init(flag)
 int	flag;
 {
   int				cardNum, chanNum;
-  unsigned char			probeVal, initVal;
+  unsigned char			probeVal;
   volatile struct avme9440	*p;
 
   if (init_flag != 0)
@@ -351,14 +352,14 @@ int	flag;
     {
 
       if (devAvme9440Debug >= 5)
-         printf("devAvme9440: Probe at 0x%08.8X failed\n", &(p->boardStatus));
+         printf("devAvme9440: Probe at %p failed\n", &(p->boardStatus));
       cards[cardNum].card = NULL;		/* No card found */
     }
     else
     {
       if (devAvme9440Debug >= 5)
       {
-         printf("devAvme9440: Probe at 0x%08.8X success, board status = 0x%02.2X\n", &(p->boardStatus), probeVal);
+         printf("devAvme9440: Probe at %p success, board status = 0x%2.2X\n", &(p->boardStatus), probeVal);
 	 printf("             Beginning card %d initialization\n", cardNum);
       }
 
@@ -368,8 +369,8 @@ int	flag;
       {
 	 if ((vxMemProbe(((char*) &(p->intVector0) + (2 * chanNum))  , WRITE, 1, &probeVal) == OK) && (devAvme9440Debug >= 5))
 	 {
-	     printf("devAvme9440: Interrupt vector 0x%02.2X being written to channel %d interrupt\n", probeVal, chanNum);
-	     printf("             vector table entry at address 0x%08.8X\n", (&(p->intVector0) + (2 * chanNum)));
+	     printf("devAvme9440: Interrupt vector 0x%2.2X being written to channel %d interrupt\n", probeVal, chanNum);
+	     printf("             vector table entry at address %p\n", (&(p->intVector0) + (2 * chanNum)));
 
              cards[cardNum].intCnt[chanNum] = 0;  /* clear channel interrupt counter */
          }
@@ -820,7 +821,7 @@ int             reg;
     *value = cards[card].card->outputData & mask;
 
   if (devAvme9440Debug >= 20)
-    printf("devAvme9440: read 0x%04.4X from card %d\n", *value, card);
+    printf("devAvme9440: read 0x%4.4X from card %d\n", *value, card);
 
   return(OK);
 }
@@ -843,7 +844,7 @@ unsigned long   value;
   FASTUNLOCK(&(cards[card].lock));
 
   if (devAvme9440Debug >= 15)
-    printf("devAvme9440: wrote 0x%04.4X to card %d\n", cards[card].card->outputData, card);
+    printf("devAvme9440: wrote 0x%4.4X to card %d\n", cards[card].card->outputData, card);
 
   return(0);
 }
@@ -866,7 +867,7 @@ unsigned long   value;
   FASTUNLOCK(&(cards[card].lock));
 
   if (devAvme9440Debug >= 15)
-    printf("devAvme9440: wrote 0x%04.4X to card %d\n", cards[card].card->outputData, card);
+    printf("devAvme9440: wrote 0x%4.4X to card %d\n", cards[card].card->outputData, card);
 
   return(0);
 }
@@ -903,7 +904,6 @@ IOSCANPVT		*ppvt;
 
    struct vmeio *pvmeio = (struct vmeio *)(&pbi->inp.value);
    volatile struct avme9440 *pc = cards[pvmeio->card].card;
-   unsigned int card;
 
    *ppvt = cards[pvmeio->card].ioscanpvt[pvmeio->signal];
 

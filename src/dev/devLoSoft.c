@@ -32,8 +32,8 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>

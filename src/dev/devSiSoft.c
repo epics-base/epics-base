@@ -34,8 +34,8 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -68,7 +68,6 @@ struct {
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;
 {
-    long status;
 
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pstringin->inp.type) {

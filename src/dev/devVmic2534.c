@@ -78,8 +78,8 @@ static char rcsid[] =
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -137,7 +137,7 @@ static long init_bi( struct biRecord	*pbi)
 	pbi->mask <<= pvmeio->signal;
 #ifdef DEBUG_2534
 	printf("Input: signal = %x, mask = %08x\n", pvmeio->signal, pbi->mask);
-#endif DEBUG_2534
+#endif /*DEBUG_2534*/
 	if ( vmic2534_setIOBitDirection( pvmeio->card, pbi->mask, 0 ) != 0 )
 	    {
 	    pbi->mask = 0;
@@ -195,7 +195,7 @@ static long init_bo(struct boRecord	*pbo)
 	pbo->mask <<= pvmeio->signal;
 #ifdef DEBUG_2534
 	printf("Output: signal = 0x%x, mask = %08x\n", pvmeio->signal, pbo->mask);
-#endif DEBUG_2534
+#endif /*DEBUG_2534*/
 	if ( vmic2534_setIOBitDirection( pvmeio->card, pbo->mask, 1 ) != 0 )
 	    {
 	    pbo->mask = 0;

@@ -32,8 +32,8 @@
  *  1. 10-08-93   mcn      (created)     dev support for MbboDirect records
  */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>

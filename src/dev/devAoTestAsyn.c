@@ -41,11 +41,11 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<stdio.h>
 #include	<wdLib.h>
 #include	<memLib.h>
-#include	<string.h>
 
 #include	<alarm.h>
 #include	<callback.h>
@@ -130,7 +130,7 @@ static long write_ao(pao)
     switch (pao->out.type) {
     case (CONSTANT) :
 	if(pao->pact) {
-		printf("%Completed asynchronous processing: %s\n",pao->name);
+		printf("Completed asynchronous processing: %s\n",pao->name);
 		return(0);
 	} else {
 		wait_time = (int)(pao->disv * vxTicksPerSecond);

@@ -1,4 +1,4 @@
-/* #define EG_DEBUG  /**/
+/* #define EG_DEBUG  */
 /*
  
 *****************************************************************
@@ -62,7 +62,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 */
 
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <iosLib.h>
 #include <taskLib.h>
 #include <semLib.h>
@@ -75,6 +76,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <dbDefs.h>
 #include <dbCommon.h>
 #include <dbAccess.h>
+#include <epicsPrint.h>
+#include <dbEvent.h>
+#include <recGbl.h>
 #include <devSup.h>
 #include <dbDefs.h>
 #include <link.h>
@@ -136,7 +140,6 @@ typedef struct
 } EgEventNode;
 
 STATIC long EgInitDev(int pass);
-STATIC long EgInitRec(struct egRecord *pRec);
 STATIC long EgProcEgRec(struct egRecord *pRec);
 STATIC long EgDisableFifo(EgLinkStruct *pParm);
 STATIC long EgEnableFifo(EgLinkStruct *pParm);
@@ -213,28 +216,28 @@ int EgConfigure(int Card, unsigned long CardAddress)
 
   if (ConfigureLock != 0)
   {
-    logMsg("devApsEg: Cannot change configuration after init.  Request ignored\n");
+    epicsPrintf("devApsEg: Cannot change configuration after init.  Request ignored\n");
     return(-1);
   }
   if (Card >= NUM_EG_LINKS)
   {
-    logMsg("devApsEg: Card number invalid, must be 0-%d\n", NUM_EG_LINKS);
+    epicsPrintf("devApsEg: Card number invalid, must be 0-%d\n", NUM_EG_LINKS);
     return(-1);
   }
   if (CardAddress > 0xffff)
   {
-    logMsg("devApsEg: Card address invalid, must be 0x0000-0xffff\n");
+    epicsPrintf("devApsEg: Card address invalid, must be 0x0000-0xffff\n");
     return(-1);
   }
   if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char*)CardAddress, (char**)&EgLink[Card].pEg)!=OK)
   {
-    logMsg("devApsEg: Failure mapping requested A16 address\n");
+    epicsPrintf("devApsEg: Failure mapping requested A16 address\n");
     EgLink[Card].pEg = NULL;
     return(-1);
   }
   if (vxMemProbe((char*)&(EgLink[Card].pEg->Control), READ, sizeof(short), (char*)&Junk) != OK)
   {
-    logMsg("devApsEg: Failure probing for event receiver... Card disabled\n");
+    epicsPrintf("devApsEg: Failure probing for event receiver... Card disabled\n");
     EgLink[Card].pEg = NULL;
     return(-1);
   }
@@ -724,7 +727,7 @@ STATIC long EgProcEgRec(struct egRecord *pRec)
   EgLinkStruct	*pLink = &EgLink[pRec->out.value.vmeio.card];
 
   if (pRec->tpro > 10)
-    printf("devApsEg::proc(%s) link%d at 0x%08.8X\n", pRec->name, 
+    printf("devApsEg::proc(%s) link%d at %p\n", pRec->name, 
 	pRec->out.value.vmeio.card, pLink);
 
   /* Check if the card is present */
@@ -1028,11 +1031,11 @@ STATIC long EgProcEgRec(struct egRecord *pRec)
 }
 struct {
   long	number;
-  void *p1;
-  void *p2;
-  void *p3;
-  void *p4;
-  void *p5;
+  long (*p1)();
+  long (*p2)();
+  long (*p3)();
+  long (*p4)();
+  long (*p5)();
 } devEg={ 5, NULL, EgInitDev, EgInitEgRec, NULL, EgProcEgRec};
 
 /******************************************************************************
@@ -1078,7 +1081,7 @@ STATIC long EgProcEgEventRec(struct egeventRecord *pRec)
   double	RamSpeed;
 
   if (pRec->tpro > 10)
-    printf("devApsEg::EgProcEgEventRec(%s) link%d at 0x%08.8X\n", pRec->name,
+    printf("devApsEg::EgProcEgEventRec(%s) link%d at %p\n", pRec->name,
         pRec->out.value.vmeio.card, pLink);
 
   /* Check if the card is present */
@@ -1175,11 +1178,11 @@ STATIC long EgProcEgEventRec(struct egeventRecord *pRec)
 
 struct {
   long	number;
-  void *p1;
-  void *p2;
-  void *p3;
-  void *p4;
-  void *p5;
+  long (*p1)();
+  long (*p2)();
+  long (*p3)();
+  long (*p4)();
+  long (*p5)();
 } devEgEvent={ 5, NULL, EgInitDev, EgInitEgEventRec, NULL, EgProcEgEventRec};
 
 /******************************************************************************
@@ -1237,7 +1240,7 @@ STATIC long EgProgramRamEvent(EgLinkStruct *pParm, long Ram, long Addr, long Eve
     if ((pEg->Seq1Data&0xff) != 0)
     {
 #ifdef EG_DEBUG
-      printf("Seq1 data at 0x%04.4X already %02.2X\n", Addr, pEg->Seq1Data&0xff);
+      printf("Seq1 data at 0x%4.4X already 0x%2.2X\n", Addr, pEg->Seq1Data&0xff);
 #endif
       return(-1);
     }
@@ -1249,7 +1252,7 @@ STATIC long EgProgramRamEvent(EgLinkStruct *pParm, long Ram, long Addr, long Eve
     if ((pEg->Seq2Data&0xff) != 0)
     {
 #ifdef EG_DEBUG
-      printf("Seq2 data at 0x%04.4X already %02.2X\n", Addr, pEg->Seq2Data&0xff);
+      printf("Seq2 data at 0x%4.4X already 0x%2.2X\n", Addr, pEg->Seq2Data&0xff);
 #endif
       return(-1);
     }
@@ -1675,7 +1678,7 @@ STATIC long EgGetMode(EgLinkStruct *pParm, int Ram)
     if (Mask & 0x1000)
       return(egMOD1_Single);
   }
-  printf("EgGetMode() seqence RAM in invalid state %04.4X %04.4X\n", pEg->Control, pEg->EventMask);
+  printf("EgGetMode() seqence RAM in invalid state %4.4X %4.4X\n", pEg->Control, pEg->EventMask);
   return(-1);
 }
 
@@ -1862,7 +1865,7 @@ STATIC int EgDumpRegs(EgLinkStruct *pParm)
 {
   volatile ApsEgStruct          *pEg = pParm->pEg;
 
-  printf("Control = %04.4X, Event Mask = %04.4X\n", pEg->Control, pEg->EventMask);
+  printf("Control = %4.4X, Event Mask = %4.4X\n", pEg->Control, pEg->EventMask);
   return(0);
 }
 STATIC int SetupSeqRam(EgLinkStruct *pParm, int channel)
@@ -1916,7 +1919,7 @@ STATIC void PrintSeq(EgLinkStruct *pParm, int channel)
 
   if (EgReadSeqRam(pParm, channel, TestRamBuf) < 0)
   {
-    printf("Sequence ram %d is currently enabled, can not read\n");
+    printf("Sequence ram is currently enabled, can not read\n");
     return;
   }
 
@@ -1932,14 +1935,13 @@ STATIC void PrintSeq(EgLinkStruct *pParm, int channel)
 
 STATIC int ConfigSeq(EgLinkStruct *pParm, int channel)
 {
-  volatile ApsEgStruct *pEg = pParm->pEg;
   char buf[100];
 
   while(1)
   {
     SeqConfigMenu();
     if (fgets(buf, sizeof(buf), stdin) == NULL)
-      return;
+      return(0);
 
     switch (buf[0])
     {
@@ -2004,9 +2006,10 @@ STATIC int ConfigSeq(EgLinkStruct *pParm, int channel)
     case 'z':
       EgDumpRegs(pParm);
       break;
-    case 'q': return;
+    case 'q': return(0);
     }
   }
+  return(0);
 }
 
 STATIC void menu(void)
@@ -2034,7 +2037,7 @@ int EG(void)
     printf("Invalid card number specified\n");
     return(-1);
   }
-  printf("Card address: %08.8X\n", EgLink[Card].pEg);
+  printf("Card address: %p\n", EgLink[Card].pEg);
 
   
   while (1)

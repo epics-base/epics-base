@@ -34,8 +34,8 @@
  *      ...
  */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -66,7 +66,6 @@ struct {
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    long status;
 
     if (pmbbi->inp.type == CONSTANT) {
         if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))

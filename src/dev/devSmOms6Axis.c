@@ -35,8 +35,8 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -74,7 +74,6 @@ static long sm_command(psm,command,arg1,arg2)
     int arg1;
     int arg2;
 {
-	int	    status;
 	short	card,channel;
 
 	card = psm->out.value.vmeio.card;

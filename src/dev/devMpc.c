@@ -53,6 +53,9 @@
  *****************************************************************
  *
  * $Log$
+ * Revision 1.3  1995/11/29 14:35:02  mrk
+ * Changes for replacing default.dctsdr by all ascii files
+ *
  * Revision 1.2  1995/04/05  14:13:43  winans
  * Only do a sysIntEnable() for those cards that are found with the probe.
  *
@@ -137,11 +140,11 @@
  *
  ****************************************************************************/
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<sysLib.h>
 #include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<string.h>
 #include	<semLib.h>
 #include	<fast_lock.h>
 #include	<iv.h>
@@ -167,7 +170,7 @@
 
 #define		MPC_DOG_POLL_RATE	6
 #define		NUM_LINKS			4	/* Max number of allowed cards */
-#define		STATIC	/* static		/* */
+#define		STATIC	/* static*/
 
 int MpcConfig();
 STATIC long MpcInit();
@@ -358,6 +361,7 @@ STATIC long MpcReport(void)
 	j, cards[j].MpcBaseA16, cards[j].VMEintVector, cards[j].VMEintLevel);
 	}
   }
+  return(0);
 }
 /*****************************************************************************
  *
@@ -404,7 +408,7 @@ int MpcConfig(
 	return(0);
   }
   if (devMpcDebug >= 5)
-	printf("devMpc: MpcInit VME base address = %p\n", MpcBaseA16);
+	printf("devMpc: MpcInit VME base address = 0x%4.4x\n", MpcBaseA16);
 
   cards[Card].VMEintVector = VMEintVector;
   cards[Card].VMEintLevel = VMEintLevel;
@@ -733,9 +737,8 @@ STATIC long MpcInitBoRec(struct boRecord *pRec)
 STATIC long MpcInitBiRec(struct biRecord *pRec)
 {
 	struct vmeio*	pvmeio = (struct vmeio*)&(pRec->inp.value);
-	PvtStruct		*pvt;
-	int				status = 0;
-	int				signal;
+	PvtStruct	*pvt;
+	int		status = 0;
 
 	status = GenericInitRecord((struct dbCommon *)pRec, &pRec->inp);
 
@@ -1019,7 +1022,6 @@ STATIC long MpcWriteBo(struct boRecord *pRec)
  **************************************************************************/
 STATIC long MpcReadBi(struct biRecord *pRec)
 {
-	struct vmeio	*pvmeio = (struct vmeio*)&(pRec->inp.value);
 	unsigned short	regVal = 0;
 	PvtStruct		*pvt = (PvtStruct *)pRec->dpvt;
 
@@ -1110,7 +1112,6 @@ STATIC long MpcReadMbbi(struct mbbiRecord *pmbbi)
 STATIC long MpcGetIointInfoBi(int cmd, struct biRecord *pr, IOSCANPVT *ppvt)
 {
 	struct vmeio *pvmeio = (struct vmeio *)(&pr->inp.value);
-	int		intmask;
 
 	if (pr->dpvt == NULL)
 		return(0);

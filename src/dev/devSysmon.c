@@ -58,6 +58,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.11  1997/01/13 15:56:31  mrk
+ * get rid of call to devGpibLib_setPvSevr
+ *
  * Revision 1.10  1995/11/29 14:35:12  mrk
  * Changes for replacing default.dctsdr by all ascii files
  *
@@ -85,11 +88,12 @@
  ****************************************************************************/
 
 #include	<vxWorks.h>
-#include	<sysLib.h>
-#include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
+#include	<sysLib.h>
+#include	<intLib.h>
+#include	<vme.h>
 #include	<iv.h>
 
 
@@ -358,6 +362,7 @@ STATIC long SysmonReport(void)
 	cards[j].VXIintVector, cards[j].VMEintLevel);
 	}
   }
+  return(0);
 }
 /*****************************************************************************
  *
@@ -410,11 +415,11 @@ int SysmonConfig(
 
   if ((SysmonBaseA16 > 0xffff) || (SysmonBaseA16 & 0x003f))
   {
-	printf("devSysmon: ERROR Invalid address specified 0x4.4X\n", SysmonBaseA16);
+	printf("devSysmon: ERROR Invalid address specified 0x%4.4x\n", SysmonBaseA16);
 	return(0);
   }
   if (devSysmonDebug >= 5)
-	printf("devSysmon: SysmonInit VME (VXI) base address = %p\n", SysmonBaseA16);
+	printf("devSysmon: SysmonInit VME (VXI) base address = 0x%4.4x\n", SysmonBaseA16);
 
   cards[Card].VMEintVector = VMEintVector;
   cards[Card].VMEintLevel = VMEintLevel;
@@ -726,7 +731,6 @@ STATIC long SysmonInitBiRec(struct biRecord *pbi)
 	struct vmeio* pvmeio = (struct vmeio*)&(pbi->inp.value);
 	PvtStruct   *pvt;
 	int status = 0;
-	int	signal;
 
 	status = generic_init_record((struct dbCommon *)pbi, &pbi->inp);
 
@@ -963,7 +967,6 @@ STATIC long SysmonWriteBo(struct boRecord *pbo)
  **************************************************************************/
 STATIC long SysmonReadBi(struct biRecord *pbi)
 {
-	struct vmeio *pvmeio = (struct vmeio*)&(pbi->inp.value);
 	unsigned short regVal = 0;
 	PvtStruct	*pvt = (PvtStruct *)pbi->dpvt;
 
@@ -1025,7 +1028,6 @@ STATIC long SysmonWriteMbbo(struct mbboRecord *pmbbo)
  **************************************************************************/
 STATIC long SysmonReadMbbi(struct mbbiRecord *pmbbi)
 {
-	struct vmeio *pvmeio = (struct vmeio*)&(pmbbi->inp.value);
 	unsigned short regVal;
 	PvtStruct	*pvt = (PvtStruct *)pmbbi->dpvt;
 

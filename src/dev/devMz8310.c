@@ -48,13 +48,13 @@
 /* the Advanced Micro Devices Am9513 Technical Manual		*/
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<sysLib.h>
 #include	<rebootLib.h>
 #include	<intLib.h>
 #include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<string.h>
 #include	<iv.h>
 
 #include	<alarm.h>

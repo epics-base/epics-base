@@ -34,8 +34,8 @@
  * 	...
  */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	<alarm.h>
 #include	<cvtTable.h>
@@ -69,7 +69,6 @@ struct {
 static long init_record(pai)
     struct aiRecord	*pai;
 {
-    long status;
 
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {

@@ -40,8 +40,8 @@
  */
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -83,8 +83,6 @@ struct {
 static long init_record(pwf)
 struct waveformRecord	*pwf;
 {
-  unsigned short value;
-  long status;
 
   /* wf.inp must be an VME_IO */
   if (pwf->inp.type != VME_IO)
@@ -123,7 +121,6 @@ static long get_ioint_info(int cmd, struct waveformRecord *pwf,IOSCANPVT *ppvt)
 static long read_wf(pwf)
 struct waveformRecord	*pwf;
 {
-  unsigned short value;
   struct vmeio *pvmeio;
   long status;
 

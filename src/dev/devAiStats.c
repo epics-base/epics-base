@@ -27,8 +27,11 @@
  *
  * Modification Log:
  * -----------------
-/*
+ *
  * 	$Log$
+ * 	Revision 1.1  1996/10/21 15:30:37  jbk
+ * 	Added ai/ao device support for vxWorks statics (memory/load/TCP con)
+ *
  */
 
 /*
@@ -123,8 +126,8 @@
 */
 
 #include <vxWorks.h>
-#include <types.h>
-#include <stdioLib.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <memLib.h>
 #include <taskLib.h>
@@ -338,7 +341,6 @@ static long ai_init(int pass)
 
 static long ai_init_record(aiRecord* pr)
 {
-    long status;
 	int i;
     vmeio* io = (vmeio*)&(pr->inp.value);
     pvtArea* pvt = NULL;
@@ -375,7 +377,6 @@ static long ai_init_record(aiRecord* pr)
 
 static long ao_init_record(aoRecord* pr)
 {
-    long status;
 	int i;
     vmeio* io = (vmeio*)&(pr->out.value);
     pvtArea* pvt = NULL;

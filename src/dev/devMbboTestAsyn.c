@@ -41,8 +41,8 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<wdLib.h>
 #include	<memLib.h>
 #include	<string.h>

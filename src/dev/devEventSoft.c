@@ -33,8 +33,8 @@
  * .04  03-03-94	mrk	Move constant link value to val only if val is zero
 */
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -66,7 +66,6 @@ struct {
 static long init_record(pevent)
     struct eventRecord	*pevent;
 {
-    long status;
 
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {

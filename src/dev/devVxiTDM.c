@@ -70,11 +70,10 @@
    */
 
 #include	<vxWorks.h>
-#include	<vme.h>
-#include	<types.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<ctype.h>
-#include	<stdioLib.h>
-#include	<string.h>
+#include	<vme.h>
 #include	<iv.h>
 #include	<drvEpvxi.h>
 
@@ -187,9 +186,6 @@ static void tdm_report();
 
 static long report(int interest)
 {
-unsigned short	la,signal;
-struct	vxi_csr	*pcsr;
-struct	tdm_config *tc;
 epvxiDeviceSearchPattern	dsp;
 
 	printf("Report for Vxi Time Delay Module\n");
@@ -289,13 +285,13 @@ struct	tdm_config	*tc;
 	Initialize a pulse delay record channel (signal)
 */
 
+static unsigned epvxiGetLa();
 static long init_pd(struct pulseDelayRecord *pd)
 {
 struct vxiio *pvxiio = (struct vxiio *)&(pd->out.value);
 unsigned short	dummy;
 short	la,signal;
 unsigned short	*channel_reg;
-static unsigned epvxiGetLa();
 struct vxi_csr	*pcsr;
 struct tdm_config *tc;
 long		status;
@@ -367,7 +363,7 @@ long		status;
 
 	(char *)channel_reg=(char *)pcsr+REG_OFFSET;
 
-	Debug("channel_reg = %08.8X \n",channel_reg);
+	Debug("channel_reg = %p \n",channel_reg);
 	Debug("tc->stat = %x \n",tc->stat);
 
 	if( tc->stat&(1<<signal) )
@@ -458,8 +454,8 @@ long		status;
 	pcsr=VXIBASE(la);
 	(char *)channel_reg=(char *)pcsr+REG_OFFSET;
 
-	Debug("Channel base address = 0x%08.8X \n",channel_reg);
-	Debug("Channel register address = 0x%08.8X \n",&channel_reg[signal]);
+	Debug("Channel base address = %p \n",channel_reg);
+	Debug("Channel register address = %p \n",&channel_reg[signal]);
 
 	FASTLOCK(&tc->lock);
 
@@ -533,7 +529,7 @@ long		status;
 		/* write to register */
 		channel_reg[signal]=channel_value;
 
-		Debug("Ending channel value = %04.4X\n",channel_value);
+		Debug("Ending channel value = %4.4X\n",channel_value);
 
 	}
 

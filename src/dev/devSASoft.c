@@ -38,8 +38,8 @@
 
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
 
 #include	<alarm.h>
@@ -74,7 +74,6 @@ struct {
 static long init_record(psa)
     struct subArrayRecord	*psa;
 {
-    long status;
 
     /* sa.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (psa->inp.type) {
@@ -109,7 +108,7 @@ static long read_sa(psa)
           ecount = nRequest - psa->indx;
        else
           ecount = psa->nelm;
-       bcopy(psa->bptr + psa->indx * sizeofTypes[psa->ftvl], psa->bptr, 
+       memcpy(psa->bptr,(char *)psa->bptr + psa->indx * sizeofTypes[psa->ftvl],
              ecount * sizeofTypes[psa->ftvl]);
     }
     psa->nord = nRequest - psa->indx;

@@ -51,21 +51,25 @@
  */
 
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <iosLib.h>
 #include <taskLib.h>
 #include <semLib.h>
 #include <memLib.h>
+#include <rebootLib.h>
+#include <intLib.h>
 #include <lstLib.h>
 #include <vme.h>
 #include <sysLib.h>
 #include <iv.h>
-#include<stdio.h>
 
 #include <module_types.h>
 #include <devSup.h>
+#include <recGbl.h>
 #include <dbDefs.h>
 #include <dbAccess.h>
+#include <epicsPrint.h>
 #include <link.h>
 #include <dbScan.h>
 #include <eventRecord.h>
@@ -187,7 +191,7 @@ long ErHaveReceiver(int Card)
 long ErRegisterEventHandler(int Card, EVENT_FUNC func)
 {
   if (ErDebug)
-    printf("ErRegisterEventHandler(%d, %08.8X\n", Card, func);
+    printf("ErRegisterEventHandler(%d, %p\n", Card, func);
 
   ErLink[Card].EventFunc = func;
   return(0);
@@ -203,7 +207,7 @@ long ErRegisterEventHandler(int Card, EVENT_FUNC func)
 long ErRegisterErrorHandler(int Card, ERROR_FUNC func)
 {
   if (ErDebug)
-    printf("ErRegisterEventHandler(%d, %08.8X\n", Card, func);
+    printf("ErRegisterEventHandler(%d, %p\n", Card, func);
 
   ErLink[Card].ErrorFunc = func;
   return(0);
@@ -240,28 +244,28 @@ int ErConfigure(int Card, unsigned long CardAddress, unsigned int IrqVector, uns
 
   if (ConfigureLock != 0)
   {
-    logMsg("devApsEr: Cannot change configuration after init.  Request ignored\n");
+    epicsPrintf("devApsEr: Cannot change configuration after init.  Request ignored\n");
     return(-1);
   }
   if (Card >= NUM_ER_LINKS)
   {
-    logMsg("devApsEr: Card number invalid, must be 0-%d\n", NUM_ER_LINKS);
+    epicsPrintf("devApsEr: Card number invalid, must be 0-%d\n", NUM_ER_LINKS);
     return(-1);
   }
   if (CardAddress > 0xffff)
   {
-    logMsg("devApsEr: Card address invalid, must be 0x0000-0xffff\n");
+    epicsPrintf("devApsEr: Card address invalid, must be 0x0000-0xffff\n");
     return(-1);
   }
   if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char*)CardAddress, (char**)&ErLink[Card].pEr)!=OK)
   {
-    logMsg("devApsEr: Failure mapping requested A16 address\n");
+    epicsPrintf("devApsEr: Failure mapping requested A16 address\n");
     ErLink[Card].pEr = NULL;
     return(-1);
   }
   if (vxMemProbe((char*)&ErLink[Card].pEr->Control, READ, sizeof(short), (char*)&Junk) != OK)
   {
-    logMsg("devApsEr: Failure probing for event receiver... Card disabled\n");
+    epicsPrintf("devApsEr: Failure probing for event receiver... Card disabled\n");
     ErLink[Card].pEr = NULL;
     return(-1);
   }
@@ -307,7 +311,7 @@ STATIC long ErInitDev(int pass)
   if (OneShotFlag)
   {
     OneShotFlag = 0;
-    rebootHookAdd(ErRebootFunc);
+    rebootHookAdd((FUNCPTR)ErRebootFunc);
 
     ConfigureLock = 1;	/* Prevent any future ErConfigure's */
 
@@ -358,7 +362,6 @@ scum()
 STATIC long init_record(struct erRecord *pRec)
 {
   ErLinkStruct  *pLink;
-  unsigned long	mask;
 
   if (ErDebug)
     printf("devApsEr::init_record() entered\n");
@@ -532,7 +535,7 @@ STATIC long ErEventProc(struct ereventRecord  *pRec)
     if (pRec->vme != 0)  Mask |= 0x8000;
 
     if (pRec->tpro > 10)
-      printf("ErEventProc(%s) New RAM mask is 0x%04.4X\n", pRec->name, Mask);
+      printf("ErEventProc(%s) New RAM mask is 0x%4.4X\n", pRec->name, Mask);
     if (Mask != pRec->lout)
       DownLoadRam = 1;
 
@@ -733,12 +736,12 @@ STATIC int ErDumpRegs(ApsErStruct *pParm)
 {
   volatile ApsErStruct	*pEr = pParm;
 
-  printf("%04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X\n",
+  printf("%4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X\n",
 	pEr->Control, pEr->EventRamAddr, pEr->EventRamData, pEr->OutputPulseEnables,
 	pEr->OutputLevelEnables, pEr->TriggerEventEnables, pEr->EventCounterLo,
 	pEr->EventCounterHi, pEr->TimeStampLo, pEr->TimeStampHi);
 
-  printf("%04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X %04.4X\n",
+  printf("%4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X %4.4X\n",
 	pEr->EventFifo, pEr->EventTimeHi, pEr->DelayPulseEnables, pEr->DelayPulseSelect,
 	pEr->PulseDelay, pEr->PulseWidth, pEr->IrqVector, pEr->IrqEnables);
 
@@ -789,7 +792,7 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
 
   mask = pEr->Control;
   if(ErDebug > 9)
-    logMsg("ErIrqHandler() control =%04.4X\n", mask);
+    epicsPrintf("ErIrqHandler() control =%4.4X\n", mask);
 
   if (mask&0x1000)
   { /* Got a lost heart beat */
@@ -799,7 +802,7 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
       (*pLink->ErrorFunc)(pLink->Card, ERROR_HEART);
 
     if(ErDebug)
-      logMsg("ErIrqHandler() lost heart beat\n");
+      epicsPrintf("ErIrqHandler() lost heart beat\n");
   }
 
   /* Read any stuff from the FIFO */
@@ -807,7 +810,7 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
   {
     pEr->Control = (mask&CONTROL_REG_OR_STRIP)|0x0800;
     if(ErDebug > 10)
-      logMsg("ErIrqHandler() clearing event with %04.4X\n", (mask&CONTROL_REG_OR_STRIP)|0x0800);
+      epicsPrintf("ErIrqHandler() clearing event with %4.4X\n", (mask&CONTROL_REG_OR_STRIP)|0x0800);
 
     z = 10;	/* Make sure we don't get into a major spin loop */
     while ((pEr->Control & 0x0002)&&(--z > 0))
@@ -825,11 +828,11 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
       {
 	(*pLink->EventFunc)(pLink->Card, EventNum, Time);
         if(ErDebug)
-          logMsg("ErIrqHandler() Calling %08.8X", pLink->EventFunc);
+          epicsPrintf("ErIrqHandler() Calling %p", pLink->EventFunc);
       }
 
       if(ErDebug)
-        logMsg("ErIrqHandler() %06.6X-%02.2X\n", Time, EventNum);
+        epicsPrintf("ErIrqHandler() %6.6X-%2.2X\n", Time, EventNum);
 
       /* Schedule processing for any event-driven records */
       scanIoRequest(pLink->IoScanPvt[EventNum]);
@@ -844,7 +847,7 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
       (*pLink->ErrorFunc)(pLink->Card, ERROR_LOST);
 
     if(ErDebug)
-    logMsg("ErIrqHandler() FIFO overflow %04.4X\n", (mask&CONTROL_REG_OR_STRIP)|0x0004);
+    epicsPrintf("ErIrqHandler() FIFO overflow %4.4X\n", (mask&CONTROL_REG_OR_STRIP)|0x0004);
   }
   if (mask&0x0001)
   {
@@ -854,7 +857,7 @@ STATIC void ErIrqHandler(ErLinkStruct *pLink)
       (*pLink->ErrorFunc)(pLink->Card, ERROR_TAXI);
 
     if(ErDebug)
-      logMsg("ErIrqHandler() taxi violation %04.4X\n", pEr->Control = (mask&CONTROL_REG_OR_STRIP)|0x0001);
+      epicsPrintf("ErIrqHandler() taxi violation %4.4X\n", pEr->Control = (mask&CONTROL_REG_OR_STRIP)|0x0001);
   }
   /*
    * Disable and then re-enable the IRQs so board re-issues any 
@@ -1101,7 +1104,7 @@ static int DumpEventFifo(ApsErStruct *pParm)
   {
     j = pEr->EventFifo;
     k = pEr->EventTimeHi;
-    printf("FIFO event: %04.4X%04.4X\n", k, j);
+    printf("FIFO event: %4.4X%4.4X\n", k, j);
   }
   return(0);
 }
@@ -1130,7 +1133,7 @@ int ER(void)
     printf("Invalid card number specified\n");
     return(-1);
   }
-  printf("Card address: %08.8X\n", ErLink[Card].pEr);
+  printf("Card address: %p\n", ErLink[Card].pEr);
 
   while(1)
   {

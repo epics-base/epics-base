@@ -40,10 +40,10 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
-#include	<types.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<string.h>
+#include        <sysSymTbl.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>

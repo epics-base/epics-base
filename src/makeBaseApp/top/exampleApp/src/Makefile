@@ -20,7 +20,7 @@ RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd
 
-LIBRARY_vxWorks = example
+MUNCH_LIBRARY = example
 
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
@@ -30,9 +30,9 @@ example_SRCS += devXxxSoft.c
 
 example_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
 
-example_OBJS += $(EPICS_BASE_BIN)/iocCoreLibrary
+example_OBJS += $(EPICS_BASE_BIN)/iocCoreLibrary.o
 example_OBJS += $(EPICS_BASE_BIN)/iocInit.o
-#example_OBJS += $(EPICS_BASE_BIN)/seq
+#example_OBJS += $(EPICS_BASE_BIN)/seq.o
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

@@ -136,7 +136,7 @@ OPT_CXXFLAGS_NO =
 #
 # no special libs for static link
 #
-LDLIBSws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
+LDLIBS = ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 
 # -c case sensitive linking
 # -C clear state before linking

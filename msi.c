@@ -459,7 +459,9 @@ typedef struct subInfo {
     char	*filename;
     int		isPattern;
     ELLLIST	patternList;
-    char	macroReplacements[MAX_BUFFER_SIZE];
+    size_t	size;
+    size_t	curLength;
+    char	*macroReplacements;
 }subInfo;
 
 static char *subGetNextLine(subFile *psubFile);
@@ -467,6 +469,7 @@ static tokenType subGetNextToken(subFile *psubFile);
 static void subFileErrPrint(subFile *psubFile,char * message);
 static void freeSubFile(subInfo *psubInfo);
 static void freePattern(subInfo *psubInfo);
+static void catMacroReplacements(subInfo *psubInfo,const char *value);
 
 void freeSubFile(subInfo *psubInfo)
 {
@@ -591,11 +594,10 @@ static char *substituteGetReplacements(void *pvt)
 {
     subInfo	*psubInfo = (subInfo *)pvt;
     subFile	*psubFile = psubInfo->psubFile;
-    char	*pNext;
     patternNode *ppatternNode;
 
-    pNext = &psubInfo->macroReplacements[0];
-    psubInfo->macroReplacements[0] = 0;
+    if(psubInfo->macroReplacements) psubInfo->macroReplacements[0] = 0;
+    psubInfo->curLength = 0;
     while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
     if(psubFile->token==tokenRBrace && psubInfo->isFile) {
         psubInfo->isFile = FALSE;
@@ -623,12 +625,12 @@ static char *substituteGetReplacements(void *pvt)
                 subFileErrPrint(psubFile,"Illegal token");
                 exit(-1);
             }
-	    if(gotFirstPattern) strcat(psubInfo->macroReplacements,",");
+	    if(gotFirstPattern) catMacroReplacements(psubInfo,",");
 	    gotFirstPattern = TRUE;
             if(ppatternNode) {
-	        strcat(psubInfo->macroReplacements,ppatternNode->var);
-	        strcat(psubInfo->macroReplacements,"=");
-	        strcat(psubInfo->macroReplacements,psubFile->string);
+	        catMacroReplacements(psubInfo,ppatternNode->var);
+	        catMacroReplacements(psubInfo,"=");
+	        catMacroReplacements(psubInfo,psubFile->string);
                 ppatternNode = (patternNode *)ellNext(&ppatternNode->node);
             } else {
                 subFileErrPrint(psubFile,"more values than patterns");
@@ -641,10 +643,10 @@ static char *substituteGetReplacements(void *pvt)
                 subGetNextToken(psubFile);
                 return(psubInfo->macroReplacements);
 	    case tokenSeparater:
-		strcat(psubInfo->macroReplacements,",");
+		catMacroReplacements(psubInfo,",");
 		break;
 	    case tokenString:
-		strcat(psubInfo->macroReplacements,psubFile->string);
+		catMacroReplacements(psubInfo,psubFile->string);
 		break;
 	    default:
 		subFileErrPrint(psubFile,"Illegal token");
@@ -741,4 +743,30 @@ static tokenType subGetNextToken(subFile *psubFile)
     psubFile->pnextChar = p;
     psubFile->token = tokenString;
     return(tokenString);
+}
+
+static void catMacroReplacements(subInfo *psubInfo,const char *value)
+{
+    size_t	len = strlen(value);
+
+    if(psubInfo->size <= (psubInfo->curLength + len)) {
+        size_t newsize = psubInfo->size + MAX_BUFFER_SIZE;
+        char *newbuf;
+
+        if(newsize <= psubInfo->curLength + len)
+            newsize = psubInfo->curLength + len + 1;
+        newbuf = calloc(1,newsize);
+        if(!newbuf) {
+            fprintf(stderr,"calloc failed for size %d\n",newsize);
+            exit(1);
+        }
+        if(psubInfo->macroReplacements) {
+            memcpy(newbuf,psubInfo->macroReplacements,psubInfo->curLength);
+            free(psubInfo->macroReplacements);
+        }
+        psubInfo->size = newsize;
+        psubInfo->macroReplacements = newbuf;
+    }
+    strcat(psubInfo->macroReplacements,value);
+    psubInfo->curLength += len;
 }

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.62  1997/04/29 06:11:08  jhill
+ * use free lists
+ *
  * Revision 1.61  1997/04/23 17:05:07  jhill
  * pc port changes
  *
@@ -326,7 +329,7 @@ typedef struct caclient_put_notify{
  * because we dont get an optimal number of bytes 
  * per network frame 
  */
-#define MAX_CONTIGUOUS_MSG_COUNT 5 
+#define MAX_CONTIGUOUS_MSG_COUNT 10 
 
 /*
  * ! lock needs to be applied when an id is allocated !
@@ -452,10 +455,10 @@ typedef struct ioc_in_use{
 	 */
 	unsigned		client_busy:1;
 	unsigned		echoPending:1; 
-	unsigned		send_needed:1;	/* CA needs a send */
 	unsigned		sendPending:1;
 	unsigned 		claimsPending:1; 
 	unsigned		recvPending:1;
+	unsigned		pushPending:1;
 }IIU;
 
 /*
@@ -522,6 +525,7 @@ struct  ca_static{
 	unsigned 	ca_nextSlowBucketId;
 	unsigned 	ca_nextFastBucketId;
 	unsigned	ca_repeater_tries;
+	unsigned	ca_number_iiu_in_fc;
 	unsigned short	ca_server_port;
 	unsigned short	ca_repeater_port;
 	char		ca_sprintf_buf[256];

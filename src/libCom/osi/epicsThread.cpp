@@ -50,13 +50,19 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
         return;
     }
     catch ( std::exception & except ) {
+        char name [128];
+        epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
         errlogPrintf ( 
-            "epicsThread: Unexpected C++ exception \"%s\" - terminating thread",
-            except.what () );
+            "epicsThread: Unexpected C++ exception \"%s\" - terminating \"%s\"",
+            except.what (), name );
+        std::unexpected ();
     }
     catch ( ... ) {
+        char name [128];
+        epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
         errlogPrintf ( 
-            "epicsThread: Unknown C++ exdception - terminating thread" );
+            "epicsThread: Unknown C++ exception - terminating \"%s\"", name );
+        std::unexpected ();
     }
 }
 

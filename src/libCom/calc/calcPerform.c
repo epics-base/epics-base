@@ -128,7 +128,6 @@ epicsShareFunc long epicsShareAPI
 	double *pstacktop;	/* stack of values	*/
 	double		stack[80];
 	short		temp1;
-	short	i;
 	double 		*top;
 	int 		itop;		/* integer top value	*/
 	int 		inexttop;	/* ineteger next to top value 	*/
@@ -140,7 +139,7 @@ epicsShareFunc long epicsShareAPI
 	pstacktop = &stack[0];
 
 /* DEBUG print statements
-for (i=0;i<184;i++){
+for (short i=0;i<184;i++){
 printf ("%d_",post[i]);
 if ( post[i] == END_STACK ) break;
 if ( post[i] == 71 ) i=i+8;
@@ -331,8 +330,7 @@ printf ("*FINISHED*\n");
 			inexttop = (int)*(pstacktop+1);
 			if (inexttop == 0)
 				return(-1);
-			i =  itop % inexttop;
-			*pstacktop = i;
+			*pstacktop =  itop % inexttop;
 			break;
 
 		case REL_OR:

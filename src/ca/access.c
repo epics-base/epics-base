@@ -888,7 +888,7 @@ ca_process_exit()
  *
  *
  */
-ca_build_and_connect
+int ca_build_and_connect
 #ifdef __STDC__
 (
  char *name_str,
@@ -1859,7 +1859,7 @@ void			*pfl;
   	void			*pval;
   	register unsigned	size;
 	struct tmp_buff{
-		NODE		node;
+		DLLNODE		node;
 		unsigned	size;
 	};
 	struct tmp_buff		*pbuf = NULL;

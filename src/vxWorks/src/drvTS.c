@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.1  2001/08/01 14:33:12  mrk
+ * get rid of dev/drv support; use OBJ library only
+ *
  * Revision 1.41  2001/01/31 13:34:01  mrk
  * osiTime=>epicsTime
  *
@@ -587,7 +590,6 @@ static int getEvent(TS_STAMP *pDest, unsigned eventNumber)
 long TSinit(void)
 {
     SYM_TYPE stype;
-    char tz[100],min_west[20];
     
     Debug0(5,"In TSinit()\n");
     
@@ -816,36 +818,20 @@ long TSinit(void)
             Debug0(5,"TSinit() - sync client started  \n");
         }
     }
-    
-    /*
-    This section sets up the vxWorks clock for use with the ansiLib
-    functions.  The TIMEZONE environment variable for vxWorks is only
-    overwritten if it has not been set.  It seems as though the day
-    light saving time does not work (at least following the directions
-    in ansiLib).
-    
-    The EPICS environment variable EPICS_TS_MIN_WEST holds the minutes
-    west of GMT (UTC) time.  This variable should be preset by the EPICS
-    administrator for your site.
-    */
-    
-    if(getenv("TIMEZONE")==(char*)NULL)
-    {
-        if(envGetConfigParam(&EPICS_TS_MIN_WEST,sizeof(min_west),min_west)==NULL
-            || strlen(min_west)==0)
-        {
-            TSprintf("TS initialization: No Time Zone Information\n");
-        }
-        else
-        {
-            sprintf(tz,"TIMEZONE=UTC::%s:040102:100102",min_west);
-            if(putenv(tz)==ERROR)
-            {
-                TSprintf("TS initialization: TIMEZONE putenv failed\n");
+    /* if TIMEZONE not defined set TIMEZONE from EPICS_TIMEZONE */
+    if(getenv("TIMEZONE")==(char*)NULL) {
+        char timezone[80];
+        char envtimezone[100];
+        if(envGetConfigParam(&EPICS_TIMEZONE,sizeof(timezone),timezone)==NULL
+        || strlen(timezone)==0) {
+            printf("iocClockInit: No Time Zone Information\n");
+        } else {
+            sprintf(envtimezone,"TIMEZONE=%s",timezone);
+            if(putenv(envtimezone)==ERROR) {
+                printf("iocClockInit: TIMEZONE putenv failed\n");
             }
         }
     }
-    
     TSdriverInit(); /* Call the user's driver initialization if supplied */
     return 0;
 }

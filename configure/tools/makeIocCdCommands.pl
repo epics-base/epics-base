@@ -6,7 +6,16 @@ use Cwd;
 $cwd  = cwd();
 #hack for sun4
 $cwd =~ s|/tmp_mnt||;
+#hack for win32
+$cwd =~ s|\\|\/|g;
 $arch = $ARGV[0];
+$iocsApplTop = $ARGV[1];
+#remove top parts of current working directory
+#and add ioc's appl top alias (if supplied)
+if ( $iocsApplTop ne "" ) {
+    $cwd =~ s|.*(/iocBoot.*)|$1|;
+    $cwd = $iocsApplTop . $cwd;
+}
 
 unlink("cdCommands");
 open(OUT,">cdCommands") or die "$! opening cdCommands";

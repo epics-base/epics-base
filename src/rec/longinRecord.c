@@ -44,24 +44,23 @@
  * .13  03-29-94        mcn     Converted to Fast Links
  */
 
-
-#include        <vxWorks.h>
-#include        <types.h>
-#include        <stdioLib.h>
-#include        <lstLib.h>
-#include        <string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include        <alarm.h>
-#include        <dbAccess.h>
-#include        <dbEvent.h>
-#include        <dbFldTypes.h>
-#include        <devSup.h>
-#include        <errMdef.h>
-#include        <recSup.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<longinRecord.h>
+#include "longinRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

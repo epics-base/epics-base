@@ -25,11 +25,6 @@ recordtype(gsub) {
 		interest(4)
 		extra("void *		sadr")
 	}
-	field(STYP,DBF_SHORT) {
-		prompt("Subr symbol type")
-		special(SPC_NOMOD)
-		interest(3)
-	}
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
 		promptgroup(GUI_INPUTS)

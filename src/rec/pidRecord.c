@@ -44,24 +44,23 @@
  * .12  03-29-94        mcn     Converted to fast links
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
-/*since tickLib is not defined just define tickGet*/
-unsigned long tickGet();
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
+#include "osiClock.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<pidRecord.h>
+#include "pidRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
@@ -374,7 +373,7 @@ struct pidRecord     *ppid;
 
 	/* compute time difference and make sure it is large enough*/
 	ctp = ppid->ct;
-	ct = tickGet();
+	ct = clockGetCurrentTick();
 	if(ctp==0) {/*this happens the first time*/
 		dt=0.0;
 	} else {
@@ -384,7 +383,7 @@ struct pidRecord     *ppid;
 			dt = (unsigned long)(0xffffffff) - ctp;
 			dt = dt + ct + 1;
 		}
-		dt = dt/vxTicksPerSecond;
+		dt = dt/clockGetRate();
 		if(dt<ppid->mdt) return(1);
 	}
 	/* get the rest of values needed */

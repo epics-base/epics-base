@@ -59,26 +59,25 @@
  *				implemented)
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<math.h>
-#include	<string.h>
-#include	<stdlib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbStaticLib.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<special.h>
-#include	<recSup.h>
+#include "alarm.h"
+#include "dbStaticLib.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "special.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<compressRecord.h>
+#include "compressRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

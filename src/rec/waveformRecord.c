@@ -60,25 +60,24 @@
  * .20  09-14-92        jba     nord set only for db links
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<stdlib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<dbScan.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "dbScan.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<waveformRecord.h>
+#include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
 /* Create RSET - Record Support Entry Table*/
 #define report NULL

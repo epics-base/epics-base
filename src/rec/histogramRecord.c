@@ -40,30 +40,30 @@
  * .09	01-24-94	mcn	Converted to Fast Links
  */
 
-#include     <vxWorks.h>
-#include     <types.h>
-#include     <stdioLib.h>
-#include     <lstLib.h>
-#include     <string.h>
-#include     <math.h>
-#include     <limits.h>
-#include     <wdLib.h>
-#include     <stdlib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <limits.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include     <alarm.h>
-#include     <callback.h>
-#include     <dbAccess.h>
-#include     <dbEvent.h>
-#include     <epicsPrint.h>
-#include     <dbFldTypes.h>
-#include     <devSup.h>
-#include     <errMdef.h>
-#include     <special.h>
-#include     <recSup.h>
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "alarm.h"
+#include "callback.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "epicsPrint.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "special.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include     <histogramRecord.h>
+#include "histogramRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
@@ -121,7 +121,7 @@ struct callback {
      void (*callback)();
      int priority;
      struct dbAddr dbAddr;
-     WDOG_ID wd_id;
+     watchdogId wd_id;
 };
 
 /*
@@ -137,8 +137,6 @@ static void wdogCallback(pcallback)
      struct callback *pcallback;
 {
      struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->dbAddr.precord);
-     float         wait_time;
-
      /* force post events for any count change */
      if(phistogram->mcnt>0){
           dbScanLock((struct dbCommon *)phistogram);
@@ -150,8 +148,9 @@ static void wdogCallback(pcallback)
 
      if(phistogram->sdel>0) {
           /* start new watchdog timer on monitor */
-          wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+          watchdogStart(pcallback->wd_id,
+              (int)(phistogram->sdel *clockGetRate()),
+              (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
      }
 
      return;
@@ -160,7 +159,6 @@ static long wdogInit(phistogram)
     struct histogramRecord	*phistogram;
 {
      struct callback *pcallback;
-     float wait_time;
 
      if(phistogram->wdog==NULL && phistogram->sdel>0) {
           /* initialize a watchdog timer */
@@ -169,7 +167,7 @@ static long wdogInit(phistogram)
 	  if(!pcallback) return -1;
           pcallback->callback = wdogCallback;
           pcallback->priority = priorityLow;
-          pcallback->wd_id = wdCreate();
+          pcallback->wd_id = watchdogCreate();
           dbNameToAddr(phistogram->name,&(pcallback->dbAddr));
      }
 
@@ -177,12 +175,13 @@ static long wdogInit(phistogram)
      pcallback = (struct callback *)phistogram->wdog;
      if(!pcallback) return -1;
 
-     wdCancel(pcallback->wd_id);
+     watchdogCancel(pcallback->wd_id);
   
      if( phistogram->sdel>0) {
          /* start new watchdog timer on monitor */
-         wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-         wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+         watchdogStart(pcallback->wd_id,
+             (int)(phistogram->sdel * clockGetRate()),
+             (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
      }
      return 0;
 }

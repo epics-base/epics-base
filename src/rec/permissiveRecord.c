@@ -37,20 +37,21 @@
  * .05  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<permissiveRecord.h>
+#include "permissiveRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

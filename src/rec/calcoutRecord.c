@@ -41,33 +41,31 @@
 
 
 
-#include	<vxWorks.h>
-#include        <stdlib.h>
-#include        <stdarg.h>
-#include        <stdio.h>
-#include        <string.h>
-#include        <math.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
-#include        <tickLib.h>
-#include        <wdLib.h>
-#include        <sysLib.h>
-
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"dbEvent.h"
-#include	"dbScan.h"
-#include	"errMdef.h"
-#include	"recSup.h"
-#include	"special.h"
-#include        "callback.h"
-#include        "taskwd.h"
-#include        "postfix.h"
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbScan.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
+#include "callback.h"
+#include "taskwd.h"
+#include "postfix.h"
 
 #define GEN_SIZE_OFFSET
-#include	"calcoutRecord.h"
+#include "calcoutRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include        "menuIvoa.h"
+#include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -128,9 +126,9 @@ struct rset calcoutRSET={
 
 struct rpvtStruct {
         CALLBACK  doOutCb;
-        WDOG_ID   wd_id_0;
+        watchdogId   wd_id_0;
         CALLBACK  checkLinkCb;
-        WDOG_ID   wd_id_1;
+        watchdogId   wd_id_1;
         short     wd_id_1_LOCK;
         short     caLinkStat; /* NO_CA_LINKS,CA_LINKS_ALL_OK,CA_LINKS_NOT_OK */
 };
@@ -210,16 +208,16 @@ static long init_record(pcalc,pass)
     callbackSetCallback(checkLinksCallback, &prpvt->checkLinkCb);
     callbackSetPriority(0, &prpvt->checkLinkCb);
     callbackSetUser(pcalc, &prpvt->checkLinkCb);
-    prpvt->wd_id_0 = wdCreate();
-    prpvt->wd_id_1 = wdCreate();
+    prpvt->wd_id_0 = watchdogCreate();
+    prpvt->wd_id_1 = watchdogCreate();
     prpvt->wd_id_1_LOCK = 0;
 
 /* Can't do this. Sometimes initialization is not done after 1 second
    and then dbScanLock will complain !!!
 
     if(prpvt->caLinkStat == CA_LINKS_NOT_OK) {
-        wdStart(prpvt->wd_id_1, 60, (FUNCPTR)callbackRequest,
-                (int)(&prpvt->checkLinkCb));
+        watchdogStart(prpvt->wd_id_1, clockGetRate(), (WATCHDOGFUNC)callbackRequest,
+                (void *)(&prpvt->checkLinkCb));
         prpvt->wd_id_1_LOCK = 1;
     }
 */
@@ -291,10 +289,11 @@ static long process(pcalc)
             if(pcalc->odly > 0.0) {
                 pcalc->dlya = 1;
                 db_post_events(pcalc,&pcalc->dlya,DBE_VALUE);
-                wdDelay = pcalc->odly * sysClkRateGet();
+                wdDelay = (int)(pcalc->odly * clockGetRate());
                 callbackSetPriority(pcalc->prio, &prpvt->doOutCb);
-                wdStart(prpvt->wd_id_0, wdDelay, (FUNCPTR)callbackRequest,
-                        (int)(&prpvt->doOutCb));
+                watchdogStart(prpvt->wd_id_0, wdDelay,
+                    (WATCHDOGFUNC)callbackRequest,
+                        (void *)(&prpvt->doOutCb));
             }
             else {
                 execOutput(pcalc);
@@ -397,8 +396,8 @@ static long special(paddr,after)
             *plinkValid = calcoutINAV_EXT_NC;
             /* DO_CALLBACK, if not already scheduled */
             if(!prpvt->wd_id_1_LOCK) {
-                wdStart(prpvt->wd_id_1, 30, (FUNCPTR)callbackRequest,
-                    (int)(&prpvt->checkLinkCb));
+                watchdogStart(prpvt->wd_id_1, clockGetRate()/2, (WATCHDOGFUNC)callbackRequest,
+                    (void *)(&prpvt->checkLinkCb));
                 prpvt->wd_id_1_LOCK = 1;
                 prpvt->caLinkStat = CA_LINKS_NOT_OK;
             }
@@ -770,8 +769,8 @@ static void checkLinks(pcalc)
     if(!prpvt->wd_id_1_LOCK && caLinkNc) {
         /* Schedule another CALLBACK */
         prpvt->wd_id_1_LOCK = 1;
-        wdStart(prpvt->wd_id_1, 30, (FUNCPTR)callbackRequest,
-               (int)(&prpvt->checkLinkCb));
+        watchdogStart(prpvt->wd_id_1, clockGetRate()/2, (WATCHDOGFUNC)callbackRequest,
+               (void *)(&prpvt->checkLinkCb));
     }
 }
 

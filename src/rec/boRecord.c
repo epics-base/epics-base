@@ -67,29 +67,29 @@
  * .31  04-05-94	mrk	ANSI changes to callback routines
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
-#include	<stdlib.h>
-#include	<wdLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<callback.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
+#include "alarm.h"
+#include "callback.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
 #define GEN_SIZE_OFFSET
-#include	<boRecord.h>
+#include "boRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include      <menuIvoa.h>
+#include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -144,7 +144,7 @@ struct bodset { /* binary output dset */
 struct callback {
         CALLBACK        callback;
         struct dbCommon *precord;
-        WDOG_ID wd_id;
+        watchdogId wd_id;
 };
 
 static void alarm();
@@ -162,13 +162,14 @@ static void myCallback(pcallback)
 
     dbScanLock((struct dbCommon *)pbo);
     if(pbo->pact) {
-	wait_time = (int)((pbo->high) * vxTicksPerSecond);/* seconds to ticks */
+	wait_time = (int)(pbo->high * clockGetRate());
 	if (pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
 		pcallback = (struct callback *)(pbo->rpvt);
-        	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
+        	if(pcallback->wd_id==NULL) pcallback->wd_id = watchdogCreate();
                 callbackSetPriority(pbo->prio, &pcallback->callback);
-               	wdStart(pcallback->wd_id, wait_time, (FUNCPTR)callbackRequest, (int)pcallback);
+               	watchdogStart(pcallback->wd_id, wait_time,
+                    (WATCHDOGFUNC)callbackRequest, (void *)pcallback);
 	}
     } else {
 	pbo->val = 0;
@@ -303,13 +304,14 @@ static long process(pbo)
 	pbo->pact = TRUE;
 
 	recGblGetTimeStamp(pbo);
-	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
+	wait_time = (int)(pbo->high * clockGetRate());
 	if (pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
 		pcallback = (struct callback *)(pbo->rpvt);
-        	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
+        	if(pcallback->wd_id==0) pcallback->wd_id = watchdogCreate();
                 callbackSetPriority(pbo->prio, &pcallback->callback);
-               	wdStart(pcallback->wd_id, wait_time, (FUNCPTR)callbackRequest, (int)pcallback);
+               	watchdogStart(pcallback->wd_id, wait_time,
+                    (WATCHDOGFUNC)callbackRequest, (void *)pcallback);
 	}
 	/* check event list */
 	monitor(pbo);

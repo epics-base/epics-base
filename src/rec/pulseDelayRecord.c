@@ -41,7 +41,7 @@
  * .10  10-20-92        jbk     added get_enum funcs, allowed defaults in fields
  */ 
 
-#include <vxWorks.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>

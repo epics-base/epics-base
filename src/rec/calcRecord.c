@@ -72,10 +72,10 @@
  * .30  05-24-94        jba     Added recGblRecordError messages for postfix status
  */
 
-#include <vxWorks.h>
-#include <types.h>
-#include <stdioLib.h>
-#include <lstLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "dbDefs.h"

@@ -70,12 +70,11 @@
  *				out of fetch_value.
  */
 
-#include <vxWorks.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <lstLib.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"

@@ -47,26 +47,24 @@
  * .15  03-30-94        mcn     converted to fast links
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
-#include	<symLib.h>
-#include        <sysSymTbl.h>   /* for sysSymTbl*/
-#include        <a_out.h>       /* for N_TEXT */
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<epicsPrint.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "registry.h"
+#include "alarm.h"
+#include "dbAccess.h"
+#include "epicsPrint.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include	<subRecord.h>
+#include "subRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/
@@ -120,10 +118,7 @@ static long init_record(psub,pass)
     int pass;
 {
     FUNCPTR	psubroutine;
-    char	sub_type;
-    char	temp[40];
     long	status = 0;
-    STATUS	ret;
     struct link *plink;
     int i;
     double *pvalue;
@@ -140,13 +135,8 @@ static long init_record(psub,pass)
 
     if(strlen(psub->inam)!=0) {
         /* convert the initialization subroutine name  */
-        temp[0] = 0;			/* all global variables start with _ */
-        if (psub->inam[0] != '_'){
-	    strcpy(temp,"_");
-        }
-        strcat(temp,psub->inam);
-        ret = symFindByNameEPICS(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
-        if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
+        psub->sadr = registryFind(0,psub->inam);
+        if(psub->sadr==0) {
 	    recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	    return(S_db_BadSub);
         }
@@ -161,19 +151,11 @@ static long init_record(psub,pass)
 	psub->pact = TRUE;
 	return(0);
     }
-    /* convert the subroutine name to an address and type */
-    /* convert the processing subroutine name  */
-    temp[0] = 0;			/* all global variables start with _ */
-    if (psub->snam[0] != '_'){
-    	strcpy(temp,"_");
-    }
-    strcat(temp,psub->snam);
-    ret = symFindByNameEPICS(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
-    if ((ret < 0) || ((sub_type & N_TEXT) == 0)){
+    psub->sadr = registryFind(0,psub->snam);
+    if(psub->sadr==0) {
 	recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	return(S_db_BadSub);
     }
-    psub->styp = sub_type;
     return(0);
 }
 

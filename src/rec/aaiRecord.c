@@ -38,11 +38,10 @@
  * -----------------
  */
 
-#include <vxWorks.h>
-#include <types.h>
-#include <stdioLib.h>
-#include <lstLib.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "dbDefs.h"

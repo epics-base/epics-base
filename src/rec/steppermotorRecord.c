@@ -100,27 +100,27 @@
  *				steps.  Dev/Drv sup will interpret meaning
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<dbScan.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "dbScan.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
 #define GEN_SIZE_OFFSET
-#include	<steppermotorRecord.h>
+#include "steppermotorRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include	<steppermotor.h>
+#include "steppermotor.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL

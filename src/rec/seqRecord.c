@@ -30,30 +30,28 @@
  *  .02 04-19-94	jrw	Added value fields and monitors on them
  *  .01	09-21-92	jrw	created
  */
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<lstLib.h>
-#include	<string.h>
-#include	<memLib.h>
-#include	<wdLib.h>
-#include	<sysLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
-#include	<callback.h>
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
+#include "callback.h"
 
 #define GEN_SIZE_OFFSET
-#include	<seqRecord.h>
+#include "seqRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 int	seqRecDebug = 0;
@@ -99,7 +97,7 @@ struct	linkDesc {
 /* Callback structure used by the watchdog function to queue link processing */
 struct	callbackSeq {
   CALLBACK		callBack;	/* used for the callback task */
-  WDOG_ID		wd_id;		/* Watchdog udes for delays */
+  watchdogId		wd_id;		/* Watchdog udes for delays */
   struct linkDesc *plinks[NUM_LINKS+1]; /* Pointers to links to process */
   int			index;
 };
@@ -123,6 +121,7 @@ int pass;
 {
     int		index;
     struct  linkDesc      *plink;
+    struct callbackSeq *pcallbackSeq;
 
     if (pass==0) return(0);
 
@@ -131,10 +130,10 @@ int pass;
 
     /* Allocate a callback structure for use in processing */
     pseq->dpvt = (void *)malloc(sizeof(struct  callbackSeq));
-
-    ((struct callbackSeq *) (pseq->dpvt))->callBack.callback = processCallback;
-    ((struct callbackSeq *) (pseq->dpvt))->callBack.user = (void *) pseq;
-    ((struct callbackSeq *) (pseq->dpvt))->wd_id = wdCreate();
+    pcallbackSeq = (struct callbackSeq *)pseq->dpvt;
+    pcallbackSeq->callBack.callback = processCallback;
+    pcallbackSeq->callBack.user = (void *) pseq;
+    pcallbackSeq->wd_id = watchdogCreate();
 
     /* Get link selection if sell is a constant and nonzero */
     if (pseq->sell.type==CONSTANT)
@@ -317,8 +316,9 @@ struct seqRecord *pseq;
     if (pcb->plinks[pcb->index]->dly > 0.0)
     {
       /* Use the watch-dog as a delay mechanism */
-      wdDelay = pcb->plinks[pcb->index]->dly * sysClkRateGet();
-      wdStart(pcb->wd_id, wdDelay, (FUNCPTR)watchDog, (int)(&(pcb->callBack)));
+      wdDelay = (int)(pcb->plinks[pcb->index]->dly * clockGetRate());
+      watchdogStart(pcb->wd_id, wdDelay,
+          (WATCHDOGFUNC)watchDog, (void *)(&(pcb->callBack)));
     }
     else
     {

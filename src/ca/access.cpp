@@ -236,9 +236,6 @@ int epicsShareAPI ca_create_channel (
     try {
         oldChannelNotify * pChanNotify = new oldChannelNotify ( 
             * pcac, name_str, conn_func, puser, priority );
-        if ( ! pChanNotify ) {
-            return ECA_ALLOCMEM;
-        }
         // make sure that their chan pointer is set prior to
         // calling connection call backs
         *chanptr = pChanNotify;
@@ -1405,5 +1402,6 @@ epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
 
 // extern "C"
 epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
+
 // extern "C"
 epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;

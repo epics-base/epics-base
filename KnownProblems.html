@@ -9,13 +9,35 @@
 </head>
 
 <body>
-<h1>EPICS base R3.13.0beta1: Known Problems</h1>
+<h1 style="text-align: center">EPICS base R3.13.0beta1: Known Problems</h1>
 
 <h2>vxWorks TIMEZONE pentium</h2>
 
 <p>If the name of the timezone has more than a few characters a crash can
 occur on pentium vxWorks iocs. See ansiTime in the vxWorks reference manual
-for details about TIMEZONE. </p>
+for details about TIMEZONE.</p>
 
-</body>
+<h2>RTEMS appDevGuide Documentation</h2>
+
+<p>In the Application Developer's Guide the example for the RTEMS TFTP
+filesystem chdir command isn't quite right. The note says that all pathnames
+passed to chdir must end in a / character, but the example doesn't show this.
+The example should be changed as shown below.</p>
+<hr />
+
+<p>The RTEMS TFTP remote filesystem driver now supports a limited form of the
+chdir() system call. One restriction is that all pathnames passed to chdir()
+must end in a / character, so IOC shell commands to change directories must
+be given as</p>
+
+<p><code>cd ../db/</code></p>
+
+<h2>epicsReadLine</h2>
+
+<p>src/libCom/osi/os/default/epicsReadline.c used a char variable to hold the
+return value from getc(), and compared this against EOF. getc() returns int
+not char because ANSI C allows char to be unsigned if the architecture finds
+that easier, thus EOF can never be stored in a char on a PowerPC CPU. char
+should be changed to int or signed char.</p>
+=======</body>
 </html>

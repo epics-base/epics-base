@@ -14,8 +14,17 @@ of this distribution.
 #define INCasCah
 
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc void epicsShareAPI asCaStart(void);
 epicsShareFunc void epicsShareAPI asCaStop(void);
 epicsShareExtern int asCaDebug;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCasCah*/

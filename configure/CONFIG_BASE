@@ -28,8 +28,8 @@ EPICS_BASE_IOC_LIBS += recIoc softDevIoc testDevIoc iocsh
 EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc
 EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com 
 
-EPICS_BASE_HOST_LIBS += libcas libgdd libiocsh libasHost libdbStaticHost
-EPICS_BASE_HOST_LIBS += libca libCom
+EPICS_BASE_HOST_LIBS += cas gdd iocsh asHost dbStaticHost
+EPICS_BASE_HOST_LIBS += ca Com
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)

@@ -109,7 +109,7 @@ char *filename;
 	
 	/* load data base record name to pvName */
 	str = pvName[0];
-	bzero(str,1000*31);
+	memset(str,0,1000*31);
 
 	pdbbase=dbAllocBase();
 	pdbentry=dbAllocEntry(pdbbase);

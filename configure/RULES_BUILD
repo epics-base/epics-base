@@ -300,7 +300,7 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 
 $(MUNCHNAME):%.munch : %_ctdt$(OBJ)
 	@$(RM) $@
-	$(LD) -o $@ $(LDFLAGS) $<
+	$(LD) -o $@ $(LDFLAGS) $*.o $<
 
 
 binInstalls:  $(BIN_INSTALLS)

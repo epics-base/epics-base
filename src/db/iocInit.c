@@ -190,7 +190,7 @@ int iocInit(char * pResourceFilename)
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
     scanInit();
-    asInit(NULL);
+    asInit();
     /* wait 1/2 second to make sure all tasks are started*/
     (void)taskDelay(sysClkRateGet()/2);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);

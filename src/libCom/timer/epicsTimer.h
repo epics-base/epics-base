@@ -22,12 +22,12 @@
 
 #ifdef __cplusplus
 
-//
-// Notes:
-// 1) epicsTimer does not hold its lock when calling callbacks.
-//
+/*
+ * Notes:
+ * 1) epicsTimer does not hold its lock when calling callbacks.
+ */
 
-// code using a timer must implement epicsTimerNotify
+/* code using a timer must implement epicsTimerNotify */
 class epicsTimerNotify {
 public:
     enum restart_t { noRestart, restart };
@@ -42,12 +42,12 @@ public:
     };
 
     epicsShareFunc virtual ~epicsTimerNotify () = 0;
-    // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
+    /* return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )" */
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     epicsShareFunc virtual void show ( unsigned int level ) const;
 };
 
-class epicsTimer {              // X aCC 655
+class epicsTimer {              /* X aCC 655 */
 public:
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
@@ -62,10 +62,10 @@ public:
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    epicsShareFunc virtual ~epicsTimer () = 0; // protected => delete() must not be called
+    epicsShareFunc virtual ~epicsTimer () = 0; /* protected => delete() must not be called */
 };
 
-class epicsTimerQueue {         // X aCC 655
+class epicsTimerQueue {         /* X aCC 655 */
 public:
     virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
@@ -73,7 +73,7 @@ protected:
     epicsShareFunc virtual ~epicsTimerQueue () = 0;
 };
 
-class epicsTimerQueueActive // X aCC 655
+class epicsTimerQueueActive /* X aCC 655 */
     : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueueActive & allocate (
@@ -83,24 +83,24 @@ protected:
     epicsShareFunc virtual ~epicsTimerQueueActive () = 0;
 };
 
-class epicsTimerQueueNotify {   // X aCC 655
+class epicsTimerQueueNotify {   /* X aCC 655 */
 public:
-    // called when a new timer is inserted into the queue and the
-    // delay to the next expire has changed
+    /* called when a new timer is inserted into the queue and the */
+    /* delay to the next expire has changed */
     virtual void reschedule () = 0;
-    // if there is a quantum in the scheduling of timer intervals
-    // return this quantum in seconds. If unknown then return zero.
+    /* if there is a quantum in the scheduling of timer intervals */
+    /* return this quantum in seconds. If unknown then return zero. */
     virtual double quantum () = 0;
 protected:
     epicsShareFunc virtual ~epicsTimerQueueNotify () = 0;
 };
 
-class epicsTimerQueuePassive // X aCC 655
+class epicsTimerQueuePassive /* X aCC 655 */
     : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
-    epicsShareFunc virtual ~epicsTimerQueuePassive () = 0; // ok to call delete
-    virtual double process ( const epicsTime & currentTime ) = 0; // returns delay to next expire
+    epicsShareFunc virtual ~epicsTimerQueuePassive () = 0; /* ok to call delete */
+    virtual double process ( const epicsTime & currentTime ) = 0; /* returns delay to next expire */
 };
 
 inline epicsTimer::expireInfo::expireInfo ( bool activeIn, 

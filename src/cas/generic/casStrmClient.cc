@@ -815,7 +815,8 @@ caStatus casStrmClient::monitorResponse (
 		if ( completionStatus == S_cas_noRead ) {
             return monitorFailureResponse ( guard, msg, ECA_NORDACCESS );
 		}
-		else if ( completionStatus == S_cas_noMemory ) {
+		else if ( completionStatus == S_cas_noMemory || 
+            completionStatus == S_casApp_noMemory ) {
             return monitorFailureResponse ( guard, msg, ECA_ALLOCMEM );
 		}
 		else if ( completionStatus == S_cas_badType ) {
@@ -1337,7 +1338,7 @@ caStatus casStrmClient::createChanResponse (
 	    if ( this->userStartedAsyncIO ) {
 		    if ( status != S_casApp_asyncCompletion ) {
 			    fprintf ( stderr, 
-                    "Application returned %d from casPV::read()"
+                    "Application returned %d from casChannel::read()"
                     " - expected S_casApp_asyncCompletion\n", status);
 		    }
 			status = S_cas_success;
@@ -1353,7 +1354,7 @@ caStatus casStrmClient::createChanResponse (
 	    }
         else if ( status == S_casApp_postponeAsyncIO ) {
 		    errlogPrintf ( "The server library does not currently support postponment of " );
-            errlogPrintf ( "string table cache update of casPV::read()." );
+            errlogPrintf ( "string table cache update of casChannel::read()." );
 		    errlogPrintf ( "To postpone this request please postpone the PC attach IO request." );
 		    errlogPrintf ( "String table cache update did not occur." );
             status = enumPostponedCreateChanResponse ( 
@@ -1945,7 +1946,7 @@ caStatus casStrmClient::write()
 	if ( this->userStartedAsyncIO ) {
 		if (status!=S_casApp_asyncCompletion) {
 			fprintf(stderr, 
-"Application returned %d from casPV::write() - expected S_casApp_asyncCompletion\n",
+"Application returned %d from casChannel::write() - expected S_casApp_asyncCompletion\n",
 				status);
 			status = S_casApp_asyncCompletion;
 		}
@@ -1953,7 +1954,7 @@ caStatus casStrmClient::write()
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_badParameter;
 		errMessage ( status, 
-		"- expected asynch IO creation from casPV::write()" );
+		"- expected asynch IO creation from casChannel::write()" );
 	}
 
 	return status;
@@ -2010,7 +2011,7 @@ caStatus casStrmClient::writeScalarData ()
 	    //
 	    // call the server tool's virtual function
 	    //
-	    status = this->ctx.getPV()->write ( this->ctx, *pDD );
+	    status = this->ctx.getChannel()->write ( this->ctx, *pDD );
     }
 
 	//
@@ -2099,7 +2100,7 @@ caStatus casStrmClient::writeArrayData()
 	    //
 	    // call the server tool's virtual function
 	    //
-	    status = this->ctx.getPV()->write ( this->ctx, *pDD );
+	    status = this->ctx.getChannel()->write ( this->ctx, *pDD );
     }
     else {
         status = S_cas_noConvert;
@@ -2134,7 +2135,7 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	//
 	// call the server tool's virtual function
 	//
-	status = this->ctx.getPV()->read ( this->ctx, * pDD );
+	status = this->ctx.getChannel()->read ( this->ctx, * pDD );
 
 	//
 	// prevent problems when they initiate
@@ -2144,7 +2145,7 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	if ( this->userStartedAsyncIO ) {
 		if ( status != S_casApp_asyncCompletion ) {
 			fprintf(stderr, 
-"Application returned %d from casPV::read() - expected S_casApp_asyncCompletion\n",
+"Application returned %d from casChannel::read() - expected S_casApp_asyncCompletion\n",
 				status);
 			status = S_casApp_asyncCompletion;
 		}
@@ -2152,7 +2153,7 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_badParameter;
 		errMessage(status, 
-			"- expected asynch IO creation from casPV::read()");
+			"- expected asynch IO creation from casChannel::read()");
 	}
 
 	if ( status == S_casApp_success ) {

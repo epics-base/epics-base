@@ -52,6 +52,8 @@ public:
 	bool readAccess () const;
     bool writeAccess () const;
 	bool confirmationRequested () const;
+    caStatus read ( const casCtx & ctx, gdd & prototype );
+    caStatus write ( const casCtx & ctx, const gdd & value );
 	void show ( unsigned level ) const;
 private:
 	tsDLList < casAsyncIOI > ioList;

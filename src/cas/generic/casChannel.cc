@@ -71,6 +71,25 @@ bool casChannel::confirmationRequested () const
 	return false;
 }
 
+caStatus casChannel::beginTransaction ()
+{
+    return S_casApp_success;
+}
+
+void casChannel::endTransaction ()
+{
+}
+
+caStatus casChannel::read ( const casCtx & ctx, gdd & prototype )
+{
+    return ctx.getPV()->read ( ctx, prototype );
+}
+
+caStatus casChannel::write ( const casCtx & ctx, const gdd & value )
+{
+    return ctx.getPV()->write ( ctx, value );
+}
+
 void casChannel::show ( unsigned level ) const
 {
 	if ( level > 2u ) {

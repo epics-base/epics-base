@@ -79,3 +79,24 @@ caStatus casChannelI::cbFunc (
 	return stat;
 }
 
+caStatus casChannelI::read ( const casCtx & ctx, gdd & prototype )
+{
+    caStatus status = this->chan.beginTransaction ();
+    if ( status != S_casApp_success ) {
+        return status;
+    }
+    status = this->chan.read ( ctx, prototype );
+    this->chan.endTransaction ();
+    return status;
+}
+
+caStatus casChannelI::write ( const casCtx & ctx, const gdd & value )
+{
+    caStatus status = this->chan.beginTransaction ();
+    if ( status != S_casApp_success ) {
+        return status;
+    }
+    status = this->chan.write ( ctx, value );
+    this->chan.endTransaction ();
+    return status;
+}

@@ -571,6 +571,34 @@ public:
 	// for confirmation prior writing to this PV
 	epicsShareFunc virtual bool confirmationRequested () const;
 
+    //
+    // If this function is not provided in the derived class then casPV::beginTransaction()
+    // is called - see casPV::beginTransaction() for additional comments.
+    //
+    epicsShareFunc virtual caStatus beginTransaction ();
+    
+    //
+    // If this function is not provided in the derived class then casPV::endTransaction()
+    // is called - see casPV::endTransaction() for additional comments.
+    //
+    epicsShareFunc virtual void endTransaction ();
+
+    //
+    // read
+    //
+    // If this function is not provided in the derived class then casPV::read()
+    // is called - see casPV::read() for additional comments.
+    //
+    epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
+    
+    //
+    // write 
+    //
+    // If this function is not provided in the derived class then casPV::write()
+    // is called - see casPV::write() for additional comments.
+    //
+    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
+
 	//
 	// This is called for each channel in the server if
 	// caServer::show() is called and the level is high 

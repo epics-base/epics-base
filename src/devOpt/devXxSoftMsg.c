@@ -52,56 +52,86 @@
 
 #include <drvMsg.h>
 #include <drvRs232.h>
+#include <drvBB232.h>
 
-#define	DSET_AI	devAiSoftMsg
-#define	DSET_AO	devAoSoftMsg
-#define	DSET_BI	devBiSoftMsg
-#define	DSET_BO devBoSoftMsg
-#define DSET_MI devMiSoftMsg
-#define DSET_MO	devMoSoftMsg
-#define	DSET_LI	devLiSoftMsg
-#define	DSET_LO	devLoSoftMsg
-#define	DSET_SI	devSiSoftMsg
-#define	DSET_SO devSoSoftMsg
-#define	DSET_WF devWfSoftMsg
+static long		BBinit(), BBreport(), VXinit(), VXreport();
+static msgParmBlock	BBParmBlock, VXParmBlock;
+
+/******************************************************************************
+ *
+ * DSET tables used for BITBUS -> RS-232 ports.
+ *
+ ******************************************************************************/
+msgDset	devBBAiSoftMsg = { 6, { BBreport, BBinit, drvMsg_initAi, NULL, 
+	drvMsg_procAi, NULL}, &BBParmBlock, &drvMsgAi};
+msgDset devBBAoSoftMsg = { 6, { NULL, NULL, drvMsg_initAo, NULL, 
+	drvMsg_procAo, NULL}, &BBParmBlock, &drvMsgAo};
 
+msgDset devBBBiSoftMsg = { 6, { NULL, NULL, drvMsg_initBi, NULL, 
+	drvMsg_procBi, NULL}, &BBParmBlock, &drvMsgBi};
+msgDset devBBBoSoftMsg = { 6, { NULL, NULL, drvMsg_initBo, NULL, 
+	drvMsg_procBo, NULL}, &BBParmBlock, &drvMsgBo};
 
-static long	init(), report();
-static msgParmBlock	parmBlock;
+msgDset devBBMiSoftMsg = { 6, { NULL, NULL, drvMsg_initMi, NULL, 
+	drvMsg_procMi, NULL}, &BBParmBlock, &drvMsgMi};
+msgDset devBBMoSoftMsg = { 6, { NULL, NULL, drvMsg_initMo, NULL, 
+	drvMsg_procMo, NULL}, &BBParmBlock, &drvMsgMo};
 
-msgDset	DSET_AI = { 6, { report, init, drvMsg_initAi, NULL, 
-	drvMsg_procAi, NULL}, &parmBlock};
-msgDset DSET_AO = { 6, { NULL, NULL, drvMsg_initAo, NULL, 
-	drvMsg_procAo, NULL}, &parmBlock};
+msgDset devBBLiSoftMsg = { 6, { NULL, NULL, drvMsg_initLi, NULL, 
+	drvMsg_procLi, NULL}, &BBParmBlock, &drvMsgLi};
+msgDset devBBLoSoftMsg = { 6, { NULL, NULL, drvMsg_initLo, NULL, 
+	drvMsg_procLo, NULL}, &BBParmBlock, &drvMsgLo};
 
-msgDset DSET_BI = { 6, { NULL, NULL, drvMsg_initBi, NULL, 
-	drvMsg_procBi, NULL}, &parmBlock};
-msgDset DSET_BO = { 6, { NULL, NULL, drvMsg_initBo, NULL, 
-	drvMsg_procBo, NULL}, &parmBlock};
+msgDset devBBSiSoftMsg = { 6, { NULL, NULL, drvMsg_initSi, NULL, 
+	drvMsg_procSi, NULL}, &BBParmBlock, &drvMsgSi};
+msgDset devBBSoSoftMsg = { 6, { NULL, NULL, drvMsg_initSo, NULL, 
+	drvMsg_procSo, NULL}, &BBParmBlock, &drvMsgSo};
 
-msgDset DSET_MI = { 6, { NULL, NULL, drvMsg_initMi, NULL, 
-	drvMsg_procMi, NULL}, &parmBlock};
-msgDset DSET_MO = { 6, { NULL, NULL, drvMsg_initMo, NULL, 
-	drvMsg_procMo, NULL}, &parmBlock};
+msgDset devBBWfSoftMsg = { 6, { NULL, NULL, drvMsg_initWf, NULL, 
+	drvMsg_procWf, NULL}, &BBParmBlock, &drvMsgWf};
+
+/******************************************************************************
+ *
+ * DSET tables used for vxWorks tty ports.
+ *
+ ******************************************************************************/
+msgDset	devVXAiSoftMsg = { 6, { VXreport, VXinit, drvMsg_initAi, NULL, 
+	drvMsg_procAi, NULL}, &VXParmBlock, &drvMsgAi};
+msgDset devVXAoSoftMsg = { 6, { NULL, NULL, drvMsg_initAo, NULL, 
+	drvMsg_procAo, NULL}, &VXParmBlock, &drvMsgAo};
 
-msgDset DSET_LI = { 6, { NULL, NULL, drvMsg_initLi, NULL, 
-	drvMsg_procLi, NULL}, &parmBlock};
-msgDset DSET_LO = { 6, { NULL, NULL, drvMsg_initLo, NULL, 
-	drvMsg_procLo, NULL}, &parmBlock};
+msgDset devVXBiSoftMsg = { 6, { NULL, NULL, drvMsg_initBi, NULL, 
+	drvMsg_procBi, NULL}, &VXParmBlock, &drvMsgBi};
+msgDset devVXBoSoftMsg = { 6, { NULL, NULL, drvMsg_initBo, NULL, 
+	drvMsg_procBo, NULL}, &VXParmBlock, &drvMsgBo};
 
-msgDset DSET_SI = { 6, { NULL, NULL, drvMsg_initSi, NULL, 
-	drvMsg_procSi, NULL}, &parmBlock};
-msgDset DSET_SO = { 6, { NULL, NULL, drvMsg_initSo, NULL, 
-	drvMsg_procSo, NULL}, &parmBlock};
+msgDset devVXMiSoftMsg = { 6, { NULL, NULL, drvMsg_initMi, NULL, 
+	drvMsg_procMi, NULL}, &VXParmBlock, &drvMsgMi};
+msgDset devVXMoSoftMsg = { 6, { NULL, NULL, drvMsg_initMo, NULL, 
+	drvMsg_procMo, NULL}, &VXParmBlock, &drvMsgMo};
 
-msgDset DSET_WF = { 6, { NULL, NULL, drvMsg_initWf, NULL, 
-	drvMsg_procWf, NULL}, &parmBlock};
+msgDset devVXLiSoftMsg = { 6, { NULL, NULL, drvMsg_initLi, NULL, 
+	drvMsg_procLi, NULL}, &VXParmBlock, &drvMsgLi};
+msgDset devVXLoSoftMsg = { 6, { NULL, NULL, drvMsg_initLo, NULL, 
+	drvMsg_procLo, NULL}, &VXParmBlock, &drvMsgLo};
 
+msgDset devVXSiSoftMsg = { 6, { NULL, NULL, drvMsg_initSi, NULL, 
+	drvMsg_procSi, NULL}, &VXParmBlock, &drvMsgSi};
+msgDset devVXSoSoftMsg = { 6, { NULL, NULL, drvMsg_initSo, NULL, 
+	drvMsg_procSo, NULL}, &VXParmBlock, &drvMsgSo};
+
+msgDset devVXWfSoftMsg = { 6, { NULL, NULL, drvMsg_initWf, NULL, 
+	drvMsg_procWf, NULL}, &VXParmBlock, &drvMsgWf};
+
 int	softMsgDebug = 0;
 
 static msgStrParm wrParms[] = {
   { "Parm 0 write string!\n\r", -1},
-  { "wrParm-1 raw write string\n\r", -1 }
+  { "wrParm-1 raw write string\n\r", -1 },
+  { "123456789012", -1 },
+  { "1234567890123", -1 },
+  { "12345678901234", -1},
+  { "RD\r", -1 },		/* MP command solitation string */
 };
 
 static msgFoParm foParms[] = {
@@ -111,18 +141,28 @@ static msgFoParm foParms[] = {
 };
 
 static msgFiParm fiParms[] = {
-  { "%s %lf", 50 },
-  { "%lf", 50 },
-  { "%ld", 50 },
+  { "%s %lf", 0, 50 },
+  { "%lf", 0, 50 },
+  { "%ld", 0, 50 },
+  { "%lf", 0, 10 },		/* Get the voltage from the 'RD' response */
 };
 
+static msgSBIParm sbiParms[] = {
+  { "H", 13, 1 },		/* Check for 'H' in position 13 */
+};
+
+
 static msgCmd cmds[] = {
-  { &DSET_AI, READ_NDLY, {MSG_OP_WRITE, &wrParms[0]}, {MSG_OP_FAI, &fiParms[0]}, NULL, -1 },
-  { &DSET_AO, READ_NDLY, {MSG_OP_FAO, &foParms[0]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &DSET_AI, READ_NDLY, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FAI, &fiParms[1]}, NULL, -1 },
-  { &DSET_AO, READ_NDLY, {MSG_OP_FAO, &foParms[1]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &DSET_LI, READ_NDLY, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FLI, &fiParms[2]}, NULL, -1 },
-  { &DSET_LO, READ_NDLY, {MSG_OP_FLO, &foParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1 }
+  { &drvMsgAi, 0, {MSG_OP_WRITE, &wrParms[0]}, {MSG_OP_FAI, &fiParms[0]}, NULL, -1 },
+  { &drvMsgAo, 0, {MSG_OP_FAO, &foParms[0]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+  { &drvMsgAi, 0, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FAI, &fiParms[1]}, NULL, -1 },
+  { &drvMsgAo, 0, {MSG_OP_FAO, &foParms[1]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+  { &drvMsgLi, 0, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FLI, &fiParms[2]}, NULL, -1 },
+  { &drvMsgLo, 0, {MSG_OP_FLO, &foParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+  /* 6 */
+  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[3]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[4]}, {MSG_OP_NOP, NULL}, NULL, -1 },
 };
 
 /******************************************************************************
@@ -131,6 +171,7 @@ static msgCmd cmds[] = {
  * structure.
  *
  ******************************************************************************/
+/* For vxWorks tty ports */
 static dev232ParmBlock parm232extension = {
   0,		/* Time window */
   60,		/* DMA time limit */
@@ -139,13 +180,30 @@ static dev232ParmBlock parm232extension = {
   9600,          /* Baud rate to the machine at */
   OPT_7_BIT	/* 7-bit transfers */
 };
+
+/* For Bitbus -> 232 */
+static drvBB232ParmBlock parmBB232extension = {
+  0,
+  9600
+};
 /******************************************************************************
  *
  * The parmBlock is used to define the relationship b/w the command table and
  * the driverBlock.
  *
  ******************************************************************************/
-static msgParmBlock     parmBlock = {
+static msgParmBlock BBParmBlock = { /* for records requesting Bitbus->232 */
+  &softMsgDebug,
+  NULL,
+  cmds,
+  sizeof(cmds) / sizeof(msgCmd),
+  "softMsg",
+  &drvBB232Block,
+  drvMsg_xactWork,
+  &parmBB232extension
+};
+
+static msgParmBlock VXParmBlock = { /* for records requesting vxWorks tty */
   &softMsgDebug,
   NULL,
   cmds,
@@ -155,14 +213,34 @@ static msgParmBlock     parmBlock = {
   drvMsg_xactWork,
   &parm232extension
 };
+
+/******************************************************************************
+ *
+ * These are used to add parameters to calls made to the init routines.
+ *
+ ******************************************************************************/
 static long
-init(parm)
+BBinit(parm)
 int	parm;
 {
-  return(drvMsg_initMsg(parm, &devAiSoftMsg));
+  return(drvMsg_initMsg(parm, &devBBAiSoftMsg));
 }
 static long
-report()
+BBreport()
 {
-  return(drvMsg_reportMsg(&devAiSoftMsg));
+  return(drvMsg_reportMsg(&devBBAiSoftMsg));
+}
+
+
+
+static long
+VXinit(parm)
+int	parm;
+{
+  return(drvMsg_initMsg(parm, &devVXAiSoftMsg));
+}
+static long
+VXreport()
+{
+  return(drvMsg_reportMsg(&devVXAiSoftMsg));
 }

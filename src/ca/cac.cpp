@@ -433,7 +433,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
     {
         char buf[128];
         addr.name ( buf, sizeof ( buf ) );
-        printf ( guard, "New server available: %s\n", buf );
+        ::printf ( "New server available: %s\n", buf );
     }
 #   endif
 }

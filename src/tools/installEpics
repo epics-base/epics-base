@@ -32,8 +32,8 @@ done
 # at least two args required
 if [ $# -lt 2 ]
 then
-	echo "$USAGE"
-	exit 1
+	echo "Nothing to install"
+	exit
 fi
 
 INSTALL_DIR=

@@ -17,6 +17,9 @@
 
 extern "C" void cacNoConnHandler ( struct connection_handler_args args );
 
+class gnuOldAccessWarningEliminate {
+};
+
 struct oldChannel : public cacChannel {
 public:
     oldChannel (caCh *pConnCallBack, void *pPrivate);
@@ -65,6 +68,7 @@ private:
     void exceptionNotify (int status, const char *pContext);
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class getCallback, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 class putCallback : public cacNotify {
@@ -85,6 +89,7 @@ private:
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class putCallback, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 struct oldSubscription : public cacNotify {
@@ -109,5 +114,6 @@ private:
 
     ~oldSubscription (); // must allocate from pool
     static tsFreeList < struct oldSubscription, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 

@@ -85,6 +85,7 @@ private:
     static tsFreeList < class repeaterClient, 0x20 > freeList;
     ~repeaterClient ();
     unsigned port () const;
+    friend class gnuWarningEliminate;
 };
 
 /* 

@@ -108,6 +108,9 @@
 
 static const unsigned comBufSize = 0x4000;
 
+class gnuWarningEliminate {
+};
+
 class wireSendAdapter {
 public:
     virtual unsigned sendBytes ( const void *pBuf, 
@@ -156,6 +159,7 @@ private:
     unsigned char buf [ comBufSize ]; // optimal for 100 Mb Ethernet LAN MTU
 
     unsigned clipNElem ( unsigned elemSize, unsigned nElem );
+    friend class gnuWarningEliminate;
 };
 
 struct msgDescriptor {
@@ -335,6 +339,7 @@ private:
     void lockOutstandingIO () const;
     void unlockOutstandingIO () const;
     const char * pHostName () const; // deprecated - please do not use
+    friend class gnuWarningEliminate;
 };
 
 class baseNMIU : public tsDLNode < baseNMIU >, 
@@ -379,6 +384,7 @@ private:
     class netSubscription * isSubscription ();
     ~netSubscription ();
     static tsFreeList < class netSubscription, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 class netReadCopyIO : public baseNMIU {
@@ -400,6 +406,7 @@ private:
     void uninstall ();
     ~netReadCopyIO (); // must be allocated from pool
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
@@ -416,6 +423,7 @@ private:
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     ~netReadNotifyIO ();
     static tsFreeList < class netReadNotifyIO, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
@@ -432,6 +440,7 @@ private:
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     ~netWriteNotifyIO ();
     static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 /*
@@ -707,6 +716,7 @@ private:
     bool ioComplete;
     char hostNameBuf [128];
     ~hostNameCache ();
+    friend class gnuWarningEliminate;
 
     static tsFreeList < class hostNameCache, 16 > freeList;
 };
@@ -891,6 +901,7 @@ private:
 
     static tsFreeList < class bhe, 1024 > freeList;
     epicsShareFunc ~bhe (); // force allocation from freeList
+    friend class gnuWarningEliminate;
 };
 
 class caErrorCode { 
@@ -970,6 +981,7 @@ private:
     unsigned long seqNo;
 
     static tsFreeList < class syncGroupNotify, 1024 > freeList;
+    friend class gnuWarningEliminate;
 };
 
 /*

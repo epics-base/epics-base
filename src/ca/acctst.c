@@ -313,7 +313,11 @@ void getCallbackStateChange ( struct event_handler_args args )
 
     assert ( pChan->channel == args.chid );
     assert ( pChan->connected );
-    assert ( args.status == ECA_NORMAL );
+    if ( args.status == ECA_NORMAL ) {
+        printf ( "getCallbackStateChange abnormal status was \"%s\"\n", 
+            ca_message ( args.status ) ); 
+        assert ( args.status == ECA_NORMAL );
+    }
 
     getCallbackCount++;
     pChan->getCallbackCount++;

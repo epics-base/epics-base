@@ -1299,10 +1299,10 @@ void performMonitorUpdateTest (chid chan)
     eventTest       test[1000];
     dbr_float_t     temp, getResp;
     unsigned        i, j;
-    unsigned        flowCtrlCount;
+    unsigned        flowCtrlCount = 0u;
     unsigned        tries;
     
-    if (!ca_read_access(chan)) {
+    if ( ! ca_read_access(chan) ) {
         return;
     }
     
@@ -1330,58 +1330,53 @@ void performMonitorUpdateTest (chid chan)
     /*
      * attempt to uncover problems where the last event isnt sent
      * and hopefully get into a flow control situation
-     */  
-    if (!ca_write_access(chan)) {
- 
-        flowCtrlCount = 0;
-        for (i=0; i<NELEMENTS(test); i++) {
-            for (j=0; j<=i; j++) {
-                temp = (float) j;
-                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
-            }
+     */   
+    for (i=0; i<NELEMENTS(test); i++) {
+        for (j=0; j<=i; j++) {
+            temp = (float) j;
+            SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+        }
 
-            /*
-             * wait for the above to complete
-             */
-            SEVCHK ( ca_get (DBR_FLOAT,chan,&getResp), NULL);
-            SEVCHK ( ca_pend_io (1000.0), NULL);
+        /*
+         * wait for the above to complete
+         */
+        SEVCHK ( ca_get (DBR_FLOAT,chan,&getResp), NULL);
+        SEVCHK ( ca_pend_io (1000.0), NULL);
 
-            assert (getResp==temp);
+        assert (getResp==temp);
 
-            /*
-             * wait for all of the monitors to have correct values
-             */
-            tries = 0;
-            while (1) {
-                unsigned passCount = 0;
-                for (j=0; j<NELEMENTS(test); j++) {
-                    assert (test[i].count<=i);
-                    if (test[i].lastValue==temp) {
-                        if (test[i].count<i) {
-                            flowCtrlCount++;
-                        }
-                        test[i].lastValue = -1.0;
-                        test[i].count = 0;
-                        passCount++;
+        /*
+         * wait for all of the monitors to have correct values
+         */
+        tries = 0;
+        while (1) {
+            unsigned passCount = 0;
+            for (j=0; j<NELEMENTS(test); j++) {
+                assert (test[i].count<=i);
+                if (test[i].lastValue==temp) {
+                    if (test[i].count<i) {
+                        flowCtrlCount++;
                     }
+                    test[i].lastValue = -1.0;
+                    test[i].count = 0;
+                    passCount++;
                 }
-                if (passCount==NELEMENTS(test)) {
-                    break;
-                }
-                SEVCHK ( ca_pend_event (0.1), 0);
-                printf (".");
-                fflush (stdout);
-
-                assert (tries<50);
             }
+            if ( passCount==NELEMENTS(test) ) {
+                break;
+            }
+            SEVCHK ( ca_pend_event (0.1), 0);
+            printf (".");
+            fflush (stdout);
+
+            assert (tries<50);
         }
     }
-
 
     /*
      * delete the event subscriptions 
      */
-    for (i=0; i<NELEMENTS(test); i++) {
+    for ( i=0; i<NELEMENTS(test); i++ ) {
         SEVCHK ( ca_clear_event (test[i].id), NULL);
     }
         
@@ -1411,12 +1406,12 @@ void performDeleteTest (chid chan)
     dbr_float_t temp, getResp;
     unsigned    i;
     
-    printf ("Performing event subscription delete test...");
-    fflush (stdout);
+    printf ( "Performing event subscription delete test..." );
+    fflush ( stdout );
 
-    for(i=0; i<NELEMENTS(mid); i++){
-        SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, null_event,
-            &count, &mid[i]),NULL);
+    for ( i=0; i<NELEMENTS(mid); i++ ) {
+        SEVCHK ( ca_add_event(DBR_GR_FLOAT, chan, null_event,
+            &count, &mid[i]),NULL );
     }
 
     /*
@@ -1427,41 +1422,44 @@ void performDeleteTest (chid chan)
      * server is very busy with monitors the client 
      * is still able to punch through with a request.
      */
-    SEVCHK (ca_get(DBR_FLOAT,chan,&getResp),NULL);
-    SEVCHK (ca_pend_io(1000.0),NULL);
+    SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
+    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
 
-    printf ("writing...");
-    fflush (stdout);
+    printf ( "writing..." );
+    fflush ( stdout );
 
     /*
      * attempt to generate heavy event traffic before initiating
      * the monitor delete
      */  
-    if (ca_write_access(chan)) {
-        for (i=0; i<NELEMENTS(mid); i++) {
+    if ( ca_write_access (chan) ) {
+        for (i=0; i<10; i++) {
             temp = (float) i;
             SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
         }
     }
 
-    printf ("deleting...");
-    fflush (stdout);
+    printf ( "deleting..." );
+    fflush ( stdout );
 
     /*
      * without pausing begin deleting the event suvbscriptions 
      * while the queue is full
      */
-    for(i=0; i<NELEMENTS(mid); i++){
-        SEVCHK ( ca_clear_event (mid[i]), NULL);
+    for ( i=0; i < NELEMENTS (mid); i++ ) {
+        SEVCHK ( ca_clear_event ( mid[i]), NULL );
     }
-        
+
+    printf ( "flushing..." );
+    fflush ( stdout );
+
     /*
      * force all of the clear event requests to
      * complete
      */
-    SEVCHK(ca_get(DBR_FLOAT,chan,&temp),NULL);
-    SEVCHK(ca_pend_io(1000.0),NULL);
+    SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
+    SEVCHK ( ca_pend_io (1000.0), NULL );
 
-    printf("done.\n");
+    printf ("done.\n");
 } 
 

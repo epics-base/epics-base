@@ -401,7 +401,7 @@ static long initDatabase(void)
 	    /* If NAME is null then skip this record*/
 	    if(!(precord->name[0])) continue;
 	    /*initialize fields rset*/
-	    (struct rset *)(precord->rset) = prset;
+	    precord->rset = prset;
 	    /* initialize mlok and mlis*/
 	    FASTLOCKINIT(&precord->mlok);
 	    ellInit(&(precord->mlis));
@@ -669,7 +669,7 @@ static long getResources(char  *fname)
     char            s3[MAX];
     char            message[100];
     long            rtnval = 0;
-    UINT8           type;
+    SYM_TYPE	    type;
     char           *pSymAddr;
     short           n_short;
     long            n_long;

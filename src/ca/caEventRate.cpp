@@ -57,9 +57,9 @@ void caEventRate ( const char *pName, unsigned count )
     fflush ( stdout );
 
     unsigned eventCount = 0u;
-    for ( i = 0u; i < count; i++ ) {
+    for ( unsigned j = 0u; j < count; j++ ) {
         status = ca_add_event ( DBR_FLOAT, 
-            pChidTable[i], eventCallBack, &eventCount, NULL);
+            pChidTable[j], eventCallBack, &eventCount, NULL);
         SEVCHK ( status, __FILE__ );
     }
 
@@ -82,8 +82,6 @@ void caEventRate ( const char *pName, unsigned count )
     printf ( " done.\n" );
 
     double samplePeriod = initialSamplePeriod;
-    double X = 0.0;
-    double XX = 0.0;
     unsigned N = 0u;
     while ( true ) {
         unsigned nEvents, lastEventCount, curEventCount;

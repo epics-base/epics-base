@@ -65,6 +65,9 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.33  1994/10/04  18:42:42  winans
+ * Added an extensive debugging facility.
+ *
  *
  */
 
@@ -76,10 +79,16 @@
 #include <semLib.h>
 #include <rngLib.h>
 #include <wdLib.h>
-#include <wdLib.h>
 #include <tickLib.h>
 #include <vme.h>
 #include <iv.h>
+#include <rebootLib.h>
+#include <logLib.h>
+#include <sysLib.h>
+#include <intLib.h>
+#include <stdio.h>
+#include <vxLib.h>
+#include <string.h>
 
 #include <task_params.h>
 #include <module_types.h>
@@ -101,6 +110,7 @@ STATIC long	reportBB(void);
 STATIC long	initBB(void);
 STATIC long	qBBReq(struct  dpvtBitBusHead *pdpvt, int prio);
 
+STATIC int	xvmeReset(int link);
 STATIC int	xvmeTmoHandler(int link);
 STATIC int	xvmeRxTask(int link);
 STATIC int	xvmeTxTask(int link);
@@ -108,6 +118,7 @@ STATIC int	xvmeWdTask(int link);
 STATIC int	xvmeIrqRdav(int link);
 STATIC int	xvmeIrqRcmd(int link);
 
+STATIC int	pepReset(int link);
 STATIC int	pepTmoHandler(int link);
 STATIC int	pepRxTask(int link);
 STATIC int	pepTxTask(int link);
@@ -116,6 +127,14 @@ STATIC int	pepIrqRdav(int link);
 
 STATIC int	bbKill(int link);
 STATIC void	BBrebootFunc(void);
+
+STATIC int	txStuck(int link);
+
+#ifdef BB_SUPER_DEBUG
+int BBHistDump(int link);
+STATIC int BBDumpXactHistory(XactHistStruct *pXact);
+#endif
+
 
 /*****************************************************************************
  *
@@ -408,9 +427,9 @@ STATIC long reportBB(void)
     if (pBBLink[i] != NULL)
     {
       if (pBBLink[i]->LinkType == BB_CONF_TYPE_XYCOM)
-        printf("Bitbus link %d present at 0x%8.8X IV=0x%2.2X IL=%d (XYCOM)\n", i, pBBLink[i]->l.XycomLink.bbRegs, pBBLink[i]->IrqVector, pBBLink[i]->IrqLevel);
+        printf("Bitbus link %d present at %p IV=0x%2.2X IL=%d (XYCOM)\n", i, pBBLink[i]->l.XycomLink.bbRegs, pBBLink[i]->IrqVector, pBBLink[i]->IrqLevel);
       else if (pBBLink[i]->LinkType == BB_CONF_TYPE_PEP)
-        printf("Bitbus link %d present at 0x%8.8X IV=0x%2.2X IL=%d (PEP)\n", i, pBBLink[i]->l.PepLink.bbRegs, pBBLink[i]->IrqVector, pBBLink[i]->IrqLevel);
+        printf("Bitbus link %d present at %p IV=0x%2.2X IL=%d (PEP)\n", i, pBBLink[i]->l.PepLink.bbRegs, pBBLink[i]->IrqVector, pBBLink[i]->IrqLevel);
     }
   }
   return(OK);
@@ -461,7 +480,7 @@ pepReset(int link)
 
   if (!j) 
   {
-    printf("pepReset(%d): receive fifo will not clear after reset!\n");
+    printf("pepReset(%d): receive fifo will not clear after reset!\n", link);
     return(ERROR);
   }
 
@@ -481,8 +500,7 @@ pepReset(int link)
  * status register.
  *
  ****************************************************************************/
-static int
-xvmeReset(int link)
+STATIC int xvmeReset(int link)
 {
   char	trash;
   int	j;
@@ -794,7 +812,7 @@ xvmeRxTask(int link)
     case BBRX_HEAD:	/* getting the head of a new message */
       rxHead[rxTCount] = pBBLink[link]->l.XycomLink.bbRegs->data;
       if (bbDebug>21)
-        printf("xvmeRxTask(%d): >%02.2X< (Header)\n", link, rxHead[rxTCount]);
+        printf("xvmeRxTask(%d): >%2.2X< (Header)\n", link, rxHead[rxTCount]);
 
       if (++rxTCount == 5)
       { /* find the message this is a reply to */
@@ -807,7 +825,7 @@ xvmeRxTask(int link)
         while (rxDpvtHead != NULL)
         {
           if (bbDebug>19)
-            printf("xvmeRxTask(%d): checking reply against 0x%08.8X\n", link, rxDpvtHead);
+            printf("xvmeRxTask(%d): checking reply against %p\n", link, rxDpvtHead);
 
           /* see if node's match */
           if (rxDpvtHead->txMsg.node == rxHead[2])
@@ -815,7 +833,7 @@ xvmeRxTask(int link)
             if (rxDpvtHead->txMsg.tasks == rxHead[3])
             { /* They match, finish putting response into the rxMsg buffer */
               if (bbDebug>4)
-                printf("xvmeRxTask(%d): reply to 0x%08.8X\n", link, rxDpvtHead);
+                printf("xvmeRxTask(%d): reply to %p\n", link, rxDpvtHead);
   
               /* Delete the node from the list */
 	      listDel(&(pBBLink[link]->busyList), rxDpvtHead);
@@ -895,13 +913,13 @@ xvmeRxTask(int link)
         rxState = BBRX_IGN;	/* toss the rest of the data */
         rxDpvtHead->status = BB_LENGTH; /* set driver status */
 	if (bbDebug>22)
-	  printf("xvmeRxTask(%d): %02.2X (Ignored)\n", link, ch);
+	  printf("xvmeRxTask(%d): %2.2X (Ignored)\n", link, ch);
       }
       else
       {
         *rxMsg = ch;
         if (bbDebug>22)
-          printf("xvmeRxTask(%d): %02.2X (Data)\n", link, ch);
+          printf("xvmeRxTask(%d): %2.2X (Data)\n", link, ch);
         rxMsg++;
         rxTCount++;
       }
@@ -910,7 +928,7 @@ xvmeRxTask(int link)
     case BBRX_IGN:
       ch = pBBLink[link]->l.XycomLink.bbRegs->data;
       if (bbDebug>22)
-        printf("xvmeRxTask(%d): %02.2X (Ignored)\n", link, ch);
+        printf("xvmeRxTask(%d): %2.2X (Ignored)\n", link, ch);
       break;
 
     case BBRX_RCMD:
@@ -942,7 +960,7 @@ xvmeRxTask(int link)
         rxDpvtHead->rxCmd = pBBLink[link]->l.XycomLink.bbRegs->cmnd;
 
         if (bbDebug>24)
-          printf("xvmeRxTask(%d):RX command byte = %02.2X\n", link, rxDpvtHead->rxCmd);
+          printf("xvmeRxTask(%d):RX command byte = %2.2X\n", link, rxDpvtHead->rxCmd);
     
 #ifdef BB_SUPER_DEBUG
           BBSetHistEvent(link, rxDpvtHead, XACT_HIST_STATE_RX);
@@ -1223,7 +1241,6 @@ static int
 xvmeTxTask(int link)
 {
   struct dpvtBitBusHead	*pnode;
-  struct dpvtBitBusHead	*npnode;
   int			prio;
   int			working;
   int			dogStart;
@@ -1333,7 +1350,7 @@ xvmeTxTask(int link)
           BBSetHistEvent(link, pnode, XACT_HIST_STATE_TX);
 #endif
           if (bbDebug>3)
-            printf("xvmeTxTask(%d): got xact, pnode=0x%08.8X\n", link, pnode);
+            printf("xvmeTxTask(%d): got xact, pnode=%p\n", link, pnode);
       
           /* Send the message in polled mode */
   
@@ -1358,7 +1375,7 @@ xvmeTxTask(int link)
 	    {
               pBBLink[link]->l.XycomLink.bbRegs->data = *txMsg;	/* send next byte */
               if (bbDebug>30)
-                printf("xvmeTxTask(%d): outputting %02.2X\n", link, *txMsg);
+                printf("xvmeTxTask(%d): outputting %2.2X\n", link, *txMsg);
   
 	      /* On 5th byte, we are dun w/header, set start w/data buffer */
 	      if (txCCount != 4)
@@ -1476,8 +1493,7 @@ xvmeTxTask(int link)
  * byte to the transmit fifo.
  *
  ******************************************************************************/
-static int
-txStuck(int link)
+STATIC int txStuck(int link)
 {
   /* if (bbDebug) */
     printf("bitbus transmitter task stuck, resetting link %d\n", link);
@@ -1503,14 +1519,14 @@ STATIC long qBBReq(struct  dpvtBitBusHead *pdpvt, int prio)
 
   if ((prio < 0) || (prio >= BB_NUM_PRIO))
   {
-    sprintf(message, "invalid priority requested in call to qbbreq(%08.8X, %d)\n", pdpvt, prio);
+    sprintf(message, "invalid priority requested in call to qbbreq(%p, %d)\n", pdpvt, prio);
     errMessage(S_BB_badPrio, message);
     return(ERROR);
   }
 #if 0
   if (checkLink(pdpvt->link) == ERROR)
   {
-    sprintf(message, "invalid link requested in call to qbbreq(%08.8X, %d)\n", pdpvt, prio);
+    sprintf(message, "invalid link requested in call to qbbreq(%8.8X, %d)\n", pdpvt, prio);
     errMessage(S_BB_rfu1, message);
     return(ERROR);
   }
@@ -1519,13 +1535,13 @@ STATIC long qBBReq(struct  dpvtBitBusHead *pdpvt, int prio)
   {
     if (pdpvt->link >= BB_NUM_LINKS)
     {
-      sprintf(message, "qbbreq(%08.8X, %d) %d\n", pdpvt, prio, pdpvt->link);
+      sprintf(message, "qbbreq(%p, %d) %d\n", pdpvt, prio, pdpvt->link);
       errMessage(S_BB_badlink, message);
     }
     else if (linkErrFlags[pdpvt->link] == 0)
     { /* Anti-message swamping check */
       linkErrFlags[pdpvt->link] = 1;
-      sprintf(message, "qbbreq(%08.8X, %d) %d... card not present\n", pdpvt, prio, pdpvt->link);
+      sprintf(message, "qbbreq(%p, %d) %d... card not present\n", pdpvt, prio, pdpvt->link);
       errMessage(S_BB_badlink, message);
     }
     return(ERROR);
@@ -1537,7 +1553,7 @@ STATIC long qBBReq(struct  dpvtBitBusHead *pdpvt, int prio)
 #endif
 
   if (bbDebug>5)
-    printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
+    printf("qbbreq(%p, %d): transaction queued\n", pdpvt, prio);
   if (bbDebug>6)
     drvBitBusDumpMsg(&(pdpvt->txMsg));
 
@@ -1605,7 +1621,7 @@ drvBitBusDumpMsg(struct bitBusMsg *pbbMsg)
    int	y;
    int	z;
 
-   printf("Link 0x%04.4X, length 0x%02.2X, route 0x%02.2X, node 0x%02.2X, tasks 0x%02.2X, cmd %02.2X\n", pbbMsg->link, pbbMsg->length, pbbMsg->route, pbbMsg->node, pbbMsg->tasks, pbbMsg->cmd);
+   printf("Link 0x%4.4X, length 0x%2.2X, route 0x%2.2X, node 0x%2.2X, tasks 0x%2.2X, cmd %2.2X\n", pbbMsg->link, pbbMsg->length, pbbMsg->route, pbbMsg->node, pbbMsg->tasks, pbbMsg->cmd);
 
   x = BB_MSG_HEADER_SIZE;
   y = pbbMsg->length;
@@ -1613,7 +1629,7 @@ drvBitBusDumpMsg(struct bitBusMsg *pbbMsg)
 
   while (x < y)
   {
-    printf("%02.2X ", pbbMsg->data[z]);
+    printf("%2.2X ", pbbMsg->data[z]);
     ascBuf[z] = pbbMsg->data[z];
 
     if (!((ascBuf[z] >= 0x20) && (ascBuf[z] <= 0x7e)))
@@ -1648,7 +1664,7 @@ static int BBSetHistEvent(int link, struct dpvtBitBusHead *pXact, int State)
   pBBLink[link]->History.Xact[pBBLink[link]->History.Next].Time = tickGet();
   pBBLink[link]->History.Xact[pBBLink[link]->History.Next].State = State;
   if (pXact != NULL)
-    bcopy (pXact, &pBBLink[link]->History.Xact[pBBLink[link]->History.Next].Xact, sizeof(struct dpvtBitBusHead));
+    memcpy (&pBBLink[link]->History.Xact[pBBLink[link]->History.Next].Xact, pXact,  sizeof(struct dpvtBitBusHead));
 
   if (link==bbDebugLink && pBBLink[link]->History.Xact[pBBLink[link]->History.Next].Xact.txMsg.node==bbDebugNode)
     BBDumpXactHistory(&pBBLink[link]->History.Xact[pBBLink[link]->History.Next]);
@@ -1660,7 +1676,7 @@ static int BBSetHistEvent(int link, struct dpvtBitBusHead *pXact, int State)
   return(0);
 }
 
-BBHistDump(int link)
+int BBHistDump(int link)
 {
   int	count;
   int	ix;
@@ -1700,7 +1716,7 @@ BBHistDump(int link)
   semGive(pBBLink[link]->History.sem);
   return(0);
 }
-static int BBDumpXactHistory(XactHistStruct *pXact)
+STATIC int BBDumpXactHistory(XactHistStruct *pXact)
 {
     switch (pXact->State)
     {
@@ -1893,7 +1909,7 @@ pepRxTask(int link)
 	if (rxTCount > 1)  /* Toss the 2 PEP specific header bytes */
 	  rxHead[rxTCount] = ch;
 	if (bbDebug>21)
-	  printf("pepRxTask(%d): >%02.2X< (Header)\n", link, ch);
+	  printf("pepRxTask(%d): >%2.2X< (Header)\n", link, ch);
 	
 	if (++rxTCount == 7) 
 	{
@@ -1906,7 +1922,7 @@ pepRxTask(int link)
 	  rxDpvtHead = pBBLink[link]->busyList.head;
 	  while (rxDpvtHead != NULL) {
 	    if (bbDebug>19)
-	      printf("pepRxTask(%d): checking reply against 0x%08.8X\n",
+	      printf("pepRxTask(%d): checking reply against %p\n",
 		     link, rxDpvtHead);
 	    
 	    /* see if node's match */
@@ -1916,7 +1932,7 @@ pepRxTask(int link)
 	      {
 		/* They match, finish putting response into the rxMsg buffer */
 		if (bbDebug>4)
-		  printf("pepRxTask(%d): reply to 0x%08.8X\n", 
+		  printf("pepRxTask(%d): reply to %p\n", 
 			 link, rxDpvtHead);
 		
 		/* Delete the node from the list */
@@ -1982,7 +1998,7 @@ pepRxTask(int link)
 	    {
 	      printf("pepRxTask(%d): msg from node %d unsolicited!\n", 
 		     link, rxHead[4]);
-	      printf("contents: %02.2x %02.2x %02.2x %02.2x %02.2x\n",rxHead[2],
+	      printf("contents: %2.2x %2.2x %2.2x %2.2x %2.2x\n",rxHead[2],
 		     rxHead[3],rxHead[4],rxHead[5],rxHead[6]);
 	    }
 	    semGive(pXvmeLink[link]->pbbLink->busyList.sem);
@@ -1997,13 +2013,13 @@ pepRxTask(int link)
 	  rxState = BBRX_IGN;	/* toss the rest of the data */
 	  rxDpvtHead->status = BB_LENGTH; /* set driver status */
 	  if (bbDebug>22)
-	    printf("pepRxTask(%d): %02.2X (Ignored)\n", link, ch);
+	    printf("pepRxTask(%d): %2.2X (Ignored)\n", link, ch);
 	  
 	}
 	else {
 	  *rxMsg = ch;
 	  if (bbDebug>22)
-	    printf("pepRxTask(%d): %02.2X (Data)\n", link, ch);
+	    printf("pepRxTask(%d): %2.2X (Data)\n", link, ch);
 	  rxMsg++;
 	  rxTCount++;
 	}
@@ -2011,7 +2027,7 @@ pepRxTask(int link)
 	
       case BBRX_IGN:
 	if (bbDebug>22)
-	  printf("pepRxTask(%d): %02.2X (Ignored)\n", link, ch);
+	  printf("pepRxTask(%d): %2.2X (Ignored)\n", link, ch);
 	break;
       }
 
@@ -2041,7 +2057,7 @@ pepRxTask(int link)
 	{
 	  rxDpvtHead->status = BB_OK;
 	  if (bbDebug>24)
-	    printf("pepRxTask(%d): RX command byte = %02.2X\n", link, ch);
+	    printf("pepRxTask(%d): RX command byte = %2.2X\n", link, ch);
 
 #ifdef BB_SUPER_DEBUG
           BBSetHistEvent(link, rxDpvtHead, XACT_HIST_STATE_RX);
@@ -2217,7 +2233,7 @@ STATIC int pepWdTask(int link)
 #ifdef BB_SUPER_DEBUG
         BBSetHistEvent(link, pnode, XACT_HIST_STATE_WD_TIMEOUT);
 #endif
-	/* printf("pepWdTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);*/
+	/* printf("pepWdTask(%d): TIMEOUT on xact 0x%8.8X\n", link, pnode);*/
 	printf("pepWdTask(%d): TIMEOUT on bitbus message:\n", link);
 	drvBitBusDumpMsg(&pnode->txMsg);
 	
@@ -2235,7 +2251,7 @@ STATIC int pepWdTask(int link)
 	{
 	    if (bbDebug>2)
 	    {
-	      printf("pepWdTask(%d): invoking the callbackRequest %8.8x %d\n", link, pnode->finishProc, pnode->priority);
+	      printf("pepWdTask(%d): invoking the callbackRequest %p %d\n", link, pnode->finishProc, pnode->priority);
 	    }
 	  callbackRequest(pnode);     /* schedule completion processing */
 	}
@@ -2346,7 +2362,6 @@ STATIC int pepWdTask(int link)
 STATIC int pepTxTask(int link)
 {
   struct dpvtBitBusHead	*pnode;
-  struct dpvtBitBusHead	*npnode;
   int			prio;
   int			working;
   int			dogStart;
@@ -2431,7 +2446,7 @@ STATIC int pepTxTask(int link)
 
 	  
 	  if (bbDebug>3)
-	    printf("pepTxTask(%d): got xact, pnode=0x%08.8X\n", link, pnode);
+	    printf("pepTxTask(%d): got xact, pnode=%p\n", link, pnode);
 	  
 	  /* Send the message in polled mode */
 	  txTCount = pnode->txMsg.length;
@@ -2456,23 +2471,23 @@ STATIC int pepTxTask(int link)
 	    }
 	    else if (txCCount == 0) {  /* first byte is package type */
 	      if (bbDebug>30)
-		printf("pepTxTask(%d): outputting %02.2X\n",link,0x81);
+		printf("pepTxTask(%d): outputting %2.2X\n",link,0x81);
 	      pBBLink[link]->l.PepLink.bbRegs->data = 0x81;
 	    }
 	    else if (txCCount == 1) {  /* unused 2nd byte of package */
 	      if (bbDebug>30)
-		printf("pepTxTask(%d): outputting %02.2X\n",link,0x00);
+		printf("pepTxTask(%d): outputting %2.2X\n",link,0x00);
 	      pBBLink[link]->l.PepLink.bbRegs->data = 0x00;
 	    }
 	    else if (txCCount == (txTCount -1)) { /* last byte of package */
 	      pBBLink[link]->l.PepLink.bbRegs->stat_ctl = *txMsg;
 	      if (bbDebug>30)
-		printf("pepTxTask(%d): outputting last byte %02.2X\n",
+		printf("pepTxTask(%d): outputting last byte %2.2X\n",
 		       link,*txMsg);
 	    } else {                 /* regular ol' message byte */
 	      pBBLink[link]->l.PepLink.bbRegs->data = *txMsg;
 	      if (bbDebug>30)
-		printf("pepTxTask(%d): outputting %02.2X\n",link,*txMsg);
+		printf("pepTxTask(%d): outputting %2.2X\n",link,*txMsg);
 	      if (txCCount != 6)
 		txMsg++;
 	      else
@@ -2573,6 +2588,6 @@ int pepDumpStat(int link)
 
   stat_ctl = pBBLink[link]->l.PepLink.bbRegs->stat_ctl;
 
-  printf("stat_ctl reg: %02x\n",stat_ctl);
+  printf("stat_ctl reg: %2X\n",stat_ctl);
   return(OK);
 }

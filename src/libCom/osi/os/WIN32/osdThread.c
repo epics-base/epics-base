@@ -483,14 +483,17 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
     static const double mSecPerSec = 1000;
     DWORD milliSecDelay;
 
-    if ( seconds >= INFINITE / mSecPerSec ) {
-        milliSecDelay = INFINITE - 1;
-    }
-    else if ( seconds < 0.0 ) {
+    if ( seconds <= 0.0 ) {
         milliSecDelay = 0u;
+    }
+    else if ( seconds >= INFINITE / mSecPerSec ) {
+        milliSecDelay = INFINITE - 1;
     }
     else {
         milliSecDelay = ( DWORD ) ( ( seconds * mSecPerSec ) + 0.5 );
+        if ( milliSecDelay == 0 ) {
+            milliSecDelay = 1;
+        }
     }
     Sleep ( milliSecDelay );
 }

@@ -19,6 +19,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
+#include "epicsAssert.h"
 
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::stop() {};
@@ -114,3 +115,71 @@ bool epicsThread::isCurrentThread () const
 {
     return ( epicsThreadGetIdSelf () == this->id );
 }
+
+void epicsThread::resume ()
+{
+    epicsThreadResume (this->id);
+}
+
+void epicsThread::getName (char *name, size_t size) const
+{
+    epicsThreadGetName (this->id, name, size);
+}
+
+epicsThreadId epicsThread::getId () const
+{
+    return this->id;
+}
+
+unsigned int epicsThread::getPriority () const
+{
+    return epicsThreadGetPriority (this->id);
+}
+
+void epicsThread::setPriority (unsigned int priority)
+{
+    epicsThreadSetPriority (this->id, priority);
+}
+
+bool epicsThread::priorityIsEqual (const epicsThread &otherThread) const
+{
+    if ( epicsThreadIsEqual (this->id, otherThread.id) ) {
+        return true;
+    }
+    return false;
+}
+
+bool epicsThread::isSuspended () const
+{
+    if ( epicsThreadIsSuspended (this->id) ) {
+        return true;
+    }
+    return false;
+}
+
+bool epicsThread::operator == (const epicsThread &rhs) const
+{
+    return (this->id == rhs.id);
+}
+
+void epicsThread::suspendSelf ()
+{
+    epicsThreadSuspendSelf ();
+}
+
+void epicsThread::sleep (double seconds)
+{
+    epicsThreadSleep (seconds);
+}
+
+//epicsThread & epicsThread::getSelf ()
+//{
+//    return * static_cast<epicsThread *> ( epicsThreadGetIdSelf () );
+//}
+
+const char *epicsThread::getNameSelf ()
+{
+    return epicsThreadGetNameSelf ();
+}
+
+

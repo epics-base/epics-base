@@ -33,9 +33,16 @@ LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 SHRLIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
 
 #-------------------------------------------------------
+# shrlib: dependancy definitions
+SHRLIB_DEPLIBS = $(foreach lib,$(SHRLIB_LIBS),$(firstword $(wildcard  \
+$($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
+
 # Shared library definitions
 SHRLIB_LDFLAGS = $($(ANSI)_SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
 SHRLIB_LDLIBS = $($*_LIBS:%=-l%)
+
+SHRLIB_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(SHRLIB_DEPLIBS))
+SHRLIB_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
 
 #--------------------------------------------------
 # Prod: dependancy definitions

@@ -4,6 +4,7 @@
 
 /* common to epics Unix and vxWorks */
 #include "dbAccess.h"
+#include "asLib.h"
 #include "sdrHeader.h"
 #include "drvSup.h"
 #include "devSup.h"

@@ -20,14 +20,14 @@
 // nciu inline member functions
 //
 
-inline void * nciu::operator new (size_t size)
+inline void * nciu::operator new ( size_t size )
 { 
-    return nciu::freeList.allocate (size);
+    return nciu::freeList.allocate ( size );
 }
 
-inline void nciu::operator delete (void *pCadaver, size_t size)
+inline void nciu::operator delete ( void *pCadaver, size_t size )
 { 
-    nciu::freeList.release (pCadaver,size);
+    nciu::freeList.release ( pCadaver, size );
 }
 
 inline bool nciu::fullyConstructed () const

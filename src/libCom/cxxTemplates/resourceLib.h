@@ -160,7 +160,7 @@ public:
     void traverse ( pSetMFArg(pCB) );
     void traverseConst ( pSetMFArgConst(pCB) ) const;
 
-    unsigned numEntriesInstalled () const
+    unsigned numEntriesInstalled () const;
 
 private:
     tsSLList<T>     *pTable;
@@ -470,7 +470,7 @@ void resTable<T,ID>::traverseConst (pSetMFArgConst(pCB)) const
 }
 
 template <class T, class ID>
-inline void resTable<T,ID>::numEntriesInstalled () const
+inline unsigned resTable<T,ID>::numEntriesInstalled () const
 {
     return this->nInUse;
 }

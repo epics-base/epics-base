@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.80  1995/10/18  16:49:23  jhill
+ * recv task is now running at a lower priority than the send task under vxWorks
+ *
  * Revision 1.79  1995/10/12  01:30:10  jhill
  * new ca_flush_io() mechanism prevents deadlock when they call
  * ca_flush_io() from within an event routine. Also forces early
@@ -2094,13 +2097,17 @@ long		mask
 
 	/*
 	 * Check for huge waveform
+	 *
+	 * (the count is not checked here against the native count
+	 * when connected because this introduces a race condition 
+	 * for the client tool - the requested count is clipped to 
+	 * the actual count when the monitor request is sent so
+	 * verifying that the requested count is valid here isnt
+	 * required)
 	 */
 	if(dbr_size_n(type,count)>MAX_MSG_SIZE-sizeof(caHdr)){
 		return ECA_TOLARGE;
 	}
-
-  	if(count > chix->count && chix->type != TYPENOTCONN)
-    		return ECA_BADCOUNT;
 
   	if(!mask)
     		return ECA_BADMASK;

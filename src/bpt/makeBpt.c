@@ -36,25 +36,31 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "dbBase.h"
+#include "dbDefs.h"
 #include "ellLib.h"
 #include "cvtTable.h"
 
 #define MAX_LINE_SIZE 160
 #define MAX_BREAKS 100
 struct brkCreateInfo {
-    float           engLow;	/* Lowest value desired: engineering units */
-    float           engHigh;	/* Highest value desired: engineering units */
-    float            rawLow;	/* Raw value for EngLow			 */
-    float            rawHigh;	/* Raw value for EngHigh		 */
-    float           accuracy;	/* accuracy desired in engineering units */
-    float           tblEngFirst;/* First table value: engineering units */
-    float           tblEngLast;	/* Last table value: engineering units	 */
-    float           tblEngDelta;/* Change per table entry: eng units	 */
+    double           engLow;	/* Lowest value desired: engineering units */
+    double           engHigh;	/* Highest value desired: engineering units */
+    double            rawLow;	/* Raw value for EngLow			 */
+    double            rawHigh;	/* Raw value for EngHigh		 */
+    double           accuracy;	/* accuracy desired in engineering units */
+    double           tblEngFirst;/* First table value: engineering units */
+    double           tblEngLast;	/* Last table value: engineering units	 */
+    double           tblEngDelta;/* Change per table entry: eng units	 */
     long            nTable;	/* number of table entries 		 */
     /* (last-first)/delta + 1		 */
-    float          *pTable;	/* addr of data table			 */
+    double          *pTable;	/* addr of data table			 */
 } brkCreateInfo;
+
+typedef struct brkInt {	/* breakpoint interval */
+    double	raw;	/* raw value for beginning of interval */
+    double	slope;	/* slope for interval */
+    double	eng;	/* converted value for beginning of interval */
+} brkInt;
 
 brkInt brkint[MAX_BREAKS];
 
@@ -65,16 +71,16 @@ static int linenum=0;
 
 typedef struct dataList{
 	struct dataList *next;
-	float		value;
+	double		value;
 }dataList;
 
-static int getNumber(char **pbeg, float *value)
+static int getNumber(char **pbeg, double *value)
 {
     int	 nchars=0;
 
     while(isspace(**pbeg) && **pbeg!= '\0') (*pbeg)++;
     if(**pbeg == '!' || **pbeg == '\0') return(-1);
-    if(sscanf(*pbeg,"%f%n",value,&nchars)!=1) return(-1);
+    if(sscanf(*pbeg,"%lf%n",value,&nchars)!=1) return(-1);
     *pbeg += nchars;
     return(0);
 }
@@ -92,12 +98,12 @@ int main(argc, argv)
 {
     char	*pbeg;
     char	*pend;
-    float	value;
+    double	value;
     char	*pname = NULL;
     dataList	*phead;
     dataList	*pdataList;
     dataList	*pnext;
-    float	*pdata;
+    double	*pdata;
     long	ndata;
     int		nBreak,len,n;
     char	*outFilename;
@@ -176,7 +182,7 @@ got_header:
     ndata = 0;
     errno = 0;
     while(fgets(inbuf,MAX_LINE_SIZE,inFile)) {
-	float	value;
+	double	value;
 
 	inbuf[strlen(inbuf)] = '\0'; /* remove newline*/
 	pbeg = inbuf;
@@ -195,7 +201,7 @@ got_header:
 	errExit("create_break failed: no name specified\n");
     }
     brkCreateInfo.nTable = ndata;
-    pdata = (float *)calloc(brkCreateInfo.nTable,sizeof(float));
+    pdata = (double *)calloc(brkCreateInfo.nTable,sizeof(double));
     pnext = phead;
     for(n=0; n<brkCreateInfo.nTable; n++) {
 	pdata[n] = pnext->value;
@@ -220,7 +226,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
     int max_breaks, int *n_breaks)
 {
     brkInt  *pbrkInt;
-    float          *table = pbci->pTable;
+    double          *table = pbci->pTable;
     long            ntable = pbci->nTable;
     double          ilow,
                     ihigh,
@@ -287,13 +293,13 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
     i = (int) ilow;
     if (i >= ntable - 1)
 	i = ntable - 2;
-    tbllow = table[i] + (table[i + 1] - table[i]) * (ilow - (float) i);
+    tbllow = table[i] + (table[i + 1] - table[i]) * (ilow - (double) i);
     /* Find engHigh in Table and then compute tblHigh */
     ihigh = (pbci->engHigh - pbci->tblEngFirst) / (pbci->tblEngDelta);
     i = (int) ihigh;
     if (i >= ntable - 1)
 	i = ntable - 2;
-    tblhigh = table[i] + (table[i + 1] - table[i]) * (ihigh - (float) i);
+    tblhigh = table[i] + (table[i + 1] - table[i]) * (ihigh - (double) i);
     /* compute slope and offset */
     slope = (pbci->rawHigh - pbci->rawLow) / (tblhigh - tbllow);
     offset = pbci->rawHigh - slope * tblhigh;
@@ -328,7 +334,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
     i = ilow;
     if (i >= ntable - 1)
 	i = ntable - 2;
-    rawBeg = table[i] + (table[i + 1] - table[i]) * (ilow - (float) i);
+    rawBeg = table[i] + (table[i + 1] - table[i]) * (ilow - (double) i);
     engBeg = pbci->engLow;
     ibeg = (int) (ilow);       /* Make sure that ibeg > ilow */
     if( ibeg < ilow ) ibeg = ibeg + 1;
@@ -367,12 +373,12 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 	    if (imax <= ibeg)
 		break;		/* failure */
 	    rawEnd = table[imax];
-	    engEnd = pbci->tblEngFirst + (float) imax *(pbci->tblEngDelta);
+	    engEnd = pbci->tblEngFirst + (double) imax *(pbci->tblEngDelta);
 	    slope = (engEnd - engBeg) / (rawEnd - rawBeg);
 	    all_ok = TRUE;
 	    for (i = ibeg + 1; i <= imax; i++) {
 		engCalc = engBeg + slope * (table[i] - rawBeg);
-		engActual = pbci->tblEngFirst + ((float) i) * (pbci->tblEngDelta);
+		engActual = pbci->tblEngFirst + ((double) i) * (pbci->tblEngDelta);
 		error = engCalc - engActual;
 		if (error < 0.0)
 		    error = -error;

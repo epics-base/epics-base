@@ -11,7 +11,7 @@ DBD += bptTypeJdegF.dbd
 DBD += bptTypeKdegC.dbd
 DBD += bptTypeKdegF.dbd
 
-PROD_LIBS = dbStaticHost Com
+PROD_LIBS = Com
 PROD_HOST += makeBpt
 makeBpt_SRCS=makeBpt
 

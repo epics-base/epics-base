@@ -36,14 +36,6 @@
 timerQueueThreadedMgr::~timerQueueThreadedMgr ()
 {
     epicsAutoMutex locker ( this->mutex );
-    while ( timerQueueThreaded * pQ = this->sharedQueueList.get () ) {
-        timerQueueThreadedMgrPrivate *pPriv = pQ;
-        delete pPriv;
-    }
-    while ( timerQueueThreaded * pQ = this->privateQueueList.get () ) {
-        timerQueueThreadedMgrPrivate *pPriv = pQ;
-        delete pPriv;
-    }
 }
     
 timerQueueThreaded & timerQueueThreadedMgr::create (
@@ -68,9 +60,6 @@ timerQueueThreaded & timerQueueThreadedMgr::create (
     if ( okToShare ) {
         this->sharedQueueList.add ( *pQueue );
     }
-    else {
-        this->privateQueueList.add ( *pQueue );
-    }
     return *pQueue;
 }
 
@@ -82,9 +71,6 @@ void timerQueueThreadedMgr::release ( timerQueueThreaded &queue )
     if ( queue.timerQueueThreadedMgrPrivate::referenceCount == 0u ) {
         if ( queue.sharingOK () ) {
             this->sharedQueueList.remove ( queue );
-        }
-        else {
-            this->privateQueueList.remove ( queue );
         }
         timerQueueThreadedMgrPrivate *pPriv = &queue;
         delete pPriv;

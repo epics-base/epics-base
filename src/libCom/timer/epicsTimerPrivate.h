@@ -137,7 +137,6 @@ public:
 private:
     epicsMutex mutex;
     tsDLList < timerQueueThreaded > sharedQueueList;
-    tsDLList < timerQueueThreaded > privateQueueList;
 };
 
 inline void * timer::operator new ( size_t size )

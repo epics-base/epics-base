@@ -37,7 +37,7 @@ OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
 # Stuff that will be needed when going to shared libraries
 #
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
-       -install_name $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)/$@ \
+       -install_name $(firstword $(SHRLIB_SEARCH_DIRS))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_SUFFIX = $(addprefix .,$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)).dylib
@@ -47,5 +47,5 @@ SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 # Command-line input support
 # Install the fink libtecla1 package and uncomment the
 # following line to use libtecla command-line editing,
-#COMMANDLINE_LIBRARY=LIBTECLA
+COMMANDLINE_LIBRARY=LIBTECLA
 LDLIBS_LIBTECLA = -ltecla_r -lncurses

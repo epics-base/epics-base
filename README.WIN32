@@ -206,13 +206,13 @@ calls EPICS, but are not using the EPICS build system.
 6d) If you link with EPICS object libraries then specify /MT or /MTd
     depending on whether EPICS base and your code are built for debugging. 
     This specifies the multithreaded operating environment required by EPICS.
-    It will also not define _DLL and therefore the EPICS header files will
+    This will also not define _DLL and therefore the EPICS header files will
     not specify that sharable libraries are being called. EPICS object library 
     names follow the convention "xxxObj.lib".
 6e) If you link with EPICS shareable libraries (with DLLs) then you must 
     use /MDd or /MD depending on whether EPICS base and your code are 
     built for debugging. This specifies the multithreaded operating environment 
-    required by EPICS. It will also define _DLL and therefore the EPICS header 
+    required by EPICS. This will also define _DLL and therefore the EPICS header 
     files will specify an optimized calling convention for shareable libraries. 
     EPICS shareable libraries (DLL) names follow the convention "xxx.lib"
     and "xxx.dll".

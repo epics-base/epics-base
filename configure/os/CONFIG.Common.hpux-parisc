@@ -20,7 +20,7 @@ POSIX_LDLIBS_NO +=
 
 OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
 
-SHRLIB_SUFFIX = .sl
+SHRLIB_SUFFIX = .sl$(addprefix .,$(SHRLIB_VERSION))
 
 ifdef CROSS
    GNU_TARGET=parisc-hp-unix

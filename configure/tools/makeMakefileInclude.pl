@@ -63,6 +63,17 @@ foreach $name ( @nameList ) {
 	print OUT "\n";
 	print OUT "depends: \$(${name}_SRCS)\n";
 	print OUT "\n";
+	print OUT "ifeq (\$(filter ${name},\$(TESTPROD)),${name})\n";
+	print OUT "ifeq (,\$(strip \$(${name}_OBJS) \$(PROD_OBJS)))\n";
+	print OUT "${name}_OBJS+=${name}\$(OBJ)\n";
+	print OUT "endif\n";
+	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
+	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
+	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
+	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
+	print OUT "${name}\$(EXE): \$(${name}_OBJSNAME) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
+	print OUT "endif\n";
+	print OUT "\n";
 	print OUT "ifeq (\$(filter ${name},\$(PROD)),${name})\n";
 	print OUT "ifeq (,\$(strip \$(${name}_OBJS) \$(PROD_OBJS)))\n";
 	print OUT "${name}_OBJS+=${name}\$(OBJ)\n";

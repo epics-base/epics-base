@@ -2,14 +2,13 @@
 #include <stdio.h>
 #include "cadef.h"
 #include "dbDefs.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 
 void event_handler(struct event_handler_args args);
 int evtime(char *pname);
 
 static unsigned 	iteration_count;
-static unsigned		last_time;
-static double		rate;
+static epicsUInt32	last_time;
 
 #ifndef iocCore
 int main(int argc, char **argv)
@@ -44,8 +43,6 @@ int evtime(char *pname)
 		return OK;
 	}
 
-	rate = clockGetRate();
-
 	status = ca_add_event(
 			DBR_FLOAT,
 			chan,
@@ -65,19 +62,20 @@ int evtime(char *pname)
  */
 void event_handler(struct event_handler_args args)
 {
-	unsigned		current_time;
+	epicsUInt32		current_time;
 #	define 			COUNT	0x8000
 	double			interval;
 	double			delay;
+        TS_STAMP		ts;
 
 	if(iteration_count%COUNT == 0){
-		current_time = clockGetCurrentTick();
+		tsStampGetCurrent(&ts);
+		current_time = ts.secPastEpoch;
 		if(last_time != 0){
 			interval = current_time - last_time;
-			delay = interval/(rate*COUNT);
-			printf("Delay = %f sec for 1 event\n",
-				delay,
-				COUNT);
+			delay = interval/COUNT;
+			printf("Delay = %f sec per event\n",
+				delay);
 		}
 		last_time = current_time;
 	}

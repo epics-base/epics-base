@@ -19,6 +19,7 @@
 #include "epicsAssert.h"
 #include "cadef.h"
 #include "caProto.h"
+#include "tsStamp.h"
 
 #ifndef LOCAL
 #define LOCAL static
@@ -266,16 +267,16 @@ void timeIt(
 	unsigned	inlineIter;
 	unsigned	nBytes;
 
-	status = tsLocalTime(&start_time);
+	status = tsStampGetCurrent(&start_time);
 #if 0
 	assert (status == S_ts_OK);
 #endif
 	(*pfunc) (pItems, iterations, &inlineIter);
-	status = tsLocalTime(&end_time);
+	status = tsStampGetCurrent(&end_time);
 #if 0
 	assert (status == S_ts_OK);
 #endif
-	TsDiffAsDouble(&delay,&end_time,&start_time);
+	delay = tsStampDiffInSeconds(&end_time,&start_time);
 	if (delay>0.0) {
 		printf ("Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
 			delay/(iterations*inlineIter),
@@ -621,16 +622,16 @@ LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
 	int status;
 
 	for (pi=pItems; pi<&pItems[iterations]; pi++) {
-		tsLocalTime (&start_time);
+		tsStampGetCurrent (&start_time);
 		status = ca_array_get (pi->type, pi->count, 
 						pi->chix, &pi->val);
     	SEVCHK (status, NULL);
 		status = ca_pend_io (100.0);
 		SEVCHK (status, NULL);
 
-		tsLocalTime(&end_time);
+		tsStampGetCurrent(&end_time);
 
-		TsDiffAsDouble(&delay,&end_time,&start_time);
+		delay = tsStampDiffInSeconds(&end_time,&start_time);
 
 		X += delay;
 		XX += delay*delay;

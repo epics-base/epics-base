@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.82  2000/01/04 17:09:34  mrk
+ * dont include osiTime.h
+ *
  * Revision 1.81  1999/11/18 16:15:42  mrk
  * changes for iocCore port
  *
@@ -220,7 +223,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include "ellLib.h"
 #include "envDefs.h" 
 #include "epicsPrint.h"
-#include "tsDefs.h"
+#include "tsStamp.h"
 
 #if defined(epicsExportSharedSymbols)
 #error suspect that libCom was not imported

@@ -18,6 +18,7 @@ static char *sccsId = "@(#) $Id$";
  * EPICS
  */
 #include	"epicsAssert.h"
+#include	"tsStamp.h"
 
 /*
  * CA 
@@ -933,14 +934,14 @@ int acctst(char *pname)
 		dbr_double_t	request = 15.0;
 		dbr_double_t	accuracy;
 
-		tsLocalTime(&start_time);
+		tsStampGetCurrent(&start_time);
 		printf("waiting for events for %f sec\n", request);
 		status = ca_pend_event(request);
 		if (status != ECA_TIMEOUT) {
 			SEVCHK(status, NULL);
 		}
-		tsLocalTime(&end_time);
-		TsDiffAsDouble(&delay,&end_time,&start_time);
+		tsStampGetCurrent(&end_time);
+		delay = tsStampDiffInSeconds(&end_time,&start_time);
 		accuracy = 100.0*(delay-request)/request;
 		printf("CA pend event delay accuracy = %f %%\n",
 			accuracy);
@@ -951,12 +952,12 @@ int acctst(char *pname)
 		TS_STAMP	start_time;
 		dbr_double_t	delay;
 
-		tsLocalTime(&start_time);
+		tsStampGetCurrent(&start_time);
 		printf("entering ca_task_exit()\n");
 		status = ca_task_exit();
 		SEVCHK(status,NULL);
-		tsLocalTime(&end_time);
-		TsDiffAsDouble(&delay,&end_time,&start_time);
+		tsStampGetCurrent(&end_time);
+		delay = tsStampDiffInSeconds(&end_time,&start_time);
 		printf("in ca_task_exit() for %f sec\n", delay);
 	}
 
@@ -997,13 +998,13 @@ void pend_event_delay_test(dbr_double_t request)
 	dbr_double_t	delay;
 	dbr_double_t	accuracy;
 
-	tsLocalTime(&start_time);
+	tsStampGetCurrent(&start_time);
 	status = ca_pend_event(request);
 	if (status != ECA_TIMEOUT) {
 		SEVCHK(status, NULL);
 	}
-	tsLocalTime(&end_time);
-	TsDiffAsDouble(&delay,&end_time,&start_time);
+	tsStampGetCurrent(&end_time);
+	delay = tsStampDiffInSeconds(&end_time,&start_time);
 	accuracy = 100.0*(delay-request)/request;
 	printf("CA pend event delay = %f sec results in error = %f %%\n",
 		request, accuracy);

@@ -30,6 +30,7 @@ static char *sccsId = "@(#) $Id$";
  */
 #define CAC_VERSION_GLOBAL
 
+#include 	"tsStamp.h"
 #include 	"iocinf.h"
 #include	"sigPipeIgnore.h"
 
@@ -2677,7 +2678,7 @@ void cac_gettimeval(struct timeval  *pt)
     TS_STAMP ts;
     int status;
 
-    clockGetCurrentTime(&ts);
+    tsStampGetCurrent(&ts);
     pt->tv_sec = ts.secPastEpoch;
     pt->tv_usec = ts.nsec/1000;
 }

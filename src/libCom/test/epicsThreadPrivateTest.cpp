@@ -12,6 +12,9 @@ void epicsThreadPrivateTestThread ( void *pParm )
 {
     epicsThreadPrivateId id = static_cast < epicsThreadPrivateId > ( pParm );
     assert ( 0 == epicsThreadPrivateGet ( id ) );
+    static bool var;
+    epicsThreadPrivateSet ( id, &var );
+    assert ( &var == epicsThreadPrivateGet ( id ) );
     doneFlag = true;
 }
 
@@ -46,18 +49,17 @@ inline void callItTenTimesSquared ( const epicsThreadPrivateId &id )
 
 void epicsThreadPrivateTest ()
 {
-    static int var;
     epicsThreadPrivateId id = epicsThreadPrivateCreate ();
     assert ( id );
+    static bool var;
     epicsThreadPrivateSet ( id, &var );
     assert ( &var == epicsThreadPrivateGet ( id ) );
-
     epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax, 
         epicsThreadStackSmall, epicsThreadPrivateTestThread, id );
     while ( ! doneFlag ) {
         epicsThreadSleep ( 0.01 );
     }
-
+    assert ( &var == epicsThreadPrivateGet ( id ) );
     epicsThreadPrivateSet ( id, 0 );
     assert ( 0 == epicsThreadPrivateGet ( id ) );
 

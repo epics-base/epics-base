@@ -42,7 +42,11 @@
  *                              for addressing.
  * .07	03-02-92        bg	added level and ability to print raw values to 
  *                              compu_sm_io_report for level > 0.
- * .08	06-25-92        bg	Combined drvCompuSm.c and compu_sm_driver.c
+ * .08	05-04-92        bg	added compu_sm_reset and rebootHookAdd so ioc can be
+ *                              rebooted with control X. 
+ * .09	06-25-92        bg	Combined drvCompuSm.c and compu_sm_driver.c
+ * .10	06-26-92        bg	Added level to compu_sm_io_report in drvCompuSm 
+ *                              structure   
 */
 #include <vxWorks.h>
 #include <vme.h>
@@ -80,7 +84,7 @@ static long report(fp)
 {
     register int i;
 
-      compu_sm_io_report();
+      compu_sm_io_report(level);
 }
 
 static long init()

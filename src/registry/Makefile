@@ -18,7 +18,6 @@ INC += registryRecordType.h
 INC += registryDeviceSupport.h
 INC += registryDriverSupport.h
 INC += registryFunction.h
-INC += registerRecordDeviceDriver.h
 
 
 #       general contents of library on all platforms

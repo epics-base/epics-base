@@ -26,7 +26,7 @@ SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 
 LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
 LOADABLE_SHRLIB_SUFFIX = .so
-LOADABLE_SHRLIB_PREFIX =
+LOADABLE_SHRLIB_PREFIX = lib
 
 #
 # Position-independent code is the default on Darwin.

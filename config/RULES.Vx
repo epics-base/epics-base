@@ -3,6 +3,7 @@
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD = $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS = $(LIBNAME:%= $(INSTALL_BIN)/%)
+INSTALL_LIBS = $(LIBNAME_CXX:%= $(INSTALL_BIN)/%)
 INSTALL_INC = $(INC:%= $(INSTALL_INCLUDE)/%)
 INSTALL_OSINCLUDE = $(INSTALL_INCLUDE)/os/vxWorks
 INSTALL_OSINC = $(OSINC:%= $(INSTALL_OSINCLUDE)/%)
@@ -35,7 +36,7 @@ rebuild:: clean install
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
-         $(LIBNAME) $(TARGETS) $(PROD) $(DBDNAME)
+         $(LIBNAME) $(LIBNAME_CXX) $(TARGETS) $(PROD) $(DBDNAME)
 
 inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) $(INSTALL_INCLUDE)/os \
 	$(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
@@ -49,7 +50,8 @@ buildInstall :: build $(INSTALL_INCREC)\
 	 $(INSTALL_MAN) $(INSTALL_MANS)\
          $(INSTALL_DOC) $(INSTALL_DOCS) \
 	 $(INSTALL_SCRIPTS) $(INSTALL_INSTALLS)\
-	 $(INSTALL_DBD) $(INSTALL_DBS) $(INSTALL_BPTS) $(INSTALL_DBDNAME)
+	 $(INSTALL_DBD) $(INSTALL_DBS) $(INSTALL_BPTS) \
+	 $(INSTALL_DBDNAME) binInstalls
 
 depends:: $(SRCS.c) $(SRCS.cc)
 ifdef SRCS
@@ -151,6 +153,8 @@ $(DIRECTORY_TARGETS) :
 	$(MANGEN) -s $(<F)
 	$(MV) $(<F).nr $(<F).1
 
+binInstalls:  $(BIN_INSTALLS)
+	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 
 $(INSTALL_DBD)/%: % 
 	@echo "Installing $@"
@@ -197,6 +201,11 @@ $(LIBNAME): $(LIBOBJS)
 	@$(RM) $@
 	$(LINK.c) $@ $(LIBOBJS)
 
+$(LIBNAME_CXX): $(LIBOBJS_CXX)
+	@echo Building CXX library $@
+	@$(RM) $@
+	$(LINK.cc) $@ $(LIBOBJS_CXX)
+
 $(INSTALL_BIN)/%: % 
 	@echo "Installing $@"
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
@@ -241,7 +250,12 @@ $(INSTALL_DOC)/%: ../%
 
 .PRECIOUS: %.o %.c
 
-.PHONY:: all inc depends build install pre_build clean rebuild buildInstall
+.PHONY:: all inc depends build install pre_build clean rebuild buildInstall binInstalls
 
 -include .DEPENDS
+
+ifneq (,$(wildcard ../baseLIBOBJS))
+$(LIBNAME): ../baseLIBOBJS
+endif
+$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 

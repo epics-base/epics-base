@@ -29,11 +29,6 @@
  *              Accelerator Systems Division
  *              Advanced Photon Source
  *              Argonne National Laboratory
- *
- *		Lawrence Berkley National Laboratory
- *
- *      Modification Log:
- *      -----------------
  */
 
 #ifndef _WIN32
@@ -298,7 +293,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 }
 
 /*
- *  	osiSockDiscoverBroadcastAddresses ()
+ * osiSockDiscoverBroadcastAddresses ()
  */
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)

@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,18 +25,24 @@
  *
  * Modification Log:
  * -----------------
- * .01	12-04-90	rac	initial version
- * .02	06-30-91	rac	installed in SCCS
- * .03	09-06-91	rac	change pprAreaErase to pprRegionErase; add
- *				documentation
- * .04	10-01-91	rac	properly handle channels which aren't
- *				connected yet
- * .05	10-20-91	rac	avoid an abort on printing a plot to
- *				PostScript; for non-user-window plotting,
- *				defer the pprWinIsMono call until after
- *				the window is mapped
- * .06	12-03-91	rac	add some intelligence to auto ranging
- * .07	01-23-92	rac	don't take log10 of zero value
+ *  .01 12-04-90 rac	initial version
+ *  .02 06-30-91 rac	installed in SCCS
+ *  .03 09-06-91 rac	change pprAreaErase to pprRegionErase; add
+ *		 	documentation
+ *  .04 10-01-91 rac	properly handle channels which aren't connected yet
+ *  .05 10-20-91 rac	avoid an abort on printing a plot to
+ *		 	PostScript; for non-user-window plotting,
+ *		 	defer the pprWinIsMono call until after
+ *		 	the window is mapped
+ *  .06 12-03-91 rac	add some intelligence to auto ranging
+ *  .07 01-23-92 rac	don't take log10 of zero value
+ *  .08 03-31-92 rac	fix plotting of filled channels; set time axis
+ *			scaling based on firstData to lastData rather
+ *			than 0 to sampleCount; handle plotting mean and
+ *			standard deviation; handle plotting restricted set
+ *			of data; better annotate time axes; support a time
+ *			cursor on a plot; add sydPlotChan_event to determine
+ *			which channel a mouse event applies to;
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -71,6 +77,7 @@
 *         long  sydPlotAxisSetAttr(pSlave, attr, value, pArg)
 *			attr = SYD_PLATTR_{GC}
 * SYD_PL_SLAVE *sydPlotChanAdd(pMstr, pSChan)
+* SYD_PL_SLAVE *sydPlotChan_event(pMstr, x, y)
 *         long  sydPlotDone(pMstr, quitFlag)
 *         long  sydPlotEraseSamples(pMstr)
 *         long  sydPlotInit(pMstr, pSspec, winType, dispName, winTitle,
@@ -81,6 +88,7 @@
 *                  attr = SYD_PLATTR_{FG1,FG2,LINE,MARK,MONO,POINT,SHOW,
 *                                     UNDER,WRAP}
 *         long  sydPlotSetTitles(pMstr, top, left, bottom, right) 
+*         long  sydPlotTimeCursor(pMstr, pStamp, pSlave)
 *         long  sydPlotWinLoop(pMstr)
 *         long  sydPlotWinReplot(pMstr)
 *
@@ -98,6 +106,8 @@
 * BUGS
 * o	sydPlotInitUW doesn't support SunView; some other routines have
 *	questionable support
+* o	there is no counterpart for sydTimeCursor for other than time-based
+*	plots
 *   
 *-***************************************************************************/
 #include <genDefs.h>
@@ -128,6 +138,28 @@
 #   include <ctype.h>
 #   include <math.h>
 #endif
+
+/*-----------------------------------------------------------------------------
+*	structure for annotating time axis
+*----------------------------------------------------------------------------*/
+static struct {
+    unsigned long threshold;	/* seconds for start of partition */
+    unsigned long modForEnds;	/* rounding interval for axis ends */
+    short	firstForEnds;	/* index in mm/dd/yy hh:mm:ss.msec */
+    short	nCharForEnds;	/* # char from mm/dd/... for end label */
+    unsigned long modForTicks;	/* rounding interval for axis tick marks */
+    short	firstForTicks;	/* index in mm/dd/yy hh:mm:ss.msec */
+    short	nCharForTicks;	/* # char from mm/dd/... for tick label */
+} timeCal[]={
+    7*86400+1, 86400, 0, 5, 86400, 0, 5,	/* more than 7 days */
+    43201,     86400, 0, 5, 43200, 9, 5,	/* more than 12 hours */
+    3601,      3600, 9, 5, 3600, 9, 5,		/* more than 1 hour */
+    601,       600, 9, 5, 600, 9, 5,		/* more than 10 minutes */
+    61,        60, 12, 5, 60, 12, 5,		/* more than 60 seconds */
+    11,        10, 12, 5, 10, 12, 5,		/* more than 10 seconds */
+    0,         1, 15, 6, 1, 15, 6		/* <= 10 seconds */
+};
+
 
 /*+/subr**********************************************************************
 * NAME	sydPlotAxisAutoRange - set axis ends to min and max data values
@@ -150,44 +182,28 @@ sydPlotAxisAutoRange(pSlave)
 SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 {
     SYD_CHAN	*pSChan=pSlave->pSChan;
-    double	origin, extent;
+    double	origin=pSlave->pSChan->restrictMinDataVal;
+    double	extent=pSlave->pSChan->restrictMaxDataVal;
     double	big, small;
     double	bLog, sLog, dLog;
     int		bLogChr, sLogChr;
     double	dLogChrD;
-    int		eSign, oSign;
+    int		eSign=1, oSign=1;
     int		nInt;
 
     if (pSChan->dbrType == DBR_TIME_ENUM)
 	return;
-    origin = pSlave->pSChan->minDataVal;
-    extent = pSlave->pSChan->maxDataVal;
-    if (origin == extent)
-	extent = origin + 1.;
-    if (origin >= 0.)
-	oSign = 1;
-    else {
-	oSign = -1;
-	origin = 0. - origin;
-    }
-    if (extent >= 0.)
-	eSign = 1;
-    else {
-	eSign = -1;
-	extent = 0. - extent;
-    }
+    if (origin == extent) extent = origin + 1.;
+    if (origin < 0.) oSign = -1, origin = 0. - origin;
+    if (extent < 0.) eSign = -1, extent = 0. - extent;
 
 /*-----------------------------------------------------------------------------
 * figure out what endpoints to use
 *----------------------------------------------------------------------------*/
-    if (origin < extent) {
-	small = origin;
-	big = extent;
-    }
-    else {
-	small = extent;
-	big = origin;
-    }
+    small = extent, big = origin;
+    if (origin < extent)
+	small = origin, big = extent;
+
     sLogChr = sLog = small != 0. ? log10(small) : 999999.;
     bLogChr = bLog = big != 0. ? log10(big) : 999999.;
     if (sLogChr == bLogChr && oSign == eSign) {	/* same decade */
@@ -196,14 +212,8 @@ SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 	dLog -= dLogChrD;
 	small = small - fmod(small, exp10(dLogChrD));
 	big = big - fmod(big, exp10(dLogChrD)) + exp10(dLogChrD);
-	if (origin < extent) {
-	    origin = small;
-	    extent = big;
-	}
-	else {
-	    extent = small;
-	    origin = big;
-	}
+	if (origin < extent)	origin = small, extent = big;
+	else			extent = small, origin = big;
     }
     else {
 	if (big != 0.) {
@@ -423,16 +433,14 @@ SYD_CHAN *pSChan;	/* I pointer to synchronous data channel structure,
     pMstr->nSlaves++;
     pSlave->markNum = pMstr->nSlaves - 1;
     pSlave->lineKey = pMstr->nSlaves;
-    pSlave->timeLabel[0] = '\0';
     pSlave->xChan = 0;
     pSlave->pArea = NULL;
-    pSlave->fg = 0;
-    pSlave->bg = 0;
+    pSlave->fg = pSlave->bg = 0;
     pSlave->first = 1;
-    pSlave->xFracLeft = 0.;
-    pSlave->yFracBot = 0.;
-    pSlave->xFracRight = 0.;
-    pSlave->yFracTop = 0.;
+    pSlave->xFracLeft = pSlave->xFracRight = 0.;
+    pSlave->yFracBot = pSlave->yFracTop = 0.;
+    pSlave->annotXFL = pSlave->annotXFR = 0.;
+    pSlave->annotYFB = pSlave->annotYFT = 0.;
 
     DoubleListAppend(pSlave, pMstr->pHead, pMstr->pTail);
     sydPlotAxisSetup(pSlave);
@@ -443,9 +451,47 @@ SYD_CHAN *pSChan;	/* I pointer to synchronous data channel structure,
     }
     else
 	pSlave->ppAnnot = NULL;
-    (void)sprintf(pSlave->timeLabel, "sec past %s", pMstr->refText);
 
     return pSlave;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydPlotChan_event - find the plot slave corresponding to an event
+*
+* DESCRIPTION
+*	The x and y position for the event are used to find the corresponding
+*	plot slave.  This search examines the bounding box for the grid and
+*	the annotation area.
+*
+*	For a shared grid plot, the result will be ambiguous.
+*
+* RETURNS
+*	SYD_PL_SLAVE *, or
+*	NULL
+*
+*-*/
+SYD_PL_SLAVE *
+sydPlotChan_event(pMstr, x, y)
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master */
+int	x, y;		/* I the x and y position from the event */
+{
+    SYD_PL_SLAVE *pSlave;	/* pointer to slave structure */
+    int		i;
+    double	xFrac, yFrac;
+
+    assert(pMstr != NULL);
+
+    xFrac = PprPixXToXFrac(pMstr->pWin, x);
+    yFrac = PprPixYToYFrac(pMstr->pWin, y);
+    for (pSlave=pMstr->pHead; pSlave!=NULL; pSlave=pSlave->pNext) {
+	if (xFrac >= pSlave->xFracLeft && xFrac <= pSlave->xFracRight &&
+		yFrac >= pSlave->yFracBot && yFrac <= pSlave->yFracTop)
+	    return pSlave;
+	if (xFrac >= pSlave->annotXFL && xFrac <= pSlave->annotXFR &&
+		yFrac >= pSlave->annotYFB && yFrac <= pSlave->annotYFT)
+	    return pSlave;
+    }
+    return NULL;
 }
 
 /*+/subr**********************************************************************
@@ -602,6 +648,8 @@ SYD_PL_MSTR *pMstr;
     pMstr->markPlot = 0;
     pMstr->showStat = 0;
     pMstr->fillUnder = 0;
+    pMstr->noColor = 0;
+    pMstr->errBar = 0;
 #ifdef XWINDOWS
     pMstr->pDisp = NULL;
     pMstr->window = NULL;
@@ -615,7 +663,6 @@ SYD_PL_MSTR *pMstr;
     pMstr->lTitle[0] = '\0';
     pMstr->bTitle[0] = '\0';
     pMstr->rTitle[0] = '\0';
-    pMstr->refText[0] = '\0';
     pMstr->pHead = NULL;
     pMstr->pTail = NULL;
     pMstr->nSlaves = 0;
@@ -623,8 +670,12 @@ SYD_PL_MSTR *pMstr;
     pMstr->extentVal = 0.;
     pMstr->wrapX = 0;
     if (pMstr->pSspec->sampleCount >= 1) {
+	pMstr->originVal =
+		pMstr->pSspec->pDeltaSec[pMstr->pSspec->restrictFirstData] -
+		pMstr->pSspec->restrictDeltaSecSubtract;
 	pMstr->extentVal =
-		pMstr->pSspec->pDeltaSec[pMstr->pSspec->sampleCount-1];
+		pMstr->pSspec->pDeltaSec[pMstr->pSspec->restrictLastData] -
+		pMstr->pSspec->restrictDeltaSecSubtract;
     }
 }
 
@@ -759,6 +810,7 @@ int	incrFlag;	/* I 0,1 for batch,incremental plotting */
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_MONO, {0,1}, NULL)
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_POINT, {0,1}, NULL)
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_SHOW, {0,1}, NULL)
+*	sydPlotSetAttr(pMstr, SYD_PLATTR_STDDEV, {0,1}, NULL)
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_UNDER, {0,1}, NULL)
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_WRAP, {0,1}, NULL)
 *	sydPlotSetAttr(pMstr, SYD_PLATTR_XLAB, {0,1}, NULL)
@@ -802,6 +854,12 @@ void	*pArg;		/* I pointer for value for attribute */
     else if (attr == SYD_PLATTR_YLAB)   pMstr->useYlabel = value;
     else if (attr == SYD_PLATTR_YANN)   pMstr->useYannot = value;
     else if (attr == SYD_PLATTR_MONO)   pMstr->noColor = value;
+    else if (attr == SYD_PLATTR_STDDEV) {
+	if (value == 1)
+	    pMstr->errBar = SYD_PLATTR_STDDEV;
+	else
+	    pMstr->errBar = 0;
+    }
     else assertAlways(0);
 
     return S_syd_OK;
@@ -857,6 +915,73 @@ char	*right;		/* I title for right of plot, or NULL */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydPlotTimeCursor - plot a time `cursor'
+*
+* DESCRIPTION
+*	Draws or erases a vertical line corresponding to the specified
+*	time stamp.  If a plot slave is specified, its annotation area
+*	is outlined (or the outline is erased).
+*
+*	The drawing is done using the X GXxor function, so that the first
+*	call for a time stamp draws a line and the next call for the
+*	same time stamp erases the line.
+*
+* RETURNS
+*	S_syd_OK
+*
+* NOTES
+* 1.	Since alternate calls to this routine draw and erase, speciall
+*	handling is needed by the caller who wants to draw several time
+*	cursors and also outline the annotation area for a plot slave.
+*	For this case, the pointer to the plot slave should be used in only
+*	_one_ of the calls to this routine.
+*
+*-*/
+long
+sydPlotTimeCursor(pMstr, pStamp, pSlave)
+SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
+TS_STAMP *pStamp;	/* I time stamp to position cursor */
+SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure, or NULL */
+{
+    SYD_SPEC	*pSspec = pMstr->pSspec;
+    double	diff;		/* offset of stamp from reference stamp */
+    PPR_AREA	*pArea;
+
+    if (pMstr->plotAxis != SYD_PLAX_TY && pMstr->plotAxis != SYD_PLAX_TYY)
+	return S_syd_OK;
+
+    TsDiffAsDouble(&diff, pStamp, &pSspec->restrictRefTs);
+    if (diff < pMstr->originVal || diff > pMstr->extentVal)
+	return S_syd_OK;
+    pArea = pprAreaOpen(pMstr->pWin,
+		pMstr->originFrac, 0., pMstr->extentFrac, 1.,
+		pMstr->originVal, 0., pMstr->extentVal, 1.,
+		1, 1, 0.);
+    assertAlways(pArea != NULL);
+    XSetFunction(pArea->pWin->pDisp, pArea->attr.gc, GXinvert);
+    XSetPlaneMask(pArea->pWin->pDisp, pArea->attr.gc, 1);
+    pprLineSegD(pArea, diff, 0., diff, 1.);
+    pprAreaClose(pArea);
+    pArea = pprAreaOpen(pMstr->pWin, 0.,0.,1.,1.,  0.,0.,1.,1.,  1, 1, 0.);
+    assertAlways(pArea != NULL);
+    XSetFunction(pArea->pWin->pDisp, pArea->attr.gc, GXinvert);
+    XSetPlaneMask(pArea->pWin->pDisp, pArea->attr.gc, 1);
+    if (pSlave != NULL) {
+	double	inX, inY;		/* insets into the annot area */
+	inX = (pSlave->annotXFR - pSlave->annotXFL) * .05;
+	inY = (pSlave->annotYFT - pSlave->annotYFB) * .05;
+	pprMoveD(pArea, pSlave->annotXFL+inX, pSlave->annotYFB+inY, 0);
+	pprMoveD(pArea, pSlave->annotXFL+inX, pSlave->annotYFT-inY, 1);
+	pprMoveD(pArea, pSlave->annotXFR-inX, pSlave->annotYFT-inY, 1);
+	pprMoveD(pArea, pSlave->annotXFR-inX, pSlave->annotYFB+inY, 1);
+	pprMoveD(pArea, pSlave->annotXFL+inX, pSlave->annotYFB+inY, 1);
+    }
+    pprAreaClose(pArea);
+
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
 * NAME	sydPlotWinLoop - do the actual plotting
 *
 * DESCRIPTION
@@ -890,24 +1015,16 @@ SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 {
     SYD_PLAX pltTy = pMstr->plotAxis;		/* type of plot desired */
     long	stat;
-    char	refText[28];
-    int		npts;
+    int		npts, beg, end;
     SYD_SPEC	*pSspec = pMstr->pSspec;
 
     npts = pSspec->sampleCount;
-    if (npts > 1 && pMstr->originVal != pMstr->extentVal) {
-	pprAutoEnds(pSspec->pDeltaSec[0], pSspec->pDeltaSec[npts-1],
-					&pMstr->originVal, &pMstr->extentVal);
-	pprAutoInterval(pMstr->originVal, pMstr->extentVal, &pMstr->nInt);
-	(void)tsStampToText(&pSspec->refTs, TS_TEXT_MMDDYY, refText);
-	(void)sprintf(pMstr->label, "sec past %s", refText);
-	(void)strcpy(pMstr->refText, refText);
-    }
-    else {
+    beg = pSspec->restrictFirstData;
+    end = pSspec->restrictLastData;
+    if (npts <= 1 || pMstr->originVal == pMstr->extentVal) {
 	pMstr->originVal = 0.;
 	pMstr->extentVal = 100.;
 	strcpy(pMstr->label, "elapsed seconds");
-	pMstr->refText[0] = '\0';
 	pMstr->nInt = 5;
     }
 
@@ -950,24 +1067,16 @@ long
 sydPlotWinReplot(pMstr)
 SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 {
-    char	refText[28];
-    int		npts;
+    int		npts, beg, end;
     SYD_SPEC	*pSspec = pMstr->pSspec;
 
     npts = pSspec->sampleCount;
-    if (npts > 1 && pMstr->originVal != pMstr->extentVal) {
-	pprAutoEnds(pSspec->pDeltaSec[0], pSspec->pDeltaSec[npts-1],
-					&pMstr->originVal, &pMstr->extentVal);
-	pprAutoInterval(pMstr->originVal, pMstr->extentVal, &pMstr->nInt);
-	(void)tsStampToText(&pSspec->refTs, TS_TEXT_MMDDYY, refText);
-	(void)sprintf(pMstr->label, "sec past %s", refText);
-	(void)strcpy(pMstr->refText, refText);
-    }
-    else {
+    beg = pSspec->restrictFirstData;
+    end = pSspec->restrictLastData;
+    if (npts <= 1 || pMstr->originVal == pMstr->extentVal) {
 	pMstr->originVal = 0.;
 	pMstr->extentVal = 100.;
 	strcpy(pMstr->label, "elapsed seconds");
-	pMstr->refText[0] = '\0';
 	pMstr->nInt = 5;
     }
 
@@ -1054,18 +1163,29 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 #define FetchIthValInto(pSChan, dbl) \
     if (dbr_type_is_FLOAT(pSChan->dbrType)) \
 	dbl = (double)((float *)pSChan->pData)[i]; \
-    else if (dbr_type_is_SHORT(pSChan->dbrType)) \
-	dbl = (double)((short *)pSChan->pData)[i]; \
+    else if (dbr_type_is_SHORT(pSChan->dbrType)) { \
+	if (pSChan->isRVAL) \
+	    dbl = (double)((unsigned short *)pSChan->pData)[i]; \
+	else \
+	    dbl = (double)((short *)pSChan->pData)[i]; \
+    } \
     else if (dbr_type_is_DOUBLE(pSChan->dbrType)) \
 	dbl = (double)((double *)pSChan->pData)[i]; \
-    else if (dbr_type_is_LONG(pSChan->dbrType)) \
-	dbl = (double)((long *)pSChan->pData)[i]; \
+    else if (dbr_type_is_LONG(pSChan->dbrType)) { \
+	if (pSChan->isRVAL) \
+	    dbl = (double)((unsigned long *)pSChan->pData)[i]; \
+	else \
+	    dbl = (double)((long *)pSChan->pData)[i]; \
+    } \
     else if (dbr_type_is_CHAR(pSChan->dbrType)) \
 	dbl = (double)((char *)pSChan->pData)[i]; \
     else if (dbr_type_is_ENUM(pSChan->dbrType)) \
 	dbl = (double)((short *)pSChan->pData)[i]; \
     else \
 	assertAlways(0);
+#if 0
+	dbl = (double)((short *)pSChan->pData)[i];
+#endif
 
 
 /*+/internal******************************************************************
@@ -1205,7 +1325,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_SmithGrid(pMstr);
-    sydPlot_SmithSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_SmithSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_SmithStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -1401,6 +1526,14 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pArea = pSlave->pArea = pprAreaOpen(pWin,
 		xlo,ylo, xhi,yhi, xmin, ymin, xmax, ymax, 1, 1, 0.);
 	assertAlways(pArea != NULL);
+	pSlave->xFracLeft = xlo + 12. * charHtX;
+	pSlave->xFracRight = xhi;
+	pSlave->yFracBot = ylo + 6. * charHt;
+	pSlave->yFracTop = yhi;
+	pSlave->annotXFL = xlo;
+	pSlave->annotXFR = pSlave->xFracLeft;
+	pSlave->annotYFB = pSlave->yFracBot;
+	pSlave->annotYFT = yhi;
 	if (pSlave->fg != 0 && pMstr->noColor == 0)
 	    pprAreaSetAttr(pSlave->pArea, PPR_ATTR_FG, 0, &pSlave->fg);
 	pSlave = pSlave->pNext;
@@ -1441,6 +1574,36 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydPlot_SmithStats - plot one or more snapshots for a Smith Chart plot
+*
+* DESCRIPTION
+*	the first channel in the plot spec is used for the X axis
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	this isn't a true Smith chart plot--the caller must have transformed
+*	the data into simple X vs Y data
+*
+* SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
+* EXAMPLE
+*
+*-*/
+void
+sydPlot_SmithStats(pMstr, begin, end)
+SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
+int	begin;		/* I number of begin snapshot to plot */
+int	end;		/* I number of end snapshot to plot */
+{
+    sydPlot_XYStats(pMstr, begin, end);
+}
+
+/*+/subr**********************************************************************
 * NAME	sydPlot_TYPlot - handle time vs Y plots
 *
 * DESCRIPTION
@@ -1470,7 +1633,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_TYGrid(pMstr);
-    sydPlot_TYSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_TYSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_TYStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -1480,10 +1648,6 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 *
 * RETURNS
 *	void
-*
-* BUGS
-* o	labeling of x axis is un-esthetic.  It should be time based, with
-*	some intelligent adaptation, based on time interval for X
 *
 * SEE ALSO
 *
@@ -1503,13 +1667,19 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     double	yPart;
     PPR_AREA	*pArea;
     double	xmin, xmax, ymin, ymax;
+    unsigned long xminUL, xmaxUL, elapsedUL, xTickDeltaUL;
+    TS_STAMP	stamp, refStamp, xminTs, xmaxTs, elapsedTs;
+    char	xminText[28], xmaxText[28];
+    char	stampText[28], *pAnnot[20], annot[20][28];
     int		xNint;
     double	charHt, charHtX;
+    SYD_SPEC	*pSspec = pMstr->pSspec;
     SYD_CHAN	*pSChan;
     TS_STAMP	now;
     char	nowText[32];
     int		thick=3;
     int		nGrids;
+    int		i, calNum;
 
     pWin = pMstr->pWin;
 
@@ -1517,14 +1687,65 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     sydPlot_setup(pMstr, nGrids,
 			&xlo, &ylo, &xhi, &yhi, &yPart, &charHt, &charHtX);
 
-    xmin = pMstr->originVal;
-    xmax = pMstr->extentVal;
-    xNint = pMstr->nInt;
-    if (xmin == xmax) {
-	xmin = 0.;
-	xmax = 100.;
-	xNint = 5;
+/*-----------------------------------------------------------------------------
+*	get start and end times (as set by sydPlotInit) referenced to the
+*	restrictRefTs.  Round them to something `sane' based on the total
+*	time range, then build the table of annotation labels.  The rounding
+*	is based on local time, rather than UTC.
+*----------------------------------------------------------------------------*/
+    tsAddDouble(&xminTs, &pSspec->restrictRefTs, pMstr->originVal);
+    xminTs.nsec = 0;
+    tsAddDouble(&xmaxTs, &pSspec->restrictRefTs, pMstr->extentVal);
+    if (xmaxTs.nsec > 0) {
+	xmaxTs.secPastEpoch++;
+	xmaxTs.nsec = 0;
     }
+    TsDiffAsStamp(&elapsedTs, &xmaxTs, &xminTs);
+    for (calNum=0; ; calNum++) {
+	if (timeCal[calNum].threshold <= elapsedTs.secPastEpoch)
+	    break;
+    }
+    tsRoundDownLocal(&xminTs, timeCal[calNum].modForEnds);
+    tsRoundUpLocal(&xmaxTs, timeCal[calNum].modForEnds);
+
+    if (xminTs.secPastEpoch == xmaxTs.secPastEpoch)
+	xmaxTs.secPastEpoch += timeCal[calNum].modForEnds;
+    refStamp = xminTs;
+
+    xminUL = xminTs.secPastEpoch;
+    xmaxUL = xmaxTs.secPastEpoch;
+    elapsedUL = xmaxUL - xminUL;
+    xTickDeltaUL = timeCal[calNum].modForTicks;
+    xNint = (xmaxUL - xminUL) / xTickDeltaUL;
+    if (xNint >= 20) {
+	xNint = 5;
+	xTickDeltaUL = elapsedUL / xNint;
+    }
+    pMstr->nInt = xNint;
+    for (i=0; i<=xNint; i++) {
+	tsStampToText(&refStamp, TS_TEXT_MMDDYY, stampText);
+	if (i == 0 || i == xNint) {
+	    strcpy(annot[i], &stampText[timeCal[calNum].firstForEnds]);
+	    annot[i][timeCal[calNum].nCharForEnds] = '\0';
+	    if (i == 0)
+		TsDiffAsDouble(&xmin, &refStamp, &pSspec->restrictRefTs);
+	    else
+		TsDiffAsDouble(&xmax, &refStamp, &pSspec->restrictRefTs);
+	}
+	else {
+	    strcpy(annot[i], &stampText[timeCal[calNum].firstForTicks]);
+	    annot[i][timeCal[calNum].nCharForTicks] = '\0';
+	}
+	pAnnot[i] = annot[i];
+	refStamp.secPastEpoch += xTickDeltaUL;
+    }
+    pMstr->originVal = xmin;
+    pMstr->extentVal = xmax;
+
+    (void)tsStampToText(&xminTs, TS_TEXT_MMDDYY, xminText);
+    (void)tsStampToText(&xmaxTs, TS_TEXT_MMDDYY, xmaxText);
+    (void)sprintf(pMstr->label, "%s  to  %s", xminText, xmaxText);
+
     pSlave = pMstr->pHead;
     while (pSlave != NULL) {
 /*-----------------------------------------------------------------------------
@@ -1547,25 +1768,33 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pSlave->xFracRight = xhi;
 	pSlave->yFracBot = ylo + 6. * charHt;
 	pSlave->yFracTop = yhi;
+	pSlave->annotXFL = xlo;
+	pSlave->annotXFR = pSlave->xFracLeft;
+	pSlave->annotYFB = pSlave->yFracBot;
+	pSlave->annotYFT = yhi;
 	if (pSlave->fg != 0 && pMstr->noColor == 0)
 	    pprAreaSetAttr(pSlave->pArea, PPR_ATTR_FG, 0, &pSlave->fg);
 	else if (pMstr->linePlot) {
 	    if (dbr_type_is_ENUM(pSChan->dbrType))
 		pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thick, NULL);
 	}
-	pprGridLabel(pArea, pMstr->label, NULL,
+	pprGridLabel(pArea, pMstr->label, pAnnot,
 				pSlave->pSChan->label, pSlave->ppAnnot, 0.);
 	ylo += yPart;
 	yhi += yPart;
 	pSlave = pSlave->pNext;
     }
+    pSlave = pMstr->pHead;
+    pMstr->originFrac = pSlave->xFracLeft;
+    pMstr->extentFrac = pSlave->xFracRight;
+
 }
 
 /*+/subr**********************************************************************
 * NAME	sydPlot_TYSamples - plot one or more samples for a time vs Y plot
 *
 * DESCRIPTION
-*	the first channel in the plot spec is used for the X axis
+*
 *
 * RETURNS
 *	void
@@ -1635,10 +1864,25 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		skip = pSlave->skip;
 	    }
 	    while (i >= 0) {
+		int	restart, restart1;
+		restart = restart1 = 0;
+		if (pSChan->pFlags[i].restart) {
+		    if (!pSChan->pFlags[i].snapstart)
+			restart = 1;
+		    else if (!pSChan->pFlags[i].snapend)
+			restart = 1;
+		}
+		if (i != end && pSChan->pFlags[i+1].restart) {
+		    if (!pSChan->pFlags[i+1].snapstart)
+			restart1 = 1;
+		    else if (!pSChan->pFlags[i+1].snapend)
+			restart1 = 1;
+		}
 		if (pSChan->pFlags[i].missing)
 		    skip = 1;
-		else if (first || skip || pSChan->pFlags[i].restart) {
-		    oldX = pSspec->pDeltaSec[i];
+		else if (first || skip || restart) {
+		    oldX = pSspec->pDeltaSec[i] -
+				pMstr->pSspec->restrictDeltaSecSubtract;
 		    if (pMstr->wrapX) {
 			while (oldX > pMstr->extentVal)
 			    oldX -= pMstr->extentVal;
@@ -1653,10 +1897,11 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 			pprPointD(pArea, oldX, oldY);
 		    skip = 0;
 		}
-		else if (pSChan->pFlags[i].filled)
+		else if (pSChan->pFlags[i].filled && restart1 == 0 && i != end)
 		    ;	/* no action */
 		else {
-		    newX = pSspec->pDeltaSec[i];
+		    newX = pSspec->pDeltaSec[i] -
+				pMstr->pSspec->restrictDeltaSecSubtract;
 		    if (pMstr->wrapX) {
 			while (newX > pMstr->extentVal)
 			    newX -= pMstr->extentVal;
@@ -1694,6 +1939,74 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydPlot_TYStats - plot one or more snapshots for a time vs Y plot
+*
+* DESCRIPTION
+*
+*
+* RETURNS
+*	void
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
+*-*/
+void
+sydPlot_TYStats(pMstr, begin, end)
+SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
+int	begin;		/* I number of begin snapshot to plot */
+int	end;		/* I number of end snapshot to plot */
+{
+    SYD_PL_SLAVE *pSlave;	/* pointer to individual slave struct */
+    PPR_AREA	*pArea;
+    int		i;
+    SYD_SPEC	*pSspec;
+    SYD_CHAN	*pSChan;
+    double	oldX, oldY, newX, newY, err;
+
+    assert(pMstr != NULL);
+    pSspec = pMstr->pSspec;
+    assert(pSspec != NULL);
+
+    for (pSlave=pMstr->pHead; pSlave!=NULL; pSlave=pSlave->pNext) {
+	pArea = pSlave->pArea;
+	pSChan = pSlave->pSChan;
+	for (i=begin; i<=end; i++) {
+	    if (i == begin) {
+		oldX = pSspec->pStatDeltaSec[i] -
+				pMstr->pSspec->restrictDeltaSecSubtract;
+		if (pMstr->wrapX) {
+		    while (oldX > pMstr->extentVal)
+			oldX -= pMstr->extentVal;
+		}
+		oldY = pSChan->pStats[i].mean;
+	    }
+	    else {
+		newX = pSspec->pStatDeltaSec[i] -
+				pMstr->pSspec->restrictDeltaSecSubtract;
+		if (pMstr->wrapX) {
+		    while (newX > pMstr->extentVal)
+			newX -= pMstr->extentVal;
+		}
+		newY = pSChan->pStats[i].mean;
+		if (pMstr->linePlot)
+		    pprLineSegD(pArea, oldX, oldY, newX, newY);
+		oldX = newX;
+		oldY = newY;
+	    }
+	    if (pMstr->markPlot)
+		pprMarkD(pArea, oldX, oldY, pSlave->markNum);
+	    else
+		pprPointD(pArea, oldX, oldY);
+	    if (pMstr->errBar == SYD_PLATTR_STDDEV) {
+		err = pSChan->pStats[i].stdDev;
+		pprErrorBar(pArea, oldX, oldY-err, oldX, oldY+err);
+	    }
+	}
+    }
+}
+
+/*+/subr**********************************************************************
 * NAME	sydPlot_TYYPlot - handle time vs multiple Y plots
 *
 * DESCRIPTION
@@ -1724,7 +2037,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_TYYGrid(pMstr);
-    sydPlot_TYSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_TYSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_TYStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -1752,35 +2070,94 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 {
     PPR_WIN	*pWin;		/* pointer to plot window structure */
     SYD_PL_SLAVE *pSlave;	/* pointer to individual slave struct */
-    double	xlo, ylo, xhi, yhi, yPart;
+    double	xlo, ylo, xhi, yhi;
+    double	yPart;
     PPR_AREA	*pArea;
     double	xmin, xmax, ymin, ymax;
+    unsigned long xminUL, xmaxUL, elapsedUL, xTickDeltaUL;
+    TS_STAMP	stamp, refStamp, xminTs, xmaxTs, elapsedTs;
+    char	xminText[28], xmaxText[28];
+    char	stampText[28], *pAnnot[20], annot[20][28];
     int		xNint;
     double	charHt, charHtX;
+    SYD_SPEC	*pSspec = pMstr->pSspec;
     SYD_CHAN	*pSChan;
     TS_STAMP	now;
     char	nowText[32];
-    int		offsetAnnotY=0;
-    int		drawAxis=0;
     int		thick=3;
     int		nGrids;
+    int		i, calNum;
+    int		offsetAnnotY=0;
+    int		drawAxis=0;
 
     pWin = pMstr->pWin;
 
     nGrids = 1;
     sydPlot_setup(pMstr, nGrids,
 			&xlo, &ylo, &xhi, &yhi, &yPart, &charHt, &charHtX);
+
+/*-----------------------------------------------------------------------------
+*	get start and end times (as set by sydPlotInit) referenced to the
+*	restrictRefTs.  Round them to something `sane' based on the total
+*	time range, then build the table of annotation labels.  The rounding
+*	is based on local time, rather than UTC.
+*----------------------------------------------------------------------------*/
+    tsAddDouble(&xminTs, &pSspec->restrictRefTs, pMstr->originVal);
+    xminTs.nsec = 0;
+    tsAddDouble(&xmaxTs, &pSspec->restrictRefTs, pMstr->extentVal);
+    if (xmaxTs.nsec > 0) {
+	xmaxTs.secPastEpoch++;
+	xmaxTs.nsec = 0;
+    }
+    TsDiffAsStamp(&elapsedTs, &xmaxTs, &xminTs);
+    for (calNum=0; ; calNum++) {
+	if (timeCal[calNum].threshold <= elapsedTs.secPastEpoch)
+	    break;
+    }
+    tsRoundDownLocal(&xminTs, timeCal[calNum].modForEnds);
+    tsRoundUpLocal(&xmaxTs, timeCal[calNum].modForEnds);
+
+    if (xminTs.secPastEpoch == xmaxTs.secPastEpoch)
+	xmaxTs.secPastEpoch += timeCal[calNum].modForEnds;
+    refStamp = xminTs;
+
+    xminUL = xminTs.secPastEpoch;
+    xmaxUL = xmaxTs.secPastEpoch;
+    elapsedUL = xmaxUL - xminUL;
+    xTickDeltaUL = timeCal[calNum].modForTicks;
+    xNint = (xmaxUL - xminUL) / xTickDeltaUL;
+    if (xNint >= 20) {
+	xNint = 5;
+	xTickDeltaUL = elapsedUL / xNint;
+    }
+    pMstr->nInt = xNint;
+    for (i=0; i<=xNint; i++) {
+	tsStampToText(&refStamp, TS_TEXT_MMDDYY, stampText);
+	if (i == 0 || i == xNint) {
+	    strcpy(annot[i], &stampText[timeCal[calNum].firstForEnds]);
+	    annot[i][timeCal[calNum].nCharForEnds] = '\0';
+	    if (i == 0)
+		TsDiffAsDouble(&xmin, &refStamp, &pSspec->restrictRefTs);
+	    else
+		TsDiffAsDouble(&xmax, &refStamp, &pSspec->restrictRefTs);
+	}
+	else {
+	    strcpy(annot[i], &stampText[timeCal[calNum].firstForTicks]);
+	    annot[i][timeCal[calNum].nCharForTicks] = '\0';
+	}
+	pAnnot[i] = annot[i];
+	refStamp.secPastEpoch += xTickDeltaUL;
+    }
+
+    pMstr->originVal = xmin;
+    pMstr->extentVal = xmax;
+    (void)tsStampToText(&xminTs, TS_TEXT_MMDDYY, xminText);
+    (void)tsStampToText(&xmaxTs, TS_TEXT_MMDDYY, xmaxText);
+    (void)sprintf(pMstr->label, "%s  to  %s", xminText, xmaxText);
+
     xlo += 6. * charHtX * (double)pMstr->nSlaves;
     ylo += 6. * charHt;
 
-    xmin = pMstr->originVal;
-    xmax = pMstr->extentVal;
-    xNint = pMstr->nInt;
-    if (xmin == xmax) {
-	xmin = 0.;
-	xmax = 100.;
-	xNint = 5;
-    }
     pSlave = pMstr->pHead;
     while (pSlave != NULL) {
 /*-----------------------------------------------------------------------------
@@ -1818,7 +2195,7 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	if (drawAxis == 0) {
 	    pprGrid(pArea);
 	    pprAnnotX_wc(pArea, 0,
-				xmin, xmax, xNint, 0, pMstr->label, NULL, 0.);
+			xmin, xmax, xNint, 0, pMstr->label, pAnnot, 0.);
 	}
 	pprAnnotY(pArea, offsetAnnotY, pSlave->originVal, pSlave->extentVal,
 	    			pSlave->nInt, drawAxis,
@@ -1827,8 +2204,15 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	    pprAnnotYMark(pArea, offsetAnnotY, pSlave->markNum);
 	offsetAnnotY += 6;
 	drawAxis = 1;		/* draw an "auxiliary" axis next time */
+	pSlave->annotXFL = xlo - offsetAnnotY * charHtX;
+	pSlave->annotXFR = pSlave->annotXFL + 6. * charHtX;
+	pSlave->annotYFB = ylo;
+	pSlave->annotYFT = yhi;
 	pSlave = pSlave->pNext;
     }
+    pSlave = pMstr->pHead;
+    pMstr->originFrac = pSlave->xFracLeft;
+    pMstr->extentFrac = pSlave->xFracRight;
 }
 
 /*+/subr**********************************************************************
@@ -1864,7 +2248,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_XYGrid(pMstr);
-    sydPlot_XYSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_XYSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_XYStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -1944,6 +2333,10 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pSlave->xFracRight = xhi;
 	pSlave->yFracBot = ylo + 6. * charHt;
 	pSlave->yFracTop = yhi;
+	pSlave->annotXFL = xlo;
+	pSlave->annotXFR = pSlave->xFracLeft;
+	pSlave->annotYFB = pSlave->yFracBot;
+	pSlave->annotYFT = yhi;
 	if (pSlave->fg != 0 && pMstr->noColor == 0)
 	    pprAreaSetAttr(pSlave->pArea, PPR_ATTR_FG, 0, &pSlave->fg);
 	pprGridLabel(pArea, pSlaveX->pSChan->label, NULL,
@@ -2050,9 +2443,23 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		skip = pSlave->skip;
 	    }
 	    while (i >= 0) {
+		int	restart, restart1;
+		restart = restart1 = 0;
+		if (pSChan->pFlags[i].restart) {
+		    if (!pSChan->pFlags[i].snapstart)
+			restart = 1;
+		    else if (!pSChan->pFlags[i].snapend)
+			restart = 1;
+		}
+		if (i != end && pSChan->pFlags[i+1].restart) {
+		    if (!pSChan->pFlags[i+1].snapstart)
+			restart1 = 1;
+		    else if (!pSChan->pFlags[i+1].snapend)
+			restart1 = 1;
+		}
 		if (pSChan->pFlags[i].missing || pSChanX->pFlags[i].missing)
 		    skip = 1;
-		else if (first || skip || pSChan->pFlags[i].restart ||
+		else if (first || skip || restart ||
 						pSChanX->pFlags[i].restart) {
 		    if (nEl == 1) {
 			FetchIthValInto(pSChanX, oldX)
@@ -2071,8 +2478,11 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		    }
 		    skip = 0;
 		}
-		else if (pSChan->pFlags[i].filled)
+#if 0	/* don't "optimize" filled--show each x,y */
+		else if (pSChan->pFlags[i].filled && i != end &&
+				pSChan->pFlags[i+1].restart == 0)
 		    ;	/* no action */
+#endif
 		else {
 		    if (nEl == 1) {
 			FetchIthValInto(pSChanX, newX)
@@ -2105,6 +2515,95 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 	pSlave->oldX = oldX;
 	pSlave->oldY = oldY;
 	pSlave->skip = skip;
+	pSlave = pSlave->pNext;
+	if (pSlave == pSlaveX)
+	    pSlave = pSlave->pNext;
+    }
+}
+
+/*+/subr**********************************************************************
+* NAME	sydPlot_XYStats - plot one or more snapshots for an X vs Y plot
+*
+* DESCRIPTION
+*	the first channel in the plot spec is used for the X axis
+*
+*	alarm state of the "X" channel is not displayed
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	line plot isn't handled
+*
+* SEE ALSO
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
+* EXAMPLE
+*
+*-*/
+void
+sydPlot_XYStats(pMstr, begin, end)
+SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
+int	begin;		/* I number of begin snapshots to plot */
+int	end;		/* I number of end snapshots to plot */
+{
+    SYD_PL_SLAVE *pSlave;	/* pointer to individual slave struct */
+    SYD_PL_SLAVE *pSlaveX;	/* pointer to X axis slave struct */
+    PPR_AREA	*pArea;
+    int		i;
+    SYD_SPEC	*pSspec;
+    SYD_CHAN	*pSChan;
+    SYD_CHAN	*pSChanX;
+    double	oldX, oldY, newX, newY, err;
+
+    assert(pMstr != NULL);
+    pSspec = pMstr->pSspec;
+    assert(pSspec != NULL);
+
+    pSlaveX = pMstr->pHead;
+    while (1) {
+	if (pSlaveX->xChan)
+	    break;
+	pSlaveX = pSlaveX->pNext;
+	if (pSlaveX == NULL) {
+	    pSlaveX = pMstr->pHead;
+	    break;
+	}
+    }
+    if (pSlaveX == pMstr->pHead)
+	pSlave = pSlaveX->pNext;
+    else
+	pSlave = pMstr->pHead;
+    pSChanX = pSlaveX->pSChan;
+    while (pSlave != NULL) {
+	pArea = pSlave->pArea;
+	pSChan = pSlave->pSChan;
+	for (i=begin; i<=end; i++) {
+	    if (i == begin) {
+		oldX = pSChanX->pStats[i].mean;
+		oldY = pSChan->pStats[i].mean;
+	    }
+	    else {
+		newX = pSChanX->pStats[i].mean;
+		newY = pSChan->pStats[i].mean;
+		if (pMstr->linePlot)
+		    pprLineSegD(pArea, oldX, oldY, newX, newY);
+		oldX = newX;
+		oldY = newY;
+	    }
+	    if (pMstr->markPlot)
+		pprMarkD(pArea, oldX, oldY, pSlave->markNum);
+	    else
+		pprPointD(pArea, oldX, oldY);
+	    if (pMstr->errBar == SYD_PLATTR_STDDEV) {
+		err = pSChan->pStats[i].stdDev;
+		pprErrorBar(pArea, oldX, oldY-err, oldX, oldY+err);
+		err = pSChanX->pStats[i].stdDev;
+		pprErrorBar(pArea, oldX-err, oldY, oldX+err, oldY);
+	    }
+	}
 	pSlave = pSlave->pNext;
 	if (pSlave == pSlaveX)
 	    pSlave = pSlave->pNext;
@@ -2216,7 +2715,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_XYYGrid(pMstr);
-    sydPlot_XYSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_XYSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_XYStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -2330,6 +2834,10 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	    pprAnnotYMark(pArea, offsetAnnotY, pSlave->markNum);
 	offsetAnnotY += 6;
 	drawAxis = 1;		/* draw an "auxiliary" axis next time */
+	pSlave->annotXFL = xlo - offsetAnnotY * charHtX;
+	pSlave->annotXFR = pSlave->annotXFL + 6. * charHtX;
+	pSlave->annotYFB = ylo;
+	pSlave->annotYFT = yhi;
 	pSlave = pSlave->pNext;
 	if (pSlave == pSlaveX)
 	    pSlave = pSlave->pNext;
@@ -2368,7 +2876,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_YGrid(pMstr);
-    sydPlot_YSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_YSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_YStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -2447,6 +2960,10 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pSlave->xFracRight = xhi;
 	pSlave->yFracBot = ylo + 6. * charHt;
 	pSlave->yFracTop = yhi;
+	pSlave->annotXFL = xlo;
+	pSlave->annotXFR = pSlave->xFracLeft;
+	pSlave->annotYFB = pSlave->yFracBot;
+	pSlave->annotYFT = yhi;
 	if (pSlave->fg != 0 && pMstr->noColor == 0)
 	    pprAreaSetAttr(pSlave->pArea, PPR_ATTR_FG, 0, &pSlave->fg);
 	else if (pMstr->linePlot) {
@@ -2534,9 +3051,23 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		skip = pSlave->skip;
 	    }
 	    while (i >= 0) {
+		int	restart, restart1;
+		restart = restart1 = 0;
+		if (pSChan->pFlags[i].restart) {
+		    if (!pSChan->pFlags[i].snapstart)
+			restart = 1;
+		    else if (!pSChan->pFlags[i].snapend)
+			restart = 1;
+		}
+		if (i != end && pSChan->pFlags[i+1].restart) {
+		    if (!pSChan->pFlags[i+1].snapstart)
+			restart1 = 1;
+		    else if (!pSChan->pFlags[i+1].snapend)
+			restart1 = 1;
+		}
 		if (pSChan->pFlags[i].missing)
 		    skip = 1;
-		else if (first || skip || pSChan->pFlags[i].restart) {
+		else if (first || skip || restart) {
 		    if (nEl == 1) {
 			oldX = i;
 			FetchIthValInto(pSChan, oldY)
@@ -2554,7 +3085,7 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		    }
 		    skip = 0;
 		}
-		else if (pSChan->pFlags[i].filled)
+		else if (pSChan->pFlags[i].filled && restart1 == 0 && i != end)
 		    ;	/* no action */
 		else {
 		    if (nEl == 1) {
@@ -2593,6 +3124,59 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 	pSlave->oldY = oldY;
 	pSlave->skip = skip;
 	pSlave = pSlave->pNext;
+    }
+}
+
+/*+/subr**********************************************************************
+* NAME	sydPlot_YStats - plot one or more snapshots for a Y plot
+*
+* DESCRIPTION
+*
+* RETURNS
+*	void
+*
+* NOTES
+* 1. This routine isn't intended to be called directly.  
+*
+*-*/
+void
+sydPlot_YStats(pMstr, begin, end)
+SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
+int	begin;		/* I number of begin snapshots to plot */
+int	end;		/* I number of end snapshots to plot */
+{
+    SYD_PL_SLAVE *pSlave;	/* pointer to individual slave struct */
+    PPR_AREA	*pArea;
+    int		i;
+    SYD_SPEC	*pSspec;
+    SYD_CHAN	*pSChan;
+    double	oldX, oldY, newX, newY, err;
+
+    assert(pMstr != NULL);
+    pSspec = pMstr->pSspec;
+    assert(pSspec != NULL);
+
+    for (pSlave=pMstr->pHead; pSlave!=NULL; pSlave=pSlave->pNext) {
+	pArea = pSlave->pArea; pSChan = pSlave->pSChan;
+	for (i=begin; i<=end; i++) {
+	    if (i == begin) {
+		oldX = i; oldY = pSChan->pStats[i].mean;
+	    }
+	    else {
+		newX = i; newY = pSChan->pStats[i].mean;
+		if (pMstr->linePlot)
+		    pprLineSegD(pArea, oldX, oldY, newX, newY);
+		oldX = newX; oldY = newY;
+	    }
+	    if (pMstr->markPlot)
+		pprMarkD(pArea, oldX, oldY, pSlave->markNum);
+	    else
+		pprPointD(pArea, oldX, oldY);
+	    if (pMstr->errBar == SYD_PLATTR_STDDEV) {
+		err = pSChan->pStats[i].stdDev;
+		pprErrorBar(pArea, oldX, oldY-err, oldX, oldY+err);
+	    }
+	}
     }
 }
 
@@ -2680,7 +3264,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     assert(pSspec != NULL);
 
     sydPlot_YYGrid(pMstr);
-    sydPlot_YSamples(pMstr, pSspec->firstData, pSspec->lastData, 0);
+    if (pSspec->useStats == 0) {
+	sydPlot_YSamples(pMstr,
+		pSspec->restrictFirstData, pSspec->restrictLastData, 0);
+    }
+    else
+	sydPlot_YStats(pMstr, 0, pSspec->statCount-1);
 }
 
 /*+/subr**********************************************************************
@@ -2785,6 +3374,10 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	    pprAnnotYMark(pArea, offsetAnnotY, pSlave->markNum);
 	offsetAnnotY += 6;
 	drawAxis = 1;		/* draw an "auxiliary" axis next time */
+	pSlave->annotXFL = xlo - offsetAnnotY * charHtX;
+	pSlave->annotXFR = pSlave->annotXFL + 6. * charHtX;
+	pSlave->annotYFB = ylo;
+	pSlave->annotYFT = yhi;
 	pSlave = pSlave->pNext;
     }
 }

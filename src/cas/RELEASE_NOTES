@@ -224,3 +224,21 @@ changed so that the purpose of this class is more clear to server tool
 designers. To remain backwards compatible the class casAsyncPVCreateIO derives from
 public base class casAsyncPVAttachIO. In a future release the class casAsyncPVCreateIO
 will be eliminated.
+
+o The hash table template class resTable<T,ID> now requires a PV count estimate 
+argument to its the constructor, and its init(PV count estimate) member function 
+has been eliminated (server tools frequently implement a string hash table
+based on class resTable<T,ID>).
+
+o The delay argument passed to fileDescriptorManager.process(delay) has been changed
+from type osiTime to the C++ primitive type double.
+
+o The arithmetic operators in class osiTime now return type double, and not type 
+osiTime.
+
+o In class osiTimer the use of type osiBool was eliminated in favor of the now universally 
+implemented ANSI STD C++ "bool" type.
+
+o In class osiTimer type double, and not type osiTime, is returned from virtual member 
+function delay().
+

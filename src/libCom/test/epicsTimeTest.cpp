@@ -46,7 +46,8 @@ int epicsTimeTest (void)
     epicsTimeStamp stamp;
     struct timespec ts;
     struct tm tmAnsi;
-    tm_nano_sec ansiDate;
+    local_tm_nano_sec ansiDate;
+    gm_tm_nano_sec ansiDateGMT;
     unsigned long nanoSec;
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
@@ -66,17 +67,19 @@ int epicsTimeTest (void)
                 diff*1e6/wasteTime);
             stamp = begin;
             ansiDate = begin;
+            ansiDateGMT = begin;
             ts = begin;
             printf ("The following should be your local time\ndisplayed using "
                     "four different internal representations:\n\n");
             epicsTimeToTM (&tmAnsi, &nanoSec, &stamp);
 
             printf ("epicsTimeStamp = %s %lu nSec \n", asctime(&tmAnsi), nanoSec);
-            printf ("struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
+            printf ("local time zone struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
                 ansiDate.nSec/(double)epicsTime::nSecPerSec);
-            tmAnsi = *localtime (&ts.tv_sec);
             printf ("struct timespec = %s %f\n", asctime(&ansiDate.ansi_tm), 
                 ts.tv_nsec/(double)epicsTime::nSecPerSec);
+            printf ("UTC struct tm = %s %f\n", asctime(&ansiDateGMT.ansi_tm), 
+                ansiDateGMT.nSec/(double)epicsTime::nSecPerSec);
             begin.show (0);
             printf ("\n");
         } else {

@@ -57,7 +57,7 @@ void myThread::run()
 
 static void threadSleepTest()
 {
-    for ( unsigned i = 0u; i < 20; i++ ) {
+    for ( int i = 0u; i < 20; i++ ) {
         epicsTime beg = epicsTime::getCurrent();
         double delay = ldexp ( 1.0 , -i );
         epicsThreadSleep ( delay );

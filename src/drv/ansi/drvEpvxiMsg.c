@@ -549,12 +549,9 @@ LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 			}
 
 			cmd = MBC_BR;
-			status = vxMemProbe(
-					&pcsr->dir.r.dd.msg.dlow,
-					WRITE,
-					sizeof(pcsr->dir.r.dd.msg.dlow),
-					&cmd);
-			if(status == OK){
+			status = devReadProbe (sizeof(cmd), 
+						&pcsr->dir.r.dd.msg.dlow, &cmd);
+			if(status == SUCCESS){
 				break;
 			}
 			fhm = FALSE;
@@ -576,13 +573,9 @@ LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 				}
 				fhm = TRUE;
 			}
-
-			status = vxMemProbe(
-					&pcsr->dir.r.dd.msg.dlow,
-					READ,
-					sizeof(pcsr->dir.r.dd.msg.dlow),
-					&resp);
-			if(status == OK){
+			status = devReadProbe (sizeof(resp), 
+						&pcsr->dir.r.dd.msg.dlow, &resp);
+			if(status == SUCCESS){
 				break;
 			}
 			fhm = FALSE;

@@ -371,7 +371,7 @@ LOCAL mz8310Stat mz8310_setup_int(unsigned card, unsigned channel)
 			mz8310_int_service, 
 			(int)&mzconf[card].icf[channel]);
   if(status != OK)
-    return S_dev_vxWorksVecInstlFail;
+    return S_dev_vecInstlFail;
 
   sysIntEnable(mz8310_strap[channel].irq);
 

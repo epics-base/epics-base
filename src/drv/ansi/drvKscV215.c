@@ -260,7 +260,7 @@ LOCAL void KscV215_init_card(unsigned la, void *pArg)
 		(void *) la);
 	if(status == ERROR){
 		epvxiClose(la, KscV215DriverId);
-		errMessage(S_dev_vxWorksVecInstlFail, 
+		errMessage(S_dev_vecInstlFail, 
 			"KscV215 init failed- device left open");
 		return;
 	}

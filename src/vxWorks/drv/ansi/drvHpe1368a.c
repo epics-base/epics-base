@@ -181,7 +181,7 @@ LOCAL void hpe1368a_init_card(unsigned la, void *pArg)
 		hpe1368a_int_service,
 		la);
 	if(r0 == ERROR){
-		errMessage(S_dev_vxWorksVecInstlFail, NULL);
+		errMessage(S_dev_vecInstlFail, NULL);
 		return;
 	}
 

@@ -293,22 +293,23 @@ char    *ext_type_name[]
 ;
 
 typedef struct extender_device{
-        ELLNODE            	node;
-        ELLLIST            	extenders;      /* sub extenders */
+	ELLNODE node;
+	ELLLIST extenders;      /* sub extenders */
 	struct extender_device	*pParent;
-        enum ext_type   	type;
-        int             	la;
-        int             	la_low;         /* inclusive */
-        int             	la_high;        /* inclusive */
-        unsigned long		A24_base;
-        unsigned long   	A24_size;
-        unsigned long		A32_base;
-        unsigned long   	A32_size;
-        unsigned        	la_mapped:1;	/* device present */
-        unsigned        	A24_mapped:1;
-        unsigned        	A32_mapped:1;
-	unsigned		A24_ok:1;
-	unsigned		A32_ok:1;
+	struct slot_zero_device *pSZD;
+	enum ext_type type;
+	int la;
+	int la_low;         /* inclusive */
+	int la_high;        /* inclusive */
+	unsigned long A24_base;
+	unsigned long A24_size;
+	unsigned long A32_base;
+	unsigned long A32_size;
+	unsigned la_mapped:1;	/* device present */
+	unsigned A24_mapped:1;
+	unsigned A32_mapped:1;
+	unsigned A24_ok:1;
+	unsigned A32_ok:1;
 }VXIE;
 
 /*
@@ -317,22 +318,19 @@ typedef struct extender_device{
  * available 
  */
 typedef struct slot_zero_device{
-	ELLNODE		node;
-	void            (*set_modid)(
-				struct slot_zero_device *pvxisz, 
-				unsigned slot);
-	void            (*clear_modid)(
-				struct slot_zero_device *pvxisz);
-	VXIE            *pvxie;
-	struct vxi_csr  *pcsr;
-	unsigned char	la;
-	unsigned	reg:1;
-	unsigned	msg:1;
-	unsigned	nicpu030:1;
+	ELLNODE node;
+	void (*set_modid)(struct slot_zero_device *pvxisz, unsigned slot);
+	void (*clear_modid)(struct slot_zero_device *pvxisz);
+	EPVXISTAT (*report)(unsigned la, unsigned level);
+	VXIE *pvxie;
+	struct vxi_csr *pcsr;
+	unsigned char la;
+	unsigned reg:1;
+	unsigned msg:1;
 }VXISZ;
 
 typedef struct epvxiLibDeviceConfig{
-        void    	(*pio_report_func)();   /* ptr to io report func */
+	void    	(*pio_report_func)();   /* ptr to io report func */
 	void		*pDriverConfig;		/* ptr to driver config	*/
 	void		*pMsgConfig;		/* msg driver config area */
 	void		*pFatAddrBase;
@@ -341,16 +339,14 @@ typedef struct epvxiLibDeviceConfig{
 	VXISZ		*pvxisz;		/* ptr to slot zero info */
 	unsigned long	driverID;		/* unique driver id	*/
 	int		taskID;			/* opened by this id	*/	
-        unsigned short  make;
-        unsigned short  model;
-        short		slot;
-        short		commander_la;
+	unsigned short  make;
+	unsigned short  model;
+	short		slot;
+	short		commander_la;
 	short		extender_la;   /* logical address of bus repeater */
-	short		slot_zero_la; 
-        unsigned char   class;
+	unsigned char   class;
 	unsigned	st_passed:1;		/* self test passed	*/
-        unsigned        msg_dev_online:1;
-        unsigned        slot0_dev:1;
+	unsigned        msg_dev_online:1;
 	unsigned	A24_mapped:1;
 	unsigned	A32_mapped:1;
 }VXIDI;
@@ -470,7 +466,7 @@ int		epvxiResourceMangerOK;
 #ifndef SRCepvxiLib 
 extern
 #endif
-void    *epvxi_local_base;
+volatile void *epvxi_local_base;
 
 #define VXIBASE(LA) VXI_LA_TO_PA(LA, epvxi_local_base)
 

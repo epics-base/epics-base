@@ -6,6 +6,6 @@
 #define EPICS_MODIFICATION      0
 #define EPICS_UPDATE_LEVEL      5
 
-#define epicsReleaseVersion "@(#)Version R3.13.0.beta2 $Date$"
+#define epicsReleaseVersion "@(#)Version R3.13.0.beta3 $Date$"
 
-#define EPICS_VERSION_STRING    "EPICS Version 3.13.0.beta2"
+#define EPICS_VERSION_STRING    "EPICS Version 3.13.0.beta3"

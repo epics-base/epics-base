@@ -24,7 +24,7 @@ INC += guigroup.h
 SRCS.c = \
 	dbYacc.c \
 	../dbReadTest.c\
-	../dbExpandInclude.c\
+	../dbExpand.c\
 	../dbPvdLib.c\
 	../dbStaticNoRun.c\
 	../dbStaticLib.c\
@@ -33,7 +33,7 @@ SRCS.c = \
 
 OBJS = \
 	dbReadTest.o\
-	dbExpandInclude.o\
+	dbExpand.o\
 	dbToMenuH.o\
 	dbToRecordtypeH.o
 
@@ -42,7 +42,7 @@ LIBNAME = libDb.a
 
 PROD = \
 	dbReadTest\
-	dbExpandInclude\
+	dbExpand\
 	dbToMenuH\
 	dbToRecordtypeH
 

@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.81  1999/11/18 16:15:42  mrk
+ * changes for iocCore port
+ *
  * Revision 1.80  1999/11/08 17:14:43  jhill
  * added prenthesis around arguments to VALID_MSG macro
  *
@@ -203,7 +206,6 @@ HDRVERSIONID(iocinfh, "$Id$")
  * OS dependent includes
  */
 #include "osiSock.h"
-#include "osiClock.h"
 #include "os_depen.h"
 
 /*

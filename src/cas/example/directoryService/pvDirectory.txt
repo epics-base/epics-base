@@ -1,5 +1,5 @@
 
-ca:ai_2000 ioc3.atdiv.lanl.gov 22000
-ca:ai_2001 128.165.32.83 22000
-ca:ao_2000 ioc3
-ca:ao_2001 128.165.32.83
+ca:ai_2000 myIOC.myLAB.org 22000
+ca:ai_2001 1.1.1.1 22000
+ca:ao_2000 myIOC
+ca:ao_2001 1.1.1.1

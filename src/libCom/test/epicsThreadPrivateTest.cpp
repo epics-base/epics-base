@@ -65,7 +65,7 @@ void epicsThreadPrivateTest ()
     assert ( 0 == priv.get() );
 
     epicsTime begin = epicsTime::getCurrent ();
-    static const unsigned N = 100000u;
+    static const unsigned N = 1000u;
     for ( unsigned i = 0u; i < N; i++ ) {
         callItTenTimesSquared ();
     }

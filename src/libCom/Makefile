@@ -118,8 +118,19 @@ INC += osiSock.h
 INC += osdSock.h
 INC += osiInterrupt.h
 INC += osdInterrupt.h
+
+#Marty remove the following
 INC += osiSem.h
 INC += osdSem.h
+INC += osiMutex.h
+INC += osiEvent.h
+
+
+INC += epicsMutex.h
+INC += osdMutex.h
+INC += epicsEvent.h
+INC += osdEvent.h
+
 INC += epicsAssert.h
 INC += epicsFindSymbol.h
 INC += osiPoolStatus.h
@@ -131,8 +142,6 @@ INC += osdTime.h
 INC += osiSigPipeIgnore.h
 INC += osdSigPipeIgnore.h
 INC += tsStamp.h
-INC += osiMutex.h
-INC += osiEvent.h
 INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
@@ -143,7 +152,12 @@ SRCS += osdAssert.c
 SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
+
+#Marty remove the following
 SRCS += osdSem.c
+
+SRCS += osdMutex.c
+SRCS += osdEvent.c
 SRCS += osdThread.c
 SRCS += osiThread.cpp
 SRCS += osdTime.cpp

@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -35,7 +34,7 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#if defined(epicsExportSharedSymbols)
+#if defined (epicsExportSharedSymbols)
 #error suspect that libCom was not imported
 #endif
 
@@ -45,7 +44,6 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
 #include "bucketLib.h"
-#include "ellLib.h"
 #include "envDefs.h" 
 #include "epicsPrint.h"
 #include "tsStamp.h"
@@ -59,9 +57,10 @@
 #include "osiEvent.h"
 #include "resourceLib.h"
 #include "localHostName.h"
+#include "ipAddrToAsciiAsynchronous.h"
 
-#if defined(epicsExportSharedSymbols)
-#error suspect that libCom was not imported
+#if defined ( epicsExportSharedSymbols )
+#   error suspect that libCom was not imported
 #endif
 
 /*
@@ -76,16 +75,15 @@
  */
 #include "caProto.h"
 #include "net_convert.h"
-#include "ringBuffer.h"
 
 #ifndef FALSE
-#   define FALSE           0
+#   define FALSE 0
 #elif FALSE
 #   error FALSE isnt boolean false
 #endif
  
 #ifndef TRUE
-#   define TRUE            1
+#   define TRUE 1
 #elif !TRUE
 #   error TRUE isnt boolean true
 #endif
@@ -114,6 +112,121 @@
  */
 #define STRING_LIMIT    512
 
+static const unsigned comBufSize = 0x4000;
+
+class comBuf : public tsDLNode < comBuf > {
+public:
+    comBuf ();
+    void destroy ();
+    unsigned unoccupiedBytes () const;
+    unsigned occupiedBytes () const;
+    static unsigned maxBytes ();
+    unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
+    unsigned copyIn ( comBuf & );
+    unsigned copyIn ( const epicsInt8 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt8 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsInt16 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt16 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsInt32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsFloat32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsFloat64 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsOldString *pValue, unsigned nElem );
+    bool copyInAllBytes ( const void *pBuf, unsigned nBytes );
+    unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
+    bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
+    unsigned removeBytes ( unsigned nBytes );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+    bool flushToWire ( class comQueSend & );
+    unsigned fillFromWire ( class comQueRecv & );
+private:
+    static tsFreeList < class comBuf, 0x20, true > freeList;
+
+    ~comBuf ();
+    unsigned nextWriteIndex;
+    unsigned nextReadIndex;
+    unsigned char buf [ comBufSize ]; // optimal for 100 Mb Ethernet LAN MTU
+
+    unsigned clipNElem ( unsigned elemSize, unsigned nElem );
+};
+
+struct msgDescriptor {
+    const void *pBuf;
+    unsigned nBytes;
+};
+
+template < class T >
+void comQueSend_copyIn ( comQueSend &que, const T *pVal, unsigned nElem );
+
+template < class T >
+void comQueSend_copyIn ( comQueSend &que, const T &val );
+
+class bufferReservoir {
+public:
+    ~bufferReservoir ();
+    bool addOneBuffer ();
+    comBuf *fetchOneBuffer ();
+    unsigned nBytes ();
+private:
+    tsDLList < comBuf > reservedBufs;
+};
+
+class comQueSend {
+public:
+    virtual ~comQueSend ();
+    unsigned occupiedBytes () const;
+    bool flushToWire ();
+    int writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
+    int writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
+    int readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
+    int clearChannelRequest ( unsigned clientId, unsigned serverId );
+    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    int disableFlowControlRequest ();
+    int enableFlowControlRequest ();
+    int echoRequest ();
+    int noopRequest ();
+    int hostNameSetRequest ( const char *pName );
+    int userNameSetRequest ( const char *pName );
+
+    virtual unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf ) = 0;
+
+private:
+    int lockAndReserveSpace ( unsigned msgSize, bufferReservoir & );
+    virtual bool flushToWirePermit () = 0;
+    virtual void shutdown () = 0;
+
+    void copy_dbr_string ( bufferReservoir &, const void *pValue, unsigned nElem );
+    void copy_dbr_short ( bufferReservoir &, const void *pValue, unsigned nElem );
+    void copy_dbr_float ( bufferReservoir &, const void *pValue, unsigned nElem );
+    void copy_dbr_char ( bufferReservoir &, const void *pValue, unsigned nElem );
+    void copy_dbr_long ( bufferReservoir &, const void *pValue, unsigned nElem );
+    void copy_dbr_double ( bufferReservoir &, const void *pValue, unsigned nElem );
+
+    tsDLList < comBuf > bufs;
+    osiMutex mutex;
+    osiMutex flushMutex; // only one thread flushes at a time
+
+    typedef void ( comQueSend::*copyFunc_t ) ( bufferReservoir &, const void *pValue, unsigned nElem );
+
+    static const copyFunc_t dbrCopyVector [];
+};
+
+class comQueRecv {
+public:
+    virtual ~comQueRecv ();
+    unsigned occupiedBytes () const;
+    bool copyOutBytes ( void *pBuf, unsigned nBytes );
+    unsigned fillFromWire ();
+    virtual unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf ) = 0;
+private:
+    tsDLList < comBuf > bufs;
+    osiMutex mutex;
+};
+
 class caClient {
 public:
     virtual void exceptionNotify (int status, const char *pContext,
@@ -124,12 +237,56 @@ public:
 private:
 };
 
-class nciu : public cacChannelIO, public tsDLNode <nciu>,
-    public chronIntIdRes <nciu> {
+/*
+ * nciu::claimMsg ()
+ */
+class claimMsgCache {
 public:
-    nciu ( class cac *pcac, cacChannel &chan, const char *pNameIn );
+    claimMsgCache ( bool v44 );
+    ~claimMsgCache ();
+    bool set ( class nciu & chan );
+    int deliverMsg ( class tcpiiu &iiu );
+    bool channelMatches ( class nciu &chan );
+private:
+    char *pStr;
+    unsigned clientId;
+    unsigned serverId;
+    unsigned currentStrLen;
+    unsigned bufLen;
+    bool v44;
+};
+
+class netiiu;
+
+class nciuPrivate {
+private:
+    osiMutex mutex;
+    osiEvent ptrLockReleaseWakeup;
+    friend class nciu;
+};
+
+class cac;
+
+class cacPrivate {
+public:
+    cacPrivate ( cac & );
+    void destroyAllIO ();
+    void subscribeAllIO ();
+    void disconnectAllIO ( const char *pHostName );
+protected:
+    cac &cacCtx;
+private:
+    tsDLList < class baseNMIU > eventq;
+    friend class cac;
+};
+
+class nciu : public cacChannelIO, public tsDLNode < nciu >,
+    public chronIntIdRes < nciu >, public cacPrivate {
+public:
+    nciu ( class cac &cac, cacChannel &chan, const char *pNameIn );
     void destroy ();
     void connect ( class tcpiiu &iiu, unsigned nativeType, unsigned long nativeCount, unsigned sid );
+    void connect ( tcpiiu &iiu );
     void disconnect ();
     void searchReplySetUp ( unsigned sid, unsigned typeCode, unsigned long count );
     int read ( unsigned type, unsigned long count, void *pValue );
@@ -150,52 +307,61 @@ public:
     void incrementOutstandingIO ();
     void decrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned seqNumber );
-    int searchMsg ();
-    bool claimMsg ( class tcpiiu *piiu );
+    bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
+    void subscriptionCancelMsg ( ca_uint32_t clientId );
     bool fullyConstructed () const;
-    void installIO ( class baseNMIU &io );
-    void uninstallIO ( class baseNMIU &io );
+    bool connectionInProgress ( const osiSockAddr & );
+    bool identifierEquivelence ( unsigned idToMatch );
 
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 
     int subscriptionMsg ( unsigned subscriptionId, 
         unsigned typeIn, unsigned long countIn, unsigned short maskIn );
+    void resetRetryCount ();
+    unsigned getRetrySeqNo () const;
+    void accessRightsStateChange ( const caar &arIn );
+    unsigned getSID () const;
+    void attachChanToIIU ( netiiu &iiu );
+    void detachChanFromIIU ();
+    void ioInstall ( class baseNMIU & );
+    void ioDestroy ( unsigned id );
 
-    tsDLList
-      <class baseNMIU>  eventq;
-    class netiiu        *piiu;
-    char                *pNameStr;
-    unsigned            sid;            /* server id                    */
-    unsigned            retry;          /* search retry number          */
-    unsigned short      retrySeqNo;     /* search retry seq number      */
-    unsigned short      nameLength;     /* channel name length          */
-    caar                ar;             /* access rights                */
-    unsigned            claimPending:1; /* T if claim msg was sent      */
-    unsigned            previousConn:1; /* T if connected in the past   */
 private:
+    caar ar;                 /* access rights                */
+    unsigned count;
+    char *pNameStr;
+    netiiu *piiu;
+    unsigned sid;                /* server id                    */
+    unsigned retry;              /* search retry number          */
+    mutable unsigned short ptrLockCount;       /* number of times IIU pointer was locked */
+    mutable unsigned short ptrUnlockWaitCount; /* number of threads waiting for IIU pointer unlock */
+    unsigned short retrySeqNo;         /* search retry seq number      */
+    unsigned short nameLength;         /* channel name length          */
+    unsigned short typeCode;
+    unsigned f_connected:1;
+    unsigned f_fullyConstructed:1;
+    unsigned previousConn:1;     /* T if connected in the past   */
 
-    unsigned long       count;
-    unsigned short      typeCode;
-    unsigned            f_connected:1;
-    unsigned            f_fullyConstructed:1;
     static tsFreeList < class nciu, 1024 > freeList;
 
     ~nciu (); // force pool allocation
-    int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
-                     unsigned long count, const void *pvalue );
+    //int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
+    //                 unsigned long count, const void *pvalue );
     void lock () const;
     void unlock () const;
-
+    void lockPIIU () const;
+    void unlockPIIU () const;
+    void lockOutstandingIO () const;
+    void unlockOutstandingIO () const;
     const char * pHostName () const; // deprecated - please do not use
+
+    friend class claimMsgCache;
 };
 
-class baseNMIU : public tsDLNode <baseNMIU>,
-    public chronIntIdRes <baseNMIU> {
+class baseNMIU : public tsDLNode < baseNMIU >, public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( nciu &chan );
-    void destroy ();
-    unsigned identifier () const;
     class cacChannelIO & channelIO () const;
     virtual void completionNotify () = 0;
     virtual void completionNotify ( unsigned type, unsigned long count, const void *pData ) = 0;
@@ -203,83 +369,92 @@ public:
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
     virtual int subscriptionMsg ();
     virtual void disconnect ( const char *pHostName ) = 0;
+    void destroy ();
 protected:
     virtual ~baseNMIU (); // must be allocated from pool
     nciu &chan;
+    friend class cac;
 };
 
 class netSubscription : public cacNotifyIO, public baseNMIU  {
 public:
-    netSubscription ( nciu &chan, chtype type, unsigned long count, 
-        unsigned short mask, cacNotify &notify );
-    void destroy ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     int subscriptionMsg ();
     void disconnect ( const char *pHostName );
+    static bool factory ( nciu &chan, chtype type, unsigned long count, 
+        unsigned short mask, cacNotify &notify, unsigned &id );
+private:
+    chtype type;
+    unsigned long count;
+    unsigned short mask;
+
+    netSubscription ( nciu &chan, chtype type, unsigned long count, 
+        unsigned short mask, cacNotify &notify );
+    ~netSubscription ();
+    void destroy ();
+    static tsFreeList < class netSubscription, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
-private:
-    chtype              type;
-    unsigned long       count;
-    unsigned short      mask;
-    ~netSubscription ();
-    static tsFreeList < class netSubscription, 1024 > freeList;
 };
 
 class netReadCopyIO : public baseNMIU {
 public:
-    netReadCopyIO ( nciu &chan, unsigned type, unsigned long count, 
-                              void *pValue, unsigned seqNumber );
     void disconnect ( const char *pHostName );
-    void destroy ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    static bool factory ( nciu &chan, unsigned type, unsigned long count, 
+                              void *pValue, unsigned seqNumber, ca_uint32_t &id );
 private:
     unsigned type;
     unsigned long count;
     void *pValue;
     unsigned seqNumber;
+    netReadCopyIO ( nciu &chan, unsigned type, unsigned long count, 
+                              void *pValue, unsigned seqNumber );
     ~netReadCopyIO (); // must be allocated from pool
+    void destroy ();
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
 };
 
 class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
-    netReadNotifyIO ( nciu &chan, cacNotify &notify );
-    void destroy ();
     void disconnect ( const char *pHostName );
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+    static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
+private:
+    netReadNotifyIO ( nciu &chan, cacNotify &notify );
+    ~netReadNotifyIO ();
+    void destroy ();
+    static tsFreeList < class netReadNotifyIO, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
-private:
-    ~netReadNotifyIO ();
-    static tsFreeList < class netReadNotifyIO, 1024 > freeList;
 };
 
 class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
-    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
-    void destroy ();
     void disconnect ( const char *pHostName );
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+    static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
+private:
+    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
+    ~netWriteNotifyIO ();
+    void destroy ();
+    static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
-private:
-    ~netWriteNotifyIO ();
-    static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
 };
 
 /*
@@ -325,11 +500,11 @@ private:
  * without a delay in between before we go into 
  * monitor flow control
  *
- * turning this down effect maximum throughput
+ * turning this down effects maximum throughput
  * because we dont get an optimal number of bytes 
  * per network frame 
  */
-#define MAX_CONTIGUOUS_MSG_COUNT 10 
+static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
 
 #define SEND_RETRY_COUNT_INIT   100
 
@@ -337,42 +512,56 @@ enum iiu_conn_state {iiu_connecting, iiu_connected, iiu_disconnected};
 
 extern threadPrivateId cacRecursionLock;
 
-class baseIIU {
+class netiiu {
 public:
-    baseIIU (class cac *pcac) : pcas (pcac) {}
-    class cac *pcas;
-};
-
-class netiiu : public baseIIU {
-public:
-    netiiu (class cac *pcac);
+    netiiu ( class cac &cac );
     virtual ~netiiu ();
-    void show (unsigned level) const;
-
-    virtual bool compareIfTCP (nciu &chan, const sockaddr_in &) const = 0;
+    void show ( unsigned level ) const;
+    unsigned channelCount () const;
+    cac & clientCtx () const;
+    void disconnectAllChan ();
+    void detachAllChan ();
+    void connectTimeoutNotify ();
+    void sendPendingClaims ( tcpiiu &iiu, bool v42Ok, claimMsgCache &cache );
+    bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
+    void resetChannelRetryCounts ();
     virtual void hostName (char *pBuf, unsigned bufLength) const = 0;
-    virtual bool ca_v42_ok () const = 0;
-    virtual bool ca_v41_ok () const = 0;
-    virtual int pushStreamMsg (const caHdr *pmsg, const void *pext, bool BlockingOk) = 0;
-    virtual int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize) = 0;
-    virtual void addToChanList ( nciu &chan ) = 0;
-    virtual void removeFromChanList ( nciu &chan ) = 0;
-    virtual void disconnect ( nciu &chan ) = 0;
-
     virtual const char * pHostName () const = 0; // deprecated - please do not use
+    virtual bool connectionInProgress ( const char *pChannelName, const osiSockAddr &addr ) const;
+    virtual bool ca_v42_ok () const;
+    virtual bool ca_v41_ok () const;
+    virtual bool pushDatagramMsg (const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
 
-    tsDLList <nciu> chidList;
+    virtual int writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue);
+    virtual int writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
+    virtual int readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    virtual int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    virtual int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    virtual int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    virtual int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
+    virtual int clearChannelRequest ( unsigned clientId, unsigned serverId );
+
+protected:
+    void lock () const;
+    void unlock () const;
 private:
+    tsDLList <nciu> chidList;
+    class cac &cacRef;
+    osiMutex mutex;
+
+    friend class nciu;
+
+    virtual void lastChannelDetachNotify ();
 };
 
 class udpiiu;
 
-class searchTimer : public osiTimer {
+class searchTimer : public osiTimer, private osiMutex {
 
 public:
-    searchTimer (udpiiu &iiu, osiTimerQueue &queue);
+    searchTimer ( udpiiu &iiu, osiTimerQueue &queue );
     void notifySearchResponse ( unsigned short retrySeqNo );
-    void reset (double delayToNextTry);
+    void reset ( double delayToNextTry );
 
 private:
 	virtual void expire ();
@@ -387,12 +576,12 @@ private:
     udpiiu &iiu;
     unsigned framesPerTry; /* # of UDP frames per search try */
     unsigned framesPerTryCongestThresh; /* one half N tries w congest */
-    unsigned minRetry; /* min retry no so far */
+    unsigned minRetry; /* min retry number so far */
     unsigned retry;
-    unsigned searchTries; /* num search tries within seq # */
-    unsigned searchResponses; /* num valid search resp within seq # */
+    unsigned searchTriesWithinThisPass; /* num search tries within this pass through the list */
+    unsigned searchResponsesWithinThisPass; /* num search resp within this pass through the list */
     unsigned short retrySeqNo; /* search retry seq number */
-    unsigned short retrySeqNoAtListBegin; /* search retry seq number at beg of list */
+    unsigned short retrySeqAtPassBegin; /* search retry seq number at beg of pass through list */
     double period; /* period between tries */
 };
 
@@ -415,44 +604,76 @@ private:
     bool once;
 };
 
+extern "C" void cacRecvThreadUDP (void *pParam);
+
 class udpiiu : public netiiu {
 public:
-    udpiiu (cac *pcac);
+    udpiiu ( cac &cac );
     virtual ~udpiiu ();
     void shutdown ();
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    bool ca_v42_ok () const;
-    bool ca_v41_ok () const;
-    void addToChanList ( nciu &chan );
-    void removeFromChanList ( nciu &chan );
-    void disconnect ( nciu &chan );
     void recvMsg ();
-    int post_msg (const struct sockaddr_in *pnet_addr, 
-              char *pInBuf, unsigned long blockSize);
-    int pushStreamMsg ( const caHdr *pmsg, const void *pext, bool BlockingOk );
-    int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
+    int postMsg ( const osiSockAddr &net_addr, 
+              char *pInBuf, unsigned long blockSize );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void flush ();
     SOCKET getSock () const;
-
-    osiTime                 recvTime;
-    char                    xmitBuf[MAX_UDP];   
-    char                    recvBuf[ETHERNET_MAX_UDP];
-    semMutexId              xmitBufLock;
-    ELLLIST                 dest;
-    semBinaryId             recvThreadExitSignal;
-    unsigned                nBytesInXmitBuf;
-    unsigned short          repeaterPort;
-    bool                    shutdownCmd;
+    bool repeaterInstalled ();
 
     // exceptions
     class noSocket {};
     class noMemory {};
 private:
-    SOCKET                  sock;
-    bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
+    osiTime recvTime;
+    char xmitBuf [MAX_UDP_SEND];   
+    char recvBuf [MAX_UDP_RECV];
+    ELLLIST dest;
+    semBinaryId recvThreadExitSignal;
+    unsigned nBytesInXmitBuf;
+    SOCKET sock;
+    unsigned short repeaterPort;
+    unsigned short serverPort;
+    bool shutdownCmd;
 
     const char * pHostName () const; // deprecated - please do not use
+    void hostName ( char *pBuf, unsigned bufLength ) const;
+
+    bool pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize );
+
+    friend void cacRecvThreadUDP ( void *pParam );
+
+    typedef void (udpiiu::*pProtoStubUDP) ( const caHdr &, const osiSockAddr & );
+
+    // UDP protocol dispatch table
+    static const pProtoStubUDP udpJumpTableCAC[];
+
+    // UDP protocol stubs
+    void noopAction ( const caHdr &, const osiSockAddr & );
+    void badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr );
+    void searchRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
+    void exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
+    void beaconAction ( const caHdr &msg, const osiSockAddr &net_addr );
+    void notHereRespAction ( const caHdr &msg, const osiSockAddr &net_addr );
+    void repeaterAckAction ( const caHdr &msg, const osiSockAddr &net_addr );
+};
+
+class pendingClaimsTimer : public osiTimer {
+public:
+    pendingClaimsTimer ( tcpiiu &iiuIn, osiTimerQueue & queueIn );
+
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
+
+private:
+    void expire ();
+	void destroy ();
+	bool again () const;
+	double delay () const;
+	const char *name () const;
+    ~pendingClaimsTimer ();
+
+    //tcpiiu &iiu;
+
+    static tsFreeList < class pendingClaimsTimer, 1024 > freeList;
 };
 
 class tcpRecvWatchdog : public osiTimer {
@@ -472,8 +693,7 @@ private:
 	double delay () const;
 	const char *name () const;
     virtual void shutdown () = 0;
-    virtual void noopRequestMsg () = 0;
-    virtual void echoRequestMsg () = 0;
+    virtual void echoRequest () = 0;
     virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
@@ -501,77 +721,133 @@ private:
     const double period;
 };
 
-extern "C" void cacSendThreadTCP ( void *pParam );
+class tcpiiu;
 
-class tcpiiu : public tcpRecvWatchdog, public tcpSendWatchdog,
-        public netiiu, public tsDLNode <tcpiiu> {
+class claimsPendingIIU : public netiiu {
 public:
-    tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion, class bhe &bhe);
+    claimsPendingIIU ( tcpiiu &tcpIIU );
+    virtual ~claimsPendingIIU ();
+
+    bool connectionInProgress ( const char *pChannelName, const osiSockAddr & ) const;
+
+private:
+    tcpiiu &tcpIIU;
+    void hostName (char *pBuf, unsigned bufLength) const;
+    const char * pHostName () const; // deprecated - please do not use
+};
+
+class hostNameCache : public ipAddrToAsciiAsynchronous {
+public:
+    hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
+    ~hostNameCache ();
+    void ioCompletionNotify ( const char *pHostName );
+    void hostName (char *pBuf, unsigned bufLength) const;
+private:
+    char *pHostName;
+};
+
+extern "C" void cacSendThreadTCP ( void *pParam );
+extern "C" void cacRecvThreadTCP ( void *pParam );
+
+class tcpiiu : 
+        public tcpRecvWatchdog, public tcpSendWatchdog,
+        public netiiu, public tsDLNode <tcpiiu>,
+        private comQueSend, private comQueRecv {
+public:
+    tcpiiu ( cac &cac, const osiSockAddr &addrIn, 
+        unsigned minorVersion, class bhe &bhe,
+        double connectionTimeout, osiTimerQueue &timerQueue,
+        ipAddrToAsciiEngine & );
     ~tcpiiu ();
     void suicide ();
     void shutdown ();
     static void * operator new (size_t size);
     static void operator delete (void *pCadaver, size_t size);
 
-    void hostName (char *pBuf, unsigned bufLength) const;
-    bool ca_v42_ok () const;
-    bool ca_v41_ok () const;
-    int pushStreamMsg ( const caHdr *pmsg, const void *pext, bool BlockingOk );
-    int post_msg (char *pInBuf, unsigned long blockSize);
-    void addToChanList ( nciu &chan );
-    void removeFromChanList ( nciu &chan );
-    void connect ();
-    void disconnect ( nciu &chan );
     bool fullyConstructed () const;
-    void recvMsg ();
     void flush ();
-    virtual void show (unsigned level) const;
+    virtual void show ( unsigned level ) const;
     osiSockAddr address () const;
     SOCKET getSock () const;
+    void echoRequest ();
 
-    void noopRequestMsg ();
     void echoRequestMsg ();
-    int busyRequestMsg ();
-    int readyRequestMsg ();
+    void enableFlowControlMsg ();
+    void disableFlowControlMsg ();
     void hostNameSetMsg ();
     void userNameSetMsg ();
+    void processIncomingAndDestroySelfIfDisconnected ();
+    void installChannelPendingClaim ( nciu & );
+    bool ca_v44_ok () const;
+    bool ca_v41_ok () const;
+    void connect ();
+    int writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
+    int writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue );
+    int readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    int readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
+    int createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength );
+    int clearChannelRequest ( unsigned clientId, unsigned serverId );
+    int subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask );
+    int subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem );
 
-    ringBuffer              send;
-    ringBuffer              recv;
-    char                    host_name_str[64];
-    osiSockAddr             dest;
-    caHdr                   curMsg;
-    unsigned long           curDataMax;
-    unsigned long           curDataBytes;
-    class bhe               &bhe;
-    void                    *pCurData;
-    semBinaryId             sendThreadExitSignal;
-    semBinaryId             recvThreadExitSignal;
-    unsigned                minor_version_number;
-    unsigned                contiguous_msg_count;
-    unsigned                curMsgBytes;
-    iiu_conn_state          state;
-    bool                    client_busy;
-    bool                    echoRequestPending; 
-    bool                    claimRequestsPending; 
-    bool                    sendPending;
-    bool                    recvPending;
-    bool                    pushPending;
-
+    void hostName (char *pBuf, unsigned bufLength) const;
+    const char * pHostName () const; // deprecated - please do not use
+    bool connectionInProgress ( const char *pChannelName, const osiSockAddr &addr ) const;
+    bool alive () const;
 private:
-    bool compareIfTCP (nciu &chan, const sockaddr_in &) const;
-    int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
-    int pushStreamMsgPrivate ( const caHdr *pmsg, const void *pext, 
-               unsigned extsize, unsigned actualextsize );
-    void flowControlOn ();
-    void flowControlOff ();
+    hostNameCache ipToA;
+    caHdr curMsg;
+    unsigned long curDataMax;
+    class bhe &bhe;
+    void *pCurData;
+    unsigned minor_version_number;
+    iiu_conn_state state;
 
+    bool ca_v42_ok () const;
+    void postMsg ();
+    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
+    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
+    bool flushToWirePermit ();
+
+    claimsPendingIIU *pClaimsPendingIIU;
+    semBinaryId sendThreadFlushSignal;
+    semBinaryId recvThreadRingBufferSpaceAvailableSignal;
+    semBinaryId sendThreadExitSignal;
+    semBinaryId recvThreadExitSignal;
     SOCKET sock;
-    bool fc;
+    unsigned contigRecvMsgCount;
+    bool fullyConstructedFlag;
+    bool busyStateDetected; // only modified by the recv thread
+    bool flowControlActive; // only modified by the send process thread
+    bool flowControlStateChange;
+    bool echoRequestPending; 
+    bool recvPending;
+    bool flushPending;
+    bool msgHeaderAvailable;
     static tsFreeList < class tcpiiu, 16 > freeList;
 
     friend void cacSendThreadTCP ( void *pParam );
-    const char * pHostName () const; // deprecated - please do not use
+    friend void cacRecvThreadTCP ( void *pParam );
+
+    void lastChannelDetachNotify ();
+    int requestStubStatus ();
+
+    // protocol stubs
+    void noopAction ();
+    void echoRespAction ();
+    void writeNotifyRespAction ();
+    void readNotifyRespAction ();
+    void eventRespAction ();
+    void readRespAction ();
+    void clearChannelRespAction ();
+    void exceptionRespAction ();
+    void accessRightsRespAction ();
+    void claimCIURespAction ();
+    void verifyAndDisconnectChan ();
+    void badTCPRespAction ();
+
+    typedef void ( tcpiiu::*pProtoStubTCP ) ();
+    static const pProtoStubTCP tcpJumpTableCAC [];
 };
 
 class inetAddrID {
@@ -613,24 +889,15 @@ private:
     int code;
 };
 
-/*
- * This struct allocated off of a free list 
- * so that the select() ctx is thread safe
- */
-struct caFDInfo {
-    ELLNODE         node;
-    fd_set          readMask;  
-    fd_set          writeMask;  
-};
-
-class processThread : public osiThread {
+class recvProcessThread : public osiThread {
 public:
-    processThread (class cac *pcacIn);
-    ~processThread ();
+    recvProcessThread (class cac *pcacIn);
+    ~recvProcessThread ();
     void entryPoint ();
     void signalShutDown ();
     void enable ();
     void disable ();
+    void signalActivity ();
 private:
     //
     // The additional complexity associated with
@@ -639,6 +906,7 @@ private:
     // and therefore reduces the chance of creating
     // a deadlock window during code maintenance.
     //
+    osiEvent recvActivity;
     class cac *pcac;
     osiEvent exit;
     osiEvent processingDone;
@@ -649,9 +917,23 @@ private:
     bool shutDown;
 };
 
+class sendProcessThread : public osiThread {
+public:
+    sendProcessThread ( class cac &cacIn );
+    ~sendProcessThread ();
+    void entryPoint ();
+    void signalShutDown ();
+    void signalActivity ();
+private:
+    osiEvent sendActivity;
+    class cac &cacRef;
+    osiEvent exit;
+    bool shutDown;
+};
+
 #define CASG_MAGIC      0xFAB4CAFE
 
-class syncGroupNotify : public cacNotify, public tsDLNode <syncGroupNotify> {
+class syncGroupNotify : public cacNotify, public tsDLNode < syncGroupNotify > {
 public:
     syncGroupNotify  ( struct CASG &sgIn, void *pValue );
     void destroy ();
@@ -680,7 +962,7 @@ private:
 /*
  * one per synch group
  */
-struct CASG : public chronIntIdRes <CASG> {
+struct CASG : public chronIntIdRes < CASG > {
 public:
     CASG (cac &cacIn);
     void destroy ();
@@ -710,84 +992,105 @@ private:
     friend class syncGroupNotify;
 };
 
-class cac : public caClient {
+class cac : public caClient, public nciuPrivate {
 public:
     cac ( bool enablePreemptiveCallback = false );
     virtual ~cac ();
-    void safeDestroyNMIU (unsigned id);
-    void processRecvBacklog ();
     void flush ();
-    void cleanUpPendIO ();
-    unsigned connectionCount () const;
-    void show (unsigned level) const;
-    void installIIU (tcpiiu &iiu);
-    void removeIIU (tcpiiu &iiu);
-    void signalRecvActivityIIU (tcpiiu &iiu);
+    int pend (double timeout, int early);
+
+    // beacon management
     void beaconNotify (const inetAddrID &addr);
     bhe *lookupBeaconInetAddr (const inetAddrID &ina);
     bhe *createBeaconHashEntry (const inetAddrID &ina, 
             const osiTime &initialTimeStamp);
+    void repeaterSubscribeConfirmNotify ();
+
+    // outstanding IO count maintenance
     void removeBeaconInetAddr (const inetAddrID &ina);
     void decrementOutstandingIO ();
     void incrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned seqNumber );
+    void lockOutstandingIO () const;
+    void unlockOutstandingIO () const;
     unsigned readSequence () const;
-    int pend (double timeout, int early);
-    bool ioComplete () const;
+    void cleanUpPendIO ();
+
+    // IIU routines
+    void installIIU ( tcpiiu &iiu );
+    void removeIIU ( tcpiiu &iiu );
+    void signalRecvActivity ();
+    void processRecvBacklog ();
+    tcpiiu * constructTCPIIU ( const osiSockAddr &, unsigned minorVersion );
+    double connectionTimeout () const;
+
+    // exception routines
     void exceptionNotify (int status, const char *pContext,
         const char *pFileName, unsigned lineNo);
     void exceptionNotify (int status, const char *pContext,
         unsigned type, unsigned long count, 
         const char *pFileName, unsigned lineNo);
-    baseNMIU * lookupIO (unsigned id);
-    void installIO (baseNMIU &io);
-    void uninstallIO (baseNMIU &io);
-    nciu * lookupChan (unsigned id);
+    void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
+    void genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo);
+
+    // IO management routines
+    bool ioComplete () const;
+    void ioDestroy ( unsigned id );
+    void ioInstall ( nciu &chan, baseNMIU &io );
+    void ioCompletionNotify ( unsigned id );
+    void ioCompletionNotify ( unsigned id, unsigned type, 
+        unsigned long count, const void *pData );
+    void ioExceptionNotify ( unsigned id, 
+        int status, const char *pContext );
+    void ioExceptionNotify ( unsigned id, int status, 
+        const char *pContext, unsigned type, unsigned long count );
+    void ioCompletionNotifyAndDestroy ( unsigned id );
+    void ioCompletionNotifyAndDestroy ( unsigned id, 
+        unsigned type, unsigned long count, const void *pData );
+    void ioExceptionNotifyAndDestroy ( unsigned id, 
+        int status, const char *pContext );
+    void ioExceptionNotifyAndDestroy ( unsigned id, 
+        int status, const char *pContext, unsigned type, unsigned long count );
+
+    // channel routines
+    void connectChannel ( unsigned id, class tcpiiu &iiu, 
+          unsigned nativeType, unsigned long nativeCount, unsigned sid );
+    void channelDestroy ( unsigned id );
+    void disconnectChannel ( unsigned id );
     void registerChannel (nciu &chan);
-    void unregisterChannel (nciu &chan);
+    void unregisterChannel ( nciu &chan );
+    bool createChannelIO (const char *name_str, cacChannel &chan);
+    void lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
+             unsigned typeCode, unsigned long count, unsigned minorVersionNumber,
+             const osiSockAddr & );
+    void installDisconnectedChannel ( nciu &chan );
+    void accessRightsNotify ( unsigned id, caar );
+
+    // sync group routines
     CASG * lookupCASG (unsigned id);
     void installCASG (CASG &);
     void uninstallCASG (CASG &);
+
     void registerService ( cacServiceIO &service );
-    bool createChannelIO (const char *name_str, cacChannel &chan);
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
-    void lock () const;
-    void unlock () const;
     void enableCallbackPreemption ();
     void disableCallbackPreemption ();
-    void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
-    void genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo);
-    void installDisconnectedChannel ( nciu &chan );
     void notifySearchResponse ( unsigned short retrySeqNo );
-    void repeaterSubscribeConfirmNotify ();
+    bool currentThreadIsRecvProcessThread ();
+    const char * userNamePointer ();
+
+    // diagnostics
+    unsigned connectionCount () const;
+    void show (unsigned level) const;
+    int printf ( const char *pformat, ... );
+    int vPrintf ( const char *pformat, va_list args );
     void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
 
-    osiTimerQueue           *pTimerQueue;
-    ELLLIST                 activeCASGOP;
-    ELLLIST                 putCvrtBuf;
-    osiTime                 programBeginTime;
-    ca_real                 ca_connectTMO;
-    caExceptionHandler      *ca_exception_func;
-    void                    *ca_exception_arg;
-    caPrintfFunc            *ca_printf_func;
-    char                    *ca_pUserName;
-    resTable 
-        < bhe, inetAddrID > beaconTable;
-    tsDLIterBD <nciu>       endOfBCastList;
-    osiEvent                recvActivity;
-    semBinaryId             ca_blockSem;
-    unsigned                readSeq;
-    unsigned                ca_nextSlowBucketId;
-    unsigned short          ca_server_port;
-    char                    ca_new_err_code_msg_buf[128u];
-
 private:
+    ipAddrToAsciiEngine     ipToAEngine;
+    char                    ca_new_err_code_msg_buf[128u];
     cacServiceList          services;
-    osiMutex                defaultMutex;
-    osiMutex                iiuListMutex;
-    osiEvent                ioDone;
-    tsDLList <tcpiiu>       iiuListIdle;
-    tsDLList <tcpiiu>       iiuListRecvPending;
+    tsDLList <tcpiiu>       iiuList;
     tsDLList 
         <cacLocalChannelIO> localChanList;
     chronIntIdResTable 
@@ -796,17 +1099,34 @@ private:
         < nciu >            chanTable;
     chronIntIdResTable
         < CASG >            sgTable;
-    processThread           *pProcThread;
+    resTable 
+        < bhe, inetAddrID > beaconTable;
+    osiTime                 programBeginTime;
+    double                  connTMO;
+    osiTimerQueue           *pTimerQueue;
+    caExceptionHandler      *ca_exception_func;
+    void                    *ca_exception_arg;
+    caPrintfFunc            *pVPrintfFunc;
+    char                    *pUserName;
+    osiEvent                ioDone;
+    recvProcessThread       *pRecvProcThread;
     CAFDHANDLER             *fdRegFunc;
     void                    *fdRegArg;
     udpiiu                  *pudpiiu;
     searchTimer             *pSearchTmr;
     repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
+    semBinaryId             ca_blockSem;
+    osiMutex                defaultMutex;
+    osiMutex                iiuListMutex;
     unsigned                pndrecvcnt;
+    unsigned                readSeq;
+    unsigned                ca_nextSlowBucketId;
     bool                    enablePreemptiveCallback;
 
-    int pendPrivate (double timeout, int early);
+    int pendPrivate ( double timeout, int early );
     bool setupUDP ();
+
+    friend class cacPrivate;
 };
 
 extern const caHdr cacnullmsg;
@@ -823,12 +1143,11 @@ epicsShareFunc void epicsShareAPI ca_repeater (void);
 bhe *lookupBeaconInetAddr(cac *pcac,
         const struct sockaddr_in *pnet_addr);
 
-#define genLocalExcep( PCAC, STAT, PCTX ) \
-(PCAC)->genLocalExcepWFL ( STAT, PCTX, __FILE__, __LINE__ )
+#define genLocalExcep( CAC, STAT, PCTX ) \
+(CAC).genLocalExcepWFL ( STAT, PCTX, __FILE__, __LINE__ )
 
 double cac_fetch_poll_period (cac *pcac);
-tcpiiu * constructTCPIIU (cac *pcac, const struct sockaddr_in *pina, 
-                                     unsigned minorVersion);
+
 void cac_destroy (cac *pcac);
 int fetchClientContext (cac **ppcac);
 extern "C" void caRepeaterThread (void *pDummy);

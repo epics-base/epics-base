@@ -37,7 +37,6 @@
 #   endif
 #endif
 
-#include "ellLib.h"
 #include "osiThread.h"
 #include "shareLib.h"
 #include "caerr.h"
@@ -719,6 +718,8 @@ epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char
  * ca_host_name_function()
  *
  * channel  R   channel identifier
+ *
+ * !!!! this function is _not_ thread safe !!!!
  */
 epicsShareFunc const char * epicsShareAPI ca_host_name (chid channel);
 /* thread safe version */

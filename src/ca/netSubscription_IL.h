@@ -15,6 +15,9 @@
  *	505 665 1831
  */
 
+#ifndef netSubscription_ILh
+#define netSubscription_ILh
+
 
 inline void * netSubscription::operator new (size_t size)
 { 
@@ -25,3 +28,26 @@ inline void netSubscription::operator delete (void *pCadaver, size_t size)
 { 
     netSubscription::freeList.release (pCadaver,size);
 }
+
+//
+// we need to be careful about exporting a raw IO
+// pointer because the IO object may be deleted 
+// at any time when the channel disconnects or the
+// IO completes
+//
+inline bool netSubscription::factory ( nciu &chan, chtype type, unsigned long count, 
+    unsigned short mask, cacNotify &notify, unsigned &id )
+{
+    netSubscription *pIO = new netSubscription ( chan, type, count, mask, notify );
+    if ( pIO ) {
+        id = pIO->getId ();
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+#endif // netSubscription_ILh
+
+

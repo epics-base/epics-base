@@ -12,6 +12,7 @@
 
 #include "iocinf.h"
 #include "netSubscription_IL.h"
+#include "nciu_IL.h"
 
 tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
@@ -20,41 +21,22 @@ netSubscription::netSubscription ( nciu &chan, chtype typeIn, unsigned long coun
     cacNotifyIO (notifyIn), baseNMIU (chan), 
     type (typeIn), count (countIn), mask (maskIn)
 {
+    this->subscriptionMsg ();
 }
 
 netSubscription::~netSubscription () 
 {
-    if ( this->chan.connected () ) {
-        caHdr hdr;
-        ca_uint16_t type_16, count_16;
-    
-        type_16 = (ca_uint16_t) this->chan.nativeType ();
-        if ( this->chan.nativeElementCount () > 0xffff ) {
-            count_16 = 0xffff;
-        }
-        else {
-            count_16 = (ca_uint16_t) this->chan.nativeElementCount ();
-        }
-
-        hdr.m_cmmd = htons (CA_PROTO_EVENT_CANCEL);
-        hdr.m_available = this->id;
-        hdr.m_dataType = htons ( type_16 );
-        hdr.m_count = htons ( count_16 );
-        hdr.m_cid = this->chan.sid;
-        hdr.m_postsize = 0;
-
-        this->chan.piiu->pushStreamMsg (&hdr, NULL, true);
-    }
+    this->chan.subscriptionCancelMsg ( this->getId () );
 }
 
 void netSubscription::destroy()
 {
-    delete this;
+    this->baseNMIU::destroy ();
 }
 
 int netSubscription::subscriptionMsg ()
 {
-    return this->chan.subscriptionMsg ( this->id, this->type, 
+    return this->chan.subscriptionMsg ( this->getId (), this->type, 
         this->count, this->mask );
 }
 

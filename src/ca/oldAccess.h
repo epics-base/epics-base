@@ -15,6 +15,8 @@
  *	505 665 1831
  */
 
+extern "C" void cacNoConnHandler ( struct connection_handler_args args );
+
 struct oldChannel : public cacChannel {
 public:
     oldChannel (caCh *pConnCallBack, void *pPrivate);
@@ -42,6 +44,7 @@ private:
     static tsFreeList < struct oldChannel, 1024 > freeList;
 
     friend int epicsShareAPI ca_array_get (chtype type, unsigned long count, chid pChan, void *pValue);
+    friend void cacNoConnHandler ( struct connection_handler_args args );
 };
 
 class getCallback : public cacNotify {

@@ -15,18 +15,8 @@
  *	505 665 1831
  */
 
-//
-// netWriteNotifyIO inline member functions
-//
-inline void * netWriteNotifyIO::operator new ( size_t size )
-{ 
-    return netWriteNotifyIO::freeList.allocate ( size );
-}
-
-inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
-{ 
-    netWriteNotifyIO::freeList.release ( pCadaver, size );
-}
+#ifndef netReadCopyIO_ILh
+#define netReadCopyIO_ILh
 
 //
 // we need to be careful about exporting a raw IO
@@ -34,9 +24,11 @@ inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
 // at any time when the channel disconnects or the
 // IO completes
 //
-inline bool netWriteNotifyIO::factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id )
+inline bool netReadCopyIO::factory ( nciu &chan, unsigned type, 
+    unsigned long count, void *pValue, unsigned seqNumber, unsigned &id )
 {
-    netWriteNotifyIO *pIO = new netWriteNotifyIO ( chan, notify );
+    netReadCopyIO *pIO = new netReadCopyIO ( chan, 
+        type, count, pValue, seqNumber );
     if ( pIO ) {
         id = pIO->getId ();
         return true;
@@ -46,4 +38,15 @@ inline bool netWriteNotifyIO::factory ( nciu &chan, cacNotify &notify, ca_uint32
     }
 }
 
+inline void * netReadCopyIO::operator new ( size_t size )
+{
+    return netReadCopyIO::freeList.allocate ( size );
+}
 
+inline void netReadCopyIO::operator delete ( void *pCadaver, size_t size )
+{
+    netReadCopyIO::freeList.release ( pCadaver, size );
+}
+
+
+#endif // netReadCopyIO_ILh

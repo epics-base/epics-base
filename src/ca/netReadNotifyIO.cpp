@@ -22,17 +22,18 @@ netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
 
 netReadNotifyIO::~netReadNotifyIO () 
 {
+    // private NOOP forces pool allocation
 }
 
 void netReadNotifyIO::destroy ()
 {
-    delete this;
+    this->baseNMIU::destroy ();
 }
 
 void netReadNotifyIO::disconnect ( const char *pHostName )
 {
     this->cacNotifyIO::exceptionNotify ( ECA_DISCONN, pHostName );
-    delete this;
+    this->baseNMIU::destroy ();
 }
 
 void netReadNotifyIO::completionNotify ()

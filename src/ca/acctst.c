@@ -6,31 +6,24 @@
 /*
  * ANSI
  */
-#include    <stdio.h>
-#include    <stdlib.h>
-#include    <math.h>
-#include    <float.h>
-#include    <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <float.h>
+#include <string.h>
 
 /*
  * EPICS
  */
-#include    "epicsAssert.h"
-#include    "tsStamp.h"
+#include "epicsAssert.h"
+#include "tsStamp.h"
 
 /*
  * CA 
  */
-#include    "cadef.h"
+#include "cadef.h"
 
 #include "caDiagnostics.h"
-
-#define EVENT_ROUTINE   null_event
-#define CONN_ROUTINE    conn
-
-#define NUM     1
-
-int conn_cb_count;
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -48,40 +41,36 @@ int conn_cb_count;
 #define NELEMENTS(A) ( sizeof (A) / sizeof (A[0]) )
 #endif
 
-int     doacctst(char *pname);
-void    test_sync_groups(chid chix);
-void    multiple_sg_requests(chid chix, CA_SYNC_GID gid);
-void    null_event(struct event_handler_args args);
-void    write_event(struct event_handler_args args);
-void    conn(struct connection_handler_args args);
-void    get_cb(struct event_handler_args args);
-void    accessSecurity_cb(struct access_rights_handler_args args);
-void    pend_event_delay_test(dbr_double_t request);
-void    performMonitorUpdateTest (chid chan);
-void    performDeleteTest (chid chan);
+typedef struct appChan {
+    char name[64];
+    chid channel;
+    evid subscription;
+    unsigned char connected;
+    unsigned subscriptionUpdateCount;
+    unsigned accessUpdateCount;
+    unsigned connectionUpdateCount;
+    unsigned getCallbackCount;
+} appChan;
 
-void doubleTest(
-chid        chan,
-dbr_double_t    beginValue, 
-dbr_double_t    increment,
-dbr_double_t    epsilon,
-unsigned    iterations);
+unsigned subscriptionUpdateCount;
+unsigned accessUpdateCount;
+unsigned connectionUpdateCount;
+unsigned getCallbackCount;
 
-void floatTest(
-chid        chan,
-dbr_float_t     beginValue, 
-dbr_float_t increment,
-dbr_float_t     epsilon,
-unsigned    iterations);
+void showProgress ()
+{
+    printf ( "." );
+    fflush (stdout );
+}
 
-void performGrEnumTest (chid chan);
-
-void performCtrlDoubleTest (chid chan);
-
-void atLeastOneUpdateTester ( struct event_handler_args args )
+void nUpdatesTester ( struct event_handler_args args )
 {
     unsigned *pCtr = (unsigned *) args.usr;
-    (*pCtr)++;
+    ( *pCtr ) ++;
+    if ( args.status != ECA_NORMAL ) {
+	        printf("subscription update failed for \"%s\" because \"%s\"", 
+                ca_name ( args.chid ), ca_message ( args.status ) );
+    }
 }
 
 void monitorSubscriptionFirstUpdateTest ( chid chan )
@@ -95,7 +84,7 @@ void monitorSubscriptionFirstUpdateTest ( chid chan )
      * verify that the first event arrives
      */
     status = ca_add_event ( DBR_FLOAT, 
-                chan, atLeastOneUpdateTester, &eventCount, &id );
+                chan, nUpdatesTester, &eventCount, &id );
     SEVCHK (status, 0);
     while ( eventCount < 1 && waitCount++ < 100 ) {
         ca_pend_event ( 0.01 );
@@ -103,1118 +92,370 @@ void monitorSubscriptionFirstUpdateTest ( chid chan )
     assert ( eventCount > 0 );
     status = ca_clear_event ( id );
     SEVCHK (status, 0);
+
+    showProgress ();
 }
 
-int acctst (char *pname)
+void accessRightsStateChange ( struct access_rights_handler_args args )
 {
-    chid            chix1;
-    chid            chix2;
-    chid            chix3;
-    chid            chix4;
-    struct dbr_gr_float *pgrfloat = NULL;
-    dbr_float_t *pfloat = NULL;
-    dbr_double_t    *pdouble = NULL;
-    long            status;
-    long            i, j;
-    evid            monix;
-    char            pstring[NUM][MAX_STRING_SIZE];
-    unsigned    monCount=0u;
+    appChan	*pChan = (appChan *) ca_puser ( args.chid );
 
-    SEVCHK ( ca_task_initialize(), "Unable to initialize" );
+    assert ( pChan->channel == args.chid );
+    assert ( args.ar.read_access == ca_read_access ( args.chid ) );
+    assert ( args.ar.write_access == ca_write_access ( args.chid ) );
+    accessUpdateCount++;
+    pChan->accessUpdateCount++;
+}
 
-    conn_cb_count = 0;
+void getCallbackStateChange ( struct event_handler_args args )
+{
+    appChan	*pChan = (appChan *) args.usr;
 
-    printf ( "begin\n" );
+    assert ( pChan->channel == args.chid );
+    assert ( pChan->connected );
+    assert ( args.status == ECA_NORMAL );
 
-    printf ( "CA Client V%s\n", ca_version () );
+    getCallbackCount++;
+    pChan->getCallbackCount++;
+}
 
-    /*
-     * verify that we dont print a disconnect message when 
-     * we delete the last channel
-     * (this fails if we see a disconnect message)
-     */
-    status = ca_search ( pname, &chix3 );
-    SEVCHK ( status, NULL );
-    status = ca_pend_io ( 1000.0 );
-    SEVCHK ( status, NULL );
-    status = ca_clear_channel ( chix3 );
-    SEVCHK ( status, NULL );
+void connectionStateChange ( struct connection_handler_args args )
+{
+    int status;
 
-    /*
-     * verify lots of disconnects 
-     * verify channel connected state variables
-     */
-    printf ( "Connect/disconnect test" );
-    fflush ( stdout );
-    for ( i = 0; i < 10; i++ ) {
+    appChan	*pChan = (appChan *) ca_puser ( args.chid );
 
-        status = ca_search ( pname, &chix3 );
-        SEVCHK(status, NULL);
+    assert ( pChan->channel == args.chid );
 
-        status = ca_search ( pname, &chix4 );
-        SEVCHK(status, NULL);
+    if ( args.op == CA_OP_CONN_UP ) {
+        assert ( pChan->accessUpdateCount > 0u );
+        assert ( ! pChan->connected );
+        pChan->connected = 1;
+        status = ca_get_callback ( DBR_GR_STRING, args.chid, getCallbackStateChange, pChan );
+        SEVCHK (status, 0);
+        status = ca_flush_io ();
+        SEVCHK (status, 0);
+    }
+    else if ( args.op == CA_OP_CONN_DOWN ) {
+        assert ( pChan->connected );
+        pChan->connected = 0u;
+        assert ( ! ca_read_access ( args.chid ) );
+        assert ( ! ca_write_access ( args.chid ) );
+    }
+    else {
+        assert ( 0 );
+    }
+    pChan->connectionUpdateCount++;
+    connectionUpdateCount++;
+}
 
-        status = ca_search ( pname, &chix2 );
-        SEVCHK(status, NULL);
+void subscriptionStateChange ( struct event_handler_args args )
+{
+    appChan	*pChan = (appChan *) args.usr;
 
-        status = ca_search ( pname, &chix1 );
-        SEVCHK(status, NULL);
+    assert ( pChan->channel == args.chid );
+    assert ( pChan->connected );
+    assert ( args.type == DBR_GR_STRING );
+    pChan->subscriptionUpdateCount++;
+    subscriptionUpdateCount++;
 
-        if ( ca_test_io() == ECA_IOINPROGRESS ) {
-            assert(INVALID_DB_REQ(ca_field_type(chix1)) == TRUE);
-            assert(INVALID_DB_REQ(ca_field_type(chix2)) == TRUE);
-            assert(INVALID_DB_REQ(ca_field_type(chix3)) == TRUE);
-            assert(INVALID_DB_REQ(ca_field_type(chix4)) == TRUE);
+    if ( args.status != ECA_NORMAL ) {
+	        printf("subscription update failed for \"%s\" because \"%s\"", 
+                ca_name ( args.chid ), ca_message ( args.status ) );
+    }
 
-            assert(ca_state(chix1) == cs_never_conn);
-            assert(ca_state(chix2) == cs_never_conn);
-            assert(ca_state(chix3) == cs_never_conn);
-            assert(ca_state(chix4) == cs_never_conn);
+    assert ( strlen ( (char *) args.dbr ) <= MAX_STRING_SIZE );
+}
+
+void noopSubscriptionStateChange ( struct event_handler_args args )
+{
+    if ( args.status != ECA_NORMAL ) {
+	        printf("subscription update failed for \"%s\" because \"%s\"", 
+                ca_name ( args.chid ), ca_message ( args.status ) );
+    }
+}
+
+/*
+ * verifyConnectionHandlerConnect ()
+ *
+ * 1) verify that connection handler runs during connect
+ *
+ * 2) verify that access rights handler runs during connect
+ *
+ * 3) verify that get call back runs from connection handler
+ *
+ * 4) verify that first event callback arrives after connect
+ *
+ * 5) verify subscription can be cleared before channel is cleared
+ *
+ * 6) verify subscription can be cleared by clearing the channel
+ */
+void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsigned repetitionCount )
+{
+    int status;
+    unsigned i, j;
+
+    subscriptionUpdateCount = 0u;
+    accessUpdateCount = 0u;
+    connectionUpdateCount = 0u;
+    getCallbackCount = 0u;
+
+    for ( i = 0; i < repetitionCount; i++ ) {
+        for ( j = 0u; j < chanCount; j++ ) {
+
+            pChans[j].subscriptionUpdateCount = 0u;
+            pChans[j].accessUpdateCount = 0u;
+            pChans[j].connectionUpdateCount = 0u;
+            pChans[j].getCallbackCount = 0u;
+            pChans[j].connected = 0u;
+
+	        status = ca_search_and_connect ( pChans[j].name,
+                &pChans[j].channel, connectionStateChange, &pChans[j]);
+            SEVCHK ( status, NULL );
+
+            status = ca_replace_access_rights_event (
+                    pChans[j].channel, accessRightsStateChange );
+            SEVCHK ( status, NULL );
+
+            status = ca_add_event ( DBR_GR_STRING, pChans[j].channel,
+                    subscriptionStateChange, &pChans[j], &pChans[j].subscription );
+            SEVCHK ( status, NULL );
+
+            assert ( ca_test_io () == ECA_IODONE );
         }
 
-        status = ca_pend_io(1000.0);
-        SEVCHK(status, NULL);
+        while ( connectionUpdateCount < chanCount || 
+            getCallbackCount < chanCount ) {
+            ca_pend_event ( 1.0 );
+        }
 
-        printf(".");
-        fflush(stdout);
+        for ( j = 0u; j < chanCount; j++ ) {
+            assert ( pChans[j].getCallbackCount == 1u);
+            assert ( pChans[j].connectionUpdateCount > 0 );
+            if ( pChans[j].connectionUpdateCount > 1u ) {
+                printf ("Unusual connection activity count = %u on channel %s?\n",
+                    pChans[j].connectionUpdateCount, pChans[j].name );
+            }
+            assert ( pChans[j].accessUpdateCount > 0 );
+            if ( pChans[j].accessUpdateCount > 1u ) {
+                printf ("Unusual access rights activity count = %u on channel %s?\n",
+                    pChans[j].connectionUpdateCount, pChans[j].name );
+            }
+        }
 
-        assert(ca_test_io() == ECA_IODONE);
+        for ( j = 0u; j < chanCount; j += 2 ) {
+            status = ca_clear_event ( pChans[j].subscription );
+            SEVCHK ( status, NULL );
+        }
 
-        assert(ca_state(chix1) == cs_conn);
-        assert(ca_state(chix2) == cs_conn);
-        assert(ca_state(chix3) == cs_conn);
-        assert(ca_state(chix4) == cs_conn);
+        for ( j = 0u; j < chanCount; j++ ) {
+            status = ca_clear_channel ( pChans[j].channel );
+            SEVCHK ( status, NULL );
+        }
+    }
+    showProgress ();
+}
 
-        SEVCHK(ca_clear_channel(chix4), NULL);
-        SEVCHK(ca_clear_channel(chix3), NULL);
-        SEVCHK(ca_clear_channel(chix2), NULL);
-        SEVCHK(ca_clear_channel(chix1), NULL);
+/*
+ * verifyBlockingConnect ()
+ *
+ * 1) verify that we dont print a disconnect message when 
+ * we delete the last channel
+ *
+ * 2) verify that we delete the connection to the IOC
+ * when the last channel is deleted.
+ *
+ * 3) verify channel connection state variables
+ *
+ * 4) verify ca_test_io () and ca_pend_io () work with 
+ * channels w/o connection handlers
+ *
+ * 5) verify that the pending IO count is properly
+ * maintained when we are add/removing a connection
+ * handler
+ *
+ * 6) verify that the pending IO count goes to zero
+ * if the channel is deleted before it connects.
+ */
+void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repetitionCount )
+{
+    int status;
+    unsigned connections;
+    unsigned i, j;
+
+    connections = ca_get_ioc_connection_count ();
+    assert ( connections == 0u );
+
+    for ( i = 0; i < repetitionCount; i++ ) {
+
+        for ( j = 0u; j < chanCount; j++ ) {
+            pChans[j].subscriptionUpdateCount = 0u;
+            pChans[j].accessUpdateCount = 0u;
+            pChans[j].connectionUpdateCount = 0u;
+            pChans[j].getCallbackCount = 0u;
+            pChans[j].connected = 0u;
+
+            status = ca_search_and_connect ( pChans[j].name, &pChans[j].channel, NULL, &pChans[j] );
+            SEVCHK ( status, NULL );
+
+            if ( ca_state ( pChans[j].channel ) == cs_conn ) {
+                assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+            }
+            else {
+                assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+                assert ( ca_test_io () == ECA_IOINPROGRESS );
+            }
+            
+            status = ca_replace_access_rights_event (
+                    pChans[j].channel, accessRightsStateChange );
+            SEVCHK ( status, NULL );
+        }
+
+        for ( j = 0u; j < chanCount; j += 2 ) {
+            status = ca_change_connection_event ( pChans[j].channel, connectionStateChange );
+            SEVCHK ( status, NULL );
+        }
+
+        for ( j = 0u; j < chanCount; j += 2 ) {
+            status = ca_change_connection_event ( pChans[j].channel, NULL );
+            SEVCHK ( status, NULL );
+        }
+
+        for ( j = 0u; j < chanCount; j += 2 ) {
+            status = ca_change_connection_event ( pChans[j].channel, connectionStateChange );
+            SEVCHK ( status, NULL );
+        }
+
+        for ( j = 0u; j < chanCount; j += 2 ) {
+            status = ca_change_connection_event ( pChans[j].channel, NULL );
+            SEVCHK ( status, NULL );
+        }
+
+        status = ca_pend_io ( 1000.0 );
+        SEVCHK ( status, NULL );
+
+        assert ( ca_test_io () == ECA_IODONE );
+
+        connections = ca_get_ioc_connection_count ();
+        assert ( connections == 1u );
+
+        for ( j = 0u; j < chanCount; j++ ) {
+            assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+            assert ( ca_state ( pChans[j].channel ) == cs_conn );
+            SEVCHK ( ca_clear_channel ( pChans[j].channel ), NULL );
+        }
 
         /*
          * verify that connections to IOC's that are 
          * not in use are dropped
          */
-        j=0;
-        do {
-            ca_pend_event (0.1);
-            assert (++j<100);
+        if ( ca_get_ioc_connection_count() != 0u ) {
+            ca_pend_event ( 1.0 );
+            j=0;
+            while ( ca_get_ioc_connection_count() != 0u ) {
+                printf ( "-" );
+                ca_pend_event ( 1.0 );
+                assert ( ++j < 100 );
+                fflush ( stdout );
+            }
+            printf ("\n");
         }
-        while (ca_get_ioc_connection_count()>0u);
-
     }
-    printf("\n");
 
-    /*
-     * look for problems with ca_search(), ca_clear_channel(),
-     * ca_change_connection_event(), and ca_pend_io(() combo
-     */
-    status = ca_search ( pname,& chix3 );
-    SEVCHK ( status, NULL );
+    for ( j = 0u; j < chanCount; j++ ) {
+        status = ca_search ( pChans[j].name, &pChans[j].channel );
+        SEVCHK ( status, NULL );
+    }
 
-    status = ca_replace_access_rights_event ( chix3, accessSecurity_cb );
-    SEVCHK ( status, NULL );
+    for ( j = 0u; j < chanCount; j++ ) {
+        status = ca_clear_channel ( pChans[j].channel );
+        SEVCHK ( status, NULL );
+    }
 
-    /*
-     * verify clear before connect
-     */
-    status = ca_search ( pname, &chix4 );
-    SEVCHK ( status, NULL );
-
-    /* 
-     * verify that NULL 
-     * evid does not cause failure 
-     */
-    status = ca_add_event ( DBR_FLOAT, 
-            chix4, EVENT_ROUTINE, NULL, NULL );
-    SEVCHK ( status, NULL );
-
-    status = ca_clear_channel ( chix4 );
-    SEVCHK ( status, NULL );
-
-    status = ca_search ( pname, &chix4 );
-    SEVCHK ( status, NULL );
-
-    status = ca_replace_access_rights_event ( chix4, accessSecurity_cb );
-    SEVCHK ( status, NULL );
-
-    status = ca_search ( pname, &chix2 );
-    SEVCHK (status, NULL);
-
-    status = ca_replace_access_rights_event (chix2, accessSecurity_cb);
-    SEVCHK ( status, NULL );
-
-    status = ca_search ( pname, &chix1 );
-    SEVCHK ( status, NULL );
-
-    status = ca_replace_access_rights_event ( chix1, accessSecurity_cb );
-    SEVCHK ( status, NULL );
-
-    status = ca_change_connection_event ( chix1, conn );
-    SEVCHK ( status, NULL );
-
-    status = ca_change_connection_event ( chix1, NULL );
-    SEVCHK ( status, NULL );
-
-    status = ca_change_connection_event ( chix1, conn );
-    SEVCHK ( status, NULL );
-
-    status = ca_change_connection_event ( chix1, NULL );
-    SEVCHK ( status, NULL );
-
-    status = ca_pend_io ( 1000.0 );
-    SEVCHK ( status, NULL );
-
-    assert ( ca_state (chix1) == cs_conn );
-    assert ( ca_state (chix2) == cs_conn );
-    assert ( ca_state (chix3) == cs_conn );
-    assert ( ca_state (chix4) == cs_conn );
-
-    assert ( INVALID_DB_REQ (ca_field_type (chix1) ) == FALSE );
-    assert ( INVALID_DB_REQ (ca_field_type (chix2) ) == FALSE );
-    assert ( INVALID_DB_REQ (ca_field_type (chix3) ) == FALSE );
-    assert ( INVALID_DB_REQ (ca_field_type (chix4) ) == FALSE );
-
-    printf("%s Read Access=%d Write Access=%d\n", 
-        ca_name(chix1), ca_read_access(chix1), ca_write_access(chix1));
-
-    /*
-     * clear chans before starting another test 
-     */
-    status = ca_clear_channel(chix1);
-    SEVCHK(status, NULL);
-    status = ca_clear_channel(chix2);
-    SEVCHK(status, NULL);
-    status = ca_clear_channel(chix3);
-    SEVCHK(status, NULL);
-    status = ca_clear_channel(chix4);
-    SEVCHK(status, NULL);
+    assert ( ca_test_io () == ECA_IODONE );
 
     /*
      * verify ca_pend_io() does not see old search requests
      * (that did not specify a connection handler)
      */
-    status = ca_search_and_connect(pname, &chix1, NULL, NULL);
-    SEVCHK(status, NULL);
-    /*
-     * channel will connect synchronously if on the
-     * local host
-     */
-    if (ca_state(chix1)==cs_never_conn) {
-        status = ca_pend_io(1e-16);
-        if (status==ECA_TIMEOUT) {
+    status = ca_search_and_connect ( pChans[0].name, &pChans[0].channel, NULL, NULL);
+    SEVCHK ( status, NULL );
 
-            printf ("waiting on pend io verify connect...");
-            fflush (stdout);
-            while (ca_state(chix1)!=cs_conn) {
-                ca_pend_event(0.1);
-            }
-            printf ("done\n");
-
+    if ( ca_state ( pChans[0].channel ) == cs_never_conn ) {
+        /* force an early timeout */
+        status = ca_pend_io ( 1e-16 );
+        if ( status == ECA_TIMEOUT ) {
             /*
              * we end up here if the channel isnt on the same host
              */
-            status = ca_search_and_connect (pname, &chix2, NULL, NULL);
-            SEVCHK (status, NULL);
-            status = ca_pend_io(1e-16);
-            if (status!=ECA_TIMEOUT) {
-                assert(ca_state(chix2)==cs_conn);
+            ca_pend_event ( 0.1 );
+            if ( ca_state( pChans[0].channel ) != cs_conn ) {
+                printf ( "waiting on pend io verify connect" );
+                fflush ( stdout );
+                while ( ca_state ( pChans[0].channel ) != cs_conn ) {
+                    printf ( "." );
+                    fflush ( stdout );
+                    ca_pend_event ( 0.1 );
+                }
+                printf ( "done\n" );
             }
-            status = ca_clear_channel (chix2);
-            SEVCHK (status, NULL);
-        }
-        else {
-            assert (ca_state(chix1)==cs_conn);
-        }
-    }
-    status = ca_clear_channel(chix1);
-    SEVCHK (status, NULL);
 
-    /*
-     * verify connection handlers are working
-     */
-    status = ca_search_and_connect(pname, &chix1, conn, NULL);
-    SEVCHK(status, NULL);
-    status = ca_search_and_connect(pname, &chix2, conn, NULL);
-    SEVCHK(status, NULL);
-    status = ca_search_and_connect(pname, &chix3, conn, NULL);
-    SEVCHK(status, NULL);
-    status = ca_search_and_connect(pname, &chix4, conn, NULL);
-    SEVCHK(status, NULL);
-
-    printf("waiting on conn handler call back connect...");
-    fflush(stdout);
-    while (conn_cb_count != 4) {
-        ca_pend_event(0.1);
-    }
-    printf("done\n");
-
-    monitorSubscriptionFirstUpdateTest ( chix4 );
-
-    performGrEnumTest (chix1);
-
-    performCtrlDoubleTest (chix1);
-
-    /*
-     * ca_pend_io() must block
-     */
-    if(ca_read_access(chix4)){
-        dbr_float_t req;
-        dbr_float_t resp;
-
-        printf ("get TMO test ...");
-        fflush(stdout);
-        req = 56.57f;
-        resp = -99.99f;
-        SEVCHK(ca_put(DBR_FLOAT, chix4, &req),NULL);
-        SEVCHK(ca_get(DBR_FLOAT, chix4, &resp),NULL);
-        status = ca_pend_io(1.0e-12);
-        if (status==ECA_NORMAL) {
-            if (resp != req) {
-                printf (
-    "get block test failed - val written %f\n", req);
-                printf (
-    "get block test failed - val read %f\n", resp);
-                assert(0);
+            status = ca_search_and_connect ( pChans[1].name, &pChans[1].channel, NULL, NULL  );
+            SEVCHK ( status, NULL );
+            status = ca_pend_io ( 1e-16 );
+            if ( status != ECA_TIMEOUT ) {
+                assert ( ca_state ( pChans[1].channel ) == cs_conn );
             }
-        }
-        else if (resp != -99.99f) {
-            printf (
-    "CA didnt block for get to return?\n");
-        }
-            
-        req = 33.44f;
-        resp = -99.99f;
-        SEVCHK (ca_put(DBR_FLOAT, chix4, &req),NULL);
-        SEVCHK (ca_get(DBR_FLOAT, chix4, &resp),NULL);
-        SEVCHK (ca_pend_io(2000.0),NULL);
-        if (resp != req) {
-            printf (
-    "get block test failed - val written %f\n", req);
-            printf (
-    "get block test failed - val read %f\n", resp);
-            assert(0);
-        }
-        printf ("done\n");
-    }
-
-    /*
-     * Verify that we can do IO with the new types for ALH
-     */
-#if 0
-    if(ca_read_access(chix4)&&ca_write_access(chix4)){
-    {
-        dbr_put_ackt_t acktIn=1u;
-        dbr_put_acks_t acksIn=1u;
-        struct dbr_stsack_string stsackOut;
-
-        SEVCHK (ca_put(DBR_PUT_ACKT, chix4, &acktIn),NULL);
-        SEVCHK (ca_put(DBR_PUT_ACKS, chix4, &acksIn),NULL);
-        SEVCHK (ca_get(DBR_STSACK_STRING, chix4, &stsackOut),NULL);
-        SEVCHK (ca_pend_io(2000.0),NULL);
-    }
-#endif
-
-    /*
-     * Verify that we can write and then read back
-     * the same analog value (DBR_FLOAT)
-     */
-    if( (ca_field_type(chix1)==DBR_DOUBLE || 
-        ca_field_type(chix1)==DBR_FLOAT) && 
-        ca_read_access(chix1) && 
-        ca_write_access(chix1)){
-
-        dbr_float_t incr;
-        dbr_float_t epsil;
-        dbr_float_t base;
-        unsigned long iter;
-
-        printf ("dbr_float_t test ");
-        fflush (stdout);
-        epsil = FLT_EPSILON*4.0F;
-        base = FLT_MIN;
-        for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-            incr = (dbr_float_t) ldexp (0.5F,i);
-            if (fabs(incr)>FLT_MAX/10.0) {
-                iter = (unsigned long) (FLT_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            floatTest(chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        base = FLT_MAX;
-        for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-            incr =  (dbr_float_t) - ldexp (0.5F,i);
-            if (fabs(incr)>FLT_MAX/10.0) {
-                iter = (unsigned long) (FLT_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            floatTest(chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        base = - FLT_MAX;
-        for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-            incr = (dbr_float_t) ldexp (0.5F,i);
-            if (fabs(incr)>FLT_MAX/10.0) {
-                iter = (unsigned long) (FLT_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            floatTest (chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        printf ("done\n");
-    }
-
-    /*
-     * Verify that we can write and then read back
-     * the same analog value (DBR_DOUBLE)
-     */
-    if( ca_field_type(chix1)==DBR_DOUBLE &&
-        ca_read_access(chix1) && 
-        ca_write_access(chix1)){
-
-        dbr_double_t incr;
-        dbr_double_t epsil;
-        dbr_double_t base;
-        unsigned long iter;
-
-        printf ("dbr_double_t test ");
-        fflush(stdout);
-        epsil = DBL_EPSILON*4;
-        base = DBL_MIN;
-        for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
-            incr = ldexp (0.5,i);
-            if (fabs(incr)>DBL_MAX/10.0) {
-                iter = (unsigned long) (DBL_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            doubleTest(chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        base = DBL_MAX;
-        for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
-            incr =  - ldexp (0.5,i);
-            if (fabs(incr)>DBL_MAX/10.0) {
-                iter = (unsigned long) (DBL_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            doubleTest(chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        base = - DBL_MAX;
-        for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
-            incr = ldexp (0.5,i);
-            if (fabs(incr)>DBL_MAX/10.0) {
-                iter = (unsigned long) (DBL_MAX/fabs(incr));
-            }
-            else {
-                iter = 10ul;
-            }
-            doubleTest(chix1, base, incr, epsil, iter);
-            printf (".");
-            fflush (stdout);
-        }
-        printf ("done\n");
-    }
-
-    /*
-     * Verify that we can write and then read back
-     * the same integer value (DBR_LONG)
-     */
-    if (ca_read_access(chix1) && ca_write_access(chix1)) {
-
-        dbr_long_t iter, rdbk, incr;
-        struct dbr_ctrl_long cl;
-
-        status = ca_get (DBR_CTRL_LONG, chix1, &cl);
-        SEVCHK (status, "graphic long fetch failed\n");
-        status = ca_pend_io (10.0);
-        SEVCHK (status, "graphic long pend failed\n");
-
-        incr = (cl.upper_ctrl_limit - cl.lower_ctrl_limit);
-        if (incr>=1) {
-            incr /= 1000;
-            if (incr==0) {
-                incr = 1;
-            }
-            printf ("dbr_long_t test ");
-            fflush (stdout);
-            for (iter=cl.lower_ctrl_limit; 
-                iter<=cl.upper_ctrl_limit; iter+=incr) {
-
-                status = ca_put (DBR_LONG, chix1, &iter);
-                status = ca_get (DBR_LONG, chix1, &rdbk);
-                status = ca_pend_io (10.0);
-                SEVCHK (status, "get pend failed\n");
-                assert (iter == rdbk);
-                printf (".");
-                fflush (stdout);
-            }
-            printf ("done\n");
-        }
-    }
-
-    /*
-     * verify we dont jam up on many uninterrupted
-     * solicitations
-     */
-    if(ca_read_access(chix4)){
-        dbr_float_t temp;
-
-        printf("Performing multiple get test...");
-        fflush(stdout);
-        for(i=0; i<10000; i++){
-            SEVCHK(ca_get(DBR_FLOAT, chix4, &temp),NULL);
-        }
-        SEVCHK(ca_pend_io(2000.0), NULL);
-        printf("done.\n");
-    }
-    else{
-        printf("Skipped multiple get test - no read access\n");
-    }
-
-    /*
-     * verify we dont jam up on many uninterrupted requests 
-     */
-    if(ca_write_access(chix4)){
-        printf("Performing multiple put test...");
-        fflush(stdout);
-        for(i=0; i<10000; i++){
-            dbr_double_t fval = 3.3;
-            status = ca_put(DBR_DOUBLE, chix4, &fval);
-            SEVCHK(status, NULL);
-        }
-        SEVCHK(ca_pend_io(2000.0), NULL);
-        printf("done.\n");
-    }
-    else{
-        printf("Skipped multiple put test - no write access\n");
-    }
-
-    /*
-     * verify we dont jam up on many uninterrupted
-     * solicitations
-     */
-    if(ca_read_access(chix1)){
-        unsigned    count=0u;
-        printf("Performing multiple get callback test...");
-        fflush(stdout);
-        for(i=0; i<10000; i++){
-            status = ca_array_get_callback(
-                    DBR_FLOAT, 1, chix1, null_event, &count);
-    
-            SEVCHK(status, NULL);
-        }
-        SEVCHK(ca_flush_io(), NULL);
-        while (count<10000u) {
-            ca_pend_event(1.0);
-            printf("waiting...");
-            fflush(stdout);
-        }
-        printf("done.\n");
-    }
-    else{
-        printf("Skipped multiple get cb test - no read access\n");
-    }
-
-    /*
-     * verify we dont jam up on many uninterrupted
-     * put callback solicitations
-     */
-    if ( ca_write_access (chix1) && ca_v42_ok (chix1) ) {
-        unsigned count = 0u;
-        printf ( "Performing multiple put callback test..." );
-        fflush ( stdout );
-        for ( i=0; i<10000; i++ ) {
-            dbr_float_t fval = 3.3F;
-            status = ca_array_put_callback (
-                    DBR_FLOAT, 1, chix1, &fval,
-                    null_event, &count );
+            status = ca_clear_channel ( pChans[1].channel );
             SEVCHK ( status, NULL );
         }
-        SEVCHK ( ca_flush_io (), NULL );
-        while ( count < 10000u ) {
-            ca_pend_event ( 1.0 );
-            printf ( "waiting..." );
-            fflush ( stdout );
-        }
-
-        printf ( "done.\n" );
-    }
-    else {
-        printf ( "Skipped multiple put cb test - no write access\n" );
-    }
-
-    /*
-     * verify that we detect that a large string has been written
-     */
-    if ( ca_write_access (chix1) ) {
-        dbr_string_t    stimStr;
-        dbr_string_t    respStr;
-        memset(stimStr, 'a', sizeof(stimStr));
-        status = ca_array_put(DBR_STRING, 1u, chix1, stimStr);
-        assert(status!=ECA_NORMAL);
-        sprintf(stimStr, "%u", 8u);
-        status = ca_array_put(DBR_STRING, 1u, chix1, stimStr);
-        assert(status==ECA_NORMAL);
-        status = ca_array_get(DBR_STRING, 1u, chix1, respStr);
-        assert(status==ECA_NORMAL);
-        status = ca_pend_io(0.0);
-        assert(status==ECA_NORMAL);
-        printf(
-"Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
-            stimStr, respStr);
-    }
-    else{
-        printf("Skipped bad string test - no write access\n");
-    }
-
-    if(ca_v42_ok(chix1)){
-        test_sync_groups(chix1);
-    }
-
-    /* performMonitorUpdateTest (chix4); */
-    performDeleteTest (chix2);
-
-    if (VALID_DB_REQ(ca_field_type(chix4))) {
-        status = ca_add_event(
-                DBR_FLOAT, 
-                chix4, 
-                EVENT_ROUTINE, 
-                &monCount, 
-                &monix);
-        SEVCHK(status, NULL);
-        SEVCHK(ca_clear_event(monix), NULL);
-        status = ca_add_event(
-                DBR_FLOAT, 
-                chix4, 
-                EVENT_ROUTINE, 
-                &monCount, 
-                &monix);
-        SEVCHK(status, NULL);
-    }
-    if (VALID_DB_REQ(ca_field_type(chix4))) {
-        status = ca_add_event(
-                DBR_FLOAT, 
-                chix4, 
-                EVENT_ROUTINE, 
-                &monCount, 
-                &monix);
-        SEVCHK(status, NULL);
-        SEVCHK(ca_clear_event(monix), NULL);
-    }
-    if (VALID_DB_REQ(ca_field_type(chix3))) {
-        status = ca_add_event(
-                DBR_FLOAT, 
-                chix3, 
-                EVENT_ROUTINE, 
-                &monCount, 
-                &monix);
-        SEVCHK(status, NULL);
-        status = ca_add_event(
-                DBR_FLOAT, 
-                chix3, 
-                write_event, 
-                &monCount, 
-                &monix);
-        SEVCHK(status, NULL);
-    }
-
-    pfloat = (dbr_float_t *) calloc(sizeof(*pfloat),NUM);
-    assert (pfloat);
-    pdouble = (dbr_double_t *) calloc(sizeof(*pdouble),NUM);
-    assert (pdouble);
-    pgrfloat = (struct dbr_gr_float *) calloc(sizeof(*pgrfloat),NUM);
-    assert (pgrfloat);
-
-    if (VALID_DB_REQ(ca_field_type(chix1))) {
-        for (i = 0; i < NUM; i++) {
-            for (j = 0; j < NUM; j++)
-                sprintf(&pstring[j][0], "%ld", j + 100l);
-            SEVCHK(ca_array_put(
-                    DBR_STRING, 
-                    NUM, 
-                    chix1, 
-                    pstring), 
-                    NULL)
-            SEVCHK(ca_array_get(
-                    DBR_FLOAT, 
-                    NUM, 
-                    chix1, 
-                    pfloat), 
-                    NULL)
-            SEVCHK(ca_array_get(
-                    DBR_DOUBLE, 
-                    NUM, 
-                    chix1, 
-                pdouble), 
-                    NULL)
-            SEVCHK(ca_array_get(
-                    DBR_GR_FLOAT, 
-                    NUM, 
-                    chix1, 
-                    pgrfloat), 
-                    NULL)
+        else {
+            assert ( ca_state( pChans[0].channel ) == cs_conn );
         }
     }
-    SEVCHK(ca_pend_io(4000.0), NULL);
-
-    /*
-     * array test
-     * o verifies that we can at least write and read back the same array
-     * if multiple elements are present
-     */
-    if (VALID_DB_REQ(ca_field_type(chix1))) {
-        if (ca_element_count(chix1)>1u && ca_read_access(chix1)) {
-            dbr_float_t *pRF, *pWF, *pEF, *pT1, *pT2;
-
-            printf("Performing %lu element array test...",
-                    ca_element_count(chix1) );
-            fflush(stdout);
-
-            pRF = (dbr_float_t *) calloc(ca_element_count(chix1), 
-                        sizeof(*pRF));
-            assert(pRF!=NULL);
-
-            pWF = (dbr_float_t *)calloc(ca_element_count(chix1), 
-                        sizeof(*pWF));
-            assert(pWF!=NULL);
-
-            /*
-             * write some random numbers into the array
-             */
-            if (ca_write_access(chix1)) {
-                pT1 = pWF;
-                pEF = &pWF[ca_element_count(chix1)];
-                while(pT1<pEF) {
-                    *pT1++ = (float) rand();
-                }
-                status = ca_array_put(
-                        DBR_FLOAT, 
-                        ca_element_count(chix1), 
-                        chix1, 
-                        pWF); 
-                SEVCHK(status, "array write request failed");
-            }
-
-            /*
-             * read back the array
-             */
-            if (ca_read_access(chix1)) {
-                status = ca_array_get(
-                        DBR_FLOAT, 
-                        ca_element_count(chix1), 
-                        chix1, 
-                        pRF); 
-                SEVCHK(status, "array read request failed");
-                status = ca_pend_io(30.0);
-                SEVCHK(status, "array read failed");
-            }
-
-            /*
-             * verify read response matches values written
-             */
-            if (ca_read_access(chix1) && ca_write_access(chix1)) {
-                pEF = &pRF[ca_element_count(chix1)];
-                pT1 = pRF;
-                pT2 = pWF;
-                while (pT1<pEF) {
-                    assert (*pT1 == *pT2);
-                    pT1++;
-                    pT2++;
-                }
-            }
-
-            /*
-             * read back the array as strings
-             *
-             * this demonstrates that we can operate close to the N*40<=16k limit
-             */
-            if (ca_read_access(chix1)) {
-                /* clip to 16k message buffer limit */
-                unsigned maxElem = ((1<<14)-16)/MAX_STRING_SIZE;
-                unsigned nElem = min(maxElem, ca_element_count(chix1));
-                
-                char *pRS = malloc(nElem*MAX_STRING_SIZE);
-                assert(pRS);
-                status = ca_array_get(
-                        DBR_STRING, 
-                        nElem, 
-                        chix1, 
-                        pRS); 
-                SEVCHK(status, "array read request failed");
-                status = ca_pend_io(30.0);
-                SEVCHK(status, "array read failed");
-                free(pRS);
-            }
-
-            printf("done\n");
-            free(pRF);
-            free(pWF);
-        }
-    }
-
-    SEVCHK(ca_modify_user_name("Willma"), NULL);
-    SEVCHK(ca_modify_host_name("Bed Rock"), NULL);
-
-    {
-        TS_STAMP    end_time;
-        TS_STAMP    start_time;
-        dbr_double_t    delay;
-        dbr_double_t    request = 15.0;
-        dbr_double_t    accuracy;
-
-        tsStampGetCurrent(&start_time);
-        printf("waiting for events for %f sec\n", request);
-        status = ca_pend_event(request);
-        if (status != ECA_TIMEOUT) {
-            SEVCHK(status, NULL);
-        }
-        tsStampGetCurrent(&end_time);
-        delay = tsStampDiffInSeconds(&end_time,&start_time);
-        accuracy = 100.0*(delay-request)/request;
-        printf("CA pend event delay accuracy = %f %%\n",
-            accuracy);
-    }
-
-    /*
-     * CA pend event delay accuracy test
-     * (CA asssumes that search requests can be sent
-     * at least every 25 mS on all supported os)
-     */
-    pend_event_delay_test ( 1.0 );
-    pend_event_delay_test ( 0.1 );
-    pend_event_delay_test ( 0.25 ); 
-
-    {
-        TS_STAMP    end_time;
-        TS_STAMP    start_time;
-        dbr_double_t    delay;
-
-        tsStampGetCurrent(&start_time);
-        printf("entering ca_task_exit()\n");
-        status = ca_task_exit();
-        SEVCHK(status,NULL);
-        tsStampGetCurrent(&end_time);
-        delay = tsStampDiffInSeconds(&end_time,&start_time);
-        printf("in ca_task_exit() for %f sec\n", delay);
-    }
-
-    if (pfloat) {
-        free(pfloat);
-    }
-    if (pdouble) {
-        free(pdouble);
-    }
-    if (pgrfloat) {
-        free(pgrfloat);
-    }
-
-    return(0);
+    status = ca_clear_channel( pChans[0].channel );
+    SEVCHK ( status, NULL );
+    showProgress ();
 }
 
 /*
- * pend_event_delay_test()
+ * 1) verify that use of NULL evid does not cause problems
+ * 2) verify clear before connect
  */
-void pend_event_delay_test(dbr_double_t request)
-{
-    int     status;
-    TS_STAMP    end_time;
-    TS_STAMP    start_time;
-    dbr_double_t    delay;
-    dbr_double_t    accuracy;
-
-    tsStampGetCurrent(&start_time);
-    status = ca_pend_event(request);
-    if (status != ECA_TIMEOUT) {
-        SEVCHK(status, NULL);
-    }
-    tsStampGetCurrent(&end_time);
-    delay = tsStampDiffInSeconds(&end_time,&start_time);
-    accuracy = 100.0*(delay-request)/request;
-    printf("CA pend event delay = %f sec results in error = %f %%\n",
-        request, accuracy);
-    assert (fabs(accuracy) < 10.0);
-}
-
-/*
- * floatTest ()
- */
-void floatTest(
-chid        chan,
-dbr_float_t     beginValue, 
-dbr_float_t increment,
-dbr_float_t     epsilon,
-unsigned    iterations)
-{
-    unsigned    i;
-    dbr_float_t fval;
-    dbr_float_t fretval;
-    int     status;
-
-    fval = beginValue;
-    for (i=0; i<iterations; i++) {
-        fretval = FLT_MAX;
-        status = ca_put (DBR_FLOAT, chan, &fval);
-        SEVCHK (status, NULL);
-        status = ca_get (DBR_FLOAT, chan, &fretval);
-        SEVCHK (status, NULL);
-        status = ca_pend_io (10.0);
-        SEVCHK (status, NULL);
-        if (fabs(fval-fretval) > epsilon) {
-            printf ("float test failed val written %f\n", fval);
-            printf ("float test failed val read %f\n", fretval);
-            assert(0);
-        }
-
-        fval += increment;
-    }
-}
-
-/*
- * doubleTest ()
- */
-void doubleTest(
-chid        chan,
-dbr_double_t    beginValue, 
-dbr_double_t    increment,
-dbr_double_t    epsilon,
-unsigned    iterations)
-{
-    unsigned    i;
-    dbr_double_t    fval;
-    dbr_double_t    fretval;
-    int     status;
-
-    fval = beginValue;
-    for (i=0; i<iterations; i++) {
-        fretval = DBL_MAX;
-        status = ca_put (DBR_DOUBLE, chan, &fval);
-        SEVCHK (status, NULL);
-        status = ca_get (DBR_DOUBLE, chan, &fretval);
-        SEVCHK (status, NULL);
-        status = ca_pend_io (100.0);
-        SEVCHK (status, NULL);
-        if (fabs(fval-fretval) > epsilon) {
-            printf ("float test failed val written %f\n", fval);
-            printf ("float test failed val read %f\n", fretval);
-            assert(0);
-        }
-
-        fval += increment;
-    }
-}
-
-/*
- * null_event ()
- */
-void null_event (struct event_handler_args args)
-{
-    unsigned    *pInc = (unsigned *) args.usr;
-
-    /*
-     * no pend event in event call back test
-     */
-#if 0
-    int status;
-    status = ca_pend_event (1e-6);
-    assert (status==ECA_EVDISALLOW);
-#endif
-
-    if (pInc) {
-        (*pInc)++;
-    }
-
-#if 0
-    if (ca_state(args.chid)==cs_conn) {
-        status = ca_put (DBR_FLOAT, args.chid, &fval);
-        SEVCHK(status, "put failed in null_event()");
-    }
-    else {
-        printf("null_event() called for disconnected %s\n",
-                ca_name(args.chid));
-    }
-#endif
-}
-
-/*
- * write_event ()
- */
-void write_event (struct event_handler_args args)
-{
-    static unsigned iterations = 100;
-    int status;
-    dbr_float_t *pFloat = (dbr_float_t *) args.dbr;
-    dbr_float_t a;
-
-    if ( ! args.dbr ) {
-        return;
-    }
-
-    if ( iterations > 0 ) {
-        iterations--;
-
-        a = *pFloat;
-        a += 10.1F;
-
-        status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
-        SEVCHK ( status, NULL );
-        SEVCHK ( ca_flush_io (), NULL );
-    }
-}
-
-void conn (struct connection_handler_args args)
+void verifyClear ( appChan *pChans )
 {
     int status;
 
-    if (args.op == CA_OP_CONN_UP) {
-#       if 0
-            printf("Channel On Line [%s]\n", ca_name(args.chid));
-#       endif
-        status = ca_get_callback (DBR_GR_FLOAT, args.chid, get_cb, NULL);
-        SEVCHK (status, "get call back in connection handler");
-        status = ca_flush_io ();
-        SEVCHK (status, "get call back flush in connection handler");
-    }
-    else if (args.op == CA_OP_CONN_DOWN) {
-#       if 0
-            printf("Channel Off Line [%s]\n", ca_name(args.chid));
-#       endif
-    }
-    else {
-        printf("Ukn conn ev\n");
-    }
+    /*
+     * verify channel clear before connect
+     */
+    status = ca_search ( pChans[0].name, &pChans[0].channel );
+    SEVCHK ( status, NULL );
 
-}
+    status = ca_clear_channel ( pChans[0].channel );
+    SEVCHK ( status, NULL );
 
-void get_cb (struct event_handler_args args)
-{
-    if ( ! ( args.status & CA_M_SUCCESS ) ) {
-        printf("Get cb failed because \"%s\"\n", 
-            ca_message (args.status) );
-    }
-    else {
-        conn_cb_count++;
-    }
-}
+    /*
+     * verify subscription clear before connect
+     * and verify that NULL evid does not cause failure 
+     */
+    status = ca_search ( pChans[0].name, &pChans[0].channel );
+    SEVCHK ( status, NULL );
 
-/*
- * test_sync_groups()
- */
-void test_sync_groups(chid chix)
-{
-    int status;
-    CA_SYNC_GID gid1=0;
-    CA_SYNC_GID gid2=0;
+    SEVCHK ( status, NULL );
+    status = ca_add_event ( DBR_GR_DOUBLE, 
+            pChans[0].channel, subscriptionStateChange, NULL, NULL );
+    SEVCHK ( status, NULL );
 
-    printf ("Performing sync group test...");
-    fflush (stdout);
-
-    status = ca_sg_create (&gid1);
-    SEVCHK (status, NULL);
-
-    multiple_sg_requests (chix, gid1);
-    status = ca_sg_reset (gid1);
-    SEVCHK (status, NULL);
-
-    status = ca_sg_create (&gid2);
-    SEVCHK (status, NULL);
-
-    multiple_sg_requests (chix, gid2);
-    multiple_sg_requests (chix, gid1);
-    status = ca_sg_test (gid2);
-    SEVCHK (status, "SYNC GRP2");
-    status = ca_sg_test (gid1);
-    SEVCHK (status, "SYNC GRP1");
-    status = ca_sg_block (gid1, 500.0);
-    SEVCHK (status, "SYNC GRP1");
-    status = ca_sg_block (gid2, 500.0);
-    SEVCHK (status, "SYNC GRP2");
-
-    status = ca_sg_delete (gid2);
-    SEVCHK (status, NULL);
-    status = ca_sg_create (&gid2);
-    SEVCHK (status, NULL);
-
-    multiple_sg_requests (chix, gid1);
-    multiple_sg_requests (chix, gid2);
-    status = ca_sg_block (gid1, 15.0);
-    SEVCHK (status, "SYNC GRP1");
-    status = ca_sg_block (gid2, 15.0);
-    SEVCHK (status, "SYNC GRP2");
-    status = ca_sg_delete (gid1);
-    SEVCHK (status, NULL);
-    status = ca_sg_delete (gid2);
-    SEVCHK (status, NULL);
-
-    printf ("done\n");
-}
-
-/*
- * multiple_sg_requests()
- */
-void multiple_sg_requests(chid chix, CA_SYNC_GID gid)
-{
-    int         status;
-    unsigned        i;
-    static dbr_float_t  fvalput  = 3.3F;
-    static dbr_float_t  fvalget;
-
-    for(i=0; i<1000; i++){
-        if(ca_write_access(chix)){
-            status = ca_sg_array_put(
-                    gid,
-                    DBR_FLOAT, 
-                    1,
-                    chix, 
-                    &fvalput);
-            SEVCHK(status, NULL);
-        }
-
-        if(ca_read_access(chix)){
-            status = ca_sg_array_get(
-                    gid,
-                    DBR_FLOAT, 
-                    1,
-                    chix, 
-                    &fvalget);
-            SEVCHK(status, NULL);
-        }
-    }
-}
-
-/*
- * accessSecurity_cb()
- */
-void accessSecurity_cb(struct access_rights_handler_args args)
-{
-#   ifdef DEBUG
-        printf( "%s on %s has %s/%s access\n",
-            ca_name(args.chid),
-            ca_host_name(args.chid),
-            ca_read_access(args.chid)?"read":"noread",
-            ca_write_access(args.chid)?"write":"nowrite");
-#   endif
+    status = ca_clear_channel ( pChans[0].channel );
+    SEVCHK ( status, NULL );
+    showProgress ();
 }
 
 /*
  * performGrEnumTest
  */
-void performGrEnumTest (chid chan)
+void performGrEnumTest ( chid chan )
 {
     struct dbr_gr_enum ge;
     unsigned count;
@@ -1238,6 +479,7 @@ void performGrEnumTest (chid chan)
         }
         printf ("}\n");
     }
+    showProgress ();
 }
 
 /*
@@ -1254,10 +496,12 @@ void performCtrlDoubleTest (chid chan)
     unsigned i;
 
     if (!ca_write_access(chan)) {
+        printf ("skipped ctrl dbl test - no write access\n");
         return;
     }
 
     if (dbr_value_class[ca_field_type(chan)]!=dbr_class_float) {
+        printf ("skipped ctrl dbl test - not an analog type\n");
         return;
     }
 
@@ -1304,7 +548,858 @@ void performCtrlDoubleTest (chid chan)
 
     free (pCtrlDbl);
     free (pDbl);
+    showProgress ();
 }
+
+/*
+ * ca_pend_io() must block
+ */
+void verifyBlockInPendIO ( chid chan )
+{
+    int status;
+
+    if ( ca_read_access (chan) ) {
+        dbr_float_t req;
+        dbr_float_t resp;
+
+        req = 56.57f;
+        resp = -99.99f;
+        SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
+        SEVCHK ( ca_get (DBR_FLOAT, chan, &resp), NULL );
+        status = ca_pend_io (1.0e-12);
+        if ( status == ECA_NORMAL ) {
+            if ( resp != req ) {
+                printf (
+    "get block test failed - val written %f\n", req );
+                printf (
+    "get block test failed - val read %f\n", resp );
+                assert ( 0 );
+            }
+        }
+        else if ( resp != -99.99f ) {
+            printf ( "CA didnt block for get to return?\n" );
+        }
+            
+        req = 33.44f;
+        resp = -99.99f;
+        SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
+        SEVCHK ( ca_get (DBR_FLOAT, chan, &resp), NULL );
+        SEVCHK ( ca_pend_io (2000.0) , NULL );
+        if ( resp != req ) {
+            printf (
+    "get block test failed - val written %f\n", req);
+            printf (
+    "get block test failed - val read %f\n", resp);
+            assert(0);
+        }
+    }
+    else {
+        printf ("skipped pend IO block test - no read access\n");
+    }
+    showProgress ();
+}
+
+/*
+ * floatTest ()
+ */
+void floatTest ( chid chan, dbr_float_t beginValue, dbr_float_t increment,
+            dbr_float_t epsilon, unsigned iterations )
+{
+    unsigned i;
+    dbr_float_t fval;
+    dbr_float_t fretval;
+    int status;
+
+    fval = beginValue;
+    for ( i=0; i < iterations; i++ ) {
+        fretval = FLT_MAX;
+        status = ca_put ( DBR_FLOAT, chan, &fval );
+        SEVCHK ( status, NULL );
+        status = ca_get ( DBR_FLOAT, chan, &fretval );
+        SEVCHK ( status, NULL );
+        status = ca_pend_io ( 10.0 );
+        SEVCHK (status, NULL);
+        if ( fabs ( fval - fretval ) > epsilon ) {
+            printf ( "float test failed val written %f\n", fval );
+            printf ( "float test failed val read %f\n", fretval );
+            assert (0);
+        }
+        fval += increment;
+    }
+}
+
+/*
+ * doubleTest ()
+ */
+void doubleTest ( chid chan, dbr_double_t beginValue, 
+    dbr_double_t  increment, dbr_double_t epsilon,
+    unsigned iterations)
+{
+    unsigned i;
+    dbr_double_t fval;
+    dbr_double_t fretval;
+    int status;
+
+    fval = beginValue;
+    for ( i = 0; i < iterations; i++ ) {
+        fretval = DBL_MAX;
+        status = ca_put ( DBR_DOUBLE, chan, &fval );
+        SEVCHK ( status, NULL );
+        status = ca_get ( DBR_DOUBLE, chan, &fretval );
+        SEVCHK ( status, NULL );
+        status = ca_pend_io ( 100.0 );
+        SEVCHK ( status, NULL );
+        if ( fabs ( fval - fretval ) > epsilon ) {
+            printf ( "float test failed val written %f\n", fval );
+            printf ( "float test failed val read %f\n", fretval );
+            assert ( 0 );
+        }
+        fval += increment;
+    }
+}
+
+/*
+ * Verify that we can write and then read back
+ * the same analog value
+ */
+void verifyAnalogIO ( chid chan, int dataType, double min, double max, 
+               int minExp, int maxExp, double epsilon )
+{
+    int i;
+    double incr;
+    double epsil;
+    double base;
+    unsigned iter;
+
+    if ( ! ca_write_access ( chan ) ) {
+        printf ("skipped analog test - no write access\n");
+        return;
+    }
+
+    if ( ca_field_type ( chan ) != DBR_FLOAT && 
+        ca_field_type ( chan ) != DBR_DOUBLE ) {
+        printf ("skipped analog test - not an analog type\n");
+        return;
+    }
+
+    epsil = epsilon * 4.0;
+    base = min;
+    for ( i = minExp; i <= maxExp; i += maxExp / 10 ) {
+        incr = ldexp ( 0.5, i );
+        if ( fabs (incr) > max /10.0 ) {
+            iter = ( unsigned ) ( max / fabs (incr) );
+        }
+        else {
+            iter = 10u;
+        }
+        if ( dataType == DBR_FLOAT ) {
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+                (dbr_float_t) epsil, iter );
+        }
+        else if (dataType == DBR_DOUBLE ) {
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+                (dbr_double_t) epsil, iter );
+        }
+        else {
+            assert ( 0 );
+        }
+    }
+    base = max;
+    for ( i = minExp; i <= maxExp; i += maxExp / 10 ) {
+        incr = - ldexp ( 0.5, i );
+        if ( fabs (incr) > max / 10.0 ) {
+            iter = (unsigned) ( max / fabs (incr) );
+        }
+        else {
+            iter = 10u;
+        }
+        if ( dataType == DBR_FLOAT ) {
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+                (dbr_float_t) epsil, iter );
+        }
+        else if (dataType == DBR_DOUBLE ) {
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+                (dbr_double_t) epsil, iter );
+         }
+        else {
+            assert ( 0 );
+        }
+    }
+    base = - max;
+    for ( i = minExp; i <= maxExp; i += maxExp / 10 ) {
+        incr = ldexp ( 0.5, i );
+        if ( fabs (incr) > max / 10.0 ) {
+            iter = (unsigned) ( max / fabs ( incr ) );
+        }
+        else {
+            iter = 10l;
+        }
+        if ( dataType == DBR_FLOAT ) {
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+                (dbr_float_t) epsil, iter );
+        }
+        else if (dataType == DBR_DOUBLE ) {
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+                (dbr_double_t) epsil, iter );
+         }
+        else {
+            assert ( 0 );
+        }
+    }
+    showProgress ();
+}
+
+/*
+ * Verify that we can write and then read back
+ * the same DBR_LONG value
+ */
+void verifyLongIO ( chid chan )
+{
+    int status;
+
+    dbr_long_t iter, rdbk, incr;
+    struct dbr_ctrl_long cl;
+
+    if ( ca_write_access ( chan ) ) {
+        return;
+    }
+
+    status = ca_get ( DBR_CTRL_LONG, chan, &cl );
+    SEVCHK ( status, "control long fetch failed\n" );
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "control long pend failed\n" );
+
+    incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
+    if ( incr >= 1 ) {
+        incr /= 1000;
+        if ( incr == 0 ) {
+            incr = 1;
+        }
+        for ( iter = cl.lower_ctrl_limit; 
+            iter <= cl.upper_ctrl_limit; iter+=incr ) {
+
+            status = ca_put ( DBR_LONG, chan, &iter );
+            status = ca_get ( DBR_LONG, chan, &rdbk );
+            status = ca_pend_io ( 10.0 );
+            SEVCHK ( status, "get pend failed\n" );
+            assert ( iter == rdbk );
+        }
+        showProgress ();
+    }
+    else {
+        printf ( "strange limits configured for channel \"%s\"\n", ca_name (chan) );
+    }
+}
+
+/*
+ * Verify that we can write and then read back
+ * the same DBR_SHORT value
+ */
+void verifyShortIO ( chid chan )
+{
+    int status;
+
+    dbr_short_t iter, rdbk, incr;
+    struct dbr_ctrl_short cl;
+
+    if ( ca_write_access ( chan ) ) {
+        return;
+    }
+
+    status = ca_get ( DBR_CTRL_SHORT, chan, &cl );
+    SEVCHK ( status, "control short fetch failed\n" );
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "control short pend failed\n" );
+
+    incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
+    if ( incr >= 1 ) {
+        incr /= 1000;
+        if ( incr == 0 ) {
+            incr = 1;
+        }
+        for ( iter = cl.lower_ctrl_limit; 
+            iter <= cl.upper_ctrl_limit; iter+=incr ) {
+
+            status = ca_put ( DBR_SHORT, chan, &iter );
+            status = ca_get ( DBR_SHORT, chan, &rdbk );
+            status = ca_pend_io ( 10.0 );
+            SEVCHK ( status, "get pend failed\n" );
+            assert ( iter == rdbk );
+        }
+        showProgress ();
+    }
+    else {
+        printf ( "Strange limits configured for channel \"%s\"\n", ca_name (chan) );
+    }
+}
+
+void verifyHighThroughputRead ( chid chan )
+{
+    int status;
+    unsigned i;
+
+    /*
+     * verify we dont jam up on many uninterrupted
+     * solicitations
+     */
+    if ( ca_read_access (chan) ) {
+        dbr_float_t temp;
+        for ( i=0; i<10000; i++ ) {
+            status = ca_get ( DBR_FLOAT, chan, &temp );
+            SEVCHK ( status ,NULL );
+        }
+        status = ca_pend_io (2000.0);
+        SEVCHK ( status, NULL );
+        showProgress ();
+    }
+    else {
+        printf ( "Skipped highthroughput read test - no read access\n" );
+    }
+}
+
+void verifyHighThroughputWrite ( chid chan ) 
+{
+    int status;
+    unsigned i;
+
+    if (ca_write_access ( chan ) ) {
+        for ( i=0; i<10000; i++ ) {
+            dbr_double_t fval = 3.3;
+            status = ca_put ( DBR_DOUBLE, chan, &fval );
+            SEVCHK ( status, NULL );
+        }
+        SEVCHK ( ca_pend_io (2000.0), NULL );
+        showProgress ();
+    }
+    else{
+        printf("Skipped multiple put test - no write access\n");
+    }
+}
+
+/*
+ * verify we dont jam up on many uninterrupted
+ * get callback requests
+ */
+void verifyHighThroughputReadCallback ( chid chan ) 
+{
+    unsigned i;
+    int status;
+
+    if ( ca_read_access ( chan ) ) { 
+        unsigned count = 0u;
+        for ( i=0; i<10000; i++ ) {
+            status = ca_array_get_callback (
+                    DBR_FLOAT, 1, chan, nUpdatesTester, &count );
+            SEVCHK ( status, NULL );
+        }
+        SEVCHK ( ca_flush_io (), NULL );
+        while ( count < 10000u ) {
+            ca_pend_event ( 0.1 );
+        }
+        showProgress ();
+    }
+    else {
+        printf ( "Skipped multiple get cb test - no read access\n" );
+    }
+}
+
+/*
+ * verify we dont jam up on many uninterrupted
+ * put callback request
+ */
+void verifyHighThroughputWriteCallback ( chid chan ) 
+{
+    unsigned i;
+    int status;
+
+    if ( ca_write_access (chan) && ca_v42_ok (chan) ) {
+        unsigned count = 0u;
+        for ( i=0; i<10000; i++ ) {
+            dbr_float_t fval = 3.3F;
+            status = ca_array_put_callback (
+                    DBR_FLOAT, 1, chan, &fval,
+                    nUpdatesTester, &count );
+            SEVCHK ( status, NULL );
+        }
+        SEVCHK ( ca_flush_io (), NULL );
+        while ( count < 10000u ) {
+            ca_pend_event ( 0.1 );
+        }
+        showProgress ();
+    }
+    else {
+        printf ( "Skipped multiple put cb test - no write access\n" );
+    }
+}
+
+void verifyBadString ( chid chan )
+{
+    int status;
+
+    /*
+     * verify that we detect that a large string has been written
+     */
+    if ( ca_write_access (chan) ) {
+        dbr_string_t    stimStr;
+        dbr_string_t    respStr;
+        memset (stimStr, 'a', sizeof (stimStr) );
+        status = ca_array_put ( DBR_STRING, 1u, chan, stimStr );
+        assert ( status != ECA_NORMAL );
+        sprintf ( stimStr, "%u", 8u );
+        status = ca_array_put ( DBR_STRING, 1u, chan, stimStr );
+        assert ( status == ECA_NORMAL );
+        status = ca_array_get ( DBR_STRING, 1u, chan, respStr );
+        assert ( status == ECA_NORMAL );
+        status = ca_pend_io ( 0.0 );
+        assert ( status == ECA_NORMAL );
+        printf (
+"Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
+            stimStr, respStr);
+        showProgress ();
+    }
+    else {
+        printf ( "Skipped bad string test - no write access\n" );
+    }
+}
+
+/*
+ * multiple_sg_requests()
+ */
+void multiple_sg_requests ( chid chix, CA_SYNC_GID gid )
+{
+    int status;
+    unsigned i;
+    static dbr_float_t fvalput = 3.3F;
+    static dbr_float_t fvalget;
+
+    for ( i=0; i < 1000; i++ ) {
+        if ( ca_write_access (chix) ){
+            status = ca_sg_array_put ( gid, DBR_FLOAT, 1,
+                        chix, &fvalput);
+            SEVCHK ( status, NULL );
+        }
+
+        if ( ca_read_access (chix) ) {
+            status = ca_sg_array_get ( gid, DBR_FLOAT, 1,
+                    chix, &fvalget);
+            SEVCHK ( status, NULL );
+        }
+    }
+}
+
+/*
+ * test_sync_groups()
+ */
+void test_sync_groups ( chid chan )
+{
+    int status;
+    CA_SYNC_GID gid1=0;
+    CA_SYNC_GID gid2=0;
+
+    if ( ! ca_v42_ok ( chan ) ) {
+        printf ( "skipping sycnc group test - serveris on wron version\n" );
+    }
+
+    status = ca_sg_create ( &gid1 );
+    SEVCHK ( status, NULL );
+
+    multiple_sg_requests ( chan, gid1 );
+    status = ca_sg_reset ( gid1 );
+    SEVCHK ( status, NULL );
+
+    status = ca_sg_create ( &gid2 );
+    SEVCHK ( status, NULL );
+
+    multiple_sg_requests ( chan, gid2 );
+    multiple_sg_requests ( chan, gid1 );
+    status = ca_sg_test ( gid2 );
+    SEVCHK ( status, "SYNC GRP2" );
+    status = ca_sg_test ( gid1 );
+    SEVCHK ( status, "SYNC GRP1" );
+    status = ca_sg_block ( gid1, 500.0 );
+    SEVCHK ( status, "SYNC GRP1" );
+    status = ca_sg_block ( gid2, 500.0 );
+    SEVCHK ( status, "SYNC GRP2" );
+
+    status = ca_sg_delete ( gid2 );
+    SEVCHK (status, NULL);
+    status = ca_sg_create ( &gid2 );
+    SEVCHK (status, NULL);
+
+    multiple_sg_requests ( chan, gid1 );
+    multiple_sg_requests ( chan, gid2 );
+    status = ca_sg_block ( gid1, 15.0 );
+    SEVCHK ( status, "SYNC GRP1" );
+    status = ca_sg_block ( gid2, 15.0 );
+    SEVCHK ( status, "SYNC GRP2" );
+    status = ca_sg_delete  ( gid1 );
+    SEVCHK ( status, NULL );
+    status = ca_sg_delete ( gid2 );
+    SEVCHK ( status, NULL );
+
+    showProgress ();
+}
+
+/*
+ * performDeleteTest
+ *
+ * 1) verify we can add many monitors at once
+ * 2) verify that under heavy load the last monitor
+ *      returned is the last modification sent
+ */
+void performDeleteTest ( chid chan )
+{
+    unsigned count = 0u;
+    evid mid[1000];
+    dbr_float_t temp, getResp;
+    unsigned i;
+    
+    for ( i=0; i < NELEMENTS (mid); i++ ) {
+        SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
+            &count, &mid[i]) , NULL );
+    }
+
+    showProgress ();
+
+    /*
+     * force all of the monitors subscription requests to
+     * complete
+     *
+     * NOTE: this hopefully demonstrates that when the
+     * server is very busy with monitors the client 
+     * is still able to punch through with a request.
+     */
+    SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
+    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+
+    showProgress ();
+
+    /*
+     * attempt to generate heavy event traffic before initiating
+     * the monitor delete
+     */  
+    if ( ca_write_access (chan) ) {
+        for ( i=0; i < 10; i++ ) {
+            temp = (float) i;
+            SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+        }
+    }
+
+    showProgress ();
+
+    /*
+     * without pausing begin deleting the event suvbscriptions 
+     * while the queue is full
+     */
+    for ( i=0; i < NELEMENTS (mid); i++ ) {
+        SEVCHK ( ca_clear_event ( mid[i]), NULL );
+    }
+
+    showProgress ();
+
+    /*
+     * force all of the clear event requests to
+     * complete
+     */
+    SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
+    SEVCHK ( ca_pend_io (1000.0), NULL );
+
+    showProgress ();
+} 
+
+void eventClearTest ( chid chan )
+{
+    int status;
+    evid monix1, monix2, monix3;
+
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+                NULL, &monix1 );
+    SEVCHK ( status, NULL );
+
+    status = ca_clear_event ( monix1 );
+    SEVCHK ( status, NULL );
+
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+                NULL, &monix1 );
+    SEVCHK ( status, NULL );
+
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+                NULL, &monix2);
+    SEVCHK (status, NULL);
+
+    status = ca_clear_event ( monix2 );
+    SEVCHK ( status, NULL);
+
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+                NULL, &monix2);
+    SEVCHK ( status, NULL );
+
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+                NULL, &monix3);
+    SEVCHK ( status, NULL );
+
+    status = ca_clear_event ( monix2 );
+    SEVCHK ( status, NULL);
+
+    status = ca_clear_event ( monix1 );
+    SEVCHK ( status, NULL);
+
+    status = ca_clear_event ( monix3 );
+    SEVCHK ( status, NULL);
+}
+
+/*
+ * array test
+ *
+ * verify that we can at least write and read back the same array
+ * if multiple elements are present
+ */
+void arrayTest ( chid chan )
+{
+    dbr_double_t *pRF, *pWF;
+    unsigned i;
+    int status;
+
+    if ( ! ca_write_access ( chan ) ) {
+        printf ( "skipping array test - no write access\n" );
+    }
+
+    pRF = (dbr_double_t *) calloc ( ca_element_count (chan), sizeof (*pRF) );
+    assert ( pRF != NULL );
+
+    pWF = (dbr_double_t *) calloc ( ca_element_count (chan), sizeof (*pWF) );
+    assert ( pWF != NULL );
+
+    /*
+     * write some random numbers into the array
+     */
+    for ( i = 0; i < ca_element_count (chan); i++ ) {
+        pWF[i] =  rand ();
+        pRF[i] = - pWF[i];
+    }
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ), 
+                    chan, pWF ); 
+    SEVCHK ( status, "array write request failed" );
+
+    /*
+     * read back the array
+     */
+    status = ca_array_get ( DBR_DOUBLE,  ca_element_count (chan), 
+                    chan, pRF ); 
+    SEVCHK ( status, "array read request failed" );
+    status = ca_pend_io ( 30.0 );
+    SEVCHK ( status, "array read failed" );
+
+    /*
+     * verify read response matches values written
+     */
+    for ( i = 0; i < ca_element_count (chan); i++ ) {
+        assert ( pWF[i] == pRF[i] );
+    }
+
+    /*
+     * read back the array as strings
+     */
+    {
+        /* clip to 16k message buffer limit */
+        unsigned maxElem = ( ( 1 << 14 ) - 16 ) / MAX_STRING_SIZE;
+        unsigned nElem = min ( maxElem, ca_element_count (chan) );
+        char *pRS = malloc ( nElem * MAX_STRING_SIZE );
+
+        assert (pRS);
+        status = ca_array_get ( DBR_STRING, nElem, chan, pRS ); 
+        SEVCHK  ( status, "array read request failed" );
+        status = ca_pend_io ( 30.0 );
+        SEVCHK ( status, "array read failed" );
+        free ( pRS );
+    }
+
+    free ( pRF );
+    free ( pWF );
+
+    showProgress ();
+}
+
+/*
+ * pend_event_delay_test()
+ */
+void pend_event_delay_test(dbr_double_t request)
+{
+    int     status;
+    TS_STAMP    end_time;
+    TS_STAMP    start_time;
+    dbr_double_t    delay;
+    dbr_double_t    accuracy;
+
+    tsStampGetCurrent(&start_time);
+    status = ca_pend_event(request);
+    if (status != ECA_TIMEOUT) {
+        SEVCHK(status, NULL);
+    }
+    tsStampGetCurrent(&end_time);
+    delay = tsStampDiffInSeconds(&end_time,&start_time);
+    accuracy = 100.0*(delay-request)/request;
+    printf("CA pend event delay = %f sec results in error = %f %%\n",
+        request, accuracy);
+    assert (fabs(accuracy) < 10.0);
+}
+
+caTaskExistTest ()
+{
+    int status;
+
+    TS_STAMP end_time;
+    TS_STAMP start_time;
+    dbr_double_t delay;
+
+    tsStampGetCurrent ( &start_time );
+    printf ( "entering ca_task_exit()\n" );
+    status = ca_task_exit ();
+    SEVCHK ( status, NULL );
+    tsStampGetCurrent ( &end_time );
+    delay = tsStampDiffInSeconds ( &end_time, &start_time );
+    printf ( "in ca_task_exit() for %f sec\n", delay );
+}
+
+int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
+{
+    chid chan;
+    int status;
+    unsigned i;
+    appChan *pChans;
+
+    printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
+
+    pChans = calloc ( channelCount, sizeof ( *pChans ) );
+    assert ( pChans );
+
+    for ( i = 0; i < channelCount; i++ ) {
+        strncpy ( pChans[ i ].name, pName, sizeof ( pChans[ i ].name ) );
+        pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
+    }
+
+    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
+    verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
+    verifyClear ( pChans );
+
+    status = ca_search ( pName, &chan );
+    SEVCHK ( status, NULL );
+    status = ca_pend_io ( 100.0 );
+    SEVCHK ( status, NULL );
+
+    monitorSubscriptionFirstUpdateTest ( chan );
+    performGrEnumTest ( chan );
+    performCtrlDoubleTest ( chan );
+    verifyBlockInPendIO ( chan );
+    verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX, 
+               FLT_MIN_EXP, FLT_MAX_EXP, FLT_EPSILON );
+    verifyAnalogIO ( chan, DBR_DOUBLE, DBL_MIN, DBL_MAX, 
+               DBL_MIN_EXP, DBL_MAX_EXP, DBL_EPSILON );
+    verifyLongIO ( chan );
+    verifyShortIO ( chan );
+    verifyHighThroughputRead ( chan );
+    verifyHighThroughputWrite ( chan );
+    verifyHighThroughputReadCallback ( chan );
+    verifyHighThroughputWriteCallback ( chan );
+    verifyBadString ( chan );
+    test_sync_groups ( chan );
+    /* performMonitorUpdateTest ( chan ); */
+    performDeleteTest ( chan );
+    eventClearTest ( chan );
+    arrayTest ( chan ); 
+
+    /*
+     * Verify that we can do IO with the new types for ALH
+     */
+#if 0
+    if ( ca_read_access (chan) && ca_write_access (chan) ) {
+    {
+        dbr_put_ackt_t acktIn = 1u;
+        dbr_put_acks_t acksIn = 1u;
+        struct dbr_stsack_string stsackOut;
+
+        SEVCHK ( ca_put ( DBR_PUT_ACKT, chan, &acktIn ), NULL );
+        SEVCHK ( ca_put ( DBR_PUT_ACKS, chan, &acksIn ), NULL );
+        SEVCHK ( ca_get ( DBR_STSACK_STRING, chan, &stsackOut ), NULL );
+        SEVCHK ( ca_pend_io ( 2000.0 ), NULL );
+    }
+
+    {
+        TS_STAMP    end_time;
+        TS_STAMP    start_time;
+        dbr_double_t    delay;
+        dbr_double_t    request = 15.0;
+        dbr_double_t    accuracy;
+
+        tsStampGetCurrent(&start_time);
+        printf ("waiting for events for %f sec\n", request);
+        status = ca_pend_event (request);
+        if ( status != ECA_TIMEOUT ) {
+            SEVCHK ( status, NULL );
+        }
+        tsStampGetCurrent ( &end_time );
+        delay = tsStampDiffInSeconds ( &end_time, &start_time );
+        accuracy = 100.0 * ( delay - request ) / request;
+        printf ( "CA pend event delay accuracy = %f %%\n", accuracy );
+    }
+#endif
+
+    /*
+     * CA pend event delay accuracy test
+     * (CA asssumes that search requests can be sent
+     * at least every 25 mS on all supported os)
+     */
+    pend_event_delay_test ( 1.0 );
+    pend_event_delay_test ( 0.1 );
+    pend_event_delay_test ( 0.25 ); 
+
+    caTaskExistTest ();
+
+    printf ( "\nTest Complete\n" );
+
+    return 0;
+}
+
+/*
+ * write_event ()
+ */
+void write_event (struct event_handler_args args)
+{
+    static unsigned iterations = 100;
+    int status;
+    dbr_float_t *pFloat = (dbr_float_t *) args.dbr;
+    dbr_float_t a;
+
+    if ( ! args.dbr ) {
+        return;
+    }
+
+    if ( iterations > 0 ) {
+        iterations--;
+
+        a = *pFloat;
+        a += 10.1F;
+
+        status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
+        SEVCHK ( status, NULL );
+        SEVCHK ( ca_flush_io (), NULL );
+    }
+}
+
+/*
+ * accessSecurity_cb()
+ */
+void accessSecurity_cb(struct access_rights_handler_args args)
+{
+#   ifdef DEBUG
+        printf( "%s on %s has %s/%s access\n",
+            ca_name(args.chid),
+            ca_host_name(args.chid),
+            ca_read_access(args.chid)?"read":"noread",
+            ca_write_access(args.chid)?"write":"nowrite");
+#   endif
+}
+
 
 typedef struct {
     evid            id;
@@ -1427,74 +1522,5 @@ void performMonitorUpdateTest ( chid chan )
     printf ("flow control bypassed %u events\n", flowCtrlCount);
 } 
 
-/*
- * performDeleteTest
- *
- * 1) verify we can add many monitors at once
- * 2) verify that under heavy load the last monitor
- *      returned is the last modification sent
- */
-void performDeleteTest (chid chan)
-{
-    unsigned    count = 0u;
-    evid        mid[1000];
-    dbr_float_t temp, getResp;
-    unsigned    i;
-    
-    printf ( "Performing event subscription delete test..." );
-    fflush ( stdout );
 
-    for ( i=0; i<NELEMENTS(mid); i++ ) {
-        SEVCHK ( ca_add_event(DBR_GR_FLOAT, chan, null_event,
-            &count, &mid[i]),NULL );
-    }
-
-    /*
-     * force all of the monitors subscription requests to
-     * complete
-     *
-     * NOTE: this hopefully demonstrates that when the
-     * server is very busy with monitors the client 
-     * is still able to punch through with a request.
-     */
-    SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
-    SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
-
-    printf ( "writing..." );
-    fflush ( stdout );
-
-    /*
-     * attempt to generate heavy event traffic before initiating
-     * the monitor delete
-     */  
-    if ( ca_write_access (chan) ) {
-        for (i=0; i<10; i++) {
-            temp = (float) i;
-            SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
-        }
-    }
-
-    printf ( "deleting..." );
-    fflush ( stdout );
-
-    /*
-     * without pausing begin deleting the event suvbscriptions 
-     * while the queue is full
-     */
-    for ( i=0; i < NELEMENTS (mid); i++ ) {
-        SEVCHK ( ca_clear_event ( mid[i]), NULL );
-    }
-
-    printf ( "flushing..." );
-    fflush ( stdout );
-
-    /*
-     * force all of the clear event requests to
-     * complete
-     */
-    SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
-    SEVCHK ( ca_pend_io (1000.0), NULL );
-
-    printf ("done.\n");
-} 
 

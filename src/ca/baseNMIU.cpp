@@ -11,20 +11,21 @@
  */
 
 #include "iocinf.h"
+#include "nciu_IL.h"
 
-baseNMIU::baseNMIU ( nciu &chanIn ) : chan (chanIn)
+baseNMIU::baseNMIU ( nciu &chanIn ) : chan ( chanIn )
 {
-    this->chan.installIO ( *this );
-}
-
-void baseNMIU::destroy ()
-{
-    delete this;
+    chanIn.ioInstall ( *this );
 }
 
 baseNMIU::~baseNMIU ()
 {
-    this->chan.uninstallIO ( *this );
+    // private NOOP forces pool allocation
+}
+
+void baseNMIU::destroy ()
+{
+    this->chan.ioDestroy ( this->getId () );
 }
 
 int baseNMIU::subscriptionMsg ()

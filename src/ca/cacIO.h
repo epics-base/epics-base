@@ -86,8 +86,8 @@ public:
 protected:
     class cacChannelIO *pChannelIO;
 
-    void lock () const;
-    void unlock () const;
+    void lockOutstandingIO () const;
+    void unlockOutstandingIO () const;
 
 private:
     virtual void ioAttachNotify ();
@@ -116,8 +116,8 @@ public:
 
     virtual const char *pName () const = 0;
 
-    virtual void lock () const = 0;
-    virtual void unlock () const = 0;
+    virtual void lockOutstandingIO () const = 0;
+    virtual void unlockOutstandingIO () const = 0;
 
 private:
     virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;
@@ -143,11 +143,11 @@ private:
     friend class cacChannel;
 };
 
-class epicsShareClass cacLocalChannelIO : 
+class cacLocalChannelIO : 
     public cacChannelIO, public tsDLNode <cacLocalChannelIO> {
 public:
-    cacLocalChannelIO ( cacChannel &chan );
-    virtual ~cacLocalChannelIO () = 0;
+    epicsShareFunc cacLocalChannelIO ( cacChannel &chan );
+    epicsShareFunc virtual ~cacLocalChannelIO () = 0;
 };
 
 struct cacServiceIO : public tsDLNode <cacServiceIO> {

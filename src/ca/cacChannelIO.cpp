@@ -107,4 +107,12 @@ void cacChannelIO::decrementOutstandingIO ()
 {
 }
 
+void cacChannelIO::lockOutstandingIO () const
+{
+}
+
+void cacChannelIO::unlockOutstandingIO () const
+{
+}
+
 

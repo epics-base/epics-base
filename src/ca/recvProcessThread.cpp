@@ -18,8 +18,8 @@
 
 #include <iocinf.h>
 
-processThread::processThread (cac *pcacIn) :
-    osiThread ( "CAC-process", threadGetStackSize (threadStackSmall), threadPriorityMedium ), 
+recvProcessThread::recvProcessThread (cac *pcacIn) :
+    osiThread ( "CAC-recv-process", threadGetStackSize (threadStackSmall), threadPriorityMedium ), 
     pcac ( pcacIn ),
     enableRefCount ( 0u ),
     blockingForCompletion ( 0u ),
@@ -29,18 +29,18 @@ processThread::processThread (cac *pcacIn) :
     this->start ();
 }
 
-processThread::~processThread ()
+recvProcessThread::~recvProcessThread ()
 {
     this->signalShutDown ();
     while ( ! this->exit.wait ( 10.0 ) ) {
-        printf ("processThread::~processThread (): Warning, thread object destroyed before thread exit \n");
+        errlogPrintf ("recvProcessThread::~recvProcessThread (): Warning, thread object destroyed before thread exit \n");
     }
 }
 
-void processThread::entryPoint ()
+void recvProcessThread::entryPoint ()
 {
     int status = ca_attach_context ( this->pcac );
-    SEVCHK ( status, "attaching to client context in process thread" );
+    SEVCHK ( status, "attaching to client context in recv process thread" );
     while ( ! this->shutDown ) {
 
         this->mutex.lock ();
@@ -58,18 +58,18 @@ void processThread::entryPoint ()
             this->processingDone.signal ();
         }
 
-        this->pcac->recvActivity.wait ();
+        this->recvActivity.wait ();
     }
     this->exit.signal ();
 }
 
-void processThread::signalShutDown ()
+void recvProcessThread::signalShutDown ()
 {
     this->shutDown = true;
-    this->pcac->recvActivity.signal ();
+    this->recvActivity.signal ();
 }
 
-void processThread::enable ()
+void recvProcessThread::enable ()
 {
     unsigned copy;
 
@@ -80,11 +80,11 @@ void processThread::enable ()
     this->mutex.unlock ();
     
     if ( copy == 0u ) {
-        this->pcac->recvActivity.signal ();
+        this->recvActivity.signal ();
     }
 }
 
-void processThread::disable ()
+void recvProcessThread::disable ()
 {
     bool waitNeeded;
 
@@ -111,4 +111,9 @@ void processThread::disable ()
             this->processingDone.signal ();
         }
     }
+}
+
+void recvProcessThread::signalActivity ()
+{
+    this->recvActivity.signal ();
 }

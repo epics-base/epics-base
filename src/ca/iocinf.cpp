@@ -116,8 +116,8 @@ epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates
                     if (pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
                         pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
                         char buf[64];
-                        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
-                        ca_printf ("Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf);
+                        ipAddrToA ( &pNode->addr.ia, buf, sizeof (buf) );
+                        ca_printf ( "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
                         free (pNode);
                         pNode = NULL;
                         break;
@@ -139,7 +139,7 @@ epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates
  * configureChannelAccessAddressList ()
  */
 epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
-        (ELLLIST *pList, SOCKET sock, unsigned short port)
+        ( ELLLIST *pList, SOCKET sock, unsigned short port )
 {
     ELLLIST         tmpList;
     char            *pstr;
@@ -149,7 +149,7 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
     /*
      * dont load the list twice
      */
-    assert ( ellCount(pList) == 0 );
+    assert ( ellCount (pList) == 0 );
 
     ellInit ( &tmpList );
 
@@ -202,16 +202,16 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
 /*
  * printChannelAccessAddressList ()
  */
-epicsShareFunc void epicsShareAPI printChannelAccessAddressList (const ELLLIST *pList)
+epicsShareFunc void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pList )
 {
     osiSockAddrNode *pNode;
 
-    printf ("Channel Access Address List\n");
-    pNode = (osiSockAddrNode *) ellFirst (pList);
+    printf ( "Channel Access Address List\n" );
+    pNode = (osiSockAddrNode *) ellFirst ( pList );
     while (pNode) {
         char buf[64];
-        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
-        printf ("%s\n", buf);
-        pNode = (osiSockAddrNode *) ellNext (&pNode->node);
+        ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
+        printf ( "%s\n", buf );
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
     }
 }

@@ -6,7 +6,7 @@
 
 static const unsigned defaultIterations = 10000u;
 
-int main(int argc, char **argv)
+int main ( int argc, char **argv )
 {
     const char *pUsage = "<channel name> [<channel count> [<if 3rd arg present append number to pv name>]]";
 

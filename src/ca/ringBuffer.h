@@ -25,45 +25,43 @@
 #define nElementsInRing (1<<nBitsRingIndex)
 
 typedef struct ringBuffer {
-    semBinaryId         readSignal;
-    semBinaryId         writeSignal;
     semMutexId          readLock;
     semMutexId          writeLock;
     unsigned            rdix; /* index of last char read  */ 
     unsigned            wtix; /* index of next char to write */
-    unsigned            shutDown;
     char                buf[nElementsInRing];
 } ringBuffer;
 
-int cacRingBufferConstruct (ringBuffer *pBuf);
-void cacRingBufferDestroy (ringBuffer *pBuf);
+bool cacRingBufferConstruct ( ringBuffer *pBuf );
 
-unsigned cacRingBufferWrite (ringBuffer *pRing, 
-          const void *pBuf, unsigned nBytes);
+void cacRingBufferDestroy ( ringBuffer *pBuf );
 
-unsigned cacRingBufferRead (ringBuffer *pRing, 
-                                 void *pBuf, unsigned nBytes);
+void cacRingBufferWriteLock ( ringBuffer *pBuf );
 
-void cacRingBufferWriteLock (ringBuffer *pBuf);
+bool cacRingBufferWriteLockIfBytesAvailable ( ringBuffer *pBuf, unsigned bytesRequired );
 
-bool cacRingBufferWriteLockNoBlock (ringBuffer *pBuf, unsigned bytesRequired);
+void cacRingBufferWriteUnlock ( ringBuffer *pBuf );
 
-void cacRingBufferWriteUnlock (ringBuffer *pBuf);
+unsigned cacRingBufferWrite ( ringBuffer *pBuf, const void *pMsg, unsigned nBytes );
 
-void *cacRingBufferWriteReserve (ringBuffer *pBuf, unsigned *pAvailBytes);
+bool cacRingBufferWriteNoBlock ( ringBuffer *pBuf, const void *pMsg, unsigned nBytes );
 
-void cacRingBufferWriteCommit (ringBuffer *pBuf, unsigned delta);
+struct msgDescriptor {
+    const void *pMsg;
+    unsigned length;
+};
 
-void *cacRingBufferReadReserve (ringBuffer *pBuf, unsigned *pBytesAvail);
+bool cacRingBufferWriteMultipartMessageNoBlock ( ringBuffer *pBuf, 
+                     const msgDescriptor *pMsgs, unsigned nMsgs );
 
-void *cacRingBufferReadReserveNoBlock (ringBuffer *pBuf, unsigned *pBytesAvail);
+void *cacRingBufferWriteReserve ( ringBuffer *pBuf, unsigned *pBytesAvail );
 
-void cacRingBufferReadCommit (ringBuffer *pBuf, unsigned delta);
+void cacRingBufferWriteCommit ( ringBuffer *pBuf, unsigned delta );
 
-// return true if there was something to flush and otherwise false
-bool cacRingBufferReadFlush (ringBuffer *pBuf);
-bool cacRingBufferWriteFlush (ringBuffer *pBuf);
+void *cacRingBufferReadReserve ( ringBuffer *pBuf, unsigned *pBytesAvail );
 
-void cacRingBufferShutDown (ringBuffer *pBuf);
+bool cacRingBufferReadNoBlock ( ringBuffer *pBuf, void *pDest, unsigned nBytesRequired );
+
+void cacRingBufferReadCommit ( ringBuffer *pBuf, unsigned delta );
 
 #endif /* ringBufferh */

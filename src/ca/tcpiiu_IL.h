@@ -18,7 +18,7 @@
 
 inline osiSockAddr tcpiiu::address () const
 {
-    return this->dest;
+    return this->ipToA.address ();
 }
 
 inline void * tcpiiu::operator new (size_t size)
@@ -33,41 +33,55 @@ inline void tcpiiu::operator delete (void *pCadaver, size_t size)
 
 inline bool tcpiiu::fullyConstructed () const
 {
-    return this->fc;
-}
-
-inline void tcpiiu::flush ()
-{
-    if ( cacRingBufferWriteFlush ( &this->send ) ) {
-        this->armSendWatchdog ();
-    }
+    return this->fullyConstructedFlag;
 }
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {
-    if ( bufLength ) {
-        strncpy ( pBuf, this->host_name_str, bufLength );
-        pBuf[bufLength - 1u] = '\0';
-    }
+    this->ipToA.hostName ( pBuf, bufLength );
 }
 
 // deprecated - please dont use
 inline const char * tcpiiu::pHostName () const
 {
-    return this->host_name_str;
-}
-
-inline bool tcpiiu::ca_v42_ok () const
-{
-    return CA_V42 (CA_PROTOCOL_VERSION, this->minor_version_number);
-}
-
-inline bool tcpiiu::ca_v41_ok () const
-{
-    return CA_V41 (CA_PROTOCOL_VERSION, this->minor_version_number);
+    static char nameBuf [128];
+    this->ipToA.hostName ( nameBuf, sizeof ( nameBuf ) );
+    return nameBuf; // ouch !!
 }
 
 inline SOCKET tcpiiu::getSock () const
 {
     return this->sock;
+}
+
+inline void tcpiiu::flush ()
+{
+    this->flushPending = true;
+    semBinaryGive ( this->sendThreadFlushSignal );
+}
+
+inline bool tcpiiu::ca_v44_ok () const
+{
+    return CA_V44 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+}
+
+inline bool tcpiiu::ca_v42_ok () const
+{
+    return CA_V42 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+}
+
+inline bool tcpiiu::ca_v41_ok () const
+{
+    return CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+}
+
+inline bool tcpiiu::alive () const
+{
+    if ( this->state == iiu_connecting || 
+        this->state == iiu_connected ) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }

@@ -74,14 +74,18 @@
  * environment variables "EPICS_CA_REPEATER_PORT" and
  * "EPICS_CA_SERVER_PORT"
  */
-#define CA_PORT_BASE        IPPORT_USERRESERVED + 56U
-#define CA_SERVER_PORT      (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u)
-#define CA_REPEATER_PORT    (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u+1u)
-/* 1492(min of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) joh 8-6-97 */
-#define ETHERNET_MAX_UDP    (1482u-20u-8u)
-#define MAX_UDP             1024u /* original MAX_UDP */
-#define MAX_TCP             (MAX_UDP*16u) /* so waveforms fit */
-#define MAX_MSG_SIZE        (MAX_TCP) /* the larger of tcp and udp max */
+#define CA_PORT_BASE            IPPORT_USERRESERVED + 56U
+#define CA_SERVER_PORT          (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u)
+#define CA_REPEATER_PORT        (CA_PORT_BASE+CA_PROTOCOL_VERSION*2u+1u)
+/* 
+ * 1500 (max of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) 
+ * (the MTU of Ethernet is currently independent of speed varient)
+ */
+#define ETHERNET_MAX_UDP        ( 1500u - 20u - 8u )
+#define MAX_UDP_RECV            ( 0xffff + 16u ) /* allow large frames to be received in the future */
+#define MAX_UDP_SEND            1024u /* original MAX_UDP */
+#define MAX_TCP                 ( 1024 * 16u ) /* so waveforms fit */
+#define MAX_MSG_SIZE            ( MAX_TCP ) /* the larger of tcp and udp max */
 
 /*
  * architecture independent types
@@ -118,7 +122,7 @@ typedef ca_uint32_t     caResId;
 #define CA_PROTO_HOST_NAME      21u /* CA V4.1 identify client */
 #define CA_PROTO_ACCESS_RIGHTS  22u /* CA V4.2 asynch access rights chg */
 #define CA_PROTO_ECHO           23u /* CA V4.3 connection verify */
-#define REPEATER_REGISTER       24u /* registr for repeater fan out */
+#define REPEATER_REGISTER       24u /* register for repeater fan out */
 #define CA_PROTO_SIGNAL         25u /* knock the server out of select */
 #define CA_PROTO_CLAIM_CIU_FAILED 26u   /* unable to create chan resource in server */
 #define CA_PROTO_SERVER_DISCONN 27u /* server deletes PV (or channel) */

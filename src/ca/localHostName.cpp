@@ -20,10 +20,25 @@ localHostName localHostNameAtLoadTime;
 
 localHostName::localHostName ()
 {
-    int status = gethostname ( this->cache, sizeof ( this->cache ) );
+    int status = osiSockAttach ();
     if ( status ) {
-        strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
-        localHostName::cache [ sizeof ( this->cache ) - 1u ] = '\0';
+        this->attachedToSockLib = true;
+        int status = gethostname ( this->cache, sizeof ( this->cache ) );
+        if ( status ) {
+            strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
+            localHostName::cache [ sizeof ( this->cache ) - 1u ] = '\0';
+        }
+        this->length = strlen ( this->cache );
     }
-    this->length = strlen ( this->cache );
+    else {
+        this->attachedToSockLib = false;
+        strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
+    }
+}
+
+localHostName::~localHostName ()
+{
+    if ( this->attachedToSockLib ) {
+        osiSockRelease ();
+    }
 }

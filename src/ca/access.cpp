@@ -25,6 +25,7 @@
 
 #include "iocinf.h"
 #include "oldAccess.h"
+#include "cac_IL.h"
 
 threadPrivateId caClientContextId;
 
@@ -229,7 +230,7 @@ int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
     int             caStatus;
     cac             *pcac;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -238,16 +239,23 @@ int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
         return ECA_EMPTYSTR;
     }
 
-    pChan = new oldChannel (conn_func, puser);
+    pChan = new oldChannel ( conn_func, puser );
     if ( ! pChan ) {
         return ECA_ALLOCMEM;
     }
 
+    // we must set *chanptr here before we are 100% certain that
+    // the channel can be created in case *chanptr is inside
+    // of their structure at address puser and they reference
+    // it in a connection handler that is called by createChannelIO()
+    chid tmp = *chanptr;
+    *chanptr = pChan;
+
     if ( pcac->createChannelIO ( name_str, *pChan ) ) {
-        *chanptr = pChan;
         return ECA_NORMAL;
     }
     else {
+        *chanptr = tmp;
         pChan->destroy ();
         return ECA_ALLOCMEM;
     }
@@ -428,7 +436,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
     cac *pcac;
     int status;
 
-    status = fetchClientContext (&pcac);
+    status = fetchClientContext ( &pcac );
     if ( status != ECA_NORMAL ) {
         return status;
     }
@@ -660,16 +668,16 @@ int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
 /*
  * ca_printf()
  */
-int ca_printf (const char *pformat, ...)
+int ca_printf ( const char *pformat, ... )
 {
     va_list theArgs;
     int status;
 
-    va_start (theArgs, pformat);
+    va_start ( theArgs, pformat );
     
-    status = ca_vPrintf (pformat, theArgs);
+    status = ca_vPrintf ( pformat, theArgs );
     
-    va_end (theArgs);
+    va_end ( theArgs );
     
     return status;
 }
@@ -677,31 +685,27 @@ int ca_printf (const char *pformat, ...)
 /*
  * ca_vPrintf()
  */
-int ca_vPrintf (const char *pformat, va_list args)
+int ca_vPrintf ( const char *pformat, va_list args )
 {
-    caPrintfFunc *ca_printf_func;
-
     if ( caClientContextId ) {
         cac *pcac = (cac *) threadPrivateGet ( caClientContextId );
-        if (pcac) {
-            ca_printf_func = pcac->ca_printf_func;
+        if ( pcac ) {
+            return pcac->vPrintf ( pformat, args );
         }
         else {
-            ca_printf_func = errlogVprintf;
+            return ( *errlogVprintf ) ( pformat, args );
         }
     }
     else {
-        ca_printf_func = errlogVprintf;
+        return ( *errlogVprintf ) ( pformat, args );
     }
-
-    return (*ca_printf_func) ( pformat, args );
 }
 
 
 /*
  * ca_field_type()
  */
-short epicsShareAPI ca_field_type (chid pChan) 
+short epicsShareAPI ca_field_type ( chid pChan ) 
 {
     return pChan->nativeType ();
 }

@@ -83,7 +83,7 @@ unsigned    *pInlineIter
 /*
  * test_search ()
  */
-LOCAL void test_search(
+LOCAL void test_search (
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -92,12 +92,12 @@ unsigned    *pInlineIter
     unsigned i;
     int status;
 
-    for (i=0u; i<iterations; i++) {
-        status = ca_search (pItems[i].name, &pItems[i].chix);
+    for ( i = 0u; i < iterations; i++ ) {
+        status = ca_search ( pItems[i].name, &pItems[i].chix );
         SEVCHK (status, NULL);
     }
-    status = ca_pend_io(0.0);
-        SEVCHK (status, NULL);
+    status = ca_pend_io ( 0.0 );
+        SEVCHK ( status, NULL );
 
     *pInlineIter = 1;
 }

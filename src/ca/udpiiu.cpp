@@ -15,8 +15,42 @@
 #include "iocinf.h"
 #include "addrList.h"
 #include "inetAddrID_IL.h"
+#include "netiiu_IL.h"
 
 typedef void (*pProtoStubUDP) (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr);
+
+// UDP protocol dispatch table
+const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC[] = 
+{
+    udpiiu::noopAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::searchRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::exceptionRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::beaconAction,
+    udpiiu::notHereRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::repeaterAckAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction,
+    udpiiu::badUDPRespAction
+};
 
 //
 //  udpiiu::recvMsg ()
@@ -62,12 +96,12 @@ void udpiiu::recvMsg ()
             SOCKERRSTR (errnoCpy) );
     }
     else if (status > 0) {
-        status = this->post_msg ( &src.ia,
+        status = this->postMsg ( src,
                     this->recvBuf, (unsigned long) status );
         if ( status != ECA_NORMAL ) {
             char buf[64];
 
-            ipAddrToA (&src.ia, buf, sizeof(buf));
+            sockAddrToA ( &src.sa, buf, sizeof (buf) );
 
             ca_printf (
                 "%s: bad UDP msg from %s because \"%s\"\n", __FILE__, 
@@ -210,27 +244,27 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-int repeater_installed (udpiiu *piiu)
+bool udpiiu::repeaterInstalled ()
 {
-    int                 installed = FALSE;
+    bool                installed = false;
     int                 status;
     SOCKET              sock;
     struct sockaddr_in  bd;
     int                 flag;
 
-    sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sock == INVALID_SOCKET) {
+    sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( sock == INVALID_SOCKET ) {
         return installed;
     }
 
-    memset ( (char *) &bd, 0, sizeof (bd) );
+    memset ( (char *) &bd, 0, sizeof ( bd ) );
     bd.sin_family = AF_INET;
-    bd.sin_addr.s_addr = htonl (INADDR_ANY); 
-    bd.sin_port = htons (piiu->repeaterPort);   
-    status = bind (sock, (struct sockaddr *) &bd, sizeof(bd) );
-    if (status<0) {
-        if (SOCKERRNO == SOCK_EADDRINUSE) {
-            installed = TRUE;
+    bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+    bd.sin_port = htons ( this->repeaterPort );   
+    status = bind ( sock, (struct sockaddr *) &bd, sizeof ( bd ) );
+    if ( status < 0 ) {
+        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+            installed = true;
         }
     }
 
@@ -240,12 +274,12 @@ int repeater_installed (udpiiu *piiu)
      */
     flag = TRUE;
     status = setsockopt ( sock, SOL_SOCKET, SO_REUSEADDR, 
-                (char *)&flag, sizeof (flag) );
+                (char *)&flag, sizeof ( flag ) );
     if (status<0) {
         ca_printf ( "CAC: set socket option reuseaddr set failed\n");
     }
 
-    socket_close (sock);
+    socket_close ( sock );
 
     return installed;
 }
@@ -253,9 +287,8 @@ int repeater_installed (udpiiu *piiu)
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( cac *pcac ) :
-    netiiu ( pcac ),
-    shutdownCmd ( false )
+udpiiu::udpiiu ( cac &cac ) :
+    netiiu ( cac ), shutdownCmd ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -265,8 +298,11 @@ udpiiu::udpiiu ( cac *pcac ) :
     this->repeaterPort = 
         envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
 
-    this->sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (this->sock == INVALID_SOCKET) {
+    this->serverPort = 
+        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, CA_SERVER_PORT );
+
+    this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( this->sock == INVALID_SOCKET ) {
         ca_printf ("CAC: unable to create datagram socket because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
@@ -306,7 +342,7 @@ udpiiu::udpiiu ( cac *pcac ) :
     addr.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
     addr.ia.sin_port = htons (PORT_ANY);   
     status = bind (this->sock, &addr.sa, sizeof (addr) );
-    if (status<0) {
+    if ( status < 0 ) {
         socket_close (this->sock);
         ca_printf ("CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
@@ -315,16 +351,9 @@ udpiiu::udpiiu ( cac *pcac ) :
 
     this->nBytesInXmitBuf = 0u;
 
-    this->xmitBufLock = semMutexCreate ();
-    if (!this->xmitBufLock) {
-        socket_close (this->sock);
-        throwWithLocation ( noMemory () );
-    }
-
-    this->recvThreadExitSignal = semBinaryCreate (semEmpty);
+    this->recvThreadExitSignal = semBinaryCreate ( semEmpty );
     if ( ! this->recvThreadExitSignal ) {
-        semMutexDestroy (this->xmitBufLock);
-        socket_close (this->sock);
+        socket_close ( this->sock );
         throwWithLocation ( noMemory () );
     }
 
@@ -333,9 +362,9 @@ udpiiu::udpiiu ( cac *pcac ) :
      * broadcast address list
      */
     ellInit ( &this->dest );
-    configureChannelAccessAddressList (&this->dest, this->sock, pcac->ca_server_port);
+    configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
     if ( ellCount ( &this->dest ) == 0 ) {
-        genLocalExcep ( this->pcas, ECA_NOSEARCHADDR, NULL );
+        genLocalExcep ( this->clientCtx (), ECA_NOSEARCHADDR, NULL );
     }
   
     {
@@ -349,18 +378,17 @@ udpiiu::udpiiu ( cac *pcac ) :
             priorityOfRecv = priorityOfSelf;
         }
 
-        tid = threadCreate ("CAC-UDP", priorityOfRecv,
-                threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this);
+        tid = threadCreate ( "CAC-UDP", priorityOfRecv,
+                threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this );
         if (tid==0) {
             ca_printf ("CA: unable to create UDP receive thread\n");
             semBinaryDestroy (this->recvThreadExitSignal);
-            semMutexDestroy (this->xmitBufLock);
             socket_close (this->sock);
             throwWithLocation ( noMemory () );
         }
     }
 
-    if ( ! repeater_installed (this) ) {
+    if ( ! this->repeaterInstalled () ) {
         osiSpawnDetachedProcessReturn osptr;
         
 	    /*
@@ -369,7 +397,7 @@ udpiiu::udpiiu ( cac *pcac ) :
 	     * the 2nd repeater exits when unable to attach to the 
 	     * repeater's port)
 	     */
-        osptr = osiSpawnDetachedProcess ("CA Repeater", "caRepeater");
+        osptr = osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
         if ( osptr == osiSpawnDetachedProcessNoSupport ) {
             threadId tid;
 
@@ -390,28 +418,22 @@ udpiiu::udpiiu ( cac *pcac ) :
  */
 udpiiu::~udpiiu ()
 {
-    nciu *pChan, *pNext;
 
     // closes the udp socket
     this->shutdown ();
 
-    this->pcas->lock ();
-    tsDLIter <nciu> iter (this->chidList);
-    pChan = iter ();
-    while (pChan) {
-        pNext = iter ();
-        pChan->destroy ();
-        pChan = pNext;
-    }
-    this->pcas->unlock ();
+    this->detachAllChan ();
 
     // wait for recv threads to exit
-    semBinaryMustTake (this->recvThreadExitSignal);
+    semBinaryMustTake ( this->recvThreadExitSignal );
 
-    semMutexDestroy (this->xmitBufLock);
-    semBinaryDestroy (this->recvThreadExitSignal);
+    semBinaryDestroy ( this->recvThreadExitSignal );
 
-    ellFree (&this->dest);
+    ellFree ( &this->dest );
+
+    if ( this->sock != INVALID_SOCKET ) {
+        socket_close ( this->sock );
+    }
 }
 
 /*
@@ -419,62 +441,72 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    this->pcas->lock ();
-    if ( ! this->shutdownCmd ) {
-        int status;
+    bool laborRequired;
 
-        // this knocks the UDP input thread out of recv ()
+    this->lock ();
+    if ( ! this->shutdownCmd ) {
         this->shutdownCmd = true;
-        status = socket_close ( this->sock );
-        if ( status ) {
-            errlogPrintf ( "CAC UDP socket close error was \"%s\"\n", 
-                SOCKERRSTR (SOCKERRNO) );
+        laborRequired = true;
+    }
+    else {
+        laborRequired = false;
+    }
+    this->unlock ();
+
+    if ( laborRequired ) {
+        int status;
+        osiSockAddr addr;
+        int size = sizeof ( addr.sa );
+
+        status = getsockname ( this->sock, &addr.sa, &size );
+        if ( status < 0 ) {
+            // this knocks the UDP input thread out of recv ()
+            // on all os except linux
+            socket_close ( this->sock );
+            this->sock = INVALID_SOCKET;
+        }
+        else {
+            caHdr msg;
+            msg.m_cmmd = htons ( CA_PROTO_NOOP );
+            msg.m_available = htonl ( 0u );
+            msg.m_dataType = htons ( 0u );
+            msg.m_count = htons ( 0u );
+            msg.m_cid = htonl ( 0u );
+            msg.m_postsize = htons ( 0u );
+
+            // send a wakeup msg so the UDP recv thread will exit
+            status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  sizeof (msg), 0, 
+                    &addr.sa, sizeof ( addr.sa ) );
+            if ( status < 0 ) {
+                // this knocks the UDP input thread out of recv ()
+                // on all os except linux
+                socket_close ( this->sock );
+                this->sock = INVALID_SOCKET;
+            }
         }
     }
-    this->pcas->unlock ();
 }
 
-/*
- * bad_udp_resp_action ()
- */
-LOCAL void bad_udp_resp_action (udpiiu * /* piiu */, 
-	caHdr *pMsg, const struct sockaddr_in *pnet_addr)
+void udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
 {
     char buf[256];
-    ipAddrToA ( pnet_addr, buf, sizeof (buf) );
+    sockAddrToA ( &netAddr.sa, buf, sizeof ( buf ) );
     ca_printf ( "CAC: Bad response code in UDP message from %s was %u\n", 
-        buf, pMsg->m_cmmd);
+        buf, msg.m_cmmd);
 }
 
-/*
- * udp_noop_action ()
- */
-LOCAL void udp_noop_action (udpiiu * /* piiu */, caHdr * /* pMsg */, 
-                            const struct sockaddr_in * /* pnet_addr */)
+void udpiiu::noopAction ( const caHdr &, const osiSockAddr & )
 {
     return;
 }
 
-/*
- * search_resp_action ()
- */
-LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr)
+void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
 {
-    struct sockaddr_in  ina;
-    nciu                *chan;
-    tcpiiu              *allocpiiu;
-    unsigned short      *pMinorVersion;
-    unsigned            minorVersion;
+    osiSockAddr serverAddr;
+    unsigned minorVersion;
+    ca_uint16_t *pMinorVersion;
 
-    /*
-     * ignore broadcast replies for deleted channels
-     * 
-     * lock required around use of the sprintf buffer
-     */
-    piiu->pcas->lock ();
-    chan = piiu->pcas->lookupChan (pMsg->m_available);
-    if ( ! chan ) {
-        piiu->pcas->unlock ();
+    if ( addr.sa.sa_family != AF_INET ) {
         return;
     }
 
@@ -483,9 +515,9 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
      * is appended to the end of each search reply.
      * This value is ignored by earlier clients.
      */
-    if ( pMsg->m_postsize >= sizeof (*pMinorVersion) ){
-        pMinorVersion = (unsigned short *) (pMsg+1);
-        minorVersion = ntohs (*pMinorVersion);      
+    if ( msg.m_postsize >= sizeof (*pMinorVersion) ){
+        pMinorVersion = (ca_uint16_t *) ( &msg + 1 );
+        minorVersion = ntohs ( *pMinorVersion );      
     }
     else {
         minorVersion = CA_UKN_MINOR_VERSION;
@@ -495,109 +527,49 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
      * the type field is abused to carry the port number
      * so that we can have multiple servers on one host
      */
-    ina.sin_family = AF_INET;
+    serverAddr.ia.sin_family = AF_INET;
     if ( CA_V48 (CA_PROTOCOL_VERSION,minorVersion) ) {
-        if ( pMsg->m_cid != INADDR_BROADCAST ) {
+        if ( msg.m_cid != INADDR_BROADCAST ) {
             /*
              * Leave address in network byte order (m_cid has not been 
              * converted to the local byte order)
              */
-            ina.sin_addr.s_addr = pMsg->m_cid;
+            serverAddr.ia.sin_addr.s_addr = msg.m_cid;
         }
         else {
-            ina.sin_addr = pnet_addr->sin_addr;
+            serverAddr.ia.sin_addr = addr.ia.sin_addr;
         }
-        ina.sin_port = htons (pMsg->m_dataType);
+        serverAddr.ia.sin_port = htons (msg.m_dataType);
     }
     else if ( CA_V45 (CA_PROTOCOL_VERSION,minorVersion) ) {
-        ina.sin_port = htons (pMsg->m_dataType);
-        ina.sin_addr = pnet_addr->sin_addr;
+        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+        serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
     else {
-        ina.sin_port = htons (piiu->pcas->ca_server_port);
-        ina.sin_addr = pnet_addr->sin_addr;
+        serverAddr.ia.sin_port = htons ( this->serverPort );
+        serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
-
-    /*
-     * Ignore duplicate search replies
-     */
-    if ( chan->piiu->compareIfTCP (*chan, *pnet_addr) ) {
-        piiu->pcas->unlock ();
-        return;
-    }
-
-    allocpiiu = constructTCPIIU (piiu->pcas, &ina, minorVersion);
-    if ( ! allocpiiu ) {
-        piiu->pcas->unlock ();
-        return;
-    }
-
-    /*
-     * If this is the first channel to be
-     * added to this niiu then communicate
-     * the client's name to the server. 
-     * (CA V4.1 or higher)
-     */
-    if ( ellCount ( &allocpiiu->chidList ) == 0 ) {
-        allocpiiu->userNameSetMsg ();
-        allocpiiu->hostNameSetMsg ();
-    }
-
-    piiu->pcas->notifySearchResponse ( chan->retrySeqNo );
-
-    /*
-     * Assume that we have access once connected briefly
-     * until the server is able to tell us the correct
-     * state for backwards compatibility.
-     *
-     * Their access rights call back does not get
-     * called for the first time until the information 
-     * arrives however.
-     */
-    chan->ar.read_access = TRUE;
-    chan->ar.write_access = TRUE;
-
-    /*
-     * remove it from the broadcast niiu
-     */
-    chan->piiu->removeFromChanList ( *chan );
-
-    /*
-     * chan->piiu must be correctly set prior to issuing the
-     * claim request
-     *
-     * add to the beginning of the list until we
-     * have sent the claim message (after which we
-     * move it to the end of the list)
-     *
-     * claim pending flag is set here
-     */
-    allocpiiu->addToChanList ( *chan );
 
     if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
-        chan->searchReplySetUp ( pMsg->m_cid, USHRT_MAX, 0 );
+        this->clientCtx ().lookupChannelAndTransferToTCP 
+            ( msg.m_available, msg.m_cid, USHRT_MAX, 0, 
+            minorVersion, serverAddr );
     }
     else {
-        chan->searchReplySetUp ( pMsg->m_cid, pMsg->m_dataType, pMsg->m_count );
+        this->clientCtx ().lookupChannelAndTransferToTCP 
+            ( msg.m_available, msg.m_cid, msg.m_dataType, 
+                minorVersion, msg.m_count, serverAddr );
     }
-    
-    chan->claimMsg ( allocpiiu );
-    cacRingBufferWriteFlush ( &allocpiiu->send );
-    
-    piiu->pcas->unlock ();
 }
 
-
-/*
- * beacon_action ()
- */
-LOCAL void beacon_action ( udpiiu * piiu, 
-	caHdr *pMsg, const struct sockaddr_in *pnet_addr)
+void udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
 {
     struct sockaddr_in ina;
 
-    piiu->pcas->lock ();
-        
+    if ( net_addr.sa.sa_family != AF_INET ) {
+        return;
+    }
+
     /* 
      * this allows a fan-out server to potentially
      * insert the true address of the CA server 
@@ -613,143 +585,96 @@ LOCAL void beacon_action ( udpiiu * piiu,
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
-    if ( pMsg->m_available != htonl (INADDR_ANY) ) {
-        ina.sin_addr.s_addr = pMsg->m_available;
+    if ( msg.m_available != htonl (INADDR_ANY) ) {
+        ina.sin_addr.s_addr = msg.m_available;
     }
     else {
-        ina.sin_addr = pnet_addr->sin_addr;
+        ina.sin_addr = net_addr.ia.sin_addr;
     }
-    if ( pMsg->m_count != 0 ) {
-        ina.sin_port = htons ( pMsg->m_count );
+    if ( msg.m_count != 0 ) {
+        ina.sin_port = htons ( msg.m_count );
     }
     else {
         /*
          * old servers dont supply this and the
          * default port must be assumed
          */
-        ina.sin_port = htons (piiu->pcas->ca_server_port);
+        ina.sin_port = htons ( this->serverPort );
     }
-    piiu->pcas->beaconNotify (ina);
 
-    piiu->pcas->unlock ();
+    this->clientCtx ().beaconNotify ( ina );
 
     return;
 }
 
-/*
- * repeater_ack_action ()
- */
-LOCAL void repeater_ack_action (udpiiu * piiu, 
-	caHdr * /* pMsg */,  const struct sockaddr_in * /* pnet_addr */)
+void udpiiu::repeaterAckAction ( const caHdr &,  const osiSockAddr &)
 {
-    piiu->pcas->repeaterSubscribeConfirmNotify ();
+    this->clientCtx ().repeaterSubscribeConfirmNotify ();
 }
 
-/*
- * not_here_resp_action ()
- */
-LOCAL void not_here_resp_action (udpiiu * /* piiu */, caHdr * /* pMsg */,  const struct sockaddr_in * /* pnet_addr */)
+void udpiiu::notHereRespAction ( const caHdr &,  const osiSockAddr &)
 {
     return;
 }
 
-/*
- * udp_exception_resp_action ()
- */
-LOCAL void udp_exception_resp_action ( udpiiu *piiu, 
-	caHdr *pMsg, const struct sockaddr_in *pnet_addr )
+void udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr )
 {
-    caHdr *pReqMsg = pMsg + 1;
+    const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
 
-    ipAddrToA ( pnet_addr, name, sizeof ( name ) );
+    sockAddrToA ( &net_addr.sa, name, sizeof ( name ) );
 
-    if ( pMsg->m_postsize > sizeof (caHdr) ){
+    if ( msg.m_postsize > sizeof ( caHdr ) ){
         errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\"\n", 
-            ca_message ( ntohl ( pMsg->m_available ) ), 
-            name, reinterpret_cast <char *> ( pReqMsg + 1 ) );
+            ca_message ( msg.m_available ), 
+            name, reinterpret_cast <const char *> ( &reqMsg + 1 ) );
     }
     else{
         errlogPrintf ( "error condition \"%s\" detected by %s\n", 
-            ca_message ( ntohl ( pMsg->m_available ) ), name );
+            ca_message ( msg.m_available ), name );
     }
 
     return;
 }
 
-
-/*
- * UDP protocol jump table
- */
-LOCAL const pProtoStubUDP udpJumpTableCAC[] = 
-{
-    udp_noop_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    search_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    udp_exception_resp_action,
-    bad_udp_resp_action,
-    beacon_action,
-    not_here_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    repeater_ack_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action,
-    bad_udp_resp_action
-};
 
 /*
  * post_udp_msg ()
  */
-int udpiiu::post_msg (const struct sockaddr_in *pnet_addr, 
-              char *pInBuf, unsigned long blockSize)
+int udpiiu::postMsg ( const osiSockAddr &net_addr, 
+              char *pInBuf, unsigned long blockSize )
 {
     caHdr *pCurMsg;
 
     while ( blockSize ) {
         unsigned long size;
 
-        if ( blockSize < sizeof (*pCurMsg) ) {
+        if ( blockSize < sizeof ( *pCurMsg ) ) {
             return ECA_TOLARGE;
         }
 
-        pCurMsg = reinterpret_cast <caHdr *> (pInBuf);
+        pCurMsg = reinterpret_cast <caHdr *> ( pInBuf );
 
         /* 
          * fix endian of bytes 
          */
-        pCurMsg->m_postsize = ntohs (pCurMsg->m_postsize);
-        pCurMsg->m_cmmd = ntohs (pCurMsg->m_cmmd);
-        pCurMsg->m_dataType = ntohs (pCurMsg->m_dataType);
-        pCurMsg->m_count = ntohs (pCurMsg->m_count);
+        pCurMsg->m_postsize = ntohs ( pCurMsg->m_postsize );
+        pCurMsg->m_cmmd = ntohs ( pCurMsg->m_cmmd );
+        pCurMsg->m_dataType = ntohs ( pCurMsg->m_dataType );
+        pCurMsg->m_count = ntohs ( pCurMsg->m_count );
 
 #if 0
-        printf ("UDP Cmd=%3d Type=%3d Count=%4d Size=%4d",
+        printf ( "UDP Cmd=%3d Type=%3d Count=%4d Size=%4d",
             pCurMsg->m_cmmd,
             pCurMsg->m_dataType,
             pCurMsg->m_count,
-            pCurMsg->m_postsize);
+            pCurMsg->m_postsize );
         printf (" Avail=%8x Cid=%6d\n",
             pCurMsg->m_available,
-            pCurMsg->m_cid);
+            pCurMsg->m_cid );
 #endif
 
-        size = pCurMsg->m_postsize + sizeof (*pCurMsg);
+        size = pCurMsg->m_postsize + sizeof ( *pCurMsg );
 
         /*
          * dont allow msg body extending beyond frame boundary
@@ -762,13 +687,13 @@ int udpiiu::post_msg (const struct sockaddr_in *pnet_addr,
          * execute the response message
          */
         pProtoStubUDP      pStub;
-        if ( pCurMsg->m_cmmd>=NELEMENTS (udpJumpTableCAC) ) {
-            pStub = bad_udp_resp_action;
+        if ( pCurMsg->m_cmmd >= NELEMENTS ( udpJumpTableCAC ) ) {
+            pStub = badUDPRespAction;
         }
         else {
             pStub = udpJumpTableCAC [pCurMsg->m_cmmd];
         }
-        (*pStub) (this, pCurMsg, pnet_addr);
+        (this->*pStub) ( *pCurMsg, net_addr);
 
         blockSize -= size;
         pInBuf += size;;
@@ -789,110 +714,44 @@ const char * udpiiu::pHostName () const
     return "<disconnected>";
 }
 
-bool udpiiu::ca_v42_ok () const
-{
-    return false;
-}
-
-bool udpiiu::ca_v41_ok () const
-{
-    return false;
-}
-
-bool udpiiu::compareIfTCP (nciu &, const sockaddr_in &) const
-{
-    return false;
-}
-
-/*
- * Add chan to iiu and guarantee that
- * one chan on the B cast iiu list is pointed to by
- * ca_pEndOfBCastList 
- */
-void udpiiu::addToChanList ( nciu &chan )
-{
-    this->pcas->lock ();
-
-    /*
-     * add to the beginning of the list so that search requests for
-     * this channel will be sent first (since the retry count is zero)
-     */
-    if ( ellCount ( &this->chidList ) == 0 ) {
-        this->pcas->endOfBCastList = tsDLIterBD <nciu> ( &chan );
-    }
-    /*
-     * add to the front of the list so that
-     * search requests for new channels will be sent first
-     */
-    chan.retry = 0u;
-    this->chidList.push ( chan );
-    chan.piiu = this;
-
-    this->pcas->unlock ();
-}
-
-void udpiiu::removeFromChanList ( nciu &chan )
-{
-    tsDLIterBD <nciu> iter ( &chan );
-
-    this->pcas->lock ();
-    if ( chan.piiu->pcas->endOfBCastList == iter ) {
-        if ( iter.itemBefore ().valid () ) {
-            chan.piiu->pcas->endOfBCastList = iter.itemBefore ();
-        }
-        else {
-            chan.piiu->pcas->endOfBCastList = 
-                tsDLIterBD<nciu> ( chan.piiu->chidList.last () );
-        }
-    }
-    chan.piiu->chidList.remove ( chan );
-    chan.piiu = NULL;
-    this->pcas->unlock ();
-}
-
-void udpiiu::disconnect ( nciu & /* chan */ )
-{
-    // NOOP
-}
-
 /*
  *  udpiiu::pushDatagramMsg ()
  */ 
-int udpiiu::pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize)
+bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize )
 {
     unsigned long   msgsize;
     ca_uint16_t     allignedExtSize;
     caHdr           *pbufmsg;
 
-    allignedExtSize = CA_MESSAGE_ALIGN (extsize);
-    msgsize = sizeof (caHdr) + allignedExtSize;
+    allignedExtSize = CA_MESSAGE_ALIGN ( extsize );
+    msgsize = sizeof ( caHdr ) + allignedExtSize;
 
 
     /* fail out if max message size exceeded */
-    if ( msgsize >= sizeof (this->xmitBuf)-7 ) {
-        return ECA_TOLARGE;
+    if ( msgsize >= sizeof ( this->xmitBuf ) - 7 ) {
+        return false;
     }
 
-    semMutexMustTake (this->xmitBufLock);
+    this->lock ();
 
     if ( msgsize + this->nBytesInXmitBuf > sizeof ( this->xmitBuf ) ) {
-        semMutexGive (this->xmitBufLock);
-        return ECA_TOLARGE;
+        this->unlock ();
+        return false;
     }
 
     pbufmsg = (caHdr *) &this->xmitBuf[this->nBytesInXmitBuf];
-    *pbufmsg = *pMsg;
-    memcpy (pbufmsg+1, pExt, extsize);
+    *pbufmsg = msg;
+    memcpy ( pbufmsg+1, pExt, extsize );
     if ( extsize != allignedExtSize ) {
-        char *pDest = (char *) (pbufmsg+1);
-        memset (pDest + extsize, '\0', allignedExtSize - extsize);
+        char *pDest = (char *) ( pbufmsg + 1 );
+        memset ( pDest + extsize, '\0', allignedExtSize - extsize );
     }
-    pbufmsg->m_postsize = htons (allignedExtSize);
+    pbufmsg->m_postsize = htons ( allignedExtSize );
     this->nBytesInXmitBuf += msgsize;
 
-    semMutexGive (this->xmitBufLock);
+    this->unlock ();
 
-    return ECA_NORMAL;
+    return true;
 }
 
 //
@@ -902,7 +761,12 @@ void udpiiu::flush ()
 {
     osiSockAddrNode  *pNode;
 
-    semMutexMustTake (this->xmitBufLock);
+    this->lock ();
+
+    if ( this->nBytesInXmitBuf == 0u ) {
+        this->unlock ();
+        return;
+    }
 
     pNode = (osiSockAddrNode *) ellFirst ( &this->dest );
     while ( pNode ) {
@@ -940,7 +804,7 @@ void udpiiu::flush ()
                 else {
                     char buf[64];
 
-                    ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
+                    sockAddrToA ( &pNode->addr.sa, buf, sizeof ( buf ) );
 
                     ca_printf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",
@@ -954,17 +818,12 @@ void udpiiu::flush ()
 
     this->nBytesInXmitBuf = 0u;
 
-    semMutexGive ( this->xmitBufLock );
-}
-
-int udpiiu::pushStreamMsg ( const caHdr * /* pmsg */, 
-	const void * /* pext */, bool /* blockingOk */ )
-{
-    ca_printf ("in pushStreamMsg () for a udp iiu?\n");
-    return ECA_DISCONNCHID;
+    this->unlock ();
 }
 
 SOCKET udpiiu::getSock () const
 {
     return this->sock;
 }
+
+

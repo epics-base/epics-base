@@ -39,11 +39,11 @@ static void cacInitRecursionLock ( void * dummy )
 // cac::cac ()
 //
 cac::cac ( bool enablePreemptiveCallbackIn ) :
-    beaconTable ( 1024 ),
-    endOfBCastList ( 0 ),
+    ipToAEngine ( "caIPAddrToAsciiEngine" ), 
     ioTable ( 1024 ),
     chanTable ( 1024 ),
     sgTable ( 128 ),
+    beaconTable ( 1024 ),
     fdRegFunc ( 0 ),
     fdRegArg ( 0 ),
     pudpiiu ( 0 ),
@@ -81,8 +81,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 
-	ellInit (&this->putCvrtBuf);
-    this->ca_printf_func = errlogVprintf;
+    this->pVPrintfFunc = errlogVprintf;
     this->ca_exception_func = ca_default_exception_handler;
     this->ca_exception_arg = NULL;
     this->readSeq = 0u;
@@ -103,44 +102,41 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         if ( gunRet != osiGetUserNameSuccess ) {
             tmp[0] = '\0';
         }
-        len = strlen (tmp) + 1;
-        this->ca_pUserName = (char *) malloc ( len );
-        if ( ! this->ca_pUserName ) {
+        len = strlen ( tmp ) + 1;
+        this->pUserName = new char [len];
+        if ( ! this->pUserName ) {
             semBinaryDestroy (this->ca_blockSem);
             throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
         }
-        strncpy (this->ca_pUserName, tmp, len);
+        strncpy ( this->pUserName, tmp, len );
     }
 
     this->programBeginTime = osiTime::getCurrent ();
 
-    status = envGetDoubleConfigParam (&EPICS_CA_CONN_TMO, &this->ca_connectTMO);
-    if (status) {
-        this->ca_connectTMO = CA_CONN_VERIFY_PERIOD;
+    status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
+    if ( status ) {
+        this->connTMO = CA_CONN_VERIFY_PERIOD;
         ca_printf (
-            "EPICS \"%s\" float fetch failed\n",
+            "EPICS \"%s\" double fetch failed\n",
             EPICS_CA_CONN_TMO.name);
         ca_printf (
-            "Setting \"%s\" = %f\n",
+            "Defaulting \"%s\" = %f\n",
             EPICS_CA_CONN_TMO.name,
-            this->ca_connectTMO);
+            this->connTMO);
     }
 
-    this->ca_server_port = 
-        envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
-
     //
-    // unfortunately, this must be created her in the 
+    // unfortunately, this must be created here in the 
     // constructor, and not on demand (only when it is needed)
     // because the enable reference count must be 
     // maintained whenever this object exists.
     //
-    this->pProcThread = new processThread ( this );
-    if ( ! this->pProcThread ) {
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
+    this->pRecvProcThread = new recvProcessThread ( this );
+    if ( ! this->pRecvProcThread ) {
+        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
     else if ( this->enablePreemptiveCallback ) {
-        // only after this->pProcThread is valid
+        // only after this->pRecvProcThread is valid
         this->enableCallbackPreemption ();
     }
 }
@@ -170,19 +166,15 @@ cac::~cac ()
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
-    delete this->pProcThread;
+    recvProcessThread *pTmp = this->pRecvProcThread;
+    this->pRecvProcThread = 0;
+    delete pTmp;
 
     //
     // shutdown all tcp connections and wait for threads to exit
     //
     this->iiuListMutex.lock ();
-    tsDLIterBD <tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu.valid () ) {
-        tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
-        piiu->suicide ();
-        piiu = pnext;
-    }
-    piiu = this->iiuListRecvPending.first ();
+    tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
     while ( piiu.valid () ) {
         tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
         piiu->suicide ();
@@ -207,21 +199,17 @@ cac::~cac ()
         delete this->pudpiiu;
     }
 
-    /* remove put convert block free list */
-    ellFree ( &this->putCvrtBuf );
-
-    /* reclaim sync group resources */
-    this->sgTable.destroyAllEntries ();
-
     /*
      * free user name string
      */
-    if ( this->ca_pUserName ) {
-        free ( this->ca_pUserName );
+    if ( this->pUserName ) {
+        delete [] this->pUserName;
     }
 
+    this->sgTable.destroyAllEntries ();
     this->beaconTable.destroyAllEntries ();
-
+    this->chanTable.destroyAllEntries ();
+    this->ioTable.destroyAllEntries ();
     semBinaryDestroy ( this->ca_blockSem );
 
     osiSockRelease ();
@@ -229,59 +217,18 @@ cac::~cac ()
     delete this->pTimerQueue;
 }
 
-void cac::safeDestroyNMIU (unsigned id)
-{
-    this->defaultMutex.lock ();
-
-    baseNMIU *pIOBlock = this->ioTable.lookup (id);
-    if ( pIOBlock ) {
-        pIOBlock->destroy ();
-    }
-
-    this->defaultMutex.unlock ();
-}
-
 void cac::processRecvBacklog ()
 {
-    tcpiiu *piiu;
+    this->iiuListMutex.lock ();
 
-    while ( 1 ) {
-        int status;
-        unsigned bytesToProcess;
+    tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
+    while ( piiu.valid () ) {
+        tsDLIterBD <tcpiiu> pNext = piiu.itemAfter ();
+        piiu->processIncomingAndDestroySelfIfDisconnected ();
+        piiu = pNext;
+	}
 
-        this->iiuListMutex.lock ();
-
-        piiu = this->iiuListRecvPending.get ();
-        if ( ! piiu ) {
-            this->iiuListMutex.unlock ();
-            break;
-        }
-
-        piiu->recvPending = false;
-        this->iiuListIdle.add (*piiu);
-
-        this->iiuListMutex.unlock ();
-
-        if ( piiu->state == iiu_disconnected ) {
-            delete piiu;
-            continue;
-        }
-
-        char *pProto = (char *) cacRingBufferReadReserveNoBlock 
-                            (&piiu->recv, &bytesToProcess);
-        while ( pProto ) {
-            status = piiu->post_msg (pProto, bytesToProcess);
-            if ( status == ECA_NORMAL ) {
-                cacRingBufferReadCommit (&piiu->recv, bytesToProcess);
-                cacRingBufferReadFlush (&piiu->recv);
-            }
-            else {
-                delete piiu;
-            }
-            pProto = (char *) cacRingBufferReadReserveNoBlock 
-                            (&piiu->recv, &bytesToProcess);
-        }
-    }
+    this->iiuListMutex.unlock ();
 }
 
 /*
@@ -293,12 +240,7 @@ void cac::flush ()
      * set the push pending flag on all virtual circuits
      */
     this->iiuListMutex.lock ();
-    tsDLIterBD<tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu.valid () ) {
-        piiu->flush ();
-        piiu++;
-    }
-    piiu = this->iiuListRecvPending.first ();
+    tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
     while ( piiu.valid () ) {
         piiu->flush ();
         piiu++;
@@ -317,69 +259,47 @@ void cac::flush ()
  */
 void cac::cleanUpPendIO ()
 {
-    nciu *pchan;
-
     this->defaultMutex.lock ();
 
     this->readSeq++;
     this->pndrecvcnt = 0u;
 
-    if ( this->pudpiiu ) {
-        tsDLIter <nciu> iter ( this->pudpiiu->chidList );
-        while ( ( pchan = iter () ) ) {
-            pchan->connectTimeoutNotify ();
-        }
-    }
-
     this->defaultMutex.unlock ();
+
+    if ( this->pudpiiu ) {
+        this->pudpiiu->connectTimeoutNotify ();
+    }
 }
 
 unsigned cac::connectionCount () const
 {
-    unsigned count;
-
-    this->iiuListMutex.lock ();
-    count = this->iiuListIdle.count () + this->iiuListRecvPending.count ();
-    this->iiuListMutex.unlock ();
-    return count;
+    return this->iiuList.count ();
 }
 
 void cac::show (unsigned level) const
 {
-	this->defaultMutex.lock ();
-
     if ( this->pudpiiu ) {
         this->pudpiiu->show (level);
     }
 
     this->iiuListMutex.lock ();
 
-    tsDLIterConstBD <tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu.valid () ) {
-        piiu->show (level);
-        piiu++;
-	}
-
-    piiu = this->iiuListRecvPending.first ();
+    tsDLIterConstBD <tcpiiu> piiu ( this->iiuList.first () );
     while ( piiu.valid () ) {
         piiu->show (level);
         piiu++;
 	}
 
     this->iiuListMutex.unlock ();
-
-    this->defaultMutex.unlock ();
 }
 
 void cac::installIIU ( tcpiiu &iiu )
 {
     this->iiuListMutex.lock ();
-    iiu.recvPending = false;
-    this->iiuListIdle.add (iiu);
+    this->iiuList.add (iiu);
     this->iiuListMutex.unlock ();
 
     this->defaultMutex.lock ();
-        
     if ( ! this->enablePreemptiveCallback && this->fdRegFunc ) {
         ( * this->fdRegFunc ) 
             ( (void *) this->fdRegArg, iiu.getSock (), TRUE );
@@ -387,33 +307,14 @@ void cac::installIIU ( tcpiiu &iiu )
     this->defaultMutex.unlock ();
 }
 
-void cac::signalRecvActivityIIU (tcpiiu &iiu)
+void cac::signalRecvActivity ()
 {
-    bool change;
-
-    this->iiuListMutex.lock ();
-
-    if ( iiu.recvPending ) {
-        change = false;
-    }
-    else {
-        this->iiuListIdle.remove (iiu);
-        this->iiuListRecvPending.add (iiu);
-        iiu.recvPending = true;
-        change = true;
-    }
-
-    this->iiuListMutex.unlock ();
-
-    //
-    // wakeup after unlock improves performance
-    //
-    if (change) {
-        this->recvActivity.signal ();
+    if ( this->pRecvProcThread ) {
+        this->pRecvProcThread->signalActivity ();
     }
 }
 
-void cac::removeIIU (tcpiiu &iiu)
+void cac::removeIIU ( tcpiiu &iiu )
 {
     this->defaultMutex.lock ();
     osiSockAddr addr = iiu.address ();
@@ -430,12 +331,7 @@ void cac::removeIIU (tcpiiu &iiu)
 
     this->iiuListMutex.lock ();
 
-    if ( iiu.recvPending ) {
-        this->iiuListRecvPending.remove (iiu);
-    }
-    else {
-        this->iiuListIdle.remove (iiu);
-    }
+    this->iiuList.remove (iiu);
 
     if ( ! this->enablePreemptiveCallback ) {
         if ( this->fdRegFunc ) {
@@ -543,6 +439,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
         status = getsockname ( this->pudpiiu->getSock (), (struct sockaddr *) &saddr, &saddr_length );
         if ( status < 0 ) {
             epicsPrintf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            this->defaultMutex.unlock ();
             return;
         }
         port = ntohs ( saddr.sin_port );
@@ -560,22 +457,14 @@ void cac::beaconNotify ( const inetAddrID &addr )
         }
     }
 
-    /*
-     * set retry count of all disconnected channels
-     * to zero
-     */
-    tsDLIterBD <nciu> iter ( this->pudpiiu->chidList.first () );
-    while ( iter.valid () ) {
-        iter->retry = 0u;
-        iter++;
-    }
-
     this->defaultMutex.unlock ();
+
+    this->pudpiiu->resetChannelRetryCounts ();
 
 #   if DEBUG
     {
         char buf[64];
-        ipAddrToA (pnet_addr, buf, sizeof (buf) );
+        ipAddrToA (pnet_addr, buf, sizeof ( buf ) );
         printf ("new server available: %s\n", buf);
     }
 #   endif
@@ -596,28 +485,53 @@ void cac::removeBeaconInetAddr (const inetAddrID &ina)
     assert (pBHE);
 }
 
-void cac::decrementOutstandingIO (unsigned seqNumber)
+void cac::decrementOutstandingIO ( unsigned seqNumber )
 {
+    bool signalNeeded;
     this->defaultMutex.lock ();
     if ( this->readSeq == seqNumber ) {
         if ( this->pndrecvcnt > 0u ) {
             this->pndrecvcnt--;
+            if ( this->pndrecvcnt == 0u ) {
+                signalNeeded = true;
+            }
+            else {
+                signalNeeded = false;
+            }
+        }
+        else {
+            signalNeeded = true;
         }
     }
+    else {
+        signalNeeded = true;
+    }
     this->defaultMutex.unlock ();
-    if ( this->pndrecvcnt == 0u ) {
+
+    if ( signalNeeded ) {
         this->ioDone.signal ();
     }
 }
 
 void cac::decrementOutstandingIO ()
 {
+    bool signalNeeded;
     this->defaultMutex.lock ();
     if ( this->pndrecvcnt > 0u ) {
         this->pndrecvcnt--;
+        if ( this->pndrecvcnt == 0u ) {
+            signalNeeded = true;
+        }
+        else {
+            signalNeeded = false;
+        }
+    }
+    else {
+        signalNeeded = true;
     }
     this->defaultMutex.unlock ();
-    if ( this->pndrecvcnt == 0u ) {
+
+    if ( signalNeeded ) {
         this->ioDone.signal ();
     }
 }
@@ -734,26 +648,150 @@ bool cac::ioComplete () const
     }
 }
 
-void cac::installIO ( baseNMIU &io )
+void cac::ioInstall ( nciu &chan, baseNMIU &io )
 {
     this->defaultMutex.lock ();
     this->ioTable.add ( io );
+    chan.cacPrivate::eventq.add ( io );
     this->defaultMutex.unlock ();
 }
 
-void cac::uninstallIO ( baseNMIU &io )
+void cac::ioDestroy ( unsigned id )
 {
     this->defaultMutex.lock ();
-    this->ioTable.remove ( io );
+    baseNMIU * pmiu = this->ioTable.remove ( id );
+    if ( pmiu ) {
+        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+    }
     this->defaultMutex.unlock ();
+    // care is taken to not destroy with the cac lock
+    // applied because we could potentially hold the 
+    // cac lock while sending and deadlock with the 
+    // recv thread, but we must uninstall the IO 
+    // before accessing it with the lock released
+    if ( pmiu ) {
+        pmiu->destroy ();
+    }
 }
 
-baseNMIU * cac::lookupIO (unsigned id)
+void cac::ioCompletionNotify ( unsigned id )
 {
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->completionNotify ();
+    }
     this->defaultMutex.unlock ();
-    return pmiu;
+}
+
+void cac::ioCompletionNotify ( unsigned id, unsigned type, 
+                              unsigned long count, const void *pData )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->completionNotify ( type, count, pData );
+    }
+    this->defaultMutex.unlock ();
+}
+
+void cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext );
+    }
+    this->defaultMutex.unlock ();
+}
+
+void cac::ioExceptionNotify ( unsigned id, int status, 
+                   const char *pContext, unsigned type, unsigned long count )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext, type, count );
+    }
+    this->defaultMutex.unlock ();
+}
+
+void cac::ioCompletionNotifyAndDestroy ( unsigned id )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.remove ( id );
+    if ( pmiu ) {
+        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+    }
+    this->defaultMutex.unlock ();
+    // care is taken to not destroy with the cac lock
+    // applied because we could potentially hold the 
+    // cac lock while sending and deadlock with the 
+    // recv thread, but we must uninstall the IO 
+    // before accessing it with the lock released
+    if ( pmiu ) {
+        pmiu->completionNotify ();
+        pmiu->destroy (); 
+    }
+}
+
+void cac::ioCompletionNotifyAndDestroy ( unsigned id, 
+                        unsigned type, unsigned long count, const void *pData )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.remove ( id );
+    if ( pmiu ) {
+        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+    }
+    this->defaultMutex.unlock ();
+    // care is taken to not destroy with the cac lock
+    // applied because we could potentially hold the 
+    // cac lock while sending and deadlock with the 
+    // recv thread, but we must uninstall the IO 
+    // before accessing it with the lock released
+    if ( pmiu ) {
+        pmiu->completionNotify ( type, count, pData );
+        pmiu->destroy ();
+    }
+}
+
+void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pContext )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.remove ( id );
+    if ( pmiu ) {
+        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+    }
+    this->defaultMutex.unlock ();
+    // care is taken to not destroy with the cac lock
+    // applied because we could potentially hold the 
+    // cac lock while sending and deadlock with the 
+    // recv thread, but we must uninstall the IO 
+    // before accessing it with the lock released
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext );
+        pmiu->destroy ();
+    }
+}
+
+void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+                        const char *pContext, unsigned type, unsigned long count )
+{
+    this->defaultMutex.lock ();
+    baseNMIU * pmiu = this->ioTable.remove ( id );
+    if ( pmiu ) {
+        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+    }
+    this->defaultMutex.unlock ();
+    // care is taken to not destroy with the cac lock
+    // applied because we could potentially hold the 
+    // cac lock while sending and deadlock with the 
+    // recv thread, but we must uninstall the IO 
+    // before accessing it with the lock released
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext, type, count );
+        pmiu->destroy (); 
+    }
 }
 
 void cac::registerChannel (nciu &chan)
@@ -763,19 +801,59 @@ void cac::registerChannel (nciu &chan)
     this->defaultMutex.unlock ();
 }
 
-void cac::unregisterChannel (nciu &chan)
+void cac::unregisterChannel ( nciu &chan )
 {
     this->defaultMutex.lock ();
     this->chanTable.remove ( chan );
     this->defaultMutex.unlock ();
 }
 
-nciu * cac::lookupChan (unsigned id)
+void cac::accessRightsNotify ( unsigned id, caar ar )
 {
     this->defaultMutex.lock ();
-    nciu * pchan = this->chanTable.lookup ( id );
+    nciu * pChan = this->chanTable.lookup ( id );
+    if ( pChan ) {
+        pChan->accessRightsStateChange ( ar );
+    }
     this->defaultMutex.unlock ();
-    return pchan;
+}
+
+void cac::connectChannel ( unsigned id, class tcpiiu &iiu, 
+          unsigned nativeType, unsigned long nativeCount, unsigned sid )
+{
+    this->defaultMutex.lock ();
+    nciu * pChan = this->chanTable.lookup ( id );
+    if ( pChan ) {
+        unsigned sidTmp;
+        if ( iiu.ca_v44_ok () ) {
+            sidTmp = sid;
+        }
+        else {
+            sidTmp = pChan->getSID ();
+        }
+        pChan->connect ( iiu, nativeType, nativeCount, sidTmp );
+    }
+    this->defaultMutex.unlock ();
+}
+
+void cac::channelDestroy ( unsigned id )
+{
+    this->defaultMutex.lock ();
+    nciu * pChan = this->chanTable.lookup ( id );
+    if ( pChan ) {
+        pChan->destroy ();
+    }
+    this->defaultMutex.unlock ();
+}
+
+void cac::disconnectChannel ( unsigned id )
+{
+    this->defaultMutex.lock ();
+    nciu * pChan = this->chanTable.lookup ( id );
+    if ( pChan ) {
+        pChan->disconnect ();
+    }
+    this->defaultMutex.unlock ();
 }
 
 void cac::installCASG (CASG &sg)
@@ -837,7 +915,7 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
                     return false;
                 }
             }
-            nciu *pNetChan = new nciu ( this, chan, pName );
+            nciu *pNetChan = new nciu ( *this, chan, pName );
             if ( pNetChan ) {
                 if ( ! pNetChan->fullyConstructed () ) {
                     pNetChan->destroy ();
@@ -867,7 +945,7 @@ bool cac::setupUDP ()
         return true;
     }
 
-    this->pudpiiu = new udpiiu ( this );
+    this->pudpiiu = new udpiiu ( *this );
     if ( ! this->pudpiiu ) {
         this->defaultMutex.unlock ();
         return false;
@@ -877,6 +955,7 @@ bool cac::setupUDP ()
     if ( ! this->pSearchTmr ) {
         delete this->pudpiiu;
         this->pudpiiu = 0;
+        this->defaultMutex.unlock ();
         return false;
     }
 
@@ -901,16 +980,6 @@ bool cac::setupUDP ()
     return true;
 }
 
-void cac::lock () const
-{
-    this->defaultMutex.lock ();
-}
-
-void cac::unlock () const
-{
-    this->defaultMutex.unlock ();
-}
-
 void cac::registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg )
 {
     this->defaultMutex.lock ();
@@ -921,12 +990,16 @@ void cac::registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg )
 
 void cac::enableCallbackPreemption ()
 {
-    this->pProcThread->enable ();
+    if ( this->pRecvProcThread ) {
+        this->pRecvProcThread->enable ();
+    }
 }
 
 void cac::disableCallbackPreemption ()
 {
-    this->pProcThread->disable ();
+    if ( this->pRecvProcThread ) {
+        this->pRecvProcThread->disable ();
+    }
 }
 
 void cac::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
@@ -980,10 +1053,9 @@ void cac::installDisconnectedChannel ( nciu &chan )
 
     assert ( this->pudpiiu && this->pSearchTmr );
 
-    this->defaultMutex.lock ();
-    this->pudpiiu->addToChanList ( chan );
+    chan.attachChanToIIU ( *this->pudpiiu );
+    chan.resetRetryCount ();
     this->pSearchTmr->reset ( CA_RECAST_DELAY );
-    this->defaultMutex.unlock ();
 }
 
 void cac::notifySearchResponse ( unsigned short retrySeqNo )
@@ -1004,10 +1076,123 @@ void cac::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
 {
     this->defaultMutex.lock ();
     if ( ca_printf_func ) {
-        this->ca_printf_func = ca_printf_func;
+        this->pVPrintfFunc = ca_printf_func;
     }
     else {
-        this->ca_printf_func = epicsVprintf;
+        this->pVPrintfFunc = epicsVprintf;
     }
     this->defaultMutex.unlock ();
+}
+
+/*
+ * constructTCPIIU ()
+ */
+tcpiiu * cac::constructTCPIIU ( const osiSockAddr &addr, unsigned minorVersion )
+{
+    bhe *pBHE;
+    tcpiiu *piiu;
+
+    if ( addr.sa.sa_family != AF_INET ) {
+        return 0u;
+    }
+
+    /*
+     * look for an existing virtual circuit
+     */
+    this->defaultMutex.lock ();
+    pBHE = this->lookupBeaconInetAddr ( addr.ia );
+    if ( ! pBHE ) {
+        pBHE = this->createBeaconHashEntry ( addr.ia, osiTime () );
+        if ( ! pBHE ) {
+            this->defaultMutex.unlock ();
+            return NULL;
+        }
+    }
+    
+    piiu = pBHE->getIIU ();
+    if ( piiu ) {
+        if ( piiu->alive () ) {
+            this->defaultMutex.unlock ();
+            return piiu;
+        }
+        else {
+            this->defaultMutex.unlock ();
+            return NULL;
+        }
+    }
+    this->defaultMutex.unlock ();
+
+    piiu = new tcpiiu ( *this, addr, minorVersion, 
+        *pBHE, this->connTMO, *this->pTimerQueue,
+        this->ipToAEngine );
+    if ( ! piiu ) {
+        return NULL;
+    }
+
+    if ( piiu->fullyConstructed () ) {
+        return piiu;
+    }
+    else {
+        delete piiu;
+        return NULL;
+    }
+}
+
+void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
+             unsigned typeCode, unsigned long count, 
+             unsigned minorVersionNumber, const osiSockAddr &addr )
+{
+    unsigned  retrySeqNumber;
+    tcpiiu *allocpiiu;
+
+    {
+        this->defaultMutex.lock ();
+        nciu *chan;
+
+        /*
+         * ignore search replies for deleted channels
+         */
+        chan = this->chanTable.lookup ( cid );
+        if ( ! chan ) {
+            this->defaultMutex.unlock ();
+            return;
+        }
+
+        retrySeqNumber = chan->getRetrySeqNo ();
+
+        /*
+         * Ignore duplicate search replies
+         */
+        if ( chan->connectionInProgress ( addr ) ) {
+            this->defaultMutex.unlock ();
+            return;
+        }
+
+        allocpiiu = this->constructTCPIIU ( addr, minorVersionNumber );
+        if ( ! allocpiiu ) {
+            this->defaultMutex.unlock ();
+            return;
+        }
+
+        /*
+         * remove it from the broadcast niiu
+         */
+        chan->searchReplySetUp ( sid, typeCode, count );
+        allocpiiu->installChannelPendingClaim ( *chan );
+
+        this->defaultMutex.unlock ();
+    }
+
+    this->notifySearchResponse ( retrySeqNumber );
+    return;
+}
+
+bool cac::currentThreadIsRecvProcessThread ()
+{
+    if ( this->pRecvProcThread ) {
+        return this->pRecvProcThread->isCurrentThread ();
+    }
+    else {
+        return false;
+    }
 }

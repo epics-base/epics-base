@@ -16,9 +16,46 @@
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
 #include "tcpiiu_IL.h"
+#include "claimMsgCache_IL.h"
+#include "cac_IL.h"
+#include "comQueSend_IL.h"
+#include "netiiu_IL.h"
 
 const caHdr cacnullmsg = {
     0,0,0,0,0,0
+};
+
+// TCP protocol jump table
+const tcpiiu::pProtoStubTCP tcpiiu::tcpJumpTableCAC [] = 
+{
+    tcpiiu::noopAction,
+    tcpiiu::eventRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::readRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::exceptionRespAction,
+    tcpiiu::clearChannelRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::readNotifyRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::claimCIURespAction,
+    tcpiiu::writeNotifyRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::accessRightsRespAction,
+    tcpiiu::echoRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::badTCPRespAction,
+    tcpiiu::verifyAndDisconnectChan,
+    tcpiiu::verifyAndDisconnectChan
 };
 
 tsFreeList < class tcpiiu, 16 > tcpiiu::freeList;
@@ -33,61 +70,12 @@ tsFreeList < class tcpiiu, 16 > tcpiiu::freeList;
 extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
 
-typedef void (*pProtoStubTCP) (tcpiiu *piiu);
-
 const static char nullBuff[32] = {
     0,0,0,0,0,0,0,0,0,0, 
     0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,
     0,0
 };
-
-/*
- * constructTCPIIU ()
- * (lock must be applied by caller)
- */
-tcpiiu * constructTCPIIU (cac *pcac, const struct sockaddr_in *pina, 
-                                     unsigned minorVersion)
-{
-    bhe *pBHE;
-    tcpiiu *piiu;
-
-    /*
-     * look for an existing virtual circuit
-     */
-    pBHE = pcac->lookupBeaconInetAddr ( *pina );
-    if ( ! pBHE ) {
-        pBHE = pcac->createBeaconHashEntry ( *pina, osiTime () );
-        if ( ! pBHE ) {
-            return NULL;
-        }
-    }
-    
-    piiu = pBHE->getIIU ();
-    if ( piiu ) {
-        if ( piiu->state == iiu_connecting || 
-            piiu->state == iiu_connected ) {
-            return piiu;
-        }
-        else {
-            return NULL;
-        }
-    }
-
-    piiu = new tcpiiu ( pcac, *pina, minorVersion, *pBHE );
-    if (!piiu) {
-        return NULL;
-    }
-
-    if ( piiu->fullyConstructed () ) {
-        return piiu;
-    }
-    else {
-        delete piiu;
-        return NULL;
-    }
-}
-
 
 /*
  * tcpiiu::connect ()
@@ -103,8 +91,9 @@ void tcpiiu::connect ()
     while (1) {
         int errnoCpy;
 
-        status = ::connect ( this->sock, &this->dest.sa,
-                sizeof ( this->dest.sa ) );
+        osiSockAddr addr = this->ipToA.address ();
+        status = ::connect ( this->sock, &addr.sa,
+                sizeof ( addr.sa ) );
         if ( status == 0 ) {
             this->cancelSendWatchdog ();
             // put the iiu into the connected state
@@ -130,7 +119,7 @@ void tcpiiu::connect ()
         else {  
             this->cancelSendWatchdog ();
             ca_printf ( "Unable to connect because %d=\"%s\"\n", 
-                errnoCpy, SOCKERRSTR (errnoCpy) );
+                errnoCpy, SOCKERRSTR ( errnoCpy ) );
             this->shutdown ();
             return;
         }
@@ -138,149 +127,129 @@ void tcpiiu::connect ()
 }
 
 /*
- * retryPendingClaims()
- *
- * This assumes that all channels with claims pending are at the 
- * front of the list (and that the channel is moved to the end of
- * the list when a claim message has been sent for it)
- *
- * We send claim messages here until the outgoing message buffer 
- * will not accept any more messages
- */
-LOCAL void retryPendingClaims (tcpiiu *piiu)
-{
-    bool success;
-
-    piiu->pcas->lock ();
-    tsDLIterBD<nciu> chan ( piiu->chidList.first () );
-    while ( chan.valid () ) {
-        if ( ! chan->claimPending ) {
-            piiu->claimRequestsPending = false;
-            piiu->flush ();
-            break;
-        }
-        // this moves the channel to the end of the list
-        success = chan->claimMsg ( piiu );
-        if ( ! success ) {
-            piiu->flush ();
-            break;
-        }
-        chan = piiu->chidList.first ();
-    }
-    piiu->pcas->unlock ();
-}
-
-/*
  *  cacSendThreadTCP ()
  */
-extern "C" void cacSendThreadTCP (void *pParam)
+extern "C" void cacSendThreadTCP ( void *pParam )
 {
-    tcpiiu *piiu = (tcpiiu *) pParam;
+    tcpiiu *piiu = ( tcpiiu * ) pParam;
+    claimMsgCache cache ( CA_V44 ( CA_PROTOCOL_VERSION, piiu->minor_version_number ) );
 
     while ( true ) {
-        unsigned sendCnt;
-        char *pOutBuf;
-        int status;
 
-        pOutBuf = static_cast <char *> ( cacRingBufferReadReserveNoBlock (&piiu->send, &sendCnt) );
-        while ( ! pOutBuf ) {
-            piiu->cancelSendWatchdog ();
-            if ( piiu->state != iiu_connected ) {
-                semBinaryGive ( piiu->sendThreadExitSignal );
-                return;
-            }
-            pOutBuf = (char *) cacRingBufferReadReserve (&piiu->send, &sendCnt);
-        }
+        semBinaryMustTake ( piiu->sendThreadFlushSignal );
 
-        assert ( sendCnt <= INT_MAX );
-        status = send ( piiu->sock, pOutBuf, (int) sendCnt, 0 );
-        if ( status > 0 ) {
-            cacRingBufferReadCommit ( &piiu->send, (unsigned long) status );
-            cacRingBufferReadFlush ( &piiu->send );
-            if ( piiu->claimRequestsPending ) {
-                retryPendingClaims ( piiu );
-            }
-            if ( piiu->echoRequestPending ) {
-                piiu->echoRequestMsg ();
-            }
-        }
-        else {
-            int localError = SOCKERRNO;
-
-            cacRingBufferReadCommit (&piiu->send, 0);
-
-            if ( status == 0 ) {    
-                piiu->shutdown ();
-                break;
-            }
-
-            if ( localError == SOCK_SHUTDOWN ) {
-                break;
-            }
-
-            if ( localError == SOCK_EINTR ) {
-                if ( piiu->state == iiu_disconnected ) {
-                    break;
-                }
-                else {
-                    continue;
-                }
-            }
-               
-            if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
-                localError != SOCK_ETIMEDOUT) {
-                ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
-            }
-
-            piiu->shutdown ();
+        if ( piiu->state != iiu_connected ) {
             break;
+        }
+
+        if ( piiu->pClaimsPendingIIU->channelCount () > 0u ) {
+            piiu->pClaimsPendingIIU->sendPendingClaims ( *piiu,
+                CA_V42 ( CA_PROTOCOL_VERSION, piiu->minor_version_number ), cache );
+            piiu->flushPending = true;
+        }
+
+        if ( piiu->busyStateDetected != piiu->flowControlActive ) {
+            if ( piiu->flowControlActive ) {
+                piiu->enableFlowControlMsg ();
+            }
+            else {
+                piiu->disableFlowControlMsg ();
+            }
+            piiu->flushPending = true;
+        }
+
+        if ( piiu->echoRequestPending ) {
+            piiu->echoRequestMsg ();
+            piiu->flushPending = true;
+        }
+
+        if ( piiu->flushPending ) {
+            if ( ! piiu->flushToWire () ) {
+                break;
+            }
+            piiu->flushPending = false;
         }
     }
 
     semBinaryGive ( piiu->sendThreadExitSignal );
 }
 
-/*
- * tcpiiu::recvMsg ()
- */
-void tcpiiu::recvMsg ()
+unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
 {
-    char            *pProto;
-    unsigned        writeSpace;
+    int status;
+
+    assert ( nBytesInBuf <= INT_MAX );
+
+    while ( true ) {
+        this->clientCtx ().enableCallbackPreemption ();
+        this->armSendWatchdog ();
+        status = ::send ( this->sock, 
+            static_cast < const char * > (pBuf), (int) nBytesInBuf, 0 );
+        this->clientCtx ().disableCallbackPreemption ();
+        if ( status > 0 ) {
+            this->cancelSendWatchdog ();
+            return ( unsigned ) status;
+        }
+        else {
+            int localError = SOCKERRNO;
+
+            if ( status == 0 ) {
+                this->cancelSendWatchdog ();
+                this->shutdown ();
+                return 0u;
+            }
+
+            if ( localError == SOCK_SHUTDOWN ) {
+                this->cancelSendWatchdog ();
+                return 0u;
+            }
+
+            if ( localError == SOCK_EINTR ) {
+                continue;
+            }
+       
+            if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
+                localError != SOCK_ETIMEDOUT && localError != SOCK_ECONNABORTED ) {
+                ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
+            }
+
+            this->cancelSendWatchdog ();
+            this->shutdown ();
+            return 0u;
+        }
+    }
+}
+
+unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
+{
     unsigned        totalBytes;
     int             status;
     
     if ( this->state != iiu_connected ) {
-        return;
-    }
-              
-    pProto = (char *) cacRingBufferWriteReserve ( &this->recv, &writeSpace );
-    if ( ! pProto ) {
-        return;
+        return 0u;
     }
 
-    assert ( writeSpace <= INT_MAX );
-    status = ::recv ( this->sock, pProto, (int) writeSpace, 0);
+    assert ( nBytesInBuf <= INT_MAX );
+    status = ::recv ( this->sock, static_cast <char *> ( pBuf ), 
+        static_cast <int> ( nBytesInBuf ), 0);
     if ( status <= 0 ) {
         int localErrno = SOCKERRNO;
 
-        cacRingBufferWriteCommit ( &this->recv, 0 );
-
         if ( status == 0 ) {
             this->shutdown ();
-            return;
+            return 0u;
         }
 
         if ( localErrno == SOCK_SHUTDOWN ) {
-            return;
+            return 0u;
         }
 
         if ( localErrno == SOCK_EINTR ) {
-            return;
+            return 0u;
         }
         
         if ( localErrno == SOCK_ECONNABORTED ) {
-            return;
+            return 0u;
         }
 
         {
@@ -292,27 +261,33 @@ void tcpiiu::recvMsg ()
 
         this->shutdown ();
 
-        return;
+        return 0u;
     }
     
-    assert ( ( (unsigned) status ) <= writeSpace );
-    totalBytes = (unsigned) status;
+    assert ( static_cast <unsigned> ( status ) <= nBytesInBuf );
+    totalBytes = static_cast <unsigned> ( status );
 
-    if ( writeSpace == totalBytes ) {
-        this->flowControlOn ();
+    if ( nBytesInBuf == totalBytes ) {
+        if ( this->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
+            this->busyStateDetected = true;
+        }
+        else { 
+            this->contigRecvMsgCount++;
+        }
     }
     else {
-        this->flowControlOff ();
+        this->contigRecvMsgCount = 0u;
+        this->busyStateDetected = false;
     }
-    
-    cacRingBufferWriteCommit ( &this->recv, totalBytes );
-    // cacRingBufferWriteFlush (&this->recv);
 
+    // care is taken not to post the busy/ready message to the send buffer
+    // here so that we avoid push/pull deadlocks
+    this->flowControlStateChange = this->busyStateDetected != this->flowControlActive;
+    
     this->messageArrivalNotify (); // reschedule connection activity watchdog
 
-    return;
+    return totalBytes;
 }
-
 
 /*
  *  cacRecvThreadTCP ()
@@ -328,40 +303,56 @@ extern "C" void cacRecvThreadTCP (void *pParam)
         threadBoolStatus tbs;
         threadId tid;
 
-        tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfSend);
+        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfSend );
         if ( tbs != tbsSuccess ) {
             priorityOfSend = priorityOfSelf;
         }
-        tid = threadCreate ("CAC-TCP-send", priorityOfSend,
-                threadGetStackSize (threadStackMedium), cacSendThreadTCP, piiu);
+        tid = threadCreate ( "CAC-TCP-send", priorityOfSend,
+                threadGetStackSize ( threadStackMedium ), cacSendThreadTCP, piiu );
         if ( tid ) {
-            while (1) {
-                piiu->recvMsg ();
-                if ( piiu->state != iiu_connected ) {
-                    break;
+            while ( piiu->state == iiu_connected ) {
+                if ( piiu->comQueRecv::occupiedBytes () >= 0x4000 ) {
+                    semBinaryMustTake ( piiu->recvThreadRingBufferSpaceAvailableSignal );
                 }
-                piiu->pcas->signalRecvActivityIIU (*piiu);
+                else {
+                    unsigned nBytesIn = piiu->fillFromWire ();
+                    if ( nBytesIn ) {
+                        piiu->recvPending = true;
+                        piiu->clientCtx ().signalRecvActivity ();
+                    }
+                }
             }
         }
         else {
-            semBinaryGive (piiu->sendThreadExitSignal);
+            semBinaryGive ( piiu->sendThreadExitSignal );
             piiu->shutdown ();
         }
     }
     else {
-        semBinaryGive (piiu->sendThreadExitSignal);
+        semBinaryGive ( piiu->sendThreadExitSignal );
     }
-    semBinaryGive (piiu->recvThreadExitSignal);
+    semBinaryGive ( piiu->recvThreadExitSignal );
 }
 
 //
 // tcpiiu::tcpiiu ()
 //
-tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion, class bhe &bheIn) :
-    tcpRecvWatchdog (pcac->ca_connectTMO, *pcac->pTimerQueue, CA_V43 (CA_PROTOCOL_VERSION, minorVersion) ),
-    tcpSendWatchdog (pcac->ca_connectTMO, *pcac->pTimerQueue),
-    netiiu (pcac),
-    bhe (bheIn)
+tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn, 
+        unsigned minorVersion, class bhe &bheIn,
+        double connectionTimeout, osiTimerQueue &timerQueue,
+        ipAddrToAsciiEngine &engineIn ) :
+    ipToA ( addrIn, engineIn ),
+    tcpRecvWatchdog ( connectionTimeout, timerQueue, CA_V43 (CA_PROTOCOL_VERSION, minorVersion ) ),
+    tcpSendWatchdog ( connectionTimeout, timerQueue ),
+    netiiu ( cac ),
+    bhe ( bheIn ),
+    contigRecvMsgCount ( 0u ),
+    busyStateDetected ( false ),
+    flowControlActive ( false ),
+    flowControlStateChange ( false ),
+    recvPending ( false ),
+    flushPending ( false ),
+    msgHeaderAvailable ( false )
 {
     SOCKET newSocket;
     int status;
@@ -371,7 +362,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     if ( newSocket == INVALID_SOCKET ) {
         ca_printf ("CAC: unable to create virtual circuit because \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
-        this->fc = false;
+        this->fullyConstructedFlag = false;
         return;
     }
 
@@ -422,41 +413,10 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
 
     this->sock = newSocket;
     this->minor_version_number = minorVersion;
-    this->dest.ia = ina;
-    this->contiguous_msg_count = 0u;
-    this->client_busy = false;
-    this->claimRequestsPending = false;
     this->echoRequestPending = false;
-    this->sendPending = false;
-    this->pushPending = false;
     this->curDataMax = 0ul;
-    this->curMsgBytes = 0ul;
-    this->curDataBytes = 0ul;
     memset ( (void *) &this->curMsg, '\0', sizeof (this->curMsg) );
     this->pCurData = 0;
-
-    status = cacRingBufferConstruct (&this->recv);
-    if (status) {
-        ca_printf ("CA: unable to create recv ring buffer\n");
-        socket_close ( newSocket );
-        this->fc = false;
-        return;
-    }
-
-    status = cacRingBufferConstruct (&this->send);
-    if (status) {
-        ca_printf ("CA: unable to create send ring buffer\n");
-        cacRingBufferDestroy (&this->recv);
-        socket_close ( newSocket );
-        this->fc = false;
-        return;
-    }
-
-    /*
-     * Save the Host name for efficient access in the
-     * future.
-     */
-    ipAddrToA ( &this->dest.ia, this->host_name_str, sizeof (this->host_name_str) );
 
     /*
      * TCP starts out in the connecting state and later transitions
@@ -467,10 +427,8 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     this->sendThreadExitSignal = semBinaryCreate (semEmpty);
     if ( ! this->sendThreadExitSignal ) {
         ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
-        cacRingBufferDestroy (&this->recv);
-        cacRingBufferDestroy (&this->send);
         socket_close ( newSocket );
-        this->fc = false;
+        this->fullyConstructedFlag = false;
         return;
     }
 
@@ -478,18 +436,50 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     if ( ! this->recvThreadExitSignal ) {
         ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
         semBinaryDestroy (this->sendThreadExitSignal);
-        cacRingBufferDestroy (&this->recv);
-        cacRingBufferDestroy (&this->send);
         socket_close ( newSocket );
-        this->fc = false;
+        this->fullyConstructedFlag = false;
         return;
     }
+
+    this->pClaimsPendingIIU = new claimsPendingIIU ( *this );
+    if ( ! this->pClaimsPendingIIU ) {
+        ca_printf ("CA: unable to create claimsPendingIIU object\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        socket_close ( newSocket );
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->sendThreadFlushSignal = semBinaryCreate ( semEmpty );
+    if ( ! this->sendThreadFlushSignal ) {
+        ca_printf ("CA: unable to create sendThreadFlushSignal object\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        socket_close ( newSocket );
+        delete this->pClaimsPendingIIU;
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->recvThreadRingBufferSpaceAvailableSignal = semBinaryCreate ( semEmpty );
+    if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
+        ca_printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        semBinaryDestroy (this->sendThreadFlushSignal);
+        socket_close ( newSocket );
+        delete this->pClaimsPendingIIU;
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->userNameSetMsg ();
+
+    this->hostNameSetMsg ();
 
     {
         unsigned priorityOfSelf = threadGetPrioritySelf ();
         unsigned priorityOfRecv;
-        threadId tid;
         threadBoolStatus tbs;
+        threadId tid;
 
         tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfRecv);
         if ( tbs != tbsSuccess ) {
@@ -498,22 +488,23 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
 
         tid = threadCreate ("CAC-TCP-recv", priorityOfRecv,
                 threadGetStackSize (threadStackMedium), cacRecvThreadTCP, this);
-        if (tid==0) {
+        if ( tid == 0 ) {
             ca_printf ("CA: unable to create CA client receive thread\n");
             semBinaryDestroy (this->recvThreadExitSignal);
             semBinaryDestroy (this->sendThreadExitSignal);
-            cacRingBufferDestroy (&this->recv);
-            cacRingBufferDestroy (&this->send);
             socket_close ( newSocket );
-            this->fc = false;
+            delete this->pClaimsPendingIIU;
+            semBinaryDestroy (this->sendThreadFlushSignal);
+            semBinaryDestroy (this->recvThreadRingBufferSpaceAvailableSignal);
+            this->fullyConstructedFlag = false;
             return;
         }
     }
 
     bhe.bindToIIU ( *this );
-    pcac->installIIU ( *this );
+    cac.installIIU ( *this );
 
-    this->fc = true;
+    this->fullyConstructedFlag = true;
 }
 
 /*
@@ -521,21 +512,29 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
  */
 void tcpiiu::shutdown ()
 {
-    this->pcas->lock ();
-    if ( this->state != iiu_disconnected ) {
-        int status;
+    bool laborNeeded;
 
+    this->lock ();
+    if ( this->state != iiu_disconnected ) {
         this->state = iiu_disconnected;
-        status = ::shutdown ( this->sock, SD_BOTH );
+        laborNeeded = true;
+    }
+    else  {
+        laborNeeded = false;
+    }
+    this->unlock ();
+
+    if ( laborNeeded ) {
+        int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
-        cacRingBufferShutDown ( &this->send );
-        cacRingBufferShutDown ( &this->recv );
-        this->pcas->signalRecvActivityIIU ( *this );
+        semBinaryGive ( this->sendThreadFlushSignal );
+        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+        this->recvPending = true;
+        this->clientCtx ().signalRecvActivity ();
     }
-    this->pcas->unlock ();
 }
 
 //
@@ -543,50 +542,44 @@ void tcpiiu::shutdown ()
 //
 tcpiiu::~tcpiiu ()
 {
-    unsigned chanDisconnectCount;
-
-    if ( ! this->fc ) {
+    if ( ! this->fullyConstructedFlag ) {
         return;
     }
 
-    this->fc = false;
+    this->fullyConstructedFlag = false;
 
     this->shutdown ();
 
-    this->pcas->lock ();
-
-    chanDisconnectCount = ellCount (&this->chidList);
-    if ( chanDisconnectCount ) {
-        genLocalExcep ( this->pcas, ECA_DISCONN, this->host_name_str );
+    if ( this->channelCount () ) {
+        char hostName[64];
+        this->ipToA.hostName ( hostName, sizeof ( hostName ) );
+        genLocalExcep ( this->clientCtx (), ECA_DISCONN, hostName );
     }
 
-    tsDLIterBD <nciu> iter ( this->chidList.first () );
-    while ( iter.valid () ) {
-        tsDLIterBD<nciu> next = iter.itemAfter ();
-        iter->disconnect ();
-        iter = next;
-    }
-
-    this->pcas->unlock ();
+    this->disconnectAllChan ();
 
     // wait for send and recv threads to exit
     semBinaryMustTake ( this->sendThreadExitSignal );
     semBinaryMustTake ( this->recvThreadExitSignal );
-    semBinaryDestroy (this->sendThreadExitSignal);
-    semBinaryDestroy (this->recvThreadExitSignal);
 
-    this->pcas->removeIIU ( *this );
+    if ( this->pClaimsPendingIIU ) {
+        delete this->pClaimsPendingIIU;
+    }
 
-    socket_close (this->sock);
+    semBinaryDestroy ( this->sendThreadExitSignal );
+    semBinaryDestroy ( this->recvThreadExitSignal );
+    semBinaryDestroy ( this->sendThreadFlushSignal );
+    semBinaryDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
 
-    cacRingBufferDestroy (&this->recv);
-    cacRingBufferDestroy (&this->send);
+    this->clientCtx ().removeIIU ( *this );
+
+    socket_close ( this->sock );
 
     /*
      * free message body cache
      */
-    if (this->pCurData) {
-        free (this->pCurData);
+    if ( this->pCurData ) {
+        free ( this->pCurData );
     }
 }
 
@@ -595,17 +588,18 @@ void tcpiiu::suicide ()
     delete this;
 }
 
-bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
+bool tcpiiu::connectionInProgress ( const char *pChannelName, const osiSockAddr &addr ) const
 {
-    if ( this->dest.ia.sin_addr.s_addr != addr.sin_addr.s_addr ||
-        this->dest.ia.sin_port != addr.sin_port ) {
+    if ( ! this->ipToA.identicalAddress ( addr ) ) {
+        char acc[64];
         char rej[64];
         char buf[256];
 
-        ipAddrToA ( &addr, rej, sizeof (rej) );
-        sprintf ( buf, "Channel: %64s Accepted: %64s Rejected: %64s",
-                chan.pName (), this->host_name_str, rej );
-        genLocalExcep ( this->pcas, ECA_DBLCHNL, buf );
+        this->ipToA.hostName ( acc, sizeof (acc) );
+        sockAddrToA ( &addr.sa, rej, sizeof (rej) );
+        sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+                pChannelName, acc, rej );
+        genLocalExcep ( this->clientCtx (), ECA_DBLCHNL, buf );
     }
     return true;
 }
@@ -614,25 +608,10 @@ void tcpiiu::show ( unsigned /* level */ ) const
 {
 }
 
-/*
- * tcpiiu::noopRequestMsg ()
- */
-void tcpiiu::noopRequestMsg ()
+void tcpiiu::echoRequest ()
 {
-    caHdr hdr;
-    int status;
-
-    hdr.m_cmmd = htons (CA_PROTO_NOOP);
-    hdr.m_dataType = htons (0);
-    hdr.m_count = htons (0);
-    hdr.m_cid = htons (0);
-    hdr.m_available = htons (0);
-    hdr.m_postsize = 0;
-    
-    status = this->pushStreamMsg (&hdr, NULL, true);
-    if ( status == ECA_NORMAL ) {
-        this->flush ();
-    }
+    this->echoRequestPending = true;
+    this->flush ();
 }
 
 /*
@@ -640,64 +619,38 @@ void tcpiiu::noopRequestMsg ()
  */
 void tcpiiu::echoRequestMsg ()
 {
-    caHdr       hdr;
-
-    hdr.m_cmmd = htons (CA_PROTO_ECHO);
-    hdr.m_dataType = htons (0);
-    hdr.m_count = htons (0);
-    hdr.m_cid = htons (0);
-    hdr.m_available = htons (0);
-    hdr.m_postsize = 0u;
-
-    /*
-     * If we are out of buffer space then postpone this
-     * operation until later. This avoids any possibility
-     * of a push pull deadlock (since this can be sent when 
-     * parsing the UDP input buffer).
-     */
-    if ( this->pushStreamMsg (&hdr, NULL, false) == ECA_NORMAL ) {
-        this->flush ();
-        this->echoRequestPending = false;
+    if ( CA_V43 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
+        this->comQueSend::echoRequest ();
     }
     else {
-        this->echoRequestPending = true;
+        this->comQueSend::noopRequest ();
     }
+
+    this->echoRequestPending = false;
 }
 
 /*
- *  tcpiiu::busyRequestMsg ()
+ *  tcpiiu::enableFlowControlMsg ()
  */
-int tcpiiu::busyRequestMsg ()
+void tcpiiu::enableFlowControlMsg ()
 {
-    caHdr hdr;
-    int status;
-
-    hdr = cacnullmsg;
-    hdr.m_cmmd = htons ( CA_PROTO_EVENTS_OFF );
-
-    status = this->pushStreamMsg ( &hdr, NULL, true );
-    if ( status == ECA_NORMAL ) {
-        this->flush ();
-    }
-    return status;
+    this->comQueSend::enableFlowControlRequest ();
+    this->flowControlActive = true;
+#   if defined ( DEBUG ) || 1
+    printf( "fc on\n" );
+#   endif
 }
 
 /*
- * tcpiiu::readyRequestMsg ()
+ * tcpiiu::disableFlowControlMsg ()
  */
-int tcpiiu::readyRequestMsg ()
+void tcpiiu::disableFlowControlMsg ()
 {
-    caHdr hdr;
-    int status;
-
-    hdr = cacnullmsg;
-    hdr.m_cmmd = htons (CA_PROTO_EVENTS_ON);
-    
-    status = this->pushStreamMsg (&hdr, NULL, true);
-    if ( status == ECA_NORMAL ) {
-        this->flush ();
-    }
-    return status;
+    this->comQueSend::disableFlowControlRequest ();
+    this->flowControlActive = false;
+#   if defined ( DEBUG ) || 1
+        printf ( "fc off\n" );
+#   endif
 }
 
 /*
@@ -705,19 +658,11 @@ int tcpiiu::readyRequestMsg ()
  */
 void tcpiiu::hostNameSetMsg ()
 {
-    caHdr       hdr;
-
     if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
         return;
     }
 
-    hdr = cacnullmsg;
-    hdr.m_cmmd = htons ( CA_PROTO_HOST_NAME );
-    hdr.m_postsize = localHostNameAtLoadTime.stringLength () + 1u;
-    
-    this->pushStreamMsg ( &hdr, localHostNameAtLoadTime.pointer (), true );
-
-    return;
+    this->comQueSend::hostNameSetRequest ( localHostNameAtLoadTime.pointer () );
 }
 
 /*
@@ -725,498 +670,251 @@ void tcpiiu::hostNameSetMsg ()
  */
 void tcpiiu::userNameSetMsg ()
 {
-    unsigned    size;
-    caHdr       hdr;
-    char        *pName;
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
+        return;
+    }
 
-    if ( ! CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number) ) {
+    this->comQueSend::userNameSetRequest ( this->clientCtx ().userNamePointer () );
+}
+
+void tcpiiu::noopAction ()
+{
+    return;
+}
+ 
+void tcpiiu::echoRespAction ()
+{
+    return;
+}
+
+void tcpiiu::writeNotifyRespAction ()
+{
+    int status = this->curMsg.m_cid;
+    if ( status == ECA_NORMAL ) {
+        this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available );
+    }
+    else {
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( this->curMsg.m_available, 
+                    status, "write notify request rejected" );
+    }
+}
+
+void tcpiiu::readNotifyRespAction ()
+{
+    int v41;
+    int status;
+
+    /*
+     * convert the data buffer from net
+     * format to host format
+     */
+#   ifdef CONVERSION_REQUIRED 
+        if ( this->curMsg.m_dataType < NELEMENTS ( cac_dbr_cvrt ) ) {
+            ( *cac_dbr_cvrt[ this->curMsg.m_dataType ] ) (
+                 this->pCurData, this->pCurData, FALSE, this->curMsg.m_count);
+        }
+        else {
+            this->curMsg.m_cid = htonl ( ECA_BADTYPE );
+        }
+#   endif
+
+    /*
+     * the channel id field is abused for
+     * read notify status starting
+     * with CA V4.1
+     */
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    if (v41) {
+        status = this->curMsg.m_cid;
+    }
+    else{
+        status = ECA_NORMAL;
+    }
+
+    if ( status == ECA_NORMAL ) {
+        this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
+            this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
+    }
+    else {
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( this->curMsg.m_available,
+            status, "read failed", this->curMsg.m_dataType, this->curMsg.m_count );
+    }
+}
+
+void tcpiiu::eventRespAction ()
+{
+    int v41;
+    int status;
+
+    /*
+     * m_postsize = 0 used to be a confirmation, but is
+     * now a noop because the above hash lookup will 
+     * not find a matching IO block
+     */
+    if ( ! this->curMsg.m_postsize ) {
+        this->clientCtx ().ioDestroy ( this->curMsg.m_available );
         return;
     }
 
     /*
-     * allocate space in the outgoing buffer
+     * convert the data buffer from net
+     * format to host format
      */
-    pName = this->pcas->ca_pUserName, 
-    size = strlen (pName) + 1;
-    hdr = cacnullmsg;
-    hdr.m_cmmd = htons ( CA_PROTO_CLIENT_NAME );
-    hdr.m_postsize = size;
-    
-    this->pushStreamMsg ( &hdr, pName, true );
-
-    return;
-}
-
-
-/*
- * tcp_noop_action ()
- */
-LOCAL void tcp_noop_action (tcpiiu * /* piiu */)
-{
-    return;
-}
-
-/*
- * echo_resp_action ()
- */
-LOCAL void echo_resp_action (tcpiiu *piiu)
-{
-    return;
-}
-
-/*
- * write_notify_resp_action ()
- */
-LOCAL void write_notify_resp_action (tcpiiu *piiu)
-{
-    baseNMIU *monix;
-
-    piiu->pcas->lock ();
-    monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-    if (monix) {
-        int status = ntohl (piiu->curMsg.m_cid);
-        if ( status == ECA_NORMAL ) {
-            monix->completionNotify ();
+#   ifdef CONVERSION_REQUIRED 
+        if ( this->curMsg.m_dataType < NELEMENTS ( cac_dbr_cvrt ) ) {
+            ( *cac_dbr_cvrt [ this->curMsg.m_dataType ] )(
+                 this->pCurData, this->pCurData, FALSE,
+                 this->curMsg.m_count);
         }
         else {
-            monix->exceptionNotify ( status, "write notify request rejected" );
+            this->curMsg.m_cid = htonl ( ECA_BADTYPE );
         }
-        monix->destroy ();
-    }
-    piiu->pcas->unlock ();
-}
-
-/*
- * read_notify_resp_action ()
- */
-LOCAL void read_notify_resp_action ( tcpiiu *piiu )
-{
-    baseNMIU *monix;
-
-    piiu->pcas->lock ();
-    monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-
-    if (monix) {
-        int v41;
-        int status;
-
-        /*
-         * convert the data buffer from net
-         * format to host format
-         */
-#       ifdef CONVERSION_REQUIRED 
-            if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
-                (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
-                     piiu->pCurData, 
-                     piiu->pCurData, 
-                     FALSE,
-                     piiu->curMsg.m_count);
-            }
-            else {
-                piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
-            }
-#       endif
-
-        /*
-         * the channel id field is abused for
-         * read notify status starting
-         * with CA V4.1
-         */
-        v41 = CA_V41 (CA_PROTOCOL_VERSION, piiu->minor_version_number);
-        if (v41) {
-            status = ntohl (piiu->curMsg.m_cid);
-        }
-        else{
-            status = ECA_NORMAL;
-        }
-
-        if ( status == ECA_NORMAL ) {
-            monix->completionNotify (piiu->curMsg.m_dataType, piiu->curMsg.m_count, piiu->pCurData);
-        }
-        else {
-            monix->exceptionNotify (status, "read failed", piiu->curMsg.m_dataType, piiu->curMsg.m_count);
-        }
-        monix->destroy ();
-    }
-
-    piiu->pcas->unlock ();
-
-    return;
-}
-
-/*
- * event_resp_action ()
- */
-LOCAL void event_resp_action (tcpiiu *piiu)
-{
-    baseNMIU *monix;
+#   endif
 
     /*
-     * run the user's event handler 
+     * the channel id field is abused for
+     * read notify status starting
+     * with CA V4.1
      */
-    piiu->pcas->lock ();
-    monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-    if ( monix ) {
-        int v41;
-        int status;
-
-        /*
-         * m_postsize = 0 used to be a confirmation, but is
-         * now a noop because the above hash lookup will 
-         * not find a matching IO block
-         */
-        if ( ! piiu->curMsg.m_postsize ) {
-            monix->destroy ();
-            piiu->pcas->unlock ();
-            return;
-        }
-
-        /*
-         * convert the data buffer from net
-         * format to host format
-         */
-#       ifdef CONVERSION_REQUIRED 
-            if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
-                (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
-                     piiu->pCurData, 
-                     piiu->pCurData, 
-                     FALSE,
-                     piiu->curMsg.m_count);
-            }
-            else {
-                piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
-            }
-#       endif
-
-        /*
-         * the channel id field is abused for
-         * read notify status starting
-         * with CA V4.1
-         */
-        v41 = CA_V41 (CA_PROTOCOL_VERSION, piiu->minor_version_number);
-        if (v41) {
-            status = ntohl (piiu->curMsg.m_cid);
-        }
-        else {
-            status = ECA_NORMAL;
-        }
-        if ( status == ECA_NORMAL ) {
-            monix->completionNotify ( piiu->curMsg.m_dataType, 
-                piiu->curMsg.m_count, piiu->pCurData );
-        }
-        else {
-            monix->exceptionNotify ( status, "subscription update failed", 
-                            piiu->curMsg.m_dataType, piiu->curMsg.m_count );
-        }
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    if (v41) {
+        status = this->curMsg.m_cid;
     }
-
-    piiu->pcas->unlock ();
-
-    return;
-}
-
-/*
- * read_resp_action ()
- */
-LOCAL void read_resp_action (tcpiiu *piiu)
-{
-    baseNMIU *pIOBlock;
-
-    piiu->pcas->lock ();
-
-    /*
-     * verify the event id
-     */
-    pIOBlock = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-    if ( pIOBlock ) {
-
-        /*
-         * convert the data buffer from net
-         * format to host format
-         */
-        pIOBlock->completionNotify (piiu->curMsg.m_dataType, piiu->curMsg.m_count, piiu->pCurData);
-        pIOBlock->destroy ();
+    else {
+        status = ECA_NORMAL;
     }
-
-    piiu->pcas->unlock ();
-
-    return;
+    if ( status == ECA_NORMAL ) {
+        this->clientCtx ().ioCompletionNotify ( this->curMsg.m_available,
+            this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
+    }
+    else {
+        this->clientCtx ().ioExceptionNotify ( this->curMsg.m_available,
+                status, "subscription update failed", 
+                this->curMsg.m_dataType, this->curMsg.m_count );
+    }
 }
 
-/*
- * clear_channel_resp_action ()
- */
-LOCAL void clear_channel_resp_action (tcpiiu * /* piiu */)
+void tcpiiu::readRespAction ()
 {
-    /* presently a noop */
-    return;
+    this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
+        this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
 }
 
-/*
- * exception_resp_action ()
- */
-LOCAL void exception_resp_action (tcpiiu *piiu)
+void tcpiiu::clearChannelRespAction ()
 {
-    baseNMIU *monix;
+    this->clientCtx ().channelDestroy ( this->curMsg.m_available );
+}
+
+void tcpiiu::exceptionRespAction ()
+{
     char context[255];
-    caHdr *req = (caHdr *) piiu->pCurData;
+    char hostName[64];
+    caHdr *req = (caHdr *) this->pCurData;
 
-    if ( piiu->curMsg.m_postsize > sizeof (caHdr) ){
-        sprintf (context, "detected by: %s for: %s", 
-            piiu->host_name_str, (char *)(req+1));
+    this->ipToA.hostName ( hostName, sizeof ( hostName ) );
+    if ( this->curMsg.m_postsize > sizeof (caHdr) ) {
+        sprintf ( context, "detected by: %s for: %s", 
+            hostName, (char *)(req+1) );
     }
     else{
-        sprintf (context, "detected by: %s", piiu->host_name_str);
+        sprintf ( context, "detected by: %s", hostName );
     }
 
-    piiu->pcas->lock ();
-    switch ( ntohs (req->m_cmmd) ) {
+    switch ( ntohs ( req->m_cmmd ) ) {
     case CA_PROTO_READ_NOTIFY:
-        monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-        if (monix) {
-            monix->exceptionNotify ( ntohl (piiu->curMsg.m_available), context, 
-                ntohs (req->m_dataType), ntohs (req->m_count) );
-            monix->destroy ();
-        }
-        else {
-            piiu->pcas->exceptionNotify (ntohl (piiu->curMsg.m_available), 
-                context, __FILE__, __LINE__);
-        }
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+            ntohl (this->curMsg.m_available), context, 
+            ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_READ:
-        monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-        if (monix) {
-            monix->exceptionNotify ( ntohl (piiu->curMsg.m_available), context, 
-                ntohs (req->m_dataType), ntohs (req->m_count) );
-            monix->destroy ();
-        }
-        else {
-            piiu->pcas->exceptionNotify (ntohl (piiu->curMsg.m_available), 
-                context, __FILE__, __LINE__);
-        }
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+            ntohl (this->curMsg.m_available), context, 
+            ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_WRITE_NOTIFY:
-        monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-        if (monix) {
-            monix->exceptionNotify (ntohl (piiu->curMsg.m_available), context);
-            monix->destroy ();
-        }
-        else {
-            piiu->pcas->exceptionNotify (ntohl ( piiu->curMsg.m_available), 
-                context, __FILE__, __LINE__);
-        }
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+            ntohl (this->curMsg.m_available), context, 
+            ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_WRITE:
-        piiu->pcas->exceptionNotify (ntohl ( piiu->curMsg.m_available), 
+        this->clientCtx ().exceptionNotify ( ntohl ( this->curMsg.m_available), 
                 context, ntohs (req->m_dataType), ntohs (req->m_count), __FILE__, __LINE__);
         break;
     case CA_PROTO_EVENT_ADD:
-        monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-        if (monix) {
-            monix->exceptionNotify (ntohl (piiu->curMsg.m_available), context);
-            monix->destroy ();
-        }
-        else {
-            piiu->pcas->exceptionNotify (ntohl (piiu->curMsg.m_available), 
-                context, __FILE__, __LINE__);
-        }
+        this->clientCtx ().ioExceptionNotify ( ntohl (req->m_available), 
+            ntohl (this->curMsg.m_available), context, 
+            ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_EVENT_CANCEL:
-        monix = piiu->pcas->lookupIO ( piiu->curMsg.m_available );
-        if (monix) {
-            monix->exceptionNotify (ntohl (piiu->curMsg.m_available), context);
-            monix->destroy ();
-        }
-        else {
-            piiu->pcas->exceptionNotify (ntohl (piiu->curMsg.m_available), 
-                context, __FILE__, __LINE__);
-        }
+        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+            ntohl (this->curMsg.m_available), context );
         break;
     default:
-        piiu->pcas->exceptionNotify (ntohl (piiu->curMsg.m_available), 
+        this->clientCtx ().exceptionNotify (ntohl (this->curMsg.m_available), 
             context, __FILE__, __LINE__);
         break;
     }
-
-    piiu->pcas->unlock ();
-
-    return;
 }
 
-/*
- * access_rights_resp_action ()
- */
-LOCAL void access_rights_resp_action (tcpiiu *piiu)
+void tcpiiu::accessRightsRespAction ()
 {
-    int ar;
-    nciu *chan;
+    static caar init;
+    caar arBitField = init; // shut up bounds checker
+    unsigned ar;
 
-    piiu->pcas->lock ();
-    chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
-    if ( ! chan ) {
-        /*
-         * end up here if they delete the channel
-         * prior to connecting
-         */
-        piiu->pcas->unlock ();
-        return;
-    }
+    ar = this->curMsg.m_available;
+    arBitField.read_access = ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? 1 : 0;
+    arBitField.write_access = ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? 1 : 0;
 
-    ar = ntohl (piiu->curMsg.m_available);
-    chan->ar.read_access = (ar&CA_PROTO_ACCESS_RIGHT_READ)?1:0;
-    chan->ar.write_access = (ar&CA_PROTO_ACCESS_RIGHT_WRITE)?1:0;
-
-    chan->accessRightsNotify (chan->ar);
-
-    piiu->pcas->unlock ();
-    return;
+    this->clientCtx ().accessRightsNotify ( this->curMsg.m_cid, arBitField );
 }
 
-/*
- * claim_ciu_resp_action ()
- */
-LOCAL void claim_ciu_resp_action (tcpiiu *piiu)
+void tcpiiu::claimCIURespAction ()
 {
-    unsigned sid;
-    nciu *chan;
-
-    piiu->pcas->lock ();
-
-    chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
-    if ( ! chan ) {
-        piiu->pcas->unlock ();
-        return;
-    }
-
-    if ( CA_V44 (CA_PROTOCOL_VERSION, piiu->minor_version_number) ) {
-        sid = piiu->curMsg.m_available;
-    }
-    else {
-        sid = chan->sid;
-    }
-
-    chan->connect (*piiu, piiu->curMsg.m_dataType, piiu->curMsg.m_count, sid);
-
-    piiu->pcas->unlock ();
-
-    return;
+    this->clientCtx ().connectChannel ( this->curMsg.m_cid, *this, 
+        this->curMsg.m_dataType, this->curMsg.m_count, this->curMsg.m_available );
 }
 
-/*
- * verifyAndDisconnectChan ()
- */
-LOCAL void verifyAndDisconnectChan (tcpiiu *piiu)
+void tcpiiu::verifyAndDisconnectChan ()
 {
-    nciu *chan;
-
-    piiu->pcas->lock ();
-    chan = piiu->pcas->lookupChan (piiu->curMsg.m_cid);
-    if (!chan) {
-        /*
-         * end up here if they delete the channel
-         * prior to this response 
-         */
-        piiu->pcas->unlock ();
-        return;
-    }
-
-    /*
-     * need to move the channel back to the cast niiu
-     * (so we will be able to reconnect)
-     *
-     * this marks the niiu for disconnect if the channel 
-     * count goes to zero
-     */
-    chan->disconnect ();
-    piiu->pcas->unlock ();
-    return;
+    this->clientCtx ().disconnectChannel ( this->curMsg.m_cid );
 }
 
-/*
- * bad_tcp_resp_action ()
- */
-LOCAL void bad_tcp_resp_action (tcpiiu *piiu)
+void tcpiiu::badTCPRespAction ()
 {
-    ca_printf ("CAC: Bad response code in TCP message from %s was %u\n", 
-        piiu->host_name_str, piiu->curMsg.m_cmmd);
+    char hostName[64];
+    this->ipToA.hostName ( hostName, sizeof ( hostName ) );
+    ca_printf ( "CAC: Bad response code in TCP message from %s was %u\n", 
+        hostName, this->curMsg.m_cmmd);
 }
-
-/*
- * TCP protocol jump table
- */
-LOCAL const pProtoStubTCP tcpJumpTableCAC[] = 
-{
-    tcp_noop_action,
-    event_resp_action,
-    bad_tcp_resp_action,
-    read_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    exception_resp_action,
-    clear_channel_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    read_notify_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    claim_ciu_resp_action,
-    write_notify_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    access_rights_resp_action,
-    echo_resp_action,
-    bad_tcp_resp_action,
-    bad_tcp_resp_action,
-    verifyAndDisconnectChan,
-    verifyAndDisconnectChan
-};
-
 
 /*
  * post_tcp_msg ()
  */
-int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
+void tcpiiu::postMsg ()
 {
-    unsigned long size;
+    while ( 1 ) {
 
-    while ( blockSize ) {
-
-        /*
-         * fetch a complete message header
-         */
-        if ( this->curMsgBytes < sizeof (this->curMsg) ) {
-            char  *pHdr;
-
-            size = sizeof (this->curMsg) - this->curMsgBytes;
-            size = min (size, blockSize);
-            
-            pHdr = (char *) &this->curMsg;
-            memcpy ( pHdr + this->curMsgBytes, pInBuf, size);
-            
-            this->curMsgBytes += size;
-            if ( this->curMsgBytes < sizeof (this->curMsg) ) {
-#if 0 
-                printf ("waiting for %d msg hdr bytes\n", 
-                    sizeof(this->curMsg) - this->curMsgBytes);
-#endif
-                return ECA_NORMAL;
+        //
+        // fetch a complete message header
+        //
+        if ( ! this->msgHeaderAvailable ) {
+            this->msgHeaderAvailable = this->copyOutBytes ( &this->curMsg, sizeof ( this->curMsg ) );
+            if ( ! this->msgHeaderAvailable ) {
+                return;
             }
+            
+            semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
 
-            pInBuf += size;
-            blockSize -= size;
-        
-            /* 
-             * fix endian of bytes 
-             */
-            this->curMsg.m_postsize = ntohs (this->curMsg.m_postsize);
-            this->curMsg.m_cmmd = ntohs (this->curMsg.m_cmmd);
-            this->curMsg.m_dataType = ntohs (this->curMsg.m_dataType);
-            this->curMsg.m_count = ntohs (this->curMsg.m_count);
+            //
+            // fix endian of bytes 
+            //
+            this->curMsg.m_cmmd = ntohs ( this->curMsg.m_cmmd );
+            this->curMsg.m_postsize = ntohs ( this->curMsg.m_postsize );
+            this->curMsg.m_dataType = ntohs ( this->curMsg.m_dataType );
+            this->curMsg.m_count = ntohs ( this->curMsg.m_count );
+            this->curMsg.m_cid = ntohl ( this->curMsg.m_cid );
+            this->curMsg.m_available = ntohl ( this->curMsg.m_available );
 #if 0
             ca_printf (
                 "%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
@@ -1232,19 +930,20 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
 #endif
         }
 
-        /*
-         * dont allow huge msg body until
-         * the server supports it
-         */
+        //
+        // dont allow huge msg body until
+        // the client library supports it
+        //
         if ( this->curMsg.m_postsize > (unsigned) MAX_TCP ) {
-            this->curMsgBytes = 0;
-            this->curDataBytes = 0;
-            return ECA_TOLARGE;
+            this->msgHeaderAvailable = false;
+            ca_printf ("CAC: message body was too large (disconnecting)\n");
+            this->shutdown ();
+            return;
         }
 
-        /*
-         * make sure we have a large enough message body cache
-         */
+        //
+        // make sure we have a large enough message body cache
+        //
         if ( this->curMsg.m_postsize > this->curDataMax ) {
             void *pData;
             size_t cacheSize;
@@ -1256,10 +955,12 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
              * not page fault if they read MAX_STRING_SIZE
              * bytes (instead of the actual string size).
              */
-            cacheSize = max ( this->curMsg.m_postsize, MAX_STRING_SIZE );
+            cacheSize = max ( this->curMsg.m_postsize * 2u, MAX_STRING_SIZE );
             pData = (void *) calloc (1u, cacheSize);
             if ( ! pData ) {
-                return ECA_ALLOCMEM;
+                ca_printf ("CAC: not enough memory for message body cache (disconnecting)\n");
+                this->shutdown ();
+                return;
             }
             if (this->pCurData) {
                 free (this->pCurData);
@@ -1268,229 +969,122 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
             this->curDataMax = this->curMsg.m_postsize;
         }
 
-        /*
-         * Fetch a complete message body
-         * (allows for arrays larger than than the
-         * ring buffer size)
-         */
-        if (this->curMsg.m_postsize > this->curDataBytes ) {
-            char *pBdy;
+        bool msgBodyAvailable = this->copyOutBytes ( this->pCurData, this->curMsg.m_postsize );
+        if ( ! msgBodyAvailable ) {
+            return;
+        }
 
-            size = this->curMsg.m_postsize - this->curDataBytes; 
-            size = min (size, blockSize);
-            pBdy = (char *) this->pCurData;
-            memcpy ( pBdy + this->curDataBytes, pInBuf, size);
-            this->curDataBytes += size;
-            if (this->curDataBytes < this->curMsg.m_postsize) {
-#if 0
-                printf ("waiting for %d msg bdy bytes\n", 
-                    this->curMsg.m_postsize - this->curDataBytes);
-#endif
-                return ECA_NORMAL;
-            }
-            pInBuf += size;
-            blockSize -= size;
-        }   
+        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
 
         /*
          * execute the response message
          */
-        pProtoStubTCP      pStub;
-        if ( this->curMsg.m_cmmd >= NELEMENTS (tcpJumpTableCAC) ) {
-            pStub = bad_tcp_resp_action;
+        pProtoStubTCP pStub;
+        if ( this->curMsg.m_cmmd >= NELEMENTS ( tcpJumpTableCAC ) ) {
+            pStub = badTCPRespAction;
         }
         else {
             pStub = tcpJumpTableCAC [this->curMsg.m_cmmd];
         }
-        (*pStub) (this);
+        ( this->*pStub ) ();
          
-        this->curMsgBytes = 0;
-        this->curDataBytes = 0;
-    }
-    return ECA_NORMAL;
-}
-
-/*
- *  tcpiiu::pushStreamMsg ()
- */ 
-int tcpiiu::pushStreamMsg ( const caHdr *pmsg, 
-                                   const void *pext, bool BlockingOk )
-{
-    caHdr           msg;
-    ca_uint16_t     actualextsize;
-    ca_uint16_t     extsize;
-    unsigned        msgsize;
-    int             status;
-
-    if ( pext == NULL ) {
-        extsize = actualextsize = 0;
-    }
-    else {
-        if ( pmsg->m_postsize > 0xffff-7 ) {
-            return ECA_TOLARGE;
-        }
-        actualextsize = pmsg->m_postsize;
-        extsize = CA_MESSAGE_ALIGN (actualextsize);
-    }
-
-    msg = *pmsg;
-    msg.m_postsize = htons ( extsize );
-    msgsize = extsize + sizeof ( msg );
-
-    if ( cacRingBufferWriteLockNoBlock ( &this->send, msgsize ) ) {
-        status = this->pushStreamMsgPrivate ( &msg, pext, extsize, actualextsize );
-        cacRingBufferWriteUnlock ( &this->send );
-        return status;
-    }
-    else if ( BlockingOk ) {
-        this->armSendWatchdog ();
-        this->pcas->enableCallbackPreemption ();
-        cacRingBufferWriteLock ( &this->send );
-        status = this->pushStreamMsgPrivate ( &msg, pext, extsize, actualextsize );
-        cacRingBufferWriteUnlock ( &this->send );
-        this->pcas->disableCallbackPreemption ();
-        return status;
-    }
-    else {
-        return ECA_OPWILLBLOCK;
+        this->msgHeaderAvailable = false;
     }
 }
 
-int tcpiiu::pushStreamMsgPrivate ( const caHdr *pmsg, const void *pext, 
-               unsigned extsize, unsigned actualextsize )
+inline int tcpiiu::requestStubStatus ()
 {
-    unsigned bytesSent;
-
-    /*
-     * push the header onto the ring 
-     */
-    bytesSent = cacRingBufferWrite ( &this->send, pmsg, sizeof ( *pmsg ) );
-    if ( bytesSent != sizeof ( *pmsg ) ) {
+    if ( this->state == iiu_connected ) {
+        return ECA_NORMAL;
+    }
+    else {
         return ECA_DISCONNCHID;
     }
-
-    /*
-     * push message body onto the ring
-     *
-     * (optionally encode in network format as we send)
-     */
-    if ( extsize > 0u ) {
-        bytesSent = cacRingBufferWrite ( &this->send, pext, actualextsize );
-        if ( bytesSent != actualextsize ) {
-            return ECA_DISCONNCHID;
-        }
-        /*
-         * force pad bytes at the end of the message to nill
-         * if present (this avoids messages from purify)
-         */
-        {
-            unsigned long n;
-
-            n = extsize-actualextsize;
-            if ( n ) {
-                assert ( n <= sizeof (nullBuff) );
-                bytesSent = cacRingBufferWrite ( &this->send, nullBuff, n );
-                if ( bytesSent != n ) {
-                    return ECA_DISCONNCHID;
-                }
-            }
-        }
-    }
-    return ECA_NORMAL;
 }
 
-int tcpiiu::pushDatagramMsg (const caHdr * /* pMsg */, 
-                   const void * /* pExt */, ca_uint16_t /* extsize */)
+int tcpiiu::writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue )
 {
-    return ECA_INTERNAL;
+    return this->comQueSend::writeRequest ( serverId, type,  nElem,  pValue );
 }
 
-/*
- * add to the beginning of the list until we
- * have sent the claim message (after which we
- * move it to the end of the list)
- */
-void tcpiiu::addToChanList ( nciu &chan )
+int tcpiiu::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue )
 {
-    this->pcas->lock ();
-    chan.claimPending = TRUE;
-    this->chidList.push ( chan );
-    chan.piiu = this;
-    this->pcas->unlock ();
-}
-
-void tcpiiu::removeFromChanList ( nciu &chan )
-{
-    this->pcas->lock ();
-    this->chidList.remove ( chan );
-    chan.piiu = NULL;
-    this->pcas->unlock ();
-
-    if ( this->chidList.count () == 0 ) {
-        this->shutdown ();
-    }
-}
-
-void tcpiiu::disconnect ( nciu &chan )
-{
-    this->pcas->lock ();
-    this->removeFromChanList (chan);
-    this->pcas->installDisconnectedChannel ( chan );
-    this->pcas->unlock ();
-}
-
-/*
- * FLOW CONTROL
- * 
- * Keep track of how many times messages have 
- * come with out a break in between and 
- * suppress monitors if we are behind
- * (an update is sent when we catch up)
- */
-void tcpiiu::flowControlOn ()
-{
-    int status;
-
-    this->pcas->lock ();
-
-    /*  
-     * I prefer to avoid going into flow control 
-     * as this impacts the performance of batched fetches
-     */
-    if ( this->contiguous_msg_count >= MAX_CONTIGUOUS_MSG_COUNT ) {
-        if ( ! this->client_busy ) {
-            status = this->busyRequestMsg ();
-            if ( status == ECA_NORMAL ) {
-                this->client_busy = TRUE;
-#               if defined(DEBUG) 
-                    printf("fc on\n");
-#               endif
-            }
-        }
+    if ( this->ca_v41_ok () ) {
+        return this->comQueSend::writeNotifyRequest ( ioId, serverId, type,  nElem,  pValue );
     }
     else {
-        this->contiguous_msg_count++;
+        return ECA_NOSUPPORT;
     }
-
-    this->pcas->unlock ();
 }
 
-void tcpiiu::flowControlOff ()
+int tcpiiu::readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
 {
-    int status;
-
-    this->pcas->lock ();
-
-    this->contiguous_msg_count = 0;
-    if ( this->client_busy ) {
-        status = this->readyRequestMsg ();
-        if ( status == ECA_NORMAL ) {
-            this->client_busy = FALSE;
-#           if defined (DEBUG) 
-                printf("fc off\n");
-#           endif
-        }
-    }
-
-    this->pcas->unlock ();
+    return this->comQueSend::readCopyRequest ( ioId, serverId, type,  nElem );
 }
+
+int tcpiiu::readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
+{
+    return this->comQueSend::readNotifyRequest ( ioId, serverId, type,  nElem );
+}
+
+int tcpiiu::createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength )
+{
+    return this->comQueSend::createChannelRequest ( clientId, pName, nameLength );
+}
+
+int tcpiiu::clearChannelRequest ( unsigned clientId, unsigned serverId )
+{
+    return this->comQueSend::clearChannelRequest ( clientId, serverId );
+}
+
+int tcpiiu::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, unsigned mask )
+{
+    return this->comQueSend::subscriptionRequest ( ioId, serverId, type, nElem, mask );
+}
+
+int tcpiiu::subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
+{
+    return this->comQueSend::subscriptionCancelRequest ( ioId, serverId, type, nElem );
+}
+
+void tcpiiu::processIncomingAndDestroySelfIfDisconnected ()
+{
+    if ( this->state == iiu_disconnected ) {
+        this->suicide ();
+    }
+    else if ( this->recvPending ) {
+        this->recvPending = false;
+        this->postMsg ();
+    }
+}
+
+void tcpiiu::lastChannelDetachNotify ()
+{
+    this->shutdown ();
+}
+
+void tcpiiu::installChannelPendingClaim ( nciu &chan )
+{
+    chan.attachChanToIIU ( *this->pClaimsPendingIIU );
+    // wake up send thread which sends claim message
+    semBinaryGive ( this->sendThreadFlushSignal );
+}
+
+// the recv thread is not permitted to flush as this
+// can result in a push / pull deadlock on the TCP pipe.
+// Instead the recv thread scheduals the flush with the 
+// send thread which runs at a higher priority than the 
+// send thread.
+bool tcpiiu::flushToWirePermit ()
+{
+    if ( this->clientCtx ().currentThreadIsRecvProcessThread () ) {
+        this->flushPending = true;
+        semBinaryGive ( this->sendThreadFlushSignal );
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+

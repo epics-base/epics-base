@@ -29,14 +29,7 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 
 void tcpRecvWatchdog::expire ()
 {
-    /*
-     * remain backwards compatible with old servers
-     * ( this isnt an echo request )
-     */
-    if ( ! this->echoProtocolAccepted ) {
-        this->noopRequestMsg ();
-    }
-    else if ( this->responsePending ) {
+    if ( this->responsePending ) {
         char hostName[128];
         this->hostName ( hostName, sizeof (hostName) );
         ca_printf ( "CA server %s unresponsive for %g sec. Disconnecting.\n", 
@@ -44,8 +37,10 @@ void tcpRecvWatchdog::expire ()
         this->shutdown ();
     }
     else {
-        this->echoRequestMsg ();
-        this->responsePending = true;
+        this->echoRequest ();
+        if ( this->echoProtocolAccepted ) {
+            this->responsePending = true;
+        }
     }
 }
 

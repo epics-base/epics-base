@@ -11,6 +11,8 @@
  */
 
 #include "iocinf.h"
+#include "netReadCopyIO_IL.h"
+#include "nciu_IL.h"
 
 tsFreeList < class netReadCopyIO, 1024 > netReadCopyIO::freeList;
 
@@ -24,12 +26,13 @@ netReadCopyIO::netReadCopyIO ( nciu &chanIn, unsigned typeIn, unsigned long coun
 
 netReadCopyIO::~netReadCopyIO () 
 {
+
 }
 
 void netReadCopyIO::disconnect ( const char *pHostName )
 {
     this->exceptionNotify ( ECA_DISCONN, pHostName );
-    delete this;
+    this->baseNMIU::destroy ();
 }
 
 void netReadCopyIO::completionNotify ()
@@ -48,7 +51,7 @@ void netReadCopyIO::completionNotify ( unsigned typeIn,
             memcpy ( this->pValue, pDataIn, 
                  dbr_size_n ( typeIn, countIn ) );
 #       endif
-        chan.decrementOutstandingIO (this->seqNumber);
+        this->chan.decrementOutstandingIO (this->seqNumber);
     }
     else {
         this->exceptionNotify ( ECA_INTERNAL, "bad data type in message" );
@@ -66,14 +69,4 @@ void netReadCopyIO::exceptionNotify ( int status,
     ca_signal_formated (status, __FILE__, __LINE__, 
         "%s type=%d count=%ld\n", 
         pContextIn, typeIn, countIn);
-}
-
-void * netReadCopyIO::operator new ( size_t size )
-{
-    return netReadCopyIO::freeList.allocate ( size );
-}
-
-void netReadCopyIO::operator delete ( void *pCadaver, size_t size )
-{
-    netReadCopyIO::freeList.release ( pCadaver, size );
 }

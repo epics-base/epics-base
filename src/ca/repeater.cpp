@@ -57,23 +57,44 @@
 #include    "iocinf.h"
 #include    "taskwd.h"
 
+#ifdef DEBUG
+#   define debugPrintf(argsInParen) printf argsInParen
+#else
+#   define debugPrintf(argsInParen)
+#endif
+
 /*
  * one socket per client so we will get the ECONNREFUSED
  * error code (and then delete the client)
  */
-struct one_client {
-    ELLNODE             node;
-    struct sockaddr_in  from;
-    SOCKET              sock;
+class repeaterClient : public tsDLNode < repeaterClient > {
+public:
+    repeaterClient ( const osiSockAddr &from );
+    bool connect ();
+    bool sendConfirm ();
+    bool sendMessage ( const void *pBuf, unsigned bufSize );
+    void destroy ();
+    bool verify ();
+    bool identicalAddress ( const osiSockAddr &from );
+    bool identicalPort ( const osiSockAddr &from );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+private:
+    osiSockAddr from;
+    SOCKET sock;
+    static tsFreeList < class repeaterClient, 0x20 > freeList;
+    ~repeaterClient ();
+    unsigned port () const;
 };
 
 /* 
  *  these can be external since there is only one instance
  *  per machine so we dont care about reentrancy
  */
-static ELLLIST client_list;
+static tsDLList < repeaterClient > client_list;
+tsFreeList < repeaterClient, 0x20 > repeaterClient::freeList;
 
-static char buf[ETHERNET_MAX_UDP]; 
+static char buf [MAX_UDP_RECV]; 
 
 static const unsigned short PORT_ANY = 0u;
 
@@ -86,14 +107,14 @@ typedef struct {
 /*
  * makeSocket()
  */
-LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr)
+LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
 {
     int status;
     struct sockaddr_in bd;
     makeSocketReturn msr;
     int flag;
 
-    msr.sock = socket (AF_INET, SOCK_DGRAM, 0);     
+    msr.sock = socket ( AF_INET, SOCK_DGRAM, 0 );     
     if ( msr.sock == INVALID_SOCKET ) {
         msr.errNumber = SOCKERRNO;
         msr.pErrStr = SOCKERRSTR (msr.errNumber);
@@ -110,18 +131,18 @@ LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr)
         bd.sin_addr.s_addr = htonl (INADDR_ANY); 
         bd.sin_port = htons (port);  
         status = bind (msr.sock, (struct sockaddr *)&bd, (int)sizeof(bd));
-        if (status<0) {
+        if ( status < 0 ) {
             msr.errNumber = SOCKERRNO;
-            msr.pErrStr = SOCKERRSTR (msr.errNumber);
+            msr.pErrStr = SOCKERRSTR ( msr.errNumber );
             socket_close (msr.sock);
             msr.sock = INVALID_SOCKET;
             return msr;
         }
         if (reuseAddr) {
-            flag = TRUE;
+            flag = true;
             status = setsockopt ( msr.sock,  SOL_SOCKET, SO_REUSEADDR,
-                        (char *)&flag, sizeof (flag) );
-            if (status<0) {
+                        (char *) &flag, sizeof (flag) );
+            if ( status < 0 ) {
                 int errnoCpy = SOCKERRNO;
                 ca_printf (
             "%s: set socket option failed because \"%s\"\n", 
@@ -135,131 +156,233 @@ LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr)
     return msr;
 }
 
+repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
+    from ( fromIn ), sock ( INVALID_SOCKET )
+{
+    debugPrintf ( ( "new client %u\n", ntohs ( from.ia.sin_port ) ) );
+}
+
+bool repeaterClient::connect ()
+{
+    int status;
+    makeSocketReturn msr;
+
+    msr = makeSocket ( PORT_ANY, false );
+    if ( msr.sock == INVALID_SOCKET ) {
+        ca_printf ( "%s: no client sock because %d=\"%s\"\n",
+                __FILE__, msr.errNumber, msr.pErrStr );
+        return false;
+    }
+
+    this->sock = msr.sock;
+
+    status = ::connect ( this->sock, &this->from.sa, sizeof ( this->from.sa ) );
+    if ( status < 0 ) {
+        int errnoCpy = SOCKERRNO;
+
+        ca_printf (
+            "%s: unable to connect client sock because \"%s\"\n",
+            __FILE__, SOCKERRSTR ( errnoCpy ) );
+        return false;
+    }
+
+    return true;
+}
+
+bool repeaterClient::sendConfirm ()
+{
+    int status;
+
+    caHdr confirm;
+    memset ( (char *) &confirm, '\0', sizeof (confirm) );
+    confirm.m_cmmd = htons ( REPEATER_CONFIRM );
+    confirm.m_available = this->from.ia.sin_addr.s_addr;
+    status = send ( this->sock, (char *) &confirm,
+                    sizeof (confirm), 0 );
+    if ( status >= 0 ) {
+        assert ( status == sizeof ( confirm ) );
+        return true;
+    }
+    else if ( SOCKERRNO == SOCK_ECONNREFUSED ) {
+        return false;
+    }
+    else {
+        ca_printf ( "CA Repeater: confirm err was \"%s\"\n",
+                SOCKERRSTR (SOCKERRNO) );
+        return false;
+    }
+}
+
+bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
+{
+    int status;
+
+    status = send ( this->sock, (char *) pBuf, bufSize, 0 );
+    if ( status >= 0 ) {
+        assert ( status == bufSize );
+        debugPrintf ( ("Sent to %u\n", ntohs ( this->from.ia.sin_port ) ) );
+        return true;
+    }
+    else {
+        int errnoCpy = SOCKERRNO;
+        if ( errnoCpy == SOCK_ECONNREFUSED ) {
+            debugPrintf ( ("Client refused message %u\n", ntohs ( this->from.ia.sin_port ) ) );
+        }
+        else {
+            debugPrintf ( ( "CA Repeater: UDP send err was \"%s\"\n", SOCKERRSTR (errnoCpy) ) );
+        }
+        return false;
+    }
+}
+
+repeaterClient::~repeaterClient ()
+{
+    if ( this->sock != INVALID_SOCKET ) {
+        socket_close ( this->sock );
+    }
+    debugPrintf ( ( "Deleted client %u\n", ntohs ( this->from.ia.sin_port ) ) );
+}
+
+inline void * repeaterClient::operator new ( size_t size )
+{ 
+    return repeaterClient::freeList.allocate ( size );
+}
+
+inline void repeaterClient::operator delete ( void *pCadaver, size_t size )
+{ 
+    repeaterClient::freeList.release ( pCadaver, size );
+}
+
+inline void repeaterClient::destroy ()
+{
+    delete this;
+}
+
+inline unsigned repeaterClient::port () const
+{
+    return ntohs ( this->from.ia.sin_port );
+}
+
+inline bool repeaterClient::identicalAddress ( const osiSockAddr &from )
+{
+    if ( from.sa.sa_family == this->from.sa.sa_family ) {
+        if ( from.ia.sin_port == this->from.ia.sin_port) {
+            if ( from.ia.sin_addr.s_addr == this->from.ia.sin_addr.s_addr ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline bool repeaterClient::identicalPort ( const osiSockAddr &from )
+{
+    if ( from.sa.sa_family == this->from.sa.sa_family ) {
+        if ( from.ia.sin_port == this->from.ia.sin_port) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool repeaterClient::verify ()
+{
+    makeSocketReturn msr;
+    msr = makeSocket ( this->port (), false );
+    if ( msr.sock != INVALID_SOCKET ) {
+        socket_close ( msr.sock );
+        return false;
+    }
+    else {
+        /*
+         * win sock does not set SOCKERRNO when this fails
+         */
+        if ( msr.errNumber != SOCK_EADDRINUSE ) {
+            ca_printf (
+"CA Repeater: bind test err was %d=\"%s\"\n", 
+                msr.errNumber, msr.pErrStr );
+        }
+        return true;
+    }
+}
+
+
 /*
  * verifyClients()
  * (this is required because solaris has a half baked version of sockets)
  */
 LOCAL void verifyClients()
 {
-    ELLLIST theClients;
-    struct one_client *pclient;
-    makeSocketReturn msr;
+    static tsDLList < repeaterClient > theClients;
+    repeaterClient *pclient;
 
-    ellInit(&theClients);
-    while ( (pclient=(struct one_client *)ellGet(&client_list)) ) {
-        ellAdd (&theClients, &pclient->node);
-
-        msr = makeSocket ( ntohs (pclient->from.sin_port), FALSE );
-        if ( msr.sock != INVALID_SOCKET ) {
-#ifdef DEBUG
-            ca_printf ("Deleted client %d\n",
-                    ntohs (pclient->from.sin_port) );
-#endif
-            ellDelete (&theClients, &pclient->node);
-            socket_close (msr.sock);
-            socket_close (pclient->sock);
-            free (pclient);
+    while ( pclient = client_list.get () ) {
+        if ( pclient->verify () ) {
+            theClients.add ( *pclient );
         }
         else {
-            /*
-             * win sock does not set SOCKERRNO when this fails
-             */
-            if ( msr.errNumber != SOCK_EADDRINUSE ) {
-                ca_printf (
-    "CA Repeater: bind test err was %d=\"%s\"\n", 
-                    msr.errNumber, msr.pErrStr);
-            }
+            pclient->destroy ();
         }
     }
-    ellConcat (&client_list, &theClients);
+    client_list.add ( theClients );
 }
 
 /*
  * fanOut()
  */
-LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
+LOCAL void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize )
 {
-    ELLLIST theClients;
-    struct one_client *pclient;
-    int status;
-    int verify = FALSE;
+    static tsDLList < repeaterClient > theClients;
+    repeaterClient *pclient;
 
-    ellInit(&theClients);
-    while ( ( pclient = (struct one_client *) ellGet (&client_list) ) ) {
-        ellAdd(&theClients, &pclient->node);
-
-        /*
-         * Dont reflect back to sender
-         */
-        if(pFrom->sin_port == pclient->from.sin_port &&
-           pFrom->sin_addr.s_addr == pclient->from.sin_addr.s_addr){
+    while ( pclient = client_list.get () ) {
+        theClients.add ( *pclient );
+        /* Dont reflect back to sender */
+        if ( pclient->identicalAddress ( from ) ) {
             continue;
         }
 
-        status = send ( pclient->sock, (char *)pMsg, msgSize, 0 );
-        if ( status >= 0 ) {
-#ifdef DEBUG
-            ca_printf ("Sent to %d\n", 
-                ntohs (pclient->from.sin_port));
-#endif
-        }
-        if ( status < 0 ) {
-            int errnoCpy = SOCKERRNO;
-            if ( errnoCpy == SOCK_ECONNREFUSED ) {
-#ifdef DEBUG
-                ca_printf ("Deleted client %d\n",
-                    ntohs (pclient->from.sin_port));
-#endif
-                verify = TRUE;
-            }
-            else {
-                ca_printf (
-"CA Repeater: UDP fan out err was \"%s\"\n",
-                    SOCKERRSTR(errnoCpy));
+        if ( ! pclient->sendMessage ( pMsg, msgSize ) ) {
+            if ( ! pclient->verify () ) {
+                theClients.remove ( *pclient );
+                pclient->destroy ();
             }
         }
     }
-    ellConcat(&client_list, &theClients);
 
-    if (verify) {
-        verifyClients ();
-    }
+    client_list.add ( theClients );
 }
 
 /*
  * register_new_client()
  */
-LOCAL void register_new_client (struct sockaddr_in  *pFrom)
+LOCAL void register_new_client ( osiSockAddr &from )
 {
     int status;
-    struct one_client *pclient;
-    caHdr confirm;
-    caHdr noop;
-    int newClient = FALSE;
+    bool newClient = false;
     makeSocketReturn msr;
 
-    if (pFrom->sin_family != AF_INET) {
+    if ( from.sa.sa_family != AF_INET ) {
         return;
     }
 
     /*
      * the repeater and its clients must be on the same host
      */
-    if ( htonl(INADDR_LOOPBACK) != pFrom->sin_addr.s_addr ) {
+    if ( htonl ( INADDR_LOOPBACK ) != from.ia.sin_addr.s_addr ) {
         static SOCKET testSock = INVALID_SOCKET;
-        static int init;
-        struct sockaddr_in ina;
+        static bool init = false;
 
         if ( ! init ) {
-            msr = makeSocket (PORT_ANY, TRUE);
+            msr = makeSocket ( PORT_ANY, true );
             if ( msr.sock == INVALID_SOCKET ) {
-                ca_printf("%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
-                    __FILE__, msr.errNumber, msr.pErrStr);
+                ca_printf ( "%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
+                    __FILE__, msr.errNumber, msr.pErrStr );
             }
             else {
                 testSock = msr.sock;
             }
-            init = TRUE;
+            init = true;
         }
 
         /*
@@ -272,12 +395,14 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
          * to current code.
          */
         if ( testSock != INVALID_SOCKET ) {
-            ina = *pFrom;
-            ina.sin_port = PORT_ANY;
+            osiSockAddr addr;
+
+            addr = from;
+            addr.ia.sin_port = PORT_ANY;
 
             /* we can only bind to a local address */
-            status = bind ( testSock, (struct sockaddr *) &ina, (int) sizeof (ina) );
-            if (status) {
+            status = bind ( testSock, &addr.sa, sizeof ( addr ) );
+            if ( status ) {
                 return;
             }
         }
@@ -286,84 +411,45 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         }
     }
 
-    for ( pclient = (struct one_client *) ellFirst (&client_list);
-        pclient; pclient = (struct one_client *) ellNext (&pclient->node) ){
-
-        if ( pFrom->sin_port == pclient->from.sin_port ) {
+    tsDLIterBD < repeaterClient > pclient = client_list.first ();
+    while ( pclient.valid () ) {
+        if ( pclient->identicalPort ( from ) ) {
             break;
         }
+        pclient = pclient.itemAfter ();
     }       
 
-    if ( ! pclient ) {
-        pclient = (struct one_client *) calloc ( 1, sizeof (*pclient) );
-        if ( ! pclient ) {
+    if ( ! pclient.valid () ) {
+        pclient = new repeaterClient ( from );
+        if ( ! pclient.valid () ) {
             ca_printf ( "%s: no memory for new client\n", __FILE__ );
             return;
         }
 
-        msr = makeSocket (PORT_ANY, FALSE);
-        if ( msr.sock==INVALID_SOCKET ) {
-            free ( pclient );
-            ca_printf ( "%s: no client sock because %d=\"%s\"\n",
-                    __FILE__, msr.errNumber, msr.pErrStr );
+        if ( ! pclient->connect () ) {
+            pclient->destroy ();
             return;
         }
 
-        pclient->sock = msr.sock;
-
-        status = connect ( pclient->sock, 
-                (struct sockaddr *) pFrom, 
-                sizeof ( *pFrom ) );
-        if ( status < 0 ) {
-            int errnoCpy = SOCKERRNO;
-
-            ca_printf (
-            "%s: unable to connect client sock because \"%s\"\n",
-                __FILE__, SOCKERRSTR (errnoCpy) );
-
-            socket_close ( pclient->sock );
-            free ( pclient );
-            return;
-        }
-
-        pclient->from = *pFrom;
-
-        ellAdd ( &client_list, &pclient->node );
-        newClient = TRUE;
-#ifdef DEBUG
-        ca_printf ( "Added %d\n", ntohs (pFrom->sin_port) );
-#endif
+        client_list.add ( *pclient ); 
+        newClient = true;
     }
 
-    memset ( (char *) &confirm, '\0', sizeof (confirm) );
-    confirm.m_cmmd = htons (REPEATER_CONFIRM);
-    confirm.m_available = pFrom->sin_addr.s_addr;
-    status = send ( pclient->sock, (char *) &confirm,
-                    sizeof (confirm), 0 );
-    if ( status >= 0 ) {
-        assert ( status == sizeof (confirm) );
-    }
-    else if ( SOCKERRNO == SOCK_ECONNREFUSED ){
-#ifdef DEBUG
-        ca_printf ( "Deleted repeater client=%d sending ack\n",
-                ntohs (pFrom->sin_port) );
-#endif
-        ellDelete ( &client_list, &pclient->node );
-        socket_close ( pclient->sock );
-        free ( pclient );
-    }
-    else {
-        ca_printf ( "CA Repeater: confirm err was \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO) );
+    if ( ! pclient->sendConfirm () ) {
+        client_list.remove (*pclient );
+        pclient->destroy ();
+        debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
+                    ntohs (from.ia.sin_port) ) );
     }
 
     /*
      * send a noop message to all other clients so that we dont 
      * accumulate sockets when there are no beacons
      */
-    memset ( (char *) &noop, '\0', sizeof (noop) );
-    confirm.m_cmmd = htons (CA_PROTO_NOOP);
-    fanOut ( pFrom, (char *)&noop, sizeof (noop) );
+    caHdr noop;
+    memset ( (char *) &noop, '\0', sizeof ( noop ) );
+    noop.m_cmmd = htons ( CA_PROTO_NOOP );
+    fanOut ( from, &noop, sizeof ( noop ) );
 
     if ( newClient ) {
         /*
@@ -389,8 +475,8 @@ void epicsShareAPI ca_repeater ()
 {
     int size;
     SOCKET sock;
-    struct sockaddr_in from;
-    int from_size = sizeof from;
+    osiSockAddr from;
+    int from_size = sizeof ( from );
     unsigned short port;
     makeSocketReturn msr;
 
@@ -398,9 +484,7 @@ void epicsShareAPI ca_repeater ()
 
     port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
 
-    ellInit(&client_list);
-
-    msr = makeSocket (port, TRUE);
+    msr = makeSocket ( port, true );
     if ( msr.sock == INVALID_SOCKET ) {
         /*
          * test for server was already started
@@ -417,15 +501,13 @@ void epicsShareAPI ca_repeater ()
 
     sock = msr.sock;
 
-#ifdef DEBUG
-    ca_printf ("CA Repeater: Attached and initialized\n");
-#endif
+   debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 
-    while (TRUE) {
+   while ( true ) {
         caHdr   *pMsg;
 
         size = recvfrom ( sock, buf, sizeof (buf), 0,
-                    (struct sockaddr *)&from, &from_size );
+                    &from.sa, &from_size );
         if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
 #           ifdef linux
@@ -449,8 +531,8 @@ void epicsShareAPI ca_repeater ()
          * will register a new client
          */
         if ( ( (size_t) size) >= sizeof (*pMsg) ) {
-            if ( ntohs(pMsg->m_cmmd) == REPEATER_REGISTER ) {
-                register_new_client (&from);
+            if ( ntohs ( pMsg->m_cmmd ) == REPEATER_REGISTER ) {
+                register_new_client ( from );
 
                 /*
                  * strip register client message
@@ -463,21 +545,21 @@ void epicsShareAPI ca_repeater ()
             }
         }
         else if (size == 0) {
-            register_new_client (&from);
+            register_new_client ( from );
             continue;
         }
 
-        fanOut (&from, (char *) pMsg, size);
+        fanOut ( from, pMsg, size );
     }
 }
 
 /*
  * caRepeaterThread ()
  */
-void caRepeaterThread (void * /* pDummy */ )
+void caRepeaterThread ( void * /* pDummy */ )
 {
-    taskwdInsert (threadGetIdSelf(), NULL, NULL);
-    ca_repeater();
+    taskwdInsert ( threadGetIdSelf(), NULL, NULL );
+    ca_repeater ();
 }
 
 

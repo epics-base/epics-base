@@ -20,53 +20,6 @@
 
 tsFreeList < struct oldChannel, 1024 > oldChannel::freeList;
 
-oldChannel::oldChannel (caCh *pConnCallBackIn, void *pPrivateIn) :
-    pConnCallBack (pConnCallBackIn), pPrivate (pPrivateIn), pAccessRightsFunc (0)
-{
-}
-
-oldChannel::~oldChannel ()
-{
-    this->lock ();
-    if ( ! this->pConnCallBack ) {
-        this->decrementOutstandingIO ();
-    }
-    this->unlock ();
-}
-
-void oldChannel::destroy ()
-{
-    delete this;
-}
-
-void oldChannel::ioAttachNotify ()
-{
-    this->lock ();
-    if ( ! this->pConnCallBack ) {
-        this->incrementOutstandingIO ();
-    }
-    this->unlock ();
-}
-
-void oldChannel::ioReleaseNotify ()
-{
-    this->lock ();
-    if ( ! this->pConnCallBack ) {
-        this->decrementOutstandingIO ();
-    }
-    this->unlock ();
-}
-
-void oldChannel::setPrivatePointer (void *pPrivateIn)
-{
-    this->pPrivate = pPrivateIn;
-}
-
-void * oldChannel::privatePointer () const
-{
-    return this->pPrivate;
-}
-
 /*
  * cacAlreadyConnHandler ()
  * This is installed into channels which dont have
@@ -78,89 +31,156 @@ extern "C" void cacAlreadyConnHandler (struct connection_handler_args)
 {
 }
 
+/*
+ * cacNoConnHandler ()
+ * This is installed into channels which dont have
+ * a connection handler before ca_pend_io() times
+ * out so that we will properly decrement the pending
+ * recv count in the future.
+ */
+extern "C" void cacNoConnHandler ( struct connection_handler_args args )
+{
+    args.chid->lockOutstandingIO ();
+    if ( args.chid->pConnCallBack == cacNoConnHandler ) {
+        args.chid->pConnCallBack = cacAlreadyConnHandler;
+        if ( args.op == CA_OP_CONN_UP ) {
+            args.chid->decrementOutstandingIO ();
+        }
+    }
+    args.chid->unlockOutstandingIO ();
+}
+
+extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
+{
+}
+
+oldChannel::oldChannel (caCh *pConnCallBackIn, void *pPrivateIn) :
+    pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler )
+{
+    if ( ! pConnCallBackIn ) {
+        this->pConnCallBack = cacNoConnHandler;
+    }
+    else {
+        this->pConnCallBack = pConnCallBackIn;
+    }
+}
+
+oldChannel::~oldChannel ()
+{
+    if ( this->pConnCallBack == cacNoConnHandler ) {
+        this->decrementOutstandingIO ();
+    }
+}
+
+void oldChannel::destroy ()
+{
+    delete this;
+}
+
+void oldChannel::ioAttachNotify ()
+{
+    this->lockOutstandingIO ();
+    if ( this->pConnCallBack == cacNoConnHandler ) {
+        this->incrementOutstandingIO ();
+    }
+    this->unlockOutstandingIO ();
+}
+
+void oldChannel::ioReleaseNotify ()
+{
+    this->lockOutstandingIO ();
+    if ( this->pConnCallBack == cacNoConnHandler ) {
+        this->decrementOutstandingIO ();
+    }
+    this->unlockOutstandingIO ();
+}
+
+void oldChannel::setPrivatePointer ( void *pPrivateIn )
+{
+    this->pPrivate = pPrivateIn;
+}
+
+void * oldChannel::privatePointer () const
+{
+    return this->pPrivate;
+}
+
 void oldChannel::connectTimeoutNotify ()
 {
-    this->lock ();
-    if ( ! this->pConnCallBack ) {
+    this->lockOutstandingIO ();
+    if ( this->pConnCallBack == cacNoConnHandler ) {
         this->pConnCallBack = cacAlreadyConnHandler;
     }
-    this->unlock ();
+    this->unlockOutstandingIO ();
 }
 
 void oldChannel::connectNotify ()
 {
-    this->lock ();
-    if ( this->pConnCallBack ) {
-        caCh *pCCB = this->pConnCallBack;
-        struct connection_handler_args  args;
-        args.chid = this;
-        args.op = CA_OP_CONN_UP;
-        (*pCCB) (args);
-    }
-    else {
-        this->pConnCallBack = cacAlreadyConnHandler;
-        this->decrementOutstandingIO ();
-    }
-    this->unlock ();
+    this->lockOutstandingIO ();
+    struct connection_handler_args  args;
+    args.chid = this;
+    args.op = CA_OP_CONN_UP;
+    (*this->pConnCallBack) (args);
+    this->unlockOutstandingIO ();
 }
 
 void oldChannel::disconnectNotify ()
 {
-    this->lock ();
-    if ( this->pConnCallBack ) {
-        struct connection_handler_args  args;
-        args.chid = this;
-        args.op = CA_OP_CONN_DOWN;
-        (*this->pConnCallBack) (args);
-    }
-    this->unlock ();
+    this->lockOutstandingIO ();
+    struct connection_handler_args  args;
+    args.chid = this;
+    args.op = CA_OP_CONN_DOWN;
+    (*this->pConnCallBack) ( args );
+    this->unlockOutstandingIO ();
 }
 
-void oldChannel::accessRightsNotify (caar ar)
+int oldChannel::changeConnCallBack ( caCh *pfunc )
 {
-    this->lock ();
-    if ( this->pAccessRightsFunc ) {
-        struct access_rights_handler_args args;
-        args.chid = this;
-        args.ar = ar;
-        ( *this->pAccessRightsFunc ) ( args );
-    }
-    this->unlock ();
-}
-
-int oldChannel::changeConnCallBack (caCh *pfunc)
-{
-    this->lock ();
-    if ( pfunc == 0) {
-        if ( this->pConnCallBack != 0 ) {
-            if ( this->pConnCallBack != cacAlreadyConnHandler ) {
+    this->lockOutstandingIO ();
+    if ( ! pfunc ) {
+        if ( this->pConnCallBack != cacNoConnHandler  && 
+            this->pConnCallBack != cacAlreadyConnHandler ) {
+            if ( this->state () == cs_never_conn ) {
                 this->incrementOutstandingIO ();
-                this->pConnCallBack = 0;
+                this->pConnCallBack = cacNoConnHandler;
+            }
+            else {
+                this->pConnCallBack = cacAlreadyConnHandler;
             }
         }
     }
     else {
-        if ( this->pConnCallBack == 0 ) { 
+        if ( this->pConnCallBack == cacNoConnHandler ) { 
             this->decrementOutstandingIO ();
         }
         this->pConnCallBack = pfunc;
     }
-    this->unlock ();
+    this->unlockOutstandingIO ();
 
     return ECA_NORMAL;
 }
 
-int oldChannel::replaceAccessRightsEvent (caArh *pfunc)
+void oldChannel::accessRightsNotify ( caar ar )
 {
-    this->lock ();
+    struct access_rights_handler_args args;
+    args.chid = this;
+    args.ar = ar;
+    ( *this->pAccessRightsFunc ) ( args );
+}
+
+int oldChannel::replaceAccessRightsEvent ( caArh *pfunc )
+{
+    if ( ! pfunc ) {
+        pfunc = cacNoopAccesRightsHandler;
+    }
+
     this->pAccessRightsFunc = pfunc;
-    if ( pfunc && this->connected () ) {
+    if ( this->connected () ) {
         struct access_rights_handler_args args;
         args.chid = this;
         args.ar = this->accessRights ();
         (*pfunc) (args);
     }
-    this->unlock ();
 
     return ECA_NORMAL;
 }

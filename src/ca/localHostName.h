@@ -13,10 +13,12 @@
 class localHostName {
 public:
     localHostName ();
+    ~localHostName ();
     const char * pointer () const;
     void copy ( char *pBuf, unsigned bufLength ) const;
     unsigned stringLength () const;
 private:
+    bool attachedToSockLib;
     unsigned length;
     char cache [128];
 };

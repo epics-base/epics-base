@@ -28,10 +28,10 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
     framesPerTryCongestThresh (UINT_MAX),
     minRetry (UINT_MAX),
     retry (0u),
-    searchTries (0u),
-    searchResponses (0u),
+    searchTriesWithinThisPass (0u),
+    searchResponsesWithinThisPass (0u),
     retrySeqNo (0u),
-    retrySeqNoAtListBegin (0u),
+    retrySeqAtPassBegin (0u),
     period (CA_RECAST_DELAY)
 {
 }
@@ -47,7 +47,7 @@ void searchTimer::reset ( double delayToNextTry )
         delayToNextTry = CA_RECAST_DELAY;
     }
 
-    this->iiu.pcas->lock ();
+    this->lock ();
     this->retry = 0;
     if ( this->period > delayToNextTry ) {
         reschedule = true;
@@ -56,7 +56,7 @@ void searchTimer::reset ( double delayToNextTry )
         reschedule = false;
     }
     this->period = CA_RECAST_DELAY;
-    this->iiu.pcas->unlock ();
+    this->unlock ();
 
     if ( reschedule ) {
         this->reschedule ( delayToNextTry );
@@ -76,7 +76,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
     unsigned idelay;
     double delay;
 
-    this->iiu.pcas->lock ();
+    this->lock ();
 
     /*
      * set the retry number
@@ -93,7 +93,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
      */
     this->period = min (CA_RECAST_PERIOD, delay);
 
-    this->iiu.pcas->unlock ();
+    this->unlock ();
 
     debugPrintf ( ("new CA search period is %f sec\n", this->period) );
 }
@@ -107,17 +107,21 @@ void searchTimer::setRetryInterval (unsigned retryNo)
 //
 void searchTimer::notifySearchResponse ( unsigned short retrySeqNo )
 {
-    this->iiu.pcas->lock ();
+    bool reschedualNeeded;
 
-    if ( this->retrySeqNoAtListBegin <= retrySeqNo ) {
-        if ( this->searchResponses < ULONG_MAX ) {
-            this->searchResponses++;
+    this->lock ();
+
+    if ( this->retrySeqAtPassBegin <= retrySeqNo ) {
+        if ( this->searchResponsesWithinThisPass < UINT_MAX ) {
+            this->searchResponsesWithinThisPass++;
         }
     }    
-        
-    this->iiu.pcas->unlock ();
 
-    if ( retrySeqNo == this->retrySeqNo ) {
+    reschedualNeeded = ( retrySeqNo == this->retrySeqNo );
+        
+    this->unlock ();
+
+    if ( reschedualNeeded ) {
         this->reschedule (0.0);
     }
 }
@@ -127,19 +131,17 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNo )
 //
 void searchTimer::expire ()
 {
-    tsDLIterBD <nciu>   chan(0);
-    tsDLIterBD <nciu>   firstChan(0);
-    int                 status;
-    unsigned            nSent=0u;
-    
+    unsigned nFrameSent = 0u;
+    unsigned nChanSent = 0u;
+
     /*
      * check to see if there is nothing to do here 
      */
-    if ( ellCount (&this->iiu.chidList) ==0 ) {
+    if ( this->iiu.channelCount () == 0 ) {
         return;
     }   
     
-    this->iiu.pcas->lock ();
+    this->lock ();
  
     /*
      * increment the retry sequence number
@@ -173,8 +175,8 @@ void searchTimer::expire ()
      * increase frames per try only if we see better than
      * a 93.75% success rate for one pass through the list
      */
-    if (this->searchResponses >
-        (this->searchTries-(this->searchTries/16u)) ) {
+    if (this->searchResponsesWithinThisPass >
+        (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/16u)) ) {
         /*
          * increase UDP frames per try if we have a good score
          */
@@ -189,33 +191,26 @@ void searchTimer::expire ()
                 this->framesPerTry += (this->framesPerTry/8) + 1;
             }
             debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
-                this->framesPerTry, this->searchTries, this->searchResponses) );
+                this->framesPerTry, this->searchTriesWithinThisPass, this->searchResponsesWithinThisPass) );
         }
     }
     /*
      * if we detect congestion because we have less than a 87.5% success 
      * rate then gradually reduce the frames per try
      */
-    else if ( this->searchResponses < 
-        (this->searchTries-(this->searchTries/8u)) ) {
+    else if ( this->searchResponsesWithinThisPass < 
+        (this->searchTriesWithinThisPass-(this->searchTriesWithinThisPass/8u)) ) {
             if (this->framesPerTry>1) {
                 this->framesPerTry--;
             }
             this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
             debugPrintf ( ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
-                this->framesPerTry, this->searchTries, 
-                this->searchResponses) );
+                this->framesPerTry, this->searchTriesWithinThisPass, 
+                this->searchResponsesWithinThisPass) );
     }
     
-    /*
-     * a successful chan->searchMsg() sends channel to
-     * the end of the list
-     */
-    firstChan = chan = this->iiu.chidList.first ();
-    while ( chan.valid () ) {
-        
-        this->minRetry = min (this->minRetry, chan->retry);
-        
+    while ( 1 ) {
+                
         /*
          * clear counter when we reach the end of the list
          *
@@ -223,10 +218,10 @@ void searchTimer::expire ()
          * dont increase the delay between search
          * requests
          */
-        if ( this->iiu.pcas->endOfBCastList == chan ) {
-            if ( this->searchResponses == 0u ) {
+        if ( this->searchTriesWithinThisPass >= this->iiu.channelCount () ) {
+            if ( this->searchResponsesWithinThisPass == 0u ) {
                 debugPrintf ( ("increasing search try interval\n") );
-                this->setRetryInterval (this->minRetry + 1u);
+                this->setRetryInterval ( this->minRetry + 1u );
             }
             
             this->minRetry = UINT_MAX;
@@ -243,83 +238,67 @@ void searchTimer::expire ()
             /*
              * so that old search tries will not update the counters
              */
-            this->retrySeqNoAtListBegin = this->retrySeqNo;
+            this->retrySeqAtPassBegin = this->retrySeqNo;
 
-            /*
-             * reset the search try/response counters at the end of the list
-             * (sequence number) so that we dont overflow, but dont subtract
-             * out tries that dont have a matching response yet in case they
-             * are delayed
-             */
-            if ( this->searchTries > this->searchResponses ) {
-                this->searchTries -= this->searchResponses;
-            }
-            else {
-                this->searchTries = 0;
-            }
-            this->searchResponses = 0;
+            this->searchTriesWithinThisPass = 0;
+            this->searchResponsesWithinThisPass = 0;
 
             debugPrintf ( ("saw end of list\n") );
         }
         
-        /*
-         * this moves the channel to the end of the
-         * list (if successful)
-         */
-        status = chan->searchMsg ();
-        if ( status != ECA_NORMAL ) {
-            nSent++;
+        unsigned retryNoForThisChannel;
+        if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
+            nFrameSent++;
             
-            if ( nSent >= this->framesPerTry ) {
+            if ( nFrameSent >= this->framesPerTry ) {
                 break;
             }
 
-            // flush out the search request buffer 
             this->iiu.flush ();
            
-            // try again
-            status = chan->searchMsg ();
-            if (status != ECA_NORMAL) {
+            if ( ! this->iiu.searchMsg ( this->retrySeqNo, retryNoForThisChannel ) ) {
                 break;
             }
         }
 
-        if ( this->searchTries < ULONG_MAX ) {
-            this->searchTries++;
-        }
+        this->minRetry = min ( this->minRetry, retryNoForThisChannel );
 
-        chan->retrySeqNo = this->retrySeqNo;
-        chan = this->iiu.chidList.first ();
+        if ( this->searchTriesWithinThisPass < UINT_MAX ) {
+            this->searchTriesWithinThisPass++;
+        }
+        if ( nChanSent < UINT_MAX ) {
+            nChanSent++;
+        }
 
         /*
          * dont send any of the channels twice within one try
          */
-        if ( chan == firstChan ) {
+        if ( nChanSent >= this->iiu.channelCount () ) {
             /*
-             * add one to nSent because there may be 
+             * add one to nFrameSent because there may be 
              * one more partial frame to be sent
              */
-            nSent++;
+            nFrameSent++;
             
             /* 
              * cap this->framesPerTry to
              * the number of frames required for all of 
              * the unresolved channels
              */
-            if (this->framesPerTry>nSent) {
-                this->framesPerTry = nSent;
+            if ( this->framesPerTry > nFrameSent ) {
+                this->framesPerTry = nFrameSent;
             }
             
             break;
         }
     }
     
-    this->iiu.pcas->unlock ();
+    this->unlock ();
 
     // flush out the search request buffer
     this->iiu.flush ();
 
-    debugPrintf ( ("sent %u delay sec=%f\n", nSent, this->period) );
+    debugPrintf ( ("sent %u delay sec=%f\n", nFrameSent, this->period) );
 }
 
 void searchTimer::destroy ()
@@ -328,7 +307,7 @@ void searchTimer::destroy ()
 
 bool searchTimer::again () const
 {
-    if ( ellCount (&this->iiu.chidList) == 0 ) {
+    if ( this->iiu.channelCount () == 0 ) {
         return false;
     }
     else {

@@ -82,11 +82,11 @@ clean::
 
 %: %.o
 	$(RM) $@
-	$(LINK.c)$@ $< $(LDLIBS)
+	$(LINK.c) $@ $< $(LDLIBS)
 
 #$(PROD): $(OBJS)
 #	$(RM) $@
-#	$(LINK.c)$@ $(OBJS)
+#	$(LINK.c) $@ $(OBJS)
 
 %.o: %.c
 	$(RM) $@

@@ -61,7 +61,7 @@ inline void casPVI::unregisterIO()
 //
 inline caStatus  casPVI::bestDBRType ( unsigned &dbrType ) // X aCC 361
 {
-	unsigned bestAIT = this->bestExternalType ();
+	aitEnum bestAIT = this->bestExternalType ();
 
 	if ( bestAIT < NELEMENTS ( gddAitToDbr ) && bestAIT != aitEnumInvalid ) {
 		dbrType = gddAitToDbr[bestAIT];

@@ -208,14 +208,6 @@ PROD += $(PROD_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(PRODMT_$(OS_CLASS))),)
-PRODMT += $(subst -nil-,,$(PRODMT_$(OS_CLASS)))
-else
-ifdef PRODMT_DEFAULT
-PRODMT += $(PRODMT_DEFAULT)
-endif
-endif
-
 #
 #	concat specific scripts
 #

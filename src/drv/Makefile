@@ -1,15 +1,12 @@
 #
 # $Id$
 #
-#  Lowest Level Directroy Makefile
-#        by Janet Anderson
-#
-# $Log$
-#
 
 EPICS=../../..
 
 include $(EPICS)/config/CONFIG_BASE
 
-include $(EPICS)/config/RULES_ARCHS
+DIRS = ansi old combine
+
+include $(EPICS)/config/RULES_DIRS
 

@@ -1,0 +1,18 @@
+#
+# $Id$
+#
+
+EPICS = ../../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_CFLAGS = -ansi
+
+VX_WARN_YES = -Wall -pedantic
+
+SRCS.c += ../drvAb.c
+
+TARGETS += drvAb.o
+
+include $(EPICS)/config/RULES.Vx
+

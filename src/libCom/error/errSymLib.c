@@ -86,8 +86,13 @@
 extern SYMTAB_ID  statSymTbl;
 
 #else
+
+#ifndef _NTSDK
+/* MS Visual C has defines for these in stdlib.h  -kuk- */
 extern int     sys_nerr;
 extern char    *sys_errlist[];
+#endif
+
 #endif
 
 

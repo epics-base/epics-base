@@ -62,7 +62,6 @@ static int create_break(struct brkCreateInfo *pbci, brkInt *pabrkInt,
 	int max_breaks, int *n_breaks);
 static char inbuf[MAX_LINE_SIZE];
 static int linenum=0;
-void *pdbbase=NULL;
 
 typedef struct dataList{
 	struct dataList *next;

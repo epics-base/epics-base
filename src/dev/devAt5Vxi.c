@@ -60,6 +60,7 @@
 static long init_ai();
 static long init_ao();
 static long init_bi();
+static long init_bo();
 static long init_mbbi();
 static long init_mbbo();
 static long ai_ioinfo();
@@ -82,17 +83,17 @@ typedef struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_write;
-	DEVSUPFUN	special_linconv} AT5VXIDSET;
+	DEVSUPFUN	special_linconv;} AT5VXIDSET;
 
-AT5VXIDSET devAiVxiAt5=  {6,NULL,NULL,init_ai,  ai_ioinfo,  read_ai, ai_lincvt};
-AT5VXIDSET devAoVxiAt5=  {6,NULL,NULL,init_ao,       NULL,  write_ao,ao_lincvt};
-AT5VXIDSET devBiVxiAt5=  {6,NULL,NULL,init_bi,  bi_ioinfo,  read_bi,   NULL};
-AT5VXIDSET devBoVxiAt5=  {6,NULL,NULL,init_bo,       NULL,  write_bo,  NULL};
-AT5VXIDSET devMbbiVxiAt5={6,NULL,NULL,init_mbbi,mbbi_ioinfo,read_mbbi, NULL};
-AT5VXIDSET devMbboVxiAt5={6,NULL,NULL,init_mbbo,       NULL,write_mbbo,NULL};
+
+AT5VXIDSET devAiAt5Vxi=  {6,NULL,NULL,init_ai,  ai_ioinfo,  read_ai, ai_lincvt};
+AT5VXIDSET devAoAt5Vxi=  {6,NULL,NULL,init_ao,       NULL,  write_ao,ao_lincvt};
+AT5VXIDSET devBiAt5Vxi=  {6,NULL,NULL,init_bi,  bi_ioinfo,  read_bi,   NULL};
+AT5VXIDSET devBoAt5Vxi=  {6,NULL,NULL,init_bo,       NULL,  write_bo,  NULL};
+AT5VXIDSET devMbbiAt5Vxi={6,NULL,NULL,init_mbbi,mbbi_ioinfo,read_mbbi, NULL};
+AT5VXIDSET devMbboAt5Vxi={6,NULL,NULL,init_mbbo,       NULL,write_mbbo,NULL};
 
-static long init_ai(pai)
-    struct aiRecord	*pai;
+static long init_ai( struct aiRecord	*pai)
 {
     unsigned short value;
     struct vmeio *pvmeio;
@@ -104,7 +105,7 @@ static long init_ai(pai)
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pai,
-		"devAiVxiAt5 (init_record) Illegal INP field");
+		"devAiAt5Vxi (init_record) Illegal INP field");
 	return(S_db_badField);
     }
 
@@ -115,23 +116,22 @@ static long init_ai(pai)
     pvmeio = (struct vmeio *)&(pai->inp.value);
     if(status=at5vxi_ai_driver(pvmeio->card,pvmeio->signal,&value)) {
 	recGblRecordError(status,(void *)pai,
-		"devAiVxiAt5 (init_record) at5vxi_ai_driver error");
+		"devAiAt5Vxi (init_record) at5vxi_ai_driver error");
 	return(status);
     }
     return(0);
 }
 
 static long ai_ioinfo(
-    short               *cmd;
-    struct aiRecord     *pai;
-    IOSCANPVT		*ppvt;
+    int               cmd,
+    struct aiRecord     *pai,
+    IOSCANPVT		*ppvt)
 {
     at5vxi_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
     return(0);
 }
 
-static long read_ai(pai)
-    struct aiRecord	*pai;
+static long read_ai(struct aiRecord	*pai)
 {
 	struct vmeio *pvmeio;
 	int	     status;
@@ -151,9 +151,7 @@ static long read_ai(pai)
 	return(status);
 }
 
-static long ai_lincvt(pai,after)
-    struct aiRecord	*pai;
-    int after;
+static long ai_lincvt(struct aiRecord	*pai, int after)
 {
 
     if(!after) return(0);
@@ -164,8 +162,7 @@ static long ai_lincvt(pai,after)
 
 static void read_ao(); /* forward reference*/
 
-static long init_ao(pao)
-    struct aoRecord	*pao;
+static long init_ao(struct aoRecord	*pao)
 {
 
     /* ao.out must be an VME_IO */
@@ -173,8 +170,8 @@ static long init_ao(pao)
     case (VME_IO) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pao,
-		"devAoVxiAt5 (init_record) Illegal OUT field");
+	recGblRecordError(S_db_badField,(void *)pao,
+		"devAoAt5Vxi (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
 
@@ -186,8 +183,7 @@ static long init_ao(pao)
     return(0);
 }
 
-static long write_ao(pao)
-    struct aoRecord	*pao;
+static long write_ao(struct aoRecord	*pao)
 {
 	struct vmeio 	*pvmeio;
 	int	    	status;
@@ -207,9 +203,7 @@ static long write_ao(pao)
 	return(status);
 }
 
-static long ao_lincvt(pao,after)
-    struct aoRecord	*pao;
-    int after;
+static long ao_lincvt( struct aoRecord	*pao, int after)
 {
 
     if(!after) return(0);
@@ -230,8 +224,7 @@ struct aoRecord      *pao;
 	return;
 }
 
-static long init_bi(pbi)
-    struct biRecord	*pbi;
+static long init_bi( struct biRecord	*pbi)
 {
     struct vmeio *pvmeio;
 
@@ -244,24 +237,23 @@ static long init_bi(pbi)
 	pbi->mask <<= pvmeio->signal;
 	break;
     default :
-	recGblRecordError(S_db_badField,pbi,
-		"devBiVxiAt5 (init_record) Illegal INP field");
+	recGblRecordError(S_db_badField,(void *)pbi,
+		"devBiAt5Vxi (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
 }
 
 static long bi_ioinfo(
-    short               *cmd;
-    struct biRecord     *pbi;
-    IOSCANPVT		*ppvt;
+    int               cmd,
+    struct biRecord     *pbi,
+    IOSCANPVT		*ppvt)
 {
     at5vxi_getioscanpvt(pbi->inp.value.vmeio.card,ppvt);
     return(0);
 }
 
-static long read_bi(pbi)
-    struct biRecord	*pbi;
+static long read_bi(struct biRecord	*pbi)
 {
 	struct vmeio *pvmeio;
 	int	    status;
@@ -279,8 +271,7 @@ static long read_bi(pbi)
 	}
 }
 
-static long init_bo(pbo)
-    struct boRecord	*pbo;
+static long init_bo(struct boRecord	*pbo)
 {
     unsigned int value;
     int status=0;
@@ -298,14 +289,13 @@ static long init_bo(pbo)
 	break;
     default :
 	status = S_db_badField;
-	recGblRecordError(status,pbo,
-	    "devBoVxiAt5 (init_record) Illegal OUT field");
+	recGblRecordError(status,(void *)pbo,
+	    "devBoAt5Vxi (init_record) Illegal OUT field");
     }
     return(status);
 }
 
-static long write_bo(pbo)
-    struct boRecord	*pbo;
+static long write_bo(struct boRecord	*pbo)
 {
 	struct vmeio *pvmeio;
 	int	    status;
@@ -319,8 +309,7 @@ static long write_bo(pbo)
 	return(status);
 }
 
-static long init_mbbi(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static long init_mbbi(struct mbbiRecord	*pmbbi)
 {
 
     /* mbbi.inp must be an VME_IO */
@@ -330,24 +319,23 @@ static long init_mbbi(pmbbi)
 	pmbbi->mask <<= pmbbi->shft;
 	break;
     default :
-	recGblRecordError(S_db_badField,pmbbi,
-		"devMbbiVxiAt5 (init_record) Illegal INP field");
+	recGblRecordError(S_db_badField,(void *)pmbbi,
+		"devMbbiAt5Vxi (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
 }
 
 static long mbbi_ioinfo(
-    short               *cmd;
-    struct mbbiRecord     *pmbbi;
-    IOSCANPVT		*ppvt;
+    int               cmd,
+    struct mbbiRecord     *pmbbi,
+    IOSCANPVT		*ppvt)
 {
     at5vxi_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
     return(0);
 }
 
-static long read_mbbi(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static long read_mbbi(struct mbbiRecord	*pmbbi)
 {
 	struct vmeio	*pvmeio;
 	int		status;
@@ -364,8 +352,7 @@ static long read_mbbi(pmbbi)
 	return(status);
 }
 
-static long init_mbbo(pmbbo)
-    struct mbboRecord	*pmbbo;
+static long init_mbbo(struct mbboRecord	*pmbbo)
 {
     unsigned long value;
     struct vmeio *pvmeio;
@@ -383,14 +370,13 @@ static long init_mbbo(pmbbo)
 	break;
     default :
 	status = S_db_badField;
-	recGblRecordError(status,pmbbo,
-		"devMbboVxiAt5 (init_record) Illegal OUT field");
+	recGblRecordError(status,(void *)pmbbo,
+		"devMbboAt5Vxi (init_record) Illegal OUT field");
     }
     return(status);
 }
 
-static long write_mbbo(pmbbo)
-    struct mbboRecord	*pmbbo;
+static long write_mbbo(struct mbboRecord	*pmbbo)
 {
 	struct vmeio *pvmeio;
 	int	    status;

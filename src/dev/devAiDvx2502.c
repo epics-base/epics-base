@@ -51,6 +51,7 @@
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
+#include	<dbScan.h>
 #include	<module_types.h>
 #include	<aiRecord.h>
 
@@ -107,18 +108,9 @@ static long init_record(pai)
     return(0);
 }
 
-static long get_ioint_info(cmd,pai,io_type,card_type,card_number)
-    short               *cmd;
-    struct aiRecord     *pai;
-    short               *io_type;
-    short               *card_type;
-    short               *card_number;
+static long get_ioint_info(int cmd, struct aiRecord *pai,IOSCANPVT *ppvt)
 {
-    *cmd=-1;
-    if(pai->inp.type != VME_IO) return(S_dev_badInpType);
-    *io_type = IO_AI;
-    *card_type = DVX2502;
-    *card_number = pai->inp.value.vmeio.card;
+    dvx_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
     return(0);
 }
 

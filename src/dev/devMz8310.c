@@ -408,7 +408,7 @@ static void mz8310_int_service(IOSCANPVT ioscanpvt)
 }
 
 static long get_ioint_info(
-	short			*cmd,
+	int			cmd,
 	struct eventRecord	*pr,
 	IOSCANPVT		*ppvt)
 {
@@ -434,8 +434,8 @@ static long get_ioint_info(
 	     return(0);
 	}
 	*ppvt = mz8310_info[card].int_info[intvec].ioscanpvt;
-	if(*cmd!=0) {
-	    if(*cmd==1) mz8310_info[card].int_info[intvec].nrec_using -= 1;
+	if(cmd!=0) {
+	    if(cmd==1) mz8310_info[card].int_info[intvec].nrec_using -= 1;
 	    return(0);
 	}
 	mz8310_info[card].int_info[intvec].nrec_using +=1;

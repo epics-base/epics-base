@@ -601,7 +601,8 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
     pStamp->nsec = 987000000;
     pStamp->secPastEpoch = 30 * 86400 + 495;	/* 0815 Jan 31 of epoch year */
 #  else
-	return TScurrentTimeStamp((struct timespec*)pStamp);
+	if(!TScurrentTimeStamp((struct timespec*)pStamp)) return(S_ts_OK);
+	return(S_ts_sysTimeError);
 #  endif
 #else
     struct timeval curtime;

@@ -98,6 +98,7 @@ struct event_user {
     void                *extralabor_arg;/* parameter to above */
     
     epicsThreadId       taskid;         /* event handler task id */
+    struct evSubscrip   *pSuicideEvent; /* event that is deleteing itself */
     unsigned            queovr;         /* event que overflow count */
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
@@ -318,6 +319,7 @@ dbEventCtx epicsShareAPI db_init_events (void)
 
     evUser->flowCtrlMode = FALSE;
     evUser->extraLaborBusy = FALSE;
+    evUser->pSuicideEvent = NULL;
     return (dbEventCtx) evUser;
 }
 
@@ -539,7 +541,10 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     }
     assert ( pevent->npend == 0u );
 
-    if ( pevent->ev_que->evUser->taskid != epicsThreadGetIdSelf() ) {
+    if ( pevent->ev_que->evUser->taskid == epicsThreadGetIdSelf() ) {
+        pevent->ev_que->evUser->pSuicideEvent = pevent;
+    }
+    else {
         while ( pevent->callBackInProgress ) {
             UNLOCKEVQUE ( pevent->ev_que )
             epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
@@ -895,12 +900,17 @@ LOCAL int event_read ( struct event_que *ev_que )
              * complete sem if there are no longer any events on the
              * queue
              */
-            if ( event->user_sub==NULL && event->npend==0u ) {
-                event->callBackInProgress = FALSE;
-                epicsEventSignal ( ev_que->evUser->pflush_sem );
+            if ( ev_que->evUser->pSuicideEvent == event ) {
+                ev_que->evUser->pSuicideEvent = NULL;
             }
             else {
-                event->callBackInProgress = FALSE;
+                if ( event->user_sub==NULL && event->npend==0u ) {
+                    event->callBackInProgress = FALSE;
+                    epicsEventSignal ( ev_que->evUser->pflush_sem );
+                }
+                else {
+                    event->callBackInProgress = FALSE;
+                }
             }
         }
     }

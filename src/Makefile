@@ -35,7 +35,8 @@
 all: bld_errSym
 
 bld_errSym:
-	cd libCom; 	sh blderrSymTbl
+	cd libCom;	../../tools/blderrSymTbl
 
 
-
+clean:
+	/bin/rm -f libCom/errInc.o

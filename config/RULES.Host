@@ -55,6 +55,7 @@ vpath %.h $(USER_VPATH)
 #	INC		include-files to install
 #	LIBSRCS		source files for building library
 #	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
+#	USR_LIBS	NONEPICS libs needed by PROD and TESTPROD
 #	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
 #	PROD		products to build and install
 #	SCRIPTS		scripts to install
@@ -125,6 +126,20 @@ else
 
 ifdef PROD_LIBS_DEFAULT
 PROD_LIBS += $(PROD_LIBS_DEFAULT)
+endif
+
+endif
+
+#
+#	concat specific library contents (if defined) to USR_LIBS
+#
+ifneq (x$(USR_LIBS_$(ARCH_CLASS)),x)
+USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(ARCH_CLASS)))
+
+else
+
+ifdef USR_LIBS_DEFAULT
+USR_LIBS += $(USR_LIBS_DEFAULT)
 endif
 
 endif

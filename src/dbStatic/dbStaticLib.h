@@ -36,11 +36,11 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "shareLib.h"
 #include "dbFldTypes.h"
 #include "dbBase.h"
 #include "link.h"
 #include "errMdef.h"
-#include "shareLib.h"
 
 /*Field types as seen by static database access clients*/
 #define DCT_STRING	0

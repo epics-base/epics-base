@@ -288,7 +288,9 @@ endif
 
 #---------------------------------------------------------------
 # always use c++ linker
+ifdef CPLUSPLUS
 LINK.c = $(LINK.cc)
+endif
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)

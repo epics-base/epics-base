@@ -41,7 +41,9 @@
  *				cvt[Float/Double]ToCompactString,
  *				cvtLongToHex, cvtLongToOctal routines, fix
  *				calls to gcvt, etc.
+ * .03	joh	03-30-93	added bit field extract/ insert routines
  */
+
 #include <stdlib.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
 #include <cvtFast.h>
@@ -751,3 +753,54 @@ int cvtLongToOctalString(
     *pdest = 0;
     return((int)(pdest-startAddr));
 }
+
+
+
+
+/*
+ *
+ * cvtBitsToUlong()
+ *
+ * extract a bit field from the source unsigend long
+ */
+unsigned long cvtBitsToUlong(
+unsigned long   src,
+unsigned        bitFieldOffset,
+unsigned        bitFieldLength)
+{
+        unsigned long   mask;
+
+        src = src >> bitFieldOffset;
+
+        mask = (1<<bitFieldLength)-1;
+
+        src = src & mask;
+
+        return src;
+}
+
+
+
+/*
+ *
+ * cvtUlongToBits()
+ *
+ * insert a bit field from the source unsigend long
+ * into the destination unsigned long
+ */
+unsigned long cvtUlongToBits(
+unsigned long   src,
+unsigned long   dest,
+unsigned        bitFieldOffset,
+unsigned        bitFieldLength)
+{
+        unsigned long   mask;
+
+        mask = (1<<bitFieldLength)-1;
+        mask = mask << bitFieldOffset;
+        src = src << bitFieldOffset;
+        dest = (dest & ~mask) | (src & mask);
+
+        return dest;
+}
+

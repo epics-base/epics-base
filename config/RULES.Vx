@@ -1,31 +1,34 @@
 # $Id$
 
 INCREC +=$(RECTYPES) $(MENUS)
-INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
-INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_BIN)/%)
-INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
-INSTALL_INCREC=$(INCREC:%=$(INSTALL_INCLUDE)/%)
-INSTALL_MANS+=$(MAN1:%=$(INSTALL_MAN)/man1/%)
-INSTALL_MANS+=$(MAN2:%=$(INSTALL_MAN)/man2/%)
-INSTALL_MANS+=$(MAN3:%=$(INSTALL_MAN)/man3/%)
-INSTALL_MANS+=$(MAN4:%=$(INSTALL_MAN)/man4/%)
-INSTALL_MANS+=$(MAN5:%=$(INSTALL_MAN)/man5/%)
-INSTALL_MANS+=$(MAN6:%=$(INSTALL_MAN)/man6/%)
-INSTALL_MANS+=$(MAN7:%=$(INSTALL_MAN)/man7/%)
-INSTALL_MANS+=$(MAN8:%=$(INSTALL_MAN)/man8/%)
-INSTALL_MANS+=$(MAN9:%=$(INSTALL_MAN)/man9/%)
-INSTALL_DOCS=$(DOCS:%=$(INSTALL_DOC)/%)
-INSTALL_SCRIPTS=$(SCRIPTS:%=$(INSTALL_BIN)/%)
-INSTALL_INSTALLS=$(INSTALLS:%=$(INSTALL_BIN)/%)
+INSTALL_PROD = $(INSTALL_BIN) $(PROD:%= $(INSTALL_BIN)/%)
+INSTALL_LIBS = $(INSTALL_BIN) $(LIBNAME:%= $(INSTALL_BIN)/%)
+INSTALL_INC = $(INSTALL_INCLUDE) $(INC:%= $(INSTALL_INCLUDE)/%)
+INSTALL_OSINCLUDE = $(INSTALL_INCLUDE)/os/vxWorks
+INSTALL_OSINC = $(INSTALL_OSINCLUDE) $(OSINC:%= $(INSTALL_OSINCLUDE)/%)
+INSTALL_INCREC = $(INSTALL_INCLUDE) $(INCREC:%= $(INSTALL_INCLUDE)/%)
+MANLIST = 1 2 3 4 5 6 7 8 9
+INSTALL_MANS = $(foreach n, \
+	$(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
+INSTALL_DOCS = $(INSTALL_DOC) $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_SCRIPTS = $(INSTALL_BIN) $(SCRIPTS:%= $(INSTALL_BIN)/%)
+INSTALL_INSTALLS = $(INSTALL_BIN) $(INSTALLS:%= $(INSTALL_BIN)/%)
 
-INSTALL_BPTS=$(BPTS:%=$(INSTALL_DBD)/%)
-INSTALL_DBS=$(DBDINSTALL:%=$(INSTALL_DBD)/%)\
-              $(RECTYPES:%.h=$(INSTALL_DBD)/%.dbd)\
-              $(MENUS:%.h=$(INSTALL_DBD)/%.dbd)
+INSTALL_BPTS = $(INSTALL_DBD) $(BPTS:%= $(INSTALL_DBD)/%)
+INSTALL_DBS = $(INSTALL_DBD) $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
+              $(INSTALL_DBD) $(RECTYPES:%.h= $(INSTALL_DBD)/%.dbd)\
+              $(INSTALL_DBD) $(MENUS:%.h= $(INSTALL_DBD)/%.dbd)
 
-INSTALL_DBDNAME=$(DBDNAME:%=$(INSTALL_DBD)/%)
+INSTALL_DBDNAME = $(INSTALL_DBD) $(DBDNAME:%= $(INSTALL_DBD)/%)
 
-all:: install
+MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
+
+DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_DOC) $(INSTALL_DBD) \
+	$(INSTALL_OSINCLUDE) $(INSTALL_INCLUDE)/os \
+	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) \
+	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN)
+
+all:: install 
 
 rebuild:: clean install
 
@@ -34,10 +37,13 @@ pre_build::
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
          $(LIBNAME) $(TARGETS) $(PROD) $(DBDNAME)
 
-inc:: $(INSTALL_INC) 
+inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) $(INSTALL_INCLUDE)/os \
+	$(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
 
 install:: inc build $(INSTALL_INCREC)\
-         $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) $(INSTALL_MANS)\
+	 $(INSTALL_LOCATION_BIN) \
+         $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) \
+	 $(INSTALL_MAN) $(INSTALL_MANS)\
          $(INSTALL_DOCS) $(INSTALL_SCRIPTS)\
          $(INSTALL_INSTALLS) $(INSTALL_DBS) $(INSTALL_BPTS)\
          $(INSTALL_DBDNAME)
@@ -59,6 +65,8 @@ clean::
 	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
 	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
+$(DIRECTORY_TARGETS) :
+	@$(MKDIR) $@
 
 #  The order of the following dependencies is
 #  VERY IMPORTANT !!!!
@@ -141,14 +149,12 @@ clean::
 	$(MV) $(<F).nr $(<F).1
 
 
-$(INSTALL_DBD)/%: %
+$(INSTALL_DBD)/%: % 
 	@echo "Installing $@"
-	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
 	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
 
-$(INSTALL_DBD)/%: ../%
+$(INSTALL_DBD)/%: ../% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
 	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
 
 %Record.h: %Record.dbd
@@ -188,75 +194,45 @@ $(LIBNAME): $(LIBOBJS)
 	@$(RM) $@
 	$(LINK.c) $@ $(LIBOBJS)
 
-$(INSTALL_BIN)/%: %
+$(INSTALL_BIN)/%: % 
 	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_BIN)/%: ../%
+$(INSTALL_BIN)/%: ../% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/%
+$(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_MAN)/man9/% \
-$(INSTALL_MAN)/man8/% \
-$(INSTALL_MAN)/man7/% \
-$(INSTALL_MAN)/man6/% \
-$(INSTALL_MAN)/man5/% \
-$(INSTALL_MAN)/man4/% \
-$(INSTALL_MAN)/man3/% \
-$(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: %
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
 	@echo "Installing $@"
-	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
-	@test -d $(@D) || mkdir $(@D)
 	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_MAN)/man9/% \
-$(INSTALL_MAN)/man8/% \
-$(INSTALL_MAN)/man7/% \
-$(INSTALL_MAN)/man6/% \
-$(INSTALL_MAN)/man5/% \
-$(INSTALL_MAN)/man4/% \
-$(INSTALL_MAN)/man3/% \
-$(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: ../%
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
-	@test -d $(@D) || mkdir $(@D)
 	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/%: %
+$(INSTALL_INCLUDE)/%: % 
 	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/%: ../%
+$(INSTALL_INCLUDE)/%: ../% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(@D)
 
-$(INSTALL_DOC)/%: %
+$(INSTALL_DOC)/%: % 
 	@echo "Installing $@"
-	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
-$(INSTALL_DOC)/%: ../%
+$(INSTALL_DOC)/%: ../% 
 	@echo "Installing $@"
-	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
 .PRECIOUS: %.o %.c
 
-.PHONY: all inc depends build install pre-build clean rebuild
+.PHONY: all inc depends build install pre-build clean rebuild 
 
 -include .DEPENDS
 

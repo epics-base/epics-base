@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.22  1997/06/13 09:14:27  jhill
+ * connect/search proto changes
+ *
  * Revision 1.21  1997/01/22 21:11:49  jhill
  * moved vms includes here
  *
@@ -60,6 +63,7 @@
 #include <prcdef.h>
 #include <jpidef.h>
 #include <descrip.h>
+#include <starlet.h>
 
 #include "iocinf.h"
 

@@ -38,6 +38,7 @@ of this distribution.
 /*end of conflicting definitions*/
 #include "cadef.h"
 #include "db_access.h"
+#include "dbLock.h"
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
@@ -83,6 +84,7 @@ long epicsShareAPI dbcar(char	*precordname,int level)
 		for(j=0; j<pdbRecordType->no_links; j++) {
 		    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
 		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                    dbLockSetGblLock();
 		    if (plink->type == CA_LINK) {
 			ncalinks++;
 			pca = (caLink *)plink->value.pv_link.pvt;
@@ -123,6 +125,7 @@ long epicsShareAPI dbcar(char	*precordname,int level)
 			    }
 			}
 		    }
+                    dbLockSetGblUnlock();
 		}
 		if(precordname) goto done;
 	    }

@@ -70,14 +70,12 @@
 		prompt("Monitor fastlock")
 		special(SPC_NOMOD)
 		interest(4)
-		size(8)
 		extra("FAST_LOCK	mlok")
 	}
 	field(MLIS,DBF_NOACCESS) {
 		prompt("Monitor List")
 		special(SPC_NOMOD)
 		interest(4)
-		size(12)
 		extra("ELLLIST		mlis")
 	}
 	field(DISP,DBF_UCHAR) {
@@ -155,63 +153,54 @@
 		prompt("Access Security Pvt")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*asp")
 	}
 	field(PPN,DBF_NOACCESS) {
 		prompt("addr of PUTNOTIFY")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*ppn")
 	}
 	field(PPNN,DBF_NOACCESS) {
 		prompt("next record PUTNOTIFY")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*ppnn")
 	}
 	field(SPVT,DBF_NOACCESS) {
 		prompt("Scan Private")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*spvt")
 	}
 	field(RSET,DBF_NOACCESS) {
 		prompt("Address of RSET")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*rset")
 	}
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("struct dset	*dset")
 	}
 	field(DPVT,DBF_NOACCESS) {
 		prompt("Device Private")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*dpvt")
 	}
 	field(RDES,DBF_NOACCESS) {
 		prompt("Address of dbRecordType")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*rdes")
 	}
 	field(LSET,DBF_NOACCESS) {
 		prompt("Lock Set")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void		*lset")
 	}
 	field(PRIO,DBF_MENU) {
@@ -228,7 +217,6 @@
 		prompt("Break Point")
 		special(SPC_NOMOD)
 		interest(1)
-		size(1)
 		extra("char bkpt")
 	}
 	field(UDF,DBF_UCHAR) {
@@ -241,7 +229,6 @@
 		prompt("Time")
 		special(SPC_NOMOD)
 		interest(4)
-		size(8)
 		extra("TS_STAMP	time")
 	}
 	field(FLNK,DBF_FWDLINK) {

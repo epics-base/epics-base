@@ -137,7 +137,7 @@ COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(call PATH_FILTER,$(INCLUDES
 
 #--------------------------------------------------
 # C preprocessor command
-VXCPPFLAGS = $(filterout $(OP_SYS_INCLUDE_CPPFLAGS),$(CPPFLAGS))
+VXCPPFLAGS = $(filter-out $(OP_SYS_INCLUDE_CPPFLAGS),$(CPPFLAGS))
 PREPROCESS.cpp = $(CPP) $(VXCPPFLAGS) $(INCLUDES) $< > $@
 
 #--------------------------------------------------

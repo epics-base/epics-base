@@ -259,13 +259,22 @@ int dbLoadRecords(char* pfilename, char* pattern, char* container)
 
 	if(is_not_inited)
 	{
+#ifdef ERROR_STUFF
+		fprintf(stderr,"initing parser\n");
+#endif
 		yyin=fp;
 		is_not_inited=0;
 	}
 	else
 	{
+#ifdef ERROR_STUFF
+		fprintf(stderr,"restarting parser\n");
+#endif
 		yyrestart(fp);
 	}
+#ifdef ERROR_STUFF
+		fprintf(stderr,"before parser startup\n");
+#endif
 	yyparse();
 
 #ifndef vxWorks

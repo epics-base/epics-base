@@ -191,13 +191,19 @@ long dbInitSubst(char* parm_pattern)
 			/* find vars and subs */
 			switch(*pp)
 			{
-			case '\\': pp++; break;
+			case '\\': pp++; break; /* skip the next character */
 			case '=': subst_total++; break;
-			case '\"': for(++pp;*pp!='\"';pp++) if(*pp=='\\') pp++; pp++; break;
+			case '\"':
+				for(++pp;*pp && *pp!='\"';pp++);
+				if(*pp=='\\') pp++;
+				pp++;
+				break;
 			default: break;
 			}
 		}
-		/* fprintf(stderr,"total = %d\n",subst_total); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"total = %d\n",subst_total);
+#endif
  
 		/* allocate the substitution table */
 		subst = (struct var_sub*)malloc( sizeof(struct var_sub)*subst_total );
@@ -235,12 +241,12 @@ long dbInitSubst(char* parm_pattern)
 		}
 
 		/* debug code */
-		/*
+#ifdef ERROR_STUFF
 		for(pi=0;pi<subst_total;pi++)
 		{
-			printf("table[%d]=(%s,%s)\n",pi,subst[pi].var,subst[pi].sub);
+			fprintf(stderr,"table[%d]=(%s,%s)\n",pi,subst[pi].var,subst[pi].sub);
 		}
-		*/
+#endif
 
 		/* resolve the multiple substitutions now */
 		for(pi=0;pi<subst_total;pi++)
@@ -253,12 +259,12 @@ long dbInitSubst(char* parm_pattern)
 		}
 
 		/* more debug code */
-		/*
+#ifdef ERROR_STUFF
 		for(pi=0;pi<subst_total;pi++)
 		{
-			printf("table[%d]=(%s,%s)\n",pi,subst[pi].var,subst[pi].sub);
+			fprintf(stderr,"table[%d]=(%s,%s)\n",pi,subst[pi].var,subst[pi].sub);
 		}
-		*/
+#endif
 	}
 	else
 	{
@@ -276,7 +282,9 @@ static char* get_var(char** to, char* from)
 	pp = strpbrk(from," \t=");
 	*pp = '\0';
 	pp++;
-	/* fprintf(stderr,"get_var: (%s)\n",from); */
+#ifdef ERROR_STUFF
+	fprintf(stderr,"get_var: (%s)\n",from);
+#endif
 	*to=from;
 	return pp;
 }
@@ -297,7 +305,9 @@ static char* get_sub(char* to, char* from)
 			else *cp++ = *pp;
 		}
 		*cp='\0';
-		/* fprintf(stderr,"get_sub: quote (%s)\n",to); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"get_sub: quote (%s)\n",to);
+#endif
 		pp++;
 	}
 	else
@@ -307,7 +317,9 @@ static char* get_sub(char* to, char* from)
 		{
 			*hold = '\0';
 			hold++;
-			/* fprintf(stderr,"get_sub: regular (%s)\n",pp); */
+#ifdef ERROR_STUFF
+			fprintf(stderr,"get_sub: regular (%s)\n",pp);
+#endif
 		}
 
 		strcpy(to,pp);

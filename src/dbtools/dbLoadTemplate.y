@@ -105,11 +105,11 @@ subst: PATTERN pattern subs
 
 pattern: O_BRACE vars C_BRACE
 	{ 
-	/*
+#ifdef ERROR_STUFF
 		int i;
 		for(i=0;i<var_count;i++) fprintf(stderr,"variable=(%s)\n",vars[i]);
 		fprintf(stderr,"var_count=%d\n",var_count);
-	*/
+#endif
 	}
     ;
 
@@ -130,7 +130,9 @@ subs: subs sub
 sub: WORD O_BRACE vals C_BRACE
 	{
 		sub_collect[strlen(sub_collect)-1]='\0';
-		/* fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
+#endif
 #ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect,$1);
@@ -147,7 +149,9 @@ sub: WORD O_BRACE vals C_BRACE
 	| O_BRACE vals C_BRACE
 	{
 		sub_collect[strlen(sub_collect)-1]='\0';
-		/* fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
+#endif
 #ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect,NULL);
@@ -199,7 +203,9 @@ var_subs: var_subs var_sub
 var_sub: WORD O_BRACE sub_pats C_BRACE
 	{
 		sub_collect[strlen(sub_collect)-1]='\0';
-		/* fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
+#endif
 #ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect,$1);
@@ -216,7 +222,9 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 	| O_BRACE sub_pats C_BRACE
 	{
 		sub_collect[strlen(sub_collect)-1]='\0';
-		/* fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect); */
+#ifdef ERROR_STUFF
+		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
+#endif
 #ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect,NULL);
@@ -292,7 +300,10 @@ int dbLoadTemplate(char* sub_file)
 		yyin=fp;
 		is_not_inited=0;
 	}
-	else yyrestart(fp);
+	else
+	{
+		yyrestart(fp);
+	}
 
 	yyparse();
 
@@ -328,8 +339,18 @@ int sub_it()
 {
 	FILE* fp;
 	char var_buff[500];
+
+#ifdef ERROR_STUFF
+	fprintf(stderr,"In sub_it()\n");
+#endif
+
 	if( *sub_collect )
+	{
+#ifdef ERROR_STUFF
+	fprintf(stderr," dbInitSubst() calling\n");
+#endif
 		dbInitSubst(sub_collect);
+	}
 	else
 	{
 		fprintf(stderr,"No valid substitutions found in table\n");
@@ -345,10 +366,16 @@ int sub_it()
 	/* do the work here */
 	while( fgets(var_buff,200,fp)!=(char*)NULL )
 	{
+#ifdef ERROR_STUFF
+		fprintf(stderr," calling dbDoSubst()\n");
+#endif
 		dbDoSubst(var_buff,500,NULL);
 		fputs(var_buff,stdout);
 	}
 
+#ifdef ERROR_STUFF
+	fprintf(stderr," calling dbFreeSubst()\n");
+#endif
 	dbFreeSubst();
 	fclose(fp);
 	return 0;

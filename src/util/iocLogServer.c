@@ -51,6 +51,7 @@
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>
 
@@ -61,9 +62,9 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include        <netdb.h>
 
 #include 	<envDefs.h>
+#include 	<fdmgr.h>
 
 static long 		ioc_log_port;
-static struct in_addr 	ioc_log_addr;
 static long		ioc_log_file_limit;
 static char		ioc_log_file_name[64];
 
@@ -115,7 +116,7 @@ static void envFailureNotify(ENV_PARAM *pparam);
  *	main()
  *
  */
-main()
+int main()
 {
 	struct sockaddr_in 	serverAddr;	/* server's address */
 	struct timeval          timeout;
@@ -125,8 +126,8 @@ main()
 
 	status = getConfig();
 	if(status<0){
-		printf("iocLogServer: EPICS environment underspecified\n");
-		printf("iocLogServer: failed to initialize\n");
+		fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
+		fprintf(stderr, "iocLogServer: failed to initialize\n");
 		exit(ERROR);
 	}
 
@@ -156,8 +157,9 @@ main()
                                 &optval,
                                 sizeof(optval));
         if(status<0){
-                ca_printf(      "%s: set socket option failed\n",
-                                __FILE__);
+                fprintf(stderr,
+			"%s: set socket option failed\n",
+                        __FILE__);
         }
 
 	/* Zero the sock_addr structure */
@@ -168,9 +170,10 @@ main()
 	/* get server's Internet address */
 	status = bind(pserver->sock, &serverAddr, sizeof serverAddr);
 	if (status<0) {
-		printf(	"ioc log server allready installed on port %d?\n", 
+		fprintf(stderr,
+			"ioc log server allready installed on port %ld?\n", 
 			ioc_log_port);
-		exit();
+		exit(ERROR);
 	}
 
 	/* listen and accept new connections */
@@ -181,9 +184,10 @@ main()
 
 	status = openLogFile(pserver);
 	if(status<0){
-		printf(	"File access problems `%s'\n", 
+		fprintf(stderr,
+			"File access problems `%s'\n", 
 			ioc_log_file_name);
-		exit();
+		exit(ERROR);
 	}
 
 	status = fdmgr_add_fd(
@@ -232,11 +236,10 @@ static int openLogFile(struct ioc_log_server *pserver)
  */
 static void handleLogFileError(void)
 {
-	int status;
-
-	printf("iocLogServer: log file access problem (errno=%s)\n", 
+	fprintf(stderr,
+		"iocLogServer: log file access problem (errno=%s)\n", 
 		strerror(errno));
-	exit();
+	exit(ERROR);
 
 }
 		
@@ -264,7 +267,7 @@ static void acceptNewClient(struct ioc_log_server *pserver)
 	pclient->insock = accept(pserver->sock, NULL, 0);
 	if(pclient->insock<0){
 		free(pclient);
-		printf("Accept Error %d\n", errno);
+		fprintf(stderr, "Accept Error %d\n", errno);
 		return;
 	}
 
@@ -321,7 +324,7 @@ static void acceptNewClient(struct ioc_log_server *pserver)
 				&true,
 				sizeof true);
 		if(status<0){
-			printf("Keepalive option set failed\n");
+			fprintf(stderr, "Keepalive option set failed\n");
 		}
 	}
 
@@ -358,7 +361,7 @@ static void readFromClient(struct iocLogClient *pclient)
 
 #		ifdef	DEBUG
 		if(length == 0){
-			printf("iocLogServer: nil message disconnect\n");
+			fprintf(stderr, "iocLogServer: nil message disconnect\n");
 		}
 #		endif
 
@@ -457,14 +460,15 @@ static void readFromClient(struct iocLogClient *pclient)
 	if (length > pclient->pserver->max_file_size) {
 #		define 	FILE_BEGIN 0
 #		ifdef DEBUG
-			printf("ioc log server: resetting the file pointer\n");
+			fprintf(stderr,
+				"ioc log server: resetting the file pointer\n");
 #		endif
 		fseek(pclient->pserver->poutfile, 0, FILE_BEGIN);
 		status = ftruncate(
 				   fileno(pclient->pserver->poutfile),
 				   length);
 		if (status < 0) {
-			printf("truncation error %d\n", errno);
+			fprintf(stderr,"truncation error %d\n", errno);
 		}
 	}
 }
@@ -503,7 +507,6 @@ static void logTime(struct iocLogClient *pclient)
  */
 static int getConfig(void)
 {
-	char	inet_address_string[64];
 	int	status;
 	char	*pstring;
 
@@ -514,16 +517,6 @@ static int getConfig(void)
 		envFailureNotify(&EPICS_IOC_LOG_PORT);
 		return ERROR;
 	}
-
-#ifdef FETCH_INET_ADDR
-	status = envGetInetAddrConfigParam(
-			&EPICS_IOC_LOG_INET, 
-			&ioc_log_addr);
-	if(status<0){
-		envFailureNotify(&EPICS_IOC_LOG_INET);
-		return ERROR;
-	}
-#endif
 
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_FILE_LIMIT, 
@@ -554,6 +547,7 @@ static int getConfig(void)
  */
 static void envFailureNotify(ENV_PARAM *pparam)
 {
-	printf(	"iocLogServer: EPICS environment variable `%s' undefined\n",
+	fprintf(stderr,
+		"iocLogServer: EPICS environment variable `%s' undefined\n",
 		pparam->name);
 }

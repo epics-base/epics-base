@@ -31,6 +31,9 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.44  1999/07/16 16:38:59  jhill
+ * added congestion thresh parm to search alg
+ *
  * Revision 1.43.4.1  1999/07/15 20:33:46  jhill
  * added congestion thresh to search sched alg
  *
@@ -96,7 +99,7 @@ LOCAL int updateBeaconPeriod (bhe *pBHE);
 /*
  *	checkConnWatchdogs()
  */
-void checkConnWatchdogs()
+void checkConnWatchdogs(unsigned closeAllowed)
 {
 	IIU *piiu;
 	ca_real delay;
@@ -135,7 +138,7 @@ void checkConnWatchdogs()
 			}
 		}
 
-		if (piiu->state==iiu_disconnected) {
+		if (closeAllowed && piiu->state==iiu_disconnected) {
 			cac_close_ioc (piiu);
 		}
 

@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.75  1999/07/16 17:02:06  jhill
+ * added congestion thresh parm for search alg
+ *
  * Revision 1.74.4.1  1999/07/15 20:52:38  jhill
  * added congestion thresh to search sched alg
  *
@@ -673,8 +676,8 @@ void 	issue_identify_client(struct ioc_in_use *piiu);
 void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 epicsShareFunc int epicsShareAPI ca_printf(char *pformat, ...);
-void 	manage_conn();
-void	checkConnWatchdogs();
+void 	manage_conn(void);
+void	checkConnWatchdogs(unsigned closeAllowed);
 void 	mark_server_available(const struct sockaddr_in *pnet_addr);
 void	flow_control_on(struct ioc_in_use *piiu);
 void	flow_control_off(struct ioc_in_use *piiu);
@@ -745,7 +748,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
 void os_specific_sg_create(CASG *pcasg);
 void os_specific_sg_delete(CASG *pcasg);
 void os_specific_sg_io_complete(CASG *pcasg);
-void ca_process_exit();
+void ca_process_exit(void);
 void ca_spawn_repeater(void);
 void cac_gettimeval(struct timeval  *pt);
 /* returns A - B in floating secs */
@@ -766,7 +769,7 @@ void retryPendingClaims(IIU *piiu);
 void cacSetRetryInterval(unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);
 void removeFromChanList(ciu chan);
-void cac_create_udp_fd();
+void cac_create_udp_fd(void);
 double cac_fetch_poll_period(void);
 int caSockAddrFromHost(const char *pName, struct sockaddr *paddr);
 void cac_close_ioc (IIU *piiu);

@@ -57,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.47  1998/09/29 20:50:37  jhill
+ * more robust in situations wherelocal IP cant be determined
+ *
  * Revision 1.46  1998/09/24 21:22:54  jhill
  * conn.c
  *
@@ -229,17 +232,18 @@ void epicsShareAPI ca_repeater()
 			&from_size);
 
    	 	if(size < 0){
+            int errnoCpy = SOCKERRNO;
 #			ifdef linux
 				/*
 				 * Avoid spurious ECONNREFUSED bug
 				 * in linux
 				 */
-				if (SOCKERRNO==SOCK_ECONNREFUSED) {
+				if (errnoCpy==SOCK_ECONNREFUSED) {
 					continue;
 				}
 #			endif
-			ca_printf("CA Repeater: recv err %s\n",
-				SOCKERRSTR);
+			ca_printf("CA Repeater: unexpected UDP recv err: %s\n",
+				SOCKERRSTR(errnoCpy));
 			continue;
 		}
 
@@ -307,7 +311,8 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 #endif
 		}
 		if(status < 0){
-			if (SOCKERRNO == SOCK_ECONNREFUSED) {
+            int errnoCpy = SOCKERRNO;
+			if (errnoCpy == SOCK_ECONNREFUSED) {
 #ifdef DEBUG
 				ca_printf ("Deleted client %d\n",
 					ntohs (pclient->from.sin_port));
@@ -316,8 +321,8 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 			}
 			else {
 				ca_printf(
-"CA Repeater: fan out err was \"%s\"\n",
-					SOCKERRSTR);
+"CA Repeater: UDP fan out err was \"%s\"\n",
+					SOCKERRSTR(errnoCpy));
 			}
 		}
 	}
@@ -384,7 +389,7 @@ LOCAL makeSocketReturn makeSocket(unsigned short port, int reuseAddr)
 					0);		/* deflt proto	*/
 	if (msr.sock == INVALID_SOCKET) {
 		msr.errNumber = SOCKERRNO;
-		msr.pErrStr = SOCKERRSTR;
+		msr.pErrStr = SOCKERRSTR(msr.errNumber);
 		return msr;
 	}
 
@@ -400,7 +405,7 @@ LOCAL makeSocketReturn makeSocket(unsigned short port, int reuseAddr)
 		status = bind(msr.sock, (struct sockaddr *)&bd, (int)sizeof(bd));
 		if (status<0) {
 			msr.errNumber = SOCKERRNO;
-			msr.pErrStr = SOCKERRSTR;
+			msr.pErrStr = SOCKERRSTR(msr.errNumber);
 			socket_close(msr.sock);
 			msr.sock = INVALID_SOCKET;
 			return msr;
@@ -413,9 +418,10 @@ LOCAL makeSocketReturn makeSocket(unsigned short port, int reuseAddr)
 						(char *)&true,
 						sizeof(true));
 			if (status<0) {
+                int errnoCpy = SOCKERRNO;
 				ca_printf(
-			"%s: set socket option failed because %d=\"%s\"\n", 
-						__FILE__, SOCKERRNO, SOCKERRSTR);
+			"%s: set socket option failed because \"%s\"\n", 
+						__FILE__, SOCKERRSTR(errnoCpy));
 			}
 		}
 	}
@@ -494,9 +500,10 @@ struct sockaddr_in 	*pFrom)
 				(struct sockaddr *)pFrom, 
 				sizeof(*pFrom));
 		if (status<0) {
+            int errnoCpy = SOCKERRNO;
 			ca_printf(
 			"%s: unable to connect client sock because \"%s\"\n",
-				__FILE__, SOCKERRSTR);
+				__FILE__, SOCKERRSTR(errnoCpy));
 			socket_close(pclient->sock);
 			free(pclient);
 			return;
@@ -535,7 +542,7 @@ struct sockaddr_in 	*pFrom)
 	}
 	else {
 		ca_printf("CA Repeater: confirm err was \"%s\"\n",
-				SOCKERRSTR);
+				SOCKERRSTR(SOCKERRNO));
 	}
 
 	/*

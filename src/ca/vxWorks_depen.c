@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.40  1999/07/16 21:08:02  jhill
+ * fixed bug occurring when connection dropped while waiting to send
+ *
  * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
  * fixed bug where client disconnects while waiting to send TCP
  *
@@ -986,7 +989,7 @@ void cac_recv_task(int  tid)
 
 		ca_process_input_queue ();
 
-		checkConnWatchdogs ();
+		checkConnWatchdogs (TRUE);
 #endif
 	}
 }

@@ -82,7 +82,7 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	if (status < 0 || ifconf.ifc_len == 0) {
 		ca_printf(
 			"CAC: SIOCGIFCONF ioctl failed because \"%s\"\n", 
-			SOCKERRSTR);
+			SOCKERRSTR(SOCKERRNO));
 		ifconf.ifc_len = 0;
 	}
 

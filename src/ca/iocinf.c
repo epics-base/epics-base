@@ -319,7 +319,7 @@ int				net_proto
 		if(status<0){
 			free(piiu);
 			ca_printf("CAC: sso (err=\"%s\")\n",
-			SOCKERRSTR);
+			    SOCKERRSTR(SOCKERRNO));
 			status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -356,7 +356,7 @@ int				net_proto
 					sizeof(size));
 			if (status<0) {
         			ca_printf("CAC: setsockopt SO_RCVBUF (err=%s)\n",
-					SOCKERRSTR);
+					    SOCKERRSTR(SOCKERRNO));
 			}
 		}
 #endif
@@ -374,7 +374,7 @@ int				net_proto
 			(struct sockaddr *) &saddr, 
 			sizeof(saddr));
 		if(status<0){
-			ca_printf("CAC: bind (err=%s)\n",SOCKERRSTR);
+			ca_printf("CAC: bind (err=%s)\n",SOCKERRSTR(SOCKERRNO));
 			genLocalExcep (ECA_INTERNAL,"bind failed");
 		}
 #endif
@@ -454,7 +454,7 @@ LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 	if(status<0){
 		ca_printf(
 			"CAC: failed to set non-blocking because \"%s\"\n",
-			SOCKERRSTR);
+			SOCKERRSTR(SOCKERRNO));
 	}
 }
 
@@ -543,7 +543,7 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 	"CAC: Unable to connect port %d on \"%s\" because %d=\"%s\"\n", 
 				ntohs(pNode->destAddr.in.sin_port), 
 				piiu->host_name_str, errnoCpy, 
-				SOCKERRSTR);
+				SOCKERRSTR(errnoCpy));
 			return;
 		}
 	}
@@ -732,18 +732,18 @@ void notify_ca_repeater()
 	status = sendto (piiuCast->sock_chan, (char *)&msg, len,  
 						0, (struct sockaddr *)&saddr, sizeof(saddr));
 	if (status < 0) {
-		if(	SOCKERRNO != SOCK_EINTR && 
-			/* SOCKERRNO != SOCK_ENOBUFS && */
-			SOCKERRNO != SOCK_EWOULDBLOCK &&
+        int errnoCpy = SOCKERRNO;
+		if(	errnoCpy != SOCK_EINTR && 
+			errnoCpy != SOCK_EWOULDBLOCK &&
 			/*
 			 * This is returned from Linux when
 			 * the repeater isnt running
 			 */
-			SOCKERRNO != SOCK_ECONNREFUSED 
+			errnoCpy != SOCK_ECONNREFUSED 
 			) {
 			ca_printf(
 				"CAC: error sending to repeater was \"%s\"\n", 
-				SOCKERRSTR);
+				SOCKERRSTR(errnoCpy));
 		}
 	}
 	ca_static->ca_repeater_tries++;
@@ -804,7 +804,6 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 			localErrno = SOCKERRNO;
 
 			if(	localErrno != SOCK_EWOULDBLOCK && 
-				/* localErrno != SOCK_ENOBUFS && */
 				localErrno != SOCK_EINTR){
                 char buf[64];
 
@@ -812,7 +811,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 
 				ca_printf(
 					"CAC: error = \"%s\" sending UDP msg to %s\n",
-					SOCKERRSTR, buf);
+					SOCKERRSTR(localErrno), buf);
 			}
 		}
 		pNode = (caAddrNode *) pNode->node.next;
@@ -912,8 +911,8 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		localError != SOCK_ECONNRESET &&
 		localError != SOCK_ETIMEDOUT){
 		ca_printf(	
-			"CAC: error on socket send() %s\n",
-			SOCKERRSTR);
+			"CAC: unexpected TCP send error: %s\n",
+			SOCKERRSTR(localError));
 	}
 
 	TAG_CONN_DOWN(piiu);
@@ -990,17 +989,18 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 			break;
 		}
 		else if(status <0){
+            int localErrno = SOCKERRNO;
 			/* try again on status of -1 and no luck this time */
-			if(SOCKERRNO == SOCK_EWOULDBLOCK || SOCKERRNO == SOCK_EINTR){
+			if(localErrno == SOCK_EWOULDBLOCK || localErrno == SOCK_EINTR){
 				break;
 			}
 
-			if(	SOCKERRNO != SOCK_EPIPE && 
-				SOCKERRNO != SOCK_ECONNRESET &&
-				SOCKERRNO != SOCK_ETIMEDOUT){
+			if(	localErrno != SOCK_EPIPE && 
+				localErrno != SOCK_ECONNRESET &&
+				localErrno != SOCK_ETIMEDOUT){
 				ca_printf(	
-					"CAC: unexpected TCP recv error (err=%s)\n",
-					SOCKERRSTR);
+					"CAC: unexpected TCP recv error: %s\n",
+					SOCKERRSTR(localErrno));
 			}
 			TAG_CONN_DOWN(piiu);
 			break;
@@ -1118,11 +1118,12 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 			(struct sockaddr *)&pmsglog->addr, 
 			&reply_size);
     	if(status < 0){
+            int errnoCpy = SOCKERRNO;
 		/*
 		 * op would block which is ok to ignore till ready
 		 * later
 		 */
-      		if(SOCKERRNO == SOCK_EWOULDBLOCK || SOCKERRNO == SOCK_EINTR){
+      		if(errnoCpy == SOCK_EWOULDBLOCK || errnoCpy == SOCK_EINTR){
 			UNLOCK;
        			return;
 		}
@@ -1131,12 +1132,12 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 			 * Avoid spurious ECONNREFUSED bug
 			 * in linux
 			 */
-			if (SOCKERRNO==SOCK_ECONNREFUSED) {
+			if (errnoCpy==SOCK_ECONNREFUSED) {
 				UNLOCK;
        				return;
 			}
 #               endif
-		ca_printf("Unexpected UDP failure %s\n", SOCKERRSTR);
+		ca_printf("Unexpected UDP recv error %s\n", SOCKERRSTR(errnoCpy));
     	}
 	else if(status > 0){
 		unsigned long		bytesActual;

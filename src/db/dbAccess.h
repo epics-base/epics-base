@@ -23,11 +23,10 @@ of this distribution.
 #include "caeventmask.h"
 #include "dbAddr.h"
 #include "dbLock.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbCa.h"
 #include "dbCommon.h"
 #include "db_field_log.h"
-#include "dbAccessDefs.h"
 
 
 #endif /*INCdbAccessh*/

@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef _WIN32
 #include <winsock.h>
+#endif
 
 #include "tsDefs.h"
 #include "osiTime.h"

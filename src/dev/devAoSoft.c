@@ -80,12 +80,7 @@ struct aoRecord *pao;
 {
 
     long status=0;
-
-    status = recGblInitFastOutLink(&(pao->out), (void *) pao, DBR_DOUBLE, "OVAL");
-
-    /* dont convert */
-    if (status == 0) status = 2;
-
+    status = 2;
     return status;
 
 } /* end init_record() */
@@ -95,7 +90,7 @@ static long write_ao(pao)
 {
     long status;
 
-    status = recGblPutFastLink(&(pao->out), (void *)pao, &(pao->oval));
+    status = dbPutLink(&pao->out,DBR_DOUBLE, &pao->oval,1);
 
     return(status);
 }

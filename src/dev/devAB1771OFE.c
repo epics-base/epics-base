@@ -102,7 +102,7 @@ LOCAL long init_1771Ofe(struct aoRecord *prec)
 
 	if (prec->out.type != AB_IO){
 		recGblRecordError(S_db_badField,(void *)prec,
-			"devAiAb1771Ife (init_record) Illegal INP field");
+			"devAoAb1771Ofe (init_record) Illegal INP field");
 		return(S_db_badField);
 	}
 	/* set linear conversion slope*/
@@ -134,7 +134,7 @@ LOCAL long init_1771Ofe(struct aoRecord *prec)
 	    if(drvStatus!=abSuccess) {
 		status = S_db_badField;
 		recGblRecordError(status,(void *)prec,
-			"devAiAb1771Ife (init_record) startScan");
+			"devAoAb1771Ofe (init_record) startScan");
 		break;
 	    }
 	    /*wait for up to 3 seconds*/
@@ -156,7 +156,7 @@ LOCAL long init_1771Ofe(struct aoRecord *prec)
 	default:
 	    status = S_db_badField;
 	    recGblRecordError(status,(void *)prec,
-			"devAiAb1771Ife (init_record) registerCard");
+			"devAoAb1771Ofe (init_record) registerCard");
 	    break;
 	}
 	return(status);

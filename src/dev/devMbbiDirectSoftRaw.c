@@ -47,11 +47,6 @@
 #include	<module_types.h>
 #include	<mbbiDirectRecord.h>
 
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
-
-
 /* Create the dset for devMbbiDirectSoftRaw */
 static long init_record();
 static long read_mbbi();
@@ -81,12 +76,11 @@ static long init_record(pmbbi)
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);
+	pmbbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :
-        status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_ULONG, "RVAL");
-        if (status)
-           return(status);
+    case (CA_LINK) :
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)pmbbi,
@@ -101,7 +95,7 @@ static long read_mbbi(pmbbi)
 {
     long status;
 
-    status = recGblGetFastLink(&(pmbbi->inp), (void *) pmbbi, &(pmbbi->rval));
+    status = dbGetLink(&pmbbi->inp,DBR_LONG,&pmbbi->rval,0,0);
 
     return(0);
 }

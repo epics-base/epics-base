@@ -49,9 +49,6 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<subArrayRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
 
@@ -85,11 +82,7 @@ static long init_record(psa)
 	psa->nord = 0;
 	break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(psa->inp), (void *) psa, "VAL");
-        if(status) return(status);
-	break;
     case (DB_LINK) :
-	break;
     case (CA_LINK) :
 	break;
     default :
@@ -103,14 +96,13 @@ static long init_record(psa)
 static long read_sa(psa)
     struct subArrayRecord	*psa;
 {
-    long status,ecount,options=0,nRequest;
+    long status,ecount,nRequest;
 
     if ((psa->indx + psa->nelm) < psa->malm)
        nRequest= psa->indx + psa->nelm;
     else
        nRequest=psa->malm;
-    status = recGblGetLinkValue(&(psa->inp),(void *)psa,psa->ftvl,
-             psa->bptr, &options,&nRequest);
+    status = dbGetLink(&psa->inp,psa->ftvl,psa->bptr, 0,&nRequest);
     if ((nRequest - psa->indx) > 0)
     {
        if (psa->nelm > (nRequest - psa->indx))

@@ -71,12 +71,7 @@ struct {
 static long init_record(plongout)
 struct longoutRecord *plongout;
 {
-    long status = 0L;
- 
-    status = recGblInitFastOutLink(&(plongout->out), (void *) plongout, DBR_LONG, "VAL");
- 
-    return(status);
- 
+    return(0);
 } /* end init_record() */
 
 static long write_longout(plongout)
@@ -84,7 +79,7 @@ static long write_longout(plongout)
 {
     long status;
 
-    status = recGblPutFastLink(&(plongout->out), (void *)plongout, &(plongout->val));
+    status = dbPutLink(&plongout->out,DBR_LONG, &plongout->val,1);
 
     if (RTN_SUCCESS(status))
        plongout->udf=FALSE;

@@ -47,12 +47,8 @@
 #include	<module_types.h>
 #include	<stringoutRecord.h>
 
-/* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
-static long init_record();
-
 /* Create the dset for devSoSoft */
+static long init_record();
 static long write_stringout();
 
 struct {
@@ -74,25 +70,15 @@ struct {
 static long init_record(pstringout)
 struct stringoutRecord *pstringout;
 {
- 
-long status;
- 
-    if (pstringout->out.type == PV_LINK)
-        status = dbCaAddOutlink(&(pstringout->out), (void *) pstringout, "VAL");
-    else
-        status = 0L;
- 
-    return status;
- 
+    return 0;
 } /* end init_record() */
 
 static long write_stringout(pstringout)
     struct stringoutRecord	*pstringout;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(pstringout->out),(void *)pstringout,DBR_STRING,pstringout->val,
-              &nRequest);
+    status = dbPutLink(&pstringout->out,DBR_STRING,pstringout->val,1);
 
     return(status);
 }

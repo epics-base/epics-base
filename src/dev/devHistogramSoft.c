@@ -81,14 +81,11 @@ static long init_record(phistogram)
     switch (phistogram->svl.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl);
+	phistogram->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
-        status = recGblInitFastInLink(&phistogram->svl, phistogram, DBR_DOUBLE, "SGNL");
-
-        if (status != 0)
-           return(status);
-
+    case (CA_LINK) :
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)phistogram,
@@ -103,7 +100,7 @@ static long read_histogram(phistogram)
 {
     long status;
 
-    status = recGblGetFastLink(&(phistogram->svl), (void *)phistogram, &(phistogram->sgnl));
+    status = dbGetLink(&phistogram->svl,DBR_DOUBLE, &phistogram->sgnl,0,0);
 
     return(0); /*add count*/
 }

@@ -77,11 +77,8 @@ struct boRecord *pbo;
  
    long status=0;
  
-   status = recGblInitFastOutLink(&(pbo->out), (void *) pbo, DBR_USHORT, "VAL");
- 
     /* dont convert */
-   if (status == 0 ) status=2;
-
+   status=2;
    return status;
  
 } /* end init_record() */
@@ -91,7 +88,7 @@ static long write_bo(pbo)
 {
     long status;
 
-    status = recGblPutFastLink(&(pbo->out), (void *)pbo, &(pbo->val));
+    status = dbPutLink(&pbo->out,DBR_USHORT,&pbo->val,1);
 
     return(status);
 }

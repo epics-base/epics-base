@@ -49,9 +49,6 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<waveformRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* Create the dset for devWfSoft */
 static long init_record();
@@ -83,11 +80,7 @@ static long init_record(pwf)
 	pwf->nord = 0;
 	break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwf->inp), (void *) pwf, "VAL");
-        if(status) return(status);
-	break;
     case (DB_LINK) :
-	break;
     case (CA_LINK) :
 	break;
     default :
@@ -101,12 +94,11 @@ static long init_record(pwf)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-    long status,options=0,nRequest;
+    long status,nRequest;
 
     nRequest=pwf->nelm;
-    status = recGblGetLinkValue(&(pwf->inp),(void *)pwf,pwf->ftvl,pwf->bptr,
-              &options,&nRequest);
-    /*If recGblGetLinkValue got no values leave things as they were*/
+    status = dbGetLink(&pwf->inp,pwf->ftvl,pwf->bptr, 0,&nRequest);
+    /*If dbGetLink got no values leave things as they were*/
     if(nRequest>0) pwf->nord = nRequest;
 
     return(0);

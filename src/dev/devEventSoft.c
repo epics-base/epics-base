@@ -48,9 +48,6 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<eventRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* Create the dset for devEventSoft */
 static long init_record();
@@ -79,15 +76,11 @@ static long init_record(pevent)
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
     case (CONSTANT) :
-	if(recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val))
-	    pevent->udf = FALSE;
+	recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val);
+	pevent->udf = FALSE;
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pevent->inp), (void *) pevent, "VAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
-        break;
     case (CA_LINK) :
         break;
     default :
@@ -103,10 +96,7 @@ static long read_event(pevent)
 {
     long status,options=0,nRequest=1;
 
-    status = recGblGetLinkValue(&(pevent->inp),(void *)pevent,DBR_USHORT,&(pevent->val),
-              &options,&nRequest);
-
+    status = dbGetLink(&pevent->inp,DBR_USHORT,&pevent->val,0,0);
     if(RTN_SUCCESS(status)) pevent->udf=FALSE;
-
     return(status);
 }

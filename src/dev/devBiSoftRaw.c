@@ -50,9 +50,6 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<biRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* Create the dset for devBiSoftRaw */
 static long init_record();
@@ -83,14 +80,11 @@ static long init_record(pbi)
     switch (pbi->inp.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&pbi->inp,DBF_ULONG,&pbi->rval);
+	pbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :
-        status = recGblInitFastInLink(&(pbi->inp), (void *) pbi, DBR_ULONG, "RVAL");
-
-        if (status)
-           return(status);
-
+    case (CA_LINK) :
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,
@@ -105,7 +99,7 @@ static long read_bi(pbi)
 {
     long status;
 
-    status = recGblGetFastLink(&(pbi->inp), (void *)pbi, &(pbi->rval));
+    status = dbGetLink(&pbi->inp, DBR_ULONG, &pbi->rval,0,0);
 
     return(0);
 }

@@ -47,9 +47,6 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<longinRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* Create the dset for devLiSoft */
 static long init_record();
@@ -78,16 +75,12 @@ static long init_record(plongin)
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (plongin->inp.type) {
     case (CONSTANT) :
-	if(recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val))
-	    plongin->udf = FALSE;
+	recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val);
+	plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
-        status = recGblInitFastInLink(&(plongin->inp), (void *) plongin, DBR_LONG, "VAL");
-
-        if (status)
-           return(status);
-
+    case (CA_LINK) :
         break;
     default :
 	recGblRecordError(S_db_badField,(void *)plongin,
@@ -102,9 +95,7 @@ static long read_longin(plongin)
 {
     long status;
 
-    status = recGblGetFastLink(&(plongin->inp), (void *)plongin, &(plongin->val));
-
+    status = dbGetLink(&plongin->inp,DBR_LONG, &plongin->val,0,0);
     if(RTN_SUCCESS(status)) plongin->udf=FALSE;
-
     return(status);
 }

@@ -49,12 +49,8 @@
 #include	<module_types.h>
 #include	<pulseTrainRecord.h>
 
-/* added for Channel Access Links */
-long dbCaAddOutlink();
-long dbCaPutLink();
-static long init_record();
-
 /* Create the dset for devPtSoft */
+static long init_record();
 static long write_pt();
 
 struct {
@@ -75,26 +71,15 @@ struct {
 static long init_record(ppt)
 struct pulseTrainRecord *ppt;
 {
- 
-long status;
- 
-    if (ppt->out.type == PV_LINK)
-        status = dbCaAddOutlink(&(ppt->out), (void *) ppt, "VAL");
-    else
-        status = 0L;
- 
-    return status;
- 
+    return 0;
 } /* end init_record() */
 
 static long write_pt(ppt)
     struct pulseTrainRecord	*ppt;
 {
-    long status,nRequest=1;
+    long status;
 
-    status = recGblPutLinkValue(&(ppt->out),(void *)ppt,DBR_SHORT,&(ppt->val),&nRequest);
-
+    status = dbPutLink(&(ppt->out),DBR_SHORT,&(ppt->val),1);
     if(RTN_SUCCESS(status)) ppt->udf=FALSE;
-
     return(0);
 }

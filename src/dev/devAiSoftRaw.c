@@ -51,9 +51,6 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* Create the dset for devAiSoftRaw */
 static long init_record();
@@ -86,11 +83,11 @@ static long init_record(pai)
     switch (pai->inp.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&pai->inp,DBF_LONG,&pai->rval);
+	pai->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
-        status = recGblInitFastInLink(&(pai->inp), (void *) pai, DBR_LONG, "RVAL");
-        if(status) return(status);
+    case (CA_LINK) :
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pai,
@@ -105,7 +102,7 @@ static long read_ai(pai)
 {
     long status;
 
-    status = recGblGetFastLink(&(pai->inp),(void *)pai,&(pai->rval));
+    status = dbGetLink(&(pai->inp),DBR_LONG,&(pai->rval),0,0);
 
     return(0);
 }

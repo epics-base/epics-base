@@ -49,9 +49,6 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 
 /* Create the dset for devMbbiSoft */
@@ -80,17 +77,9 @@ static long init_record(pmbbi)
     long status;
 
     if (pmbbi->inp.type == CONSTANT) {
-	if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
-	    pmbbi->udf = FALSE;
+	recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val);
+	pmbbi->udf = FALSE;
     }
-    else {
-        status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_USHORT, "VAL");
-
-        if (status)
-           return(status);
-
-    }
-
     return(0);
 }
 
@@ -99,9 +88,7 @@ static long read_mbbi(pmbbi)
 {
     long status;
 
-    status = recGblGetFastLink(&(pmbbi->inp), (void *)pmbbi, &(pmbbi->val));
-
+    status = dbGetLink(&pmbbi->inp,DBR_USHORT,&pmbbi->val,0,0);
     if(RTN_SUCCESS(status)) pmbbi->udf=FALSE;
-
     return(2);
 }

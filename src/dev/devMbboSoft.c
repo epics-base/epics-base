@@ -79,11 +79,8 @@ struct mbboRecord *pmbbo;
  
     long status=0;
  
-    status = recGblInitFastOutLink(&(pmbbo->out), (void *) pmbbo, DBR_USHORT, "VAL");
- 
-    /* dont convert */
-    if ( status == 0 ) status=2;
-
+    /*dont convert*/
+    status=2;
     return status;
  
 } /* end init_record() */
@@ -93,9 +90,7 @@ static long write_mbbo(pmbbo)
 {
     long status;
 
-    status = recGblPutFastLink(&(pmbbo->out), (void *)pmbbo, &(pmbbo->val));
-
+    status = dbPutLink(&pmbbo->out,DBR_USHORT, &pmbbo->val,1);
     if(RTN_SUCCESS(status)) pmbbo->udf=FALSE;
-
     return(0);
 }

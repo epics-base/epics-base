@@ -75,8 +75,8 @@ static long init_record(pbo)
 struct boRecord *pbo;
 {
     long status;
- 
-    status = recGblInitFastOutLink(&(pbo->out), (void *) pbo, DBR_LONG, "RVAL");
+    
+    /*Don't convert*/
     status = 2;
     return status;
  
@@ -87,7 +87,7 @@ static long write_bo(pbo)
 {
     long status;
 
-    status = recGblPutFastLink(&(pbo->out), (void *)pbo, &(pbo->rval));
+    status = dbPutLink(&pbo->out,DBR_LONG, &pbo->rval,1);
 
     return(status);
 }

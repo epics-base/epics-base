@@ -75,13 +75,9 @@ struct mbboDirectRecord *pmbbo;
 {
     long status;
  
-    status = recGblInitFastOutLink(&(pmbbo->out), (void *) pmbbo, DBR_ULONG, "RVAL");
-
     if (pmbbo->out.type != PV_LINK)
        status = 2;
- 
     return status;
- 
 } /* end init_record() */
 
 static long write_mbbo(pmbbo)
@@ -89,7 +85,6 @@ static long write_mbbo(pmbbo)
 {
     long status;
 
-    status = recGblPutFastLink(&(pmbbo->out), (void *)pmbbo, &(pmbbo->rval));
-
+    status = dbPutLink(&pmbbo->out,DBR_LONG, &pmbbo->rval,1);
     return(0);
 }

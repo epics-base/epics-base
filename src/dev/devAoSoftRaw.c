@@ -75,12 +75,7 @@ struct {
 static long init_record(pao)
 struct aoRecord *pao;
 {
-    long status = 0L;
-
-    status = recGblInitFastOutLink(&(pao->out), (void *) pao, DBR_LONG, "RVAL");
-
-    return status;
-
+    return 0;
 } /* end init_record() */
 
 static long write_ao(pao)
@@ -88,7 +83,7 @@ static long write_ao(pao)
 {
     long status;
 
-    status = recGblPutFastLink(&(pao->out), (void *)pao, &(pao->rval));
+    status = dbPutLink(&pao->out,DBR_LONG,&pao->rval,1);
 
     return(status);
 }

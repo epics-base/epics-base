@@ -1,5 +1,5 @@
 /*
- *	$Id$
+ *	@(#)veclist.c	1.10
  *
  *	list fuctions attached to the interrupt vector table
  *
@@ -7,6 +7,8 @@
  *	hill@atdiv.lanl.gov
  *	(505) 665 1831
  *
+ *	.01 010393 Applied fix for zero C ISR param causes incorrect 
+ *		   identification as MACRO ISR problem. 
  */
 
 /*
@@ -23,13 +25,15 @@
  */
 
 #include "vxWorks.h"
-#include "a_out.h"
+#include "stdio.h"
+#include "intLib.h"
+#include "vxLib.h"
 #include "iv.h"
 #include "ctype.h"
 #include "sysSymTbl.h"
 
 static char *sccsID = 
-	"$Id$\t$Date$ J. Hill hill@atdiv.lanl.gov";
+	"@(#)veclist.c	1.10\t1/3/94 J. Hill hill@atdiv.lanl.gov";
 
 /*
  *
@@ -40,8 +44,8 @@ static char *sccsID =
 
 static char *ignore_list[] = {"_excStub","_excIntStub"};
 
-int	veclist(int);
-int	cISRTest(void (*)(), void (**)(), void **);
+int		veclist(int);
+int		cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam);
 static void 	*fetch_pointer(unsigned char *);
 
 
@@ -50,28 +54,31 @@ static void 	*fetch_pointer(unsigned char *);
  * veclist()
  *
  */
-veclist(int all)
+int veclist(int all)
 {
   	int		vec;
 	int		value;
 	SYM_TYPE	type;
 	char		name[MAX_SYS_SYM_LEN];
 	char		function_type[10];
-	void		(*proutine)();
-	void		(*pCISR)();
+	FUNCPTR		proutine;
+	FUNCPTR		pCISR;
+	int		cRoutine;
 	void		*pparam;
 	int		status;
 	int		i;
 
   	for(vec=0; vec<NVEC; vec++){
-    		proutine = (void *) intVecGet(INUM_TO_IVEC(vec));
+    		proutine = intVecGet((FUNCPTR *)INUM_TO_IVEC(vec));
 
 		status = cISRTest(proutine, &pCISR, &pparam);
 		if(status == OK){
+			cRoutine = TRUE;
 			proutine = pCISR;
 			strcpy(function_type, "C");
 		}
 		else{
+			cRoutine = FALSE;
 			strcpy(function_type, "MACRO");
 			pCISR = NULL;
 		}
@@ -83,7 +90,7 @@ veclist(int all)
 				&value,
 				&type);
 		if(status<0 || value != (int)proutine){
-			sprintf(name, "0x%X", proutine);
+			sprintf(name, "0x%X", (unsigned int) proutine);
 		}
 		else if(!all){
 			int	match = FALSE;
@@ -98,12 +105,12 @@ veclist(int all)
 				continue;
 			}
 		}
-       		printf(	"vec 0x%2X %5s ISR %s", 
+       		printf(	"vec 0x%02X %5s ISR %s", 
 			vec, 
 			function_type,
 			name);
-		if(pCISR){
-			printf("(0x%X)", pparam);
+		if(cRoutine){
+			printf("(0x%X)", (unsigned int) pparam);
 		}
 		printf("\n");
 	}
@@ -121,13 +128,15 @@ veclist(int all)
  */
 #define ISR_PATTERN	0xaaaaaaaa
 #define PARAM_PATTERN	0x55555555 
-int	cISRTest(void (*proutine)(), void (**ppisr)(), void **pparam)
+int	cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam)
 {
 	static FUNCPTR	handler = NULL;
 	STATUS		status;
 	unsigned char	*pchk;
 	unsigned char	*pref;
 	unsigned char	val;
+	int		found_isr;
+	int		found_param;
 
 	if(handler == NULL){
 		handler = (FUNCPTR) intHandlerCreate(
@@ -138,12 +147,12 @@ int	cISRTest(void (*proutine)(), void (**ppisr)(), void **pparam)
 		}
 	}
 
-	*ppisr = NULL;
-	*pparam = NULL;
+	found_isr = FALSE;
+	found_param = FALSE;
 	pchk = (unsigned char *) proutine;
 	pref = (unsigned char *) handler; 
 	for(	;
-		*ppisr==NULL || *pparam==NULL;
+		found_isr==FALSE || found_param==FALSE;
 		pchk++, pref++){
 
 		status = vxMemProbe(	
@@ -158,19 +167,15 @@ int	cISRTest(void (*proutine)(), void (**ppisr)(), void **pparam)
 		if(val != *pref){
 			if(*pref == (unsigned char) ISR_PATTERN){
 				*ppisr = fetch_pointer(pchk);
-				if(!*ppisr){
-					return ERROR;
-				}
 				pref += sizeof(*ppisr)-1;
 				pchk += sizeof(*ppisr)-1;
+				found_isr = TRUE;	
 			}
 			else if(*pref == (unsigned char) PARAM_PATTERN){
 				*pparam = fetch_pointer(pchk);
-				if(!*pparam){
-					return ERROR;
-				}
 				pref += sizeof(*pparam)-1;
 				pchk += sizeof(*pparam)-1;
+				found_param = TRUE;
 			}
 			else{	
 				return ERROR;

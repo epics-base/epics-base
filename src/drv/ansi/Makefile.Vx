@@ -23,6 +23,12 @@ SRCS.c += ../drvStc.c
 SRCS.c += ../drvTime.c
 #	SRCS.c += ../drvCaenV265.c
 
+#	SRCS.c += ../drvVipc310.c
+#	SRCS.c += ../drvVipc610.c
+#	SRCS.c += ../drvIpMv162.c
+#	SRCS.c += ../drvIpac.c
+#	SRCS.c += ../drvTip810.c
+
 TARGETS = $(SRCS.c:../%.c=%.o)
 
 include $(EPICS)/config/RULES.Vx

@@ -75,12 +75,13 @@ void nUpdatesTester ( struct event_handler_args args )
     }
 }
 
-void monitorSubscriptionFirstUpdateTest ( chid chan )
+void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
 {
     int status;
     unsigned eventCount = 0u;
     unsigned waitCount = 0u;
     evid id;
+    chid chan2;
 
     showProgressBegin ();
 
@@ -99,6 +100,25 @@ void monitorSubscriptionFirstUpdateTest ( chid chan )
     assert ( eventCount > 0 );
     status = ca_clear_event ( id );
     SEVCHK (status, 0);
+
+    eventCount = 0u;
+    waitCount = 0u;
+    status = ca_search ( pName, &chan2 );
+    SEVCHK ( status, 0 );
+    status = ca_add_event ( DBR_FLOAT, chan2, 
+		nUpdatesTester, &eventCount, &id );
+    SEVCHK ( status, 0 );
+    status = ca_pend_io ( 20.0 );
+    SEVCHK (status, 0);
+    ca_pend_event ( 0.1 );
+    while ( eventCount < 1 && waitCount++ < 100 ) {
+        printf ( "-" );
+        fflush ( stdout );
+        ca_pend_event ( 0.1 );
+    }
+    assert ( eventCount > 0 );
+    status = ca_clear_channel ( chan2 );
+    SEVCHK ( status, 0 );
 
     showProgressEnd ();
 }
@@ -1902,7 +1922,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     exceptionTest ( chan );
     arrayTest ( chan ); 
     verifyMonitorSubscriptionFlushIO ( chan );
-    monitorSubscriptionFirstUpdateTest ( chan );
+    monitorSubscriptionFirstUpdateTest ( pName, chan );
     performGrEnumTest ( chan );
     performCtrlDoubleTest ( chan );
     verifyBlockInPendIO ( chan );

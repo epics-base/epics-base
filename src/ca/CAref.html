@@ -802,7 +802,7 @@ CA client library as typeless "void *" pointers then care should be taken to
 ensure that you have passed the corect C data type corresponding to the
 DBR_XXXX type that you have specified. Architecture independent types are
 provided in db_access.h to assist programmers in writing portable code. For
-example "dbr_short_t" should be used to send or receive type DBR_SHORT. </p>
+example "dbr_short_t" should be used to send or receive type DBR_SHORT.</p>
 
 <table border="1">
   <caption>Structure of the Channel Access Data Type Space</caption>
@@ -1074,7 +1074,7 @@ process exit.</p>
 <pre><code>#include &lt;cadef.h&gt;
 typedef void ( *pCallBack ) (
          struct connection_handler_args );
-int epicsShareAPI ca_create_channel
+int ca_create_channel
 (
         const char     *PROCESS_VARIABLE_NAME, 
         caCh           *USERFUNC, 
@@ -1130,6 +1130,10 @@ any time.</p>
 additional threads are <em>not </em>allowed to join the CA context using
 ca_context_attach() because allowing other threads to join implies that CA
 callbacks will be called preemptively from more than one thread.</p>
+
+<h4>Example</h4>
+
+<p>See caExample.c in the example application created by makeBaseApp.pl.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -1346,6 +1350,10 @@ until one of ca_flush_io, ca_pend_io, ca_pend_event, or ca_sg_pend are
 called. This allows several requests to be efficiently sent over the network
 in one message.</p>
 
+<h4>Example</h4>
+
+<p>See caExample.c in the example application created by makeBaseApp.pl.</p>
+
 <h4>Arguments</h4>
 <dl>
   <dt><code>TYPE</code></dt>
@@ -1455,6 +1463,10 @@ restored normal event processing will resume starting always with at
 least one update indicating the current state of the channel.</p>
 
 <p>A better name for this function might have been ca_subscribe.</p>
+
+<h4>Example</h4>
+
+<p>See caMonitor.c in the example application created by makeBaseApp.pl.</p>
 
 <h4>Arguments</h4>
 <dl>

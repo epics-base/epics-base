@@ -1,0 +1,161 @@
+Compiling EPICS on WIN32 (Windows95/NT)
+---------------------------------------
+
+	-kuk- 11/18/96	questions & comments please
+			mailto:kasemir@atdiv.lanl.gov
+
+0) what you will get
+--------------------
+
+Right now this port of EPICS to WIN32 should allow you to
+
+* compile almost all EPICS base using Tornado, MS Visual C
+  and some additional tools: gnumake, a UNIX-like shell, awk, sed, ...
+  (See below where to get these.)
+* load EPICS on a PC IOC (486, pentium),
+  load simple databases
+  (no drivers/devices for real I/O available, yet.
+   Some Greenspring IP support [Relay, Dig, ADC, DAC] is in progress)
+* build and use ca.dll on NT or Win95 to access all IOCs,
+  as well as the Com-library as a DLL.
+  The remaining libraries are statically linked and
+  therefore only accessible from programming languages like C,
+  not general WIN32 apps.
+* build gdd, cas and a demo of the new portable CA server on WIN32.
+* missing: the sequencer, makeExampleApp etc.  and long term tests
+
+1) see what you have
+--------------------
+
+To compiler EPICS on WIN32, we need
+
+	WindRiver Systems Tornado (used: 1.0)
+	Microsoft Visual C       (used: 4.0)
+
+and some tools:
+
+	a Unix-like shell
+	gnumake
+	basename
+	date
+	mv
+	touch
+	sort
+
+All the above except. the shell are available 'on the net'
+as sources which compile with MS Visual C++.
+If you cannot/don't want to find them, contact me, please!
+
+I could not find a shell that's fully operational.
+The best one seems to be the Cygnus bash for WIN32, though it
+still has errors and doesn't come with sources that compile
+under MS VC++.
+I use a small self-written shell called knts,
+again: Contact me if you need it.
+
+* The final solution to make the shell, basename, date, ...
+* obsolete:
+* Use 
+* 1) no shell scripts
+* 2) Perl which is available for Unix and WIN32
+
+In addition we need some binaries that I have no sources
+for, yet, but that come with Tornado if and only if you
+INSTALL THE FULL PACKAGE (!)
+Including the 'WTX Test Suite i386/i486'
+(under "Select Sub-components" when installing Tornado)
+
+You should find in your <Tornado>/host/x86-win32/bin dir:
+
+	awk, cat, cp, rm, mkdir
+
+(There is also a bash and a GNU-make which are really poor,
+ and WindRiver told me that they do not consider to support
+ those in the future, so I no longer use them.)
+
+2) set environment variables
+----------------------------
+
+Your path should include:
+- The EPICS-binaries that we are about to build in base/bin/WIN32
+- The NTtools that you've built in step 1
+- The System (for me it's in NT40...)
+- The MS Visual C compiler binaries
+- The Tornado binaries
+
+Check with e.g.:
+
+/users/kay/Src/epics/nttools >echo $Path
+c:\users\kay\src\epics\base\bin\WIN32;c:\users\kay\src\epics\NTtools\bin;C:\NT40
+\system32;C:\NT40;c:\msdev\bin;C:\users\Tornado\host\x86-win32\bin
+
+On NT, $Path is defined by the operatin system, on Win95, it's $PATH instead.
+knts tries to use PATH and falls back on Path,
+what should wok on both systems.
+
+MS Visual C and Tornado should be installed properly with
+these env. variables set:
+
+WIND_BASE=c:\usersTornado
+WIND_HOST_TYPE=x86-win32
+
+This way the EPICS makesystem can locate Tornado 
+without any changes to the files in base/config.
+So for pc486 the settings in CONFIG_SITE where
+you specify the location of VxWorks are ignored,
+this information is taken from WIND_BASE and _HOST_TYPE!!
+
+MSDevDir=C:\MSDEV
+include=c:\msdev\include;c:\msdev\mfc\include
+lib=c:\msdev\lib;c:\msdev\mfc\lib
+
+(Setting env. vars. is different: for NT, use Settings/System,
+for Win95 use autoexec.bat)
+
+For EPICS, set:
+
+#	select host arch to build:
+HOST_ARCH=WIN32
+
+EPICS_CA_ADDR_LIST              128.165.32.255	(addr of WIN32 host)
+EPICS_CA_AUTO_CA_ADDR_LIST	NO
+EPICS_CA_CONN_TMO		30.0
+EPICS_CA_BEACON_PERIOD		15.0
+EPICS_CA_REPEATER_PORT		5065
+EPICS_CA_SERVER_PORT		5064
+EPICS_TS_MIN_WEST		420		(Germany: -120)
+
+
+To debug knts, set KNTS to 5:
+KNTS=5
+export KNTS
+
+You should do this, however, only if you really want the debugging info.
+
+
+3) building EPICS
+-----------------
+
+Prepare apx. 2 ltr. Tee and type:
+
+	cd <epics>/base
+	gnumake
+
+Watch for errors and send them to me.
+
+There might be loads of compiler warnings.
+Known errors:
+* gnumake seems to be faster than WIN32 sometimes
+  which results in warnings/errors like
+  "file has modification date in the future"
+  for newly vreated things.
+  Very seldom this is fatal, so you have to
+  stop gnumake and restart it.
+* This is strange because Windows95/NT don't care
+  about upper/lower case:
+  WIN32 is WIN32, not win32. Gnumake fails
+  if e.g. base/src/include/os/WIN32 is ...win32.
+
+Good luck !
+
+-Kay

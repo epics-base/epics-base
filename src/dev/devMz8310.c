@@ -92,7 +92,7 @@ MZDSET devPtMz8310={ 5,   NULL, NULL, init_pt, NULL, write_pt};
 /* defines specific to mz8310*/
 
 #define MAXCARDS	4
-#define BASE		0xf800
+static unsigned short BASE;
 #define CARDSIZE	0x00000100
 
 #define CHIPSIZE	0x20
@@ -218,6 +218,7 @@ static long init()
 	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
 	exit(1);
     }
+    BASE = tm_addrs[MZ8310];
     for(card=0; card<MAXCARDS; card++) {
 	mz8310_info[card].present = FALSE;
 	for(chip=0; chip<NCHIP; chip ++) {

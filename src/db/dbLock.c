@@ -223,6 +223,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
         epicsMutexMustLock(plockSet->lock);
         epicsMutexMustLock(lockSetModifyLock);
         if(plockSet->nWaiting == 0) break;
+        epicsMutexUnlock(plockSet->lock);
         epicsThreadSleep(.1);
     }
     epicsMutexUnlock(plockSet->lock);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.20  1998/02/05 23:05:27  jhill
+ * removed static members
+ *
  * Revision 1.19  1997/08/05 00:47:16  jhill
  * fixed warnings
  *
@@ -166,7 +169,6 @@ typedef caResId caEventId;
 // fwd ref
 //
 class caServerI;
-
 
 //
 // casEventSys
@@ -863,9 +865,8 @@ class caServerI :
 	private uintResTable<casRes>,
 	public casEventRegistry {
 public:
-	caServerI(caServer &tool, unsigned pvCountEstimate);
-	caStatus init(); //constructor does not return status
-	~caServerI();
+	caServerI (caServer &tool, unsigned pvCountEstimate);
+	~caServerI ();
 
 	//
 	// find the channel associated with a resource id

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/08/05 00:46:57  jhill
+ * fixed warnings
+ *
  * Revision 1.8  1997/06/13 09:15:51  jhill
  * connect proto changes
  *
@@ -136,79 +139,72 @@ void caServerI::show (unsigned level) const
 // caServerI::caServerI()
 //
 caServerI::caServerI (caServer &tool, unsigned nPV) :
-	caServerOS(*this),
-	casEventRegistry(* (osiMutex *) this),
-	dgClient(*this),
+	caServerOS (*this),
+	casEventRegistry (* (osiMutex *) this),
+	dgClient (*this),
         //
         // Set up periodic beacon interval
         // (exponential back off to a plateau
         // from this intial period)
         //
-	beaconPeriod(CAServerMinBeaconPeriod),
-	adapter(tool),
-	debugLevel(0u),
-	pvCountEstimate(nPV<100u?100u:nPV), 
-	haveBeenInitialized(FALSE)
+	beaconPeriod (CAServerMinBeaconPeriod),
+	adapter (tool),
+	debugLevel (0u),
+	pvCountEstimate (nPV<100u?100u:nPV), 
+	haveBeenInitialized (FALSE)
 {
 	caStatus	status;
-
-	assert(&adapter);
-	//ctx.setServer(this);
-
-	status = this->init();
-	if (status) {
-		errMessage(status, "CA server internals init");
-	}
-}
-
-
-//
-// caServerI::init()
-//
-caStatus caServerI::init()
-{
-	int		status;
 	int		resLibStatus;
 
-        if (this->osiMutex::init()) {
-                return S_cas_noMemory;
+	assert (&adapter);
+
+        if (this->osiMutex::init ()) {
+		errMessage (S_cas_noMemory, "CA server mutex init");
+		return;
         }
 
-        status = casEventRegistry::init();
+        status = casEventRegistry::init ();
         if (status) {
-                return status;
+		errMessage (status, "CA server event registry init");
+		return;
         }
 
-        status = caServerIO::init(*this);
+        status = caServerIO::init (*this);
         if (status) {
-                return status;
+		errMessage (status, "CA server IO internals init");
+                return;
         }
 
 	if (this->intfList.count()==0u) {
-		return S_cas_noInterface;
+		errMessage (S_cas_noInterface, "CA server internals init");
+		return;
 	}
 
         status = caServerOS::init();
         if (status) {
-                return status;
+		errMessage (status, "CA server OS dependent init");
+                return;
         }
 
 	status = this->dgClient.init();
         if (status) {
-                return status;
+		errMessage (status, "CA server DG init");
+                return;
         }
 
 	//
 	// hash table size may need adjustment here?
 	//
-	resLibStatus = this->uintResTable<casRes>::init(this->pvCountEstimate*2u);
+	resLibStatus = this->uintResTable<casRes>::init
+				(this->pvCountEstimate*2u);
 	if (resLibStatus) {
-		ca_printf("CAS: integer resource id table init failed\n");
-		return S_cas_noMemory;
+		errMessage (S_cas_noMemory, 
+			"integer resource id table init failed");
+		return;
 	}
 
 	this->haveBeenInitialized = TRUE;
-	return S_cas_success;
+	return;
 }
 
 

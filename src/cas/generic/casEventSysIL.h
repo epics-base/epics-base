@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/08/05 00:47:09  jhill
+ * fixed warnings
+ *
  * Revision 1.4  1997/04/10 19:34:09  jhill
  * API changes
  *
@@ -70,10 +73,8 @@ inline casEventSys::casEventSys (casCoreClient &coreClientIn) :
 //
 inline caStatus casEventSys::init()
 {
-	if (this->mutex.init()) {
-		return S_cas_noMemory;
-	}
-	return S_cas_success;
+	return (this->mutex.init() ? 
+		S_cas_noMemory : S_cas_success);
 }
 
 //

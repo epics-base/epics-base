@@ -14,9 +14,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include <limits.h>
 
 #include "epicsAssert.h"
 #include "cadef.h"
+#include "caProto.h"
 
 #ifndef LOCAL
 #define LOCAL static
@@ -142,20 +144,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
 		itemList[i].name[strsize]= '\0';
 		itemList[i].count = 1;
 	}
-#if 0
-	printf ("sync search test\n");
-	assert (100u<=NELEMENTS(itemList));
-	timeIt (test_sync_search, itemList, 100u);
-	printSearchStat(100u);
 
-  	printf ("free test\n");
-	timeIt (test_free, itemList, 100u);
-
-  	printf ("waiting for the server to reply to free requests...");
-	fflush (stdout);
-	ca_pend_event(1.0);
-  	printf ("hopefully done\n");
-#endif
 	printf ("search test\n");
 	timeIt (test_search, itemList, NELEMENTS(itemList));
 	printSearchStat(NELEMENTS(itemList));
@@ -177,7 +166,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
   	test (itemList, NELEMENTS(itemList));
 
   	for (i=0; i<NELEMENTS(itemList); i++) {
-    		strcpy(itemList[i].val.strval, "0.0");
+		strcpy(itemList[i].val.strval, "0.0");
 		itemList[i].type = DBR_STRING; 
 	}
 	printf ("string test\n");
@@ -261,6 +250,7 @@ void timeIt(
 	double		delay;
 	int		status;
 	unsigned	inlineIter;
+	unsigned	nBytes;
 
 	status = tsLocalTime(&start_time);
 #if 0
@@ -273,9 +263,17 @@ void timeIt(
 #endif
 	TsDiffAsDouble(&delay,&end_time,&start_time);
 	if (delay>0.0) {
-		printf ("Elapsed Per Item = %12.8f sec (%10.1f Items per sec)\n", 
+		printf ("Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
 			delay/(iterations*inlineIter),
 			(iterations*inlineIter)/delay);
+		if (pItems!=NULL) {
+			nBytes = sizeof(caHdr) + OCT_ROUND(dbr_size[pItems[0].type]);
+			printf(", %3.1f Mbps\n", 
+				(iterations*inlineIter*nBytes*CHAR_BIT)/(delay*1e6));
+		}
+		else {
+			printf ("\n");
+		}
 	}
 	else {
 		printf ("Elapsed Per Item = %12.8f sec\n", 

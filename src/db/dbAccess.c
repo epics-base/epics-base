@@ -523,6 +523,9 @@ long dbPutNotify(PUTNOTIFY *ppn)
 	    return(0);
 	}
     }
+    callbackSetCallback(notifyCallback,&ppn->callback);
+    callbackSetUser(ppn,&ppn->callback);
+    callbackSetPriority(priorityLow,&ppn->callback);
     dbScanLock(precord);
     status=dbPut(paddr,dbrType,pbuffer,nRequest);
     if(status) recGblDbaddrError(status,paddr,"dbPutField");
@@ -539,9 +542,6 @@ long dbPutNotify(PUTNOTIFY *ppn)
 	    ppn->nwaiting = 1;
 	    ppn->rescan = FALSE;
 	    ppn->list = NULL;
-	    callbackSetCallback(notifyCallback,&ppn->callback);
-	    callbackSetUser(ppn,&ppn->callback);
-	    callbackSetPriority(priorityLow,&ppn->callback);
 	    precord->ppn = ppn;
 	    precord->ppnn = NULL;
 	    if(precord->pact) {/*blocked wait for dbNotifyCompletion*/
@@ -562,6 +562,10 @@ long dbPutNotify(PUTNOTIFY *ppn)
 		ppn->status = status;
 		notifyCancel(ppn);
 	    }
+	} else { /*Make callback immediately*/
+	    ppn->cmd = notifyCmdCallUser;
+	    ppn->status = 0;
+	    notifyCallback(&ppn->callback);
 	}
     }
     dbScanUnlock(precord);
@@ -5737,6 +5741,8 @@ long dbPut(
 			    db_post_events(precord,&precord->acks,DBE_VALUE);
 			}
 		    }
+		} else if(special==SPC_AS) {
+		    asChangeGroup(&precord->asp,precord->asg);
 		}
 	    }
 	    else {

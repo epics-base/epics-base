@@ -205,52 +205,28 @@ long dbel(char*pname)
     return(0);
 }
 
-long dbl(char	*ptypeName)
+long dbl(char	*precdesname)
 {
-    int			rectype,beg,end;
-    struct recLoc	*precLoc;
-    struct dbCommon	*precord;
-    char		*pstr;
-    char		name[PVNAME_SZ+1];
-    struct recType	*precType;
-    struct recHeader	*precHeader;
-    RECNODE		*precNode;
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry=&dbentry;
+    long	status;
 
-    if(!pdbBase) {
-	printf("No database\n");
-	return(0);
-    }
-    if(!(precType=pdbBase->precType)) return(0);
-    if(!(precHeader = pdbBase->precHeader)) return(0);
-    if(ptypeName==NULL) {
-	beg=0;
-	end=precHeader->number - 1;
-    }
-    else {
-	for(rectype=0; rectype<precHeader->number; rectype++) {
-	    if(!(pstr=GET_PRECNAME(precType,rectype))) continue;
-	    if(strcmp(pstr,ptypeName)==0){
-		beg=rectype;
-		end=rectype;
-		goto got_it;
-	    }
+    dbInitEntry(pdbBase,pdbentry);
+    if(!precdesname)
+	status = dbFirstRecdes(pdbentry);
+    else
+	status = dbFindRecdes(pdbentry,precdesname);
+    if(status) printf("No record description\n");
+    while(!status) {
+	status = dbFirstRecord(pdbentry);
+	while(!status) {
+	    printf("%s\n",dbGetRecordName(pdbentry));
+	    status = dbNextRecord(pdbentry);
 	}
-	printf("Illegal Record Type\n");
-	return(1);
+	if(precdesname) break;
+	status = dbNextRecdes(pdbentry);
     }
-got_it:
-    for(rectype=beg; rectype<=end; rectype++) {
-	if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
-	if(!precLoc->preclist) continue;
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-		precord = precNode->precord;
-		if(precord->name[0] == 0) continue; /*deleted record*/
-		strncpy(name,precord->name,PVNAME_SZ);
-		name[PVNAME_SZ]=0;
-		printf("%s\n",name);
-	}
-    }
+    dbFinishEntry(pdbentry);
     return(0);
 }
 
@@ -723,38 +699,32 @@ long dbior(char	*pdrvName,int type)
 
 long dblls(int	lockset)
 {
-    int			rectype,beg,end;
-    struct recLoc	*precLoc;
+    DBENTRY		dbentry;
+    DBENTRY		*pdbentry=&dbentry;
+    long		status;
     struct dbCommon	*precord;
-    char		name[PVNAME_SZ+1];
-    struct recType      *precType;
-    struct recHeader    *precHeader;
-    RECNODE             *precNode;
 
-    if(!(precType=pdbBase->precType)) return(0);
-    if(!(precHeader = pdbBase->precHeader)) return(0);
-    beg=0;
-    end=precHeader->number - 1;
+    dbInitEntry(pdbBase,pdbentry);
+    status = dbFirstRecdes(pdbentry);
     printf(" lset  lcnt  disv  disa  pact\n");
-    for(rectype=beg; rectype<=end; rectype++) {
-        if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
-	if(!precLoc->preclist) continue;
-        for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-            precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-                precord = precNode->precord;
-		if(precord->name[0] == 0) continue; /*deleted record*/
-		if(lockset>0 && lockset!=precord->lset) continue;
-		strncpy(name,precord->name,PVNAME_SZ);
-		name[PVNAME_SZ]=0;
+    while(!status) {
+	status = dbFirstRecord(pdbentry);
+	while(!status) {
+	    precord = pdbentry->precnode->precord;
+	    if(lockset==0 || lockset==precord->lset) {
 		printf("%5.5d %5.5d %5.5d %5.5d %5.5d %s\n",
 			precord->lset,
 			precord->lcnt,
 			precord->disv,
 			precord->disa,
 			precord->pact,
-			name);
+			precord->name);
+	    }
+	    status = dbNextRecord(pdbentry);
 	}
+	status = dbNextRecdes(pdbentry);
     }
+    dbFinishEntry(pdbentry);
     return(0);
 }
 

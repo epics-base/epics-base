@@ -852,6 +852,10 @@ DbRecDes(fp, fflag)
 			&precDes->papRecTypDes[i]->papFldDes[j]->interest,
 			precDes->papRecTypDes[i]->papFldDes[j]->interest);
 		bufOut(fp, fflag);
+		sprintf(buffer, "%8x\t\t\tas_level [%d]",
+			&precDes->papRecTypDes[i]->papFldDes[j]->as_level,
+			precDes->papRecTypDes[i]->papFldDes[j]->as_level);
+		bufOut(fp, fflag);
 		memcpy((void *) buff,
 			(void *) & precDes->papRecTypDes[i]->papFldDes[j]->initial, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\tinitial",

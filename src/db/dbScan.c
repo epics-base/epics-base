@@ -470,7 +470,7 @@ static void initPeriodic()
 	return;
 got_record:
 	/* get database address of SCAN field */
-	name[PVNAME_SZ+1] = 0;
+	name[PVNAME_SZ] = 0;
 	strncpy(name,precord->name,PVNAME_SZ);
 	strcat(name,".SCAN");
 	if ((status=dbNameToAddr(name,&dbAddr)) != 0){
@@ -480,11 +480,11 @@ got_record:
 	options = DBR_ENUM_STRS;
 	nRequest = 0;
 	status = dbGetField(&dbAddr,DBR_ENUM,&scanChoices,&options,&nRequest,pfl);
-	if(status) {
+	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
+	if(status || options!=DBR_ENUM_STRS || nPeriodic<=0) {
 		recGblDbaddrError(status,&dbAddr,"initPeriodic");
 		exit(1);
 	}
-	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
 	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list));
 	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
 	for(i=0; i<nPeriodic; i++) {

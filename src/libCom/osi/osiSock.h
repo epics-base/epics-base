@@ -107,6 +107,10 @@ epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoI
 
 #include "osdSock.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef union osiSockAddr {
     struct sockaddr_in  ia;
     struct sockaddr     sa;
@@ -155,5 +159,9 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  * this osi interface can be eliminated.
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef osiSockh */

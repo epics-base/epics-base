@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.25  1996/08/13 23:16:23  jhill
+ * removed os specific code
+ *
  * Revision 1.23  1996/08/05 19:18:56  jhill
  * better msg for lack of fp
  *
@@ -739,7 +742,7 @@ LOCAL void ca_check_for_fp()
 
 	assert(taskOptionsGet(taskIdSelf(), &options) == OK);
 	if (!(options & VX_FP_TASK)) {
-		ca_signal(ECA_NEEDSFP, taskName(taskIdSelf()));
+		genLocalExcep (ECA_NEEDSFP, taskName(taskIdSelf()));
         }
 }
 

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.56  1996/08/13 23:16:19  jhill
+ * removed os specific code
+ *
  * Revision 1.55  1996/08/05 19:21:26  jhill
  * removed unused proto
  *
@@ -633,6 +636,10 @@ void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler (void);
 void cacDisconnectChannel(chid chix, enum channel_state state);
 int caSendMsgPending(void);
+void generateLocalExceptionWithFileAndLine(long stat, char *ctx, 
+	char *pFile, unsigned line);
+#define genLocalExcep(STAT, PCTX) \
+generateLocalExceptionWithFileAndLine (STAT, PCTX, __FILE__, __LINE__)
 
 /*
  * !!KLUDGE!!

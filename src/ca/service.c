@@ -579,6 +579,8 @@ const struct in_addr  	*pnet_addr
 		 */
 		monix = NULL;
 		args.addr = NULL;
+		args.pFile = NULL;
+		args.lineNo = 0u;
 		LOCK;
 		switch (ntohs(req->m_cmmd)) {
 		case CA_PROTO_READ_NOTIFY:
@@ -813,7 +815,7 @@ const struct in_addr	*pnet_addr
 				(char *)(chan + 1),
 				chpiiu->host_name_str,
 				rej);
-			ca_signal(ECA_DBLCHNL, sprintf_buf);
+			genLocalExcep (ECA_DBLCHNL, sprintf_buf);
 		}
 		UNLOCK;
 		return;

@@ -91,7 +91,7 @@ bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
     return false;
 }
 
-void netiiu::lastChannelDetachNotify ( class epicsGuard < class callbackMutex > & /* cbLocker */ )
+void netiiu::lastChannelDetachNotify ( epicsGuard < class callbackMutex > & /* cbLocker */ )
 {
 }
 

@@ -17,17 +17,32 @@
 
 #include "epicsDynLink.h"
  
-STATUS symFindByNameEPICS( SYMTAB_ID symTblId,
+STATUS symFindByNameEPICS( 
+	SYMTAB_ID symTblId,
 	char      *name,
-	char      **pvalue,
+	char      **ppvalue,
 	SYM_TYPE  *pType    )
 {
-	STATUS status;
+	static int leadingUnderscore = 1;
+	static int init = 0;
+	STATUS status = ERROR;
 
-	status = symFindByName( symTblId, name, pvalue, pType );
+	if (!init) {
+		char *pSymValue;
+		SYM_TYPE type;
+		status = symFindByName ( symTblId, "symFindByNameEPICS", &pSymValue, &type );
+		if (status==OK) {
+			leadingUnderscore = 0;
+		}
+		init = 1;
+	}
 
-	if ( status == ERROR && name[0] == '_' )
-		status = symFindByName( symTblId, (name+1), pvalue, pType );
+	if (name[0] != '_' || leadingUnderscore) {
+		status = symFindByName ( symTblId, name, ppvalue, pType );
+	}
+	else {
+		status = symFindByName ( symTblId, (name+1), ppvalue, pType );
+	}
 
 	return status;
 }
@@ -35,19 +50,34 @@ STATUS symFindByNameEPICS( SYMTAB_ID symTblId,
 STATUS symFindByNameAndTypeEPICS( 
 	SYMTAB_ID symTblId,
 	char      *name,
-	char      **pvalue,
+	char      **ppvalue,
 	SYM_TYPE  *pType,
 	SYM_TYPE  sType,
 	SYM_TYPE  mask	)
 {
-	STATUS status;
+	static int leadingUnderscore = 1;
+	static int init = 0;
+	STATUS status = ERROR;
 
-	status = symFindByNameAndType( symTblId, name, pvalue,
-				       pType, sType, mask );
+	if (!init) {
+		char *pSymValue;
+		SYM_TYPE type;
+		status = symFindByName (symTblId, "symFindByNameAndTypeEPICS", &pSymValue, &type );
+		if (status==OK) {
+			leadingUnderscore = 0;
+		}
+		init = 1;
+	}
 
-	if ( status == ERROR && name[0] == '_' )
-		status = symFindByNameAndType( symTblId, (name+1), pvalue,
-					       pType, sType, mask );
+	if (name[0] != '_' || leadingUnderscore) {
+		status = symFindByNameAndType ( symTblId, name, ppvalue, pType, sType, mask );
+	}
+	else if (leadingUnderscore) {
+		status = symFindByNameAndType ( symTblId, (name+1), ppvalue, pType, sType, mask );
+	}
 
 	return status;
 }
+
+
+

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/25 18:01:42  jhill
+ * use pointer (not ref) for list in iter class
+ *
  * Revision 1.2  1996/07/24 22:12:04  jhill
  * added remove() to iter class + made node's prev/next private
  *
@@ -125,7 +128,7 @@ template <class T>
 class tsSLIter {
 public:
 	tsSLIter(tsSLList<T> &listIn) :
-		pList(&listIn), pCurrent(0), pPrevious(0) {}
+		pCurrent(0), pPrevious(0), pList(&listIn) {}
 
 	void reset()
 	{

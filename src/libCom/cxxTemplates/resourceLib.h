@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/08/05 19:31:59  jhill
+ * fixed removes use of iter.cur()
+ *
  * Revision 1.3  1996/07/25 17:58:16  jhill
  * fixed missing ref in list decl
  *
@@ -58,6 +61,9 @@ typedef	unsigned 	resTableIndex;
 
 const unsigned resTableIndexBitWidth = (sizeof(resTableIndex)*CHAR_BIT);
 
+//
+// class T must derive class ID
+//
 template <class T, class ID>
 class resTable {
 public:
@@ -106,7 +112,6 @@ public:
 		while (pList<&this->pTable[this->hashIdMask+1]) {
 			tsSLIter<T> iter(*pList);
 			T *pItem;
-
 			while ( (pItem = iter()) ) {
 				iter.remove();
 				delete pItem;
@@ -248,7 +253,7 @@ private:
 //
 class uintId {
 public:
-	uintId(unsigned idIn=~0u) : id(idIn) {}
+	uintId(unsigned idIn=UINT_MAX) : id(idIn) {}
 
         resTableIndex resourceHash(unsigned nBitsId) const
         {
@@ -267,7 +272,7 @@ public:
                 //
                 return hashid;
         }
- 
+
         int operator == (const uintId &idIn)
         {
                 return this->id == idIn.id;
@@ -287,11 +292,15 @@ protected:
 template <class ITEM>
 class uintRes : public uintId, public tsSLNode<ITEM> {
 friend class uintResTable<ITEM>;
+public:
+	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
 };
 
 //
 // special resource table which uses 
 // unsigned integer keys allocated in chronological sequence
+// 
+// NOTE: ITEM must public inherit from uintRes<ITEM>
 //
 template <class ITEM>
 class uintResTable : public resTable<ITEM, uintId> {
@@ -360,17 +369,33 @@ private:
 //
 class stringId {
 public:
-        stringId (char const * const idIn) : id(idIn) {}
+        stringId (char const * const idIn) :
+		pStr(new char [strlen(idIn)+1u])
+	{
+		if (this->pStr!=NULL) {
+			strcpy(this->pStr, idIn);
+		}
+	}
+
+	~ stringId()
+	{
+		if (this->pStr!=NULL) {
+			delete [] this->pStr;
+		}
+	}
  
         resTableIndex resourceHash(unsigned nBitsId) const
         {
-		const char *pStr = this->id;
                 resTableIndex hashid;
 		unsigned i;
  
+		if (this->pStr==NULL) {
+			return 0u;
+		}
+
                 hashid = 0u;
-		for (i=0u; pStr[i]; i++) {
-			hashid += pStr[i] * (i+1u);
+		for (i=0u; this->pStr[i]; i++) {
+			hashid += this->pStr[i] * (i+1u);
 		}
 
 		hashid = hashid % (1u<<nBitsId);
@@ -380,20 +405,25 @@ public:
  
         int operator == (const stringId &idIn)
         {
-                return strcmp(this->id,idIn.id)==0;
+		if (this->pStr!=NULL && idIn.pStr!=NULL) {
+                	return strcmp(this->pStr,idIn.pStr)==0;
+		}
+		else {
+			return 0u; // not equal
+		}
         }
 
 	const char * resourceName()
 	{
-		return id;
+		return this->pStr;
 	}
 
 	void show (unsigned)
 	{
-		printf ("resource id = %s\n", id);
+		printf ("resource id = %s\n", this->pStr);
 	}
 private:
-        char const * const id;
+        char * const pStr;
 };
 
 #endif // INCresourceLibh

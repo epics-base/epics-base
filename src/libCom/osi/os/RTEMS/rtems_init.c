@@ -150,63 +150,12 @@ rtems_netstat (unsigned int level)
     }
 }
 
-static void 
-rtems_semstat (int level)
-{
-    Semaphore_Control *sem;
-    int i;
-    int n;
-
-    n = 0;
-    for (i = 0 ; i < _Semaphore_Information.maximum ; i++) {
-        sem =  (Semaphore_Control *)_Semaphore_Information.local_table[i];
-        if (sem) {
-            if (level == 0) {
-                n++;
-            }
-            else {
-                char *cp = sem->Object.name;
-                char cbuf[4];
-                int j;
-    
-                for (j = 0 ; j < 4 ; j++) {
-                    unsigned char c = cp[j];
-                    if (isprint (c))
-                        cbuf[j] = c;
-                    else
-                        cbuf[j] = ' ';
-                }
-                printf ("%4.4s%9x%5x%5d", cbuf, sem->Object.id,
-                                    sem->attribute_set,
-                                    sem->attribute_set & RTEMS_BINARY_SEMAPHORE ?
-                                        sem->Core_control.mutex.lock :
-                                        sem->Core_control.semaphore.count);
-                n++;
-                if ((n % 3) == 0)
-                    printf ("\n");
-                else
-                    printf ("   ");
-            }
-        }
-    }
-    if (level && ((n % 3) != 0))
-        printf ("\n");
-    printf ("%d of %d semaphores used.\n", n, _Semaphore_Information.maximum);
-}
-
 static const ioccrfArg netStatArg0 = { "level",ioccrfArgInt};
 static const ioccrfArg * const netStatArgs[1] = {&netStatArg0};
 static const ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
 static void netStatCallFunc(const ioccrfArgBuf *args)
 {
     rtems_netstat(args[0].ival);
-}
-static const ioccrfArg semStatArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg * const semStatArgs[1] = {&semStatArg0};
-static const ioccrfFuncDef semStatFuncDef = {"semstat",1,semStatArgs};
-static void semStatCallFunc(const ioccrfArgBuf *args)
-{
-    rtems_semstat(args[0].ival);
 }
 static const ioccrfFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
 static void stackCheckCallFunc(const ioccrfArgBuf *args)
@@ -216,7 +165,6 @@ static void stackCheckCallFunc(const ioccrfArgBuf *args)
 static void ioccrfRegisterRTEMS (void)
 {
     ioccrfRegister(&netStatFuncDef, netStatCallFunc);
-    ioccrfRegister(&semStatFuncDef, semStatCallFunc);
     ioccrfRegister(&stackCheckFuncDef, stackCheckCallFunc);
 }
 

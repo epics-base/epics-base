@@ -29,10 +29,15 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
 
 #include <server.h>
+#include <dbMapper.h>        	// ait to dbr types 
+#include <gddAppTable.h>        // EPICS application type table
 
 //
 // NOTES

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -36,6 +39,7 @@
 #ifndef casPVIIL_h
 #define casPVIIL_h
 
+#include <dbMapper.h>
 
 //
 // casPVI::lock()

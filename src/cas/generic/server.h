@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -81,8 +84,10 @@ HDRVERSIONID(serverh, "%W% %G%")
 //
 // gdd
 //
+#if 0
 #include <dbMapper.h>
 #include <gddApps.h>
+#endif
 
 //
 // CAS

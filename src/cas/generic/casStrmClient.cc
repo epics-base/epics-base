@@ -29,10 +29,15 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
 #include <server.h>
+#include <dbMapper.h>		// ait to dbr types
+#include <gddAppTable.h>        // EPICS application type table
 #include <caServerIIL.h>	// caServerI inline functions
 #include <casClientIL.h>	// casClient inline functions
 #include <casChannelIIL.h>	// casChannelI inline functions

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -40,7 +43,7 @@
 //
 
 #include <server.h>
-#include <casPVIIL.h> // casPVI inline func
+#include <casPVIIL.h> 	// casPVI inline func
 
 casPV::casPV (const casCtx &ctx, const char * const pPVName) :
 	casPVI (*ctx.getServer(), pPVName, *this)

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.19  1998/12/19 00:04:51  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.18  1998/11/18 18:52:49  jhill
  * fixed casChannelI undefined symbols on WIN32
  *
@@ -549,7 +552,7 @@ public:
 
 	//
 	// CA only does 1D arrays for now (and the new server
-	// temporarily does only scalers)
+	// temporarily does only scalars)
 	//
 	inline aitIndex nativeCount();
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/06/18 00:09:09  jhill
+ * installed bwd compat casPV constructor
+ *
  * Revision 1.8  1998/06/16 02:30:44  jhill
  * allow PV to be created before the server
  *
@@ -152,7 +155,7 @@ epicsShareFunc aitEnum casPV::bestExternalType() const
 
 //
 // casPV::maxDimension()
-// (base returns zero - scaler)
+// (base returns zero - scalar)
 //
 epicsShareFunc unsigned casPV::maxDimension() const
 {
@@ -161,7 +164,7 @@ epicsShareFunc unsigned casPV::maxDimension() const
 
 //
 // casPV::maxBound()
-// (base returns scaler bound independent of the dimension arg)
+// (base returns scalar bound independent of the dimension arg)
 //
 epicsShareFunc aitIndex casPV::maxBound(unsigned /* dimension */) const
 {

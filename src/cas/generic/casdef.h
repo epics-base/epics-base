@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.22  1998/12/19 00:04:52  jhill
+ * 	renamed createPV() to pvAttach()
+ *
  * 	Revision 1.21  1998/12/07 23:21:53  jhill
  * 	doc
  *
@@ -501,16 +504,16 @@ public:
 	epicsShareFunc virtual void show (unsigned level) const;
 
 	//
-	// Called by the server libary each time that it wishes to
+	// called by the server libary each time that it wishes to
 	// subscribe for PV change notification from the server 
-	// tool via postEvent() below.
+	// tool via postEvent() below
 	//
 	epicsShareFunc virtual caStatus interestRegister ();
 
 	//
 	// called by the server library each time that it wishes to
 	// remove its subscription for PV value change events
-	// from the server tool via caServerPostEvents()
+	// from the server tool via postEvent() below
 	//
 	epicsShareFunc virtual void interestDelete ();
 
@@ -596,36 +599,37 @@ public:
 	// Returns the maximum bounding box for all present and
 	// future data stored within the PV. 
 	//
-	// The routine "dimension()" returns the maximum
-	// number of dimensions in the hypercube (0=scaler, 
+	// The virtual function "dimension()" returns the maximum
+	// number of dimensions in the hypercube (0=scalar, 
 	// 1=array, 2=plane, 3=cube ...}.
 	//
-	// The routine "maxBound(dimension)" returns the 
-	// maximum length of a particular dimension of the
-	// hypercube as follows:
-	// 
-	//	dim equal to	0	1	3	...	
-	//	-------------------------------------------
-	// hypercube 
-	// type	
-	// ---------
+	// The virtual function "maxBound(dimension)" returns the 
+	// maximum number of elements in a particular dimension 
+	// of the hypercube as follows:
+	//
+	// scalar - maxDimension() returns 0
+	//
+	// array - maxDimension() returns 1
+	//        maxBounds(0) supplies number of elements in array
 	//	
-	// array		array
-	//			length
-	//	
-	// plane		x	y	
+	// plane - maxDimension() returns 2
+	//        maxBounds(0) supplies number of elements in X dimension
+	//        maxBounds(1) supplies number of elements in Y dimension
 	//
-	// cube			x	y	z 
+	// cube - maxDimension() returns 3 
+	//        maxBounds(0) supplies number of elements in X dimension
+	//        maxBounds(1) supplies number of elements in Y dimension
+	//        maxBounds(2) supplies number of elements in Z dimension
 	//
 	// .
 	// .
 	// .
 	//
-	// The default (base) "dimension()" returns zero (scaler).
-	// The default (base) "maxBound()" returns scaler bounds
-	// for all dimensions.
+	// The default (base) "dimension()" returns zero (scalar).
+	// The default (base) "maxBound()" returns one (scalar bounds)
+	//       for all dimensions.
 	//
-	// Clients will see that the PV's data is scaler if
+	// Clients will see that the PV's data is scalar if
 	// these routines are not supplied in the derived class.
 	//
 	// If the "dimension" argument to maxBounds() is set to
@@ -634,7 +638,7 @@ public:
 	// set to one then the bound on the second dimension
 	// are being fetched...
 	//
-	epicsShareFunc virtual unsigned maxDimension() const; // return zero if scaler
+	epicsShareFunc virtual unsigned maxDimension() const; // return zero if scalar
 	epicsShareFunc virtual aitIndex maxBound (unsigned dimension) const;
 
 	//

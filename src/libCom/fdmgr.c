@@ -410,15 +410,13 @@ void		*param
 	for(	pa=(fdmgrAlarm *)pfdctx->alarm_list.node.next; 
 		pa; 
 		pa=(fdmgrAlarm *)pa->node.next){
-		if(pa->t.tv_sec > palarm->t.tv_sec){
-			break;
-		}
-		else {
-			if(pa->t.tv_sec == palarm->t.tv_sec){
-				if(pa->t.tv_usec > palarm->t.tv_usec){
-					break;
-				}
+		if(pa->t.tv_sec == palarm->t.tv_sec){
+			if(pa->t.tv_usec >= palarm->t.tv_usec){
+				break;
 			}
+		}
+		else if(pa->t.tv_sec > palarm->t.tv_sec){
+			break;
 		}
 	}
 	if(pa){

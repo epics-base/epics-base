@@ -105,15 +105,15 @@ long dbCommonInit();
 
 /* define forward references*/
 extern long dbRead();
-long initDrvSup();
-long initRecSup();
-long initDevSup();
-long finishDevSup();
-long initDatabase();
-long addToSet();
-long initialProcess();
-long getResources();
-void setMasterTimeToSelf();
+static long initDrvSup();
+static long initRecSup();
+static long initDevSup();
+static long finishDevSup();
+static long initDatabase();
+static long addToSet();
+static long initialProcess();
+static long getResources();
+static void setMasterTimeToSelf();
 
 int iocInit(pResourceFilename)
 char * pResourceFilename;
@@ -126,11 +126,11 @@ char * pResourceFilename;
     SYM_TYPE type;
 
     if(initialized) {
-	logMsg("iocInit can only be called once\n");
+	logMsg("iocInit can only be called once\n",0,0,0,0,0,0);
 	return(-1);
     }
     if (!pdbBase) {
-	logMsg("iocInit aborting because No database loaded by dbLoad\n");
+	logMsg("iocInit aborting because No database loaded by dbLoad\n",0,0,0,0,0,0);
 	return(-1);
     }
     /* if function initHooks exists setup ptr pinitHooks */
@@ -138,7 +138,7 @@ char * pResourceFilename;
     strcat(name,"initHooks");
     rtnval = symFindByName(sysSymTbl,name,(void *)&pinitHooks,&type);
     if( rtnval==OK && !(type&N_TEXT!=0)) {
-	logMsg("iocInit - WARNING symbol initHooks has wrong type - skipping all init hooks\n");
+	logMsg("iocInit - WARNING symbol initHooks has wrong type - skipping all init hooks\n",0,0,0,0,0,0);
 	pinitHooks=NULL;
     }
     if (pinitHooks) (*pinitHooks)(INITHOOKatBeginning);
@@ -147,13 +147,13 @@ char * pResourceFilename;
     if (pinitHooks) (*pinitHooks)(INITHOOKafterSetEnvParams);
     status=getResources(pResourceFilename);
     if(status!=0) {
-	logMsg("iocInit aborting because getResources failed\n");
+	logMsg("iocInit aborting because getResources failed\n",0,0,0,0,0,0);
 	return(-1);
     }
     if (pinitHooks) (*pinitHooks)(INITHOOKafterGetResources);
     status = iocLogInit();
     if(status!=0){
-        logMsg("iocInit Failed to Initialize Ioc Log Client \n");
+        logMsg("iocInit Failed to Initialize Ioc Log Client \n",0,0,0,0,0,0);
     }
     if (pinitHooks) (*pinitHooks)(INITHOOKafterLogInit);
     initialized = TRUE;
@@ -167,20 +167,20 @@ char * pResourceFilename;
     dbCaLinkInit((int) 1);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit1);
 
-    if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n");
+    if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDrvSup);
-    if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n");
+    if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitRecSup);
-    if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
+    if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDevSup);
     ts_init();
     if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
-    if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n");
+    if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
     /* added for Channel Access Links */
     dbCaLinkInit((int) 2);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit2);
-    if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
+    if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
     scanInit();
     /* wait 1/2 second to make sure all tasks are started*/
@@ -188,10 +188,10 @@ char * pResourceFilename;
     if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);
     interruptAccept=TRUE;
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
-    if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
+    if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
     rsrv_init();
-    logMsg("iocInit: All initialization complete\n");
+    logMsg("iocInit: All initialization complete\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKatEnd);
 
     return(0);
@@ -252,7 +252,7 @@ static long initRecSup()
 	return(status);
     }
     nbytes = sizeof(struct recSup) + precType->number*sizeof(void *);
-    if(!(precSup = calloc(1,nbytes))) {
+    if(!(precSup = (struct recSup *)calloc(1,nbytes))) {
 	errMessage(0,"Could not allocate structures for record support");
 	return(-1);
     }
@@ -667,7 +667,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     char            s3[MAX];
     char            message[100];
     long            rtnval = 0;
-    UTINY           type;
+    UINT8	    type;
     char           *pSymAddr;
     short           n_short;
     long            n_long;
@@ -836,7 +836,7 @@ char * pfilename;
     long status;
     status=dbRead(&pdbBase, pfilename);
     if(status!=0) {
-	logMsg("dbLoad aborting because dbRead failed\n");
+	logMsg("dbLoad aborting because dbRead failed\n",0,0,0,0,0,0);
 	return(-1);
     }
     return (0);

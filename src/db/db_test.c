@@ -54,7 +54,7 @@ short	index;
 
 	if (pname==0 || ((*pname < ' ') || (*pname > 'z'))) {
 		printf("\nusage \"pv name\"\n");
-		return;
+		return(1);
 	}
 	/* convert name to database address */
 	status=db_name_to_addr(pname,&addr,index);
@@ -113,7 +113,7 @@ short	index;
 	  || ((*pname < ' ') || (*pname > 'z'))
 	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
 		printf("\nusage \"pv name\",\"value\"\n");
-		return;
+		return(1);
 	}
 
 	/* convert name to database address */

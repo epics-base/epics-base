@@ -762,10 +762,10 @@ int count;
     if (count == 2)
     {
 	taskSpawn(DB_CA_INPUT_NAME, DB_CA_INPUT_PRI, DB_CA_INPUT_OPT,
-	    DB_CA_INPUT_STACK, (FUNCPTR) dbCaProcessInlinks);
+	    DB_CA_INPUT_STACK, (FUNCPTR) dbCaProcessInlinks,0,0,0,0,0,0,0,0,0,0);
 
 	taskSpawn(DB_CA_OUTPUT_NAME, DB_CA_OUTPUT_PRI, DB_CA_OUTPUT_OPT,
-	    DB_CA_OUTPUT_STACK, (FUNCPTR) dbCaProcessOutlinks);
+	    DB_CA_OUTPUT_STACK, (FUNCPTR) dbCaProcessOutlinks,0,0,0,0,0,0,0,0,0,0);
     } /* endif */
 
 } /* end dbCaLinkInit() */
@@ -884,7 +884,7 @@ BOOL done;
 
 	taskSpawn(DB_CA_PROC_ASYNCH_EV_TASK_NAME, DB_CA_PROC_ASYNCH_EV_TASK_PRI,
 	    DB_CA_PROC_ASYNCH_EV_TASK_OPT, DB_CA_PROC_ASYNCH_EV_TASK_STACK, 
-	    (FUNCPTR) process_asynch_events_task, taskIdSelf());
+	    (FUNCPTR) process_asynch_events_task, taskIdSelf(),0,0,0,0,0,0,0,0,0);
 
 	/* queueing ca_build_and_connect()'s */
 

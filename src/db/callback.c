@@ -52,8 +52,8 @@ static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
 volatile int callbackRestart=FALSE;
 
 /* forward references */
-void wdCallback(long);	/*callback from taskwd*/
-void start();		/*start or restart a callbackTask*/
+static void wdCallback(long);	/*callback from taskwd*/
+static void start();		/*start or restart a callbackTask*/
 
 /*public routines */
 long callbackInit()
@@ -136,7 +136,7 @@ static void start(int ind)
 	errMessage(0,"rngCreate failed while starting a callback task");
     callbackTaskId[ind] = taskSpawn(CALLBACK_NAME,priority,
     			CALLBACK_OPT,CALLBACK_STACK,
-    			(FUNCPTR)callbackTask,ind);
+    			(FUNCPTR)callbackTask,ind,0,0,0,0,0,0,0,0,0);
     if(callbackTaskId[ind]==ERROR) {
 	errMessage(0,"Failed to spawn a callback task");
 	return;

@@ -69,13 +69,14 @@ inline double delayVerify::delay () const
 
 void delayVerify::checkError () const
 {
+    const double messageThresh = 0.5; // percent 
     double actualDelay =  this->expireStamp - this->beginStamp;
     double measuredError = actualDelay - delayVerifyOffset - this->expectedDelay;
     double percentError = measuredError / this->expectedDelay;
     percentError *= 100.0;
     if ( percentError > 0.5 ) {
-        printf ( "TEST FAILED timer delay = %g sec, error = %g mSec (%f %%)\n", 
-            this->expectedDelay, measuredError * 1000.0, percentError );
+        printf ( "delay error > %g %%, delay = %g sec, error = %g mSec (%f %%)\n", 
+            messageThresh, this->expectedDelay, measuredError * 1000.0, percentError );
     }
 }
 

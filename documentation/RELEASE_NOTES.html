@@ -12,6 +12,7 @@
 
 <h2 align="center">Changes since 3.14.6</h2>
 
+
 <h4>selRecord</h4>
 <p>The select record type has for a long time made use of a coule of magic
 numbers (1e+30 and -1e+30) to mean "not a real value", which prevents the record
@@ -38,7 +39,11 @@ sizes are (128K,256K,512K). This is used for at least the following:
 linux, solaris, HPUX, Darwin). Doing this allows creation of many more
 threads os most systems.</p>
 
-<h4>dbNotifyCancel</h4>
+<h4>dbNotify</h4>
+<p>dbNotify now contains two new functions: putNotifyInit and putNotifyCleanup.
+putNotifyInit must bew called before the first call to dbPutNotify.
+putNotifyCleanup must be called before the storage for "struct putNotify" is
+freed.</p>
 <p>dbNotifyCancel now waits if the userCallback is active when dbNotifyCancel
 is called. Previously it just returned. NOTE CAREFULLY. This means
 that the userCallback must not free the putNotify structure.</p>

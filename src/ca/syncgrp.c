@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.24  1997/06/13 09:14:26  jhill
+ * connect/search proto changes
+ *
  * Revision 1.23  1997/04/29 06:12:42  jhill
  * use free lists
  *
@@ -309,7 +312,7 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 		/*
 		 * Allow for CA background labor
 		 */
-		remaining = min(SELECT_POLL, remaining);
+		remaining = min(cac_fetch_poll_period(), remaining);
 
 		/*
 		 * wait for asynch notification

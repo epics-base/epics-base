@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.71  1997/06/13 09:14:19  jhill
+ * connect/search proto changes
+ *
  * Revision 1.70  1997/05/05 04:44:39  jhill
  * socket buf matches CA buf size, and pushPending flag added
  *
@@ -1926,7 +1929,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 	 *	(this results in improved max throughput)
 	 */
         while (TRUE) {
-		LD_CA_TIME (0.0, &timeout);
+		CLR_CA_TIME (&timeout);
 		/*
 		 * NOTE cac_select_io() will set the
 		 * send flag for a particular iiu irregradless
@@ -1960,7 +1963,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 				}
 				else {
 					if (caSendMsgPending()) {
-						LD_CA_TIME (SELECT_POLL, &timeout);
+						LD_CA_TIME (cac_fetch_poll_period(), &timeout);
 					}
 					else {
 						ca_static->ca_flush_pending = FALSE;
@@ -1973,7 +1976,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 			}
 		}
 		else {
-			LD_CA_TIME (0.0, &timeout);
+			CLR_CA_TIME (&timeout);
 		}
 		ca_process_input_queue();
         }

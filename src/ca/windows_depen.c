@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.28  1997/06/13 09:14:29  jhill
+ * connect/search proto changes
+ *
  * Revision 1.27  1997/05/01 19:46:32  jhill
  * fixed unintialized variable bug
  *
@@ -159,8 +162,21 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	/* DllMain does most OS dependent init & cleanup */
 
 	status = ca_os_independent_init ();
-
-    	return status;
+	if (status!=ECA_NORMAL) {
+		return status;
+	}
+	/*
+	 * select() under WIN32 gives us grief
+	 * if we delay with out interest in at
+ 	 * least one fd (so we create the UDP
+	 * fd during init before it is used for 
+	 * the first time)
+	 */
+	cac_create_udp_fd();
+	if(!ca_static->ca_piiuCast){
+		return ECA_NOCAST;
+	}
+    	return ECA_NORMAL;
 }
 
 
@@ -492,7 +508,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif
 #endif
 		/* init. winsock */
-		if ((status = WSAStartup(MAKEWORD(2,0), &WsaData)) != 0) {
+		if ((status = WSAStartup(MAKEWORD(2,0), &WsaData)) != 0) { 
 			WSACleanup();
 			fprintf(stderr,"Cant init winsock \n");
 			return FALSE;

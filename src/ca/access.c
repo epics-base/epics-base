@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.96  1997/06/13 16:57:38  jhill
+ * fixed warning
+ *
  * Revision 1.95  1997/06/13 09:14:06  jhill
  * connect/search proto changes
  *
@@ -288,7 +291,7 @@ db_field_log	*pfl
 LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
 #endif
 LOCAL void 	ca_pend_io_cleanup();
-LOCAL void 	create_udp_fd();
+
 static int issue_ca_array_put
 (
 unsigned	cmd,
@@ -411,7 +414,7 @@ const void		*pext
 				return ECA_BADCHID;
 			}
 
-			LD_CA_TIME (SELECT_POLL, &itimeout);
+			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
 			cac_mux_io (&itimeout);
 
 			LOCK;
@@ -760,7 +763,7 @@ int ca_os_independent_init (void)
 /*
  * create_udp_fd
  */
-LOCAL void create_udp_fd()
+void cac_create_udp_fd()
 {
 	int	status;
 
@@ -1116,7 +1119,7 @@ int epicsShareAPI ca_search_and_connect
 #endif
 
 	if (!ca_static->ca_piiuCast) {
-		create_udp_fd();
+		cac_create_udp_fd();
 		if(!ca_static->ca_piiuCast){
 			return ECA_NOCAST;
 		}
@@ -2779,18 +2782,6 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 
   	INITCHK;
 
-	/*
-	 * select() under WIN32 gives us grief
-	 * if we delay with out interest in at
-	 * least one fd
-	 */
-	if (!ca_static->ca_piiuCast) {
-		create_udp_fd();
-		if(!ca_static->ca_piiuCast){
-			return ECA_NOCAST;
-		}
-	}
-
 	if(EVENTLOCKTEST){
     		return ECA_EVDISALLOW;
 	}
@@ -2808,7 +2799,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		/*
 		 * force the flush
 		 */
-		LD_CA_TIME (0.0, &tmo);
+		CLR_CA_TIME (&tmo);
 		cac_mux_io(&tmo);
         	return ECA_NORMAL;
 	}
@@ -2817,7 +2808,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		/*
 		 * force the flush
 		 */
-		LD_CA_TIME (0.0, &tmo);
+		CLR_CA_TIME (&tmo);
 		cac_mux_io(&tmo);
 		return ECA_TIMEOUT;
 	}
@@ -2831,20 +2822,20 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			/*
 			 * force the flush
 			 */
-			LD_CA_TIME (0.0, &tmo);
+			CLR_CA_TIME (&tmo);
 			cac_mux_io(&tmo);
         		return ECA_NORMAL;
 		}
 
     		if(timeout == 0.0){
-			remaining = SELECT_POLL;
+			remaining = cac_fetch_poll_period();
 		}
 		else{
 			remaining = timeout-delay;
 			/*
 			 * Allow for CA background labor
 			 */
-			remaining = min(SELECT_POLL, remaining);
+			remaining = min(cac_fetch_poll_period(), remaining);
   		}    
 
 
@@ -2875,7 +2866,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			/*
 			 * force the flush
 			 */
-			LD_CA_TIME (0.0, &tmo);
+			CLR_CA_TIME (&tmo);
 			cac_block_for_io_completion (&tmo);
 			return ECA_TIMEOUT;
 		}
@@ -2887,6 +2878,22 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			delay = cac_time_diff (&ca_static->currentTime, 
 							&beg_time);
 		}
+	}
+}
+
+/*
+ * cac_fetch_poll_period()
+ */
+double cac_fetch_poll_period(void)
+{
+	if (!piiuCast) {
+		return SELECT_POLL_NO_SEARCH;
+	}
+	else if (ellCount(&piiuCast->chidlist)==0) {
+		return SELECT_POLL_NO_SEARCH;
+	}
+	else {
+		return SELECT_POLL_SEARCH;
 	}
 }
 
@@ -3014,7 +3021,7 @@ int epicsShareAPI ca_flush_io()
 	 * while performing socket io and processing recv backlog
 	 */
 	ca_static->ca_flush_pending = TRUE;
-	LD_CA_TIME (0.0, &timeout);
+	CLR_CA_TIME (&timeout);
 	cac_mux_io (&timeout);
 
   	return ECA_NORMAL;

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.64  1997/06/13 09:14:21  jhill
+ * connect/search proto changes
+ *
  * Revision 1.63  1997/05/05 04:45:25  jhill
  * send_needed => pushPending, and added ca_number_iiu_in_fc
  *
@@ -268,6 +271,8 @@ typedef struct timeval ca_time;
 ((PCATIME)->tv_sec = (long) (FLOAT_TIME), \
 (PCATIME)->tv_usec = (long) ( ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC ))
 
+#define CLR_CA_TIME(PCATIME) ((PCATIME)->tv_sec = 0l,(PCATIME)->tv_usec = 0l)
+
 /*
  * these control the duration and period of name resolution
  * broadcasts
@@ -283,10 +288,25 @@ typedef struct timeval ca_time;
 
 /*
  * NOTE: These must be larger than one vxWorks tick or we will end up
- * using the CPU. A vxWorks tick is usually 1/60th of a sec.
+ * using the CPU. A vxWorks tick is usually 1/60th of a sec. The
+ * vxWorks implementation of select is not efficient.
+ * select() with no delay takes (on a hk nitro 060):
+ * 17uS (no fd)
+ * 56uS (one UDP read fd)
+ * 80uS (two UDP read fd)
+ * 113uS (one UDP read/write fd)
+ * 185uS (two UDP read/write fd)
+ * 3 uS are required to call FD_ZERO (&readMask)
+ *	and FD_ZERO (&writeMask)
+ * 4 uS required to call cac_gettimeval()
  */
-#define SELECT_POLL 		(0.025) /* units sec - polls into recast */
-#define CA_RECAST_DELAY 	(0.025) /* initial delay to next recast (sec) */
+#ifdef vxWorks
+#define SELECT_POLL_SEARCH	(0.075) /* units sec - polls for search request (4 ticks)*/
+#else
+#define SELECT_POLL_SEARCH 	(0.025) /* units sec - polls for search request */
+#endif
+#define SELECT_POLL_NO_SEARCH	(0.5) /* units sec - polls for conn heartbeat */
+#define CA_RECAST_DELAY 	SELECT_POLL_SEARCH /* initial delay to next recast (sec) */
 #define CA_RECAST_PORT_MASK	0xff	/* random retry interval off port */
 #define CA_RECAST_PERIOD 	(5.0)	/* ul on retry period long term (sec) */
 
@@ -717,6 +737,8 @@ void retryPendingClaims(IIU *piiu);
 void cacSetRetryInterval(unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);
 void removeFromChanList(ciu chan);
+void cac_create_udp_fd();
+double cac_fetch_poll_period(void);
 
 /*
  * !!KLUDGE!!

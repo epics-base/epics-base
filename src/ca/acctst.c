@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.47  1997/06/25 06:12:13  jhill
+ * fixed warnings
+ *
  * Revision 1.46  1997/06/13 09:14:09  jhill
  * connect/search proto changes
  *
@@ -355,8 +358,13 @@ int doacctst(char *pname)
 	if (ca_state(chix1)==cs_never_conn) {
 		status = ca_pend_io(1e-16);
 		if (status==ECA_TIMEOUT) {
+			/*
+			 * under vxWorks another thread may connect the
+			 * channel before this gets a chance to run
+			 */
+#ifndef vxWorks
 			assert(ca_state(chix1)==cs_never_conn);
-
+#endif
 			printf("waiting on pend io verify connect...");
 			fflush(stdout);
 			while (ca_state(chix1)!=cs_conn) {
@@ -371,7 +379,13 @@ int doacctst(char *pname)
 			SEVCHK(status, NULL);
 			status = ca_pend_io(1e-16);
 			if (status==ECA_TIMEOUT) {
+				/*
+				 * under vxWorks another thread may connect the
+				 * channel before this gets a chance to run
+				 */
+#ifndef vxWorks
 				assert(ca_state(chix2)==cs_never_conn);
+#endif
 			}
 			else {
 				assert(ca_state(chix2)==cs_conn);

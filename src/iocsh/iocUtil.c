@@ -29,7 +29,8 @@ static const iocshArg * const runScriptArgs[1] = {&runScriptArg0};
 static const iocshFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
 static void runScriptCallFunc(const iocshArgBuf *args)
 {
-    iocsh (args[0].sval);
+    if (args[0].sval)
+        iocsh(args[0].sval);
 }
 
 /* chdir */

@@ -20,13 +20,14 @@ $(uninstallArchTargets): uninstallDirs
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart) $(INSTALL_LOCATION_LIB)/$(archPart) 
 
 cleandirs:
-	@echo " " #stops "nothing to be done for cleandirs" message
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)
 endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
+	echo
+# The echo above stops a "nothing to be done for cleandirs" message
 
 distclean: realclean realuninstall
 

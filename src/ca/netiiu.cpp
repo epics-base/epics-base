@@ -103,8 +103,7 @@ void netiiu::requestRecvProcessPostponedFlush ()
     return;
 }
 
-class tcpiiu * netiiu::uninstallChanAndReturnDestroyPtr 
-            ( epicsGuard < cacMutex > &, nciu & )
+void netiiu::uninstallChan ( epicsGuard < cacMutex > &, nciu & )
 {
     throw cacChannel::notConnected();
 }

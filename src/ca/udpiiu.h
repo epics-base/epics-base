@@ -88,7 +88,7 @@ public:
     void beaconAnomalyNotify ();
     int printf ( const char *pformat, ... );
     unsigned channelCount ();
-    class tcpiiu * uninstallChanAndReturnDestroyPtr ( epicsGuard < cacMutex > &, nciu & );
+    void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     void shutdown ();
 

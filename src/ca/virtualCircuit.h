@@ -64,6 +64,7 @@ public:
     virtual ~tcpSendThread ();
     void start ();
     void exitWait ();
+    void exitWaitRelease ();
 private:
     class tcpiiu & iiu;
     epicsThread thread;
@@ -81,8 +82,8 @@ public:
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ( epicsGuard < callbackMutex > & );
-    void initiateAbortShutdown ( 
-        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > & );
+    void initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
+                                    epicsGuard <cacMutex > & guard ); 
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
@@ -90,7 +91,7 @@ public:
     bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
     void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( cacNotify & notify, epicsGuard < cacMutex > & primaryGuard );
+        ( cacNotify &, epicsGuard < cacMutex > & );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void createChannelRequest ( nciu & );
@@ -113,8 +114,7 @@ public:
                                 class cacDisconnectChannelPrivate & );
     void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    class tcpiiu * uninstallChanAndReturnDestroyPtr ( 
-        epicsGuard < cacMutex > &, nciu & chan );
+    void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
 
 private:
     tcpRecvThread recvThread;
@@ -149,6 +149,7 @@ private:
     bool earlyFlush;
     bool recvProcessPostponedFlush;
 
+    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
     bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );

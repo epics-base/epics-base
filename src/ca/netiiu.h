@@ -56,8 +56,7 @@ public:
         ( cacNotify &, epicsGuard < cacMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
-    virtual class tcpiiu * uninstallChanAndReturnDestroyPtr 
-                        ( epicsGuard < cacMutex > &, nciu & ) = 0;
+    virtual void uninstallChan ( epicsGuard < cacMutex > &, nciu & ) = 0;
 };
 
 class limboiiu : public netiiu { // X aCC 655
@@ -86,8 +85,7 @@ private:
         ( cacNotify &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
-    class tcpiiu * uninstallChanAndReturnDestroyPtr 
-                    ( epicsGuard < cacMutex > &, nciu & );
+    void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
 	limboiiu ( const limboiiu & );
 	limboiiu & operator = ( const limboiiu & );
 };

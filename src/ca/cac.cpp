@@ -228,27 +228,24 @@ cac::~cac ()
     }
 
     //
-    // shutdown all tcp connections
+    // shutdown all tcp circuits
     // (take both locks here in the proper order to avoid deadlocks)
     //
-    tsSLList < tcpiiu > dest;
     {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
-        this->serverTable.removeAll ( dest );
-    }
-
-    while ( tcpiiu * pIIU = dest.get () ) {
-        {
-            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-            this->privateUninstallIIU ( cbGuard, *pIIU );
+        resTableIter < tcpiiu, caServerID > iter = this->serverTable.firstIter ();
+        while ( iter.valid() ) {
+            iter->initiateAbortShutdown ( cbGuard, guard );
+            iter++;
         }
-        // this will block for oustanding sends to go out so dont 
-        // hold a lock while destroying the tcpiiu
-        delete pIIU;
     }
 
     //
     // wait for tcp threads to exit
+    //
+    // this will block for oustanding sends to go out so dont 
+    // hold a lock while waiting
     //
     while ( this->serverTable.numEntriesInstalled() ) {
         this->iiuUninstall.wait ();
@@ -570,7 +567,7 @@ bool cac::lookupChannelAndTransferToTCP (
             }
         }
 
-        this->pudpiiu->uninstallChanAndReturnDestroyPtr ( guard, *pChan );
+        this->pudpiiu->uninstallChan ( guard, *pChan );
         piiu->installChannel ( guard, *pChan, sid, typeCode, count );
 
         v41Ok = piiu->ca_v41_ok ();
@@ -674,7 +671,6 @@ void cac::uninstallChannel ( nciu & chan )
         }
     }
 
-    tcpiiu * pDestroyIIU;
     {
         // taking this mutex prior to deleting the IO and channel guarantees 
         // that we will not delete a channel out from under a callback
@@ -697,18 +693,9 @@ void cac::uninstallChannel ( nciu & chan )
         // o chan destroy exception has been delivered
         {
             epicsGuard < cacMutex > guard ( this->mutex );
-            pDestroyIIU = chan.getPIIU()->uninstallChanAndReturnDestroyPtr 
-                                ( guard, chan );
-            if ( pDestroyIIU ) {
-                this->serverTable.remove ( *pDestroyIIU );
-                this->privateUninstallIIU ( cbGuard, *pDestroyIIU );
-            }
+            chan.getPIIU()->uninstallChan ( guard, chan );
         }
     }
-
-    // this blocks for all outstanding messages to be sent so
-    // no lock can be held here
-    delete pDestroyIIU;
 }
 
 int cac::printf ( const char *pformat, ... ) const
@@ -1518,6 +1505,12 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
     }
 }
 
+void cac::uninstallIIU ( tcpiiu & iiu )
+{
+    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+    this->privateUninstallIIU ( cbGuard, iiu );
+}
+
 void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
@@ -1537,6 +1530,8 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &
    
     assert ( this->pudpiiu );
     iiu.removeAllChannels ( cbGuard, guard, *this );
+
+    this->serverTable.remove ( iiu );
 
     this->pudpiiu->resetSearchTimerPeriod ( 0.0 );
 

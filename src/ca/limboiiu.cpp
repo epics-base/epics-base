@@ -108,10 +108,9 @@ osiSockAddr limboiiu::getNetworkAddress () const
     return netiiu::getNetworkAddress ();
 }
 
-class tcpiiu * limboiiu::uninstallChanAndReturnDestroyPtr 
-        ( epicsGuard < cacMutex > & guard, nciu & chan )
+void limboiiu::uninstallChan ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
-    return netiiu::uninstallChanAndReturnDestroyPtr ( guard, chan );
+    return netiiu::uninstallChan( guard, chan );
 }
 
 

@@ -114,6 +114,16 @@ void tcpSendThread::run ()
     while ( this->iiu.blockingForFlush ) {
         epicsThreadSleep ( 0.1 );
     }
+
+    this->iiu.recvThread.exitWait ();
+
+    this->thread.exitWaitRelease ();
+
+    this->iiu.cacRef.uninstallIIU ( this->iiu );
+
+    delete & this->iiu;
+
+    epicsThread::exit ();
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
@@ -257,12 +267,19 @@ void tcpRecvThread::run ()
 
         this->iiu.connect ();
 
-        if ( this->iiu.state == tcpiiu::iiucs_connected ) {
-            this->iiu.sendThread.start ();
-        }
-        else {
+        if ( this->iiu.state != tcpiiu::iiucs_connected ) {
+            this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
+
+            this->thread.exitWaitRelease ();
+
+            this->iiu.cacRef.uninstallIIU ( this->iiu );
+
+            delete & this->iiu;
+
             return;
         }
+
+        this->iiu.sendThread.start ();
 
         comBuf * pComBuf = new comBuf;
         while ( this->iiu.state == tcpiiu::iiucs_connected ||
@@ -373,8 +390,9 @@ void tcpRecvThread::run ()
         }
     }
     catch ( ... ) {
-        errlogPrintf ("cac tcp receive thread terminating due to a c++ exception\n" );
-    }
+        errlogPrintf ( "cac tcp receive thread terminating due to a c++ exception\n" );
+        this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
+   }
 }
 
 
@@ -556,8 +574,17 @@ void tcpiiu::connect ()
     }
 }
 
+void tcpiiu::initiateCleanShutdown ( epicsGuard < cacMutex > & )
+{
+    if ( this->state == iiucs_connected || this->state == iiucs_connecting ) {
+        this->state = iiucs_clean_shutdown;
+    }
+    this->sendThreadFlushEvent.signal ();
+}
+
+
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
-                       epicsGuard < cacMutex > & guard )
+                                    epicsGuard <cacMutex > & guard )
 {
     if ( this->state != iiucs_abort_shutdown ) {
         this->state = iiucs_abort_shutdown;
@@ -607,12 +634,9 @@ tcpiiu::~tcpiiu ()
 {
     {
         epicsGuard < cacMutex > guard ( this->cacRef.mutexRef() );
-        if ( this->state == iiucs_connected || this->state == iiucs_connecting ) {
-            this->state = iiucs_clean_shutdown;
-        }
+        this->initiateCleanShutdown ( guard );
     }
 
-    this->sendThreadFlushEvent.signal ();
     this->sendThread.exitWait ();
     this->recvThread.exitWait ();
 
@@ -1218,15 +1242,12 @@ void tcpiiu::installChannel ( epicsGuard < cacMutex > &, nciu & chan, unsigned s
     this->flushRequest ();
 }
 
-tcpiiu * tcpiiu::uninstallChanAndReturnDestroyPtr 
+void tcpiiu::uninstallChan 
         ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
     this->channelList.remove ( chan );
     if ( channelList.count() == 0 ) {
-        return this;
-    }
-    else {
-        return 0;
+        this->initiateCleanShutdown ( guard );
     }
 }
 

@@ -995,12 +995,11 @@ int udpiiu::printf ( const char *pformat, ... )
     return status;
 }
 
-class tcpiiu *  udpiiu::uninstallChanAndReturnDestroyPtr ( 
+void udpiiu::uninstallChan ( 
     epicsGuard < cacMutex > &, nciu & chan )
 {
     epicsGuard < udpMutex > guard ( this->mutex );
     this->channelList.remove ( chan );
-    return 0;
 }
 
 void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const

@@ -205,7 +205,7 @@ int mz8310_io_report_card(card,level)
       }
   }
 
-  printf("TM: MZ8310:      card %d\n", card);
+  printf("TM: MZ8310:\tcard %d\n", card);
 
 
   if (mzconf && card<mz8310_card_count && level){

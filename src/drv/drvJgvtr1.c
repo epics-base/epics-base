@@ -512,9 +512,9 @@ short int 	level;
   	if(status != OK)
     	  return ERROR;
         if (level == 0)
-  	   printf("WF: JGVTR1: card=%d \n",card);
+  	   printf("WF: JGVTR1:\tcard=%d \n",card);
         else if (level >  0)
-        	printf(	"WF: JGVTR1: card=%d Sample rate=%g %s %s %s %s %s \n",
+        	printf(	"WF: JGVTR1:\tcard=%d Sample rate=%g %s %s %s %s %s \n",
 	 		card,
 			sample_rate[stat.internal_frequency],
 			clock_status[ stat.internal_clock ],

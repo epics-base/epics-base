@@ -400,6 +400,6 @@ static void cpuUsageInit(void)
     pcpuUsage->startSem = semBCreate (SEM_Q_FIFO,SEM_EMPTY);
     pcpuUsage->ticksNoContention = ticksToWait;
     pcpuUsage->didNotComplete = TRUE;
-    taskSpawn("cpuUsageTask",255,VX_FP_TASK,1000,(FUNCPTR)cpuUsageTask,
+    taskSpawn("cpuUsageTask",255,VX_FP_TASK,3000,(FUNCPTR)cpuUsageTask,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

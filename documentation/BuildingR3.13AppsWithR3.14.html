@@ -5,7 +5,7 @@
    <meta name="ProgId" content="Word.Document">
    <meta name="Generator" content="Microsoft Word 9">
    <meta name="Originator" content="Microsoft Word 9">
-   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.78 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
    <title>Instruction on building existing R3</title>
 <link rel=File-List href="./READMEbuildingR3.13AppsWithR3.14_files/filelist.xml">
 <!--[if gte mso 9]><xml>
@@ -85,10 +85,10 @@ div.Section1
 
 <center>
 <h2>
-Building EPICS R3.13 applications with R3.14.0beta1 base</h2></center>
+Building EPICS R3.13 applications with R3.14.0beta2 base</h2></center>
 
 <p><br>This document describes how to modify a R3.13 vxWorks application
-so that it builds with release R3.14.0beta1.&nbsp; It describes an easy
+so that it builds with release R3.14.0beta2.&nbsp; It describes an easy
 way to modify applications subject to the following restrictions:
 <ul>
 <li>
@@ -142,7 +142,7 @@ files.</blockquote>
 State Notation Language changes</h3>
 
 <blockquote>snc is no longer in base. If snc is used in your application,
-you must download and build the seq module with baseR3.14.0beta1. See the
+you must download and build the seq module with baseR3.14.0beta2. See the
 Application Developer's Guide to see how to build sequence programs.</blockquote>
 
 <blockquote>Change
@@ -180,7 +180,7 @@ and dbStaticIoc for ioc builds.
 <br>Change
 <pre>PROD_LIBS+=Db</pre>
 to
-<pre>PROD_LIBS+=dbStaticHost</pre>
+<pre>PROD_LIBS+=dk</pre>
 and
 <pre>Db_DIR=$(EPICS_BASE_LIB)</pre>
 to
@@ -244,7 +244,8 @@ Hardware support changes</h3>
 <blockquote>All hardware support (dev, drv and dbd files) has been unbundled
 from base R3.14. This support includes the files <tt>symb, symb.dbd, drvHp1404a.o,
 drvEpvxiMsg.o, and drvEpvxi.o</tt>.&nbsp; If they are not used in your
-application, comment out references to these files in base.dbd and baseLIBOBJS.
+application,
+comment out references to these files in base.dbd and baseLIBOBJS.
 <p>Hardware support files now exist as separate modules available for download
 from the <a href="http://www.aps.anl.gov/epics/">EPICS www home page at
 ANL</a>. You must now download all the hardware support modules needed
@@ -273,26 +274,31 @@ definition).</blockquote>
 dbLoadtemplate tool changes</h3>
 
 <blockquote>The host tool dbLoadTemplate has been replaced by a new extension,
-msi. dbLoadTemplate is still supported on iocs. Build the msi extension
-with base R3.14 and change the following definitions in your application
-files.
+msi. dbLoadTemplate is still supported on iocs. Build the new msi extension
+with a R3.13 or R3.14 base and verify that the msi executable is in your
+path.
+<p>Change the following definitions in your application files.
 <p>In config/RULES.Db replace the line
 <pre>DBLOADTEMPLATE=$(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)</pre>
 with
-<pre>MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
-&nbsp;&nbsp; (EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/msi$(HOSTEXE)) msi$(HOSTEXE))</pre>
-and change line:
-<pre>@$(DBLOADTEMPLATE) $&lt; > $@</pre>
-to
-<pre>@$(MSI) $&lt; > $@</pre>
-Also, if dbLoadTemplate was used by your application,&nbsp; add the definition
-<blockquote>
-<pre>EPICS_EXTENSIONS=&lt;full path name to epics extensions directory></pre>
-</blockquote>
-to your application config/RELEASE file.</blockquote>
-depends changes
-<p>&nbsp;&nbsp;&nbsp;&nbsp; Remove any SRCS.c and SRCS.cc definitions in
-your application src/Makefile..*files. The depends rule no longer uses
+<pre>MSI = msi</pre>
+and change the DBLOADTEMPLATE rule in RULES.Db from
+<p>%.t.db.raw: %.substitutions
+<br>&nbsp;&nbsp;&nbsp; @echo "Inflating database from $&lt;"
+<br>&nbsp;&nbsp;&nbsp; @$(RM) $@
+<br>&nbsp;&nbsp;&nbsp; @$(DBLOADTEMPLATE) $&lt; > $@
+<p>to
+<p>%.t.db.raw: %.substitutions %.template
+<br>&nbsp;&nbsp;&nbsp; @echo "Inflating database from $&lt;"
+<br>&nbsp;&nbsp;&nbsp; @$(RM) $@
+<br>&nbsp;&nbsp;&nbsp; @$(MSI) -S $^ > $@
+<br>&nbsp;</blockquote>
+
+<h3>
+depends changes</h3>
+
+<p><br>&nbsp;&nbsp;&nbsp;&nbsp; Remove any SRCS.c and SRCS.cc definitions
+in your application src/Makefile..*files. The depends rule no longer uses
 these definitions.
 </body>
 </html>

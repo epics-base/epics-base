@@ -12,7 +12,7 @@ include $(CONFIG)/os/CONFIG.Common.linux-x86
 
 ARCH_DEP_CFLAGS = -march=i386
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=i386-pc-linux-gnu
 endif
 

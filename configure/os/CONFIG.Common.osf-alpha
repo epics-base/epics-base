@@ -22,7 +22,7 @@ POSIX_LDLIBS_NO +=
 
 OP_SYS_CPPFLAGS = -D_OSF_SOURCE
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=alpha-osf
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))

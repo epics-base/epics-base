@@ -31,7 +31,7 @@ ARCH_DEP_CPPFLAGS = -D_X86_
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-R%)
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=x86-sun-solaris2
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))

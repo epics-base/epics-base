@@ -28,7 +28,7 @@ empty:=                                      # trick from the make docs...
 space:= $(empty) $(empty)
 RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=parisc-hp-unix
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))

@@ -29,7 +29,7 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
 ifeq ($(EPICS_HOST_ARCH),linux-x86)
    # Added for 386,486,... cross builds
    CMPLR_PREFIX=

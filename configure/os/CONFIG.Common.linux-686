@@ -13,7 +13,7 @@ include $(CONFIG)/os/CONFIG.Common.linux-x86
 # i686 is euivalent to pentiumpro
 ARCH_DEP_CFLAGS = -march=i686
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=i686-pc-linux-gnu
 endif
 

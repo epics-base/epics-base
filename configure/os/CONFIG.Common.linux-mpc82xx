@@ -29,7 +29,7 @@ OP_SYS_LDLIBS = -lrt
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=ppc_82xx
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))

@@ -30,7 +30,7 @@ OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION)
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-R%)
 
-ifdef CROSS
+ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=sparc-sun-solaris2
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))

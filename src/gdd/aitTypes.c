@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/08/05 00:51:07  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.3  1997/05/01 19:54:51  jhill
  * updated dll keywords
  *
@@ -126,8 +129,8 @@ epicsShareDef double aitMin[aitTotal] = {
 	0u,
 	INT_MIN,
 	0u,
-	FLT_MIN,
-	DBL_MIN,
+	-FLT_MAX,
+	-DBL_MAX,
 	+1,
 	+1,
 	+1

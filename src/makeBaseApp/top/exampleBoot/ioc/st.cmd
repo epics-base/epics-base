@@ -10,7 +10,6 @@
 cd topbin
 ld < exampleLibrary.munch
 threadInit()
-TSinit()
 
 cd top
 dbLoadDatabase("dbd/exampleApp.dbd")

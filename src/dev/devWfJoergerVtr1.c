@@ -175,7 +175,6 @@ static long read_wf(pwf)
 	/* if already active then call is from myCallback. check rarm*/
 	else if(pwf->rarm) {
 		(void)arm_wf(pwf);
-		pwf->rarm = 0;
 	}
 	return(status);
 }
@@ -185,6 +184,7 @@ struct waveformRecord   *pwf;
 {
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
+	pwf->busy = TRUE;
 	if(wf_driver(JGVTR1,pvmeio->card,myCallback,pwf->dpvt)<0){
 		if(pwf->nsev<VALID_ALARM ) {
                 	pwf->nsta = READ_ALARM;
@@ -194,6 +194,5 @@ struct waveformRecord   *pwf;
 		pwf->busy = FALSE;
 		return(0);
 	}
-	pwf->busy = TRUE;
 	return(1);
 }

@@ -318,7 +318,7 @@ char		*pvalue
 		SEVCHK(status, NULL);
 		verify_value(chan_id, DBR_CHAR);
 	}
-	if(sscanf(pvalue,"%ld",&longvalue)==1) {
+	if(sscanf(pvalue,"%d",&longvalue)==1) {
 		/*
 		 * long integer ca_put
 		 */

@@ -107,7 +107,7 @@ static long asDbAddRecords(void)
     dbCommon	*precord;
 
     dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
+    status = dbFirstRecordType(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
@@ -119,7 +119,7 @@ static long asDbAddRecords(void)
 	    }
 	    status = dbNextRecord(pdbentry);
 	}
-	status = dbNextRecdes(pdbentry);
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return(0);

@@ -90,8 +90,6 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 #include "locationException.h"
 #include "osiEvent.h"
 
-static void osiThreadCallEntryPoint (void *pPvt); // for gnu warning
-
 class epicsShareClass osiThread {
 public:
     osiThread (const char *name, unsigned stackSize,

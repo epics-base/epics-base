@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stddef.h>
 
+static void osiThreadCallEntryPoint (void *pPvt); // for gnu warning
+
 #define epicsExportSharedSymbols
 #include "osiThread.h"
 

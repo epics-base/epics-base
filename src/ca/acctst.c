@@ -713,7 +713,7 @@ void grEnumTest ( chid chan, unsigned interestLevel )
         for (i=0; i<count; i++) {
             printf ("\"%s\" ", ge.strs[i]);
         }
-        printf ("}\n");
+        printf ("}");
     }
     showProgressEnd ( interestLevel );
 }

@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,16 +25,16 @@
  *
  * Modification Log:
  * -----------------
- * .01	03-09-90	rac	initial version
- * .02	07-31-91	rac	installed in SCCS
- * .03	09-19-91	rac	add a new assert check; fix bug in writing
- *				index blocks
+ *  .01 03-09-90 rac	initial version
+ *  .02 07-31-91 rac	installed in SCCS
+ *  .03 09-19-91 rac	add a new assert check; fix bug in writing
+ *			index blocks
+ *  .04 09-14-92 rac	remove use of special malloc and free routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	arChanIO.c - AR channel data file routines
@@ -132,7 +132,7 @@ void	*pMem;
 int	size;
 char	*text;
 {
-    GenFree((char *)pMem);
+    free((char *)pMem);
     glArNFree++;
     glArNbytesFree += size;
     glArNetNbytesMalloc -= size;
@@ -148,7 +148,7 @@ int	size;
 char	*text;
 {
     void	*pMem;
-    pMem = (void *)GenMalloc(size);
+    pMem = (void *)malloc(size);
     if (pMem != NULL) {
 	glArNMalloc++;
 	glArNbytesMalloc += size;
@@ -182,7 +182,7 @@ arCF_mallocMI_BUF()
 #ifdef DEBUG
     return (AR_MI_BUF *)arMalloc(sizeof(AR_MI_BUF), "AR_MI_BUF");
 #else
-    return (AR_MI_BUF *)GenMalloc(sizeof(AR_MI_BUF));
+    return (AR_MI_BUF *)malloc(sizeof(AR_MI_BUF));
 #endif
 }
 void
@@ -192,7 +192,7 @@ AR_MI_BUF *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_MI_BUF), "AR_MI_BUF");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 
@@ -202,7 +202,7 @@ arCF_mallocINDEX_BUF()
 #ifdef DEBUG
     return (AR_INDEX_BUF *)arMalloc(sizeof(AR_INDEX_BUF), "AR_INDEX_BUF");
 #else
-    return (AR_INDEX_BUF *)GenMalloc(sizeof(AR_INDEX_BUF));
+    return (AR_INDEX_BUF *)malloc(sizeof(AR_INDEX_BUF));
 #endif
 }
 void
@@ -212,7 +212,7 @@ AR_INDEX_BUF *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_INDEX_BUF), "AR_INDEX_BUF");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 
@@ -222,7 +222,7 @@ arCF_mallocDATA_BUF()
 #ifdef DEBUG
     return (AR_DATA_BUF *)arMalloc(sizeof(AR_DATA_BUF), "AR_DATA_BUF");
 #else
-    return (AR_DATA_BUF *)GenMalloc(sizeof(AR_DATA_BUF));
+    return (AR_DATA_BUF *)malloc(sizeof(AR_DATA_BUF));
 #endif
 }
 void
@@ -232,7 +232,7 @@ AR_DATA_BUF *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_DATA_BUF), "AR_DATA_BUF");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 
@@ -242,7 +242,7 @@ arCF_mallocGR_BUF()
 #ifdef DEBUG
     return (AR_GR_BUF *)arMalloc(sizeof(AR_GR_BUF), "AR_GR_BUF");
 #else
-    return (AR_GR_BUF *)GenMalloc(sizeof(AR_GR_BUF));
+    return (AR_GR_BUF *)malloc(sizeof(AR_GR_BUF));
 #endif
 }
 void
@@ -252,7 +252,7 @@ AR_GR_BUF *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_GR_BUF), "AR_GR_BUF");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 

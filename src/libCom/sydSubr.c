@@ -62,12 +62,17 @@
  *			restrict range of interest to a subset of the samples;
  *			put a blank line in export file following snapshot;
  *			for .RVAL channels, set prec=0, EGU="counts"
+ *  .15 08-25-92 rac	fix bugs in exporting for restricted time range;
+ *			fix sydSamplePrint to put a separator in front of
+ *			the no data message; add better handling for SSF
+ *			files with missing data; added a routine to prepare
+ *			a channel for a new retrieval; discontinue use of
+ *			special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 #if 0	/* allow comments within the module heading */
 /*+/mod***********************************************************************
@@ -106,6 +111,7 @@
 * SYD_CHAN *sydChanFind(         pSspec,  chanName			)
 *     long  sydChanOpen(         pSspec, >ppSChan, chanName,  sync, pArg, trig)
 *				         sync = SYD_SY_{NONF,FILLED}
+*     long  sydChanPrep(         pSspec,  pSChan			)
 *     long  sydClose(            pSspec					)
 *     void  sydCopyGr(          >pDest,   pSrc,  srcDbrType             )
 *     void  sydCopyVal(         >pDest,   pSrc,  count,  srcDbrType     )
@@ -147,10 +153,12 @@
 *     long  sydTest(             pSspec					)
 *     long  sydTestAddFromText(  pSspec, text				)
 *     long  sydTestClose(        pSspec					)
-*   double  sydValAsDbl(         pSChan,  sampNum			)
+*      int  sydValAsDbl(         pSChan,  sampNum, pDbl			)
 *
 * BUGS
 * o	error detection and handling isn't "leakproof"
+* o	for retrieving from sample set files, if all the channels in the
+*	set are missing for two snapshots in a row, EOF is reported
 *
 * DESCRIPTION, continued
 *
@@ -511,17 +519,17 @@ SYD_CHAN *pSChan;	/* I pointer to synchronous channel descriptor */
 	(void)(pSspec->pFunc)(pSspec, pSChan, SYD_FC_CLOSE, NULL);
     for (i=0; i<pSChan->nInBufs; i++) {
 	if (pSChan->pInBuf[i] != NULL)
-	    GenFree((char *)pSChan->pInBuf[i]);
+	    free((char *)pSChan->pInBuf[i]);
     }
     sydChanFreeArrays(pSChan);
 
     pSspec->chanCount--;
     DoubleListRemove(pSChan, pSspec->pChanHead, pSspec->pChanTail);
     if (pSChan->testChan) {
-	GenFree((char *)pSspec->pAccept);
+	free((char *)pSspec->pAccept);
 	pSspec->pAccept = NULL;
     }
-    GenFree((char *)pSChan);
+    free((char *)pSChan);
 
     return S_syd_OK;
 }
@@ -534,31 +542,31 @@ sydChanFreeArrays(pSChan)
 SYD_CHAN *pSChan;
 {
     if (pSChan->pData != NULL) {
-	GenFree((char *)pSChan->pData);
+	free((char *)pSChan->pData);
 	pSChan->pData = NULL;
     }
     if (pSChan->pDataAlStat != NULL) {
-	GenFree((char *)pSChan->pDataAlStat);
+	free((char *)pSChan->pDataAlStat);
 	pSChan->pDataAlStat = NULL;
     }
     if (pSChan->pDataAlSev != NULL) {
-	GenFree((char *)pSChan->pDataAlSev);
+	free((char *)pSChan->pDataAlSev);
 	pSChan->pDataAlSev = NULL;
     }
     if (pSChan->pDataCodeL != NULL) {
-	GenFree((char *)pSChan->pDataCodeL);
+	free((char *)pSChan->pDataCodeL);
 	pSChan->pDataCodeL = NULL;
     }
     if (pSChan->pDataCodeR != NULL) {
-	GenFree((char *)pSChan->pDataCodeR);
+	free((char *)pSChan->pDataCodeR);
 	pSChan->pDataCodeR = NULL;
     }
     if (pSChan->pFlags != NULL) {
-	GenFree((char *)pSChan->pFlags);
+	free((char *)pSChan->pFlags);
 	pSChan->pFlags = NULL;
     }
     if (pSChan->pStats != NULL) {
-	GenFree((char *)pSChan->pStats);
+	free((char *)pSChan->pStats);
 	pSChan->pStats = NULL;
     }
 }
@@ -711,7 +719,7 @@ int	test;		/* I 0,1 if this is data,test channel */
 	    new = 0;
     }
     if (new) {
-	pSChan = (SYD_CHAN *)GenMalloc(sizeof(SYD_CHAN));
+	pSChan = (SYD_CHAN *)malloc(sizeof(SYD_CHAN));
 	if (pSChan == NULL)
 	    return S_syd_noMem;
 	DoubleListAppend(pSChan, pSspec->pChanHead, pSspec->pChanTail);
@@ -726,6 +734,7 @@ int	test;		/* I 0,1 if this is data,test channel */
 	}
 	pSChan->firstInBuf = pSChan->lastInBuf = pSChan->sampInBuf = -1;
 	pSChan->minDataVal = pSChan->maxDataVal = 0.;
+	pSChan->minMaxNeedInit = 1;
 	pSChan->restrictMinDataVal = pSChan->restrictMaxDataVal = 0.;
 	strcpy(pSChan->name, chanName);
 	strcpy(pSChan->label, chanName);
@@ -801,7 +810,7 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
 *    set either SMOOTH or STEP for the channel
 *----------------------------------------------------------------------------*/
     for (i=0; i<pSChan->nInBufs; i++) {
-	pSChan->pInBuf[i] = (union db_access_val *)GenMalloc(
+	pSChan->pInBuf[i] = (union db_access_val *)malloc(
 			dbr_size_n(pSChan->dbrType, pSChan->elCount));
 	if (pSChan->pInBuf[i] == NULL) {
 	    (void)sydChanClose(pSspec, pSChan);
@@ -878,6 +887,35 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
 }
 
 /*+/subr**********************************************************************
+* NAME	sydChanPrep - prepare a channel for a new retrieval
+*
+* DESCRIPTION
+*	This routine initializes a channel structure in preparation for
+*	a new retrieval.
+*
+* RETURNS
+*	S_syd_OK
+*
+* SEE ALSO
+*	sydSampleSetGet, sydInputGet, sydInputStoreInSet
+*
+*-*/
+long
+sydChanPrep(pSspec, pSChan)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+SYD_CHAN *pSChan;	/* I pointer to synchronous channel descriptor */
+{
+    int		i;
+
+    assert(pSspec != NULL);
+    assert(pSChan != NULL);
+
+    pSChan->minDataVal = pSChan->maxDataVal = 0.;
+    pSChan->minMaxNeedInit = 1;
+    pSChan->restrictMinDataVal = pSChan->restrictMaxDataVal = 0.;
+}
+
+/*+/subr**********************************************************************
 * NAME	sydClose - close a synchronous set spec
 *
 * DESCRIPTION
@@ -890,10 +928,10 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
 *	other status codes if an error occurs
 *
 * BUGS
-* o	the `wrapup' call should do the GenFree, since the GenFree must
-*	match the GenMalloc--if this routine is compiled with DEBUG and
-*	the routine which did the GenMalloc (e.g., sydSubrCA) is compiled
-*	without it, then the GenFree here will complain.
+* o	the `wrapup' call should do the free, since the free must
+*	match the malloc--if this routine is compiled with DEBUG and
+*	the routine which did the malloc (e.g., sydSubrCA) is compiled
+*	without it, then the free here will complain.
 *
 * SEE ALSO
 *	sydOpen
@@ -921,7 +959,7 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
     if (stat != S_syd_OK)
 	retStat = stat;
 
-    GenFree((char *)pSspec);
+    free((char *)pSspec);
     return retStat;
 }
 
@@ -941,20 +979,30 @@ void	*pSrc;		/* I pointer to buffer holding graphics info */
 chtype	srcDbrType;	/* I DBR_xxx type of the source buffer */
 {
 #define U_DB union db_access_val *
-    if (srcDbrType == DBR_GR_FLOAT)
+    if (srcDbrType == DBR_GR_FLOAT) {
 	((U_DB)pDest)->gfltval = ((U_DB)pSrc)->gfltval;
-    else if (srcDbrType == DBR_GR_SHORT)
+	((U_DB)pDest)->gfltval.units[7] = '\0';
+    }
+    else if (srcDbrType == DBR_GR_SHORT) {
 	((U_DB)pDest)->gshrtval = ((U_DB)pSrc)->gshrtval;
-    else if (srcDbrType == DBR_GR_DOUBLE)
+	((U_DB)pDest)->gshrtval.units[7] = '\0';
+    }
+    else if (srcDbrType == DBR_GR_DOUBLE) {
 	((U_DB)pDest)->gdblval = ((U_DB)pSrc)->gdblval;
-    else if (srcDbrType == DBR_GR_LONG)
+	((U_DB)pDest)->gdblval.units[7] = '\0';
+    }
+    else if (srcDbrType == DBR_GR_LONG) {
 	((U_DB)pDest)->glngval = ((U_DB)pSrc)->glngval;
+	((U_DB)pDest)->glngval.units[7] = '\0';
+    }
     else if (srcDbrType == DBR_GR_STRING)
 	((U_DB)pDest)->gstrval = ((U_DB)pSrc)->gstrval;
     else if (srcDbrType == DBR_GR_ENUM)
 	((U_DB)pDest)->genmval = ((U_DB)pSrc)->genmval;
-    else if (srcDbrType == DBR_GR_CHAR)
+    else if (srcDbrType == DBR_GR_CHAR) {
 	((U_DB)pDest)->gchrval = ((U_DB)pSrc)->gchrval;
+	((U_DB)pDest)->gchrval.units[7] = '\0';
+    }
     else
 	assertAlways(0);
 }
@@ -1545,6 +1593,8 @@ skipSecondRead:
 	    if (i >= 0 && BUFiTS.secPastEpoch == 0)
 		BUFiTS.secPastEpoch = 86401;
 	}
+	if (pSspec->type == SYD_TY_SSF)
+	    break;
     }
 }
 
@@ -1834,8 +1884,10 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    float	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tfltval.value;
 		    pDest = ((float *)pSChan->pData) + sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0)
+		    if (useVal && pSChan->minMaxNeedInit) {
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+			pSChan->minMaxNeedInit = 0;
+		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
@@ -1851,12 +1903,13 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    double	dbl;
 		    pSrc = &pSChan->pInBuf[i]->tshrtval.value;
 		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0) {
+		    if (useVal && pSChan->minMaxNeedInit) {
 			if (pSChan->isRVAL)
 			    dbl = (double)(*(unsigned short *)pSrc);
 			else
 			    dbl = (double)(*pSrc);
 			pSChan->maxDataVal = pSChan->minDataVal = dbl;
+			pSChan->minMaxNeedInit = 0;
 		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
@@ -1876,8 +1929,10 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    double	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tdblval.value;
 		    pDest = ((double *)pSChan->pData) + sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0)
+		    if (useVal && pSChan->minMaxNeedInit) {
 			pSChan->maxDataVal = pSChan->minDataVal = *pSrc;
+			pSChan->minMaxNeedInit = 0;
+		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
 			    if (*pSrc > pSChan->maxDataVal)
@@ -1893,12 +1948,14 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    double	dbl;
 		    pSrc = &pSChan->pInBuf[i]->tlngval.value;
 		    pDest = ((long *)pSChan->pData) + sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0)
+		    if (useVal && pSChan->minMaxNeedInit) {
 			if (pSChan->isRVAL)
 			    dbl = (double)(*(unsigned long *)pSrc);
 			else
 			    dbl = (double)(*pSrc);
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+			pSChan->minMaxNeedInit = 0;
+		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
 			    if (pSChan->isRVAL)
@@ -1929,8 +1986,10 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    pSrc = &pSChan->pInBuf[i]->tchrval.value;
 		    pDest = ((unsigned char *)pSChan->pData) +
 						sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0)
+		    if (useVal && pSChan->minMaxNeedInit) {
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+			pSChan->minMaxNeedInit = 0;
+		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
@@ -1945,8 +2004,10 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    short	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tenmval.value;
 		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		    if (useVal && pSspec->sampleCount == 0)
+		    if (useVal && pSChan->minMaxNeedInit) {
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+			pSChan->minMaxNeedInit = 0;
+		    }
 		    for (el=0; el<pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
@@ -2222,7 +2283,7 @@ int	samp;		/* I sample number in synchronous set */
 *----------------------------------------------------------------------------*/
     if (samp == pSspec->restrictFirstData) {
 	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"", tsStampToText(
-		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
+		    &pSspec->restrictRefTs, TS_TEXT_MMDDYY, stampText));
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
 	    if (pSChan->dataChan) {
 		if (option == 2 || option == 4)
@@ -2299,7 +2360,7 @@ int	snap;		/* I snapshot number in synchronous set */
 *----------------------------------------------------------------------------*/
     if (snap == 0) {
 	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"\t\"sample\"",
-		tsStampToText( &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
+		tsStampToText(&pSspec->restrictRefTs,TS_TEXT_MMDDYY,stampText));
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
 	    if (pSChan->dataChan)
 		(void)fprintf(out,"\t\"%s\"\t\"%s\"",pSChan->name,pSChan->EGU);
@@ -2315,7 +2376,7 @@ int	snap;		/* I snapshot number in synchronous set */
 /*-----------------------------------------------------------------------------
 *    print the statistics for each channel for this snapshot.
 *----------------------------------------------------------------------------*/
-    tsStampToText(&pSspec->pTimeStamp[snap], TS_TEXT_MMDDYY, stampText);
+    tsStampToText(&pSspec->pStatTimeStamp[snap], TS_TEXT_MMDDYY, stampText);
     (void)fprintf(out, "\"%s\"\t%.3f\t%d", stampText,
 	pSspec->pStatDeltaSec[snap] - pSspec->restrictDeltaSecSubtract,
 	pSspec->pStatPopCount[snap]);
@@ -2602,7 +2663,8 @@ int	sampNum;	/* I sample number in sync set */
     }
     else {
 	if (flags&SHOW_AR)
-	    (void)fprintf(out, "1");
+	    (void)fprintf(out, "1%c", sep);
+	(void)fputc(sep, out);
 	if (flags&USE_QUO) {
 	    if (flags&ENF_WID)
 		(void)fprintf(out, "\"%*.*s\"", colWidth, colWidth, special);
@@ -2903,9 +2965,12 @@ int	samp;		/* I sample number in synchronous set */
 
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->dataChan) {
-	    (void)fprintf(pFile, "%s %s %d %d", SydChanName(pSChan),
-		dbf_type_to_text(SydChanDbfType(pSChan)),
-		pSChan->pDataAlSev[samp], pSChan->pDataAlStat[samp]);
+	    (void)fprintf(pFile, "%s %s", SydChanName(pSChan),
+		dbf_type_to_text(SydChanDbfType(pSChan)));
+	    (void)fprintf(pFile, " %d",
+		pSChan->pDataAlSev != NULL ? pSChan->pDataAlSev[samp] : 0);
+	    (void)fprintf(pFile, " %d",
+		pSChan->pDataAlStat != NULL ? pSChan->pDataAlStat[samp] : 0);
 	    sydSamplePrint1(pSChan, pFile, ' ', SHOW_AR, 0, samp);
 	    (void)fprintf(pFile, "\n");
 	}
@@ -2957,13 +3022,13 @@ int	reqCount;	/* I number of samples in the set */
     if (reqCount > pSspec->dataDim)
 	sydSampleSetFree(pSspec);
     if (pSspec->dataDim <= 0) {
-	pSspec->pDeltaSec = (double *)GenMalloc(reqCount * sizeof(double));
+	pSspec->pDeltaSec = (double *)malloc(reqCount * sizeof(double));
 	if (pSspec->pDeltaSec == NULL)
 	    goto sampleMallocErr;
-	pSspec->pTimeStamp = (TS_STAMP *)GenMalloc(reqCount * sizeof(TS_STAMP));
+	pSspec->pTimeStamp = (TS_STAMP *)malloc(reqCount * sizeof(TS_STAMP));
 	if (pSspec->pTimeStamp == NULL)
 	    goto sampleMallocErr;
-	pSspec->pPartial = (char *)GenMalloc(reqCount * sizeof(char));
+	pSspec->pPartial = (char *)malloc(reqCount * sizeof(char));
 	if (pSspec->pPartial == NULL)
 	    goto sampleMallocErr;
 	pSspec->dataDim = reqCount;
@@ -2973,28 +3038,28 @@ int	reqCount;	/* I number of samples in the set */
 	if (pSChan->conn == 0)
 	    ;			/* no action if never been connected */
 	else if (pSChan->pData == NULL) {
-	    pSChan->pData = (void *)GenMalloc(reqCount *
+	    pSChan->pData = (void *)malloc(reqCount *
 			dbr_value_size[pSChan->dbrType] * pSChan->elCount);
 	    if (pSChan->pData == NULL)
 		goto sampleMallocErr;
 
-	    pSChan->pDataAlStat = (void *)GenMalloc(reqCount *
+	    pSChan->pDataAlStat = (void *)malloc(reqCount *
 						sizeof(*pSChan->pDataAlStat));
 	    if (pSChan->pDataAlStat == NULL)
 		goto sampleMallocErr;
-	    pSChan->pDataAlSev = (void *)GenMalloc(reqCount *
+	    pSChan->pDataAlSev = (void *)malloc(reqCount *
 						sizeof(*pSChan->pDataAlSev));
 	    if (pSChan->pDataAlSev == NULL)
 		goto sampleMallocErr;
-	    pSChan->pDataCodeL = (void *)GenMalloc(reqCount *
+	    pSChan->pDataCodeL = (void *)malloc(reqCount *
 						sizeof(*pSChan->pDataCodeL));
 	    if (pSChan->pDataCodeL == NULL)
 		goto sampleMallocErr;
-	    pSChan->pDataCodeR = (void *)GenMalloc(reqCount *
+	    pSChan->pDataCodeR = (void *)malloc(reqCount *
 						sizeof(*pSChan->pDataCodeR));
 	    if (pSChan->pDataCodeR == NULL)
 		goto sampleMallocErr;
-	    pSChan->pFlags = (void *)GenMalloc(reqCount *
+	    pSChan->pFlags = (void *)malloc(reqCount *
 						sizeof(*pSChan->pFlags));
 	    if (pSChan->pFlags == NULL)
 		goto sampleMallocErr;
@@ -3088,27 +3153,27 @@ SYD_SPEC *pSspec;
     assert(pSspec != NULL);
 
     if (pSspec->pDeltaSec != NULL) {
-	GenFree((char *)pSspec->pDeltaSec);
+	free((char *)pSspec->pDeltaSec);
 	pSspec->pDeltaSec = NULL;
     }
     if (pSspec->pTimeStamp != NULL) {
-	GenFree((char *)pSspec->pTimeStamp);
+	free((char *)pSspec->pTimeStamp);
 	pSspec->pTimeStamp = NULL;
     }
     if (pSspec->pPartial != NULL) {
-	GenFree((char *)pSspec->pPartial);
+	free((char *)pSspec->pPartial);
 	pSspec->pPartial = NULL;
     }
     if (pSspec->pStatTimeStamp != NULL) {
-	GenFree((char *)pSspec->pStatTimeStamp);
+	free((char *)pSspec->pStatTimeStamp);
         pSspec->pStatTimeStamp = NULL;
     }
     if (pSspec->pStatDeltaSec != NULL) {
-	GenFree((char *)pSspec->pStatDeltaSec);
+	free((char *)pSspec->pStatDeltaSec);
         pSspec->pStatDeltaSec = NULL;
     }
     if (pSspec->pStatPopCount != NULL) {
-	GenFree((char *)pSspec->pStatPopCount);
+	free((char *)pSspec->pStatPopCount);
         pSspec->pStatPopCount = NULL;
     }
     pSspec->dataDim = 0;
@@ -3154,6 +3219,7 @@ SYD_SPEC *pSspec;
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->discon == 0)
 	    n++;
+	sydChanPrep(pSspec, pSChan);
     }
 
     pSspec->firstData = pSspec->lastData = -1;
@@ -3263,7 +3329,7 @@ TS_STAMP *pTsEnd;	/* I pointer to stamp to end, or NULL */
 {
     SYD_CHAN	*pSChan;
     TS_STAMP	tsBegin, tsEnd;
-    int		i, beg=-1, end=-1;
+    int		i, beg=-1, end=-1, first;
     int		statCount=0, sampCount;
     double	val;
 
@@ -3317,12 +3383,15 @@ TS_STAMP *pTsEnd;	/* I pointer to stamp to end, or NULL */
 		&pSspec->restrictRefTs, &pSspec->refTs);
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	i = beg;
+	first = 1;
 	while (1) {
-	    val=sydValAsDbl(pSChan, i);
-	    if (pSChan->restrictMinDataVal > val || i == beg)
-		pSChan->restrictMinDataVal = val;
-	    if (pSChan->restrictMaxDataVal < val || i == beg)
-		pSChan->restrictMaxDataVal = val;
+	    if (sydValAsDbl(pSChan, i, &val)) {
+		if (pSChan->restrictMinDataVal > val || first)
+		    pSChan->restrictMinDataVal = val;
+		if (pSChan->restrictMaxDataVal < val || first)
+		    pSChan->restrictMaxDataVal = val;
+		first = 0;
+	    }
 	    if (i == end)
 		break;
 	    if (++i >= pSspec->dataDim)
@@ -3369,21 +3438,21 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 	    if (!pSChan->dataChan)
 		continue;
 	    if (pSspec->statDim > 0) {
-		GenFree((char *)pSChan->pStats);
-		GenFree((char *)pSspec->pStatTimeStamp);
-		GenFree((char *)pSspec->pStatDeltaSec);
-		GenFree((char *)pSspec->pStatPopCount);
+		free((char *)pSChan->pStats);
+		free((char *)pSspec->pStatTimeStamp);
+		free((char *)pSspec->pStatDeltaSec);
+		free((char *)pSspec->pStatPopCount);
 	    }
-	    pSChan->pStats=(SYD_STATS *)GenMalloc(statCount*sizeof(SYD_STATS));
+	    pSChan->pStats=(SYD_STATS *)malloc(statCount*sizeof(SYD_STATS));
 	    assertAlways(pSChan->pStats != NULL);
 	    pSspec->pStatDeltaSec =
-			(double *)GenMalloc(statCount*sizeof(double));
+			(double *)malloc(statCount*sizeof(double));
 	    assertAlways(pSspec->pStatDeltaSec != NULL);
 	    pSspec->pStatTimeStamp =
-			(TS_STAMP *)GenMalloc(statCount*sizeof(TS_STAMP));
+			(TS_STAMP *)malloc(statCount*sizeof(TS_STAMP));
 	    assertAlways(pSspec->pStatTimeStamp != NULL);
 	    pSspec->pStatPopCount =
-			(short *)GenMalloc(statCount*sizeof(short));
+			(long *)malloc(statCount*sizeof(long));
 	    assertAlways(pSspec->pStatPopCount != NULL);
 	}
 	pSspec->statDim = statCount;
@@ -3431,7 +3500,7 @@ SYD_SPEC *pSspec;
 int	statNum, sampBeg, sampEnd, sampCount;
 {
     SYD_CHAN	*pSChan;
-    double	mean, stdDev, diff;
+    double	mean, stdDev, diff, val;
     int		i;
 
     pSspec->pStatDeltaSec[statNum] = pSspec->pDeltaSec[sampBeg];
@@ -3443,7 +3512,8 @@ int	statNum, sampBeg, sampEnd, sampCount;
 	mean = stdDev = 0.;
 	i = sampBeg;
 	while (1) {
-	    mean += sydValAsDbl(pSChan, i);
+	    if (sydValAsDbl(pSChan, i, &val))
+		mean += val;
 	    if (i == sampEnd)			break;
 	    if (++i >= pSspec->dataDim)		i = 0;
 	}
@@ -3451,8 +3521,10 @@ int	statNum, sampBeg, sampEnd, sampCount;
 	    mean /= sampCount;
 	i = sampBeg;
 	while (1) {
-	    diff = sydValAsDbl(pSChan, i) - mean;
-	    stdDev += diff * diff;
+	    if (sydValAsDbl(pSChan, i, &val)) {
+		diff = val - mean;
+		stdDev += diff * diff;
+	    }
 	    if (i == sampEnd)			break;
 	    if (++i >= pSspec->dataDim)		i = 0;
 	}
@@ -3704,7 +3776,7 @@ char	*text;		/* I pointer to string with test specification */
     }
     pText = myText;
     strcpy(myText, text);
-    if ((pTest = (SYD_TEST *)GenMalloc(sizeof(SYD_TEST))) == NULL) {
+    if ((pTest = (SYD_TEST *)malloc(sizeof(SYD_TEST))) == NULL) {
 	(void)printf("sydTestAddFromText: couldn't malloc for test struct\n");
 	free(myText);
 	return S_syd_noMem;
@@ -3813,14 +3885,14 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
     if ((pTest = pSspec->pAccept) == NULL)
 	return S_syd_OK;
     if (pTest->pSChan == NULL) {
-	GenFree((char *)pTest);
+	free((char *)pTest);
 	pSspec->pAccept = NULL;
     }
     else if (pTest->pSChan->dataChan == 0)
 	sydChanClose(pSspec, pTest->pSChan);
     else {
 	pTest->pSChan->testChan = 0;
-	GenFree((char *)pTest);
+	free((char *)pTest);
 	pSspec->pAccept = NULL;
     }
 
@@ -3851,36 +3923,38 @@ int	roundNsec;
 * NAME	sydValAsDbl - fetch value from channel as a double
 *
 * RETURNS
-*	value (as a double) of channel for the specified sample number, or
-*	0., if the value is missing or EOF, or if the type is invalid
+*	1, or
+*	0  if the value is missing or EOF, or if the type is invalid
 *	
-*
 *-*/
-double
-sydValAsDbl(pSChan, sampNum)
+int
+sydValAsDbl(pSChan, sampNum, pDbl)
 SYD_CHAN *pSChan;	/* I sync channel pointer */
 int	sampNum;	/* I sample number */
+double	*pDbl;		/* O value */
 {
     if (pSChan->pFlags[sampNum].missing || pSChan->pFlags[sampNum].eof)
-	return 0.;
+	return 0;
     if (pSChan->dbfType == DBF_FLOAT)
-	return (double)(((float *)pSChan->pData)[sampNum]);
+	*pDbl = (double)(((float *)pSChan->pData)[sampNum]);
     else if (pSChan->dbfType == DBF_DOUBLE)
-	return (double)(((double *)pSChan->pData)[sampNum]);
+	*pDbl = ((double *)pSChan->pData)[sampNum];
     else if (pSChan->dbfType == DBF_SHORT) {
 	if (pSChan->isRVAL)
-	    return (double)(((unsigned short *)pSChan->pData)[sampNum]);
+	    *pDbl = (double)(((unsigned short *)pSChan->pData)[sampNum]);
 	else
-	    return (double)(((short *)pSChan->pData)[sampNum]);
+	    *pDbl = (double)(((short *)pSChan->pData)[sampNum]);
     }
     else if (pSChan->dbfType == DBF_LONG) {
 	if (pSChan->isRVAL)
-	    return (double)(((unsigned long *)pSChan->pData)[sampNum]);
+	    *pDbl = (double)(((unsigned long *)pSChan->pData)[sampNum]);
 	else
-	    return (double)(((long *)pSChan->pData)[sampNum]);
+	    *pDbl = (double)(((long *)pSChan->pData)[sampNum]);
     }
     else if (pSChan->dbfType == DBF_CHAR)
-	return (double)(((char *)pSChan->pData)[sampNum]);
+	*pDbl = (double)(((char *)pSChan->pData)[sampNum]);
     else
-	return 0.;
+	return 0;
+
+    return 1;
 }

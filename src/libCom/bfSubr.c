@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,14 +25,14 @@
  *
  * Modification Log:
  * -----------------
- * .01	03-05-90	rac	initial version
- * .02	07-30-91	rac	installed in SCCS
+ *  .01 03-05-90 rac	initial version
+ *  .02 07-30-91 rac	installed in SCCS
+ *  .03 09-14-92 rac	discontinue using special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	bfSubr.c - 'block file' subroutines
@@ -173,22 +173,16 @@
 #endif
 
 BF_DESC *bfMallocDesc()
-{  return (BF_DESC *)GenMalloc(sizeof(BF_DESC));  }
-void bfBufCheckDesc(ptr)
-BF_DESC *ptr;
-{  GenBufCheck(ptr);  }
+{  return (BF_DESC *)malloc(sizeof(BF_DESC));  }
 void bfFreeDesc(ptr)
 BF_DESC *ptr;
-{  GenFree(ptr);  }
+{  free(ptr);  }
 
 BF_BLOCK0 *bfMallocBlock0()
-{  return (BF_BLOCK0 *)GenMalloc(sizeof(BF_BLOCK0));  }
-void bfBufCheckBlock0(ptr)
-BF_BLOCK0 *ptr;
-{  GenBufCheck(ptr);  }
+{  return (BF_BLOCK0 *)malloc(sizeof(BF_BLOCK0));  }
 void bfFreeBlock0(ptr)
 BF_BLOCK0 *ptr;
-{  GenFree(ptr);  }
+{  free(ptr);  }
 
 
 /*+/subr**********************************************************************
@@ -290,7 +284,7 @@ BF_DESC *pDesc;		/* IO block file descriptor for ring file */
     if (pDesc->readBlock > 0) {
 	if (pDesc->pReadBuf == NULL) {
 	    if ((pDesc->pReadBuf =
-		    (BF_BLOCK *)GenMalloc((unsigned)BfB0BlockSize(pDesc))) ==
+		    (BF_BLOCK *)malloc((unsigned)BfB0BlockSize(pDesc))) ==
 								NULL) {
 		(void)fprintf(stderr,
 				"bfRingFillRbufAndGetc: can't get memory\n");
@@ -435,7 +429,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
     BF_BLKNUM	flink;		/* link to next write block */
     BF_BLOCK   *pBuf;		/* next write block */
 
-    if ((pBuf = (BF_BLOCK *)GenMalloc((unsigned)BfB0BlockSize(pDesc))) == NULL) {
+    if ((pBuf = (BF_BLOCK *)malloc((unsigned)BfB0BlockSize(pDesc))) == NULL) {
 	(void)fprintf(stderr, "bfRingFlushWbufAndPutc: can't get memory\n");
 	return EOF;
     }
@@ -451,7 +445,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 	if ((flink = BfB0RingTail(pDesc)) > 0) {
 	    stat = bfRead(pDesc, pBuf, flink);
 	    if (stat != OK) {
-		(void)GenFree((char *)pBuf);
+		(void)free((char *)pBuf);
 		return EOF;
 	    }
 	    if (pBuf->lastByte >= BfB0BlockSize(pDesc)-1) {
@@ -462,7 +456,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 	else {
 	    flink = bfAcquire(pDesc, pBuf);
 	    if (flink == ERROR) {
-		(void)GenFree((char *)pBuf);
+		(void)free((char *)pBuf);
 		return EOF;
 	    }
 	}
@@ -491,7 +485,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 	        if ((flink = BfB0RingHead(pDesc)) > 0)
 		    readFlag = 1;
 		else {
-		    GenFree((char *)pBuf);
+		    free((char *)pBuf);
 		    return EOF;		/* no new block available */
 		}
 	    }
@@ -499,7 +493,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 	if (readFlag) {		/* only have flink; get the actual block */
 	    stat = bfRead(pDesc, pBuf, flink);
 	    if (stat != OK) {
-		GenFree((char *)pBuf);
+		free((char *)pBuf);
 		return EOF;
 	    }
 	    pBuf->firstByte = 0;
@@ -536,10 +530,10 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 
 	stat = bfWrite(pDesc, pDesc->pWriteBuf, pDesc->writeBlock);
 	if (stat != OK) {
-	    GenFree((char *)pBuf);
+	    free((char *)pBuf);
 	    return EOF;
 	}
-	GenFree((char *)pDesc->pWriteBuf);
+	free((char *)pDesc->pWriteBuf);
     }
 
 /*----------------------------------------------------------------------------
@@ -611,7 +605,7 @@ BF_DESC *pDesc;		/* IO pointer to ring file descriptor */
 *	BF_BLKNUM blockNum;	block number of acquired block
 *
 *	pDesc = bfOpen("myFile", O_RDWR, BF_TYPE_UNDEF);
-*	pBuf = (BF_BLOCK *)GenMalloc(BfB0BlockSize(pDesc));
+*	pBuf = (BF_BLOCK *)malloc(BfB0BlockSize(pDesc));
 *	blockNum = bfAcquire(pDesc, pBuf);
 *	pBuf->firstByte = pBuf->lastByte + 1;
 *	for (i=0; i<nBytes; i++)
@@ -744,9 +738,9 @@ BF_DESC	**ppDesc;	/* IO pointer to pointer to descriptor */
 	}
     }
     if (pDesc->pWriteBuf != NULL)
-	GenFree((char *)pDesc->pWriteBuf);
+	free((char *)pDesc->pWriteBuf);
     if (pDesc->pReadBuf != NULL)
-	GenFree((char *)pDesc->pReadBuf);
+	free((char *)pDesc->pReadBuf);
 
 /*----------------------------------------------------------------------------
 *    next, position file at beginning and write block0
@@ -901,7 +895,7 @@ BF_BLKNUM maxBlocks;	/* I size limit in blocks; must be <= BF_MAX_BLOCKS */
 	if (retStat == OK && nBlocks > 1) {
 	    BF_BLOCK *pBuf;
 
-	    pBuf = (BF_BLOCK *)GenMalloc(blockSize);
+	    pBuf = (BF_BLOCK *)malloc(blockSize);
 	    if (pBuf == NULL) {
 		retStat = ERROR;
 		(void)fprintf(stderr,
@@ -918,7 +912,7 @@ BF_BLKNUM maxBlocks;	/* I size limit in blocks; must be <= BF_MAX_BLOCKS */
 			perror("bfCreate: error writing free block list");
 			break;
 		    }
-		GenFree((char *)pBuf);
+		free((char *)pBuf);
 		}
 	    }
 	}
@@ -954,7 +948,7 @@ BF_BLKNUM blockNum;	/* I block number */
     int		retStat=OK;	/* return status to caller */
     char	*pBuf;		/* buffer pointer */
 
-    if ((pBuf = (char *)GenMalloc((unsigned)BfB0BlockSize(pBfDesc))) == NULL) {
+    if ((pBuf = (char *)malloc((unsigned)BfB0BlockSize(pBfDesc))) == NULL) {
 	(void)printf("bfDumpHex: can't malloc buffer\n");
 	retStat = ERROR;
     }
@@ -987,7 +981,7 @@ BF_BLKNUM blockNum;	/* I block number */
 	}
     }
     if (pBuf != NULL)
-	(void)GenFree(pBuf);
+	(void)free(pBuf);
 
     return retStat;
 }
@@ -1016,7 +1010,7 @@ BF_BLKNUM blockNum;	/* I block number */
     int		retStat=OK;	/* return status to caller */
     char	*pBuf;		/* buffer pointer */
 
-    if ((pBuf = (char *)GenMalloc((unsigned)BfB0BlockSize(pBfDesc))) == NULL) {
+    if ((pBuf = (char *)malloc((unsigned)BfB0BlockSize(pBfDesc))) == NULL) {
 	(void)printf("bfDumpHex: can't malloc buffer\n");
 	retStat = ERROR;
     }
@@ -1051,7 +1045,7 @@ BF_BLKNUM blockNum;	/* I block number */
 	}
     }
     if (pBuf != NULL)
-	(void)GenFree(pBuf);
+	(void)free(pBuf);
 
     return retStat;
 }

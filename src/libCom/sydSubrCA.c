@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)sydSubrCA.c	1.8 8/24/92
  *	Author:	Roger A. Cole
  *	Date:	06-12-91
  *
@@ -39,12 +39,12 @@
  *			after ca_search; handle disconCount and needGrCount
  *			in sampleSetSpec; move copyGr and copyVal into
  *			sydSubr.c
+ *  .08 09-14-92 rac	discontinue use of special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	sydSubrCA.c - acquire synchronous samples from Channel Access
@@ -86,12 +86,12 @@ void	*pHandle;	/* I NULL; someday might implement a callback
 
     assert(ppSspec != NULL);
 
-    if ((*ppSspec = (SYD_SPEC *)GenMalloc(sizeof(SYD_SPEC))) == NULL)
+    if ((*ppSspec = (SYD_SPEC *)malloc(sizeof(SYD_SPEC))) == NULL)
 	return S_syd_noMem;
     (*ppSspec)->pFunc = sydCAFunc;
     (*ppSspec)->type = SYD_TY_CA;
     if ((stat = sydCAFunc(*ppSspec, NULL, SYD_FC_INIT, pHandle)) != S_syd_OK){
-	GenFree((char *)*ppSspec);
+	free((char *)*ppSspec);
 	return stat;
     }
     (*ppSspec)->nInBufs = SYD_CHAN_MAX_IN;
@@ -163,9 +163,9 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 *    If searches are to be asynchronous, the connection handler is allowed
 *    to do the required connection processing.
 *----------------------------------------------------------------------------*/
-	pSChan->dbrType = TYPENOTCONN;
+	pSChan->dbfType = pSChan->dbrType = TYPENOTCONN;
 	pSspec->disconCount++;
-	pSChan->elCount = 0;
+	pSChan->elCount = 1;
 	pSChan->evid = NULL;
 	pSChan->gotGr = 0;
 	pSspec->needGrCount++;

@@ -28,18 +28,21 @@
  *  .00 12-04-90 rac	initial version
  *  .01 06-18-91 rac	installed in SCCS
  *  .02 06-19-91 rac	replace <fields.h> with <alarm.h>
- *  .03 08-14-91 rac	jjj
+ *  .03 08-14-91 rac	
  *  .04 02-27-92 rac	do ts rounding here instead of sydSubr.c
  *  .05 08-18-92 rac	add SYD_FC_STOP function code
+ *  .06 09-09-92 rac	allow reading text values such as `no data'; look at
+ *			the _end_ of the file to do name searches; handle
+ *			channels which are missing and/or disconnected;
+ *			discontinue use of special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
-* TITLE	sydSubr.c - acquire synchronous samples from AR `sample set' files
+* TITLE	sydSubrSSF.c - acquire synchronous samples from AR `sample set' files
 *
 * DESCRIPTION
 *	
@@ -107,6 +110,10 @@ static long posKeyFwd();
 static long posKeyRev();
 static long posPos();
 
+/*+/internal******************************************************************
+* NAME	posBOF - position file at the beginning
+*
+*-*/
 static long
 posBOF(pStream)
 FILE	*pStream;
@@ -117,7 +124,10 @@ FILE	*pStream;
     }
     return ftell(pStream);
 }
-
+/*+/internal******************************************************************
+* NAME	posEOF - position file at the end
+*
+*-*/
 static long
 posEOF(pStream)
 FILE	*pStream;
@@ -128,7 +138,14 @@ FILE	*pStream;
     }
     return ftell(pStream);
 }
-
+/*+/internal******************************************************************
+* NAME	posKeyFwd - search forward for a string
+*
+* RETURNS
+*	position of key (its first character), or
+*	-1 if search fails
+*
+*-*/
 static long
 posKeyFwd(key, pStream)
 char	*key;
@@ -186,13 +203,19 @@ FILE	*pStream;
     }
     return pos;
 }
-
+/*+/internal******************************************************************
+* NAME	posKeyRev - search backward for a string
+*
+* RETURNS
+*	position of key (its first character), or
+*	-1 if search fails
+*
+*-*/
 static long
 posKeyRev(key, pStream, lastPos)
 char	*key;
 FILE	*pStream;
-long	lastPos;	/* I position to start search if reverse; -1
-				says to start at EOF */
+long	lastPos;	/* I position to start search; -1 for EOF */
 {
     int		i, lastChar;
     int		c;
@@ -241,7 +264,10 @@ long	lastPos;	/* I position to start search if reverse; -1
 	perror("posKeyRev: ftell error");
     return pos;
 }
-
+/*+/internal******************************************************************
+* NAME	posPos - set file to desired position
+*
+*-*/
 static long
 posPos(pStream, pos)
 FILE	*pStream;
@@ -254,6 +280,10 @@ long	pos;
     return ftell(pStream);
 }
 
+/*+/subr**********************************************************************
+* NAME	sydOpenSSF
+*
+*-*/
 long
 sydOpenSSF(ppSspec, filePath)
 SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
@@ -263,12 +293,12 @@ char	*filePath;	/* I path name for `sample set' archive file */
 
     assert(ppSspec != NULL);
 
-    if ((*ppSspec = (SYD_SPEC *)GenMalloc(sizeof(SYD_SPEC))) == NULL)
+    if ((*ppSspec = (SYD_SPEC *)malloc(sizeof(SYD_SPEC))) == NULL)
 	return S_syd_noMem;
     (*ppSspec)->pFunc = sydSSFFunc;
     (*ppSspec)->type = SYD_TY_SSF;
     if ((stat = sydSSFFunc(*ppSspec, NULL,SYD_FC_INIT,filePath)) != S_syd_OK){
-	GenFree((char *)*ppSspec);
+	free((char *)*ppSspec);
 	*ppSspec = NULL;
 	return stat;
     }
@@ -298,6 +328,8 @@ char	*filePath;	/* I path name for `sample set' archive file */
 * o	doesn't do anything (or even detect) overwriting un-sampled
 *	buffers (for SYD_FC_READ)
 * o	needs a "get graphics information" function and function code
+* o	if a channel wasn't connected when the last snapshot in the file
+*	was written, its elCount is assumed to be 1
 *
 * SEE ALSO
 *
@@ -339,16 +371,15 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	pSspec->pHandle = (void *)ssFile;
     }
     else if (funcCode ==				SYD_FC_OPEN) {
-	(void)posBOF(ssFile);
-	if ((pos = posKeyFwd("%endData%", ssFile)) < 0) {
-	    (void)printf("couldn't find %%endData%%\n");
+	if ((pos = posKeyRev("%endHeader%", ssFile, -1L)) < 0) {
+	    (void)printf("couldn't find %%endHeader%%\n");
 	    (void)posBOF(ssFile);
 	    return S_syd_chanNotFound;
 	}
 	strcpy(chanName, "\n");
 	strcat(chanName, pSChan->name);
 	strcat(chanName, " ");
-	if ((pos = posKeyRev(chanName, ssFile, pos)) < 0)
+	if ((pos = posKeyFwd(chanName, ssFile)) < 0)
 		return S_syd_chanNotFound;
 	assert(sizeof(record) == 120);
 	fgetc(ssFile);		/* skip over the \n */
@@ -364,21 +395,29 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	if (nextAlphField(&pRecord, &pField, &delim) <= 1)
 	    assertAlways(0);
 	dbf_text_to_type(pField, type);
-	assert(type >= 0);
-	pSChan->dbfType = type;
-	pSChan->dbrType = dbf_type_to_DBR_TIME(type);
-	pSChan->dbrGrType = dbf_type_to_DBR_GR(type);
-	stat = sscanf(pRecord, "%*d %*d %d", &elCount);
-	assert(stat == 1);
-	pSChan->elCount = elCount;
-	pSChan->sync = SYD_SY_NONF;	/* force channel to be sync */
+	if (type >= 0) {
+	    pSChan->dbfType = type;
+	    pSChan->dbrType = dbf_type_to_DBR_TIME(type);
+	    pSChan->dbrGrType = dbf_type_to_DBR_GR(type);
+	    stat = sscanf(pRecord, "%*d %*d %d", &elCount);
+	    assert(stat == 1);
+	    pSChan->elCount = elCount;
+	}
+	else {
+	    pSChan->dbfType = TYPENOTCONN;
+	    pSChan->dbrType = TYPENOTCONN;
+	    pSChan->dbrGrType = TYPENOTCONN;
+	    pSChan->elCount = 1;
+	}
 	sydSSFFuncGetGR(pSspec, pSChan);
+	pSChan->sync = SYD_SY_NONF;	/* force channel to be sync */
 	(void)posBOF(ssFile);
     }
     else if (funcCode ==				SYD_FC_READ) {
 	TS_STAMP timeStamp;
-	enum sydBStatus bufStat;
-	int	bufNum, oldBufNum;
+	enum sydBStatus bufStat, newStat;
+	int	bufNum, oldBufNum, first=1;
+	char	typeText[80];
 
 /*-----------------------------------------------------------------------------
 *    find the next line with SAMPLE: and get the time stamp.  When done:
@@ -386,12 +425,15 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 *		SYD_B_RESTART	this sample starts a new "run" of data
 *		SYD_B_FULL	this is an ordinary sample
 *		SYD_B_EOF	end of file
+*		SYD_B_MISSING	no value for this channel i nthis sample
 *    o  the file will be positioned following the %endHeader% line
 *    o  if time stamp rounding has been requested, it will be done
 *----------------------------------------------------------------------------*/
-	bufStat = sydSSFFuncSeekSample(ssFile, &timeStamp);
-	if (pSspec->roundNsec > 0)
-	    sydTsRound(&timeStamp, pSspec->roundNsec);
+	while (1) {
+	    newStat = SYD_B_EMPTY;
+	    bufStat = sydSSFFuncSeekSample(ssFile, &timeStamp);
+	    if (pSspec->roundNsec > 0)
+		sydTsRound(&timeStamp, pSspec->roundNsec);
 
 /*-----------------------------------------------------------------------------
 *    now, read the actual data.  This is done by processing all the data
@@ -403,36 +445,53 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 *    o  all channels with data will have the data in the buffer
 *    o  all channels will have .lastInBuf updated
 *----------------------------------------------------------------------------*/
-	pSChan = pSspec->pChanHead;
-	oldBufNum = pSChan->lastInBuf;
-	bufNum = NEXT_INBUF(pSChan, oldBufNum);
-	while (pSChan != NULL) {
-	    if (bufStat != SYD_B_EOF)
-		pSChan->inStatus[bufNum] = SYD_B_MISSING;
-	    else
-		pSChan->inStatus[bufNum] = bufStat;
-	    pSChan->pInBuf[bufNum]->tfltval.stamp = timeStamp;
-	    pSChan->lastInBuf = bufNum;
-	    if (pSChan->firstInBuf < 0)
-	        pSChan->firstInBuf = bufNum;
-	    pSChan = pSChan->pNext;
-	}
-	if (bufStat == SYD_B_EOF)
-	    return S_syd_EOF;
-	while (1) {
-	    stat = fscanf(ssFile, "%s", chanName);
-	    assert(stat == 1);
-	    if ((pSChan = sydChanFind(pSspec, chanName)) != NULL) {
-		(void)fscanf(ssFile, "%*s");	/* skip DBF_xxx */
-		stat = sydSSFFuncReadData(pSChan, ssFile, 
-						bufStat, bufNum, oldBufNum);
+	    pSChan = pSspec->pChanHead;
+	    if (first) {
+		oldBufNum = pSChan->lastInBuf;
+		bufNum = NEXT_INBUF(pSChan, oldBufNum);
+		first = 0;
 	    }
-	    else if (strcmp(chanName, "%endData%") == 0)
+	    while (pSChan != NULL) {
+		if (bufStat != SYD_B_EOF)
+		    pSChan->inStatus[bufNum] = SYD_B_MISSING;
+		else
+		    pSChan->inStatus[bufNum] = bufStat;
+		pSChan->pInBuf[bufNum]->tfltval.stamp = timeStamp;
+		pSChan->lastInBuf = bufNum;
+		if (pSChan->firstInBuf < 0)
+		    pSChan->firstInBuf = bufNum;
+		pSChan = pSChan->pNext;
+	    }
+	    if (bufStat == SYD_B_EOF)
+		return S_syd_EOF;
+	    while (1) {
+		stat = fscanf(ssFile, "%s", chanName);
+		assert(stat == 1);
+		if ((pSChan = sydChanFind(pSspec, chanName)) != NULL) {
+		    (void)fscanf(ssFile, "%s", typeText);
+		    dbf_text_to_type(typeText, type);
+		    if (pSChan->dbfType == TYPENOTCONN && type >= 0) {
+			pSChan->dbfType = type;
+			pSChan->dbrType = dbf_type_to_DBR_TIME(type);
+			pSChan->dbrGrType = dbf_type_to_DBR_GR(type);
+			sydSSFFuncGetGR(pSspec, pSChan);
+		    }
+		    stat = sydSSFFuncReadData(pSChan, ssFile, 
+					bufStat, bufNum, oldBufNum, type);
+		    if (pSChan->inStatus[bufNum] != SYD_B_MISSING &&
+					newStat == SYD_B_EMPTY) {
+			newStat = pSChan->inStatus[bufNum];
+		    }
+		}
+		else if (strcmp(chanName, "%endData%") == 0)
+		    break;
+		else {
+		    while ((delim = fgetc(ssFile)) != EOF && delim != '\n')
+			;	/* keep skipping until end of line */
+		}
+	    }
+	    if (newStat != SYD_B_EMPTY)
 		break;
-	    else {
-		while ((delim = fgetc(ssFile)) != EOF && delim != '\n')
-		    ;	/* keep skipping until end of line */
-	    }
 	}
     }
     else if (funcCode ==				SYD_FC_STOP) {
@@ -547,11 +606,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	(void)fprintf((FILE *)pArg, "data from %s through %s\n",
 	       tsStampToText(&oldestStamp, TS_TEXT_MMDDYY, oldestStampText),
                tsStampToText(&newestStamp, TS_TEXT_MMDDYY, newestStampText) );
-	if (posBOF(ssFile) < 0) {
-	    (void)fprintf((FILE *)pArg, "error positioning file\n");
-	    return S_syd_ERROR;
-	}
-	if (posKeyFwd("%endHeader%", ssFile) < 0) {
+	if (posKeyRev("%endHeader%", ssFile, -1L) < 0) {
 	    (void)fprintf((FILE *)pArg,
 				"error locating %%endHeader%% in file\n");
 	    return S_syd_ERROR;
@@ -606,11 +661,25 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
     return retStat;
 }
 
-long
-sydSSFFuncReadData(pSChan, ssFile, bufStat, bufNum, oldBufNum)
+/*+/internal******************************************************************
+* NAME	sydSSFFuncReadData
+*
+* DESCRIPTION
+*	Read data from the file into the sync set.  An entire snapshot is
+*	read.  For each channel in the snapshot, the data is stored in the
+*	sync set only if the channel is in the set.
+*
+* BUGS
+* o	if a channel has a smaller elCount in the file than in the sync set,
+*	then the `extra' values in the sync set will be garbage
+*
+*-*/
+static long
+sydSSFFuncReadData(pSChan, ssFile, bufStat, bufNum, oldBufNum, type)
 SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
 FILE	*ssFile;
 int	bufStat, bufNum, oldBufNum;
+chtype	type;
 {
     long	stat;
     int		alStat, alSev, elCount;
@@ -628,57 +697,92 @@ int	bufStat, bufNum, oldBufNum;
 /*-----------------------------------------------------------------------------
 *    now get the actual data
 *----------------------------------------------------------------------------*/
-    if (pSChan->dbrType == DBR_TIME_FLOAT) {
-	float	*pFl;
+    if (pSChan->dbrType == TYPENOTCONN || type == TYPENOTCONN) {
+	stat = fscanf(ssFile, "%*s");
+	bufStat = SYD_B_MISSING;
+    }
+    else if (pSChan->dbrType == DBR_TIME_FLOAT) {
+	float	*pFl, val;
 	pFl = &pSChan->pInBuf[bufNum]->tfltval.value;
 	for (i=0; i<elCount; i++) {
-	    stat = fscanf(ssFile, "%f", pFl++);
-	    assert(stat == 1);
+	    stat = fscanf(ssFile, "%f", &val);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
+	    else if (i < pSChan->elCount)
+		*pFl++ = val;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_SHORT) {
-	short	*pSh;
+	short	*pSh, val;
 	pSh = &pSChan->pInBuf[bufNum]->tshrtval.value;
 	for (i=0; i<elCount; i++) {
-	    stat = fscanf(ssFile, "%hd", pSh++);
-	    assert(stat == 1);
+	    stat = fscanf(ssFile, "%hd", &val);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
+	    else if (i < pSChan->elCount)
+		*pSh++ = val;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_DOUBLE) {
-	double	*pDbl;
+	double	*pDbl, val;
 	pDbl = &pSChan->pInBuf[bufNum]->tdblval.value;
 	for (i=0; i<elCount; i++) {
-	    stat = fscanf(ssFile, "%lf", pDbl++);
-	    assert(stat == 1);
+	    stat = fscanf(ssFile, "%lf", &val);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
+	    else if (i < pSChan->elCount)
+		*pDbl++ = val;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_LONG) {
-	long	*pL;
+	long	*pL, val;
 	pL = &pSChan->pInBuf[bufNum]->tlngval.value;
 	for (i=0; i<elCount; i++) {
-	    stat = fscanf(ssFile, "%ld", pL++);
-	    assert(stat == 1);
+	    stat = fscanf(ssFile, "%ld", &val);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
+	    else if (i < pSChan->elCount)
+		*pL++ = val;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_STRING) {
-	char	*pC;
+	char	*pC, val[db_strval_dim];
 	int	nChar;
 	pC = pSChan->pInBuf[bufNum]->tstrval.value;
 	for (i=0; i<elCount; i++) {
 	    stat = fscanf(ssFile, "%d", &nChar);
-	    assert(stat == 1);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
 	    assert(nChar > 0 && nChar < db_strval_dim);
-	    if (fgets(pC, nChar, ssFile) == NULL)
+	    if (fgets(val, nChar, ssFile) == NULL)
 		assertAlways(0);
-	    pC += db_strval_dim;
+	    if (i < pSChan->elCount) {
+		strcpy(pC, val);
+		pC += db_strval_dim;
+	    }
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_CHAR) {
-	unsigned char	*pC;
+	unsigned char	*pC, val;
 	pC = &pSChan->pInBuf[bufNum]->tchrval.value;
 	for (i=0; i<elCount; i++) {
-	    stat = fscanf(ssFile, "%c", pC++);
-	    assert(stat == 1);
+	    stat = fscanf(ssFile, "%c", &val);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
+	    else if (i < pSChan->elCount)
+		*pC++ = val;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_ENUM) {
@@ -688,7 +792,10 @@ int	bufStat, bufNum, oldBufNum;
 	pSh = &pSChan->pInBuf[bufNum]->tenmval.value;
 	for (i=0; i<elCount; i++) {
 	    stat = fscanf(ssFile, "%s", state);
-	    assert(stat == 1);
+	    if (stat != 1) {
+		bufStat = SYD_B_MISSING;
+		break;
+	    }
 	    assert(strlen(state) < db_state_text_dim);
 	    iState = 0;
 	    while (1) {
@@ -702,15 +809,19 @@ int	bufStat, bufNum, oldBufNum;
 		iState++;
 		assert(iState < db_state_dim);
 	    }
-	    *pSh++ = iState;
+	    if (i < pSChan->elCount)
+		*pSh++ = iState;
 	}
     }
 /*-----------------------------------------------------------------------------
 *    set the buffer status.  If the previous record had a status of MISSING,
 *    then the buffer status will be SYD_B_RESTART; otherwise, the caller's
-*    status will be used.
+*    status will be used.  (Unless, of course, this routine discovered that
+*    the status needs to be something else.)
 *----------------------------------------------------------------------------*/
-    if (oldBufNum >= 0 && pSChan->inStatus[oldBufNum] == SYD_B_MISSING)
+    if (bufStat == SYD_B_MISSING)
+	pSChan->inStatus[bufNum] = bufStat;
+    else if (oldBufNum >= 0 && pSChan->inStatus[oldBufNum] == SYD_B_MISSING)
 	pSChan->inStatus[bufNum] = SYD_B_RESTART;
     else
 	pSChan->inStatus[bufNum] = bufStat;
@@ -718,6 +829,10 @@ int	bufStat, bufNum, oldBufNum;
     return S_syd_OK;
 }
 
+/*+/internal******************************************************************
+* NAME	sydSSFFuncGetGR - simulate getting graphics information
+*
+*-*/
 static long
 sydSSFFuncGetGR(pSspec, pSChan)
 SYD_SPEC *pSspec;	/* pointer to syncSet specification */
@@ -863,7 +978,21 @@ SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
     return S_syd_OK;
 }
 
-long
+/*+/internal******************************************************************
+* NAME	sydSSFFuncSeekStamp - find a `SAMPLE: at' line
+*
+* DESCRIPTION
+*	Find a `SAMPLE: at' line and get the time stamp from it.
+*
+*	If the search is forward, the file is left positioned following
+*	the stamp.  If backward, the position is at the beginning of the
+*	line.
+*
+* RETURNS
+*	position of the line
+*
+*-*/
+static long
 sydSSFFuncSeekStamp(ssFile, pStamp, revFlag, pos)
 FILE	*ssFile;
 TS_STAMP *pStamp;
@@ -905,7 +1034,20 @@ long	pos;		/* I position to start search if reverse; -1
     return pos;
 }
 
-long
+/*+/internal******************************************************************
+* NAME	sydSSFFuncSeekSample - find the next sample
+*
+* DESCRIPTION
+*	Finds the next `SAMPLE: at' line, gets the time stamp for the
+*	sample, and gets the `status' for the snapshot.  The file is
+*	positioned following the %endHeader%, ready for reading the data.
+*
+* RETURNS
+*	SYD_B_RESTART if `initial' was specified on the `SAMPLE: at' line, or
+*	SYD_B_FULL
+*
+*-*/
+static long
 sydSSFFuncSeekSample(ssFile, pStamp)
 FILE	*ssFile;
 TS_STAMP *pStamp;

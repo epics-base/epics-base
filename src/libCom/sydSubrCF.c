@@ -25,18 +25,18 @@
  *
  * Modification Log:
  * -----------------
- * .00	12-04-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
- * .03	08-06-91	rac	allow specifying file name
- * .04	09-11-91	rac	finish allowing user specified name
- * .05	02-27-92	rac	do ts rounding here instead of sydSubr.c
+ *  .00 12-04-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 06-19-91 rac	replace <fields.h> with <alarm.h>
+ *  .03 08-06-91 rac	allow specifying file name
+ *  .04 09-11-91 rac	finish allowing user specified name
+ *  .05 02-27-92 rac	do ts rounding here instead of sydSubr.c
+ *  .06 09-14-92 rac	discontinue use of special malloc routines
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	sydSubrCF.c - acquire synchronous samples from `by channel' AR file
@@ -101,12 +101,12 @@ char	*filePath;	/* I path name for `by channel' archive file */
 
     assert(ppSspec != NULL);
 
-    if ((*ppSspec = (SYD_SPEC *)GenMalloc(sizeof(SYD_SPEC))) == NULL)
+    if ((*ppSspec = (SYD_SPEC *)malloc(sizeof(SYD_SPEC))) == NULL)
 	return S_syd_noMem;
     (*ppSspec)->pFunc = sydCFFunc;
     (*ppSspec)->type = SYD_TY_CF;
     if ((stat = sydCFFunc(*ppSspec, NULL, SYD_FC_INIT, filePath)) != S_syd_OK){
-	GenFree((char *)*ppSspec);
+	free((char *)*ppSspec);
 	*ppSspec = NULL;
 	return stat;
     }

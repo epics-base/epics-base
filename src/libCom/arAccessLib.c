@@ -31,11 +31,11 @@
  *			causes problems on Sun4; other minor fixes
  *  .04 04-04-92 rac	add arCFChanWrite_args; handle flags for begin
  *			and end of snapshot
+ *  .05 09-14-92 rac	remove use of special malloc and free routines
  *
  * make options
  *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
+ *      -DDEBUG         compile various debug code
  */
 /*+/mod***********************************************************************
 * TITLE	arAccessLib.c - AR access library for AR data set files
@@ -133,7 +133,7 @@ arCF_mallocCHAN_DESC()
 #ifdef DEBUG
     return (AR_CHAN_DESC *)arMalloc(sizeof(AR_CHAN_DESC), "AR_CHAN_DESC");
 #else
-    return (AR_CHAN_DESC *)GenMalloc(sizeof(AR_CHAN_DESC));
+    return (AR_CHAN_DESC *)malloc(sizeof(AR_CHAN_DESC));
 #endif
 }
 void
@@ -143,7 +143,7 @@ AR_CHAN_DESC *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_CHAN_DESC), "AR_CHAN_DESC");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 
@@ -153,7 +153,7 @@ arCF_mallocCF_DESC()
 #ifdef DEBUG
     return (AR_CF_DESC *)arMalloc(sizeof(AR_CF_DESC), "AR_CF_DESC");
 #else
-    return (AR_CF_DESC *)GenMalloc(sizeof(AR_CF_DESC));
+    return (AR_CF_DESC *)malloc(sizeof(AR_CF_DESC));
 #endif
 }
 void
@@ -163,7 +163,7 @@ AR_CF_DESC *ptr;
 #ifdef DEBUG
     arFree(ptr, sizeof(AR_CF_DESC), "AR_CF_DESC");
 #else
-    GenFree(ptr);
+    free(ptr);
 #endif
 }
 
@@ -2785,7 +2785,6 @@ AR_CF_DESC *pArCfDesc;	/* I ptr to channel file descriptor */
 	    pArCfDesc->pMIFree = pMIBuf;
 	    pArCfDesc->MIFree_hdrNum = ArB0MIFree_hdrNum(pArCfDesc);
 	}
-	GenBufCheck(pMIBuf);
 	blockNum = pMIBuf->bfInfo.flink;	/* next MI block */
     }
     return OK;

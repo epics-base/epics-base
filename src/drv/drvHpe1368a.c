@@ -30,6 +30,7 @@
  *      Modification Log:
  *      -----------------
  *	.01 071792 joh	Added model name registration
+ *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
  *
  */
 
@@ -91,7 +92,7 @@ hpe1368a_init()
                 return OK;
         }
 
-        hpe1368aDriverId = vxiUniqueDriverID();
+        hpe1368aDriverId = epvxiUniqueDriverID();
 
         {
                 epvxiDeviceSearchPattern  dsp;
@@ -171,7 +172,10 @@ unsigned la;
                        __FILE__,
                        model);
         }
-
+	r0 = epvxiRegisterMakeName(VXIMAKE(pcsr), "Hewlett-Packard");
+	if(r0<0){
+		logMsg( "%s: failed to register make\n", __FILE__);
+	}
 }
 
 

@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.3  1999/04/30 15:24:53  jhill
+ * fixed improper container index bug
+ *
  * Revision 1.2  1997/04/23 17:13:03  jhill
  * fixed export of symbols from WIN32 DLL
  *
@@ -26,12 +29,11 @@
 class epicsShareClass gddArray : public gdd
 {
 public:
-	gddArray(void) { }
-	gddArray(gddArray* ad) : gdd(ad) { }
-	gddArray(int app) : gdd(app) { }
-	gddArray(int app, aitEnum prim) : gdd(app,prim) { }
-	gddArray(int app, aitEnum prim, int dimen, aitUint32* size_array):
-		gdd(app,prim,dimen,size_array) { }
+	gddArray(void);
+	gddArray(gddArray* ad);
+	gddArray(int app);
+	gddArray(int app, aitEnum prim);
+	gddArray(int app, aitEnum prim, int dimen, aitUint32* size_array);
 	gddArray(int app, aitEnum prim, int dimen, ...);
 
 	// view dimension size info as a bounding box instead of first/count
@@ -43,17 +45,17 @@ public:
 	void dump(void) const;
 	void test(void);
 
-	gddArray& operator=(aitFloat64* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitFloat32* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitUint32* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitInt32* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitUint16* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitInt16* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitUint8* v) { *((gdd*)this)=v; return *this; }
-	gddArray& operator=(aitInt8* v) { *((gdd*)this)=v; return *this; }
+	gddArray& operator=(aitFloat64* v);
+	gddArray& operator=(aitFloat32* v);
+	gddArray& operator=(aitUint32* v);
+	gddArray& operator=(aitInt32* v);
+	gddArray& operator=(aitUint16* v);
+	gddArray& operator=(aitInt16* v);
+	gddArray& operator=(aitUint8* v);
+	gddArray& operator=(aitInt8* v);
 
 protected:
-	~gddArray(void) { }
+	~gddArray(void);
 private:
 };
 

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.29  1999/08/05 22:19:34  jhill
+ * removed knowledge of class osiTime, and made ref/unref mf const
+ *
  * Revision 1.28  1999/05/11 00:31:34  jhill
  * removed redun gdd:
  *
@@ -599,5 +602,7 @@ private:
 #include "gddContainer.h"
 
 #include "gddI.h"
+#include "gddArrayI.h"
+#include "gddScalarI.h"
 
 #endif

@@ -1,14 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+* Operator of Los Alamos National Laboratory.
+* This file is distributed subject to a Software License Agreement found
+* in the file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*msi - macro sunstitutions and include */
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
- 
-(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-**********************************************************************/
  
 /*
  * Modification Log:

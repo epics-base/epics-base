@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/06/13 09:15:52  jhill
+ * connect proto changes
+ *
  * Revision 1.4  1997/04/10 19:33:54  jhill
  * API changes
  *
@@ -69,11 +72,11 @@ inline caServer * caServerI::operator -> ()
 //
 inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 {
-	uintId	id(idIn);
-	casRes	*pRes;
+    chronIntId      id (idIn);
+    casRes          *pRes;    
 
 	this->osiLock();
-	pRes = this->uintResTable<casRes>::lookup(id);
+    pRes = this->chronIntIdResTable<casRes>::lookup (id);
 	if (pRes) {
 		if (pRes->resourceType()!=type) {
 			pRes = NULL;
@@ -104,7 +107,7 @@ inline casChannelI *caServerI::resIdToChannel(const caResId &id)
 //
 inline void caServerI::installItem(casRes &res)
 {
-	this->uintResTable<casRes>::installItem(res);
+    this->chronIntIdResTable<casRes>::add(res);
 }
 
 //
@@ -112,7 +115,7 @@ inline void caServerI::installItem(casRes &res)
 //
 inline casRes *caServerI::removeItem(casRes &res)
 {
-	return this->uintResTable<casRes>::remove(res);
+	return this->chronIntIdResTable<casRes>::remove(res);
 }
 
 //

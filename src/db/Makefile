@@ -61,7 +61,6 @@ LIBSRCS += initHooks.c
 LIBSRCS += cvtBpt.c
 LIBSRCS += dbServiceIO.cpp
 LIBSRCS += dbChannelIO.cpp
-LIBSRCS += dbPutNotifyIO.cpp
 LIBSRCS += dbSubscriptionIO.cpp
 LIBSRCS += dbPutNotifyBlocker.cpp
 

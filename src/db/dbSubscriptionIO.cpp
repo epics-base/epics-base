@@ -18,10 +18,11 @@
 #include "limits.h"
 
 #include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "tsFreeList.h"
 
-#include "cadef.h"
 #include "cacIO.h"
+#include "db_access.h" // need to eliminate this
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
@@ -31,11 +32,17 @@
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
 epicsMutex dbSubscriptionIO::freeListMutex;
 
-dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, 
-    cacNotify &notifyIn, unsigned typeIn, unsigned long countIn ) :
-    cacNotifyIO ( notifyIn ), chan ( chanIO ), es ( 0 ), 
-        type ( typeIn ), count ( countIn )
+dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
+    dbAddr &addr, cacDataNotify &notifyIn, 
+    unsigned typeIn, unsigned long countIn, unsigned maskIn,
+    cacChannel::ioid * pId ) :
+    notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 
+        type ( typeIn ), count ( countIn ), id ( 0u )
 {
+    this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn, pId );
+    if ( ! this->es ) {
+        throw cacChannel::noMemory();
+    }
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()
@@ -48,17 +55,6 @@ dbSubscriptionIO::~dbSubscriptionIO ()
 void dbSubscriptionIO::destroy ()
 {
     delete this;
-}
-
-void dbSubscriptionIO::cancel ()
-{
-    this->chan.uninstallSubscription ( *this );
-    delete this;
-}
-
-cacChannelIO & dbSubscriptionIO::channelIO () const
-{
-    return this->chan;
 }
 
 void * dbSubscriptionIO::operator new ( size_t size )
@@ -77,24 +73,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /*
 	int /* eventsRemaining */, struct db_field_log *pfl )
 {
     dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
-    pIO->chan.callReadNotify ( pIO->type, pIO->count, pfl, pIO->notify() );
-}
-
-int dbSubscriptionIO::begin ( unsigned mask )
-{
-    if ( this->type > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-    if ( this->count > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-    this->es = this->chan.subscribe ( *this, mask );
-    if ( this->es ) {
-        return ECA_NORMAL;
-    }
-    else {
-        return ECA_ALLOCMEM;
-    }
+    pIO->chan.callReadNotify ( pIO->type, pIO->count, pfl, pIO->notify );
 }
 
 void dbSubscriptionIO::show ( unsigned level ) const
@@ -115,3 +94,10 @@ void dbSubscriptionIO::show ( unsigned level ) const
         }
     }
 }
+
+dbSubscriptionIO * dbSubscriptionIO::isSubscription () 
+{
+    return this;
+}
+
+

@@ -17,10 +17,11 @@
 
 #include "limits.h"
 
-#include "cadef.h"
 #include "cacIO.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
+#include "epicsEvent.h"
+#include "db_access.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
@@ -30,11 +31,13 @@
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 epicsMutex dbChannelIO::freeListMutex;
+unsigned dbChannelIO::nextIdForIO;
+
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :
-    cacChannelIO ( notify ), serviceIO ( serviceIO ), 
-    pBlocker ( 0 ), addr ( addrIn )
+    cacChannel ( notify ), serviceIO ( serviceIO ), 
+    addr ( addrIn )
 {
 }
 
@@ -45,101 +48,76 @@ void dbChannelIO::initiateConnect ()
 
 dbChannelIO::~dbChannelIO ()
 {
-    while ( dbSubscriptionIO *pIO = this->eventq.get () ) {
-        pIO->destroy ();
-    }
-
-    if ( this->pBlocker ) {
-        this->pBlocker->destroy ();
-    }
+    this->serviceIO.destroyAllIO ( *this );
 }
 
-int dbChannelIO::read ( unsigned type, unsigned long count, void *pValue )
+cacChannel::ioStatus dbChannelIO::read ( unsigned type, 
+     unsigned long count, cacDataNotify &notify, ioid * ) 
 {
-    if ( type > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-    if ( count > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-    int status = db_get_field ( &this->addr, static_cast <int> ( type ), 
-                    pValue, static_cast <int> ( count ), 0);
-    if ( status ) {
-        return ECA_GETFAIL;
-    }
-    else { 
-        return ECA_NORMAL;
-    }
+    this->serviceIO.callReadNotify ( this->addr, 
+        type, count, 0, *this, notify );
+    return iosSynch;
 }
 
-int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify ) 
-{
-    this->serviceIO.callReadNotify ( this->addr, type, count, 0, *this, notify );
-    notify.release ();
-    return ECA_NORMAL;
-}
-
-int dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue )
+void dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue )
 {
     int status;
     if ( count > LONG_MAX ) {
-        return ECA_BADCOUNT;
+        throw outOfBounds();
     }
     status = db_put_field ( &this->addr, type, pValue, static_cast <long> (count) );
     if ( status ) {
-        return ECA_PUTFAIL;
-    }
-    else {
-        return ECA_NORMAL;
+        throw -1; 
     }
 }
 
-int dbChannelIO::write ( unsigned type, unsigned long count, 
-                        const void *pValue, cacNotify &notify ) 
+cacChannel::ioStatus dbChannelIO::write ( unsigned type, unsigned long count, 
+                        const void *pValue, cacNotify &notify, ioid *pId ) 
 {
     if ( count > LONG_MAX ) {
-        return ECA_BADCOUNT;
+        throw outOfBounds();
     }
 
-    if ( ! this->pBlocker ) {
-        dbAutoScanLock ( *this );
-        if ( ! this->pBlocker ) {
-            this->pBlocker = new dbPutNotifyBlocker ( *this );
-            if ( ! this->pBlocker ) {
-                return ECA_ALLOCMEM;
-            }
-        }
-    }
+    this->serviceIO.initiatePutNotify ( *this, this->addr, type, count, pValue, notify, pId );
 
-    return this->pBlocker->initiatePutNotify ( notify, 
-                        this->addr, type, count, pValue );
+    return iosAsynch;
 }
 
-int dbChannelIO::subscribe ( unsigned type, unsigned long count, 
-    unsigned mask, cacNotify &notify, cacNotifyIO *&pReturnIO ) 
+void dbChannelIO::putNotifyCompletion ( dbPutNotifyBlocker &blocker )
+{
+    this->serviceIO.putNotifyCompletion ( blocker );
+}
+
+void dbChannelIO::subscribe ( unsigned type, unsigned long count, 
+    unsigned mask, cacDataNotify &notify, ioid *pId ) 
 {   
-    int status;
-    dbSubscriptionIO *pIO = new dbSubscriptionIO ( *this, notify, type, count );
-    if ( pIO ) {
-        status = pIO->begin ( mask );
-        if ( status == ECA_NORMAL ) {
-            dbAutoScanLock locker ( *this );
-            this->eventq.add ( *pIO );
-            pReturnIO = pIO;
-        }
-        else {
-            pIO->destroy ();
-        }
+    if ( type > INT_MAX ) {
+        throw cacChannel::badType();
     }
-    else {
-        status = ECA_ALLOCMEM;
+    if ( count > INT_MAX ) {
+        throw cacChannel::outOfBounds();
     }
-    return status;
+
+    dbSubscriptionIO *pIO =
+        new dbSubscriptionIO ( this->serviceIO, *this, 
+            this->addr, notify, type, count, mask, pId );
+    if ( ! pIO ) {
+        throw noMemory();
+    }
+}
+
+void dbChannelIO::ioCancel ( const ioid & id )
+{
+    this->serviceIO.ioCancel ( *this, id );
+}
+
+void dbChannelIO::ioShow ( const ioid &id, unsigned level ) const
+{
+    this->serviceIO.ioShow ( id, level );
 }
 
 void dbChannelIO::show ( unsigned level ) const
 {
-    dbAutoScanLock locker ( *this );
     printf ("channel at %p attached to local database record %s\n", 
         static_cast <const void *> ( this ), this->addr.precord->name );
 
@@ -150,13 +128,9 @@ void dbChannelIO::show ( unsigned level ) const
     }
     if ( level > 1u ) {
         this->serviceIO.show ( level - 2u );
-        tsDLIterConstBD < dbSubscriptionIO > pItem = this->eventq.firstIter ();
-        while ( pItem.valid () ) {
-            pItem->show ( level - 2u );
-            pItem++;
-        }
-        if ( this->pBlocker ) {
-            this->pBlocker->show ( level - 2u );
-        }
+        this->serviceIO.showAllIO ( *this, level - 2u );
     }
 }
+
+
+

@@ -20,102 +20,145 @@
 #include "string.h"
 
 #include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "epicsTime.h"
 #include "tsFreeList.h"
 #include "errMdef.h"
 
-#include "cadef.h"
 #include "cacIO.h"
+#include "caerr.h" // this needs to be eliminated
+#include "db_access.h" // this needs to be eliminated
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
 #include "dbChannelIOIL.h"
 #include "dbNotifyBlockerIL.h"
-#include "dbPutNotifyIOIL.h"
 
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
 
-tsFreeList <dbPutNotifyBlocker> dbPutNotifyBlocker::freeList;
+tsFreeList < dbPutNotifyBlocker > dbPutNotifyBlocker::freeList;
 epicsMutex dbPutNotifyBlocker::freeListMutex;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
-    pPN (0), chan ( chanIn )
+    chan ( chanIn ), pNotify ( 0 )
+{
+    memset ( &this->pn, '\0', sizeof ( this->pn ) );
+}
+
+dbPutNotifyBlocker::~dbPutNotifyBlocker () 
 {
 }
 
-dbPutNotifyBlocker::~dbPutNotifyBlocker ()
+void dbPutNotifyBlocker::destroy ()
 {
-    if ( this->pPN ) {
-        this->pPN->destroy ();
+    delete this;
+}
+
+void dbPutNotifyBlocker::cancel ()
+{
+    if ( this->pn.paddr ) {
+        dbNotifyCancel ( &this->pn );
     }
+    memset ( &this->pn, '\0', sizeof ( this->pn ) );
+    this->pNotify = 0;
+    this->block.signal ();
 }
 
-void dbPutNotifyBlocker::uninstallPutNotifyIO ( dbPutNotifyIO &io )
+extern "C" void putNotifyCompletion ( putNotify *ppn )
 {
-    dbAutoScanLock ( this->chan );
-    if ( &io == this->pPN ) {
-        this->pPN = 0;
+    dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
+    if ( pBlocker->pNotify ) {
+        if ( pBlocker->pn.status ) {
+            if ( pBlocker->pn.status == S_db_Blocked ) {
+                pBlocker->pNotify->exception ( 
+                    ECA_PUTCBINPROG, "put notify blocked" );
+            }
+            else {
+                pBlocker->pNotify->exception ( 
+                    ECA_PUTFAIL,  "put notify unsuccessful");
+            }
+        }
+        else {
+            pBlocker->pNotify->completion ();
+        }
     }
+    else {
+        errlogPrintf ( "put notify completion pNotify = %p?\n", pBlocker->pNotify );
+    }
+    memset ( &pBlocker->pn, '\0', sizeof ( pBlocker->pn ) );
+    pBlocker->pNotify = 0;
+    pBlocker->block.signal ();
+    pBlocker->chan.putNotifyCompletion ( *pBlocker );
 }
 
-dbChannelIO & dbPutNotifyBlocker::channel () const
+void dbPutNotifyBlocker::completion ()
 {
-    return this->chan;
+    memset ( &this->pn, '\0', sizeof ( this->pn ) );
+    this->pNotify = 0;
+    this->block.signal ();
 }
 
-int dbPutNotifyBlocker::initiatePutNotify ( cacNotify &notify, 
+void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacNotify &notify, 
         struct dbAddr &addr, unsigned type, unsigned long count, 
         const void *pValue )
 {
-    dbPutNotifyIO *pIO = new dbPutNotifyIO ( notify, *this );
-    if ( ! pIO ) {
-        return ECA_ALLOCMEM;
-    }
+    int status;
 
     epicsTime begin;
     bool beginTimeInit = false;
     while ( true ) {
-        {
-            dbAutoScanLock ( this->chan );
-            if ( this->pPN == 0 ) {
-                this->pPN = pIO;
-                break;
-            }
+        if ( this->pNotify ) {
+            this->pNotify = &notify;
+            break;
         }
         if ( beginTimeInit ) {
             if ( epicsTime::getCurrent () - begin > 30.0 ) {
-                pIO->destroy ();
-                return ECA_PUTCBINPROG;
+                throw -1;
             }
         }
         else {
             begin = epicsTime::getCurrent ();
             beginTimeInit = true;
         }
-        this->block.wait ( 1.0 );
+        {
+            epicsAutoMutexRelease blocker ( mutex );
+            this->block.wait ( 1.0 );
+        }
     }
 
-    int status = pIO->initiate ( addr, type, count, pValue );
-    if ( status != ECA_NORMAL ) {
-        pIO->destroy ();
-        dbAutoScanLock ( this->chan );
-        this->pPN = 0;
+    if ( count > LONG_MAX ) {
+        throw cacChannel::outOfBounds();
     }
 
-    return status;
-}
-
-extern "C" void putNotifyCompletion ( putNotify *ppn )
-{
-    dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
-    {
-        pBlocker->pPN->completion ();
-        pBlocker->pPN->destroy ();
-        dbAutoScanLock ( pBlocker->chan );
-        pBlocker->pPN = 0;
+    if ( type > SHRT_MAX ) {
+        throw cacChannel::badType();
     }
-    pBlocker->block.signal ();
+
+    status = this->pn.dbrType = dbPutNotifyMapType ( 
+                &this->pn, static_cast <short> ( type ) );
+    if ( status ) {
+        memset ( &this->pn, '\0', sizeof ( this->pn ) );
+        this->pNotify = 0;
+        throw cacChannel::badType();
+    }
+
+    this->pn.pbuffer = const_cast < void * > ( pValue );
+    this->pn.nRequest = static_cast < unsigned > ( count );
+    this->pn.paddr = &addr;
+    this->pn.userCallback = putNotifyCompletion;
+    this->pn.usrPvt = this;
+
+    status = ::dbPutNotify ( &this->pn );
+    if ( status && status != S_db_Pending ) {
+        memset ( &this->pn, '\0', sizeof ( this->pn ) );
+        this->pNotify = 0;
+        {
+            epicsAutoMutexRelease blocker ( mutex );
+            notify.exception (
+                ECA_PUTFAIL, "dbPutNotify() returned failure" );
+        }
+    }
 }
 
 void dbPutNotifyBlocker::show ( unsigned level ) const
@@ -123,8 +166,6 @@ void dbPutNotifyBlocker::show ( unsigned level ) const
     printf ( "put notify blocker at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
-        printf ( "\tdbPutNotifyIO at %p\n", 
-            static_cast <void *> ( this->pPN ) );
         printf ( "\tdbChannelIO at %p\n", 
             static_cast <void *> ( &this->chan ) );
     }
@@ -133,5 +174,8 @@ void dbPutNotifyBlocker::show ( unsigned level ) const
     }
 }
 
-
+dbSubscriptionIO * dbPutNotifyBlocker::isSubscription () 
+{
+    return 0;
+}
 

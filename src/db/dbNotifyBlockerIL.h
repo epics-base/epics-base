@@ -15,11 +15,6 @@
  *	505 665 1831
  */
 
-inline void dbPutNotifyBlocker::destroy ()
-{
-    delete this;
-}
-
 inline void * dbPutNotifyBlocker::operator new ( size_t size )
 {
     epicsAutoMutex locker ( dbPutNotifyBlocker::freeListMutex );

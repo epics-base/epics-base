@@ -3,6 +3,8 @@ include $(TOP)/configure/CONFIG
 
 LIBCOM = $(TOP)/src/libCom
 
+USR_CXXFLAGS_hpux += -D_REENTRANT
+
 #epicsVersion is created by this Makefile
 INC += epicsVersion.h
 

@@ -48,7 +48,7 @@
  * .10	06-26-92        bg	Added level to compu_sm_io_report in drvCompuSm 
  *                              structure   
  * .11	06-29-92	joh	took file ptr arg out of io report
- * .12	08-06-92	joh	include file name change	
+ * .12	08-06-92	joh	merged compu sm include file
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -56,14 +56,15 @@
 #include <semLib.h>		/* library for semaphore support */
 #include <wdLib.h>
 #include <rngLib.h>		/* library for ring buffer support */
+#if 0
 #include <stdioLib.h>
+#endif
 
 /* drvCompuSm.c -  Driver Support Routines for CompuSm */
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<drvCompuSm.h>
 #include	 <steppermotor.h>
 #include	 <task_params.h>
 
@@ -93,6 +94,213 @@ static long init()
 
     return(0);
 }
+
+/* compumotor vme interface information */
+#define	MAX_COMPU_MOTORS	8		/********/
+
+#define RESP_SZ		16		/* card returns 16 chars - cmd & resp */
+#define RESPBUF_SZ	(RESP_SZ+1)	/* intr routine also passes motor no. */
+
+/*	Control Byte bit definitions for the Compumotor 1830	*/
+					/* bits 0 and 1 are not used */
+#define	CBEND	0x04			/* end of command string */
+#define CBLMR	0x08			/* last message byte read */
+#define CBCR	0x10			/* command ready in cm_idb */
+#define CBMA	0x20			/* message accepted from odb */
+#define CBEI	0x40			/* enable interrupts */
+#define CBBR	0x80			/* board reset */
+#define	SND_MORE	CBCR | CBEI		/* more chars to send */
+#define SND_LAST	CBEND | SND_MORE	/* last char being sent */
+#define	RD_MORE		CBMA | CBEI		/* more chars to read */
+#define RD_LAST		CBLMR | RD_MORE		/* last byte we need to read */
+
+/*	Status Byte bit definitions	*/
+#define SBIRDY	0x10			/* idb is ready */
+
+/*	Structure used for communication with a Compumotor 1830
+**	Motor Controller. The data buffer is repeated 64 times
+**	on even word addresses (0xXXXXXX1,0xXXXXX5...) and the
+**	control location is repeated 64 times on odd word 
+**	addresses (0xXXXXX3, 0xXXXXX7...). The registers must
+**	be read and written as bytes.
+*/
+struct compumotor {
+	char	cm_d1;		/* not accessable */
+	char	cm_idb;		/* input data buffer */
+	char	cm_d2;		/* not accessable */
+	char	cm_cb;		/* control byte */
+	char	cm_d3[0x100-4];	/* fill to next standard address */
+};
+
+
+/* This file includes defines for all compumotor 1830 controller 
+** commands. */
+
+#define SM_NULL		0x0	/* Null command */
+#define	SM_INT		0x1	/* Interrupt X */
+#define SM_WRT_STAT	0x8	/* Write X to the user defined status bits */
+#define	SM_SET_STAT	0x9	/* Set user defined status bit number X */ 
+#define	SM_CLR_STAT	0xa	/* Clear user defined status bit number X */
+#define	SM_SET_PROG	0xb	/* Set programmable output bit X */
+#define	SM_CLR_PROG	0xc	/* Clear programmable output bit X */
+#define	SM_WRT_PROG	0xd	/* Write X to the programmable output bits */
+#define	SM_DEF_X_TO_Y	0xf	/* Define bit X to indicate state Y */
+#define	SM_TOG_JOG	0x10	/* Disable/enable the JOG inputs */
+#define	SM_DEF_JOG	0x11	/* Define JOG input functions */
+#define SM_TOG_REM_PWR	0x12	/* Turn off/on remote power shutdown */
+#define	SM_TOG_REM_SHUT	0x13	/* Disable/enable the "remote shutdown" bit */
+#define	SM_SET_CW_MOTN	0x14	/* Set CW motion equal to +- */
+#define	SM_TOG_POS_MTN	0x18	/* Turn off/on post-move position maintenance */
+#define SM_TOG_STOP_STL	0x19	/* Turn off/on termination on stall detect */
+#define SM_REP_X_Y	0x20	/* Repeat the following X commands Y times */
+#define	SM_REP_TIL_CONT	0x21	/* Repeat the following X commands
+				   until a CONTINUE is received */
+#define SM_WAIT_CONT	0x28	/* Wait for a CONTINUE */
+#define SM_WAIT_MILLI	0x29	/* Wait X milliseconds */
+#define SM_WAIT_SECOND	0x2a	/* Wait X seconds */
+#define SM_WAIT_MINUTE	0x2b	/* Wait X minutes */
+#define SM_WAIT_TRIGGER	0x2c	/* Wait for trigger X to go active */
+#define SM_DEF_A_OP_POS	0x2e	/* Define the abs open-loop position as X */
+#define SM_DEF_A_CL_POS	0x2f	/* Define absolute closed-loop position */
+#define	SM_DEF_ABS_ZERO	0x30	/* Define the present position as the 
+				   absolute zero position */
+#define	SM_DEF_VEL_ACC	0x31	/* Define default velocity and acceleration */
+#define	SM_MOV_DEFAULT	0x32	/* Perform the default move (trapezoidal
+				   continuous) */
+#define SM_MOV_REL_POS	0x33	/* Go to relative position X at default
+				   velocity and acceleration */
+#define SM_MOV_ABS_POS	0x34	/* Go to absolute position X at default
+				   velocity and acceleration */
+#define	SM_MOV_REL_ENC	0x35	/* Go to relative encoder position X */
+#define SM_MOV_ABS_ENC	0x36	/* Go to absolute encoder position X */
+#define SM_DEF_OP_HOME	0x38	/* Define HOME location (open loop */
+#define SM_DEF_CL_HOME	0x38	/* Define HOME location (closed loop) */
+#define	SM_MOV_HOME_POS	0x39	/* Go HOME at the default velocity and
+				   acceleration */
+#define SM_MOV_HOME_ENC	0x3a	/* Go to encoder HOME at the default
+				   velocity and acceleration */
+#define	SM_DO_MOV_X	0x40	/* Perform move number X */
+#define	SM_DO_SEQ_X	0x41	/* Perform sequence buffer X */
+#define	SM_DO_VEL_STR	0x42	/* Perform the velocity streaming buffer */
+#define	SM_CONT		0x48	/* CONTINUE (perform next command) */
+#define	SM_OP_LOOP_MODE	0x50	/* Enter open loop indexer mode */
+#define	SM_VEL_DIS_MODE	0x51	/* Enter velocity-distance streaming mode */
+#define SM_VEL_TIM_MODE	0x52	/* Enter velocity-time streaming mode */
+#define	SM_STOP		0x70	/* STOP motion */
+#define SM_DSC_SEQ	0x71	/* Discontinue the sequence buffer */
+#define	SM_SSP_SEQ	0x72	/* Suspend the sequence buffer;
+				   wait for a CONTINUE to resume */
+#define	SM_DSC_SNGL	0x73	/* Discontinue any singular command 
+				   currently being performed */
+#define	SM_STOP_ON_TRG	0x74	/* STOP motion when trigger X goes active */
+#define	SM_DSC_SEQ_TRG	0x75	/* Discontinue the sequence buffer when
+				   trigger X goes active */
+#define SM_SSP_SEQ_TRG	0x76	/* Suspend sequence buffer when trigger
+				   X goes active */
+#define	SM_DSC_SNGL_TRG	0x77	/* Discontinue any singular command when
+				   trigger X goes active */
+#define	SM_KILL		0x78	/* Kill motion */
+#define	SM_KILL_SEQ	0x79	/* Kill the sequence buffer */
+#define	SM_KILL_SEQ_SNGL 0x7a	/* Kill current sequence singular command;
+				   wait for CONTINUE */	
+#define	SM_KILL_VEL_STR	0x7b	/* Kill the velocity streaming buffer */
+#define	SM_KILL_ON_TRG	0x7c	/* Kill motion when trigger X goes active */
+#define	SM_KILL_SEQ_TRG	0x7d	/* Kill the sequence buffer when trigger
+				   X goes active */
+#define	SM_KL_SQSNG_TRG	0x7e	/* Kill current sequence singular command
+				   when trigger X goes active; wait for
+				   a continue */
+#define	SM_KL_VLSTR_TRG	0x7f	/* Kill the velocity streaming buffer
+				   when trigger X goes active */
+#define	SM_GET_B_REL_POS 0x80	/* Request position relative to the
+				   beginning of the current move */
+#define	SM_GET_E_REL_POS 0x81	/* Request position relative to the
+				   end of the current move */
+#define	SM_GET_H_REL_POS 0x82	/* Request position relative to the home
+				   limit switch */
+#define	SM_GET_Z_REL_POS 0x83	/* Request position relative to the 
+				   absolute zero position */
+#define	SM_GET_CUR_DIR	0x84	/* Request current direction */
+#define	SM_GET_VEL	0x85	/* Request current velocity */
+#define	SM_GET_ACC	0x86	/* Request current acceleration */
+#define	SM_GET_MOV_STAT 0x88	/* Request current move status */
+#define SM_GET_LIM_STAT	0x89	/* Request state of the limit switches */
+#define	SM_GET_HOME_STAT 0x8a	/* Request state of the HOME switch */
+#define SM_GET_TRV_DIR	0x8b	/* Request direction of travel */
+#define	SM_GET_MOT_MOV	0x8c	/* Request whether motor is moving or not */
+#define	SM_GET_MOT_CONST 0x8d	/* Request whether motor is at constant,
+			  	   nonzero velocity or not */
+#define	SM_GET_MOT_ACC	0x8e	/* Request whether motor is or is not
+				   accelerating */
+#define	SM_GET_MOT_DEC	0x8f	/* Request whether motor is or is not
+				   decelerating */
+#define	SM_GET_MODE	0x90	/* Request present mode */
+#define	SM_GET_MV_PARM	0x91	/* Request move parameters for move number X */
+#define	SM_GET_SEQ_CMMD	0x92	/* request commands stored in the
+				   sequence buffer */
+#define	SM_GET_MVDEF_STAT 0x93	/* Request state of the move definitions */
+#define	SM_GET_TRG_STAT	0x94	/* Request state of trigger inputs */
+#define	SM_GET_JOG_STAT	0x95	/* Request state of JOG inputs */
+#define	SM_GET_Z_STAT	0x96	/* Request state of the Channel Z home input */
+#define	SM_GET_OUT_STAT	0x97	/* Request the state of the programmable
+				   output bits */
+#define	SM_GET_REL_ENC	0x98	/* Request relative encoder count */
+#define	SM_GET_REL_ERR	0x99	/* Request relative error from desired
+				   closed loop position */
+#define	SM_GET_ABS_ENC	0x9a	/* Request absolute encoder count */
+#define	SM_GET_SLIP_STAT 0x9b	/* Request slip detect status */
+#define	SM_GET_RATIO	0x9c	/* Request motor pulse to encoder pulse ratio */
+#define	SM_GET_RESOLTN	0x9d	/* Request motor resolution */
+#define	SM_GET_BACK_SIG	0x9e	/* Request backlash sigma (motor steps)*/
+#define	SM_GET_ALG	0x9f	/* Request position maintenance alg.
+				   const, and max velocity */
+#define	SM_INT_NXT_MOV	0xa0	/* Interrupt at start of next move */
+#define	SM_INT_ALL_MOV	0xa1	/* Interrupt at the start of every move */
+#define	SM_INT_NXT_NZ	0xa2	/* Interrupt at constant nonzero velocity
+				   of next move */
+#define SM_INT_ALL_NZ	0xa3	/* Interrupt at constant nonzero velocity
+				   of every move */
+#define	SM_INT_NXT_END	0xa4	/* Interrupt at next end of motion */
+#define	SM_INT_ALL_END	0xa5	/* Interrupt at every end of motion */
+#define	SM_INT_NXT_STL	0xa6	/* Interrupt on next stall detect */
+#define	SM_INT_ALL_STL	0xa7	/* Interrupt on every stall detect */
+#define	SM_INT_NXT_PLIM	0xa8	/* Interrupt the next time the motor 
+				   hits the positive limit */
+#define	SM_INT_ALL_PLIM	0xa9	/* Interrupt on every positive limit */
+#define	SM_INT_NXT_NLIM	0xaa	/* Interrupt the next time the motor
+				   hits the negative limit */
+#define	SM_INT_ALL_NLIM	0xab	/* Interrupt on every negative limit */
+#define	SM_INT_TRG	0xac	/* Interrupt on trigger X active */
+#define	SM_INT_INHBT	0xaf	/* Inhibit all interrupts */
+#define	SM_DEF_RATIO	0xb0	/* Define motor pulse to encoder pulse ratio */
+#define SM_DEF_RESOLTN	0xb1	/* Define motor resolution */
+#define	SM_DEF_BACK_SIG	0xb2	/* Define backlash sigma (motor steps)*/
+#define	SM_DEF_ALG	0xb3	/* Define position maintenance algorithm
+				   const, and max velocity */
+#define	SM_DEF_TEETH	0xb4	/* Define  the number of rotor teeth */
+#define	SM_DEF_DEADBAND	0xb5	/* Def the deadband region in encoder pulses */
+#define	SM_DEF_REL_TRP	0xc8	/* Define move X as a relative, 
+				   trapezoidal move */
+#define	SM_DEF_ABS_TRP	0xcb	/* Define move X as an absolute
+				   trapezoidal move */
+#define	SM_DEF_CONT	0xce	/* Define move X as a continuous move */
+#define SM_DEF_REL_CL	0xd4	/* Define move X, define it as relative,
+				   closed-loop move */
+#define	SM_DEF_ABS_CL	0xd5	/* Def move X as an abs, closed- loop move */
+#define	SM_DEF_STSTP_VEL 0xd6	/* Define the start/stop velocity */
+#define	SM_DEL_MOV_X	0xd7	/* Delete move X */
+#define	SM_END_SEQ_DEF	0xd8	/* End definition of sequence buffer */
+#define	SM_BEG_SEQ_DEF	0xd9	/* Begin definition of sequence buffer */
+#define	SM_DEL_SEQ_X	0xda	/* Delete sequence buffer X */
+#define	SM_LD_VD_DATA	0xe0	/* Place data into the velocity-distance buffer */
+#define	SM_LD_VT_DATA	0xe1	/* Place data into the velocity-time buffer */
+#define	SM_GET_FREE_BYT	0xe2	/* Request number of free bytes in vel-
+				   streaming/sequence buffer */
+#define	SM_DEF_VS_CMMD	0xee	/* Define command to be executed during
+				   the velocity streaming buffer */
+#define	SM_GET_NUM_REV	0xfd	/* Request software part number and revision */
+#define	SM_TEST_SWITCH	0xff	/* Perform the test switch function */
+
 
 #define VELOCITY_MODE	0
 #define	MAX_COMMANDS	256

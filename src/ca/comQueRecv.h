@@ -127,24 +127,24 @@ inline epicsUInt8 comQueRecv::popUInt8 ()
 inline epicsUInt16 comQueRecv::popUInt16 ()
 {
     comBuf * pComBuf = this->bufs.first ();
-    if ( pComBuf ) {
-        // try first for all in one buffer efficent version
-        // (double check here avoids slow C++ exception)
-        // (hopefully optimizer removes inside check)
-        unsigned bytesAvailable = pComBuf->occupiedBytes();
-        if ( bytesAvailable > sizeof ( epicsUInt16 ) ) {
-            this->nBytesPending -= sizeof ( epicsUInt16 );
-            return pComBuf->popUInt16 ();
-        }
-        else if ( bytesAvailable == sizeof ( epicsUInt16 ) ) {
-            this->nBytesPending -= sizeof ( epicsUInt16 );
-            epicsUInt16 tmp = pComBuf->popUInt16 ();
-            this->removeAndDestroyBuf ( *pComBuf );
-            return tmp;
-        }
-        return this->multiBufferPopUInt16 ();
+    if ( ! pComBuf ) {
+        comBuf::throwInsufficentBytesException ();
     }
-    comBuf::throwInsufficentBytesException ();
+    // try first for all in one buffer efficent version
+    // (double check here avoids slow C++ exception)
+    // (hopefully optimizer removes inside check)
+    unsigned bytesAvailable = pComBuf->occupiedBytes ();
+    if ( bytesAvailable > sizeof ( epicsUInt16 ) ) {
+        this->nBytesPending -= sizeof ( epicsUInt16 );
+        return pComBuf->popUInt16 ();
+    }
+    else if ( bytesAvailable == sizeof ( epicsUInt16 ) ) {
+        this->nBytesPending -= sizeof ( epicsUInt16 );
+        epicsUInt16 tmp = pComBuf->popUInt16 ();
+        this->removeAndDestroyBuf ( *pComBuf );
+        return tmp;
+    }
+    return this->multiBufferPopUInt16 ();
 }
 
 // optimization here complicates this function somewhat

@@ -40,8 +40,17 @@ struct ntpTimeStamp {
 #ifdef __cplusplus
 
 class aitTimeStamp; /* GDD*/
-// extended ANSI C RTL "struct tm" which includes  nano seconds within a second.
-struct tm_nano_sec {
+
+// extend ANSI C RTL "struct tm" to include nano seconds within a second
+// and a struct tm that is adjusted for the local timezone
+struct local_tm_nano_sec {
+    struct tm ansi_tm; /* ANSI C time details */
+    unsigned long nSec; /* nano seconds extension */
+};
+
+// extend ANSI C RTL "struct tm" to includes nano seconds within a second
+// and a struct tm that is adjusted for GMT (UTC)
+struct gm_tm_nano_sec {
     struct tm ansi_tm; /* ANSI C time details */
     unsigned long nSec; /* nano seconds extension */
 };
@@ -88,9 +97,14 @@ public:
     epicsTime operator = (const time_t_wrapper &rhs);
 
     // convert to and from ANSI Cs "struct tm" (with nano seconds)
-    operator tm_nano_sec () const;
-    epicsTime (const tm_nano_sec &ts);
-    epicsTime operator = (const tm_nano_sec &rhs);
+    // adjusted for the local time zone
+    operator local_tm_nano_sec () const;
+    epicsTime (const local_tm_nano_sec &ts);
+    epicsTime operator = (const local_tm_nano_sec &rhs);
+
+    // convert to ANSI Cs "struct tm" (with nano seconds)
+    // adjusted for GM time (UTC)
+    operator gm_tm_nano_sec () const;
 
     // convert to and from POSIX RTs "struct timespec"
     operator struct timespec () const;
@@ -180,6 +194,8 @@ epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (
 /*convert to and from ANSI C's "struct tm" with nano seconds */
 epicsShareFunc int epicsShareAPI epicsTimeToTM (
     struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc);
+epicsShareFunc int epicsShareAPI epicsTimeToGMTM (
+    struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc);
 epicsShareFunc int epicsShareAPI epicsTimeFromTM (
     epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc);
 
@@ -222,6 +238,11 @@ epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (
 /* dump current state to standard out */
 epicsShareFunc void epicsShareAPI epicsTimeShow (
     const epicsTimeStamp *, unsigned interestLevel);
+
+/* OS dependent reentrant versions of the ANSI C interface because */
+/* vxWorks gmtime_r interface does not match POSIX standards */
+int epicsTime_localtime ( const time_t *clock, struct tm *result );
+int epicsTime_gmtime ( const time_t *clock, struct tm *result );
 
 #ifdef __cplusplus
 }
@@ -309,7 +330,7 @@ inline bool epicsTime::operator > (const epicsTime &rhs) const
     return ! ( *this <= rhs );
 }
 
-inline epicsTime epicsTime::operator = (const tm_nano_sec &rhs)
+inline epicsTime epicsTime::operator = (const local_tm_nano_sec &rhs)
 {
     return *this = epicsTime (rhs);
 }

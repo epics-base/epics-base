@@ -81,14 +81,15 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
     double secWest;
 
     {
-        time_t current = time (NULL);
+        time_t current = time ( NULL );
         time_t error;
         tm date;
 
-        gmtime_r (&current, &date);
-        error = mktime (&date);
-        assert (error!=(time_t)-1);
-        secWest =  difftime (error, current);
+        int status = epicsTime_gmtime ( &current, &date );
+        assert ( status == epicsTimeOK );
+        error = mktime ( &date );
+        assert ( error != (time_t) - 1 );
+        secWest =  difftime ( error, current );
     }
     
     {
@@ -197,22 +198,18 @@ epicsTime::operator time_t_wrapper () const
 }
 
 //
-// convert to and from ANSI C struct tm (with nano seconds)
+// convert to ANSI C struct tm (with nano seconds) adjusted for the local time zone
 //
-epicsTime::operator tm_nano_sec () const
+epicsTime::operator local_tm_nano_sec () const
 {
-    tm_nano_sec tm;
-    time_t_wrapper ansiTimeTicks;
+    time_t_wrapper ansiTimeTicks = *this;
 
-    ansiTimeTicks = *this;
+    local_tm_nano_sec tm;
 
-    //
-    // reentrant version of localtime() - from POSIX RT
-    //
-    // WRS returns int and others return &tm.ansi_tm on
-    // succes?
-    //
-    localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
+    int status = epicsTime_localtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
+    if ( status != epicsTimeOK ) {
+        throw -1;
+    }
 
     tm.nSec = this->nSec;
 
@@ -220,9 +217,28 @@ epicsTime::operator tm_nano_sec () const
 }
 
 //
-// epicsTime (const tm_nano_sec &tm)
+// convert to ANSI C struct tm (with nano seconds) adjusted for UTC
 //
-epicsTime::epicsTime (const tm_nano_sec &tm)
+epicsTime::operator gm_tm_nano_sec () const
+{
+    time_t_wrapper ansiTimeTicks = *this;
+
+    gm_tm_nano_sec tm;
+
+    int status = epicsTime_gmtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
+    if ( status != epicsTimeOK ) {
+        throw -1;
+    }
+
+    tm.nSec = this->nSec;
+
+    return tm;
+}
+
+//
+// epicsTime (const local_tm_nano_sec &tm)
+//
+epicsTime::epicsTime (const local_tm_nano_sec &tm)
 {
     static const time_t mktimeFailure = static_cast <time_t> (-1);
     time_t_wrapper ansiTimeTicks;
@@ -237,7 +253,7 @@ epicsTime::epicsTime (const tm_nano_sec &tm)
 
     unsigned long nSecAdj = tm.nSec % nSecPerSec;
     unsigned long secAdj = tm.nSec / nSecPerSec;
-    *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
+    *this = epicsTime ( this->secPastEpoch+secAdj, this->nSec+nSecAdj );
 }
 
 //
@@ -433,7 +449,7 @@ size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat 
     if (fracPtr != NULL) *fracPtr = '\0';
 
     // format all but fractional seconds
-    tm_nano_sec tmns = *this;
+    local_tm_nano_sec tmns = *this;
     size_t numChar = ::strftime (pBuff, bufLength, format, &tmns.ansi_tm);
     if (numChar == 0 || fracPtr == NULL) return numChar;
 
@@ -704,10 +720,10 @@ extern "C" {
     }
     epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
     {
-        time_t_wrapper dst;
-        dst.ts = src;
         try {
-            *pDest = epicsTime (dst);
+            time_t_wrapper dst;
+            dst.ts = src;
+            *pDest = epicsTime ( dst );
         }
         catch (...) {
             return epicsTimeERROR;
@@ -716,24 +732,34 @@ extern "C" {
     }
     epicsShareFunc int epicsShareAPI epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
     {
-        tm_nano_sec tmns;
         try {
-            tmns = epicsTime (*pSrc);
+            local_tm_nano_sec tmns = epicsTime (*pSrc);
+            *pDest = tmns.ansi_tm;
+            *pNSecDest = tmns.nSec;
         }
         catch (...) {
             return epicsTimeERROR;
         }
-        *pDest = tmns.ansi_tm;
-        *pNSecDest = tmns.nSec;
+        return epicsTimeOK;
+    }
+    epicsShareFunc int epicsShareAPI epicsTimeToGMTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
+    {
+        try {
+            gm_tm_nano_sec gmtmns = epicsTime (*pSrc);
+            *pDest = gmtmns.ansi_tm;
+            *pNSecDest = gmtmns.nSec;
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
         return epicsTimeOK;
     }
     epicsShareFunc int epicsShareAPI epicsTimeFromTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
     {
-        tm_nano_sec tmns;
-        tmns.ansi_tm = *pSrc;
-        tmns.nSec = nSecSrc;
-
         try {
+            local_tm_nano_sec tmns;
+            tmns.ansi_tm = *pSrc;
+            tmns.nSec = nSecSrc;
             *pDest = epicsTime (tmns);
         }
         catch (...) {

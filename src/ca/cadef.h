@@ -929,6 +929,8 @@ epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
 
 epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
 
+epicsShareFunc void epicsShareAPI ca_self_test ();
+
 /*
  * deprecated
  */

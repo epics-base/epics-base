@@ -95,24 +95,27 @@ extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
 {
     oldCAC *pcac;
 
-    epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
+    try {
+        epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
+        if ( caClientContextId == 0 ) {
+            return ECA_ALLOCMEM;
+        }
 
-    if ( caClientContextId == 0 ) {
+        pcac = ( oldCAC * ) epicsThreadPrivateGet ( caClientContextId );
+	    if ( pcac ) {
+		    return ECA_NORMAL;
+	    }
+
+        pcac = new oldCAC ( preemptiveCallBackEnable ? true : false );
+	    if ( ! pcac ) {
+		    return ECA_ALLOCMEM;
+	    }
+
+        epicsThreadPrivateSet ( caClientContextId, (void *) pcac );
+    }
+    catch ( ... ) {
         return ECA_ALLOCMEM;
     }
-
-    pcac = ( oldCAC * ) epicsThreadPrivateGet ( caClientContextId );
-	if ( pcac ) {
-		return ECA_NORMAL;
-	}
-
-    pcac = new oldCAC ( preemptiveCallBackEnable ? true : false );
-	if ( ! pcac ) {
-		return ECA_ALLOCMEM;
-	}
-
-    epicsThreadPrivateSet ( caClientContextId, (void *) pcac );
-
     return ECA_NORMAL;
 }
 
@@ -963,14 +966,21 @@ extern "C" int epicsShareAPI ca_current_context ( caClientCtx *pCurrentContext )
  */
 extern "C" int epicsShareAPI ca_attach_context ( caClientCtx context )
 {
-    oldCAC *pcac;
-
-    pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
+    oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
     if ( pcac && context != 0 ) {
         return ECA_ISATTACHED;
     }
     epicsThreadPrivateSet ( caClientContextId, context );
     return ECA_NORMAL;
+}
+
+extern "C" void epicsShareAPI ca_self_test ()
+{
+    oldCAC *pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
+    if ( ! pcac ) {
+        return;
+    }
+    pcac->selfTest ();
 }
 
 extern "C" epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {

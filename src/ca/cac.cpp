@@ -1748,3 +1748,12 @@ void cac::decrementOutstandingIO ( unsigned sequenceNo )
         this->ioDone.signal ();
     }
 }
+
+void cac::selfTest ()
+{
+    this->chanTable.verify ();
+    this->ioTable.verify ();
+    this->sgTable.verify ();
+    this->beaconTable.verify ();
+}
+

@@ -213,6 +213,7 @@ public:
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
     void blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
+    void selfTest ();
 // perhaps these should be eliminated in deference to the exception mechanism
     int printf ( const char *pformat, ... ) const;
     int vPrintf ( const char *pformat, va_list args ) const;
@@ -502,6 +503,11 @@ inline void oldCAC::vSignal ( int ca_status, const char *pfilenm,
 {
     this->clientCtx.vSignal ( ca_status, pfilenm, 
                      lineno, pFormat, args );
+}
+
+inline void oldCAC::selfTest ()
+{
+    this->clientCtx.selfTest ();
 }
 
 #endif // ifndef oldAccessh

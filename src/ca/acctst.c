@@ -393,6 +393,8 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             }
         }
 
+        ca_self_test ();
+
         showProgress ();
 
         for ( j = 0u; j < chanCount; j += 2 ) {
@@ -400,12 +402,16 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             SEVCHK ( status, NULL );
         }
 
+        ca_self_test ();
+
         showProgress ();
 
         for ( j = 0u; j < chanCount; j++ ) {
             status = ca_clear_channel ( pChans[j].channel );
             SEVCHK ( status, NULL );
         }
+
+        ca_self_test ();
 
         showProgress ();
 
@@ -497,6 +503,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
         status = ca_pend_io ( 1000.0 );
         SEVCHK ( status, NULL );
 
+        ca_self_test ();
+
         showProgress ();
 
         assert ( ca_test_io () == ECA_IODONE );
@@ -509,6 +517,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             assert ( ca_state ( pChans[j].channel ) == cs_conn );
             SEVCHK ( ca_clear_channel ( pChans[j].channel ), NULL );
         }
+
+        ca_self_test ();
 
         showProgress ();
 
@@ -576,6 +586,9 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
     }
     status = ca_clear_channel( pChans[0].channel );
     SEVCHK ( status, NULL );
+
+    ca_self_test ();
+
     showProgressEnd ();
 }
 

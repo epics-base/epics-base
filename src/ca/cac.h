@@ -134,6 +134,7 @@ public:
     unsigned largeBufferSizeTCP () const;
     char * allocateLargeBufferTCP ();
     void releaseLargeBufferTCP ( char * );
+    void selfTest ();
 
 private:
     ipAddrToAsciiEngine     ipToAEngine;

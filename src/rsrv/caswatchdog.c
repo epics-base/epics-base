@@ -40,7 +40,7 @@ static char *sccsId = "@(#)caswatchdog.c	1.3\t7/28/92";
 
 #define CA_WD_DELAY 10
 
-#include <ellLib.h>
+#include "ellLib.h"
 
 void		ca_watchdog_check();
 static

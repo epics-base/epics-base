@@ -61,7 +61,6 @@ static char	*sccsId = "@(#) $Id$";
 #include <string.h>
 
 #include <vxWorks.h>
-#include <ellLib.h>
 #include <taskLib.h>
 #include <types.h>
 #include <socket.h>
@@ -76,11 +75,13 @@ static char	*sccsId = "@(#) $Id$";
 #include <usrLib.h>
 #include <inetLib.h>
 
-#include <taskwd.h>
-#include <db_access.h>
-#include <task_params.h>
-#include <envDefs.h>
-#include <server.h>
+#include "ellLib.h"
+#include "taskwd.h"
+#include "db_access.h"
+#include "task_params.h"
+#include "envDefs.h"
+#include "freeList.h"
+#include "server.h"
 
 	
 LOCAL void clean_addrq();
@@ -136,6 +137,32 @@ int cast_server(void)
     		taskSuspend(taskIdSelf());
   	}
 
+        {
+                /*
+                 *
+                 * this allows for faster connects by queuing
+                 * additional incomming UDP search frames
+                 *
+                 * this allocates a 32k buffer
+                 * (uses a power of two)
+                 */
+                int size = 1u<<15u;
+                status = setsockopt(
+				IOC_cast_sock,
+                                SOL_SOCKET,
+                                SO_RCVBUF,
+                                (char *)&size,
+                                sizeof(size));
+                if (status<0) {
+			logMsg("CAS: unable to set cast socket size\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+                }
+        }
 
   	/*  Zero the sock_addr structure */
   	bfill((char *)&sin, sizeof(sin), 0);
@@ -173,7 +200,7 @@ int cast_server(void)
 		NULL,
 		NULL,
 		NULL);
-  	if(status<0){
+  	if(status==ERROR){
     		logMsg("CAS: couldnt start up online notify task\n",
 			NULL,
 			NULL,
@@ -349,15 +376,15 @@ LOCAL void clean_addrq()
 		if (delay > timeout) {
 
 			ellDelete(&prsrv_cast_client->addrq, &pciu->node);
-        		FASTLOCK(&rsrv_free_addrq_lck);
+        		FASTLOCK(&clientQlock);
 			s = bucketRemoveItemUnsignedId (
 				pCaBucket,
 				&pciu->sid);
 			if(s){
 				errMessage (s, "Bad id at close");
 			}
-			ellAdd(&rsrv_free_addrq, &pciu->node);
-       			FASTUNLOCK(&rsrv_free_addrq_lck);
+       			FASTUNLOCK(&clientQlock);
+			freeListFree(rsrvChanFreeList, pciu);
 			ndelete++;
 			maxdelay = max(delay, maxdelay);
 		}
@@ -388,22 +415,16 @@ struct client *create_udp_client(unsigned sock)
 {
   	struct client *client;
 
-    	LOCK_CLIENTQ;
-	client = (struct client *)ellGet(&rsrv_free_clientQ);
-    	UNLOCK_CLIENTQ;
-
+	client = freeListMalloc(rsrvClientFreeList);
 	if(!client){
-      		client = (struct client *)casMalloc(sizeof(struct client));
-      		if(!client){
-			logMsg("CAS: no mem for new client\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-        		return NULL;
-      		}
+		logMsg("CAS: no spae in pool for a new client\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		return NULL;
 	}
 
       	if(CASDEBUG>2)
@@ -424,17 +445,17 @@ struct client *create_udp_client(unsigned sock)
    
 	client->blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!client->blockSem){
-		free(client);
+		freeListFree(rsrvClientFreeList, client);
 		return NULL;
 	}
 
 	/*
 	 * user name initially unknown
 	 */
-	client->pUserName = casMalloc(1); 
+	client->pUserName = malloc(1); 
 	if(!client->pUserName){
 		semDelete(client->blockSem);
-		free(client);
+		freeListFree(rsrvClientFreeList, client);
 		return NULL;
 	}
 	client->pUserName[0] = '\0';
@@ -442,11 +463,11 @@ struct client *create_udp_client(unsigned sock)
 	/*
 	 * host name initially unknown
 	 */
-	client->pHostName = casMalloc(1); 
+	client->pHostName = malloc(1); 
 	if(!client->pHostName){
 		semDelete(client->blockSem);
 		free(client->pUserName);
-		free(client);
+		freeListFree(rsrvClientFreeList, client);
 		return NULL;
 	}
 	client->pHostName[0] = '\0';

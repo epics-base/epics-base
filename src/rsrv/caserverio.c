@@ -41,7 +41,7 @@ static char *sccsId = "@(#) $Id$";
 #include <errno.h>
 
 #include <vxWorks.h>
-#include <ellLib.h>
+#include "ellLib.h"
 #include <types.h>
 #include <socket.h>
 #include <ioLib.h>
@@ -54,7 +54,7 @@ static char *sccsId = "@(#) $Id$";
 #include <tickLib.h>
 #include <inetLib.h>
 
-#include <server.h>
+#include "server.h"
 
 
 

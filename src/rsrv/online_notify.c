@@ -58,9 +58,9 @@ static char *sccsId = "@(#) $Id$";
 /*
  *	EPICS includes
  */
-#include <envDefs.h>
+#include "envDefs.h"
 #include "server.h"
-#include <task_params.h>
+#include "task_params.h"
 
 /*
  *	RSRV_ONLINE_NOTIFY_TASK

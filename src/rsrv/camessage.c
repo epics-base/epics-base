@@ -65,12 +65,13 @@ static char *sccsId = "%W% %G%";
 #include <stdioLib.h>
 #include <sysLib.h>
 
-#include <db_access.h>
-#include <task_params.h>
-#include <ellLib.h>
-#include <caerr.h>
+#include "db_access.h"
+#include "task_params.h"
+#include "ellLib.h"
+#include "freeList.h"
+#include "caerr.h"
 
-#include <server.h>
+#include "server.h"
 
 static caHdr nill_msg;
 
@@ -187,12 +188,13 @@ struct dbAddr 	*pAddr,
 unsigned	cid
 );
 
+LOCAL void *casCalloc (size_t count, size_t size);
+
+LOCAL void *casMalloc (size_t size);
 
 
 /*
  * CAMESSAGE()
- *
- *
  */
 int camessage(
 struct client  *client,
@@ -360,7 +362,7 @@ struct message_buffer *recv
 			}
 
 #ifdef CONVERSION_REQUIRED
-			if (mp->m_type > DBR_CTRL_DOUBLE) {
+			if (mp->m_type >= NELEMENTS(cac_dbr_cvrt)) {
 				SEND_LOCK(client);
 				send_err(
 					mp, 
@@ -479,7 +481,7 @@ struct client  	*client
 	/*
 	 * user name will not change if there isnt enough memory
 	 */
-	pMalloc = casMalloc(size);
+	pMalloc = malloc(size);
 	if(!pMalloc){
 		send_err(
 			mp,
@@ -542,7 +544,7 @@ struct client  	*client
 	/*
 	 * user name will not change if there isnt enough memory
 	 */
-	pMalloc = casMalloc(size);
+	pMalloc = malloc(size);
 	if(!pMalloc){
 		send_err(
 			mp,
@@ -657,6 +659,23 @@ struct client  *client
 			exit(0);
 		}
 
+		/* 
+		 * duplicate claim message are unacceptable 
+		 * (so we disconnect the client)
+		 */
+		if (pciu->client!=prsrv_cast_client) {
+			logMsg("CAS: double claim disconnect id=%d\n",
+				mp->m_cid,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+			FASTUNLOCK(&prsrv_cast_client->addrqLock);
+			free_client(client);
+			exit(0);
+		}
+
 		/*
 		 * remove channel in use block from
 		 * the UDP client where it could time
@@ -667,11 +686,6 @@ struct client  *client
 			&prsrv_cast_client->addrq, 
 			&pciu->node);
 		FASTUNLOCK(&prsrv_cast_client->addrqLock);
-
-		/* 
-		 * Any other client attachment is a severe error
-		 */
-		assert (pciu->client==prsrv_cast_client);
 
 		FASTLOCK(&prsrv_cast_client->addrqLock);
 		pciu->client = client;
@@ -914,7 +928,7 @@ struct client  *client
 		return;
 	}
 
-	if (mp->m_type > DBR_CTRL_DOUBLE) {
+	if (mp->m_type > LAST_BUFFER_TYPE) {
 		putNotifyErrorReply(client, mp, ECA_BADTYPE);
 		return;
 	}
@@ -961,8 +975,8 @@ struct client  *client
 	 * if there isnt enough memory left
 	 */
 	if(!pciu->pPutNotify){
-		pciu->pPutNotify = 
-			(RSRVPUTNOTIFY *) casCalloc(1, sizeof(*pciu->pPutNotify)+size);
+		pciu->pPutNotify = (RSRVPUTNOTIFY *) 
+			casCalloc(1, sizeof(*pciu->pPutNotify)+size);
 		if(!pciu->pPutNotify){
 			putNotifyErrorReply(client, mp, ECA_ALLOCMEM);
 			return;
@@ -1112,23 +1126,17 @@ struct client  *client
 		return;
 	}
 
+	pevext = (struct event_ext *) freeListMalloc(rsrvEventFreeList);
 	size = db_sizeof_event_block() + sizeof(*pevext);
-	FASTLOCK(&rsrv_free_eventq_lck);
-	pevext = (struct event_ext *) 
-		ellGet(&rsrv_free_eventq);
-	FASTUNLOCK(&rsrv_free_eventq_lck);
 	if (!pevext) {
-		pevext = (struct event_ext *) casMalloc(size);
-		if (!pevext) {
-			SEND_LOCK(client);
-			send_err(
-				mp,
-				ECA_ALLOCMEM, 
-				client, 
-				RECORD_NAME(&pciu->addr));
-			SEND_UNLOCK(client);
-			return;
-		}
+		SEND_LOCK(client);
+		send_err(
+			mp,
+			ECA_ALLOCMEM, 
+			client, 
+			RECORD_NAME(&pciu->addr));
+		SEND_UNLOCK(client);
+		return;
 	}
 
 #ifdef CONVERSION_REQUIRED
@@ -1268,9 +1276,7 @@ struct client  *client
 			status = db_cancel_event(pevext->pdbev);
 			assert(status == OK);
 		}
-		FASTLOCK(&rsrv_free_eventq_lck);
-		ellAdd(&rsrv_free_eventq, &pevext->node);
-		FASTUNLOCK(&rsrv_free_eventq_lck);
+		freeListFree(rsrvEventFreeList, pevext);
         }
 
 	status = db_flush_extra_labor_event(client->evuser);
@@ -1278,8 +1284,8 @@ struct client  *client
 		taskSuspend(0);
 	}
 
-	if(pciu->pPutNotify){
-		free(pciu->pPutNotify);
+	if (pciu->pPutNotify) {
+		free (pciu->pPutNotify);
 	}
 
 	/*
@@ -1309,14 +1315,14 @@ struct client  *client
 		errMessage(status, RECORD_NAME(&pciu->addr));
 	}
 
-	FASTLOCK(&rsrv_free_addrq_lck);
+	FASTLOCK(&clientQlock);
 	status = bucketRemoveItemUnsignedId (pCaBucket, &pciu->sid);
 	if(status != S_bucket_success){
 		errMessage (status, "Bad resource id during channel clear");
 		logBadId(client, mp);
 	}
-	ellAdd(&rsrv_free_addrq, &pciu->node);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
+	FASTUNLOCK(&clientQlock);
+	freeListFree(rsrvChanFreeList, pciu);
 
 	return;
 }
@@ -1403,9 +1409,7 @@ struct client  *client
 	END_MSG(client);
 	SEND_UNLOCK(client);
 
-	FASTLOCK(&rsrv_free_eventq_lck);
-	ellAdd(&rsrv_free_eventq, &pevext->node);
-	FASTUNLOCK(&rsrv_free_eventq_lck);
+	freeListFree (rsrvEventFreeList, pevext);
 }
 
 
@@ -1547,7 +1551,7 @@ db_field_log		*pfl
 		 * assert() is safe here because the type was
 		 * checked by db_get_field()
 		 */
-		assert (pevext->msg.m_type <= DBR_CTRL_DOUBLE);
+		assert (mp->m_type < NELEMENTS(cac_dbr_cvrt));
 
 		/* use type as index into conversion jumptable */
 		(* cac_dbr_cvrt[pevext->msg.m_type])
@@ -1715,8 +1719,9 @@ struct client  *client
 	 * stop further use of server if max block drops 
 	 * below MAX_BLOCK_THRESHOLD
 	 */
-	spaceAvailOnFreeList = ellCount(&rsrv_free_clientQ)>0 
-			&& ellCount(&rsrv_free_addrq)>0;
+	spaceAvailOnFreeList = freeListItemsAvail(rsrvClientFreeList)>0 
+			&& freeListItemsAvail(rsrvChanFreeList)>0
+			&& freeListItemsAvail(rsrvEventFreeList)>0;
 	if (casBelowMaxBlockThresh && !spaceAvailOnFreeList) { 
 		SEND_LOCK(client);
 		send_err(mp, 
@@ -1806,17 +1811,11 @@ unsigned	cid
 	int			status;
 
 	/* get block off free list if possible */
-	FASTLOCK(&rsrv_free_addrq_lck);
-	pchannel = (struct channel_in_use *) ellGet(&rsrv_free_addrq);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
+	pchannel = (struct channel_in_use *) 
+		freeListCalloc(rsrvChanFreeList);
 	if (!pchannel) {
-		pchannel = (struct channel_in_use *) 
-			casMalloc(sizeof(*pchannel));
-		if (!pchannel) {
-			return NULL;
-		}
+		return NULL;
 	}
-	memset((char *)pchannel, 0, sizeof(*pchannel));
 	ellInit(&pchannel->eventq);
 	pchannel->ticks_at_creation = tickGet();
 	pchannel->addr = *pAddr;
@@ -1836,7 +1835,7 @@ unsigned	cid
 	 * The lock is applied here because on some architectures the
 	 * ++ operator isnt atomic.
 	 */
-	FASTLOCK(&rsrv_free_addrq_lck);
+	FASTLOCK(&clientQlock);
 
 	do {
 		/*
@@ -1854,12 +1853,10 @@ unsigned	cid
 				pchannel);
 	} while (status != S_bucket_success);
 
-	FASTUNLOCK(&rsrv_free_addrq_lck);
+	FASTUNLOCK(&clientQlock);
 
 	if(status!=S_bucket_success){
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellAdd(&rsrv_free_addrq, &pchannel->node);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
+		freeListFree(rsrvChanFreeList, pchannel);
 		errMessage (status, "Unable to allocate server id");
 		return NULL;
 	}
@@ -2120,9 +2117,9 @@ LOCAL struct channel_in_use *MPTOPCIU (caHdr *mp)
 	struct channel_in_use 	*pciu;
 	const unsigned		id = mp->m_cid;
 
-	FASTLOCK(&rsrv_free_addrq_lck);
+	FASTLOCK(&clientQlock);
 	pciu = bucketLookupItemUnsignedId (pCaBucket, &id);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
+	FASTUNLOCK(&clientQlock);
 
 	return pciu;
 }
@@ -2235,25 +2232,25 @@ LOCAL void access_rights_reply(struct channel_in_use *pciu)
  *
  * (dont drop below some max block threshold)
  */
-void *casCalloc(size_t count, size_t size)
+LOCAL void *casCalloc(size_t count, size_t size)
 {
-	if (casBelowMaxBlockThresh) {
-		return NULL;
-	}
-	return calloc(count, size);
+        if (casBelowMaxBlockThresh) {
+                return NULL;
+        }
+        return calloc(count, size);
 }
-
+ 
 
 /*
  * casMalloc()
  *
  * (dont drop below some max block threshold)
  */
-void *casMalloc(size_t size)
+LOCAL void *casMalloc(size_t size)
 {
-	if (casBelowMaxBlockThresh) {
-		return NULL;
-	}
-	return malloc(size);
+        if (casBelowMaxBlockThresh) {
+                return NULL;
+        }
+        return malloc(size);
 }
 

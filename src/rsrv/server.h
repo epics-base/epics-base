@@ -53,27 +53,27 @@ static char *serverhSccsId = "@(#) $Id$";
 
 #define APIENTRY
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 
 #include <vxLib.h>
-#include <ellLib.h>
-#include <fast_lock.h>
+#include "ellLib.h"
+#include "fast_lock.h"
 
-#include <dbDefs.h>
-#include <db_access.h>
-#include <dbEvent.h>
-#include <caProto.h>
-#include <bucketLib.h>
-#include <taskwd.h>
+#include "dbDefs.h"
+#include "db_access.h"
+#include "dbEvent.h"
+#include "caProto.h"
+#include "bucketLib.h"
+#include "taskwd.h"
 
-#include <asLib.h>
-#include <asDbLib.h>
+#include "asLib.h"
+#include "asDbLib.h"
 
 #include <socket.h>
-#include <addrList.h>
+#include "addrList.h"
 
 
-#include <net_convert.h>
+#include "net_convert.h"
 
 /*
  * !! buf must be the first item in this structure !!
@@ -207,16 +207,14 @@ GLBLTYPE int			CASDEBUG;
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
 GLBLTYPE unsigned short		ca_server_port;
-GLBLTYPE ELLLIST		clientQ;	/* locked by clientQlock */
-GLBLTYPE ELLLIST		rsrv_free_clientQ; /* locked by clientQlock */
-GLBLTYPE ELLLIST		rsrv_free_addrq;
-GLBLTYPE ELLLIST		rsrv_free_eventq;
+GLBLTYPE ELLLIST		clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		beaconAddrList;
 GLBLTYPE FAST_LOCK		clientQlock;
-GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
-GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
+GLBLTYPE void			*rsrvClientFreeList; 
+GLBLTYPE void			*rsrvChanFreeList;
+GLBLTYPE void 			*rsrvEventFreeList;
 
 #define CAS_HASH_TABLE_SIZE 4096
 
@@ -280,9 +278,6 @@ struct client   *pc
 );
 
 void write_notify_reply(void *pArg);
-
-void *casMalloc(size_t size);
-void *casCalloc(size_t count, size_t size);
 
 /*
  * !!KLUDGE!!

@@ -33,7 +33,7 @@
 static char *sccsId = "@(#) $Id$";
 
 #include <vxWorks.h>
-#include <ellLib.h>
+#include "ellLib.h"
 #include <taskLib.h>
 #include <types.h>
 #include <socket.h>
@@ -41,9 +41,10 @@ static char *sccsId = "@(#) $Id$";
 #include <errnoLib.h>
 #include <usrLib.h>
 
-#include <db_access.h>
-#include <task_params.h>
-#include <server.h>
+#include "db_access.h"
+#include "task_params.h"
+#include "freeList.h"
+#include "server.h"
 
 #define DELETE_TASK(TID)\
 if(taskIdVerify(TID)==OK)taskDelete(TID);
@@ -51,20 +52,16 @@ if(taskIdVerify(TID)==OK)taskDelete(TID);
 
 /*
  * rsrv_init()
- * 
- *
- *
  */
 int rsrv_init()
 {
-	FASTLOCKINIT(&rsrv_free_addrq_lck);
-	FASTLOCKINIT(&rsrv_free_eventq_lck);
 	FASTLOCKINIT(&clientQlock);
 
 	ellInit(&clientQ);
-	ellInit(&rsrv_free_clientQ);
-	ellInit(&rsrv_free_addrq);
-	ellInit(&rsrv_free_eventq);
+	freeListInitPvt(&rsrvClientFreeList, sizeof(struct client), 8);
+	freeListInitPvt(&rsrvChanFreeList, sizeof(struct channel_in_use), 512);
+	freeListInitPvt(&rsrvEventFreeList, 
+		sizeof(struct event_ext)+db_sizeof_event_block(), 512);
 	ellInit(&beaconAddrList);
 	prsrv_cast_client = NULL;
 	pCaBucket = NULL;

@@ -61,12 +61,13 @@ static char *sccsId = "@(#) $Id$";
 #include <tickLib.h>
 #include <sysLib.h>
 
-#include <ellLib.h>
-#include <taskwd.h>
-#include <db_access.h>
-#include <task_params.h>
-#include <envDefs.h>
-#include <server.h>
+#include "ellLib.h"
+#include "taskwd.h"
+#include "db_access.h"
+#include "task_params.h"
+#include "envDefs.h"
+#include "freeList.h"
+#include "server.h"
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client, unsigned level);
@@ -223,9 +224,7 @@ int free_client(struct client *client)
 
 	terminate_one_client(client);
 
-	LOCK_CLIENTQ;
-	ellAdd(&rsrv_free_clientQ, &client->node);
-	UNLOCK_CLIENTQ;
+	freeListFree(rsrvClientFreeList, client);
 
 	return OK;
 }
@@ -310,20 +309,18 @@ LOCAL int terminate_one_client(struct client *client)
 				status = db_cancel_event(pevext->pdbev);
 				assert(status == OK);
 			}
-			FASTLOCK(&rsrv_free_eventq_lck);
-			ellAdd(&rsrv_free_eventq, &pevext->node);
-			FASTUNLOCK(&rsrv_free_eventq_lck);
+			freeListFree(rsrvEventFreeList, pevext);
 		}
 		status = db_flush_extra_labor_event(client->evuser);
 		assert(status==OK);
 		if(pciu->pPutNotify){
 			free(pciu->pPutNotify);
 		}
-		FASTLOCK(&rsrv_free_addrq_lck);
+		FASTLOCK(&clientQlock);
 		status = bucketRemoveItemUnsignedId (
 				pCaBucket, 
 				&pciu->sid);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
+		FASTUNLOCK(&clientQlock);
 		if(status != S_bucket_success){
 			errPrintf (
 				status,
@@ -342,9 +339,7 @@ LOCAL int terminate_one_client(struct client *client)
 		 * place per channel block onto the
 		 * free list
 		 */
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellAdd(&rsrv_free_addrq, &pciu->node);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
+		freeListFree (rsrvChanFreeList, pciu);
 	}
 
 	if (client->evuser) {
@@ -440,7 +435,7 @@ int client_stat(unsigned level)
  */
 void casr (unsigned level)
 {
-	int		bytes_reserved;
+	size_t bytes_reserved;
 	struct client 	*client;
 
 	printf( "Channel Access Server V%d.%d\n",
@@ -464,26 +459,26 @@ void casr (unsigned level)
 		log_one_client(prsrv_cast_client, level);
 	}
 	
-	if (level >=2u) {
-		bytes_reserved = 0;
-		bytes_reserved += sizeof(struct client)*
-					ellCount(&rsrv_free_clientQ);
-		bytes_reserved += sizeof(struct channel_in_use)*
-					ellCount(&rsrv_free_addrq);
-		bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block())*
-					ellCount(&rsrv_free_eventq);
-		printf(	"There are currently %d bytes on the server's free list\n",
+	if (level>=2u) {
+		bytes_reserved = 0u;
+		bytes_reserved += sizeof (struct client) * 
+					freeListItemsAvail (rsrvClientFreeList);
+		bytes_reserved += sizeof (struct channel_in_use) *
+					freeListItemsAvail (rsrvChanFreeList);
+		bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block()) *
+					freeListItemsAvail (rsrvEventFreeList);
+		printf(	"There are currently %u bytes on the server's free list\n",
 			bytes_reserved);
-		printf(	"%d client(s), %d channel(s), and %d event(s) (monitors)\n",
-			ellCount(&rsrv_free_clientQ),
-			ellCount(&rsrv_free_addrq),
-			ellCount(&rsrv_free_eventq));
+		printf(	"%u client(s), %u channel(s), and %u event(s) (monitors)\n",
+			freeListItemsAvail (rsrvClientFreeList),
+			freeListItemsAvail (rsrvChanFreeList),
+			freeListItemsAvail (rsrvEventFreeList));
 
 		if(pCaBucket){
 			printf(	"The server's resource id conversion table:\n");
-			FASTLOCK(&rsrv_free_addrq_lck);
+			FASTLOCK(&clientQlock);
 			bucketShow (pCaBucket);
-			FASTUNLOCK(&rsrv_free_addrq_lck);
+			FASTUNLOCK(&clientQlock);
 		}
 
 		caPrintAddrList (&beaconAddrList);

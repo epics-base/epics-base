@@ -219,7 +219,7 @@ sub GetUser # no args
 
     # add to this list if new possibilities arise,
     # currently it's UNIX and WIN32:
-    $user=$ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
+    $user=$ENV{USER} || $ENV{USERNAME} || $ENV{LOGNAME} || Win32::LoginName();
 
     unless ($user)
     {

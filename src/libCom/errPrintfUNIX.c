@@ -49,7 +49,8 @@
  * ERRMESSAGE - now a macro to call errPrintf
  * ERRPRINTF  - print an error symbol message
  ***************************************************************/
-void errPrintf(long status, char *pFileName, int lineno, char *pformat, ...)
+void errPrintf(long status, const char *pFileName, 
+	int lineno, const char *pformat, ...)
 {
     va_list 	   pvar;
 

@@ -112,12 +112,13 @@ static long fetch_values();
 static void monitor();
 
 #define ARG_MAX 12
+typedef long (*SUBFUNCPTR)();
 
 static long init_record(psub,pass)
     struct subRecord	*psub;
     int pass;
 {
-    FUNCPTR	psubroutine;
+    SUBFUNCPTR	psubroutine;
     long	status = 0;
     struct link *plink;
     int i;
@@ -142,8 +143,8 @@ static long init_record(psub,pass)
         }
 
         /* invoke the initialization subroutine */
-        psubroutine = (FUNCPTR)(psub->sadr);
-        status = psubroutine(psub,process);
+        psubroutine = (SUBFUNCPTR)(psub->sadr);
+        status = (*psubroutine)(psub,process);
     }
 
     if(strlen(psub->snam)==0) {
@@ -389,16 +390,16 @@ static long do_sub(psub)
 struct subRecord *psub;  /* pointer to subroutine record  */
 {
 	long	status;
-	FUNCPTR	psubroutine;
+	SUBFUNCPTR	psubroutine;
 
 
 	/* call the subroutine */
-	psubroutine = (FUNCPTR)(psub->sadr);
+	psubroutine = (SUBFUNCPTR)(psub->sadr);
 	if(psubroutine==NULL) {
                	recGblSetSevr(psub,BAD_SUB_ALARM,INVALID_ALARM);
 		return(0);
 	}
-	status = psubroutine(psub);
+	status = (*psubroutine)(psub);
 	if(status < 0){
                	recGblSetSevr(psub,SOFT_ALARM,psub->brsv);
 	} else psub->udf = FALSE;

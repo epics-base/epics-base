@@ -98,12 +98,13 @@ static long fetch_values();
 static void monitor();
 
 #define ARG_MAX 6
+typedef long (*SUBFUNCPTR)();
 
 static long init_record(psub,pass)
     struct gsubRecord	*psub;
     int pass;
 {
-    FUNCPTR	psubroutine;
+    SUBFUNCPTR	psubroutine;
     int	status;
     struct link *plink;
     int i;
@@ -127,8 +128,8 @@ static long init_record(psub,pass)
     }
 
     /* invoke the initialization subroutine */
-    psubroutine = (FUNCPTR)(psub->sadr);
-    status = psubroutine(pcallbackdummy, pcallbackdummy,
+    psubroutine = (SUBFUNCPTR)(psub->sadr);
+    status = (*psubroutine)(pcallbackdummy, pcallbackdummy,
 		&(psub->a),&(psub->b),&(psub->c),&(psub->d),&(psub->e),
                 &(psub->f),&(psub->val));
 
@@ -367,16 +368,16 @@ static long do_gsub(psub)
 struct gsubRecord *psub;  /* pointer to subroutine record  */
 {
 	int	status;
-	FUNCPTR	psubroutine;
+	SUBFUNCPTR	psubroutine;
 	int 	*pcallbackdummy = NULL;  /*  dummy callback arguments */
 
 	/* call the subroutine */
-	psubroutine = (FUNCPTR)(psub->sadr);
+	psubroutine = (SUBFUNCPTR)(psub->sadr);
 	if(psubroutine==NULL) {
                	recGblSetSevr(psub,BAD_SUB_ALARM,INVALID_ALARM);
 		return(0);
 	}
-	status = psubroutine(pcallbackdummy, pcallbackdummy,
+	status = (*psubroutine)(pcallbackdummy, pcallbackdummy,
 		&(psub->a),&(psub->b),&(psub->c),&(psub->d),&(psub->e), 
 		&(psub->f), &(psub->val));
 	if(status < 0){

@@ -1,4 +1,4 @@
-/* db_event.c */
+/* dbEvent.c */
 /* share/src/db  $Id$ */
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
@@ -83,10 +83,10 @@
 #include	<task_params.h>
 #include	<db_access.h>
 #include 	<dbEvent.h>
+#include 	<caeventmask.h>
 
 #include 	<memDebugLib.h>
 
-static char *sccsId = "$Id$\t$Date$";
 
 /* local function declarations */
 LOCAL EVENTFUNC	wake_cancel;
@@ -643,10 +643,10 @@ unsigned int		select
 
 		/*
 		 * Only send event msg if they are waiting on the field which
-		 * changed
+		 * changed or pvalue==NULL and waiting on alarms and alarms changed
 		 */
-    		if( (event->paddr->pfield == (void *)pvalue) && 
-			(select & event->select) ){
+    		if( ((event->paddr->pfield == (void *)pvalue) && (select & event->select))
+		    ||(pvalue==NULL && (select==DBE_ALARM && event->select==DBE_ALARM)) ){
 
 			/*
 			 * evuser ring buffer must be locked for the multiple
@@ -673,7 +673,7 @@ unsigned int		select
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					bcopy(	(char *)pvalue,
+					bcopy(	(char *)event->paddr->pfield,
 						(char *)&ev_que->valque[putix].field,
 						dbr_size[event->paddr->field_type]);
 

@@ -44,6 +44,9 @@
  * dba(pname)			Print dbAddr info
  *	char	*pname		Pvname
  *
+ * dbel(pname)			Print Channel Access Event List
+ *	char	*pname		Pvname
+ *
  * dbl(ptypeName)		list record names.
  *	char	*ptypeName;	Record type. If null all record types
  *
@@ -96,6 +99,7 @@
 #include	<special.h>
 #include	<dbRecDes.h>
 #include	<dbStaticLib.h>
+#include	<ellLib.h>
 
 extern struct dbBase *pdbBase;
 
@@ -150,6 +154,49 @@ long dba(char*pname)
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
     if(status) return(1); else return(0);
+}
+
+/*Following definition is from dbEvent.c*/
+struct event_block{
+  	ELLNODE			node;
+  	struct dbAddr		*paddr;
+  	void			(*user_sub)();
+  	void			*user_arg;
+  	struct event_que	*ev_que;
+  	unsigned char		select;
+  	char			valque;
+  	unsigned short		npend;	/* n times this event is on the que */
+};
+
+long dbel(char*pname)
+{
+    struct dbAddr 	addr;
+    struct dbAddr 	*paddr;
+    long		status;
+    struct event_block  *peb;
+    struct fldDes 	*pfldDes;
+
+    status=dbNameToAddr(pname,&addr);
+    if(status) {
+	printf("record not found\n");
+	return(0);
+    }
+    peb = (struct event_block *)ellFirst(&addr.precord->mlis);
+    if(!peb) {
+	printf("Event List Empty\n");
+	return(0);
+    }
+    while(peb) {
+	pfldDes = peb->paddr->pfldDes;
+	printf("%4.4s",&pfldDes->fldname[0]);
+	if(peb->select&&DBE_VALUE) printf(" VALUE");
+	if(peb->select&&DBE_LOG) printf(" LOG");
+	if(peb->select&&DBE_ALARM) printf(" ALARM");
+	printf("\n");
+	peb = (struct event_block *)ellNext((struct event_block *)peb);
+    }
+    db_event_list(pname);
+    return(0);
 }
 
 long dbl(char	*ptypeName)

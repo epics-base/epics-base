@@ -518,7 +518,7 @@ int cvtDoubleToCompactString(f_value,pstr_value,f_precision)
 {
 #endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
-		(f_value > -1.e4 && f_value < -1.e-4)) {
+		(f_value > -1.e4 && f_value < -1.e-4) || f_value == 0.0) {
     return(cvtDoubleToString(f_value,pstr_value,f_precision));
   } else {
     return(cvtDoubleToExpString(f_value,pstr_value,f_precision));

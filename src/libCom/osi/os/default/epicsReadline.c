@@ -28,7 +28,7 @@
 char * epicsShareAPI
 epicsReadline (FILE *fp, const char *prompt)
 {
-    int c;	/* char is unsigned on some archs, EOF is -ve */
+    int c;      /* char is unsigned on some archs, EOF is -ve */
     char *line = NULL;
     int linelen = 0;
     int linesize = 50;
@@ -44,8 +44,10 @@ epicsReadline (FILE *fp, const char *prompt)
         printf ("Out of memory!\n");
         return NULL;
     }
-    if (prompt)
+    if (prompt) {
         fputs (prompt, stdout);
+        fflush (stdout);
+    }
     while ((c = getc (fp)) !=  '\n') {
         if (c == EOF) {
             free (line);

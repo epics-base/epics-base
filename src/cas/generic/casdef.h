@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.7  1996/11/02 00:54:26  jhill
+ * 	many improvements
+ *
  * 	Revision 1.6  1996/09/04 20:27:00  jhill
  * 	doccasdef.h
  *
@@ -242,7 +245,6 @@ public:
 	// 	const char *pConstName = "myPVName";
 	// 	char pName[9] = "myPVName";
 	// 	return pvExistReturn(S_casApp_success, pConstName); // efficent
-	// 	return pvExistReturn(S_casApp_success, pName"); // less efficent
 	// 	return pvExistReturn(S_casApp_asyncCompletion); // not now
 	// }
 	//

@@ -34,6 +34,7 @@
 
 #include "osiSock.h"
 #include "epicsEvent.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsTime.h"
 #include "errlog.h"
@@ -339,11 +340,43 @@ LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload,
 }
 
 /*
- * tcp_noop_action()
+ * tcp_version_action()
  */
-LOCAL int tcp_noop_action ( caHdrLargeArray *mp, void *pPayload, 
+LOCAL int tcp_version_action ( caHdrLargeArray *mp, void *pPayload, 
                            struct client *client )
 {
+    double tmp;
+    unsigned epicsPriorityNew;
+    unsigned epicsPrioritySelf;
+
+    if ( mp->m_dataType < CA_PROTO_PRIORITY_MIN || 
+            mp->m_dataType > CA_PROTO_PRIORITY_MAX ) {
+        return RSRV_ERROR;
+    }
+
+    tmp = mp->m_dataType - CA_PROTO_PRIORITY_MIN;
+    tmp *= epicsThreadPriorityCAServerHigh - epicsThreadPriorityCAServerLow;
+    tmp /= CA_PROTO_PRIORITY_MAX - CA_PROTO_PRIORITY_MIN;
+    tmp += epicsThreadPriorityCAServerLow;
+    epicsPriorityNew = (unsigned) tmp;
+    epicsPrioritySelf = epicsThreadGetPrioritySelf();
+    if ( epicsPriorityNew != epicsPrioritySelf ) {
+        epicsThreadBooleanStatus tbs;
+        unsigned priorityOfEvents;
+        tbs  = epicsThreadHighestPriorityLevelBelow ( epicsPriorityNew, &priorityOfEvents );
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
+            priorityOfEvents = epicsPriorityNew;
+        }
+
+        if ( epicsPriorityNew > epicsPrioritySelf ) {
+            epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsPriorityNew );
+            db_event_change_priority ( client->evuser, priorityOfEvents );
+        }
+        else {
+            db_event_change_priority ( client->evuser, priorityOfEvents );
+            epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsPriorityNew );
+        }
+    }
     return RSRV_OK;
 }
 
@@ -2006,7 +2039,7 @@ typedef int (*pProtoStubTCP) (caHdrLargeArray *mp, void *pPayload, struct client
  */
 LOCAL const pProtoStubTCP tcpJumpTable[] = 
 {
-    tcp_noop_action,
+    tcp_version_action,
     event_add_action,
     event_cancel_reply,
     read_action,

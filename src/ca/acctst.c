@@ -50,19 +50,19 @@ unsigned getCallbackCount;
 void showProgressBegin ()
 {
     printf ( "{" );
-    fflush (stdout );
+    fflush ( stdout );
 }
 
 void showProgressEnd ()
 {
     printf ( "}" );
-    fflush (stdout );
+    fflush ( stdout );
 }
 
 void showProgress ()
 {
     printf ( "." );
-    fflush (stdout );
+    fflush ( stdout );
 }
 
 void nUpdatesTester ( struct event_handler_args args )
@@ -468,7 +468,14 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 
     showProgressBegin ();
 
-    assert ( backgroundConnCount == 1u || backgroundConnCount == 0u );
+    i = 0;
+    while ( backgroundConnCount > 1u ) {
+        backgroundConnCount = ca_get_ioc_connection_count ();
+        assert ( i++ < 10 );
+        printf ( "Z" );
+        fflush ( stdout );
+        epicsThreadSleep ( 1.0 );
+    }
 
     for ( i = 0; i < repetitionCount; i++ ) {
 

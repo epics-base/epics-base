@@ -47,13 +47,15 @@ class tcpiiu;
 
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
-    epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
+    epicsShareFunc bhe ( const epicsTime &initialTimeStamp, 
+        unsigned initialBeaconNumber, const inetAddrID &addr );
     epicsShareFunc ~bhe (); 
     epicsShareFunc void destroy ();
     epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
                         const epicsTime & currentTime, unsigned beaconNumber, 
                         unsigned protocolRevision );
     epicsShareFunc double period () const;
+    epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void registerIIU ( tcpiiu & );
     epicsShareFunc void unregisterIIU ( tcpiiu & );

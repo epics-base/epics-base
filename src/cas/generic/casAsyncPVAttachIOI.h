@@ -32,7 +32,7 @@ private:
     class casAsyncPVAttachIO & asyncPVAttachIO;
 	pvAttachReturn retVal;
 
-	caStatus cbFuncAsyncIO ();
+	caStatus cbFuncAsyncIO ( epicsGuard < casClientMutex > & );
 	casAsyncPVAttachIOI ( const casAsyncPVAttachIOI & );
 	casAsyncPVAttachIOI & operator = ( const casAsyncPVAttachIOI & );
 };

@@ -47,6 +47,7 @@ class casPVI :
 {
 public:
     casPVI ( casPV & );
+    epicsShareFunc virtual ~casPVI (); 
     caServerI * getPCAS () const;
     caStatus attachToServer ( caServerI & cas );
     aitIndex nativeCount ();
@@ -74,96 +75,36 @@ public:
     void updateEnumStringTableAsyncCompletion ( const gdd & resp );
     casPV * apiPointer (); // retuns NULL if casPVI isnt a base of casPV
     void show ( unsigned level ) const;
-    caStatus beginTransaction ();
-    void endTransaction ();
     caStatus read ( const casCtx & ctx, gdd & prototype );
     caStatus write ( const casCtx & ctx, const gdd & value );
     casChannel * createChannel ( const casCtx & ctx,
         const char * const pUserName, const char * const pHostName );
     aitEnum bestExternalType () const;
-    unsigned maxDimension () const; 
-    aitIndex maxBound ( unsigned dimension ) const;
     const char * getName () const;
-    static casPVI * attachPV ( casPV & );
+    void casPVDestroyNotify ();
 
-protected:
-    epicsShareFunc virtual ~casPVI (); 
 private:
     mutable epicsMutex mutex;
     tsDLList < chanIntfForPV > chanList;
     gddEnumStringTable enumStrTbl;
     caServerI * pCAS;
-    casPV & pv;
+    casPV * pPV;
     unsigned nMonAttached;
     unsigned nIOAttached;
+    bool deletePending;
 
 	casPVI ( const casPVI & );
 	casPVI & operator = ( const casPVI & );
 };
 
-inline caServerI *casPVI::getPCAS() const
+inline caServerI * casPVI::getPCAS() const
 {
 	return this->pCAS;
-}
-
-// CA only does 1D arrays for now 
-inline aitIndex casPVI::nativeCount () 
-{
-	if ( this->maxDimension() == 0u ) {
-		return 1u; // scalar
-	}
-	return this->maxBound(0u);
 }
 
 inline const gddEnumStringTable & casPVI::enumStringTable () const
 {
     return this->enumStrTbl;
-}
-
-inline caStatus casPVI::beginTransaction ()
-{
-    return this->pv.beginTransaction ();
-}
-
-inline void casPVI::endTransaction ()
-{
-    this->pv.endTransaction ();
-}
-
-inline caStatus casPVI::read ( const casCtx & ctx, gdd & prototype )
-{
-    return this->pv.read ( ctx, prototype );
-}
-
-inline caStatus casPVI::write ( const casCtx & ctx, const gdd & value )
-{
-    return this->pv.write ( ctx, value );
-}
-
-inline casChannel * casPVI::createChannel ( const casCtx & ctx,
-    const char * const pUserName, const char * const pHostName )
-{
-    return this->pv.createChannel ( ctx, pUserName, pHostName );
-}
-
-inline aitEnum casPVI::bestExternalType () const
-{
-    return this->pv.bestExternalType ();
-}
-
-inline unsigned casPVI::maxDimension () const
-{
-    return this->pv.maxDimension ();
-}
-
-inline aitIndex casPVI::maxBound ( unsigned dimension ) const
-{
-    return this->pv.maxBound ( dimension );
-}
-
-inline const char * casPVI::getName () const
-{
-    return this->pv.getName ();
 }
 
 #endif // casPVIh

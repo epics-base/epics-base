@@ -29,8 +29,8 @@
 #include "casMonitor.h"
 
 casPVI::casPVI ( casPV & intf ) : 
-	pCAS ( NULL ), pv ( intf ), 
-    nMonAttached ( 0u ), nIOAttached ( 0u ) {}
+	pCAS ( NULL ), pPV ( & intf ), nMonAttached ( 0u ), 
+        nIOAttached ( 0u ), deletePending ( false ) {}
 
 casPVI::~casPVI ()
 {
@@ -46,8 +46,8 @@ casPVI::~casPVI ()
 	// when we destroyed the channels
 	//
 	casVerify ( this->nIOAttached == 0u );
-    if (this->nIOAttached) {
-        errlogPrintf ( "The number of IO objected supposedly attached is %u\n", this->nIOAttached );
+    if ( this->nIOAttached ) {
+        errlogPrintf ( "The number of IO objected attached is %u\n", this->nIOAttached );
     }
 
 	//
@@ -56,8 +56,24 @@ casPVI::~casPVI ()
 	//
 	casVerify ( this->nMonAttached == 0u );
 
-    this->pv.pPVI = 0;
-    this->pv.destroy ();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->deletePending = true;
+        if ( this->pPV ) {
+            this->pPV->destroyRequest ();
+        }
+    }
+}
+
+void casPVI::casPVDestroyNotify ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( ! this->deletePending ) {
+        tsDLIter < chanIntfForPV > iter = this->chanList.firstIter ();
+        while ( iter.valid() ) {
+            iter->casChannelDestroyNotify ( false );
+        }
+    }
 }
 
 //
@@ -93,16 +109,9 @@ void casPVI::deleteSignal ()
 	// !! dont access self after potential delete above !!
 }
 
-casPVI * casPVI::attachPV ( casPV & pv ) 
-{
-    if ( ! pv.pPVI ) {
-        pv.pPVI = new ( std::nothrow ) casPVI ( pv );
-    }
-    return pv.pPVI;
-}
-
 caStatus casPVI::attachToServer ( caServerI & cas )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	if ( this->pCAS ) {
 		//
 		// currently we enforce that the PV can be attached to only
@@ -128,6 +137,8 @@ caStatus casPVI::attachToServer ( caServerI & cas )
 //
 caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
     //
     // keep trying to fill in the table if client disconnects 
     // prevented previous asynchronous IO from finishing, but if
@@ -248,7 +259,7 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
         }
         else if ( resp.primitiveType() == aitEnumFixedString ) {
             aitFixedString *pStr = (aitFixedString *) resp.dataVoid ();
-            for ( index = 0; index<count; index++ ) {
+            for ( index = 0; index < count; index++ ) {
                 if ( ! this->enumStrTbl.setString ( index, pStr[index].fixed_string ) ) {
                     errMessage ( S_cas_noMemory, 
                         "no memory to set enumerated PV string cache" );
@@ -287,19 +298,13 @@ void casPVI::postEvent ( const casEventMask & select, const gdd & event )
 caStatus casPVI::installMonitor ( 
     casMonitor & mon, tsDLList < casMonitor > & monitorList )
 {
-    bool newInterest = false;
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        assert ( this->nMonAttached < UINT_MAX );
-	    this->nMonAttached++;
-	    if ( this->nMonAttached == 1u ) {
-            newInterest = true;
-	    }
-        // use pv lock to protect channel's monitor list
-	    monitorList.add ( mon );
-    }
-    if ( newInterest ) {
-		return this->pv.interestRegister ();
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    assert ( this->nMonAttached < UINT_MAX );
+	this->nMonAttached++;
+    // use pv lock to protect channel's monitor list
+	monitorList.add ( mon );
+    if ( this->nMonAttached == 1u && this->pPV ) {
+		return this->pPV->interestRegister ();
     }
     else {
 		return S_cas_success;
@@ -309,37 +314,33 @@ caStatus casPVI::installMonitor (
 casMonitor * casPVI::removeMonitor ( 
     tsDLList < casMonitor > & list, ca_uint32_t clientIdIn )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     casMonitor * pMon = 0;
-    bool noInterest = false;
-    {
-	    //
-	    // (it is reasonable to do a linear search here because
-	    // sane clients will require only one or two monitors 
-	    // per channel)
-	    //
-        epicsGuard < epicsMutex > guard ( this->mutex );
-	    tsDLIter < casMonitor > iter = list.firstIter ();
-        while ( iter.valid () ) {
-		    if ( iter->matchingClientId ( clientIdIn ) ) {
-                list.remove ( *iter.pointer () );
-                assert ( this->nMonAttached > 0 );
-	            this->nMonAttached--;
-                noInterest = 
-                    ( this->nMonAttached == 0u );
-                pMon = iter.pointer ();
-                break;
-		    }
-		    iter++;
-	    }
-    }
-    if ( noInterest ) {
-        this->pv.interestDelete ();
+	//
+	// (it is reasonable to do a linear search here because
+	// sane clients will require only one or two monitors 
+	// per channel)
+	//
+	tsDLIter < casMonitor > iter = list.firstIter ();
+    while ( iter.valid () ) {
+		if ( iter->matchingClientId ( clientIdIn ) ) {
+            list.remove ( *iter.pointer () );
+            assert ( this->nMonAttached > 0 );
+	        this->nMonAttached--;
+            pMon = iter.pointer ();
+            break;
+		}
+		iter++;
+	}
+    if ( this->nMonAttached == 0u && this->pPV ) {
+        this->pPV->interestDelete ();
     }
     return pMon;
 }
 
 caServer *casPVI::getExtServer () const // X aCC 361
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	if ( this->pCAS ) {
 		return this->pCAS->getAdapter ();
 	}
@@ -357,13 +358,13 @@ void casPVI::show ( unsigned level )  const
 		printf ( "\tBest external type = %d\n", this->bestExternalType() );
 	}
 	if ( level >= 2u ) {
-        this->pv.show ( level - 2u );
+        this->pPV->show ( level - 2u );
 	}
 }
 
 casPV * casPVI::apiPointer ()
 {
-    return & this->pv;
+    return this->pPV;
 }
 
 void casPVI::installChannel ( chanIntfForPV & chan )
@@ -376,19 +377,15 @@ void casPVI::removeChannel (
     chanIntfForPV & chan, tsDLList < casMonitor > & src, 
     tsDLList < casMonitor > & dest )
 {
-    bool noInterest = false;
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        src.removeAll ( dest );
-        if ( dest.count() ) {
-            assert ( this->nMonAttached >= dest.count() );
-            this->nMonAttached -= dest.count ();
-            noInterest = ( this->nMonAttached == 0u );
-        }
-	    this->chanList.remove ( chan );
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    src.removeAll ( dest );
+    if ( dest.count() ) {
+        assert ( this->nMonAttached >= dest.count() );
+        this->nMonAttached -= dest.count ();
     }
-    if ( noInterest ) {
-        this->pv.interestDelete ();
+	this->chanList.remove ( chan );
+    if ( this->nMonAttached == 0u && this->pPV ) {
+        this->pPV->interestDelete ();
     }
 }
 
@@ -446,6 +443,7 @@ void casPVI::uninstallIO (
 
 caStatus  casPVI::bestDBRType ( unsigned & dbrType ) // X aCC 361
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	aitEnum bestAIT = this->bestExternalType ();
     if ( bestAIT == aitEnumInvalid || bestAIT < 0 ) {
 		return S_cas_badType;
@@ -458,4 +456,85 @@ caStatus  casPVI::bestDBRType ( unsigned & dbrType ) // X aCC 361
 	return S_cas_success;
 }
 
+caStatus casPVI::read ( const casCtx & ctx, gdd & prototype )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+        caStatus status = this->pPV->beginTransaction ();
+        if ( status != S_casApp_success ) {
+            return status;
+        }
+        status = this->pPV->read ( ctx, prototype );
+        this->pPV->endTransaction ();
+        return status;
+    }
+    else {
+        return S_cas_disconnect;
+    }
+}
+
+caStatus casPVI::write ( const casCtx & ctx, const gdd & value )
+{
+    if ( this->pPV ) {
+        caStatus status = this->pPV->beginTransaction ();
+        if ( status != S_casApp_success ) {
+            return status;
+        }
+        status = this->pPV->write ( ctx, value );
+        this->pPV->endTransaction ();
+        return status;
+    }
+    else {
+        return S_cas_disconnect;
+    }
+}
+
+casChannel * casPVI::createChannel ( const casCtx & ctx,
+    const char * const pUserName, const char * const pHostName )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+        return this->pPV->createChannel ( ctx, pUserName, pHostName );
+    }
+    else {
+        return 0;
+    }
+}
+
+aitEnum casPVI::bestExternalType () const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+        return this->pPV->bestExternalType ();
+    }
+    else {
+        return aitEnumInvalid;
+    }
+}
+
+// CA only does 1D arrays for now 
+aitIndex casPVI::nativeCount () 
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+	    if ( this->pPV->maxDimension() == 0u ) {
+		    return 1u; // scalar
+	    }
+	    return this->pPV->maxBound ( 0u );
+    }
+    else {
+        return S_cas_disconnect;
+    }
+}
+
+const char * casPVI::getName () const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+        return this->pPV->getName ();
+    }
+    else {
+        return "<disconnected>";
+    }
+}
 

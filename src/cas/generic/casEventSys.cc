@@ -22,8 +22,9 @@
 #include "casCoreClient.h"
 #include "casAsyncIOI.h"
 #include "casChannelI.h"
+#include "channelDestroyEvent.h"
 
-void casEventSys::show(unsigned level) const
+void casEventSys::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 	printf ( "casEventSys at %p\n", 
@@ -52,12 +53,6 @@ casEventSys::~casEventSys()
     // o any subscription events remaining on the queue
     //   are pending destroy
 
-    // this will clean up the event queue because all 
-    // channels have been deleted and any events left on 
-    // the queue are there because they are going to
-    // execute a subscription delete
-    this->process ();
-
     // verify above assertion is true
     casVerify ( this->eventLogQue.count() == 0 );
 
@@ -85,13 +80,14 @@ void casEventSys::removeMonitor ()
 	this->maxLogEntries -= averageEventEntries;
 }
 
-casEventSys::processStatus casEventSys::process ()
+casEventSys::processStatus casEventSys::process (
+    epicsGuard < casClientMutex > & casClientGuard )
 {
     casEventSys::processStatus ps;
 	ps.cond = casProcOk;
 	ps.nAccepted = 0u;
 
-    epicsGuard < epicsMutex > guard ( this->mutex );
+    epicsGuard < evSysMutex > evGuard ( this->mutex );
 
 	while ( ! this->dontProcess ) {
         casEvent * pEvent;
@@ -103,7 +99,7 @@ casEventSys::processStatus casEventSys::process ()
 		}
 
         caStatus status = pEvent->cbFunc ( 
-                        this->client, guard );
+                this->client, casClientGuard, evGuard );
 		if ( status == S_cas_success ) {
 			ps.nAccepted++;
 		}
@@ -210,15 +206,14 @@ casEventPurgeEv::casEventPurgeEv ( casEventSys & evSysIn ) :
 {
 }
 
-caStatus casEventPurgeEv::cbFunc ( casCoreClient &, epicsGuard < epicsMutex > & guard )
+caStatus casEventPurgeEv::cbFunc ( 
+    casCoreClient &, 
+    epicsGuard < casClientMutex > &,
+    epicsGuard < evSysMutex > & )
 {
 	this->evSys.dontProcess = true;
 	this->evSys.pPurgeEvent = NULL;
-    {
-        epicsGuardRelease < epicsMutex > unklocker ( guard );
-	    delete this;
-    }
-
+	delete this;
 	return S_cas_success;
 }
 
@@ -255,12 +250,6 @@ bool casEventSys::addToEventQueue ( casChannelI & event, bool & inTheEventQueue 
     return wakeupRequired;
 }
  
-void casEventSys::removeFromEventQueue ( casMonEvent & event )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-	this->eventLogQue.remove ( event );
-}
-
 void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQueue )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -268,6 +257,12 @@ void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQue
         onTheEventQueue = false;
 	    this->eventLogQue.remove ( io );
     }
+}
+
+void casEventSys::addToEventQueue ( channelDestroyEvent & event )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventLogQue.add ( event );
 }
 
 void casEventSys::setDestroyPending ()
@@ -319,7 +314,8 @@ bool casEventSys::postEvent ( tsDLList < casMonitor > & monitorList,
                 if ( this->eventLogQue.count() == 0 ) {
                     signalNeeded = true;
                 }
-                iter->installNewEventLog ( this->eventLogQue, pLog, event );
+                iter->installNewEventLog ( 
+                    this->eventLogQue, pLog, event );
             }
 	        ++iter;
         }
@@ -328,7 +324,7 @@ bool casEventSys::postEvent ( tsDLList < casMonitor > & monitorList,
 }
 
 void casEventSys::casMonEventDestroy ( 
-    casMonEvent & ev, epicsGuard < epicsMutex > & guard )
+    casMonEvent & ev, epicsGuard < evSysMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     ev.~casMonEvent ();

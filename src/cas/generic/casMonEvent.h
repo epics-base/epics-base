@@ -34,9 +34,6 @@
 
 #include "casEvent.h"
 
-class epicsMutex;
-template < class MUTEX > class epicsGuard;
-
 class casMonEvent : public casEvent {
 public:
 	casMonEvent ( class casMonitor & monitor );
@@ -54,7 +51,10 @@ private:
 	smartConstGDDPointer pValue;
     void * operator new ( size_t );
     void operator delete ( void * );
-	caStatus cbFunc ( casCoreClient &, epicsGuard < epicsMutex > & guard );
+	caStatus cbFunc ( 
+        casCoreClient &, 
+        epicsGuard < casClientMutex > &,
+        epicsGuard < evSysMutex > & );
 	casMonEvent ( const casMonEvent & );
 	casMonEvent & operator = ( const casMonEvent & );
 };

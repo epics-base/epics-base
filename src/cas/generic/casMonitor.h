@@ -36,9 +36,13 @@
 #include "caHdrLargeArray.h"
 #include "casMonEvent.h"
 
+class casMonitor;
+class casClientMutex;
+
 class casMonitorCallbackInterface { // X aCC 655
 public:
-	virtual caStatus casMonitorCallBack ( class casMonitor &,
+	virtual caStatus casMonitorCallBack ( 
+        epicsGuard < casClientMutex > &, casMonitor &,
         const gdd & ) = 0;
 };
 
@@ -55,20 +59,21 @@ public:
     void installNewEventLog ( 
         tsDLList < casEvent > & eventLogQue, 
         casMonEvent * pLog, const gdd & event );
-    caStatus response ( casCoreClient & client,
-        const gdd & value );
     void show ( unsigned level ) const;
     bool selected ( const casEventMask & select ) const;
-	caStatus executeEvent ( casCoreClient &, 
-        casMonEvent &, const gdd &,
-        epicsGuard < epicsMutex > & );
     bool matchingClientId ( caResId clientIdIn ) const;
     unsigned numEventsQueued () const;
+    caStatus response ( 
+        epicsGuard < casClientMutex > &, casCoreClient & client,
+        const gdd & value );
+	caStatus executeEvent ( casCoreClient &, 
+        casMonEvent &, const gdd &,
+        epicsGuard < casClientMutex > &,
+        epicsGuard < evSysMutex > & );
     void * operator new ( size_t size, 
         tsFreeList < casMonitor, 1024 > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < casMonitor, 1024 > & ))
-
 private:
 	casMonEvent overFlowEvent;
 	ca_uint32_t const nElem;

@@ -32,7 +32,8 @@ private:
     class casAsyncWriteIO & asyncWriteIO;
 	class casChannelI & chan; 
 	caStatus completionStatus;
-	caStatus cbFuncAsyncIO ();
+	caStatus cbFuncAsyncIO ( 
+        epicsGuard < casClientMutex > & );
 	casAsyncWriteIOI ( const casAsyncWriteIOI & );
 	casAsyncWriteIOI & operator = ( const casAsyncWriteIOI & );
 };

@@ -53,10 +53,10 @@ pvCreateReturn caServer::createPV (const casCtx &, const char *)
 	return S_casApp_pvNotFound;
 }
 
-pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char *pAliasName)
+pvAttachReturn caServer::pvAttach ( const casCtx &ctx, const char *pAliasName )
 {
 	// remain backwards compatible (call deprecated routine)
-	return this->createPV(ctx, pAliasName);
+	return this->createPV ( ctx, pAliasName );
 }
 
 casEventMask caServer::registerEvent (const char *pName) // X aCC 361

@@ -38,12 +38,15 @@ casCoreClient::~casCoreClient()
     if ( this->ctx.getServer()->getDebugLevel() > 0u ) {
 		errlogPrintf ( "CAS: Connection Terminated\n" );
     }
-}
 
-caStatus casCoreClient::disconnectChan ( caResId )
-{
-	printf ("Disconnect Chan issued for inappropriate client type?\n");
-	return S_cas_success;
+    // this will clean up the event queue because all 
+    // channels have been deleted and any events left on 
+    // the queue are there because they are going to
+    // execute a subscription delete
+    {
+        epicsGuard < casClientMutex > guard ( this->mutex );
+        this->eventSys.process ( guard );
+    }
 }
 
 void casCoreClient::show ( unsigned level ) const
@@ -60,53 +63,77 @@ void casCoreClient::show ( unsigned level ) const
 // asynchronous completion
 //
 caStatus casCoreClient::asyncSearchResponse (
-		const caNetAddr &, const caHdrLargeArray &, const pvExistReturn &,
-        ca_uint16_t, ca_uint32_t )
+    epicsGuard < casClientMutex > &, const caNetAddr &, 
+    const caHdrLargeArray &, const pvExistReturn &,
+    ca_uint16_t, ca_uint32_t )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse ( const caHdrLargeArray &, const pvAttachReturn & )
+caStatus casCoreClient::createChanResponse (         
+    epicsGuard < casClientMutex > &,
+    const caHdrLargeArray &, const pvAttachReturn & )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readResponse ( casChannelI *, const caHdrLargeArray &, 
-	    const gdd &, const caStatus )
+caStatus casCoreClient::readResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI *, 
+    const caHdrLargeArray &, const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::readNotifyResponse ( casChannelI *, const caHdrLargeArray &, 
-	    const gdd &, const caStatus )
+caStatus casCoreClient::readNotifyResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI *, 
+    const caHdrLargeArray &, const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeResponse ( casChannelI &, 
-        const caHdrLargeArray &, const caStatus )
+caStatus casCoreClient::writeResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI &, 
+    const caHdrLargeArray &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::writeNotifyResponse ( casChannelI &, 
-        const caHdrLargeArray &, const caStatus )
+caStatus casCoreClient::writeNotifyResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI &, 
+    const caHdrLargeArray &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::monitorResponse ( casChannelI &, const caHdrLargeArray &, 
-	const gdd &, const caStatus )
+caStatus casCoreClient::monitorResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI &, 
+    const caHdrLargeArray &, const gdd &, const caStatus )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::accessRightsResponse ( casChannelI * )
+caStatus casCoreClient::accessRightsResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI * )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::enumPostponedCreateChanResponse ( casChannelI &, 
+caStatus casCoreClient::enumPostponedCreateChanResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI &, 
     const caHdrLargeArray &, unsigned )
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::channelCreateFailedResp ( const caHdrLargeArray &, 
+caStatus casCoreClient::channelCreateFailedResp ( 
+    epicsGuard < casClientMutex > &, const caHdrLargeArray &, 
     const caStatus )
 {
 	return S_casApp_noSupport;
+}
+caStatus casCoreClient::channelDestroyNotify (
+    epicsGuard < casClientMutex > &, 
+    casChannelI &, bool )
+{
+    assert ( 0 );
+	return S_casApp_noSupport;
+}
+
+void casCoreClient::casChannelDestroyNotify ( 
+    casChannelI &, bool immediatedSestroyNeeded )
+{
+    assert ( 0 );
 }
 
 caNetAddr casCoreClient::fetchLastRecvAddr () const
@@ -131,8 +158,8 @@ void casCoreClient::eventSignal()
 {
 }
 
-caStatus casCoreClient::casMonitorCallBack ( casMonitor &,
-    const gdd & )
+caStatus casCoreClient::casMonitorCallBack ( 
+    epicsGuard < casClientMutex > &, casMonitor &, const gdd & )
 {
     return S_cas_internal;
 }

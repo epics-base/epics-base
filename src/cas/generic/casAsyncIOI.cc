@@ -75,18 +75,15 @@ casAsyncIOI::~casAsyncIOI()
 // o clients lock is applied when calling this
 //
 caStatus casAsyncIOI::cbFunc ( 
-    casCoreClient &, epicsGuard < epicsMutex > & guard )
+    casCoreClient &, 
+    epicsGuard < casClientMutex > & clientGuard,
+    epicsGuard < evSysMutex > & evGuard )
 {
-
     caStatus status = S_cas_success;
     {
 	    this->inTheEventQueue = false;
 
-        {
-            epicsGuardRelease < epicsMutex > unlocker ( guard );
-	        status = this->cbFuncAsyncIO ();
-        }
-
+	    status = this->cbFuncAsyncIO ( clientGuard );
 	    if ( status == S_cas_sendBlocked ) {
 		    //
 		    // causes this op to be pushed back on the queue 

@@ -20,9 +20,9 @@
 #include "casAsyncIOI.h"
 
 casChannelI::casChannelI ( casChannel & chanIn, const casCtx &  ctx ) :
-        chanForPV ( *ctx.getClient() ), pv ( *ctx.getPV() ), 
+        chanIntfForPV ( *ctx.getClient() ), pv ( *ctx.getPV() ), 
         chan ( chanIn ), cid ( ctx.getMsg()->m_cid ), 
-        accessRightsEvPending ( false )
+        serverDeletePending ( false ), accessRightsEvPending ( false )
 {
 }
 
@@ -30,7 +30,8 @@ casChannelI::~casChannelI ()
 {	    
     this->pv.destroyAllIO ( this->ioList );
 
-    this->chan.destroy ();
+    this->serverDeletePending = true;
+    this->chan.destroyRequest ();
     
     // force PV delete if this is the last channel attached
     this->pv.deleteSignal ();
@@ -39,7 +40,7 @@ casChannelI::~casChannelI ()
 void casChannelI::uninstallFromPV ( casEventSys & eventSys )
 {
     tsDLList < casMonitor > dest;
-    this->chanForPV.removeSelfFromPV ( this->pv, dest );
+    this->removeSelfFromPV ( this->pv, dest );
     while ( casMonitor * pMon = dest.get () ) {
         eventSys.prepareMonitorForDestroy ( *pMon );
 	}
@@ -50,26 +51,24 @@ void casChannelI::show ( unsigned level ) const
     printf ( "casChannelI: client id %u PV %s\n", 
         this->cid, this->pv.getName() );
     if ( level > 0 ) {
-        this->chanForPV.show ( level - 1 );
+        this->chanIntfForPV::show ( level - 1 );
         this->chan.show ( level - 1 );
     }
 }
 
 caStatus casChannelI::cbFunc ( 
-    casCoreClient &, epicsGuard < epicsMutex > & guard )
+    casCoreClient &, 
+    epicsGuard < casClientMutex > & clientGuard,
+    epicsGuard < evSysMutex > & evGuard )
 {
     caStatus stat = S_cas_success;
     {
-        epicsGuardRelease < epicsMutex > guardRelease ( guard );
-	    stat = this->chanForPV.client().accessRightsResponse ( this );
+	    stat = this->client().accessRightsResponse ( 
+                    clientGuard, this );
     }
 	if ( stat == S_cas_success ) {
 		this->accessRightsEvPending = false;
 	}
 	return stat;
-}
-
-void casChannelI::destroy()
-{
 }
 

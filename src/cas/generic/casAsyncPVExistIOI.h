@@ -35,7 +35,7 @@ private:
     const ca_uint16_t protocolRevision;
     const ca_uint32_t sequenceNumber;
 
-	caStatus cbFuncAsyncIO ();
+	caStatus cbFuncAsyncIO ( epicsGuard < casClientMutex > & );
 	casAsyncPVExistIOI ( const casAsyncPVExistIOI & );
 	casAsyncPVExistIOI & operator = ( const casAsyncPVExistIOI & );
 };

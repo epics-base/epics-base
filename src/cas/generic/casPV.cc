@@ -18,7 +18,8 @@
 #define epicsExportSharedSymbols
 #include "casPVI.h"
 
-casPV::casPV () : pPVI ( 0 )
+casPV::casPV () : 
+    pPVI ( 0 )
 {
 }
 
@@ -26,12 +27,22 @@ casPV::casPV () : pPVI ( 0 )
 // This constructor is preserved for backwards compatibility only.
 // Please do _not_ use this constructor.
 //
-casPV::casPV ( caServer & ) : pPVI ( 0 )
+casPV::casPV ( caServer & ) :
+    pPVI ( 0 )
 {
 }
 
 casPV::~casPV ()
 {
+    if ( this->pPVI ) {
+        this->pPVI->casPVDestroyNotify ();
+    }
+}
+
+void casPV::destroyRequest ()
+{
+    this->pPVI = 0;
+    this->destroy ();
 }
 
 //
@@ -48,8 +59,8 @@ void casPV::destroy ()
 //
 // casPV::createChannel()
 //
-casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
-		const char * const )
+casChannel *casPV::createChannel (
+    const casCtx &ctx, const char * const, const char * const )
 {
 	return new casChannel ( ctx );
 }
@@ -72,7 +83,7 @@ void casPV::interestDelete ()
 //
 // casPV::beginTransaction()
 //
-caStatus casPV::beginTransaction () 
+caStatus casPV::beginTransaction ()
 {
 	return S_casApp_success;
 }

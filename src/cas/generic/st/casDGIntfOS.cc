@@ -76,9 +76,9 @@ private:
 casDGIntfOS::casDGIntfOS (
         caServerI & serverIn, clientBufMemoryManager & memMgrIn,
         const caNetAddr & addr, bool autoBeaconAddr, 
-        bool addConfigBeaconAddr) : 
-	casDGIntfIO (serverIn, memMgrIn, addr, 
-            autoBeaconAddr, addConfigBeaconAddr),
+        bool addConfigBeaconAddr ) : 
+	casDGIntfIO ( serverIn, memMgrIn, addr, 
+            autoBeaconAddr, addConfigBeaconAddr ),
 	pRdReg ( 0 ),
     pBCastRdReg ( 0 ),
     pWtReg ( 0 ),
@@ -217,12 +217,12 @@ void casDGIOWakeup::show(unsigned level) const
 //
 void casDGIntfOS::armRecv()
 {
-	if ( ! this->in.full () ) {
-	    if (!this->pRdReg) {
-			this->pRdReg = new casDGReadReg(*this);
+	if ( ! this->inBufFull () ) {
+	    if ( ! this->pRdReg ) {
+			this->pRdReg = new casDGReadReg ( *this );
 		}
-	    if (this->validBCastFD() && this->pBCastRdReg==NULL) {
-			this->pBCastRdReg = new casDGBCastReadReg(*this);
+	    if ( this->validBCastFD() && this->pBCastRdReg == NULL ) {
+			this->pBCastRdReg = new casDGBCastReadReg ( *this );
 	    }
     }
 }
@@ -232,12 +232,10 @@ void casDGIntfOS::armRecv()
 //
 void casDGIntfOS::disarmRecv()
 {
-	if (this->pRdReg) {
-		delete this->pRdReg;
-	}
-	if (this->pBCastRdReg) {
-		delete this->pBCastRdReg;
-	}
+	delete this->pRdReg;
+    this->pRdReg = 0;
+	delete this->pBCastRdReg;
+    this->pBCastRdReg = 0;
 }
 
 //
@@ -245,12 +243,12 @@ void casDGIntfOS::disarmRecv()
 //
 void casDGIntfOS::armSend()
 {
-	if ( this->out.bytesPresent () == 0u ) {
+	if ( this->outBufBytesPresent () == 0u ) {
 		return;
 	}
 
-	if (!this->pWtReg) {
-		this->pWtReg = new casDGWriteReg(*this);
+	if ( ! this->pWtReg ) {
+		this->pWtReg = new casDGWriteReg ( *this );
 	}
 }
 
@@ -259,9 +257,8 @@ void casDGIntfOS::armSend()
 //
 void casDGIntfOS::disarmSend ()
 {
-	if (this->pWtReg) {
-		delete this->pWtReg;
-	}
+	delete this->pWtReg;
+    this->pWtReg = 0;
 }
 
 //
@@ -289,7 +286,7 @@ void casDGIntfOS::eventFlush()
 	// if there is nothing pending in the input
 	// queue, then flush the output queue
 	//
-	if ( this->in.bytesAvailable() == 0u ) {
+	if ( this->inBufBytesAvailable() == 0u ) {
 		this->armSend ();
 	}
 }
@@ -301,14 +298,14 @@ void casDGIntfOS::show(unsigned level) const
 {
 	printf ( "casDGIntfOS at %p\n", 
         static_cast <const void *> ( this ) );
-    if (this->pRdReg) { 
-		this->pRdReg->show (level);
+    if ( this->pRdReg ) { 
+		this->pRdReg->show ( level );
 	}
-	if (this->pWtReg) {
-		this->pWtReg->show (level);
+	if ( this->pWtReg ) {
+		this->pWtReg->show ( level );
 	}
-    if (this->pBCastRdReg) {
-		this->pBCastRdReg->show (level);
+    if ( this->pBCastRdReg ) {
+		this->pBCastRdReg->show ( level );
     }
 	this->evWk.show (level);
 	this->ioWk.show (level);
@@ -328,7 +325,6 @@ void casDGReadReg::callBack()
 //
 casDGReadReg::~casDGReadReg()
 {
-    os.pRdReg = NULL;
 }
 
 //
@@ -354,7 +350,6 @@ void casDGBCastReadReg::callBack()
 //
 casDGBCastReadReg::~casDGBCastReadReg()
 {
-    os.pBCastRdReg = NULL;
 }
 
 //
@@ -372,7 +367,6 @@ void casDGBCastReadReg::show(unsigned level) const
 //
 casDGWriteReg::~casDGWriteReg()
 {
-	os.pWtReg = NULL; // allow rearm (send callbacks are one shots)
 }
 
 //
@@ -380,11 +374,10 @@ casDGWriteReg::~casDGWriteReg()
 //
 void casDGWriteReg::callBack()
 {
-	casDGIntfOS *pDGIOS = &this->os;
-	delete this; // allows rearm to occur if required
+	casDGIntfOS * pDGIOS = & this->os;
 	pDGIOS->sendCB();
 	//
-	// NO CODE HERE - see delete above
+	// NO CODE HERE - sendCB deletes this object
 	//
 }
 
@@ -412,17 +405,18 @@ void casDGIntfOS::sendBlockSignal()
 //
 void casDGIntfOS::sendCB()
 {
-    outBufClient::flushCondition flushCond;
+    // allows rearm to occur if required
+    this->disarmSend ();
 
 	//
 	// attempt to flush the output buffer 
 	//
-	flushCond = this->out.flush();
+	outBufClient::flushCondition flushCond = this->flush ();
 	if ( flushCond != flushProgress ) {
         return;
 	}
 
-	if (this->sendBlocked) {
+	if ( this->sendBlocked ) {
 		this->sendBlocked = false;
 	}
 
@@ -460,12 +454,12 @@ void casDGIntfOS::sendCB()
 //
 void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
 {	
-	assert (this->pRdReg);
+	assert ( this->pRdReg );
 
     //
     // copy in new messages 
     //
-    this->in.fill ( parm );
+    this->inBufFill ( parm );
     this->processInput ();
 
 	//
@@ -478,7 +472,7 @@ void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
 	// (casDGReadReg is _not_ a onceOnly fdReg - 
 	// therefore an explicit delete is required here)
 	//
-	if ( this->in.full() ) {
+	if ( this->inBufFull() ) {
 		this->disarmRecv(); // this deletes the casDGReadReg object
 	}
 }
@@ -511,8 +505,8 @@ void casDGIntfOS::processInput()
     // input buffer then keep sending the output 
     // buffer until it is empty
 	//
-    if ( this->out.bytesPresent() > 0u ) {
-        if ( this->in.bytesAvailable () == 0 ) {
+    if ( this->outBufBytesPresent() > 0u ) {
+        if ( this->inBufBytesAvailable () == 0 ) {
             this->armSend ();
         }
 	}

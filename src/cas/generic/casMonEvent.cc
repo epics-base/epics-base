@@ -23,10 +23,13 @@
 #include "casCoreClient.h"
 
 caStatus casMonEvent::cbFunc ( 
-    casCoreClient & client, epicsGuard < epicsMutex > & guard )
+    casCoreClient & client, 
+    epicsGuard < casClientMutex > & clientGuard,
+    epicsGuard < evSysMutex > & evGuard )
 {
     return this->monitor.executeEvent ( 
-        client, * this, *this->pValue, guard );
+        client, * this, *this->pValue, 
+        clientGuard, evGuard );
 }
 
 void casMonEvent::assign ( const gdd & valueIn )

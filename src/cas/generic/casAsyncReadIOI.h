@@ -39,7 +39,8 @@ private:
 	caStatus completionStatus;
     bool createChannelWasSuccessful;
     epicsShareFunc bool oneShotReadOP () const;
-	epicsShareFunc caStatus cbFuncAsyncIO ();
+	epicsShareFunc caStatus cbFuncAsyncIO ( 
+        epicsGuard < casClientMutex > & );
 	casAsyncReadIOI ( const casAsyncReadIOI & );
 	casAsyncReadIOI & operator = ( const casAsyncReadIOI & );
 };

@@ -42,20 +42,18 @@ casIntfOS::casIntfOS ( caServerI & casIn, clientBufMemoryManager & memMgrIn,
 {    
     this->setNonBlocking();
     
-    this->pRdReg = new casServerReg(*this);
+    this->pRdReg = new casServerReg ( *this );
 }
 
 casIntfOS::~casIntfOS()
 {
-	if (this->pRdReg) {
-		delete this->pRdReg;
-	}
+	delete this->pRdReg;
 }
 
 void casServerReg::callBack()
 {
-	assert(this->os.pRdReg);
-	this->os.cas.connectCB(this->os);	
+	assert ( this->os.pRdReg );
+	this->os.cas.connectCB ( this->os );	
 }
 
 casServerReg::~casServerReg()

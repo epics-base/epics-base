@@ -12,7 +12,21 @@
 #ifndef casStrmClienth
 #define casStrmClienth
 
-#include "casClient.h"
+#ifdef epicsExportSharedSymbols
+#   define epicsExportSharedSymbols_casStrmClienth
+#   undef epicsExportSharedSymbols
+#endif
+
+#include "epicsTime.h"
+
+#ifdef epicsExportSharedSymbols_casStrmClienth
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
+
+#include "casCoreClient.h"
+#include "inBuf.h"
+#include "outBuf.h"
 
 enum xBlockingStatus { xIsBlocking, xIsntBlocking };
 
@@ -20,82 +34,108 @@ enum xBlockingStatus { xIsBlocking, xIsntBlocking };
 // casStrmClient 
 //
 class casStrmClient : 
-    public casClient,
-	public tsDLNode < casStrmClient > {
+    public casCoreClient, public outBufClient, 
+    public inBufClient, public tsDLNode < casStrmClient > {
 public:
 	casStrmClient ( caServerI &, clientBufMemoryManager & );
 	virtual ~casStrmClient();
 	void show ( unsigned level ) const;
-    void flush ();
+    outBufClient::flushCondition flush ();
+	unsigned getDebugLevel () const;
+    virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
+	void userName ( char * pBuf, unsigned bufSize ) const;
+	ca_uint16_t protocolRevision () const;
+    void sendVersion ();
+protected:
+	caStatus processMsg ();
+    bool inBufFull () const;
+    bufSizeT inBufBytesAvailable () const;
+    inBufClient::fillCondition inBufFill ();
+    bufSizeT outBufBytesPresent () const;
+private:
+    char hostNameStr [32];
+    inBuf in;
+    outBuf out;
+	chronIntIdResTable < casChannelI > chanTable;
+	tsDLList < casChannelI > chanList;
+	epicsTime lastSendTS;
+	epicsTime lastRecvTS;
+	char * pUserName;
+	char * pHostName;
+    unsigned incommingBytesToDrain;
+	ca_uint16_t minor_version_number;
+
+	caStatus createChannel ( const char * pName );
+	caStatus verifyRequest ( casChannelI * & pChan );
+    typedef caStatus ( casStrmClient :: * pCASMsgHandler ) 
+                ( epicsGuard < casClientMutex > & );
+	static pCASMsgHandler const msgHandlers[CA_PROTO_LAST_CMMD+1u];
+
+	//
+	// one function for each CA request type
+	//
+    caStatus uknownMessageAction ( epicsGuard < casClientMutex > & );
+    caStatus ignoreMsgAction ( epicsGuard < casClientMutex > & );
+    caStatus versionAction ( epicsGuard < casClientMutex > & );
+    caStatus echoAction ( epicsGuard < casClientMutex > & );
+	caStatus eventAddAction ( epicsGuard < casClientMutex > & );
+	caStatus eventCancelAction ( epicsGuard < casClientMutex > & );
+	caStatus readAction ( epicsGuard < casClientMutex > & );
+	caStatus readNotifyAction ( epicsGuard < casClientMutex > & );
+	caStatus writeAction ( epicsGuard < casClientMutex > & );
+	caStatus eventsOffAction ( epicsGuard < casClientMutex > & );
+	caStatus eventsOnAction ( epicsGuard < casClientMutex > & );
+	caStatus readSyncAction ( epicsGuard < casClientMutex > & );
+	caStatus clearChannelAction ( epicsGuard < casClientMutex > & );
+	caStatus claimChannelAction ( epicsGuard < casClientMutex > & );
+	caStatus writeNotifyAction ( epicsGuard < casClientMutex > & );
+	caStatus clientNameAction ( epicsGuard < casClientMutex > & );
+	caStatus hostNameAction ( epicsGuard < casClientMutex > & );
+    caStatus sendErr ( epicsGuard < casClientMutex > &, 
+        const caHdrLargeArray *curp, ca_uint32_t cid, 
+        const int reportedStatus, const char * pformat, ... );
+    caStatus readNotifyFailureResponse ( epicsGuard < casClientMutex > &,
+        const caHdrLargeArray & msg, const caStatus ECA_XXXX );
+    caStatus monitorFailureResponse ( epicsGuard < casClientMutex > &,
+        const caHdrLargeArray & msg,  const caStatus ECA_XXXX );
+	caStatus writeNotifyResponseECA_XXX ( epicsGuard < casClientMutex > &,
+        const caHdrLargeArray & msg, const caStatus status );
+    caStatus sendErrWithEpicsStatus (  epicsGuard < casClientMutex > &,
+        const caHdrLargeArray * pMsg, ca_uint32_t cid, caStatus epicsStatus, 
+        caStatus clientStatus );
 
 	//
 	// one function for each CA request type that has
 	// asynchronous completion
 	//
-	virtual caStatus createChanResponse ( 
+	caStatus createChanResponse ( epicsGuard < casClientMutex > &,
             const caHdrLargeArray &, const pvAttachReturn & );
-	caStatus readResponse ( casChannelI * pChan, const caHdrLargeArray & msg,
+	caStatus readResponse ( epicsGuard < casClientMutex > &,
+            casChannelI * pChan, const caHdrLargeArray & msg,
 			const gdd & desc, const caStatus status );
-	caStatus readNotifyResponse ( casChannelI *pChan, const caHdrLargeArray & msg,
+	caStatus readNotifyResponse ( epicsGuard < casClientMutex > &,
+        casChannelI *pChan, const caHdrLargeArray & msg,
 			const gdd & desc, const caStatus status );
-	caStatus writeResponse ( casChannelI &, 
+	caStatus writeResponse ( epicsGuard < casClientMutex > &, casChannelI &, 
             const caHdrLargeArray & msg, const caStatus status );
-	caStatus writeNotifyResponse ( casChannelI &, 
+	caStatus writeNotifyResponse ( epicsGuard < casClientMutex > &, casChannelI &, 
             const caHdrLargeArray &, const caStatus status );
-	caStatus monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
+	caStatus monitorResponse ( epicsGuard < casClientMutex > &,
+        casChannelI & chan, const caHdrLargeArray & msg, 
 		const gdd & desc, const caStatus status );
-    caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
-        const caHdrLargeArray & hdr, unsigned dbrType );
-	caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
-        const caStatus createStatus );
+    caStatus enumPostponedCreateChanResponse ( epicsGuard < casClientMutex > &,
+        casChannelI & chan, const caHdrLargeArray & hdr, unsigned dbrType );
+	caStatus channelCreateFailedResp ( epicsGuard < casClientMutex > &,
+        const caHdrLargeArray &, const caStatus createStatus );
+    caStatus casStrmClient::channelDestroyNotify (
+        epicsGuard < casClientMutex > & guard, 
+        casChannelI &, bool uninstallNeeded );
 
-	caStatus disconnectChan ( caResId id );
-	unsigned getDebugLevel () const;
-    virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
-	void userName ( char * pBuf, unsigned bufSize ) const;
+	caStatus accessRightsResponse ( 
+        casChannelI * pciu );
+	caStatus accessRightsResponse ( 
+        epicsGuard < casClientMutex > &, casChannelI * pciu );
 
-private:
-	chronIntIdResTable < casChannelI > chanTable;
-	tsDLList < casChannelI > chanList;
-	char * pUserName;
-	char * pHostName;
-
-	//
-	// createChannel()
-	//
-	caStatus createChannel ( const char *pName );
-
-	//
-	// verify read/write requests
-	//
-	caStatus verifyRequest ( casChannelI * & pChan );
-
-	//
-	// one function for each CA request type
-	//
-    caStatus uknownMessageAction ();
-	caStatus eventAddAction ();
-	caStatus eventCancelAction ();
-	caStatus readAction ();
-	caStatus readNotifyAction ();
-	caStatus writeAction ();
-	caStatus eventsOffAction ();
-	caStatus eventsOnAction ();
-	caStatus readSyncAction ();
-	caStatus clearChannelAction ();
-	caStatus claimChannelAction ();
-	caStatus writeNotifyAction ();
-	caStatus clientNameAction ();
-	caStatus hostNameAction ();
-
-	//
-	// accessRightsResponse()
-	//
-	caStatus accessRightsResponse ( casChannelI * pciu );
-
-	//
-	// these prepare the gdd based on what is in the ca hdr
-	//
 	caStatus read ( const gdd * & pDesc );
 	caStatus write ();
 
@@ -103,9 +143,6 @@ private:
 	caStatus writeScalarData();
 	caStatus writeString();
 
-	//
-	// io independent send/recv
-	//
     outBufClient::flushCondition xSend ( char * pBuf, bufSizeT nBytesAvailableToSend,
 			bufSizeT nBytesNeedToBeSent, bufSizeT & nBytesSent );
     inBufClient::fillCondition xRecv ( char * pBuf, bufSizeT nBytesToRecv,
@@ -117,22 +154,29 @@ private:
 			bufSizeT & nBytesActual ) = 0;
 	virtual inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq,
 			bufSizeT &nBytesActual ) = 0;
-
-    caStatus readNotifyFailureResponse ( const caHdrLargeArray & msg, 
-        const caStatus ECA_XXXX );
-
-    caStatus monitorFailureResponse ( const caHdrLargeArray & msg, 
-        const caStatus ECA_XXXX );
-
-	caStatus writeNotifyResponseECA_XXX ( const caHdrLargeArray &msg,
-			const caStatus status );
-
-	caStatus casMonitorCallBack ( casMonitor &,
-        const gdd & );
+    virtual void forceDisconnect () = 0;
+	caStatus casMonitorCallBack ( 
+        epicsGuard < casClientMutex > &, casMonitor &, const gdd & );
+    caStatus logBadIdWithFileAndLineno (    
+        epicsGuard < casClientMutex > & guard, const caHdrLargeArray * mp,
+        const void	* dp, const int cacStatus, const char * pFileName, 
+        const unsigned lineno, const unsigned idIn );
+    void casChannelDestroyNotify ( casChannelI & chan, 
+        bool immediatedSestroyNeeded );
 
 	casStrmClient ( const casStrmClient & );
 	casStrmClient & operator = ( const casStrmClient & );
 };
+
+#define logBadId(GUARD, MP, DP, CACSTAT, RESID) \
+	this->logBadIdWithFileAndLineno ( GUARD, MP, DP, \
+    CACSTAT, __FILE__, __LINE__, RESID )
+
+
+inline ca_uint16_t casStrmClient::protocolRevision () const 
+{
+    return this->minor_version_number;
+}
 
 #endif // casStrmClienth
 

@@ -51,26 +51,28 @@ bool casAsyncReadIOI::oneShotReadOP () const
 	return true; // it is a read op
 }
 
-caStatus casAsyncReadIOI::cbFuncAsyncIO ()
+caStatus casAsyncReadIOI::cbFuncAsyncIO (
+    epicsGuard < casClientMutex > & guard )
 {
 	caStatus 	status;
 
 	switch ( this->msg.m_cmmd ) {
 	case CA_PROTO_READ:
-		status = client.readResponse ( &this->chan, this->msg,
-				*this->pDD, this->completionStatus);
+		status = client.readResponse ( 
+            guard, & this->chan, this->msg,
+			* this->pDD, this->completionStatus );
 		break;
 
 	case CA_PROTO_READ_NOTIFY:
-		status = client.readNotifyResponse ( &this->chan, 
-				this->msg, *this->pDD, 
-				this->completionStatus);
+		status = client.readNotifyResponse ( 
+            guard, & this->chan, this->msg, * this->pDD, 
+			this->completionStatus );
         break;
 
 	case CA_PROTO_EVENT_ADD:
-		status = client.monitorResponse ( this->chan,
-				this->msg, *this->pDD,
-				this->completionStatus);
+		status = client.monitorResponse ( 
+            guard, this->chan, this->msg, * this->pDD,
+			this->completionStatus );
 		break;
 
 	case CA_PROTO_CLAIM_CIU:
@@ -78,7 +80,8 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO ()
         status = this->chan.getPVI().bestDBRType ( nativeTypeDBR );
         if ( status ) {
 	        errMessage ( status, "best external dbr type fetch failed" );
-	        status = client.channelCreateFailedResp ( this->msg, status );
+	        status = client.channelCreateFailedResp ( 
+                guard, this->msg, status );
             if ( status != S_cas_sendBlocked ) {
                 delete & this->chan;
             }
@@ -94,8 +97,8 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO ()
                     "unable to read application type \"enums\" string"
                     " conversion table for enumerated PV" );
             }
-            status = client.enumPostponedCreateChanResponse ( this->chan, 
-                            this->msg, nativeTypeDBR );
+            status = client.enumPostponedCreateChanResponse ( 
+                guard, this->chan, this->msg, nativeTypeDBR );
             this->createChannelWasSuccessful = 
                         ( status == S_cas_success );
         }

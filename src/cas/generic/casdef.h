@@ -299,6 +299,11 @@ private:
 // o The destructor for this object will cancel any
 // client attachment to this PV (and reclaim any resources
 // allocated by the server library on its behalf)
+// o If the server tool needs to asynchronously delete an object 
+// derived from casPV from another thread then it *must* also 
+// define a specialized destroy() method that prevent race conditions 
+// occurring when both the server library and the server tool attempt 
+// to destroy the same casPV derived object at the same instant.
 //
 // NOTE: if the server tool precreates the PV during initialization
 // then it may decide to provide a "destroy()" implementation in the
@@ -407,17 +412,6 @@ public:
         const char * const pUserName, const char * const pHostName);
     
     //
-    // destroy() is called 
-    // 1) each time that a PV transitions from
-    // a situation where clients are attached to a situation
-    // where no clients are attached.
-    // 2) once for all PVs that exist when the server is deleted
-    //
-    // the default (base) "destroy()" executes "delete this"
-    //
-    epicsShareFunc virtual void destroy ();
-    
-    //
     // tbe best type for clients to use when accessing the
     // value of the PV
     //
@@ -469,6 +463,17 @@ public:
     epicsShareFunc virtual aitIndex maxBound ( unsigned dimension ) const;
     
     //
+    // destroy() is called 
+    // 1) each time that a PV transitions from
+    // a situation where clients are attached to a situation
+    // where no clients are attached.
+    // 2) once for all PVs that exist when the server is deleted
+    //
+    // the default (base) "destroy()" executes "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
+
+    //
     // Server tool calls this function to post a PV event.
     //
     epicsShareFunc void postEvent ( const casEventMask & select, const gdd & event );
@@ -499,24 +504,20 @@ public:
     // ***************
     //
     epicsShareFunc caServer * getCAS () const;
-    
-    //
-    // only used when caStrmClient converts from
-    // casPV * to casPVI *
-    //
-    //friend class casStrmClient;
+
+    void destroyRequest ();
     
 private:
     casPVI * pPVI;
-    friend class casPVI; // used ony to get casPVI	casPV ( const casPV & );
 	casPV & operator = ( const casPV & );
 
+    friend class casStrmClient;
 public:
     //
     // This constructor has been deprecated, and is preserved for 
     // backwards compatibility only. Please do not use it.
     //
-    epicsShareFunc casPV (caServer &);
+    epicsShareFunc casPV ( caServer & );
 };
 
 //
@@ -540,6 +541,11 @@ public:
 // o The destructor for this object will cancel any
 // client attachment to this channel (and reclaim any resources
 // allocated by the server library on its behalf)
+// o If the server tool needs to asynchronously delete an object 
+// derived from casChannel from another thread then it *must* also 
+// define a specialized destroy() method that prevent race conditions 
+// occurring when both the server library and the server tool attempt 
+// to destroy the same casChannel derived object at the same instant.
 //
 class casChannel {
 public:
@@ -568,13 +574,12 @@ public:
 	// caServer::show() is called and the level is high 
 	// enough
 	//
-	epicsShareFunc virtual void show (unsigned level) const;
+	epicsShareFunc virtual void show ( unsigned level ) const;
 
 	//
 	// destroy() is called when 
 	// 1) there is a client initiated channel delete 
-	// 2) there is a server tool initiaed PV delete
-	// 3) there is a server tool initiated server delete
+	// 2) there is a server tool initiated PV delete
 	//
 	// the casChannel::destroy() executes a "delete this"
 	//
@@ -597,11 +602,14 @@ public:
 	//
 	epicsShareFunc casPV * getPV ();
 
+    void destroyRequest ();
+
 private:
     class casChannelI * pChanI;
-    friend class casStrmClient; // used ony to get casChannelI
+
 	casChannel ( const casChannel & );
 	casChannel & operator = ( const casChannel & );
+    friend class casStrmClient;
 };
 
 //

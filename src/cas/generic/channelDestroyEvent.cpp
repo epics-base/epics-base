@@ -16,16 +16,20 @@
  */
 
 
-#ifndef casClientIL_h
-#define casClientIL_h
+#define epicsExportSharedSymbols
+#include "channelDestroyEvent.h"
+#include "casCoreClient.h"
 
-//
-// casClient::getDebugLevel()
-//
-//inline unsigned casClient::getDebugLevel() const
-//{
-//	return this->ctx.getServer()->getDebugLevel();
-//}
-
-#endif // casClientIL_h
+caStatus channelDestroyEvent::cbFunc (  
+    casCoreClient & client, 
+    epicsGuard < casClientMutex > & clientGuard,
+    epicsGuard < evSysMutex > & )
+{
+    caStatus status = client.channelDestroyNotify ( 
+        clientGuard, this->chan, this->uninstallNeeded );
+    if ( status != S_cas_sendBlocked ) {
+        delete this;
+    }
+    return status;
+}
 

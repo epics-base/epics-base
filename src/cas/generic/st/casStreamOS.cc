@@ -58,7 +58,6 @@ inline casStreamReadReg::casStreamReadReg (casStreamOS &osIn) :
 //
 inline casStreamReadReg::~casStreamReadReg ()
 {
-    os.pRdReg = NULL; 
 #	if defined(DEBUG) 
 		printf ("Read off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
@@ -104,7 +103,6 @@ inline casStreamWriteReg::casStreamWriteReg (casStreamOS &osIn) :
 //
 inline casStreamWriteReg::~casStreamWriteReg ()
 {
-    os.pWtReg = NULL; 
 #	if defined(DEBUG) 
 		printf ("Write off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
@@ -248,20 +246,19 @@ void casStreamIOWakeup::start ( casStreamOS &os  )
 inline void casStreamOS::armRecv()
 {
 	if ( ! this->pRdReg ) {
-		if ( ! this->in.full() ) {
+		if ( ! this->inBufFull() ) {
 			this->pRdReg = new casStreamReadReg ( *this );
 		}
 	}
 }
 
 //
-// casStreamOS::disarmRecv()
+// casStreamOS::disarmRecv ()
 //
-inline void casStreamOS::disarmRecv()
+inline void casStreamOS::disarmRecv ()
 {
-	if ( this->pRdReg ) {
-		delete this->pRdReg;
-	}
+	delete this->pRdReg;
+    this->pRdReg = 0;
 }
 
 //
@@ -269,7 +266,7 @@ inline void casStreamOS::disarmRecv()
 //
 inline void casStreamOS::armSend()
 {
-	if ( this->out.bytesPresent () == 0u ) {
+	if ( this->outBufBytesPresent() == 0u ) {
 		return;
 	}
 
@@ -283,9 +280,8 @@ inline void casStreamOS::armSend()
 //
 inline void casStreamOS::disarmSend ()
 {
-	if ( this->pWtReg ) {
-		delete this->pWtReg;
-	}
+	delete this->pWtReg;
+    this->pWtReg = 0;
 }
 
 //
@@ -313,7 +309,7 @@ void casStreamOS::eventFlush()
 	// if there is nothing pending in the input
 	// queue, then flush the output queue
 	//
-	if ( this->in.bytesAvailable() == 0u ) {
+	if ( this->inBufBytesAvailable() == 0u ) {
 		this->armSend ();
 	}
 }
@@ -349,15 +345,15 @@ casStreamOS::~casStreamOS()
 //
 void casStreamOS::show ( unsigned level ) const
 {
-	this->casStrmClient::show(level);
-	printf("casStreamOS at %p\n", 
+	this->casStrmClient::show ( level );
+	printf ( "casStreamOS at %p\n", 
         static_cast <const void *> ( this ) );
-	printf("\tsendBlocked = %d\n", this->sendBlocked);
-	if (this->pWtReg) {
-		this->pWtReg->show(level);
+	printf ( "\tsendBlocked = %d\n", this->sendBlocked );
+	if ( this->pWtReg ) {
+		this->pWtReg->show ( level );
 	}
-	if (this->pRdReg) {
-		this->pRdReg->show(level);
+	if ( this->pRdReg ) {
+		this->pRdReg->show ( level );
 	}
 	this->evWk.show ( level );
 	this->ioWk.show ( level );
@@ -366,7 +362,7 @@ void casStreamOS::show ( unsigned level ) const
 //
 // casStreamReadReg::show()
 //
-void casStreamReadReg::show(unsigned level) const
+void casStreamReadReg::show ( unsigned level ) const
 {
 	this->fdReg::show ( level );
 	printf ( "casStreamReadReg at %p\n", 
@@ -395,16 +391,16 @@ void casStreamOS::recvCB ()
     //
     // copy in new messages 
     //
-    inBufClient::fillCondition fillCond = this->in.fill();
+    inBufClient::fillCondition fillCond = this->inBufFill ();
 	if ( fillCond == casFillDisconnect ) {
         this->getCAS().destroyClient ( *this );
 	}
     else {
-	   casProcCond  procCond = this->processInput();
-	    if (procCond == casProcDisconnect) {
+	   casProcCond procCond = this->processInput ();
+	    if ( procCond == casProcDisconnect ) {
             this->getCAS().destroyClient ( *this );
 	    }	
-	    else if ( this->in.full() ) {
+	    else if ( this->inBufFull() ) {
 		    //
 		    // If there isnt any space then temporarily 
 		    // stop calling this routine until problem is resolved 
@@ -415,7 +411,7 @@ void casStreamOS::recvCB ()
 		    // (casStreamReadReg is _not_ a onceOnly fdReg - 
 		    // therefore an explicit delete is required here)
 		    //
-		    this->disarmRecv(); // this deletes the casStreamReadReg object
+		    this->disarmRecv (); // this deletes the casStreamReadReg object
 	    }
     }
 	//
@@ -427,7 +423,7 @@ void casStreamOS::recvCB ()
 //
 // casStreamOS::sendBlockSignal()
 //
-void casStreamOS::sendBlockSignal()
+void casStreamOS::sendBlockSignal ()
 {
 	this->sendBlocked = true;
 	this->armSend ();
@@ -436,36 +432,37 @@ void casStreamOS::sendBlockSignal()
 //
 // casStreamWriteReg::show()
 //
-void casStreamWriteReg::show(unsigned level) const
+void casStreamWriteReg::show ( unsigned level ) const
 {
-	this->fdReg::show (level);
+	this->fdReg::show ( level );
 	printf ( "casStreamWriteReg at %p\n", 
         static_cast <const void *> ( this ) );
 }
 
 //
-// casStreamWriteReg::callBack()
+// casStreamWriteReg::callBack ()
 //
 void casStreamWriteReg::callBack()
 {
-	casStreamOS *pSOS = &this->os;
-	delete this; // allows rearm to occur if required
-	pSOS->sendCB();
+	casStreamOS * pSOS = & this->os;
+	pSOS->sendCB ();
 	//
-	// NO CODE HERE - see delete above
+	// NO CODE HERE - sendCB deletes this object
 	//
 }
 
 //
-// casStreamOS::sendCB()
+// casStreamOS::sendCB ()
 //
-void casStreamOS::sendCB()
+void casStreamOS::sendCB ()
 {
+    this->disarmSend ();
+
 	//
 	// attempt to flush the output buffer 
 	//
-	outBufClient::flushCondition flushCond = this->out.flush ();
-	if (flushCond==flushProgress) {
+	outBufClient::flushCondition flushCond = this->flush ();
+	if ( flushCond == flushProgress ) {
 		if ( this->sendBlocked ) {
 			this->sendBlocked = false;
 		}
@@ -513,10 +510,10 @@ void casStreamOS::sendCB()
 	}
 
 #	if defined(DEBUG)
-		printf ("write attempted on %d result was %d\n", 
-				this->getFD(), flushCond);
-		printf ("Recv backlog %u\n", this->in.bytesPresent());
-		printf ("Send backlog %u\n", this->out.bytesPresent());
+		printf ( "write attempted on %d result was %d\n", 
+				this->getFD(), flushCond );
+		printf ( "Recv backlog %u\n", this->in.bytesPresent() );
+		printf ( "Send backlog %u\n", this->out.bytesPresent() );
 #	endif
 
 	//
@@ -540,8 +537,8 @@ void casStreamOS::sendCB()
 		// additional bytes may have been added since
 		// we flushed the out buffer
 		//
-		if ( this->out.bytesPresent() > 0u &&
-			this->in.bytesAvailable() == 0u ) {
+		if ( this->outBufBytesPresent() > 0u &&
+			this->inBufBytesAvailable() == 0u ) {
 			this->armSend();
 		}
 	}
@@ -574,7 +571,7 @@ casProcCond casStreamOS::processInput() // X aCC 361
 		// if there is nothing pending in the input
 		// queue, then flush the output queue
 		//
-		if ( this->in.bytesAvailable() == 0u ) {
+		if ( this->inBufBytesAvailable() == 0u ) {
 			this->armSend ();
 		}
 		this->armRecv ();

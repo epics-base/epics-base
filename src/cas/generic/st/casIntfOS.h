@@ -36,8 +36,8 @@ public:
     void show ( unsigned level ) const;
     caNetAddr serverAddress () const;
 private:
-	caServerI       & cas;
-	casServerReg    * pRdReg;
+	caServerI & cas;
+	casServerReg * pRdReg;
 
 	casIntfOS ( const casIntfOS & );
 	casIntfOS & operator = ( const casIntfOS & );

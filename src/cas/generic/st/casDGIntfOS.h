@@ -39,9 +39,9 @@ public:
 private:
     casDGIOWakeup ioWk;
     casDGEvWakeup evWk;
-	casDGReadReg *pRdReg;
-	casDGBCastReadReg *pBCastRdReg; // fix for solaris bug
-	casDGWriteReg *pWtReg;
+	casDGReadReg * pRdReg;
+	casDGBCastReadReg * pBCastRdReg; // fix for solaris bug
+	casDGWriteReg * pWtReg;
 	bool sendBlocked;
 
     void armRecv ();

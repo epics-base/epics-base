@@ -32,10 +32,12 @@
 #include "ioBlocked.h"
 #include "caServerDefs.h"
 
+class casStrmClient;
 class beaconTimer;
 class beaconAnomalyGovernor;
 class casIntfOS;
 class casMonitor;
+class casChannelI;
 
 class caServerI : 
 	public caServerIO, 
@@ -60,12 +62,16 @@ public:
     unsigned subscriptionEventsPosted () const;
     void updateEventsPostedCounter ( unsigned nNewPosts );
     void generateBeaconAnomaly ();
-    casMonitor & casMonitorFactory (  casChannelI &, 
+    casMonitor & casMonitorFactory ( casChannelI &, 
         caResId clientId, const unsigned long count, 
         const unsigned type, const casEventMask &, 
         class casMonitorCallbackInterface & );
     void casMonitorDestroy ( casMonitor & );
     void destroyClient ( casStrmClient & );
+    static void dumpMsg ( 
+        const char * pHostName, const char * pUserName,
+        const struct caHdrLargeArray * mp, const void * dp, 
+        const char * pFormat, ... );
 private:
     clientBufMemoryManager clientBufMemMgr;
     tsFreeList < casMonitor, 1024 > casMonitorFreeList;
@@ -84,8 +90,8 @@ private:
 	casEventMask logEvent; 	// DBE_LOG registerEvent("log") 
 	casEventMask alarmEvent; // DBE_ALARM registerEvent("alarm")
 
-	caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
-			bool addConfigAddr);
+	caStatus attachInterface ( const caNetAddr & addr, bool autoBeaconAddr,
+			bool addConfigAddr );
 
     void sendBeacon ( ca_uint32_t beaconNo );
 

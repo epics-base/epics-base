@@ -23,9 +23,6 @@
 #include "caHdrLargeArray.h"
 #include "casCoreClient.h"
 
-class epicsMutex;
-template < class MUTEX > class epicsGuard;
-
 class casAsyncIOI : 
     public tsDLNode < casAsyncIOI >, 
     public casEvent {
@@ -47,13 +44,17 @@ private:
 	// casEvent virtual call back function
 	// (called when IO completion event reaches top of event queue)
 	//
-	epicsShareFunc caStatus cbFunc ( casCoreClient &, epicsGuard < epicsMutex > & );
+	epicsShareFunc caStatus cbFunc ( 
+        casCoreClient &, 
+        epicsGuard < casClientMutex > &,
+        epicsGuard < evSysMutex > & );
 
     //
     // derived class specific call back
 	// (called when IO completion event reaches top of event queue)
     //
-    epicsShareFunc virtual caStatus cbFuncAsyncIO () = 0;
+    epicsShareFunc virtual caStatus cbFuncAsyncIO (
+        epicsGuard < casClientMutex > & ) = 0;
 
 	casAsyncIOI ( const casAsyncIOI & );
 	casAsyncIOI & operator = ( const casAsyncIOI & );

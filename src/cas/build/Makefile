@@ -30,7 +30,6 @@ INC += caNetAddr.h
 LIBSRCS += caServer.cc
 LIBSRCS += caServerI.cc
 LIBSRCS += casCoreClient.cc
-LIBSRCS += casClient.cc
 LIBSRCS += casDGClient.cc
 LIBSRCS += casStrmClient.cc
 LIBSRCS += casPV.cc
@@ -62,6 +61,7 @@ LIBSRCS += beaconTimer.cc
 LIBSRCS += beaconAnomalyGovernor.cc
 LIBSRCS += clientBufMemoryManager.cpp
 LIBSRCS += chanIntfForPV.cc
+LIBSRCS += channelDestroyEvent.cpp
 
 LIBSRCS += casIntfOS.cc
 LIBSRCS += casDGIntfOS.cc

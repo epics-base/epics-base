@@ -45,8 +45,9 @@ casMonitor::~casMonitor()
 {
 }
 
-caStatus casMonitor::response ( casCoreClient & client,
-                               const gdd & value )
+caStatus casMonitor::response ( 
+    epicsGuard < casClientMutex > & guard,
+    casCoreClient & client, const gdd & value )
 {
     if ( this->pChannel ) {
         // reconstruct request header
@@ -57,8 +58,8 @@ caStatus casMonitor::response ( casCoreClient & client,
 	    msg.m_count = this->nElem;
 	    msg.m_cid = this->pChannel->getSID();
 	    msg.m_available = this->clientId; 
-	    return client.monitorResponse ( *this->pChannel,
-		    msg, value, S_cas_success );
+	    return client.monitorResponse ( 
+            guard, *this->pChannel, msg, value, S_cas_success );
     }
     else {
         return S_cas_success;
@@ -102,12 +103,12 @@ void casMonitor::installNewEventLog (
 
 caStatus casMonitor::executeEvent ( casCoreClient & client, 
     casMonEvent & ev, const gdd & value,
-    epicsGuard < epicsMutex > & guard )
+    epicsGuard < casClientMutex > & clientGuard,
+    epicsGuard < evSysMutex > & evGuard )
 {
     if ( this->pChannel ) {
-        epicsGuardRelease < epicsMutex > unguard ( guard );
         caStatus status = this->callBackIntf.casMonitorCallBack ( 
-                *this, value );
+                clientGuard, *this, value );
 	    if ( status != S_cas_success ) {
             return status;
         }
@@ -125,14 +126,16 @@ caStatus casMonitor::executeEvent ( casCoreClient & client,
 		this->overFlowEvent.clear ();
 	}
 	else {
-        client.casMonEventDestroy ( ev, guard );
+        client.casMonEventDestroy ( ev, evGuard );
 	}
 
     if ( ! this->pChannel && this->nPend == 0 ) {
-        // we are careful here not to invert
-        // the lock hierarchy
-        epicsGuardRelease < epicsMutex > unguard ( guard );
-        client.destroyMonitor ( *this );
+        // we carefully avoid inverting the lock hierarchy here
+        epicsGuardRelease < evSysMutex > unguard ( evGuard );
+        {
+            epicsGuardRelease < casClientMutex > unguard ( clientGuard );
+            client.destroyMonitor ( *this );
+        }
     }
 
     return S_cas_success;

@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -16,39 +15,43 @@
  *              505 665 1831
  */
 
-#ifndef casEventh
-#define casEventh
+#ifndef channelDestroyEventh
+#define channelDestroyEventh
 
 #ifdef epicsExportSharedSymbols
-#   define epicsExportSharedSymbols_casEventh
+#   define epicsExportSharedSymbols_channelDestroyEventh
 #   undef epicsExportSharedSymbols
 #endif
 
 // external headers included here
-#include "tsDLList.h"
+#include "caProto.h"
 
-#ifdef epicsExportSharedSymbols_casEventh
+#ifdef epicsExportSharedSymbols_channelDestroyEventh
 #   define epicsExportSharedSymbols
 #   include "shareLib.h"
 #endif
 
-#include "casdef.h"
+#include "casEvent.h"
 
-class casCoreClient;
+class casChannelI;
 
-class evSysMutex;
-class casClientMutex;
-template < class MUTEX > class epicsGuard;
-
-class casEvent : public tsDLNode < casEvent > {
+class channelDestroyEvent : public casEvent {
 public:
-    virtual caStatus cbFunc ( 
+    channelDestroyEvent ( casChannelI &, bool uninstallNeeded );
+private:
+    casChannelI & chan;
+    bool uninstallNeeded;
+    caStatus cbFunc ( 
         casCoreClient &, 
         epicsGuard < casClientMutex > &,
-        epicsGuard < evSysMutex > & ) = 0;
-protected:
-    epicsShareFunc virtual ~casEvent();
+        epicsGuard < evSysMutex > & );
 };
 
-#endif // casEventh
+inline channelDestroyEvent::channelDestroyEvent ( 
+    casChannelI & chanIn, bool uninstallNeededIn ) :
+    chan ( chanIn ), uninstallNeeded ( uninstallNeededIn )
+{
+}
+
+#endif // channelDestroyEventh
 

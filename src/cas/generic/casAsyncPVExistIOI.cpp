@@ -39,7 +39,8 @@ caStatus casAsyncPVExistIOI::postIOCompletion (
 	return this->insertEventQueue ();
 }
 
-caStatus casAsyncPVExistIOI::cbFuncAsyncIO ()
+caStatus casAsyncPVExistIOI::cbFuncAsyncIO ( 
+    epicsGuard < casClientMutex > & guard )
 {
     caStatus 	status;
     
@@ -48,7 +49,7 @@ caStatus casAsyncPVExistIOI::cbFuncAsyncIO ()
         // pass output DG address parameters
         //
         status = this->client.asyncSearchResponse (
-            this->dgOutAddr, this->msg, this->retVal,
+            guard, this->dgOutAddr, this->msg, this->retVal,
             this->protocolRevision, this->sequenceNumber );
         if ( status == S_cas_sendBlocked ) {
             return status;

@@ -25,6 +25,9 @@
 #include "casEventSys.h"
 #include "casCtx.h"
 
+class casClientMutex : public epicsMutex {
+};
+
 //
 // casCoreClient
 // (this will eventually support direct communication
@@ -35,7 +38,6 @@ class casCoreClient : public ioBlocked,
 public:
 	casCoreClient ( caServerI & serverInternal ); 
 	virtual ~casCoreClient ();
-	virtual caStatus disconnectChan( caResId id );
 	virtual void show ( unsigned level ) const;
 
     void installAsynchIO ( class casAsyncPVAttachIOI & io );
@@ -50,30 +52,44 @@ public:
 	// asynchronous completion
 	//
 	virtual caStatus asyncSearchResponse (
-		const caNetAddr & outAddr, 
+        epicsGuard < casClientMutex > &, const caNetAddr & outAddr, 
 		const caHdrLargeArray &, const pvExistReturn &,
         ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber );
 	virtual caStatus createChanResponse (
+        epicsGuard < casClientMutex > &,
 		const caHdrLargeArray &, const pvAttachReturn &);
 	virtual caStatus readResponse (
+        epicsGuard < casClientMutex > &,
 		casChannelI *, const caHdrLargeArray &, 
         const gdd &, const caStatus ); 
 	virtual caStatus readNotifyResponse (
+        epicsGuard < casClientMutex > &,
 		casChannelI *, const caHdrLargeArray &, 
         const gdd &, const caStatus );
-	virtual caStatus writeResponse ( casChannelI &, 
+	virtual caStatus writeResponse ( 
+        epicsGuard < casClientMutex > &, casChannelI &, 
         const caHdrLargeArray &, const caStatus );
-	virtual caStatus writeNotifyResponse ( casChannelI &, 
+	virtual caStatus writeNotifyResponse ( 
+        epicsGuard < casClientMutex > &, casChannelI &, 
         const caHdrLargeArray &, const caStatus );
-	virtual caStatus monitorResponse ( casChannelI &, 
+	virtual caStatus monitorResponse ( 
+        epicsGuard < casClientMutex > &, casChannelI &, 
         const caHdrLargeArray &, const gdd &, 
         const caStatus status );
-	virtual caStatus accessRightsResponse ( casChannelI * );
+	virtual caStatus accessRightsResponse ( 
+        epicsGuard < casClientMutex > &, casChannelI * );
     virtual caStatus enumPostponedCreateChanResponse ( 
+        epicsGuard < casClientMutex > &,
         casChannelI &, const caHdrLargeArray &, 
         unsigned dbrType );
 	virtual caStatus channelCreateFailedResp ( 
+        epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );
+    virtual caStatus channelDestroyNotify (
+        epicsGuard < casClientMutex > &, 
+        casChannelI &, bool uninstallNeeded );
+   virtual void casChannelDestroyNotify ( 
+       casChannelI & chan, bool immediateDestroyNeeded );
 
 	virtual ca_uint16_t protocolRevision () const = 0;
 
@@ -86,8 +102,6 @@ public:
 
     casEventSys::processStatus eventSysProcess();
 
-	void addToEventQueue ( casMonEvent & );
-	void removeFromEventQueue ( casMonEvent & );
 	caStatus addToEventQueue ( casAsyncIOI &, 
         bool & onTheQueue, bool & posted );
     void removeFromEventQueue ( casAsyncIOI &, 
@@ -96,8 +110,9 @@ public:
         casChannelI &, bool & inTheEventQueue );
     void enableEvents ();
     void disableEvents ();
-    caStatus casMonitorCallBack ( casMonitor &,
-        const gdd & );
+    caStatus casMonitorCallBack ( 
+        epicsGuard < casClientMutex > &, 
+        casMonitor &, const gdd & );
     void postEvent ( tsDLList <casMonitor > &, 
         const casEventMask &select, const gdd &event );
 
@@ -110,10 +125,10 @@ public:
     void destroyMonitor ( casMonitor & mon );
 
     void casMonEventDestroy ( 
-        casMonEvent &, epicsGuard < epicsMutex > & );
+        casMonEvent &, epicsGuard < evSysMutex > & );
 
 protected:
-    mutable epicsMutex mutex;
+    mutable casClientMutex mutex;
     casEventSys eventSys;
 	casCtx ctx;
     bool userStartedAsyncIO;
@@ -142,7 +157,8 @@ inline bool casCoreClient::okToStartAsynchIO ()
     return false;
 }
 
-inline void casCoreClient::postEvent ( tsDLList < casMonitor > & monitorList, 
+inline void casCoreClient::postEvent ( 
+    tsDLList < casMonitor > & monitorList, 
     const casEventMask & select, const gdd & event )
 {
     bool signalNeeded = 
@@ -150,12 +166,12 @@ inline void casCoreClient::postEvent ( tsDLList < casMonitor > & monitorList,
     if ( signalNeeded ) {
         this->eventSignal ();
     }
-
 }
 
 inline casEventSys::processStatus casCoreClient::eventSysProcess ()
 {
-	return this->eventSys.process ();
+    epicsGuard < casClientMutex > guard ( this->mutex );
+	return this->eventSys.process ( guard );
 }
 
 inline caStatus casCoreClient::addToEventQueue ( casAsyncIOI & io, 
@@ -174,16 +190,6 @@ inline void casCoreClient::removeFromEventQueue (
     casAsyncIOI & io, bool & onTheEventQueue )
 {
     this->eventSys.removeFromEventQueue ( io, onTheEventQueue );
-}
-
-inline void casCoreClient::addToEventQueue ( casMonEvent & ev )
-{
-	this->eventSys.addToEventQueue ( ev );
-}
-
-inline void casCoreClient::removeFromEventQueue ( casMonEvent &  ev )
-{
-    this->eventSys.removeFromEventQueue ( ev );
 }
 
 inline void casCoreClient::addToEventQueue ( 
@@ -218,7 +224,7 @@ inline void casCoreClient::setDestroyPending ()
 }
 
 inline void casCoreClient::casMonEventDestroy ( 
-    casMonEvent & ev, epicsGuard < epicsMutex > & guard )
+    casMonEvent & ev, epicsGuard < evSysMutex > & guard )
 {
     this->eventSys.casMonEventDestroy ( ev, guard );
 }

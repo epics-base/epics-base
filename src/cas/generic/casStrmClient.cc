@@ -28,14 +28,53 @@ typedef unsigned long arrayElementCount;
 #include "casStrmClient.h"
 #include "casChannelI.h"
 #include "casAsyncIOI.h"
+#include "channelDestroyEvent.h"
 
 static const caHdr nill_msg = { 0u, 0u, 0u, 0u, 0u, 0u };
+
+casStrmClient::pCASMsgHandler const casStrmClient::msgHandlers[] =
+{
+	& casStrmClient::versionAction,
+	& casStrmClient::eventAddAction,
+	& casStrmClient::eventCancelAction,
+	& casStrmClient::readAction,
+	& casStrmClient::writeAction,
+    & casStrmClient::uknownMessageAction, 
+    & casStrmClient::uknownMessageAction, 
+    & casStrmClient::uknownMessageAction, 
+	& casStrmClient::eventsOffAction,
+	& casStrmClient::eventsOnAction,
+	& casStrmClient::readSyncAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::clearChannelAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::readNotifyAction,
+	& casStrmClient::ignoreMsgAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::claimChannelAction,
+	& casStrmClient::writeNotifyAction,
+	& casStrmClient::clientNameAction,
+	& casStrmClient::hostNameAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::echoAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::uknownMessageAction,
+	& casStrmClient::uknownMessageAction
+};
 
 //
 // casStrmClient::casStrmClient()
 //
-casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & memMgr ) :
-	casClient ( cas, memMgr, 1 )
+casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & mgrIn ) :
+    casCoreClient ( cas ),
+    in ( *this, mgrIn, 1 ), 
+    out ( *this, mgrIn ),
+    pUserName ( 0 ),
+    pHostName ( 0 ),
+    incommingBytesToDrain ( 0 ),
+    minor_version_number ( 0 )
 {
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
@@ -63,20 +102,175 @@ casStrmClient::~casStrmClient ()
 }
 
 //
+// casStrmClient::processMsg ()
+//
+caStatus casStrmClient::processMsg ()
+{
+    epicsGuard < casClientMutex > guard ( this->mutex );
+	int status = S_cas_success;
+
+    try {
+
+        // drain message that does not fit
+        if ( this->incommingBytesToDrain ) {
+            unsigned bytesLeft = this->in.bytesPresent();
+            if ( bytesLeft  < this->incommingBytesToDrain ) {
+                this->in.removeMsg ( bytesLeft );
+                this->incommingBytesToDrain -= bytesLeft;
+                return S_cas_success;
+            }
+            else {
+                this->in.removeMsg ( this->incommingBytesToDrain );
+                this->incommingBytesToDrain = 0u;
+            }
+        }
+
+	    //
+	    // process any messages in the in buffer
+	    //
+	    unsigned bytesLeft;
+	    while ( ( bytesLeft = this->in.bytesPresent() ) ) {
+            caHdrLargeArray msgTmp;
+            unsigned msgSize;
+            ca_uint32_t hdrSize;
+            char * rawMP;
+            {
+	            //
+	            // copy as raw bytes in order to avoid
+	            // alignment problems
+	            //
+                caHdr smallHdr;
+                if ( bytesLeft < sizeof ( smallHdr ) ) {
+                    break;
+                }
+
+                rawMP = this->in.msgPtr ();
+	            memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
+
+                ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
+                ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
+                if ( payloadSize != 0xffff && nElem != 0xffff ) {
+                    hdrSize = sizeof ( smallHdr );
+                }
+                else {
+                    ca_uint32_t LWA[2];
+                    hdrSize = sizeof ( smallHdr ) + sizeof ( LWA );
+                    if ( bytesLeft < hdrSize ) {
+                        break;
+                    }
+                    //
+                    // copy as raw bytes in order to avoid
+                    // alignment problems
+                    //
+                    memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
+                    payloadSize = epicsNTOH32 ( LWA[0] );
+                    nElem = epicsNTOH32 ( LWA[1] );
+                }
+
+                msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
+                msgTmp.m_postsize = payloadSize;
+                msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
+                msgTmp.m_count = nElem;
+                msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
+                msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
+
+
+                msgSize = hdrSize + payloadSize;
+                if ( bytesLeft < msgSize ) {
+                    if ( msgSize > this->in.bufferSize() ) {
+                        this->in.expandBuffer ();
+                        // msg to large - set up message drain
+                        if ( msgSize > this->in.bufferSize() ) {
+                            caServerI::dumpMsg ( this->pHostName, this->pUserName, & msgTmp, 0, 
+                                "The client requested transfer is greater than available " 
+                                "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
+                            status = this->sendErr ( guard, & msgTmp, invalidResID, ECA_TOLARGE, 
+                                "client's request didnt fit within the CA server's message buffer" );
+                            this->in.removeMsg ( bytesLeft );
+                            this->incommingBytesToDrain = msgSize - bytesLeft;
+                        }
+                    }
+                    break;
+                }
+
+                this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
+
+		        if ( this->getCAS().getDebugLevel() > 2u ) {
+			        caServerI::dumpMsg ( this->pHostName, this->pUserName, 
+                        & msgTmp, rawMP + hdrSize, 0 );
+		        }
+
+            }
+
+		    //
+		    // Reset the context to the default
+		    // (guarantees that previous message does not get mixed 
+		    // up with the current message)
+		    //
+		    this->ctx.setChannel ( NULL );
+		    this->ctx.setPV ( NULL );
+
+		    //
+		    // Call protocol stub
+		    //
+            casStrmClient::pCASMsgHandler pHandler;
+		    if ( msgTmp.m_cmmd < NELEMENTS ( casStrmClient::msgHandlers ) ) {
+                pHandler = this->casStrmClient::msgHandlers[msgTmp.m_cmmd];
+		    }
+            else {
+                pHandler = & casStrmClient::uknownMessageAction;
+            }
+		    status = ( this->*pHandler ) ( guard );
+		    if ( status ) {
+			    break;
+		    }
+
+            this->in.removeMsg ( msgSize );
+	    }
+    }
+    catch ( std::bad_alloc & ) {
+        status = this->sendErr ( guard,
+            this->ctx.getMsg(), invalidResID, ECA_ALLOCMEM, 
+            "inablility to allocate memory in "
+            "the server disconnected client" );
+        status = S_cas_noMemory;
+    }
+    catch ( std::exception & except ) {
+		status = this->sendErr ( guard,
+            this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
+            "C++ exception \"%s\" in server "
+            "diconnected client",
+            except.what () );
+        status = S_cas_internal;
+    }
+    catch (...) {
+		status = this->sendErr ( guard,
+            this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
+            "unexpected C++ exception in server "
+            "diconnected client" );
+        status = S_cas_internal;
+    }
+
+	return status;
+}
+
+//
 // casStrmClient::uknownMessageAction()
 //
-caStatus casStrmClient::uknownMessageAction ()
+caStatus casStrmClient::uknownMessageAction ( epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	caStatus status;
 
-	this->dumpMsg ( mp, this->ctx.getData(),
+    caServerI::dumpMsg ( this->pHostName, 
+        this->pUserName, mp, this->ctx.getData(),
         "bad request code from virtual circuit=%u\n", mp->m_cmmd );
 
 	/* 
 	 *	most clients dont recover from this
 	 */
-	status = this->sendErr ( mp, invalidResID, ECA_INTERNAL, "Invalid Request Code" );
+	status = this->sendErr ( guard, mp, invalidResID, 
+        ECA_INTERNAL, "Invalid Request Code" );
 	if (status) {
 		return status;
 	}
@@ -86,6 +280,78 @@ caStatus casStrmClient::uknownMessageAction ()
 	 * the client with the bad message
 	 */
 	return S_cas_internal;
+}
+
+/*
+ * casStrmClient::ignoreMsgAction()
+ */
+caStatus casStrmClient::ignoreMsgAction ( epicsGuard < casClientMutex > & )
+{
+	return S_cas_success;
+}
+
+//
+// versionAction()
+//
+caStatus casStrmClient::versionAction ( epicsGuard < casClientMutex > & )
+{
+#if 1
+	return S_cas_success;
+#else
+    //
+    // eventually need to set the priority here
+    //
+	const caHdrLargeArray * mp = this->ctx.getMsg();
+
+    if ( mp->m_dataType > CA_PROTO_PRIORITY_MAX ) {
+        return S_cas_badProtocol;
+    }
+
+    double tmp = mp->m_dataType - CA_PROTO_PRIORITY_MIN;
+    tmp *= epicsThreadPriorityCAServerHigh - epicsThreadPriorityCAServerLow;
+    tmp /= CA_PROTO_PRIORITY_MAX - CA_PROTO_PRIORITY_MIN;
+    tmp += epicsThreadPriorityCAServerLow;
+    unsigned epicsPriorityNew = (unsigned) tmp;
+    unsigned epicsPrioritySelf = epicsThreadGetPrioritySelf();
+    if ( epicsPriorityNew != epicsPrioritySelf ) {
+        epicsThreadBooleanStatus tbs;
+        unsigned priorityOfEvents;
+        tbs  = epicsThreadHighestPriorityLevelBelow ( epicsPriorityNew, &priorityOfEvents );
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
+            priorityOfEvents = epicsPriorityNew;
+        }
+
+        if ( epicsPriorityNew > epicsPrioritySelf ) {
+            epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsPriorityNew );
+            db_event_change_priority ( client->evuser, priorityOfEvents );
+        }
+        else {
+            db_event_change_priority ( client->evuser, priorityOfEvents );
+            epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsPriorityNew );
+        }
+        client->priority = mp->m_dataType;
+    }
+    return S_cas_success;
+#endif
+}
+
+//
+// echoAction()
+//
+caStatus casStrmClient::echoAction ( epicsGuard < casClientMutex > & )
+{
+	const caHdrLargeArray * mp = this->ctx.getMsg();
+	const void * dp = this->ctx.getData();
+    void * pPayloadOut;
+
+    caStatus status = this->out.copyInHeader ( mp->m_cmmd, mp->m_postsize, 
+        mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
+        & pPayloadOut );
+    if ( ! status ) {
+        memcpy ( pPayloadOut, dp, mp->m_postsize );
+        this->out.commitMsg ();
+    }
+	return S_cas_success;
 }
 
 //
@@ -131,7 +397,7 @@ void casStrmClient::show ( unsigned level ) const
         static_cast <const void *> ( this ) );
 	if ( level > 1u ) {
 		printf ("\tuser %s at %s\n", this->pUserName, this->pHostName);
-	    this->casClient::show ( level - 1 );
+	    this->casCoreClient::show ( level - 1 );
 	    this->in.show ( level - 1 );
 	    this->out.show ( level - 1 );
         this->chanTable.show ( level - 1 );
@@ -141,7 +407,7 @@ void casStrmClient::show ( unsigned level ) const
 /*
  * casStrmClient::readAction()
  */
-caStatus casStrmClient::readAction ()
+caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray * mp = this->ctx.getMsg();
 	caStatus status;
@@ -151,11 +417,11 @@ caStatus casStrmClient::readAction ()
 	status = this->verifyRequest ( pChan );
 	if ( status != ECA_NORMAL ) {
         if ( pChan ) {
-		    return this->sendErr ( mp, pChan->getCID(), 
+		    return this->sendErr ( guard, mp, pChan->getCID(), 
                 status, "get request" );
         }
         else {
-		    return this->sendErr ( mp, invalidResID, 
+		    return this->sendErr ( guard, mp, invalidResID, 
                 status, "get request" );
         }
 	}
@@ -174,13 +440,13 @@ caStatus casStrmClient::readAction ()
 			status = ECA_GETFAIL;
 		}
 
-		return this->sendErr ( mp, pChan->getCID(), 
+		return this->sendErr ( guard, mp, pChan->getCID(), 
             status, "read access denied" );
 	}
 
 	status = this->read ( pDesc ); 
 	if ( status == S_casApp_success ) {
-		status = this->readResponse ( pChan, *mp, *pDesc, S_cas_success );
+		status = this->readResponse ( guard, pChan, *mp, *pDesc, S_cas_success );
 	}
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
@@ -189,7 +455,7 @@ caStatus casStrmClient::readAction ()
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->sendErrWithEpicsStatus ( mp, 
+		status = this->sendErrWithEpicsStatus ( guard, mp, 
             pChan->getCID(), status, ECA_GETFAIL );
 	}
 
@@ -203,17 +469,16 @@ caStatus casStrmClient::readAction ()
 //
 // casStrmClient::readResponse()
 //
-caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArray & msg, 
+caStatus casStrmClient::readResponse ( epicsGuard < casClientMutex > & guard,
+                    casChannelI * pChan, const caHdrLargeArray & msg, 
 					const gdd & desc, const caStatus status )
 {
 	if ( status != S_casApp_success ) {
-		return this->sendErrWithEpicsStatus ( & msg, 
+		return this->sendErrWithEpicsStatus ( guard, & msg, 
             pChan->getCID(), status, ECA_GETFAIL );
 	}
 
-    epicsGuard < epicsMutex > guard ( this->mutex );
-
-    void *pPayload;
+    void * pPayload;
     {
 	    unsigned payloadSize = dbr_size_n ( msg.m_dataType, msg.m_count );
         caStatus localStatus = this->out.copyInHeader ( msg.m_cmmd, payloadSize,
@@ -221,7 +486,7 @@ caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArra
             msg.m_available, & pPayload );
 	    if ( localStatus ) {
 		    if ( localStatus==S_cas_hugeRequest ) {
-			    localStatus = sendErr ( &msg, pChan->getCID(), ECA_TOLARGE, 
+			    localStatus = sendErr ( guard, & msg, pChan->getCID(), ECA_TOLARGE, 
                     "unable to fit read response into server's buffer" );
 		    }
 		    return localStatus;
@@ -239,7 +504,7 @@ caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArra
 		errPrintf ( S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
 				pChan->getPVI().getName(), msg.m_dataType, msg.m_count );
 		return this->sendErrWithEpicsStatus ( 
-            & msg, pChan->getCID(), S_cas_badBounds, ECA_GETFAIL );
+            guard, & msg, pChan->getCID(), S_cas_badBounds, ECA_GETFAIL );
 	}
 #ifdef CONVERSION_REQUIRED
 	( * cac_dbr_cvrt[msg.m_dataType] )
@@ -259,7 +524,7 @@ caStatus casStrmClient::readResponse ( casChannelI * pChan, const caHdrLargeArra
 //
 // casStrmClient::readNotifyAction()
 //
-caStatus casStrmClient::readNotifyAction ()
+caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray * mp = this->ctx.getMsg();
 	casChannelI * pChan;
@@ -268,19 +533,19 @@ caStatus casStrmClient::readNotifyAction ()
 
 	status = this->verifyRequest ( pChan );
 	if ( status != ECA_NORMAL ) {
-		return this->readNotifyFailureResponse ( *mp, status );
+		return this->readNotifyFailureResponse ( guard, * mp, status );
 	}
 
 	//
 	// verify read access
 	// 
 	if ( ! pChan->readAccess() ) {
-		return this->readNotifyFailureResponse ( *mp, ECA_NORDACCESS );
+		return this->readNotifyFailureResponse ( guard, *mp, ECA_NORDACCESS );
 	}
 
 	status = this->read ( pDesc ); 
 	if ( status == S_casApp_success ) {
-		status = this->readNotifyResponse ( pChan, *mp, *pDesc, status );
+		status = this->readNotifyResponse ( guard, pChan, *mp, *pDesc, status );
 	}
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
@@ -289,7 +554,7 @@ caStatus casStrmClient::readNotifyAction ()
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->readNotifyResponse ( pChan, *mp, *pDesc, status );
+		status = this->readNotifyResponse ( guard, pChan, *mp, *pDesc, status );
 	}
 
     if ( pDesc ) {
@@ -302,12 +567,12 @@ caStatus casStrmClient::readNotifyAction ()
 //
 // casStrmClient::readNotifyResponse()
 //
-caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan, 
-		const caHdrLargeArray & msg, const gdd & desc, 
+caStatus casStrmClient::readNotifyResponse ( epicsGuard < casClientMutex > & guard, 
+        casChannelI * pChan, const caHdrLargeArray & msg, const gdd & desc, 
         const caStatus completionStatus )
 {
 	if ( completionStatus != S_cas_success ) {
-        caStatus ecaStatus =  this->readNotifyFailureResponse ( msg, ECA_GETFAIL );
+        caStatus ecaStatus =  this->readNotifyFailureResponse ( guard, msg, ECA_GETFAIL );
     	//
 	    // send independent warning exception to the client so that they
 	    // will see the error string associated with this error code 
@@ -321,15 +586,13 @@ caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan,
 	    // The message is logged to the console in the rare situations when
 	    // we are unable to send.
 	    //
-		caStatus tmpStatus = this->sendErrWithEpicsStatus ( & msg, pChan->getCID(),
+		caStatus tmpStatus = this->sendErrWithEpicsStatus ( guard, & msg, pChan->getCID(),
                     completionStatus, ECA_NOCONVERT );
 		if ( tmpStatus ) {
 			errMessage ( completionStatus, "<= get callback failure detail not passed to client" );
 		}
         return ecaStatus;
 	}
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
     void *pPayload;
     {
@@ -339,7 +602,7 @@ caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan,
                     msg.m_available, & pPayload );
 	    if ( status ) {
 		    if ( status == S_cas_hugeRequest ) {
-			    status = sendErr ( & msg, pChan->getCID(), ECA_TOLARGE, 
+			    status = sendErr ( guard, & msg, pChan->getCID(), ECA_TOLARGE, 
                     "unable to fit read notify response into server's buffer" );
 		    }
 		    return status;
@@ -356,7 +619,7 @@ caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan,
 		errPrintf ( S_cas_badBounds, __FILE__, __LINE__, 
             "- get notify with PV=%s type=%u count=%u",
 			pChan->getPVI().getName(), msg.m_dataType, msg.m_count );
-        return this->readNotifyFailureResponse ( msg, ECA_NOCONVERT );
+        return this->readNotifyFailureResponse ( guard, msg, ECA_NOCONVERT );
 	}
 
 #ifdef CONVERSION_REQUIRED
@@ -378,9 +641,9 @@ caStatus casStrmClient::readNotifyResponse ( casChannelI * pChan,
 //
 // casStrmClient::readNotifyFailureResponse ()
 //
-caStatus casStrmClient::readNotifyFailureResponse ( const caHdrLargeArray & msg, const caStatus ECA_XXXX )
+caStatus casStrmClient::readNotifyFailureResponse ( 
+    epicsGuard < casClientMutex > &, const caHdrLargeArray & msg, const caStatus ECA_XXXX )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
     assert ( ECA_XXXX != ECA_NORMAL );
     void *pPayload;
 	unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
@@ -495,10 +758,10 @@ static gdd * createDBRDD ( unsigned dbrType, unsigned elemCount )
 //
 // casStrmClient::monitorFailureResponse ()
 //
-caStatus casStrmClient::monitorFailureResponse ( const caHdrLargeArray & msg, 
+caStatus casStrmClient::monitorFailureResponse ( 
+    epicsGuard < casClientMutex > &, const caHdrLargeArray & msg, 
     const caStatus ECA_XXXX )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
     assert ( ECA_XXXX != ECA_NORMAL );
     void *pPayload;
 	unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
@@ -515,11 +778,11 @@ caStatus casStrmClient::monitorFailureResponse ( const caHdrLargeArray & msg,
 //
 // casStrmClient::monitorResponse ()
 //
-caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
-		const gdd & desc, const caStatus completionStatus )
+caStatus casStrmClient::monitorResponse ( 
+    epicsGuard < casClientMutex > & guard,
+    casChannelI & chan, const caHdrLargeArray & msg, 
+	const gdd & desc, const caStatus completionStatus )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-
     void * pPayload = 0;
     {
 	    ca_uint32_t size = dbr_size_n ( msg.m_dataType, msg.m_count );
@@ -528,7 +791,7 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
             msg.m_available, & pPayload );
 	    if ( status ) {
 		    if ( status == S_cas_hugeRequest ) {
-			    status = sendErr ( & msg, chan.getCID(), ECA_TOLARGE, 
+			    status = sendErr ( guard, & msg, chan.getCID(), ECA_TOLARGE, 
                     "unable to fit read subscription update response "
                     "into server's buffer" );
 		    }
@@ -537,14 +800,14 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
     }
 
 	if ( ! chan.readAccess () ) {
-        return monitorFailureResponse ( msg, ECA_NORDACCESS );
+        return monitorFailureResponse ( guard, msg, ECA_NORDACCESS );
 	}
 
     gdd * pDBRDD = 0;
 	if ( completionStatus == S_cas_success ) {
 	    pDBRDD = createDBRDD ( msg.m_dataType, msg.m_count );
         if ( ! pDBRDD ) {
-            return monitorFailureResponse ( msg, ECA_ALLOCMEM );
+            return monitorFailureResponse ( guard, msg, ECA_ALLOCMEM );
         }
 	    else {
 	        gddStatus gdds = gddApplicationTypeTable::
@@ -554,20 +817,20 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
 		        errPrintf ( S_cas_noConvert, __FILE__, __LINE__,
         "no conversion between event app type=%d and DBR type=%d Element count=%d",
 			        desc.applicationType (), msg.m_dataType, msg.m_count);
-                return monitorFailureResponse ( msg, ECA_NOCONVERT );
+                return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
             }
         }
 	}
 	else {
 		errMessage ( completionStatus, "- in monitor response" );
 		if ( completionStatus == S_cas_noRead ) {
-            return monitorFailureResponse ( msg, ECA_NORDACCESS );
+            return monitorFailureResponse ( guard, msg, ECA_NORDACCESS );
 		}
 		else if ( completionStatus == S_cas_noMemory ) {
-            return monitorFailureResponse ( msg, ECA_ALLOCMEM );
+            return monitorFailureResponse ( guard, msg, ECA_ALLOCMEM );
 		}
 		else {
-            return monitorFailureResponse ( msg, ECA_GETFAIL );
+            return monitorFailureResponse ( guard, msg, ECA_GETFAIL );
 		}
 	}
 
@@ -575,7 +838,7 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
         *pDBRDD, chan.enumStringTable() );
     if ( mapDBRStatus < 0 ) {
         pDBRDD->unreference ();
-        return monitorFailureResponse ( msg, ECA_NOCONVERT );
+        return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
     }
 
 #ifdef CONVERSION_REQUIRED
@@ -603,7 +866,7 @@ caStatus casStrmClient::monitorResponse ( casChannelI & chan, const caHdrLargeAr
 /*
  * casStrmClient::writeAction()
  */
-caStatus casStrmClient::writeAction()
+caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 {	
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	caStatus status;
@@ -612,11 +875,11 @@ caStatus casStrmClient::writeAction()
 	status = this->verifyRequest ( pChan );
 	if (status != ECA_NORMAL) {
         if ( pChan ) {
-		    return this->sendErr ( mp, pChan->getCID(), 
+		    return this->sendErr ( guard, mp, pChan->getCID(), 
                 status, "get request" );
         }
         else {
-		    return this->sendErr ( mp, invalidResID, 
+		    return this->sendErr ( guard, mp, invalidResID, 
                 status, "get request" );
         }
 	}
@@ -624,10 +887,10 @@ caStatus casStrmClient::writeAction()
 	//
 	// verify write access
 	// 
-	if (!pChan->writeAccess()) {
+	if ( ! pChan->writeAccess() ) {
 		int	v41;
 
-		v41 = CA_V41(this->minor_version_number);
+		v41 = CA_V41 ( this->minor_version_number );
 		if (v41) {
 			status = ECA_NOWTACCESS;
 		}
@@ -635,14 +898,14 @@ caStatus casStrmClient::writeAction()
 			status = ECA_PUTFAIL;
 		}
 
-		return this->sendErr(mp, pChan->getCID(),
+		return this->sendErr ( guard, mp, pChan->getCID(),
             status, "write access denied");
 	}
 
 	//
 	// initiate the  write operation
 	//
-	status = this->write(); 
+	status = this->write (); 
 	if ( status == S_casApp_success || status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
 	}
@@ -650,7 +913,7 @@ caStatus casStrmClient::writeAction()
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->sendErrWithEpicsStatus ( mp, pChan->getCID(),
+		status = this->sendErrWithEpicsStatus ( guard, mp, pChan->getCID(),
                     status, ECA_PUTFAIL );
 		//
 		// I have assumed that the server tool has deleted the gdd here
@@ -666,14 +929,15 @@ caStatus casStrmClient::writeAction()
 //
 // casStrmClient::writeResponse()
 //
-caStatus casStrmClient::writeResponse ( casChannelI & chan,
-		const caHdrLargeArray & msg, const caStatus completionStatus )
+caStatus casStrmClient::writeResponse (
+    epicsGuard < casClientMutex > & guard, casChannelI & chan,
+	const caHdrLargeArray & msg, const caStatus completionStatus )
 {
 	caStatus status;
 
 	if ( completionStatus ) {
 		errMessage ( completionStatus, NULL );
-		status = this->sendErrWithEpicsStatus ( & msg, 
+		status = this->sendErrWithEpicsStatus ( guard, & msg, 
 				chan.getCID(), completionStatus, ECA_PUTFAIL );
 	}
 	else {
@@ -686,27 +950,28 @@ caStatus casStrmClient::writeResponse ( casChannelI & chan,
 /*
  * casStrmClient::writeNotifyAction()
  */
-caStatus casStrmClient::writeNotifyAction()
+caStatus casStrmClient::writeNotifyAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
-	const caHdrLargeArray *mp = this->ctx.getMsg();
+	const caHdrLargeArray *mp = this->ctx.getMsg ();
 
 	casChannelI	*pChan;
 	int status = this->verifyRequest ( pChan );
-	if (status != ECA_NORMAL) {
-		return casStrmClient::writeNotifyResponseECA_XXX(*mp, status);
+	if ( status != ECA_NORMAL ) {
+		return casStrmClient::writeNotifyResponseECA_XXX ( guard, *mp, status );
 	}
 
 	//
 	// verify write access
 	// 
-	if (!pChan->writeAccess()) {
-		if (CA_V41(this->minor_version_number)) {
-			return this->casStrmClient::writeNotifyResponseECA_XXX(
-					*mp, ECA_NOWTACCESS);
+	if ( ! pChan->writeAccess() ) {
+		if ( CA_V41(this->minor_version_number) ) {
+			return this->casStrmClient::writeNotifyResponseECA_XXX (
+					guard, *mp, ECA_NOWTACCESS);
 		}
 		else {
 			return this->casStrmClient::writeNotifyResponse (
-					*pChan, *mp, S_cas_noWrite );
+					guard, *pChan, *mp, S_cas_noWrite );
 		}
 	}
 
@@ -721,7 +986,7 @@ caStatus casStrmClient::writeNotifyAction()
 		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
-		status = casStrmClient::writeNotifyResponse ( *pChan, *mp, status );
+		status = casStrmClient::writeNotifyResponse ( guard, *pChan, *mp, status );
 	}
 
 	return status;
@@ -730,8 +995,8 @@ caStatus casStrmClient::writeNotifyAction()
 /* 
  * casStrmClient::writeNotifyResponse()
  */
-caStatus casStrmClient::writeNotifyResponse ( casChannelI & chan,
-		const caHdrLargeArray & msg, const caStatus completionStatus )
+caStatus casStrmClient::writeNotifyResponse ( epicsGuard < casClientMutex > & guard,
+        casChannelI & chan, const caHdrLargeArray & msg, const caStatus completionStatus )
 {
 	caStatus ecaStatus;
 
@@ -742,7 +1007,8 @@ caStatus casStrmClient::writeNotifyResponse ( casChannelI & chan,
 		ecaStatus = ECA_PUTFAIL;	
 	}
 
-	ecaStatus = this->casStrmClient::writeNotifyResponseECA_XXX(msg, ecaStatus);
+	ecaStatus = this->casStrmClient::writeNotifyResponseECA_XXX ( 
+        guard, msg, ecaStatus );
 	if (ecaStatus) {
 		return ecaStatus;
 	}
@@ -760,11 +1026,12 @@ caStatus casStrmClient::writeNotifyResponse ( casChannelI & chan,
 	// The message is logged to the console in the rare situations when
 	// we are unable to send.
 	//
-	if (completionStatus!=S_cas_success) {
-		ecaStatus = this->sendErrWithEpicsStatus ( &msg, chan.getCID(),
+	if ( completionStatus != S_cas_success ) {
+		ecaStatus = this->sendErrWithEpicsStatus ( guard, & msg, chan.getCID(),
                         completionStatus, ECA_NOCONVERT );
-		if (ecaStatus) {
-			errMessage (completionStatus, "<= put callback failure detail not passed to client");
+		if ( ecaStatus ) {
+			errMessage ( completionStatus, 
+                "<= put callback failure detail not passed to client" );
 		}
 	}
 	return S_cas_success;
@@ -774,9 +1041,9 @@ caStatus casStrmClient::writeNotifyResponse ( casChannelI & chan,
  * casStrmClient::writeNotifyResponseECA_XXX()
  */
 caStatus casStrmClient::writeNotifyResponseECA_XXX (
-		const caHdrLargeArray & msg, const caStatus ecaStatus )
+	epicsGuard < casClientMutex > & guard, 
+    const caHdrLargeArray & msg, const caStatus ecaStatus )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
     caStatus status = out.copyInHeader ( msg.m_cmmd, 0,
         msg.m_dataType, msg.m_count, ecaStatus, 
         msg.m_available, 0 );
@@ -790,7 +1057,7 @@ caStatus casStrmClient::writeNotifyResponseECA_XXX (
 /*
  * casStrmClient::hostNameAction()
  */
-caStatus casStrmClient::hostNameAction()
+caStatus casStrmClient::hostNameAction ( epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
@@ -801,7 +1068,7 @@ caStatus casStrmClient::hostNameAction()
     // currently this has to occur prior to 
     // creating channels or its not allowed
     if ( this->chanList.count () ) {
-		return this->sendErr ( mp, invalidResID, 
+		return this->sendErr ( guard, mp, invalidResID, 
                         ECA_UNAVAILINSERV, pName );
     }
 
@@ -811,7 +1078,7 @@ caStatus casStrmClient::hostNameAction()
 	 */
 	pMalloc = new char [size];
 	if ( ! pMalloc ){
-		status = this->sendErr ( mp, invalidResID, 
+		status = this->sendErr ( guard, mp, invalidResID, 
                         ECA_ALLOCMEM, pName );
 		if (status) {
 			return status;
@@ -820,8 +1087,6 @@ caStatus casStrmClient::hostNameAction()
 	}
 	strncpy ( pMalloc, pName, size - 1 );
 	pMalloc[ size - 1 ]='\0';
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	if ( this->pHostName ) {
 		delete [] this->pHostName;
@@ -834,7 +1099,8 @@ caStatus casStrmClient::hostNameAction()
 /*
  * casStrmClient::clientNameAction()
  */
-caStatus casStrmClient::clientNameAction()
+caStatus casStrmClient::clientNameAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	char 			*pName = (char *) this->ctx.getData();
@@ -845,7 +1111,7 @@ caStatus casStrmClient::clientNameAction()
     // currently this has to occur prior to 
     // creating channels or its not allowed
     if ( this->chanList.count () ) {
-		return this->sendErr ( mp, invalidResID, 
+		return this->sendErr ( guard, mp, invalidResID, 
                         ECA_UNAVAILINSERV, pName );
     }
 
@@ -856,7 +1122,7 @@ caStatus casStrmClient::clientNameAction()
 	 */
 	pMalloc = new char [size];
 	if(!pMalloc){
-		status = this->sendErr ( mp, invalidResID, 
+		status = this->sendErr ( guard, mp, invalidResID, 
                     ECA_ALLOCMEM, pName );
 		if (status) {
 			return status;
@@ -865,8 +1131,6 @@ caStatus casStrmClient::clientNameAction()
 	}
 	strncpy ( pMalloc, pName, size - 1 );
 	pMalloc[size-1]='\0';
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	if ( this->pUserName ) {
 		delete [] this->pUserName;
@@ -879,11 +1143,12 @@ caStatus casStrmClient::clientNameAction()
 /*
  * casStrmClientMon::claimChannelAction()
  */
-caStatus casStrmClient::claimChannelAction ()
+caStatus casStrmClient::claimChannelAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
-	const caHdrLargeArray *mp = this->ctx.getMsg();
+	const caHdrLargeArray * mp = this->ctx.getMsg();
 	char *pName = (char *) this->ctx.getData();
-	caServerI &cas = *this->ctx.getServer();
+	caServerI & cas = *this->ctx.getServer();
 	caStatus status;
 
 	/*
@@ -892,7 +1157,7 @@ caStatus casStrmClient::claimChannelAction ()
 	 * starting with CA 4.1. The field was set to zero
 	 * prior to 4.1
 	 */
-    if (mp->m_available < 0xffff ) {
+    if ( mp->m_available < 0xffff ) {
 	    this->minor_version_number = 
             static_cast < ca_uint16_t > ( mp->m_available );
     }
@@ -905,21 +1170,21 @@ caStatus casStrmClient::claimChannelAction ()
 	// an R3.11 client because we will not respond to their
 	// search requests (if so we disconnect)
 	//
-	if ( ! CA_V44(this->minor_version_number) ) {
+	if ( ! CA_V44 ( this->minor_version_number ) ) {
 		//
 		// old connect protocol was dropped when the
 		// new API was added to the server (they must
 		// now use clients at EPICS 3.12 or higher)
 		//
-		status = this->sendErr ( mp, mp->m_cid, ECA_DEFUNCT,
+		status = this->sendErr ( guard, mp, mp->m_cid, ECA_DEFUNCT,
 				"R3.11 connect sequence from old client was ignored");
-		if (status) {
+		if ( status ) {
 			return status;
 		}
 		return S_cas_badProtocol; // disconnect client
 	}
 
-	if (mp->m_postsize <= 1u) {
+	if ( mp->m_postsize <= 1u ) {
 		return S_cas_badProtocol; // disconnect client
 	}
 
@@ -951,7 +1216,7 @@ caStatus casStrmClient::claimChannelAction ()
 		status = S_cas_success;	
 	}
 	else if ( pvar.getStatus() == S_casApp_asyncCompletion ) {
-		status = this->createChanResponse ( *mp, S_cas_badParameter );
+		status = this->createChanResponse ( guard, *mp, S_cas_badParameter );
 		errMessage ( S_cas_badParameter, 
 		"- expected asynch IO creation from caServer::pvAttach()" );
 	}
@@ -960,60 +1225,69 @@ caStatus casStrmClient::claimChannelAction ()
 		this->ctx.getServer()->addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->createChanResponse ( *mp, pvar );
+		status = this->createChanResponse ( guard, *mp, pvar );
 	}
 	return status;
 }
-
-
 
 //
 // casStrmClient::createChanResponse()
 //
 caStatus casStrmClient::createChanResponse ( 
+    epicsGuard < casClientMutex > & guard,
     const caHdrLargeArray & hdr, const pvAttachReturn & pvar )
 {
 	if ( pvar.getStatus() != S_cas_success ) {
-		return this->channelCreateFailedResp ( hdr, pvar.getStatus() );
+		return this->channelCreateFailedResp ( guard, hdr, pvar.getStatus() );
 	}
 
-    casPVI * pPVI = casPVI::attachPV ( * pvar.getPV() );
-    if ( ! pPVI ) {
-        pvar.getPV()->destroy ();
-		return this->channelCreateFailedResp ( hdr, S_casApp_pvNotFound );
+    if ( ! pvar.getPV()->pPVI ) {
+        pvar.getPV()->pPVI = new ( std::nothrow ) casPVI ( *pvar.getPV() );
+        if ( ! pvar.getPV()->pPVI ) {
+            pvar.getPV()->destroyRequest ();
+		    return this->channelCreateFailedResp ( guard, hdr, S_casApp_pvNotFound );
+        }
     }
 
 	unsigned nativeTypeDBR;
-	caStatus status = pPVI->bestDBRType ( nativeTypeDBR );
+	caStatus status = pvar.getPV()->pPVI->bestDBRType ( nativeTypeDBR );
 	if ( status ) {
-		pPVI->deleteSignal();
+		pvar.getPV()->pPVI->deleteSignal();
 		errMessage ( status, "best external dbr type fetch failed" );
-		return this->channelCreateFailedResp ( hdr, status );
+		return this->channelCreateFailedResp ( guard, hdr, status );
 	}
 
 	//
 	// attach the PV to this server
 	//
-	status = pPVI->attachToServer ( this->getCAS() );
+	status = pvar.getPV()->pPVI->attachToServer ( this->getCAS() );
 	if ( status ) {
-		pPVI->deleteSignal();
-		return this->channelCreateFailedResp ( hdr, status );
+		pvar.getPV()->pPVI->deleteSignal();
+		return this->channelCreateFailedResp ( guard, hdr, status );
 	}
 
 	//
 	// create server tool XXX derived from casChannel
-    // (use temp context because this can be caled asynchronously)
+    // (use temp context because this can be called asynchronously)
 	//
     casCtx tmpCtx;
     tmpCtx.setClient ( this );
-    tmpCtx.setPV ( pPVI );
+    tmpCtx.setPV ( pvar.getPV()->pPVI );
     tmpCtx.setMsg ( hdr, 0 );
-	casChannel * pChan = pPVI->createChannel ( 
+	casChannel * pChan = pvar.getPV()->pPVI->createChannel ( 
         tmpCtx, this->pUserName, this->pHostName );
 	if ( ! pChan ) {
-		pPVI->deleteSignal();
-		return this->channelCreateFailedResp ( hdr, S_cas_noMemory );
+		return this->channelCreateFailedResp ( guard, hdr, S_cas_noMemory );
 	}
+
+    if ( ! pChan->pChanI ) {
+        pChan->pChanI = new ( std::nothrow ) casChannelI ( *pChan, tmpCtx );
+        if ( ! pChan->pChanI ) {
+            pChan->destroyRequest ();
+		    pvar.getPV()->pPVI->deleteSignal ();
+		    return this->channelCreateFailedResp ( guard, hdr, S_cas_noMemory );
+        }
+    }
 
     //
     // check to see if the enum table is empty and therefore
@@ -1022,10 +1296,9 @@ caStatus casStrmClient::createChanResponse (
     // an asynchronous IO to get the table completed
     //
     if ( nativeTypeDBR == DBR_ENUM ) {
-        this->ctx.setPV ( pPVI );
-        this->ctx.setChannel ( pChan->pChanI );
+        this->ctx.setPV ( pvar.getPV()->pPVI );
         this->userStartedAsyncIO = false;
-        status = pPVI->updateEnumStringTable ( this->ctx );
+        status = pvar.getPV()->pPVI->updateEnumStringTable ( this->ctx );
 	    if ( this->userStartedAsyncIO ) {
 		    if ( status != S_casApp_asyncCompletion ) {
 			    fprintf ( stderr, 
@@ -1036,7 +1309,7 @@ caStatus casStrmClient::createChanResponse (
 	    }
         else if ( status == S_casApp_success ) {
             status = enumPostponedCreateChanResponse ( 
-                    * pChan->pChanI, hdr, nativeTypeDBR );
+                    guard, *ctx.getChannel(), hdr, nativeTypeDBR );
         }
 	    else if ( status == S_casApp_asyncCompletion )  {
 		    status = S_cas_badParameter;
@@ -1048,15 +1321,17 @@ caStatus casStrmClient::createChanResponse (
             errlogPrintf ( "string table cache update of casPV::read()." );
 		    errlogPrintf ( "To postpone this request please postpone the PC attach IO request." );
 		    errlogPrintf ( "String table cache update did not occur." );
-            status = enumPostponedCreateChanResponse ( *pChan->pChanI, hdr, nativeTypeDBR );
+            status = enumPostponedCreateChanResponse ( 
+                guard, * ctx.getChannel(), hdr, nativeTypeDBR );
         }
     }
     else {
-        status = enumPostponedCreateChanResponse ( *pChan->pChanI, hdr, nativeTypeDBR );
+        status = enumPostponedCreateChanResponse ( 
+            guard, *pChan->pChanI, hdr, nativeTypeDBR );
     }
     
     if ( status != S_cas_success ) {
-        delete pChan->pChanI;
+        delete ctx.getChannel();
     }
 
     return status;
@@ -1068,10 +1343,9 @@ caStatus casStrmClient::createChanResponse (
 // LOCK must be applied
 //
 caStatus casStrmClient::enumPostponedCreateChanResponse ( 
+    epicsGuard < casClientMutex > & guard,
     casChannelI & chan, const caHdrLargeArray & hdr, unsigned nativeTypeDBR )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
-
 	//
 	// We are allocating enough space for both the claim
 	// response and the access rights response so that we know for
@@ -1089,11 +1363,11 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	// here because we allocated enough space for this
 	// and the claim response above.
 	//
-	caStatus status = casStrmClient::accessRightsResponse ( & chan );
+	caStatus status = this->accessRightsResponse ( guard, & chan );
 	if ( status ) {
         this->out.popCtx ( outctx );
 		errMessage ( status, "incomplete channel create?" );
-		status = this->channelCreateFailedResp ( hdr, status );
+		status = this->channelCreateFailedResp ( guard, hdr, status );
         if ( status == S_cas_success ) {
 		    delete & chan;
         }
@@ -1122,14 +1396,14 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
         static_cast <ca_uint16_t> ( nativeCount ), 
         hdr.m_cid, chan.getSID(), 0 );
     if ( status != S_cas_success ) {
-        this->chanTable.remove ( chan );
-        this->chanList.remove ( chan );
-        chan.uninstallFromPV ( this->eventSys );
 
         this->out.popCtx ( outctx );
 		errMessage ( status, "incomplete channel create?" );
-		status = this->channelCreateFailedResp ( hdr, status );
+		status = this->channelCreateFailedResp ( guard, hdr, status );
         if ( status == S_cas_success ) {
+            this->chanTable.remove ( chan );
+            this->chanList.remove ( chan );
+            chan.uninstallFromPV ( this->eventSys );
 		    delete & chan;
         }
         return status;
@@ -1150,8 +1424,9 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 /*
  * casStrmClient::channelCreateFailed()
  */
-caStatus casStrmClient::channelCreateFailedResp (
-    const caHdrLargeArray & hdr, const caStatus createStatus )
+caStatus casStrmClient::channelCreateFailedResp ( 
+    epicsGuard < casClientMutex > & guard, const caHdrLargeArray & hdr, 
+    const caStatus createStatus )
 {
 	if ( createStatus == S_casApp_asyncCompletion ) {
 		errMessage( S_cas_badParameter, 
@@ -1166,7 +1441,6 @@ caStatus casStrmClient::channelCreateFailedResp (
 	}
     caStatus status;
 	if ( CA_V46 ( this->minor_version_number ) ) {
-        epicsGuard < epicsMutex > guard ( this->mutex );
         status = this->out.copyInHeader ( 
             CA_PROTO_CLAIM_CIU_FAILED, 0,
             0, 0, hdr.m_cid, 0, 0 );
@@ -1176,45 +1450,15 @@ caStatus casStrmClient::channelCreateFailedResp (
 	}
 	else {
 		status = this->sendErrWithEpicsStatus ( 
-            & hdr, hdr.m_cid, createStatus, ECA_ALLOCMEM );
+            guard, & hdr, hdr.m_cid, createStatus, ECA_ALLOCMEM );
 	}
 	return status;
-}
-
-/*
- * casStrmClient::disconnectChan()
- *
- * If we are talking to an CA_V47 client then tell them when a channel
- * was deleted by the server tool 
- */
-caStatus casStrmClient::disconnectChan ( caResId id )
-{
-	caStatus status;
-	caStatus createStatus;
-
-    if ( CA_V47 ( this->minor_version_number ) ) {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        status = this->out.copyInHeader ( CA_PROTO_SERVER_DISCONN, 0,
-            0, 0, id, 0, 0 );
-		if ( status ) {
-			return status;
-		}
-		this->out.commitMsg ();
-		createStatus = S_cas_success;
-	}
-	else {
-		errlogPrintf (
-		    "Disconnecting old client because of internal channel or PV delete\n");
-		createStatus = S_cas_disconnect;
-	}
-
-	return createStatus;
 }
 
 //
 // casStrmClient::eventsOnAction()
 //
-caStatus casStrmClient::eventsOnAction ()
+caStatus casStrmClient::eventsOnAction ( epicsGuard < casClientMutex > & )
 {
     this->enableEvents ();
 	return S_cas_success;
@@ -1223,7 +1467,7 @@ caStatus casStrmClient::eventsOnAction ()
 //
 // casStrmClient::eventsOffAction()
 //
-caStatus casStrmClient::eventsOffAction()
+caStatus casStrmClient::eventsOffAction ( epicsGuard < casClientMutex > & )
 {
     this->disableEvents ();
 	return S_cas_success;
@@ -1232,7 +1476,8 @@ caStatus casStrmClient::eventsOffAction()
 //
 // eventAddAction()
 //
-caStatus casStrmClient::eventAddAction ()
+caStatus casStrmClient::eventAddAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray *mp = this->ctx.getMsg();
 	struct mon_info *pMonInfo = (struct mon_info *) 
@@ -1242,11 +1487,11 @@ caStatus casStrmClient::eventAddAction ()
 	caStatus status = casStrmClient::verifyRequest ( pciu );
 	if ( status != ECA_NORMAL ) {
         if ( pciu ) {
-		    return this->sendErr ( mp, 
+		    return this->sendErr ( guard, mp, 
                 pciu->getCID(), status, NULL);
         }
         else {
-		    return this->sendErr ( mp, 
+		    return this->sendErr ( guard, mp, 
                 invalidResID, status, NULL );
         }
 	}
@@ -1271,7 +1516,8 @@ caStatus casStrmClient::eventAddAction ()
 	if (mask.noEventsSelected()) {
 		char errStr[40];
 		sprintf ( errStr, "event add req with mask=0X%X\n", caProtoMask );
-		return this->sendErr ( mp, pciu->getCID(), ECA_BADMASK, errStr );
+		return this->sendErr ( guard, mp, pciu->getCID(), 
+            ECA_BADMASK, errStr );
 	}
 
 	//
@@ -1295,7 +1541,7 @@ caStatus casStrmClient::eventAddAction ()
 		pciu->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->monitorResponse ( *pciu, 
+		status = this->monitorResponse ( guard, *pciu, 
                     *mp, *pDD, status );
 	}
 
@@ -1317,70 +1563,109 @@ caStatus casStrmClient::eventAddAction ()
 //
 // casStrmClient::clearChannelAction()
 //
-caStatus casStrmClient::clearChannelAction ()
+caStatus casStrmClient::clearChannelAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
-	const caHdrLargeArray * mp = this->ctx.getMsg();
-	const void * dp = this->ctx.getData();
+	const caHdrLargeArray * mp = this->ctx.getMsg ();
+	const void * dp = this->ctx.getData ();
 	int status;
 
-	//
 	// send delete confirmed message
-	//
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        status = this->out.copyInHeader ( mp->m_cmmd, 0,
-            mp->m_dataType, mp->m_count, 
-            mp->m_cid, mp->m_available, 0 );
-        if ( status ) {
-            return status;
-        }
-        this->out.commitMsg ();
+    status = this->out.copyInHeader ( mp->m_cmmd, 0,
+        mp->m_dataType, mp->m_count, 
+        mp->m_cid, mp->m_available, 0 );
+    if ( status ) {
+        return status;
     }
+    this->out.commitMsg ();
 
-	/*
-	 * Verify the channel
-	 */
+	// Verify the channel
     chronIntId tmpId ( mp->m_cid );
 	casChannelI * pciu = this->chanTable.remove ( tmpId );
-	if ( pciu == NULL ) {
+	if ( pciu ) {
+        this->chanList.remove ( *pciu );
+        pciu->uninstallFromPV ( this->eventSys );
+        delete pciu;
+    }
+    else {
 		/*
 		 * it is possible that the channel delete arrives just 
 		 * after the server tool has deleted the PV so we will
 		 * not disconnect the client in this case. Nevertheless,
 		 * we send a warning message in case either the client 
 		 * or server has become corrupted
-		 *
-		 * return early here if we are unable to send the warning
-		 * so that send block conditions will be handled
 		 */
-		status = logBadId ( mp, dp, ECA_BADCHID, mp->m_cid );
-		if ( status ) {
-			return status;
-		}
-		//
-		// after sending the warning then go ahead and send the
-		// delete confirm message even if the channel couldnt be
-		// located so that the client can finish cleaning up
-		//
-        return status;
+  		logBadId ( guard, mp, dp, ECA_BADCHID, mp->m_cid );
 	}
-
-    this->chanList.remove ( *pciu );
-    pciu->uninstallFromPV ( this->eventSys );
-    delete pciu;
 
 	return status;
 }
 
+// casStrmClient::casChannelDestroyNotify()
+// immediateUninstallNeeded is false when we must avoid 
+// taking the lock insituations where we would compromise 
+// the lock hierarchy
+void casStrmClient::casChannelDestroyNotify ( 
+    casChannelI & chan, bool immediateUninstallNeeded )
+{
+    if ( immediateUninstallNeeded ) {
+        epicsGuard < casClientMutex > guard ( this->mutex );
+
+        this->chanTable.remove ( chan );
+        this->chanList.remove ( chan );
+        chan.uninstallFromPV ( this->eventSys );
+    }
+
+    channelDestroyEvent * pEvent = 
+        new ( std::nothrow ) channelDestroyEvent ( 
+            chan, !immediateUninstallNeeded );
+    if ( pEvent ) {
+        this->eventSys.addToEventQueue ( *pEvent );
+    }
+    else {
+        this->forceDisconnect ();
+        if ( immediateUninstallNeeded ) {
+            delete & chan;
+        }
+    }
+}
+
+// casStrmClient::channelDestroyNotify()
+caStatus casStrmClient::channelDestroyNotify (
+    epicsGuard < casClientMutex > & guard, 
+    casChannelI & chan, bool uninstallNeeded )
+{
+    caStatus status = S_cas_success;
+    if ( CA_V47 ( this->minor_version_number ) ) {
+        caStatus status = this->out.copyInHeader ( 
+            CA_PROTO_SERVER_DISCONN, 0,
+            0, 0, chan.getCID(), 0, 0 );
+		if ( status == S_cas_success ) {
+		    this->out.commitMsg ();
+		}
+	}
+    else {
+        this->forceDisconnect ();
+    }
+    if ( status != S_cas_sendBlocked ) {
+        if ( uninstallNeeded ) {
+            this->chanTable.remove ( chan );
+            this->chanList.remove ( chan );
+            chan.uninstallFromPV ( this->eventSys );
+        }
+        delete & chan;
+    }
+    return status;
+}
+
 // casStrmClient::eventCancelAction()
-caStatus casStrmClient::eventCancelAction ()
+caStatus casStrmClient::eventCancelAction ( 
+    epicsGuard < casClientMutex > & guard )
 {
 	const caHdrLargeArray * mp = this->ctx.getMsg ();
 	const void * dp = this->ctx.getData ();
 
     {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-
         chronIntId tmpId ( mp->m_cid );
         casChannelI * pChan = this->chanTable.lookup ( tmpId );
 	    if ( ! pChan ) {
@@ -1388,7 +1673,7 @@ caStatus casStrmClient::eventCancelAction ()
 		    // after the server tool has deleted the PV. Its probably 
             // best to just diconnect for now since some old clients
             // may still exist.
-		    logBadId ( mp, dp, ECA_BADCHID, mp->m_cid );
+		    logBadId ( guard, mp, dp, ECA_BADCHID, mp->m_cid );
             return S_cas_badResourceId;
         }
 
@@ -1409,7 +1694,7 @@ caStatus casStrmClient::eventCancelAction ()
 		    // this indicates client or server library 
             // corruption so a disconnect is probably
             // the best option
-		    logBadId ( mp, dp, ECA_BADMONID, mp->m_available );
+		    logBadId ( guard, mp, dp, ECA_BADMONID, mp->m_available );
             return S_cas_badResourceId;
         }
     }
@@ -1424,7 +1709,8 @@ caStatus casStrmClient::eventCancelAction ()
  * substantial complication introduced here by the need for backwards
  * compatibility
  */
-caStatus casStrmClient::noReadAccessEvent ( casClientMon * pMon )
+caStatus casStrmClient::noReadAccessEvent ( 
+    epicsGuard < casClientMutex > & guard, casClientMon * pMon )
 {
 	caHdr falseReply;
 	unsigned size;
@@ -1439,8 +1725,6 @@ caStatus casStrmClient::noReadAccessEvent ( casClientMon * pMon )
 	falseReply.m_count = pMon->getCount();
 	falseReply.m_cid = pMon->getChannel().getCID();
 	falseReply.m_available = pMon->getClientId();
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	status = this->allocMsg ( size, &reply );
 	if ( status ) {
@@ -1480,7 +1764,7 @@ caStatus casStrmClient::noReadAccessEvent ( casClientMon * pMon )
 // timed out on a read so we must clear out any pending 
 // asynchronous IO associated with a read.
 //
-caStatus casStrmClient::readSyncAction ()
+caStatus casStrmClient::readSyncAction ( epicsGuard < casClientMutex > & )
 {
     tsDLIter < casChannelI > iter = 
                 this->chanList.firstIter ();
@@ -1490,8 +1774,6 @@ caStatus casStrmClient::readSyncAction ()
     }
 
 	const caHdrLargeArray * mp = this->ctx.getMsg ();
-
-    epicsGuard < epicsMutex > guard ( this->mutex );
 
     int	status = this->out.copyInHeader ( mp->m_cmmd, 0,
         mp->m_dataType, mp->m_count, 
@@ -1510,15 +1792,20 @@ caStatus casStrmClient::readSyncAction ()
  // Do not change the size of this response without making
  // parallel changes in createChanResp
  //
-caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
+caStatus casStrmClient::accessRightsResponse ( casChannelI * pciu )
+{
+    epicsGuard < casClientMutex > guard ( this->mutex );
+    return this->accessRightsResponse ( guard, pciu );
+}
+
+caStatus casStrmClient::accessRightsResponse ( 
+    epicsGuard < casClientMutex > &, casChannelI * pciu )
 {
     unsigned ar;
     int v41;
     int status;
     
-    //
     // noop if this is an old client
-    //
     v41 = CA_V41 ( this->minor_version_number );
     if ( ! v41 ) {
         return S_cas_success;
@@ -1532,7 +1819,6 @@ caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
         ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
     }
     
-    epicsGuard < epicsMutex > guard ( this->mutex );
     status = this->out.copyInHeader ( CA_PROTO_ACCESS_RIGHTS, 0,
         0, 0, pciu->getCID(), ar, 0 );
     if ( ! status ) {
@@ -1568,14 +1854,6 @@ caStatus casStrmClient::write()
 #endif
 
 	//
-	// the PV state must not be modified during a transaction
-	//
-	status = pPV->beginTransaction ();
-	if ( status ) {
-		return status;
-	}
-
-	//
 	// clear async IO flag
 	//
 	this->userStartedAsyncIO = false;
@@ -1609,8 +1887,6 @@ caStatus casStrmClient::write()
 		errMessage ( status, 
 		"- expected asynch IO creation from casPV::write()" );
 	}
-
-	pPV->endTransaction ();
 
 	return status;
 }
@@ -1779,15 +2055,6 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	}
 
 	//
-	// the PV state must not be modified during a transaction
-	//
-	caStatus status = this->ctx.getPV()->beginTransaction();
-	if ( status ) {
-        pDD->unreference ();
-		return status;
-	}
-
-	//
 	// clear the async IO flag
 	//
 	this->userStartedAsyncIO = false;
@@ -1795,9 +2062,7 @@ caStatus casStrmClient::read ( const gdd * & pDescRet )
 	//
 	// call the server tool's virtual function
 	//
-	status = this->ctx.getPV()->read ( this->ctx, * pDD );
-
-	this->ctx.getPV()->endTransaction();
+	caStatus status = this->ctx.getPV()->read ( this->ctx, * pDD );
 
 	//
 	// prevent problems when they initiate
@@ -1915,22 +2180,178 @@ inBufClient::fillCondition casStrmClient::xRecv ( char * pBufIn, bufSizeT nBytes
 //
 // casStrmClient::getDebugLevel()
 //
-unsigned casStrmClient::getDebugLevel() const
+unsigned casStrmClient::getDebugLevel () const
 {
-	return this->getCAS().getDebugLevel();
-}
-
-void casStrmClient::flush ()
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    this->out.flush ();
+	return this->getCAS().getDebugLevel ();
 }
 
 //
 // casStrmClient::casMonitorCallBack()
 //
 caStatus casStrmClient::casMonitorCallBack ( 
+    epicsGuard < casClientMutex > & guard,
     casMonitor & mon, const gdd & value )
 {
-    return mon.response ( *this, value );
+    return mon.response ( guard, *this, value );
 }
+
+//
+//	casStrmClient::sendErr()
+//
+caStatus casStrmClient::sendErr ( epicsGuard <casClientMutex> &,
+    const caHdrLargeArray * curp, ca_uint32_t cid, 
+    const int reportedStatus, const char *pformat, ... )
+{
+	unsigned stringSize;
+	char msgBuf[1024]; /* allocate plenty of space for the message string */
+	if ( pformat ) {
+	    va_list args;
+		va_start ( args, pformat );
+		int status = vsprintf (msgBuf, pformat, args);
+		if ( status < 0 ) {
+			errPrintf (S_cas_internal, __FILE__, __LINE__,
+				"bad sendErr(%s)", pformat);
+			stringSize = 0u;
+		}
+		else {
+			stringSize = 1u + (unsigned) status;
+		}
+	}
+	else {
+		stringSize = 0u;
+	}
+
+    unsigned hdrSize = sizeof ( caHdr );
+    if ( ( curp->m_postsize >= 0xffff || curp->m_count >= 0xffff ) && 
+            CA_V49( this->minor_version_number ) ) {
+        hdrSize += 2 * sizeof ( ca_uint32_t );
+    }
+
+    caHdr * pReqOut;
+    caStatus status = this->out.copyInHeader ( CA_PROTO_ERROR, 
+        hdrSize + stringSize, 0, 0, cid, reportedStatus,
+        reinterpret_cast <void **> ( & pReqOut ) );
+    if ( ! status ) {
+        char * pMsgString;
+
+        /*
+         * copy back the request protocol
+         * (in network byte order)
+         */
+        if ( ( curp->m_postsize >= 0xffff || curp->m_count >= 0xffff ) && 
+                CA_V49( this->minor_version_number ) ) {
+            ca_uint32_t *pLW = ( ca_uint32_t * ) ( pReqOut + 1 );
+            pReqOut->m_cmmd = htons ( curp->m_cmmd );
+            pReqOut->m_postsize = htons ( 0xffff );
+            pReqOut->m_dataType = htons ( curp->m_dataType );
+            pReqOut->m_count = htons ( 0u );
+            pReqOut->m_cid = htonl ( curp->m_cid );
+            pReqOut->m_available = htonl ( curp->m_available );
+            pLW[0] = htonl ( curp->m_postsize );
+            pLW[1] = htonl ( curp->m_count );
+            pMsgString = ( char * ) ( pLW + 2 );
+        }
+        else {
+            pReqOut->m_cmmd = htons (curp->m_cmmd);
+            pReqOut->m_postsize = htons ( ( (ca_uint16_t) curp->m_postsize ) );
+            pReqOut->m_dataType = htons (curp->m_dataType);
+            pReqOut->m_count = htons ( ( (ca_uint16_t) curp->m_count ) );
+            pReqOut->m_cid = htonl (curp->m_cid);
+            pReqOut->m_available = htonl (curp->m_available);
+            pMsgString = ( char * ) ( pReqOut + 1 );
+         }
+
+        /*
+         * add their context string into the protocol
+         */
+        memcpy ( pMsgString, msgBuf, stringSize );
+
+        this->out.commitMsg ();
+    }
+
+	return S_cas_success;
+}
+
+// send minor protocol revision to the client
+void casStrmClient::sendVersion ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    caStatus status = this->out.copyInHeader ( CA_PROTO_VERSION, 0, 
+        0, CA_MINOR_PROTOCOL_REVISION, 0, 0, 0 );
+    if ( ! status ) {
+        this->out.commitMsg ();
+    }
+}
+
+bool casStrmClient::inBufFull () const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->in.full ();
+}
+
+inBufClient::fillCondition casStrmClient::inBufFill ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->in.fill ();
+}
+
+bufSizeT casStrmClient::inBufBytesAvailable () const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->in.bytesAvailable ();
+}
+
+bufSizeT casStrmClient::outBufBytesPresent () const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->out.bytesPresent ();
+}
+
+outBufClient::flushCondition casStrmClient::flush ()
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    return this->out.flush ();
+}
+
+//
+// casStrmClient::logBadIdWithFileAndLineno()
+//
+caStatus casStrmClient::logBadIdWithFileAndLineno ( 
+    epicsGuard < casClientMutex > & guard,
+    const caHdrLargeArray * mp, const void * dp, 
+    const int cacStatus, const char * pFileName, 
+    const unsigned lineno, const unsigned idIn )
+{
+	if ( pFileName ) {
+        caServerI::dumpMsg ( this->pHostName, this->pUserName, mp, dp, 
+            "bad resource id in \"%s\" at line %d\n",
+			pFileName, lineno );
+	}
+    else {
+	    caServerI::dumpMsg ( this->pHostName, this->pUserName, mp, dp, 
+            "bad resource id\n" );
+    }
+
+	int status = this->sendErr ( guard,
+			mp, invalidResID, cacStatus, 
+            "Bad Resource ID=%u detected at %s.%d",
+			idIn, pFileName, lineno );
+
+	return status;
+}
+
+/*
+ * casStrmClient::sendErrWithEpicsStatus()
+ *
+ * same as sendErr() except that we convert epicsStatus
+ * to a string and send that additional detail
+ */
+caStatus casStrmClient::sendErrWithEpicsStatus ( 
+    epicsGuard < casClientMutex > & guard, const caHdrLargeArray * pMsg, 
+	ca_uint32_t cid, caStatus epicsStatus, caStatus clientStatus )
+{
+	char buf[0x1ff];
+	errSymLookup ( epicsStatus, buf, sizeof(buf) );
+	return this->sendErr ( guard, pMsg, cid, clientStatus, buf );
+}
+

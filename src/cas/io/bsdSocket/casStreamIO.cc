@@ -14,15 +14,13 @@
 #define epicsExportSharedSymbols
 #include "casStreamIO.h"
 
-//
 // casStreamIO::casStreamIO()
-//
 casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
                           const ioArgsToNewStreamIO & args ) :
 	casStrmClient ( cas, bufMgr ), sock ( args.sock ), addr (  args.addr), 
-        blockingFlag ( xIsBlocking )
+        blockingFlag ( xIsBlocking ), sockHasBeenClosed ( false )
  {
-	assert (sock>=0);
+	assert ( sock >= 0 );
 	int yes = true;
 	int	status;
 
@@ -30,16 +28,12 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 	 * see TCP(4P) this seems to make unsollicited single events much
 	 * faster. I take care of queue up as load increases.
 	 */
-	status = setsockopt(
-							this->sock,
-							IPPROTO_TCP,
-							TCP_NODELAY,
-							(char *)&yes,
-							sizeof(yes));
-	if (status<0) {
-		errlogPrintf(
+	status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
+							( char * ) & yes, sizeof ( yes ) );
+	if ( status < 0 ) {
+		errlogPrintf (
 			"CAS: %s TCP_NODELAY option set failed %s\n",
-			__FILE__, SOCKERRSTR(SOCKERRNO));
+			__FILE__, SOCKERRSTR(SOCKERRNO) );
 		throw S_cas_internal;
 	}
 
@@ -47,16 +41,12 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 	 * turn on KEEPALIVE so if the client crashes
 	 * this task will find out and exit
 	 */
-	status = setsockopt(
-					sock,
-					SOL_SOCKET,
-					SO_KEEPALIVE,
-					(char *)&yes,
-					sizeof(yes));
+	status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE,
+					(char *) & yes, sizeof ( yes ) );
 	if (status<0) {
-		errlogPrintf(
+		errlogPrintf (
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
-			__FILE__, SOCKERRSTR(SOCKERRNO));
+			__FILE__, SOCKERRSTR(SOCKERRNO) );
 		throw S_cas_internal;
 	}
 
@@ -99,19 +89,15 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 
 }
 
-//
 // casStreamIO::~casStreamIO()
-//
 casStreamIO::~casStreamIO()
 {
-	if (sock>=0) {
-		socket_close(this->sock);
+	if ( ! this->sockHasBeenClosed ) {
+		socket_close ( this->sock );
 	}
 }
 
-//
 // casStreamIO::osdSend()
-//
 outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT nBytesReq, 
                                  bufSizeT &nBytesActual )
 {
@@ -154,9 +140,7 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
     return outBufClient::flushProgress;
 }
 
-//
 // casStreamIO::osdRecv()
-//
 inBufClient::fillCondition
 casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
                       bufSizeT & nBytesActual )
@@ -194,9 +178,23 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
     }
 }
 
-//
+// casStreamIO::forceDisconnect()
+void casStreamIO::forceDisconnect ()
+{
+	if ( ! this->sockHasBeenClosed ) {
+        this->sockHasBeenClosed;
+        int status = ::shutdown ( this->sock, SD_BOTH );
+        if ( status ) {
+            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
+		socket_close ( this->sock );
+        // other wakeup will be required here when we 
+        // switch to a threaded implementation
+	}
+}
+
 // casStreamIO::show()
-//
 void casStreamIO::osdShow (unsigned level) const
 {
 	printf ( "casStreamIO at %p\n", 
@@ -210,9 +208,7 @@ void casStreamIO::osdShow (unsigned level) const
 	}
 }
 
-//
 // casStreamIO::xSsetNonBlocking()
-//
 void casStreamIO::xSetNonBlocking()
 {
 	int status;
@@ -229,17 +225,13 @@ void casStreamIO::xSetNonBlocking()
 	}
 }
 
-//
 // casStreamIO::blockingState()
-//
 xBlockingStatus casStreamIO::blockingState() const
 {
 	return this->blockingFlag;
 }
 
-//
 // casStreamIO::incomingBytesPresent()
-//
 bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
 {
     int status;
@@ -271,17 +263,13 @@ bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
     }
 }
 
-//
 // casStreamIO::hostName()
-//
-void casStreamIO::hostName ( char *pInBuf, unsigned bufSizeIn ) const
+void casStreamIO::hostName ( char * pInBuf, unsigned bufSizeIn ) const
 {
-	ipAddrToA ( &this->addr, pInBuf, bufSizeIn );
+	ipAddrToA ( & this->addr, pInBuf, bufSizeIn );
 }
 
-//
 // casStreamIO:::optimumBufferSize()
-//
 bufSizeT casStreamIO::optimumBufferSize () 
 {
 
@@ -309,9 +297,7 @@ printf("the tcp buf size is %d\n", size);
 #endif
 }
 
-//
 // casStreamIO::getFD()
-//
 int casStreamIO::getFD() const
 {
 	return this->sock;

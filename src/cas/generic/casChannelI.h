@@ -28,18 +28,20 @@ class casMonitor;
 class casAsyncIOI;
 
 class casChannelI : public tsDLNode < casChannelI >, 
-    public chronIntIdRes < casChannelI >, public casEvent {
+    public chronIntIdRes < casChannelI >, public casEvent,
+    private chanIntfForPV {
 public:
 	casChannelI ( casChannel & chan, const casCtx & ctx );
-	epicsShareFunc virtual ~casChannelI ();
+	~casChannelI ();
+    void casChannelDestroyNotify ( bool immediateUninstall );
 	const caResId getCID ();
 	const caResId getSID ();
     void uninstallFromPV ( casEventSys & eventSys );
     void installIntoPV ();
-    void installMonitor ( casMonitor & mon );
-    casMonitor * removeMonitor ( ca_uint32_t monId );
     void installIO ( casAsyncIOI & );
     void uninstallIO ( casAsyncIOI & );
+    void installMonitor ( casMonitor & mon );
+    casMonitor * removeMonitor ( ca_uint32_t clientIdIn );
 	casPVI & getPVI () const;
 	void clearOutstandingReads ();
 	void postAccessRightsEvent ();
@@ -52,14 +54,16 @@ public:
 	void show ( unsigned level ) const;
 private:
 	tsDLList < casAsyncIOI > ioList;
-    chanIntfForPV chanForPV;
 	casPVI & pv;
     casChannel & chan;
 	caResId cid; // client id 
+    bool serverDeletePending;
 	bool accessRightsEvPending;
-	epicsShareFunc virtual void destroy ();
-	epicsShareFunc caStatus cbFunc ( 
-        casCoreClient &, epicsGuard < epicsMutex > & guard ); 
+	//epicsShareFunc virtual void destroy ();
+	caStatus cbFunc ( 
+        casCoreClient &, 
+        epicsGuard < casClientMutex > &,
+        epicsGuard < evSysMutex > & ); 
 	casChannelI ( const casChannelI & );
 	casChannelI & operator = ( const casChannelI & );
 };
@@ -81,7 +85,7 @@ inline const caResId casChannelI::getSID ()
 
 inline void casChannelI::postAccessRightsEvent ()
 {
-	this->chanForPV.client().addToEventQueue ( *this, this->accessRightsEvPending );
+	this->client().addToEventQueue ( *this, this->accessRightsEvPending );
 }
 
 inline const gddEnumStringTable & casChannelI::enumStringTable () const
@@ -91,12 +95,7 @@ inline const gddEnumStringTable & casChannelI::enumStringTable () const
 
 inline void casChannelI::installIntoPV ()
 {
-    this->pv.installChannel ( this->chanForPV );
-}
-
-inline void casChannelI::installMonitor ( casMonitor & mon )
-{
-    this->chanForPV.installMonitor ( this->pv, mon );
+    this->pv.installChannel ( *this );
 }
 
 inline void casChannelI::clearOutstandingReads ()
@@ -125,11 +124,6 @@ inline bool casChannelI::confirmationRequested () const
     return this->chan.confirmationRequested ();
 }
 
-inline casMonitor * casChannelI::removeMonitor ( ca_uint32_t clientIdIn )
-{
-    return this->chanForPV.removeMonitor ( this->pv, clientIdIn );
-}
-
 inline void casChannelI::installIO ( casAsyncIOI & io )
 {
     this->pv.installIO ( this->ioList, io );
@@ -138,6 +132,26 @@ inline void casChannelI::installIO ( casAsyncIOI & io )
 inline void casChannelI::uninstallIO ( casAsyncIOI & io )
 {
     this->pv.uninstallIO ( this->ioList, io );
+}
+
+inline void casChannelI::casChannelDestroyNotify ( 
+            bool immediateUninstall )
+{
+    if ( ! this->serverDeletePending ) {
+        this->client().casChannelDestroyNotify ( 
+            *this, immediateUninstall );
+    }
+}
+
+inline void casChannelI::installMonitor ( casMonitor & mon )
+{
+    this->chanIntfForPV::installMonitor ( this->pv, mon );
+}
+
+inline casMonitor * casChannelI::removeMonitor (
+    ca_uint32_t clientIdIn )
+{
+    return this->chanIntfForPV::removeMonitor ( this->pv, clientIdIn );
 }
 
 #endif // casChannelIh

@@ -27,36 +27,32 @@ public:
 	casStreamIO ( caServerI &, clientBufMemoryManager &, 
         const ioArgsToNewStreamIO & );
 	~casStreamIO ();
-
 	int getFD () const;
 	void xSetNonBlocking ();
-
+    const caNetAddr getAddr() const;
 	void hostName ( char *pBuf, unsigned bufSize ) const;
-	
-	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT & nBytesActual );
-	inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT & nBytesActual );
-
-	xBlockingStatus blockingState() const;
-
-	bufSizeT incomingBytesPresent() const;
-
-	static bufSizeT optimumBufferSize ();
-
-	void osdShow ( unsigned level ) const;
-
-	const caNetAddr getAddr() const
-	{
-		return caNetAddr ( this->addr );
-	}
 
 private:
 	SOCKET sock;
 	struct sockaddr_in addr;
 	xBlockingStatus blockingFlag;
+    bool sockHasBeenClosed;
+	xBlockingStatus blockingState() const;
+	bufSizeT incomingBytesPresent() const;
+	static bufSizeT optimumBufferSize ();
+	void osdShow ( unsigned level ) const;
+	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT & nBytesActual );
+	inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT & nBytesActual );
+    void forceDisconnect ();
 	casStreamIO ( const casStreamIO & );
 	casStreamIO & operator = ( const casStreamIO & );
 };
+
+inline const caNetAddr casStreamIO::getAddr() const
+{
+	return caNetAddr ( this->addr );
+}
 
 #endif // casStreamIOh

@@ -59,48 +59,42 @@ class casMonitor;
 class casMonEvent;
 class casCoreClient;
 
+class evSysMutex;
+template < class MUTEX > class epicsGuard;
+
+class evSysMutex : public epicsMutex {};
+
 class casEventSys {
 public:
 	casEventSys ( casCoreClient & );
 	~casEventSys ();
-
 	void show ( unsigned level ) const;
     struct processStatus {
         casProcCond cond;
         unsigned nAccepted;
     };
-	processStatus process ();
-
+	processStatus process ( 
+        epicsGuard < casClientMutex > & guard );
 	void installMonitor ();
 	void removeMonitor ();
     void prepareMonitorForDestroy ( casMonitor & mon );
-
     bool postEvent ( tsDLList < casMonitor > & monitorList, 
         const casEventMask & select, const gdd & event );
-
-	void removeFromEventQueue ( casMonEvent & );
-	void addToEventQueue ( casMonEvent & );
-
 	caStatus addToEventQueue ( class casAsyncIOI &, 
         bool & onTheQueue, bool & posted, bool & signalNeeded );
     void removeFromEventQueue ( class casAsyncIOI &, 
         bool & onTheEventQueue );
-
 	bool addToEventQueue ( 
         casChannelI &, bool & inTheEventQueue );
-
+	void addToEventQueue ( class channelDestroyEvent & );
 	bool getNDuplicateEvents () const;
-
 	void setDestroyPending ();
-
 	void eventsOn ();
 	bool eventsOff ();
-
     void casMonEventDestroy ( 
-        casMonEvent &, epicsGuard < epicsMutex > & );
-
+        casMonEvent &, epicsGuard < evSysMutex > & );
 private:
-    mutable epicsMutex mutex;
+    mutable evSysMutex mutex;
 	tsDLList < casEvent > eventLogQue;
     tsFreeList < casMonEvent, 1024, epicsMutexNOOP > casMonEventFreeList;
     casCoreClient & client;
@@ -129,7 +123,9 @@ public:
 private:
     casEventSys & evSys;
 	caStatus cbFunc ( 
-        casCoreClient &, epicsGuard < epicsMutex > & guard );
+        casCoreClient &, 
+        epicsGuard < casClientMutex > &,
+        epicsGuard < evSysMutex > & );
 };
 
 //

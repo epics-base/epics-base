@@ -20,12 +20,21 @@
 #include "casChannelI.h"
 
 casChannel::casChannel ( const casCtx & ctx ) : 
-    pChanI ( new casChannelI ( *this, ctx ) )
+    pChanI ( 0 )
 {
 }
 
 casChannel::~casChannel () 
 {
+    if ( this->pChanI ) {
+        this->pChanI->casChannelDestroyNotify ( true );
+    }
+}
+
+void casChannel::destroyRequest ()
+{
+    this->pChanI = 0;
+    this->destroy ();
 }
 
 casPV * casChannel::getPV () // X aCC 361
@@ -39,8 +48,8 @@ casPV * casChannel::getPV () // X aCC 361
     }
 }
 
-void casChannel::setOwner(const char * const /* pUserName */, 
-	const char * const /* pHostName */)
+void casChannel::setOwner ( const char * const /* pUserName */, 
+	const char * const /* pHostName */ )
 {
 	//
 	// NOOP
@@ -52,34 +61,34 @@ bool casChannel::readAccess () const
 	return true;
 }
 
-bool casChannel::writeAccess() const 
+bool casChannel::writeAccess () const 
 {
 	return true;
 }
 
-bool casChannel::confirmationRequested() const 
+bool casChannel::confirmationRequested () const 
 {
 	return false;
 }
 
-void casChannel::show(unsigned level) const
+void casChannel::show ( unsigned level ) const
 {
-	if (level>2u) {
-		printf("casChannel: read access = %d\n",
-			this->readAccess());
-		printf("casChannel: write access = %d\n",
-			this->writeAccess());
-		printf("casChannel: confirmation requested = %d\n",
-			this->confirmationRequested());
+	if ( level > 2u ) {
+		printf ( "casChannel: read access = %d\n",
+			this->readAccess() );
+		printf ( "casChannel: write access = %d\n",
+			this->writeAccess() );
+		printf ( "casChannel: confirmation requested = %d\n",
+			this->confirmationRequested() );
 	}
 }
 
-void casChannel::destroy()
+void casChannel::destroy ()
 {
 	delete this;
 }
 
-void casChannel::postAccessRightsEvent()
+void casChannel::postAccessRightsEvent ()
 {
     if ( this->pChanI ) {
 	    this->pChanI->postAccessRightsEvent ();

@@ -33,13 +33,15 @@ caStatus casAsyncPVAttachIOI::postIOCompletion ( const pvAttachReturn & retValIn
 	return this->insertEventQueue ();
 }
 
-caStatus casAsyncPVAttachIOI::cbFuncAsyncIO ()
+caStatus casAsyncPVAttachIOI::cbFuncAsyncIO ( 
+    epicsGuard < casClientMutex > & guard )
 {
 	caStatus 	status;
 
 	switch ( this->msg.m_cmmd ) {
 	case CA_PROTO_CLAIM_CIU:
-		status = this->client.createChanResponse ( this->msg, this->retVal );
+		status = this->client.createChanResponse ( guard,
+                        this->msg, this->retVal );
         if ( status == S_cas_sendBlocked ) {
             return status;
         }

@@ -37,18 +37,19 @@ caStatus casAsyncWriteIOI::postIOCompletion ( caStatus completionStatusIn )
 	return this->insertEventQueue ();
 }
 
-caStatus casAsyncWriteIOI::cbFuncAsyncIO ()
+caStatus casAsyncWriteIOI::cbFuncAsyncIO (
+    epicsGuard < casClientMutex > & guard )
 {
     caStatus status;
     
     switch ( this->msg.m_cmmd ) {
     case CA_PROTO_WRITE:
-        status = client.writeResponse ( this->chan,
+        status = client.writeResponse ( guard, this->chan,
             this->msg, this->completionStatus );
         break;
         
     case CA_PROTO_WRITE_NOTIFY:
-        status = client.writeNotifyResponse ( this->chan,
+        status = client.writeNotifyResponse ( guard, this->chan,
             this->msg, this->completionStatus );
         break;
         

@@ -33,7 +33,7 @@
 #   include "shareLib.h"
 #endif
 
-#include "casCoreClient.h"
+#include "casStrmClient.h"
 #include "casPVI.h"
 
 class casMonitor;
@@ -46,6 +46,7 @@ public:
     chanIntfForPV ( class casCoreClient & );
     ~chanIntfForPV ();
     class casCoreClient & client () const;
+    virtual void casChannelDestroyNotify ( bool immediateUninstall ) = 0;
     void installMonitor ( casPVI & pv, casMonitor & mon );
     casMonitor * removeMonitor ( casPVI &, ca_uint32_t monId );
     void removeSelfFromPV ( casPVI &, 

@@ -250,11 +250,43 @@ void caServerI::casMonitorDestroy ( casMonitor & cm )
     this->casMonitorFreeList.release ( & cm );
 }
 
+//
+//	caServerI::dumpMsg()
+//
+//	Debug aid - print the header part of a message.
+//
+//	dp arg allowed to be null
+//
+//
+void caServerI::dumpMsg ( const char * pHostName, const char * pUserName,
+    const caHdrLargeArray * mp, const void * dp, const char * pFormat, ... )
+{
+    va_list theArgs;
+    if ( pFormat ) {
+        va_start ( theArgs, pFormat );
+        errlogPrintf ( "CAS: " );
+        errlogVprintf ( pFormat, theArgs );
+        va_end ( theArgs );
+    }
+
+    fprintf ( stderr, 
+"CAS Request: %s on %s: cmd=%u cid=%u typ=%u cnt=%u psz=%u avail=%x\n",
+        pUserName,
+        pHostName,
+        mp->m_cmmd,
+        mp->m_cid,
+        mp->m_dataType,
+        mp->m_count,
+        mp->m_postsize,
+        mp->m_available);
+
+    //if ( mp->m_cmmd == CA_PROTO_WRITE && mp->m_dataType == DBR_STRING && dp ) {
+    //    errlogPrintf("CAS: The string written: %s \n", (char *)dp);
+    //}
+}
+
 casEventRegistry::~casEventRegistry()
 {
     this->traverse ( &casEventMaskEntry::destroy );
 }
-
-
-
 

@@ -366,7 +366,8 @@ struct aiRecord	*pai;
 
 	val = pai->rval + pai->roff;
 	/* adjust slope and offset */
-	val = val * aslo + aoff;
+	if(aslo!=0.0) val*=aslo;
+	if(aoff!=0.0) val+=aoff;
 
 	/* convert raw to engineering units and signal units */
 	if(pai->linr == 0) {

@@ -81,7 +81,7 @@
 ***************************************************
 */
 
-static char *sccsId = "@(#)gsd_sync_subr.c	1.8\t11/5/92";
+static char *sccsId = "$Id$";
 
 #if defined(UNIX)
 #	include	<sys/types.h>

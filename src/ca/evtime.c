@@ -1,4 +1,3 @@
-/* $Id$ */
 
 #include <cadef.h>
 #include <dbDefs.h>

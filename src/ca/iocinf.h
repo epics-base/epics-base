@@ -53,7 +53,7 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-static char     *iocinfhSccsId = "$Id$";
+static char	*iocinfhSccsId = "$Id$";
 
 /*
  * ANSI C includes

@@ -39,7 +39,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char     *sccsId = "$Id$";
+static char 	*sccsId = "$Id$";
 
 #include 	"iocinf.h"
 

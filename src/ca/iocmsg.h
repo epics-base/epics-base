@@ -23,7 +23,7 @@
 
 #define __IOCMSG__
 
-static char     *iocmsghSccsId = "$Id$ CA version 4.3";
+static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4

@@ -1,5 +1,5 @@
 
-static char *sccsId = "@(#)V5_vxWorks_patch.c	1.2\t7/27/92";
+static char *sccsId = "$Id$";
 
 #include <taskLib.h>
 #include <taskVarLib.h>

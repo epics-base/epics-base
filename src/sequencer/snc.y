@@ -31,6 +31,7 @@
  */
 #include	<stdio.h>
 #include	<ctype.h>
+#include	<string.h>
 #include	"parse.h"
 
 #ifndef	TRUE

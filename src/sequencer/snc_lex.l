@@ -95,7 +95,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 		line_num++;
 }
 <PP>{FPNUM} {	nc = strlen(yytext);
-		bcopy(yytext, str_next, nc+1);
+		memcpy(str_next, yytext, nc+1);
 		yylval.pchar = str_next;
 		str_next += nc+1;
 		RETURN(NUMBER);

@@ -41,6 +41,7 @@
 
 #define		ANSI
 #include	"seq.h"
+#include	<string.h>
 
 LOCAL VOID *getPtrToValue(union db_access_val *, chtype);
 
@@ -119,7 +120,7 @@ struct	event_handler_args args;
 	/* Copy value returned into user variable */
 	pVal = getPtrToValue((union db_access_val *)args.dbr, pDB->get_type);
 	nbytes = pDB->size * pDB->count;
-	bcopy(pVal, pDB->var, nbytes);
+	memcpy(pDB->var, pVal,  nbytes);
 
 	/* Copy status & severity */
 	dbr_sts_ptr = (struct dbr_sts_char *)args.dbr;
@@ -355,7 +356,7 @@ struct event_handler_args	args;
 	/* Copy value returned into user variable */
 	pVal = getPtrToValue((union db_access_val *)args.dbr, pDB->get_type);
 	nbytes = pDB->size * pDB->count;
-	bcopy(pVal, pDB->var, nbytes);
+	memcpy(pDB->var, pVal, nbytes);
 
 	/* Copy status & severity */
 	dbr_sts_ptr = (struct dbr_sts_char *)args.dbr;

@@ -16,6 +16,7 @@
 extern	char *sncVersion;	/* snc version and date created */
 
 #include	<stdio.h>
+#include    <string.h>
 
 #ifndef	TRUE
 #define	TRUE 1
@@ -200,9 +201,9 @@ char		*s;
 	int		ls;
 
 	ls = strlen(s);
-	bcopy(s, in_file, ls);
+	memcpy(in_file, s, ls);
 	in_file[ls] = 0;
-	bcopy(s, out_file, ls);
+	memcpy(out_file, s, ls);
 	if ( strcmp(&in_file[ls-3], ".st") == 0 )
 	{
 		out_file[ls-2] = 'c';

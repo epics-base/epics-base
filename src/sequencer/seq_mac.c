@@ -14,6 +14,7 @@
 ***************************************************************************/
 #define		ANSI
 #include	"seq.h"
+#include    <string.h>
 
 LOCAL int macNameLth(char *);
 LOCAL int seqMacParseName(char *);
@@ -164,7 +165,7 @@ SPROG		*pSP;
 		name = seqAlloc(pSP, nChar+1);
 		if (name == NULL)
 			break;
-		bcopy(pMacStr, name, nChar);
+		memcpy(name, pMacStr, nChar);
 		name[nChar] = 0;
 #ifdef	DEBUG
 		printf("name=%s, nChar=%d\n", name, nChar);
@@ -198,7 +199,7 @@ SPROG		*pSP;
 		value = seqAlloc(pSP, nChar+1);
 		if (value == NULL)
 			break;
-		bcopy(pMacStr, value, nChar);
+		memcpy(value, pMacStr, nChar);
 		value[nChar] = 0;
 		pMacStr += nChar;
 #ifdef	DEBUG

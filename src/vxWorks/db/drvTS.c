@@ -1,6 +1,12 @@
 
 /*
  * $Log$
+ * Revision 1.8  1995/02/13  03:54:21  jhill
+ * drvTS.c - use errMessage () as discussed with jbk
+ * iocInit.c - static => LOCAL for debugging and many changes
+ * 		to the parser for resource.def so that we
+ * 		allow white space between tokens in env var
+ *
  * Revision 1.7  1995/02/02  17:15:55  jbk
  * Removed the stinking message "Cannot contact master timing IOC ".
  *
@@ -113,6 +119,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <envDefs.h>
 
 #include <errMdef.h>
 #include <drvSup.h>
@@ -125,6 +132,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #else
 #define FL M_drvSup,__FILE__,__LINE__ 
 #endif
+
+#define DEFAULT_TIME	0
+#define NO_EVENT_SYSTEM	1
 
 /* functions used by this driver */
 static long TSgetUnixTime(struct timespec*);
@@ -168,12 +178,7 @@ static long (*TShaveReceiver)(int Card);
 static long (*TSforceSync)(int Card);
 static long (*TSgetTime)(struct timespec*);
 static long (*TSsyncEvent)();
-
-static long TSreturnError() { return -1; }
-static long TShaveReceiverError(int i) { return -1; }
-static long TSregisterErrorHandlerError(int i, void(*f)()) { return -1; }
-static long TSregisterEventHandlerError(int i, void(*f)()) { return -1; }
-static long TSgetTicksError(int i,unsigned long* t) { return -1; }
+static long (*TSdirectTime)();
 
 /* global functions */
 #ifdef __cplusplus
@@ -196,8 +201,8 @@ void TSprintCurrentTime();
 TSinfo TSdata = { TS_master_dead, TS_async_slave, TS_async_none,
 					0,NULL,
 					TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
-					TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,
-					NULL, NULL,NULL, 0 };
+					TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,0,0,
+					NULL, NULL, NULL };
 
 extern char* sysBootLine;
 
@@ -224,6 +229,16 @@ unsigned long ns_val[32] = {
     29,14,7,4,2,1,0,0
 };
 
+static long TSreturnError() { return -1; }
+static long TSdirectTimeError() { return -1; }
+static long TShaveReceiverError(int i) { return -1; }
+static long TSgetTicksError(int i,unsigned long* t) { return -1; }
+
+static long TSregisterErrorHandlerError(int i, void(*f)())
+	{ if(TSdata.has_direct_time==1) return 0; else return -1; }
+static long TSregisterEventHandlerError(int i, void(*f)())
+	{ if(TSdata.has_direct_time==1) return 0; else return -1; }
+
 /*-----------------------------------------------------------------------*/
 /*	
 	TSreport() - report information about the state of the time stamp
@@ -233,8 +248,10 @@ long TSreport()
 {
 	switch(TSdata.type)
 	{
+	case TS_direct_master:	printf("Direct timing master\n"); break;
 	case TS_sync_master:	printf("Event timing master\n"); break;
 	case TS_async_master:	printf("Soft timing master\n"); break;
+	case TS_direct_slave:	printf("Direct timing slave\n"); break;
 	case TS_sync_slave:		printf("Event timing slave\n"); break;
 	case TS_async_slave:	printf("Soft timing slave\n"); break;
 	default: break;
@@ -259,6 +276,12 @@ long TSreport()
 	printf("Slave communications port = %d\n",TSdata.slave_port);
 	printf("Total events supported = %d\n",TSdata.total_events);
 	printf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
+
+	if(TSdata.UserRequestedType)
+		printf("\nForced to not use the event system\n");
+
+	if(TSdata.has_direct_time)
+		printf("Event system has time directly available\n");
 
 	return 0;
 }
@@ -295,7 +318,19 @@ void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 	if(time_out) TSdata.time_out=time_out;
 	else TSdata.time_out=TS_TIME_OUT_MS;
 
-	TSdata.UserRequestedType = type;
+	switch(type)
+	{
+	case DEFAULT_TIME:
+	case NO_EVENT_SYSTEM:
+		TSdata.UserRequestedType = type;
+		break;
+	default:
+		printf("Invalid type parameter <%d> must be:\n",type);
+		printf("  0 = default time system\n");
+		printf("  1 = force no event system\n");
+		TSdata.UserRequestedType = 0;
+		break;
+	}
 
 	return;
 }
@@ -319,6 +354,10 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 	case TS_async_master:
 	case TS_async_slave:
 		*sp = TSdata.event_table[TSdata.sync_event];
+		break;
+	case TS_direct_slave:
+	case TS_direct_master:
+		TSgetTime(sp);
 		break;
 	case TS_sync_slave:
 	case TS_sync_master:
@@ -372,8 +411,11 @@ long TSinit()
 
 	Debug(5,"In TSinit()\n",0);
 
-	if (TSdata.UserRequestedType == 0)
-	{	/* default configuration probe */
+	/* 0=default, 1=none, 2=direct */
+
+	if(	TSdata.UserRequestedType==DEFAULT_TIME)
+	{
+		/* default configuration probe */
 		/* ------------------------------------------------------------- */
 		/* find the lower level event system functions */
 		if(symFindByName(sysSymTbl,"_ErHaveReceiver",
@@ -396,6 +438,10 @@ long TSinit()
 						(char**)&TSforceSync,&stype)==ERROR)
 			TSforceSync = TSforceSoftSync;
 	
+		if(symFindByName(sysSymTbl,"_ErDirectTime",
+						(char**)&TSdirectTime,&stype)==ERROR)
+			TSdirectTime = TSdirectTimeError;
+	
 		if(symFindByName(sysSymTbl,"_ErGetTime",
 						(char**)&TSgetTime,&stype)==ERROR)
 			TSgetTime = TSgetCurrentTime;
@@ -409,10 +455,9 @@ long TSinit()
 		/* ------------------------------------------------------------- */
 	}
 	else
-	{	/* inhibit probe and use of the event system */
-
+	{
+		/* inhibit probe and use of the event system */
 		printf("WARNING: drvTS event hardware probe inhibited by user\n");
-
 		TShaveReceiver = TShaveReceiverError;
 		TSgetTicks = TSgetTicksError;
 		TSregisterEventHandler = TSregisterEventHandlerError;
@@ -428,6 +473,7 @@ long TSinit()
 	TSdata.state=TS_master_dead;
 	TSdata.sync_occurred = semBCreate(SEM_Q_PRIORITY,SEM_EMPTY);
 	TSdata.has_event_system = 0;
+	TSdata.has_direct_time = 0;
 	TSdata.async_type=TS_async_none;
 
 	if( (TSdata.total_events=TShaveReceiver(0))<=0)
@@ -442,6 +488,8 @@ long TSinit()
 	else
 		TSdata.has_event_system = 1;
 
+	if(TSdirectTime()>0) TSdata.has_direct_time=1;
+
 	/* allocate the event table */
 	TSdata.event_table=(struct timespec*)malloc(
 						TSdata.total_events*sizeof(struct timespec));
@@ -450,15 +498,29 @@ long TSinit()
 	{
 		/* master */
 		Debug(5,"TSinit() - I am master\n",0);
-		if(TSdata.has_event_system) TSdata.type=TS_sync_master;
-		else TSdata.type=TS_async_master;
+		if(TSdata.has_direct_time)
+			TSdata.type=TS_direct_master;
+		else
+		{
+			if(TSdata.has_direct_time)
+				TSdata.type=TS_sync_master;
+			else
+				TSdata.type=TS_async_master;
+		}
 	}
 	else
 	{
 		/* slave */
 		Debug(5,"TSinit() - I am slave\n",0);
-		if(TSdata.has_event_system) TSdata.type=TS_sync_slave;
-		else TSdata.type=TS_async_slave;
+		if(TSdata.has_direct_time)
+			TSdata.type=TS_direct_slave;
+		else
+		{
+			if(TSdata.has_event_system)
+				TSdata.type=TS_sync_slave;
+			else
+				TSdata.type=TS_async_slave;
+		}
 	}
 
 	/* set up the event system hooks */
@@ -486,7 +548,7 @@ long TSinit()
 		Debug(5,"TSinit() - started soft clock\n",0);
 	}
 #else
-	TSstartSoftClock();
+	if(TSdata.has_direct_time==0) TSstartSoftClock();
 #endif
 
 	/* get time from boot server Unix system */
@@ -512,6 +574,7 @@ long TSinit()
 
 		TSdata.state = TS_master_alive;
 
+		/* a direct master may be capable of delivering sync time stamps? */
 		if(TSdata.type==TS_sync_master)
 		{
 			/* start the sync udp server */
@@ -649,6 +712,18 @@ static void TSeventHandler(int Card,int EventNum,unsigned long Ticks)
 	struct timespec* st;
 	int key;
 
+#ifdef DIRECT_WITH_EVENTS
+	if(TSdata.has_direct_time==1)
+	{
+		TSgetTime(&ts);
+		key=intLock();
+		TSdata.event_table[EventNum].tv_sec = ts.tv_sec;
+		TSdata.event_table[EventNum].tv_nsec = ts.tv_nsec;
+		intUnlock(key);
+		return;
+	}
+#endif
+
 	/* calculate a time stamp from the Tick count */
 	ts.tv_sec = Ticks / TSdata.clock_hz;
 	ts.tv_nsec = (Ticks - (ts.tv_sec * TSdata.clock_hz)) * TSdata.clock_conv;
@@ -739,12 +814,18 @@ static long TSgetUnixTime(struct timespec* ts)
 	TS_NTP buf_ntp;
 	struct sockaddr_in sin;
 	int soc;
-	char* host_addr;
+	char host_addr[BOOT_ADDR_LEN];
 
 	Debug(1,"in TSgetUnixTime()\n",0);
 
-	bootStringToStruct(sysBootLine,&bootParms);
-	host_addr = bootParms.had; /* bootParms.had = host ethernet address */
+	if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
+		strlen(host_addr)==0)
+	{
+		/* use boot host if the environment variable not set */
+		bootStringToStruct(sysBootLine,&bootParms);
+		/* bootParms.had = host IP address */
+		strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+	}
 
 	if( (soc=TSgetSocket(0,&sin)) <0)
 		{ Debug(1,"TSgetsocket failed\n",0); return -1; }
@@ -1178,16 +1259,22 @@ static long TSasyncClient()
 	struct sockaddr_in sin_unix,sin_bc,sin_master;
 	int count,soc_unix,soc_master,soc_bc,buf_size;
 	struct timespec ts,diff_time,cts,curr_time;
-	char* host_addr;
 	unsigned long nsecs;
+	char host_addr[BOOT_ADDR_LEN];
 
 	Debug(1,"in TSasyncClient()\n",0);
 
 	/* could open two sockets here, one to contact unix, one to find master */
 
 	/*------socket for unix server----------*/
-	bootStringToStruct(sysBootLine,&bootParms);
-	host_addr = bootParms.had; /* bootParms.had = host ethernet address */
+	if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
+		strlen(host_addr)==0)
+	{
+		/* use boot host if the environment variable not set */
+		bootStringToStruct(sysBootLine,&bootParms);
+		/* bootParms.had = host IP address */
+		strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+	}
 
 	if( (soc_unix=TSgetSocket(0,&sin_unix)) <0)
 		{ Debug(1,"TSgetSocket failed\n",0); return -1; }
@@ -1506,6 +1593,12 @@ long TSaccurateTimeStamp(struct timespec* sp)
 {
 	struct timespec ts;
 	unsigned long ticks;
+
+	if(TSdata.has_direct_time==1)
+	{
+		TSgetTime(sp);
+		return 0;
+	}
 
 	TSgetTicks(0,&ticks); /* add in the board time */
 	*sp = TSdata.event_table[TSdata.sync_event];

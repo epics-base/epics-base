@@ -131,7 +131,7 @@ build : inc
 
 rebuild: clean install
 
-inc: $(INSTALL_INC) $(INSTALL_OSINC) $(INSTALL_INCREC)
+inc: $(INSTALL_INC) $(INSTALL_INCREC)
 
 build: $(OBJSNAME) \
 	$(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) $(TARGETS)

@@ -63,6 +63,8 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<netinet/in.h>
 #include        <netdb.h>
 
+#include 	<bsdProto.h>
+
 #include 	<envDefs.h>
 #include 	<fdmgr.h>
 
@@ -159,7 +161,7 @@ int main()
         status = setsockopt(    pserver->sock,
                                 SOL_SOCKET,
                                 SO_REUSEADDR,
-                                &optval,
+                                (char *) &optval,
                                 sizeof(optval));
         if(status<0){
 		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
@@ -172,7 +174,9 @@ int main()
 	serverAddr.sin_port = htons(ioc_log_port);
 
 	/* get server's Internet address */
-	status = bind(pserver->sock, &serverAddr, sizeof serverAddr);
+	status = bind (	pserver->sock, 
+			(struct sockaddr *)&serverAddr, 
+			sizeof (serverAddr) );
 	if (status<0) {
 		fprintf(stderr,
 			"ioc log server allready installed on port %ld?\n", 
@@ -288,7 +292,7 @@ static void acceptNewClient(void *pParam)
 	memset((void *)&addr, 0, sizeof addr);
         status = getpeername(
                         pclient->insock,
-                        &addr, 
+                        (struct sockaddr *) &addr, 
                         &size); 
         if(status>=0){
   		struct hostent      *pent;   
@@ -300,7 +304,7 @@ static void acceptNewClient(void *pParam)
 		if(pent){
 			pname = pent->h_name;
 		}else{
-			pname = (char *) inet_ntoa(addr.sin_addr);
+			pname = inet_ntoa (addr.sin_addr);
 		}
         }
 
@@ -329,8 +333,8 @@ static void acceptNewClient(void *pParam)
 				pclient->insock,
 				SOL_SOCKET,
 				SO_KEEPALIVE,
-				&true,
-				sizeof true);
+				(char *)&true,
+				sizeof(true) );
 		if(status<0){
 			fprintf(stderr, "Keepalive option set failed\n");
 		}

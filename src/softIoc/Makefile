@@ -16,6 +16,7 @@ PROD_IOC_DEFAULT = softIoc
 PROD_IOC_vxWorks = -nil-
 
 DBD += softIoc.dbd
+softIoc_DBD += base.dbd
 
 USR_CXXFLAGS += -DEPICS_BASE=$(shell $(PERL) ../absPath.pl $(INSTALL_LOCATION))
 

@@ -1,23 +1,7 @@
 #!/bin/sh
-#*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
-#*************************************************************************
 #
-# EpicsHostArch - returns the Epics host architecture suitable
-#                 for assigning to the EPICS_HOST_ARCH variable
-
-if [ "x${1}" != "x" ]
-then
-    suffix="-"${1}
-else
-    suffix=""
-fi
+# base/bin/tools/EpicsHostArch - returns the Epics host architecture suitable
+#                           for assigning to the EPICS_HOST_ARCH variable
 
 sysname=`uname`
 
@@ -25,19 +9,11 @@ case $sysname in
     Linux )
         os=linux
 		cpu=`uname -m`
-        case $cpu in i386 | i486 | i586 | i686 )
+        case $cpu in i386 | i486 | i586 | i686)
             cpu=x86
 			;;
 		esac
-		echo ${os}-${cpu}${suffix}
-        ;;
-    Darwin )
-        os=darwin
-	cpu=`uname -m`
-        case "$cpu" in
-            "Power Macintosh") cpu=ppc ;;
-        esac
-	echo ${os}-${cpu}${suffix}
+		echo ${os}-${cpu}
         ;;
     HP-UX )
         os=hpux
@@ -46,12 +22,12 @@ case $sysname in
             cpu=m68k
 			;;
 		esac
-		echo ${os}-${cpu}${suffix}
+		echo ${os}-${cpu}
         ;;
     OSF1 )
         os=osf
 		cpu=`uname -m`
-		echo ${os}-${cpu}${suffix}
+		echo ${os}-${cpu}
         ;;
     SunOS )
         version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`
@@ -69,7 +45,7 @@ case $sysname in
             cpu=x86
 			;;
 		esac
-		echo ${os}-${cpu}${suffix}
+		echo ${os}-${cpu}
         ;;
     * )
         echo unsupported

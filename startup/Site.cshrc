@@ -1,13 +1,4 @@
 #!/bin/csh -f
-#*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
-#*************************************************************************
 #  Site-specific EPICS environment settings
 #
 #  sites should modify these definitions
@@ -58,66 +49,7 @@ if ( $?EPICS_EXTENSIONS_PVT ) then
 endif
 
 ##################################################################
-
-# Start of set R3.14 environment variables
-
-if ( -e /usr/local/etc/setup/EpicsHostArch.pl ) then
-   setenv EPICS_HOST_ARCH `/usr/local/etc/setup/EpicsHostArch.pl`
-else
-   setenv EPICS_HOST_ARCH `/usr/local/epics/startup/EpicsHostArch.pl`
-endif
-
-# Allow private versions of base
-if ( $?EPICS_BASE_PVT ) then
-   if ( -e $EPICS_BASE_PVT/bin/$EPICS_HOST_ARCH ) then
-      set path = ( $path $EPICS_BASE_PVT/bin/$EPICS_HOST_ARCH)
-   endif
-   if ( -e $EPICS_BASE_PVT/lib/$EPICS_HOST_ARCH ) then
-      if ( $?LD_LIBRARY_PATH ) then
-         setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_BASE_PVT}/lib/${EPICS_HOST_ARCH}"
-      else
-         setenv LD_LIBRARY_PATH "${EPICS_BASE_PVT}/lib/${EPICS_HOST_ARCH}"
-      endif
-   endif
-endif
-
-set path = ( $path $EPICS_BASE/bin/$EPICS_HOST_ARCH )
-
-# Allow private versions of extensions
-if ( $?EPICS_EXTENSIONS_PVT ) then
-   if ( -e $EPICS_EXTENSIONS_PVT/bin/$EPICS_HOST_ARCH ) then
-      set path = ( $path $EPICS_EXTENSIONS_PVT/bin/$EPICS_HOST_ARCH)
-   endif
-   if ( -e $EPICS_EXTENSIONS_PVT/lib/$EPICS_HOST_ARCH ) then
-      if ( $?LD_LIBRARY_PATH ) then
-         setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
-      else
-         setenv LD_LIBRARY_PATH "${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
-      endif
-   endif
-endif
-
-set path = ( $path $EPICS_EXTENSIONS/bin/$EPICS_HOST_ARCH )
-
-# Needed if shared base libraries are built
-if ( $?LD_LIBRARY_PATH ) then
-   setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
-else
-   setenv LD_LIBRARY_PATH "${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
-endif
-
-# Needed if shared extension libraries are built
-if ( $?LD_LIBRARY_PATH ) then
-   setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
-else
-   setenv LD_LIBRARY_PATH "${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
-endif
-
-# End of set R3.14 environment variables
-##################################################################
-
-
-# Start of set pre R3.14 environment variables
+# Start of R3.13 environment variables
 
 # Time service:
 # EPICS_TS_MIN_WEST the local time difference from GMT.
@@ -128,6 +60,22 @@ if ( -e /usr/local/etc/setup/HostArch.pl ) then
 else
    setenv HOST_ARCH `/usr/local/epics/startup/HostArch.pl`
 endif
+
+# Allow private versions of base
+if ( $?EPICS_BASE_PVT ) then
+   if ( -e $EPICS_BASE_PVT/bin/$HOST_ARCH ) then
+      set path = ( $path $EPICS_BASE_PVT/bin/$HOST_ARCH)
+   endif
+   if ( -e $EPICS_BASE_PVT/lib/$HOST_ARCH ) then
+      if ( $?LD_LIBRARY_PATH ) then
+         setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_BASE_PVT}/lib/${HOST_ARCH}"
+      else
+         setenv LD_LIBRARY_PATH "${EPICS_BASE_PVT}/lib/${HOST_ARCH}"
+      endif
+   endif
+endif
+
+set path = ( $path $EPICS_BASE/bin/$HOST_ARCH )
 
 # Allow private versions of extensions
 if ( $?EPICS_EXTENSIONS_PVT ) then
@@ -145,8 +93,20 @@ if ( $?EPICS_EXTENSIONS_PVT ) then
 endif
 
 set path = ( $path $EPICS_EXTENSIONS/bin/$HOST_ARCH )
-# Needed if shared extension libraries are built
-setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS}/lib/${HOST_ARCH}"
 
-# End of set pre R3.14 environment variables
+# Needed if shared base libraries are built
+if ( $?LD_LIBRARY_PATH ) then
+   setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
+else
+   setenv LD_LIBRARY_PATH "${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
+endif
+
+# Needed if shared extension libraries are built
+if ( $?LD_LIBRARY_PATH ) then
+   setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
+else
+   setenv LD_LIBRARY_PATH "${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
+endif
+
+# End of R3.13 environment variables
 ##################################################################

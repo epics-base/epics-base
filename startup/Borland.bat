@@ -8,7 +8,7 @@ REM
 REM    --------------- WINDOWS ---------------------------
 REM    ----- WIN95 -----
 REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
-REM    ----- WINNT, WIN2000 -----
+REM    ----- WINNT, WIN2000  -----
 set PATH=C:\WINNT;C:\WINNT\SYSTEM32
 
 REM    --------------- GNU make (use cygwin make ) ----------------
@@ -23,13 +23,13 @@ set PATH=%PATH%;c:\cygwin\bin
 REM    --------------- perl (use cygwin perl) ------------
 set PERLLIB=/C//cygwin/lib/perl5/5.6.1
 
-REM    --------------- Visual c++ ------------------------
-REM    ----- Visual c++ 6.0 -----
-call "C:\Program files\Microsoft Visual Studio\Vc98\bin\vcvars32.bat"
+REM ---------------- Borland -------------------------
+REM cygwin tools first so borland make not used
+set PATH=%PATH%;c:\Borland\Bcc55\bin
 
 REM    --------------- EPICS -----------------------------
 REM ----- R3.13 EPICS -----
-set HOST_ARCH=WIN32
+set HOST_ARCH=Borland
 set PATH=%PATH%;G:\epics\base_R3_13_1_branch\bin\%HOST_ARCH%
 set PATH=%PATH%;G:\epics\extensions\bin\%HOST_ARCH%
 
@@ -45,7 +45,7 @@ set HOME=/home/%USERNAME%
 REM VIM needed by vim to find help files.
 set VIM=/usr/share/vim/vim61
 
-REM    --------------- cygwin cvs  ------------------------
+REM    --------------- remote cvs  ------------------------
 REM HOME needed by cvs for .cvsrc file (set in vim above) 
 set CVSROOT=:ext:jba@venus.aps.anl.gov:/net/phoebus/epicsmgr/cvsroot
 set CVS_RSH=/bin/ssh.exe
@@ -77,8 +77,8 @@ REM -- Exceed xdk 7.00 ----
 REM set PATH=%PATH%;C:\Progra~1\Hummingbird\Connectivity\7.00\Exceed
 REM -- Exceed xdk 6.01 ----
 REM NOTE: Need to start Exceed by hand before executing extensions
-REM set DISPLAY=localhost:0
-REM set PATH=%PATH%;C:\Exceed\dlls
+set DISPLAY=localhost:0
+set PATH=%PATH%;C:\Exceed\dlls
 
 REM    --------------- CVS ---------------------------
 REM set CVSROOT=/cvsroot

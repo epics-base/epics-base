@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# base/bin/tools/HostArch - returns the Epics host architecture suitable
+#                           for assigning to the HOST_ARCH variable
+
+sysname=`uname`
+
+case $sysname in
+    Linux )
+        echo Linux
+        ;;
+    HP-UX )
+        echo hp700
+        ;;
+    OSF1 )
+        echo alpha
+        ;;
+    SunOS )
+        version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`
+        if [ ${version} -ge 5 ]; then
+            echo solaris
+        else
+            echo sun4
+        fi
+        ;;
+    * )
+        echo unsupported
+        ;;
+esac
+

@@ -182,7 +182,7 @@ epicsMutexLockStatus epicsMutexLockWithTimeout(epicsMutexId pmutex, double timeo
 epicsMutexLockStatus epicsMutexTryLock(epicsMutexId pmutex)
 {
     pthread_t tid = pthread_self();
-    epicsMutexLockStatus status = epicsMutexLockError;
+    epicsMutexLockStatus status;
     int pthreadStatus;
 
     pthreadStatus = pthread_mutex_lock(&pmutex->lock);
@@ -191,7 +191,10 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId pmutex)
         pmutex->ownerTid = tid;
         pmutex->owned = 1;
         pmutex->count++;
-        status = 0;
+        status = epicsMutexLockOK;
+    }
+    else {
+        status = epicsMutexLockTimeout;
     }
     pthreadStatus = pthread_mutex_unlock(&pmutex->lock);
     checkStatusQuit(pthreadStatus,"pthread_mutex_unlock","epicsMutexTryLock");

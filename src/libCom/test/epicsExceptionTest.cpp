@@ -15,8 +15,8 @@
 
 #include <new>
 #include <iostream>
+#include <limits>
 
-#include <limits.h>
 #include <assert.h>
 #include <stdio.h>
 
@@ -44,7 +44,7 @@ static void epicsExceptionTestPrivate ()
 {
     int excep = false;
     try {
-        new char [LONG_MAX];
+        new char [numeric_limits<DST_T>::max (size_t)];
         assert ( 0 );
     }
     catch ( const bad_alloc & ) {

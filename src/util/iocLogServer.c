@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.30  1998/06/16 02:43:16  jhill
+ * use ip addr conversion in libCom - and cosmetic changes
+ *
  * Revision 1.29  1998/05/29 20:19:11  jhill
  * use new sock ioctl() typedef
  *
@@ -383,12 +386,12 @@ static void handleLogFileError(void)
  */
 static void acceptNewClient(void *pParam)
 {
-	struct ioc_log_server	*pserver = (struct ioc_log_server *)pParam;
-	struct iocLogClient	*pclient;
-	int			size;
-	struct sockaddr_in 	addr;
-	int			status;
-	osiSockIoctl_t	optval;
+	struct ioc_log_server *pserver = (struct ioc_log_server *)pParam;
+	struct iocLogClient *pclient;
+	osiSocklen_t size;
+	struct sockaddr_in addr;
+	int status;
+	osiSockIoctl_t optval;
 
 	pclient = (struct iocLogClient *) 
 			malloc(sizeof *pclient);

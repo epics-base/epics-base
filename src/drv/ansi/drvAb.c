@@ -116,13 +116,13 @@
 #include	<string.h>
 #include	<sysLib.h>
 #include	<semLib.h>
+#include	<wdLib.h>
 #include	<vme.h> 
 #include	<rebootLib.h> 
 #include	<logLib.h>
 #include	<tickLib.h>
 
 #include	<task_params.h>
-#include	<dbDefs.h>
 #include	<dbScan.h>
 #include	<drvSup.h>
 #include	<taskwd.h>
@@ -200,8 +200,10 @@ typedef volatile struct ab_region {
 typedef struct {
 	abStatus	btStatus;
 	unsigned short	cmd;
-	unsigned short	*pmsg;
 	unsigned short	msg_len;
+	unsigned short	*pmsg;
+	/* The following field is only used for cardType = typeBt */
+	WDOG_ID		wdId;	/*For Timeout */
 }btInfo;
 
 typedef enum {
@@ -431,7 +433,7 @@ LOCAL int sc_lock(ab_link *plink)
     if(ab_debug>3)printf("sc_lock\n");
     semTake(plink->request_sem,WAIT_FOREVER);
     /* try to to lock the dual port memory */
-    for(i=0; i<vxTicksPerSecond*6; i++) {
+    for(i=0; i<sysClkRateGet()*6; i++) {
 	if ((lock_stat = sysBusTas ((char *)&pmb->fl_lock)) == TRUE) break;
 	taskDelay(1);
     }
@@ -459,7 +461,7 @@ LOCAL int sc_waitcmd(ab_link *plink)
     pmb->conf_stat = 0x000f;
     ntry = 0;
     p6008->sc_intr = 1; /*Wake up scanner*/
-    status = semTake(plink->ab_cmd_sem,vxTicksPerSecond);
+    status = semTake(plink->ab_cmd_sem,sysClkRateGet());
     if(status!=OK) {
 	plink->sccmd_to++;
 	if(ab_debug) printf(
@@ -634,7 +636,7 @@ LOCAL abStatus  bt_queue(unsigned short command,ab_card *pcard,
 	    sc_conferr(plink);
 	    if (status == BT_QUEUE_FULL){
 		printf("drvAb: BT_QUEUE_FULL link %hu\n",plink->link);
-		taskDelay(vxTicksPerSecond/10);
+		taskDelay(sysClkRateGet()/10);
 	    }
 	    return(abFailure);
 	}
@@ -658,6 +660,7 @@ LOCAL int link_status(ab_link *plink)
     ab_link_status	*plink_status = plink->plink_status;
     int			status;
     int			ntry;
+    int			linkOK = TRUE;
 
     /* initialize the pointer to the dual ported memory */
     pmb = (dp_mbox *)(&plink->vme_addr->mail);
@@ -681,7 +684,7 @@ LOCAL int link_status(ab_link *plink)
     }
     if(ntry>=maxCmdTrys) {
 	if(ab_debug)printf("abDrv: link_status failed link %hu\n",plink->link);
-	return(ERROR);
+	linkOK = FALSE;
     }
     /* check each adapter on this link */
     for (i = 0; i< AB_MAX_ADAPTERS; i++){
@@ -689,7 +692,7 @@ LOCAL int link_status(ab_link *plink)
 
 	if(!padapter) continue;
 	/* good status */
-	if (plink_status->status[i*4] & 0x70){
+	if (linkOK && plink_status->status[i*4] & 0x70){
 	    if (!padapter->adapter_online) {
 		printf("link %d adapter %d change bad to good\n",
 			plink->link,i);
@@ -725,7 +728,7 @@ LOCAL int ab_reboot_hook(int boot_type)
 	}
 	/* this seems to be necessary for the AB card to stop talking */
 	printf("\nReboot: drvAb delay to clear interrupts off backplane\n");
-	taskDelay(vxTicksPerSecond*2);
+	taskDelay(sysClkRateGet()*2);
 	return(0);
 }
 
@@ -751,7 +754,7 @@ LOCAL void config_init(ab_link *plink)
 int abConfigNlinks(int nlinks)
 {
     if(pab_links) {
-	printf("abConfigNlinks Illegal call. Must be first abDrv related call");
+	printf("abConfigNlinks Illegal call. Must be first abDrv related call\n");
 	return(-1);
     }
     max_ab_6008s = nlinks;
@@ -900,15 +903,15 @@ LOCAL int ab_driver_init()
 	    plink->vme_addr = p6008;	/* set AB card address */
 	    pconfig = plink->pconfig;
 	    if(!(plink->request_sem = semBCreate(SEM_Q_FIFO,SEM_EMPTY))){
-		printf("AB_DRIVER_INIT: semBcreate failed");
+		printf("AB_DRIVER_INIT: semBcreate failed\n");
 		taskSuspend(0);
 	    }
 	    if(!(plink->ab_cmd_sem = semBCreate(SEM_Q_FIFO,SEM_EMPTY))){
-		printf("AB_DRIVER_INIT: semBcreate failed");
+		printf("AB_DRIVER_INIT: semBcreate failed\n");
 		taskSuspend(0);
 	    }
 	    if(!(plink->ab_data_sem = semBCreate(SEM_Q_FIFO,SEM_EMPTY))){
-		printf("AB_DRIVER_INIT: semBcreate failed");
+		printf("AB_DRIVER_INIT: semBcreate failed\n");
 		taskSuspend(0);
 	    }
 	    status = devConnectInterrupt(intVME,pconfig->int_vector,
@@ -933,7 +936,7 @@ LOCAL int ab_driver_init()
 		  ABSCAN_STACK,(FUNCPTR)abScanTask,(int)plink,
 		  0,0,0,0,0,0,0,0,0);
 	    if(vxstatus < 0){
-		printf("AB_DRIVER_INIT: failed taskSpawn");
+		printf("AB_DRIVER_INIT: failed taskSpawn\n");
 		taskSuspend(0);
 	    }
 	    plink->abScanId = vxstatus;
@@ -943,7 +946,7 @@ LOCAL int ab_driver_init()
 		ABDONE_STACK,(FUNCPTR)abDoneTask,(int)plink,
 		0,0,0,0,0,0,0,0,0);
 	    if(vxstatus < 0){
-		printf("AB_DRIVER_INIT: failed taskSpawn");
+		printf("AB_DRIVER_INIT: failed taskSpawn\n");
 		taskSuspend(0);
 	    }
 	    plink->abDoneId = vxstatus;
@@ -1107,7 +1110,7 @@ LOCAL void abScanTask(ab_link *plink)
     tickBeg = tickGet();
     while(TRUE){
 	/* run every 1/10 second */
-	taskDelay(vxTicksPerSecond/10);
+	taskDelay(sysClkRateGet()/10);
 	if(plink->ab_disable) continue;
 	/* Every second perform a link check to see if any adapters */
 	/* have  changed state.  (Don't want to queue up requests if*/
@@ -1126,8 +1129,8 @@ LOCAL void abScanTask(ab_link *plink)
 	    if(tickNow > tickBeg){/*skip overflows*/
 		tickDiff = tickNow - tickBeg;
 		/*round to nearest counts/sec */
-		plink->intrSec=((plink->intr_cnt*vxTicksPerSecond)+5)/tickDiff;
-		plink->btSec=((plink->bt_cnt*vxTicksPerSecond)+5)/tickDiff;
+		plink->intrSec=((plink->intr_cnt*sysClkRateGet())+5)/tickDiff;
+		plink->btSec=((plink->bt_cnt*sysClkRateGet())+5)/tickDiff;
 	    }
 	    tickBeg = tickNow;
 	    plink->intr_cnt = 0;
@@ -1160,7 +1163,17 @@ LOCAL void read_ab_adapter(ab_link *plink, ab_adapter *padapter)
 	pcard = padapter->papcard[card];
 	if (!pcard) continue;
 	if(!pcard->active) continue;
-	if(pcard->type==typeBt) continue;
+	if(pcard->type==typeBt)  {
+	    pbtInfo = pcard->pbtInfo;
+	    semTake(pcard->card_sem,WAIT_FOREVER);
+	    if(pcard->active && pbtInfo->btStatus != abBtqueued) {
+		pcard->active = FALSE;
+		pcard->status = pbtInfo->btStatus;
+		if(pcard->callback) (*pcard->callback) ((void *)pcard);
+	    }
+	    semGive(pcard->card_sem);
+	    continue;
+	}
 	if(pcard->type==typeBi || pcard->type==typeBo || pcard->type==typeBiBo){
 	    if(pcard->type==typeBi || pcard->type==typeBiBo) {
 		di_read(pcard,&value);
@@ -1239,7 +1252,10 @@ LOCAL void read_ab_adapter(ab_link *plink, ab_adapter *padapter)
 	    /*break left out on purpose*/
 repeat_countdown:
 	case stateCountdown:
-	    if(pcard->needsUpdate) pscanInfo->down_cnt = 0;
+	    if(pcard->needsUpdate) {
+		pscanInfo->down_cnt = 0;
+		pcard->needsUpdate = FALSE;
+	    }
 	    if(pscanInfo->down_cnt>0) pscanInfo->down_cnt--;
 	    if(pscanInfo->down_cnt>0) continue;
 	    pscanInfo->state_cnt = 0;
@@ -1347,9 +1363,14 @@ LOCAL void abDoneTask(ab_link *plink)
 	}
 	pmb->fl_lock = 0;
 	if(pcard->type==typeBt) {
-	    pcard->active = FALSE;
-	    pcard->status = pbtInfo->btStatus;
-	    if(pcard->callback) (*pcard->callback)((void *)pcard);
+	    semTake(pcard->card_sem,WAIT_FOREVER);
+	    if(pcard->active) {
+		pcard->active = FALSE;
+		wdCancel(pbtInfo->wdId);
+		pcard->status = pbtInfo->btStatus;
+		if(pcard->callback) (*pcard->callback) ((void *)pcard);
+	    }
+	    semGive(pcard->card_sem);
 	}
     }
 }
@@ -1366,7 +1387,7 @@ LOCAL void ab_reset_task(ab_link *plink)
 	pab_region = plink->vme_addr;
 	plink->ab_disable = 1;
 	printf("Disabled AB Scanner Task\n");
-	taskDelay(vxTicksPerSecond*2);
+	taskDelay(sysClkRateGet()*2);
 	/* Signal the Scanner to Reset */
 	pab_region->sys_fail_set2 = 0xa0a0;
 	pab_region->sys_fail_set1 = 0x0080;
@@ -1609,19 +1630,26 @@ LOCAL abStatus registerCard(
     pcard->type = type;
     pcard->card_name = card_name;
     if(!(pcard->card_sem = semBCreate(SEM_Q_FIFO,SEM_FULL))){
-	printf("abDrv register card: semBcreate failed");
+	printf("abDrv register card: semBcreate failed\n");
 	taskSuspend(0);
     }
     if(type==typeBo) pcard->bocallback = callback;
     else pcard->callback = callback;
-    if(type==typeAi || type ==typeAo || type == typeBt)
+    if(type==typeAi || type ==typeAo || type == typeBt) {
 	pcard->pbtInfo = abCalloc(1,sizeof(btInfo));
+	if(type == typeBt) {
+	    if(!(pcard->pbtInfo->wdId = wdCreate()) ) {
+		printf("abDrv register card: wdCreate failed\n");
+		taskSuspend(0);
+	    }
+	}
+    }
     *ppcard = pcard;
     if(!padapter) {
 	padapter = abCalloc(1,sizeof(ab_adapter));
 	padapter->papcard = abCalloc(MAX_CARDS_PER_ADAPTER,sizeof(ab_card *));
 	if(!(padapter->adapter_sem = semBCreate(SEM_Q_FIFO,SEM_FULL))){
-	    printf("abDrv: abRegister: semBcreate failed");
+	    printf("abDrv: abRegister: semBcreate failed\n");
 	    taskSuspend(0);
 	}
 	padapter->adapter = adapter;
@@ -1745,27 +1773,55 @@ LOCAL abStatus readBi(void *drvPvt,unsigned long *pvalue,unsigned long mask)
     return(getStatus(drvPvt));
 }
 
-LOCAL abStatus btRead(void *drvPvt,unsigned short *pread_msg, unsigned short read_msg_len)
+static void btTimeoutCallback(ab_card *pcard)
+{
+    pcard->pbtInfo->btStatus = abFailure;
+    if(ab_debug) logMsg("btTimeoutCallback link %d adapter %d card %d\n",
+	pcard->link,pcard->adapter,pcard->card,0,0,0);
+    return;
+}
+
+LOCAL abStatus btReadWrite(unsigned short cmd, void *drvPvt,
+	unsigned short *pread_msg, unsigned short read_msg_len)
 {
     ab_card 	*pcard = drvPvt;
     int		btStatus;
+    STATUS	wdStatus;
 
-    if(pcard->active) return(abBusy);
-    pcard->active = TRUE;
-    btStatus=bt_queue(AB_READ,pcard,pread_msg,read_msg_len);
-    if(btStatus!=abBtqueued) pcard->active = FALSE;
+    if(!pcard) return(abFailure);
+    semTake(pcard->card_sem,WAIT_FOREVER);
+    if(pcard->active) {
+	btStatus = abBusy;
+    } else {
+	pcard->active = TRUE;
+	btStatus=bt_queue(cmd,pcard,pread_msg,read_msg_len);
+	if(btStatus==abBtqueued) {
+	    /* Set timeout for 1 second more than 68008 SV block */
+	    /* transfer timout, which is 4 seconds		 */
+	    wdStatus = wdStart(pcard->pbtInfo->wdId,
+		sysClkRateGet()*5,
+		(FUNCPTR)btTimeoutCallback,(int)pcard);
+	    if(wdStatus==ERROR) {
+		printf("abDrv btReadWrite : wdStart failure\n");
+		btStatus = abFailure;
+	    }
+	}
+	if(btStatus!=abBtqueued) pcard->active = FALSE;
+    }
+    semGive(pcard->card_sem);
     return(btStatus);
 }
-LOCAL abStatus btWrite(void *drvPvt,unsigned short *pwrite_msg, unsigned short write_msg_len)
-{
-    ab_card 	*pcard = drvPvt;
-    int		btStatus;
 
-    if(pcard->active) return(abBusy);
-    pcard->active = TRUE;
-    btStatus=bt_queue(AB_WRITE,pcard,pwrite_msg,write_msg_len);
-    if(btStatus!=abBtqueued) pcard->active = FALSE;
-    return(btStatus);
+LOCAL abStatus btRead(void *drvPvt,
+	unsigned short *pread_msg, unsigned short read_msg_len)
+{
+    return(btReadWrite(AB_READ,drvPvt,pread_msg,read_msg_len));
+}
+
+LOCAL abStatus btWrite(void *drvPvt,
+	unsigned short *pwrite_msg, unsigned short write_msg_len)
+{
+    return(btReadWrite(AB_WRITE,drvPvt,pwrite_msg,write_msg_len));
 }
 
 LOCAL abStatus adapterStatus(unsigned short link,unsigned short adapter)

@@ -24,7 +24,7 @@
 
 epicsSingleton < tsFreeList < class getCopy, 1024 > > getCopy::pFreeList;
 
-getCopy::getCopy ( oldCAC &cacCtxIn, oldChannelNotify &chanIn, 
+getCopy::getCopy ( ca_client_context &cacCtxIn, oldChannelNotify &chanIn, 
                   unsigned typeIn, arrayElementCount countIn, void *pValueIn ) :
     count ( countIn ), cacCtx ( cacCtxIn ), chan ( chanIn ), pValue ( pValueIn ), 
         ioSeqNo ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )

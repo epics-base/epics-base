@@ -138,7 +138,7 @@ private:
 	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
 };
 
-struct oldCAC;
+struct ca_client_context;
 
 class casgMutex {
 public:
@@ -153,7 +153,7 @@ template < class T > class sgAutoPtr;
 
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
-    CASG ( oldCAC & cacIn );
+    CASG ( ca_client_context & cacIn );
     bool ioComplete ();
     void destroy ();
     bool verify () const;
@@ -178,7 +178,7 @@ private:
     tsDLList < syncGroupNotify > ioCompletedList;
     casgMutex mutable mutex;
     epicsEvent sem;
-    oldCAC & client;
+    ca_client_context & client;
     unsigned magic;
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > freeListReadOP;
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > freeListWriteOP;

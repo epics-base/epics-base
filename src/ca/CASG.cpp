@@ -39,7 +39,7 @@
 
 epicsSingleton < tsFreeList < struct CASG, 128 > > CASG::pFreeList;
 
-CASG::CASG ( oldCAC &cacIn ) :
+CASG::CASG ( ca_client_context &cacIn ) :
     client ( cacIn ), magic ( CASG_MAGIC )
 {
     client.installCASG ( *this );

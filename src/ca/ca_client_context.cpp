@@ -28,7 +28,7 @@
 
 extern epicsThreadPrivateId caClientContextId;
 
-oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
+ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     clientCtx ( * new cac ( *this, enablePreemptiveCallback ) ),
     pCallbackGuard ( 0 ), ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
@@ -40,23 +40,23 @@ oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
     }
 }
 
-oldCAC::~oldCAC ()
+ca_client_context::~ca_client_context ()
 {
     delete this->pCallbackGuard;
     delete & this->clientCtx;
 }
 
-void oldCAC::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
+void ca_client_context::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
 {
-    epicsGuard < oldCACMutex > guard ( this->mutex );
+    epicsGuard < ca_client_context_mutex > guard ( this->mutex );
     this->ca_exception_func = pfunc;
     this->ca_exception_arg = arg;
 // should block here until releated callback in progress completes
 }
 
-void oldCAC::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
+void ca_client_context::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
 {
-    epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+    epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
     if ( ca_printf_func ) {
         this->pVPrintfFunc = ca_printf_func;
     }
@@ -66,33 +66,33 @@ void oldCAC::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
 // should block here until releated callback in progress completes
 }
 
-void oldCAC::registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg )
+void ca_client_context::registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg )
 {
-    epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+    epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
     this->fdRegFunc = pFunc;
     this->fdRegArg = pArg;
 // should block here until releated callback in progress completes
 }
 
-int oldCAC::printf ( const char *pformat, ... ) const
+int ca_client_context::printf ( const char *pformat, ... ) const
 {
     va_list theArgs;
     int status;
 
     va_start ( theArgs, pformat );
     
-    status = this->oldCAC::vPrintf ( pformat, theArgs );
+    status = this->ca_client_context::vPrintf ( pformat, theArgs );
     
     va_end ( theArgs );
     
     return status;
 }
 
-int oldCAC::vPrintf ( const char *pformat, va_list args ) const // X aCC 361
+int ca_client_context::vPrintf ( const char *pformat, va_list args ) const // X aCC 361
 {
     caPrintfFunc *pFunc;
     {
-        epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+        epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
         pFunc = this->pVPrintfFunc;
     }
     if ( pFunc ) {
@@ -103,14 +103,14 @@ int oldCAC::vPrintf ( const char *pformat, va_list args ) const // X aCC 361
     }
 }
 
-void oldCAC::exception ( int stat, const char *pCtx, 
+void ca_client_context::exception ( int stat, const char *pCtx, 
                         const char *pFile, unsigned lineNo )
 {
     struct exception_handler_args args;
     caExceptionHandler *pFunc;
     void *pArg;
     {
-        epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+        epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
         pFunc = this->ca_exception_func;
         pArg = this->ca_exception_arg;
     }
@@ -134,7 +134,7 @@ void oldCAC::exception ( int stat, const char *pCtx,
     }
 }
 
-void oldCAC::exception ( int status, const char *pContext,
+void ca_client_context::exception ( int status, const char *pContext,
     const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
     unsigned type, arrayElementCount count, unsigned op )
 {
@@ -142,7 +142,7 @@ void oldCAC::exception ( int status, const char *pContext,
     caExceptionHandler *pFunc;
     void *pArg;
     {
-        epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+        epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
         pFunc = this->ca_exception_func;
         pArg = this->ca_exception_arg;
     }
@@ -170,12 +170,12 @@ void oldCAC::exception ( int status, const char *pContext,
     }
 }
 
-void oldCAC::fdWasCreated ( int fd )
+void ca_client_context::fdWasCreated ( int fd )
 {
     CAFDHANDLER *pFunc;
     void *pArg;
     {
-        epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+        epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
         pFunc = this->fdRegFunc;
         pArg = this->fdRegArg;
     }
@@ -184,12 +184,12 @@ void oldCAC::fdWasCreated ( int fd )
     }
 }
 
-void oldCAC::fdWasDestroyed ( int fd )
+void ca_client_context::fdWasDestroyed ( int fd )
 {
     CAFDHANDLER *pFunc;
     void *pArg;
     {
-        epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+        epicsGuard < ca_client_context_mutex > autoMutex ( this->mutex );
         pFunc = this->fdRegFunc;
         pArg = this->fdRegArg;
     }
@@ -198,9 +198,9 @@ void oldCAC::fdWasDestroyed ( int fd )
     }
 }
 
-void oldCAC::show ( unsigned level ) const
+void ca_client_context::show ( unsigned level ) const
 {
-    ::printf ( "oldCAC at %p\n", 
+    ::printf ( "ca_client_context at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         this->mutex.show ( level - 1u );
@@ -217,16 +217,16 @@ void oldCAC::show ( unsigned level ) const
     }
 }
 
-void oldCAC::attachToClientCtx ()
+void ca_client_context::attachToClientCtx ()
 {
     assert ( ! epicsThreadPrivateGet ( caClientContextId ) );
     epicsThreadPrivateSet ( caClientContextId, this );
 }
 
-void oldCAC::incrementOutstandingIO ( unsigned ioSeqNoIn )
+void ca_client_context::incrementOutstandingIO ( unsigned ioSeqNoIn )
 {
     if ( this->ioSeqNo == ioSeqNoIn ) {
-        epicsGuard < oldCACMutex > guard ( this->mutex );
+        epicsGuard < ca_client_context_mutex > guard ( this->mutex );
         if ( this->ioSeqNo == ioSeqNoIn ) {
             assert ( this->pndRecvCnt < UINT_MAX );
             this->pndRecvCnt++;
@@ -234,7 +234,7 @@ void oldCAC::incrementOutstandingIO ( unsigned ioSeqNoIn )
     }
 }
 
-void oldCAC::decrementOutstandingIO ( unsigned ioSeqNoIn )
+void ca_client_context::decrementOutstandingIO ( unsigned ioSeqNoIn )
 {
     if ( this->ioSeqNo != ioSeqNoIn ) {
         return;
@@ -242,7 +242,7 @@ void oldCAC::decrementOutstandingIO ( unsigned ioSeqNoIn )
 
     bool signalNeeded;
     {
-        epicsGuard < oldCACMutex > guard ( this->mutex ); 
+        epicsGuard < ca_client_context_mutex > guard ( this->mutex ); 
         if ( this->ioSeqNo == ioSeqNoIn ) {
             assert ( this->pndRecvCnt > 0u );
             this->pndRecvCnt--;
@@ -269,7 +269,7 @@ void oldCAC::decrementOutstandingIO ( unsigned ioSeqNoIn )
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
-int oldCAC::pendIO ( const double & timeout )
+int ca_client_context::pendIO ( const double & timeout )
 {
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback. 
@@ -301,7 +301,7 @@ int oldCAC::pendIO ( const double & timeout )
     }
 
     {
-        epicsGuard < oldCACMutex > guard ( this->mutex );
+        epicsGuard < ca_client_context_mutex > guard ( this->mutex );
         this->ioSeqNo++;
         this->pndRecvCnt = 0u;
     }
@@ -315,8 +315,7 @@ int oldCAC::pendIO ( const double & timeout )
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
-// this routine should probably be moved to the oldCAC?
-int oldCAC::pendEvent ( const double & timeout )
+int ca_client_context::pendEvent ( const double & timeout )
 {
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback. 
@@ -357,7 +356,7 @@ int oldCAC::pendEvent ( const double & timeout )
     return ECA_TIMEOUT;
 }
 
-void oldCAC::blockForEventAndEnableCallbacks ( epicsEvent & event, double timeout )
+void ca_client_context::blockForEventAndEnableCallbacks ( epicsEvent & event, double timeout )
 {
     if ( this->pCallbackGuard ) {
         epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );

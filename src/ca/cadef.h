@@ -924,13 +924,12 @@ epicsShareFunc int epicsShareAPI ca_preemtive_callback_is_enabled ();
  * used when an auxillary thread needs to join a CA client context started
  * by another thread
  */
-typedef struct oldCAC ca_client_context;
-epicsShareFunc ca_client_context * epicsShareAPI ca_current_context ();
-epicsShareFunc int epicsShareAPI ca_attach_context ( ca_client_context * context );
+epicsShareFunc struct ca_client_context * epicsShareAPI ca_current_context ();
+epicsShareFunc int epicsShareAPI ca_attach_context ( struct ca_client_context * context );
 
 
 epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level );
-epicsShareFunc int epicsShareAPI ca_context_status ( ca_client_context *, unsigned level );
+epicsShareFunc int epicsShareAPI ca_context_status ( struct ca_client_context *, unsigned level );
 
 epicsShareFunc void epicsShareAPI ca_self_test ();
 

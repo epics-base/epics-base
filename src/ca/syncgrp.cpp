@@ -39,7 +39,7 @@
  */
 extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid ) // X aCC 361
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     int caStatus;
     CASG *pcasg;
 
@@ -63,7 +63,7 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid ) // X aCC 361
  */
 extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     int caStatus;
     CASG *pcasg;
 
@@ -87,7 +87,7 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
     int status;
 
@@ -112,7 +112,7 @@ extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeou
  */
 extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
     int caStatus;
 
@@ -138,7 +138,7 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
 
     int caStatus = fetchClientContext (&pcac);
@@ -162,7 +162,7 @@ extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
     int caStatus;
 
@@ -190,7 +190,7 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
 extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, const void *pValue )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
     int caStatus;
     
@@ -253,7 +253,7 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
 extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, void *pValue )
 {
-    oldCAC *pcac;
+    ca_client_context *pcac;
     CASG *pcasg;
     int caStatus;
 

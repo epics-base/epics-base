@@ -39,7 +39,7 @@
 
 struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( struct oldCAC &, const char *pName, 
+    oldChannelNotify ( struct ca_client_context &, const char *pName, 
         caCh *pConnCallBackIn, void *pPrivateIn, capri priority );
     void destroy ();
     void setPrivatePointer ( void * );
@@ -83,7 +83,7 @@ public:
 protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
-    oldCAC & cacCtx;
+    ca_client_context & cacCtx;
     cacChannel & io;
     caCh * pConnCallBack;
     void * pPrivate;
@@ -106,7 +106,7 @@ private:
 
 class getCopy : public cacReadNotify {
 public:
-    getCopy ( oldCAC &cacCtx, oldChannelNotify &, unsigned type, 
+    getCopy ( ca_client_context &cacCtx, oldChannelNotify &, unsigned type, 
         arrayElementCount count, void *pValue );
     void destroy ();
     void show ( unsigned level ) const;
@@ -117,7 +117,7 @@ protected:
     ~getCopy (); // allocate only out of pool
 private:
     arrayElementCount count;
-    oldCAC &cacCtx;
+    ca_client_context &cacCtx;
     oldChannelNotify &chan;
     void *pValue;
     unsigned ioSeqNo;
@@ -200,7 +200,7 @@ private:
 	oldSubscription & operator = ( const oldSubscription & );
 };
 
-class oldCACMutex {
+class ca_client_context_mutex {
 public:
     void lock ();
     void unlock ();
@@ -209,11 +209,11 @@ private:
     epicsMutex mutex;
 };
 
-struct oldCAC : public cacNotify
+struct ca_client_context : public cacNotify
 {
 public:
-    oldCAC ( bool enablePreemptiveCallback = false );
-    virtual ~oldCAC ();
+    ca_client_context ( bool enablePreemptiveCallback = false );
+    virtual ~ca_client_context ();
     void changeExceptionEvent ( caExceptionHandler * pfunc, void * arg );
     void registerForFileDescriptorCallBack ( CAFDHANDLER * pFunc, void * pArg );
     void replaceErrLogHandler ( caPrintfFunc * ca_printf_func );
@@ -247,7 +247,7 @@ public:
     bool preemptiveCallbakIsEnabled () const;
     epicsGuard < callbackMutex > callbackGuardFactory ();
 private:
-    mutable oldCACMutex mutex; 
+    mutable ca_client_context_mutex mutex; 
     epicsEvent ioDone;
     cac & clientCtx;
     epicsGuard < callbackMutex > * pCallbackGuard;
@@ -262,11 +262,11 @@ private:
     void fdWasCreated ( int fd );
     void fdWasDestroyed ( int fd );
     void attachToClientCtx ();
-	oldCAC ( const oldCAC & );
-	oldCAC & operator = ( const oldCAC & );
+	ca_client_context ( const ca_client_context & );
+	ca_client_context & operator = ( const ca_client_context & );
 };
 
-int fetchClientContext ( oldCAC **ppcac );
+int fetchClientContext ( ca_client_context **ppcac );
 
 inline void oldChannelNotify::destroy ()
 {
@@ -453,85 +453,85 @@ inline void getCallback::operator delete ( void *pCadaver, size_t size )
     getCallback::pFreeList->release ( pCadaver, size );
 }
 
-inline void oldCAC::registerService ( cacService &service )
+inline void ca_client_context::registerService ( cacService &service )
 {
     this->clientCtx.registerService ( service );
 }
 
-inline cacChannel & oldCAC::createChannel ( const char * name_str, 
+inline cacChannel & ca_client_context::createChannel ( const char * name_str, 
              oldChannelNotify & chan, cacChannel::priLev pri )
 {
     return this->clientCtx.createChannel ( name_str, chan, pri );
 }
 
-inline void oldCAC::flushRequest ()
+inline void ca_client_context::flushRequest ()
 {
     this->clientCtx.flushRequest ();
 }
 
-inline unsigned oldCAC::connectionCount () const
+inline unsigned ca_client_context::connectionCount () const
 {
     return this->clientCtx.connectionCount ();
 }
 
-inline CASG * oldCAC::lookupCASG ( unsigned id )
+inline CASG * ca_client_context::lookupCASG ( unsigned id )
 {
     return this->clientCtx.lookupCASG ( id );
 }
 
-inline void oldCAC::installCASG ( CASG &sg )
+inline void ca_client_context::installCASG ( CASG &sg )
 {
     this->clientCtx.installCASG ( sg );
 }
 
-inline void oldCAC::uninstallCASG ( CASG &sg )
+inline void ca_client_context::uninstallCASG ( CASG &sg )
 {
     this->clientCtx.uninstallCASG ( sg );
 }
 
-inline void oldCAC::vSignal ( int ca_status, const char *pfilenm, 
+inline void ca_client_context::vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args )
 {
     this->clientCtx.vSignal ( ca_status, pfilenm, 
                      lineno, pFormat, args );
 }
 
-inline void oldCAC::selfTest ()
+inline void ca_client_context::selfTest ()
 {
     this->clientCtx.selfTest ();
 }
 
-inline bool oldCAC::preemptiveCallbakIsEnabled () const
+inline bool ca_client_context::preemptiveCallbakIsEnabled () const
 {
     return this->clientCtx.preemptiveCallbakIsEnabled ();
 }
 
-inline bool oldCAC::ioComplete () const
+inline bool ca_client_context::ioComplete () const
 {
     return ( this->pndRecvCnt == 0u );
 }
 
-inline unsigned oldCAC::sequenceNumberOfOutstandingIO () const
+inline unsigned ca_client_context::sequenceNumberOfOutstandingIO () const
 {
     return this->ioSeqNo;
 }
 
-inline epicsGuard < callbackMutex > oldCAC::callbackGuardFactory ()
+inline epicsGuard < callbackMutex > ca_client_context::callbackGuardFactory ()
 {
     return this->clientCtx.callbackGuardFactory ();
 }
 
-inline void oldCACMutex::lock ()
+inline void ca_client_context_mutex::lock ()
 {
     this->mutex.lock ();
 }
 
-inline void oldCACMutex::unlock ()
+inline void ca_client_context_mutex::unlock ()
 {
     this->mutex.unlock ();
 }
 
-inline void oldCACMutex::show ( unsigned level ) const
+inline void ca_client_context_mutex::show ( unsigned level ) const
 {
     this->mutex.show ( level );
 }

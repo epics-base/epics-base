@@ -31,7 +31,7 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
 
-oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName, 
+oldChannelNotify::oldChannelNotify ( ca_client_context & cacIn, const char *pName, 
         caCh * pConnCallBackIn, void * pPrivateIn, capri priority ) :
     cacCtx ( cacIn ), 
     io ( cacIn.createChannel ( pName, *this, priority ) ), 

@@ -44,7 +44,9 @@ inline tcpiiu *bhe::getIIU ()const
 
 inline void bhe::bindToIIU ( tcpiiu &iiuIn )
 {
-    assert ( this->piiu == 0 );
-    this->piiu = &iiuIn;
+    if ( this->piiu != &iiuIn ) {
+        assert ( this->piiu == 0 );
+        this->piiu = &iiuIn;
+    }
 }
 

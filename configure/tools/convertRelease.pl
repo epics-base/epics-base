@@ -72,7 +72,7 @@ $outfile = $ARGV[0];
 
 # Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
-die "Can't find $relfile" unless (-r $relfile);
+die "Can't find $relfile" unless (-f $relfile);
 &readReleaseFiles($relfile, \%macros, \@apps);
 &expandRelease(\%macros, \@apps);
 

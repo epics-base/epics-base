@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.92  1997/04/23 17:04:57  jhill
+ * pc port changes
+ *
  * Revision 1.91  1997/04/10 19:26:01  jhill
  * asynch connect, faster connect, ...
  *
@@ -208,6 +211,8 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 #include	"sigPipeIgnore.h"
+
+#include 	"freeList.h"
 
 #ifdef vxWorks
 #include 	"dbEvent.h"
@@ -687,12 +692,14 @@ int ca_os_independent_init (void)
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
-	ellInit(&ca_static->ca_free_event_list);
 	ellInit(&ca_static->ca_pend_read_list);
 	ellInit(&ca_static->ca_pend_write_list);
 	ellInit(&ca_static->putCvrtBuf);
 	ellInit(&ca_static->fdInfoFreeList);
 	ellInit(&ca_static->fdInfoList);
+
+	freeListInitPvt(&ca_static->ca_ioBlockFreeListPVT, 
+				sizeof(struct pending_event), 256);
 
 	ca_static->ca_pSlowBucket = 
 		bucketCreate(CLIENT_HASH_TBL_SIZE);
@@ -932,7 +939,7 @@ void ca_process_exit()
 	ca_sg_shutdown(ca_static);
 
 	/* remove remote waiting ev blocks */
-	ellFree(&ca_static->ca_free_event_list);
+	freeListCleanup(ca_static->ca_ioBlockFreeListPVT);
 
 	/* free select context lists */
 	ellFree(&ca_static->fdInfoFreeList);
@@ -1408,14 +1415,7 @@ LOCAL miu caIOBlockCreate(void)
 
 	LOCK;
 
-	pIOBlock = (miu) ellGet (&free_event_list);
-	if (pIOBlock) {
-		memset ((char *)pIOBlock, 0, sizeof(*pIOBlock));
-	}
-	else {
-		pIOBlock = (miu) calloc(1, sizeof(*pIOBlock));
-	}
-
+	pIOBlock = (miu) freeListCalloc(ca_static->ca_ioBlockFreeListPVT);
 	if (pIOBlock) {
 		do {
 			pIOBlock->id = CLIENT_FAST_ID_ALLOC;
@@ -1426,7 +1426,8 @@ LOCAL miu caIOBlockCreate(void)
 		} while (status == S_bucket_idInUse);
 
 		if(status != S_bucket_success){
-			free(pIOBlock);
+			freeListFree(ca_static->ca_ioBlockFreeListPVT, 
+				pIOBlock);
 			pIOBlock = NULL;
 		}
 	}
@@ -1450,7 +1451,7 @@ void caIOBlockFree(miu pIOBlock)
 			&pIOBlock->id);
 	assert (status == S_bucket_success);
 	pIOBlock->id = ~0U; /* this id always invalid */
-	ellAdd (&free_event_list, &pIOBlock->node);
+	freeListFree(ca_static->ca_ioBlockFreeListPVT, pIOBlock);
 	UNLOCK;
 }
 
@@ -2165,19 +2166,10 @@ long		mask
 
   	if (!pChan->piiu) {
 # 		ifdef vxWorks
-  		int		size;
-    		static int	dbevsize;
-
-      		if(!dbevsize){
-        		dbevsize = db_sizeof_event_block();
-		}
-      		size = sizeof(*monix)+dbevsize;
-      		if(!(monix = (miu)ellGet(&dbfree_ev_list))){
-        		monix = (miu)malloc(size);
-      		}
+			monix = freeListMalloc (ca_static->ca_dbMonixFreeList);
 # 		else
 		return ECA_INTERNAL;
-# 		endif
+# 			endif
   	}
 	else {
 		monix = caIOBlockCreate();
@@ -2214,6 +2206,7 @@ long		mask
 				(struct event_block *)(monix+1));
 		if(status == ERROR){
 			UNLOCK;
+			freeListFree (ca_static->ca_dbMonixFreeList, monix);
 			return ECA_DBLCLFAIL; 
 		}
 
@@ -2526,8 +2519,8 @@ int epicsShareAPI ca_clear_event (evid monix)
 		LOCK;
 		ellDelete(&chix->eventq, &pMon->node);
 		status = db_cancel_event((struct event_block *)(pMon + 1));
-		ellAdd(&dbfree_ev_list, &pMon->node);
 		UNLOCK;
+		freeListFree (ca_static->ca_dbMonixFreeList, pMon);
 
 		return ECA_NORMAL;
 	}
@@ -2637,7 +2630,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 		while ( (monix = (miu) ellGet(&pChan->eventq)) ) {
 			status = db_cancel_event((struct event_block *)(monix + 1));
 			assert (status == OK);
-			ellAdd(&dbfree_ev_list, &monix->node);
+			freeListFree (ca_static->ca_dbMonixFreeList, monix);
 		}
 
 		/*

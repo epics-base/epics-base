@@ -28,7 +28,7 @@ REM    some tools may need a tmp directory
 set PATH=%PATH%;c:\cygwin\bin
 
 REM    --------------- perl (use cygwin perl) ------------
-set PERLLIB=/C//cygwin/lib/perl5/5.6.1
+REM set PERLLIB=/C//cygwin/lib/perl5/5.6.1
 
 REM     ------------ Borland c++ compiler -----------------
 REM     cygwin tools first so borland make not used

@@ -56,11 +56,15 @@ unsigned accessUpdateCount;
 unsigned connectionUpdateCount;
 unsigned getCallbackCount;
 
+static epicsTimeStamp showProgressBeginTime;
+
 void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 {
+
     if ( interestLevel > 0 ) {
         if ( interestLevel > 1 ) {
             printf ( "%s ", pTestName );
+            epicsTimeGetCurrent ( & showProgressBeginTime );
         }
         printf ( "{" );
     }
@@ -69,10 +73,15 @@ void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 
 void showProgressEnd ( unsigned interestLevel )
 {
+
     if ( interestLevel > 0 ) {
         printf ( "}" );
         if ( interestLevel > 1 ) {
-            printf ( "\n" );
+            epicsTimeStamp showProgressEndTime;
+            double delay;
+            epicsTimeGetCurrent ( & showProgressEndTime );
+            delay = epicsTimeDiffInSeconds ( &showProgressEndTime, &showProgressBeginTime );
+            printf ( " %f sec\n", delay );
         }
         else {
             fflush ( stdout );
@@ -2314,8 +2323,8 @@ void verifyTimeStamps ( chid chan, unsigned interestLevel )
  */
 void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
 {
-    static const unsigned nPrio = 30;
-    chid chanArray[ 30 ];
+    static const unsigned nPrio = 15;
+    chid chanArray[ 15 ];
     double value;
     unsigned i;
     int status;

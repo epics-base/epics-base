@@ -938,7 +938,7 @@ void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > &,
         throw cacChannel::unsupportedByService();
     }
     this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE_NOTIFY,  
-        type, nElem, chan.getSID(), io.getID(), pValue,
+        type, nElem, chan.getSID(), io.getId(), pValue,
         CA_V49 ( this->minorProtocolVersion ) );
 }
 
@@ -969,7 +969,7 @@ void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > &,
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_READ_NOTIFY, 0u, 
         static_cast < ca_uint16_t > ( dataType ), 
-        nElem, chan.getSID(), io.getID(), 
+        nElem, chan.getSID(), io.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
     this->sendQue.commitMsg ();
 }
@@ -1061,7 +1061,7 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > &,
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_ADD, 16u, 
         static_cast < ca_uint16_t > ( dataType ), 
-        nElem, chan.getSID(), subscr.getID(), 
+        nElem, chan.getSID(), subscr.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
 
     // extension
@@ -1080,7 +1080,7 @@ void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > &,
         CA_PROTO_EVENT_CANCEL, 0u, 
         static_cast < ca_uint16_t > ( subscr.getType() ), 
         static_cast < ca_uint16_t > ( subscr.getCount() ), 
-        chan.getSID(), subscr.getID(), 
+        chan.getSID(), subscr.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
     this->sendQue.commitMsg ();
 }

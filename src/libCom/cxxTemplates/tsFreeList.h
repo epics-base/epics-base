@@ -120,26 +120,30 @@ tsFreeList < T, N, DEBUG_LEVEL > :: ~tsFreeList ()
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
 {
-    tsFreeListItem < T, DEBUG_LEVEL > *p;
-
-    if ( DEBUG_LEVEL > 9 ) {
-        fprintf ( stderr, "creating a new %s of size %u\n", 
-            typeid ( T ).name (), sizeof ( T ) );
-    }
-
-    if ( size != sizeof ( T ) || N == 0u ) {
+#   ifdef EPICS_DEBUG
         return ::operator new ( size, std::nothrow );
-    }
+#   else
+        tsFreeListItem < T, DEBUG_LEVEL > *p;
 
-    p = this->pFreeList;
-    if ( p ) {
-        this->pFreeList = p->pNext;
-    }
-    else {
-        p = this->allocateFromNewChunk ();
-    }
+        if ( DEBUG_LEVEL > 9 ) {
+            fprintf ( stderr, "creating a new %s of size %u\n", 
+                typeid ( T ).name (), sizeof ( T ) );
+        }
 
-    return static_cast < void * > ( p );
+        if ( size != sizeof ( T ) || N == 0u ) {
+            return ::operator new ( size, std::nothrow );
+        }
+
+        p = this->pFreeList;
+        if ( p ) {
+            this->pFreeList = p->pNext;
+        }
+        else {
+            p = this->allocateFromNewChunk ();
+        }
+
+        return static_cast < void * > ( p );
+#   endif
 }
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
@@ -173,19 +177,23 @@ tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFr
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 inline void tsFreeList < T, N, DEBUG_LEVEL >::release ( void *pCadaver, size_t size )
 {
-    if ( DEBUG_LEVEL > 9 ) {
-        fprintf ( stderr, "releasing a %s of size %u\n", 
-            typeid ( T ).name (), sizeof ( T ) );
-    }
-    if ( size != sizeof ( T ) || N == 0u ) {
+#   ifdef EPICS_DEBUG
         ::operator delete ( pCadaver );
-    }
-    else if ( pCadaver ) {
-        tsFreeListItem < T, DEBUG_LEVEL > *p = 
-            static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
-        p->pNext = this->pFreeList;
-        this->pFreeList = p;
-    }
+#   else
+        if ( DEBUG_LEVEL > 9 ) {
+            fprintf ( stderr, "releasing a %s of size %u\n", 
+                typeid ( T ).name (), sizeof ( T ) );
+        }
+        if ( size != sizeof ( T ) || N == 0u ) {
+            ::operator delete ( pCadaver );
+        }
+        else if ( pCadaver ) {
+            tsFreeListItem < T, DEBUG_LEVEL > *p = 
+                static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
+            p->pNext = this->pFreeList;
+            this->pFreeList = p;
+        }
+#   endif
 }
 
 #endif // tsFreeList_h

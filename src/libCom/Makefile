@@ -59,6 +59,7 @@ SRCS += osdPoolStatus.c
 SRCS += osdRing.c
 SRCS += osdSem.c
 SRCS += osdThread.c
+SRCS += osiThread.cpp
 SRCS += osdTime.cpp
 SRCS += osiTime.cpp
 SRCS += osdSigPipeIgnore.c
@@ -158,7 +159,7 @@ USR_CFLAGS = -D_NO_PROTO
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
 LIBRARY=Com
-SYS_DLL_LIBS := ws2_32 advapi32
+SYS_DLL_LIBS := ws2_32
 
 
 #   only for WIN32:

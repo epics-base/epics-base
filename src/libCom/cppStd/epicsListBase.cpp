@@ -6,6 +6,7 @@
   #pragma implementation
 #endif
 
+#define epicsExportSharedSymbols
 #include "epicsListBase.h"
 #include "cantProceed.h"
 

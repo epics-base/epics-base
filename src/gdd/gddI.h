@@ -145,7 +145,7 @@ inline gddStatus gdd::reference(void) const
 	}
 	else			ref_cnt++; // X aCC 818
 
-	if(ref_cnt>((1u<<(sizeof(ref_cnt)*CHAR_BIT))-2u))
+	if ( ref_cnt >= 0xffffffff )
 	{
 		fprintf(stderr,"gdd reference count overflow!!\n");
 		gddAutoPrint("gdd::reference()",gddErrorOverflow);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1997/08/05 00:47:09  jhill
+ * fixed warnings
+ *
  * Revision 1.12  1997/06/13 09:15:58  jhill
  * connect proto changes
  *
@@ -94,7 +97,7 @@ class casChanDelEv : public casEvent {
 public:
 	casChanDelEv(caResId idIn) : id(idIn) {}
 	~casChanDelEv();
-        caStatus cbFunc(casEventSys &);
+	caStatus cbFunc(casEventSys &);
 private:
 	caResId	id;
 };
@@ -104,8 +107,8 @@ enum casResType {casChanT=1, casClientMonT, casPVT};
 class casRes : public uintRes<casRes>
 {
 public:
-        virtual ~casRes();
-        virtual casResType resourceType() const = 0;
+	virtual ~casRes();
+	virtual casResType resourceType() const = 0;
 	virtual void show (unsigned level) const = 0;
 	virtual void destroy() = 0;
 private:
@@ -132,9 +135,9 @@ private:
 //
 class ioBlockedList : private tsDLList<ioBlocked> {
 public:
-        ioBlockedList ();
-        ~ioBlockedList ();
-        void signal ();
+	ioBlockedList ();
+	~ioBlockedList ();
+	void signal ();
 	void removeItemFromIOBLockedList(ioBlocked &item);
 	void addItemToIOBLockedList(ioBlocked &item);
 };
@@ -292,15 +295,15 @@ public:
 	void reportInvalidAsynchIO(unsigned);
 
 protected:
-	casCoreClient	&client;   
-	casAsyncIO	&ioExternal;
+	casCoreClient &client;   
+	casAsyncIO &ioExternal;
 
 private:
-	unsigned	inTheEventQueue:1;
-	unsigned	posted:1;
-	unsigned	ioComplete:1;
-	unsigned	serverDelete:1;
-	unsigned	duplicate:1;
+	unsigned inTheEventQueue:1;
+	unsigned posted:1;
+	unsigned ioComplete:1;
+	unsigned serverDelete:1;
+	unsigned duplicate:1;
 	//
 	// casEvent virtual call back function
 	// (called when IO completion event reaches top of event queue)
@@ -329,10 +332,10 @@ public:
 		gdd &valueRead);
 	epicsShareFunc int readOP();
 private:
-	caHdr const	msg;
-	casChannelI	&chan; 
-	gdd		*pDD;
-	caStatus	completionStatus;
+	caHdr const msg;
+	casChannelI &chan; 
+	gdd *pDD;
+	caStatus completionStatus;
 };
 
 //
@@ -378,10 +381,10 @@ public:
 	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 private:
-	caHdr const		msg;
-	pvExistReturn 		retVal;
-	casDGIntfIO * const 	pOutDGIntfIO;
-	const caNetAddr	dgOutAddr;
+	caHdr const msg;
+	pvExistReturn retVal;
+	casDGIntfIO * const pOutDGIntfIO;
+	const caNetAddr dgOutAddr;
 };
 
 //

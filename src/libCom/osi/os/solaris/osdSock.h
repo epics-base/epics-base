@@ -30,14 +30,35 @@ extern "C" {
 }
 #endif
  
-typedef int                     SOCKET;
-#define INVALID_SOCKET		(-1)
-#define SOCKERRNO               errno
-#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
-#define socket_close(S)         close(S)
-#define socket_ioctl(A,B,C)     ioctl(A,B,C)
+typedef int SOCKET;
+#define INVALID_SOCKET (-1)
+#define SOCKERRNO errno
+#define SOCKERRSTR(ERRNO_IN) (strerror(ERRNO_IN))
+#define socket_close(S) close(S)
+#define socket_ioctl(A,B,C) ioctl(A,B,C)
 typedef int osiSockIoctl_t;
-typedef int osiSocklen_t;
+
+/* 
+ * this requires emulation of SUN PRO's -D__`uname -s`_`uname -r` 
+ * on 3rd party compilers
+ */
+#if defined ( __SunOS_5_0 ) 
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_1 )
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_2 )
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_3 ) 
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_4 ) 
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_5 ) 
+    typedef int osiSocklen_t;
+#elif defined ( __SunOS_5_6 ) 
+    typedef int osiSocklen_t;
+#else 
+    typedef uint32_t osiSocklen_t;
+#endif
 
 #define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
 

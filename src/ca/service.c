@@ -832,6 +832,7 @@ struct in_addr          *pnet_addr
         ellDelete(&chpiiu->chidlist, &chan->node);
 	chan->piiu = allocpiiu;
         ellAdd(&allocpiiu->chidlist, &chan->node);
+	ca_static->ca_search_responses++;
 
 	/*
 	 * If this is the first channel to be

@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.16  1994/09/09  17:32:27  jba
+# Cleanup of files
+#
 # Revision 1.15  1994/09/08  17:25:39  mcn
 # Changed clean to tools/Clean.  Added "uninstall" dependency.
 #
@@ -96,19 +99,19 @@ dirs.%:
 
 build.%: dirs.% 
 	@echo $*: Building
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs build
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build
 
 install.%: dirs.%
 	@echo $*: Installing
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs install
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
 
 depends.%: dirs.%
 	@echo $*: Performing Make Depends
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs depends
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 
 clean.%: dirs.%
 	@echo $*: Cleaning
-	@${MAKE} ${MFLAGS} ARCH=$* -f Makefile.subdirs clean
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs clean
 
 # Illegal Syntax
 

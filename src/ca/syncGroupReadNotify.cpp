@@ -34,21 +34,22 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupReadNotify::syncGroupReadNotify ( CASG &sgIn, chid pChan, 
-                           unsigned type, arrayElementCount count, void *pValueIn ) :
+syncGroupReadNotify::syncGroupReadNotify ( CASG &sgIn, chid pChan, void *pValueIn ) :
     syncGroupNotify ( sgIn, pChan ), pValue ( pValueIn )
 {
-    pChan->read ( type, count, *this, &this->id );
+}
+
+void syncGroupReadNotify::begin ( unsigned type, arrayElementCount count )
+{
+    this->chan->read ( type, count, *this, &this->id );
     this->idIsValid = true;
 }
 
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
     tsFreeList < class syncGroupReadNotify, 128 > &freeList, 
-    struct CASG &sg, chid chan, unsigned type, 
-    arrayElementCount count, void *pValueIn )
+    struct CASG &sg, chid chan, void *pValueIn )
 {
-    return new ( freeList ) syncGroupReadNotify ( sg, chan, type, 
-            count, pValueIn);
+    return new ( freeList ) syncGroupReadNotify ( sg, chan, pValueIn);
 }
 
 void syncGroupReadNotify::destroy ( casgRecycle &recycle )
@@ -73,9 +74,8 @@ void syncGroupReadNotify::completion (
         size_t size = dbr_size_n ( type, count );
         memcpy ( this->pValue, pData, size );
     }
-
     this->idIsValid = false;
-    this->sg.destroyIO ( *this );
+    this->sg.completionNotify ( *this );
 }
 
 void syncGroupReadNotify::exception (

@@ -34,21 +34,23 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupWriteNotify::syncGroupWriteNotify ( CASG &sgIn, chid pChan, unsigned type, 
-                       arrayElementCount count, const void *pValueIn  ) :
+syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, chid pChan ) :
     syncGroupNotify ( sgIn, pChan )
 {
-    pChan->write ( type, count, pValueIn, *this, &this->id );
+}
+
+void syncGroupWriteNotify::begin ( unsigned type, 
+                      arrayElementCount count, const void * pValueIn )
+{
+    this->chan->write ( type, count, pValueIn, *this, &this->id );
     this->idIsValid = true;
 }
 
 syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
     tsFreeList < class syncGroupWriteNotify, 128 > &freeList, 
-    struct CASG &sg, chid chan, unsigned type, 
-    arrayElementCount count, const void *pValueIn )
+    struct CASG &sg, chid chan )
 {
-    return new ( freeList ) syncGroupWriteNotify ( sg, chan, type, 
-            count, pValueIn);
+    return new ( freeList ) syncGroupWriteNotify ( sg, chan );
 }
 
 void syncGroupWriteNotify::destroy ( casgRecycle & recycle )
@@ -67,9 +69,8 @@ void syncGroupWriteNotify::completion ()
         this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
-
     this->idIsValid = false;
-    this->sg.destroyIO ( *this );
+    this->sg.completionNotify ( *this );
 }
 
 void syncGroupWriteNotify::exception (

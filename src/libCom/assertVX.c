@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.3  1995/08/12  01:00:07  jhill
+ *  use $log in header
+ *
  ***************************************************************************
  */
 
@@ -49,7 +52,8 @@
  * calls taskSuspend() instead of exit() so that we can debug
  * the problem.
  */
-void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
+void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
+	const char *pAuthorName)
 {
 	int	taskId = taskIdSelf();
 
@@ -60,12 +64,26 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
 		pFile, 
 		line);
 
-        epicsPrintf (	
+	if (pAuthorName) {
+
+        	epicsPrintf (	
 "Please send a copy of the output from \"tt (0x%x)\" and a copy of this message\n",
 		taskId);
 
-        epicsPrintf (	
+        	epicsPrintf (	
+"to \"%s\" (the author of this software) or \"tech-talk@aps.anl.gov\"\n", pAuthorName);
+
+	}
+	else {
+
+        	epicsPrintf (	
+"Please send a copy of the output from \"tt (0x%x)\" and a copy of this message\n",
+		taskId);
+
+        	epicsPrintf (	
 "to the author or \"tech-talk@aps.anl.gov\"\n");
+
+	}
 
         taskSuspend (taskId);
 }

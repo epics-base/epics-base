@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.3  1995/08/12  00:59:11  jhill
+ * use $log in header
+ *
  */
 
 #include <stdlib.h>
@@ -41,7 +44,8 @@
 /*
  * epicsAssert ()
  */
-void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
+void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
+	const char *pAuthorName)
 {
 	epicsPrintf (
 "\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pMsg, pFile, line);
@@ -55,11 +59,27 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
 	epicsPrintf (
 "in diagnosing this problem.\n");
 
-	epicsPrintf (
+	if (pAuthorName) {
+
+		epicsPrintf (
+"Please contact \"%s\"\n", pAuthorName);
+
+		epicsPrintf (
+"(the author of this software) or else send the text of this message to\n");
+
+		epicsPrintf (
+"\"tech-talk@aps.anl.gov\"\n");
+
+	}
+	else {
+
+		epicsPrintf (
 "Please contact the author of this software or else send the text of\n");
 
-	epicsPrintf (
+		epicsPrintf (
 "this message to \"tech-talk@aps.anl.gov\"\n");
+
+	}
 
 	abort ();
 }

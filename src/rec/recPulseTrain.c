@@ -1,5 +1,5 @@
 /* recPulseTrain.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recPulser.c - Record Support Routines for PulseTrain records */
 /*

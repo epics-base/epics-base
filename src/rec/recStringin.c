@@ -1,5 +1,5 @@
 /* recStringin.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recStringin.c - Record Support Routines for Stringin records */
 /*
@@ -36,6 +36,7 @@
  * .05  04-18-92        jba     removed process from dev init_record parms
  * .06  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .07  08-13-92        jba     Added simulation processing
+ * .08  03-29-94        mcn     Added fast links
  */
 
 
@@ -114,40 +115,26 @@ static long init_record(pstringin,pass)
 
     if (pass==0) return(0);
 
-    /* stringin.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pstringin->siml.type) {
-    case (CONSTANT) :
+    if (pstringin->siml.type == CONSTANT) {
         pstringin->simm = pstringin->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pstringin->siml), (void *) pstringin, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pstringin,
-                "stringin: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else  {
+        status = recGblInitFastInLink(&(pstringin->siml), (void *) pstringin, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
     /* stringin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pstringin->siol.type) {
-    case (CONSTANT) :
+    if (pstringin->siol.type == CONSTANT) {
         if (pstringin->siol.value.value!=0.0 ){
                  sprintf(pstringin->sval,"%-14.7g",pstringin->siol.value.value);
         }
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pstringin->siol), (void *) pstringin, "SVAL");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pstringin,
-                "stringin: init_record Illegal SIOL field");
-        return(S_db_badField);
+    } 
+    else {
+        status = recGblInitFastInLink(&(pstringin->siol), (void *) pstringin, DBR_STRING, "SVAL");
+
+	if (status)
+           return(status);
     }
 
     if(!(pdset = (struct stringindset *)(pstringin->dset))) {
@@ -224,17 +211,13 @@ static long readValue(pstringin)
 {
 	long		status;
         struct stringindset 	*pdset = (struct stringindset *) (pstringin->dset);
-	long            nRequest=1;
-	long            options=0;
-
 
 	if (pstringin->pact == TRUE){
 		status=(*pdset->read_stringin)(pstringin);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pstringin->siml),
-		(void *)pstringin,DBR_ENUM,&(pstringin->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(pstringin->siml), (void *)pstringin, &(pstringin->simm));
 	if (status)
 		return(status);
 
@@ -243,9 +226,8 @@ static long readValue(pstringin)
 		return(status);
 	}
 	if (pstringin->simm == YES){
-		status=recGblGetLinkValue(&(pstringin->siol),
-				(void *)pstringin,DBR_STRING,pstringin->sval,&options,&nRequest);
-		if (status==0){
+		status=recGblGetFastLink(&(pstringin->siol), (void *)pstringin, pstringin->sval);
+		if (status==0) {
 			strcpy(pstringin->val,pstringin->sval);
 			pstringin->udf=FALSE;
 		}

@@ -1,5 +1,5 @@
 /* recPid.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recPid.c - Record Support Routines for Pid records */
 /*
@@ -41,6 +41,7 @@
  * .09  07-21-92        jba     changed alarm limits for non val related fields
  * .10  08-06-92        jba     New algorithm for calculating analog alarms
  * .11  09-10-92        jba     modified fetch of VAL from STPL to call recGblGetLinkValue
+ * .12  03-29-94        mcn     Converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -118,11 +119,17 @@ static long init_record(ppid,pass)
                 ppid->val = ppid->stpl.value.value;
                 ppid->udf = FALSE;
 	}
-        if (ppid->stpl.type == PV_LINK)
-        {
-            status = dbCaAddInlink(&(ppid->stpl), (void *) ppid, "VAL");
-            if(status) return(status);
+        else  {
+            status = recGblInitFastInLink(&(ppid->stpl), (void *) ppid, DBR_FLOAT, "VAL");
+            if (status)
+               return(status);
         } /* endif */
+
+        if (ppid->cvl.type != CONSTANT) {
+           status = recGblInitFastInLink(&(ppid->cvl), (void *) ppid, DBR_FLOAT, "VAL");
+           if (status)
+              return(status);
+        }
 
 	return(0);
 }
@@ -357,7 +364,7 @@ static void monitor(ppid)
 static long do_pid(ppid)
 struct pidRecord     *ppid;
 {
-	long		status,options,nRequest;
+	long		status;
 	unsigned long	ctp;	/*clock ticks previous	*/
 	unsigned long	ct;	/*clock ticks		*/
 	float		cval;	/*actual value		*/
@@ -378,19 +385,15 @@ struct pidRecord     *ppid;
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
                 if (recGblSetSevr(ppid,SOFT_ALARM,INVALID_ALARM)) return(0);
 	}
-        options=0;
-        nRequest=1;
-        if(dbGetLink(&(ppid->cvl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
-	&cval,&options,&nRequest)!=NULL) {
+        if (recGblGetFastLink(&(ppid->cvl), (void *) ppid, &cval)) {
                 recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
                 return(0);
         }
         /* fetch the setpoint */
         if(ppid->smsl == CLOSED_LOOP){
-        	options=0;
-        	nRequest=1;
-        	status = recGblGetLinkValue(&(ppid->stpl),(void *)ppid,DBR_FLOAT,
-			&(ppid->val),&options,&nRequest);
+        	status = recGblGetFastLink(&(ppid->stpl), (void *)ppid,
+                                           &(ppid->val));
+
                 if (RTN_SUCCESS(status)) ppid->udf=FALSE;
         }
 	val = ppid->val;

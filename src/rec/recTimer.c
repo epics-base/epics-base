@@ -1,5 +1,5 @@
 /* recTimer.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recTimer.c - Record Support Routines for Timer records */
 /*
@@ -51,6 +51,7 @@
  * .18  10-10-92        jba     replaced get of trdl from torg code with recGblGetLinkValue call
  * .19  09-02-93        mcn     Changed DSET structure for timers, moved code that bypassed
  *                              device support into new device support (major improvement).
+ * .20  03-30-94        mcn     converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -138,12 +139,11 @@ static long init_record(ptimer, pass)
     if (pass==0) return(0);
 
     /* get the delay initial value if torg is a constant*/
-    if (ptimer->torg.type == CONSTANT ){
+    if (ptimer->torg.type == CONSTANT) {
             ptimer->trdl = ptimer->torg.value.value;
     }
-    if (ptimer->torg.type == PV_LINK )
-    {
-	status = dbCaAddInlink(&(ptimer->torg), (void *) ptimer, "TRDL");
+    else {
+	status = recGblInitFastInLink(&(ptimer->torg), (void *) ptimer, DBR_FLOAT, "TRDL");
 	if(status) return(status);
     } /* endif */
 
@@ -280,14 +280,11 @@ static long read_timer(struct timerRecord *ptimer)
 static long write_timer(struct timerRecord *ptimer)
 {
    struct tmdset *pdset;
-   long status,options,nRequest; 
+   long status;
 
    /* get the delay from trigger source */
    if (ptimer->torg.type == DB_LINK) {
-           options=0;
-           nRequest=1;
-           status=recGblGetLinkValue(&(ptimer->torg),(void *)ptimer,DBR_FLOAT,
-                   &(ptimer->trdl),&options,&nRequest);
+           status=recGblGetFastLink(&(ptimer->torg), (void *)ptimer, &(ptimer->trdl));
            if (!RTN_SUCCESS(status)) return status;
    }
  
@@ -297,7 +294,7 @@ static long write_timer(struct timerRecord *ptimer)
    }
 
    /* should we maintain through a reboot */
-   if (ptimer->main && ptimer->rdt1 && ptimer->rpw1){
+   if (ptimer->main && ptimer->rdt1 && ptimer->rpw1) {
            ptimer->dut1 = ptimer->rdt1 - ptimer->trdl;
            ptimer->opw1 = ptimer->rpw1;
            ptimer->main = 0;       /* only kept on the first write */

@@ -1,5 +1,5 @@
 /* recAo.c */
-/* share/src/rec  $Id$ */
+/* base/src/rec  $Id$ */
   
 /* recAo.c - Record Support Routines for Analog Output records */
 /*
@@ -66,7 +66,8 @@
  * .33  08-19-92        jba     Added code for invalid alarm output action
  * .34  10-15-93        jba     modified oroc test to work on the mv162
  * .35  03-03-94	mrk	Added aslo and aoff
-
+ * .36  03-29-94	mcn	Fast links.  Moved omsl and dol.type check
+ *				out of fetch_value.
  */
 
 #include	<vxWorks.h>
@@ -157,45 +158,43 @@ static long init_record(pao,pass)
     if (pass==0) return(0);
 
     /* ao.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pao->siml.type) {
-    case (CONSTANT) :
+    if (pao->siml.type == CONSTANT) {
         pao->simm = pao->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pao->siml), (void *) pao, "SIMM");
+    }
+    else {
+        status = recGblInitFastInLink(&(pao->siml), (void *) pao, DBR_ENUM, "SIMM");
 	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pao,
-                "ao: init_record Illegal SIML field");
-        return(S_db_badField);
     }
 
-    /* ao.siol may be a PV_LINK */
-    if (pao->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pao->siol), (void *) pao, "OVAL");
-	if(status) return(status);
-    }
+    status = recGblInitFastOutLink(&(pao->siol), (void *) pao, DBR_DOUBLE, "OVAL");
+    if (status)
+       return(status);
 
     if(!(pdset = (struct aodset *)(pao->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pao,"ao: init_record");
 	return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
-    if (pao->dol.type == CONSTANT ){
+    if (pao->dol.type == CONSTANT) {
 	    pao->udf = FALSE;
             pao->val = pao->dol.value.value;
     }
+    else {
+        status = recGblInitFastInLink(&(pao->dol), (void *) pao,
+                               DBR_DOUBLE, "VAL");
+ 
+        if (status)
+            return(status);
+    }
+
     /* must have write_ao function defined */
-    if( (pdset->number < 6) || (pdset->write_ao ==NULL) ) {
+    if ((pdset->number < 6) || (pdset->write_ao ==NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)pao,"ao: init_record");
 	return(S_dev_missingSup);
     }
     pao->init = TRUE;
 
-    if( pdset->init_record ) {
+    if (pdset->init_record) {
         status=(*pdset->init_record)(pao);
         switch(status){
         case(0): /* convert */
@@ -233,16 +232,23 @@ static long process(pao)
 	unsigned char    pact=pao->pact;
 	double		value;
 
-	if( (pdset==NULL) || (pdset->write_ao==NULL) ) {
+	if ((pdset==NULL) || (pdset->write_ao==NULL)) {
 		pao->pact=TRUE;
 		recGblRecordError(S_dev_missingSup,(void *)pao,"write_ao");
 		return(S_dev_missingSup);
 	}
 
 	/* fetch value and convert*/
-	if(pao->pact == FALSE){
-		fetch_value(pao,&value);
-		convert(pao,&value);
+	if (pao->pact == FALSE) {
+                if ((pao->dol.type != CONSTANT) &&
+                    (pao->omsl == CLOSED_LOOP)) {
+
+                   fetch_value(pao, &value);
+                }
+                else {
+                   value = pao->val;
+                }
+		convert(pao, &value);
 	}
 
 	/* check for alarms */
@@ -446,28 +452,26 @@ static void fetch_value(pao,pvalue)
     struct aoRecord  *pao;
     double *pvalue;
 {
+	short		save_pact;
+	long		status;
 
-        if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
-		long		nRequest;
-		long		options;
-		short		save_pact;
-		long		status;
+	save_pact = pao->pact;
+	pao->pact = TRUE;
 
-		options=0;
-		nRequest=1;
-		save_pact = pao->pact;
-		pao->pact = TRUE;
-		/* don't allow dbputs to val field */
-		pao->val=pao->pval;
-                status = dbGetLink(&pao->dol.value.db_link,(struct dbCommon *)pao,DBR_DOUBLE,
-			pvalue,&options,&nRequest);
-		pao->pact = save_pact;
-		if(status) {
-                        recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
-			return;
-		}
-                if (pao->oif == OUTPUT_INCREMENTAL) *pvalue += pao->val;
-        } else *pvalue = pao->val;
+	/* don't allow dbputs to val field */
+	pao->val=pao->pval;
+
+        status = recGblGetFastLink(&pao->dol, (void *) pao, pvalue);
+        pao->pact = save_pact;
+
+	if (status) {
+           recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
+           return;
+	}
+
+        if (pao->oif == OUTPUT_INCREMENTAL)
+           *pvalue += pao->val;
+
 	return;
 }
 
@@ -500,7 +504,7 @@ static void convert(pao,pvalue)
 	pao->oval = value;
 
         /* convert */
-        if (pao->linr == 0){
+        if (pao->linr == 0) {
                 ; /* do nothing*/
         } else if (pao->linr == 1){
               if (pao->eslo == 0.0) value = 0;
@@ -572,16 +576,13 @@ static long writeValue(pao)
 {
 	long		status;
         struct aodset 	*pdset = (struct aodset *) (pao->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pao->pact == TRUE){
 		status=(*pdset->write_ao)(pao);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pao->siml),
-		(void *)pao,DBR_ENUM,&(pao->simm),&options,&nRequest);
+	status = recGblGetFastLink(&(pao->siml), (void *)pao, &(pao->simm));
 	if (status)
 		return(status);
 
@@ -590,8 +591,7 @@ static long writeValue(pao)
 		return(status);
 	}
 	if (pao->simm == YES){
-		status=recGblPutLinkValue(&(pao->siol),
-				(void *)pao,DBR_DOUBLE,&(pao->oval),&nRequest);
+		status = recGblPutFastLink(&(pao->siol), (void *)pao, &(pao->oval));
 	} else {
 		status=-1;
 		recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM);

@@ -1,5 +1,5 @@
 /* recState.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recState.c - Record Support Routines for State records */
 /*

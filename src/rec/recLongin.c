@@ -1,5 +1,5 @@
 /* recLongin.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recLongin.c - Record Support Routines for Longin records */
 /*
@@ -41,6 +41,7 @@
  * .10  07-21-92        jba     changed alarm limits for non val related fields
  * .11  08-06-92        jba     New algorithm for calculating analog alarms
  * .12  08-13-92        jba     Added simulation processing
+ * .13  03-29-94        mcn     Converted to Fast Links
  */
 
 
@@ -122,37 +123,21 @@ static long init_record(plongin,pass)
     if (pass==0) return(0);
 
     /* longin.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (plongin->siml.type) {
-    case (CONSTANT) :
+    if (plongin->siml.type == CONSTANT) {
         plongin->simm = plongin->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(plongin->siml), (void *) plongin, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)plongin,
-                "longin: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else { 
+        status = recGblInitFastInLink(&(plongin->siml), (void *) plongin, DBR_ENUM, "SIMM");
+	if (status) return(status);
     }
 
     /* longin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (plongin->siol.type) {
-    case (CONSTANT) :
+    if (plongin->siol.type == CONSTANT) {
         plongin->sval = plongin->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(plongin->siol), (void *) plongin, "SVAL");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)plongin,
-                "longin: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(plongin->siol), (void *) plongin, DBR_LONG, "SVAL");
+	if (status) return(status);
     }
 
     if(!(pdset = (struct longindset *)(plongin->dset))) {
@@ -354,18 +339,15 @@ static void monitor(plongin)
 static long readValue(plongin)
 	struct longinRecord	*plongin;
 {
-	long		status;
-        struct longindset 	*pdset = (struct longindset *) (plongin->dset);
-	long            nRequest=1;
-	long            options=0;
+	long status;
+        struct longindset *pdset = (struct longindset *) (plongin->dset);
 
 	if (plongin->pact == TRUE){
 		status=(*pdset->read_longin)(plongin);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(plongin->siml),
-		(void *)plongin,DBR_ENUM,&(plongin->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(plongin->siml), (void *)plongin, &(plongin->simm));
 	if (status)
 		return(status);
 
@@ -374,9 +356,9 @@ static long readValue(plongin)
 		return(status);
 	}
 	if (plongin->simm == YES){
-		status=recGblGetLinkValue(&(plongin->siol),
-			(void *)plongin,DBR_LONG,&(plongin->sval),&options,&nRequest);
-		if (status==0){
+		status=recGblGetFastLink(&(plongin->siol), (void *)plongin, &(plongin->sval));
+
+		if (status==0) {
 			plongin->val=plongin->sval;
 			plongin->udf=FALSE;
 		}

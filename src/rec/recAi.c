@@ -1,5 +1,5 @@
 /* recAi.c */
-/* share/src/rec  $Id$ */
+/* base/src/rec $Id$ */
   
 /* recAi.c - Record Support Routines for Analog Input records */
 /*
@@ -69,6 +69,7 @@
  * .30  07-21-92        jba     changed alarm limits for non val related fields
  * .31  08-06-92        jba     New algorithm for calculating analog alarms
  * .32  08-13-92        jba     Added simulation processing
+ * .33  03-29-94        mcn     converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -160,37 +161,21 @@ static long init_record(pai,pass)
     if (pass==0) return(0);
 
     /* ai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pai->siml.type) {
-    case (CONSTANT) :
+    if (pai->siml.type == CONSTANT) {
         pai->simm = pai->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pai->siml), (void *) pai, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pai,
-                "ai: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pai->siml), (void *) pai, DBR_ENUM, "SIMM");
+	if (status) return(status);
     }
 
     /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pai->siol.type) {
-    case (CONSTANT) :
+    if (pai->siol.type == CONSTANT) {
         pai->sval = pai->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pai->siol), (void *) pai, "SVAL");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pai,
-                "ai: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pai->siol), (void *) pai, DBR_DOUBLE, "SVAL");
+	if (status) return(status);
     }
 
     if(!(pdset = (struct aidset *)(pai->dset))) {
@@ -226,7 +211,7 @@ static long process(pai)
         /* event throttling */
 	/*Will not work with new event systems*/
 /*
-        if (pai->scan == SCAN_IO_EVENT){
+        if (pai->scan == SCAN_IO_EVENT) {
                 if ((pai->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pai->evnt) != 0){
                                 return(0);
@@ -484,16 +469,14 @@ static long readValue(pai)
 {
 	long		status;
         struct aidset 	*pdset = (struct aidset *) (pai->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pai->pact == TRUE){
 		status=(*pdset->read_ai)(pai);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pai->siml),
-		(void *)pai,DBR_ENUM,&(pai->simm),&options,&nRequest);
+	status = recGblGetFastLink(&(pai->siml), (void *)pai, &(pai->simm));
+
 	if (status)
 		return(status);
 
@@ -502,8 +485,7 @@ static long readValue(pai)
 		return(status);
 	}
 	if (pai->simm == YES){
-		status=recGblGetLinkValue(&(pai->siol),
-				(void *)pai,DBR_DOUBLE,&(pai->sval),&options,&nRequest);
+		status = recGblGetFastLink(&(pai->siol), (void *)pai, &(pai->sval));
 		if (status==0){
 			 pai->val=pai->sval;
 			 pai->udf=FALSE;

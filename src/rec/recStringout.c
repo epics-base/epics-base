@@ -1,5 +1,5 @@
 /* recStringout.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recStringout.c - Record Support Routines for Stringout records */
 /*
@@ -40,7 +40,8 @@
  * .09  08-14-92        jba     Added simulation processing
  * .10  08-19-92        jba     Added code for invalid alarm output action
  * .11  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue call
- * .12  10-18-92        jba     pact noew set in recGblGetLinkValue
+ * .12  10-18-92        jba     pact now set in recGblGetLinkValue
+ * .13  03-30-94        mcn     converted to fast links
  */ 
 
 
@@ -119,28 +120,16 @@ static long init_record(pstringout,pass)
 
     if (pass==0) return(0);
 
-    /* stringout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pstringout->siml.type) {
-    case (CONSTANT) :
+    if (pstringout->siml.type == CONSTANT) {
         pstringout->simm = pstringout->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pstringout->siml), (void *) pstringout, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pstringout,
-                "stringout: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pstringout->siml), (void *) pstringout, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
-    /* stringout.siol may be a PV_LINK */
-    if (pstringout->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pstringout->siol), (void *) pstringout, "VAL");
-	if(status) return(status);
-    }
+    status = recGblInitFastOutLink(&(pstringout->siol), (void *) pstringout, DBR_STRING, "VAL");
 
     if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pstringout,"stringout: init_record");
@@ -263,16 +252,13 @@ static long writeValue(pstringout)
 {
 	long		status;
         struct stringoutdset 	*pdset = (struct stringoutdset *) (pstringout->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pstringout->pact == TRUE){
 		status=(*pdset->write_stringout)(pstringout);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pstringout->siml),
-		(void *)pstringout,DBR_ENUM,&(pstringout->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(pstringout->siml), (void *)pstringout, &(pstringout->simm));
 	if (status)
 		return(status);
 
@@ -281,8 +267,7 @@ static long writeValue(pstringout)
 		return(status);
 	}
 	if (pstringout->simm == YES){
-		status=recGblPutLinkValue(&(pstringout->siol),
-				(void *)pstringout,DBR_STRING,pstringout->val,&nRequest);
+		status=recGblPutFastLink(&(pstringout->siol), (void *)pstringout, pstringout->val);
 	} else {
 		status=-1;
 		recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM);

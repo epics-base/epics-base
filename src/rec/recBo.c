@@ -1,6 +1,6 @@
 /* recBo.c */
-/* share/src/rec   $Id$ */
-  
+/* base/src/rec  $Id$ */
+ 
 /* recBo.c - Record Support Routines for Binary Output records */
 /*
  *      Original Author: Bob Dalesio
@@ -63,7 +63,8 @@
  * .27  08-14-92        jba     Added simulation processing
  * .28  08-19-92        jba     Added code for invalid alarm output action
  * .29  11-01-93        jba     Added get_precision routine
- * .30  04-05-94	mrk	ANSI changes to callback routines
+ * .30	03-29-94	mcn	Converted to fast links
+ * .31  04-05-94	mrk	ANSI changes to callback routines
  */
 
 #include	<vxWorks.h>
@@ -171,27 +172,19 @@ static long init_record(pbo,pass)
     if (pass==0) return(0);
 
     /* bo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pbo->siml.type) {
-    case (CONSTANT) :
+    if (pbo->siml.type == CONSTANT) {
         pbo->simm = pbo->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pbo->siml), (void *) pbo, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pbo,
-                "bo: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pbo->siml), (void *) pbo, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
-    /* bo.siol may be a PV_LINK */
-    if (pbo->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pbo->siol), (void *) pbo, "VAL");
-	if(status) return(status);
-    }
+   /* bo.siol */
+    status = recGblInitFastOutLink(&(pbo->siol), (void *) pbo, DBR_USHORT, "VAL");
+    if (status)
+       return(status);
 
     if(!(pdset = (struct bodset *)(pbo->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pbo,"bo: init_record");
@@ -203,11 +196,18 @@ static long init_record(pbo,pass)
 	return(S_dev_missingSup);
     }
     /* get the initial value */
-    if (pbo->dol.type == CONSTANT){
+    if (pbo->dol.type == CONSTANT) {
 	if (pbo->dol.value.value == 0)  pbo->val = 0;
 	else                            pbo->val = 1;
 	pbo->udf = FALSE;
     }
+    else {
+        status = recGblInitFastInLink(&(pbo->dol), (void *) pbo, DBR_USHORT, "VAL");
+ 
+        if (status)
+           return(status);
+    }
+
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
     pbo->rpvt = (void *)pcallback;
     callbackSetCallback(myCallback,&pcallback->callback);
@@ -238,14 +238,11 @@ static long process(pbo)
 		return(S_dev_missingSup);
 	}
         if (!pbo->pact) {
-		if((pbo->dol.type == DB_LINK) && (pbo->omsl == CLOSED_LOOP)){
-			long options=0;
-			long nRequest=1;
+		if ((pbo->dol.type != CONSTANT) && (pbo->omsl == CLOSED_LOOP)){
 			unsigned short val;
 
 			pbo->pact = TRUE;
-			status = dbGetLink(&pbo->dol.value.db_link,(struct dbCommon *)pbo,
-				DBR_USHORT,&val,&options,&nRequest);
+			status = recGblGetFastLink(&pbo->dol, (void *) pbo, &val);
 			pbo->pact = FALSE;
 			if(status==0){
 				pbo->val = val;
@@ -298,12 +295,12 @@ static long process(pbo)
 
 	recGblGetTimeStamp(pbo);
 	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
-	if(pbo->val==1 && wait_time>0) {
+	if (pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
 		pcallback = (struct callback *)(pbo->rpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
-                callbackSetPriority(pbo->prio,&pcallback->callback);
-               	wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+                callbackSetPriority(pbo->prio, &pcallback->callback);
+               	wdStart(pcallback->wd_id, wait_time, (FUNCPTR)callbackRequest, (int)pcallback);
 	}
 	/* check event list */
 	monitor(pbo);
@@ -436,16 +433,13 @@ static long writeValue(pbo)
 {
 	long		status;
         struct bodset 	*pdset = (struct bodset *) (pbo->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pbo->pact == TRUE){
 		status=(*pdset->write_bo)(pbo);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pbo->siml),
-		(void *)pbo,DBR_ENUM,&(pbo->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(pbo->siml), (void *)pbo, &(pbo->simm));
 	if (status)
 		return(status);
 
@@ -454,8 +448,7 @@ static long writeValue(pbo)
 		return(status);
 	}
 	if (pbo->simm == YES){
-		status=recGblPutLinkValue(&(pbo->siol),
-				(void *)pbo,DBR_USHORT,&(pbo->val),&nRequest);
+		status=recGblPutFastLink(&(pbo->siol), (void *)pbo, &(pbo->val));
 	} else {
 		status=-1;
 		recGblSetSevr(pbo,SOFT_ALARM,INVALID_ALARM);

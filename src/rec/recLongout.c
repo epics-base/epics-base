@@ -1,5 +1,5 @@
 /* recLongout.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recLongout.c - Record Support Routines for Longout records */
 /*
@@ -43,6 +43,7 @@
  * .12  08-19-92        jba     Added code for invalid alarm output action
  * .13  09-10-92        jba     modified fetch of val from dol to call recGblGetLinkValue
  * .14  09-18-92        jba     pact now set in recGblGetLinkValue
+ * .15  03-29-94        mcn     converted to fast links
  */ 
 
 
@@ -124,27 +125,16 @@ static long init_record(plongout,pass)
     if (pass==0) return(0);
 
     /* longout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (plongout->siml.type) {
-    case (CONSTANT) :
+    if (plongout->siml.type == CONSTANT) {
         plongout->simm = plongout->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(plongout->siml), (void *) plongout, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)plongout,
-                "longout: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(plongout->siml), (void *) plongout, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
-    /* longout.siol may be a PV_LINK */
-    if (plongout->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(plongout->siol), (void *) plongout, "VAL");
-	if(status) return(status);
-    }
+    status = recGblInitFastOutLink(&(plongout->siol), (void *) plongout, DBR_LONG, "VAL");
 
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)plongout,"longout: init_record");
@@ -156,15 +146,14 @@ static long init_record(plongout,pass)
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
-    if (plongout->dol.type == CONSTANT){
+    if (plongout->dol.type == CONSTANT) {
         plongout->val = plongout->dol.value.value;
 	plongout->udf=FALSE;
     }
-    if (plongout->dol.type == PV_LINK)
-    {
-        status = dbCaAddInlink(&(plongout->dol), (void *) plongout, "VAL");
+    else {
+        status = recGblInitFastInLink(&(plongout->dol), (void *) plongout, DBR_LONG, "VAL");
         if(status) return(status);
-    } /* endif */
+    }
 
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(plongout))) return(status);
@@ -184,13 +173,13 @@ static long process(plongout)
 		recGblRecordError(S_dev_missingSup,(void *)plongout,"write_longout");
 		return(S_dev_missingSup);
 	}
-        if (!plongout->pact && plongout->omsl == CLOSED_LOOP){
-		long options=0;
-		long nRequest=1;
+        if (!plongout->pact && plongout->omsl == CLOSED_LOOP) {
 
-		status = recGblGetLinkValue(&(plongout->dol),(void *)plongout,
-			DBR_LONG,&(plongout->val),&options,&nRequest);
-		if(RTN_SUCCESS(status)) plongout->udf=FALSE;
+		status = recGblGetFastLink(&(plongout->dol), (void *)plongout,
+			&(plongout->val));
+
+		if (RTN_SUCCESS(status))
+                   plongout->udf=FALSE;
 	}
 
 	/* check for alarms */
@@ -386,16 +375,13 @@ static long writeValue(plongout)
 {
 	long		status;
         struct longoutdset 	*pdset = (struct longoutdset *) (plongout->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (plongout->pact == TRUE){
 		status=(*pdset->write_longout)(plongout);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(plongout->siml),
-		(void *)plongout,DBR_ENUM,&(plongout->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(plongout->siml), (void *)plongout, &(plongout->simm));
 	if (!RTN_SUCCESS(status))
 		return(status);
 
@@ -404,8 +390,7 @@ static long writeValue(plongout)
 		return(status);
 	}
 	if (plongout->simm == YES){
-		status=recGblPutLinkValue(&(plongout->siol),
-				(void *)plongout,DBR_LONG,&(plongout->val),&nRequest);
+		status=recGblPutFastLink(&(plongout->siol), (void *)plongout, &(plongout->val));
 	} else {
 		status=-1;
 		recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM);

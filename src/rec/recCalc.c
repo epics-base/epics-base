@@ -1,5 +1,5 @@
 /* recCalc.c */
-/* share/src/rec @(#)recCalc.c	1.15     4/6/92 */
+/* base/src/rec  $Id$ */
 
 /* recCalc.c - Record Support Routines for Calculation records */
 /*
@@ -153,13 +153,14 @@ static long init_record(pcalc,pass)
     plink = &pcalc->inpa;
     pvalue = &pcalc->a;
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
-        if(plink->type==CONSTANT) 
+        if (plink->type == CONSTANT) {
 	    *pvalue = plink->value.value;
-        if (plink->type == PV_LINK)
-	{
-            status = dbCaAddInlink(plink, (void *) pcalc, Fldnames[i]);
-	    if(status) return(status);
-	} /* endif */
+        }
+        else {
+            status = recGblInitFastInLink(plink, (void *) pcalc, DBR_DOUBLE, Fldnames[i]);
+	    if (status)
+               return(status);
+	}
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status){
@@ -417,14 +418,12 @@ struct calcRecord *pcalc;
 {
 	struct link	*plink;	/* structure of the link field  */
 	double		*pvalue;
-	long		status=0,options=0,nRequest=1;
+	long		status = 0;
 	int		i;
 
 	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
 
-	    if(plink->type!=CONSTANT)
-                status = recGblGetLinkValue(plink,(void *)pcalc,
-                          DBR_DOUBLE,pvalue,&options,&nRequest); 
+            status = recGblGetFastLink(plink, (void *)pcalc, pvalue);
 
 	    if (!RTN_SUCCESS(status)) return(status);
 	}

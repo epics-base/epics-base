@@ -1,6 +1,6 @@
 /* recBi.c */
-/* share/src/rec  $Id$ */
-  
+/* base/src/rec  $Id$ */
+ 
 /* recBi.c - Record Support Routines for Binary Input records */
 /*
  *      Original Author: Bob Dalesio
@@ -53,6 +53,7 @@
  * .19  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .20  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .21  08-13-92        jba     Added simulation processing
+ * .22	03-29-94	mcn	Converted to Fast Links
  */
 
 #include	<vxWorks.h>
@@ -130,37 +131,23 @@ static long init_record(pbi,pass)
     if (pass==0) return(0);
 
     /* bi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pbi->siml.type) {
-    case (CONSTANT) :
+    if (pbi->siml.type == CONSTANT) {
         pbi->simm = pbi->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pbi->siml), (void *) pbi, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pbi,
-                "bi: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pbi->siml), (void *) pbi, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
     /* bi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pbi->siol.type) {
-    case (CONSTANT) :
+    if (pbi->siol.type == CONSTANT) {
         pbi->sval = pbi->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pbi->siol), (void *) pbi, "SVAL");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pbi,
-                "bi: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pbi->siol), (void *) pbi, DBR_USHORT, "SVAL");
+	if (status)
+           return(status);
     }
 
     if(!(pdset = (struct bidset *)(pbi->dset))) {
@@ -323,16 +310,13 @@ static long readValue(pbi)
 {
 	long		status;
         struct bidset 	*pdset = (struct bidset *) (pbi->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pbi->pact == TRUE){
 		status=(*pdset->read_bi)(pbi);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pbi->siml),
-		(void *)pbi,DBR_ENUM,&(pbi->simm),&options,&nRequest);
+	status = recGblGetFastLink(&(pbi->siml), (void *)pbi, &(pbi->simm));
 	if (status)
 		return(status);
 
@@ -341,8 +325,7 @@ static long readValue(pbi)
 		return(status);
 	}
 	if (pbi->simm == YES){
-		status=recGblGetLinkValue(&(pbi->siol),
-				(void *)pbi,DBR_USHORT,&(pbi->sval),&options,&nRequest);
+		status=recGblGetFastLink(&(pbi->siol), (void *)pbi, &(pbi->sval));
 		if (status==0){
 			pbi->val=pbi->sval;
 			pbi->udf=FALSE;

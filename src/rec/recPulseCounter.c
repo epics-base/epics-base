@@ -1,6 +1,5 @@
 /* recPulseCounter.c */
-/* share/src/rec $Id$ */
-
+/* base/src/rec  $Id$ */
 
 /* recPulseCounter.c - Record Support Routines for PulseCounter records */
 /*

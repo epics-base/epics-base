@@ -1,5 +1,5 @@
 /* recMbbi.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recMbbi.c - Record Support Routines for multi bit binary Input records */
 /*
@@ -54,6 +54,7 @@
  * .19  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .20  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .21  08-14-92        jba     Added simulation processing
+ * .22  03-29-94        mcn     converted to fast links.
  */
 
 #include	<vxWorks.h>
@@ -152,37 +153,23 @@ static long init_record(pmbbi,pass)
     if (pass==0) return(0);
 
     /* mbbi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbi->siml.type) {
-    case (CONSTANT) :
+    if (pmbbi->siml.type == CONSTANT) {
         pmbbi->simm = pmbbi->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbi->siml), (void *) pmbbi, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbbi,
-                "mbbi: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pmbbi->siml), (void *) pmbbi, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
     /* mbbi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pmbbi->siol.type) {
-    case (CONSTANT) :
+    if (pmbbi->siol.type == CONSTANT) {
         pmbbi->sval = pmbbi->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbi->siol), (void *) pmbbi, "SVAL");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbbi,
-                "mbbi: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pmbbi->siol), (void *) pmbbi, DBR_USHORT, "SVAL");
+	if (status)
+           return(status);
     }
 
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
@@ -408,16 +395,13 @@ static long readValue(pmbbi)
 {
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbi->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pmbbi->pact == TRUE){
 		status=(*pdset->read_mbbi)(pmbbi);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pmbbi->siml),
-		(void *)pmbbi,DBR_ENUM,&(pmbbi->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(pmbbi->siml), (void *)pmbbi, &(pmbbi->simm));
 	if (status)
 		return(status);
 
@@ -426,8 +410,7 @@ static long readValue(pmbbi)
 		return(status);
 	}
 	if (pmbbi->simm == YES){
-		status=recGblGetLinkValue(&(pmbbi->siol),
-			(void *)pmbbi,DBR_USHORT,&(pmbbi->sval),&options,&nRequest);
+		status=recGblGetFastLink(&(pmbbi->siol), (void *)pmbbi, &(pmbbi->sval));
 		if (status==0){
 			pmbbi->val=pmbbi->sval;
 			pmbbi->udf=FALSE;

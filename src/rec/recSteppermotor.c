@@ -1,5 +1,5 @@
 /* recSteppermotor.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recSteppermotor.c - Record Support Routines for Steppermotor records */
 /*
@@ -93,6 +93,7 @@
  * .35  08-06-93	mrk	vel mode: Call recGblFwdLink only when motor
  *				Stops
  * .36  09-15-93	mrk	call monitor when starting
+ * .37  03-29-94	mcn	converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -203,11 +204,15 @@ static long init_record(psm,pass)
             psm->udf = FALSE;
             psm->val = psm->dol.value.value;
     }
-    if (psm->dol.type == PV_LINK)
-    {
-	status = dbCaAddInlink(&(psm->dol), (void *) psm, "VAL");
-	if(status) return(status);
+    else {
+	status = recGblInitFastInLink(&(psm->dol), (void *) psm, DBR_FLOAT, "VAL");
+	if (status)
+           return(status);
     } /* endif */
+
+    /* initialize readback link */
+    status = recGblInitFastInLink(&(psm->rdbl), (void *) psm, DBR_FLOAT, "VAL");
+
     init_sm(psm);
     return(0);
 }
@@ -707,7 +712,7 @@ struct steppermotorRecord	*psm;
 {
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
         int             acceleration,velocity;
-	long 		status,options=0,nRequest=1;
+	long 		status;
 
 	
 	/* emergency stop */
@@ -755,9 +760,8 @@ struct steppermotorRecord	*psm;
 	}
 
 	/* fetch the desired value if there is a database link */
-        if (psm->omsl == CLOSED_LOOP){
-		status=recGblGetLinkValue(&(psm->dol),(void *)psm,DBR_FLOAT,
-			&(psm->val),&options,&nRequest);
+        if (psm->omsl == CLOSED_LOOP) {
+		status=recGblGetFastLink(&(psm->dol), (void *)psm, &(psm->val));
 		if (!RTN_SUCCESS(status)) return;
 		psm->udf = FALSE;
 	}
@@ -810,12 +814,11 @@ struct steppermotorRecord	*psm;
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
 	float	chng_vel;
 	int	acceleration,velocity;
-	long 	status,options=0,nRequest=1;
+	long 	status;
 
 	/* fetch the desired value if there is a database link */
         if (psm->omsl == CLOSED_LOOP){
-		status=recGblGetLinkValue(&(psm->dol),(void *)psm,DBR_FLOAT,
-			&(psm->val),&options,&nRequest);
+		status=recGblGetFastLink(&(psm->dol), (void *)psm, &(psm->val));
 		if (!RTN_SUCCESS(status)) return;
 		psm->udf = FALSE;
 	}
@@ -888,9 +891,6 @@ struct steppermotorRecord	*psm;
 
     /* get readback position */
     if (psm->rdbl.type == DB_LINK){
-	long options=0;
-	long nRequest=1;
-
 	/* when readback comes from another field of this record   */
 	/* the fetch will fail if the record is uninitialized      */
         /* also - prdl (process readback location) should be set   */
@@ -898,15 +898,15 @@ struct steppermotorRecord	*psm;
 
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
-	if(dbGetLink(&(psm->rdbl.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
-		&new_pos,&options,&nRequest)){
+	if(recGblGetFastLink(&(psm->rdbl),(void *)psm, &new_pos)) {
 		recGblSetSevr(psm,READ_ALARM,INVALID_ALARM);
 		psm->init = reset;
 		return;
 	}
 	psm->init = reset;
     /* default is the motor position returned from the driver */
-    }else{
+    }
+    else {
 	new_pos = psm->mpos;
     }
 

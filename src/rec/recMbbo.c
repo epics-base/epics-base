@@ -1,5 +1,5 @@
 /* recMbbo.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recMbbo.c - Record Support Routines for multi bit binary Output records */
 /*
@@ -58,6 +58,7 @@
  * .23  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .24  08-14-92        jba     Added simulation processing
  * .25  08-19-92        jba     Added code for invalid alarm output action
+ * .26  03-29-94        mcn     Converted to Fast Links
  */
 
 #include	<vxWorks.h>
@@ -160,27 +161,19 @@ static long init_record(pmbbo,pass)
     if (pass==0) return(0);
 
     /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pmbbo->siml.type) {
-    case (CONSTANT) :
+    if (pmbbo->siml.type == CONSTANT) {
         pmbbo->simm = pmbbo->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbo->siml), (void *) pmbbo, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbbo,
-                "mbbo: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pmbbo->siml), (void *) pmbbo, DBR_ENUM, "SIMM");
+	if (status)
+           return(status);
     }
 
-    /* mbbo.siol may be a PV_LINK */
-    if (pmbbo->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pmbbo->siol), (void *) pmbbo, "VAL");
-	if(status) return(status);
-    }
+    status = recGblInitFastOutLink(&(pmbbo->siol), (void *) pmbbo, DBR_USHORT, "VAL");
+
+    if (status)
+       return(status);
 
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pmbbo,"mbbo: init_record");
@@ -195,6 +188,13 @@ static long init_record(pmbbo,pass)
 	pmbbo->val = pmbbo->dol.value.value;
 	pmbbo->udf = FALSE;
     }
+    else {
+        status = recGblInitFastInLink(&(pmbbo->dol), (void *) pmbbo, DBR_USHORT, "VAL");
+
+        if (status)
+           return(status);
+    }
+
     /* initialize mask*/
     pmbbo->mask = 0;
     for (i=0; i<pmbbo->nobt; i++) {
@@ -248,16 +248,11 @@ static long process(pmbbo)
     }
 
     if (!pmbbo->pact) {
-	if(pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
-	    long options=0;
-	    long nRequest=1;
+	if (pmbbo->dol.type != CONSTANT && pmbbo->omsl == CLOSED_LOOP) {
 	    long status;
 	    unsigned short val;
 
-	    pmbbo->pact = TRUE;
-	    status = dbGetLink(&pmbbo->dol.value.db_link,(struct dbCommon *)pmbbo,DBR_USHORT,
-			&val,&options,&nRequest);
-	    pmbbo->pact = FALSE;
+	    status = recGblGetFastLink(&pmbbo->dol, (void *) pmbbo, &val);
 	    if(status==0) {
 		pmbbo->val= val;
 		pmbbo->udf= FALSE;
@@ -478,16 +473,13 @@ static long writeValue(pmbbo)
 {
 	long		status;
         struct mbbodset 	*pdset = (struct mbbodset *) (pmbbo->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pmbbo->pact == TRUE){
 		status=(*pdset->write_mbbo)(pmbbo);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pmbbo->siml),
-		(void *)pmbbo,DBR_ENUM,&(pmbbo->simm),&options,&nRequest);
+	status=recGblGetFastLink(&(pmbbo->siml), (void *)pmbbo, &(pmbbo->simm));
 	if (status)
 		return(status);
 
@@ -496,8 +488,7 @@ static long writeValue(pmbbo)
 		return(status);
 	}
 	if (pmbbo->simm == YES){
-		status=recGblPutLinkValue(&(pmbbo->siol),
-				(void *)pmbbo,DBR_USHORT,&(pmbbo->val),&nRequest);
+		status=recGblPutFastLink(&(pmbbo->siol), (void *)pmbbo, &(pmbbo->val));
 	} else {
 		status=-1;
 		recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM);

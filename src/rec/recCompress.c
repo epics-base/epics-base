@@ -1,5 +1,5 @@
 /* recCompress.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recCompress.c - Record Support Routines for Compression records*/
 /*
@@ -458,7 +458,7 @@ long			no_elements;
 	inx++;
 	if(pcompress->n<=0)pcompress->n=1;
 	n = pcompress->n;
-	if(inx<n) {
+	if (inx<n) {
 		pcompress->inx = inx;
 		return(1);
 	}

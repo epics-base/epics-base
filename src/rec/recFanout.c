@@ -1,5 +1,6 @@
 /* recFanout.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
+
 /* recFanout.c - Record Support Routines for Fanout records */
 /*
  *      Original Author: Bob Dalesio
@@ -45,7 +46,7 @@
  * .14  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .15  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .16  09-10-92        jba     replaced fetch link selection with call to recGblGetLinkValue
-
+ * .17	03-29-94	mcn	converted to fast links
  */
 
 #include        <vxWorks.h>
@@ -115,14 +116,15 @@ static long init_record(pfanout,pass)
     if (pass==0) return(0);
 
     /* get link selection if sell is a constant and nonzero*/
-    if (pfanout->sell.type==CONSTANT && pfanout->sell.value.value!=0 ){
-            pfanout->seln = pfanout->sell.value.value;
+    if (pfanout->sell.type == CONSTANT) {
+            if (pfanout->sell.value.value != 0)
+                pfanout->seln = pfanout->sell.value.value;
     }
-    if (pfanout->sell.type == PV_LINK)
-    {
-	status = dbCaAddInlink(&(pfanout->sell), (void *) pfanout, "SELN");
-	if(status) return(status);
-    } /* endif */
+    else {
+        status = recGblInitFastInLink(&(pfanout->sell), (void *) pfanout, DBR_USHORT, "SELN");
+        if (status)
+           return(status);
+    }
 
     return(0);
 }

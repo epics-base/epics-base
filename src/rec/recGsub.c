@@ -1,5 +1,5 @@
 /* recGsub.c */
-/* share/src/rec @(#)recGsub.c	1.18     9/14/92 */
+/* base/src/rec  $Id$ */
 
 /* recGsub.c - Record Support Routines for Subroutine records */
 /*

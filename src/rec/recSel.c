@@ -1,5 +1,5 @@
 /* recSel.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recSel.c - Record Support Routines for Select records */
 /*
@@ -45,6 +45,7 @@
  * .12  08-06-92        jba     New algorithm for calculating analog alarms
  * .13  09-10-92        jba     Changed algorithms to use all a-l which are defined
  * .14  10-10-92        jba     replaced code with recGblGetLinkValue call
+ * .15  03-29-94        mcn     converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -130,24 +131,27 @@ static long init_record(psel,pass)
     if (pass==0) return(0);
 
     /* get seln initial value if nvl is a constant*/
-    if (psel->nvl.type == CONSTANT ) psel->seln = psel->nvl.value.value;
-    if (psel->nvl.type == PV_LINK)
-    {
-	status = dbCaAddInlink(&(psel->nvl), (void *) psel, "SELN");
-	if(status) return(status);
-    } /* endif */
+    if (psel->nvl.type == CONSTANT ) {
+        psel->seln = psel->nvl.value.value;
+    }
+    else {
+	status = recGblInitFastInLink(&(psel->nvl), (void *) psel, DBR_USHORT, "SELN");
+	if (status)
+           return(status);
+    }
 
     plink = &psel->inpa;
     pvalue = &psel->a;
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
         *pvalue = 1e+30;
-	if(plink->type==CONSTANT && plink->value.value != 0.) 
+	if (plink->type==CONSTANT && plink->value.value != 0.) {
 	    *pvalue = plink->value.value;
-        if (plink->type == PV_LINK)
-        {
-            status = dbCaAddInlink(plink, (void *) psel, Fldnames[i]);
-            if(status) return(status);
-        } /* endif */
+        }
+        else {
+            status = recGblInitFastInLink(plink, (void *) psel, DBR_DOUBLE, Fldnames[i]);
+            if (status)
+               return(status);
+        }
     }
     return(0);
 }
@@ -452,8 +456,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 static int fetch_values(psel)
 struct selRecord *psel;
 {
-	long		nRequest=1;
-	long		options=0;
 	struct link	*plink;
 	double		*pvalue;
 	int		i;
@@ -464,23 +466,18 @@ struct selRecord *psel;
 	/* If select mechanism is SELECTED only get selected input*/
 	if(psel->selm == SELECTED) {
 	        /* fetch the select index */
-		status=recGblGetLinkValue(&(psel->nvl),(void *)psel,DBR_USHORT,
-			&(psel->seln),&options,&nRequest);
+		status=recGblGetFastLink(&(psel->nvl), (void *)psel, &(psel->seln));
 		if (!RTN_SUCCESS(status)) return(status);
 
 		plink += psel->seln;
 		pvalue += psel->seln;
 
-		status=recGblGetLinkValue(plink,(void *)psel,DBR_DOUBLE,
-			pvalue,&options,&nRequest);
+		status=recGblGetFastLink(plink, (void *)psel, pvalue);
 		return(status);
 	}
 	/* fetch all inputs*/
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-		options=0;
-		nRequest=1;
-		status=recGblGetLinkValue(plink,(void *)psel,DBR_DOUBLE,
-			pvalue,&options,&nRequest);
+		status=recGblGetFastLink(plink,(void *)psel, pvalue);
 	}
 	return(status);
 }

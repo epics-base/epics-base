@@ -1,5 +1,5 @@
 /* recSub.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recSub.c - Record Support Routines for Subroutine records */
 /*
@@ -44,6 +44,7 @@
  * .12  08-06-92        jba     New algorithm for calculating analog alarms
  * .13  08-06-92        jba     monitor now posts events for changes in a-l
  * .14  10-10-92        jba     replaced code with recGblGetLinkValue call
+ * .15  03-30-94        mcn     converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -131,11 +132,14 @@ static long init_record(psub,pass)
     plink = &psub->inpa;
     pvalue = &psub->a;
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
-        if(plink->type==CONSTANT) *pvalue = plink->value.value;
-        if (plink->type == PV_LINK)
-        {
-            status = dbCaAddInlink(plink, (void *) psub, Fldnames[i]);
-            if(status) return(status);
+        if (plink->type==CONSTANT) {
+            *pvalue = plink->value.value;
+        }
+        else {
+            status = recGblInitFastInLink(plink, (void *) psub, DBR_DOUBLE, Fldnames[i]);
+
+            if (status)
+               return(status);
         } /* endif */
     }
 
@@ -393,13 +397,11 @@ struct subRecord *psub;
 {
         struct link     *plink; /* structure of the link field  */
         double           *pvalue;
-        long            options=0,nRequest=1;
         int             i;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
-		status=recGblGetLinkValue(plink,(void *)psub,DBR_DOUBLE,
-			pvalue,&options,&nRequest);
+		status=recGblGetFastLink(plink, (void *)psub, pvalue);
 		if (!RTN_SUCCESS(status)) return(-1);
         }
         return(0);

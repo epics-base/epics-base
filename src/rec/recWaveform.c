@@ -1,5 +1,5 @@
 /* recWaveform.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recWaveform.c - Record Support Routines for Waveform records */
 /*

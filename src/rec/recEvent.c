@@ -1,5 +1,5 @@
 /* recEvent.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recEvent.c - Record Support Routines for Event records */
 /*
@@ -35,6 +35,7 @@
  * .03  04-18-92        jba     removed process from dev init_record parms
  * .04  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .05  08-17-92        jba     added simulation mode handling
+ * .06	03-29-94	mcn	converted to fast links
  */
 
 #include	<vxWorks.h>
@@ -112,38 +113,23 @@ static long init_record(pevent,pass)
 
     if (pass==0) return(0);
 
-    /* event.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pevent->siml.type) {
-    case (CONSTANT) :
+    if (pevent->siml.type == CONSTANT) {
         pevent->simm = pevent->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pevent->siml), (void *) pevent, "SIMM");
-        if(status) return(status);
-        break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pevent,
-                "event: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pevent->siml), (void *) pevent, DBR_ENUM, "SIMM");
+        if (status)
+           return(status);
     }
 
-    /* event.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pevent->siol.type) {
-    case (CONSTANT) :
+    if (pevent->siol.type == CONSTANT) {
         pevent->sval = pevent->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pevent->siol), (void *) pevent, "SVAL");
-        if(status) return(status);
-        break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pevent,
-                "event: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(pevent->siol), (void *) pevent, DBR_USHORT, "SVAL");
+
+        if (status)
+           return(status);
     }
 
     if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
@@ -206,16 +192,14 @@ static long readValue(pevent)
 {
         long            status;
         struct eventdset   *pdset = (struct eventdset *) (pevent->dset);
-	long            nRequest=1;
-	long            options=0;
 
         if (pevent->pact == TRUE){
                 status=(*pdset->read_event)(pevent);
                 return(status);
         }
 
-        status=recGblGetLinkValue(&(pevent->siml),
-                (void *)pevent,DBR_ENUM,&(pevent->simm),&options,&nRequest);
+        status=recGblGetFastLink(&(pevent->siml), (void *)pevent, &(pevent->simm));
+
         if (status)
                 return(status);
 
@@ -224,9 +208,8 @@ static long readValue(pevent)
                 return(status);
         }
         if (pevent->simm == YES){
-                status=recGblGetLinkValue(&(pevent->siol),
-                        (void *)pevent,DBR_USHORT,&(pevent->sval),&options,&nRequest);
-                if (status==0){
+                status=recGblGetFastLink(&(pevent->siol), (void *)pevent, &(pevent->sval));
+                if (status==0) {
                         pevent->val=pevent->sval;
                         pevent->udf=FALSE;
                 }

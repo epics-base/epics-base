@@ -1,5 +1,5 @@
 /* recHistogram.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
  
 /* recHistogram.c - Record Support Routines for Histogram records */
 /*
@@ -37,6 +37,7 @@
  * .06  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .07  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .08  08-13-92        jba     Added simulation processing
+ * .09	01-24-94	mcn	Converted to Fast Links
  */
 
 #include     <vxWorks.h>
@@ -191,38 +192,23 @@ static long init_record(phistogram,pass)
           wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
      }
 
-    /* histogram.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (phistogram->siml.type) {
-    case (CONSTANT) :
+    if (phistogram->siml.type == CONSTANT) {
         phistogram->simm = phistogram->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(phistogram->siml), (void *) phistogram, "SIMM");
-        if(status) return(status);
-        break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)phistogram,
-                "histogram: init_record Illegal SIML field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(phistogram->siml), (void *) phistogram, DBR_ENUM, "SIMM");
+        if (status)
+           return(status);
     }
 
-    /* histogram.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (phistogram->siol.type) {
-    case (CONSTANT) :
+    if (phistogram->siol.type == CONSTANT) {
         phistogram->sval = phistogram->siol.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(phistogram->siol), (void *) phistogram, "SVAL");
-        if(status) return(status);
-        break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)phistogram,
-                "histogram: init_record Illegal SIOL field");
-        return(S_db_badField);
+    }
+    else {
+        status = recGblInitFastInLink(&(phistogram->siol), (void *) phistogram, DBR_DOUBLE, "SVAL");
+
+        if (status)
+           return(status);
     }
 
      /* must have device support defined */
@@ -413,16 +399,14 @@ static long readValue(phistogram)
 {
         long            status;
         struct histogramdset   *pdset = (struct histogramdset *) (phistogram->dset);
-	long            nRequest=1;
-	long            options=0;
 
         if (phistogram->pact == TRUE){
                 status=(*pdset->read_histogram)(phistogram);
                 return(status);
         }
 
-        status=recGblGetLinkValue(&(phistogram->siml),
-                (void *)phistogram,DBR_ENUM,&(phistogram->simm),&options,&nRequest);
+        status=recGblGetFastLink(&(phistogram->siml), (void *)phistogram, &(phistogram->simm));
+
         if (status)
                 return(status);
 
@@ -431,8 +415,7 @@ static long readValue(phistogram)
                 return(status);
         }
         if (phistogram->simm == YES){
-                status=recGblGetLinkValue(&(phistogram->siol),
-                       (void *)phistogram,DBR_DOUBLE,&(phistogram->sval),&options,&nRequest);
+                status=recGblGetFastLink(&(phistogram->siol), (void *)phistogram, &(phistogram->sval));
                 if (status==0){
                          phistogram->sgnl=phistogram->sval;
                 }

@@ -1,5 +1,5 @@
 /* recPermissive.c */
-/* share/src/rec $Id$ */
+/* base/src/rec  $Id$ */
 
 /* recPermissive.c - Record Support Routines for Permissive records */
 /*

@@ -37,15 +37,16 @@ private:
 };
 
 template < class T, epics_auto_ptr_type PT >
-inline epics_auto_ptr<T,PT>::epics_auto_ptr ( T *pIn ) : 
+inline epics_auto_ptr<T,PT>::epics_auto_ptr ( T *pIn ) throw () : 
 p ( pIn ) {}
 
 template < class T, epics_auto_ptr_type PT >
-inline epics_auto_ptr<T,PT>::epics_auto_ptr ( const epics_auto_ptr<T,PT> & ap ) : 
+inline epics_auto_ptr<T,PT>::
+    epics_auto_ptr ( const epics_auto_ptr<T,PT> & ap ) throw () : 
     p ( ap.release() ) {}
 
 template < class T, epics_auto_ptr_type PT >
-inline void epics_auto_ptr<T,PT>::destroyTarget ()
+inline void epics_auto_ptr<T,PT>::destroyTarget () throw ()
 {
     if ( PT == eapt_scalar ) {
         delete this->p;
@@ -56,13 +57,14 @@ inline void epics_auto_ptr<T,PT>::destroyTarget ()
 }
 
 template < class T, epics_auto_ptr_type PT >
-inline epics_auto_ptr<T,PT>::~epics_auto_ptr () 
+inline epics_auto_ptr<T,PT>::~epics_auto_ptr () throw ()
 {
     this->destroyTarget ();
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline epics_auto_ptr<T,PT> & epics_auto_ptr<T,PT>::operator = ( epics_auto_ptr<T,PT> & rhs )
+inline epics_auto_ptr<T,PT> & epics_auto_ptr<T,PT>::operator = 
+    ( epics_auto_ptr<T,PT> & rhs ) throw ()
 {
     if ( &rhs != this) {
         this->destroyTarget ();
@@ -72,31 +74,31 @@ inline epics_auto_ptr<T,PT> & epics_auto_ptr<T,PT>::operator = ( epics_auto_ptr<
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline T & epics_auto_ptr<T,PT>::operator * () const
+inline T & epics_auto_ptr<T,PT>::operator * () const throw()
 { 
     return * this->p; 
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline T * epics_auto_ptr<T,PT>::operator -> () const
+inline T * epics_auto_ptr<T,PT>::operator -> () const throw ()
 { 
     return this->p; 
 }
 
 template < class T, epics_auto_ptr_type PT >	
-T & epics_auto_ptr<T,PT>::operator [] ( unsigned index ) const
+T & epics_auto_ptr<T,PT>::operator [] ( unsigned index ) const throw ()
 {
     return this->p [ index ];
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline T * epics_auto_ptr<T,PT>::get () const
+inline T * epics_auto_ptr<T,PT>::get () const throw ()
 { 
     return this->p; 
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline T * epics_auto_ptr<T,PT>::release ()
+inline T * epics_auto_ptr<T,PT>::release () throw ()
 { 
     T *pTmp = this->p;
     this->p = 0;
@@ -104,7 +106,7 @@ inline T * epics_auto_ptr<T,PT>::release ()
 }
 
 template < class T, epics_auto_ptr_type PT >	
-inline void epics_auto_ptr<T,PT>::reset ( T * pIn )
+inline void epics_auto_ptr<T,PT>::reset ( T * pIn ) throw ()
 {
     this->destroyTarget ();
     this->p = pIn;

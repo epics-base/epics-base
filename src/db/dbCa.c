@@ -94,7 +94,6 @@ void epicsShareAPI dbCaAddLink( struct link *plink)
 {
 	caLink *pca;
 
-printf("dbCaAddLink called\n");
 	pca = (caLink*)dbCalloc(1,sizeof(caLink));
 	pca->plink = plink;
 	plink->type = CA_LINK;
@@ -617,14 +616,12 @@ void dbCaTask()
 	semBinaryMustTake(caWakeupSem);
 	while(TRUE) { /* process all requests in caList*/
 	    semMutexMustTake(caListSem);
-printf("dbCaTask semMutexMustTake returned\n");
 	    if((pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
 		ellDelete(&caList,&pca->node);
 		link_action = pca->link_action;
 		pca->link_action = 0;
 		semMutexGive(caListSem); /*Give it back immediately*/
 		if(link_action&CA_DELETE) {/*This must be first*/
-printf("dbCaTask CA_DELETE\n");
 		    if(pca->chid) ca_clear_channel(pca->chid);	
 		    free(pca->pgetNative);
 		    free(pca->pputNative);
@@ -636,8 +633,6 @@ printf("dbCaTask CA_DELETE\n");
 		    continue; /*No other link_action makes sense*/
 		}
 		if(link_action&CA_CONNECT) {
-printf("dbCaTask CA_CONNECT\n");
-printf("dbCaTask calling ca_search_and_connect\n");
 		    status = ca_search_and_connect(
 				  pca->plink->value.pv_link.pvname,
 				  &(pca->chid),
@@ -647,7 +642,6 @@ printf("dbCaTask calling ca_search_and_connect\n");
 				ca_message(status));
 		        continue;
 		    }
-printf("dbCaTask calling ca_replace_access_rights_event\n");
 		    status = ca_replace_access_rights_event(pca->chid,
 				accessRightsCallback);
 		    if(status!=ECA_NORMAL)
@@ -657,14 +651,12 @@ printf("dbCaTask calling ca_replace_access_rights_event\n");
 		}
 		if(ca_state(pca->chid) != cs_conn) continue;
 		if(link_action&CA_WRITE_NATIVE) {
-printf("dbCaTask calling ca_array_put\n");
 		    status = ca_array_put(
 			    pca->dbrType,pca->nelements,
 			    pca->chid,pca->pputNative);
 		    if(status==ECA_NORMAL) pca->newOutNative = FALSE;
 		}
 		if(link_action&CA_WRITE_STRING) {
-printf("dbCaTask calling ca_array_put\n");
 		    status = ca_array_put(
 			    DBR_STRING,1,
 			    pca->chid,pca->pputString);
@@ -675,20 +667,17 @@ printf("dbCaTask calling ca_array_put\n");
 
 		    element_size = dbr_value_size[ca_field_type(pca->chid)];
 		    pca->pgetNative = dbCalloc(pca->nelements,element_size);
-printf("dbCaTask CA_MONITOR_NATIVE calling ca_add_array_event\n");
 		    status = ca_add_array_event(
 			ca_field_type(pca->chid)+DBR_TIME_STRING,
 			ca_element_count(pca->chid),
 			pca->chid, eventCallback,pca,0.0,0.0,0.0,
 			0);
-printf("dbCaTask returned from ca_add_array_event\n");
 		    if(status!=ECA_NORMAL)
 		        epicsPrintf("dbCaTask ca_add_array_event %s\n",
 			    ca_message(status));
 		}
 		if(link_action&CA_MONITOR_STRING) {
 		    pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
-printf("dbCaTask calling ca_add_array_event\n");
 		    status = ca_add_array_event(DBR_TIME_STRING,1,
 				pca->chid, eventCallback,pca,0.0,0.0,0.0,
 				0);
@@ -697,7 +686,6 @@ printf("dbCaTask calling ca_add_array_event\n");
 				ca_message(status));
 		}
 		if(link_action&CA_GET_ATTRIBUTES) {
-printf("dbCaTask calling ca_get_callback\n");
 		    status = ca_get_callback(DBR_CTRL_DOUBLE,
 				pca->chid,getAttribEventCallback,pca);
 		    if(status!=ECA_NORMAL)

@@ -61,9 +61,9 @@ void testStringConversion()
 
 int epicsTimeTest (void)
 {
-    unsigned i, errors, sum_errors=0, sum_errloops=0;
+    unsigned errors, sum_errors=0, sum_errloops=0;
     const epicsTime begin = epicsTime::getCurrent();
-    const unsigned wasteTime = 100000u;
+    const unsigned wasteTime = 10000000u;
     const int nTimes = 100;
     epicsTimeStamp stamp;
     struct timespec ts;
@@ -86,9 +86,10 @@ int epicsTimeTest (void)
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
     for (int iTimes=0; iTimes < nTimes; ++iTimes) {
-        for (i=0; i<wasteTime; i++) {
-            useSomeCPU = epicsTime::getCurrent();
-        }
+        epicsThreadSleep (60.0);
+        //for (i=0; i<wasteTime; i++) {
+        //    useSomeCPU = epicsTime::getCurrent();
+        //}
 
         const epicsTime end = epicsTime::getCurrent();
 

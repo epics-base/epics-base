@@ -219,7 +219,7 @@ ioccrf (const char *pathname)
     if ((pathname == NULL) || (strcmp (pathname, "<telnet>") == 0)) {
         const char *historySize;
         if ((prompt = getenv ("IOCSH_PS1")) == NULL)
-            prompt = "iocsh> ";
+            prompt = "epics> ";
         if (((historySize = getenv ("IOCSH_HISTSIZE")) == NULL)
          && ((historySize = getenv ("HISTSIZE")) == NULL))
             historySize = "20";
@@ -484,10 +484,9 @@ static void helpCallFunc(const ioccrfArgBuf *)
 }
 
 /* comment */
-static const ioccrfArg commentArg0 = { "newline-terminated comment",ioccrfArgInt};
+static const ioccrfArg commentArg0 = { "newline-terminated comment",ioccrfArgArgv};
 static const ioccrfArg *commentArgs[1] = {&commentArg0};
-static const ioccrfFuncDef commentFuncDef =
-    {"#",1,commentArgs};
+static const ioccrfFuncDef commentFuncDef = {"#",1,commentArgs};
 static void commentCallFunc(const ioccrfArgBuf *)
 {
 }

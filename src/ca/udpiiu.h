@@ -43,7 +43,7 @@ class epicsTime;
 
 class udpiiu : public netiiu {
 public:
-    udpiiu ( class cac & );
+    udpiiu ( class cac &, epicsThreadPrivateId );
     virtual ~udpiiu ();
     void shutdown ();
     void recvMsg ();
@@ -67,6 +67,7 @@ private:
     ELLLIST dest;
     epicsThreadId recvThreadId;
     epicsEventId recvThreadExitSignal;
+    epicsThreadPrivateId isRecvProcessId;
     unsigned nBytesInXmitBuf;
     SOCKET sock;
     unsigned short repeaterPort;

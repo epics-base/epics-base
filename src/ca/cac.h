@@ -173,6 +173,7 @@ private:
     void                    *tcpSmallRecvBufFreeList;
     void                    *tcpLargeRecvBufFreeList;
     epicsThread             *pRecvProcessThread;
+    epicsThreadPrivateId    isRecvProcessId;
     cacNotify               &notify;
     unsigned                ioNotifyInProgressId;
     unsigned                initializingThreadsPriority;

@@ -51,8 +51,9 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( cac &cac ) :
-    netiiu ( &cac ), shutdownCmd ( false ), sockCloseCompleted ( false )
+udpiiu::udpiiu ( cac &cac, epicsThreadPrivateId isRecvProcessIdIn ) :
+    netiiu ( &cac ), isRecvProcessId ( isRecvProcessIdIn ), 
+        shutdownCmd ( false ), sockCloseCompleted ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -244,6 +245,7 @@ void udpiiu::recvMsg ()
 extern "C" void cacRecvThreadUDP ( void *pParam )
 {
     udpiiu *piiu = (udpiiu *) pParam;
+    epicsThreadPrivateSet ( piiu->isRecvProcessId, pParam );
     do {
         piiu->recvMsg ();
     } while ( ! piiu->shutdownCmd );

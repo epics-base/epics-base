@@ -165,7 +165,6 @@ struct	niLink {
   struct ibLink	ibLink;
 
   char		tmoFlag;	/* timeout has occurred */
-  int		tmoLimit;	/* how long to wait before issuing timeout */
   SEM_ID	ioSem;		/* DMA I/O operation complete or WD timeout */
   WDOG_ID	watchDogId;	/* watchdog for timeouts */
   struct	ibregs	*ibregs;/* pointer to board registers */
@@ -327,7 +326,6 @@ initGpib()
       pNiLink[i]->ibregs = pibregs;
       pNiLink[i]->ioSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
       pNiLink[i]->watchDogId = wdCreate();
-      pNiLink[i]->tmoLimit = defaultTimeout;
       pNiLink[i]->tmoFlag = 0;
       pNiLink[i]->cmdSpins = 0;
       pNiLink[i]->maxSpins = 0;
@@ -673,15 +671,16 @@ int     length;
  *
  ******************************************************************************/
 static int
-niGpibRead(link, buffer, length)
+niGpibRead(link, buffer, length, time)
 int	link;
 char	*buffer;
 int	length;
+int	time;
 {
   int	err;
 
   if(ibDebug)
-    printf("niGpibRead(%d, 0x%08.8X, %d)\n",link, buffer, length);
+    printf("niGpibRead(%d, 0x%08.8X, %d, %d)\n",link, buffer, length, time);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -689,7 +688,7 @@ int	length;
     return(ERROR);
   }
 
-  err = niPhysIo(READ, link, buffer, length);
+  err = niPhysIo(READ, link, buffer, length, time);
   pNiLink[link]->r_isr1 &= ~HR_END;
 
   return(err ? err : length - niGpibResid(link));
@@ -702,15 +701,16 @@ int	length;
  *
  ******************************************************************************/
 static int
-niGpibWrite(link, buffer, length)
+niGpibWrite(link, buffer, length, time)
 int	link;
 char	*buffer;
 int	length;
+int	time;
 {
   int	err;
 
   if(ibDebug)
-    printf("niGpibWrite(%d, 0x%08.8X, %d)\n",link, buffer, length);
+    printf("niGpibWrite(%d, 0x%08.8X, %d, %d)\n",link, buffer, length, time);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -718,7 +718,7 @@ int	length;
     return(ERROR);
   }
 
-  err = niPhysIo(WRITE, link, buffer, length);
+  err = niPhysIo(WRITE, link, buffer, length, time);
 
   return(err ? err : length - niGpibResid(link));
 }
@@ -792,7 +792,8 @@ caddr_t	p;
 
   switch (cmd) {
   case IBTMO:		/* set the timeout value for the next transaction */
-    pNiLink[link]->tmoLimit = v;
+    /* pNiLink[link]->tmoLimit = v; */
+    printf("Old NI driver call entered IBTMO ignored\n");
     break;
   case IBIFC:		/* fire out an Interface Clear pulse */
     pNiLink[link]->ibregs->auxmr = AUX_SIFC;	/* assert the line */
@@ -832,11 +833,12 @@ caddr_t	p;
  *
  ******************************************************************************/
 static int
-niPhysIo(dir, link, buffer, length)
+niPhysIo(dir, link, buffer, length, time)
 int	dir;		/* direction (READ or WRITE) */
 int	link;		/* link number to do the I/O with */
 char	*buffer;	/* data to transfer */
 int	length;		/* number of bytes to transfer */
+int	time;		/* time to wait on the DMA operation */
 {
   int	status;
   short	cnt;
@@ -912,11 +914,11 @@ int	length;		/* number of bytes to transfer */
   niWrLong(&b->ch0.mar, temp_addr);
 
   /* setup GPIB response timeout handler */
-  if (pNiLink[link]->tmoLimit == 0)
-    pNiLink[link]->tmoLimit = defaultTimeout;	/* 0 = take the default */
+  if (time == 0)
+    time = defaultTimeout;	/* 0 = take the default */
   pNiLink[link]->tmoFlag = FALSE;		/* assume no timeout */
-  wdStart(pNiLink[link]->watchDogId, pNiLink[link]->tmoLimit, niTmoHandler, link);
-  pNiLink[link]->tmoLimit = 0;			/* reset for next time */
+  wdStart(pNiLink[link]->watchDogId, time, niTmoHandler, link);
+
   /* start dma (ch1 first) */
   if (cnt)
     b->ch1.ccr = D_EINT | D_SRT;	/* enable interrupts */
@@ -948,7 +950,7 @@ int	length;		/* number of bytes to transfer */
       while (b->ch0.mtc)
       {
 	taskDelay(1);
-	if (++tmoTmp == pNiLink[link]->tmoLimit)
+	if (++tmoTmp == time)
 	{
 	  pNiLink[link]->tmoFlag = TRUE;
 	  break;
@@ -1193,8 +1195,7 @@ struct	ibLink *plink;
     {
       if (pollInhibit[plink->linkId][j] != 1);/* if user did not block it out */
       {
-        ioctlIb(plink->linkType, plink->linkId, plink->bug, IBTMO, 4, NULL);
-        if (pollIb(plink, j, 0) == ERROR)
+        if (pollIb(plink, j, 0, POLLTIME) == ERROR)
           pollInhibit[plink->linkId][j] = 2;	/* address is not pollable */
       }
     }
@@ -1298,7 +1299,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
           }
 	  if (ibDebug || ibSrqDebug)
             printf("ibLinkTask(%d, %d): poling device %d\n", plink->linkType, plink->linkId, pollAddress);
-          if ((ringData.status = pollIb(plink, pollAddress, 1)) & 0x40)
+          if ((ringData.status = pollIb(plink, pollAddress, 1, POLLTIME)) & 0x40)
           {
             ringData.device = pollAddress;
 	    if (ibDebug || ibSrqDebug)
@@ -1403,10 +1404,11 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
  *
  ******************************************************************************/
 static int
-pollIb(plink, gpibAddr, verbose)
+pollIb(plink, gpibAddr, verbose, time)
 struct ibLink     *plink;
 int             gpibAddr;
 int		verbose;	/* set to 1 if should log any errors */
+int		time;
 {
   char  pollCmd[4];
   unsigned char  pollResult[3];
@@ -1414,13 +1416,13 @@ int		verbose;	/* set to 1 if should log any errors */
   int	tsSave;
 
   if(verbose && (ibDebug || ibSrqDebug))
-    printf("pollIb(0x%08.8X, %d, %d)\n", plink, gpibAddr, verbose);
+    printf("pollIb(0x%08.8X, %d, %d, %d)\n", plink, gpibAddr, verbose, time);
 
   tsSave = timeoutSquelch;
   timeoutSquelch = !verbose;	/* keep the I/O routines quiet if desired */
 
   /* raw-read back the response from the instrument */
-  if (readIb(plink, gpibAddr, pollResult, sizeof(pollResult)) == ERROR)
+  if (readIb(plink, gpibAddr, pollResult, sizeof(pollResult), time) == ERROR)
   {
     if(verbose)
       printf("pollIb(%d, %d): data read error\n", plink->linkId, gpibAddr);
@@ -1694,17 +1696,18 @@ int	prio;
  *
  ******************************************************************************/
 static int
-writeIb(pibLink, gpibAddr, data, length)
+writeIb(pibLink, gpibAddr, data, length, time)
 struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to write the data to */
 char	*data;		/* the data buffer to write out */
 int	length;		/* number of bytes to write out from the data buffer */
+int	time;
 {
   char	attnCmd[5];
   int	stat;
 
   if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-    printf("writeIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
+    printf("writeIb(%08.8X, %d, 0x%08.8X, %d, %d)\n", pibLink, gpibAddr, data, length, time);
 
   if (pibLink->linkType == GPIB_IO)
   {
@@ -1716,14 +1719,14 @@ int	length;		/* number of bytes to write out from the data buffer */
 
     if (writeIbCmd(pibLink, attnCmd, 4) != 4)
       return(ERROR);
-    stat = niGpibWrite(pibLink->linkId, data, length);
+    stat = niGpibWrite(pibLink->linkId, data, length, time);
 
     if (writeIbCmd(pibLink, attnCmd, 2) != 2)
       return(ERROR);
   }
   else if (pibLink->linkType == BBGPIB_IO)
   {
-    stat = bbGpibWrite(pibLink, gpibAddr, data, length);
+    stat = bbGpibWrite(pibLink, gpibAddr, data, length, time);
   }
   else
   {
@@ -1741,11 +1744,12 @@ int	length;		/* number of bytes to write out from the data buffer */
  *
  ******************************************************************************/
 static int
-readIb(pibLink, gpibAddr, data, length)
+readIb(pibLink, gpibAddr, data, length, time)
 struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to read the data from */
 char	*data;		/* the buffer to place the data into */
 int	length;		/* max number of bytes to place into the buffer */
+int	time;		/* max time to allow for read operation */
 {
   char  attnCmd[5];
   int   stat;
@@ -1764,14 +1768,14 @@ int	length;		/* max number of bytes to place into the buffer */
     if (writeIbCmd(pibLink, attnCmd, 4) != 4)
       return(ERROR);
 
-    stat = niGpibRead(pibLink->linkId, data, length);
+    stat = niGpibRead(pibLink->linkId, data, length, time);
 
     if (writeIbCmd(pibLink, attnCmd, 2) != 2)
       return(ERROR);
   }
   else if (pibLink->linkType == BBGPIB_IO)
   {
-    stat = bbGpibRead(pibLink, gpibAddr, data, length);
+    stat = bbGpibRead(pibLink, gpibAddr, data, length, time);
   }
   else
   { /* incorrect link type specified! */
@@ -1824,18 +1828,19 @@ int     length; 	/* number of bytes to write out from the data buffer */
  *
  ******************************************************************************/
 static int
-bbGpibRead(pibLink, device, buffer, length)
+bbGpibRead(pibLink, device, buffer, length, time)
 struct	ibLink	*pibLink;
 int	device;
 char    *buffer;
 int     length;
+int	time;
 {
   struct bbIbLink       *pbbIbLink = (struct bbIbLink *) pibLink;
   struct dpvtBitBusHead bbdpvt;
   int                   bytesRead;
 
   if (ibDebug || bbibDebug)
-    printf("bbGpibRead(%08.8X, %d, %08.8X, %d): entered\n", pibLink, device, buffer, length);
+    printf("bbGpibRead(%08.8X, %d, %08.8X, %d, %d): entered\n", pibLink, device, buffer, length, time);
 
   bytesRead = 0;
 
@@ -1882,11 +1887,12 @@ int     length;
  *
  ******************************************************************************/
 static int
-bbGpibWrite(pibLink, device, buffer, length)
+bbGpibWrite(pibLink, device, buffer, length, time)
 struct	ibLink	*pibLink;
 int	device;
 char    *buffer;
 int     length;
+int	time;
 {
   struct bbIbLink       *pbbIbLink = (struct bbIbLink *) pibLink;
   struct dpvtBitBusHead	bbdpvt;
@@ -1896,7 +1902,7 @@ int     length;
   int			bytesSent;
 
   if (ibDebug || bbibDebug)
-    printf("bbGpibWrite(%08.8X, %d, %08.8X, %d): entered\n", pibLink, device, buffer, length);
+    printf("bbGpibWrite(%08.8X, %d, %08.8X, %d, %d): entered\n", pibLink, device, buffer, length, time);
 
   bytesSent = length;	/* we either get an error or send them all */
 

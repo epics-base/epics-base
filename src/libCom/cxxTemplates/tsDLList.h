@@ -196,8 +196,8 @@ public:
 
 	tsDLIterBD<T> operator = (T *pNewEntry);
 
-    tsDLIterBD<T> itemAfter ();
-    tsDLIterBD<T> itemBefore ();
+	tsDLIterBD<T> itemAfter ();
+	tsDLIterBD<T> itemBefore ();
 
 	bool operator == (const tsDLIterBD<T> &rhs) const;
 	bool operator != (const tsDLIterBD<T> &rhs) const;
@@ -206,10 +206,31 @@ public:
 	T * operator -> () const;
 	//operator T* () const;
 
-	tsDLIterBD<T> operator ++ (); // prefix ++
-	tsDLIterBD<T> operator ++ (int); // postfix ++
-	tsDLIterBD<T> operator -- (); // prefix --
-	tsDLIterBD<T> operator -- (int); // postfix -- 
+	tsDLIterBD<T> operator ++ () // prefix ++
+	{
+		this->tsDLIterConstBD<T>::operator ++ ();
+		return *this;
+	}
+
+	tsDLIterBD<T> operator ++ (int) // postfix ++
+	{
+		tsDLIterBD<T> tmp = *this;
+		this->tsDLIterConstBD<T>::operator ++ (1);
+		return tmp;
+	}
+
+	tsDLIterBD<T> operator -- () // prefix --
+	{
+		this->tsDLIterConstBD<T>::operator -- ();
+		return *this;
+	}
+
+	tsDLIterBD<T> operator -- (int) // postfix -- 
+	{
+		tsDLIterBD<T> tmp = *this;
+		this->tsDLIterConstBD<T>::operator -- (1);
+		return tmp;
+	}
 
 #	if defined(_MSC_VER) && _MSC_VER < 1200
 		tsDLIterBD (const class tsDLIterBD<T> &copyIn);
@@ -319,7 +340,7 @@ public:
 	void reset ();
 	void reset (tsDLList<T> &listIn);
 	void operator = (tsDLList<T> &listIn);
-	T * operator () ();
+	T * operator () () { return this->tsDLIter<T>::prev(); }
 	T * prev ();
 	T * last();
 	//
@@ -847,54 +868,6 @@ inline tsDLIterBD<T> tsDLIterBD<T>::itemBefore ()
 }
 
 //
-// prefix ++
-//
-template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ () 
-{
-    this->tsDLIterConstBD<T>::operator ++ ();
-    return *this;
-}
-
-//
-// postfix ++
-//
-template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ (int) 
-{
-	tsDLIterBD<T> tmp = *this;
-    this->tsDLIterConstBD<T>::operator ++ (1);
-	return tmp;
-}
-
-//
-// prefix -- 
-//
-template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator -- () 
-{
-    this->tsDLIterConstBD<T>::operator -- ();
-    return *this;
-}
-
-//
-// postfix -- 
-//
-template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int) 
-{
-	tsDLIterBD<T> tmp = *this;
-    this->tsDLIterConstBD<T>::operator -- (1);
-	return tmp;
-}
-
-template <class T>
-inline bool tsDLIterBD<T>::valid () const
-{
-    return this->tsDLIterConstBD<T>::valid ();
-}
-
-//
 // tsDLIterBD<T>::eol
 //
 template <class T>
@@ -1067,15 +1040,6 @@ void tsDLBwdIter<T>::remove ()
 		//
 		pMutableList->remove(*pCur);
 	}
-}
-
-//
-// tsDLBwdIter<T>::operator () ()
-//
-template <class T>
-inline T * tsDLBwdIter<T>::operator () ()
-{
-	return this->tsDLIter<T>::prev();
 }
 
 //////////////////////////////////////////

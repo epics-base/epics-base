@@ -12,3 +12,9 @@
 # and ldconfig run to inform the system of the shared libraries.
 
 #SHARED_LIBRARIES=YES
+
+# If readline is installed uncomment the following lines
+# to get command-line editing and history support
+#COMMANDLINE_LIBRARY = READLINE
+#LDLIBS_READLINE = -lreadline -lncurses
+

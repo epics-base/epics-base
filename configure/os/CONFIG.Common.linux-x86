@@ -39,7 +39,3 @@ endif
 SYS_SHRLIB_LIBS += pthread rt
 
 
-# Command-line input support
-COMMANDLINE_LIBRARY = READLINE
-LDLIBS_READLINE = -lreadline -lncurses
-

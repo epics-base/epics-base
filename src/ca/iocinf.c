@@ -57,6 +57,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.5  2002/07/12 22:16:02  jba
+ * Updated license comments.
+ *
  * Revision 1.84.4.4  2002/05/28 18:41:41  jhill
  * fixed ellFree cause malloc and free to be in different win32 dlls
  *
@@ -1545,6 +1548,7 @@ void cacDisconnectChannel(ciu chix)
 	chix->id.sid = ~0u;
 	chix->ar.read_access = FALSE;
 	chix->ar.write_access = FALSE;
+    	chix->retry = 4u;
 
 	/*
 	 * call their connection handler as required
@@ -1606,7 +1610,9 @@ void cacDisconnectChannel(ciu chix)
 	 */
 	assert (piiuCast);
 	addToChanList(chix, piiuCast);
-	cacSetRetryInterval(0u);
+	if ( ca_static->ca_search_retry > 4u ) {
+		cacSetRetryInterval(4u);
+	}
 	UNLOCK;
 }
 

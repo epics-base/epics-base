@@ -40,6 +40,9 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.43.4.4  2002/07/12 22:16:00  jba
+ * Updated license comments.
+ *
  * Revision 1.43.4.3  2001/03/06 00:10:03  jhill
  * fixed R3.13 for Linux's new socklen_t
  *
@@ -674,10 +677,14 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 	 * set retry count of all disconnected channels
 	 * to zero
 	 */
-	cacSetRetryInterval(0u);
+    if ( ca_static->ca_search_retry > 4u ) {
+	    cacSetRetryInterval(4u);
+    }
 	chan = (ciu) ellFirst(&piiuCast->chidlist);
 	while (chan) {
-		chan->retry = 0u;
+        if ( chan->retry > 4u ) {
+		    chan->retry = 4u;
+        }
 		chan = (ciu) ellNext (&chan->node);
 	}
 
@@ -1081,7 +1088,6 @@ void addToChanList(ciu chan, IIU *piiu)
 		 * add to the front of the list so that
 		 * search requests for new channels will be sent first
 		 */
-		chan->retry = 0u;
 		ellInsert(&piiu->chidlist, NULL, &chan->node);
 	}
 	else {

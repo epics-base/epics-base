@@ -29,6 +29,22 @@ epicsShareFunc void epicsShareAPI epicsTempName (
     char * pNameBuf, size_t nameBufLength );
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ();
 
+epicsShareFunc FILE * epicsShareAPI epicsGetStdin(void);
+epicsShareFunc FILE * epicsShareAPI epicsGetStdout(void);
+epicsShareFunc FILE * epicsShareAPI epicsGetStderr(void);
+epicsShareFunc void  epicsShareAPI epicsSetStdin(FILE *);
+epicsShareFunc void  epicsShareAPI epicsSetStdout(FILE *);
+epicsShareFunc void  epicsShareAPI epicsSetStderr(FILE *);
+
+#ifndef epicsStdioPVT
+#undef stdin
+#define stdin epicsGetStdin()
+#undef stdout
+#define stdout epicsGetStdout()
+#undef stderr
+#define stderr epicsGetStderr()
+#endif /* epicsStdioPVT */
+
 
 /*
  * truncate to specified size (we dont use truncate()

@@ -699,10 +699,7 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
     void *value;
 
     assert(epicsThreadOnceCalled);
-    value = pthread_getspecific(*key);
-    if(errVerbose && !value)
-        errlogPrintf("epicsThreadPrivateGet: pthread_getspecific returned 0\n");
-    return(value);
+    return pthread_getspecific(*key);
 }
 
 double epicsThreadSleepQuantum ()

@@ -418,7 +418,7 @@ void epicsShareAPI db_event_enable (dbEventSubscription es)
      * dont let a misplaced event corrupt the queue 
      */
     status = ellFind (&precord->mlis, &pevent->node);
-    if (status) {
+    if ( status < 0 ) {
         ellAdd (&precord->mlis, &pevent->node);
     }
     UNLOCKREC(precord);
@@ -440,7 +440,7 @@ void epicsShareAPI db_event_disable (dbEventSubscription es)
      * dont let a misplaced event corrupt the queue 
      */
     status = ellFind(&precord->mlis, &pevent->node);
-    if (!status) {
+    if ( status > 0 ) {
         ellDelete(&precord->mlis, &pevent->node);
     }
     UNLOCKREC(precord);
@@ -494,6 +494,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
      * Decrement event que quota
      */
     pevent->ev_que->quota -= EVENTENTRIES;
+
 
     freeListFree (dbevEventBlockFreeList, pevent);
 

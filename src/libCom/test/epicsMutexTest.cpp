@@ -22,6 +22,7 @@ of this distribution.
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "errlog.h"
 
 
@@ -105,6 +106,44 @@ void epicsMutexPerformance ()
     printf ( "One lock pair completes in %f micro sec\n", delay );
 }
 
+struct verifyTryLock {
+    epicsMutexId mutex;
+    epicsEventId done;
+};
+
+static void verifyTryLockThread ( void *pArg )
+{
+    struct verifyTryLock *pVerify = 
+        ( struct verifyTryLock * ) pArg;
+    epicsMutexLockStatus status;
+
+    status = epicsMutexTryLock ( pVerify->mutex );
+    assert ( status == epicsMutexLockTimeout );
+    epicsEventSignal ( pVerify->done );
+}
+
+void verifyTryLock ()
+{
+    struct verifyTryLock verify;
+    epicsMutexLockStatus status;
+
+    verify.mutex = epicsMutexMustCreate ();
+    verify.done = epicsEventMustCreate ( epicsEventEmpty );
+
+    status = epicsMutexTryLock ( verify.mutex );
+    assert ( status == epicsMutexLockOK );
+
+    epicsThreadCreate ( "verifyTryLockThread", 40, 
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        (EPICSTHREADFUNC )verifyTryLockThread, &verify );
+
+    epicsEventWait ( verify.done );
+
+    epicsMutexUnlock ( verify.mutex );
+    epicsMutexDestroy ( verify.mutex );
+    epicsEventDestroy ( verify.done );
+}
+
 extern "C" void epicsMutexTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
@@ -119,6 +158,7 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
     int errVerboseSave = errVerbose;
 
     epicsMutexPerformance ();
+    verifyTryLock ();
 
     errVerbose = verbose;
     mutex = epicsMutexMustCreate();

@@ -65,7 +65,7 @@ CONFORM_CFLAGS_TRAD =
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071	
+WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
 # -w- display warnings off
 WARN_CFLAGS_NO =  -w-
 
@@ -115,7 +115,9 @@ endif
 # -w-8004 'identifier' is assigned a value that is never used
 #           (compile time know template parameters
 #           causes this to spew garbage)
-WARN_CXXFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071 -w-8008 -w-8027 -w-8066 -w-8080 -w-8004
+# -w-8026  Functions with exception specifications are not expanded inline
+#
+WARN_CXXFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071 -w-8008 -w-8027 -w-8066 -w-8080 -w-8004 -w-8026
 # -w- display warnings off
 WARN_CXXFLAGS_NO = -w-
 

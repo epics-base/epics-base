@@ -12,7 +12,7 @@ To build EPICS on Win95 or NT using cygwin32, we need
         Cygnus's latest gnu-win32 distribution, available from 
            http://www.cygnus.com/misc/gnu-win32/ (release b19 or later)
         Perl,version 5.003 or later, available from 
-            http://www.perl.org/CPAN/ports/win32/
+            http://www.ActiveState.com/pw32/
 
 Optional items 
         CVS, version 1.9 or later, available from

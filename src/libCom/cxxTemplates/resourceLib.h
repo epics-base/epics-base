@@ -69,7 +69,8 @@
 #include "locationException.h"
 typedef size_t resTableIndex;
 
-template <class T, class ID> class resTableIter;
+template < class T, class ID > class resTableIter;
+template < class T, class ID > class resTableIterConst;
 
 //
 // class resTable <T, ID>
@@ -102,17 +103,19 @@ public:
     resTable ();
     virtual ~resTable();
     // Call " void T::show (unsigned level)" for each entry
-    void show (unsigned level) const;
+    void show ( unsigned level ) const;
     void verify () const;
     int add ( T & res ); // returns -1 (id exists in table), 0 (success)
-    T * remove (const ID &idIn); // remove entry
-    void removeAll (tsSLList<T> & destination); // remove all entries
-    T * lookup (const ID &idIn) const; // locate entry
+    T * remove ( const ID &idIn ); // remove entry
+    void removeAll ( tsSLList<T> & destination ); // remove all entries
+    T * lookup ( const ID &idIn ) const; // locate entry
     // Call (pT->*pCB) () for each entry
     void traverse ( void (T::*pCB)() );
     void traverseConst ( void (T::*pCB)() const ) const;
     unsigned numEntriesInstalled () const;
     void setTableSize ( const unsigned newTableSize );
+    resTableIter < T, ID > firstIter ();
+    resTableIterConst < T, ID > firstIter () const;
 private:
     tsSLList < T > * pTable;
     unsigned nextSplitIndex;
@@ -129,7 +132,8 @@ private:
     resTable ( const resTable & );
     resTable & operator = ( const resTable & );
     static unsigned resTableBitMask ( const unsigned nBits );
-    friend class resTableIter<T,ID>;
+    friend class resTableIter < T, ID >;
+    friend class resTableIterConst < T, ID >;
 };
 
 //
@@ -137,16 +141,53 @@ private:
 //
 // an iterator for the resource table class
 //
-template <class T, class ID>
+template < class T, class ID >
 class resTableIter {
 public:
-    resTableIter (const resTable<T,ID> &tableIn);
-    T * next ();
-    T * operator () ();
+    resTableIter ();
+    bool valid () const;
+    bool operator == ( const resTableIter < T,ID > & rhs ) const;
+    bool operator != ( const resTableIter < T,ID > & rhs ) const;
+    resTableIter < T, ID > & operator = ( const resTableIter < T, ID > & );
+    T & operator * () const;
+    T * operator -> () const;
+    resTableIter < T, ID > & operator ++ (); 
+    resTableIter < T, ID > operator ++ ( int ); 
+    T * pointer ();
 private:
-    tsSLIter<T> iter;
+    tsSLIter < T > iter;
     unsigned index;
-    const resTable<T,ID> &table;
+    resTable < T,ID > * pResTable;
+    resTableIter ( resTable < T,ID > & tableIn );
+    void findNextEntry ();
+    friend class resTable < T, ID >;
+};
+
+//
+// class resTableIterConst
+//
+// an iterator for a const resource table class
+//
+template < class T, class ID >
+class resTableIterConst {
+public:
+    resTableIterConst ();
+    bool valid () const;
+    bool operator == ( const resTableIterConst < T,ID > & rhs ) const;
+    bool operator != ( const resTableIterConst < T,ID > & rhs ) const;
+    resTableIterConst < T, ID > & operator = ( const resTableIterConst < T, ID > & );
+    const T & operator * () const;
+    const T * operator -> () const;
+    resTableIterConst < T, ID > & operator ++ (); 
+    resTableIterConst < T, ID > operator ++ ( int ); 
+    const T * pointer () const;
+private:
+    tsSLIterConst < T > iter;
+    unsigned index;
+    const resTable < T,ID > * pResTable;
+    resTableIterConst ( const resTable < T,ID > & tableIn );
+    void findNextEntry ();
+    friend class resTable < T, ID >;
 };
 
 //
@@ -645,7 +686,7 @@ int resTable<T,ID>::add ( T &res )
 // (or NULL if nothing matching was found)
 //
 template <class T, class ID>
-T *resTable<T,ID>::find ( tsSLList<T> &list, const ID &idIn ) const
+T * resTable<T,ID>::find ( tsSLList<T> &list, const ID &idIn ) const
 {
     tsSLIter <T> pItem = list.firstIter ();
     while ( pItem.valid () ) {
@@ -686,51 +727,205 @@ inline resTable<T,ID> & resTable<T,ID>::operator = ( const resTable & )
     return *this;
 }
 
+template <class T, class ID>
+resTableIterConst < T, ID > resTable<T,ID>::firstIter () const
+{
+    return resTableIterConst < T, ID > ( *this );
+}
+
+template <class T, class ID>
+resTableIter < T, ID > resTable<T,ID>::firstIter ()
+{
+    return resTableIter < T, ID > ( *this );
+}
+
 //////////////////////////////////////////////
 // resTableIter<T,ID> member functions
 //////////////////////////////////////////////
 
-//
-// resTableIter<T,ID>::resTableIter ()
-//
-template <class T, class ID>
-inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
-    iter ( tableIn.pTable ? tableIn.pTable[0].firstIter () : 
-            tsSLList<T>::invalidIter() ), 
-    index (1), table ( tableIn ) {} 
-
-//
-// resTableIter<T,ID>::next ()
-//
-template <class T, class ID> 
-T * resTableIter<T,ID>::next ()
+template < class T, class ID >
+inline resTableIter<T,ID>::resTableIter ( resTable < T,ID > & tableIn ) : 
+    index ( 0 ), pResTable ( & tableIn ) 
 {
-    if ( this->iter.valid () ) {
-        T *p = this->iter.pointer ();
-        this->iter++;
-        return p;
-    }
-    unsigned N = this->table.tableSize();
-    while ( true ) {
-        if ( this->index >= N ) {
-            return 0;
+    this->findNextEntry ();
+} 
+
+template < class T, class ID >
+inline resTableIter<T,ID>::resTableIter () : 
+    iter ( tsSLList<T>::invalidIter() ), 
+    index ( 0 ), pResTable ( 0 ) 
+{
+} 
+
+template < class T, class ID >
+void resTableIter<T,ID>::findNextEntry () 
+{
+    if ( this->pResTable ) {
+        while ( this->index < this->pResTable->tableSize() ) {
+            this->iter = this->pResTable->pTable[this->index++].firstIter ();
+            if ( this->iter.valid () ) {
+                break;
+            }
         }
-        this->iter = tsSLIter<T> ( this->table.pTable[this->index++].firstIter () );
-        if ( this->iter.valid () ) {
-            T *p = this->iter.pointer ();
-            this->iter++;
-            return p;
-        }
     }
+} 
+
+template < class T, class ID >
+inline bool resTableIter<T,ID>::valid () const
+{
+    return this->iter.valid ();
 }
 
-//
-// resTableIter<T,ID>::operator () ()
-//
-template <class T, class ID>
-inline T * resTableIter<T,ID>::operator () ()
+template < class T, class ID >
+inline bool resTableIter<T,ID>::operator == ( const resTableIter < T,ID > & rhs ) const
 {
-    return this->next ();
+    return ( this->pResTable == rhs.pResTable && this->index == rhs.index && this->iter == rhs.iter );
+}
+
+template < class T, class ID >
+inline bool resTableIter<T,ID>::operator != ( const resTableIter < T,ID > & rhs ) const
+{
+    return ! this->operator == ( rhs );
+}
+
+template < class T, class ID >
+inline resTableIter < T, ID > & resTableIter<T,ID>::operator = ( const resTableIter < T, ID > & )
+{
+    this->pTable = rhs.pTable;
+    this->index = rhs.index; 
+    this->iter = rhs.iter;
+    return *this;
+}
+
+template < class T, class ID >
+inline T & resTableIter<T,ID>::operator * () const
+{
+    return this->iter.operator * ();
+}
+
+template < class T, class ID >
+inline T * resTableIter<T,ID>::operator -> () const
+{
+    return this->iter.operator -> ();
+}
+
+template < class T, class ID >
+inline resTableIter<T,ID> & resTableIter<T,ID>::operator ++ ()
+{
+    this->iter++;
+    if ( ! this->iter.valid() ) {
+        this->findNextEntry ();
+    }
+    return *this;
+}
+
+template < class T, class ID >
+inline resTableIter<T,ID> resTableIter<T,ID>::operator ++ ( int )
+{
+    resTableIter<T,ID> tmp = *this;
+    this->operator ++ ();
+    return tmp;
+}
+
+template < class T, class ID >
+inline T * resTableIter<T,ID>::pointer () 
+{
+    return this->iter.pointer ();
+}
+
+//////////////////////////////////////////////
+// resTableIterConst<T,ID> member functions
+//////////////////////////////////////////////
+
+template < class T, class ID >
+inline resTableIterConst<T,ID>::resTableIterConst ( const resTable < T,ID > & tableIn ) : 
+    index ( 0 ), pResTable ( & tableIn ) 
+{
+    this->findNextEntry ();
+} 
+
+template < class T, class ID >
+inline resTableIterConst<T,ID>::resTableIterConst () : 
+    iter ( tsSLList<T>::invalidIter() ), 
+    index ( 0 ), pResTable ( 0 ) 
+{
+} 
+
+template < class T, class ID >
+void resTableIterConst<T,ID>::findNextEntry () 
+{
+    if ( this->pResTable ) {
+        while ( this->index < this->pResTable->tableSize() ) {
+            const tsSLList<T> * pList = & this->pResTable->pTable[this->index++];
+            this->iter = pList->firstIter ();
+            if ( this->iter.valid () ) {
+                break;
+            }
+        }
+    }
+} 
+
+template < class T, class ID >
+inline bool resTableIterConst<T,ID>::valid () const
+{
+    return this->iter.valid ();
+}
+
+template < class T, class ID >
+inline bool resTableIterConst<T,ID>::operator == ( const resTableIterConst < T,ID > & rhs ) const
+{
+    return ( this->pTable == rhs.pTable && this->index == rhs.index && this->iter == rhs.iter );
+}
+
+template < class T, class ID >
+inline bool resTableIterConst<T,ID>::operator != ( const resTableIterConst < T,ID > & rhs ) const
+{
+    return ! this->operator == ( rhs );
+}
+
+template < class T, class ID >
+inline resTableIterConst < T, ID > & resTableIterConst<T,ID>::operator = ( const resTableIterConst < T, ID > & )
+{
+    this->pTable = rhs.pTable;
+    this->index = rhs.index; 
+    this->iter = rhs.iter;
+    return *this;
+}
+
+template < class T, class ID >
+inline const T & resTableIterConst<T,ID>::operator * () const
+{
+    return this->iter.operator * ();
+}
+
+template < class T, class ID >
+inline const T * resTableIterConst<T,ID>::operator -> () const
+{
+    return this->iter.operator -> ();
+}
+
+template < class T, class ID >
+inline resTableIterConst<T,ID> & resTableIterConst<T,ID>::operator ++ ()
+{
+    this->iter++;
+    if ( ! this->iter.valid() ) {
+        this->findNextEntry ();
+    }
+    return *this;
+}
+
+template < class T, class ID >
+inline resTableIterConst<T,ID> resTableIterConst<T,ID>::operator ++ ( int )
+{
+    resTableIterConst<T,ID> tmp = *this;
+    this->operator ++ ();
+    return tmp;
+}
+
+template < class T, class ID >
+inline const T * resTableIterConst<T,ID>::pointer () const
+{
+    return this->iter.pointer ();
 }
 
 //////////////////////////////////////////////

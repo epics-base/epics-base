@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.20  1999/04/30 15:37:31  jhill
+ * doc
+ *
  * Revision 1.19  1998/12/19 00:04:51  jhill
  * renamed createPV() to pvAttach()
  *
@@ -122,8 +125,8 @@ private:
 };
 
 enum casResType {casChanT=1, casClientMonT, casPVT};
- 
-class casRes : public uintRes<casRes>
+
+class casRes : public chronIntIdRes<casRes>
 {
 public:
 	virtual ~casRes();

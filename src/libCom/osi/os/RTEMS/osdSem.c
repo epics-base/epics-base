@@ -6,11 +6,19 @@
  *              (306) 966-6055
  */
 
+/*
+ * We want to print out some information which is
+ * normally hidden from application programs.
+ */
+#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
+
 #include <assert.h>
+#include <stdio.h>
 #include <rtems.h>
 #include <rtems/error.h>
 
 #include "osiSem.h"
+#include "osiThread.h"
 #include "errlog.h"
 
 /*
@@ -131,8 +139,43 @@ semBinaryTakeNoWait(semBinaryId id)
 }
 
 void
-semBinaryShow(semBinaryId id,unsigned int level)
+semBinaryShow(semBinaryId id, unsigned int level)
 {
+#if __RTEMS_VIOLATE_KERNEL_VISIBILITY__
+    rtems_id sid = (rtems_id)id;
+    Semaphore_Control *the_semaphore;
+    Semaphore_Control semaphore;
+    Objects_Locations location;
+
+    the_semaphore = _Semaphore_Get (sid, &location);
+    if (location != OBJECTS_LOCAL)
+        return;
+    /*
+     * Yes, there's a race condition here since an interrupt might
+     * change things while the copy is in progress, but the information
+     * is only for display, so it's not that critical.
+     */
+    semaphore = *the_semaphore;
+    _Thread_Enable_dispatch();
+    printf ("          %8.8x  ", sid);
+    if (_Attributes_Is_counting_semaphore (semaphore.attribute_set)) {
+            printf ("Count: %d", semaphore.Core_control.semaphore.count);
+    }
+    else {
+        if (_CORE_mutex_Is_locked(&semaphore.Core_control.mutex)) {
+            char name[20];
+            threadGetName ((threadId)semaphore.Core_control.mutex.holder_id, name, sizeof name);
+            printf ("Held by:%8.8x (%s)  Nest count:%d",
+                                    semaphore.Core_control.mutex.holder_id,
+                                    name,
+                                    semaphore.Core_control.mutex.nest_count);
+        }
+        else {
+            printf ("Not Held");
+        }
+    }
+    printf ("\n");
+#endif
 }
 
 semMutexId

@@ -1975,7 +1975,7 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
      * stop further use of server if memory becomes scarse
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
-                            && freeListItemsAvail ( rsrvEventFreeList ) > 0;
+                            && freeListItemsAvail ( rsrvEventFreeList ) > 10;
     if ( ! ( casSufficentSpaceInPool || spaceAvailOnFreeList ) ) { 
         SEND_LOCK(client);
         send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );

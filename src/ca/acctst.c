@@ -2410,6 +2410,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
+    grEnumTest ( chan, interestLevel );
     test_sync_groups ( chan, interestLevel );
     verifyChannelPriorities ( pName );
     verifyTimeStamps ( chan );
@@ -2418,7 +2419,6 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     arrayTest ( chan, maxArrayBytes, interestLevel ); 
     verifyMonitorSubscriptionFlushIO ( chan, interestLevel );
     monitorSubscriptionFirstUpdateTest ( pName, chan, interestLevel );
-    grEnumTest ( chan, interestLevel );
     ctrlDoubleTest ( chan, interestLevel );
     verifyBlockInPendIO ( chan, interestLevel );
     verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX, 

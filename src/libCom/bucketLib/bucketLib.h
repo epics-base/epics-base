@@ -27,32 +27,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *      Modification Log:
- *      -----------------
- * 	.01 091493 joh	added nEntries to struct bucket
- * 	.02 121693 joh	added bucketFree() 
- * 	.03 052395 joh	use std EPICS status 
- *	$Log$
- *	Revision 1.7  1998/02/27 01:34:08  jhill
- *	cleaned up the DLL symbol export
- *	
- *	Revision 1.6  1998/02/20 21:45:10  evans
- *	Made a large number of changes to epicsShareThings in libCom routines
- *	to get imports and exports straight on WIN32.  Not everything is fixed
- *	at this time.
- *
- *	Revision 1.5  1997/05/01 19:57:13  jhill
- *	updated dll keywords
- *
- *	Revision 1.4  1997/04/29 06:17:18  jhill
- *	use free lists
- *
- *	Revision 1.3  1997/04/10 19:45:35  jhill
- *	API changes and include with  not <>
- *
- *	Revision 1.2  1996/06/19 19:44:53  jhill
- *	C++ support
- *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted

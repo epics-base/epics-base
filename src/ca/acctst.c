@@ -5,6 +5,10 @@
 
 static char *sccsId = "@(#) $Id$";
 
+/*
+ * $Log$
+ */
+
 #ifdef VMS
 #include <LIB$ROUTINES.H>
 #endif
@@ -115,6 +119,26 @@ int doacctst(char *pname)
 #ifdef VMS
 	lib$init_timer();
 #endif /*VMS*/
+
+	{
+		TS_STAMP	end_time;
+		TS_STAMP	start_time;
+		double		delay;
+		double		request = 0.5;
+		double		accuracy;
+
+		tsLocalTime(&start_time);
+		status = ca_pend_event(request);
+		if (status != ECA_TIMEOUT) {
+			SEVCHK(status, NULL);
+		}
+		tsLocalTime(&end_time);
+		TsDiffAsDouble(&delay,&end_time,&start_time);
+		accuracy = 100.0*(delay-request)/request;
+		printf("CA pend event delay accuracy = %f %%\n",
+			accuracy);
+		assert (abs(accuracy) < 10.0);
+	}
 
 	ptr = (struct dbr_gr_float *)
 		malloc(dbr_size_n(DBR_GR_FLOAT, NUM));  

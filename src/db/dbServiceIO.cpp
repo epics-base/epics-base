@@ -257,17 +257,17 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
         while ( ( pIO = chan.dbServicePrivateListOfIO::eventq.get() ) ) {
             this->ioTable.remove ( *pIO );
             tmp.add ( *pIO );
-            // this prevents a db event callback from coming 
-            // through after the IO is deleted
-            pIO->unsubscribe ();
         }
         if ( chan.dbServicePrivateListOfIO::pBlocker ) {
             this->ioTable.remove ( *chan.dbServicePrivateListOfIO::pBlocker );
         }
     }
     while ( ( pIO = tmp.get() ) ) {
+        // This prevents a db event callback from coming 
+        // through after the IO is deleted
+        pIO->unsubscribe ();
         // If they call ioCancel() here it will be ignored
-        // because the IO has been unregistered above
+        // because the IO has been unregistered above.
         pIO->channelDeleteException ();
         pIO->destroy ();
     }

@@ -1,0 +1,91 @@
+# $Id$
+#
+# This file is maintained by the EPICS community.
+
+# OLDINSTALL def used only for releases prior to R3.12.2.2
+# Unix Compiler and other Utilities
+OLDINSTALL = echo CONFIG.Vx.486 OLDINSTALL
+
+MV=mv
+RM=rm -f
+CP=cp
+RMDIR=rm -rf
+MKDIR=mkdir
+
+#	overrides defines in CONFIG_SITE that don't fit Tornado
+#
+#	We are lucky because
+#	this should not really be site specific
+#
+#	(if Tornado is installed correctly
+#	   -> WIND_BASE, WIND_HOST_TYPE set  )
+#
+#	At first we hack a little bit on WIND_BASE 
+#	to convert the DOS style into a Unix style path:
+#
+#	If C: was in WIND_BASE, it's converted into c: (lowercase),
+#	then c: is removed and all '\' are converted into '/'.
+SANE_WIND_BASE := $(subst \,/,$(subst c:,,$(subst C:,c:,$(WIND_BASE))))
+VX_DIR         := $(SANE_WIND_BASE)/target
+VX_GNU         := $(SANE_WIND_BASE)/host/$(WIND_HOST_TYPE)
+VX_GNU_BIN     := $(VX_GNU)/bin
+VX_GNU_LIB     := $(VX_GNU)/lib
+VX_IMAGE        = $(VX_CONFIG_DIR)/$(T_A)/vxWorks
+VX_IMAGE_SYM    = $(VX_CONFIG_DIR)/$(T_A)/vxWorks.sym
+
+
+AR = $(VX_GNU_BIN)/ar386
+RANLIB = $(VX_GNU_BIN)/ranlib386
+YACC = $(EYACC)
+LEX = $(ELEX)
+CC = $(VX_GNU_BIN)/cc386 -B$(VX_GNU_LIB)/gcc-lib/ -nostdinc -fno-builtin -fno-defer-pop
+CPP = $(VX_GNU_BIN)/cpp386 -nostdinc
+#CPP = $(CC) -E
+GCC = $(CC)
+LD = $(VX_GNU_BIN)/ld386 -r
+EPICS_LDLIBS =
+
+# special c library requirements
+SPECIAL_LANG =
+
+# Compiler flags, don't mess with this
+#    Optimization flags
+VX_OPT_YES = -O
+VX_OPT_NO = -O0
+VX_OPT_FLAGS = $(VX_OPT_$(VX_OPT))
+ 
+#    Include files
+VX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)	\
+	 -I$(EPICS_BASE_INCLUDE)/os/vxWorks -I$(VX_INCLUDE)
+
+#    Warnings
+#At some time we should turn on pedantic
+#VX_WARN_YES = -Wall -pedantic
+VX_WARN_YES = -W
+VX_WARN_NO =
+VX_WARN_FLAGS = $(VX_WARN_$(VX_WARN))
+ 
+#    Operating system flags
+VX_OP_SYS_FLAGS = -DvxWorks -DV5_vxWorks
+ 
+#    Arch dependent flags are set in CONFIG_ARCH.*
+VX_CFLAGS = $(VX_OPT_FLAGS) $(VX_WARN_FLAGS) $(USR_INCLUDES) \
+        $(VX_INCLUDES) $(VX_OP_SYS_FLAGS)
+ 
+VX_LDFLAGS = -o
+ 
+TARGET_CFLAGS = $($(basename $@)_CFLAGS)
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+
+CFLAGS = $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VX_CFLAGS)
+LDFLAGS = $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(VX_LDFLAGS)
+ 
+# Build compile line here
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
+COMPILE.cc = $(CC) -x 'c++' $(CFLAGS) $(CPPFLAGS)  -c
+LINK.c = $(LD) $(LDFLAGS)
+
+CPPSNCFLAGS = $(USR_INCLUDES) $(VX_INCLUDES)
+
+DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Vx.68k

@@ -1,0 +1,583 @@
+# $Id$
+#
+#	Rules for making things specified in Makefile.Host
+#
+#	Some rules for filename-massage are system specific
+#	and have "ifdefs" here instead of using definitions
+#	from CONFIG.Host.$(ARCH_CLASS)  -  sorry about this,
+#	but so far the rules are quite similar on all systems
+#	except WIN32 has some specials.
+#
+#	Maybe there is a way to use indentation to make it
+#	easier to read this file?
+#
+#	Most things may also work if you say e.g.
+#		VAR+=ADD
+#	even if ADD is not there, but this way "VAR" would
+#	be defined in any case, that's why I try to use
+#		ifdef ADD
+#		VAR+=ADD
+#		endif
+#
+#	-kuk-
+
+#	we are in O.$(ARCH_CLASS), but most sources are one dir above:
+#
+#	The use of VPATH (no suffix specification) caused everything
+#	to break several times.
+#	vpath, of course, has the disadvantage that we need explicit rules
+#	for scripts or similar os-specific filed which have _no_ suffix...
+vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+#	This prevents base/src/include/*.h from being installed. Why??
+#vpath %.h ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.h $(USER_VPATH)   
+
+#	check for add-on CFLAGS and CXXFLAGS
+#
+#	Rules:
+#	1) USR_CFLAGS is used
+#	2) if there is a special USR_CFLAGS_$(ARCH_CLASS), it's
+#	   appended to 1)
+#	3) if there is no special defined, but a generic USR_CFLAGS_DEFAULT,
+#	   this one is appended
+#	4) if you have the special case that your USR_CFLAGS_$(ARCH_CLASS) is
+#	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
+#		USR_CFLAGS := <defines for all systems>
+#		USR_CFLAGS_sun4 := -nil-
+#		USR_CFLAGS_DEFAULT := <defines for most systems, not sun4>
+#
+#	These rules apply to these Makefile-variables:
+#	USR_CFLAGS	C flags
+#	USR_CXXFLAGS	C++ flags
+#	INC		include-files to install
+#	LIBSRCS		source files for building library
+#	PROD_LIBS	libs needed by PROD
+#	PROD		products to build and install
+#	SCRIPTS		scripts to install
+#
+#	Remark:
+#	If you define a special INC, e.g. INC_WIN32 := getopt.h,
+#	the source (getopt.h) has to be in os/WIN32 (or os/<your ARCH_CLASS>)
+#
+#	This makes INC_$(ARCH_CLASS) slightly different from OSINC:
+#	OSINC := a_file.h
+#	means that you have a special  os/$(ARCH_CLASS)/a_file.h
+#	for _every_ ARCH_CLASS.
+#	If you use INC_$(ARCH_CLASS), you need the special include
+#	only for the specified ARCH_CLASS!
+#
+ifneq (x$(USR_CFLAGS_$(ARCH_CLASS)),x)
+USR_CFLAGS+=$(subst -nil-,,$(USR_CFLAGS_$(ARCH_CLASS)))
+else
+ifdef USR_CFLAGS_DEFAULT
+USR_CFLAGS+=$(USR_CFLAGS_DEFAULT)
+endif
+endif
+
+ifneq (x$(USR_CXXFLAGS_$(ARCH_CLASS)),x)
+USR_CXXFLAGS+=$(subst -nil-,,$(USR_CXXFLAGS_$(ARCH_CLASS)))
+else
+ifdef USR_CXXFLAGS_DEFAULT
+USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
+endif
+endif
+
+#	check for special includes:
+#
+ifneq (x$(INC_$(ARCH_CLASS)),x)
+#	os-specific includes go to the include/os-directory:
+OSINC += $(subst -nil-,,$(INC_$(ARCH_CLASS)))
+else
+ifdef INC_DEFAULT
+INC += $(INC_DEFAULT)
+endif
+endif
+
+#	concat specific library contents (if defined) to LIBCONTENS
+#
+ifneq (x$(LIBSRCS_$(ARCH_CLASS)),x)
+LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(ARCH_CLASS)))
+else
+
+ifdef LIBSRCS_DEFAULT
+LIBSRCS+=$(LIBSRCS_DEFAULT)
+endif
+
+endif
+
+#	adjust object names for library contents
+#
+ifdef LIBSRCS
+LIBOBJS=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
+endif
+
+#
+#	concat specific library contents (if defined) to PROD_LIBS
+#
+ifneq (x$(PROD_LIBS_$(ARCH_CLASS)),x)
+PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(ARCH_CLASS)))
+
+else
+
+ifdef PROD_LIBS_DEFAULT
+PROD_LIBS += $(PROD_LIBS_DEFAULT)
+endif
+
+endif
+
+#
+#	concat specific products
+#
+ifneq (x$(PROD_$(ARCH_CLASS)),x)
+PROD += $(subst -nil-,,$(PROD_$(ARCH_CLASS)))
+
+else
+
+ifdef PROD_DEFAULT
+PROD += $(PROD_DEFAULT)
+endif
+
+endif
+
+#
+#	concat specific scripts
+#
+ifneq (x$(SCRIPTS_$(ARCH_CLASS)),x)
+SCRIPTS += $(subst -nil-,,$(SCRIPTS_$(ARCH_CLASS)))
+
+else
+
+ifdef SCRIPTS_DEFAULT
+SCRIPTS += $(SCRIPTS_DEFAULT)
+endif
+
+endif
+
+# -------------------------------------------------------------------
+#	adjust names to platform specific pre-/postfixes,
+#	this is ugly (ifdef XXX...) but hopefully get's you there...
+# -------------------------------------------------------------------
+
+#	adjust names of libraries to build
+#
+#	But: if there are no objects LIBOBJS to include
+#	in this library (may be for e.g. base/src/libCompat
+#	on some archs), don't define (and build) any library!
+ifdef LIBRARY
+ifdef LIBOBJS
+
+ifndef WIN32
+#	handle plain Unix first because it's easy: <lib> ->  lib<lib>.a
+LIBNAME:=$(LIBRARY:%=lib%.a)
+
+else
+#	WIN32 library name:
+LIBNAME:=$(LIBRARY).lib
+#	check if DLL or plain lib requested:
+ifeq ($(LIBTYPE),SHARED)
+#	create name for dll, import file
+DLLNAME:=$(LIBRARY).dll
+#	libs defined that we need to link the DLL with?
+DLL_DEP_LIBS:=$(DLL_LIBS:%=$(INSTALL_LIB)/%.lib)
+endif # LIBTYPE=SHARED
+endif # WIN32
+
+endif
+endif # LIBRARY and LIBOBJS
+
+#	dito for libraries used by PROD
+#
+ifdef PROD_LIBS
+
+ifdef WIN32
+PRODDEPLIBS:=$(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
+#	add to USR_LDLIBS so that the libs are linked
+#	we need the full path because there is no "-L" option on WIN32....
+USR_LDLIBS += $(PRODDEPLIBS)
+else
+#	On Unix: library "ca" is linked with "-lca"  etc.
+#	A library may be just newly build in the local dir: add "-L."
+PRODDEPLIBS=$(PROD_LIBS:%=lib%.a)
+USR_LDLIBS += $(PROD_LIBS:%=-l%) -L.
+endif
+
+endif
+
+
+#	adjust executables
+ifdef PROD
+PROD := $(addsuffix $(EXE), $(PROD))
+endif
+
+ifdef TESTPROD
+TESTPROD := $(addsuffix $(EXE), $(TESTPROD))
+endif
+
+#	----------------------------------------------------
+#	create names (lists) for installed things
+#	----------------------------------------------------
+
+#	each list starts with the destination directory name(s)
+#	to make sure it's there
+
+INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
+
+#	DLLs (only defined on WIN32) are like executables:
+ifdef DLLNAME
+INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
+endif
+
+INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
+INSTALL_INC= $(INC:%=$(INSTALL_INCLUDE)/%)
+INSTALL_OSINCLUDE=$(INSTALL_INCLUDE)/os/$(ARCH_CLASS)
+INSTALL_OSINC= $(OSINC:%= $(INSTALL_OSINCLUDE)/%)
+MANLIST = 1 2 3 4 5 6 7 8 9
+INSTALL_MANS = $(foreach n, \
+        $(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
+INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
+ifdef TEMPLATES_DIR
+INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+else
+INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
+endif
+INSTALL_TEMPLATE = $(TEMPLATES:%= $(INSTALL_TEMPLATES_SUBDIR)/%)
+INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
+
+MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
+
+DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/os \
+	$(INSTALL_OSINCLUDE) $(INSTALL_DOC) \
+	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) $(INSTALL_LIB) \
+	$(INSTALL_LOCATION_LIB) $(INSTALL_CONFIG) \
+	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN) \
+	$(INSTALL_TEMPLATES) 
+
+ifdef TEMPLATES_DIR
+DIRECTORY_TARGETS += $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+endif
+
+
+#	Main target
+#
+all::	install
+
+#	Problem on WIN32:
+#	There seems to be no -L switch, so we have to specify the
+#	full library names (including the path).
+#	OK, so we prefix all libs by $(INSTALL_LIB) to be able to link
+#	with the installed libraries. This means, however, that
+#	libs have to be installed _before_ we build any PROD that uses them,
+#	because we cannot use them from the current O.WIN32 directory any more.
+#	Example: dbExpand etc. in dbStatic all need the db library.
+#
+#	Solution: place INSTALL_DLLS and _LIBS in build
+#
+build:: $(LIBNAME) $(DLLNAME) \
+	$(INSTALL_LOCATION_LIB) $(INSTALL_LIB)\
+	$(INSTALL_LIBS) $(INSTALL_DLLS) $(PROD) $(TESTPROD)
+
+
+inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) \
+	$(INSTALL_INCLUDE)/os $(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
+
+rebuild:: clean install
+
+install:: inc buildInstall 
+
+buildInstall :: build $(TARGETS) $(INSTALL_LOCATION_BIN) \
+	$(INSTALL_BIN) $(INSTALL_SCRIPTS) $(INSTALL_PROD) \
+	$(INSTALL_MAN) $(INSTALL_MANS) \
+	$(INSTALL_DOC) $(INSTALL_DOCS) \
+	$(INSTALL_TEMPLATES) $(INSTALL_TEMPLATES_SUBDIR) $(INSTALL_TEMPLATE) \
+	$(INSTALL_CONFIG) $(INSTALL_CONFIGS) 
+
+depends:: $(LIBSRCS) $(SRCS)
+	$(RM) .DEPENDS
+	touch .DEPENDS
+ifdef DEPENDS_RULE
+	$(DEPENDS_RULE)
+else
+	@echo RULES.Host: You have no DEPENDS_RULE defined for $(ARCH_CLASS)
+	@echo (DEPENDS_RULE should be able to handle both C and C++ files,
+	@echo  use a script if all else failes)
+	@exit
+endif
+
+
+clean::
+	@echo "Cleaning"
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(LIBNAME) $(INC)
+
+$(DIRECTORY_TARGETS) :
+	$(MKDIR) $@
+
+# Problem: PRODDEPLIBS may contain libm.a etc. which we cannot locate
+# But: The order in build/install should make sure that libs are
+# in place before we build PROD anyway.
+# $(PROD): $(PRODDEPLIBS)
+
+#  The order of the following dependencies is
+#  VERY IMPORTANT !!!!
+
+#	generic rule to build executable from same-name-object:
+# 	(this should be handled by the implicit rule below)
+#
+#%$(EXE):	%$(OBJ)
+#ifdef WIN32
+#	$(LINK.c) $< $(LDLIBS)
+#else
+#	$(RM) $@
+#	echo LINKING:
+#	$(LINK.c) $< $(LDLIBS)
+#endif
+
+#	explicit list of source files given for PROD ?
+#	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
+ifdef SRCS
+
+ifeq ($(findstring cc,$(suffix $(SRCS))),cc)
+PROD_LINKER = $(LINK.cc)
+else
+PROD_LINKER = $(LINK.c)
+endif
+
+PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
+
+$(PROD): $(PROD_OBJS)
+	$(RM) $@
+	echo $(LDLIBS)
+	$(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
+endif
+
+#	explicit list of source files given for TESTPROD ?
+#	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
+ifdef TESTPROD_SRCS
+
+ifeq ($(findstring cc,$(suffix $(TESTPROD_SRCS))),cc)
+TESTPROD_LINKER = $(LINK.cc)
+else
+TESTPROD_LINKER = $(LINK.c)
+endif
+
+TESTPROD_OBJS=$(addsuffix $(OBJ), $(basename $(TESTPROD_SRCS)))
+
+$(TESTPROD): $(TESTPROD_OBJS)
+	$(RM) $@
+	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
+endif
+
+%$(EXE): %.c
+	$(RM) $@
+	$(LINK.c)  $< $(LDLIBS)
+
+%$(EXE): %.cc
+	$(RM) $@
+	$(LINK.cc)  $< $(LDLIBS)
+
+%$(OBJ): %.c
+	$(RM) $@
+	$(COMPILE.c)  $<
+
+%$(OBJ): %.cc
+	$(RM) $@
+	$(COMPILE.cc)  $<
+
+%.c %.h: ../%.y
+	$(RM) y.tab.c y.tab.h
+	$(YACC) $(YACCOPT) $<
+	@if [ -f y.tab.c ]; \
+		then \
+			echo "$(MV) y.tab.c $*.c"; \
+			$(RM) $*.c; \
+			$(MV) y.tab.c $*.c; \
+	fi
+	@if [ -f y.tab.h ]; \
+		then \
+			echo "$(MV) y.tab.h $*.h"; \
+			$(RM) $*.h; \
+			$(MV) y.tab.h $*.h; \
+	fi
+
+%.c: ../%.l
+	$(RM) lex.yy.c
+	$(LEX) $(LEXOPT) $<
+	$(RM) $@
+	$(MV) lex.yy.c $@
+
+#state notation language rule
+%.c: ../%.st
+	@echo "preprocessing $*.st"
+	@$(RM) $*.i
+	$(CPP) $(CPPFLAGS) $< $*.i
+	@echo "converting $*.i"
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+
+%.c:	%.stt
+	@echo "converting $<"
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $<
+	
+# Capfast Rules:
+%.db: %.edf
+	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+
+%.db: ../%.edf
+	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+
+%.edf: ../%.sch $(DEPSCHS)
+	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
+	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
+
+# Mangen Rule:
+%.1:%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	$(MV) $(<F).nr $(<F).1
+
+# Mangen Rule:
+%.1:../%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	$(MV) $(<F).nr $(<F).1
+
+
+#	Rules for building LIBRARY with LIBSRCS
+#	(which are now LIBNAME, LIBOBJS)
+#
+ifdef WIN32
+
+ifeq ($(LIBTYPE),SHARED)
+#	A WIN32 dll has tree parts:
+#	x.dll: the real dll (DLLNAME)
+#	x.lib: what you link to progs that use the dll (LIBNAME)
+#	x.exp: what you need to build the dll (in no variable)
+#
+#	the latter two are created automatically when building the dll:
+$(LIBNAME):	$(DLLNAME)
+
+#	test if there is a def file for this dll:
+#
+DLL_DEF_FILE := ../$(LIBRARY).def
+
+ifeq ($(DLL_DEF_FILE), $(wildcard $(DLL_DEF_FILE)))
+DLL_DEF := -def:$(DLL_DEF_FILE)
+endif
+
+#	Ugly trick:
+#	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
+#	which in turn are used in COMPILE.c[c]
+#
+#	If we compile a .c, .cc into an $(OBJ),
+#	we test if this object is part of the 
+#	library objects LIBOBJS.
+#	If so, we define _WINDLL so that
+#	e.g. include/shareLib.h works correctly.
+#
+#HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
+
+$(DLLNAME): $(LIBOBJS)
+	link	$(WIN32LDFLAGS)\
+		-implib:$(LIBNAME) -out:$(DLLNAME) $(DLL_DEF) \
+		$(DLL_DEP_LIBS) $(LIBOBJS)
+else
+#	still on WIN32, this time no DLL but plain lib requested:
+$(LIBNAME):	$(LIBOBJS)
+	lib -nologo -verbose -out:$(LIBNAME)\
+		$(LIBOBJS)
+	lib -nologo -list $(LIBNAME)
+
+endif # LIBTYPE is SHARED ?
+
+else  # not WIN32
+
+#	usual Unix rule for lib creation
+$(LIBNAME): $(LIBOBJS)
+	$(RM) $@
+	$(ARCMD) $@ $(LIBOBJS)
+	@if [ ! -z "$(RANLIB)" ] ; then\
+		echo $(RANLIB) $@; \
+		$(RANLIB) $@; \
+	fi
+endif # ifdef WIN32
+# end of library creation rules
+
+
+$(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
+	@echo "Installing os-specific script $@"
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: %
+	@echo "Installing binary $@"
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: ../%
+	@echo "Installing script $@"
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_LIB)/%.a: %.a
+	@echo "Installing library $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+	@if [ ! -z "$(RANLIB)" ] ; then\
+		$(RANLIB) $(RANLIBFLAGS) $@; \
+	fi
+
+$(INSTALL_LIB)/%.lib: %.lib
+	@echo "Installing library $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+
+$(INSTALL_CONFIG)/%: %
+	@echo "Installing config file $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+
+$(INSTALL_CONFIG)/%: ../%
+	@echo "Installing config file $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
+	@echo "Installing man file $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../% 
+	@echo "Installing man file $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_INCLUDE)/%: %
+	@echo "Installing include file $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_INCLUDE)/%: ../%
+	@echo "Installing include file $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_DOC)/%: %
+	@echo "Installing doc $@"
+	@testmkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_DOC)/%: ../%
+	@echo "Installing doc $@"
+	@testmkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+
+.PRECIOUS: %.o %.c
+
+-include .DEPENDS
+
+.PHONY:: all inc depends build install clean rebuild buildInstall
+
+#	EOF RULES.Host

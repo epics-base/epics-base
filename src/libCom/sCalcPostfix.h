@@ -32,6 +32,8 @@
 #ifndef INCpostfixh
 #define INCpostfixh
 
+#include "shareLib.h"
+
 long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror);
 epicsShareFunc long epicsShareAPI 
 	sCalcPerform(double *parg, int numArgs, char **psarg, int numSArgs, double *presult, char *psresult, int lenSresult, char *post);

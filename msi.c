@@ -25,7 +25,7 @@ of this distribution.
 #include <macLib.h>
 #include <ellLib.h>
 
-#define MAX_BUFFER_SIZE 1024
+#define MAX_BUFFER_SIZE 4096
 
 /*Forward references to local routines*/
 static void usageExit(void);
@@ -558,6 +558,7 @@ static int substituteGetNextSet(void *pvt,char **filename)
     *filename = psubInfo->filename;
     while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
     if(psubFile->token==tokenLBrace) return(TRUE);
+    if(psubFile->token==tokenRBrace) return(FALSE);
     if(psubFile->token!=tokenString
     || strcmp(psubFile->string,"pattern")!=0) {
         subFileErrPrint(psubFile,"Expecting pattern");

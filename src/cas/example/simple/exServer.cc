@@ -339,7 +339,7 @@ void exAsyncExistIO::expire()
         //
         // post IO completion
         //
-        this->postIOCompletion (pverExistsHere);
+        this->postIOCompletion (pvExistReturn(pverExistsHere));
 }
 
 //

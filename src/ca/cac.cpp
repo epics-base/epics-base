@@ -326,7 +326,7 @@ void cac::processRecvBacklog ()
     }
     if ( deadIIU.count() ) {
         {
-            epicsAutoMutex autoRelease ( this->mutex );
+            epicsAutoMutexRelease autoRelease ( this->mutex );
             while ( tcpiiu *piiu = deadIIU.get() ) {
                 // make certain that:
                 // 1) this is called from the appropriate thread

@@ -1021,7 +1021,12 @@ long epicsShareAPI dbPutField(
 	if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
 	/*begin kludge for old db_access MAX_STRING_SIZE*/
 	/*Allow M for MS and (N or NM) for NMS */
-	strcpy(buffer,(char *)pbuffer);
+        if(strlen((char *)pbuffer)>=MAX_STRING_SIZE) {
+            errlogPrintf("dbPutField input string length >= MAX_STRING_SIZE");
+            return(S_db_badField);
+        }
+        strncpy(buffer,(char *)pbuffer,MAX_STRING_SIZE);
+        buffer[MAX_STRING_SIZE] = 0;
 	/*Strip trailing blanks*/
 	len = strlen(buffer);
 	for(j=len-1; j>0; j--) {

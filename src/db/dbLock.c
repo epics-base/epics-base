@@ -26,15 +26,14 @@ Four problems arise:
 
 1) Two threads simultaneoulsy trying to change lock sets
 2) Another thread has successfully issued a dbScanLock and currently owns it.
-3) A thread is waiting for dbScanLock.
-4) While lock set is being changed, a thread issues a dbScanLock.
+3) While lock set is being changed, a thread issues a dbScanLock.
 
 Solution:
 
 A routine attempting to modify a link must do the following:
 
 Call dbLockSetGblLock before modifying any link and dbLockSetGblUnlock after.
-Call dbLockSetRecordLock for any record referenced during change.
+Call dbLockSetRecordLock for any record referenced during change.  It MUST NOT UNLOCK
 Call dbLockSetSplit before changing any link that is originally a DB_LINK
 Call dbLockSetMerge if changed link becomes a DB_LINK.
 
@@ -43,16 +42,9 @@ Discussion:
 
 Each problem above is solved as follows:
 1) dbLockGlobal solves this problem.
-2) dbLockSetRecordLock solves this problem.
-3) After changing lock sets original semId id deleted.
-   This makes all threads in semTake for that semaphore fail.
-   The code in dbScanLock makes thread recover.
-4) The global variable changingLockSets and code in
-   dbScanLock and semFlush in dbLockSetGblUnlock solves
-   this problem.
+2) dbLockSetRecordLock solves this problem. It takes the lock and then immediately unlocks.
+3) dbScanLock first takes the global lock.
 
-Note that all other threads are prevented from processing records between
-dbLockSetGblLock and dbLockSetGblUnlock. 
 
 dblsr may crash if executed while lock sets are being modified.
 It is NOT a good idea to make it more robust by issuing dbLockSetGblLock
@@ -89,7 +81,6 @@ STATIC int	lockListInitialized = FALSE;
 STATIC ELLLIST lockList;
 STATIC epicsMutexId globalLock;
 STATIC unsigned long id = 0;
-STATIC volatile int changingLockSets = FALSE;
 
 typedef struct lockSet {
 	ELLNODE		node;
@@ -109,6 +100,7 @@ typedef struct lockRecord {
 /*private routines */
 STATIC void initLockList(void)
 {
+    if(lockListInitialized) return;
     ellInit(&lockList);
     globalLock = epicsMutexMustCreate();
     lockListInitialized = TRUE;
@@ -141,12 +133,10 @@ void epicsShareAPI dbLockSetGblLock(void)
 {
     if(!lockListInitialized) initLockList();
     epicsMutexMustLock(globalLock);
-    changingLockSets = TRUE;
 }
 
 void epicsShareAPI dbLockSetGblUnlock(void)
 {
-    changingLockSets = FALSE;
     epicsMutexUnlock(globalLock);
     return;
 }
@@ -157,12 +147,8 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     lockSet	*plockSet;
     epicsMutexLockStatus status;
 
-    /*Make sure that dbLockSetGblLock was called*/
-    if(!changingLockSets) {
-        cantProceed("dbLockSetRecordLock called before dbLockSetGblLock\n");
-    }
     /*Must make sure that no other thread has lock*/
-    if(!plockRecord) return;
+    assert(plockRecord);
     plockSet = plockRecord->plockSet;
     if(!plockSet) return;
     if(plockSet->thread_id==epicsThreadGetIdSelf()) return;
@@ -186,22 +172,18 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
 {
     lockRecord	*plockRecord;
     lockSet	*plockSet;
-    epicsMutexLockStatus status;
 
     if(!(plockRecord= precord->lset)) {
-	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
+	epicsPrintf("dbScanLock lset is NULL for record %s\n",
 	    precord->name);
 	epicsThreadSuspendSelf();
     }
-    while(TRUE) {
-        while(changingLockSets) epicsThreadSleep(.05);
-	status = epicsMutexLock(plockRecord->plockSet->lock);
-	/*epicsMutexLock fails if epicsMutexDestroy was called while active*/
-	if(status==epicsMutexLockOK) break;
-    }
+    epicsMutexMustLock(globalLock);
     plockSet = plockRecord->plockSet;
+    epicsMutexMustLock(plockSet->lock);
     plockSet->thread_id = epicsThreadGetIdSelf();
     plockSet->precord = (void *)precord;
+    epicsMutexUnlock(globalLock);
     return;
 }
 
@@ -239,6 +221,7 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
     int			nrecords=0;
     lockRecord		*plockRecord;
     
+    if(!lockListInitialized) initLockList();
     /*Allocate and initialize a lockRecord for each record instance*/
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {

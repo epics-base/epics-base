@@ -28,6 +28,7 @@
  * .00	06-12-91	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
+ * .03	08-15-91	rac	use new call for sydOpen
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -88,7 +89,7 @@ void	*pHandle;	/* I NULL; someday might implement a callback
     }
     (*ppSspec)->nInBufs = SYD_CHAN_MAX_IN;
 
-    return sydOpen(ppSspec, pHandle);
+    return sydOpen(ppSspec);
 }
 /*+/subr**********************************************************************
 * NAME	sydCAFunc - handle "Channel Access" data interactions
@@ -172,9 +173,10 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    ca_clear_channel(pCh);
 	    return retStat;
 	}
-	pSChan->dbrType = dbf_type_to_DBR_TIME(ca_field_type(pCh));
+	pSChan->dbfType = ca_field_type(pCh);
+	pSChan->dbrType = dbf_type_to_DBR_TIME(pSChan->dbfType);
 	pSChan->elCount = ca_element_count(pCh);
-	pSChan->dbrGrType = dbf_type_to_DBR_GR(ca_field_type(pCh));
+	pSChan->dbrGrType = dbf_type_to_DBR_GR(pSChan->dbfType);
 	stat = ca_get(pSChan->dbrGrType, pCh, &pSChan->grBuf);
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;

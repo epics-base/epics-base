@@ -28,75 +28,166 @@
  * .00	12-04-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
+ * .03	08-15-91	rac	update documentation; add args to sydChanOpen;
+ *				enhance for use by ordinary users
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
- *	-DNDEBUG	don't compile assert() checking
+ *	-DNDEBUG	don't compile assert checking
  *      -DDEBUG         compile various debug code, including checks on
  *                      malloc'd memory
  */
+#if 0	/* allow comments within the module heading */
 /*+/mod***********************************************************************
-* TITLE	sydSubr.c - routines for building and using "synchronous data specs"
+* TITLE	sydSubr.c - synchronous data routines
 *
 * DESCRIPTION
-*	These routines provide for acquiring and handling sets of
-*	synchronous samples of data.
+*	These routines support:
+*	o   defining a set of channels for which synchronous samples are
+*	    to be acquired
+*	o   checking to see if a synchronous sample is available
+*	o   acquiring the next synchronous sample or a specified number
+*	    of synchronous samples
+*	o   storing the most recently acquired synchronous sample at the
+*	    end of the set of synchronous samples
+*	o   printing a particular synchronous sample or all samples in
+*	    a synchronous sample set
 *
-*	The functions provided are:
-*	o   create and/or alter a synchronous data specification via
-*	    subroutine calls
-*	o   read a synchronous data specification from a file (not yet
-*	    implemented)
-*	o   get next n synchronous samples
-*	o   print in tabular form the samples in a synchronous sample set
-*	o   plot the samples in a synchronous sample set
-*	o   make a hard copy of either the tabular printout or the plot
-*	o   write a file containing the samples in a synchronous sample set,
-*	    with various options on the file format
+*	Sample acquisition can be from one of:
+*	o   archiver `sample set' file
+*	o   archiver `by channel' file
+*	o   Channel Access
 *
-*	These routines can obtain synchronous sample sets from any of several
-*	sources, including archiver "by channel" data files, archiver
-*	"sample set" data files, and Channel Access.  (Only a single
-*	source can be used at once for a particular sync data spec, but
-*	several sync data spec's can exist simultaneously.)
+*	sydPlot.c provides routines which support plotting a synchronous
+*	sample set.
 *
 * QUICK REFERENCE
 *
 * #include <genDefs.h>		some general use definitions
 * #include <db_access.h>	definitions for database related items
-* #include <sydDefs.h>	structures for synchronous data routines
+* #include <sydDefs.h>		structures for synchronous data routines
 *
 * SYD_SPEC *pSspec;	pointer to synchronous set spec
 * SYD_CHAN *pSChan;	pointer to synchronous channel descriptor
 *
 *     long  sydChanClose(        pSspec,  pSChan			)
 * SYD_CHAN *sydChanFind(         pSspec,  chanName			)
-*     long  sydChanOpen(         pSspec,  chanName,  sync, pArg		)
+*     long  sydChanOpen(         pSspec, >ppSChan, chanName,  sync, pArg )
 *				         sync = SYD_SY_{NONF,FILLED}
 *     long  sydClose(            pSspec					)
 *     long  sydFileInfo(         pSspec,  out                           )
+*     long  sydInputGet(         pSspec, >pMoreFlag			)
+*     void  sydInputReset(       pSspec					)
+*     void  sydInputResetKeepNewest(pSspec				)
+*     void  sydInputResetSampled(pSspec					)
+*     void  sydInputStoreInSet(  pSspec					)
+*     long  sydInputSync(        pSspec         			)
 *     long  sydOpenCA(          >ppSspec, NULL				)
-*     long  sydOpenCF(          >ppSspec, pHandle			)
-*     long  sydOpenPFO(         >ppSspec, pHandle			)
-*     long  sydOpenSSF(         >ppSspec, pHandle			)
-*     long  sydReadSync(         pSspec         			)
-*     void  sydResetBuf(         pSspec					)
-*     void  sydResetBufKeepNewest(pSspec				)
-*     void  sydResetBufSampled(  pSspec					)
-*     long  sydSampleGet(        pSspec					)
+*     long  sydOpenCF(          >ppSspec, filePath			)
+*     long  sydOpenPFO(         >ppSspec, NULL				)
+*     long  sydOpenSSF(         >ppSspec, filePath			)
+*     long  sydPosition(         pSspec,  pStamp			)
+*     long  sydSampleExport(     pSspec,  out,  fmtFlag,  hdrFlag,  sampNum)
 *     long  sydSamplePrint(      pSspec,  out,  fmtFlag,  hdrFlag,  sampNum)
-*     void  sydSampleStore(      pSspec,  sampleNum			)
 *
 *     long  sydSampleSetAlloc(   pSspec,  reqCount			)
+*     long  sydSampleSetExport(  pSspec,  out,  fmtFlag			)
 *     long  sydSampleSetFree(    pSspec					)
 *     long  sydSampleSetGet(     pSspec					)
 *     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag			)
 *
 * BUGS
-* o	error detection and handling is in VERY ratty shape
-* o	sydOpenCF should allow specifying a file name
-*	
+* o	error detection and handling isn't "leakproof"
+*
+* DESCRIPTION, continued
+*
+* o  special terms
+*
+*	synchronous sample--is a set of values, one for each channel,
+*	    with the same time stamp for each
+*
+*	synchronous sample set--is a set of synchronous samples, in order
+*	    by time stamp.  This frequently will be referred to as a
+*	    synchronous set.
+*
+*	synchronous channel descriptor--is the information about one
+*	    of the channels for which synchronous data is to be acquired
+*
+*	synchronous set specification--is the set of information describing
+*	    how synchronous samples are to be acquired, and which channels
+*	    are to be used
+*
+* o  synchronous set specification
+*
+*	A program can have one or more synchronous set specifications at the
+*	same time.  Each is created with an "open" and destroyed with a
+*	"close".  The "open" returns a pointer which is used in all
+*	subsequent operations with the "sync set spec".
+*
+*	There are several routines available for opening a sync set spec; the
+*	one which is used determines where samples will be obtained.  Most
+*	other sydXxx routines are independent of which source is being used.
+*	See sydOpen for more details.
+*
+* o  synchronous channel descriptor
+*
+*	After a sync set spec has been opened, one or more channels will
+*	be added to it with calls to sydChanOpen.  When a channel is opened,
+*	it must be specified whether the channel will be treated as "filled"
+*	or as "synchronous".  This distinction comes into play while samples
+*	are being acquired (see below).
+*
+*	The value for a channel might be a scalar, as for a thermocouple,
+*	or an array, as for a digitized waveform.  Most of the discussion
+*	which follows makes no distinction between the two kinds of values.
+*
+*	When a channel is no longer wanted as part of a sync set spec, the
+*	sydChanClose call can be used to remove it.  (The sydClose call
+*	automatically closes all channels in a sync set spec.)
+*
+* o  acquiring synchronous samples
+*
+*	Each channel is treated as having a stream of time-stamped values.
+*	When sydInputGet is called, the earliest time stamp for all the
+*	channels is found--this is the time stamp for the sample.  Each
+*	channel which has a value with that time stamp is placed in the
+*	sample.  If no samples have yet been recieved for a channel, then
+*	the channel is flagged as "missing" in the sample.  The action taken
+*	when there is no value for a channel depends on how the channel was
+*	opened.
+*
+*	If the sydChanOpen call specified SYD_SY_FILLED, then when the channel
+*	has no value at the chosen time stamp the most recent prior value is
+*	placed into the sample.  This implements the assumption that the
+*	channel's value has remained constant.
+*
+*	Specifying SYD_SY_NONF in the sydChanOpen call inhibits "filling in"
+*	a value in the sample when a channel has no value at the chosen
+*	time stamp.  In this case, the channel will be flagged as "missing"
+*	in the sample.
+*
+*	If data acquisition is from Channel Access, then some additional
+*	details come into play.  The result is to compensate for possible
+*	network delays in transmitting data, which means that the calling
+*	program may occasionally receive a "no data now" status.  In that
+*	case, the calling program is expected to try again later to see
+*	if additional data have been received.
+*
+* o  accessing data for a sample
+*
+* o  accessing data for a sample set
+*
+* EXAMPLE
+*
+* #include <genDefs.h>
+* #include <cadef.h>
+* #include <db_access.h>
+* #include <sydDefs.h>
+*
+jjj	put the sample program here
 *-***************************************************************************/
+#endif	/* allow comments within the module heading */
+
 #include <genDefs.h>
 #define SYD_PRIVATE
 #define SYD_PRIVATE_DATA
@@ -120,25 +211,232 @@
 #   include <string.h>
 #   include <strings.h>
 #endif
+
+void sydChanFreeArrays();
+void sydInputGetIn();
+void sydSamplePrint1();
+long sydSampleSetAlloc();
+long sydSampleSetFree();
+
 
-/*+/subr**********************************************************************
-* NAME	sydChanClose - delete a channel from a synchronous data spec
+#if 0
+main()
+{
+    SYD_SPEC	*pSspec;	/* pointer to sync set spec */
+    SYD_CHAN	*pSchanBase;	/* pointer to sync chan desc for POWER:BASE */
+    SYD_CHAN	*pSchanLag;	/* pointer to sync chan desc for POWER:LAG30 */
+    long	stat;		/* status return */
+    int		i;
+    int		moreFlag;	/* 1 if more samples waiting */
+    float	sumBase, sumLag;/* sums for the two channels */
+    char	timeText[28];	/* text for time stamp */
+    int		chanStat;	/* input status for channel */
+
+/*-----------------------------------------------------------------------------
+*	open the synchronous sample set specification and add the channels
+*	to it
+*----------------------------------------------------------------------------*/
+    stat = sydOpenCA(&pSspec, NULL);
+    if (stat != S_syd_OK) {
+	printf("couldn't open sync set spec\n");
+	exit(1);
+    }
+    stat = sydChanOpen(pSspec, &pSchanBase, "rai_2000", SYD_SY_FILLED, NULL);
+    if (stat != S_syd_OK) {
+	printf("couldn't open POWER:BASE\n");
+	exit(1);
+    }
+    stat = sydChanOpen(pSspec, &pSchanLag, "rao_2000", SYD_SY_FILLED, NULL);
+    if (stat != S_syd_OK) {
+	printf("couldn't open POWER:LAG30\n");
+	exit(1);
+    }
+/*-----------------------------------------------------------------------------
+*	now get 100 synchronous samples and accumulate a running sum for
+*	each channel.  Since this example program is using Channel Access,
+*	it loops on sydInputGet until a status of S_syd_noDataNow is
+*	received; when retrieving from an archive file, such a loop wouldn't
+*	be used.
+*----------------------------------------------------------------------------*/
+    sumBase = sumLag = 0.;
+    i = 0;
+    while (i < 100) {
+	ca_pend_event(.1);		/* allow Channel Access to get values */
+	stat = sydInputGet(pSspec, &moreFlag);	/* see if any were obtained */
+	while (stat == S_syd_OK || stat == S_syd_partial) {
+	    i++;
+	    tsStampToText(&SydInputTs(pSspec), TS_TEXT_MMDDYY, timeText);
+#if 0
+	    tsStampToText(&pSspec->sampleTs, TS_TEXT_MMDDYY, timeText);
+#endif
+	    printf("sample at %s more:%d--", timeText, moreFlag);
+	    chanStat = SydInputStatus(pSchanBase);
+	    if (chanStat != SYD_B_EOF && chanStat != SYD_B_MISSING) {
+		sumBase += SydInputValAsFloat(pSchanBase);
+		printf("%s= %f ", SydChanName(pSchanBase),
+					SydInputValAsFloat(pSchanBase));
+		SydInputMarkAsSampled(pSchanBase);
+	    }
+	    chanStat = SydInputStatus(pSchanLag);
+	    if (chanStat != SYD_B_EOF && chanStat != SYD_B_MISSING) {
+		sumLag += SydInputValAsFloat(pSchanLag);
+		printf("%s= %f ", SydChanName(pSchanLag),
+					SydInputValAsFloat(pSchanLag));
+		SydInputMarkAsSampled(pSchanLag);
+	    }
+	    printf("\n");
+	    stat = sydInputGet(pSspec, &moreFlag);
+	}
+    }
+    printf("sumBase= %f   sumLag= %f\n", sumBase, sumLag);
+}
+#endif
+
+/*+/internal******************************************************************
+* NAME	sydCvtDblToTxt - format a double for printing
 *
 * DESCRIPTION
-*	This routine deletes a channel from a synchronous data spec.
+*	Formats a double for printing.  This routine is dedicated to
+*	getting as large a range of values as possible into a particular
+*	field width.
+*
+*	This routine doesn't attempt to handle extremely small values.
+*	It assumes that the field is large enough to handle the smallest
+*	significant value to be encountered.
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	extremely small values aren't handled well
+* o	this is the same as pprCvtDblToTxt; it ought to be in a general-
+*	purpose library somewhere
+*
+* NOTES
+* 1.	If the value can't be represented at all in the field, the sign
+*	followed by *'s appears.
+* 2.	In extreme cases, only the magnitude of the value will appear, as
+*	En or Enn.  For negative values, a - will precede the E.
+* 3.	When appropriate, the value is rounded to the nearest integer
+*	for formatting.
+*
+*-*/
+static void
+sydCvtDblToTxt(text, width, value, sigDig)
+char	*text;		/* O text representation of value */
+int	width;		/* I max width of text string (not counting '\0') */
+double	value;		/* I value to print */
+int	sigDig;		/* I max # of dec places to print */
+{
+    double	valAbs;		/* absolute value of caller's value */
+    int		wholeNdig;	/* number of digits in "whole" part of value */
+    double	logVal;		/* log10 of value */
+    int		decPlaces;	/* number of decimal places to print */
+    int		expWidth;	/* width needed for exponent field */
+    int		excess;		/* number of low order digits which
+				    won't fit into the field */
+
+    if (value == 0.) {
+	(void)strcpy(text, "0");
+	return;
+    }
+
+/*-----------------------------------------------------------------------------
+*    find out how many columns are required to represent the integer part
+*    of the value.  A - is counted as a column;  the . isn't.
+*----------------------------------------------------------------------------*/
+    valAbs = value>0 ? value : -value;
+    logVal = log10(valAbs);
+    wholeNdig = 1 + (int)logVal;
+    if (wholeNdig < 0)
+	wholeNdig = 1;
+    if (value < 0.)
+	wholeNdig++;
+    if (wholeNdig < width-1) {
+/*-----------------------------------------------------------------------------
+*    the integer part fits well within the field.  Find out how many
+*    decimal places can be printed (honoring caller's sigDig limit).
+*----------------------------------------------------------------------------*/
+	decPlaces = width - wholeNdig - 1;
+	if (sigDig < decPlaces)
+	    decPlaces = sigDig;
+	if (sigDig > 0)
+	    (void)sprintf(text, "%.*f", decPlaces, value);
+	else
+	    (void)sprintf(text, "%d", nint(value));
+    }
+    else if (wholeNdig == width || wholeNdig == width-1) {
+/*-----------------------------------------------------------------------------
+*    The integer part just fits within the field.  Print the value as an
+*    integer, without printing the superfluous decimal point.
+*----------------------------------------------------------------------------*/
+	(void)sprintf(text, "%d", nint(value));
+    }
+    else {
+/*-----------------------------------------------------------------------------
+*    The integer part is too large to fit within the caller's field.  Print
+*    with an abbreviated E notation.
+*----------------------------------------------------------------------------*/
+	expWidth = 2;				/* assume that En will work */
+	excess = wholeNdig - (width - 2);
+	if (excess > 999) {
+	    expWidth = 5;			/* no! it must be Ennnn */
+	    excess += 3;
+	}
+	else if (excess > 99) {
+	    expWidth = 4;			/* no! it must be Ennn */
+	    excess += 2;
+	}
+	else if (excess > 9) {
+	    expWidth = 3;			/* no! it must be Enn */
+	    excess += 1;
+	}
+/*-----------------------------------------------------------------------------
+*	Four progressively worse cases, with all or part of exponent fitting
+*	into field, but not enough room for any of the value
+*		Ennn		positive value; exponent fits
+*		-Ennn		negative value; exponent fits
+*		+****		positive value; exponent too big
+*		-****		negative value; exponent too big
+*----------------------------------------------------------------------------*/
+	if (value >= 0. && expWidth == width)
+	    (void)sprintf(text, "E%d", nint(logVal));
+	else if (value < 0. && expWidth == width-1)
+	    (void)sprintf(text, "-E%d", nint(logVal));
+	else if (value > 0. && expWidth > width)
+	    (void)sprintf(text, "%.*s", width, "+*******");
+	else if (value < 0. && expWidth > width-1)
+	    (void)sprintf(text, "%.*s", width, "-*******");
+	else {
+/*-----------------------------------------------------------------------------
+*	The value can fit, in exponential notation
+*----------------------------------------------------------------------------*/
+	    (void)sprintf(text, "%dE%d",
+			nint(value/exp10((double)excess)), excess);
+	}
+    }
+}
+
+/*+/subr**********************************************************************
+* NAME	sydChanClose - delete a channel from a synchronous set spec
+*
+* DESCRIPTION
+*	This routine deletes a channel from a synchronous set spec.  The
+*	other channels in the set aren't affected, and their data is
+*	preserved.
 *
 * RETURNS
 *	S_syd_OK
 *
 * SEE ALSO
-*	sydOpen(), sydChanOpen(), sydChanFind()
-*	sydGetNextSample()
+*	sydOpen, sydChanOpen, sydChanFind
+*	sydInputGet
 *
 *-*/
 long
 sydChanClose(pSspec, pSChan)
-SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
-SYD_CHAN *pSChan;	/* IO pointer to synchronous channel descriptor */
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+SYD_CHAN *pSChan;	/* I pointer to synchronous channel descriptor */
 {
     int		i;
 
@@ -190,10 +488,11 @@ SYD_CHAN *pSChan;
 }
 
 /*+/subr**********************************************************************
-* NAME	sydChanFind - find a channel in a synchronous data spec
+* NAME	sydChanFind - find a channel in a synchronous set spec
 *
 * DESCRIPTION
-*	This routine finds a channel in a synchronous data spec.
+*	This routine finds a channel in a synchronous set spec.  This can
+*	be useful in detecting duplications in channel name.
 *
 * RETURNS
 *	SYD_CHAN * for channel, if found, or
@@ -203,7 +502,7 @@ SYD_CHAN *pSChan;
 SYD_CHAN *
 sydChanFind(pSspec, chanName)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-char	*chanName;	/* I channel name to find in synchronous data spec */
+char	*chanName;	/* I channel name to find in synchronous set spec */
 {
     SYD_CHAN	*pSChan;	/* pointer to channel descriptor */
 
@@ -221,23 +520,44 @@ char	*chanName;	/* I channel name to find in synchronous data spec */
 }
 
 /*+/subr**********************************************************************
-* NAME	sydChanOpen - add a channel to a synchronous data spec
+* NAME	sydChanOpen - add a channel to a synchronous set spec
 *
 * DESCRIPTION
-*	This routine adds a channel to a synchronous data spec.
+*	This routine opens a channel and adds it to the end of a synchronous
+*	set spec.
 *
 * RETURNS
 *	S_syd_OK, or
 *	S_syd_noMem		no memory for adding channel to set
-*	S_syd_chanNotFound	channel not found in file
-*	S_syd_ERROR		if channel already exists in sync data spec
+*	S_syd_chanNotFound	channel not found
+*	S_syd_ERROR		if channel already exists in sync set spec
 *
 * BUGS
 * o	always places channel at end of list
+* o	for retrievals from Channel Access, S_syd_chanNotFound results if
+*	the ca_search doesn't succeed in a timely fashion.  Some applications
+*	would prefer to allow proceeding prior to the completion of the
+*	search.
+* o	data are always acquired using the native type of the channel,
+*	rather than caller-specified type
 *
 * SEE ALSO
-*	sydOpen(), sydChanClose()
-*	sydGetNextSample()
+*	sydOpen, sydChanClose
+*	sydInputGet
+*
+* MACROS
+*	These macros extract fields from the synchronous channel structure
+*	created by sydChanOpen.  By using these macros, the programmer
+*	can avoid the need to look inside the sample structures.
+*
+*	Each macro takes as an argument a pointer to a synchronous
+*	channel structure, as returned by sydChanOpen or sydChanFind.
+*
+*	SydChanArrayCount(pSChan)	obtain the array count (1 for scalar)
+*	SydChanDbfType(pSChan)		obtain the channel type.  This will
+*		be one of the DBF_XXX types.
+*	SydChanDbrType(pSChan)		obtain the value type.  This will
+*		be one of the DBR_XXX types.
 *
 * NOTES
 * 1.	For channels in AR sample set data files, SYD_SY_NONF if forced,
@@ -249,8 +569,9 @@ char	*chanName;	/* I channel name to find in synchronous data spec */
 *
 *-*/
 long
-sydChanOpen(pSspec, chanName, sync, pArg)
+sydChanOpen(pSspec, ppSChan, chanName, sync, pArg)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+SYD_CHAN **ppSChan;	/* O pointer to sync channel pointer; or NULL */
 char	*chanName;	/* I channel name (.VAL assumed if field omitted) */
 enum sydChanSync sync;	/* I sync/non-sync; SYD_SY_NONF or SYD_SY_FILLED */
 void	*pArg;		/* I pointer to struct needed to init, or NULL */
@@ -264,6 +585,9 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
     assert(pSspec != NULL);
     assert(strlen(chanName) > 0);
     assert(strlen(chanName) < db_name_dim);
+
+    if (ppSChan != NULL)
+	*ppSChan = NULL;
 
     if (sydChanFind(pSspec, chanName) != NULL)
 	return S_syd_ERROR;
@@ -362,14 +686,17 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 	    pSChan->precision = 3;
     }
 
+    if (ppSChan != NULL)
+	*ppSChan = pSChan;
+
     return S_syd_OK;
 }
 
 /*+/subr**********************************************************************
-* NAME	sydClose - close a synchronous data spec
+* NAME	sydClose - close a synchronous set spec
 *
 * DESCRIPTION
-*	This routine closes a synchronous data spec, closing channels, etc.,
+*	This routine closes a synchronous set spec, closing channels, etc.,
 *	wrapping up the retrieval "source", and then free()'s the data
 *	structures associated with the set.
 *
@@ -381,14 +708,14 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 * o	text
 *
 * SEE ALSO
-*	sydOpen()
+*	sydOpen
 *
 * EXAMPLE
 *
 *-*/
 long
 sydClose(pSspec)
-SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 {
     long	retStat=S_syd_OK;/* return status to caller */
     long	stat;
@@ -442,286 +769,16 @@ FILE	*outStream;	/* I file pointer to receive information */
     return retStat;
 }
 
-/*+/macro*********************************************************************
-* NAME	sydOpen - create and initialize an empty synchronous data spec
-*
-* DESCRIPTION
-*	This routine builds an empty synchronous data spec structure.  In
-*	order to use the SYD_SPEC, channels for synchronous samples must
-*	be specified.  Retrieval will be for synchronous samples of data,
-*	in which all channels have the same time stamp; retrieval begins
-*	with the oldest data available and continues to the most recent.
-*	Several versions of this routine are available, corresponding
-*	to the source of the data:
-*
-*	sydOpenCA(&pSspec, NULL)	init for Channel Access
-*	sydOpenCF(&pSspec, NULL)	init for "by channel" file
-*	sydOpenPFO(&pSspec, fileName)	init for OPI sync data
-*	sydOpenSSF(&pSspec, fileName)	init for "sample set" file
-*
-* RETURNS
-*	S_syd_OK, or
-*	S_syd_noMem	if memory isn't available to store set descriptor
-*
-* BUGS
-* o	should set up, in the sync set spec, the number of input buffers,
-*	rather than having that job be done in sydChanOpen.
-*
-* SEE ALSO
-*	sydChanOpen(), sydAddTrigger(), sydAddTimeRange()
-*	sydGetNextSample()
-*
-* EXAMPLE
-*
-*-*/
-long
-sydOpen(ppSspec, pHandle)
-SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
-void	*pHandle;	/* I pointer to handle for "source" */
-{
-    assert(ppSspec != NULL);
-    assert(*ppSspec != NULL);
-
-    (*ppSspec)->pChanHead = NULL;
-    (*ppSspec)->pChanTail = NULL;
-    (*ppSspec)->pTrigger = NULL;
-    (*ppSspec)->refTs.secPastEpoch = 0;
-    (*ppSspec)->refTs.nsec = 0;
-    (*ppSspec)->priorTs = (*ppSspec)->refTs;
-    (*ppSspec)->sampleTs = (*ppSspec)->refTs;
-    (*ppSspec)->chanCount = 0;
-    (*ppSspec)->eofCount = 0;
-    (*ppSspec)->dataDim = 0;
-    (*ppSspec)->sampleCount = 0;
-    (*ppSspec)->pDeltaSec = NULL;
-    (*ppSspec)->pTimeStamp = NULL;
-    (*ppSspec)->pPartial = NULL;
-    (*ppSspec)->lastData = -1;
-    (*ppSspec)->firstData = -1;
-    return S_syd_OK;
-}
-
 /*+/subr**********************************************************************
-* NAME	sydReadSync - synchronize read buffers with disk
-*
-* DESCRIPTION
-*
-* RETURNS
-*	S_syd_OK, or
-*	other error code
-*
-* BUGS
-* o	text
-*
-* SEE ALSO
-*
-* EXAMPLE
-*
-*-*/
-long
-sydReadSync(pSspec)
-SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-{
-    long	retStat=S_syd_OK;
-    long	stat;
-
-    assert(pSspec != NULL);
-
-    if (pSspec->type != SYD_TY_CF)
-	return S_syd_OK;
-    stat = (pSspec->pFunc)(pSspec, NULL, SYD_FC_READ_SYNC, NULL);
-    if (stat != S_syd_OK)
-	retStat = stat;
-    return retStat;
-}
-
-/*+/subr**********************************************************************
-* NAME	sydResetBuf - reset synchronous sample buffers for channels
-*
-* DESCRIPTION
-*	This routine flags as EMPTY the input buffers for the channels in a
-*	synchronous data spec.  Two routines are available:
-*
-*	sydResetBuf() flags as empty all buffers for all channels
-*			This routine is appropriate to use after a
-*			positioning operation, since such an operation
-*			invalidates both FULL and SAMPLED buffers.
-*
-*	sydResetBufKeepNewest() flags as empty all buffers except the
-*				newest one, which is flagged as SAMPLED
-*			This routine is primarily intended for use with
-*			Channel Access.  Keeping the newest buffer and
-*			flagging it as SAMPLED allows: a) using it if
-*			no new value comes in; or b) throwing it away
-*			if a new value does come in.
-*	sydResetBufSampled() flags as empty only those buffers which
-*				are flagged as SAMPLED
-*			This routine is appropriate to use between
-*			successive retrievals.  Since
-*			there is no "gap" between retrievals, the FULL
-*			buffers must be available to the next retrieval.
-*			Making SAMPLED buffers available for the next
-*			retrieval could result in the next retrieval
-*			having the same retrieval time stamp as the
-*			prior retrieval.
-*
-* RETURNS
-*	S_syd_OK
-*
-* BUGS
-* o	text
-*
-*-*/
-void
-sydResetBuf(pSspec)
-SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
-{
-    SYD_CHAN	*pSChan;
-    int		i;
-
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	for (i=0; i<pSChan->nInBufs; i++)
-	    pSChan->inStatus[i] = SYD_B_EMPTY;
-	pSChan->firstInBuf = -1;
-	pSChan->lastInBuf = -1;
-	pSChan = pSChan->pNext;
-    }
-    pSspec->sampleTs.secPastEpoch = 0;
-}
-
-void
-sydResetBufKeepNewest(pSspec)
-SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-{
-    SYD_CHAN	*pSChan;
-    int		i;
-
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	i = pSChan->firstInBuf;
-	while (i >= 0 && i != pSChan->lastInBuf) {
-	    pSChan->inStatus[i] = SYD_B_EMPTY;
-	    i = NEXT_INBUF(pSChan, i);
-	    pSChan->firstInBuf = i;
-	}
-	if ((i=pSChan->firstInBuf) > 0)
-	    pSChan->inStatus[i] = SYD_B_SAMPLED;
-	pSChan->sampInBuf = -1;
-	pSChan = pSChan->pNext;
-    }
-    pSspec->sampleTs.secPastEpoch = 0;
-}
-
-void
-sydResetBufSampled(pSspec)
-SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
-{
-    SYD_CHAN	*pSChan;
-    int		i;
-
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	i = pSChan->firstInBuf;
-	while (i >= 0) {
-	    if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
-		pSChan->inStatus[i] = SYD_B_EMPTY;
-		if (pSChan->lastInBuf == i) {
-		    pSChan->lastInBuf = -1;
-		    pSChan->firstInBuf = -1;
-		    i = -1;
-		}
-		else if (pSChan->firstInBuf == i)
-		    pSChan->firstInBuf = NEXT_INBUF(pSChan, i);
-	    }
-	    if (i == pSChan->lastInBuf)
-		i = -1;				/* leave the loop */
-	    else
-		i = NEXT_INBUF(pSChan, i);
-	}
-	pSChan->sampInBuf = -1;
-	pSChan = pSChan->pNext;
-    }
-    pSspec->sampleTs.secPastEpoch = 0;
-}
-
-/*+/subr**********************************************************************
-* NAME	sydSampleFilter
-*
-* DESCRIPTION
-*
-* RETURNS
-*
-* BUGS
-* o	should use precision from graphic info for printing floats
-* o	doesn't handle array channels.  There needs to be an option
-*	which puts elementCount prior to printing values
-* o	options should be #defined symbols
-*
-* SEE ALSO
-*
-* EXAMPLE
-*
-*-*/
-long
-sydSampleFilter(pSspec, out, option, samp)
-SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-FILE	*out;		/* IO stream pointer for output */
-int	option;		/* I filtering option */
-			/*   1 spreadsheet; delta time and values */
-			/*   2 spreadsheet; delta time and values and status */
-int	samp;		/* I sample number in synchronous set */
-{
-    SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
-    char	stampText[28];
-    int		i;
-
-/*-----------------------------------------------------------------------------
-* generate headings, depending on option:
-* 1==>	"mm/dd/yy hh:mm:ss.msc"
-*	time	name1	name2	...
-*
-* 2==>	"mm/dd/yy hh:mm:ss.msc"
-*	time	stat	name1	stat	name2	...
-*----------------------------------------------------------------------------*/
-    if (samp == pSspec->firstData) {
-	(void)fprintf(out, "\"%s\"\ntime", tsStampToText(
-		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
-	    if (option == 2)
-		(void)fprintf(out, "\tstat");
-	    (void)fprintf(out, "\t%s", pSChan->name);
-	    pSChan = pSChan->pNext;
-	}
-	(void)fprintf(out, "\n");
-    }
-
-/*-----------------------------------------------------------------------------
-*    print the value for each channel for this sample.
-*----------------------------------------------------------------------------*/
-    (void)fprintf(out, "%.3f", pSspec->pDeltaSec[samp]);
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	if (option == 1)
-	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, samp);
-	else if (option == 2)
-	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, samp);
-	pSChan = pSChan->pNext;
-    }
-    (void)fprintf(out, "\n");
-}
-
-/*+/subr**********************************************************************
-* NAME	sydSampleGet - get the next synchronous sample
+* NAME	sydInputGet - get the next synchronous sample
 *
 * DESCRIPTION
 *	This routine acquires the next sample for the channels in the
-*	synchronous data spec.  The desired time stamp for the `next sample'
+*	synchronous set spec.  The desired time stamp for the `next sample'
 *	is determined by searching forward from the time of the previous
-*	sample.  Among the channels in the synchronous data spec, the one
+*	sample.  Among the channels in the synchronous set spec, the one
 *	which changes soonest is the one whose time stamp is used for the
-*	next sample.  Channels are handled on either a "non-filled" or a
+*	next sample.  Values are handled on either a "non-filled" or a
 *	"filled" basis.
 *
 *	For "filled" channels, it is assumed that if a change isn't
@@ -753,16 +810,19 @@ int	samp;		/* I sample number in synchronous set */
 *	The caller must periodically call ca_pend_event in order to allow
 *	Channel Access to give data to the sydXxx routines.
 *
-*	The sample buffer for each channel in the synchronous set is indicated
-*	by the .sampInBuf item in the channel structure.  The status of the
-*	sample buffer (from the input) is in the .inStatus[sampInBuf] item.
-*	Several cases may be encountered:
-*	o   inStatus is SYD_B_FULL, SYD_B_RESTART, or SYD_B_SAMPLED; the
+*	There are two main ways of dealing with samples obtaines from this
+*	routine--use the other sydXxx routines to manipulate it or access
+*	it directly for manipulation by user code.  The first case is
+*	the simplest, and would probably use sydSampleSetGet rather than
+*	this routine.  The second alternative is described in more detail
+*	below.
+*
+*	The status of the sample for a channel is obtained with the
+*	SydInputStatus macro; several cases may be encountered:
+*	o   status is SYD_B_FULL, SYD_B_RESTART, or SYD_B_SAMPLED; the
 *	    buffer contains valid sample data.  Once the caller has dealt
-*	    with the sample, THE CALLER MUST SET THE SAMPLE BUFFER STATUS
-*	    TO SYD_B_SAMPLED!!!
-*	o   inStatus is SYD_B_MISSING or SYD_B_EOF; no data is available
-*	o   .sampInBuf is < 0; no data is available
+*	    with the sample, THE CALLER MUST call SydInputMarkAsSampled!!!
+*	o   status is SYD_B_MISSING or SYD_B_EOF; no data is available
 *
 * RETURNS
 *	S_syd_OK		all channels are present in sample
@@ -776,15 +836,88 @@ int	samp;		/* I sample number in synchronous set */
 *
 * BUGS
 * o	should get and report actual number of bytes from the read
+* o	for AR sample set files, if all channels are missing for 2
+*	successive samples, EOF is reported, even though file isn't at end
 *
 * SEE ALSO
+*	sydChanOpen, sydSamplePrint, sydInputStoreInSet, sydSampleSetGet
+*
+* MACROS
+*	These macros extract fields from input buffers produced by sydInputGet.
+*	By using these macros, the programmer can avoid the need to look
+*	inside the sample structures.
+*
+*	Each macro takes as an argument a pointer to a synchronous sample
+*	channel structure, as returned by sydChanOpen or sydChanFind.
+*
+*	The SydInputValAsXxx macros must not be called if the value
+*	returned by SydInputStatus is SYD_B_MISSING or SYD_B_EOF.
+*
+*	SydInputStatus(pSChan)		obtain the input sample status for a
+*		channel.  This will be one of the SYD_B_XXX values.
+*	SydInputMarkAsSampled(pSChan)	set the input sample status to
+*		SYD_B_SAMPLED
+*
+*	Access the input value for a channel, following sydInputGet
+*		SydInputValAsFloat(pSChan)	returns a float
+*		SydInputValAsDouble(pSChan)	returns a double
+*		SydInputValAsShort(pSChan)	returns a short
+*		SydInputValAsLong(pSChan)	returns a long
+*		SydInputValAsChar(pSChan)	returns a char
+*		SydInputValAsString(pSChan)	returns a string (i.e., char *)
+*		SydInputValAsVoidPtr(pSChan)	returns a void * pointer to
+*			value (useful for array channels)
+*
+* NOTES
+* 1.	The `more flag' is for use only with Channel Access.  It serves as
+*	a hint that another call to sydInputGet will be successful.  This
+*	is useful for programs which want to throw away all but the most
+*	recent sample if they fall behind.  The technique with such
+*	programs is to repeatedly call sydInputGet until the return status
+*	is S_syd_noDataNow, and process only those cases in which the
+*	`more flag' is returned as zero.  It may be interesting to note
+*	that a zero value doesn't guarantee that the next call will
+*	result in a status of S_syd_noDataNow.
 *
 * EXAMPLE
+*	Get the next sample, then print the values and statuses for the
+*	channels.  If Channel Access has queued up several values from the
+*	IOC, then several samples will probably be processed.  This example
+*	ignores the differences between SYD_B_FULL, SYD_B_RESTART, and
+*	SYD_B_SAMPLED.
+*
+*	SYD_CHAN *pSChan1, *pSChan2, ...;	pointers to channel structures
+*	int	status;
+*	float	value;
+*	char	timeText[28];
+*	int	moreFlag;
+*
+*	ca_pend_event(.1);	
+*	stat = sydInputGet(pSspec, &moreFlag);
+*	while (stat == S_syd_OK || stat == S_syd_partial) {
+*	    tsStampToText(&SydInputTs(pSspec), TS_TEXT_MMDDYY, timeText);
+*	    printf("sample time stamp is %s\n", timeText);
+*	    if (stat == S_syd_partial)
+*		printf("one or more channels don't have data\n");
+*	    status = SydInputStatus(pSChan1);
+*	    if (status == SYD_B_MISSING || status == SYD_B_EOF)
+*		printf("%s has missing data\n", pSChan1->name);
+*	    else {
+*		value = SydInputValAsFloat(pSChan1);
+*		printf("%s value is: %f\n", value);
+*		SydInputMarkAsSampled(pSChan1);
+*	    }
+*
+*	    stat = sydInputGet(pSspec, &moreFlag);	try for another sample
+*	}
 *
 *-*/
 long 
-sydSampleGet(pSspec)
-SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
+sydInputGet(pSspec, pMoreFlag)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
+			    indicates more data is available; 0 indicates
+			    uncertainty about whether more is available */
 {
     long	retStat=S_syd_OK;/* return status to caller */
     long	stat;           /* status return from calls */
@@ -792,7 +925,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     SYD_CHAN	*pSChan;	/* pointer to channel in Sspec */
     double	refDiff;	/* difference from reference time  */
     TS_STAMP	nextTs;		/* time stamp for next sample */
-    int		i, i1, j, now=0, later=0;
+    int		i, i1, i2, j, now=0, later=0;
+    int		moreFlag=1;	/* assume there's more; reset if not */
 
     assert(pSspec != NULL);
     assert(pSspec->pChanHead != NULL);
@@ -807,7 +941,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 /*-----------------------------------------------------------------------------
 *    try to get at least two "available" buffers of input data
 *----------------------------------------------------------------------------*/
-    sydSampleGetIn(pSspec);
+    sydInputGetIn(pSspec);
 
     pSChan = pSspec->pChanHead;
     while (pSChan != NULL) {
@@ -821,7 +955,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 *    about to lose data (because buffer is nearly full), then the `now'
 *    flag is set to force generating a partial sample.  If a channel has
 *    no data, then the `later' flag is set to gently request returning a
-*    status of S_syd_noDataNow.
+*    status of S_syd_noDataNow; this is also done if the channel has only
+*    one value and its status is SYD_B_SAMPLED.
 *
 *    the time stamp for the sample is the smallest time stamp of all
 *    the channels which can contribute.  If no SYD_B_FULL or SYD_B_RESTART or
@@ -837,8 +972,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		j = pSChan->lastInBuf;
 		if (j < pSChan->firstInBuf)
 		    j += pSChan->nInBufs;
-		if (j - pSChan->firstInBuf < 3)
-		    now = 1;
+		if (pSChan->nInBufs - (j - pSChan->firstInBuf +1) < 3)
+		    now = 1;	/* 3 or fewer empty slots left */
 	    }
 	    if (nextTs.secPastEpoch == 0 || TsCmpStampsLT(&BUFiTS, &nextTs))
 		nextTs = BUFiTS;
@@ -853,8 +988,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		j = pSChan->lastInBuf;
 		if (j < pSChan->firstInBuf)
 		    j += pSChan->nInBufs;
-		if (j - pSChan->firstInBuf < 3)
-		    now = 1;
+		if (pSChan->nInBufs - (j - pSChan->firstInBuf +1) < 3)
+		    now = 1;	/* 3 or fewer empty slots left */
 	    }
 	    if (nextTs.secPastEpoch == 0 || TsCmpStampsLT(&BUFi1TS, &nextTs))
 		nextTs = BUFi1TS;
@@ -862,6 +997,10 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 	else if (pSChan->inStatus[i1] == SYD_B_MISSING) {
 	    if (TsCmpStampsLT(&BUFi1TS, &nextTs))
 		nextTs = BUFi1TS;
+	}
+	else if (i == pSChan->lastInBuf &&
+				pSChan->inStatus[i] == SYD_B_SAMPLED) {
+	    later = 1;
 	}
 	else
 	    later = 1;
@@ -908,6 +1047,10 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 *    oldest buffer will be included if its time stamp is <= to the retrieval
 *    time stamp.  If the second oldest buffer is included in the sample,
 *    then the oldest buffer is flagged as empty.
+*
+*    For Channel Access retrievals, the moreFlag will be reset if:
+*    o   a channel doesn't contribute to the sample; or
+*    o   a channel doesn't have one more SYD_B_FULL buffer
 *----------------------------------------------------------------------------*/
 
     pSspec->priorTs = pSspec->sampleTs;
@@ -920,6 +1063,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 	i1 = NEXT_INBUF(pSChan, i);
 	if (i < 0) {
 	    pSChan->sampInBuf = -1;
+	    moreFlag = 0;
 	    pSspec->partial = 1;
 	    retStat = S_syd_partial;
 	}
@@ -927,6 +1071,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		    pSChan->inStatus[i] == SYD_B_RESTART) &&
 					TsCmpStampsLE(&BUFiTS, &nextTs)) {
 	    pSChan->sampInBuf = i;
+	    if (pSChan->inStatus[i1] != SYD_B_FULL)
+		moreFlag = 0;
 	    pSChan->reused = 0;
 	}
 	else if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
@@ -938,25 +1084,33 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 		pSChan->firstInBuf = i1;
 		pSChan->reused = 0;
 		pSChan->sampInBuf = i1;
+		i2 = NEXT_INBUF(pSChan, i1);
+		if (pSChan->inStatus[i2] != SYD_B_FULL)
+		    moreFlag = 0;
 	    }
 	    else {
 		pSChan->reused = 1;
 		pSChan->sampInBuf = i;
+		if (pSChan->inStatus[i1] != SYD_B_FULL)
+		    moreFlag = 0;
 	    }
 	}
 	else if (pSChan->inStatus[i] == SYD_B_EOF) {
 	    pSChan->sampInBuf = i;
+	    moreFlag = 0;
 	    pSspec->eofCount++;
 	    pSspec->partial = 1;
 	    retStat = S_syd_partial;
 	}
 	else {
 	    pSChan->sampInBuf = -1;
+	    moreFlag = 0;
 	    pSspec->partial = 1;
 	    retStat = S_syd_partial;
 	}
 	if (pSChan->sampInBuf >= 0 &&
 			pSChan->inStatus[pSChan->sampInBuf] == SYD_B_MISSING) {
+	    moreFlag = 0;
 	    pSspec->partial = 1;
 	    retStat = S_syd_partial;
 	}
@@ -964,12 +1118,14 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 	pSChan = pSChan->pNext;
     }
     pSChan = pSspec->pChanHead;
+    if (pMoreFlag != NULL)
+	*pMoreFlag = moreFlag;
 
     return retStat;
 }
 
-/*+/subr**********************************************************************
-* NAME	sydSampleGetIn - get new input data, possibly discarding old
+/*+/internal******************************************************************
+* NAME	sydInputGetIn - get new input data, possibly discarding old
 *
 * DESCRIPTION
 *	Checks input buffers, discarding old buffers, if possible.  Then,
@@ -986,8 +1142,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 * EXAMPLE
 *
 *-*/
-void 
-sydSampleGetIn(pSspec)
+static void 
+sydInputGetIn(pSspec)
 SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 {
     long	retStat=S_syd_OK;/* return status to caller */
@@ -1073,183 +1229,120 @@ skipSecondRead:
 }
 
 /*+/subr**********************************************************************
-* NAME	sydSamplePrint
+* NAME	sydInputReset - reset synchronous sample buffers for channels
 *
 * DESCRIPTION
+*	This routine flags as EMPTY the input buffers for the channels in a
+*	synchronous set spec.  Two routines are available:
+*
+*	sydInputReset   flags as empty all buffers for all channels
+*			This routine is appropriate to use after a
+*			positioning operation, since such an operation
+*			invalidates both FULL and SAMPLED buffers.
+*
+*	sydInputResetKeepNewest   flags as empty all buffers except the
+*				newest one, which is flagged as SAMPLED
+*			This routine is primarily intended for use with
+*			Channel Access.  Keeping the newest buffer and
+*			flagging it as SAMPLED allows: a) using it if
+*			no new value comes in; or b) throwing it away
+*			if a new value does come in.
+*	sydInputResetSampled   flags as empty only those buffers which
+*				are flagged as SAMPLED
+*			This routine is appropriate to use between
+*			successive retrievals.  Since
+*			there is no "gap" between retrievals, the FULL
+*			buffers must be available to the next retrieval.
+*			Making SAMPLED buffers available for the next
+*			retrieval could result in the next retrieval
+*			having the same retrieval time stamp as the
+*			prior retrieval.
 *
 * RETURNS
+*	S_syd_OK
 *
 * BUGS
-* o	should use precision from graphic info for printing floats
-*
-* SEE ALSO
-*
-* EXAMPLE
-*
-*-*/
-long
-sydSamplePrint(pSspec, out, formatFlag, headerFlag, samp)
-SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-FILE	*out;		/* IO stream pointer for output */
-int	formatFlag;	/* I ==1 causes page formatting for printing */
-int	headerFlag;	/* I ==1 causes printing of column headings */
-int	samp;		/* I sample number in synchronous set */
-{
-    SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
-    char	stampText[28];
-    int		i;
-
-/*-----------------------------------------------------------------------------
-*    print a heading line with channel names; if this isn't the first page,
-*    put a ^L prior to the heading.
-*----------------------------------------------------------------------------*/
-    if (headerFlag) {
-	if (formatFlag) {	/* indent if printing */
-	    if (samp != pSspec->firstData)
-		(void)fprintf(out, "\f");
-	    (void)fprintf(out, "\n\n");
-	    (void)fprintf(out, "    ");
-	}
-	(void)fprintf(out, "  %21s", " ");
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
-	    (void)fprintf(out, " %14s", pSChan->name);
-	    pSChan = pSChan->pNext;
-	}
-	(void)fprintf(out, "\n");
-    }
-/*-----------------------------------------------------------------------------
-*    print the value for each channel for this sample.  Print the status
-*    flags following values, but print only the first element for array
-*    channels.
-*----------------------------------------------------------------------------*/
-    if (formatFlag)		/* indent if printing */
-	(void)fprintf(out, "    ");
-    if (pSspec->pPartial[samp])
-	(void)fprintf(out, "*");
-    else
-	(void)fprintf(out, " ");
-    (void)fprintf(out, " %s", tsStampToText(
-		    &pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText));
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, samp);
-	pSChan = pSChan->pNext;
-    }
-    (void)fprintf(out, "\n");
-}
-
-/*+/internal******************************************************************
-* NAME	sydSamplePrint1 - print a value for a channel
-*
-* DESCRIPTION
-*
-* RETURNS
-*	void
-*
-* BUGS
-* o	doesn't yet print entire array
-*
-* SEE ALSO
-*
-* EXAMPLE
+* o	text
 *
 *-*/
 void
-sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, sampNum)
-SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
-FILE	*out;		/* I file pointer for writing value */
-char	sep;		/* I character to use a a prefix for each field,
-				as a separator; usually ' ' or '\t' */
-int	preFlag;	/* I != 0 prints status flag prior to value */
-int	postFlag;	/* I != 0 prints status flag following value */
-int	showArray;	/* I != 0 to show all array elements, not just 1st */
-int	sampNum;	/* I sample number in coincidence set */
+sydInputReset(pSspec)
+SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 {
+    SYD_CHAN	*pSChan;
     int		i;
-    chtype	type;		/* type of value */
 
-    type = pSChan->dbrType;
-
-    if (preFlag) (void)fprintf(out, "%c%c%c", sep,
-		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
-    (void)fputc(sep, out);
-    if (pSChan->pFlags[sampNum].eof)
-	(void)fprintf(out, "%11s", "EOF");
-    else if (pSChan->pFlags[sampNum].missing)
-	(void)fprintf(out, "%11s", "no_data");
-    else {
-	if (type == DBR_TIME_STRING)
-	    (void)fprintf(out, "%11s", ((char *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_FLOAT)
-	    (void)fprintf(out, "%11.*f",
-		pSChan->precision, ((float *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_SHORT)
-	    (void)fprintf(out, "%11d", ((short *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_DOUBLE)
-	    (void)fprintf(out, "%11.*f",
-		pSChan->precision, ((double *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_LONG)
-	    (void)fprintf(out, "%11d", ((long *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_CHAR)
-	    (void)fprintf(out, "%11d", ((char *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_ENUM) {
-	    short	val;
-
-	    val = ((short *)pSChan->pData)[sampNum];
-	    if (val < pSChan->grBuf.genmval.no_str)
-		(void)fprintf(out, "%11s", pSChan->grBuf.genmval.strs[val]);
-	    else
-		(void)fprintf(out, "%11d", val);
-	}
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	for (i=0; i<pSChan->nInBufs; i++)
+	    pSChan->inStatus[i] = SYD_B_EMPTY;
+	pSChan->firstInBuf = -1;
+	pSChan->lastInBuf = -1;
+	pSChan = pSChan->pNext;
     }
-
-    if (postFlag) (void)fprintf(out, "%c%c%c", sep,
-		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+    pSspec->sampleTs.secPastEpoch = 0;
 }
-
-sydSamplePrintArray(pSChan, sampNum)
-SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
-int	sampNum;	/* I sample number in coincidence set */
+
+void
+sydInputResetKeepNewest(pSspec)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 {
-    int		nEl, nBytes, i;
-    char	*pSrc;
-    double	value;
-    char	text[7];
+    SYD_CHAN	*pSChan;
+    int		i;
 
-    nEl = pSChan->elCount;
-    nBytes = dbr_value_size[pSChan->dbrType];
-    pSrc = (char *)pSChan->pData + sampNum * nBytes * nEl;
-
-    (void)printf("%s %d\n", pSChan->name, nEl);
-    for (i=0; i<nEl; i++) {
-	if (i % 10 == 0)
-	    (void)printf("%05d ", i);
-        if      (dbr_type_is_FLOAT(pSChan->dbrType))
-            value = *(float *)pSrc;
-        else if (dbr_type_is_SHORT(pSChan->dbrType))
-            value = *(short *)pSrc;
-        else if (dbr_type_is_DOUBLE(pSChan->dbrType))
-            value = *(double *)pSrc;
-        else if (dbr_type_is_LONG(pSChan->dbrType))
-            value = *(long *)pSrc;
-        else if (dbr_type_is_CHAR(pSChan->dbrType))
-            value = *(unsigned char *)pSrc;
-        else if (dbr_type_is_ENUM(pSChan->dbrType))
-            value = *(short *)pSrc;
-	pprCvtDblToTxt(text, 6, value, pSChan->precision);
-	(void)printf(" %6s", text);
-	if ((i+1) % 10 == 0 || i+1 >= nEl)
-	    (void)printf("\n");
-	pSrc += nBytes;
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	i = pSChan->firstInBuf;
+	while (i >= 0 && i != pSChan->lastInBuf) {
+	    pSChan->inStatus[i] = SYD_B_EMPTY;
+	    i = NEXT_INBUF(pSChan, i);
+	    pSChan->firstInBuf = i;
+	}
+	if ((i=pSChan->firstInBuf) > 0)
+	    pSChan->inStatus[i] = SYD_B_SAMPLED;
+	pSChan->sampInBuf = -1;
+	pSChan = pSChan->pNext;
     }
+    pSspec->sampleTs.secPastEpoch = 0;
+}
+
+void
+sydInputResetSampled(pSspec)
+SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
+{
+    SYD_CHAN	*pSChan;
+    int		i;
+
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	i = pSChan->firstInBuf;
+	while (i >= 0) {
+	    if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
+		pSChan->inStatus[i] = SYD_B_EMPTY;
+		if (pSChan->lastInBuf == i) {
+		    pSChan->lastInBuf = -1;
+		    pSChan->firstInBuf = -1;
+		    i = -1;
+		}
+		else if (pSChan->firstInBuf == i)
+		    pSChan->firstInBuf = NEXT_INBUF(pSChan, i);
+	    }
+	    if (i == pSChan->lastInBuf)
+		i = -1;				/* leave the loop */
+	    else
+		i = NEXT_INBUF(pSChan, i);
+	}
+	pSChan->sampInBuf = -1;
+	pSChan = pSChan->pNext;
+    }
+    pSspec->sampleTs.secPastEpoch = 0;
 }
 
 /*+/subr**********************************************************************
-* NAME	sydSampleStore - store a sample into the sample set
+* NAME	sydInputStoreInSet - store a sample into the sample set
 *
 * DESCRIPTION
-*	Stores a sample acquired by sydSampleGet into the next available
+*	Stores a sample acquired by sydInputGet into the next available
 *	sample set buffer.  Flags for the sample set buffer are set
 *	appropriately.  The minDataVal and maxDataVal for the channel
 *	are updated.
@@ -1266,7 +1359,7 @@ int	sampNum;	/* I sample number in coincidence set */
 *
 *-*/
 void
-sydSampleStore(pSspec)
+sydInputStoreInSet(pSspec)
 SYD_SPEC *pSspec;
 {
     int		sub;		/* subscript to store sample */
@@ -1476,6 +1569,374 @@ SYD_SPEC *pSspec;
 }
 
 /*+/subr**********************************************************************
+* NAME	sydInputSync - synchronize input buffers with disk for `by channel'
+*
+* DESCRIPTION
+*
+* RETURNS
+*	S_syd_OK, or
+*	other error code
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long
+sydInputSync(pSspec)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+{
+    long	retStat=S_syd_OK;
+    long	stat;
+
+    assert(pSspec != NULL);
+
+    if (pSspec->type != SYD_TY_CF)
+	return S_syd_OK;
+    stat = (pSspec->pFunc)(pSspec, NULL, SYD_FC_READ_SYNC, NULL);
+    if (stat != S_syd_OK)
+	retStat = stat;
+    return retStat;
+}
+
+/*+/macro*********************************************************************
+* NAME	sydOpen - create and initialize an empty synchronous set spec
+*
+* DESCRIPTION
+*	This routine builds an empty synchronous set spec structure.  In
+*	order to use the SYD_SPEC, channels for synchronous samples must
+*	be specified.  Retrieval will be for synchronous samples of data,
+*	in which all channels have the same time stamp; retrieval begins
+*	with the oldest data available and continues to the most recent.
+*	Several versions of this routine are available, corresponding
+*	to the source of the data:
+*
+*	sydOpenCA(&pSspec, NULL)	init for Channel Access
+*	sydOpenCF(&pSspec, filePath)	init for "by channel" file
+*	sydOpenPFO(&pSspec, NULL)	init for OPI sync data
+*	sydOpenSSF(&pSspec, filePath)	init for "sample set" file
+*
+* RETURNS
+*	S_syd_OK, or
+*	S_syd_noMem	if memory isn't available to store set descriptor
+*
+* BUGS
+* o	should set up, in the sync set spec, the number of input buffers,
+*	rather than having that job be done in sydChanOpen.
+*
+* SEE ALSO
+*	sydChanOpen, sydAddTrigger, sydAddTimeRange
+*	sydInputGet
+*
+* EXAMPLE
+*
+*-*/
+long
+sydOpen(ppSspec)
+SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
+{
+    assert(ppSspec != NULL);
+    assert(*ppSspec != NULL);
+
+    (*ppSspec)->pChanHead = NULL;
+    (*ppSspec)->pChanTail = NULL;
+    (*ppSspec)->pTrigger = NULL;
+    (*ppSspec)->refTs.secPastEpoch = 0;
+    (*ppSspec)->refTs.nsec = 0;
+    (*ppSspec)->priorTs = (*ppSspec)->refTs;
+    (*ppSspec)->sampleTs = (*ppSspec)->refTs;
+    (*ppSspec)->chanCount = 0;
+    (*ppSspec)->eofCount = 0;
+    (*ppSspec)->dataDim = 0;
+    (*ppSspec)->sampleCount = 0;
+    (*ppSspec)->pDeltaSec = NULL;
+    (*ppSspec)->pTimeStamp = NULL;
+    (*ppSspec)->pPartial = NULL;
+    (*ppSspec)->lastData = -1;
+    (*ppSspec)->firstData = -1;
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydPosition - position the data file
+*
+* DESCRIPTION
+*
+* RETURNS
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long 
+sydPosition(pSspec, pStamp)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+TS_STAMP *pStamp;	/* I stamp at which to position; NULL to rewind */
+{
+    SYD_CHAN	*pSChan;
+    long	stat;
+
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_POSITION, pStamp);
+	if (pSspec->type == SYD_TY_SSF)
+	    break;
+	pSChan = pSChan->pNext;
+    }
+    sydInputReset(pSspec);
+    pSspec->sampleTs.secPastEpoch = pSspec->sampleTs.nsec = 0;
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydSampleExport
+*
+* DESCRIPTION
+*
+* RETURNS
+*
+* BUGS
+* o	should use precision from graphic info for printing floats
+* o	doesn't handle array channels.  There needs to be an option
+*	which puts elementCount prior to printing values
+* o	options should be #defined symbols
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long
+sydSampleExport(pSspec, out, option, samp)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+FILE	*out;		/* IO stream pointer for output */
+int	option;		/* I filtering option */
+			/*   1 spreadsheet; delta time and values */
+			/*   2 spreadsheet; delta time and values and status */
+int	samp;		/* I sample number in synchronous set */
+{
+    SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
+    char	stampText[28];
+    int		i;
+
+/*-----------------------------------------------------------------------------
+* generate headings, depending on option:
+* 1==>	"mm/dd/yy hh:mm:ss.msc"
+*	time	name1	name2	...
+*
+* 2==>	"mm/dd/yy hh:mm:ss.msc"
+*	time	stat	name1	stat	name2	...
+*----------------------------------------------------------------------------*/
+    if (samp == pSspec->firstData) {
+	(void)fprintf(out, "\"%s\"\ntime", tsStampToText(
+		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
+	pSChan = pSspec->pChanHead;
+	while (pSChan != NULL) {
+	    if (option == 2)
+		(void)fprintf(out, "\tstat");
+	    (void)fprintf(out, "\t%s", pSChan->name);
+	    pSChan = pSChan->pNext;
+	}
+	(void)fprintf(out, "\n");
+    }
+
+/*-----------------------------------------------------------------------------
+*    print the value for each channel for this sample.
+*----------------------------------------------------------------------------*/
+    (void)fprintf(out, "%.3f", pSspec->pDeltaSec[samp]);
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	if (option == 1)
+	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, samp);
+	else if (option == 2)
+	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, samp);
+	pSChan = pSChan->pNext;
+    }
+    (void)fprintf(out, "\n");
+}
+
+/*+/subr**********************************************************************
+* NAME	sydSamplePrint
+*
+* DESCRIPTION
+*
+* RETURNS
+*
+* BUGS
+* o	should use precision from graphic info for printing floats
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+long
+sydSamplePrint(pSspec, out, formatFlag, headerFlag, samp)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+FILE	*out;		/* IO stream pointer for output */
+int	formatFlag;	/* I ==1 causes page formatting for printing */
+int	headerFlag;	/* I ==1 causes printing of column headings */
+int	samp;		/* I sample number in synchronous set */
+{
+    SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
+    char	stampText[28];
+    int		i;
+
+/*-----------------------------------------------------------------------------
+*    print a heading line with channel names; if this isn't the first page,
+*    put a ^L prior to the heading.
+*----------------------------------------------------------------------------*/
+    if (headerFlag) {
+	if (formatFlag) {	/* indent if printing */
+	    if (samp != pSspec->firstData)
+		(void)fprintf(out, "\f");
+	    (void)fprintf(out, "\n\n");
+	    (void)fprintf(out, "    ");
+	}
+	(void)fprintf(out, "  %21s", " ");
+	pSChan = pSspec->pChanHead;
+	while (pSChan != NULL) {
+	    (void)fprintf(out, " %14s", pSChan->name);
+	    pSChan = pSChan->pNext;
+	}
+	(void)fprintf(out, "\n");
+    }
+/*-----------------------------------------------------------------------------
+*    print the value for each channel for this sample.  Print the status
+*    flags following values, but print only the first element for array
+*    channels.
+*----------------------------------------------------------------------------*/
+    if (formatFlag)		/* indent if printing */
+	(void)fprintf(out, "    ");
+    if (pSspec->pPartial[samp])
+	(void)fprintf(out, "*");
+    else
+	(void)fprintf(out, " ");
+    (void)fprintf(out, " %s", tsStampToText(
+		    &pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText));
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, samp);
+	pSChan = pSChan->pNext;
+    }
+    (void)fprintf(out, "\n");
+}
+
+/*+/internal******************************************************************
+* NAME	sydSamplePrint1 - print a value for a channel
+*
+* DESCRIPTION
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	doesn't yet print entire array
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
+static void
+sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, sampNum)
+SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
+FILE	*out;		/* I file pointer for writing value */
+char	sep;		/* I character to use a a prefix for each field,
+				as a separator; usually ' ' or '\t' */
+int	preFlag;	/* I != 0 prints status flag prior to value */
+int	postFlag;	/* I != 0 prints status flag following value */
+int	showArray;	/* I != 0 to show all array elements, not just 1st */
+int	sampNum;	/* I sample number in coincidence set */
+{
+    int		i;
+    chtype	type;		/* type of value */
+
+    type = pSChan->dbrType;
+
+    if (preFlag) (void)fprintf(out, "%c%c%c", sep,
+		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+    (void)fputc(sep, out);
+    if (pSChan->pFlags[sampNum].eof)
+	(void)fprintf(out, "%11s", "EOF");
+    else if (pSChan->pFlags[sampNum].missing)
+	(void)fprintf(out, "%11s", "no_data");
+    else {
+	if (type == DBR_TIME_STRING)
+	    (void)fprintf(out, "%11s", ((char *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_FLOAT)
+	    (void)fprintf(out, "%11.*f",
+		pSChan->precision, ((float *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_SHORT)
+	    (void)fprintf(out, "%11d", ((short *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_DOUBLE)
+	    (void)fprintf(out, "%11.*f",
+		pSChan->precision, ((double *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_LONG)
+	    (void)fprintf(out, "%11d", ((long *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_CHAR)
+	    (void)fprintf(out, "%11d", ((char *)pSChan->pData)[sampNum]);
+	else if (type == DBR_TIME_ENUM) {
+	    short	val;
+
+	    val = ((short *)pSChan->pData)[sampNum];
+	    if (val < pSChan->grBuf.genmval.no_str)
+		(void)fprintf(out, "%11s", pSChan->grBuf.genmval.strs[val]);
+	    else
+		(void)fprintf(out, "%11d", val);
+	}
+    }
+
+    if (postFlag) (void)fprintf(out, "%c%c%c", sep,
+		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+}
+
+static
+sydSamplePrintArray(pSChan, sampNum)
+SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
+int	sampNum;	/* I sample number in coincidence set */
+{
+    int		nEl, nBytes, i;
+    char	*pSrc;
+    double	value;
+    char	text[7];
+
+    nEl = pSChan->elCount;
+    nBytes = dbr_value_size[pSChan->dbrType];
+    pSrc = (char *)pSChan->pData + sampNum * nBytes * nEl;
+
+    (void)printf("%s %d\n", pSChan->name, nEl);
+    for (i=0; i<nEl; i++) {
+	if (i % 10 == 0)
+	    (void)printf("%05d ", i);
+        if      (dbr_type_is_FLOAT(pSChan->dbrType))
+            value = *(float *)pSrc;
+        else if (dbr_type_is_SHORT(pSChan->dbrType))
+            value = *(short *)pSrc;
+        else if (dbr_type_is_DOUBLE(pSChan->dbrType))
+            value = *(double *)pSrc;
+        else if (dbr_type_is_LONG(pSChan->dbrType))
+            value = *(long *)pSrc;
+        else if (dbr_type_is_CHAR(pSChan->dbrType))
+            value = *(unsigned char *)pSrc;
+        else if (dbr_type_is_ENUM(pSChan->dbrType))
+            value = *(short *)pSrc;
+	sydCvtDblToTxt(text, 6, value, pSChan->precision);
+	(void)printf(" %6s", text);
+	if ((i+1) % 10 == 0 || i+1 >= nEl)
+	    (void)printf("\n");
+	pSrc += nBytes;
+    }
+}
+
+/*+/subr**********************************************************************
 * NAME	sydSampleSetAlloc - acquire memory for holding a sample set
 *
 * DESCRIPTION
@@ -1573,7 +2034,7 @@ sampleMallocErr:
 }
 
 /*+/subr**********************************************************************
-* NAME	sydSampleSetFilter - filter sample set data to output
+* NAME	sydSampleSetExport - export sample set data to output
 *
 * DESCRIPTION
 *
@@ -1588,8 +2049,8 @@ sampleMallocErr:
 *
 *-*/
 long 
-sydSampleSetFilter(pSspec, out, option)
-FILE	*out;		/* IO stream pointer for output */
+sydSampleSetExport(pSspec, out, option)
+FILE	*out;		/* I stream pointer for output */
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 int	option;		/* I filtering option */
 {
@@ -1597,7 +2058,7 @@ int	option;		/* I filtering option */
 
     samp = pSspec->firstData;
     while (samp >= 0) {
-	sydSampleFilter(pSspec, out, option, samp);
+	sydSampleExport(pSspec, out, option, samp);
 	if (samp == pSspec->lastData)
 	    samp = -1;
 	else if (++samp >= pSspec->dataDim)
@@ -1676,45 +2137,10 @@ SYD_SPEC *pSspec;
     pSspec->sampleCount = 0;
     stat = S_syd_OK;
     while (stat != S_syd_EOF && pSspec->sampleCount < pSspec->reqCount) {
-	if ((stat = sydSampleGet(pSspec)) != S_syd_EOF)
-	    sydSampleStore(pSspec);
+	if ((stat = sydInputGet(pSspec, NULL)) != S_syd_EOF)
+	    sydInputStoreInSet(pSspec);
     }
     return stat;
-}
-
-/*+/subr**********************************************************************
-* NAME	sydSampleSetPosition - position the data file
-*
-* DESCRIPTION
-*
-* RETURNS
-*
-* BUGS
-* o	text
-*
-* SEE ALSO
-*
-* EXAMPLE
-*
-*-*/
-long 
-sydSampleSetPosition(pSspec, pStamp)
-SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-TS_STAMP *pStamp;	/* I stamp at which to position; NULL to rewind */
-{
-    SYD_CHAN	*pSChan;
-    long	stat;
-
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_POSITION, pStamp);
-	if (pSspec->type == SYD_TY_SSF)
-	    break;
-	pSChan = pSChan->pNext;
-    }
-    sydResetBuf(pSspec);
-    pSspec->sampleTs.secPastEpoch = pSspec->sampleTs.nsec = 0;
-    return S_syd_OK;
 }
 
 /*+/subr**********************************************************************

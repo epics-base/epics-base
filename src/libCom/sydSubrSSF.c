@@ -28,6 +28,7 @@
  * .00	12-04-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
+ * .03	08-14-91	rac	jjj
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -252,9 +253,9 @@ long	pos;
 }
 
 long
-sydOpenSSF(ppSspec, pHandle)
+sydOpenSSF(ppSspec, filePath)
 SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
-void	*pHandle;	/* I pointer to handle for "source" */
+char	*filePath;	/* I path name for `sample set' archive file */
 {
     long	stat;
 
@@ -264,20 +265,20 @@ void	*pHandle;	/* I pointer to handle for "source" */
 	return S_syd_noMem;
     (*ppSspec)->pFunc = sydSSFFunc;
     (*ppSspec)->type = SYD_TY_SSF;
-    if ((stat = sydSSFFunc(*ppSspec, NULL, SYD_FC_INIT, pHandle)) != S_syd_OK){
+    if ((stat = sydSSFFunc(*ppSspec, NULL,SYD_FC_INIT,filePath)) != S_syd_OK){
 	GenFree((char *)*ppSspec);
 	*ppSspec = NULL;
 	return stat;
     }
     (*ppSspec)->nInBufs = 2;
-    return sydOpen(ppSspec, pHandle);
+    return sydOpen(ppSspec);
 }
 /*+/subr**********************************************************************
 * NAME	sydSSFFunc - handle "sample set" data file interactions
 *
 * DESCRIPTION
 *
-* sydSSFFunc(pSspec, NULL, SYD_FC_INIT, fileName)  open "sample set" file
+* sydSSFFunc(pSspec, NULL, SYD_FC_INIT, filePath)  open "sample set" file
 * sydSSFFunc(pSspec, pSChan, SYD_FC_OPEN, NULL)  chanName already in pSChan
 * sydSSFFunc(pSspec, pSChan, SYD_FC_READ, NULL)
 * sydSSFFunc(pSspec, pSChan, SYD_FC_POSITION, &stamp)
@@ -362,6 +363,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    assertAlways(0);
 	dbf_text_to_type(pField, type);
 	assert(type >= 0);
+	pSChan->dbfType = type;
 	pSChan->dbrType = dbf_type_to_DBR_TIME(type);
 	pSChan->dbrGrType = dbf_type_to_DBR_GR(type);
 	stat = sscanf(pRecord, "%*d %*d %d", &elCount);

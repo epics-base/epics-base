@@ -28,6 +28,7 @@
  * .00	12-04-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
+ * .03	08-06-91	rac	allow specifying file name
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -66,14 +67,33 @@
 #   include <stdio.h>
 #   include <sys/file.h>	/* for O_RDWR and O_RDONLY definitions */
 #endif
-
 long sydCFFunc();
 long sydCFFuncGetGR();
 
+
+/*+/subr**********************************************************************
+* NAME	sydOpenCF - open an AR `by channel' file for retrieval
+*
+* DESCRIPTION
+*	Open an archiver `by channel' file for synchronous data retrieval.
+*
+* RETURNS
+*	S_syd_OK, or
+*	S_syd_ERROR, or
+*	other code indicating error
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
 long
-sydOpenCF(ppSspec, pHandle)
+sydOpenCF(ppSspec, filePath)
 SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
-void	*pHandle;	/* I pointer to handle for "source" */
+char	*filePath;	/* I path name for `by channel' archive file */
 {
     long	stat;
 
@@ -83,27 +103,27 @@ void	*pHandle;	/* I pointer to handle for "source" */
 	return S_syd_noMem;
     (*ppSspec)->pFunc = sydCFFunc;
     (*ppSspec)->type = SYD_TY_CF;
-    if ((stat = sydCFFunc(*ppSspec, NULL, SYD_FC_INIT, pHandle)) != S_syd_OK){
+    if ((stat = sydCFFunc(*ppSspec, NULL, SYD_FC_INIT, filePath)) != S_syd_OK){
 	GenFree((char *)*ppSspec);
 	*ppSspec = NULL;
 	return stat;
     }
     (*ppSspec)->nInBufs = 2;
-    return sydOpen(ppSspec, pHandle);
+    return sydOpen(ppSspec);
 }
 /*+/subr**********************************************************************
 * NAME	sydCFFunc - handle "by channel" data file interactions
 *
 * DESCRIPTION
 *
-* sydCFFunc(pSspec, NULL, SYD_FC_INIT, NULL)	open "by channel" file
-* sydCFFunc(pSspec, pSChan, SYD_FC_OPEN, NULL)  chanName already in pSChan
+* sydCFFunc(pSspec, NULL, SYD_FC_INIT, filePath)  open "by channel" file
+* sydCFFunc(pSspec, pSChan, SYD_FC_OPEN, NULL)    chanName already in pSChan
 * sydCFFunc(pSspec, pSChan, SYD_FC_READ, NULL)
-* sydCFFunc(pSspec, NULL, SYD_FC_READ_SYNC, NULL)  sync "by channel" file
+* sydCFFunc(pSspec, NULL, SYD_FC_READ_SYNC, NULL) sync "by channel" file
 * sydCFFunc(pSspec, pSChan, SYD_FC_POSITION, &stamp)
 * sydCFFunc(pSspec, pSChan, SYD_FC_CLOSE, NULL)
 * sydCFFunc(pSspec, NULL, SYD_FC_FILEINFO, outFile)
-* sydCFFunc(pSspec, NULL, SYD_FC_WRAPUP, NULL)	close "by channel" file
+* sydCFFunc(pSspec, NULL, SYD_FC_WRAPUP, NULL)	  close "by channel" file
 *
 * RETURNS
 *	S_syd_OK, or
@@ -154,8 +174,8 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    retStat = S_syd_chanNotFound;
 	else {
 	    pSChan->pHandle = (void *)pChanDesc;
-	    pSChan->dbrType =
-			    dbf_type_to_DBR_TIME(ArCFChanFieldType(pChanDesc));
+	    pSChan->dbfType = ArCFChanFieldType(pChanDesc);
+	    pSChan->dbrType = dbf_type_to_DBR_TIME(pSChan->dbfType);
 	    pSChan->elCount = ArCFChanElementCount(pChanDesc);
 	    sydCFFuncGetGR(pSChan, pChanDesc);
 	}

@@ -134,6 +134,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
     else if (funcCode ==				SYD_FC_OPEN) {
 	pPChan = (PFO_CHAN *)pArg;
 	pSChan->pHandle = (void *)pPChan->pGsd;
+	pSChan->dbfType = ca_field_type(pPChan->pGsd->pChid);
 	pSChan->dbrType = pPChan->pGsd->time_type;
 	assert(dbr_type_is_TIME(pSChan->dbrType));
 	pSChan->elCount = pPChan->pGsd->count;

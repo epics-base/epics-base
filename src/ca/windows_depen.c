@@ -429,7 +429,7 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
     }
 
 
-  retCode = RegQueryValueEx (hKey,        // Key handle returned from RegOpenKeyEx
+  retCode = RegQueryValueEx (hKey,        // Key handle returned from
                           lpzValueName,   // Name of value.
                           NULL,        // Reserved, dword = NULL.
                           lpdwType,     // Type of data.

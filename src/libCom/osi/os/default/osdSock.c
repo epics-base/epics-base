@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
+#include "osiThread.h"
 #include "osiSem.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
@@ -45,13 +46,27 @@
  * Protect some routines which are not thread-safe
  */
 static semMutexId infoMutex;
+static void createInfoMutex (void *unused)
+{
+	infoMutex = semMutexMustCreate ();
+}
+static void lockInfo (void)
+{
+    static threadOnceId infoMutexOnceFlag = OSITHREAD_ONCE_INIT;
+
+    threadOnce (&infoMutexOnceFlag, createInfoMutex, NULL);
+	semMutexMustTake (infoMutex);
+}
+static void unlockInfo (void)
+{
+	semMutexGive (infoMutex);
+}
 
 /*
  * NOOP
  */
 int bsdSockAttach()
 {
-	infoMutex = semMutexMustCreate ();
 	return 1;
 }
 
@@ -60,7 +75,6 @@ int bsdSockAttach()
  */
 void bsdSockRelease()
 {
-	semMutexDestroy (infoMutex);
 }
 
 /*
@@ -78,14 +92,14 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 		return 0;
 	}
 
-	semMutexMustTake (infoMutex);
+	lockInfo ();
 	ent = gethostbyaddr((char *) pAddr, sizeof (*pAddr), AF_INET);
 	if (ent) {
         strncpy (pBuf, ent->h_name, bufSize);
         pBuf[bufSize-1] = '\0';
         ret = strlen (pBuf);
 	}
-	semMutexGive (infoMutex);
+	unlockInfo ();
     return ret;
 }
 
@@ -100,7 +114,7 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	struct hostent *phe;
 	int ret = -1;
 
-	semMutexMustTake (infoMutex);
+	lockInfo ();
 	phe = gethostbyname (pHostName);
 	if (phe && phe->h_addr_list[0]) {
 		if (phe->h_addrtype==AF_INET && phe->h_length<=sizeof(struct in_addr)) {
@@ -110,6 +124,6 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 			ret = 0;
 		}
 	}
-	semMutexGive (infoMutex);
+	unlockInfo ();
 	return ret;
 }

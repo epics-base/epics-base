@@ -233,6 +233,12 @@ void nciu::stringVerify ( const char *pStr, const unsigned count )
 void nciu::write ( unsigned type, 
                  arrayElementCount countIn, const void *pValue )
 {
+    // make sure that they get this and not "no write access"
+    // if disconnected
+    if ( ! this->f_connected ) {
+        throw notConnected();
+    }
+
     if ( ! this->accessRightState.writePermit() ) {
         throw noWriteAccess();
     }
@@ -251,6 +257,12 @@ void nciu::write ( unsigned type,
 cacChannel::ioStatus nciu::write ( unsigned type, arrayElementCount countIn, 
                         const void *pValue, cacWriteNotify &notify, ioid *pId )
 {
+    // make sure that they get this and not "no write access"
+    // if disconnected
+    if ( ! this->f_connected ) {
+        throw notConnected();
+    }
+
     if ( ! this->accessRightState.writePermit() ) {
         throw noWriteAccess();
     }

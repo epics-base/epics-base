@@ -141,6 +141,8 @@ public:
         nciu & );
     void initiateConnect ( 
         epicsGuard < epicsMutex > &, nciu &, netiiu * & );
+    nciu * lookupChannel (
+        epicsGuard < epicsMutex > &, const cacChannel::ioid & );
 
     // IO requests
     void writeRequest ( epicsGuard < epicsMutex > &, nciu &, unsigned type, 
@@ -424,6 +426,14 @@ inline callbackManager::callbackManager (
     cacContextNotify & notify, epicsMutex & callbackControl ) :
     notifyGuard ( notify ), cbGuard ( callbackControl )
 {
+}
+
+inline nciu * cac::lookupChannel (
+    epicsGuard < epicsMutex > & guard, 
+    const cacChannel::ioid & idIn )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->chanTable.lookup ( idIn );
 }
 
 #endif // ifdef cach

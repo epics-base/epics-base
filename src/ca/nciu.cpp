@@ -171,12 +171,23 @@ void nciu::unresponsiveCircuitNotify (
     epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard )
 {
+    ioid tmpId = this->getId ();
+    cac & caRefTmp = this->cacCtx;
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     this->cacCtx.disconnectAllIO ( cbGuard, guard, 
         *this, this->eventq );
     this->notify().disconnectNotify ( guard );
-    caAccessRights noRights;
-    this->notify().accessRightsNotify ( guard, noRights );
+    // if they destroy the channel in their disconnect 
+    // handler then we have to be very careful to not
+    // touch this object if it has been destroyed
+    nciu * pChan = caRefTmp.lookupChannel ( guard, tmpId );
+    if ( pChan ) {
+        caAccessRights noRights;
+        pChan->notify().accessRightsNotify ( guard, noRights );
+        // likewise, they might destroy the channel in their access rights 
+        // handler so we have to be very careful to not touch this 
+        // object from here on down
+    }
 }
 
 void nciu::setServerAddressUnknown ( netiiu & newiiu, 

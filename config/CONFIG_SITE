@@ -36,7 +36,7 @@ endif
 #       hkv2f
 #	niCpu030
 #
-CROSS_COMPILER_TARGET_ARCHS=mv167
+CROSS_COMPILER_TARGET_ARCHS=mv167 mv162
 
 #  If only a subset of the host architectures perform
 #  the build for the CROSS_COMPILER_TARGET_ARCHS 

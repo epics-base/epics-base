@@ -525,7 +525,14 @@ void tcpiiu::shutdown ()
     this->unlock ();
 
     if ( laborNeeded ) {
-        int status = ::shutdown ( this->sock, SD_BOTH );
+        //
+        // using shutdown () here initiates a graceful socket
+        // shutdown sequence which will linger on the CA echo
+        // request until the IOC reboots. Unfortunately, this
+        // also has the side effect that the thread in recv ()
+        // does not promptly exit.
+        //
+        int status = socket_close ( this->sock );
         if ( status ) {
             errlogPrintf ("CAC TCP shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
@@ -572,8 +579,6 @@ tcpiiu::~tcpiiu ()
     semBinaryDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
 
     this->clientCtx ().removeIIU ( *this );
-
-    socket_close ( this->sock );
 
     /*
      * free message body cache

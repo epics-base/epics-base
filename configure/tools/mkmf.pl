@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------
-#              mkmf.pl: Perl script to create include file dependancies
+# mkmf.pl: Perl script to create #include file dependancies
 #
 # Limitations:
 #
@@ -11,148 +11,151 @@
 # 3) Does not keep track of the macros defined in #include files so can't
 #    do #ifdefs #ifndef ...
 # 4) Does not know where system include files are located
-# 
+# 5) Uses only #include lines with single or double quoted file names
+#
 #-----------------------------------------------------------------------
 
-require 5;
-use strict;
-use File::Basename;
 use Getopt::Std;
-use vars qw( $opt_d $opt_m $opt_v ); # declare these global to be shared with Getopt:Std
 
-my $version = '$Id$ ';
+my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
+my $endline = $/;
+my %delim_match = ( q/'/ => q/'/, q/"/ => q/"/);
+my %output;
+my @includes;
 
-# initialize variables: use getopts for these
-getopts( 'dm:v' ) || die "\aSyntax: $0 [-d] [-m makefile] [-v] [targets]\n";
-$opt_v = 1 if $opt_d;    # debug flag turns on verbose flag also
-print "$0 $version\n" if $opt_v;
+use vars qw( $opt_d $opt_m );
+getopts( 'dm:' ) || die "\aSyntax: $0 [-d] [-f dependsFile] includeDirs objFile srcFile\n";
+my $debug = $opt_d;
+my $depFile = $opt_m;
 
-$opt_m = 'depends' unless $opt_m; # set default file name
-print "Making depends file  $opt_m ...\n" if $opt_v;
+print "$0 $version\n" if $debug;
 
+# directory list 
 my @dirs;
 my $i;
 foreach $i (0 .. $#ARGV-2) {
     push @dirs, $ARGV[$i];
 }
-#some generic declarations
-my( $file, $line);
 
-my %scanned;                   # list of directories/files already scanned
-my $object = $ARGV[$#ARGV-1];  # object file
-my $source = $ARGV[$#ARGV];    # sourcefile from object
+my $objFile = $ARGV[$#ARGV-1];
+my $srcFile = $ARGV[$#ARGV];
 
-#some constants
-my $endline = $/;
-my %delim_match = ( q/'/ => q/'/,    # hash to find includefile delimiter pair
-            q/"/ => q/"/,
-            q/</ => q/>/ );
+if( $debug ) {
+   print "DEBUG: dirs= @dirs\n";
+   print "DEBUG: source= $srcFile\n";
+   print "DEBUG: object= $objFile\n";
+}
 
-#formatting command for MAKEFILE, keeps very long lines to 80 characters
-format MAKEFILE =
-^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< \~
+print "Generating dependencies for $objFile\n" if $debug;
+scanFile($srcFile);
+scanIncludesList();
+
+$depFile = 'depends' unless $depFile;
+
+print "Creating file $depFile\n" if $debug;
+printList($depFile,$objFile);
+
+print "\n ALL DONE \n\n" if $debug;
+
+
+
+#----------------------------------------
+sub printList{
+   my $depFile = shift; 
+   my $objFile = shift; 
+   my $line;
+
+   unlink($depFile) or die "Can't delete $depFile: $!\n" if -f $depFile;
+
+   open DEPENDS, ">$depFile" or die "\aERROR opening file $depFile for writing: $!\n";
+
+   my $old_handle = select(DEPENDS);
+
+#Limit lines to 80 characters
+# a dot marks the end of the format
+format DEPENDS_FMT =
+^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\~
 $line
 .
 
-sub print_formatted_list{
-#this routine, in conjunction with the format line above, can be used to break up long lines
-# it is currently used to break up the potentially long defs of SRC, OBJ, CPPDEFS, etc.
-# not used for the dependency lists
-   $line = "@_";
-   local $: = " \t\n"; # the default formatting word boundary includes the hyphen, but not here
+format TARGETS_FMT =
+^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<:~
+$line
+.
+
+   print "# DO NOT EDIT: This file created by $version\n\n";
+
+   local $: = " \t\n"; # remove hyphen from word boundary defaults
+
+   $~ = DEPENDS_FMT;
+   $line = "$objFile : @includes";
    while ( length $line > 78 ) {
-      write MAKEFILE, $line;
+      write ;
    }
-   print MAKEFILE $line unless $line eq '';
-   print MAKEFILE "\n";
+   print $line unless $line eq '';
+   print "\n\n";
+   print "#Depend files must be targets to avoid 'No rule to make target ...' errors\n";
+
+   $~ = TARGETS_FMT;
+   $line = "@includes";
+   while ( length $line > 78 ) {
+      write ;
+   }
+   print "$line :" unless $line eq '';
+   
+   select($old_handle) ; # in this case, STDOUT
 }
 
-#begin writing makefile
-open MAKEFILE, ">$opt_m" or die "\aERROR opening file $opt_m for writing: $!\n";
-printf MAKEFILE "# Makefile created by %s $version\n\n", basename($0);
-
-if( $opt_d ) {
-   print "DEBUG: dirs= @dirs\n";
-   print "DEBUG: source= $source\n";
-   print "DEBUG: object= $object\n";
-}
-
-my %includes_in;  # hash of includes in a given source file (hashed against the corresponding object)
-#subroutine to scan file for include files
-# first argument is $object, second is $file
-sub scanfile_for_keywords {
-   my $object = shift;
+#-------------------------------------------
+# scan file for #includes
+sub scanFile {
    my $file = shift;
-   local $/ = $endline;
-   #if file has already been scanned, return
-   return if $scanned{$file};
-   print "Scanning file $file of object $object ...\n" if $opt_v;
-   open FILE, $file or die "\aERROR opening file $file of object $object: $!\n";
+   my $incfile;
+   my $line;
+   print "Scanning file $file\n" if $debug;
+   open FILE, $file or return;
    foreach $line ( <FILE> ) {
-      next if !($line =~ m/^[ 	]*\#?[ 	]*include/);
-      if( $line =~ /^[\#?\s]*include\s*(['""'<])([\w\.\/]*)$delim_match{\1}/ix ) {
-     $includes_in{$file} .= ' ' . $2 if $2;
-      }
+      $incfile = findNextIncName($line);
+      next if !$incfile;
+      next if $output{$incfile};   
+      push @includes,$incfile;
+      $output{$incfile} = 1;
    }
    close FILE;
-   $scanned{$file} = 1;
-   print "   uses includes=$includes_in{$file}.\n" if $opt_d;
 }
 
-&scanfile_for_keywords( $object, $source );
-
-my %includes;            # global list of includes
-my @cmdline;
-my %obj_of_include;        # hash of includes for current object
-print "Collecting dependencies for $object ...\n" if $opt_v;
-@cmdline = "$object: ";
-#includes: done in subroutine since it must be recursively called to look for embedded includes
-&get_include_list( $object, $source );
-#write the command line: if no file-specific command, use generic command for this suffix
-&print_formatted_list(@cmdline) if $#cmdline > 1 ;
-
-# subroutine to seek out includes recursively
-sub get_include_list {
-  my( $incfile, $incname, $incpath );
-  my @paths;
-  my $object = shift;
-  my $file = shift;
-  my $include;
-  foreach ( split /\s+/, $includes_in{$file} ) {
-     print "object=$object, file=$file, include=$_.\n" if $opt_d;
-     if ( $scanned{"$_"} ) {
-        print "DEBUG: skipping scanned file $_\n" if $opt_d;
-        next;
-     }
-     $include = $_;
-     $incname = basename($_);
-     next if ( $incname eq '' );
-     $incpath = dirname($_);
-     undef $incpath if $incpath eq './';
-     undef $incpath if $incpath eq '.';
-     if( $incpath =~ /^\// ) {
-        @paths = $incpath; # exact incpath specified, use it
-     } else {
-        @paths = @dirs;
-     }
-     foreach ( @paths ) {
-        local $/ = '/'; chomp; # remove trailing / if present
-        my $newincpath = "$_/$incpath" if $_;
-        undef $newincpath if $newincpath eq './';
-        $incfile = "$newincpath$incname";
-        print "DEBUG: checking for $incfile in $_\n" if $opt_d;
-        if ( -f $incfile and $obj_of_include{$incfile} ne $object ) {
-            push @cmdline, $incfile;
-            $includes{$incfile} = 1;
-            chomp( $newincpath );
-            $newincpath = '.' if $newincpath eq '';
-            &scanfile_for_keywords($object,$incfile);
-            $obj_of_include{$incfile} = $object;
-            &get_include_list($object,$incfile); # recursively look for includes
-            last;
-         }
-      }
-      $scanned{"$include"} = 1;
+#------------------------------------------
+# scan files in includes list
+sub scanIncludesList {
+   my $file;
+   foreach $file (@includes) {
+      scanFile($file);
    }
+}
+
+#-----------------------------------------
+# find filename on #include line
+sub findNextIncName {
+   my $line = shift;
+   my $incname = "";
+   my $incfile = 0;
+   my $dir;
+
+   local $/ = $endline;
+   return 0 if !($line =~ m/^[	  ]*\#?[	 ]*include/);
+   return 0 if !($line =~ /^[\#?\s]*include\s*(['""'<])([\w\.\/]*)$delim_match{\1}/ix);
+   return 0 if !$2;
+   $incname = $2;
+
+   return $incname if -f $incname;
+   return 0 if ( $incname =~ /^\// || $incname =~ /^\\/ );
+
+   foreach $dir ( @dirs ) {
+      chomp($dir);
+      $incfile = "$dir/$incname";
+      print "DEBUG: checking for $incname in $dir\n" if $debug;
+      return $incfile if -f $incfile;
+   }
+   return 0;
 }
 

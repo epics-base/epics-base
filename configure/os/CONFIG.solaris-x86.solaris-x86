@@ -53,5 +53,3 @@ STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS_YES = -G -h $@  -z ignore -z combreloc -z lazyload
 
-HDEPENDS_FLAGS_CMPLR = -xM1
-

@@ -268,36 +268,22 @@ COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOU
 COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_CXXFLAG)
 
 #--------------------------------------------------
-# Build depends command here
+# Depends command
 
-HOST_HDEPENDS_CMD = MKMF
-CROSS_HDEPENDS_CMD = MKMF
-
-HDEPENDS_CMD = $($(BUILD_CLASS)_HDEPENDS_CMD)
-
-HDEPENDS.c_CMPLR = $(CC)
-HDEPENDS.cpp_CMPLR = $(CCC)
-HDEPENDSFLAGS_CMPLR += $(CPPFLAGS) $(INCLUDES) $< > $*$(DEP)
-
-HDEPENDS.c_MKMF =  $(PERL) $(TOOLS)/mkmf.pl
-HDEPENDS.cpp_MKMF = $(PERL) $(TOOLS)/mkmf.pl
-HDEPENDSFLAGS_MKMF = -m $*$(DEP) $(HDEPENDS_INCLUDES_MKMF) $@ $<
-HDEPENDS_INCLUDES_MKMF = $(filter .%,$(subst -I,,$(INCLUDES)))
-
-HDEPENDS.c = $(HDEPENDS.c_$(HDEPENDS_CMD))
-HDEPENDS.cpp = $(HDEPENDS.cpp_$(HDEPENDS_CMD))
-HDEPENDSFLAGS = $(HDEPENDSFLAGS_$(HDEPENDS_CMD))
-HDEPENDS_FLAGS = $(HDEPENDS_FLAGS_$(HDEPENDS_CMD))
-HDEPENDS_CMD.c   = -$(HDEPENDS.c) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
-HDEPENDS_CMD.cpp = -$(HDEPENDS.cpp) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
-HDEPENDS_TARGETS_CMD = $(PERL) $(TOOLS)/makeDependsTargets.pl $*$(DEP)
+HDEPENDS_FLAGS =
+HDEPENDS_INCLUDES = $(filter .%,$(subst -I,,$(INCLUDES)))
+HDEPENDSFLAGS = -m $*$(DEP) $(HDEPENDS_INCLUDES) $@ $<
+HDEPENDS_CMD_YES   = -$(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
+HDEPENDS_CMD_NO   = echo ""
+HDEPENDS_CMD  = $(HDEPENDS_CMD_$(HDEPENDS))
 
 #--------------------------------------------------
 # depends definition
 
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
 SRC_FILES =  $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS)
-HDEPENDS_FILES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
+HDEPENDS_FILES_YES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
+HDEPENDS_FILES  = $(HDEPENDS_FILES_$(HDEPENDS))
 
 #---------------------------------------------------------------
 # Names of installed items

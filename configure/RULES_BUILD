@@ -81,10 +81,8 @@ all:	install
 
 -include $(CONFIG)/RULES_JAVA
 
-ifeq ($(HDEPENDS),YES)
 ifneq (,$(strip $(HDEPENDS_FILES)))
 -include $(HDEPENDS_FILES)
-endif
 endif
 
 #---------------------------------------------------------------
@@ -197,38 +195,22 @@ $(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)
 	$(COMPILE.c) -traditional $<
 
 %$(OBJ): %.c
-ifeq ($(HDEPENDS),YES)
-	@$(RM) $*$(DEP)
-	@$(HDEPENDS_CMD.c)
-	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
-endif
+	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.c) $(call PATH_FILTER,$<)
 
 %$(OBJ): %.cc
-ifeq ($(HDEPENDS),YES)
-	@$(RM) $*$(DEP)
-	@$(HDEPENDS_CMD.cpp)
-	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
-endif
+	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 %$(OBJ): %.cpp
-ifeq ($(HDEPENDS),YES)
-	@$(RM) $*$(DEP)
-	@$(HDEPENDS_CMD.cpp)
-	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
-endif
+	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 %$(OBJ): %.C
-ifeq ($(HDEPENDS),YES)
-	@$(RM) $*$(DEP)
-	@$(HDEPENDS_CMD.cpp)
-	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
-endif
+	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 

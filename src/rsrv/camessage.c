@@ -61,15 +61,15 @@ static struct extmsg nill_msg;
 #define MPTOPADDR(MP) (&((struct channel_in_use *)(MP)->m_pciu)->addr)
 #define	RECORD_NAME(PADDR) (((struct db_addr *)(PADDR))->precord)
 
-void  	search_reply();
-void  	build_reply();
-void	read_reply();
-void	read_sync_reply();
-void	event_cancel_reply();
-void	clear_channel_reply();
-void	send_err();
-void	log_header();
-void    search_fail_reply();
+static void  	search_reply();
+static void  	build_reply();
+static void	read_reply();
+static void	read_sync_reply();
+static void	event_cancel_reply();
+static void	clear_channel_reply();
+static void	send_err();
+static void	log_header();
+static void	search_fail_reply();
 
 
 /*
@@ -549,7 +549,7 @@ void		*pfl;
 		 */
 		if (mp->m_type == DBR_STRING && mp->m_count == 1) {
 			/* add 1 so that the string terminator will be shipped */
-			strcnt = strlen(reply + 1) + 1;
+			strcnt = strlen((char *)(reply + 1)) + 1;
 			reply->m_postsize = strcnt;
 		}
 		END_MSG(client);
@@ -807,7 +807,7 @@ send_err(curp, status, client, footnote)
 		break;
 	}
 	*(reply + 1) = *curp;
-	strcpy(reply + 2, footnote);
+	strcpy((char *)(reply + 2), footnote);
 
 	END_MSG(client);
 
@@ -822,6 +822,7 @@ send_err(curp, status, client, footnote)
 LOCAL void
 log_header (mp, mnum)
 FAST struct extmsg *mp;
+int		mnum;
 {
 	logMsg(	"CAS: N=%d cmd=%d type=%d pstsize=%d paddr=%x avail=%x\n",
 	  	mnum, 

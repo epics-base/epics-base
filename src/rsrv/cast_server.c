@@ -70,7 +70,7 @@ static char	*sccsId = "@(#)cast_server.c	1.13\t7/28/92";
 #include <server.h>
 
 	
-void 	clean_addrq();
+static void 	clean_addrq();
 
 
 

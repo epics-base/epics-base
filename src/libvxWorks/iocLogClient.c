@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.19  1998/06/18 00:15:03  jhill
+ * use ipAddrToA
+ *
  * Revision 1.18  1998/02/06 00:51:42  jhill
  * deleted extra include of assert.h
  *
@@ -121,6 +124,13 @@ int iocLogInit(void)
 	int	options;
 
 	if(iocLogDisable){
+		return OK;
+	}
+
+	status = getConfig();
+	if(status<0){
+		printf ("iocLogClient: logging disabled\n");
+		iocLogDisable = 1;
 		return OK;
 	}
 

@@ -26,7 +26,7 @@ $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 # Empty string: Don't copy this file
 sub ReplaceFilename { # (filename)
     my($file) = $_[0];
-    $file =~ s|.*/CVS/?.*||;	# template might be kept under CVS
+    $file =~ s|.*/CVS/?.*||;	# Ignore CVS files
     if($opt_i) {
 	$file =~ s|/$apptypename|/iocBoot|;
     }
@@ -214,19 +214,10 @@ sub get_commandline_opts { #no args
 #
 sub ListAppTypes { # no args
     print "Valid application types are:\n";
-    find(\&Fapp_types, "$top");
-    for $type (keys %Types) {
-	printf "%-15s %-15s\n", $TypeNameA{$type}, $TypeNameE{$type};
+    foreach $name (<$top/*App $top/*Boot>) {
+	$name =~ s|$top/||;
+	printf "$name\n";
     }
-}
-sub Fapp_types {
-    ! /$topn/ && ! /defaultApp$/ && /App$/ &&
-    ($File::Find::prune = 1) && s/App$// &&
-    (($type = $_) =~ s/^example_//, 1) &&
-    ($t = /^example_.*/?TypeNameE:TypeNameA,
-     s/^example_.*/(including example: use \'-e\' option)/, 1) &&
-    (eval "\$$t\{\$type\} = \$_", 1) &&
-    ($Types{$type} = 1);
 }
 
 #
@@ -304,6 +295,11 @@ where
 Environment:
 EPICS_MBA_DEF_APP_TYPE  The application type you want to use as default
 EPICS_MBA_TEMPLATE_TOP  The template top directory
+
+Example: Create exampleApp 
+
+<base>/bin/<arch>/makeBaseApp.pl -t example example
+<base>/bin/<arch>/makeBaseApp.pl -i -t example example
 EOF
 
     exit $rtncode;

@@ -160,6 +160,7 @@ threadWrapper (rtems_task_argument arg)
     if (v->forw)
         v->forw->back = v->back;
     taskVarUnlock ();
+    free (v->threadVariables);
     free (v->name);
     free (v);
     rtems_task_delete (RTEMS_SELF);

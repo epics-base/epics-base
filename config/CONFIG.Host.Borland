@@ -104,7 +104,7 @@ CCC_TEMPL_INST_FLAG =
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-CCC_WARN_YES = -w -g0 -w-8012 -w-8060 -w-8071
+CCC_WARN_YES = -w -g0 -w-8012 -w-8060 -w-8071 -w-8008 -w-8027 -w-8066 -w-8080 -w-8004
 # -w- display warnings off
 CCC_WARN_NO = -w-
 

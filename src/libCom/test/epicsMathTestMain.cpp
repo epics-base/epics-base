@@ -13,7 +13,7 @@
  */
 
 extern "C" {
-void epicsMathTest ( void );
+int epicsMathTest ( void );
 }
 
 int main ( int  , char *[] )

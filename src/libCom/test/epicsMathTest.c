@@ -22,7 +22,7 @@
 
 static char *truth[2] = {"false","true"};
 
-void epicsMathTest ()
+int epicsMathTest ()
 {
     double a,b,c;
 
@@ -41,4 +41,5 @@ void epicsMathTest ()
     a=1e300; b=1e300; c=a/b;
     printf("a %e b %e c %e isnan %s isinf %s\n",
         a,b,c,truth[isnan(c) ? 1 : 0],truth[isinf(c) ? 1 : 0]);
+    return(0);
 }

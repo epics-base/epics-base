@@ -17,15 +17,16 @@ TOP=.
 include $(TOP)/configure/CONFIG
 
 DIRS = configure
+DIRS += config
 DIRS += src
 
 include $(TOP)/configure/RULES_TOP
 
-release: 
+release::
 	@echo TOP: Creating Release...
 	@./MakeRelease
 
-built_release:
+built_release::
 	@echo TOP: Creating Fully Built Release...
 	@./MakeRelease -b $(INSTALL_LOCATION)
 

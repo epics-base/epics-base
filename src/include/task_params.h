@@ -50,6 +50,10 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.4  1998/09/29 14:45:50  mrk
+ * Task priorities were changed so that no epics task  has higher priority than netTask.
+ * Definitions for IOEVENTSCAN and TIMESTAMP were removed.
+ *
  * Revision 1.3  1998/05/20 21:00:43  mrk
  * raised DB_CA_PRI to just higher than sequencer
  *
@@ -73,6 +77,10 @@
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.4  1998/09/29 14:45:50  mrk
+ * added Task priorities were changed so that no epics task  has higher priority than netTask.
+ * added Definitions for IOEVENTSCAN and TIMESTAMP were removed.
+ * added
  * added Revision 1.3  1998/05/20 21:00:43  mrk
  * added raised DB_CA_PRI to just higher than sequencer
  * added
@@ -116,17 +124,17 @@
 #define	SEQUENCER_NAME		"sequencer"
 #define BKPT_CONT_NAME          "bkptCont"
 #define	SCANNER_NAME		"scanner"	
-#define	REQ_SRVR_NAME		"CA TCP"
-#define	CA_CLIENT_NAME		"CA client"
-#define	CA_EVENT_NAME		"CA event"
-#define CAST_SRVR_NAME		"CA UDP"
-#define CA_REPEATER_NAME	"CA repeater"
-#define CA_ONLINE_NAME		"CA online"
+#define	REQ_SRVR_NAME		"CA_TCP"
+#define	CA_CLIENT_NAME		"CA_client"
+#define	CA_EVENT_NAME		"CA_event"
+#define CAST_SRVR_NAME		"CA_UDP"
+#define CA_REPEATER_NAME	"CA_repeater"
+#define CA_ONLINE_NAME		"CA_online"
 #define TASKWD_NAME		"taskwd"
 #define SMIOTEST_NAME		"smInout"
 #define SMROTTEST_NAME		"smRotate"
 #define EVENT_PEND_NAME		"event task"
-#define XY240_NAME              "xy 240 scan"
+#define XY240_NAME              "xy_240_scan"
 #define	GPIBLINK_NAME		"gpibLink"
 #define BBLINK_NAME		"bbLinkTask"
 #define	BBTXLINK_NAME		"bbTx"

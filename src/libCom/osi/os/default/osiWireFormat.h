@@ -58,7 +58,6 @@ inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWir
 
 inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWire )
 {
-    const epicsUInt32 * pValue = reinterpret_cast < const epicsUInt32 *> ( &value );
     union {
         epicsUInt8 btmp[8];
         epicsFloat64 ftmp;

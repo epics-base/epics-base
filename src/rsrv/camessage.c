@@ -38,6 +38,7 @@
  *			to avoid deadlock condition between the client
  *			and the server.
  *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
+ *	.07 joh	021192	verify channels to be deleted prior to deletion
  */
 
 #include <vxWorks.h>
@@ -347,7 +348,25 @@ struct client  *client;
 	FAST struct event_ext *pevext;
 	FAST int        status;
 	struct channel_in_use *pciu = (struct channel_in_use *) mp->m_pciu;
+	struct channel_in_use *ptmpciu;
 	LIST           *peventq = &pciu->eventq;
+
+
+	/*
+	 *
+	 * Verify the channel
+	 *
+ 	 */
+	ptmpciu = (struct channel_in_use *) & client->addrq.node.next;
+	while (ptmpciu = (struct channel_in_use *) pciu->node.next){
+		if(ptmpciu == pciu){
+			break;
+		}
+	}
+	if(!ptmpciu){
+		logMsg("CAS: Attempt to delete nonexistent channel ignored\n");
+		return;
+	}
 
 	for (pevext = (struct event_ext *) peventq->node.next;
 	     pevext;

@@ -33,7 +33,11 @@ OP_SYS_CFLAGS += -no-cpp-precomp
 OP_SYS_INCLUDES = -I/sw/include -I/usr/X11R6/include
 OP_SYS_LDFLAGS += -L/sw/lib -L/usr/X11R6/lib
 
-ARCH_DEP_LDLIBS += -lreadline
+# Uncomment this if you're using the GNU readline library
+#ARCH_DEP_LDLIBS += -lreadline
+
+# Uncomment this if you're using the libtecla library
+ARCH_DEP_LDLIBS += -ltecla_r -ltermcap
 
 #
 # Compiler/linker problems prevent the use of shared libraries at the moment

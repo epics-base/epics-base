@@ -413,8 +413,13 @@ void tcpRecvThread::run ()
     }
     catch ( ... ) {
         errlogPrintf ( "cac tcp receive thread terminating due to a c++ exception\n" );
-        this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
     }
+
+    // Although this is redundant in certain situations it is
+    // required in other because the receive thread must hang
+    // around until it receives its blocking socket call interrupt 
+    // signal.
+    this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
 }
 
 //

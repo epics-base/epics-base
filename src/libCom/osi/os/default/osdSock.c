@@ -37,7 +37,7 @@
 
 #define epicsExportSharedSymbols
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -45,21 +45,21 @@
 /*
  * Protect some routines which are not thread-safe
  */
-static semMutexId infoMutex;
+static epicsMutexId infoMutex;
 static void createInfoMutex (void *unused)
 {
-	infoMutex = semMutexMustCreate ();
+	infoMutex = epicsMutexMustCreate ();
 }
 static void lockInfo (void)
 {
     static threadOnceId infoMutexOnceFlag = OSITHREAD_ONCE_INIT;
 
     threadOnce (&infoMutexOnceFlag, createInfoMutex, NULL);
-	semMutexMustTake (infoMutex);
+	epicsMutexMustLock (infoMutex);
 }
 static void unlockInfo (void)
 {
-	semMutexGive (infoMutex);
+	epicsMutexUnlock (infoMutex);
 }
 
 /*

@@ -8,7 +8,6 @@ extern "C" {
 #include <stddef.h>
 
 #include "shareLib.h"
-#include "osiSem.h"
 
 typedef void (*THREADFUNC)(void *parm);
 

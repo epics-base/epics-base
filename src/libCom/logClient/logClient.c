@@ -44,7 +44,8 @@
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "osiThread.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
@@ -70,15 +71,15 @@ typedef struct {
     ELLNODE             node; /* must be the first field in struct */
     struct sockaddr_in  addr;
     FILE                *file;
-    semMutexId          mutex;
+    epicsMutexId        mutex;
     SOCKET              sock;
     unsigned            connectTries;
     unsigned            connectCount;
     unsigned            connectReset;
 }logClient;
 
-LOCAL semMutexId logClientGlobalMutex;    
-LOCAL semBinaryId logClientGlobalSignal;
+LOCAL epicsMutexId logClientGlobalMutex;  
+LOCAL epicsEventId logClientGlobalSignal;
 LOCAL ELLLIST logClientList;
 LOCAL threadId logClientThreadId;
 LOCAL logClient *pLogClientDefaultClient;
@@ -141,7 +142,7 @@ LOCAL void logClientReset (logClient *pClient)
     /*
      * mutex on
      */
-    semMutexMustTake (pClient->mutex);
+    epicsMutexMustLock (pClient->mutex);
     
     /*
      * close any preexisting connection to the log server
@@ -168,12 +169,12 @@ LOCAL void logClientReset (logClient *pClient)
     /*
      * mutex off
      */
-    semMutexGive (pClient->mutex);
+    epicsMutexUnlock (pClient->mutex);
 
     /*
      * wake up the watchdog task
      */
-    semBinaryGive (logClientGlobalSignal);
+    epicsEventSignal (logClientGlobalSignal);
 
 #   ifdef DEBUG
         fprintf (stderr, "done\n");
@@ -189,11 +190,11 @@ LOCAL void logClientDestroy (logClient *pClient)
     /*
      * mutex on (and left on)
      */
-    semMutexMustTake (pClient->mutex);
+    epicsMutexMustLock (pClient->mutex);
 
     logClientReset (pClient);
 
-    semMutexDestroy (pClient->mutex);
+    epicsMutexDestroy (pClient->mutex);
 
     free (pClient);
 }
@@ -212,11 +213,11 @@ LOCAL void logClientShutdown (void)
      */
 #   ifndef vxWorks
         logClient *pClient;
-        semMutexMustTake (logClientGlobalMutex);
+        epicsMutexMustLock (logClientGlobalMutex);
         while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
             logClientDestroy (pClient);
         }
-        semMutexGive (logClientGlobalMutex);
+        epicsMutexUnlock (logClientGlobalMutex);
 #   endif
 }
 
@@ -235,7 +236,7 @@ LOCAL void logClientSendMessageInternal (logClientId id, const char *message)
     /*
      * mutex on
      */
-    semMutexMustTake (pClient->mutex);
+    epicsMutexMustLock (pClient->mutex);
    
     if (pClient->file) {
         status = fprintf (pClient->file, "%s", message);
@@ -252,7 +253,7 @@ LOCAL void logClientSendMessageInternal (logClientId id, const char *message)
     /*
      * mutex off
      */
-    semMutexGive (pClient->mutex);
+    epicsMutexUnlock (pClient->mutex);
     
     return;
 }
@@ -277,7 +278,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
         fprintf (stderr, "log client: creating socket...");
 #   endif
 
-    semMutexMustTake (pClient->mutex);
+    epicsMutexMustLock (pClient->mutex);
    
     /* 
      * allocate a socket 
@@ -286,7 +287,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
     if (pClient->sock == INVALID_SOCKET){
         fprintf (stderr, "log client: no socket error %s\n", 
             SOCKERRSTR(SOCKERRNO));
-        semMutexGive (pClient->mutex);
+        epicsMutexUnlock (pClient->mutex);
         return;
     }
     
@@ -297,11 +298,11 @@ LOCAL void logClientMakeSock (logClient *pClient)
 			__FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
 		socket_close (pClient->sock);
         pClient->sock = INVALID_SOCKET;
-        semMutexGive (pClient->mutex);
+        epicsMutexUnlock (pClient->mutex);
 		return;
 	}
     
-    semMutexGive (pClient->mutex);
+    epicsMutexUnlock (pClient->mutex);
 
 #   ifdef DEBUG
         fprintf (stderr, "done\n");
@@ -436,9 +437,9 @@ LOCAL void logClientConnect (logClient *pClient)
  */
 LOCAL void logRestart (void *pPrivate)
 {
-    semTakeStatus       semStatus;
-    logClient           *pClient;
-    unsigned            ioPending;
+    epicsEventWaitStatus semStatus;
+    logClient *pClient;
+    unsigned ioPending;
 
     /*
      * roll the local port forward so that we dont collide
@@ -451,10 +452,10 @@ LOCAL void logRestart (void *pPrivate)
     while (1) {
         ioPending = 0;
 
-        semStatus = semBinaryTakeTimeout (logClientGlobalSignal, LOG_RESTART_DELAY);
-        assert ( semStatus==semTakeOK || semStatus==semTakeTimeout );
+        semStatus = epicsEventWaitWithTimeout (logClientGlobalSignal, LOG_RESTART_DELAY);
+        assert ( semStatus==epicsEventWaitOK || semStatus==epicsEventWaitTimeout );
 
-        semMutexMustTake (logClientGlobalMutex);
+        epicsMutexMustLock (logClientGlobalMutex);
         for ( pClient = (logClient *) ellFirst (&logClientList); pClient; 
                 pClient = (logClient *) ellNext(&pClient->node) ) {
 
@@ -485,7 +486,7 @@ LOCAL void logRestart (void *pPrivate)
                 logClientReset (pClient);
             }
         }
-        semMutexGive (logClientGlobalMutex);
+        epicsMutexUnlock (logClientGlobalMutex);
     }
 }
 
@@ -496,29 +497,28 @@ LOCAL void logClientGlobalInit ()
 {
     static const unsigned logRestartStackSize = 0x2000;
 
-    logClientGlobalMutex = semMutexCreate ();
+    logClientGlobalMutex = epicsMutexCreate ();
     if (!logClientGlobalMutex) {
         fprintf(stderr, "log client: Unable to create log client global mutex\n");
         return;
     }
 
-    semMutexMustTake (logClientGlobalMutex);
+    epicsMutexMustLock (logClientGlobalMutex);
     ellInit (&logClientList);
 
-    logClientGlobalSignal = semBinaryCreate (0);
+    logClientGlobalSignal = epicsEventCreate (0);
     if(!logClientGlobalSignal){
-        semMutexDestroy (logClientGlobalMutex);
+        epicsMutexDestroy (logClientGlobalMutex);
         logClientGlobalMutex = NULL;
         return;
     }
     
-
     logClientThreadId = threadCreate ("logRestart", threadPriorityLow, 
                             logRestartStackSize, logRestart, 0);
     if (logClientThreadId==NULL) {
-        semMutexDestroy (logClientGlobalMutex);
+        epicsMutexDestroy (logClientGlobalMutex);
         logClientGlobalMutex = NULL;
-        semMutexDestroy (logClientGlobalSignal);
+        epicsMutexDestroy (logClientGlobalSignal);
         logClientGlobalSignal = NULL;
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return;
@@ -535,7 +535,7 @@ LOCAL void logClientGlobalInit ()
 #   else
         atexit (logClientShutdown);
 #   endif
-    semMutexGive (logClientGlobalMutex);
+    epicsMutexUnlock (logClientGlobalMutex);
 }
 
 /*
@@ -570,7 +570,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
         return NULL;
     }
     
-    pClient->mutex = semMutexCreate ();
+    pClient->mutex = epicsMutexCreate ();
     if (!pClient->mutex) {
         free (pClient);
         return NULL;
@@ -579,16 +579,16 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
     pClient->sock = INVALID_SOCKET;
     pClient->file = NULL;
 
-    semMutexMustTake (logClientGlobalMutex);
+    epicsMutexMustLock (logClientGlobalMutex);
     ellAdd (&logClientList, &pClient->node);
-    semMutexGive (logClientGlobalMutex);
+    epicsMutexUnlock (logClientGlobalMutex);
 
     /*
      * attempt to block for the connect
      */
     while (pClient->file==NULL) {
 
-        semBinaryGive (logClientGlobalSignal);
+        epicsEventSignal (logClientGlobalSignal);
 
         threadSleep (50e-3);
 
@@ -596,9 +596,9 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
         if (connectTries>=maxConnectTries) {
             char name[64];
         
-            semMutexMustTake (logClientGlobalMutex);
+            epicsMutexMustLock (logClientGlobalMutex);
             ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
-            semMutexGive (logClientGlobalMutex);
+            epicsMutexUnlock (logClientGlobalMutex);
 
             break;
         }

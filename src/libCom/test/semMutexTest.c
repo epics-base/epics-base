@@ -18,7 +18,7 @@ of this distribution.
 
 #include "osiThread.h"
 #include "errlog.h"
-
+#include "osiSem.h"
 
 typedef struct info {
     int        threadnum;

@@ -51,7 +51,7 @@ inline void tcpiiu::flush ()
         epicsAutoMutex autoMutex ( this->mutex );
         this->flushPending = true;
     }
-    semBinaryGive ( this->sendThreadFlushSignal );
+    epicsEventSignal ( this->sendThreadFlushSignal );
 }
 
 inline bool tcpiiu::ca_v44_ok () const

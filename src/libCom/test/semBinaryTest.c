@@ -19,6 +19,7 @@ of this distribution.
 #include "osiThread.h"
 #include "epicsRingPointer.h"
 #include "errlog.h"
+#include "osiSem.h"
 
 
 typedef struct info {

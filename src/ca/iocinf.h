@@ -44,7 +44,7 @@
 #include "tsFreeList.h"
 #include "tsDLList.h"
 #include "osiSock.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 #include "osiThread.h"
 #include "osiTimer.h"
 #include "epicsMutex.h"
@@ -611,7 +611,7 @@ private:
     char recvBuf [MAX_UDP_RECV];
     ELLLIST dest;
     threadId recvThreadId;
-    semBinaryId recvThreadExitSignal;
+    epicsEventId recvThreadExitSignal;
     unsigned nBytesInXmitBuf;
     SOCKET sock;
     unsigned short repeaterPort;
@@ -773,10 +773,10 @@ private:
     void *pCurData;
     unsigned minorProtocolVersion;
     iiu_conn_state state;
-    semBinaryId sendThreadFlushSignal;
-    semBinaryId recvThreadRingBufferSpaceAvailableSignal;
-    semBinaryId sendThreadExitSignal;
-    semBinaryId recvThreadExitSignal;
+    epicsEventId sendThreadFlushSignal;
+    epicsEventId recvThreadRingBufferSpaceAvailableSignal;
+    epicsEventId sendThreadExitSignal;
+    epicsEventId recvThreadExitSignal;
     SOCKET sock;
     unsigned contigRecvMsgCount;
     bool fullyConstructedFlag;

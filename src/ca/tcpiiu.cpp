@@ -98,7 +98,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
 
     while ( true ) {
 
-        semBinaryMustTake ( piiu->sendThreadFlushSignal );
+        epicsEventMustWait ( piiu->sendThreadFlushSignal );
 
         if ( piiu->state != iiu_connected ) {
             break;
@@ -160,7 +160,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         }
     }
 
-    semBinaryGive ( piiu->sendThreadExitSignal );
+    epicsEventSignal ( piiu->sendThreadExitSignal );
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
@@ -313,15 +313,15 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             tid = threadCreate ( "CAC-TCP-send", priorityOfSend,
                     threadGetStackSize ( threadStackMedium ), cacSendThreadTCP, piiu );
             if ( ! tid ) {
-                semBinaryGive ( piiu->recvThreadExitSignal );
-                semBinaryGive ( piiu->sendThreadExitSignal );
+                epicsEventSignal ( piiu->recvThreadExitSignal );
+                epicsEventSignal ( piiu->sendThreadExitSignal );
                 piiu->cleanShutdown ();
                 return;
             }
         }
         else {
-            semBinaryGive ( piiu->recvThreadExitSignal );
-            semBinaryGive ( piiu->sendThreadExitSignal );
+            epicsEventSignal ( piiu->recvThreadExitSignal );
+            epicsEventSignal ( piiu->sendThreadExitSignal );
             piiu->cleanShutdown ();
             return;
         }
@@ -334,7 +334,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             nBytes = piiu->recvQue.occupiedBytes ();
         }
         if ( nBytes >= 0x4000 ) {
-            semBinaryMustTake ( piiu->recvThreadRingBufferSpaceAvailableSignal );
+            epicsEventMustWait ( piiu->recvThreadRingBufferSpaceAvailableSignal );
         }
         else {
             comBuf * pComBuf = new comBuf;
@@ -358,7 +358,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         }
     }
 
-    semBinaryGive ( piiu->recvThreadExitSignal );
+    epicsEventSignal ( piiu->recvThreadExitSignal );
 }
 
 //
@@ -387,34 +387,34 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, osiTimerQueue &timerQueue )
 {
     this->addr.sa.sa_family = AF_UNSPEC;
 
-    this->sendThreadExitSignal = semBinaryCreate (semEmpty);
+    this->sendThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->sendThreadExitSignal ) {
         ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
         this->fullyConstructedFlag = false;
         return;
     }
 
-    this->recvThreadExitSignal = semBinaryCreate (semEmpty);
+    this->recvThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->recvThreadExitSignal ) {
         ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
+        epicsEventDestroy (this->sendThreadExitSignal);
         this->fullyConstructedFlag = false;
         return;
     }
 
-    this->sendThreadFlushSignal = semBinaryCreate ( semEmpty );
+    this->sendThreadFlushSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->sendThreadFlushSignal ) {
         ca_printf ("CA: unable to create sendThreadFlushSignal object\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
+        epicsEventDestroy (this->sendThreadExitSignal);
         this->fullyConstructedFlag = false;
         return;
     }
 
-    this->recvThreadRingBufferSpaceAvailableSignal = semBinaryCreate ( semEmpty );
+    this->recvThreadRingBufferSpaceAvailableSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
         ca_printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
-        semBinaryDestroy (this->sendThreadFlushSignal);
+        epicsEventDestroy (this->sendThreadExitSignal);
+        epicsEventDestroy (this->sendThreadFlushSignal);
         this->fullyConstructedFlag = false;
         return;
     }
@@ -622,8 +622,8 @@ void tcpiiu::cleanShutdown ()
             this->state = iiu_disconnected;
         }
     }
-    semBinaryGive ( this->sendThreadFlushSignal );
-    semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+    epicsEventSignal ( this->sendThreadFlushSignal );
+    epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
     this->pCAC ()->signalRecvActivity ();
 }
 
@@ -661,8 +661,8 @@ void tcpiiu::forcedShutdown ()
         }
     }
 
-    semBinaryGive ( this->sendThreadFlushSignal );
-    semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+    epicsEventSignal ( this->sendThreadFlushSignal );
+    epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
     this->pCAC ()->signalRecvActivity ();
 }
 
@@ -679,13 +679,13 @@ void tcpiiu::disconnect ()
 
     // wait for send thread to exit
     static const double shutdownDelay = 15.0;
-    semTakeStatus semStat;
+    epicsEventWaitStatus semStat;
     while ( true ) {
-        semStat = semBinaryTakeTimeout ( this->sendThreadExitSignal, shutdownDelay );
-        if ( semStat == semTakeOK ) {
+        semStat = epicsEventWaitWithTimeout ( this->sendThreadExitSignal, shutdownDelay );
+        if ( semStat == epicsEventWaitOK ) {
             break;
         }
-        assert ( semStat == semTakeTimeout );
+        assert ( semStat == epicsEventWaitTimeout );
         if ( ! this->sockCloseCompleted ) {
             printf ( "Gave up waiting for \"shutdown()\" to force send thread to exit after %f sec\n", 
                 shutdownDelay);
@@ -703,11 +703,11 @@ void tcpiiu::disconnect ()
 
     // wait for recv thread to exit
     while ( true ) {
-        semStat = semBinaryTakeTimeout ( this->recvThreadExitSignal, shutdownDelay );
-        if ( semStat == semTakeOK ) {
+        semStat = epicsEventWaitWithTimeout ( this->recvThreadExitSignal, shutdownDelay );
+        if ( semStat == epicsEventWaitOK ) {
             break;
         }
-        assert ( semStat == semTakeTimeout );
+        assert ( semStat == epicsEventWaitTimeout );
         if ( ! this->sockCloseCompleted ) {
             printf ( "Gave up waiting for \"shutdown()\" to force receive thread to exit after %f sec\n", 
                 shutdownDelay);
@@ -769,10 +769,10 @@ tcpiiu::~tcpiiu ()
         return;
     }
 
-    semBinaryDestroy ( this->sendThreadExitSignal );
-    semBinaryDestroy ( this->recvThreadExitSignal );
-    semBinaryDestroy ( this->sendThreadFlushSignal );
-    semBinaryDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
+    epicsEventDestroy ( this->sendThreadExitSignal );
+    epicsEventDestroy ( this->recvThreadExitSignal );
+    epicsEventDestroy ( this->sendThreadFlushSignal );
+    epicsEventDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
 
     if ( this->pHostNameCache ) {
         this->pHostNameCache->destroy ();
@@ -855,13 +855,13 @@ void tcpiiu::show ( unsigned level ) const
     if ( level > 3u ) {
         printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
         printf ( "\tsend thread flush signal:\n" );
-        semBinaryShow ( this->sendThreadFlushSignal, level-3u );
+        epicsEventShow ( this->sendThreadFlushSignal, level-3u );
         printf ( "\trecv thread buffer space available signal:\n" );
-        semBinaryShow ( this->recvThreadRingBufferSpaceAvailableSignal, level-3u );
+        epicsEventShow ( this->recvThreadRingBufferSpaceAvailableSignal, level-3u );
         printf ( "\tsend thread exit signal:\n" );
-        semBinaryShow ( this->sendThreadExitSignal, level-3u );
+        epicsEventShow ( this->sendThreadExitSignal, level-3u );
         printf ( "\trecv thread exit signal:\n" );
-        semBinaryShow ( this->recvThreadExitSignal, level-3u );
+        epicsEventShow ( this->recvThreadExitSignal, level-3u );
         printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
         printf ("\techo pending bool = %u\n", this->echoRequestPending );
         printf ("\tflush pending bool = %u\n", this->flushPending );
@@ -1376,7 +1376,7 @@ void tcpiiu::processIncoming ()
                 }
             }
 
-            semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+            epicsEventSignal ( this->recvThreadRingBufferSpaceAvailableSignal );
         }
 
         /*

@@ -125,7 +125,7 @@ extern "C" void cacRecvThreadUDP (void *pParam)
         piiu->recvMsg ();
     } while ( ! piiu->shutdownCmd );
 
-    semBinaryGive ( piiu->recvThreadExitSignal );
+    epicsEventSignal ( piiu->recvThreadExitSignal );
 }
 
 /*
@@ -395,7 +395,7 @@ udpiiu::udpiiu ( cac &cac ) :
 
     this->nBytesInXmitBuf = 0u;
 
-    this->recvThreadExitSignal = semBinaryCreate ( semEmpty );
+    this->recvThreadExitSignal = epicsEventMustCreate ( epicsEventEmpty );
     if ( ! this->recvThreadExitSignal ) {
         socket_close ( this->sock );
         throwWithLocation ( noMemory () );
@@ -425,7 +425,7 @@ udpiiu::udpiiu ( cac &cac ) :
                 threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this );
         if ( this->recvThreadId == 0 ) {
             ca_printf ("CA: unable to create UDP receive thread\n");
-            semBinaryDestroy (this->recvThreadExitSignal);
+            epicsEventDestroy (this->recvThreadExitSignal);
             socket_close (this->sock);
             throwWithLocation ( noMemory () );
         }
@@ -442,7 +442,7 @@ udpiiu::~udpiiu ()
     // closes the udp socket and waits for its recv thread to exit
     this->shutdown ();
 
-    semBinaryDestroy ( this->recvThreadExitSignal );
+    epicsEventDestroy ( this->recvThreadExitSignal );
 
     ellFree ( &this->dest );
 
@@ -510,7 +510,7 @@ void udpiiu::shutdown ()
             }
         }
         // wait for recv threads to exit
-        semBinaryMustTake ( this->recvThreadExitSignal );
+        epicsEventMustWait ( this->recvThreadExitSignal );
     }
 }
 
@@ -846,7 +846,7 @@ void udpiiu::show ( unsigned level ) const
         printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
         printf ("\tshut down command bool %u\n", this->shutdownCmd );
         printf ( "\trecv thread exit signal:\n" );
-        semBinaryShow ( this->recvThreadExitSignal, level-3u );
+        epicsEventShow ( this->recvThreadExitSignal, level-3u );
     }
 }
 

@@ -688,7 +688,7 @@ void cac_send_msg()
 
 		if(done){
 			/*
-			 * allways double check that we
+			 * always double check that we
 			 * are finished in case somthing was added 
 			 * to a send buffer and a recursive 
 			 * ca_send_msg() call was refused above

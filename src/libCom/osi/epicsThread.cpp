@@ -14,56 +14,70 @@
 //
 
 #include <stdexcept>
+#include <typeinfo>
 
 #include <stdio.h>
 #include <stddef.h>
 #include <float.h>
 
 #define epicsExportSharedSymbols
+#include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsAssert.h"
+#include "epicsGuard.h"
 
 epicsThreadRunable::~epicsThreadRunable () {}
-void epicsThreadRunable::stop() {};
-void epicsThreadRunable::show(unsigned int) const {};
+void epicsThreadRunable::stop () {};
+void epicsThreadRunable::show ( unsigned int ) const {};
 
 extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
 {
     epicsThread * pThread = 
         static_cast <epicsThread *> ( pPvt );
     bool waitRelease = false;
-    pThread->pWaitReleaseFlag = & waitRelease;
     try {
-        pThread->beginEvent.wait ();
+        pThread->pWaitReleaseFlag = & waitRelease;
+        pThread->beginWait ();
         if ( ! pThread->cancel ) {
             pThread->runable.run ();
         }
-        if ( ! waitRelease ) {
-            pThread->exitWaitRelease ();
-        }
-        return;
     }
     catch ( const epicsThread::exitException & ) {
-        if ( ! waitRelease ) {
-            pThread->exitWaitRelease ();
-        }
-        return;
     }
     catch ( std::exception & except ) {
-        char name [128];
-        epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
-        errlogPrintf ( 
-            "epicsThread: Unexpected C++ exception \"%s\" - terminating thread \"%s\"",
-            except.what (), name );
-        return;
+        if ( ! waitRelease ) {
+            char name [128];
+            epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
+            errlogPrintf ( 
+                "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" - terminating thread \"%s\"",
+                except.what (), typeid ( except ).name (), name );
+        }
     }
     catch ( ... ) {
-        char name [128];
-        epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
-        errlogPrintf ( 
-            "epicsThread: Unknown C++ exception - terminating thread \"%s\"", name );
-        return;
+        if ( ! waitRelease ) {
+            char name [128];
+            epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
+            errlogPrintf ( 
+                "epicsThread: Unknown C++ exception - terminating thread \"%s\"", name );
+        }
     }
+    if ( ! waitRelease ) {
+        pThread->exitWaitRelease ();
+    }
+    return;
+}
+
+void epicsThread::beginWait ()
+{
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        while ( ! this->begin ) {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            this->event.wait ();
+        }
+        // the event mechanism is used for other purposes
+    }
+    this->event.signal ();
 }
 
 void epicsThread::exit ()
@@ -78,26 +92,45 @@ void epicsThread::exitWait ()
 
 bool epicsThread::exitWait ( double delay )
 {
-    if ( ! this->terminated ) {
-        this->exitEvent.wait ( delay );
+    {
+        epicsTime begin = epicsTime::getCurrent ();
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        double elapsed = 0.0;
+        while ( ! this->terminated ) {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            this->event.wait ( delay - elapsed );
+            epicsTime current = epicsTime::getCurrent ();
+            double elapsed = current - begin;
+            if ( elapsed >= delay ) {
+                break;
+            }
+        }
     }
+    // the event mechanism is used for other purposes
+    this->event.signal ();
     return this->terminated;
 }
 
 void epicsThread::exitWaitRelease ()
 {
     if ( this->isCurrentThread() ) {
-        this->id = 0;
-        this->terminated = true;
-        *this->pWaitReleaseFlag = true;
-        this->exitEvent.signal ();
+        if ( this->pWaitReleaseFlag ) {
+            *this->pWaitReleaseFlag = true;
+        }
+        {
+            // once the terminated flag is set and we release the lock
+            // then the "this" pointer must not be touched again
+            epicsGuard < epicsMutex > guard ( this->mutex );
+            this->terminated = true;
+            this->event.signal ();
+        }
     }
 }
 
 epicsThread::epicsThread ( epicsThreadRunable &r, const char *name,
     unsigned stackSize, unsigned priority ) :
         runable(r), pWaitReleaseFlag ( 0 ),
-            cancel (false), terminated ( false )
+            begin ( false ), cancel (false), terminated ( false )
 {
     this->id = epicsThreadCreate ( name, priority, stackSize,
         epicsThreadCallEntryPoint, static_cast <void *> (this) );
@@ -105,25 +138,35 @@ epicsThread::epicsThread ( epicsThreadRunable &r, const char *name,
 
 epicsThread::~epicsThread ()
 {
-    if ( this->id ) {
-        this->cancel = true;
-        this->beginEvent.signal ();
-        while ( ! this->exitWait ( 10.0 )  ) {
-            char nameBuf [256];
-            this->getName ( nameBuf, sizeof ( nameBuf ) );
-            fprintf ( stderr, 
-                "epicsThread::~epicsThread(): "
-                "blocking for thread \"%s\" to exit\n", 
-                nameBuf );
-            fprintf ( stderr, 
-                "was epicsThread object destroyed before thread exit ?\n");
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        if ( this->terminated ) {
+            return;
         }
+        this->cancel = true;
+    }
+    
+    this->event.signal ();
+
+    while ( ! this->exitWait ( 10.0 )  ) {
+        char nameBuf [256];
+        this->getName ( nameBuf, sizeof ( nameBuf ) );
+        fprintf ( stderr, 
+            "epicsThread::~epicsThread(): "
+            "blocking for thread \"%s\" to exit\n", 
+            nameBuf );
+        fprintf ( stderr, 
+            "was epicsThread object destroyed before thread exit ?\n");
     }
 }
 
 void epicsThread::start ()
 {
-    this->beginEvent.signal ();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->begin = true;
+    }
+    this->event.signal ();
 }
 
 bool epicsThread::isCurrentThread () const

@@ -115,7 +115,7 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet(epicsThreadPrivateId);
 
 #include "locationException.h"
 #include "epicsEvent.h"
-
+#include "epicsMutex.h"
 
 class epicsThreadRunable {
 public:
@@ -155,12 +155,14 @@ public:
 private:
     epicsThreadRunable & runable;
     epicsThreadId id;
-    epicsEvent exitEvent;
-    epicsEvent beginEvent;
-    volatile bool * pWaitReleaseFlag;
+    epicsMutex mutex;
+    epicsEvent event;
+    bool * pWaitReleaseFlag;
+    bool begin;
     bool cancel;
     bool terminated;
 
+    void beginWait ();
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );

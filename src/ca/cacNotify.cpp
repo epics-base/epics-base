@@ -21,7 +21,10 @@ cacNotify::~cacNotify ()
     cacNotifyIO *pTmpIO = this->pIO;
     if ( pTmpIO ) {
         this->pIO = 0;
-        pTmpIO->destroy ();
+        // the code fits together better in iother places
+        // if the delete and the uninstall are speparate steps
+        pTmpIO->uninstall ();
+        delete pTmpIO;
     }
 }
 

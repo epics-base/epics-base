@@ -9,7 +9,7 @@
 
 
 #include <exServer.h>
-#include <fdMgr.h>
+#include <fdManager.h>
 
 const pvInfo exServer::pvList[] = {
 	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync),

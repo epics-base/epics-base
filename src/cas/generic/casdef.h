@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.17  1998/05/05 16:30:38  jhill
+ * 	fixed doc
+ *
  * 	Revision 1.16  1998/03/18 23:59:28  jhill
  * 	use _MSC_VER to turn of vis C++ specific warning
  *
@@ -171,6 +174,8 @@ typedef aitUint32 caStatus;
 #define S_cas_tooManyEvents (M_cas | 28) /*maximum simult event types exceeded*/
 #define S_cas_noInterface (M_cas | 29) /*server isnt attached to a network*/
 #define S_cas_badBounds (M_cas | 30) /*server tool changed bounds on request*/
+#define S_cas_pvAlreadyAttached (M_cas | 31) /*PV attached to another server*/
+#define S_cas_badRequest (M_cas | 32) /*client's request was invalid*/
 /*
  * ===========================================================
  * returned by the application (to the server library)
@@ -308,7 +313,7 @@ private:
 	caServerI *pCAS;
 public:
 	epicsShareFunc caServer (unsigned pvCountEstimate=1024u);
-	epicsShareFunc virtual ~caServer();
+	epicsShareFunc virtual ~caServer() = 0;
 
 	//caStatus enableClients ();
 	//caStatus disableClients ();
@@ -412,15 +417,15 @@ public:
 // client attachment to this PV (and reclaim any resources
 // allocated by the server library on its behalf)
 //
-// NOTE: if the server tool precreates the PV during initialization
+// HINT: if the server tool precreates the PV during initialization
 // then it may decide to provide a "destroy()" implementation in the
 // derived class which is a noop.
 //
 class casPV : private casPVI {
 public:
-	epicsShareFunc casPV (caServer &cas);
+	epicsShareFunc casPV ();
 
-	epicsShareFunc virtual ~casPV ();
+	epicsShareFunc virtual ~casPV () = 0;
 
 	//
 	// This is called for each PV in the server if
@@ -584,9 +589,10 @@ public:
 	// Find the server associated with this PV
 	// ****WARNING****
 	// this returns NULL if the PV isnt currently installed 
-	// into a server (this situation will exist only if
+	// into a server (this situation will exist if
 	// the pv isnt deleted in a derived classes replacement
-	// for virtual casPV::destroy() 
+	// for virtual casPV::destroy() or if the PV is created
+	// before the server
 	// ***************
 	//
 	epicsShareFunc caServer *getCAS() const;
@@ -730,7 +736,7 @@ public:
 	//
 	// force virtual destructor 
 	//
-	epicsShareFunc virtual ~casAsyncIO();
+	epicsShareFunc virtual ~casAsyncIO() = 0;
 
 	//
 	// called by the server lib after the response message

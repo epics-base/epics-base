@@ -289,7 +289,7 @@ LOCAL void 	ca_task_exit_tid();
 #else
 LOCAL void 	ca_process_exit();
 #endif 
-LOCAL void    	issue_get_callback();
+LOCAL int	issue_get_callback();
 LOCAL void    	ca_event_handler();
 LOCAL void	ca_pend_io_cleanup();
 

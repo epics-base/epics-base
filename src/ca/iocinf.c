@@ -1633,7 +1633,7 @@ struct ca_buffer	*pRing,
 void			*pBuf,
 unsigned long		nBytes)
 #else /*__STDC__*/
-unsigned long cacRingBufferWrite(pRing,pBuf,nBytes);
+unsigned long cacRingBufferWrite(pRing,pBuf,nBytes)
 struct ca_buffer	*pRing;
 void			*pBuf;
 unsigned long		nBytes;
@@ -1670,7 +1670,7 @@ unsigned long		nBytes;
 #ifdef __STDC__
 LOCAL void cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size)
 #else /*__STDC__*/
-LOCAL void cacRingBufferInit(pBuf, unsigned long size)
+LOCAL void cacRingBufferInit(pBuf, size)
 struct ca_buffer *pBuf;
 #endif /*__STDC__*/
 {

@@ -75,9 +75,9 @@ private:
 //
 template <class T>
 class tsDLList {
-    friend class tsDLIter<T>;
-    friend class tsDLFwdIter<T>;
-    friend class tsDLBwdIter<T>;
+    friend class tsDLIter<T>; // deprecated
+    friend class tsDLFwdIter<T>; // deprecated
+    friend class tsDLBwdIter<T>; // deprecated
 public:
 
     tsDLList (); // create empty list
@@ -108,7 +108,7 @@ public:
     // returns -1 if the item isnt on the list and the node 
     // number (beginning with zero if it is)
     //
-    int find (T &item) const;
+    int find (const T &item) const;
 
     T *first (void) const; // ptr to first item on list
     T *last (void) const; // ptr to last item on list
@@ -508,18 +508,19 @@ inline void tsDLList<T>::push (T &item)
 // and the node number (beginning with zero if
 // it is)
 //
-template <class T>
-int tsDLList<T>::find (T &item) const
+template < class T >
+int tsDLList < T > :: find ( const T &item ) const
 {
-    tsDLFwdIter<T> iter (*this);
-    tsDLNode<T> *pItem;
-    int     itemNo=0;
+    tsDLIterConstBD < T > thisItem ( &item );
+    tsDLIterConstBD < T > iter ( this->first () );
+    int itemNo = 0;
 
-    while ( ( pItem = iter.next () ) ) {
-        if ( pItem == &item ) {
+    while ( iter.valid () ) {
+        if ( iter == thisItem ) {
             return itemNo;
         }
         itemNo++;
+        iter++;
     }
     return -1;
 }

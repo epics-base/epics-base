@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.1  1996/11/02 01:01:33  jhill
+// installed
+//
 // Revision 1.1.1.1  1996/06/20 00:28:06  jhill
 // ca server installation
 //
@@ -595,7 +598,7 @@ casProcCond casStreamOS::processInput()
 		break;
         default:
                 errMessage (status,
-                 	"unexpected error processing client's input");
+                 	"unexpected problem with client's input - forcing disconnect");
 		return casProcDisconnect;
         }
 }

@@ -104,7 +104,7 @@ static long init_record(pao)
 	pao->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
 	pcallback->priority = priorityLow;
-	pcallback->prec = (struct dbComm *)pao;
+	pcallback->prec = (struct dbCommon *)pao;
 	pcallback->wd_id = wdCreate();
 	break;
     default :

@@ -1,0 +1,21 @@
+
+TOP=../..
+
+include $(TOP)/configure/CONFIG
+
+USR_CFLAGS += -DACCESS_SECURITY -D_NO_PROTO
+
+LIBRARY = asLibrary
+
+asLibrary_SRCS = asDbLib.c asCa.c asLib.c
+
+include $(TOP)/configure/RULES_BUILD
+
+# Extra rule since asLib_lex.c is included in asLib.c
+#   In my opinion, these objects should really be built
+#   independently.
+asLib$(OBJ): asLib_lex.c ../asLibRoutines.c
+
+clean::
+	@$(RM) asLib.c asLib_lex.c 
+

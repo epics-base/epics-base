@@ -6,6 +6,7 @@ recordtype(ao) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Desired Output")
+                promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 		pp(TRUE)
 	}
@@ -79,12 +80,14 @@ recordtype(ao) {
 	}
 	field(EOFF,DBF_DOUBLE) {
 		prompt("Eng Unit Offset")
-		special(SPC_NOMOD)
+		promptgroup(GUI_CONVERT)
+		asl(ASL0)
 		interest(2)
 	}
 	field(ESLO,DBF_DOUBLE) {
 		prompt("EGU to Raw Slope")
-		special(SPC_NOMOD)
+		promptgroup(GUI_CONVERT)
+		asl(ASL0)
 		interest(2)
 		initial("1")
 	}

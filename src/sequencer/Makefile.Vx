@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS =
 
-SRCS = \
+SRCS.c = \
 	../seq_main.c ../seq_ca.c ../seq_qry.c ../seq_task.c \
 	../seq_mac.c ../seq_prog.c
 

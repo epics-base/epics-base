@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-SRCS = ../asDbLib.c ../asCa.c asLib.c
+SRCS.c = ../asDbLib.c ../asCa.c asLib.c
 OBJS = asDbLib.o asCa.o asLib.o
 PROD = asLibrary
 

@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-SRCS = \
+SRCS.c = \
 	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
 	../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \
 	../dbEvent.c ../dbTest.c ../dbls.c ../db_access.c \

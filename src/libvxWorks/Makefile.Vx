@@ -3,7 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 
-SRCS = ../iocLogClient.c ../veclist.c
+SRCS.c = ../iocLogClient.c ../veclist.c
 
 OBJS = veclist.o iocLogClient.o
 

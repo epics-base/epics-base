@@ -7,7 +7,7 @@ YACC = $(EYACC)
 YACCOPT = -l
 LEXOPT = -L
 
-SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
+SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
 OBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
 
@@ -15,8 +15,10 @@ PROD = dbSubs
 
 include $(EPICS)/config/RULES.Vx
 
+#dbLoadTemplate.o: dbLoadTemplate_lex.c dbLoadTemplate.c
+#dbLoadRecords.o: dbLoadRecords_lex.c dbLoadRecords.c
 dbLoadTemplate.o: dbLoadTemplate_lex.c
-dbLoadRecords.o: dbLoadRecords_lex.c 
+dbLoadRecords.o: dbLoadRecords_lex.c
 subtool: dbLoadTemplate_lex.c
 
 subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o

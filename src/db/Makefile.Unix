@@ -11,7 +11,7 @@ DEPLIBS = ./libDb.a\
 	$(DEPLIBS_BASE)/libDb.a
 
 
-SRCS = \
+SRCS.c = \
 	../dbStaticLib.c \
 	atdb_lex.c \
 	atdb_yacc.c \

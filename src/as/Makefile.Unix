@@ -14,7 +14,7 @@ DEPLIBS = ./libAs.a\
 LEX = $(ELEX)
 YACC = $(EYACC)
 
-SRCS = ../ascheck.c asLib.c
+SRCS.c = ../ascheck.c asLib.c
 OBJS = ascheck.o
 LIBOBJS = asLib.o
 LIBNAME = libAs.a

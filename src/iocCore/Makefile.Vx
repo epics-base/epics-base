@@ -4,7 +4,8 @@ include $(EPICS)/config/CONFIG_BASE
 
 LINK.c=$(LD) $(LDFLAGS)
 
-SRCS=
+# JRW -- Don't define a SRCS.c or SRCS.cc if it is empty
+# SRCS.c =
 
 IOC_CORE_OBJS = \
 	$(INSTALL_BIN)/asLibrary \

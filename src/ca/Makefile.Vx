@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-SRCS = \
+SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
 	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c

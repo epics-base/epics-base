@@ -10,7 +10,7 @@ DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libca.a\
 	$(DEPLIBS_BASE)/libCom.a
 
-SRCS = \
+SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../acctst.c \
 	../syncgrp.c ../if_depen.c ../netdb_depen.c ../bsd_depen.c \

@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
-SRCS = \
+SRCS.c = \
 	../arAccessLib.c ../arCSCheck.c ../arChanIO.c ../bfSubr.c \
 	../bucketLib.c ../calcPerform.c ../cmdSubr.c ../cvtFast.c \
 	../cvtNumbers.c ../ellLib.c ../envSubr.c ../errMtst.c ../errSymLib.c \

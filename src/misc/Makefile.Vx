@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-SRCS = ../epicsEnvParams.c ../epicsRelease.c
+SRCS.c = ../epicsEnvParams.c ../epicsRelease.c
 
 OBJS = epicsEnvParams.o epicsRelease.o
 

@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../drv
 
-SRCS = \
+SRCS.c = \
 	../recAi.c ../recGsub.c ../recPulseDelay.c ../recAo.c \
 	../recHistogram.c ../recPulseTrain.c ../recBi.c ../recLongin.c \
 	../recSel.c ../recBo.c ../recLongout.c ../recSeq.c \

@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../drv
 
-SRCS = \
+SRCS.c = \
 	../devAnalytekGpib.c ../devXxDg535Gpib.c  ../devBBInteract.c \
 	../devGpibInteract.c ../devXxSr620Gpib.c ../devK486Gpib.c \
 	../devXxK196Gpib.c ../devXxDc5009Gpib.c ../devXxK263Gpib.c

@@ -7,7 +7,7 @@ YACC = $(EYACC)
 YACCOPT = -l
 LEXOPT = -L
 
-SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
+SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
 
 OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o

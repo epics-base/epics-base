@@ -5,7 +5,7 @@ include $(EPICS)/config/CONFIG_BASE
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
 
-SRCS = \
+SRCS.c = \
 	../module_types.c ../drvXy010.c ../drvAb.c ../drvBb902.c \
 	../drvBb910.c ../drvCompuSm.c ../drvDvx.c ../drvMz8310.c \
 	../drvOms.c ../drvStc.c ../drvTime.c ../drvVmi4100.c \

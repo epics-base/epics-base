@@ -14,7 +14,7 @@ DEPLIBS = $(DEPLIBS_BASE)/libca.a\
 USR_INCLUDES = -I$(OPENWIN)/include
 USR_CFLAGS = -DXWINDOWS -UvxWorks
 
-SRCS = \
+SRCS.c = \
 	../apCreateShadow.c ../apStatusSync.c ../bfRing.c ../ca_test.c \
 	../calcTest.c ../cmdClient.c ../extrDoc.c ../guiSubr.c \
 	../iocLogServer.c ../pprPlot.c ../racPrint.c ../recListProg.c \

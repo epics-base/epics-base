@@ -5,7 +5,7 @@ include $(EPICS)/config/CONFIG_BASE
 USR_INCLUDES = -I../../ca
 USR_CFLAGS = -UUNIX
 
-SRCS =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
+SRCS.c =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
 	../rsrv_init.c ../cast_server.c ../online_notify.c ../globalsource.c
 
 OBJS = \

@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-SRCS = \
+SRCS.c = \
 	../calcPerform.c ../cmdSubr.c ../cvtBpt.c ../cvtFast.c \
 	../cvtNumbers.c ../gpHashLib.c ../freeListLib.c ../ellLib.c \
 	../envSubr.c ../errSymLib.c ../ezsSockSubr.c ../genSubr.c \

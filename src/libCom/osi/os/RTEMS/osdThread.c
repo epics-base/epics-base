@@ -221,7 +221,7 @@ threadGetIdSelf (void)
     return (threadId)tid;
 }
 
-extern void *rtemsTaskVariable;
+void *rtemsTaskVariable;
 threadVarId threadPrivateCreate ()
 {
 	return NULL;
@@ -238,9 +238,3 @@ void * threadPrivateGet (threadVarId id)
 {
 	return rtemsTaskVariable;
 }
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* osdThreadh */

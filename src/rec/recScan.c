@@ -43,9 +43,11 @@
  * .07  10-21-94  nda     changed linear scan parameter algorithms so changing
  *                        start/end modifies step/width unless frozen. This
  *                        seems more intuitive.
+ * .08  12-06-94  nda     added support for .FFO .When set to 1, frzFlag values
+ *                        are saved in recPvtStruct. Restored when FFO set to 0.
  */
 
-#define VERSION 1.07
+#define VERSION 1.08
 
 
 
@@ -144,6 +146,28 @@ struct recPvtStruct {
     struct p_limits   *pP2Limits;
     struct p_limits   *pP3Limits;
     struct p_limits   *pP4Limits;
+    short              pffo;          /* previouss state of ffo */
+    short              fpts;          /* backup copy of all freeze flags */
+    short              p1fs;
+    short              p1fi;
+    short              p1fc;
+    short              p1fe;
+    short              p1fw;
+    short              p2fs;
+    short              p2fi;
+    short              p2fc;
+    short              p2fe;
+    short              p2fw;
+    short              p3fs;
+    short              p3fi;
+    short              p3fc;
+    short              p3fe;
+    short              p3fw;
+    short              p4fs;
+    short              p4fi;
+    short              p4fc;
+    short              p4fe;
+    short              p4fw;
     unsigned long      tickStart;     /* used to time the scan */
     unsigned char      scanErr;
     unsigned char      nptsCause;     /* who caused the "# of points to change:
@@ -208,6 +232,9 @@ static void adjLinParms();
 static void changedNpts();
 static void checkScanLimits();
 static void drawPos1Scan();
+static void saveFrzFlags();
+static void resetFrzFlags();
+static void restoreFrzFlags();
 /* variables ... */
 long    scanRecDebug=0;
 long    viewScanPos=0; 
@@ -286,6 +313,11 @@ static long init_record(pscan,pass)
     precPvt->nptsCause = 0; /* resolve all positioner parameters */
     changedNpts(pscan);
 
+    if(pscan->ffo) {
+       saveFrzFlags(pscan);
+       resetFrzFlags(pscan);
+    }
+
     /* init field values */
     pscan->exsc = 0;
     pscan->pxsc = 0;
@@ -344,6 +376,7 @@ static long special(paddr,after)
     unsigned char       prevAlrt;
 
     if(!after) {
+        precPvt->pffo = pscan->ffo; /* save previous ffo flag */
         return(0);
     }
     switch(special_type) {
@@ -416,6 +449,25 @@ static long special(paddr,after)
             drawPos1Scan(pscan);
         } 
         break;
+
+    case(SPC_SC_FFO):
+        /* Freeze Flag Override field */
+        if((pscan->ffo) && (!precPvt->pffo)) {
+           saveFrzFlags(pscan);
+           resetFrzFlags(pscan);
+        }
+        else if(!pscan->ffo && precPvt->pffo) /* only on 1->0 */
+           restoreFrzFlags(pscan);
+    
+        break;
+
+    case(SPC_SC_F):
+        /* Freeze Flag Override field */
+        if(pscan->ffo)
+           resetFrzFlags(pscan);
+
+        break;
+
 
     default:
 /*      recGblDbaddrError(S_db_badChoice,paddr,"scan: special");
@@ -1993,3 +2045,267 @@ static void drawPos1Scan(pscan)
 }
         
  
+static void saveFrzFlags(pscan)
+    struct scanRecord   *pscan;
+{
+
+    struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
+
+    /* save state of each freeze flag */
+    precPvt->fpts = pscan->fpts;
+    precPvt->p1fs = pscan->p1fs;
+    precPvt->p1fi = pscan->p1fi;
+    precPvt->p1fc = pscan->p1fc;
+    precPvt->p1fe = pscan->p1fe;
+    precPvt->p1fw = pscan->p1fw;
+    precPvt->p2fs = pscan->p2fs;
+    precPvt->p2fi = pscan->p2fi;
+    precPvt->p2fc = pscan->p2fc;
+    precPvt->p2fe = pscan->p2fe;
+    precPvt->p2fw = pscan->p2fw;
+    precPvt->p3fs = pscan->p3fs;
+    precPvt->p3fi = pscan->p3fi;
+    precPvt->p3fc = pscan->p3fc;
+    precPvt->p3fe = pscan->p3fe;
+    precPvt->p3fw = pscan->p3fw;
+    precPvt->p4fs = pscan->p4fs;
+    precPvt->p4fi = pscan->p4fi;
+    precPvt->p4fc = pscan->p4fc;
+    precPvt->p4fe = pscan->p4fe;
+    precPvt->p4fw = pscan->p4fw;
+}
+
+static void resetFrzFlags(pscan)
+    struct scanRecord   *pscan;
+{
+
+    struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
+
+    /* reset each frzFlag, post monitor if changed */
+
+    if(pscan->fpts) {
+       pscan->fpts = 0;
+       db_post_events(pscan,&pscan->fpts, DBE_VALUE);
+    }
+
+    if(pscan->p1fs) {
+       pscan->p1fs = 0;
+       db_post_events(pscan,&pscan->p1fs, DBE_VALUE);
+    }
+
+    if(pscan->p1fi) {
+       pscan->p1fi = 0;
+       db_post_events(pscan,&pscan->p1fi, DBE_VALUE);
+    }
+
+    if(pscan->p1fc) {
+       pscan->p1fc = 0;
+       db_post_events(pscan,&pscan->p1fc, DBE_VALUE);
+    }
+
+    if(pscan->p1fe) {
+       pscan->p1fe = 0;
+       db_post_events(pscan,&pscan->p1fe, DBE_VALUE);
+    }
+
+    if(pscan->p1fw) {
+       pscan->p1fw = 0;
+       db_post_events(pscan,&pscan->p1fw, DBE_VALUE);
+    }
+
+    if(pscan->p2fs) {
+       pscan->p2fs = 0;
+       db_post_events(pscan,&pscan->p2fs, DBE_VALUE);
+    }
+
+    if(pscan->p2fi) {
+       pscan->p2fi = 0;
+       db_post_events(pscan,&pscan->p2fi, DBE_VALUE);
+    }
+
+    if(pscan->p2fc) {
+       pscan->p2fc = 0;
+       db_post_events(pscan,&pscan->p2fc, DBE_VALUE);
+    }
+
+    if(pscan->p2fe) {
+       pscan->p2fe = 0;
+       db_post_events(pscan,&pscan->p2fe, DBE_VALUE);
+    }
+
+    if(pscan->p2fw) {
+       pscan->p2fw = 0;
+       db_post_events(pscan,&pscan->p2fw, DBE_VALUE);
+    }
+
+    if(pscan->p3fs) {
+       pscan->p3fs = 0;
+       db_post_events(pscan,&pscan->p3fs, DBE_VALUE);
+    }
+
+    if(pscan->p3fi) {
+       pscan->p3fi = 0;
+       db_post_events(pscan,&pscan->p3fi, DBE_VALUE);
+    }
+
+    if(pscan->p3fc) {
+       pscan->p3fc = 0;
+       db_post_events(pscan,&pscan->p3fc, DBE_VALUE);
+    }
+
+    if(pscan->p3fe) {
+       pscan->p3fe = 0;
+       db_post_events(pscan,&pscan->p3fe, DBE_VALUE);
+    }
+
+    if(pscan->p3fw) {
+       pscan->p3fw = 0;
+       db_post_events(pscan,&pscan->p3fw, DBE_VALUE);
+    }
+
+    if(pscan->p4fs) {
+       pscan->p4fs = 0;
+       db_post_events(pscan,&pscan->p4fs, DBE_VALUE);
+    }
+
+    if(pscan->p4fi) {
+       pscan->p4fi = 0;
+       db_post_events(pscan,&pscan->p4fi, DBE_VALUE);
+    }
+
+    if(pscan->p4fc) {
+       pscan->p4fc = 0;
+       db_post_events(pscan,&pscan->p4fc, DBE_VALUE);
+    }
+
+    if(pscan->p4fe) {
+       pscan->p4fe = 0;
+       db_post_events(pscan,&pscan->p4fe, DBE_VALUE);
+    }
+
+    if(pscan->p4fw) {
+       pscan->p4fw = 0;
+       db_post_events(pscan,&pscan->p4fw, DBE_VALUE);
+    }
+}
+
+
+
+
+
+/* Restores Freeze Flags to the state they were in */
+static void restoreFrzFlags(pscan)
+    struct scanRecord   *pscan;
+{
+
+    struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
+
+    /* restore state of each freeze flag, post if changed */
+    pscan->fpts = precPvt->fpts;
+    if(pscan->fpts) {
+       db_post_events(pscan,&pscan->fpts, DBE_VALUE);
+    }
+
+    pscan->p1fs = precPvt->p1fs;
+    if(pscan->p1fs) {
+       db_post_events(pscan,&pscan->p1fs, DBE_VALUE);
+    }
+
+    pscan->p1fi = precPvt->p1fi;
+    if(pscan->p1fi) {
+       db_post_events(pscan,&pscan->p1fi, DBE_VALUE);
+    }
+
+    pscan->p1fc = precPvt->p1fc;
+    if(pscan->p1fc) {
+       db_post_events(pscan,&pscan->p1fc, DBE_VALUE);
+    }
+
+    pscan->p1fe = precPvt->p1fe;
+    if(pscan->p1fe) {
+       db_post_events(pscan,&pscan->p1fe, DBE_VALUE);
+    }
+
+    pscan->p1fw = precPvt->p1fw;
+    if(pscan->p1fw) {
+       db_post_events(pscan,&pscan->p1fw, DBE_VALUE);
+    }
+
+    pscan->p2fs = precPvt->p2fs;
+    if(pscan->p2fs) {
+       db_post_events(pscan,&pscan->p2fs, DBE_VALUE);
+    }
+
+    pscan->p2fi = precPvt->p2fi;
+    if(pscan->p2fi) {
+       db_post_events(pscan,&pscan->p2fi, DBE_VALUE);
+    }
+
+    pscan->p2fc = precPvt->p2fc;
+    if(pscan->p2fc) {
+       db_post_events(pscan,&pscan->p2fc, DBE_VALUE);
+    }
+
+    pscan->p2fe = precPvt->p2fe;
+    if(pscan->p2fe) {
+       db_post_events(pscan,&pscan->p2fe, DBE_VALUE);
+    }
+
+    pscan->p2fw = precPvt->p2fw;
+    if(pscan->p2fw) {
+       db_post_events(pscan,&pscan->p2fw, DBE_VALUE);
+    }
+
+    pscan->p3fs = precPvt->p3fs;
+    if(pscan->p3fs) {
+       db_post_events(pscan,&pscan->p3fs, DBE_VALUE);
+    }
+
+    pscan->p3fi = precPvt->p3fi;
+    if(pscan->p3fi) {
+       db_post_events(pscan,&pscan->p3fi, DBE_VALUE);
+    }
+
+    pscan->p3fc = precPvt->p3fc;
+    if(pscan->p3fc) {
+       db_post_events(pscan,&pscan->p3fc, DBE_VALUE);
+    }
+
+    pscan->p3fe = precPvt->p3fe;
+    if(pscan->p3fe) {
+       db_post_events(pscan,&pscan->p3fe, DBE_VALUE);
+    }
+
+    pscan->p3fw = precPvt->p3fw;
+    if(pscan->p3fw) {
+       db_post_events(pscan,&pscan->p3fw, DBE_VALUE);
+    }
+
+    pscan->p4fs = precPvt->p4fs;
+    if(pscan->p4fs) {
+       db_post_events(pscan,&pscan->p4fs, DBE_VALUE);
+    }
+
+    pscan->p4fi = precPvt->p4fi;
+    if(pscan->p4fi) {
+       db_post_events(pscan,&pscan->p4fi, DBE_VALUE);
+    }
+
+    pscan->p4fc = precPvt->p4fc;
+    if(pscan->p4fc) {
+       db_post_events(pscan,&pscan->p4fc, DBE_VALUE);
+    }
+
+    pscan->p4fe = precPvt->p4fe;
+    if(pscan->p4fe) {
+       db_post_events(pscan,&pscan->p4fe, DBE_VALUE);
+    }
+
+    pscan->p4fw = precPvt->p4fw;
+    if(pscan->p4fw) {
+       db_post_events(pscan,&pscan->p4fw, DBE_VALUE);
+    }
+
+}
+
+

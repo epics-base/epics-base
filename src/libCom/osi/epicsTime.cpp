@@ -255,7 +255,7 @@ epicsTime::operator time_t_wrapper () const
     time_t_wrapper wrap;
 
     if ( lti.useDiffTimeOptimization ) {
-       if ( this->secPastEpoch < ULONG_MAX - lti.epicsEpochOffset ) {
+        if ( this->secPastEpoch < ULONG_MAX - lti.epicsEpochOffset ) {
            wrap.ts = static_cast <time_t> ( this->secPastEpoch + lti.epicsEpochOffset );
            return wrap;
        }

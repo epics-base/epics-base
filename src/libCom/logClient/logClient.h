@@ -15,6 +15,8 @@
  *      Date:           080791 
  */
 
+#ifndef INClogClienth
+#define INClogClienth 1
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -37,3 +39,4 @@ epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);
 }
 #endif
 
+#endif /*INClogClienth*/

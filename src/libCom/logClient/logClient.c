@@ -219,6 +219,7 @@ LOCAL void logClientSendMessageInternal (logClientId id, const char *message)
     logClient *pClient = (logClient *) id;
     int status;
     
+    if (iocLogDisable) return;
     if (!message || *message==0) {
         return;
     }

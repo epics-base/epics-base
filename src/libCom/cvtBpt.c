@@ -46,12 +46,16 @@ extern struct dbBase *pdbBase;
 
 
 
-long cvtRawToEngBpt(
-     double     *pval,
-     short      linr,
-     short      init,
-     caddr_t    *ppbrk,
-     short      *plbrk)
+#ifdef __STDC__
+long cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk, short *plbrk)
+#else /* __STDC__ */
+long cvtRawToEngBpt(pval, linr, init, ppbrk, plbrk)
+double *pval;
+short linr;
+short init;
+void **ppbrk;
+short *plbrk;
+#endif /* __STDC__ */
 { 
      double           val=*pval;
      long             status=0;
@@ -104,12 +108,17 @@ long cvtRawToEngBpt(
      return(status);
 }
 
-long cvtEngToRawBpt(
-     double     *pval,
-     short      linr,
-     short      init,
-     caddr_t    *ppbrk,
-     short      *plbrk)
+#ifdef __STDC__
+long cvtEngToRawBpt(double *pval,short linr,short init,
+	 void **ppbrk,short *plbrk);
+#else /* __STDC__ */
+long cvtEngToRawBpt(pval,linr, init,ppbrk,plbrk)
+double *pval;
+short linr;
+short init;
+void **ppbrk;
+short *plbrk;
+#endif /* __STDC__ */
 { 
      double           val=*pval;
      long             status=0;

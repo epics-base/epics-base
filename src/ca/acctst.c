@@ -1230,7 +1230,7 @@ void test_sync_groups ( chid chan )
     CA_SYNC_GID gid2=0;
 
     if ( ! ca_v42_ok ( chan ) ) {
-        printf ( "skipping sycnc group test - serveris on wron version\n" );
+        printf ( "skipping sync group test - server is on wrong version\n" );
     }
 
     showProgressBegin ();
@@ -1871,7 +1871,7 @@ void unequalServerBufferSizeTest ( const char *pName )
     {
         chid newChan;
 
-        status = ca_create_channel ( pName, 0, 0, 0, &newChan );
+        status = ca_create_channel ( pName, 0, 0, 0, & newChan );
         assert ( status == ECA_NORMAL );
         status = ca_pend_io ( 100.0 );
         assert ( status == ECA_NORMAL );
@@ -1975,11 +1975,11 @@ void verifyDataTypeMacros ()
     assert ( dbr_type_is_valid ( DBR_SHORT ) );
     assert ( dbf_type_is_valid ( DBF_SHORT ) );
     {
-        int dataType;
+        int dataType = -1;
         dbf_text_to_type ( "DBF_SHORT", dataType ); 
         assert ( dataType == DBF_SHORT );
-        dbr_text_to_type ( "DBR_SHORT", dataType ); 
-        assert ( dataType == DBR_SHORT );
+        dbr_text_to_type ( "DBR_CLASS_NAME", dataType ); 
+        assert ( dataType == DBR_CLASS_NAME );
     }
 }
 
@@ -2227,36 +2227,40 @@ void verifyOldPend ()
 
 void verifyTimeStamps ( chid chan )
 {
-    struct dbr_time_double first, last;
+    struct dbr_time_double first;
+    struct dbr_time_double last;
     epicsTimeStamp localTime;
     char buf[128];
     size_t length;
     double diff;
     int status;
 
-    status = epicsTimeGetCurrent ( &localTime );
+    status = epicsTimeGetCurrent ( & localTime );
     assert ( status >= 0 );
 
-    status = ca_get ( DBR_TIME_DOUBLE, chan, &first );
+    status = ca_get ( DBR_TIME_DOUBLE, chan, & first );
     SEVCHK ( status, "fetch of dbr time double failed\n" );
     status = ca_pend_io ( 20.0 );
     assert ( status == ECA_NORMAL );
 
-    status = ca_get ( DBR_TIME_DOUBLE, chan, &last );
+    status = ca_get ( DBR_TIME_DOUBLE, chan, & last );
     SEVCHK ( status, "fetch of dbr time double failed\n" );
     status = ca_pend_io ( 20.0 );
     assert ( status == ECA_NORMAL );
 
     length = epicsTimeToStrftime ( buf, sizeof ( buf ), 
-        "%a %b %d %Y %H:%M:%S.%f", &first.stamp );
+        "%a %b %d %Y %H:%M:%S.%f", & first.stamp );
     assert ( length );
-    printf ("Processing time of channel \"%s\" was \"%s\"\n", ca_name ( chan ), buf );
+    printf ("Processing time of channel \"%s\" was \"%s\"\n", 
+        ca_name ( chan ), buf );
 
-    diff = epicsTimeDiffInSeconds ( &last.stamp, &first.stamp );
-    printf ("Time difference between two successive reads was %g sec\n", diff );
+    diff = epicsTimeDiffInSeconds ( & last.stamp, & first.stamp );
+    printf ("Time difference between two successive reads was %g sec\n", 
+        diff );
 
-    diff = epicsTimeDiffInSeconds ( &first.stamp, &localTime );
-    printf ("Time difference between client and server %g sec\n", diff );
+    diff = epicsTimeDiffInSeconds ( & first.stamp, & localTime );
+    printf ("Time difference between client and server %g sec\n", 
+        diff );
 }
 
 /*
@@ -2354,9 +2358,9 @@ int acctst ( char *pName, unsigned channelCount,
     /* this test must be run when no channels are connected */
     unequalServerBufferSizeTest ( pName );
 
-    status = ca_search ( pName, &chan );
+    status = ca_search ( pName, & chan );
     SEVCHK ( status, NULL );
-    assert ( strcmp ( pName, ca_name (chan) ) == 0 );
+    assert ( strcmp ( pName, ca_name ( chan ) ) == 0 );
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
 

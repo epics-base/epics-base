@@ -99,7 +99,7 @@ static struct rtems_bsdnet_ifconfig bsp_driver_config = {
 struct rtems_bsdnet_config rtems_bsdnet_config = {
     FIRST_DRIVER_CONFIG,   /* Link to next interface */
     MY_DO_BOOTP,           /* How to find network config */
-    0,                     /* If 0 then the network daemons will run at a */
+    10,                    /* If 0 then the network daemons will run at a */
                            /*   priority just less than the lowest-priority */
                            /*   EPICS scan thread. */
                            /* If non-zero then the network daemons will run */

@@ -195,6 +195,7 @@ SRCS_vxWorks += iocClock.c
 LIBRARY=Com
 SYS_DLL_LIBS := ws2_32 advapi32 user32
 
+#Com_RCS_WIN32 = Com.rc
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS := Com
@@ -228,8 +229,8 @@ envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl
 errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)
 
-epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
-	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
+$(COMMON_DIR)/epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
+	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION $(@D)
 
 clean::
 	@$(RM) errSymTbl.c envData.c

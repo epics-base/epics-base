@@ -21,7 +21,7 @@ actionArchTargets = $(foreach x, $(ACTIONS),\
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
-$(actionArchTargets) : $(buildDirs)
+$(actionArchTargets) : $(buildDirs) O.Common
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. T_A=$(archPart) $(actionPart)
 
 $(BUILD_ARCHS) : % : O.%
@@ -29,17 +29,20 @@ $(BUILD_ARCHS) : % : O.%
 
 $(ACTIONS):%: $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
-$(buildDirs) :
+$(buildDirs): 
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/..
+
+O.Common:
+	$(MKDIR) O.Common
 
 #
 # special clean rule
 #
 clean ::
-	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS))
+	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common
 
 clean$(DIVIDER)% :: 
-	$(RMDIR) O.$*
+	$(RMDIR) O.$* O.Common
 
 .PHONY : $(buildActionTargets)
 .PHONY : $(buildActionArchTargets)

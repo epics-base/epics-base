@@ -81,6 +81,7 @@ STANDARD=ACC
 #   G++     (g++)   GNU C++
 #   CCC     (CC)    OS VENDOR C++
 #CPLUSPLUS=G++
+#Note: if CPLUSPLUS is empty then C++ src codes are not built
 #CPLUSPLUS=	# use this if site does not have C++ compiler
 CPLUSPLUS=CCC
 

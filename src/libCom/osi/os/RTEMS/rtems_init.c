@@ -33,6 +33,8 @@
  *                         RTEMS CONFIGURATION                         *
  ***********************************************************************
  */
+/* #define STACK_CHECKER_ON                1 */
+
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
 #define CONFIGURE_EXECUTIVE_RAM_SIZE        (2000*1024)
@@ -41,10 +43,10 @@
 #define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
 #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    rtems_resource_unlimited(5)
 
-#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 30
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 50
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 
-#define CONFIGURE_MICROSECONDS_PER_TICK     20000
+#define CONFIGURE_MICROSECONDS_PER_TICK 20000
 
 #define CONFIGURE_INIT_TASK_PRIORITY    80
 #define NETWORK_TASK_PRIORITY           90

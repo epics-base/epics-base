@@ -48,11 +48,6 @@ recordtype(timer) {
 		pp(TRUE)
 		interest(1)
 	}
-	field(PREC,DBF_SHORT) {
-		prompt("Display Precision")
-		promptgroup(GUI_TIMER)
-		interest(1)
-	}
 	field(TIMU,DBF_MENU) {
 		prompt("Time Units")
 		promptgroup(GUI_TIMER)

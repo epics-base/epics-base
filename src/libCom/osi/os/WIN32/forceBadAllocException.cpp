@@ -18,27 +18,27 @@
 static int my_new_handler (size_t size)
 {
     throw std::bad_alloc();
-        return 0;
+    return 0;
 }
 
 class my_new_handler_obj
 {
 public:
-        my_new_handler_obj()
-        {
-                //_old_new_mode = _set_new_mode(1); // cause malloc to throw like new
-                _old_new_handler = _set_new_handler(my_new_handler);
-        }
+    my_new_handler_obj()
+    {
+        //_old_new_mode = _set_new_mode(1); // cause malloc to throw like new
+        _old_new_handler = _set_new_handler(my_new_handler);
+    }
 
-        ~my_new_handler_obj()
-        {
-                _set_new_handler(_old_new_handler);
-                //_set_new_mode(_old_new_mode);
-        }
+    ~my_new_handler_obj()
+    {
+        _set_new_handler(_old_new_handler);
+        //_set_new_mode(_old_new_mode);
+    }
 
 private:
-        _PNH _old_new_handler;
-        //int _old_new_mode;
+    _PNH _old_new_handler;
+    //int _old_new_mode;
 };
 
 static my_new_handler_obj _g_new_handler_obj;

@@ -28,12 +28,23 @@ static void runScriptCallFunc(ioccrfArg **args)
 }
 
 /* chdir */
-static ioccrfArg chdirArg0 = { "directory name",ioccrfArgString,0};
+static ioccrfArg chdirArg0 = { "current directory name",ioccrfArgString,0};
 static ioccrfArg *chdirArgs[1] = {&chdirArg0};
 static ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(ioccrfArg **args)
 {
     chdir((char *)args[0]->value);
+}
+
+/* print current working directory */
+static ioccrfFuncDef pwdFuncDef = { "pwd", 0, 0 };
+static void pwdCallFunc (ioccrfArg **args)
+{
+    char buf[256];
+    char *pwd = getcwd ( buf, sizeof(buf) - 1 );
+    if ( pwd ) {
+        printf ( "%s\n", pwd );
+    }
 }
 
 /* show (thread information) */
@@ -106,6 +117,7 @@ void epicsShareAPI iocUtilRegister(void)
 {
     ioccrfRegister(&runScriptFuncDef,runScriptCallFunc);
     ioccrfRegister(&chdirFuncDef,chdirCallFunc);
+    ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
     ioccrfRegister(&threadInitFuncDef,threadInitCallFunc);
 }

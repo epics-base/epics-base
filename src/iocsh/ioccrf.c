@@ -374,9 +374,12 @@ ioccrf (const char *pathname)
                 pioccrfArg = pioccrfFuncDef->arg[arg];
                 if (!pargvalue) {
                     pargvalue = callocMustSucceed(1, sizeof(argvalue), "ioccrf");
-                    if(prevargvalue)
+                    if ( prevargvalue ) {
                         prevargvalue->next = pargvalue;
-                    argvalueHead = pargvalue;
+                    }
+                    else {
+                        argvalueHead = pargvalue;
+                    }
                 }
                 if (!cvtArg (filename, lineno, p, pargvalue, pioccrfArg))
                     break;

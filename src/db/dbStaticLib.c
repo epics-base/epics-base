@@ -57,6 +57,15 @@
 
 #define messagesize	100
 #define RPCL_LEN 184
+
+#if defined(EPICS_LITTLE_ENDIAN)
+#define BYTE_SWAP_4(A)            \
+  ( (((A) & 0xFF) << 24 )    |    \
+    (((A) & 0xFF00) << 8)    |    \
+    (((A) & 0xFF0000) >> 8)  |    \
+    (((A) & 0xFF000000) >> 24) )
+#endif
+
 long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[2]={"NPP","PP"};
@@ -1008,15 +1017,23 @@ char *pfieldName;
     bottom = 0;
     test = (top + bottom) / 2;
     while (1) {
+	unsigned int t1, t2;
+
 	/* check the field name */
-	if (sortFldName[test] == *(unsigned long *) pconvName) {
+	t1 = (unsigned int) sortFldName[ test];
+	t2 = (unsigned int) *(unsigned int*)pconvName;
+#if defined(EPICS_LITTLE_ENDIAN)
+	t1 = BYTE_SWAP_4( t1);
+	t2 = BYTE_SWAP_4( t2);
+#endif
+	if(t1 == t2) {
 	    if(!(pflddes=GET_PFLDDES(precTypDes,sortFldInd[test])))
 		return(S_dbLib_recdesNotFound);
 	    pdbentry->pflddes = pflddes;
 	    pdbentry->pfield = precord + pflddes->offset;
 	    pdbentry->indfield = sortFldInd[test];
 	    return (0);
-	} else if (sortFldName[test] > *(unsigned long *) pconvName) {
+	} else if (t1 > t2) {
 	    top = test - 1;
 	    if (top < bottom) return (S_dbLib_fieldNotFound);
 	    test = (top + bottom) / 2;
@@ -1591,7 +1608,7 @@ char *pstring;
 		if (!(pchoice = pdevChoiceSet->papDevChoice[i]->pchoice))
 		    continue;
 		if (strcmp(pchoice, pstring) == 0) {
-		    long link_type,status;
+		    long link_type;
 
 		    link_type = pdevChoiceSet->papDevChoice[i]->link_type;
 		    /*If no INP or OUT OK */
@@ -1689,12 +1706,18 @@ char *pstring;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.camacio.n);
-		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.a);
-		    if(!(end = strchr(pstr,'F'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.f);
+ 		    if(!(end = strchr(pstr,'A')))  {
+ 			plink->value.camacio.a = 0;
+ 		    } else {
+ 		        pstr = end + 1;
+ 		        sscanf(pstr,"%hd",&plink->value.camacio.a);
+ 		    }
+ 		    if(!(end = strchr(pstr,'F'))) {
+ 			plink->value.camacio.f = 0;
+ 		    } else {
+ 		        pstr = end + 1;
+ 		        sscanf(pstr,"%hd",&plink->value.camacio.f);
+ 		    }
 		    plink->value.camacio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
@@ -4127,16 +4150,29 @@ FILE *fp;
 }
 
 /* Beginning of Process Variable Directory Routines*/
-#define 	HASH_NO	512		/* number of hash table entries */
-
-
+int dbPvdHashTableSize = 512;
+static int dbPvdHashTableShift;
+#define NTABLESIZES 9
+static struct {
+	unsigned int	tablesize;
+	int		shift;
+}hashTableParms[9] = {
+	{256,0},
+	{512,1},
+	{1024,2},
+	{2048,3},
+	{4096,4},
+	{8192,5},
+	{16384,6},
+	{32768,7},
+	{65536,8}
+};
 /*The hash algorithm is a modification of the algorithm described in	*/
 /* Fast Hashing of Variable Length Text Strings, Peter K. Pearson,	*/
 /* Communications of the ACM, June 1990					*/
-/* The modifications were desdigned by Marty Kraimer and Ben Chin Cha	*/
-/* The mods were implemented and tested by Ben Chin Cha			*/
+/* The modifications were designed by Marty Kraimer			*/
 
-static unsigned char T0[256] = {
+static unsigned char T[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -4155,45 +4191,24 @@ static unsigned char T0[256] = {
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47 
 };
 
-static unsigned char T1[256] = {
-  9,139,209, 40, 31,202, 58,179,116, 33,207,146, 76, 60,242,124,
-254,197, 80,167,153,145,129,233,132, 48,246, 86,156,177, 36,187,
- 45,  1, 96, 18, 19, 62,185,234, 99, 16,218, 95,128,224,123,253,
- 42,109,  4,247, 72,  5,151,136,  0,152,148,127,204,133, 17, 14,
-182,217, 54,199,119,174, 82, 57,215, 41,114,208,206,110,239, 23,
-189, 15,  3, 22,188, 79,113,172, 28,  2,222, 21,251,225,237,105,
-102, 32, 56,181,126, 83,230, 53,158, 52, 59,213,118,100, 67,142,
-220,170,144,115,205, 26,125,168,249, 66,175, 97,255, 92,229, 91,
-214,236,178,243, 46, 44,201,250,135,186,150,221,163,216,162, 43,
- 11,101, 34, 37,194, 25, 50, 12, 87,198,173,240,193,171,143,231,
-111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
-134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47,
- 39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
-157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
-176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
- 75,107,169,138,195,184, 70, 90, 61,166,  7,244,165,108,219, 51,
-};
 
-#ifdef __STDC__
 static unsigned short hash( char *pname, int length)
-#else
-static unsigned short hash( pname, length)
-char *pname;
-int length;
-#endif /*__STDC__*/
 {
-    unsigned short h=0;
-    unsigned short hret;
-    unsigned char  *h0=(unsigned char *)&h;
-    unsigned char  *h1= h0 + 1;
+    unsigned char h0=0;
+    unsigned char h1=0;
+    unsigned short ind0,ind1;
+    int		even = TRUE;
+    unsigned char  c;
     int		i;
 
-    for(i=0; i<length; i+=2, pname+=2) {
-	*h0 = T0[*h0 ^ *pname];
-	*h1 = T1[*h1 ^ *(pname+1)];
+    for(i=0; i<length; i++, pname++) {
+	c = *pname;
+	if(even) {h0 = T[h0^c]; even = FALSE;}
+	else {h1 = T[h1^c]; even = TRUE;}
     }
-    hret = *h0;
-    return(hret + *h1);
+    ind0 = (unsigned short)h0;
+    ind1 = (unsigned short)h1;
+    return((ind1<<dbPvdHashTableShift) ^ ind0);
 }
 
 #ifdef __STDC__
@@ -4203,9 +4218,19 @@ void    dbPvdInitPvt(pdbbase)
 DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
-    ELLLIST **ppvd;
+    ELLLIST	**ppvd;
+    int		i;
 
-    ppvd = dbCalloc(HASH_NO, sizeof(ELLLIST *));
+    for(i=0; i< NTABLESIZES; i++) {
+	if((i==NTABLESIZES-1)
+	||((dbPvdHashTableSize>=hashTableParms[i].tablesize)
+	  && (dbPvdHashTableSize<hashTableParms[i+1].tablesize))) {
+	    dbPvdHashTableSize = hashTableParms[i].tablesize;
+	    dbPvdHashTableShift = hashTableParms[i].shift;
+	    break;
+	}
+    }
+    ppvd = dbCalloc(dbPvdHashTableSize, sizeof(ELLLIST *));
     pdbbase->ppvd = (void *) ppvd;
     return;
 }
@@ -4315,7 +4340,7 @@ DBBASE *pdbbase;
     PVDENTRY       *next;
     
     if (ppvd == NULL) return;
-    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
+    for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
@@ -4345,7 +4370,7 @@ DBBASE *pdbbase;
     
     if (ppvd == NULL) return;
     printf("Process Variable Directory\n");
-    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
+    for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);

@@ -33,12 +33,10 @@ dbStaticIoc_DLL_LIBS = Com
 PROD_LIBS := dbStaticHost Com
 dbStaticHost_DIR=.
 PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
-PROD_HOST +=  dbMakeDBDDepends
 dbReadTest_SRCS = dbReadTest.c
 dbExpand_SRCS = dbExpand.c
 dbToMenuH_SRCS = dbToMenuH.c
 dbToRecordtypeH_SRCS = dbToRecordtypeH.c
-dbMakeDBDDepends_SRCS = dbMakeDBDDepends.c
 
 dbStaticHost_RCS_WIN32 = dbStaticHost.rc
 dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc

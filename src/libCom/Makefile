@@ -175,6 +175,8 @@ SRCS += epicsMessageQueue.cpp
 
 SRCS += osdSock.c
 SRCS += osiSock.c
+SRCS += systemCallIntMech.cpp
+SRCS += epicsSocketConvertErrnoToString.cpp
 SRCS += osdAssert.c
 SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c

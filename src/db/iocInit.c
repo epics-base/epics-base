@@ -44,6 +44,10 @@ iocInit(pfilename)
 char * pfilename;
 {
     long status;
+    char name[40];
+    long rtnval;
+    void (*pdbUserExit)();
+    UTINY type;
 
     if(initialized) {
 	logMsg("iocInit can only be called once\n");
@@ -67,6 +71,14 @@ char * pfilename;
     if(initDevSup()==0) logMsg("Device Support Initialized\n");
     ts_init(); logMsg("Time Stamp Driver Initialized\n");
     if(initDatabase()==0) logMsg("Database Initialized\n");
+    /* if user exit exists call it */
+    strcpy(name,"_");
+    strcat(name,"dbUserExit");
+    rtnval = symFindByName(sysSymTbl,name,&pdbUserExit,&type);
+    if(rtnval==OK && (type&N_TEXT!=0)) {
+	(*pdbUserExit)();
+	logMsg("User Exit was called\n");
+    }
     scan_init(); logMsg("Scanners Initialized\n");
     rsrv_init(); logMsg("Channel Access Servers Initialized\n");
     logMsg("iocInit: All initialization complete\n");
@@ -279,7 +291,9 @@ long initDatabase()
 			if(dbNameToAddr(name,&dbAddr) == 0) {
 			    /* show that refered to record has link. */
 			    /* See determine lock set below.*/
-			    ((struct dbCommon *)(dbAddr.precord))->lset = -1;
+			    if(plink->value.pv_link.process_passive
+				&& dbAddr.no_elements<=1)
+			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
 				(caddr_t)calloc(1,sizeof(struct dbAddr));
@@ -311,7 +325,7 @@ long initDatabase()
     /* Now determine lock sets*/
     /* When each record is examined lset has one of the following values
      * -1   Record is not in a set and at least one following record refers
-     *      to this record
+     *      to this record && no_elements<=1 && process_passive
      *  0   record is not in a set and no following records refer to it.
      * >0   Record is already in a set
      */
@@ -356,27 +370,30 @@ long addToSet(precord,record_type,lookAhead,i,j,lset)
     }
     precord->lset = lset;
    /* add all DB_LINKs in this record to the set */
+   /* unless not process_passive or no_elements>1*/
     precTypDes = dbRecDes->papRecTypDes[record_type];
     for(k=0; k<precTypDes->no_links; k++) {
+	struct dbAddr	*pdbAddr;
 	struct dbCommon	*pk;
 
 	pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
 	plink = (struct link *)((char *)precord + pfldDes->offset);
 	if(plink->type != DB_LINK) continue;
-	pk = (struct dbCommon *)
-		(((struct dbAddr *)(plink->value.db_link.pdbAddr))->precord);
+	pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+	if(!(plink->value.db_link.process_passive) || (pdbAddr->no_elements>1))
+		continue;
+	pk = (struct dbCommon *)(pdbAddr->precord);
 	if(pk->lset > 0){
 		if(pk->lset == lset) continue; /*already in lock set*/
 		status = S_db_lsetLogic;
 		errMessage(status,"Logic Error in iocInit(addToSet)");
 		return(status);
 	}
-	status = addToSet(pk,
-		((struct dbAddr *)(plink->value.db_link.pdbAddr))->record_type,
-		TRUE,i,j,lset);
+	status = addToSet(pk,pdbAddr->record_type,TRUE,i,j,lset);
 	if(status) return(status);
     }
     /* Now look for all later records that refer to this record*/
+    /* unless not process_passive or no_elements>1*/
     /* remember that all earlier records already have lock set determined*/
     if(!lookAhead) return(0);
     j1st=j+1; 
@@ -392,13 +409,16 @@ long addToSet(precord,record_type,lookAhead,i,j,lset)
 		/* If NAME is null then skip this record*/
                 if(!(pn->name[0])) continue;
 		for(k=0; k<precTypDes->no_links; k++) {
+		    struct dbAddr	*pdbAddr;
 		    struct dbCommon	*pk;
 
 		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
 		    plink = (struct link *)((char *)pn + pfldDes->offset);
 		    if(plink->type != DB_LINK) continue;
-		    pk = (struct dbCommon *)
-			(((struct dbAddr *)(plink->value.db_link.pdbAddr))->precord);
+		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+		    if(!(plink->value.db_link.process_passive)
+			|| (pdbAddr->no_elements>1)) continue;
+		    pk = (struct dbCommon *)(pdbAddr->precord);
 		    if(pk != precord) continue;
 		    if(pn->lset > 0) {
 			if(pn->lset == lset) continue;

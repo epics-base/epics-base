@@ -38,6 +38,7 @@
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsAssert.h"
+#include "errlog.h"
 
 #define DEBUG
 #ifdef DEBUG
@@ -110,8 +111,8 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	return -1;
 }
 
-void epicsShareAPI osiSockDiscoverInterfaces
-     (ELLLIST *pList, int socket, unsigned short port, const struct in_addr *pMatchAddr)
+epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     static const unsigned           nelem = 100;
     struct sockaddr_in              *pInetAddr;
@@ -223,8 +224,26 @@ void epicsShareAPI osiSockDiscoverInterfaces
          * if it isnt a wildcarded interface then look for
          * an exact match
          */
-        if (pMatchAddr->s_addr != htonl(INADDR_ANY)) {
-             if (pInetAddr->sin_addr.s_addr != pMatchAddr->s_addr) {
+		    if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+			    if (pIfinfo->iiAddress.AddressIn.sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
+				    continue;
+			    }
+		    }
+        }
+
+        if (pMatchAddr->sa.sa_family != AF_UNSPEC) {
+            if (pIfinfo->iiAddress.Address.sa_family != pMatchAddr->sa.sa_family) {
+                continue;
+            }
+            if (pIfinfo->iiAddress.Address.sa_family != AF_INET) {
+                continue;
+            }
+            if (pMatchAddr->sa.sa_family != AF_INET) {
+                continue;
+            }
+
+        if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+             if (pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
                  ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s didnt match\n", pifreq->ifr_name) );
                  continue;
              }
@@ -270,8 +289,7 @@ void epicsShareAPI osiSockDiscoverInterfaces
             return;
         }
 
-        pNewNode->destAddr = *pInetAddr;
-        pNewNode->destAddr.in.sin_port = htons (port);
+        pNewNode->addr.ia = *pInetAddr;
 
 		/*
 		 * LOCK applied externally

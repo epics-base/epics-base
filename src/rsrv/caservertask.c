@@ -44,6 +44,8 @@
 #include "addrList.h"
 #include "freeList.h"
 #include "errlog.h"
+#include "db_field_log.h"
+#include "dbAddr.h"
 #include "dbEvent.h"
 #include "dbCommon.h"
 
@@ -323,7 +325,8 @@ LOCAL int req_server (void)
                 continue;
             }
             id = threadCreate ("CAclient", threadPriorityChannelAccessClient,
-                    threadGetStackSize (threadStackBig), camsgtask, (void *)pClient);
+                    threadGetStackSize (threadStackBig),
+                    (THREADFUNC)camsgtask, (void *)pClient);
             if (id==0) {
                 destroy_client (pClient);
                 errlogPrintf("CAS: task creation for new client failed because \"%s\"\n",

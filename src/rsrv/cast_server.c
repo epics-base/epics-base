@@ -50,6 +50,7 @@
 #include <errno.h>
 
 #include "osiSock.h"
+#include "dbDefs.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "tsStamp.h"
@@ -306,4 +307,5 @@ int cast_server(void)
             clean_addrq ();
         }
     }
+    return(0);
 }

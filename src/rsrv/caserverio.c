@@ -32,6 +32,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "dbDefs.h"
 #include "osiSock.h"
 #include "tsStamp.h"
 #include "errlog.h"

@@ -40,6 +40,7 @@
 /*
  *  EPICS includes
  */
+#include "dbDefs.h"
 #include "osiSock.h"
 #include "osiPoolStatus.h"
 #include "tsStamp.h"

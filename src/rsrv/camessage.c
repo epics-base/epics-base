@@ -40,10 +40,12 @@
 #include "special.h"
 #include "freeList.h"
 #include "caerr.h"
+#include "db_field_log.h"
 #include "dbEvent.h"
 #include "dbCommon.h"
 #include "db_field_log.h"
 #include "asLib.h"
+#include "callback.h"
 #include "asDbLib.h"
 
 #include "server.h"

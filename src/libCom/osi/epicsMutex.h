@@ -24,7 +24,7 @@ public:
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
 private:
-    mutable semMutexId id;
+    mutable epicsMutexId id;
 };
 #endif /*__cplusplus*/
 

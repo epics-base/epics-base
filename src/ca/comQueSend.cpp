@@ -746,7 +746,7 @@ int comQueSend::userNameSetRequest ( const char *pName )
     return status;
 }
 
-#if 0
+#ifdef JUNKYARD
 /*
  *  tcpiiu::pushStreamMsg ()
  */ 

@@ -26,7 +26,7 @@
 /*
  * Magic number for validating context.
  */
-#define MAC_MAGIC 0xabadcafe	/* ...sells sub-standard coffee? */
+#define MAC_MAGIC 0xbadcafe	/* ...sells sub-standard coffee? */
 
 /*
  * Maximum size of macro name or value string (simpler to make fixed)
@@ -192,6 +192,9 @@ macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.1  1996/07/10 14:49:51  mrk
+ * added macLib
+ *
  * Revision 1.8  1996/06/26  09:43:16  wlupton
  * first released version
  *

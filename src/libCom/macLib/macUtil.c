@@ -140,9 +140,9 @@ macParseDefns(
     /* debug output */
     if ( handle != NULL && handle->debug & 4 )
 	for ( i = 0; i < num; i += 2 )
-	    printf( "[%d] %.*s = [%d] %.*s (%s) (%s)\n",
-		    end[i+0] - ptr[i+0], end[i+0] - ptr[i+0], ptr[i+0],
-		    end[i+1] - ptr[i+1], end[i+1] - ptr[i+1], ptr[i+1],
+	    printf( "[%ld] %.*s = [%ld] %.*s (%s) (%s)\n",
+		    (long) (end[i+0] - ptr[i+0]), (int) (end[i+0] - ptr[i+0]), ptr[i+0],
+		    (long) (end[i+1] - ptr[i+1]), (int) (end[i+1] - ptr[i+1]), ptr[i+1],
 		    del[i+0] ? "del" : "nodel",
 		    del[i+1] ? "del" : "nodel" );
 
@@ -216,7 +216,7 @@ macParseDefns(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macParseDefns() -> %d\n", num / 2 );
+	printf( "macParseDefns() -> %ld\n", num / 2 );
 
     /* success exit; return number of definitions */
     return num / 2;
@@ -262,13 +262,16 @@ macInstallMacros(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macInstallMacros() -> %d\n", n );
+	printf( "macInstallMacros() -> %ld\n", n );
 
     /* return number of macros defined */
     return n;
 }
 
 /* $Log$
+ * Revision 1.1  1996/07/10 14:49:55  mrk
+ * added macLib
+ *
  * Revision 1.6  1996/06/26  09:43:19  wlupton
  * first released version
  *

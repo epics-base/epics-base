@@ -150,7 +150,7 @@ macExpandString(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macExpandString( %s, maxlen = %d )\n", src, maxlen );
+	printf( "macExpandString( %s, maxlen = %ld )\n", src, maxlen );
 
     /* expand raw values if necessary */
     if ( expand( handle ) < 0 )
@@ -172,7 +172,7 @@ macExpandString(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macExpandString() -> %d\n", length );
+	printf( "macExpandString() -> %ld\n", length );
 
     return length;
 }
@@ -273,7 +273,7 @@ macGetValue(
     /* if not found, copy name to value and return minus #chars copied */
     if ( entry == NULL ) {
 	strncpy( value, name, maxlen );
-	return ( value[maxlen-1] == '\0' ) ? -strlen( name ) : -maxlen;
+	return ( value[maxlen-1] == '\0' ) ? - (long) strlen( name ) : -maxlen;
     }
 
     /* expand raw values if necessary; if fail (can only fail because of
@@ -281,7 +281,7 @@ macGetValue(
     if ( expand( handle ) < 0 ) {
 	macErrMessage0( -1, "macGetValue: failed to expand raw values" );
 	strncpy( value, name, maxlen );
-	return ( value[maxlen-1] == '\0' ) ? -strlen( name ) : -maxlen;
+	return ( value[maxlen-1] == '\0' ) ? - (long) strlen( name ) : -maxlen;
     }
 
     /* copy value and return +/- #chars copied depending on successful
@@ -743,6 +743,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.1  1996/07/10 14:49:48  mrk
+ * added macLib
+ *
  * Revision 1.9  1996/06/26  09:43:14  wlupton
  * first released version
  *

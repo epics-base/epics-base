@@ -221,7 +221,7 @@ Init (rtems_task_argument ignored)
         if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
             break;
         epicsThreadSleep (5.0);
-        if (i >= 8) {
+        if (i >= 12) {
             rtems_status_code sc;
             rtems_time_of_day now;
             printf ("    *************** WARNING ***************\n");

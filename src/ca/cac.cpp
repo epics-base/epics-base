@@ -286,7 +286,7 @@ cac::~cac ()
     // wait for tcp threads to exit
     //
     while ( this->serverTable.numEntriesInstalled() ) {
-        this->iiuUninstal.wait ();
+        this->iiuUninstall.wait ();
     }
 
     delete this->pRepeaterSubscribeTmr;
@@ -440,7 +440,8 @@ void cac::show ( unsigned level ) const
 /*
  *  cac::beaconNotify
  */
-void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime )
+void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
+                        unsigned beaconNumber, unsigned protocolRevision  )
 {
     epicsAutoMutex autoMutex ( this->mutex );
 
@@ -456,7 +457,8 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime 
         /*
          * return if the beacon period has not changed significantly
          */
-        if ( ! pBHE->updatePeriod ( this->programBeginTime, currentTime ) ) {
+        if ( ! pBHE->updatePeriod ( this->programBeginTime, currentTime, 
+                beaconNumber, protocolRevision ) ) {
             return;
         }
     }
@@ -877,56 +879,70 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
 void cac::uninstallChannel ( nciu & chan )
 {
-    // wait for any IO callbacks in progress to complete
-    // prior to destroying the IO object
+    tsDLList < baseNMIU > tmpList;
+
+    // uninstall channel and any subsiderary IO so that recv threads
+    // will not start a new callback for this channel's IO. Send any 
+    // side effect IO requests w/o holding the callback lock so that 
+    // we do not dead lock
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        this->flushIfRequired ( *chan.getPIIU() );
+        while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
+            tmpList.add ( *pIO );
+            this->ioTable.remove ( *pIO );
+            class netSubscription *pSubscr = pIO->isSubscription ();
+            if ( pSubscr && chan.connected() ) {
+                chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+            }
+            {
+                epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+                // If they call ioCancel() here it will be ignored
+                // because the IO has been unregistered above
+                pIO->exception ( ECA_CHANDESTROY, chan.pName() );
+            }
+        }        
+        nciu * pChan = this->chanTable.remove ( chan );
+        assert ( pChan == &chan );
+        // if the claim reply has not returned yet then we will issue
+        // the clear channel request to the server when the claim reply
+        // arrives and there is no matching nciu in the client
+        if ( pChan->connected() ) {
+            chan.getPIIU()->clearChannelRequest ( chan.getSID(), chan.getCID() );
+        }
+        chan.getPIIU()->detachChannel ( chan );
+    }
+
+    // take callback lock briefly to ensure that any callbacks in 
+    // progress complete prior to destroying channel and any associated IO
     //
     // If this is a callback thread then it already owns the 
     // CB lock at this point. If this is the main thread then we 
     // are not in pendEvent, pendIO, SG block, etc and 
     // this->pCallbackLocker protects. Otherwise if this is
-    // the users auxillary thread then this->pCallbackLocker
+    // a preemptive callback enabled app then this->pCallbackLocker
     // isnt set and we must take the call back lock.
-    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
-        this->uninstallChannelPrivate ( chan );
-    }
-    else if ( this->pCallbackLocker ) {
-        this->uninstallChannelPrivate ( chan );
-    }
-    else {
-        // taking this mutex guarantees that we will not delete 
-        // a channel out from under a callback
+    //
+    // must _not_ hold callback lock while sending channel and subscription
+    // cancel requests above unless.
+    // 1) this is a recv thread
+    // 2) this is the thread that initialized the library and preemptive 
+    //      callback is disabled
+    bool alreadyLocked = epicsThreadPrivateGet ( caClientCallbackThreadId ) 
+                || this->pCallbackLocker;
+    if ( ! alreadyLocked ) {
+        // taking this mutex priior to deleting the IO and channel guarantees 
+        // that we will not delete a channel out from under a callback
         epicsAutoMutex autoCallbackMutex ( this->callbackMutex );
-        this->uninstallChannelPrivate ( chan );
     }
-}
 
-void cac::uninstallChannelPrivate ( nciu & chan )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    this->flushIfRequired ( *chan.getPIIU() );
-    while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
-        this->ioTable.remove ( *pIO );
-        class netSubscription *pSubscr = pIO->isSubscription ();
-        if ( pSubscr && chan.connected() ) {
-            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
-        }
-        {
-            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
-            // If they call ioCancel() here it will be ignored
-            // because the IO has been unregistered above
-            pIO->exception ( ECA_CHANDESTROY, chan.pName() );
-        }
-        pIO->destroy ( *this );
-    }        
-    nciu * pChan = this->chanTable.remove ( chan );
-    assert ( pChan = &chan );
-    // if the claim reply has not returned yet then we will issue
-    // the clear channel request to the server when the claim reply
-    // arrives and there is no matching nciu in the client
-    if ( pChan->connected() ) {
-        chan.getPIIU()->clearChannelRequest ( chan.getSID(), chan.getCID() );
+    // destroy subsiderary IO now that it is safe to do so
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        while ( baseNMIU *pIO = tmpList.get() ) {
+            pIO->destroy ( *this );
+        }        
     }
-    chan.getPIIU()->detachChannel ( chan );
 }
 
 int cac::printf ( const char *pformat, ... ) const
@@ -1834,7 +1850,7 @@ void cac::privateUninstallIIU ( tcpiiu & iiu )
     this->pSearchTmr->resetPeriod ( 0.0 );
 
     // signal iiu uninstal event so that cac can properly shut down
-    this->iiuUninstal.signal();
+    this->iiuUninstall.signal();
 }
 
 void cac::preemptiveCallbackLock ()

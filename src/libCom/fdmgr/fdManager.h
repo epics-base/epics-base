@@ -183,8 +183,8 @@ inline resTableIndex fdRegId::hash () const
 {
     resTableIndex hashid;
         
-    hashid = integerHash < fdManagerHashTableMinIndexBits, 
-        fdManagerHashTableMaxIndexBits > ( this->fd );
+    hashid = integerHash ( fdManagerHashTableMinIndexBits, 
+        fdManagerHashTableMaxIndexBits, this->fd );
  
     //
     // also evenly distribute based on the type of fdRegType

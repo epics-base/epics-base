@@ -52,8 +52,8 @@ inline resTableIndex inetAddrID::hash () const
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;
     index ^= this->addr.sin_port >> 8u;
-    return integerHash < inetAddrMinIndexBitWidth,
-        inetAddrMaxIndexBitWidth > ( index );
+    return integerHash( inetAddrMinIndexBitWidth, 
+        inetAddrMaxIndexBitWidth, index );
 }
 
 inline unsigned inetAddrID::maxIndexBitWidth ()

@@ -466,11 +466,15 @@ void resTable<T,ID>::splitBucket ()
         for ( i = oldTableOccupiedSize; i < newTableSize; i++ ) {
             new ( &pNewTable[i] ) tsSLList<T>;
         }
-        // run the destructors explicitly 
-        // (no doubt that this will be removed by the optimizer)
-        for ( i = 0; i < oldTableSize; i++ ) {
-            this->pTable[i].~tsSLList<T>();
-        }
+        // Run the destructors explicitly. Currently this destructor is a noop.
+        // Currently the Tornado compiler cant deal with ~tsSLList<T>() but since 
+        // its a NOOP we can find a workaround ...
+        //
+#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 72 )
+            for ( i = 0; i < oldTableSize; i++ ) {
+                this->pTable[i].~tsSLList<T>();
+            }
+#       endif
         operator delete ( this->pTable );
         this->pTable = pNewTable;
         this->hashIxMask = this->hashIxSplitMask;
@@ -733,8 +737,9 @@ inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth 
 //
 // converts any integer into a hash table index
 //
-template < unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH, class T >
-inline resTableIndex integerHash ( const T &id )
+template < class T >
+inline resTableIndex integerHash ( unsigned MIN_INDEX_WIDTH,
+                                  unsigned MAX_ID_WIDTH, const T &id )
 {
     resTableIndex hashid = static_cast <resTableIndex> ( id );
 
@@ -771,7 +776,7 @@ inline resTableIndex integerHash ( const T &id )
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const
 {
-    return integerHash<MIN_INDEX_WIDTH,MAX_ID_WIDTH> (this->id);
+    return integerHash ( MIN_INDEX_WIDTH, MAX_ID_WIDTH, this->id );
 }
 
 ////////////////////////////////////////////////////
@@ -937,7 +942,7 @@ resTableIndex stringId::hash() const
 
     h0 = ( h3 << 24 ) | ( h2 << 16 ) | ( h1 << 8 ) | h0;
 
-    return integerHash < stringIdMinIndexWidth, stringIdMaxIndexWidth > ( h0 );
+    return integerHash ( stringIdMinIndexWidth, stringIdMaxIndexWidth, h0 );
 }
 
 //

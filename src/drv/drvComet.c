@@ -333,7 +333,7 @@ static long init()
  *
  */
 comet_driver(card, signal, pcbroutine, parg)
-register unsigned short	card,signal;
+register int		card,signal;
 unsigned int		*pcbroutine;
 unsigned int		*parg;	/* pointer to the waveform record */
 {
@@ -355,7 +355,7 @@ unsigned int		*parg;	/* pointer to the waveform record */
        FASTLOCK(&pconfig->lock);
 
 	/* mark the card as armed */
-	if (pconfig->parg[signal] != 0) 
+	if (pconfig->parg[signal] == 0) 
 		pconfig->parg[signal] = parg;
  	if (pconfig->psub) return;
 	pconfig->psub = (void (*)()) pcbroutine;

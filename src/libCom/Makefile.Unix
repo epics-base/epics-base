@@ -40,7 +40,7 @@ SRCS.c += ../postfix.c
 SRCS.c += ../realpath.c
 SRCS.c += ../tsSubr.c
 SRCS.c += ../assertUNIX.c
-SRCS.c += ../fdMgr.cc
+#SRCS.c += ../fdMgr.cc
 
 LIBOBJS += bucketLib.o
 LIBOBJS += calcPerform.o
@@ -61,7 +61,7 @@ LIBOBJS += postfix.o
 LIBOBJS += realpath.o
 LIBOBJS += tsSubr.o
 LIBOBJS += assertUNIX.o
-LIBOBJS += fdMgr.o
+#LIBOBJS += fdMgr.o
 
 LIBNAME = libCom.a
 

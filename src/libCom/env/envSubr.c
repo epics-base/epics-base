@@ -181,7 +181,7 @@ char	*pBuf		/* I pointer to parameter buffer  */
 {
     const char *pEnv;		/* pointer to environment string */
 
-    pEnv = epicsShareAPI envGetConfigParamPtr(pParam);
+    pEnv = envGetConfigParamPtr(pParam);
     if (!pEnv) {
 	return NULL;
     }
@@ -379,7 +379,7 @@ const ENV_PARAM *pParam)	/* pointer to config param structure */
 {
     const char *pVal;
 
-    pVal = epicsShareAPI envGetConfigParamPtr(pParam);
+    pVal = envGetConfigParamPtr(pParam);
     if (pVal == NULL)
 	fprintf(stderr, "%s is undefined\n", pParam->name);
     else

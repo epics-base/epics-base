@@ -37,7 +37,7 @@ static void ignoreSigPipe (int param)
 /*
  * installSigPipeIgnore ()
  */
-void installSigPipeIgnore (void)
+void epicsShareAPI installSigPipeIgnore (void)
 {
 	static int init;
 

@@ -10,7 +10,9 @@
 extern "C" {
 #endif
 
-void installSigPipeIgnore (void);
+#include "shareLib.h"
+
+void epicsShareAPI installSigPipeIgnore (void);
 
 #ifdef __cplusplus
 }

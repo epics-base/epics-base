@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1997/04/10 19:45:33  jhill
+// API changes and include with  not <>
+//
 // Revision 1.3  1996/11/02 02:04:42  jhill
 // fixed several subtle bugs
 //
@@ -34,7 +37,7 @@
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
 #include "fdManager.h"
-#define INSTANCIATE_RES_LIB_STATIC
+#define instantiateStringIdFastHash
 #include "resourceLib.cc"
  
 //

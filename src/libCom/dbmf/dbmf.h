@@ -23,11 +23,16 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/04/07 20:16:42  jbk
+ * Added a simple library for doing malloc/free from a buffer pool
+ *
  *
  */
 
-void* dbmfInit(size_t size, size_t alignment, int init_num_free_list_items);
-void* dbmfMalloc(void* handle,size_t bytes);
-void  dbmfFree(void* handle,void* bytes);
+#include "shareLib.h"
+
+void* epicsShareAPI dbmfInit(size_t size, size_t alignment, int init_num_free_list_items);
+void* epicsShareAPI dbmfMalloc(void* handle,size_t bytes);
+void  epicsShareAPI dbmfFree(void* handle,void* bytes);
 
 #endif

@@ -2,6 +2,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.1  1997/04/07 20:16:41  jbk
+ * Added a simple library for doing malloc/free from a buffer pool
+ *
  *
  * Author: Jim Kowalkowski
  * Date:   4/97
@@ -50,7 +53,7 @@ typedef struct _chunk chunk;
 static chunk* def=NULL; /* default buffer pool - when handle to malloc() NULL */
 
 /* returns handle to user */
-void* dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
+void* epicsShareAPI dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
 {
 	chunk* c = (chunk*)malloc(sizeof(chunk));
 
@@ -68,7 +71,7 @@ void* dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
 	return c;
 }
 
-void* dbmfMalloc(void* handle,size_t x)
+void* epicsShareAPI dbmfMalloc(void* handle,size_t x)
 {
 	chunk* c = (chunk*)handle;
 	char** addr;
@@ -122,7 +125,7 @@ void* dbmfMalloc(void* handle,size_t x)
 	return (void*)(&node[c->align]);
 }
 
-void dbmfFree(void* handle,void* x)
+void epicsShareAPI dbmfFree(void* handle,void* x)
 {
 	chunk* c = (chunk*)handle;
 	char* p = (char*)x;

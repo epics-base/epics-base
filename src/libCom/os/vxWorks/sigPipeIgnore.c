@@ -4,7 +4,7 @@
 /*
  * NOOP
  */
-void installSigPipeIgnore (void)
+void epicsShareAPI installSigPipeIgnore (void)
 {
 }
  

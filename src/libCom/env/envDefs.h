@@ -73,7 +73,7 @@ typedef struct envParam {
 } ENV_PARAM;
 
 /*
- * bldEnvData looks for "epicsShareExtern ENV_PARAM"
+ * bldEnvData looks for "epicsShareExtern const ENV_PARAM"
  */
 epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST; 
 epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO; 
@@ -118,14 +118,16 @@ long epicsShareAPI envGetDoubleConfigParam(const ENV_PARAM *pParam,
 			double *pDouble);
 long epicsShareAPI envGetLongConfigParam(const ENV_PARAM *pParam, 
 			long *pLong);
+const char * epicsShareAPI envGetConfigParamPtr(const ENV_PARAM *pParam);
 #else
 char * epicsShareAPI envGetConfigParam();
-const char * epicsShareAPI envGetConfigParamPtr();
+char * epicsShareAPI envGetConfigParamPtr();
 long epicsShareAPI envPrtConfigParam();
 long epicsShareAPI envSetConfigParam();
 long epicsShareAPI envGetInetAddrConfigParam();
 long epicsShareAPI envGetDoubleConfigParam();
 long epicsShareAPI envGetLongConfigParam();
+char * epicsShareAPI envGetConfigParamPtr();
 #endif
 
 #ifdef __cplusplus

@@ -141,7 +141,6 @@ public:
     epicsTimer & createTimer ( epicsTimerNotify & );
     void process ();
     double getNextExpireDelay () const;
-    void reschedule ();
     void show ( unsigned int level ) const;
     void release ();
 private:

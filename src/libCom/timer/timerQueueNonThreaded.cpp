@@ -56,22 +56,6 @@ epicsTimer & timerQueueNonThreaded::createTimer ( epicsTimerNotify & notifyIn )
     return *pTmr;
 }
 
-void timerQueueNonThreaded::reschedule ()
-{
-    //
-    // Only useful in a multi-threaded program ...
-    //
-    // If a select() based file descriptor manager was waiting
-    // in select () this routine should force it to wake up
-    // and rescheduale its delay, but since file descriptor managers
-    // typically are only be used in single-threaded programs, and
-    // in fact the file descriptor manager currently supplied
-    // with EPICS is not thread safe, then perhaps
-    // its not worth the effort to tightly integrate this with 
-    // the file descriptor manager so that this can be implemented.
-    //
-}
-
 void timerQueueNonThreaded::process ()
 {
     this->queue.process ();

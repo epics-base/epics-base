@@ -1616,6 +1616,7 @@ void exceptionTest ( chid chan, unsigned interestLevel )
         status = ca_array_get_callback ( DBR_PUT_ACKT, 
             ca_element_count (chan), chan, arrayEventExceptionNotify, 0 ); 
         if ( status != ECA_NORMAL ) {
+            assert ( status == ECA_BADTYPE || status == ECA_GETFAIL );
             arrayEventExceptionNotifyComplete = 1;
         }
         ca_flush_io ();
@@ -1639,6 +1640,7 @@ void exceptionTest ( chid chan, unsigned interestLevel )
         status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
                         chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
         if ( status != ECA_NORMAL ) {
+            assert ( status == ECA_BADTYPE || status == ECA_GETFAIL );
             arrayEventExceptionNotifyComplete = 1;
         }
         ca_flush_io ();
@@ -1658,7 +1660,7 @@ void exceptionTest ( chid chan, unsigned interestLevel )
      * force a put exception to occur
      */
     {
-        dbr_string_t *pWS;
+        dbr_string_t * pWS;
         unsigned i;
 
         acctstExceptionCount = 0u;
@@ -1673,6 +1675,7 @@ void exceptionTest ( chid chan, unsigned interestLevel )
         status = ca_array_put ( DBR_STRING, 
             ca_element_count (chan), chan, pWS ); 
         if ( status != ECA_NORMAL ) {
+            assert ( status == ECA_BADTYPE || status == ECA_PUTFAIL );
             acctstExceptionCount++; /* local PV case */
         }
         ca_flush_io ();
@@ -1952,8 +1955,10 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 
     status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
                 newChan, pWF ); 
+    assert ( status == ECA_NORMAL );
     status = ca_array_get ( DBR_DOUBLE, 1, 
                 newChan, pRF ); 
+    assert ( status == ECA_NORMAL );
     status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
     status = ca_clear_channel ( newChan );

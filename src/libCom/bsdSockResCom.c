@@ -91,9 +91,7 @@ void epicsShareAPI sockAddrToA
 
                 for (i=0; i<nDigitsDottedIP; i++) {
                     chunk[i] = addr & makeMask(chunkSize);
-#if 0
                     addr >>= chunkSize;
-#endif
                 }
 
                 /*
@@ -104,11 +102,10 @@ void epicsShareAPI sockAddrToA
                         chunk[3], chunk[2], chunk[1], chunk[0]);
             }
             else {
-                strncpy (pBuf, "<Invalid IP address>", bufSize);
+                strncpy (pBuf, "<IP addr>", bufSize);
 		        pBuf[bufSize-1] = '\0';
                 len = strlen (pBuf);
             }
-
 		}
 
         assert (len<bufSize);
@@ -117,7 +114,7 @@ void epicsShareAPI sockAddrToA
 		/*
 		 * allow space for the port number
 		 */
-		if (bufSize>maxPortDigits) {
+		if (bufSize>maxPortDigits+1) {
 			sprintf (&pBuf[len], ":%hu", ntohs(paddr_in->sin_port));
 		}
 	}

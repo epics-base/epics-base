@@ -190,7 +190,7 @@ struct epicsTimerQueueActiveForC : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
-    void release ();
+    void release () throw();
     void * operator new ( size_t );
     void operator delete ( void * );
 protected:

@@ -40,7 +40,8 @@
 casPVI::casPVI () : 
 	pCAS (NULL), // initially there is no server attachment
 	nMonAttached (0u),
-	nIOAttached (0u)
+	nIOAttached (0u),
+    destroyInProgress (false)
 {
 }
 
@@ -49,6 +50,8 @@ casPVI::casPVI () :
 //
 casPVI::~casPVI()
 {
+    this->destroyInProgress = true;
+
 	//
 	// only relevant if we are attached to a server
 	//
@@ -329,7 +332,7 @@ void casPVI::unregisterEvent()
 	// Dont call casPV::interestDelete() when we are in 
 	// casPVI::~casPVI() (and casPV no longr exists)
 	//
-	if (this->nMonAttached==0u) {
+	if ( this->nMonAttached==0u && !this->destroyInProgress ) {
         this->interestDelete();
 	}
 	this->unlock();

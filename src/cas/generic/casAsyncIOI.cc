@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 00:53:58  jhill
+ * many improvements
+ *
  *
  */
 
@@ -212,18 +215,24 @@ int casAsyncIOI::readOP()
 //
 void casAsyncIOI::destroyIfReadOP()
 {
+	casCoreClient &client = this->client;
+
         //
         // client lock used because this object's
         // lock may be destroyed
         //
-        this->client.osiLock();
+        client.osiLock();
  
 	if (this->readOP()) {
         	this->serverDelete = TRUE;
         	(*this)->destroy();
 	}
  
-        this->client.osiUnlock();
+	//
+	// NO REF TO THIS OBJECT BELOW HERE
+	// BECAUSE OF THE DELETE ABOVE
+	//
+        client.osiUnlock();
 }
 
 //

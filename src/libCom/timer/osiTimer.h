@@ -61,6 +61,13 @@ public:
      */
     epicsShareFunc osiTimer ( double delay, osiTimerQueue & queueIn );
     epicsShareFunc osiTimer ( double delay);
+
+    /*
+     * Create an inactive timer
+     *
+     * ** Warning ** default timer queue has no manager thread and is typically
+     * processed by the file descriptor manager
+     */
     epicsShareFunc osiTimer ( osiTimerQueue & queueIn );
     epicsShareFunc osiTimer ();
 

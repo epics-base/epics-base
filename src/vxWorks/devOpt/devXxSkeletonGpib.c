@@ -368,7 +368,7 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 {
   int	status = IDLE;		/* assume device will be idle when finished */
 
-  if (Dc5009Debug || ibSrqDebug)
+  if (SkeletonDebug || ibSrqDebug)
     printf("dc5009 srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
 
   switch (srqStatus & DC5009_GOODBITS) {
@@ -400,7 +400,7 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 
     if (phwpvt->unsolicitedDpvt != NULL)
     {
-      if(Dc5009Debug || ibSrqDebug)
+      if(SkeletonDebug || ibSrqDebug)
         printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
 

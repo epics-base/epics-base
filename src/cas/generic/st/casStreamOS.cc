@@ -115,8 +115,8 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 //
 // casStreamEvWakeup()
 //
-casStreamEvWakeup::casStreamEvWakeup () : 
-    timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
+casStreamEvWakeup::casStreamEvWakeup ( casStreamOS & osIn ) : 
+    timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
 {
 }
 
@@ -144,12 +144,9 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
-    casStreamOS & os = *this->pOS;
-    this->pOS = 0;
-
     casEventSys::processStatus ps = os.eventSysProcess ();
     if ( ps.nAccepted > 0u ) {
-        os.eventFlush ();
+        this->os.eventFlush ();
     }
 	if ( ps.cond != casProcOk ) {
 		//
@@ -160,7 +157,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* 
 		// called from a client member function
 		// higher up on the stack
 		//
-		delete & os;	
+		delete & this->os;	
 
 		//
 		// must not touch the "this" pointer
@@ -175,13 +172,13 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* 
 //
 void casStreamEvWakeup::start( casStreamOS &os )
 {    
-    if ( this->pOS ) {
-        assert ( this->pOS == &os );
-    }
-    else {
-        this->pOS = &os;
-        this->timer.start ( *this, 0.0 );
-    }
+    // care is needed here because this is called
+    // asynchronously by postEvent
+    //
+    // there is some overhead here but care is taken
+    // in the caller of this routine to call this
+    // only when its the 2nd event on the queue
+    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -317,10 +314,12 @@ void casStreamOS::eventFlush()
 //
 // casStreamOS::casStreamOS()
 //
-casStreamOS::casStreamOS ( caServerI & cas, clientBufMemoryManager & bufMgrIn,
-                          const ioArgsToNewStreamIO & ioArgs ) : 
-	    casStreamIO ( cas, bufMgrIn, ioArgs ),
-	pWtReg ( 0 ), pRdReg ( 0 ), sendBlocked ( false )
+casStreamOS::casStreamOS ( 
+        caServerI & cas, clientBufMemoryManager & bufMgrIn,
+        const ioArgsToNewStreamIO & ioArgs ) : 
+    casStreamIO ( cas, bufMgrIn, ioArgs ),
+    evWk ( *this ), pWtReg ( 0 ), pRdReg ( 0 ), 
+    sendBlocked ( false )
 {
 	this->xSetNonBlocking ();
 	this->armRecv ();

@@ -48,13 +48,13 @@ private:
 
 class casStreamEvWakeup : public epicsTimerNotify {
 public:
-	casStreamEvWakeup ();
+	casStreamEvWakeup ( casStreamOS	& );
 	virtual ~casStreamEvWakeup ();
 	void show ( unsigned level ) const;
     void start ( class casStreamOS & osIn );
 private:
     epicsTimer & timer;
-	casStreamOS	* pOS;
+	casStreamOS	& os;
 	expireStatus expire ( const epicsTime & currentTime );
 	casStreamEvWakeup ( const casStreamEvWakeup & );
 	casStreamEvWakeup & operator = ( const casStreamEvWakeup & );

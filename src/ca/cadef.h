@@ -258,6 +258,8 @@ struct	exception_handler_args{
 	long			stat;	/* Channel access std status code 		*/
 	long			op;	/* External codes for channel access operations	*/
 	char			*ctx;	/* A character string containing context info	*/
+	char			*pFile; /* source file name (may be NULL) */
+	unsigned		lineNo; /* source file line number */
 };
 
 
@@ -983,6 +985,11 @@ int epicsShareAPI ca_v42_ok(chid chan);
 #else /*CAC_FUNC_PROTO*/
 int epicsShareAPI ca_v42_ok();
 #endif /*CAC_FUNC_PROTO*/
+
+/*
+ * function that returns the CA version string
+ */
+READONLY char * epicsShareAPI ca_version();
 
 /*
  * ca_replace_printf_handler ()

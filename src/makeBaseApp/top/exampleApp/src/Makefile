@@ -61,7 +61,7 @@ example_SRCS_vxWorks += -nil-
 example_OBJS_DEFAULT += $(EPICS_BASE_BIN)/registerRecordDeviceDriverRegister
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/registerRecordDeviceDriver
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
-#example_OBJS_vxWorks += $(EPICS_BASE_BIN)/seq
+#example_OBJS_vxWorks += $(SEQ_BIN)/seq
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

@@ -21,7 +21,7 @@ of this distribution.
 #ifdef __cplusplus
 
 // code using a timer must implement epicsTimerNotify
-class epicsShareClass epicsTimerNotify {
+class epicsTimerNotify {
 public:
     enum restart_t { noRestart, restart };
     class expireStatus {
@@ -36,10 +36,10 @@ public:
     };
     // return noRestart OR return expireStatus ( restart, 30.0 /* sec */ );
     virtual expireStatus expire () = 0;
-    virtual void show ( unsigned int level ) const;
+    virtual epicsShareFunc void show ( unsigned int level ) const;
 };
 
-class epicsShareClass epicsTimer {
+class epicsTimer {
 public:
     virtual ~epicsTimer () = 0;
     virtual void start ( const epicsTime & ) = 0;
@@ -49,9 +49,9 @@ public:
     virtual void show ( unsigned int level ) const = 0;
 };
 
-class epicsShareClass epicsTimerQueue {
+class epicsTimerQueue {
 public:
-    static epicsTimerQueue & allocate (
+    static epicsShareFunc epicsTimerQueue & allocate (
         bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
     virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
@@ -67,9 +67,9 @@ public:
     virtual void reschedule () = 0;
 };
 
-class epicsShareClass epicsTimerQueuePassive {
+class epicsTimerQueuePassive {
 public:
-    static epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
+    static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
     virtual ~epicsTimerQueuePassive () = 0;
     virtual epicsTimer & createTimer ( epicsTimerNotify & ) = 0;
     virtual void process () = 0;

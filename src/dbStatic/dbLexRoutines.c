@@ -536,7 +536,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	    free((void *)value);
 	    return;
 	}
-	yyerror("Illegal promptgroup. See guigroup.h for legal values");
+	yyerror("Illegal special value.");
 	return;
     }
     if(strcmp(name,"pp")==0) {

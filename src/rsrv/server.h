@@ -41,7 +41,7 @@
 #include "asLib.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
-#define CA_MINOR_PROTOCOL_REVISION 9
+#define CA_MINOR_PROTOCOL_REVISION 10
 #include "caProto.h"
 #include "ellLib.h"
 #include "epicsTime.h"

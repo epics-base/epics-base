@@ -84,6 +84,7 @@ int rsrv_online_notify_task()
     SOCKET              sock;
     int                 true = TRUE;
     unsigned short      port;
+    ca_uint32_t         beaconCounter = 0;
     
     casSufficentSpaceInPool = osiSufficentSpaceInPool ();
 
@@ -136,6 +137,7 @@ int rsrv_online_notify_task()
     memset((char *)&msg, 0, sizeof msg);
     msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
     msg.m_count = htons (ca_server_port);
+    msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
     
     ellInit (&beaconAddrList);
     
@@ -185,6 +187,7 @@ int rsrv_online_notify_task()
                 }
                 else if (if_addr.sin_family==AF_INET) {
                     msg.m_available = if_addr.sin_addr.s_addr;
+                    msg.m_cid = htonl ( beaconCounter );
 
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
@@ -207,6 +210,8 @@ int rsrv_online_notify_task()
                 delay = maxdelay;
             }
         }
+
+        beaconCounter++; /* expected to overflow */
     }
 }
 

@@ -1,7 +1,7 @@
 #ifndef EPICS_DRVBITBUS_H
 #define EPICS_DRVBITBUS_H
 
-#define BB_SUPER_DEBUG 
+/* #define BB_SUPER_DEBUG */
 
 /*
  *      Author: John Winans
@@ -36,6 +36,9 @@
  * .03  07-01-94	jrw	Bigtime hacking... merged PEP and Xycom.
  *
  * $Log$
+ * Revision 1.8  1994/10/04  18:42:44  winans
+ * Added an extensive debugging facility.
+ *
  *
  */
 

@@ -31,6 +31,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .03  02-28-92	jba	ANSI C changes
  */ 
 
 
@@ -38,6 +39,7 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 
 #include        <alarm.h>
 #include	<dbDefs.h>
@@ -51,21 +53,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_units();
+static long get_units();
 #define get_precision NULL
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
-long get_alarm_double();
+static long get_graphic_double();
+static long get_control_double();
+static long get_alarm_double();
 
 struct rset longoutRSET={
 	RSETNUMBER,
@@ -200,8 +202,10 @@ static long get_graphic_double(paddr,pgd)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    pgd->upper_disp_limit = plongout->hopr;
-    pgd->lower_disp_limit = plongout->lopr;
+    if(paddr->pfield==(void *)plongout->val){
+        pgd->upper_disp_limit = plongout->hopr;
+        pgd->lower_disp_limit = plongout->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -211,8 +215,10 @@ static long get_control_double(paddr,pcd)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = plongout->hopr;
-    pcd->lower_ctrl_limit = plongout->lopr;
+    if(paddr->pfield==(void *)plongout->val){
+        pcd->upper_ctrl_limit = plongout->hopr;
+        pcd->lower_ctrl_limit = plongout->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(paddr,pad)

@@ -31,6 +31,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .03  02-28-92	jba	ANSI C changes
  */ 
 
 #include     <vxWorks.h>
@@ -51,10 +52,10 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -222,22 +223,12 @@ static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble *pgd;
 {
-    struct pulseCounterRecord    *ppc=(struct pulseCounterRecord *)paddr->precord;
-    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
+    struct pulseCounterRecord   *ppc=(struct pulseCounterRecord *)paddr->precord;
 
-    if(((void *)(paddr->pfield))==((void *)&(ppc->clks))){
-         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
-         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppc->gate))){
-         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
-         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    pgd->upper_disp_limit = ppc->hopr;
-    pgd->lower_disp_limit = ppc->lopr;
-
+    if(paddr->pfield==(void *)&ppc->val){
+        pgd->upper_disp_limit = ppc->hopr;
+        pgd->lower_disp_limit = ppc->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -245,22 +236,12 @@ static long get_control_double(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;
 {
-    struct pulseCounterRecord     *ppc=(struct pulseCounterRecord *)paddr->precord;
-    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
+    struct pulseCounterRecord   *ppc=(struct pulseCounterRecord *)paddr->precord;
 
-    if(((void *)(paddr->pfield))==((void *)&(ppc->clks))){
-         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.short_value;
-         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.short_value;
-         return(0);
-    }
-    if(((void *)(paddr->pfield))==((void *)&(ppc->gate))){
-         pcd->upper_ctrl_limit = (double)pfldDes->range1.value.short_value;
-         pcd->lower_ctrl_limit = (double)pfldDes->range2.value.short_value;
-         return(0);
-    }
-    pcd->upper_ctrl_limit = ppc->hopr;
-    pcd->lower_ctrl_limit = ppc->lopr;
-
+    if(paddr->pfield==(void *)&ppc->val){
+        pcd->upper_ctrl_limit = ppc->hopr;
+        pcd->lower_ctrl_limit = ppc->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

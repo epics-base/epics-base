@@ -29,7 +29,7 @@ int main ()
 	const unsigned iter = 100000u;
 	TS_STAMP stamp;
 	struct timespec ts;
-	struct tm tm;
+	struct tm tmAnsi;
 	tm_nano_sec ansiDate;
 	char stampText[128];
 	double diff;
@@ -50,10 +50,10 @@ int main ()
 
 	tsStampToText (&stamp, TS_TEXT_MMDDYY, stampText);
 	printf ("TS_STAMP = %s\n", stampText);
-	printf ("struct tm = %s %f\n", asctime(&ansiDate.tm), 
+	printf ("struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
 		ansiDate.nsec/(double)osiTime::nSecPerSec);
-	tm = *localtime (&ts.tv_sec);
-	printf ("struct timespec = %s %f\n", asctime(&ansiDate.tm), 
+	tmAnsi = *localtime (&ts.tv_sec);
+	printf ("struct timespec = %s %f\n", asctime(&ansiDate.ansi_tm), 
 		ts.tv_nsec/(double)osiTime::nSecPerSec);
 	begin.show (0);
 

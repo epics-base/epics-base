@@ -10,57 +10,93 @@
 #define epicsSingleton_h
 
 #include "shareLib.h"
+#include "epicsMutex.h"
+#include "epicsGuard.h"
+#include "epicsThread.h"
 
-class epicsShareClass epicsSingletonBase {
+template < class TYPE >
+class epicsSingleton {
 public:
-    epicsSingletonBase ();
-protected:
-    virtual ~epicsSingletonBase ();
-    void lockedFactory ();
-    void * singletonPointer () const;
+    epicsSingleton ();
+    ~epicsSingleton ();
+    TYPE * operator -> ();
+    const TYPE * operator -> () const;
+    TYPE & operator * ();
+    const TYPE & operator * () const;
+    TYPE * instance ();
+    const TYPE * instance () const;
+    bool isInstantiated () const;
 private:
-    void * pSingleton;
-    virtual void * factory () = 0;
+    TYPE * pSingleton;
+    void factory ();
 };
 
-template <class T>
-class epicsSingleton : private epicsSingletonBase {
-public:
-    virtual ~epicsSingleton ();
-    T * operator -> ();
-    T & operator * ();
-private:
-    void * factory ();
-};
-
-template < class T >
-inline epicsSingleton<T>::~epicsSingleton ()
+template < class TYPE >
+inline epicsSingleton<TYPE>::epicsSingleton () : pSingleton ( 0 )
 {
-    delete static_cast < T * > ( this->singletonPointer () );
 }
 
-template < class T >
-inline T * epicsSingleton<T>::operator -> ()
+template < class TYPE >
+inline epicsSingleton<TYPE>::~epicsSingleton ()
 {
-    if ( ! this->singletonPointer () ) {
-        this->lockedFactory ();
+    delete this->pSingleton;
+}
+
+epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
+
+template < class TYPE >
+void epicsSingleton<TYPE>::factory ()
+{
+    epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
+    if ( ! this->pSingleton ) {
+        this->pSingleton = new TYPE;
     }
-    return static_cast < T * > ( this->singletonPointer () );
 }
 
-template < class T >
-inline T & epicsSingleton<T>::operator * ()
+template < class TYPE >
+inline TYPE * epicsSingleton<TYPE>::operator -> ()
 {
-    if ( ! this->singletonPointer () ) {
-        this->lockedFactory ();
+    if ( ! this->pSingleton ) {
+        this->factory ();
     }
-    return * static_cast < T * > ( this->singletonPointer () );
+    return this->pSingleton;
 }
 
-template < class T >
-void * epicsSingleton<T>::factory ()
+template < class TYPE >
+inline const TYPE * epicsSingleton<TYPE>::operator -> () const
 {
-    return static_cast < void * > ( new T );
+	epicsSingleton<TYPE> *p = const_cast < epicsSingleton<TYPE> * > ( this );
+    return const_cast <const TYPE *> ( p->operator -> () );
+}
+
+template < class TYPE >
+inline TYPE & epicsSingleton<TYPE>::operator * ()
+{
+    return * this->operator -> ();
+}
+
+template < class TYPE >
+inline const TYPE & epicsSingleton<TYPE>::operator * () const
+{
+    return * this->operator -> ();
+}
+
+template < class TYPE >
+inline TYPE * epicsSingleton<TYPE>::instance ()
+{
+    return this->operator -> ();
+}
+
+template < class TYPE >
+inline const TYPE * epicsSingleton<TYPE>::instance () const
+{
+    return this->operator -> ();
+}
+
+template < class TYPE >
+inline bool epicsSingleton<TYPE>::isInstantiated () const
+{
+    return ( this->pSingleton ? true : false );
 }
 
 #endif // epicsSingleton_h

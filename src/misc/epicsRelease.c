@@ -17,14 +17,13 @@
 #define epicsExportSharedSymbols
 #include    "epicsRelease.h"
 
-char *epicsRelease= "@(#)EPICS IOC CORE built on " __DATE__;
-char *epicsRelease1 = epicsReleaseVersion;
+static const char *id = "@(#) " EPICS_VERSION_STRING ", Misc. Utilities Library" __DATE__;
 
 epicsShareFunc int epicsShareAPI coreRelease(void)
 {
-    printf ("############################################################################\n");
-    printf ("###  %s\n", epicsRelease);
-    printf ("###  %s\n", epicsRelease1);
-    printf ("############################################################################\n");
-    return(0);
+    printf ( "############################################################################\n" );
+    printf ( "###  %s\n", "EPICS IOC CORE built on " __DATE__ );
+    printf ( "###  %s\n", epicsReleaseVersion );
+    printf ( "############################################################################\n" );
+    return 0;
 }

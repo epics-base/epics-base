@@ -175,7 +175,7 @@ TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
 #--------------------------------------------------
 # Epics includes (CONFIG.Vx will override OS_CLASS)
 OS_CLASS = $(ARCH_CLASS)
-EPICS_INCLUDES = -I$(INSTALL_INCLUDE) -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)
+EPICS_INCLUDES = -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) -I$(INSTALL_INCLUDE)
 EPICS_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------

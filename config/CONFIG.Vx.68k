@@ -45,7 +45,7 @@ RANLIB_G++ = $(GNU_BIN)/sun3-ranlib
 LD_G++ = $(GNU_BIN)/sun3-ld
 G++_ARCH_DEP_CCFLAGS = --no-builtin -Wa,"-m68040" -DOS_EQ_$(OS) \
 	-DBOARD_EQ_$(BOARD) -DCPU_EQ_$(CPU) -DBOARD=$(BOARD)
-G++_ARCH_DEP_LDFLAGS = -Ur -N
+G++_ARCH_DEP_LDFLAGS = -Ur -N -T$(EPICS_BASE_BIN)/vxldscript.MRI
 
 CCC_NORMAL = $(CCC)
 CCC_STRICT = $(CCC) -ansi -pedantic -Wtraditional \
@@ -91,7 +91,6 @@ VX_OP_SYS_FLAGS = -DvxWorks -DV5_vxWorks
 VX_CFLAGS = $(VX_OPT_FLAGS) $(VX_WARN_FLAGS) \
         $(VX_INCLUDES) $(VX_OP_SYS_FLAGS)
  
-#VX_LDFLAGS = -T$(EPICS_BASE)/src/libvxWorks/vxldscript.MRI -o
 VX_LDFLAGS =  -o
   
 TARGET_CFLAGS = $($(basename $@)_CFLAGS)

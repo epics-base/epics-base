@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.63  1996/07/09 22:41:28  jhill
+ * silence gcc warning
+ *
  * Revision 1.62  1996/06/19 17:59:06  jhill
  * many 3.13 beta changes
  *
@@ -1662,7 +1665,7 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 		addr.in.sin_family = AF_INET;
   		addr.in.sin_port = htons(port);
                 addr.in.sin_addr.s_addr = inet_addr(pToken);
-                if(addr.in.sin_addr.s_addr == -1){
+                if (addr.in.sin_addr.s_addr == ~0ul) {
                         ca_printf( 
 				"%s: Parsing '%s'\n",
                                 __FILE__,

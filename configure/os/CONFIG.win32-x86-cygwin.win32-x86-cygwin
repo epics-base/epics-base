@@ -12,8 +12,12 @@ include $(CONFIG)/CONFIG.gnuCommon
 ## Shared libraries for cygwin not implemented yet
 SHARED_LIBRARIES=NO
 
-CC = $(GNU_BIN)/gcc
-CCC = $(GNU_BIN)/g++
+# cygwin's gcc, g++, ar, ld, and ranlib must be in user's path
+CC = gcc
+CCC = g++
+AR = ar -rc
+LD = ld -r
+RANLIB = ranlib
 
 CODE_CFLAGS =
 CODE_CXXFLAGS =

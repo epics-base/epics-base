@@ -90,8 +90,8 @@ extern "C" epicsShareFunc void epicsShareAPI
         printf("clock_gettime failed with error %s\n",strerror(errno));
         cantProceed("convertDoubleToWakeTime"); 
     }
-    wait.tv_sec = timeout;
-    wait.tv_nsec = (long)((timeout - (double)wait.tv_sec) * 1e9);
+    wait.tv_sec = static_cast < long > ( timeout );
+    wait.tv_nsec = static_cast < long > ( (timeout - (double)wait.tv_sec) * 1e9 );
     wakeTime->tv_sec += wait.tv_sec;
     wakeTime->tv_nsec += wait.tv_nsec;
     if(wakeTime->tv_nsec>1000000000L) {

@@ -112,7 +112,8 @@ G++ = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 
 G++_CONFORM_CFLAGS_NORMAL = -ansi -pedantic
 G++_CONFORM_CFLAGS_STRICT = -ansi -pedantic
-G++_WARN_YES = -Wall -Weffc++
+#G++_WARN_YES = -Wall -Weffc++
+G++_WARN_YES = -Wall 
 G++_WARN_NO = -w
 G++_OPT_YES = -g -O3
 G++_OPT_NO = -g

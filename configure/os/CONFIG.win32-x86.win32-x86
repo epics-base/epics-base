@@ -216,7 +216,7 @@ LDCMD =  $(CCC) /Fo $@ $^
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
 SHRLIB_SUFFIX=.dll
-SHRLIBNAME = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
+SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 
 
 #

@@ -97,6 +97,8 @@ OBJSNAME = $(addsuffix $(OBJ),$(basename $(OBJS)))
 PRODNAME = $(addsuffix $(EXE),$(basename $(PROD)))
 TESTPRODNAME = $(addsuffix $(EXE),$(basename $(TESTPROD)))
 
+SHRLIBNAME = $(SHRLIBNAME_$(SHARED_LIBRARIES))
+
 #--------------------------------------------------
 # obj files
 

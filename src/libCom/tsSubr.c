@@ -33,6 +33,8 @@
  *  .05 01-27-92 rac	fixed off-by-1 bug for leap years in tsTextToStamp
  *  .06 08-03-92 rac	added tsRound... routines
  *  .07 10-06-92 rac	minor fixes to the documentation
+ *  .08 04-02-92 joh 	fixed number of days in a year uninitialized
+ *			for the EPOCH year
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -911,6 +913,10 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
     pT->dayOfWeek = (days + TS_EPOCH_WDAY_NUM) % 7;
 
     pT->year=TS_EPOCH_YEAR;
+    if (pT->year % 400 == 0 || (pT->year % 4 == 0 && pT->year % 100 != 0))
+        ndays = 366;
+    else
+        ndays = 365;
     while (days > 0) {
 	if (pT->year % 400 == 0 || (pT->year % 4 == 0 && pT->year % 100 != 0))
 	    ndays = 366;

@@ -32,11 +32,11 @@
  * Per-task variables
  */
 struct taskVar {
-    struct taskVar	*forw;
-    struct taskVar	*back;
-    char                *name;
-    rtems_id		id;
-    THREADFUNC          funptr;
+    struct taskVar  *forw;
+    struct taskVar  *back;
+    char            *name;
+    rtems_id             id;
+    THREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
@@ -154,11 +154,11 @@ threadWrapper (rtems_task_argument arg)
     (*v->funptr)(v->parm);
     taskVarLock ();
     if (v->back)
-	v->back->forw = v->forw;
+        v->back->forw = v->forw;
     else
-	taskVarHead = v->forw;
+        taskVarHead = v->forw;
     if (v->forw)
-	v->forw->back = v->back;
+        v->forw->back = v->back;
     taskVarUnlock ();
     free (v->name);
     free (v);
@@ -206,7 +206,7 @@ setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
     v->forw = taskVarHead;
     v->back = NULL;
     if (v->forw)
-	v->forw->back = v;
+        v->forw->back = v;
     taskVarHead = v;
     taskVarUnlock ();
     if (funptr)
@@ -405,7 +405,7 @@ void threadGetName (threadId id, char *name, size_t size)
         name[size-1] = '\0';
     }
     else {
-	*name = '\0';
+        *name = '\0';
     }
     taskVarUnlock ();
 }
@@ -421,10 +421,10 @@ threadId threadGetId (const char *name)
      */
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
-	if (strcmp (name, v->name) == 0) {
-	    tid = v->id;
-	    break;
-	} 
+        if (strcmp (name, v->name) == 0) {
+            tid = v->id;
+            break;
+        } 
     }
     taskVarUnlock ();
     return (threadId)tid;
@@ -438,9 +438,9 @@ void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
     if (!initialized) threadInit();
     semMutexMustTake(onceMutex);
     if (*id == 0) {
-	    *id = -1;
-	    func(arg);
-	    *id = 1;
+            *id = -1;
+            func(arg);
+            *id = 1;
     }
     semMutexGive(onceMutex);
 }
@@ -503,7 +503,7 @@ void * threadPrivateGet (threadPrivateId id)
  * Show task info
  */
 struct bitmap {
-    char	    *msg;
+    char            *msg;
     unsigned long   mask;
     unsigned long   state;
 };
@@ -512,10 +512,10 @@ static void
 showBitmap (char *cbuf, unsigned long bits, const struct bitmap *bp)
 {
     for ( ; bp->msg != NULL ; bp++) {
-	if ((bp->mask & bits) == bp->state) {
-	    strcpy (cbuf, bp->msg);
-	    cbuf += strlen (bp->msg);
-	}
+        if ((bp->mask & bits) == bp->state) {
+            strcpy (cbuf, bp->msg);
+            cbuf += strlen (bp->msg);
+        }
     }
 }
 
@@ -528,53 +528,63 @@ showInternalTaskInfo (rtems_id tid)
     static Thread_Control thread;
     static char bitbuf[120];
     static const struct bitmap taskState[] = {
-	{ "RUN",   STATES_ALL_SET,		STATES_READY },
-	{ "DORM",  STATES_DORMANT,		STATES_DORMANT },
-	{ "SUSP",  STATES_SUSPENDED,		STATES_SUSPENDED },
-	{ "TRANS", STATES_TRANSIENT,		STATES_TRANSIENT },
-	{ "DELAY", STATES_DELAYING,		STATES_DELAYING },
-	{ "Wtime", STATES_WAITING_FOR_TIME,	STATES_WAITING_FOR_TIME },
-	{ "Wbuf",  STATES_WAITING_FOR_BUFFER,	STATES_WAITING_FOR_BUFFER },
-	{ "Wseg",  STATES_WAITING_FOR_SEGMENT,	STATES_WAITING_FOR_SEGMENT },
-	{ "Wmsg" , STATES_WAITING_FOR_MESSAGE,	STATES_WAITING_FOR_MESSAGE },
-	{ "Wevnt", STATES_WAITING_FOR_EVENT,	STATES_WAITING_FOR_EVENT },
-	{ "Wsem",  STATES_WAITING_FOR_SEMAPHORE,STATES_WAITING_FOR_SEMAPHORE },
-	{ "Wmtx",  STATES_WAITING_FOR_MUTEX,	STATES_WAITING_FOR_MUTEX },
-	{ "Wjoin", STATES_WAITING_FOR_JOIN_AT_EXIT,STATES_WAITING_FOR_JOIN_AT_EXIT },
-	{ "Wrpc",  STATES_WAITING_FOR_RPC_REPLY,STATES_WAITING_FOR_RPC_REPLY },
-	{ "Wrate", STATES_WAITING_FOR_PERIOD,	STATES_WAITING_FOR_PERIOD },
-	{ "Wsig",  STATES_WAITING_FOR_SIGNAL,	STATES_WAITING_FOR_SIGNAL },
-	{ NULL, 0, 0 },
+        { "RUN",   STATES_ALL_SET,              STATES_READY },
+        { "DORM",  STATES_DORMANT,              STATES_DORMANT },
+        { "SUSP",  STATES_SUSPENDED,            STATES_SUSPENDED },
+        { "TRANS", STATES_TRANSIENT,            STATES_TRANSIENT },
+        { "DELAY", STATES_DELAYING,             STATES_DELAYING },
+        { "Wtime", STATES_WAITING_FOR_TIME,     STATES_WAITING_FOR_TIME },
+        { "Wbuf",  STATES_WAITING_FOR_BUFFER,   STATES_WAITING_FOR_BUFFER },
+        { "Wseg",  STATES_WAITING_FOR_SEGMENT,  STATES_WAITING_FOR_SEGMENT },
+        { "Wmsg" , STATES_WAITING_FOR_MESSAGE,  STATES_WAITING_FOR_MESSAGE },
+        { "Wevnt", STATES_WAITING_FOR_EVENT,    STATES_WAITING_FOR_EVENT },
+        { "Wsem",  STATES_WAITING_FOR_SEMAPHORE,STATES_WAITING_FOR_SEMAPHORE },
+        { "Wmtx",  STATES_WAITING_FOR_MUTEX,    STATES_WAITING_FOR_MUTEX },
+        { "Wjoin", STATES_WAITING_FOR_JOIN_AT_EXIT,STATES_WAITING_FOR_JOIN_AT_EXIT },
+        { "Wrpc",  STATES_WAITING_FOR_RPC_REPLY,STATES_WAITING_FOR_RPC_REPLY },
+        { "Wrate", STATES_WAITING_FOR_PERIOD,   STATES_WAITING_FOR_PERIOD },
+        { "Wsig",  STATES_WAITING_FOR_SIGNAL,   STATES_WAITING_FOR_SIGNAL },
+        { NULL, 0, 0 },
     };
 
     the_thread = _Thread_Get (tid, &location);
     if (location != OBJECTS_LOCAL)
-	return;
+        return;
     thread = *the_thread;
     _Thread_Enable_dispatch();
-    printf ("%4d", threadGetOsiPriorityValue(thread.current_priority));
+    /*
+     * Show both real and current priorities if they differ.
+     * Note that the threadGetOsiPriorityValue routine is not used here.
+     * If a thread has a priority outside the normal EPICS range then
+     * that priority should be displayed, not the value truncated to
+     * the EPICS range.
+     */
+    if (thread.current_priority == thread.real_priority)
+        printf ("%4d     ", 199-thread.current_priority);
+    else
+        printf ("%4d/%-4d", 199-thread.current_priority, 199-thread.real_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
     printf ("%9.9s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
-				STATES_WAITING_FOR_MUTEX |
-				STATES_WAITING_FOR_MESSAGE))
-	printf (" %8.8x", thread.Wait.id);
+                                STATES_WAITING_FOR_MUTEX |
+                                STATES_WAITING_FOR_MESSAGE))
+        printf (" %8.8x", thread.Wait.id);
 #endif
 }
 
 static void
 threadShowHeader (void)
 {
-    printf ("      NAME        ID    PRI   STATE    WAIT   \n");
-    printf ("+-------------+--------+---+--------+--------+\n");
+    printf ("      NAME        ID    PRIORITY   STATE    WAIT   \n");
+    printf ("+-------------+--------+--------+--------+--------+\n");
 }
 
 static void
 threadShowInfo (struct taskVar *v, unsigned int level)
 {
-	printf ("%14.14s %8.8x", v->name, v->id);
-	showInternalTaskInfo (v->id);
-	printf ("\n");
+        printf ("%14.14s %8.8x", v->name, v->id);
+        showInternalTaskInfo (v->id);
+        printf ("\n");
 }
 
 void threadShow (threadId id, unsigned int level)
@@ -582,15 +592,15 @@ void threadShow (threadId id, unsigned int level)
     struct taskVar *v;
 
     if (!id) {
-	threadShowHeader ();
-	return;
+        threadShowHeader ();
+        return;
     }
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
-	if ((rtems_id)id == v->id) {
-	    threadShowInfo (v, level);
-	    return;
-	}
+        if ((rtems_id)id == v->id) {
+            threadShowInfo (v, level);
+            return;
+        }
     }
     taskVarUnlock ();
     printf ("*** Thread %x does not exist.\n", (unsigned int)id);
@@ -606,10 +616,10 @@ void threadShowAll (unsigned int level)
      * Show tasks in the order of creation (backwards through list)
      */
     for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
-	continue;
+        continue;
     while (v) {
-	threadShowInfo (v, level);
-	v = v->back;
+        threadShowInfo (v, level);
+        v = v->back;
     }
     taskVarUnlock ();
 }

@@ -31,7 +31,7 @@
 tcpRecvWatchdog::tcpRecvWatchdog 
     ( cac & cacIn, tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        cacRef ( cacIn ), iiu ( iiuIn ), responsePending ( false ),
+        iiu ( iiuIn ), cacRef ( cacIn ), responsePending ( false ),
         beaconAnomaly ( true )
 {
 }

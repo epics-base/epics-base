@@ -107,10 +107,12 @@ LOCAL void req_server (void *pParm)
         status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
                     (char *) &flag, sizeof (flag) );
         if ( status < 0 ) {
-            int errnoCpy = SOCKERRNO;
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
         "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                    __FILE__, SOCKERRSTR (errnoCpy) );
+                    __FILE__, sockErrBuf );
         }
     }
 #   endif
@@ -135,8 +137,11 @@ LOCAL void req_server (void *pParm)
                 (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
 		}
 		if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO) );
+                sockErrBuf );
             epicsThreadSuspendSelf ();
 		}
         portChange = 1;
@@ -149,8 +154,11 @@ LOCAL void req_server (void *pParm)
 	status = getsockname ( IOC_sock, 
 			(struct sockaddr *)&serverAddr, &addrSize);
 	if ( status ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: getsockname() error %s\n", 
-			SOCKERRSTR(SOCKERRNO) );
+			sockErrBuf );
         epicsThreadSuspendSelf ();
 	}
 
@@ -189,8 +197,11 @@ LOCAL void req_server (void *pParm)
         osiSocklen_t        addLen = sizeof(sockAddr);
 
         if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
-                (int) SOCKERRSTR(SOCKERRNO));
+                sockErrBuf );
             epicsThreadSleep(15.0);
             continue;
         } 

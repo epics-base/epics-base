@@ -98,7 +98,9 @@ epicsShareFunc void epicsShareAPI osiSockRelease (void);
 /*
  * convert socket error number to a string
  */
-epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn);
+epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
+        char * pBuf, unsigned bufSize );
+
 
 #ifdef __cplusplus
 }

@@ -181,10 +181,12 @@ void cast_server(void *pParm)
         status = setsockopt ( IOC_cast_sock,  SOL_SOCKET, SO_REUSEADDR,
                     (char *) &flag, sizeof (flag) );
         if ( status < 0 ) {
-            int errnoCpy = SOCKERRNO;
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
         "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                    __FILE__, SOCKERRSTR (errnoCpy) );
+                    __FILE__, sockErrBuf );
         }
     }
     
@@ -196,7 +198,10 @@ void cast_server(void *pParm)
     
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
-        epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", SOCKERRSTR ( SOCKERRNO ) );
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
         socket_close (IOC_cast_sock);
         epicsThreadSuspendSelf ();
     }
@@ -205,10 +210,12 @@ void cast_server(void *pParm)
     status = setsockopt ( IOC_cast_sock,  SOL_SOCKET, SO_REUSEADDR,
                 (char *)&flag, sizeof (flag) );
     if ( status < 0 ) {
-        int errnoCpy = SOCKERRNO;
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf (
     "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                __FILE__, SOCKERRSTR (errnoCpy) );
+                __FILE__, sockErrBuf );
     }
     
     tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacon );
@@ -252,8 +259,11 @@ void cast_server(void *pParm)
             (struct sockaddr *)&new_recv_addr, 
             &recv_addr_size);
         if (status<0) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
-                    SOCKERRSTR(SOCKERRNO));
+                    sockErrBuf);
             epicsThreadSleep(1.0);
         }
         else {

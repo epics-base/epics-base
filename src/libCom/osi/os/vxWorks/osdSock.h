@@ -43,7 +43,6 @@ int sysClkRateGet(void);
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define SOCKERRNO               errno
-#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
 #define socket_close(S)         close(S)
 #ifndef SHUT_RDWR
 #   define SHUT_RDWR 2

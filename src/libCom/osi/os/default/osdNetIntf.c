@@ -243,9 +243,12 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
     ifconf.ifc_req = pIfreqList;
     status = socket_ioctl ( socket, SIOCGIFCONF, &ifconf );
     if ( status < 0 || ifconf.ifc_len == 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf (
             "osiLocalAddr(): SIOCGIFCONF ioctl failed because \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO) );
+            sockErrBuf );
         free ( pIfreqList );
         return addr;
     }

@@ -103,64 +103,47 @@ static tsDLList < repeaterClient > client_list;
 
 static const unsigned short PORT_ANY = 0u;
 
-typedef struct {
-    SOCKET sock;
-    int errNumber;
-    const char * pErrStr;
-} makeSocketReturn;
-
 /*
  * makeSocket()
  */
-static makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
+static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 {
     int status;
 	union {
 		struct sockaddr_in ia;
 		struct sockaddr sa;
 	} bd;
-    makeSocketReturn msr;
     int flag;
 
-    msr.sock = socket ( AF_INET, SOCK_DGRAM, 0 );     
-    if ( msr.sock == INVALID_SOCKET ) {
-        msr.errNumber = SOCKERRNO;
-        msr.pErrStr = SOCKERRSTR (msr.errNumber);
-        return msr;
+    SOCKET sock = socket ( AF_INET, SOCK_DGRAM, 0 );     
+    if ( sock == INVALID_SOCKET ) {
+        return false;
     }
 
     /*
      * no need to bind if unconstrained
      */
-    if (port != PORT_ANY) {
+    if ( port != PORT_ANY ) {
 
         memset ( (char *) &bd, 0, sizeof (bd) );
         bd.ia.sin_family = AF_INET;
         bd.ia.sin_addr.s_addr = epicsHTON32 (INADDR_ANY); 
         bd.ia.sin_port = epicsHTON16 (port);  
-        status = bind ( msr.sock, &bd.sa, (int) sizeof(bd) );
+        status = bind ( sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
-            msr.errNumber = SOCKERRNO;
-            msr.pErrStr = SOCKERRSTR ( msr.errNumber );
-            socket_close (msr.sock);
-            msr.sock = INVALID_SOCKET;
-            return msr;
+            socket_close ( sock );
+            return false;
         }
         if (reuseAddr) {
             flag = true;
-            status = setsockopt ( msr.sock,  SOL_SOCKET, SO_REUSEADDR,
+            status = setsockopt ( sock,  SOL_SOCKET, SO_REUSEADDR,
                         (char *) &flag, sizeof (flag) );
             if ( status < 0 ) {
-                int errnoCpy = SOCKERRNO;
-                fprintf ( stderr, "%s: set socket option failed because \"%s\"\n", 
-                        __FILE__, SOCKERRSTR(errnoCpy));
+                return false;
             }
         }
     }
-
-    msr.errNumber = 0;
-    msr.pErrStr = "no error";
-    return msr;
+    return true;
 }
 
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
@@ -172,23 +155,23 @@ repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
 bool repeaterClient::connect ()
 {
     int status;
-    makeSocketReturn msr;
 
-    msr = makeSocket ( PORT_ANY, false );
-    if ( msr.sock == INVALID_SOCKET ) {
-        fprintf ( stderr, "%s: no client sock because %d=\"%s\"\n",
-                __FILE__, msr.errNumber, msr.pErrStr );
+    if ( ! makeSocket ( PORT_ANY, false, & this->sock ) ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        fprintf ( stderr, "%s: no client sock because \"%s\"\n",
+                __FILE__, sockErrBuf );
         return false;
     }
 
-    this->sock = msr.sock;
-
     status = ::connect ( this->sock, &this->from.sa, sizeof ( this->from.sa ) );
     if ( status < 0 ) {
-        int errnoCpy = SOCKERRNO;
-
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "%s: unable to connect client sock because \"%s\"\n",
-            __FILE__, SOCKERRSTR ( errnoCpy ) );
+            __FILE__, sockErrBuf );
         return false;
     }
 
@@ -213,8 +196,10 @@ bool repeaterClient::sendConfirm () // X aCC 361
         return false;
     }
     else {
-        fprintf ( stderr, "CA Repeater: confirm err was \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO) );
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        debugPrintf ( ( "CA Repeater: confirm req err was \"%s\"\n", sockErrBuf) );
         return false;
     }
 }
@@ -235,7 +220,9 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC
             debugPrintf ( ("Client refused message %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
         }
         else {
-            debugPrintf ( ( "CA Repeater: UDP send err was \"%s\"\n", SOCKERRSTR (errnoCpy) ) );
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            debugPrintf ( ( "CA Repeater: UDP send err was \"%s\"\n", sockErrBuf) );
         }
         return false;
     }
@@ -310,19 +297,20 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 
 bool repeaterClient::verify ()  // X aCC 361
 {
-    makeSocketReturn msr;
-    msr = makeSocket ( this->port (), false );
-    if ( msr.sock != INVALID_SOCKET ) {
-        socket_close ( msr.sock );
+    SOCKET sock;
+    if ( ! makeSocket ( this->port (), false, & sock ) ) {
         return false;
     }
     else {
         /*
          * win sock does not set SOCKERRNO when this fails
          */
-        if ( msr.errNumber != SOCK_EADDRINUSE ) {
-            fprintf ( stderr, "CA Repeater: bind test err was %d=\"%s\"\n", 
-                msr.errNumber, msr.pErrStr );
+        if ( SOCKERRNO != SOCK_EADDRINUSE ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            fprintf ( stderr, "CA Repeater: bind test err was \"%s\"\n", 
+                sockErrBuf );
         }
         return true;
     }
@@ -383,9 +371,8 @@ static void fanOut ( const osiSockAddr & from, const void * pMsg,
 static void register_new_client ( osiSockAddr & from, 
             tsFreeList < repeaterClient, 0x20 > & freeList )
 {
-    int status;
     bool newClient = false;
-    makeSocketReturn msr;
+    int status;
 
     if ( from.sa.sa_family != AF_INET ) {
         return;
@@ -399,13 +386,16 @@ static void register_new_client ( osiSockAddr & from,
         static bool init = false;
 
         if ( ! init ) {
-            msr = makeSocket ( PORT_ANY, true );
-            if ( msr.sock == INVALID_SOCKET ) {
-                fprintf ( stderr, "%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
-                    __FILE__, msr.errNumber, msr.pErrStr );
+            SOCKET sock;
+            if ( ! makeSocket ( PORT_ANY, true, & sock ) ) {
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
+                fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
+                    __FILE__, sockErrBuf );
             }
             else {
-                testSock = msr.sock;
+                testSock = sock;
             }
             init = true;
         }
@@ -507,7 +497,6 @@ void ca_repeater ()
     SOCKET sock;
     osiSockAddr from;
     unsigned short port;
-    makeSocketReturn msr;
     char * pBuf; 
 
     pBuf = new char [MAX_UDP_RECV];
@@ -516,25 +505,24 @@ void ca_repeater ()
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
-
-    msr = makeSocket ( port, true );
-    if ( msr.sock == INVALID_SOCKET ) {
+    if ( ! makeSocket ( port, true, & sock ) ) {
         /*
          * test for server was already started
          */
-        if ( msr.errNumber == SOCK_EADDRINUSE ) {
+        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
             osiSockRelease ();
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
             exit (0);
         }
-        fprintf ( stderr, "%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
-            __FILE__, msr.errNumber, msr.pErrStr);
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
+            __FILE__, sockErrBuf );
         osiSockRelease ();
         delete [] pBuf;
         exit(0);
     }
-
-    sock = msr.sock;
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 
@@ -552,8 +540,11 @@ void ca_repeater ()
             if ( errnoCpy == SOCK_ECONNRESET ) {
                 continue;
             }
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf ( stderr, "CA Repeater: unexpected UDP recv err: %s\n",
-                SOCKERRSTR (errnoCpy) );
+                sockErrBuf );
             continue;
         }
 

@@ -88,10 +88,12 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                     anerrno!=SOCK_EPIPE&&
                     anerrno!=SOCK_ETIMEDOUT)||
                     CASDEBUG>2){
-
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf (
     "CAS: TCP send to \"%s\" failed because \"%s\"\n",
-                    buf, SOCKERRSTR(anerrno));
+                    buf, sockErrBuf);
             }
             pclient->disconnect = TRUE;
             pclient->send.stk = 0u;
@@ -156,16 +158,16 @@ void cas_send_dg_msg ( struct client * pclient )
         }
     }
     else {
-        int anerrno = SOCKERRNO;
-        char buf[64];
-
+        char sockErrBuf[64];
+        char buf[128];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
-
         errlogPrintf(
                     "CAS: UDP send to \"%s\" "
                     "failed because \"%s\"\n",
-                    (int)buf,
-                    (int)SOCKERRSTR(anerrno));
+                    buf,
+                    sockErrBuf);
     }
 
     pclient->send.stk = 0u;

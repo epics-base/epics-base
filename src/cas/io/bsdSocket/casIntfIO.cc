@@ -51,7 +51,9 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 	 */
 	this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (this->sock==INVALID_SOCKET) {
-		printf("No socket error was %s\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		printf ( "No socket error was %s\n", sockErrBuf );
 		throw S_cas_noFD;
 	}
 
@@ -70,9 +72,11 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 					    SO_REUSEADDR,
 					    (char *) &yes,
 					    sizeof (yes));
-	    if (status<0) {
-		    errlogPrintf("CAS: server set SO_REUSEADDR failed? %s\n",
-			    SOCKERRSTR(SOCKERRNO));
+	    if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		    errlogPrintf ( "CAS: server set SO_REUSEADDR failed? %s\n",
+			    sockErrBuf );
             socket_close (this->sock);
 		    throw S_cas_internal;
 	    }
@@ -96,13 +100,13 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 		}
 		if (status<0) {
 			char buf[64];
-            int errnoCpy = SOCKERRNO;
-
 			ipAddrToA (&this->addr, buf, sizeof(buf));
-			errPrintf(S_cas_bindFail,
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+			errPrintf ( S_cas_bindFail,
 				__FILE__, __LINE__,
 				"- bind TCP IP addr=%s failed because %s",
-				buf, SOCKERRSTR(errnoCpy));
+				buf, sockErrBuf );
             socket_close (this->sock);
 			throw S_cas_bindFail;
 		}
@@ -118,8 +122,10 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
                 reinterpret_cast <sockaddr *> ( &this->addr ), 
                 &addrSize );
 	if (status) {
-		errlogPrintf("CAS: getsockname() error %s\n", 
-			SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		errlogPrintf ( "CAS: getsockname() error %s\n", 
+			sockErrBuf );
         socket_close (this->sock);
 		throw S_cas_internal;
 	}
@@ -141,7 +147,9 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 
     status = listen(this->sock, caServerConnectPendQueueSize);
     if(status < 0) {
-		errlogPrintf("CAS: listen() error %s\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		errlogPrintf ( "CAS: listen() error %s\n", sockErrBuf );
         socket_close (this->sock);
 		throw S_cas_internal;
     }
@@ -176,8 +184,10 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
     if ( newSock == INVALID_SOCKET ) {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy != SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: %s accept error \"%s\"\n",
-                __FILE__,SOCKERRSTR ( errnoCpy ) );
+                __FILE__, sockErrBuf );
             oneMsgFlag = true;
         }
         return NULL;
@@ -217,10 +227,12 @@ void casIntfIO::setNonBlocking()
         osiSockIoctl_t yes = true;
  
         status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
-        if (status<0) {
-                errlogPrintf(
+        if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf (
                 "%s:CAS: server non blocking IO set fail because \"%s\"\n",
-                                __FILE__, SOCKERRSTR(SOCKERRNO));
+                            __FILE__, sockErrBuf );
         }
 }
  

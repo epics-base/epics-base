@@ -274,10 +274,13 @@ LOCAL void logClientMakeSock (logClient *pClient)
     /* 
      * allocate a socket 
      */
-    pClient->sock = socket (AF_INET, SOCK_STREAM, 0);
-    if (pClient->sock == INVALID_SOCKET){
-        fprintf (stderr, "log client: no socket error %s\n", 
-            SOCKERRSTR(SOCKERRNO));
+    pClient->sock = socket ( AF_INET, SOCK_STREAM, 0 );
+    if ( pClient->sock == INVALID_SOCKET ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        fprintf ( stderr, "log client: no socket error %s\n", 
+            sockErrBuf );
         epicsMutexUnlock (pClient->mutex);
         return;
     }
@@ -285,8 +288,11 @@ LOCAL void logClientMakeSock (logClient *pClient)
     optval = TRUE;
     status = socket_ioctl (pClient->sock, FIONBIO, &optval);
     if (status<0) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
-            __FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
+            __FILE__, __LINE__, sockErrBuf);
         socket_close (pClient->sock);
         pClient->sock = INVALID_SOCKET;
         epicsMutexUnlock (pClient->mutex);
@@ -349,9 +355,12 @@ LOCAL void logClientConnect (logClient *pClient)
                 ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
                 if (pClient->connectReset==0) {
+                    char sockErrBuf[64];
+                    convertSocketErrorToString ( 
+                        sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
                         "log client: Unable to connect to \"%s\" because %d=\"%s\"\n", 
-                        name, errnoCpy, SOCKERRSTR(errnoCpy));
+                        name, errnoCpy, sockErrBuf);
                 }
 
                 logClientReset (pClient);
@@ -366,8 +375,11 @@ LOCAL void logClientConnect (logClient *pClient)
     optval = FALSE;
     status = socket_ioctl (pClient->sock, FIONBIO, &optval);
     if (status<0) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d ioctl FIONBIO log client error was \"%s\"\n", 
-            __FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
+            __FILE__, __LINE__, sockErrBuf);
         logClientReset (pClient);
         return;
     }
@@ -379,7 +391,10 @@ LOCAL void logClientConnect (logClient *pClient)
     optval = TRUE;
     status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
     if (status<0) {
-        fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
     }
     
     /*
@@ -395,7 +410,10 @@ LOCAL void logClientConnect (logClient *pClient)
         lingerval.l_linger = 60*5; 
         status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER, (char *) &lingerval, sizeof(lingerval));
         if (status<0) {
-            fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", SOCKERRSTR(SOCKERRNO));
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);
         }
     }
 

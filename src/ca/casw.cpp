@@ -102,8 +102,11 @@ int main ( int argc, char ** argv )
 
     sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( sock == INVALID_SOCKET ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ("casw: unable to create datagram socket because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+            sockErrBuf );
         return -1;
     }
 
@@ -113,18 +116,24 @@ int main ( int argc, char ** argv )
     addr.ia.sin_port = epicsHTON16 ( 0 ); // any port
     status = bind ( sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
-        errlogPrintf ("casw: unable to bind to an unconstrained address because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+        errlogPrintf ( "casw: unable to bind to an unconstrained address because = \"%s\"\n",
+            sockErrBuf );
         return -1;
     }
 
     osiSockIoctl_t yes = true;
     status = socket_ioctl ( sock, FIONBIO, &yes ); // X aCC 392
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
-        errlogPrintf ("casw: unable to set socket to nonblocking state because \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+        errlogPrintf ( "casw: unable to set socket to nonblocking state because \"%s\"\n",
+            sockErrBuf );
         return -1;
     }
 
@@ -153,9 +162,12 @@ int main ( int argc, char ** argv )
     osiSockIoctl_t no = false;
     status = socket_ioctl ( sock, FIONBIO, &no ); // X aCC 392
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
-        errlogPrintf ("casw: unable to set socket to blocking state because \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+        errlogPrintf ( "casw: unable to set socket to blocking state because \"%s\"\n",
+            sockErrBuf );
         return -1;
     }
 
@@ -166,9 +178,12 @@ int main ( int argc, char ** argv )
         status = recvfrom ( sock, buf, sizeof ( buf ), 0,
                             &addr.sa, &addrSize );
         if ( status <= 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( sock );
             errlogPrintf ("casw: error from recv was = \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO));
+                sockErrBuf );
             return -1;
         }
 

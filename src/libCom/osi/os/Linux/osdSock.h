@@ -61,8 +61,6 @@ typedef socklen_t osiSocklen_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 
-#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
-
 #define SOCK_EWOULDBLOCK EWOULDBLOCK
 #define SOCK_ENOBUFS ENOBUFS
 #define SOCK_ECONNRESET ECONNRESET

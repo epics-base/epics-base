@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
@@ -113,5 +114,19 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	unlockInfo ();
 	return ret;
 }
+
+/*
+ * convertSocketErrorToString()
+ */
+epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
+        char * pBuf, unsigned bufSize )
+{
+    if ( ! bufSize ) {
+        return;
+    }
+    strncpy ( pBuf, strerror ( SOCKERRNO ), bufSize );
+    pBuf[bufSize-1] = '\0';
+}
+
 
 

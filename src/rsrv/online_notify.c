@@ -209,9 +209,12 @@ void rsrv_online_notify_task(void *pParm)
  
             status = connect (sock, &pNode->addr.sa, sizeof(pNode->addr.sa));
             if (status<0) {
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                 errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
-                    __FILE__, buf, SOCKERRSTR(SOCKERRNO));
+                    __FILE__, buf, sockErrBuf);
             }
             else {
                 struct sockaddr_in if_addr;
@@ -219,8 +222,10 @@ void rsrv_online_notify_task(void *pParm)
                 osiSocklen_t size = sizeof (if_addr);
                 status = getsockname (sock, (struct sockaddr *) &if_addr, &size);
                 if (status<0) {
+                    char sockErrBuf[64];
+                    convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                     errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
-                        __FILE__, SOCKERRSTR(SOCKERRNO));
+                        __FILE__, sockErrBuf);
                 }
                 else if (if_addr.sin_family==AF_INET) {
                     msg.m_available = if_addr.sin_addr.s_addr;
@@ -228,9 +233,11 @@ void rsrv_online_notify_task(void *pParm)
 
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
+                        char sockErrBuf[64];
                         ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
+                        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                         errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
-                            __FILE__, buf, SOCKERRSTR(SOCKERRNO));
+                            __FILE__, buf, sockErrBuf);
                     }
                     else {
                         assert (status == sizeof(msg));

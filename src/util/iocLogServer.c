@@ -130,7 +130,9 @@ int main()
 	 */
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock==INVALID_SOCKET) {
-		fprintf(stderr, "iocLogServer: sock create err: %s\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		fprintf(stderr, "iocLogServer: sock create err: %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
 	
@@ -149,7 +151,9 @@ int main()
 							    (char *) &optval,
 							    sizeof(optval));
 	    if(status<0){
-		    fprintf(stderr, "iocLogServer: setsockopt err %s\n", SOCKERRSTR(SOCKERRNO));
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		    fprintf(stderr, "iocLogServer: setsockopt err %s\n", sockErrBuf);
 		    return IOCLS_ERROR;
 	    }
 #   endif
@@ -164,7 +168,9 @@ int main()
 			(struct sockaddr *)&serverAddr, 
 			sizeof (serverAddr) );
 	if (status<0) {
-		fprintf(stderr, "iocLogServer: bind err: %s\n", SOCKERRSTR(SOCKERRNO) );
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		fprintf(stderr, "iocLogServer: bind err: %s\n", sockErrBuf );
 		fprintf (stderr,
 			"iocLogServer: a server is already installed on port %u?\n", 
 			(unsigned)ioc_log_port);
@@ -174,7 +180,9 @@ int main()
 	/* listen and accept new connections */
 	status = listen(pserver->sock, 10);
 	if (status<0) {
-		fprintf(stderr, "iocLogServer: listen err %s\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
 
@@ -188,7 +196,9 @@ int main()
 					FIONBIO,
 					&optval);
 	if(status<0){
-		fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
 
@@ -463,8 +473,10 @@ static void acceptNewClient ( void *pParam )
 					FIONBIO,
 					&optval);
 	if(status<0){
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "%s:%d ioctl FBIO client er %s\n", 
-			__FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
+			__FILE__, __LINE__, sockErrBuf);
 		socket_close(pclient->insock);
 		free(pclient);
 		return;
@@ -509,8 +521,10 @@ static void acceptNewClient ( void *pParam )
 #	define SOCKET_SHUTDOWN_WRITE_SIDE 1
 	status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
 	if(status<0){
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf (stderr, "%s:%d shutdown err %s\n", __FILE__, __LINE__,
-				SOCKERRSTR(SOCKERRNO));
+				sockErrBuf);
         socket_close(pclient->insock);
 		free(pclient);
 
@@ -564,10 +578,12 @@ static void readFromClient(void *pParam)
 				errnoCpy != SOCK_EPIPE &&
 				errnoCpy != SOCK_ETIMEDOUT
 				) {
+                char sockErrBuf[64];
+                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 				fprintf(stderr, 
 		"%s:%d socket=%d size=%d read error=%s\n",
 					__FILE__, __LINE__, pclient->insock, 
-					size, SOCKERRSTR(errnoCpy));
+					size, sockErrBuf);
 			}
 		}
 		/*

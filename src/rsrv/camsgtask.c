@@ -130,8 +130,11 @@ void camsgtask ( void *pParm )
          */
         status = socket_ioctl (client->sock, FIONREAD, &nchars);
         if (status < 0) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: io ctl err - %s\n",
-                SOCKERRSTR(SOCKERRNO));
+                sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }
         else if (nchars == 0){

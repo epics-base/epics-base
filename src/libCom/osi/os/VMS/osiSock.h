@@ -133,11 +133,6 @@ typedef int osiSockIoctl_t;
 #else
 #	define SOCKERRNO errno /* UCX and others? */
 #endif
-
-/*
- * This appears to work even on Multinet
- */
-#define SOCKERRSTR(ERRNO_IN) (strerror(ERRNO_IN))
     
 #define MAXHOSTNAMELEN 75
 

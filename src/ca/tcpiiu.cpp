@@ -183,8 +183,11 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                     localError != SOCK_ETIMEDOUT && 
                     localError != SOCK_ECONNABORTED &&
                     localError != SOCK_SHUTDOWN ) {
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 this->cacRef.printf ( "CAC: unexpected TCP send error: %s\n", 
-                    SOCKERRSTR ( localError ) );
+                    sockErrBuf );
             }
 
             this->cacRef.disconnectNotify ( *this );
@@ -251,8 +254,11 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
             {
                 char name[64];
                 this->hostName ( name, sizeof ( name ) );
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 this->printf ( "Unexpected problem with circuit to CA server \"%s\" was \"%s\" - disconnecting\n", 
-                    name, SOCKERRSTR ( localErrno ) );
+                    name, sockErrBuf );
             }
 
             this->cacRef.initiateAbortShutdown ( *this );
@@ -446,8 +452,11 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
 {
     this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ( "CAC: unable to create virtual circuit because \"%s\"\n",
-            SOCKERRSTR ( SOCKERRNO ) );
+            sockErrBuf );
         cac.releaseSmallBufferTCP ( this->pCurData );
         throw std::bad_alloc ();
     }
@@ -456,16 +465,22 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     int status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
                 (char *) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
-        this->printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        this->printf ( "CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
+            sockErrBuf );
     }
 
     flag = true;
     status = setsockopt ( this->sock , SOL_SOCKET, SO_KEEPALIVE,
                 ( char * ) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ( "CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
-            SOCKERRSTR ( SOCKERRNO ) );
+            sockErrBuf );
     }
 
     // load message queue with messages informing server 
@@ -489,15 +504,19 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
         status = setsockopt ( this->sock, SOL_SOCKET, SO_SNDBUF,
                 ( char * ) &i, sizeof ( i ) );
         if (status < 0) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             this->printf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
-                SOCKERRSTR ( SOCKERRNO ) );
+                sockErrBuf );
         }
         i = MAX_MSG_SIZE;
         status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
                 ( char * ) &i, sizeof ( i ) );
         if ( status < 0 ) {
-            this->printf ("CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO));
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            this->printf ( "CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
+                sockErrBuf );
         }
     }
 #   endif
@@ -509,8 +528,11 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
                 ( char * ) &nBytes, &sizeOfParameter );
         if ( status < 0 || nBytes < 0 || 
                 sizeOfParameter != static_cast < int > ( sizeof ( nBytes ) ) ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             this->printf ("CAC: problems getting socket option SO_SNDBUF = \"%s\"\n",
-                SOCKERRSTR ( SOCKERRNO ) );
+                sockErrBuf );
         }
         else {
             this->socketLibrarySendBufferSize = static_cast < unsigned > ( nBytes );
@@ -587,8 +609,11 @@ void tcpiiu::connect ()
             break;
         }
         else {  
-            this->printf ( "Unable to connect because %d=\"%s\"\n", 
-                errnoCpy, SOCKERRSTR ( errnoCpy ) );
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            this->printf ( "Unable to connect because \"%s\"\n", 
+                sockErrBuf );
             this->cacRef.disconnectNotify ( *this );
             break;
         }
@@ -625,8 +650,11 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
         int status = setsockopt ( this->sock, SOL_SOCKET, SO_LINGER, 
             reinterpret_cast <char *> ( &tmpLinger ), sizeof (tmpLinger) );
         if ( status != 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAC TCP socket linger set error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
+                sockErrBuf );
         }
         this->discardingPendingData = true;
     }
@@ -652,8 +680,11 @@ void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard )
         if ( oldState == iiucs_connected ) {
             int status = ::shutdown ( this->sock, SHUT_RDWR );
             if ( status ) {
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                    SOCKERRSTR (SOCKERRNO) );
+                    sockErrBuf );
             }
         }
 
@@ -664,8 +695,11 @@ void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard )
         //
         int status = socket_close ( this->sock );
         if ( status ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAC TCP socket close error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
+                sockErrBuf );
         }
 
         // 
@@ -686,8 +720,11 @@ tcpiiu::~tcpiiu ()
     if ( this->state != this->iiucs_abort_shutdown ) {
         int status = socket_close ( this->sock );
         if ( status ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAC TCP socket close error was %s\n", 
-                SOCKERRSTR ( SOCKERRNO ) );
+                sockErrBuf );
         }
     }
 
@@ -1261,9 +1298,9 @@ const char * tcpiiu::pHostName () const
 }
 
 void tcpiiu::removeAllChannels ( 
-                                epicsGuard < callbackMutex > & cbGuard, 
-                                epicsGuard < cacMutex > & guard,
-                                cacDisconnectChannelPrivate & dcp )
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard,
+    cacDisconnectChannelPrivate & dcp )
 {
     epicsTime currentTime = epicsTime::getCurrent ();
     while ( nciu *pChan = this->channelList.first() ) {
@@ -1389,8 +1426,11 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
             {
                 char name[64];
                 this->hostName ( name, sizeof ( name ) );
+                char sockErrBuf[64];
+                convertSocketErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
                 this->printf ( "Unexpected problem with circuit to CA server \"%s\" was \"%s\" - disconnecting\n", 
-                    name, SOCKERRSTR ( localErrno ) );
+                    name, sockErrBuf );
             }
 
             this->cacRef.initiateAbortShutdown ( *this );

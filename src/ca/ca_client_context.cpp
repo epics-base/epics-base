@@ -39,10 +39,12 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf (
             "ca_client_context: unable to create "
             "datagram socket because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+            sockErrBuf );
         throwWithLocation ( noSocket () );
     }
 
@@ -51,10 +53,12 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         int status = socket_ioctl ( this->sock, 
                 FIONBIO, & yes); // X aCC 392
         if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
             this->printf (
                 "%s: non blocking IO set fail because \"%s\"\n",
-                            __FILE__, SOCKERRSTR ( SOCKERRNO ) );
+                            __FILE__, sockErrBuf );
             throwWithLocation ( noSocket () );
         }
     }
@@ -69,11 +73,13 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         addr.ia.sin_port = epicsHTON16 ( PORT_ANY ); // X aCC 818
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close (this->sock);
             this->printf (
                 "CAC: unable to bind to an unconstrained "
                 "address because = \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO));
+                sockErrBuf );
             throwWithLocation ( noSocket () );
         }
     }
@@ -83,8 +89,10 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         int status = getsockname ( this->sock, & tmpAddr.sa, & saddr_length );
         if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
-            this->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {

@@ -105,16 +105,22 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
 
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ("CAC: unable to create datagram socket because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+            sockErrBuf );
         throwWithLocation ( noSocket () );
     }
 
     status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *) &boolValue, sizeof ( boolValue ) );
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
-            SOCKERRSTR ( SOCKERRNO ) );
+            sockErrBuf );
     }
 
 #if 0
@@ -129,8 +135,10 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
                 (char *)&size, sizeof (size) );
         if (status<0) {
-            this->printf ("CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO));
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            this->printf ( "CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
+                sockErrBuf );
         }
     }
 #endif
@@ -143,9 +151,12 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     addr.ia.sin_port = epicsHTON16 (PORT_ANY); // X aCC 818
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close (this->sock);
-        this->printf ("CAC: unable to bind to an unconstrained address because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+        this->printf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
+            sockErrBuf );
         throwWithLocation ( noSocket () );
     }
     
@@ -154,8 +165,11 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
-            this->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
@@ -275,8 +289,11 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
         if ( errnoCpy == SOCK_ECONNRESET ) {
             return;
         }
+        char sockErrBuf[64];
+        convertSocketErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ( "CAC: UDP recv error was \"%s\"\n", 
-            SOCKERRSTR (errnoCpy) );
+            sockErrBuf );
     }
     else if ( status > 0 ) {
         this->postMsg ( guard, src, this->recvBuf, 
@@ -417,8 +434,11 @@ void epicsShareAPI caRepeaterRegistrationMessage (
         if (    errnoCpy != SOCK_EINTR && 
                 errnoCpy != SOCK_ECONNREFUSED && 
                 errnoCpy != SOCK_ECONNRESET ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n", 
-                SOCKERRSTR ( errnoCpy ) );
+                sockErrBuf );
         }
     }
 }
@@ -610,12 +630,12 @@ bool udpiiu::searchRespAction ( // X aCC 361
 
     bool success;
     if ( CA_V42 ( minorVersion ) ) {
-        success = this->cacRef.lookupChannelAndTransferToTCP 
+        success = this->cacRef.transferChanToVirtCircuit 
             ( cbLocker, msg.m_available, msg.m_cid, 0xffff, 
                 0, minorVersion, serverAddr );
     }
     else {
-        success = this->cacRef.lookupChannelAndTransferToTCP 
+        success = this->cacRef.transferChanToVirtCircuit 
             ( cbLocker, msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr );
     }
@@ -894,12 +914,13 @@ void udpiiu::datagramFlush ( const epicsTime & currentTime )
                 }
                 else {
                     char buf[64];
-
                     sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
-
+                    char sockErrBuf[64];
+                    convertSocketErrorToString ( 
+                        sockErrBuf, sizeof ( sockErrBuf ) );
                     this->printf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",
-                        SOCKERRSTR ( localErrno ), buf);
+                        sockErrBuf, buf);
                     break;
                 }
             }

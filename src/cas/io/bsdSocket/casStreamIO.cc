@@ -31,9 +31,11 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 	status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
 							( char * ) & yes, sizeof ( yes ) );
 	if ( status < 0 ) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf (
 			"CAS: %s TCP_NODELAY option set failed %s\n",
-			__FILE__, SOCKERRSTR(SOCKERRNO) );
+			__FILE__, sockErrBuf );
 		throw S_cas_internal;
 	}
 
@@ -44,9 +46,11 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 	status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE,
 					(char *) & yes, sizeof ( yes ) );
 	if (status<0) {
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf (
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
-			__FILE__, SOCKERRSTR(SOCKERRNO) );
+			__FILE__, sockErrBuf );
 		throw S_cas_internal;
 	}
 
@@ -125,10 +129,11 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
 
  			    char buf[64];
                 ipAddrToA (&this->addr, buf, sizeof(buf));
-
-			    errlogPrintf(
+                char sockErrBuf[64];
+                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+			    errlogPrintf (
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
-				    buf, SOCKERRSTR(errnoCpy));
+				    buf, sockErrBuf );
             }
             return outBufClient::flushDisconnect;
         }
@@ -165,9 +170,11 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
                 myerrno != SOCK_EPIPE &&
                 myerrno != SOCK_ETIMEDOUT ) {
                 ipAddrToA (&this->addr, buf, sizeof(buf));
+                char sockErrBuf[64];
+                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf(
 		    "CAS: client %s disconnected because \"%s\"\n",
-                    buf, SOCKERRSTR(myerrno));
+                    buf, sockErrBuf );
             }
             return casFillDisconnect;
         }
@@ -185,8 +192,10 @@ void casStreamIO::forceDisconnect ()
         this->sockHasBeenClosed = true;
         int status = ::shutdown ( this->sock, SHUT_RDWR );
         if ( status ) {
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
+                sockErrBuf );
         }
 		socket_close ( this->sock );
         // other wakeup will be required here when we 
@@ -219,8 +228,10 @@ void casStreamIO::xSetNonBlocking()
 		this->blockingFlag = xIsntBlocking;
 	}
 	else {
-		errlogPrintf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
-				__FILE__, SOCKERRSTR(SOCKERRNO));
+        char sockErrBuf[64];
+        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+		errlogPrintf ( "%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
+				__FILE__, sockErrBuf );
 	    throw S_cas_internal;
 	}
 }
@@ -247,11 +258,11 @@ bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
             localError != SOCK_ETIMEDOUT ) 
         {
             char buf[64];
-            int errnoCpy = SOCKERRNO;
-            
             ipAddrToA ( &this->addr, buf, sizeof(buf) );
+            char sockErrBuf[64];
+            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
-                buf, SOCKERRSTR ( errnoCpy ) );
+                buf, sockErrBuf );
         }
         return 0u;
     }

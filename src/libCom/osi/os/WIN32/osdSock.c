@@ -168,34 +168,39 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 /*
  * convertSocketErrorToString()
  */
-epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn)
+epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
+        char * pBuf, unsigned bufSize )
 {
-	static char errString[128];
+    int theSockError = SOCKERRNO;
+	DWORD success;
+
+    if ( ! bufSize ) {
+        return;
+    }
 
 	/*
-	 * unfortunately, this does not work ...
-	 * and there is no obvious replacement ...
+	 * this does not work on systems prior to W2K
 	 */
-#if 0
-	DWORD W32status;
-
-	W32status = FormatMessage( 
-		FORMAT_MESSAGE_FROM_SYSTEM,
+	success = FormatMessage ( 
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 		NULL,
-		errnoIn,
-		MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
-		errString,
-		sizeof(errString)/sizeof(errString[0]),
+		theSockError,
+		MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */
+		pBuf,
+		bufSize,
 		NULL 
 	);
-
-	if (W32status==0) {
-		sprintf (errString, "WIN32 Socket Library Error %d", errnoIn);
+	if ( ! success ) {
+        static const char * pFormat = "WINSOCK Error %.*d";
+        unsigned formatLength = strlen ( pFormat );
+        if ( bufSize > formatLength ) {
+		    sprintf ( pBuf, pFormat, 
+                bufSize - formatLength, theSockError );
+        }
+        else {
+            strncpy ( pBuf, "WINSOCK Error", bufSize );
+            pBuf [bufSize - 0] = '\0';
+        }
 	}
-	return errString;
-#else
-	sprintf (errString, "WIN32 Socket Library Error %d", errnoIn);
-	return errString;
-#endif
 }
 

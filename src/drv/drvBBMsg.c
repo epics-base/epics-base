@@ -47,7 +47,7 @@
 #include <drvSup.h>
 #include <devSup.h>
 #include <dbDefs.h>
-#include <dbCommon.h>
+#include <rec/dbCommon.h>
 #include <dbAccess.h>
 #include <link.h>
 #include <callback.h>

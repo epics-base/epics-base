@@ -216,7 +216,7 @@ enum laPass {
 
 LOCAL char	niCpu030Initialized;
 LOCAL VXIE	root_extender;
-LOCAL LIST	crateList;
+LOCAL ELLLIST	crateList;
 
 LOCAL char 		*ignore_list[] = {"_excStub","_excIntStub"};
 LOCAL void 		*ignore_addr_list[NELEMENTS(ignore_list)];
@@ -946,7 +946,7 @@ enum ext_type	type
 	pvxie->la_mapped = TRUE;
 	pvxie->la_low = min(pvxie->la_low, la);
 	pvxie->la_high = max(pvxie->la_high, la);
-	lstAdd(&pvxie->extenders, &pnewvxie->node);
+	ellAdd(&pvxie->extenders, &pnewvxie->node);
 
 	epvxiRegisterModelName(
 			VXIMAKE(pmxi),
@@ -1094,7 +1094,7 @@ enum laPass	pass
 					next = (VXISZ *) pvxisz->node.next;
 					if(pvxisz->la == pnewvxie->la || 
 						pvxisz->pvxie == pnewvxie){
-						lstDelete(&crateList, &pvxisz->node);
+						ellDelete(&crateList, &pvxisz->node);
 					}
 					pvxisz = next;
 				}
@@ -1631,7 +1631,7 @@ unsigned	la
 	pvxisz->pvxie = pvxie;
 	pvxisz->la = la;
 
-	lstAdd(&crateList, &pvxisz->node);
+	ellAdd(&crateList, &pvxisz->node);
 
 	if(!epvxiLibDeviceList[la]){
 		status = open_vxi_device(pvxie, la);
@@ -1746,7 +1746,7 @@ VXIE	*pvxie
 		pvxisz->la = la;
 		pvxisz->pvxie = pvxie;
 
-		lstAdd(&crateList, &pvxisz->node);
+		ellAdd(&crateList, &pvxisz->node);
 	}
 	return VXI_SUCCESS;
 }
@@ -2492,7 +2492,7 @@ VXIE	*pvxie
 	A32_size = pvxie->A32_size;
 
 	psubvxie = (VXIE *) &pvxie->extenders.node;
-	while(psubvxie = (VXIE *) lstNext((NODE *)psubvxie)){
+	while(psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)){
 
 		psubvxie->A24_base = A24_base;
 		psubvxie->A24_size = A24_size;
@@ -4204,7 +4204,7 @@ LOCAL void epvxiExtenderPrint(VXIE *pvxie)
 	}
 
 	psubvxie = (VXIE *) &pvxie->extenders.node;
-	while(psubvxie = (VXIE *) lstNext((NODE *)psubvxie)){
+	while(psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)){
 		epvxiExtenderPrint(psubvxie);
 	}
 }

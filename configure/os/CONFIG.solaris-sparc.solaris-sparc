@@ -11,7 +11,9 @@ SPARCWORKS = /opt/SUNWspro
 
 CC = $(SPARCWORKS)/bin/cc
 CCC = $(SPARCWORKS)/bin/CC
-CPP = $(CCC) -E
+#CPP = $(CCC) -E
+#CPP = $(CCC) -P
+CPP = g++ -E
 RANLIB =
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o

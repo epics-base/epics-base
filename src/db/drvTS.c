@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.5  1994/12/16  15:51:21  winans
+ * Changed error message in the event system error handler & added a conditional
+ * based on a debug flag to print it... defaults to off.  (Per request from MRK.)
+ *
  * Revision 1.4  1994/10/28  20:15:10  jbk
  * increased the USP packet time-out to 250ms, added a parm to the configure()
  * routine to let user specify it.
@@ -177,7 +181,7 @@ TSinfo TSdata = { TS_master_dead, TS_async_slave, TS_async_none,
 					0,NULL,
 					TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
 					TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,
-					NULL, NULL,NULL };
+					NULL, NULL,NULL, 0 };
 
 extern char* sysBootLine;
 
@@ -248,9 +252,12 @@ long TSreport()
 	TSconfigure() - This is the configuration routine which is meant to 
 	be called from the vxWorks startup.cmd script before iocInit.
 	It's job is to set operating parameters for the time stamp support code.
+
+    JRW -- if type = 0, then try to config using event system
+           if type = 1, then permanantly inhibit use of the event system
 */
 void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
-				int master_port, int slave_port, unsigned long time_out)
+				int master_port, int slave_port, unsigned long time_out, int type)
 {
 	if(master) TSdata.master_timing_IOC=1;
 	else TSdata.master_timing_IOC=0;
@@ -271,6 +278,8 @@ void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 
 	if(time_out) TSdata.time_out=time_out;
 	else TSdata.time_out=TS_TIME_OUT_MS;
+
+	TSdata.UserRequestedType = type;
 
 	return;
 }
@@ -346,39 +355,56 @@ long TSinit()
 	SYM_TYPE stype;
 
 	Debug(5,"In TSinit()\n",0);
-	/* ------------------------------------------------------------- */
-	/* find the lower level event system functions */
-	if(symFindByName(sysSymTbl,"_ErHaveReceiver",
-					(char**)&TShaveReceiver,&stype)==ERROR)
-		TShaveReceiver = TShaveReceiverError;
 
-	if(symFindByName(sysSymTbl,"_ErGetTicks",
-					(char**)&TSgetTicks,&stype)==ERROR)
-		TSgetTicks = TSgetTicksError;
-
-	if(symFindByName(sysSymTbl,"_ErRegisterEventHandler",
-					(char**)&TSregisterEventHandler,&stype)==ERROR)
-		TSregisterEventHandler = TSregisterEventHandlerError;
-
-	if(symFindByName(sysSymTbl,"_ErRegisterErrorHandler",
-					(char**)&TSregisterErrorHandler,&stype)==ERROR)
-		TSregisterErrorHandler = TSregisterErrorHandlerError;
-
-	if(symFindByName(sysSymTbl,"_ErForceSync",
-					(char**)&TSforceSync,&stype)==ERROR)
-		TSforceSync = TSforceSoftSync;
-
-	if(symFindByName(sysSymTbl,"_ErGetTime",
-					(char**)&TSgetTime,&stype)==ERROR)
-		TSgetTime = TSgetCurrentTime;
-
-	if(symFindByName(sysSymTbl,"_ErSyncEvent",
-					(char**)&TSsyncEvent,&stype)==ERROR)
-		TSdata.sync_event=ER_EVENT_RESET_TICK;
+	if (TSdata.UserRequestedType == 0)
+	{	/* default configuration probe */
+		/* ------------------------------------------------------------- */
+		/* find the lower level event system functions */
+		if(symFindByName(sysSymTbl,"_ErHaveReceiver",
+						(char**)&TShaveReceiver,&stype)==ERROR)
+			TShaveReceiver = TShaveReceiverError;
+	
+		if(symFindByName(sysSymTbl,"_ErGetTicks",
+						(char**)&TSgetTicks,&stype)==ERROR)
+			TSgetTicks = TSgetTicksError;
+	
+		if(symFindByName(sysSymTbl,"_ErRegisterEventHandler",
+						(char**)&TSregisterEventHandler,&stype)==ERROR)
+			TSregisterEventHandler = TSregisterEventHandlerError;
+	
+		if(symFindByName(sysSymTbl,"_ErRegisterErrorHandler",
+						(char**)&TSregisterErrorHandler,&stype)==ERROR)
+			TSregisterErrorHandler = TSregisterErrorHandlerError;
+	
+		if(symFindByName(sysSymTbl,"_ErForceSync",
+						(char**)&TSforceSync,&stype)==ERROR)
+			TSforceSync = TSforceSoftSync;
+	
+		if(symFindByName(sysSymTbl,"_ErGetTime",
+						(char**)&TSgetTime,&stype)==ERROR)
+			TSgetTime = TSgetCurrentTime;
+	
+		if(symFindByName(sysSymTbl,"_ErSyncEvent",
+						(char**)&TSsyncEvent,&stype)==ERROR)
+			TSdata.sync_event=ER_EVENT_RESET_TICK;
+		else
+			TSdata.sync_event=TSsyncEvent();
+	
+		/* ------------------------------------------------------------- */
+	}
 	else
-		TSdata.sync_event=TSsyncEvent();
+	{	/* inhibit probe and use of the event system */
 
-	/* ------------------------------------------------------------- */
+		printf("WARNING: drvTS event hardware probe inhibited by user\n");
+
+		TShaveReceiver = TShaveReceiverError;
+		TSgetTicks = TSgetTicksError;
+		TSregisterEventHandler = TSregisterEventHandlerError;
+		TSregisterErrorHandler = TSregisterErrorHandlerError;
+		TSforceSync = TSforceSoftSync;
+		TSgetTime = TSgetCurrentTime;
+		TSdata.sync_event=ER_EVENT_RESET_TICK;
+	}
 
 	/* set all the known information about the system */
 	TSdata.event_table=NULL;

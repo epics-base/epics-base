@@ -501,6 +501,7 @@ static void convert(pao,pvalue)
                         if (pao->oroc < -diff) value = pao->oval - pao->oroc;
                 }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
         }
+	if(pao->oval==value) pao->omod = FALSE; else pao->omod = TRUE;
 	pao->oval = value;
 
         /* convert */
@@ -556,8 +557,9 @@ static void monitor(pao)
         if (monitor_mask){
                 db_post_events(pao,&pao->val,monitor_mask);
 	}
-	if(pao->oval!=pao->val) monitor_mask |= (DBE_VALUE|DBE_LOG);
+	if(pao->omod) monitor_mask |= (DBE_VALUE|DBE_LOG);
 	if(monitor_mask) {
+		pao->omod = FALSE;
 		db_post_events(pao,&pao->oval,monitor_mask);
 		if(pao->oraw != pao->rval) {
                 	db_post_events(pao,&pao->rval,monitor_mask|DBE_VALUE);

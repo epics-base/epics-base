@@ -397,7 +397,7 @@ void epicsShareAPI ca_repeater ()
 
     assert (bsdSockAttach());
 
-    port = caFetchPortConfig ( NULL, &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
+    port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
 
     ellInit(&client_list);
 

@@ -29,20 +29,18 @@
  */
 
 #define epicsExportSharedSymbols
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
-static timerQueueThreadedMgr queueMgr;
+timerQueueActiveMgr queueMgr;
 
-epicsTimerQueueThreaded::~epicsTimerQueueThreaded () {}
+epicsTimerQueue::~epicsTimerQueue () {}
 
-epicsTimerQueueThreaded &epicsTimerQueueThreaded::allocate ( bool okToShare, int threadPriority )
+epicsTimerQueue &epicsTimerQueue::allocate ( bool okToShare, int threadPriority )
 {
     return queueMgr.allocate ( okToShare, threadPriority );
 }
 
-tsFreeList < class timerQueueThreaded, 0x8 > timerQueueThreaded::freeList;
-
-timerQueueThreaded::timerQueueThreaded ( bool okToShareIn, unsigned priority ) :
+timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
     queue ( *this ), thread ( *this, "epicsTimerQueue",
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
@@ -50,7 +48,7 @@ timerQueueThreaded::timerQueueThreaded ( bool okToShareIn, unsigned priority ) :
     this->thread.start ();
 }
 
-timerQueueThreaded::~timerQueueThreaded ()
+timerQueueActive::~timerQueueActive ()
 {
     this->terminateFlag = true;
     this->rescheduleEvent.signal ();
@@ -61,12 +59,7 @@ timerQueueThreaded::~timerQueueThreaded ()
     this->exitEvent.signal ();
 }
 
-void timerQueueThreaded::release ()
-{
-    queueMgr.release ( *this );
-}
-
-void timerQueueThreaded::run ()
+void timerQueueActive::run ()
 {
     this->exitFlag = false;
     while ( ! this->terminateFlag ) {
@@ -83,7 +76,7 @@ void timerQueueThreaded::run ()
     this->exitEvent.signal (); // no access to queue after exitEvent signal
 }
 
-epicsTimer & timerQueueThreaded::createTimer ( epicsTimerNotify & notify )
+epicsTimer & timerQueueActive::createTimer ( epicsTimerNotify & notify )
 {
     timer *pTmr = new timer ( notify, this->queue );
     if ( ! pTmr ) {
@@ -92,12 +85,12 @@ epicsTimer & timerQueueThreaded::createTimer ( epicsTimerNotify & notify )
     return *pTmr;
 }
 
-void timerQueueThreaded::reschedule ()
+void timerQueueActive::reschedule ()
 {
     this->rescheduleEvent.signal ();
 }
 
-void timerQueueThreaded::show ( unsigned int level ) const
+void timerQueueActive::show ( unsigned int level ) const
 {
     printf ( "EPICS threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );

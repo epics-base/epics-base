@@ -29,7 +29,7 @@
  */
 
 #define epicsExportSharedSymbols
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
 timerQueue::timerQueue ( epicsTimerQueueNotify &notifyIn ) :
     notify ( notifyIn ), pExpireTmr ( 0 ),  

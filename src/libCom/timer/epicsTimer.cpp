@@ -30,95 +30,126 @@
 
 #define epicsExportSharedSymbols
 #include "epicsTimer.h"
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
-void epicsTimerNotify::show ( unsigned /* level */ ) const {}
-
-class epicsTimerNotifyForC : public epicsTimerNotify {
+struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
-    epicsTimerNotifyForC ( epicsTimerCallback, void *pPrivateIn );
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
+    void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
-    virtual ~epicsTimerNotifyForC ();
+    virtual ~epicsTimerForC ();
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
     expireStatus expire ();
-    static tsFreeList < epicsTimerNotifyForC > freeList;
+    static tsFreeList < epicsTimerForC > freeList;
 };
 
-class epicsTimerQueueNotifyForC : public epicsTimerQueueNotify {
+struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
 public:
-    epicsTimerQueueNotifyForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
+    epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
+    void destroy ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
-    virtual ~epicsTimerQueueNotifyForC ();
+    virtual ~epicsTimerQueuePassiveForC ();
 private:
     epicsTimerQueueRescheduleCallback pCallback;
     void *pPrivate;
     void reschedule ();
-    static tsFreeList < epicsTimerQueueNotifyForC > freeList;
+    static tsFreeList < epicsTimerQueuePassiveForC > freeList;
 };
 
-tsFreeList < epicsTimerNotifyForC > epicsTimerNotifyForC::freeList;
+void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
-inline void * epicsTimerNotifyForC::operator new ( size_t size )
-{ 
-    return epicsTimerNotifyForC::freeList.allocate ( size );
+tsFreeList < epicsTimerForC > epicsTimerForC::freeList;
+
+epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
+    timer ( *this, queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
+{
 }
 
-inline void epicsTimerNotifyForC::operator delete ( void *pCadaver, size_t size )
-{ 
-    epicsTimerNotifyForC::freeList.release ( pCadaver, size );
+epicsTimerForC::~epicsTimerForC () 
+{
 }
 
-epicsTimerNotifyForC::epicsTimerNotifyForC ( epicsTimerCallback pCBIn, void *pPrivateIn ) :
-    pCallBack ( pCBIn ), pPrivate ( pPrivateIn ) {}
+inline void epicsTimerForC::destroy ()
+{
+    delete this;
+}
 
-epicsTimerNotifyForC::~epicsTimerNotifyForC () {}
+inline void * epicsTimerForC::operator new ( size_t size )
+{ 
+    return epicsTimerForC::freeList.allocate ( size );
+}
 
-epicsTimerNotify::expireStatus epicsTimerNotifyForC::expire ()
+inline void epicsTimerForC::operator delete ( void *pCadaver, size_t size )
+{ 
+    epicsTimerForC::freeList.release ( pCadaver, size );
+}
+
+epicsTimerNotify::expireStatus epicsTimerForC::expire ()
 {
     ( *this->pCallBack ) ( this->pPrivate );
     return noRestart;
 }
 
-tsFreeList < epicsTimerQueueNotifyForC > epicsTimerQueueNotifyForC::freeList;
+tsFreeList < epicsTimerQueueForC > epicsTimerQueueForC::freeList;
 
-inline void * epicsTimerQueueNotifyForC::operator new ( size_t size )
-{ 
-    return epicsTimerQueueNotifyForC::freeList.allocate ( size );
+epicsTimerQueueForC::epicsTimerQueueForC ( bool okToShare, unsigned priority ) :
+    timerQueueActive ( okToShare, priority )
+{
 }
 
-inline void epicsTimerQueueNotifyForC::operator delete ( void *pCadaver, size_t size )
-{ 
-    epicsTimerQueueNotifyForC::freeList.release ( pCadaver, size );
+epicsTimerQueueForC::~epicsTimerQueueForC ()
+{
 }
 
+void epicsTimerQueueForC::release ()
+{
+    queueMgr.release ( *this );
+}
 
-epicsTimerQueueNotifyForC::epicsTimerQueueNotifyForC ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn ) :
-    pCallback ( pCallbackIn ), pPrivate ( pPrivateIn ) {}
+tsFreeList < epicsTimerQueuePassiveForC > epicsTimerQueuePassiveForC::freeList;
 
-epicsTimerQueueNotifyForC::~epicsTimerQueueNotifyForC () {}
+inline void * epicsTimerQueuePassiveForC::operator new ( size_t size )
+{ 
+    return epicsTimerQueuePassiveForC::freeList.allocate ( size );
+}
 
-void epicsTimerQueueNotifyForC::reschedule ()
+inline void epicsTimerQueuePassiveForC::operator delete ( void *pCadaver, size_t size )
+{ 
+    epicsTimerQueuePassiveForC::freeList.release ( pCadaver, size );
+}
+
+epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC 
+    ( epicsTimerQueueRescheduleCallback pCallbackIn, void * pPrivateIn ) :
+        timerQueuePassive ( * static_cast < epicsTimerQueueNotify * > ( this ) ), 
+            pCallback ( pCallbackIn ), pPrivate ( pPrivateIn ) 
+{
+}
+
+epicsTimerQueuePassiveForC::~epicsTimerQueuePassiveForC () 
+{
+}
+
+void epicsTimerQueuePassiveForC::reschedule ()
 {
     (*this->pCallback) ( this->pPrivate );
 }
 
-extern "C" epicsTimerQueueNonThreadedId epicsShareAPI
-    epicsTimerQueueNonThreadedCreate ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn )
+inline void epicsTimerQueuePassiveForC::destroy ()
+{
+    delete this;
+}
+
+extern "C" epicsTimerQueuePassiveId epicsShareAPI
+    epicsTimerQueuePassiveCreate ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn )
 {
     try {
-        epicsTimerQueueNotifyForC *pNotify = new epicsTimerQueueNotifyForC ( pCallbackIn, pPrivateIn );
-        if ( ! pNotify ) {
-            throw timer::noMemory ();
-        }
-        epicsTimerQueueNonThreaded &queue = 
-            epicsTimerQueueNonThreaded::create ( *pNotify );
-        return &queue;
+        return new epicsTimerQueuePassiveForC ( pCallbackIn, pPrivateIn );
     }
     catch ( ... ) {
         return 0;
@@ -126,75 +157,46 @@ extern "C" epicsTimerQueueNonThreadedId epicsShareAPI
 }
 
 extern "C" void epicsShareAPI 
-    epicsTimerQueueNonThreadedDestroy ( epicsTimerQueueNonThreadedId pQueue )
+    epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId pQueue )
 {
-    delete pQueue;
+    pQueue->destroy ();
 }
 
 extern "C" void epicsShareAPI 
-    epicsTimerQueueNonThreadedProcess ( epicsTimerQueueNonThreadedId pQueue )
+    epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
     pQueue->process ();
 }
 
 extern "C" double epicsShareAPI 
-    epicsTimerQueueNonThreadedGetDelayToNextExpire (
-        epicsTimerQueueNonThreadedId pQueue )
+    epicsTimerQueuePassiveGetDelayToNextExpire (
+        epicsTimerQueuePassiveId pQueue )
 {
     return pQueue->getNextExpireDelay ();
 }
 
-extern "C" epicsTimerId epicsShareAPI epicsTimerQueueNonThreadedCreateTimer (
-    epicsTimerQueueNonThreadedId pQueue,
-    epicsTimerCallback pCallback, void *pArg )
+extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
+    epicsTimerQueuePassiveId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
-        epicsTimerNotifyForC *pNotify = new epicsTimerNotifyForC ( pCallback, pArg );
-        if ( ! pNotify ) {
-            throw timer::noMemory ();
-        }
-        epicsTimer &tmr = pQueue->createTimer ( *pNotify );
-        return &tmr;
+        return new epicsTimerForC ( pQueue->getTimerQueue (), pCallback, pArg );
     }
     catch ( ... ) {
         return 0;
     }
 }
 
-extern "C" void  epicsShareAPI epicsTimerQueueNonThreadedShow (
-    epicsTimerQueueNonThreadedId pQueue, unsigned int level )
+extern "C" void  epicsShareAPI epicsTimerQueuePassiveShow (
+    epicsTimerQueuePassiveId pQueue, unsigned int level )
 {
     pQueue->show ( level );
 }
 
-extern "C" epicsTimerQueueThreadedId epicsShareAPI
-    epicsTimerQueueThreadedCreate ( int okToShare, unsigned int threadPriority )
+extern "C" epicsTimerQueueId epicsShareAPI
+    epicsTimerQueueCreate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsTimerQueueThreaded & queue = 
-            epicsTimerQueueThreaded::allocate 
-                ( okToShare ? true : false, threadPriority );
-        return &queue;
-    }
-    catch ( ... ) {
-        return 0;
-    }
-}
-
-extern "C" void epicsShareAPI epicsTimerQueueThreadedDelete ( epicsTimerQueueThreadedId pQueue )
-{
-    pQueue->release ();
-}
-
-extern "C" epicsTimerId epicsShareAPI epicsTimerQueueThreadedCreateTimer (
-    epicsTimerQueueThreadedId pQueue, epicsTimerCallback pCallback, void *pArg )
-{
-    try {
-        epicsTimerNotifyForC *pNotify = new epicsTimerNotifyForC ( pCallback, pArg );
-        if ( ! pNotify ) {
-            throw timer::noMemory ();
-        }
-        epicsTimer &tmr = pQueue->createTimer ( *pNotify );
+        epicsTimerQueueForC &tmr = queueMgr.allocate ( okToShare ? true : false, threadPriority );
         return &tmr;
     }
     catch ( ... ) {
@@ -202,15 +204,31 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueueThreadedCreateTimer (
     }
 }
 
-extern "C" void  epicsShareAPI epicsTimerQueueThreadedShow (
-    epicsTimerQueueThreadedId pQueue, unsigned int level )
+extern "C" void epicsShareAPI epicsTimerQueueDelete ( epicsTimerQueueId pQueue )
+{
+    pQueue->release ();
+}
+
+extern "C" epicsTimerId epicsShareAPI epicsTimerQueueCreateTimer (
+    epicsTimerQueueId pQueue, epicsTimerCallback pCallback, void *pArg )
+{
+    try {
+        return new epicsTimerForC ( pQueue->getTimerQueue (), pCallback, pArg );
+    }
+    catch ( ... ) {
+        return 0;
+    }
+}
+
+extern "C" void  epicsShareAPI epicsTimerQueueShow (
+    epicsTimerQueueId pQueue, unsigned int level )
 {
     pQueue->show ( level );
 }
 
 extern "C" void  epicsShareAPI epicsTimerDestroy ( epicsTimerId pTmr )
 {
-    delete pTmr;
+    pTmr->destroy ();
 }
 
 extern "C" void  epicsShareAPI epicsTimerStartTime (
@@ -238,6 +256,6 @@ extern "C" double  epicsShareAPI epicsTimerGetExpireDelay ( epicsTimerId pTmr )
 extern "C" void  epicsShareAPI epicsTimerShow (
     epicsTimerId pTmr, unsigned int level )
 {
-    pTmr->show ( level );
+    pTmr->timer::show ( level );
 }
 

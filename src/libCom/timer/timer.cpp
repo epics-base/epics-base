@@ -30,7 +30,7 @@
  */
 
 #define epicsExportSharedSymbols
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
 tsFreeList < class timer, 0x20 > timer::freeList;
 

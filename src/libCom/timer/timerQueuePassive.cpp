@@ -29,25 +29,27 @@
  */
 
 #define epicsExportSharedSymbols
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
-epicsTimerQueueNonThreaded::~epicsTimerQueueNonThreaded () {}
+tsFreeList < class timerQueuePassive, 0x8 > timerQueuePassive::freeList;
 
-epicsTimerQueueNonThreaded &epicsTimerQueueNonThreaded::create ( epicsTimerQueueNotify &notify )
+epicsTimerQueuePassive::~epicsTimerQueuePassive () {}
+
+epicsTimerQueuePassive &epicsTimerQueuePassive::create ( epicsTimerQueueNotify &notify )
 {
-    timerQueueNonThreaded *pQueue = new timerQueueNonThreaded ( notify );
+    timerQueuePassive *pQueue = new timerQueuePassive ( notify );
     if ( ! pQueue ) {
         throwWithLocation ( timer::noMemory () );
     }
     return *pQueue;
 }
 
-timerQueueNonThreaded::timerQueueNonThreaded ( epicsTimerQueueNotify &notifyIn ) :
+timerQueuePassive::timerQueuePassive ( epicsTimerQueueNotify &notifyIn ) :
     queue ( notifyIn ) {}
 
-timerQueueNonThreaded::~timerQueueNonThreaded () {}
+timerQueuePassive::~timerQueuePassive () {}
 
-epicsTimer & timerQueueNonThreaded::createTimer ( epicsTimerNotify & notifyIn )
+epicsTimer & timerQueuePassive::createTimer ( epicsTimerNotify & notifyIn )
 {
     timer *pTmr = new timer ( notifyIn, this->queue );
     if ( ! pTmr ) {
@@ -56,17 +58,17 @@ epicsTimer & timerQueueNonThreaded::createTimer ( epicsTimerNotify & notifyIn )
     return *pTmr;
 }
 
-void timerQueueNonThreaded::process ()
+void timerQueuePassive::process ()
 {
     this->queue.process ();
 }
 
-double timerQueueNonThreaded::getNextExpireDelay () const
+double timerQueuePassive::getNextExpireDelay () const
 {
     return this->queue.delayToFirstExpire ();
 }
 
-void timerQueueNonThreaded::show ( unsigned int level ) const
+void timerQueuePassive::show ( unsigned int level ) const
 {
     printf ( "EPICS non-threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );

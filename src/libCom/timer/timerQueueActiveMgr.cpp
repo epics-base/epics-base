@@ -31,57 +31,57 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
-#include "epicsTimerPrivate.h"
+#include "timerPrivate.h"
 
-timerQueueThreadedMgr::~timerQueueThreadedMgr ()
+timerQueueActiveMgr::~timerQueueActiveMgr ()
 {
     epicsAutoMutex locker ( this->mutex );
 }
     
-timerQueueThreaded & timerQueueThreadedMgr::allocate (
+epicsTimerQueueForC & timerQueueActiveMgr::allocate (
         bool okToShare, int threadPriority )
 {
     epicsAutoMutex locker ( this->mutex );
     if ( okToShare ) {
-        tsDLIterBD < timerQueueThreaded > iter = this->sharedQueueList.firstIter ();
+        tsDLIterBD < epicsTimerQueueForC > iter = this->sharedQueueList.firstIter ();
         while ( iter.valid () ) {
             if ( iter->threadPriority () == threadPriority ) {
-                assert ( iter->timerQueueThreadedMgrPrivate::referenceCount < UINT_MAX );
-                iter->timerQueueThreadedMgrPrivate::referenceCount++;
+                assert ( iter->timerQueueActiveMgrPrivate::referenceCount < UINT_MAX );
+                iter->timerQueueActiveMgrPrivate::referenceCount++;
                 return *iter;
             }
         }
     }
-    timerQueueThreaded *pQueue = new timerQueueThreaded ( okToShare, threadPriority );
+    epicsTimerQueueForC *pQueue = new epicsTimerQueueForC ( okToShare, threadPriority );
     if ( ! pQueue ) {
         throwWithLocation ( timer::noMemory () );
     }
-    pQueue->timerQueueThreadedMgrPrivate::referenceCount = 1u;
+    pQueue->timerQueueActiveMgrPrivate::referenceCount = 1u;
     if ( okToShare ) {
         this->sharedQueueList.add ( *pQueue );
     }
     return *pQueue;
 }
 
-void timerQueueThreadedMgr::release ( timerQueueThreaded &queue )
+void timerQueueActiveMgr::release ( epicsTimerQueueForC &queue )
 {
     epicsAutoMutex locker ( this->mutex );
-    assert ( queue.timerQueueThreadedMgrPrivate::referenceCount > 0u );
-    queue.timerQueueThreadedMgrPrivate::referenceCount--;
-    if ( queue.timerQueueThreadedMgrPrivate::referenceCount == 0u ) {
+    assert ( queue.timerQueueActiveMgrPrivate::referenceCount > 0u );
+    queue.timerQueueActiveMgrPrivate::referenceCount--;
+    if ( queue.timerQueueActiveMgrPrivate::referenceCount == 0u ) {
         if ( queue.sharingOK () ) {
             this->sharedQueueList.remove ( queue );
         }
-        timerQueueThreadedMgrPrivate *pPriv = &queue;
+        timerQueueActiveMgrPrivate *pPriv = &queue;
         delete pPriv;
     }
 }
 
-timerQueueThreadedMgrPrivate::timerQueueThreadedMgrPrivate () :
+timerQueueActiveMgrPrivate::timerQueueActiveMgrPrivate () :
     referenceCount ( 0u )
 {
 }
 
-timerQueueThreadedMgrPrivate::~timerQueueThreadedMgrPrivate () 
+timerQueueActiveMgrPrivate::~timerQueueActiveMgrPrivate () 
 {
 }

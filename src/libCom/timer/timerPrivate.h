@@ -85,31 +85,27 @@ private:
     friend class timer;
 };
 
-class timerQueueThreadedMgrPrivate {
+class timerQueueActiveMgrPrivate {
 public:
-    timerQueueThreadedMgrPrivate ();
+    timerQueueActiveMgrPrivate ();
 protected:
-    virtual ~timerQueueThreadedMgrPrivate () = 0;
+    virtual ~timerQueueActiveMgrPrivate () = 0;
 private:
     unsigned referenceCount;
-    friend class timerQueueThreadedMgr;
+    friend class timerQueueActiveMgr;
 };
 
-class timerQueueThreaded : public epicsTimerQueueThreaded, 
+class timerQueueActive : public epicsTimerQueue, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
-    public timerQueueThreadedMgrPrivate,
-    public tsDLNode < timerQueueThreaded > {
+    public timerQueueActiveMgrPrivate {
 public:
-    timerQueueThreaded ( bool okToShare, unsigned priority );
+    timerQueueActive ( bool okToShare, unsigned priority );
+    ~timerQueueActive () = 0;
     epicsTimer & createTimer ( epicsTimerNotify & );
     void show ( unsigned int level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-    void release ();
     bool sharingOK () const;
     int threadPriority () const;
-protected:
-    ~timerQueueThreaded ();
+    timerQueue & getTimerQueue ();
 private:
     timerQueue queue;
     epicsEvent rescheduleEvent;
@@ -120,31 +116,50 @@ private:
     bool terminateFlag;
     void run ();
     void reschedule ();
-    static tsFreeList < class timerQueueThreaded, 0x8 > freeList;
 };
 
-class timerQueueThreadedMgr {
+struct epicsTimerQueueForC : public timerQueueActive, 
+    public tsDLNode < epicsTimerQueueForC > {
 public:
-    ~timerQueueThreadedMgr ();
-    timerQueueThreaded & allocate ( bool okToShare, 
+    epicsTimerQueueForC ( bool okToShare, unsigned priority );
+    void release ();
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+protected:
+    virtual ~epicsTimerQueueForC ();
+private:
+    static tsFreeList < epicsTimerQueueForC > freeList;
+};
+
+class timerQueueActiveMgr {
+public:
+    ~timerQueueActiveMgr ();
+    epicsTimerQueueForC & allocate ( bool okToShare, 
         int threadPriority = epicsThreadPriorityMin + 10 );
-    void release ( timerQueueThreaded & );
+    void release ( epicsTimerQueueForC & );
 private:
     epicsMutex mutex;
-    tsDLList < timerQueueThreaded > sharedQueueList;
+    tsDLList < epicsTimerQueueForC > sharedQueueList;
 };
 
-class timerQueueNonThreaded : public epicsTimerQueueNonThreaded {
+extern timerQueueActiveMgr queueMgr;
+
+class timerQueuePassive : public epicsTimerQueuePassive {
 public:
-    timerQueueNonThreaded ( epicsTimerQueueNotify & );
-    ~timerQueueNonThreaded ();
+    timerQueuePassive ( epicsTimerQueueNotify & );
     epicsTimer & createTimer ( epicsTimerNotify & );
     void process ();
     double getNextExpireDelay () const;
     void show ( unsigned int level ) const;
     void release ();
+    timerQueue & getTimerQueue ();
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~timerQueuePassive ();
 private:
     timerQueue queue;
+    static tsFreeList < class timerQueuePassive, 0x8 > freeList;
 };
 
 inline void * timer::operator new ( size_t size )
@@ -171,24 +186,44 @@ inline double timer::privateDelayToFirstExpire () const
     }
 }
 
-inline bool timerQueueThreaded::sharingOK () const
+inline bool timerQueueActive::sharingOK () const
 {
     return this->okToShare;
 }
 
-inline int timerQueueThreaded::threadPriority () const
+inline int timerQueueActive::threadPriority () const
 {
     return thread.getPriority ();
 }
 
-inline void * timerQueueThreaded::operator new ( size_t size )
+inline timerQueue & timerQueueActive::getTimerQueue ()
 {
-    return timerQueueThreaded::freeList.allocate ( size );
+    return this->queue;
 }
 
-inline void timerQueueThreaded::operator delete ( void *pCadaver, size_t size )
+inline void * timerQueuePassive::operator new ( size_t size )
 {
-    timerQueueThreaded::freeList.release ( pCadaver, size );
+    return timerQueuePassive::freeList.allocate ( size );
+}
+
+inline void timerQueuePassive::operator delete ( void *pCadaver, size_t size )
+{
+    timerQueuePassive::freeList.release ( pCadaver, size );
+}
+
+inline timerQueue & timerQueuePassive::getTimerQueue ()
+{
+    return this->queue;
+}
+
+inline void * epicsTimerQueueForC::operator new ( size_t size )
+{ 
+    return epicsTimerQueueForC::freeList.allocate ( size );
+}
+
+inline void epicsTimerQueueForC::operator delete ( void *pCadaver, size_t size )
+{ 
+    epicsTimerQueueForC::freeList.release ( pCadaver, size );
 }
 
 #endif // epicsTimerPrivate_h

@@ -111,26 +111,35 @@ static void asSpcAsCallback(struct dbCommon *precord)
 {
     asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
 }
+
+static void asInitCommonOnce(void *arg)
+{
+    int *firstTime = (int *)arg;
+    *firstTime = FALSE;
+}
     
 static long asInitCommon(void)
 {
     long	status;
     int		asWasActive = asActive;
+    int		wasFirstTime = firstTime;
+    static threadOnceId asInitCommonOnceFlag = OSITHREAD_ONCE_INIT;
 
-    if(firstTime) {
-	firstTime = FALSE;
-	if(!pacf) return(0); /*access security will NEVER be turned on*/
+    
+    threadOnce(&asInitCommonOnceFlag,asInitCommonOnce,(void *)&firstTime);
+    if(wasFirstTime) {
+        if(!pacf) return(0); /*access security will NEVER be turned on*/
     } else {
-	if(!asActive) {
+        if(!asActive) {
             printf("Access security is NOT enabled."
                    " Was asSetFilename specified before iocInit?\n");
             return(S_asLib_asNotActive);
         }
-	if(pacf) {
-	    asCaStop();
-	} else { /*Just leave everything as is */
-	    return(S_asLib_badConfig);
-	}
+        if(pacf) {
+            asCaStop();
+        } else { /*Just leave everything as is */
+            return(S_asLib_badConfig);
+        }
     }
     status = asInitFile(pacf,psubstitutions);
     if(asActive) {

@@ -25,6 +25,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
+#include "osiThread.h"
 #include "ellLib.h"
 #include "cantProceed.h"
 #include "osiSem.h"
@@ -48,7 +49,6 @@ epicsShareDef ASBASE volatile *pasbase=NULL;
 static ASBASE *pasbasenew=NULL;
 epicsShareDef int   asActive = FALSE;
 
-static int          asLockInit=TRUE;
 static void         *freeListPvt = NULL;
 
 
@@ -85,6 +85,10 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc);
      the old memberList is moved from old to new.
      the old structures are freed.
 */
+static void asInitializeOnce(void *arg)
+{
+    asLock  = semMutexMustCreate();
+}
 long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 {
     ASG		*pasg;
@@ -95,11 +99,9 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     UAGNAME	*puagname;
     HAG		*phag;
     HAGNAME	*phagname;
+    static threadOnceId asInitializeOnceFlag = OSITHREAD_ONCE_INIT;
 
-    if(asLockInit) {
-	asLock  = semMutexMustCreate();
-	asLockInit = FALSE;
-    }
+    threadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
     LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);

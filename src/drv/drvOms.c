@@ -1,3 +1,4 @@
+
 /* drvOms.c */
 /* share/src/drv $Id$ */
 /*
@@ -57,6 +58,12 @@
  * .16	06-26-92	 bg	Combined drvOms.c with oms_driver.c
  * .17  06-29-92	joh	took file pointer arg out of io report
  * .18  08-11-92	joh	io report format cleanup	
+ * .19  08-26-92	mrk	changed oms poll rate
+ * .20  08-27-92	joh	silenced gcc warnings
+ * .21  08-27-92	joh	started to fix driver function which returned
+ *				with and without status but left new code #if'd
+ *				out until the proper status can be determined
+ * .22 	08-03-92	joh	merged the include oms file
  */
 
 /* data requests are made from the oms_task at
@@ -77,14 +84,13 @@
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<drvOms.h>
 #include	<steppermotor.h>
 
 #define OMS_INT_LEV 5
 
 /* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
+long	oms_io_report(int level);
+long	oms_driver_init(void);
 
 struct {
 	long	number;
@@ -92,22 +98,47 @@ struct {
 	DRVSUPFUN	init;
 } drvOms={
 	2,
-	report,
-	init};
-
-static long report(level)
-    int level;
-{
-    oms_io_report(level);
-}
+	oms_io_report,
+	oms_driver_init};
 
-
-static long init()
-{
-    int status;
-    oms_driver_init();
-    return(0);
-}
+#define	MAX_OMS_CARDS		8
+#define	MAX_OMS_CHANNELS	6
+
+
+/* motor information */
+struct oms_motor{
+short	active;		/* flag to tell the oms_task if the motor is moving */
+int	callback;	/* routine in database library to call with status  */
+int	callback_arg;	/* argument to callback routine  */
+short	update_count;
+short	stop_count;
+};
+
+#define	MIRQE			0x80
+#define	TRANSMIT_BUFFER_EMPTY	0x40
+#define	INPUT_BUFFER_FULL	0x20
+#define	MDONE			0x10
+#define	OMS_ENCODER		0x04
+#define	OMS_CMD_ERROR		0x01
+
+struct vmex_motor{
+	char	unused0;
+	char	data;
+	char	unused1;
+	char	done;
+	char	unused2;
+	char	control;
+	char	unused3;
+	char	status;
+	char	unused4;
+	char	vector;
+	char	unused5[6];
+};
+
+/* oms message defines */
+#define	OMS_MSG_SZ	32		/* response message size */
+#define OMS_RESP_Q_SZ	(OMS_MSG_SZ*500)	/* response ring buffer size */
+
 
 /*
  * a rate of 10Hz when a motor is active    
@@ -143,9 +174,10 @@ char	read_buffer[MAX_OMS_CARDS][34];
 
 /* forward reference. */
 VOID oms_reset();
+LOCAL void oms_intr();
 
 
-oms_intr(card)
+LOCAL void oms_intr(card)
 register short	card;
 {
     register struct vmex_motor	*pmotor;
@@ -158,7 +190,7 @@ register short	card;
     /* pointer to this motor */
     if ((pmotor = oms_motor_present[card]) == 0){
 	intUnlock(key);
-	return(0);
+	return;
     }
     pinx = &resp_inx[card];
 
@@ -196,7 +228,6 @@ register short	card;
 	}
     }
     intUnlock(key);
-    return(0);
 }
 
 /*
@@ -227,7 +258,7 @@ oms_resp_task()
 #	endif
 
         /* process requests in the command ring buffer */
-        while (rngBufGet(oms_resp_q,resp,OMS_MSG_SZ) == OMS_MSG_SZ){
+        while (rngBufGet(oms_resp_q,(char *)resp,OMS_MSG_SZ) == OMS_MSG_SZ){
             if (oms_debug) 
               printf("card: %d  msg:%s\n",resp[0],&resp[1]);
 	    /* get the card number and pointers to the state and channel */
@@ -252,14 +283,14 @@ oms_resp_task()
 
 	    /* convert encoder position */
 	    }else if (*pstate == 1){
-		    sscanf(&resp[1],"%d",&temp);
+		    sscanf((char *)&resp[1],"%d",&temp);
 		    pmotor_data_array->encoder_position = temp;
 		    *pstate = 0;
 	    /* convert motor position */
 	    /* use the motor position for detecting end of motion because */
 	    /* all motors use this, not all motors have encoders	  */
 	    }else if (*pstate == 2){
-		    sscanf(&resp[1],"%d",&temp);
+		    sscanf((char *)&resp[1],"%d",&temp);
 		    if ((pmotor_data_array->motor_position == temp)
 		      && (poms_motor_array->active == TRUE)){
 			poms_motor_array->stop_count++;
@@ -333,7 +364,6 @@ oms_task()
 	motor_active = TRUE;
 	while (motor_active){
 	    motor_active = FALSE;
-	    taskDelay(2);
 	    for (channel = 0; channel < MAX_OMS_CHANNELS; channel++){
 		pmotor = oms_motor_present[0];
 		for (card = 0; card < MAX_OMS_CARDS; card++,pmotor++){
@@ -350,6 +380,7 @@ oms_task()
 			oms_send_msg(oms_motor_present[card],oms_msg);
 		    }
 		}
+		taskDelay(2);
 	    }
 	}
     }
@@ -360,7 +391,8 @@ oms_task()
  *
  * initialize all oms drivers present
  */
-oms_driver_init(){
+long	oms_driver_init(void)
+{
 	struct vmex_motor	*pmotor;
         short                           i,j,got_one;
         int				status;
@@ -374,10 +406,13 @@ oms_driver_init(){
 	/* find all cards present */
 	got_one = FALSE;
         
-        status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,sm_addrs[OMS_6AXIS], &localaddr);
+        status = sysBusToLocalAdrs(
+			VME_AM_SUP_SHORT_IO,
+			(char *)sm_addrs[OMS_6AXIS], 
+			&localaddr);
         if (status != OK){ 
            logMsg("Addressing error in oms driver\n");
-           return(ERROR);
+           return ERROR;
         }
         rebootHookAdd(oms_reset);  
         pmotor = (struct vmex_motor *)localaddr;
@@ -442,7 +477,8 @@ oms_driver_init(){
                          }
 		}
 	}
-	return(0);
+
+	return OK;
 }
 
 /*
@@ -524,7 +560,7 @@ int		arg2;
 		if (arg1 == 0){
 			oms_move_msg[1] = oms_motor_specifier[channel];
 		}else{
-			return(0);
+			return (0);
 		}
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
@@ -571,8 +607,10 @@ int		arg2;
 
 		break;
 	}
-	return(0);
+
+	return (0);
 }
+
 
 char	last_msg[80];
 int	oms_count,oms_icount,oms_illcmd,oms_sleep,oms_isleep;
@@ -600,8 +638,13 @@ i = 0;
 				oms_icount++;
 				if ((oms_icount % 5) == 0){
 					oms_isleep++;
-/* A taskDelay makes a 68040 wait frequently */
-					/*taskDelay(1);*/
+					/* 
+					 * A taskDelay makes a 68040 
+					 * wait frequently
+					 */
+#					ifdef 0
+						taskDelay(1);
+#					endif
 				}
 			}
 			pmotor->data = 0x19;	/* reset */
@@ -610,8 +653,13 @@ i = 0;
 				oms_count++;
 				if ((oms_count % 5) == 0){
 					oms_sleep++;
-/* A taskDelay makes a 68040 wait frequently */
-					/*taskDelay(1);*/
+					/* 
+					 * A taskDelay makes a 68040 
+					 * wait frequently
+					 */
+#					ifdef 0
+						taskDelay(1);
+#					endif
 				}
 			}
 			pmotor->data = *pmsg;
@@ -622,8 +670,7 @@ i = 0;
         semGive(&oms_send_sem);
 }
 
-oms_io_report(level)
-short int level;
+long	oms_io_report(int level)
 {
     register short int i,j;
 
@@ -637,6 +684,8 @@ short int level;
                 }
              
         }
+
+	return OK;
  }
 
 VOID oms_sm_stat(card,channel)

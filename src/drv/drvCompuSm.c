@@ -1,6 +1,6 @@
 
 /* drvCompuSm.c */
-/* share/src/drv $Id$ */
+/* share/src/drv @(#)drvCompuSm.c	1.9     8/27/92 */
 /*
  * subroutines and tasks that are used to interface to the Compumotor 1830
  * stepper motor drivers
@@ -49,6 +49,8 @@
  *                              structure   
  * .11	06-29-92	joh	took file ptr arg out of io report
  * .12	08-06-92	joh	merged compu sm include file
+ * .13	08-27-92	joh	silenced ANSI C function proto warning	
+ * .14	08-27-92	joh	fixed no epics init
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -56,9 +58,6 @@
 #include <semLib.h>		/* library for semaphore support */
 #include <wdLib.h>
 #include <rngLib.h>		/* library for ring buffer support */
-#if 0
-#include <stdioLib.h>
-#endif
 
 /* drvCompuSm.c -  Driver Support Routines for CompuSm */
 
@@ -69,9 +68,8 @@
 #include	 <task_params.h>
 
 
-/* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
+long compu_sm_io_report();
+long compu_driver_init();
 
 struct {
 	long	number;
@@ -79,21 +77,8 @@ struct {
 	DRVSUPFUN	init;
 } drvCompuSm={
 	2,
-	report,
-	init};
-
-static long report(level)
-int	level;
-{
-      compu_sm_io_report(level);
-}
-
-static long init()
-{
-    int status;
-
-    return(0);
-}
+	compu_sm_io_report,
+	compu_driver_init};
 
 /* compumotor vme interface information */
 #define	MAX_COMPU_MOTORS	8		/********/
@@ -337,7 +322,7 @@ struct compu_motor	compu_motor_array[MAX_COMPU_MOTORS];
 
 /* Forward reference. */
 VOID compu_sm_reset();
-
+VOID compu_sm_stat();
 
 /* motor status - returned to the database library routines */
 struct motor_data	compu_motor_data_array[MAX_COMPU_MOTORS];
@@ -415,7 +400,7 @@ compu_resp_task()
 	/* 2 -	the first byte of the response		 	*/
 
 	/* process requests in the command ring buffer */
-        while (rngBufGet(smRespQ,resp,RESPBUF_SZ) == RESPBUF_SZ){
+        while (rngBufGet(smRespQ,(char *)resp,RESPBUF_SZ) == RESPBUF_SZ){
 		pmotor_data = &compu_motor_data_array[resp[0]];
 
 		/* convert argument */
@@ -546,7 +531,7 @@ register int mdnum;
 
     /* when the buffer is full pass it onto the repsonse task */
     if (counts[mdnum] == RESPBUF_SZ){
-        if (rngBufPut(smRespQ,sm_responses[mdnum],RESPBUF_SZ) != RESPBUF_SZ)
+        if (rngBufPut(smRespQ,(char *)sm_responses[mdnum],RESPBUF_SZ) != RESPBUF_SZ)
             logMsg("smRespQ %d - Full\n",mdnum);
 	else
 	    semGive (&smRespSem);
@@ -569,6 +554,7 @@ register int mdnum;
  *
  * initialization for the compumotor 1830 card
  */
+long
 compu_driver_init(){
     register short i;
     int status;
@@ -578,9 +564,13 @@ compu_driver_init(){
 
    /* intialize each driver which is present */
     none_found = TRUE;
-    rebootHookAdd(compu_sm_reset);
-    if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,sm_addrs[CM57_83E], &compu_addr)) != OK){ 
-      printf("Addressing error in compumotor steppermotor driver\n"); 
+    rebootHookAdd((FUNCPTR)compu_sm_reset);
+    status = sysBusToLocalAdrs(
+		VME_AM_SUP_SHORT_IO,
+		(char *)sm_addrs[CM57_83E], 
+		(char **)&compu_addr);
+    if (status != OK){ 
+      printf("%s: failed to map A16 base\n", __FILE__); 
       return ERROR;
     }
    
@@ -921,7 +911,7 @@ register short			count;
  * send a message to the compumotor 1830
  */
 
-VOID compu_sm_io_report(level)
+long compu_sm_io_report(level)
   short int level;
  {
    register int i;
@@ -934,6 +924,8 @@ VOID compu_sm_io_report(level)
                         compu_sm_stat(i); 
                 }
         }
+
+	return OK;
  }
 
 VOID compu_sm_stat(compu_num)

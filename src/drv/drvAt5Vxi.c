@@ -1,8 +1,6 @@
-/* drvVxiAt5.c */
-/* share/src/drv @(#) $Id$ */
+/* 	share/src/drv @(#) $Id$ */
 
 /*
- * 	at5vxi_driver.c
  *
  * 	driver for at5 designed VXI modules
  *
@@ -54,7 +52,8 @@
  *	.15 joh 072992	print more raw values in io report
  *	.16 joh 081092	merged at5vxi_models.h into this source
  *	.17 joh 081992	function name change	
- *	.17 mrk	082692	Added support for new I/O event scanning
+ *	.18 joh 082792	converted to ansi C
+ *	.19 joh	111392	removed shifts on analog IO
  *
  *	Notes:
  *	------
@@ -102,9 +101,6 @@
  */
 
 #include <vxWorks.h>
-#include <dbDefs.h>
-
-
 #ifdef V5_vxWorks
 #	include <iv.h>
 #else
@@ -114,23 +110,101 @@
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
-#include <epvxiLib.h>
 #include <drvSup.h>
+#include <dbDefs.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
+#include <drvEpvxi.h>
 
 static char SccsId[] = "$Id$\t$Date$";
 
+typedef long (*DRVSUPFUN) ();   /* ptr to driver support function*/
 
-void 		log_at5vxi_failure();
-void		at5vxi_int_service();
-void		at5vxi_init_card();
-void		at5vxi_stat();
-void		at5vxi_shutdown();
-void		at5vxi_shutdown_card();
-int 		at5vxi_report_timing();
-long		at5vxi_init();
+
+void 	at5vxi_int_service(
+	int 	addr
+);
+
+void 	at5vxi_init_card(
+	unsigned 	addr
+);
+
+void	at5vxi_shutdown(
+	void
+);
+
+void 	at5vxi_shutdown_card(
+	unsigned la
+);
+
+int 	at5vxi_report_timing(
+	unsigned card,
+	unsigned channel
+);
+
+void 	at5vxi_stat(
+	unsigned	card,
+	int		level
+);
+
+/*
+ * these should be in a header file
+ */
+long	at5vxi_init(
+	void
+);
+
+int	at5vxi_one_shot(	
+	int		preset,		/* TRUE or COMPLEMENT logic */
+	double		edge0_delay,	/* sec */
+	double		edge1_delay,	/* set */
+	unsigned	card,		/* 0 through ... */
+	unsigned	channel,	/* 0 through channels on a card */
+	int		int_source, 	/* (FALSE)External/(TRUE)Internal source */
+	void		*event_rtn,	/* subroutine to run on events */
+	int		event_rtn_param	/* parameter to pass to above routine */
+);
+
+int	at5vxi_one_shot_read(
+	int		*preset,	/* TRUE or COMPLEMENT logic */
+	double		*edge0_delay,	/* sec */
+	double		*edge1_delay,	/* sec */
+	unsigned	card,		/* 0 through ... */
+	unsigned	channel,	/* 0 through channels on a card */
+	int		*int_source 	/* (FALSE)External/(TRUE)Internal src */
+);
+
+int	at5vxi_ai_driver(
+	unsigned short	card,
+	unsigned short	chan,
+	unsigned short 	*prval
+);
+
+int	at5vxi_ao_driver(
+	unsigned short 	card,
+	unsigned short 	chan,
+	unsigned short 	*prval,
+	unsigned short 	*prbval
+);
+
+int	at5vxi_ao_read(
+	unsigned short 	card,
+	unsigned short 	chan,
+	unsigned short 	*pval
+);
+
+int	at5vxi_bi_driver(
+	unsigned short 	card,
+	unsigned long	mask,
+	unsigned long	*prval
+);
+
+int	at5vxi_bo_driver(
+	unsigned short	card,
+	unsigned long	val,
+	unsigned long	mask
+);
 
 struct {
 	long    number;
@@ -207,10 +281,17 @@ struct at5vxi_control{
  * Insert or extract a bit field using the standard
  * masks and shifts defined below
  */
-#define INSERT(FIELD,VALUE)\
-(((VALUE)&(FD_/* */FIELD/* */_M))<<(FD_/* */FIELD/* */_S))
-#define EXTRACT(FIELD,VALUE)\
-( ((VALUE)>>(FD_/* */FIELD/* */_S)) &(FD_/* */FIELD/* */_M))
+#ifdef __STDC__
+#	define INSERT(FIELD,VALUE)\
+	(((VALUE)&(FD_ ## FIELD ## _M))<<(FD_ ## FIELD ## _S))
+#	define EXTRACT(FIELD,VALUE)\
+	( ((VALUE)>>(FD_ ## FIELD ## _S)) &(FD_ ## FIELD ## _M))
+#else
+#	define INSERT(FIELD,VALUE)\
+	(((VALUE)&(FD_/* */FIELD/* */_M))<<(FD_/* */FIELD/* */_S))
+#	define EXTRACT(FIELD,VALUE)\
+	( ((VALUE)>>(FD_/* */FIELD/* */_S)) &(FD_/* */FIELD/* */_M))
+#endif
 
 /*
  * in the constants below _M is a right justified mask
@@ -348,8 +429,9 @@ struct at5vxi_config{
 	struct vxi_csr		*pcsr;		/* vxi device hdr ptr 	*/
 	struct at5vxi_dd	*pdd;		/* at5 device dep ptr	*/
 #ifndef EPICS_V2
-	IOSCANPVT ioscanpvt;
+       	IOSCANPVT 		ioscanpvt;
 #endif
+
 };
 
 LOCAL unsigned long at5vxiDriverID;
@@ -409,7 +491,9 @@ struct at5vxi_model at5vxi_models[] = {
  *
  */
 long
-at5vxi_init()
+at5vxi_init(
+	void
+)
 {
 	int 	r0;
 
@@ -450,8 +534,10 @@ at5vxi_init()
  * disable interrupts on at5vxi cards
  *
  */
-LOCAL void	
-at5vxi_shutdown()
+LOCAL 
+void	at5vxi_shutdown(
+	void
+)
 {
 	epvxiDeviceSearchPattern  dsp;
 	int			s;
@@ -472,9 +558,10 @@ at5vxi_shutdown()
  * disable interrupts on at5vxi cards
  *
  */
-LOCAL void 
-at5vxi_shutdown_card(la)
-unsigned la;
+LOCAL 
+void 	at5vxi_shutdown_card(
+	unsigned 	la
+)
 {
 #ifndef CONTINUOUS_OPERATION
 	struct vxi_csr	*pcsr;
@@ -493,9 +580,10 @@ unsigned la;
  * initialize single at5vxi card
  *
  */
-LOCAL void
-at5vxi_init_card(addr)
-unsigned addr;
+LOCAL 
+void 	at5vxi_init_card(
+	unsigned 		addr
+)
 {
 	int			r0;
 	struct at5vxi_config	*pc;
@@ -525,8 +613,9 @@ unsigned addr;
 
 	FASTLOCKINIT(&pc->lock);
 #ifndef EPICS_V2
-	scanIoInit(&pc->ioscanpvt);
+        scanIoInit(&pc->ioscanpvt);
 #endif
+
 
 	/*
 	 * revert to power up control 
@@ -675,9 +764,9 @@ unsigned addr;
  *
  *	update card busy writes and notify the IO interrupt scanner
  */
-void 
-at5vxi_int_service(addr)
-int addr;
+void 	at5vxi_int_service(
+	int 	addr
+)
 {
 	register struct at5vxi_config *pconfig; 
 
@@ -695,7 +784,7 @@ int addr;
 		io_scanner_wakeup(IO_AI, VXI_AT5_AI, addr);
 		io_scanner_wakeup(IO_BI, VXI_AT5_BI, addr);
 #else
-		scanIoRequest(pconfig->ioscanpvt);
+                scanIoRequest(pconfig->ioscanpvt);
 #endif
 	}
 
@@ -759,7 +848,7 @@ int addr;
 		for(chan=0; chan<NELEMENTS(pconfig->av); chan++){
 			if(!pconfig->av[chan].mdt)
 				continue;
-			pdd->ao[chan] = pconfig->av[chan].val<<4;
+			pdd->ao[chan] = pconfig->av[chan].val;
 			pconfig->av[chan].mdt = FALSE;
 		}
 
@@ -795,23 +884,16 @@ int addr;
  *
  *	setup AMD 9513 STC for a repeated two edge timing signal 
  */
-at5vxi_one_shot(	
-		preset,
-		edge0_delay,
-		edge1_delay, 
-		card, 
-		channel,
-		int_source,
-		event_rtn,
-		event_rtn_param)
-int		preset;		/* TRUE or COMPLEMENT logic */
-double		edge0_delay;	/* sec */
-double		edge1_delay;	/* set */
-unsigned	card;		/* 0 through ... */
-unsigned	channel;	/* 0 through channels on a card */
-int		int_source; 	/* (FALSE)External/(TRUE)Internal source */
-void		*event_rtn;	/* subroutine to run on events */
-int		event_rtn_param;/* parameter to pass to above routine */
+int	at5vxi_one_shot(	
+	int		preset,		/* TRUE or COMPLEMENT logic */
+	double		edge0_delay,	/* sec */
+	double		edge1_delay,	/* set */
+	unsigned	card,		/* 0 through ... */
+	unsigned	channel,	/* 0 through channels on a card */
+	int		int_source, 	/* (FALSE)External/(TRUE)Internal source */
+	void		*event_rtn,	/* subroutine to run on events */
+	int		event_rtn_param	/* parameter to pass to above routine */
+)
 {
   	int status;
   	register struct vxi_csr		*pcsr;
@@ -903,18 +985,14 @@ int		event_rtn_param;/* parameter to pass to above routine */
  *
  *	read back two edge timing from an AMD 9513 STC
  */
-at5vxi_one_shot_read(	preset,
-			edge0_delay,
-			edge1_delay, 
-			card, 
-			channel,
-			int_source)
-int			*preset;	/* TRUE or COMPLEMENT logic */
-double			*edge0_delay;	/* sec */
-double			*edge1_delay;	/* sec */
-unsigned		card;		/* 0 through ... */
-unsigned		channel;	/* 0 through channels on a card */
-int			*int_source; 	/* (FALSE)External/(TRUE)Internal src */
+int	at5vxi_one_shot_read(
+	int		*preset,	/* TRUE or COMPLEMENT logic */
+	double		*edge0_delay,	/* sec */
+	double		*edge1_delay,	/* sec */
+	unsigned	card,		/* 0 through ... */
+	unsigned	channel,	/* 0 through channels on a card */
+	int		*int_source 	/* (FALSE)External/(TRUE)Internal src */
+)
 {	
 #ifdef CONTINUOUS_OPERATION
   	unsigned short		iedge0;
@@ -1010,10 +1088,10 @@ int			*int_source; 	/* (FALSE)External/(TRUE)Internal src */
  *	
  *
  */
-void
-at5vxi_stat(card, level)
-unsigned	card;
-int		level;
+void 	at5vxi_stat(
+	unsigned	card,
+	int		level
+)
 {
 	struct vxi_csr			*pcsr; 
 	register struct at5vxi_dd	*pdd;
@@ -1115,10 +1193,11 @@ int		level;
  *
  *	diagnostic
  */
-LOCAL int
-at5vxi_report_timing(card,channel)
-unsigned card;
-unsigned channel;
+LOCAL 
+int 	at5vxi_report_timing(
+	unsigned card,
+	unsigned channel
+)
 {
   int 		preset;
   double 	edge0_delay;
@@ -1155,10 +1234,11 @@ unsigned channel;
  *
  *	analog input driver
  */
-at5vxi_ai_driver(card,chan,prval)
-register unsigned short	card;
-unsigned short		chan;
-register unsigned short *prval;
+int	at5vxi_ai_driver(
+	unsigned short	card,
+	unsigned short	chan,
+	unsigned short 	*prval
+)
 {
 	register struct at5vxi_dd	*pdd;
   	register struct vxi_csr		*pcsr;
@@ -1177,7 +1257,7 @@ register unsigned short *prval;
 	if(chan >= NELEMENTS(pdd->ai))
 		return ERROR;
 
-	*prval = pdd->ai[chan]>>(unsigned)4;
+	*prval = pdd->ai[chan];
 
 	return OK;
 }
@@ -1190,11 +1270,12 @@ register unsigned short *prval;
  *
  *	analog output driver
  */
-at5vxi_ao_driver(card,chan,prval,prbval)
-register unsigned short card;
-register unsigned short chan;
-unsigned short 		*prval;
-unsigned short 		*prbval;
+int	at5vxi_ao_driver(
+	unsigned short 	card,
+	unsigned short 	chan,
+	unsigned short 	*prval,
+	unsigned short 	*prbval
+)
 {
 	struct at5vxi_dd		*pdd;
   	register struct vxi_csr		*pcsr;
@@ -1214,8 +1295,8 @@ unsigned short 		*prbval;
 		return ERROR;
 
 #ifdef CONTINUOUS_OPERATION
-	pdd->ao[chan] = *prval<<4;
-	*prbval = pdd->ao[chan]>>(unsigned)4;
+	pdd->ao[chan] = *prval;
+	*prbval = pdd->ao[chan];
 #else
 	*PCONTROL(pcsr) = INTDISABLE;
 	pconfig->av[chan].val = *prval;
@@ -1223,7 +1304,7 @@ unsigned short 		*prbval;
 	pconfig->mdt = TRUE;	
 	*PCONTROL(pcsr) = CSRINIT;
 
-	*prbval = *prval & 0xfff;
+	*prbval = *prval;
 #endif
 	return OK;
 }
@@ -1236,10 +1317,11 @@ unsigned short 		*prbval;
  *
  *	analog output read back
  */
-at5vxi_ao_read(card,chan,pval)
-register unsigned short card;
-register unsigned short chan;
-unsigned short 		*pval;
+int	at5vxi_ao_read(
+	unsigned short 	card,
+	unsigned short 	chan,
+	unsigned short 	*pval
+)
 {
 	register struct at5vxi_dd	*pdd;
   	register struct vxi_csr		*pcsr;
@@ -1258,7 +1340,7 @@ unsigned short 		*pval;
 	if(chan >= NELEMENTS(pdd->ao))
 		return ERROR;
 
-	*pval = pdd->ao[chan] >> 4;
+	*pval = pdd->ao[chan];
 
 	return OK;
 }
@@ -1271,10 +1353,11 @@ unsigned short 		*pval;
  *
  *	binary input driver
  */
-at5vxi_bi_driver(card, mask, prval)
-register unsigned short card;
-unsigned long		mask;
-register unsigned long	*prval;
+int	at5vxi_bi_driver(
+	unsigned short 	card,
+	unsigned long	mask,
+	unsigned long	*prval
+)
 {
 	register unsigned long		work;
 	register struct at5vxi_dd	*pdd;
@@ -1298,19 +1381,7 @@ register unsigned long	*prval;
 
 	return OK;
 }
-
-#ifndef EPICS_V2
-at5vxi_getioscanpvt(card,scanpvt)
-unsigned short card;
-IOSCANPVT *scanpvt;
-{
-	register struct at5vxi_config 	*pconfig;
 
-	pconfig = AT5VXI_PCONFIG(card);
-	if(pconfig) *scanpvt = pconfig->ioscanpvt;
-	return(0);
-}
-#endif
 
 /*
  *
@@ -1319,10 +1390,11 @@ IOSCANPVT *scanpvt;
  *
  *	binary output driver
  */
-at5vxi_bo_driver(card,val,mask)
-register unsigned short	card;
-register unsigned long	val;
-unsigned long		mask;
+int	at5vxi_bo_driver(
+	unsigned short	card,
+	unsigned long	val,
+	unsigned long	mask
+)
 {
 #ifdef CONTINUOUS_OPERATION
 	register unsigned long		work;
@@ -1367,4 +1439,24 @@ unsigned long		mask;
 	
 	return OK;
 }
+
+
+#ifndef EPICS_V2
+/*
+ *
+ * at5vxi_getioscanpvt()
+ *
+ *
+ */
+at5vxi_getioscanpvt(card,scanpvt)
+unsigned short card;
+IOSCANPVT *scanpvt;
+{
+        register struct at5vxi_config   *pconfig;
+
+        pconfig = AT5VXI_PCONFIG(card);
+        if(pconfig) *scanpvt = pconfig->ioscanpvt;
+        return(0);
+}
+#endif
 

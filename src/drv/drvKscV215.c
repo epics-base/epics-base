@@ -34,6 +34,7 @@
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
  *	.03 082692 mrk	Added support for new I/O event scanning and DRVET
+ *	.03 012893 joh	include file name change	
  *
  */
 
@@ -49,7 +50,7 @@
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
-#include <epvxiLib.h>
+#include <drvEpvxi.h>
 #include <dbDefs.h>
 #include <drvSup.h>
 #ifndef EPICS_V2

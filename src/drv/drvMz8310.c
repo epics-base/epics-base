@@ -1,6 +1,6 @@
 
 /* drvMz8310.c */
-/* share/src/drv $Id$ */
+/* share/src/drv @(#)drvMz8310.c	1.9     8/27/92 */
 /* 
  * Routines specific to the MZ8310 Low level routines for the AMD STC in
  * stc_driver.c
@@ -175,10 +175,11 @@ static struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
 /* forward reference. */
 
 void mz8310_reset();
+int mz8310_io_report_card(int card, int level);
 
 
 long mz8310_io_report(level)
-short int level;
+int 	level;
 {
 	unsigned	card;
 
@@ -191,7 +192,7 @@ short int level;
 
 
 LOCAL
-int mz8310_io_report_card(card,level)
+int mz8310_io_report_card(int card, int level)
 {
   unsigned int channel, chip;
   int status;

@@ -48,7 +48,8 @@
  * .10 joh 071092	added scan task wakeup from ISR	 
  * .11 joh 071092	moved ivec allocation to module_types.h
  * .12 joh 072792	added soft reboot int disable
- * .13 mrk 090192	support epics I/O event scan, and added DRVET
+ * .13 joh 082792	converted to V5 vxorks
+ * .14 mrk 090192	support epics I/O event scan, and added DRVET
  */
 
 
@@ -506,7 +507,11 @@ fp_dump()
  */
 fp_mon()
 {
+#ifdef V5_vxWorks
  for(semTake(fp_semid,WAIT_FOREVER);fp_dump() != 0;semTake(fp_semid,WAIT_FOREVER));
+#else
+ for(semTake(fp_semid);fp_dump() != 0;semTake(fp_semid));
+#endif
 }
 fp_monitor()
 {

@@ -1,7 +1,9 @@
 /*
  *
- * HP E1404A VXI bus slot zero translator
- * device dependent routines
+ * 	HP E1404A VXI bus slot zero translator
+ * 	device dependent routines
+ *
+ *	share/src/drv @(#)drvHp1404a.c	1.4	8/27/92
  *
  * 	Author Jeffrey O. Hill
  * 	Date		030692
@@ -31,12 +33,13 @@
  * -----------------
  * .01 joh 073092	Added msg device support & interrupt shutdown for
  *			soft reboots
+ * .02 joh 082792	converted to ANSI C
  *
  *
  *
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)drvHp1404a.c	1.4\t8/27/92";
 
 #include <vxWorks.h>
 #ifdef V5_vxWorks
@@ -44,16 +47,16 @@ static char	*sccsId = "$Id$\t$Date$";
 #else
 #	include <iv68k.h>
 #endif
-#include <epvxiLib.h>
+#include <drvEpvxi.h>
+
+LOCAL unsigned long	hpE1404DriverID;
+
+struct hpE1404_config{
+	void	(*pSignalCallback)();
+};
 
 #define		TLTRIG(N) (1<<(N))
 #define		ECLTRIG(N) (1<<((N)+8))
-
-#define LOCAL static
-
-#define NULL 0
-#define TRUE 1
-#define FALSE 0
 
 #define VXI_HP_MODEL_E1404_REG_SLOT0    0x10
 #define VXI_HP_MODEL_E1404_REG          0x110
@@ -78,17 +81,55 @@ static char	*sccsId = "$Id$\t$Date$";
 #define hpE1404PConfig(LA) \
 	epvxiPConfig((LA), hpE1404DriverID, struct hpE1404_config *)
 
-void	hpE1404Int();
-void	hpE1404InitLA();
-void	hpE1404ShutDown();
-void	hpE1404ShutDownLA();
-int	hpE1404IOReport();
+void 	hpE1404InitLA(
+	unsigned	la
+);
 
-struct hpE1404_config{
-	void	(*pSignalCallback)();
-};
+void 	hpE1404ShutDown(
+	void
+);
 
-LOCAL unsigned long	hpE1404DriverID;
+void 	hpE1404ShutDownLA(
+	unsigned 		la
+);
+
+/*
+ * these should be in a header file
+ */
+int 	hpE1404SignalConnect(
+	unsigned 	la,
+	void		(*pSignalCallback)()
+);
+
+void 	hpE1404Int(
+	unsigned 	la
+);
+
+int	hpE1404RouteTriggerECL(
+unsigned        la,             /* slot zero device logical address     */
+unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
+                                /* a 1 enables a trigger                */
+                                /* a 0 disables a trigger               */
+unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
+                                /* a 1 sources the front panel          */
+                                /* a 0 sources the back plane           */
+);
+
+int	hpE1404RouteTriggerTTL(
+unsigned        la,             /* slot zero device logical address     */
+unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
+                                /* a 1 enables a trigger                */
+                                /* a 0 disables a trigger               */
+unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
+                                /* a 1 sources the front panel          */
+                                /* a 0 sources the back plane           */
+);
+
+void	hpE1404IOReport(
+	unsigned 		la,
+	unsigned 		level
+);
+
 
 
 /*
@@ -97,7 +138,9 @@ LOCAL unsigned long	hpE1404DriverID;
  *
  */
 int
-hpE1404Init()
+hpE1404Init(
+	void
+)
 {
 	int		status;
 
@@ -154,7 +197,9 @@ hpE1404Init()
  *
  */
 LOCAL
-void hpE1404ShutDown()
+void 	hpE1404ShutDown(
+	void
+)
 {
 	int				status;
 	epvxiDeviceSearchPattern  	dsp;
@@ -182,9 +227,10 @@ void hpE1404ShutDown()
  *
  *
  */
-void
-hpE1404ShutDownLA(la)
-unsigned la;
+LOCAL
+void 	hpE1404ShutDownLA(
+	unsigned 		la
+)
 {
         struct vxi_csr  	*pcsr;
 
@@ -199,8 +245,10 @@ unsigned la;
  * hpE1404InitLA()
  *
  */
-LOCAL void
-hpE1404InitLA(la)
+LOCAL 
+void 	hpE1404InitLA(
+	unsigned	la
+)
 {
 	struct hpE1404_config	*pc;
         struct vxi_csr  	*pcsr;
@@ -252,10 +300,10 @@ hpE1404InitLA(la)
  *	hpE1404SignalConnect()	
  *
  */
-int
-hpE1404SignalConnect(la, pSignalCallback)
-unsigned 	la;
-void		(*pSignalCallback)();
+int 	hpE1404SignalConnect(
+	unsigned 	la,
+	void		(*pSignalCallback)()
+)
 {
 	struct hpE1404_config	*pc;
 
@@ -275,9 +323,10 @@ void		(*pSignalCallback)();
  *	hpE1404Int()	
  *
  */
-LOCAL void 
-hpE1404Int(la)
-unsigned la;
+LOCAL 
+void 	hpE1404Int(
+	unsigned 	la
+)
 {
 	struct vxi_csr  	*pcsr;
 	unsigned short		signal;
@@ -308,14 +357,15 @@ unsigned la;
  *	hpE1404RouteTriggerECL
  *
  */
-hpE1404RouteTriggerECL(la, enable_map, io_map)
-unsigned        la;             /* slot zero device logical address     */
-unsigned        enable_map;     /* bits 0-5  correspond to trig 0-5     */
+int	hpE1404RouteTriggerECL(
+unsigned        la,             /* slot zero device logical address     */
+unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 enables a trigger                */
                                 /* a 0 disables a trigger               */
-unsigned        io_map;         /* bits 0-5  correspond to trig 0-5     */
+unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 sources the front panel          */
                                 /* a 0 sources the back plane           */
+)
 {
 	struct vxi_csr	*pcsr;
 
@@ -335,14 +385,15 @@ unsigned        io_map;         /* bits 0-5  correspond to trig 0-5     */
  *
  *
  */
-hpE1404RouteTriggerTTL(la, enable_map, io_map)
-unsigned        la;             /* slot zero device logical address     */
-unsigned        enable_map;     /* bits 0-5  correspond to trig 0-5     */
+int	hpE1404RouteTriggerTTL(
+unsigned        la,             /* slot zero device logical address     */
+unsigned        enable_map,     /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 enables a trigger                */
                                 /* a 0 disables a trigger               */
-unsigned        io_map;         /* bits 0-5  correspond to trig 0-5     */
+unsigned        io_map         /* bits 0-5  correspond to trig 0-5     */
                                 /* a 1 sources the front panel          */
                                 /* a 0 sources the back plane           */
+)
 {
         struct vxi_csr  *pcsr;
 
@@ -362,9 +413,10 @@ unsigned        io_map;         /* bits 0-5  correspond to trig 0-5     */
  *
  */
 LOCAL
-int hpE1404IOReport(la, level)
-unsigned la;
-unsigned level;
+void	hpE1404IOReport(
+	unsigned 		la,
+	unsigned 		level
+)
 {
 
 

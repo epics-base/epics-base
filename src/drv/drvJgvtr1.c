@@ -1,7 +1,7 @@
 /* drvJgvtr1.c */
-/* share/src/drv $Id$ */
+/* share/src/drv @(#)drvJgvtr1.c	1.9     8/27/92 */
 /*
- *	 Author:      Jeff Hill
+ *	Author:      Jeff Hill
  * 	Date:        5-89
  *
  *	Experimental Physics and Industrial Control System (EPICS)
@@ -50,9 +50,10 @@
  *	062592	 bg	Combined drvJgvtr1.c and jgvtr_driver.c
  *	062992	joh	removed file pointer argument added to io
  *			report by bg
+ *	082792	joh	added ANSI C function prototypes
  */
 
-static char *sccsID = "$Id$\t$Date$";
+static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 
 /*
  * 	Code Portions
@@ -85,9 +86,40 @@ static char *sccsID = "$Id$\t$Date$";
 #	endif
 
 
-/* If any of the following does not exist replace it with #define <> NULL */
-static long jgvtr1_io_report();
-static long jgvtr1_init();
+long 	jgvtr1_io_report(
+	unsigned	level
+);
+
+long 	jgvtr1_init(
+	void
+);
+
+void 	jgvtr1_int_service(
+	void
+);
+
+void 	jgvtr1DoneTask(
+	void
+);
+
+int jgvtr1_dump(
+	unsigned	card,
+	unsigned	n
+);
+
+/*
+ * should be in a header file
+ */
+int jgvtr1_driver(
+	unsigned short	card,
+	unsigned int	*pcbroutine,
+	unsigned int	*parg	/* number of values read */
+);
+
+int jgvtr1_stat(
+	unsigned	card,
+	short int 	level
+);
 
 struct {
 	long	number;
@@ -169,7 +201,9 @@ int			jgvtr1_max_card_count;
  * intialize the driver for the joerger vtr1
  *
  */
-long jgvtr1_init()
+long jgvtr1_init(
+	void
+)
 {
 	register unsigned 	card;
 	register unsigned 	card_count = 0;
@@ -178,8 +212,6 @@ long jgvtr1_init()
 	short			readback;
 	int			status;
 
-	void			jgvtr1_int_service();
-	void			jgvtr1DoneTask();
 
         if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,0,&shortaddr)) != OK){ 
            printf("Addressing error for short address in jgvtr1 driver\n");
@@ -250,7 +282,7 @@ long jgvtr1_init()
 				WFDONE_PRI,
 				WFDONE_OPT,
 				WFDONE_STACK,
-				jgvtr1DoneTask);
+				(FUNCPTR) jgvtr1DoneTask);
 	if(status == ERROR)
 	  	return ERROR;
          
@@ -275,10 +307,11 @@ long jgvtr1_init()
  * initiate waveform read
  *
  */
-jgvtr1_driver(card, pcbroutine, parg)
-register unsigned short	card;
-register unsigned int	*pcbroutine;
-register unsigned int	*parg;	/* number of values read */
+int jgvtr1_driver(
+	unsigned short	card,
+	unsigned int	*pcbroutine,
+	unsigned int	*parg	/* number of values read */
+)
 {
 	if(card >= jgvtr1_max_card_count)
 		return ERROR;
@@ -309,8 +342,7 @@ register unsigned int	*parg;	/* number of values read */
  *
  */
 #ifdef INTERRUPT_HARDWARE_FIXED
-void
-jgvtr1_int_service()
+void jgvtr1_int_service(void)
 {
   	semGive(jgvtr1_interrupt);
 }
@@ -324,8 +356,9 @@ jgvtr1_int_service()
  * and call back to the database with the waveform size and address
  *
  */
-void
-jgvtr1DoneTask()
+void 	jgvtr1DoneTask(
+	void
+)
 {
 	register unsigned		card;
 	register struct jgvtr1_config	*pconfig;
@@ -336,7 +369,7 @@ jgvtr1DoneTask()
 
 	/* dont allow two of this task */
 	if(started)
-	  exit(1);
+	  exit(0);
 	started = TRUE;
 
     	while(TRUE){
@@ -439,8 +472,9 @@ jgvtr1DoneTask()
  *
  *
  */
-long jgvtr1_io_report(level)
-short int level;
+long jgvtr1_io_report(
+	unsigned	level
+)
 {
 	unsigned 	card;
 	unsigned	nelements;
@@ -472,9 +506,10 @@ short int level;
  *	
  *
  */
-jgvtr1_stat(card,level)
-unsigned	card;
-short int 	level;
+int jgvtr1_stat(
+unsigned	card,
+short int 	level
+)
 {
  	struct jgvtr1_status 		stat;
 	int				status;
@@ -532,9 +567,10 @@ short int 	level;
  *
  */
 LOCAL
-int jgvtr1_dump(card, n)
-unsigned	card;
-unsigned	n;
+int jgvtr1_dump(
+	unsigned	card,
+	unsigned	n
+)
 {
 	register unsigned short		*pjgdata;
         unsigned short                  *pread;

@@ -1,3 +1,4 @@
+
 /* drvXy566.c */
 
 /* share/src/drv $Id$ */
@@ -75,19 +76,22 @@
  *				raw value if there is a demand.
  * .18  08-10-92	joh	cleaned up the merge of the xy566 wf and ai
  *				drivers
- * .19  08-25-92	mrk	replaced call to ai_driver by ai_xy566_driver
- * .20  08-26-92	mrk	support epics I/O event scan
+ * .19  08-25-92      	mrk     replaced call to ai_driver by ai_xy566_driver
+ * .20  08-26-92      	mrk     support epics I/O event scan
+ * .21  08-27-92	joh	fixed routines which return with and without
+ *				status	
+ * .22  08-27-92	joh	fixed nonexsistant EPICS init 
  */
 
 #include	<vxWorks.h>
 #include	<vme.h>
 #include	<dbDefs.h>
-#include	<drvSup.h>
-#include	<module_types.h>
-#include 	<task_params.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
+#include	<drvSup.h>
+#include	<module_types.h>
+#include 	<task_params.h>
 
 
 static char SccsId[] = "$Id$\t$Date$ ";
@@ -100,9 +104,16 @@ static char SccsId[] = "$Id$\t$Date$ ";
  * senb/senw		Writes to the 566 where the call provides a req'd delay
  */
 
+/* If any of the following does not exist replace it with #define <> NULL */
+
 
 long report();
 long init();
+
+#if 0
+long xy566_io_report();
+long ai_566_init();
+#endif
 
 struct {
 	long	number;
@@ -113,6 +124,12 @@ struct {
 	report,
 	init};
 
+static long init()
+{
+    ai_566_init();
+    xy566_init();
+    return(0);
+}
 
 static long report()
 {
@@ -120,13 +137,6 @@ static long report()
     xy566_io_report();
 }
 
-static long init()
-{
-    ai_566_init();
-    xy566_init();
-    return(0);
-}
-
 #define MAX_SE_CARDS	(ai_num_cards[XY566SE])
 #define MAX_DI_CARDS	(ai_num_cards[XY566DI])
 #define MAX_DIL_CARDS	(ai_num_cards[XY566DIL])
@@ -242,11 +252,14 @@ unsigned int	**proutine;
 /* VME memory Short Address Space is set up in gta_init */
 
 int		wfDoneId;	/* waveform done task ID */
+
 /* forward references */
 void 	senw();
 VOID 	xy566_reset(); 
 int	ai_xy566_init();
 int	ai_xy566l_init();
+VOID 	rval_convert();
+VOID 	xy566_rval_report();
 
 
 static acro_intr(ap)
@@ -275,16 +288,18 @@ unsigned char val;
 }
 
 ai566_intr(i)
-short i;
+short	i;
 {
-	register struct ai566 *ap = pai_xy566dil[i];
+	register struct ai566 *ap;
 
-	/* wake up the I/O event scanner */
-#ifdef EPICS_V2
-	io_scanner_wakeup(IO_AI,XY566DIL,ap->card_number);
-#else
-        scanIoRequest(paioscanpvt[i]);
-#endif
+	ap = pai_xy566dil[i];
+
+#	ifdef EPICS_V2
+		/* wake up the I/O event scanner */
+		io_scanner_wakeup(IO_AI,XY566DIL,ap->card_number);
+#	else
+		scanIoRequest(paioscanpvt[i]);
+#	endif
 
 	/* reset the CSR - needed to allow next interrupt */
 	senw(&ap->a566_csr,XY566L_CSR);
@@ -353,14 +368,20 @@ register short		***pppmem_present;
     ppmem_present = *pppmem_present;
 
     /* map the io card into the VRTX short address space */
-    if((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,base_addr, &pai566)) != OK){
-    	logMsg("Addressing error in 566 analog input driver\n");
+    status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, base_addr, &pai566);
+    if(status != OK){
+    	logMsg("%s: failed to map XY566 A16 base addr A16=%x\n", 
+		__FILE__, 
+		base_addr);
    	return ERROR;
     }
 
     /* map the io card into the standard address space */
-    if((status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,paimem, &pai566io)) != OK){
-    	logMsg("Addressing error in 566 analog input driver\n");
+    status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,paimem, &pai566io);
+    if(status != OK){
+    	logMsg( "%s: failed to map XY566 A24 base addr A24=%x\n",
+		__FILE__,
+		paimem);
    	return ERROR;
     }
 
@@ -444,7 +465,8 @@ register short		***pppmem_present;
 	/* latch in the first bunch of data and start continuous scan */
 	senb(&pai566->soft_start,0);
     } 
-    return(0);
+
+    return OK;
 } 
 
 /*
@@ -480,11 +502,11 @@ register short		***pppmem_present;
         return ERROR;
     }
     {
-	int i;
-	for(i=0; i<num_cards; i++) {
-		paioscanpvt[i] = NULL;
-		scanIoInit(&paioscanpvt[i]);
-	}
+        int i;
+        for(i=0; i<num_cards; i++) {
+                paioscanpvt[i] = NULL;
+                scanIoInit(&paioscanpvt[i]);
+        }
     }
 #endif
 
@@ -499,13 +521,17 @@ register short		***pppmem_present;
 
     /* map the io card into the VRTX short address space */
     if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,base_addr, &pai566)) != OK){
-    	logMsg("Addressing error in 566 latched analog input driver\n");
+    	logMsg(	"%s: failed to map XY566 (latched) A16 base addr A16=%x\n", 
+		__FILE__, 
+		base_addr);
    	return ERROR;
     }
 
     /* map the io card into the standard address space */
     if((status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,paimem, &pai566io)) != OK){
-    	logMsg("Addressing error in 566 analog input driver\n");
+    	logMsg(	"%s: failed to map XY566 (latched) A24 base addr A24=%x\n",
+		__FILE__,
+		paimem);
    	return ERROR;
     }
 
@@ -602,19 +628,20 @@ register short		***pppmem_present;
 	senw(&pai566->a566_csr,XY566L_CSR);
 
     }
-    return(0);
+
+    return OK;
 }
 
 #ifndef EPICS_V2
 ai_xy566_getioscanpvt(card,scanpvt)
-unsigned short	card;
+unsigned short        card;
 IOSCANPVT *scanpvt;
 {
-	if((card<=MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
-	return(0);
+      if((card<=MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
+      return(0);
 }
 #endif
-
+
 ai_xy566_driver(card,chan,type,prval)
 register unsigned short	card;
 unsigned short		chan;
@@ -673,9 +700,11 @@ register unsigned short *prval;
                 rval_convert(prval);
 		return (0);
 	}
-        }
-	return (0);
 
+
+        }
+
+       return (-3);
 }
 
 /*
@@ -710,8 +739,12 @@ VOID xy566_reset(){
 	struct ai566	*pai566;	/* memory location of cards */
 	short int status;
 
-	if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,ai_addrs[XY566DIL], &pai566)) != OK){
-		logMsg("Addressing error in 566 latched analog input driver\n");
+	status = sysBusToLocalAdrs(
+			VME_AM_SUP_SHORT_IO,
+			ai_addrs[XY566DIL], 
+			&pai566);
+	if (status != OK){
+		logMsg("%s: unable to map A16 XY566 base\n", __FILE__);
 		return;
 	}
 

@@ -4,7 +4,7 @@
 /*
  *      hpe1368a_driver.c
  *
- *      driver for hpe1368a and hpe1369a VXI modules
+ *      driver for hpe1368a and hpe1369a microwave switch VXI modules
  *
  *      Author:      Jeff Hill
  *      Date:        052192
@@ -38,6 +38,7 @@
  *
  */
 
+static char *sccsId = "$Id$\t$Date$"
 
 #include <vxWorks.h>
 #include <dbDefs.h>
@@ -50,7 +51,7 @@
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
-#include <epvxiLib.h>
+#include <drvEpvxi.h>
 #include <dbDefs.h>
 #include <drvSup.h>
 #ifndef EPICS_V2

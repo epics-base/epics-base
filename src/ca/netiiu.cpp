@@ -128,44 +128,39 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
 // guarantee that the lock is not held while blocking 
 // in ::send () for buffer space.
 //
-void netiiu::sendPendingClaims ( tcpiiu &iiu, bool v42Ok, claimMsgCache &cache )
+void netiiu::sendPendingClaims ( bool v42Ok, claimMsgCache &cache )
 {
     while ( 1 ) {
-        while (1) {
-            this->lock ();
-            tsDLIterBD < nciu > chan ( this->channelList.last () );
-            if ( ! chan.valid () ) {
-                this->unlock ();
-                return;
-            }
-
-            bool status = cache.set ( *chan );
-            if ( status ) {
-                this->unlock ();
-                break;
-            }
-
-            this->unlock ();
-            threadSleep ( 1.0 );
-        }
-        
-        int status = cache.deliverMsg ( iiu );
-        if ( status != ECA_NORMAL ) {
-            break;
-        }
-
         this->lock ();
-        // if the channel was not deleted while the lock was off
-        tsDLIterBD < nciu > chan ( this->channelList.last () );
-        if ( chan.valid () ) {
-            if ( cache.channelMatches ( *chan ) ) {
-                if ( ! v42Ok ) {
-                    chan->connect ( iiu );
-                }
-                chan->attachChanToIIU ( iiu );
-            }
+        tsDLIterBD < nciu > chan ( this->channelList.first () );
+        if ( ! chan.valid () ) {
+            this->unlock ();
+            return;
         }
+        if ( chan->claimSent () ) {
+            this->unlock ();
+            return;
+        }
+        if ( ! chan->setClaimMsgCache ( cache ) ) {
+            this->unlock ();
+            return;
+        }
+        // move channel to the end of the list so that it
+        // will not be considered again for a claim message
+        this->channelList.remove ( *chan );
+        this->channelList.add ( *chan );
         this->unlock ();
+        
+        int status = cache.deliverMsg ( *this );
+        if ( status != ECA_NORMAL ) {
+            // this indicates diconnect condition 
+            // therefore no cleanup required
+            return;
+        }
+
+        if ( ! v42Ok ) {
+            cache.connectChannel ( this->cacRef );
+        }
     }
 }
 

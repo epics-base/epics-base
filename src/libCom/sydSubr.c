@@ -25,34 +25,33 @@
  *
  * Modification Log:
  * -----------------
- * .00	12-04-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
- * .03	08-15-91	rac	update documentation; add args to sydChanOpen;
- *				enhance for use by ordinary users
- * .04	09-11-91	rac	for CA, report "noData" if ts==0; add more
- *				documentation
- * .05	09-22-91	rac	add sydInputFetch; add trigger routines;
- *				handle asynchronous ca_search
- * .06	10-21-91	rac	set the reference time stamp for the first
- *				sample which is stored; better handle long
- *				lines in printing; fold channel names when
- *				printing; put EGU in channel structure;
- *				put EGU in export file; support time stamp
- *				rounding;
- *				args changed for: sydSampleSetPrint;
- *				sydSamplePrint; sydInputStoreInSet;
- * .07	11-02-91	rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
- * .08	12-08-91	rac	fix alignment for printing of channel names
- * .09	01-20-92	rac	add a code for VALID_ALARM and handle
- *				invalid values properly
- * .10	02-04-92	rac	allow multiple chanOpen for same name
- * .11  02-18-92	rac	finally handle array channels on print
- *				and export; add an export column for
- *				text time stamp
- * .12	02-26-92	rac	move timestamp rounding to the individual
- *				read routines, using a new routine here;
- *				add sydSetAttr and default deadband
+ *  .00 12-04-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 06-19-91 rac	replace <fields.h> with <alarm.h>
+ *  .03 08-15-91 rac	update documentation; add args to sydChanOpen;
+ *			enhance for use by ordinary users
+ *  .04 09-11-91 rac	for CA, report "noData" if ts==0; add more
+ *			documentation
+ *  .05 09-22-91 rac	add sydInputFetch; add trigger routines;
+ *			handle asynchronous ca_search
+ *  .06 10-21-91 rac	set the reference time stamp for the first
+ *			sample which is stored; better handle long
+ *			lines in printing; fold channel names when
+ *			printing; put EGU in channel structure;
+ *			put EGU in export file; support time stamp
+ *			rounding; args changed for: sydSampleSetPrint;
+ *			sydSamplePrint; sydInputStoreInSet;
+ *  .07 11-02-91 rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
+ *  .08 12-08-91 rac	fix alignment for printing of channel names
+ *  .09 01-20-92 rac	add a code for VALID_ALARM and handle
+ *			invalid values properly
+ *  .10 02-04-92 rac	allow multiple chanOpen for same name
+ *  .11 02-18-92 rac	finally handle array channels on print and export;
+ *			add an export column for text time stamp
+ *  .12 02-26-92 rac	move timestamp rounding to the individual read
+ *			routines, using a new routine here; add sydSetAttr
+ *			and default deadband
+ *  .13 03-23-92 rac	set default monitor to use ADEL deadband
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -1718,7 +1717,7 @@ SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
     (*ppSspec)->lastData = -1;
     (*ppSspec)->firstData = -1;
     (*ppSspec)->roundNsec = 0;
-    (*ppSspec)->deadband = 0;
+    (*ppSspec)->deadband = DBE_LOG;
     return S_syd_OK;
 }
 

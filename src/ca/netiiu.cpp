@@ -15,6 +15,7 @@
 #include "iocinf.h"
 #include "netiiu_IL.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {

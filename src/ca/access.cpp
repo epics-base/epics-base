@@ -26,6 +26,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac_IL.h"
+#include "baseNMIU_IL.h"
 
 epicsThreadPrivateId caClientContextId;
 

@@ -39,9 +39,12 @@ $hostarch = $opt_h if ($opt_h);
 
 # Find $top from current path; NB only works under iocBoot/* and configure/*
 $top = $cwd;
-$top =~ s/^\/cygdrive\/(\w)\//$1:\//;
+#$top =~ s/^\/cygdrive\/(\w)\//$1:\//;
 $top =~ s/\/iocBoot.*$//;
 $top =~ s/\/configure.*$//;
+if ($^0 eq "cygwin") {
+  chomp($top = `cygpath -m $top`);
+}
 
 # The IOC may need a different path to get to $top
 if ($opt_t) {

@@ -41,6 +41,7 @@ static char *sccsId = "@(#) $Id$";
 #include <errnoLib.h>
 #include <usrLib.h>
 
+#include "dbDefs.h"
 #include "db_access.h"
 #include "task_params.h"
 #include "freeList.h"

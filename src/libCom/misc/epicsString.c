@@ -165,33 +165,42 @@ epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
 epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
     char *outbuf, int outsize, const char *inbuf, int inlen)
 {
-   int outCapacity = outsize;
+   int maxout = outsize;
+   int nout = 0;
    int len;
+   char *outpos = outbuf;
 
-   while (inlen-- && (outsize > 0))  {
+   while (inlen--)  {
        char c = *inbuf++;
        switch (c) {
-       case '\a':  len = epicsSnprintf(outbuf, outsize, "\\a"); break;
-       case '\b':  len = epicsSnprintf(outbuf, outsize, "\\b"); break;
-       case '\f':  len = epicsSnprintf(outbuf, outsize, "\\f"); break;
-       case '\n':  len = epicsSnprintf(outbuf, outsize, "\\n"); break;
-       case '\r':  len = epicsSnprintf(outbuf, outsize, "\\r"); break;
-       case '\t':  len = epicsSnprintf(outbuf, outsize, "\\t"); break;
-       case '\v':  len = epicsSnprintf(outbuf, outsize, "\\v"); break;
-       case '\\':  len = epicsSnprintf(outbuf, outsize, "\\\\"); ; break;
+       case '\a':  len = epicsSnprintf(outpos, maxout, "\\a"); break;
+       case '\b':  len = epicsSnprintf(outpos, maxout, "\\b"); break;
+       case '\f':  len = epicsSnprintf(outpos, maxout, "\\f"); break;
+       case '\n':  len = epicsSnprintf(outpos, maxout, "\\n"); break;
+       case '\r':  len = epicsSnprintf(outpos, maxout, "\\r"); break;
+       case '\t':  len = epicsSnprintf(outpos, maxout, "\\t"); break;
+       case '\v':  len = epicsSnprintf(outpos, maxout, "\\v"); break;
+       case '\\':  len = epicsSnprintf(outpos, maxout, "\\\\"); ; break;
        /*? does not follow C convention because trigraphs no longer important*/
-       case '\?':  len = epicsSnprintf(outbuf, outsize, "?"); break;
-       case '\'':  len = epicsSnprintf(outbuf, outsize, "\\'"); break;
-       case '\"':  len = epicsSnprintf(outbuf, outsize, "\\\""); break;
+       case '\?':  len = epicsSnprintf(outpos, maxout, "?"); break;
+       case '\'':  len = epicsSnprintf(outpos, maxout, "\\'"); break;
+       case '\"':  len = epicsSnprintf(outpos, maxout, "\\\""); break;
        default:
            if (isprint(c))
-               len = epicsSnprintf(outbuf, outsize, "%c", c);
+               len = epicsSnprintf(outpos, maxout, "%c", c);
            else
-               len = epicsSnprintf(outbuf, outsize, "\\%03o", (unsigned char)c);
+               len = epicsSnprintf(outpos, maxout, "\\%03o", (unsigned char)c);
            break;
        }
-       outsize -= len;
-       outbuf += len;
+       if(len<0) return -1;
+       nout += len;
+       if(nout < outsize) {
+           maxout -= len;
+           outpos += len;
+       } else {
+           outpos = outpos + maxout -1;
+           maxout = 1;
+       }
    }
-   return(outCapacity - outsize);
+   return nout;
 }

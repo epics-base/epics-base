@@ -224,7 +224,8 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
 	@echo "Inflating database from $<"
 	@$(RM) $@
-	$(MSI) -S$< $(TEMPLATE_FILENAME) > $@
+	$(MSI) -S$< $(TEMPLATE_FILENAME) > msi.tmp
+    $(MV) msi.tmp $@
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'

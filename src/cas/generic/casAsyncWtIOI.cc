@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/11/02 01:01:04  jhill
+ * installed
+ *
  *
  */
 
@@ -49,11 +52,6 @@ casAsyncWtIOI::casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn) :
 {
 	assert (&this->msg);
 	assert (&this->chan);
-
-	if (this->msg.m_cmmd != CA_PROTO_WRITE &&
-		this->msg.m_cmmd != CA_PROTO_WRITE_NOTIFY) {
-		this->reportInvalidAsynchIO(this->msg.m_cmmd);
-	}
 
 	this->chan.installAsyncIO(*this);
 }
@@ -86,17 +84,22 @@ caStatus casAsyncWtIOI::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-	if (this->msg.m_cmmd == CA_PROTO_WRITE) {
+        switch (this->msg.m_cmmd) {
+        case CA_PROTO_WRITE:
 		status = client.writeResponse(&this->chan, this->msg,
 				this->completionStatus);
-	}
-	else if (this->msg.m_cmmd == CA_PROTO_WRITE_NOTIFY) {
+                break;
+ 
+        case CA_PROTO_WRITE_NOTIFY:
 		status = client.writeNotifyResponse(&this->chan, 
 				this->msg, this->completionStatus);
-	}
-	else {
-		status = S_cas_internal;
-	}
+                break;
+ 
+        default:
+                this->reportInvalidAsynchIO(this->msg.m_cmmd);
+                status = S_cas_internal;
+                break;
+        }
 
 	return status;
 }

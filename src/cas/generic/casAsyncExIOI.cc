@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/11/02 01:01:02  jhill
+ * installed
+ *
  *
  *
  */
@@ -52,12 +55,6 @@ casAsyncExIOI::casAsyncExIOI(const casCtx &ctx,
 	dgOutAddr(ctx.getClient()->fetchRespAddr())
 {
 	assert (&this->msg);
-
-	if (this->msg.m_cmmd != CA_PROTO_CLAIM_CIU &&
-		this->msg.m_cmmd != CA_PROTO_SEARCH) {
-		this->reportInvalidAsynchIO(this->msg.m_cmmd);
-	}
-
 	this->client.installAsyncIO(*this);
 }
 
@@ -87,20 +84,25 @@ caStatus casAsyncExIOI::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-	if (this->msg.m_cmmd == CA_PROTO_SEARCH) {
+        switch (this->msg.m_cmmd) {
+        case CA_PROTO_SEARCH:
 		//
 		// pass output DG address parameters
 		//
 		assert(this->pOutDGIntfIO);
 		status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
 				this->dgOutAddr.get(), this->msg, this->retVal);
-	}
-	else if (this->msg.m_cmmd == CA_PROTO_CLAIM_CIU) {
+                break;
+ 
+        case CA_PROTO_CLAIM_CIU:
 		status = this->client.createChanResponse(this->msg, this->retVal);
-	}
-	else {
-		status = S_cas_internal;
-	}
+                break;
+ 
+        default:
+                this->reportInvalidAsynchIO(this->msg.m_cmmd);
+                status = S_cas_internal;
+                break;
+        }
 
 	return status;
 }

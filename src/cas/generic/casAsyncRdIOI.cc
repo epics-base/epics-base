@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/11/02 01:01:03  jhill
+ * installed
+ *
  * Revision 1.3  1996/09/04 20:13:16  jhill
  * initialize new member - asyncIO
  *
@@ -59,11 +62,6 @@ casAsyncRdIOI::casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn) :
 {
 	assert (&this->msg);
 	assert (&this->chan);
-
-	if (this->msg.m_cmmd != CA_PROTO_READ &&
-		this->msg.m_cmmd != CA_PROTO_READ_NOTIFY) {
-		this->reportInvalidAsynchIO(this->msg.m_cmmd);
-	}
 
 	this->chan.installAsyncIO(*this);
 }
@@ -123,17 +121,28 @@ caStatus casAsyncRdIOI::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-	if (this->msg.m_cmmd == CA_PROTO_READ) {
+	switch (this->msg.m_cmmd) {
+	case CA_PROTO_READ:
 		status = client.readResponse(&this->chan, this->msg,
 				this->pDD, this->completionStatus);
-	}
-	else if (this->msg.m_cmmd == CA_PROTO_READ_NOTIFY) {
+		break;
+
+	case CA_PROTO_READ_NOTIFY:
 		status = client.readNotifyResponse(&this->chan, 
 				this->msg, this->pDD, 
 				this->completionStatus);
-	}
-	else {
+		break;
+
+	case CA_PROTO_EVENT_ADD:
+		status = client.monitorResponse(&this->chan,
+				this->msg, this->pDD,
+				this->completionStatus);
+		break;
+
+	default:
+		this->reportInvalidAsynchIO(this->msg.m_cmmd);
 		status = S_cas_internal;
+		break;
 	}
 
 	return status;

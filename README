@@ -1,7 +1,7 @@
 $Id$
 
 ----------------------------------------------------------------------------
-3.12 EPICS BASE Notes and Build Instructions.
+3.13 EPICS BASE Notes and Build Instructions.
 	- By Matthew Needes
 ----------------------------------------------------------------------------
 
@@ -41,19 +41,43 @@ Notes:
 1.3  To build EPICS:
 
    cd epics/base
-   gnumake             - To build and install EPICS.
+   gnumake             - To install include files, build and install EPICS.
+                         (Same as "gnumake inc install")
+   gnumake all         - Same as "gnumake"
    gnumake clean       - To clean temporary object files.  Top level 
                          clean will remove all the O.ARCH dirs, not
                          only those specified in BUILD_ARCHS.
    gnumake uninstall   - Only available at the top level directory.
                          Cleans directories created by the install.
+   gnumake rebuild     - Same as "gnumake clean uninstall all"
 
 1.4  "Partial" build commands:
 
-   gnumake clean.sun4       - Cleans sun4 binaries in O.sun4 dirs only.
-   gnumake install.sun4     - Builds sun4 only.
-   gnumake install.mv167    - Builds mv167 only (a HOST_ARCH build must
-                              be complete before this can be issued).
+     The complete set of targets now supported are: 
+
+            action 
+            arch 
+            action.arch 
+            dir 
+            dir.action 
+            dir.arch 
+            dir.action.arch 
+
+      where: 
+            action can be clean, inc, install, depends, or build
+            action can also be uninstall or rebuild at top level only
+            dir is the name of a subdirectory. 
+            arch can be host, cross, sun4, solaris, mv167, ... 
+
+    Examples are:
+
+       gnumake inc              - To install include files
+       gnumake install.host     - To build and install EPICS for host arch.
+       gnumake install.cross    - To build and install EPICS for Vx archs.
+       gnumake clean.sun4       - Cleans sun4 binaries in O.sun4 dirs only.
+       gnumake install.sun4     - Builds sun4 only.
+       gnumake install.mv167    - Builds mv167 only (a HOST_ARCH build must
+                                  be complete before this can be issued).
 
 NOTES:
 

@@ -353,6 +353,10 @@ $(INSTALL_TCLLIB)/%: ../%
 	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
 endif
 
+$(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
+	@echo "Updating $@"
+	@echo eval auto_mkindex $(INSTALL_TCLLIB) "$(TCLLIBNAME)" | tclsh
+
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	@echo "Installing loadable shared library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)

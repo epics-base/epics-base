@@ -7,23 +7,13 @@ $Id$
 
 Notes:
 
-1. Before you can build or really use EPICS, you must set your
-	path properly:
-
-set path = ( $path EPICS/base/tools EPICS/base/bin/HOST_ARCH \
-			EPICS/extensions/bin HOST_ARCH )
-
-	e.g.:
-
-set path = ( $path /home/epics/base/tools /home/epics/base/bin/sun4 \
-			/home/epics/extensions/bin/sun4 )
+1. Before you can build or really use EPICS, you must properly set the
+   environemnt variable HOST_ARCH. The epics/startup/HostArch script file
+   has been provided to set HOST_ARCH.
 
 2. You must use GNU make (which is now THE supported make utility) for
-   the build. A script, gmake,  exists in the base/tools directory to invoke
-   it with the --no-print-directory option.  This option will turn off the
-   annoying messages GNU make produces upon entering a directory.
-
-gmake
+   the build, gnumake.  Set your path so that a recent version (e.g.
+   V3.70) of gnumake is available (as make) before any system supplied makes.
 
 ----------------------------------------------------------------------------
    Part 1 - Configuring and Building EPICS Base
@@ -39,63 +29,63 @@ gmake
 
    cd epics/config
    cp CONFIG_ARCH.mv167 CONFIG_ARCH.YOUR_ARCH
-   edit CONFIG_ARCH.YOUR_ARCH	- For compiler flags / etc.
+   edit CONFIG_ARCH.YOUR_ARCH   - For compiler flags / etc.
 
    cp CONFIG.Vx.68k CONFIG.Vx.YOUR_ARCH_CLASS
    cp CONFIG_SITE.Vx.68k CONFIG_SITE.Vx.YOUR_ARCH_CLASS
        - ONLY IF you are adding a new architecture class,
                  see note in Appendix A.
 
-   edit CONFIG_BASE		- Add architecture to list.
+   edit CONFIG_BASE    - Add architecture to list.
 
 1.3  To build EPICS:
 
    cd epics/base
-   gmake             - To build and install EPICS.
-   gmake clean       - To clean temporary object files.  Clean will
+   gnumake             - To build and install EPICS.
+   gnumake clean       - To clean temporary object files.  Clean will
                        remove files from ALL O.ARCH dirs, not
                        only those specified in BUILD_ARCHS.
 
 1.4  To create an EPICS release:
 
-   edit base/include/version.h	- ONLY IF you need to change the EPICS
-					version number.
+   edit base/include/version.h  - ONLY IF you need to change the EPICS
+                                  version number.
 
-   gmake release			- Will create Tar file
+   gnumake release          - Will create Tar file
 
-   gmake built_release         - Will create Tar file, after generating
-                                dependencies, INCLUDING BINARIES.
+   gnumake built_release    - Will create Tar file, after generating
+                              dependencies, INCLUDING BINARIES.
 
 1.5  "Partial" build commands:
 
-   gmake clean.sun4		- Cleans sun4 binaries in O.sun4 dirs only.
-   gmake install.sun4		- Builds sun4 only.
-   gmake install.mv167		- Builds mv167 only (a HOST_ARCH build must
-					be complete before this can be issued).
+   gnumake clean.sun4       - Cleans sun4 binaries in O.sun4 dirs only.
+   gnumake install.sun4     - Builds sun4 only.
+   gnumake install.mv167    - Builds mv167 only (a HOST_ARCH build must
+                              be complete before this can be issued).
 
 NOTES:
    1. base/MakeRelease will create tar files in the directory ABOVE
-        base.  These tar files are then meant to be untarred at that level.
-        This release will include the "epics/config" directory.
+      base.  These tar files are then meant to be untarred at that level.
+      This release will include the "epics/config" directory.
 
    2. EPICS binaries are kept in the bin/ARCH and lib/ARCH directories. 
-        EPICS shellscripts are kept in the tools directory.
+      EPICS shellscripts are kept in the tools directory.
 
    3. During a normal build (a "make" or "make install"), the "depends"
-        dependency will NOT be invoked.  Only if "make depends" is run
-        explicitly, or a "make built_release" is performed will dependencies
-        be generated automatically.
+      dependency will NOT be invoked.  Only if "make depends" is run
+      explicitly, or a "make built_release" is performed will dependencies
+      be generated automatically.
    
    4. Temporary objects are stored in src/DIR/O.ARCH, This allows objects
-	for multiple architectures to be maintained at the same time.
-	While developing source for EPICS, merely cd src/DIR/O.ARCH, and
-	invoke "make":
+      for multiple architectures to be maintained at the same time.
+      While developing source for EPICS, merely cd src/DIR/O.ARCH, and
+      invoke "make":
 
-	cd epics/base/src/db/O.mv167
-	make dbAccess.o
+      cd epics/base/src/db/O.mv167
+      make dbAccess.o
 
-	The above example instructs make to build dbAccess.o for the
-	mv167 target.
+      The above example instructs make to build dbAccess.o for the
+      mv167 target.
 
 ----------------------------------------------------------------------------
    Part 2  ---  Configuration Files in epics/config

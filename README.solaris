@@ -6,8 +6,7 @@ EPICS R3.12.2 Notes for Solaris
 Notes:
 
 1. In order to build EPICS under Solaris 2, you must ensure that the
-solaris directory /usr/ccs/bin is in your search path, in addition to
-the EPICS directories named in base/README.
+solaris directory /usr/ccs/bin is in your search path.
 
 2. It is not possible to compile EPICS under Solaris 2 using only the
 GNU gcc compiler -- you must have the Sun SPARCworks ANSI C compiler.

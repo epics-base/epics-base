@@ -64,7 +64,6 @@
 #include 	<wf_driver.h>
 #include 	<task_params.h>
 #include	<ai_driver.h>
-#include	<drvsubs.h>
 
 /* drvXy566.c -  Driver Support Routines for xy566 */
 

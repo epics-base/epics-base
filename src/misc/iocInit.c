@@ -63,6 +63,7 @@ of this distribution.
 #include "link.h"
 #include "dbLock.h"
 #include "dbAccess.h"
+#include "dbNotify.h"
 #include "dbCa.h"
 #include "dbScan.h"
 #include "taskwd.h"
@@ -144,14 +145,16 @@ int epicsShareAPI iocInit()
 	errlogPrintf("iocInit: asInit Failed during initialization\n");
 	return(-1);
     }
+    dbPutNotifyInit();
     epicsThreadSleep(.5);
     initHooks(initHookAfterScanInit);
+
+    initialProcess(); initHooks(initHookAfterInitialProcess);
 
    /* Enable scan tasks and some driver support functions.  */
     interruptAccept=TRUE; initHooks(initHookAfterInterruptAccept);
     epicsThreadSleep(1.0);
 
-    initialProcess(); initHooks(initHookAfterInitialProcess);
 
    /*  Start up CA server */
     rsrv_init();

@@ -641,8 +641,8 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
 
 double epicsThreadSleepQuantum ()
 {
-    double HZ;
-    HZ = sysconf ( _SC_CLK_TCK );
-    return 1.0 / HZ;
+    double hz;
+    hz = sysconf ( _SC_CLK_TCK );
+    return 1.0 / hz;
 }
 

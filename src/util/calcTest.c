@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01	02-10-92	jba	initial version
+ * .02	06-16-92	jba	Increased dim of rpbuf to hold double constants in expression
  *
  */
 
@@ -133,7 +134,9 @@ int	fieldCount;
 {
 	long	status=0;
 	short	error_number=0;
-	char	rpbuf[80];
+        /* rpbuf dimension must be >= 10*(dimension_of_CALC_field/2)   */
+        /* since each constant in the expression now takes 9 bytes (chars):   1(code)+8(double) */
+	char	rpbuf[184];
 	char	valString[80];
 	double	val;
 

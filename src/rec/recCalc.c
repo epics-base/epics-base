@@ -63,6 +63,7 @@
  * .21  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .22  02-28-92	jba	ANSI C changes
  * .23  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .24  06-16-92        jba     Increased dim of rpbuf to hold double constants in expression
  */
 
 #include	<vxWorks.h>
@@ -143,7 +144,7 @@ static long init_record(pcalc,pass)
     int i;
     double *pvalue;
     short error_number;
-    char rpbuf[80];
+    char rpbuf[184];
 
     if (pass==0) return(0);
 
@@ -193,7 +194,7 @@ static long special(paddr,after)
     struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
     int           	special_type = paddr->special;
     short error_number;
-    char rpbuf[80];
+    char rpbuf[184];
 
     if(!after) return(0);
     switch(special_type) {

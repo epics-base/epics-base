@@ -145,7 +145,7 @@ inline bool nciu::connectionInProgress ( const osiSockAddr &addrIn )
 {
     bool status;
 
-    this->lockPIIU ();
+    this->lock ();
 
     if ( this->piiu ) {
         status = this->piiu->connectionInProgress ( this->pNameStr, addrIn );
@@ -154,7 +154,7 @@ inline bool nciu::connectionInProgress ( const osiSockAddr &addrIn )
         status = false;
     }
 
-    this->unlockPIIU ();
+    this->unlock ();
 
     return status;
 }

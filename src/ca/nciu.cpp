@@ -523,7 +523,7 @@ void nciu::attachChanToIIU ( netiiu &iiu )
 void nciu::detachChanFromIIU ()
 {
     this->lockPIIU ();
-     if ( this->piiu ) {
+    if ( this->piiu ) {
         this->piiu->mutex.lock ();
         this->piiu->channelList.remove ( *this );
         if ( this->piiu->channelList.count () == 0u ) {
@@ -589,9 +589,9 @@ void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 // deprecated - please do not use, this is _not_ thread safe
 const char * nciu::pHostName () const
 {
-    this->lockPIIU ();
+    this->lock ();
     const char *pName = this->piiu->pHostName (); 
-    this->unlockPIIU ();
+    this->unlock ();
     return pName; // ouch !
 }
 
@@ -599,14 +599,14 @@ bool nciu::ca_v42_ok () const
 {
     bool status; 
 
-    this->lockPIIU ();
+    this->lock ();
     if ( this->piiu ) {
         status = this->piiu->ca_v42_ok ();
     }
     else {
         status = false;
     }
-    this->unlockPIIU ();
+    this->unlock ();
     return status;
 }
 

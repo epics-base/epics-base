@@ -1061,6 +1061,7 @@ long dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 		*pdbAddr = dbaddr; /*structure copy*/;
 		plink->value.pv_link.precord = precord;
 		plink->value.pv_link.pvt = pdbAddr;
+		dbLockSetRecordLock(pdbAddr->precord);
 		dbLockSetMerge(precord,pdbAddr->precord);
 	    } else {/*It is a CA link*/
 	 	char	*pperiod;
@@ -1188,7 +1189,7 @@ long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 		status=(*dbPutConvertRoutine[dbrType][field_type])
 			(paddr,pbuffer,nRequest,no_elements,offset);
 		/* update array info	*/
-		if(prset && (prset->put_array_info) ) {
+		if(prset && (prset->put_array_info) && !status) {
 			status= (*prset->put_array_info)
 				(paddr,nRequest);
 		}

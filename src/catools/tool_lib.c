@@ -40,8 +40,8 @@ IntFormatT outType = dec;            /* For -0.. output format option */
 char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) */
 char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
 
-int charAsNr = 0;      /* used for -n option - get DBF_CHAR as number */
-double timeout = 1.0;  /* wait time default (see -w option) */
+int charAsNr = 0;        /* used for -n option - get DBF_CHAR as number */
+double caTimeout = 1.0;  /* wait time default (see -w option) */
 
 #define TIMETEXTLEN 28          /* Length of timestamp text buffer */
 
@@ -506,7 +506,7 @@ int connect_pvs (pv* pvs, int nPvs)
         }
     }
                                 /* Wait for channels to connect */
-    result = ca_pend_io (timeout);
+    result = ca_pend_io (caTimeout);
     if (result == ECA_TIMEOUT)
     {
         if (nPvs > 1)

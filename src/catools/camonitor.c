@@ -161,7 +161,7 @@ int camonitor (pv *pvs, int nPvs, unsigned long reqElems)
     if (nConn)
                                 /* Wait for callbacks */
                                 /* ------------------ */
-        while (1) ca_pend_event(timeout);
+        while (1) ca_pend_event(caTimeout);
     else
         return 1;       /* No connection? We're done. */
 }
@@ -216,11 +216,11 @@ int main (int argc, char *argv[])
             tsType = incrementalByChan;
             break;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &timeout) != 1)
+            if(sscanf(optarg,"%lf", &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
                         "- ignored. ('caget -h' for help.)\n", optarg);
-                timeout = DEFAULT_TIMEOUT;
+                caTimeout = DEFAULT_TIMEOUT;
             }
             break;
         case '#':               /* Array count */

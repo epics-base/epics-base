@@ -73,7 +73,7 @@ typedef struct
 extern TimeT tsType;        /* Timestamp type flag (-r -i -I options) */
 extern IntFormatT outType;  /* Flag used for -0.. output format option */
 extern int charAsNr;        /* Used for -n option (get DBF_CHAR as number) */
-extern double timeout;      /* Wait time default (see -w option) */
+extern double caTimeout;    /* Wait time default (see -w option) */
 extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option) */
 
 

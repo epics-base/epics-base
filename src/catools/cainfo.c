@@ -136,11 +136,11 @@ int main (int argc, char *argv[])
             usage();
             return 0;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &timeout) != 1)
+            if(sscanf(optarg,"%lf", &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
                         "- ignored. ('caget -h' for help.)\n", optarg);
-                timeout = DEFAULT_TIMEOUT;
+                caTimeout = DEFAULT_TIMEOUT;
             }
             break;
         case 's':               /* ca_client_status interest level */

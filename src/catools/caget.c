@@ -193,13 +193,13 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* Wait for completion */
                                 /* ------------------- */
 
-    result = ca_pend_io(timeout);
+    result = ca_pend_io(caTimeout);
     if (result == ECA_TIMEOUT)
         fprintf(stderr, "Read operation timed out: some PV data was not read.\n");
 
     if (request == callback)    /* Also wait for callbacks */
     {
-        double slice = timeout / PEND_EVENT_SLICES;
+        double slice = caTimeout / PEND_EVENT_SLICES;
         for (n = 0; n < PEND_EVENT_SLICES; n++)
         {
             ca_pend_event(slice);
@@ -358,11 +358,11 @@ int main (int argc, char *argv[])
             charAsNr=1;
             break;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &timeout) != 1)
+            if(sscanf(optarg,"%lf", &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
                         "- ignored. ('caget -h' for help.)\n", optarg);
-                timeout = DEFAULT_TIMEOUT;
+                caTimeout = DEFAULT_TIMEOUT;
             }
             break;
         case '#':               /* Array count */

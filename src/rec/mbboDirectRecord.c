@@ -54,7 +54,8 @@
 #define GEN_SIZE_OFFSET
 #include "mbboDirectRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include	<menuIvoa.h>
+#include "menuOmsl.h"
+#include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -174,7 +175,7 @@ static long process(pmbboDirect)
     }
 
     if (!pmbboDirect->pact) {
-	if(pmbboDirect->dol.type!=CONSTANT && pmbboDirect->omsl==CLOSED_LOOP){
+	if(pmbboDirect->dol.type!=CONSTANT && pmbboDirect->omsl==menuOmslclosed_loop){
 	    long status;
 	    unsigned short val;
 
@@ -194,7 +195,7 @@ static long process(pmbboDirect)
 	}
 	if(pmbboDirect->nsev < INVALID_ALARM
 	&& pmbboDirect->sevr == INVALID_ALARM
-	&& pmbboDirect->omsl == SUPERVISORY) {
+	&& pmbboDirect->omsl == menuOmslsupervisory) {
 	    /* reload value field with B0 - B15 */
 	    int offset = 1, i;
 	    unsigned char *bit = &(pmbboDirect->b0);
@@ -261,7 +262,7 @@ static long special(paddr,after)
         *    offset equals the offset in bit array.  Only do
         *    this if in supervisory mode.
         */
-        if (pmbboDirect->omsl == CLOSED_LOOP)
+        if (pmbboDirect->omsl == menuOmslclosed_loop)
            return(0);
 
         offset = 1 << (((int)paddr->pfield) - ((int) &(pmbboDirect->b0)));
@@ -284,7 +285,7 @@ static long special(paddr,after)
         *     reload value field with B0 - B15
         */
         bit = &(pmbboDirect->b0);
-        if (pmbboDirect->omsl == SUPERVISORY) {
+        if (pmbboDirect->omsl == menuOmslsupervisory) {
            for (i=0; i<NUM_BITS; i++, offset = offset << 1, bit++) {
               if (*bit)
                   pmbboDirect->val |= offset;

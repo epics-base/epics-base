@@ -63,6 +63,7 @@
 #include "longoutRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
+#include "menuOmsl.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -162,7 +163,8 @@ static long process(plongout)
 		return(S_dev_missingSup);
 	}
 	if (!plongout->pact) {
-		if (plongout->omsl == CLOSED_LOOP) {
+		if((plongout->dol.type != CONSTANT)
+                && (plongout->omsl == menuOmslclosed_loop)) {
 			status = dbGetLink(&(plongout->dol),DBR_LONG,
 				&value,0,0);
 			if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))

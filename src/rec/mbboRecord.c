@@ -81,6 +81,7 @@
 #define GEN_SIZE_OFFSET
 #include "mbboRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "menuOmsl.h"
 #include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
@@ -241,7 +242,7 @@ static long process(pmbbo)
     }
 
     if (!pmbbo->pact) {
-	if (pmbbo->dol.type != CONSTANT && pmbbo->omsl == CLOSED_LOOP) {
+	if (pmbbo->dol.type != CONSTANT && pmbbo->omsl == menuOmslclosed_loop) {
 	    long status;
 	    unsigned short val;
 

@@ -89,6 +89,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "menuConvert.h"
+#include "menuOmsl.h"
 #define GEN_SIZE_OFFSET
 #include "aoRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -231,7 +232,7 @@ static long process(pao)
 	/* fetch value and convert*/
 	if (pao->pact == FALSE) {
                 if ((pao->dol.type != CONSTANT)
-                && (pao->omsl == CLOSED_LOOP)) {
+                && (pao->omsl == menuOmslclosed_loop)) {
                     status = fetch_value(pao, &value);
                 }
                 else {

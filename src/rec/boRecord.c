@@ -89,6 +89,7 @@
 #include "boRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
+#include "menuOmsl.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -241,7 +242,7 @@ static long process(pbo)
 		return(S_dev_missingSup);
 	}
         if (!pbo->pact) {
-		if ((pbo->dol.type != CONSTANT) && (pbo->omsl == CLOSED_LOOP)){
+		if ((pbo->dol.type != CONSTANT) && (pbo->omsl == menuOmslclosed_loop)){
 			unsigned short val;
 
 			pbo->pact = TRUE;

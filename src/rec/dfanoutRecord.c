@@ -31,6 +31,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
+#include "menuOmsl.h"
 #define GEN_SIZE_OFFSET
 #include "dfanoutRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -97,7 +98,9 @@ static long process(struct dfanoutRecord *pdfanout)
 {
     long status=0;
 
-    if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
+    if (!pdfanout->pact
+    && (pdfanout->dol.type != CONSTANT)
+    && (pdfanout->omsl == menuOmslclosed_loop)){
 	status = dbGetLink(&(pdfanout->dol),DBR_DOUBLE,&(pdfanout->val),0,0);
 	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status))
             pdfanout->udf=FALSE;

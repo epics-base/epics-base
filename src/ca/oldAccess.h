@@ -29,7 +29,7 @@
 
 struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( class oldCAC &, const char *pName, 
+    oldChannelNotify ( struct oldCAC &, const char *pName, 
         caCh *pConnCallBackIn, void *pPrivateIn, capri priority );
     void destroy ();
     void setPrivatePointer ( void * );
@@ -183,7 +183,7 @@ private:
     static epicsMutex freeListMutex;
 };
 
-class oldCAC : public cacNotify
+struct oldCAC : public cacNotify
 {
 public:
     oldCAC ( bool enablePreemptiveCallback = false );
@@ -218,6 +218,7 @@ public:
     int vPrintf ( const char *pformat, va_list args ) const;
     void vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args );
+    bool preemptiveCallbakIsEnabled () const;
 private:
     mutable epicsMutex mutex; 
     cac & clientCtx;
@@ -509,6 +510,11 @@ inline void oldCAC::vSignal ( int ca_status, const char *pfilenm,
 inline void oldCAC::selfTest ()
 {
     this->clientCtx.selfTest ();
+}
+
+inline bool oldCAC::preemptiveCallbakIsEnabled () const
+{
+    return this->clientCtx.preemptiveCallbakIsEnabled ();
 }
 
 #endif // ifndef oldAccessh

@@ -7,6 +7,9 @@
 // (for single threaded version of the server)
 //
 // $Log$
+// Revision 1.3  1997/06/13 09:16:10  jhill
+// connect proto changes
+//
 // Revision 1.2  1997/04/10 19:34:32  jhill
 // API changes
 //
@@ -74,13 +77,18 @@ ioBlockedList::~ioBlockedList ()
 //
 void ioBlockedList::signal()
 {
-	tsDLList<ioBlocked> tmp(*this);
-        ioBlocked *pB;
+	tsDLList<ioBlocked> tmp;
+	ioBlocked *pB;
 
-        while ( (pB = tmp.get ()) ) {
-                pB->pList = NULL;
-                pB->ioBlockedSignal ();
-        }
+	//
+	// move all of the items onto tmp
+	//
+	tmp.add(*this);
+
+	while ( (pB = tmp.get ()) ) {
+		pB->pList = NULL;
+		pB->ioBlockedSignal ();
+	}
 }
 
 //
@@ -88,10 +96,10 @@ void ioBlockedList::signal()
 //
 void ioBlockedList::removeItemFromIOBLockedList(ioBlocked &item)
 {
-        if (item.pList==this) {
-                this->remove(item);
-                item.pList = NULL;
-        }
+	if (item.pList==this) {
+		this->remove(item);
+		item.pList = NULL;
+	}
 }
  
 //

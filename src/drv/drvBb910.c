@@ -36,6 +36,8 @@
  * .05  02-04-92	 bg	added the argument level to 
  * 				bb910_io_report() and gave it the ability
  *                              to read raw values from card if level > 0 
+ * .06	08-10-92	joh	made the number of cards runtime
+ *				configurable
  */
 
 /*
@@ -64,7 +66,7 @@ struct bi_bb910{
 };
 
 /* pointers to the binary input cards */
-struct bi_bb910 *pbi_bb910s[MAX_BB_BI_CARDS];      /* Burr-Brown 910s */
+struct bi_bb910 **pbi_bb910s;      /* Burr-Brown 910s */
 
 /* test word for forcing bi_driver */
 int	bi_test;
@@ -83,6 +85,12 @@ bb910_driver_init(){
         int status;
         register short  i;
         struct bi_bb910        *pbi_bb910;
+
+	pbi_bb910s = (struct bi_bb910 **) 
+		calloc(MAX_BB_BI_CARDS, sizeof(*pbi_bb910s));
+	if(!pbi_bb910s){
+		return ERROR;
+	}
 
         /* intialize the Burr-Brown 910 binary input cards */
         /* base address of the burr-brown 910 binary input cards */

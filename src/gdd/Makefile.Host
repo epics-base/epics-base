@@ -7,8 +7,15 @@ include $(TOP)/config/CONFIG_BASE
 #OPTIM_YES=-g
 
 INC += gdd.h
+INC += gddI.h
+INC += gddContainer.h
+INC += gddContainerI.h
+INC += gddArray.h
+INC += gddScalar.h
+INC += gddSemaphore.h
 INC += gddNewDel.h
 INC += gddUtils.h
+INC += gddUtilsI.h
 INC += gddErrorCodes.h
 INC += aitTypes.h
 INC += aitConvert.h
@@ -20,13 +27,15 @@ INC += gddAppFuncTable.cc
 INC += gddApps.h
 
 LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
-	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc
+	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
+	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc
 
 LIBRARY := gdd
 
 # build locally:
 TESTPROD:=genApps
-TESTPROD_SRCS:=genApps.cc gdd.cc gddTest.cc gddAppTable.cc\
+TESTPROD_SRCS:=genApps.cc gdd.cc gddArray.cc gddContainer.cc \
+		gddTest.cc gddErrorCodes.cc gddUtils.cc gddAppTable.cc\
 		gddNewDel.cc gddAppDefs.cc \
 		aitTypes.cc aitConvert.cc aitHelpers.cc
 
@@ -40,8 +49,9 @@ include $(TOP)/config/RULES.Host
 #	-> use explicit reference to the uninstalled files in '..'
 aitConvert$(OBJ): aitConvert.cc aitConvertGenerated.cc\
 		../aitConvert.h ../aitTypes.h
-dbMapper.cc:	../gdd.h ../gddAppTable.h ../dbMapper.h\
-		./gddApps.h ../aitTypes.h
+dbMapper.cc:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
+		../gddArray.h ../gddScalar.h ../gddAppTable.h ../dbMapper.h \
+		./gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
 
 # Rules for generated files
 #

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  1996/11/02 01:28:15  jhill
+ * removed merge problems
+ *
  * Revision 1.9  1996/11/02 01:24:42  jhill
  * strcpy => styrcpy (shuts up purify)
  *
@@ -291,7 +294,7 @@ inline int aitString::cset(const char* p,aitUint32 l)
 }
 
 inline int aitString::copy(const char* p)
-	{ return p?cset(p,strlen(p)):-1; }
+	{ return p?set(p,strlen(p)):-1; }
 inline int aitString::copy(char* p)
 	{ return p?set(p,strlen(p)):-1; }
 inline int aitString::copy(aitString* p)
@@ -299,9 +302,9 @@ inline int aitString::copy(aitString* p)
 inline int aitString::copy(aitString& p)
 	{ return set((char*)p,p.length()); }
 inline int aitString::copy(const aitString* p)
-	{ return p?cset((const char*)*p,p->length()):-1; }
+	{ return p?set((const char*)*p,p->length()):-1; }
 inline int aitString::copy(const aitString& p)
-	{ return cset((const char*)p,p.length()); }
+	{ return set((const char*)p,p.length()); }
 
 inline void aitString::replaceData(const char* p)
 	{ if(p && str) strncpy(str,p,len); }

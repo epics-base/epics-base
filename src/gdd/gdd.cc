@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.19  1997/03/17 17:14:46  jbk
+// fixed a problem with gddDestructor and reference counting
+//
 // Revision 1.18  1997/01/21 15:13:06  jbk
 // free up resources in clearData
 //
@@ -74,64 +77,25 @@
 #include <stdarg.h>
 #include "gdd.h"
 
-gdd_NEWDEL_NEW(gddBounds1D)
-gdd_NEWDEL_DEL(gddBounds1D)
-gdd_NEWDEL_STAT(gddBounds1D)
-
-gdd_NEWDEL_NEW(gddBounds2D)
-gdd_NEWDEL_DEL(gddBounds2D)
-gdd_NEWDEL_STAT(gddBounds2D)
-
-gdd_NEWDEL_NEW(gddBounds3D)
-gdd_NEWDEL_DEL(gddBounds3D)
-gdd_NEWDEL_STAT(gddBounds3D)
-
-gdd_NEWDEL_NEW(gddDestructor)
-gdd_NEWDEL_DEL(gddDestructor)
-gdd_NEWDEL_STAT(gddDestructor)
-
 gdd_NEWDEL_NEW(gdd)
 gdd_NEWDEL_DEL(gdd)
 gdd_NEWDEL_STAT(gdd)
 
-// -------------------------- Error messages -------------------------
-
-char* gddErrorMessages[]=
+class gddFlattenDestructor : public gddDestructor
 {
-	"Invalid",
-	"TypeMismatch",
-	"NotAllowed",  
-	"AlreadyDefined",
-	"NewFailed", 
-	"OutOfBounds",
-	"AtLimit",
-	"NotDefined",
-	"NotSupported",
-	"Overflow",
-	"Underflow"
+public:
+	gddFlattenDestructor(void) { }
+	gddFlattenDestructor(void* user_arg):gddDestructor(user_arg) { }
+	void run(void*);
 };
 
-// --------------------------The gddBounds functions-------------------
-
-// gddBounds::gddBounds(void) { first=0; count=0; }
-
-// --------------------------The gddDestructor functions-------------------
-
-gddStatus gddDestructor::destroy(void* thing)
+class gddContainerCleaner : public gddDestructor
 {
-	if(ref_cnt==0 || --ref_cnt==0)
-	{
-		run(thing);
-		delete this;
-	}
-	return 0;
-}
-
-void gddDestructor::run(void* thing)
-{
-	aitInt8* pd = (aitInt8*)thing;
-	delete [] pd;
-}
+public:
+	gddContainerCleaner(void) { }
+	gddContainerCleaner(void* user_arg):gddDestructor(user_arg) { }
+	void run(void*);
+};
 
 void gddFlattenDestructor::run(void*)
 {
@@ -315,14 +279,14 @@ gddStatus gdd::replaceDestructor(gddDestructor* dest)
 	return 0;
 }
 
-gddStatus gdd::genCopy(aitEnum t, const void* d)
+gddStatus gdd::genCopy(aitEnum t, const void* d, aitDataFormat f)
 {
 	size_t sz;
 	aitInt8* buf;
 	gddStatus rc=0;
 
 	if(isScalar())
-		aitConvert(primitiveType(),dataAddress(),t,d,1);
+		set(t,d,f);
 	else if(isAtomic())
 	{
 		if(!dataPointer())
@@ -338,13 +302,19 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 				setData(buf);
 				destruct=new gddDestructor;
 				destruct->reference();
-				aitConvert(primitiveType(),dataPointer(),t,d,
-					getDataSizeElements());
 			}
 		}
-		else
-			aitConvert(primitiveType(),dataPointer(),t,d,
-				getDataSizeElements());
+		if(rc==0)
+		{
+			if(f==aitLocalDataFormat)
+				aitConvert(primitiveType(),dataPointer(),t,d,
+					getDataSizeElements());
+			else
+				aitConvertFromNet(primitiveType(),dataPointer(),t,d,
+					getDataSizeElements());
+
+			markLocalDataFormat();
+		}
 	}
 	else
 	{
@@ -1391,265 +1361,208 @@ gddStatus gdd::put(const gdd* dd)
 	return rc;
 }
 
-// ----------------------The gddAtomic functions-------------------------
-
-gddAtomic::gddAtomic(int app, aitEnum prim, int dimen, ...):
-		gdd(app,prim,dimen)
+size_t gdd::outHeader(void* buf,aitUint32 bufsize)
 {
-	va_list ap;
-	int i;
-	aitIndex val;
+	// simple encoding for now..  will change later
+	// this is the SLOW, simple version
 
-	va_start(ap,dimen);
-	for(i=0;i<dimen;i++)
+	aitUint8* b = (aitUint8*)buf;
+	aitUint8* app = (aitUint8*)&appl_type;
+	aitUint8* stat = (aitUint8*)&status;
+	aitUint8* ts_sec = (aitUint8*)&time_stamp.tv_sec;
+	aitUint8* ts_nsec = (aitUint8*)&time_stamp.tv_nsec;
+	int i,j,sz;
+	aitIndex ff,ss;
+	aitUint8 *f,*s;
+
+	// verify that header will fit into buffer first
+	sz=4+sizeof(status)+sizeof(time_stamp)+sizeof(appl_type)+
+		sizeof(prim_type)+sizeof(dim)+(dim*sizeof(gddBounds));
+
+	if(sz>bufsize) return 0; // blow out here!
+
+	*(b++)='H'; *(b++)='E'; *(b++)='A'; *(b++)='D';
+
+	// how's this for putrid
+	*(b++)=dim;
+	*(b++)=prim_type;
+
+	if(aitLocalNetworkDataFormatSame)
 	{
-		val=va_arg(ap,aitUint32);
-		bounds[i].set(0,val);
+		*(b++)=app[0]; *(b++)=app[1];
+		for(i=0;i<sizeof(status);i++) *(b++)=stat[i];
+		for(i=0;i<sizeof(time_stamp.tv_sec);i++) *(b++)=ts_sec[i];
+		for(i=0;i<sizeof(time_stamp.tv_nsec);i++) *(b++)=ts_nsec[i];
 	}
-	va_end(ap);
-}
-
-gddStatus gddAtomic::getBoundingBoxSize(aitUint32* b)
-{
-	unsigned i;
-	gddStatus rc=0;
-
-	if(dimension()>0)
-		for(i=0;i<dimension();i++) b[i]=bounds[i].size();
 	else
 	{
-		gddAutoPrint("gddAtomic::getBoundingBoxSize()",gddErrorOutOfBounds);
-		rc=gddErrorOutOfBounds;
+		*(b++)=app[1]; *(b++)=app[0];
+		for(i=sizeof(status)-1;i>=0;i--) *(b++)=stat[i];
+		for(i=sizeof(time_stamp.tv_sec)-1;i>=0;i--) *(b++)=ts_sec[i];
+		for(i=sizeof(time_stamp.tv_nsec)-1;i>=0;i--) *(b++)=ts_nsec[i];
 	}
 
-	return rc;
-}
-
-gddStatus gddAtomic::setBoundingBoxSize(const aitUint32* const b)
-{
-	unsigned i;
-	gddStatus rc=0;
-
-	if(dimension()>0)
-		for(i=0;i<dimension();i++) bounds[i].setSize(b[i]);
-	else
+	// put out the bounds info
+	for(j=0;j<dim;j++)
 	{
-		gddAutoPrint("gddAtomic::setBoundingBoxSize()",gddErrorOutOfBounds);
-		rc=gddErrorOutOfBounds;
-	}
-
-	return rc;
-}
-
-gddStatus gddAtomic::getBoundingBoxOrigin(aitUint32* b)
-{
-	unsigned i;
-	gddStatus rc=0;
-
-	if(dimension()>0)
-		for(i=0;i<dimension();i++) b[i]=bounds[i].first();
-	else
-	{
-		gddAutoPrint("gddAtomic::getBoundingBoxOrigin()",gddErrorOutOfBounds);
-		rc=gddErrorOutOfBounds;
-	}
-
-	return rc;
-}
-
-gddStatus gddAtomic::setBoundingBoxOrigin(const aitUint32* const b)
-{
-	unsigned i;
-	gddStatus rc=0;
-
-	if(dimension()>0)
-		for(i=0;i<dimension();i++) bounds[i].setFirst(b[i]);
-	else
-	{
-		gddAutoPrint("gddAtomic::setBoundingBoxOrigin",gddErrorOutOfBounds);
-		rc=gddErrorOutOfBounds;
-	}
-
-	return rc;
-}
-
-// --------------------The gddScalar functions---------------------
-
-// --------------------The gddContainer functions---------------------
-
-gddCursor gddContainer::getCursor(void) const
-{
-	gddCursor ec(this);
-	return ec;
-}
-
-gddContainer::gddContainer(void):gdd(0,aitEnumContainer,1) { }
-gddContainer::gddContainer(int app):gdd(app,aitEnumContainer,1) { }
-
-gddContainer::gddContainer(int app,int tot) : gdd(app,aitEnumContainer,1)
-	{ cInit(tot); }
-
-void gddContainer::cInit(int tot)
-{
-	int i;
-	gdd* dd_list;
-	gdd* temp;
-
-	setBound(0,0,tot);
-	dd_list=NULL;
-
-	for(i=0;i<tot;i++)
-	{
-		temp=new gdd;
-		temp->noReferencing();
-		temp->setNext(dd_list);
-		dd_list=temp;
-	}
-	setData(dd_list);
-}
-
-gddContainer::gddContainer(gddContainer* ec)
-{
-	unsigned i;
-	gdd* dd_list;
-	gdd* temp;
-
-	copy(ec);
-	dd_list=NULL;
-
-	// this needs to recursively add to the container, only copy the
-	// info and bounds information and scaler data, not arrays
-
-	for(i=0;i<dimension();i++)
-	{
-		temp=new gdd(getDD(i));
-		temp->noReferencing();
-		temp->setNext(dd_list);
-		dd_list=temp;
-	}
-	setData(dd_list);
-}
-
-gdd* gddContainer::getDD(aitIndex index)
-{
-	if (index==0u) {
-		return this;
-	}
-	else if(index>getDataSizeElements())
-		return NULL;
-	else
-	{
-		aitIndex i;
-		gdd* dd=(gdd*)dataPointer();
-		for(i=1u;i<index;i++) {
-			dd=(gdd*)dd->next();
+		ff=bounds[j].first(); f=(aitUint8*)&ff;
+		ss=bounds[j].size(); s=(aitUint8*)&ss;
+		if(aitLocalNetworkDataFormatSame)
+		{
+			for(i=0;i<sizeof(aitIndex);i++) *(b++)=s[i];
+			for(i=0;i<sizeof(aitIndex);i++) *(b++)=f[i];
 		}
-		return dd;
-	}
-}
-
-gddStatus gddContainer::insert(gdd* dd)
-{
-	dd->setNext(cData());
-	setData(dd);
-	bounds->setSize(bounds->size()+1);
-	return 0;
-}
-
-gddStatus gddContainer::remove(aitIndex index)
-{
-	gddCursor cur = getCursor();
-	gdd *dd,*prev_dd;
-	aitIndex i;
-
-	prev_dd=NULL;
-
-	for(i=0; (dd=cur[i]) && i!=index; i++) prev_dd=dd;
-
-	if(i==index && dd)
-	{
-		if(prev_dd)
-			prev_dd->setNext(dd->next());
 		else
-			setData(dd->next());
-
-		dd->unreference();
-		bounds->setSize(bounds->size()-1);
-		return 0;
+		{
+			for(i=sizeof(aitIndex)-1;i>=0;i--) *(b++)=s[i];
+			for(i=sizeof(aitIndex)-1;i>=0;i--) *(b++)=f[i];
+		}
 	}
-	else
-	{
-		gddAutoPrint("gddContainer::remove()",gddErrorOutOfBounds);
-		return gddErrorOutOfBounds;
-	}
+	return sz;
 }
-
-// ------------------------cursor functions-------------------------------
-
-gdd* gddCursor::operator[](int index)
+size_t gdd::outData(void* buf,aitUint32 bufsize, aitEnum e, aitDataFormat f)
 {
-	int i,start;
-	gdd* dd;
+	// put data into user's buffer in the format that the user wants (e/f).
+	// if e is invalid, then use whatever format this gdd describes.
 
-	if(index>=curr_index)
+	aitUint32 sz = getDataSizeElements();
+	aitUint32 len = getDataSizeBytes();
+	aitEnum type=(e==aitEnumInvalid)?primitiveType():e;
+
+	if(len>bufsize) return 0; // blow out early
+
+	if(sz>0)
 	{
-		start=curr_index;
-		dd=curr;
+		if(f==aitLocalDataFormat)
+			aitConvert(type,buf,primitiveType(),dataVoid(),sz);
+		else
+			aitConvertToNet(type,buf,primitiveType(),dataVoid(),sz);
+	}
+
+	return len;
+}
+size_t gdd::out(void* buf,aitUint32 bufsize,aitDataFormat f)
+{
+	size_t index = outHeader(buf,bufsize);
+	size_t rc;
+
+	if(index>0)
+		rc=outData(((char*)buf)+index,bufsize-index,aitEnumInvalid,f)+index;
+	else
+		rc=0;
+
+	return rc;
+}
+
+size_t gdd::inHeader(void* buf)
+{
+	// simple encoding for now..  will change later
+	// this is the SLOW, simple version
+
+	aitUint16 inapp;
+	aitUint8 inprim;
+	aitUint8 indim;
+
+	aitUint8* b = (aitUint8*)buf;
+	aitUint8* b1 = b;
+	aitUint8* app = (aitUint8*)&inapp;
+	aitUint8* stat = (aitUint8*)&status;
+	aitUint8* ts_sec = (aitUint8*)&time_stamp.tv_sec;
+	aitUint8* ts_nsec = (aitUint8*)&time_stamp.tv_nsec;
+	int i,j;
+	aitIndex ff,ss;
+	aitUint8 *f,*s;
+
+	if(strncmp((char*)b,"HEAD",4)!=0) return 0;
+	b+=4;
+
+	indim=*(b++);
+	inprim=*(b++);
+
+	if(aitLocalNetworkDataFormatSame)
+	{
+		app[0]=*(b++); app[1]=*(b++);
+		init(inapp,(aitEnum)inprim,indim);
+		for(i=0;i<sizeof(status);i++) stat[i]=*(b++);
+		for(i=0;i<sizeof(time_stamp.tv_sec);i++) ts_sec[i]=*(b++);
+		for(i=0;i<sizeof(time_stamp.tv_nsec);i++) ts_nsec[i]=*(b++);
 	}
 	else
 	{
-		start=0;
-		dd=list->cData();
+		app[1]=*(b++); app[0]=*(b++);
+		init(inapp,(aitEnum)inprim,indim);
+		for(i=sizeof(status)-1;i>=0;i--) stat[i]=*(b++);
+		for(i=sizeof(time_stamp.tv_sec)-1;i>=0;i--) ts_sec[i]=*(b++);
+		for(i=sizeof(time_stamp.tv_nsec)-1;i>=0;i--) ts_nsec[i]=*(b++);
 	}
 
-	for(i=start;i<index;i++) dd=dd->next();
-	curr_index=index;
-	curr=dd;
-	return dd;
+	// read in the bounds info
+	f=(aitUint8*)&ff;
+	s=(aitUint8*)&ss;
+	
+	for(j=0;j<dim;j++)
+	{
+		if(aitLocalNetworkDataFormatSame)
+		{
+			for(i=0;i<sizeof(aitIndex);i++) s[i]=*(b++);
+			for(i=0;i<sizeof(aitIndex);i++) f[i]=*(b++);
+		}
+		else
+		{
+			for(i=sizeof(aitIndex)-1;i>=0;i--) s[i]=*(b++);
+			for(i=sizeof(aitIndex)-1;i>=0;i--) f[i]=*(b++);
+		}
+		bounds[j].setFirst(ff);
+		bounds[j].setSize(ss);
+	}
+	return (size_t)(b-b1);
+}
+size_t gdd::inData(void* buf,aitUint32 tot, aitEnum e, aitDataFormat f)
+{
+	size_t rc;
+
+	// Get data from a buffer and put it into this gdd.  Lots of rules here.
+	// 1) tot is the total number of elements to copy from buf to this gdd.
+	// * if tot is zero, then use the element count described in the gdd.
+	// * if tot is not zero, then set the gdd up as a 1 dimensional array
+	//   with tot elements in it.
+	// 2) e is the primitive data type of the incoming data.
+	// * if e is aitEnumInvalid, then use the gdd primitive type.
+	// * if e is valid and gdd primitive type is invalid, set the gdd
+	//   primitive type to e.
+	// * if e is valid and so is this gdd primitive type, then convert the
+	//   incoming data from type e to gdd primitive type.
+
+	// Bad error condition, don't do anything.
+	if(e==aitEnumInvalid && primitiveType()==aitEnumInvalid)
+		return 0;
+
+	aitIndex sz=tot;
+	aitEnum src_type=(e==aitEnumInvalid)?primitiveType():e;
+	aitEnum dest_type=(primitiveType()==aitEnumInvalid)?e:primitiveType();
+
+	// I'm not sure if this is the best way to do this.
+	if(sz>0)
+		reset(dest_type,dimension(),&sz);
+
+	if(genCopy(src_type,buf,f)==0)
+		rc=getDataSizeBytes();
+	else 
+		rc=0;
+
+	return rc;
+}
+size_t gdd::in(void* buf, aitDataFormat f)
+{
+	size_t index = inHeader(buf);
+	size_t rc;
+
+	if(index>0)
+		rc=inData(((char*)buf)+index,0,aitEnumInvalid,f)+index;
+	else
+		rc=0;
+
+	return rc;
+
 }
 
-#if 0
-	code section for handling transfer of element from
-	multidimensional space
-			// should handle single dimensional array as a special case
-			const Bounds* b = dd->getBounds();
-			const Bounds* bs = getBounds();
-			aitIndex x[dd->dimension()];
-			aitIndex offset,mult;
-			aitUint8* arr_dest=(aitUint8*)dataPointer();
-			aitUint8* arr_src=(aitUint8*)dd->dataPointer();
-			int d = dd->dimension();
-			int i,j;
-
-			for(i=0;i<d;i++) x[i]=b[i].first();
-
-			// look at this ugly mess - slow and horrible, but generic
-			// this is so unbelievably sucky, I hate it
-			j=0;
-			while(x[d-1]<b[d-1].size())
-			{
-				// modify coordinate here
-				for(offset=x[0],mult=1,i=1;i<d;i++)
-				{
-					mult*=bs[i];
-					offset+=x[i]*mult;
-				}
-
-				aitConvert(primitiveType(),
-					arr_dest[offset*aitSize[dd->primitiveType()],
-					dd->primitiveType(),arr_src[j],1);
-
-				if(++x[0]>=b[0].size())
-				{
-					for(i=0;i<(d-1);i++)
-					{
-						if(x[i]>=b[i].size())
-						{
-							++x[i+1];
-							x[i]=b[i].first();
-						}
-					}
-				}
-				j++;
-			}
-#endif

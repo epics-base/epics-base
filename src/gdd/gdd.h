@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.21  1997/03/17 17:14:48  jbk
+ * fixed a problem with gddDestructor and reference counting
+ *
  * Revision 1.20  1997/01/12 20:32:46  jbk
  * many errors fixed
  *
@@ -105,17 +108,6 @@
 #       include <sys/time.h>
 #endif
 
-#ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(solaris) && !defined(SOLARIS)
-struct timespec
-{
-	time_t tv_sec;
-	long tv_nsec;
-};
-typedef struct timespec timespec;
-#endif
-#endif
-
 // gddNewDel.h - a simple bunch of macros to make a class use free lists
 //            with new/remove operators
 
@@ -155,155 +147,6 @@ class gddScalar;
 //  container appear as an array.
 
 // ---------------------------------------------------------------------
-// Describe the bounds of a single dimension in terms of the first
-// element and the number of elements in the dimension.
-
-class gddBounds
-{
-public:
-	// I found a weird memory management quirk with SunOS when constructors
-	// are present in a class that is used as an array in another class
-	// as it is in gddBounds2D.  The memory manager reallocates the entire
-	// gddBounds2D in some sort of buffer pool which stays allocated when the
-	// program completes
-
-	// gddBounds(void);
-	// gddBounds(aitIndex c);
-	// gddBounds(aitIndex f, aitIndex c);
-
-	void setSize(aitIndex c);
-	void setFirst(aitIndex c);
-	void set(aitIndex f, aitIndex c);
-	void get(aitIndex& f, aitIndex& c);
-	aitIndex size(void) const;
-	aitIndex first(void) const;
-
-private:
-	aitIndex start;
-	aitIndex count;
-};
-
-// inline gddBounds::gddBounds(aitIndex c) { start=0; count=c; }
-// inline gddBounds::gddBounds(aitIndex f, aitIndex c) { start=f; count=c; }
-
-inline void gddBounds::setSize(aitIndex c)			{ count=c; }
-inline void gddBounds::setFirst(aitIndex f)			{ start=f; }
-inline void gddBounds::set(aitIndex f, aitIndex c)	{ start=f; count=c; }
-inline void gddBounds::get(aitIndex& f, aitIndex& c){ f=start; c=count; }
-inline aitIndex gddBounds::size(void) const			{ return count; }
-inline aitIndex gddBounds::first(void) const		{ return start; }
-
-// ---------------------------------------------------------------------
-// Special managment for 1D-2D-3D bounds - others use normal new/remove.
-// Since bounds are maintained as arrays, where the length of the array is
-// the dimension of the data, we will manage the normal cases using 
-// free lists.
-
-class gddBounds1D
-{
-public:
-	gddBounds1D(void) { }
-	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(gddBounds1D) // required for using generic new and remove
-private:
-	gddBounds b[1];
-	gdd_NEWDEL_DATA(gddBounds1D) // required for using generic new/remove
-};
-inline gddBounds* gddBounds1D::boundArray(void) { return (gddBounds*)b; }
-
-class gddBounds2D
-{
-public:
-	gddBounds2D(void) { }
-	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(gddBounds2D) // required for using generic new and remove
-private:
-	gddBounds b[2];
-	gdd_NEWDEL_DATA(gddBounds2D) // required for using generic new/remove
-};
-inline gddBounds* gddBounds2D::boundArray(void) { return (gddBounds*)b; }
-
-class gddBounds3D
-{
-public:
-	gddBounds3D(void) { }
-	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(gddBounds3D) // for using generic new and remove
-private:
-	gddBounds b[3];
-	gdd_NEWDEL_DATA(gddBounds3D) // required for using generic new/remove
-};
-inline gddBounds* gddBounds3D::boundArray(void) { return (gddBounds*)b; }
-
-// ---------------------------------------------------------------------
-// This is a class for managing the destruction of user data held within
-// a DD.  It allows multiple DDs to reference the same chunk of user
-// data.  The data would remain alive until the reference count goes to
-// zero, at this time the user destructor function will be called with
-// a pointer to the piece of data to deal with.  The intention here is
-// that user will create a subclass of this and supply the virtual
-// function run(void*).  The default behavior will be to treat the void*
-// data as an array of aitInt8 and call remove.
-
-// **** WARNING!
-// The reference count is initialized to zero.  This means that if you
-// create one and want to keep it, you must reference it twice - the
-// initial time and a time for your personal use.  This is because the
-// gdd library automatically increments the reference count on 
-// destructors when data is referenced into a gdd with a destructor.
-// Remember the rule: if you pass a destructor to someone, then that
-// someone now owns the destructor.  A reference count of 1 indicates that
-// the thing will go away when unreferenced - which is what you will
-// have if you only reference the destructor once after it is created.
-
-class gddDestructor
-{
-public:
-	gddDestructor(void);
-	gddDestructor(void* user_arg);
-
-	void reference(void);
-	int refCount(void) const;
-
-	gddStatus destroy(void* thing_to_remove);
-	virtual void run(void* thing_to_remove);
-
-	gdd_NEWDEL_FUNC(gddDestructor) // for using generic new and remove
-protected:
-	aitUint16 ref_cnt;
-	void* arg;
-private:
-	gdd_NEWDEL_DATA(gddDestructor)
-};
-
-inline gddDestructor::gddDestructor(void) { ref_cnt=0; arg=NULL; }
-inline gddDestructor::gddDestructor(void* usr_arg) { ref_cnt=1; arg=usr_arg; }
-inline void gddDestructor::reference(void)		{ ref_cnt++; }
-inline int gddDestructor::refCount(void) const	{ return ref_cnt; }
-
-class gddFlattenDestructor : public gddDestructor
-{
-public:
-	gddFlattenDestructor(void) { }
-	gddFlattenDestructor(void* user_arg):gddDestructor(user_arg) { }
-	void run(void*);
-};
-
-class gddContainerCleaner : public gddDestructor
-{
-public:
-	gddContainerCleaner(void) { }
-	gddContainerCleaner(void* user_arg):gddDestructor(user_arg) { }
-	void run(void*);
-};
-
-#define GDD_MANAGED_MASK	0x01
-#define GDD_FLAT_MASK		0x02
-#define GDD_NET_MASK		0x04
-#define GDD_NOREF_MASK		0x08
-#define GDD_CONSTANT_MASK	0x10
-
-// ---------------------------------------------------------------------
 // class structure for DDs:
 //
 //      gddScalar
@@ -328,12 +171,23 @@ public:
 	gdd(int app,aitEnum prim,int dimen);
 	gdd(int app,aitEnum prim,int dimen,aitUint32* size_array);
 
+	enum
+	{
+		GDD_MANAGED_MASK=0x01,
+		GDD_FLAT_MASK=0x02,
+		GDD_NET_MASK=0x04,
+		GDD_NOREF_MASK=0x08,
+		GDD_CONSTANT_MASK=0x10
+	};
+
 	unsigned applicationType(void) const;
 	aitEnum primitiveType(void) const;
 	unsigned dimension(void) const;
 	aitType& getData(void);
 	aitType* dataUnion(void);
 	gddDestructor* destructor(void) const;
+	gdd* next(void);
+	void setNext(gdd*);
 
 	const gddBounds* getBounds(void) const;
 	const gddBounds* getBounds(int bn) const;
@@ -424,53 +278,42 @@ public:
 	gdd& operator=(const gdd& v);
 
 	// get a pointer to the data in the DD
-	void getRef(aitFloat64*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitFloat32*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitUint32*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitInt32*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitUint16*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitInt16*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitUint8*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitInt8*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitString*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(aitFixedString*& d,aitDataFormat=aitLocalDataFormat);
-	void getRef(void*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitFloat64*& d);
+	void getRef(aitFloat32*& d);
+	void getRef(aitUint32*& d);
+	void getRef(aitInt32*& d);
+	void getRef(aitUint16*& d);
+	void getRef(aitInt16*& d);
+	void getRef(aitUint8*& d);
+	void getRef(aitInt8*& d);
+	void getRef(aitString*& d);
+	void getRef(aitFixedString*& d);
+	void getRef(void*& d);
 
 	// make the DD points to user data with a destroy method,
 	// put the referenced in and adjust the primitive type
-	void putRef(void*,aitEnum,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(aitFloat64*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitFloat32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitUint8*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitInt8*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitUint16*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitInt16*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitUint32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitInt32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitString*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
-	void putRef(aitFixedString*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(void*,aitEnum,gddDestructor* =0);
+	void putRef(aitFloat64*,gddDestructor* =0);
+	void putRef(aitFloat32*,gddDestructor* =0);
+	void putRef(aitUint8*,gddDestructor* =0);
+	void putRef(aitInt8*,gddDestructor* =0);
+	void putRef(aitUint16*,gddDestructor* =0);
+	void putRef(aitInt16*,gddDestructor* =0);
+	void putRef(aitUint32*,gddDestructor* =0);
+	void putRef(aitInt32*,gddDestructor* =0);
+	void putRef(aitString*,gddDestructor* =0);
+	void putRef(aitFixedString*,gddDestructor* =0);
 	// work with constants
-	void putRef(const aitFloat64*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitFloat32*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitUint8*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitInt8*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitUint16*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitInt16*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitUint32*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitInt32*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitString*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
-	void putRef(const aitFixedString*,gddDestructor* =0,
-		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitFloat64*,gddDestructor* =0);
+	void putRef(const aitFloat32*,gddDestructor* =0);
+	void putRef(const aitUint8*,gddDestructor* =0);
+	void putRef(const aitInt8*,gddDestructor* =0);
+	void putRef(const aitUint16*,gddDestructor* =0);
+	void putRef(const aitInt16*,gddDestructor* =0);
+	void putRef(const aitUint32*,gddDestructor* =0);
+	void putRef(const aitInt32*,gddDestructor* =0);
+	void putRef(const aitString*,gddDestructor* =0);
+	void putRef(const aitFixedString*,gddDestructor* =0);
 	gddStatus putRef(const gdd*);
 
 	// get the data in the form the user wants (do conversion)
@@ -600,12 +443,35 @@ public:
 	operator aitString(void);
 	// gdd::operator aitFixedString(void); // not present
 
-	gddStatus genCopy(aitEnum t, const void* d);
-	void adjust(gddDestructor* d, void* v, aitEnum type, aitDataFormat);
-	void get(aitEnum t,void* v);
-	void set(aitEnum t,void* v);
+	gddStatus genCopy(aitEnum t, const void* d,
+		aitDataFormat f=aitLocalDataFormat);
+	void adjust(gddDestructor* d,void* v,aitEnum type,
+		aitDataFormat f=aitLocalDataFormat);
+	void get(aitEnum t,void* v,aitDataFormat f=aitLocalDataFormat);
+	void set(aitEnum t,const void* v,aitDataFormat f=aitLocalDataFormat);
 
-	gdd_NEWDEL_FUNC(gdd) // managed on free lists
+	// following methods are used to import and export data into and out
+	// of this gdd.  For the out methods, the returned count in the number
+	// of bytes put into the user's buffer.  For the in methods, the
+	// returned count in the number of bytes put into the gdd from the
+	// user's buffer.  The in methods always change the data format to local
+	// from whatever input format is specified with the argument.  The out
+	// methods convert the gdd to whatever format is specified with the 
+	// aitDataFormat argument.  If aitEnum argument left as invalid, then
+	// data in the user's buffer will be assumed to be the same as the
+	// type defined in the gdd.
+
+	size_t out(void* buf,aitUint32 bufsize,aitDataFormat =aitNetworkDataFormat);
+	size_t outHeader(void* buf,aitUint32 bufsize);
+	size_t outData(void* buf,aitUint32 bufsize,
+		aitEnum = aitEnumInvalid, aitDataFormat = aitNetworkDataFormat);
+
+	size_t in(void* buf, aitDataFormat =aitNetworkDataFormat);
+	size_t inHeader(void* buf);
+	size_t inData(void* buf,aitUint32 number_of_elements = 0,
+		aitEnum = aitEnumInvalid, aitDataFormat = aitNetworkDataFormat);
+
+	gdd_NEWDEL_FUNC(bounds) // managed on free lists
 
 protected:
 	~gdd(void);  // users must call Unreference()
@@ -627,830 +493,26 @@ protected:
 	void setData(void* d);
 
 	aitType data;				// array pointer or scaler data
-	gdd_NEWDEL_DATA(gdd)		// required for using generic new and remove
 	gddBounds* bounds;			// array of bounds information length dim
+	gdd* nextgdd;
 	gddDestructor* destruct;	// NULL=none supplied, use remove
 	aitTimeStamp time_stamp;
 	aitStatus status;
 	aitUint16 appl_type;		// application type code
 	aitUint8 prim_type;			// primitive type code
 	aitUint8 dim;				// 0=scaler, >0=array
+
+	gdd_NEWDEL_DATA		// required for using generic new and remove
 private:
 	aitUint16 ref_cnt;
 	aitUint8 flags;
 };
 
-inline void gdd::setData(void* d)					{ data.Pointer=d; }
-inline gddDestructor* gdd::destructor(void) const	{ return destruct; }
-
-inline gdd::gdd(void)					{ init(0,aitEnumInvalid,0); }
-inline gdd::gdd(int app)				{ init(app,aitEnumInvalid,0); }
-inline gdd::gdd(int app,aitEnum prim)	{ init(app,prim,0); }
-
-inline unsigned gdd::applicationType(void) const{ return appl_type; }
-inline aitEnum gdd::primitiveType(void) const	{ return (aitEnum)prim_type; }
-inline const gddBounds* gdd::getBounds(void) const	{ return bounds; }
-inline const gddBounds* gdd::getBounds(int bn) const { return &bounds[bn]; }
-
-inline unsigned gdd::dimension(void) const	{ return dim; }
-inline aitType& gdd::getData(void) 			{ return data; }
-inline aitType* gdd::dataUnion(void)		{ return &data; }
-inline void gdd::setPrimType(aitEnum t)		{ prim_type=(aitUint8)t; }
-inline void gdd::setApplType(int t)			{ appl_type=(aitUint16)t; }
-inline gddStatus gdd::copyInfo(gdd* dd)		{ return copyStuff(dd,0); }
-inline gddStatus gdd::copy(gdd* dd)			{ return copyStuff(dd,1); }
-inline gddStatus gdd::Dup(gdd* dd)			{ return copyStuff(dd,2); }
-inline void* gdd::dataAddress(void)	const	{ return (void*)&data; }
-inline void* gdd::dataPointer(void)	const	{ return data.Pointer; }
-
-inline void* gdd::dataVoid(void) const
-{
-	return (dimension()||primitiveType()==aitEnumFixedString)?
-		dataPointer():dataAddress();
-}
-
-inline aitUint32 gdd::align8(unsigned long count) const
-{
-	unsigned long tmp=count&(~((unsigned long)0x07));
-	return (tmp!=count)?tmp+8:tmp;
-}
-
-inline void* gdd::dataPointer(aitIndex f) const
-	{ return (void*)(((aitUint8*)dataPointer())+aitSize[primitiveType()]*f); }
-
-inline int gdd::isManaged(void) const	{ return flags&GDD_MANAGED_MASK; }
-inline int gdd::isFlat(void) const		{ return flags&GDD_FLAT_MASK; }
-inline int gdd::isNoRef(void) const		{ return flags&GDD_NOREF_MASK; }
-inline int gdd::isConstant(void) const	{ return flags&GDD_CONSTANT_MASK; }
-inline int gdd::isLocalDataFormat(void) const { return !(flags&GDD_NET_MASK); }
-inline int gdd::isNetworkDataFormat(void) const
-	{ return !isLocalDataFormat() || aitLocalNetworkDataFormatSame; }
-
-inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; }
-inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
-inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
-inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
-inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; }
-inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; }
-
-inline void gdd::getTimeStamp(struct timespec* const ts) const
-	{ ts->tv_sec=time_stamp.tv_sec; ts->tv_nsec=time_stamp.tv_nsec; }
-inline void gdd::setTimeStamp(const struct timespec* const ts) {
-	time_stamp.tv_sec=(aitUint32)ts->tv_sec;
-	time_stamp.tv_nsec=(aitUint32)ts->tv_nsec; }
-inline void gdd::getTimeStamp(aitTimeStamp* const ts) const { *ts=time_stamp; }
-inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
-
-inline void gdd::setStatus(aitUint32 s)		{ status=s; }
-inline void gdd::getStatus(aitUint32& s)	{ s=status; }
-inline void gdd::setStatus(aitUint16 high, aitUint16 low)
-	{ status=(((aitUint32)high)<<16)|low; }
-inline void gdd::getStatus(aitUint16& high, aitUint16& low)
-	{ high=(aitUint16)(status>>16); low=(aitUint16)(status&0x0000ffff); }
-
-inline void gdd::setStat(aitUint16 s)
-	{ aitUint16* x = (aitUint16*)&status; x[0]=s; }
-inline void gdd::setSevr(aitUint16 s)
-	{ aitUint16* x = (aitUint16*)&status; x[1]=s; }
-inline aitUint16 gdd::getStat(void) const
-	{ aitUint16* x = (aitUint16*)&status; return x[0]; }
-inline aitUint16 gdd::getSevr(void) const
-	{ aitUint16* x = (aitUint16*)&status; return x[1]; }
-inline void gdd::getStatSevr(aitInt16& st, aitInt16& se)
-	{ st=getStat(); se=getSevr(); }
-inline void gdd::setStatSevr(aitInt16 st, aitInt16 se)
-	{ setStat(st); setSevr(se); }
-
-inline gdd& gdd::operator=(const gdd& v)
-	{ memcpy(this,&v,sizeof(gdd)); return *this; }
-
-inline int gdd::isScalar(void) const { return dimension()==0?1:0; }
-inline int gdd::isContainer(void) const
-	{ return (primitiveType()==aitEnumContainer)?1:0; }
-inline int gdd::isAtomic(void) const
-	{ return (dimension()>0&&primitiveType()!=aitEnumContainer)?1:0; }
-inline gddStatus gdd::noReferencing(void)
-{
-	int rc=0;
-	if(ref_cnt>1)
-	{
-		gddAutoPrint("gdd::noReferencing()",gddErrorNotAllowed);
-		rc=gddErrorNotAllowed;
-	}
-	else			flags|=GDD_NOREF_MASK;
-	return rc;
-}
-inline gddStatus gdd::reference(void)
-{
-	int rc=0;
-
-	if(isNoRef())
-	{
-		gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
-		rc=gddErrorNotAllowed;
-	}
-	else			ref_cnt++;
-
-	if(ref_cnt>((1u<<(sizeof(ref_cnt)*CHAR_BIT))-2u))
-	{
-		fprintf(stderr,"gdd reference count overflow!!\n");
-		gddAutoPrint("gdd::reference()",gddErrorOverflow);
-		rc=gddErrorOverflow;
-	}
-	return rc;
-}
-
-inline gddStatus gdd::unreference(void)
-{
-	int rc=0;
-
-	if(ref_cnt==0u)
-	{
-		fprintf(stderr,"gdd reference count underflow!!\n");
-		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
-		rc=gddErrorUnderflow;
-	}
-	else if(--ref_cnt<=0u)
-	{
-		if(isManaged())
-		{
-			// managed dd always destroys the entire thing
-			ref_cnt=1;
-			if(destruct) destruct->destroy(this);
-			destruct=NULL;
-		}
-		else if(!isFlat())
-			delete this;
-	}
-	return rc;
-}
-
-inline void gdd::destroyData(void)
-{
-	if(destruct)
-	{
-		if(isContainer())
-			destruct->destroy(this);
-		else
-			destruct->destroy(dataPointer());
-
-		freeBounds(); // must be done here
-		destruct=NULL;
-		setData(NULL);
-	}
-	else
-	{
-		if(primitiveType()==aitEnumString && isScalar())
-		{
-			aitString* str = (aitString*)dataAddress();
-			str->clear();
-		}
-	}
-}
-
-inline void gdd::adjust(gddDestructor* d, void* v, aitEnum type,aitDataFormat)
-{
-	if(destruct) destruct->destroy(dataPointer());
-	destruct=d;
-	if(destruct) destruct->reference();
-	setPrimType(type);
-	setData(v);
-}
-
-// These function do NOT work well for aitFixedString because
-// fixed strings are always stored by reference.  You WILL get
-// into trouble is the gdd does not contain a fixed string
-// before you putConvert() something into it.
-
-inline void gdd::get(aitEnum t,void* v)
-{
-	if(primitiveType()==aitEnumFixedString)
-	{
-		if(dataPointer()) aitConvert(t,v,primitiveType(),dataPointer(),1);
-	}
-	else
-		aitConvert(t,v,primitiveType(),dataAddress(),1);
-}
-
-inline void gdd::set(aitEnum t,void* v)
-{
-	if(primitiveType()==aitEnumFixedString)
-	{
-		if(dataPointer()==NULL)
-			data.FString=new aitFixedString;
-		aitConvert(primitiveType(),dataPointer(),t,v,1);
-	}
-	else
-		aitConvert(primitiveType(),dataAddress(),t,v,1);
-}
-
-// -------------------getRef(data pointer) functions----------------
-inline void gdd::getRef(aitFloat64*& d,aitDataFormat )
-	{ d=(aitFloat64*)dataPointer(); }
-inline void gdd::getRef(aitFloat32*& d,aitDataFormat )
-	{ d=(aitFloat32*)dataPointer(); }
-inline void gdd::getRef(aitUint32*& d,aitDataFormat )
-	{ d=(aitUint32*)dataPointer(); }
-inline void gdd::getRef(aitInt32*& d,aitDataFormat )
-	{ d=(aitInt32*)dataPointer(); }
-inline void gdd::getRef(aitUint16*& d,aitDataFormat )
-	{ d=(aitUint16*)dataPointer(); }
-inline void gdd::getRef(aitInt16*& d,aitDataFormat )
-	{ d=(aitInt16*)dataPointer(); }
-inline void gdd::getRef(aitUint8*& d,aitDataFormat )
-	{ d=(aitUint8*)dataPointer(); }
-inline void gdd::getRef(aitInt8*& d,aitDataFormat )
-	{ d=(aitInt8*)dataPointer(); }
-inline void gdd::getRef(void*& d,aitDataFormat )
-	{ d=dataPointer(); }
-inline void gdd::getRef(aitFixedString*& d,aitDataFormat )
-	{d=(aitFixedString*)dataPointer();}
-inline void gdd::getRef(aitString*& d,aitDataFormat ) {
-	if(isScalar()) d=(aitString*)dataAddress();
-	else d=(aitString*)dataPointer();
-}
-
-// -------------------putRef(data pointer) functions----------------
-inline void gdd::putRef(void* v,aitEnum code, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, v, code,f); }
-inline void gdd::putRef(aitFloat64* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFloat64,f); }
-inline void gdd::putRef(aitFloat32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFloat32,f); }
-inline void gdd::putRef(aitUint8* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint8,f); }
-inline void gdd::putRef(aitInt8* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt8,f); }
-inline void gdd::putRef(aitUint16* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint16,f); }
-inline void gdd::putRef(aitInt16* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt16,f); }
-inline void gdd::putRef(aitUint32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint32,f); }
-inline void gdd::putRef(aitInt32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt32,f); }
-inline void gdd::putRef(aitString* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumString,f); }
-inline void gdd::putRef(aitFixedString* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFixedString,f); }
-
-// -------------------putRef(const data pointer) functions----------------
-inline void gdd::putRef(const aitFloat64* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFloat64,f); markConstant(); }
-inline void gdd::putRef(const aitFloat32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFloat32,f); markConstant(); }
-inline void gdd::putRef(const aitUint8* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint8,f); markConstant(); }
-inline void gdd::putRef(const aitInt8* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt8,f); markConstant(); }
-inline void gdd::putRef(const aitUint16* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint16,f); markConstant(); }
-inline void gdd::putRef(const aitInt16* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt16,f); markConstant(); }
-inline void gdd::putRef(const aitUint32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumUint32,f); markConstant(); }
-inline void gdd::putRef(const aitInt32* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumInt32,f); markConstant(); }
-inline void gdd::putRef(const aitString* v, gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumString,f); markConstant(); }
-inline void gdd::putRef(const aitFixedString* v,gddDestructor* d,aitDataFormat f)
-	{ adjust(d, (void*)v, aitEnumFixedString,f); markConstant(); }
-
-// -------------------getConvert(scalar) functions ----------------------
-inline void gdd::getConvert(aitFloat64& d)	{ get(aitEnumFloat64,&d); }
-inline void gdd::getConvert(aitFloat32& d)	{ get(aitEnumFloat32,&d); }
-inline void gdd::getConvert(aitUint32& d)	{ get(aitEnumUint32,&d); }
-inline void gdd::getConvert(aitInt32& d)	{ get(aitEnumInt32,&d); }
-inline void gdd::getConvert(aitUint16& d)	{ get(aitEnumUint16,&d); }
-inline void gdd::getConvert(aitInt16& d)	{ get(aitEnumInt16,&d); }
-inline void gdd::getConvert(aitUint8& d)	{ get(aitEnumUint8,&d); }
-inline void gdd::getConvert(aitInt8& d)		{ get(aitEnumInt8,&d); }
-
-// -------------------putConvert(scalar) functions ----------------------
-inline void gdd::putConvert(aitFloat64 d){ set(aitEnumFloat64,&d); }
-inline void gdd::putConvert(aitFloat32 d){ set(aitEnumFloat32,&d); }
-inline void gdd::putConvert(aitUint32 d) { set(aitEnumUint32,&d); }
-inline void gdd::putConvert(aitInt32 d)  { set(aitEnumInt32,&d); }
-inline void gdd::putConvert(aitUint16 d) { set(aitEnumUint16,&d); }
-inline void gdd::putConvert(aitInt16 d)  { set(aitEnumInt16,&d); }
-inline void gdd::putConvert(aitUint8 d)  { set(aitEnumUint8,&d); }
-inline void gdd::putConvert(aitInt8 d)	 { set(aitEnumInt8,&d); }
-
-// ------------------------put(pointer) functions----------------------
-inline gddStatus gdd::put(const aitFloat64* const d)
-	{ return genCopy(aitEnumFloat64,d); }
-inline gddStatus gdd::put(const aitFloat32* const d)
-	{ return genCopy(aitEnumFloat32,d); }
-inline gddStatus gdd::put(const aitUint32* const d)
-	{ return genCopy(aitEnumUint32,d); }
-inline gddStatus gdd::put(const aitInt32* const d)
-	{ return genCopy(aitEnumInt32,d); }
-inline gddStatus gdd::put(const aitUint16* const d)
-	{ return genCopy(aitEnumUint16,d); }
-inline gddStatus gdd::put(const aitInt16* const d)
-	{ return genCopy(aitEnumInt16,d); }
-inline gddStatus gdd::put(const aitUint8* const d)
-	{ return genCopy(aitEnumUint8,d); }
-
-// special case for aitInt8 array to aitString scalar
-inline gddStatus gdd::put(const aitInt8* const d)
-{
-	gddStatus rc=0;
-
-	if(primitiveType()==aitEnumString && dim==0)
-	{
-		aitString* p = (aitString*)dataAddress();
-		p->installString((char*)d);
-	}
-	else if(primitiveType()==aitEnumFixedString && dim==0) {
-		strncpy(data.FString->fixed_string,(char*)d, 
-			sizeof(aitFixedString));
-		data.FString->fixed_string[sizeof(aitFixedString)-1u]='\0';
-	}
-	else
-		rc=genCopy(aitEnumInt8,d);
-
-	return rc;
-}
-
-// ----------------put(scalar) functions----------------
-inline gddStatus gdd::put(aitFloat64 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Float64=d; setPrimType(aitEnumFloat64); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitFloat32 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Float32=d;setPrimType(aitEnumFloat32); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitUint32 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Uint32=d; setPrimType(aitEnumUint32); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitInt32 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Int32=d; setPrimType(aitEnumInt32); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitUint16 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Uint16=d; setPrimType(aitEnumUint16); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitInt16 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Int16=d; setPrimType(aitEnumInt16); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitUint8 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Uint8=d; setPrimType(aitEnumUint8); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitInt8 d) {
-	gddStatus rc=0;
-	if(isScalar()) { data.Int8=d; setPrimType(aitEnumInt8); }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-inline gddStatus gdd::put(aitType* d) {
-	gddStatus rc=0;
-	if(isScalar()) { data=*d; }
-	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
-	return rc;
-}
-
-// ---------------------get(pointer) functions--------------------------
-inline void gdd::get(void* d) {
-	if(isScalar())
-		aitConvert(primitiveType(),d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(primitiveType(),d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(void* d,aitEnum e) {
-	if(isScalar())
-		aitConvert(e,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(e,d,primitiveType(),dataPointer(),getDataSizeElements());
-}
-inline void gdd::get(aitFloat64* d)
-{
-	if(isScalar())
-		aitConvert(aitEnumFloat64,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFloat64,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitFloat32* d) {
-	if(isScalar())
-		aitConvert(aitEnumFloat32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFloat32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint32* d) {
-	if(isScalar())
-		aitConvert(aitEnumUint32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitInt32* d) {
-	if(isScalar())
-		aitConvert(aitEnumInt32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumInt32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint16* d) {
-	if(isScalar())
-		aitConvert(aitEnumUint16,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint16,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitInt16* d) {
-	if(isScalar())
-		aitConvert(aitEnumInt16,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumInt16,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint8* d) {
-	if(isScalar())
-		aitConvert(aitEnumUint8,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint8,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitString* d) {
-	if(isScalar())
-		aitConvert(aitEnumString,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumString,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitFixedString* d) {
-	if(isScalar())
-		aitConvert(aitEnumFixedString,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFixedString,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-
-// special case for string scalar to aitInt8 array!
-inline void gdd::get(aitInt8* d)
-{
-	if(primitiveType()==aitEnumString && dim==0)
-	{
-		aitString* str = (aitString*)dataAddress();
-		strcpy((char*)d,str->string());
-	}
-	else if(primitiveType()==aitEnumFixedString && dim==0)
-		strcpy((char*)d,data.FString->fixed_string);
-	else
-		aitConvert(aitEnumInt8,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-
-// ------------------get(scalar) functions-----------------
-inline void gdd::get(aitFloat64& d) {
-	if(primitiveType()==aitEnumFloat64) d=getData().Float64;
-	else get(aitEnumFloat64,&d);
-}
-inline void gdd::get(aitFloat32& d)	{
-	if(primitiveType()==aitEnumFloat32) d=getData().Float32;
-	else get(aitEnumFloat32,&d);
-}
-inline void gdd::get(aitUint32& d) {
-	if(primitiveType()==aitEnumUint32) d=getData().Uint32;
-	else get(aitEnumUint32,&d);
-}
-inline void gdd::get(aitInt32& d) {
-	if(primitiveType()==aitEnumInt32) d=getData().Int32;
-	else get(aitEnumInt32,&d);
-}
-inline void gdd::get(aitUint16& d) {
-	if(primitiveType()==aitEnumUint16) d=getData().Uint16;
-	else get(aitEnumUint16,&d);
-}
-inline void gdd::get(aitInt16& d) {
-	if(primitiveType()==aitEnumInt16) d=getData().Int16;
-	else get(aitEnumInt16,&d);
-}
-inline void gdd::get(aitUint8& d) {
-	if(primitiveType()==aitEnumUint8) d=getData().Uint8;
-	else get(aitEnumUint8,&d);
-}
-inline void gdd::get(aitInt8& d) {
-	if(primitiveType()==aitEnumInt8) d=getData().Int8;
-	else get(aitEnumInt8,&d);
-}
-inline void gdd::get(aitType& d)	{ d=data; }
-
-// ---------- gdd x = primitive data type pointer functions----------
-inline gdd& gdd::operator=(aitFloat64* v)	{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitFloat32* v)	{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitUint32* v)	{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitInt32* v)		{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitUint16* v)	{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitInt16* v)		{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitUint8* v)		{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitInt8* v)		{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitString* v)	{ putRef(v); return *this;}
-inline gdd& gdd::operator=(aitFixedString* v){ putRef(v); return *this;}
-
-// ----------------- gdd x = primitive data type functions----------------
-inline gdd& gdd::operator=(aitFloat64 d)
-	{ data.Float64=d; setPrimType(aitEnumFloat64); return *this; }
-inline gdd& gdd::operator=(aitFloat32 d)
-	{ data.Float32=d;setPrimType(aitEnumFloat32); return *this; }
-inline gdd& gdd::operator=(aitUint32 d)
-	{ data.Uint32=d; setPrimType(aitEnumUint32); return *this; }
-inline gdd& gdd::operator=(aitInt32 d)	
-	{ data.Int32=d; setPrimType(aitEnumInt32); return *this; }
-inline gdd& gdd::operator=(aitUint16 d)
-	{ data.Uint16=d; setPrimType(aitEnumUint16); return *this; }
-inline gdd& gdd::operator=(aitInt16 d)
-	{ data.Int16=d; setPrimType(aitEnumInt16); return *this; }
-inline gdd& gdd::operator=(aitUint8 d)
-	{ data.Uint8=d; setPrimType(aitEnumUint8); return *this; }
-inline gdd& gdd::operator=(aitInt8 d)
-	{ data.Int8=d; setPrimType(aitEnumInt8); return *this; }
-inline gdd& gdd::operator=(aitString& d)
-	{ put(d); return *this; }
-inline gdd& gdd::operator=(const aitString& d)
-	{ put(d); return *this; }
-
-// ------------- primitive type pointer = gdd x functions --------------
-inline gdd::operator aitFloat64*(void) const
-	{ return (aitFloat64*)dataPointer(); }
-inline gdd::operator aitFloat32*(void) const
-	{ return (aitFloat32*)dataPointer(); }
-inline gdd::operator aitUint32*(void) const
-	{ return (aitUint32*)dataPointer(); }
-inline gdd::operator aitInt32*(void) const
-	{ return (aitInt32*)dataPointer(); }
-inline gdd::operator aitUint16*(void) const
-	{ return (aitUint16*)dataPointer(); }
-inline gdd::operator aitInt16*(void) const
-	{ return (aitInt16*)dataPointer(); }
-inline gdd::operator aitUint8*(void) const
-	{ return (aitUint8*)dataPointer(); }
-inline gdd::operator aitInt8*(void)	 const
-	{ return (aitInt8*)dataPointer(); }
-inline gdd::operator aitString*(void) const
-	{ return (aitString*)dataPointer(); }
-inline gdd::operator aitFixedString*(void) const
-	{ return (aitFixedString*)dataPointer(); }
-
-// ------------- primitive type = gdd x functions --------------
-inline gdd::operator aitFloat64(void)	{ aitFloat64 d; get(d); return d; }
-inline gdd::operator aitFloat32(void)	{ aitFloat32 d; get(d); return d; }
-inline gdd::operator aitUint32(void)	{ aitUint32 d; get(d); return d; }
-inline gdd::operator aitInt32(void)		{ aitInt32 d; get(d); return d; }
-inline gdd::operator aitUint16(void)	{ aitUint16 d; get(d); return d; }
-inline gdd::operator aitInt16(void)		{ aitInt16 d; get(d); return d; }
-inline gdd::operator aitUint8(void)		{ aitUint8 d; get(d); return d; }
-inline gdd::operator aitInt8(void)		{ aitInt8 d; get(d); return d; }
-inline gdd::operator aitString(void)	{ aitString d; get(d); return d; }
-
-// ***********************************************************************
-// Adds ability to put array data into a DD, get it out, and adjust it
-// ***********************************************************************
-
-class gddAtomic : public gdd
-{
-public:
-	gddAtomic(void) { }
-	gddAtomic(gddAtomic* ad) : gdd(ad) { }
-	gddAtomic(int app) : gdd(app) { }
-	gddAtomic(int app, aitEnum prim) : gdd(app,prim) { }
-	gddAtomic(int app, aitEnum prim, int dimen, aitUint32* size_array):
-		gdd(app,prim,dimen,size_array) { }
-	gddAtomic(int app, aitEnum prim, int dimen, ...);
-
-	// view dimension size info as a bounding box instead of first/count
-	gddStatus getBoundingBoxSize(aitUint32* put_info_here);
-	gddStatus setBoundingBoxSize(const aitUint32* const get_info_from_here);
-	gddStatus getBoundingBoxOrigin(aitUint32* put_info_here);
-	gddStatus setBoundingBoxOrigin(const aitUint32* const get_info_from_here);
-
-	void dump(void);
-	void test(void);
-
-	gddAtomic& operator=(aitFloat64* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitFloat32* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitUint32* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitInt32* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitUint16* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitInt16* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitUint8* v) { *((gdd*)this)=v; return *this; }
-	gddAtomic& operator=(aitInt8* v) { *((gdd*)this)=v; return *this; }
-
-protected:
-	~gddAtomic(void) { }
-private:
-};
-
-// ------------------------------------------------------------------------
-// Add handling of the special case where the data is a scaler - the
-// dimension is zero
-
-class gddScalar : public gddAtomic
-{
-public:
-	gddScalar(void) { }
-	gddScalar(gddScalar* ad) : gddAtomic(ad) { }
-	gddScalar(int app) : gddAtomic(app) { }
-	gddScalar(int app,aitEnum prim) : gddAtomic(app,prim) { }
-
-	void dump(void);
-	void test(void);
-
-	gddScalar& operator=(aitFloat64 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitFloat32 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitUint32 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitInt32 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitUint16 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitInt16 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitUint8 d) { *((gdd*)this)=d; return *this; }
-	gddScalar& operator=(aitInt8 d) { *((gdd*)this)=d; return *this; }
-
-protected:
-	gddScalar(int app, aitEnum prim, int dimen, aitUint32* size_array):
-		gddAtomic(app,prim,dimen,size_array) { }
-	~gddScalar(void) { }
-
-	// disallow
-	const gddBounds* getBounds(void)				{ return NULL; }
-	gddStatus getBoundingBoxSize(aitUint32*) {
-		gddAutoPrint("gddScalar::getBoundingBoxSize()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBoundingBoxSize(const aitUint32* const) {
-		gddAutoPrint("gddScalar::setBoundingBoxSize()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus getBoundingBoxOrigin(aitUint32*) {
-		gddAutoPrint("gddScalar::getBoundingBoxOrigin()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBoundingBoxOrigin(const aitUint32* const) {
-		gddAutoPrint("gddScalar::setBoundingBoxOrigin()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBound(int,aitIndex,aitIndex) {
-		gddAutoPrint("gddScalar::setBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus getBound(int,aitIndex&,aitIndex&) {
-		gddAutoPrint("gddScalar::getBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-
-	// disallow
-	void adjust(aitFloat64* const, gddDestructor*)	{ }
-	void adjust(aitFloat32* const, gddDestructor*)	{ }
-	void adjust(aitUint32* const, gddDestructor*)	{ }
-	void adjust(aitInt32* const, gddDestructor*)	{ }
-	void adjust(aitUint16* const, gddDestructor*)	{ }
-	void adjust(aitInt16* const, gddDestructor*)	{ }
-	void adjust(aitUint8* const, gddDestructor*)	{ }
-	void adjust(aitInt8* const, gddDestructor*)		{ }
-
-private:
-};
-
-// ------------------------------------------------------------------------
-
-class gddCursor;
-
-// this class needs to be able to register a destructor for the container
-
-class gddContainer : public gdd
-{
-public:
-	gddContainer(void);
-	gddContainer(int app);
-	gddContainer(gddContainer* ac);
-	gddContainer(int app,int number_of_things_in_it);
-
-	gddStatus insert(gdd*);
-	gddStatus remove(aitIndex index);
-	int total(void);
-
-	void dump(void);
-	void test(void);
-
-	// The following are slow and inefficient
-	gdd* getDD(aitIndex index);
-	gdd* getDD(aitIndex index,gddScalar*&);
-	gdd* getDD(aitIndex index,gddAtomic*&);
-	gdd* getDD(aitIndex index,gddContainer*&);
-	gdd* operator[](aitIndex index);
-
-	// preferred method for looking into a container
-	gddCursor getCursor(void) const;
-	gdd* cData(void) const;
-
-protected:
-	gddContainer(int,int,int,int*) { }
-	~gddContainer(void) { }
-
-	void cInit(int num_things_within);
-	gddStatus changeType(int,aitEnum) {
-		gddAutoPrint("gddContainer::changeType()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBound(int,aitIndex,aitIndex) {
-		gddAutoPrint("setBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus getBound(int,aitIndex&,aitIndex&) {
-		gddAutoPrint("getBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBound(aitIndex,aitIndex);
-
-private:
-	friend class gddCursor;
-};
-
-inline gdd* gddContainer::cData(void) const
-	{ return (gdd*)dataPointer(); }
-inline int gddContainer::total(void)
-	{ return bounds->size(); }
-inline gdd* gddContainer::operator[](aitIndex index)
-	{ return getDD(index); }
-inline gdd* gddContainer::getDD(aitIndex index,gddScalar*& dd)
-	{ return (gdd*)(dd=(gddScalar*)getDD(index)); }
-inline gdd* gddContainer::getDD(aitIndex index,gddAtomic*& dd)
-	{ return (gdd*)(dd=(gddAtomic*)getDD(index)); }
-inline gdd* gddContainer::getDD(aitIndex index,gddContainer*& dd)
-	{ return (gdd*)(dd=(gddContainer*)getDD(index)); }
-inline gddStatus gddContainer::setBound(aitIndex f, aitIndex c)
-	{ bounds->set(f,c); return 0; }
-
-class gddCursor
-{
-public:
-	gddCursor(void);
-	gddCursor(const gddContainer* ec);
-
-	gdd* first(void);
-	gdd* first(gddScalar*&);
-	gdd* first(gddAtomic*&);
-	gdd* first(gddContainer*&);
-
-	gdd* next(void);
-	gdd* next(gddScalar*&);
-	gdd* next(gddAtomic*&);
-	gdd* next(gddContainer*&);
-
-	gdd* current(void);
-	gdd* current(gddScalar*&);
-	gdd* current(gddAtomic*&);
-	gdd* current(gddContainer*&);
-
-	gdd* operator[](int index);
-private:
-	const gddContainer* list;
-	gdd* curr;
-	int curr_index;
-};
-
-inline gddCursor::gddCursor(void):list(NULL)
-	{ curr=NULL; }
-inline gddCursor::gddCursor(const gddContainer* ec):list(ec)
-	{ curr=ec->cData(); curr_index=0; }
-
-inline gdd* gddCursor::first(void)
-	{ curr=list->cData(); curr_index=0; return curr; }
-inline gdd* gddCursor::first(gddScalar*& dd)
-	{ return (gdd*)(dd=(gddScalar*)first()); }
-inline gdd* gddCursor::first(gddAtomic*& dd)
-	{ return (gdd*)(dd=(gddAtomic*)first()); }
-inline gdd* gddCursor::first(gddContainer*& dd)
-	{ return (gdd*)(dd=(gddContainer*)first()); }
-
-inline gdd* gddCursor::next(void)
-	{ if(curr) { curr_index++;curr=curr->next(); } return curr; }
-inline gdd* gddCursor::next(gddScalar*& dd)
-	{ return (gdd*)(dd=(gddScalar*)next()); }
-inline gdd* gddCursor::next(gddAtomic*& dd)
-	{ return (gdd*)(dd=(gddAtomic*)next()); }
-inline gdd* gddCursor::next(gddContainer*& dd)
-	{ return (gdd*)(dd=(gddContainer*)next()); }
-
-inline gdd* gddCursor::current(void)
-	{ return curr; }
-inline gdd* gddCursor::current(gddScalar*& dd)
-	{ return (gdd*)(dd=(gddScalar*)current()); }
-inline gdd* gddCursor::current(gddAtomic*& dd)
-	{ return (gdd*)(dd=(gddAtomic*)current()); }
-inline gdd* gddCursor::current(gddContainer*& dd)
-	{ return (gdd*)(dd=(gddContainer*)current()); }
+#include "gddI.h"
+
+// include these to be backward compatible with first gdd library version
+#include "gddArray.h"
+#include "gddScalar.h"
+#include "gddContainer.h"
 
 #endif

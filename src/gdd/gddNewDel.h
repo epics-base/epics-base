@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:47  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.2  1996/06/24 03:15:37  jbk
  * *name changes and fixes for aitString and fixed string functions
@@ -19,7 +22,7 @@
 // this file if formatted with tab stop = 4
 
 #include <stdlib.h>
-#include "gddUtils.h"
+#include "gddSemaphore.h"
 
 // Avoid using templates at the cost of very poor readability.
 // This forces the user to have a static data member named "gddNewDel_freelist"
@@ -45,61 +48,64 @@
 #define gdd_CHUNK(mine) (gdd_CHUNK_NUM*sizeof(mine))
 
 // private data to add to a class
-#define gdd_NEWDEL_DATA(clas) \
-	clas* newdel_next; \
-	static clas* newdel_freelist; \
-	static gddSemaphore lock;
+#define gdd_NEWDEL_DATA \
+	static char* newdel_freelist; \
+	static gddSemaphore newdel_lock;
 
 // public interface for the new/delete stuff
-#define gdd_NEWDEL_FUNC(clas) void* operator new(size_t); \
-								void operator delete(void*); \
-								clas* next(void) { return newdel_next; } \
-								void setNext(clas* n) { newdel_next=n; }
+#define gdd_NEWDEL_FUNC(fld) \
+	void* operator new(size_t); \
+	void operator delete(void*); \
+	char* newdel_next(void) { return (char*)fld; } \
+	void newdel_setNext(char* n) { char** x=(char**)&fld; *x=n; }
 
 // declaration of the static variable for the free list
 #define gdd_NEWDEL_STAT(clas) \
-	clas* clas::newdel_freelist=NULL; \
-	gddSemaphore clas::lock;
+	char* clas::newdel_freelist=NULL; \
+	gddSemaphore clas::newdel_lock;
 
 // code for the delete function
-#define gdd_NEWDEL_DEL(clas) void clas::operator delete(void* v) { \
- clas* dn = (clas*)v; \
- if(dn->newdel_next==(clas*)(-1)) free((char*)v); \
- else { \
-   clas::lock.take(); \
-   dn->newdel_next=clas::newdel_freelist; clas::newdel_freelist=dn; \
-   clas::lock.give(); \
- } \
-}
+#define gdd_NEWDEL_DEL(clas) \
+ void clas::operator delete(void* v) { \
+	clas* dn = (clas*)v; \
+	if(dn->newdel_next()==(char*)(-1)) free((char*)v); \
+	else { \
+		clas::newdel_lock.take(); \
+		dn->newdel_setNext(clas::newdel_freelist); \
+		clas::newdel_freelist=(char*)dn; \
+		clas::newdel_lock.give(); \
+	} \
+ }
 
 // following function assumes that reading/writing address is atomic
 
 // code for the new function
-#define gdd_NEWDEL_NEW(clas) void* clas::operator new(size_t size) { \
- int tot; \
- clas *nn,*dn; \
- if(!clas::newdel_freelist) { \
-   tot=gdd_CHUNK_NUM; \
-   nn=(clas*)malloc(gdd_CHUNK(clas)); \
-   gddCleanUp::Add(nn); \
-   for(dn=nn;--tot;dn++) dn->newdel_next=dn+1; \
-   clas::lock.take(); \
-   (dn)->newdel_next=clas::newdel_freelist; \
-   clas::newdel_freelist=nn; \
-   clas::lock.give(); \
- } \
- if(size==sizeof(clas)) { \
-   clas::lock.take(); \
-   dn=clas::newdel_freelist; \
-   clas::newdel_freelist=clas::newdel_freelist->newdel_next; \
-   clas::lock.give(); \
-   dn->newdel_next=NULL; \
- } else { \
-   dn=(clas*)malloc(size); \
-   dn->newdel_next=(clas*)(-1); \
- } \
- return (void*)dn; \
-}
+#define gdd_NEWDEL_NEW(clas) \
+ void* clas::operator new(size_t size) { \
+	int tot; \
+	clas *nn,*dn; \
+	if(!clas::newdel_freelist) { \
+		tot=gdd_CHUNK_NUM; \
+		nn=(clas*)malloc(gdd_CHUNK(clas)); \
+		gddCleanUp::Add(nn); \
+		for(dn=nn;--tot;dn++) dn->newdel_setNext((char*)(dn+1)); \
+		clas::newdel_lock.take(); \
+		(dn)->newdel_setNext(clas::newdel_freelist); \
+		clas::newdel_freelist=(char*)nn; \
+		clas::newdel_lock.give(); \
+	} \
+	if(size==sizeof(clas)) { \
+		clas::newdel_lock.take(); \
+		dn=(clas*)clas::newdel_freelist; \
+		clas::newdel_freelist=((clas*)clas::newdel_freelist)->newdel_next(); \
+		clas::newdel_lock.give(); \
+		dn->newdel_setNext(NULL); \
+	} else { \
+		dn=(clas*)malloc(size); \
+		dn->newdel_setNext((char*)(-1)); \
+	} \
+	return (void*)dn; \
+ }
 
 class gddCleanUpNode
 {

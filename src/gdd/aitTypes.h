@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/08/22 21:05:40  jbk
+ * More fixes to make strings and fixed string work better.
+ *
  * Revision 1.1  1996/06/25 19:11:33  jbk
  * new in EPICS base
  *
@@ -65,6 +68,17 @@ typedef	struct {
 	char* string;
 	aitUint32 len;
 } aitString;
+#endif
+
+#ifndef vxWorks
+#if (_POSIX_C_SOURCE < 3) && !defined(solaris) && !defined(SOLARIS)
+struct timespec
+{
+	time_t tv_sec;
+	long tv_nsec;
+};
+typedef struct timespec timespec;
+#endif
 #endif
 
 /* all normal types */

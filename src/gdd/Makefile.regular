@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  1996/09/12 11:18:46  jbk
+# makefile to build library outside of EPICS tree
+#
 #
 
 DEPENDS_FLAG = -M # -xM
@@ -17,27 +20,36 @@ CFLAGS = $(CCFLAGS)
 AR = ar
 
 SRCS = aitGen.c aitTypes.c aitHelpers.cc \
-       gdd.cc gddAppDefs.cc gddAppTable.cc gddNewDel.cc \
-       gddTest.cc genApps.cc
+       gdd.cc gddTest.cc gddArray.cc gddContainer.cc \
+       gddAppDefs.cc gddAppTable.cc gddNewDel.cc \
+       gddErrorCodes.cc gddUtils.cc genApps.cc
 
 MY_OBJS = gdd.o gddTest.o gddAppTable.o gddNewDel.o gddAppDefs.o \
-		  aitTypes.o aitConvert.o aitHelpers.o
+		  aitTypes.o aitConvert.o aitHelpers.o gddArray.o gddContainer.o \
+		  gddUtils.o gddErrorCodes.o
 
 LIBOBJS = $(MY_OBJS) dbMapper.o
 LIBNAME = libgdd.a
 
+HEADS = gdd.h gddI.h gddContainer.h gddContainerI.h gddArray.h  \
+        gddScalar.h gddUtils.h
+
 all: $(LIBNAME) dbMapper.o
 
 $(LIBNAME): $(LIBOBJS)
-	$(AR) r $(LIBNAME) $@
+	$(AR) r $(LIBNAME) $^
 
 # cannot generate dependencies for aitConvert automatically
 
 gdd.o: gdd.cc
 gddTest.o: gddTest.cc
+gddArray.o: gddArray.cc
+gddContainer.o: gddContainer.cc
 gddAppTable.o: gddAppTable.cc
 gddAppDefs.o: gddAppDefs.cc
 gddNewDel.o: gddNewDel.cc
+gddUtils.o: gddUtils.cc
+gddErrorCodes.o: gddErrorCodes.cc
 aitHelpers.o: aitHelpers.cc
 aitTypes.o: aitTypes.c
 aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
@@ -50,7 +62,7 @@ aitGen: aitGen.o aitTypes.o
 
 # cannot generate dependencies for dbMapper.o automatically
 
-dbMapper.o: dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
+dbMapper.o: dbMapper.cc $(HEADS) gddAppTable.h dbMapper.h gddApps.h aitTypes.h
 	$(COMPILE.cc) -I$(HOME)/include $<
 	$(AR) r $(LIBNAME) $@
 

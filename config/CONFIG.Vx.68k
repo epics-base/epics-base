@@ -117,3 +117,5 @@ CPPSNCFLAGS = $(VX_INCLUDES)
 DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
 DEPENDS_RULE.cc = -$(COMPILE.cc) -M $(SRCS.cc) >> .DEPENDS 
 
+# Allow site host architecture specific overrides
+-include $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(ARCH_CLASS).$(HOST_ARCH)

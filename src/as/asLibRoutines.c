@@ -37,6 +37,7 @@ of this distribution.
 
 #ifdef vxWorks
 #include <fast_lock.h>
+static FAST_LOCK asLock;
 #else
 /*This only works in a single threaded environment */
 #define FAST_LOCK int
@@ -44,10 +45,9 @@ of this distribution.
 #define FASTLOCK(PFAST_LOCK)
 #define FASTUNLOCK(PFAST_LOCK)
 #endif
-static FAST_LOCK asLock;
 static int	asLockInit=TRUE;
-int	asActive = FALSE;
-static void *freeListPvt = NULL;
+int		asActive = FALSE;
+static void 	*freeListPvt = NULL;
 
 /*following must be global because asCa nneeds it*/
 ASBASE	volatile *pasbase=NULL;

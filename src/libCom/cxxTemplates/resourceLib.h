@@ -65,7 +65,7 @@ template <class T, class ID> class resTableIter;
 //
 // class resTable <T, ID>
 //
-// This class stores resource entires of type T which can be efficiently 
+// This class stores resource entries of type T which can be efficiently 
 // located with a hash key of type ID.
 //
 //
@@ -79,11 +79,11 @@ template <class T, class ID> class resTableIter;
 //      own discretion) "delete" the item itself.
 //
 // 3)   If the "resTable::show (unsigned level)" member function is called then 
-//      class T must also implemt a "show (unsigned level)" member function which
+//      class T must also implement a "show (unsigned level)" member function which
 //      dumps increasing diagnostics information with increasing "level" to
 //      standard out.
 //
-// 4)   Classes of type ID must implement the following memeber functions:
+// 4)   Classes of type ID must implement the following member functions:
 //
 //          // equivalence test
 //          bool operator == (const ID &);
@@ -162,7 +162,7 @@ public:
 	// Call (pT->*pCB) () for each entry
 	//
 	// where pT is a pointer to type T and pCB is
-	// a pointer to a memmber function of T with 
+	// a pointer to a member function of T with 
 	// no parameters that returns void
 	//
 	void traverse (pSetMFArg(pCB)) const;
@@ -206,7 +206,7 @@ private:
 // class intId
 //
 // signed or unsigned integer identifier (class T must be
-// a signed or unsigned interger type)
+// a signed or unsigned integer type)
 //
 // this class works as type ID in resTable <class T, class ID>
 //
@@ -220,7 +220,7 @@ private:
 //
 // MIN_INDEX_WIDTH and MAX_ID_WIDTH are specified here at
 // compile time so that the hash index can be produced 
-// efficently. Hash indexes are produced more efficiently 
+// efficiently. Hash indexes are produced more efficiently 
 // when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
 //
 #if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
@@ -748,7 +748,7 @@ inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hashEngine (const 
     // is actually a very small inline function
     //
 	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and urolling the
+	// slower than switching on the architecture size and unrolling the
 	// loop explicitly (that solution has resulted in portability
 	// problems in the past).
 	//
@@ -861,7 +861,7 @@ void stringId::show (unsigned level) const
 // stringId::~stringId()
 //
 //
-// this needs to be instanciated only once (normally in libCom)
+// this needs to be instantiated only once (normally in libCom)
 //
 stringId::~stringId()
 {

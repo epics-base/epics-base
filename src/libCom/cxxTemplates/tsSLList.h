@@ -175,7 +175,7 @@ inline void tsSLNode<T>::removeNextItem ()
 
 //////////////////////////////////////////
 //
-// tsSLList<T> inline memeber functions
+// tsSLList<T> inline member functions
 //
 //////////////////////////////////////////
 
@@ -242,7 +242,7 @@ inline void tsSLList<T>::push(T &item)
 
 //////////////////////////////////////////
 //
-// tsSLIter<T> inline memeber functions
+// tsSLIter<T> inline member functions
 //
 //////////////////////////////////////////
 
@@ -291,7 +291,7 @@ inline T * tsSLIter<T>::operator () ()
 
 //////////////////////////////////////////
 //
-// tsSLIterRm<T> inline memeber functions
+// tsSLIterRm<T> inline member functions
 //
 // adds remove method (and does not construct
 // with const list)
@@ -359,7 +359,7 @@ inline T * tsSLIterRm<T>::operator () ()
 // tsSLIterRm<T>::remove ()
 //
 // remove current node
-// (and move current to be the previos item -
+// (and move current to be the previous item -
 // the item seen by the iterator before the 
 // current one - this guarantee that the list 
 // will be accessed sequentially even if an item

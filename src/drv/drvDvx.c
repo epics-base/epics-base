@@ -111,6 +111,12 @@
  *  told to start transferring more data.  This is in case the sampling 
  *  completes with less than 512 bytes in the fifo.
  *
+ *  In another phone conversation with Analogic, tech support told me that when
+ *  the start signal is de-asserted (when using external start/stop mode), the
+ *  sequence program pointer is reset to 0 (zero).  This is fine and dandy, but
+ *  it can cause the mux stage/pipeline to start improperly.  Thus causing the
+ *  first data sample to be corrupt.
+ *
  * BUGS:
  *  The driver should inspect the VXI make and model codes and use a data type
  *  for the DMA buffer that is appropriate.
@@ -205,6 +211,8 @@ struct dvx_rec
 	unsigned long	pgmMask[8];	/* ports to be read by seq-program */
 	unsigned short	gain[8];	/* port gains */
 
+	int	RearmMode;		/* zero if auto-rearm, else manual */
+
 	IOSCANPVT *pioscanpvt;
 };
 
@@ -284,20 +292,20 @@ struct {
 
 static struct dvx_rec dvx[MAX_DVX_CARDS] = {
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-,{0, 0, 0, 0, 0, 0, 0, 0}
-, NULL
+,{0, 0, 0, 0, 0, 0, 0, 0},
+0 , NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-,{0, 0, 0, 0, 0, 0, 0, 0}
-, NULL
+,{0, 0, 0, 0, 0, 0, 0, 0},
+0, NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-,{0, 0, 0, 0, 0, 0, 0, 0}
-, NULL
+,{0, 0, 0, 0, 0, 0, 0, 0},
+0, NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
-,{0, 0, 0, 0, 0, 0, 0, 0}
-, NULL
+,{0, 0, 0, 0, 0, 0, 0, 0},
+0, NULL
 }
 };
 
@@ -350,6 +358,8 @@ int	dvxDebug = 0;
 LOCAL void
 dvx_int(struct dvx_rec *dvxptr)
 {
+	/* BUG --- why are there STATIC variables in here????? */
+
 	static short i, junk;
 	register struct dvx_2502 *cptr;
 	static unsigned int tick, t, intlev;
@@ -386,17 +396,79 @@ dvx_int(struct dvx_rec *dvxptr)
 
 		dvxptr->inbuf->wordcnt = i;		/* record # of words to clear fifo */
 
-		/* enable DMA opeations */
-		cptr->dma_point = DMA_CSR;
-		cptr->dma_data = CMR_SC | M_CIE | M_CH2;	/* enable int channel #2 */
-		cptr->dma_data = CMR_START | M_CH2;		/* start channel #2 */
+		if (dvxptr->RearmMode == 0)
+		{
+		  	/* enable DMA opeations */
+		  cptr->dma_point = DMA_CSR;
+
+		  	/* enable int channel #2 */
+		  cptr->dma_data = CMR_SC | M_CIE | M_CH2;
+
+		  	/* start channel #2 */
+		  cptr->dma_data = CMR_START | M_CH2;		
+		}
+
 		scanIoRequest(*(dvxptr->pioscanpvt));
 		break;
 	}
 	cptr->csr = dvxptr->csr_shadow;
 }
 
-
+int dvx_RearmModeSet(int card, int mode)
+{
+  /* make sure hardware exists */
+  if ((card >= ai_num_cards[DVX2502]) || (card < 0))	
+    return(-1);
+  
+  dvx[card].RearmMode = mode;
+  return(0);
+}
+
+int dvx_rearm(int card)
+{
+  struct dvx_rec *dvxptr;
+  struct dvx_2502 *cptr;
+  int i;
+  short junk;
+
+  /* make sure hardware exists */
+  if ((card >= ai_num_cards[DVX2502]) || (card < 0))	
+    return(-1);
+  else if(dvx[card].pdvx2502 == NULL)
+    return(-2);
+
+  dvxptr = &dvx[card];
+  cptr = dvxptr->pdvx2502;
+ 
+  if (dvxptr->RearmMode == 0)
+    return(-3);
+
+#if 0
+  cptr = dvxptr->pdvx2502;
+  cptr->dma_point = DMA_CSR;
+  cptr->dma_data = CMR_CC | M_IP | M_CH2;	/* clear dma int channel #2 */
+  cptr->csr = dvxptr->csr_shadow & 0xff5f;	/* disable fifo interrupts */
+#endif
+
+  /* Drain the fifo of any crud */
+  for (i = 0; cptr->csr & S_NEPTY; i++, junk = cptr->fifo);
+
+  if (dvxDebug)
+    printf("dvx_rearm(%d) fifo residual = %d\n", card, i);
+
+    /* enable DMA opeations */
+  cptr->dma_point = DMA_CSR;
+
+    /* enable int channel #2 */
+  cptr->dma_data = CMR_SC | M_CIE | M_CH2;
+
+    /* start channel #2 */
+  cptr->dma_data = CMR_START | M_CH2;
+
+  return(0);
+}
+
+
 /*
  * dvx_driver_init
  *
@@ -525,6 +597,8 @@ LOCAL long dvx_driver_init(void)
 #endif
 				return(-1);
 
+			if (dvxDebug)
+			  printf("dvx_driver_init(%d) allocated ibp at %p buffer at %p\n", i, ibptr, ibptr->data);
 			if (j == 0){
 				dvx[i].inbuf = ibptr;		/* initialize if first */
 			}
@@ -722,7 +796,10 @@ dvx_program(int card, int board, unsigned long mask, int dmaSize, int gain)
  * Allow the user to specify the interrupt level number
  *
  * It returns the 'old' IRQ level value.
+ *
+ * NOTE that off the shelf DVX2502s are set to use IRQ level 1
  */
+
 int dvx_setIrqLevel(int level)
 {
   int i;
@@ -1193,33 +1270,33 @@ int 	dvx_dma_stat(int card, int chan)
 		ptr = dvx[card].pdvx2502;
 		temp = (chan & 0x1)<<1;
 		ptr->dma_point = DMA_CSR | temp;
-		printf("dma status = %x\n",ptr->dma_data);
+		printf("dma status = %X\n",ptr->dma_data);
 		ptr->dma_point = DMA_MMR;
-		printf("master mode register = %x\n",ptr->dma_data);
+		printf("master mode register = %X\n",ptr->dma_data);
 		ptr->dma_point = DMA_CARH | temp;
-		printf("chain address high = %x\n",ptr->dma_data);
+		printf("chain address = %4.4X",ptr->dma_data);
 		ptr->dma_point = DMA_CARL | temp;
-		printf("chain address low = %x\n",ptr->dma_data);
+		printf("%4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_CARAH | temp;
-		printf("current address register A high = %x\n",ptr->dma_data);
+		printf("current address register A = %4.4X",ptr->dma_data);
 		ptr->dma_point = DMA_CARAL | temp;
-		printf("current address register A low = %x\n",ptr->dma_data);
+		printf("%4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_CARBH | temp;
-		printf("current address register B high = %x\n",ptr->dma_data);
+		printf("current address register B = %4.4X",ptr->dma_data);
 		ptr->dma_point = DMA_CARBL | temp;
-		printf("current address register B low = %x\n",ptr->dma_data);
+		printf("%4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_BARAH | temp;
-		printf("base address register A high = %x\n",ptr->dma_data);
+		printf("base address register A = %4.4X",ptr->dma_data);
 		ptr->dma_point = DMA_BARAL | temp;
-		printf("base address register A low = %x\n",ptr->dma_data);
+		printf("%4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_BARBH | temp;
-		printf("base address register B high = %x\n",ptr->dma_data);
+		printf("base address register B = %4.4X",ptr->dma_data);
 		ptr->dma_point = DMA_BARBL | temp;
-		printf("base address register B low = %x\n",ptr->dma_data);
+		printf("%4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_COC | temp;
-		printf("current operation count = %x\n",ptr->dma_data);
+		printf("current operation count = %4.4X\n",ptr->dma_data);
 		ptr->dma_point = DMA_BOC | temp;
-		printf("base operation count = %x\n",ptr->dma_data);
+		printf("base operation count = %4.4X\n",ptr->dma_data);
 	}
 	return 0;
 }

@@ -1,71 +1,12 @@
-/************************************************************************/
-/* $Id$								*/
-/*									*/
-/*	        	      L O S  A L A M O S			*/
-/*		        Los Alamos National Laboratory			*/
-/*		         Los Alamos, New Mexico 87545			*/
-/*									*/
-/*	Copyright, 1986, The Regents of the University of California.	*/
-/*									*/
-/*									*/
-/*	History								*/
-/*	-------								*/
-/*	xx0887	joh	Init Release					*/
-/*	021291 	joh	Fixed vxWorks task name creation bug		*/
-/*	032291	joh	source cleanup					*/
-/*	041591	joh	added channel exsits routine			*/
-/*	060591	joh	delinting					*/
-/*	060691	joh	removed 4 byte count from the beginning of	*/
-/*			each message					*/
-/*	071291	joh	no longer sends id at TCP connect		*/
-/*	082791	joh	split send_msg() into two subroutines		*/
-/*	110491	joh	mark all channels disconnected prior to		*/
-/*			calling the first connection handler on		*/
-/*			disconnect					*/
-/*	110491	joh	allow cac_send_msg() to be called recursively	*/
-/*	110691	joh	call recv_msg to free up deadlock prior to 	*/
-/*			each send until a better solution is found	*/
-/*			(checking only when the socket blocks causes	*/
-/*			does not leave enough margin to fix the		*/
-/*			problem once it is detected)			*/
-/*	120991	joh	better quit when unable to broadcast		*/
-/*	022692	joh	better prefix on messages			*/
-/*	031892	joh	initial rebroadcast delay is now a #define	*/
-/*	042892	joh	made local routines static			*/
-/*      050492 	joh  	dont call cac_send_msg() until all messages     */
-/*                      have been processed to support batching         */
-/*	050492	joh	added new fd array to select			*/
-/*	072392	joh	use SO_REUSEADDR when testing to see		*/
-/*			if the repeater has been started		*/
-/*	072792	joh	better messages					*/
-/*	101692	joh	defensive coding against unexpected errno's	*/
-/*      120992	GeG	support  VMS/UCX		                */
-/*	091493	joh	init send retry count when each recv and at	*/
-/*			at connect					*/
-/*	102993	joh	toggle set sock opt to set			*/
-/*	021794	joh	turn on SO_REUSEADDR only after the test for	*/
-/*			address in use so that test works on UNIX	*/
-/*			kernels that support multicast			*/
-/*									*/
-/*_begin								*/
-/************************************************************************/
-/*									*/
-/*	Title:	IOC socket interface module				*/
-/*	File:	share/src/ca/iocinf.c					*/
-/*									*/
-/*	Purpose								*/
-/*	-------								*/
-/*									*/
-/*	ioc socket interface module					*/
-/*									*/
-/*									*/
-/*	Special comments						*/
-/*	------- --------						*/
-/* 	NOTE: Wallangong select does not return early if IO is 		*/
-/*	present prior to the timeout expiration.			*/
-/*									*/
-/************************************************************************/
-/*_end									*/
+/*
+ * $Id$
+ *
+ *	        	      L O S  A L A M O S
+ *		        Los Alamos National Laboratory
+ *		         Los Alamos, New Mexico 87545
+ *
+ *	Copyright, 1986, The Regents of the University of California.
+ */
 
 static char *sccsId = "@# $Id$";
 

@@ -186,7 +186,7 @@ static void ProcessCallback(CALLBACK *pCallback)
 
     callbackGetUser(pRec, pCallback);
     dbScanLock(pRec);
-    (*((struct rset *)pRec->rset)->process)(pRec);
+    (*pRec->rset->process)(pRec);
     dbScanUnlock(pRec);
 }
 void callbackRequestProcessCallback(CALLBACK *pCallback,

@@ -676,10 +676,10 @@ static void addToList(struct dbCommon *precord,scan_list *psl)
 	scan_element	*pse,*ptemp;
 
 	FASTLOCK(&psl->lock);
-	pse = (scan_element *)(precord->spvt);
+	pse = precord->spvt;
 	if(pse==NULL) {
 		pse = dbCalloc(1,sizeof(scan_element));
-		precord->spvt = (void *)pse;
+		precord->spvt = pse;
 		pse->precord = precord;
 	}
 	pse ->pscan_list = psl;
@@ -707,7 +707,7 @@ static void deleteFromList(struct dbCommon *precord,scan_list *psl)
 		FASTUNLOCK(&psl->lock);
 		return;
 	}
-	pse = (scan_element *)(precord->spvt);
+	pse = precord->spvt;
 	if(pse==NULL || pse->pscan_list!=psl) {
 	    FASTUNLOCK(&psl->lock);
 	    errMessage(-1,"deleteFromList failed");

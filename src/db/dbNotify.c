@@ -53,7 +53,7 @@
 #include	"recGbl.h"
 
 /*NODE structure attached to ppnn field of each record in list*/
-typedef struct {
+typedef struct pnWaitNode {
 	ELLNODE		node;
 	struct dbCommon	*precord;
 } PNWAITNODE;
@@ -114,7 +114,7 @@ static void waitAdd(struct dbCommon *precord,PUTNOTIFY *ppn)
     PNWAITNODE	*ppnnode;
 
     if(!precord->ppnn) precord->ppnn = dbCalloc(1,sizeof(PNWAITNODE));
-    ppnnode = (PNWAITNODE *)precord->ppnn;
+    ppnnode = precord->ppnn;
     ppnnode->precord = precord;
     precord->ppn = ppn;
     ellAdd(&ppn->waitList,&ppnnode->node);
@@ -302,8 +302,8 @@ static void notifyCancel(PUTNOTIFY *ppn)
 
 void dbNotifyCompletion(struct dbCommon *precord)
 {
-    PUTNOTIFY	*ppn = (PUTNOTIFY *)precord->ppn;
-    PNWAITNODE	*ppnnode = (PNWAITNODE *)precord->ppnn;;
+    PUTNOTIFY	*ppn = precord->ppn;
+    PNWAITNODE	*ppnnode = precord->ppnn;;
 
     ellDelete(&ppn->waitList,&ppnnode->node);
     precord->ppn = NULL;
@@ -313,7 +313,7 @@ void dbNotifyCompletion(struct dbCommon *precord)
 
 void dbNotifyAdd(struct dbCommon *pfrom, struct dbCommon *pto)
 {
-    PUTNOTIFY *pfromppn = (PUTNOTIFY *)pfrom->ppn;
+    PUTNOTIFY *pfromppn = pfrom->ppn;
     PUTNOTIFY *ppn=NULL;
 
     if(pto->ppn == pfrom->ppn) return; /*Aready in same set*/

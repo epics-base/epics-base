@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.15  1997/04/11 20:24:13  jhill
+ * added const to failureNotify()
+ *
  * Revision 1.14  1997/04/10 20:03:53  jhill
  * use include  not include <>
  *
@@ -510,6 +513,7 @@ int iocLogVPrintf(const char *pFormat, va_list pvar)
 			iocLogFile = NULL;
 			iocLogFD = ERROR;
 			semStatus = semGive(iocLogSignal);
+			printf("iocLogClient: lost contact with the log server\n");
 			assert(semStatus==OK);
 		}
 	}

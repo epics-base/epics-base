@@ -45,6 +45,8 @@
  * .14  12-11-92	mrk	Removed include for stdioLib.h
  * .15  11-03-93		jba		Added test for extra close paren at end of expression
  * .16  01-24-94		jba		Changed seperator test to catch invalid commas
+ * .17  05-11-94		jba		Added support for CONST_PI, CONST_R2D, and CONST_D2R
+ * 								and conversion of infix expression to uppercase
 */
 
 /* 
@@ -99,6 +101,7 @@
 #include	<string.h>
 #include	<dbDefs.h>
 #include	<post.h>
+#include	<ctype.h>
 
 /* declarations for postfix */
 /* element types */
@@ -170,6 +173,9 @@ static struct expression_element	elements[] = {
 "OR",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* or */
 "AND",		2,	2,	BINARY_OPERATOR,BIT_AND,   /* and */
 "XOR",		1,	1,	BINARY_OPERATOR,BIT_EXCL_OR, /* exclusive or */
+"PI",		0,	0,	OPERAND,	CONST_PI,	/* pi */
+"D2R",		0,	0,	OPERAND,	CONST_D2R,	/* pi/180 */
+"R2D",		0,	0,	OPERAND,	CONST_R2D,	/* 180/pi */
 "A",		0,	0,	OPERAND,	FETCH_A,   /* fetch var A */
 "B",		0,	0,	OPERAND,	FETCH_B,   /* fetch var B */
 "C",		0,	0,	OPERAND,	FETCH_C,   /* fetch var C */
@@ -299,7 +305,12 @@ short		*perror;
 	struct expression_element	*pelement;
 	register struct expression_element	*pstacktop;
 	double		constant;
-	register char   *pposthold;	
+	register char   *pposthold, *pc;	
+
+	/* convert infix expression to upper case */
+	for (pc=pinfix; *pc; pc++) {
+		if (islower(*pc)) *pc = toupper(*pc);
+	}
 
 	/* place the expression elements into postfix */
 	operand_needed = TRUE;

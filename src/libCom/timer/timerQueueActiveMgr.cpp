@@ -55,6 +55,7 @@ epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
                 iter->timerQueueActiveMgrPrivate::referenceCount++;
                 return *iter;
             }
+            iter++;
         }
     }
 

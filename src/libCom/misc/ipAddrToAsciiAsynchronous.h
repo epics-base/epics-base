@@ -17,7 +17,7 @@
 #ifndef ipAddrToAsciiAsynchronous_h
 #define ipAddrToAsciiAsynchronous_h
 
-#include "osiMutex.h"
+#include "osiEvent.h"
 #include "osiSock.h"
 #include "tsDLList.h"
 #include "shareLib.h"
@@ -33,8 +33,8 @@ public:
     epicsShareFunc void show ( unsigned level ) const;
 private:
     tsDLList < ipAddrToAsciiAsynchronous > labor;
-    osiEvent event;
-    osiEvent threadExit;
+    epicsEvent event;
+    epicsEvent threadExit;
     char nameTmp [1024];
     unsigned nextId;
     bool exitFlag;

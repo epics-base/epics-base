@@ -17,13 +17,11 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
-#include <syslog.h>
 #include <sys/termios.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <syslog.h>
 #include <rtems.h>
 #include <rtems/error.h>
 #include <rtems/stackchk.h>
@@ -31,6 +29,7 @@
 #include <rtems/tftp.h>
 
 #include <epicsThread.h>
+#include <errlog.h>
 #include <logClient.h>
 #include <iocsh.h>
 
@@ -68,8 +67,7 @@ logReset (void)
                 break;
         }
     }
-    syslog (LOG_NOTICE, "Startup after %s.", cbuf);
-    printf ("Startup after %s.\n", cbuf);
+    errlogPrintf ("Startup after %s.\n", cbuf);
     m360.rsr = ~0;
 }
 
@@ -78,7 +76,7 @@ logReset (void)
 static void
 logReset (void)
 {
-    syslog (LOG_NOTICE, "Started.");
+    errlogPrintf ("Started.\n");
 }
 #endif
 
@@ -128,7 +126,7 @@ LogFatal (const char *msg, ...)
     va_list ap;
 
     va_start (ap, msg);
-    vsyslog (LOG_ALERT,  msg, ap);
+    errlogVprintf (msg, ap);
     va_end (ap);
     delayedPanic (msg);
 }
@@ -139,7 +137,7 @@ LogFatal (const char *msg, ...)
 void
 LogRtemsFatal (const char *msg, rtems_status_code sc)
 {
-    syslog (LOG_ALERT, "%s: %s", msg, rtems_status_text (sc));
+    errlogPrintf ("%s: %s\n", msg, rtems_status_text (sc));
     delayedPanic (msg);
 }
 
@@ -149,7 +147,7 @@ LogRtemsFatal (const char *msg, rtems_status_code sc)
 void
 LogNetFatal (const char *msg, int err)
 {
-    syslog (LOG_ALERT, "%s: %d", msg, err);
+    errlogPrintf ("%s: %d\n", msg, err);
     delayedPanic (msg);
 }
 
@@ -266,11 +264,7 @@ Init (rtems_task_argument ignored)
     char arg1[] = "st.cmd";
     char *argv[3] = { arg0, arg1, NULL };
     rtems_interval ticksPerSecond;
-
-    /*
-     * Get configuration
-     */
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
+    rtems_task_priority newpri;
 
     /*
      * Architecture-specific hooks
@@ -278,6 +272,19 @@ Init (rtems_task_argument ignored)
 #if defined(__i386__)
     initRemoteGdb(ticksPerSecond);
 #endif
+
+    /*
+     * Get configuration
+     */
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
+
+    /*
+     * Override RTEMS configuration
+     */
+    rtems_task_set_priority (
+                     RTEMS_SELF,
+                     epicsThreadGetOssPriorityValue(epicsThreadPriorityIocsh),
+                     &newpri);
 
     /*
      * Create a reasonable environment
@@ -290,6 +297,12 @@ Init (rtems_task_argument ignored)
     /*
      * Start network
      */
+    if (rtems_bsdnet_config.network_task_priority == 0) {
+        unsigned int p;
+        if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
+                                            == epicsThreadBooleanStatusSuccess)
+            rtems_bsdnet_config.network_task_priority = epicsThreadGetOssPriorityValue(p);
+    }
     printf ("***** Initializing network *****\n");
     rtems_bsdnet_initialize_network ();
     printf ("***** Initializing TFTP *****\n");
@@ -318,9 +331,6 @@ Init (rtems_task_argument ignored)
             break;
         }
     }
-    printf ("***** Initializing syslog *****\n");
-    openlog ("IOC", LOG_CONS, LOG_DAEMON);
-    logReset ();
 
     /*
      * Run the EPICS startup script

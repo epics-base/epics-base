@@ -18,8 +18,6 @@
 #include <bsp.h>
 #include <rtems/rtems_bsdnet.h>
 
-#define NETWORK_TASK_PRIORITY           90
-
 extern void rtems_bsdnet_loopattach();
 static struct rtems_bsdnet_ifconfig loopback_config = {
     "lo0",                          /* name */
@@ -76,9 +74,13 @@ static struct rtems_bsdnet_ifconfig bsp_driver_config = {
 #endif
 
 struct rtems_bsdnet_config rtems_bsdnet_config = {
-    FIRST_DRIVER_CONFIG,      /* Link to next interface */
-    rtems_bsdnet_do_bootp,    /* Use BOOTP to get network configuration */
-    NETWORK_TASK_PRIORITY,    /* Network task priority */
-    180*1024,                 /* MBUF space */
-    350*1024,                 /* MBUF cluster space */
+    FIRST_DRIVER_CONFIG,   /* Link to next interface */
+    rtems_bsdnet_do_bootp, /* Use BOOTP to get network configuration */
+    0,                     /* If 0 then the network daemons will run at a */
+                           /*   priority just less than the lowest-priority */
+                           /*   EPICS scan thread. */
+                           /* If non-zero then the network daemons will run */
+                           /*   at this *RTEMS* priority */
+    180*1024,              /* MBUF space */
+    350*1024,              /* MBUF cluster space */
 };

@@ -150,6 +150,7 @@ INC += osiUnistd.h
 INC += osiWireFormat.h
 
 SRCS += epicsThread.cpp
+SRCS += epicsMutex.c
 SRCS += epicsTime.cpp
 
 SRCS += osdSock.c

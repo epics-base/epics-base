@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.21  1996/06/19 17:12:40  jhill
+ * check for fd>FD_SETSIZE and improved func proto
+ *
  * Revision 1.20  1995/12/19  19:41:24  jhill
  * optimized alarm entry sort
  *
@@ -1063,9 +1066,7 @@ fdctx 		*pfdctx,
 struct timeval	*pt 
 )
 {
-	struct timezone		tz;
-
-	return gettimeofday (pt, &tz);
+	return gettimeofday (pt, (struct timezone *) NULL);
 }
 #endif
 

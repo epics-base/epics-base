@@ -17,9 +17,8 @@ osiTime osiTime::getCurrent ()
 {
         int             status;
         struct timeval  tv;
-        struct timezone tzp;
  
-        status = gettimeofday (&tv, &tzp);
+        status = gettimeofday (&tv, NULL);
         assert (status==0);
  
         return osiTime(tv.tv_sec, tv.tv_usec * nSecPerUSec);

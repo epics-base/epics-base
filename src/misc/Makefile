@@ -9,6 +9,7 @@ INC +=  asSubRecordFunctions.h
 LIBSRCS +=  epicsRelease.c
 LIBSRCS +=  iocInit.c
 LIBSRCS +=  asSubRecordFunctions.c
+DLL_LIBS = Com dbStaticIoc dbIoc asIoc rsrvIoc registryIoc  
 LIBRARY_IOC = miscIoc
 
 miscIoc_DLL_LIBS  = rsrvIoc asIoc dbIoc registryIoc dbStaticIoc Com

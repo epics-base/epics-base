@@ -9,6 +9,7 @@ of this distribution.
 #define INCiocInith
 
 #include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -32,6 +32,7 @@
  * .02	08-06-91 mrk	Make extra values 0
  * .03	08-13-91 mrk	Add pfl argument to dbGetField calls
  * .04  02-05-92 jba	Changed function arguments from paddr to precord 
+ * .05  02-28-92 jba    ANSI C changes
  */
 
 
@@ -533,7 +534,7 @@ new_alarm(){
  *			see DBR_ defines in db_access.h
  *	pbuffer		return buffer
  *	no_elements	number of elements
- *      caddr_t		pfl;
+ *      void		*pfl;
  *    returns
  *	0		successful
  *	-1		failed
@@ -583,7 +584,7 @@ struct dbAddr	*paddr;
 short		buffer_type;
 char		*pbuffer;
 unsigned short	no_elements;
-caddr_t		pfl;
+void		*pfl;
 {
     long status;
     long options;
@@ -1232,7 +1233,7 @@ caddr_t		pfl;
 		short no_str;
 		short *pvalue = &pold->value;
 
-		bzero(pold,sizeof(struct dbr_ctrl_enum));
+		memset(pold,'\0',sizeof(struct dbr_ctrl_enum));
 		/* first get status and severity */
 		options=DBR_STATUS|DBR_ENUM_STRS;
 		nRequest=0;

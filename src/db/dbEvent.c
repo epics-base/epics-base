@@ -52,6 +52,7 @@
  * joh	12	082091	db_event_get_field() comented out
  * joh	13	091191	updated for v5 vxWorks
  * jba	14	112691	Added 'return NULL;' to end of db_event_list
+ * jba  15 	022892	ANSI C changes
  */
 
 #include	<vxWorks.h>
@@ -561,11 +562,11 @@ register struct event_block		*pevent;
 			ev_que->valque[putix].sevr = sevr;
 			ev_que->valque[putix].time = precord->time;
 			/*
-		 	* use bcopy to avoid a bus error on
+		 	* use memcpy to avoid a bus error on
 		 	* union copy of char in the db at an odd 
 		 	* address
 		 	*/
-			bcopy(	pevent->paddr->pfield,
+			memcpy(	pevent->paddr->pfield,
 				&ev_que->valque[putix].field,
 				dbr_size[pevent->paddr->field_type]);
 	
@@ -639,11 +640,11 @@ register unsigned int		select;
 					ev_que->valque[putix].time = precord->time;
 
 					/*
-				 	* use bcopy to avoid a bus error on
+				 	* use memcpy to avoid a bus error on
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					bcopy(	pvalue,
+					memcpy(	pvalue,
 						&ev_que->valque[putix].field,
 						dbr_size[event->paddr->field_type]);
 

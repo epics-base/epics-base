@@ -38,6 +38,7 @@
  *                              parameters in a structure (first try)
  * .09  12-02-91        mrk     Added finishDevSup 
  * .10  02-10-92        jba     Changed error messages
+ * .11  02-28-92        jba     ANSI C changes
  *				
  */
 
@@ -50,7 +51,7 @@
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
 #include	<a_out.h>	/* for N_TEXT */
 #include	<stdioLib.h>
-#include	<strLib.h>
+#include	<string.h>
 
 #include	<sdrHeader.h>
 #include	<fast_lock.h>
@@ -199,7 +200,7 @@ static long initRecSup()
 	errMessage(status,"dbRecType is NULL, i.e. no record types defined");
 	return(status);
     }
-    nbytes = sizeof(struct recSup) + dbRecType->number*sizeof(caddr_t);
+    nbytes = sizeof(struct recSup) + dbRecType->number*sizeof(void *);
     recSup = calloc(1,nbytes);
     recSup->number = dbRecType->number;
     (long)recSup->papRset = (long)recSup + (long)sizeof(struct recSup);
@@ -429,7 +430,7 @@ static long addToSet(precord,record_type,lookAhead,i,j,lset)
     short  j;		/*record before 1st following: record number	*/
     short  lset;	/* current lock set		*/
 {
-    short  k,in,itemp,jn,j1st;
+    short  k,in,jn,j1st;
     long status;
     struct fldDes       *pfldDes;
     struct link		*plink;
@@ -660,7 +661,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 		errMessage(-1L, message);
 	    }
             if ( epicsFlag )
-                strncpy(pSymAddr+sizeof(caddr_t), s3, len + 1);
+                strncpy(pSymAddr+sizeof(void *), s3, len + 1);
             else
                 strncpy(pSymAddr, s3, len + 1);
 	    break;
@@ -738,10 +739,10 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    return (-1);
 	    break;
 	}
-CLEAR:	bzero(buff, MAX);
-	bzero(s1, MAX);
-	bzero(s2, MAX);
-	bzero(s3, MAX);
+CLEAR:	memset(buff, '\0',  MAX);
+	memset(s1, '\0', MAX);
+	memset(s2, '\0', MAX);
+	memset(s3, '\0', MAX);
     }
     close(fd);
     return (0);

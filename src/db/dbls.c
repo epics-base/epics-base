@@ -29,6 +29,7 @@
  * Modification Log:
  * -----------------
  * .01  11-26-91        jba     Initialized fp to null
+ * .01  02-28-92        jba     ANSI C changes
  */
 
 
@@ -770,8 +771,8 @@ DbRecDes(fp, fflag)
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->interest,
 			dbRecDes->papRecTypDes[i]->papFldDes[j]->interest);
 		bufOut(fp, fflag);
-		bcopy((caddr_t) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
-		      (caddr_t) buff, 8);
+		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
+		      (void *) buff, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\tinitial",
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
 			buff[0], buff[1]);
@@ -780,8 +781,8 @@ DbRecDes(fp, fflag)
 		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum,
 		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum);
 		bufOut(fp, fflag);
-		bcopy((caddr_t) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
-		      (caddr_t) buff, 8);
+		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
+		      (void *) buff, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange1.value",
 		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
 			buff[0], buff[1]);
@@ -790,8 +791,8 @@ DbRecDes(fp, fflag)
 		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum,
 		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum);
 		bufOut(fp, fflag);
-		bcopy((caddr_t) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
-		      (caddr_t) buff, 8);
+		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
+		      (void *) buff, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange2.value",
 		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
 			buff[0], buff[1]);

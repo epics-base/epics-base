@@ -33,6 +33,7 @@
  * .02  10-23-91	mrk	Changed dbior so it also reports device support
  * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .05  02-28-92        jba     ANSI C changes
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -74,7 +75,7 @@
 
 #include	<vxWorks.h>
 #include	<types.h>
-#include	<strLib.h>
+#include	<string.h>
 #include	<stdioLib.h>
 
 #include	<fast_lock.h>
@@ -1002,7 +1003,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     short           n,n2;
     long            status;
     long            buffer[100];
-    caddr_t         pbuffer;
+    void       	   *pbuffer;
     long            options;
     long            nRequest;
     int             sv_tab_size;
@@ -1292,7 +1293,7 @@ static void dbpr_msg_flush(pMsgBuff, tab_size)
     /* skip print if buffer empty */
     if (pMsgBuff->pNext != pMsgBuff->out_buff)
 	printf("%s\n", pMsgBuff->out_buff);
-    bzero(pMsgBuff->out_buff, (int) MAXLINE + 1);
+    memset(pMsgBuff->out_buff,'\0', (int) MAXLINE + 1);
     pMsgBuff->pNext = pMsgBuff->out_buff;
     pMsgBuff->pNexTab = pMsgBuff->out_buff + tab_size;
     return;

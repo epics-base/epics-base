@@ -185,7 +185,7 @@ casStreamIOWakeup::casStreamIOWakeup () :
 //
 casStreamIOWakeup::~casStreamIOWakeup()
 {
-    this->timer.deatroy ();
+    this->timer.destroy ();
 }
 
 //

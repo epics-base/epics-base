@@ -143,6 +143,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_sg_put">ca_sg_put</a></li>
   <li><a href="#ca_sg_reset">ca_sg_reset</a></li>
   <li><a href="#ca_sg_test">ca_sg_test</a></li>
+  <li><a href="#ca_state">ca_state</a></li>
   <li><a href="#ca_test_event">ca_test_event</a></li>
   <li><a href="#ca_test_io">ca_test_io</a></li>
   <li><a href="#L6941">ca_write_access</a></li>
@@ -1978,9 +1979,8 @@ use at the users discretion.</p>
     <dd>user private pointer</dd>
 </dl>
 
-<h3><code><a name="L6746">channel_state()</a></code></h3>
-<pre><code>/* channel connection state */
-#include &lt;cadef.h&gt;
+<h3><code><a name="ca_state">ca_state()</a></code></h3>
+<pre><code>#include &lt;cadef.h&gt;
 enum channel_state {
         cs_never_conn, /* valid chid, server not found or unavaliable */
         cs_prev_conn,  /* valid chid, previously connected to server */

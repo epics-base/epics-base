@@ -95,7 +95,7 @@ void dbServiceIO::callReadNotify ( struct dbAddr &addr,
         return;
     }
 
-    if ( count > INT_MAX ) {
+    if ( count > INT_MAX || count > addr.no_elements ) {
         notify.exception ( ECA_BADCOUNT, 
             "element count out of range (high side)",
             type, count);
@@ -130,10 +130,10 @@ void dbServiceIO::callReadNotify ( struct dbAddr &addr,
     }
 }
 
-void dbServiceIO::callStateNotify ( struct dbAddr &addr, 
+void dbServiceIO::callStateNotify ( struct dbAddr & addr, 
         unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, 
-        cacStateNotify &notify )
+        const struct db_field_log * pfl, 
+        cacStateNotify & notify )
 {
     unsigned long size = dbr_size_n ( type, count );
 

@@ -732,19 +732,21 @@ long		offset;
 {
     char  *psrc=paddr->pfield;
     short size=paddr->field_size;
+    short sizeto;
 
     /* always force result string to be null terminated*/
-    if(size>=MAX_STRING_SIZE) size = MAX_STRING_SIZE-1;
+    sizeto = size;
+    if(sizeto>=MAX_STRING_SIZE) sizeto = MAX_STRING_SIZE-1;
 
     if(nRequest==1 && offset==0) {
-	strncpy(pbuffer,psrc,size);
-	*(pbuffer+size) = 0;
+	strncpy(pbuffer,psrc,sizeto);
+	*(pbuffer+sizeto) = 0;
 	return(0);
     }
     psrc+= (size*offset);
     while (nRequest) {
-        strncpy(pbuffer,psrc,size);
-	*(pbuffer+size) = 0;
+        strncpy(pbuffer,psrc,sizeto);
+	*(pbuffer+sizeto) = 0;
 	pbuffer += MAX_STRING_SIZE;
 	if(++offset==no_elements)
 		psrc=paddr->pfield;

@@ -131,10 +131,10 @@ int catime (char *channelName, enum appendNumberFlag appNF)
     printSearchStat(NELEMENTS(itemList));
 
     printf (
-        "channel name=%s, native type=%d, native count=%d\n",
-        ca_name(itemList[0].chix),
-        ca_field_type(itemList[0].chix),
-        ca_element_count(itemList[0].chix));
+        "channel name=%s, native type=%d, native count=%lu\n",
+        ca_name (itemList[0].chix),
+        ca_field_type (itemList[0].chix),
+        ca_element_count (itemList[0].chix));
 
     printf ("\tpend event test\n");
     timeIt (test_pend, NULL, 100, 0);

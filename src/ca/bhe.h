@@ -24,6 +24,7 @@
 #endif
 
 #include "tsSLList.h"
+#include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsTime.h"
 
@@ -38,22 +39,22 @@ class tcpiiu;
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
-    tcpiiu *getIIU () const;
-    void bindToIIU ( tcpiiu & );
-    void unbindFromIIU ();
     epicsShareFunc void destroy ();
-    epicsShareFunc bool updatePeriod ( const epicsTime &programBeginTime, 
+   epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
                         const epicsTime & currentTime );
     epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;
+    epicsShareFunc void registerIIU ( tcpiiu & );
+    epicsShareFunc void unregisterIIU ( tcpiiu & );
     epicsShareFunc void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void *pCadaver, size_t size );
 protected:
     epicsShareFunc ~bhe (); // force allocation from freeList
 private:
-    tcpiiu *piiu;
+    tsDLList < tcpiiu > iiuList;
     epicsTime timeStamp;
     double averagePeriod;
+    void beaconAnomalyNotify ();
     static tsFreeList < class bhe, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
@@ -72,9 +73,8 @@ private:
  * zero (so we can correctly compute the period
  * between the 1st and 2nd beacons)
  */
-inline bhe::bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr ) :
-    inetAddrID ( addr ), piiu ( 0 ), 
-    timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX )
+inline bhe::bhe ( const epicsTime & initialTimeStamp, const inetAddrID & addr ) :
+    inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX )
 {
 #   ifdef DEBUG
     {
@@ -83,26 +83,6 @@ inline bhe::bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr ) :
         ::printf ( "created beacon entry for %s\n", name );
     }
 #   endif
-}
-
-inline tcpiiu *bhe::getIIU ()const
-{
-    return this->piiu;
-}
-
-inline void bhe::bindToIIU ( tcpiiu &iiuIn )
-{
-    if ( this->piiu != &iiuIn ) {
-        assert ( this->piiu == 0 );
-        this->piiu = &iiuIn;
-    }
-}
-
-inline void bhe::unbindFromIIU ()
-{
-    this->piiu = 0;
-    this->timeStamp = epicsTime();
-    this->averagePeriod = - DBL_MAX;
 }
 
 #endif // ifdef bheh

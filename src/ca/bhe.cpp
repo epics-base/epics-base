@@ -38,6 +38,15 @@ bhe::~bhe ()
 {
 }
 
+void bhe::beaconAnomalyNotify ()
+{
+    tsDLIterBD < tcpiiu > iter = this->iiuList.firstIter ();
+    while ( iter.valid() ) {
+        iter->beaconAnomalyNotify ();
+        iter++;
+    }
+}
+
 /*
  * update beacon period
  *
@@ -51,9 +60,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
 
     if ( this->timeStamp == epicsTime () ) {
 
-        if ( this->piiu ) {
-            this->piiu->beaconAnomalyNotify ();
-        }
+        this->beaconAnomalyNotify ();
 
         /* 
          * this is the 1st beacon seen - the beacon time stamp
@@ -73,9 +80,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     if ( this->averagePeriod < 0.0 ) {
         double totalRunningTime;
 
-        if ( this->piiu ) {
-            this->piiu->beaconAnomalyNotify ();
-        }
+        this->beaconAnomalyNotify ();
 
         /*
          * this is the 2nd beacon seen. We cant tell about
@@ -112,9 +117,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
              * trigger on any missing beacon 
              * if connected to this server
              */    
-            if ( this->piiu ) {
-                this->piiu->beaconAnomalyNotify ();
-            }
+            this->beaconAnomalyNotify ();
 
             if ( currentPeriod >= this->averagePeriod * 3.25 ) {
                 /* 
@@ -137,9 +140,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          * that the server is available
          */
         else if ( currentPeriod <= this->averagePeriod * 0.80 ) {
-            if ( this->piiu ) {
-                this->piiu->beaconAnomalyNotify ();
-            }
+            this->beaconAnomalyNotify ();
             netChange = true;
         }
         else {
@@ -147,8 +148,10 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
              * update state of health for active virtual circuits 
              * if the beacon looks ok
              */
-            if ( this->piiu ) {
-                piiu->beaconArrivalNotify (); // reset connection activity watchdog
+            tsDLIterBD < tcpiiu > iter = this->iiuList.firstIter ();
+            while ( iter.valid() ) {
+                iter->beaconArrivalNotify ();
+                iter++;
             }
         }
     
@@ -175,10 +178,6 @@ void bhe::show ( unsigned level ) const
 {
     ::printf ( "CA beacon hash entry at %p with average period %f\n", 
         static_cast <const void *> ( this ), this->averagePeriod );
-    if ( level > 0u ) {
-        ::printf ( "network IO pointer %p\n", 
-            static_cast <void *> ( this->piiu ) );
-    }
 }
 
 void bhe::destroy ()
@@ -191,4 +190,15 @@ double bhe::period () const
     return this->averagePeriod;
 }
 
+void bhe::registerIIU ( tcpiiu & iiu )
+{
+    this->iiuList.add ( iiu );
+}
+
+void bhe::unregisterIIU ( tcpiiu & iiu )
+{
+    this->iiuList.remove ( iiu );
+    this->timeStamp = epicsTime();
+    this->averagePeriod = - DBL_MAX;
+}
 

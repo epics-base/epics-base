@@ -64,6 +64,7 @@
 #include <ellLib.h>
 #include <dbDefs.h>
 #include <errMdef.h>
+#include "errSymTbl.h"
 #include <stdio.h>
 
 #ifdef vxWorks
@@ -83,23 +84,7 @@ extern int      sys_nerr;
 extern char    *sys_errlist[];
 #endif
 
-#define LOCAL   static
-#ifndef NELEMENTS
-#define NELEMENTS(array)		/* number of elements in an array */ \
-		(sizeof (array) / sizeof ((array) [0]))
-#endif
 
-typedef struct		/* ERRSYMBOL - entry in symbol table */
-    {
-    char *name;		/* pointer to symbol name */
-    long errNum;	/* errMessage symbol number */
-    } ERRSYMBOL;
-typedef struct		/* ERRSYMTAB - symbol table */
-    {
-    short nsymbols;	/* current number of symbols in table */
-    ERRSYMBOL *symbols;	/* ptr to array of symbol entries */
-    } ERRSYMTAB;
-typedef ERRSYMTAB *ERRSYMTAB_ID;
 #ifdef vxWorks
 #define MYERRNO	(errnoGet()&0xffff)
 #else
@@ -136,12 +121,9 @@ int errVerbose=0;
  * ERRSYMBLD
  *
  * Create the normal ell LIST of sorted error messages nodes
- * Followed by linked hash lists - that thread together those
+ * Followed by linked hash lists - that link together those
  * ell nodes that have a common hash number.
  *
- * The hash will get you to the top of a singly linked hash list
- * A linear search is then performed to find the place to
- * plant/retrieve the next hashed link/message. 
  ***************************************************************/
 int errSymBld()
 {
@@ -499,6 +481,7 @@ int ModSymFind(status, pname, pvalue)
 	phashnode = &pNextNode->hashnode;
 	pNextNode = *phashnode;
     }
+    *pname  = 0;
     *pvalue = -1;
     return ;
 }
@@ -540,42 +523,6 @@ int errSymFind(status, name)
     else
 	return (0);
 }
-
-#if 1
-
-/****************************************************************
- * ERRSYMFINDTST
- ***************************************************************/
-void errSymFindTst()
-{
-    ERRNUMNODE     *pNextNode;
-    char	   message[128];
-    unsigned short modnum;
-    unsigned short errnum;
-    int            i;
-
-    for ( i=0; i<NHASH; i++) {
-        if ((pNextNode = hashtable[i]) == NULL) {
-            continue;
-        }
-        /* search down the linked list for each errNum */
-        while (pNextNode)
-	{
-            modnum = (pNextNode->errNum >> 16);
-            errnum = pNextNode->errNum & 0xffff;
-            if((errSymFind (pNextNode->errNum, message)) <0 )
-            {
-                printf("errSymFindTst: errSymFind FAILED - modnum=%d errnum=%d\n"
-			 ,modnum ,errnum);
-            }
-            printf("hash_no=%d mod=%d num=%d errmess=\"%s\"\n"
-			, i, modnum, errnum, message);
-            pNextNode = pNextNode->hashnode;
-        }
-    }
-return;
-}
-#endif
 
 
 /****************************************************************
@@ -652,4 +599,29 @@ long errNum;
     printf("module %hu number %hu message=\"%s\"\n",
 		modnum, errnum, message);
     return;
+}
+
+/****************************************************************
+ * ERRSYMTEST
+****************************************************************/
+#ifdef __STDC__
+void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
+#else
+void errSymTest(modnum, begErrNum, endErrNum)
+unsigned short modnum;
+unsigned short begErrNum;
+unsigned short endErrNum;
+#endif /* __STDC__ */
+{
+    long            errNum;
+    unsigned short  errnum;
+    if (modnum < 501)
+	return;
+
+    /* print range of error messages */
+    for (errnum = begErrNum; errnum < endErrNum+1; errnum++) {
+	errNum = modnum << 16;
+	errNum |= (errnum & 0xffff);
+	errSymTestPrint(errNum);
+    }
 }

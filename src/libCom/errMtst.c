@@ -37,11 +37,6 @@
 
 #include <stdio.h>
 
-#ifdef __STDC__
-void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
-#else
-void errSymTest();
-#endif /* __STDC__ */
 
 
 /****************************************************************
@@ -58,32 +53,7 @@ main()
 	errSymFindTst();
 #endif
 #if 1
-	errSymTest((unsigned short)501, 1, 17);
+	errSymTest(501, 1, 17);
 #endif
 }
 #endif
-
-/****************************************************************
- * ERRSYMTEST
-****************************************************************/
-#ifdef __STDC__
-void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
-#else
-void errSymTest(modnum, begErrNum, endErrNum)
-unsigned short modnum;
-unsigned short begErrNum;
-unsigned short endErrNum;
-#endif /* __STDC__ */
-{
-    long            errNum;
-    unsigned short  errnum;
-    if (modnum < 501)
-	return;
-
-    /* print range of error messages */
-    for (errnum = begErrNum; errnum < endErrNum+1; errnum++) {
-	errNum = modnum << 16;
-	errNum |= (errnum & 0xffff);
-	errSymTestPrint(errNum);
-    }
-}

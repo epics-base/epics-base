@@ -96,6 +96,8 @@
  * .37  03-29-94	mcn	converted to fast links
  * .38  09-27-95	lrd	fix init to limit in overshoot check and retry
  *				post monitors for mcw and mccw
+ * .39  04-09-96	ric	Pos/Neg limit algos changed to move max int
+ *				steps.  Dev/Drv sup will interpret meaning
  */
 
 #include	<vxWorks.h>
@@ -171,6 +173,8 @@ struct smdset {
 #define POSITION 1
 #define POSITIVE_LIMIT 1
 #define NEGATIVE_LIMIT 2
+#define POSITIVE_HOME  3
+#define NEGATIVE_HOME  4
 
 static void alarm();
 static void monitor();
@@ -680,10 +684,19 @@ struct steppermotorRecord      *psm;
 	/*  set initial position */
 	if (psm->mode == POSITION){
 		if (psm->ialg != 0){
-			if (psm->ialg == POSITIVE_LIMIT){
-				status = (*pdset->sm_command)(psm,SM_MOVE,0x0fffff,0);
-			}else if (psm->ialg == NEGATIVE_LIMIT){
-				status = (*pdset->sm_command)(psm,SM_MOVE,-0x0fffff,0);
+			switch (psm->ialg){
+			case (POSITIVE_LIMIT):
+				status = (*pdset->sm_command)(psm,SM_FIND_LIMIT,1,0);
+				break;
+			case (NEGATIVE_LIMIT):
+				status = (*pdset->sm_command)(psm,SM_FIND_LIMIT,-1,0);
+				break;
+			case (POSITIVE_HOME):
+				status = (*pdset->sm_command)(psm,SM_FIND_HOME,1,0);
+				break;
+			case (NEGATIVE_HOME):
+				status = (*pdset->sm_command)(psm,SM_FIND_HOME,-1,0);
+				break;
 			}
 			psm->sthm = 1;
 		/* force a read of the position and status */

@@ -2,6 +2,8 @@ menu(steppermotorIALG) {
 	choice(steppermotorIALG_No_Initialization,"No Initialization")
 	choice(steppermotorIALG_Move_to_the_Positive_Limit,"Move to the Positive Limit")
 	choice(steppermotorIALG_Move_to_the_Negative_Limit,"Move to the Negative Limit")
+	choice(steppermotorIALG_Move_to_Positive_Home,"Move to Positive Home")
+	choice(steppermotorIALG_Move_to_Negative_Home,"Move to Negative Home")
 }
 menu(steppermotorMODE) {
 	choice(steppermotorMODE_Velocity,"Velocity")

@@ -70,7 +70,7 @@
 #include	"sCalcPostfix.h"
 #include	"sCalcPostfixPvt.h"
 
-static double	local_random();
+static double	local_random(void);
 
 static int isnan(double d)
 {

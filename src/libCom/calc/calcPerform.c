@@ -112,7 +112,7 @@
 #include	"postfix.h"
 #include	"postfixPvt.h"
 
-static double	local_random();
+static double	local_random(void);
 
 #define	NOT_SET		0
 #define	TRUE_COND	1

@@ -35,9 +35,7 @@ OBJS += exSyncPV.o
 OBJS += exAsyncPV.o
 OBJS += exChannel.o
 
-#PROD += excas
-
-include $(EPICS)/config/RULES.Unix
+PROD += excas
 
 BUILDDIR = $(CAS)/build/singleThread/O.sun4/
 
@@ -76,7 +74,7 @@ GLOMBOBJ += $(BUILDDIR)casDGIO.o
 GLOMBOBJ += $(BUILDDIR)casStreamIO.o
 GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
  
-all: excas
+include $(EPICS)/config/RULES.Unix
 
 #PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
 nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBS)
@@ -89,4 +87,6 @@ clean::
 	@$(RM) excas 
 	@$(RM) nolib
 	@$(RM) -rf Templates.DB
+
+
 

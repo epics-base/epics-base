@@ -2045,7 +2045,7 @@ void verifyChannelPriorities ( const char *pName )
             ( i * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
         priority += CA_PRIORITY_MIN;
         status = ca_create_channel ( pName, 0, 0, 
-            CA_PRIORITY_MIN + i, &chanArray[i] );
+            priority, &chanArray[i] );
         SEVCHK ( status, "prioritized channel create failed" );
     }
     status = ca_pend_io ( 10.0 );

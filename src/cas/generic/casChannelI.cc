@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:34:00  jhill
+ * API changes
+ *
  * Revision 1.3  1996/11/02 00:54:02  jhill
  * many improvements
  *
@@ -158,13 +161,13 @@ void casChannelI::clearOutstandingReads()
 {
 	this->lock();
 
-        //
-        // cancel any pending asynchronous IO 
-        //
+    //
+    // cancel any pending asynchronous IO 
+    //
 	tsDLIterBD<casAsyncIOI> iterIO(this->ioInProgList.first());
 	tsDLIterBD<casAsyncIOI> eolIO;
 	tsDLIterBD<casAsyncIOI> tmp;
-        while (iterIO!=eolIO) {
+	while (iterIO!=eolIO) {
 		//
 		// destructor removes from this list
 		//
@@ -172,7 +175,7 @@ void casChannelI::clearOutstandingReads()
 		++tmp;
 		iterIO->destroyIfReadOP();
 		iterIO = tmp;
-        }
+	}
 
 	this->unlock();
 }

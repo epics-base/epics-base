@@ -123,12 +123,12 @@ void exVectorPV::scan()
 		*(pF++) = newValue;
 	}
 
-        status = this->update (*pDD);
-        if (status) {
-                errMessage (status, "scan update failed\n");
-        }
- 
-        pDD->unreference();
+	status = this->update (*pDD);
+	if (status) {
+			errMessage (status, "scan update failed\n");
+	}
+
+	pDD->unreference();
 }
 
 //
@@ -147,10 +147,14 @@ void exVectorPV::scan()
 //
 caStatus exVectorPV::updateValue(gdd &valueIn)
 {
+	//
+	// replace means here throwing away the old gdd
+	// and "replacing" it with the one passed in
+	//
 	enum {replace, dontReplace} replFlag = dontReplace;
-        gddStatus gdds;
-        gdd *pNewValue;
- 
+    gddStatus gdds;
+    gdd *pNewValue;
+	
 	//
 	// Check bounds of incoming request
 	// (and see if we are replacing all elements -
@@ -180,7 +184,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		//
 		return S_casApp_outOfBounds;
 	}
-
+	
 	if (replFlag==replace) {
 		//
 		// replacing all elements is efficient
@@ -190,18 +194,18 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 	}
 	else {
 		aitFloat32 *pF, *pFE;
-
+		
 		//
 		// Create a new array data descriptor
 		// (so that old values that may be referenced on the
 		// event queue are not replaced)
 		//
 		pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat32, 
-				1u, this->info.getElementCount());
+			1u, this->info.getElementCount());
 		if (pNewValue==NULL) {
 			return S_casApp_noMemory;
 		}
-
+		
 		//
 		// copy over the old values if they exist
 		// (or initialize all elements to zero)
@@ -222,7 +226,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 				pNewValue->unreference();
 				return S_casApp_noMemory;
 			}
-
+			
 			//
 			// Install (and initialize) array buffer
 			// if no old values exist
@@ -233,7 +237,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 			}
 			*pNewValue = pF;
 		}
-
+		
 		//
 		// insert the values that they are writing
 		//
@@ -243,13 +247,13 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 			return S_cas_noConvert;
 		}
 	}
-
+	
 	if (this->pValue) {
 		this->pValue->unreference();
 	}
 	this->pValue = pNewValue;
-
-        return S_casApp_success;
+	
+	return S_casApp_success;
 }
 
 //

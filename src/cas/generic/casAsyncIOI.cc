@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/08/05 00:47:00  jhill
+ * fixed warnings
+ *
  * Revision 1.6  1997/04/10 19:33:56  jhill
  * API changes
  *
@@ -150,17 +153,17 @@ epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 
 	status = this->cbFuncAsyncIO();
 
-        if (status == S_cas_sendBlocked) {
+	if (status == S_cas_sendBlocked) {
 		//
 		// causes this op to be pushed back on the queue 
 		//
 		this->inTheEventQueue = TRUE;
 		this->unlock();
-                return status;
-        }
-        else if (status != S_cas_success) {
-                errMessage (status, "Asynch IO completion failed");
-        }
+		return status;
+	}
+	else if (status != S_cas_success) {
+		errMessage (status, "Asynch IO completion failed");
+	}
 
 	this->ioComplete = TRUE;
 
@@ -227,7 +230,7 @@ caStatus casAsyncIOI::postIOCompletionI()
 //
 caServer *casAsyncIOI::getCAS() const
 {
-        return this->client.getCAS().getAdapter();
+	return this->client.getCAS().getAdapter();
 }
 
 //
@@ -248,11 +251,11 @@ void casAsyncIOI::destroyIfReadOP()
 {
 	casCoreClient &clientCopy = this->client;
 
-        //
-        // client lock used because this object's
-        // lock may be destroyed
-        //
-        clientCopy.osiLock();
+	//
+	// client lock used because this object's
+	// lock may be destroyed
+	//
+	clientCopy.osiLock();
  
 	if (this->readOP()) {
         	this->serverDelete = TRUE;
@@ -264,7 +267,7 @@ void casAsyncIOI::destroyIfReadOP()
 	// BECAUSE OF THE DELETE ABOVE
 	//
 
-        clientCopy.osiUnlock();
+	clientCopy.osiUnlock();
 }
 
 //

@@ -89,16 +89,16 @@ caStatus exScalarPV::updateValue (gdd &valueIn)
 		return S_casApp_outOfBounds;
 	}
 
-        //
-        // release old value and replace it
-        // with the new one
-        //
-        if (this->pValue) {
-                this->pValue->unreference();
-        }
+	//
+	// release old value and replace it
+	// with the new one
+	//
+	if (this->pValue) {
+			this->pValue->unreference();
+	}
 	valueIn.reference();
-        this->pValue = &valueIn;
- 
-        return S_casApp_success;
+	this->pValue = &valueIn;
+
+	return S_casApp_success;
 }
 

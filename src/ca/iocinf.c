@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.75  1998/03/12 20:39:09  jhill
+ * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ *
  * Revision 1.74  1998/02/05 22:29:42  jhill
  * use osiSock macros
  *
@@ -1748,24 +1751,24 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
  */
 char *localHostName()
 {
-        int     size;
-        int     status;
-        char    pName[MAXHOSTNAMELEN];
+	int     size;
+	int     status;
+	char    pName[MAXHOSTNAMELEN];
 	char	*pTmp;
 
-        status = gethostname(pName, sizeof(pName));
-        if(status){
-                return NULL;
-        }
+	status = gethostname(pName, sizeof(pName));
+	if(status){
+		return NULL;
+	}
 
-        size = strlen(pName)+1;
-        pTmp = malloc(size);
-        if(!pTmp){
-                return pTmp;
-        }
+	size = strlen(pName)+1;
+	pTmp = malloc(size);
+	if(!pTmp){
+		return pTmp;
+	}
 
-        strncpy(pTmp, pName, size-1);
-        pTmp[size-1] = '\0';
+	strncpy(pTmp, pName, size-1);
+	pTmp[size-1] = '\0';
 
 	return pTmp;
 }

@@ -270,6 +270,8 @@ struct dbr_alDouble     {DBRalDouble};
 struct rset *dbGetRset(struct dbAddr *paddr);
 int dbIsValueField(struct dbFldDes *pdbFldDes);
 int dbGetFieldIndex(struct dbAddr *paddr);
+long dbGetNelements(struct link *plink,long *nelements);
+int dbIsLinkConnected(struct link *plink);
 long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
 long dbProcess(struct dbCommon *precord);

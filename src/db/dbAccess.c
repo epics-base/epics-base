@@ -404,7 +404,35 @@ int dbGetFieldIndex(struct dbAddr *paddr)
     return(((struct dbFldDes *)paddr->pfldDes)->indRecordType);
 }
 
+long dbGetNelements(struct link *plink,long *nelements)
+{
+    switch(plink->type) {
+    case CONSTANT:
+	*nelements = 0;
+	return(0);
+    case DB_LINK: {
+	    DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
+	    *nelements = paddr->no_elements;
+	    return(0);
+	}
+    case CA_LINK:
+	return(dbCaGetNelements(plink,nelements));
+    default:
+	break;
+    }
+    return(S_db_badField);
+}
 
+int dbIsLinkConnected(struct link *plink)
+{
+    switch(plink->type) {
+	case DB_LINK: return(TRUE);
+	case CA_LINK: return(dbCaIsLinkConnected(plink));
+	default: break;
+    }
+    return(FALSE);
+}
+
 /*
  *  Process a record if its scan field is passive.
  *     Will notify if processing is complete by callback.

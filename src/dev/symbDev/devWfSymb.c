@@ -38,11 +38,12 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<waveformRecord.h>
@@ -90,16 +91,19 @@ static long read_wf(pwf)
 {
     long status, typesize;
     struct vxSym *private = (struct vxSym *) pwf->dpvt;
+    int lockKey;
 
     if (private)
     {
         typesize = sizeofTypes[pwf->ftvl];
         
         /* Copy the data */
+        lockKey = intLock();
         memcpy(pwf->bptr, 
                (char *)(*private->ppvar) + typesize * private->index, 
                pwf->nelm * typesize);
-        
+        intUnlock(lockKey);
+
         pwf->nord = pwf->nelm;	/* We always get it all */
         pwf->udf = FALSE;	/* Record also does this (but shouldn't) */
         status = 0;

@@ -43,15 +43,16 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<stringinRecord.h>
@@ -95,17 +96,20 @@ static long init_record(pstringin)
 static long read_stringin(pstringin)
     struct stringinRecord	*pstringin;
 {
+	int lockKey;
     long status;
     struct vxSym *private = (struct vxSym *) pstringin->dpvt;
 
     if (private)
     {
-       pstringin->val[39] = '\0';
-       strncpy(pstringin->val, (char *)(*private->ppvar) + private->index, 39);
-       status = 0;
+        pstringin->val[39] = '\0';
+	    lockKey = intLock();
+        strncpy(pstringin->val, (char *)(*private->ppvar) + private->index, 39);
+        intUnlock(lockKey);
+        status = 0;
     }
     else 
-       status = 1;
+        status = 1;
 
     if(RTN_SUCCESS(status)) pstringin->udf=FALSE;
 

@@ -46,11 +46,12 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<special.h>
@@ -97,9 +98,14 @@ static long write_ao(pao)
     struct aoRecord	*pao;
 {
     struct vxSym *private = (struct vxSym *) pao->dpvt;
+	int lockKey;
 
     if (private)
+    {
+	   lockKey = intLock();
        *((double *)(*private->ppvar) + private->index) = pao->val;
+	   intUnlock(lockKey);
+    }
     else
        return(1);
 

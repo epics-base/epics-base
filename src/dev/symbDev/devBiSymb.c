@@ -43,15 +43,16 @@
  */
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<biRecord.h>
@@ -95,16 +96,19 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
+	int lockKey;
     long status;
     struct vxSym *private = (struct vxSym *) pbi->dpvt;
 
     if (pbi->dpvt)
     {
-       pbi->val = *((unsigned short *)(*private->ppvar) + private->index);
-       status = 0;
+        lockKey = intLock();
+        pbi->val = *((unsigned short *)(*private->ppvar) + private->index);
+        intUnlock(lockKey);
+        status = 0;
     }
     else
-       status = 1;
+        status = 1;
 
     if(RTN_SUCCESS(status)) pbi->udf=FALSE;
 

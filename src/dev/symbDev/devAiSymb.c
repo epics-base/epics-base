@@ -47,12 +47,13 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
@@ -100,10 +101,13 @@ static long read_ai(pai)
 {
     long status;
     struct vxSym *private = (struct vxSym *) pai->dpvt;
+	int lockKey;
 
     if (private)
     {
+	   lockKey = intLock();
        pai->val = *((double *)(*private->ppvar) + private->index);
+	   intUnlock(lockKey);
        status = 0;
     }
     else

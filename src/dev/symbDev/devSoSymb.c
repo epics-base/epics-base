@@ -43,15 +43,16 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<stringoutRecord.h>
@@ -95,15 +96,18 @@ static long init_record(pstringout)
 static long write_stringout(pstringout)
     struct stringoutRecord	*pstringout;
 {
+	int lockKey;
     struct vxSym *private = (struct vxSym *) pstringout->dpvt;
 
     if (private)
     {
-       pstringout->val[39] = '\0';
-       strcpy((char *)(*private->ppvar) + private->index, pstringout->val);
+        pstringout->val[39] = '\0';
+	    lockKey = intLock();
+        strcpy((char *)(*private->ppvar) + private->index, pstringout->val);
+        intUnlock(lockKey);
     }
     else 
-       return(1);
+        return(1);
 
     pstringout->udf = FALSE;
 

@@ -43,15 +43,16 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<longoutRecord.h>
@@ -96,9 +97,14 @@ static long write_longout(plongout)
     struct longoutRecord	*plongout;
 {
     struct vxSym *private = (struct vxSym *) plongout->dpvt;
+	int lockKey;
 
     if (private)
+	{
+	   lockKey = intLock();
        *((long *)(*private->ppvar) + private->index) = plongout->val;
+	   intUnlock(lockKey);
+	}
     else
        return(1);
 

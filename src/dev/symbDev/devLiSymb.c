@@ -42,15 +42,16 @@
  */
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<longinRecord.h>
@@ -96,10 +97,13 @@ static long read_longin(plongin)
 {
     long status;
     struct vxSym *private = (struct vxSym *) plongin->dpvt;
+	int lockKey;
 
     if (plongin->dpvt)
     {
+	   lockKey = intLock();
        plongin->val = *((long *)(*private->ppvar) + private->index);
+	   intUnlock(lockKey);
        status = 0;
     }
     else

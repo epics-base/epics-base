@@ -44,15 +44,16 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<boRecord.h>
@@ -96,12 +97,17 @@ static long init_record(pbo)
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
+    int lockKey;
     struct vxSym *private = (struct vxSym *) pbo->dpvt;
-    
+
     if (private)
-       *((unsigned short *)(*private->ppvar) + private->index) = pbo->val;
+    {
+        lockKey = intLock();
+        *((unsigned short *)(*private->ppvar) + private->index) = pbo->val;
+        intUnlock(lockKey);
+    }
     else
-       return(1);
+        return(1);
 
     pbo->udf=FALSE;
 

@@ -43,15 +43,16 @@
  */
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
@@ -95,16 +96,19 @@ static long init_record(pmbbi)
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
+    int lockKey;
     long status;
     struct vxSym *private = (struct vxSym *) pmbbi->dpvt;
 
     if (pmbbi->dpvt)
     {
-       pmbbi->val = *((long *)(*private->ppvar) + private->index);
-       status = 0;
+        lockKey = intLock();
+        pmbbi->val = *((long *)(*private->ppvar) + private->index);
+        intUnlock(lockKey);
+        status = 0;
     }
     else
-       status = 1;
+        status = 1;
 
     if(RTN_SUCCESS(status)) pmbbi->udf=FALSE;
 

@@ -44,15 +44,16 @@
 
 
 #include	<vxWorks.h>
-#include        <sysSymTbl.h>
+#include	<sysSymTbl.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbboRecord.h>
@@ -96,12 +97,17 @@ static long init_record(pmbbo)
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
+    int lockKey;
     struct vxSym *private = (struct vxSym *) pmbbo->dpvt;
     
     if (private)
-       *((long *)(*private->ppvar) + private->index) = pmbbo->val;
+    {
+        lockKey = intLock();
+        *((long *)(*private->ppvar) + private->index) = pmbbo->val;
+        intUnlock(lockKey);
+    }
     else
-       return(1);
+        return(1);
 
     pmbbo->udf=FALSE;
 

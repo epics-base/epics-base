@@ -8,6 +8,12 @@
 
 /* Modification History:
  * $Log$
+ * Revision 1.1.1.1  1998/03/16 16:57:06  franksen
+ * Imported using tkCVS
+ *
+ * Revision 1.1  1998/01/21 20:47:44  mrk
+ * restructure; new Symb support
+ *
  * Revision 1.1  1996/10/24 18:29:20  wlupton
  * Andrew Johnson's changes (upwards-compatible)
  *

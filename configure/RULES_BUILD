@@ -45,7 +45,7 @@ include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
 # Set opt and warn
-ifeq ($(HOST_ARCH),$(T_A))
+ifneq ($(BUILD_CLASS),CROSS)
 OPT=$(HOST_OPT)
 WARN=$(HOST_WARN)
 else
@@ -71,7 +71,7 @@ endif
 
 ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
 OBJS += $(OBJS_IOC)
-else 
+else
 LIBRARY_IOC =
 endif
 #---------------------------------------------------------------
@@ -133,12 +133,8 @@ rebuild: clean install
 
 inc: $(INSTALL_INC) $(INSTALL_OSINC) $(INSTALL_INCREC)
 
-build: $(MENUS) $(RECTYPES) $(BPTS) $(OBJSNAME) \
+build: $(OBJSNAME) \
 	$(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) $(TARGETS)
-
-ifdef DBDEXPAND
-build:	$(DBDNAME)
-endif
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
@@ -158,13 +154,10 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
-	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) \
-	$(DBDNAME) *.out MakefileInclude
+	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) \
+	*.out MakefileInclude
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF_IOC) $(LIB_BAF_HOST) *$(BOF)
-endif
-ifdef DBDEXPAND
-	@$(RM) $(DBDNAME)
 endif
 
 # WIN95/NT source browser
@@ -191,7 +184,7 @@ $(DIRECTORY_TARGETS) :
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: $(LIBSRCS_IOC) $(LIBSRCS_HOST) $(SRCS) $(COND_PROD_SRCS)
+depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 	@$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
@@ -304,48 +297,48 @@ $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
  
-%Record.h: %Record.dbd
+$(INSTALL_INCLUDE)/%Record.h: %Record.dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
-	        $(DBDFLAGS)  $<
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
+	        $(DBDFLAGS)  $< $@
  
-%Record.h: ../%Record.dbd
+$(INSTALL_INCLUDE)/%Record.h: ../%Record.dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(HOSTEXE) \
-	        $(DBDFLAGS)  $<
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
+	        $(DBDFLAGS)  $< $@
  
-menu%.h: menu%.dbd
+$(INSTALL_INCLUDE)/menu%.h: menu%.dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE) $< $@
  
-menu%.h: ../menu%.dbd
+$(INSTALL_INCLUDE)/menu%.h: ../menu%.dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(HOSTEXE) $<
+	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE) $< $@
  
-bpt%.dbd: bpt%.data
+$(INSTALL_DBD)/bpt%.dbd: bpt%.data
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE) $< $@
 
-bpt%.dbd: ../bpt%.data
+$(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
+	$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE) $< $@
 
 ifdef DBDEXPAND
-$(DBDNAME): ../$(DBDEXPAND)
+$(INSTALL_DBD)/$(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(HOSTEXE) $(DBDFLAGS) $< > $@
+	$(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE) $(DBDFLAGS) $< > $@
 endif
 
 # WIN95/NT source browser
 ifdef BAF
 
-$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIBSRCS_HOST)))
+$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIB_LD_OBJS)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
 
-$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIBSRCS_IOC)))
+$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIB_LD_OBJS)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
@@ -463,9 +456,9 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	iocBinInstalls
 
 ifneq (,$(wildcard ../base.dbd))
-$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
+$(INSTALL_DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 else
-$(DBDNAME): $(RECTYPES:%.h=../%.dbd)
+$(INSTALL_DBDNAME): $(RECTYPES:%.h=../%.dbd)
 endif
 
 endif # T_A defined

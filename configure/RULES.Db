@@ -31,7 +31,7 @@ buildInstall: build $(INSTALL_BPTS) $(INSTALL_DATA)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \
+	@$(RM) $(DB) *.template *.substitutions *.db.raw \
 	*.db-stamp *.edf esiread.cnf
 
 depends:
@@ -71,13 +71,13 @@ endif
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 .PRECIOUS: %.db.raw
-%.db-stamp: %.db.raw $(INSTALL_DBD)/$(DBDNAME)
+%.db-stamp: %.db.raw $(INSTALL_DBDNAME)
 	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $(DB_REALTARGET)
+	$(DBST) $(INSTALL_DBDNAME) $< -d > $(DB_REALTARGET)
 	@$(TOUCH) $@
-%.db-stamp: %.t.db.raw $(INSTALL_DBD)/$(DBDNAME)
+%.db-stamp: %.t.db.raw $(INSTALL_DBDNAME)
 	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $(DB_REALTARGET)
+	$(DBST) $(INSTALL_DBDNAME) $< -d > $(DB_REALTARGET)
 	@$(TOUCH) $@
 else
 # NO optimization => move it and keep a stamp
@@ -154,12 +154,12 @@ $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-bpt%.dbd: ../bpt%.data
+$(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(MAKEBPT) $<
+	$(MAKEBPT) $< $@
 
 ifdef DBDEXPAND
-$(DBDNAME): ../$(DBDEXPAND)
+$(INSTALL_DBD)/$(DBDNAME): ../$(DBDEXPAND)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(USR_DBDFLAGS) $< > $@

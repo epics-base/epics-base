@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define epicsExportSharedSymbols
+#include "epicsStdio.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#define epicsExportSharedSymbols
-#include "epicsStdio.h"
 
 int epicsShareAPI epicsVsnprintf (
     char * str, size_t size, const char *format, va_list ap )

@@ -244,7 +244,7 @@ static char *findConversionIndicator(char *s)
 	return(retval);
 }
 
-#if DEBUG
+#if 0
 /* Override standard EPICS expression evaluator (if we're loaded after it) */
 epicsShareFunc long epicsShareAPI 
 	calcPerform(double *parg, double *presult, char *post)
@@ -787,7 +787,7 @@ printf(") \n");
 					for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
 						switch(post[1]) {
 						case LITERAL:	post+=8; break;
-						case SLITERAL:  post++; while (post[1]) post++; break;
+						case SLITERAL:	post++; while (post[1]) post++; break;
 						case COND_IF:	got_if++; break;
 						case COND_ELSE: got_if--; break;
 						case FETCH: case SFETCH: post++; break;
@@ -804,7 +804,7 @@ printf(") \n");
 				for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
 					switch(post[1]) {
 					case LITERAL:	post+=8; break;
-					case SLITERAL:  post++; while (post[1]) post++; break;
+					case SLITERAL:	post++; while (post[1]) post++; break;
 					case COND_IF:	got_if++; break;
 					case COND_ELSE:	got_if--; break;
 					case FETCH: case SFETCH: post++; break;
@@ -1242,7 +1242,6 @@ printf(") \n");
 					default: case '*':
 						cleanup(top, ps1);
 						return(-1);
-						break;
 					case 'c': case 'd': case 'i': case 'o':
 					case 'u': case 'x': case 'X':
 						toDouble(ps1);
@@ -1278,7 +1277,6 @@ printf(") \n");
 				default: case 'p': case 'w': case 'n': case '$':
 					cleanup(top, ps1);
 					return(-1);
-					break;
 				case 'd': case 'i':
 					if (s[-1] == 'h') {
 		 				sscanf(ps->s, ps1->s, &h);
@@ -1331,14 +1329,14 @@ printf(") \n");
 				toString(ps);
 				k = strlen(ps->s);
 				if (isDouble(ps1)) {
-					i = ps1->d;
+					i = (int)ps1->d;
 					if (i < 0) i += k;
 				} else {
 					s = strstr(ps->s, ps1->s);
 					i = s ? (s - ps->s) + strlen(ps1->s) : 0;
 				}
 				if (isDouble(ps2)) {
-					j = ps2->d;
+					j = (int)ps2->d;
 					if (j < 0) j += k;
 				} else {
 					if (*(ps2->s)) {

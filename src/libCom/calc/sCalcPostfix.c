@@ -161,8 +161,7 @@ struct	expression_element{
  * then try to find BS therefore ABS must be first in this list
  */
 static struct expression_element	elements[] = {
-/*
-element	i_s_p	i_c_p	type_element	internal_rep */
+/* element	i_s_p	i_c_p	type_element	internal_rep */
 "ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
 "NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
 "-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG, /* unary negate (or binary op) */
@@ -269,7 +268,7 @@ static struct expression_element	fetch_string_element = {
 static int strncasecmp(char *s1, char *s2, size_t n)
 {
 	short i;
-	for (i=0; i<n && (*s1 || *s2); i++, s1++, s2++) {
+	for (i=0; i<(short)n && (*s1 || *s2); i++, s1++, s2++) {
 		if (toupper((int)*s1) > toupper((int)*s2)) return(1);
 		if (toupper((int)*s1) < toupper((int)*s2)) return(-1);
 	}
@@ -342,7 +341,7 @@ register short	*pno_bytes, *parg;
 	
 }
 
-#if DEBUG
+#if 0
 /* Override standard EPICS expression evaluator (if we're loaded after it). */
 long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 {
@@ -421,7 +420,7 @@ long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror)
 			*ppostfix++ = pelement->code;
 
 			/* if this is a variable reference, append variable number */
-			if ((pelement->code == FETCH) || (pelement->code == SFETCH)) {
+			if ((pelement->code == (char)FETCH) || (pelement->code == (char)SFETCH)) {
 				*ppostfix++ = arg;
 			}
 

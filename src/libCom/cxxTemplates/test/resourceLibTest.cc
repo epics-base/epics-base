@@ -111,6 +111,8 @@ int main()
 	stringId strId2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
     strTbl.verify ();
 
+	intTbl.setTableSize ( 100000 );
+
 	assert (intTbl.add(fred0)==0);
     intTbl.verify ();
 	assert (intTbl.add(fred1)==0);
@@ -121,6 +123,9 @@ int main()
     intTbl.verify ();
 	assert (intTbl.add(fred4)==0);
     intTbl.verify ();
+
+	intTbl.setTableSize ( 200000 );
+
 	assert (intTbl.add(fred5)==0);
     intTbl.verify ();
 	assert (intTbl.add(fred6)==0);

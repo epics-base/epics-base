@@ -33,6 +33,11 @@
 
 /*
  * $Log$
+ * Revision 1.76  1999/09/02 21:44:49  jhill
+ * improved the way that socket error numbers are converted to strings,
+ * changed () to (void) in func proto, and fixed missing parameter to
+ * checkConnWatchdogs() bug resulting from this
+ *
  * Revision 1.75  1999/07/16 17:02:06  jhill
  * added congestion thresh parm for search alg
  *
@@ -662,31 +667,32 @@ struct CA_STATIC *ca_static;
  *
  */
 
-void 	cac_send_msg(void);
-void 	cac_mux_io(struct timeval *ptimeout, unsigned iocCloseAllowed);
+void cac_send_msg(void);
+void cac_mux_io(struct timeval *ptimeout, unsigned iocCloseAllowed);
 int	repeater_installed(void);
 int	search_msg(ciu chix, int reply_type);
 int	ca_request_event(evid monix);
 int	ca_busy_message(struct ioc_in_use *piiu);
 int	ca_ready_message(struct ioc_in_use *piiu);
-void	noop_msg(struct ioc_in_use *piiu);
-int 	echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime);
+void noop_msg(struct ioc_in_use *piiu);
+int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime);
 int	issue_claim_channel(chid pchan);
-void 	issue_identify_client(struct ioc_in_use *piiu);
-void 	issue_client_host_name(struct ioc_in_use *piiu);
+void issue_identify_client(struct ioc_in_use *piiu);
+void issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
-epicsShareFunc int epicsShareAPI ca_printf(char *pformat, ...);
-void 	manage_conn(void);
-void	checkConnWatchdogs(unsigned closeAllowed);
-void 	mark_server_available(const struct sockaddr_in *pnet_addr);
-void	flow_control_on(struct ioc_in_use *piiu);
-void	flow_control_off(struct ioc_in_use *piiu);
+epicsShareFunc int epicsShareAPI ca_printf (const char *pformat, ...);
+epicsShareFunc int epicsShareAPI ca_vPrintf (const char *pformat, va_list args);
+void manage_conn(void);
+void checkConnWatchdogs(unsigned closeAllowed);
+void mark_server_available(const struct sockaddr_in *pnet_addr);
+void flow_control_on(struct ioc_in_use *piiu);
+void flow_control_off(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
 epicsShareFunc void epicsShareAPI ca_repeater(void);
-void 	cac_recv_task(int tid);
-void 	ca_sg_init(void);
-void	ca_sg_shutdown(struct CA_STATIC *ca_temp);
-int 	cac_select_io(struct timeval *ptimeout, int flags);
+void cac_recv_task(int tid);
+void ca_sg_init(void);
+void ca_sg_shutdown(struct CA_STATIC *ca_temp);
+int  cac_select_io(struct timeval *ptimeout, int flags);
 int post_msg(
 	struct ioc_in_use       *piiu,
 	const struct sockaddr_in	*pnet_addr,

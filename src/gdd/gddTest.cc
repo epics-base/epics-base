@@ -61,7 +61,7 @@ void gdd::dumpInfo(void)
 	unsigned i;
 	aitIndex f,c;
 	long sz_tot,sz_data,sz_elem;
-	const aitIndex max=5;
+	const aitIndex max=20;
 	aitIndex prt_tot;
 
 	sz_tot = getTotalSizeBytes();

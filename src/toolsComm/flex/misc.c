@@ -33,7 +33,7 @@ static char rcsid[] =
 
 #include <ctype.h>
 #include "flexdef.h"
-
+#include <assert.h>
 
 /* ANSI C does not guarantee that isascii() is defined */
 #ifndef isascii
@@ -621,7 +621,14 @@ Char array[];
 
     switch ( array[1] )
 	{
+#if 0
 	case 'a': return ( '\a' );
+#else
+	case 'a':
+		assert(0);		/* \a causes some obscure problem with ANSI compilers */
+						/* EPICS never uses it anyway, so this should be OK */
+		break;
+#endif
 	case 'b': return ( '\b' );
 	case 'f': return ( '\f' );
 	case 'n': return ( '\n' );

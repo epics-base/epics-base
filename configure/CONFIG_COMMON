@@ -90,6 +90,7 @@ GCC_RANLIB = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ranlib$(CMPLR_SUFFIX)
 GCC_ANSI = $(GCC) -ansi 
 GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_TRAD = $(GCC) -traditional
+GCC_DEP_CFLAGS =  -fPIC -D_REENTRANT
 GCC_WARN_YES = -Wall
 GCC_WARN_NO = -w
 GCC_OPT_YES = -O3 -g
@@ -100,7 +101,6 @@ GCC_SLIBS_YES =
 GCC_SLIBS_NO =
 GCC_CFLAGS_CROSS = -B$(GNU_LIB)/gcc-lib/ -nostdinc
 GCC_CPPFLAGS_CROSS = -nostdinc
-GCC_SHRLIB_CFLAGS_YES =  -fPIC
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 GCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_REENTRANT
 
@@ -110,6 +110,7 @@ G++_NORMAL = $(G++) -ansi -pedantic
 G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
 G++_TRAD = $(G++) -traditional
 G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
+G++_DEP_CFLAGS =  -fPIC -D_REENTRANT
 G++_WARN_YES = -Wall \
       -Wmissing-prototypes -Woverloaded-virtual \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
@@ -122,7 +123,6 @@ G++_SFLAGS_NO =
 G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
-G++_SHRLIB_CFLAGS_YES =  -fPIC
 G++_SHRLIB_LDFLAGS_YES =  -shared
 G++_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_REENTRANT
 

@@ -69,13 +69,13 @@
 #endif
 
 long sydCAFunc();
-void sydCAFuncConnHandler();
+static void sydCAFuncConnHandler();
 void sydCAFuncMonHandler();
-long sydFuncCA_finishConn();
+static long sydFuncCA_finishConn();
 
 #define sydCA_searchNOW	/* force immediate completion of connection */
 #undef sydCA_searchNOW	/* asynchronous completion of connection */
-void sydCAFuncInitGR();
+static void sydCAFuncInitGR();
 
 long
 sydOpenCA(ppSspec, pHandle)

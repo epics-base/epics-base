@@ -14,6 +14,9 @@
  *
  */
 
+
+#if defined(__PPC__) && defined(mpc750)
+
 #include <rtems.h>
 #include <bsp.h>
 #include <bsp/VME.h>
@@ -316,3 +319,5 @@ void unsolicitedHandlerEPICS(int vectorNumber)
         "Interrupt to EPICS disconnected vector"
 		);
 }
+
+#endif /* defined(__PPC__) && defined(mpc750) */

@@ -42,7 +42,6 @@
 
 #include <bucketLib.h>
 
-
 #ifndef NBBY
 #define NBBY 8
 #endif /* NBBY */

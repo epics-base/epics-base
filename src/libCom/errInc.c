@@ -11,11 +11,12 @@
 #include "tsDefs.h"
 #include "drvGpibErr.h"
 #include "drvBitBusErr.h"
-#include "calink.h"
 #include "dbStaticLib.h"
 #include "drvEpvxi.h"
 #include "devLib.h"
+#if 0
 #include "casdef.h"
+#endif
 #include "errMdef.h"
 #ifdef VXLIST
 /* epics vxWorks  only*/

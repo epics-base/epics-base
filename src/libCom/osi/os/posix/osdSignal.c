@@ -14,6 +14,7 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
+#include "epicsThread.h"
 #include "epicsSignal.h"
 
 typedef void ( *pSigFunc ) ( int );

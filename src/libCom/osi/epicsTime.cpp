@@ -392,7 +392,7 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
 
 // 631152000 (at posix epic) + 2272060800 (btw posix and epics epoch) +
 // 15 ( leap seconds )
-static const unsigned long epicsEpocSecsPastEpochNTP = 2903212815;
+static const unsigned long epicsEpocSecsPastEpochNTP = 2903212815u;
 static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
 
 struct l_fp { /* NTP time stamp */

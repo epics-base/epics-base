@@ -17,7 +17,9 @@ while (<VARS>)
 	if (/CVS_DATE="\\(.*)"/)	{ $cvs_date = $1; }
 }
 
-$ver_str = "$ver.$rev.$mod.$upd_name.$upd_level";
+$ver_str = "$ver.$rev.$mod";
+$ver_str = "$ver_str.$upd_name" if $upd_name;
+$ver_str = "$ver_str.$upd_level" if $upd_level;
 
 print "Found EPICS Version $ver_str\n";
 

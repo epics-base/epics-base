@@ -1,5 +1,5 @@
-#!/usr/bin/sh
-####!/usr/bin/sh -xv
+#!/bin/sh
+####!/bin/sh -xv
 
 # InstallVerson
 #
@@ -11,6 +11,9 @@
 #     Date:     7/18/94
 #
 #  $Log$
+#  Revision 1.1  1996/02/20 20:58:35  jba
+#  Moved tools to src/tools dir. base/tools dir removed.
+#
 # Revision 1.3  1994/12/07  15:13:03  jba
 # Modified comments
 #

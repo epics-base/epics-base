@@ -80,7 +80,7 @@ typedef int fd_set ;
 #define FD_SET(n, p)    (*(p) |= (1 << ((n) % NFDBITS)))
 #define FD_CLR(n, p)    (*(p) &= ~(1 << ((n) % NFDBITS)))
 #define FD_ISSET(n, p)  (*(p) & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)      bzero((char *)(p), sizeof (*(p)))
+#define FD_ZERO(p)      memset((char *)(p), 0, sizeof (*(p)))
 
 #include <iodef.h>
 #define IO$_RECEIVE	(IO$_WRITEVBLK)

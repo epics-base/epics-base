@@ -13,5 +13,5 @@ ARCH_CLASS = pcPentium
 ARCH_DEP_CPPFLAGS = -DCPU=PENTIUM -DCPU_FAMILY=I80x86 -D_X86_ 
 ARCH_DEP_CFLAGS = -mpentium
 ARCH_DEP_CXXFLAGS += -x 'c++' 
-ARCH_DEP_CFLAGS += -fno-builtin -fno-defer-pop
+ARCH_DEP_CFLAGS += -fno-defer-pop
 

@@ -30,6 +30,7 @@
  *      Modification Log:
  *      -----------------
  *	.01 071792 joh	Added model name registration
+ *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
  *
  */
 
@@ -126,7 +127,7 @@ KscV215Init()
                 return ERROR;
         }
 
-        KscV215DriverId = vxiUniqueDriverID();
+        KscV215DriverId = epvxiUniqueDriverID();
 
         {
                 epvxiDeviceSearchPattern  dsp;
@@ -225,6 +226,12 @@ unsigned la;
 		return;
 	sysIntEnable(KSCV215_INT_LEVEL);
 #endif
+
+	status = epvxiRegisterMakeName(VXI_MAKE_KSC, "Kinetic Systems");
+	if(status<0){
+		logMsg("%s: unable reg make\n",
+			__FILE__);
+	}
 
         model = VXIMODEL(pcsr);
         status = epvxiRegisterModelName(

@@ -1,7 +1,4 @@
 
-#include <vxWorks.h>
-#include <tickLib.h>
-#include <sysLib.h>
 
 #define epicsExportSharedSymbols
 #include "osiTime.h"
@@ -18,18 +15,12 @@ void osiTime::synchronize()
 //
 osiTime osiTime::osdGetCurrent ()
 {
-	ULONG	ticks;
-	ULONG	sec;
-	ULONG	nsec;
-	ULONG	rate = sysClkRateGet();
- 
-	//
-	// currently assuming that this has been already adjusted
-	// for the EPICS epoch
-	//
-	ticks = tickGet();
-	sec = ticks / rate;
-	nsec = (ticks % rate) * (nSecPerSec / rate); 
- 
-	return osiTime (sec, nsec);
+    struct timespec ts;
+    int status;
+
+    status = clock_gettime(CLOCK_REALTIME, &ts);
+    if (status!=0) {
+        throw unableToFetchCurrentTime ();
+    }
+    return osiTime (ts);
 }

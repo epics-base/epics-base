@@ -96,8 +96,9 @@ epicsShareExtern fdManager fileDescriptorManager;
 //
 // file descriptor registration
 //
-class fdReg : public fdRegId, private tsDLNode<fdReg>, private tsSLNode<fdReg> {
+class fdReg : public fdRegId, public tsDLNode<fdReg>, public tsSLNode<fdReg> {
     friend class fdManager;
+
 public:
 
     epicsShareFunc fdReg (const SOCKET fdIn, const fdRegType type, 

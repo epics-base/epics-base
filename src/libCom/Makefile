@@ -176,6 +176,7 @@ INC += epicsStdioRedirect.h
 INC += epicsGetopt.h
 
 INC += devLib.h
+INC += osdVME.h
 
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp

@@ -35,7 +35,7 @@ To build only for WIN32 and not cross compile for IOC development type
 To compile EPICS on WIN32, we need
 
 	WindRiver System's Tornado (used: 1.0)  (not required if host only build)
-	Microsoft's Visual C/C++   (used: 4.0)  (borland C++ rumored to work also)
+	Microsoft's Visual C/C++   (used: 6.0)  (borland C++ rumored to work also)
 
 and some tools:
 

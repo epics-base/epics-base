@@ -33,6 +33,8 @@
 #include "tsDLList.h"
 #include "comBuf.h"
 
+#define comQueSendCopyDispatchSize 39
+
 //
 // Notes.
 // o calling popNextComBufToSend() will clear any uncommitted bytes
@@ -69,7 +71,7 @@ private:
     unsigned nBytesPending;
     typedef void ( comQueSend::*copyFunc_t ) (  
         const void *pValue, unsigned nElem );
-    static const copyFunc_t dbrCopyVector [39];
+    static const copyFunc_t dbrCopyVector [comQueSendCopyDispatchSize];
 
     void copy_dbr_string ( const void *pValue, unsigned nElem );
     void copy_dbr_short ( const void *pValue, unsigned nElem ); 
@@ -128,7 +130,7 @@ extern const char cacNillBytes[];
 
 inline bool comQueSend::dbr_type_ok ( unsigned type ) 
 {
-    if ( type >= ( sizeof ( this->dbrCopyVector ) / sizeof ( this->dbrCopyVector[0] )  ) ) {
+    if ( type >= comQueSendCopyDispatchSize ) {
         return false;
     }
     if ( ! this->dbrCopyVector [type] ) {

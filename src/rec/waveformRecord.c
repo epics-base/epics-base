@@ -154,7 +154,11 @@ static long init_record(pwf,pass)
 		if(pwf->ftvl>DBF_ENUM) pwf->ftvl=2;
 		pwf->bptr = (char *)calloc(pwf->nelm,sizeofTypes[pwf->ftvl]);
 	}
-	pwf->nord = 0;
+	if(pwf->nelm==1) {
+	    pwf->nord = 1;
+	} else {
+	    pwf->nord = 0;
+	}
 	return(0);
     }
 
@@ -175,8 +179,6 @@ static long init_record(pwf,pass)
     /* wf.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     switch (pwf->siol.type) {
     case (CONSTANT) :
-        pwf->nord = 0;
-        break;
     case (PV_LINK) :
     case (DB_LINK) :
         break;

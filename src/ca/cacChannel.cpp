@@ -226,9 +226,9 @@ caar cacChannel::accessRights () const
         return pIO->accessRights ();
     }
     else {
-        caar ar;
-        ar.read_access = false;
-        ar.write_access = false;
+        // static here avoids undefined memory read warning from
+        // error checking codes
+        static caar ar = { false, false };
         return ar;
     }
 }

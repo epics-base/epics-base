@@ -46,7 +46,7 @@
 /* Global Database Test Routines - All can be invoked via vxWorks shell*/
 long dba(char*pname);		/*dbAddr info */
 long dbel(char*pname);		/*CA event list */
-long dbl(char	*precdesname);  /*list records*/
+long dbl(char	*precordTypename);  /*list records*/
 long dbnr(int verbose);		/*list number of records of each type*/
 long dbgrep(char *pmask);	/*list records with mask*/
 long dbgf(char	*pname);	/*get field value*/
@@ -158,17 +158,17 @@ long dbel(char*pname)
     return(0);
 }
 
-long dbl(char	*precdesname)
+long dbl(char	*precordTypename)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
 
     dbInitEntry(pdbbase,pdbentry);
-    if(!precdesname)
-	status = dbFirstRecdes(pdbentry);
+    if(!precordTypename)
+	status = dbFirstRecordType(pdbentry);
     else
-	status = dbFindRecdes(pdbentry,precdesname);
+	status = dbFindRecordType(pdbentry,precordTypename);
     if(status) printf("No record description\n");
     while(!status) {
 	status = dbFirstRecord(pdbentry);
@@ -176,8 +176,8 @@ long dbl(char	*precdesname)
 	    printf("%s\n",dbGetRecordName(pdbentry));
 	    status = dbNextRecord(pdbentry);
 	}
-	if(precdesname) break;
-	status = dbNextRecdes(pdbentry);
+	if(precordTypename) break;
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return(0);
@@ -192,14 +192,14 @@ long dbnr(int verbose)
     int		total=0;
 
     dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
+    status = dbFirstRecordType(pdbentry);
     if(status) printf("No record description\n");
     while(!status) {
 	nrecords = dbGetNRecords(pdbentry);
 	total += nrecords;
 	if(verbose || nrecords)
-	    printf("%.4d %s\n",nrecords,dbGetRecdesName(pdbentry));
-	status = dbNextRecdes(pdbentry);
+	    printf("%.4d %s\n",nrecords,dbGetRecordTypeName(pdbentry));
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     printf("Total Records: %d\n",total);
@@ -261,7 +261,7 @@ long dbgrep(char *pmask)
     char	*pname;
 
     dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
+    status = dbFirstRecordType(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
@@ -269,7 +269,7 @@ long dbgrep(char *pmask)
             if (specified_by(pname, pmask))  printf("%s\n", pname);
 	    status = dbNextRecord(pdbentry);
 	}
-	status = dbNextRecdes(pdbentry);
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return(0);
@@ -643,7 +643,7 @@ long dbior(char	*pdrvName,int type)
     char		*pname;
     drvSup		*pdrvSup;
     struct drvet	*pdrvet;
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     devSup		*pdevSup;
     struct dset		*pdset;
 
@@ -664,9 +664,10 @@ long dbior(char	*pdrvName,int type)
 	}
     }
     /* now check devSup reports */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    if(!(pdset = pdevSup->pdset)) continue;
 	    if(!(pname = pdevSup->name)) continue;
@@ -714,7 +715,7 @@ static void printDbAddr(long status,DBADDR *paddr)
     printf(" Field Address: %p",paddr->pfield);
     printf(" Field Description: %p\n",pdbFldDes);
     printf("   No Elements: %ld\n",paddr->no_elements);
-    printf("   Record Type: %s\n",pdbFldDes->pdbRecDes->name);
+    printf("   Record Type: %s\n",pdbFldDes->pdbRecordType->name);
     printf("     FieldType: DBF_");
     field_type = paddr->field_type;
     if(field_type<0 || field_type>DBR_NOACCESS)
@@ -1030,14 +1031,14 @@ static int dbpr_report(
 
     char	*pmsg;
     dbFldDes  	*pdbFldDes = paddr->pfldDes;
-    dbRecDes    *pdbRecDes = pdbFldDes->pdbRecDes;
+    dbRecordType    *pdbRecordType = pdbFldDes->pdbRecordType;
     short	n2;
     void	*pfield;
     char	*pfield_name;
 
     pmsg = pMsgBuff->message;
-    for (n2 = 0; n2 <= pdbRecDes->no_fields - 1; n2++) {
-	pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->sortFldInd[n2]];
+    for (n2 = 0; n2 <= pdbRecordType->no_fields - 1; n2++) {
+	pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->sortFldInd[n2]];
 	pfield_name = pdbFldDes->name;
 	pfield = ((char *)paddr->precord) + pdbFldDes->offset;
 	if (pdbFldDes->interest > interest_level )

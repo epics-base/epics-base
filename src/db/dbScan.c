@@ -636,14 +636,15 @@ static void scanList(scan_list *psl)
 
 static void buildScanLists(void)
 {
-	dbRecDes		*pdbRecDes;
+	dbRecordType		*pdbRecordType;
 	dbRecordNode		*pdbRecordNode;
 	dbCommon		*precord;
 
 	/*Look for first record*/
-	for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-	pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	    for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+	pdbRecordType;
+	pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	    for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	    pdbRecordNode;
 	    pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 		precord = pdbRecordNode->precord;

@@ -112,10 +112,10 @@ void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
 	char 		buffer[200];
 	struct dbCommon *precord;
 	dbFldDes	*pdbFldDes = 0;
-	dbRecDes	*pdbRecDes = 0;
+	dbRecordType	*pdbRecordType = 0;
 
 	if(paddr) pdbFldDes=(dbFldDes *)(paddr->pfldDes);
-	if(pdbFldDes) pdbRecDes = pdbFldDes->pdbRecDes;
+	if(pdbFldDes) pdbRecordType = pdbFldDes->pdbRecordType;
 	buffer[0]=0;
 	strcat(buffer,"Record Support Routine (");
 	if(psupport_name)
@@ -123,9 +123,9 @@ void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
 	else
 		strcat(buffer,"Unknown");
 	strcat(buffer,") not available.\n");
-	if(pdbRecDes) {
+	if(pdbRecordType) {
 	    strcat(buffer,"Record Type is ");
-	    strcat(buffer,pdbRecDes->name);
+	    strcat(buffer,pdbRecordType->name);
 	    if(paddr) { /* print process variable name */
 		precord=(struct dbCommon *)(paddr->precord);
 		strcat(buffer,", PV is ");

@@ -18,10 +18,11 @@ MENUS += menuScan.h
 MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
+USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 
-DBINSTALL +=  dbCommonRecord.db 
-DBINSTALL +=  menuGlobal.db
-DBINSTALL +=  epics.db
+DBINSTALL +=  dbCommonRecord.dbd 
+DBINSTALL +=  menuGlobal.dbd
+DBINSTALL +=  epics.dbd
 DBINSTALL += epicsLIBOBJS
 
 SRCS.c = \
@@ -73,12 +74,13 @@ LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
 
-dbCommon.h: ../dbCommonRecord.db dbCommon.db
+dbCommon.h: ../dbCommonRecord.dbd dbCommon.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+		$(USER_DBDFLAGS) $<
 
-dbCommon.db: ../dbCommon.db
+dbCommon.dbd: ../dbCommon.dbd
 	@test -f $@ || ln -s  $< $@
 
 clean::
-	@$(RM) dbCommon.db rec base
+	@$(RM) dbCommon.dbd rec base

@@ -253,7 +253,7 @@ unsigned long dbLockGetLockId(dbCommon *precord)
 void dbLockInitRecords(dbBase *pdbbase)
 {
     int			link;
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbFldDes		*pdbFldDes;
     dbRecordNode 	*pdbRecordNode;
     dbCommon		*precord;
@@ -262,15 +262,15 @@ void dbLockInitRecords(dbBase *pdbbase)
     lockRecord		*plockRecord;
     
     /*Allocate and initialize a lockRecord for each record instance*/
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	nrecords += ellCount(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	nrecords += ellCount(&pdbRecordType->recList);
     }
     /*Allocate all of them at once */
     plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    precord = pdbRecordNode->precord;
@@ -279,17 +279,18 @@ void dbLockInitRecords(dbBase *pdbbase)
 	    plockRecord++;
 	}
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
-    	    for(link=0; link<pdbRecDes->no_links; link++) {
+    	    for(link=0; link<pdbRecordType->no_links; link++) {
 		DBADDR	*pdbAddr;
 
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
 		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		if(plink->type != DB_LINK) continue;
 		pdbAddr = (DBADDR *)(plink->value.pv_link.pvt);
@@ -354,7 +355,7 @@ void dbLockSetSplit(dbCommon *psource)
     lockRecord	*plockRecord;
     dbCommon	*precord;
     int		link;
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
     DBLINK	*plink;
     int		nrecordsInSet,i;
@@ -384,11 +385,11 @@ void dbLockSetSplit(dbCommon *psource)
 	precord = paprecord[i];
 	plockRecord = (lockRecord *)precord->lset;
 	if(!(precord->name[0])) continue;
-	pdbRecDes = (dbRecDes *)precord->rdes;
-    	for(link=0; link<pdbRecDes->no_links; link++) {
+	pdbRecordType = (dbRecordType *)precord->rdes;
+    	for(link=0; link<pdbRecordType->no_links; link++) {
 	    DBADDR	*pdbAddr;
 
-	    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+	    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
 	    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 	    if(plink->type != DB_LINK) continue;
 
@@ -420,7 +421,7 @@ long dblsr(char *recordname,int level)
     dbCommon		*precord;
     lockSet		*plockSet;
     lockRecord		*plockRecord;
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbFldDes		*pdbFldDes;
     DBLINK		*plink;
 
@@ -465,13 +466,13 @@ long dblsr(char *recordname,int level)
 	for(plockRecord = (lockRecord *)ellFirst(&plockSet->recordList);
 	plockRecord; plockRecord = (lockRecord *)ellNext(&plockRecord->node)) {
 	    precord = plockRecord->precord;
-	    pdbRecDes = (dbRecDes *)precord->rdes;
+	    pdbRecordType = (dbRecordType *)precord->rdes;
 	    printf("%s\n",precord->name);
 	    if(level<=1) continue;
-	    for(link=0; (link<pdbRecDes->no_links) ; link++) {
+	    for(link=0; (link<pdbRecordType->no_links) ; link++) {
 		DBADDR	*pdbAddr;
 
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
 		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		if(plink->type != DB_LINK) continue;
 		pdbAddr = (DBADDR *)(plink->value.pv_link.pvt);

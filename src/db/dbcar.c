@@ -50,7 +50,7 @@ long dbcar(char	*precordname,int level)
     DBENTRY		*pdbentry=&dbentry;
     long		status;
     dbCommon		*precord;
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbFldDes		*pdbFldDes;
     DBLINK		*plink;
     int			ncalinks=0;
@@ -64,16 +64,16 @@ long dbcar(char	*precordname,int level)
 
 
     dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
+    status = dbFirstRecordType(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
 	    if(!precordname
 	    || (strcmp(precordname,dbGetRecordName(pdbentry)) ==0)) {
-		pdbRecDes = pdbentry->precdes;
+		pdbRecordType = pdbentry->precordType;
 		precord = (dbCommon *)pdbentry->precnode->precord;
-		for(j=0; j<pdbRecDes->no_links; j++) {
-		    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[j]];
+		for(j=0; j<pdbRecordType->no_links; j++) {
+		    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
 		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		    if (plink->type == CA_LINK) {
 			ncalinks++;
@@ -118,7 +118,7 @@ long dbcar(char	*precordname,int level)
 	    }
 	    status = dbNextRecord(pdbentry);
 	}
-	status = dbNextRecdes(pdbentry);
+	status = dbNextRecordType(pdbentry);
     }
 done:
     printf("ncalinks %d",ncalinks);

@@ -306,22 +306,22 @@ LOCAL long initRecSup(void)
     long	status=0;
     long	rtnval;
     STATUS	vxstatus;
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     struct rset *prset;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
 	strcpy(name,"_");
-	strcat(name,pdbRecDes->name);
+	strcat(name,pdbRecordType->name);
 	strcat(name,"RSET");
 	vxstatus = symFindByName(sysSymTbl, name,
-            (void *)&pdbRecDes->prset, &type);
+            (void *)&pdbRecordType->prset, &type);
 	if (vxstatus != OK) {
 	    status = S_rec_noRSET;
-	    errPrintf(status,__FILE__,__LINE__,"%s",pdbRecDes->name);
+	    errPrintf(status,__FILE__,__LINE__,"%s",pdbRecordType->name);
 	    continue;
 	}
-	prset = pdbRecDes->prset;
+	prset = pdbRecordType->prset;
        /* If an initialization routine exists for a record type, execute it */
 	if(!prset->init) {
             continue;
@@ -347,13 +347,13 @@ LOCAL long initDevSup(void)
     long	status=0;
     long	rtnval = 0;
     STATUS	vxstatus;
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     devSup	*pdevSup;
     struct dset *pdset;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    if(!(pname = pdevSup->name)) continue;
 	    strcpy(name, "_");
@@ -381,13 +381,13 @@ LOCAL long initDevSup(void)
  */
 LOCAL long finishDevSup(void) 
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     devSup	*pdevSup;
     struct dset *pdset;
 
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    if(!(pdset = pdevSup->pdset)) continue;
 	    if(pdset->init) (*pdset->init)(1);
@@ -401,7 +401,7 @@ LOCAL long initDatabase(void)
 {
     long		status=0;
     long		rtnval=0;
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbFldDes		*pdbFldDes;
     dbRecordNode 	*pdbRecordNode;
     devSup		*pdevSup;
@@ -412,10 +412,10 @@ LOCAL long initDatabase(void)
     DBLINK		*plink;
     int			j;
    
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	prset = pdbRecDes->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	prset = pdbRecordType->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    if(!prset) break;
@@ -423,7 +423,7 @@ LOCAL long initDatabase(void)
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
 	    precord->rset = prset;
-	    precord->rdes = pdbRecDes;
+	    precord->rdes = pdbRecordType;
 	    FASTLOCKINIT(&precord->mlok);
 	    ellInit(&(precord->mlis));
 
@@ -431,7 +431,7 @@ LOCAL long initDatabase(void)
 	    precord->pact=FALSE;
 
 	    /* Init DSET NOTE that result may be NULL */
-	    pdevSup = (devSup *)ellNth(&pdbRecDes->devList,precord->dtyp+1);
+	    pdevSup = (devSup *)ellNth(&pdbRecordType->devList,precord->dtyp+1);
 	    pdset = (pdevSup ? pdevSup->pdset : 0);
 	    precord->dset = pdset;
 	    if(!prset->init_record) continue;
@@ -443,18 +443,18 @@ LOCAL long initDatabase(void)
    /*
     *  Second pass to resolve links
     */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	prset = pdbRecDes->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	prset = pdbRecordType->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
             /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
             /* For all the links in the record type... */
-	    for(j=0; j<pdbRecDes->no_links; j++) {
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[j]];
+	    for(j=0; j<pdbRecordType->no_links; j++) {
+		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
 		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		if (plink->type == PV_LINK) {
 		    if(!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
@@ -484,10 +484,10 @@ LOCAL long initDatabase(void)
     }
 
     /* Call record support init_record routine - Second pass */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	prset = pdbRecDes->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList); pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	prset = pdbRecordType->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    if(!prset) break;
@@ -509,13 +509,14 @@ LOCAL long initDatabase(void)
  */
 LOCAL long initialProcess(void)
 {
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbRecordNode 	*pdbRecordNode;
     dbCommon		*precord;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType;
+    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	pdbRecordNode;
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    precord = pdbRecordNode->precord;

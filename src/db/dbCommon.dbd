@@ -201,7 +201,7 @@
 		extra("void		*dpvt")
 	}
 	field(RDES,DBF_NOACCESS) {
-		prompt("Address of dbRecDes")
+		prompt("Address of dbRecordType")
 		special(SPC_NOMOD)
 		interest(4)
 		size(4)

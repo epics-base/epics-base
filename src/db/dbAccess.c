@@ -388,12 +388,12 @@ struct rset *dbGetRset(struct dbAddr *paddr)
 	struct dbFldDes *pfldDes = (struct dbFldDes *)paddr->pfldDes;
 
 	if(!pfldDes) return(0);
-	return(pfldDes->pdbRecDes->prset);
+	return(pfldDes->pdbRecordType->prset);
 }
 
 int dbIsValueField(struct dbFldDes *pdbFldDes)
 {
-    if(pdbFldDes->pdbRecDes->indvalFlddes == pdbFldDes->indRecDes)
+    if(pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
 	return(TRUE);
     else
 	return(FALSE);
@@ -401,7 +401,7 @@ int dbIsValueField(struct dbFldDes *pdbFldDes)
 
 int dbGetFieldIndex(struct dbAddr *paddr)
 {
-    return(((struct dbFldDes *)paddr->pfldDes)->indRecDes);
+    return(((struct dbFldDes *)paddr->pfldDes)->indRecordType);
 }
 
 
@@ -448,7 +448,7 @@ long dbScanLink(dbCommon *pfrom, dbCommon *pto)
 long dbProcess(dbCommon *precord)
 {
 	struct rset	*prset = (struct rset *)precord->rset;
-	dbRecDes	*pdbRecDes = (dbRecDes *)precord->rdes;
+	dbRecordType	*pdbRecordType = (dbRecordType *)precord->rdes;
 	unsigned char	tpro=precord->tpro;
 	unsigned long	lset;
 	long		status = 0;
@@ -500,7 +500,7 @@ long dbProcess(dbCommon *precord)
 		recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
 		monitor_mask = recGblResetAlarms(precord);
 		monitor_mask |= DBE_VALUE;
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->indvalFlddes];
+		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
 		db_post_events(precord,
 			(void *)(((char *)precord) + pdbFldDes->offset),
 			monitor_mask);
@@ -531,7 +531,7 @@ long dbProcess(dbCommon *precord)
 		precord->nsta = 0;
 		db_post_events(precord, &precord->stat, DBE_VALUE);
 		db_post_events(precord, &precord->sevr, DBE_VALUE);
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->indvalFlddes];
+		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
 		db_post_events(precord,
 			(void *)(((char *)precord) + pdbFldDes->offset),
 			DBE_VALUE|DBE_ALARM);

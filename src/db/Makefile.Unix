@@ -17,7 +17,6 @@ INC += fast_lock.h
 INC += initHooks.h
 INC += recSup.h
 INC += devSup.h
-INC += task_params.h
 INC += taskwd.h
 INC += recGbl.h
 INC += dbBkpt.h

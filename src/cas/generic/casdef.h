@@ -475,7 +475,8 @@ public:
     // NOTE:
     // o the server tool is encouraged to change the prototype GDD's
     // primitive type to whatever primitive data type is most convient
-    // for the server side tool.
+    // for the server side tool. Conversion libraries in the CA server
+    // will convert as necessary to the client's primitive data type.
     //
     epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
     

@@ -17,12 +17,28 @@ EPICS R3.13 extensions have both a Makefile and a Makefile.Host in the build
 directories and the EPICS R3.13 extension tree has an extensions/config
 directory.</p>
 
+<h3>Prerequsite building R3.13 extensions</h3>
+
+<blockquote>
+  <ul>
+    <li>The macro COMPAT_TOOLS_313 must be set to YES in base/configure/CONFIG_SITE
+        before the base build? If it was not set, set it to YES and then do a gmake
+        in the base/config/tools directory. This will install some perl scripts needed
+        for building R3.13 extensions.
+    </li>
+  </ul>
+</blockquote>
+
 <h3>Preliminary steps for all extensions</h3>
 
 <blockquote>
   <ul>
     <li>Download the latest version of the extensions/config files,
       extensionsConfig.tar.gz,  from the APS EPICS www page.</li>
+      The extensions directory can have both the base/config (for extensions with
+      R3.13 makefiles) and base/configure (for extensions with R3.14 makefiles)
+      directories.
+    </li>
     <li>Make certain that you have set the HOST_ARCH environment
     variable.</li>
     <li>Set EPICS_BASE in extensions/config/RELEASE to the full path location

@@ -53,7 +53,7 @@ static void myCallback(CALLBACK *pcallback)
     dbScanUnlock((dbCommon *)precord);
 }
 
-long epicsShareAPI asSubInit(subRecord *precord,void *process)
+long asSubInit(subRecord *precord,void *process)
 {
     ASDBCALLBACK *pcallback;
 
@@ -65,7 +65,7 @@ long epicsShareAPI asSubInit(subRecord *precord,void *process)
     return(0);
 }
 
-long epicsShareAPI asSubProcess(subRecord *precord)
+long asSubProcess(subRecord *precord)
 {
     ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
 
@@ -80,10 +80,12 @@ long epicsShareAPI asSubProcess(subRecord *precord)
     return(0);
 }
 
-void epicsShareAPI asSubRecordFunctionsRegister(void)
+static registryFunctionRef asSubRef[] = {
+    {"asSubInit",(REGISTRYFUNCTION)asSubInit},
+    {"asSubProcess",(REGISTRYFUNCTION)asSubProcess}
+};
+
+void epicsShareAPI asSub(void)
 {
-    if(!registryFunctionAdd("asSubInit",(REGISTRYFUNCTION)asSubInit))
-      errlogPrintf("asSubRecordFunctionsRegister registryFunctionAdd failed\n");
-    if(!registryFunctionAdd("asSubProcess",(REGISTRYFUNCTION)asSubProcess))
-      errlogPrintf("asSubRecordFunctionsRegister registryFunctionAdd failed\n");
+    registryFunctionRefAdd(asSubRef,NELEMENTS(asSubRef));
 }

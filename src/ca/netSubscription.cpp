@@ -12,7 +12,6 @@
 
 #include "iocinf.h"
 #include "netSubscription_IL.h"
-#include "cacNotifyIO_IL.h"
 #include "nciu_IL.h"
 
 tsFreeList < class netSubscription, 1024 > netSubscription::freeList;

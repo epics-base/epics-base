@@ -46,9 +46,9 @@ export WIND_BASE = $(VX_DIR)
 #--------------------------------------------------
 # VxWorks command definitions
 
-GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ $(STDINC_CFLAGS)
 AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
-CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc -x c -E
+CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ $(STDINC_CFLAGS) -x c -E
 RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
 LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 
@@ -56,7 +56,7 @@ LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 # Tornado C++ crosscompiler definitions
 
 CPLUSPLUS_YES = G++
-G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ $(STDINC_CFLAGS)
 LD_G++ = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
 MUNCH = $(GNU_BIN)/munch
@@ -66,7 +66,7 @@ MUNCH = $(GNU_BIN)/munch
 # These are pre tornado definitions for Hideos builds (defined for 68k only)
 
 CPLUSPLUS_NO = CCC
-CCC = $(GNU_DIR)/bin/sun3-g++ -B$(GNU_DIR)/lib/gcc-lib/ -nostdinc -DEXPL_TEMPL
+CCC = $(GNU_DIR)/bin/sun3-g++ -B$(GNU_DIR)/lib/gcc-lib/ $(STDINC_CFLAGS) -DEXPL_TEMPL
 LD_CCC = $(GNU_DIR)/bin/sun3-ld $(OLD_ARCH_DEP_LDFLAGS) -r
 
 CCC_NORMAL = $(CCC) $(OLD_ARCH_DEP_CFLAGS)
@@ -107,8 +107,18 @@ OP_SYS_LDLIBS =
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h
+
 ifeq ($(TORNADO), YES)
 	OP_SYS_CFLAGS += -include $(VX_INCLUDE)/vxWorks.h
+ifneq ($(T22), YES)
+    OP_SYS_CFLAGS += -nostdinc
+endif
+endif
+
+#--------------------------------------------------
+# -nostdinc fails with Tornado 2.2  
+ifneq ($(T22), YES)
+    STDINC_CFLAGS += -nostdinc
 endif
 
 #--------------------------------------------------

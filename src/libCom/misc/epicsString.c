@@ -204,50 +204,36 @@ epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
    }
    return nout;
 }
+
 epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
     const char *str, const char *pattern)
 {
-    int inx;
-    int wild_card_start;
- 
-        /* check if the specification begins with a wild card */
-        if (*pattern == '*') wild_card_start = 1;
-        else wild_card_start = 0;
- 
-        /* check for specification */
-        while (1) {
-                /* skip any wild cards */
-                while (*pattern == '*') pattern++;
- 
-                /* find the specification chars to compare */
-                inx = 0;
-                while ( (*(pattern+inx) != '*') && (*(pattern+inx)) )
-                        inx++;
- 
-                /* check for specification ending with wildcard */
-                if (inx == 0) return 1;
- 
-                /* find the spec chars in the test string */
-                while ((strlen(str) >= inx)
-                  && (strncmp(str,pattern,inx) != 0) ) {
- 
-                        /* check variable beginning */
-                        if (!wild_card_start) return 0;
-                        else str++;
+        const char *cp, *mp;
+        
+        while ((*str) && (*pattern != '*')) {
+                if ((*pattern != *str) && (*pattern != '?')) {
+                        return 0;
                 }
- 
-                /* check segment found */
-                if (strlen(str) < inx) return 0;
- 
-                /* adjust pointers and wild card indication */
-                wild_card_start = 1;
-                str += inx;
-                pattern += inx;
- 
-                /* check for end of specification */
-                if (*pattern == '\0') {
-                        if (*str == 0) return 1;
-                        else return 0;
+                pattern++;
+                str++;
+        }
+        while (*str) {
+                if (*pattern == '*') {
+                        if (!*++pattern) {
+                                return 1;
+                        }
+                        mp = pattern;
+                        cp = str+1;
+                } else if ((*pattern == *str) || (*pattern == '?')) {
+                        pattern++;
+                        str++;
+                } else {
+                        pattern = mp;
+                        str = cp++;
                 }
         }
+        while (*pattern == '*') {
+                pattern++;
+        }
+        return !*pattern;
 }

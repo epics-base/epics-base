@@ -23,16 +23,6 @@
 #include "iocsh.h"
 #include "iocUtilRegister.h"
 
-/* < (runScript) command */
-static const iocshArg runScriptArg0 = { "command file name",iocshArgString};
-static const iocshArg * const runScriptArgs[1] = {&runScriptArg0};
-static const iocshFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
-static void runScriptCallFunc(const iocshArgBuf *args)
-{
-    if (args[0].sval)
-        iocsh(args[0].sval);
-}
-
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
@@ -173,7 +163,6 @@ static void coreReleaseCallFunc(const iocshArgBuf *args)
 
 void epicsShareAPI iocUtilRegister(void)
 {
-    iocshRegister(&runScriptFuncDef,runScriptCallFunc);
     iocshRegister(&chdirFuncDef,chdirCallFunc);
     iocshRegister(&pwdFuncDef,pwdCallFunc);
     iocshRegister(&threadFuncDef,threadCallFunc);

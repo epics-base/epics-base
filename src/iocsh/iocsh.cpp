@@ -22,14 +22,15 @@
 #include "errlog.h"
 #include "dbAccess.h"
 #include "macLib.h"
+#include "epicsStdio.h"
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "envDefs.h"
 #include "registry.h"
+#include "epicsReadline.h"
 #define epicsExportSharedSymbols
 #include "iocsh.h"
-#include "epicsReadline.h"
 
 /*
  * File-local information
@@ -50,6 +51,16 @@ static char iocshVarID[] = "iocshVar";
 extern "C" { static void varCallFunc(const iocshArgBuf *); }
 static epicsMutexId iocshTableMutex;
 static epicsThreadOnceId iocshTableOnceId = EPICS_THREAD_ONCE_INIT;
+
+/*
+ * I/O redirection
+ */
+#define NREDIRECTS   5
+struct iocshRedirect {
+    const char *name;
+    const char *mode;
+    FILE       *fp;
+};
 
 /*
  * Set up command table mutex
@@ -270,6 +281,70 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
 }
 
 /*
+ * Open redirected I/O
+ */
+static int
+openRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
+{
+    int i;
+
+    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
+        if (redirect->name != NULL) {
+            redirect->fp = fopen(redirect->name, redirect->mode);
+            if (redirect->fp == NULL) {
+                showError(filename, lineno, "Can't open \"%s\": %s.",
+                                            redirect->name, strerror(errno));
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+/*
+ * Start I/O redirection
+ */
+static void
+startRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
+{
+    int i;
+
+    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
+        if (redirect->fp != NULL) {
+            switch(i) {
+            case 0: epicsSetStdin(redirect->fp);  break;
+            case 1: epicsSetStdout(redirect->fp); break;
+            case 2: epicsSetStderr(redirect->fp); break;
+            }
+        }
+    }
+}
+
+/*
+ * Finish up I/O redirection
+ */
+static void
+stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
+{
+    int i;
+
+    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
+        if (redirect->fp != NULL) {
+            if (fclose(redirect->fp) != 0)
+                showError(filename, lineno, "Error closing \"%s\": %s.",
+                                            redirect->name, strerror(errno));
+            redirect->fp = NULL;
+            switch(i) {
+            case 0: epicsSetStdin(NULL);  break;
+            case 1: epicsSetStdout(NULL); break;
+            case 2: epicsSetStderr(NULL); break;
+            }
+        }
+        redirect->name = NULL;
+    }
+}
+
+/*
  * The body of the command interpreter
  */
 int epicsShareAPI
@@ -286,6 +361,8 @@ iocsh (const char *pathname)
     int argc;
     char **argv = NULL;
     int argvCapacity = 0;
+    struct iocshRedirect *redirects = NULL;
+    struct iocshRedirect *redirect = NULL;
     int iarg;
     int sep;
     const char *prompt;
@@ -334,6 +411,18 @@ iocsh (const char *pathname)
         lineno++;
 
         /*
+         * Undo redirection
+         */
+        if (redirects == NULL) {
+            redirects = (struct iocshRedirect *)calloc(NREDIRECTS, sizeof *redirects);
+            if (redirects == NULL) {
+                printf ("Out of memory!\n");
+                break;
+            }
+        }
+        stopRedirect(filename, lineno, redirects);
+
+        /*
          * Ignore comment lines other than to echo
          * them if they came from a script.
          */
@@ -364,6 +453,7 @@ iocsh (const char *pathname)
         argc = 0;
         quote = EOF;
         backslash = 0;
+        redirect = NULL;
         for (;;) {
             if (argc >= argvCapacity) {
                 char **av;
@@ -383,9 +473,42 @@ iocsh (const char *pathname)
                 sep = 1;
             else
                 sep = 0;
-            if ((quote == EOF) && (c == '\\') && !backslash) {
-                backslash = 1;
-                continue;
+            if ((quote == EOF) && !backslash) {
+                int redirectFd = 1;
+                if (c == '\\') {
+                    backslash = 1;
+                    continue;
+                }
+                if (c == '<') {
+                    if (redirect != NULL) {
+                        break;
+                    }
+                    redirect = &redirects[0];
+                    sep = 1;
+                    redirect->mode = "r";
+                }
+                if ((c >= '1') && (c <= '9') && (line[icin] == '>')) {
+                    redirectFd = c - '0';
+                    c = '>';
+                    icin++;
+                }
+                if (c == '>') {
+                    if (redirect != NULL)
+                        break;
+                    if (redirectFd >= NREDIRECTS) {
+                        redirect = &redirects[1];
+                        break;
+                    }
+                    redirect = &redirects[redirectFd];
+                    sep = 1;
+                    if (line[icin] == '>') {
+                        icin++;
+                        redirect->mode = "a";
+                    }
+                    else {
+                        redirect->mode = "w";
+                    }
+                }
             }
             if (inword) {
                 if (c == quote) {
@@ -413,13 +536,27 @@ iocsh (const char *pathname)
                 if (!sep) {
                     if (((c == '"') || (c == '\'')) && !backslash)
                         quote = c;
-                    argv[argc++] = line + icout;
+                    if (redirect != NULL) {
+                        if (redirect->name != NULL) {
+                            argc = -1;
+                            break;
+                        }
+                        redirect->name = line + icout;
+                        redirect = NULL;
+                    }
+                    else {
+                        argv[argc++] = line + icout;
+                    }
                     if (quote == EOF)
                         line[icout++] = c;
                     inword = 1;
                 }
             }
             backslash = 0;
+        }
+        if (redirect != NULL) {
+            showError (filename, lineno, "Illegal redirection.");
+            continue;
         }
         if (argc < 0)
             break;
@@ -436,6 +573,16 @@ iocsh (const char *pathname)
         argv[argc] = NULL;
 
         /*
+         * Prepare for redirection
+         */
+        if ((argc == 0) && (redirects[0].name != NULL)) {
+            iocsh(redirects[0].name);
+            continue;
+        }
+        if (openRedirect(filename, lineno, redirects) < 0)
+            continue;
+
+        /*
          * Look up command
          */
         if (argc) {
@@ -449,30 +596,31 @@ iocsh (const char *pathname)
                 if (argc == 1) {
                     int l, col = 0;
 
+                    startRedirect(filename, lineno, redirects);
                     printf ("Type `help command_name' to get more information about a particular command.\n");
                     iocshTableLock ();
                     for (found = iocshCommandHead ; found != NULL ; found = found->next) {
                         piocshFuncDef = found->pFuncDef;
                         l = strlen (piocshFuncDef->name);
                         if ((l + col) >= 79) {
-                            putchar ('\n');
+                            fputc ('\n', stdout);
                             col = 0;
                         }
                         fputs (piocshFuncDef->name, stdout);
                         col += l;
                         if (col >= 64) {
-                            putchar ('\n');
+                            fputc ('\n', stdout);
                             col = 0;
                         }
                         else {
                             do {
-                                putchar (' ');
+                                fputc (' ', stdout);
                                 col++;
                             } while ((col % 16) != 0);
                         }
                     }
                     if (col)
-                        putchar ('\n');
+                        fputc ('\n', stdout);
                     iocshTableUnlock ();
                 }
                 else {
@@ -482,6 +630,7 @@ iocsh (const char *pathname)
                             printf ("%s -- no such command.\n", argv[iarg]);
                         }
                         else {
+                            startRedirect(filename, lineno, redirects);
                             piocshFuncDef = found->pFuncDef;
                             fputs (piocshFuncDef->name, stdout);
                             for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
@@ -516,6 +665,7 @@ iocsh (const char *pathname)
              */
             for (iarg = 0 ; ; iarg++) {
                 if (iarg == piocshFuncDef->nargs) {
+                    startRedirect(filename, lineno, redirects);
                     (*found->func)(argBuf);
                     break;
                 }
@@ -534,6 +684,7 @@ iocsh (const char *pathname)
                 if (piocshFuncDef->arg[iarg]->type == iocshArgArgv) {
                     argBuf[iarg].aval.ac = argc-iarg;
                     argBuf[iarg].aval.av = argv+iarg;
+                    startRedirect(filename, lineno, redirects);
                     (*found->func)(argBuf);
                     break;
                 }
@@ -551,6 +702,10 @@ iocsh (const char *pathname)
     }
     if (fp && (fp != stdin))
         fclose (fp);
+    if (redirects != NULL) {
+        stopRedirect(filename, lineno, redirects);
+        free (redirects);
+    }
     free(line);
     free (argv);
     free (argBuf);

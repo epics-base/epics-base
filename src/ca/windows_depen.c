@@ -13,6 +13,7 @@
  *
  *      This software was produced under  U.S. Government contracts:
  *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
  *      Initial development by:
  *              The Controls and Automation Group (AT-8)
@@ -26,17 +27,18 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *              Lawrence Berkley National Laboratory
+ *		Lawrence Berkley National Laboratory
  *
  *      Modification Log:
  *      -----------------
- *
  */
 
 /*
  * Windows includes
  */
+#include <windows.h>
 #include <process.h>
+#include <mmsystem.h>
 
 #include "iocinf.h"
 
@@ -44,6 +46,10 @@
 #error This source is specific to WIN32 
 #endif
 
+long offset_time;  /* time diff (sec) between 1970 and when windows started */
+DWORD prev_time;   
+
+static void init_timers();
 static int get_subnet_mask ( char SubNetMaskStr[256]);
 static int RegTcpParams (char IpAddr[256], char SubNetMask[256]);
 static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName, 
@@ -55,11 +61,25 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
  */
 void cac_gettimeval(struct timeval  *pt)
 {
-        SYSTEMTIME st;
+    /**
+	The multi-media timers used here should be good to a millisecond 
+	resolution. However, since the timer rolls back to 0 every 49.7 
+	days (2^32 ms, 4,294,967.296 sec), it's not very good for 
+	time stamping over long periods (if Windows is restarted more 
+	often than 49 days, it wont be a problem).  An attempt is made 
+	to keep the time returned increasing, but there is no guarantee 
+	the UTC time is right after 49 days.
+	**/
 
-	GetSystemTime(&st);
-	pt->tv_sec = time(NULL);
-	pt->tv_usec = st.wMilliseconds*1000;
+	DWORD win_sys_time;	/* time (ms) since windows started */
+
+	win_sys_time = timeGetTime();
+	if (prev_time > win_sys_time)	{	/* must have been a timer roll-over */
+		offset_time += 4294967;		/* add number of seconds in 49.7 days */
+	}
+	pt->tv_sec = (long)win_sys_time/1000 + offset_time;	/* time (sec) since 1970 */
+	pt->tv_usec = (long)((win_sys_time % 1000) * 1000);
+	prev_time = win_sys_time;
 }
 
 
@@ -102,8 +122,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
  */
 int cac_os_depen_init(struct ca_static *pcas)
 {
-    	int status;
-	WSADATA WsaData;
+    int status;
 
 	ca_static = pcas;
 
@@ -117,10 +136,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 
 	/* signal(SIGPIPE,SIG_IGN); */
 
-#	ifdef _WINSOCKAPI_
-		status = WSAStartup(MAKEWORD(1,1), &WsaData);
-		assert (status==0);
-#	endif
+	/* DllMain does most OS dependent init & cleanup */
 
 	status = ca_os_independent_init ();
 
@@ -435,37 +451,56 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
 	WSADATA WsaData;
+	TIMECAPS tc;
+	UINT     wTimerRes;
 
 	switch (dwReason)  {
 
 	case DLL_PROCESS_ATTACH:
-
-		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0)
-			return FALSE;
-#if _DEBUG
+						
+#if _DEBUG			  /* for gui applications, setup console for error messages */
 		if (AllocConsole())	{
 			SetConsoleTitle("Channel Access Status");
     		freopen( "CONOUT$", "a", stderr );
-			fprintf(stderr, "Process attached to ca.dll R12\n");
 		}
-#endif
+		fprintf(stderr, "Process attached to ca.dll R3.12.1\n");
+#endif	 			  /* init. winsock */
+		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0) {
+			fprintf(stderr,"Cant init winsock \n");
+			return FALSE;
+		}
+					   /* setup multi-media timer */
+		if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
+			fprintf(stderr,"cant get timer info \n");
+			return FALSE;
+		}
+					  /* set for 1 ms resoulution */
+		wTimerRes = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
+		status = timeBeginPeriod(wTimerRes); 
+		if (status != TIMERR_NOERROR)
+			fprintf(stderr,"timer setup failed\n");
+		offset_time = (long)time(NULL) - (long)timeGetTime()/1000;
+		prev_time =  timeGetTime();
+
 		break;
 
 	case DLL_PROCESS_DETACH:
 		
+		timeEndPeriod(wTimerRes);
+		 
 		if ((status = WSACleanup()) !=0)
 			return FALSE;
 		break;
 
 	case DLL_THREAD_ATTACH:
 #if _DEBUG
-		fprintf(stderr, "Thread attached to ca.dll R12\n");
+		fprintf(stderr, "Thread attached to ca.dll R3.12.1\n");
 #endif
 		break;
 
 	case DLL_THREAD_DETACH:
 #if _DEBUG
-		fprintf(stderr, "Thread detached from ca.dll R12\n");
+		fprintf(stderr, "Thread detached from ca.dll R3.12.1\n");
 #endif
 		break;
 
@@ -475,6 +510,8 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 return TRUE;
 
+
 }
+
 
 

@@ -20,7 +20,6 @@ CMLOG, will now receive the logMsg messages.</p>
 <p>Previously if a dbGetLink failed on one of the input links, dbGetLink
 was not called for the remaining links. Now it is.</p>
 
-
 <h3>put notify</h3>
 <p>put notify did not act properly if a record had disp=TRUE, i.e.
 if puts are disabled. It now returns S_db_putDisabled.</p>
@@ -77,6 +76,30 @@ that device driver. The desirable functional change being errlogPrintf's
 capability to discard messages when it gets behind (because of a transient
 mbuf starvation situation).</p>
 
+<h3>macLib</h3>
+
+<p>macParseDefns did not check for handle==NULL. The documentation for
+macParseDefns was not correct.</p>
+
+<h3>task_params.h</h3>
+<p>"event task" changed tp "event_task".</p>
+
+<h3>drvGpib</h3>
+<p>Remove some dead code.
+Clean up code for handling A24 DMA memory.</p>
+
+<h3>dbGetLink and dbPutLink</h3>
+<p>A bug in dbGetLink resulted in nRequest not being given the value 0 if the
+link is a constant link. This in turn caused the waveform record to always
+set NORD=NELEM. Thus if an application trys to write a waveform via the
+steps:</p>
+<pre>    prset-&gt;get_array_info(paddr,&amp;no_elements,&amp;offset);
+    write nNew elements into array &gt;&gt;
+    prset-&gt;put_array_info(paddr,nNew);</pre>
+
+<p>This sets NORD = nNew. But because of the dbGetLink bug, the soft device
+support attached to the waveform record sets NORD to NELM.</p>
+<p>This problem is fixed. The actual bug was in macros in dbAccess.h</p>
 <h2>Changes since 3.13.7</h2>
 
 <h3>dbEvent Bug Fix Changes</h3>

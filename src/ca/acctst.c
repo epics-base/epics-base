@@ -1296,9 +1296,9 @@ void test_sync_groups ( chid chan, unsigned interestLevel  )
 
     multiple_sg_requests ( chan, gid1 );
     multiple_sg_requests ( chan, gid2 );
-    status = ca_sg_block ( gid1, 15.0 );
+    status = ca_sg_block ( gid1, 500.0 );
     SEVCHK ( status, "SYNC GRP1" );
-    status = ca_sg_block ( gid2, 15.0 );
+    status = ca_sg_block ( gid2, 500.0 );
     SEVCHK ( status, "SYNC GRP2" );
     status = ca_sg_delete  ( gid1 );
     SEVCHK ( status, NULL );

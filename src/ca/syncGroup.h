@@ -44,6 +44,10 @@
 #   if _MSC_VER >= 1200
 #	    define CASG_PLACEMENT_DELETE
 #   endif
+#elif defined ( __HP_aCC )
+#   if _HP_aCC > 033300
+#       define CASG_PLACEMENT_DELETE
+#   endif
 #else
 #	define CASG_PLACEMENT_DELETE
 #endif

@@ -51,12 +51,8 @@
 #include "special.h"
 #include "aoRecord.h"
 
-static long init_record();
-
 /* Create the dset for devAoSoftRaw */
-static long init_record();
-static long write_ao();
-static long special_linconv();
+static long write_ao(aoRecord *pao);
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -69,17 +65,11 @@ struct {
 	6,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	write_ao,
-	special_linconv};
+	NULL};
 
-static long init_record(aoRecord *pao)
-{
-    special_linconv(pao,1);
-    return 0;
-} /* end init_record() */
-
 static long write_ao(aoRecord *pao)
 {
     long status;
@@ -88,9 +78,3 @@ static long write_ao(aoRecord *pao)
 
     return(status);
 }
-
-static long special_linconv(aoRecord *pao, int after)
-{
-    return(0);
-}
-

@@ -49,9 +49,8 @@
 #include "link.h"
 #include "aiRecord.h"
 /* Create the dset for devAiSoftRaw */
-static long init_record();
-static long read_ai();
-static long special_linconv();
+static long init_record(aiRecord *pai);
+static long read_ai(aiRecord *pai);
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -67,7 +66,7 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-	special_linconv
+	NULL
 };
 
 static long init_record(aiRecord *pai)
@@ -86,19 +85,13 @@ static long init_record(aiRecord *pai)
 		"devAiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
-    special_linconv(pai,1);
     return(0);
 }
 
-static long read_ai( aiRecord *pai)
+static long read_ai(aiRecord *pai)
 {
     long status;
 
     status = dbGetLink(&(pai->inp),DBR_LONG,&(pai->rval),0,0);
-    return(0);
-}
-
-static long special_linconv(aiRecord *pai,int after)
-{
     return(0);
 }

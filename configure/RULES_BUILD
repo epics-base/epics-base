@@ -240,7 +240,7 @@ endif
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
 
-%.cpp:	%.stt
+%.cpp:	../%.stt
 	@echo "converting $< "
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@

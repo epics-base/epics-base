@@ -5,6 +5,9 @@
 #    by Matthew Needes and Mike Bordua
 #
 # $Log$
+# Revision 1.13  1994/09/09  17:32:29  jba
+# Cleanup of files
+#
 # Revision 1.12  1994/09/08  17:25:41  mcn
 # Changed clean to tools/Clean.  Added "uninstall" dependency.
 #
@@ -27,7 +30,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 all: build
 
-build:
+build: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
@@ -35,7 +38,7 @@ build:
 			cd $$TMP;					\
 		done)
 
-install:
+install: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
@@ -43,11 +46,31 @@ install:
 			cd $$TMP;					\
 		done)
 
-depends:
+depends: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
 			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
 			cd $$TMP;					\
 		done)
+
+dirs:
+	@echo ${T_A}: Creating Directories 
+	@for DIR in ${DIRS};						\
+		do							\
+			TMP=`pwd`; 	\
+			cd $$DIR ;	\
+			if [ -f Makefile.${BUILD_TYPE} ] ; then \
+				test -d O.${T_A} || \
+				mkdir O.${T_A}; \
+				test -f O.${T_A}/Makefile || \
+				ln -s ../Makefile.${BUILD_TYPE} O.${T_A}/Makefile \
+					> /dev/null 2> /dev/null; \
+				test -f O.${T_A}/Target.include || \
+					echo "T_A=${T_A}" > O.${T_A}/Target.include; \
+				test -f O.${T_A}/.DEPENDS || \
+					touch O.${T_A}/.DEPENDS; \
+				fi ; \
+			cd $$TMP;					\
+		done
 

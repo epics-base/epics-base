@@ -74,7 +74,7 @@ gmake
 					be complete before this can be issued).
 
 NOTES:
-   1. tools/MakeRelease will create tar files in the directory ABOVE
+   1. base/MakeRelease will create tar files in the directory ABOVE
         base.  These tar files are then meant to be untarred at that level.
         This release will include the "epics/config" directory.
 

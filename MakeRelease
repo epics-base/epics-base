@@ -1,0 +1,125 @@
+#!/bin/sh
+#
+# $Id$
+#
+# Make Release - Creates an EPICS release
+#   By Matthew Needes and Bob Zieman
+#
+#  MakeRelease [-b]
+#
+#    [-b] - For fully built release
+#
+# $Log$
+# Revision 1.14  1994/12/19  18:42:08  tang
+# Make the args length compatible for HP and SUN.
+#
+# Revision 1.13  1994/12/15  19:19:18  tang
+# Replace -I opt by cat and xargs for tar for HP compatibility.
+#
+# Revision 1.12  1994/12/14  23:57:55  tang
+# Take out \< and \> pair for hp compatible
+#
+# Revision 1.11  1994/10/31  21:44:17  jba
+# Moved print stmnt, added cd $(EPICS)
+#
+# Revision 1.10  1994/10/05  18:29:34  jba
+# Renamed version.h to epicsVersion.h
+#
+# Revision 1.9  1994/09/22  01:41:47  mcn
+# MakeRelease - MAJOR bug fix.  GetVar / MakeDirs - minor fix.
+#
+# Revision 1.8  1994/09/07  20:59:15  mcn
+# Revamped GetVar, modified scripts for new GetVar.
+#
+# Revision 1.7  1994/09/02  20:58:00  mcn
+# minor change.
+#
+# Revision 1.6  1994/08/21  00:56:41  mcn
+# New Stuff
+#
+# Revision 1.5  1994/08/02  18:36:29  mcn
+# Support new configuration.
+#
+# Revision 1.4  1994/07/14  22:13:32  mcn
+# Now include SDR Makefile/Headers
+#
+#
+
+EPICS=${1};
+
+if [ ! -d include -o ! -d src ]; then
+	echo "Cannot find src or include, are you at the top of EPICS base ?"
+	exit 1
+fi
+
+cd $EPICS/base
+
+FULLY_BUILT=NO
+if [ "${2}" = "-b" ]; then
+	FULLY_BUILT=YES
+	shift
+fi
+
+# Retrieve EPICS release string from include/epicsVersion.h
+grep EPICS_VERSION_STRING include/epicsVersion.h > /dev/null 2>&1 || ERR=1;
+
+if [ "$ERR" = "1" ];
+	then
+		echo "TOP:  Cannot retrieve release number from include/epicsVersion.h";
+		exit 1;
+	fi
+
+RELS=`grep "EPICS_VERSION_STRING" include/epicsVersion.h \
+		| sed   -e 's-.*Version--' \
+			-e 's-[  ][      ]*--g' \
+         		-e 's-".*--' \
+                	-e 's-\.0$--'`;
+ 
+if [ -z "${RELS}" ];
+	then
+		echo "TOP: Cannot retrieve release number from include/epicsVersion.h";
+		exit 1;
+	fi
+
+RELS="R${RELS}";
+
+echo TOP: Creating ../${RELS}.Tar;
+
+if [ -f ${RELS}.Tar* ];
+	then
+		echo "TOP: This release has already been created.";
+		echo "TOP: Remove Tar file or edit include/epicsVersion.h.";
+		exit 1;
+	fi
+
+# Create list of files and dirs to include in Tar file
+
+cd $EPICS
+
+ls base/README* | xargs tar cvf ${RELS}.Tar
+
+ls base/Makefile* > /tmp/make_release.out.$$;
+
+find config base/include base/man base/tools -name CVS -prune -o \
+		! -type d -print >> /tmp/make_release.out.$$;
+
+# binary / library / default.dctsdr / <rec>Record.h / etc.
+if [ $FULLY_BUILT = "YES" ];
+	then
+		find base/bin -name CVS -prune -o ! -type d -print \
+				>> /tmp/make_release.out.$$;
+
+		find base/lib -name CVS -prune -o ! -type d -print \
+				>> /tmp/make_release.out.$$;
+
+		find base/rec -name CVS -prune -o ! -type d -print \
+				>> /tmp/make_release.out.$$;
+	fi
+
+find base/src -name CVS -prune -o -name SCCS -prune -o ! -type d -print \
+		| grep -v '/O\..*$' >> /tmp/make_release.out.$$
+
+cat /tmp/make_release.out.$$ | xargs tar rvf ${RELS}.Tar 
+		
+rm /tmp/make_release.out.$$
+

@@ -12,6 +12,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.23  1995/02/13  15:00:09  jba
+# Changed include file from CONFIG_SITE to CONFIG
+#
 # Revision 1.22  1994/11/14  23:12:17  tang
 # Replace ARCH_TYPE with .
 #
@@ -74,21 +77,27 @@ depends:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
+clean:
+	@(for ARCH in ${BUILD_ARCHS};					\
+		do							\
+			ARCH_TYPE=$$ARCH				\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+uninstall:
+	@(for ARCH in ${BUILD_ARCHS};					\
+		do							\
+			ARCH_TYPE=$$ARCH				\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
 release: 
 	@echo TOP: Creating Release...
-	@tools/MakeRelease
+	@./MakeRelease ${EPICS}
 
 built_release: install
 	@echo TOP: Creating Fully Built Release...
-	@tools/MakeRelease -b
-
-clean:
-	@echo "TOP: Cleaning"
-	@tools/Clean
-
-uninstall:
-	rm -rf bin/* lib/* rec.bak
-	rm -f rec/default.dctsdr rec/default.sdrSum rec/*.h
+	@./MakeRelease ${EPICS} -b
 
 #  Notes for single architecture build rules:
 #    CheckArch only has to be run for dirs.% .  That
@@ -107,20 +116,15 @@ uninstall:
 #     some things may be included on a per architecture 
 #     basis.
 
-dirs.%:
-	@tools/CheckArch $*
-	@echo $*: Creating Directories
-	@tools/MakeDirs $*
-
-build.%: dirs.% 
+build.%:
 	@echo $*: Building
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build
 
-install.%: dirs.%
+install.%:
 	@echo $*: Installing
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
 
-depends.%: dirs.%
+depends.%:
 	@echo $*: Performing Make Depends
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 
@@ -133,11 +137,10 @@ release.%:
 	@echo
 
 uninstall.%:
-	@echo
-	@echo "The uninstall.arch syntax is not supported by this build."
-	@echo
+	@echo "TOP: Uninstalling $* "
+	@rm -rf ./bin/$* ./lib/$* rec.bak rec
 
 clean.%:
-	@echo "$*: Cleaning"
-	@tools/Clean $*
+	@echo "TOP: Cleaning $* "
+	@find src -type d -name "O.$*" -prune -exec rm -rf {} \;
 

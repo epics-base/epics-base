@@ -114,7 +114,11 @@ static long asInitCommon(void)
 	firstTime = FALSE;
 	if(!pacf) return(0); /*access security will NEVER be turned on*/
     } else {
-	if(!asActive) return(S_asLib_asNotActive);
+	if(!asActive) {
+            printf("Access security is NOT enabled."
+                   " Was asSetFilename specified before iocInit?\n");
+            return(S_asLib_asNotActive);
+        }
 	if(pacf) {
 	    asCaStop();
 	} else { /*Just leave everything as is */
@@ -131,9 +135,6 @@ static long asInitCommon(void)
 
 int asInit(void)
 {
-
-    /*If no access configuration file defined return success*/
-    if(!pacf) return(0);
     return(asInitCommon());
 }
 

@@ -1347,7 +1347,7 @@ void arrayTest ( chid chan )
                     chan, arrayReadNotify, pWF ); 
     SEVCHK  ( status, "array read notify request failed" );
 
-    while ( ! arrayWriteNotifyComplete && ! arrayReadNotifyComplete ) {
+    while ( ! arrayWriteNotifyComplete || ! arrayReadNotifyComplete ) {
         ca_pend_event ( 0.1 );
     }
 

@@ -180,7 +180,8 @@ static long init_record(struct aoRecord *pao, int pass)
 	return(S_dev_missingSup);
     }
     pao->init = TRUE;
-    if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
+    /*The following is for old device support that doesnt know about eoff*/
+    if ((pao->eslo==1.0) && (pao->eoff==0.0)) {
 	pao->eoff = pao->egul;
     }
 
@@ -212,7 +213,6 @@ static long init_record(struct aoRecord *pao, int pass)
         default:
 	     recGblRecordError(S_dev_badInitRet,(void *)pao,"ao: init_record");
 	     return(S_dev_badInitRet);
-        break;
         }
     }
     pao->oval = pao->pval = pao->val;

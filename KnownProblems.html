@@ -11,7 +11,25 @@
 <body>
 <h1 style="text-align: center">EPICS base R3.13.0beta1: Known Problems</h1>
 
-<p> </p>
+<h2>Device Support, which does not implement special_linconv, is broken</h2>
+<p>In release beta1 changes were made to allow ESLO EOFF to be
+database design fields. Because of changes that were made to aiRecord and
+aoRecord device support that does not implement special_linconv
+may no longer work.<p>
+<p>To fix aiRecord.c, in init_record replace</p>
+<pre>    if ((pai-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_li
+nconv) {
+</pre>
+<p>by</p>
+<pre>    if ((pai-&gt;eslo==1.0) &amp;&amp; (pai-&gt;eoff==0.0)) {
+</pre>
+<p>To fix aoRecord.c, in init_record replace</p>
+<pre>    if ((pao-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_li
+nconv) {
+</pre>
+<p>by</p>
+<pre>    if ((pao-&gt;eslo==1.0) &amp;&amp; (pao-&gt;eoff==0.0)) {
+</pre>
 
 <h2>CA puts to disabled record</h2>
 <p>If a CA client issues a put to a disabled record then, when the record is ena

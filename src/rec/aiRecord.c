@@ -183,7 +183,8 @@ static long init_record(void *precord,int pass)
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
-    if ((pai->linr == menuConvertLINEAR) && pdset->special_linconv) {
+    /*The following is for old device support that doesnt know about eoff*/
+    if ((pai->eslo==1.0) && (pai->eoff==0.0)) {
 	pai->eoff = pai->egul;
     }
 

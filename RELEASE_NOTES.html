@@ -16,6 +16,21 @@
 
 <h2>Changes since beta1</h2>
 
+<p><strong>aiRecord and aoRecord: Setting eoff=egul</strong></p>
+
+<p>Instead of init_record executing code like</p>
+<pre>    if ((pai-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_linconv) {
+        pai-&gt;eoff = pai-&gt;egul;
+    }
+</pre>
+
+<p>It now executes:</p>
+<pre>    if ((pai-&gt;eslo==1.0) &amp;&amp; (pai-&gt;eoff==0.0)) {
+        pai-&gt;eoff = pai-&gt;egul;
+    }
+</pre>
+<p>aoRecord has a similar change</p>
+
 <p><strong>CA puts to disabled record</strong></p>
 
 <p>If a CA client issues a put to a disabled record then, when the record is ena

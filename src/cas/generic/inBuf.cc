@@ -45,7 +45,9 @@ inBuf::inBuf (bufSizeT bufSizeIn, bufSizeT ioMinSizeIn) :
         this->ioMinSize = 1;
     }
 
-    assert (this->bufSize>this->ioMinSize);
+    if ( this->bufSize < this->ioMinSize ) {
+        this->bufSize = this->ioMinSize;
+    }
 
     this->pBuf = new char [this->bufSize];
     if (!this->pBuf) {

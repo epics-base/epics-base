@@ -1,0 +1,232 @@
+menu(timerTIMU) {
+	choice(timerTIMU_milliseconds,"milliseconds")
+	choice(timerTIMU_microseconds,"microseconds")
+	choice(timerTIMU_nanoseconds,"nanoseconds")
+	choice(timerTIMU_picoseconds,"picoseconds")
+}
+menu(timerTSRC) {
+	choice(timerTSRC_external,"external")
+	choice(timerTSRC_internal,"internal")
+}
+menu(timerPTST) {
+	choice(timerPTST_low,"low")
+	choice(timerPTST_high,"high")
+}
+recordtype(timer) {
+	include "dbCommon.dbd" 
+	field(TORG,DBF_INLINK) {
+		prompt("Trigger Origin")
+		promptgroup(GUI_TIMER)
+		interest(1)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup(GUI_PULSE)
+		interest(1)
+	}
+	field(VAL,DBF_SHORT) {
+		prompt("Status")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(TSRC,DBF_MENU) {
+		prompt("Clock Source")
+		promptgroup(GUI_TIMER)
+		interest(1)
+		menu(timerTSRC)
+	}
+	field(PTST,DBF_MENU) {
+		prompt("Pre-Trigger State")
+		promptgroup(GUI_TIMER)
+		pp(TRUE)
+		interest(1)
+		menu(timerPTST)
+	}
+	field(TEVT,DBF_SHORT) {
+		prompt("Event on Trigger")
+		promptgroup(GUI_TIMER)
+		pp(TRUE)
+		interest(1)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_TIMER)
+		interest(1)
+	}
+	field(TIMU,DBF_MENU) {
+		prompt("Time Units")
+		promptgroup(GUI_TIMER)
+		interest(1)
+		menu(timerTIMU)
+	}
+	field(MAIN,DBF_MENU) {
+		prompt("Maintain on reboot")
+		promptgroup(GUI_TIMER)
+		pp(TRUE)
+		interest(1)
+		menu(menuYesNo)
+		initial("1")
+	}
+	field(RDT1,DBF_FLOAT) {
+		prompt("Reboot Delay of 1")
+		interest(1)
+	}
+	field(RPW1,DBF_FLOAT) {
+		prompt("Reboot Width of 1")
+		interest(1)
+	}
+	field(PDLY,DBF_FLOAT) {
+		prompt("Delay Source to Inp")
+		promptgroup(GUI_TIMER)
+		interest(1)
+	}
+	field(DUT1,DBF_FLOAT) {
+		prompt("Delay Until Trigger 1")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(OPW1,DBF_FLOAT) {
+		prompt("Output Pulse Width  1")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(DUT2,DBF_FLOAT) {
+		prompt("Delay Until Trigger 2")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(OPW2,DBF_FLOAT) {
+		prompt("Output Pulse Width  2")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(DUT3,DBF_FLOAT) {
+		prompt("Delay Until Trigger 3")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(OPW3,DBF_FLOAT) {
+		prompt("Output Pulse Width  3")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(DUT4,DBF_FLOAT) {
+		prompt("Delay Until Trigger 4")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(OPW4,DBF_FLOAT) {
+		prompt("Output Pulse Width  4")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(DUT5,DBF_FLOAT) {
+		prompt("Delay Until Trigger 5")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(OPW5,DBF_FLOAT) {
+		prompt("Output Pulse Width  5")
+		promptgroup(GUI_PULSE)
+		pp(TRUE)
+		interest(1)
+	}
+	field(T1DL,DBF_DOUBLE) {
+		prompt("Delay for trigger 1")
+		interest(2)
+	}
+	field(T1WD,DBF_DOUBLE) {
+		prompt("Width of Trigger 1")
+		interest(2)
+	}
+	field(T2DL,DBF_DOUBLE) {
+		prompt("Delay for trigger 2")
+		interest(2)
+	}
+	field(T2WD,DBF_DOUBLE) {
+		prompt("Width of Trigger 2")
+		interest(2)
+	}
+	field(T3DL,DBF_DOUBLE) {
+		prompt("Delay for trigger 3")
+		interest(2)
+	}
+	field(T3WD,DBF_DOUBLE) {
+		prompt("Width of Trigger 3")
+		interest(2)
+	}
+	field(T4DL,DBF_DOUBLE) {
+		prompt("Delay for trigger 4")
+		interest(2)
+	}
+	field(T4WD,DBF_DOUBLE) {
+		prompt("Width of Trigger 4")
+		interest(2)
+	}
+	field(T5DL,DBF_DOUBLE) {
+		prompt("Delay for trigger 5")
+		interest(2)
+	}
+	field(T5WD,DBF_DOUBLE) {
+		prompt("Width of Trigger 5")
+		interest(2)
+	}
+	field(T1TD,DBF_FLOAT) {
+		prompt("Trailing Delay of 1")
+		interest(2)
+	}
+	field(T1LD,DBF_FLOAT) {
+		prompt("Leading Delay of 1")
+		interest(2)
+	}
+	field(T2TD,DBF_FLOAT) {
+		prompt("Trailing Delay of 2")
+		interest(2)
+	}
+	field(T2LD,DBF_FLOAT) {
+		prompt("Leading Delay of 2")
+		interest(2)
+	}
+	field(T3TD,DBF_FLOAT) {
+		prompt("Trailing Delay of 3")
+		interest(2)
+	}
+	field(T3LD,DBF_FLOAT) {
+		prompt("Leading Delay of 3")
+		interest(2)
+	}
+	field(T4TD,DBF_FLOAT) {
+		prompt("Trailing Delay of 4")
+		interest(2)
+	}
+	field(T4LD,DBF_FLOAT) {
+		prompt("Leading Delay of 4")
+		interest(2)
+	}
+	field(T5TD,DBF_FLOAT) {
+		prompt("Trailing Delay of 5")
+		interest(2)
+	}
+	field(T5LD,DBF_FLOAT) {
+		prompt("Leading Delay of 5")
+		interest(2)
+	}
+	field(TRDL,DBF_FLOAT) {
+		prompt("Trigger Origin Delay")
+		interest(2)
+	}
+	field(TDIS,DBF_SHORT) {
+		prompt("Timing Pulse Disable")
+		pp(TRUE)
+		interest(2)
+	}
+}

@@ -1,0 +1,120 @@
+menu(compressALG) {
+	choice(compressALG_N_to_1_Low_Value,"N to 1 Low Value")
+	choice(compressALG_N_to_1_High_Value,"N to 1 High Value")
+	choice(compressALG_N_to_1_Average,"N to 1 Average")
+	choice(compressALG_Average,"Average")
+	choice(compressALG_Circular_Buffer,"Circular Buffer")
+}
+recordtype(compress) {
+	include "dbCommon.dbd" 
+	field(VAL,DBF_NOACCESS) {
+		prompt("Value")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		pp(TRUE)
+		size(4)
+		extra("void *		val")
+	}
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup(GUI_COMPRESS)
+		interest(1)
+	}
+	field(RES,DBF_SHORT) {
+		prompt("Reset")
+		asl(ASL0)
+		special(SPC_RESET)
+		interest(3)
+	}
+	field(ALG,DBF_MENU) {
+		prompt("Compression Algorithm")
+		promptgroup(GUI_ALARMS)
+		special(SPC_RESET)
+		interest(1)
+		menu(compressALG)
+	}
+	field(NSAM,DBF_ULONG) {
+		prompt("Number of Values")
+		promptgroup(GUI_COMPRESS)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(N,DBF_ULONG) {
+		prompt("N to 1 Compression")
+		promptgroup(GUI_COMPRESS)
+		special(SPC_RESET)
+		interest(1)
+		initial("1")
+	}
+	field(IHIL,DBF_FLOAT) {
+		prompt("Init High Interest Lim")
+		promptgroup(GUI_COMPRESS)
+		interest(1)
+	}
+	field(ILIL,DBF_FLOAT) {
+		prompt("Init Low Interest Lim")
+		promptgroup(GUI_COMPRESS)
+		interest(1)
+	}
+	field(HOPR,DBF_FLOAT) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LOPR,DBF_FLOAT) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("EngineeringUnits")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		size(16)
+	}
+	field(OFF,DBF_ULONG) {
+		prompt("Offset")
+		special(SPC_NOMOD)
+	}
+	field(NUSE,DBF_ULONG) {
+		prompt("Number Used")
+		special(SPC_NOMOD)
+	}
+	field(BPTR,DBF_NOACCESS) {
+		prompt("Buffer Pointer")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("double		*bptr")
+	}
+	field(SPTR,DBF_NOACCESS) {
+		prompt("Summing Buffer Ptr")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("double		*sptr")
+	}
+	field(WPTR,DBF_NOACCESS) {
+		prompt("Working Buffer Ptr")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("double		*wptr")
+	}
+	field(CVB,DBF_DOUBLE) {
+		prompt("Compress Value Buffer")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(INX,DBF_ULONG) {
+		prompt("Compressed Array Inx")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+}

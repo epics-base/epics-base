@@ -108,10 +108,8 @@ static long init_record(pstringin)
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)pstringin;
 	pcallback->wd_id = wdCreate();
-	if (pstringin->inp.value.value!=0.0) {
-        	sprintf(pstringin->val,"%-14.7g",pstringin->inp.value.value);
-		pstringin->udf = FALSE;
-		}
+	if(recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val))
+	    pstringin->udf = FALSE;
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pstringin,

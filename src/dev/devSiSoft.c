@@ -79,11 +79,8 @@ static long init_record(pstringin)
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pstringin->inp.type) {
     case (CONSTANT) :
-	if(pstringin->inp.value.value!=0.0){
-	        sprintf(pstringin->val,"%-14.7g",pstringin->inp.value.value);
-		pstringin->udf= FALSE;
-		}
-	pstringin->udf= FALSE;
+	if(recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val))
+	    pstringin->udf = FALSE;
         break;
     case (PV_LINK) :
         status = dbCaAddInlink(&(pstringin->inp), (void *) pstringin, "VAL");

@@ -62,10 +62,11 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stddef.h>
 #include <gpHash.h>
 #include <ellLib.h>
+#include <epicsPrint.h>
 
 
-/*Algorithm depends on HASH_NO=256*/
-#define 	HASH_NO	256	/*DO NOT CHANGE: number of hash table entries */
+static int tableSize=0;
+static int nShift=0;
 #ifdef vxWorks
 static FAST_LOCK lock;
 #endif
@@ -75,7 +76,7 @@ static FAST_LOCK lock;
 /* Fast Hashing of Variable Length Text Strings, Peter K. Pearson,	*/
 /* Communications of the ACM, June 1990					*/
 
-static unsigned char T0[256] = {
+static unsigned char T[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -93,6 +94,9 @@ static unsigned char T0[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47 
 };
+
+#define NSIZES 9
+static int allowSize[NSIZES] = {256,512,1024,2048,4096,8192,16384,32768,65636};
 
 static void *myCalloc(size_t nobj,size_t size)
 {
@@ -108,21 +112,41 @@ static void *myCalloc(size_t nobj,size_t size)
     return(NULL);
 }
 
-static unsigned char hash( char *pname)
+static int hash( char *pname)
 {
-    unsigned char  h=0;
+    unsigned char	h0=0;
+    unsigned char	h1=0;
+    unsigned short	ind0,ind1;
+    int			even = TRUE;
+    unsigned char	c;
 
     while(*pname) {
-	h = T0[h^*pname];
+	c = *pname;
+	if(even) {h0 = T[h0^c]; even = FALSE;}
+	else {h1 = T[h1^c]; even = TRUE;}
 	pname++;
     }
-    return(h);
+    ind0 = (unsigned short)h0;
+    ind1 = (unsigned short)h1;
+    return((ind1<<nShift) ^ ind0);
 }
 
-void gphInitPvt(void **pgphPvt)
+void gphInitPvt(void **pgphPvt,int size)
 {
-    ELLLIST        **pgph;
-    pgph = myCalloc(HASH_NO, sizeof(ELLLIST *));
+    ELLLIST	**pgph;
+    int		i;
+
+    for(i=0; i<NSIZES; i++) {
+	if(size==allowSize[i]) {
+	    tableSize = size;
+	    nShift = i;
+	}
+    }
+    if(tableSize==0) {
+	epicsPrintf("gphInitPvt: Illegal size\n");
+	return;
+    }
+    pgph = myCalloc(tableSize, sizeof(ELLLIST *));
 #ifdef vxWorks
     FASTLOCKINIT(&lock);
 #endif
@@ -132,12 +156,13 @@ void gphInitPvt(void **pgphPvt)
 	
 GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short	hashInd;
-    ELLLIST		**pgph = (ELLLIST **) gphPvt;
-    ELLLIST		*gphlist;
-    GPHENTRY		*pgphNode;
+    int		hashInd;
+    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    ELLLIST	*gphlist;
+    GPHENTRY	*pgphNode;
     
-    hashInd = (unsigned short)hash(name);
+    if(tableSize==0) return(NULL);
+    hashInd = hash(name);
 #ifdef vxWorks
     FASTLOCK(&lock);
 #endif
@@ -160,12 +185,13 @@ GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 
 GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short	hashInd;
-    ELLLIST		**pgph = (ELLLIST **) gphPvt;
-    ELLLIST		*plist;
-    GPHENTRY		*pgphNode;
+    int		hashInd;
+    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    ELLLIST	*plist;
+    GPHENTRY	*pgphNode;
     
-    hashInd = (unsigned short)hash(name);
+    if(tableSize==0) return(NULL);
+    hashInd = hash(name);
 #ifdef vxWorks
     FASTLOCK(&lock);
 #endif
@@ -197,12 +223,13 @@ GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
 
 void gphDelete(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short	hashInd;
-    ELLLIST		**pgph = (ELLLIST **) gphPvt;
-    ELLLIST		*plist;
-    GPHENTRY		*pgphNode;
+    int		hashInd;
+    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    ELLLIST	*plist;
+    GPHENTRY	*pgphNode;
     
-    hashInd = (unsigned short)hash(name);
+    if(tableSize==0) return;
+    hashInd = hash(name);
 #ifdef vxWorks
     FASTLOCK(&lock);
 #endif
@@ -229,17 +256,17 @@ void gphDelete(void *gphPvt,char *name,void *pvtid)
 
 void gphFreeMem(void * gphPvt)
 {
-    unsigned short	hashInd;
-    ELLLIST		**pgph = (ELLLIST **) gphPvt;
-    ELLLIST		*plist;
-    GPHENTRY		*pgphNode;
-    GPHENTRY		*next;;
+    int		hashInd;
+    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    ELLLIST	*plist;
+    GPHENTRY	*pgphNode;
+    GPHENTRY	*next;;
     
     if (pgph == NULL) return;
 #ifdef vxWorks
     FASTLOCK(&lock);
 #endif
-    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
+    for (hashInd=0; hashInd<tableSize; hashInd++) {
 	if(pgph[hashInd] == NULL) continue;
 	plist=pgph[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);
@@ -259,14 +286,14 @@ void gphFreeMem(void * gphPvt)
 
 void gphDump(void * gphPvt)
 {
-    unsigned short	hashInd;
-    ELLLIST		**pgph = (ELLLIST **) gphPvt;
-    ELLLIST		*plist;
-    GPHENTRY		*pgphNode;
-    int			number;
+    int		hashInd;
+    ELLLIST	**pgph = (ELLLIST **) gphPvt;
+    ELLLIST	*plist;
+    GPHENTRY	*pgphNode;
+    int		number;
     
     if (pgph == NULL) return;
-    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
+    for (hashInd=0; hashInd<tableSize; hashInd++) {
 	if(pgph[hashInd] == NULL) continue;
 	plist=pgph[hashInd];
 	pgphNode = (GPHENTRY *) ellFirst(plist);

@@ -1,0 +1,47 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_LDLIBS = -lDb -lCom  -lm 
+
+#USR_CFLAGS = -v -g
+#CC = $(PURIFYHOME)/purify $(C_$(CMPLR))
+
+LEX = $(ELEX)
+YACC = $(EYACC)
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBS = ./libDb.a\
+	$(DEPLIBS_BASE)/libCom.a
+
+
+SRCS.c = \
+	dbAsciiYacc.c \
+	../dbAsciiTest.c\
+	../dbPvdLib.c\
+	../dbStaticNoRun.c\
+	../dbStaticLib.c\
+	../dbAsciiToMenuH.c\
+	../dbAsciiToRecordtypeH.c
+
+OBJS = \
+	dbAsciiTest.o\
+	dbAsciiToMenuH.o\
+	dbAsciiToRecordtypeH.o
+
+LIBOBJS = dbStaticLib.o dbAsciiYacc.o dbPvdLib.o dbStaticNoRun.o 
+LIBNAME = libDb.a
+
+PROD = \
+	dbAsciiTest\
+	dbAsciiToMenuH\
+	dbAsciiToRecordtypeH
+
+include $(EPICS)/config/RULES.Unix
+
+# Extra rule since dbAsciiRoutines.c is included in dbAsciiYacc.c
+dbAsciiYacc.o: dbAsciiLex.c ../dbAsciiRoutines.c
+
+clean::
+	@$(RM) dbAsciiLex.c dbAsciiYacc.c 
+

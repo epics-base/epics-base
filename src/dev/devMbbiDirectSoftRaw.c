@@ -80,7 +80,7 @@ static long init_record(pmbbi)
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
-        pmbbi->rval = pmbbi->inp.value.value;
+	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);
         break;
     case (DB_LINK) :
     case (PV_LINK) :

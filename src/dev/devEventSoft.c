@@ -79,10 +79,8 @@ static long init_record(pevent)
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
     case (CONSTANT) :
-	if(pevent->inp.value.value!=0.0 && pevent->val == 0.0){
-	        pevent->val=pevent->inp.value.value;
-		}
-	pevent->udf= FALSE;
+	if(recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val))
+	    pevent->udf = FALSE;
         break;
     case (PV_LINK) :
         status = dbCaAddInlink(&(pevent->inp), (void *) pevent, "VAL");

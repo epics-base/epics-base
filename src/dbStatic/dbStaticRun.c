@@ -1,0 +1,591 @@
+/*dbStaticLibRun.c*/
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
+
+/* Modification Log:
+ * -----------------
+ * .01	06-12-95	mrk	Initial
+ */
+
+#ifdef vxWorks
+#include <vxWorks.h>
+#include <taskLib.h>
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <limits.h>
+#include <string.h>
+#include <math.h>
+#include <symLib.h>
+#include <sysSymTbl.h>   /* for sysSymTbl*/
+
+#include <dbDefs.h>
+#include <errMdef.h>
+#include <epicsPrint.h>
+#include <ellLib.h>
+#include <dbDefs.h>
+#include <cvtFast.h>
+#include <dbStaticLib.h>
+#include <dbStaticPvt.h>
+#include <devSup.h>
+#include <drvSup.h>
+#include <recSup.h>
+#include <cvtTable.h>
+#include <special.h>
+
+static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
+		'a','b','c','d','e','f'};
+
+static void ulongToHexString(unsigned long source,char *pdest)
+{
+    unsigned long  val,temp;
+    char  digit[10];
+    int	  i,j;
+
+    if(source==0) {
+	strcpy(pdest,"0x0");
+	return;
+    }
+    *pdest++ = '0'; *pdest++ = 'x';
+    val = source;
+    for(i=0; val!=0; i++) {
+	temp = val/16;
+	digit[i] = hex_digit_to_ascii[val - temp*16];
+	val = temp;
+    }
+    for(j=i-1; j>=0; j--) {
+	*pdest++ = digit[j];
+    }
+    *pdest = 0;
+    return;
+}
+
+static double delta[2]={1e-6,1e-15};
+static int precision[2]={6,14};
+static void realToString(double value,char *preturn,int isdouble)
+{
+    long	intval;
+    double	diff,absvalue;
+    int		logval,prec,end;
+    char	tstr[30];
+    char	*ptstr=&tstr[0];
+    int		round;
+    int		ise=FALSE;
+    char	*loce=NULL;
+
+    if(value==0.0) {strcpy(preturn,"0"); return;};
+    intval=value;
+    diff = value - intval;
+    if(diff<0.0) diff =-diff;
+    absvalue = (value<0.0? -value: value);
+    if(diff < absvalue*delta[isdouble]) {
+	cvtLongToString(intval,preturn);
+	return;
+    }
+    /*Now starts the hard cases*/
+    if(value<0.0) {*preturn++ = '-'; value = -value;}
+    logval = (int)log10(value);
+    if(logval>6 || logval<-2 ) {
+	ise=TRUE;
+	prec = precision[isdouble];
+	sprintf(ptstr,"%.*e",prec,value);
+	loce = strchr(ptstr,'e');
+	if(!loce) {errMessage(-1,"logic error in real to string"); return;}
+	*loce++ = 0;
+    } else {
+	prec = precision[isdouble]-logval;
+	if(prec<0)prec=0;
+	sprintf(ptstr,"%.*f",prec,value);
+    }
+    if(prec>0) {
+	end = strlen(ptstr) -1;
+	round=FALSE;
+	while(TRUE) {
+	    if(end<=0)break;
+	    if(tstr[end]=='.'){end--; break;}
+	    if(tstr[end]=='0'){end--; continue;}
+	    if(!round && end<precision[isdouble]) break;
+	    if(!round && tstr[end]<'8') break;
+	    if(tstr[end-1]=='.') {
+		if(round)end = end-2;
+		break;
+	    }
+	    if(tstr[end-1]!='9') break;
+	    round=TRUE;
+	    end--;
+	}
+	tstr[end+1]=0;
+	while (round) {
+	    if(tstr[end]<'9') {tstr[end]++; break;}
+	    if(end==0) { *preturn++='1'; tstr[end]='0'; break;}
+	    tstr[end--]='0';
+	}
+    }
+    strcpy(preturn,&tstr[0]);
+    if(ise) {
+	if(!(strchr(preturn,'.'))) strcat(preturn,".0");
+	strcat(preturn,"e");
+	strcat(preturn,loce);
+    }
+    return;
+}
+
+static void floatToString(float value,char *preturn)
+{
+    realToString((double)value,preturn,0);
+    return;
+}
+
+static void doubleToString(double value,char *preturn)
+{
+    realToString(value,preturn,1);
+    return;
+}
+
+
+long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
+{
+    dbRecDes		*precdes = pdbentry->precdes;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    dbFldDes		*pflddes;
+    int			i;
+    char		*precord;
+    char		*pfield;
+    
+    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!precnode) return(S_dbLib_recNotFound);
+    precnode->precord = dbCalloc(1,precdes->rec_size);
+    precord = (char *)precnode->precord;
+    if(precdes->rec_size == 0) {
+	epicsPrintf("dbAllocRecord(%s) record_size =0\n",
+	    precdes->name);
+	return(S_dbLib_noRecSup);
+    }
+    pflddes = precdes->papFldDes[0];
+    if(!pflddes) {
+	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
+	return(S_dbLib_flddesNotFound);
+    }
+    if(strlen(precordName)>=pflddes->size) {
+	epicsPrintf("dbAllocRecord: NAME(%s) too long\n",precordName);
+	return(S_dbLib_nameLength);
+    }
+    pfield = precord + pflddes->offset;
+    strcpy(pfield,precordName);
+    for(i=1; i<precdes->no_fields; i++) {
+
+	pflddes = precdes->papFldDes[i];
+	if(!pflddes) continue;
+	pfield = precord + pflddes->offset;
+	pdbentry->pfield = (void *)pfield;
+	pdbentry->pflddes = pflddes;
+	pdbentry->indfield = i;
+	switch(pflddes->field_type) {
+	case DBF_STRING:
+	    if(pflddes->initial)  {
+		if(strlen(pflddes->initial) >= pflddes->size) {
+		    epicsPrintf("initial size > size for %s.%s\n",
+			precdes->name,pflddes->name);
+		} else {
+		    strcpy(pfield,pflddes->initial);
+		}
+	    }
+	    break;
+	case DBF_CHAR:
+	case DBF_UCHAR:
+	case DBF_SHORT:
+	case DBF_USHORT:
+	case DBF_LONG:
+	case DBF_ULONG:
+	case DBF_FLOAT:
+	case DBF_DOUBLE:
+	case DBF_ENUM:
+	case DBF_DEVICE:
+	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
+	case DBF_MENU:
+	    if(pflddes->initial) {
+		long status;
+
+		status = dbPutStringNum(pdbentry,pflddes->initial);
+		if(status)
+		    epicsPrintf("Error initializing %s.%s initial %s\n",
+			precdes->name,pflddes->name,pflddes->initial);
+	    }
+	    break;
+	case DBF_INLINK:
+	case DBF_OUTLINK:
+	case DBF_FWDLINK: {
+		DBLINK *plink = (DBLINK *)pfield;
+
+		if(pflddes->initial) {
+		    plink->value.constantStr =
+			dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
+		    strcpy(plink->value.constantStr,pflddes->initial);
+		}
+	    }
+	    break;
+	case DBF_NOACCESS:
+	    break;
+	default:
+	    epicsPrintf("dbAllocRecord: Illegal field type\n");
+	}
+    }
+    return(0);
+}
+
+long dbFreeRecord(DBENTRY *pdbentry)
+{
+    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordNode *precnode = pdbentry->precnode;
+
+    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!precnode) return(S_dbLib_recNotFound);
+    if(!precnode->precord) return(S_dbLib_recNotFound);
+    free(precnode->precord);
+    precnode->precord = NULL;
+    return(0);
+}
+
+long dbGetFieldAddress(DBENTRY *pdbentry)
+{
+    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbFldDes	*pflddes = pdbentry->pflddes;
+
+    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!precnode) return(S_dbLib_recNotFound);
+    if(!pflddes) return(S_dbLib_flddesNotFound);
+    if(!precnode->precord) return(0);
+    pdbentry->pfield = ((char *)precnode->precord) + pflddes->offset;
+    return(0);
+}
+
+char *dbRecordName(DBENTRY *pdbentry)
+{
+    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbFldDes	*pflddes;
+    char	*precord;
+
+    if(!precdes) return(0);
+    if(!precnode) return(0);
+    if(!precnode->precord) return(0);
+    precord = (char *)precnode->precord;
+    pflddes = precdes->papFldDes[0];
+    if(!pflddes) return(NULL);
+    return(precord + pflddes->offset);
+}
+
+int  dbIsDefaultValue(DBENTRY *pdbentry)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+    void        *pfield = pdbentry->pfield;
+
+    if(!pflddes) return(FALSE);
+    if(!pfield) return(FALSE);
+    switch (pflddes->field_type) {
+	case (DBF_STRING) : {
+	    char *p = (char *)pfield;
+	
+	    if(!pflddes->initial) return((strlen(p)==0) ? TRUE : FALSE);
+	    return((strcmp(pflddes->initial,p)==0) ? TRUE : FALSE);
+	}
+	case DBF_CHAR: {
+	    char	field = *(char *)pfield;
+	    long	ltemp;
+	    if(pflddes->initial)  {
+		ltemp = strtol(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_UCHAR: {
+	    unsigned char	field = *(unsigned char *)pfield;
+	    unsigned long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtoul(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_SHORT: {
+	    short	field = *(short *)pfield;
+	    long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtol(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_USHORT: {
+	    unsigned short	field = *(unsigned short *)pfield;
+	    unsigned long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtoul(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_LONG: {
+	    long	field = *(long *)pfield;
+	    long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtol(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_ULONG: {
+	    unsigned long	field = *(unsigned long *)pfield;
+	    unsigned long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtoul(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_FLOAT: {
+	    float	field = *(float *)pfield;
+	    double	dtemp;
+
+	    if(pflddes->initial)  {
+		dtemp = strtod(pflddes->initial,NULL);
+		return((field==dtemp));
+	    }
+	    return((field==0.0));
+	}
+	case DBF_DOUBLE: {
+	    double	field = *(double *)pfield;
+	    double	dtemp;
+
+	    if(pflddes->initial)  {
+		dtemp = strtod(pflddes->initial,NULL);
+		return((field==dtemp));
+	    }
+	    return((field==0.0));
+	}
+	case DBF_ENUM:
+	case DBF_MENU:
+	case DBF_DEVICE: {
+	    unsigned short	field = *(unsigned short *)pfield;
+	    unsigned long	ltemp;
+
+	    if(pflddes->initial)  {
+		ltemp = strtoul(pflddes->initial,NULL,0);
+		return((field==ltemp));
+	    }
+	    return((field==0));
+	}
+	case DBF_INLINK:
+	case DBF_OUTLINK:
+	case DBF_FWDLINK: 
+	    return(TRUE); /*Dont know what to do with this!!*/
+	default:
+	    return(TRUE);
+    }
+    return(FALSE);
+}
+
+char *dbGetStringNum(DBENTRY *pdbentry)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+    void	*pfield = pdbentry->pfield;
+    char	*message;
+    unsigned char cvttype;
+
+    if(!pdbentry->message) pdbentry->message = dbCalloc(1,50);
+    message = pdbentry->message;
+    cvttype = pflddes->base;
+    switch (pflddes->field_type) {
+    case DBF_CHAR:
+	if(cvttype==CT_DECIMAL)
+	    cvtCharToString(*(char*)pfield, message);
+	else
+	    ulongToHexString((unsigned long)(*(char*)pfield),message);
+	break;
+    case DBF_UCHAR:
+	if(cvttype==CT_DECIMAL)
+	    cvtUcharToString(*(unsigned char*)pfield, message);
+	else
+	    ulongToHexString((unsigned long)(*(unsigned char*)pfield),message);
+	break;
+    case DBF_SHORT:
+	if(cvttype==CT_DECIMAL)
+	    cvtShortToString(*(short*)pfield, message);
+	else
+	    ulongToHexString((unsigned long)(*(short*)pfield),message);
+	break;
+    case DBF_USHORT:
+    case DBF_ENUM:
+	if(cvttype==CT_DECIMAL)
+	    cvtUshortToString(*(unsigned short*)pfield, message); 
+	else
+	    ulongToHexString((unsigned long)(*(unsigned short*)pfield),message);
+	break;
+    case DBF_LONG:
+	if(cvttype==CT_DECIMAL) 
+	    cvtLongToString(*(long*)pfield, message);
+	else
+	    ulongToHexString((unsigned long)(*(long*)pfield), message);
+	break;
+    case DBF_ULONG:
+	if(cvttype==CT_DECIMAL)
+	    cvtUlongToString(*(unsigned long *)pfield, message);
+	else
+	    ulongToHexString(*(unsigned long*)pfield, message);
+	break;
+    case DBF_FLOAT:
+	floatToString(*(float *)pfield,message);
+	break;
+    case DBF_DOUBLE:
+	doubleToString(*(double *)pfield,message);
+	break;
+    default:
+	return(NULL);
+    }
+    return (message);
+}
+
+long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+    void	*pfield = pdbentry->pfield;
+    long	status=0;
+
+    switch (pflddes->field_type) {
+    case DBF_CHAR :
+    case DBF_SHORT :
+    case DBF_LONG:{
+	    long  value;
+	    char  *endp;
+
+	    value = strtol(pstring,&endp,0);
+	    if(*endp!=0) status = S_dbLib_badField;
+	    switch (pflddes->field_type) {
+	    case DBF_CHAR : *(char *)pfield = value; break;
+	    case DBF_SHORT : *(short *)pfield = value; break;
+	    case DBF_LONG : *(long *)pfield = value; break;
+	    default: epicsPrintf("Logic error in dbPutStringNum\n");
+	    }
+	}
+	break;
+    case DBF_UCHAR:
+    case DBF_USHORT:
+    case DBF_ULONG:
+    case DBF_ENUM:{
+	    unsigned long  value;
+	    char  *endp;
+
+	    value = strtoul(pstring,&endp,0);
+	    if(*endp!=0) status = S_dbLib_badField;
+	    switch (pflddes->field_type) {
+	    case DBF_UCHAR : *(unsigned char *)pfield = value; break;
+	    case DBF_USHORT:
+	    case DBF_ENUM: *(unsigned short *)pfield=value; break;
+	    case DBF_ULONG : *(unsigned long *)pfield = value; break;
+	    default: epicsPrintf("Logic error in dbPutStringNum\n");
+	    }
+	}
+	break;
+    case DBF_FLOAT:
+    case DBF_DOUBLE: {	
+	    double value;
+	    char  *endp;
+
+	    value = strtod(pstring,&endp);
+	    if(*endp!=0) status = S_dbLib_badField;
+	    if(pflddes->field_type==DBF_FLOAT)
+	    	*(float *)pfield = value;
+	    else
+		*(double *)pfield = value;
+	}
+	break;
+    case DBF_MENU: {
+	    dbMenu		*pdbMenu = (dbMenu *)pflddes->ftPvt;
+	    char		**papChoiceValue;
+	    char		*pchoice;
+	    unsigned short	*field= (unsigned short*)pfield;
+	    unsigned int	nChoice,ind;
+	    int			nargs,nchars;
+
+	    if( pdbMenu  && (papChoiceValue = pdbMenu->papChoiceValue)) {
+		nChoice = pdbMenu->nChoice;
+		for(ind=0; ind<nChoice; ind++) {
+		    if(!(pchoice=papChoiceValue[ind])) continue;
+		    if(strcmp(pchoice,pstring)==0) {
+			*field = ind;
+			return(0);
+		    }
+		}
+		nargs = sscanf(pstring," %u %n",&ind,&nchars);
+		if(nargs==1 && nchars==strlen(pstring) && ind<nChoice) {
+		    *field = ind;
+		    return(0);
+		}
+	    }
+    	}
+	return (S_dbLib_badField);
+    case DBF_DEVICE: {
+	    dbDeviceMenu 	*pdbDeviceMenu=(dbDeviceMenu *)pflddes->ftPvt;
+	    char		**papChoice;
+	    char		*pchoice;
+	    unsigned short	*field= (unsigned short*)pfield;
+	    unsigned int	nChoice,ind;
+	    int			nargs,nchars;
+
+	    if( pdbDeviceMenu  && (papChoice = pdbDeviceMenu->papChoice)) {
+		nChoice = pdbDeviceMenu->nChoice;
+		for(ind=0; ind<nChoice; ind++) {
+		    if(!(pchoice=papChoice[ind])) continue;
+		    if(strcmp(pchoice,pstring)==0) {
+			*field = ind;
+			return(0);
+		    }
+		}
+		nargs = sscanf(pstring," %u %n",&ind,&nchars);
+		if(nargs==1 && nchars==strlen(pstring) && ind<nChoice) {
+		    *field = ind;
+		    return(0);
+		}
+	    }
+    	}
+	return (S_dbLib_badField);
+    default:
+	return (S_dbLib_badField);
+    }
+    return(status);
+}
+
+void dbGetRecordtypeSizeOffset(dbRecDes *pdbRecDes)
+{
+    char	name[60];
+    SYM_TYPE	type;
+    STATUS	vxstatus;
+    long	status;
+    int (*sizeOffset)(dbRecDes *pdbRecDes);
+
+    strcpy(name,"_");
+    strcat(name,pdbRecDes->name);
+    strcat(name,"RecordSizeOffset");
+    vxstatus = symFindByName(sysSymTbl, name,
+	(void *)&sizeOffset, &type);
+    if (vxstatus != OK) {
+	status = S_rec_noSizeOffset;
+	errPrintf(status,__FILE__,__LINE__,"%s",pdbRecDes->name);
+	return;
+    }
+    sizeOffset(pdbRecDes);
+}

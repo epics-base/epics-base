@@ -58,6 +58,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.9  1995/01/18  16:38:03  winans
+ * added the '0x' in front of the hex input and outputs in the report function.
+ *
  * Revision 1.8  1995/01/09  20:52:02  winans
  * Added analog input support for temperature
  *
@@ -95,6 +98,7 @@
 #include	<link.h>
 #include	<fast_lock.h>
 
+#include	<dbCommon.h>
 #include	<aiRecord.h>
 #include	<boRecord.h>
 #include	<biRecord.h>

@@ -1,0 +1,36 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+LEX = $(ELEX)
+YACC = $(EYACC)
+
+USR_CFLAGS = -ansi
+VX_WARN_YES = -Wall -pedantic
+
+SRCS.c = \
+	dbAsciiYacc.c \
+	../dbPvdLib.c\
+	../dbStaticRun.c\
+	../dbStaticLib.c
+
+OBJSdbLib = \
+	dbAsciiYacc.o\
+	dbPvdLib.o\
+	dbStaticRun.o\
+	dbStaticLib.o
+
+PROD = dbStaticLib
+
+include $(EPICS)/config/RULES.Vx
+
+# Extra rule since dbAsciiRoutines.c is included in dbAsciiYacc.c
+dbAsciiYacc.o: dbAsciiLex.c ../dbAsciiRoutines.c
+
+clean::
+	@$(RM) dbAsciiLex.c dbAsciiYacc.c
+
+dbStaticLib: $(OBJSdbLib)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJSdbLib) $(LDLIBS)
+

@@ -80,8 +80,8 @@ static long init_record(pmbbi)
     long status;
 
     if (pmbbi->inp.type == CONSTANT) {
-        pmbbi->val = pmbbi->inp.value.value;
-	pmbbi->udf = FALSE;
+	if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
+	    pmbbi->udf = FALSE;
     }
     else {
         status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_USHORT, "VAL");

@@ -110,8 +110,8 @@ static long init_record(pbi)
 	callbackSetCallback(myCallback,&pcallback->callback);
 	pcallback->precord = (struct dbCommon *)pbi;
 	pcallback->wd_id = wdCreate();
-	pbi->val = pbi->inp.value.value;
-	pbi->udf = FALSE;
+	if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
+	    pbi->udf = FALSE;
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,

@@ -81,7 +81,7 @@ static long init_record(pmbbi)
     long status;
 
     if (pmbbi->inp.type == CONSTANT) {
-        pmbbi->rval = pmbbi->inp.value.value;
+	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);
     }
     else {
         status = recGblInitFastInLink(&(pmbbi->inp), (void *) pmbbi, DBR_ULONG, "RVAL");

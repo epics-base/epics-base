@@ -81,8 +81,8 @@ static long init_record(pbi)
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK */
     switch (pbi->inp.type) {
     case (CONSTANT) :
-        pbi->val = pbi->inp.value.value;
-	pbi->udf = FALSE;
+	if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
+	    pbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :

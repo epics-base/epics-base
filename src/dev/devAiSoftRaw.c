@@ -85,7 +85,7 @@ static long init_record(pai)
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
     case (CONSTANT) :
-	pai->rval = pai->inp.value.value;
+	recGblInitConstantLink(&pai->inp,DBF_LONG,&pai->rval);
 	break;
     case (PV_LINK) :
     case (DB_LINK) :

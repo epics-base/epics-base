@@ -53,12 +53,27 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 #ifdef vxWorks
 #include <vxWorks.h>
+#include <fast_lock.h>
 #endif
 
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <freeList.h>
+
+typedef struct allocMem {
+    struct allocMem	*next;
+    void		*memory;
+}allocMem;
+typedef struct {
+    int		size;
+    int		nmalloc;
+    void	*head;
+    allocMem	*mallochead;
+#ifdef vxWorks
+    FAST_LOCK	lock;
+#endif
+}FREELISTPVT;
 
 void freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
@@ -74,6 +89,7 @@ void freeListInitPvt(void **ppvt,int size,int nmalloc)
     pfl->size = size;
     pfl->nmalloc = nmalloc;
     pfl->head = NULL;
+    pfl->mallochead = NULL;
 #ifdef vxWorks
     FASTLOCKINIT(&pfl->lock);
 #endif
@@ -96,6 +112,7 @@ void *freeListMalloc(void *pvt)
     FREELISTPVT *pfl = pvt;
     void	*ptemp;
     void	**ppnext;
+    allocMem	*pallocmem;
     int		i;
 
 #ifdef vxWorks
@@ -103,13 +120,18 @@ void *freeListMalloc(void *pvt)
 #endif
     ptemp = pfl->head;
     if(!ptemp) {
-	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
-	if(!ptemp) {
+	ptemp = (void *)malloc((pfl->nmalloc*pfl->size)+sizeof(void *));
+	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
+	if(!ptemp || !pallocmem) {
 #ifdef vxWorks
 	    FASTUNLOCK(&pfl->lock);
 #endif
 	    return(ptemp);
 	}
+	pallocmem->memory = ptemp;
+	if(pfl->mallochead)
+	    pallocmem->next = pfl->mallochead;
+	pfl->mallochead = pallocmem;
 	for(i=0; i<pfl->nmalloc; i++) {
 	    ppnext = ptemp;
 	    *ppnext = pfl->head;
@@ -140,4 +162,20 @@ void freeListFree(void *pvt,void*pmem)
 #ifdef vxWorks
     FASTUNLOCK(&pfl->lock);
 #endif
+}
+
+void freeListCleanup(void *pvt)
+{
+    FREELISTPVT *pfl = pvt;
+    allocMem	*phead;
+    allocMem	*pnext;
+
+    phead = pfl->mallochead;
+    while(phead) {
+	pnext = phead->next;
+	free(phead->memory);
+	free(phead);
+	phead = pnext;
+    }
+    free(pvt);
 }

@@ -78,8 +78,8 @@ static long init_record(plongin)
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (plongin->inp.type) {
     case (CONSTANT) :
-	plongin->val = plongin->inp.value.value;
-	plongin->udf = FALSE;
+	if(recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val))
+	    plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :

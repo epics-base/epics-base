@@ -57,7 +57,6 @@
 #include	<iv.h>
 
 #include	<alarm.h>
-#include	<dbRecType.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbCommon.h>

@@ -107,7 +107,7 @@ static long init_record(phistogram)
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)phistogram;
 	pcallback->wd_id = wdCreate();
-	phistogram->sgnl = phistogram->svl.value.value;
+	recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl);
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)phistogram,

@@ -53,6 +53,9 @@
  *****************************************************************
  *
  * $Log$
+ * Revision 1.2  1995/04/05  14:13:43  winans
+ * Only do a sysIntEnable() for those cards that are found with the probe.
+ *
  * Revision 1.1  1995/03/31  15:03:32  winans
  * Machine protection system interface card
  *
@@ -151,6 +154,7 @@
 #include	"devSup.h"
 #include	"link.h"
 
+#include	"dbCommon.h"
 #include	"aiRecord.h"
 #include	"boRecord.h"
 #include	"biRecord.h"

@@ -51,6 +51,7 @@
  * .21	09-05-92	rcz	changed dbUserExit to initHooks
  * .22	09-10-92	rcz	added many initHooks - INITHOOK*<place> argument
  * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
+ * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
  *
  */
 
@@ -181,13 +182,6 @@ char * pResourceFilename;
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit2);
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
-
-#if 0
-    if(rtnval==OK && (type&N_TEXT!=0)) {
-	hookrtn=(*pinitHooks)(DBUSEREXIT);
-	logMsg("initHooks(DBUSEREXIT) was called\n");
-    }
-#endif
     scanInit();
     /* wait 1/2 second to make sure all tasks are started*/
     (void)taskDelay(sysClkRateGet()/2);
@@ -846,44 +840,4 @@ char * pfilename;
 	return(-1);
     }
     return (0);
-}
-void setMasterTimeToSelf()
-{
-    BOOT_PARAMS     bp;
-    char           *pnext;
-    char            name[] = "_EPICS_IOCMCLK_INET";
-    char            message[100];
-    UTINY           type;
-    long            rtnval = 0;
-    char           *pSymAddr;
-    int             len = 0;
-    int             i = 0;
-    char            *ptr = 0;
-    pnext = bootStringToStruct(sysBootLine, &bp);
-    if (*pnext != EOS) {
-	sprintf(message,
-		"setMasterTimeToSelf: unable to parse boot params\n");
-	errMessage(-1L, message);
-	return;
-    }
-    rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
-    if (rtnval != OK || (type & N_TEXT == 0)) {
-	sprintf(message,
-		"setMasterTimeToSelf: symBol EPICS_IOCMCLK_INET not found");
-	errMessage(-1L, message);
-	return;
-    }
-    ptr = (char*)&bp.ead;
-    len=strlen((char*)&bp.ead);
-    /* strip off maask */
-    for (i=0; i<len; i++, ptr++) {
-	if ( *ptr == ':' ){
-		break;
-	}
-    }
-    *ptr = 0;
-    ptr = (char*)&bp.ead;
-    len=strlen(ptr);
-    strncpy((char*)(pSymAddr + sizeof(void *)), ptr,len+1);
-    return;
 }

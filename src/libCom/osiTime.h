@@ -179,7 +179,7 @@ private:
 	// c) it would be easy to forget which argument is nanoseconds
 	// and which argument is seconds (no help from compiler)
 	//
-	osiTime (unsigned long sec, unsigned long nSec);
+	osiTime (const unsigned long sec, const unsigned long nSec);
 };
 
 /////////////////////////////////////

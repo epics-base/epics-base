@@ -201,7 +201,13 @@ Init (rtems_task_argument ignored)
     int i;
     char arg0[] = "RTEMS_IOC";
     char arg1[] = "st.cmd";
-        char *argv[3] = { arg0, arg1, NULL };
+    char *argv[3] = { arg0, arg1, NULL };
+    rtems_interval ticksPerSecond;
+
+    /*
+     * Get configuration
+     */
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
 
     /*
      * Create a reasonable environment
@@ -222,7 +228,7 @@ Init (rtems_task_argument ignored)
         printf ("***** Initializing NTP *****\n");
         if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
             break;
-        epicsThreadSleep (5.0);
+        rtems_task_wake_after (5*ticksPerSecond);
         if (i >= 12) {
             rtems_status_code sc;
             rtems_time_of_day now;

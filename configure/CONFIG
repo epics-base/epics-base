@@ -19,7 +19,7 @@ endif
 
 include $(CONFIG)/CONFIG_COMMON
 
-#  EPICS-specific build options
+#  Base-specific build options
 #
 include $(CONFIG)/CONFIG_BASE
 include $(CONFIG)/CONFIG_BASE_VERSION

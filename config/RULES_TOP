@@ -8,7 +8,7 @@ uninstall$(DIVIDER)%::
 	@$(RMDIR)  rec.bak rec
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
 		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) \
-		$(INSTALL_HTML)
+		$(INSTALL_HTML) $(INSTALL_JAVA)
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 

@@ -431,7 +431,57 @@ $(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
 	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
 endif
 
+#---------------------------------------------------------------
+#     Java classes and packages
+#
 
+# install and clean rules are strange because java may create multiple
+# class files from one java file. For example from xx.java file the
+# files xx.class xx$1.class, xx$2.class ... may be created
+# and gnumake cannot easily handle files with $ in name 
+
+INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
+
+CLASSES += $(subst .java,.class,$(foreach package,$(PACKAGES),$(wildcard $(package)/*.java)))
+TESTCLASSES += $(subst .java,.class,$(foreach package,$(TESTPACKAGES),$(wildcard $(package)/*.java)))
+INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/%)
+INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
+
+CLEAN_CLASSES = *.class $(foreach package,$(PACKAGES) $(TESTPACKAGES),$(package)/*.class)
+
+JAR_OPTIONS = cvf
+ifdef MANIFEST
+JAR_OPTIONS = cvmf
+endif
+JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+
+build:: $(CLASSES) $(TESTCLASSES) $(JAR)
+
+buildInstall :: $(INSTALL_CLASSES) $(INSTALL_JAR)
+
+clean::
+	@$(RM) $(CLEAN_CLASSES) $(TESTCLASSES) $(JAR)
+
+%.class:%.java
+	@echo Creating java class file $@
+	$(RM) $@
+	$(JAVACCMD)
+
+$(JAR):%.jar:  $(JAR_DEPFILES)
+	@echo Creating java jar file $@
+	$(RM) $@
+	@echo "$(JARCMD)"
+	$(JARCMD)
+
+$(INSTALL_JAVA)/%.jar: %.jar
+	@echo "Installing jar file $@"
+	$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_JAVA)/%.class: %.class
+	@echo "Installing java file $@"
+	$(INSTALL) -d -m 644 $< $(@D)
+
+#---------------------------------------------------------------
 #---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that
 #	can be generated from a single source with same basename.
@@ -619,7 +669,7 @@ $(INSTALL_LIB)/%.lib: %.lib
 
 $(INSTALL_SHRLIBS): $(SHRLIBNAME)
 	@echo "Installing library $@"
-	$(INSTALL) -m 644 $< $(INSTALL_LIB)
+	$(INSTALL) -m 555 $< $(INSTALL_LIB)
 ifdef SHRLIB_VERSION
 	$(RM) $(subst $(SHRLIB_VERSION),,$@)
 	ln -s $< $(subst $(SHRLIB_VERSION),,$@)

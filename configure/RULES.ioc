@@ -13,7 +13,16 @@ include $(CONFIG)/RULES_DIRS
 build: buildInstall
 install: buildInstall
 
+ifneq ($(findstring $(ARCH),$(BUILD_ARCHS)),)
 buildInstall: $(TARGETS)
+
+clean:
+	$(RM) cdCommands envPaths
+
+else 
+buildInstall:
+clean:
+endif
 
 envPaths cdCommands: $(wildcard $(TOP)/configure/RELEASE*) \
 	$(TOP)/configure/CONFIG $(INSTALL_BIN)
@@ -24,6 +33,6 @@ else
 	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 endif
 
-realclean clean:
+realclean:
 	$(RM) cdCommands envPaths
 

@@ -27,7 +27,6 @@ LIBSRCS += casChannelI.cc
 LIBSRCS += casPVListChan.cc
 LIBSRCS += casClientMon.cc
 LIBSRCS += casChanDelEv.cc
-LIBSRCS += casMsgIO.cc
 LIBSRCS += casAsyncIO.cc
 LIBSRCS += casAsyncIOI.cc
 LIBSRCS += casAsyncXXIO.cc
@@ -45,6 +44,7 @@ LIBSRCS += dgOutBuf.cc
 LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
+#LIBSRCS += casMsgIO.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

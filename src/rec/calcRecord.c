@@ -148,7 +148,7 @@ static long init_record(pcalc,pass)
     int i;
     double *pvalue;
     short error_number;
-    char rpbuf[184];
+    char rpbuf[200];
 
     if (pass==0) return(0);
 
@@ -198,7 +198,7 @@ static long special(paddr,after)
     struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
     int           	special_type = paddr->special;
     short error_number;
-    char rpbuf[184];
+    char rpbuf[200];
 
     if(!after) return(0);
     switch(special_type) {

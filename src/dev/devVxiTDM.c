@@ -31,6 +31,8 @@
  * -----------------
  * .01  08-20-92	jbk	Initial Implementation
  * .02  09-18-92	jbk	frame/slot addressing added
+ * .03  08-31-93	joh	updated for changed epvxi
+ *				status format
  *      ...
  */
 
@@ -197,7 +199,7 @@ epvxiDeviceSearchPattern	dsp;
 	dsp.make=VxiTDM_make; /* VXI_MAKE_TDM; */
 	dsp.model=VxiTDM_model; /* VXI_MODEL_TDM; */
 
-	if( epvxiLookupLA(&dsp,tdm_report,(void *)&interest)<0 )
+	if( epvxiLookupLA(&dsp,tdm_report,(void *)&interest)!=VXI_SUCCESS)
 		return ERROR;
 
 	return OK;
@@ -227,17 +229,17 @@ epvxiDeviceSearchPattern	dsp;
 	dsp.make=VxiTDM_make; /* VXI_MAKE_TDM; */
 	dsp.model=VxiTDM_model; /* VXI_MODEL_TDM; */
 
-	if( epvxiLookupLA(&dsp,tdmInitLA,(void *)NULL) <0)
+	if( epvxiLookupLA(&dsp,tdmInitLA,(void *)NULL)!=VXI_SUCCESS)
 	{
 		logMsg("No ANL Time Delay Modules found\n");
 		return ERROR;
 	}
 
-	if(epvxiRegisterMakeName(VxiTDM_make,"ANL")<0) /* VXI_MAKE_TDM */
+	if(epvxiRegisterMakeName(VxiTDM_make,"ANL")!=VXI_SUCCESS) /* VXI_MAKE_TDM */
 		logMsg("%s: unable to register MAKE\n",__FILE__);
 
 	if(epvxiRegisterModelName(VxiTDM_make,VxiTDM_model,
-	   "Time Delay Module")<0) /* VXI_MAKE_TDM VXI_MODEL_TDM */
+	   "Time Delay Module")!=VXI_SUCCESS) /* VXI_MAKE_TDM VXI_MODEL_TDM */
 		logMsg("%s: unable to register MODEL\n",__FILE__);
 
 	return OK;
@@ -259,7 +261,7 @@ struct	tdm_config	*tc;
 
 	status=epvxiOpen(la,tdmDriverID,sizeof(struct tdm_config),tdm_stat);
 
-	if(status<0)
+	if(status!=VXI_SUCCESS)
 	{
 		logMsg("%s:Device Open Failed (stat=%d)(LA=0x%02X)\n",
 			__FILE__,status,la);
@@ -297,6 +299,7 @@ unsigned short	*channel_reg;
 static unsigned epvxiGetLa();
 struct vxi_csr	*pcsr;
 struct tdm_config *tc;
+long		status;
 
 	/* out must be an VXI_IO */
 
@@ -353,13 +356,12 @@ struct tdm_config *tc;
 
 	/* get the address of the register for this la and signal */
 
-	tc=epvxiPConfig(la,tdmDriverID,struct tdm_config *);
-
-	if(!tc)
+	status = epvxiFetchPConfig(la,tdmDriverID,tc);
+	if(status)
 	{
-		recGblRecordError(S_dev_badSignal,(void *)pd,
+		recGblRecordError(status,(void *)pd,
 			"devVxiTDM (init_record) No card at address");
-		return(S_dev_badSignal);
+		return(status);
 	}
 
 	pcsr=VXIBASE(la);
@@ -427,6 +429,7 @@ unsigned short	delay_time,channel_value,channel_read;
 struct vxiio	*pvxiio;
 struct vxi_csr	*pcsr;
 struct tdm_config *tc;
+long		status;
 
 	Debug("Entering write_pd for pulseDelay\n",0);
 
@@ -448,7 +451,11 @@ struct tdm_config *tc;
 
 	/* get address of register for this card and signal */
 
-	tc=epvxiPConfig(la,tdmDriverID,struct tdm_config *);
+	status=epvxiFetchPConfig(la,tdmDriverID,tc);
+	if(status){
+		return status;
+	}
+
 	pcsr=VXIBASE(la);
 	(char *)channel_reg=(char *)pcsr+REG_OFFSET;
 
@@ -547,8 +554,13 @@ static void tdm_stat(unsigned la,int level)
 struct tdm_config *tc;
 struct vxi_csr	 *pcsr;
 int	i;
+long	status;
 
-	tc=epvxiPConfig(la,tdmDriverID,struct tdm_config *);
+	status = epvxiFetchPConfig(la,tdmDriverID,tc);
+	if(status){
+		errMessage(status,NULL);
+		return;
+	}
 	pcsr=VXIBASE(la);
 
 	Debug("Report level = %d\n",level);
@@ -585,6 +597,7 @@ struct vxiio *pvxi=(struct vxiio *)pvxiio;
 static unsigned epvxiGetLa(struct vxiio *pvxiio,unsigned long vxiDriverID)
 {
 epvxiDeviceSearchPattern	dsp;
+long				status;
 
 	if(pvxiio->flag==0) /* frame */
 	{
@@ -600,7 +613,8 @@ epvxiDeviceSearchPattern	dsp;
 		Debug("epvxiGetLa() dsp.slot=%d\n",dsp.slot);
 		Debug("epvxiGetLa() dsp.slotzero_la=%d\n",dsp.slot_zero_la);
 
-		if( epvxiLookupLA(&dsp,epvxiGetLA_one,(void *)pvxiio) <0)
+		status = epvxiLookupLA(&dsp,epvxiGetLA_one,(void *)pvxiio);
+		if(status)
 			return ERROR;
 	}
 	else /* SA - static address (la) */

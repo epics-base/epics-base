@@ -89,8 +89,7 @@ private:
 
 class cacDisconnectChannelPrivate { // X aCC 655
 public:
-    virtual void disconnectChannel ( 
-        epicsGuard < callbackMutex > &, 
+    virtual void disconnectChannel ( epicsGuard < callbackMutex > &, 
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
@@ -121,6 +120,7 @@ public:
             ca_uint16_t typeCode, arrayElementCount count, 
             unsigned minorVersionNumber, const osiSockAddr &, 
             const epicsTime & currentTime );
+
     void uninstallChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, 
         cacChannelNotify &chan, cacChannel::priLev pri );
@@ -242,8 +242,8 @@ private:
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
 
-    void disconnectChannel ( 
-        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > &, nciu & chan );
+    void disconnectChannel ( epicsGuard < callbackMutex > &, 
+        epicsGuard < cacMutex > &, nciu & chan );
 
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );
@@ -261,7 +261,7 @@ private:
        int status, const char *pContext, unsigned type, arrayElementCount count );
 
     // recv protocol stubs
-    bool noopAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+    bool versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
         const caHdrLargeArray &, void *pMsgBdy );
     bool echoRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
         const caHdrLargeArray &, void *pMsgBdy );

@@ -25,9 +25,10 @@
 
 #include "shareLib.h"
 
-#   include "osiSock.h"
-#   include "epicsThread.h"
-#   include "epicsMemory.h"
+#include "osiSock.h"
+#include "epicsThread.h"
+#include "epicsMemory.h"
+#include "epicsTime.h"
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -77,20 +78,20 @@ public:
     virtual ~udpiiu ();
     void installChannel ( nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
-    bool searchMsg ( unsigned short retrySeqNumber, unsigned & retryNoForThisChannel );
-    void datagramFlush ();
+    bool searchMsg ( unsigned & retryNoForThisChannel );
+    void datagramFlush ( const epicsTime & currentTime );
+    ca_uint32_t datagramSeqNumber () const;
     void show ( unsigned level ) const;
     bool wakeupMsg ();
-    void resetSearchPeriod ( double delay );
     void repeaterConfirmNotify ();
-    void notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime );
-    void resetSearchTimerPeriod ( double delay );
+    void notifySearchResponse ( const epicsTime & currentTime );
     void beaconAnomalyNotify ();
     int printf ( const char *pformat, ... );
-    unsigned channelCount ();
+    unsigned channelCount () const;
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     void shutdown ();
+    double roundTripDelayEstimate () const;
 
     // exceptions
     class noSocket {};
@@ -102,8 +103,13 @@ private:
     udpRecvThread recvThread;
     tsDLList < nciu > channelList;
     ELLLIST dest;
+    epicsTime rtteTimeStamp;
+    double rtteMean;
     cac & cacRef;
     unsigned nBytesInXmitBuf;
+    ca_uint32_t sequenceNumber;
+    ca_uint32_t rtteSequenceNumber;
+    ca_uint32_t lastReceivedSeqNo;
     SOCKET sock;
     epics_auto_ptr < class searchTimer > pSearchTmr;
     epics_auto_ptr < class repeaterSubscribeTimer > pRepeaterSubscribeTmr;
@@ -111,6 +117,8 @@ private:
     unsigned short serverPort;
     unsigned short localPort;
     bool shutdownCmd;
+    bool rtteActive;
+    bool lastReceivedSeqNoIsValid;
 
     void recvMsg ( callbackMutex & );
     void postMsg ( epicsGuard < callbackMutex > &, 
@@ -126,7 +134,7 @@ private:
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool noopAction ( epicsGuard < callbackMutex > &, const caHdr &, 
+    bool versionAction ( epicsGuard < callbackMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
     bool badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
@@ -156,6 +164,7 @@ private:
                     ca_uint32_t sid, ca_uint32_t cid );
     void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, 
                     netSubscription &subscr );
+    bool pushVersionMsg ();
     void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
                     nciu & chan, netSubscription & subscr );
     void flushRequest ();
@@ -165,10 +174,16 @@ private:
         ( cacNotify &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
- 
+
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );
 };
+
+// This impacts the exponential backoff delay between search messages.
+// This delay is two to the power of the minimum channel retry count
+// times the estimated round trip time. So this results in about a
+// one second delay.
+static const unsigned beaconAnomalyRetrySetpoint = 10u;
 
 inline void udpMutex::lock ()
 {
@@ -185,9 +200,19 @@ inline void udpMutex::show ( unsigned level ) const
     this->mutex.show ( level );
 }
 
-inline unsigned udpiiu::channelCount ()
+inline unsigned udpiiu::channelCount () const
 {
     return this->channelList.count ();
+}
+
+inline ca_uint32_t udpiiu::datagramSeqNumber () const
+{
+    return this->sequenceNumber;
+}
+
+inline double udpiiu::roundTripDelayEstimate () const
+{
+    return this->rtteMean;
 }
 
 #endif // udpiiuh

@@ -36,7 +36,7 @@
 
 #include "shareLib.h"
 
-#define CA_MINOR_PROTOCOL_REVISION 10
+#define CA_MINOR_PROTOCOL_REVISION 11
 #include "caProto.h"
 
 #include "cacIO.h"
@@ -67,14 +67,12 @@ public:
     void connectStateNotify ( epicsGuard < callbackMutex > &  ) const;
     void accessRightsNotify ( epicsGuard < callbackMutex > & ) const;
     void disconnect ( netiiu &newiiu );
-    bool searchMsg ( class udpiiu & iiu, unsigned short retrySeqNumber, 
-        unsigned & retryNoForThisChannel );
+    bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
     void createChannelRequest ( class tcpiiu & iiu );
     bool identifierEquivelence ( unsigned idToMatch );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    void resetRetryCount ();
-    unsigned short getRetrySeqNo () const;
+    void beaconAnomalyNotify ();
     void accessRightsStateChange ( const caAccessRights & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
@@ -101,7 +99,6 @@ private:
     ca_uint32_t sid; // server id
     unsigned count;
     unsigned retry; // search retry number
-    unsigned short retrySeqNo; // search retry seq number
     unsigned short nameLength; // channel name length
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
@@ -145,11 +142,6 @@ inline bool nciu::identifierEquivelence ( unsigned idToMatch )
     return idToMatch == this->id;
 }
 
-inline void nciu::resetRetryCount () 
-{
-    this->retry = 0u;
-}
-
 inline void nciu::accessRightsStateChange ( const caAccessRights & arIn )
 {
     this->accessRightState = arIn;
@@ -163,11 +155,6 @@ inline ca_uint32_t nciu::getSID () const
 inline ca_uint32_t nciu::getCID () const
 {
     return this->id;
-}
-
-inline unsigned short nciu::getRetrySeqNo () const
-{
-    return this->retrySeqNo;
 }
 
 // this is to only be used by early protocol revisions

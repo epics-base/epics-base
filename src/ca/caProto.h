@@ -53,6 +53,7 @@
 #   define CA_V48(MINOR) ((MINOR)>=8u)
 #   define CA_V49(MINOR) ((MINOR)>=9u)    /* large arrays, dispatch priorities */
 #   define CA_V410(MINOR) ((MINOR)>=10u)  /* beacon counter */
+#   define CA_V411(MINOR) ((MINOR)>=11u)  /* sequence numbers in UDP version command */
 #elif CA_MAJOR_PROTOCOL_REVISION > 4u
 #   define CA_V41(MINOR) ( 1u )
 #   define CA_V42(MINOR) ( 1u )
@@ -64,6 +65,7 @@
 #   define CA_V48(MINOR) ( 1u )
 #   define CA_V49(MINOR) ( 1u )
 #   define CA_V410(MINOR) ( 1u )
+#   define CA_V411(MINOR) ( 1u )
 #else
 #   define CA_V41(MINOR) ( 0u )
 #   define CA_V42(MINOR) ( 0u )
@@ -75,6 +77,7 @@
 #   define CA_V48(MINOR) ( 0u )
 #   define CA_V49(MINOR) ( 0u )
 #   define CA_V410(MINOR) ( 0u )
+#   define CA_V411(MINOR) ( 0u )
 #endif 
 
 /*
@@ -149,6 +152,11 @@ typedef ca_uint32_t     caResId;
  */
 #define DOREPLY     10u
 #define DONTREPLY   5u
+
+/*
+ * for use with the m_dataType field in UDP messages emitted by servers
+ */
+#define sequenceNoIsValid 1
 
 /* size of object in bytes rounded up to nearest oct word */
 #define OCT_ROUND(A)    (((A)+7)/8)

@@ -37,7 +37,7 @@
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
 {
-    &cac::noopAction,
+    &cac::versionAction,
     &cac::eventRespAction,
     &cac::badTCPRespAction,
     &cac::readRespAction,
@@ -481,7 +481,6 @@ bool cac::lookupChannelAndTransferToTCP (
              const epicsTime & currentTime )
 {
     bool newIIU = false;
-    unsigned short retrySeqNumber = 0u;
     tcpiiu * piiu = 0;
 
     if ( addr.sa.sa_family != AF_INET ) {
@@ -500,8 +499,6 @@ bool cac::lookupChannelAndTransferToTCP (
         if ( ! pChan ) {
             return true;
         }
-
-        retrySeqNumber = pChan->getRetrySeqNo ();
 
         /*
          * Ignore duplicate search replies
@@ -606,7 +603,7 @@ bool cac::lookupChannelAndTransferToTCP (
     }
 
     if ( this->pudpiiu ) {
-        this->pudpiiu->notifySearchResponse ( retrySeqNumber, currentTime );
+        this->pudpiiu->notifySearchResponse ( currentTime );
     }
 
     return true;
@@ -1064,7 +1061,7 @@ cac::subscriptionRequest ( nciu &chan, unsigned type, // X aCC 361
     return id;
 }
 
-bool cac::noopAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
                       const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true;
@@ -1366,19 +1363,15 @@ bool cac::verifyAndDisconnectChan (
     if ( ! pChan ) {
         return true;
     }
-    assert ( this->pudpiiu );
     this->disconnectChannel ( cbGuard, guard, *pChan );
-    if ( this->pudpiiu ) {
-        this->pudpiiu->resetSearchTimerPeriod ( 0.0 );
-    }
     return true;
 }
 
 void cac::disconnectChannel (
         epicsGuard < callbackMutex > & cbGuard, // X aCC 431
-        epicsGuard < cacMutex > & guard,
-        nciu & chan )
+        epicsGuard < cacMutex > & guard, nciu & chan )
 {
+    assert ( this->pudpiiu );
     this->disconnectAllIO ( guard, chan, true );
     chan.getPIIU()->uninstallChan ( guard, chan );
     chan.disconnect ( *this->pudpiiu );
@@ -1537,8 +1530,6 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &
     iiu.removeAllChannels ( cbGuard, guard, *this );
 
     this->serverTable.remove ( iiu );
-
-    this->pudpiiu->resetSearchTimerPeriod ( 0.0 );
 
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstall.signal();

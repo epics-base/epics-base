@@ -42,7 +42,6 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     sid ( UINT_MAX ),
     count ( 0 ),
     retry ( 0u ),
-    retrySeqNo ( 0u ),
     nameLength ( 0u ),
     typeCode ( USHRT_MAX ),
     priority ( static_cast <ca_uint8_t> ( pri ) ),
@@ -134,17 +133,16 @@ void nciu::disconnect ( netiiu & newiiu )
 /*
  * nciu::searchMsg ()
  */
-bool nciu::searchMsg ( udpiiu & iiu, unsigned short retrySeqNumber, 
-                      unsigned &retryNoForThisChannel )
+bool nciu::searchMsg ( udpiiu & iiu, unsigned & retryNoForThisChannel )
 {
     caHdr msg;
     bool success;
 
     msg.m_cmmd = epicsHTON16 ( CA_PROTO_SEARCH );
-    msg.m_available = this->getId ();
+    msg.m_available = epicsHTON32 ( this->getId () );
     msg.m_dataType = epicsHTON16 ( DONTREPLY );
     msg.m_count = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
-    msg.m_cid = this->getId ();
+    msg.m_cid = epicsHTON32 ( this->getId () );
 
     success = iiu.pushDatagramMsg ( msg, 
             this->pNameStr, this->nameLength );
@@ -156,9 +154,8 @@ bool nciu::searchMsg ( udpiiu & iiu, unsigned short retrySeqNumber,
         if ( this->retry < UINT_MAX ) {
             this->retry++;
         }
-        this->retrySeqNo = retrySeqNumber;
         retryNoForThisChannel = this->retry;
-     }
+    }
 
     return success;
 }
@@ -396,8 +393,7 @@ void nciu::show ( unsigned level ) const
         ::printf ( "\tnetwork IO pointer = %p\n", 
             static_cast <void *> ( this->piiu ) );
         ::printf ( "\tserver identifier %u\n", this->sid );
-        ::printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
-            this->retry, this->retrySeqNo );
+        ::printf ( "\tsearch retry number=%u\n", this->retry );
         ::printf ( "\tname length=%u\n", this->nameLength );
     }
 }
@@ -414,3 +410,11 @@ int nciu::printf ( const char *pFormat, ... )
     
     return status;
 }
+
+void nciu::beaconAnomalyNotify () 
+{
+    if ( this->retry > beaconAnomalyRetrySetpoint ) {
+        this->retry = beaconAnomalyRetrySetpoint;
+    }
+}
+

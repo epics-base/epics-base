@@ -157,7 +157,7 @@ int GI(void)
   }
 
   ans = 0;                /* set loop not to exit */
-  printf("\n\n");
+  logMsg("\n\n");
 
   while ((ans != 'q') && (ans != 'Q'))
   {
@@ -382,6 +382,8 @@ static int sendMsg(void)
 
   if (replyIsBack)
   {
+    if (ibDebug)
+	taskDelay(60);		/* Allow debug printing to complete */
     showGpibMsg(msgNum);
   }
   else
@@ -440,7 +442,7 @@ static int gpibWork(struct gpibIntCmd *pCmd)
       }
       else if (status > (MAX_MSG_LENGTH - 1)) /* check length of resp */
       {
-        printf("GPIB Response length equaled allocated space !!!\n");
+        logMsg("GPIB Response length equaled allocated space !!!\n");
         pCmd->resp[(MAX_MSG_LENGTH)] = '\0';    /* place \0 at end */
       }
       else

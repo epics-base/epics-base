@@ -41,10 +41,6 @@ dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO
         type ( typeIn ), count ( countIn ), id ( 0u )
 {
     this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn );
-    if ( ! this->es ) {
-        throw std::bad_alloc ();
-    }
-
     if ( pId ) {
         *pId = this->getId ();
     }

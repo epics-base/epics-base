@@ -528,11 +528,14 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
 #   endif
     const unsigned oldTableOccupiedSize = this->tableSize ();
 
-    tsSLList<T> * pNewTable = ( tsSLList<T> * ) 
-        operator new ( newTableSize * sizeof ( tsSLList<T> ), std::nothrow );
-    if ( ! pNewTable ) {
+    tsSLList<T> * pNewTable;
+    try {
+        pNewTable = ( tsSLList<T> * ) 
+            ::operator new ( newTableSize * sizeof ( tsSLList<T> ) );
+    }
+    catch ( ... ){
         if ( ! this->pTable ) {
-		    throw std::bad_alloc();
+		    throw;
         }
         return false;
     }
@@ -899,14 +902,8 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 {
     if (typeIn==copyString) {
         unsigned nChars = strlen (idIn) + 1u;
-
         this->pStr = new char [nChars];
-        if (this->pStr!=0) {
-            memcpy ((void *)this->pStr, idIn, nChars);
-        }
-        else {
-			throw std::bad_alloc();
-        }
+        memcpy ( (void *) this->pStr, idIn, nChars );
     }
     else {
         this->pStr = idIn;

@@ -114,13 +114,7 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
     // no need to lock this because state notify is 
     // called from only one event queue consumer thread
     if ( this->stateNotifyCacheSize < size) {
-        char * pTmp = new ( std::nothrow ) char [size];
-        if ( ! pTmp ) {
-            notify.exception ( ECA_ALLOCMEM, 
-                "unable to allocate callback cache",
-                type, count );
-            return;
-        }
+        char * pTmp = new char [size];
         delete [] this->pStateNotifyCache;
         this->pStateNotifyCache = pTmp;
         this->stateNotifyCacheSize = size;
@@ -194,9 +188,6 @@ void dbServiceIO::initiatePutNotify (
     epicsGuard < epicsMutex > locker ( this->mutex );
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
         chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ( chan );
-        if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
-            throw std::bad_alloc ();
-        }
         this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
     }
     chan.dbServicePrivateListOfIO::pBlocker->initiatePutNotify ( 

@@ -91,12 +91,8 @@ void dbChannelIO::subscribe ( unsigned type, unsigned long count,
         throw cacChannel::outOfBounds();
     }
 
-    dbSubscriptionIO *pIO =
-        new dbSubscriptionIO ( this->serviceIO, *this, 
-            this->addr, notify, type, count, mask, pId );
-    if ( ! pIO ) {
-        throw std::bad_alloc ();
-    }
+    new dbSubscriptionIO ( this->serviceIO, *this, 
+        this->addr, notify, type, count, mask, pId );
 }
 
 void dbChannelIO::ioCancel ( const ioid & id )

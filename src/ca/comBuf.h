@@ -67,7 +67,7 @@ public:
     unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
     bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
     unsigned removeBytes ( unsigned nBytes );
-    void * operator new ( size_t size, const std::nothrow_t & );
+    void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     bool flushToWire ( wireSendAdapter & );
     unsigned fillFromWire ( wireRecvAdapter & );
@@ -116,7 +116,7 @@ inline void comBuf::clear ()
     this->nextReadIndex = 0u;
 }
 
-inline void * comBuf::operator new ( size_t size, const std::nothrow_t & )
+inline void * comBuf::operator new ( size_t size )
 {
     return comBuf::pFreeList->allocate ( size );
 }

@@ -169,10 +169,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
                 tmp[0] = '\0';
             }
             len = strlen ( tmp ) + 1;
-            this->pUserName = new ( std::nothrow ) char [ len ];
-            if ( ! this->pUserName ) {
-                throw std::bad_alloc ();
-            }
+            this->pUserName = new char [ len ];
             strncpy ( this->pUserName, tmp, len );
         }
 
@@ -673,12 +670,7 @@ cacChannel & cac::createChannel ( const char * pName,
             }
             epics_auto_ptr < cacChannel > pNetChan 
                 ( new nciu ( *this, limboIIU, chan, pName, pri ) );
-            if ( pNetChan.get() ) {
-                return *pNetChan.release ();
-            }
-            else {
-                throw std::bad_alloc ();
-            }
+            return *pNetChan.release ();
         }
     }
     return *pIO;
@@ -1038,17 +1030,12 @@ cac::writeNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
     epicsGuard < epicsMutex > guard ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq,
         *this, netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, chan, notifyIn ) );
-    if ( pIO.get() ) {
-        this->ioTable.add ( *pIO );
-        chan.cacPrivateListOfIO::eventq.add ( *pIO );
-        this->flushIfRequired ( guard, *chan.getPIIU() );
-        chan.getPIIU()->writeNotifyRequest ( 
-            chan, *pIO, type, nElem, pValue );
-        return pIO.release()->getId ();
-    }
-    else {
-        throw std::bad_alloc ();
-    }
+    this->ioTable.add ( *pIO );
+    chan.cacPrivateListOfIO::eventq.add ( *pIO );
+    this->flushIfRequired ( guard, *chan.getPIIU() );
+    chan.getPIIU()->writeNotifyRequest ( 
+        chan, *pIO, type, nElem, pValue );
+    return pIO.release()->getId ();
 }
 
 cacChannel::ioid
@@ -1059,16 +1046,11 @@ cac::readNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
     autoPtrRecycle  < netReadNotifyIO > pIO ( this->ioTable,
         chan.cacPrivateListOfIO::eventq, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, chan, notifyIn ) );
-    if ( pIO.get() ) {
-        this->ioTable.add ( *pIO );
-        chan.cacPrivateListOfIO::eventq.add ( *pIO );
-        this->flushIfRequired ( guard, *chan.getPIIU() );
-        chan.getPIIU()->readNotifyRequest ( chan, *pIO, type, nElem );
-        return pIO.release()->getId ();
-    }
-    else {
-        throw std::bad_alloc ();
-    }
+    this->ioTable.add ( *pIO );
+    chan.cacPrivateListOfIO::eventq.add ( *pIO );
+    this->flushIfRequired ( guard, *chan.getPIIU() );
+    chan.getPIIU()->readNotifyRequest ( chan, *pIO, type, nElem );
+    return pIO.release()->getId ();
 }
 
 void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
@@ -1363,20 +1345,15 @@ cac::subscriptionRequest ( nciu &chan, unsigned type, // X aCC 361
         chan.cacPrivateListOfIO::eventq, *this, 
         netSubscription::factory ( this->freeListSubscription,
                                    chan, type, nElem, mask, notifyIn ) );
-    if ( pIO.get() ) {
-        this->ioTable.add ( *pIO );
-        chan.cacPrivateListOfIO::eventq.add ( *pIO );
-        if ( chan.connected () ) {
-            this->flushIfRequired ( guard, *chan.getPIIU() );
-            chan.getPIIU()->subscriptionRequest ( chan, *pIO );
-        }
-        cacChannel::ioid id = pIO->getId ();
-        pIO.release ();
-        return id;
+    this->ioTable.add ( *pIO );
+    chan.cacPrivateListOfIO::eventq.add ( *pIO );
+    if ( chan.connected () ) {
+        this->flushIfRequired ( guard, *chan.getPIIU() );
+        chan.getPIIU()->subscriptionRequest ( chan, *pIO );
     }
-    else {
-        throw std::bad_alloc();
-    }
+    cacChannel::ioid id = pIO->getId ();
+    pIO.release ();
+    return id;
 }
 
 bool cac::noopAction ( epicsGuard < callbackMutex > &, tcpiiu &, 

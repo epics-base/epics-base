@@ -141,10 +141,7 @@ void * tsFreeList < T, N, MUTEX, DEBUG_LEVEL >::allocate ( size_t size )
     }
 
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
-        void *p = ::operator new ( size, std::nothrow );
-        if ( ! p ) {
-            throw std::bad_alloc ();
-        }
+        void *p = ::operator new ( size );
         if ( tsFreeListDebugBypass ) {
             memset ( p, 0xaa, size );
         }
@@ -169,10 +166,7 @@ tsFreeListItem < T, DEBUG_LEVEL > *
     tsFreeList < T, N, MUTEX, DEBUG_LEVEL >::allocateFromNewChunk ()
 {
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = 
-        new ( std::nothrow ) ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
-    if ( ! pChunk ) {
-        throw std::bad_alloc ();
-    }
+        new tsFreeListChunk < T, N, DEBUG_LEVEL >;
 
     for ( unsigned i=1u; i < N-1; i++ ) {
         pChunk->items[i].pNext = &pChunk->items[i+1];

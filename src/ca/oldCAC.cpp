@@ -27,9 +27,6 @@ oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 )
 {
-    if ( ! & this->clientCtx ) {
-        throw std::bad_alloc ();
-    }
 }
 
 oldCAC::~oldCAC ()

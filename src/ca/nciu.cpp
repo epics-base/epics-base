@@ -65,9 +65,6 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
 	this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
 
     this->pNameStr = new char [ this->nameLength ];
-    if ( ! this->pNameStr ) {
-        throw std::bad_alloc ();
-    }
     strcpy ( this->pNameStr, pNameIn );
 }
 

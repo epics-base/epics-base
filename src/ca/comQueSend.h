@@ -79,10 +79,7 @@ private:
             nCopied = 0u;
         }
         while ( nElem > nCopied ) {
-            comBuf * pComBuf = new ( std::nothrow ) comBuf;
-            if ( ! pComBuf ) {
-                throw std::bad_alloc ();
-            }
+            comBuf * pComBuf = new comBuf;
             unsigned nNew = pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
             nCopied += nNew;
             this->bufs.add ( *pComBuf );
@@ -105,10 +102,7 @@ private:
                 return;
             }
         }
-        pComBuf = new ( std::nothrow ) comBuf;
-        if ( ! pComBuf ) {
-            throw std::bad_alloc ();
-        }
+        pComBuf = new comBuf;
         assert ( pComBuf->copyIn ( &val, 1u ) == 1u );
         this->bufs.add ( *pComBuf );
         if ( ! this->pFirstUncommited.valid() ) {

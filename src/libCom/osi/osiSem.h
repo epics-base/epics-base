@@ -42,6 +42,16 @@ epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id);
     Mutex semaphores should implement priority inheritance and deletion safe
 */
 
+#ifdef __cplusplus
+}
+#endif
+
+#include "osdSem.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc INLINE semBinaryId epicsShareAPI semBinaryMustCreate (
     int initialState)
 {
@@ -70,8 +80,5 @@ epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semMutexId id)
 #ifdef __cplusplus
 }
 #endif
-
-#include "osdSem.h"
-
 
 #endif /* osiSemh */

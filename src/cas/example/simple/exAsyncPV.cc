@@ -1,6 +1,7 @@
 
 //
 // Example EPICS CA server
+// (asynchrronous process variable)
 //
 
 #include <exServer.h>

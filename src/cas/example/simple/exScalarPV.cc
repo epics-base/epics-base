@@ -75,11 +75,15 @@ void exScalarPV::scan()
 // be translated into a real number?
 // 2) We prefer to unreference the old PV value here and
 // reference the incomming value because this will
-// result in value change events each retaining an
+// result in each value change events retaining an
 // independent value on the event queue.
 //
 caStatus exScalarPV::updateValue (gdd &valueIn)
 {
+	//
+	// Really no need to perform this check since the
+	// server lib verifies that all requests are in range
+	//
 	if (!valueIn.isScalar()) {
 		return S_casApp_outOfBounds;
 	}

@@ -312,6 +312,7 @@ caStatus exPV::getValue(gdd &value)
 
 //
 // exPV::write()
+// (synchronous default)
 //
 caStatus exPV::write (const casCtx &, gdd &valueIn)
 {
@@ -320,6 +321,7 @@ caStatus exPV::write (const casCtx &, gdd &valueIn)
  
 //
 // exPV::read()
+// (synchronous default)
 //
 caStatus exPV::read (const casCtx &, gdd &protoIn)
 {

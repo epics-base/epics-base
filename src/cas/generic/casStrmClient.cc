@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1996/12/11 01:03:52  jhill
+ * removed redundant bad client attach detect
+ *
  * Revision 1.12  1996/12/06 22:36:22  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -108,7 +111,7 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
         //
         // element count out of range ?
         //
-        if (mp->m_count> pChan->getPVI().nativeCount()) {
+        if (mp->m_count > pChan->getPVI().nativeCount()) {
                 return this->sendErr(mp, ECA_BADCOUNT, NULL);
         }
  

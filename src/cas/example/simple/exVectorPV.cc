@@ -142,6 +142,9 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 	// (and see if we are replacing all elements -
 	// replaceOk==TRUE)
 	//
+	// Perhaps much of this is unnecessary since the
+	// server lib checks the bounds of all requests
+	//
 	if (valueIn.isAtomic()) {
 		if (valueIn.dimension()!=1u) {
 			return S_casApp_badDimension;
@@ -166,7 +169,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 
 	if (replFlag==replace) {
 		//
-		// It is most efficient to replace all elements 
+		// replacing all elements is efficient
 		//
 		valueIn.reference();
 		pNewValue = &valueIn;

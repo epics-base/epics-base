@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.41  1996/12/11 01:10:33  jhill
+ * added additional vector tests
+ *
  * Revision 1.40  1996/11/22 19:07:01  jhill
  * included string.h
  *
@@ -755,7 +758,6 @@ int doacctst(char *pname)
 	 * o verifies that we can at least write and read back the same array
 	 * if multiple elements are present
 	 */
-printf("Element Count %u\n", ca_element_count(chix1));
 	if (VALID_DB_REQ(chix1->type)) {
 		if (ca_element_count(chix1)>1u) {
 			dbr_float_t	*pRF, *pWF, *pEF, *pT;
@@ -795,7 +797,7 @@ printf("Element Count %u\n", ca_element_count(chix1));
 					assert(*pRF++ == *pWF++);
 				}
 			}
-			printf("done");
+			printf("done\n");
 		}
 	}
 

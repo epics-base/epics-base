@@ -19,14 +19,14 @@ of this distribution.
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <errno.h>
 
+#define epicsExportSharedSymbols
 #define ERRLOG_INIT
 #include "dbDefs.h"
 #include "osiThread.h"
 #include "osiSem.h"
 #include "osiInterrupt.h"
-#include "errno.h"
-
 #include "epicsAssert.h"
 #include "errMdef.h"
 #include "error.h"

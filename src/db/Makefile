@@ -64,5 +64,5 @@ $(LIBOBJS_HOST): dbCommon.h
 
 dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
 		$(USER_DBDFLAGS) $<

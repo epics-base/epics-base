@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1996/08/12 15:37:46  jbk
+ * Re-added the installString() function I took out.
+ *
  * Revision 1.4  1996/08/09 02:28:09  jbk
  * rewrite of aitString class - more intuitive now, I think
  *
@@ -162,7 +165,7 @@ public:
 	operator aitInt32(void) const		{ return (aitInt32)len; }
 	operator const char*(void) const	{ return str; }
 	operator char*(void) const			{ return str; }
-	int isConstant(void) const			{ return (getType()==aitStrConst)?1:0; }
+	int isConstant(void) const;
 
 	aitUint32 length(void) const	{ return (aitUint32)len; }
 	const char* string(void) const	{ return str; }
@@ -215,6 +218,11 @@ private:
 	int cset(const char* p, aitUint32 len);
 	aitStrType getType(void) const { return (aitStrType)type; }
 };
+
+inline int aitString::isConstant(void) const
+{
+	return (getType()==aitStrConst && str)?1:0;
+}
 
 inline void aitString::clear(void)
 {

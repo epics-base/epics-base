@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.7  1996/08/13 15:07:46  jbk
+// changes for better string manipulation and fixes for the units field
+//
 // Revision 1.6  1996/08/06 19:14:11  jbk
 // Fixes to the string class.
 // Changes units field to a aitString instead of aitInt8.
@@ -1154,6 +1157,31 @@ gddStatus gdd::put(const gdd* dd)
 			}
 #endif
 		}
+	}
+	else if((primitiveType()==aitEnumString ||
+			 primitiveType()==aitEnumFixedString) &&
+			dd->primitiveType()==aitEnumInt8 &&
+			isScalar() && dd->isAtomic())
+	{
+		// special case for aitInt8--->aitString (hate this)
+		aitInt8* i1=(aitInt8*)dd->dataPointer();
+		put(i1);
+	}
+	else if(primitiveType()==aitEnumInt8 &&
+			dd->primitiveType()==aitEnumString &&
+			dd->isScalar() && isAtomic())
+	{
+		// special case for aitString--->aitInt8
+		aitString* s1=(aitString*)dd->dataAddress();
+		put(*s1);
+	}
+	else if(primitiveType()==aitEnumInt8 &&
+			dd->primitiveType()==aitEnumFixedString &&
+			dd->isScalar() && isAtomic())
+	{
+		// special case for aitFixedString--->aitInt8
+		aitFixedString* s2=data.FString;
+		if(s2) put(*s2);
 	}
 	else if(isScalar())
 	{

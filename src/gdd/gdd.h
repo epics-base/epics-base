@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1996/08/13 15:07:48  jbk
+ * changes for better string manipulation and fixes for the units field
+ *
  * Revision 1.7  1996/08/09 02:29:16  jbk
  * fix getRef(aitString*&) to return the correct value if gdd is scalar
  *
@@ -840,9 +843,9 @@ inline gddStatus gdd::put(const aitInt8* const d)
 	{
 		aitString* p = (aitString*)dataAddress();
 		if(isConstant())
-			p->copy((char*)d);
-		else
 			p->replaceData((char*)d);
+		else
+			p->copy((char*)d);
 	}
 	else if(primitiveType()==aitEnumFixedString && dim==0)
 		strcpy(data.FString->fixed_string,(char*)d);

@@ -38,3 +38,12 @@ include $(TOP)/config/CONFIG
 
 EPICS_BASE = $(INSTALL_LOCATION)
 
+#
+# this speeds up the build by turning off implicit rules search
+#
+.PHONY: $(TOP)/config/CONFIG
+.PHONY: $(TOP)/config/CONFIG.* $(TOP)/config/CONFIG_* 
+.PHONY: $(TOP)/config/RULES.* $(TOP)/config/RULES_* .DEPENDS
+.PHONY: $(HOME)/.EPICS_CONFIG
+.PHONY: ../Makefile.Vx ../Makefile.Unix ../Makefile.Host Makefile
+

@@ -22,7 +22,7 @@ ACC_ANSI = $(ACC)
 ACC_STRICT = $(ACC) -pedantic
 #ACC_STRICT = $(ACC)  -ansi -pedantic -D_SVID_SOURCE
 ACC_TRAD = $(ACC)
-ACC_WARN_YES = 
+ACC_WARN_YES =  -Wall
 ACC_WARN_NO =  -w
 ACC_OPT_YES =  -O
 ACC_OPT_NO = -g
@@ -39,8 +39,8 @@ ACC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@
 CCC = g++
 CCC_NORMAL = $(CCC)
 CCC_STRICT = $(CCC)
-CCC_TEMPL_INST_FLAG = -DEXPL_TEMPL
-CCC_WARN_YES = 
+#CCC_TEMPL_INST_FLAG = -DEXPL_TEMPL
+CCC_WARN_YES =  -Wall
 CCC_WARN_NO =
 CCC_OPT_YES =  -O
 CCC_OPT_NO = -g
@@ -57,7 +57,7 @@ GCC_STRICT = $(GCC)
 G++_STRICT = $(G++)  -Wtraditional
 
 
-ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
+#ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_LDFLAGS =
 

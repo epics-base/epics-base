@@ -196,17 +196,6 @@ WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS)
 #
 DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
 
-#	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
-#	which in turn are used in COMPILE.c[c]
-#
-#	If we compile a .c, .cc into an $(OBJ),
-#	we test if this object is part of the 
-#	library objects LIBRARY_LD_OBJS.
-#	If so, we define _WINDLL so that
-#	e.g. include/shareLib.h works correctly.
-#
-HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
-
 #
 #	A WIN32 dll has three parts:
 #	x.dll: the real dll (SHRLIBNAME)

@@ -333,6 +333,7 @@ LOCAL makeSocketReturn makeSocket(unsigned short port, int reuseAddr)
 		msr.pErrStr = SOCKERRSTR;
 		return msr;
 	}
+    setCloseOnExec ( msr.sock );
 
 	/*
 	 * no need to bind if unconstrained

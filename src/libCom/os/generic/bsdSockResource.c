@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #define epicsExportSharedSymbols
 #include "bsdSocketResource.h"
@@ -110,3 +112,17 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	 */
 	return -1;
 }
+
+/* 
+ * setCloseOnExec()
+ */
+epicsShareFunc void epicsShareAPI setCloseOnExec ( SOCKET sock )
+{
+    int status = fcntl ( sock, F_SETFD, FD_CLOEXEC );
+    if ( status < 0 ) {
+        errlogPrintf ( 
+            "epicsSocketCreate: failed to "
+            "fcntl FD_CLOEXEC\n" );
+    }
+}
+

@@ -181,3 +181,10 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	return -1;
 }
 
+/* 
+ * setCloseOnExec()
+ */
+epicsShareFunc void epicsShareAPI setCloseOnExec ( SOCKET sock )
+{
+}
+

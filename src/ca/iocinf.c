@@ -57,6 +57,11 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.6  2003/06/13 00:27:26  jhill
+ * set retry number to 4 when there is a beacon anomaly or when a
+ * channel disconnects. This starts the searcch delay at .4 seconds
+ * instead of at 0.25 seconds.
+ *
  * Revision 1.84.4.5  2002/07/12 22:16:02  jba
  * Updated license comments.
  *
@@ -321,6 +326,7 @@ int				net_proto
 			UNLOCK;
 			return ECA_SOCK;
 		}
+        setCloseOnExec ( sock );
 
 		piiu->sock_chan = sock;
 
@@ -471,6 +477,7 @@ int				net_proto
 			UNLOCK;
 			return ECA_SOCK;
 		}
+        setCloseOnExec ( sock );
 
       	piiu->sock_chan = sock;
 
@@ -1659,6 +1666,7 @@ int repeater_installed()
 		UNLOCK;
 		return installed;
 	}
+    setCloseOnExec ( sock );
 
 	memset((char *)&bd,0,sizeof bd);
 	bd.sin_family = AF_INET;

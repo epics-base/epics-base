@@ -15,6 +15,9 @@
 //
 //
 // $Log$
+// Revision 1.7.8.4  2002/07/12 22:16:51  jba
+// Updated license comments.
+//
 // Revision 1.7.8.3  2001/03/06 00:24:42  jhill
 // fixed R3.13 for Linux's new socklen_t
 //
@@ -89,6 +92,7 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 		printf("No socket error was %s\n", SOCKERRSTR);
 		return S_cas_noFD;
 	}
+    setCloseOnExec ( this->sock );
 
 	/*
 	 * release the port in case we exit early
@@ -247,6 +251,8 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
                 ca_printf("CAS: accept returned bad address len?\n");
                 return NULL;
         }
+    setCloseOnExec ( newSock );
+
 
 	ioArgsToNewStreamIO args;
 	args.addr = newAddr;

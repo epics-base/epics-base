@@ -156,32 +156,6 @@ char *localUserName()
 
 	return pTmp;
 }
-
-/*
- * max_unix_fd()
- *
- * attempt to determine the maximum file descriptor
- * on all UNIX systems
- */
-int max_unix_fd( )
-{
-	int max;
-	static const int bestGuess = 1024;
-
-#	if defined(OPEN_MAX)
-		max = OPEN_MAX; /* posix */
-#	elif defined(_SC_OPEN_MAX)
-		max = sysconf (_SC_OPEN_MAX);
-		if (max<0) {
-			max = bestGuess;
-		}
-#	else
-		max = bestGuess;
-#	endif
-
-	return max;
-}
-
 
 /*
  * ca_spawn_repeater()
@@ -211,16 +185,9 @@ void ca_spawn_repeater()
 	}
 
 	/*
-	 * close all open files except for STDIO so they will not
+	 * all open sockets closed by CLOSEXC flag so they will not
 	 * be inherited by the repeater task
 	 */
-	maxfd = max_unix_fd (); 
-	for (fd = 0; fd<=maxfd; fd++) {
-		if (fd==STDIN_FILENO) continue;
-		if (fd==STDOUT_FILENO) continue;
-		if (fd==STDERR_FILENO) continue;
-		close (fd);
-	}
 
 	/*
  	 * running in the repeater process

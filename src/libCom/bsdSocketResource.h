@@ -52,6 +52,8 @@ epicsShareFunc const char * epicsShareAPI getLastWSAErrorAsString();
 epicsShareFunc unsigned epicsShareAPI wsaMajorVersion();
 #endif
 
+epicsShareFunc void epicsShareAPI setCloseOnExec ( SOCKET sock );
+
 #ifdef __cplusplus
 }
 #endif

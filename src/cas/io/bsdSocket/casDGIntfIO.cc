@@ -115,6 +115,7 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 		"CAS: unable to create cast socket\n");
 			return S_cas_noMemory;
 	}
+    setCloseOnExec ( this->sock );
 
 	status = setsockopt(
 					this->sock,

@@ -20,8 +20,6 @@ RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd
 
-MUNCH_LIBRARY = example
-
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
 #example_SRCS += sncExample.c

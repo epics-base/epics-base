@@ -187,7 +187,7 @@ semMutexId semMutexCreate(void) {
     status = pthread_condattr_init(&pmutex->condAttr);
     checkStatus(status,"pthread_condattr_init");
     status = pthread_condattr_setpshared(&pmutex->condAttr,
-        _POSIX_THREAD_PROCESS_SHARED);
+        PTHREAD_PROCESS_PRIVATE);
     checkStatus(status,"pthread_condattr_setpshared");
     status = pthread_cond_init(&pmutex->waitToBeOwner,&pmutex->condAttr);
 #else

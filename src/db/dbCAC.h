@@ -96,6 +96,8 @@ private:
 class dbServiceIO;
 
 class dbServicePrivateListOfIO {
+public:
+    dbServicePrivateListOfIO ();
 private:
     tsDLList < dbSubscriptionIO > eventq;
     dbPutNotifyBlocker *pBlocker;
@@ -166,3 +168,8 @@ private:
     char *pEventCallbackCache;
     mutable epicsMutex mutex;
 };
+
+inline dbServicePrivateListOfIO::dbServicePrivateListOfIO () :
+    pBlocker ( 0 )
+{
+}

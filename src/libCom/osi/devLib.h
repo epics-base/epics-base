@@ -304,7 +304,7 @@ typedef struct devLibVirtualOS {
 	 * (required for backwards compatibility)
 	 */
 	long (*pDevConnectInterruptVME) (unsigned vectorNumber, 
-						void (*pFunction)(), void  *parameter);
+						void (*pFunction)(void *), void  *parameter);
 
 	/*
 	 * disconnect ISR from a VME interrupt vector
@@ -379,7 +379,7 @@ extern devLibVirtualOS *pdevLibVirtualOS;
 long    devConnectInterrupt(
 			epicsInterruptType intType,
 			unsigned vectorNumber,
-			void (*pFunction)(),
+			void (*pFunction)(void *),
 			void  *parameter);
 
 /*
@@ -393,7 +393,7 @@ long    devConnectInterrupt(
 long    devDisconnectInterrupt(
 			epicsInterruptType      intType,
 			unsigned                vectorNumber,
-			void			(*pFunction)());
+			void			(*pFunction)(void *));
 
 /*
  * NOTE: this routine has been deprecated. It exists

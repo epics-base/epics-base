@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.33  2000/02/02 20:06:24  mrk
+ * new way to build
+ *
  * Revision 1.32  2000/01/24 21:26:55  mrk
  * new way to build
  *
@@ -178,7 +181,7 @@
 #include "errMdef.h"
 #include "drvSup.h"
 #include "drvTS.h"
-#include "osiSockResource.h"
+#include "osiSock.h"
 
 #define TSprintf epicsPrintf
 

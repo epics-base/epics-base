@@ -10,6 +10,7 @@ CMPLR = STRICT
 SYS_PROD_LIBS_DEFAULT := m
 SYS_PROD_LIBS_WIN32   := -nil-
 PROD_LIBS         := ca Com
+SYS_PROD_LIBS_WIN32 := ws2_32
 
 PROD_DEFAULT := ca_test iocLogServer startCArepeater
 PROD_solaris := ca_test iocLogServer startCArepeater S99logServer S99caRepeater 

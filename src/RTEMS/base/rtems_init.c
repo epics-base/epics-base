@@ -252,7 +252,8 @@ initialize_remote_filesystem(const char **argv)
         cp = mount_point;
         while ((cp = strchr(cp+1, '/')) != NULL) {
             *cp = '\0';
-            if (mkdir (mount_point, 0755) != 0)
+            if ((mkdir (mount_point, 0755) != 0)
+             && (errno != EEXIST))
                 LogFatal("Can't create directory \"%s\": %s.\n",
                                                 mount_point, strerror(errno));
             *cp = '/';

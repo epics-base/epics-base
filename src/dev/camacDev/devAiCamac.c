@@ -32,6 +32,7 @@
 static long init();
 static long init_record();
 static long read_ai();
+static long special_linconv();
 
 struct {
 	long		number;
@@ -48,11 +49,10 @@ struct {
 	init_record,
 	NULL,
 	read_ai,
-        NULL};
+        special_linconv};
 
 
-static long init(after)
-int after;
+static long init( int after)
 {
 
 #ifdef DEBUG_ON
@@ -61,12 +61,10 @@ int after;
     return(0);
 }
 
-static long init_record(pai)
-struct aiRecord	*pai;
+static long init_record(struct aiRecord *pai)
 {
 struct camacio *pcamacio;
 struct dinfo *pcio;
-int fsd;
 #ifdef DEBUG_ON
     if ( CDEBUG)printf("devAiCamac (init_record) Called.\n");
 #endif
@@ -74,7 +72,7 @@ int fsd;
     /* ai.inp must be a CAMAC_IO */
     switch (pai->inp.type) {
     case (CAMAC_IO) :
-        pcio = (struct dinfo *)malloc(sizeof(struct dinfo));
+        pcio = (struct dinfo *)calloc(1,sizeof(struct dinfo));
         if (pcio == NULL) {
 #ifdef DEBUG_ON
             if ( CDEBUG)printf("devAiCamac (init_record): malloc failed.\n");
@@ -97,13 +95,13 @@ int fsd;
 		return(DO_NOT_CONVERT); /* cdreg failed if ext is zero */
 	}
 
-        sscanf((char *)pcamacio->parm, "%i",&fsd);
-        if (fsd > 0) {
-	  if (!(fsd & (fsd+1))) fsd++; /* camac card count should be 2's power */ 
-          pai->eslo = (pai->eguf - pai->egul)/fsd;
+        sscanf((char *)pcamacio->parm, "%i",&pcio->fsd);
+        if (pcio->fsd > 0) {
+	  if (!(pcio->fsd & (pcio->fsd+1))) pcio->fsd++; /* camac card count should be 2's power */ 
+          pai->eslo = (pai->eguf - pai->egul)/pcio->fsd;
 	}
 
-	for (pcio->mask=1; pcio->mask < fsd; pcio->mask=pcio->mask<<1);
+	for (pcio->mask=1; pcio->mask < pcio->fsd; pcio->mask=pcio->mask<<1);
 	pcio->mask--;
 
 	pcio->f = pcamacio->f;
@@ -119,24 +117,33 @@ int fsd;
     return(0);
 }
 
-static long read_ai(pai)
-struct aiRecord	*pai;
+static long read_ai(struct aiRecord *pai)
 {
-register struct dinfo *pcio;
+struct dinfo *pcio;
 int q;
 
 	pcio = (struct dinfo *)pai->dpvt;
 
 	if(!(pcio->ext)) return(DO_NOT_CONVERT); 
 #ifdef DEBUG_ON
-        if ( CDEBUG) printf("devAiCamac (read_ai):  f=%d ext=%ld mask=%ld\n",
+        if ( CDEBUG) printf("devAiCamac (read_ai):  f=%d ext=%d mask=%d\n",
                 pcio->f, pcio->ext, pcio->mask);
 #endif
 	q=0;
-        cfsa(pcio->f, pcio->ext, &(pai->rval), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(pai->rval), &q);
 	pai->rval &= pcio->mask;
 
         
         if(q) return(CONVERT);
         else return(DO_NOT_CONVERT);
+}
+
+static long special_linconv(struct aiRecord *pai,int after)
+{
+    struct dinfo *pcio = (struct dinfo *)pai->dpvt;
+
+    if(!after) return(0);
+    /* set linear conversion slope*/
+    if(pcio->fsd!=0) pai->eslo = (pai->eguf - pai->egul)/pcio->fsd;
+    return(0);
 }

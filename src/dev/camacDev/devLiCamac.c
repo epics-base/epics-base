@@ -127,7 +127,7 @@ int q;
                 pcio->f, pcio->ext, pcio->mask);
 #endif
         q=0;
-        cfsa(pcio->f, pcio->ext, &(plongin->val), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(plongin->val), &q);
         plongin->val &= pcio->mask;
 
         if(q) return(CONVERT);

@@ -124,7 +124,7 @@ unsigned long val;
                 pcio->f, pcio->ext, pmbbi->mask);
 #endif
         q=0;
-        cfsa(pcio->f, pcio->ext, &val, &q);
+        cfsa(pcio->f, pcio->ext, (int *)&val, &q);
 	if(q)
 	{
 		pmbbi->rval = val&pmbbi->mask; 

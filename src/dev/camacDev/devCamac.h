@@ -43,6 +43,7 @@ static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 
 struct dinfo{
 	short		f;
-	long		ext;
-	long		mask;
+	int		ext;
+	int		mask;
+        int             fsd; /*full scale for ai and ao*/
 };

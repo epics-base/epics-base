@@ -127,7 +127,7 @@ int   q;
 
         plongout->val &= pcio->mask;
         q = 0;
-        cfsa(pcio->f, pcio->ext, &(plongout->val), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(plongout->val), &q);
 #ifdef DEBUG_ON
         if ( CDEBUG)printf("devLoCamac (write_longout):  f=%d ext=%ld mask=%ld value=%d\n",
                 pcio->f, pcio->ext, pcio->mask, plongout->val);

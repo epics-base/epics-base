@@ -56,8 +56,7 @@ struct {
 	write_ao,
         special_linconv};
 
-static long init(after)
-int after;
+static long init(int after)
 {
 #ifdef DEBUG_ON 
     if ( CDEBUG)printf("devAoCamac (init) called, pass=%d\n", after);
@@ -65,12 +64,10 @@ int after;
     return(0);
 }
 
-static long init_record(pao)
-struct aoRecord	*pao;
+static long init_record(struct aoRecord *pao)
 {
 struct camacio *pcamacio;
 struct dinfo *pcio;
-int fsd;
 
 #ifdef DEBUG_ON
     if ( CDEBUG)printf("devAoCamac (init_record) called.\n");
@@ -79,7 +76,7 @@ int fsd;
     /* ao.out must be a CAMAC_IO */
     switch (pao->out.type) {
     case (CAMAC_IO) :
-	  pcio = (struct dinfo *)malloc(sizeof(struct dinfo));
+	  pcio = (struct dinfo *)calloc(1,sizeof(struct dinfo));
 	  if (pcio == NULL) {
 #ifdef DEBUG_ON
     	     if ( CDEBUG)printf("devAoCamac (init_record): malloc failed.\n");
@@ -95,15 +92,15 @@ int fsd;
           cdreg(&(pcio->ext), pcamacio->b, pcamacio->c, pcamacio->n, pcamacio->a);
 
 	  if(!(pcio->ext)) return(DO_NOT_CONVERT);
-          sscanf((char *)pcamacio->parm, "%i",&fsd);
+          sscanf((char *)pcamacio->parm, "%i",&pcio->fsd);
 
- /*         fsd = (int)atoi((char *)pcamacio->parm); */
-          if (fsd > 0) {
-	     if (!(fsd & (fsd+1))) fsd++;  
-             pao->eslo=(pao->eguf - pao->egul)/fsd;
+ /*         pcio->fsd = (int)atoi((char *)pcamacio->parm); */
+          if (pcio->fsd > 0) {
+	     if (!(pcio->fsd & (pcio->fsd+1))) pcio->fsd++;  
+             pao->eslo=(pao->eguf - pao->egul)/pcio->fsd;
 	  }
 
-	  for (pcio->mask=1; pcio->mask<fsd; pcio->mask=pcio->mask<<1);
+	  for (pcio->mask=1; pcio->mask<pcio->fsd; pcio->mask=pcio->mask<<1);
 	  pcio->mask--;
 
 	  pcio->f = pcamacio->f;
@@ -120,10 +117,9 @@ int fsd;
     return(0);
 }
 
-static long write_ao(pao)
-struct aoRecord	*pao;
+static long write_ao(struct aoRecord *pao)
 {
-register struct dinfo *pcio;
+struct dinfo *pcio;
 int   q;
 
 	pcio = (struct dinfo *)pao->dpvt;
@@ -131,7 +127,7 @@ int   q;
 	
         pao->rval &= pcio->mask;
 	q = 0;
-        cfsa(pcio->f, pcio->ext, &(pao->rval), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(pao->rval), &q);
 #ifdef DEBUG_ON
         if ( CDEBUG)printf("devAoCamac (write_ao):  f=%d ext=%ld mask=%ld value=%d\n",
                 pcio->f, pcio->ext, pcio->mask, pao->rval);
@@ -140,10 +136,12 @@ int   q;
         else return(DO_NOT_CONVERT);
 }
 
-static long special_linconv(pao,after)
-struct aoRecord *pao;
-int after;
+static long special_linconv(struct aoRecord *pao, int after)
 {
-    /* Stub routine, added for consistency. */
+    struct dinfo *pcio = (struct dinfo *)pao->dpvt;
+
+    if(!after) return(0);
+    /* set linear conversion slope*/
+    if(pcio->fsd!=0) pao->eslo = (pao->eguf - pao->egul)/pcio->fsd;
     return(0);
 }

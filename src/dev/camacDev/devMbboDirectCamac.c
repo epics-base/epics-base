@@ -126,7 +126,7 @@ int   q;
         if(!(pcio->ext)) return(DO_NOT_CONVERT);
 
         q = 0;
-        cfsa(pcio->f, pcio->ext, &(pmbbodirect->rval), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(pmbbodirect->rval), &q);
 #ifdef DEBUG_ON
         if(CDEBUG)printf("devMbboDirectCamac (write_mbbodirect):  f=%d ext=%ld mask=%ld value=%d\n",
                 pcio->f, pcio->ext, pcio->mask, pmbbodirect->rval);

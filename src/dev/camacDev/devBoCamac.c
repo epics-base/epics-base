@@ -124,7 +124,7 @@ int   q;
 
         pbo->rval &= pbo->mask;
         q = 0;
-        cfsa(pcio->f, pcio->ext, &(pbo->rval), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(pbo->rval), &q);
 #ifdef DEBUG_ON
         if ( CDEBUG)printf("devBoCamac (write_bo):  f=%d ext=%ld mask=%ld value=%d\n",
                 pcio->f, pcio->ext, pbo->mask, pbo->rval);

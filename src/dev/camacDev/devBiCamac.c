@@ -123,7 +123,7 @@ int         q;
                 pcio->f, pcio->ext, pbi->mask);
 #endif
         q=0;
-        cfsa(pcio->f, pcio->ext, &(pbi->rval), &q);
+        cfsa(pcio->f, pcio->ext, (int *)&(pbi->rval), &q);
         pbi->rval &= pbi->mask;
 
         if(q) return(CONVERT);

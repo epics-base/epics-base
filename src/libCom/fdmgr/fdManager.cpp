@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.2  1996/09/04 21:50:16  jhill
+// added hashed fd to fdi convert
+//
 // Revision 1.1  1996/08/13 22:48:23  jhill
 // dfMgr =>fdManager
 //
@@ -12,7 +15,7 @@
 //
 //
 // NOTES: 
-// 1) This isnt intended for a multi-threading environment
+// 1) This library is not thread safe
 //
 //
 
@@ -23,17 +26,23 @@
 #include <errno.h>
 #include <string.h>
 
-#if __GNUC__
-	extern "C" {
-#		include <sys/types.h>
-		int select (int, fd_set *, fd_set *, 
-				fd_set *, struct timeval *);
-		int bzero (char *b, int length);
-	} //extern "C"
-#endif // __GNUC__
+//	Both the functions in osiTimer and fdManager are
+//	implemented in this DLL -> define epicsExportSharesSymbols
+#define epicsExportSharedSymbols
+#include "osiTimer.h"
+#include "fdManager.h"
 
-#include <fdManager.h>
-#include <osiTimer.h>
+#if !defined(__SUNPRO_CC)
+        //
+        // From Stroustrups's "The C++ Programming Language"
+        // Appendix A: r.14.9
+        //
+        // This explicitly instantiates the template class's member
+        // functions into "fdManager.o"
+        //
+#	include <resourceLib.cc>
+        template class resTable <fdReg, fdRegId>;
+#endif
 
 fdManager fileDescriptorManager;
 
@@ -85,7 +94,7 @@ fdManager::~fdManager()
 //
 void fdManager::process (const osiTime &delay)
 {
-	tsDLIter<fdReg> regIter(this->regList);
+	tsDLFwdIter<fdReg> regIter(this->regList);
 	osiTime minDelay;
 	osiTime zeroDelay;
 	fdReg *pReg;
@@ -100,26 +109,25 @@ void fdManager::process (const osiTime &delay)
 	}
 	this->processInProg = 1;
 
-	while ( (pReg=regIter()) ) {
-		FD_SET(pReg->getFD(), &this->fdSets[pReg->getType()]); 
-	}
-
 	//
-	// dont bother calling select if the delay to
-	// the first timer expire is zero
+	// One shot at expired timers prior to going into
+	// select. This allows zero delay timers to arm
+	// fd writes. We will never process the timer queue
+	// more than once here so that fd activity get serviced
+	// in a reasonable length of time.
 	//
-	while (1) {
+	minDelay = staticTimerQueue.delayToFirstExpire();
+	if (zeroDelay>=minDelay) {
+		staticTimerQueue.process();
 		minDelay = staticTimerQueue.delayToFirstExpire();
-		if (zeroDelay>=minDelay) {
-			staticTimerQueue.process();
-		} 
-		else {
-			break;
-		}
-	}
+	} 
 
 	if (minDelay>=delay) {
 		minDelay = delay;
+	}
+
+	while ( (pReg=regIter()) ) {
+		FD_SET(pReg->getFD(), &this->fdSets[pReg->getType()]); 
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
 	status = select (this->maxFD, &this->fdSets[fdrRead], 
@@ -208,7 +216,7 @@ fdReg::~fdReg()
 //
 // fdReg::show()
 //
-void fdReg::show(unsigned level)
+void fdReg::show(unsigned level) const
 {
 	printf ("fdReg at %x\n", (unsigned) this);
 	if (level>1u) {
@@ -221,7 +229,7 @@ void fdReg::show(unsigned level)
 //
 // fdRegId::show()
 //
-void fdRegId::show(unsigned level)
+void fdRegId::show(unsigned level) const
 {
 	printf ("fdRegId at %x\n", (unsigned) this);
 	if (level>1u) {

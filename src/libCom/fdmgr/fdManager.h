@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/04 21:50:16  jhill
+ * added hashed fd to fdi convert
+ *
  * Revision 1.1  1996/08/13 22:48:21  jhill
  * dfMgr =>fdManager
  *
@@ -41,20 +44,12 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
-#include <tsDLList.h>
-#include <resourceLib.h>
-#include <osiTime.h>
-
-#ifdef WIN32
-#include <winsock.h>
-#else
-extern "C" {
-#	include <sys/types.h>
-#	include <sys/time.h>
-} // extern "C"
-#endif
-
 #include <stdio.h>
+
+#include "tsDLList.h"
+#include "resourceLib.h"
+#include "osiTime.h"
+#include "osiSock.h"
 
 enum fdRegType {fdrRead, fdrWrite, fdrExcp, fdRegTypeNElem};
 enum fdRegState {fdrActive, fdrPending, fdrLimbo};
@@ -100,7 +95,7 @@ public:
                 return hashid;
         }
 
-	virtual void show(unsigned level);
+	virtual void show(unsigned level) const;
 private:
         const int	fd;
 	const fdRegType	type;
@@ -110,15 +105,15 @@ private:
 // fdReg
 // file descriptor registration
 //
-class fdReg : public tsDLNode<fdReg>, public fdRegId,
+class epicsShareClass fdReg : public tsDLNode<fdReg>, public fdRegId,
 	public tsSLNode<fdReg> {
         friend class fdManager;
 public:
-	fdReg (const int fdIn, const fdRegType typ, 
+	inline fdReg (const int fdIn, const fdRegType typ, 
 			const unsigned onceOnly=0);
 	virtual ~fdReg ();
 
-	virtual void show(unsigned level);
+	virtual void show(unsigned level) const;
 private:
 
         //
@@ -145,7 +140,7 @@ private:
 	unsigned char	onceOnly;
 };
  
-class fdManager {
+class epicsShareClass fdManager {
 friend class fdReg;
 public:
         fdManager();
@@ -155,7 +150,7 @@ public:
 	//
 	// returns NULL if the fd is unknown
 	//
-	fdReg *lookUpFD(const int fd, const fdRegType type);
+	inline fdReg *lookUpFD(const int fd, const fdRegType type);
 private:
         tsDLList<fdReg>	regList;
         tsDLList<fdReg>	activeList;
@@ -168,12 +163,12 @@ private:
 	//
 	fdReg		*pCBReg; 
 
-	void installReg (fdReg &reg);
-        void removeReg (fdReg &reg);
+	inline void installReg (fdReg &reg);
+        inline void removeReg (fdReg &reg);
 	resTable<fdReg,fdRegId> fdTbl;
 };
 
-extern fdManager fileDescriptorManager;
+epicsShareExtern fdManager fileDescriptorManager;
 
 //
 // lookUpFD()
@@ -259,7 +254,7 @@ inline fdReg::fdReg (const int fdIn, const fdRegType typIn,
 	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
 {
 	assert (fdIn>=0);
-        if (fdIn>FD_SETSIZE) {
+        if (!FD_IN_FDSET(fdIn)) {
 		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
 			__FILE__);
 		return;

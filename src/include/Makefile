@@ -12,8 +12,23 @@ INC += shareLib.h
 INC += osiMutexNOOP.h
 INC += unixFileName.h
 
-OSINC += osiFileName.h
-OSINC += osiSock.h
+INC += drvTS.h
+INC += devSup.h
+INC += drvSup.h
+INC += caeventmask.h
+INC += asLib.h
+INC += registryDeviceSupport.h
+INC += registryDriverSupport.h
+INC += registryRecordType.h
+INC += cadef.h
+INC += caerr.h
+INC += task_params.h
+INC += fast_lock.h
+INC += asDbLib.h
+
+
+INC += osiFileName.h
+INC += osiSock.h
 
 include $(TOP)/configure/RULES_BUILD
 
@@ -22,4 +37,8 @@ include $(TOP)/configure/RULES_BUILD
 #	no matter what date ...CONFIG_BASE_VERSION has
 epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
 	$(PERL) ../makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
+
+xxx:
+	@echo INSTALL_INC=$(INSTALL_INC)
+	@echo INC=$(INC)
 

@@ -1,0 +1,20 @@
+#
+# $Id$
+# Author: W. Eric Norum
+#         Advanced Photon Source
+#         norume@aps.anl.gov
+#
+# All RTEMS targets use the same Makefile fragment
+#
+RTEMS_TARGET_CPU = powerpc
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD
+
+MUNCH_SUFFIX = .boot
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+define MUNCH_CMD
+	$(RTEMS_BASE)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
+endef
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+OP_SYS_LDLIBS += -lrtemsNfs

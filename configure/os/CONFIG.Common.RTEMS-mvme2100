@@ -7,6 +7,7 @@
 # All RTEMS targets use the same Makefile fragment
 #
 RTEMS_TARGET_CPU = powerpc
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 
 MUNCH_SUFFIX = .boot

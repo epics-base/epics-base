@@ -93,7 +93,7 @@ typedef struct{
 
 #define FASTLOCKINIT(PFAST_LOCK)\
 	(((FAST_LOCK *)(PFAST_LOCK))->ppend = \
-		semBCreate(SEM_Q_PRIORITY, SEM_FULL)) 
+		semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY)) 
 #define FASTLOCKFREE(PFAST_LOCK)\
 	semDelete( ((FAST_LOCK *)(PFAST_LOCK))->ppend )
 #define FASTLOCK(PFAST_LOCK)\

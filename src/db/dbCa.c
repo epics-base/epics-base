@@ -77,7 +77,7 @@ static void addAction(caLink *pca, short link_action)
 void dbCaLinkInit(void)
 {
 	ellInit(&caList);
-	caListSem = semBCreate(SEM_Q_PRIORITY,SEM_FULL);
+	caListSem = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	caWakeupSem = semBCreate(SEM_Q_PRIORITY,SEM_EMPTY);
 	if(!caListSem || !caWakeupSem) {
 		printf("dbCaLinkInit: semBCreate failed\n");

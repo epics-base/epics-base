@@ -107,13 +107,14 @@ typedef struct lockRecord {
 	lockSet		*plockSet;
 	dbCommon	*precord;
 } lockRecord;
+#define semMCoptions SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY
 
 /*private routines */
 STATIC void initLockList(void)
 {
     ellInit(&lockList);
-    if((globalLockSemId = semBCreate(SEM_Q_FIFO,SEM_FULL))==0) {
-	errMessage(0,"allocLockNode called semBCreate\n");
+    if((globalLockSemId = semMCreate(semMCoptions))==0) {
+	errMessage(0,"allocLockNode called semMCreate\n");
 	exit(-1);
     }
     if((globalWaitSemid = semBCreate(SEM_Q_FIFO,SEM_EMPTY))==0) {
@@ -135,8 +136,8 @@ STATIC lockSet * allocLock(lockRecord *plockRecord)
     plockSet->id = id;
     ellAdd(&plockSet->recordList,&plockRecord->node);
     ellAdd(&lockList,&plockSet->node);
-    if((plockSet->semId = semBCreate(SEM_Q_FIFO,SEM_FULL))==0) {
-	errMessage(0,"allocLockNode called semBCreate\n");
+    if((plockSet->semId = semMCreate(semMCoptions))==0) {
+	errMessage(0,"allocLockNode called semMCreate\n");
 	exit(-1);
     }
     return(plockSet);

@@ -38,7 +38,7 @@ SHRLIB_DEPLIBS = $(foreach lib,$(SHRLIB_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
 SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
-SHRLIB_LDLIBS = $($*_LIBS:%=-l%) $(SHRLIB_LIBS:%=-l%) \
+SHRLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(SHRLIB_LIBS:%=-l%) \
  $($*_SYS_LIBS:%=-l%) $(SYS_SHRLIB_LIBS:%=-l%)
 
 SHRLIB_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(SHRLIB_DEPLIBS))
@@ -49,7 +49,7 @@ SHRLIB_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
 PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-PROD_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+PROD_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
 
 PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))

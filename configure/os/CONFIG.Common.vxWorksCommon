@@ -32,7 +32,7 @@ LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-PROD_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+PROD_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
 
 PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))

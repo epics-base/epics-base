@@ -31,7 +31,7 @@
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsTime.h"
-#include "cxxCompilerDepPlacementDelete.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -56,13 +56,13 @@ public:
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     epicsShareFunc bhe ( const epicsTime & initialTimeStamp, 
-        unsigned initialBeaconNumber, const inetAddrID & addr ) throw ();
+        unsigned initialBeaconNumber, const inetAddrID & addr ) epics_throws (());
     epicsShareFunc ~bhe (); 
     epicsShareFunc bool updatePeriod ( 
         const epicsTime & programBeginTime, 
         const epicsTime & currentTime, ca_uint32_t beaconNumber, 
         unsigned protocolRevision );
-    epicsShareFunc double period () const throw ();
+    epicsShareFunc double period () const epics_throws (());
     epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void registerIIU ( tcpiiu & );

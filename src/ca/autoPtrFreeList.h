@@ -33,7 +33,7 @@
 #endif
 
 #include "tsFreeList.h"
-#include "cxxCompilerDepPlacementDelete.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef autoPtrFreeListh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

@@ -30,7 +30,7 @@
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
-#include "cxxCompilerDepPlacementDelete.h"
+#include "cxxCompilerDependencies.h"
 
 class cac;
 class callbackMutex;

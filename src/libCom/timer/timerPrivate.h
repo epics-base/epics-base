@@ -22,7 +22,7 @@
 #include "epicsSingleton.h"
 #include "tsDLList.h"
 #include "epicsTimer.h"
-#include "cxxCompilerDepPlacementDelete.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef DEBUG
 #   define debugPrintf(ARGSINPAREN) printf ARGSINPAREN
@@ -45,7 +45,7 @@ public:
     void operator delete ( void *, tsFreeList < timer, 0x20 > & );
 #endif
 protected:
-    timer ( class timerQueue & ) throw ();
+    timer ( class timerQueue & ) epics_throws (());
     ~timer (); 
     timerQueue & queue;
 private:
@@ -69,7 +69,7 @@ struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
     void destroy ();
 protected:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) throw ();
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) epics_throws (());
     ~epicsTimerForC (); 
     void * operator new ( size_t size, tsFreeList < epicsTimerForC, 0x20 > & );
 #ifdef CXX_PLACEMENT_DELETE
@@ -199,7 +199,7 @@ struct epicsTimerQueueActiveForC : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
-    void release () throw();
+    void release () epics_throws (());
     void * operator new ( size_t );
     void operator delete ( void * );
 protected:

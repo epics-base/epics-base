@@ -24,6 +24,7 @@
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
+#include "cxxCompilerDependencies.h"
 
 // This class exists for the purpose of avoiding file scope
 // object chicken and egg problems. It implements thread safe
@@ -41,33 +42,33 @@ public:
     // inline func def required by visual c++ 7
     class reference {
     public:
-        reference ( TYPE & tIn ) throw () :
+        reference ( TYPE & tIn ) epics_throws (()) :
             instance ( tIn ) 
         {
         }
 
-        ~reference () throw () 
+        ~reference () epics_throws (()) 
         {
         }
 
-        TYPE * operator -> () throw () 
+        TYPE * operator -> () epics_throws (()) 
         { 
             return & this->instance; 
         }
 
-        const TYPE * operator -> () const throw ()
+        const TYPE * operator -> () const epics_throws (())
         {
             typename epicsSingleton<TYPE>::reference & ref = 
                 const_cast < typename epicsSingleton<TYPE>::reference & > ( *this );
             return ref.operator -> ();
         }
 
-        TYPE & operator * () throw ()
+        TYPE & operator * () epics_throws (())
         {
             return * this->operator -> ();
         }
 
-        const TYPE & operator * () const throw ()
+        const TYPE & operator * () const epics_throws (())
         {
             return * this->operator -> ();
         }

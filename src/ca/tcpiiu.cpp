@@ -139,7 +139,7 @@ void tcpSendThread::run ()
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
-                            unsigned nBytesInBuf ) throw ()
+                            unsigned nBytesInBuf ) epics_throws (())
 {
     int status;
     unsigned nBytes = 0u;
@@ -202,7 +202,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     return nBytes;
 }
 
-unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) throw ()
+unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) epics_throws (())
 {
     if ( this->state != iiucs_connected && 
             this->state != iiucs_clean_shutdown ) {

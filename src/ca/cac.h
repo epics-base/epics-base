@@ -31,6 +31,7 @@
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "cxxCompilerDependencies.h"
 #include "ipAddrToAsciiAsynchronous.h"
 #include "epicsTimer.h"
 #include "epicsEvent.h"
@@ -98,8 +99,8 @@ private:
 class cacComBufMemoryManager : public comBufMemoryManager
 {
 public:
-    void * allocate ( size_t ) throw ( std::bad_alloc );
-    void release ( void * ) throw ();
+    void * allocate ( size_t ) epics_throws (( std::bad_alloc ));
+    void release ( void * ) epics_throws (());
 private:
     tsFreeList < class comBuf, 0x20 > freeList;
 };

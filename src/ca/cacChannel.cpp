@@ -88,17 +88,16 @@ const char * cacChannel::pHostName () const
     return ref->pointer ();
 }
 
-// ms visual c++ 7.0 appears to require these when they
-// are not called?
 void cacChannel::operator delete ( void * )
 {
-    throw std::logic_error ( 
-        "why is the compiler calling cacChannel::operator delete?" );
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
 }
-void cacChannel::operator delete [] ( void * )
-{
-    throw std::logic_error ( 
-        "why is the compiler calling cacChannel::operator delete?" );
-}
+
 
 

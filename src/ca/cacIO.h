@@ -205,9 +205,7 @@ private:
 	cacChannel ( const cacChannel & );
 	cacChannel & operator = ( const cacChannel & );
     void * operator new ( size_t );
-    void * operator new [] ( size_t );
     void operator delete ( void * );
-    void operator delete [] ( void * );
 };
 
 class cacNotify { // X aCC 655

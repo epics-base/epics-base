@@ -34,7 +34,7 @@
 
 #include "tsDLList.h"
 #include "tsFreeList.h"
-#include "cxxCompilerDepPlacementDelete.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef repeaterClienth_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

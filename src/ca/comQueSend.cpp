@@ -81,18 +81,18 @@ const char cacNillBytes [] =
 };
 
 comQueSend::comQueSend ( wireSendAdapter & wireIn, 
-    comBufMemoryManager & comBufMemMgrIn ) throw () :
+    comBufMemoryManager & comBufMemMgrIn ) epics_throws (()) :
         comBufMemMgr ( comBufMemMgrIn ), wire ( wireIn ), 
             nBytesPending ( 0u )
 {
 }
 
-comQueSend::~comQueSend () throw ()
+comQueSend::~comQueSend () epics_throws (())
 {
     this->clear ();
 }
 
-void comQueSend::clear () throw ()
+void comQueSend::clear () epics_throws (())
 {
     comBuf *pBuf;
 
@@ -109,7 +109,7 @@ void comQueSend::clear () throw ()
     assert ( this->nBytesPending == 0 );
 }
 
-void comQueSend::clearUncommitted () throw ()
+void comQueSend::clearUncommitted () epics_throws (())
 {
     while ( this->pFirstUncommited.valid() ) {
         tsDLIter < comBuf > next = this->pFirstUncommited;
@@ -129,32 +129,32 @@ void comQueSend::clearUncommitted () throw ()
     }
 }
 
-void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_string_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_short_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_float_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_char_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_long_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem ) throw ()
+void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem ) epics_throws (())
 {
     this->push ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
@@ -201,7 +201,7 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
     0  // DBR_CLASS_NAME
 };
 
-comBuf * comQueSend::popNextComBufToSend () throw ()
+comBuf * comQueSend::popNextComBufToSend () epics_throws (())
 {
     comBuf *pBuf = this->bufs.get ();
     if ( pBuf ) {
@@ -225,7 +225,7 @@ void comQueSend::insertRequestHeader (
     ca_uint16_t request, ca_uint32_t payloadSize, 
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t requestDependent, bool v49Ok ) 
-        throw ( cacChannel::outOfBounds )
+        epics_throws (( cacChannel::outOfBounds ))
 {
     this->beginMsg ();
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
@@ -254,7 +254,7 @@ void comQueSend::insertRequestHeader (
 void comQueSend::insertRequestWithPayLoad (
     ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
     ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-    bool v49Ok ) throw ( cacChannel::outOfBounds )
+    bool v49Ok ) epics_throws (( cacChannel::outOfBounds ))
 {
     if ( ! this->dbr_type_ok ( dataType ) ) {
         throw cacChannel::badType();
@@ -299,7 +299,7 @@ void comQueSend::insertRequestWithPayLoad (
     this->commitMsg ();
 }
 
-void comQueSend::commitMsg () throw ()
+void comQueSend::commitMsg () epics_throws (())
 {
     while ( this->pFirstUncommited.valid() ) {
         this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();

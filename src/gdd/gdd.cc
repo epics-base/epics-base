@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.2  1996/06/26 02:42:06  jbk
+// more correction to the aitString processing - testing menus
+//
 // Revision 1.1  1996/06/25 19:11:37  jbk
 // new in EPICS base
 //
@@ -394,7 +397,7 @@ size_t gdd::DescribedDataSizeBytes(void) const
 size_t gdd::getTotalSizeBytes(void) const
 {
 	size_t sz;
-	unsigned long tmp,tsize;
+	unsigned long tsize;
 	gdd* pdd;
 
 	// add up size of bounds + size of this DD

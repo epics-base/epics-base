@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:41  jbk
+// new in EPICS base
+//
 
 // *Revision 1.3  1996/06/24 03:15:35  jbk
 // *name changes and fixes for aitString and fixed string functions
@@ -264,7 +267,8 @@ gddStatus gddApplicationTypeTable::registerApplicationTypeWithProto(
 	aitUint8* blk;
 	size_t sz;
 	aitIndex tot;
-	int i;
+	aitUint16 x;
+	aitUint16 i;
 	gddStatus rc;
 
 	if(rc=registerApplicationType(name,new_app)) return rc;
@@ -302,7 +306,10 @@ gddStatus gddApplicationTypeTable::registerApplicationTypeWithProto(
 	attr_table[group][app].map_size=total_registered;
 	for(i=0;i<total_registered;i++) attr_table[group][app].map[i]=0;
 	for(i=0;i<tot;i++)
-		attr_table[group][app].map[attr_table[group][app].proto[i].applicationType()]=i;
+	{
+		x=attr_table[group][app].proto[i].applicationType();
+		if(x<total_registered) attr_table[group][app].map[x]=i;
+	}
 
 	return 0;
 }

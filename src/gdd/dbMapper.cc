@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.3  1996/06/26 02:42:05  jbk
+// more correction to the aitString processing - testing menus
+//
 // Revision 1.2  1996/06/25 19:18:12  jbk
 // moved from extensions to base - fixed trouble in dbMapper.cc
 //
@@ -833,14 +836,13 @@ static int mapControlGddToFloat(void* v, gdd* dd)
 }
 
 // -------------map the enum structures----------------
-static gdd* mapGraphicEnumToGdd(void* v, aitIndex count)
+static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 {
 	dbr_gr_enum* db = (dbr_gr_enum*)v;
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_ENUM].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_enum_value];
 	gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
 	aitString* str = menu;
-	aitIndex l;
 	int i;
 
 	for(i=0;i<db->no_str;i++) str[i]=((const char*)&(db->strs[i][0]));
@@ -853,14 +855,13 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex count)
 	return dd;
 }
 
-static gdd* mapControlEnumToGdd(void* v, aitIndex count)
+static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 {
 	dbr_ctrl_enum* db = (dbr_ctrl_enum*)v;
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_ENUM].app);
 	gdd& menu = dd[gddAppTypeIndex_dbr_ctrl_enum_enums];
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_enum_value];
 	aitString* str = menu;
-	aitIndex l;
 	int i;
 
 	for(i=0;i<db->no_str;i++) str[i]=((const char*)&(db->strs[i][0]));

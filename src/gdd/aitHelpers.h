@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:31  jbk
+ * new in EPICS base
+ *
  *
  */
 
@@ -109,15 +112,14 @@ inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 
 inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 {
-	if (lhs.tv_sec>rhs.tv_sec) {
-		return 1;
-	}
-	else if (lhs.tv_sec==rhs.tv_sec) {
-		if (lhs.tv_nsec>=rhs.tv_nsec) {
-			return 1;
-		}
-	}
-	return 0;
+	int rc=0;
+
+	if (lhs.tv_sec>rhs.tv_sec)
+		rc=1;
+	else if(lhs.tv_sec==rhs.tv_sec)
+		if(lhs.tv_nsec>=rhs.tv_nsec)
+			rc=1;
+	return rc;
 }
 
 
@@ -132,6 +134,7 @@ private:
 
 	int set(const char* p)
 	{
+		int rc=0;
 		if(p)
 		{
 			len=strlen(p); 
@@ -149,7 +152,7 @@ private:
 				len = 0u;
 				type = aitStrConst;
 				printf("aitString: no pool => continuing with nill str\n");
-				return -1;
+				rc=-1;
 			}
 		}
 		else
@@ -158,7 +161,7 @@ private:
 			len=0u; 
 			type=aitStrConst;
 		}
-		return 0;
+		return rc;
 	}
 
 	void cset(const char* p)

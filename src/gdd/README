@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  1996/06/25 19:11:27  jbk
+# new in EPICS base
+#
 # Revision 1.4  1996/06/25 18:58:57  jbk
 # more fixes for the aitString management functions and mapping menus
 #
@@ -117,6 +120,16 @@ still need to fix the transfer of aitString data into a pre-made gdd.
 If only array of 5 aitString is placed into a pre-made array of 16,
 then the last 11 should be initialized to NULLs or something, same for
 fixed string - especially the fixed string
+
+************** 6/26/96 ************
+
+aitString:copy() still has troubles.  Need to correct the
+aitConvertStringFloat64() and others.  How are they supposed to work?
+Should they be calling aitString::installString() instead of copy()? Yes,
+that is the answer.  In the convert functions, the temp variable
+used to hold a value (character value) is always a stack variable and
+needs to be copied.  Maybe the temp char variable should be copied over
+the existing string if it will fit. No.
 
 Jim
 

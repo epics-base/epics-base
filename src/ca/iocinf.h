@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.67  1998/02/05 22:30:34  jhill
+ * fixed dll export problems
+ *
  * Revision 1.66  1997/08/04 23:37:11  jhill
  * added beacon anomaly flag init/allow ip 255.255.255.255
  *
@@ -165,7 +168,8 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include "bucketLib.h"
 #include "ellLib.h"
 #include "envDefs.h" 
-#include "epicsPrint.h" 
+#include "epicsPrint.h"
+#include "tsDefs.h"
 
 #if defined(epicsExportSharedSymbols)
 #error suspect that libCom was not imported

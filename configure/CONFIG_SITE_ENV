@@ -21,10 +21,10 @@
 # Time service:
 # EPICS_TIMEZONE needed for vxWorks
 # EPICS_TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>
-# eg TIMEZONE=US/Central::360:040102:100102
+# eg EPICS_TIMEZONE=CUS::360:033102:102802
 # EPICS_TS_NTP_INET ntp or Unix time server ip addr.
 
-EPICS_TIMEZONE=US/Central::360:040102:102802
+EPICS_TIMEZONE=CUS::360:033102:102802
 EPICS_TS_NTP_INET=
 
 

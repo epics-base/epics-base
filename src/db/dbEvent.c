@@ -138,8 +138,6 @@ LOCAL void *dbevEventBlockFreeList;
 
 static char *EVENT_PEND_NAME = "eventTask";
 
-int DBEDEBUG = 0;
-
 static struct evSubscrip canceledEvent;
 
 /*
@@ -776,11 +774,6 @@ LOCAL int event_read ( struct event_que *ev_que )
     void ( *user_sub ) ( void *user_arg, struct dbAddr *paddr, 
             int eventsRemaining, db_field_log *pfl );
     
-    if ( DBEDEBUG > 0 && EVENTQUESIZE - RNGSPACE( ev_que ) ) {
-        printf ( "processing event queue %p with %u occupied entries\n", 
-            ev_que, EVENTQUESIZE - RNGSPACE( ev_que ) );
-    }
-
     /*
      * evUser ring buffer must be locked for the multiple
      * threads writing/reading it
@@ -794,9 +787,6 @@ LOCAL int event_read ( struct event_que *ev_que )
      */
     if ( ev_que->evUser->flowCtrlMode && ev_que->nDuplicates == 0u ) {
         UNLOCKEVQUE(ev_que);
-        if ( DBEDEBUG > 0 ) {
-            printf ( "ignoring queue due to flow control mode being active\n" );
-        }
         return DB_EVENT_OK;
     }
     
@@ -824,10 +814,6 @@ LOCAL int event_read ( struct event_que *ev_que )
 
         event_remove ( ev_que, ev_que->getix, EVENTQEMPTY );
         ev_que->getix = RNGINC ( ev_que->getix );
-
-        if ( DBEDEBUG > 1 ) {
-            printf ( "processing event %p\n", (void *) event );
-        }
 
         /*
          * create a local copy of the call back parameters while

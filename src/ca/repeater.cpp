@@ -542,13 +542,18 @@ void epicsShareAPI ca_repeater ()
                     continue;
                 }
             }
+            else if ( ntohs ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
+                if ( pMsg->m_available == 0u ) {
+                    pMsg->m_available = from.ia.sin_addr.s_addr;
+                }
+            }
         }
         else if ( size == 0 ) {
             register_new_client ( from );
             continue;
         }
 
-        fanOut ( from, pMsg, size );
+        fanOut ( from, pMsg, size ); 
     }
 }
 

@@ -3,6 +3,12 @@
 #
 #  sites should modify these definitions
 
+# Location of epics base
+if [ -z "${EPICS_BASE}" ] ; then
+	EPICS_BASE=/usr/local/epics/extensions
+	export EPICS_BASE
+fi
+
 # Location of epics extensions
 if [ -z "${EPICS_EXTENSIONS}" ] ; then
 	EPICS_EXTENSIONS=/usr/local/epics/extensions
@@ -36,23 +42,65 @@ fi
 #EPICS_AR_PORT=7002
 #export EPICS_AR_PORT
 
+# Needed for java extensions
+if [ -z "${CLASSPATH}" ] ; then
+	CLASSPATH="${EPICS_EXTENSIONS}/javalib"
+else
+	CLASSPATH="${CLASSPATH}:${EPICS_EXTENSIONS}/javalib"
+fi
+
+# Allow private versions of extensions without a bin subdir
+if [ -n "${EPICS_EXTENSIONS_PVT}" ] ; then
+	PATH="${PATH}:${EPICS_EXTENSIONS_PVT}"
+fi
+
+#---------------------------------------------------------------
 # Start of set R3.14 environment variables
 
-EPICS_HOST_ARCH=`/usr/local/epics/startup/EpicsHostArch`
+EPICS_HOST_ARCH=`/usr/local/epics/startup/EpicsHostArch.pl`
 export EPICS_HOST_ARCH
 
-# Allow private versions of extensions
-if [ -n "${EPICS_EXTENSIONS_PVT}" ] ; then
-	PATH="${PATH}:${EPICS_EXTENSIONS_PVT}/bin/${EPICS_HOST_ARCH}"
+# Allow private versions of base
+if [ -n "${EPICS_BASE_PVT}" ] ; then
+	if [ -d $EPICS_BASE_PVT/bin/$EPICS_HOST_ARCH ]; then
+		PATH="${PATH}:${EPICS_BASE_PVT}/bin/${EPICS_HOST_ARCH}"
+	fi
 	# Needed if shared extension libraries are built
-	if [ -z "${LD_LIBRARY_PATH}" ] ; then
-		LD_LIBRARY_PATH="${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
-	else
-		LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
+	if [ -d $EPICS_BASE_PVT/lib/$EPICS_HOST_ARCH ]; then
+		if [ -z "${LD_LIBRARY_PATH}" ] ; then
+			LD_LIBRARY_PATH="${EPICS_BASE_PVT}/lib/${EPICS_HOST_ARCH}"
+		else
+			LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_BASE_PVT}/lib/${EPICS_HOST_ARCH}"
+		fi
 	fi
 fi
 
-PATH="${PATH}:${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
+PATH="${PATH}:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}"
+
+# Allow private versions of extensions
+if [ -n "${EPICS_EXTENSIONS_PVT}" ] ; then
+	if [ -d $EPICS_EXTENSIONS_PVT/bin/$EPICS_HOST_ARCH ]; then
+		PATH="${PATH}:${EPICS_EXTENSIONS_PVT}/bin/${EPICS_HOST_ARCH}"
+	fi
+	# Needed if shared extension libraries are built
+	if [ -d $EPICS_EXTENSIONS_PVT/lib/$EPICS_HOST_ARCH ]; then
+		if [ -z "${LD_LIBRARY_PATH}" ] ; then
+			LD_LIBRARY_PATH="${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
+		else
+			LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS_PVT}/lib/${EPICS_HOST_ARCH}"
+		fi
+	fi
+fi
+
+PATH="${PATH}:${EPICS_EXTENSIONS}/bin/${EPICS_HOST_ARCH}"
+
+# Needed if shared base libraries are built
+if [ -z "${LD_LIBRARY_PATH}" ] ; then
+	LD_LIBRARY_PATH="${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
+else
+	LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_BASE}/lib/${EPICS_HOST_ARCH}"
+fi
+
 # Needed if shared extension libraries are built
 if [ -z "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH="${EPICS_EXTENSIONS}/lib/${EPICS_HOST_ARCH}"
@@ -62,6 +110,7 @@ fi
 
 # End of set R3.14 environment variables
 
+#---------------------------------------------------------------
 
 # Start of set pre R3.14 environment variables
 
@@ -70,14 +119,41 @@ fi
 EPICS_TS_MIN_WEST=360
 export EPICS_TS_MIN_WEST
 
-HOST_ARCH=`/usr/local/epics/startup/HostArch`
+HOST_ARCH=`/usr/local/epics/startup/HostArch.pl`
 export HOST_ARCH
+
+# Allow private versions of base
+if [ -n "${EPICS_BASE_PVT}" ] ; then
+	if [ -d $EPICS_BASE_PVT/bin/$HOST_ARCH ]; then
+		PATH="${PATH}:${EPICS_BASE_PVT}/bin/${HOST_ARCH}"
+	fi
+	# Needed if shared extension libraries are built
+	if [ -d $EPICS_BASE_PVT/lib/$HOST_ARCH ]; then
+		if [ -z "${LD_LIBRARY_PATH}" ] ; then
+			LD_LIBRARY_PATH="${EPICS_BASE_PVT}/lib/${HOST_ARCH}"
+		else
+			LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_BASE_PVT}/lib/${HOST_ARCH}"
+		fi
+	fi
+fi
+
+PATH="${PATH}:${EPICS_BASE}/lib/${HOST_ARCH}"
+# Needed if shared base libraries are built
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_BASE}/lib/${HOST_ARCH}"
 
 # Allow private versions of extensions
 if [ -n "${EPICS_EXTENSIONS_PVT}" ] ; then
-	PATH="${PATH}:${EPICS_EXTENSIONS_PVT}/bin/${HOST_ARCH}"
+	if [ -d $EPICS_EXTENSIONS_PVT/bin/$HOST_ARCH ]; then
+		PATH="${PATH}:${EPICS_EXTENSIONS_PVT}/bin/${HOST_ARCH}"
+	fi
 	# Needed if shared extension libraries are built
-	LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS_PVT}/lib/${HOST_ARCH}"
+	if [ -d $EPICS_EXTENSIONS_PVT/lib/$HOST_ARCH ]; then
+		if [ -z "${LD_LIBRARY_PATH}" ] ; then
+			LD_LIBRARY_PATH="${EPICS_EXTENSIONS_PVT}/lib/${HOST_ARCH}"
+		else
+			LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS_PVT}/lib/${HOST_ARCH}"
+		fi
+	fi
 fi
 
 PATH="${PATH}:${EPICS_EXTENSIONS}/lib/${HOST_ARCH}"
@@ -86,11 +162,9 @@ LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EPICS_EXTENSIONS}/lib/${HOST_ARCH}"
 
 # End of set pre R3.14 environment variables
 
+#---------------------------------------------------------------
+
 export PATH
 export LD_LIBRARY_PATH
-
-if [ -z "${JBAADTHOME}" ] ; then
-	JBAADTHOME=janetanderson
-	export JBAADTHOME
-fi
+export CLASSPATH
 

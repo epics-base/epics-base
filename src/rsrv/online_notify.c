@@ -132,7 +132,7 @@ int rsrv_online_notify_task()
 
 	caAddConfiguredAddr(
 		&destAddr,
-		&EPICS_CA_SEARCH_ADDR_LIST,
+		&EPICS_CA_ADDR_LIST,
 		sock,
 		CA_CLIENT_PORT);
 

@@ -59,15 +59,15 @@ friend class tsSLIter<T>;
 friend class tsSLIterRm<T>;
 public:
 
-	tsSLNode ();
+    tsSLNode ();
 
-	void operator = (const tsSLNode<T> &) const;
+    void operator = (const tsSLNode<T> &) const;
 
 private:
 
-	void removeNextItem ();	// removes the item after this node
+    void removeNextItem (); // removes the item after this node
 
-	T	*pNext;
+    T   *pNext;
 };
 
 
@@ -80,15 +80,15 @@ class tsSLList : public tsSLNode<T> {
 public:
     tsSLList (); // creates an empty list
 
-	void insert (T &item, tsSLNode<T> &itemBefore); // insert after item before
+    void insert (T &item, tsSLNode<T> &itemBefore); // insert after item before
 
-	void add (T &item); // add to the beginning of the list
+    void add (T &item); // add to the beginning of the list
 
-	T * get (); // remove from the beginning of the list
+    T * get (); // remove from the beginning of the list
 
-	T * pop (); // same as get
+    T * pop (); // same as get
 
-	void push (T &item); // same as add
+    void push (T &item); // same as add
 private:
     tsSLList (const tsSLList &); // intentionally _not_ implemented
 };
@@ -99,15 +99,15 @@ private:
 template <class T>
 class tsSLIter {
 public:
-	tsSLIter (const tsSLList<T> &listIn);
+    tsSLIter (const tsSLList<T> &listIn);
 
-	T * next (); // move iterator forward
+    T * next (); // move iterator forward
 
-	T * operator () (); // same as next ()
+    T * operator () (); // same as next ()
 
 private:
-	T *pCurrent;
-	const tsSLList<T> *pList; // ptr allows cpy op
+    T *pCurrent;
+    const tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //
@@ -118,23 +118,23 @@ template <class T>
 class tsSLIterRm {
 public:
 
-	//
-	// exceptions
-	//
-	class noCurrentItemInIterator {};
+    //
+    // exceptions
+    //
+    class noCurrentItemInIterator {};
 
-	tsSLIterRm (tsSLList<T> &listIn);
+    tsSLIterRm (tsSLList<T> &listIn);
 
-	T * next (); // move iterator forward
+    T * next (); // move iterator forward
 
-	T * operator () (); // same as next ()
+    T * operator () (); // same as next ()
 
-	void remove (); // remove current node
+    void remove (); // remove current node
 
 private:
-	T *pPrevious;
-	T *pCurrent;
-	tsSLList<T> *pList; // ptr allows cpy op
+    T *pPrevious;
+    T *pCurrent;
+    tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //////////////////////////////////////////
@@ -166,11 +166,11 @@ inline void tsSLNode<T>::operator = (const tsSLNode<T> &) const {}
 template <class T>
 inline void tsSLNode<T>::removeNextItem ()
 {
-	T *pItem = this->pNext;
-	if (pItem) {
-		tsSLNode<T> *pNode = pItem;
-		this->pNext = pNode->pNext;
-	}
+    T *pItem = this->pNext;
+    if (pItem) {
+        tsSLNode<T> *pNode = pItem;
+        this->pNext = pNode->pNext;
+    }
 }
 
 //////////////////////////////////////////
@@ -196,9 +196,9 @@ inline tsSLList<T>::tsSLList ()
 template <class T>
 inline void tsSLList<T>::insert (T &item, tsSLNode<T> &itemBefore)
 {
-	tsSLNode<T> &node = item;
-	node.pNext = itemBefore.pNext;
-	itemBefore.pNext = &item;
+    tsSLNode<T> &node = item;
+    node.pNext = itemBefore.pNext;
+    itemBefore.pNext = &item;
 }
 
 //
@@ -207,7 +207,7 @@ inline void tsSLList<T>::insert (T &item, tsSLNode<T> &itemBefore)
 template <class T>
 inline void tsSLList<T>::add (T &item)
 {
-	this->insert (item, *this);
+    this->insert (item, *this);
 }
 
 //
@@ -216,10 +216,10 @@ inline void tsSLList<T>::add (T &item)
 template <class T>
 inline T * tsSLList<T>::get()
 {
-	tsSLNode<T> *pThisNode = this;
-	T *pItem = pThisNode->pNext;
-	pThisNode->removeNextItem();
-	return pItem;
+    tsSLNode<T> *pThisNode = this;
+    T *pItem = pThisNode->pNext;
+    pThisNode->removeNextItem();
+    return pItem;
 }
 
 //
@@ -228,7 +228,7 @@ inline T * tsSLList<T>::get()
 template <class T>
 inline T * tsSLList<T>::pop()
 {
-	return this->get();
+    return this->get();
 }
 
 //
@@ -237,7 +237,7 @@ inline T * tsSLList<T>::pop()
 template <class T>
 inline void tsSLList<T>::push(T &item)
 {
-	this->add(item);
+    this->add(item);
 }
 
 //////////////////////////////////////////
@@ -265,19 +265,19 @@ inline tsSLIter<T>::tsSLIter (const tsSLList<T> &listIn) :
 template <class T>
 inline T * tsSLIter<T>::next () 
 {
-	if (this->pCurrent!=0) {
-		tsSLNode<T> *pCurNode = this->pCurrent;
-		this->pCurrent = pCurNode->pNext;
-	}
-	else {
-		const tsSLNode<T> &first = *this->pList;
-		//
-		// assume that we are starting (or restarting) at the 
-		// beginning of the list
-		//
-		this->pCurrent = first.pNext;
-	}
-	return this->pCurrent;
+    if (this->pCurrent!=0) {
+        tsSLNode<T> *pCurNode = this->pCurrent;
+        this->pCurrent = pCurNode->pNext;
+    }
+    else {
+        const tsSLNode<T> &first = *this->pList;
+        //
+        // assume that we are starting (or restarting) at the 
+        // beginning of the list
+        //
+        this->pCurrent = first.pNext;
+    }
+    return this->pCurrent;
 }
 
 //
@@ -286,7 +286,7 @@ inline T * tsSLIter<T>::next ()
 template <class T>
 inline T * tsSLIter<T>::operator () () 
 {
-	return this->next();
+    return this->next();
 }
 
 //////////////////////////////////////////
@@ -329,21 +329,21 @@ inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
 template <class T>
 inline T * tsSLIterRm<T>::next () 
 {
-	if (this->pCurrent!=0) {
-		tsSLNode<T> *pCurNode = this->pCurrent;
-		this->pPrevious = this->pCurrent;
-		this->pCurrent = pCurNode->pNext;
-	}
-	else {
-		const tsSLNode<T> &first = *this->pList;
-		//
-		// assume that we are starting (or restarting) at the 
-		// beginning of the list
-		//
-		this->pCurrent = first.pNext;
-		this->pPrevious = 0;
-	}
-	return this->pCurrent;
+    if (this->pCurrent!=0) {
+        tsSLNode<T> *pCurNode = this->pCurrent;
+        this->pPrevious = this->pCurrent;
+        this->pCurrent = pCurNode->pNext;
+    }
+    else {
+        const tsSLNode<T> &first = *this->pList;
+        //
+        // assume that we are starting (or restarting) at the 
+        // beginning of the list
+        //
+        this->pCurrent = first.pNext;
+        this->pPrevious = 0;
+    }
+    return this->pCurrent;
 }
 
 //
@@ -352,7 +352,7 @@ inline T * tsSLIterRm<T>::next ()
 template <class T>
 inline T * tsSLIterRm<T>::operator () () 
 {
-	return this->next();
+    return this->next();
 }
 
 //
@@ -372,30 +372,30 @@ inline T * tsSLIterRm<T>::operator () ()
 template <class T>
 void tsSLIterRm<T>::remove ()
 {
-	if (this->pCurrent==0) {
+    if (this->pCurrent==0) {
         throwWithLocation ( noCurrentItemInIterator () );
-	}
+    }
 
-	tsSLNode<T> *pPrevNode;
-	tsSLNode<T> *pCurNode = this->pCurrent;
+    tsSLNode<T> *pPrevNode;
+    tsSLNode<T> *pCurNode = this->pCurrent;
 
-	if (this->pPrevious==0) {
-		pPrevNode = this->pList;
-		//
-		// fail if it is an attempt to 
-		// delete twice without moving the iterator
-		//
-		if (pPrevNode->pNext != this->pCurrent) {   
+    if (this->pPrevious==0) {
+        pPrevNode = this->pList;
+        //
+        // fail if it is an attempt to 
+        // delete twice without moving the iterator
+        //
+        if (pPrevNode->pNext != this->pCurrent) {   
             throwWithLocation ( noCurrentItemInIterator ());
-		}
-	}
-	else {
-		pPrevNode = this->pPrevious;
-	}
+        }
+    }
+    else {
+        pPrevNode = this->pPrevious;
+    }
 
-	pPrevNode->pNext = pCurNode->pNext;
-	this->pCurrent = this->pPrevious;
-	this->pPrevious = 0; 
+    pPrevNode->pNext = pCurNode->pNext;
+    this->pCurrent = this->pPrevious;
+    this->pPrevious = 0; 
 }
 
 #endif // tsSLListh

@@ -47,12 +47,14 @@
  */
 
 #include	<vxWorks.h>
+#include	<vxLib.h>
 #include	<stdlib.h>
-#include	<types.h>
+#include	<stdio.h>
 #include 	<lstLib.h>
 #include 	<taskLib.h>
 
 #include        <dbDefs.h>
+#include        <errMdef.h>
 #include        <taskwd.h>
 #include        <task_params.h>
 #include        <fast_lock.h>
@@ -75,16 +77,17 @@ struct freeList{
 static struct freeList *freeHead=NULL;
 
 /*forward definitions*/
-void taskwdTask();
-struct task_list *allocList();
-void freeList(struct task_list *);
+static void taskwdTask(void);
+static struct task_list *allocList(void);
+static void freeList(struct task_list *pt);
 
 void taskwdInit()
 {
     FASTLOCKINIT(&lock);
     lstInit(&list);
     taskwdid = taskSpawn(TASKWD_NAME,TASKWD_PRI,
-			TASKWD_OPT,TASKWD_STACK,(FUNCPTR )taskwdTask);
+			TASKWD_OPT,TASKWD_STACK,(FUNCPTR )taskwdTask,
+			0,0,0,0,0,0,0,0,0,0);
 }
 
 void taskwdInsert(int tid,VOIDFUNCPTR callback,void *arg)
@@ -103,7 +106,6 @@ void taskwdInsert(int tid,VOIDFUNCPTR callback,void *arg)
 
 void taskwdRemove(int tid)
 {
-    int i;
     struct task_list *pt;
 
     FASTLOCK(&lock);
@@ -121,7 +123,7 @@ void taskwdRemove(int tid)
     errMessage(-1,"taskwdRemove failed");
 }
 
-static void taskwdTask()
+static void taskwdTask(void)
 {
     struct task_list *pt,*next;
 
@@ -152,7 +154,7 @@ static void taskwdTask()
 }
 
 
-struct task_list *allocList()
+static struct task_list *allocList(void)
 {
     struct task_list *pt;
 
@@ -167,7 +169,7 @@ struct task_list *allocList()
     return(pt);
 }
 
-void freeList(struct task_list *pt)
+static void freeList(struct task_list *pt)
 {
     
     ((struct freeList *)pt)->next  = freeHead;

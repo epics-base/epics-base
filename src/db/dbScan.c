@@ -41,12 +41,11 @@
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
-#include	<stdioLib.h>
-#include	<types.h>
+#include	<stdio.h>
+#include 	<string.h>
 #include	<semLib.h>
 #include 	<rngLib.h>
 #include 	<lstLib.h>
-#include 	<string.h>
 #include 	<vxLib.h>
 #include 	<tickLib.h>
 
@@ -61,7 +60,7 @@
 #include	<devSup.h>
 #include	<task_params.h>
 #include	<fast_lock.h>
-#include	<dbManipulate.h>
+#include	<dbStaticLib.h>
 
 extern struct dbBase *pdbBase;
 extern volatile int interruptAccept;
@@ -104,21 +103,20 @@ struct io_scan_list {
 static struct io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 
 /* Private routines */
-void periodicTask();	/*Periodic scan task			*/
-void initPeriodic();	/*Initialize the periodic variables	*/
-void spawnPeriodic();	/*Spawn the periodTasks			*/
-void wdPeriodic();	/*watchdog callback for periodicTasks	*/
-void eventTask();	/*Periodic scan task			*/
-void initEvent();	/*Initialize the event variables	*/
-void spawnEvent();	/*Spawn the eventTask			*/
-void wdEvent();		/*watchdog callback for eventTask	*/
-void ioeventCallback();	/*ioevent callback 			*/
-void printList();	/*print a scan list			*/
-
-void scanList();	/*Scan a scan list			*/
-void buildScanLists();	/*Build scan lists			*/
-void addToList();	/*add element to a list			*/
-void deleteFromList();	/*delete element from a list		*/
+static void periodicTask(struct scan_list *psl);
+static void initPeriodic(void);
+static void spawnPeriodic(int ind);
+static void wdPeriodic(long ind);
+static void eventTask(void);
+static void initEvent(void);
+static void spawnEvent(void);
+static void wdEvent(void);
+static void ioeventCallback(struct io_scan_list *piosl);
+static void printList(struct scan_list *psl,char *message);
+static void scanList(struct scan_list *psl);
+static void buildScanLists(void);
+static void addToList(struct dbCommon *precord,struct scan_list *psl);
+static void deleteFromList(struct dbCommon *precord,struct scan_list *psl);
 
 long scanInit()
 {
@@ -176,7 +174,7 @@ void scanAdd(struct dbCommon *precord)
 	    evnt = (signed)precord->evnt;
 	    psl = papEvent[evnt];
 	    if(psl==NULL) {
-		psl = calloc(1,sizeof(struct scan_list));
+		psl = dbCalloc(1,sizeof(struct scan_list));
 		papEvent[precord->evnt] = psl;
 		FASTLOCKINIT(&psl->lock);
 		lstInit(&psl->list);
@@ -184,7 +182,7 @@ void scanAdd(struct dbCommon *precord)
 	    addToList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
 	    struct io_scan_list *piosl=NULL;
-	    int			priority,dummy1,dummy2;
+	    int			priority;
 	    DEVSUPFUN get_ioint_info;
 
 	    if(precord->dset==NULL){
@@ -243,7 +241,7 @@ void scanDelete(struct dbCommon *precord)
 		deleteFromList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
 	    struct io_scan_list *piosl=NULL;
-	    int			priority,dummy1,dummy2;
+	    int			priority;
 	    DEVSUPFUN get_ioint_info;
 
 	    if(precord->dset==NULL) {
@@ -335,7 +333,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
 
     /* allocate an array of io_scan_lists. One for each priority	*/
     /* IOSCANPVT will hold the address of this array of structures	*/
-    *ppioscanpvt=calloc(NUM_CALLBACK_PRIORITIES,sizeof(struct io_scan_list));
+    *ppioscanpvt=dbCalloc(NUM_CALLBACK_PRIORITIES,sizeof(struct io_scan_list));
     for(priority=0, piosl=*ppioscanpvt;
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
 	piosl->callback.callback = ioeventCallback;
@@ -404,7 +402,7 @@ static void initPeriodic()
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
 		for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+		precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 			precord = precNode->precord;
 			if(precord->name[0]!=0) goto got_record;
 		}
@@ -428,22 +426,10 @@ got_record:
 		exit(1);
 	}
 	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
-	papPeriodic = calloc(nPeriodic,sizeof(struct scan_list));
-	if(papPeriodic==NULL) {
-		errMessage(0,"initPeriodic calloc failure");
-		exit(1);
-	}
-	periodicTaskId = calloc(nPeriodic,sizeof(int));
-	if(periodicTaskId==NULL) {
-		errMessage(0,"initPeriodic calloc failure");
-		exit(1);
-	}
+	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list));
+	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
 	for(i=0; i<nPeriodic; i++) {
-		psl = calloc(1,sizeof(struct scan_list));
-		if(psl==NULL) {
-			errMessage(0,"initPeriodic calloc failure");
-			exit(1);
-		}
+		psl = dbCalloc(1,sizeof(struct scan_list));
 		papPeriodic[i] = psl;
 		FASTLOCKINIT(&psl->lock);
 		lstInit(&psl->list);
@@ -459,7 +445,8 @@ static void spawnPeriodic(int ind)
     psl = papPeriodic[ind];
     periodicTaskId[ind] = taskSpawn(PERIODSCAN_NAME,PERIODSCAN_PRI-ind,
 				PERIODSCAN_OPT,PERIODSCAN_STACK,
-				(FUNCPTR )periodicTask,psl);
+				(FUNCPTR )periodicTask,(int)psl,
+				0,0,0,0,0,0,0,0,0);
     taskwdInsert(periodicTaskId[ind],wdPeriodic,(void *)(long)ind);
 }
 
@@ -474,7 +461,7 @@ static void wdPeriodic(long ind)
     spawnPeriodic(ind);
 }
 
-static void eventTask()
+static void eventTask(void)
 {
     unsigned char	event;
     struct scan_list *psl;
@@ -485,7 +472,7 @@ static void eventTask()
         while (rngNBytes(eventQ)>=sizeof(unsigned char)){
 	    if(rngBufGet(eventQ,(void *)&event,sizeof(unsigned char))!=sizeof(unsigned char))
 		errMessage(0,"rngBufGet returned error in eventTask");
-	    if(event<0 || event>MAX_EVENTS-1) {
+	    if(event>MAX_EVENTS-1) {
 		errMessage(-1,"eventTask received an illegal event");
 		continue;
 	    }
@@ -496,7 +483,7 @@ static void eventTask()
     }
 }
 
-static void initEvent()
+static void initEvent(void)
 {
 	int i;
 
@@ -510,15 +497,16 @@ static void initEvent()
 		errMessage(0,"semBcreate failed in initEvent");
 }
 
-static void spawnEvent()
+static void spawnEvent(void)
 {
 
     eventTaskId = taskSpawn(EVENTSCAN_NAME,EVENTSCAN_PRI,EVENTSCAN_OPT,
-			EVENTSCAN_STACK,(FUNCPTR)eventTask);
+			EVENTSCAN_STACK,(FUNCPTR)eventTask,
+			0,0,0,0,0,0,0,0,0,0);
     taskwdInsert(eventTaskId,wdEvent,0L);
 }
 
-static void wdEvent()
+static void wdEvent(void)
 {
     int i;
     struct scan_list *psl;
@@ -619,7 +607,7 @@ static void scanList(struct scan_list *psl)
     }
 }
 
-static void buildScanLists()
+static void buildScanLists(void)
 {
 	struct recHeader	*precHeader;
 	struct recLoc		*precLoc;
@@ -636,7 +624,7 @@ static void buildScanLists()
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
 		for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+		precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 			precord = precNode->precord;
 			if(precord->name[0]==0) continue;
 			scanAdd(precord);
@@ -651,11 +639,7 @@ static void addToList(struct dbCommon *precord,struct scan_list *psl)
 	FASTLOCK(&psl->lock);
 	pse = (struct scan_element *)(precord->spvt);
 	if(pse==NULL) {
-		pse = calloc(1,sizeof(struct scan_element));
-		if(pse==NULL) {
-		    recGblRecordError(-1,(void *)precord,"addToList calloc error");
-		    exit(1);
-		}
+		pse = dbCalloc(1,sizeof(struct scan_element));
 		precord->spvt = (void *)pse;
 		(void *)pse->precord = precord;
 	}

@@ -44,10 +44,14 @@
 
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>
 #include        <a_out.h>       /* for N_TEXT */
+#include	<errMdef.h>
 
 
 
@@ -58,7 +62,7 @@ void setMasterTimeToSelf()
     char           *pnext;
     char            name[] = "_EPICS_IOCMCLK_INET";
     char            message[100];
-    UTINY           type;
+    UINT8           type;
     long            rtnval = 0;
     char           *pSymAddr;
     int             len = 0;

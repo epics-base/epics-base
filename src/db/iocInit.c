@@ -52,21 +52,22 @@
  * .22	09-10-92	rcz	added many initHooks - INITHOOK*<place> argument
  * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
  * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
+ * .25	07-15-93	mrk	Changed dbLoad for new dbStaticLib support
  *
  */
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<memLib.h>
+#include	<stdlib.h>
+#include	<stdarg.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<lstLib.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
 #include	<a_out.h>	/* for N_TEXT */
-#include	<stdarg.h>
-#include	<stdioLib.h>
-#include	<string.h>
 #include	<logLib.h>
+#include	<taskLib.h>
 
 #include	<sdrHeader.h>
 #include	<fast_lock.h>
@@ -87,7 +88,7 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<envDefs.h>
-#include	<dbManipulate.h>
+#include	<dbStaticLib.h>
 #include	<initHooks.h>
 /*This module will declare and initilize module_type variables*/
 #define MODULE_TYPES_INIT 1
@@ -104,22 +105,26 @@ struct dbBase *pdbBase=NULL;
 long dbCommonInit();
 
 /* define forward references*/
-extern long dbRead();
-static long initDrvSup();
-static long initRecSup();
-static long initDevSup();
-static long finishDevSup();
-static long initDatabase();
-static long addToSet();
-static long initialProcess();
-static long getResources();
-static void setMasterTimeToSelf();
+static long initDrvSup(void);
+static long initRecSup(void);
+static long initDevSup(void);
+static long finishDevSup(void);
+static long initDatabase(void);
+static long addToSet(
+    struct dbCommon *precord,	/* record being added to lock set*/
+    short  record_type,	/* record being added to lock set*/
+    short lookAhead,	/*should following records be checked*/
+    short  i,		/*record before 1st following: index into papRecLoc*/
+    RECNODE *prootNod,	/*precNode before 1st following	*/
+    short  lset		/* current lock set		*/
+);
+static long initialProcess(void);
+static long getResources(char  *fname);
+void setMasterTimeToSelf(void);
 
-int iocInit(pResourceFilename)
-char * pResourceFilename;
+int iocInit(char * pResourceFilename)
 {
     long status;
-    long hookrtn=0;
     char name[40];
     long rtnval;
     void (*pinitHooks)() = NULL;
@@ -197,7 +202,7 @@ char * pResourceFilename;
     return(0);
 }
 
-static long initDrvSup() /* Locate all driver support entry tables */
+static long initDrvSup(void) /* Locate all driver support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -233,7 +238,7 @@ static long initDrvSup() /* Locate all driver support entry tables */
     return(status);
 }
 
-static long initRecSup()
+static long initRecSup(void)
 {
     char	name[40];
     int		i;
@@ -252,10 +257,7 @@ static long initRecSup()
 	return(status);
     }
     nbytes = sizeof(struct recSup) + precType->number*sizeof(void *);
-    if(!(precSup = (struct recSup *)calloc(1,nbytes))) {
-	errMessage(0,"Could not allocate structures for record support");
-	return(-1);
-    }
+    precSup = dbCalloc(1,nbytes);
     pdbBase->precSup = precSup;
     precSup->number = precType->number;
     precSup->papRset = (void *)((long)precSup + (long)sizeof(struct recSup));
@@ -283,7 +285,7 @@ static long initRecSup()
     return(status);
 }
 
-static long initDevSup() /* Locate all device support entry tables */
+static long initDevSup(void) /* Locate all device support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -325,7 +327,7 @@ static long initDevSup() /* Locate all device support entry tables */
     return(status);
 }
 
-static long finishDevSup() 
+static long finishDevSup(void) 
 {
     int		i,j;
     struct recDevSup	*precDevSup;
@@ -344,8 +346,7 @@ static long finishDevSup()
     return(0);
 }
 
-
-static long initDatabase()
+static long initDatabase(void)
 {
     char	name[PVNAME_SZ+FLDNAME_SZ+2];
     short	i,j;
@@ -394,7 +395,7 @@ static long initDatabase()
 	precTypDes = precDes->papRecTypDes[i];
 	pdevSup = GET_PDEVSUP(pdbBase->precDevSup,i);
 	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 		precord = precNode->precord;
 		/* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -420,7 +421,7 @@ static long initDatabase()
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -443,7 +444,7 @@ static long initDatabase()
 			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
-				(struct dbAddr *)calloc(1,sizeof(struct dbAddr));
+				dbCalloc(1,sizeof(struct dbAddr));
 			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
 			}
 			else {
@@ -479,7 +480,7 @@ static long initDatabase()
 	if(!(prset=GET_PRSET(precSup,i))) continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -504,7 +505,7 @@ static long initDatabase()
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -520,13 +521,14 @@ static long initDatabase()
     return(status);
 }
 
-static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
-    struct dbCommon *precord;	/* record being added to lock set*/
-    short  record_type;		/* record being added to lock set*/
-    short lookAhead;		/*should following records be checked*/
-    short  i;			/*record before 1st following: index into papRecLoc*/
-    RECNODE *prootNode;		/*precNode before 1st following	*/
-    short  lset;	/* current lock set		*/
+static long addToSet(
+    struct dbCommon *precord,	/* record being added to lock set*/
+    short  record_type,	/* record being added to lock set*/
+    short lookAhead,	/*should following records be checked*/
+    short  i,		/*record before 1st following: index into papRecLoc*/
+    RECNODE *prootNode,	/*precNode before 1st following	*/
+    short  lset		/* current lock set		*/
+)
 {
     short  k,in;
     long status;
@@ -574,7 +576,7 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
     /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
     /* remember that all earlier records already have lock set determined*/
     if(!lookAhead) return(0);
-    precNode = (RECNODE *)lstNext(&prootNode->next);
+    precNode = (RECNODE *)lstNext(&prootNode->node);
     if(!(precHeader = pdbBase->precHeader)) return(0);
     for(in=i; in<precHeader->number; in++) {
 	struct dbCommon	*pn;
@@ -609,14 +611,14 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
 		    status = addToSet(pn,in,TRUE,i,prootNode,lset);
 		    if(status) return(status);
 		}
-		precNode = (RECNODE *)lstNext(&precNode->next);
+		precNode = (RECNODE *)lstNext(&precNode->node);
 	}
 	precNode = NULL;
     }
     return(0);
 }
 
-static long initialProcess()
+static long initialProcess(void)
 {
     short	i;
     struct recHeader	*precHeader;
@@ -628,7 +630,7 @@ static long initialProcess()
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -649,8 +651,7 @@ static char    *cvt_str[] = {
     "DBF_DOUBLE"
 };
 #define CVT_COUNT (sizeof(cvt_str) / sizeof(char*))
-static long getResources(fname) /* Resource Definition File interpreter */
-    char           *fname;
+static long getResources(char  *fname)
 {
     FILE            *fp;
     int             len;
@@ -667,7 +668,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     char            s3[MAX];
     char            message[100];
     long            rtnval = 0;
-    UINT8	    type;
+    UINT8           type;
     char           *pSymAddr;
     short           n_short;
     long            n_long;
@@ -830,13 +831,36 @@ CLEAR:	memset(buff, '\0',  MAX);
     return (0);
 }
 
-long dbLoad(pfilename)
-char * pfilename;
+static gotSdrSum=FALSE;
+static struct sdrSum sdrSum;
+int dbLoad(char * pfilename)
 {
-    long status;
-    status=dbRead(&pdbBase, pfilename);
+    long	status;
+    FILE	*fp;
+
+    fp = fopen(pfilename,"r");
+    if(!fp) {
+	errMessage(-1,"dbLoad: Error opening file");
+	return(-1);
+    }
+    status=dbRead(pdbBase, fp);
+    fclose(fp);
     if(status!=0) {
-	logMsg("dbLoad aborting because dbRead failed\n",0,0,0,0,0,0);
+	errMessage(status,"dbLoad aborting because dbRead failed");
+	return(-1);
+    }
+    if(!gotSdrSum) {
+	fp = fopen("default.sdrSum","r");
+	if(!fp) {
+	    errMessage(-1,"dbLoad: Error opening default.sdrSum");
+	    return(-1);
+	}
+	fclose(fp);
+	fgets(sdrSum.allSdrSums,sizeof(sdrSum.allSdrSums),fp);
+	gotSdrSum = TRUE;
+    }
+    if(strcmp(pdbBase->psdrSum->allSdrSums,sdrSum.allSdrSums)!=0) {
+	errMessage(-1,"dbLoad: check sdrSum Error: Database out of date");
 	return(-1);
     }
     return (0);

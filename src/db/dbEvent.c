@@ -1,5 +1,6 @@
 /* DB_EVENT.C */
-/* share/src/db  $Id$ */
+/* share/src/db  @(#)dbEvent.c	1.17     6/7/93 */
+
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
  * 	Author: 	Jeffrey O. Hill 
@@ -51,8 +52,11 @@
  * ???	11	????91	anl turned off paddr sanity checking
  * joh	12	082091	db_event_get_field() comented out
  * joh	13	091191	updated for v5 vxWorks
- * jba	14	112691	Added 'return NULL;' to end of db_event_list
- * jba  15 	022892	ANSI C changes
+ * jba  14      112691  Added 'return NULL;' to end of db_event_list
+ * jba  15      022892  ANSI C changes
+ * joh  16    	111992  removed unused taskpri var
+ * joh  17    	111992  added task priority offset arg to
+ *             	   	db_start_events()
  */
 
 #include	<vxWorks.h>
@@ -60,7 +64,6 @@
 #include	<wdLib.h>
 #include	<lstLib.h>
 #include	<semLib.h>
-#include	<string.h>
 
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
@@ -162,7 +165,6 @@ struct event_que{
 
 struct event_user{
   	int			taskid;		/* event handler task id */
-  	int			taskpri;	/* event handler task pri */
 
   	char			pendlck;	/* Only one task can pend */
   	SEM_ID			ppendsem;	/* Wait while empty */
@@ -196,17 +198,6 @@ FASTUNLOCK(&(RECPTR)->mlok);
 
 
 #define VXTASKIDSELF 0
-
-/*
- * >> 	kernel dependent	<<
- * 
- * if we go to a kernel which has different priority order I can
- * switch all priority inc/dec at once -joh
- * 
- * on VRTX a lower priority number runs first- hence the minus one
- */
-#define HIGHERPRIORITYINC (-1)
-#define HIGHER_OR_SAME_PRIORITY_THAN <=
 
 
 /*
@@ -248,7 +239,8 @@ char				*name;
 			pevent->npend);
      	}
   	UNLOCKREC(precord);
-        return NULL;
+
+	return OK;
 }
 
 
@@ -411,7 +403,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	lstAdd((LIST*)&precord->mlis,(NODE*) pevent);
+  	lstAdd((LIST*)&precord->mlis, (NODE*)pevent);
   	UNLOCKREC(precord);
 
   	return OK;
@@ -442,9 +434,9 @@ register struct event_block	*pevent;
 
   	LOCKREC(precord);
   	/* dont let a misplaced event corrupt the queue */
-  	status = lstFind((LIST*)&precord->mlis,(NODE*)pevent);
+  	status = lstFind((LIST*)&precord->mlis, (NODE*)pevent);
   	if(status!=ERROR)
-    		lstDelete((LIST*)&precord->mlis,(NODE*)pevent);
+    		lstDelete((LIST*)&precord->mlis, (NODE*)pevent);
   	UNLOCKREC(precord);
   	if(status == ERROR)
     		return ERROR;
@@ -474,11 +466,11 @@ register struct event_block	*pevent;
     			flush_event.npend = 0;
 
     			if(db_post_single_event(&flush_event)==OK){
-#		ifdef V5_vxWorks
-      				semTake(pflush_sem, sysClkRateGet()*10);
-#		else
-      				semTake(pflush_sem);
-#		endif
+#				ifdef V5_vxWorks
+      					semTake(pflush_sem, sysClkRateGet()*10);
+#				else
+      					semTake(pflush_sem);
+#				endif
 			}
 
 			semDelete(pflush_sem);
@@ -563,12 +555,12 @@ register struct event_block		*pevent;
 			ev_que->valque[putix].sevr = sevr;
 			ev_que->valque[putix].time = precord->time;
 			/*
-		 	* use memcpy to avoid a bus error on
+		 	* use bcopy to avoid a bus error on
 		 	* union copy of char in the db at an odd 
 		 	* address
 		 	*/
-			memcpy( &ev_que->valque[putix].field,
-				pevent->paddr->pfield,
+			bcopy(	pevent->paddr->pfield,
+				&ev_que->valque[putix].field,
 				dbr_size[pevent->paddr->field_type]);
 	
 		}
@@ -603,7 +595,7 @@ register unsigned int		select;
   	register struct event_que	*ev_que;
  	register unsigned int		putix;
 
-	if (precord->mlis.count == 0) return;		/* no monitors set */
+	if (precord->mlis.count == 0) return OK;		/* no monitors set */
 
   	LOCKREC(precord);
   
@@ -641,12 +633,12 @@ register unsigned int		select;
 					ev_que->valque[putix].time = precord->time;
 
 					/*
-				 	* use memcpy to avoid a bus error on
+				 	* use bcopy to avoid a bus error on
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					memcpy( &ev_que->valque[putix].field,
-						pvalue,
+					bcopy(	pvalue,
+						&ev_que->valque[putix].field,
 						dbr_size[event->paddr->field_type]);
 
 				}
@@ -674,25 +666,27 @@ register unsigned int		select;
  * DB_START_EVENTS()
  *
  */
-db_start_events(evuser,taskname,init_func,init_func_arg)
+db_start_events(evuser,taskname,init_func,init_func_arg,priority_offset)
 struct event_user	*evuser;
 char			*taskname;	/* defaulted if NULL */
 void			(*init_func)();
 int			init_func_arg;
+int			priority_offset;
 {
   	int		myprio;
   	int		status;
+	int		taskpri;
   	int		event_task();
 
   	/* only one ca_pend_event thread may be started for each evuser ! */
   	while(!vxTas(&evuser->pendlck))
     		return ERROR;
 
-  	status = taskPriorityGet(VXTASKIDSELF, &evuser->taskpri);
+  	status = taskPriorityGet(VXTASKIDSELF, &taskpri);
   	if(status == ERROR)
     		return ERROR;
  
-  	evuser->taskpri += HIGHERPRIORITYINC;
+  	taskpri += priority_offset;
 
   	evuser->pendexit = FALSE;
 
@@ -701,13 +695,14 @@ int			init_func_arg;
   	status = 
     	taskSpawn(	
 		taskname,
-		evuser->taskpri,
+		taskpri,
 		EVENT_PEND_OPT,
 		EVENT_PEND_STACK,
 		event_task,
-		evuser,
-		init_func,
-		init_func_arg);
+		(int)evuser,
+		(int)init_func,
+		(int)init_func_arg,
+		0,0,0,0,0,0,0);
   	if(status == ERROR)
     		return ERROR;
 
@@ -781,15 +776,13 @@ register int			init_func_arg;
 
       			nextque = ev_que->nextque;
 			if(FASTLOCKFREE(&ev_que->writelock)<0)
-				logMsg("evtsk: fast lock free fail 2\n");
-      			if(free(ev_que))
-        			logMsg("evtsk: sub queue free fail\n");
+				logMsg("evtsk: fast lock free fail 2\n",0,0,0,0,0,0);
+      			free(ev_que);
  			ev_que = nextque;
    		}
   	}
 
-  	if(free(evuser))
-    		logMsg("evtsk: evuser free fail\n");
+  	free(evuser);
 
   	return OK;
 }

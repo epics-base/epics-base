@@ -43,6 +43,7 @@
  * .12  07-16-92	jba	Added disable alarm severity, ansi c changes
  * .13  08-05-92	jba	Removed all references to dbr_field_type
  * .14  09-18-92	jba	replaced get of disa code with recGblGetLinkValue call
+ * .15  07-15-93	mrk	Changes for new dbStaticLib
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -69,14 +70,14 @@
  */
 
 #include	<vxWorks.h>
-#include	<types.h>
-#include	<memLib.h>
+#include	<stdlib.h>
 #include	<stdarg.h>
-#include	<stdioLib.h>
+#include	<stdio.h>
 #include	<string.h>
 #include	<taskLib.h>
 #include	<vxLib.h>
 #include	<tickLib.h>
+#include	<lstLib.h>
 
 #include	<fast_lock.h>
 #include	<cvtFast.h>
@@ -85,13 +86,12 @@
 #include	<dbDefs.h>
 #include	<dbBase.h>
 #include	<dbAccess.h>
-#include	<dbManipulate.h>
+#include	<dbStaticLib.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>
 #include 	<dbRecType.h>
-#include	<dbRecords.h>
 #include	<db_field_log.h>
 #include	<errMdef.h>
 #include	<recSup.h>
@@ -300,23 +300,23 @@ long dbNameToAddr(char *pname,struct dbAddr *paddr)
 	DBENTRY		dbEntry;
 	long		status=0;
 	struct rset	*prset;
-	struct fldDes	*pfldDes;
+	struct fldDes	*pflddes;
 
-	if(dbFindRecord(pdbBase,pname,&dbEntry)) return(S_db_notFound);
-	if (!dbEntry.precord) return(S_db_notFound);
-	paddr->precord = dbEntry.precord;
+	if(dbFindRecord(&dbEntry,pname)) return(S_db_notFound);
+	if (!dbEntry.precnode->precord) return(S_db_notFound);
+	paddr->precord = dbEntry.precnode->precord;
 	paddr->record_type = dbEntry.record_type;
 	if(!dbEntry.pfield) {
-		if ((dbFindField(pdbBase,"VAL",&dbEntry)) != 0) return(S_db_notFound);
+		if ((dbFindField(&dbEntry,"VAL")) != 0) return(S_db_notFound);
 	}
 	paddr->pfield = dbEntry.pfield;
-	pfldDes = dbEntry.pfldDes;
-	paddr->pfldDes = (void *)pfldDes;
-	paddr->field_type = pfldDes->field_type;
-	paddr->dbr_field_type = mapDBFToDBR[pfldDes->field_type];
-	paddr->field_size = pfldDes->size;
-	paddr->choice_set = pfldDes->choice_set;
-	paddr->special = pfldDes->special;
+	pflddes = dbEntry.pflddes;
+	paddr->pfldDes = (void *)pflddes;
+	paddr->field_type = pflddes->field_type;
+	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
+	paddr->field_size = pflddes->size;
+	paddr->choice_set = pflddes->choice_set;
+	paddr->special = pflddes->special;
 
 	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
 	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
@@ -396,7 +396,7 @@ long dbPutField(
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
 	if(RTN_SUCCESS(status)){
-		if(paddr->pfield==(void *)precord->proc) status=dbProcess(precord);
+		if(paddr->pfield==(void *)&precord->proc) status=dbProcess(precord);
 		else if (pfldDes->process_passive) status=dbScanPassive(precord);
 	}
 	dbScanUnlock(paddr->precord);
@@ -2677,10 +2677,14 @@ long (*get_convert_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 
 
 /* forward references for private routines used by dbGetField */
-void get_enum_strs();
-void get_graphics();
-void get_control();
-void get_alarm();
+static void get_enum_strs(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options);
+static void get_graphics(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options);
+static void get_control(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options);
+static void get_alarm(struct dbAddr *paddr,void	**ppbuffer,
+	struct rset *prset,long	*options);
 
 long dbGetField(
 struct dbAddr	*paddr,
@@ -2803,11 +2807,8 @@ GET_DATA:
         return(status);
 }
 
-static void get_enum_strs(paddr,ppbuffer,prset,options)
-struct dbAddr	*paddr;
-char		**ppbuffer;
-struct rset	*prset;
-long		*options;
+static void get_enum_strs(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options)
 {
 	short			field_type=paddr->field_type;
 	struct choiceSet	*pchoiceSet;
@@ -2820,9 +2821,7 @@ long		*options;
 	int			i;
 
 	memset(pdbr_enumStrs,'\0',dbr_enumStrs_size);
-	switch(field_type) {
-		case DBF_ENUM:
-		    if( prset && prset->get_enum_strs ) {
+	switch(field_type) { case DBF_ENUM: if( prset && prset->get_enum_strs ) {
 			(*prset->get_enum_strs)(paddr,pdbr_enumStrs);
 		    } else {
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
@@ -2886,11 +2885,8 @@ choice_common:
 	return;
 }
 
-static void get_graphics(paddr,ppbuffer,prset,options)
-struct dbAddr	*paddr;
-char		**ppbuffer;
-struct rset	*prset;
-long		*options;
+static void get_graphics(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options)
 {
 	struct			dbr_grDouble grd;
 	int			got_data=FALSE;
@@ -2928,11 +2924,8 @@ long		*options;
 	return;
 }
 
-static void get_control(paddr,ppbuffer,prset,options)
-struct dbAddr	*paddr;
-char		**ppbuffer;
-struct rset	*prset;
-long		*options;
+static void get_control(struct dbAddr *paddr,void **ppbuffer,
+	struct rset *prset,long	*options)
 {
 	struct dbr_ctrlDouble	ctrld;
 	int			got_data=FALSE;
@@ -2970,11 +2963,8 @@ long		*options;
 	return;
 }
 
-static void get_alarm(paddr,ppbuffer,prset,options)
-struct dbAddr	*paddr;
-char		**ppbuffer;
-struct rset	*prset;
-long		*options;
+static void get_alarm(struct dbAddr *paddr,void	**ppbuffer,
+	struct rset *prset,long	*options)
 {
 	struct			dbr_alDouble ald;
 	int			got_data=FALSE;

@@ -44,17 +44,13 @@
 #include <stdlib.h>
 
 /* needed for sprintf */
-#include <stdioLib.h>
+#include <stdio.h>
 
 /* needed for vxTas */
 #include <vxLib.h>
 
 /* needed for PVNAME_SZ and FLDNAME_SZ */
 #include <dbDefs.h>
-
-/* needed for typedef of caddr_t which is used somehwhere in link.h */
-/* typedef char *  caddr_t */
-#include <types.h>
 
 /* needed for struct link */
 #include <link.h>
@@ -762,10 +758,12 @@ int count;
     if (count == 2)
     {
 	taskSpawn(DB_CA_INPUT_NAME, DB_CA_INPUT_PRI, DB_CA_INPUT_OPT,
-	    DB_CA_INPUT_STACK, (FUNCPTR) dbCaProcessInlinks,0,0,0,0,0,0,0,0,0,0);
+	    DB_CA_INPUT_STACK, (FUNCPTR) dbCaProcessInlinks,
+	    0,0,0,0,0,0,0,0,0,0);
 
 	taskSpawn(DB_CA_OUTPUT_NAME, DB_CA_OUTPUT_PRI, DB_CA_OUTPUT_OPT,
-	    DB_CA_OUTPUT_STACK, (FUNCPTR) dbCaProcessOutlinks,0,0,0,0,0,0,0,0,0,0);
+	    DB_CA_OUTPUT_STACK, (FUNCPTR) dbCaProcessOutlinks,
+	    0,0,0,0,0,0,0,0,0,0);
     } /* endif */
 
 } /* end dbCaLinkInit() */
@@ -884,7 +882,8 @@ BOOL done;
 
 	taskSpawn(DB_CA_PROC_ASYNCH_EV_TASK_NAME, DB_CA_PROC_ASYNCH_EV_TASK_PRI,
 	    DB_CA_PROC_ASYNCH_EV_TASK_OPT, DB_CA_PROC_ASYNCH_EV_TASK_STACK, 
-	    (FUNCPTR) process_asynch_events_task, taskIdSelf(),0,0,0,0,0,0,0,0,0);
+	    (FUNCPTR) process_asynch_events_task, taskIdSelf(),
+	    0,0,0,0,0,0,0,0,0);
 
 	/* queueing ca_build_and_connect()'s */
 

@@ -87,18 +87,18 @@ extern struct dbBase *pdbBase;
 #endif
 
 /* forward references */
-void            DbRecType();
-void            DrvSup();
-void            DevSup();
-void            DbRecDes();
-void            CvtTable();
-void            ChoiceRec();
-void            ChoiceDev();
-void            ChoiceCvt();
-void            ChoiceGbl();
-void            DbErrDes();
-void            DbRecords();
-void            RecSup();
+static void            DbRecType();
+static void            DrvSup();
+static void            DevSup();
+static void            DbRecDes();
+static void            CvtTable();
+static void            ChoiceRec();
+static void            ChoiceDev();
+static void            ChoiceCvt();
+static void            ChoiceGbl();
+static void            DbErrDes();
+static void            DbRecords();
+static void            RecSup();
 int             getSelection();
 
 static char     buffer[512];

@@ -17,6 +17,12 @@
 <center>
 <h2>Changes since 3.14.2</h2>
 </center>
+<h4>errlog and logMsg</h4>
+<p>If logMsg was called by netTask it could cause the
+ioc to hang.
+To fix this problem the method of trapping logMsg calls has been changed.
+The fix also means that any code that calls errlogAddListener, e.g.
+CMLOG, will now receive the logMsg messages.</p>
 <h4>calcRecord and calcoutRecord</h4>
 <p>Previously if a dbGetLink failed on one of the input links, dbGetLink
 was not called for the remaining links. Now it is.</p>

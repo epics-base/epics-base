@@ -304,8 +304,8 @@ static long get_alarm_double(paddr,pad)
 static void alarm(pcalc)
     struct calcRecord	*pcalc;
 {
-	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	double		val, hyst, lalm;
+	float		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pcalc->udf == TRUE ){

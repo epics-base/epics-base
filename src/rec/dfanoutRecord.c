@@ -176,7 +176,7 @@ static void alarm(pdfanout)
     struct dfanoutRecord	*pdfanout;
 {
 	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pdfanout->udf == TRUE ){

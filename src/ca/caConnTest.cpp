@@ -63,8 +63,12 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
         subsequentConnect = false;
         begin = osiTime::getCurrent ();
 
+        printf ( "initializing CA client library\n" );
+
 		status = ca_task_initialize();
 		SEVCHK ( status, "CA init failed" );
+
+        printf ( "creating channels\n" );
 
 		for ( i = 0u; i < channelCount; i++ ) {
 			status = ca_search_and_connect ( pNameIn, &pChans[i], connHandler, 0 );
@@ -80,8 +84,10 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
 			    status = ca_clear_channel ( pChans[i] );
 			    SEVCHK ( status, "ca_clear_channel() problems" );
 		    }
+            printf ( "all channels were destroyed\n" );
         }
-        printf ( "all channels were destroyed\n" );
+
+        printf ( "shutting down CA client library\n" );
 
 		status = ca_task_exit ();
 		SEVCHK ( status, "task exit problems" );

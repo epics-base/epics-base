@@ -242,7 +242,7 @@ void ca_repeater()
 /*
  * register_new_client()
  */
-void register_new_client(
+LOCAL void register_new_client(
 SOCKET			sock, 
 struct sockaddr_in 	*pLocal, 
 struct sockaddr_in 	*pFrom)

@@ -166,6 +166,16 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
 
+
+/*
+ * Certain os, such as HPUX, do not unblock a socket system call 
+ * when another thread asynchronously calls both shutdown() and 
+ * close(). To solve this problem we need to employ OS specific
+ * mechanisms.
+ */
+epicsShareFunc void epicsShareAPI epicsSocketEnableInterruptedSystemCall ();
+epicsShareFunc void epicsShareAPI epicsSocketInterruptSystemCall ( struct epicsThreadOSD * );
+
 #ifdef __cplusplus
 }
 #endif

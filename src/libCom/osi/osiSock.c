@@ -21,6 +21,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
+#include "epicsSignal.h"
 #include "osiSock.h"
 
 #define nDigitsDottedIP 4u
@@ -165,5 +166,16 @@ void epicsShareAPI ipAddrToDottedIP
         strncpy ( pBuf, "<IPA>", bufSize );
 		pBuf[bufSize-1] = '\0';
     }
+}
+
+epicsShareFunc void epicsShareAPI epicsSocketEnableInterruptedSystemCall ()
+{
+    epicsSignalInstallSigUrgIgnore ();
+}
+
+epicsShareFunc void epicsShareAPI epicsSocketInterruptSystemCall 
+                                    ( struct epicsThreadOSD * threadId )
+{
+    epicsSignalRaiseSigUrg ( threadId );
 }
 

@@ -34,6 +34,7 @@
  * .04  04-05-89        lrd     fixed the order of some operations in the
  *                              element table and added a warning label
  * .05  11-26-90        lrd     fix SINH, COSH, TANH
+ * .06	02-20-92	rcz	fixed for vxWorks build
 */
 
 /* 
@@ -77,7 +78,14 @@
  *		FLASE		expression element not found
  */
 
-#include	<stdio.h>
+#ifdef vxWorks
+#   include <stdioLib.h>
+#   include <strLib.h>
+#else
+#   include <stdio.h>
+#   include <string.h>
+#endif
+
 #include	<dbDefs.h>
 #include	<post.h>
 

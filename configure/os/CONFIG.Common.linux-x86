@@ -29,11 +29,10 @@ OP_SYS_LDLIBS += -lrt
 ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
 
-ifeq ($(SHARED_LIBRARIES),YES)
-    # Set runtime path for shared libraries
-    PROD_LDFLAGS += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%/lib/$(T_A)))
-    SHRLIB_LDFLAGS += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%/lib/$(T_A)))
-endif
+# Set runtime path for shared libraries
+PROD_LDFLAGS_YES += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%/lib/$(T_A)))
+SHRLIB_LDFLAGS_YES += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%/lib/$(T_A)))
+PROD_LDFLAGS += $(PROD_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu

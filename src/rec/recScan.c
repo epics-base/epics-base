@@ -40,9 +40,12 @@
  * .06  10-03-94  nda     added code for enumerated string .CMND. Changed 
  *                        .EXSC to a SHORT in record definition. Added VERSION
  *                        for .VERS field (1.06) to keep track of version. 
+ * .07  10-21-94  nda     changed linear scan parameter algorithms so changing
+ *                        start/end modifies step/width unless frozen. This
+ *                        seems more intuitive.
  */
 
-#define VERSION 1.06
+#define VERSION 1.07
 
 
 
@@ -1287,18 +1290,8 @@ static void adjLinParms(paddr)
 
     switch(special_type) {
       case(SPC_SC_S):              /* start position changed */
-        /* if end/center/width are not frozen, change them  */
-        if(!pParms->p_fe && !pParms->p_fc && !pParms->p_fw) {      
-            pParms->p_ep = pParms->p_sp +
-                               ((pscan->npts - 1) * pParms->p_si);
-            db_post_events(pscan,&pParms->p_ep,DBE_VALUE);
-            pParms->p_cp = (pParms->p_ep + pParms->p_sp)/2;
-            db_post_events(pscan,&pParms->p_cp,DBE_VALUE);
-            pParms->p_wd = (pParms->p_ep - pParms->p_sp);
-            db_post_events(pscan,&pParms->p_wd,DBE_VALUE);
-            return;
         /* if step increment/center/width are not frozen, change them  */
-        } else if(!pParms->p_fi && !pParms->p_fc && !pParms->p_fw) { 
+        if(!pParms->p_fi && !pParms->p_fc && !pParms->p_fw) {
             pParms->p_si = (pParms->p_ep - pParms->p_sp)/(pscan->npts - 1);
             db_post_events(pscan,&pParms->p_si,DBE_VALUE);
             pParms->p_cp = (pParms->p_ep + pParms->p_sp)/2;
@@ -1306,8 +1299,16 @@ static void adjLinParms(paddr)
             pParms->p_wd = (pParms->p_ep - pParms->p_sp);
             db_post_events(pscan,&pParms->p_wd,DBE_VALUE);
             return;
+        /* if end/center are not frozen, change them  */
+        } else if(!pParms->p_fe && !pParms->p_fc) {      
+            pParms->p_ep = pParms->p_sp +
+                               ((pscan->npts - 1) * pParms->p_si);
+            db_post_events(pscan,&pParms->p_ep,DBE_VALUE);
+            pParms->p_cp = (pParms->p_ep + pParms->p_sp)/2;
+            db_post_events(pscan,&pParms->p_cp,DBE_VALUE);
+            return;
         /* if step increment/end/width are not frozen, change them  */
-        } else if(!pParms->p_fi && !pParms->p_fc && !pParms->p_fw) { 
+        } else if(!pParms->p_fi && !pParms->p_fe && !pParms->p_fw) { 
             pParms->p_wd = (pParms->p_cp - pParms->p_sp) * 2;
             db_post_events(pscan,&pParms->p_wd,DBE_VALUE);
             pParms->p_si = pParms->p_wd/(pscan->npts - 1);
@@ -1422,19 +1423,19 @@ static void adjLinParms(paddr)
         break;
 
       case(SPC_SC_E):              /* end position changed   */
-        /* if start/center/width are not frozen, change them */
-        if(!pParms->p_fs && !pParms->p_fc && !pParms->p_fw) { 
-            pParms->p_sp = pParms->p_ep - ((pscan->npts - 1) * pParms->p_si);
-            db_post_events(pscan,&pParms->p_sp,DBE_VALUE);
+        /* if step increment/center/width are not frozen, change them */
+        if(!pParms->p_fi && !pParms->p_fc && !pParms->p_fw) {
+            pParms->p_si = (pParms->p_ep - pParms->p_sp)/(pscan->npts - 1);
+            db_post_events(pscan,&pParms->p_si,DBE_VALUE);
             pParms->p_cp = (pParms->p_ep + pParms->p_sp)/2;
             db_post_events(pscan,&pParms->p_cp,DBE_VALUE);
             pParms->p_wd = (pParms->p_ep - pParms->p_sp);
             db_post_events(pscan,&pParms->p_wd,DBE_VALUE);
             return;
-        /* if step increment/center/width are not frozen, change them */
-        } else if(!pParms->p_fi && !pParms->p_fc && !pParms->p_fw) { 
-            pParms->p_si = (pParms->p_ep - pParms->p_sp)/(pscan->npts - 1);
-            db_post_events(pscan,&pParms->p_si,DBE_VALUE);
+        /* if start/center/width are not frozen, change them */
+        } else if(!pParms->p_fs && !pParms->p_fc && !pParms->p_fw) { 
+            pParms->p_sp = pParms->p_ep - ((pscan->npts - 1) * pParms->p_si);
+            db_post_events(pscan,&pParms->p_sp,DBE_VALUE);
             pParms->p_cp = (pParms->p_ep + pParms->p_sp)/2;
             db_post_events(pscan,&pParms->p_cp,DBE_VALUE);
             pParms->p_wd = (pParms->p_ep - pParms->p_sp);

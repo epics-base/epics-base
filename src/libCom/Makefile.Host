@@ -29,11 +29,8 @@ INC += osiTime.h
 INC += osiTimer.h
 INC += macLib.h
 INC += impLib.h
-<<<<<<< Makefile.Host
 INC += sigPipeIgnore.h
-=======
 INC += dbmf.h
->>>>>>> 1.4
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -62,18 +59,19 @@ LIBSRCS += postfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c
-LIBSRCS += fdManager.cc
-LIBSRCS += osiTimer.cc
+LIBSRCS += impLib.c
 LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
-LIBSRCS += ipAddrToA.cc
-LIBSRCS += osdTime.cc
-LIBSRCS += impLib.c
-<<<<<<< Makefile.Host
 LIBSRCS += sigPipeIgnore.c
-=======
 LIBSRCS += dbmf.c
->>>>>>> 1.4
+
+#
+# if CPLUSPLUS isnt empty then include C++ src codes
+#
+LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
+LIBSRCS += $(patsubst %,osiTimer.cc,$(strip $(CPLUSPLUS)))
+LIBSRCS += $(patsubst %,ipAddrToA.cc,$(strip $(CPLUSPLUS)))
+LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c

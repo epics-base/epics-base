@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  1998/12/21 20:59:30  jhill
+ * changes from Salikova
+ *
  * Revision 1.8  1998/06/16 03:10:51  jhill
  * added sgi support
  *
@@ -88,18 +91,6 @@ typedef	struct {
 	char* string;
 	aitUint32 len;
 } aitString;
-#endif
-
-#ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux) && !defined(sgi) && !defined(LynxOS)
-
-struct timespec
-{
-	time_t tv_sec;
-	long tv_nsec;
-};
-typedef struct timespec timespec;
-#endif
 #endif
 
 /* all normal types */

@@ -219,7 +219,7 @@ int			net_proto
 				IPPROTO_TCP,
 				TCP_NODELAY,
 				(char *)&true,
-				sizeof true);
+				sizeof(true));
       		if(status < 0){
 			free(piiu);
         		status = socket_close(sock);
@@ -443,7 +443,6 @@ int			net_proto
 			piiu->host_name_str, 
 			"<<unknown host>>", 
 			sizeof(piiu->host_name_str)-1);
-
       		break;
 
 	default:

@@ -40,13 +40,14 @@ static char	*sccsId = "@(#) $Id$";
 #include <assert.h>
 
 #ifdef _WINDOWS
-#include <winsock.h>
+#	include <winsock.h>
+#else
+#	include <sys/types.h>
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <arpa/inet.h>
+#	include <netdb.h>
 #endif
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 
 
 /*

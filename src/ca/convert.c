@@ -1592,7 +1592,7 @@ void ntohf(float *pNet, float *pHost)
 
 #endif /*CA_FLOAT_MIT*/
 
-#if !defined(CA_FLOAT_MIT) 
+#if defined(CA_FLOAT_IEEE) && 0
 
 /*
  * htond ()
@@ -1600,6 +1600,7 @@ void ntohf(float *pNet, float *pHost)
  */
 void htond (double *IEEEhost, double *IEEEnet)
 {
+#ifdef CA_LITTLE_ENDIAN
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
     	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 	ca_uint32_t	tmp;
@@ -1612,6 +1613,9 @@ void htond (double *IEEEhost, double *IEEEnet)
 	tmp = pHost[0];
 	pNet[0] = htonl (pHost[1]);
 	pNet[1] = htonl (tmp);	
+#else
+	*IEEEnet = *IEEEhost;
+#endif
 }
 
 /*
@@ -1620,6 +1624,7 @@ void htond (double *IEEEhost, double *IEEEnet)
  */
 void ntohd (double *IEEEnet, double *IEEEhost)
 {
+#ifdef CA_LITTLE_ENDIAN
     	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
     	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 	ca_uint32_t	tmp;
@@ -1632,6 +1637,9 @@ void ntohd (double *IEEEnet, double *IEEEhost)
 	tmp = pNet[0];
 	pHost[0] = ntohl (pNet[1]);
 	pHost[1] = htonl (tmp);	
+#else
+	*IEEEhost = *IEEEnet;
+#endif
 }
 
 /*
@@ -1658,7 +1666,7 @@ void htonf (float *IEEEhost, float *IEEEnet)
     	*pNet = htonl (*pHost);
 }
 
-#endif /* not CA_MIT_FLOAT*/
+#endif /* IEEE float and little endian */
 
 
 

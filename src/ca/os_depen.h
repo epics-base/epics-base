@@ -134,11 +134,8 @@ static char *os_depenhSccsId = "$Id$";
 #endif
 
 /*
- * Big endin architecture is assumed. Otherwise set "CA_LITTLE_ENDIAN". 
- *
- * IEEE floating point architecture assumed. Set "CA_FLOAT_MIT" if
- * appropriate. No other floating point formats currently
- * supported.
+ * Here are the definitions for architecture dependent byte ordering 
+ * and floating point format
  */
 #if defined(VAX) 
 #	define CA_FLOAT_MIT

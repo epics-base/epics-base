@@ -469,7 +469,7 @@ void mark_server_available(struct in_addr *pnet_addr)
 		delay += CA_RECAST_DELAY;
 		idelay = (long) delay;
 		ca_delay.tv_sec = idelay;
-		ca_delay.tv_usec = (long) (delay-idelay) * USEC_PER_SEC; 
+		ca_delay.tv_usec = (long) ((delay-idelay) * USEC_PER_SEC); 
 		next = cac_time_sum(&currentTime, &ca_delay);
 
 		diff = cac_time_diff(

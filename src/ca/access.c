@@ -559,7 +559,7 @@ int ca_os_independent_init (void)
 	sec = (unsigned) CA_RECAST_DELAY;
 	ca_static->ca_conn_retry_delay.tv_sec = sec;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-		(long) (CA_RECAST_DELAY-sec)*USEC_PER_SEC;
+		(long) ((CA_RECAST_DELAY-sec)*USEC_PER_SEC);
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -1109,7 +1109,7 @@ int APIENTRY ca_search_and_connect
 	sec = (int) CA_RECAST_DELAY;
 	ca_static->ca_conn_retry_delay.tv_sec = sec;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-		(long) (CA_RECAST_DELAY-sec)*USEC_PER_SEC;
+		(long) ((CA_RECAST_DELAY-sec)*USEC_PER_SEC);
 
 	UNLOCK;
 
@@ -2722,11 +2722,11 @@ int APIENTRY ca_pend(ca_real timeout, int early)
 			/*
 			 * Allow for CA background labor
 			 */
-			remaining = (long) min(SELECT_POLL, remaining);
+			remaining = min(SELECT_POLL, remaining);
   		}    
 
 		tmo.tv_sec = (long) remaining;
-		tmo.tv_usec = (long) (remaining-tmo.tv_sec)*USEC_PER_SEC;
+		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_io_completion(&tmo);
 	}
 }

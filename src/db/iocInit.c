@@ -843,6 +843,7 @@ int dbLoad(char * pfilename)
 	errMessage(-1,"dbLoad: Error opening file");
 	return(-1);
     }
+    if(pdbBase==NULL) pdbBase = dbAllocBase();
     status=dbRead(pdbBase, fp);
     fclose(fp);
     if(status!=0) {
@@ -855,11 +856,13 @@ int dbLoad(char * pfilename)
 	    errMessage(-1,"dbLoad: Error opening default.sdrSum");
 	    return(-1);
 	}
-	fclose(fp);
 	fgets(sdrSum.allSdrSums,sizeof(sdrSum.allSdrSums),fp);
+	fclose(fp);
 	gotSdrSum = TRUE;
     }
     if(strcmp(pdbBase->psdrSum->allSdrSums,sdrSum.allSdrSums)!=0) {
+printf("pdbBase->psdrSum->allSdrSums = |%s|\n",pdbBase->psdrSum->allSdrSums);
+printf("sdrSum.allSdrSums = |%s|\n",sdrSum.allSdrSums);
 	errMessage(-1,"dbLoad: check sdrSum Error: Database out of date");
 	return(-1);
     }

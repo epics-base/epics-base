@@ -2992,24 +2992,24 @@ int modOnly;
 #define SAME 0
 
 /* forward references */
-static int	adj_dbRecType();
-static int	adj_dbRecords();
-static int	adj_dbRecDes();
-static int	adj_dbPvd();
-static int	adj_choiceGbl();
-static int	adj_choiceCvt();
-static int	adj_choiceRec();
-static int	adj_choiceDev();
-static int	adj_devSup();
-static int	adj_cvtTable();
-static int	adj_drvSup();
-static int	adj_recSup();
-static int	adj_sdrSum();
-static int	initadj_fun();
+static long	adj_dbRecType();
+static long	adj_dbRecords();
+static long	adj_dbRecDes();
+static long	adj_dbPvd();
+static long	adj_choiceGbl();
+static long	adj_choiceCvt();
+static long	adj_choiceRec();
+static long	adj_choiceDev();
+static long	adj_devSup();
+static long	adj_cvtTable();
+static long	adj_drvSup();
+static long	adj_recSup();
+static long	adj_sdrSum();
+static long	initadj_fun();
 static void	post_adj_devSup();
 
 /* array of pointers to adjusting functions */
-static          (*adj_fun[SDR_NTYPES]) ();
+static  long(*adj_fun[SDR_NTYPES]) ();
 
 /* Note: see addValidDefaults() function for sdr types in default.dctsdr file */
 
@@ -3069,19 +3069,19 @@ FILE *fp;
 		}
 		status = S_sdr_noRead;
 		errMessage(status,"dbRead: READHEADER");
-		return(-1);
+		return(status);
 		break;
 	    }
 	    if (sdrHeader.magic != DBMAGIC) {
 		status = S_sdr_noMagic;
 		errMessage(status,"dbRead: READHEADER - wrong DBMAGIC");
-		return(-1);
+		return(status);
 		break;
 	    }
 	    if (sdrHeader.type > SDR_NTYPES || sdrHeader.type < 0) {
 		status = S_sdr_noRecDef;
 		errMessage(status,"dbRead: READHEADER - bad type");
-		return(-1);
+		return(status);
 		break;
 	    }
 	    ptmp = dbCalloc(1,sdrHeader.nbytes);
@@ -3089,19 +3089,20 @@ FILE *fp;
 		free(ptmp);
 		status = S_sdr_noRead;
 		errMessage(status,"dbRead: Error reading file");
-		return(-1);
+		return(status);
 		break;
 	    }
 	    if ((adj_fun[sdrHeader.type]) == NULL) {
 		status = S_sdr_noSdrType;
 		errMessage(status,"dbRead: Warning: S_sdr_noSdrType not found");
 		free(ptmp);
-		return(-1);
+		return(status);
 		break;
 	    }
 	    /* pass the adjusting function the allocated ptr */
-	    if (((*adj_fun[sdrHeader.type]) (ptmp, pdbbase)) < 0) {
-		return(-1);
+	    if (status = (*adj_fun[sdrHeader.type]) (ptmp, pdbbase)) {
+		errMessage(status,"dbRead: Warning: adj_fun failed");
+		return(status);
 		break;
 	    }
 	    if(sdrHeader.type==SDR_ALLSUMS) {
@@ -3109,7 +3110,9 @@ FILE *fp;
 		    pdbbase->sdrFileSize = ftell(fp);
 		}else {
 		    if(pdbbase->sdrFileSize!=ftell(fp))
-			return(S_sdr_sumError);
+			status = S_sdr_sumError;
+			errMessage(status,"dbRead: SDR_ALLSUMS error");
+			return(status);
 		}
 	    }
 	    if (job_type == LOAD_ONLY_ONE) {
@@ -3125,7 +3128,7 @@ FILE *fp;
  * Load and adjust SDR structure
  * 
  */
-static int 
+static long
 #ifdef __STDC__
 adj_dbRecType(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3165,7 +3168,7 @@ adj_dbRecType(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_dbRecords(char *ptmp,DBBASE *pdbbase)
 #else
@@ -3189,12 +3192,12 @@ adj_dbRecords(ptmp, pdbbase)
     if (precType == NULL) {
 	status = S_sdr_notLoaded;
 	errMessage(status,"dbRead: adj_dbRecords() recType == NULL");
-	return (-1);
+	return (status);
     }
     if (precDes == NULL) {
 	status = S_sdr_notLoaded;
 	errMessage(status,"dbRead: adj_dbRecords() recDes == NULL");
-	return (-1);
+	return (status);
     }
     dbInitEntry(pdbbase,&dbEntry);
     no_records = (sdrHeader.nbytes / precLoc->rec_size);
@@ -3239,7 +3242,7 @@ adj_dbRecords(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_dbRecDes(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3258,7 +3261,7 @@ adj_dbRecDes(ptmp, pdbbase)
 	status = S_sdr_notLoaded;
 	sprintf(text, "dbRead: adj_dbRecDes() precType == NULL");
 	errMessage(status, text);
-	return (-1);
+	return (status);
     }
     if (pdbbase->precDes == NULL) {
 	precDes = (struct recDes *) ptmp;
@@ -3302,7 +3305,7 @@ adj_dbRecDes(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_choiceGbl(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3345,7 +3348,7 @@ adj_choiceGbl(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_choiceCvt(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3380,7 +3383,7 @@ adj_choiceCvt(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_choiceRec(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3399,7 +3402,7 @@ adj_choiceRec(ptmp, pdbbase)
 	status = S_sdr_notLoaded;
 	sprintf(text, "dbRead: adj_choiceRec() recType == NULL");
 	errMessage(status, text);
-	return (-1);
+	return (status);
     }
     if (pdbbase->pchoiceRec == NULL) {
 	pchoiceRec = (struct choiceRec *) ptmp;
@@ -3443,7 +3446,7 @@ adj_choiceRec(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_choiceDev(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3462,7 +3465,7 @@ adj_choiceDev(ptmp, pdbbase)
 	status = S_sdr_notLoaded;
 	sprintf(text, "dbRead: adj_choiceDev() precType == NULL");
 	errMessage(status, text);
-	return (-1);
+	return (status);
     }
     if (pdbbase->pchoiceDev == NULL) {
 	pchoiceDev = (struct devChoiceRec *) ptmp;
@@ -3499,7 +3502,7 @@ adj_choiceDev(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_devSup(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3518,7 +3521,7 @@ adj_devSup(ptmp, pdbbase)
 	status = S_sdr_notLoaded;
 	sprintf(text, "dbRead: adj_devSup() precType == NULL");
 	errMessage(status, text);
-	return (-1);
+	return (status);
     }
     if (pdbbase->precDevSup == NULL) {
 	precDevSup = (struct recDevSup *) ptmp;
@@ -3553,7 +3556,7 @@ adj_devSup(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_cvtTable(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3596,7 +3599,7 @@ adj_cvtTable(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_drvSup(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3630,7 +3633,7 @@ adj_drvSup(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_recSup(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3651,7 +3654,7 @@ adj_recSup(ptmp, pdbbase)
  * Load SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_sdrSum(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3661,6 +3664,7 @@ adj_sdrSum(ptmp, pdbbase)
 #endif /*__STDC__*/
 {
     struct sdrSum  *psdrSum = (struct sdrSum*)pdbbase->psdrSum;
+    long	status;
 
     if(psdrSum==NULL) {
 	pdbbase->psdrSum = (struct sdrSum *) ptmp;
@@ -3668,7 +3672,11 @@ adj_sdrSum(ptmp, pdbbase)
 	 struct sdrSum *pnewsdrSum = (struct sdrSum *)ptmp;
 
 	if((strncmp(psdrSum->allSdrSums,pnewsdrSum->allSdrSums,
-		strlen(psdrSum->allSdrSums)))!=0) return(-1);
+	strlen(psdrSum->allSdrSums)))!=0) {
+	    status = S_sdr_sumError;
+	    errMessage(status,"adj_sdrSum error");
+	    return(status);
+	}
 	/* ignore - already loaded */
 	free(ptmp);
     }
@@ -3681,7 +3689,7 @@ adj_sdrSum(ptmp, pdbbase)
  * Load and adjust SDR structure
  *
  */
-static int
+static long
 #ifdef __STDC__
 adj_dbPvd(char *ptmp, DBBASE *pdbbase)
 #else
@@ -3702,7 +3710,7 @@ adj_dbPvd(ptmp, pdbbase)
  *
  */
 #ifdef __STDC__
-static int initadj_fun(DBBASE *pdbbase)
+static long initadj_fun(DBBASE *pdbbase)
 #else
 static int initadj_fun(pdbbase)
 DBBASE *pdbbase;
@@ -4043,9 +4051,9 @@ DBBASE *pdbbase;
 }
 
 #ifdef __STDC__
-void dbDumpPvd(DBBASE *pdbbase)
+void dbPvdDump(DBBASE *pdbbase)
 #else
-void dbDumpPvd(pdbbase)
+void dbPvdDump(pdbbase)
 DBBASE *pdbbase;
 #endif /*__STDC__*/
 {

@@ -1,16 +1,16 @@
 
-TOP = ../../../../..
 CAS = ../../..
+TOP = $(CAS)/../..
 SRC = $(CAS)/generic
 IOSRC = $(CAS)/io/bsdSocket
 OSSRC = $(CAS)/os/posix
 VPATH = $(SRC) $(IOSRC) $(OSSRC) 
 
-include Target.include
 include $(TOP)/src/config/CONFIG_BASE
 
-USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/gdd  
-USR_LDLIBS = -lcas -lm
+USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/../gdd  -I$(CAS)/../gdd/O.$(T_A)
+
+USR_LDLIBS = 
 USR_LDFLAGS = 
 USR_CCFLAGS =  
 
@@ -38,14 +38,11 @@ SRCS.cc += $(SRC)/casMonitor.cc
 SRCS.cc += $(SRC)/casMonEvent.cc 
 SRCS.cc += $(SRC)/outBuf.cc 
 SRCS.cc += $(SRC)/inBuf.cc 
-SRCS.cc += $(SRC)/osiTimerQueue.cc
-SRCS.cc += $(SRC)/osiTimer.cc
 SRCS.cc += $(SRC)/casEventMask.cc
 
 SRCS.cc += $(OSSRC)/caServerOS.cc
 SRCS.cc += $(OSSRC)/casDGOS.cc
 SRCS.cc += $(OSSRC)/casStreamOS.cc
-SRCS.cc += $(OSSRC)/osiTimeOSD.cc
 
 SRCS.cc += $(IOSRC)/caServerIO.cc
 SRCS.cc += $(IOSRC)/casDGIO.cc
@@ -72,14 +69,11 @@ LIBOBJS += casMonitor.o
 LIBOBJS += casMonEvent.o
 LIBOBJS += outBuf.o
 LIBOBJS += inBuf.o 
-LIBOBJS += osiTimerQueue.o
-LIBOBJS += osiTimer.o
 LIBOBJS += casEventMask.o
 
 LIBOBJS += caServerOS.o
 LIBOBJS += casDGOS.o
 LIBOBJS += casStreamOS.o
-LIBOBJS += osiTimeOSD.o
 
 LIBOBJS += caServerIO.o
 LIBOBJS += casDGIO.o

@@ -3,5 +3,13 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+CXXCMPLR = STRICT
+
+PROD_LIBS = Com
+SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
+
+TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
+		tsSLListBench tsSLListTest minmaxTest tsBTreeBench tsBTreeTest
+
+include $(TOP)/configure/RULES
 

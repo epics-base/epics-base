@@ -235,7 +235,7 @@ static long get_enum_strs(paddr,pes)
 {
     struct biRecord	*pbi=(struct biRecord *)paddr->precord;
 
-    pes->no_str = 0;
+    pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbi->znam,sizeof(pbi->znam));
     if(*pbi->znam!=0) pes->no_str=1;

@@ -117,12 +117,12 @@ void syncGroupNotify::exceptionNotify ( int status, const char *pContext, unsign
             type, count, pContext);
 }
 
-void syncGroupNotify::lock ()
+void syncGroupNotify::lock () const
 {
     this->sg.mutex.lock ();
 }
 
-void syncGroupNotify::unlock ()
+void syncGroupNotify::unlock () const
 {
     this->sg.mutex.unlock ();
 }

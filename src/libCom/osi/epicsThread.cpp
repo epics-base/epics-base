@@ -13,6 +13,8 @@
 // Author: Jeff Hill
 //
 
+#include <stdexcept>
+
 #include <stdio.h>
 #include <stddef.h>
 #include <float.h>
@@ -25,10 +27,11 @@ epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::stop() {};
 void epicsThreadRunable::show(unsigned int) const {};
 
-void epicsThreadCallEntryPoint ( void * pPvt )
+extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
 {
+    epicsThread * pThread = 
+        static_cast <epicsThread *> ( pPvt );
     bool waitRelease = false;
-    epicsThread * pThread = static_cast <epicsThread *> ( pPvt );
     pThread->pWaitReleaseFlag = & waitRelease;
     try {
         pThread->beginEvent.wait ();
@@ -46,8 +49,14 @@ void epicsThreadCallEntryPoint ( void * pPvt )
         }
         return;
     }
+    catch ( std::exception & except ) {
+        errlogPrintf ( 
+            "epicsThread: Unexpected C++ exception \"%s\" - terminating thread",
+            except.what () );
+    }
     catch ( ... ) {
-        throw;
+        errlogPrintf ( 
+            "epicsThread: Unknown C++ exdception - terminating thread" );
     }
 }
 

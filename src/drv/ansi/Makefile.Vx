@@ -23,7 +23,7 @@ SRCS.c += ../drvKscV215.c
 SRCS.c += ../drvMz8310.c
 SRCS.c += ../drvStc.c
 SRCS.c += ../drvTime.c
-SRCS.c += ../drvCaenV265.c
+#SRCS.c += ../drvCaenV265.c
 
 SRCS.c += ../drvVipc310.c
 SRCS.c += ../drvVipc610.c

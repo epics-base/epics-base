@@ -1041,7 +1041,8 @@ void verifyShortIO ( chid chan )
             incr = 1;
         }
         for ( iter = (dbr_short_t) cl.lower_ctrl_limit; 
-            iter <= (dbr_short_t) cl.upper_ctrl_limit; iter += incr ) {
+            iter <= (dbr_short_t) cl.upper_ctrl_limit; 
+            iter = (dbr_short_t) (iter + incr) ) {
 
             ca_put ( DBR_SHORT, chan, &iter );
             ca_get ( DBR_SHORT, chan, &rdbk );
@@ -1275,13 +1276,15 @@ void test_sync_groups ( chid chan )
 }
 
 /*
- * performDeleteTest
+ * multiSubscriptionDeleteTest
  *
  * 1) verify we can add many monitors at once
  * 2) verify that under heavy load the last monitor
  *      returned is the last modification sent
+ * 3) attempt to delete monitors while many monitors 
+ *      are running
  */
-void performDeleteTest ( chid chan )
+void multiSubscriptionDeleteTest ( chid chan )
 {
     unsigned count = 0u;
     evid mid[1000];
@@ -1313,7 +1316,7 @@ void performDeleteTest ( chid chan )
      * the monitor delete
      */  
     if ( ca_write_access (chan) ) {
-        for ( i=0; i < 10; i++ ) {
+        for ( i=0; i < NELEMENTS (mid); i++ ) {
             temp = (float) i;
             SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
         }
@@ -1324,22 +1327,140 @@ void performDeleteTest ( chid chan )
     /*
      * without pausing begin deleting the event subscriptions 
      * while the queue is full
+     *
+     * continue attempting to generate heavy event traffic 
+     * while deleting subscriptions with the hope that we will 
+     * deleting an event at the instant that its callback is 
+     * occurring
      */
     for ( i=0; i < NELEMENTS (mid); i++ ) {
+        if ( ca_write_access (chan) ) {
+            temp = (float) i;
+            SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+        }
         SEVCHK ( ca_clear_event ( mid[i]), NULL );
     }
 
     showProgress ();
 
     /*
-     * force all of the clear event requests to
-     * complete
+     * force all of the clear event requests to complete
      */
     SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
     SEVCHK ( ca_pend_io (1000.0), NULL );
 
     showProgressEnd ();
 } 
+
+
+/*
+ * singleSubscriptionDeleteTest
+ *
+ * verify that we dont fail when we repeatedly create 
+ * and delete only one subscription with a high level of 
+ * traffic on it
+ */
+void singleSubscriptionDeleteTest ( chid chan )
+{
+    unsigned count = 0u;
+    evid sid;
+    dbr_float_t temp, getResp;
+    unsigned i;
+    
+    showProgressBegin ();
+
+    for ( i=0; i < 1000; i++ ){
+        count = 0u;
+        SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
+            &count, &sid) , NULL );
+
+        /*
+         * force the subscription request to complete
+         */
+        SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
+        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+
+        /*
+         * attempt to generate heavy event traffic before initiating
+         * the monitor delete
+         *
+         * try to interrupt the recv thread while it is processing 
+         * incoming subscription updates
+         */  
+        if ( ca_write_access (chan) ) {
+            unsigned j = 0;
+            while ( j < i ) {
+                temp = (float) j++;
+                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+            }
+            ca_flush_io ();
+            epicsThreadSleep ( 0.001 );
+        }
+
+        SEVCHK ( ca_clear_event ( sid ), NULL );
+    }
+
+    showProgressEnd ();
+} 
+
+/*
+ * channelClearWithEventTrafficTest
+ *
+ * verify that we can delete a channel that has subcriptions
+ * attached with heavy update traffic
+ */
+void channelClearWithEventTrafficTest ( const char *pName )
+{
+    unsigned count = 0u;
+    evid sid;
+    dbr_float_t temp, getResp;
+    unsigned i;
+    
+    showProgressBegin ();
+
+    for ( i=0; i < 1000; i++ ) {
+        chid chan;
+
+        int status = ca_create_channel ( pName, 0, 0, 
+            CA_PRIORITY_DEFAULT, &chan );
+        status = ca_pend_io ( 100.0 );
+        SEVCHK ( status, "channelClearWithEventTrafficTest: channel connect failed" );
+        assert ( status == ECA_NORMAL );
+
+        count = 0u;
+        SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
+            &count, &sid ) , NULL );
+
+        /*
+         * force the subscription request to complete
+         */
+        SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
+        SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
+
+        /*
+         * attempt to generate heavy event traffic before initiating
+         * the channel delete
+         *
+         * try to interrupt the recv thread while it is processing 
+         * incoming subscription updates
+         */  
+        if ( ca_write_access (chan) ) {
+            unsigned j = 0;
+            while ( j < i ) {
+                temp = (float) j++;
+                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+            }
+            ca_flush_io ();
+            epicsThreadSleep ( 0.001 );
+        }
+
+        SEVCHK ( ca_clear_channel ( chan ), NULL );
+    }
+
+    showProgressEnd ();
+} 
+
+
 
 evid globalEventID;
 
@@ -1864,17 +1985,20 @@ void performMonitorUpdateTest ( chid chan )
      */
     tries = 0;
     while ( 1 ) {
-        unsigned nComplete = 0u;
+        unsigned nFailed = 0u;
         epicsThreadSleep ( 0.1 );
         ca_poll (); /* emulate typical GUI */
         for ( i = 0; i < NELEMENTS ( test ); i++ ) {
             if ( test[i].count > 0 ) {
-                if ( test[i].lastValue == temp ) {
-                    nComplete++;
+                if ( test[i].lastValue != temp ) {
+                    nFailed++;
                 }
             }
+            else {
+                nFailed++;
+            }
         }
-        if ( nComplete == NELEMENTS ( test ) ) {
+        if ( nFailed == 0u ) {
             break;
         }
         printf ( "-" );
@@ -2122,6 +2246,9 @@ int acctst ( char *pName, unsigned channelCount,
     unsigned connections;
 
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
+    if ( select == ca_enable_preemptive_callback ) {
+        printf ( "Preemptive call back is enabled.\n" );
+    }
 
     epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", "10000000" ); 
 
@@ -2163,15 +2290,17 @@ int acctst ( char *pName, unsigned channelCount,
                DBL_MIN_EXP, DBL_MAX_EXP, DBL_EPSILON );
     verifyLongIO ( chan );
     verifyShortIO ( chan );
+    multiSubscriptionDeleteTest ( chan );
+    singleSubscriptionDeleteTest ( chan );
+    channelClearWithEventTrafficTest ( pName );
+    eventClearTest ( chan );
+    performMonitorUpdateTest ( chan );
     verifyHighThroughputRead ( chan );
     verifyHighThroughputWrite ( chan );
     verifyHighThroughputReadCallback ( chan );
     verifyHighThroughputWriteCallback ( chan );
     verifyBadString ( chan );
     test_sync_groups ( chan );
-    performDeleteTest ( chan );
-    eventClearTest ( chan );
-    performMonitorUpdateTest ( chan );
 
     /*
      * CA pend event delay accuracy test

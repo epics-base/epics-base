@@ -1,7 +1,6 @@
-EPICS = ../../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
-
+TOP = ../../../..
+include $(TOP)/src/config/CONFIG_BASE
+ 
 #CMPLR = STRICT
 
 YACC = $(EYACC)
@@ -28,7 +27,7 @@ OBJS = \
 
 PROD = e_flex
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 $(PROD): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)

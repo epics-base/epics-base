@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
@@ -72,15 +71,9 @@ PROD = initHooks.o
 
 LIBNAME = dbLib
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 
-dbCommon.h: ../dbCommonRecord.dbd dbCommon.dbd
+dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
-		$(USER_DBDFLAGS) $<
+	$(DB_TO_RECTYPE_H) $(USER_DBDFLAGS) $<
 
-dbCommon.dbd: ../dbCommon.dbd
-	@test -f $@ || ln -s  $< $@
-
-clean::
-	@$(RM) dbCommon.dbd rec base

@@ -1,7 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
-
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 #YACCOPT = -l
 #LEXOPT = -L
@@ -21,7 +19,7 @@ OBJS =  snc_main.o parse.o phase2.o gen_ss_code.o \
 
 PROD = snc
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 #
 #  The generated lex file includes snc.h

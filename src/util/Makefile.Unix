@@ -1,9 +1,8 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_LDLIBS = -lca -lCom -lm
-DEPLIBS = $(EPICS_BASE_LIB)/libca.a $(EPICS_BASE_LIB)/libCom.a
+DEPLIBS = $(INSTALL_LIB)/libca.a $(INSTALL_LIB)/libCom.a
 
 SRCS.c = \
 	../ca_test.c \
@@ -26,10 +25,10 @@ PROD += S99logServer
 PROD += S99caRepeater
 endif
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
  
 S99%: ../rc2.%
-	@/usr/bin/sed -e s%:EPICS:%`chdir $(EPICS); /usr/bin/pwd`% \
+	@/usr/bin/sed -e s%:EPICS:%`chdir $(TOP); /usr/bin/pwd`% \
 		-e s%:INSTALL_BIN:%`chdir $(INSTALL_BIN); /usr/bin/pwd`% \
 		$< >$@
 

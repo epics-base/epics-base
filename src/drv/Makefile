@@ -2,11 +2,11 @@
 # $Id$
 #
 
-EPICS=../../..
+TOP=../..
 
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
 DIRS = ansi old combine
 
-include $(EPICS)/config/RULES_DIRS
+include $(TOP)/src/config/RULES_DIRS
 

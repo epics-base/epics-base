@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
@@ -8,7 +7,7 @@ SRCS.c = ../asDbLib.c ../asCa.c asLib.c
 LIBOBJS = asDbLib.o asCa.o asLib.o
 LIBNAME = asLibrary
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built

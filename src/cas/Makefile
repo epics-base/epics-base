@@ -5,17 +5,19 @@
 #        by Janet Anderson
 #
 # $Log$
+# Revision 1.1.1.1  1996/06/20 00:28:05  jhill
+# ca server installation
+#
 # Revision 1.1  1994/09/07  19:26:34  jba
 # New file
 #
 #
 
-EPICS=../../..
+TOP=../..
 
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
 DIRS = build example 
 
-include $(EPICS)/config/RULES_ARCHS
-
+include $(TOP)/src/config/RULES_ARCHS
 

@@ -1,11 +1,10 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 PROD = installEpics
 SCRIPTS = InstallVersion getrel 
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 $(INSTALL_BIN)/installEpics: installEpics
 	@echo "Installing $@"

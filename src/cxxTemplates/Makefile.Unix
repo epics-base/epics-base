@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 INC += osiTime.h
 INC += osiTimer.h
@@ -8,4 +7,4 @@ INC += resourceLib.h
 INC += tsDLList.h
 INC += tsSLList.h
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix

@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 INC += bdt.h
 
@@ -8,4 +7,4 @@ LIBOBJS += bdt.o
 
 LIBNAME = libBdt.a
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix

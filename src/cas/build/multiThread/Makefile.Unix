@@ -1,5 +1,5 @@
 
-EPICS = ../../../..
+TOP = ../../..
 CAS = ../../..
 SRC = $(CAS)/generic
 IOSRC = $(CAS)/io/bsdSocket
@@ -7,7 +7,7 @@ OSSRC = $(CAS)/os/posix
 VPATH = $(SRC) $(IOSRC) $(OSSRC) 
 
 include Target.include
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_INCLUDES = -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/gdd  
 USR_LDLIBS = -lcas -lm
@@ -69,7 +69,7 @@ LIBOBJS += caServerIO.o
 
 LIBNAME = libcas.a
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 obj: $(LIBOBJS) 
 

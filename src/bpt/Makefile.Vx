@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
@@ -21,5 +20,5 @@ LIBOBJS = \
 
 LIBNAME = pbtLib
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 

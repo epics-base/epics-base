@@ -1,10 +1,9 @@
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
-EPICS = ../../../..
 SRC = .. 
 IOTYPE = bsdSocket
 OSTYPE = posix
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../../ca -I../os/$(OSTYPE) -I../io/$(IOTYPE) -I../gdd -I../gdd/sun4 
 USR_LDLIBS = -lcas -lm
@@ -53,7 +52,7 @@ LIBOBJS += casMapDBR.o
 
 LIBNAME = libcas.a
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 obj: $(LIBOBJS) 
 

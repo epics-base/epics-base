@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
@@ -14,5 +13,5 @@ LIBOBJS = \
 
 LIBNAME = caLib 
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 

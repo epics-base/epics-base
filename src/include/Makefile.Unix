@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 INC += dbDefs.h
 INC += camacLib.h
@@ -13,4 +12,5 @@ INC += createSoftLinks.sh
 INC += bsdProto.h
 INC += task_params.h
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
+

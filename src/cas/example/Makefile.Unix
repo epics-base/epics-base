@@ -1,9 +1,8 @@
 
-EPICS = ../../../../..
+TOP = ../../../..
 CAS = ../../
 
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
 #CPLUSPLUS = G++
 
@@ -74,7 +73,7 @@ GLOMBOBJ += $(BUILDDIR)casDGIO.o
 GLOMBOBJ += $(BUILDDIR)casStreamIO.o
 GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
  
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 #PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
 nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBS)

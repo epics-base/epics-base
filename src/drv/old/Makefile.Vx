@@ -2,9 +2,8 @@
 # $Id$
 #
 
-EPICS = ../../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
@@ -42,5 +41,5 @@ SRCS.c += ../drvXy566.c
 
 TARGETS = $(SRCS.c:../%.c=%.o)
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 

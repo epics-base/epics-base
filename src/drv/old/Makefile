@@ -2,9 +2,9 @@
 # $Id$
 #
 
-EPICS=../../../..
-
-include $(EPICS)/config/CONFIG_BASE
-
-include $(EPICS)/config/RULES_ARCHS
+TOP=../../..
+ 
+include $(TOP)/src/config/CONFIG_BASE
+ 
+include $(TOP)/src/config/RULES_ARCHS
 

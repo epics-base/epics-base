@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 INC += drvTS.h
 INC += drvSup.h
@@ -22,4 +21,5 @@ INC += recGbl.h
 INC += dbBkpt.h
 INC += devLib.h
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
+

@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c
@@ -43,21 +42,18 @@ LIBNAME = libCom
 
 MAN3 = gpHash.3 freeList.3
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 
 clean::
-	@$(RM) errInc.c errSymTbl.c envData.c
+	@$(RM) errSymTbl.c envData.c
 
 build: errSymTbl.o errInc.o
 
-errSymTbl.c errInc.o: errInc.c
+errSymTbl.c errInc.o: ../errInc.c
 	@$(RM) errInc.o
-	../blderrSymTbl $(EPICS) $(HOST_ARCH) "$(MAKE)"
+	../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
 
-envData.c: $(EPICS_BASE)/include/envDefs.h $(EPICS)/config/CONFIG_ENV \
-		$(EPICS)/config/CONFIG_SITE_ENV
-	../bldEnvData $(EPICS)
-
-pre_build:
-	@test -f errInc.c || ln -s ../errInc.c errInc.c
+envData.c: ../envDefs.h $(TOP)/src/config/CONFIG_ENV \
+        $(TOP)/src/config/CONFIG_SITE_ENV
+	../bldEnvData $(TOP)/src/config
 

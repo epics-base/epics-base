@@ -1,7 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
-
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
@@ -20,7 +18,7 @@ OBJSdbLib = \
 
 PROD = dbStaticLib
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 
 # Extra rule since dbLexRoutines.c is included in dbYacc.c
 dbYacc.o: dbLex.c ../dbLexRoutines.c

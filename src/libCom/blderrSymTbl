@@ -34,7 +34,7 @@
 #  	...
 #
 
-# tool to rebuild errSymTbl.c when errInc.c or it's depends change
+# tool to rebuild errSymTbl.c when ../errInc.c or it's depends change
 
 # Usage 	blderrSymTbl EPICS HOST_ARCH MAKE VXLIST     - IOC and commmon
 # Usage 	blderrSymTbl EPICS HOST_ARCH MAKE 		- just common
@@ -48,10 +48,10 @@ if [ -z "$2" ]; then
 	exit 1
 fi
 
-EPICS=$1
+TOP=$1
 MAKE=$2
 
-INCLUDE=${EPICS}/config/CONFIG_BASE
+INCLUDE=${TOP}/src/config/CONFIG_BASE
 
 if [ -z "$4" ]; then
 	OPTS=""
@@ -64,7 +64,7 @@ PID=$$
 # Construct temporary makefile
 cat - <<MFILE > /tmp/Makefile.tmp.$$
 
-EPICS=$EPICS
+TOP=$TOP
 
 include ${INCLUDE}
 
@@ -91,11 +91,11 @@ fi
 
 TMPMAKEFILE=/tmp/tmpmakefile
 SFILES=/tmp/sfiles
-EPICS=$1
+TOP=$1
 HOST_ARCH=$2
 MAKE=$3
-SRC=$EPICS/base/src
-INCLUDEH="-I$SRC/include -I$SRC/as -I$SRC/ca -I$SRC/db -I$SRC/libCom\
+SRC=$TOP/src
+INCLUDEH="-I$SRC/include -I$SRC/as -I$SRC/ca -I$SRC/db -I..\
 	-I$SRC/drv/old -I$SRC/drv/ansi -I$SRC/dbStatic -I$SRC/bpt -I$SRC/dev" 
 
 case $HOST_ARCH in
@@ -105,13 +105,13 @@ case $HOST_ARCH in
 	GCC=`which gcc`
 	if [ -x "$GCC" ]; then
 		FILES=`"$GCC" -M -D$DEF $INCLUDEH \
-		errInc.c 2>/dev/null \
+		../errInc.c 2>/dev/null \
 		| sed -e 's/errInc\.o.*: errInc\.c//' -e 's/\\\//'`
 	else
            MAKEDEPEND=`which makedepend`
 	   if [ -x "$MAKEDEPEND" ]; then
 	      FILES=`"$MAKEDEPEND" -f- -D$DEF $INCLUDEH \
-		errInc.c 2>/dev/null | sed -e 's/errInc.o://' -e 's/\\\//'`
+		../errInc.c 2>/dev/null | sed -e 's/errInc.o://' -e 's/\\\//'`
 	   else
 	      echo Neither GCC or MAKEDEPEND found.
 	      exit 1
@@ -122,8 +122,8 @@ case $HOST_ARCH in
 	# use -xM option of ACC to list dependencies
 
 	#CC=`$EPICS/base/bin/$HOST_ARCH/GetVar $EPICS $MAKE ACC $HOST_ARCH`
-	CC=`GetVar $EPICS $MAKE ACC $HOST_ARCH`
-	FILES=`$CC -xM -D$DEF $INCLUDEH errInc.c \
+	CC=`GetVar $TOP $MAKE ACC $HOST_ARCH`
+	FILES=`$CC -xM -D$DEF $INCLUDEH ../errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
         ;;
@@ -148,7 +148,7 @@ grep "^#define[       ]*S_" $FILES /dev/null \
 
 # create a tmpmakefile
 cat $SFILES | (awk '
-BEGIN	{print "errInc.o :  errInc.c \\"}
+BEGIN	{print "errInc.o :  ../errInc.c \\"}
 {print "	"$0" \\" }
 END {print "	../errMdef.h"}
 

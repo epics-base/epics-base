@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 LINK.c=$(LD) $(LDFLAGS)
 
@@ -21,7 +20,7 @@ IOC_CORE_OBJS = \
 
 PROD = iocCore vxWorks vxWorks.sym
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 
 vxWorks: $(VX_IMAGE)
 	@$(RM) $@

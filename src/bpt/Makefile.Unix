@@ -1,7 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
-
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 INC += cvtTable.h
 
@@ -9,4 +7,5 @@ SRCS.c = ../makeBpt
 OBJS = makeBpt
 PROD = makeBpt
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
+

@@ -1,12 +1,11 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 USR_LDLIBS = -lAs -lCom -lDb -lCom -lm -s
 USR_LDFLAGS = -L.
 
-DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBS_BASE = $(INSTALL_LIB)
 DEPLIBS = ./libAs.a\
 	  $(DEPLIBS_BASE)/libCom.a\
 	  $(DEPLIBS_BASE)/libDb.a
@@ -20,7 +19,7 @@ LIBOBJS = asLib.o
 LIBNAME = libAs.a
 PROD = ascheck
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built

@@ -1,6 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_LDLIBS = -lDb -lCom  -lm 
 USR_LDFLAGS = -L.
@@ -9,7 +8,7 @@ USR_LDFLAGS = -L.
 #CC = $(PURIFYHOME)/purify $(C_$(CMPLR))
 
 
-DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBS_BASE = $(INSTALL_LIB)
 DEPLIBS = ./libDb.a\
 	$(DEPLIBS_BASE)/libCom.a
 
@@ -47,7 +46,7 @@ PROD = \
 	dbToMenuH\
 	dbToRecordtypeH
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 # Extra rule since dbLexRoutines.c is included in dbYacc.c
 dbYacc.o: dbLex.c ../dbLexRoutines.c

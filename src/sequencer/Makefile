@@ -13,9 +13,9 @@
 #
 #
 
-EPICS=../../..
+TOP=../..
 
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
-include $(EPICS)/config/RULES_ARCHS
+include $(TOP)/src/config/RULES_ARCHS
 

@@ -1,11 +1,10 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 USR_LDLIBS = -lca -lCom -lm
 USR_LDFLAGS = -L.
 
-DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBS_BASE = $(INSTALL_LIB)
 DEPLIBS = ./libca.a\
 	$(DEPLIBS_BASE)/libCom.a
 
@@ -33,7 +32,7 @@ LIBNAME = libca.a
 PROD = caRepeater 
 
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 
 acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
 	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a 

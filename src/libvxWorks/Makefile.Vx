@@ -1,7 +1,5 @@
-EPICS = ../../../..
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
-
+TOP = ../../..
+include $(TOP)/src/config/CONFIG_BASE
 
 SRCS.c = ../iocLogClient.c ../veclist.c ../ldpp.c
 
@@ -10,5 +8,5 @@ LIBOBJS = veclist.o iocLogClient.o ldpp.o
 LIBNAME = vxComLib
 SCRIPTS = vxldscript.MRI
 
-include $(EPICS)/config/RULES.Vx
+include $(TOP)/src/config/RULES.Vx
 

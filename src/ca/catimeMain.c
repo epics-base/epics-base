@@ -8,7 +8,7 @@ static const unsigned defaultIterations = 10000u;
 
 int main ( int argc, char **argv )
 {
-    const char *pUsage = "<channel name> [<channel count> [<if 3rd arg present append number to pv name>]]";
+    const char *pUsage = "<PV name> [<channel count> [<append number to pv name if true>]]";
 
     if ( argc > 1 ) {
         char *pname = argv[1];
@@ -17,7 +17,17 @@ int main ( int argc, char **argv )
             if ( iterations > 0) {
                 if ( argc > 3 ) {
                     if ( argc == 4 ) {
-                        return catime ( pname, (unsigned) iterations, appendNumber );
+                        int status;
+                        unsigned appendNumberBool;
+                        status = sscanf ( argv[3], " %u ", &appendNumberBool );
+                        if ( status == 1 ) {
+                            if ( appendNumberBool ) {
+                                return catime ( pname, (unsigned) iterations, appendNumber );
+                            }
+                            else {
+                                return catime ( pname, (unsigned) iterations, dontAppendNumber );
+                            }
+                        }
                     }
                 }
                 else {

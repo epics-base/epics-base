@@ -16,10 +16,10 @@
 #ifndef osdTimeh
 #define osdTimeh
 
-#include <inttypes.h>
+#include <sys/types.h>
 
 /* from win32 */
-typedef uint32_t DWORD;
+typedef u_int32_t DWORD;
 typedef struct _FILETIME {
    DWORD dwLowDateTime;   /* low 32 bits  */
    DWORD dwHighDateTime;  /* high 32 bits */

@@ -47,20 +47,11 @@ typedef struct putNotify{
         void            *usrPvt;        /*for private use of user*/
         /*The following is status of request. Set by dbNotify */
         putNotifyStatus status;
-        /*The following are private to dbNotify */
-        short           state;
-        CALLBACK        callback;
-        ELLLIST         waitList; /*list of records for current putNotify*/
-        short           cancelWait;
-        short           userCallbackWait;
-        epicsEventId    cancelEvent;
-        epicsEventId    userCallbackEvent;
+        void            *pputNotifyPvt;  /*for private use of putNotify*/
 }putNotify;
 
 /* dbPutNotify and dbNotifyCancel are the routines called by user*/
 /* The user is normally channel access client or server               */
-epicsShareFunc void epicsShareAPI putNotifyInit(putNotify *pputNotify);
-epicsShareFunc void epicsShareAPI putNotifyCleanup(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbPutNotify(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbNotifyCancel(putNotify *pputNotify);
 
@@ -91,8 +82,8 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  * dbPutNotify, and dbNotifyCancel.
  *
  * The use must allocate storage for "struct putNotify"
- * putNotifyInit must be called before the first call to dbPutNotify
- * and putNotifyCleanup must be called when the user is done with putNotify.
+ * The user MUST set pputNotifyPvt=0 before the first call to dbPutNotify
+ * and should never modify it again.
  *
  * After dbPutNotify is called it may not called for the same putNotify
  * until the putCallback is complete. The use can call dbNotifyCancel

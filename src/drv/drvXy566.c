@@ -614,7 +614,7 @@ VOID  xy566_rval_report(card,type)
 	num_chans = ai_num_channels[type];
 
         for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-            j+=MAX_COLS,k+= MAX_COLS,l+= MAX_COLS,m += MAX_COLS){
+            j+=IOR_MAX_COLS,k+=IOR_MAX_COLS,l+= IOR_MAX_COLS,m +=IOR_MAX_COLS){
         	if(j < num_chans){
                      if( ai_driver(card,j,type,&jrval) == 0){       
                 	printf("Chan %d = %x \t",j,jrval);

@@ -284,7 +284,7 @@ endif
 
 #---------------------------------------------------------------
 # always use c++ linker
-#LINK.c = $(LINK.cc)
+LINK.c = $(LINK.cc)
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
@@ -312,14 +312,12 @@ endif
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(CPLUSPLUS)_SHRLIB_CFLAGS_YES)
+SHRLIB_LDFLAGS = $($(CPLUSPLUS)_SHRLIB_LDFLAGS_YES)
 
 PROD_VERSION =$(SHRLIB_VERSION)
-ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
+# always use c++ linker
 SHRLIB_LINKER = $(CXX)
-else
-SHRLIB_LINKER = $(CC)
-endif
 LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 
 endif # SHARED_LIBRARIES=YES

@@ -9,3 +9,6 @@
 
 include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
 
+# Removes -O optimization and adds -g compile option
+HOST_OPT=NO
+

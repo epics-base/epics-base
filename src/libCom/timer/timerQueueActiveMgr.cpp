@@ -31,6 +31,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "epicsGuard.h"
 #include "timerPrivate.h"
 
 timerQueueActiveMgr::timerQueueActiveMgr ()
@@ -39,13 +40,13 @@ timerQueueActiveMgr::timerQueueActiveMgr ()
 
 timerQueueActiveMgr::~timerQueueActiveMgr ()
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 }
     
 epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
         bool okToShare, unsigned threadPriority )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     if ( okToShare ) {
         tsDLIterBD < epicsTimerQueueActiveForC > iter = this->sharedQueueList.firstIter ();
         while ( iter.valid () ) {
@@ -56,20 +57,18 @@ epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
             }
         }
     }
-    epicsTimerQueueActiveForC *pQueue = new epicsTimerQueueActiveForC ( okToShare, threadPriority );
-    if ( ! pQueue ) {
-        throw std::bad_alloc ();
-    }
-    pQueue->timerQueueActiveMgrPrivate::referenceCount = 1u;
+
+    epicsTimerQueueActiveForC & queue = * new epicsTimerQueueActiveForC ( okToShare, threadPriority );
+    queue.timerQueueActiveMgrPrivate::referenceCount = 1u;
     if ( okToShare ) {
-        this->sharedQueueList.add ( *pQueue );
+        this->sharedQueueList.add ( queue );
     }
-    return *pQueue;
+    return queue;
 }
 
 void timerQueueActiveMgr::release ( epicsTimerQueueActiveForC &queue )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     assert ( queue.timerQueueActiveMgrPrivate::referenceCount > 0u );
     queue.timerQueueActiveMgrPrivate::referenceCount--;
     if ( queue.timerQueueActiveMgrPrivate::referenceCount == 0u ) {

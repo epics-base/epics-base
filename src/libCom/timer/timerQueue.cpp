@@ -29,6 +29,7 @@
  */
 
 #define epicsExportSharedSymbols
+#include "epicsGuard.h"
 #include "timerPrivate.h"
 
 epicsTimerQueue::~epicsTimerQueue () {}
@@ -50,49 +51,46 @@ timerQueue::~timerQueue ()
 
 double timerQueue::process ( const epicsTime & currentTime )
 {  
-    {
-        epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
-        if ( this->pExpireTmr ) {
-            // if some other thread is processing the queue
-            // (or if this is a recursive call)
-            timer *pTmr = this->timerList.first ();
-            if ( pTmr ) {
-                double delay = pTmr->exp - currentTime;
-                if ( delay < 0.0 ) {
-                    delay = 0.0;
-                }
-                return delay;
+    if ( this->pExpireTmr ) {
+        // if some other thread is processing the queue
+        // (or if this is a recursive call)
+        timer *pTmr = this->timerList.first ();
+        if ( pTmr ) {
+            double delay = pTmr->exp - currentTime;
+            if ( delay < 0.0 ) {
+                delay = 0.0;
             }
-            else {
-                return DBL_MAX;
-            }
-        }
-
-        //
-        // Tag current epired tmr so that we can detect if call back
-        // is in progress when canceling the timer.
-        //
-        this->pExpireTmr = this->timerList.first ();
-        if ( this->pExpireTmr ) {
-            if ( currentTime >= this->pExpireTmr->exp ) {
-                this->timerList.remove ( *this->pExpireTmr ); 
-                this->pExpireTmr->curState = timer::stateLimbo;
-                this->processThread = epicsThreadGetIdSelf ();
-#               ifdef DEBUG
-                    this->pExpireTmr->show ( 0u );
-#               endif 
-            }
-            else {
-                double delay = this->pExpireTmr->exp - currentTime;
-                this->pExpireTmr = 0;
-                debugPrintf ( ( "no activity process %f to next\n", delay ) );
-                return delay;
-            }
+            return delay;
         }
         else {
             return DBL_MAX;
         }
+    }
+
+    //
+    // Tag current epired tmr so that we can detect if call back
+    // is in progress when canceling the timer.
+    //
+    if ( this->timerList.first () ) {
+        if ( currentTime >= this->timerList.first ()->exp ) {
+            this->pExpireTmr = this->timerList.first ();
+            this->timerList.remove ( *this->pExpireTmr ); 
+            this->pExpireTmr->curState = timer::stateActive;
+            this->processThread = epicsThreadGetIdSelf ();
+#           ifdef DEBUG
+                this->pExpireTmr->show ( 0u );
+#           endif 
+        }
+        else {
+            double delay = this->timerList.first ()->exp - currentTime;
+            debugPrintf ( ( "no activity process %f to next\n", delay ) );
+            return delay;
+        }
+    }
+    else {
+        return DBL_MAX;
     }
 
 #   ifdef DEBUG
@@ -100,48 +98,57 @@ double timerQueue::process ( const epicsTime & currentTime )
 #   endif
 
     while ( true ) {
- 
-        debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n", 
-            N++, typeid ( this->pExpireTmr->notify ).name (), 
-            currentTime - this->pExpireTmr->exp ) );
+        epicsTimerNotify *pTmpNotify = this->pExpireTmr->pNotify;
+        this->pExpireTmr->pNotify = 0;
+        epicsTimerNotify::expireStatus expStat ( epicsTimerNotify::noRestart );
 
-        epicsTimerNotify::expireStatus expStat = 
-            this->pExpireTmr->pNotify->expire ( currentTime );
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
 
-        epicsAutoMutex locker ( this->mutex );
+            debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n", 
+                N++, typeid ( this->pExpireTmr->notify ).name (), 
+                currentTime - this->pExpireTmr->exp ) );
 
-        //
-        // only restart if they didnt cancel() the timer
-        // while the call back was running
-        //
-        if ( this->cancelPending ) {
-            // cancel() waits for this
-            this->cancelPending = false;
-            this->cancelBlockingEvent.signal ();
-            this->pExpireTmr->pNotify = 0;
-        }
-        // restart as nec
-        else if ( expStat.restart() ) {
-            this->pExpireTmr->privateStart ( 
-                *this->pExpireTmr->pNotify, 
-                currentTime + expStat.expirationDelay() );
-        }
-        else {
-            this->pExpireTmr->pNotify = 0;
+            expStat = pTmpNotify->expire ( currentTime );
         }
 
-        this->pExpireTmr = this->timerList.first ();
-        if ( this->pExpireTmr ) {
-            if ( currentTime >= this->pExpireTmr->exp ) {
-                this->timerList.remove ( *this->pExpireTmr ); 
+        {
+            //
+            // only restart if they didnt cancel() the timer
+            // while the call back was running
+            //
+            if ( this->cancelPending ) {
+
+                // 1) if another thread is canceling cancel() waits for this
+                // 2) if this thread is canceling in the timer callback then
+                // dont touch timer or notify here because the cancel might 
+                // have occurred because they destroyed the time rin the 
+                // callback
+                this->cancelPending = false;
+                this->cancelBlockingEvent.signal ();
+            }
+            // restart as nec
+            else {
                 this->pExpireTmr->curState = timer::stateLimbo;
+                if ( expStat.restart() ) {
+                    this->pExpireTmr->privateStart ( 
+                        *pTmpNotify, currentTime + expStat.expirationDelay() );
+                }
+            }
+            this->pExpireTmr = 0;
+        }
+
+        if ( this->timerList.first () ) {
+            if ( currentTime >= this->timerList.first ()->exp ) {
+                this->pExpireTmr = this->timerList.first ();
+                this->timerList.remove ( *this->pExpireTmr ); 
+                this->pExpireTmr->curState = timer::stateActive;
 #               ifdef DEBUG
                     this->pExpireTmr->show ( 0u );
 #               endif 
             }
             else {
-                double delay = this->pExpireTmr->exp - currentTime;
-                this->pExpireTmr = 0;
+                double delay = this->timerList.first ()->exp - currentTime;
                 this->processThread = 0;
                 return delay;
             }
@@ -156,17 +163,18 @@ double timerQueue::process ( const epicsTime & currentTime )
 
 epicsTimer & timerQueue::createTimer ()
 {
-    epicsAutoMutex autoLock ( this->mutex );
-    void *pBuf = this->timerFreeList.allocate ( sizeof (timer) );
-    if ( ! pBuf ) {
-        throw std::bad_alloc();
-    }
-    return * new ( pBuf ) timer ( *this );
+    return * new timer ( * this );
 }
+
+epicsTimerForC & timerQueue::createTimerForC ( epicsTimerCallback pCallback, void *pArg )
+{
+    return * new epicsTimerForC ( *this, pCallback, pArg );
+}
+
 
 void timerQueue::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     printf ( "epicsTimerQueue with %u items pending\n", this->timerList.count () );
     if ( level >= 1u ) {
         tsDLIterConstBD < timer > iter = this->timerList.firstIter ();

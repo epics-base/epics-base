@@ -41,13 +41,9 @@
 
 epicsTimerQueuePassive::~epicsTimerQueuePassive () {}
 
-epicsTimerQueuePassive &epicsTimerQueuePassive::create ( epicsTimerQueueNotify &notify )
+epicsTimerQueuePassive & epicsTimerQueuePassive::create ( epicsTimerQueueNotify &notify )
 {
-    timerQueuePassive *pQueue = new timerQueuePassive ( notify );
-    if ( ! pQueue ) {
-        throw std::bad_alloc ();
-    }
-    return *pQueue;
+    return * new timerQueuePassive ( notify );
 }
 
 timerQueuePassive::timerQueuePassive ( epicsTimerQueueNotify &notifyIn ) :
@@ -60,14 +56,9 @@ epicsTimer & timerQueuePassive::createTimer ()
     return this->queue.createTimer ();
 }
 
-epicsTimerForC & timerQueuePassive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
+epicsTimerForC & timerQueuePassive::createTimerForC ( epicsTimerCallback pCallback, void * pArg )
 {
-    return this->queue.createTimerForC ( pCB, pPrivateIn );
-}
-
-void timerQueuePassive::destroyTimerForC ( epicsTimerForC &tmr )
-{
-    this->queue.destroyTimerForC ( tmr );
+    return this->queue.createTimerForC ( pCallback, pArg );
 }
 
 double timerQueuePassive::process ( const epicsTime & currentTime )

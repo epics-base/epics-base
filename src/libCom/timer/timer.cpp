@@ -30,18 +30,10 @@
  */
 
 #define epicsExportSharedSymbols
+#include "epicsGuard.h"
 #include "timerPrivate.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < timer, 32, 0 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
+epicsSingleton < tsFreeList < timer, 0x20 > > timer::pFreeList;
 
 timer::timer ( timerQueue &queueIn ) :
     curState ( stateLimbo ), pNotify ( 0 ), queue ( queueIn )
@@ -55,9 +47,7 @@ timer::~timer ()
 
 void timer::destroy () 
 {
-    this->~timer ();
-    epicsAutoMutex autoLock ( this->queue.mutex );
-    this->queue.timerFreeList.release ( this, sizeof( *this ) );
+    delete this;
 }
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
@@ -67,7 +57,7 @@ void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 
 void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
 {
-    epicsAutoMutex locker ( this->queue.mutex );
+    epicsGuard < epicsMutex > locker ( this->queue.mutex );
     this->privateCancel ( locker );
     this->privateStart ( notify, expire );
 }
@@ -126,46 +116,44 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 
 void timer::cancel ()
 {
-    epicsAutoMutex locker ( this->queue.mutex );
-    this->privateCancel ( locker );
+    if ( this->curState == statePending || this->curState == stateActive ) {
+        epicsGuard < epicsMutex > locker ( this->queue.mutex );
+        this->privateCancel ( locker );
+    }
 }
 
-void timer::privateCancel ( epicsAutoMutex & locker )
+void timer::privateCancel ( epicsGuard < epicsMutex > & locker )
 {
-    while ( true ) {
-        if ( this->curState == statePending ) {
-            if ( this->queue.timerList.first() == this ) {
-                this->queue.notify.reschedule ();
-            }
-            this->queue.timerList.remove ( *this );
-            this->curState = stateLimbo;
-            this->pNotify = 0;
+    if ( this->curState == statePending ) {
+        if ( this->queue.timerList.first() == this ) {
+            this->queue.notify.reschedule ();
         }
-        if ( this->queue.pExpireTmr == this && 
-            this->queue.processThread != epicsThreadGetIdSelf() ) {
-            this->queue.cancelPending = true;
+        this->queue.timerList.remove ( *this );
+        this->curState = stateLimbo;
+        this->pNotify = 0;
+    }
+    else if ( this->curState == stateActive ) {
+        this->queue.cancelPending = true;
+        this->curState = timer::stateLimbo;
+        if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
             // make certain timer expire() does not run after cancel () returns,
             // but dont require that lock is applied while calling expire()
             {
-                epicsAutoMutexRelease autoRelease ( locker );
-                while ( this->queue.cancelPending ) {
+                epicsGuardRelease < epicsMutex > autoRelease ( locker );
+                while ( this->queue.cancelPending && 
+                        this->queue.pExpireTmr == this ) {
                     this->queue.cancelBlockingEvent.wait ();
                 }
                 // in case other threads are waiting
                 this->queue.cancelBlockingEvent.signal ();
             }
         }
-        else {
-            // dont wait if this was called indirectly by expire ()
-            return;
-        }
     }
 }
 
 epicsTimer::expireInfo timer::getExpireInfo () const
 {
-    epicsAutoMutex locker ( this->queue.mutex );
-    if ( this->curState == statePending || this->queue.pExpireTmr == this ) {
+    if ( this->curState == statePending || this->curState == stateActive ) {
         return expireInfo ( true, this->exp );
     }
     return expireInfo ( false, epicsTime() );
@@ -173,21 +161,34 @@ epicsTimer::expireInfo timer::getExpireInfo () const
 
 void timer::show ( unsigned int level ) const
 {
-    epicsAutoMutex locker ( this->queue.mutex );
+    epicsGuard < epicsMutex > locker ( this->queue.mutex );
     const char * pName = "<no notify attached>";
+    const char *pStateName;
+
     if ( this->pNotify ) {
         pName = typeid ( *this->pNotify ).name ();
     }
     double delay;
-    if ( this->curState == statePending ) {
+    if ( this->curState == statePending || this->curState == stateActive ) {
         delay = this->exp - epicsTime::getCurrent();
     }
     else {
         delay = -DBL_MAX;
     }
+    if ( this->curState == statePending ) {
+        pStateName = "pending";
+    }
+    else if ( this->curState == stateActive ) {
+        pStateName = "active";
+    }
+    else if ( this->curState == stateLimbo ) {
+        pStateName = "limbo";
+    }
+    else {
+        pStateName = "corrupt";
+    }
     printf ( "%s, state = %s, delay = %f\n",
-        pName, this->curState == statePending ? "pending" : "limbo",
-        delay );
+        pName, pStateName, delay );
     if ( level >= 1u && this->pNotify ) {
         this->pNotify->show ( level - 1u );
     }

@@ -73,17 +73,12 @@ void timerQueueActive::run ()
 
 epicsTimer & timerQueueActive::createTimer ()
 {
-    return this->queue.createTimer ();
+    return this->queue.createTimer();
 }
 
-epicsTimerForC & timerQueueActive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
+epicsTimerForC & timerQueueActive::createTimerForC ( epicsTimerCallback pCallback, void * pArg )
 {
-    return this->queue.createTimerForC ( pCB, pPrivateIn );
-}
-
-void timerQueueActive::destroyTimerForC ( epicsTimerForC &tmr )
-{
-    this->queue.destroyTimerForC ( tmr );
+    return this->queue.createTimerForC ( pCallback, pArg );
 }
 
 void timerQueueActive::reschedule ()

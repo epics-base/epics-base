@@ -79,6 +79,5 @@ epicsShareFunc extern void epicsShareAPI epicsAssert ();
 }
 #endif
 
-
 #endif /* assertEPICS */
 

@@ -298,7 +298,7 @@ int epicsShareAPI cvtDoubleToCompactString(
 static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
 
 int epicsShareAPI cvtCharToString(
-	char source,
+	signed char source,
 	char *pdest)
 {
     unsigned char val,temp;
@@ -441,7 +441,7 @@ int epicsShareAPI cvtLongToString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"%ld",LONG_MIN);
+	    sprintf(pdest,"%ld",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -511,7 +511,7 @@ int epicsShareAPI cvtLongToHexString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"-0x%lx",LONG_MIN);
+	    sprintf(pdest,"-0x%lx",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';
@@ -548,7 +548,7 @@ int epicsShareAPI cvtLongToOctalString(
     }
     if(source<0) {
 	if(source == LONG_MIN) {
-	    sprintf(pdest,"-0%lo",LONG_MIN);
+	    sprintf(pdest,"-0%lo",source);
 	    return((int)strlen(pdest));
 	}
 	*pdest++ = '-';

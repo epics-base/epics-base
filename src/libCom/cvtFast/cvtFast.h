@@ -51,7 +51,6 @@ extern "C" {
 
 #include "shareLib.h"
 
-#if defined(__STDC__) || defined(__cplusplus)
 
 /*
  * each of these functions return the number of characters "transmitted"
@@ -70,7 +69,7 @@ epicsShareFunc int epicsShareAPI
 epicsShareFunc int epicsShareAPI 
 	cvtDoubleToCompactString(double value, char *pstring, unsigned short precision);
 epicsShareFunc int epicsShareAPI 
-	cvtCharToString(char value, char *pstring);
+	cvtCharToString(signed char value, char *pstring);
 epicsShareFunc int epicsShareAPI 
 	cvtUcharToString(unsigned char value, char *pstring);
 epicsShareFunc int epicsShareAPI 
@@ -95,26 +94,6 @@ epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits(
 	unsigned      bitFieldOffset,
 	unsigned      bitFieldLength);
 
-#else /*__STDC__*/
-
-epicsShareFunc int epicsShareAPI cvtFloatToString();
-epicsShareFunc int epicsShareAPI cvtDoubleToString();
-epicsShareFunc int epicsShareAPI cvtFloatToExpString();
-epicsShareFunc int epicsShareAPI cvtDoubleToExpString();
-epicsShareFunc int epicsShareAPI cvtFloatToCompactString();
-epicsShareFunc int epicsShareAPI cvtDoubleToCompactString();
-epicsShareFunc int epicsShareAPI cvtCharToString();
-epicsShareFunc int epicsShareAPI cvtUcharToString();
-epicsShareFunc int epicsShareAPI cvtShortToString();
-epicsShareFunc int epicsShareAPI cvtUshortToString();
-epicsShareFunc int epicsShareAPI cvtLongToString();
-epicsShareFunc int epicsShareAPI cvtUlongToString();
-epicsShareFunc int epicsShareAPI cvtLongToHexString();
-epicsShareFunc int epicsShareAPI cvtLongToOctalString();
-epicsShareFunc unsigned long epicsShareAPI cvtBitsToUlong();
-epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits();
-
-#endif /*__STDC__*/
 
 #ifdef __cplusplus
 }

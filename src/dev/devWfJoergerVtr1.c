@@ -37,6 +37,7 @@
  * .05  02-28-92	jba	Changed callback handling, ANSI C changes
  * .06	03-13-92	jba	ANSI C changes
  * .07  04-10-92        jba     pact now used to test for asyn processing, not return value
+ * .08  04-18-92        jba     removed process from init_record parms
  *      ...
  */
 
@@ -129,9 +130,8 @@ static long get_ioint_info(cmd,pwf,io_type,card_type,card_number)
 }
 
 
-static long init_record(pwf,process)
+static long init_record(pwf)
     struct waveformRecord	*pwf;
-    void (*process)();
 {
     char message[100];
 

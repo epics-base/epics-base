@@ -33,7 +33,8 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92        jba     Changed callback handling, ANSI C changes
- * .02	03-13-92	jba	ANSI C changes
+ * .04	03-13-92	jba	ANSI C changes
+ * .05	04-18-92	jba	removed process from init_record parms
  *      ...
  */
 
@@ -96,9 +97,8 @@ static void myCallback(pwf,no_read,pdata)
         dbScanUnlock((struct dbCommon *)pwf);
 }
 
-static long init_record(pwf,process)
+static long init_record(pwf)
     struct waveformRecord	*pwf;
-    void (*process)();
 {
     char message[100];
 

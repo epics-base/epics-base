@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.14  1998/06/16 02:06:32  jhill
+// lazy init sock lib when its a static build & recoverfrom select differences in winsock
+//
 // Revision 1.13  1998/05/29 20:22:44  jhill
 // made hashing routine portable
 //
@@ -413,3 +416,17 @@ epicsShareFunc fdReg *fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
 	return this->fdTbl.lookup(id); 
 }
 
+//
+// fdReg::fdReg()
+//
+fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn, 
+		const unsigned onceOnlyIn) : 
+	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
+{
+	if (!FD_IN_FDSET(fdIn)) {
+		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
+			__FILE__);
+		return;
+	}
+	fileDescriptorManager.installReg(*this);
+}

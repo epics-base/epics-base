@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/06/16 02:04:07  jhill
+ * fixed spelling
+ *
  * Revision 1.8  1998/02/05 21:12:10  jhill
  * removed questionable inline
  *
@@ -188,20 +191,5 @@ inline int fdManagerMaxInt (int a, int b)
         }
 }
  
-//
-// fdReg::fdReg()
-//
-inline fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn, 
-		const unsigned onceOnlyIn) : 
-	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
-{
-	if (!FD_IN_FDSET(fdIn)) {
-		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
-			__FILE__);
-		return;
-	}
-	fileDescriptorManager.installReg(*this);
-}
-
 #endif // fdManagerH_included
  

@@ -61,7 +61,7 @@ LOCAL int initIPAddr (struct in_addr ipAddr, unsigned short port, struct sockadd
  * named host to be specified.
  *
  * Sets the port number to "defaultPort" only if 
- * "pAddrString" does not contain an addres of the form
+ * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p"
  */
 epicsShareFunc int epicsShareAPI 

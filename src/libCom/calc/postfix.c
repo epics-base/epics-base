@@ -38,6 +38,7 @@
  * .07  02-24-92        jba     add EXP and fixed trailing blanks in expression
  * .08  03-03-92        jba     added MAX and MIN and comma(like close paren)
  * .09  03-06-92        jba     added multiple conditional expressions ?
+ * .10  04-01-92        jba     allowed floating pt constants in expression
 */
 
 /* 
@@ -104,6 +105,7 @@
 #define	ELSE		7
 #define	SEPERATOR	8
 #define	TRASH		9
+#define	FLOAT_PT	10
 
 
 /* flags end of element table */
@@ -113,11 +115,6 @@
 #define	FINE		0
 #define	UNKNOWN_ELEMENT	-1
 #define	END		-2
-
-struct link{
-	short	field1;
-	short	field2;
-};
 
 /*
  * element table
@@ -190,6 +187,17 @@ static struct expression_element	elements[] = {
 "j",		0,	0,	OPERAND,	FETCH_J,   /* fetch var J */
 "k",		0,	0,	OPERAND,	FETCH_K,   /* fetch var K */
 "l",		0,	0,	OPERAND,	FETCH_L,   /* fetch var L */
+"0",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"1",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"2",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"3",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"4",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"5",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"6",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"7",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"8",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"9",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+".",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
 "?",		0,	0,	CONDITIONAL,	COND_IF,   /* conditional */
 ":",		0,	0,	CONDITIONAL,	COND_ELSE, /* else */
 "(",		0,	8,	UNARY_OPERATOR,	PAREN,     /* open paren */
@@ -246,11 +254,10 @@ static int find_element(pbuffer,pelement,pno_bytes)
  *
  * get an expression element
  */
-static int get_element(pinfix,pelement,pno_bytes,plink)
+static int get_element(pinfix,pelement,pno_bytes)
 register char	*pinfix;
 register struct expression_element	**pelement;
 register short		*pno_bytes;
-struct link		*plink;
 {
 
 	/* get the next expression element from the infix expression */
@@ -281,7 +288,6 @@ short		*perror;
 	short		no_bytes;
 	register short	operand_needed;
 	register short	new_expression;
-	struct link	new_link;
 	struct expression_element	stack[80];
 	struct expression_element	*pelement;
 	register struct expression_element	*pstacktop;
@@ -290,7 +296,10 @@ short		*perror;
 	operand_needed = TRUE;
 	new_expression = TRUE;
 	pstacktop = &stack[0];
-	while (get_element(pinfix,&pelement,&no_bytes,&new_link) != END){
+	while (get_element(pinfix,&pelement,&no_bytes) != END){
+/*
+printf ("postfix pinfix=%s \n",pinfix);
+*/
 
 	    pinfix += no_bytes;
 	    switch (pelement->type){
@@ -303,6 +312,36 @@ short		*perror;
 
 		/* add operand to the expression */
 		*ppostfix++ = pelement->code;
+
+		operand_needed = FALSE;
+		new_expression = FALSE;
+		break;
+
+	    case FLOAT_PT:
+		if (!operand_needed){
+		    *perror = 5;
+		    return(-1);
+		}
+
+		/* add constant to the expression */
+		*ppostfix++ = pelement->code;
+
+		pinfix-=no_bytes;
+		while (TRUE) {
+			if ( ( *pinfix >= '0' && *pinfix <= '9' ) || *pinfix == '.' ) {
+				*ppostfix++ = *pinfix;
+				pinfix++;
+			} else if ( *pinfix == 'E' || *pinfix == 'e' ) {
+				*ppostfix++ = *pinfix;
+				pinfix++;
+					if (*pinfix == '+' || *pinfix == '-' ) {
+						*ppostfix++ = *pinfix;
+						pinfix++;
+					}
+			} else break;
+		}
+
+		*ppostfix++ = '\0';
 
 		operand_needed = FALSE;
 		new_expression = FALSE;

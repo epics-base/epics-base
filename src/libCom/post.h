@@ -32,6 +32,8 @@
  * .03  02-17-92        jba     add exp, CEIL, and FLOOR
  * .04  03-03-92        jba     added MAX, MIN, and comma
  * .05  03-06-92        jba     added multiple conditional expressions ?
+ * .06  04-02-92        jba     added CONSTANT for floating pt constants in expression
+
  */
 
 /*	defines for element table      */
@@ -106,4 +108,5 @@
 #define		COMMA		68
 #define		COND_IF		69
 #define		COND_END	70
+#define		CONSTANT	71
 #define		END_STACK	-1

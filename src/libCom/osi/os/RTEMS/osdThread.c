@@ -206,8 +206,7 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
     rtems_status_code sc;
 
     v = mallocMustSucceed (sizeof *v, "epicsThreadCreate_vars");
-    v->name = mallocMustSucceed (strlen (name) + 1, "epicsThreadCreate_name");
-    strcpy (v->name, name);
+    v->name = epicsStrDup(name);
     v->id = tid;
     v->funptr = funptr;
     v->parm = parm;

@@ -142,8 +142,7 @@ static epicsThreadOSD * create_threadInfo(const char *name)
 
     pthreadInfo = callocMustSucceed(1,sizeof(*pthreadInfo),"create_threadInfo");
     pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);
-    pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"create_threadInfo");
-    strcpy(pthreadInfo->name,name);
+    pthreadInfo->name = epicsStrDup(name);
     return pthreadInfo;
 }
 

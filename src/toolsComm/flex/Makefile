@@ -11,7 +11,7 @@ YACCOPT = -l -d
 SKELETON_FILE=include/flex.skel.static
 
 #	ARCH_CLASS hp700 needs special flags,
-#	everything else uses default:
+#	everything else uses DEFAULT:
 #
 USR_CFLAGS_DEFAULT := -DUSG
 USR_CFLAGS_hp700 := -DSCO_UNIX
@@ -26,7 +26,8 @@ INC += flex.skel.static
 #
 SRCS := ccl.c dfa.c ecs.c gen.c misc.c nfa.c sym.c tblcmp.c parse.c
 
-PROD := e_flex
+PROD_DEFAULT := e_flex
+PROD_vxWorks := -nil-
 
 include $(TOP)/configure/RULES_BUILD
 

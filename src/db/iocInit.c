@@ -53,7 +53,6 @@
  * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
  * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
  * .25	07-15-93	mrk	Changed dbLoad for new dbStaticLib support
-<<<<<<< iocInit.c
  * .26	02-09-94	jbk	changed to new time stamp support software ts_init()
  * .27	03-18-94	mcn	added comments
  * .28	03-23-94	mrk	Added asInit
@@ -176,11 +175,6 @@ int iocInit(char * pResourceFilename)
     *  Read EPICS resources.
     */
     status = getResources(pResourceFilename);
-    if (status != 0) {
-	logMsg("iocInit aborting because getResources failed\n",0,0,0,0,0,0);
-	return(-1);
-    }
-
    /* Call hook for after resources are read. */
     if (pinitHooks) (*pinitHooks)(INITHOOKafterGetResources);
 
@@ -1078,7 +1072,7 @@ static long getResources(char  *fname)
 	    sprintf(message,
 		    "getResources: Line too long - line=%d", lineNum);
 	    errMessage(-1L, message);
-	    return (-1);
+	    continue;
 	}
 	for (i = 0; i < len; i++) {
 	    if (buff[i] == '!') {
@@ -1090,7 +1084,7 @@ static long getResources(char  *fname)
 	    sprintf(message,
 		    "getResources: Not enough fields - line=%d", lineNum);
 	    errMessage(-1L, message);
-	    return (-1);
+	    continue;
 	}
 	found = 0;
 	len2 = strlen(s2);
@@ -1107,7 +1101,7 @@ static long getResources(char  *fname)
 	    sprintf(message,
 		    "getResources: Field 2 not defined - line=%d", lineNum);
 	    errMessage(-1L, message);
-	    return (-1);
+	    continue;
 	}
 	strcpy(name, "_");
 	strcat(name, s1);
@@ -1116,7 +1110,7 @@ static long getResources(char  *fname)
 	    sprintf(message,
 		  "getResources: Symbol name not found - line=%d", lineNum);
 	    errMessage(-1L, message);
-	    return (-1);
+	    continue;
 	}
 	if ( (strncmp(s1,"EPICS_",6)) == SAME)
             epicsFlag = 1;
@@ -1143,7 +1137,7 @@ static long getResources(char  *fname)
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(-1L, message);
-	        return (-1);
+	        continue;
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
@@ -1160,7 +1154,7 @@ static long getResources(char  *fname)
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(-1L, message);
-	        return (-1);
+	        continue;
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
@@ -1176,7 +1170,7 @@ static long getResources(char  *fname)
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(-1L, message);
-	        return (-1);
+	        continue;
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
@@ -1193,7 +1187,7 @@ static long getResources(char  *fname)
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(-1L, message);
-	        return (-1);
+	        continue;
 	    }
             if ( epicsFlag ) {
                 sprintf(message,
@@ -1209,7 +1203,7 @@ static long getResources(char  *fname)
 	    sprintf(message,
 		 "getResources: switch default reached - line=%d", lineNum);
 	    errMessage(-1L, message);
-	    return (-1);
+	    continue;
 	    break;
 	}
 CLEAR:	memset(buff, '\0',  MAX);

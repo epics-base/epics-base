@@ -9,6 +9,7 @@ MANLIST = 1 2 3 4 5 6 7 8 9
 INSTALL_MANS = $(foreach n, \
         $(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
 INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
 INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 INSTALL_TEMPLATE = $(TEMPLATES:%= $(INSTALL_TEMPLATES_SUBDIR)/%)
@@ -41,7 +42,7 @@ buildInstall :: build \
 	$(TARGETS) \
 	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) \
 		$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
-	$(INSTALL_MAN) $(INSTALL_MANS) \
+	$(INSTALL_MAN) $(INSTALL_MANS) $(INSTALL_HTMLS) \
 	$(INSTALL_DOC) $(INSTALL_DOCS) $(INSTALL_TEMPLATES) \
 	$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) $(INSTALL_TEMPLATE) \
 	$(INSTALL_CONFIG) $(INSTALL_CONFIGS) 
@@ -209,13 +210,21 @@ $(INSTALL_DOC)/%: ../%
 	@echo "Installing doc $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: % 
+	@echo "Installing html $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: ../% 
+	@echo "Installing html $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../% 
 	@echo "Installing template $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(@D) 
 
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: % 
 	@echo "Installing template $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PRECIOUS: %.o %.c
 

@@ -12,6 +12,7 @@ MANLIST = 1 2 3 4 5 6 7 8 9
 INSTALL_MANS = $(foreach n, \
 	$(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
 INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
 INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
 INSTALL_INSTALLS = $(INSTALLS:%= $(INSTALL_BIN)/%)
 
@@ -49,6 +50,7 @@ buildInstall :: build $(INSTALL_INCREC)\
 	 $(TARGETS) $(INSTALL_PROD) \
 	 $(INSTALL_MAN) $(INSTALL_MANS)\
          $(INSTALL_DOC) $(INSTALL_DOCS) \
+         $(INSTALL_HTMLS) \
 	 $(INSTALL_SCRIPTS) $(INSTALL_INSTALLS)\
 	 $(INSTALL_DBD) $(INSTALL_DBS) $(INSTALL_BPTS) \
 	 $(INSTALL_DBDNAME) 
@@ -259,6 +261,14 @@ $(INSTALL_DOC)/%: %
 $(INSTALL_DOC)/%: ../% 
 	@echo "Installing $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: % 
+	@echo "Installing $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: ../% 
+	@echo "Installing $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PRECIOUS: %.o %.c
 

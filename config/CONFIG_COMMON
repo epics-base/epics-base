@@ -25,6 +25,7 @@ INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
 
 INSTALL_INCLUDE             = $(INSTALL_LOCATION)/include
 INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
+INSTALL_HTML                = $(INSTALL_LOCATION)/html
 INSTALL_MAN                 = $(INSTALL_LOCATION)/man
 INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.54  1998/06/16 00:42:21  jhill
+ * fixed include
+ *
  * Revision 1.53  1998/06/16 00:25:31  jhill
  * cleanup
  *
@@ -290,6 +293,18 @@ int doacctst(char *pname)
 		SEVCHK(ca_clear_channel(chix3), NULL);
 		SEVCHK(ca_clear_channel(chix2), NULL);
 		SEVCHK(ca_clear_channel(chix1), NULL);
+
+		/*
+		 * verify that connections to IOC's that are 
+		 * not in use are dropped
+		 */
+		j=0;
+		do {
+			ca_pend_event (0.1);
+			assert (++j<100);
+		}
+		while (ca_get_ioc_connection_count()>0u);
+
 	}
 	printf("\n");
 

@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <limits.h>
-#include <time.h>
 
 #define epicsExportSharedSymbols
 #include <tsDefs.h> 
@@ -69,8 +68,8 @@ osiTime osiTime::getCurrent ()
 // does not include header files that do define this
 //
 struct timespec {
-    time_t tv_sec; /* seconds */
-    long tv_nsec;  /* nanoseconds */
+    unsigned long tv_sec; /* seconds */
+    unsigned long tv_nsec;  /* nanoseconds */
 };
 
 //
@@ -79,7 +78,6 @@ struct timespec {
 osiTime::operator struct timespec () const
 {
 	struct timespec ts;
-	assert (this->sec<=LONG_MAX-osiTime::epicsEpochSecPast1970);
 	ts.tv_sec = this->sec + osiTime::epicsEpochSecPast1970;
 	ts.tv_nsec = this->nSec;
 	return ts;
@@ -90,21 +88,43 @@ osiTime::operator struct timespec () const
 //
 osiTime::osiTime (const struct timespec &ts)
 {
-	assert (ts.tv_sec >= osiTime::epicsEpochSecPast1970);
-	this->sec = ((unsigned long)ts.tv_sec) - osiTime::epicsEpochSecPast1970;
-	assert (ts.tv_nsec>=0 && ts.tv_nsec<osiTime::nSecPerSec);
-	this->nSec = (unsigned long) ts.tv_nsec;
+	if (ts.tv_sec >= osiTime::epicsEpochSecPast1970) {
+		this->sec = ts.tv_sec - osiTime::epicsEpochSecPast1970;
+	}
+	else {
+		this->sec = 0;
+	}
+
+	if (ts.tv_nsec<osiTime::nSecPerSec) {
+		this->nSec = ts.tv_nsec;
+	}
+	else {
+		this->sec += ts.tv_nsec / osiTime::nSecPerSec;
+		this->nSec = ts.tv_nsec % osiTime::nSecPerSec;
+	}
 }
 
 //
 // operator = (const struct timespec &rhs)
 //
-osiTime::operator = (const struct timespec &rhs)
+osiTime osiTime::operator = (const struct timespec &rhs)
 {
-	assert (rhs.tv_sec >= osiTime::epicsEpochSecPast1970);
-	this->sec = ((unsigned long)rhs.tv_sec) - osiTime::epicsEpochSecPast1970;
-	assert (rhs.tv_nsec>=0 && rhs.tv_nsec<osiTime::nSecPerSec);
-	this->nSec = (unsigned long) rhs.tv_nsec;
+	if (rhs.tv_sec >= osiTime::epicsEpochSecPast1970) {
+		this->sec = rhs.tv_sec - osiTime::epicsEpochSecPast1970;
+	}
+	else {
+		this->sec = 0;
+	}
+
+	if (rhs.tv_nsec<osiTime::nSecPerSec) {
+		this->nSec = rhs.tv_nsec;
+	}
+	else {
+		this->sec += rhs.tv_nsec / osiTime::nSecPerSec;
+		this->nSec = rhs.tv_nsec % osiTime::nSecPerSec;
+	}
+
+	return *this;
 }
 
 //
@@ -124,7 +144,6 @@ public:
 osiTime::operator aitTimeStamp () const
 {
 	aitTimeStamp ts;
-	assert (this->sec<=ULONG_MAX-osiTime::epicsEpochSecPast1970);
 	ts.tv_sec = this->sec + osiTime::epicsEpochSecPast1970;
 	ts.tv_nsec = this->nSec;
 	return ts;
@@ -135,21 +154,41 @@ osiTime::operator aitTimeStamp () const
 //
 osiTime::osiTime (const aitTimeStamp &ts) 
 {
-	assert (ts.tv_sec >= osiTime::epicsEpochSecPast1970);
-	this->sec = ts.tv_sec - osiTime::epicsEpochSecPast1970;
-	assert (ts.tv_nsec<osiTime::nSecPerSec);
-	this->nSec = ts.tv_nsec;
+	if (ts.tv_sec >= osiTime::epicsEpochSecPast1970) {
+		this->sec = ts.tv_sec - osiTime::epicsEpochSecPast1970;
+	}
+	else {
+		this->sec = 0;
+	}
+
+	if (ts.tv_nsec<osiTime::nSecPerSec) {
+		this->nSec = ts.tv_nsec;
+	}
+	else {
+		this->sec += ts.tv_nsec / osiTime::nSecPerSec;
+		this->nSec = ts.tv_nsec % osiTime::nSecPerSec;
+	}
 }
 
 //
 // operator = (const aitTimeStamp &rhs)
 //
-osiTime::operator = (const aitTimeStamp &rhs)
+osiTime osiTime::operator = (const aitTimeStamp &rhs)
 {
-	assert (rhs.tv_sec >= osiTime::epicsEpochSecPast1970);
-	this->sec = rhs.tv_sec - osiTime::epicsEpochSecPast1970;
-	assert (rhs.tv_nsec<osiTime::nSecPerSec);
-	this->nSec = rhs.tv_nsec;
+	if (rhs.tv_sec >= osiTime::epicsEpochSecPast1970) {
+		this->sec = rhs.tv_sec - osiTime::epicsEpochSecPast1970;
+	}
+	else {
+		this->sec = 0;
+	}
+	if (rhs.tv_nsec<osiTime::nSecPerSec) {
+		this->nSec = rhs.tv_nsec;
+	}
+	else {
+		this->sec += rhs.tv_nsec / osiTime::nSecPerSec;
+		this->nSec = rhs.tv_nsec % osiTime::nSecPerSec;
+	}
+	return *this;
 }
 
 //
@@ -175,10 +214,11 @@ osiTime::osiTime (const struct TS_STAMP &ts)
 //
 // operator = (const TS_STAMP &rhs)
 //
-osiTime::operator = (const struct TS_STAMP &rhs)
+osiTime osiTime::operator = (const struct TS_STAMP &rhs)
 {
 	this->sec = rhs.secPastEpoch;
 	this->nSec = rhs.nsec;
+	return *this;
 }
 
 //
@@ -210,7 +250,7 @@ void osiTime::show (unsigned) const
 //
 osiTime osiTime::operator - (const osiTime &rhs) const
 {
-	unsigned long nSec, sec;
+	unsigned long nSecRes, secRes;
 
 	if (this->sec<rhs.sec) {
 		if (rhs.sec-this->sec < ULONG_MAX/2) {
@@ -229,12 +269,12 @@ osiTime osiTime::operator - (const osiTime &rhs) const
 			// 69 years assume that the seconds counter has rolled 
 			// over and compute the "wrap around" difference
 			//
-			sec = 1 + this->sec + (ULONG_MAX - rhs.sec);
+			secRes = 1 + this->sec + (ULONG_MAX - rhs.sec);
 		}
 	}
 	else {
-		sec = this->sec - rhs.sec;
-		if (sec > ULONG_MAX/2) {
+		secRes = this->sec - rhs.sec;
+		if (secRes > ULONG_MAX/2) {
 			//
 			// assume that someone adjusted the time 
 			// backwards slightly. This would happen if a high
@@ -246,16 +286,16 @@ osiTime osiTime::operator - (const osiTime &rhs) const
 	}
 
 	if (this->nSec>=rhs.nSec) {
-		nSec = this->nSec - rhs.nSec;	
+		nSecRes = this->nSec - rhs.nSec;	
 	}
 	else {
 
-		if (sec>0) {
+		if (secRes>0) {
 			//
 			// Borrow
 			//	
-			nSec = this->nSec + (osiTime::nSecPerSec - rhs.nSec);	
-			sec--;
+			nSecRes = this->nSec + (osiTime::nSecPerSec - rhs.nSec);	
+			secRes--;
 		}
 		else {
 			//
@@ -268,7 +308,7 @@ osiTime osiTime::operator - (const osiTime &rhs) const
 			return osiTime ();
 		}
 	}
-	return osiTime (sec, nSec);	
+	return osiTime (secRes, nSecRes);	
 }
 
 //

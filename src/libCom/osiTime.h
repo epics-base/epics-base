@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1999/05/07 19:12:39  jhill
+ * many improvements to osiTime
+ *
  * Revision 1.8  1999/05/03 16:22:29  jhill
  * allow osiTime to convert toaitTimeStamp without binding to gdd
  *
@@ -135,21 +138,21 @@ public:
 	//
 	operator struct TS_STAMP () const;
 	osiTime (const struct TS_STAMP &ts);
-	operator = (const struct TS_STAMP &rhs);
+	osiTime operator = (const struct TS_STAMP &rhs);
 
 	//
 	// convert to and from GDD's aitTimeStamp format
 	//
 	operator aitTimeStamp () const;
 	osiTime (const aitTimeStamp &ts);
-	operator = (const aitTimeStamp &rhs);
+	osiTime operator = (const aitTimeStamp &rhs);
 
 	//
 	// convert to and from POSIX RT's "struct timespec"
 	//
 	operator struct timespec () const;
 	osiTime (const struct timespec &ts);
-	operator = (const struct timespec &rhs);
+	osiTime operator = (const struct timespec &rhs);
 
 	//
 	// arithmetic operators

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1999/08/10 19:57:15  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.7  1999/08/10 17:23:55  jhill
  * moved inlines in order to eliminate g++ warnings
  *
@@ -52,9 +55,9 @@ inline const aitType& gdd::getData(void) const	{ return data; }
 inline aitType* gdd::dataUnion(void)		{ return &data; }
 inline const aitType* gdd::dataUnion(void)const { return &data; }
 inline void gdd::setApplType(int t)			{ appl_type=(aitUint16)t; }
-inline gddStatus gdd::copyInfo(gdd* dd)		{ return copyStuff(dd,0); }
-inline gddStatus gdd::copy(gdd* dd)			{ return copyStuff(dd,1); }
-inline gddStatus gdd::Dup(gdd* dd)			{ return copyStuff(dd,2); }
+inline gddStatus gdd::copyInfo(const gdd* dd)		{ return copyStuff(dd,0); }
+inline gddStatus gdd::copy(const gdd* dd)			{ return copyStuff(dd,1); }
+inline gddStatus gdd::Dup(const gdd* dd)			{ return copyStuff(dd,2); }
 inline const void* gdd::dataAddress(void)	const	{ return (void*)&data; }
 inline void* gdd::dataAddress(void) { return (void*)&data; }
 inline const void* gdd::dataPointer(void)	const { return data.Pointer; }

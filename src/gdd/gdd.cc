@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.31  2000/03/08 16:24:20  jhill
+// doc
+//
 // Revision 1.30  1999/10/28 15:57:09  jhill
 // now supports copy only the addressed portions between one GDD
 // and another
@@ -431,7 +434,7 @@ gddStatus gdd::getBound(unsigned index_dim, aitIndex& first, aitIndex& count) co
 }
 
 // should the copy functions in gdd use the flatten technique?
-gddStatus gdd::copyStuff(gdd* dd,int ctype)
+gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 {
 	unsigned i;
 	gddStatus rc=0;

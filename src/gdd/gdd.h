@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.32  2000/06/12 17:32:11  jhill
+ * moved stdlib.h (an ANSI C file) outside of OS depen switch
+ *
  * Revision 1.31  1999/08/10 17:11:01  jhill
  * moved inlines in order to eliminate g++ warnings
  *
@@ -284,9 +287,9 @@ public:
 	//   copy data into it.
 	// Dup() will copy DD info. bounds, data references copied only.
 
-	gddStatus copyInfo(gdd*);
-	gddStatus copy(gdd*);
-	gddStatus Dup(gdd*);
+	gddStatus copyInfo(const gdd*);
+	gddStatus copy(const gdd*);
+	gddStatus Dup(const gdd*);
 
 	// copy the entire DD structure into a contiguous buffer, return the
 	// last byte of the buffer that was used.
@@ -570,7 +573,7 @@ protected:
 	void init(int app, aitEnum prim, int dimen);
 	void freeBounds(void);
 	void dumpInfo(void) const;
-	gddStatus copyStuff(gdd*,int type);
+	gddStatus copyStuff(const gdd*,int type);
 	gddStatus clearData(void);
 
 	size_t describedDataSizeBytes(void) const;

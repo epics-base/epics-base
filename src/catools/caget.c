@@ -70,9 +70,10 @@ void usage (void)
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
     "Floating point type format:\n"
-    "  Default: Use g format\n"
-    "  -f <nr>: Use f format, with <nr> digits after the decimal point\n"
-    "  -e <nr>: Use e format, with <nr> digits after the decimal point\n"
+    "  Default: Use %%g format\n"
+    "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
+    "  -f <nr>: Use %%f format, with a precision of <nr> digits\n"
+    "  -g <nr>: Use %%g format, with a precision of <nr> digits\n"
     "Integer number format:\n"
     "  Default: Print as decimal number\n"
     "  -0x: Print as hex number\n"
@@ -320,7 +321,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,0);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhe:f:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhe:f:g:#:d:0:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -374,31 +375,20 @@ int main (int argc, char *argv[])
                 count = 0;
             }
             break;
-        case 'e':               /* Select %e format, using <arg> digits */
+        case 'e':               /* Select %e/%f/%g format, using <arg> digits */
+        case 'f':
+        case 'g':
             if (sscanf(optarg, "%d", &digits) != 1)
                 fprintf(stderr, 
                         "Invalid precision argument '%s' "
-                        "for option '-e' - ignored.\n", optarg);
+                        "for option '-%c' - ignored.\n", optarg, optopt);
             else
             {
                 if (digits>=0 && digits<=VALID_DOUBLE_DIGITS)
-                    sprintf(dblFormatStr, "%%-.%de", digits);
+                    sprintf(dblFormatStr, "%%-.%d%c", digits, optopt);
                 else
-                    fprintf(stderr, "Precision %d for option '-e' "
-                            "out of range - ignored.\n", digits);
-            }
-            break;
-        case 'f':               /* Select %f format, using <arg> digits */
-            if (sscanf(optarg, "%d", &digits) != 1)
-                fprintf(stderr, "Invalid precision argument '%s' "
-                        "for option '-f' - ignored.\n", optarg);
-            else
-            {
-                if (digits>=0 && digits<=VALID_DOUBLE_DIGITS)
-                    sprintf(dblFormatStr, "%%-.%df", digits);
-                else
-                    fprintf(stderr, "Precision %d for option '-f' "
-                            "out of range - ignored.\n", digits);
+                    fprintf(stderr, "Precision %d for option '-%c' "
+                            "out of range - ignored.\n", digits, optopt);
             }
             break;
         case '0':               /* Select integer format */

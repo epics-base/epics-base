@@ -29,6 +29,7 @@
  * -----------------
  * .01  09-05-92	rcz	initial version
  * .02  09-10-92	rcz	changed return from void to long
+ * .03  09-10-92	rcz	changed completely
  *
  */
 
@@ -36,7 +37,7 @@
 #include	<vxWorks.h>
 #include	<initHooks.h>
 
-extern long setMasterTimeToSelf();
+extern void setMasterTimeToSelf();
 
 /*
  * INITHOOKS
@@ -48,21 +49,49 @@ extern long setMasterTimeToSelf();
 
 /* If this function (initHooks) is loaded, iocInit calls this function
  * at certain defined points during IOC initialization */
-long initHooks(callNumber)
+void initHooks(callNumber)
 int	callNumber;
 {
-long status = 0;
-
 	switch (callNumber) {
-	case SETMASTERTIMETOSELF:
-		status = setMasterTimeToSelf();
+	case INITHOOKatBeginning :
+	    /* Note: EPICS_IOCMCLK_INET enabled in the resource.def file*/
+	    /* will override this call to setMasterTimeToSelf */
+	    setMasterTimeToSelf();
 	    break;
-	case DBUSEREXIT:
-		/* place holder */
-		status = 0; /* call user routine here */
+	case INITHOOKafterSetEnvParams :
+	    break;
+	case INITHOOKafterGetResources :
+	    break;
+	case INITHOOKafterLogInit :
+	    break;
+	case INITHOOKafterCallbackInit :
+	    break;
+	case INITHOOKafterCaLinkInit1 :
+	    break;
+	case INITHOOKafterInitDrvSup :
+	    break;
+	case INITHOOKafterInitRecSup :
+	    break;
+	case INITHOOKafterInitDevSup :
+	    break;
+	case INITHOOKafterTS_init :
+	    break;
+	case INITHOOKafterInitDatabase :
+	    break;
+	case INITHOOKafterCaLinkInit2 :
+	    break;
+	case INITHOOKafterFinishDevSup :
+	    break;
+	case INITHOOKafterScanInit :
+	    break;
+	case INITHOOKafterInterruptAccept :
+	    break;
+	case INITHOOKafterInitialProcess :
+	    break;
+	case INITHOOKatEnd :
 	    break;
 	default:
 	    break;
 	}
-	return(status);
+	return;
 }

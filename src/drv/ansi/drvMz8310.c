@@ -473,7 +473,7 @@ LOCAL mz8310Stat mz8310_read_test(unsigned card, unsigned channel)
 mz8310Stat mz8310_one_shot(	
 unsigned	preset,			/* TRUE or COMPLEMENT logic */
 double		edge0_delay,		/* sec */
-double		edge1_delay,		/* set */
+double		edge1_delay,		/* sec */
 unsigned	card,			/* 0 through ... */
 unsigned	channel,		/* 0 through channels on a card */
 unsigned	int_source, 		/* (FALSE)External/ (TRUE)Internal source */

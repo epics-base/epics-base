@@ -117,7 +117,7 @@ void circuit::recvTest ()
     }
 }
 
-void socketRecvTest ( void * pParm )
+extern "C" void socketRecvTest ( void * pParm )
 {
     circuit * pCir = reinterpret_cast < circuit * > ( pParm );
     pCir->recvTest ();
@@ -145,7 +145,7 @@ const char * clientCircuit::pName ()
     return "client circuit";
 }
 
-void serverDaemon ( void * pParam ) {
+extern "C" void serverDaemon ( void * pParam ) {
     server * pSrv = reinterpret_cast < server * > ( pParam );
     pSrv->daemon ();
 }
@@ -188,11 +188,11 @@ serverCircuit::serverCircuit ( SOCKET sockIn ) :
     circuit ( sockIn )
 {
     circuit * pCir = this;
-    epicsThreadId id = epicsThreadCreate ( 
+    epicsThreadId threadId = epicsThreadCreate ( 
         "server circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    assert ( id );
+    assert ( threadId );
 }
 
 const char * serverCircuit::pName ()

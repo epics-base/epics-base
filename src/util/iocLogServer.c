@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.21  1996/06/21 01:07:46  jhill
+ * use sigemptyset() and cc -Xc changes
+ *
  * Revision 1.20  1996/06/19 18:03:17  jhill
  * SIGHUP changes added by KECK
  *
@@ -63,38 +66,28 @@
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
+#include 	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<errno.h>
+
 #include 	<unistd.h>
+#include	<signal.h>
 
-#include	<sys/types.h>
-#include	<sys/time.h>
-#include	<sys/socket.h>
-#include	<sys/ioctl.h>
-#include	<netinet/in.h>
-#include	<arpa/inet.h>
-#include        <netdb.h>
+#include	<epicsAssert.h>
+#include 	<osiSock.h>
+#include 	<envDefs.h>
+#include 	<fdmgr.h>
 
+
+#if 0
 /*
  * _XOPEN_SOURCE & _POSIX_C_SOURCE must not be defined
  * prior to including the socket headers on solaris
  */
 #define _XOPEN_SOURCE /* for solaris and "cc -Xc" */
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<errno.h>
-#include	<assert.h>
 #define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc" */
-#include	<signal.h>
-
-#   ifdef SOLARIS
-#       include <sys/filio.h>
-#   endif
-
-#include 	<bsdProto.h>
-
-#include 	<envDefs.h>
-#include 	<fdmgr.h>
-
+#endif
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;

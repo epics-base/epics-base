@@ -36,7 +36,7 @@
 #include "virtualCircuit.h"
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
-#include "noopIIU.h"
+#include "noopiiu.h"
 
 nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 
             const char *pNameIn, cacChannel::priLev pri ) :

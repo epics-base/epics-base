@@ -28,6 +28,7 @@
 #include "envDefs.h"
 #include "osiProcess.h"
 #include "osiWireFormat.h"
+#include "epicsAlgorithm.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"
@@ -1123,7 +1124,7 @@ void udpiiu::updateRTTE ( double measured )
 
 double udpiiu::getRTTE () const
 {
-    return max ( this->rtteMean, minRoundTripEstimate );
+    return epicsMax ( this->rtteMean, minRoundTripEstimate );
 }
 
 void udpiiu::hostName ( 

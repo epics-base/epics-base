@@ -7,7 +7,7 @@ most important:
 tools/installEpics.pl
 include/makeEpicsVersion.pl
 libCom/bldEnvData.pl
-libCom/makeStatSymTbl.pl
+libCom/makeStatTbl.pl
 sequencer/makeVersion.pl
 
 WIN32 also uses

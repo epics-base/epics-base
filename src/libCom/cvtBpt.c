@@ -110,7 +110,7 @@ short *plbrk;
 
 #ifdef __STDC__
 long cvtEngToRawBpt(double *pval,short linr,short init,
-	 void **ppbrk,short *plbrk);
+	 void **ppbrk,short *plbrk)
 #else /* __STDC__ */
 long cvtEngToRawBpt(pval,linr, init,ppbrk,plbrk)
 double *pval;

@@ -111,7 +111,7 @@ void * syncGroupReadNotify::operator new ( size_t size,
 
 #if defined ( CXX_PLACEMENT_DELETE )
 void syncGroupReadNotify::operator delete ( void *pCadaver, 
-    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList )
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }

@@ -194,7 +194,7 @@ inline void * CASG::operator new ( size_t size,
 
 #   if defined ( CXX_PLACEMENT_DELETE )
 inline void CASG::operator delete ( void * pCadaver, 
-    tsFreeList < struct CASG, 128 > & freeList )
+    tsFreeList < struct CASG, 128 > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }

@@ -268,7 +268,7 @@ inline void * repeaterClient::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void repeaterClient::operator delete ( void *pCadaver, 
-    tsFreeList < repeaterClient, 0x20 > & freeList )
+    tsFreeList < repeaterClient, 0x20 > & freeList ) epicsThrows(())
 { 
     freeList.release ( pCadaver );
 }

@@ -223,7 +223,7 @@ inline void * timer::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void timer::operator delete ( void * pCadaver, 
-                     tsFreeList < timer, 0x20 > & freeList ) 
+                     tsFreeList < timer, 0x20 > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }
@@ -237,7 +237,7 @@ inline void * epicsTimerForC::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void epicsTimerForC::operator delete ( void * pCadaver, 
-                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }

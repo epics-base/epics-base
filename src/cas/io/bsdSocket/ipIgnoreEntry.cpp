@@ -57,7 +57,7 @@ void * ipIgnoreEntry::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 void ipIgnoreEntry::operator delete ( void * pCadaver, 
-        tsFreeList < class ipIgnoreEntry, 128 > & freeList )
+        tsFreeList < class ipIgnoreEntry, 128 > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }

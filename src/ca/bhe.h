@@ -101,7 +101,7 @@ inline void * bhe::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void bhe::operator delete ( void * pCadaver, 
-        bheMemoryManager & mgr )
+        bheMemoryManager & mgr ) epicsThrows(())
 { 
     mgr.release ( pCadaver );
 }

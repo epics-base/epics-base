@@ -62,7 +62,7 @@ void * msgForMultiplyDefinedPV::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, 
-    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
+    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver, sizeof ( msgForMultiplyDefinedPV ) );
 }

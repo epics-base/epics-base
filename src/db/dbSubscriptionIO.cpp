@@ -93,7 +93,7 @@ void * dbSubscriptionIO::operator new ( size_t size,
 
 #ifdef CXX_PLACEMENT_DELETE
 void dbSubscriptionIO::operator delete ( void * pCadaver, 
-        tsFreeList < dbSubscriptionIO > & freeList )
+        tsFreeList < dbSubscriptionIO > & freeList ) epicsThrows(())
 {
     freeList.release ( pCadaver );
 }

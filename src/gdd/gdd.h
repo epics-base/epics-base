@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  1996/08/27 13:05:06  jbk
+ * final repairs to string functions, put() functions, and error code printing
+ *
  * Revision 1.11  1996/08/22 21:05:41  jbk
  * More fixes to make strings and fixed string work better.
  *
@@ -67,12 +70,17 @@
 #include <string.h>
 #include <limits.h>
 #include <sys/types.h>
-#ifndef vxWorks
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/time.h>
-#else
-#include <time.h>
+
+#if defined(WIN32)
+#       include <stdlib.h>
+#elif defined(vxWorks)
+#       include <time.h>
+#       include <timers.h> // for timespec under v51 vxWorks
+#elif defined(UNIX)
+        // hopefully a posix compliant OS
+#       include <stdlib.h>
+#       include <unistd.h>
+#       include <sys/time.h>
 #endif
 
 // strdup is not defined under POSIX

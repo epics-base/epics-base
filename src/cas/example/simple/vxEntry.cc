@@ -2,16 +2,6 @@
 // $Id$
 // Author: Jeff HIll (LANL)
 //
-// $Log$
-// Revision 1.2  1997/04/10 19:39:26  jhill
-// API changes
-//
-// Revision 1.1  1996/12/06 22:20:22  jhill
-// moved down one level
-//
-// Revision 1.2  1996/09/16 18:22:09  jhill
-// added cvs log entries
-//
 //
 
 #include <vxWorks.h>

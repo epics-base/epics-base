@@ -15,7 +15,7 @@ epicsTime exPV::currentTime;
 // special gddDestructor guarantees same form of new and delete
 //
 class exFixedStringDestructor: public gddDestructor {
-	virtual void run (void *);
+    virtual void run (void *);
 };
 
 //
@@ -23,24 +23,24 @@ class exFixedStringDestructor: public gddDestructor {
 //
 exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) : 
     timer ( this->getCAS()->timerQueue().createTimer(*this) ),
-	info ( setup ),
-	interest ( false ),
-	preCreate ( preCreateFlag ),
-	scanOn ( scanOnIn )
+    info ( setup ),
+    interest ( false ),
+    preCreate ( preCreateFlag ),
+    scanOn ( scanOnIn )
 {
-	//
-	// no dataless PV allowed
-	//
-	assert (this->info.getElementCount()>=1u);
+    //
+    // no dataless PV allowed
+    //
+    assert (this->info.getElementCount()>=1u);
 
-	//
-	// start a very slow background scan 
-	// (we will speed this up to the normal rate when
-	// someone is watching the PV)
-	//
-	if ( this->scanOn && this->info.getScanPeriod () > 0.0 ) {
+    //
+    // start a very slow background scan 
+    // (we will speed this up to the normal rate when
+    // someone is watching the PV)
+    //
+    if ( this->scanOn && this->info.getScanPeriod () > 0.0 ) {
         this->timer.start ( this->getScanPeriod() );
-	}
+    }
 }
 
 //
@@ -49,7 +49,7 @@ exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
 exPV::~exPV() 
 {
     delete & this->timer;
-	this->info.unlinkPV();
+    this->info.unlinkPV();
 }
 
 //
@@ -60,9 +60,9 @@ exPV::~exPV()
 //
 void exPV::destroy()
 {
-	if ( ! this->preCreate ) {
-		delete this;
-	}
+    if ( ! this->preCreate ) {
+        delete this;
+    }
 }
 
 //
@@ -70,28 +70,28 @@ void exPV::destroy()
 //
 caStatus exPV::update(smartConstGDDPointer pValueIn)
 {
-	caServer *pCAS = this->getCAS();
-	caStatus cas;
+    caServer *pCAS = this->getCAS();
+    caStatus cas;
  
-#	if DEBUG
-		printf("Setting %s too:\n", this->info.getName().string());
-		valueIn.dump();
-#	endif
+#   if DEBUG
+        printf("Setting %s too:\n", this->info.getName().string());
+        valueIn.dump();
+#   endif
 
-	cas = this->updateValue (pValueIn);
-	if ( cas || ( ! this->pValue.valid() ) ) {
-		return cas;
-	}
+    cas = this->updateValue (pValueIn);
+    if ( cas || ( ! this->pValue.valid() ) ) {
+        return cas;
+    }
 
-	//
-	// post a value change event
-	//
-	if (this->interest==true && pCAS!=NULL) {
-		casEventMask select(pCAS->valueEventMask()|pCAS->logEventMask());
-		this->postEvent (select, *this->pValue);
-	}
+    //
+    // post a value change event
+    //
+    if (this->interest==true && pCAS!=NULL) {
+        casEventMask select(pCAS->valueEventMask()|pCAS->logEventMask());
+        this->postEvent (select, *this->pValue);
+    }
 
-	return S_casApp_success;
+    return S_casApp_success;
 }
 
 //
@@ -99,7 +99,7 @@ caStatus exPV::update(smartConstGDDPointer pValueIn)
 //
 epicsTimerNotify::expireStatus exPV::expire ()
 {
-	this->scan();
+    this->scan();
     if ( this->scanOn ) {
         return expireStatus ( restart, this->getScanPeriod() );
     }
@@ -113,7 +113,7 @@ epicsTimerNotify::expireStatus exPV::expire ()
 //
 aitEnum exPV::bestExternalType() const
 {
-	return aitEnumFloat64;
+    return aitEnumFloat64;
 }
 
 //
@@ -121,19 +121,19 @@ aitEnum exPV::bestExternalType() const
 //
 caStatus exPV::interestRegister()
 {
-	caServer *pCAS = this->getCAS();
+    caServer *pCAS = this->getCAS();
 
-	if ( ! pCAS ) {
-		return S_casApp_success;
-	}
+    if ( ! pCAS ) {
+        return S_casApp_success;
+    }
 
-	this->interest = true;
+    this->interest = true;
 
-	if ( this->scanOn && this->getScanPeriod() < this->timer.getExpireDelay() ) {
-		this->timer.start ( this->getScanPeriod() );
-	}
+    if ( this->scanOn && this->getScanPeriod() < this->timer.getExpireDelay() ) {
+        this->timer.start ( this->getScanPeriod() );
+    }
 
-	return S_casApp_success;
+    return S_casApp_success;
 }
 
 //
@@ -141,7 +141,7 @@ caStatus exPV::interestRegister()
 //
 void exPV::interestDelete()
 {
-	this->interest = false;
+    this->interest = false;
 }
 
 //
@@ -149,15 +149,15 @@ void exPV::interestDelete()
 //
 void exPV::show ( unsigned level ) const
 {
-	if (level>1u) {
-		if ( this->pValue.valid () ) {
-			printf ( "exPV: cond=%d\n", this->pValue->getStat () );
-			printf ( "exPV: sevr=%d\n", this->pValue->getSevr () );
-			printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue ) );
-		}
-		printf ( "exPV: interest=%d\n", this->interest );
+    if (level>1u) {
+        if ( this->pValue.valid () ) {
+            printf ( "exPV: cond=%d\n", this->pValue->getStat () );
+            printf ( "exPV: sevr=%d\n", this->pValue->getSevr () );
+            printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue ) );
+        }
+        printf ( "exPV: interest=%d\n", this->interest );
         this->timer.show ( level - 1u );
-	}
+    }
 }
 
 //
@@ -165,28 +165,28 @@ void exPV::show ( unsigned level ) const
 //
 void exPV::initFT()
 {
-	if ( exPV::hasBeenInitialized ) {
-			return;
-	}
+    if ( exPV::hasBeenInitialized ) {
+            return;
+    }
 
-	//
-	// time stamp, status, and severity are extracted from the
-	// GDD associated with the "value" application type.
-	//
-	exPV::ft.installReadFunc ("value", &exPV::getValue);
-	exPV::ft.installReadFunc ("precision", &exPV::getPrecision);
-	exPV::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
-	exPV::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
-	exPV::ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
-	exPV::ft.installReadFunc ("controlLow", &exPV::getLowLimit);
-	exPV::ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
-	exPV::ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
-	exPV::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
-	exPV::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
-	exPV::ft.installReadFunc ("units", &exPV::getUnits);
-	exPV::ft.installReadFunc ("enums", &exPV::getEnums);
+    //
+    // time stamp, status, and severity are extracted from the
+    // GDD associated with the "value" application type.
+    //
+    exPV::ft.installReadFunc ("value", &exPV::getValue);
+    exPV::ft.installReadFunc ("precision", &exPV::getPrecision);
+    exPV::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
+    exPV::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
+    exPV::ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
+    exPV::ft.installReadFunc ("controlLow", &exPV::getLowLimit);
+    exPV::ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
+    exPV::ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
+    exPV::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
+    exPV::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
+    exPV::ft.installReadFunc ("units", &exPV::getUnits);
+    exPV::ft.installReadFunc ("enums", &exPV::getEnums);
 
-	exPV::hasBeenInitialized = 1;
+    exPV::hasBeenInitialized = 1;
 }
 
 //
@@ -194,8 +194,8 @@ void exPV::initFT()
 //
 caStatus exPV::getPrecision(gdd &prec)
 {
-	prec.put(4u);
-	return S_cas_success;
+    prec.put(4u);
+    return S_cas_success;
 }
 
 //
@@ -203,8 +203,8 @@ caStatus exPV::getPrecision(gdd &prec)
 //
 caStatus exPV::getHighLimit(gdd &value)
 {
-	value.put(info.getHopr());
-	return S_cas_success;
+    value.put(info.getHopr());
+    return S_cas_success;
 }
 
 //
@@ -212,8 +212,8 @@ caStatus exPV::getHighLimit(gdd &value)
 //
 caStatus exPV::getLowLimit(gdd &value)
 {
-	value.put(info.getLopr());
-	return S_cas_success;
+    value.put(info.getLopr());
+    return S_cas_success;
 }
 
 //
@@ -221,9 +221,9 @@ caStatus exPV::getLowLimit(gdd &value)
 //
 caStatus exPV::getUnits(gdd &units)
 {
-	aitString str("furlongs", aitStrRefConstImortal);
-	units.put(str);
-	return S_cas_success;
+    aitString str("furlongs", aitStrRefConstImortal);
+    units.put(str);
+    return S_cas_success;
 }
 
 //
@@ -238,30 +238,30 @@ caStatus exPV::getUnits(gdd &units)
 //
 caStatus exPV::getEnums (gdd &enums)
 {
-	static const unsigned nStr = 2;
-	aitFixedString *str;
-	exFixedStringDestructor *pDes;
+    static const unsigned nStr = 2;
+    aitFixedString *str;
+    exFixedStringDestructor *pDes;
 
-	enums.setDimension(1);
-	str = new aitFixedString[nStr];
-	if (!str) {
-		return S_casApp_noMemory;
-	}
+    enums.setDimension(1);
+    str = new aitFixedString[nStr];
+    if (!str) {
+        return S_casApp_noMemory;
+    }
 
-	pDes = new exFixedStringDestructor;
-	if (!pDes) {
-		delete [] str;
-		return S_casApp_noMemory;
-	}
+    pDes = new exFixedStringDestructor;
+    if (!pDes) {
+        delete [] str;
+        return S_casApp_noMemory;
+    }
 
-	enums.putRef (str, pDes);
+    enums.putRef (str, pDes);
 
-	strncpy (str[0].fixed_string, "off", sizeof(str[0].fixed_string));
-	strncpy (str[1].fixed_string, "on", sizeof(str[1].fixed_string));
+    strncpy (str[0].fixed_string, "off", sizeof(str[0].fixed_string));
+    strncpy (str[1].fixed_string, "on", sizeof(str[1].fixed_string));
 
-	enums.setBound (0,0,nStr);
+    enums.setBound (0,0,nStr);
 
-	return S_cas_success;
+    return S_cas_success;
 }
 
 //
@@ -269,24 +269,24 @@ caStatus exPV::getEnums (gdd &enums)
 //
 caStatus exPV::getValue(gdd &value)
 {
-	caStatus status;
+    caStatus status;
 
-	if ( this->pValue.valid () ) {
-		gddStatus gdds;
+    if ( this->pValue.valid () ) {
+        gddStatus gdds;
 
-		gdds = gddApplicationTypeTable::
-			app_table.smartCopy (&value, & (*this->pValue) );
-		if (gdds) {
-			status = S_cas_noConvert;	
-		}
-		else {
-			status = S_cas_success;
-		}
-	}
-	else {
-		status = S_casApp_undefined;
-	}
-	return status;
+        gdds = gddApplicationTypeTable::
+            app_table.smartCopy (&value, & (*this->pValue) );
+        if (gdds) {
+            status = S_cas_noConvert;   
+        }
+        else {
+            status = S_cas_success;
+        }
+    }
+    else {
+        status = S_casApp_undefined;
+    }
+    return status;
 }
 
 //
@@ -295,7 +295,7 @@ caStatus exPV::getValue(gdd &value)
 //
 caStatus exPV::write (const casCtx &, const gdd &valueIn)
 {
-	return this->update (valueIn);
+    return this->update (valueIn);
 }
  
 //
@@ -304,7 +304,7 @@ caStatus exPV::write (const casCtx &, const gdd &valueIn)
 //
 caStatus exPV::read (const casCtx &, gdd &protoIn)
 {
-	return this->ft.read (*this, protoIn);
+    return this->ft.read (*this, protoIn);
 }
 
 //
@@ -313,10 +313,10 @@ caStatus exPV::read (const casCtx &, gdd &protoIn)
 // for access control - optional
 //
 casChannel *exPV::createChannel (const casCtx &ctx,
-		const char * const /* pUserName */, 
-		const char * const /* pHostName */)
+        const char * const /* pUserName */, 
+        const char * const /* pHostName */)
 {
-	return new exChannel (ctx);
+    return new exChannel (ctx);
 }
 
 //
@@ -326,7 +326,7 @@ casChannel *exPV::createChannel (const casCtx &ctx,
 //
 void exFixedStringDestructor::run (void *pUntyped)
 {
-	aitFixedString *ps = (aitFixedString *) pUntyped;
-	delete [] ps;
+    aitFixedString *ps = (aitFixedString *) pUntyped;
+    delete [] ps;
 }
 

@@ -9,7 +9,7 @@
 // exChannel::setOwner ()
 //
 void exChannel::setOwner(const char * const /* pUserName */, 
-		const char * const /* pHostName */)
+        const char * const /* pHostName */)
 {
 }
 
@@ -18,7 +18,7 @@ void exChannel::setOwner(const char * const /* pUserName */,
 //
 bool exChannel::readAccess () const
 {
-	return true;
+    return true;
 }
 
 //
@@ -26,7 +26,7 @@ bool exChannel::readAccess () const
 //
 bool exChannel::writeAccess () const
 {
-	return true;
+    return true;
 }
 
 

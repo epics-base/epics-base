@@ -27,49 +27,49 @@
 //
 void exScalarPV::scan()
 {
-	caStatus        status;
-	double          radians;
-	smartGDDPointer	pDD;
-	float           newValue;
-	float           limit;
-	int				gddStatus;
+    caStatus        status;
+    double          radians;
+    smartGDDPointer pDD;
+    float           newValue;
+    float           limit;
+    int             gddStatus;
 
-	//
-	// update current time (so we are not required to do
-	// this every time that we write the PV which impacts
-	// throughput under sunos4 because gettimeofday() is
-	// slow)
-	//
-	this->currentTime = epicsTime::getCurrent();
+    //
+    // update current time (so we are not required to do
+    // this every time that we write the PV which impacts
+    // throughput under sunos4 because gettimeofday() is
+    // slow)
+    //
+    this->currentTime = epicsTime::getCurrent();
 
-	pDD = new gddScalar (gddAppType_value, aitEnumFloat64);
-	if ( ! pDD.valid () ) {
-		return;
-	}
+    pDD = new gddScalar (gddAppType_value, aitEnumFloat64);
+    if ( ! pDD.valid () ) {
+        return;
+    }
 
-	//
-	// smart pointer class manages reference count after this point
-	//
-	gddStatus = pDD->unreference();
-	assert (!gddStatus);
+    //
+    // smart pointer class manages reference count after this point
+    //
+    gddStatus = pDD->unreference();
+    assert (!gddStatus);
 
-	radians = (rand () * 2.0 * myPI)/RAND_MAX;
-	if ( this->pValue.valid () ) {
-		this->pValue->getConvert(newValue);
-	}
-	else {
-		newValue = 0.0f;
-	}
-	newValue += (float) (sin (radians) / 10.0);
-	limit = (float) this->info.getHopr();
-	newValue = tsMin (newValue, limit);
-	limit = (float) this->info.getLopr();
-	newValue = tsMax (newValue, limit);
-	*pDD = newValue;
-	status = this->update (pDD);
-	if (status!=S_casApp_success) {
-		errMessage (status, "scalar scan update failed\n");
-	}
+    radians = (rand () * 2.0 * myPI)/RAND_MAX;
+    if ( this->pValue.valid () ) {
+        this->pValue->getConvert(newValue);
+    }
+    else {
+        newValue = 0.0f;
+    }
+    newValue += (float) (sin (radians) / 10.0);
+    limit = (float) this->info.getHopr();
+    newValue = tsMin (newValue, limit);
+    limit = (float) this->info.getLopr();
+    newValue = tsMax (newValue, limit);
+    *pDD = newValue;
+    status = this->update (pDD);
+    if (status!=S_casApp_success) {
+        errMessage (status, "scalar scan update failed\n");
+    }
 }
 
 //
@@ -90,16 +90,16 @@ caStatus exScalarPV::updateValue (smartConstGDDPointer pValueIn)
         return S_casApp_undefined;
     }
 
-	//
-	// Really no need to perform this check since the
-	// server lib verifies that all requests are in range
-	//
-	if (!pValueIn->isScalar()) {
-		return S_casApp_outOfBounds;
-	}
+    //
+    // Really no need to perform this check since the
+    // server lib verifies that all requests are in range
+    //
+    if (!pValueIn->isScalar()) {
+        return S_casApp_outOfBounds;
+    }
 
-	this->pValue = pValueIn;
+    this->pValue = pValueIn;
 
-	return S_casApp_success;
+    return S_casApp_success;
 }
 

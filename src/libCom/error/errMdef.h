@@ -70,7 +70,6 @@ extern "C" {
 #define M_gen           (515 <<16) /*General Purpose Routines; see genDefs.h*/
 #define	M_gpib		(516 <<16) /*Gpib driver & device support; see drvGpibInterface.h*/
 #define	M_bitbus	(517 <<16) /*Bitbus driver & device support; see drvBitBusInterface.h*/
-#define M_dbCa          (518 <<16) /*CA_LINKs; see calink.h*/
 #define M_dbLib         (519 <<16) /*Static Database Access */
 #define M_epvxi		(520 <<16) /*VXI Driver*/
 #define M_devLib	(521 <<16) /*Device Resource Registration*/

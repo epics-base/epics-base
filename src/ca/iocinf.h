@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.71  1998/05/05 16:04:19  jhill
+ * added lock count var
+ *
  * Revision 1.70  1998/04/13 19:14:34  jhill
  * fixed task variable problem
  *
@@ -665,14 +668,9 @@ void 	cac_recv_task(int tid);
 void 	ca_sg_init(void);
 void	ca_sg_shutdown(struct CA_STATIC *ca_temp);
 int 	cac_select_io(struct timeval *ptimeout, int flags);
-void caHostFromInetAddr(
-	const struct in_addr 	*pnet_addr,
-	char			*pBuf,
-	unsigned		size
-);
 int post_msg(
 	struct ioc_in_use       *piiu,
-	const struct in_addr	*pnet_addr,
+	const struct sockaddr_in	*pnet_addr,
 	char			*pInBuf,
 	unsigned long		blockSize
 );
@@ -741,7 +739,7 @@ ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(miu pIOBlock);
 void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler (void);
-void cacDisconnectChannel(ciu chix, enum channel_state state);
+void cacDisconnectChannel(ciu chix);
 int caSendMsgPending(void);
 void genLocalExcepWFL(long stat, char *ctx, 
 	char *pFile, unsigned line);
@@ -754,6 +752,7 @@ void addToChanList(ciu chan, IIU *piiu);
 void removeFromChanList(ciu chan);
 void cac_create_udp_fd();
 double cac_fetch_poll_period(void);
+int caSockAddrFromHost(const char *pName, struct sockaddr *paddr);
 
 /*
  * !!KLUDGE!!

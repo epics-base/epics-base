@@ -76,8 +76,8 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
  * prior to including the socket headers on solaris
  *
  * functions involved here:
- * popen() stdio.h
- * sigaction() signal.h
+ * popen() stdio.h (only in xopen)
+ * sigaction() signal.h (only in posix)
  */
 #define _XOPEN_SOURCE /* for solaris and "cc -Xc"/"gcc -ansi" */
 #define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc"/"gcc -ansi" */

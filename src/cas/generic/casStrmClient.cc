@@ -289,10 +289,10 @@ caStatus casStrmClient::uknownMessageAction ( epicsGuard < casClientMutex > & gu
 	}
 
 	/*
-	 * returning S_cas_internal here disconnects
+	 * returning S_cas_badProtocol here disconnects
 	 * the client with the bad message
 	 */
-	return S_cas_internal;
+	return S_cas_badProtocol;
 }
 
 /*

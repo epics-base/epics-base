@@ -118,7 +118,7 @@ caStatus casDGClient::uknownMessageAction ()
     caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
         "bad request code=%u in DG\n", mp->m_cmmd );
 
-	return S_cas_internal;
+	return S_cas_badProtocol;
 }
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/20 18:08:35  jhill
+ * changed where caProto.h comes from
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -200,11 +203,11 @@ public:
 	{
 		int gddStatus;
 		if (this->pValue) {
-			gddStatus = this->pValue->Unreference();
+			gddStatus = this->pValue->unreference();
 			assert (!gddStatus);
 		}
 		if (monEventIn.pValue) {
-			gddStatus = monEventIn.pValue->Reference();
+			gddStatus = monEventIn.pValue->reference();
 			assert (!gddStatus);
 		}
 		this->pValue = monEventIn.pValue;
@@ -215,7 +218,7 @@ public:
 	{
 		int gddStatus;
 		if (this->pValue) {
-			gddStatus = this->pValue->Unreference();
+			gddStatus = this->pValue->unreference();
 			assert (!gddStatus);
 			this->pValue = NULL;
 		}
@@ -370,7 +373,7 @@ public:
 	{
 		if (this->pDesc) {
 			gddStatus status;
-			status = this->pDesc->Unreference();
+			status = this->pDesc->unreference();
 			assert(!status);
 			this->pDesc = NULL;
 		}

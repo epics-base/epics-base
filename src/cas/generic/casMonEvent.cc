@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -44,7 +47,7 @@ casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
         id(monitor.casRes::getId())
 {
         int gddStatus;
-        gddStatus = this->pValue->Reference();
+        gddStatus = this->pValue->reference();
         assert (!gddStatus);
 }
  
@@ -57,7 +60,7 @@ casMonEvent::casMonEvent (casMonEvent &initValue) :
 {
         int gddStatus;
         if (this->pValue) {
-                gddStatus = this->pValue->Reference();
+                gddStatus = this->pValue->reference();
                 assert (!gddStatus);
         }
 }
@@ -106,11 +109,11 @@ void casMonEvent::assign (casMonitor &monitor, gdd *pValueIn)
 {
         int gddStatus;
         if (this->pValue) {
-                gddStatus = this->pValue->Unreference();
+                gddStatus = this->pValue->unreference();
                 assert (!gddStatus);
         }
         if (pValueIn) {
-                gddStatus = pValueIn->Reference();
+                gddStatus = pValueIn->reference();
                 assert (!gddStatus);
         }
         this->pValue = pValueIn;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -116,7 +119,7 @@ caStatus casDGClient::searchAction()
 	//
 	// delete the PV name object
 	//
-	gddStatus = pCanonicalName->Unreference();
+	gddStatus = pCanonicalName->unreference();
 	assert(gddStatus==0);
 
 	return S_cas_success;

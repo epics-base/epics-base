@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -100,23 +103,23 @@ caStatus casPVI::verifyPVName(gdd &name)
         // a valid name (so that we wont fail
         // in the PV constructor)
         //
-        gddStatus = name.Reference();
+        gddStatus = name.reference();
         if (gddStatus) {
                 serverToolDebug();
                 return S_cas_badPVName;
         }
-        gddStatus = name.Unreference();
+        gddStatus = name.unreference();
         if (gddStatus) {
                 serverToolDebug();
                 return S_cas_badPVName;
         }
  
-	if (name.PrimitiveType() != aitEnumString) {
+	if (name.primitiveType() != aitEnumString) {
                 serverToolDebug();
                 return S_cas_badPVName;
 	}
 
-        if (name.Dimension() != 1u) {
+        if (name.dimension() != 1u) {
                 serverToolDebug();
                 return S_cas_badPVName;
         }

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/21 02:30:58  jhill
+ * solaris port
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -69,8 +72,8 @@ HDRVERSIONID(serverh, "%W% %G%")
 //
 // EPICS
 //
-#include <epicsAssert.h>
 #define	 epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+#include <epicsAssert.h>
 #include <db_access.h>
 
 //

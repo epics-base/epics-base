@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/21 02:30:57  jhill
+ * solaris port
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -126,7 +129,7 @@ inline caStatus casStrmClient::createChannel (const char *pName)
 		status = createChanResponse (NULL, *this->ctx.getMsg(),
 				pCanonicalName, status);
 	}
-	gddStatus = pCanonicalName->Unreference ();
+	gddStatus = pCanonicalName->unreference ();
 	assert (!gddStatus);
 	return status;
 }
@@ -289,7 +292,7 @@ caStatus casStrmClient::readAction ()
 	if (pDesc) {
 		int gddStatus;
 
-		gddStatus = pDesc->Unreference();
+		gddStatus = pDesc->unreference();
 		assert(gddStatus==0);
 	}
 
@@ -392,7 +395,7 @@ caStatus casStrmClient::readNotifyAction ()
 
 	if (pDesc) {
 		int gddStatus;
-		gddStatus = pDesc->Unreference();
+		gddStatus = pDesc->unreference();
 		assert(gddStatus==0);
 	}
 
@@ -542,11 +545,11 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 			}
 			else {
 				gdds = gddApplicationTypeTable::
-					app_table.SmartCopy(pDBRDD, pDesc);
+					app_table.smartCopy(pDBRDD, pDesc);
 				if (gdds) {
 					errPrintf (status, __FILE__, __LINE__,
 "no conversion between event app type=%d and DBR type=%d Element count=%d",
-						pDesc->ApplicationType(),
+						pDesc->applicationType(),
 						msg.m_type,
 						msg.m_count);
 					completionStatusCopy = S_cas_noConvert;
@@ -599,7 +602,7 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 	this->commitMsg ();
 
 	if (pDBRDD) {
-		pDBRDD->Unreference();
+		pDBRDD->unreference();
 	}
 
 	return S_cas_success;
@@ -1081,7 +1084,7 @@ caStatus casStrmClient::eventAddAction ()
 
 	if (pDD) {
 		int gddStatus;
-		gddStatus = pDD->Unreference();
+		gddStatus = pDD->unreference();
 		assert(gddStatus==0);
 	}
 
@@ -1367,9 +1370,9 @@ caStatus casStrmClient::writeScalerData()
 		return S_cas_noMemory;
 	}
 
-	gddStat = pDD->GCopy(type, this->ctx.getData());
+	gddStat = pDD->genCopy(type, this->ctx.getData());
 	if (gddStat) {
-		pDD->Unreference();
+		pDD->unreference();
 		return S_cas_badType;
 	}
 
@@ -1377,7 +1380,7 @@ caStatus casStrmClient::writeScalerData()
 	// No suprises when multiple codes are looking
 	// at the same data
 	//
-	pDD->MarkConstant ();
+	pDD->markConstant ();
 
 	//
 	// call the server tool's virtual function
@@ -1387,7 +1390,7 @@ caStatus casStrmClient::writeScalerData()
 	//
 	// tell the DD that this code is finished with it
 	//
-	gddStat = pDD->Unreference();
+	gddStat = pDD->unreference();
 	assert(gddStat==0);
 
 	return status;
@@ -1421,14 +1424,14 @@ caStatus casStrmClient::writeArrayData()
 	size = dbr_size_n (pHdr->m_type, pHdr->m_count);
 	pData = new char [size];
 	if (!pData) {
-		pDD->Unreference();
+		pDD->unreference();
 		return S_cas_noMemory;
 	}
 
 	pDestructor = new gddDestructor;
 	if (!pDestructor) {
 		delete [] pData;
-		pDD->Unreference();
+		pDD->unreference();
 		return S_cas_noMemory;
 	}
 
@@ -1442,13 +1445,13 @@ caStatus casStrmClient::writeArrayData()
 	//
 	// install allocated area into the DD
 	//
-	pDD->PutRef (pData, type, pDestructor);
+	pDD->putRef (pData, type, pDestructor);
 
 	//
 	// No suprises when multiple codes are looking
 	// at the same data
 	//
-	pDD->MarkConstant ();
+	pDD->markConstant ();
 
 	//
 	// call the server tool's virtual function
@@ -1458,7 +1461,7 @@ caStatus casStrmClient::writeArrayData()
 	//
 	// tell the DD that this code is finished with it
 	//
-	gddStat = pDD->Unreference();
+	gddStat = pDD->unreference();
 	assert(gddStat==0);
 
 	return status;
@@ -1494,7 +1497,7 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 	//
 	status = (*this->ctx.getPV())->read(this->ctx, *pDescRet);
 	if (status) {
-		pDescRet->Unreference();
+		pDescRet->unreference();
 		pDescRet = NULL;
 		if (status!=S_casApp_asyncCompletion) {
 			errMessage(status, 
@@ -1521,7 +1524,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 	//
 	// create the descriptor
 	//
-	pDescRet = gddApplicationTypeTable::app_table.GetDD (appType);
+	pDescRet = gddApplicationTypeTable::app_table.getDD (appType);
 	if (!pDescRet) {
 		return S_cas_noMemory;
 	}
@@ -1530,26 +1533,26 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 	// set bounds for the value member
 	//
 	if (dbrCount != 1u) {
-		if (pDescRet->IsContainer()) {
+		if (pDescRet->isContainer()) {
 			gddContainer *pCont = (gddContainer *) pDescRet;
 			gdd *pVal;
 
 			gddStatus = 
-			gddApplicationTypeTable::app_table.MapAppToIndex
+			gddApplicationTypeTable::app_table.mapAppToIndex
 				(appType, gddAppType_value, valIndex);
 			if (gddStatus) {
-				pDescRet->Unreference();
+				pDescRet->unreference();
 				pDescRet = NULL;
 				return S_cas_badType;
 			}
-			pVal = pCont->GetDD(valIndex);
+			pVal = pCont->getDD(valIndex);
 			assert (pVal);
-			gddStatus = pVal->SetBound (0, 0u, dbrCount);
+			gddStatus = pVal->setBound (0, 0u, dbrCount);
 			assert (gddStatus==0)
 		}
-		else if (pDescRet->IsAtomic()) {
+		else if (pDescRet->isAtomic()) {
 			gddAtomic *pAtomic = (gddAtomic *) pDescRet;
-			gddStatus = pAtomic->SetBound(0, 0u, dbrCount);
+			gddStatus = pAtomic->setBound(0, 0u, dbrCount);
 			assert (gddStatus==0)
 		}
 		else {
@@ -1613,7 +1616,7 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 	//
 	this->lock();
 
-	pCanonicalName->MarkConstant();
+	pCanonicalName->markConstant();
 
 	pPV = this->ctx.getServer()->createPV(*pCanonicalName);
 	if (!pPV) {
@@ -1672,15 +1675,15 @@ casPVI *caServerI::createPV (gdd &name)
 		return NULL;
 	}
 
-	name.GetRef (pAITStr);
-	stringId id (pAITStr->String());
+	name.getRef (pAITStr);
+	stringId id (pAITStr->string());
 
         this->lock ();
 
         pPVI = this->stringResTbl.lookup (id);
 	if (!pPVI) {
         	casPV	*pPV;
-		pPV = (*this)->createPV (this->ctx, pAITStr->String());
+		pPV = (*this)->createPV (this->ctx, pAITStr->string());
 		if (pPV) {
 			pPVI = (casPVI *) pPV;
 		}

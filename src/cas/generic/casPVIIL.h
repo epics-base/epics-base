@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/21 02:30:55  jhill
+ * solaris port
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -150,7 +153,7 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
         // the event queue is looking at the DD 
         // now so it must not be changed
         //
-        event.MarkConstant();
+        event.markConstant();
  
         tsDLIter<casPVListChan> iter(this->chanList);
         while ( (pChan = iter()) ) {

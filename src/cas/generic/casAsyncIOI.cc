@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -68,7 +71,7 @@ casAsyncIOI::casAsyncIOI(const casCtx &ctx, casAsyncIO &ioIn, gdd *pDD) :
 	if (this->pDesc) {
 		int gddStatus;
 
-		gddStatus = this->pDesc->Reference();
+		gddStatus = this->pDesc->reference();
 		assert(!gddStatus);
 	}
 }
@@ -137,7 +140,7 @@ casAsyncIOI::~casAsyncIOI()
 	if (this->pDesc) {
 		int	gddStatus;
 
-		gddStatus = this->pDesc->Unreference();
+		gddStatus = this->pDesc->unreference();
 		assert (gddStatus==0);
 		this->pDesc = NULL;
 	}
@@ -211,11 +214,11 @@ caStatus casAsyncIOI::postIOCompletion(caStatus completionStatusIn, gdd *pValue)
 	if (pValue) {
 		int gddStatus;
 
-		gddStatus = pValue->Reference();
+		gddStatus = pValue->reference();
 		assert(!gddStatus);
 
 		if (this->pDesc) {
-			gddStatus = this->pDesc->Unreference();
+			gddStatus = this->pDesc->unreference();
 			assert (gddStatus==0);
 		}
 
@@ -226,7 +229,7 @@ caStatus casAsyncIOI::postIOCompletion(caStatus completionStatusIn, gdd *pValue)
 	// No changes after the IO completes
 	//
 	if (this->pDesc) {
-		pDesc->MarkConstant();
+		pDesc->markConstant();
 	}
 
 	//

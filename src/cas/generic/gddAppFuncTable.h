@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -89,8 +92,8 @@ public:
 		gddStatus rc;
 
 		rc = gddApplicationTypeTable::
-			app_table.RegisterApplicationType (pName, type);
-		if (rc!=0 && rc!=gddErrorAlreadyDefined && rc!=gddErrorAlreadyAssigned) {
+			app_table.registerApplicationType (pName, type);
+		if (rc!=0 && rc!=gddErrorAlreadyDefined) {
 			printf(
 	"at gdd lib limit => read of PV attribute \"%s\" will fail\n", pName);		
 			return S_gddAppFuncTable_gddLimit;
@@ -189,13 +192,13 @@ inline gddAppFuncTableStatus gddAppFuncTable<PV>::read(PV &pv, gdd &value)
 	// if this gdd is a container then step through it
 	// and fetch all of the values inside
 	//
-	if (value.IsContainer()) {
+	if (value.isContainer()) {
 		gddContainer *pCont = (gddContainer *) &value;
-		gddCursor curs = pCont->GetCursor();
+		gddCursor curs = pCont->getCursor();
 		gdd *pItem;
 
 		status = S_gddAppFuncTable_Success;
-		for (pItem=curs.First(); pItem; pItem=curs.Next())
+		for (pItem=curs.first(); pItem; pItem=curs.next())
 		{
 			status = this->read(pv, *pItem);
 			if (status) {
@@ -209,7 +212,7 @@ inline gddAppFuncTableStatus gddAppFuncTable<PV>::read(PV &pv, gdd &value)
 	// otherwise call the function associated
 	// with this application type
 	//
-	type = value.ApplicationType();
+	type = value.applicationType();
 	if (type>=this->maxAppType) {
 		errPrintf (S_gddAppFuncTable_badType, __FILE__,
 			__LINE__, "- large appl type code = %u\n", 

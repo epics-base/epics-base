@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -81,7 +84,7 @@ casMonitor::~casMonitor()
                 client.removeFromEventQueue (this->overFlowEvent);
         }
 	if (this->pModifiedValue) {
-		this->pModifiedValue->Unreference();
+		this->pModifiedValue->unreference();
 		this->pModifiedValue = NULL;
 	}
         this->ciu.deleteMonitor(*this);
@@ -162,11 +165,11 @@ void casMonitor::push(gdd &newValue)
                         //
                         gdd *pValue = this->overFlowEvent.getValue();
                         assert(pValue);
-                        gddStatus = pValue->Reference();
+                        gddStatus = pValue->reference();
                         assert(!gddStatus);
                         this->overFlowEvent = *pLog;
                         pLog->assign(*this, pValue);
-                        gddStatus = pValue->Unreference();
+                        gddStatus = pValue->unreference();
                         assert(!gddStatus);
                         client.insertEventQueue(*pLog, &this->overFlowEvent);
                 }
@@ -218,9 +221,9 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 		// no flow control)
 		//
 		if (this->pModifiedValue) {
-			this->pModifiedValue->Unreference ();
+			this->pModifiedValue->unreference ();
 		}
-		pVal->Reference ();
+		pVal->reference ();
 		this->pModifiedValue = pVal;
 		status = S_cas_success;
 	}
@@ -276,7 +279,7 @@ void casMonitor::postIfModified()
         this->mutex.lock();
         if (this->pModifiedValue) {
                 this->callBack (*this->pModifiedValue);
-                this->pModifiedValue->Unreference ();
+                this->pModifiedValue->unreference ();
                 this->pModifiedValue = NULL;
         }
         this->mutex.unlock();

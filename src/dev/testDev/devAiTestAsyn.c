@@ -35,9 +35,52 @@
 #include "aiRecord.h"
 #include "epicsExport.h"
 
+static void myCallback(CALLBACK *pcallback)
+{
+    struct dbCommon *precord;
+    struct rset     *prset;
+
+    callbackGetUser(precord,pcallback);
+    prset=(struct rset *)(precord->rset);
+    dbScanLock(precord);
+    (*prset->process)(precord);
+    dbScanUnlock(precord);
+}
+
+static long init_record(struct aiRecord *pai)
+{
+    CALLBACK *pcallback;
+    switch (pai->inp.type) {
+    case (CONSTANT) :
+        pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
+        callbackSetCallback(myCallback,pcallback);
+        callbackSetUser(pai,pcallback);
+        pai->dpvt = (void *)pcallback;
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pai,
+            "devAiTestAsyn (init_record) Illegal INP field");
+        return(S_db_badField);
+    }
+    return(0);
+}
+
+static long read_ai(struct aiRecord *pai)
+{
+    CALLBACK *pcallback = (CALLBACK *)pai->dpvt;
+    if(pai->pact) {
+        pai->val += 0.1; /* Change VAL just to show we've done something. */
+        pai->udf = FALSE; /* We modify VAL so we are responsible for UDF too. */
+        printf("Completed asynchronous processing: %s\n",pai->name);
+        return(2); /* don`t convert*/
+    } 
+    printf("Starting asynchronous processing: %s\n",pai->name);
+    pai->pact=TRUE;
+    callbackRequestDelayed(pcallback,pai->disv);
+    return(0);
+}
+
 /* Create the dset for devAiTestAsyn */
-static long init_record();
-static long read_ai();
 struct {
     long        number;
     DEVSUPFUN   report;
@@ -56,48 +99,3 @@ struct {
     NULL
 };
 epicsExportAddress(dset,devAiTestAsyn);
-
-
-static void myCallback(CALLBACK *pcallback)
-{
-    struct dbCommon *precord=pcallback->user;
-    struct rset     *prset=(struct rset *)(precord->rset);
-
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
-static long init_record(struct aiRecord *pai)
-{
-    CALLBACK *pcallback;
-    /* ai.inp must be a CONSTANT*/
-    switch (pai->inp.type) {
-    case (CONSTANT) :
-        pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
-        callbackSetCallback(myCallback,pcallback);
-        callbackSetUser(pai,pcallback);
-        pai->dpvt = (void *)pcallback;
-        if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
-            pai->udf = FALSE;
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pai,
-            "devAiTestAsyn (init_record) Illegal INP field");
-        return(S_db_badField);
-    }
-    return(0);
-}
-
-static long read_ai(struct aiRecord *pai)
-{
-    CALLBACK *pcallback = (CALLBACK *)pai->dpvt;
-    if(pai->pact) {
-        printf("Completed asynchronous processing: %s\n",pai->name);
-        return(2); /* don`t convert*/
-    } 
-    printf("Starting asynchronous processing: %s\n",pai->name);
-    pai->pact=TRUE;
-    callbackRequestDelayed(pcallback,pai->disv);
-    return(0);
-}

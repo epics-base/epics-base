@@ -1531,10 +1531,11 @@ bool cac::verifyAndDisconnectChan ( tcpiiu & iiu,
     return true;
 }
 
-bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+bool cac::badTCPRespAction ( tcpiiu & iiu, 
+                            const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
-    iiu.hostName ( hostName, sizeof(hostName) );
+    iiu.hostName ( hostName, sizeof ( hostName ) );
     this->printf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
         hdr.m_cmmd, hostName );
     return false;

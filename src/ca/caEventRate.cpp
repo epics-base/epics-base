@@ -79,7 +79,6 @@ void caEventRate ( const char *pName, unsigned count )
     double samplePeriod = initialSamplePeriod;
     double X = 0.0;
     double XX = 0.0;
-    double test = 0.0;
     unsigned N = 0u;
     while ( true ) {
         unsigned nEvents, lastEventCount, curEventCount;

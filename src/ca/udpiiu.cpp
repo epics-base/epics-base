@@ -199,47 +199,67 @@ udpiiu::~udpiiu ()
 //
 void udpiiu::recvMsg ()
 {
+    char peek;
     osiSockAddr src;
-    osiSocklen_t src_size = sizeof ( src );
     int status;
 
-    status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
-                        &src.sa, &src_size );
-    if ( status <= 0 ) {
+    if ( this->pCAC()->preemptiveCallbackEnable() ) {
+        osiSocklen_t src_size = sizeof ( src );
+        status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
+                            &src.sa, &src_size );
+    }
+    else {
+        // peek first at the message so that file descriptor managers will wake up
+        // in single threaded applications
+        osiSocklen_t src_size = sizeof ( src );
+        recvfrom ( this->sock, & peek, sizeof ( peek ), MSG_PEEK,
+                            &src.sa, &src_size );
+    }
 
-        if ( status == 0 ) {
-            return;
-        }
+    {
+        callbackAutoMutex autoMutex ( *this->pCAC() );
 
-        int errnoCpy = SOCKERRNO;
+        if ( ! this->pCAC()->preemptiveCallbackEnable() ) {
+            osiSocklen_t src_size = sizeof ( src );
+            status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
+                            &src.sa, &src_size );
+        }
+        if ( status <= 0 ) {
 
-        if ( errnoCpy == SOCK_SHUTDOWN ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_ENOTSOCK ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EBADF ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EINTR ) {
-            return;
-        }
-#       ifdef linux
-            /*
-             * Avoid spurious ECONNREFUSED bug
-             * in linux
-             */
-            if ( errnoCpy == SOCK_ECONNREFUSED ) {
+            if ( status == 0 ) {
                 return;
             }
-#       endif
-        this->printf ( "Unexpected UDP recv error was \"%s\"\n", 
-            SOCKERRSTR (errnoCpy) );
-    }
-    else if ( status > 0 ) {
-        this->postMsg ( src, this->recvBuf, (arrayElementCount) status, 
-            epicsTime::getCurrent() );
+
+            int errnoCpy = SOCKERRNO;
+
+            if ( errnoCpy == SOCK_SHUTDOWN ) {
+                return;
+            }
+            if ( errnoCpy == SOCK_ENOTSOCK ) {
+                return;
+            }
+            if ( errnoCpy == SOCK_EBADF ) {
+                return;
+            }
+            if ( errnoCpy == SOCK_EINTR ) {
+                return;
+            }
+    #       ifdef linux
+                /*
+                 * Avoid spurious ECONNREFUSED bug
+                 * in linux
+                 */
+                if ( errnoCpy == SOCK_ECONNREFUSED ) {
+                    return;
+                }
+    #       endif
+            this->printf ( "Unexpected UDP recv error was \"%s\"\n", 
+                SOCKERRSTR (errnoCpy) );
+        }
+        else if ( status > 0 ) {
+            this->postMsg ( src, this->recvBuf, (arrayElementCount) status, 
+                epicsTime::getCurrent() );
+        }
     }
     return;
 }
@@ -251,9 +271,17 @@ extern "C" void cacRecvThreadUDP ( void *pParam )
 {
     udpiiu *piiu = (udpiiu *) pParam;
     epicsThreadPrivateSet ( caClientCallbackThreadId, pParam );
+    {
+        callbackAutoMutex autoMutex ( *piiu->pCAC() );
+        piiu->pCAC()->notifyNewFD ( piiu->sock );
+    }
     do {
         piiu->recvMsg ();
     } while ( ! piiu->shutdownCmd );
+    {
+        callbackAutoMutex autoMutex ( *piiu->pCAC() );
+        piiu->pCAC()->notifyDestroyFD ( piiu->sock );
+    }
     epicsEventSignal ( piiu->recvThreadExitSignal );
 }
 
@@ -653,8 +681,6 @@ void udpiiu::postMsg ( const osiSockAddr & net_addr,
               const epicsTime & currentTime )
 {
     caHdr *pCurMsg;
-
-    callbackAutoMutex autoMutex ( *this->pCAC() );
 
     while ( blockSize ) {
         arrayElementCount size;

@@ -79,6 +79,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <stdio.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 

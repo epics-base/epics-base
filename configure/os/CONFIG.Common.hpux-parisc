@@ -13,21 +13,23 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = hpux
 ARCH_CLASS = parisc
 
-POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
-POSIX_CPPFLAGS_NO =
-POSIX_LDLIBS_NO +=
-# When compiling with gcc, static builds need two more libraries (*sigh*)
-POSIX_LDLIBS_GNU_YES_STATIC_YES += -lpthread -l:libdld.sl
-POSIX_LDLIBS_YES = $(POSIX_LDLIBS_GNU_$(GNU)_STATIC_$(STATIC_BUILD))
+# Posix stuff is not set here as "-mt" (in CONFIG.hpux-parisc.hpux-parisc)
+# does all defines and linker options to make posix threads work
 
-OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
+OP_SYS_CPPFLAGS = -DHP_UX
+OP_SYS_CFLAGS = -D_HPUX_SOURCE 
+OP_SYS_CXXFLAGS =
 
-SHARED_LIBRARIES=YES
 SHRLIB_SUFFIX = .sl$(addprefix .,$(SHRLIB_VERSION))
+
+# Set runtime path for shared libraries
+empty:=                                      # trick from the make docs...
+space:= $(empty) $(empty)
+RUNTIME_LDFLAGS_YES = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
+RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS
    GNU_TARGET=parisc-hp-unix
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
-

@@ -11,4 +11,3 @@
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
 WIND_HOST_TYPE = parisc-hpux10
-

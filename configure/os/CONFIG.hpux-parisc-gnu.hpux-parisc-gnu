@@ -10,11 +10,20 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-#GNU_DIR = /opt/gnu
-
 CC = $(GNU_BIN)/gcc
 CCC = $(GNU_BIN)/g++
 AR = ar -rc
 RANLIB=
 LD = ld -r
 
+# Always keep libc shared to force using the one supplied with the
+# target machine (HP system and libc must match - important e.g. for
+# multi-CPU-systems)
+STATIC_LDFLAGS_YES = -static -l:libc.sl
+
+# Switch explicitly from default DCE threads to posix threads
+POSIX_CPPFLAGS_YES += -D_REENTRANT -D_PTHREADS -D_POSIX_C_SOURCE=199506L
+USR_SYS_LIBS += pthread
+
+# C++ templates need PIC definition also in link phase
+SHRLIB_LDFLAGS += -shared -fPIC

@@ -48,6 +48,7 @@
  * .18	07-31-92	rcz	moved database loading to function dbLoad
  * .19	08-14-92	jba	included dblinks with maximize severity in lockset
  * .20	08-27-92	mrk	removed wakeup_init (For old I/O Event scanning)
+ * .21	09-05-92	rcz	changed dbUserExit to initHooks
  *
  */
 
@@ -84,6 +85,7 @@
 #include	<recSup.h>
 #include	<envDefs.h>
 #include	<dbManipulate.h>
+#include	<initHooks.h>
 /*This module will declare and initilize module_type variables*/
 #define MODULE_TYPES_INIT 1
 #include        <module_types.h>
@@ -108,14 +110,16 @@ long initDatabase();
 long addToSet();
 long initialProcess();
 long getResources();
+long setMasterTimeToSelf();
 
 int iocInit(pResourceFilename)
 char * pResourceFilename;
 {
     long status;
+    long hookrtn=0;
     char name[40];
     long rtnval;
-    void (*pdbUserExit)();
+    long (*pinitHooks)() = NULL;
     SYM_TYPE type;
 
     if(initialized) {
@@ -125,9 +129,17 @@ char * pResourceFilename;
     coreRelease();
     epicsSetEnvParams();
 
+    /* if function initHooks exists call it */
+    strcpy(name,"_");
+    strcat(name,"initHooks");
+    rtnval = symFindByName(sysSymTbl,name,(void *)&pinitHooks,&type);
     if (!pdbBase) {
 	logMsg("iocInit aborting because No database loaded by dbLoad\n");
 	return(-1);
+    }
+    if(rtnval==OK && (type&N_TEXT!=0)) {
+	hookrtn=(*pinitHooks)(SETMASTERTIMETOSELF);
+	logMsg("initHooks(SETMASTERTIMETOSELF) was called\n");
     }
     status=getResources(pResourceFilename);
     if(status!=0) {
@@ -154,13 +166,9 @@ char * pResourceFilename;
 
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
 
-    /* if user exit exists call it */
-    strcpy(name,"_");
-    strcat(name,"dbUserExit");
-    rtnval = symFindByName(sysSymTbl,name,(void *)&pdbUserExit,&type);
     if(rtnval==OK && (type&N_TEXT!=0)) {
-	(*pdbUserExit)();
-	logMsg("User Exit was called\n");
+	hookrtn=(*pinitHooks)(DBUSEREXIT);
+	logMsg("initHooks(DBUSEREXIT) was called\n");
     }
     callbackInit();
     scanInit();
@@ -816,5 +824,46 @@ char * pfilename;
 	logMsg("dbLoad aborting because dbRead failed\n");
 	return(-1);
     }
+    return (0);
+}
+long setMasterTimeToSelf()
+{
+    BOOT_PARAMS     bp;
+    char           *pnext;
+    char            name[] = "_EPICS_IOCMCLK_INET";
+    char            message[100];
+    UTINY           type;
+    long            rtnval = 0;
+    char           *pSymAddr;
+    int             len = 0;
+    int             i = 0;
+    char            *ptr = 0;
+
+    pnext = bootStringToStruct(sysBootLine, &bp);
+    if (*pnext != EOS) {
+	sprintf(message,
+		"setMasterTimeToSelf: unable to parse boot params\n");
+	errMessage(-1L, message);
+	return (-1);
+    }
+    rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
+    if (rtnval != OK || (type & N_TEXT == 0)) {
+	sprintf(message,
+		"setMasterTimeToSelf: symBol EPICS_IOCMCLK_INET not found");
+	errMessage(-1L, message);
+	return (-1);
+    }
+    ptr = (char*)&bp.ead;
+    len=strlen((char*)&bp.ead);
+    /* strip off maask */
+    for (i=0; i<len; i++, ptr++) {
+	if ( *ptr == ':' ){
+		break;
+	}
+    }
+    *ptr = 0;
+    ptr = (char*)&bp.ead;
+    len=strlen(ptr);
+    strncpy((char*)(pSymAddr + sizeof(void *)), ptr,len+1);
     return (0);
 }

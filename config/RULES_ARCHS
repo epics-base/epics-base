@@ -46,8 +46,8 @@ $(hostDirs) :
 
 $(crossDirs) : 
 	$(MKDIR) $@
-	echo "T_A=$@" > $@/Makefile
-	echo "include ../Makefile.Vx >> $@/Makefile
+	echo "T_A=$(subst O.,,$@)" > $@/Makefile
+	echo "include ../Makefile.Vx" >> $@/Makefile
 
 #
 # host/cross action targets

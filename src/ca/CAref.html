@@ -1185,28 +1185,22 @@ setup and teardown overhead.</p>
 
 <p>A well known negative side effect is that R3.14.5 CA clients will wait the
 full (typically long) duration of TCP/IP's internal keep alive timer prior to
-reconnecting under the following two scenarios:</p>
-<ol>
-  <li>A vxWorks IOC is stopped and then reboots with a different IP
+reconnecting under the following scenario (all of the following occur):</p>
+<ul>
+  <li>An IOC's operating system crashes (or is abruptly turned off) or a
+    vxWorks system is stopped by any means</li>
+  <li>This operating system does not immediately reboot using the same IP
+    address</li>
+  <li>A duplicate of the IOC is started appearing at a different IP
   address</li>
-  <li>All of the following occur:
-    <ul>
-      <li>An IOC's operating system crashes (or is abruptly turned off) or a
-        vxWorks system is stopped by any means</li>
-      <li>This operating system does not immediately reboot using the same IP
-        address</li>
-      <li>A duplicate of the IOC is started with a different IP address</li>
-    </ul>
-  </li>
-</ol>
+</ul>
 
-<p>It is unlikely that any rational organization will advocate changing the
-IP address of a server while the system is operational. Nevertheless, this
-<em>is</em> undoubtedly a negative side effect because there are substantive
-opportunities for users to become confused during control system development,
-but it is felt that the improvements in operational system robustness justify
-the confusion resulting in the small number of situations where the above
-scenarios occur.</p>
+<p>It is unlikely that any rational organization will advocate the above
+scenario while the system is operational. Nevertheless, this <em>is</em>
+undoubtedly a negative side effect because there are opportunities for users
+to become confused during control system development, but it is felt that the
+improvements in operational system robustness justify the confusion resulting
+in the small number of situations where the above scenarios occur.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 

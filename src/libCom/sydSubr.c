@@ -43,7 +43,7 @@
  *			sydSamplePrint; sydInputStoreInSet;
  *  .07 11-02-91 rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
  *  .08 12-08-91 rac	fix alignment for printing of channel names
- *  .09 01-20-92 rac	add a code for VALID_ALARM and handle
+ *  .09 01-20-92 rac	add a code for INVALID_ALARM and handle
  *			invalid values properly
  *  .10 02-04-92 rac	allow multiple chanOpen for same name
  *  .11 02-18-92 rac	finally handle array channels on print and export;
@@ -69,6 +69,7 @@
  *			a channel for a new retrieval; discontinue use of
  *			special malloc routines
  *
+ *  .16 07-15-92 jba    changed VALID_ALARM to INVALID alarm
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert checking
@@ -1828,7 +1829,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 *	for the channel.
 *----------------------------------------------------------------------------*/
 		useVal = 1;
-		if (alSev == VALID_ALARM) {
+		if (alSev == INVALID_ALARM) {
 		    useVal = 0;
 		    pSChan->pDataCodeL[sub] = 'I';
 		}

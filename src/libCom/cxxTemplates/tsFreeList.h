@@ -39,6 +39,9 @@
 #include <typeinfo>
 #include "osiMutex.h"
 
+// these versions of the microsoft compiler incorrectly
+// warn about a missing delete operator if only the
+// preferred delete operator with a size argument is present
 #if defined ( _MSC_VER ) && _MSC_VER <= 1200
 #   pragma warning ( disable : 4291 )  
 #endif
@@ -127,6 +130,12 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
 tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFromNewChunk ()
 {
+    if ( DEBUG_LEVEL > 0 ) {
+        fprintf ( stderr, "allocating a %s of size %u\n", 
+            typeid ( tsFreeListChunk < T, N, DEBUG_LEVEL > ).name (), 
+            sizeof ( tsFreeListChunk < T, N, DEBUG_LEVEL > ) );
+    }
+
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
     if ( ! pChunk) {
         return 0;

@@ -53,6 +53,12 @@ PROD_HOST = aitGen genApps
 # Remove the following line once a better version of gcc is available.
 aitConvert_OPT_RTEMS-pc386 = NO
 
+# Switch off potentially bogus warnings on HPUX 11 - detailed warning
+# suppression in the source code would be too much effort with respect
+# to gdd's limited future
+
+USR_CXXFLAGS_hpux = +W818 +W361 +W392 +W749
+
 gdd_RCS_WIN32 = gdd.rc
 
 include $(TOP)/configure/RULES

@@ -4,6 +4,12 @@
 //
 //
 // $Log$
+// Revision 1.10  1998/10/23 00:27:15  jhill
+// fixed problem where send was not always rearmed if this
+// was indirectly necessary in the send callback because
+// in this callback the code considered sends to be still armed
+// until the send callback completed
+//
 // Revision 1.9  1998/09/24 20:50:50  jhill
 // subtle changes which relate to not flushing the output buffer if there are bytes
 // pending in the input queue (improves performance)
@@ -143,7 +149,7 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 class casStreamEvWakeup : public osiTimer {
 public:
 	casStreamEvWakeup(casStreamOS &osIn) : 
-		osiTimer(osiTime(0.0)), os(osIn) {}
+		osiTimer(osiTime()), os(osIn) {}
 	~casStreamEvWakeup();
 
 	void expire();

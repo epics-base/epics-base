@@ -235,7 +235,7 @@ initBB()
       xvmeReset(pXvmeRegs, i);	  /* finish reset the PB-BIT module */
 
       /* Attach the Rx interrupt handler routine. Vector based on link #  */
-      intConnect(INUM_TO_IVEC(PEP_BB_IVEC_BASE + (i*4)), xvmeIrqRdav, i);
+      intConnect(INUM_TO_IVEC(PEP_BB_IVEC_BASE + (i*2)), xvmeIrqRdav, i);
 
       /* start a task to manage the TX link */
       sprintf(nameTemp, "%s%d", BBTXLINK_NAME, i);
@@ -505,7 +505,7 @@ int	link;
 
       /* Enable interrupts and check again in case PB-BIT blew it */
       lockKey = intLock();
-      pXvmeLink[link]->bbRegs->int_vec = PEP_BB_IVEC_BASE;
+      pXvmeLink[link]->bbRegs->int_vec = PEP_BB_IVEC_BASE +(link*2);
       intUnlock(lockKey);
       
       while (((pXvmeLink[link]->bbRegs->stat_ctl & XVME_RFNE) == 0) && 
@@ -513,7 +513,7 @@ int	link;
 	
         /* Re-enable ints here each time in case board got reset */
 	lockKey = intLock();
-        pXvmeLink[link]->bbRegs->int_vec = PEP_BB_IVEC_BASE;
+        pXvmeLink[link]->bbRegs->int_vec = PEP_BB_IVEC_BASE +(link*2);
 	intUnlock(lockKey);
 	
         semTake(pXvmeLink[link]->rxInt, WAIT_FOREVER); /* wait for message */

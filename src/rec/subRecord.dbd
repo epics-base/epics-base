@@ -10,14 +10,14 @@ recordtype(sub) {
 		promptgroup(GUI_SUB)
 		special(SPC_NOMOD)
 		interest(1)
-		size(16)
+		size(40)
 	}
 	field(SNAM,DBF_STRING) {
 		prompt("Subroutine Name")
 		promptgroup(GUI_SUB)
 		special(SPC_NOMOD)
 		interest(1)
-		size(16)
+		size(40)
 	}
 	field(SADR,DBF_NOACCESS) {
 		prompt("Subroutine Address")

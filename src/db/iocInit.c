@@ -262,6 +262,7 @@ static long initDatabase()
 			strncpy(name,plink->value.pv_link.pvname,PVNAME_SZ);
 			strcat(name,".");
 			strncat(name,plink->value.pv_link.fldname,FLDNAME_SZ);
+printf("%s %d %d %s\n",precord->name,plink->value.pv_link.process_passive,plink->value.pv_link.maximize_sevr,name);
 			if(dbNameToAddr(name,&dbAddr) == 0) {
 			    ((struct dbCommon *)(dbAddr.precord))->lset = -1;
 			    plink->type = DB_LINK;

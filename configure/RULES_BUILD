@@ -56,8 +56,8 @@ endif
 
 #---------------------------------------------------------------
 
-##PROD := $(addsuffix $(EXE),$(PROD))
-##TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
+PROD := $(addsuffix $(EXE),$(PROD))
+TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
  
 LIBTARGETS += $(LIBNAME_HOST) $(LIBNAME_IOC) $(INSTALL_LIBS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
@@ -65,18 +65,19 @@ LIBTARGETS += $(SHRLIBNAME_HOST) $(SHRLIBNAME_IOC) $(INSTALL_SHRLIBS) $(INSTALL_
 endif # SHARED_LIBRARIES=YES
 
 #---------------------------------------------------------------
-# Set PROD, OBJS, LIB_HOST, and LIB_IOC
+# Set PROD, OBJS, LIBRARY_HOST, and LIBRARY_IOC
 
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 PROD += $(PROD_HOST)
-LIB_HOST += $(LIB) $(LIBRARY)
+LIBRARY_HOST += $(LIBRARY)
 OBJS += $(OBJS_HOST)
 else 
 # PROD and TESTPROD not built for ioc only builds
 PROD = 
 TESTPROD = 
-LIB_IOC += $(LIB) $(LIBRARY)
+LIBRARY_IOC += $(LIBRARY)
 endif
+
 
 ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
 OBJS += $(OBJS_IOC)
@@ -100,20 +101,20 @@ LINK.c = $(LINK.cpp)
 #   in this library (may be for e.g. base/src/libCompat
 #   on some archs), don't define (and build) any library!
 
-# LIB_HOST
+# LIBRARY_HOST
 
-ifdef LIB_HOST
+ifdef LIBRARY_HOST
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 SHRLIB_LINKER = $(CXX)
-LIBSRCS_HOST+=$(SRCS) $(LIBSRCS) $($(basename $(LIB_HOST))_SRCS)
-ifneq ($(foreach lib,$(LIB_HOST),$($(lib)_SRCS_$(OS_CLASS))),)
-LIBSRCS_HOST += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIB_HOST))))
+LIBSRCS_HOST+=$(SRCS) $(LIBSRCS) $($(basename $(LIBRARY_HOST))_SRCS)
+ifneq ($(foreach lib,$(LIBRARY_HOST),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_HOST += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST))))
 else
-LIBSRCS_HOST += $($(addsuffix _SRCS_DEFAULT,$(LIB_HOST)))
+LIBSRCS_HOST += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_HOST)))
 endif
 LIBOBJS_HOST+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_HOST)))
-endif # LIB_HOST
+endif # LIBRARY_HOST
 
 
 ifdef LIBNAME_HOST
@@ -139,20 +140,20 @@ endif # LIBNAME_HOST
 #   in this library (may be for e.g. base/src/libCompat
 #   on some archs), don't define (and build) any library!
 
-# LIB_IOC
+# LIBRARY_IOC
 
-ifdef LIB_IOC
+ifdef LIBRARY_IOC
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 SHRLIB_LINKER = $(CXX)
-LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(basename $(LIB_IOC))_SRCS)
-ifneq ($(foreach lib,$(LIB_IOC),$($(lib)_SRCS_$(OS_CLASS))),)
-LIBSRCS_IOC += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIB_IOC))))
+LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(basename $(LIBRARY_IOC))_SRCS)
+ifneq ($(foreach lib,$(LIBRARY_IOC),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_IOC += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC))))
 else
-LIBSRCS_IOC += $($(addsuffix _SRCS_DEFAULT,$(LIB_IOC)))
+LIBSRCS_IOC += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_IOC)))
 endif
 LIBOBJS_IOC+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_IOC))) $(LIBOBJS)
-endif # LIB_IOC
+endif # LIBRARY_IOC
 
 
 ifdef LIBNAME_IOC
@@ -226,8 +227,8 @@ endif
 # WIN95/NT source browser
 #ifdef BAF
 PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
-LIB_BAF_IOC = $(addsuffix $(BAF), $(basename $(LIB_IOC)))
-LIB_BAF_HOST = $(addsuffix $(BAF), $(basename $(LIB_HOST)))
+LIB_BAF_IOC=$(addsuffix $(BAF),$(basename $(LIBRARY_IOC)))
+LIB_BAF_HOST=$(addsuffix $(BAF),$(basename $(LIBRARY_HOST)))
 browse: $(LIB_BAF_IOC) $(LIB_BAF_HOST) $(PROD_BAF)
 #endif
 
@@ -510,17 +511,17 @@ endif
 
 # WIN95/NT source browser
 ifdef BAF
-$(LIB_BAF_IOC): $(addsuffix $(BOF), $(basename $(LIBSRCS_IOC)))
+
+$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIBSRCS_HOST)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
 
-ifdef LIB_BAF_HOST
-$(LIB_BAF_HOST): $(addsuffix $(BOF), $(basename $(LIBSRCS_HOST)))
+$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIBSRCS_IOC)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
-endif
+
 endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))
@@ -545,6 +546,7 @@ $(LIBNAME_HOST): $(LIBOBJS_HOST)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
+
 
 $(DLL_LINK_LIBNAME_HOST) $(SHRLIBNAME_HOST): $(LIBOBJS_HOST)
 	$(LINK.shrlib) $(LIBOBJS_HOST) $(DLL_LDLIBS_HOST)

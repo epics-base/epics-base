@@ -158,30 +158,30 @@ OBJS_HOST+=$(OBJS_HOST_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(LIB_$(OS_CLASS))),)
-LIB+=$(subst -nil-,,$(LIB_$(OS_CLASS)))
+ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
+LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
 else
-ifneq (,$(LIB_DEFAULT))
-#ifdef LIB_DEFAULT
-LIB+=$(LIB_DEFAULT)
+ifneq (,$(LIBRARY_DEFAULT))
+#ifdef LIBRARY_DEFAULT
+LIBRARY+=$(LIBRARY_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(LIB_IOC_$(OS_CLASS))),)
-LIB_IOC+=$(subst -nil-,,$(LIB_IOC_$(OS_CLASS)))
+ifneq ($(strip $(LIBRARY_IOC_$(OS_CLASS))),)
+LIBRARY_IOC+=$(subst -nil-,,$(LIBRARY_IOC_$(OS_CLASS)))
 else
-ifneq (,$(LIB_IOC_DEFAULT))
-#ifdef LIB_IOC_DEFAULT
-LIB_IOC+=$(LIB_IOC_DEFAULT)
+ifneq (,$(LIBRARY_IOC_DEFAULT))
+#ifdef LIBRARY_IOC_DEFAULT
+LIBRARY_IOC+=$(LIBRARY_IOC_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(LIB_HOST_$(OS_CLASS))),)
-LIB_HOST+=$(subst -nil-,,$(LIB_HOST_$(OS_CLASS)))
+ifneq ($(strip $(LIBRARY_HOST_$(OS_CLASS))),)
+LIBRARY_HOST+=$(subst -nil-,,$(LIBRARY_HOST_$(OS_CLASS)))
 else
-ifneq (,$(LIB_HOST_DEFAULT))
-#ifdef LIB_HOST_DEFAULT
-LIB_HOST+=$(LIB_HOST_DEFAULT)
+ifneq (,$(LIBRARY_HOST_DEFAULT))
+#ifdef LIBRARY_HOST_DEFAULT
+LIBRARY_HOST+=$(LIBRARY_HOST_DEFAULT)
 endif
 endif
 

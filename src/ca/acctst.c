@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.56  1998/10/27 00:47:28  jhill
+ * fixed warnings
+ *
  * Revision 1.55  1998/09/24 21:11:38  jhill
  * verify that conn is dropped when channel count goes to zero
  *
@@ -1245,8 +1248,6 @@ void test_sync_groups(chid chix)
 	printf("done\n");
 }
 
-
-
 /*
  * multiple_sg_requests()
  */

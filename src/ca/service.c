@@ -147,13 +147,13 @@ unsigned long		blockSize
 			piiu->curMsg.m_postsize = 
 				ntohs(piiu->curMsg.m_postsize);
 			piiu->curMsg.m_cmmd = ntohs(piiu->curMsg.m_cmmd);
-			piiu->curMsg.m_type = ntohs(piiu->curMsg.m_type);
+			piiu->curMsg.m_dataType = ntohs(piiu->curMsg.m_dataType);
 			piiu->curMsg.m_count = ntohs(piiu->curMsg.m_count);
 #if 0
 			ca_printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
 				piiu->host_name_str,
 				piiu->curMsg.m_cmmd,
-				piiu->curMsg.m_type,
+				piiu->curMsg.m_dataType,
 				piiu->curMsg.m_count,
 				piiu->curMsg.m_postsize);
 			ca_printf(" Avail=%8x Cid=%6d\n",
@@ -341,8 +341,8 @@ const struct sockaddr_in  	*pnet_addr
 			 *
 			 */
 #			ifdef CONVERSION_REQUIRED 
-			if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
-				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
+			if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
+				(*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
 				     piiu->pCurData, 
 				     piiu->pCurData, 
 				     FALSE,
@@ -355,7 +355,7 @@ const struct sockaddr_in  	*pnet_addr
 
 			args.usr = (void *) monix->usr_arg;
 			args.chid = monix->chan;
-			args.type = piiu->curMsg.m_type;
+			args.type = piiu->curMsg.m_dataType;
 			args.count = piiu->curMsg.m_count;
 			args.dbr = piiu->pCurData;
 			/*
@@ -420,8 +420,8 @@ const struct sockaddr_in  	*pnet_addr
 		 * format to host format
 		 */
 #		ifdef CONVERSION_REQUIRED 
-			if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
-				 (*cac_dbr_cvrt[piiu->curMsg.m_type])(
+			if (piiu->curMsg.m_dataType<NELEMENTS(cac_dbr_cvrt)) {
+				 (*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
 					   piiu->pCurData, 
 					   piiu->pCurData, 
 					   FALSE,
@@ -441,7 +441,7 @@ const struct sockaddr_in  	*pnet_addr
 		 */
 		args.usr = (void *) monix->usr_arg;
 		args.chid = monix->chan;
-		args.type = piiu->curMsg.m_type;
+		args.type = piiu->curMsg.m_dataType;
 		args.count = piiu->curMsg.m_count;
 		args.dbr = piiu->pCurData;
 		/*
@@ -489,15 +489,15 @@ const struct sockaddr_in  	*pnet_addr
 			 * convert the data buffer from net
 			 * format to host format
 			 */
-			if (piiu->curMsg.m_type <= (unsigned) LAST_BUFFER_TYPE) {
+			if (piiu->curMsg.m_dataType <= (unsigned) LAST_BUFFER_TYPE) {
 #				ifdef CONVERSION_REQUIRED 
-					(*cac_dbr_cvrt[piiu->curMsg.m_type])(
+					(*cac_dbr_cvrt[piiu->curMsg.m_dataType])(
 					     piiu->pCurData, 
 					     (void *) pIOBlock->usr_arg, 
 					     FALSE,
 					     piiu->curMsg.m_count);
 #				else
-					if (piiu->curMsg.m_type == DBR_STRING &&
+					if (piiu->curMsg.m_dataType == DBR_STRING &&
 					     piiu->curMsg.m_count == 1u) {
 					     strcpy ((char *)pIOBlock->usr_arg,
 							 piiu->pCurData);
@@ -507,7 +507,7 @@ const struct sockaddr_in  	*pnet_addr
 							 (char *)pIOBlock->usr_arg,
 							 piiu->pCurData,
 							 dbr_size_n (
-								   piiu->curMsg.m_type, 
+								   piiu->curMsg.m_dataType, 
 								   piiu->curMsg.m_count)
 							 );
 					}
@@ -635,7 +635,7 @@ const struct sockaddr_in  	*pnet_addr
 				(pSlowBucket, &piiu->curMsg.m_cid);
 
 		args.usr = (void *) ca_static->ca_exception_arg;
-		args.type = ntohs (req->m_type);	
+		args.type = ntohs (req->m_dataType);	
 		args.count = ntohs (req->m_count);
 		args.stat = ntohl (piiu->curMsg.m_available);
 		args.op = op;
@@ -677,7 +677,7 @@ const struct sockaddr_in  	*pnet_addr
 		break;
 	}
 	case CA_PROTO_CLAIM_CIU:
-		cac_reconnect_channel(piiu->curMsg.m_cid, piiu->curMsg.m_type, piiu->curMsg.m_count);
+		cac_reconnect_channel(piiu->curMsg.m_cid, piiu->curMsg.m_dataType, piiu->curMsg.m_count);
 		break;
 
 	case CA_PROTO_CLAIM_CIU_FAILED:
@@ -878,10 +878,10 @@ const struct sockaddr_in	*pnet_addr
 		else {
 			ina.sin_addr = pnet_addr->sin_addr;
 		}
-		ina.sin_port = htons (piiu->curMsg.m_type);
+		ina.sin_port = htons (piiu->curMsg.m_dataType);
 	}
 	else if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
-		ina.sin_port = htons(piiu->curMsg.m_type);
+		ina.sin_port = htons(piiu->curMsg.m_dataType);
 		ina.sin_addr = pnet_addr->sin_addr;
 	}
 	else {
@@ -1014,7 +1014,7 @@ const struct sockaddr_in	*pnet_addr
 	chan->id.sid = piiu->curMsg.m_cid;
 
 	if (!CA_V42(CA_PROTOCOL_VERSION, minorVersion)) {
-		chan->privType  = piiu->curMsg.m_type;      
+		chan->privType  = piiu->curMsg.m_dataType;      
 		chan->privCount = piiu->curMsg.m_count;
 	}
 

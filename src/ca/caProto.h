@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1998/02/05 22:04:08  jhill
+ * added ETHERNET_MAX_UDP
+ *
  * Revision 1.4  1997/06/13 09:14:11  jhill
  * connect/search proto changes
  *
@@ -74,6 +77,9 @@
  *
  *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
  * $Log$
+ * Revision 1.5  1998/02/05 22:04:08  jhill
+ * added ETHERNET_MAX_UDP
+ *
  * Revision 1.4  1997/06/13 09:14:11  jhill
  * connect/search proto changes
  *
@@ -232,7 +238,7 @@ typedef ca_uint32_t	caResId;
 typedef struct	ca_hdr {
 	ca_uint16_t	m_cmmd;		/* operation to be performed */
 	ca_uint16_t	m_postsize;	/* size of message extension */	
-	ca_uint16_t	m_type;		/* operation data type */ 
+	ca_uint16_t	m_dataType;		/* operation data type */ 
 	ca_uint16_t	m_count;	/* operation data count */
 	ca_uint32_t	m_cid;		/* channel identifier */
 	ca_uint32_t	m_available;	/* undefined message location for use

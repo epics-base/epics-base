@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.2  1999/09/02 21:16:40  jhill
+ * fixed missing paramter to checkConnWatchDogs() func
+ *
  * Revision 1.107.2.1  1999/07/15 20:23:57  jhill
  * fixed bug where client disconnects while waiting to send TCP
  *
@@ -1218,7 +1221,7 @@ int	reply_type
 
 	mptr->m_cmmd = htons (CA_PROTO_SEARCH);
 	mptr->m_available = chix->cid;
-	mptr->m_type = reply_type;
+	mptr->m_dataType = reply_type;
 	mptr->m_count = htons (CA_MINOR_VERSION);
 	mptr->m_cid = chix->cid;
 
@@ -1549,7 +1552,7 @@ LOCAL int issue_get_callback(evid monix, ca_uint16_t cmmd)
 	
 	/* msg header only on db read notify req	 */
 	hdr.m_cmmd = htons (cmmd);
-	hdr.m_type = htons ((ca_uint16_t)monix->type);
+	hdr.m_dataType = htons ((ca_uint16_t)monix->type);
 	hdr.m_count = htons (count);
 	hdr.m_available = monix->id;
 	hdr.m_postsize = 0;
@@ -1977,7 +1980,7 @@ const void	*pvalue
 #	endif /*CONVERSION_REQUIRED*/
 
 	hdr.m_cmmd = htons(cmd);
-	hdr.m_type = htons((ca_uint16_t)type);
+	hdr.m_dataType = htons((ca_uint16_t)type);
 	hdr.m_count = htons((ca_uint16_t)count);
 	hdr.m_cid = chix->id.sid;
 	hdr.m_available = id;
@@ -2327,7 +2330,7 @@ int ca_request_event(evid monix)
 	/* msg header	 */
 	msg.m_header.m_cmmd = htons(CA_PROTO_EVENT_ADD);
 	msg.m_header.m_available = monix->id;
-	msg.m_header.m_type = htons((ca_uint16_t)monix->type);
+	msg.m_header.m_dataType = htons((ca_uint16_t)monix->type);
 	msg.m_header.m_count = htons(count);
 	msg.m_header.m_cid = chix->id.sid;
 	msg.m_header.m_postsize = sizeof(msg.m_info);
@@ -2568,7 +2571,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 		/* msg header	 */
 		hdr.m_cmmd = htons(CA_PROTO_EVENT_CANCEL);
 		hdr.m_available = pMon->id;
-		hdr.m_type = htons(chix->privType);
+		hdr.m_dataType = htons(chix->privType);
 		hdr.m_count = htons(chix->privCount);
 		hdr.m_cid = chix->id.sid;
 		hdr.m_postsize = 0;
@@ -2721,7 +2724,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	hdr.m_cmmd = htons(CA_PROTO_CLEAR_CHANNEL);
 	hdr.m_available = pChan->cid;
 	hdr.m_cid = pChan->id.sid;
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_postsize = 0;
 
@@ -3279,7 +3282,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 	int 		status;
 
 	hdr.m_cmmd = htons(CA_PROTO_ECHO);
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_cid = htons(0);
 	hdr.m_available = htons(0);
@@ -3313,7 +3316,7 @@ void noop_msg(struct ioc_in_use *piiu)
 	int 	status;
 
 	hdr.m_cmmd = htons(CA_PROTO_NOOP);
-	hdr.m_type = htons(0);
+	hdr.m_dataType = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_cid = htons(0);
 	hdr.m_available = htons(0);

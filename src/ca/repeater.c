@@ -38,6 +38,8 @@
  *	to all CA client processes that have subscribed.
  *
  *
+<<<<<<< repeater.c
+=======
  * 	Modification Log:
  * 	-----------------
  *	.01 060691 joh	Took out 4 byte count at message begin to 
@@ -57,6 +59,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.47  1998/09/29 20:50:37  jhill
+ * more robust in situations wherelocal IP cant be determined
+ *
  * Revision 1.46  1998/09/24 21:22:54  jhill
  * conn.c
  *
@@ -92,15 +97,7 @@
  *
  * Revision 1.32.6.1  1996/07/12 00:39:59  jhill
  * fixed client disconnect problem under solaris
- *
- * Revision 1.35  1996/07/10 23:30:11  jhill
- * fixed GNU warnings
- *
- * Revision 1.34  1996/06/19 17:59:24  jhill
- * many 3.13 beta changes
- *
- * Revision 1.33  1995/11/29  19:19:05  jhill
- * Added $log$
+>>>>>>> 1.50
  *
  */
 
@@ -155,12 +152,8 @@ LOCAL void verifyClients();
 LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr);
 LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize);
 
-
 /*
- *
  *	ca_repeater()
- *
- *
  */
 void epicsShareAPI ca_repeater()
 {

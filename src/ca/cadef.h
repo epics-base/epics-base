@@ -931,7 +931,7 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
  */
 epicsShareFunc unsigned epicsShareAPI ca_get_ioc_connection_count (void);
 epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
-
+epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
 
 /*
  * used when an auxillary thread needs to join a CA client context started

@@ -12,6 +12,7 @@
 
 #include "iocinf.h"
 #include "bhe_IL.h"
+#include "tcpiiu_IL.h"
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
 
@@ -34,7 +35,7 @@ bhe::~bhe ()
  *
  * updates beacon period, and looks for beacon anomalies
  */
-bool bhe::updateBeaconPeriod ( osiTime programBeginTime )
+bool bhe::updatePeriod ( osiTime programBeginTime )
 {
     double currentPeriod;
     bool netChange = false;
@@ -166,4 +167,10 @@ void bhe::destroy ()
 {
     delete this;
 }
+
+double bhe::period () const
+{
+    return this->averagePeriod;
+}
+
 

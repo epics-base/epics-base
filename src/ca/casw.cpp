@@ -153,7 +153,7 @@ int main ( int argc, char **argv )
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    netChange = pBHE->updateBeaconPeriod ( programBeginTime );
+                    netChange = pBHE->updatePeriod ( programBeginTime );
                 }
                 else {
                     /*

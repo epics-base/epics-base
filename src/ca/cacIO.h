@@ -71,6 +71,7 @@ public:
     bool writeAccess () const;
     const char *pName () const;
     unsigned searchAttempts () const;
+    double beaconPeriod () const;
     bool ca_v42_ok () const;
     bool connected () const;
     caar accessRights () const;
@@ -130,6 +131,7 @@ private:
     virtual channel_state state () const; // defaults to always connected
     virtual caar accessRights () const; // defaults to unrestricted access
     virtual unsigned searchAttempts () const; // defaults to zero
+    virtual double beaconPeriod () const; // defaults to negative DBL_MAX
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
     virtual unsigned readSequence () const; // defaults to always zero

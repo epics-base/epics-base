@@ -762,14 +762,19 @@ extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
 /*
  * ca_name ()
  */
-extern "C" epicsShareFunc const char * epicsShareAPI ca_name (chid pChan)
+extern "C" epicsShareFunc const char * epicsShareAPI ca_name ( chid pChan )
 {
     return pChan->pName ();
 }
 
-extern "C" epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid pChan)
+extern "C" epicsShareFunc unsigned epicsShareAPI ca_search_attempts ( chid pChan )
 {
     return pChan->searchAttempts ();
+}
+
+extern "C" epicsShareFunc double epicsShareAPI ca_beacon_period ( chid pChan )
+{
+    return pChan->beaconPeriod ();
 }
 
 /*

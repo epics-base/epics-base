@@ -11,6 +11,8 @@
  *  Author: Jeff Hill
  */
 
+#include <float.h>
+
 #include "iocinf.h"
 
 cacChannelIO::cacChannelIO ( cacChannel &chanIn ) :
@@ -72,6 +74,11 @@ caar cacChannelIO::accessRights () const
 unsigned cacChannelIO::searchAttempts () const 
 {
     return 0u;
+}
+
+double cacChannelIO::beaconPeriod () const 
+{
+    return - DBL_MAX;
 }
 
 bool cacChannelIO::ca_v42_ok () const 

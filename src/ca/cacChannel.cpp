@@ -15,6 +15,8 @@
  *	505 665 1831
  */
 
+#include <float.h>
+
 #include "iocinf.h"
 
 cacChannel::cacChannel () : pChannelIO (0) 
@@ -194,6 +196,17 @@ unsigned cacChannel::searchAttempts () const
     }
     else {
         return 0u;
+    }
+}
+
+double cacChannel::beaconPeriod () const
+{
+    cacChannelIO *pIO = this->pChannelIO;
+    if ( pIO ) {
+        return pIO->beaconPeriod ();
+    }
+    else {
+        return - DBL_MAX;
     }
 }
 

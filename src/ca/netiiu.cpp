@@ -11,6 +11,7 @@
  */
 
 #include <limits.h>
+#include <float.h>
 
 #include "iocinf.h"
 #include "netiiu_IL.h"
@@ -263,4 +264,9 @@ void netiiu::uninstallIO ( baseNMIU &io )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
+}
+
+double netiiu::beaconPeriod () const
+{
+    return - DBL_MAX;
 }

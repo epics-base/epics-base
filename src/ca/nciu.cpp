@@ -484,6 +484,11 @@ unsigned nciu::searchAttempts () const
     return this->retry;
 }
 
+double nciu::beaconPeriod () const
+{
+    return this->piiu->beaconPeriod ();
+}
+
 int nciu::createChannelRequest ()
 {
     int status = this->piiu->createChannelRequest ( *this );

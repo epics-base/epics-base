@@ -51,9 +51,6 @@ caStatus casAsyncPVExistIOI::cbFuncAsyncIO (
         status = this->client.asyncSearchResponse (
             guard, this->dgOutAddr, this->msg, this->retVal,
             this->protocolRevision, this->sequenceNumber );
-        if ( status == S_cas_sendBlocked ) {
-            return status;
-        }
     }
     else {
         errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,

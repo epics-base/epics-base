@@ -38,23 +38,19 @@ caStatus casAsyncPVAttachIOI::cbFuncAsyncIO (
 {
 	caStatus 	status;
 
-	switch ( this->msg.m_cmmd ) {
-	case CA_PROTO_CREATE_CHAN:
+	if ( this->msg.m_cmmd == CA_PROTO_CREATE_CHAN ) {
 		status = this->client.createChanResponse ( guard,
                         this->msg, this->retVal );
-        if ( status == S_cas_sendBlocked ) {
-            return status;
-        }
-		break;  
-
-	default:
+    }
+    else {
         errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
             " - client request type = %u", this->msg.m_cmmd );
 		status = S_cas_invalidAsynchIO;
-		break;
 	}
 
-    this->client.uninstallAsynchIO ( *this );
+    if ( status != S_cas_sendBlocked ) {
+        this->client.uninstallAsynchIO ( *this );
+    }
 
 	return status;
 }

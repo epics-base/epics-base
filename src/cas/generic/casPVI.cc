@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/01 19:56:13  jhill
+ * one last update prior to first release
+ *
  * Revision 1.2  1996/06/26 21:18:57  jhill
  * now matches gdd api revisions
  *
@@ -49,16 +52,14 @@
 //
 casPVI::casPVI(caServerI &casIn, const char * const pNameIn, 
 		casPV &pvAdapterIn) : 
-	cas(casIn), 
 	stringId(pNameIn),
+	cas(casIn), 
+	pv(pvAdapterIn),
 	nMonAttached(0u),
 	nIOAttached(0u)
 {
-	assert(&cas);
-	//
-	// casPVI must always be a base of casPV
-	//
-	assert(&pvAdapterIn == (casPV *)this);
+	assert(&this->cas);
+	assert(&this->pv);
 	this->cas.installPV(*this);
 }
 
@@ -108,22 +109,22 @@ caStatus casPVI::verifyPVName(gdd &name)
         //
         gddStatus = name.reference();
         if (gddStatus) {
-                serverToolDebug();
+                serverToolDebug("GDD PV name must not be \"no ref\"");
                 return S_cas_badPVName;
         }
         gddStatus = name.unreference();
         if (gddStatus) {
-                serverToolDebug();
+                serverToolDebug("corruption expected");
                 return S_cas_badPVName;
         }
  
 	if (name.primitiveType() != aitEnumString) {
-                serverToolDebug();
+                serverToolDebug("GDD PV name must be stored as an aitString");
                 return S_cas_badPVName;
 	}
 
-        if (name.dimension() != 1u) {
-                serverToolDebug();
+        if (name.dimension() != 0u) {
+                serverToolDebug("GDD Dimension must be zero (gddScaler)");
                 return S_cas_badPVName;
         }
 

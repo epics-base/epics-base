@@ -662,12 +662,12 @@ static int fetch_values(pcalc)
 
 	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<NO_OF_INPUTS; 
             i++, plink++, pvalue++) {
+            int newStatus;
 
-            status = dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
-
-	    if (!RTN_SUCCESS(status)) return(status);
+            newStatus = dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
+            if(status==0) status = newStatus;
 	}
-	return(0);
+	return(status);
 }
 
 static void checkLinksCallback(CALLBACK *arg)

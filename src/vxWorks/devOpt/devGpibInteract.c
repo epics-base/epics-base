@@ -48,15 +48,16 @@
  */
 
 #include        <vxWorks.h>
+#if 0 /* COMMENTED OUT */
 #include        <sysLib.h>
 #include        <iosLib.h>
 #include        <types.h>
 #include        <stdioLib.h>
 #include        <strLib.h>
 #include        <semLib.h>
-#include        <lstLib.h>
-#include        <rngLib.h>
 #include        <taskLib.h>
+#endif  /* COMMENTED OUT */
+#include        <rngLib.h>
 
 #include        <alarm.h>
 #include        <cvtTable.h>

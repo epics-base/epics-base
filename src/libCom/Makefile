@@ -4,8 +4,17 @@ include $(TOP)/configure/CONFIG
 LIBCOM = $(TOP)/src/libCom
 
 
+# From cxxTemplates
+SRC_DIRS += $(LIBCOM)/cxxTemplates
+
+INC += resourceLib.h
+INC += tsDLList.h
+INC += tsSLList.h
+INC += tsMinMax.h
+INC += tsBTree.h
+
 # From osi
-SRC_DIRS = $(LIBCOM)/osi
+SRC_DIRS += $(LIBCOM)/osi
 
 INC += dbDefs.h
 INC += epicsTypes.h
@@ -116,10 +125,12 @@ SRCS += fdManager.cpp
 SRC_DIRS += $(LIBCOM)/freeList
 INC += freeList.h
 SRCS += freeListLib.c
+HTMLS += $(LIBCOM)/freeList/freeList.3.html
 
 SRC_DIRS += $(LIBCOM)/gpHash
 INC += gpHash.h
 SRCS += gpHashLib.c
+HTMLS += $(LIBCOM)/gpHash/gpHash.3.html
 
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
@@ -152,6 +163,7 @@ SRCS_WIN32 += dllmain.cpp
 # For RTEMS CommandInterpreter
 INC_RTEMS := CommandInterpreter.h
 SRCS_RTEMS := CommandInterpreter.c
+HTMLS_RTEMS += $(LIBCOM)/osi/os/RTEMS/CommandInterpreter.3.html
 
 #why is this here ?
 USR_CFLAGS = -D_NO_PROTO 

@@ -29,6 +29,7 @@
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  * .03	08-06-91	rac	allow specifying file name
+ * .04	09-11-91	rac	finish allowing user specified name
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -161,9 +162,9 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	pCfDesc = (AR_CF_DESC *)pSspec->pHandle;
 
     if (funcCode ==					SYD_FC_INIT) {
-	pCfDesc = arCFOpen("arChan/arChanData.bin", O_RDONLY);
+	pCfDesc = arCFOpen(pArg, O_RDONLY);
 	if (pCfDesc == NULL) {
-	    (void)printf("couldn't open arChan/arChanData.bin\n");
+	    (void)printf("couldn't open %s\n", pArg);
 	    retStat = S_syd_ERROR;
 	}
 	pSspec->pHandle = (void *)pCfDesc;

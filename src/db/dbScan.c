@@ -57,7 +57,7 @@
 #include "osiThread.h"
 #include "tsStamp.h"
 #include "cantProceed.h"
-#include "osiRing.h"
+#include "epicsRingPointer.h"
 #include "epicsPrint.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
@@ -77,7 +77,7 @@
 /* SCAN ONCE */
 int onceQueueSize = 1000;
 static semBinaryId onceSem;
-static ringId onceQ;
+static epicsRingPointerId onceQ;
 static threadId onceTaskId;
 
 /*all other scan types */
@@ -442,12 +442,12 @@ void epicsShareAPI scanOnce(void *precord)
 {
     static int newOverflow=TRUE;
     int lockKey;
-    int nput;
+    int pushOK;
 
     lockKey = interruptLock();
-    nput = ringPut(onceQ,(char *)&precord,sizeof(precord));
+    pushOK = epicsRingPointerPush(onceQ,precord);
     interruptUnlock(lockKey);
-    if(nput!=sizeof(precord)) {
+    if(!pushOK) {
 	if(newOverflow)errMessage(0,"rngBufPut overflow in scanOnce");
 	newOverflow = FALSE;
     }else {
@@ -464,10 +464,7 @@ static void onceTask(void)
 	if(semBinaryTake(onceSem)!=semTakeOK)
 	    errlogPrintf("dbScan: semBinaryTake returned error in onceTask");
         while(TRUE) {
-            int nbytes = ringGet(onceQ,(void *)&precord,sizeof(precord));
-            if(nbytes==0) break;
-	    if(nbytes!=sizeof(precord))
-		errMessage(0,"dbScan: rngBufGet returned error in onceTask");
+            if(!(precord = epicsRingPointerPop(onceQ))) break;
 	    dbScanLock(precord);
 	    dbProcess(precord);
 	    dbScanUnlock(precord);
@@ -483,7 +480,7 @@ int epicsShareAPI scanOnceSetQueueSize(int size)
 
 static void initOnce(void)
 {
-    if((onceQ = ringCreate(sizeof(void *) * onceQueueSize))==NULL){
+    if((onceQ = epicsRingPointerCreate(onceQueueSize))==NULL){
         cantProceed("dbScan: initOnce failed");
     }
     onceSem=semBinaryMustCreate(semEmpty);

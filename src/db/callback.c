@@ -22,7 +22,7 @@ of this distribution.
 #include "osiThread.h"
 #include "osiInterrupt.h"
 #include "osiTimer.h"
-#include "osiRing.h"
+#include "epicsRingPointer.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "dbStaticLib.h"
@@ -41,7 +41,7 @@ of this distribution.
 
 int callbackQueueSize = 2000;
 static semBinaryId callbackSem[NUM_CALLBACK_PRIORITIES];
-static ringId callbackQ[NUM_CALLBACK_PRIORITIES];
+static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
 static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
 static void callbackInitPvt(void *);
@@ -92,7 +92,7 @@ void epicsShareAPI callbackInit()
 void epicsShareAPI callbackRequest(CALLBACK *pcallback)
 {
     int priority = pcallback->priority;
-    int nput;
+    int pushOK;
     int lockKey;
 
     if(priority<0 || priority>=(NUM_CALLBACK_PRIORITIES)) {
@@ -101,9 +101,9 @@ void epicsShareAPI callbackRequest(CALLBACK *pcallback)
     }
     if(ringOverflow[priority]) return;
     lockKey = interruptLock();
-    nput = ringPut(callbackQ[priority],(void *)&pcallback,sizeof(pcallback));
+    pushOK = epicsRingPointerPush(callbackQ[priority],(void *)pcallback);
     interruptUnlock(lockKey);
-    if(nput!=sizeof(pcallback)){
+    if(!pushOK) {
 	epicsPrintf("callbackRequest ring buffer full\n");
 	ringOverflow[priority] = TRUE;
     }
@@ -116,20 +116,14 @@ static void callbackTask(int *ppriority)
 {
     int priority = *ppriority;
     CALLBACK *pcallback;
-    int nget;
 
     ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
         semBinaryMustTake(callbackSem[priority]);
         while(TRUE) {
-	    nget = ringGet(callbackQ[priority],
-                (void *)&pcallback,sizeof(pcallback));
-            if(nget==0) break;
-	    if(nget!=sizeof(pcallback)) {
-		errMessage(0,"ringGet failed in callbackTask");
-		threadSuspendSelf();
-	    }
+            if(!(pcallback = (CALLBACK *)
+                epicsRingPointerPop(callbackQ[priority]))) break;
 	    ringOverflow[priority] = FALSE;
 	    (*pcallback->callback)(pcallback);
 	}
@@ -150,8 +144,8 @@ static void start(int ind)
 	errMessage(0,"callback start called with illegal priority\n");
 	return;
     }
-    if((callbackQ[ind]=ringCreate(sizeof(CALLBACK *)*callbackQueueSize)) == 0) 
-	errMessage(0,"ringCreate failed while starting a callback task");
+    if((callbackQ[ind]=epicsRingPointerCreate(callbackQueueSize)) == 0) 
+	errMessage(0,"epicsRingPointerCreate failed while starting a callback task");
     sprintf(taskName,"cb%s",priorityName[ind]);
     callbackTaskId[ind] = threadCreate(taskName,priority,
         threadGetStackSize(threadStackBig),(THREADFUNC)callbackTask,
@@ -170,7 +164,7 @@ static void wdCallback(void *pind)
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
     semBinaryDestroy(callbackSem[ind]);
-    ringDelete(callbackQ[ind]);
+    epicsRingPointerDelete(callbackQ[ind]);
     start(ind);
 }
 

@@ -12,7 +12,7 @@ static bool subsequentConnect = false;
 
 osiTime begin;
 
-static void connHandler ( struct connection_handler_args args )
+extern "C" void caConnTestConnHandler ( struct connection_handler_args args )
 {
     if ( args.op == CA_OP_CONN_UP ) {
         if ( connCount == 0u ) {
@@ -71,7 +71,8 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
         printf ( "creating channels\n" );
 
 		for ( i = 0u; i < channelCount; i++ ) {
-			status = ca_search_and_connect ( pNameIn, &pChans[i], connHandler, 0 );
+			status = ca_search_and_connect ( pNameIn, 
+                &pChans[i], caConnTestConnHandler, 0 );
 			SEVCHK ( status, "CA search problems" );
 		}
 

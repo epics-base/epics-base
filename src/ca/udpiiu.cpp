@@ -267,27 +267,27 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
     struct sockaddr_in bd;
     int flag;
 
-    if ( repeaterPort <= 0xffff ) {
-        tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-        if ( tmpSock != INVALID_SOCKET ) {
-            ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-            memset ( (char *) &bd, 0, sizeof ( bd ) );
-            bd.sin_family = AF_INET;
-            bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-            bd.sin_port = htons ( port );   
-            status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
-            if ( status < 0 ) {
-                if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-                    installed = true;
-                }
-                else {
-                    ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
-                }
+    if ( repeaterPort > 0xffff ) {
+        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
+        return;
+    }
+
+    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( tmpSock != INVALID_SOCKET ) {
+        ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
+        memset ( (char *) &bd, 0, sizeof ( bd ) );
+        bd.sin_family = AF_INET;
+        bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+        bd.sin_port = htons ( port );   
+        status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
+        if ( status < 0 ) {
+            if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+                installed = true;
+            }
+            else {
+                ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
             }
         }
-    }
-    else {
-        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
     }
 
     /*

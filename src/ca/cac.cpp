@@ -21,7 +21,7 @@
 #include "nciu_IL.h"
 #include "ioCounter_IL.h"
 
-static void cacRecursionLockExitHandler ()
+extern "C" void cacRecursionLockExitHandler ()
 {
     if ( cacRecursionLock ) {
         threadPrivateDelete ( cacRecursionLock );
@@ -29,7 +29,7 @@ static void cacRecursionLockExitHandler ()
     }
 }
 
-static void cacInitRecursionLock ( void * )
+extern "C" void cacInitRecursionLock ( void * )
 {
     cacRecursionLock = threadPrivateCreate ();
     if ( cacRecursionLock ) {

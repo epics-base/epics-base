@@ -47,8 +47,13 @@ void putCallback::completionNotify ()
     (*this->pFunc) (args);
 }
 
-void putCallback::exceptionNotify (int status, 
-    const char * /* pContext */ )
+void putCallback::completionNotify ( unsigned type, 
+        unsigned long count, const void *pData )
+{
+    cacNotify::completionNotify ( type, count, pData );
+}
+
+void putCallback::exceptionNotify (int status, const char * /* pContext */ )
 {
     struct event_handler_args args;
 
@@ -59,6 +64,12 @@ void putCallback::exceptionNotify (int status,
     args.status = status;
     args.dbr = 0;
     (*this->pFunc) (args);
+}
+
+void putCallback::exceptionNotify ( int status, 
+    const char *pContext, unsigned type, unsigned long count )
+{
+    cacNotify::exceptionNotify ( status, pContext, type, count );
 }
 
 void * putCallback::operator new ( size_t size )

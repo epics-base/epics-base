@@ -34,6 +34,11 @@ void getCallback::destroy ()
     delete this;
 }
 
+void getCallback::completionNotify ()
+{
+    cacNotify::completionNotify ();
+}
+
 void getCallback::completionNotify ( unsigned type, unsigned long count, const void *pData )
 {
     struct event_handler_args   args;
@@ -46,8 +51,7 @@ void getCallback::completionNotify ( unsigned type, unsigned long count, const v
     (*this->pFunc) (args);
 }
 
-void getCallback::exceptionNotify (int status, 
-    const char * /* pContext */)
+void getCallback::exceptionNotify (int status, const char * /* pContext */)
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;
@@ -57,6 +61,12 @@ void getCallback::exceptionNotify (int status,
     args.status = status;
     args.dbr = 0;
     (*this->pFunc) (args);
+}
+
+void getCallback::exceptionNotify ( int status, const char *pContext, 
+    unsigned type, unsigned long count )
+{
+    cacNotify::exceptionNotify ( status, pContext, type, count);
 }
 
 void * getCallback::operator new ( size_t size )

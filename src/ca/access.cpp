@@ -33,7 +33,7 @@ threadPrivateId cacRecursionLock;
 
 static threadOnceId caClientContextIdOnce = OSITHREAD_ONCE_INIT;
 
-static void ca_client_exit_handler ()
+extern "C" void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
         threadPrivateDelete ( caClientContextId );
@@ -42,7 +42,7 @@ static void ca_client_exit_handler ()
 }
 
 // runs once only for each process
-static void ca_init_client_context ( void * )
+extern "C" void ca_init_client_context ( void * )
 {
     caClientContextId = threadPrivateCreate ();
     if ( caClientContextId ) {

@@ -60,8 +60,10 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     ~getCallback (); // allocate only out of pool
-    virtual void completionNotify (unsigned type, unsigned long count, const void *pData);
-    virtual void exceptionNotify (int status, const char *pContext);
+    void completionNotify ();
+    void completionNotify (unsigned type, unsigned long count, const void *pData);
+    void exceptionNotify (int status, const char *pContext);
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class getCallback, 1024 > freeList;
 };
 
@@ -78,8 +80,10 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     ~putCallback (); // allocate only out of pool
-    virtual void completionNotify ();
-    virtual void exceptionNotify ( int status, const char *pContext );
+    void completionNotify ();
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class putCallback, 1024 > freeList;
 };
 
@@ -98,8 +102,10 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
 
+    void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
 
     ~oldSubscription (); // must allocate from pool
     static tsFreeList < struct oldSubscription, 1024 > freeList;

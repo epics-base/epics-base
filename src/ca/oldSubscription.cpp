@@ -29,6 +29,11 @@ oldChannel &oldSubscription::channel ()
     return this->chan;
 }
 
+void oldSubscription::completionNotify ()
+{
+    cacNotify::completionNotify ();
+}
+
 void oldSubscription::completionNotify (unsigned type, unsigned long count, const void *pData)
 {
     struct event_handler_args args;
@@ -39,11 +44,10 @@ void oldSubscription::completionNotify (unsigned type, unsigned long count, cons
     args.count = count;
     args.status = ECA_NORMAL;
     args.dbr = pData;
-    (*this->pFunc) (args);
+    ( *this->pFunc ) (args);
 }
 
-void oldSubscription::exceptionNotify (int status, 
-    const char * /* pContext */ )
+void oldSubscription::exceptionNotify ( int status, const char * /* pContext */ )
 {
     struct event_handler_args args;
 
@@ -53,7 +57,13 @@ void oldSubscription::exceptionNotify (int status,
     args.count = 0;
     args.status = status;
     args.dbr = 0;
-    (*this->pFunc) (args);    
+    ( *this->pFunc ) (args);    
+}
+    
+void oldSubscription::exceptionNotify ( int status, const char *pContext, 
+                                       unsigned type, unsigned long count )
+{
+    cacNotify::exceptionNotify ( status, pContext, type, count );
 }
 
 void oldSubscription::destroy ()

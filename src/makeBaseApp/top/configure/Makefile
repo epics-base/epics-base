@@ -1,6 +1,4 @@
-#
-# $Id$
-#
+# Makefile
 
 TOP=..
 
@@ -15,6 +13,6 @@ CONFIG_APP_INCLUDE: $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH)
 endif
 
 CONFIG_APP_INCLUDE: $(TOP)/configure/RELEASE $(TOP)/configure/CONFIG_APP
-	$(RM) $@
-	@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)
+	@$(RM) $@
+	@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@ $(TOP)
 

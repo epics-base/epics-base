@@ -131,8 +131,6 @@
 #include	<drvAb.h>
 
 
-#undef LOCAL
-#define LOCAL
 
 #define maxCmdTrys		3
 #define AB_INT_LEVEL    	5
@@ -922,9 +920,10 @@ LOCAL int link_init(ab_link *plink)
     /* (The most current revision is Series A, Revision D.)	*/
     strcpy(plink->firmware_info,(char *)&pmb->msg[0]);
     /* setup scanner */
+    /* Wake up scanner for the first time*/
+    p6008->sc_intr = 1; /*Wake up scanner*/
+    taskDelay(1); /*Give it time to initialize*/
     for(ntry=0; ntry<maxCmdTrys; ntry++) {
-        /*NOTE: For some reason first try sc_waitcmd ALWAYS fails*/
-        /*6008-SV Scanner   Series A  Revision D */
         status = sc_lock(plink);
         if(status) continue;
         pmb->command = SET_UP;

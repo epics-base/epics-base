@@ -128,7 +128,7 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 	//
 	// data type out of range ?
 	//
-	if (mp->m_type>((unsigned)LAST_BUFFER_TYPE)) {
+	if (mp->m_dataType>((unsigned)LAST_BUFFER_TYPE)) {
 		return ECA_BADTYPE;
 	}
 
@@ -190,7 +190,7 @@ caStatus casStrmClient::readAction ()
 	/*
 	 * verify read access
 	 */
-	if (pChan->readAccess()!=aitTrue) {
+	if (!pChan->readAccess()) {
 		int	v41;
 
 		v41 = CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number);
@@ -237,7 +237,7 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 		return this->sendErrWithEpicsStatus(&msg, status, ECA_GETFAIL);
 	}
 
-	size = dbr_size_n (msg.m_type, msg.m_count);
+	size = dbr_size_n (msg.m_dataType, msg.m_count);
 	localStatus = this->allocMsg(size, &reply);
 	if (localStatus) {
 		if (localStatus==S_cas_hugeRequest) {
@@ -257,16 +257,16 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, desc);
+	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, desc);
 	if (mapDBRStatus<0) {
 		desc.dump();
-		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
-				pChan->getPVI().getName(), msg.m_type, msg.m_count);
+		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
+				pChan->getPVI().getName(), msg.m_dataType, msg.m_count);
 		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
 	}
 #ifdef CONVERSION_REQUIRED
 	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[msg.m_type])
+	(* cac_dbr_cvrt[msg.m_dataType])
 		( reply + 1,
 		  reply + 1,
 		  TRUE,       /* host -> net format */
@@ -276,7 +276,7 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// force string message size to be the true size rounded to even
 	// boundary
 	//
-	if (msg.m_type == DBR_STRING && msg.m_count == 1u) {
+	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 		/* add 1 so that the string terminator will be shipped */
 		strcnt = strlen((char *)(reply + 1u)) + 1u;
 		reply->m_postsize = strcnt;
@@ -305,7 +305,7 @@ caStatus casStrmClient::readNotifyAction ()
 	//
 	// verify read access
 	// 
-	if (pChan->readAccess()!=aitTrue) {
+	if (!pChan->readAccess()) {
 		if (CA_V41(CA_PROTOCOL_VERSION, this->minor_version_number)) {
 			return this->readNotifyResponseECA_XXX (NULL, *mp, NULL, ECA_NORDACCESS);
 		}
@@ -383,7 +383,7 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	caStatus	status;
 	int        	strcnt;
 
-	size = dbr_size_n (msg.m_type, msg.m_count);
+	size = dbr_size_n (msg.m_dataType, msg.m_count);
 	status = this->allocMsg(size, &reply);
 	if (status) {
 		if (status==S_cas_hugeRequest) {
@@ -419,11 +419,11 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 			// convert gdd to db_access type
 			// (places the data in network format)
 			//
-			mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, *pDesc);
+			mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc);
 			if (mapDBRStatus<0) {
 				pDesc->dump();
 				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
-					pChan->getPVI().getName(), msg.m_type, msg.m_count);
+					pChan->getPVI().getName(), msg.m_dataType, msg.m_count);
 				reply->m_cid = ECA_GETFAIL;
 			}
 			else {
@@ -454,7 +454,7 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	else {
 
 		/* use type as index into conversion jumptable */
-		(* cac_dbr_cvrt[msg.m_type])
+		(* cac_dbr_cvrt[msg.m_dataType])
 			( reply + 1,
 			  reply + 1,
 			  TRUE,       /* host -> net format */
@@ -466,7 +466,7 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	// force string message size to be the true size rounded to even
 	// boundary
 	//
-	if (msg.m_type == DBR_STRING && msg.m_count == 1u) {
+	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 		/* add 1 so that the string terminator will be shipped */
 		strcnt = strlen((char *)(reply + 1u)) + 1u;
 		reply->m_postsize = strcnt;
@@ -491,7 +491,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 	int strcnt;
 	gddStatus gdds;
 
-	size = dbr_size_n (msg.m_type, msg.m_count);
+	size = dbr_size_n (msg.m_dataType, msg.m_count);
 	status = this->allocMsg(size, &pReply);
 	if (status) {
 		if (status==S_cas_hugeRequest) {
@@ -525,7 +525,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 	if (completionStatusCopy == S_cas_success) {
 
 		if (pDesc) {
-			completionStatusCopy = createDBRDD(msg.m_type, 
+			completionStatusCopy = createDBRDD(msg.m_dataType, 
 							msg.m_count, pDBRDD);
 			if (completionStatusCopy==S_cas_success) {
 				gdds = gddApplicationTypeTable::
@@ -534,7 +534,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 					errPrintf (status, __FILE__, __LINE__,
 "no conversion between event app type=%d and DBR type=%d Element count=%d",
 						pDesc->applicationType(),
-						msg.m_type,
+						msg.m_dataType,
 						msg.m_count);
 					completionStatusCopy = S_cas_noConvert;
 				}
@@ -555,11 +555,11 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 		// there appears to be no success/fail
 		// status from this routine
 		//
-		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), msg.m_count, *pDBRDD);
+		gddMapDbr[msg.m_dataType].conv_dbr ((pReply+1), msg.m_count, *pDBRDD);
 
 #ifdef CONVERSION_REQUIRED
 		/* use type as index into conversion jumptable */
-		(* cac_dbr_cvrt[msg.m_type])
+		(* cac_dbr_cvrt[msg.m_dataType])
 			( pReply + 1,
 			  pReply + 1,
 			  TRUE,       /* host -> net format */
@@ -568,7 +568,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 		//
 		// force string message size to be the true size 
 		//
-		if (msg.m_type == DBR_STRING && msg.m_count == 1u) {
+		if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 			// add 1 so that the string terminator 
 			// will be shipped 
 			strcnt = strlen((char *)(pReply + 1u)) + 1u;
@@ -617,7 +617,7 @@ caStatus casStrmClient::writeAction()
 	//
 	// verify write access
 	// 
-	if (pChan->writeAccess()!=aitTrue) {
+	if (!pChan->writeAccess()) {
 		int	v41;
 
 		v41 = CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number);
@@ -694,7 +694,7 @@ caStatus casStrmClient::writeNotifyAction()
 	//
 	// verify write access
 	// 
-	if (pChan->writeAccess()!=aitTrue) {
+	if (!pChan->writeAccess()) {
 		if (CA_V41(CA_PROTOCOL_VERSION,this->minor_version_number)) {
 			return this->casStrmClient::writeNotifyResponseECA_XXX(
 					*mp, ECA_NOWTACCESS);
@@ -1069,7 +1069,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 
 	*claim_reply = nill_msg;
 	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-	claim_reply->m_type = dbrType;
+	claim_reply->m_dataType = dbrType;
 	claim_reply->m_count = pPV->nativeCount();
 	claim_reply->m_cid = hdr.m_cid;
 	claim_reply->m_available = pChanI->getSID();
@@ -1259,7 +1259,7 @@ caStatus casStrmClient::eventAddAction ()
 	if (status==S_cas_success) {
 
 		pMonitor = new casClientMon(*pciu, mp->m_available, 
-					mp->m_count, mp->m_type, mask, *this);
+					mp->m_count, mp->m_dataType, mask, *this);
 		if (!pMonitor) {
 			status = this->sendErr(mp, ECA_ALLOCMEM, NULL);
 			if (status==S_cas_success) {
@@ -1385,7 +1385,7 @@ caStatus casStrmClient::eventCancelAction ()
 	
 	reply->m_cmmd = CA_PROTO_EVENT_ADD;
 	reply->m_postsize = 0u;
-	reply->m_type = pMon->getType ();
+	reply->m_dataType = pMon->getType ();
 	reply->m_count = (unsigned short) pMon->getCount ();
 	reply->m_cid = pciu->getCID ();
 	reply->m_available = pMon->getClientId ();
@@ -1415,7 +1415,7 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 
 	falseReply.m_cmmd = CA_PROTO_EVENT_ADD;
 	falseReply.m_postsize = size;
-	falseReply.m_type = pMon->getType();
+	falseReply.m_dataType = pMon->getType();
 	falseReply.m_count = pMon->getCount();
 	falseReply.m_cid = pMon->getChannel().getCID();
 	falseReply.m_available = pMon->getClientId();
@@ -1542,13 +1542,13 @@ caStatus casStrmClient::write()
 	//
 	// no puts via compound types (for now)
 	//
-	if (dbr_value_offset[pHdr->m_type]) {
+	if (dbr_value_offset[pHdr->m_dataType]) {
 		return S_cas_badType;
 	}
 
 #ifdef CONVERSION_REQUIRED
 	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[pHdr->m_type])
+	(* cac_dbr_cvrt[pHdr->m_dataType])
 		( this->ctx.getData(),
 		  this->ctx.getData(),
 		  FALSE,       /* net -> host format */
@@ -1619,10 +1619,10 @@ caStatus casStrmClient::writeScalarData()
 	 * that "gddDbrToAit" will not track with changes in
 	 * the DBR_XXXX type system
 	 */
-	if (pHdr->m_type>=NELEMENTS(gddDbrToAit)) {
+	if (pHdr->m_dataType>=NELEMENTS(gddDbrToAit)) {
 		return S_cas_badType;
 	}
-	type = gddDbrToAit[pHdr->m_type].type;
+	type = gddDbrToAit[pHdr->m_dataType].type;
 	if (type==aitEnumInvalid) {
 		return S_cas_badType;
 	}
@@ -1688,10 +1688,10 @@ caStatus casStrmClient::writeArrayData()
 	 * that "gddDbrToAit" will not track with changes in
 	 * the DBR_XXXX type system
 	 */
-	if (pHdr->m_type>=NELEMENTS(gddDbrToAit)) {
+	if (pHdr->m_dataType>=NELEMENTS(gddDbrToAit)) {
 		return S_cas_badType;
 	}
-	type = gddDbrToAit[pHdr->m_type].type;
+	type = gddDbrToAit[pHdr->m_dataType].type;
 	if (type==aitEnumInvalid) {
 		return S_cas_badType;
 	}
@@ -1707,7 +1707,7 @@ caStatus casStrmClient::writeArrayData()
 	gddStat = pDD->unreference();
 	assert (!gddStat);
 
-	size = dbr_size_n (pHdr->m_type, pHdr->m_count);
+	size = dbr_size_n (pHdr->m_dataType, pHdr->m_count);
 	pData = new char [size];
 	if (!pData) {
 		return S_cas_noMemory;
@@ -1762,7 +1762,7 @@ caStatus casStrmClient::read(smartGDDPointer &pDescRet)
 	caStatus	status;
 
 	pDescRet = NULL;
-	status = createDBRDD (pHdr->m_type, pHdr->m_count, pDescRet);
+	status = createDBRDD (pHdr->m_dataType, pHdr->m_count, pDescRet);
 	if (status) {
 		return status;
 	}

@@ -46,32 +46,32 @@ typedef struct caAttributes
 typedef struct caLink
 {
 	ELLNODE		node;
+	epicsMutexId	lock;
 	struct link	*plink;
         char		*pvname;
 	chid 		chid;
+	short		link_action;
+	unsigned short	sevr;
+	epicsTimeStamp	timeStamp;
 	void 		*pgetNative;
 	void		*pputNative;
 	char		*pgetString;
 	char		*pputString;
 	caAttributes	*pcaAttributes;
-	long		nelements;
-        enum channel_state	caState;
-        short		hasReadAccess;
-        short		hasWriteAccess;
-	epicsMutexId	lock;
-	unsigned long	nDisconnect;
-	unsigned long	nNoWrite;
-	short		dbrType;
-	short		link_action;
-	unsigned short	sevr;
-	epicsTimeStamp	timeStamp;
 	char		gotInNative;
 	char		gotOutNative;
 	char		gotInString;
 	char		gotOutString;
 	char		newOutNative;
 	char		newOutString;
+        int             isConnected;
+	short		dbrType;
+	long		nelements;
+        short		hasReadAccess;
+        short		hasWriteAccess;
 	char		gotFirstConnection;
+	unsigned long	nDisconnect;
+	unsigned long	nNoWrite; /*only modified by dbCaPutLink*/
 }caLink;
 
 #endif /*INCdbCaPvth*/

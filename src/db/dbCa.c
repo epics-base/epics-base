@@ -54,9 +54,9 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCa.h"
 #include "dbCaPvt.h"
 
-static ELLLIST caList;    /* Work list for dbCaTask */
-static epicsMutexId caListSem; /*Mutual exclusions semaphores for caList*/
-static epicsEventId caWakeupSem; /*wakeup semaphore for dbCaTask*/
+static ELLLIST workList;    /* Work list for dbCaTask */
+static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
+static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 static int removesOutstanding = 0;
 static int removesOutstandingWarning = 10000;
 
@@ -65,8 +65,8 @@ extern void dbServiceIOInit();
 
 /* caLink locking
  *
- * caListSem
- *   This is only used to put request into and take them out of caList.
+ * workListLock
+ *   This is only used to put request into and take them out of workList.
  *   While this is locked no other locks are taken
  *
  * dbScanLock
@@ -103,10 +103,8 @@ extern void dbServiceIOInit();
  *      plink->value.pv_link.pvt = 0;
  *      addAction(pca,CA_CLEAR_CHANNEL);
  *      epicsMutexUnlock(pca->lock);
- *      epicsEventMustWait(pca->channelCleared)
  *
- *   It waits until dbCaTask has done a ca_clear_channel and then
- *   frees the caLink.
+ *   dbCaTask issues a ca_clear_channel and then frees the caLink.
  *
  *   If any channel access callback gets called before the ca_clear_channel
  *   it finds pca->plink=0 and does nothing. Once ca_clear_channel
@@ -118,7 +116,7 @@ static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
-    epicsMutexMustLock(caListSem);
+    epicsMutexMustLock(workListLock);
     if(pca->link_action==0) callAdd = TRUE;
     if((pca->link_action&CA_CLEAR_CHANNEL)!=0) {
         errlogPrintf("dbCa:addAction %d but CA_CLEAR_CHANNEL already requested\n",
@@ -132,17 +130,17 @@ static void addAction(caLink *pca, short link_action)
         }
     }
     pca->link_action |= link_action;
-    if(callAdd) ellAdd(&caList,&pca->node);
-    if(callAdd) epicsEventSignal(caWakeupSem);
-    epicsMutexUnlock(caListSem); /*Give it back immediately*/
+    if(callAdd) ellAdd(&workList,&pca->node);
+    if(callAdd) epicsEventSignal(workListEvent);
+    epicsMutexUnlock(workListLock); /*Give it back immediately*/
 }
 
 void epicsShareAPI dbCaLinkInit(void)
 {
     dbServiceIOInit();
-    ellInit(&caList);
-    caListSem = epicsMutexMustCreate();
-    caWakeupSem = epicsEventMustCreate(epicsEventEmpty);
+    ellInit(&workList);
+    workListLock = epicsMutexMustCreate();
+    workListEvent = epicsEventMustCreate(epicsEventEmpty);
     epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC) dbCaTask,0);
@@ -193,7 +191,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         return(-1);
     }
     epicsMutexMustLock(pca->lock);
-    if(pca->caState != cs_conn || !pca->hasReadAccess) {
+    if(!pca->isConnected || !pca->hasReadAccess) {
         pca->sevr = INVALID_ALARM; status = -1;
         goto done;
     }
@@ -259,7 +257,7 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     }
     /* put the new value in */
     epicsMutexMustLock(pca->lock);
-    if(pca->caState != cs_conn || !pca->hasWriteAccess) {
+    if(!pca->isConnected || !pca->hasWriteAccess) {
         epicsMutexUnlock(pca->lock);
         return(-1);
     }
@@ -324,7 +322,7 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
         return(-1);
     }
     epicsMutexMustLock(pca->lock);
-    if(pca->caState != cs_conn || !pca->hasWriteAccess) {
+    if(!pca->isConnected || !pca->hasWriteAccess) {
         epicsMutexUnlock(pca->lock);
         return(-1);
     }
@@ -350,7 +348,7 @@ caAttributes *getpcaAttributes(const struct link *plink)
 
     if(!plink || (plink->type!=CA_LINK)) return(NULL);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(pca->caState != cs_conn) return(NULL);
+    if(!pca->isConnected) return(NULL);
     return(pca->pcaAttributes);
 }
 
@@ -424,7 +422,7 @@ long epicsShareAPI dbCaGetNelements(
     if(!plink) return(-1);
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(pca->caState != cs_conn) return(-1);
+    if(!pca->isConnected) return(-1);
     *nelements = pca->nelements;
     return(0);
 }
@@ -437,7 +435,7 @@ long epicsShareAPI dbCaGetSevr(
     if(!plink) return(-1);
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(pca->caState != cs_conn) return(-1);
+    if(!pca->isConnected) return(-1);
     *severity = pca->sevr;
     return(0);
 }
@@ -450,7 +448,7 @@ long epicsShareAPI dbCaGetTimeStamp(
     if(!plink) return(-1);
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(pca->caState != cs_conn) return(-1);
+    if(!pca->isConnected) return(-1);
     memcpy(pstamp,&pca->timeStamp,sizeof(epicsTimeStamp));
     return(0);
 }
@@ -465,7 +463,7 @@ int epicsShareAPI dbCaIsLinkConnected(
     pca = (caLink *)plink->value.pv_link.pvt;
     if(!pca) return(FALSE);
     if(!pca->chid) return(FALSE);
-    if(pca->caState == cs_conn) return(TRUE);
+    if(pca->isConnected) return(TRUE);
     return(FALSE);
 }
 
@@ -479,7 +477,7 @@ int epicsShareAPI dbCaGetLinkDBFtype(
     pca = (caLink *)plink->value.pv_link.pvt;
     if(!pca) return(-1);
     if(!pca->chid) return(-1);
-    if(pca->caState == cs_conn) 
+    if(pca->isConnected) 
         return(dbDBRoldToDBFnew[ca_field_type(pca->chid)]);
     return(-1);
 }
@@ -649,14 +647,14 @@ static void connectionCallback(struct connection_handler_args arg)
     pca = ca_puser(arg.chid);
     if(!pca) return;
     epicsMutexMustLock(pca->lock);
-    pca->caState = ca_state(arg.chid);
-    if(pca->caState==cs_conn) {
+    pca->isConnected = (ca_state(arg.chid)==cs_conn) ? TRUE : FALSE ;
+    if(pca->isConnected) {
         pca->hasReadAccess = ca_read_access(arg.chid);
         pca->hasWriteAccess = ca_write_access(arg.chid);
     }
     plink = pca->plink;
     if(!plink) goto done;
-    if(ca_state(arg.chid) != cs_conn){
+    if(!pca->isConnected) {
         struct pv_link *ppv_link = &(plink->value.pv_link);
         dbCommon	*precord = ppv_link->precord;
 
@@ -722,18 +720,18 @@ void dbCaTask()
     while(!interruptAccept) epicsThreadSleep(.1);
     /* channel access event loop */
     while (TRUE){
-        epicsEventMustWait(caWakeupSem);
-        while(TRUE) { /* process all requests in caList*/
-            epicsMutexMustLock(caListSem);
-            if(!(pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
-                epicsMutexUnlock(caListSem);
-                break; /*caList is empty*/
+        epicsEventMustWait(workListEvent);
+        while(TRUE) { /* process all requests in workList*/
+            epicsMutexMustLock(workListLock);
+            if(!(pca = (caLink *)ellFirst(&workList))){/*Take off list head*/
+                epicsMutexUnlock(workListLock);
+                break; /*workList is empty*/
             }
-            ellDelete(&caList,&pca->node);
+            ellDelete(&workList,&pca->node);
             link_action = pca->link_action;
-            if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
-            epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_CLEAR_CHANNEL) {/*This must be first*/
+                --removesOutstanding;
+                epicsMutexUnlock(workListLock); /*Give it back immediately*/
                 /*must lock/unlock so that dbCaRemove can unlock*/
                 epicsMutexMustLock(pca->lock);
                 epicsMutexUnlock(pca->lock);
@@ -749,6 +747,7 @@ void dbCaTask()
                 continue; /*No other link_action makes sense*/
             }
             pca->link_action = 0;
+            epicsMutexUnlock(workListLock); /*Give it back immediately*/
             if(link_action&CA_CONNECT) {
                 status = ca_create_channel(
                       pca->pvname,connectionCallback,(void *)pca,

@@ -38,7 +38,3 @@ include $(TOP)/configure/RULES_BUILD
 epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
 	$(PERL) ../makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
 
-xxx:
-	@echo INSTALL_INC=$(INSTALL_INC)
-	@echo INC=$(INC)
-

@@ -136,18 +136,9 @@ MUNCH_SUFFIX=.munch
 MUNCHNAME = $(LIBNAME:%=%$(MUNCH_SUFFIX))
 
 #--------------------------------------------------
-# C++ host processing
-ifeq ($(wildcard $(GNU_BIN)/munch.tcl),$(GNU_BIN)/munch.tcl)
-#tornado2
+# The follow 2 exports prevent gnu cross-compiler
+# from finding wrong assembler (as).
 export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE
-ifneq ($(WIND_HOST_TYPE),x86-win32)
-export PATH := $(GNU_BIN):$(PATH)
-endif
-MUNCH = $(GNU_BIN)/wtxtcl$(HOSTEXE) $(GNU_BIN)/munch.tcl -asm $(ARCH_CLASS)
-else
-#tornado101
-MUNCH = $(GNU_BIN)/$(CMPLR_PREFIX)munch$(HOSTEXE)
-endif
 
 

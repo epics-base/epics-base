@@ -2720,7 +2720,62 @@ void verifyConnectWithDisconnectedChannels (
     showProgressEnd ( interestLevel );
 }
 
-int acctst ( char *pName, unsigned interestLevel, unsigned channelCount, 
+void verifyClearChannelOnDisconnectCallback (
+    struct connection_handler_args args )
+{
+     if ( args.op == CA_OP_CONN_DOWN ) {
+         ca_clear_channel ( args.chid );
+     }
+}
+
+void verifyDisconnect ( 
+    const char * pName, unsigned interestLevel )
+{
+    chid chan;
+    int status;
+
+    status = ca_create_channel  ( 
+        pName, verifyClearChannelOnDisconnectCallback, 
+        0, 0, & chan );
+    SEVCHK ( status, NULL );
+
+    fprintf ( stdout, "Waiting for test channel to connect." );
+    fflush ( stdout );
+    do {
+        ca_pend_event ( 5.0 );
+        fprintf ( stdout, "." );
+        fflush ( stdout );
+    } while ( ca_state ( chan ) != cs_conn );
+    fprintf ( stdout, "confirmed.\n" );
+
+    fprintf ( stdout, "Please force test channel to disconnect." );
+    fflush ( stdout );
+    do {
+        ca_pend_event ( 5.0 );;
+        fprintf ( stdout, "." );
+        fflush ( stdout );
+    } while ( ca_state ( chan ) == cs_conn );
+    fprintf ( stdout, "confirmed.\n" );
+    /* channel cleared by disconnect handler */
+
+    status = ca_create_channel  ( 
+        pName, 0, 0, 0, & chan );
+    SEVCHK ( status, NULL );
+
+    fprintf ( stdout, "Waiting for test channel to connect." );
+    fflush ( stdout );
+    while ( ca_state ( chan ) != cs_conn ) {
+        ca_pend_event ( 5.0 );
+        fprintf ( stdout, "." );
+        fflush ( stdout );
+    }
+    status = ca_clear_channel ( chan );
+    SEVCHK ( status, NULL );
+    fprintf ( stdout, "confirmed.\n" );
+}
+
+
+int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
@@ -2742,6 +2797,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
 
+    verifyDisconnect ( pName, interestLevel );
     verifyImmediateTearDown ( pName, select, interestLevel );
     verifyTearDownWhenChannelConnected ( pName, select, interestLevel );
 

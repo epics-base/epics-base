@@ -27,6 +27,7 @@ public:
     void getString ( unsigned index, char *pBuf, unsigned size ) const;
     const char * getString ( unsigned index ) const;
     unsigned getStringLength ( unsigned index ) const;
+    bool getIndex ( const char * pString, unsigned & index ) const;
     unsigned numberOfStrings () const;
 private:
     unsigned nStrings;

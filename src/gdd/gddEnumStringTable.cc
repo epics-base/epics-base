@@ -139,3 +139,14 @@ unsigned gddEnumStringTable::getStringLength ( unsigned index ) const
     }
 }
 
+bool gddEnumStringTable::getIndex ( const char * pString, unsigned & indexOut ) const
+{
+    for ( unsigned index = 0u; index < this->nStrings; index++ ) {
+        if ( ! strcmp ( pString, this->pStringTable[index].pString ) ) {
+            indexOut = index;
+            return true;
+        }
+    }
+    return false;
+}
+

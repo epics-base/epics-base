@@ -70,26 +70,29 @@
  *				out of fetch_value.
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
+#include <vxWorks.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <lstLib.h>
 
-#include	<alarm.h>
-#include        <cvtTable.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<special.h>
-#include	<recSup.h>
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "alarm.h"
+#include "cvtTable.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "special.h"
+#include "recSup.h"
+#include "menuConvert.h"
 #define GEN_SIZE_OFFSET
-#include	<aoRecord.h>
+#include "aoRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include	<menuIvoa.h>
+#include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -141,9 +144,6 @@ struct aodset { /* analog input dset */
 };
 
 
-/* the following definitions must match those in choiceRec.ascii */
-#define OUTPUT_FULL 		0
-#define OUTPUT_INCREMENTAL	1
 
 static void alarm();
 static void fetch_value();
@@ -182,18 +182,19 @@ static long init_record(pao,pass)
 	return(S_dev_missingSup);
     }
     pao->init = TRUE;
+    pao->eoff = pao->egul;
 
     if (pdset->init_record) {
         status=(*pdset->init_record)(pao);
         switch(status){
         case(0): /* convert */
-	    value = pao->rval + pao->roff;
+	    value = (double)pao->rval + (double)pao->roff;
 	    if(pao->aslo!=0.0) value *= pao->aslo;
-	    if(pao->aoff!=0.0) value += pao->aoff;
-            if (pao->linr == 0){
+	    value += pao->aoff;
+            if (pao->linr == menuConvertNO_CONVERSION){
 		; /*do nothing*/
-            }else if (pao->linr == 1){
-                     value = value*pao->eslo + pao->egul;
+            }else if (pao->linr == menuConvertLINEAR){
+                     value = value*pao->eslo + pao->eoff;
             }else{
                 if(cvtRawToEngBpt(&value,pao->linr,pao->init,
 			(void *)&pao->pbrk,&pao->lbrk)!=0) break;
@@ -237,7 +238,7 @@ static long process(pao)
                 else {
                    value = pao->val;
                 }
-		convert(pao, &value);
+		convert(pao, value);
 	}
 
 	/* check for alarms */
@@ -256,7 +257,7 @@ static long process(pao)
 	                if(pao->pact == FALSE){
 			 	pao->val=pao->ivov;
 			 	value=pao->ivov;
-				convert(pao,&value);
+				convert(pao,value);
                         }
 			status=writeValue(pao); /* write the new value */
 		        break;
@@ -448,19 +449,16 @@ static void fetch_value(pao,pvalue)
            return;
 	}
 
-        if (pao->oif == OUTPUT_INCREMENTAL)
+        if (pao->oif == aoOIF_Incremental)
            *pvalue += pao->val;
 
 	return;
 }
 
-static void convert(pao,pvalue)
+static void convert(pao,value)
     struct aoRecord  *pao;
-    double *pvalue;
+    double value;
 {
-	double		value;
-
-	value=*pvalue;
         /* check drive limits */
 	if(pao->drvh > pao->drvl) {
         	if (value > pao->drvh) value = pao->drvh;
@@ -480,16 +478,16 @@ static void convert(pao,pvalue)
                         if (pao->oroc < -diff) value = pao->oval - pao->oroc;
                 }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
         }
-	if(pao->oval==value) pao->omod = FALSE; else pao->omod = TRUE;
+	pao->omod = (pao->oval!=value);
 	pao->oval = value;
 
         /* convert */
-        if (pao->linr == 0) {
+        if (pao->linr == menuConvertNO_CONVERSION) {
                 ; /* do nothing*/
-        } else if (pao->linr == 1){
+        } else if (pao->linr == menuConvertLINEAR){
               if (pao->eslo == 0.0) value = 0;
               else {
-                   value = (value - pao->egul) / pao->eslo;
+                   value = (value - pao->eoff) / pao->eslo;
               }
         }else{
 	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
@@ -497,12 +495,11 @@ static void convert(pao,pvalue)
 		   return;
 	     }
         }
-	if(pao->aoff!=0.0) value -= pao->aoff;
+	value -= pao->aoff;
 	if(pao->aslo!=0.0) value /= pao->aslo;
 	if (value >= 0.0) pao->rval = value + 0.5;
-	else	pao->rval = value - 0.5;
+	else pao->rval = value - 0.5;
 	pao->rval -= pao->roff;
-	return;
 }
 
 

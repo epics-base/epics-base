@@ -257,13 +257,14 @@ int main()
 	alTbl.verify ();
 	alTbl.show (1u);
 
-    resTableIter< albert, testIntId > alTblIter (alTbl);
+    resTableIter < albert, testIntId > alTblIter ( alTbl.firstIter() );
     albert *pa;
     i=0;
-    while ( (pa = alTblIter.next()) ) {
+    while ( ( pa = alTblIter.pointer() ) ) {
         i++;
+        alTblIter++;
     }
-    assert (i==elementCount);
+    assert ( i == elementCount );
 	alTbl.verify ();
 
 	for ( i = 0; i < elementCount; i++ ) {

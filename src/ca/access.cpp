@@ -769,16 +769,16 @@ cac::~cac ()
         LOCK (this);
         piiu = (tcpiiu *) ellFirst (&this->ca_iiuList);
         if (piiu) {
-            semBinaryId id = piiu->recvThreadExitSignal;
+            id = piiu->recvThreadExitSignal;
             initiateShutdownTCPIIU (piiu);
         }
         UNLOCK (this);
 
-        if (!piiu) {
-            break;
+        if (piiu) {
+            semBinaryTake (id);
         }
         else {
-            semBinaryTake (id);
+            break;
         }
     }
 

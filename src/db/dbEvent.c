@@ -591,12 +591,12 @@ int db_post_single_event(struct event_block	*pevent)
 			ev_que->valque[putix].sevr = sevr;
 			ev_que->valque[putix].time = precord->time;
 			/*
-		 	* use bcopy to avoid a bus error on
+		 	* use memcpy to avoid a bus error on
 		 	* union copy of char in the db at an odd 
 		 	* address
 		 	*/
-			bcopy(	pevent->paddr->pfield,
-				(char *)&ev_que->valque[putix].field,
+			memcpy(	(char *)&ev_que->valque[putix].field,
+				pevent->paddr->pfield,
 				dbr_size[pevent->paddr->field_type]);
 		}
     		/* notify the event handler */
@@ -669,12 +669,12 @@ unsigned int		select
 					ev_que->valque[putix].time = precord->time;
 
 					/*
-				 	* use bcopy to avoid a bus error on
+				 	* use memcpy to avoid a bus error on
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					bcopy(	(char *)event->paddr->pfield,
-						(char *)&ev_que->valque[putix].field,
+					memcpy(	(char *)&ev_que->valque[putix].field,
+						(char *)event->paddr->pfield,
 						dbr_size[event->paddr->field_type]);
 
 				}

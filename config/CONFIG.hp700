@@ -4,7 +4,7 @@
 
 # BUILD_TYPE
 #   Currently either Vx or Unix
-BUILD_TYPE = Unix
+BUILD_TYPE = Host
 
 ARCH_CLASS = hp700
 
@@ -25,7 +25,7 @@ LEX = $(ELEX)
 G++ = g++
 CCC = CC
 
-CP=cp
+CP = cp
 MV = mv
 RM=rm -f
 RMDIR = rm -rf
@@ -137,8 +137,8 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
 # Override defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 DEPENDS_RULE.c = @echo no DEPENDS_RULE.c defined in CONFIG.hp700
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.hp700
 

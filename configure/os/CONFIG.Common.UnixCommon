@@ -64,8 +64,8 @@ OP_SYS_LDLIBS = -lm
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(CXX) -o $@ $(LDFLAGS)
-LINK.shrlib = $(CXX) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS)
+LINK.cpp = $(CXX) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+LINK.shrlib = $(CXX) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 
 #--------------------------------------------------
 # Allow site overrides

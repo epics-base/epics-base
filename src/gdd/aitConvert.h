@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  2001/06/11 20:13:42  jhill
+ * workarounds for problems discovered when building for RTEMS
+ *
  * Revision 1.10  2001/06/11 17:57:31  jhill
  * workarounds for problems discovered when building for RTEMS
  *
@@ -96,7 +99,7 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus)
 
-extern std::vector<std::string> aitEmptyEnumStringTable;
+extern const std::vector<std::string> aitEmptyEnumStringTable;
 
 inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 

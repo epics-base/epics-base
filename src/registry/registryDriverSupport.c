@@ -11,14 +11,14 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "registry.h"
 #include "dbBase.h"
 #include "drvSup.h"
 #define epicsExportSharedSymbols
 #include "registryDriverSupport.h"
+#include "registry.h"
 
 const char *driverSupport = "driver support";
-static void *registryID = &driverSupport;
+static void *registryID = (void *)&driverSupport;
 
 
 epicsShareFunc int epicsShareAPI registryDriverSupportAdd(

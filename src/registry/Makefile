@@ -25,7 +25,7 @@ LIBSRCS += registryDeviceSupport.c
 LIBSRCS += registryDriverSupport.c
 
 LIBRARY_IOC = registryIoc
-registryIoc_DLL_LIBS  = dbStaticIoc Com
+registryIoc_DLL_LIBS  = Com
 
 OBJS_IOC = registerRecordDeviceDriver
 

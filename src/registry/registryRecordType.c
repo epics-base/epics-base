@@ -11,13 +11,13 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "registry.h"
 #include "dbBase.h"
 #define epicsExportSharedSymbols
 #include "registryRecordType.h"
+#include "registry.h"
 
 const char *recordType = "record type";
-static void *registryID = &recordType;
+static void *registryID = (void *)&recordType;
 
 
 epicsShareFunc int epicsShareAPI registryRecordTypeAdd(

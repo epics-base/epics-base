@@ -11,14 +11,14 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "registry.h"
 #include "dbBase.h"
 #include "devSup.h"
 #define epicsExportSharedSymbols
 #include "registryDeviceSupport.h"
+#include "registry.h"
 
 const char *deviceSupport = "device support";
-static void *registryID = &deviceSupport;
+static void *registryID = (void *)&deviceSupport;
 
 
 epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(

@@ -309,11 +309,6 @@ Init (rtems_task_argument ignored)
     syslog (LOG_NOTICE, "IOC started.");
 
     /*
-     * Do EPICS initialization
-     */
-    epicsThreadInit ();
-
-    /*
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");

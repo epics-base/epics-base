@@ -15,8 +15,9 @@ public:
     epics_auto_ptr<T> & operator = ( const epics_auto_ptr<T> & rhs );					
 	T & operator * () const;
     T * operator -> () const;
-	T* get () const;                 
-	T* release ();                   
+	T * get () const;                 
+	T * release (); 
+    void reset ( T * p = 0 );
 private:
     T *p;
 };
@@ -58,7 +59,7 @@ inline T * epics_auto_ptr<T>::operator -> () const
 }
 
 template < class T >	
-inline T * epics_auto_ptr<T>::get() const
+inline T * epics_auto_ptr<T>::get () const
 { 
     return this->p; 
 }
@@ -69,6 +70,13 @@ inline T * epics_auto_ptr<T>::release ()
     T *pTmp = this->p;
     this->p = 0;
     return pTmp; 
+}
+
+template < class T >	
+inline void epics_auto_ptr<T>::reset ( T * pIn )
+{
+    delete this->p;
+    this->p = pIn;
 }
 
 #endif // ifndef epicsMemoryH

@@ -69,6 +69,7 @@
  * .27  07-21-92        jba     changed alarm limits for non val related fields
  * .28  08-06-92        jba     New algorithm for calculating analog alarms
  * .29  09-10-92        jba     modified fetch_values to call recGblGetLinkValue
+ * .30  05-24-94        jba     Added recGblRecordError messages for postfix status
  */
 
 #include	<vxWorks.h>
@@ -161,7 +162,11 @@ static long init_record(pcalc,pass)
 	} /* endif */
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
-    if(status) return(status);
+    if(status){
+		recGblRecordError(S_db_badField,(void *)pcalc,
+			"calc: init_record: Illegal CALC field");
+		return(S_db_badField);
+	}
     memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
     return(0);
 }
@@ -201,7 +206,11 @@ static long special(paddr,after)
     switch(special_type) {
     case(SPC_CALC):
 	status=postfix(pcalc->calc,rpbuf,&error_number);
-	if(status) return(status);
+    if(status){
+		recGblRecordError(S_db_badField,(void *)pcalc,
+			"calc: init_record: Illegal CALC field");
+		return(S_db_badField);
+	}
 	memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
 	db_post_events(pcalc,pcalc->calc,DBE_VALUE);
 	return(0);

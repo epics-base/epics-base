@@ -30,6 +30,7 @@
  * .03	08-07-91	joh	added config get for struct in_addr type
  * .04	01-11-95	joh	use getenv()/putenv() to fetch/write env 
  *				vars under vxWorks	
+ * .05  04-20-95	anj	changes to use CONFIG_ENV
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -79,10 +80,9 @@
 #include <errnoLib.h>
 #endif
 
-#define ENV_PRIVATE_DATA
 #include <envDefs.h>
+#include "envData.h"
 #include <errMdef.h>
-#include <epicsEnvParams.h>
 
 
 /*+/subr**********************************************************************
@@ -423,34 +423,36 @@ char		*value;		/* I pointer to value string */
 }
 
 
-/*parameters meant to be modified in epicsEnvParams.h*/
+/* epicsSetEnvParams not required any more - do not use */
 
 int epicsSetEnvParams()
 {
-    printf("setting EPICS environment parameters\n");
-    envSetConfigParam(&EPICS_TS_MIN_WEST, EPICS_TS_MIN_VALUE);
-    envSetConfigParam(&EPICS_AR_PORT, "7002");
-    envSetConfigParam(&EPICS_IOC_LOG_INET, EPICS_IOC_LOG_VALUE);
-    envSetConfigParam(&EPICS_IOC_LOG_PORT, "7004");
-    envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, EPICS_IOC_FILE_VALUE);
-    envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, EPICS_IOC_LOG_FILE_TXT);
     return 0;
 }
 
-int epicsPrtEnvParams()
+/*+/subr**********************************************************************
+* NAME  epicsPrtEnvParams - print value of all configuration parameters
+*
+* DESCRIPTION
+*       Prints all configuration parameters and their current value.
+*
+* RETURNS
+*       0
+*
+* EXAMPLE
+* 1.    Print the value for all EPICS-defined environment parameters.
+*
+*       #include <envDefs.h>
+*
+*       epicsPrtEnvParams();
+*
+*-*/
+long
+epicsPrtEnvParams()
 {
-    envPrtConfigParam(&EPICS_TS_MIN_WEST);
-    envPrtConfigParam(&EPICS_CMD_PROTO_PORT);
-    envPrtConfigParam(&EPICS_AR_PORT);
-    envPrtConfigParam(&EPICS_IOC_LOG_INET);
-    envPrtConfigParam(&EPICS_IOC_LOG_PORT);
-    envPrtConfigParam(&EPICS_IOC_LOG_FILE_LIMIT);
-    envPrtConfigParam(&EPICS_IOC_LOG_FILE_NAME);
-    envPrtConfigParam(&EPICS_CA_ADDR_LIST);
-    envPrtConfigParam(&EPICS_CA_CONN_TMO);
-    envPrtConfigParam(&EPICS_CA_BEACON_PERIOD);
-    envPrtConfigParam(&EPICS_CA_AUTO_ADDR_LIST);
-    envPrtConfigParam(&EPICS_CA_REPEATER_PORT);
-    envPrtConfigParam(&EPICS_CA_SERVER_PORT);
-    return 0;
+    ENV_PARAM **ppParam = env_param_list;
+     
+    while (*ppParam != NULL)
+	envPrtConfigParam(*(ppParam++));
 }
+

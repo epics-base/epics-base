@@ -44,13 +44,17 @@ PROD = libCom
 include $(EPICS)/config/RULES.Vx
 
 clean::
-	@$(RM) errInc.c errSymTbl.c
+	@$(RM) errInc.c errSymTbl.c envData.h
 
 build: errSymTbl.o errInc.o
 
 errSymTbl.c errInc.o: errInc.c
 	@$(RM) errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl
+
+envSubr.o: envData.h
+envData.h: $(EPICS_BASE)/include/envDefs.h $(EPICS)/config/CONFIG_ENV
+	$(EPICS_BASE)/tools/bldEnvData
 
 pre_build:
 	@test -f errInc.c || ln -s ../errInc.c errInc.c

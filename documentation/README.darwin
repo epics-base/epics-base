@@ -5,8 +5,16 @@ $Id$
 
 EPICS Base
 ==========
-1) To build base set the HOST_ARCH environment variable to darwin-ppc
-   and run make in the top-level source directory.
+1) To build base set the EPICS_HOST_ARCH environment variable to darwin-ppc
+   and run make in the top-level source directory.  The scripts in the
+   base/startup directory can do this for you.  For example, here's what's
+   in my Bash login script (~/.bash_login):
+   #
+   # EPICS
+   #
+   EPICS_BASE="${HOME}/src/EPICS/work/epics/base"
+   EPICS_EXTENSIONS="${HOME}/src/EPICS/work/epics/extensions"
+   . "${EPICS_BASE}"/startup/Site.profile
 
 2) As distributed, EPICS on Mac OS X uses the default command line input
    routines.  IOC applications are much more pleasant to interact with if

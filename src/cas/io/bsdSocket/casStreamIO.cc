@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.17  1998/11/11 01:31:59  jhill
+// reduced socket buffer size
+//
 // Revision 1.16  1998/06/16 02:35:52  jhill
 // use aToIPAddr and auto attach to winsock if its a static build
 //
@@ -81,7 +84,6 @@ caStatus casStreamIO::init()
 {
 	int yes = TRUE;
 	int	status;
-	int i;
 
 	/*
 	 * see TCP(4P) this seems to make unsollicited single events much
@@ -124,6 +126,8 @@ caStatus casStreamIO::init()
 	 * joh 11-10-98
 	 */
 #if 0
+	int i;
+
 	/*
 	 * set TCP buffer sizes to be synergistic
 	 * with CA internal buffering

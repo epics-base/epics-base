@@ -233,6 +233,68 @@ file.</blockquote>
   </blockquote>
 </blockquote>
 
+<h3>Registration code changed</h3>
+
+<blockquote>
+  Registration code for application specific functions, e.g. subroutine
+  record init and process functions, has been changed as follows
+
+  <p>1) Include the registration support header files:</p>
+
+  <blockquote>
+    <pre>#include "dbDefs.h"
+#include "registryFunction.h"</pre>
+  </blockquote>
+  2) Include the export definitions header file after including all other
+  header files:
+
+  <blockquote>
+    <pre>#include "epicsExport.h"</pre>
+  </blockquote>
+  3) Make the application specific functions static functions, e.g.
+
+  <blockquote>
+    <pre>static long mySubInit(subRecord *precord,processMethod process)
+static long mySubProcess(subRecord *precord)</pre>
+  </blockquote>
+  4) Define a registryFunctionRef array of the application specific functions
+  to be registered, e.g.
+
+  <blockquote>
+    <pre>static registryFunctionRef mySubRef[] = {
+    {"mySubInit",(REGISTRYFUNCTION)mySubInit},
+    {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
+};</pre>
+  </blockquote>
+  5) Add a new function to do the registration of the registryFunctionRef
+  array elements, e.g.
+
+  <blockquote>
+    <pre>void mySub(void)
+{
+    registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
+}</pre>
+  </blockquote>
+  6) Call the epicsExportRegistrar with the new registration function: e.g.
+
+  <blockquote>
+    <pre>epicsExportRegistrar(mySub);</pre>
+  </blockquote>
+  7) Remove the existing function lines in &lt;appname&gt;Include.dbd: e.g.
+  remove
+
+  <blockquote>
+    <pre>function("mySubInit")
+function("mySubProcess")</pre>
+  </blockquote>
+  8) Add a registrar statement to &lt;name&gt;Include.dbd with the new
+  registration function as parameter: e.g. add
+
+  <blockquote>
+    <pre>registrar("mySub")</pre>
+  </blockquote>
+</blockquote>
+
 <h3>Modify the Makefiles in &lt;top&gt;/iocBoot directory.</h3>
 
 <p>Change " i<tt>nclude $(TOP)/config/CONFIG_APP" </tt>to "<tt>include

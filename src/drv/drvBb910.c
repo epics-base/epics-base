@@ -49,7 +49,6 @@
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
-#include <drvsubs.h>
 
 static char SccsId[] = "$Id$\t$Date$";
 

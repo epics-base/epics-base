@@ -297,7 +297,7 @@ CONTINUE:
                 default :
                     status=-1;
                     recGblRecordError(S_db_badField,(void *)pmbbo,
-                            "ao:process Illegal IVOA field");
+                            "mbbo:process Illegal IVOA field");
             }
     }
 

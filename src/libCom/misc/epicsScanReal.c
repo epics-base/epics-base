@@ -10,9 +10,9 @@
 /*epicsScanReal.c*/
 /*Author: Eric Norum */
 
-#include <epicsStdlib.h>
 
 #define epicsExportSharedSymbols
+#include <epicsStdlib.h>
 #include "epicsStdio.h"
 
 

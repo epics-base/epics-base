@@ -475,6 +475,7 @@ private:
     caServerI                   *pCAS;
     unsigned                    nMonAttached;
     unsigned                    nIOAttached;
+    bool                        destroyInProgress;
    
     inline void lock () const;
     inline void unlock () const;

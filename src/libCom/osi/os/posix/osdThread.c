@@ -243,6 +243,8 @@ static void * start_routine(void *arg)
 
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
+    status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+    checkStatusQuit(status,"pthread_setcanceltype","start_routine");
     semMutexMustTake(listMutex);
     ellAdd(&pthreadList,&pthreadInfo->node);
     semMutexGive(listMutex);

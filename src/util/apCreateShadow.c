@@ -1,10 +1,6 @@
 /*
  *	apCreateShadow.c
  * - todo
-
-changed appLoc to appList ...
-
-
  * complete rework ??? to EPICS area tools - templates etc.
  *
  *
@@ -85,7 +81,7 @@ main(argc, argv)
 /* TODO */
     startFromHere();
 
-    fprintf(stderr, "makeApplShadow  %s\n", "completed");
+    fprintf(stderr, "apCreateShadow  %s\n", "completed");
     return (0);
 }
 
@@ -174,9 +170,7 @@ dirwalk(dir, fcn)
 static void
 Usage()
 {
-    printf("\nUsage:\t%s <appSystemTop>\n", progName);
-    printf("\tor\n");
-    printf("\t%s <appReleaseTop>\n", progName);
+    printf("\nUsage:\t%s <top>\n", progName);
 }
 
 /****************************************************************************

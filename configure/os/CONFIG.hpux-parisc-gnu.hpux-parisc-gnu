@@ -10,7 +10,7 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-GNU_DIR = /opt/gnu
+#GNU_DIR = /opt/gnu
 
 CC = $(GNU_BIN)/gcc
 CCC = $(GNU_BIN)/g++

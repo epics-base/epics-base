@@ -306,11 +306,6 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 LIBNAME_RCS=$(foreach lib, $(basename $(LIBRARY)), $(RCS) $($(lib)_RCS) $($(lib)_RCS_$(ARCH_CLASS)))
 LIBNAME_RESS=$(addsuffix $(RES), $(basename $(LIBNAME_RCS)))
 
-ifneq ($(words $(DLL_LIBS)), $(words $(DLL_DEPLIBS)))
-#  If invalid library names, don't make DLL file
-SHARED_LIBRARIES = NO
-endif
-
 #  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 
@@ -329,8 +324,6 @@ endif # LIBOBJS
 endif # LIBRARY
 
 #---------------------------------------------------------------
-#	Main targets
-
 all::	install
 
 build:: inc

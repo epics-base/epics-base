@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.14  1997/08/05 00:47:14  jhill
+ * 	fixed warnings
+ *
  * 	Revision 1.13  1997/06/13 09:16:01  jhill
  * 	connect proto changes
  *
@@ -241,17 +244,24 @@ public:
 	{
 		this->pPV = NULL;
 		if (rhs == S_casApp_success) {
-			rhs = S_cas_badParameter;
+			this->stat = S_cas_badParameter;
 		}
-		this->stat = rhs;
+		else {
+			this->stat = rhs;
+		}
 		return *this;
-	}	
-	const pvCreateReturn &operator = (casPV &pvIn)
-	{
-		this->stat = S_casApp_success;
-		this->pPV = &pvIn;
-		return *this;
-	}	
+	}
+	
+	// 
+	// const pvCreateReturn &operator = (casPV &pvIn)
+	//
+	// The above assignement operator is not included 
+	// because it does not match the strict definition of an 
+	// assignement operator unless "const casPV &"
+	// is passed in, and we cant use a const PV
+	// pointer here because the server library _will_ make
+	// controlled modification of the PV in the future.
+	//
 	const pvCreateReturn &operator = (casPV *pPVIn)
 	{
 		if (pPVIn!=NULL) {
@@ -267,8 +277,8 @@ public:
 	casPV *getPV() const { return this->pPV; }
 	
 private:
-	casPV 		*pPV;
-	caStatus 	stat;
+	casPV *pPV;
+	caStatus stat;
 };
 
 #include "casEventMask.h"	// EPICS event select class 

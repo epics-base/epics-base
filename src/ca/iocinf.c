@@ -94,8 +94,9 @@ LOCAL char	*getToken(char **ppString);
  *
  */
 int alloc_ioc(
-struct in_addr			*pnet_addr,
-struct ioc_in_use		**ppiiu
+const struct in_addr	*pnet_addr,
+int			port,
+struct ioc_in_use	**ppiiu
 )
 {
   	int			status;
@@ -127,6 +128,7 @@ struct ioc_in_use		**ppiiu
   		status = create_net_chan(
 				ppiiu, 
 				pnet_addr, 
+				port,
 				IPPROTO_TCP);
 		if(status == ECA_NORMAL){
 			pBHE->piiu = *ppiiu;
@@ -145,7 +147,8 @@ struct ioc_in_use		**ppiiu
  */
 int create_net_chan(
 struct ioc_in_use 	**ppiiu,
-struct in_addr		*pnet_addr,	/* only used by TCP connections */
+const struct in_addr	*pnet_addr,	/* only used by TCP connections */
+int			port,
 int			net_proto
 )
 {
@@ -190,8 +193,7 @@ int			net_proto
       		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
   		pNode->destAddr.inetAddr.sin_family = AF_INET;
 		pNode->destAddr.inetAddr.sin_addr = *pnet_addr;
-  		pNode->destAddr.inetAddr.sin_port = 
-			htons (ca_static->ca_server_port);
+  		pNode->destAddr.inetAddr.sin_port = htons (port);
 		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
 		piiu->sendBytes = cac_tcp_send_msg_piiu; 
@@ -593,7 +595,7 @@ void notify_ca_repeater()
 
       		status = sendto(
 			piiuCast->sock_chan,
-        		(char *)&msg, /* UCX requires a valid address here */
+        		(char *)&msg, 
         		len,  
         		0,
        			(struct sockaddr *)&saddr, 
@@ -601,11 +603,16 @@ void notify_ca_repeater()
       		if(status < 0){
 			if(	MYERRNO != EINTR && 
 				MYERRNO != ENOBUFS && 
-				MYERRNO != EWOULDBLOCK){
+				MYERRNO != EWOULDBLOCK &&
+				/*
+				 * This is returned from Linux when
+				 * the repeater isnt running
+				 */
+				MYERRNO != ECONNREFUSED 
+				){
 				ca_printf(
-					"send error => %s\n", 
-					strerror(MYERRNO));
-				assert(0);	
+				"CAC: error sending to repeater is \"%s\"\n", 
+				strerror(MYERRNO));
 			}
 		}
 		else{
@@ -659,29 +666,24 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 				0,
 				&pNode->destAddr.sockAddr,
 				sizeof(pNode->destAddr.sockAddr));
-		if(status<0){
+		if(status>=0){
+			actualSendCnt = (unsigned long) status;
+			assert (actualSendCnt == sendCnt);
+			pNode = (caAddrNode *) pNode->node.next;
+		}
+		else {
 			int	localErrno;
 
 			localErrno = MYERRNO;
 
-			if(	localErrno == EWOULDBLOCK && 
-				localErrno == ENOBUFS && 
-				localErrno == EINTR){
-				UNLOCK;
-				return;
-			}
-			else {
+			if(	localErrno != EWOULDBLOCK && 
+				localErrno != ENOBUFS && 
+				localErrno != EINTR){
 				ca_printf(
-					"CAC: error on socket send() %s\n",
+					"CAC: UDP send error = \"%s\"\n",
 					strerror(localErrno));
 			}
-
-			TAG_CONN_DOWN(piiu);
-			break;
 		}
-		actualSendCnt = (unsigned long) status;
-		assert (actualSendCnt == sendCnt);
-		pNode = (caAddrNode *) pNode->node.next;
 	}
 
 	/*
@@ -1043,7 +1045,6 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
        			return;
 		}
 		ca_printf("Unexpected UDP failure %s\n", strerror(MYERRNO));
-		TAG_CONN_DOWN(piiu);
     	}
 	else if(status > 0){
 		unsigned long		bytesActual;

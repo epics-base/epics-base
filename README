@@ -35,6 +35,14 @@
    tools/MakeRelease		- To create release file.
    tools/MakeRelease -b		- To create release file WITH BINARIES.
 
+1.5  "Partial" build commands:
+
+   make clean.sun4		- Cleans sun4 binaries in O.sun4 dirs only
+   make install.sun4		- Builds sun4 only
+   make install.mv167		- Builds mv167 only (a sun4 build must be
+					complete before this can be
+					issued)
+
 NOTES:
    1. tools/MakeRelease will create tar files in the directory ABOVE
         base.  These tar files are then meant to be untarred at that level.

@@ -7,6 +7,9 @@
 # 	Experimental Physics and Industrial Control System (EPICS)
 # 
 # $Log$
+# Revision 1.2  1995/09/29  22:16:27  jhill
+# ms windows changes
+#
 # Revision 1.1  1995/08/17  20:22:09  jba
 # Moved bldEnvData,blderrSymTbl, makeStatTbl to libCom dir
 #
@@ -29,7 +32,7 @@ HERE=`/bin/pwd`
 cd $1
 EPICS=`/bin/pwd`
 cd ${HERE}
-SRC=${EPICS}/base/include/envDefs.h
+SRC=../envDefs.h
 ENV_DATA=${EPICS}/config/CONFIG_ENV
 SITE_DATA=${EPICS}/config/CONFIG_SITE_ENV
 OBJ=envData.c

@@ -43,6 +43,14 @@ errors are being reported.</p>
 <p><span style="font-family: courier">uname</span> must be defined for builds
 on solaris hosts because it is used to determine the solaris version.</p>
 
+<p><strong>Linux build note</strong></p>
+
+<p>Under linux-x86 only, when SHARED_LIBRARIES=YES it is now possible to have
+one or more directory paths burned into products as run-time locations for
+the shared libraries. In configure/os/CONFIG_SITE.Common.linux-x86 add any
+such absolute paths to the new make variable SHRLIB_SEARCH_DIRS
+(lib/&lt;arch&gt; will be automatically appended to each directory given).</p>
+
 <p><strong>RULES.Db</strong></p>
 
 <p>A <span style="font-family: courier">*[</span><span
@@ -325,42 +333,42 @@ release.</p>
 Build modifications in alpha2 require the following changes to existing R3.14
 applications.
 <ul>
-  <li> Remove the now unused RULES files</li>
+  <li>&nbsp;Remove the now unused RULES files</li>
   <li><ul>
       ./configure/RULES.Db <br>
       ./configure/RULES.registerRecordDeviceDriver <br>
-       </ul>
+      &nbsp;</ul>
   </li>
   <li>Delete the following line in ./configure/RULES
     <ul>
-        <br>
+      &nbsp; <br>
       include $(TOP)/configure/RULES.registerRecordDeviceDriver</ul>
   </li>
 </ul>
 <ul>
-  <li>  In &lt;top&gt;/configure/Makefile change
+  <li>&nbsp; In &lt;top&gt;/configure/Makefile change 
     <ul>
-        <br>
+      &nbsp; <br>
       @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)</ul>
   </li>
   to
   <ul>
     @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@
     $(TOP) <br>
-     </ul>
+    &nbsp;</ul>
   and add the line
   <ul>
-      <br>
+    &nbsp; <br>
     depends: install <br>
-     </ul>
+    &nbsp;</ul>
   to the bottom of the Makefile.
   <ul>
-     </ul>
+    &nbsp;</ul>
 </ul>
 <ul>
   <li>In all *App/*Db/Makefileschange
     <ul>
-        <br>
+      &nbsp; <br>
       include $(TOP)/configure/RULES.Db</ul>
   </li>
   to
@@ -368,62 +376,68 @@ applications.
     include $(TOP)/configure/RULES</ul>
   <li>In all *App/src/Makefile files
     <ul>
-       </ul>
+      &nbsp;</ul>
   </li>
-  change    DBDNAME = &lt;name&gt;App    to    DBD += &lt;name&gt;
+  change&nbsp;&nbsp;&nbsp; DBDNAME = &lt;name&gt;App&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp; DBD += &lt;name&gt; 
   <ul>
-     </ul>
+    &nbsp;</ul>
   and remove the line <br>
-   
+  &nbsp; 
   <ul>
     DBDEXPAND = &lt;name&gt;Include.dbd <br>
-     </ul>
+    &nbsp;</ul>
   NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
   should make these same changes in that *Db dirctory. <br>
-   
+  &nbsp; 
   <ul>
     <li>In all *App/src/Makefile Makefiles</li>
   </ul>
   <ul>
-     </ul>
-  change    RECTYPES=&lt;name&gt;.h    to    DBDINC+=&lt;name&gt;
+    &nbsp;</ul>
+  change&nbsp;&nbsp;&nbsp; RECTYPES=&lt;name&gt;.h&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp; DBDINC+=&lt;name&gt; 
   <ul>
-     </ul>
-  change    MENUS=&lt;name&gt;.h    to        DBDINC+=&lt;name&gt;</ul>
+    &nbsp;</ul>
+  change&nbsp;&nbsp;&nbsp; MENUS=&lt;name&gt;.h&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBDINC+=&lt;name&gt;</ul>
 <ul>
-  change    BPTS     to     DBD
+  change&nbsp;&nbsp;&nbsp; BPTS&nbsp;&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp;&nbsp; DBD 
 
-  <p>change     INSTALLDB     to    DB</p>
+  <p>change&nbsp;&nbsp;&nbsp;&nbsp; INSTALLDB&nbsp;&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp; DB</p>
 
-  <p>change    DBDINSTALL    to     DBD <br>
-   </p>
+  <p>change&nbsp;&nbsp;&nbsp; DBDINSTALL&nbsp;&nbsp;&nbsp;
+  to&nbsp;&nbsp;&nbsp;&nbsp; DBD <br>
+  &nbsp;</p>
   <li>In all example *App/src/Makefile files change
     <ul>
-        <br>
+      &nbsp; <br>
       example_SRCS_DEFAULT += registerRecordDeviceDriver.c</ul>
   </li>
   to
   <ul>
     example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp <br>
-     </ul>
+    &nbsp;</ul>
   where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
   created from a &lt;name&gt;Include.dbd file and which will be loaded in a
   st.cmd or stcmd.host script (e.g. example). <br>
-   
+  &nbsp; 
   <ul>
     <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change</li>
   </ul>
   <br>
-   
+  &nbsp; 
   <ul>
     dbLoadDatabase("dbd/exampleApp.dbd")</ul>
   to
   <ul>
     dbLoadDatabase("dbd/example.dbd") <br>
-     </ul>
+    &nbsp;</ul>
   <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change
     <ul>
-        <br>
+      &nbsp; <br>
       dbLoadDatabase("../../dbd/exampleApp.dbd",0,0)</ul>
   </li>
   to
@@ -433,16 +447,16 @@ applications.
 
 <h3>EPICS_HOST_ARCH changes</h3>
 GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
-are no longer specified in CONFIG_SITE.  All references to the ANSI (ACC/GCC)
-and CPLUSPLUS (CCC/G++) macros have been removed. <br>
- 
+are no longer specified in CONFIG_SITE.&nbsp; All references to the ANSI
+(ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed. <br>
+&nbsp; 
 
 <h3>libCom</h3>
 Most of the library routines and files starting with the prefix osi have been
 changed to start with epics. Several also had major changes to their user
 interface. See the latest version of the Application Developer's Guide for
 details. <br>
- 
+&nbsp; 
 
 <center>
 <h2>EPICS Release base 3.14.0alpha1 Notes</h2>

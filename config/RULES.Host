@@ -463,9 +463,11 @@ endif  #ifdef PROD
 #     Java classes and packages
 #
 
+ifdef JAVA
 DIRECTORY_TARGETS += $(INSTALL_JAVA)
 ifdef PACKAGE
 DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
+endif
 endif
 
 vpath %.class $(INSTALL_JAVA)/$(PACKAGE)

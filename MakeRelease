@@ -10,6 +10,9 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.2  1995/08/28  15:49:54  jba
+# Added startup directory to release tar file
+#
 # Revision 1.1  1995/08/17  20:14:56  jba
 # Added base/tools scripts functionality to base/Makefile, removed scripts
 # Moved base/tools/MakeRelease to base dir.
@@ -103,6 +106,8 @@ cd $EPICS
 ls base/README* | xargs tar cvf ${RELS}.Tar
 
 ls base/Makefile* > /tmp/make_release.out.$$;
+
+ls base/*COPYRIGHT* >> /tmp/make_release.out.$$;
 
 if [ -d startup ];
 	then

@@ -2028,6 +2028,50 @@ void verifyTimeStamps ( chid chan )
     printf ("Time difference between client and server %g sec\n", diff );
 }
 
+/*
+ * attempts to verify from the client side that
+ * channel priorities work correctly
+ */
+void verifyChannelPriorities ( const char *pName )
+{
+    static const unsigned nPrio = 30;
+    chid chanArray[ 30 ];
+    double value;
+    unsigned i;
+    int status;
+
+    for ( i = 0u; i < nPrio; i++ ) {
+        unsigned priority = 
+            ( i * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
+        priority += CA_PRIORITY_MIN;
+        status = ca_create_channel ( pName, 0, 0, 
+            CA_PRIORITY_MIN + i, &chanArray[i] );
+        SEVCHK ( status, "prioritized channel create failed" );
+    }
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "prioritized channel connect failed" );
+
+    for ( i = 0u; i < nPrio; i++ ) {
+        value = i;
+        status = ca_put ( DBR_DOUBLE, chanArray[i], &value );
+        SEVCHK ( status, "prioritized channel put failed" );
+    }
+    status = ca_flush_io ();
+    SEVCHK ( status, "prioritized channel flush failed" );
+
+    for ( i = 0u; i < nPrio; i++ ) {
+        status = ca_get ( DBR_DOUBLE, chanArray[i], &value );
+        SEVCHK ( status, "prioritized channel get failed" );
+    }
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "prioritized channel pen io failed" );
+
+    for ( i = 0u; i < nPrio; i++ ) {
+        status = ca_clear_channel ( chanArray[i] );
+        SEVCHK ( status, "prioritized channel clear failed" );
+    }
+}
+
 void verifyImmediateTearDown ()
 {
     ca_task_initialize ();
@@ -2065,6 +2109,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "testing with a local channel\n" );
     }
 
+    verifyChannelPriorities ( pName );
     verifyTimeStamps ( chan );
     verifyOldPend ();
     exceptionTest ( chan );

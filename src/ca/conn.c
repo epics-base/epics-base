@@ -135,7 +135,9 @@ int	silent;
     	if(piiuCast->nconn_tries++ > MAXCONNTRIES)
       		return;
 
-	piiuCast->retry_delay += piiuCast->retry_delay;
+	if(piiuCast->retry_delay<CA_RECAST_PERIOD){
+		piiuCast->retry_delay += piiuCast->retry_delay;
+	}
 	piiuCast->next_retry = current + piiuCast->retry_delay;
 
     	chix = (chid) &piiuCast->chidlist.node.next;
@@ -165,7 +167,6 @@ int	silent;
   	}
 }
 
-
 
 /*
  *
@@ -184,7 +185,11 @@ void mark_server_available(pnet_addr)
 struct in_addr  *pnet_addr;
 #endif
 {
-	unsigned		port;	
+	int		currentPeriod;
+	int		currentTime;
+	bhe		*pBHE;
+	unsigned	index;
+	unsigned	port;	
 
 	/*
 	 * if timers have expired take care of them
@@ -192,23 +197,105 @@ struct in_addr  *pnet_addr;
 	 */
 	manage_conn(TRUE);
 
+	if(!piiuCast){
+		return;
+	}
+
+	currentTime = time(NULL);
+
+	/*
+	 * look for it in the hash table
+	 */
+	index = ntohl(pnet_addr->s_addr);
+	index &= BHT_INET_ADDR_MASK;
+	pBHE = ca_static->ca_beaconHash[index];
+	while(pBHE){
+		if(pBHE->inetAddr.s_addr ==
+			pnet_addr->s_addr){
+					
+			break;
+		}
+		pBHE = pBHE->pNext;
+	}
+
+	/*
+	 * if we have seen the beacon before ignore it
+	 * (unless there is an unusual change in its period)
+	 */
+	if(pBHE){
+		int netChange = FALSE;
+
+		/*
+		 * update time stamp and average period
+		 */
+		currentPeriod = currentTime - pBHE->timeStamp;
+		pBHE->averagePeriod = 
+			(currentPeriod + pBHE->averagePeriod)>>1;
+		pBHE->timeStamp = currentTime;
+
+		if((currentPeriod>>2)>=pBHE->averagePeriod){
+#ifdef DEBUG
+			ca_printf(	
+				"net resume seen %x cur=%d avg=%d\n", 
+				pnet_addr->s_addr,
+				currentPeriod, 
+				pBHE->averagePeriod);
+#endif
+			netChange = TRUE;
+		}
+
+		if((pBHE->averagePeriod>>1)>=currentPeriod){
+#ifdef DEBUG
+			ca_printf(
+				"reboot seen %x cur=%d avg=%d\n", 
+				pnet_addr->s_addr,
+				currentPeriod, 
+				pBHE->averagePeriod);
+#endif
+			netChange = TRUE;
+		}
+
+		if(!netChange){
+			return;
+		}
+	}
+	else{
+
+		/*
+		 * create the hash entry
+		 */
+		pBHE = (bhe *)malloc(sizeof(*pBHE));
+		if(!pBHE){
+			return;
+		}
+
+#ifdef DEBUG
+		ca_printf("new IOC %x\n", pnet_addr->s_addr);
+#endif
+		/*
+		 * store the inet address
+		 */
+		pBHE->inetAddr = *pnet_addr;
+
+		/*
+		 * start the average at zero
+		 */
+		pBHE->averagePeriod = 0;
+		pBHE->timeStamp = currentTime;
+
+		/*
+		 * install in the hash table
+		 */
+		pBHE->pNext = ca_static->ca_beaconHash[index];
+		ca_static->ca_beaconHash[index] = pBHE;
+	}
+
 #ifdef DEBUG
 	ca_printf("CAC: <%s> ",host_from_addr(pnet_addr));
 #ifdef UNIX
     	fflush(stdout);
 #endif
 #endif
-
-	if(!piiuCast){
-		return;
-	}
-
-	/*
-	 * never connected to this IOC before
-	 *
-	 * We end up here when the client starts before the server
-	 *
-	 */
 
 
 	/*
@@ -233,27 +320,21 @@ struct in_addr  *pnet_addr;
 				&saddr_length);
 		if(status<0)
 			abort(0);
-		port = saddr.sin_port;
+		port = ntohs(saddr.sin_port);
 	}
 
 	{
 		int	delay;
 		int	next;
 
-		delay = (port&CA_RECAST_PORT_MASK) + CA_RECAST_PERIOD;
+		delay = port&CA_RECAST_PORT_MASK;
 
-		next = time(NULL) + delay;
+		next = currentTime + delay;
 
-		/*
-		 * next retry time most likely
-		 * invalid in this case
-		 */
-    		if(piiuCast->nconn_tries >= MAXCONNTRIES ||
-			next < piiuCast->next_retry){
+		if(piiuCast->next_retry>next){
 			piiuCast->next_retry = next;
-			piiuCast->retry_delay = CA_RECAST_DELAY;
 		}
-
+		piiuCast->retry_delay = CA_RECAST_DELAY;
 	      	piiuCast->nconn_tries = 0;
 	}
 

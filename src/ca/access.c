@@ -1064,6 +1064,29 @@ LOCAL void ca_process_exit()
 		 */
 		ellFree(&ca_temp->ca_iiuList);
 
+		/*
+		 * free beacon hash table
+		 */
+		{
+			int	len;
+			bhe	**ppBHE;
+			bhe	*pBHE;
+
+			len = NELEMENTS(ca_static->ca_beaconHash);
+			for(	ppBHE = ca_static->ca_beaconHash;
+				ppBHE < &ca_static->ca_beaconHash[len];
+				ppBHE++){
+				pBHE = *ppBHE;
+				while(pBHE){
+					bhe     *pOld;
+					
+					pOld = pBHE;
+					pBHE = pBHE->pNext;
+					free(pOld);
+				}
+			}
+		}
+
 		free((char *)ca_temp);
 		ca_static = (struct ca_static *) NULL;
 

@@ -116,12 +116,25 @@ struct pending_io_event{
 };
 
 typedef unsigned long ca_time;
-#define MAXCONNTRIES 30
-#define CA_RETRY_PERIOD	5	/* int sec to next keepalive */
-#define CA_RECAST_DELAY	1	/* initial int sec to next recast */
-#define CA_RECAST_PORT_MASK	0xf	/* random retry interval off port */
-#define CA_RECAST_PERIOD 30	/* ll on retry period long term */
-#define CA_CURRENT_TIME 0
+
+#define MAXCONNTRIES 		60	/* N conn retries on unchanged net */
+#define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
+#define CA_RECAST_DELAY		1	/* initial int sec to next recast */
+#define CA_RECAST_PORT_MASK	0x3	/* random retry interval off port */
+#define CA_RECAST_PERIOD 	5	/* ul on retry period long term */
+#define CA_CURRENT_TIME 	0
+
+/*
+ * for the beacon's recvd hash table
+ */
+#define BHT_INET_ADDR_MASK		0x7f
+typedef struct beaconHashEntry{
+	struct beaconHashEntry	*pNext;
+	struct in_addr 		inetAddr;
+	int			timeStamp;
+	int			averagePeriod;
+}bhe;
+
 
 #define MAX_CONTIGUOUS_MSG_COUNT 2
 
@@ -251,6 +264,7 @@ struct  ca_static{
 	char		ca_sprintf_buf[128];
 	BUCKET		*ca_pBucket;
 	unsigned long	ca_nextBucketId;
+	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
 #if defined(UNIX) || defined(vxWorks)
 	fd_set          ca_readch;  
 	fd_set          ca_excepch;  

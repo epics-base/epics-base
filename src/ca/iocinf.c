@@ -130,7 +130,9 @@ static char *sccsId = "$Id$\t$Date$";
 #include		<iocmsg.h>
 #include		<iocinf.h>
 
+#ifdef UNIX
 static struct timeval notimeout = {0,0};
+#endif
 
 #ifdef __STDC__
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
@@ -1379,6 +1381,7 @@ struct ioc_in_use	*piiu;
 	 * prior to calling handlers incase the
 	 * handler tries to use a channel before
 	 * I mark it disconnected.
+	 *
 	 */
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
@@ -1392,6 +1395,30 @@ struct ioc_in_use	*piiu;
     		ca_signal(
 			ECA_DISCONN, 
 			piiu->host_name_str);
+	}
+
+	/*
+	 * remove IOC from the hash table
+	 */
+	{
+		bhe		*pBHE;
+		bhe		**ppBHE;
+		unsigned 	index;
+
+        	index = ntohl(piiu->sock_addr.sin_addr.s_addr);
+        	index &= BHT_INET_ADDR_MASK;
+		ppBHE = &ca_static->ca_beaconHash[index];
+		pBHE = *ppBHE;
+        	while(pBHE){
+                	if(pBHE->inetAddr.s_addr ==
+                       		piiu->sock_addr.sin_addr.s_addr){
+				*ppBHE = pBHE->pNext;
+				free(pBHE);
+                       		break;
+                	}
+			ppBHE = &pBHE->pNext;
+			pBHE = *ppBHE;
+		}
 	}
 
 	/*

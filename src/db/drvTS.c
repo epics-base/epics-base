@@ -1488,6 +1488,7 @@ static void TSsyncClient()
 	num=select(FD_SETSIZE,&readfds,(fd_set*)NULL,(fd_set*)NULL,NULL);
 	if(num==ERROR) { perror("select failed"); continue; }
 
+        fl = sizeof(fs);
 	if((mlen=recvfrom(soc,(char*)&stran,sizeof(stran),0,&fs,&fl))<0)
 	{ perror("recvfrom failed"); continue; }
 
@@ -1755,7 +1756,14 @@ static long TSgetData(char* buf, int buf_size, int soc,
             break;
         }
         Debug(1,"removing stale response of %d bytes\n", mlen);
-        recvfrom(soc,buf,buf_size,0,from_sin,&flen);
+        if(from_sin) {
+            flen = sizeof(*from_sin);
+            recvfrom(soc,buf,buf_size,0,from_sin,&flen);
+        } else {
+            struct sockaddr from;
+            flen = sizeof(struct sockaddr);
+            recvfrom(soc,buf,buf_size,0,&from,&flen);
+        }
     }
     
     /* convert millisecond time out to seconds/microseconds */
@@ -1782,9 +1790,15 @@ static long TSgetData(char* buf, int buf_size, int soc,
     else
     {
 	/* data available */
-	flen=from_sin?sizeof(struct sockaddr):0;
-	if((mlen=recvfrom(soc,buf,buf_size,0,from_sin,&flen))<0)
-	    { perror("recvfrom failed"); return -1; }
+        if (from_sin == NULL) {
+            struct sockaddr dummy_from; 
+            flen = sizeof(struct sockaddr); 
+            mlen = recvfrom(soc, buf, buf_size, 0, &dummy_from, &flen); 
+        } else {
+            flen = sizeof(struct sockaddr); 
+	    mlen=recvfrom(soc,buf,buf_size,0,from_sin,&flen);
+        }
+	if(mlen < 0) { perror("recvfrom failed"); return -1; }
 	if(from_sin)
 	{
 	    Debug(8,"recvfrom port %d\n",

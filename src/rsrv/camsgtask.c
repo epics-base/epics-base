@@ -58,11 +58,26 @@ void camsgtask ( void *pParm )
         destroy_tcp_client ( client );
         return;
     }
-    cas_send_bs_msg ( client, TRUE );
 
     while ( ! client->disconnect ) {
+
+        /*
+         * allow message to batch up if more are comming
+         */
+        status = socket_ioctl (client->sock, FIONREAD, &nchars);
+        if (status < 0) {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf("CAS: io ctl err - %s\n",
+                sockErrBuf);
+            cas_send_bs_msg(client, TRUE);
+        }
+        else if (nchars == 0){
+            cas_send_bs_msg(client, TRUE);
+        }
+
         client->recv.stk = 0;
-            
         assert ( client->recv.maxstk >= client->recv.cnt );
         nchars = recv ( client->sock, &client->recv.buf[client->recv.cnt], 
                 (int) ( client->recv.maxstk - client->recv.cnt ), 0 );
@@ -137,22 +152,6 @@ void camsgtask ( void *pParm )
             ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
             epicsPrintf ("CAS: forcing disconnect from %s\n", buf);
                 break;
-        }
-        
-        /*
-         * allow message to batch up if more are comming
-         */
-        status = socket_ioctl (client->sock, FIONREAD, &nchars);
-        if (status < 0) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: io ctl err - %s\n",
-                sockErrBuf);
-            cas_send_bs_msg(client, TRUE);
-        }
-        else if (nchars == 0){
-            cas_send_bs_msg(client, TRUE);
         }
     }
 

@@ -65,6 +65,7 @@
  * .29  04-01-92        jba     allowed floating pt constants in expression
  * .30  05-01-92        jba     flt pt constant string replaced with double in postfix
  * .31  08-21-92        jba     ANSI c changes
+ * .32  12-11-92	mrk	Removed include for stdioLib.h
 >
  */
 
@@ -94,8 +95,8 @@
 
 #ifdef vxWorks
 #   include <vxWorks.h>
+#   include <varargs.h>
 #   include <fioLib.h>
-#   include <stdioLib.h>
 #else
 #   include <stdio.h>
 #endif

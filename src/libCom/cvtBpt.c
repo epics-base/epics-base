@@ -32,6 +32,7 @@
  * -----------------
  * nnn mm-dd-yy          nnn     Comment
  * .02  05-18-92        rcz     New database access
+ * .03  12-11-92	mrk	ANSI prototypes
  */
 #include     <vxWorks.h>
 #include     <types.h>
@@ -46,12 +47,12 @@ extern struct dbBase *pdbBase;
 
 
 
-long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
-     double     *pval;
-     short      linr;
-     short      init;
-     caddr_t    *ppbrk;
-     short      *plbrk;
+long cvtRawToEngBpt(
+     double     *pval,
+     short      linr,
+     short      init,
+     caddr_t    *ppbrk,
+     short      *plbrk)
 { 
      double           val=*pval;
      long             status=0;
@@ -104,12 +105,12 @@ long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
      return(status);
 }
 
-long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
-     double     *pval;
-     short      linr;
-     short      init;
-     caddr_t    *ppbrk;
-     short      *plbrk;
+long cvtEngToRawBpt(
+     double     *pval,
+     short      linr,
+     short      init,
+     caddr_t    *ppbrk,
+     short      *plbrk)
 { 
      double           val=*pval;
      long             status=0;

@@ -42,6 +42,7 @@
  * .11  05-01-92        jba     flt pt constant string replaced with double in postfix
  * .12  08-21-92        jba     ANSI c changes
  * .13  08-21-92        jba     initialized *ppostfix: needed when calc expr not defined
+ * .14  12-11-92	mrk	Removed include for stdioLib.h
 */
 
 /* 
@@ -86,7 +87,8 @@
  */
 
 #ifdef vxWorks
-#include <stdioLib.h>
+#include  <vxWorks.h>
+#include <varargs.h>
 #include <fioLib.h>
 #else
 #include <stdio.h>

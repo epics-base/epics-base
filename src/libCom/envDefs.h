@@ -30,6 +30,7 @@
  * .03  09-26-94	joh	ifdef out double inclusion	
  * .04  11-28-94	joh	new CA env var 
  * .05  04-20-95	anj	moved defaults to CONFIG_ENV
+ * .06  09-11-96	joh 	ANSI prototypes	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -58,6 +59,15 @@
 #define envDefsH
 
 #include <shareLib.h>
+
+#ifdef WIN32
+#       include <winsock.h>
+#else
+#       include <sys/types.h>
+#       include <netinet/in.h>
+#       include <arpa/inet.h>
+#endif
+
 
 typedef struct envParam {
     char	*name;		/* text name of the parameter */
@@ -94,12 +104,26 @@ epicsShareExtern ENV_PARAM EPICS_AR_PORT;
 epicsShareExtern ENV_PARAM
 	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
 
-char *envGetConfigParam();
-long envPrtConfigParam();
-long envSetConfigParam();
-long envGetInetAddrConfigParam();
-long envGetDoubleConfigParam();
-long envGetLongConfigParam();
+#ifdef __STDC__
+char * epicsShareAPI envGetConfigParam(ENV_PARAM *pParam, 
+				int bufDim, char *pBuf);
+long epicsShareAPI envPrtConfigParam(ENV_PARAM *pParam);
+long epicsShareAPI envSetConfigParam(ENV_PARAM *pParam, 
+			char *value);
+long epicsShareAPI envGetInetAddrConfigParam(ENV_PARAM *pParam, 
+			struct in_addr *pAddr);
+long epicsShareAPI envGetDoubleConfigParam(ENV_PARAM *pParam, 
+			double *pDouble);
+long epicsShareAPI envGetLongConfigParam(ENV_PARAM *pParam, 
+			long *pLong);
+#else
+char * epicsShareAPI envGetConfigParam();
+long epicsShareAPI envPrtConfigParam();
+long epicsShareAPI envSetConfigParam();
+long epicsShareAPI envGetInetAddrConfigParam();
+long epicsShareAPI envGetDoubleConfigParam();
+long epicsShareAPI envGetLongConfigParam();
+#endif
 
 #endif /*envDefsH*/
 

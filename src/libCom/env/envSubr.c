@@ -34,6 +34,7 @@
  * .06  05-24-95	joh	added return stmnt to epicsPrtEnvParams()	
  * .07  11-03-96	joh	fixed bug occuring when diagnostic is
  *				printed and the env var cant be found
+ * .08  09-11-96        joh     ANSI prototypes
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -69,14 +70,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef WIN32 
-#	include <winsock.h>
-#else
-#	include <sys/types.h>
-#	include <netinet/in.h>
-#	include	<arpa/inet.h>
-#endif
 
 #ifdef vxWorks
 #include <inetLib.h>
@@ -125,11 +118,11 @@
 *	    printf("DISPLAY is %s\n", temp);
 *
 *-*/
-char *
-envGetConfigParam(pParam, bufDim, pBuf)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
-int	bufDim;		/* I dimension of parameter buffer */
-char	*pBuf;		/* I pointer to parameter buffer  */
+char * epicsShareAPI envGetConfigParam(
+ENV_PARAM *pParam,	/* I pointer to config param structure */
+int	bufDim,		/* I dimension of parameter buffer */
+char	*pBuf		/* I pointer to parameter buffer  */
+)
 {
     char	*pEnv;		/* pointer to environment string */
     long	i;
@@ -182,10 +175,10 @@ char	*pBuf;		/* I pointer to parameter buffer  */
 *	}
 *
 *-*/
-long
-envGetDoubleConfigParam(pParam, pDouble)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
-double	*pDouble;	/* O pointer to place to store value */
+long epicsShareAPI envGetDoubleConfigParam(
+ENV_PARAM *pParam,	/* I pointer to config param structure */
+double	*pDouble	/* O pointer to place to store value */
+)
 {
     char	text[128];
     char	*ptext;
@@ -237,10 +230,10 @@ double	*pDouble;	/* O pointer to place to store value */
 *	}
 *
 *-*/
-long
-envGetInetAddrConfigParam(pParam, pAddr)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
-struct in_addr *pAddr;	/* O pointer to struct to receive inet addr */
+long epicsShareAPI envGetInetAddrConfigParam(
+ENV_PARAM *pParam,	/* I pointer to config param structure */
+struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
+)
 {
     char	text[128];
     char	*ptext;
@@ -293,10 +286,10 @@ struct in_addr *pAddr;	/* O pointer to struct to receive inet addr */
 *	}
 *
 *-*/
-long
-envGetLongConfigParam(pParam, pLong)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
-long	*pLong;		/* O pointer to place to store value */
+long epicsShareAPI envGetLongConfigParam(
+ENV_PARAM *pParam,	/* I pointer to config param structure */
+long	*pLong		/* O pointer to place to store value */
+)
 {
     char	text[128];
     char	*ptext;
@@ -331,9 +324,8 @@ long	*pLong;		/* O pointer to place to store value */
 *	envPrtConfigParam(&EPICS_TS_MIN_WEST);
 *
 *-*/
-long
-envPrtConfigParam(pParam)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
+long epicsShareAPI envPrtConfigParam(
+ENV_PARAM *pParam)	/* pointer to config param structure */
 {
     char	text[80];
     if (envGetConfigParam(pParam, 80, text) == NULL)
@@ -374,10 +366,10 @@ ENV_PARAM *pParam;	/* I pointer to config param structure */
 *		envSetConfigParam &EPICS_TS_MIN_WEST,"360"
 *
 *-*/
-long
-envSetConfigParam (pParam, value)
-ENV_PARAM 	*pParam;	/* I pointer to config param structure */
-char		*value;		/* I pointer to value string */
+long epicsShareAPI envSetConfigParam (
+ENV_PARAM 	*pParam,	/* I pointer to config param structure */
+char		*value		/* I pointer to value string */
+)
 {
 #ifndef vxWorks
     	printf("envSetConfigParam can only be used under vxWorks\n");

@@ -136,7 +136,7 @@ epicsShareFunc int errlogVprintf(
 	return 0;
     }
     errlogInit(0);
-    pbuffer = msgbufGetFree(!isOkToBlock);
+    pbuffer = msgbufGetFree(isOkToBlock);
     if(!pbuffer) return(0);
     nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
@@ -221,7 +221,7 @@ epicsShareFunc int errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(!isOkToBlock);
+    pnext = msgbufGetFree(isOkToBlock);
     pmessage = pnext;
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
@@ -316,7 +316,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         return;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(!isOkToBlock);
+    pnext = msgbufGetFree(isOkToBlock);
     pmessage = pnext;
     if(!pnext) return;
     if(pFileName){

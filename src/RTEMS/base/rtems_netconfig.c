@@ -32,38 +32,42 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
 /*
  * The following conditionals select the network interface card.
  *
- * By default the network interface specified by the board-support
+ * On RTEMS-pc386 targets all network drivers which support run-time
+ * probing are linked. 
+ * On other targets the network interface specified by the board-support
  * package is used.
  * To use a different NIC for a particular application, copy this file to the
- * application directory and add the appropriate -Dxxxx to the compiler flag.
- * To specify a different NIC on a site-wide basis, add the appropriate
- * flags to the site configuration file for the target.  For example, to
- * specify a 3COM 3C509 for all RTEMS-pc386 targets at your site, add
- *      TARGET_CFLAGS += -DEPICS_RTEMS_NIC_3C509
- * to configure/os/CONFIG_SITE.Common.RTEMS-pc386.
+ * application directory and make the appropriate changes.
  */
-#if defined(EPICS_RTEMS_NIC_3C509)       /* 3COM 3C509 */
-  extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
-# define NIC_NAME   "ep0"
-# define NIC_ATTACH rtems_3c509_driver_attach
+#if defined(__i386__)
 
-#elif defined(EPICS_RTEMS_NIC_EEPRO)     /* Intel EtherExpressPr (82559ER) */
-  extern int rtems_fxp_attach (struct rtems_bsdnet_ifconfig *, int);
-# define NIC_NAME   "fxp1"
-# define NIC_ATTACH rtems_fxp_attach
-
-#else                                    /* Use NIC provided by BSP */
-# define NIC_NAME   RTEMS_BSP_NETWORK_DRIVER_NAME
-# define NIC_ATTACH RTEMS_BSP_NETWORK_DRIVER_ATTACH
-#endif
-
-static struct rtems_bsdnet_ifconfig netdriver_config = {
-    NIC_NAME,                           /* name */
-    NIC_ATTACH,                         /* attach function */
+extern int rtems_fxp_attach (struct rtems_bsdnet_ifconfig *, int);
+static struct rtems_bsdnet_ifconfig fxp_driver_config = {
+    "fxp1",                             /* name */
+    rtems_fxp_attach,                   /* attach function */
     &loopback_config,                   /* link to next interface */
 };
+extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
+static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
+    "ep0",                              /* name */
+    rtems_3c509_driver_attach,          /* attach function */
+    &fxp_driver_config,                 /* link to next interface */
+};
+#define FIRST_DRIVER_CONFIG &e3c509_driver_config
+
+#else
+
+static struct rtems_bsdnet_ifconfig bsp_driver_config = {
+    RTEMS_BSP_NETWORK_DRIVER_NAME,      /* name */
+    RTEMS_BSP_NETWORK_DRIVER_ATTACH,    /* attach function */
+    &loopback_config,                   /* link to next interface */
+};
+#define FIRST_DRIVER_CONFIG &bsp_driver_config
+
+#endif
+
 struct rtems_bsdnet_config rtems_bsdnet_config = {
-    &netdriver_config,        /* Network interface */
+    FIRST_DRIVER_CONFIG,      /* Link to next interface */
     rtems_bsdnet_do_bootp,    /* Use BOOTP to get network configuration */
     NETWORK_TASK_PRIORITY,    /* Network task priority */
     180*1024,                 /* MBUF space */

@@ -1,5 +1,3 @@
 #
 # Site-specific overrides for RTEMS-pc386 target
 #
-#TARGET_CFLAGS += -DEPICS_RTEMS_NIC_3C509
-TARGET_CFLAGS += -DEPICS_RTEMS_NIC_EEPRO

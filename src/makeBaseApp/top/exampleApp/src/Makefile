@@ -20,20 +20,22 @@ RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd
 
-LIBRARY_IOC = exampleLib
+LIBRARY_vxWorks = example
 
-exampleLib_SRCS += xxxRecord.c
-exampleLib_SRCS += devXxxSoft.c
-#exampleLib_SRCS += sncExample.c
+example_SRCS += xxxRecord.c
+example_SRCS += devXxxSoft.c
+#example_SRCS += sncExample.c
 
-#exampleLib_SRCS += registerRecordDeviceDriver.c
+#example_SRCS += registerRecordDeviceDriver.c
 
-exampleLib_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
+example_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
 
-exampleLib_OBJS += $(EPICS_BASE_BIN)/iocCore
-#exampleLib_OBJS += $(EPICS_BASE_BIN)/seq
+example_OBJS += $(EPICS_BASE_BIN)/iocCoreLibrary
+example_OBJS += $(EPICS_BASE_BIN)/iocInit.o
+#example_OBJS += $(EPICS_BASE_BIN)/seq
 
 -include ../baseLIBOBJS
+example_OBJS += $(LIBOBJS)
 
 #Note that the command line that builds the
 #library $(LIBRARY_IOC) may be HUGE (>3kB)

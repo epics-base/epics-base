@@ -16,6 +16,8 @@ TEMPLATES += top/configure/RULES.iocBoot
 TEMPLATES += top/configure/RULES.registerRecordDeviceDriver
 TEMPLATES += top/configure/RULES_DIRS
 TEMPLATES += top/configure/RULES_TOP
+TEMPLATES += top/configure/makeDbDepends.pl
+TEMPLATES += top/configure/makeIocCdCommands.pl
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile

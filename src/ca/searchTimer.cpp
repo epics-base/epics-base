@@ -86,11 +86,11 @@ void searchTimer::setRetryInterval (unsigned retryNo)
      */
     this->retry = tsMin ( retryNo, MAXCONNTRIES + 1u );
 
-
     /*
      * set the retry interval
      */
-    idelay = 1u << tsMin (this->retry, CHAR_BIT*sizeof(idelay)-1u);
+    idelay = 1u << tsMin ( static_cast < size_t > ( this->retry ), 
+                                CHAR_BIT * sizeof ( idelay ) - 1u );
     delay = idelay * CA_RECAST_DELAY; /* sec */ 
     /*
      * place upper limit on the retry delay

@@ -21,6 +21,7 @@
 #include "osiThread.h"
 #include "errlog.h"
 
+
 /*
  * Create a simple binary semaphore
  */
@@ -195,7 +196,7 @@ semMutexCreate(void)
     
     sc = rtems_semaphore_create (rtems_build_name ('M', c3, c2, c1),
         1,
-        RTEMS_PRIORITY|RTEMS_BINARY_SEMAPHORE|RTEMS_INHERIT_PRIORITY |RTEMS_NO_PRIORITY_CEILING|RTEMS_LOCAL,
+        RTEMS_FIFO|RTEMS_BINARY_SEMAPHORE|RTEMS_NO_INHERIT_PRIORITY|RTEMS_NO_PRIORITY_CEILING|RTEMS_LOCAL,
         0,
         &sid);
     if (sc != RTEMS_SUCCESSFUL) {

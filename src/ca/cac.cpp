@@ -134,10 +134,11 @@ extern "C" void cacOnceFunc ( void * )
 //
 // cac::cac ()
 //
-cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
+cac::cac ( cacNotify & notifyIn ) :
     ipToAEngine ( "dnsQuery" ), 
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
+    cbMutex ( notifyIn ),
     globalServiceList ( globalServiceListCAC.getReference () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
@@ -149,9 +150,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
-    nRecvThreadsPending ( 0u ),
-    beaconAnomalyCount ( 0u ),
-    preemptiveCallbackEnabled ( enablePreemptiveCallbackIn )
+    beaconAnomalyCount ( 0u )
 {
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -1505,12 +1504,9 @@ void cac::disconnectNotify ( tcpiiu & iiu )
 
 void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
-    cacMessageProcessingMinder msgProcMinder ( *this );
-    {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        epicsGuard < cacMutex > guard ( this->mutex );
-        iiu.initiateAbortShutdown ( cbGuard, guard );
-    }
+    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+    epicsGuard < cacMutex > guard ( this->mutex );
+    iiu.initiateAbortShutdown ( cbGuard, guard );
 }
 
 void cac::uninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
@@ -1581,64 +1577,9 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             pChannelName, pAcc, pRej );
     {
-        cacMessageProcessingMinder msgProcMinder ( *this );
-        {
-            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-            this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
-        }
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
     }
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
 }
-
-//
-// This is needed because in non-preemptive callback mode 
-// legacy applications that use file descriptor managers 
-// will register for ca receive thread activity and keep
-// calling ca_pend_event until all of the socket data has
-// been read. We must guarantee that other threads get a 
-// chance to run if there is data in any of the sockets.
-//
-void cac::waitUntilNoRecvThreadsPending ()
-{
-    if ( ! this->preemptiveCallbackEnabled ) {
-        epicsGuard < cacMutex > guard ( this->mutex );
-        while ( this->nRecvThreadsPending > 0 ) {
-            epicsGuardRelease < cacMutex > unguard ( guard );
-            this->recvThreadActivityComplete.wait ( 30.0 );
-        }
-    }
-}
-
-void cac::messageProcessingCompleteNotify ()
-{
-    if ( ! this->preemptiveCallbackEnabled ) {
-        bool signalNeeded = false;
-        {
-            epicsGuard < cacMutex > guard ( this->mutex );
-            if ( this->nRecvThreadsPending <= 1 ) {
-                if ( this->nRecvThreadsPending == 1 ) {
-                    this->nRecvThreadsPending = 0;
-                    signalNeeded = true;
-                }
-            }
-            else {
-                this->nRecvThreadsPending--;
-            }
-        }
-        if ( signalNeeded ) {
-            this->recvThreadActivityComplete.signal ();
-        }
-    }
-}
-
-void cac::messageArrivalNotify ()
-{
-    if ( ! this->preemptiveCallbackEnabled ) {
-        epicsGuard < cacMutex > guard ( this->mutex );
-        this->nRecvThreadsPending++;
-    }
-    this->notify.messageArrivalNotify ();
-}
-
-

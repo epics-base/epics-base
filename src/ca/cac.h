@@ -73,12 +73,12 @@ extern epicsThreadPrivateId caClientCallbackThreadId;
 
 class callbackMutex {
 public:
-    callbackMutex ();
+    callbackMutex ( cacNotify & );
     ~callbackMutex ();
     void lock ();
     void unlock ();
 private:
-    epicsMutex primaryMutex; 
+    cacNotify & notify;
     callbackMutex ( callbackMutex & );
     callbackMutex & operator = ( callbackMutex & );
 };
@@ -109,19 +109,11 @@ public:
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
-class cacMessageProcessingMinder {
-public:
-    cacMessageProcessingMinder ( class cac & );
-    ~cacMessageProcessingMinder ();
-private:
-    class cac & cacRef;
-};
-
 class cac : private cacRecycle, private cacDisconnectChannelPrivate,
     private callbackForMultiplyDefinedPV
 {
 public:
-    cac ( cacNotify &, bool enablePreemptiveCallbackIn );
+    cac ( cacNotify & );
     virtual ~cac ();
 
     // beacon management
@@ -132,8 +124,6 @@ public:
 
     // IO management
     void flushRequest ();
-    void waitUntilNoRecvThreadsPending ();
-    epicsGuard < callbackMutex > callbackGuardFactory ();
     bool executeResponse ( epicsGuard < callbackMutex > &, tcpiiu &, 
         const epicsTime & currentTime, caHdrLargeArray &, char *pMsgBody );
 
@@ -194,7 +184,6 @@ public:
     cacMutex & mutexRef ();
     void attachToClientCtx ();
     void selfTest () const;
-    bool preemptiveCallbakIsEnabled () const;
     double beaconPeriod ( const nciu & chan ) const;
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
@@ -247,7 +236,6 @@ private:
     callbackMutex cbMutex;
     mutable cacMutex mutex; 
     epicsEvent iiuUninstall;
-    epicsEvent recvThreadActivityComplete;
     epicsSingleton 
         < cacServiceList >::reference
             globalServiceList;
@@ -260,9 +248,7 @@ private:
     epicsThreadId initializingThreadsId;
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
-    unsigned nRecvThreadsPending;
     unsigned beaconAnomalyCount;
-    bool preemptiveCallbackEnabled;
 
     void run ();
     void connectAllIO ( epicsGuard < cacMutex > &, nciu &chan );
@@ -345,25 +331,9 @@ private:
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
-    void messageArrivalNotify ();
-    void messageProcessingCompleteNotify ();
-
 	cac ( const cac & );
 	cac & operator = ( const cac & );
-
-    friend class cacMessageProcessingMinder;
 };
-
-inline cacMessageProcessingMinder::cacMessageProcessingMinder ( cac & cacIn ) :
-    cacRef ( cacIn )
-{
-    cacIn.messageArrivalNotify ();
-}
-
-inline cacMessageProcessingMinder::~cacMessageProcessingMinder ()
-{
-    cacRef.messageProcessingCompleteNotify ();
-}
 
 inline const char * cac::userNamePointer () const
 {
@@ -425,20 +395,9 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
     freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
-inline bool cac::preemptiveCallbakIsEnabled () const
-{
-    return this->preemptiveCallbackEnabled;
-}
-
 inline unsigned cac::beaconAnomaliesSinceProgramStart () const
 {
     return this->beaconAnomalyCount;
-}
-
-inline epicsGuard < callbackMutex > cac::callbackGuardFactory ()
-{
-    // facilitate the return value optimization
-    return ( epicsGuard < callbackMutex > ( this->cbMutex ) );
 }
 
 inline void cacMutex::lock ()
@@ -456,7 +415,8 @@ inline void cacMutex::show ( unsigned level ) const
     this->mutex.show ( level );
 }
 
-inline callbackMutex::callbackMutex () 
+inline callbackMutex::callbackMutex ( cacNotify & notifyIn ) :
+    notify ( notifyIn )
 {
 }
 
@@ -466,12 +426,12 @@ inline callbackMutex::~callbackMutex ()
 
 inline void callbackMutex::lock ()
 {
-    this->primaryMutex.lock ();
+    this->notify.callbackLock ();
 }
 
 inline void callbackMutex::unlock ()
 {
-    this->primaryMutex.unlock ();
+    this->notify.callbackUnlock ();
 }
 
 #endif // ifdef cach

@@ -92,6 +92,7 @@
  * .34  07-20-93        jbk     fixed accel of zero causing divide by zero
  * .35  08-06-93	mrk	vel mode: Call recGblFwdLink only when motor
  *				Stops
+ * .36  09-15-93	mrk	call monitor when starting
  */
 
 #include	<vxWorks.h>
@@ -235,6 +236,8 @@ static long process(psm)
 	if(psm->cmod == POSITION) {
 		positional_sm(psm);
 		if(!psm->dmov) {
+			tsLocalTime(&psm->time);
+			monitor(psm);
 			psm->pact=FALSE;
 			return(0);
 		}

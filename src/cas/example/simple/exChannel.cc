@@ -8,8 +8,8 @@
 //
 // exChannel::setOwner ()
 //
-void exChannel::setOwner(const char * const pUserName, 
-		const char * const pHostName)
+void exChannel::setOwner(const char * const /* pUserName */, 
+		const char * const /* pHostName */)
 {
 }
 

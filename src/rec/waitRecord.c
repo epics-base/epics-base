@@ -330,14 +330,11 @@ static long process(pwait)
 {
         short async    = FALSE;
         long  status;
-        long  nRequest = 1;
-        long  options  = 0;
 
         pwait->pact = TRUE;
 
         /* Check for simulation mode */
-        status=recGblGetLinkValue(&(pwait->siml),
-               (void *)pwait,DBR_ENUM,&(pwait->simm),&options,&nRequest);
+        status=dbGetLink(&(pwait->siml),DBR_ENUM,&(pwait->simm),0,0);
 
         /* reset procPending before getting values */
         ((struct cbStruct *)pwait->cbst)->procPending = 0;
@@ -353,9 +350,7 @@ static long process(pwait)
             }
         }
         else {      /* SIMULATION MODE */
-            nRequest = 1;
-            status = recGblGetLinkValue(&(pwait->siol),
-               (void *)pwait,DBR_DOUBLE,&(pwait->sval),&options,&nRequest);
+            status = dbGetLink(&(pwait->siol),DBR_DOUBLE,&(pwait->sval),0,0);
             if (status==0){
                 pwait->val=pwait->sval;
                 pwait->udf=FALSE;
@@ -604,9 +599,6 @@ struct waitRecord   *pwait;
 	recGblInitConstantLink(&pwait->siml,DBF_USHORT,&pwait->simm);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwait->siml), (void *) pwait, "SIMM");
-	if(status) return(status);
-	break;
     case (DB_LINK) :
         break;
     default :
@@ -621,9 +613,6 @@ struct waitRecord   *pwait;
 	recGblInitConstantLink(&pwait->siol,DBF_DOUBLE,&pwait->sval);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwait->siol), (void *) pwait, "SVAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
         break;
     default :

@@ -17,13 +17,11 @@ recordtype(timer) {
 	field(TORG,DBF_INLINK) {
 		prompt("Trigger Origin")
 		promptgroup(GUI_TIMER)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(VAL,DBF_SHORT) {

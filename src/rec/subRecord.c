@@ -137,12 +137,6 @@ static long init_record(psub,pass)
         if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
-        else {
-            status = recGblInitFastInLink(plink, (void *) psub, DBR_DOUBLE, Fldnames[i]);
-
-            if (status)
-               return(status);
-        } /* endif */
     }
 
     /* convert the initialization subroutine name  */
@@ -407,7 +401,7 @@ struct subRecord *psub;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
-		status=recGblGetFastLink(plink, (void *)psub, pvalue);
+		status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 		if (!RTN_SUCCESS(status)) return(-1);
         }
         return(0);

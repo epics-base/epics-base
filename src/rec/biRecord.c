@@ -136,20 +136,10 @@ static long init_record(pbi,pass)
     if (pbi->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pbi->siml,DBF_USHORT,&pbi->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pbi->siml), (void *) pbi, DBR_ENUM, "SIMM");
-	if (status)
-           return(status);
-    }
 
     /* bi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     if (pbi->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pbi->siol,DBF_USHORT,&pbi->sval);
-    }
-    else {
-        status = recGblInitFastInLink(&(pbi->siol), (void *) pbi, DBR_USHORT, "SVAL");
-	if (status)
-           return(status);
     }
 
     if(!(pdset = (struct bidset *)(pbi->dset))) {
@@ -321,7 +311,7 @@ static long readValue(pbi)
 		return(status);
 	}
 
-	status = recGblGetFastLink(&(pbi->siml), (void *)pbi, &(pbi->simm));
+	status = dbGetLink(&(pbi->siml),DBR_USHORT, &(pbi->simm),0,0);
 	if (status)
 		return(status);
 
@@ -330,7 +320,7 @@ static long readValue(pbi)
 		return(status);
 	}
 	if (pbi->simm == YES){
-		status=recGblGetFastLink(&(pbi->siol), (void *)pbi, &(pbi->sval));
+		status=dbGetLink(&(pbi->siol),DBR_USHORT,&(pbi->sval),0,0);
 		if (status==0){
 			pbi->val=pbi->sval;
 			pbi->udf=FALSE;

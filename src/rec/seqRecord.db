@@ -24,7 +24,6 @@ recordtype(seq) {
 	field(SELL,DBF_INLINK) {
 		prompt("Link Selection Loc")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(PREC,DBF_SHORT) {
@@ -40,7 +39,6 @@ recordtype(seq) {
 	field(DOL1,DBF_INLINK) {
 		prompt("Input link1")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO1,DBF_DOUBLE) {
@@ -50,7 +48,6 @@ recordtype(seq) {
 	field(LNK1,DBF_OUTLINK) {
 		prompt("Output Link 1")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY2,DBF_DOUBLE) {
@@ -61,7 +58,6 @@ recordtype(seq) {
 	field(DOL2,DBF_INLINK) {
 		prompt("Input link 2")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO2,DBF_DOUBLE) {
@@ -71,7 +67,6 @@ recordtype(seq) {
 	field(LNK2,DBF_OUTLINK) {
 		prompt("Output Link 2")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY3,DBF_DOUBLE) {
@@ -82,7 +77,6 @@ recordtype(seq) {
 	field(DOL3,DBF_INLINK) {
 		prompt("Input link 3")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO3,DBF_DOUBLE) {
@@ -92,7 +86,6 @@ recordtype(seq) {
 	field(LNK3,DBF_OUTLINK) {
 		prompt("Output Link 3")
 		promptgroup(GUI_SEQ1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY4,DBF_DOUBLE) {
@@ -103,7 +96,6 @@ recordtype(seq) {
 	field(DOL4,DBF_INLINK) {
 		prompt("Input link 4")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO4,DBF_DOUBLE) {
@@ -113,7 +105,6 @@ recordtype(seq) {
 	field(LNK4,DBF_OUTLINK) {
 		prompt("Output Link 4")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY5,DBF_DOUBLE) {
@@ -124,7 +115,6 @@ recordtype(seq) {
 	field(DOL5,DBF_INLINK) {
 		prompt("Input link 5")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO5,DBF_DOUBLE) {
@@ -134,7 +124,6 @@ recordtype(seq) {
 	field(LNK5,DBF_OUTLINK) {
 		prompt("Output Link 5")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY6,DBF_DOUBLE) {
@@ -145,7 +134,6 @@ recordtype(seq) {
 	field(DOL6,DBF_INLINK) {
 		prompt("Input link 6")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO6,DBF_DOUBLE) {
@@ -155,7 +143,6 @@ recordtype(seq) {
 	field(LNK6,DBF_OUTLINK) {
 		prompt("Output Link 6")
 		promptgroup(GUI_SEQ2)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY7,DBF_DOUBLE) {
@@ -166,7 +153,6 @@ recordtype(seq) {
 	field(DOL7,DBF_INLINK) {
 		prompt("Input link 7")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO7,DBF_DOUBLE) {
@@ -176,7 +162,6 @@ recordtype(seq) {
 	field(LNK7,DBF_OUTLINK) {
 		prompt("Output Link 7")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY8,DBF_DOUBLE) {
@@ -187,7 +172,6 @@ recordtype(seq) {
 	field(DOL8,DBF_INLINK) {
 		prompt("Input link 8")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO8,DBF_DOUBLE) {
@@ -197,7 +181,6 @@ recordtype(seq) {
 	field(LNK8,DBF_OUTLINK) {
 		prompt("Output Link 8")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLY9,DBF_DOUBLE) {
@@ -208,7 +191,6 @@ recordtype(seq) {
 	field(DOL9,DBF_INLINK) {
 		prompt("Input link 9")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DO9,DBF_DOUBLE) {
@@ -218,7 +200,6 @@ recordtype(seq) {
 	field(LNK9,DBF_OUTLINK) {
 		prompt("Output Link 9")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DLYA,DBF_DOUBLE) {
@@ -229,7 +210,6 @@ recordtype(seq) {
 	field(DOLA,DBF_INLINK) {
 		prompt("Input link 10")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DOA,DBF_DOUBLE) {
@@ -239,7 +219,6 @@ recordtype(seq) {
 	field(LNKA,DBF_OUTLINK) {
 		prompt("Output Link 10")
 		promptgroup(GUI_SEQ3)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 }

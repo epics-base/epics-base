@@ -16,7 +16,6 @@ recordtype(aai) {
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup(GUI_BITS1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
@@ -63,13 +62,11 @@ recordtype(aai) {
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
 		promptgroup(GUI_DISPLAY)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_HIST)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

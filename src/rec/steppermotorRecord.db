@@ -18,19 +18,16 @@ recordtype(steppermotor) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(RDBL,DBF_INLINK) {
 		prompt("Readback Location")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {

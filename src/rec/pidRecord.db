@@ -8,13 +8,11 @@ recordtype(pid) {
 	field(CVL,DBF_INLINK) {
 		prompt("Controlled Value Loc")
 		promptgroup(GUI_PID)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(STPL,DBF_INLINK) {
 		prompt("Setpoint Location")
 		promptgroup(GUI_PID)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SMSL,DBF_MENU) {

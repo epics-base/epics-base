@@ -8,13 +8,11 @@ recordtype(event) {
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SVAL,DBF_USHORT) {
@@ -23,7 +21,6 @@ recordtype(event) {
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

@@ -84,32 +84,13 @@ static long init_record(pdfanout,pass)
     struct dfanoutRecord	*pdfanout;
     int pass;
 {
-    struct link *plink;
-    long status=0;
-    int i;
-
     if (pass==0) return(0);
-
-
-    plink = &pdfanout->outa;
-    for (i=0; i<OUT_ARG_MAX; i++, plink++) {
-        if (plink->type == PV_LINK) {
-            status = dbCaAddOutlink(plink, (void *) pdfanout, Ofldnames[i]);
-            if (status) return(status);
-        }
-    }
 
     /* get the initial value dol is a constant*/
     if (pdfanout->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pdfanout->dol,DBF_LONG,&pdfanout->val))
-		pdfanout->udf=FALSE;
+	recGblInitConstantLink(&pdfanout->dol,DBF_LONG,&pdfanout->val);
+	pdfanout->udf=FALSE;
     }
-    if (pdfanout->dol.type == PV_LINK)
-    {
-        status = dbCaAddInlink(&(pdfanout->dol), (void *) pdfanout, "VAL");
-        if(status) return(status);
-    } /* endif */
-
     return(0);
 }
 
@@ -120,11 +101,8 @@ static long process(pdfanout)
 	unsigned char    pact=pdfanout->pact;
 
         if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
-		long options=0;
-		long nRequest=1;
-
-		status = recGblGetLinkValue(&(pdfanout->dol),(void *)pdfanout,
-			DBR_LONG,&(pdfanout->val),&options,&nRequest);
+		status = dbGetLink(&(pdfanout->dol),
+			 DBR_LONG,&(pdfanout->val),0,0);
 		if(RTN_SUCCESS(status)) pdfanout->udf=FALSE;
 	}
 
@@ -301,14 +279,11 @@ static long push_values(pdfanout)
 struct dfanoutRecord *pdfanout;
 {
         struct link     *plink; /* structure of the link field  */
-        long            nRequest=1;
         int             i;
         long            status;
 
         for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
-                nRequest=1;
-                status=recGblPutLinkValue(plink,(void *)pdfanout,DBR_LONG,
-                        &(pdfanout->val),&nRequest);
+                status=dbPutLink(plink,DBR_LONG,&(pdfanout->val),1);
                 if (!RTN_SUCCESS(status)) return(-1);
         }
         return(0);

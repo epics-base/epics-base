@@ -10,7 +10,6 @@ recordtype(eg) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(MOD1,DBF_MENU) {

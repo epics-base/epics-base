@@ -24,43 +24,36 @@ recordtype(fanout) {
 	field(SELL,DBF_INLINK) {
 		prompt("Link Selection Loc")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK1,DBF_FWDLINK) {
 		prompt("Forward Link 1")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK2,DBF_FWDLINK) {
 		prompt("Forward Link 2")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK3,DBF_FWDLINK) {
 		prompt("Forward Link 3")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK4,DBF_FWDLINK) {
 		prompt("Forward Link 4")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK5,DBF_FWDLINK) {
 		prompt("Forward Link 5")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(LNK6,DBF_FWDLINK) {
 		prompt("Forward Link 6")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 }

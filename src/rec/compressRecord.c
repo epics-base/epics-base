@@ -143,7 +143,8 @@ static long init_record(pcompress,pass)
         return(0);
     }
     if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
-	 struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
+	 struct dbAddr *pdbAddr =
+		(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
 
 	 pcompress->wptr = (double *)calloc(pdbAddr->no_elements,sizeof(double));
     }
@@ -165,13 +166,12 @@ static long process(pcompress)
 		status=0;
 	} else {
 		struct dbAddr	*pdbAddr =
-			(struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
-		long		options=0;
+			(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
 		long		no_elements=pdbAddr->no_elements;
 		int			alg=pcompress->alg;
 
-		if(dbGetLink(&pcompress->inp.value.db_link,(struct dbCommon *)pcompress,
-			DBF_DOUBLE,pcompress->wptr,&options,&no_elements)!=0){
+		if(dbGetLink(&pcompress->inp,DBF_DOUBLE,
+		pcompress->wptr,0,&no_elements)!=0){
 				recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
                         }
 
@@ -436,7 +436,7 @@ long			no_elements;
 	double	*psum;
 	double	multiplier;
 	long	inx=pcompress->inx;
-	struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
+	struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
 	long	ninp=pdbAddr->no_elements;
 	long	nuse,n;
 

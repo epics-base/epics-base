@@ -119,10 +119,6 @@ static long init_record(ppal,pass)
         if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
-        else {
-            status = recGblInitFastInLink(plink, (void *) ppal, DBR_DOUBLE, Fldnames[i]);
-	    if(status) return(status);
-	} /* endif */
     }
     if ((ppal->pptr = palinit(ppal->jedf,ppal->name,&ppal->a0)) == 0)
 	return -1;
@@ -239,7 +235,7 @@ struct palRecord *ppal;
 
 	for(i=0, plink=&ppal->inpa, pvalue=&ppal->a; i<ARG_MAX; i++, plink++, pvalue++) {
 
-                status = recGblGetFastLink(plink, (void *)ppal, pvalue);
+                status = dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 		if (!RTN_SUCCESS(status)) return(status);
 	}
 	return(0);

@@ -30,7 +30,6 @@ recordtype(pulseCounter) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(GTYP,DBF_MENU) {
@@ -46,7 +45,6 @@ recordtype(pulseCounter) {
 	field(SGL,DBF_INLINK) {
 		prompt("Soft Gate Location")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SGV,DBF_MENU) {

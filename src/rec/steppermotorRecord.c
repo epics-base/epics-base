@@ -205,17 +205,9 @@ static long init_record(psm,pass)
 
     /* get the initial value if dol is a constant*/
     if (psm->dol.type == CONSTANT ){
-	if(recGblInitConstantLink(&psm->dol,DBF_FLOAT,&psm->val))
-            psm->udf = FALSE;
+	recGblInitConstantLink(&psm->dol,DBF_FLOAT,&psm->val);
+        psm->udf = FALSE;
     }
-    else {
-	status = recGblInitFastInLink(&(psm->dol), (void *) psm, DBR_FLOAT, "VAL");
-	if (status)
-           return(status);
-    } /* endif */
-
-    /* initialize readback link */
-    status = recGblInitFastInLink(&(psm->rdbl), (void *) psm, DBR_FLOAT, "VAL");
 
     init_sm(psm);
     return(0);
@@ -770,7 +762,7 @@ struct steppermotorRecord	*psm;
 
 	/* fetch the desired value if there is a database link */
         if (psm->omsl == CLOSED_LOOP) {
-		status=recGblGetFastLink(&(psm->dol), (void *)psm, &(psm->val));
+		status=dbGetLink(&(psm->dol),DBR_FLOAT, &(psm->val),0,0);
 		if (!RTN_SUCCESS(status)) return;
 		psm->udf = FALSE;
 	}
@@ -827,7 +819,7 @@ struct steppermotorRecord	*psm;
 
 	/* fetch the desired value if there is a database link */
         if (psm->omsl == CLOSED_LOOP){
-		status=recGblGetFastLink(&(psm->dol), (void *)psm, &(psm->val));
+		status=dbGetLink(&(psm->dol),DBR_FLOAT, &(psm->val),0,0);
 		if (!RTN_SUCCESS(status)) return;
 		psm->udf = FALSE;
 	}
@@ -907,7 +899,7 @@ struct steppermotorRecord	*psm;
 
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
-	if(recGblGetFastLink(&(psm->rdbl),(void *)psm, &new_pos)) {
+	if(dbGetLink(&psm->rdbl,DBR_FLOAT, &new_pos,0,0)) {
 		recGblSetSevr(psm,READ_ALARM,INVALID_ALARM);
 		psm->init = reset;
 		return;

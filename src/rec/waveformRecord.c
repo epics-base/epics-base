@@ -164,9 +164,6 @@ static long init_record(pwf,pass)
 	recGblInitConstantLink(&pwf->siml,DBF_USHORT,&pwf->simm);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwf->siml), (void *) pwf, "SIMM");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
         break;
     default :
@@ -181,9 +178,6 @@ static long init_record(pwf,pass)
         pwf->nord = 0;
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwf->siol), (void *) pwf, "VAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
         break;
     default :
@@ -362,9 +356,8 @@ static long readValue(pwf)
         struct waveformRecord *pwf;
 {
         long            status;
+	long		nRequest;
         struct wfdset   *pdset = (struct wfdset *) (pwf->dset);
-	long            nRequest=1;
-	long            options=0;
 
 
         if (pwf->pact == TRUE){
@@ -372,8 +365,7 @@ static long readValue(pwf)
                 return(status);
         }
 
-        status=recGblGetLinkValue(&(pwf->siml),
-                (void *)pwf,DBR_ENUM,&(pwf->simm),&options,&nRequest);
+        status=dbGetLink(&(pwf->siml), DBR_ENUM,&(pwf->simm),0,0);
         if (status)
                 return(status);
 
@@ -383,8 +375,8 @@ static long readValue(pwf)
         }
         if (pwf->simm == YES){
         	nRequest=pwf->nelm;
-                status=recGblGetLinkValue(&(pwf->siol),
-                                (void *)pwf,pwf->ftvl,pwf->bptr,&options,&nRequest);
+                status=dbGetLink(&(pwf->siol),
+                                pwf->ftvl,pwf->bptr,0,&nRequest);
                 /* nord set only for db links: needed for old db_access */
         	if (pwf->siol.type == DB_LINK )pwf->nord = nRequest;
                 if (status==0){

@@ -124,11 +124,6 @@ static long init_record(psub,pass)
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
         if(plink->type==CONSTANT)
 	    recGblInitConstantLink(plink,DBF_FLOAT,pvalue);
-        if (plink->type == PV_LINK)
-        {
-            status = dbCaAddInlink(plink, (void *) psub, Fldnames[i]);
-            if(status) return(status);
-        } /* endif */
     }
 
     /* convert the initialization subroutine name  */
@@ -385,14 +380,11 @@ struct gsubRecord *psub;
 {
         struct link     *plink; /* structure of the link field  */
         float           *pvalue;
-        long            options=0,nRequest=1;
         int             i;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
-		nRequest=1;
-		status=recGblGetLinkValue(plink,(void *)psub,DBR_FLOAT,
-			pvalue,&options,&nRequest);
+		status=dbGetLink(plink,DBR_FLOAT,pvalue,0,0);
 		if (!RTN_SUCCESS(status)) return(-1);
         }
         return(0);

@@ -165,18 +165,10 @@ static long init_record(void *precord,int pass)
     if (pai->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pai->siml,DBF_USHORT,&pai->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pai->siml), (void *) pai, DBR_ENUM, "SIMM");
-	if (status) return(status);
-    }
 
     /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (pai->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pai->siol,DBF_DOUBLE,&pai->sval);
-    }
-    else {
-        status = recGblInitFastInLink(&(pai->siol), (void *) pai, DBR_DOUBLE, "SVAL");
-	if (status) return(status);
     }
 
     if(!(pdset = (aidset *)(pai->dset))) {
@@ -455,7 +447,7 @@ static long readValue(aiRecord *pai)
 		return(status);
 	}
 
-	status = recGblGetFastLink(&(pai->siml), (void *)pai, &(pai->simm));
+	status = dbGetLink(&(pai->siml),DBR_USHORT,&(pai->simm),0,0);
 
 	if (status)
 		return(status);
@@ -465,7 +457,7 @@ static long readValue(aiRecord *pai)
 		return(status);
 	}
 	if (pai->simm == YES){
-		status = recGblGetFastLink(&(pai->siol), (void *)pai, &(pai->sval));
+		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
 		if (status==0){
 			 pai->val=pai->sval;
 			 pai->udf=FALSE;

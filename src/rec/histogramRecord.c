@@ -197,20 +197,9 @@ static long init_record(phistogram,pass)
     if (phistogram->siml.type == CONSTANT) {
 	recGblInitConstantLink(&phistogram->siml,DBF_USHORT,&phistogram->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(phistogram->siml), (void *) phistogram, DBR_ENUM, "SIMM");
-        if (status)
-           return(status);
-    }
 
     if (phistogram->siol.type == CONSTANT) {
 	recGblInitConstantLink(&phistogram->siol,DBF_DOUBLE,&phistogram->sval);
-    }
-    else {
-        status = recGblInitFastInLink(&(phistogram->siol), (void *) phistogram, DBR_DOUBLE, "SVAL");
-
-        if (status)
-           return(status);
     }
 
      /* must have device support defined */
@@ -407,7 +396,7 @@ static long readValue(phistogram)
                 return(status);
         }
 
-        status=recGblGetFastLink(&(phistogram->siml), (void *)phistogram, &(phistogram->simm));
+        status=dbGetLink(&(phistogram->siml),DBR_USHORT,&(phistogram->simm),0,0);
 
         if (status)
                 return(status);
@@ -417,7 +406,9 @@ static long readValue(phistogram)
                 return(status);
         }
         if (phistogram->simm == YES){
-                status=recGblGetFastLink(&(phistogram->siol), (void *)phistogram, &(phistogram->sval));
+        	status=dbGetLink(&(phistogram->siol),DBR_DOUBLE,
+			&(phistogram->sval),0,0);
+
                 if (status==0){
                          phistogram->sgnl=phistogram->sval;
                 }

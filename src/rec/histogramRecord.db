@@ -58,7 +58,6 @@ recordtype(histogram) {
 	field(SVL,DBF_INLINK) {
 		prompt("Signal Value Location")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(BPTR,DBF_NOACCESS) {
@@ -94,7 +93,6 @@ recordtype(histogram) {
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SVAL,DBF_DOUBLE) {
@@ -103,7 +101,6 @@ recordtype(histogram) {
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

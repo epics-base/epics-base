@@ -8,7 +8,6 @@ recordtype(mbbo) {
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
 		promptgroup(GUI_MBB)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {
@@ -26,7 +25,6 @@ recordtype(mbbo) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_MBB)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(ZRVL,DBF_ULONG) {
@@ -441,13 +439,11 @@ recordtype(mbbo) {
 	field(SIOL,DBF_OUTLINK) {
 		prompt("Sim Output Specifctn")
 		promptgroup(GUI_MBB)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_MBB)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

@@ -136,11 +136,6 @@ static long init_record(psel,pass)
     if (psel->nvl.type == CONSTANT ) {
 	recGblInitConstantLink(&psel->nvl,DBF_USHORT,&psel->seln);
     }
-    else {
-	status = recGblInitFastInLink(&(psel->nvl), (void *) psel, DBR_USHORT, "SELN");
-	if (status)
-           return(status);
-    }
 
     plink = &psel->inpa;
     pvalue = &psel->a;
@@ -148,11 +143,6 @@ static long init_record(psel,pass)
         *pvalue = 1e+30;
 	if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
-        }
-        else {
-            status = recGblInitFastInLink(plink, (void *) psel, DBR_DOUBLE, Fldnames[i]);
-            if (status)
-               return(status);
         }
     }
     return(0);
@@ -468,18 +458,18 @@ struct selRecord *psel;
 	/* If select mechanism is SELECTED only get selected input*/
 	if(psel->selm == SELECTED) {
 	        /* fetch the select index */
-		status=recGblGetFastLink(&(psel->nvl), (void *)psel, &(psel->seln));
+		status=dbGetLink(&(psel->nvl),DBR_USHORT,&(psel->seln),0,0);
 		if (!RTN_SUCCESS(status)) return(status);
 
 		plink += psel->seln;
 		pvalue += psel->seln;
 
-		status=recGblGetFastLink(plink, (void *)psel, pvalue);
+		status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 		return(status);
 	}
 	/* fetch all inputs*/
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-		status=recGblGetFastLink(plink,(void *)psel, pvalue);
+		status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 	}
 	return(status);
 }

@@ -34,7 +34,6 @@ recordtype(pulseDelay) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(UNIT,DBF_MENU) {
@@ -116,7 +115,6 @@ recordtype(pulseDelay) {
 	field(STL,DBF_INLINK) {
 		prompt("Soft Trigger Location")
 		promptgroup(GUI_CLOCK)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(STV,DBF_MENU) {
@@ -130,7 +128,6 @@ recordtype(pulseDelay) {
 	field(GLNK,DBF_INLINK) {
 		prompt("Soft Gate Location")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(GATE,DBF_MENU) {

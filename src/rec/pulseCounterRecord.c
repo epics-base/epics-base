@@ -155,12 +155,6 @@ static long init_record(struct pulseCounterRecord *ppc, int pass)
     if (ppc->sgl.type == CONSTANT && ppc->gtyp == SOFTWARE)
 	recGblInitConstantLink(&ppc->sgl,DBF_USHORT,&ppc->sgv);
 
-    if (ppc->sgl.type == PV_LINK && ppc->gtyp == SOFTWARE)
-    {
-        status = dbCaAddInlink(&(ppc->sgl), (void *) ppc, "SGV");
-        if(status) return(status);
-    }
-
     /* must have cmd_pc functions defined */
     if( (pdset->number < 5) || (pdset->cmd_pc == NULL) )
     {
@@ -185,12 +179,11 @@ static long init_record(struct pulseCounterRecord *ppc, int pass)
 
 static long process(struct pulseCounterRecord *ppc)
 {
-    struct pcdset     *pdset = (struct pcdset *)(ppc->dset);
-    struct callback *pcallback=(struct callback *)(ppc->cptr);
-    long           status=0;
-    long             options,nRequest;
-    unsigned short   save;
-    unsigned char    pact=ppc->pact;
+    struct pcdset     	*pdset = (struct pcdset *)(ppc->dset);
+    struct callback 	*pcallback=(struct callback *)(ppc->cptr);
+    long		status=0;
+    unsigned short   	save;
+    unsigned char    	pact=ppc->pact;
 
     /* must have  cmd_pc functions defined */
     if( (pdset==NULL) || (pdset->cmd_pc==NULL) )
@@ -203,11 +196,7 @@ static long process(struct pulseCounterRecord *ppc)
     /* get soft hgv value when sgl is a DB_LINK and gtyp from Software */
     if (!ppc->pact && ppc->gtyp == SOFTWARE)
     {
-	options=0;
-	nRequest=1;
-	status=recGblGetLinkValue(&(ppc->sgl),
-		(void *)ppc,DBR_SHORT,&(ppc->sgv),&options,&nRequest);
-
+	status=dbGetLink(&(ppc->sgl),DBR_SHORT,&(ppc->sgv),0,0);
         if(status==0)
 	{
             if(ppc->sgv != ppc->osgv) /* sgv changed */

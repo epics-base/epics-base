@@ -14,13 +14,11 @@ recordtype(bo) {
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(HIGH,DBF_FLOAT) {
@@ -113,13 +111,11 @@ recordtype(bo) {
 	field(SIOL,DBF_OUTLINK) {
 		prompt("Sim Output Specifctn")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

@@ -131,9 +131,6 @@ static long init_record(paai,pass)
 	recGblInitConstantLink(&paai->siml,DBF_USHORT,&paai->simm);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(paai->siml), (void *) paai, "SIMM");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
         break;
     default :
@@ -147,9 +144,6 @@ static long init_record(paai,pass)
     case (CONSTANT) :
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(paai->siol), (void *) paai, "VAL");
-        if(status) return(status);
-        break;
     case (DB_LINK) :
         break;
     default :
@@ -317,8 +311,6 @@ static long readValue(paai)
 {
         long            status;
         struct aaidset  *pdset = (struct aaidset *) (paai->dset);
-	long            nRequest=1;
-	long            options=0;
 
 
         if (paai->pact == TRUE){
@@ -326,8 +318,7 @@ static long readValue(paai)
                 return(status);
         }
 
-        status=recGblGetLinkValue(&(paai->siml),
-                (void *)paai,DBR_ENUM,&(paai->simm),&options,&nRequest);
+        status=dbGetLink(&(paai->siml),DBR_ENUM,&(paai->simm),0,0);
         if (status)
                 return(status);
 

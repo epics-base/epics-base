@@ -143,24 +143,12 @@ static long init_record(ppd,pass)
 	recGblInitConstantLink(&ppd->stl,DBF_USHORT,&ppd->stv);
     }
  
-    if(ppd->stl.type==PV_LINK)
-    {
-        status = dbCaAddInlink(&(ppd->stl), (void *) ppd, "STV");
-        if(status) return(status);
-    }
-
     /* get the soft gate value if glnk is a constant*/
     if(ppd->glnk.type==CONSTANT)
     {
 	recGblInitConstantLink(&ppd->glnk,DBF_USHORT,&ppd->gate);
     }
  
-    if(ppd->glnk.type==PV_LINK)
-    {
-        status = dbCaAddInlink(&(ppd->glnk), (void *) ppd, "GLNK");
-        if(status) return(status);
-    }
-
     /* call device support init_record */
     if( pdset->init_record ) {
          if((status=(*pdset->init_record)(ppd))) return(status);
@@ -182,7 +170,6 @@ static long process(ppd)
     struct pddset     *pdset = (struct pddset *)(ppd->dset);
     long           status=0;
     unsigned char    pact=ppd->pact;
-    long nRequest,options;
 
     /* must have  write_pd functions defined */
     if( (pdset==NULL) || (pdset->write_pd==NULL) ) {
@@ -194,16 +181,10 @@ static long process(ppd)
     if(!ppd->pact)
     {
     	/* get soft trigger value */
-        options=0;
-        nRequest=1;
-        status=recGblGetLinkValue(&(ppd->stl),(void *)ppd,DBR_SHORT,
-             &ppd->stv,&options,&nRequest);
+        status=dbGetLink(&(ppd->stl),DBR_SHORT,&ppd->stv,0,0);
  
     	/* get soft gate value */
-        options=0;
-        nRequest=1;
-        status=recGblGetLinkValue(&(ppd->glnk),(void *)ppd,DBR_SHORT,
-             &ppd->gate,&options,&nRequest);
+        status=dbGetLink(&(ppd->glnk),DBR_SHORT,&ppd->gate,0,0);
 
     }
 

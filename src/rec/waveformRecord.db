@@ -22,7 +22,6 @@ recordtype(waveform) {
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
@@ -73,13 +72,11 @@ recordtype(waveform) {
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

@@ -144,10 +144,6 @@ static long init_record(ptimer, pass)
     if (ptimer->torg.type == CONSTANT) {
 	recGblInitConstantLink(&ptimer->torg,DBF_FLOAT,&ptimer->trdl);
     }
-    else {
-	status = recGblInitFastInLink(&(ptimer->torg), (void *) ptimer, DBR_FLOAT, "TRDL");
-	if(status) return(status);
-    } /* endif */
 
     /* read to maintain time pulses over a restart */
     return read_timer(ptimer);
@@ -286,7 +282,7 @@ static long write_timer(struct timerRecord *ptimer)
 
    /* get the delay from trigger source */
    if (ptimer->torg.type == DB_LINK) {
-           status=recGblGetFastLink(&(ptimer->torg), (void *)ptimer, &(ptimer->trdl));
+           status=dbGetLink(&(ptimer->torg),DBR_FLOAT,&(ptimer->trdl),0,0);
            if (!RTN_SUCCESS(status)) return status;
    }
  

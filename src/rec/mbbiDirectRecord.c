@@ -146,9 +146,6 @@ static long init_record(pmbbiDirect,pass)
 	recGblInitConstantLink(&pmbbiDirect->siml,DBF_USHORT,&pmbbiDirect->simm);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbiDirect->siml), (void *) pmbbiDirect, "SIMM");
-	if(status) return(status);
-	break;
     case (DB_LINK) :
         break;
     default :
@@ -163,9 +160,6 @@ static long init_record(pmbbiDirect,pass)
 	recGblInitConstantLink(&pmbbiDirect->siol,DBF_USHORT,&pmbbiDirect->sval);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbbiDirect->siol), (void *) pmbbiDirect, "SVAL");
-	if(status) return(status);
-	break;
     case (DB_LINK) :
         break;
     default :
@@ -283,8 +277,6 @@ static long readValue(pmbbiDirect)
 {
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbiDirect->dset);
-	long            nRequest=1;
-	long            options=0;
 
 	if (pmbbiDirect->pact == TRUE){
 		status=(*pdset->read_mbbi)(pmbbiDirect);
@@ -292,8 +284,8 @@ static long readValue(pmbbiDirect)
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pmbbiDirect->siml),
-		(void *)pmbbiDirect,DBR_ENUM,&(pmbbiDirect->simm),&options,&nRequest);
+	status=dbGetLink(&(pmbbiDirect->siml),DBR_ENUM,
+		&(pmbbiDirect->simm),0,0);
 	if (status)
 		return(status);
 
@@ -303,9 +295,8 @@ static long readValue(pmbbiDirect)
 		return(status);
 	}
 	if (pmbbiDirect->simm == YES){
-		nRequest=1;
-		status=recGblGetLinkValue(&(pmbbiDirect->siol),
-			(void *)pmbbiDirect,DBR_USHORT,&(pmbbiDirect->sval),&options,&nRequest);
+		status=dbGetLink(&(pmbbiDirect->siol),
+			DBR_USHORT,&(pmbbiDirect->sval),0,0);
 		if (status==0){
 			pmbbiDirect->val=pmbbiDirect->sval;
 			pmbbiDirect->udf=FALSE;

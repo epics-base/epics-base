@@ -164,14 +164,6 @@ static long init_record(pao,pass)
     if (pao->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pao->siml,DBF_USHORT,&pao->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pao->siml), (void *) pao, DBR_ENUM, "SIMM");
-	if(status) return(status);
-    }
-
-    status = recGblInitFastOutLink(&(pao->siol), (void *) pao, DBR_DOUBLE, "OVAL");
-    if (status)
-       return(status);
 
     if(!(pdset = (struct aodset *)(pao->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pao,"ao: init_record");
@@ -179,15 +171,8 @@ static long init_record(pao,pass)
     }
     /* get the initial value if dol is a constant*/
     if (pao->dol.type == CONSTANT) {
-	if(recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val))
-	    pao->udf = FALSE;
-    }
-    else {
-        status = recGblInitFastInLink(&(pao->dol), (void *) pao,
-                               DBR_DOUBLE, "VAL");
- 
-        if (status)
-            return(status);
+	recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val);
+	pao->udf = FALSE;
     }
 
     /* must have write_ao function defined */
@@ -464,7 +449,7 @@ static void fetch_value(pao,pvalue)
 	/* don't allow dbputs to val field */
 	pao->val=pao->pval;
 
-        status = recGblGetFastLink(&pao->dol, (void *) pao, pvalue);
+        status = dbGetLink(&pao->dol,DBR_DOUBLE,pvalue,0,0);
         pao->pact = save_pact;
 
 	if (status) {
@@ -587,7 +572,7 @@ static long writeValue(pao)
 		return(status);
 	}
 
-	status = recGblGetFastLink(&(pao->siml), (void *)pao, &(pao->simm));
+        status = dbGetLink(&pao->siml,DBR_USHORT,&(pao->simm),0,0);
 	if (status)
 		return(status);
 
@@ -596,7 +581,7 @@ static long writeValue(pao)
 		return(status);
 	}
 	if (pao->simm == YES){
-		status = recGblPutFastLink(&(pao->siol), (void *)pao, &(pao->oval));
+		status = dbPutLink(&(pao->siol),DBR_DOUBLE,&(pao->oval),1);
 	} else {
 		status=-1;
 		recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM);

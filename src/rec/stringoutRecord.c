@@ -126,13 +126,6 @@ static long init_record(pstringout,pass)
     if (pstringout->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pstringout->siml,DBF_USHORT,&pstringout->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pstringout->siml), (void *) pstringout, DBR_ENUM, "SIMM");
-	if (status)
-           return(status);
-    }
-
-    status = recGblInitFastOutLink(&(pstringout->siol), (void *) pstringout, DBR_STRING, "VAL");
 
     if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pstringout,"stringout: init_record");
@@ -145,15 +138,9 @@ static long init_record(pstringout,pass)
     }
     /* get the initial value dol is a constant*/
     if (pstringout->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pstringout->dol,DBF_STRING,pstringout->val))
-	    pstringout->udf=FALSE;
-    }
-    if (pstringout->dol.type == PV_LINK)
-    {
-        status = dbCaAddInlink(&(pstringout->dol), (void *) pstringout, "VAL");
-        if(status) return(status);
+	recGblInitConstantLink(&pstringout->dol,DBF_STRING,pstringout->val);
 	pstringout->udf=FALSE;
-    } /* endif */
+    }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pstringout))) return(status);
     }
@@ -173,11 +160,8 @@ static long process(pstringout)
 		return(S_dev_missingSup);
 	}
         if (!pstringout->pact && pstringout->omsl == CLOSED_LOOP){
-		long options=0;
-		long nRequest=1;
-
-		status = recGblGetLinkValue(&(pstringout->dol),(void *)pstringout,
-			DBR_STRING,pstringout->val,&options,&nRequest);
+		status = dbGetLink(&(pstringout->dol),
+			DBR_STRING,pstringout->val,0,0);
 		if(RTN_SUCCESS(status)) pstringout->udf=FALSE;
 	}
 
@@ -242,7 +226,8 @@ static void monitor(pstringout)
 
     monitor_mask = recGblResetAlarms(pstringout);
     if(strncmp(pstringout->oval,pstringout->val,sizeof(pstringout->val))) {
-        db_post_events(pstringout,&(pstringout->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstringout,&(pstringout->val[0]),
+		monitor_mask|DBE_VALUE|DBE_LOG);
 	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));
     }
     return;
@@ -259,7 +244,8 @@ static long writeValue(pstringout)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(pstringout->siml), (void *)pstringout, &(pstringout->simm));
+	status=dbGetLink(&(pstringout->siml),DBR_USHORT,
+		&(pstringout->simm),0,0);
 	if (status)
 		return(status);
 
@@ -268,7 +254,8 @@ static long writeValue(pstringout)
 		return(status);
 	}
 	if (pstringout->simm == YES){
-		status=recGblPutFastLink(&(pstringout->siol), (void *)pstringout, pstringout->val);
+		status=dbPutLink(&pstringout->siol,DBR_STRING,
+			pstringout->val,1);
 	} else {
 		status=-1;
 		recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM);

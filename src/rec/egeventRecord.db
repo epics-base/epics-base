@@ -19,7 +19,6 @@ recordtype(egevent) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(ENM,DBF_LONG) {

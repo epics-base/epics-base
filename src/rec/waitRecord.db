@@ -495,7 +495,6 @@ recordtype(wait) {
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SVAL,DBF_DOUBLE) {
@@ -504,7 +503,6 @@ recordtype(wait) {
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {

@@ -118,20 +118,9 @@ static long init_record(ppid,pass)
 
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){
-	    if(recGblInitConstantLink(&ppid->stpl,DBF_FLOAT,&ppid->val))
-                ppid->udf = FALSE;
+	    recGblInitConstantLink(&ppid->stpl,DBF_FLOAT,&ppid->val);
+            ppid->udf = FALSE;
 	}
-        else  {
-            status = recGblInitFastInLink(&(ppid->stpl), (void *) ppid, DBR_FLOAT, "VAL");
-            if (status)
-               return(status);
-        } /* endif */
-
-        if (ppid->cvl.type != CONSTANT) {
-           status = recGblInitFastInLink(&(ppid->cvl), (void *) ppid, DBR_FLOAT, "VAL");
-           if (status)
-              return(status);
-        }
 
 	return(0);
 }
@@ -387,14 +376,14 @@ struct pidRecord     *ppid;
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
                 if (recGblSetSevr(ppid,SOFT_ALARM,INVALID_ALARM)) return(0);
 	}
-        if (recGblGetFastLink(&(ppid->cvl), (void *) ppid, &cval)) {
+        if (dbGetLink(&ppid->cvl,DBR_FLOAT,&cval,0,0)) {
                 recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
                 return(0);
         }
         /* fetch the setpoint */
         if(ppid->smsl == CLOSED_LOOP){
-        	status = recGblGetFastLink(&(ppid->stpl), (void *)ppid,
-                                           &(ppid->val));
+        	status = dbGetLink(&(ppid->stpl),DBR_FLOAT,
+                                           &(ppid->val),0,0);
 
                 if (RTN_SUCCESS(status)) ppid->udf=FALSE;
         }

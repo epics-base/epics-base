@@ -190,16 +190,6 @@ static long init_record(pbo,pass)
     if (pbo->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pbo->siml,DBF_USHORT,&pbo->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pbo->siml), (void *) pbo, DBR_ENUM, "SIMM");
-	if (status)
-           return(status);
-    }
-
-   /* bo.siol */
-    status = recGblInitFastOutLink(&(pbo->siol), (void *) pbo, DBR_USHORT, "VAL");
-    if (status)
-       return(status);
 
     if(!(pdset = (struct bodset *)(pbo->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pbo,"bo: init_record");
@@ -212,18 +202,12 @@ static long init_record(pbo,pass)
     }
     /* get the initial value */
     if (pbo->dol.type == CONSTANT) {
-	unsigned short ival;
+	unsigned short ival = 0;
 
 	recGblInitConstantLink(&pbo->dol,DBF_USHORT,&ival);
 	if (ival  == 0)  pbo->val = 0;
 	else  pbo->val = 1;
 	pbo->udf = FALSE;
-    }
-    else {
-        status = recGblInitFastInLink(&(pbo->dol), (void *) pbo, DBR_USHORT, "VAL");
- 
-        if (status)
-           return(status);
     }
 
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
@@ -260,7 +244,7 @@ static long process(pbo)
 			unsigned short val;
 
 			pbo->pact = TRUE;
-			status = recGblGetFastLink(&pbo->dol, (void *) pbo, &val);
+			status=dbGetLink(&pbo->dol,DBR_USHORT, &val,0,0);
 			pbo->pact = FALSE;
 			if(status==0){
 				pbo->val = val;
@@ -460,7 +444,7 @@ static long writeValue(pbo)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(pbo->siml), (void *)pbo, &(pbo->simm));
+	status=dbGetLink(&pbo->siml,DBR_USHORT, &pbo->simm,0,0);
 	if (status)
 		return(status);
 
@@ -469,7 +453,7 @@ static long writeValue(pbo)
 		return(status);
 	}
 	if (pbo->simm == YES){
-		status=recGblPutFastLink(&(pbo->siol), (void *)pbo, &(pbo->val));
+		status=dbPutLink(&(pbo->siol),DBR_USHORT, &(pbo->val),1);
 	} else {
 		status=-1;
 		recGblSetSevr(pbo,SOFT_ALARM,INVALID_ALARM);

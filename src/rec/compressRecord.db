@@ -18,7 +18,6 @@ recordtype(compress) {
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup(GUI_COMPRESS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(RES,DBF_SHORT) {

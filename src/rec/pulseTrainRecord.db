@@ -30,7 +30,6 @@ recordtype(pulseTrain) {
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(UNIT,DBF_MENU) {
@@ -79,7 +78,6 @@ recordtype(pulseTrain) {
 	field(SGL,DBF_INLINK) {
 		prompt("Soft Gate Location")
 		promptgroup(GUI_PULSE)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OSGV,DBF_USHORT) {

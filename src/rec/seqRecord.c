@@ -115,7 +115,6 @@ init_record(pseq, pass)
 struct seqRecord *pseq;
 int pass;
 {
-    long	status = 0;
     int		index;
     struct  linkDesc      *plink;
 
@@ -139,19 +138,11 @@ int pass;
       recGblInitConstantLink(&pseq->sell,DBF_USHORT,&pseq->seln);
     }
 
-    /* If is a channel access link, deal with it. */
-    if (pseq->sell.type == PV_LINK)
-    {
-      if (seqRecDebug > 5) 
-	printf("init_record(%s) SELL is a CA link, attaching\n", pseq->name);
-      status = dbCaAddInlink(&(pseq->sell), (void *) pseq, "SELN");
-    }
-
   /* Copy over ALL the input link constants here */
   plink = (struct linkDesc *)(&(pseq->dly1));
 
   index = 0;
-  while ((status == 0) && (index < NUM_LINKS))
+  while (index < NUM_LINKS)
   {
     char DumbCaString[10];
 
@@ -160,37 +151,10 @@ int pass;
 
     index++;
 
-    /*
-     * This is so &@$%-ing stupid I can't believe it.  This should be done
-     * in the iocCore record init code that deals with the rest of the
-     * link init stuff.
-     */
-    
-    status = 0;
-    if (plink->dol.type == PV_LINK)
-    {
-      if (seqRecDebug > 4)
-	printf("seq-record::init_record initializing CA-link DO%1.1X\n", index);
-
-      sprintf(DumbCaString, "DO%1.1X", index);
-      status = dbCaAddInlink(&(plink->dol), (void *) pseq, DumbCaString);
-    }
-    if (status == 0)
-    {
-      if (plink->lnk.type == PV_LINK)
-      {
-
-        if (seqRecDebug > 4)
-	  printf("seq-record::init_record initializing CA-link DO%1.1X\n", index);
-
-        sprintf(DumbCaString, "DO%1.1X", index);
-        status = dbCaAddOutlink(&(plink->lnk), (void *) pseq, DumbCaString);
-      }
-    }
     plink++;
   }
 
-  return(status);
+  return(0);
 }
 /*****************************************************************************
  *
@@ -222,8 +186,6 @@ struct seqRecord *pseq;
   struct  callbackSeq	*pcb = (struct callbackSeq *) (pseq->dpvt);
   struct  linkDesc	*plink;
   unsigned short	lmask;
-  long			options;
-  long			nRequest;
   int			tmp;
 
   if(seqRecDebug > 10)
@@ -254,9 +216,7 @@ struct seqRecord *pseq;
     /* Fill in the SELN field */
     if (pseq->sell.type != CONSTANT)
     {
-      options = 0;
-      nRequest = 1;
-      recGblGetLinkValue(&(pseq->sell), (void *)pseq, DBR_USHORT, &(pseq->seln), &options,&nRequest);
+      dbGetLink(&(pseq->sell), DBR_USHORT, &(pseq->seln), 0,0);
     }
     if  (pseq->selm == seqSELM_Specified)
     {
@@ -415,10 +375,10 @@ CALLBACK *pcallback;
  * Link-group processing function.
  *
  * if the input link is not a constant
- *   call recGblGetLinkValue() to get the link value
+ *   call dbGetLink() to get the link value
  * else
  *   get the value from the DOV field
- * call recGblPutLinkValue() to forward the value to destination location
+ * call dbPutLink() to forward the value to destination location
  * call processNextLink() to schedule the processing of the next link-group
  *
  * NOTE:
@@ -431,8 +391,6 @@ CALLBACK *pCallback;
 {
   struct seqRecord *pseq = (struct seqRecord *)(pCallback->user);
   struct  callbackSeq   *pcb = (struct callbackSeq *) (pseq->dpvt);
-  long			options;
-  long			nRequest;
   double		myDouble;
 
   dbScanLock((struct dbCommon *)pseq);
@@ -443,18 +401,12 @@ CALLBACK *pCallback;
   /* Save the old value */
   myDouble = pcb->plinks[pcb->index]->dov;
 
-  /* If the input link is a constant, don't call recGblGetLinkValue() */
-  if (pcb->plinks[pcb->index]->dol.type != CONSTANT)
-  {
-    /* Get the value from the input link location */
-    options = 0;
-    nRequest = 1;
-    recGblGetLinkValue(&(pcb->plinks[pcb->index]->dol), (void *)pseq, DBR_DOUBLE, &(pcb->plinks[pcb->index]->dov), &options, &nRequest);
-  }
+  dbGetLink(&(pcb->plinks[pcb->index]->dol), DBR_DOUBLE,
+	&(pcb->plinks[pcb->index]->dov),0,0);
 
   /* Dump the value to the destination field */
-  nRequest = 1;
-  recGblPutLinkValue(&(pcb->plinks[pcb->index]->lnk), (void *)pseq, DBR_DOUBLE, &(pcb->plinks[pcb->index]->dov), &nRequest);
+  dbPutLink(&(pcb->plinks[pcb->index]->lnk), DBR_DOUBLE,
+	&(pcb->plinks[pcb->index]->dov),1);
 
   if (myDouble != pcb->plinks[pcb->index]->dov)
   {

@@ -131,13 +131,6 @@ static long init_record(plongout,pass)
     if (plongout->siml.type == CONSTANT) {
 	recGblInitConstantLink(&plongout->siml,DBF_USHORT,&plongout->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(plongout->siml), (void *) plongout, DBR_ENUM, "SIMM");
-	if (status)
-           return(status);
-    }
-
-    status = recGblInitFastOutLink(&(plongout->siol), (void *) plongout, DBR_LONG, "VAL");
 
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)plongout,"longout: init_record");
@@ -150,12 +143,8 @@ static long init_record(plongout,pass)
     }
     /* get the initial value dol is a constant*/
     if (plongout->dol.type == CONSTANT) {
-	if(recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val))
-	    plongout->udf=FALSE;
-    }
-    else {
-        status = recGblInitFastInLink(&(plongout->dol), (void *) plongout, DBR_LONG, "VAL");
-        if(status) return(status);
+	recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val);
+	plongout->udf=FALSE;
     }
 
     if( pdset->init_record ) {
@@ -177,10 +166,8 @@ static long process(plongout)
 		return(S_dev_missingSup);
 	}
         if (!plongout->pact && plongout->omsl == CLOSED_LOOP) {
-
-		status = recGblGetFastLink(&(plongout->dol), (void *)plongout,
-			&(plongout->val));
-
+		status = dbGetLink(&(plongout->dol),DBR_LONG,
+			&(plongout->val),0,0);
 		if (RTN_SUCCESS(status))
                    plongout->udf=FALSE;
 	}
@@ -384,7 +371,7 @@ static long writeValue(plongout)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(plongout->siml), (void *)plongout, &(plongout->simm));
+	status=dbGetLink(&(plongout->siml),DBR_USHORT,&(plongout->simm),0,0);
 	if (!RTN_SUCCESS(status))
 		return(status);
 
@@ -393,7 +380,7 @@ static long writeValue(plongout)
 		return(status);
 	}
 	if (plongout->simm == YES){
-		status=recGblPutFastLink(&(plongout->siol), (void *)plongout, &(plongout->val));
+		status=dbPutLink(&plongout->siol,DBR_LONG,&plongout->val,1);
 	} else {
 		status=-1;
 		recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM);

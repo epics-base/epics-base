@@ -123,21 +123,12 @@ static long init_record(pmbboDirect,pass)
 	recGblInitConstantLink(&pmbboDirect->siml,DBF_USHORT,&pmbboDirect->simm);
         break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pmbboDirect->siml), (void *) pmbboDirect, "SIMM");
-	if(status) return(status);
-	break;
     case (DB_LINK) :
         break;
     default :
         recGblRecordError(S_db_badField,(void *)pmbboDirect,
                 "mbboDirect: init_record Illegal SIML field");
         return(S_db_badField);
-    }
-
-    /* mbbo.siol may be a PV_LINK */
-    if (pmbboDirect->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pmbboDirect->siol), (void *) pmbboDirect, "VAL");
-	if(status) return(status);
     }
 
     if(!(pdset = (struct mbbodset *)(pmbboDirect->dset))) {
@@ -187,14 +178,11 @@ static long process(pmbboDirect)
 
     if (!pmbboDirect->pact) {
 	if(pmbboDirect->dol.type==DB_LINK && pmbboDirect->omsl==CLOSED_LOOP){
-	    long options=0;
-	    long nRequest=1;
 	    long status;
 	    unsigned short val;
 
 	    pmbboDirect->pact = TRUE;
-	    status = dbGetLink(&pmbboDirect->dol.value.db_link,(struct dbCommon *)pmbboDirect,DBR_USHORT,
-			&val,&options,&nRequest);
+	    status = dbGetLink(&pmbboDirect->dol,DBR_USHORT,&val,0,0);
 	    pmbboDirect->pact = FALSE;
 	    if(status==0) {
 		pmbboDirect->val= val;
@@ -330,17 +318,15 @@ static long writeValue(pmbboDirect)
 	struct mbboDirectRecord	*pmbboDirect;
 {
 	long		status;
-        struct mbbodset 	*pdset = (struct mbbodset *) (pmbboDirect->dset);
-	long            nRequest=1;
-	long            options=0;
+        struct mbbodset *pdset = (struct mbbodset *) (pmbboDirect->dset);
 
 	if (pmbboDirect->pact == TRUE){
 		status=(*pdset->write_mbbo)(pmbboDirect);
 		return(status);
 	}
 
-	status=recGblGetLinkValue(&(pmbboDirect->siml),
-		(void *)pmbboDirect,DBR_ENUM,&(pmbboDirect->simm),&options,&nRequest);
+	status=dbGetLink(&(pmbboDirect->siml),
+		DBR_ENUM,&(pmbboDirect->simm),0,0);
 	if (status)
 		return(status);
 
@@ -349,9 +335,8 @@ static long writeValue(pmbboDirect)
 		return(status);
 	}
 	if (pmbboDirect->simm == YES){
-		nRequest=1;
-		status=recGblPutLinkValue(&(pmbboDirect->siol),
-				(void *)pmbboDirect,DBR_USHORT,&(pmbboDirect->val),&nRequest);
+		status=dbPutLink(&pmbboDirect->siol,DBR_USHORT,
+			&pmbboDirect->val,1);
 	} else {
 		status=-1;
 		recGblSetSevr(pmbboDirect,SOFT_ALARM,INVALID_ALARM);

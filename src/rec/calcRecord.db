@@ -14,73 +14,61 @@ recordtype(calc) {
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input B")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input C")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input D")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input E")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input F")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input G")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input H")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input I")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input J")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input K")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
 		promptgroup(GUI_CALC)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {

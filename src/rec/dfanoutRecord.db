@@ -8,55 +8,46 @@ recordtype(dfanout) {
 	field(OUTA,DBF_OUTLINK) {
 		prompt("Output Spec A")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTB,DBF_OUTLINK) {
 		prompt("Output Spec B")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTC,DBF_OUTLINK) {
 		prompt("Output Spec C")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTD,DBF_OUTLINK) {
 		prompt("Output Spec D")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTE,DBF_OUTLINK) {
 		prompt("Output Spec E")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTF,DBF_OUTLINK) {
 		prompt("Output Spec F")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTG,DBF_OUTLINK) {
 		prompt("Output Spec G")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUTH,DBF_OUTLINK) {
 		prompt("Output Spec H")
 		promptgroup(GUI_OUTPUT)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
 		promptgroup(GUI_INPUTS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {

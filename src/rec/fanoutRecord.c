@@ -121,13 +121,6 @@ static long init_record(pfanout,pass)
     if (pfanout->sell.type == CONSTANT) {
 	recGblInitConstantLink(&pfanout->sell,DBF_USHORT,&pfanout->seln);
     }
-    else {
-        status = recGblInitFastInLink(&(pfanout->sell), (void *) pfanout,
-	    DBR_USHORT, "SELN");
-        if (status)
-           return(status);
-    }
-
     return(0);
 }
 
@@ -141,30 +134,26 @@ static long process(pfanout)
     unsigned short state;
     short          i;
     long           status=0;
-    long           options=0;
-    long           nRequest=1;
     unsigned short monitor_mask;
 
     pfanout->pact = TRUE;
 
     /* fetch link selection  */
-    recGblGetLinkValue(&(pfanout->sell),(void *)pfanout,DBR_USHORT,
-                         &(pfanout->seln),&options,&nRequest);
-
+    dbGetLink(&(pfanout->sell),DBR_USHORT,&(pfanout->seln),0,0);
     switch (pfanout->selm){
     case (SELECT_ALL):
         if (pfanout->lnk1.type==DB_LINK) 
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk1.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk1.value.pv_link.pvt)->precord);
         if (pfanout->lnk2.type==DB_LINK)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk2.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk2.value.pv_link.pvt)->precord);
         if (pfanout->lnk3.type==DB_LINK)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk3.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk3.value.pv_link.pvt)->precord);
         if (pfanout->lnk4.type==DB_LINK)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk4.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk4.value.pv_link.pvt)->precord);
         if (pfanout->lnk5.type==DB_LINK)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk5.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk5.value.pv_link.pvt)->precord);
         if (pfanout->lnk6.type==DB_LINK)
-		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk6.value.db_link.pdbAddr)->precord);
+		dbScanPassive((void *)pfanout,((struct dbAddr *)pfanout->lnk6.value.pv_link.pvt)->precord);
         break;
     case (SELECTED):
         if(pfanout->seln>6) {
@@ -176,7 +165,7 @@ static long process(pfanout)
         }
         plink=&(pfanout->lnk1);
         plink += (pfanout->seln-1);
-        dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.db_link.pdbAddr)->precord);
+        dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.pv_link.pvt)->precord);
         break;
     case (SELECT_MASK):
         if(pfanout->seln==0) {
@@ -190,7 +179,7 @@ static long process(pfanout)
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
             if(state & 1 && plink->type==DB_LINK)
-			dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.db_link.pdbAddr)->precord);
+			dbScanPassive((void *)pfanout,((struct dbAddr *)plink->value.pv_link.pvt)->precord);
         }
         break;
     default:

@@ -120,22 +120,11 @@ static long init_record(pstringin,pass)
     if (pstringin->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pstringin->siml,DBF_USHORT,&pstringin->simm);
     }
-    else  {
-        status = recGblInitFastInLink(&(pstringin->siml), (void *) pstringin, DBR_ENUM, "SIMM");
-	if (status)
-           return(status);
-    }
 
     /* stringin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (pstringin->siol.type == CONSTANT) {
         recGblInitConstantLink(&pstringin->siol,DBF_STRING,pstringin->sval);
     } 
-    else {
-        status = recGblInitFastInLink(&(pstringin->siol), (void *) pstringin, DBR_STRING, "SVAL");
-
-	if (status)
-           return(status);
-    }
 
     if(!(pdset = (struct stringindset *)(pstringin->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pstringin,"stringin: init_record");
@@ -200,7 +189,8 @@ static void monitor(pstringin)
 
     monitor_mask = recGblResetAlarms(pstringin);
     if(strncmp(pstringin->oval,pstringin->val,sizeof(pstringin->val))) {
-        db_post_events(pstringin,&(pstringin->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstringin,&(pstringin->val[0]),
+		monitor_mask|DBE_VALUE|DBE_LOG);
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
     }
     return;
@@ -217,7 +207,7 @@ static long readValue(pstringin)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(pstringin->siml), (void *)pstringin, &(pstringin->simm));
+	status=dbGetLink(&(pstringin->siml),DBR_USHORT, &(pstringin->simm),0,0);
 	if (status)
 		return(status);
 
@@ -226,7 +216,8 @@ static long readValue(pstringin)
 		return(status);
 	}
 	if (pstringin->simm == YES){
-		status=recGblGetFastLink(&(pstringin->siol), (void *)pstringin, pstringin->sval);
+		status=dbGetLink(&(pstringin->siol),DBR_STRING,
+			pstringin->sval,0,0);
 		if (status==0) {
 			strcpy(pstringin->val,pstringin->sval);
 			pstringin->udf=FALSE;

@@ -118,20 +118,9 @@ static long init_record(pevent,pass)
     if (pevent->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pevent->siml,DBF_USHORT,&pevent->simm);
     }
-    else {
-        status = recGblInitFastInLink(&(pevent->siml), (void *) pevent, DBR_ENUM, "SIMM");
-        if (status)
-           return(status);
-    }
 
     if (pevent->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pevent->siol,DBF_USHORT,&pevent->sval);
-    }
-    else {
-        status = recGblInitFastInLink(&(pevent->siol), (void *) pevent, DBR_USHORT, "SVAL");
-
-        if (status)
-           return(status);
     }
 
     if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
@@ -200,7 +189,7 @@ static long readValue(pevent)
                 return(status);
         }
 
-        status=recGblGetFastLink(&(pevent->siml), (void *)pevent, &(pevent->simm));
+        status=dbGetLink(&(pevent->siml),DBR_USHORT,&(pevent->simm),0,0);
 
         if (status)
                 return(status);
@@ -210,7 +199,8 @@ static long readValue(pevent)
                 return(status);
         }
         if (pevent->simm == YES){
-                status=recGblGetFastLink(&(pevent->siol), (void *)pevent, &(pevent->sval));
+                status=dbGetLink(&(pevent->siol),DBR_USHORT,
+			&(pevent->sval),0,0);
                 if (status==0) {
                         pevent->val=pevent->sval;
                         pevent->udf=FALSE;

@@ -128,18 +128,10 @@ static long init_record(plongin,pass)
     if (plongin->siml.type == CONSTANT) {
 	recGblInitConstantLink(&plongin->siml,DBF_USHORT,&plongin->simm);
     }
-    else { 
-        status = recGblInitFastInLink(&(plongin->siml), (void *) plongin, DBR_ENUM, "SIMM");
-	if (status) return(status);
-    }
 
     /* longin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (plongin->siol.type == CONSTANT) {
 	recGblInitConstantLink(&plongin->siol,DBF_LONG,&plongin->sval);
-    }
-    else {
-        status = recGblInitFastInLink(&(plongin->siol), (void *) plongin, DBR_LONG, "SVAL");
-	if (status) return(status);
     }
 
     if(!(pdset = (struct longindset *)(plongin->dset))) {
@@ -349,7 +341,7 @@ static long readValue(plongin)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(plongin->siml), (void *)plongin, &(plongin->simm));
+	status=dbGetLink(&(plongin->siml),DBR_USHORT, &(plongin->simm),0,0);
 	if (status)
 		return(status);
 
@@ -358,7 +350,8 @@ static long readValue(plongin)
 		return(status);
 	}
 	if (plongin->simm == YES){
-		status=recGblGetFastLink(&(plongin->siol), (void *)plongin, &(plongin->sval));
+		status=dbGetLink(&(plongin->siol),DBR_LONG,
+			&(plongin->sval),0,0);
 
 		if (status==0) {
 			plongin->val=plongin->sval;

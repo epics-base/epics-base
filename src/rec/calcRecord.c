@@ -158,11 +158,6 @@ static long init_record(pcalc,pass)
         if (plink->type == CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
         }
-        else {
-            status = recGblInitFastInLink(plink, (void *) pcalc, DBR_DOUBLE, Fldnames[i]);
-	    if (status)
-               return(status);
-	}
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status){
@@ -425,7 +420,7 @@ struct calcRecord *pcalc;
 
 	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
 
-            status = recGblGetFastLink(plink, (void *)pcalc, pvalue);
+            status = dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
 
 	    if (!RTN_SUCCESS(status)) return(status);
 	}

@@ -23,7 +23,6 @@ recordtype(subArray) {
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup(GUI_BITS1)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {

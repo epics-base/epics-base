@@ -142,12 +142,6 @@ static long init_record(ppt,pass)
 	recGblInitConstantLink(&ppt->sgl,DBF_SHORT,&ppt->hgv);
     }
 
-    if (ppt->sgl.type == PV_LINK )
-    {
-        status = dbCaAddInlink(&(ppt->sgl), (void *) ppt, "SGV");
-        if(status) return(status);
-    } /* endif */
-
     /* must have write_pt functions defined */
     if( (pdset->number < 5) || (pdset->write_pt == NULL) ) {
          recGblRecordError(S_dev_missingSup,(void *)ppt,"pt: write_pt");
@@ -165,7 +159,6 @@ static long process(ppt)
 {
     struct ptdset     *pdset = (struct ptdset *)(ppt->dset);
     long              status=0;
-    long              options,nRequest;
     double            save;
     unsigned char    pact=ppt->pact;
 
@@ -179,11 +172,7 @@ static long process(ppt)
 
     /* get soft hgv value when sgl is a DB_LINK and gtyp from Software */
     if (!ppt->pact && ppt->gtyp == SOFTWARE){
-         options=0;
-         nRequest=1;
-         status=recGblGetLinkValue(&(ppt->sgl),(void *)ppt,DBR_SHORT,
-              &(ppt->sgv),&options,&nRequest);
-
+         status=dbGetLink(&(ppt->sgl),DBR_SHORT,&(ppt->sgv),0,0);
          if(status==0){
               if(ppt->sgv != ppt->osgv){ /* hgv changed */
                    if(ppt->sgv==0){

@@ -279,7 +279,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // only one recv thread at a time may call callbacks
         // - pendEvent() blocks until threads waiting for
         // this lock get a chance to run
-        callbackAutoMutex autoMutex ( *piiu->pCAC() );
+        callbackAutoMutex cbLocker ( *piiu->pCAC() );
 
         if ( ! piiu->pCAC()->preemptiveCallbakIsEnabled() ) {
             nBytesIn = pComBuf->fillFromWire ( *piiu );
@@ -313,7 +313,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             pComBuf = 0;
 
             // execute receive labor
-            bool noProtocolViolation = piiu->processIncoming ();
+            bool noProtocolViolation = piiu->processIncoming ( cbLocker );
             if ( ! noProtocolViolation ) {
                 piiu->state = iiu_disconnected;
                 break;
@@ -468,17 +468,13 @@ tcpiiu::tcpiiu ( cac & cac, double connectionTimeout,
 
 // this must always be called by the udp thread when it holds 
 // the callback lock.
-bool tcpiiu::start ()
+bool tcpiiu::start ( callbackAutoMutex & cbGuard )
 {
-    // notify before recv thread starts because tcpiiu can
-    // vanish at any time after that. Also, we must register
-    // now from the udp thread while we hold the callback
-    // lock so that single threaded codes that dont poll will
-    // call ca_pend_event() when claim messages come back
-    //
-    // this is always called by the udp thread when it holds 
-    // the callback lock.
-    this->pCAC()->notifyNewFD ( this->sock );
+    // this is done here after we release the priamry
+    // lock so that we will hold the callback lock but
+    // not the primary lock when the fd is registered
+    // with the user
+    this->pCAC()->notifyNewFD ( cbGuard, this->sock );
 
     unsigned priorityOfRecv = cac::highestPriorityLevelBelow 
         ( this->pCAC()->getInitializingThreadsPriority() );
@@ -547,28 +543,14 @@ void tcpiiu::connect ()
     }
 }
 
-void tcpiiu::forcedShutdown ()
-{
-    // generate some NOOP UDP traffic so that ca_pend_event()
-    // will get called in preemptive callback disabled 
-    // applications, and therefore the callback lock below
-    // will not block
-    this->pCAC()->udpWakeup ();
-    callbackAutoMutex autoMutexCB ( *this->pCAC() );
-    epicsAutoMutex autoMutexCAC ( this->pCAC()->mutexRef() );
-    this->shutdown ( true );
-}
-
 void tcpiiu::cleanShutdown ()
 {
-    // generate some NOOP UDP traffic so that ca_pend_event()
-    // will get called in preemptive callback disabled 
-    // applications, and therefore the callback lock below
-    // will not block
-    this->pCAC()->udpWakeup ();
-    callbackAutoMutex autoMutexCB ( *this->pCAC() );
-    epicsAutoMutex autoMutexCAC ( this->pCAC()->mutexRef() );
-    this->shutdown ( false );
+    this->pCAC()->tcpCircuitShutdown ( *this, false );
+}
+
+void tcpiiu::forcedShutdown ()
+{
+    this->pCAC()->tcpCircuitShutdown ( *this, true );
 }
 
 //
@@ -577,14 +559,14 @@ void tcpiiu::cleanShutdown ()
 // caller must hold callback mutex and also primary cac mutex  
 // when calling this routine
 //
-void tcpiiu::shutdown ( bool discardPendingMessages )
+void tcpiiu::shutdown ( class callbackAutoMutex & cbLocker, bool discardPendingMessages )
 {
     if ( ! this->sockCloseCompleted ) {
+        this->pCAC()->notifyDestroyFD ( cbLocker, this->sock );
+
         iiu_conn_state oldState = this->state;
         this->state = iiu_disconnected;
         this->sockCloseCompleted = true;
-
-        this->pCAC()->notifyDestroyFD ( this->sock );
 
         if ( discardPendingMessages ) {
             // force abortive shutdown sequence 
@@ -778,7 +760,7 @@ bool tcpiiu::setEchoRequestPending () // X aCC 361
 //
 // tcpiiu::processIncoming()
 //
-bool tcpiiu::processIncoming ()
+bool tcpiiu::processIncoming ( callbackAutoMutex & cbLocker )
 {
     while ( true ) {
 
@@ -853,7 +835,7 @@ bool tcpiiu::processIncoming ()
                     return true;
                 }
             }
-            bool msgOK = this->pCAC()->executeResponse ( *this, 
+            bool msgOK = this->pCAC()->executeResponse ( cbLocker, *this, 
                                 this->curMsg, this->pCurData );
             if ( ! msgOK ) {
                 return false;
@@ -1261,9 +1243,9 @@ void tcpiiu::subscriptionCancelRequest ( nciu & chan, netSubscription & subscr )
 // caller must hold both the callback mutex and
 // also the cac primary mutex
 //
-void tcpiiu::lastChannelDetachNotify ()
+void tcpiiu::lastChannelDetachNotify ( class callbackAutoMutex & cbLocker ) 
 {
-    this->shutdown ( false );
+    this->shutdown ( cbLocker, false );
 }
 
 bool tcpiiu::flush ()
@@ -1317,14 +1299,14 @@ bool tcpiiu::flush ()
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero
 void tcpiiu::blockUntilSendBacklogIsReasonable ( 
-          epicsMutex *pCallbackMutex, epicsMutex & primaryMutex )
+          epicsAutoMutex *pCallbackLocker, epicsAutoMutex & primaryLocker )
 {
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
-        epicsAutoMutexRelease autoRelease ( primaryMutex );
-        if ( pCallbackMutex ) {
-            epicsAutoMutexRelease autoReleaseCallback ( *pCallbackMutex );
+        epicsAutoMutexRelease autoRelease ( primaryLocker );
+        if ( pCallbackLocker ) {
+            epicsAutoMutexRelease autoReleaseCallback ( *pCallbackLocker );
             this->flushBlockEvent.wait ();
         }
         else {

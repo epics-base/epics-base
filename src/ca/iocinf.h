@@ -286,6 +286,7 @@ public:
     const char *pName () const;
     unsigned nameLen () const;
     unsigned searchAttempts () const;
+    double beaconPeriod () const;
     bool connected () const;
     unsigned readSequence () const;
     void incrementOutstandingIO ();
@@ -511,6 +512,7 @@ public:
     virtual int clearChannelRequest ( nciu & );
     virtual void uninstallIO ( baseNMIU & );
     virtual void subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
+    virtual double beaconPeriod () const;
 
 protected:
     cac * pCAC () const;
@@ -636,14 +638,14 @@ private:
 
 class tcpRecvWatchdog : private osiTimer {
 public:
-    tcpRecvWatchdog ( double periodIn, osiTimerQueue & queueIn );
+    tcpRecvWatchdog ( tcpiiu &, double periodIn, osiTimerQueue & queueIn );
     ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void messageArrivalNotify ();
     void beaconArrivalNotify ();
     void beaconAnomalyNotify ();
     void connectNotify ();
-    void cancelRecvWatchdog ();
+    void cancel ();
     void show ( unsigned level ) const;
 
 private:
@@ -652,31 +654,28 @@ private:
 	bool again () const;
 	double delay () const;
 	const char *name () const;
-    virtual void forcedShutdown () = 0;
-    virtual bool setEchoRequestPending () = 0;
-    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
+    tcpiiu &iiu;
     bool responsePending;
     bool beaconAnomaly;
 };
 
 class tcpSendWatchdog : private osiTimer {
 public:
-    tcpSendWatchdog (double periodIn, osiTimerQueue & queueIn);
+    tcpSendWatchdog ( tcpiiu &, double periodIn, osiTimerQueue & queueIn );
     ~tcpSendWatchdog ();
-    void armSendWatchdog ();
-    void cancelSendWatchdog ();
+    void arm ();
+    void cancel ();
 private:
     void expire ();
 	void destroy ();
 	bool again () const;
 	double delay () const;
 	const char *name () const;
-    virtual void forcedShutdown () = 0;
-    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
+    tcpiiu &iiu;
 };
 
 class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
@@ -716,7 +715,6 @@ extern "C" void cacSendThreadTCP ( void *pParam );
 extern "C" void cacRecvThreadTCP ( void *pParam );
 
 class tcpiiu : 
-        public tcpRecvWatchdog, public tcpSendWatchdog,
         public netiiu, public tsDLNode < tcpiiu >,
         private wireSendAdapter, private wireRecvAdapter {
 public:
@@ -729,6 +727,8 @@ public:
     void suicide ();
     void cleanShutdown ();
     void forcedShutdown ();
+    void beaconAnomalyNotify ();
+    void beaconArrivalNotify ();
 
     bool fullyConstructed () const;
     void flush ();
@@ -752,8 +752,11 @@ public:
     const char * pHostName () const; // deprecated - please do not use
     bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     bool alive () const;
+    double beaconPeriod () const;
     bhe * getBHE () const;
 private:
+    tcpRecvWatchdog recvDog;
+    tcpSendWatchdog sendDog;
     epicsMutex flushMutex; // only one thread flushes at a time
     chronIntIdResTable < baseNMIU > ioTable;
     comQueSend sendQue;
@@ -776,7 +779,6 @@ private:
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
-    bool flushPending;
     bool msgHeaderAvailable;
     bool sockCloseCompleted;
 
@@ -876,7 +878,8 @@ public:
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
     epicsShareFunc void destroy ();
-    epicsShareFunc bool updateBeaconPeriod ( osiTime programBeginTime );
+    epicsShareFunc bool updatePeriod ( osiTime programBeginTime );
+    epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void *pCadaver, size_t size );

@@ -29,6 +29,7 @@
  * -----------------
  * .01 07-03-91  ajk	.
  * .02 12-11-91  ajk	Cosmetic changes (comments & names)
+ * .03 02-13-92  ajk	All seqLog() calls compile only if DEBUG is defined.
  */
 
 #include	"seq.h"
@@ -168,18 +169,24 @@ struct connection_handler_args	args;
 	{
 		pDB->connected = FALSE;
 		pSP->conn_count--;
+#ifdef	DEBUG
 		seq_log(pSP, "Channel \"%s\" disconnected\n", pDB->db_name);
+#endif	DEBUG
 	}
 	else
 	{
 		pDB->connected = TRUE;
 		pSP->conn_count++;
+#ifdef	DEBUG
 		seq_log(pSP, "Channel \"%s\" connected\n", pDB->db_name);
+#endif	DEBUG
 		if (pDB->count > ca_element_count(args.chid))
 		{
 			pDB->count = ca_element_count(args.chid);
+#ifdef	DEBUG
 			seq_log(pSP, "\"%s\": reset count to %d\n",
 			 pDB->db_name, pDB->count);
+#endif	DEBUG
 		}
 	}
 
@@ -342,10 +349,12 @@ CHAN	*pDB;	/* ptr to channel struct */
 	 pDB->chid, pDB->var);
 	if (status != ECA_NORMAL)
 	{
+#ifdef	DEBUG
 		seq_log(pSP, "pvPut on \"%s\" failed (%d)\n",
 		 pDB->db_name, status);
 		seq_log(pSP, "  put_type=%d\n", pDB->put_type);
 		seq_log(pSP, "  size=%d, count=%d\n", pDB->size, pDB->count);
+#endif	DEBUG
 	}
 
 	return status;

@@ -308,13 +308,17 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 
 	/* Suspend all state set tasks except self */
 	pSS = pSP->sscb;
+#ifdef	DEBUG
 	logMsg("   Suspending state set tasks:\n");
+#endif	DEBUG
 	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
 		tid_ss = pSS->task_id;
 		if ( (tid_ss > 0) && (tid != tid_ss) )
 		{
+#ifdef	DEBUG
 			logMsg("    suspend task: tid=%d\n", tid_ss);
+#endif	DEBUG
 			taskSuspend(tid_ss);
 		}
 	}
@@ -322,14 +326,18 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	/* Call user exit routine (only if task has run) */
 	if (pSP->sscb->task_id > 0)
 	{
+#ifdef	DEBUG
 		logMsg("   Call exit function\n");
+#endif	DEBUG
 		pSP->exit_func(pSP, pSP->user_area);
 	}
 
 	/* Close the log file */
 	if (pSP->logFd > 0 && pSP->logFd != ioGlobalStdGet(1))
 	{
+#ifdef	DEBUG
 		logMsg("Closing log fd=%d\n", pSP->logFd);
+#endif	DEBUG
 		close(pSP->logFd);
 		pSP->logFd = ioGlobalStdGet(1);
 	}
@@ -346,7 +354,9 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		{
 			if ( (tid != tid_ss) && (tid_ss > 0) )
 			{
+#ifdef	DEBUG
 				logMsg("   delete ss task: tid=%d\n", tid_ss);
+#endif	DEBUG
 				taskDelete(tid_ss);
 			}
 			semDelete(pSS->syncSemId);
@@ -359,7 +369,9 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	semDelete(pSP->caSemId);
 
 	/* Free the memory that was allocated for the task area */
+#ifdef	DEBUG
 	logMsg("free pSP->dyn_ptr=0x%x\n", pSP->dyn_ptr);
+#endif	DEBUG
 	taskDelay(5);
 	free(pSP->dyn_ptr);
 	

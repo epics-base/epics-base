@@ -46,7 +46,7 @@
 /* Global Database Test Routines - All can be invoked via vxWorks shell*/
 long dba(char*pname);		/*dbAddr info */
 long dbel(char*pname);		/*CA event list */
-long dbl(char	*precordTypename);  /*list records*/
+long dbl(char	*precordTypename,char *filename);  /*list records*/
 long dbnr(int verbose);		/*list number of records of each type*/
 long dbgrep(char *pmask);	/*list records with mask*/
 long dbgf(char	*pname);	/*get field value*/
@@ -58,28 +58,31 @@ long dbtpf(char	*pname,char *pvalue); /*test put field*/
 long dbior(char	*pdrvName,int type); /*I/O report */
 int dbhcr(void);		/*Hardware Configuration Report*/
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<stdio.h>
-#include	<timexLib.h>
+#include <vxWorks.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <timexLib.h>
 
-#include        <ellLib.h>
-#include	<fast_lock.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbBase.h>
-#include	<dbCommon.h>
-#include	<dbLock.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<drvSup.h>
-#include	<recGbl.h>
-#include	<special.h>
-#include	<dbStaticLib.h>
-#include	<dbEvent.h>
-#include	<ellLib.h>
-#include 	<callback.h>
+/*for open and close*/
+#include <ioLib.h>
+
+#include <ellLib.h>
+#include <fast_lock.h>
+#include <dbDefs.h>
+#include <dbAccess.h>
+#include <dbBase.h>
+#include <dbCommon.h>
+#include <dbLock.h>
+#include <recSup.h>
+#include <devSup.h>
+#include <drvSup.h>
+#include <recGbl.h>
+#include <special.h>
+#include <dbStaticLib.h>
+#include <dbEvent.h>
+#include <ellLib.h>
+#include <callback.h>
 
 extern struct dbBase *pdbbase;
 
@@ -149,28 +152,46 @@ long dbel(char*pname)
     return(0);
 }
 
-long dbl(char	*precordTypename)
+long dbl(char	*precordTypename,char *filename)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
+    FILE	*stream;
 
+    if(filename==0 || strlen(filename)==0) {
+        stream = stdout;
+    } else {
+        int fd;
+
+        fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
+        if(fd<0) {
+            fprintf(stderr,"%s could no be created\n",filename);
+            return(0);
+        }
+        stream = fdopen(fd,"w+");
+        if(stream==NULL) {
+            fprintf(stderr,"%s could not be opened for output\n",filename);
+            return(0);
+        }
+    }
     dbInitEntry(pdbbase,pdbentry);
     if(!precordTypename)
 	status = dbFirstRecordType(pdbentry);
     else
 	status = dbFindRecordType(pdbentry,precordTypename);
-    if(status) printf("No record description\n");
+    if(status) fprintf(stream,"No record description\n");
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    printf("%s\n",dbGetRecordName(pdbentry));
+	    fprintf(stream,"%s\n",dbGetRecordName(pdbentry));
 	    status = dbNextRecord(pdbentry);
 	}
 	if(precordTypename) break;
 	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
+    fclose(stream);
     return(0);
 }
 

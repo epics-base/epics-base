@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/06/26 00:19:40  jhill
+ * added CHAR_BIT to max bound calc for the "ref_cnt" member of class gdd
+ *
  * Revision 1.1  1996/06/25 19:11:38  jbk
  * new in EPICS base
  *
@@ -297,10 +300,10 @@ public:
 	void* dataPointer(void) const;
 	void* dataPointer(aitIndex element_offset) const;
 
-	void getTimeStamp(struct timespec* ts);
-	void getTimeStamp(aitTimeStamp* ts);
-	void setTimeStamp(struct timespec* ts);
-	void setTimeStamp(aitTimeStamp* ts);
+	void getTimeStamp(struct timespec* const ts) const;
+	void getTimeStamp(aitTimeStamp* const ts) const;
+	void setTimeStamp(const struct timespec* const ts);
+	void setTimeStamp(const aitTimeStamp* const ts);
 	void setStatus(aitUint32);
 	void setStatus(aitUint16 high, aitUint16 low);
 	void getStatus(aitUint32&);
@@ -308,8 +311,8 @@ public:
 
 	void setStat(aitUint16);
 	void setSevr(aitUint16);
-	aitUint16 getStat(void);
-	aitUint16 getSevr(void);
+	aitUint16 getStat(void) const;
+	aitUint16 getSevr(void) const;
 	void setStatSevr(aitInt16 stat, aitInt16 sevr);
 	void getStatSevr(aitInt16& stat, aitInt16& sevr);
 
@@ -608,13 +611,14 @@ inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
 inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
 inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
 
-inline void gdd::getTimeStamp(struct timespec* ts)
+inline void gdd::getTimeStamp(struct timespec* const ts) const
 	{ ts->tv_sec=time_stamp.tv_sec; ts->tv_nsec=time_stamp.tv_nsec; }
-inline void gdd::setTimeStamp(struct timespec* ts) {
+inline void gdd::setTimeStamp(const struct timespec* const ts) {
 	time_stamp.tv_sec=(aitUint32)ts->tv_sec;
 	time_stamp.tv_nsec=(aitUint32)ts->tv_nsec; }
-inline void gdd::getTimeStamp(aitTimeStamp* ts) { *ts=time_stamp; }
-inline void gdd::setTimeStamp(aitTimeStamp* ts) { time_stamp=*ts; }
+inline void gdd::getTimeStamp(aitTimeStamp* const ts) const { *ts=time_stamp; }
+inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
+
 inline void gdd::setStatus(aitUint32 s)		{ status=s; }
 inline void gdd::getStatus(aitUint32& s)	{ s=status; }
 inline void gdd::setStatus(aitUint16 high, aitUint16 low)
@@ -626,9 +630,9 @@ inline void gdd::setStat(aitUint16 s)
 	{ aitUint16* x = (aitUint16*)&status; x[0]=s; }
 inline void gdd::setSevr(aitUint16 s)
 	{ aitUint16* x = (aitUint16*)&status; x[1]=s; }
-inline aitUint16 gdd::getStat(void)
+inline aitUint16 gdd::getStat(void) const
 	{ aitUint16* x = (aitUint16*)&status; return x[0]; }
-inline aitUint16 gdd::getSevr(void)
+inline aitUint16 gdd::getSevr(void) const
 	{ aitUint16* x = (aitUint16*)&status; return x[1]; }
 inline void gdd::getStatSevr(aitInt16& st, aitInt16& se)
 	{ st=getStat(); se=getSevr(); }
@@ -672,10 +676,9 @@ inline gddStatus gdd::unreference(void)
 	if(ref_cnt==0u)
 	{
 		fprintf(stderr,"gdd reference count underflow!!\n");
-		return gddErrorUnderflow;
+		rc=gddErrorUnderflow;
 	}
-
-	if(--ref_cnt<=0u)
+	else if(--ref_cnt<=0u)
 	{
 		if(isManaged())
 		{

@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.9  1996/07/10 23:48:03  jhill
+# added install for gddAppFuncTable.h
+#
 # Revision 1.8  1996/07/09 22:58:55  jhill
 # added installation of the include files
 #
@@ -46,6 +49,8 @@ TOP= ../../..
 
 include $(TOP)/config/CONFIG_BASE
 
+OPTIM_YES=-g
+
 INC += gdd.h
 INC += gddNewDel.h
 INC += gddUtils.h
@@ -67,8 +72,10 @@ SRCS.cc = ../aitGen.c ../aitTypes.c ../aitHelpers.cc \
           ../gdd.cc ../gddAppDefs.cc ../gddAppTable.cc ../gddNewDel.cc \
           ../gddTest.cc ../genApps.cc ../dbMapper.cc 
 
-LIBOBJS = gdd.o gddTest.o gddAppTable.o gddNewDel.o gddAppDefs.o \
-		  aitTypes.o aitConvert.o aitHelpers.o dbMapper.o
+MY_OBJS = gdd.o gddTest.o gddAppTable.o gddNewDel.o gddAppDefs.o \
+		  aitTypes.o aitConvert.o aitHelpers.o
+
+LIBOBJS = $(MY_OBJS) dbMapper.o
 
 LIBNAME = libgdd.a
 
@@ -95,7 +102,7 @@ dbMapper.o: ../dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
 gddApps.h: genApps
 	./genApps $@
 
-genApps: genApps.o $(LIBOBJS)
+genApps: genApps.o $(MY_OBJS)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
 clean::

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.3  1996/06/26 21:00:07  jbk
+// Fixed up code in aitHelpers, removed unused variables in others
+// Fixed potential problem in gddAppTable.cc with the map functions
+//
 // Revision 1.2  1996/06/26 02:42:06  jbk
 // more correction to the aitString processing - testing menus
 //
@@ -953,7 +957,7 @@ gddStatus gdd::put(const gdd* dd)
 
 	if(isContainer() || dd->isContainer())
 		rc=gddErrorNotSupported;
-	if(isScaler() && dd->isScaler())
+	else if(isScaler() && dd->isScaler())
 	{
 		// this is the simple case - just make this scaler look like the other
 		// not protected against screwing up the string type
@@ -1038,6 +1042,11 @@ gddStatus gdd::put(const gdd* dd)
 			aitConvert(primitiveType(),dataPointer(),
 				dd->primitiveType(),dd->dataAddress(),1);
 	}
+
+	aitTimeStamp ts;
+	setStatSevr(dd->getStat(),dd->getSevr());
+	dd->getTimeStamp(&ts);
+	setTimeStamp(&ts);
 
 	return rc;
 }

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:41  jbk
+// new in EPICS base
+//
 //
 
 // *Revision 1.3  1996/06/24 03:15:34  jbk
@@ -28,13 +31,12 @@ gddApplicationTypeTable* gddGenerateApplicationTypeTable(long x/*=(1<<13)*/)
 
 void gddApplicationTypeTable::GenerateTypes(void)
 {
-	gddScaler* add_units = new gddScaler(0);
+	gddAtomic* add_units = new gddAtomic(0,aitEnumInt8,1,8);
 	gddAtomic* add_enum = new gddAtomic(0,aitEnumString,1,16);
 
 	aitString add_enum_buf[16];
-	aitString add_units_buf = thing;
 
-	add_units->put(add_units_buf);
+	add_units->putRef(thing);
 	add_enum->putRef(add_enum_buf);
 
 	// ----------------------------------------------------------------

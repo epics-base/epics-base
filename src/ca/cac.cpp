@@ -1149,7 +1149,10 @@ void cac::connectAllIO ( nciu & chan )
 // (lock must be applied here)
 void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
 {
-    while ( baseNMIU *pNetIO = chan.cacPrivateListOfIO::eventq.get() ) {
+    tsDLIterBD<baseNMIU> pNetIO = chan.cacPrivateListOfIO::eventq.firstIter();
+    while ( pNetIO.valid() ) {
+        tsDLIterBD<baseNMIU> pNext = pNetIO;
+        pNext++;
         if ( ! pNetIO->isSubscription () ) {
             // no use after disconnected - so uninstall it
             this->ioTable.remove ( *pNetIO );
@@ -1163,6 +1166,7 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
             }
             pNetIO->destroy ( *this );
         }
+        pNetIO = pNext;
     }
 }
 
@@ -1720,6 +1724,7 @@ void cac::uninstallIIU ( tcpiiu & iiu )
 
 void cac::preemptiveCallbackLock()
 {
+    // the count must be incremented prior to taking the lock
     if ( ! this->enablePreemptiveCallback ) {
         epicsAutoMutex autoMutex ( this->mutex );
         assert ( this->recvThreadsPendingCount < UINT_MAX );

@@ -3,6 +3,7 @@
 //
 
 #include <exServer.h>
+#include <gddApps.h>
 
 const double myPI = 3.14159265358979323846;
 
@@ -13,7 +14,7 @@ exPV::exPV (const casCtx &ctxIn, const pvInfo &setup) :
 	pValue(NULL),
 	pScanTimer(NULL),
 	info(setup),
-	casPV(ctxIn, setup.getName().String()),
+	casPV(ctxIn, setup.getName().string()),
 	interest(aitFalse)
 {
 	//
@@ -32,7 +33,7 @@ exPV::~exPV()
 		this->pScanTimer = NULL;
 	}
 	if (this->pValue) {
-		this->pValue->Unreference();
+		this->pValue->unreference();
 		this->pValue = NULL;
 	}
 }
@@ -60,7 +61,7 @@ void exPV::scanPV()
 
 	radians = (rand () * 2.0 * myPI)/RAND_MAX;
 	if (this->pValue) {
-		this->pValue->GetConvert(newValue);
+		this->pValue->getConvert(newValue);
 	}
 	else {
 		newValue = 0.0f;
@@ -76,7 +77,7 @@ void exPV::scanPV()
 		errMessage (status, "scan update failed\n");
 	}
 
-	pDD->Unreference();
+	pDD->unreference();
 }
 
 //
@@ -128,28 +129,28 @@ caStatus exPV::update(gdd &valueIn)
 	}
 
 #	if DEBUG
-		printf("%s = %f\n", this->info.getName().String, valueIn);
+		printf("%s = %f\n", this->info.getName().string, valueIn);
 #	endif
 
 	gdds = gddApplicationTypeTable::
-		app_table.SmartCopy(pNewValue, &valueIn);
+		app_table.smartCopy(pNewValue, &valueIn);
 	if (gdds) {
-		pNewValue->Unreference();
+		pNewValue->unreference();
 		return S_cas_noConvert;
 	}
 
 	cur.get (t.tv_sec, t.tv_nsec);
-	pNewValue->SetTimeStamp(&t);
+	pNewValue->setTimeStamp(&t);
 
-	pNewValue->SetStat (epicsAlarmNone);
-	pNewValue->SetSevr (epicsSevNone);
+	pNewValue->setStat (epicsAlarmNone);
+	pNewValue->setSevr (epicsSevNone);
 
 	//
 	// release old value and replace it
 	// with the new one
 	//
 	if (this->pValue) {
-		this->pValue->Unreference();
+		this->pValue->unreference();
 	}
 	this->pValue = pNewValue;
 
@@ -187,7 +188,7 @@ caStatus exPV::interestRegister()
 		if (!this->pScanTimer) {
 			errPrintf (S_cas_noMemory, __FILE__, __LINE__,
 				"Scan init for %s failed\n", 
-				this->info.getName().String());
+				this->info.getName().string());
 			return S_cas_noMemory;
 		}
 	}
@@ -216,8 +217,8 @@ void exPV::show(unsigned level)
 {
 	if (level>1u) {
 		if (this->pValue) {
-			printf("exPV: cond=%d\n", this->pValue->GetStat());
-			printf("exPV: sevr=%d\n", this->pValue->GetSevr());
+			printf("exPV: cond=%d\n", this->pValue->getStat());
+			printf("exPV: sevr=%d\n", this->pValue->getSevr());
 			printf("exPV: value=%f\n", (double) *this->pValue);
 		}
 		printf("exPV: interest=%d\n", this->interest);
@@ -231,10 +232,10 @@ void exPV::show(unsigned level)
 caStatus exPV::getStatus(gdd &value)
 {
 	if (this->pValue) {
-		value.PutConvert(this->pValue->GetStat());
+		value.putConvert(this->pValue->getStat());
 	}
 	else {
-		value.PutConvert(epicsAlarmUDF);
+		value.putConvert(epicsAlarmUDF);
 	}
 	return S_cas_success;
 }
@@ -245,10 +246,10 @@ caStatus exPV::getStatus(gdd &value)
 caStatus exPV::getSeverity(gdd &value)
 {
 	if (this->pValue) {
-		value.PutConvert(this->pValue->GetSevr());
+		value.putConvert(this->pValue->getSevr());
 	}
 	else {
-		value.PutConvert(epicsSevInvalid);
+		value.putConvert(epicsSevInvalid);
 	}
 	return S_cas_success;
 }
@@ -260,7 +261,7 @@ inline aitTimeStamp exPV::getTS()
 {
 	aitTimeStamp ts;
 	if (this->pValue) {
-		this->pValue->GetTimeStamp(&ts);
+		this->pValue->getTimeStamp(&ts);
 	}
 	else {
 		osiTime cur(osiTime::getCurrent());
@@ -275,7 +276,7 @@ inline aitTimeStamp exPV::getTS()
 caStatus exPV::getSeconds(gdd &value)
 {
 	aitUint32 sec (this->getTS().tv_sec);
-	value.PutConvert (sec);
+	value.putConvert (sec);
 	return S_cas_success;
 }
 
@@ -285,7 +286,7 @@ caStatus exPV::getSeconds(gdd &value)
 caStatus exPV::getNanoseconds(gdd &value)
 {
 	aitUint32 nsec (this->getTS().tv_nsec);
-	value.PutConvert (nsec);
+	value.putConvert (nsec);
 	return S_cas_success;
 }
 
@@ -294,7 +295,7 @@ caStatus exPV::getNanoseconds(gdd &value)
 //
 caStatus exPV::getPrecision(gdd &prec)
 {
-	prec.PutConvert(4u);
+	prec.putConvert(4u);
 	return S_cas_success;
 }
 
@@ -303,7 +304,7 @@ caStatus exPV::getPrecision(gdd &prec)
 //
 caStatus exPV::getHighLimit(gdd &value)
 {
-	value.PutConvert(info.getHopr());
+	value.putConvert(info.getHopr());
 	return S_cas_success;
 }
 
@@ -312,7 +313,7 @@ caStatus exPV::getHighLimit(gdd &value)
 //
 caStatus exPV::getLowLimit(gdd &value)
 {
-	value.PutConvert(info.getLopr());
+	value.putConvert(info.getLopr());
 	return S_cas_success;
 }
 
@@ -322,7 +323,7 @@ caStatus exPV::getLowLimit(gdd &value)
 caStatus exPV::getUnits(gdd &units)
 {
 	static aitString str("@#$%");
-	units.PutRef(str);
+	units.putRef(str);
 	return S_cas_success;
 }
 
@@ -337,7 +338,7 @@ caStatus exPV::getValue(gdd &value)
 		gddStatus gdds;
 
 		gdds = gddApplicationTypeTable::
-			app_table.SmartCopy(&value, this->pValue);
+			app_table.smartCopy(&value, this->pValue);
 		if (gdds) {
 			status = S_cas_noConvert;	
 		}

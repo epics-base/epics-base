@@ -1,26 +1,29 @@
 
-TOP = ../../../..
 CAS = ../../
+TOP = $(CAS)/../..
 
 include $(TOP)/src/config/CONFIG_BASE
 
 #CPLUSPLUS = G++
 
-GDD = $(CAS)/gdd
+GDD = $(CAS)/../gdd
 
 CAS_INCLUDES = -I$(CAS)/generic -I$(CAS)/../ca
 
-USR_INCLUDES = -I$(GDD) $(CAS_INCLUDES) 
+USR_INCLUDES = -I$(GDD) -I$(GDD)/O.$(T_A) $(CAS_INCLUDES) 
+
+USR_LDLIBS = -lcas -lca -lCom -lgdd -lm
+
 ifeq ($(CPLUSPLUS),G++)
-USR_LDLIBS = -lca -lCom -lgdd -lm -liberty
-else
-USR_LDLIBS = -lca -lCom -lgdd -lm
+USR_LDLIBS += -liberty
 endif
 
-USR_LDFLAGS = -L$(GDD)/sun4/
+USR_LDFLAGS = -L$(GDD)/O.$(T_A)/
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
-DEPLIBS = $(DEPLIBS_BASE)/libca.a $(DEPLIBS_BASE)/libCom.a $(GDD)/sun4/libgdd.a
+DEPLIBSWOCAS = $(DEPLIBS_BASE)/libca.a \
+	$(DEPLIBS_BASE)/libCom.a $(GDD)/O.$(T_A)/libgdd.a
+DEPLIBS = $(DEPLIBS_BASE)/libcas.a $(DEPLIBSWOCAS)
 
 SRCS.cc += ../exServer.cc 
 SRCS.cc += ../exPV.cc 
@@ -75,12 +78,15 @@ GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
  
 include $(TOP)/src/config/RULES.Unix
 
-#PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
-nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBS)
-	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(USR_LDFLAGS) $(USR_LDLIBS)
+excas: $(OBJS) $(DEPLIBS)
+	$(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 
-excas: $(OBJS) $(DEPLIBS) $(DEPLIBS_BASE)/libcas.a
-	$(LINK.cc) -o $@ $(OBJS) $(USR_LDFLAGS) -lcas $(USR_LDLIBS)
+#
+# fast link (without library build)
+#
+#PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
+nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
+	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 
 
 clean::
 	@$(RM) excas 

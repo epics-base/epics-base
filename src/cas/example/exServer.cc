@@ -109,7 +109,7 @@ caStatus exServer::pvExistTest(const casCtx &ctxIn, const char *pPVName,
 		 * there are no name aliases in this
 		 * server's PV name syntax
 		 */
-		canonicalPVName.PutRef (&pPVI->getName());
+		canonicalPVName.putRef (&pPVI->getName());
 		return S_casApp_success;
 	}
 
@@ -126,7 +126,7 @@ const pvInfo *exServer::findPV(const char *pName)
 		&exServer::pvList[NELEMENTS(exServer::pvList)];
 
 	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
-		if (strcmp (pName, pPVI->getName().String()) == '\0') {
+		if (strcmp (pName, pPVI->getName().string()) == '\0') {
 			return pPVI;
 		}
 	}

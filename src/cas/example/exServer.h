@@ -370,7 +370,7 @@ public:
 		const casCtx &ctxIn, gdd &canonicalPVName) :
 		exAsyncIO(ctxIn, &canonicalPVName)
 	{
-		canonicalPVName.PutRef(&pPVI->getName());
+		canonicalPVName.putRef(&pPVI->getName());
 	}
 
 	//

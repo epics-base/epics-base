@@ -19,6 +19,7 @@ static void osiThreadCallEntryPoint ( void *pPvt )
     if ( ! pThread->cancel ) {
         pThread->entryPoint ();
     }
+    pThread->id = 0;
     pThread->exit.signal ();
 }
 

@@ -11,16 +11,16 @@
 EPICS Release baseR3.13.0.beta12</H1>
 
 <H4>
-June 3, 1998</H4>
+June 15, 1998</H4>
 All major functionality that will be in R3.13 is now in place. It has been
 build on solaris, sunos, HPUX, alpha, SG, and winXX. This release is still
 called a beta release but will become 3.13.1 as soon as it has been used
-on a few production systems (bug fixes will bne made if necessary)
+on a few production systems (bug fixes will be made if necessary)
 
 <P>The Application Developer's Guide is a major revision of the 3.12 edition.
 The latest version is for beta12 base release.&nbsp; It is available in
 pdf (adobe acrobat reader) and in postscript. The pdf format is nice for
-online and postscript for generating a hard copy.
+online viewing and postscript for generating a hard copy.
 
 <P>LANL has a revision of the Record Reference Manual available. See the
 LANL EPICS documentation.
@@ -33,7 +33,12 @@ Changes between beta11 and beta12</H3>
 
 <H3>
 IOC Applications: Building</H3>
-Before switching applications to beta12 it is <B>STRONGLY</B> recommended
+The following explains changes that need to be made to existing applications
+that followed the <A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
+IOC Applications: Building and Source/Release Control</A>. guidelines.
+See the new version of this manual for details.
+
+<P>Before switching applications to beta12 it is <B>STRONGLY</B> recommended
 that you execute:
 <BLOCKQUOTE>
 <PRE>cd &lt;top>
@@ -67,7 +72,7 @@ If desired add a definition for <TT>TEMPLATE_TOP</TT></DD>
 <TT>RULES_TOP RULES.Db RULES.ioc RULES.iocBoot</TT></DT>
 
 <DD>
-These no longer exists in base.&nbsp; Replace you version with the version
+These no longer exists in base.&nbsp; Replace your version with the version
 from:</DD>
 
 <BLOCKQUOTE>
@@ -83,10 +88,10 @@ from:</DD>
 Remove the rules for creating soft&nbsp; links.</DD>
 
 <DT>
-<TT>makeIocCdCommands.pl</TT></DT>
+<TT>makeDbDepends.pl, makeIocCdCommands.pl, replaceVAR.pl</TT></DT>
 
 <DD>
-Copy the version from&nbsp; <TT>&lt;base>/templates/makeBaseApp/top/config</TT></DD>
+Copy the versions from&nbsp; <TT>&lt;base>/templates/makeBaseApp/top/config</TT></DD>
 
 <DT>
 <TT>makeSoftLinks</TT></DT>
@@ -95,6 +100,22 @@ Copy the version from&nbsp; <TT>&lt;base>/templates/makeBaseApp/top/config</TT><
 Remove this file</DD>
 
 <BR>&nbsp;
+<H4>
+Changes to xxxApp/src</H4>
+Move the following definitions from Makefile.Vx to Makefile.Host:
+<BLOCKQUOTE>
+<PRE>USER_DBDFLAGS
+RECTYPES
+DBDEXPAND
+DBDNAME
+MENUS</PRE>
+</BLOCKQUOTE>
+
+<H4>
+Changes to xxxApp/Db</H4>
+Rules for DBFROMTEMPLATE and INDDBFROMTEMPLATE no longer exist. See the
+new documentation of makeBaseApp for details of what the make rules are
+for databases.
 <H4>
 Changes to iocBoot and iocBoot/iocxxx</H4>
 iocBoot no longer needs a generated nfs.cmd file
@@ -112,8 +133,7 @@ The ld commands just give a file name with no path</LI>
 <LI>
 The dbLoadxxx commands must specify "../../xxxApp"</LI>
 </UL>
-See "<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
-IOC Applications: Building and Source/Release Control</A>"&nbsp; for details.
+&nbsp;
 <H3>
 aoRecord</H3>
 This did not work properly if DOL&nbsp; is a channel access link that fails.
@@ -174,7 +194,7 @@ time.</LI>
 Access Security now supports macro substitutions. A new vxWorks shell command
 is:
 <BR>&nbsp;
-<UL>asSetSubstitutions("var1=sub1,var2=sub2,..."</UL>
+<UL>asSetSubstitutions("var1=sub1,var2=sub2,...")</UL>
 See the Application developer's Guide for details about access security.
 <H3>
 tsdefs.h and tsSubr.c</H3>

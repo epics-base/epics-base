@@ -13,3 +13,5 @@ GNU_DIR = /usr
 
 CC = $(GNU_BIN)/gcc
 CCC = $(GNU_BIN)/g++
+
+SHRLIB_LDFLAGS +=  -shared

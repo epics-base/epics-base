@@ -28,6 +28,7 @@
  * .00	08-09-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02	07-20-91	rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
+ * .03	08-16-91	rac	use envGetLongConfigParam
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -673,24 +674,22 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
 }
 
 static int needToInitMinWest=1;
-static int tsMinWest=TS_MIN_WEST;
+static long tsMinWest=TS_MIN_WEST;
 
 static tsInitMinWest()
 {
-    char	env[80];
     int		error=0;
 
-    if (envGetConfigParam(&EPICS_TS_MIN_WEST, 80, env) != NULL) {
-	if (sscanf(env, "%d", &tsMinWest) != 1)
-	    error = 1;
+    if (envGetLongConfigParam(&EPICS_TS_MIN_WEST, &tsMinWest) != 0)
+	error = 1;
+    else
 	if (tsMinWest > 1380 && tsMinWest < -1380)
 	    error = 1;
-	if (error) {
+    if (error) {
 	    (void)printf(
-"tsSubr: illegal value for %s:%s\n\
+"tsSubr: illegal value for %s\n\
 tsSubr: default value of %d will be used\n",
-EPICS_TS_MIN_WEST.name, env, tsMinWest);
-	}
+EPICS_TS_MIN_WEST.name, tsMinWest);
     }
     needToInitMinWest = 0;
 }

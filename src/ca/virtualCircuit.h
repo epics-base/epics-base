@@ -55,7 +55,7 @@ struct caHdrLargeArray {
 class hostNameCache;
 class ipAddrToAsciiEngine;
 
-class tcpRecvThread : public epicsThreadRunable {
+class tcpRecvThread : private epicsThreadRunable {
 public:
     tcpRecvThread ( 
         class tcpiiu & iiuIn, epicsMutex & cbMutexIn, cacContextNotify &,
@@ -65,6 +65,7 @@ public:
     void exitWait ();
     bool exitWait ( double delay );
     void interruptSocketRecv ();
+    void show ( unsigned level ) const;
 private:
     epicsThread thread;
     class tcpiiu & iiu;
@@ -74,7 +75,7 @@ private:
     void connect ();
 };
 
-class tcpSendThread : public epicsThreadRunable {
+class tcpSendThread : private epicsThreadRunable {
 public:
     tcpSendThread ( 
         class tcpiiu & iiuIn, const char * pName, 
@@ -83,7 +84,8 @@ public:
     void start ();
     void exitWait ();
     void exitWaitRelease ();
-   void interruptSocketSend ();
+    void interruptSocketSend ();
+    void show ( unsigned level ) const;
 private:
     epicsThread thread;
     class tcpiiu & iiu;
@@ -287,9 +289,8 @@ private:
     bool flush ( 
         epicsGuard < epicsMutex > & ); // only to be called by the send thread
 
-    friend void tcpRecvThread::run ();
-    friend void tcpRecvThread::connect ();
-    friend void tcpSendThread::run ();
+    friend class tcpRecvThread;
+    friend class tcpSendThread;
 
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );

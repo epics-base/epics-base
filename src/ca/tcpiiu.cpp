@@ -59,6 +59,10 @@ void tcpSendThread::start ()
     this->thread.start ();
 }
 
+void tcpSendThread::show ( unsigned /* level */ ) const
+{
+}
+
 void tcpSendThread::exitWait ()
 {
     this->thread.exitWait ();
@@ -365,6 +369,10 @@ tcpRecvThread::~tcpRecvThread ()
 void tcpRecvThread::start ()
 {
     this->thread.start ();
+}
+
+void tcpRecvThread::show ( unsigned /* level */ ) const
+{
 }
 
 bool tcpRecvThread::exitWait ( double delay )

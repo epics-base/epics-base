@@ -9,10 +9,7 @@ LIBRARY_HOST = As
 LIBRARY_IOC = as
 DLL_LIBS  = Db Com
 
-#	All systems link the libs As, Com, Db (and again Com ??),
-#	generic Unix needs also lib m:
-#
-PROD_LIBS         := As dbStatic Com
+PROD_LIBS = As dbStatic Com
 As_DIR=.
 
 PROD = ascheck

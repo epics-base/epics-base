@@ -54,6 +54,7 @@
  *	.17 joh 081992	function name change	
  *	.18 joh 082792	converted to ansi C
  *	.19 joh	111392	removed shifts on analog IO
+ *	.20 joh	071593	fixwd comment	
  *
  *	Notes:
  *	------
@@ -669,7 +670,7 @@ void 	at5vxi_init_card(
 	 * data ptr seq enbl 
 	 * 16 bit bus 
  	 * FOUT on 
-	 * FOUT divide by one 
+	 * FOUT divide by 16
 	 * FOUT source (F1) 
 	 * Time of day disabled
 	 */

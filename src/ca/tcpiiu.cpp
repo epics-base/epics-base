@@ -586,7 +586,7 @@ tcpiiu::tcpiiu (
             cac.getInitializingThreadsPriority() ) ),
     recvDog ( cbMutexIn, ctxNotifyIn, mutexIn, 
         *this, connectionTimeout, timerQueue ),
-    sendDog ( cbMutexIn, ctxNotifyIn, 
+    sendDog ( cbMutexIn, ctxNotifyIn, mutexIn,
         *this, connectionTimeout, timerQueue ),
     sendQue ( *this, comBufMemMgrIn ),
     recvQue ( comBufMemMgrIn ),
@@ -1071,17 +1071,20 @@ bool tcpiiu::processIncoming (
                 this->curMsg.m_count = this->recvQue.popUInt32 ();
             }
             this->msgHeaderAvailable = true;
-            debugPrintf (
-                ( "%s Cmd=%3u Type=%3u Count=%8u Size=%8u",
-                this->pHostName (),
-                this->curMsg.m_cmmd,
-                this->curMsg.m_dataType,
-                this->curMsg.m_count,
-                this->curMsg.m_postsize) );
-            debugPrintf (
-                ( " Avail=%8u Cid=%8u\n",
-                this->curMsg.m_available,
-                this->curMsg.m_cid) );
+#           ifdef DEBUG
+                epicsGuard < epicsMutex > guard ( this->mutex );
+                debugPrintf (
+                    ( "%s Cmd=%3u Type=%3u Count=%8u Size=%8u",
+                      this->pHostName ( guard ),
+                      this->curMsg.m_cmmd,
+                      this->curMsg.m_dataType,
+                      this->curMsg.m_count,
+                      this->curMsg.m_postsize) );
+                debugPrintf (
+                    ( " Avail=%8u Cid=%8u\n",
+                      this->curMsg.m_available,
+                      this->curMsg.m_cid) );
+#           endif
         }
 
         //

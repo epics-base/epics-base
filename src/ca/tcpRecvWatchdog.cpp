@@ -64,8 +64,9 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
     "o application is blocked in a callback from the client library\n" );
         }
 #       ifdef DEBUG
+            epicsGuard < epicsMutex > guard ( this->mutex );
             char hostName[128];
-            this->iiu.hostName ( hostName, sizeof (hostName) );
+            this->iiu.hostName ( guard, hostName, sizeof (hostName) );
             debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec"
                             "- disconnecting.\n", 
                 hostName, this->period ) );

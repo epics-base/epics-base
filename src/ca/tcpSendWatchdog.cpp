@@ -27,10 +27,11 @@
 
 tcpSendWatchdog::tcpSendWatchdog ( 
         epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn, 
-        tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
-    period ( periodIn ), timer ( queueIn.createTimer () ),
-        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
-        iiu ( iiuIn )
+        epicsMutex & mutexIn, tcpiiu & iiuIn,
+        double periodIn, epicsTimerQueue & queueIn ) :
+        period ( periodIn ), timer ( queueIn.createTimer () ),
+        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ),
+        mutex ( mutexIn ), iiu ( iiuIn )
 {
 }
 
@@ -50,8 +51,9 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
             "application schedualing problem\n" );
     }
 #   ifdef DEBUG
+        epicsGuard < epicsMutex > guard ( this->mutex );
         char hostName[128];
-        this->iiu.hostName ( hostName, sizeof ( hostName ) );
+        this->iiu.hostName ( guard, hostName, sizeof ( hostName ) );
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif

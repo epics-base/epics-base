@@ -429,11 +429,11 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
 
     this->pudpiiu->beaconAnomalyNotify ( guard, currentTime );
 
-#   if DEBUG
+#   ifdef DEBUG
     {
-        char buf[64];
-        ipAddrToDottedIP (pnet_addr, buf, sizeof ( buf ) );
-        printf ("new server available: %s\n", buf);
+        char buf[128];
+        addr.name ( buf, sizeof ( buf ) );
+        printf ( guard, "New server available: %s\n", buf );
     }
 #   endif
 }

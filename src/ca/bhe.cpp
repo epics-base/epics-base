@@ -76,7 +76,7 @@ void bhe::logBeacon ( const char * pDiagnostic,
                      const double & currentPeriod,
                      const epicsTime & currentTime )
 {
-    if ( this->pIIU || DEBUG_ALL ) {
+    if ( this->pIIU ) {
         char name[64];
         this->name ( name, sizeof ( name ) );
         char date[64];
@@ -99,7 +99,7 @@ inline void bhe::logBeacon ( const char * /* pDiagnostic */,
 void bhe::logBeaconDiscard ( unsigned beaconAdvance,
                      const epicsTime & currentTime )
 {
-    if ( this->pIIU || DEBUG_ALL ) {
+    if ( this->pIIU ) {
         char name[64];
         this->name ( name, sizeof ( name ) );
         char date[64];
@@ -284,8 +284,8 @@ void bhe::show ( epicsGuard < epicsMutex > &, unsigned level ) const
     char host [64];
     this->name ( host, sizeof ( host ) );
     if ( this->averagePeriod == -DBL_MAX ) {
-        ::printf ( "CA beacon hash entry for %s <no periofd estimate>\n", 
-            host, this->averagePeriod );
+        ::printf ( "CA beacon hash entry for %s <no period estimate>\n", 
+            host );
     }
     else {
         ::printf ( "CA beacon hash entry for %s with period estimate %f\n", 

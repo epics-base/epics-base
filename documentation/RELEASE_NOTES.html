@@ -12,6 +12,30 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>New DBD rule</h4>
+<p>A new dbd rule will create a  &lt;name&gt;Include.dbd from files
+specified in a &lt;name&gt;_DBD macro definition. An include line will
+be placed in the &lt;name&gt;Include.dbd for each file specified
+in the &lt;name&gt;_DBD definition. If a Makefile contains
+</p>
+<pre>
+	DBD=xxx.dbd 
+	xxx_DBD = f1.dbd f2.dbd f3.dbd 
+</pre>
+<p>
+an xxxInclude.dbd file will be created containing the lines
+</p>
+<pre>
+	include "f1.dbd"
+	include "f2.dbd"
+	include "f1.dbd"
+</pre>
+<p>
+and dbExpand will be invoked to create the xxx.dbd file from the
+xxxInclude.dbd.
+</p>
+
+
 <h4>Solaris Builds </h4>
 <p>Old solaris 6 specific compiler options have been removed.</p>
 

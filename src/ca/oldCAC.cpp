@@ -20,8 +20,9 @@
 
 #include "oldAccess.h"
 
-oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
-    clientCtx ( * new cac ( *this, enablePreemptiveCallback ) ),
+oldCAC::oldCAC ( bool enablePreemptiveCallback,
+                unsigned maxNumberOfChannels ) :
+    clientCtx ( * new cac ( *this, enablePreemptiveCallback, maxNumberOfChannels ) ),
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 )
 {

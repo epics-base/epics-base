@@ -60,7 +60,7 @@
 /* MAXSEVERITY_FROM_PDBADDR moved to another header file */
 #include <rec/dbCommon.h>
 
-/* needed for (db_field_log *) NULL parm passed to dbGetField() */
+/* needed for (db_field_log *) NULL parm passed to dbGet() */
 #include <db_field_log.h>
 
 #include <errMdef.h>
@@ -312,14 +312,14 @@ long rc;
 * Output: None.
 *
 * Returns:
-*     any rc from dbGetField()
+*     any rc from dbGet()
 *     S_dbCa_nullarg - received a NULL pointer in one of the args
 *
 * Notes:
 *     The source pvar name is used as the primary key to index the Output List
 * in this file.
 *     The two arguments poptions and pnrequest are passed because this function
-* uses dbGetField() to transfer the data from the record to the temporary store
+* uses dbGet() to transfer the data from the record to the temporary store
 * in the Output List.
 *     This function is called by dbCaPutLink() in dbCaLink.c.
 *
@@ -343,7 +343,7 @@ long rc;
 	    if (poptions)
 	    {
 		if (pnrequest)
-		    rc = dbGetField((struct dbAddr *) psource_dbaddr, 
+		    rc = dbGet((struct dbAddr *) psource_dbaddr, 
 			    dest_old_dbr_type, (caddr_t) pval, 
 			    poptions, pnrequest, (db_field_log *) NULL);
 		else

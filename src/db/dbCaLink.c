@@ -34,6 +34,7 @@
 *
 ****************************************************************/
 
+#include <vxWorks.h>
 #include <errno.h>
 
 #include <cadef.h>
@@ -118,7 +119,7 @@ struct output_pvar
     char source_name[PVARNAMELENGTH];
     chid cid;
     short source_old_dbr_type; /* for output demon ca_put() */
-    short source_new_dbr_type; /* for dbCaPutLink() call to dbGetField() */
+    short source_new_dbr_type; /* for dbCaPutLink() call to dbGet() */
     short revised_source_new_dbr_type;
     FAST_LOCK lock;
     BOOL valid_value;
@@ -519,7 +520,7 @@ long rc;
 					    plink->value.pv_link.fldname, 
 					    FLDNAME_SZ);
 
-					/* for dbGetField() */
+					/* for dbGet() */
 					po->source_new_dbr_type = 
 					    dbCaNewDbfToNewDbr(
 						dbCaDbfFromDbAddr(
@@ -1008,8 +1009,8 @@ BOOL done;
 *
 * Input:
 *     struct link *plink   pointer to output link structure
-*     long *poptions       as passed to dbGetField()
-*     long *pnrequest      as passed to dbGetField()
+*     long *poptions       as passed to dbGet()
+*     long *pnrequest      as passed to dbGet()
 *
 * Output: None.
 *
@@ -1017,13 +1018,13 @@ BOOL done;
 *     0                - Success or raised alarm
 *     S_dbCa_nullarg   - received a NULL pointer in one of the input args
 *     S_dbCa_foundnull - found a NULL pointer where one should not be
-*     any rc from dbGetField()
+*     any rc from dbGet()
 *
 * Notes:
 *     Presumably this link was properly registered during record initialization 
 * by calling dbCaAddOutlink().  In copying the value from the source pvar to
 * the temporary store, a call is made to dbCaCopyPvar() in dbCaDblink.c which
-* ultimately makes a call to dbGetField(), hence the need for the two arguments
+* ultimately makes a call to dbGet(), hence the need for the two arguments
 * poptions and pnrequest.
 * 
 *     The connection handler (my_connection_handler()) is called whenever

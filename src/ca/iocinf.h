@@ -498,7 +498,7 @@ class udpiiu;
 class searchTimer : private epicsTimerNotify {
 public:
     searchTimer ( udpiiu &iiu, epicsTimerQueue &queue );
-    ~searchTimer ();
+    virtual ~searchTimer ();
     void notifySearchResponse ( unsigned short retrySeqNo );
     void resetPeriod ( double delayToNextTry );
     void show ( unsigned level ) const;
@@ -522,7 +522,7 @@ private:
 class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
     repeaterSubscribeTimer (udpiiu &iiu, epicsTimerQueue &queue);
-    ~repeaterSubscribeTimer ();
+    virtual ~repeaterSubscribeTimer ();
     void confirmNotify ();
 	void show (unsigned level) const;
 
@@ -593,7 +593,7 @@ private:
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
     tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
-    ~tcpRecvWatchdog ();
+    virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void messageArrivalNotify ();
     void beaconArrivalNotify ();
@@ -614,7 +614,7 @@ private:
 class tcpSendWatchdog : private epicsTimerNotify {
 public:
     tcpSendWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
-    ~tcpSendWatchdog ();
+    virtual ~tcpSendWatchdog ();
     void start ();
     void cancel ();
 private:

@@ -392,7 +392,7 @@ private:
 class exAsyncWriteIO : public casAsyncWriteIO, public epicsTimerNotify {
 public:
     exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, const gdd &valueIn );
-    ~exAsyncWriteIO ();
+    virtual ~exAsyncWriteIO ();
 private:
     exAsyncPV &pv;
     epicsTimer &timer;
@@ -406,7 +406,7 @@ private:
 class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
     exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn );
-    ~exAsyncReadIO ();
+    virtaul ~exAsyncReadIO ();
 private:
     exAsyncPV &pv;
     epicsTimer &timer;
@@ -422,7 +422,7 @@ class exAsyncExistIO : public casAsyncPVExistIO, public epicsTimerNotify {
 public:
     exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
             exServer &casIn );
-    ~exAsyncExistIO ();
+    virtual ~exAsyncExistIO ();
 private:
     const pvInfo &pvi;
     epicsTimer &timer;
@@ -439,7 +439,7 @@ class exAsyncCreateIO : public casAsyncPVAttachIO, public epicsTimerNotify {
 public:
     exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
         const casCtx &ctxIn, bool scanOnIn );
-    ~exAsyncCreateIO ();
+    virtaul ~exAsyncCreateIO ();
 private:
     pvInfo      &pvi;
     epicsTimer  &timer;

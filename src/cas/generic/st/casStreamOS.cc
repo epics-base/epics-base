@@ -110,7 +110,7 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 class casStreamEvWakeup : public epicsTimerNotify {
 public:
 	casStreamEvWakeup(casStreamOS &osIn);
-	~casStreamEvWakeup ();
+	virtual ~casStreamEvWakeup ();
 	void show ( unsigned level ) const;
 private:
     epicsTimer &timer;
@@ -179,7 +179,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire()
 class casStreamIOWakeup : public epicsTimerNotify {
 public:
 	casStreamIOWakeup(casStreamOS &osIn);
-	~casStreamIOWakeup();
+	virtual ~casStreamIOWakeup();
 	void show ( unsigned level ) const;
 private:
     epicsTimer &timer;

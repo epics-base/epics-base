@@ -69,7 +69,7 @@ private:
 class casDGEvWakeup : public epicsTimerNotify {
 public:
 	casDGEvWakeup ( casDGIntfOS &osIn );
-	~casDGEvWakeup();
+	virtual ~casDGEvWakeup();
 	void show ( unsigned level ) const;
 private:
     epicsTimer &timer;
@@ -83,7 +83,7 @@ private:
 class casDGIOWakeup : public epicsTimerNotify {
 public:
 	casDGIOWakeup ( casDGIntfOS &osIn );
-	~casDGIOWakeup ();
+	virtual ~casDGIOWakeup ();
 	void show ( unsigned level ) const;
 private:
     epicsTimer &timer;

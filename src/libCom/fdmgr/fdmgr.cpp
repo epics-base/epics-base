@@ -70,7 +70,7 @@ class oldFdmgr;
 class timerForOldFdmgr : public epicsTimerNotify, public chronIntIdRes<timerForOldFdmgr> {
 public:
 	epicsShareFunc timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
-	epicsShareFunc ~timerForOldFdmgr ();
+	epicsShareFunc virtual ~timerForOldFdmgr ();
 
     //
     // exceptions

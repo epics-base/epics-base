@@ -19,7 +19,7 @@
 class casBeaconTimer : public epicsTimerNotify {
 public:
     casBeaconTimer ( double delay, caServerOS &osIn );
-    ~casBeaconTimer ();
+    virtual ~casBeaconTimer ();
 private:
     epicsTimer  &timer;
     caServerOS  &os;

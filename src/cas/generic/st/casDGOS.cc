@@ -17,7 +17,7 @@
 class casDGEvWakeup : public epicsTimerNotify {
 public:
 	casDGEvWakeup (casDGOS &osIn);
-	~casDGEvWakeup();
+	virtual ~casDGEvWakeup();
 	void show (unsigned level) const;
 private:
     epicsTimer  &timer;

@@ -1,7 +1,7 @@
 #
 # supplement README for HP700 and Alpha OSF/1 builds
 #
-#
+# M. Anderson and J. Tang
 
 
 - EPICS environment variable - set by hand prior to build
@@ -32,7 +32,7 @@
 
  For example:
 
- % make HOST_ARCH=alpha
+ % make HOST_ARCH=hp700
 
 
  Also, directory permissions may not be correct across multiple machines,
@@ -41,3 +41,5 @@
  % chmod -R ugo+rw base extensions
 
  might be necessary.
+
+- bsdinstall is written to replace install for hp.

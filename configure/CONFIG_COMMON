@@ -78,7 +78,7 @@ GENERIC_SRC_INCLUDES = $(addprefix -I, $(GENERIC_SRC_DIRS))
 #--------------------------------------------------
 # GNU compiler defaults
 
-GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -D INLINE='extern __inline__'
+GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
 GCC_AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
 GCC_CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -x c -E
 GCC_RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)

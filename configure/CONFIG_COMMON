@@ -80,7 +80,7 @@ INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 #--------------------------------------------------
 # vpath directories
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
-OS_SRC_DIRS += . $(foreach dir, $(SRC_DIRS) .., \
+OS_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
             $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/os/default )
 ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
@@ -164,9 +164,12 @@ TARGET_LDFLAGS = $($(basename $@)_LDFLAGS_$(OS_CLASS)) $($(basename $@)_LDFLAGS)
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS_$(OS_CLASS)) $($(basename $@)_CPPFLAGS)
 
 # Level of ansi conformance flags
-CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(CMPLR))
-CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
-CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
+CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(firstword $($(basename $@)_CMPLR_$(T_A)) \
+ $($(basename $@)_CMPLR_$(OS_CLASS)) $($(basename $@)_CMPLR) $(CMPLR)))
+CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(firstword $($(basename $@)_CMPLR_$(T_A)) \
+ $($(basename $@)_CMPLR_$(OS_CLASS)) $($(basename $@)_CMPLR) $(CMPLR)))
+CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(firstword $($(basename $@)_CMPLR_$(T_A)) \
+ $($(basename $@)_CMPLR_$(OS_CLASS)) $($(basename $@)_CMPLR) $(CXXCMPLR)))
 
 # Warnings flags
 WARN_CFLAGS = $(WARN_CFLAGS_$(firstword $($(basename $@)_WARN_$(T_A)) \

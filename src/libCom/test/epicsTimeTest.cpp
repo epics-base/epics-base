@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <limits.h>
 
 #include "epicsTime.h"
 #include "epicsThread.h"
@@ -18,6 +19,11 @@
 extern "C" {
 int epicsTimeTest (void);
 }
+
+struct l_fp { /* NTP time stamp */
+    epicsUInt32 l_ui; /* sec past NTP epoch */
+    epicsUInt32 l_uf; /* fractional seconds */
+};
 
 epicsTime useSomeCPU;
 
@@ -58,6 +64,17 @@ int epicsTimeTest (void)
     local_tm_nano_sec ansiDate;
     gm_tm_nano_sec ansiDateGMT;
     unsigned long nanoSec;
+
+    {
+        epicsTime tsi = epicsTime::getCurrent ();
+        l_fp ntp = tsi;
+        epicsTime tsf = ntp;
+        const double diff = fabs ( tsf - tsi );
+        // the difference in the precision of the two time formats
+        static const double precisionNTP = 1.0 / ( 1.0 + UINT_MAX );
+        static const double precisionEPICS = 1.0 / epicsTime::nSecPerSec;
+        assert ( diff <= precisionEPICS + precisionNTP );
+    }
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 

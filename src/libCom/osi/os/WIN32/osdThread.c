@@ -50,35 +50,33 @@ typedef struct epicsThreadPrivateOSD {
 static HANDLE win32ThreadGlobalMutex = 0;
 static int win32ThreadInitOK = 0;
 
-#if WINVER >= 500 && 0
-#   define osdPriorityStateCount 14u
-#else
-#   define osdPriorityStateCount 5u
-#endif
-//
-// apparently these additional priorities only work if the process 
-// priority class is real time?
-//
-static const int osdPriorityList [osdPriorityStateCount] = 
+#define osdOrdinaryPriorityStateCount 5u
+static const int osdOrdinaryPriorityList [osdOrdinaryPriorityStateCount] = 
 {
-#if WINVER >= 500 && 0
-    -7, // allowed on >= W2k, but no #define supplied
-    -6, // allowed on >= W2k, but no #define supplied
-    -5, // allowed on >= W2k, but no #define supplied
-    -4, // allowed on >= W2k, but no #define supplied
-    -3,  // allowed on >= W2k, but no #define supplied
-#endif
     THREAD_PRIORITY_LOWEST,       // -2 on >= W2K ??? on W95
     THREAD_PRIORITY_BELOW_NORMAL, // -1 on >= W2K ??? on W95
     THREAD_PRIORITY_NORMAL,       //  0 on >= W2K ??? on W95
     THREAD_PRIORITY_ABOVE_NORMAL, //  1 on >= W2K ??? on W95
     THREAD_PRIORITY_HIGHEST       //  2 on >= W2K ??? on W95
-#if WINVER >= 500 && 0
+};
+
+#   define osdRealtimePriorityStateCount 14u
+static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] = 
+{
+    -7, // allowed on >= W2k, but no #define supplied
+    -6, // allowed on >= W2k, but no #define supplied
+    -5, // allowed on >= W2k, but no #define supplied
+    -4, // allowed on >= W2k, but no #define supplied
+    -3, // allowed on >= W2k, but no #define supplied
+    THREAD_PRIORITY_LOWEST,       // -2 on >= W2K ??? on W95
+    THREAD_PRIORITY_BELOW_NORMAL, // -1 on >= W2K ??? on W95
+    THREAD_PRIORITY_NORMAL,       //  0 on >= W2K ??? on W95
+    THREAD_PRIORITY_ABOVE_NORMAL, //  1 on >= W2K ??? on W95
+    THREAD_PRIORITY_HIGHEST,      //  2 on >= W2K ??? on W95
     3, // allowed on >= W2k, but no #define supplied
     4, // allowed on >= W2k, but no #define supplied
     5, // allowed on >= W2k, but no #define supplied
     6  // allowed on >= W2k, but no #define supplied
-#endif
 };
 
 static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
@@ -139,7 +137,7 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain ( void )
 /*
  * osdPriorityMagFromPriorityOSI ()
  */
-static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority ) 
+static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned priorityStateCount ) 
 {
     unsigned magnitude;
 
@@ -153,7 +151,7 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority )
         osiPriority = epicsThreadPriorityMax;
     }
 
-    magnitude = osiPriority * osdPriorityStateCount;
+    magnitude = osiPriority * priorityStateCount;
     magnitude /= ( epicsThreadPriorityMax - epicsThreadPriorityMin ) + 1;
 
     return magnitude;
@@ -164,32 +162,28 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority )
  */
 static int epicsThreadGetOsdPriorityValue ( unsigned osiPriority ) 
 {
-    unsigned magnitude = osdPriorityMagFromPriorityOSI ( osiPriority );
-    return osdPriorityList[magnitude];
-}
-
-/*
- * osdPriorityMagFromPriorityOSI ()
- */
-static unsigned osdPriorityMagFromPriorityOSD ( int osdPriority ) 
-{
+    const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
+    const unsigned * pStateList;
+    unsigned stateCount;
     unsigned magnitude;
 
-    for ( magnitude=0u; magnitude<osdPriorityStateCount; magnitude++ ) {
-        if ( osdPriority == osdPriorityList[magnitude] ) {
-            break;
-        }
+    if ( priorityClass == REALTIME_PRIORITY_CLASS ) {
+        stateCount = osdRealtimePriorityStateCount;
+        pStateList = osdRealtimePriorityList;
+    }
+    else {
+        stateCount = osdOrdinaryPriorityStateCount;
+        pStateList = osdOrdinaryPriorityList;
     }
 
-    assert ( magnitude < osdPriorityStateCount );
-
-    return magnitude;
+    magnitude = osdPriorityMagFromPriorityOSI ( osiPriority, stateCount );
+    return pStateList[magnitude];
 }
 
 /*
- * osdPriorityMagFromPriorityOSI ()
+ * osiPriorityMagFromMagnitueOSD ()
  */
-static unsigned osiPriorityMagFromMagnitueOSD ( unsigned magnitude ) 
+static unsigned osiPriorityMagFromMagnitueOSD ( unsigned magnitude, unsigned osdPriorityStateCount ) 
 {
     unsigned osiPriority;
 
@@ -206,21 +200,53 @@ static unsigned osiPriorityMagFromMagnitueOSD ( unsigned magnitude )
  */
 static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority ) 
 {
-    unsigned magnitude = osdPriorityMagFromPriorityOSD ( osdPriority );
-    return osiPriorityMagFromMagnitueOSD (magnitude);
+    const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
+    const unsigned * pStateList;
+    unsigned stateCount;
+    unsigned magnitude;
+
+    if ( priorityClass == REALTIME_PRIORITY_CLASS ) {
+        stateCount = osdRealtimePriorityStateCount;
+        pStateList = osdRealtimePriorityList;
+    }
+    else {
+        stateCount = osdOrdinaryPriorityStateCount;
+        pStateList = osdOrdinaryPriorityList;
+    }
+
+    for ( magnitude = 0u; magnitude < stateCount; magnitude++ ) {
+        if ( osdPriority == pStateList[magnitude] ) {
+            break;
+        }
+    }
+
+    assert ( magnitude < stateCount );
+
+    return osiPriorityMagFromMagnitueOSD ( magnitude, stateCount );
 }
 
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
 epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityLevelAbove 
-            ( unsigned int priority, unsigned *pPriorityJustAbove )
+            ( unsigned int priority, unsigned * pPriorityJustAbove )
 {
-    unsigned magnitude = osdPriorityMagFromPriorityOSI ( priority );
+    const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
     epicsThreadBooleanStatus status;
+    unsigned stateCount;
+    unsigned magnitude;
 
-    if ( magnitude < (osdPriorityStateCount-1) ) {
-        *pPriorityJustAbove = osiPriorityMagFromMagnitueOSD ( magnitude + 1u );
+    if ( priorityClass == REALTIME_PRIORITY_CLASS ) {
+        stateCount = osdRealtimePriorityStateCount;
+    }
+    else {
+        stateCount = osdOrdinaryPriorityStateCount;
+    }
+
+    magnitude = osdPriorityMagFromPriorityOSI ( priority, stateCount );
+
+    if ( magnitude < ( stateCount - 1 ) ) {
+        *pPriorityJustAbove = osiPriorityMagFromMagnitueOSD ( magnitude + 1u, stateCount );
         status = epicsThreadBooleanStatusSuccess;
     }
     else {
@@ -233,13 +259,24 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
  * epicsThreadHighestPriorityLevelBelow ()
  */
 epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow 
-            ( unsigned int priority, unsigned *pPriorityJustBelow )
+            ( unsigned int priority, unsigned * pPriorityJustBelow )
 {
-    unsigned magnitude = osdPriorityMagFromPriorityOSI ( priority );
+    const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
     epicsThreadBooleanStatus status;
+    unsigned stateCount;
+    unsigned magnitude;
+
+    if ( priorityClass == REALTIME_PRIORITY_CLASS ) {
+        stateCount = osdRealtimePriorityStateCount;
+    }
+    else {
+        stateCount = osdOrdinaryPriorityStateCount;
+    }
+
+    magnitude = osdPriorityMagFromPriorityOSI ( priority, stateCount );
 
     if ( magnitude > 1u ) {
-        *pPriorityJustBelow = osiPriorityMagFromMagnitueOSD ( magnitude - 1u );
+        *pPriorityJustBelow = osiPriorityMagFromMagnitueOSD ( magnitude - 1u, stateCount );
         status = epicsThreadBooleanStatusSuccess;
     }
     else {

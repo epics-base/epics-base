@@ -7,16 +7,11 @@ include $(TOP)/configure/CONFIG
 
 PROD_HOST += caExample
 caExample_SRCS	+= caExample.c
-caExample_LIBS	+= ca
-caExample_LIBS	+= Com
+caExample_LIBS	+= $(EPICS_BASE_HOST_LIBS)
 
 PROD_HOST += caMonitor
 caMonitor_SRCS	+= caMonitor.c
-caMonitor_LIBS	+= ca
-caMonitor_LIBS	+= Com
-
-ca_DIR           = $(EPICS_BASE_LIB)
-Com_DIR          = $(EPICS_BASE_LIB)
+caMonitor_LIBS	+= $(EPICS_BASE_HOST_LIBS)
 
 include $(TOP)/configure/RULES
 #----------------------------------------

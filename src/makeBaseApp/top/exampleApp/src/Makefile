@@ -20,7 +20,6 @@ _APPNAME_Ioc_SRCS += devXxxSoft.c
 _APPNAME_Ioc_SRCS += dbSubExample.c
 
 _APPNAME_Ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
-_APPNAME_Ioc_SYS_LIBS_solaris += c
 
 #=============================
 
@@ -43,8 +42,7 @@ _APPNAME__LIBS += _APPNAME_Ioc
 
 #The following builds sncExample as a component of _APPNAME_
 #_APPNAME__SRCS += sncExample.stt
-#_APPNAME__LIBS += seq
-#_APPNAME__LIBS += pv
+#_APPNAME__LIBS += seq pv
 
 _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
 
@@ -52,8 +50,7 @@ _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
 #PROD_HOST += sncExample
 #sncExample_SNCFLAGS += +m
 #sncExample_SRCS += sncExample.stt
-#sncExample_LIBS += seq
-#sncExample_LIBS += pv
+#sncExample_LIBS += seq pv
 #sncExample_LIBS += $(EPICS_BASE_HOST_LIBS)
 
 #===========================

@@ -12,16 +12,12 @@ TOP=..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS := cas ca gdd Com
-cas_DIR = $(INSTALL_LIB)
-ca_DIR = $(INSTALL_LIB)
-gdd_DIR = $(INSTALL_LIB)
-Com_DIR = $(INSTALL_LIB)
+PROD_LIBS += $(EPICS_BASE_HOST_LIBS)
 
 #
 # Added ws2_32 winmm user32 for the non-dll build
 #
-SYS_PROD_LIBS_WIN32 := ws2_32 advapi32 user32
+SYS_PROD_LIBS_WIN32 += ws2_32 advapi32 user32
 
 SRCS += main.cc
 SRCS += exServer.cc

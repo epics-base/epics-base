@@ -11,6 +11,7 @@
 
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
+#include "iocUtilRegister.h"
 
 
 /* < (runScript) command */

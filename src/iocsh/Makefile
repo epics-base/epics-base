@@ -5,6 +5,7 @@ include $(TOP)/configure/CONFIG
 #
 
 INC += ioccrf.h
+INC += osiRegister.h
 INC += iocUtilRegister.h
 INC += dbStaticRegister.h
 INC += dbTestRegister.h
@@ -14,6 +15,7 @@ INC += caTestRegister.h
 INC += dbAccessRegister.h
 INC += ioccrfRegister.h
 INC += asTestRegister.h
+INC += registerRecordDeviceDriverRegister.h
 
 
 #       general contents of library on all platforms
@@ -24,19 +26,20 @@ INC += asTestRegister.h
 #
 
 LIBSRCS += ioccrf.c
+LIBSRCS += osiRegister.c
+LIBSRCS += dbStaticRegister.c
+LIBSRCS += dbTestRegister.c
+LIBSRCS += dbBkptRegister.c
+LIBSRCS += dbCaTestRegister.c
+LIBSRCS += caTestRegister.c
+LIBSRCS += dbAccessRegister.c
+LIBSRCS += ioccrfRegister.c
+LIBSRCS += asTestRegister.c
 LIBSRCS += iocUtil.c
-LIBSRCS += dbStaticRegister
-LIBSRCS += dbTestRegister
-LIBSRCS += dbBkptRegister
-LIBSRCS += dbCaTestRegister
-LIBSRCS += caTestRegister
-LIBSRCS += dbAccessRegister
-LIBSRCS += ioccrfRegister
-LIBSRCS += asTestRegister
 
 LIBRARY_IOC = iocsh
 
-iocsh_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
+OBJS += registerRecordDeviceDriverRegister
 
 iocsh_DLL_LIBS  = Com registryIoc dbStaticIoc dbIoc asIoc rsrvIoc dbtoolsIoc miscIoc 
 registryIoc_DIR=$(EPICS_BASE_LIB)

@@ -12,13 +12,12 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
+#include "dbAccess.h" 
 #include "iocInit.h"
-#include "dbAccess.h"
 #include "dbLoadTemplate.h"
 #define epicsExportSharedSymbols
 #include "registryRecordType.h"
 #include "dbAccessRegister.h"
-#include "ioccrf.h"
 
 #ifdef __rtems__
 # define dbLoadDatabase dbLoadDatabaseRTEMS
@@ -61,17 +60,6 @@ static void dbLoadTemplateCallFunc(ioccrfArg **args)
     dbLoadTemplate((char *)args[0]->value);
 }
 
-/* registerRecordDeviceDriver */
-static ioccrfArg registerRecordDeviceDriverArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-static ioccrfArg *registerRecordDeviceDriverArgs[1] =
-    {&registerRecordDeviceDriverArg0};
-static ioccrfFuncDef registerRecordDeviceDriverFuncDef =
-    {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
-static void registerRecordDeviceDriverCallFunc(ioccrfArg **args)
-{
-    registerRecordDeviceDriverBase(pdbbase);
-}
-
 /* iocInit */
 static ioccrfFuncDef iocInitFuncDef =
     {"iocInit",0,0};
@@ -85,7 +73,5 @@ void epicsShareAPI dbAccessRegister(void)
     ioccrfRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
     ioccrfRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);
     ioccrfRegister(&dbLoadTemplateFuncDef,dbLoadTemplateCallFunc);
-    ioccrfRegister(&registerRecordDeviceDriverFuncDef,
-        registerRecordDeviceDriverCallFunc);
     ioccrfRegister(&iocInitFuncDef,iocInitCallFunc);
 }

@@ -84,7 +84,7 @@
  *	vxi_find_slot0		find (and open) slot zero devices
  *	vxi_find_slot		what slot is that LA in
  *	open_slot0_device	open slot zero devices
- *	nicpu030_slot0_test	is it a NICPU030 slot zero module
+ *	nicpu030_init		NI CPU030 controller setup
  *	nivxi_cpu030_set_modid	set modid on the NICPU030
  *	nivxi_cpu030_clr_all_modid 	clear all modid lines on the NICPU030
  *	set_reg_modid		set modid on a reg based slot0 device	
@@ -129,6 +129,8 @@
 
 #define SRCepvxiLib	/* allocate externals here */
 #include <epvxiLib.h>
+
+#define LOCAL
 
 #define NICPU030
 
@@ -193,7 +195,7 @@ int	map_mxi_inward();
 int	open_vxi_device();
 int	vxi_begin_normal_operation();
 int	vxi_allocate_int_lines();
-void	nicpu030_slot0_test();
+void	nicpu030_init();
 void	vxi_find_sc_devices();
 void	vxi_find_dc_devices();
 void	set_reg_modid();
@@ -263,12 +265,13 @@ epvxiResman()
 	last_la = min(last_la, NELEMENTS(epvxiLibDeviceList)-1);
 
 	/*
-	 * perform this step if you want to reassign LA to DC
-	 * devices after a soft reboot
+	 * init the NI CPU030 hardware first so that we
+	 * dont end up with a bus error on the first
+	 * VME access
 	 */
-#       ifdef RESET_DC_DEVICES
-                vxi_reset_dc();
-#       endif
+#	ifdef NICPU030
+		nicpu030_init();
+#	endif
 
         if(vxi_init_ignore_list()==ERROR)
                 return ERROR;
@@ -879,10 +882,6 @@ vxi_find_slot0()
 	struct vxi_csr		*pcsr;
 	short			id;
 	
-#	ifdef NICPU030
-		nicpu030_slot0_test();
-#	endif
-
 	for(addr=0; addr<=last_la; addr++){
 
 		/*
@@ -1011,7 +1010,7 @@ unsigned	la;
 
 /*
  *
- *	NICPU030_SLOT0_TEST()	
+ *	NICPU030_INIT()	
  *	check to see if this code is running on a
  *	national instruments cpu030 installed in
  *	slot zero.
@@ -1019,7 +1018,7 @@ unsigned	la;
  */
 #ifdef NICPU030
 LOCAL void
-nicpu030_slot0_test()
+nicpu030_init()
 {
 	int		i;
 	int		status;

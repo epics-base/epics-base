@@ -381,7 +381,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 	double		val;
 
 	/* selection mechanism */
-	psel->udf = TRUE;
 	pvalue = &psel->a;
 	switch (psel->selm){
 	case (SELECTED):
@@ -418,12 +417,16 @@ struct selRecord *psel;  /* pointer to selection record  */
 		val = order[order_inx/2];
 		break;
 	default:
+		recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
 		return(-1);
 	}
 	if (val != 1e+30 && val != -1e+30 ){
 		psel->val=val;
 		psel->udf=FALSE;
-	}
+	}  else {
+            recGblSetSevr(psel,UDF_ALARM,MAJOR_ALARM);
+            /* If UDF is TRUE this alarm will be overwritten by checkAlarms*/
+        }
 	/* initialize flag  */
 	return(0);
 }

@@ -25,4 +25,5 @@ epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
 }
 #endif
 
-#endif addrListh // ifndef addrListh
+#endif // ifndef addrListh
+

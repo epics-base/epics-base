@@ -165,7 +165,6 @@ INC += osiWireFormat.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h
-INC += compilerDefs.h
 
 INC += devLib.h
 

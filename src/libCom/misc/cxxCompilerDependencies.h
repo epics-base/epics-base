@@ -9,27 +9,30 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-// Author: 
-// Jeffrey O. Hill
-// johill@lanl.gov
+/*
+ * Author: 
+ * Jeffrey O. Hill
+ * johill@lanl.gov
+ */
 
 #ifndef cxxCompilerDependencies_h
 #define cxxCompilerDependencies_h
 
-// This  tells us what features of standard C++ a compiler supports.
-// Since this is a compiler, and not os dependent issue, then ifdefs 
-// are used. The ifdefs allow us to assume that these problems will 
-// get fixed by future compiler releases.
-//
-// CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
-// CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
-//
+/*
+ * This  tells us what features of standard C++ a compiler supports.
+ * Since this is a compiler, and not os dependent issue, then ifdefs 
+ * are used. The ifdefs allow us to assume that these problems will 
+ * get fixed by future compiler releases.
+ *
+ * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
+ * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
+ */
 
 #if defined ( _MSC_VER )
-#   if _MSC_VER >= 1200 // visual studio 6.0 or later 
+#   if _MSC_VER >= 1200  * visual studio 6.0 or later 
 #       define CXX_PLACEMENT_DELETE
 #   endif
-#   if _MSC_VER > 1300 // some release after visual studio 7 we hope 
+#   if _MSC_VER > 1300  * some release after visual studio 7 we hope 
 #       define CXX_THROW_SPECIFICATION
 #   endif
 #elif defined ( __HP_aCC ) 
@@ -54,18 +57,31 @@
 #   define CXX_THROW_SPECIFICATION
 #endif
 
-// usage: void func () epicsThrows (( std::bad_alloc, std::logic_error ))
+/*
+ * usage: void func () epicsThrows (( std::bad_alloc, std::logic_error ))
+ */
 #if defined ( CXX_THROW_SPECIFICATION )
 #   define epicsThrows(X) throw X
 #else
 #   define epicsThrows(X)
 #endif
 
-// usage: epicsPlacementDeleteOperator (( void *, myMemoryManager & ))
+/*
+ * usage: epicsPlacementDeleteOperator (( void *, myMemoryManager & ))
+ */
 #if defined ( CXX_PLACEMENT_DELETE )
 #   define epicsPlacementDeleteOperator(X) void operator delete X;
 #else
 #   define epicsPlacementDeleteOperator(X)
 #endif
 
-#endif // ifndef cxxCompilerDependencies_h
+/*
+ * Enable format-string checking if possible
+ */
+#ifdef __GNUC__
+# define EPICS_PRINTF_STYLE(f,a) __attribute__((format(printf,f,a)))
+#else
+# define EPICS_PRINTF_STYLE(f,a)
+#endif
+
+#endif  /* ifndef cxxCompilerDependencies_h */

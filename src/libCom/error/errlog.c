@@ -41,7 +41,7 @@
 #endif /* LOCAL */
 
 /* BUFFER_EXTRA_BYTES is set equal to MAX_MESSAGE_SIZE in case
-   an os cant implement vsnprintf. Such an os
+   an os can't implement vsnprintf. Such an os
    is subject to buffer overflow. Allocating an additional
    BUFFER_EXTRA_BYTES bytes will at least make this less likely
 */
@@ -126,7 +126,7 @@ epicsShareFunc int errlogVprintf(
     errlogInit(0);
     pbuffer = msgbufGetFree(0);
     if(!pbuffer) return(0);
-    nchar = vsprintf(pbuffer,pFormat,pvar);
+    nchar = vsprintf(pbuffer,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar+1);/*include the \0*/
     return nchar;
 }
@@ -179,7 +179,7 @@ epicsShareFunc int errlogVprintfNoConsole(
     errlogInit(0);
     pbuffer = msgbufGetFree(1);
     if(!pbuffer) return(0);
-    nchar = vsprintf(pbuffer,pFormat,pvar);
+    nchar = vsprintf(pbuffer,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar+1);/*include the \0*/
     return nchar;
 }

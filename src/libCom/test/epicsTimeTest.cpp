@@ -7,6 +7,9 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+/*
+ * Authors: Jeff HIll and Marty Kraimer
+ */
 #include <stdio.h>
 #include <time.h>
 #include <math.h>

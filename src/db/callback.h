@@ -76,10 +76,12 @@ long callbackInit();
 void callbackRequest(CALLBACK *);
 void callbackRequestProcessCallback(CALLBACK *pCallback,
 	int Priority, void *pRec);
+int callbackSetQueueSize(int size);
 #else
 long callbackInit();
 void callbackRequest();
 void callbackRequestProcessCallback();
+int callbackSetQueueSize();
 #endif /*__STDC__*/
 
 

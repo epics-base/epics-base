@@ -51,7 +51,7 @@
 #include	<dbLock.h>
 #include	<task_params.h>
 
-#define QUEUESIZE 1000
+int callbackQueueSize = 2000;
 static SEM_ID callbackSem[NUM_CALLBACK_PRIORITIES];
 static RING_ID callbackQ[NUM_CALLBACK_PRIORITIES];
 static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
@@ -63,6 +63,12 @@ static void wdCallback(long ind); /*callback from taskwd*/
 static void start(int ind); /*start or restart a callbackTask*/
 
 /*public routines */
+int callbackSetQueueSize(int size)
+{
+    callbackQueueSize = size;
+    return(0);
+}
+
 long callbackInit()
 {
     int i;
@@ -145,7 +151,7 @@ static void start(int ind)
 	errMessage(0,"semBcreate failed while starting a callback task\n");
 	return;
     }
-    if((callbackQ[ind] = rngCreate(sizeof(CALLBACK *) * QUEUESIZE)) == NULL) 
+    if((callbackQ[ind]=rngCreate(sizeof(CALLBACK *)*callbackQueueSize)) == NULL) 
 	errMessage(0,"rngCreate failed while starting a callback task");
     sprintf(taskName,"cb%s",priorityName[ind]);
     callbackTaskId[ind] = taskSpawn(taskName,priority,

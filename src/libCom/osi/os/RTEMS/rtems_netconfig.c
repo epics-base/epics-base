@@ -38,7 +38,7 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
  */
 #if defined(EPICS_RTEMS_NIC_3C509)       /* 3COM 3C509 */
   extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
-# define NIC_NAME   "en0"
+# define NIC_NAME   "ep0"
 # define NIC_ATTACH rtems_3c509_driver_attach
 
 #else                                    /* Use NIC provided by BSP */

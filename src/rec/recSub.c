@@ -179,6 +179,7 @@ static long process(psub)
 	struct subRecord *psub;
 {
 	long		 status=0;
+	unsigned char	pact=psub->pact;
 
         if(!psub->pact){
 		psub->pact = TRUE;
@@ -186,6 +187,9 @@ static long process(psub)
 		psub->pact = FALSE;
 	}
         if(status==0) status = do_sub(psub);
+	/* check if device support set pact */
+        if ( !pact && psub->pact ) return(0);
+	/*previously we had different rules. Lets support old subs*/
         psub->pact = TRUE;
 	if(status==1) return(0);
 	recGblGetTimeStamp(psub);

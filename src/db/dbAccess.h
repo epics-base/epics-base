@@ -235,7 +235,7 @@ long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
 void dbScanFwdLink(struct link *plink);
 long dbProcess(struct dbCommon *precord);
-long dbNameToAddr(char *pname,struct dbAddr *);
+long dbNameToAddr(const char *pname,struct dbAddr *);
 long dbGetLinkValue(struct link *,short dbrType,
 		void *pbuffer,long *options,long *nRequest);
 long dbGetField(struct dbAddr *,short dbrType,void *pbuffer,long *options,
@@ -272,7 +272,7 @@ long dbCaGetSevr(struct link *plink,short *severity);
 long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
 int dbCaIsLinkConnected(struct link *plink);
 
-short db_name_to_addr_mess(char *pname, struct dbAddr *paddr);
+short db_name_to_addr_mess(const char *pname, struct dbAddr *paddr);
 short db_get_field_mess(
 struct dbAddr   *paddr,
 short           buffer_type,

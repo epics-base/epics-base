@@ -79,6 +79,7 @@
 #include	<taskLib.h>
 
 #include	"taskwd.h"
+#include	"freeList.h"
 #include 	"tsDefs.h"
 #include	"dbDefs.h"
 #include	"dbCommon.h"
@@ -132,6 +133,9 @@ FASTLOCK(&(RECPTR)->mlok);
 
 #define UNLOCKREC(RECPTR)\
 FASTUNLOCK(&(RECPTR)->mlok);
+
+LOCAL void *dbevEventUserFreeList;
+LOCAL void *dbevEventQueueFreeList;
 
 
 /*
@@ -191,7 +195,17 @@ struct event_user *db_init_events(void)
 {
   	struct event_user	*evuser;
 
-  	evuser = (struct event_user *) calloc(1, sizeof(*evuser));
+	if (!dbevEventUserFreeList) {
+		freeListInitPvt(&dbevEventUserFreeList, 
+			sizeof(struct event_user),8);
+	}
+	if (!dbevEventQueueFreeList) {
+		freeListInitPvt(&dbevEventQueueFreeList, 
+			sizeof(struct event_que),8);
+	}
+
+  	evuser = (struct event_user *) 
+		freeListCalloc(dbevEventUserFreeList);
   	if(!evuser)
     		return NULL;
 
@@ -200,14 +214,14 @@ struct event_user *db_init_events(void)
 	evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evuser->ppendsem){
 		FASTLOCKFREE(&(evuser->firstque.writelock));
-		free(evuser);
+		freeListFree(dbevEventUserFreeList, evuser);
 		return NULL;
 	}
 	evuser->pflush_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evuser->pflush_sem){
 		FASTLOCKFREE(&(evuser->firstque.writelock));
 		semDelete(evuser->ppendsem);
-		free(evuser);
+		freeListFree(dbevEventUserFreeList, evuser);
 		return NULL;
 	}
 
@@ -294,14 +308,13 @@ struct event_block	*pevent /* ptr to event blk (not required) */
   	/* find an event que block with enough quota */
   	/* otherwise add a new one to the list */
   	ev_que = &evuser->firstque;
-  	while(TRUE){
+  	while (TRUE) {
     		if(ev_que->quota < EVENTQUESIZE - EVENTENTRIES)
       			break;
     		if(!ev_que->nextque){
       			tmp_que = (struct event_que *) 
-				calloc(1, sizeof(*tmp_que));   
-
-      			if(!tmp_que)
+				freeListCalloc(dbevEventQueueFreeList);
+      			if(!tmp_que) 
         			return ERROR;
       			tmp_que->evuser = evuser;
 			FASTLOCKINIT(&(tmp_que->writelock));
@@ -312,7 +325,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
     		ev_que = ev_que->nextque;
   	}
 
-  	if(!pevent){
+  	if (!pevent) {
     		pevent = (struct event_block *) malloc(sizeof(*pevent));
     		if(!pevent)
       			return ERROR;
@@ -857,7 +870,7 @@ int			init_func_arg
 					NULL,
 					NULL,
 					NULL);
-      			free(ev_que);
+			freeListFree(dbevEventQueueFreeList, ev_que);
  			ev_que = nextque;
    		}
   	}
@@ -883,7 +896,7 @@ int			init_func_arg
 			NULL);
 	}
 
-  	free(evuser);
+	freeListFree(dbevEventUserFreeList, evuser);
 
 	taskwdRemove((int)taskIdCurrent);
 

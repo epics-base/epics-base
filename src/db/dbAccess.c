@@ -622,7 +622,7 @@ all_done:
  *    Returns error codes from StaticLib module, not
  *        from dbAccess.
  */
-long dbNameToAddr(char *pname,DBADDR *paddr)
+long dbNameToAddr(const char *pname,DBADDR *paddr)
 {
 	DBENTRY		dbEntry;
 	long		status=0;

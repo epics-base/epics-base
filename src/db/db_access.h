@@ -190,7 +190,7 @@ typedef epicsUInt16	dbr_put_acks_t;
  * larger type to avoid loss of information
  */
 #ifdef DB_TEXT_GLBLSOURCE
-READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
+epicsShareDecl READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
                         DBR_SHORT, /* forces conversion fronm uint8 to int16 */
                         DBR_CHAR,
                         DBR_SHORT,
@@ -261,7 +261,7 @@ unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
  * The DBR_XXXX types are indicies into this array
  */
 #if defined(DB_TEXT_GLBLSOURCE) 
-READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+epicsShareDecl READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 			epicsOldStringT,
 			epicsInt16T,	
 			epicsFloat32T,	
@@ -300,7 +300,11 @@ READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 			epicsEnum16T,	
 			epicsUInt8T,	
 			epicsInt32T,	
-			epicsFloat64T
+			epicsFloat64T,
+
+			epicsUInt16T,
+			epicsUInt16T,
+			epicsOldStringT
 };
 #else
 epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
@@ -707,7 +711,7 @@ struct dbr_ctrl_double{
 #ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1];
 #else
-READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
+epicsShareDecl READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 	sizeof(dbr_short_t),		/* short			*/
 	sizeof(dbr_float_t),		/* IEEE Float			*/
@@ -753,7 +757,7 @@ READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 #ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
 #else
-READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
+epicsShareDecl READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
@@ -805,7 +809,7 @@ enum dbr_value_class {
 #ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
 #else
-READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
+epicsShareDecl READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/
 	dbr_class_float,	/* IEEE Float			*/
@@ -873,7 +877,7 @@ READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 #ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
 #else
-READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
+epicsShareDecl READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 	0,					/* short			*/
 	0,					/* IEEE Float			*/
@@ -1085,7 +1089,7 @@ union db_access_val{
     epicsShareExtern READONLY char	*dbf_text[LAST_TYPE+2], *dbf_text_invalid;
     epicsShareExtern READONLY short	dbf_text_dim;
 #else
-    READONLY char *dbf_text[] = {
+    epicsShareDecl READONLY char *dbf_text[] = {
 	"TYPENOTCONN",
 	"DBF_STRING",
 	"DBF_SHORT",
@@ -1096,15 +1100,15 @@ union db_access_val{
 	"DBF_DOUBLE",
 	"DBF_NO_ACCESS"
     };
-    READONLY char    *dbf_text_invalid = "DBF_invalid";
-    READONLY short   dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+    epicsShareDecl READONLY char    *dbf_text_invalid = "DBF_invalid";
+    epicsShareDecl READONLY short   dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
 #endif
 
 #ifndef DB_TEXT_GLBLSOURCE
     epicsShareExtern READONLY char	*dbr_text[LAST_BUFFER_TYPE+1], *dbr_text_invalid;
     epicsShareExtern READONLY short	dbr_text_dim;
 #else
-    READONLY char *dbr_text[LAST_BUFFER_TYPE+1] = {
+    epicsShareDecl READONLY char *dbr_text[LAST_BUFFER_TYPE+1] = {
 	"DBR_STRING",
 	"DBR_SHORT",
 	"DBR_FLOAT",
@@ -1144,8 +1148,8 @@ union db_access_val{
 	"DBR_PUT_ACKS",
 	"DBR_STSACK_STRING",
     };
-    READONLY char * dbr_text_invalid = "DBR_invalid";
-    READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *));
+    epicsShareDecl READONLY char * dbr_text_invalid = "DBR_invalid";
+    epicsShareDecl READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *));
 #endif
 
 #ifdef __cplusplus

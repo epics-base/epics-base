@@ -52,9 +52,9 @@ typedef struct putNotify{
  * prototypes must also be included in db_access.h)
  */
 #ifdef __STDC__
-        int db_name_to_addr(char *pname, DBADDR *paddr);
+        int db_name_to_addr(const char *pname, DBADDR *paddr);
         int db_put_field(DBADDR *paddr, int src_type,
-                        void *psrc, int no_elements);
+                        const void *psrc, int no_elements);
         int db_get_field(DBADDR *paddr, int dest_type,
                         void *pdest, int no_elements, void *pfl);
 #else

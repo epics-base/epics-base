@@ -53,9 +53,9 @@ struct event_block{
         void                    *user_arg;
         struct event_que        *ev_que;
 	db_field_log		*pLastLog;
+        unsigned long           npend;  /* n times this event is on the que */
         unsigned char           select;
         char                    valque;
-        unsigned long           npend;  /* n times this event is on the que */
 };
 
 typedef void			EVENTFUNC(
@@ -75,30 +75,24 @@ typedef void			EVENTFUNC(
  * really a ring buffer
  */
 struct event_que{
-        struct event_block      *evque[EVENTQUESIZE];
-        db_field_log            valque[EVENTQUESIZE];
-        unsigned short  putix;
-        unsigned short  getix;
-        unsigned short  quota;          /* the number of assigned entries*/
-
         /* lock writers to the ring buffer only */
         /* readers must never slow up writers */
         FAST_LOCK               writelock;
-
+        db_field_log            valque[EVENTQUESIZE];
+        struct event_block      *evque[EVENTQUESIZE];
         struct event_que        *nextque;       /* in case que quota exceeded */
         struct event_user       *evuser;        /* event user parent struct */
+        unsigned short  putix;
+        unsigned short  getix;
+        unsigned short  quota;          /* the number of assigned entries*/
 };
 
 struct event_user{
-        int                     taskid;         /* event handler task id */
+        struct event_que        firstque;       /* the first event que */
 
-        char                    pendlck;        /* Only one task can pend */
         SEM_ID                  ppendsem;       /* Wait while empty */
         SEM_ID             	pflush_sem;	/* wait for flush */
-        unsigned char           pendexit;       /* exit pend task */
-	unsigned char		extra_labor;	/* if set call extra labor func */
 
-        unsigned short  queovr;                 /* event que overflow count */
 	void			(*overflow_sub)(/* called when overflow detect */
 					void *overflow_arg, unsigned count);
         void                    *overflow_arg;  /* parameter to above   */
@@ -107,7 +101,11 @@ struct event_user{
 					(void *extralabor_arg);	
 	void			*extralabor_arg;/* parameter to above */
 
-        struct event_que        firstque;       /* the first event que */
+        int                     taskid;         /* event handler task id */
+        unsigned short  	queovr;		/* event que overflow count */
+        char                    pendlck;        /* Only one task can pend */
+        unsigned char           pendexit;       /* exit pend task */
+	unsigned char		extra_labor;	/* if set call extra labor func */
 };
 
 typedef void			OVRFFUNC(void *overflow_arg, unsigned count);

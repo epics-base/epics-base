@@ -570,7 +570,7 @@ void fill(pbuffer,size,fillchar)
 /*
  * DB_NAME_TO_ADDR
  */
-int db_name_to_addr(char *pname, struct dbAddr *paddr)
+int db_name_to_addr(const char *pname, struct dbAddr *paddr)
 {
         long    status;
 	short   ftype;
@@ -1417,7 +1417,7 @@ void		*pfl
 int db_put_field(
 struct dbAddr	*paddr,		/* where to put it */
 int		src_type, 
-void		*psrc,		/* where to get it from */
+const void	*psrc,		/* where to get it from */
 int		no_elements
 )
 {

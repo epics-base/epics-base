@@ -47,12 +47,9 @@
 #include "epicsAssert.h"
 #include "cantProceed.h"
 
-static const unsigned mSecPerSecOsdSem = 1000u;
-
 typedef struct eventSem {
     HANDLE handle;
-}eventSem;
-
+} eventSem;
 
 /*
  * epicsEventCreate ()
@@ -131,7 +128,7 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait (epicsEventId i
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
     epicsEventId id, double timeOut)
 { 
-    static const double mSecPerSec = 1000;
+    static const unsigned mSecPerSec = 1000;
     eventSem *pSem = (eventSem *) id;
     DWORD status;
     DWORD tmo;

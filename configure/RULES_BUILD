@@ -236,7 +236,7 @@ endif
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
 
 %.cpp:	%.stt
-	@echo "converting $<
+	@echo "converting $< "
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
 	@$(RM) $*.st

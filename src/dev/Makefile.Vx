@@ -4,6 +4,11 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES =  -I../../drv/ansi -I../../drv/old
 
+INC += devApsEr.h
+INC += devCamac.h
+INC += devCommonGpib.h
+
+
 #	SRCS.c += ../devAaiCamac.c
 #	SRCS.c += ../devAiCamac.c
 SRCS.c += ../devAiDvx2502.c

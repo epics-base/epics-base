@@ -45,12 +45,14 @@ else
 	DEF="${4}"
 fi
 
-
 TMPMAKEFILE=/tmp/tmpmakefile
 SFILES=/tmp/sfiles
 EPICS=$1
 HOST_ARCH=$2
 MAKE=$3
+SRC=$EPICS/base/src
+INCLUDEH="-I$SRC/include -I$SRC/as -I$SRC/ca -I$SRC/db -I$SRC/libCom\
+	-I$SRC/drv/old -I$SRC/drv/ansi -I$SRC/dbStatic -I$SRC/bpt -I$SRC/dev" 
 
 case $HOST_ARCH in
     alpha | hp700 | sgi | Linux)
@@ -58,13 +60,13 @@ case $HOST_ARCH in
 
 	GCC=`which gcc`
 	if [ -x "$GCC" ]; then
-		FILES=`"$GCC" -M -D$DEF -I../../../include \
+		FILES=`"$GCC" -M -D$DEF $INCLUDEH \
 		errInc.c 2>/dev/null \
 		| sed -e 's/errInc\.o.*: errInc\.c//' -e 's/\\\//'`
 	else
            MAKEDEPEND=`which makedepend`
 	   if [ -x "$MAKEDEPEND" ]; then
-	      FILES=`"$MAKEDEPEND" -f- -D$DEF -I../../../include \
+	      FILES=`"$MAKEDEPEND" -f- -D$DEF $INCLUDEH \
 		errInc.c 2>/dev/null | sed -e 's/errInc.o://' -e 's/\\\//'`
 	   else
 	      echo Neither GCC or MAKEDEPEND found.
@@ -76,14 +78,14 @@ case $HOST_ARCH in
 	# use -xM option of ACC to list dependencies
 
 	CC=`$EPICS/base/tools/GetVar $EPICS ACC $HOST_ARCH`
-	FILES=`$CC -xM -D$DEF -I../../../include errInc.c \
+	FILES=`$CC -xM -D$DEF $INCLUDEH errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
         ;;
     sun4)
 	# use -M option of Sun compiler to list make dependencies
 
-	FILES=`cc -M -D$DEF -I../../../include errInc.c 2>/dev/null \
+	FILES=`cc -M -D$DEF $INCLUDEH errInc.c 2>/dev/null \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
 	;;
@@ -103,7 +105,7 @@ grep "^#define[       ]*S_" $FILES /dev/null \
 cat $SFILES | (awk '
 BEGIN	{print "errInc.o :  errInc.c \\"}
 {print "	"$0" \\" }
-END {print "	../../../include/errMdef.h"}
+END {print "	../errMdef.h"}
 
 ') > $TMPMAKEFILE
 

@@ -50,11 +50,8 @@
 #include	<module_types.h>
 #include	<eventRecord.h>
 #include	<pulseCounterRecord.h>
-#include	<choicePulseCounter.h>
 #include	<pulseDelayRecord.h>
-#include	<choicePulseDelay.h>
 #include	<pulseTrainRecord.h>
-#include	<choicePulseTrain.h>
 #include	<timerRecord.h>
 
 #include 	<drvMz8310.h>

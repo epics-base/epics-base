@@ -59,7 +59,7 @@ void errPrintf(long status, const char *pFileName,
 
     va_start(pvar, pformat);
     if(pFileName && errVerbose){
-      	printf("filename=\"%s\" line number=%d\n", pFileName, lineno);
+      	fprintf(stderr,"filename=\"%s\" line number=%d\n", pFileName, lineno);
     }
     if(status==0) status = errno;
     if(status>0) {
@@ -71,15 +71,15 @@ void errPrintf(long status, const char *pFileName,
 	modnum = status >> 16;
 	errnum = status & 0xffff;
 	if(rtnval) {
-	    printf( "Error status (module %hu, number %hu) not in symbol table",
+	    fprintf(stderr, "Error status (module %hu, number %hu) not in symbol table",
 		modnum, errnum);
 	} else {
-	    printf("%s ",name);
+	    fprintf(stderr,"%s ",name);
 	}
     }
     if (pformat) {
-    	vprintf(pformat,pvar);
+    	vfprintf(stderr,pformat,pvar);
     }
-    printf("\n");
+    fprintf(stderr,"\n");
 }
 

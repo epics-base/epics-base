@@ -78,7 +78,6 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <devSup.h>
 #include <dbDefs.h>
 #include <link.h>
-#include <choiceEg.h>
 #include <ellLib.h>
 
 #include <egRecord.h>
@@ -270,7 +269,7 @@ STATIC long EgLoadRamList(EgLinkStruct *pParm, long Ram)
     RamSpeed = pParm->Ram2Speed;
 
   /* When in ALT mode, all event records have to be downloaded */
-  if (EgGetMode(pParm, 1) == EG_SEQ_MODE_ALTERNATE)
+  if (EgGetMode(pParm, 1) == egMOD1_Alternate)
   {
     pNode = ellFirst(&pParm->EgEvent1);
     RamSpeed = pParm->Ram1Speed;	/* RAM1 clock used when in ALT mode */
@@ -431,12 +430,12 @@ STATIC void EgRamTask(void)
       /* Lock the EG link */
       semTake (EgLink[j].EgLock, WAIT_FOREVER);	/******** LOCK ***************/
 
-      if (EgGetMode(&EgLink[j], 1) != EG_SEQ_MODE_ALTERNATE)
+      if (EgGetMode(&EgLink[j], 1) != egMOD1_Alternate)
       { /* Not in ALT mode, each ram is autonomous */
         if(EgLink[j].Ram1Dirty != 0)
         {
 	  /* Make sure it is disabled and not running */
-	  if ((EgGetMode(&EgLink[j], 1) == EG_SEQ_MODE_OFF) && (EgGetBusyStatus(&EgLink[j], 1) == 0))
+	  if ((EgGetMode(&EgLink[j], 1) == egMOD1_Off) && (EgGetBusyStatus(&EgLink[j], 1) == 0))
 	  { /* download the RAM */
 	    EgClearSeq(&EgLink[j], 1);
 	    EgLoadRamList(&EgLink[j], 1);
@@ -448,7 +447,7 @@ STATIC void EgRamTask(void)
         if(EgLink[j].Ram2Dirty != 0)
         {
 	  /* Make sure it is disabled and not running */
-	  if ((EgGetMode(&EgLink[j], 2) == EG_SEQ_MODE_OFF) && (EgGetBusyStatus(&EgLink[j], 2) == 0))
+	  if ((EgGetMode(&EgLink[j], 2) == egMOD1_Off) && (EgGetBusyStatus(&EgLink[j], 2) == 0))
 	  { /* download the RAM */
 	    EgClearSeq(&EgLink[j], 2);
 	    EgLoadRamList(&EgLink[j], 2);
@@ -797,21 +796,21 @@ STATIC long EgProcEgRec(struct egRecord *pRec)
     {
       if (pRec->tpro > 10)
         printf(", Mode1=%d", pRec->mod1);
-      if (pRec->mod1 == EG_SEQ_MODE_ALTERNATE)
+      if (pRec->mod1 == egMOD1_Alternate)
       {
-        pRec->mod1 = EG_SEQ_MODE_ALTERNATE;
-        pRec->lmd1 = EG_SEQ_MODE_ALTERNATE;
-        pRec->mod2 = EG_SEQ_MODE_ALTERNATE;
-        pRec->lmd2 = EG_SEQ_MODE_ALTERNATE;
+        pRec->mod1 = egMOD1_Alternate;
+        pRec->lmd1 = egMOD1_Alternate;
+        pRec->mod2 = egMOD1_Alternate;
+        pRec->lmd2 = egMOD1_Alternate;
 
         pLink->Ram1Dirty = 1;
         pLink->Ram2Dirty = 1;
       }
-      else if (pRec->lmd1 == EG_SEQ_MODE_ALTERNATE)
+      else if (pRec->lmd1 == egMOD1_Alternate)
       {
-	pRec->mod2 = EG_SEQ_MODE_OFF;
-	pRec->lmd2 = EG_SEQ_MODE_OFF;
-	EgSetSeqMode(pLink, 2, EG_SEQ_MODE_OFF);
+	pRec->mod2 = egMOD1_Off;
+	pRec->lmd2 = egMOD1_Off;
+	EgSetSeqMode(pLink, 2, egMOD1_Off);
 	pLink->Ram1Dirty = 1;
 	pLink->Ram2Dirty = 1;
       }
@@ -822,21 +821,21 @@ STATIC long EgProcEgRec(struct egRecord *pRec)
     {
       if (pRec->tpro > 10)
         printf(", Mode2=%d", pRec->mod2);
-      if (pRec->mod2 == EG_SEQ_MODE_ALTERNATE)
+      if (pRec->mod2 == egMOD1_Alternate)
       {
-        pRec->mod1 = EG_SEQ_MODE_ALTERNATE;
-        pRec->lmd1 = EG_SEQ_MODE_ALTERNATE;
-        pRec->mod2 = EG_SEQ_MODE_ALTERNATE;
-        pRec->lmd2 = EG_SEQ_MODE_ALTERNATE;
+        pRec->mod1 = egMOD1_Alternate;
+        pRec->lmd1 = egMOD1_Alternate;
+        pRec->mod2 = egMOD1_Alternate;
+        pRec->lmd2 = egMOD1_Alternate;
 
         pLink->Ram1Dirty = 1;
         pLink->Ram2Dirty = 1;
       }
-      else if (pRec->lmd2 == EG_SEQ_MODE_ALTERNATE)
+      else if (pRec->lmd2 == egMOD1_Alternate)
       {
-	pRec->mod1 = EG_SEQ_MODE_OFF;
-	pRec->lmd2 = EG_SEQ_MODE_OFF;
-	EgSetSeqMode(pLink, 1, EG_SEQ_MODE_OFF);
+	pRec->mod1 = egMOD1_Off;
+	pRec->lmd2 = egMOD1_Off;
+	EgSetSeqMode(pLink, 1, egMOD1_Off);
 	pLink->Ram1Dirty = 1;
 	pLink->Ram2Dirty = 1;
       }
@@ -1055,7 +1054,7 @@ STATIC long EgInitEgEventRec(struct egeventRecord *pRec)
 
   /* Put the event record in the proper list */
   semTake (EgLink[pRec->out.value.vmeio.card].EgLock, WAIT_FOREVER);
-  if (pRec->ram == REC_EGEVENT_RAM_2)
+  if (pRec->ram == egeventRAM_RAM_2)
   {
     ellAdd(&(EgLink[pRec->out.value.vmeio.card].EgEvent2), &(pRec->eln));
     EgLink[pRec->out.value.vmeio.card].Ram2Dirty = 1;
@@ -1097,7 +1096,7 @@ STATIC long EgProcEgEventRec(struct egeventRecord *pRec)
 
     semTake (EgLink[pRec->out.value.vmeio.card].EgLock, WAIT_FOREVER);
     /* Move to proper linked list */
-    if (pRec->ram == REC_EGEVENT_RAM_2)
+    if (pRec->ram == egeventRAM_RAM_2)
     {
       ellDelete(&(EgLink[pRec->out.value.vmeio.card].EgEvent1), &(pRec->eln));
       ellAdd(&(EgLink[pRec->out.value.vmeio.card].EgEvent2), &(pRec->eln));
@@ -1111,14 +1110,14 @@ STATIC long EgProcEgEventRec(struct egeventRecord *pRec)
     pRec->lram = pRec->ram;
   }
 
-  if (pRec->ram == REC_EGEVENT_RAM_2)
+  if (pRec->ram == egeventRAM_RAM_2)
     RamSpeed = EgLink[pRec->out.value.vmeio.card].Ram2Speed;
   else
     RamSpeed = EgLink[pRec->out.value.vmeio.card].Ram1Speed;
 
   if (pRec->enm != pRec->levt)
   {
-    if (pRec->ram == REC_EGEVENT_RAM_2)
+    if (pRec->ram == egeventRAM_RAM_2)
       EgLink[pRec->out.value.vmeio.card].Ram2Dirty = 1;
     else
       EgLink[pRec->out.value.vmeio.card].Ram1Dirty = 1;
@@ -1165,7 +1164,7 @@ STATIC long EgProcEgEventRec(struct egeventRecord *pRec)
       printf("EgProcEgEventRec(%s) dpos=%d\n", pRec->name, pRec->dpos);
 
     pRec->ldly = pRec->dely;
-    if (pRec->ram == REC_EGEVENT_RAM_2)
+    if (pRec->ram == egeventRAM_RAM_2)
       EgLink[pRec->out.value.vmeio.card].Ram2Dirty = 1;
     else
       EgLink[pRec->out.value.vmeio.card].Ram1Dirty = 1;
@@ -1517,7 +1516,7 @@ STATIC long EgSetSeqMode(EgLinkStruct *pParm, unsigned int Seq, int Mode)
   volatile ApsEgStruct  *pEg = pParm->pEg;
 
   /* Stop and disable the sequence RAMs */
-  if (Mode == EG_SEQ_MODE_ALTERNATE)
+  if (Mode == egMOD1_Alternate)
   {
     pEg->EventMask &= ~0x3006;		/* Disable *BOTH* RAMs */
     pEg->Control = (pEg->Control&CTL_OR_MASK)&~0x0066;	
@@ -1545,17 +1544,17 @@ STATIC long EgSetSeqMode(EgLinkStruct *pParm, unsigned int Seq, int Mode)
 
   switch (Mode)
   {
-  case EG_SEQ_MODE_OFF:
+  case egMOD1_Off:
     break;
 
-  case EG_SEQ_MODE_NORMAL:
+  case egMOD1_Normal:
     if (Seq == 1)
       pEg->EventMask |= 0x0004;	/* Enable Seq RAM 1 */
     else
       pEg->EventMask |= 0x0002; /* Enable Seq RAM 2 */
     break;
 
-  case EG_SEQ_MODE_NORMAL_RECYCLE:
+  case egMOD1_Normal_Recycle:
     if (Seq == 1)
     {
       pEg->EventMask |= 0x0004;	/* Enable Seq RAM 1 */
@@ -1568,14 +1567,14 @@ STATIC long EgSetSeqMode(EgLinkStruct *pParm, unsigned int Seq, int Mode)
     }
     break;
 
-  case EG_SEQ_MODE_SINGLE:
+  case egMOD1_Single:
     if (Seq == 1)
       pEg->EventMask |= 0x2004;	/* Enable Seq RAM 1 in single mode */
     else
       pEg->EventMask |= 0x1002;
     break;
 
-  case EG_SEQ_MODE_ALTERNATE:	/* The ram downloader does all the work */
+  case egMOD1_Alternate:	/* The ram downloader does all the work */
     pEg->EventMask |= 0x0800;	/* turn on the ALT mode bit */
     break;
 
@@ -1646,7 +1645,7 @@ STATIC long EgGetMode(EgLinkStruct *pParm, int Ram)
   Control = pEg->Control & 0x0060;
 
   if (Mask & 0x0800)
-    return(EG_SEQ_MODE_ALTERNATE);
+    return(egMOD1_Alternate);
 
   if (Ram == 1)
   {
@@ -1654,13 +1653,13 @@ STATIC long EgGetMode(EgLinkStruct *pParm, int Ram)
     Control &= 0x0040;
 
     if ((Mask == 0) && (Control == 0))
-      return(EG_SEQ_MODE_OFF);
+      return(egMOD1_Off);
     if ((Mask == 0x0004) && (Control == 0))
-      return(EG_SEQ_MODE_NORMAL);
+      return(egMOD1_Normal);
     if ((Mask == 0x0004) && (Control == 0x0040))
-      return(EG_SEQ_MODE_NORMAL_RECYCLE);
+      return(egMOD1_Normal_Recycle);
     if (Mask & 0x2000)
-      return(EG_SEQ_MODE_SINGLE);
+      return(egMOD1_Single);
   }
   else
   {
@@ -1668,13 +1667,13 @@ STATIC long EgGetMode(EgLinkStruct *pParm, int Ram)
     Control &= 0x0020;
 
     if ((Mask == 0) && (Control == 0))
-      return(EG_SEQ_MODE_OFF);
+      return(egMOD1_Off);
     if ((Mask == 0x0002) && (Control == 0))
-      return(EG_SEQ_MODE_NORMAL);
+      return(egMOD1_Normal);
     if ((Mask == 0x0002) && (Control == 0x0020))
-      return(EG_SEQ_MODE_NORMAL_RECYCLE);
+      return(egMOD1_Normal_Recycle);
     if (Mask & 0x1000)
-      return(EG_SEQ_MODE_SINGLE);
+      return(egMOD1_Single);
   }
   printf("EgGetMode() seqence RAM in invalid state %04.4X %04.4X\n", pEg->Control, pEg->EventMask);
   return(-1);
@@ -1963,7 +1962,7 @@ STATIC int ConfigSeq(EgLinkStruct *pParm, int channel)
       switch (buf[1])
       {
       case '0': 
-        EgSetSeqMode(pParm, channel, EG_SEQ_MODE_OFF); 
+        EgSetSeqMode(pParm, channel, egMOD1_Off); 
 	break;
       case '1': 
 	if (EgSeqEnableCheck(pParm, channel))

@@ -8,6 +8,16 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
+INC += drvBB232.h
+INC += drvBitBusErr.h
+INC += drvBitBusInterface.h
+INC += drvMsg.h
+INC += drvGpibInterface.h
+INC += drvGpibErr.h
+INC += drvHiDEOSGpib.h
+INC += drvRs232.h
+INC += drvTy232.h
+
 SRCS.c += ../module_types.c
 SRCS.c += ../drvBB232.c
 SRCS.c += ../drvBb902.c

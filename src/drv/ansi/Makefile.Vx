@@ -10,6 +10,9 @@ USR_CFLAGS = -ansi
 
 VX_WARN_YES = -Wall -pedantic
 
+INC += epvxi.h
+INC += drvEpvxi.h
+
 SRCS.c += ../drvAb.c
 SRCS.c += ../drvAt5Vxi.c
 SRCS.c += ../drvEpvxi.c

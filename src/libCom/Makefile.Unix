@@ -4,6 +4,21 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
+INC += cvtFast.h
+INC += ellLib.h
+INC += envDefs.h
+INC += epicsAssert.h
+INC += epicsPrint.h
+INC += errMdef.h
+INC += error.h
+INC += fdmgr.h
+INC += freeList.h
+INC += gpHash.h
+INC += memDebugLib.h
+INC += tsDefs.h
+INC += bucketLib.h
+INC += pal.h
+
 SRCS.c += ../bucketLib.c
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c

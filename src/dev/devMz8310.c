@@ -68,11 +68,8 @@
 #include	<module_types.h>
 #include	<eventRecord.h>
 #include	<pulseCounterRecord.h>
-#include	<choicePulseCounter.h>
 #include	<pulseDelayRecord.h>
-#include	<choicePulseDelay.h>
 #include	<pulseTrainRecord.h>
-#include	<choicePulseTrain.h>
 #include	<epicsPrint.h>
 
 /* Create the dsets for devMz8310 */
@@ -131,14 +128,14 @@ static unsigned short *shortaddr;
 #define HTS_FIELD	0x0010
 
 /* defs for counter commands */
-#define CTR_READ  REC_PULSECOUNTER_CMD_READ
-#define CTR_CLEAR REC_PULSECOUNTER_CMD_CLEAR
-#define CTR_START REC_PULSECOUNTER_CMD_START
-#define CTR_STOP  REC_PULSECOUNTER_CMD_STOP
-#define CTR_SETUP REC_PULSECOUNTER_CMD_SETUP
+#define CTR_READ  pulseCounterCMD_Read
+#define CTR_CLEAR pulseCounterCMD_Clear
+#define CTR_START pulseCounterCMD_Start
+#define CTR_STOP  pulseCounterCMD_Stop
+#define CTR_SETUP pulseCounterCMD_Setup
 
-#define SIZE_16 REC_PULSECOUNTER_CSIZ_16
-#define SIZE_32 REC_PULSECOUNTER_CSIZ_32
+#define SIZE_16 pulseCounterCSIZ_16_bit
+#define SIZE_32 pulseCounterCSIZ_32_bit
 
 /* defines specific to mz8310*/
 

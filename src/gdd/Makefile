@@ -68,7 +68,7 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 aitConvertGenerated.cc: $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE) ../aitTypes.h
 	$(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
 
-gddApps.h : genApps$(EXE)
+gddApps.h : $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
 	$(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE) $@
 
 clean::

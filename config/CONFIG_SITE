@@ -105,6 +105,9 @@ UNIX_WARN=YES
 #	must be either YES or NO
 VX_WARN=YES
 
+# adl2dl 
+ADL2DL = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl
+
 # sch2edif compiler and flags
 SCH2EDIF = sch2edif
 SCH2EDIF_PATH =

@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)guiSubr.c	1.10 11/12/92
  *	Author:	Roger A. Cole
  *	Date:	02-08-91
  *
@@ -48,6 +48,8 @@
  *			for guiGetNameFromSeln, require that selection be
  *			in caller's window;
  *  .08 08-26-92 rac	fix a bug in guiEditorUpdateSet;
+ *  .09 09-30-92 rac	allow a bigger buffer for browser; change extension
+ *			on edit lock file
  *
  */
 #if 0	/* allow embedding comments in the header below */
@@ -491,6 +493,7 @@ char	*fileName;	/* I file to load, or NULL */
 	TEXTSW_BROWSING,	TRUE,
 	TEXTSW_DISABLE_CD,	TRUE,
 	TEXTSW_DISABLE_LOAD,	TRUE,
+	TEXTSW_MEMORY_MAXIMUM,	200000,
 	TEXTSW_FILE,		fileName,
 	NULL);
     if (textsw == NULL) {
@@ -1585,7 +1588,6 @@ printFailed:
 *	void
 *	guiEditorPrintf(pEdit, fmt, ...)
 *	GUI_EDIT *pEdit;/* I pointer to guiEditor */
-*	Textsw	textsw;	/* I handle from guiTextsw */
 *	char	*fmt;	/* I printf format string */
 *	...		/* I other arguments, for printing */
 *
@@ -1854,7 +1856,7 @@ GUI_EDIT *pEdit;
     top = (int)xv_get(tsw, TEXTSW_FIRST_LINE);
     top += 2;
     strcpy(lockFile, pEdit->path);
-    strcat(lockFile, ".lock");
+    strcat(lockFile, ".editLock");
     if (guiLock(pEdit->pGuiCtx, pEdit->file, lockFile, 1) != 1)  {
 	guiEditorUpdateRst(pEdit);	/* lock attempt didn't succeed */
 	goto updateDone;

@@ -44,10 +44,12 @@ if (-f $depfile) {
             $depends =~ s/.*?://;
         }
         @dependsarray = split(//,$depends);
-        if ( $dependsarray[$#dependsarray] =~ /\\/ ) {
-            $depends =~ s/[ 	]*\\$//;
+        if ( $dependsarray[$#dependsarray] =~ /\\/ 
+         or ( $dependsarray[$#dependsarray-1] =~ /\\/ ) ) {
+            $depends =~ s/[ 	]*\\\cM?$//;
             $startline = 0;
         } else {
+            $depends =~ s/[ 	]*\cM?$//;
             $startline = 1;
         }
         print OUT "$depends : \n";

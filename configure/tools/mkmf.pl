@@ -113,8 +113,8 @@ sub scanfile_for_keywords {
    print "Scanning file $file of object $object ...\n" if $opt_v;
    open FILE, $file or die "\aERROR opening file $file of object $object: $!\n";
    foreach $line ( <FILE> ) {
-      next if !($line =~ m/^[ 	]*\#[ 	]*include/);
-      if( $line =~ /^[\#\s]*include\s*(['""'<])([\w\.\/]*)$delim_match{\1}/ix ) {
+      next if !($line =~ m/^[ 	]*\#?[ 	]*include/);
+      if( $line =~ /^[\#?\s]*include\s*(['""'<])([\w\.\/]*)$delim_match{\1}/ix ) {
      $includes_in{$file} .= ' ' . $2 if $2;
       }
    }

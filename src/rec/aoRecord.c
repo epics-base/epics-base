@@ -146,7 +146,7 @@ struct aodset { /* analog input dset */
 
 
 static void alarm();
-static void fetch_value();
+static long fetch_value();
 static void convert();
 static void monitor();
 static long writeValue();
@@ -233,12 +233,12 @@ static long process(pao)
                 if ((pao->dol.type != CONSTANT) &&
                     (pao->omsl == CLOSED_LOOP)) {
 
-                   fetch_value(pao, &value);
+                   status = fetch_value(pao, &value);
                 }
                 else {
                    value = pao->val;
                 }
-		convert(pao, value);
+		if(!status) convert(pao, value);
 	}
 
 	/* check for alarms */
@@ -428,7 +428,7 @@ static void alarm(pao)
 	return;
 }
 
-static void fetch_value(pao,pvalue)
+static long fetch_value(pao,pvalue)
     struct aoRecord  *pao;
     double *pvalue;
 {
@@ -446,13 +446,13 @@ static void fetch_value(pao,pvalue)
 
 	if (status) {
            recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
-           return;
+           return(status);
 	}
 
         if (pao->oif == aoOIF_Incremental)
            *pvalue += pao->val;
 
-	return;
+	return(0);
 }
 
 static void convert(pao,value)

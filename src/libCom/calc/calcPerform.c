@@ -472,6 +472,10 @@ printf ("*FINISHED*\n");
 			*pstacktop = floor(*pstacktop);
 			break;
 
+		case NINT:
+			*pstacktop = (double)(long)((*pstacktop) >= 0 ? (*pstacktop)+0.5 : (*pstacktop)-0.5);
+			break;
+
 		case REL_NOT:
 			*pstacktop = ((*pstacktop)?0:1);
 			break;

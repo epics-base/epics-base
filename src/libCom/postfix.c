@@ -115,7 +115,14 @@
 #define	SEPERATOR	8
 #define	TRASH		9
 #define	FLOAT_PT_CONST	10
+#define	MINUS_OPERATOR	11
 
+#define UNARY_MINUS_I_S_P  7
+#define UNARY_MINUS_I_C_P  8
+#define UNARY_MINUS_CODE   UNARY_NEG
+#define BINARY_MINUS_I_S_P 4
+#define BINARY_MINUS_I_C_P 4
+#define BINARY_MINUS_CODE  SUB
 
 /* flags end of element table */
 #define	END_ELEMENTS	-1
@@ -149,9 +156,12 @@ static struct expression_element	elements[] = {
 /* element	i_s_p	i_c_p	type_element	internal_rep */
 "ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
 "NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
+"-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG, /* unary negate (or binary op) */
+"SQRT",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
 "SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
 "EXP",		7,	8,	UNARY_OPERATOR,	EXP,       /* exponential function */
 "LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
+"LN",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
 "LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
 "ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
 "ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
@@ -160,6 +170,7 @@ static struct expression_element	elements[] = {
 "MIN",		7,	8,	UNARY_OPERATOR,	MIN,       /* minimum of 2 args */
 "CEIL",		7,	8,	UNARY_OPERATOR,	CEIL,      /* smallest integer >= */
 "FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR,     /* largest integer <=  */
+"NINT",		7,	8,	UNARY_OPERATOR,	NINT,      /* nearest integer */
 "COSH",		7,	8,	UNARY_OPERATOR,	COSH,      /* hyperbolic cosine */
 "COS",		7,	8,	UNARY_OPERATOR,	COS,       /* cosine */
 "SINH",		7,	8,	UNARY_OPERATOR,	SINH,      /* hyperbolic sine */
@@ -216,7 +227,9 @@ static struct expression_element	elements[] = {
 "^",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
 "**",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
 "+",		4,	4,	BINARY_OPERATOR,ADD,       /* addition */
+#if 0
 "-",		4,	4,	BINARY_OPERATOR,SUB,       /* subtraction */
+#endif
 "*",		5,	5,	BINARY_OPERATOR,MULT,      /* multiplication */
 "/",		5,	5,	BINARY_OPERATOR,DIV,       /* division */
 "%",		5,	5,	BINARY_OPERATOR,MODULO,    /* modulo */
@@ -305,6 +318,7 @@ short		*perror;
 	register struct expression_element	*pstacktop;
 	double		constant;
 	register char   *pposthold, *pc;	
+	char in_stack_pri, in_coming_pri, code;
 
 	/* convert infix expression to upper case */
 	for (pc=pinfix; *pc; pc++) {
@@ -414,6 +428,38 @@ short		*perror;
 		*pstacktop = *pelement;
 
 		new_expression = FALSE;
+		break;
+
+	    case MINUS_OPERATOR:
+		if (operand_needed){
+			/* then assume minus was intended as a unary operator */
+			in_coming_pri = UNARY_MINUS_I_C_P;
+			in_stack_pri = UNARY_MINUS_I_S_P;
+			code = UNARY_MINUS_CODE;
+			new_expression = FALSE;
+		}
+		else {
+			/* then assume minus was intended as a binary operator */
+			in_coming_pri = BINARY_MINUS_I_C_P;
+			in_stack_pri = BINARY_MINUS_I_S_P;
+			code = BINARY_MINUS_CODE;
+			operand_needed = TRUE;
+		}
+
+		/* add operators of higher or equal priority to	*/
+		/* postfix notation				*/
+		while ((pstacktop->in_stack_pri >= in_coming_pri)
+		  && (pstacktop >= &stack[1])){
+		    *ppostfix++ = pstacktop->code;
+		    pstacktop--;
+		}
+
+		/* add new operator to stack */
+		pstacktop++;
+		*pstacktop = *pelement;
+		pstacktop->in_stack_pri = in_stack_pri;
+		pstacktop->code = code;
+
 		break;
 
 	    case SEPERATOR:

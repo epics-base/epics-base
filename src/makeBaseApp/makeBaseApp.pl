@@ -44,7 +44,7 @@ sub ReplaceFilename { # (filename)
     }
     if ($app) {			# apptypenameApp itself is dynamic, too
 	$file =~ s|/$apptypename|/$appdir|;
-	$file =~ s|/$appdir/config|/config/$apptype|;
+	$file =~ s|/$appdir/configure|/configure/$apptype|;
     }
     $file =~ s|_APPNAME_|$appname|;
     $file =~ s|_APPTYPE_|$apptype|;
@@ -78,10 +78,10 @@ if (-r "$top/$apptypename/Replace.pl") {
 }
 
 #
-# Copy <top>/Makefile and config files if not present
+# Copy <top>/Makefile and configure files if not present
 #
 CopyFile("$top/Makefile") unless (-f 'Makefile');
-find(\&FCopyTree, "$top/config") unless (-d 'config');
+find(\&FCopyTree, "$top/configure") unless (-d 'configure');
 
 #
 # Create ioc directories
@@ -130,8 +130,8 @@ sub get_commandline_opts { #no args
     my ($command) = UnixPath($0);
     if ($opt_b) {		# first choice is -b base
 	$epics_base = UnixPath($opt_b);
-    } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
-	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
+    } elsif (-r "configure/RELEASE") { # second choice is configure/RELEASE
+	open(IN, "configure/RELEASE") or die "Cannot open configure/RELEASE";
 	while (<IN>) {
 	    chomp;
 	    s/EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_), break;
@@ -146,8 +146,8 @@ sub get_commandline_opts { #no args
 # Locate template top directory
     if ($opt_T) {		# first choice is -T templ-top
 	$top = UnixPath($opt_T);
-    } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
-	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
+    } elsif (-r "configure/RELEASE") { # second choice is configure/RELEASE
+	open(IN, "configure/RELEASE") or die "Cannot open configure/RELEASE";
 	while (<IN>) {
 	    chomp;
 	    s/TEMPLATE_TOP\s*=\s*// and $top = UnixPath($_), break;
@@ -299,16 +299,16 @@ where
           If not specified, type is taken from environment
           If not found in environment, \"default\" is used
  -T top   Set the template top directory (where the application templates are)
-          If not specified, top path is taken from config/RELEASE
-          If config does not exist, top path is taken from environment
+          If not specified, top path is taken from configure/RELEASE
+          If configure does not exist, top path is taken from environment
           If not found in environment, the templates from EPICS base are used
  -l       List valid application types for this installation
 	  If this is specified the other options are not used
  -a arch  Set the IOC architecture (e.g. mv167)
           If not specified, you will be prompted
  -b base  Set the location of EPICS base (full path)
-          If not specified, base path is taken from config/RELEASE
-          If config does not exist, base path is taken from command
+          If not specified, base path is taken from configure/RELEASE
+          If configure does not exist, base path is taken from command
  -d       Verbose output (useful for debugging)
 
 Environment:

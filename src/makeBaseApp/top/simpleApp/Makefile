@@ -1,7 +1,7 @@
 TOP = ..
-include $(TOP)/config/CONFIG_APP
+include $(TOP)/configure/CONFIG
 DIRS += $(wildcard *src*)
 DIRS += $(wildcard *Src*)
 DIRS += $(wildcard *db*)
 DIRS += $(wildcard *Db*)
-include $(TOP)/config/RULES_DIRS
+include $(TOP)/configure/RULES_DIRS

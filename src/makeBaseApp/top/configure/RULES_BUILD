@@ -1,0 +1,2 @@
+#RULES_BUILD
+include $(EPICS_BASE)/configure/RULES_BUILD

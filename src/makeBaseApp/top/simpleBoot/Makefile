@@ -1,4 +1,4 @@
 TOP = ..
-include $(TOP)/config/CONFIG_APP
+include $(TOP)/configure/CONFIG
 DIRS += $(wildcard *ioc*)
-include $(TOP)/config/RULES.iocBoot
+include $(TOP)/configure/RULES.iocBoot

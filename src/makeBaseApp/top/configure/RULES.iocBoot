@@ -1,4 +1,4 @@
 #RULES.iocBoot
 DIRS += $(wildcard ioc*)
 DIRS += $(wildcard as*)
-include $(EPICS_BASE)/config/RULES_DIRS
+include $(EPICS_BASE)/configure/RULES_DIRS

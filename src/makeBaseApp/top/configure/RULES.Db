@@ -1,9 +1,13 @@
 #RULES.Db
+
+include $(CONFIG)/RULES_ARCHS
+ifdef T_A
+
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)
 DBST		= dbst
-MAKEDBDEPENDS	= $(PERL) $(TOP)/config/makeDbDepends.pl
-REPLACEVAR	= $(PERL) $(TOP)/config/replaceVAR.pl
+MAKEDBDEPENDS	= $(PERL) $(TOP)/configure/makeDbDepends.pl
+REPLACEVAR	= $(PERL) $(TOP)/configure/replaceVAR.pl
 ifndef WIN32
 TOUCH		= touch
 else
@@ -166,3 +170,5 @@ DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substit
 	@$(MAKEDBDEPENDS) $^
 
 -include DEPENDS
+
+endif

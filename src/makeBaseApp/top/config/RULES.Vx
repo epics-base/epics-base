@@ -1,9 +1,0 @@
-#RULES.Vx
-include $(EPICS_BASE)/config/RULES.Vx
-inc:: $(INSTALL_INCREC)
-#
-# turn off implicit rules search for all binaries in base
-#
-#Jeff says this turned off all dependency checking
-#????? What to do????
-#$(EPICS_BASE_BIN)/* : ;

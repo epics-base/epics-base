@@ -1,4 +1,4 @@
 TOP = ../..
-include $(TOP)/config/CONFIG_APP
+include $(TOP)/configure/CONFIG
 ARCH = _ARCH_
-include $(TOP)/config/RULES.ioc
+include $(TOP)/configure/RULES.ioc

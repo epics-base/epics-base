@@ -15,8 +15,8 @@ print OUT "#Do not modify thie file.\n";
 print OUT "#This file is created during the build.\n";
 
 @files =();
-push(@files,"$top/config/RELEASE");
-push(@files,"$top/config/RELEASE.${arch}");
+push(@files,"$top/configure/RELEASE");
+push(@files,"$top/configure/RELEASE.${arch}");
 foreach $file (@files) {
   if (-r "$file") {
     open(IN, "$file") or die "Cannot open $file\n";

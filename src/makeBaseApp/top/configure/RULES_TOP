@@ -1,5 +1,5 @@
 #RULES_TOP
-include $(EPICS_BASE)/config/RULES_TOP
+include $(EPICS_BASE)/configure/RULES_TOP
 
 uninstall::
 	@$(RMDIR) $(INSTALL_DB)

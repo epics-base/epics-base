@@ -24,7 +24,7 @@ print OUT "top = \"$top\"\n";
 $topbin = "${top}/bin/${arch}";
 #skip check that top/bin/${arch} exists; src may not have been builT
 print OUT "topbin = \"$topbin\"\n";
-$release = "$top/config/RELEASE";
+$release = "$top/configure/RELEASE";
 if (-r "$release") {
     open(IN, "$release") or die "Cannot open $release\n";
     while ($line = <IN>) {

@@ -3,8 +3,7 @@ include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 
-#USER_DBDFLAGS += 
-
+USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 RECTYPES += xxxRecord.h
 DBDEXPAND = exampleInclude.dbd
 DBDNAME = exampleApp.dbd
@@ -17,12 +16,15 @@ PROD_LIBS	+= Osi
 ca_DIR  = $(EPICS_BASE_LIB)
 Db_DIR  = $(EPICS_BASE_LIB)
 Com_DIR = $(EPICS_BASE_LIB)
+Osi_DIR = $(EPICS_BASE_LIB)
 
 PROD += caExample
 
-LIBOBJS += xxxRecord.o
-LIBOBJS += devXxxSoft.o
-LIBOBJS += sncExample.o
+IOC_LIBRARY = exampleLib
+
+exampleLib_SRCS += xxxRecord.c
+exampleLib_SRCS += devXxxSoft.c
+exampleLib_SRCS += sncExample.c
 
 LIBOBJS += $(EPICS_BASE_BIN)/iocCore
 LIBOBJS += $(EPICS_BASE_BIN)/seq
@@ -33,23 +35,17 @@ LIBOBJS += $(EPICS_BASE_BIN)/seq
 
 # or
 EXPANDED_DBD = exampleApp.dbd
-LIBOBJS += registerRecordDeviceDriver.o
+exampleLib_SRCS += registerRecordDeviceDriver.c
 #end choices
-
 
 DBD = exampleApp.dbd
 
-include ../baseLIBOBJS
-
-LIBOBJS += $(EPICS_BASE_BIN)/iocCore
-LIBOBJS += $(EPICS_BASE_BIN)/seq
-
-IOC_LIBRARY = exampleLib
+-include ../baseLIBOBJS
 
 #Note that the command line that builds the
 #library $(LIBNAME) may be HUGE (>3kB)
 #
 include $(TOP)/configure/RULES_BUILD
-include $(TOP)/config/RULES.registerRecordDeviceDriver
+include $(TOP)/configure/RULES.registerRecordDeviceDriver
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE

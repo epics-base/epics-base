@@ -28,9 +28,8 @@ Osi_DIR = $(EPICS_BASE_LIB)
 #LIBOBJS += registerRecordDeviceDriver.o
 #end choices
 
-
 include $(TOP)/configure/RULES_BUILD
-include $(TOP)/config/RULES.registerRecordDeviceDriver
+include $(TOP)/configure/RULES.registerRecordDeviceDriver
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 

@@ -1,9 +1,0 @@
-#RULES.ioc
-include $(EPICS_BASE)/config/RULES_DIRS
-buildInstall:: cdCommands
-
-cdCommands: Makefile
-	$(PERL) $(TOP)/config/makeIocCdCommands.pl $(ARCH)
-
-clean::
-	@$(RM) cdCommands

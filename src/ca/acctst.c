@@ -77,7 +77,6 @@ void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 
 void showProgressEnd ( unsigned interestLevel )
 {
-
     if ( interestLevel > 0 ) {
         printf ( "}" );
         if ( interestLevel > 1 ) {
@@ -2007,11 +2006,11 @@ void pend_event_delay_test ( dbr_double_t request )
     assert ( fabs(accuracy) < 10.0 );
 }
 
-void caTaskExistTest ( unsigned interestLevel )
+void caTaskExitTest ( unsigned interestLevel )
 {
     int status;
 
-    showProgressBegin ( "caTaskExistTest", interestLevel );
+    showProgressBegin ( "caTaskExitTest", interestLevel );
 
     status = ca_task_exit ();
     SEVCHK ( status, NULL );
@@ -2515,6 +2514,8 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
         ca_context_destroy ();
     }
 
+    ca_context_create ( select );
+
     showProgressEnd ( interestLevel );
 }
 
@@ -2554,12 +2555,14 @@ void verifyImmediateTearDown ( const char * pName,
         SEVCHK ( status, "immediate tear down channel put failed" );
         status = ca_clear_channel ( chan );
         SEVCHK ( status, "immediate tear down channel clear failed" );
-        ca_task_exit ();
+        ca_context_destroy ();
         /* epicsThreadSleep ( 1e-15 ); */
         if ( i % 100 == 0 ) {
             showProgress ( interestLevel );
         }
     }
+
+    ca_context_create ( select );
 
     showProgressEnd ( interestLevel );
 }
@@ -2724,38 +2727,64 @@ void verifyConnectWithDisconnectedChannels (
 void verifyClearChannelOnDisconnectCallback (
     struct connection_handler_args args )
 {
-     if ( args.op == CA_OP_CONN_DOWN ) {
-         ca_clear_channel ( args.chid );
-     }
+    int * pDisconnectFlag = ca_puser ( args.chid );
+    if ( args.op == CA_OP_CONN_DOWN ) {
+        ca_clear_channel ( args.chid );
+        *pDisconnectFlag = 1;
+    }
+}
+
+void noopExceptionCallback ( struct exception_handler_args args )
+{
 }
 
 void verifyDisconnect ( 
     const char * pName, unsigned interestLevel )
 {
+    int disconnectFlag = 0;
+    unsigned count = 0;
     chid chan;
     int status;
 
     status = ca_create_channel  ( 
         pName, verifyClearChannelOnDisconnectCallback, 
-        0, 0, & chan );
+        & disconnectFlag, 0, & chan );
     SEVCHK ( status, NULL );
 
     fprintf ( stdout, "Waiting for test channel to connect." );
     fflush ( stdout );
     do {
-        ca_pend_event ( 5.0 );
-        fprintf ( stdout, "." );
-        fflush ( stdout );
+        ca_pend_event ( 0.1 );
+        if ( count++%50 == 0 ) {
+            fprintf ( stdout, "." );
+            fflush ( stdout );
+        }
     } while ( ca_state ( chan ) != cs_conn );
     fprintf ( stdout, "confirmed.\n" );
+
+    /*
+     * if its a local channel and will never disconnect
+     * then skip the portions of this test that cant be
+     * completed.
+     */
+    if ( ca_get_ioc_connection_count () == 0 ) {
+        status = ca_clear_channel ( chan );
+        SEVCHK ( status, NULL );
+        return;
+    }
+
+    status = ca_add_exception_event ( noopExceptionCallback, 0 );
+    SEVCHK ( status, NULL );
 
     fprintf ( stdout, "Please force test channel to disconnect." );
     fflush ( stdout );
     do {
-        ca_pend_event ( 5.0 );;
-        fprintf ( stdout, "." );
-        fflush ( stdout );
-    } while ( ca_state ( chan ) == cs_conn );
+        ca_pend_event ( 0.1 );;
+        if ( count++%50 == 0 ) {
+            fprintf ( stdout, "." );
+            fflush ( stdout );
+        }
+    } while ( ! disconnectFlag );
     fprintf ( stdout, "confirmed.\n" );
     /* channel cleared by disconnect handler */
 
@@ -2773,8 +2802,24 @@ void verifyDisconnect (
     status = ca_clear_channel ( chan );
     SEVCHK ( status, NULL );
     fprintf ( stdout, "confirmed.\n" );
+
+    status = ca_add_exception_event ( 0, 0 );
+    SEVCHK ( status, NULL );
 }
 
+void verifyName ( 
+    const char * pName, unsigned interestLevel )
+{
+    chid chan;
+    int status = ca_create_channel  ( 
+                    pName, 0, 0, 0, & chan );
+    SEVCHK ( status, NULL );
+    if ( strcmp ( pName, ca_name ( chan ) ) != 0 ) {
+        printf ( "Canonical name for channel was \"%s\"\n", ca_name ( chan ) );
+    }
+    status = ca_clear_channel ( chan );
+    SEVCHK ( status, NULL );
+}
 
 int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
@@ -2798,12 +2843,12 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
 
+    status = ca_context_create ( select );
+    SEVCHK ( status, NULL );
+
     verifyDisconnect ( pName, interestLevel );
     verifyImmediateTearDown ( pName, select, interestLevel );
     verifyTearDownWhenChannelConnected ( pName, select, interestLevel );
-
-    status = ca_context_create ( select );
-    SEVCHK ( status, NULL );
 
     verifyDataTypeMacros ();
 
@@ -2815,7 +2860,6 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     showProgressBegin ( "connecting to test channel", interestLevel );
     status = ca_search ( pName, & chan );
     SEVCHK ( status, NULL );
-    assert ( strcmp ( pName, ca_name ( chan ) ) == 0 );
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, NULL );
     showProgressEnd ( interestLevel );
@@ -2830,6 +2874,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
+    verifyName ( pName, interestLevel );
     clearChannelInGetCallbackTest ( pName, interestLevel );
     monitorAddConnectionCallbackTest ( pName, interestLevel );
     verifyConnectWithDisconnectedChannels ( pName, interestLevel );
@@ -2912,7 +2957,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     /* status = ca_clear_channel ( chan ); */
     /* SEVCHK ( status, NULL ); */
 
-    caTaskExistTest ( interestLevel );
+    caTaskExitTest ( interestLevel );
     
     free ( pChans );
 

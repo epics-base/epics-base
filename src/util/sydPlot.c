@@ -1,10 +1,10 @@
-/*	$Id$
+/*	@(#)sydPlot.c	1.10 2/23/93
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991-92, the Regents of the University of California,
+ *	Copyright 1991-93, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -46,6 +46,8 @@
  *  .09 08-27-92 rac	add user-specified range for AutoRange; add more
  *			smarts to AutoRange; have only one X-axis annotation;
  *			add strip chart; discontinue use of special malloc;
+ *  .10 10-01-92 rac	continued work on strip chart; use pprWave routines;
+ *  .11 01-12-93 rac	get StripYY routines in sync with StripY routines
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -110,6 +112,7 @@
 *	questionable support
 * o	there is no counterpart for sydTimeCursor for other than time-based
 *	plots
+* o	knows and uses many intimate details of the ppr structures
 *   
 *-***************************************************************************/
 #include <genDefs.h>
@@ -1485,7 +1488,7 @@ char	*pAnnot[20], annot[20][28];
     TS_STAMP	stamp, refStamp, xminTs, xmaxTs, elapsedTs;
     char	xminText[28], xmaxText[28], stampText[28];
     int		xNint;
-    double	xmin, xmax, ymin, ymax;
+    double	xtemp, xdelta, xmin, xmax, ymin, ymax;
     int		i, calNum;
 /*-----------------------------------------------------------------------------
 *	get start and end times (as set by sydPlotInit) referenced to the
@@ -1493,60 +1496,80 @@ char	*pAnnot[20], annot[20][28];
 *	time range, then build the table of annotation labels.  The rounding
 *	is based on local time, rather than UTC.
 *----------------------------------------------------------------------------*/
-    tsAddDouble(&xminTs, &pSspec->restrictRefTs, pMstr->originVal);
-    xminTs.nsec = 0;
-    tsAddDouble(&xmaxTs, &pSspec->restrictRefTs, pMstr->extentVal);
-    if (xmaxTs.nsec > 0) {
-	xmaxTs.secPastEpoch++;
-	xmaxTs.nsec = 0;
-    }
-    TsDiffAsStamp(&elapsedTs, &xmaxTs, &xminTs);
-    for (calNum=0; ; calNum++) {
-	if (timeCal[calNum].threshold <= elapsedTs.secPastEpoch)
-	    break;
-    }
-    tsRoundDownLocal(&xminTs, timeCal[calNum].modForEnds);
-    tsRoundUpLocal(&xmaxTs, timeCal[calNum].modForEnds);
-
-    if (xminTs.secPastEpoch == xmaxTs.secPastEpoch)
-	xmaxTs.secPastEpoch += timeCal[calNum].modForEnds;
-    refStamp = xminTs;
-
-    xminUL = xminTs.secPastEpoch;
-    xmaxUL = xmaxTs.secPastEpoch;
-    elapsedUL = xmaxUL - xminUL;
-    xTickDeltaUL = timeCal[calNum].modForTicks;
-    xNint = (xmaxUL - xminUL) / xTickDeltaUL;
-    if (xNint >= 20) {
-	xNint = 5;
-	xTickDeltaUL = elapsedUL / xNint;
-    }
-    pMstr->nInt = xNint;
-    pMstr->nSubInt = timeCal[calNum].nSubInt;
-    for (i=0; i<=xNint; i++) {
-	tsStampToText(&refStamp, TS_TEXT_MMDDYY, stampText);
-	if (i == 0 || i == xNint) {
-	    strcpy(annot[i], &stampText[timeCal[calNum].firstForEnds]);
-	    annot[i][timeCal[calNum].nCharForEnds] = '\0';
-	    if (i == 0)
-		TsDiffAsDouble(&xmin, &refStamp, &pSspec->restrictRefTs);
-	    else
-		TsDiffAsDouble(&xmax, &refStamp, &pSspec->restrictRefTs);
+    if (pSspec->restrictRefTs.secPastEpoch > 0) {
+	tsAddDouble(&xminTs, &pSspec->restrictRefTs, pMstr->originVal);
+	xminTs.nsec = 0;
+	tsAddDouble(&xmaxTs, &pSspec->restrictRefTs, pMstr->extentVal);
+	if (xmaxTs.nsec > 0) {
+	    xmaxTs.secPastEpoch++;
+	    xmaxTs.nsec = 0;
 	}
-	else {
-	    strcpy(annot[i], &stampText[timeCal[calNum].firstForTicks]);
-	    annot[i][timeCal[calNum].nCharForTicks] = '\0';
+	TsDiffAsStamp(&elapsedTs, &xmaxTs, &xminTs);
+	for (calNum=0; ; calNum++) {
+	    if (timeCal[calNum].threshold <= elapsedTs.secPastEpoch)
+		break;
 	}
-	pAnnot[i] = annot[i];
-	refStamp.secPastEpoch += xTickDeltaUL;
+	tsRoundDownLocal(&xminTs, timeCal[calNum].modForEnds);
+	tsRoundUpLocal(&xmaxTs, timeCal[calNum].modForEnds);
+
+	if (xminTs.secPastEpoch == xmaxTs.secPastEpoch)
+	    xmaxTs.secPastEpoch += timeCal[calNum].modForEnds;
+	refStamp = xminTs;
+
+	xminUL = xminTs.secPastEpoch;
+	xmaxUL = xmaxTs.secPastEpoch;
+	elapsedUL = xmaxUL - xminUL;
+	xTickDeltaUL = timeCal[calNum].modForTicks;
+	xNint = (xmaxUL - xminUL) / xTickDeltaUL;
+	if (xNint >= 20) {
+	    xNint = 5;
+	    xTickDeltaUL = elapsedUL / xNint;
+	}
+	pMstr->nInt = xNint;
+	pMstr->nSubInt = timeCal[calNum].nSubInt;
+	for (i=0; i<=xNint; i++) {
+	    tsStampToText(&refStamp, TS_TEXT_MMDDYY, stampText);
+	    if (i == 0 || i == xNint) {
+		strcpy(annot[i], &stampText[timeCal[calNum].firstForEnds]);
+		annot[i][timeCal[calNum].nCharForEnds] = '\0';
+		if (i == 0)
+		    TsDiffAsDouble(&xmin, &refStamp, &pSspec->restrictRefTs);
+		else
+		    TsDiffAsDouble(&xmax, &refStamp, &pSspec->restrictRefTs);
+	    }
+	    else {
+		strcpy(annot[i], &stampText[timeCal[calNum].firstForTicks]);
+		annot[i][timeCal[calNum].nCharForTicks] = '\0';
+	    }
+	    pAnnot[i] = annot[i];
+	    refStamp.secPastEpoch += xTickDeltaUL;
+	}
+
+	(void)tsStampToText(&xminTs, TS_TEXT_MMDDYY, xminText);
+	(void)tsStampToText(&xmaxTs, TS_TEXT_MMDDYY, xmaxText);
+	(void)sprintf(pMstr->label, "%s  to  %s", xminText, xmaxText);
+    }
+    else {
+	xmin = pMstr->originVal;
+	xmax = pMstr->extentVal;
+	if (xmin == xmax)
+	    xmax += 10.;
+	pprAutoEnds(xmin, xmax, &xmin, &xmax);
+	pprAutoInterval(xmin, xmax, &xNint);
+	if (xNint > 19)
+	    xNint = 19;
+	xdelta = (xmax - xmin) / xNint;
+	for (i=0, xtemp=xmin; i<=xNint; i++,xtemp+=xdelta) {
+	    if (i == xNint)
+		xtemp=xmax;
+	    pprCvtDblToTxt(annot[i], 8, xtemp, 2);
+	    pAnnot[i] = annot[i];
+	}
+	(void)sprintf(pMstr->label, "delta seconds");
     }
     pMstr->originVal = xmin;
     pMstr->extentVal = xmax;
     pMstr->nInt = xNint;
-
-    (void)tsStampToText(&xminTs, TS_TEXT_MMDDYY, xminText);
-    (void)tsStampToText(&xmaxTs, TS_TEXT_MMDDYY, xmaxText);
-    (void)sprintf(pMstr->label, "%s  to  %s", xminText, xmaxText);
 }
 
 /*+/subr**********************************************************************
@@ -1894,57 +1917,6 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 }
 
 /*+/subr**********************************************************************
-* NAME	pprAreaShiftLeft - shift the contents of the plot area
-*
-* DESCRIPTION
-*	Shifts the contents of the plot area to the left, as for a strip
-*	chart.
-*
-* RETURNS
-*	void
-*
-*-*/
-void
-pprAreaShiftLeft(pArea, dataShift)
-PPR_AREA *pArea;	/* I pointer to plot area structure */
-double	dataShift;	/* I amount to shift left, as an x data value */
-{
-    int		xc, yc, wc, hc;
-    int		xl, xr, yb, yt;
-    int		x1, y1, wid1, ht1;
-
-    if (pArea->pWin->winType != PPR_WIN_SCREEN)
-	return;
-    xl = pArea->xPixLeft;
-    xr = xl + nint((pArea->xRight - pArea->xLeft) * pArea->xScale);
-    yb = pArea->yPixBot;
-    yt = yb + nint((pArea->yTop - pArea->yBot) * pArea->yScale);
-    x1 = xl + 1;
-    wid1 = xr - x1;
-    y1 = yc = pArea->pWin->height - yt + 1;
-    ht1 = hc = yt - yb - 1;
-    wc = nint(wid1 * dataShift / (pArea->xRight - pArea->xLeft));
-    if (wc > wid1)
-	wc = wid1;
-    wid1 -= wc;
-    xc = x1 + wid1;
-
-    XSetGraphicsExposures(pArea->pWin->pDisp,pArea->attr.gc,False);
-    if (wid1 > 0) {
-	XCopyArea(pArea->pWin->pDisp,
-			pArea->pWin->plotWindow, pArea->pWin->plotWindow,
-			pArea->attr.gc, x1+wc, y1, wid1, ht1, x1, y1);
-    }
-    if (wc > 0) {
-	XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
-			xc, yc, wc, hc, False);
-    }
-    XFlush(pArea->pWin->pDisp);
-    pArea->xRight += dataShift;
-    pArea->xLeft += dataShift;
-}
-
-/*+/subr**********************************************************************
 * NAME	sydPlot_StripYGrid - draw a grid for a strip chart, Y plot
 *
 * DESCRIPTION
@@ -1983,8 +1955,18 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     nGrids = pMstr->nSlaves;
     sydPlot_setup(pMstr, nGrids, &xlo, &ylo, &xhi, &yhi, &yPart,
 			&charHt, &charHtX, &charHtTY, &charHtTX);
-    xmin = -1. * (pMstr->stripIncr * pMstr->pSspec->reqCount);
-    xmax = 0.;
+    if (pMstr->pSspec->sampleCount > 0) {
+	xmax = pMstr->pSspec->pDeltaSec[pMstr->pSspec->lastData];
+	xmin = xmax - pMstr->stripIncr * pMstr->pSspec->reqCount;
+    }
+    else if (pMstr->winType == PPR_WIN_SCREEN) {
+	xmin = -1. * (pMstr->stripIncr * pMstr->pSspec->reqCount);
+	xmax = 0.;
+    }
+    else {
+	xmin = 0.;
+	xmax = pMstr->stripIncr * pMstr->pSspec->reqCount;
+    }
 
     pSlave = pMstr->pHead;
     while (pSlave != NULL) {
@@ -2022,7 +2004,6 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	    if (dbr_type_is_ENUM(pSChan->dbrType))
 		pprAreaSetAttr(pArea, PPR_ATTR_LINE_THICK, thick, NULL);
 	}
-	pprGrid(pArea);
 	pprAnnotY(pArea, 0, ymin, ymax, pSlave->nInt, 0,
 				pSlave->pSChan->label, ppAnnotVal, 0.);
 	if (pSlave == pMstr->pHead) {
@@ -2030,6 +2011,8 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	    pprAnnotX(pArea, 0, xmin, xmax, 1, 0, "delta seconds", NULL, 0.);
 	    pArea->charHt = charHt * pWin->height;
 	}
+	pprAreaSetAttr(pSlave->pArea, PPR_ATTR_STRIP, 1, NULL);
+	pprGrid(pArea);
 	ylo += yPart;
 	yhi += yPart;
 	pSlave = pSlave->pNext;
@@ -2082,6 +2065,8 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
     int		markNum;	/* number of mark to use */
     int		nEl;		/* number of array elements */
     int		first;		/* ==1 if this is the first sample */
+    float	shift;		/* amount to shift the strip chart(s) */
+    int		pixEnd;		/* pixel coordinate for end time */
 
     assert(pMstr != NULL);
     pSspec = pMstr->pSspec;
@@ -2093,6 +2078,16 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
     markPlot = pMstr->markPlot;
     showStat = pMstr->showStat;
 
+    pArea = pMstr->pHead->pArea;
+    pixEnd = pArea->xPixRight +
+		.5 + (pSspec->pDeltaSec[end] - pArea->xRight) * pArea->xScale;
+    if (pixEnd >= pArea->xPixRight) {
+	shift = pSspec->pDeltaSec[end] - pMstr->pHead->pArea->xRight;
+	if (shift < pMstr->stripIncr)
+	    shift = pMstr->stripIncr;
+    }
+    else
+	shift = 0.;
     pSlave = pMstr->pHead;
     while (pSlave != NULL) {
 	pArea = pSlave->pArea;
@@ -2102,6 +2097,14 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 	if (pSChan->pData == NULL || pSChan->dataChan == 0)
 	    ;		/* no action if never connected or not data channel */
 	else {
+	    if (shift > 0.) {
+		pprAreaShiftLeft(pArea, shift);
+		if (pArea == pMstr->pHead->pArea) {
+		    pMstr->originVal = pArea->xLeft;
+		    pMstr->extentVal = pArea->xRight;
+		}
+	    }
+
 	    nEl = pSChan->elCount;
 
 	    i = begin;
@@ -2133,43 +2136,42 @@ int	incr;		/* I 0,1 for batch,incremental plotting */
 		else if (first || skip || restart) {
 		    oldX = pSspec->pDeltaSec[i] -
 				pMstr->pSspec->restrictDeltaSecSubtract;
-		    if (pMstr->wrapX) {
-			while (oldX > pMstr->extentVal)
-			    oldX -= pMstr->extentVal;
+		    if (oldX >= pArea->xLeft) {
+			FetchIthValInto(pSChan, oldY)
+			if (markPlot)
+			    pprMarkD(pArea, oldX, oldY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea, oldX, oldY,
+					pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, oldX, oldY);
+			skip = 0;
 		    }
-		    FetchIthValInto(pSChan, oldY)
-		    if (markPlot)
-			pprMarkD(pArea, oldX, oldY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea, oldX,oldY, pSChan->pDataCodeR[i],0.,0.);
-		    }
-		    else if (pointPlot)
-			pprPointD(pArea, oldX, oldY);
-		    skip = 0;
 		}
 		else if (pSChan->pFlags[i].filled && restart1 == 0 && i != end)
 		    ;	/* no action */
 		else {
 		    newX = pSspec->pDeltaSec[i] -
 				pMstr->pSspec->restrictDeltaSecSubtract;
-		    if (pMstr->wrapX) {
-			while (newX > pMstr->extentVal)
-			    newX -= pMstr->extentVal;
-		    }
 		    if (linePlot && dbr_type_is_ENUM(pSChan->dbrType)) {
-			pprLineSegD(pArea, oldX, oldY, newX, oldY);
+			if (oldX >= pArea->xLeft)
+			    pprLineSegD(pArea, oldX, oldY, newX, oldY);
 			oldX = newX;
 		    }
 		    FetchIthValInto(pSChan, newY)
-		    if (linePlot)
-			pprLineSegD(pArea, oldX, oldY, newX, newY);
-		    if (markPlot)
-			pprMarkD(pArea, newX, newY, markNum);
-		    if (showStat && pSChan->pDataCodeR[i] != ' ') {
-			pprChar(pArea, newX,newY, pSChan->pDataCodeR[i],0.,0.);
+		    if (oldX >= pArea->xLeft) {
+			if (linePlot)
+			    pprLineSegD(pArea, oldX, oldY, newX, newY);
+			if (markPlot)
+			    pprMarkD(pArea, newX, newY, markNum);
+			if (showStat && pSChan->pDataCodeR[i] != ' ') {
+			    pprChar(pArea, newX, newY,
+					pSChan->pDataCodeR[i], 0., 0.);
+			}
+			else if (pointPlot)
+			    pprPointD(pArea, newX, newY);
 		    }
-		    else if (pointPlot)
-			pprPointD(pArea, newX, newY);
 		    oldX = newX;
 		    oldY = newY;
 		}
@@ -2267,8 +2269,18 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
     nGrids = 1;
     sydPlot_setup(pMstr, nGrids, &xlo, &ylo, &xhi, &yhi, &yPart,
 			&charHt, &charHtX, &charHtTY, &charHtTX);
-    xmin = -1. * (pMstr->stripIncr * pMstr->pSspec->reqCount);
-    xmax = 0.;
+    if (pMstr->pSspec->sampleCount > 0) {
+	xmax = pMstr->pSspec->pDeltaSec[pMstr->pSspec->lastData];
+	xmin = xmax - pMstr->stripIncr * pMstr->pSspec->reqCount;
+    }
+    else if (pMstr->winType == PPR_WIN_SCREEN) {
+	xmin = -1. * (pMstr->stripIncr * pMstr->pSspec->reqCount);
+	xmax = 0.;
+    }
+    else {
+	xmin = 0.;
+	xmax = pMstr->stripIncr * pMstr->pSspec->reqCount;
+    }
 
     xlo += 6. * charHtX * (double)pMstr->nSlaves;
 
@@ -2312,17 +2324,20 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	}
 	else if (pMstr->noColor == 0)
 	    pprAreaSetAttr(pArea, PPR_ATTR_COLORNUM, pSlave->lineKey, NULL);
+	pprAnnotY(pArea, offsetAnnotY, pSlave->originVal, pSlave->extentVal,
+	    			pSlave->nInt, drawAxis,
+				pSlave->pSChan->label, ppAnnotVal, 90.);
 	if (drawAxis == 0) {
-	    pprGrid(pArea);
 	    if (pSlave == pMstr->pHead) {
 		pArea->charHt = charHtTY * pWin->height;
 		pprAnnotX(pArea, 0, xmin,xmax,1,0,"delta seconds",NULL,0.);
 		pArea->charHt = charHt * pWin->height;
 	    }
+	    pprAreaSetAttr(pArea, PPR_ATTR_STRIP, 1, NULL);
+	    pprGrid(pArea);
 	}
-	pprAnnotY(pArea, offsetAnnotY, pSlave->originVal, pSlave->extentVal,
-	    			pSlave->nInt, drawAxis,
-				pSlave->pSChan->label, ppAnnotVal, 90.);
+	else
+	    pprAreaSetAttr(pArea, PPR_ATTR_STRIP, 1, pMstr->pHead->pArea);
 	if (pMstr->markPlot)
 	    pprAnnotYMark(pArea, offsetAnnotY, pSlave->markNum);
 	offsetAnnotY += 6;
@@ -3865,15 +3880,6 @@ int	end;		/* I number of end snapshots to plot */
 /*+/internal******************************************************************
 * NAME	sydPlot_Yarray - plot array vs array
 *
-* DESCRIPTION
-*
-* RETURNS
-*
-* BUGS
-* o	text
-*
-* SEE ALSO
-*
 * NOTES
 * 1. This routine isn't intended to be called directly.  
 *
@@ -3894,25 +3900,26 @@ int	sub;
     nEl = nElY = pSChan->elCount;
     nByteY = dbr_value_size[pSChan->dbrType];
     pSrcY = (char *)pSChan->pData + sub * nByteY * nElY;
-    for (i=0; i<nEl; i++) {
-	newX = i;
-	if      (dbr_type_is_FLOAT(pSChan->dbrType))
-	    newY = *(float *)pSrcY;
-	else if (dbr_type_is_SHORT(pSChan->dbrType))
-	    newY = *(short *)pSrcY;
-	else if (dbr_type_is_DOUBLE(pSChan->dbrType))
-	    newY = *(double *)pSrcY;
-	else if (dbr_type_is_LONG(pSChan->dbrType))
-	    newY = *(long *)pSrcY;
-	else if (dbr_type_is_CHAR(pSChan->dbrType))
+    if      (dbr_type_is_FLOAT(pSChan->dbrType))
+	pprWaveF(pArea, 1., (float *)pSrcY, nEl);
+    else if (dbr_type_is_SHORT(pSChan->dbrType))
+	pprWaveS(pArea, 1, (short *)pSrcY, nEl);
+    else if (dbr_type_is_DOUBLE(pSChan->dbrType))
+	pprWaveD(pArea, 1., (double *)pSrcY, nEl);
+    else if (dbr_type_is_LONG(pSChan->dbrType))
+	pprWaveL(pArea, 1, (long *)pSrcY, nEl);
+    else if (dbr_type_is_ENUM(pSChan->dbrType))
+	pprWaveS(pArea, 1, (short *)pSrcY, nEl);
+    else if (dbr_type_is_CHAR(pSChan->dbrType)) {
+	for (i=0; i<nEl; i++) {
+	    newX = i;
 	    newY = *(unsigned char *)pSrcY;
-	else if (dbr_type_is_ENUM(pSChan->dbrType))
-	    newY = *(short *)pSrcY;
-	if (i > 0)
-	    pprLineSegD(pArea, oldX, oldY, newX, newY);
-	oldX = newX;
-	oldY = newY;
-	pSrcY += nByteY;
+	    if (i > 0)
+		pprLineSegD(pArea, oldX, oldY, newX, newY);
+	    oldX = newX;
+	    oldY = newY;
+	    pSrcY += nByteY;
+	}
     }
 }
 

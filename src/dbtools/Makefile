@@ -11,7 +11,7 @@ LIBSRCS += dbLoadTemplate.c
 
 LIBRARY_IOC = dbtoolsIoc
 
-dbtoolsIoc_DLL_LIBS  = asIoc dbStaticIoc Com
+dbtoolsIoc_DLL_LIBS  = dbIoc Com
 
 HTMLS += dbLoadTemplate.html
 

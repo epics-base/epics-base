@@ -21,7 +21,9 @@ ANSI=GCC
 CPLUSPLUS=G++
 #==========================
 
-ARCH_DEP_CFLAGS = -DSOLARIS 
+SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
+ARCH_DEP_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) 
+
 # socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS = -lsocket -lnsl
+ARCH_DEP_LDLIBS += -lsocket -lnsl
 

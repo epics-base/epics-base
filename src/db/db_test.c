@@ -41,6 +41,7 @@
 #include        "dbDefs.h"
 #include        "errlog.h"
 #include        "db_access.h"
+#include        "dbNotify.h"
 
 
 /* function declarations */

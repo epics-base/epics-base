@@ -7,7 +7,6 @@
 	// for brain dead C++ compilers
 	//
 	struct dbCommon;
-	struct putNotify;
 #endif
 
 typedef struct dbAddr{
@@ -22,35 +21,6 @@ typedef struct dbAddr{
         short   dbr_field_type; /* field type as seen by database request*/
                                 /*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
 }DBADDR;
-
-typedef struct pnRestartNode {
-        ELLNODE         node;
-        struct putNotify *ppn;
-        struct putNotify *ppnrestartList; /*ppn with restartList*/
-}PNRESTARTNODE;
- 
- 
-typedef struct putNotify{
-        /*The following members MUST be set by user*/
-        void            (*userCallback)(struct putNotify *);
-        struct dbAddr   *paddr;         /*dbAddr set by dbNameToAddr*/
-        void            *pbuffer;       /*address of data*/
-        long            nRequest;       /*number of elements to be written*/
-        short           dbrType;        /*database request type*/
-        void            *usrPvt;        /*for private use of user*/
-        /*The following is status of request. Set by dbPutNotify*/
-        long            status;
-        /*The following are private to database access*/
-        struct callbackPvt *callback;
-        ELLLIST         waitList;       /*list of records for which to wait*/
-        ELLLIST         restartList;    /*list of PUTNOTIFYs to restart*/
-        PNRESTARTNODE   restartNode;
-        short           restart;
-        short           callbackState;
-        void            *waitForCallback;
-}PUTNOTIFY;
-
-int dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype);
 
 /*
  * old db access API

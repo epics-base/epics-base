@@ -57,6 +57,7 @@
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "dbAddr.h"
+#include "dbNotify.h"
 #include "dbAccess.h"
 #include "dbCommon.h"
 #include "errMdef.h"

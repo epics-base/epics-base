@@ -241,7 +241,6 @@ epicsShareFunc long epicsShareAPI dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-epicsShareFunc long epicsShareAPI dbPutNotify(PUTNOTIFY *pputnotify);
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */
 epicsShareFunc void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func);

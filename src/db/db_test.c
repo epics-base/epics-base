@@ -42,7 +42,6 @@
 #include        "errlog.h"
 #include        "db_access.h"
 #define epicsExportSharedSymbols
-#include        "db_access.h"
 #include        "db_access_routines.h"
 #include        "dbNotify.h"
 

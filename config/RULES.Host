@@ -744,8 +744,6 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 -include DEPENDS
 
-$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
-
 .PHONY:: all inc depends build install clean rebuild buildInstall
 
 #	EOF RULES.Host

@@ -57,6 +57,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 #include <gpHash.h>
+#include <lstLib.h>
+
 
 #define 	HASH_NO	256		/* number of hash table entries */
 

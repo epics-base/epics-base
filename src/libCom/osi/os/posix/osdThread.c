@@ -414,10 +414,10 @@ void threadShow(threadId id,unsigned int level)
     threadInfo *pthreadInfo = (threadInfo *)id;
 
     if(!id) {
-	errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
+	errlogPrintf ("            NAME       ID      PRI    STATE     WAIT\n");
     }
     else {
-	errlogPrintf("%12.12s %8x %8d\n", pthreadInfo->name,(threadId)
+	errlogPrintf("%16.16s %8x %8d\n", pthreadInfo->name,(threadId)
 		     pthreadInfo,pthreadInfo->osiPriority);
 	if(level>0)
 	    ; /* more info */
@@ -450,6 +450,8 @@ void threadPrivateSet (threadPrivateId id, void *value)
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
 
+    if(errVerbose && !value)
+        errlogPrintf("threadPrivateSet: setting value of 0\n");
     status = pthread_setspecific(*key,value);
     checkStatusQuit(status,"pthread_setspecific","threadPrivateSet");
 }
@@ -460,7 +462,7 @@ void *threadPrivateGet(threadPrivateId id)
     void *value;
 
     value = pthread_getspecific(*key);
-    if(!value)
+    if(errVerbose && !value)
         errlogPrintf("threadPrivateGet: pthread_getspecific returned 0\n");
     return(value);
 }

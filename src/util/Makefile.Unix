@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-USR_LDLIBS = -lca -lCom -lm -s
+USR_LDLIBS = -lca -lCom -lm
 DEPLIBS = $(EPICS_BASE_LIB)/libca.a $(EPICS_BASE_LIB)/libCom.a
 
 SRCS.c = \

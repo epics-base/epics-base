@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18.2.1  2000/07/06 15:21:34  jhill
+ * added DLL export to destructor
+ *
  * Revision 1.18  1998/11/18 18:52:49  jhill
  * fixed casChannelI undefined symbols on WIN32
  *
@@ -104,7 +107,7 @@ class casChannelI;
 //
 class casEvent : public tsDLNode<casEvent> {
 public:
-        virtual ~casEvent();
+        epicsShareFunc virtual ~casEvent();
         virtual caStatus cbFunc(casEventSys &)=0;
 private:
 };
@@ -123,7 +126,7 @@ enum casResType {casChanT=1, casClientMonT, casPVT};
 class casRes : public uintRes<casRes>
 {
 public:
-	virtual ~casRes();
+	epicsShareFunc virtual ~casRes();
 	virtual casResType resourceType() const = 0;
 	virtual void show (unsigned level) const = 0;
 	virtual void destroy() = 0;
@@ -152,7 +155,7 @@ private:
 class ioBlockedList : private tsDLList<ioBlocked> {
 public:
 	ioBlockedList ();
-	virtual ~ioBlockedList ();
+	epicsShareFunc virtual ~ioBlockedList ();
 	void signal ();
 	void removeItemFromIOBLockedList(ioBlocked &item);
 	void addItemToIOBLockedList(ioBlocked &item);
@@ -286,7 +289,7 @@ class casAsyncPVCreateIO;
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
 	casAsyncIOI (casCoreClient &client, casAsyncIO &ioExternal);
-	virtual ~casAsyncIOI();
+	epicsShareFunc virtual ~casAsyncIOI();
 
 	//
 	// place notification of IO completion on the event queue
@@ -334,7 +337,7 @@ private:
 class casAsyncRdIOI : public casAsyncIOI { 
 public:
 	epicsShareFunc casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn);
-	virtual ~casAsyncRdIOI();
+	epicsShareFunc virtual ~casAsyncRdIOI();
 
 	void destroyIfReadOP();
 
@@ -359,7 +362,7 @@ private:
 class casAsyncWtIOI : public casAsyncIOI { 
 public:
 	epicsShareFunc casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn);
-	virtual ~casAsyncWtIOI();
+	epicsShareFunc virtual ~casAsyncWtIOI();
 
 	//
 	// place notification of IO completion on the event queue
@@ -384,7 +387,7 @@ class casDGIntfIO;
 class casAsyncExIOI : public casAsyncIOI { 
 public:
 	epicsShareFunc casAsyncExIOI(const casCtx &ctx, casAsyncPVExistIO &ioIn);
-	virtual ~casAsyncExIOI();
+	epicsShareFunc virtual ~casAsyncExIOI();
 
 	//
 	// place notification of IO completion on the event queue
@@ -408,7 +411,7 @@ private:
 class casAsyncPVCIOI : public casAsyncIOI { 
 public:
 	epicsShareFunc casAsyncPVCIOI(const casCtx &ctx, casAsyncPVCreateIO &ioIn);
-	virtual ~casAsyncPVCIOI();
+	epicsShareFunc virtual ~casAsyncPVCIOI();
 
 	//
 	// place notification of IO completion on the event queue
@@ -517,7 +520,7 @@ class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
         casPVListChan (const casCtx &ctx, casChannel &chanAdapter);
-        virtual ~casPVListChan();
+        epicsShareFunc virtual ~casPVListChan();
 };
 
 class caServerI;
@@ -535,7 +538,7 @@ class casPVI :
 {
 public:
 	casPVI (casPV &pvAdapter);
-	virtual ~casPVI(); 
+	epicsShareFunc virtual ~casPVI(); 
 
 	//
 	// for use by the server library

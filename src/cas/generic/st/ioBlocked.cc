@@ -7,6 +7,9 @@
 // (for single threaded version of the server)
 //
 // $Log$
+// Revision 1.4  1998/02/05 23:03:39  jhill
+// hp comiler workaround changes
+//
 // Revision 1.3  1997/06/13 09:16:10  jhill
 // connect proto changes
 //
@@ -20,8 +23,7 @@
 
 #include <stdio.h>
 
-#include "casdef.h"
-#include "osiMutexNOOP.h"
+#include "server.h"
 
 
 //

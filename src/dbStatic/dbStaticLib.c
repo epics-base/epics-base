@@ -49,6 +49,7 @@ of this distribution.
 #include <gpHash.h>
 #include <guigroup.h>
 #include <special.h>
+#include <dbmf.h>
 
 int dbStaticDebug = 0;
 #define messagesize	100
@@ -690,7 +691,8 @@ DBENTRY *dbAllocEntry(dbBase *pdbbase)
 {
     DBENTRY *pdbentry;
 
-    pdbentry = dbCalloc(1,sizeof(DBENTRY));
+    pdbentry = dbmfMalloc(sizeof(DBENTRY)); 
+    memset(pdbentry,'\0',sizeof(DBENTRY));
     pdbentry->pdbbase = pdbbase;
     return(pdbentry);
 }
@@ -699,7 +701,7 @@ void dbFreeEntry(DBENTRY *pdbentry)
 {
     if(pdbentry->message) free((void *)pdbentry->message);
     if(pdbentry->formpvt) dbFreeForm(pdbentry);
-    free((void *)pdbentry);
+    dbmfFree(pdbentry);
 }
 
 void dbInitEntry(dbBase *pdbbase,DBENTRY *pdbentry)

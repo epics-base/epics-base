@@ -27,6 +27,8 @@ of this distribution.
 #include <stdio.h>
 #include <string.h>
 
+#include <dbmf.h>
+
 #include <dbDefs.h>
 #include <dbFldTypes.h>
 #include <epicsPrint.h>
@@ -99,6 +101,14 @@ static ELLLIST tempList;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
 
+static char *strduplicate(const char * str)
+{
+    char *tstr;
+    tstr = dbCalloc(strlen(str) + 1,sizeof(char));
+    strcpy(tstr,str);
+    return(tstr);
+}
+
 static void yyerrorAbort(char *str)
 {
     yyerror(str);
@@ -180,9 +190,9 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	const char *path,const char *substitutions)
 {
     long	status;
-    inputFile	*pinputFile;
+    inputFile	*pinputFile = NULL;
     char	*penv;
-    char	**pairs;
+    char	**macPairs;
     
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
@@ -203,23 +213,22 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	    epicsPrintf("macCreateHandle error\n");
 	    return(-1);
 	}
-	macParseDefns(macHandle,(char *)substitutions,&pairs);
-	if(pairs ==NULL) {
+	macParseDefns(macHandle,(char *)substitutions,&macPairs);
+	if(macPairs ==NULL) {
 	    macDeleteHandle(macHandle);
 	    macHandle = NULL;
 	} else {
-	    macInstallMacros(macHandle,pairs);
-	    free((void *)pairs);
+	    macInstallMacros(macHandle,macPairs);
+	    free((void *)macPairs);
 	    mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
 	}
     }
     ellInit(&inputFileList);
     ellInit(&tempList);
-    freeListInitPvt(&freeListPvt,sizeof(tempListNode),5);
+    freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
-	pinputFile->filename = dbCalloc(strlen(filename)+1,sizeof(char));
-	strcpy(pinputFile->filename,filename);
+	pinputFile->filename = strduplicate(filename);
     }
     if(!fp) {
 	FILE	*fp;
@@ -336,13 +345,11 @@ static void dbIncludePrint(FILE *fp)
 static void dbPathCmd(char *path)
 {
     dbPath(pdbbase,path);
-    free((void *)path);
 }
 
 static void dbAddPathCmd(char *path)
 {
     dbAddPath(pdbbase,path);
-    free((void *)path);
 }
 
 static void dbIncludeNew(char *filename)
@@ -356,13 +363,10 @@ static void dbIncludeNew(char *filename)
 	errPrintf(0,__FILE__, __LINE__,
 		"dbIncludeNew opening file %s",filename);
 	yyerror(NULL);
-	free((void *)filename);
 	free((void *)pinputFile);
 	return;
     }
-    pinputFile->filename = dbCalloc(strlen(filename)+1,sizeof(char));
-    strcpy(pinputFile->filename,filename);
-    free((void *)filename);
+    pinputFile->filename = strduplicate(filename);
     pinputFile->fp = fp;
     ellAdd(&inputFileList,&pinputFile->node);
     pinputFileNow = pinputFile;
@@ -376,24 +380,19 @@ static void dbMenuHead(char *name)
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->menuList);
     if(pgphentry) {
 	duplicate = TRUE;
-	free((void *)name);
 	return;
     }
-    pdbMenu = dbCalloc(1,sizeof(dbMenu));
-    pdbMenu->name = name;
     if(ellCount(&tempList)) yyerrorAbort("dbMenuHead: tempList not empty");
+    pdbMenu = dbCalloc(1,sizeof(dbMenu));
+    pdbMenu->name = strduplicate(name);
     allocTemp(pdbMenu);
 }
 
 static void dbMenuChoice(char *name,char *value)
 {
-    if(duplicate) {
-	free((void *)name);
-	free((void *)value);
-	return;
-    }
-    allocTemp(name);
-    allocTemp(value);
+    if(duplicate) return;
+    allocTemp(strduplicate(name));
+    allocTemp(strduplicate(value));
 }
 
 static void dbMenuBody(void)
@@ -441,11 +440,10 @@ static void dbRecordtypeHead(char *name)
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recordTypeList);
     if(pgphentry) {
 	duplicate = TRUE;
-	free((void *)name);
 	return;
     }
     pdbRecordType = dbCalloc(1,sizeof(dbRecordType));
-    pdbRecordType->name = name;
+    pdbRecordType->name = strduplicate(name);
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordtypeHead tempList not empty");
     allocTemp(pdbRecordType);
@@ -456,23 +454,17 @@ static void dbRecordtypeFieldHead(char *name,char *type)
     dbFldDes		*pdbFldDes;
     int			i;
     
-    if(duplicate) {
-	free((void *)name);
-	free((void *)type);
-	return;
-    }
+    if(duplicate) return;
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
-    pdbFldDes->name = name;
+    pdbFldDes->name = strduplicate(name);
     pdbFldDes->as_level = ASL1;
     for(i=0; i<DBF_NTYPES; i++) {
 	if(strcmp(type,pamapdbfType[i].strvalue)==0) {
 	    pdbFldDes->field_type = pamapdbfType[i].value;
-	    free((void *)type);
 	    return;
 	}
     }
-    free((void *)type);
     yyerrorAbort("Illegal Field Type");
 }
 
@@ -480,11 +472,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 {
     dbFldDes		*pdbFldDes;
     
-    if(duplicate) {
-	free((void *)name);
-	free((void *)value);
-	return;
-    }
+    if(duplicate) return;
     pdbFldDes = (dbFldDes *)getLastTemp();
     if(strcmp(name,"asl")==0) {
 	if(strcmp(value,"ASL0")==0) {
@@ -494,13 +482,10 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	} else {
 	    yyerror("Illegal Access Security value: Must be ASL0 or ASL1");
 	}
-	free((void *)name);
-	free((void *)value);
 	return;
     }
     if(strcmp(name,"initial")==0) {
-	pdbFldDes->initial = value;
-	free((void *)name);
+	pdbFldDes->initial = strduplicate(value);
 	return;
     }
     if(strcmp(name,"promptgroup")==0) {
@@ -508,8 +493,6 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	for(i=0; i<GUI_NTYPES; i++) {
 	    if(strcmp(value,pamapguiGroup[i].strvalue)==0) {
 		pdbFldDes->promptgroup = pamapguiGroup[i].value;
-		free((void *)name);
-		free((void *)value);
 		return;
 	    }
 	}
@@ -517,8 +500,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	return;
     }
     if(strcmp(name,"prompt")==0) {
-	pdbFldDes->prompt = value;
-	free((void *)name);
+	pdbFldDes->prompt = strduplicate(value);
 	return;
     }
     if(strcmp(name,"special")==0) {
@@ -526,14 +508,10 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	for(i=0; i<SPC_NTYPES; i++) {
 	    if(strcmp(value,pamapspcType[i].strvalue)==0) {
 		pdbFldDes->special = pamapspcType[i].value;
-		free((void *)name);
-		free((void *)value);
 		return;
 	    }
 	}
 	if(sscanf(value,"%hd",&pdbFldDes->special)==1) {
-	    free((void *)name);
-	    free((void *)value);
 	    return;
 	}
 	yyerror("Illegal special value.");
@@ -547,15 +525,11 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	} else {
 	    yyerror("Illegal value. Must be NO or YES");
 	}
-	free((void *)name);
-	free((void *)value);
 	return;
     }
     if(strcmp(name,"interest")==0) {
 	if(sscanf(value,"%hd",&pdbFldDes->interest)!=1) 
 	    yyerror("Illegal value. Must be integer");
-	free((void *)name);
-	free((void *)value);
 	return;
     }
     if(strcmp(name,"base")==0) {
@@ -566,28 +540,21 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	} else {
 	    yyerror("Illegal value. Must be CT_DECIMAL or CT_HEX");
 	}
-	free((void *)name);
-	free((void *)value);
 	return;
     }
     if(strcmp(name,"size")==0) {
 	if(sscanf(value,"%hd",&pdbFldDes->size)!=1) 
 	    yyerror("Illegal value. Must be integer");
-	free((void *)name);
-	free((void *)value);
 	return;
     }
     if(strcmp(name,"extra")==0) {
-	pdbFldDes->extra = value;
-	free((void *)name);
+	pdbFldDes->extra = strduplicate(value);
 	return;
     }
     if(strcmp(name,"menu")==0) {
 	pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(pdbbase,value);
 	if(!pdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
 	    yyerrorAbort("menu not found");
-	free((void *)name);
-	free((void *)value);
 	return;
     }
 }
@@ -682,17 +649,11 @@ static void dbDevice(char *recordtype,char *linktype,
     dbRecordType	*pdbRecordType;
     GPHENTRY	*pgphentry;
     int		i,link_type;
-
     pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
     if(!pgphentry) {
 	yyerror(" record type not found");
-	free((void *)recordtype);
-	free((void *)linktype);
-	free((void *)dsetname);
-	free((void *)choicestring);
 	return;
     }
-    free(recordtype);
     link_type=-1;
     for(i=0; i<LINK_NTYPES; i++) {
 	if(strcmp(pamaplinkType[i].strvalue,linktype)==0) {
@@ -700,7 +661,6 @@ static void dbDevice(char *recordtype,char *linktype,
 	    break;
 	}
     }
-    free(linktype);
     if(link_type==-1) {
 	yyerror("Illegal link type");
 	return;
@@ -708,15 +668,13 @@ static void dbDevice(char *recordtype,char *linktype,
     pdbRecordType = (dbRecordType *)pgphentry->userPvt;
     pgphentry = gphFind(pdbbase->pgpHash,choicestring,&pdbRecordType->devList);
     if(pgphentry) {
-	free((void *)dsetname);
-	free((void *)choicestring);
 	return;
     }
     pdevSup = dbCalloc(1,sizeof(devSup));
-    pdevSup->name = dsetname;
-    pdevSup->choice = choicestring;
+    pdevSup->name = strduplicate(dsetname);
+    pdevSup->choice = strduplicate(choicestring);
     pdevSup->link_type = link_type;
-    pgphentry = gphAdd(pdbbase->pgpHash,choicestring,&pdbRecordType->devList);
+    pgphentry = gphAdd(pdbbase->pgpHash,pdevSup->name,&pdbRecordType->devList);
     if(!pgphentry) {
 	yyerror("gphAdd failed");
     } else {
@@ -732,12 +690,11 @@ static void dbDriver(char *name)
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->drvList);
     if(pgphentry) {
-	free((void *)name);
 	return;
     }
     pdrvSup = dbCalloc(1,sizeof(drvSup));
-    pdrvSup->name = name;
-    pgphentry = gphAdd(pdbbase->pgpHash,name,&pdbbase->drvList);
+    pdrvSup->name = strduplicate(name);
+    pgphentry = gphAdd(pdbbase->pgpHash,pdrvSup->name,&pdbbase->drvList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
     } 
@@ -753,21 +710,18 @@ static void dbBreakHead(char *name)
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->bptList);
     if(pgphentry) {
 	duplicate = TRUE;
-	free((void *)name);
 	return;
     }
     pbrkTable = dbCalloc(1,sizeof(brkTable));
-    pbrkTable->name = name;
-    if(ellCount(&tempList)) yyerrorAbort("dbBreakHead:tempList not empty");    allocTemp(pbrkTable);
+    pbrkTable->name = strduplicate(name);
+    if(ellCount(&tempList)) yyerrorAbort("dbBreakHead:tempList not empty");
+    allocTemp(pbrkTable);
 }
 
 static void dbBreakItem(char *value)
 {
-    if(duplicate) {
-	free((void *)value);
-	return;
-    }
-    allocTemp(value);
+    if(duplicate) return;
+    allocTemp(strduplicate(value));
 }
 
 static void dbBreakBody(void)
@@ -853,8 +807,6 @@ static void dbRecordHead(char *recordType,char *name, int visible)
     /*Duplicate records ok. Thus dont check return status.*/
     dbCreateRecord(pdbentry,name);
     if(visible) dbVisibleRecord(pdbentry);
-    free((void *)recordType);
-    free((void *)name);
 }
 
 static void dbRecordField(char *name,char *value)
@@ -877,8 +829,6 @@ static void dbRecordField(char *name,char *value)
 	yyerror(NULL);
 	return;
     }
-    free((void *)name);
-    free((void *)value);
 }
 
 static void dbRecordBody(void)

@@ -5,7 +5,6 @@ static long pvt_yy_parse(void);
 static int yyFailed = 0;
 static int yyAbort = 0;
 #include "dbLexRoutines.c"
-static char *menuString = "menu";
 %}
 
 %start database
@@ -40,25 +39,25 @@ database_item:	include
 include:	tokenINCLUDE tokenSTRING
 {
 	if(dbStaticDebug>2) printf("include : %s\n",$2);
-	dbIncludeNew($2);
+	dbIncludeNew($2); dbmfFree($2);
 };
 
 path:	tokenPATH tokenSTRING
 {
 	if(dbStaticDebug>2) printf("path : %s\n",$2);
-	dbPathCmd($2);
+	dbPathCmd($2); dbmfFree($2);
 };
 
 addpath:	tokenADDPATH tokenSTRING
 {
 	if(dbStaticDebug>2) printf("addpath : %s\n",$2);
-	dbAddPathCmd($2);
+	dbAddPathCmd($2); dbmfFree($2);
 };
 
 menu_head:	'(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("menu_head %s\n",$2);
-	dbMenuHead($2);
+	dbMenuHead($2); dbmfFree($2);
 };
 
 menu_body:	'{' choice_list '}'
@@ -72,14 +71,14 @@ choice_list:	choice_list choice | choice;
 choice:	tokenCHOICE '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("choice %s %s\n",$3,$5);
-	dbMenuChoice($3,$5);
+	dbMenuChoice($3,$5); dbmfFree($3); dbmfFree($5);
 } 
 	| include;
 
 recordtype_head: '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("recordtype_head %s\n",$2);
-	dbRecordtypeHead($2);
+	dbRecordtypeHead($2); dbmfFree($2);
 };
 
 recordtype_body: '{' recordtype_field_list '}'
@@ -97,7 +96,7 @@ recordtype_field: tokenFIELD recordtype_field_head recordtype_field_body
 recordtype_field_head:	'(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("recordtype_field_head %s %s\n",$2,$4);
-	dbRecordtypeFieldHead($2,$4);
+	dbRecordtypeFieldHead($2,$4); dbmfFree($2); dbmfFree($4);
 };
 
 recordtype_field_body:	'{' recordtype_field_item_list '}' ;
@@ -108,16 +107,13 @@ recordtype_field_item_list:  recordtype_field_item_list recordtype_field_item
 recordtype_field_item:	tokenSTRING '(' tokenSTRING ')' 
 {
 	if(dbStaticDebug>2) printf("recordtype_field_item %s %s\n",$1,$3);
-	dbRecordtypeFieldItem($1,$3);
+	dbRecordtypeFieldItem($1,$3); dbmfFree($1); dbmfFree($3);
 }
 	| tokenMENU '(' tokenSTRING ')' 
 {
-	char	*pmenu;
 
-	if(dbStaticDebug>2) printf("recordtype_field_item %s (%s)\n",menuString,$3);
-	pmenu = (char *)malloc(strlen(menuString)+1);
-	strcpy(pmenu,menuString);
-	dbRecordtypeFieldItem(pmenu,$3);
+	if(dbStaticDebug>2) printf("recordtype_field_item %s (%s)\n","menu",$3);
+	dbRecordtypeFieldItem("menu",$3); dbmfFree($3);
 };
 
 
@@ -126,19 +122,21 @@ device: tokenDEVICE '('
 { 
 	if(dbStaticDebug>2) printf("device %s %s %s %s\n",$3,$5,$7,$9);
 	dbDevice($3,$5,$7,$9);
+	dbmfFree($3); dbmfFree($5);
+	dbmfFree($7); dbmfFree($9);
 };
 
 
 driver: tokenDRIVER '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("driver %s\n",$3);
-	dbDriver($3);
+	dbDriver($3); dbmfFree($3);
 };
 
 break_head: '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("break_head %s\n",$2);
-	dbBreakHead($2);
+	dbBreakHead($2); dbmfFree($2);
 };
 
 break_body : '{' break_list '}'
@@ -154,20 +152,20 @@ break_list: break_list ',' break_item
 break_item: tokenSTRING
 {
 	if(dbStaticDebug>2) printf("break_item tokenSTRING %s\n",$1);
-	dbBreakItem($1);
+	dbBreakItem($1); dbmfFree($1);
 };
 
 
 grecord_head: '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("grecord_head %s %s\n",$2,$4);
-	dbRecordHead($2,$4,1);
+	dbRecordHead($2,$4,1); dbmfFree($2); dbmfFree($4);
 };
 
 record_head: '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("record_head %s %s\n",$2,$4);
-	dbRecordHead($2,$4,0);
+	dbRecordHead($2,$4,0); dbmfFree($2); dbmfFree($4);
 };
 
 record_body: /*Null*/
@@ -192,7 +190,7 @@ record_field_list:	record_field_list record_field
 record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$5);
-	dbRecordField($3,$5);
+	dbRecordField($3,$5); dbmfFree($3); dbmfFree($5);
 }
 	| include ;
 

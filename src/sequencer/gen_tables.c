@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		 Los Alamos National Laboratory
 
-	@(#)gen_tables.c	1.1	5/30/91
+	$Id$
 	DESCRIPTION: Generate tables for run-time sequencer.
 	See also:  phase2.c & gen_ss_code.c
 	ENVIRONMENT: UNIX
@@ -121,7 +121,7 @@ int		index;
 	case V_STRING:
 		get_type_string = "DBR_STS_STRING";
 		put_type_string = "DBR_STRING";
-		size = sizeof(char);
+		size = MAX_STRING_SIZE;
 		break;
 	}
 

@@ -19,6 +19,7 @@
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN 
 #include <winsock2.h>
+#include <process.h>
 
 /*
  * for _ftime()
@@ -60,25 +61,38 @@ static const SYSTEMTIME epicsEpochST = {
 
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
 static HANDLE osdTimeMutex = NULL;
+static bool osdTimeSyncThreadExit = false;
 static LONGLONG epicsEpoch;
 
 static int osdTimeSych ();
 
 /*
+ * osdTimeExit ()
+ */
+static void osdTimeExit ()
+{
+    if ( osdTimeMutex ) {
+        CloseHandle (osdTimeMutex);
+    }
+    osdTimeSyncThreadExit = true;
+}
+
+/*
  * epicsWin32ThreadEntry()
  */
-static DWORD WINAPI osdTimeSynchThreadEntry (LPVOID)
+static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
 {
     static const DWORD tmoTenSec = 10 * osiTime::mSecPerSec;
     int status;
 
-    while (1) {
+    while ( ! osdTimeSyncThreadExit ) {
 	    Sleep (tmoTenSec); 
         status = osdTimeSych ();
         if (status!=tsStampOK) {
             errlogPrintf ("osdTimeSych (): failed?\n");
         }
     }
+    return 0u;
 }
 
 //
@@ -94,8 +108,8 @@ static void osdTimeInit ()
 	// one time initialization of constants
 	//
 	if (!osdTimeMutex) {
-        DWORD threadId;
-        HANDLE handle;                
+        unsigned threadAddr;
+        unsigned long handle;                
 		FILETIME epicsEpochFT;
         HANDLE mutex;
 
@@ -111,7 +125,7 @@ static void osdTimeInit ()
             // synchronize with some other thread 
             // that is already in this routine
             //
-            semStatus = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
+            semStatus = WaitForSingleObject (mutex, tmoTwentySec);
             if ( semStatus == WAIT_OBJECT_0 ) {
                 ReleaseMutex (mutex);
             }
@@ -155,11 +169,13 @@ static void osdTimeInit ()
         //
         // spawn off a thread which periodically resynchronizes the offset
         //
-        handle = CreateThread (NULL, 4096, osdTimeSynchThreadEntry, 
-                                    NULL, 0, &threadId);
+        handle = _beginthreadex (NULL, 4096, osdTimeSynchThreadEntry, 
+                    0, 0, &threadAddr);
         if (handle==NULL) {
             errlogPrintf ("osdTimeInit(): unable to start time synch thread\n");;
         }
+
+        atexit (osdTimeExit);
 	}
 }
 

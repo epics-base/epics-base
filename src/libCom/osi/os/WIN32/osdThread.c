@@ -50,16 +50,35 @@ typedef struct epicsThreadPrivateOSD {
 static HANDLE win32ThreadGlobalMutex = 0;
 static int win32ThreadInitOK = 0;
 
-#define osdPriorityStateCount 7u
+#if WINVER >= 500 && 0
+#   define osdPriorityStateCount 14u
+#else
+#   define osdPriorityStateCount 5u
+#endif
+//
+// apparently these additional priorities only work if the process 
+// priority class is real time?
+//
 static const int osdPriorityList [osdPriorityStateCount] = 
 {
-    THREAD_PRIORITY_IDLE,
-    THREAD_PRIORITY_LOWEST,
-    THREAD_PRIORITY_BELOW_NORMAL,
-    THREAD_PRIORITY_NORMAL,
-    THREAD_PRIORITY_ABOVE_NORMAL,
-    THREAD_PRIORITY_HIGHEST,
-    THREAD_PRIORITY_TIME_CRITICAL,
+#if WINVER >= 500 && 0
+    -7, // allowed on >= W2k, but no #define supplied
+    -6, // allowed on >= W2k, but no #define supplied
+    -5, // allowed on >= W2k, but no #define supplied
+    -4, // allowed on >= W2k, but no #define supplied
+    -3,  // allowed on >= W2k, but no #define supplied
+#endif
+    THREAD_PRIORITY_LOWEST,       // -2 on >= W2K ??? on W95
+    THREAD_PRIORITY_BELOW_NORMAL, // -1 on >= W2K ??? on W95
+    THREAD_PRIORITY_NORMAL,       //  0 on >= W2K ??? on W95
+    THREAD_PRIORITY_ABOVE_NORMAL, //  1 on >= W2K ??? on W95
+    THREAD_PRIORITY_HIGHEST       //  2 on >= W2K ??? on W95
+#if WINVER >= 500 && 0
+    3, // allowed on >= W2k, but no #define supplied
+    4, // allowed on >= W2k, but no #define supplied
+    5, // allowed on >= W2k, but no #define supplied
+    6  // allowed on >= W2k, but no #define supplied
+#endif
 };
 
 static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
@@ -297,7 +316,9 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
     success = TlsSetValue ( tlsIndexThreadLibraryEPICS, pParm );
     if ( success ) {
+        /* printf ( "starting thread %d\n", pParm->id ); */
         ( *pParm->funptr ) ( pParm->parm );
+        /* printf ( "terminating thread %d\n", pParm->id ); */
     }
 
     /*
@@ -749,7 +770,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned l
     printf ( "\"%s\" %s", pParm->pName, pParm->isSuspended?"suspended":"running");
     if ( level ) {
         printf ( " HANDLE=%p func=%p parm=%p id=%d ",
-            pParm->handle, pParm->funptr, pParm->parm, pParm->id);
+            pParm->handle, pParm->funptr, pParm->parm, pParm->id );
     }
     printf ("\n" );
 }

@@ -166,7 +166,7 @@ epicsShareFunc long epicsShareAPI dbPutInfoString(
     DBENTRY *pdbentry,const char *string);
 epicsShareFunc long epicsShareAPI dbPutInfoPointer(
     DBENTRY *pdbentry, void *pointer);
-epicsShareFunc const char * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry);
+epicsShareFunc void * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry);
 epicsShareFunc const char * epicsShareAPI dbGetInfo(
     DBENTRY *pdbentry,const char *name);
 epicsShareFunc long epicsShareAPI dbPutInfo(

@@ -2633,7 +2633,7 @@ long epicsShareAPI dbPutInfoPointer(DBENTRY *pdbentry, void *pointer)
     return (0);
 }
 
-const char * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry)
+void * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry)
 {
     dbInfoNode *pinfo = pdbentry->pinfonode;
     if (!pinfo) return (NULL);
@@ -2642,8 +2642,8 @@ const char * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry)
 
 const char * epicsShareAPI dbGetInfo(DBENTRY *pdbentry,const char *name)
 {
-    dbFindInfo(pdbentry, name);
-    return (dbGetInfoString(pdbentry));
+    if (dbFindInfo(pdbentry, name)) return NULL;
+    return dbGetInfoString(pdbentry);
 }
 
 long epicsShareAPI dbPutInfo(DBENTRY *pdbentry,const char *name,const char *string)

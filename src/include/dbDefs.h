@@ -109,21 +109,23 @@
 #include <sysLib.h>
 #endif
 
-#include <errMdef.h>
-#include <epicsTypes.h>
+#include "errMdef.h"
+#include "epicsTypes.h"
 
 #ifdef __STDC__
 int coreRelease(void);
 int iocLogInit(void);
 int rsrv_init(void);
-long postfix(char *pinfix,char *ppostfix,short *perror);
-long calcPerform( double *parg, double *presult, char  *post);
+epicsShareFunc long epicsShareAPI 
+	postfix(char *pinfix,char *ppostfix,short *perror);
+epicsShareFunc long epicsShareAPI 
+	calcPerform(double *parg, double *presult, char  *post);
 #else
 int coreRelease();
 int iocLogInit();
 int rsrv_init();
-long postfix();
-long calcPerform();
+epicsShareFunc long epicsShareAPI postfix();
+epicsShareFunc long epicsShareAPI calcPerform();
 #endif /*__STDC__*/
 
 #endif /* INCdbDefsh */

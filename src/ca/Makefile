@@ -62,7 +62,6 @@ LIBSRCS += hostNameCache.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
 LIBSRCS += limboiiu.cpp
 LIBSRCS += callbackMutex.cpp
-LIBSRCS += tcpKillTimer.cpp
 LIBSRCS += templateInstances.cpp
 
 LIBRARY=ca

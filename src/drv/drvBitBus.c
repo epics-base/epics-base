@@ -67,6 +67,7 @@ static long	reportBB(), initBB(), qBBReq();
 static int	xvmeTmoHandler(), xvmeRxTask(), xvmeTxTask(), xvmeWdTask();
 static int	xvmeIrqRdav(), xvmeIrqRcmd();
 
+int	BB_MAX_OUTSTANDING_MSGS = 4;
 int	bbDebug = 0;	/* set to 1 from the shell to print debugging info */
 
 /******************************************************************************
@@ -796,7 +797,10 @@ int	link;
 	listDel(&(plink->busyList), pnode);
 
 	/*if (bbDebug)*/
+	{
 	  printf("xvmeWdTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
+	  drvBitBusDumpMsg(&pnode->txMsg);
+	}
 
         (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
 	pnode->status = BB_TIMEOUT;
@@ -1078,6 +1082,8 @@ int	link;
 	    FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
 	    listAddHead(&(plink->queue[BB_Q_HIGH]), pnode);
 	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	    printf("Message in progress when abort issued:\n");
+	    drvBitBusDumpMsg(&pnode->txMsg);
 	  }
 /* BUG -- I don't really need this */
 	/* break;*/			/* stop checking the fifo queues */

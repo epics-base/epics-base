@@ -99,7 +99,7 @@ private:
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
 	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
+    fdReg (fdIn, typeIn, onceOnlyIn),
     pFunc (pFuncIn),
     pParam (pParamIn)
 {
@@ -122,7 +122,7 @@ epicsShareFunc void fdRegForOldFdmgr::callBack ()
 
 timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn, 
     double delayIn, pCallBackFDMgr pFuncIn, void * pParamIn ) :
-    timer ( fdmgrIn.timerQueueRef().createTimer() ), 
+    timer ( fdmgrIn.createTimer() ), 
     fdmgr ( fdmgrIn ), pFunc ( pFuncIn ), pParam( pParamIn )
 {
     if ( pFuncIn == NULL ) {
@@ -157,17 +157,13 @@ extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 {
     oldFdmgr *pfdm;
 
-#   ifdef noExceptionsFromCXX
+    try {
         pfdm = new oldFdmgr();
-#   else            
-        try {
-            pfdm = new oldFdmgr();
-        }
-        catch (...)
-        {
-            pfdm = NULL;
-        }
-#   endif
+    }
+    catch (...)
+    {
+        pfdm = NULL;
+    }
 
     return (fdctx *) pfdm;
 }
@@ -185,18 +181,14 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     }
 
     while (true) {
-#       ifdef noExceptionsFromCXX
-            pTimer = new timerForOldFdmgr (*pfdm, delay, pFunc, pParam);
-#       else            
-            try {
-                pTimer = new timerForOldFdmgr 
-			        (*pfdm, delay, pFunc, pParam);
-            }
-            catch (...)
-            {
-                pTimer = NULL;
-            }
-#       endif       
+        try {
+            pTimer = new timerForOldFdmgr 
+			    (*pfdm, delay, pFunc, pParam);
+        }
+        catch (...)
+        {
+            pTimer = NULL;
+        }
         if (pTimer) {
             id = pTimer->getId ();
             if (id!=fdmgrNoAlarm) {
@@ -220,17 +212,13 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, 
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     timerForOldFdmgr *pTimer;
 
-#   ifdef noExceptionsFromCXX
+    try {
         pTimer = pfdm->resTbl.remove (id);
-#   else
-        try {
-            pTimer = pfdm->resTbl.remove (id);
-        }
-        catch (...)
-        {
-            pTimer = NULL;
-        }
-#   endif
+    }
+    catch (...)
+    {
+        pTimer = NULL;
+    }
 
     if (pTimer==NULL) {
         return -1;
@@ -267,17 +255,13 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
         return -1;
     }
 
-#   ifdef noExceptionsFromCXX
+    try {
         pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdiType], onceOnly, *pfdm, pFunc, pParam);
-#   else
-        try {
-            pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdiType], onceOnly, *pfdm, pFunc, pParam);
-        }
-        catch (...)
-        {
-            pfdrbc = NULL;
-        }
-#   endif
+    }
+    catch (...)
+    {
+        pfdrbc = NULL;
+    }
 
     if (pfdrbc==NULL) {
         return -1;
@@ -297,17 +281,13 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
         return -1;
     }
 
-#   ifdef noExceptionsFromCXX
+    try {
         pFDR = pfdm->lookUpFD (fd, fdiToFdRegType[fdi]);
-#   else
-        try {
-            pFDR = pfdm->lookUpFD (fd, fdiToFdRegType[fdi]);
-        }
-        catch (...)
-        {
-            pFDR = NULL;
-        }
-#   endif
+    }
+    catch (...)
+    {
+        pFDR = NULL;
+    }
 
     if (pFDR==NULL) {
         return -1;
@@ -323,16 +303,12 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, str
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
 
-#   ifdef noExceptionsFromCXX
+    try {
         pfdm->process (delay);
-#   else
-        try {
-            pfdm->process (delay);
-        }
-        catch (...) {
-            return -1;
-        }
-#   endif
+    }
+    catch (...) {
+        return -1;
+    }
 
     return 0;
 }

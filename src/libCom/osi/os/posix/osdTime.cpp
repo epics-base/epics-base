@@ -49,7 +49,7 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *p
     return epicsTimeERROR;
 }
 
-int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM );
+int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
     struct tm * pRet = gmtime_r ( pAnsiTime, pTM );
     if ( pRet ) {
@@ -70,3 +70,4 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
         return epicsTimeERROR;
     }
 }
+

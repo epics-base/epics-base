@@ -8,6 +8,17 @@
 #
 
 #
+# RTEMS tools are similar to UNIX tools
+#
+-include $(CONFIG)/os/CONFIG.Common.UnixCommon 
+
+###############################################################################
+#                                                                             #
+#           RTEMS-specific overrides of common UNIX definitions               #
+#                                                                             #
+###############################################################################
+
+#
 # Build types
 #
 VALID_BUILDS = Ioc
@@ -30,60 +41,35 @@ CFLAGS_OPTIMIZE =
 #
 # The RTEMS Makefiles redefine several macros, so we have to go
 # through the following contortions to get the EPICS flags back.
-# Another compilication is that the RTEMS Makefiles use CPPFLAGS for
-# c++ compilation.
 #
-CFLAGS += $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS) \
-	    $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) \
-	    $(STATIC_CFLAGS) $(OP_SYS_CFLAGS) $(INCLUDES)
-CPPFLAGS += $(EPICS_BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
-CXXFLAGS += $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS) \
-	    $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS) $(STATIC_CXXCFLAGS) \
-	    $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG) $(INCLUDES)
-CPPSNCFLAGS += -x c
+CFLAGS += $(CMPLR_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS)\
+ $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS)\
+ $(STATIC_CFLAGS) $(OP_SYS_CFLAGS)
 
-#
-# RTEMS already uses `main'
-#
-ARCH_DEP_CFLAGS = -Dmain=rtems_main
+CXXFLAGS += $(CMPLR_CXXFLAGS) $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS)\
+ $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS)\
+ $(STATIC_CXXCFLAGS) $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG)
+
+LDFLAGS += $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
+ $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS)
+
+CPPFLAGS += $(CMPLR_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
+ $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)
 OS_CLASS = RTEMS
 
-#-------------------------------------------------------
-# Prefix and suffix definitions
-EXE =
-OBJ = .o
-
-LIB_PREFIX=lib
-LIB_SUFFIX=.a
-
-#-------------------------------------------------------
-# Library definition
-LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
-
-#-------------------------------------------------------
-ARFLAGS = -rc
-
-#--------------------------------------------------
-# C++ compiler definition
-
-#CPLUSPLUS = $(CC_FOR_TARGET)
-
 #--------------------------------------------------
 # Operating system flags
-OP_SYS_INCLUDES = 
-OP_SYS_CFLAGS =
-OP_SYS_LDFLAGS =
-OP_SYS_LDLIBS = 
-
-#--------------------------------------------------
-# Optimization flag overrides
-GCC_OPT_YES = -g -O4
-GCC_OPT_NO = -g
-G++_OPT_YES = -g -O4
-G++_OPT_NO = -g
+OP_SYS_CPPFLAGS = -Dmain=rtems_main
+OP_SYS_LDLIBS = -lreadline -lcurses
+OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \
+                 $(PROJECT_RELEASE)/lib/no-dpmem.rel \
+                 $(PROJECT_RELEASE)/lib/no-mp.rel \
+                 $(PROJECT_RELEASE)/lib/no-part.rel \
+                 $(PROJECT_RELEASE)/lib/no-signal.rel \
+                 $(PROJECT_RELEASE)/lib/no-rtmon.rel
 
 #--------------------------------------------------
 # c++ exceptions,  YES or NO
@@ -94,20 +80,19 @@ CXX_EXCEPTIONS = NO
 OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
-# Link definitions
-#
-LDFLAGS += -L$(EPICS_BASE)/lib/RTEMS-$(RTEMS_BSP)
-DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
- $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
-LINK.cpp = $(CC) $(CXXFLAGS) $(CFLAGS) $(CFLAGS_LD) $(LDFLAGS) \
-	$(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS) \
-	$(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS) \
-	-o $@ \
-    -u Init -lCom \
-    $(PROJECT_RELEASE)/lib/no-dpmem.rel \
-    $(PROJECT_RELEASE)/lib/no-mp.rel \
-    $(PROJECT_RELEASE)/lib/no-part.rel \
-    $(PROJECT_RELEASE)/lib/no-signal.rel \
-    $(PROJECT_RELEASE)/lib/no-rtmon.rel \
-     
+# RTEMS has neither shared libraries nor dynamic loading
 STATIC_BUILD=YES
+SHARED_LIBRARIES=NO
+GCC_DEP_CFLAGS =
+G++_DEP_CFLAGS =
+
+#--------------------------------------------------
+# RTEMS wants nothing to do with POSIX
+GCC_POSIX_CPPFLAGS = 
+G++_POSIX_CPPFLAGS = 
+
+#--------------------------------------------------
+# RTEMS is not that strict
+GCC_CMPLR_CPPFLAGS_STRICT =
+:G++_CMPLR_CPPFLAGS_STRICT =
+

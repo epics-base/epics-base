@@ -318,7 +318,7 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
             if ( SOCKERRNO != SOCK_EWOULDBLOCK ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ( "CAS: UDP recv error was %s", sockErrBuf );
+                errlogPrintf ( "CAS: UDP recv error was \"%s\"\n", sockErrBuf );
             }
         }
         return casFillNone;

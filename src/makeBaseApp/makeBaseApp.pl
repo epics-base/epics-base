@@ -78,11 +78,15 @@ if (-r "$top/$apptypename/Replace.pl") {
 }
 
 #
-# Copy files from <top> (non-App & non-Boot) if not present
+# Copy files and trees from <top> (non-App & non-Boot) if not present
 #
 opendir TOPDIR, "$top" or die "Can't open $top: $!";
 foreach $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
-    find(\&FCopyTree, "$top/$f") unless (-e "$f");
+    if (-f "$f") {
+	&CopyFile("$top/$f") unless (-e "$f");
+    } else {
+	find(\&FCopyTree, "$top/$f") unless (-e "$f");
+    }
 }
 closedir TOPDIR;
 

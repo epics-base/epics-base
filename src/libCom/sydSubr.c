@@ -34,6 +34,14 @@
  *				documentation
  * .05	09-22-91	rac	add sydInputFetch; add trigger routines;
  *				handle asynchronous ca_search
+ * .06	10-21-91	rac	set the reference time stamp for the first
+ *				sample which is stored; better handle long
+ *				lines in printing; fold channel names when
+ *				printing; put EGU in channel structure;
+ *				put EGU in export file; support time stamp
+ *				rounding;
+ *				args changed for: sydSampleSetPrint;
+ *				sydSamplePrint; sydInputStoreInSet;
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -85,7 +93,7 @@
 *     void  sydInputReset(       pSspec					)
 *     void  sydInputResetKeepNewest(pSspec				)
 *     void  sydInputResetSampled(pSspec					)
-*     void  sydInputStoreInSet(  pSspec					)
+*     void  sydInputStoreInSet(  pSspec,  ignorePartial			)
 *     long  sydInputSync(        pSspec         			)
 *     long  sydOpenCA(          >ppSspec, NULL				)
 *     long  sydOpenCF(          >ppSspec, filePath			)
@@ -93,13 +101,14 @@
 *     long  sydOpenSSF(         >ppSspec, filePath			)
 *     long  sydPosition(         pSspec,  pStamp			)
 *     long  sydSampleExport(     pSspec,  out,  fmtFlag,  hdrFlag,  sampNum)
-*     long  sydSamplePrint(      pSspec,  out,  fmtFlag,  hdrFlag,  sampNum)
+*     long  sydSamplePrint(      pSspec,  out,  fmtFlag,  hdrFlag,
+*						  nCol, colWidth, sampNum)
 *
 *     long  sydSampleSetAlloc(   pSspec,  reqCount			)
 *     long  sydSampleSetExport(  pSspec,  out,  fmtFlag			)
 *     long  sydSampleSetFree(    pSspec					)
 *     long  sydSampleSetGet(     pSspec					)
-*     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag			)
+*     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag, nCol, colWidth	)
 *
 *     long  sydTriggerAddFromText(pSspec,  text				)
 *     long  sydTriggerClose(     pSspec					)
@@ -630,6 +639,11 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *		be one of the DBF_XXX types.
 *	SydChanDbrType(pSChan)		obtain the value type.  This will
 *		be one of the DBR_XXX types.
+*	SydChanName(pSChan)		obtain the channel's name.
+*	SydChanEGU(pSChan)		obtain the channel's engineering
+*		units text (if channel doesn't have EGU, this will be "none")
+*
+*	Additional macros are described under sydInputGet.
 *
 * NOTES
 * 1.	For channels in AR sample set data files, SYD_SY_NONF if forced,
@@ -704,6 +718,7 @@ int	trig;		/* I 0,1 if this is data,trigger channel */
 	strcpy(pSChan->name, chanName);
 	strcpy(pSChan->label, chanName);
 	strcat(pSChan->label, " not conn");
+	strcpy(pSChan->EGU, "none");
 	pSChan->sync = sync;
 	pSChan->pData = NULL;
 	pSChan->pDataAlStat = NULL;
@@ -787,26 +802,31 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
         pSChan->precision = pSChan->grBuf.gfltval.precision;
         sprintf(pSChan->label, "%s  %s",
                                 pSChan->name, pSChan->grBuf.gfltval.units);
+	strcpy(pSChan->EGU, pSChan->grBuf.gfltval.units);
     }
     else if (pSChan->dbrType == DBR_TIME_SHORT) {
         pSChan->precision = 0;
         sprintf(pSChan->label, "%s  %s",
                                 pSChan->name, pSChan->grBuf.gshrtval.units);
+	strcpy(pSChan->EGU, pSChan->grBuf.gshrtval.units);
     }
     else if (pSChan->dbrType == DBR_TIME_DOUBLE) {
         pSChan->precision = pSChan->grBuf.gdblval.precision;
         sprintf(pSChan->label, "%s  %s",
                                 pSChan->name, pSChan->grBuf.gdblval.units);
+	strcpy(pSChan->EGU, pSChan->grBuf.gdblval.units);
     }
     else if (pSChan->dbrType == DBR_TIME_LONG) {
         pSChan->precision = 0;
         sprintf(pSChan->label, "%s  %s",
                                 pSChan->name, pSChan->grBuf.glngval.units);
+	strcpy(pSChan->EGU, pSChan->grBuf.glngval.units);
     }
     else if (pSChan->dbrType == DBR_TIME_CHAR) {
         pSChan->precision = 0;
         sprintf(pSChan->label, "%s  %s",
                                 pSChan->name, pSChan->grBuf.gchrval.units);
+	strcpy(pSChan->EGU, pSChan->grBuf.gchrval.units);
     }
     else if (pSChan->dbrType == DBR_TIME_ENUM) {
         pSChan->precision = -1;
@@ -821,6 +841,8 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
 	    pSChan->precision = 3;
     }
 
+    if (*pSChan->EGU == ' ' || strlen(pSChan->EGU) == 0)
+	strcpy(pSChan->EGU, "none");
     return S_syd_OK;
 }
 
@@ -837,7 +859,10 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
 *	other status codes if an error occurs
 *
 * BUGS
-* o	text
+* o	the `wrapup' call should do the GenFree, since the GenFree must
+*	match the GenMalloc--if this routine is compiled with DEBUG and
+*	the routine which did the GenMalloc (e.g., sydSubrCA) is compiled
+*	without it, then the GenFree here will complain.
 *
 * SEE ALSO
 *	sydOpen
@@ -987,6 +1012,9 @@ FILE	*outStream;	/* I file pointer to receive information */
 *
 *	SydInputStatus(pSChan)		obtain the input sample status for a
 *		channel.  This will be one of the SYD_B_XXX values.
+*	SydInputTs(pSspec)		obtain time stamp of the input
+*		sample.  (Note that this uses the sample spec, not the
+*		channel pointer.)
 *	SydInputMarkAsSampled(pSChan)	set the input sample status to
 *		SYD_B_SAMPLED
 *
@@ -999,6 +1027,8 @@ FILE	*outStream;	/* I file pointer to receive information */
 *		SydInputValAsString(pSChan)	returns a string (i.e., char *)
 *		SydInputValAsVoidPtr(pSChan)	returns a void * pointer to
 *			value (useful for array channels)
+*
+*	Additional macros are described under sydChanOpen.
 *
 * NOTES
 * 1.	The `more flag' is for use only with Channel Access.  It serves as
@@ -1155,7 +1185,7 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 	else
 	    return S_syd_noDataNow;
 
-    if (pSspec->refTs.secPastEpoch == 0) {
+    if (pSspec->refTs.secPastEpoch == 0 || pSspec->sampleCount == 0) {
 /*----------------------------------------------------------------------------
 *	It is necessary to initialize the reference time stamp in the Sspec
 *	descriptor.  The reference time stamp starts on a one second boundary.
@@ -1285,6 +1315,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     long	stat;           /* status return from calls */
     SYD_CHAN	*pSChan;	/* pointer to channel in Sspec */
     int		i, i1, discard;
+    unsigned long roundTemp;
 
     assert(pSspec != NULL);
     assert(pSspec->pChanHead != NULL);
@@ -1349,15 +1380,41 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     while (pSChan != NULL) {
 /*-----------------------------------------------------------------------------
 *    after possibly throwing away the oldest input data, try to get two
-*    buffers of input data
+*    buffers of input data; if time stamp rounding is to be done, do it now
 *----------------------------------------------------------------------------*/
 	if (pSChan->firstInBuf < 0) {
 	    stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_READ, NULL);
+	    if (pSspec->roundNsec > 0 && pSChan->firstInBuf >= 0) {
+		i = pSChan->firstInBuf;
+		roundTemp = BUFiTS.nsec;
+		roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
+				pSspec->roundNsec ) * pSspec->roundNsec;
+		if (roundTemp < 1000000000)
+		    BUFiTS.nsec = roundTemp;
+		else {
+		    BUFiTS.nsec = roundTemp - 1000000000;
+		    BUFiTS.secPastEpoch += 1;;
+		}
+	    }
 	    if (pSspec->type == SYD_TY_PFO)
 		goto skipSecondRead;
 	}
-	if (pSChan->firstInBuf == pSChan->lastInBuf)
+	if (pSChan->firstInBuf == pSChan->lastInBuf) {
 	    stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_READ, NULL);
+	    if (pSspec->roundNsec > 0 &&
+			pSChan->firstInBuf != pSChan->lastInBuf) {
+		i = pSChan->lastInBuf;
+		roundTemp = BUFiTS.nsec;
+		roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
+				pSspec->roundNsec ) * pSspec->roundNsec;
+		if (roundTemp < 1000000000)
+		    BUFiTS.nsec = roundTemp;
+		else {
+		    BUFiTS.nsec = roundTemp - 1000000000;
+		    BUFiTS.secPastEpoch += 1;;
+		}
+	    }
+	}
 skipSecondRead:
 	pSChan = pSChan->pNext;
     }
@@ -1494,8 +1551,9 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 *
 *-*/
 void
-sydInputStoreInSet(pSspec)
+sydInputStoreInSet(pSspec, ignorePartial)
 SYD_SPEC *pSspec;
+int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 {
     int		sub;		/* subscript to store sample */
     chtype	type;
@@ -1506,6 +1564,16 @@ SYD_SPEC *pSspec;
     short	alStat, alSev;
     static struct sydChanFlags flags0={0,0,0,0,0,0,0};
  
+    if (ignorePartial && pSspec->partial) {
+	pSChan = pSspec->pChanHead;
+	while (pSChan != NULL) {
+	    i = pSChan->sampInBuf;
+	    if (i >= 0 && pSChan->inStatus[i] != SYD_B_MISSING)
+		pSChan->inStatus[i] = SYD_B_SAMPLED;
+	    pSChan = pSChan->pNext;
+	}
+	return;
+    }
     if (++pSspec->lastData >= pSspec->dataDim)
 	pSspec->lastData = 0;
     sub = pSspec->lastData;
@@ -1796,6 +1864,7 @@ SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
     (*ppSspec)->pPartial = NULL;
     (*ppSspec)->lastData = -1;
     (*ppSspec)->firstData = -1;
+    (*ppSspec)->roundNsec = 0;
     return S_syd_OK;
 }
 
@@ -1807,7 +1876,8 @@ SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
 * RETURNS
 *
 * BUGS
-* o	text
+* o	doesn't report EOF if that condition occurs
+* o	doesn't provide a way for the caller to find out the actual position
 *
 * SEE ALSO
 *
@@ -1842,7 +1912,6 @@ TS_STAMP *pStamp;	/* I stamp at which to position; NULL to rewind */
 * RETURNS
 *
 * BUGS
-* o	should use precision from graphic info for printing floats
 * o	doesn't handle array channels.  There needs to be an option
 *	which puts elementCount prior to printing values
 * o	options should be #defined symbols
@@ -1874,16 +1943,23 @@ int	samp;		/* I sample number in synchronous set */
 *	time	stat	name1	stat	name2	...
 *----------------------------------------------------------------------------*/
     if (samp == pSspec->firstData) {
-	(void)fprintf(out, "\"%s\"\ntime", tsStampToText(
+	(void)fprintf(out, "\"%s\"\n\"time\"", tsStampToText(
 		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
 	    if (pSChan->dataChan) {
 		if (option == 2)
-		    (void)fprintf(out, "\tstat");
-		(void)fprintf(out, "\t%s", pSChan->name);
+		    (void)fprintf(out, "\t\"stat\"");
+		(void)fprintf(out, "\t\"%s\"", pSChan->name);
 	    }
-	    pSChan = pSChan->pNext;
+	}
+	(void)fprintf(out, "\n");
+	(void)fprintf(out, "\"seconds\"");
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
+	    if (pSChan->dataChan) {
+		if (option == 2)
+		    (void)fprintf(out, "\t\"stat\"");
+		(void)fprintf(out, "\t\"%s\"", pSChan->EGU);
+	    }
 	}
 	(void)fprintf(out, "\n");
     }
@@ -1895,9 +1971,9 @@ int	samp;		/* I sample number in synchronous set */
     pSChan = pSspec->pChanHead;
     while (pSChan != NULL) {
 	if (option == 1)
-	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, samp);
+	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, 1, samp);
 	else if (option == 2)
-	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, samp);
+	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, 1, samp);
 	pSChan = pSChan->pNext;
     }
     (void)fprintf(out, "\n");
@@ -1920,54 +1996,122 @@ int	samp;		/* I sample number in synchronous set */
 *
 *-*/
 long
-sydSamplePrint(pSspec, out, formatFlag, headerFlag, samp)
+sydSamplePrint(pSspec, out, formatFlag, headerFlag, nCol, colWidth, samp)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 FILE	*out;		/* IO stream pointer for output */
 int	formatFlag;	/* I ==1 causes page formatting for printing */
 int	headerFlag;	/* I ==1 causes printing of column headings */
+int	nCol;		/* I >0 causes that many table columns, folded lines */
+int	colWidth;	/* I >0 specifies column width, in characters */
 int	samp;		/* I sample number in synchronous set */
 {
     SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
     char	stampText[28];
     int		i;
+    int		maxLen;		/* maximum length of items to go on line */
+    int		colNum;		/* number of table column */
+    int		nChan=0;
+
+    if (colWidth < 1)
+	colWidth = 15;
 
 /*-----------------------------------------------------------------------------
 *    print a heading line with channel names; if this isn't the first page,
 *    put a ^L prior to the heading.
 *----------------------------------------------------------------------------*/
     if (headerFlag) {
-	if (formatFlag) {	/* indent if printing */
+	if (formatFlag) {
 	    if (samp != pSspec->firstData)
 		(void)fprintf(out, "\f");
-	    (void)fprintf(out, "\n\n");
-	    (void)fprintf(out, "    ");
+	    (void)fprintf(out, "\n\n");		/* 2 line top margin */
+	    (void)fprintf(out, "    ");		/* indent 4 characters */
 	}
-	(void)fprintf(out, "  %21s", " ");
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
-	    (void)fprintf(out, " %14s", pSChan->name);
-	    pSChan = pSChan->pNext;
+	(void)fprintf(out, "  %21s", " ");	/* space for * and stamp */
+	maxLen = colWidth - 1;
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
+	    nChan++;
+	    if ((i = strlen(pSChan->name)) > maxLen)
+		maxLen = i;
 	}
-	(void)fprintf(out, "\n");
+	if (maxLen < colWidth) {
+	    colNum = 0;
+	    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
+		(void)fprintf(out, " %*s", colWidth-1, pSChan->name);
+		if (nCol > 0 && ++colNum >= nCol) {
+		    colNum = 0;
+		    (void)fprintf(out, "\n");
+		    if (formatFlag)
+			(void)fprintf(out, "    ");	/* indent 4 char */
+		    (void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
+		}
+	    }
+	    (void)fprintf(out, "\n");
+	}
+	else {
+	    SYD_CHAN	*pNext=pSspec->pChanHead;
+	    int		nBatches=1;
+	    int		nPasses;
+	    int		nameSub;
+	    if (nCol > 0)
+		nBatches = (nChan-1)/nCol + 1;
+	    nPasses = (maxLen + colWidth - 2) / (colWidth - 1);
+	    while (nBatches > 0) {
+		nameSub = 0;
+		for (i=0; i<nPasses; i++) {
+		    pSChan = pNext;
+		    for (colNum=0; colNum<nCol && pSChan != NULL; colNum++) {
+			if (nameSub < strlen(pSChan->name)) {
+			    (void)fprintf(out, " %-*.*s",
+				colWidth-1, colWidth-1, &pSChan->name[nameSub]);
+			}
+			else
+			    (void)fprintf(out, " %*s", colWidth-1, " ");
+			if (colWidth > 2)
+			    (void)fprintf(out, " ");
+			pSChan = pSChan->pNext;
+		    }
+		    (void)fprintf(out, "\n");
+		    if (formatFlag)
+			(void)fprintf(out, "    ");	/* indent 4 char */
+		    (void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
+		    nameSub += colWidth - 1;
+		}
+		(void)fprintf(out, "\n");
+		pNext = pSChan;
+		if (--nBatches > 0) {
+		    if (formatFlag)
+			(void)fprintf(out, "    ");	/* indent 4 char */
+		    (void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
+		}
+	    }
+	}
     }
 /*-----------------------------------------------------------------------------
 *    print the value for each channel for this sample.  Print the status
 *    flags following values, but print only the first element for array
 *    channels.
 *----------------------------------------------------------------------------*/
-    if (formatFlag)		/* indent if printing */
-	(void)fprintf(out, "    ");
+    if (formatFlag)
+	(void)fprintf(out, "    ");		/* indent 4 characters */
     if (pSspec->pPartial[samp])
 	(void)fprintf(out, "*");
     else
 	(void)fprintf(out, " ");
     (void)fprintf(out, " %s", tsStampToText(
 		    &pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText));
-    pSChan = pSspec->pChanHead;
-    while (pSChan != NULL) {
-	if (pSChan->dataChan)
-	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, samp);
-	pSChan = pSChan->pNext;
+    colNum = 0;
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
+	if (pSChan->dataChan) {
+	    if (colNum >= nCol) {
+		(void)fprintf(out, "\n");
+		if (formatFlag)
+		    (void)fprintf(out, "    ");	/* indent 4 char */
+		(void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
+		colNum = 0;
+	    }
+	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, colWidth, samp);
+	    colNum++;
+	}
     }
     (void)fprintf(out, "\n");
 
@@ -1984,6 +2128,7 @@ int	samp;		/* I sample number in synchronous set */
 *
 * BUGS
 * o	doesn't yet print entire array
+* o	for spreadsheet, status flag, if written, should be in " "
 *
 * SEE ALSO
 *
@@ -1991,7 +2136,7 @@ int	samp;		/* I sample number in synchronous set */
 *
 *-*/
 static void
-sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, sampNum)
+sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, colWidth, sampNum)
 SYD_CHAN *pSChan;	/* I pointer to coincidence channel */
 FILE	*out;		/* I file pointer for writing value */
 char	sep;		/* I character to use a a prefix for each field,
@@ -1999,12 +2144,26 @@ char	sep;		/* I character to use a a prefix for each field,
 int	preFlag;	/* I != 0 prints status flag prior to value */
 int	postFlag;	/* I != 0 prints status flag following value */
 int	showArray;	/* I != 0 to show all array elements, not just 1st */
+int	colWidth;	/* I >0 specifies column width, in characters;
+				== 2 requests only printing status code*/
 int	sampNum;	/* I sample number in coincidence set */
 {
     int		i;
     chtype	type;		/* type of value */
 
     type = pSChan->dbrType;
+
+    if (colWidth == 2) {
+	if (pSChan->pData == NULL)
+	    (void)fprintf(out, " %c", sep,'M');
+	else
+	    (void)fprintf(out, " %c", pSChan->pDataCodeL[sampNum]);
+	return;
+    }
+    if (preFlag || postFlag) {
+	if (colWidth > 3)
+	    colWidth -= 3;
+    }
 
     if (preFlag) {
 	if (pSChan->pData == NULL)
@@ -2016,34 +2175,36 @@ int	sampNum;	/* I sample number in coincidence set */
     }
     (void)fputc(sep, out);
     if (pSChan->pData == NULL)
-	(void)fprintf(out, "%11s", "no_data");
+	(void)fprintf(out, "%*s", colWidth, "no_data");
     else if (pSChan->pFlags[sampNum].eof)
-	(void)fprintf(out, "%11s", "EOF");
+	(void)fprintf(out, "%*s", colWidth, "EOF");
     else if (pSChan->pFlags[sampNum].missing)
-	(void)fprintf(out, "%11s", "no_data");
+	(void)fprintf(out, "%*s", colWidth, "no_data");
     else {
 	if (type == DBR_TIME_STRING)
-	    (void)fprintf(out, "%11s", ((char *)pSChan->pData)[sampNum]);
+	    (void)fprintf(out, "%*s", colWidth, ((char *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_FLOAT)
-	    (void)fprintf(out, "%11.*f",
-		pSChan->precision, ((float *)pSChan->pData)[sampNum]);
+	    (void)fprintf(out, "%*.*f", colWidth,
+			pSChan->precision, ((float *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_SHORT)
-	    (void)fprintf(out, "%11d", ((short *)pSChan->pData)[sampNum]);
+	    (void)fprintf(out, "%*d", colWidth,
+			((short *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_DOUBLE)
-	    (void)fprintf(out, "%11.*f",
+	    (void)fprintf(out, "%*.*f", colWidth,
 		pSChan->precision, ((double *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_LONG)
-	    (void)fprintf(out, "%11d", ((long *)pSChan->pData)[sampNum]);
+	    (void)fprintf(out, "%*d", colWidth, ((long *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_CHAR)
-	    (void)fprintf(out, "%11d", ((char *)pSChan->pData)[sampNum]);
+	    (void)fprintf(out, "%*d", colWidth, ((char *)pSChan->pData)[sampNum]);
 	else if (type == DBR_TIME_ENUM) {
 	    short	val;
 
 	    val = ((short *)pSChan->pData)[sampNum];
 	    if (val < pSChan->grBuf.genmval.no_str)
-		(void)fprintf(out, "%11s", pSChan->grBuf.genmval.strs[val]);
+		(void)fprintf(out, "\"%*s\"", colWidth,
+				pSChan->grBuf.genmval.strs[val]);
 	    else
-		(void)fprintf(out, "%11d", val);
+		(void)fprintf(out, "%*d", colWidth, val);
 	}
     }
 
@@ -2331,7 +2492,7 @@ SYD_SPEC *pSspec;
 
     while (stat != S_syd_EOF && pSspec->sampleCount < pSspec->reqCount) {
 	if ((stat = sydInputGet(pSspec, NULL)) != S_syd_EOF)
-	    sydInputStoreInSet(pSspec);
+	    sydInputStoreInSet(pSspec, 0);
     }
     return stat;
 }
@@ -2353,22 +2514,24 @@ SYD_SPEC *pSspec;
 *
 *-*/
 long 
-sydSampleSetPrint(pSspec, out, formatFlag)
+sydSampleSetPrint(pSspec, out, formatFlag, nCol, colWidth)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 FILE	*out;		/* IO stream pointer for output */
 int	formatFlag;	/* I ==1 causes page formatting for printing */
+int	nCol;		/* I >0 causes that many table columns, folded lines */
+int	colWidth;	/* I >0 specifies column width, in characters */
 {
     int		samp;		/* sample number in synchronous set */
     int		lineCount=0;
-    int		headerFlag;
+    int		headerFlag=1;
 
     assert(pSspec != NULL);
 
     samp = pSspec->firstData;
     while (samp >= 0) {
-	if (lineCount == 0)
+	if (lineCount == 0 && nCol <= 0)
 	    headerFlag = 1;
-	sydSamplePrint(pSspec, out, formatFlag, headerFlag, samp);
+	sydSamplePrint(pSspec, out, formatFlag, headerFlag, nCol, colWidth, samp);
 	headerFlag = 0;
 	if (++lineCount > 60)
 	    lineCount = 0;

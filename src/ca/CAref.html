@@ -829,9 +829,13 @@ any time.</p>
 <dl>
   <dt><p><code>PRIORITY</code></p>
   </dt>
-    <dd>The priority level for dispatch within the server and the network in
-      the range 0 through 99. This parameter is ignored if the server is
-      running on a network or operating system that does not have native
+    <dd>The priority level for dispatch within the server or network with 0
+      specifying the lowest dispatch priority and 99 the highest. This
+      parameter currently does not impact dispatch priorities within the
+      client, but this might change in the future. The abstract priority
+      range specified is mapped into an operating system specific range of
+      priorities within the server. This parameter is ignored if the server
+      is running on a network or operating system that does not have native
       support for prioritized delivery or execution respectively.</dd>
 </dl>
 <dl>

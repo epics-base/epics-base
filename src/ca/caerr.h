@@ -214,7 +214,7 @@ READONLY char	*ca_message_text[]
 #endif
 
 #ifdef __STDC__
-READONLY char *ca_message(long ca_status);
+READONLY char * epicsShareAPI ca_message(long ca_status);
 #else /* __STDC__ */
 READONLY char *ca_message();
 #endif

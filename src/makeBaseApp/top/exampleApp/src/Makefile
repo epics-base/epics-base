@@ -56,7 +56,6 @@ example_SRCS_DEFAULT += registerRecordDeviceDriver.c
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
 #example_SRCS_vxWorks += sncExample.c
-example_SRCS_RTEMS   += registerRecordDeviceDriver.c
 
 example_OBJS_DEFAULT += $(EPICS_BASE_BIN)/registerRecordDeviceDriverRegister
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/registerRecordDeviceDriver

@@ -144,23 +144,22 @@ static void stackCheckCallFunc(const iocshArgBuf *args)
 {
     Stack_check_Dump_usage ();
 }
+
 static void iocshRegisterRTEMS (void)
 {
-    iocshRegister(&netStatFuncDef, netStatCallFunc);
-    iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
-}
-
-void
-rtems_reboot (const char *name)
-{
-    int c;
-
-    printf ("Are you sure you want to reboot the IOC? ");
-    fflush (stdout);
-    if ((c = getchar ()) == 'Y')
-        LogFatal ("Reboot");
-    while ((c != '\n') && (c != EOF))
-        c = getchar ();
+    /*
+     * By using a weak reference this code will work with full IOC applications
+     * (where iocshRegister is present) and also with test applications
+     * (where iocshRegister is not present).
+     */
+    extern void iocshRegister(const iocshFuncDef *piocshFuncDef,
+                              iocshCallFunc func) __attribute__((weak)) ;
+    void (*rtemsEpicsIocshRegisterFunc)(const iocshFuncDef *piocshFuncDef,
+                                        iocshCallFunc func) = iocshRegister;
+    if (!rtemsEpicsIocshRegisterFunc)
+        return;
+    (*rtemsEpicsIocshRegisterFunc)(&netStatFuncDef, netStatCallFunc);
+    (*rtemsEpicsIocshRegisterFunc)(&stackCheckFuncDef, stackCheckCallFunc);
 }
 
 /*
@@ -202,7 +201,7 @@ Init (rtems_task_argument ignored)
     int i;
     char arg0[] = "RTEMS_IOC";
     char arg1[] = "st.cmd";
-	char *argv[3] = { arg0, arg1, NULL };
+        char *argv[3] = { arg0, arg1, NULL };
 
     /*
      * Create a reasonable environment
@@ -253,8 +252,9 @@ Init (rtems_task_argument ignored)
     printf ("***** Starting EPICS application *****\n");
     iocshRegisterRTEMS ();
     rtems_set_directory ();
-    main ((sizeof argv / sizeof argv[0]) - 1, argv);
-    LogFatal ("Console command interpreter terminated");
+    i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    printf ("***** IOC application terminating *****\n");
+    exit (i);
 }
 
 /*

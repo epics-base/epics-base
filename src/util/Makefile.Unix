@@ -5,7 +5,7 @@ include $(EPICS)/config/CONFIG_BASE
 CMPLR = OLD
 USR_LDLIBS = -lAs -lca -lCom -lDb -lCom -lm -s
 
-DEPLIBS_BASE = $(EPICS_BASE_LIB)/$(T_A)
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = $(DEPLIBS_BASE)/libca.a\
           $(DEPLIBS_BASE)/libDb.a \
           $(DEPLIBS_BASE)/libCom.a \

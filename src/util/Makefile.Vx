@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 SRCS = ../ca_test.c ../calcTest.c ../recordTest.c
 
-TARGETS = ca_test calcTest recordTest
+TARGETS = ca_test.o calcTest.o recordTest.o
 
 include $(EPICS)/config/RULES.Vx
 

@@ -7,14 +7,14 @@ LINK.c=$(LD) $(LDFLAGS)
 SRCS=
 
 IOC_CORE_OBJS = \
-	$(INSTALL_BIN)/$(T_A)/asLibrary \
-	$(INSTALL_BIN)/$(T_A)/dbLib \
-	$(INSTALL_BIN)/$(T_A)/rsrvLib \
-	$(INSTALL_BIN)/$(T_A)/libCom \
-	$(INSTALL_BIN)/$(T_A)/vxComLib \
-	$(INSTALL_BIN)/$(T_A)/caLib \
-	$(INSTALL_BIN)/$(T_A)/miscLib \
-	$(INSTALL_BIN)/$(T_A)/dbSubs
+	$(INSTALL_BIN)/asLibrary \
+	$(INSTALL_BIN)/dbLib \
+	$(INSTALL_BIN)/rsrvLib \
+	$(INSTALL_BIN)/libCom \
+	$(INSTALL_BIN)/vxComLib \
+	$(INSTALL_BIN)/caLib \
+	$(INSTALL_BIN)/miscLib \
+	$(INSTALL_BIN)/dbSubs
 
 PROD = iocCore vxWorks vxWorks.sym
 

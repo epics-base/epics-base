@@ -36,8 +36,8 @@ errSymTbl.c errInc.o: errInc.c
 	@$(RM) errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl
 
-errInc.c: ../errInc.c
-	cp ../errInc.c .
+pre_build:
+	@test -f errInc.c || ln -s ../errInc.c errInc.c
 
 libCom: $(OBJS)
 	$(RM) $@

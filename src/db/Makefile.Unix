@@ -4,7 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_LDLIBS = -lDb -lCom
 
-DEPLIBS_BASE = $(EPICS_BASE_LIB)/$(T_A)
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\
 	$(DEPLIBS_BASE)/libCom.a\
 	$(DEPLIBS_BASE)/libDb.a
@@ -28,7 +28,7 @@ PROD = dbta dbl dbls atdb
 
 include $(EPICS)/config/RULES.Unix
 
-atdb: atdb.o atdb_yacc.o
+atdb: atdb.o atdb_yacc.o $(DEPLIBS)
 	$(LINK.c) -o $@ atdb.o atdb_yacc.o $(LDLIBS)
 
 # Extra rule since atdb_lex.c is included in atdb_yacc.c

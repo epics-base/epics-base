@@ -23,7 +23,7 @@ LIBOBJS = \
 
 LIBNAME = libCom.a
 
-TARGET = cvtTest tsTest sydTest
+#TARGETS = cvtTest tsTest sydTest
 
 include $(EPICS)/config/RULES.Unix
 
@@ -34,16 +34,14 @@ errSymTbl.c errInc.o: errInc.c
 	@$(RM) errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl;
 
-errInc.c:
-	cp ../errInc.c errInc.c
+pre_build:
+	@test -f errInc.c || ln -s ../errInc.c errInc.c
 
 cvtTest: cvtNumbers.o
-	$(LINK.c) -o $@ cvtNumbers.o -lCom  -lm -s
-	#$(LINK.c) -o $@ cvtNumbers.o -lCom -lDb -lCom -lm -s
+	$(LINK.c) -o $@ cvtNumbers.o -lCom -lDb -lCom -lm -s
 
 tsTest: tsSubr.o
-	#$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
-	$(LINK.c) -o $@ tsSubr.o -lCom -lm -s
+	$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
 
 sydTest: sydSubr.o
 	$(LINK.c) -o $@ sydSubr.o -lCom -lca -lDb -lCom -lm -s

@@ -11,7 +11,7 @@ SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
 
 OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
-LIBOBJS =
+
 PROD = subtool dbLoadTemplate
 
 include $(EPICS)/config/RULES.Unix

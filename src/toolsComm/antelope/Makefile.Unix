@@ -11,16 +11,15 @@ SRCS = \
 	../mkpar.c ../output.c ../reader.c ../skeleton.c ../symtab.c \
 	../verbose.c ../warshall.c
 
-LIBOBJS =
-
 OBJS = \
 	closure.o error.o lalr.o lr0.o main.o mkpar.o \
         output.o reader.o skeleton.o symtab.o verbose.o warshall.o
 
 PROD = antelope
 
+include $(EPICS)/config/RULES.Unix
+
 $(PROD): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)
 
-include $(EPICS)/config/RULES.Unix
 

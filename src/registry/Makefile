@@ -37,7 +37,7 @@ LIBSRCS += registryDriverSupport.c
 LIBSRCS += registryFunction.c
 
 LIBRARY_IOC = registryIoc
-registryIoc_DLL_LIBS  = Com
+registryIoc_LIBS  = Com
 
 registryIoc_RCS_WIN32 = registryIoc.rc
 

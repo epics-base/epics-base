@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1996/12/06 22:36:22  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
  * Revision 1.11  1996/11/02 00:54:24  jhill
  * many improvements
  *
@@ -1145,10 +1148,6 @@ caStatus casStrmClient::clearChannelAction ()
 		logBadId (mp, dp);
 		return S_cas_internal;
 	}
-	if (&pciu->getClient()!=this) {
-		logBadId (mp, dp);
-		return S_cas_internal;
-	}
 
 	/*
 	 * send delete confirmed message
@@ -1185,10 +1184,6 @@ caStatus casStrmClient::eventCancelAction()
          */
 	pciu = this->resIdToChannel(mp->m_cid);
 	if (!pciu) {
-		logBadId(mp, dp);
-		return S_cas_internal;
-	}
-	if (&pciu->getClient()!=this) {
 		logBadId(mp, dp);
 		return S_cas_internal;
 	}

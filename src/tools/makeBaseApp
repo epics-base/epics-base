@@ -64,18 +64,6 @@ if [ ! -f Makefile ]; then
 	END
 fi
 
-if [ ! -f .cvsignore ]; then
-	cat  > .cvsignore <<-\END
-		bin
-		include
-		lib
-		man
-		dbd
-		templates
-		doc
-	END
-fi
-
 if [ ! -d config ]; then
 	mkdir config
 	cat > config/CONFIG <<-\END
@@ -275,6 +263,8 @@ do
 	sed -e "s/USER/${USER}/" \
 	-e "s/APPNAME/${APPNAME}/" > src/st.${APPNAME} <<-\END
 		# Example vxWorks startup file
+		#Following must be added for many board support packages
+		#cd <full path name to boot directory>
 		ld < iocCore
 		ld < seq
 		ld < APPNAMESupport

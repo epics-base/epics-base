@@ -156,8 +156,7 @@ static long init_record(psub)
 
     /* invoke the initialization subroutine */
     psubroutine = (FUNCPTR)(psub->sadr);
-    status = psubroutine(psub);
-    if(!status) return(status);
+    status = psubroutine(psub,process);
 
     /* convert the subroutine name to an address and type */
     /* convert the initialization subroutine name  */
@@ -312,6 +311,9 @@ static void monitor(psub)
 	unsigned short	monitor_mask;
 	float		delta;
         short           stat,sevr,nsta,nsev;
+	float           *pnew;
+	float           *pprev;
+	int             i;
 
         /* get previous stat and sevr  and new stat and sevr*/
         stat=psub->stat;
@@ -360,6 +362,13 @@ static void monitor(psub)
         if (monitor_mask){
                 db_post_events(psub,&psub->val,monitor_mask);
         }
+	/* check all input fields for changes*/
+	for(i=0, pnew=&psub->a, pprev=&psub->la; i<6; i++, pnew++, pprev++) {
+		if(*pnew != *pprev) {
+			db_post_events(psub,pnew,monitor_mask|=DBE_VALUE);
+			*pprev = *pnew;
+		}
+	}
         return;
 }
 
@@ -381,18 +390,10 @@ struct subRecord *psub;
         return;
 }
 
-static void callback(psub)
-struct subRecord *psub;  /* pointer to subroutine record  */
-{
-	dbScanLock(psub);
-	(void)process(psub);
-	dbScanUnlock(psub);
-}
-
 static long do_sub(psub)
 struct subRecord *psub;  /* pointer to subroutine record  */
 {
-	short	status;
+	long	status;
 	FUNCPTR	psubroutine;
 
 
@@ -405,7 +406,7 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 		}
 		return(0);
 	}
-	status = psubroutine(psub,callback);
+	status = psubroutine(psub);
 	if(status < 0){
 		if (psub->nsev<psub->brsv){
 			psub->nsta = SOFT_ALARM;

@@ -408,7 +408,10 @@ static void monitor(pai)
 	/* send out monitors connected to the value field */
 	if (monitor_mask){
 		db_post_events(pai,&pai->val,monitor_mask);
-		db_post_events(pai,&pai->rval,monitor_mask);
+		if(pai->oraw != pai->rval) {
+			db_post_events(pai,&pai->rval,monitor_mask);
+			pai->oraw = pai->rval;
+		}
 	}
 	return;
 }

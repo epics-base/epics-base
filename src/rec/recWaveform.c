@@ -127,13 +127,22 @@ static long init_record(pwf)
     struct wfdset *pdset;
     long status;
 
+
     /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
     if(pwf->bptr==NULL) {
 	if(pwf->nelm<=0) pwf->nelm=1;
-	if(pwf->ftvl<=0|| pwf->ftvl>DBF_ENUM) pwf->ftvl=2;
-	pwf->bptr = (char *)malloc(pwf->nelm * sizeofTypes[pwf->ftvl]);
+	if(pwf->ftvl == 0) {
+		pwf->bptr = (char *)calloc(pwf->nelm,MAX_STRING_SIZE);
+	} else {
+		if(pwf->ftvl<0|| pwf->ftvl>DBF_ENUM) pwf->ftvl=2;
+		pwf->bptr = (char *)calloc(pwf->nelm,sizeofTypes[pwf->ftvl]);
+	}
 	pwf->nord = 0;
 	/* must have read_wf function defined */
+	if(!(pdset = (struct wfdset *)(pwf->dset))) {
+	    recGblRecordError(S_dev_noDSET,pwf,"wf: init_record");
+	    return(S_dev_noDSET);
+	}
 	if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
 	    recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
 	    return(S_dev_missingSup);
@@ -176,7 +185,8 @@ static long cvt_dbaddr(paddr)
     paddr->pfield = (caddr_t)(pwf->bptr);
     paddr->no_elements = pwf->nelm;
     paddr->field_type = pwf->ftvl;
-    paddr->field_size = sizeofTypes[pwf->ftvl];
+    if(pwf->ftvl==0)  paddr->field_size = MAX_STRING_SIZE;
+    else paddr->field_size = sizeofTypes[pwf->ftvl];
     paddr->dbr_field_type = pwf->ftvl;
     return(0);
 }

@@ -261,6 +261,9 @@ static void monitor(psel)
 	unsigned short	monitor_mask;
 	float		delta;
         short           stat,sevr,nsta,nsev;
+	float           *pnew;
+	float           *pprev;
+	int             i;
 
         /* get previous stat and sevr  and new stat and sevr*/
         stat=psel->stat;
@@ -309,6 +312,13 @@ static void monitor(psel)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(psel,&psel->val,monitor_mask);
+        }
+        /* check all input fields for changes*/
+        for(i=0, pnew=&psel->a, pprev=&psel->la; i<6; i++, pnew++, pprev++) {
+                if(*pnew != *pprev) {
+                        db_post_events(psel,pnew,monitor_mask|=DBE_VALUE);
+                        *pprev = *pnew;
+                }
         }
         return;
 }
@@ -383,6 +393,15 @@ struct selRecord *psel;
 
 	plink = &psel->inpa;
 	pvalue = &psel->a;
+	/* If select mechanism is SELECTED only get selected input*/
+	if(psel->selm == SELECTED) {
+		plink += psel->seln;
+		pvalue += psel->seln;
+		nRequest=1;
+		(void)dbGetLink(&plink->value.db_link,psel,DBR_FLOAT,pvalue,&options,&nRequest);
+		return;
+	}
+	/* fetch all inputs*/
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
 		if(plink->type==DB_LINK) {
 			nRequest=1;

@@ -59,7 +59,6 @@
 #include	<recSup.h>
 #include	<special.h>
 #include	<biRecord.h>
-
 /* Create RSET - Record Support Entry Table*/
 long report();
 #define initialize NULL
@@ -101,7 +100,6 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_bi;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
-
 void alarm();
 void monitor();
 
@@ -199,7 +197,7 @@ static long get_enum_str(paddr,pstring)
     } else {
 	strcpy(pstring,"Illegal_Value");
     }
-    return(0L);
+    return(0);
 }
 
 static long get_enum_strs(paddr,pes)
@@ -212,7 +210,7 @@ static long get_enum_strs(paddr,pes)
     bzero(pes->strs,sizeof(pes->strs));
     strncpy(pes->strs[0],pbi->znam,sizeof(pbi->znam));
     strncpy(pes->strs[1],pbi->onam,sizeof(pbi->onam));
-    return(0L);
+    return(0);
 }
 
 static void alarm(pbi)
@@ -288,7 +286,10 @@ static void monitor(pbi)
 	/* send out monitors connected to the value field */
 	if (monitor_mask){
 		db_post_events(pbi,&pbi->val,monitor_mask);
-		db_post_events(pbi,&pbi->rval,monitor_mask);
+	}
+	if(pbi->oraw!=pbi->rval) {
+		db_post_events(pbi,&pbi->rval,monitor_mask|=DBE_VALUE);
+		pbi->oraw = pbi->rval;
 	}
 	return;
 }

@@ -185,7 +185,7 @@ static long get_value(pcompress,pvdes)
     struct valueDes	*pvdes;
 {
     pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=pcompress->nsam;
+    pvdes->no_elements=pcompress->nuse;
     (float *)(pvdes->pvalue) = pcompress->bptr;
     return(0);
 }
@@ -270,11 +270,6 @@ static long process(paddr)
 {
     struct compressRecord *pcompress=(struct compressRecord *)(paddr->precord);
     long		 status;
-    struct dbAddr	*pdbAddr =
-			(struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
-    long		options=0;
-    long		no_elements=pdbAddr->no_elements;
-    int			alg=pcompress->alg;
 
 	pcompress->pact = TRUE;
 
@@ -287,6 +282,12 @@ static long process(paddr)
 		}
 		status=0;
 	} else {
+		struct dbAddr	*pdbAddr =
+			(struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
+		long		options=0;
+		long		no_elements=pdbAddr->no_elements;
+		int			alg=pcompress->alg;
+
 		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_FLOAT,pcompress->wptr,
 				&options,&no_elements);
 		if(alg==AVERAGE) {
@@ -297,7 +298,7 @@ static long process(paddr)
 		} else if(pdbAddr->no_elements>1) {
 			status = compress_array(pcompress,pcompress->wptr,no_elements);
 		}else if(no_elements==1){
-			status = compress_value(pcompress);
+			status = compress_value(pcompress,pcompress->wptr);
 		}else status=1;
 	}
 
@@ -410,7 +411,7 @@ long			no_elements;
 	    /* compress N to 1 keeping the lowest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
-		for (j = 1; j < pcompress->n; j++, psource++){
+		for (j = 1; j < n; j++, psource++){
 		    if (value > *psource) value = *psource;
 		}
 		put_value(pcompress,&value,1);
@@ -420,7 +421,7 @@ long			no_elements;
 	    /* compress N to 1 keeping the highest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
-		for (j = 1; j < pcompress->n; j++, psource++){
+		for (j = 1; j < n; j++, psource++){
 		    if (value < *psource) value = *psource;
 		}
 		put_value(pcompress,&value,1);
@@ -430,8 +431,9 @@ long			no_elements;
 	    /* compress N to 1 keeping the average value */
 	    for (i = 0; i < nnew; i++){
 		value = 0;
-		for (j = 0; j < pcompress->n; j++, psource++)
+		for (j = 0; j < n; j++, psource++)
 			value += *psource;
+		value /= n;
 		put_value(pcompress,&value,1);
 	    }
 	    break;

@@ -62,7 +62,6 @@
 #include	<recSup.h>
 #include	<special.h>
 #include	<mbbiRecord.h>
-
 /* Create RSET - Record Support Entry Table*/
 long report();
 #define initialize NULL
@@ -79,7 +78,6 @@ long get_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 long get_enum_strs();
-
 struct rset mbbiRSET={
 	RSETNUMBER,
 	report,
@@ -97,7 +95,6 @@ struct rset mbbiRSET={
 	get_graphic_double,
 	get_control_double,
 	get_enum_strs };
-
 struct mbbidset { /* multi bit binary input dset */
 	long		number;
 	DEVSUPFUN	report;
@@ -106,7 +103,6 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_mbbi;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
-
 void alarm();
 void monitor();
 
@@ -354,7 +350,10 @@ static void monitor(pmbbi)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pmbbi,&pmbbi->val,monitor_mask);
+	}
+        if(pmbbi->oraw!=pmbbi->rval) {
                 db_post_events(pmbbi,&pmbbi->rval,monitor_mask);
+                pmbbi->oraw = pmbbi->rval;
         }
         return;
 }

@@ -112,9 +112,6 @@ struct aodset { /* analog input dset */
 	DEVSUPFUN	special_linconv;
 };
 
-/* the following definitions must match those in choiceGbl.ascii */
-#define SUPERVISORY 0
-#define CLOSED_LOOP 1
 
 /* the following definitions must match those in choiceRec.ascii */
 #define OUTPUT_FULL 		0
@@ -143,8 +140,6 @@ static long report(fp,paddr)
 	pao->eguf,pao->egul,pao->egu)) return(-1);
     if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
 	pao->hopr,pao->lopr)) return(-1);
-    if(fprintf(fp,"AOFF %-12.4G ASLO %-12.4G\n",
-	pao->aoff,pao->aslo)) return(-1);
     if(recGblReportLink(fp,"FLNK",&(pao->flnk))) return(-1);
     if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
 	pao->hihi,pao->high,pao->low,pao->lolo)) return(-1);
@@ -202,9 +197,13 @@ static long process(paddr)
 		recGblRecordError(S_dev_missingSup,pao,"write_ao");
 		return(S_dev_missingSup);
 	}
-	if(pao->pact == 0) convert(pao);
-	status=(*pdset->write_ao)(pao); /* write the new value */
-	pao->pact = TRUE;
+	if(pao->pact == FALSE) {
+		convert(pao);
+		if(pao->oraw != pao->oval) status=(*pdset->write_ao)(pao);
+	} else {
+		status=(*pdset->write_ao)(pao); /* write the new value */
+		pao->pact = TRUE;
+	}
 
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
@@ -407,8 +406,17 @@ static void monitor(pao)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pao,&pao->val,monitor_mask);
+	}
+	if(pao->oraw != pao->rval) {
+		monitor_mask |= DBE_VALUE;
                 db_post_events(pao,&pao->rval,monitor_mask);
-		db_post_events(pao,&pao->rbv,monitor_mask);
+		db_post_events(pao,&pao->oval,monitor_mask);
+		pao->oraw = pao->rval;
+	}
+	if(pao->orbv != pao->rbv) {
+		monitor_mask |= DBE_VALUE;
+                db_post_events(pao,&pao->rbv,monitor_mask);
+		pao->orbv = pao->rbv;
 	}
 	return;
 }
@@ -416,55 +424,57 @@ static void monitor(pao)
 static void convert(pao)
 struct aoRecord  *pao;
 {
+	float		value;
+
         /* fetch the desired output if there is a database link */
         if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
 		long		nRequest;
 		long		options;
 		short		save_pact;
-		float		value;
+		long		status;
 
 		options=0;
 		nRequest=1;
 		save_pact = pao->pact;
 		pao->pact = TRUE;
-                (void)dbGetLink(&pao->dol.value,DBR_FLOAT,&value,&options,&nRequest);
-                if (pao->oif == OUTPUT_FULL)
-                        pao->val = value;       /* output full */
-                else
-                        pao->val += value;      /* output incremental */
+                status = dbGetLink(&pao->dol.value,DBR_FLOAT,&value,&options,&nRequest);
 		pao->pact = save_pact;
-        }
+		if(status) {
+			if(pao->nsev<VALID_ALARM) {
+				pao->nsta = LINK_ALARM;
+				pao->nsev=VALID_ALARM;
+			}
+			return;
+		}
+                if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
+        } else value = pao->val;
 
+        /* check drive limits */
+	if(pao->drvh > pao->drvl) {
+        	if (value > pao->drvh) value = pao->drvh;
+        	else if (value < pao->drvl) value = pao->drvl;
+	}
+	pao->val = value;
+
+	/* now set value equal to desired output value */
         /* apply the output rate of change */
         if (pao->oroc){
 		float		diff;
 
-                diff = pao->val - pao->oval;
+                diff = value - pao->oval;
                 if (diff < 0){
-                        if (pao->oroc < -diff){
-                                pao->oval -= pao->oroc;
-                        }else{
-                                pao->oval = pao->val;
-                        }
-                }else if (pao->oroc < diff){
-                        pao->oval += pao->oroc;
-                }else{
-                        pao->oval = pao->val;
-                }
-        }else{
-                pao->oval = pao->val;
+                        if (pao->oroc < -diff) value = pao->oval - pao->oroc;
+                }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
         }
+	pao->oval = value;
 
-        /* check drive limits */
-        if (pao->oval > pao->drvh) pao->oval = pao->drvh;
-        else if (pao->oval < pao->drvl) pao->oval = pao->drvl;
 
         /* convert */
         if (pao->linr == LINEAR){
                 if (pao->eslo == 0) pao->rval = 0;
-                else pao->rval = (pao->oval - pao->egul) / pao->eslo;
+                else pao->rval = (value - pao->egul) / pao->eslo;
         }else{
-                pao->rval = pao->oval;
+                pao->rval = value;
         }
 }
 

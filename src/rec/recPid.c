@@ -82,9 +82,6 @@ struct rset pidRSET={
 	get_control_double,
 	get_enum_strs };
 
-/* the following definitions must match those in choiceGbl.ascii */
-#define SUPERVISORY 0
-#define CLOSED_LOOP 1
 
 void alarm();
 void monitor();
@@ -306,6 +303,14 @@ static void monitor(ppid)
         if (monitor_mask){
                 db_post_events(ppid,&ppid->val,monitor_mask);
         }
+	if(ppid->ocva != ppid->cval) { 
+		db_post_events(ppid,&ppid->cval,DBE_VALUE);
+		ppid->ocva = ppid->cval;
+	}
+	if(ppid->oout != ppid->out) { 
+		db_post_events(ppid,&ppid->out,DBE_VALUE);
+		ppid->oout = ppid->out;
+	}
         return;
 }
 
@@ -315,7 +320,7 @@ static void monitor(ppid)
  * where
  *	M(n)	Value of manipulated variable at nth sampling instant
  *	KP,KI,KD Proportional, Integral, and Differential Gains
- *		NOTE: KI is inverse of normal KI
+ *		NOTE: KI is inverse of normal definition of KI
  *	E(n)	Error at nth sampling instant
  *	SUMi	Sum from i=0 to i=n
  *	dT(n)	Time difference between n-1 and n
@@ -372,7 +377,7 @@ struct pidRecord     *ppid;
                 	if (ppid->nsev<MAJOR_ALARM) {
                                 ppid->stat = READ_ALARM;
                                 ppid->sevr = MAJOR_ALARM;
-                                return(-1);
+                                return(0);
                         }
                 }
         }
@@ -408,7 +413,6 @@ struct pidRecord     *ppid;
 	ppid->dt   = dt;
 	ppid->err  = e;
 	ppid->derr = de;
-	ppid->val  = val;
 	ppid->cval  = cval;
 	ppid->out  = out;
 	return(0);

@@ -108,8 +108,13 @@ static long process(paddr)
 	struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
 
         pstate->pact=TRUE;
-        if(pstate->mlis.count != 0)
-                db_post_events(pstate,&(pstate->val[0]),DBE_VALUE);
+	if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
+        	if(pstate->mlis.count != 0)
+                	db_post_events(pstate,&(pstate->val[0]),DBE_VALUE);
+		strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
+	}
+        /* process the forward scan link record */
+        if (pstate->flnk.type==DB_LINK) dbScanPassive(&pstate->flnk.value.db_link.pdbAddr);
         pstate->pact=FALSE;
 	return(0);
 }

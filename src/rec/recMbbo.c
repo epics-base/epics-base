@@ -110,9 +110,6 @@ struct mbbodset { /* multi bit binary input dset */
 	DEVSUPFUN	write_mbbo;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
 
-/* the following definitions must match those in choiceGbl.ascii */
-#define SUPERVISORY 0
-#define CLOSED_LOOP 1
 
 void alarm();
 void monitor();
@@ -270,7 +267,7 @@ static long process(paddr)
 	}
 
        /* fetch the desired output if there is a database link */
-       if (pmbbo->dol.type == DB_LINK && pmbbo->omsl == CLOSED_LOOP){
+       if (!pmbbo->pact && pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
 		long options=0;
 		long nRequest=1;
 		short savepact=pmbbo->pact;
@@ -281,36 +278,35 @@ static long process(paddr)
 		pmbbo->pact = savepact;
         }
 
-	status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
-	pmbbo->pact = TRUE;
+	if(pmbbo->lalm != pmbbo->val) { /*we have a change*/
+		status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
+		pmbbo->pact = TRUE;
 
-	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(0);
+		/* status is one if an asynchronous record is being processed*/
+		if(status==1) return(0);
 
-	/* convert the value */
-        if (pmbbo->sdef){
-                pstate_values = &(pmbbo->zrvl);
-                rbv = -1;        /* initalize to unknown state*/
-                for (i = 0; i < 16; i++){
-                        if (*pstate_values == pmbbo->rval){
-                                rbv = i;
-                                break;
-                        }
-                        pstate_values++;
-                }
-        }else{
-                /* the raw value is the desired value */
-                rbv =  (unsigned short)(pmbbo->rval);
-        }
-        pmbbo->rbv = rbv;
+		/* convert the value */
+        	if (pmbbo->sdef){
+                	pstate_values = &(pmbbo->zrvl);
+                	rbv = -1;        /* initalize to unknown state*/
+                	for (i = 0; i < 16; i++){
+                        	if (*pstate_values == pmbbo->rval){
+                                	rbv = i;
+                                	break;
+                        	}
+                        	pstate_values++;
+                	}
+        	}else{
+                	/* the raw value is the desired value */
+                	rbv =  (unsigned short)(pmbbo->rval);
+        	}
+        	pmbbo->rbv = rbv;
+	} else pmbbo->pact = TRUE;
 
 	/* check for alarms */
 	alarm(pmbbo);
-
-
 	/* check event list */
 	monitor(pmbbo);
-
 	/* process the forward scan link record */
 	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(&pmbbo->flnk.value.db_link.pdbAddr);
 
@@ -393,7 +389,14 @@ static void monitor(pmbbo)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pmbbo,&pmbbo->val,monitor_mask);
-                db_post_events(pmbbo,&pmbbo->rval,monitor_mask);
+	}
+        if(pmbbo->oraw!=pmbbo->rval) {
+                db_post_events(pmbbo,&pmbbo->rval,monitor_mask|=DBE_VALUE);
+                pmbbo->oraw = pmbbo->rval;
+        }
+        if(pmbbo->orbv!=pmbbo->rbv) {
+                db_post_events(pmbbo,&pmbbo->rbv,monitor_mask|=DBE_VALUE);
+                pmbbo->orbv = pmbbo->rbv;
         }
         return;
 }

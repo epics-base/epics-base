@@ -3,7 +3,7 @@
 # Following must be added for many board support packages
 #cd <full path to target bin directory>
 
-< cdcmds
+< cdCommands
 
 #< nfsCommands
 

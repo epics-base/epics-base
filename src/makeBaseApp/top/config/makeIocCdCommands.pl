@@ -1,5 +1,5 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell; # makeIoccdcmds.pl
+    if $running_under_some_shell; # makeIocCdCommands.pl
 
 use Cwd;
 
@@ -8,8 +8,8 @@ $cwd  = cwd();
 $cwd =~ s|/tmp_mnt||;
 $arch = $ARGV[0];
 
-unlink("cdcmds");
-open(OUT,">cdcmds") or die "$! opening cdcmds";
+unlink("cdCommands");
+open(OUT,">cdCommands") or die "$! opening cdCommands";
 print OUT "startup = \"$cwd\"\n";
 $appbin = $cwd;
 $appbin =~ s/iocBoot.*//;

@@ -17,6 +17,7 @@ USR_INCLUDES += -I$(SHARE)/include
 SHARE_BIN = $(SHARE)/bin/$(T_A)
 endif
 
+#Following only works if host provides soft links
 ifdef MASTER_IOCAPPS
 USR_INCLUDES += -I$(MASTER_IOCAPPS)/include
 MASTER_IOCAPPS_BIN = $(MASTER_IOCAPPS)/bin/$(T_A)

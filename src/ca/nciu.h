@@ -75,8 +75,13 @@ public:
         epicsGuard < cacMutex > & guard );
     void connect ( epicsGuard < callbackMutex > & cbGuard, 
                 epicsGuard < cacMutex > & guard );
-    void disconnect ( netiiu & newiiu, epicsGuard < callbackMutex > & cbGuard, 
+    void responsiveCircuitNotify ( 
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < cacMutex > & guard );
+    void unresponsiveCircuitNotify ( epicsGuard < callbackMutex > & cbGuard, 
                 epicsGuard < cacMutex > & guard );
+    void circuitHangupNotify ( class udpiiu &, 
+        epicsGuard < callbackMutex > & cbGuard, epicsGuard < cacMutex > & guard );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
     void createChannelRequest ( class tcpiiu & iiu, epicsGuard < cacMutex > & );
     void beaconAnomalyNotify ();
@@ -115,7 +120,8 @@ private:
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     bool f_connected:1;
-    bool f_claimSent:1;
+    bool f_createChanReqSent:1;
+    bool f_createChanRespReceived:1;
     void initiateConnect ();
     ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * );

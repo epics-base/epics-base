@@ -34,6 +34,7 @@
  * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92        jba     ANSI C changes
+ * .06  04-17-92        rcz     removed dbPvd for mrk
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -78,6 +79,7 @@
 #include	<string.h>
 #include	<stdioLib.h>
 
+#include        <lstLib.h>
 #include	<fast_lock.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -90,7 +92,6 @@
 #include	<choice.h>
 #include	<special.h>
 #include	<dbRecDes.h>
-#include	<dbPvd.h>
 
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
@@ -574,7 +575,7 @@ long dbior(pdrvName,type)
 	    printf("Driver: %s No report available\n",pname);
 	else {
 	    printf("Driver: %s\n",pname);
-	    (*pdrvet->report)(stdout,type);
+	    (*pdrvet->report)(type);
 	}
     }
     /* now check devSup reports */
@@ -594,7 +595,7 @@ long dbior(pdrvName,type)
 	    if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
 	    if(pdset->report!=NULL) {
 		printf("Device Support: %s\n",pname);
-	    		(*pdset->report)(stdout,type);
+	    		(*pdset->report)(type);
 	    }
 	}
     }
@@ -1544,7 +1545,7 @@ static struct fldDes * dbprGetFldRec(type, fldNum)
     struct fldDes  *pfield;
     struct recTypDes *precTypDes;
     /* verify that pvd and recDes are available	 */
-    if (!dbPvd || !dbRecDes)
+    if (!dbRecDes)
 	return (NULL);
     /* verify that type is valid			 */
     if ((type < 0) || (type >= dbRecDes->number))
@@ -1562,7 +1563,7 @@ static struct recTypDes * dbprGetRecTypDes(type)
 {
     struct recTypDes *precTypDes;
     /* verify that pvd and recDes are available	 */
-    if (!dbPvd || !dbRecDes)
+    if (!dbRecDes)
 	return (NULL);
     /* verify that type is valid			 */
     if ((type < 0) || (type >= dbRecDes->number))

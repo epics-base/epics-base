@@ -134,19 +134,15 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 		 * windows sockets and UNIX sockets implementation
 		 * of select()
 		 */
-		if (ptimeout->tv_sec!=0 ||
-			ptimeout->tv_usec!=0 ) {
+		if ( ptimeout->tv_sec!=0 || ptimeout->tv_usec!=0 ) {
 			osiSleep (ptimeout->tv_sec, ptimeout->tv_usec);
 		}
 		status = 0;
 	}
 	else {
-		status = select(
-				maxfd+1,
-				&pfdi->readMask,
-				&pfdi->writeMask,
-				NULL,
-				&autoTimeOut);
+		status = select (maxfd+1, &pfdi->readMask, &pfdi->writeMask,
+					NULL, &autoTimeOut);
+
 		if (status<0) {
 			int errnoCpy = SOCKERRNO;
 

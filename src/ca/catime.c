@@ -232,7 +232,7 @@ LOCAL void test (
 	printf ("\tasync get test\n");
   	timeIt (test_get, pItems, iterations);
 	printf ("\tsynch get test\n");
-  	timeIt (test_wait, pItems, iterations);
+  	timeIt (test_wait, pItems, iterations/100);
 }
 
 
@@ -329,13 +329,11 @@ unsigned	iterations,
 unsigned	*pInlineIter
 )
 {
-	ti	*pi;
-	int	status;
+	unsigned i;
+	int status;
 
-	for (pi=pItems; pi<&pItems[iterations]; pi++) {
-		status = ca_search (
-				pi->name, 
-				&pi->chix);
+	for (i=0u; i<iterations; i++) {
+		status = ca_search (pItems[i].name, &pItems[i].chix);
 		SEVCHK (status, NULL);
   	}
 	status = ca_pend_io(0.0);
@@ -354,13 +352,11 @@ unsigned	iterations,
 unsigned	*pInlineIter
 )
 {
-	ti	*pi;
-	int	status;
+	unsigned i;
+	int status;
 
-	for (pi=pItems; pi<&pItems[iterations]; pi++) {
-		status = ca_search (
-				pi->name, 
-				&pi->chix);
+	for (i=0u; i<iterations; i++) {
+		status = ca_search (pItems[i].name, &pItems[i].chix);
 		SEVCHK (status, NULL);
 		status = ca_pend_io(0.0);
 		SEVCHK (status, NULL);
@@ -379,13 +375,15 @@ unsigned	iterations,
 unsigned	*pInlineIter
 )
 {
-	ti		*pi;
-	int		status;
+	int status;
+	unsigned i;
 
-	for (pi=pItems; pi<&pItems[iterations]; pi++) {
-		status = ca_clear_channel (pi->chix);
+	for (i=0u; i<iterations; i++) {
+		status = ca_clear_channel (pItems[i].chix);
 		SEVCHK (status, NULL);
 	}
+	status = ca_flush_io();
+	SEVCHK (status, NULL);
 	*pInlineIter = 1;
 }
 

@@ -756,6 +756,9 @@ LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state)
 	/*
 	 * need to move the channel back to the cast IIU
 	 * (so we will be able to reconnect)
+	 *
+	 * this marks the IIU for disconnect if the channel 
+	 * count goes to zero
 	 */
 	cacDisconnectChannel(chan);
 	UNLOCK;

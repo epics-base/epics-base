@@ -347,7 +347,7 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 $(MUNCHNAME):%.munch : %.o
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	$(TOOLS)/munch.pl < nm.out > ctdt.c
+	perl $(TOOLS)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(GCC_LD) -o $@ $(LDFLAGS) $< ctdt.o
 

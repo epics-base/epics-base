@@ -35,6 +35,7 @@
  * .07  11-03-96	joh	fixed bug occuring when diagnostic is
  *				printed and the env var cant be found
  * .08  09-11-96        joh     ANSI prototypes
+ * .09  10-18-96        joh    	added envParamIsEmpty() 
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -61,6 +62,8 @@
 *  long  envGetInetAddrConfigParam(  pParam,    pAddr                 )
 *  long  envPrtConfigParam(          pParam                           )
 *  long  envSetConfigParam(          pParam,    valueString           )
+*  int envParamIsEmpty(		     pParam			      )
+)
 *
 * SEE ALSO
 *	$epics/share/bin/envSetupParams, envDefs.h
@@ -77,8 +80,9 @@
 #include <errnoLib.h>
 #endif
 
-#include <envDefs.h>
-#include <errMdef.h>
+#include "errMdef.h"
+#define epicsExportSharedSymbols
+#include "envDefs.h"
 
 
 
@@ -125,20 +129,20 @@ char	*pBuf		/* I pointer to parameter buffer  */
 )
 {
     char	*pEnv;		/* pointer to environment string */
-    long	i;
 
     pEnv = getenv(pParam->name);
 
-    if (pEnv == NULL)
+    if (pEnv == NULL) {
 	pEnv = pParam->dflt;
-    if (strlen(pEnv) == 0)
-	return NULL;
-    if ((i = strlen(pEnv)) < bufDim)
-	strcpy(pBuf, pEnv);
-    else {
-	strncpy(pBuf, pEnv, bufDim-1);
-	pBuf[bufDim-1] = '\0';
     }
+
+    if (pEnv[0u] == '\0') {
+	return NULL;
+    }
+
+    strncpy(pBuf, pEnv, bufDim-1);
+    pBuf[bufDim-1] = '\0';
+
     return pBuf;
 }
 
@@ -447,5 +451,40 @@ epicsPrtEnvParams()
 	envPrtConfigParam(*(ppParam++));
 
     return 0;
+}
+
+/*+/subr**********************************************************************
+* NAME  envParamIsEmpty - test for empty environment parameter 
+*
+* DESCRIPTION
+*	Return TRUE if the environment parameter is empty - else false
+*
+* AUTHOR
+*	Jeff Hill
+* RETURNS
+*	0 or 1
+*
+* EXAMPLE
+*       #include <envDefs.h>
+*
+*       if (envParamIsEmpty(&EPICS_CAS_SERVER_PORT)) {
+*		 port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+*	}
+*
+*-*/
+int envParamIsEmpty(
+ENV_PARAM *pParam	/* I pointer to config param structure */
+)
+{
+    char	*pEnv;		/* pointer to environment string */
+
+    pEnv = getenv(pParam->name);
+
+    if (pEnv == NULL && pParam->dflt[0u] == '\0') {
+	return 1;
+    }
+    else {
+	return 0;
+    }
 }
 

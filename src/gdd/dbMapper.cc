@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.23  1999/05/03 17:33:01  jhill
+// derive from gddDestructor so that same form of new and delete are used
+//
 // Revision 1.22  1999/04/30 15:24:52  jhill
 // fixed improper container index bug
 //
@@ -833,7 +836,7 @@ static gdd* mapControlShortToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToShort(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_gr_short* db = (dbr_gr_short*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_short_value];
 
@@ -856,7 +859,7 @@ static int mapGraphicGddToShort(void* v, aitIndex count, const gdd& dd)
 
 static int mapControlGddToShort(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_ctrl_short* db = (dbr_ctrl_short*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_short_value];
 
@@ -958,7 +961,7 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_gr_float* db = (dbr_gr_float*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_float_value];
 
@@ -983,7 +986,7 @@ static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd& dd)
 
 static int mapControlGddToFloat(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_ctrl_float* db = (dbr_ctrl_float*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_float_value];
 
@@ -1037,9 +1040,15 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
+	unsigned minl;
+	if (sizeof(aitFixedString)<sizeof(str[0].fixed_string)) {
+		minl = sizeof(aitFixedString)-1;
+	}
+	else {
+		minl = sizeof(str[0].fixed_string)-1;
+	}
 	for (i=0;i<sz;i++) {
-		unsigned minl = min (sizeof(aitFixedString), MAX_ENUM_STRING_SIZE) - 1;
-		strncpy (str[i].fixed_string,&(db->strs[i][0]), minl);
+		strncpy (str[i].fixed_string, &(db->strs[i][0]), minl);
 		memset (&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
 	}
 	menu.setBound(0,0,sz);
@@ -1216,7 +1225,7 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToChar(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_gr_char* db = (dbr_gr_char*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_char_value];
 
@@ -1240,7 +1249,7 @@ static int mapGraphicGddToChar(void* v, aitIndex count, const gdd& dd)
 
 static int mapControlGddToChar(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_ctrl_char* db = (dbr_ctrl_char*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_char_value];
 
@@ -1341,7 +1350,7 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToLong(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_gr_long* db = (dbr_gr_long*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_long_value];
 
@@ -1364,7 +1373,7 @@ static int mapGraphicGddToLong(void* v, aitIndex count, const gdd& dd)
 
 static int mapControlGddToLong(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_ctrl_long* db = (dbr_ctrl_long*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_long_value];
 
@@ -1466,7 +1475,7 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_gr_double* db = (dbr_gr_double*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_double_value];
 
@@ -1491,7 +1500,7 @@ static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd& dd)
 
 static int mapControlGddToDouble(void* v, aitIndex count, const gdd& dd)
 {
-	aitString* str;
+	const aitString* str;
 	dbr_ctrl_double* db = (dbr_ctrl_double*)v;
 	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_double_value];
 

@@ -34,6 +34,7 @@
  * .00	02-03-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02	06-28-91	rac	don't do lwp_fpset for sun4
+ * .03	08-11-93	mrk	removed ifdef V5_vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -98,28 +99,6 @@
 	    return OK;
     }
 #endif
-
-/*-----------------------------------------------------------------------------
-* signal()
-*----------------------------------------------------------------------------*/
-
-#ifdef vxWorks
-#ifndef V5_vxWorks
-    FUNCPTR signal(sig, func)
-    int	sig;
-    FUNCPTR	func;
-    {
-	struct sigvec vec;
-	struct sigvec ovec;
-
-	vec.sv_handler = func;
-	if (sigvec(sig, &vec, &ovec) == -1)
-	    return (FUNCPTR)(-1);
-	return ovec.sv_handler;
-    }
-#endif
-#endif
-
 /*----------------------------------------------------------------------------
 * taskSpawn()
 *---------------------------------------------------------------------------*/

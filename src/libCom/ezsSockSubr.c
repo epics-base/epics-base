@@ -30,6 +30,7 @@
  *  .02 09-05-91 joh	updated for v5 vxWorks; included systime.h for utime.h
  *  .03 12-08-91 rac	added a comment for ezsFopenToFd
  *  .04 10-09-92 rac	use SO_REUSEADDR with socket
+ *  .05 08-11-93 mrk	removed V5_vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -74,11 +75,7 @@
 #   include <ioLib.h>
 #   include <taskLib.h>
 #   include <types.h>
-#   ifdef V5_vxWorks
-#	include <systime.h>
-#   else
-#	include <utime.h>
-#   endif
+#   include <systime.h>
 #   include <socket.h>
 #   include <inetLib.h>
 #   include <in.h>

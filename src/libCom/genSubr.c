@@ -28,6 +28,7 @@
  * .00	03-29-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02	01-29-92	rac	added wildMatch function
+ * .03	08-11-93	mrk	removed ifdef V5_vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -326,27 +327,6 @@ void	(* handler)();	/* I pointer to signal handler */
     (void)signal(SIGFPE, handler);	/* arithmetic exception */
     (void)signal(SIGPIPE, handler);	/* write to disconnected socket */
 }
-
-#ifdef vxWorks
-#ifndef V5_vxWorks
-/*+/subr**********************************************************************
-* NAME	perror - print message corresponding to errno
-*
-* DESCRIPTION
-*	Under VxWorks, provides the capability provided by perror() under
-*	UNIX.  (This routine isn't present in genLib except for VxWorks
-*	version.)
-*
-*-*/
-perror(str)
-char    *str;	/* I string to print in conjunction with error message */
-{
-    if (str != NULL)
-	(void)printf("%s: ", str);
-    printErrno(0);
-}
-#endif
-#endif
 
 int doMatch();
 

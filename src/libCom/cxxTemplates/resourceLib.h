@@ -87,13 +87,18 @@ public:
     T * remove ( const ID &idIn ); // remove entry
     void removeAll ( tsSLList<T> & destination ); // remove all entries
     T * lookup ( const ID &idIn ) const; // locate entry
-    // Call (pT->*pCB) () for each entry
+    // Call (pT->*pCB) () for each entry but expect poor performance
+    // with sparcely populated tables
     void traverse ( void (T::*pCB)() );
     void traverseConst ( void (T::*pCB)() const ) const;
     unsigned numEntriesInstalled () const;
     void setTableSize ( const unsigned newTableSize );
-    resTableIter < T, ID > firstIter ();
-    resTableIterConst < T, ID > firstIter () const;
+    // iterate through all entries but expect poor performance
+    // with sparcely populated tables
+    typedef resTableIter < T, ID > iterator;
+    typedef resTableIterConst < T, ID > iteratorConst;
+    iterator firstIter ();
+    iteratorConst firstIter () const;
 private:
     tsSLList < T > * pTable;
     unsigned nextSplitIndex;
@@ -775,7 +780,7 @@ template < class T, class ID >
 inline resTableIter < T, ID > & resTableIter<T,ID>::operator =
     ( const resTableIter < T, ID > & rhs )
 {
-    this->pTable = rhs.pTable;
+    this->pResTable = rhs.pTable;
     this->index  = rhs.index; 
     this->iter   = rhs.iter;
     return *this;

@@ -107,10 +107,18 @@ typedef struct dbFldDes{  /* field description */
 	short	offset;		/*Offset in bytes from beginning of record*/
 }dbFldDes;
 
+typedef struct dbInfoNode {	/*non-field per-record information*/
+	ELLNODE		node;
+	char		*name;
+	char		*string;
+	void		*pointer;
+}dbInfoNode;
+
 typedef struct dbRecordNode {
 	ELLNODE		node;
 	void		*precord;
 	char		*recordname;
+	ELLLIST		infoList;	/*LIST head of info nodes*/
 	int		visible;
 }dbRecordNode;
 
@@ -124,11 +132,17 @@ typedef struct dbRecordAttribute {
 	char		value[MAX_STRING_SIZE];
 }dbRecordAttribute;
 
+typedef struct dbCdefText {
+	ELLNODE		node;
+	char		*text;
+}dbCdefText;
+
 typedef struct dbRecordType {
 	ELLNODE		node;
 	ELLLIST		attributeList;	/*LIST head of attributes*/
 	ELLLIST		recList;	/*LIST head of sorted dbRecordNodes*/
 	ELLLIST		devList;	/*List of associated device support*/
+	ELLLIST		cdefList;	/*LIST of Cdef text items*/
 	char		*name;
 	short		no_fields;	/* number of fields defined	*/
 	short		no_prompt;	/* number of fields to configure*/
@@ -153,5 +167,6 @@ typedef struct dbBase {
 	void		*ppvd;      /* pointer to process variable directory*/
 	void		*pgpHash;	/*General purpose Hash Table*/
 	short		ignoreMissingMenus;
+	short		loadCdefs;
 }dbBase;
 #endif

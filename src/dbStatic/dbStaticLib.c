@@ -923,6 +923,12 @@ long epicsShareAPI dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypenam
 		}
 		status=dbNextField(pdbentry,dctonly);
 	    }
+	    status = dbFirstInfo(pdbentry);
+	    while(!status) {
+		fprintf(fp,"\tinfo(\"%s\",\"%s\")\n",
+			dbGetInfoName(pdbentry), dbGetInfoString(pdbentry));
+		status=dbNextInfo(pdbentry);
+	    }
 	    fprintf(fp,"}\n");
 	    status = dbNextRecord(pdbentry);
 	}
@@ -1441,6 +1447,7 @@ long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     pdbentry->precnode = pNewRecNode;
     if((status = dbAllocRecord(pdbentry,precordName))) return(status);
     pNewRecNode->recordname = dbRecordName(pdbentry);
+    ellInit(&pNewRecNode->infoList);
     /* install record node in list in sorted postion */
     status = dbFirstRecord(pdbentry);
     while(status==0) {
@@ -1471,6 +1478,9 @@ long epicsShareAPI dbDeleteRecord(DBENTRY *pdbentry)
     preclist = &precordType->recList;
     ellDelete(preclist,&precnode->node);
     dbPvdDelete(pdbbase,precnode);
+    while (!dbFirstInfo(pdbentry)) {
+	dbDeleteInfo(pdbentry);
+    }
     if((status = dbFreeRecord(pdbentry))) return(status);
     free((void *)precnode);
     pdbentry->precnode = NULL;
@@ -1679,6 +1689,13 @@ long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWr
 	    epicsPrintf("dbCopyRecord: Logic Error\n");
 	    exit(1);
 	}
+    }
+    /*Copy the info strings too*/
+    status = dbFirstInfo(pdbentry);
+    while (!status) {
+	status = dbPutInfo(&dbentry, dbGetInfoName(pdbentry), dbGetInfoString(pdbentry));
+	if (status) return (status);
+	status = dbNextInfo(pdbentry);
     }
     /*Leave pdbentry pointing to newRecordName*/
     return(dbFindRecord(pdbentry,newRecordName));
@@ -2483,6 +2500,143 @@ char *epicsShareAPI dbGetRange(DBENTRY *pdbentry)
     }
     strcpy(message,"Not a valid field type");
     return (message);
+}
+
+long epicsShareAPI dbFirstInfo(DBENTRY *pdbentry)
+{
+    dbRecordNode *precnode = pdbentry->precnode;
+    
+    pdbentry->pinfonode = NULL;
+    if (!precnode) return (S_dbLib_recNotFound);
+    
+    pdbentry->pinfonode = (dbInfoNode *)ellFirst(&precnode->infoList);
+    return (pdbentry->pinfonode ? 0 : S_dbLib_infoNotFound);
+}
+
+long epicsShareAPI dbNextInfo(DBENTRY *pdbentry)
+{
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbInfoNode *pinfo;
+    
+    if (!precnode) return (S_dbLib_recNotFound);
+    pinfo = pdbentry->pinfonode;
+    if (!pinfo) return (S_dbLib_infoNotFound);
+    
+    pinfo = (dbInfoNode *)ellNext(&pinfo->node);
+    pdbentry->pinfonode = pinfo;
+    return (pinfo ? 0 : S_dbLib_infoNotFound);
+}
+
+long epicsShareAPI dbFindInfo(DBENTRY *pdbentry,const char *name)
+{
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbInfoNode *pinfo;
+    
+    pdbentry->pinfonode = NULL;
+    if (!precnode) return(S_dbLib_recNotFound);
+    
+    pinfo = (dbInfoNode *)ellFirst(&precnode->infoList);
+    while (pinfo) {
+	if (!strcmp(pinfo->name, name)) {
+	    pdbentry->pinfonode = pinfo;
+	    return (0);
+	}
+	pinfo = (dbInfoNode *)ellNext(&pinfo->node);
+    }
+    return (S_dbLib_infoNotFound);
+}
+
+long epicsShareAPI dbDeleteInfo(DBENTRY *pdbentry)
+{
+    dbRecordNode	*precnode = pdbentry->precnode;
+    dbInfoNode		*pinfo = pdbentry->pinfonode;
+    
+    if (!precnode) return (S_dbLib_recNotFound);
+    if (!pinfo) return (S_dbLib_infoNotFound);
+    ellDelete(&precnode->infoList,&pinfo->node);
+    free(pinfo->name);
+    free(pinfo->string);
+    free(pinfo);
+    pdbentry->pinfonode = NULL;
+    return (0);
+}
+
+const char * epicsShareAPI dbGetInfoName(DBENTRY *pdbentry)
+{
+    dbInfoNode *pinfo = pdbentry->pinfonode;
+    if (!pinfo) return (NULL);
+    return (pinfo->name);
+}
+
+const char * epicsShareAPI dbGetInfoString(DBENTRY *pdbentry)
+{
+    dbInfoNode *pinfo = pdbentry->pinfonode;
+    if (!pinfo) return (NULL);
+    return (pinfo->string);
+}
+
+long epicsShareAPI dbPutInfoString(DBENTRY *pdbentry,const char *string)
+{
+    dbInfoNode *pinfo = pdbentry->pinfonode;
+    char *newstring;
+    if (!pinfo) return (S_dbLib_infoNotFound);
+    newstring = realloc(pinfo->string,1+strlen(string));
+    if (!newstring) return (S_dbLib_outMem);
+    strcpy(newstring, string);
+    pinfo->string = newstring;
+    return (0);
+}
+
+long epicsShareAPI dbPutInfoPointer(DBENTRY *pdbentry, void *pointer)
+{
+    dbInfoNode *pinfo = pdbentry->pinfonode;
+    if (!pinfo) return (S_dbLib_infoNotFound);
+    pinfo->pointer = pointer;
+    return (0);
+}
+
+const char * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry)
+{
+    dbInfoNode *pinfo = pdbentry->pinfonode;
+    if (!pinfo) return (NULL);
+    return (pinfo->pointer);
+}
+
+const char * epicsShareAPI dbGetInfo(DBENTRY *pdbentry,const char *name)
+{
+    dbFindInfo(pdbentry, name);
+    return (dbGetInfoString(pdbentry));
+}
+
+long epicsShareAPI dbPutInfo(DBENTRY *pdbentry,const char *name,const char *string)
+{
+    dbInfoNode *pinfo;
+    dbRecordNode *precnode = pdbentry->precnode;
+    if (!precnode) return (S_dbLib_recNotFound);
+    
+    dbFindInfo(pdbentry, name);
+    pinfo = pdbentry->pinfonode;
+    if (pinfo) return (dbPutInfoString(pdbentry, string));
+    
+    /*Create new info node*/
+    pinfo = calloc(1,sizeof(dbInfoNode));
+    if (!pinfo) return (S_dbLib_outMem);
+    pinfo->name = calloc(1,1+strlen(name));
+    if (!pinfo->name) {
+	free(pinfo);
+	return (S_dbLib_outMem);
+    }
+    strcpy(pinfo->name, name);
+    pinfo->string = calloc(1,1+strlen(string));
+    if (!pinfo->string) {
+	free(pinfo->name);
+	free(pinfo);
+	return (S_dbLib_outMem);
+    }
+    strcpy(pinfo->string, string);
+    ellAdd(&precnode->infoList,&pinfo->node);
+    pdbentry->pinfonode = pinfo;
+    return (0);
 }
 
 brkTable * epicsShareAPI dbFindBrkTable(dbBase *pdbbase,char *name)

@@ -467,6 +467,7 @@ static void dbRecordtypeHead(char *name)
     }
     pdbRecordType = dbCalloc(1,sizeof(dbRecordType));
     pdbRecordType->name = strduplicate(name);
+    if (pdbbase->loadCdefs) ellInit(&pdbRecordType->cdefList);
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordtypeHead tempList not empty");
     allocTemp(pdbRecordType);
@@ -580,6 +581,22 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	    yyerrorAbort("menu not found");
 	return;
     }
+}
+
+static void dbRecordtypeCdef(char *text) {
+    dbCdefText		*pdbCdef;
+    tempListNode	*ptempListNode;
+    dbRecordType	*pdbRecordType;
+    
+    if (!pdbbase->loadCdefs || duplicate) return;
+    ptempListNode = (tempListNode *)ellFirst(&tempList);
+    pdbRecordType = ptempListNode->item;
+    
+    pdbCdef = dbCalloc(1,sizeof(dbCdefText));
+    if (text[0] == ' ') text++;	/* strip leading space if present */
+    pdbCdef->text = strduplicate(text);
+    ellAdd(&pdbRecordType->cdefList, &pdbCdef->node);
+    return;
 }
 
 static void dbRecordtypeBody(void)
@@ -859,6 +876,23 @@ static void dbRecordField(char *name,char *value)
 	return;
     }
     status = dbPutString(pdbentry,value);
+    if(status) {
+	errMessage(status,"");
+	yyerror(NULL);
+	return;
+    }
+}
+
+static void dbRecordInfo(char *name, char *value)
+{
+    DBENTRY		*pdbentry;
+    tempListNode	*ptempListNode;
+    long		status;
+
+    if(duplicate) return;
+    ptempListNode = (tempListNode *)ellFirst(&tempList);
+    pdbentry = ptempListNode->item;
+    status = dbPutInfo(pdbentry,name,value);
     if(status) {
 	errMessage(status,"");
 	yyerror(NULL);

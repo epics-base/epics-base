@@ -10,10 +10,11 @@ static int yyAbort = 0;
 %start database
 
 %token tokenINCLUDE tokenPATH tokenADDPATH
-%token tokenMENU tokenCHOICE tokenRECORDTYPE tokenFIELD
+%token tokenMENU tokenCHOICE tokenRECORDTYPE
+%token tokenFIELD tokenINFO
 %token tokenDEVICE tokenDRIVER tokenBREAKTABLE
 %token tokenRECORD tokenGRECORD
-%token <Str> tokenSTRING
+%token <Str> tokenSTRING tokenCDEFS
 
 %union
 {
@@ -88,9 +89,14 @@ recordtype_body: '{' recordtype_field_list '}'
 };
 
 recordtype_field_list:	recordtype_field_list recordtype_field
-	|	recordtype_field;
+	| recordtype_field;
 
 recordtype_field: tokenFIELD recordtype_field_head recordtype_field_body
+	| tokenCDEFS
+{
+	if(dbStaticDebug>2) printf("recordtype_cdef %s", $1);
+	dbRecordtypeCdef($1);
+}
 	| include ;
 
 recordtype_field_head:	'(' tokenSTRING ',' tokenSTRING ')'
@@ -191,6 +197,11 @@ record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$5);
 	dbRecordField($3,$5); dbmfFree($3); dbmfFree($5);
+}
+	| tokenINFO '(' tokenSTRING ',' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("record_info %s %s\n",$3,$5);
+	dbRecordInfo($3,$5); dbmfFree($3); dbmfFree($5);
 }
 	| include ;
 

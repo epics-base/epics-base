@@ -65,6 +65,7 @@ typedef struct{
 	dbRecordType	*precordType;
 	dbFldDes	*pflddes;
 	dbRecordNode	*precnode;
+	dbInfoNode	*pinfonode;
 	void	 	*pfield;
 	char		*message;
 	short		indfield;
@@ -159,6 +160,18 @@ epicsShareFunc char * epicsShareAPI dbVerify(DBENTRY *pdbentry,char *pstring);
 epicsShareFunc char * epicsShareAPI dbGetRange(DBENTRY *pdbentry);
 epicsShareFunc int  epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry);
 
+epicsShareFunc long epicsShareAPI dbFirstInfo(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbNextInfo(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbFindInfo(DBENTRY *pdbentry,const char *name);
+epicsShareFunc long epicsShareAPI dbDeleteInfo(DBENTRY *pdbentry);
+epicsShareFunc const char * epicsShareAPI dbGetInfoName(DBENTRY *pdbentry);
+epicsShareFunc const char * epicsShareAPI dbGetInfoString(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbPutInfoString(DBENTRY *pdbentry,const char *string);
+epicsShareFunc long epicsShareAPI dbPutInfoPointer(DBENTRY *pdbentry, void *pointer);
+epicsShareFunc const char * epicsShareAPI dbGetInfoPointer(DBENTRY *pdbentry);
+epicsShareFunc const char * epicsShareAPI dbGetInfo(DBENTRY *pdbentry,const char *name);
+epicsShareFunc long epicsShareAPI dbPutInfo(DBENTRY *pdbentry,const char *name,const char *string);
+
 epicsShareFunc brkTable * epicsShareAPI dbFindBrkTable(DBBASE *pdbbase,char *name);
 
 epicsShareFunc dbMenu * epicsShareAPI dbFindMenu(DBBASE *pdbbase,char *name);
@@ -196,7 +209,7 @@ epicsShareFunc void epicsShareAPI dbPvdDump(DBBASE *pdbbase,int verbose);
 epicsShareFunc void epicsShareAPI dbReportDeviceConfig(DBBASE *pdbbase,FILE *report);
 
 /* Misc useful routines*/
-/*general purpose allocation routines to invoke calloc and maloc	*/
+/*general purpose allocation routines to invoke calloc and malloc	*/
 /* NOTE: These routines do NOT return if they fail.			*/
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 epicsShareFunc void * epicsShareAPI dbMalloc(size_t size);
@@ -217,4 +230,6 @@ extern int dbStaticDebug;
 #define S_dbLib_strLen (M_dbLib|21)		/*String is too long*/
 #define S_dbLib_noSizeOffset (M_dbLib|23)	/*Missing SizeOffset Routine - No record support?*/
 #define S_dbLib_noForm (M_dbLib|25)		/*dbAllocForm was not called*/
+#define S_dbLib_outMem (M_dbLib|27)		/*Out of memory*/
+#define S_dbLib_infoNotFound (M_dbLib|29)	/*Info item Not Found*/
 #endif /*INCdbStaticLibh*/

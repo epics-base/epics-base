@@ -26,6 +26,7 @@
  *
  * Modification Log: 
  * -----------------
+ * $Log$
  ***************************************************************************
  */
 
@@ -64,7 +65,7 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
 		taskId);
 
         epicsPrintf (	
-"to the author or \"tech_talk@aps.anl.gov\"\n");
+"to the author or \"tech-talk@aps.anl.gov\"\n");
 
         taskSuspend (taskId);
 }

@@ -49,9 +49,13 @@ static char	*sccsId = "@(#) $Id$";
 /*
  * local_addr()
  * 
- * Perhaps it is sufficient for this to return 127.0.0.1
- * (the loop back address)
- * See Below
+ * A valid non-loopback local address is required in the
+ * beacon message in certain situations where
+ * there are beacon repeaters and there are addresses
+ * in the EPICS_CA_ADDRESS_LIST for which we dont have
+ * a strictly correct local server address on a multi-interface
+ * system. In this situation we use the first valid non-loopback local
+ * address found in the beacon message.
  */
 int local_addr(int s, struct sockaddr_in *plcladdr)
 {
@@ -108,9 +112,12 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 		}
 
 		/*
-		 * o Dont require broadcast capabilities.
-		 * o Loopback addresss is ok - preferable?
-		 */	
+		 * dont use the loop back interface
+		 */
+		if (pifreq->ifr_flags & IFF_LOOPBACK) {
+			continue;
+		}
+
 		status = socket_ioctl(s, SIOCGIFADDR, pifreq);
 		if (status == ERROR){
 #ifdef DEBUG
@@ -140,28 +147,6 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	*plcladdr = addr;
 	return OK;
 }
-
-
-#if 0
-/*
- * An alternate solution
- * for os without the if routines
- */
-/*
- * local_addr()
- *
- * return 127.0.0.1
- * (the loop back address)
- */
-int local_addr (int s, struct sockaddr_in *plcladdr)
-{
-	ca_uint32_t	loopBackAddress = 0x7f000001;
-
-	plcladdr->sa_family = AF_INET;
-	plcladdr->sin_port = 0;
-	plcladdr->sin_addr.s_addr = ntohl (loopBackAddress);
-}
-#endif
 
 
 
@@ -264,7 +249,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 * if it isnt a wildcarded interface then look for
 		 * an exact match
 		 */
-		if (matchAddr.s_addr != INADDR_ANY) {
+		if (matchAddr.s_addr != htonl(INADDR_ANY)) {
 			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
 				continue;
 			}

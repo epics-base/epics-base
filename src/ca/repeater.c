@@ -57,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.43  1998/04/15 21:58:29  jhill
+ * fixed the doc
+ *
  * Revision 1.42  1998/02/27 01:04:03  jhill
  * fixed benign WIN32 message from overwritten errno
  *
@@ -372,7 +375,7 @@ LOCAL makeSocketReturn makeSocket(unsigned short port, int reuseAddr)
 
 		memset((char *)&bd, 0, sizeof(bd));
 		bd.sin_family = AF_INET;
-		bd.sin_addr.s_addr = INADDR_ANY;	
+		bd.sin_addr.s_addr = htonl(INADDR_ANY);	
 		bd.sin_port = htons(port);	
 		status = bind(msr.sock, (struct sockaddr *)&bd, (int)sizeof(bd));
 		if (status<0) {
@@ -424,8 +427,19 @@ struct sockaddr_in 	*pFrom)
 	/*
 	 * the repeater and its clients must be on the same host
 	 */
-	if (pLocal->sin_addr.s_addr != pFrom->sin_addr.s_addr) {
-		return;
+	if (htonl(INADDR_LOOPBACK) != pFrom->sin_addr.s_addr) {
+
+		/*
+		 * Unfortunately on 3.13 beta 11 and before the
+		 * repeater would not always allow the loopback address
+		 * as a local client address so all clients must continue to
+		 * use the address from the first non-loopback interface
+		 * found to communicate with the CA repeater until all
+		 * CA repeaters have been restarted.
+		 */
+		if (pLocal->sin_addr.s_addr != pFrom->sin_addr.s_addr) {
+			return;
+		}
 	}
 
 	for(pclient = (struct one_client *) ellFirst(&client_list);
@@ -481,7 +495,7 @@ struct sockaddr_in 	*pFrom)
 
 	memset((char *)&confirm, '\0', sizeof(confirm));
 	confirm.m_cmmd = htons(REPEATER_CONFIRM);
-	confirm.m_available = pLocal->sin_addr.s_addr;
+	confirm.m_available = pFrom->sin_addr.s_addr;
 	status = send(
 		pclient->sock,
 		(char *)&confirm,

@@ -536,7 +536,7 @@ const struct in_addr  	*pnet_addr
 			 * field is set to the server's IP address).
 			 */
 			ina.sin_family = AF_INET;
-			if (piiu->curMsg.m_available != INADDR_ANY) {
+			if (piiu->curMsg.m_available != htonl(INADDR_ANY)) {
 				ina.sin_addr.s_addr = piiu->curMsg.m_available;
 			}
 			else {

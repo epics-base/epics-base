@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.76  1998/04/14 00:39:49  jhill
+ * cosmetic
+ *
  * Revision 1.75  1998/03/12 20:39:09  jhill
  * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  *
@@ -464,7 +467,7 @@ int				net_proto
 		/* 
 		 * let slib pick lcl addr 
 		 */
-      		saddr.sin_addr.s_addr = INADDR_ANY; 
+      		saddr.sin_addr.s_addr = htonl(INADDR_ANY); 
       		saddr.sin_port = htons(0U);	
 
       		status = bind(	sock, 
@@ -537,7 +540,7 @@ int				net_proto
  */
 LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 {
-  	int	true = TRUE;
+  	osiSockIoctl_t	true = TRUE;
 	int	status;
 
 	/*	
@@ -702,7 +705,7 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
 	 */
 	if (yes) {
 		struct in_addr addr;
-		addr.s_addr = INADDR_ANY;
+		addr.s_addr = htonl(INADDR_ANY);
 		caDiscoverInterfaces(
 			pList,
 			sock,
@@ -733,10 +736,11 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
  */
 void notify_ca_repeater()
 {
-	caHdr			msg;
-	struct sockaddr_in	saddr;
-	int			status;
-	static int		once = FALSE;
+	caHdr msg;
+	struct sockaddr_in saddr;
+	int status;
+	static int once = FALSE;
+	int len;
 
 	if (ca_static->ca_repeater_contacted) {
 		return;
@@ -761,65 +765,78 @@ void notify_ca_repeater()
 		}
 	}
 
-	LOCK; /*MULTINET TCP/IP routines are not reentrant*/
-     	status = local_addr(piiuCast->sock_chan, &saddr);
-	if (status == OK) {
-		int	len;
-
-		memset((char *)&msg, 0, sizeof(msg));
-		msg.m_cmmd = htons(REPEATER_REGISTER);
-		msg.m_available = saddr.sin_addr.s_addr;
-      		saddr.sin_port = htons(ca_static->ca_repeater_port);	
-
+	/*
+	 * Unfortunately on 3.13 beta 11 and before the
+	 * repeater would not always allow the loopback address
+	 * as a local client address so all clients must continue to
+	 * use the address from the first non-loopback interface 
+	 * found to communicate with the CA repeater until all
+	 * CA repeaters have been restarted.
+	 */
+	status = local_addr (piiuCast->sock_chan, &saddr);
+	if (status<0) {
 		/*
-		 * Intentionally sending a zero length message here
-		 * until most CA repeater daemons have been restarted
-		 * (and only then will accept the above protocol)
-		 * (repeaters began accepting this protocol
-		 * starting with EPICS 3.12)
+		 * use the loop back address to communicate with the CA repeater
+		 * if this os does not have interface query capabilities
 		 *
-		 * SOLARIS will not accept a zero length message
-		 * and we are just porting there for 3.12 so
-		 * we will use the new protocol for 3.12
-		 *
-		 * recent versions of UCX will not accept a zero 
-		 * length message and we will assume that folks
-		 * using newer versions of UCX have rebooted (and
-		 * therefore restarted the CA repeater - and therefore
-		 * moved it to an EPICS release that accepets this protocol)
+		 * this will only work with 3.13 beta 12 CA repeaters or later
 		 */
-#		if defined(SOLARIS) || defined(UCX)
-			len = sizeof(msg);
-# 		else /* SOLARIS */
-			len = 0;
-#		endif /* SOLARIS */
+		saddr.sin_family = AF_INET;
+		saddr.sin_port = htons (ca_static->ca_repeater_port);
+		saddr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+	}
 
-      		status = sendto(
-			piiuCast->sock_chan,
-        		(char *)&msg, 
-        		len,  
-        		0,
-       			(struct sockaddr *)&saddr, 
-			sizeof(saddr));
-      		if(status < 0){
-			if(	SOCKERRNO != SOCK_EINTR && 
-				SOCKERRNO != SOCK_ENOBUFS && 
-				SOCKERRNO != SOCK_EWOULDBLOCK &&
-				/*
-				 * This is returned from Linux when
-				 * the repeater isnt running
-				 */
-				SOCKERRNO != SOCK_ECONNREFUSED 
-				){
-				ca_printf(
+	LOCK; /*MULTINET TCP/IP routines are not reentrant*/
+
+	memset((char *)&msg, 0, sizeof(msg));
+	msg.m_cmmd = htons(REPEATER_REGISTER);
+	msg.m_available = saddr.sin_addr.s_addr;
+      	saddr.sin_port = htons(ca_static->ca_repeater_port);	
+
+	/*
+	 * Intentionally sending a zero length message here
+	 * until most CA repeater daemons have been restarted
+	 * (and only then will accept the above protocol)
+	 * (repeaters began accepting this protocol
+	 * starting with EPICS 3.12)
+	 *
+	 * SOLARIS will not accept a zero length message
+	 * and we are just porting there for 3.12 so
+	 * we will use the new protocol for 3.12
+	 *
+	 * recent versions of UCX will not accept a zero 
+	 * length message and we will assume that folks
+	 * using newer versions of UCX have rebooted (and
+	 * therefore restarted the CA repeater - and therefore
+	 * moved it to an EPICS release that accepts this protocol)
+	 */
+#	if defined(SOLARIS) || defined(UCX)
+		len = sizeof(msg);
+#	else /* SOLARIS */
+		len = 0;
+#	endif /* SOLARIS */
+
+	status = sendto (piiuCast->sock_chan, (char *)&msg, len,  
+						0, (struct sockaddr *)&saddr, sizeof(saddr));
+	if (status < 0) {
+		if(	SOCKERRNO != SOCK_EINTR && 
+			SOCKERRNO != SOCK_ENOBUFS && 
+			SOCKERRNO != SOCK_EWOULDBLOCK &&
+			/*
+			 * This is returned from Linux when
+			 * the repeater isnt running
+			 */
+			SOCKERRNO != SOCK_ECONNREFUSED 
+			) {
+			ca_printf(
 				"CAC: error sending to repeater is \"%s\"\n", 
 				SOCKERRSTR);
-			}
-		}
-		else{
-			ca_static->ca_repeater_tries++;
 		}
 	}
+	else {
+		ca_static->ca_repeater_tries++;
+	}
+
 	UNLOCK;
 }
 
@@ -1541,7 +1558,7 @@ int repeater_installed()
 
 	memset((char *)&bd,0,sizeof bd);
 	bd.sin_family = AF_INET;
-	bd.sin_addr.s_addr = INADDR_ANY;	
+	bd.sin_addr.s_addr = htonl(INADDR_ANY);	
 	bd.sin_port = htons(ca_static->ca_repeater_port);	
 	status = bind(	sock, 
 		(struct sockaddr *) &bd, 
@@ -1794,11 +1811,35 @@ void epicsShareAPI caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv,
 	}
 
 	/*
-	 * obtain a local address
+	 * obtain a local non-loopback address
+	 *
+	 * It has proven to be difficult to determine which
+	 * of the local addresses is the correct server address
+	 * to be embedded in beacons from a multi-inteface host
+	 * when the user supplies the beacon destination
+	 * due to routing complexities (a local ip address is 
+	 * supplied in the beacon message so that
+	 * we can allow beacon repeaters). I have tried using 
+	 * connect() and getsockname() to obtain this information 
+	 * without success. For now we are using the local
+	 * host address of the first non-loopback interface found
+	 * for this.
 	 */
 	status = local_addr(socket, &localAddr.in);
-	if(status){
-		return;
+	if (status) {
+		/*
+		 * some hosts do not provide local interface query 
+		 * capabilities. In this situation we default to
+		 * zero and the clients will obtain the beacon's
+		 * address from the UDP header. In this situation
+		 * beacon repeaters will be required to detect 
+		 * the address INADDR_ANY in the beacon message
+		 * and replace it with the correct address of the
+		 * server.
+		 */
+		localAddr.in.sin_family = AF_INET;
+		localAddr.in.sin_addr.s_addr = htonl(INADDR_ANY);
+		localAddr.in.sin_port = htons(0);
 	}
 
 	while( (pToken = getToken(&pStr, buf, sizeof(buf))) ){

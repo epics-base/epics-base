@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.37  1998/04/15 21:53:02  jhill
+ * fixed incomplete init problem
+ *
  * Revision 1.36  1998/04/13 19:14:36  jhill
  * fixed task variable problem
  *
@@ -64,6 +67,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.37  1998/04/15 21:53:02  jhill
+ * added fixed incomplete init problem
+ * added
  * added Revision 1.36  1998/04/13 19:14:36  jhill
  * added fixed task variable problem
  * added
@@ -397,17 +403,103 @@ void caSetDefaultPrintfHandler ()
 /*
  * local_addr()
  *
- * return 127.0.0.1
- * (the loop back address)
+ * A valid non-loopback local address is required in the
+ * beacon message in certain situations where
+ * there are beacon repeaters and there are addresses
+ * in the EPICS_CA_ADDRESS_LIST for which we dont have
+ * a strictly correct local server address on a multi-interface
+ * system. In this situation we use the first valid non-loopback local
+ * address found in the beacon message.
  */
-int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
+int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 {
-	ca_uint32_t	loopBackAddress = 0x7f000001;
+	int             	status;
+	struct sockaddr		*pLclSAddr = 
+				(struct sockaddr *) plcladdr;
+	LPINTERFACE_INFO    pIfinfo;
+	LPINTERFACE_INFO    pIfinfoList;
+	unsigned			nelem;
+	DWORD				numifs;
+	DWORD				cbBytesReturned;
+	static struct sockaddr addr;
+	static char     	init = FALSE;
 
-	plcladdr->sin_family = AF_INET;
-	plcladdr->sin_port = 0;
-	plcladdr->sin_addr.s_addr = htonl (loopBackAddress);
-	return OK;
+	if (init) {
+		*pLclSAddr = addr;
+		return 0;
+	}
+
+	/*
+	 * nelem is set to the maximum interfaces 
+	 * on one machine here
+	 */
+
+	/* 
+	 * only valid for winsock 2 and above 
+	 */
+	if ( LOBYTE( WsaData.wVersion ) < 2 ) {
+		return -1;
+	}
+
+	nelem = 10;
+	pIfinfoList = (LPINTERFACE_INFO)calloc(nelem, sizeof(INTERFACE_INFO));
+	if(!pIfinfoList){
+		return -1;
+	}
+
+	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, 
+						NULL, 0,
+						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
+						&cbBytesReturned, NULL, NULL);
+
+	if (status != 0 || cbBytesReturned == 0) {
+		fprintf(stderr, "WSAIoctl failed %d\n",WSAGetLastError());
+		free(pIfinfoList);		
+		return -1;
+	}
+
+	numifs = cbBytesReturned/sizeof(INTERFACE_INFO);
+	for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
+
+		/*
+		 * dont use interfaces that have been disabled
+		 */
+		if (!(pIfinfo->iiFlags & IFF_UP)) {
+			continue;
+		}
+
+		/*
+		 * dont use the loop back interface
+		 */
+		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+			continue;
+		}
+
+		/*
+		 * If its not an internet inteface 
+		 * then dont use it. But for MS Winsock2
+		 * assume 0 means internet.
+		 */
+		if (pIfinfo->iiAddress.sa_family != AF_INET) {
+			if (pIfinfo->iiAddress.sa_family == 0)
+				pIfinfo->iiAddress.sa_family = AF_INET;
+			else
+				continue;
+		}
+
+		/*
+		 * save the interface's IP address
+		 */
+		addr = pIfinfo->iiAddress;
+		*pLclSAddr = addr;
+		init = TRUE;
+		free (pIfinfoList);
+		return 0;
+
+	}
+
+	free (pIfinfoList);
+	return -1;
 }
 
 
@@ -443,11 +535,8 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	unsigned			nelem;
 	int					numifs;
 	DWORD				cbBytesReturned;
-	char				wsaInBuffer[1024];
 
 	/*
-	 * use pool so that we avoid using to much stack space
-	 * under vxWorks
 	 *
 	 * nelem is set to the maximum interfaces 
 	 * on one machine here
@@ -466,7 +555,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	}
 
 	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, 
-						wsaInBuffer, sizeof(wsaInBuffer),
+						NULL, 0,
 						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
 						&cbBytesReturned, NULL, NULL);
 
@@ -516,7 +605,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		 * if it isnt a wildcarded interface then look for
 		 * an exact match
 		 */
-		if (matchAddr.s_addr != INADDR_ANY) {
+		if (matchAddr.s_addr != htonl(INADDR_ANY)) {
 			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
 				continue;
 			}
@@ -552,7 +641,6 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		pNode->destAddr.in = *pInetAddr;
 		pNode->destAddr.in.sin_port = htons(port);
 		pNode->srcAddr.in = localAddr;
-		
 
 		/*
 		 * LOCK applied externally

@@ -31,6 +31,8 @@
  * .02	08-06-91	mrk	parm string length test changed to warning
  *				with continue
  * .03	08-30-91	mrk	completed .02 fix
+ * .04	10-10-91	rcz	changed getResources to accomodate EPICS_ 
+ *				parameters in a structure (first try)
  */
 
 #include	<vxWorks.h>
@@ -498,6 +500,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     int             i = 0;
     int             found = 0;
     int             cvType = 0;
+    int             epicsFlag;
     char            buff[MAX + 1];
     char            name[40];
     char            s1[MAX];
@@ -562,8 +565,13 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    errMessage(0L, message);
 	    return (-1);
 	}
+	if ( (strncmp(s1,"EPICS_",6)) == SAME)
+	    epicsFlag = 1;
+	else
+	    epicsFlag = 0;
+
 	switch (cvType) {
-	case 0:		/* DBF_STRING */
+	case 0: /* DBF_STRING */
 	    len = strlen(s3);
 	    len2 = 20;
 	    if (len >= len2) {
@@ -572,43 +580,74 @@ static long getResources(fname) /* Resource Definition File interpreter */
 			lineNum);
 		errMessage(-1L, message);
 	    }
-	    strncpy(pSymAddr, s3, len + 1);
+	    if ( epicsFlag )
+	        strncpy(pSymAddr+sizeof(caddr_t), s3, len + 1);
+	    else
+	        strncpy(pSymAddr, s3, len + 1);
 	    break;
-	case 1:		/* DBF_SHORT */
+	case 1:	/* DBF_SHORT */
 	    if ((sscanf(s3, "%hd", &n_short)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    *(short *) pSymAddr = n_short;
+	    if ( epicsFlag ) {
+		sprintf(message,
+                       "getResources: EPICS_ type DBF_SHORT not supported - line=%d",
+			lineNum);
+		errMessage(-1L, message);
+	    }
+	    else
+	        *(short *) pSymAddr = n_short;
 	    break;
-	case 2:		/* DBF_LONG */
+	case 2: /* DBF_LONG */
 	    if ((sscanf(s3, "%ld", &n_long)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    *(long *) pSymAddr = n_long;
+	    if ( epicsFlag ) {
+		sprintf(message,
+                       "getResources: EPICS_ type DBF_LONG not supported - line=%d",
+			lineNum);
+		errMessage(-1L, message);
+	    }
+	    else
+	        *(long *) pSymAddr = n_long;
 	    break;
-	case 3:		/* DBF_FLOAT */
+	case 3: /* DBF_FLOAT */
 	    if ((sscanf(s3, "%e", &n_float)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    *(float *) pSymAddr = n_float;
+	    if ( epicsFlag ) {
+		sprintf(message,
+                       "getResources: EPICS_ type DBF_FLOAT not supported - line=%d",
+			lineNum);
+		errMessage(-1L, message);
+	    }
+	    else
+	        *(float *) pSymAddr = n_float;
 	    break;
-	case 4:		/* DBF_DOUBLE */
+	case 4: /* DBF_DOUBLE */
 	    if ((sscanf(s3, "%le", &n_double)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
 		errMessage(0L, message);
 	        return (-1);
 	    }
-	    *(double *) pSymAddr = n_double;
+	    if ( epicsFlag ) {
+		sprintf(message,
+                       "getResources: EPICS_ type DBF_DOUBLE not supported - line=%d",
+			lineNum);
+		errMessage(-1L, message);
+	    }
+	    else
+	        *(double *) pSymAddr = n_double;
 	    break;
 	default:
 	    sprintf(message,

@@ -3,9 +3,11 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-osiTimeTest_LIBS += Com
-osiTimeTest_SRCS += osiTimeTest.cc
-PROD= osiTimeTest
+fdmgrTest_LIBS += Com
+fdmgrTest_SRCS += fdmgrTest.c
+fdmgrTest_LIBS += Com
+fdmgrTest_SRCS += osiTimeTest.cc
+PROD= osiTimeTest fdmgrTest
 
 include $(TOP)/configure/RULES_BUILD
 

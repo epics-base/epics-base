@@ -430,7 +430,7 @@ int			net_proto
 
 		caAddConfiguredAddr(
 			&piiu->destAddr, 
-			&EPICS_CA_SEARCH_ADDR_LIST,
+			&EPICS_CA_ADDR_LIST,
 			sock,
 			CA_SERVER_PORT);
 
@@ -1417,24 +1417,30 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
  *
  * o Indicates failure by setting ptr to nill
  *
- * o Calls non posix gethostbyname() so that we get DNS style names
- *      (gethostbyname() should be available with most BSD sock libs)
+ * o Calls non posix gethostname() 
+ *  
+ * o We want the full domain name however neither
+ *	gethostbyname() or gethostname() appear to provide it
+ *	under SUNOS.
  *
- * vxWorks user will need to configure a DNS format name for the
+ * vxWorks user may need to configure a DNS format name for the
  * host name if they wish to be cnsistent with UNIX and VMS hosts.
  *
  */
 char *localHostName()
 {
-        int     size;
-        int     status;
-        char    pName[MAXHOSTNAMELEN];
-	char	*pTmp;
+        int     	size;
+        int     	status;
+        char    	nameBuf[MAXHOSTNAMELEN];
+	char		*pName;
+	char		*pTmp;
 
-        status = gethostname(pName, sizeof(pName));
+        status = gethostname(nameBuf, sizeof(nameBuf));
         if(status){
                 return NULL;
         }
+
+	pName = nameBuf;
 
         size = strlen(pName)+1;
         pTmp = malloc(size);

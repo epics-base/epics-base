@@ -35,7 +35,6 @@ extern "C" {
 #	include <tcp/netdb.h>
 #endif
 
-
 /*
  * MULTINET defines none of these (if not using C++)
  */
@@ -85,9 +84,6 @@ struct  hostent {
 };
 struct hostent *gethostbyaddr(char *addr, int len, int type);
 #endif
-
-void ipAddrToA (const struct sockaddr_in *pInetAddr, 
-			char *pBuf, const unsigned bufSize);
 
 #ifdef __cplusplus
 }

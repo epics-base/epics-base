@@ -21,9 +21,6 @@ extern "C" {
 #include <arpa/inet.h>
 #include <net/if.h>
 
-void ipAddrToA (const struct sockaddr_in *pInetAddr, 
-			char *pBuf, const unsigned bufSize);
-
 #ifdef __cplusplus
 }
 #endif

@@ -9,9 +9,6 @@ extern "C" {
 #include <time.h>
 #include <errno.h>
 #include <windows.h>
- 
-void ipAddrToA (const struct sockaddr_in *pInetAddr, 
-			char *pBuf, const unsigned bufSize);
 
 #ifdef __cplusplus
 }

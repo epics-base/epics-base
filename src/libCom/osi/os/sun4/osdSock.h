@@ -24,9 +24,6 @@ int close (int fd);
 int gettimeofday (struct timeval *tp, struct timezone *tzp);
 int gethostname (char *name, int namelen); 
 
-void ipAddrToA (const struct sockaddr_in *pInetAddr, 
-			char *pBuf, const unsigned bufSize);
-
 /*
  * sun's CC defines at least a few of these under sunos4
  * ( but acc does not !? )

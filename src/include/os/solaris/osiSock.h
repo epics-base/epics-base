@@ -1,6 +1,6 @@
 
 /*
- * Solaris specifif socket include
+ * Solaris specific socket include
  */
 
 #ifndef osiSockH
@@ -26,9 +26,6 @@ extern "C" {
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
  
-void ipAddrToA(const struct sockaddr_in *pInetAddr, 
-		char *pBuf, const unsigned bufSize);
-
 /*
  * as far as I can tell there is no header file for these
  */

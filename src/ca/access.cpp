@@ -34,7 +34,23 @@ threadPrivateId caClientContextId;
 
 threadPrivateId cacRecursionLock;
 
-#define TYPENOTINUSE (-2)
+static threadOnceId caClientContextIdOnce = OSITHREAD_ONCE_INIT;
+
+extern "C" void ca_client_exit_handler ()
+{
+    if ( caClientContextId ) {
+        threadPrivateDelete ( caClientContextId );
+        caClientContextId = 0;
+    }
+}
+
+static void ca_init_client_context ( void * dummy )
+{
+    caClientContextId = threadPrivateCreate ();
+    if ( caClientContextId ) {
+        atexit ( ca_client_exit_handler );
+    }
+}
 
 /*
  * fetchClientContext ();
@@ -43,17 +59,21 @@ int fetchClientContext (cac **ppcac)
 {
     int status;
 
-    if ( caClientContextId != NULL ) {
-        *ppcac = (cac *) threadPrivateGet (caClientContextId);
-        if (*ppcac) {
-            return ECA_NORMAL;
-        }
+    threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
+
+    if ( caClientContextId == 0 ) {
+        return ECA_ALLOCMEM;
+    }
+
+    *ppcac = (cac *) threadPrivateGet ( caClientContextId );
+    if ( *ppcac ) {
+        return ECA_NORMAL;
     }
 
     status = ca_task_initialize ();
-    if (status == ECA_NORMAL) {
+    if ( status == ECA_NORMAL ) {
         *ppcac = (cac *) threadPrivateGet (caClientContextId);
-        if (!*ppcac) {
+        if ( ! *ppcac ) {
             status = ECA_INTERNAL;
         }
     }
@@ -87,18 +107,6 @@ extern "C" void ca_default_exception_handler (struct exception_handler_args args
     }
 }
 
-extern "C" void caClientExitHandler ()
-{
-    if ( caClientContextId ) {
-        threadPrivateDelete ( caClientContextId );
-        caClientContextId = 0;
-    }
-    if ( cacRecursionLock ) {
-        threadPrivateDelete ( cacRecursionLock );
-        cacRecursionLock = 0;
-    }
-}
-
 /*
  *  ca_task_initialize ()
  */
@@ -106,23 +114,24 @@ int epicsShareAPI ca_task_initialize (void)
 {
     cac *pcac;
 
-    if (caClientContextId==NULL) {
-        caClientContextId = threadPrivateCreate ();
-        if (!caClientContextId) {
-            return ECA_ALLOCMEM;
-        }
-        atexit (caClientExitHandler);
+    threadOnce ( &caClientContextIdOnce, ca_init_client_context, 0);
+
+    if ( caClientContextId == 0 ) {
+        return ECA_ALLOCMEM;
     }
 
-    pcac = (cac *) threadPrivateGet (caClientContextId);
-	if (pcac) {
+    pcac = (cac *) threadPrivateGet ( caClientContextId );
+	if ( pcac ) {
 		return ECA_NORMAL;
 	}
 
     pcac = new cac;
-	if (!pcac) {
+	if ( ! pcac ) {
 		return ECA_ALLOCMEM;
 	}
+
+    threadPrivateSet ( caClientContextId, (void *) pcac );
+
     return ECA_NORMAL;
 }
 
@@ -180,9 +189,10 @@ epicsShareFunc int epicsShareAPI ca_task_exit (void)
     cac   *pcac;
 
     if ( caClientContextId != NULL ) {
-        pcac = (cac *) threadPrivateGet (caClientContextId);
-        if (pcac) {
+        pcac = (cac *) threadPrivateGet ( caClientContextId );
+        if ( pcac ) {
             delete pcac;
+            threadPrivateSet ( caClientContextId, 0 );
         }
     }
 
@@ -432,7 +442,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
         return status;
     }
 
-    return pcac->pend (timeout, early);
+    return pcac->pend ( timeout, early );
 }
 
 /*
@@ -570,7 +580,7 @@ void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm,
     };
 
     if (caClientContextId) {
-        pcac = (cac *) threadPrivateGet (caClientContextId);
+        pcac = (cac *) threadPrivateGet ( caClientContextId );
     }
     else {
         pcac = NULL;
@@ -730,7 +740,7 @@ int ca_vPrintf (const char *pformat, va_list args)
     caPrintfFunc *ca_printf_func;
 
     if ( caClientContextId ) {
-        cac *pcac = (cac *) threadPrivateGet (caClientContextId);
+        cac *pcac = (cac *) threadPrivateGet ( caClientContextId );
         if (pcac) {
             ca_printf_func = pcac->ca_printf_func;
         }
@@ -893,8 +903,8 @@ epicsShareFunc int epicsShareAPI ca_channel_status (threadId /* tid */)
  */
 epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContext)
 {
-    if (caClientContextId) {
-        void *pCtx = threadPrivateGet (caClientContextId);
+    if ( caClientContextId ) {
+        void *pCtx = threadPrivateGet ( caClientContextId );
         if (pCtx) {
             *pCurrentContext = pCtx;
             return ECA_NORMAL;
@@ -916,7 +926,13 @@ epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContex
  */
 epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
 {
-    threadPrivateSet (caClientContextId, context);
+    cac *pcac;
+
+    pcac = (cac *) threadPrivateGet ( caClientContextId );
+    if ( pcac && context != 0 ) {
+        return ECA_ISATTACHED;
+    }
+    threadPrivateSet ( caClientContextId, context );
     return ECA_NORMAL;
 }
 

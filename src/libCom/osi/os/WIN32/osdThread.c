@@ -557,7 +557,14 @@ epicsShareFunc void epicsShareAPI threadOnceOsd (
     BOOL success;
     DWORD stat;
 
-    stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+    if ( ! win32ThreadInitOK ) {
+        threadInit ();
+        if ( ! win32ThreadInitOK ) {
+            return NULL;
+        }
+    }
+
+    stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
     assert ( stat == WAIT_OBJECT_0 );
 
     if (!*id) {

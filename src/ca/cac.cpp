@@ -16,6 +16,21 @@
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
 
+extern "C" void cacRecursionLockExitHandler ()
+{
+    if ( cacRecursionLock ) {
+        threadPrivateDelete ( cacRecursionLock );
+        cacRecursionLock = 0;
+    }
+}
+
+static void cacInitRecursionLock ( void * dummy )
+{
+    cacRecursionLock = threadPrivateCreate ();
+    if ( cacRecursionLock ) {
+        atexit ( cacRecursionLockExitHandler );
+    }
+}
 
 //
 // cac::cac ()
@@ -29,15 +44,15 @@ cac::cac () :
     pndrecvcnt (0)
 {
 	long status;
+    static threadOnceId once = OSITHREAD_ONCE_INIT;
 
-    if ( cacRecursionLock == NULL ) {
-        cacRecursionLock = threadPrivateCreate ();
-        if ( ! cacRecursionLock ) {
-            throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
-        }
+    threadOnce ( &once, cacInitRecursionLock, 0);
+
+    if ( cacInitRecursionLock == 0 ) {
+        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 
-	if ( ! osiSockAttach() ) {
+	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
 
@@ -129,8 +144,6 @@ cac::cac () :
         free (this->ca_pHostName);
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
-
-    threadPrivateSet (caClientContextId, (void *) this);
 }
 
 /*
@@ -140,8 +153,6 @@ cac::cac () :
  */
 cac::~cac ()
 {
-    threadPrivateSet (caClientContextId, NULL);
-
     //
     // destroy local IO channels
     //

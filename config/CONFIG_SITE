@@ -13,14 +13,15 @@
 #	i.e.: the arch running DCT/getrel/etc.
 #
 #  Currently Supporting:
-#	sun4
-#	hp700
-#	alpha
-#	solaris
-#	sgi
+#	Borland
 #	Linux
 #	WIN32
-#	LynxOS
+#	alpha
+#	cygwin32
+#	hp700
+#	sgi
+#	solaris
+#	sun4
 #
 #  HOST_ARCH now an environment variable
 #  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)
@@ -31,15 +32,20 @@ endif
 #  The architectures to build EPICS for
 #
 #  Currently Supporting:
-#       mv167
+#       frc40
+#       frc5ce
+#       hkbaja47
+#       hkv2f
+#       mv147
+#       mv1604
 #       mv162
 #       mv162lc
-#       mv147
-#       hkv2f
-#	niCpu030
-#	pc486
-#	frc5ce
-#	hkbaja47
+#       mv167
+#       mv177
+#       niCpu030
+#       pc486
+#       ppc604
+#       vxipc
 #
 CROSS_COMPILER_TARGET_ARCHS=mv167 ppc604
 

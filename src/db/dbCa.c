@@ -56,6 +56,9 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 static ELLLIST caList;    /* Work list for dbCaTask */
 static epicsMutexId caListSem; /*Mutual exclusions semaphores for caList*/
 static epicsEventId caWakeupSem; /*wakeup semaphore for dbCaTask*/
+static int removesOutstanding = 0;
+static int removesOutstandingWarning = 10000;
+
 void dbCaTask(void); /*The Channel Access Task*/
 extern void dbServiceIOInit();
 
@@ -119,6 +122,9 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
+    if(++removesOutstanding>=removesOutstandingWarning) {
+        printf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
+    }
     epicsMutexUnlock(pca->lock);
     addAction(pca,CA_DELETE);
 }
@@ -666,6 +672,7 @@ void dbCaTask()
             ellDelete(&caList,&pca->node);
             link_action = pca->link_action;
             pca->link_action = 0;
+            if(link_action&CA_DELETE) --removesOutstanding;
             epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_DELETE) {/*This must be first*/
                 if(pca->chid) ca_clear_channel(pca->chid);    

@@ -24,7 +24,6 @@
 
 #include	"parse.h"
 #include	"y.tab.h"	/* output from yacc */
-#include	"stdio.h"
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0

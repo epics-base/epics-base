@@ -116,7 +116,7 @@ void caServerIO::locateInterfaces ()
 			}
 			stat = this->attachInterface (caNetAddr(saddr), autoBeaconAddr, configAddrOnceFlag);
 			if (stat) {
-				errMessage(stat, NULL);
+				errMessage(stat, "unable to attach explicit interface");
 				break;
 			}
 			configAddrOnceFlag = false;
@@ -128,7 +128,7 @@ void caServerIO::locateInterfaces ()
 		saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 		stat = this->attachInterface (caNetAddr(saddr), autoBeaconAddr, true);
 		if (stat) {
-			errMessage(stat, NULL);
+			errMessage(stat, "unable to attach any interface");
 		}
 	}
 }

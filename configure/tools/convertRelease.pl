@@ -14,9 +14,6 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 #
 # Parse configure/RELEASE file(s) and generate a derived output file.
 #
-# This tool replaces makeConfigAppInclude.pl, makeIocCdCommands.pl and
-# makeRulesInclude.pl and adds consistency checks for RELEASE files.
-#
 
 use Cwd;
 use Getopt::Std;
@@ -25,7 +22,7 @@ $cwd = cwd();
 $cwd =~ s/\/tmp_mnt//;	# hack for sun4
 $cwd =~ s/\\/\//g;	# hack for win32
 
-getopt "aht";
+getopt "ahtT";
 
 if ($opt_a) {
     $arch = $opt_a;
@@ -37,29 +34,28 @@ if ($opt_a) {
 $hostarch = $arch;
 $hostarch = $opt_h if ($opt_h);
 
-# Find $top from current path; NB only works under iocBoot/* and configure/*
-$top = $cwd;
-#$top =~ s/^\/cygdrive\/(\w)\//$1:\//;
-$top =~ s/\/iocBoot.*$//;
-$top =~ s/\/configure.*$//;
-if ($^O eq "cygwin") {
-  chomp($top = `cygpath -m $top`);
+if ($opt_T) {
+    $top = $opt_T;
+} else {		# Find $top from current path
+    # This approach is only possible under iocBoot/* and configure/*
+    $top = $cwd;
+    $top =~ s/\/iocBoot.*$//;
+    $top =~ s/\/configure.*$//;
+    chomp($top = `cygpath -m $top`) if ($^O eq "cygwin");
 }
 
 # The IOC may need a different path to get to $top
 if ($opt_t) {
-    $iocroot = $ioctop = $opt_t;
+    $iocroot = $opt_t;
     $root = $top;
     while (substr($iocroot, -1, 1) eq substr($root, -1, 1)) {
 	chop $iocroot;
 	chop $root;
     }
-} else {
-    $ioctop = $top;
 }
 
 unless (@ARGV == 1) {
-    print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-t ioctop] outfile\n";
+    print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-T top] [-t ioctop] outfile\n";
     print "   where outfile is be one of:\n";
     print "\tcheckRelease - checks consistency with support apps\n";
     print "\tcdCommands - generate cd path strings for vxWorks IOCs\n";
@@ -77,20 +73,7 @@ $outfile = $ARGV[0];
 # Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
 die "Can't find configure/RELEASE file" unless (-r $relfile);
-&readRelease($relfile, \%macros, \@apps);
-
-if ($hostarch) {
-    my ($hrelfile) = "$relfile.$hostarch";
-    &readRelease($hrelfile, \%macros, \@apps) if (-r $hrelfile);
-}
-if ($arch) {
-    my ($crelfile) = "$relfile.Common.$arch";
-    &readRelease($crelfile, \%macros, \@apps) if (-r $crelfile);
-    if ($hostarch) {
-        my ($arelfile) = "$relfile.$hostarch.$arch";
-        &readRelease($arelfile, \%macros, \@apps) if (-r $arelfile);
-    }
-}
+&readReleaseFiles($relfile, \%macros, \@apps);
 &expandRelease(\%macros, \@apps);
 
 
@@ -105,7 +88,29 @@ for ($outfile) {
 }
 
 #
-# Parse a configure/RELEASE file.
+# Parse all relevent configure/RELEASE* files and includes
+#
+sub readReleaseFiles {
+    my ($relfile, $Rmacros, $Rapps) = @_;
+
+    return unless (-r $relfile);
+    &readRelease($relfile, $Rmacros, $Rapps);
+    if ($hostarch) {
+	my ($hrelfile) = "$relfile.$hostarch";
+	&readRelease($hrelfile, $Rmacros, $Rapps) if (-r $hrelfile);
+    }
+    if ($arch) {
+	my ($crelfile) = "$relfile.Common.$arch";
+	&readRelease($crelfile, $Rmacros, $Rapps) if (-r $crelfile);
+	if ($hostarch) {
+	    my ($arelfile) = "$relfile.$hostarch.$arch";
+	    &readRelease($arelfile, $Rmacros, $Rapps) if (-r $arelfile);
+	}
+    }
+}
+
+#
+# Parse a configure/RELEASE file and its includes.
 #
 # NB: This subroutine also appears in base/src/makeBaseApp/makeBaseApp.pl
 # If you make changes here, they will be needed there as well.
@@ -121,7 +126,7 @@ sub readRelease {
 	s/\r$//;		# Shouldn't need this, but sometimes...
 	s/\s*#.*$//;		# Remove trailing comments
 	s/\s+$//;		# Remove trailing whitespace
-        next if /^\s*$/;	# Skip blank lines
+	next if /^\s*$/;	# Skip blank lines
 	
 	# Expand all already-defined macros in the line:
 	while (($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
@@ -173,23 +178,23 @@ sub configAppInclude {
 	    print OUT "export ${app}\n";
 	}
 	foreach $app (@includes) {
-            $path = $macros{$app};
+	    $path = $macros{$app};
 	    next unless (-d "$path/bin/$hostarch");
 	    print OUT "${app}_HOST_BIN = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
 	foreach $app (@includes) {
-            $path = $macros{$app};
+	    $path = $macros{$app};
 	    next unless (-d "$path/lib/$hostarch");
 	    print OUT "${app}_HOST_LIB = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
 	foreach $app (@includes) {
-            $path = $macros{$app};
-            next unless (-d "$path/bin/$arch");
+	    $path = $macros{$app};
+	    next unless (-d "$path/bin/$arch");
 	    print OUT "${app}_BIN = \$(strip \$($app))/bin/$arch\n";
 	}
 	foreach $app (@includes) {
-            $path = $macros{$app};
-            next unless (-d "$path/lib/$arch");
+	    $path = $macros{$app};
+	    next unless (-d "$path/lib/$arch");
 	    print OUT "${app}_LIB = \$(strip \$($app))/lib/$arch\n";
 	}
 	# We can't just include TOP in the foreach list:
@@ -199,20 +204,20 @@ sub configAppInclude {
 	print OUT "SHRLIB_SEARCH_DIRS = $path/lib/$arch\n";
 	foreach $app (@includes) {
 	    $path = $macros{$app};
-            next unless (-d "$path/lib/$arch");
+	    next unless (-d "$path/lib/$arch");
 	    print OUT "SHRLIB_SEARCH_DIRS += \$(${app}_LIB)\n";
 	}
     }
     foreach $app (@includes) {
-        $path = $macros{$app};
-        next unless (-d "$path/include");
+	$path = $macros{$app};
+	next unless (-d "$path/include");
 	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include/os/\$(OS_CLASS)\n";
 	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include\n";
     }
     foreach $app (@includes) {
-        $path = $macros{$app};
-        next unless (-d "$path/dbd");
-        print OUT "RELEASE_DBDFLAGS += -I \$(strip \$($app))/dbd\n";
+	$path = $macros{$app};
+	next unless (-d "$path/dbd");
+	print OUT "RELEASE_DBDFLAGS += -I \$(strip \$($app))/dbd\n";
     }
     close OUT;
 }
@@ -226,8 +231,8 @@ sub rulesInclude {
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
     foreach $app (@includes) {
-        $path = $macros{$app};
-        next unless (-r "$path/configure/RULES_BUILD");
+	$path = $macros{$app};
+	next unless (-r "$path/configure/RULES_BUILD");
 	print OUT "-include \$(strip \$($app))/configure/RULES_BUILD\n";
     }
     close OUT;
@@ -256,6 +261,7 @@ sub cdCommands {
     }
     close OUT;
 }
+
 sub envPaths {
     die "Architecture not set (use -a option)" unless ($arch);
     @includes = grep !/^TEMPLATE_TOP$/, @apps;
@@ -264,7 +270,7 @@ sub envPaths {
     open(OUT,">$outfile") or die "$! creating $outfile";
     
     $ioc = $cwd;
-    $ioc =~ s/^.*\///;
+    $ioc =~ s/^.*\///;	# iocname is last component of directory name
     
     print OUT "epicsEnvSet(ARCH,\"$arch\")\n";
     print OUT "epicsEnvSet(IOC,\"$ioc\")\n";
@@ -272,10 +278,11 @@ sub envPaths {
     foreach $app (@includes) {
 	$iocpath = $path = $macros{$app};
 	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
-        print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
+	print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
     }
     close OUT;
 }
+
 sub checkRelease {
     $status = 0;
     delete $macros{TOP};
@@ -285,11 +292,7 @@ sub checkRelease {
 	%check = (TOP => $path);
 	@order = ();
 	$relfile = "$path/configure/RELEASE";
-	&readRelease($relfile, \%check, \@order) if (-r $relfile);
-	if ($hostarch) {
-	    $relfile .= ".$hostarch";
-	    &readRelease($relfile, \%check, \@order) if (-r $relfile);
-	}
+	&readReleaseFiles($relfile, \%check, \@order);
 	&expandRelease(\%check, \@order);
 	delete $check{TOP};
 	

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.66  1997/08/04 23:37:11  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.64  1997/06/13 09:14:21  jhill
  * connect/search proto changes
  *
@@ -136,6 +139,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 
 /*
  * ANSI C includes
+ * !!!!! MULTINET/VMS breaks if we include ANSI time.h here !!!!!
  */
 #include <ctype.h>
 #include <stdio.h>
@@ -143,7 +147,6 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <stdlib.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <time.h>
 
 /*
  * OS dependent includes
@@ -634,13 +637,13 @@ int	issue_claim_channel(chid pchan);
 void 	issue_identify_client(struct ioc_in_use *piiu);
 void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
-int 	ca_printf(char *pformat, ...);
+epicsShareFunc int epicsShareAPI ca_printf(char *pformat, ...);
 void 	manage_conn();
 void 	mark_server_available(const struct sockaddr_in *pnet_addr);
 void	flow_control_on(struct ioc_in_use *piiu);
 void	flow_control_off(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
-void	ca_repeater(void);
+epicsShareFunc void epicsShareAPI ca_repeater(void);
 void 	cac_recv_task(int tid);
 void 	ca_sg_init(void);
 void	ca_sg_shutdown(struct CA_STATIC *ca_temp);

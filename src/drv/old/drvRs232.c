@@ -37,11 +37,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <dbDefs.h>
+#include <epicsPrint.h>
 #include <task_params.h>
 #include <module_types.h>
 #include <drvSup.h>
 #include <devSup.h>
-#include <dbDefs.h>
 #include <dbCommon.h>
 #include <dbAccess.h>
 #include <link.h>

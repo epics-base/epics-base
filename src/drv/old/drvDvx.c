@@ -122,6 +122,9 @@
  *  for the DMA buffer that is appropriate.
  *
  * $Log$
+ * Revision 1.3  1997/04/30 19:02:04  mrk
+ * Fixed many compiler warning messages
+ *
  * Revision 1.2  1995/09/01  14:36:35  winans
  * Added ability to change default clock speed from shell.
  *
@@ -148,10 +151,12 @@ static char *SccsId = "$Id$";
 #include	<rebootLib.h>
 #include	<intLib.h>
 #include	<taskLib.h>
+#include	<iv.h>
+
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<iv.h>
 #include	<dbScan.h>
 #include	<devLib.h>
 

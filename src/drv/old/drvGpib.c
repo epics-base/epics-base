@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  1997/04/30 19:02:08  mrk
+ * Fixed many compiler warning messages
+ *
  * Revision 1.6  1996/05/03 19:05:36  winans
  * Added the EOS logic from Mark Rivers.  (It is only supported for HiDEOS
  * GPIB interfaces.)
@@ -118,12 +121,13 @@
 #include <symLib.h>
 #include <sysSymTbl.h>	/* idiots at WRS have undocumented stuff in here */
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include "devLib.h"
 #include "ellLib.h"
 #include "task_params.h"
 #include "module_types.h"
 #include "drvSup.h"
-#include "dbDefs.h"
 #include "link.h"
 #include "fast_lock.h"
 #include "taskwd.h"

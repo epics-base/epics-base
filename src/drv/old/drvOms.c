@@ -84,6 +84,7 @@
 #include        <vme.h>                /* library to support sysBusToLocalAdrs. */
 
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<drvSup.h>
 #include	<module_types.h>
 #include	<drvOms.h>

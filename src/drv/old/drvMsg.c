@@ -51,6 +51,8 @@
 #include <fast_lock.h>
 #include <taskwd.h>
 
+#include <dbDefs.h>
+#include <epicsPrint.h>
 #include <dbCommon.h>
 #include <aoRecord.h>
 #include <aiRecord.h>

@@ -78,6 +78,7 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.17\t9/9/93";
 #include	<iv.h>
 
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<drvSup.h>
 #include	<module_types.h>
 #include        <task_params.h>

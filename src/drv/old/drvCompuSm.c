@@ -69,6 +69,7 @@
 /* drvCompuSm.c -  Driver Support Routines for CompuSm */
 
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
 #include	<drvSup.h>
 #include	<module_types.h>
 #include	 <steppermotor.h>

@@ -91,10 +91,10 @@
 #include <intLib.h>
 #include <vxLib.h>
 
+#include <dbDefs.h>
 #include <task_params.h>
 #include <module_types.h>
 #include <drvSup.h>
-#include <dbDefs.h>
 #include <link.h>
 #include <callback.h>
 #include <taskwd.h>

@@ -39,6 +39,8 @@
 #include <stdio.h>
 #include <rebootLib.h>
 
+#include <dbDefs.h>
+#include <epicsPrint.h>
 #include <drvEpvxi.h>
 #include <drvSup.h>
 #include <devLib.h>

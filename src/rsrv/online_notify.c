@@ -248,8 +248,8 @@ void rsrv_online_notify_task(void *pParm)
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
                         char sockErrBuf[64];
-                        ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                        ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                         errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                             __FILE__, buf, sockErrBuf);
                     }

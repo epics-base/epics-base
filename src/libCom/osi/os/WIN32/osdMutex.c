@@ -99,15 +99,13 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc void epicsShareAPI 
     epicsMutexUnlock ( epicsMutexId pSem ) 
 {
-    DWORD status;
-
     //assert ( pSem->threadId == GetCurrentThreadId () );
     if ( pSem->recursionCount == 1 ) {
         pSem->threadId = 0;
         pSem->recursionCount = 0;
         LeaveCriticalSection ( &pSem->mutex );
         if ( pSem->waitingCount ) {
-            status = SetEvent ( pSem->unlockSignal );
+            DWORD status = SetEvent ( pSem->unlockSignal );
             assert ( status ); 
         }
     }
@@ -170,7 +168,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
             }
         }
 
-        assert ( pSem->waitingCount < 2147483647 );
+        assert ( pSem->waitingCount < 0x7FFFFFFF );
         InterlockedIncrement ( &pSem->waitingCount );
 
         while ( ! TryEnterCriticalSection ( &pSem->mutex ) ) {

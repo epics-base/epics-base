@@ -8,21 +8,11 @@ SRCS.c = \
 	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c ../acctst.c \
 	../catime.c
 
-OBJS = \
+LIBOBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
 	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o 
 
-PROD = caLib 
+LIBNAME = caLib 
 
 include $(EPICS)/config/RULES.Vx
-
-caLib: $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
-
-acctst.o: ../acctst.c
-	$(COMPILE.c) $<
-
-catime.o: ../catime.c
-	$(COMPILE.c) $<
 

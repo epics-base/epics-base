@@ -560,25 +560,31 @@ void destroy_tcp_client ( struct client *client )
         errlogPrintf ( "CAS: Connection %d Terminated\n", client->sock );
     }
 
-    if ( client->evuser ) {
-        db_event_flow_ctrl_mode_off ( client->evuser );
-    }
+    /*
+     * turn off extra labor callbacks from the event thread
+     */
+    status = db_add_extra_labor_event ( client->evuser, NULL, NULL );
+    assert ( ! status );
 
-    while ( TRUE ){
+    /*
+     * wait for extra labor in progress to comple
+     */
+    status = db_flush_extra_labor_event ( client->evuser );
+    assert ( ! status );
+
+    /*
+     * wait for any put notify in progress to comple
+     */
+    status = db_flush_extra_labor_event(client->evuser);
+    assert ( ! status );
+
+    while ( TRUE ) {
         epicsMutexMustLock ( client->addrqLock );
-        pciu = (struct channel_in_use *) ellGet ( &client->addrq );
+        pciu = (struct channel_in_use *) ellGet ( & client->addrq );
         epicsMutexUnlock ( client->addrqLock );
+
         if ( ! pciu ) {
             break;
-        }
-
-        /*
-         * put notify in progress needs to be deleted
-         */
-        if ( pciu->pPutNotify ) {
-            if ( pciu->pPutNotify->busy ) {
-                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
-            }
         }
 
         while ( TRUE ) {
@@ -598,10 +604,11 @@ void destroy_tcp_client ( struct client *client )
             }
             freeListFree (rsrvEventFreeList, pevext);
         }
-        status = db_flush_extra_labor_event (client->evuser);
-        assert (status==DB_EVENT_OK);
         if (pciu->pPutNotify) {
-            free(pciu->pPutNotify);
+            if ( pciu->pPutNotify->busy ) {
+                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
+            } 
+            free ( pciu->pPutNotify );
         }
         LOCK_CLIENTQ;
         status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);

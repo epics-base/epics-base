@@ -1392,6 +1392,7 @@ LOCAL void write_notify_call_back(putNotify *ppn)
      */
     epicsMutexMustLock(pclient->putNotifyLock);
     ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
+    pciu->pPutNotify->onExtraLaborQueue = TRUE;
     epicsMutexUnlock(pclient->putNotifyLock);
 
     /*
@@ -1427,6 +1428,7 @@ void write_notify_reply(void *pArg)
          */
         epicsMutexMustLock(pClient->putNotifyLock);
         ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
+        ppnb->onExtraLaborQueue = FALSE;
         epicsMutexUnlock(pClient->putNotifyLock);
         /*
          * break to loop exit
@@ -1581,6 +1583,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     pciu->pPutNotify->busy = TRUE;
+    pciu->pPutNotify->onExtraLaborQueue = FALSE;
     pciu->pPutNotify->msg = *mp;
     pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
 #ifdef CONVERSION_REQUIRED
@@ -1737,9 +1740,14 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
       * if a put notify is outstanding then cancel it
       */
      if(pciu->pPutNotify){
-         if(pciu->pPutNotify->busy){
-             dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
-         }
+        if(pciu->pPutNotify->busy){
+            dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
+        }
+        epicsMutexMustLock ( client->putNotifyLock );
+        if ( pciu->pPutNotify->onExtraLaborQueue ) {
+	        ellDelete ( &client->putNotifyQue, &pciu->pPutNotify->node );
+        }
+        epicsMutexUnlock ( client->putNotifyLock );
      }
      
      while (TRUE){

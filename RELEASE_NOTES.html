@@ -12,11 +12,33 @@
 EPICS Release 3.13.3</h1>
 
 <h4>
-June 29, 2000</h4>
+July 5, 2000</h4>
 
 <h3>
 Changes since 3.13.2</h3>
-<b>Channel Access Changes</b><b></b>
+<b>Build Changes</b>
+<br>&nbsp;
+<ul>
+<li>
+Base no longer requires the INC step. Formerly this was the first step
+of build. It installed header files.&nbsp; By default this step is no longer
+executed. If your applications need this step then in base/config/CONFIG_SITE
+(for all applications) or &lt;apptop>/config/CONFIG (for individual applications)/CONFIG_SITE&nbsp;
+provide the following definition<br>
+<br>
+MAKE_INC_TARGET_FIRST=YES<br>
+<br>
+<b>NOTE: If your applications relies on header files being installed as
+the first step of building, you should reorganize the order of building.&nbsp;
+The 3.14 releases of base will no longer support the INC step.</b></li>
+</ul>
+
+<ul>
+<li>
+Support has been added for the Borland C++ compiler on windows</li>
+</ul>
+
+<p><br><b>Channel Access Changes</b>
 <p>Fixed the RISC architecture specific problem in iocCore which results
 in an intermittent and infrequent assert failure with this message: "assert
 (ev_que->evUser->nDuplicates>=1u)". This was actually fixed in release
@@ -24,12 +46,14 @@ in an intermittent and infrequent assert failure with this message: "assert
 <p>All structure members with names "m_type" were changed to "m_dataType"
 to avoid a macro name compile time conflict present in the SENS IP kernel
 supplied with Tornado II and optionally in Tornado I.
-<p>The network interface query code used by Channel Access for auto-configure
-was modified to be compatible with changed API's present in the SENS IP&nbsp;
-kernel supplied with Tornado II and optionally in Tornado I.
-<br>&nbsp;
-<p><b>task_params.h</b>
-<p>Change task names so that they do not contain blanks.
+<p>The network interface query code used by Channel Access to auto-configure
+its address list was modified to be compatible with changed API's present
+in the SENS IP&nbsp; kernel supplied with Tornado II and optionally inTornado
+I.
+<p><b>DBR_PUT_ACKT and DBR_PUT_ACKS</b>
+<p>This now works for ca_put_callback as well as ca_put.
+<p><b>Spaces in task names</b>
+<p>Task names no longer have any blanks
 <p><b>tsLib.h</b>
 <p>Made tsStampFromLocal and tsStampToLocal public rather than private.
 <p><b>dbAccess</b>

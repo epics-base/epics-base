@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.5  1996/08/22 21:05:42  jbk
+// More fixes to make strings and fixed string work better.
+//
 // Revision 1.4  1996/08/06 19:14:13  jbk
 // Fixes to the string class.
 // Changes units field to a aitString instead of aitInt8.
@@ -51,7 +54,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// Just describe the menu - allow the block of choiced to be
 	// referenced in.
-	gddAtomic* add_enum = new gddAtomic(0,aitEnumFixedString,1,16);
+	// gddAtomic* add_enum = new gddAtomic(0,aitEnumFixedString,1,16);
 
 	// ----------------------------------------------------------------
 	// register simple types
@@ -86,7 +89,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	int type_units=registerApplicationTypeWithProto(GDD_NAME_UNITS,add_units);
 
 	// old menu method
-	// int type_menu=registerApplicationTypeWithProto(GDD_NAME_ENUM,add_enum);
+	// int type_menu=registerApplicationType(GDD_NAME_ENUM);
 
 	// ----------------------------------------------------------------
 	// register container types - not as easy
@@ -150,8 +153,8 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// DBR_GR_ENUM
 	gddContainer* cdd_gr_enum=new gddContainer(0);
-	// old menu method: cdd_gr_enum->insert(getDD(type_menu)); 
-	cdd_gr_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
+	// old: cdd_gr_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
+	cdd_gr_enum->insert(getDD(type_menu)); 
 	cdd_gr_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_gr_enum",cdd_gr_enum);
 
@@ -223,8 +226,8 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// DBR_CTRL_ENUM
 	gddContainer* cdd_ctrl_enum=new gddContainer(0);
-	// old method: cdd_ctrl_enum->insert(getDD(type_menu)); 
-	cdd_ctrl_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
+	//old:cdd_ctrl_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
+	cdd_ctrl_enum->insert(getDD(type_menu)); 
 	cdd_ctrl_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_ctrl_enum",cdd_ctrl_enum);
 

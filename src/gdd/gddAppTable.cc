@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.2  1996/06/26 21:00:08  jbk
+// Fixed up code in aitHelpers, removed unused variables in others
+// Fixed potential problem in gddAppTable.cc with the map functions
+//
 // Revision 1.1  1996/06/25 19:11:41  jbk
 // new in EPICS base
 //
@@ -215,9 +219,15 @@ gddStatus gddApplicationTypeTable::registerApplicationType(
 	gddStatus rc;
 
 	if(new_app=getApplicationType(name))
+	{
+		// gddAutoPrint(gddErrorAlreadyDefined);
 		return gddErrorAlreadyDefined;
+	}
 	if(total_registered>max_allowed)
+	{
+		gddAutoPrint("gddAppTable::registerApplicationType()",gddErrorAtLimit);
 		return gddErrorAtLimit;
+	}
 
 	sem.take();
 	rapp=total_registered++;
@@ -229,7 +239,10 @@ gddStatus gddApplicationTypeTable::registerApplicationType(
 	{
 		// group already allocated - check is app already refined
 		if(attr_table[group][app].type!=gddApplicationTypeUndefined)
+		{
+			// gddAutoPrint(gddErrorAlreadyDefined);
 			return gddErrorAlreadyDefined;
+		}
 	}
 	else
 	{
@@ -346,17 +359,21 @@ gddStatus gddApplicationTypeTable::mapAppToIndex(
 	aitUint32 c_app, aitUint32 m_app, aitUint32& x)
 {
 	aitUint32 group,app;
-	gddStatus rc;
+	gddStatus rc=0;
 
-	if((rc=splitApplicationType(c_app,group,app))<0) return rc;
-
-	if(attr_table[group][app].map && m_app<attr_table[group][app].map_size)
+	if((rc=splitApplicationType(c_app,group,app))==0)
 	{
-		x=attr_table[group][app].map[m_app];
-		return 0;
+		if(attr_table[group][app].map && m_app<attr_table[group][app].map_size)
+		{
+			x=attr_table[group][app].map[m_app];
+			if(x==0 && c_app!=m_app)
+				rc=gddErrorNotDefined;
+		}
+		else
+			rc=gddErrorOutOfBounds;
 	}
-	else
-		return gddErrorOutOfBounds;
+	gddAutoPrint("gddAppTable::mapAppToIndex()",rc);
+	return rc;
 }
 
 gdd* gddApplicationTypeTable::getDD(aitUint32 rapp)
@@ -433,15 +450,17 @@ gddStatus gddApplicationTypeTable::freeDD(gdd* dd)
 gddStatus gddApplicationTypeTable::storeValue(aitUint32 ap, aitUint32 uv)
 {
 	aitUint32 group,app;
-	gddStatus rc;
+	gddStatus rc=0;
 
 	if((rc=splitApplicationType(ap,group,app))<0) return rc;
 	if(attr_table[group]==NULL ||
 	   attr_table[group][app].type==gddApplicationTypeUndefined)
-		return gddErrorNotDefined;
+		rc=gddErrorNotDefined;
+	else
+		attr_table[group][app].user_value=uv;
 
-	attr_table[group][app].user_value=uv;
-	return 0;
+	gddAutoPrint("gddAppTable::storeValue()",rc);
+	return rc;
 }
 
 aitUint32 gddApplicationTypeTable::getValue(aitUint32 ap)
@@ -522,6 +541,9 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
 {
 	gddStatus rc=0;
 
+	// only works with managed containers because app table mapping
+	// feature is used.
+
 	if(dest->isContainer() && dest->isManaged())
 		rc=copyDD_src(dest,src);
 	else if(src->isContainer() && src->isManaged())
@@ -531,5 +553,6 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
 	else
 		rc=gddErrorNotAllowed;
 
+	gddAutoPrint("gddAppTable::smartCopy()",rc);
 	return rc;
 }

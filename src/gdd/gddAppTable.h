@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:42  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.3  1996/06/24 03:15:36  jbk
  * *name changes and fixes for aitString and fixed string functions
@@ -167,9 +170,15 @@ inline aitUint32 gddApplicationTypeTable::index(aitUint32 rapp) const
 inline gddStatus gddApplicationTypeTable::splitApplicationType(aitUint32 rapp, 
 	aitUint32& g, aitUint32& app) const
 {
+	gddStatus rc=0;
 	g=group(rapp);
 	app=index(rapp);
-	if(rapp>=total_registered) return gddErrorOutOfBounds; else return 0;
+	if(rapp>=total_registered)
+	{
+		rc=gddErrorOutOfBounds;
+		gddAutoPrint("gddAppTable::splitApplicationType()",rc);
+	}
+	return rc;
 }
 
 inline aitUint32 gddApplicationTypeTable::registerApplicationType(

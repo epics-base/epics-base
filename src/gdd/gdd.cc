@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.10  1996/08/23 20:29:36  jbk
+// completed fixes for the aitString and fixed string management
+//
 // Revision 1.9  1996/08/22 21:05:40  jbk
 // More fixes to make strings and fixed string work better.
 //
@@ -69,6 +72,23 @@ gdd_NEWDEL_STAT(gddDestructor)
 gdd_NEWDEL_NEW(gdd)
 gdd_NEWDEL_DEL(gdd)
 gdd_NEWDEL_STAT(gdd)
+
+// -------------------------- Error messages -------------------------
+
+char* gddErrorMessages[]=
+{
+	"Invalid",
+	"TypeMismatch",
+	"NotAllowed",  
+	"AlreadyDefined",
+	"NewFailed", 
+	"OutOfBounds",
+	"AtLimit",
+	"NotDefined",
+	"NotSupported",
+	"Overflow",
+	"Underflow"
+};
 
 // --------------------------The gddBounds functions-------------------
 
@@ -246,7 +266,10 @@ gddStatus gdd::registerDestructor(gddDestructor* dest)
 {
 	// this is funky, will not register a destructor if one is present
 	if(destruct)
+	{
+		gddAutoPrint("gdd::registerDestructor()",gddErrorAlreadyDefined);
 		return gddErrorAlreadyDefined;
+	}
 	else
 		return replaceDestructor(dest);
 }
@@ -275,7 +298,10 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 		{
 			sz=describedDataSizeBytes();
 			if((buf=new aitInt8[sz])==NULL)
+			{
+				gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
 				rc=gddErrorNewFailed;
+			}
 			else
 			{
 				setData(buf);
@@ -289,7 +315,10 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 				getDataSizeElements());
 	}
 	else
+	{
+		gddAutoPrint("gdd::genCopy()",gddErrorTypeMismatch);
 		rc=gddErrorTypeMismatch;
+	}
 
 	return rc;
 }
@@ -308,7 +337,10 @@ gddStatus gdd::changeType(int app,aitEnum prim)
 		setPrimType(prim);
 	}
 	else
+	{
+		gddAutoPrint("gdd::changeType()",gddErrorTypeMismatch);
 		rc=gddErrorTypeMismatch;
+	}
 
 	return rc;
 }
@@ -319,7 +351,10 @@ gddStatus gdd::setBound(unsigned index_dim, aitIndex first, aitIndex count)
 	if(index_dim<dimension())
 		bounds[index_dim].set(first,count);
 	else
+	{
+		gddAutoPrint("gdd::setBound()",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 	return rc;
 }
 
@@ -329,7 +364,10 @@ gddStatus gdd::getBound(unsigned index_dim, aitIndex& first, aitIndex& count)
 	if(index_dim<dimension())
 		bounds[index_dim].get(first,count);
 	else
+	{
+		gddAutoPrint("gdd::getBound()",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 	return rc;
 }
 
@@ -343,7 +381,10 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 
 	// blow me out quickly here
 	if(isFlat()||isManaged())
+	{
+		gddAutoPrint("gdd::copyStuff()",gddErrorNotAllowed);
 		return gddErrorNotAllowed;
+	}
 
 	clear();
 
@@ -387,7 +428,10 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 					setData(array);
 				}
 				else
+				{
+					gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
 					rc=gddErrorNewFailed;
+				}
 				break;
 			case 2: // Dup()
 				data=dd->getData(); // copy the data reference
@@ -860,7 +904,10 @@ gddStatus gdd::convertAddressToOffsets(void)
 
 	// does not ensure that all the members of a container are flat!
 	if(!isFlat())
+	{
+		gddAutoPrint("gdd::convertAddressToOffsets()",gddErrorNotAllowed);
 		return gddErrorNotAllowed;
+	}
 
 	if(isContainer())
 	{
@@ -920,7 +967,10 @@ gddStatus gdd::clearData(void)
 	gddStatus rc=0;
 	
 	if(isContainer())
+	{
+		gddAutoPrint("gdd::clearData()",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
+	}
 	else
 	{
 		if(destruct)
@@ -937,7 +987,10 @@ gddStatus gdd::clearData(void)
 gddStatus gdd::clear(void)
 {
 	if(isFlat()||isManaged())
+	{
+		gddAutoPrint("gdd::clear()",gddErrorNotAllowed);
 		return gddErrorNotAllowed;
+	}
 
 	if(isAtomic())
 	{
@@ -983,7 +1036,10 @@ gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 	gddStatus rc;
 
 	if(isFlat()||isManaged()||isContainer())
+	{
+		gddAutoPrint("gdd::reset()",gddErrorNotAllowed);
 		return gddErrorNotAllowed;
+	}
 
 	app=applicationType();
 
@@ -1058,7 +1114,7 @@ void gdd::getConvert(aitFixedString& d)
 		get(aitEnumFixedString,d.fixed_string);
 }
 
-gddStatus gdd::put(aitString d)
+gddStatus gdd::put(const aitString& d)
 {
 	gddStatus rc=0;
 	if(isScalar())
@@ -1068,13 +1124,34 @@ gddStatus gdd::put(aitString d)
 		setPrimType(aitEnumString);
 	}
 	else
+	{
+		gddAutoPrint("gdd::put(aitString&)",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
+	}
+
+	return rc;
+}
+
+gddStatus gdd::put(aitString& d)
+{
+	gddStatus rc=0;
+	if(isScalar())
+	{
+		aitString* s=(aitString*)dataAddress();
+		*s=d;
+		setPrimType(aitEnumString);
+	}
+	else
+	{
+		gddAutoPrint("gdd::put(aitString&)",gddErrorNotAllowed);
+		rc=gddErrorNotAllowed;
+	}
 
 	return rc;
 }
 
 // this is dangerous, should the fixed string be copied here?
-gddStatus gdd::put(aitFixedString& d)
+gddStatus gdd::put(const aitFixedString& d)
 {
 	gddStatus rc=0;
 
@@ -1094,7 +1171,7 @@ gddStatus gdd::put(aitFixedString& d)
 	return rc;
 }
 
-void gdd::putConvert(aitString d)
+void gdd::putConvert(const aitString& d)
 {
 	if(primitiveType()==aitEnumInt8 && dim==1)
 	{
@@ -1105,10 +1182,10 @@ void gdd::putConvert(aitString d)
 		cp[len]='\0';
 	}
 	else
-		set(aitEnumString,&d);
+		set(aitEnumString,(aitString*)&d);
 }
 
-void gdd::putConvert(aitFixedString& d)
+void gdd::putConvert(const aitFixedString& d)
 {
 	if(primitiveType()==aitEnumInt8 && dim==1)
 	{
@@ -1119,7 +1196,7 @@ void gdd::putConvert(aitFixedString& d)
 		cp[len]='\0';
 	}
 	else
-		set(aitEnumFixedString,d.fixed_string);
+		set(aitEnumFixedString,(void*)d.fixed_string);
 }
 
 // copy each of the strings into this DDs storage area
@@ -1140,7 +1217,10 @@ gddStatus gdd::put(const aitFixedString* const d)
 		else
 			genCopy(aitEnumFixedString,d);
 	else
+	{
+		gddAutoPrint("gdd::put(const aitFixedString*const)",gddErrorNotAllowed);
 		rc=gddErrorTypeMismatch;
+	}
 
 	return rc;
 }
@@ -1151,7 +1231,10 @@ gddStatus gdd::put(const gdd* dd)
 
 	// bail out quickly is either dd is a container
 	if(isContainer() || dd->isContainer())
+	{
+		gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
 		return gddErrorNotSupported;
+	}
 		
 	if(!aitConvertValid(primitiveType()))
 	{
@@ -1221,7 +1304,10 @@ gddStatus gdd::put(const gdd* dd)
 				// which marks it flat
 
 				if(isFlat())
+				{
+					gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
 					rc=gddErrorNotAllowed;
+				}
 				else
 				{
 					// convert it to a scalar - is this OK to do?
@@ -1240,16 +1326,25 @@ gddStatus gdd::put(const gdd* dd)
 		if(dataPointer()==NULL)
 		{
 			if(destruct)
+			{
+				gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
 				rc=gddErrorNotAllowed;
+			}
 			else
 				rc=copyData(dd); // is this the correct thing to do?
 		}
 		else if(dd->getDataSizeElements()>getDataSizeElements())
+		{
+			gddAutoPrint("gdd::put(const gdd*)",gddErrorOutOfBounds);
 			rc=gddErrorOutOfBounds;
+		}
 		else
 		{
 			if(dd->dimension()>1)
+			{
+				gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
 				rc=gddErrorNotSupported;
+			}
 			else
 			{
 				aitUint8* arr = (aitUint8*)dataPointer();
@@ -1277,7 +1372,10 @@ gddStatus gdd::copyData(const gdd* dd)
 	gddStatus rc=0;
 
 	if(isFlat() || isManaged() || isContainer())
+	{
+		gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
+	}
 	else
 	{
 		if((rc=clear())==0)
@@ -1296,7 +1394,10 @@ gddStatus gdd::copyData(const gdd* dd)
 				setData(arr);
 			}
 			else
+			{
+				gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
 				rc=gddErrorNewFailed;
+			}
 		}
 	}
 	return rc;
@@ -1328,7 +1429,10 @@ gddStatus gddAtomic::getBoundingBoxSize(aitUint32* b)
 	if(dimension()>0)
 		for(i=0;i<dimension();i++) b[i]=bounds[i].size();
 	else
+	{
+		gddAutoPrint("gddAtomic::getBoundingBoxSize()",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 
 	return rc;
 }
@@ -1341,7 +1445,10 @@ gddStatus gddAtomic::setBoundingBoxSize(const aitUint32* const b)
 	if(dimension()>0)
 		for(i=0;i<dimension();i++) bounds[i].setSize(b[i]);
 	else
+	{
+		gddAutoPrint("gddAtomic::setBoundingBoxSize()",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 
 	return rc;
 }
@@ -1354,7 +1461,10 @@ gddStatus gddAtomic::getBoundingBoxOrigin(aitUint32* b)
 	if(dimension()>0)
 		for(i=0;i<dimension();i++) b[i]=bounds[i].first();
 	else
+	{
+		gddAutoPrint("gddAtomic::getBoundingBoxOrigin()",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 
 	return rc;
 }
@@ -1367,7 +1477,10 @@ gddStatus gddAtomic::setBoundingBoxOrigin(const aitUint32* const b)
 	if(dimension()>0)
 		for(i=0;i<dimension();i++) bounds[i].setSize(b[i]);
 	else
+	{
+		gddAutoPrint("gddAtomic::setBoundingBoxOrigin",gddErrorOutOfBounds);
 		rc=gddErrorOutOfBounds;
+	}
 
 	return rc;
 }
@@ -1467,7 +1580,10 @@ gddStatus gddContainer::remove(aitIndex index)
 		return 0;
 	}
 	else
+	{
+		gddAutoPrint("gddContainer::remove()",gddErrorOutOfBounds);
 		return gddErrorOutOfBounds;
+	}
 }
 
 // ------------------------cursor functions-------------------------------

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  1996/08/22 21:05:41  jbk
+ * More fixes to make strings and fixed string work better.
+ *
  * Revision 1.10  1996/08/14 16:29:38  jbk
  * fixed a put() function that did not return anything
  *
@@ -452,8 +455,8 @@ public:
 	void putConvert(aitInt16 d);
 	void putConvert(aitUint8 d);
 	void putConvert(aitInt8 d);
-	void putConvert(aitString d);
-	void putConvert(aitFixedString& d);
+	void putConvert(const aitString& d);
+	void putConvert(const aitFixedString& d);
 
 	// copy the user data into the already set up DD array
 	gddStatus put(const aitFloat64* const d);
@@ -477,8 +480,9 @@ public:
 	gddStatus put(aitInt16 d);
 	gddStatus put(aitUint8 d);
 	gddStatus put(aitInt8 d);
-	gddStatus put(aitString d);
-	gddStatus put(aitFixedString& d);
+	gddStatus put(aitString& d);
+	gddStatus put(const aitString& d);
+	gddStatus put(const aitFixedString& d);
 	gddStatus put(aitType* d);
 
 	// copy the array data out of the DD
@@ -529,7 +533,8 @@ public:
 	gdd& operator=(aitInt16 d);
 	gdd& operator=(aitUint8 d);
 	gdd& operator=(aitInt8 d);
-	gdd& operator=(aitString d);
+	gdd& operator=(aitString& d);
+	gdd& operator=(const aitString& d);
 	// gdd& operator=(aitFixedString d); // not present
 
 	// Same as getRef() methods
@@ -677,7 +682,11 @@ inline int gdd::isAtomic(void) const
 inline gddStatus gdd::noReferencing(void)
 {
 	int rc=0;
-	if(ref_cnt>1)	rc=gddErrorNotAllowed;
+	if(ref_cnt>1)
+	{
+		gddAutoPrint("gdd::noReferencing()",gddErrorNotAllowed);
+		rc=gddErrorNotAllowed;
+	}
 	else			flags|=GDD_NOREF_MASK;
 	return rc;
 }
@@ -685,12 +694,17 @@ inline gddStatus gdd::reference(void)
 {
 	int rc=0;
 
-	if(isNoRef())	rc=gddErrorNotAllowed;
+	if(isNoRef())
+	{
+		gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
+		rc=gddErrorNotAllowed;
+	}
 	else			ref_cnt++;
 
 	if(ref_cnt>((1u<<(sizeof(ref_cnt)*CHAR_BIT))-2u))
 	{
 		fprintf(stderr,"gdd reference count overflow!!\n");
+		gddAutoPrint("gdd::reference()",gddErrorOverflow);
 		rc=gddErrorOverflow;
 	}
 	return rc;
@@ -703,6 +717,7 @@ inline gddStatus gdd::unreference(void)
 	if(ref_cnt==0u)
 	{
 		fprintf(stderr,"gdd reference count underflow!!\n");
+		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
 		rc=gddErrorUnderflow;
 	}
 	else if(--ref_cnt<=0u)
@@ -712,6 +727,7 @@ inline gddStatus gdd::unreference(void)
 			// managed dd always destroys the entire thing
 			ref_cnt=1;
 			if(destruct) destruct->run(this);
+			destruct=NULL;
 		}
 		else if(!isFlat())
 			delete this;
@@ -894,55 +910,55 @@ inline gddStatus gdd::put(const aitInt8* const d)
 inline gddStatus gdd::put(aitFloat64 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Float64=d; setPrimType(aitEnumFloat64); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitFloat32 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Float32=d;setPrimType(aitEnumFloat32); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint32 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Uint32=d; setPrimType(aitEnumUint32); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt32 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Int32=d; setPrimType(aitEnumInt32); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint16 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Uint16=d; setPrimType(aitEnumUint16); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt16 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Int16=d; setPrimType(aitEnumInt16); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint8 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Uint8=d; setPrimType(aitEnumUint8); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt8 d) {
 	gddStatus rc=0;
 	if(isScalar()) { data.Int8=d; setPrimType(aitEnumInt8); }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitType* d) {
 	gddStatus rc=0;
 	if(isScalar()) { data=*d; }
-	else rc=gddErrorNotAllowed;
+	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 
@@ -1072,7 +1088,9 @@ inline gdd& gdd::operator=(aitUint8 d)
 	{ data.Uint8=d; setPrimType(aitEnumUint8); return *this; }
 inline gdd& gdd::operator=(aitInt8 d)
 	{ data.Int8=d; setPrimType(aitEnumInt8); return *this; }
-inline gdd& gdd::operator=(aitString d)
+inline gdd& gdd::operator=(aitString& d)
+	{ put(d); return *this; }
+inline gdd& gdd::operator=(const aitString& d)
 	{ put(d); return *this; }
 
 // ------------- primitive type pointer = gdd x functions --------------
@@ -1177,14 +1195,24 @@ protected:
 
 	// disallow
 	const gddBounds* getBounds(void)				{ return NULL; }
-	gddStatus getBoundingBoxSize(aitUint32*)	{ return gddErrorNotAllowed; }
-	gddStatus setBoundingBoxSize(const aitUint32* const)
-		{ return gddErrorNotAllowed; }
-	gddStatus getBoundingBoxOrigin(aitUint32*)	{ return gddErrorNotAllowed; }
-	gddStatus setBoundingBoxOrigin(const aitUint32* const)
-		{ return gddErrorNotAllowed; }
-	gddStatus setBound(int,aitIndex,aitIndex)	{ return gddErrorNotAllowed; }
-	gddStatus getBound(int,aitIndex&,aitIndex&)	{ return gddErrorNotAllowed; }
+	gddStatus getBoundingBoxSize(aitUint32*) {
+		gddAutoPrint("gddScalar::getBoundingBoxSize()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus setBoundingBoxSize(const aitUint32* const) {
+		gddAutoPrint("gddScalar::setBoundingBoxSize()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus getBoundingBoxOrigin(aitUint32*) {
+		gddAutoPrint("gddScalar::getBoundingBoxOrigin()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus setBoundingBoxOrigin(const aitUint32* const) {
+		gddAutoPrint("gddScalar::setBoundingBoxOrigin()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus setBound(int,aitIndex,aitIndex) {
+		gddAutoPrint("gddScalar::setBound()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus getBound(int,aitIndex&,aitIndex&) {
+		gddAutoPrint("gddScalar::getBound()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
 
 	// disallow
 	void adjust(aitFloat64* const, gddDestructor*)	{ }
@@ -1236,9 +1264,15 @@ protected:
 	~gddContainer(void) { }
 
 	void cInit(int num_things_within);
-	gddStatus changeType(int,aitEnum)			{ return gddErrorNotAllowed; }
-	gddStatus setBound(int,aitIndex,aitIndex)	{ return gddErrorNotAllowed; }
-	gddStatus getBound(int,aitIndex&,aitIndex&)	{ return gddErrorNotAllowed; }
+	gddStatus changeType(int,aitEnum) {
+		gddAutoPrint("gddContainer::changeType()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus setBound(int,aitIndex,aitIndex) {
+		gddAutoPrint("setBound()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
+	gddStatus getBound(int,aitIndex&,aitIndex&) {
+		gddAutoPrint("getBound()",gddErrorNotAllowed);
+		return gddErrorNotAllowed; }
 	gddStatus setBound(aitIndex,aitIndex);
 
 private:

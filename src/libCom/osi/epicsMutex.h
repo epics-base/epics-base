@@ -21,6 +21,7 @@ typedef enum {
 
 #ifdef __cplusplus
 
+#include <new>
 #include <stdexcept>
 
 class epicsMutex {

@@ -186,7 +186,7 @@ long dbgf(pname)	/* get field value*/
 
     status=dbNameToAddr(pname,&addr);
     if(status) return(1);
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
     options=0;
     if(addr.dbr_field_type==DBR_ENUM) {
 	status=dbGetField(&addr,DBR_STRING,pbuffer,&options,&no_elements);
@@ -340,43 +340,43 @@ long dbtgf(pname)	/* test all options for dbGetField */
     /* Now try all request types */
     ret_options=0;
     dbr_type=DBR_STRING;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/MAX_STRING_SIZE));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/MAX_STRING_SIZE));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_CHAR;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(char)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(char)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_UCHAR;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned char)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(unsigned char)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_SHORT;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(short)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_USHORT;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned short)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(unsigned short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_LONG;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(long)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(long)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_ULONG;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned long)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(unsigned long)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_FLOAT;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(float)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(float)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_DOUBLE;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(double)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(double)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_ENUM;
-    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned short)));
+    no_elements=MIN(addr.no_elements,((sizeof(buffer))/sizeof(unsigned short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     pmsg[0] = '\0';
@@ -415,7 +415,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     if(status!=0) errPrint(status);
     else {
 	printf("DBR_STRING ok\n");
-	no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	options=0;
 	status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -428,7 +428,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_UCHAR ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -442,7 +442,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_UCHAR ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -455,7 +455,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_SHORT ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -468,7 +468,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_USHORT ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -481,7 +481,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_LONG ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -494,7 +494,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_ULONG ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -507,7 +507,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_FLOAT ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -520,7 +520,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_DOUBLE ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -533,7 +533,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	if(status!=0) errPrint(status);
 	else {
 	    printf("DBR_ENUM ok\n");
-	    no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/addr.field_size));
+	    no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
@@ -1154,7 +1154,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     if (pLaddr->field_type != pfldDes->field_type
 	    || pLaddr->no_elements > 1) {
 	options = 0;
-	nRequest = MIN(pLaddr->no_elements,((sizeof(buffer)*4)/pLaddr->field_size));
+	nRequest = MIN(pLaddr->no_elements,((sizeof(buffer))/pLaddr->field_size));
 	status = dbGetField(&Laddr, Laddr.dbr_field_type, pbuffer,
 			    &options, &nRequest);
 	printBuffer(status, Laddr.dbr_field_type, pbuffer,

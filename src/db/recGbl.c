@@ -35,6 +35,7 @@
  * .05  07-21-92        jba     Added recGblGetAlarmDouble
  * .06  08-07-92        jba     Added recGblGetLinkValue, recGblPutLinkValue
  * .07  08-07-92        jba     Added RTN_SUCCESS check for status
+ * .08  09-15-92        jba     changed error parm in recGblRecordError calls
  */
 
 #include	<vxWorks.h>
@@ -52,6 +53,7 @@
 #include	<dbAccess.h>
 #include	<devSup.h>
 #include	<dbCommon.h>
+#include	<sdrHeader.h>
 
 extern struct dbBase *pdbBase;
 
@@ -303,7 +305,6 @@ long recGblGetLinkValue(
 
 	switch (plink->type){
 		case(CONSTANT):
-			*pnRequest=0;
 			break;
 		case(DB_LINK):
 			status=dbGetLink(&(plink->value.db_link),
@@ -435,17 +436,18 @@ double		*prangeValue;
 	struct dbCommon		*precord;
 	int			i,n;
 	struct fldDes		*pfldDes;
+	long			status;
 
         *prangeValue=0;
 	precord=(struct dbCommon *)(paddr->precord);
         recType=paddr->record_type;
 
         if(!(precTypDes=GET_PRECTYPDES(pdbBase->precDes,recType))){
-                recGblRecordError(1,(void *)precord,"getVarRangeValue");
+                recGblRecordError(S_sdr_noSdrType,(void *)precord,"getVarRangeValue(GET_PRECTYPDES)");
                 return;
         }
         if(!(pfldDes=GET_PFLDDES(precTypDes,fldnum))){
-                recGblRecordError(2,(void *)precord,"getVarRangeValue");
+                recGblRecordError(S_sdr_noSdrType,(void *)precord,"getVarRangeValue(GET_PFLDDES)");
                 return;
         }
         /* get &dbAddr for range VAR field */
@@ -456,16 +458,16 @@ double		*prangeValue;
 	strcat(name,".");
 	strncat(name,pfldDes->fldname,FLDNAME_SZ);
 	strcat(name,"\0");
-        if (dbNameToAddr(name,&dbAddr)){
-                recGblRecordError(3,(void *)precord,"getVarRangeValue");
+        if (status=dbNameToAddr(name,&dbAddr)){
+                recGblRecordError(status,(void *)precord,"getVarRangeValue(dbNameToAddr)");
                 return;
         }
 
         /* get value of range VAR field */
         options = 0;
         nRequest = 1;
-        if(dbGetField(&dbAddr,DBR_DOUBLE,prangeValue,&options,&nRequest,pfl)){
-                recGblRecordError(4,(void *)precord,"getvarRangeValue");
+        if(status=dbGetField(&dbAddr,DBR_DOUBLE,prangeValue,&options,&nRequest,pfl)){
+                recGblRecordError(status,(void *)precord,"getVarRangeValue(dbGetField)");
                 return;
         }
         return;

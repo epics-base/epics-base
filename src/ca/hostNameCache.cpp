@@ -27,14 +27,16 @@
 
 #include <string.h>
 
+#if 0
 #include "iocinf.h"
+#endif
 #include "hostNameCache.h"
+#include "epicsGuard.h"
 
-hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :
-    ipAddrToAsciiAsynchronous ( addr ),
-    ioComplete ( false )
+hostNameCache::hostNameCache ( const osiSockAddr & addr, ipAddrToAsciiEngine & engine ) :
+    dnsTransaction ( engine.createTransaction() ), ioComplete ( false )
 {
-    this->ioInitiate ( engine );
+    this->dnsTransaction.ipAddrToAscii ( addr, *this );
 }
 
 void hostNameCache::destroy ()
@@ -44,11 +46,14 @@ void hostNameCache::destroy ()
 
 hostNameCache::~hostNameCache ()
 {
+    this->dnsTransaction.release ();
 }
 
-void hostNameCache::ioCompletionNotify ( const char *pHostNameIn )
+void hostNameCache::transactionComplete ( const char *pHostNameIn )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     if ( ! this->ioComplete ) {
+        this->ioComplete = true;
         strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) );
         this->hostNameBuf[ sizeof ( this->hostNameBuf ) - 1 ] = '\0';
     }
@@ -56,12 +61,13 @@ void hostNameCache::ioCompletionNotify ( const char *pHostNameIn )
 
 void hostNameCache::hostName ( char *pBuf, unsigned bufSize ) const
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->ioComplete ) {
         strncpy ( pBuf, this->hostNameBuf, bufSize);
         pBuf [ bufSize - 1u ] = '\0';
     }
     else {
-        osiSockAddr tmpAddr = this->address ();
+        osiSockAddr tmpAddr = this->dnsTransaction.address ();
         sockAddrToDottedIP ( &tmpAddr.sa, pBuf, bufSize );
     }
 }

@@ -33,7 +33,7 @@
 #endif
 
 #include "ipAddrToAsciiAsynchronous.h"
-#include "tsFreeList.h"
+#include "epicsMutex.h"
 
 #ifdef hostNameCache_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -47,9 +47,10 @@ public:
     void transactionComplete ( const char * pHostName );
     void hostName ( char *pBuf, unsigned bufLength ) const;
 private:
+    char hostNameBuf [128];
+    mutable epicsMutex mutex;
     ipAddrToAsciiTransaction & dnsTransaction;
     bool ioComplete;
-    char hostNameBuf [128];
 };
 
 #endif // #ifndef hostNameCacheh

@@ -31,8 +31,8 @@ DIRS += iocsh
 ifeq ($(findstring vxWorks,$(BUILD_ARCHS)),vxWorks)
 DIRS += vxWorks
 endif
-#DIRS += gdd
-#DIRS += cas
+DIRS += gdd
+DIRS += cas
 
 include $(TOP)/configure/RULES_DIRS
 

@@ -32,7 +32,7 @@ of this distribution.
 #include "freeList.h"
 #include "macLib.h"
 #include "postfix.h"
-#include <errMdef.h>
+#include <errlog.h>
 #include <ellLib.h>
  
 static semMutexId asLock;

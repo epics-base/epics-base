@@ -36,7 +36,7 @@ of this distribution.
 #undef LINK_GBLSOURCE
 #include "dbFldTypes.h"
 #include "epicsPrint.h"
-#include "errMdef.h"
+#include "errlog.h"
 #include "ellLib.h"
 #include "cvtFast.h"
 #include "devSup.h"

@@ -497,8 +497,10 @@ void udpiiu::shutdown ()
 
 bool udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
 {
-    ca_printf ( "CAC: undecipherable ( bad msg code %u ) UDP message\n", 
-                msg.m_cmmd );
+    char buf[64];
+    sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
+    ca_printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s\n", 
+                msg.m_cmmd, buf );
     return false;
 }
 

@@ -90,6 +90,10 @@ public:
     void subscriptionUpdateIfRequired (
         epicsGuard < epicsMutex > &, nciu & );
 protected:
+    netSubscription ( 
+        class privateInterfaceForIO &, unsigned type, 
+        arrayElementCount count, 
+        unsigned mask, cacStateNotify & );
     ~netSubscription ();
 private:
     const arrayElementCount count;
@@ -98,10 +102,6 @@ private:
     const unsigned type;
     const unsigned mask;
     bool updateWhileDisconnected;
-    netSubscription ( 
-        class privateInterfaceForIO &, unsigned type, 
-        arrayElementCount count, 
-        unsigned mask, cacStateNotify & );
     class netSubscription * isSubscription ();
     void * operator new ( size_t );
     void operator delete ( void * );
@@ -137,11 +137,11 @@ public:
     void show ( 
         epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
+    netReadNotifyIO ( privateInterfaceForIO &, cacReadNotify & );
     ~netReadNotifyIO ();
 private:
     cacReadNotify & notify;
     class privateInterfaceForIO & privateChanForIO;
-    netReadNotifyIO ( privateInterfaceForIO &, cacReadNotify & );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
@@ -178,11 +178,11 @@ public:
     void show ( 
         epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
+    netWriteNotifyIO ( privateInterfaceForIO &, cacWriteNotify & );
     ~netWriteNotifyIO ();
 private:
     cacWriteNotify & notify;
     privateInterfaceForIO & privateChanForIO;
-    netWriteNotifyIO ( privateInterfaceForIO &, cacWriteNotify & );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 

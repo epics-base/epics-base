@@ -97,6 +97,7 @@ public:
         epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
+    syncGroupReadNotify ( struct CASG & sgIn, chid, void * pValueIn );
     virtual ~syncGroupReadNotify ();
 private:
     chid chan;
@@ -106,7 +107,6 @@ private:
     cacChannel::ioid id;
     bool idIsValid;
     bool ioComplete;
-    syncGroupReadNotify ( struct CASG & sgIn, chid, void * pValueIn );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
@@ -140,6 +140,7 @@ public:
         epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
+    syncGroupWriteNotify  ( struct CASG &, chid );
     virtual ~syncGroupWriteNotify (); // allocate only from pool
 private:
     chid chan;
@@ -148,7 +149,6 @@ private:
     cacChannel::ioid id;
     bool idIsValid;
     bool ioComplete;
-    syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 

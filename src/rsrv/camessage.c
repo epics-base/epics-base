@@ -269,15 +269,14 @@ LOCAL void log_header (
 "CAS: Request from %s => cmmd=%d cid=0x%x type=%d count=%d postsize=%u\n",
         hostName, mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize);
 
-
     epicsPrintf (   
-"CAS: Request from %s =>  available=0x%x \tN=%u paddr=%x\n",
-        hostName, mp->m_available, mnum, (pciu?&pciu->addr:NULL));
+"CAS: Request from %s =>  available=0x%x \tN=%u paddr=%p\n",
+        hostName, mp->m_available, mnum, (pciu?(void *)&pciu->addr:NULL));
 
     if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBF_STRING && pPayLoad ) {
         epicsPrintf (
 "CAS: Request from %s => \tThe string written: %s \n",
-        hostName, pPayLoad );
+        hostName, (char *)pPayLoad );
     }
 }
 

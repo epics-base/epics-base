@@ -400,7 +400,6 @@ private:
     friend enum channel_state epicsShareAPI ca_state ( chid pChan );
     friend void epicsShareAPI ca_set_puser ( chid pChan, void *puser );
     friend void * epicsShareAPI ca_puser ( chid pChan );
-    friend void * epicsShareAPI ca_puser ( chid pChan );
     friend unsigned epicsShareAPI ca_read_access ( chid pChan );
     friend unsigned epicsShareAPI ca_write_access ( chid pChan );
     friend unsigned epicsShareAPI ca_search_attempts ( chid pChan );

@@ -116,7 +116,6 @@ void cast_server(void *pParm)
     osiSocklen_t        recv_addr_size;
     unsigned short      port;
     int                 nchars;
-    int                 flag;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 

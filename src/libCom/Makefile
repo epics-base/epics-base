@@ -11,6 +11,7 @@ SRC_DIRS = $(LIBCOM)/osi
 INC += osiInterrupt.h
 INC += osiRing.h
 INC += osiSem.h
+INC += osdSem.h
 
 INC += bsdSocketResource.h
 INC += epicsAssert.h

@@ -1235,21 +1235,36 @@ caStatus casStrmClient::claimChannelAction (
 //
 caStatus casStrmClient::createChanResponse ( 
     epicsGuard < casClientMutex > & guard,
-    const caHdrLargeArray & hdr, const pvAttachReturn & pvar )
+    const caHdrLargeArray & hdr, 
+    const pvAttachReturn & pvar )
 {
 	if ( pvar.getStatus() != S_cas_success ) {
-		return this->channelCreateFailedResp ( guard, hdr, pvar.getStatus() );
+		return this->channelCreateFailedResp ( guard, 
+            hdr, pvar.getStatus() );
 	}
 
     if ( ! pvar.getPV()->pPVI ) {
-        pvar.getPV()->pPVI = new ( std::nothrow ) casPVI ( *pvar.getPV() );
+        // @#$!* Tornado 2 Cygnus GNU compiler bugs
+#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
+            pvar.getPV()->pPVI = new ( std::nothrow ) 
+                        casPVI ( *pvar.getPV() );
+#       else
+            try {
+                pvar.getPV()->pPVI = new  
+                            casPVI ( *pvar.getPV() );
+            }
+            catch ( ... ) {
+                pvar.getPV()->pPVI = 0;
+            }
+#       endif
+
         if ( ! pvar.getPV()->pPVI ) {
             pvar.getPV()->destroyRequest ();
 		    return this->channelCreateFailedResp ( guard, hdr, S_casApp_pvNotFound );
         }
     }
 
-	unsigned nativeTypeDBR;
+    unsigned nativeTypeDBR;
 	caStatus status = pvar.getPV()->pPVI->bestDBRType ( nativeTypeDBR );
 	if ( status ) {
 		pvar.getPV()->pPVI->deleteSignal();
@@ -1257,7 +1272,7 @@ caStatus casStrmClient::createChanResponse (
 		return this->channelCreateFailedResp ( guard, hdr, status );
 	}
 
-	//
+    //
 	// attach the PV to this server
 	//
 	status = pvar.getPV()->pPVI->attachToServer ( this->getCAS() );
@@ -1270,22 +1285,35 @@ caStatus casStrmClient::createChanResponse (
 	// create server tool XXX derived from casChannel
     // (use temp context because this can be called asynchronously)
 	//
-    casCtx tmpCtx;
-    tmpCtx.setClient ( this );
-    tmpCtx.setPV ( pvar.getPV()->pPVI );
-    tmpCtx.setMsg ( hdr, 0 );
 	casChannel * pChan = pvar.getPV()->pPVI->createChannel ( 
-        tmpCtx, this->pUserName, this->pHostName );
+        this->ctx, this->pUserName, this->pHostName );
 	if ( ! pChan ) {
-		return this->channelCreateFailedResp ( guard, hdr, S_cas_noMemory );
+		return this->channelCreateFailedResp ( 
+            guard, hdr, S_cas_noMemory );
 	}
 
     if ( ! pChan->pChanI ) {
-        pChan->pChanI = new ( std::nothrow ) casChannelI ( *pChan, tmpCtx );
+        // @#$!* Tornado 2 Cygnus GNU compiler bugs
+#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
+            pChan->pChanI = new ( std::nothrow ) 
+                casChannelI ( * this, *pChan, 
+                    * pvar.getPV()->pPVI, hdr.m_cid );
+#       else
+            try {
+                pChan->pChanI = new 
+                    casChannelI ( * this, *pChan, 
+                        * pvar.getPV()->pPVI, hdr.m_cid );
+            }
+            catch ( ... ) {
+                pChan->pChanI = 0;
+            }
+#       endif
+
         if ( ! pChan->pChanI ) {
             pChan->destroyRequest ();
-		    pvar.getPV()->pPVI->deleteSignal ();
-		    return this->channelCreateFailedResp ( guard, hdr, S_cas_noMemory );
+		    pChan->getPV()->pPVI->deleteSignal ();
+		    return this->channelCreateFailedResp ( 
+                guard, hdr, S_cas_noMemory );
         }
     }
 
@@ -1329,7 +1357,7 @@ caStatus casStrmClient::createChanResponse (
         status = enumPostponedCreateChanResponse ( 
             guard, *pChan->pChanI, hdr, nativeTypeDBR );
     }
-    
+  
     if ( status != S_cas_success ) {
         delete ctx.getChannel();
     }

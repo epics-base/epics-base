@@ -31,7 +31,8 @@ class casChannelI : public tsDLNode < casChannelI >,
     public chronIntIdRes < casChannelI >, public casEvent,
     private chanIntfForPV {
 public:
-	casChannelI ( casChannel & chan, const casCtx & ctx );
+    casChannelI ( casCoreClient & clientIn, casChannel & chanIn, 
+        casPVI & pvIn, ca_uint32_t cidIn );
 	~casChannelI ();
     void casChannelDestroyNotify ( bool immediateUninstall );
 	const caResId getCID ();

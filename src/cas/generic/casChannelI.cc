@@ -19,10 +19,17 @@
 #include "casChannelI.h"
 #include "casAsyncIOI.h"
 
-casChannelI::casChannelI ( casChannel & chanIn, const casCtx &  ctx ) :
-        chanIntfForPV ( *ctx.getClient() ), pv ( *ctx.getPV() ), 
-        chan ( chanIn ), cid ( ctx.getMsg()->m_cid ), 
-        serverDeletePending ( false ), accessRightsEvPending ( false )
+casChannelI::casChannelI ( 
+    casCoreClient & clientIn,
+    casChannel & chanIn, 
+    casPVI & pvIn,  
+    ca_uint32_t cidIn ) :
+    chanIntfForPV ( clientIn ), 
+    pv ( pvIn ), 
+    chan ( chanIn ), 
+    cid ( cidIn ), 
+    serverDeletePending ( false ), 
+    accessRightsEvPending ( false )
 {
 }
 

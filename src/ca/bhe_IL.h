@@ -11,6 +11,8 @@
  *  Author: Jeff Hill
  */
 
+#include <float.h>
+
 /*
  * set average to -1.0 so that when the next beacon
  * occurs we can distinguish between:
@@ -26,7 +28,7 @@
  * between the 1st and 2nd beacons)
  */
 inline bhe::bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr ) :
-    inetAddrID (addr), piiu (0), timeStamp (initialTimeStamp), averagePeriod (-1.0)
+    inetAddrID (addr), piiu (0), timeStamp (initialTimeStamp), averagePeriod ( - DBL_MAX )
 {
 #   ifdef DEBUG
     {

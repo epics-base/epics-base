@@ -57,7 +57,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
         SEND_LOCK ( pclient );
     }
 
-    while ( pclient->send.stk ) {
+    while ( pclient->send.stk && ! pclient->disconnect ) {
         status = send ( pclient->sock, pclient->send.buf, pclient->send.stk, 0 );
         if ( status >= 0 ) {
             unsigned transferSize = (unsigned) status;
@@ -78,6 +78,12 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             char buf[64];
 
             if ( anerrno == SOCK_EINTR ) {
+                continue;
+            }
+
+            if ( anerrno == SOCK_ENOBUFS ) {
+                errlogPrintf ( "rsrv: system low on network buffers - send retry in 15 seconds\n" );
+                epicsThreadSleep ( 15.0 );
                 continue;
             }
 

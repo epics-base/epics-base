@@ -26,6 +26,7 @@
  * Modification Log:
  * -----------------
  * .01	07-03-91	rac	changed "bw" to "lopi"
+ * .02	07-03-91	rac	eliminate some gcc warnings
  */
 
 #include <vxWorks.h> 
@@ -37,6 +38,7 @@
 #include <taskLib.h>
 #include <semLib.h>
 #include <strLib.h>
+#include <os_depen.h>
 
 
 VOID lopi_init();
@@ -76,6 +78,7 @@ VOID lopi_conn_handler();
 VOID free_mem();
 struct mon_node *find_channel();
 VOID put_value();
+int to_short();
 
 #define FN_LEN 24
 #define LIST_END -1

@@ -39,14 +39,18 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
 //
 // searchTimer::reset ()
 //
-void searchTimer::reset (double delayToNextTry)
+void searchTimer::reset ( double delayToNextTry )
 {
     LOCK (this->iiu.pcas);
     this->retry = 0;
     this->period = CA_RECAST_DELAY;
     UNLOCK (this->iiu.pcas);
 
-    if (this->timeRemaining()>delayToNextTry) {
+    if ( delayToNextTry < CA_RECAST_DELAY ) {
+        delayToNextTry = CA_RECAST_DELAY;
+    }
+
+    if ( this->timeRemaining () > delayToNextTry ) {
         this->reschedule (delayToNextTry);
         debugPrintf ( ("reschedualed search timer for completion in %f sec\n", delayToNextTry) );
     }

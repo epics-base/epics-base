@@ -358,11 +358,11 @@ int repeater_installed (udpiiu *piiu)
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu (cac *pcac) :
-    netiiu (pcac),
-    searchTmr (*this, pcac->timerQueue), 
-    repeaterSubscribeTmr (*this, pcac->timerQueue),
-    shutdownCmd (false)
+udpiiu::udpiiu ( cac *pcac ) :
+    netiiu ( pcac ),
+    searchTmr ( *this, *pcac->pTimerQueue ), 
+    repeaterSubscribeTmr ( *this, *pcac->pTimerQueue ),
+    shutdownCmd ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -597,19 +597,22 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    int status;
+    LOCK (this->pcas);
+    if ( ! this->shutdownCmd ) {
+        int status;
 
-    //
-    // use of shutdown () for this purpose on UDP
-    // sockets does not work on certain OS (i.e. solaris).
-    //
-    status = socket_close ( this->sock );
-    if ( status ) {
-        errlogPrintf ( "CAC UDP socket close error was %s\n", 
-            SOCKERRSTR (SOCKERRNO) );
+        this->shutdownCmd = true;
+        //
+        // use of shutdown () for this purpose on UDP
+        // sockets does not work on certain OS (i.e. solaris).
+        //
+        status = socket_close ( this->sock );
+        if ( status ) {
+            errlogPrintf ( "CAC UDP socket close error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
     }
-
-    this->shutdownCmd = true;
+    UNLOCK (this->pcas);
     semBinaryGive (this->xmitSignal);
 }
 

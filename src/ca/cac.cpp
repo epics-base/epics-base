@@ -45,6 +45,7 @@ cac::cac () :
 {
 	long status;
     static threadOnceId once = OSITHREAD_ONCE_INIT;
+    unsigned abovePriority;
 
     threadOnce ( &once, cacInitRecursionLock, 0);
 
@@ -55,6 +56,21 @@ cac::cac () :
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
+
+    {
+        threadBoolStatus tbs;
+        unsigned selfPriority = threadGetPrioritySelf ();
+
+        tbs = threadLowestPriorityLevelAbove ( selfPriority, &abovePriority);
+        if ( tbs != tbsSuccess ) {
+            abovePriority = selfPriority;
+        }
+    }
+
+    this->pTimerQueue = new osiTimerQueue ( abovePriority );
+    if ( ! this->pTimerQueue ) {
+        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
+    }
 
 	ellInit (&this->ca_taskVarList);
 	ellInit (&this->putCvrtBuf);
@@ -230,6 +246,8 @@ cac::~cac ()
     semMutexDestroy (this->ca_client_lock);
 
     osiSockRelease ();
+
+    delete this->pTimerQueue;
 }
 
 void cac::safeDestroyNMIU (unsigned id)

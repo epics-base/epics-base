@@ -321,7 +321,7 @@ extern "C" void cacRecvThreadTCP (void *pParam)
         }
         tid = threadCreate ("CAC-TCP-send", priorityOfSend,
                 threadGetStackSize (threadStackMedium), cacSendThreadTCP, piiu);
-        if (tid) {
+        if ( tid ) {
             while (1) {
                 piiu->recvMsg ();
                 if ( piiu->state != iiu_connected ) {
@@ -331,8 +331,12 @@ extern "C" void cacRecvThreadTCP (void *pParam)
             }
         }
         else {
+            semBinaryGive (piiu->sendThreadExitSignal);
             piiu->shutdown ();
         }
+    }
+    else {
+        semBinaryGive (piiu->sendThreadExitSignal);
     }
     semBinaryGive (piiu->recvThreadExitSignal);
 }
@@ -341,8 +345,8 @@ extern "C" void cacRecvThreadTCP (void *pParam)
 // tcpiiu::tcpiiu ()
 //
 tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion, class bhe &bheIn) :
-    tcpRecvWatchdog (pcac->ca_connectTMO, pcac->timerQueue, CA_V43 (CA_PROTOCOL_VERSION, minorVersion) ),
-    tcpSendWatchdog (pcac->ca_connectTMO, pcac->timerQueue),
+    tcpRecvWatchdog (pcac->ca_connectTMO, *pcac->pTimerQueue, CA_V43 (CA_PROTOCOL_VERSION, minorVersion) ),
+    tcpSendWatchdog (pcac->ca_connectTMO, *pcac->pTimerQueue),
     netiiu (pcac),
     bhe (bheIn)
 {
@@ -1460,8 +1464,8 @@ void tcpiiu::disconnect (nciu *chan)
      * try to reconnect
      */
     assert (this->pcas->pudpiiu);
-    this->pcas->pudpiiu->addToChanList (chan);
-    this->pcas->pudpiiu->searchTmr.reset (0.0);
+    this->pcas->pudpiiu->addToChanList ( chan );
+    this->pcas->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
     UNLOCK (this->pcas);
 }
 

@@ -725,7 +725,7 @@ public:
     void lock () const;
     void unlock () const;
 
-    osiTimerQueue           timerQueue;
+    osiTimerQueue           *pTimerQueue;
     ELLLIST                 activeCASGOP;
     ELLLIST                 putCvrtBuf;
     ELLLIST                 fdInfoFreeList;

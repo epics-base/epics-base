@@ -57,7 +57,7 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
     /*
      * reset broadcasted search counters
      */
-    pcac->pudpiiu->searchTmr.reset (0.0);
+    pcac->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
 
     this->f_fullyConstructed = true;
 

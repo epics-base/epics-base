@@ -44,6 +44,23 @@ If you cannot/don't want to find them, contact me, please!
 
 2) set environment variables
 
+(Setting env. vars. is different: for NT, use Settings/System,
+for Win95 use autoexec.bat)
+
+When setting paths in the EPICS CONFIG files for WIN32:
+
+	** Note that that each "\" in any path variables
+		must be replaced with a "\\" (this is because GNU make treats
+		all "\" characters as line continuation)
+
+	** Note that that each space in any file name or 
+        path name variable must be replaced with 
+        a "\ " (this is because GNU make treats all " " separated
+        input as independent tokens in the input stream.
+
+	** WIN32 will generally allow "/" and "\" interchangeably in file paths,
+		but the DOS shell appears to only accept "\".
+
 Your path should include:
 - The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32
 - The System (for me it's in NT40...)
@@ -59,7 +76,7 @@ c:\perl5\bin;
 c:\make-3.75\WinRel;
 c:\epics\base\bin\win32 (really where INSTALL_LOCATION specifies)
 
-On NT, "Path" is defined by the operatin system, on Win95, it's "PATH" instead.
+On NT, "Path" is defined by the operating system, on Win95, it's "PATH" instead.
 
 MS Visual C and Tornado should be installed properly with
 these env. variables set:
@@ -80,20 +97,23 @@ lib=c:\msdev\lib;c:\msdev\mfc\lib
 Select host arch to build:
 HOST_ARCH=WIN32			(used by the make system)
 
-(Setting env. vars. is different: for NT, use Settings/System,
-for Win95 use autoexec.bat)
+Set the "TMP" environment variable if you need to specify where 
+temporary files are created.
 
-When setting paths in the EPICS CONFIG files:
+Directory Used For Temporary Files   Conditions
+----------------------------------   ----------
+Directory specified by TMP           TMP environment variable is set, 
+                                     and directory specified by TMP exists.	
+dir argument to _tempnam             TMP environment variable is not set, or 
+                                     directory specified by TMP does not exist.	
+P_tmpdir in STDIO.H                  dir argument is NULL, or dir is name of 
+                                     nonexistent directory.	
+Current working directory            P_tmpdir does not exist.	
 
-	** Note that that each "\" in any path variables
-		must be replaced with a "\\" (this is because GNU make treats
-		all "\" characters as line continuation)
+On my system I see in stdio.h that _P_tmpdir is "/". Here is a common
+setting for "TMP" (the C:\TEMP directory must exist).
 
-	** Note that that each space in any file name or 
-        path name variable must be replaced with 
-        a "\ " (this is because GNU make treats all " " seperated
-        input as independent tokins in the input stream.
-
+TMP=C:\TEMP
 
 3) building EPICS
 -----------------
@@ -109,17 +129,17 @@ Known problems:
 * gnumake seems to be faster than WIN32 sometimes
   which results in warnings/errors like
   "file has modification date in the future"
-  for newly vreated things.
+  for newly created things.
   Very seldom this is fatal, so you have to
   stop gnumake and restart it.
-* This is strange because Windows95/NT don't care
+* This is strange because Windows95/NT doesn't care
   about upper/lower case:
   WIN32 is WIN32, not win32. Gnumake fails
   if e.g. base/src/include/os/WIN32 is ...win32.
 
 4) Creating EPICS IOC applications under WIN32
 
-o create application developemnt folder
+o create application development folder
 	
 o start a DOS window and change your working directory to the folder
 	created above (with the DOS "cd" command)
@@ -133,27 +153,27 @@ o to create an example application type:
 
 	** Note that that each space in any file name or 
         path name argument to makeBaseApp.pl must be replaced with 
-        a "\ " (this is because GNU make treats all " " seperated
-        input as independent tokins in the input stream.
+        a "\ " (this is because GNU make treats all " " separated
+        input as independent tokens in the input stream.
 
 	** Note that c:\epics above must be replaced by the path
 		to your epics source installation (or where INSTALL_LOCATION 
 		specifies)
 
-o General infomation on EPICS IOC application development can be found in
+o General information on EPICS IOC application development can be found in
 	the "EPICS IOC Application Developers Guide". To see all of the options 
 	supported by makeBaseApp.pl type "perl c:\epics\bin\win32\makeBaseApp.pl"
 
 5) EPICS GNU make makefiles can be executed from within a Visual C++ "makefile"
 style project. This allows EPICS programs to be developed directly inside of
 the visual C++ environment. To do this create a "makefile" project and place your 
-gnu make command in the build configuration (accessed from the project/sttings menu). 
+gnu make command in the build configuration (accessed from the project/settings menu). 
 You will also need to add GNU make and <EPICS>/bin/win32 into the Visual C++ 
 executable search path (from the tools/options menu). I have not so far determined 
 how to configure visual C++ so that it is possible to double click on the compiler 
 error messages generated within an EPICS "makefile" style project and have visual 
 C++ immediately position the cursor on the corresponding line in the source (as is 
-normally the case in the visual C++ environement). If you solve this problem please 
+normally the case in the visual C++ environment). If you solve this problem please 
 forward the details to johill@lanl.gov.
 
 Good luck !

@@ -93,7 +93,7 @@ int main(int argc,char **argv)
 	exit(-1);
     }
     fclose(fp);
-    strcpy(pfilename,"device.db");
+    strcpy(pfilename,"device.dbd");
     fp = fopen(pfilename,"w");
     if(!fp) {
 	printf("Error opening file %s\n",pfilename);

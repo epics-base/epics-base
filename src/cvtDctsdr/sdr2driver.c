@@ -69,7 +69,7 @@ int main(int argc,char **argv)
 	exit(-1);
     }
     fclose(fp);
-    strcpy(pfilename,"driver.db");
+    strcpy(pfilename,"driver.dbd");
     fp = fopen(pfilename,"w");
     if(!fp) {
 	printf("Error opening file %s\n",pfilename);

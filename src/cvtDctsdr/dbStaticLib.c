@@ -740,7 +740,7 @@ char *precordName;
     struct recLoc  	*precLoc = NULL;
     short           	rec_size;
 
-    if(strlen(precordName)>PVNAME_SZ) return(S_dbLib_nameLength);
+    if(strlen(precordName)>(size_t)PVNAME_SZ) return(S_dbLib_nameLength);
     /* clear callers entry */
     zeroDbentry(pdbentry);
     if(!dbFindRecord(pdbentry,precordName)) return (S_dbLib_recExists);
@@ -938,7 +938,7 @@ char *newName;
     long		status;
     DBENTRY		dbentry;
 
-    if(strlen(newName)>PVNAME_SZ) return(S_dbLib_nameLength);
+    if(strlen(newName)>(size_t)PVNAME_SZ) return(S_dbLib_nameLength);
     if(!precnode) return(S_dbLib_recNotFound);
     dbInitEntry(pdbentry->pdbbase,&dbentry);
     status = dbFindRecord(&dbentry,newName);
@@ -1623,7 +1623,7 @@ char *pstring;
 		if(pstr[ind]!=' ' && pstr[ind]!='\t') break;
 		pstr[ind] = '\0';
 	    }
-	    if(!pstr || strlen(pstr)<=0 ) {
+	    if(!pstr || strlen(pstr)<(size_t)0 ) {
 		if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
 		return(0);

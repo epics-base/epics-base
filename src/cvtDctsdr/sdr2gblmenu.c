@@ -89,7 +89,7 @@ int main(int argc,char **argv)
     fclose(fp);
     for(i=0; i<NUM_GBL_MENUS; i++) {
 	strcpy(pfilename,aiMenuName[i]);
-	strcat(pfilename,".db");
+	strcat(pfilename,".dbd");
 	fp = fopen(pfilename,"w");
 	if(!fp) {
 	    printf("Error opening file %s\n",pfilename);

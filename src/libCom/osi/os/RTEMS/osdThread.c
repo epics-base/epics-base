@@ -181,7 +181,7 @@ setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
     note = (rtems_unsigned32)v;
-    rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
+    rtems_task_set_note (tid, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
     v->forw = taskVarHead;
     v->back = NULL;
@@ -190,7 +190,7 @@ setThreadInfo (rtems_id tid, const char *name, THREADFUNC funptr,void *parm)
     taskVarHead = v;
     taskVarUnlock ();
     if (funptr)
-	rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
+        rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
 }
 
 /*
@@ -446,14 +446,17 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
     unsigned int varIndex = (unsigned int)id;
     rtems_unsigned32 note;
     struct taskVar *v;
+    int i;
 
     rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
     v = (struct taskVar *)note;
     if (varIndex >= v->threadVariableCapacity) {
         v->threadVariables = realloc (v->threadVariables, (varIndex + 1) * sizeof (void *));
         if (v->threadVariables == NULL)
-	    cantProceed("threadPrivateSet realloc failed\n");
-	v->threadVariableCapacity = varIndex + 1;
+            cantProceed("threadPrivateSet realloc failed\n");
+        for (i = v->threadVariableCapacity ; i < varIndex ; i++)
+            v->threadVariables[i] = NULL;
+        v->threadVariableCapacity = varIndex + 1;
     }
     v->threadVariables[varIndex] = pvt;
 }
@@ -466,7 +469,8 @@ void * threadPrivateGet (threadPrivateId id)
 
     rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
     v = (struct taskVar *)note;
-    assert (varIndex < v->threadVariableCapacity);
+    if (varIndex >= v->threadVariableCapacity)
+        return NULL;
     return v->threadVariables[varIndex];
 }
 

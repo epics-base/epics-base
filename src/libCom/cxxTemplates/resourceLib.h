@@ -111,7 +111,7 @@ public:
 	class resourceWithThatNameIsAlreadyInstalled {};
 	class dynamicMemoryAllocationFailed {};
 	class entryDidntRespondToDestroyVirtualFunction {};
-	class sizeExceedsIndexesMaxIndexWith {};
+	class sizeExceedsMaxIndexWidth {};
 
 	resTable (unsigned nHashTableEntries);
 
@@ -329,7 +329,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	}
 
     if ( nbits > ID::maxIndexBitWidth ) {
-        throw sizeExceedsIndexesMaxIndexWith ();
+        throw sizeExceedsMaxIndexWidth ();
     }
 
     //
@@ -587,7 +587,6 @@ resTable<T,ID>::~resTable()
 		delete [] this->pTable;
 	}
 }
-
 
 //////////////////////////////////////////
 // chronIntIdResTable<ITEM> member functions

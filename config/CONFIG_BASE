@@ -32,11 +32,10 @@ DIRS = \
     devOpt\
     iocCore
 
-
 EPICS_BASE = $(TOP)
 
 # EPICS include config file
-include $(TOP)/config/CONFIG
+include $(EPICS_BASE)/config/CONFIG
 
 EPICS_BASE = $(INSTALL_LOCATION)
 
@@ -52,9 +51,9 @@ endif
 #
 # this speeds up the build by turning off implicit rules search
 #
-.PHONY: $(TOP)/config/CONFIG
-.PHONY: $(TOP)/config/CONFIG.* $(TOP)/config/CONFIG_* 
-.PHONY: $(TOP)/config/RULES.* $(TOP)/config/RULES_* .DEPENDS
-.PHONY: $(HOME)/.EPICS_CONFIG
-.PHONY: ../Makefile.Vx ../Makefile.Unix ../Makefile.Host Makefile
+.PHONY:: $(EPICS_BASE)/config/CONFIG
+.PHONY:: $(EPICS_BASE)/config/CONFIG.* $(EPICS_BASE)/config/CONFIG_* 
+.PHONY:: $(EPICS_BASE)/config/RULES.* $(EPICS_BASE)/config/RULES_* .DEPENDS
+.PHONY:: $(HOME)/.EPICS_CONFIG $(HOME)/.EPICS_CONFIG.$(HOST_ARCH)
+.PHONY:: ../Makefile.Vx ../Makefile.Unix ../Makefile.Host Makefile
 

@@ -1,0 +1,252 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="ProgId" content="Word.Document">
+   <meta name="Generator" content="Microsoft Word 9">
+   <meta name="Originator" content="Microsoft Word 9">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <title>Instruction on building existing R3</title>
+<link rel=File-List href="./READMEbuildingR3.13AppsWithR3.14_files/filelist.xml">
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:LastAuthor>Jba</o:LastAuthor>
+  <o:Revision>3</o:Revision>
+  <o:TotalTime>4</o:TotalTime>
+  <o:Created>2000-10-25T19:43:00Z</o:Created>
+  <o:LastSaved>2000-10-25T19:47:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Company>Argonne National Laboratory</o:Company>
+  <o:Lines>1</o:Lines>
+  <o:Paragraphs>1</o:Paragraphs>
+  <o:Version>9.2720</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]-->
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
+  <w:DisplayVerticalDrawingGridEvery>0</w:DisplayVerticalDrawingGridEvery>
+  <w:UseMarginsForDrawingGridOrigin/>
+  <w:Compatibility>
+   <w:FootnoteLayoutLikeWW8/>
+   <w:ShapeLayoutLikeWW8/>
+   <w:AlignTablesRowByRow/>
+   <w:ForgetLastTabAlignment/>
+   <w:LayoutRawTableWidth/>
+   <w:LayoutTableRowsApart/>
+  </w:Compatibility>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+@font-face
+	{font-family:"MS Mincho";
+	panose-1:2 2 6 9 4 2 5 8 3 4;
+	mso-font-alt:"\FF2D\FF33 \660E\671D";
+	mso-font-charset:128;
+	mso-generic-font-family:roman;
+	mso-font-pitch:fixed;
+	mso-font-signature:-1610612033 1757936891 16 0 131231 0;}
+@font-face
+	{font-family:"\@MS Mincho";
+	mso-font-charset:128;
+	mso-generic-font-family:roman;
+	mso-font-pitch:fixed;
+	mso-font-signature:1 134676480 16 0 131072 0;}
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+p.MsoPlainText, li.MsoPlainText, div.MsoPlainText
+	{margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Courier New";
+	mso-fareast-font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 66.0pt 1.0in 66.0pt;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+</head>
+<body lang="EN-US" style="tab-interval:.5in">
+
+<h2>
+Building EPICS R3.13 applications with R3.14.0alpha2 base</h2>
+This document describes how to convert a R3.13 vxWorks application so that
+it builds with release R3.14.0alpha2.&nbsp; It describes an easy way to
+convert applications subject to the following restrictions:
+<ul>
+<li>
+The application still uses config rules rather than the configure rules
+which are new to release 3.14.</li>
+
+<li>
+The OSI (Operating System Independent) features of R3.14 are not available,
+i.e. iocCore products can only be build for vxWorks.</li>
+
+<li>
+Once the application is changed to build with base R3.14, it will not build
+with earlier base releases.</li>
+</ul>
+Ultimately applications should be converted to use the new configure rules
+so that the OSI features are available.
+<h3>
+<b>Gnumake clean uninstall</b></h3>
+At the top of the application execute:
+<pre>"<tt>gnumake clean uninstall</tt>"</pre>
+to remove all files and directories created by earlier builds.
+<h3>
+Update RELEASE</h3>
+Change&nbsp; the EPICS_BASE definition to point to the R3.14 base release.
+In addition all hardware support and some soft support is now unbundled.
+For example the sequencer is unbundled. You must obtain and build all required
+unbundled products before you can build the application. The location of
+each unbundled product must be described in &lt;top>/config/RELEASE.
+<h3>
+Update target arch definitions</h3>
+Change any target arch specification in config/CONFIG to new base R3.14
+target arch specification. Look in the R3.14 base/bin to see the target
+arch names.
+<p>For example, in config/CONFIG change
+<pre>CROSS_COMPILER_TARGET_ARCHS = mv167</pre>
+to
+<pre>CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040</pre>
+In the iocBoot/*/Makefile files, change
+<pre>ARCH=&lt;old arch name></pre>
+to
+<pre>ARCH=&lt;new arch name></pre>
+and do a "<tt>gnumake"</tt> in the iocBoot directory to update the cdCommands
+files.
+<h3>
+SNC changes</h3>
+snc is no longer in base. If snc is used in your application, you must
+download and build the seq module with baseR3.14.0alpha2 or later. See
+the Application Developer's Guide to see how to build sequence programs.
+<h3>
+iocCore changes</h3>
+iocCore has been renamed to iocCoreLibrary.o.
+<br>Change
+<pre>INSTALLS=iocCore</pre>
+to
+<pre>LIBOBJS = $(EPICS_BASE_BIN)/iocCoreLibrary.o</pre>
+in your application src/Makefile.Vx files to link iocCore into your application
+library.
+<br>Also remove
+<pre>ld &lt; iocCore</pre>
+from the st.cmd files in the iocBoot subdirectories.
+<h3>
+Library db changes</h3>
+The Db library name was changed to dbStaticHost for host builds and dbStaticIoc
+for ioc builds.
+<br>Change
+<pre>PROD_LIBS+=Db</pre>
+to
+<pre>PROD_LIBS+=dbStaticHost</pre>
+and
+<pre>Db_DIR=$(EPICS_BASE_LIB)</pre>
+to
+<pre>dbStaticHost_DIR=$(EPICS_BASE_LIB)</pre>
+in your application src/Makefile.Host files.
+<h3>
+VxWorks C++ munched libraries and object files</h3>
+Since R3.14 contains C++ code, the build rules were changed to create a
+corresponding munched file for every vx object file built. The objects
+files can be combined to form libraries but the munched files must be loaded
+into vxWorks. In all st.cmd files add the suffix ".munch" to the ld lines
+where object files were previously loaded. For example change
+<pre>ld &lt; exampleLib</pre>
+to
+<pre>ld &lt; exampleLibrary.munch</pre>
+
+<h3>
+recGbl calls</h3>
+You may need to add the line&nbsp; "<tt>#include "recGbl.h</tt>" to any
+source files that have recGbl* calls so that the file will compile without
+errors.
+<h3>
+Record support changes</h3>
+The steppermotor, scan, and pid records are no longer in base. If your
+application does not use these record types, comment out or remove references
+to them in base.dbd and baseLIBOBJS. If these record types are used by
+your application you must download and build the modules with R3.14 base,
+add appropriate module definitions to your application's config/RELEASE
+fileand change the <tt>LIBOBJS</tt> definitions. For example
+<br>add
+<pre>PID=&lt;full path to modules directory>/pid</pre>
+to config/RELEASE.
+<br>Remove
+<pre>LIBOBJS += $(EPICS_BASE_BIN)/pidRecord.o</pre>
+from baseLIBOBJS,
+<br>and add
+<pre>LIBOBJS += $(PID_BIN)/pidRecord.o</pre>
+to your application src/Makefile.
+<p>You should consider changing any existing old steppermotor records to
+the new EPICS&nbsp; <a href="http://www.aps.anl.gov/upd/people/sluiter/epics/modules/mechanism/motor/index.html">motor
+record</a>&nbsp; module supported by Beamline Controls and Data Acquisition
+at APS.
+<h3>
+RecDynLink.o and devPtSoft changes</h3>
+recDynLink.o and devPtSoft.o are no longer in base. Remove references to
+them in base.dbd and baseLIBOBJS if they are not used in application.
+<h3>
+Hardware support changes</h3>
+All hardware support (dev, drv and dbd files) has been unbundled from base
+R3.14. This support includes the files symb.dbd, drvHp1404a.o, drvEpvxiMsg.o,
+and drvEpvxi.o.&nbsp; If they are not used in your application, comment
+out references to these files in base.dbd and baseLIBOBJS.
+<p>Hardware support files now exist as separate modules available for download
+from the <a href="http://www.aps.anl.gov/epics/">EPICS www home page at
+ANL</a>. You must now download all the hardware support modules needed
+for your application, build the modules with R3.14 base,&nbsp; add the
+appropriate module full path definitions to your application config/RELEASE
+file, and change <tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt>
+to the module definition bin directory in your application src directory
+files.
+<p>For example, remove
+<pre>LIBOBJS+=$(EPICS_BASE_BIN)/symb</pre>
+from baseLIBOBJS and add
+<pre>LIBOBJS+=$(SYMB_BIN)/symb</pre>
+to your application src/Makefile,
+<br>and add the line
+<pre>SYMB=&lt;full path definition for the built module SYMB></pre>
+&nbsp;into your application config/RELEASE file .
+<p>After a gnumake in the symb module followed by a gnumake in the application
+config directory, the definitions <tt>SYMB_BIN</tt> and <tt>SYMB_LIB</tt>
+will be created,&nbsp; the directory $(SYMB)/include will be added to the
+include directories on the compiler command lines&nbsp; (in the INSTALL_INCLUDES
+definition)&nbsp; and the directory $(SYMB)/dbd will be added to the dbd
+search directories on the dbExpand command lines (in the INSTALL_DBDFLAGS
+definition).
+<h3>
+dbLoadtemplate tool changes</h3>
+The host tool dbLoadTemplate has been replace by a new extension, msi.
+dbLoadTemplate is still supported on iocs. Build the msi extension with
+base R3.14 and change definitions the following definitions in your application
+files.
+<p>In config/RULES.Db replace the line
+<pre>DBLOADTEMPLATE=$(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)</pre>
+with
+<pre>MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
+&nbsp;&nbsp; (EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/msi$(HOSTEXE)) msi$(HOSTEXE))</pre>
+and change line:
+<pre>@$(DBLOADTEMPLATE) $&lt; > $@</pre>
+to
+<pre>@$(MSI) $&lt; > $@</pre>
+Also add the definition
+<pre>EPICS_EXTENSIONS=&lt;full path name to epics extensions directory></pre>
+to your application config/RELEASE file.
+</body>
+</html>

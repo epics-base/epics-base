@@ -18,15 +18,15 @@ of this distribution.
 
 #include "osiThread.h"
 #include "osiSem.h"
-#include "osiRing.h"
+#include "epicsRingPointer.h"
 #include "errlog.h"
 
 
 typedef struct info {
-    semBinaryId binary;
-    semMutexId  lockRing;
-    int         quit;
-    ringId	ring;
+    semBinaryId      binary;
+    semMutexId       lockRing;
+    int              quit;
+    epicsRingPointerId ring;
 }info;
 
 static void consumer(void *arg)
@@ -48,14 +48,13 @@ static void consumer(void *arg)
             printf("task %p semBinaryTake returned %d  time %ld\n",
                 idSelf,(int)status,time(&tp));
         }
-        while(ringUsedBytes(pinfo->ring)>=2*sizeof(threadId)) {
+        while(epicsRingPointerGetUsed(pinfo->ring)>=2) {
             threadId message[2];
-            int nget,i;
+            int i;
 
             for(i=0; i<2; i++) {
-                nget = ringGet(pinfo->ring,(void *)&message[i],sizeof(threadId));
-                if(nget!=sizeof(threadId))
-                    printf("consumer error nget %d\n",nget);
+                if(!(message[i]=epicsRingPointerPop(pinfo->ring)))
+                    printf("consumer error\n");
             }
             if(message[0]!=message[1]) {
                 printf("consumer error message %p %p\n",message[0],message[1]);
@@ -88,13 +87,12 @@ static void producer(void *arg)
             printf("producer %p semMutexTake returned %d  time %ld\n",
                 idSelf,(int)status,time(&tp));
         }
-        if(ringFreeBytes(pinfo->ring)>=2*sizeof(int)) {
-            int nput,i;
+        if(epicsRingPointerGetFree(pinfo->ring)>=2) {
+            int i;
 
             for(i=0; i<2; i++) {
-                nput = ringPut(pinfo->ring,(void *)&idSelf,sizeof(threadId));
-                if(nput!=sizeof(threadId))
-                    printf("producer %p error nput %d\n",idSelf,nput);
+                if(!epicsRingPointerPush(pinfo->ring,idSelf))
+                    printf("producer %p error\n",idSelf);
                 if(i==0 && (ntimes%4==0)) threadSleep(.1);
             }
             printf("producer %p sending\n",idSelf);
@@ -146,7 +144,7 @@ void semBinaryTest(int nthreads,int verbose)
     pinfo = calloc(1,sizeof(info));
     pinfo->binary = binary;
     pinfo->lockRing = semMutexMustCreate();
-    pinfo->ring = ringCreate(1024*2*sizeof(int));
+    pinfo->ring = epicsRingPointerCreate(1024*2);
     stackSize = threadGetStackSize(threadStackSmall);
     threadCreate("consumer",50,stackSize,consumer,pinfo);
     id = calloc(nthreads,sizeof(threadId));

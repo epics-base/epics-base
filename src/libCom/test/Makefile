@@ -10,6 +10,10 @@ timerTestHost_SRCS += timerTestMain.c timerTest.c
 PROD += timerTestHost
 OBJS_IOC += timerTest
 
+ringPointerTestHost_SRCS += ringPointerTestMain.c ringPointerTest.c
+PROD += ringPointerTestHost
+OBJS_IOC += ringPointerTest
+
 semBinaryTestHost_SRCS += semBinaryTestMain.c semBinaryTest.c
 PROD += semBinaryTestHost
 OBJS_IOC += semBinaryTest

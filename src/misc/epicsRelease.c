@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.4  1994/08/18  04:34:42  bordua
+ * Added some spaces to make output look good.
+ *
  * Revision 1.3  1994/07/17  10:37:48  bordua
  * Changed to use epicsReleaseVersion as a string.
  *
@@ -10,7 +13,7 @@
  * Initial version.
  **/
 
-#include    <version.h>
+#include    <epicsVersion.h>
 
     char *epicsRelease= "@(#)EPICS IOC CORE $Date$";
     char *epicsRelease1 = epicsReleaseVersion;

@@ -43,7 +43,7 @@
 
 #include "dbVarSub.h"
 #include <dbStaticLib.h>
-#include <version.h>
+#include <epicsVersion.h>
 
 static char subst_buffer[VAR_MAX_SUB_SIZE];
 static int subst_used;

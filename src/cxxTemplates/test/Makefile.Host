@@ -8,7 +8,7 @@ PROD_LIBS = Com
 SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 
 TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
-		tsSLListBench tsSLListTest minmaxTest
+		tsSLListBench tsSLListTest minmaxTest tsBTreeBench tsBTreeTest
 
 include $(TOP)/config/RULES.Host
 

@@ -116,7 +116,6 @@ struct callback {
      int priority;
      struct dbAddr dbAddr;
      WDOG_ID wd_id;
-     void (*process)();
 };
 
 /*
@@ -158,9 +157,8 @@ static long init_record(phistogram,pass)
 {
      struct histogramdset *pdset;
      long status;
-     struct callback *pcallback=(struct callback *)(phistogram->wdog);
+     struct callback *pcallback;
      float         wait_time;
-     void (*process)()=NULL;
 
      if (pass==0){
 
@@ -176,7 +174,6 @@ static long init_record(phistogram,pass)
           return(0);
      }
 
-     pcallback->process = process;
      if(phistogram->wdog==NULL && phistogram->sdel!=0) {
           /* initialize a watchdog timer */
           pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));

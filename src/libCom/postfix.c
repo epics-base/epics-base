@@ -303,14 +303,7 @@ register short		*pno_bytes;
  *
  * convert an infix expression to a postfix expression
  */
-<<<<<<< postfix.c
-long epicsShareAPI postfix(
-register char	*pinfix,
-register char	*ppostfix,
-short		*perror)
-=======
 long postfix(char *pinfix,char *ppostfix,short *perror)
->>>>>>> 1.23
 {
 	short		no_bytes;
 	register short	operand_needed;

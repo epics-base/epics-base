@@ -119,4 +119,4 @@ epicsShareFunc long epicsShareAPI
 	calcPerform(double *parg, double *presult, char *post);
 
 epicsShareFunc long epicsShareAPI 
-	postfix(register char *pinfix, register char *ppostfix, short *perror);
+	postfix(char *pinfix, char *ppostfix, short *perror);

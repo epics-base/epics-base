@@ -3560,7 +3560,7 @@ int		level
 				buf,
 				sizeof(buf)-1,
 				&nactual);		
-		if(status>=0){
+		if(status==VXI_SUCCESS){
 			buf[sizeof(buf)-1] = NULL;
                		printf("%s ", buf);
 		}

@@ -20,4 +20,3 @@
 # If readline is not installed comment the following line
 # to omit command-line editing and history support
 COMMANDLINE_LIBRARY = READLINE
-OP_SYS_CFLAGS += -g

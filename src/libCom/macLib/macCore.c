@@ -679,8 +679,8 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "trans-> level = %ld, maxlen = %4d, discard = %s, "
-        "rawval = %s\n", level, valend - *value, discard ? "T" : "F", *rawval );
+        printf( "trans-> level = %ld, maxlen = %4u, discard = %s, "
+        "rawval = %s\n", level, (unsigned int)(valend - *value), discard ? "T" : "F", *rawval );
 
     /* initially not in quotes */
     quote = 0;
@@ -811,8 +811,8 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "<-trans level = %ld, length = %4d, value  = %s\n",
-                     level, v - *value, *value );
+        printf( "<-trans level = %ld, length = %4u, value  = %s\n",
+                     level, (unsigned int)(v - *value), *value );
 
     /* update pointers to next characters to scan in raw value and to fill
        in in output value (if at end of input, step back so terminator is

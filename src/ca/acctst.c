@@ -390,6 +390,8 @@ void noopSubscriptionStateChange ( struct event_handler_args args )
  * 5) verify subscription can be cleared before channel is cleared
  *
  * 6) verify subscription can be cleared by clearing the channel
+ *
+ * 7) verify that a nill access rights handler can be installed
  */
 void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, 
                         unsigned repetitionCount, unsigned interestLevel )
@@ -466,6 +468,12 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
         ca_self_test ();
 
         showProgress ( interestLevel );
+        
+        for ( j = 0u; j < chanCount; j++ ) {
+            status = ca_replace_access_rights_event (
+                    pChans[j].channel, 0 );
+            SEVCHK ( status, NULL );
+        }
 
         for ( j = 0u; j < chanCount; j++ ) {
             status = ca_clear_channel ( pChans[j].channel );

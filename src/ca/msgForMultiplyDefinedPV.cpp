@@ -45,6 +45,9 @@ void msgForMultiplyDefinedPV::ioCompletionNotify ( const char * pHostNameRej )
     char buf[256];
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             this->channel, this->acc, pHostNameRej );
-    epicsGuard < callbackMutex > cbGuard ( this->mutex );
-    genLocalExcep ( cbGuard, this->cacRef, ECA_DBLCHNL, buf );
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->mutex );
+        genLocalExcep ( cbGuard, this->cacRef, ECA_DBLCHNL, buf );
+    }
+    delete this;
 }

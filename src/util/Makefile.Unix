@@ -15,13 +15,13 @@ USR_INCLUDES = -I$(OPENWIN)/include
 USR_CFLAGS = -DXWINDOWS -UvxWorks
 
 SRCS.c = \
-	../apCreateShadow.c ../apStatusSync.c ../bfRing.c ../ca_test.c \
+	../bfRing.c ../ca_test.c \
 	../calcTest.c ../cmdClient.c ../extrDoc.c ../guiSubr.c \
 	../iocLogServer.c ../pprPlot.c ../racPrint.c ../recListProg.c \
 	../recordTest.c ../startCArepeater.c ../sydPlot.c
 
 OBJS = \
-	apCreateShadow.o apStatusSync.o bfRing.o ca_test.o calcTest.o \
+	bfRing.o ca_test.o calcTest.o \
         cmdClient.o extrDoc.o guiSubr.o iocLogServer.o pprPlot.o racPrint.o \
 	recListProg.o recordTest.o startCArepeater.o sydPlot.o
 
@@ -31,7 +31,7 @@ LIBOBJS = \
 LIBNAME = libppr.a
 
 PROD = \
-	apCreateShadow apStatusSync bfRing ca_test calcTest cmdClient \
+	bfRing ca_test calcTest cmdClient \
 	extrDoc iocLogServer racPrint recListProg recordTest startCArepeater
 
 include $(EPICS)/config/RULES.Unix

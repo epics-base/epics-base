@@ -6,8 +6,7 @@
 //
 //
 
-#include "casdef.h"
-#include "resourceLib.h"
+#include "server.h"
 #include "resourceLib.cc"
 
 //

@@ -3,13 +3,13 @@
 #
 #  The developer may edit this file.
 
-#  Site-specific build options
-#
-include $(EPICS_BASE)/config/CONFIG_SITE
- 
 #  EPICS base definitions
 #
 include $(EPICS_BASE)/config/CONFIG_COMMON
+ 
+#  Site-specific build options
+#
+include $(EPICS_BASE)/config/CONFIG_SITE
  
 # assume T_A is the host arch if not specified
 ifndef T_A

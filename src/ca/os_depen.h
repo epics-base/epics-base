@@ -13,6 +13,7 @@
  *			Also droped the TCPDELAY to 50 mS
  *	.03 joh	090391	Updated for V5 vxWorks
  *	.04 joh 092491	changed order of ops on LOCALTICKS
+ *	.05 joh	092691	added NELEMENTS()
  *
  */
 
@@ -55,6 +56,10 @@
 #if     !defined(ERROR) || (ERROR!=(-1))
 #define ERROR            (-1)
 #endif  
+
+#ifndef NELEMENTS
+#define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
+#endif
 
 /************************************************************************/
 /*	Provided to enforce one thread at a time code sections		*/
@@ -133,7 +138,7 @@
 		void 		*device;
 	};
 	static char	ca_unique_address;
-	#define		MYTIMERID  (&ca_unique_address)
+#	define		MYTIMERID  (&ca_unique_address)
 #endif
 
 

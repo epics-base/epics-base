@@ -14,34 +14,24 @@ MAN1    := dbLoadTemplate.1 subtool.1
 MAN3    := dbLoadRecords.3 dbLoadTemplate.3
 MAN5    := templatefile.5 dbfile.5
 
-#	---------------------------------------
-#	the BSlib is not ported to WIN32,
-#	this results in less buildable products
-#	---------------------------------------
-ifdef WIN32
 
 #	uses getopt, optind, optarg from lib Com:
 PROD_LIBS := Db Com
 PROD      := subtool dbLoadTemplate
 
-else
+#	hard-coded dependencies and rules,
+#	hopefully system-independent
 
-#	library to build from BSlib.c:
+#	SRCS  for subtool and dbLoadTemplate
 #
+SRCS  = dbLoadTemplate.c dbLoadRecords.c
 
-#	products to build,
-#	all use BSlib, dbLoadTemplate needs lib Db:
-#	(it doesn't hurt if all link Db...)
+#	special CFLAGS only for subtool
 #
-PROD_LIBS := Db Com
-PROD      := subtool dbLoadTemplate
-
-endif
+subtool_CFLAGS := -DSUB_TOOL
 
 include $(TOP)/config/RULES.Host
  
-#	hard-coded dependencies and rules,
-#	hopefully system-independent
 #
 #	These lex sources are included in some C sources,
 #	so they have to be created in time:
@@ -49,18 +39,9 @@ include $(TOP)/config/RULES.Host
 dbLoadTemplate$(OBJ): dbLoadTemplate_lex.c
 dbLoadRecords$(OBJ): dbLoadRecords_lex.c 
 
-
-#	SRCS  for subtool and dbLoadTemplate
-#
-subtool_SRCS = dbLoadTemplate.c dbLoadRecords.c
-dbLoadTemplate_SRCS = dbLoadTemplate.c dbLoadRecords.c
-
-#	special CFLAGS only for subtool
-#
-subtool_CFLAGS := -DSUB_TOOL
-
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
 			dbLoadRecords.c 
 
 #	EOF base/src/dbtools/Makefile.Host
+

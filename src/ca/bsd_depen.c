@@ -115,10 +115,11 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 				&autoTimeOut);
 #	endif
 
-	/* 
-	 * If we have been waiting then update the current time
+	/*
+	 * get a new time stamp if we have been waiting
+	 * for any significant length of time
 	 */
-	if (ptimeout->tv_sec>0 || ptimeout->tv_usec>0) {
+	if (ptimeout->tv_sec || ptimeout->tv_usec) {
 		cac_gettimeval (&ca_static->currentTime);
 	}
 

@@ -95,6 +95,7 @@ extern "C" {
 
 #include <stddef.h>
 
+#include "shareLib.h"
 #include "epicsTypes.h"
 #include "tsStamp.h"
 #include "ellLib.h"
@@ -190,6 +191,7 @@ typedef epicsUInt16	dbr_put_acks_t;
  * of type DBR types. In some cases we select the a
  * larger type to avoid loss of information
  */
+epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 #ifdef DB_TEXT_GLBLSOURCE
 epicsShareDef READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
                         DBR_SHORT, /* forces conversion fronm uint8 to int16 */
@@ -204,8 +206,6 @@ epicsShareDef READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
                         DBR_STRING,
                         DBR_STRING
 };
-#else
-epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 #endif
 
 /*Definitions that allow old database access to use new conversion routines*/

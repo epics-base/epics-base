@@ -15,9 +15,10 @@ DB += dbExample2.db
 DB += dbSubExample.db
 
 #----------------------------------------------------
-# Declare template files which do not show up in DB
-#USES_TEMPLATE += dbExample2.template
+# If <anyname>.db template is not named <anyname>*.template add
+# <anyname>_template = <templatename>
 
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
+

@@ -135,9 +135,12 @@ $ if f$getsyi("HW_MODEL") .ge. 1024
 $ then
 $! turn of no prototype messages because MULTINET does not
 $! supply prototypes.
-$ cc_command:== cc /warn=(disable=IMPLICITFUNC)/float=d_float /include=([], [-.include], [-.libcom]) 
+$ cc_command:== cc /warn=(disable=IMPLICITFUNC)/float=d_float -
+	/include=([], [-.include], [-.libcom]) -
+	/define=("MULTINET=1")
 $ else
-$ cc_command:== cc /include=([], [-.include], [-.libcom]) 
+$ cc_command:== cc /include=([], [-.include], [-.libcom]) -
+	/define=("__STDC__=1", "MULTINET=1") 
 $ endif
 $ endsubroutine
 $! ************************************************************

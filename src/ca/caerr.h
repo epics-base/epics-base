@@ -136,7 +136,7 @@ READONLY char   *ca_message_text[]
 "Sorry, that feature is planned but not supported at this time",
 "The supplied string is unusually large",
 "The request was ignored because the specified channel is disconnected",
-"The type you have requested from this channel is unknown",
+"The data type specifed is invalid",
 "Remote Channel not found",
 "Unable to locate all user specified channels",
 "Channel Access Internal Failure",

@@ -36,8 +36,9 @@
  * Modification Log:
  * -----------------
  * .01   1-25-96        rc      Created from devABBINARY.c
- * .02   6-03-96        saa     Added ai/ao.  Renamed to devABANALOG.c.
- *      ...
+ * .02   6-03-96        saa     Added ai/ao.
+ + .03   9-19-96        saa     Changed routine names.  Added linear conv.
+ + .04   4-28-97        saa     Changed for signed 16 bit analog values.
  */
 
 
@@ -82,7 +83,7 @@ typedef struct
   DEVSUPFUN	read_li;
 }  ABLIDSET;
 
-ABLIDSET devLiAbSclDcm = {5, NULL, NULL, init_li, ioinfo, read_li};
+ABLIDSET devLiAbSlcDcm = {5, NULL, NULL, init_li, ioinfo, read_li};
 
 LOCAL long write_lo (struct longoutRecord *prec);
 LOCAL long init_lo  (struct longoutRecord *prec);
@@ -96,7 +97,7 @@ typedef struct
   DEVSUPFUN	write_dl;
 } ABLODSET;
 
-ABLODSET devLoAbSclDcm = {5, NULL, NULL, init_lo, NULL, write_lo};
+ABLODSET devLoAbSlcDcm = {5, NULL, NULL, init_lo, NULL, write_lo};
 
 LOCAL long read_ai(struct aiRecord *prec);
 LOCAL long init_ai(struct aiRecord *prec);
@@ -110,7 +111,13 @@ typedef struct {
 	DEVSUPFUN	read_ai;
 	DEVSUPFUN	special_linconv;} ABAIDSET;
 
-ABAIDSET devAiAbSclDcm={6, NULL, NULL, init_ai, ioinfo, read_ai, NULL};
+ABAIDSET devAiAbSlcDcm = {6, NULL, NULL, init_ai, ioinfo, read_ai, 
+                          linconv_ai};
+
+LOCAL long read_signed_ai(struct aiRecord *prec);
+LOCAL long init_signed_ai(struct aiRecord *prec);
+ABAIDSET devAiAbSlcDcmSigned = {6, NULL, NULL, init_signed_ai, ioinfo, read_signed_ai, 
+                                linconv_ai};
 
 LOCAL long write_ao(struct aoRecord *prec);
 LOCAL long init_ao (struct aoRecord *prec);
@@ -124,7 +131,8 @@ typedef struct {
 	DEVSUPFUN	write_ao;
 	DEVSUPFUN	special_linconv;} ABAODSET;
 
-ABAODSET devAoAAbSclDcm = {6, NULL, NULL, init_ao, NULL, write_ao, NULL};
+ABAODSET devAoAbSlcDcm = {6, NULL, NULL, init_ao, NULL, write_ao, 
+                          linconv_ao};
 
 
 LOCAL void devCallback (void * drvPvt)
@@ -137,8 +145,6 @@ LOCAL void devCallback (void * drvPvt)
   scanIoRequest (pdevPvt->ioscanpvt);
 }
 
-
-
 LOCAL long ioinfo (int               cmd,
                     struct dbCommon  *prec,
                     IOSCANPVT        *ppvt)
@@ -150,6 +156,7 @@ LOCAL long ioinfo (int               cmd,
   *ppvt = pdevPvt->ioscanpvt;
   return (0);
 }
+
 
 
 LOCAL long read_li (struct longinRecord *prec)
@@ -362,6 +369,9 @@ LOCAL long init_ai (struct aiRecord *prec)
     return (S_db_badField);
   }
 
+  /* set linear conversion slope*/
+  prec->eslo = (prec->eguf -prec->egul)/65535.0;
+  /* pointer to the data addess structure */
   pabio = (struct abio *) &(prec->inp.value);
   drvStatus = (*pabDrv->registerCard) (pabio->link, pabio->adapter, pabio->card,
                                        typeBi, "BINARY", devCallback, &drvPvt);
@@ -424,7 +434,7 @@ LOCAL long linconv_ao(struct aoRecord *prec, int after)
 
     if(!after) return(0);
     /* set linear conversion slope*/
-    prec->eslo = (prec->eguf -prec->egul)/65535.0;
+    prec->eslo = (prec->eguf -prec->egul)/32767.0;
     return(0);
 }
 
@@ -445,6 +455,9 @@ LOCAL long init_ao (struct aoRecord *prec)
     return (S_db_badField);
   }
 
+  /* set linear conversion slope*/
+  prec->eslo = (prec->eguf -prec->egul)/32767.0;
+  /* pointer to the data addess structure */
   pabio = (struct abio *) &(prec->out.value);
   drvStatus = (*pabDrv->registerCard) (pabio->link, pabio->adapter, pabio->card,
                                        typeBo, "BINARY", NULL, &drvPvt);
@@ -485,6 +498,84 @@ LOCAL long init_ao (struct aoRecord *prec)
   else
   {
     status = 2;
+  }
+
+  return (status);
+}
+
+
+
+LOCAL long read_signed_ai (struct aiRecord *prec)
+{
+  devPvt        *pdevPvt = (devPvt *) prec->dpvt;
+  void          *drvPvt;
+  abStatus       drvStatus;
+  unsigned short value[2];
+
+  if (!pdevPvt)
+  {
+    recGblSetSevr (prec, READ_ALARM, INVALID_ALARM);
+    return (2);
+  }
+  drvPvt    = pdevPvt->drvPvt;
+  drvStatus = (*pabDrv->readBi) (drvPvt, (unsigned long *)value, 0x0000ffff);
+  if (drvStatus != abSuccess)
+  {
+    recGblSetSevr (prec, READ_ALARM, INVALID_ALARM);
+    return (2);
+  }
+  prec->rval = ((long)value[1])^0x8000;
+
+  return(0);
+}
+
+
+
+LOCAL long init_signed_ai (struct aiRecord *prec)
+{
+  struct abio   *pabio;
+  devPvt        *pdevPvt;
+  abStatus       drvStatus;
+  long	         status = 0;
+  void          *drvPvt;
+
+  if (prec->inp.type != AB_IO)
+  {
+    recGblRecordError (S_db_badField, (void *) prec, "init_signed_ai: Bad INP field");
+    return (S_db_badField);
+  }
+
+  /* set linear conversion slope*/
+  prec->eslo = (prec->eguf -prec->egul)/65535.0;
+  /* pointer to the data addess structure */
+  pabio = (struct abio *) &(prec->inp.value);
+  drvStatus = (*pabDrv->registerCard) (pabio->link, pabio->adapter, pabio->card,
+                                       typeBi, "BINARY", devCallback, &drvPvt);
+  switch (drvStatus)
+  {
+  case abSuccess :
+    pdevPvt    = (devPvt *) (*pabDrv->getUserPvt) (drvPvt);
+    prec->dpvt = pdevPvt;
+    break;
+
+  case abNewCard :
+    pdevPvt = calloc (1, sizeof (devPvt));
+    pdevPvt->drvPvt = drvPvt;
+    prec->dpvt      = pdevPvt;
+    (*pabDrv->setUserPvt) (drvPvt, (void *) pdevPvt);
+    scanIoInit (&pdevPvt->ioscanpvt);
+    drvStatus = (*pabDrv->setNbits) (drvPvt, abBit16);
+    if (drvStatus != abSuccess)
+    {
+      status = S_db_badField;
+      recGblRecordError (status, (void *) prec, "init_signed_ai: setNbits");
+    }
+    break;
+
+  default:
+    status = S_db_badField;
+    recGblRecordError (status, (void *)prec, "init_signed_ai: registerCard");
+    break;
   }
 
   return (status);

@@ -10,6 +10,9 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.7  1996/06/25 21:54:42  jba
+# Command line parm now base dir
+#
 # Revision 1.6  1996/06/07 19:19:10  jba
 # MakeRelease is now in release tar file.
 #
@@ -125,9 +128,6 @@ if [ -d startup ];
 				>> /tmp/make_release.out.$$;
 	fi
 
-find config -name CVS -prune -o \
-		! -type d -print >> /tmp/make_release.out.$$;
-
 # binary / library / default.dctsdr / <rec>Record.h / etc.
 if [ $FULLY_BUILT = "YES" ];
 	then
@@ -143,9 +143,13 @@ if [ $FULLY_BUILT = "YES" ];
 		find base/lib -name CVS -prune -o ! -type d -print \
 				>> /tmp/make_release.out.$$;
 
-		find base/rec -name CVS -prune -o ! -type d -print \
+		find base/dbd -name CVS -prune -o ! -type d -print \
 				>> /tmp/make_release.out.$$;
+
 	fi
+
+find base/config -name CVS -prune -o -name SCCS -prune -o ! -type d -print \
+		| grep -v '/O\..*$' >> /tmp/make_release.out.$$
 
 find base/src -name CVS -prune -o -name SCCS -prune -o ! -type d -print \
 		| grep -v '/O\..*$' >> /tmp/make_release.out.$$

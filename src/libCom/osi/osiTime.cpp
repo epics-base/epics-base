@@ -87,11 +87,11 @@ inline osiTime::osiTime (const unsigned long secIn, const unsigned long nSecIn)
 }
 
 //
-// loadTimeInit
+// osiTimeLoadTimeInit
 //
-class loadTimeInit {
+class osiTimeLoadTimeInit {
 public:
-	loadTimeInit ();
+	osiTimeLoadTimeInit ();
 
 	double epicsEpochOffset; // seconds
 #ifdef NTP_SUPPORT
@@ -100,12 +100,12 @@ public:
 	double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
 };
 
-static const loadTimeInit lti;
+static const osiTimeLoadTimeInit lti;
 
 //
-// loadTimeInit ()
+// osiTimeLoadTimeInit ()
 //
-loadTimeInit::loadTimeInit ()
+osiTimeLoadTimeInit::osiTimeLoadTimeInit ()
 {
     static const time_t ansiEpoch = 0;
 	double secWest;

@@ -163,11 +163,10 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 #define ECA_BADCHID		 DEFMSG(CA_K_ERROR,	51)
 #define ECA_BADFUNCPTR	 DEFMSG(CA_K_ERROR,	52)
 
-#ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char	*ca_message_text[];
-#else
-epicsShareDef READONLY char	*ca_message_text[]
-=
+
+#ifdef CA_ERROR_GLBLSOURCE
+epicsShareDef READONLY char	*ca_message_text[] =
 {
 "Normal successful completion",
 "Maximum simultaneous IOC connections exceeded",

@@ -22,7 +22,7 @@
 
 epicsSingleton < tsFreeList < ipIgnoreEntry, 1024 > > ipIgnoreEntry::pFreeList;
 
-void ipIgnoreEntry::show ( unsigned level ) const
+void ipIgnoreEntry::show ( unsigned /* level */ ) const
 {
     char buf[256];
     struct sockaddr_in addr;

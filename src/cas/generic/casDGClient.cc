@@ -318,7 +318,7 @@ caStatus casDGClient::versionAction ()
 	const caHdrLargeArray * mp = this->ctx.getMsg();
 
     if ( mp->m_count != 0 ) {
-        this->minor_version_number = mp->m_count;
+        this->minor_version_number = static_cast <ca_uint16_t> ( mp->m_count );
         if ( CA_V411 ( mp->m_count ) ) {
             this->seqNoOfReq = mp->m_cid;
         }

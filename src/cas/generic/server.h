@@ -248,7 +248,7 @@ private:
 
 extern epicsSingleton < casBufferFactory > pGlobalBufferFactoryCAS;
 
-class inBufClient {
+class inBufClient {             // X aCC 655
 public:
     enum fillCondition { casFillNone,  casFillProgress,  
         casFillDisconnect };
@@ -339,7 +339,7 @@ private:
 	bufSizeT stack;
 };
 
-class outBufClient {
+class outBufClient {            // X aCC 655
 public:
     enum flushCondition { flushNone, flushProgress, flushDisconnect };
 	virtual unsigned getDebugLevel () const = 0;

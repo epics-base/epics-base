@@ -278,6 +278,9 @@ iocsh (const char *pathname)
         if (*line == '#')
             continue;
 
+	if ((prompt == NULL) && *line)
+	    puts(line);
+
         /*
          * Break line into words
          */

@@ -34,25 +34,29 @@
  */
 static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 {
+    bool tokenFound = false;
     const char *pToken;
     unsigned i;
 
     pToken = *ppString;
-    while(isspace(*pToken)&&*pToken){
+    while ( isspace (*pToken) && *pToken ){
         pToken++;
     }
 
     for ( i=0u; i<bufSIze; i++ ) {
         if ( isspace (pToken[i]) || pToken[i]=='\0' ) {
             pBuf[i] = '\0';
+            *ppString = &pToken[i];
+            if ( i != 0 ) {
+                tokenFound = true;
+            }
             break;
         }
         pBuf[i] = pToken[i];
     }
 
-    *ppString = &pToken[i];
-
-    if ( *pToken ) {
+    if ( tokenFound ) {
+        pBuf[bufSIze-1] = '\0';
 		return pBuf;
 	}
     return NULL;
@@ -91,7 +95,6 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
         }
 
         pNewNode->addr.ia = addr;
-        memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
 
 		/*
 		 * LOCK applied externally
@@ -103,9 +106,9 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
 }
 
 /*
- * removeDuplicatesAddresses ()
+ * removeDuplicateAddresses ()
  */
-extern "C" void epicsShareAPI removeDuplicatesAddresses 
+extern "C" void epicsShareAPI removeDuplicateAddresses 
     ( ELLLIST *pDestList, ELLLIST *pSrcList, int silent )
 {
     ELLNODE *pRawNode;
@@ -120,14 +123,11 @@ extern "C" void epicsShareAPI removeDuplicatesAddresses
             pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);    // X aCC 749
             while ( pTmpNode ) {
                 if (pTmpNode->addr.sa.sa_family == AF_INET) {
-                    unsigned netMask = pNode->netMask.ia.sin_addr.s_addr | 
-                        pTmpNode->netMask.ia.sin_addr.s_addr;
-                    unsigned exorAddr = pNode->addr.ia.sin_addr.s_addr ^ pTmpNode->addr.ia.sin_addr.s_addr;
-                    exorAddr &= netMask;
-                    if ( exorAddr == 0u && pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
-                        char buf[64];
-                        ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
+                    if ( pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
+                            pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port ) {
 						if ( ! silent ) {
+                            char buf[64];
+                            ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
 							fprintf ( stderr, 
 								"Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
 						}
@@ -207,7 +207,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
 		ellInit ( &bcastList ); // X aCC 392
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
-		removeDuplicatesAddresses ( &tmpList, &bcastList, 1 );
+		removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
         if ( ellCount ( &tmpList ) == 0 ) { // X aCC 392
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
@@ -219,7 +219,6 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
                 pNewNode->addr.ia.sin_family = AF_INET;
                 pNewNode->addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
                 pNewNode->addr.ia.sin_port = epicsHTON16 ( port );
-                memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
                 ellAdd ( &tmpList, &pNewNode->node );
             }
             else {
@@ -232,7 +231,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     }
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );
 
-    removeDuplicatesAddresses ( pList, &tmpList, 0 );
+    removeDuplicateAddresses ( pList, &tmpList, 0 );
 }
 
 

@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 			printf("%s\n",argv[0]);
 			argv++; argc--;
 		}
-		return ERROR;
+		return -1;
 	}
 
 
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 		return ca_test(argv[1], argv[2]);
 	}
 	else{
-		return ERROR;
+		return -1;
 	}
 
 }

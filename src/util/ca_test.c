@@ -43,14 +43,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifndef ERROR
-#define ERROR -1
-#endif
-
-#ifndef OK
-#define OK 0
-#endif
-
 #ifndef LOCAL
 #define LOCAL static
 #endif
@@ -113,7 +105,7 @@ LOCAL int cagft(char *pname)
 	status = ca_pend_io(2.0);
 	if(status != ECA_NORMAL){
 		printf("Not Found %s\n", pname);
-		return ERROR;
+		return -1;
 	}
 
 	printf("name:\t%s\n", ca_name(chan_id));
@@ -155,7 +147,7 @@ LOCAL int cagft(char *pname)
 
 		if(!outstanding){
 			printf("\n\n");
-			return OK;
+			return 0;
 		}
 
 		if (outstanding==oldOut) {
@@ -163,7 +155,7 @@ LOCAL int cagft(char *pname)
 		}
 	}
 
-	return	ERROR;
+	return -1;
 }
 
 
@@ -212,7 +204,7 @@ char		*pvalue
 	if (((*pname < ' ') || (*pname > 'z'))
 	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
 		printf("\nusage \"pv name\",\"value\"\n");
-		return ERROR;
+		return -1;
 	}
 
 	/* 
@@ -223,7 +215,7 @@ char		*pvalue
 	status = ca_pend_io(2.0);
 	if(status != ECA_NORMAL){
 		printf("Not Found %s\n", pname);
-		return ERROR;
+		return -1;
 	}
 
 	printf("name:\t%s\n", ca_name(chan_id));
@@ -311,13 +303,13 @@ skip_rest:
 
 		if(!outstanding){
 			printf("\n\n");
-			return OK;
+			return 0;
 		}
 
 		ntries--;
 	}
 
-	return	ERROR;
+	return -1;
 }
 
 

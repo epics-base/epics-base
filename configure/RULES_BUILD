@@ -586,17 +586,17 @@ $(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: %
 	@echo "Installing include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-#$(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: ../%
-#	@echo "Installing include file $@"
-#	@$(INSTALL) -d -m 644 $< $(@D)
+$(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: ../%
+	@echo "Installing include file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_INCLUDE)/%: %
 	@echo "Installing include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-#$(INSTALL_INCLUDE)/%: ../%
-#	@echo "Installing include file $@"
-#	@$(INSTALL) -d -m 644 $< $(@D)
+$(INSTALL_INCLUDE)/%: ../%
+	@echo "Installing include file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: %
 	@echo "Installing doc $@"

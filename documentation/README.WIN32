@@ -35,16 +35,18 @@ To build only for win32-x86 and not cross compile for IOC development type
 To compile EPICS on win32-x86, we need
 
 	WindRiver System's Tornado (used: 1.0)  (not required if host only build)
-	Microsoft's Visual C/C++   (used: 6.0)  (borland C++ rumored to work also)
+	Microsoft's Visual C/C++   (used: 6.0) 
+     or borland C++ 
+     or Visual C++ toolkit 2003 with MS platform SDK
 
 and some tools:
 
 	gnu make - www.gnu.org (we used 3.76)
 	perl - www.perl.org (we used 5.003)
 
-The perl interpreter and gnu make are available 'on the net'
+The gnu make and perl executables are downloadable from www.cygwin.com
+The perl interpreter and gnu make are also available 'on the net'
 as sources which compile with MS Visual C++.
-If you cannot/don't want to find them, contact me, please!
 
 2) set environment variables
 
@@ -61,7 +63,7 @@ and the MS linker will accept "/" and this will result in less trouble.
 		must be replaced with a "\\" (this is because GNU make treats
 		all "\" characters as line continuation)
 
-	** Note that that each space in any file name or 
+	*and* Note that that each space in any file name or 
         path name variable you set must be replaced with 
         a "\ " (this is because GNU make treats all " " separated
         input as independent tokens in the input stream.
@@ -107,8 +109,11 @@ MSDevDir=C:\MSDEV
 include=c:\msdev\include;c:\msdev\mfc\include
 lib=c:\msdev\lib;c:\msdev\mfc\lib
 
+The EPICS build system requires EPICS_HOST_ARCH environment variable
 Select host arch to build:
-EPICS_HOST_ARCH=win32-x86			(used by the make system)
+	EPICS_HOST_ARCH=win32-x86
+or
+	EPICS_HOST_ARCH=win32-x86-borland  (if using borland C++)
 
 Set the "TMP" environment variable if you need to specify where 
 temporary files are created.

@@ -626,7 +626,7 @@ main()
     exit(4);
   }
   printf("ok\nellConcat() check...  ");
-  ellConcat(list1, list2);
+  ellConcat(&list1, &list2);
   if ((ellCount(&list1) != 20)||(ellCount(&list2) != 0)||
       (list1.node.previous != (ELLNODE *)pmyNode))
   {

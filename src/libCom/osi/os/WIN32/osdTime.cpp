@@ -359,72 +359,136 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *p
     }
 }
 
-//
-// gmtime_r ()
-//
-// from posix real time
-//
-struct tm *gmtime_r (const time_t *pAnsiTime, struct tm *pTM)
+inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
 {
-	HANDLE thisThread = GetCurrentThread ();
-	struct tm *p;
-	int oldPriority;
-	BOOL win32Success;
+     // Note that LONGLONG is a 64-bit value
+     LARGE_INTEGER ll;
 
-	oldPriority = GetThreadPriority (thisThread);
-	if (oldPriority==THREAD_PRIORITY_ERROR_RETURN) {
-		return NULL;
-	}
-
-	win32Success = SetThreadPriority (thisThread, THREAD_PRIORITY_TIME_CRITICAL);
-	if (!win32Success) {
-		return NULL;
-	}
-
-	p = gmtime (pAnsiTime);
-	if (p!=NULL) {
-		*pTM = *p;
-	}
-
-	win32Success = SetThreadPriority (thisThread, oldPriority);
-	if (!win32Success) {
-        return NULL;
-    }
-
-	return p;
+     ll.QuadPart = Int32x32To64 ( *pAnsiTime, 10000000 ) + 116444736000000000;
+     pft->dwLowDateTime = ll.LowPart;
+     pft->dwHighDateTime = ( DWORD ) ll.HighPart;
 }
 
-//
-// localtime_r ()
-//
-// from posix real time
-//
-struct tm *localtime_r (const time_t *pAnsiTime, struct tm *pTM)
+static int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31,
+    31, 30, 31, 30, 31 }; 
+
+static bool isLeapYear ( DWORD year ) 
 {
-	HANDLE thisThread = GetCurrentThread ();
-	struct tm *p;
-	int oldPriority;
-	BOOL win32Success;
+    if ( (year % 4) == 0 ) {
+        if ( ( year % 100 ) != 0 || ( year % 400 ) == 0 ) {
+            return true;         
+        }
+        else {
+            return false;         
+        }
+    } else {                 
+        return false;         
+    } 
+} 
 
-	oldPriority = GetThreadPriority (thisThread);
-	if (oldPriority==THREAD_PRIORITY_ERROR_RETURN) {
-		return NULL;
-	}
-
-	win32Success = SetThreadPriority (thisThread, THREAD_PRIORITY_TIME_CRITICAL);
-	if (!win32Success) {
-		return NULL;
-	}
-
-	p = localtime (pAnsiTime);
-	if (p!=NULL) {
-		*pTM = *p;
-	}
-
-	win32Success = SetThreadPriority (thisThread, oldPriority);
-	if (!win32Success) {
-        return NULL;
+static int dayOfYear ( DWORD day, DWORD month, DWORD year ) 
+{
+    DWORD nDays = 0;
+    for ( unsigned m = 1; m < month; m++ ) {
+        nDays += daysInMonth[m-1];
+        if ( m == 2 && isLeapYear(year) ) {
+            nDays++;
+        }
     }
-	
-	return p;
+    return nDays + day;
 }
+
+// synthesize a reentrant gmtime on WIN32
+int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
+{
+    FILETIME ft;
+    UnixTimeToFileTime ( pAnsiTime, &ft );
+
+    SYSTEMTIME st;
+    BOOL status = FileTimeToSystemTime ( &ft, &st );
+    if ( ! status ) {
+		return epicsTimeERROR;
+    }
+
+    pTM->tm_sec = st.wSecond; // seconds after the minute - [0,59]
+    pTM->tm_min = st.wMinute; // minutes after the hour - [0,59]
+    pTM->tm_hour = st.wHour; // hours since midnight - [0,23]
+    assert ( st.wDay >= 1 && st.wDay <= 31 );
+    pTM->tm_mday = st.wDay; // day of the month - [1,31]
+    assert ( st.wMonth >= 1 && st.wMonth <= 12 );
+    pTM->tm_mon = st.wMonth - 1; // months since January - [0,11]
+    assert ( st.wYear >= 1900 );
+    pTM->tm_year = st.wYear - 1900; // years since 1900
+    pTM->tm_wday = st.wDayOfWeek; // days since Sunday - [0,6] 
+    pTM->tm_yday = dayOfYear ( st.wDay, st.wMonth, st.wYear ) - 1; 
+    pTM->tm_isdst = 0;
+
+	return epicsTimeOK;
+}
+
+// synthesize a reentrant localtime on WIN32
+int epicsTime_localtime ( const time_t *pAnsiTime, struct tm *pTM )
+{
+    FILETIME ft;
+    UnixTimeToFileTime ( pAnsiTime, &ft );
+
+    FILETIME lft;
+    BOOL status = FileTimeToLocalFileTime ( &ft, &lft );
+    if ( ! status ) {
+		return epicsTimeERROR;
+    }
+
+    SYSTEMTIME st;
+    status = FileTimeToSystemTime ( &lft, &st );
+    if ( ! status ) {
+		return epicsTimeERROR;
+    }
+    pTM->tm_sec = st.wSecond; // seconds after the minute - [0,59]
+    pTM->tm_min = st.wMinute; // minutes after the hour - [0,59]
+    pTM->tm_hour = st.wHour; // hours since midnight - [0,23]
+    assert ( st.wDay >= 1 && st.wDay <= 31 );
+    pTM->tm_mday = st.wDay; // day of the month - [1,31]
+    assert ( st.wMonth >= 1 && st.wMonth <= 12 );
+    pTM->tm_mon = st.wMonth - 1; // months since January - [0,11]
+    assert ( st.wYear >= 1900 );
+    pTM->tm_year = st.wYear - 1900; // years since 1900
+    pTM->tm_wday = st.wDayOfWeek; // days since Sunday - [0,6] 
+    pTM->tm_yday = dayOfYear ( st.wDay, st.wMonth, st.wYear ) - 1;
+
+    TIME_ZONE_INFORMATION tzInfo;
+    DWORD tzStatus = GetTimeZoneInformation ( &tzInfo );
+    switch ( tzStatus ) {
+    case TIME_ZONE_ID_UNKNOWN:
+        pTM->tm_isdst = -1;
+        break;
+    case TIME_ZONE_ID_STANDARD:
+        pTM->tm_isdst = 0;
+        break;
+    case TIME_ZONE_ID_DAYLIGHT:
+        pTM->tm_isdst = 1;
+        break;
+    default:
+        pTM->tm_isdst = -1;
+        break;
+    }
+
+	return epicsTimeOK;
+}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

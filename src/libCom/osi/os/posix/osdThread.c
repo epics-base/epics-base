@@ -469,9 +469,10 @@ epicsThreadId epicsThreadGetIdSelf(void) {
     return(pthreadInfo);
 }
 
-pthread_t epicsThreadGetPthreadIdSelf ( epicsThreadOSD * pthreadInfo )
+pthread_t epicsThreadGetPthreadIdSelf ( epicsThreadPrivateId threadId )
 {
-    return ( pthreadInfo->tid );
+    struct epicsThreadOSD * pThreadInfo = threadId;
+    return pThreadInfo->tid;
 }
 
 epicsThreadId epicsThreadGetId(const char *name) {

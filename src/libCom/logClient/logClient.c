@@ -526,7 +526,7 @@ LOCAL void logClientGlobalInit ()
     if (logClientThreadId==NULL) {
         epicsMutexDestroy (logClientGlobalMutex);
         logClientGlobalMutex = NULL;
-        epicsMutexDestroy (logClientGlobalSignal);
+        epicsEventDestroy (logClientGlobalSignal);
         logClientGlobalSignal = NULL;
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return;

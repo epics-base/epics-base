@@ -33,21 +33,40 @@
  * .03  05-19-92	mrk	Mods for internal database structure changes
  * .04  07-16-92        jba     changes made to remove compile warning msgs
  * .05  08-05-92	jba	Removed all references to dbr_field_type
+ * .06  09-15-92	jba	added stments for unix version
  */
 
 
 #define SAME 0
 
+
+#ifndef vxWorks
+#include <stdio.h>
+#include <sys/types.h>
+#include <string.h>
+#include <dbDefs.h>
+#include <errno.h>
+#else
 #include <vxWorks.h>
 #include <stdioLib.h>
 #include <types.h>
 #include <string.h>
+#endif
+
+#ifndef FOREVER
+#define FOREVER for(;;)
+#endif
+
 #include <dbRecType.h>
 #include <choice.h>
 #include <cvtTable.h>
 #include <devSup.h>
 #include <drvSup.h>
+#if 1
 #include <recSup.h>
+#endif
+
+#include <lstLib.h>
 #include <dbBase.h>
 #include <dbRecDes.h>
 #include <dbRecords.h>
@@ -55,7 +74,17 @@
 #include <error.h>
 #include <sdrHeader.h>
 
+#ifndef vxWorks
+struct dbBase *pdbBase=NULL;
+extern long dbLoad();
+#ifndef MYERRNO
+#define MYERRNO	(int errno)
+#endif
+
+#else
+
 extern struct dbBase *pdbBase;
+#endif
 
 /* forward references */
 void            DbRecType();
@@ -128,6 +157,26 @@ static struct PRTAB {
 	"FFFF", NULL
     }
 };
+
+
+#ifndef vxWorks
+main()
+{
+/* load the default.dctsdr file */
+    long status;
+
+    status=dbRead(&pdbBase, "default.dctsdr");
+    if(status!=0) {
+	printf("dbls aborting because dbRead failed\n");
+	return(-1);
+    }
+    dbls();
+return(0);
+}
+#endif
+
+
+
 /*
  * LISTSTRUCTURES
  *
@@ -145,7 +194,11 @@ int dbls()
     char            fname[80];
     long            status;
     struct recType *precType;
-
+    if (!pdbBase) {
+	status = S_sdr_notLoaded;
+	errMessage(status, "dbls: Error - database not loaded");
+	return(-1);
+    }
     if (!(precType=pdbBase->precType)) {
 	status = S_sdr_notLoaded;
 	errMessage(status, "dbls: Error - precType not loaded");

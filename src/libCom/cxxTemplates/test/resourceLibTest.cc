@@ -20,7 +20,7 @@ class albert : public intId<unsigned,8>, public tsSLNode<albert> {
 public:
 	albert (resTable< albert, intId<unsigned,8> > &atIn, unsigned idIn) : 
 		at(atIn), intId<unsigned,8>(idIn) {}
-	void show (unsigned level) 
+	void show (unsigned /* level */) 
 	{
 	}
 	void destroy()
@@ -84,7 +84,7 @@ void jane::testTraverse()
 	template class resTable<jane,stringId>;	
 #endif
 
-main()
+int main()
 {
 	unsigned i;
 	clock_t start, finish;
@@ -252,3 +252,4 @@ main()
 void empty()
 {
 }
+

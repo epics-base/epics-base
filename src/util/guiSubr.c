@@ -25,19 +25,20 @@
  *
  * Modification Log:
  * -----------------
- * .00	02-08-91	rac	initial version
- * .01	07-30-91	rac	installed in SCCS
- * .02	08-14-91	rac	add guiNoticeName; add more documentation
- * .03	09-06-91	rac	add GuiCheckbox..., guiGetNameFromSeln
- * .04	10-23-91	rac	allow window manager to position command
- *				frames; add file selector routine; add
- *				guiInit, guiFileSelect, guiShellCmd; add
- *				guiTextswXxx; don't specify position for
- *				frames
- * .05	02-25-92	rac	add a text editor command frame; guiInit
- *				now gets host name and user name; add a
- *				printer command frame and print routine;
- *				add "puts" for text subwindows
+ *  .00 02-08-91 rac	initial version
+ *  .01 07-30-91 rac	installed in SCCS
+ *  .02 08-14-91 rac	add guiNoticeName; add more documentation
+ *  .03 09-06-91 rac	add GuiCheckbox..., guiGetNameFromSeln
+ *  .04 10-23-91 rac	allow window manager to position command
+ *			frames; add file selector routine; add
+ *			guiInit, guiFileSelect, guiShellCmd; add
+ *			guiTextswXxx; don't specify position for
+ *			frames
+ *  .05 02-25-92 rac	add a text editor command frame; guiInit
+ *			now gets host name and user name; add a
+ *			printer command frame and print routine;
+ *			add "puts" for text subwindows
+ *  .06 03-15-92 rac	add guiLock as a locking mechanism
  *
  * make options
  *	-DXWINDOWS	to use xview/X Window System
@@ -82,6 +83,8 @@
 *      char *guiGetNameFromSeln(pGuiCtx, textSw, headFlag, tailFlag)
 *       Icon guiIconCreate(frame, iconBits)
 *      Panel guiInit(pGuiCtx, pArgc, argv, label, x, y, width, height)
+*        int guiLock(pGuiCtx, text, lockPath, flag)
+*                      flag is 0,1 to reset/set the lock
 *       Menu guiMenu(proc, key1, val1, key2, val2)
 *  Menu_item guiMenuItem(label, menu, proc, inact, dflt,
 *                                      key1, val1, key2, val2)
@@ -1235,8 +1238,6 @@ int	value;
 void guiEditorUpdateRst(pEdit)
 GUI_EDIT *pEdit;
 {
-    FILE	*pFile;
-
     if ((int)xv_get(pEdit->text_TSW, TEXTSW_MODIFIED)) {
 	xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
 	guiNotice(pEdit->pGuiCtx, "text has been modified; use Save or Cancel");
@@ -1246,17 +1247,74 @@ GUI_EDIT *pEdit;
     xv_set(pEdit->update_PCB, PANEL_VALUE, 0, NULL);
     if (pEdit->updFlag == 1) {
 	pEdit->updFlag = 0;
-	if ((pFile = fopen(pEdit->lockFile, "w+")) == NULL) {
-	    guiNoticeFile(pEdit->pGuiCtx, "couldn't open lock file",
-			pEdit->lockFile);
-	    xv_set(pEdit->update_PCB, PANEL_VALUE, 0, NULL);
-	}
-	fwrite("unlocked", 9, 1, pFile);
-	fclose(pFile);
-	unlink(pEdit->lockFile);
+	guiLock(pEdit->pGuiCtx, pEdit->file, pEdit->lockFile, 0);
+	xv_set(pEdit->update_PCB, PANEL_VALUE, 0, NULL);
     }
 }
 
+
+/*+/subr**********************************************************************
+* NAME	guiLock - provide a "global" lock and unlock mechanism
+*
+* DESCRIPTION
+*
+* RETURNS
+*	1	if lock succeeds
+*	0	if unlock succeeds
+*	-1	if either operation fails
+*
+*-*/
+int
+guiLock(pGuiCtx, text, lockPath, lock)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context block */
+char	*text;		/* I name or description for error messages */
+char	*lockPath;	/* I pointer to path for lock file */
+int	lock;		/* I 0,1 to reset,set the lock */
+{
+    FILE	*pFile;
+    char	msgLock[2*GUI_TDIM];
+    char	msgWho[2*GUI_TDIM];
+    TS_STAMP	ts;
+    char	tsText[32];
+    int		noticeVal;
+
+    if (lock) {
+	if ((pFile = fopen(lockPath, "r+")) != NULL) {
+	    fread(msgWho, GUI_TDIM, 1, pFile);
+	    fclose(pFile);
+	    if (strncmp(msgWho, "unlocked", 8) != 0) {
+		sprintf(msgLock, "%s is locked:", text);
+		noticeVal = notice_prompt(pGuiCtx->baseFrame, NULL,
+		    NOTICE_MESSAGE_STRINGS,	msgLock, msgWho,
+			"you can cancel the operation or force an unlock", NULL,
+		    NOTICE_BUTTON_YES,	"Cancel",
+		    NOTICE_BUTTON_NO,	"Unlock",
+		    NULL);
+		if (noticeVal == NOTICE_YES)
+		    return -1;
+	    }
+	}
+    }
+    if ((pFile = fopen(lockPath, "w+")) == NULL) {
+	guiNoticeFile(pGuiCtx, "couldn't open lock file", lockPath);
+	return -1;
+    }
+    if (lock) {
+	tsLocalTime(&ts);
+	tsStampToText(&ts, TS_TEXT_MONDDYYYY, tsText);
+	sprintf(msgWho, "by:%s  on:%s  at:%.21s",
+			pGuiCtx->user, pGuiCtx->host, tsText);
+	fwrite(msgWho, strlen(msgWho)+1, 1, pFile);
+	fclose(pFile);
+	return 1;
+    }
+    else {
+	fwrite("unlocked", 9, 1, pFile);
+	fclose(pFile);
+	unlink(lockPath);
+	return 0;
+    }
+}
 /*+/internal******************************************************************
 * NAME	guiEditorUpdateSet
 *
@@ -1269,11 +1327,6 @@ GUI_EDIT *pEdit;
     int		top;
     char	lockFile[2*GUI_TDIM + 5];
     FILE	*pFile;
-    char	msgLock[2*GUI_TDIM];
-    char	msgWho[2*GUI_TDIM];
-    int		noticeVal;
-    TS_STAMP	ts;
-    char	tsText[32];
 
     if (pEdit->updFlag == 1) {
 	xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
@@ -1297,34 +1350,10 @@ GUI_EDIT *pEdit;
     top += 2;
     strcpy(lockFile, pEdit->path);
     strcat(lockFile, ".lock");
-    if ((pFile = fopen(lockFile, "r+")) != NULL) {
-	fread(msgWho, GUI_TDIM, 1, pFile);
-	fclose(pFile);
-	if (strcmp(msgWho, "unlocked") != 0) {
-	    sprintf(msgLock, "%s is locked:", pEdit->file);
-	    noticeVal = notice_prompt(pEdit->pGuiCtx->baseFrame, NULL,
-		    NOTICE_MESSAGE_STRINGS,	msgLock, msgWho,
-			"you can cancel your update or force an unlock", NULL,
-		    NOTICE_BUTTON_YES,	"Cancel",
-		    NOTICE_BUTTON_NO,	"Unlock",
-		    NULL);
-	    if (noticeVal == NOTICE_YES) {
-		guiEditorUpdateRst(pEdit);
-		return;
-	    }
-	}
-    }
-    if ((pFile = fopen(lockFile, "w+")) == NULL) {
-	guiNoticeFile(pEdit->pGuiCtx, "couldn't open lock file", lockFile);
-	guiEditorUpdateRst(pEdit);
+    if (guiLock(pEdit->pGuiCtx, pEdit->file, lockFile, 1) != 1)  {
+	guiEditorUpdateRst(pEdit);	/* lock attempt didn't succeed */
 	return;
     }
-    tsLocalTime(&ts);
-    tsStampToText(&ts, TS_TEXT_MONDDYYYY, tsText);
-    sprintf(msgWho, "by:%s  on:%s  at:%.21s",
-			pEdit->pGuiCtx->user, pEdit->pGuiCtx->host, tsText);
-    fwrite(msgWho, strlen(msgWho)+1, 1, pFile);
-    fclose(pFile);
     xv_set(tsw, TEXTSW_FIRST_LINE, top);
     xv_set(tsw, TEXTSW_BROWSING, FALSE, NULL);
     xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);

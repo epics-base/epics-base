@@ -30,7 +30,12 @@ typedef int                     SOCKET;
 #define SOCKERRNO               errno
 #define SOCKERRSTR (strerror(SOCKERRNO))
 #define socket_close(S)         close(S)
+/*
+ * it is quite lame on WRS's part to assume that
+ * a ptr is always the same as an int
+ */
 #define socket_ioctl(A,B,C)     ioctl(A,B,(int)C)
+typedef int osiSockIoctl_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
@@ -47,6 +52,10 @@ typedef int                     SOCKET;
 #define SOCK_EINVAL EINVAL
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
+
+#ifndef INADDR_LOOPBACK
+#define INADDR_LOOPBACK 0x7F000001
+#endif
 
 #endif /*osiSockH*/
  

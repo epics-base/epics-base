@@ -1,8 +1,7 @@
-/* errMtst.c */
-/* share/src/libCom @(#)errSymFind.c	1.3     2/4/92 */
-/*
+/* share/src/libCom $Id$ 
+ * errMtst.c
  *      Author:          Bob Zieman
- *      Date:            6-1-91
+ *      Date:            09-01-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,105 +28,59 @@
  * -----------------
  * .01  mm-dd-yy        iii     Comment
  */
-/* errSymFind.c - Locate error symbol */
 
-
-#include <error.h>
 #ifdef vxWorks
 #include <vxWorks.h>
-#include <types.h>
-#include <symLib.h>
-extern caddr_t  statSymTbl;
 #else
 #include <string.h>
-extern int      sys_nerr;
-extern char    *sys_errlist[];
 #endif
 
+#include <stdio.h>
+#include <errMdef.h>
 
-int 
-errSymFind(status, name)
-    long            status;
-    char           *name;
-{
-    long            value;
-#ifdef vxWorks
-    unsigned char   type;
-#endif
-    unsigned short  modnum;
-    modnum = (status >> 16);
-    if (modnum <= 500)
-#ifdef vxWorks
-	symFindByValue((SYMTAB_ID)statSymTbl, status, name,(int*) &value, (SYM_TYPE*)&type);
-#else
-	UnixSymFind(status, name, &value);
-#endif
-    else
-	ModSymFind(status, name, &value);
-    if (value != status)
-	return (-1);
-    else
-	return (0);
-}
-
+
+/****************************************************************
+ * MAIN FOR errMtst
+****************************************************************/
 #ifndef vxWorks
-int 
-UnixSymFind(status, pname, pvalue)
-    long            status;
-    char           *pname;
-    long           *pvalue;
+main()
 {
-    if (status >= sys_nerr || status < 1) {
-	*pvalue = -1;
-	return;
-    }
-    strcpy(pname, sys_errlist[status]);
-    *pvalue = status;
-    return;
+	printf("calling errSymBld from main in errMtst.c\n");
+	errSymBld();
+#if 0
+	printf("calling errSymDump from main in errMtst.c\n");
+	errSymDump();
+	printf("calling errSymFindTst from main in errMtst.c\n");
+	errSymFindTst();
+#endif
+	printf("calling errSymTest from main in errMtst.c\n");
+	errSymTest((unsigned short)501, 0, 17);
 }
 #endif
-
-int 
-ModSymFind(status, pname, pvalue)
-    long            status;
-    char           *pname;
-    long           *pvalue;
+
+/****************************************************************
+ * ERRSYMTEST
+****************************************************************/
+/* errSymTest: test error numbers */
+#ifdef __STDC__
+void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
+#else
+void errSymTest(modnum, begErrNum, endErrNum)
+unsigned short modnum;
+unsigned short begErrNum;
+unsigned short endErrNum;
+#endif /* __STDC__ */
 {
-    unsigned short  modNum;
-    unsigned short  modDim;
-    unsigned short  errOff;
-    unsigned short  errDim;
-    /* lsb status must be odd */
-    if (!(status & 0x1)) {
-	*pvalue = -1;
+    long            errNum;
+    unsigned short  errnum;
+    if (modnum < 501)
 	return;
+
+    /* get and print the range */
+    for (errnum = begErrNum; errnum < endErrNum; errnum++) {
+	errNum = modnum << 16;
+	errNum |= (errnum & 0xffff);
+	printf("DEBUG errSymTest: errNum=%ld\n", errNum);
+/*	errSymTestPrint(errNum);*/
     }
-    modNum = (status >> 16);
-    if (modNum < 501) {
-	*pvalue = -1;
-	return;
-    }
-    modNum = modNum - 501;
-    if (!dbErrDes->papErrSet[modNum]) {
-	*pvalue = -1;
-	return;
-    }
-    modDim = dbErrDes->number;
-    if (modNum >= modDim) {
-	*pvalue = -1;
-	return;
-    }
-    errDim = dbErrDes->papErrSet[modNum]->number;
-    errOff = (status & 0xffff) >> 1;
-    if (errOff >= errDim) {
-	*pvalue = -1;
-	return;
-    }
-    if (!dbErrDes->papErrSet[modNum]->papName[errOff]) {
-	*pvalue = -1;
-	return;
-    }
-    strcpy(pname, dbErrDes->papErrSet[modNum]->papName[errOff]);
-    *pvalue = status;
-    return;
 }

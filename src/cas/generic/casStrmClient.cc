@@ -1325,6 +1325,7 @@ caStatus casStrmClient::createChanResponse (
     //
     if ( nativeTypeDBR == DBR_ENUM ) {
         this->ctx.setPV ( pvar.getPV()->pPVI );
+        this->ctx.setChannel ( pChan->pChanI );
         this->userStartedAsyncIO = false;
         status = pvar.getPV()->pPVI->updateEnumStringTable ( this->ctx );
 	    if ( this->userStartedAsyncIO ) {
@@ -1337,7 +1338,7 @@ caStatus casStrmClient::createChanResponse (
 	    }
         else if ( status == S_casApp_success ) {
             status = enumPostponedCreateChanResponse ( 
-                    guard, *ctx.getChannel(), hdr, nativeTypeDBR );
+                    guard, * pChan->pChanI, hdr, nativeTypeDBR );
         }
 	    else if ( status == S_casApp_asyncCompletion )  {
 		    status = S_cas_badParameter;
@@ -1350,12 +1351,12 @@ caStatus casStrmClient::createChanResponse (
 		    errlogPrintf ( "To postpone this request please postpone the PC attach IO request." );
 		    errlogPrintf ( "String table cache update did not occur." );
             status = enumPostponedCreateChanResponse ( 
-                guard, * ctx.getChannel(), hdr, nativeTypeDBR );
+                guard, * pChan->pChanI, hdr, nativeTypeDBR );
         }
     }
     else {
         status = enumPostponedCreateChanResponse ( 
-            guard, *pChan->pChanI, hdr, nativeTypeDBR );
+            guard, * pChan->pChanI, hdr, nativeTypeDBR );
     }
   
     if ( status != S_cas_success ) {

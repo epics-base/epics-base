@@ -240,10 +240,6 @@ calcTest "~c "				"1 2 0 4 5 6 7 8 9 10 11 12"		-1	VERIFY
 calcTest "~c "				"1 2 3 4 5 6 7 8 9 10 11 12"		-4	VERIFY
 calcTest "~l "				"1 2 3 4 5 6 7 8 9 10 11 12"		-13	VERIFY
 
-! --------------------------------------Question mark operator  (cond)?t:f 
-
-calcTest "((e+f+g)=(h+j)) ? k:l"	"1 2 3 4 5 6 7 8 9 10 11 12"		11	VERIFY
-calcTest "((a+e+f+g)=(h+j))?k:l"	"1 2 3 4 5 6 7 8 9 10 11 12"		12	VERIFY
 ! --------------------------------------random number generation  RNDM
 
 calcTest "RNDM"				"1 2 3 4 5 6 7 8 9 10 11 12"		0	NOVERIFY
@@ -255,6 +251,79 @@ calcTest "RNDM"				"1 2 3 4 5 6 7 8 9 10 11 12"		0	NOVERIFY
 calcTest "RNDM"				"1 2 3 4 5 6 7 8 9 10 11 12"		0	NOVERIFY
 calcTest "RNDM"				"1 2 3 4 5 6 7 8 9 10 11 12"		0	NOVERIFY
 
+! --------------------------------------maximum                   MAX
+
+calcTest "MAX(a,b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		2
+calcTest "MAX(a+c,b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		4
+calcTest "MAX(MAX(a,b),c)"		"1 2 3 4 5 6 7 8 9 10 11 12"		3
+calcTest "MAX(MAX(a,b),MAX(c+d,e+f))"	"1 2 3 4 5 6 7 8 9 10 11 12"		11
+calcTest "MAX(MAX(a,b),MAX(c+d,f-b))"	"1 2 3 4 5 6 7 8 9 10 11 12"		7	
+calcTest "MAX(h-a,f-b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		7
+
+! --------------------------------------minimum                   MIN
+
+calcTest "MIN(a,b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		1
+calcTest "MIN(a+c,b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		2
+calcTest "MIN(MIN(a,b),c)"		"1 2 3 4 5 6 7 8 9 10 11 12"		1
+calcTest "MIN(MIN(a,b),MIN(c+d,e+f))"	"1 2 3 4 5 6 7 8 9 10 11 12"		1
+calcTest "MIN(MIN(a,b),MIN(c+d,f-b))"	"1 2 3 4 5 6 7 8 9 10 11 12"		1	
+calcTest "MIN(h-a,f-b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		4
+
+! --------------------------------------ceiling                   CEIL
+
+calcTest "CEIL(a)"			"3.2123"				4
+calcTest "CEIL(a+b)"			".1 2.91"				4
+calcTest "CEIL(CEIL(a)+b)"		"1.7 2.2 "				5
+calcTest "CEIL(CEIL(a+b)*CEIL(c+d+e))"	".8 1.9 2.10 3.11 4.12"			30
+calcTest "CEIL(CEIL(a-b)*CEIL(c-d))"	"1 2 3 4 5 6 7 8 9 10 11 12"		1
+calcTest "CEIL(a-b)"			"1 2 3 4 5 6 7 8 9 10 11 12"		-1
+
+! --------------------------------------floor                     FLOOR
+
+calcTest "FLOOR(a+b)"			".2  1.3 "				1
+calcTest "FLOOR(a-c*b)"			".1 .9 .5"				-1
+calcTest "FLOOR(FLOOR(a+b)*c)"		"1e-2 2.7 3.1"				6
+calcTest "FLOOR(FLOOR(a+b)-FLOOR(c+d))"	".1 1.2 3.4 4.5 "			-6
+calcTest "FLOOR(FLOOR(a-b)+FLOOR(c-d-e-f))"	".1 .2 .3 .4 .5 .6 "		-3
+calcTest "FLOOR(a-b)"			"5e-3 .7"				-1
+
+! --------------------------------------conditional                 ? :
+
+calcTest "a?b:c"			"1 2 3 "				2
+calcTest "a?b:c"			"0 2 3 "				3
+calcTest "a?b?c:d:e"			"1 1 3 4 5"				3
+calcTest "a?(b?c:d):e"			"1 1 3 4 5"				3
+calcTest "a?b?c:d:e"			"1 0 3 4 5"				4
+calcTest "a?b?c:d:e"			"0 0 3 4 5"				5
+calcTest "a?b:c?d:e"			"0 5 1 6 7"				6
+calcTest "a?b:c?d:e"			"1 5 1 6 7"				5
+calcTest "a?b:c?d:e"			"0 5 0 6 7"				7
+
+calcTest "a?b:c?d:e"			"1 6 0 7 8"				6
+calcTest "a?b:c?d:e"			"0 6 0 7 8"				8
+calcTest "a?b:c?d:e"			"0 6 1 7 8"				7
+
+calcTest "h+(a?b:c)+(d?e:f)+g"		"1 2 3 0 10 20 100 200"			322
+calcTest "h+(a?b:c)+(d?e:f)+g"		"0 2 3 1 10 20 100 200"			313
+
+calcTest "a?(b?(c+d):e):(f?g:h)"	"1 1 10 50 30 0 100 200"		60
+calcTest "a?(b?(c+d):e):(f?g:h)"	"0 1 10 50 30 0 100 200"		200
+calcTest "a?(b?(c+d):e):(f?g:h)"	"0 1 10 50 30 1 100 200"		100
+calcTest "a?(b?(c+d):e):(f?g:h)"	"1 0 10 50 30 0 100 200"		30
+
+calcTest "((e+f+g)=(h+j)) ? k:l"	"1 2 3 4 5 6 7 8 9 10 11 12"		11
+calcTest "((a+e+f+g)=(h+j))?k:l"	"1 2 3 4 5 6 7 8 9 10 11 12"		12
+
+! --------------------------------------constants in expression
+calcTest "a+3"				"5"					8
+calcTest "a/.001"			"6000"					6
+calcTest "a**2"				"3"					9
+calcTest "LOG(1)"			"1"					0
+calcTest "ABS(2-f)-ABS(3-g)"		"1 1 1 4 5 6 7 8 9 10 11 12"		0
+calcTest "ACOS(SQR(a))-3.141592653589793238462643/b"	".5 4"			0
+
+
+!  *****************************************************
 !  *****************************************************
 
 ! -------------------------- End of test ---------------

@@ -14,7 +14,7 @@
 #
 
 TOP=.
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 all: install
 
@@ -90,12 +90,14 @@ release.%:
 
 uninstall.%:
 	@echo "TOP: Uninstalling $* "
-	@rm -rf ./bin/$* ./lib/$* dbd include man config
+	@rm -rf $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
+		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) 
 	@rm -rf  rec.bak rec
 
 clean.%:
 	@echo "TOP: Cleaning $* "
 	@find src -type d -name "O.$*" -prune -exec rm -rf {} \;
+	@find config -type d -name "O.$*" -prune -exec rm -rf {} \;
 
 
 

@@ -6,7 +6,7 @@
 #
 
 TOP=.
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 all: build
 

@@ -45,13 +45,11 @@ class osiTimerQueue;
 class managerThread;
 
 epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
-class epicsShareClass osiTimer;
-template class epicsShareClass tsDLNode<osiTimer>;
 
 //
 // osiTimer
 //
-class epicsShareClass osiTimer : public tsDLNode<osiTimer> {
+class osiTimer : public tsDLNode<osiTimer> {
 friend class osiTimerQueue;
 public:
     class noDelaySpecified {}; // exception
@@ -60,39 +58,39 @@ public:
     // create an active timer that will expire delay secods after it is created
     // or create an inactive timer respectively
     //
-	osiTimer (double delay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
-	osiTimer ();
+	epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
+	epicsShareFunc osiTimer ();
 
 	//
 	// change the timer's expiration to newDelay
 	// seconds after when reschedule() is called
 	//	
-    void reschedule (double newDelay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
+    epicsShareFunc void reschedule (double newDelay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
 
 	//
 	// change the timers expiration to this->delay()
 	// seconds after when reschedule() is called
 	//	
-	void reschedule (osiTimerQueue & queueIn = osiDefaultTimerQueue);
+	epicsShareFunc void reschedule (osiTimerQueue & queueIn = osiDefaultTimerQueue);
 
     //
     // inactivate the timer and call the virtual destroy()
     // member function
     //
-	void cancel ();
+	epicsShareFunc void cancel ();
 
 	//
 	// return the number of seconds remaining before
 	// this osiTimer will expire or the expiration date
     // respectively
 	//
-	double timeRemaining () const; // returns seconds, but inefficent
-    osiTime expirationDate () const; // efficent
+	epicsShareFunc double timeRemaining () const; // returns seconds, but inefficent
+    epicsShareFunc osiTime expirationDate () const; // efficent
 
 	//
 	// called when the osiTimer expires
 	//
-	virtual void expire () = 0;
+	epicsShareFunc virtual void expire () = 0;
 
 	//
 	// called if 
@@ -105,7 +103,7 @@ public:
     // is taking responsibility for freeing (deleting)
     // timer resources when they are nolonger needed.
 	//
-	virtual void destroy ();
+	epicsShareFunc virtual void destroy ();
 
 	//
 	// returning true indicates that the
@@ -115,7 +113,7 @@ public:
 	// the defaut osiTimer::again() returns false
 	// (run the osiTimer once only)
 	//
-	virtual bool again () const;
+	epicsShareFunc virtual bool again () const;
 
 	//
 	// returns the delay prior to expire
@@ -127,16 +125,16 @@ public:
     // not be called unless the again() virtual 
     // function returns true.
 	//
-	virtual double delay () const;
+	epicsShareFunc virtual double delay () const;
 
-	virtual void show (unsigned level) const;
+	epicsShareFunc virtual void show (unsigned level) const;
 
 	//
 	// for diagnostics
 	//
-	virtual const char *name () const;
+	epicsShareFunc virtual const char *name () const;
 
-	virtual ~osiTimer ();
+	epicsShareFunc virtual ~osiTimer ();
 
 private:
 

@@ -159,6 +159,10 @@ SRCS_WIN32 += dllmain.cpp
 # For RTEMS startup
 SRCS_RTEMS += rtems_init.c
 
+# For vxWorks a clock
+INC_vxWorks += iocClock.h
+SRCS_vxWorks += iocClock.c
+
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #

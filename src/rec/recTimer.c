@@ -261,9 +261,9 @@ struct timerRecord	*ptimer;
 		if(status!=0) return;
 	}
 	if (ptimer->out.type != VME_IO) {
-		if(ptimer->nsev<MAJOR_ALARM) {
+		if(ptimer->nsev<VALID_ALARM) {
 			ptimer->nsta = WRITE_ALARM;
-			ptimer->nsev = MAJOR_ALARM;
+			ptimer->nsev = VALID_ALARM;
 		}
 		return;
 	}
@@ -283,9 +283,9 @@ struct timerRecord	*ptimer;
 	  ((ptimer->tevt == 0)?0:post_event),	/* addr of event post routine */
 	  (int)ptimer->tevt)		/* event to post on trigger */
 	    != 0){
-		if (ptimer->nsev<MAJOR_ALARM) {
+		if (ptimer->nsev<VALID_ALARM) {
 			ptimer->nsta = WRITE_ALARM;
-			ptimer->nsev = MAJOR_ALARM;
+			ptimer->nsev = VALID_ALARM;
 		}
 	}
 	return;

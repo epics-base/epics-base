@@ -121,9 +121,9 @@ static long process(paddr)
 	psel->pact = TRUE;
 	if(fetch_values(psel)==0) {
 		if(do_sel(psel)!=0) {
-			if(psel->nsev<MAJOR_ALARM) {
+			if(psel->nsev<VALID_ALARM) {
 				psel->nsta = CALC_ALARM;
-				psel->nsev = MAJOR_ALARM;
+				psel->nsev = VALID_ALARM;
 			}
 		}
 	}

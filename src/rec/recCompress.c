@@ -148,9 +148,9 @@ static long process(paddr)
 	if (pcompress->inp.type != DB_LINK) {
 		status=0;
 	}else if (pcompress->wptr == NULL) {
-		if(pcompress->nsev<MAJOR_ALARM) {
+		if(pcompress->nsev<VALID_ALARM) {
 			pcompress->nsta = READ_ALARM;
-			pcompress->nsev = MAJOR_ALARM;
+			pcompress->nsev = VALID_ALARM;
 		}
 		status=0;
 	} else {

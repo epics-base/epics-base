@@ -489,9 +489,9 @@ struct steppermotorRecord      *psm;
 	/* initialize the motor */
 	/* set mode - first command checks card present */
 	if (sm_driver(psm->dtyp,card,channel,SM_MODE,psm->mode,0) < 0){
-		if(psm->nsev < MAJOR_ALARM) {
+		if(psm->nsev < VALID_ALARM) {
 			psm->nsta = WRITE_ALARM;
-			psm->nsev = MAJOR_ALARM;
+			psm->nsev = VALID_ALARM;
 		}
 		psm->init = 1;
 		return;
@@ -522,9 +522,9 @@ struct steppermotorRecord      *psm;
 			status = sm_driver(psm->dtyp,card,channel,SM_READ,0,0);
 		}
 		if (status < 0){
-			if (psm->nsev < MAJOR_ALARM) {
+			if (psm->nsev < VALID_ALARM) {
 				psm->nsta = WRITE_ALARM;
-				psm->nsev = MAJOR_ALARM;
+				psm->nsev = VALID_ALARM;
 			}
 			return;
 		}
@@ -613,9 +613,9 @@ struct steppermotorRecord	*psm;
 		long nRequest=1;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
-			if (psm->nsev < MAJOR_ALARM) {
+			if (psm->nsev < VALID_ALARM) {
 				psm->nsta = READ_ALARM;
-				psm->nsev = MAJOR_ALARM;
+				psm->nsev = VALID_ALARM;
 			}
 			return;
 		}
@@ -648,9 +648,9 @@ struct steppermotorRecord	*psm;
 
 			/* move motor */
 			if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-				if (psm->nsev < MAJOR_ALARM) {
+				if (psm->nsev < VALID_ALARM) {
 					psm->stat = WRITE_ALARM;
-					psm->sevr = MAJOR_ALARM;
+					psm->sevr = VALID_ALARM;
 				}
 				return;
 			}
@@ -689,9 +689,9 @@ struct steppermotorRecord	*psm;
 		long nRequest=1;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
-			if (psm->nsev < MAJOR_ALARM) {
+			if (psm->nsev < VALID_ALARM) {
 				psm->nsta = READ_ALARM;
-				psm->nsev = MAJOR_ALARM;
+				psm->nsev = VALID_ALARM;
 			}
 			return;
 		}
@@ -729,9 +729,9 @@ struct steppermotorRecord	*psm;
 	
 			/*the last arg of next call is check for direction */
 			if(sm_driver(psm->dtyp,card,channel,SM_MOTION,1,(psm->val < 0))){
-				if (psm->nsev < MAJOR_ALARM) {
+				if (psm->nsev < VALID_ALARM) {
 					psm->stat = WRITE_ALARM;
-					psm->sevr = MAJOR_ALARM;
+					psm->sevr = VALID_ALARM;
 				}
 				return;
 			}
@@ -776,9 +776,9 @@ struct steppermotorRecord	*psm;
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
 	if(dbGetLink(&(psm->rdbl.value.db_link),psm,DBR_FLOAT,&new_pos,&options,&nRequest)){
-		if (psm->nsev < MAJOR_ALARM) {
+		if (psm->nsev < VALID_ALARM) {
 			psm->nsta = READ_ALARM;
-			psm->nsev = MAJOR_ALARM;
+			psm->nsev = VALID_ALARM;
 		}
 		psm->init = reset;
 		return;

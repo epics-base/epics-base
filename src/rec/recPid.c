@@ -357,9 +357,9 @@ struct pidRecord     *ppid;
 
         /* fetch the controlled value */
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
-                if (ppid->nsev<MAJOR_ALARM) {
+                if (ppid->nsev<VALID_ALARM) {
                         ppid->nsta = SOFT_ALARM;
-                        ppid->nsev = MAJOR_ALARM;
+                        ppid->nsev = VALID_ALARM;
                         return(0);
                 }
 	}
@@ -367,9 +367,9 @@ struct pidRecord     *ppid;
         nRequest=1;
         if(dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
 	&cval,&options,&nRequest)!=NULL) {
-                if (ppid->nsev<MAJOR_ALARM) {
+                if (ppid->nsev<VALID_ALARM) {
                         ppid->nsta = READ_ALARM;
-                        ppid->nsev = MAJOR_ALARM;
+                        ppid->nsev = VALID_ALARM;
                         return(0);
                 }
         }
@@ -379,9 +379,9 @@ struct pidRecord     *ppid;
         	nRequest=1;
         	if(dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
-                	if (ppid->nsev<MAJOR_ALARM) {
+                	if (ppid->nsev<VALID_ALARM) {
                                 ppid->stat = READ_ALARM;
-                                ppid->sevr = MAJOR_ALARM;
+                                ppid->sevr = VALID_ALARM;
                                 return(0);
                         }
                 }

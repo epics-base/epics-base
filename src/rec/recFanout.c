@@ -109,8 +109,8 @@ static long process(paddr)
         if (pfanout->lnk6.type==DB_LINK) dbScanPassive(pfanout->lnk6.value.db_link.pdbAddr);
     } else if(pfanout->selm==SELECTED) {
 	if(pfanout->seln<1 || pfanout->seln>6) {
-	    if(pfanout->nsev<MAJOR_ALARM) {
-		pfanout->nsev = MAJOR_ALARM;
+	    if(pfanout->nsev<VALID_ALARM) {
+		pfanout->nsev = VALID_ALARM;
 		pfanout->nsta = SOFT_ALARM;
 	    }
 	} else {
@@ -121,8 +121,8 @@ static long process(paddr)
 	    dbScanPassive(plink->value.db_link.pdbAddr);
 	}
     } else {
-	if(pfanout->nsev<MAJOR_ALARM) {
-	    pfanout->nsev = MAJOR_ALARM;
+	if(pfanout->nsev<VALID_ALARM) {
+	    pfanout->nsev = VALID_ALARM;
 	    pfanout->nsta = SOFT_ALARM;
 	}
     }

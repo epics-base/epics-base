@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1998/06/16 03:01:44  jhill
+ * cosmetic
+ *
  * Revision 1.12  1998/05/29 17:25:47  jhill
  * allow use of epicsAssert.h
  *
@@ -151,183 +154,46 @@ public:
 	// adds addList to the end of the list
 	// (and removes all items from addList)
 	//
-	void add (tsDLList<T> &addList)
-	{
-		//
-		// NOOP if addList is empty
-		//
-		if (addList.itemCount==0u) {
-			return;
-		}
-
-		if (this->itemCount==0u) {
-			//
-			// this is empty so just init from 
-			// addList 
-			//
-			*this = addList;
-		}
-		else {
-			tsDLNode<T> *pLastNode = this->pLast;
-			tsDLNode<T> *pAddListFirstNode = addList.pFirst;
-
-			//
-			// add addList to the end of this
-			//
-			pLastNode->pNext = addList.pFirst;
-			pAddListFirstNode->pPrev = addList.pLast;
-			this->pLast = addList.pLast;
-			this->itemCount += addList.itemCount;
-		}
-
-		//
-		// leave addList empty
-		//
-		addList.clear();
-	}
+	void add (tsDLList<T> &addList);
 
 	//
 	// add() 
 	// (add an item to the end of the list)
 	//
-	void add (T &item)
-	{
-		tsDLNode<T> &node = item;
-
-		node.pNext = 0;
-		node.pPrev = this->pLast;
-
-		if (this->itemCount) {
-			tsDLNode<T> *pLastNode = this->pLast;
-			pLastNode->pNext = &item;
-		}
-		else {
-			this->pFirst = &item;
-		}
-
-		this->pLast = &item;
-
-		this->itemCount++;
-	}
+	void add (T &item);
 
 	//
 	// get ()
 	//
-	T * get()
-	{
-		T *pItem = this->pFirst;
-
-		if (pItem) {
-			this->remove (*pItem);
-		}
-		
-		return pItem;
-	}
+	T * get();
 
 	//
 	// insertAfter()
 	// (place item in the list immediately after itemBefore)
 	//
-	void insertAfter (T &item, T &itemBefore)
-	{
-		tsDLNode<T> &node = item;
-		tsDLNode<T> &nodeBefore = itemBefore;
-
-		node.pPrev = &itemBefore;
-		node.pNext = nodeBefore.pNext;
-		nodeBefore.pNext = &item;
-
-		if (node.pNext) {
-			tsDLNode<T> *pNextNode = node.pNext;
-			pNextNode->pPrev = &item;
-		}
-		else {
-			this->pLast = &item;
-		}
-
-		this->itemCount++;
-	}
+	void insertAfter (T &item, T &itemBefore);
 
 	//
 	// insertBefore ()
 	// (place item in the list immediately before itemAfter)
 	//
-	void insertBefore (T &item, T &itemAfter)
-	{
-		tsDLNode<T> &node = item;
-		tsDLNode<T> &nodeAfter = itemAfter;
-
-		node.pNext = &itemAfter;
-		node.pPrev = nodeAfter.pPrev;
-		nodeAfter.pPrev = &item;
-
-		if (node.pPrev) {
-			tsDLNode<T> *pPrevNode = node.pPrev;
-			pPrevNode->pNext = &item;
-		}
-		else {
-			this->pFirst = &item;
-		}
-
-		this->itemCount++;
-	}
+	void insertBefore (T &item, T &itemAfter);
 
 	//
 	// remove ()
 	//
-	void remove (T &item)
-	{
-		tsDLNode<T> &node = item;
-
-		if (this->pLast == &item) {
-			this->pLast = node.pPrev;
-		}
-		else {
-			tsDLNode<T> *pNextNode = node.pNext;
-			pNextNode->pPrev = node.pPrev; 
-		}
-
-		if (this->pFirst == &item) {
-			this->pFirst = node.pNext;
-		}
-		else {
-			tsDLNode<T> *pPrevNode = node.pPrev;
-			pPrevNode->pNext = node.pNext;
-		}
-		
-		this->itemCount--;
-	}
+	void remove (T &item);
 
 	//
 	// pop ()
 	// (returns the first item on the list)
-	T * pop()
-	{
-		return this->get();
-	}
+	T * pop();
 
 	//
 	// push ()
 	// (add an item at the beginning of the list)
 	//
-	void push (T &item)
-	{
-		tsDLNode<T> &node = item;
-		node.pPrev = 0;
-		node.pNext = this->pFirst;
-
-		if (this->itemCount) {
-			tsDLNode<T> *pFirstNode = this->pFirst;
-			pFirstNode->pPrev = &item;
-		}
-		else {
-			this->pLast = &item;
-		}
-
-		this->pFirst = &item;
-
-		this->itemCount++;
-	}
+	void push (T &item);
 	
 	//
 	// find 
@@ -364,6 +230,7 @@ private:
 	tsDLList (const tsDLList &);
 };
 
+
 //
 // tsDLIterBD<T>
 // (a bi-directional iterator in the style of the STL)
@@ -377,8 +244,7 @@ public:
 	tsDLIterBD (T *pInitialEntry) : 
 		pEntry(pInitialEntry) {}
 
-	tsDLIterBD (class tsDLIterBD<T> &copyIn) : 
-		pEntry(copyIn.pEntry) {}
+	tsDLIterBD (const class tsDLIterBD<T> &copyIn);
 
 	tsDLIterBD<T> & operator = (T *pNewEntry)
 	{
@@ -459,7 +325,7 @@ public:
 private:
 	T *pEntry;
 };
-
+		
 //
 // tsDLIter<T>
 //
@@ -474,7 +340,7 @@ private:
 template <class T>
 class tsDLIter {
 public:
-	tsDLIter (const tsDLList<T> & listIn) : 
+	tsDLIter (tsDLList<T> & listIn) : 
 		pCurrent(0), pList(&listIn) {}
 
 	void reset ()
@@ -493,33 +359,9 @@ public:
 	    this->reset(listIn);
 	}
 
-	T * next () 
-	{
-		T *pCur = this->pCurrent;
-		if (pCur==0) {
-			pCur = this->pList->pFirst;
-		}
-		else {
-			tsDLNode<T> *pCurNode = pCur;
-			pCur = pCurNode->pNext;
-		}
-		this->pCurrent = pCur;
-		return pCur;
-	}
+	T * next ();
 
-	T * prev ()
-	{
-	    T *pCur = this->pCurrent;
-	    if (pCur==0) {
-			pCur = this->pList->pLast;
-	    }
-	    else {
-			tsDLNode<T> *pCurNode = pCur;
-			pCur = pCurNode->pPrev;
-	    }
-	    this->pCurrent = pCur;
-	    return pCur;
-	}
+	T * prev ();
 
 	T * first()
 	{
@@ -533,14 +375,11 @@ public:
 	    return this->pCurrent;
 	}
 
-	T * operator () () 
-	{
-		return this->next();
-	}
+	T * operator () ();
 
 protected:
 	T			*pCurrent;
-	const tsDLList<T>	*pList;
+	tsDLList<T>	*pList;
 };
 
 //
@@ -561,30 +400,28 @@ protected:
 template <class T>
 class tsDLFwdIter: private tsDLIter<T> {
 public:
-	tsDLFwdIter (const tsDLList<T> &listIn) : 
+	tsDLFwdIter (tsDLList<T> &listIn) : 
 		tsDLIter<T>(listIn) {}
 
 	void reset ()
 	{
 		this->tsDLIter<T>::reset();
 	}
+
 	void reset (tsDLList<T> &listIn)
 	{
 	    this->tsDLIter<T>::reset(listIn);
 	}
+
 	void operator = (tsDLList<T> &listIn)
 	{
 	    this->tsDLIter<T>::reset(listIn);
 	}
-	T * operator () ()
-	{
-	    return this->tsDLIter<T>::next();
-	}
-	T * next () 
-	{
-		tsDLIter<T> &iterBase = *this;
-		return iterBase.next();
-	}
+
+	T * operator () ();
+
+	T * next ();
+
 	T * first()
 	{
 		tsDLIter<T> &iterBase = *this;
@@ -600,31 +437,7 @@ public:
 	// accessed sequentially even if an item
 	// is removed)
 	//
-	void remove ()
-	{
-		T *pCur = this->pCurrent;
-
-		if (pCur) {
-			tsDLNode<T> *pCurNode = pCur;
-
-			//
-			// strip const (we didnt declare the
-			// list const in the constructor)
-			//
-			tsDLList<T> * pMutableList = 
-				(tsDLList<T> *) this->pList;
-
-			//
-			// Move this->pCurrent to the previous item
-			//
-			this->pCurrent = pCurNode->pPrev;
-
-			//
-			// delete current item
-			//
-			pMutableList->remove(*pCur);
-		}
-	}
+	void remove ();
 };
 
 //
@@ -645,29 +458,28 @@ public:
 template <class T>
 class tsDLBwdIter : private tsDLIter<T> {
 public:
-	tsDLBwdIter(const tsDLList<T> &listIn) : 
+	tsDLBwdIter(tsDLList<T> &listIn) : 
 		tsDLIter<T>(listIn) {}
 
 	void reset ()
 	{
 		this->tsDLIter<T>::reset();
 	}
+
 	void reset (tsDLList<T> &listIn)
 	{
 	    this->tsDLIter<T>::reset(listIn);
 	}
+
 	void operator = (tsDLList<T> &listIn)
 	{
 	    this->tsDLIter<T>::reset(listIn);
 	}
-	T * operator () ()
-	{
-	    return this->tsDLIter<T>::prev();
-	}
-	T * prev () 
-	{
-		return this->tsDLIter<T>::prev();
-	}
+
+	T * operator () ();
+
+	T * prev ();
+
 	T * last()
 	{
 		return this->tsDLIter<T>::last();
@@ -683,43 +495,366 @@ public:
 	// accessed sequentially even if an item
 	// is removed)
 	//
-	void remove ()
-	{
-		T *pCur = this->pCurrent;
-
-		if (pCur) {
-			tsDLNode<T> *pCurNode = pCur;
-
-			//
-			// strip const (we didnt declare the
-			// list const in the constructor)
-			//
-			tsDLList<T> * pMutableList = 
-				(tsDLList<T> *) this->pList;
-
-			//
-			// Move this->pCurrent to the item after the
-			// item being deleted 
-			//
-			this->pCurrent = pCurNode->pNext;
-
-			//
-			// delete current item
-			//
-			pMutableList->remove(*pCur);
-		}
-	}
+	void remove ();
 };
+
+//
+// MS Visual C 6.0 requires that this code is not provided in
+// the class definition because the class isnt fully defined yet
+//
+template <class T>
+inline tsDLIterBD<T>::tsDLIterBD(const class tsDLIterBD<T> &copyIn) :
+	pEntry(copyIn.pEntry) {}
 
 
 //
-// find 
+// tsDLList<T>::remove ()
+//
+template <class T>
+void tsDLList<T>::remove (T &item)
+{
+	tsDLNode<T> &node = item;
+
+	if (this->pLast == &item) {
+		this->pLast = node.pPrev;
+	}
+	else {
+		tsDLNode<T> *pNextNode = node.pNext;
+		pNextNode->pPrev = node.pPrev; 
+	}
+
+	if (this->pFirst == &item) {
+		this->pFirst = node.pNext;
+	}
+	else {
+		tsDLNode<T> *pPrevNode = node.pPrev;
+		pPrevNode->pNext = node.pNext;
+	}
+	
+	this->itemCount--;
+}
+
+//
+// tsDLList<T>::get ()
+//
+template <class T>
+inline T * tsDLList<T>::get()
+{
+	T *pItem = this->pFirst;
+
+	if (pItem) {
+		this->remove (*pItem);
+	}
+	
+	return pItem;
+}
+
+//
+// tsDLList<T>::pop ()
+// (returns the first item on the list)
+template <class T>
+inline T * tsDLList<T>::pop()
+{
+	return this->get();
+}
+
+//
+// add() - 
+// adds addList to the end of the list
+// (and removes all items from addList)
+//
+template <class T>
+void tsDLList<T>::add (tsDLList<T> &addList)
+{
+	//
+	// NOOP if addList is empty
+	//
+	if (addList.itemCount==0u) {
+		return;
+	}
+
+	if (this->itemCount==0u) {
+		//
+		// this is empty so just init from 
+		// addList 
+		//
+		*this = addList;
+	}
+	else {
+		tsDLNode<T> *pLastNode = this->pLast;
+		tsDLNode<T> *pAddListFirstNode = addList.pFirst;
+
+		//
+		// add addList to the end of this
+		//
+		pLastNode->pNext = addList.pFirst;
+		pAddListFirstNode->pPrev = addList.pLast;
+		this->pLast = addList.pLast;
+		this->itemCount += addList.itemCount;
+	}
+
+	//
+	// leave addList empty
+	//
+	addList.clear();
+}
+
+//
+// add() 
+// (add an item to the end of the list)
+//
+template <class T>
+void tsDLList<T>::add (T &item)
+{
+	tsDLNode<T> &node = item;
+
+	node.pNext = 0;
+	node.pPrev = this->pLast;
+
+	if (this->itemCount) {
+		tsDLNode<T> *pLastNode = this->pLast;
+		pLastNode->pNext = &item;
+	}
+	else {
+		this->pFirst = &item;
+	}
+
+	this->pLast = &item;
+
+	this->itemCount++;
+}
+
+//
+// insertAfter()
+// (place item in the list immediately after itemBefore)
+//
+template <class T>
+void tsDLList<T>::insertAfter (T &item, T &itemBefore)
+{
+	tsDLNode<T> &node = item;
+	tsDLNode<T> &nodeBefore = itemBefore;
+
+	node.pPrev = &itemBefore;
+	node.pNext = nodeBefore.pNext;
+	nodeBefore.pNext = &item;
+
+	if (node.pNext) {
+		tsDLNode<T> *pNextNode = node.pNext;
+		pNextNode->pPrev = &item;
+	}
+	else {
+		this->pLast = &item;
+	}
+
+	this->itemCount++;
+}
+
+//
+// insertBefore ()
+// (place item in the list immediately before itemAfter)
+//
+template <class T>
+void tsDLList<T>::insertBefore (T &item, T &itemAfter)
+{
+	tsDLNode<T> &node = item;
+	tsDLNode<T> &nodeAfter = itemAfter;
+
+	node.pNext = &itemAfter;
+	node.pPrev = nodeAfter.pPrev;
+	nodeAfter.pPrev = &item;
+
+	if (node.pPrev) {
+		tsDLNode<T> *pPrevNode = node.pPrev;
+		pPrevNode->pNext = &item;
+	}
+	else {
+		this->pFirst = &item;
+	}
+
+	this->itemCount++;
+}
+
+//
+// push ()
+// (add an item at the beginning of the list)
+//
+template <class T>
+void tsDLList<T>::push (T &item)
+{
+	tsDLNode<T> &node = item;
+	node.pPrev = 0;
+	node.pNext = this->pFirst;
+
+	if (this->itemCount) {
+		tsDLNode<T> *pFirstNode = this->pFirst;
+		pFirstNode->pPrev = &item;
+	}
+	else {
+		this->pLast = &item;
+	}
+
+	this->pFirst = &item;
+
+	this->itemCount++;
+}
+
+//
+// tsDLIter<T>::next ()
+//
+template <class T> 
+T * tsDLIter<T>::next () 
+{
+	T *pCur = this->pCurrent;
+	if (pCur==0) {
+		pCur = this->pList->pFirst;
+	}
+	else {
+		tsDLNode<T> *pCurNode = pCur;
+		pCur = pCurNode->pNext;
+	}
+	this->pCurrent = pCur;
+	return pCur;
+}
+
+//
+// tsDLIter<T>::prev ()
+//
+template <class T>
+T * tsDLIter<T>::prev ()
+{
+	T *pCur = this->pCurrent;
+	if (pCur==0) {
+		pCur = this->pList->pLast;
+	}
+	else {
+		tsDLNode<T> *pCurNode = pCur;
+		pCur = pCurNode->pPrev;
+	}
+	this->pCurrent = pCur;
+	return pCur;
+}
+
+//
+// tsDLIter<T>::operator () ()
+//
+template <class T>
+inline T * tsDLIter<T>::operator () () 
+{
+	return this->next();
+}
+
+//
+// remove ()
+// remove current item 
+// (and move current to be the item
+// pointed to by pNext - the item seen
+// by the iterator before the current one -
+// this guarantee that the list will be
+// accessed sequentially even if an item
+// is removed)
+//
+template <class T>
+void tsDLBwdIter<T>::remove ()
+{
+	T *pCur = this->pCurrent;
+
+	if (pCur) {
+		tsDLNode<T> *pCurNode = pCur;
+
+		//
+		// strip const (we didnt declare the
+		// list const in the constructor)
+		//
+		tsDLList<T> * pMutableList = 
+			(tsDLList<T> *) this->pList;
+
+		//
+		// Move this->pCurrent to the item after the
+		// item being deleted 
+		//
+		this->pCurrent = pCurNode->pNext;
+
+		//
+		// delete current item
+		//
+		pMutableList->remove(*pCur);
+	}
+}
+
+//
+// tsDLBwdIter<T>::operator () ()
+//
+template <class T>
+inline T * tsDLBwdIter<T>::operator () ()
+{
+	return this->tsDLIter<T>::prev();
+}
+
+//
+// tsDLBwdIter<T>::prev () 
+//
+template <class T>
+inline T * tsDLBwdIter<T>::prev () 
+{
+	return this->tsDLIter<T>::prev();
+}
+
+//
+// tsDLFwdIter<T>::remove ()
+// (and move current to be the item
+// pointed to by pPrev - the item seen
+// by the iterator before the current one -
+// this guarantee that the list will be
+// accessed sequentially even if an item
+// is removed)
+//
+template <class T>
+void tsDLFwdIter<T>::remove ()
+{
+	T *pCur = this->pCurrent;
+
+	if (pCur) {
+		tsDLNode<T> *pCurNode = pCur;
+
+		//
+		// Move this->pCurrent to the previous item
+		//
+		this->pCurrent = pCurNode->pPrev;
+
+		//
+		// delete current item
+		//
+		this->pList->remove(*pCur);
+	}
+}
+
+//
+// tsDLFwdIter<T>::next ()
+// 
+template <class T>
+inline T * tsDLFwdIter<T>::next () 
+{
+	tsDLIter<T> &iterBase = *this;
+	return iterBase.next();
+}
+
+//
+// tsDLFwdIter<T>::operator () ()
+// 
+template <class T>
+inline T * tsDLFwdIter<T>::operator () () 
+{
+	return this->next();
+}
+
+//
+// tsDLList<T>::find () 
 // returns -1 if the item isnt on the list
 // and the node number (beginning with zero if
 // it is)
 //
 template <class T>
-inline int tsDLList<T>::find(T &item) const
+int tsDLList<T>::find(T &item) const
 {
 	tsDLFwdIter<T>	iter(*this);
 	tsDLNode<T>	*pItem;

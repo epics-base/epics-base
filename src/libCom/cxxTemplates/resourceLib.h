@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.17  1998/06/16 03:00:19  jhill
+ * cleaned up fast string hash table
+ *
  * Revision 1.16  1998/04/10 23:07:33  jhill
  * fixed solaris architecture specific problem where xxx>>32 was ignored
  *
@@ -129,14 +132,7 @@ public:
 
 	int init(unsigned nHashTableEntries);
 
-	~resTable() 
-	{
-		if (this->pTable) {
-			this->destroyAllEntries();
-			assert (this->nInUse == 0u);
-			delete [] this->pTable;
-		}
-	}
+	virtual ~resTable();
 
 	//
 	// destroy all res in the table
@@ -240,6 +236,7 @@ private:
 class epicsShareClass uintId {
 public:
 	uintId (unsigned idIn=UINT_MAX) : id(idIn) {}
+	virtual ~uintId();
 
 	int operator == (const uintId &idIn)
 	{
@@ -259,38 +256,6 @@ protected:
 	unsigned id;
 };
 
-//
-// this needs to be instanciated only once (normally in libCom)
-//
-#ifdef instantiateRecourceLib
-//
-// uintId::resourceHash()
-//
-resTableIndex uintId::resourceHash(unsigned /* nBitsId */) const
-{
-	resTableIndex hashid = this->id;
-
-	//
-	// This assumes worst case hash table index width of 1 bit.
-	// We will iterate this loop 5 times on a 32 bit architecture.
-	//
-	// A good optimizer will unroll this loop?
-	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and urolling the
-	// loop explicitly (that solution has resulted in portability
-	// problems in the past).
-	//
-	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
-		hashid ^= (hashid>>i);
-	}
-
-	//
-	// the result here is always masked to the
-	// proper size after it is returned to the resource class
-	//
-	return hashid;
-}
-#endif // instantiateRecourceLib 
 
 //
 // special resource table which uses 
@@ -302,6 +267,7 @@ template <class ITEM>
 class uintResTable : public resTable<ITEM, uintId> {
 public:
 	uintResTable() : allocId(1u) {} // hashing is faster close to zero
+	virtual ~uintResTable();
 
 	inline void installItem(ITEM &item);
 private:
@@ -316,6 +282,7 @@ class uintRes : public uintId, public tsSLNode<ITEM> {
 friend class uintResTable<ITEM>;
 public:
 	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
+	virtual ~uintRes();
 private:
 	//
 	// workaround for bug in DEC compiler
@@ -323,23 +290,6 @@ private:
 	void setId(unsigned newId) {this->id = newId;}
 };
 
-//
-// uintRes<ITEM>::installItem()
-//
-// NOTE: This detects (and avoids) the case where 
-// the PV id wraps around and we attempt to have two 
-// resources with the same id.
-//
-template <class ITEM>
-inline void uintResTable<ITEM>::installItem(ITEM &item)
-{
-	int resTblStatus;
-	do {
-		item.uintRes<ITEM>::setId(allocId++);
-		resTblStatus = this->add(item);
-	}
-	while (resTblStatus);
-}
 
 //
 // character string identifier
@@ -379,14 +329,7 @@ public:
 		pStr(typeIn==copyString?allocCopyString(idIn):idIn),
 		allocType(typeIn) {}
 
-	~ stringId()
-	{
-		if (this->allocType==copyString) {
-			if (this->pStr!=NULL) {
-				delete [] (char *) this->pStr;
-			}
-		}
-	}
+	virtual ~ stringId();
 
 	//
 	// The hash algorithm is a modification of the algorithm described in 
@@ -427,54 +370,6 @@ private:
 	allocationType const allocType;
 	static const unsigned char stringIdFastHash[256];
 };
-
-//
-// this needs to be instanciated only once (normally in libCom)
-//
-#ifdef instantiateRecourceLib
-//
-// stringId::resourceHash()
-//
-// The hash algorithm is a modification of the algorithm described in 
-// Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
-// Communications of the ACM, June 1990 
-// The modifications were designed by Marty Kraimer
-//
-resTableIndex stringId::resourceHash(unsigned nBitsId) const
-{
-	if (this->pStr==NULL) {
-		return 0u;
-	}
-
-	unsigned h0 = 0u;
-	unsigned h1 = 0u;
-	unsigned c;
-	unsigned i;
-	for (i=0u; (c = this->pStr[i]); i++) {
-		//
-		// odd 
-		//
-		if (i&1u) {
-			h1 = stringIdFastHash[h1 ^ c];
-		}
-		//
-		// even 
-		//
-		else {
-			h0 = stringIdFastHash[h0 ^ c];
-		}
-	}
-
-	//
-	// does not work well for more than 65k entries ?
-	// (because some indexes in the table will not be produced)
-	//
-	if (nBitsId>=8u) {
-		h1 = h1 << (nBitsId-8u);
-	}
-	return h1 ^ h0;
-}
-#endif // instantiateRecourceLib 
 
 //
 // resTable<T,ID>::init()
@@ -692,6 +587,165 @@ T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 }
 
 //
+// ~resTable<T,ID>::resTable()
+//
+template <class T, class ID>
+resTable<T,ID>::~resTable() 
+{
+	if (this->pTable) {
+		this->destroyAllEntries();
+		assert (this->nInUse == 0u);
+		delete [] this->pTable;
+	}
+}
+
+//
+// uintResTable<ITEM>::~uintResTable()
+// (not inline because it is virtual)
+//
+template <class ITEM>
+uintResTable<ITEM>::~uintResTable() {}
+
+//
+// uintRes<ITEM>::~uintRes()
+// (not inline because it is virtual)
+//
+template <class ITEM>
+uintRes<ITEM>::~uintRes() {}
+
+//
+// this needs to be instanciated only once (normally in libCom)
+//
+#ifdef instantiateRecourceLib
+//
+// uintId::resourceHash()
+//
+resTableIndex uintId::resourceHash(unsigned /* nBitsId */) const
+{
+	resTableIndex hashid = this->id;
+
+	//
+	// This assumes worst case hash table index width of 1 bit.
+	// We will iterate this loop 5 times on a 32 bit architecture.
+	//
+	// A good optimizer will unroll this loop?
+	// Experiments using the microsoft compiler show that this isnt 
+	// slower than switching on the architecture size and urolling the
+	// loop explicitly (that solution has resulted in portability
+	// problems in the past).
+	//
+	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
+		hashid ^= (hashid>>i);
+	}
+
+	//
+	// the result here is always masked to the
+	// proper size after it is returned to the resource class
+	//
+	return hashid;
+}
+
+//
+// uintResTable<ITEM>::~uintResTable()
+// (not inline because it is virtual)
+//
+uintId::~uintId() {}
+
+#endif // instantiateRecourceLib 
+
+//
+// uintRes<ITEM>::installItem()
+//
+// NOTE: This detects (and avoids) the case where 
+// the PV id wraps around and we attempt to have two 
+// resources with the same id.
+//
+template <class ITEM>
+inline void uintResTable<ITEM>::installItem(ITEM &item)
+{
+	int resTblStatus;
+	do {
+		item.uintRes<ITEM>::setId(allocId++);
+		resTblStatus = this->add(item);
+	}
+	while (resTblStatus);
+}
+
+//
+// stringId::~stringId()
+//
+//
+// this needs to be instanciated only once (normally in libCom)
+//
+#ifdef instantiateRecourceLib
+stringId::~stringId()
+{
+	if (this->allocType==copyString) {
+		if (this->pStr!=NULL) {
+#ifdef _MSC_VER
+			//
+			// bugs in microsloth visual C++ appear to require 
+			// a const cast away here
+			//
+			delete [] (char * const) this->pStr;
+#else
+			delete [] this->pStr;
+#endif
+			
+		}
+	}
+}
+#endif // instantiateRecourceLib 
+
+//
+// this needs to be instanciated only once (normally in libCom)
+//
+#ifdef instantiateRecourceLib
+//
+// stringId::resourceHash()
+//
+// The hash algorithm is a modification of the algorithm described in 
+// Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
+// Communications of the ACM, June 1990 
+// The modifications were designed by Marty Kraimer
+//
+resTableIndex stringId::resourceHash(unsigned nBitsId) const
+{
+	if (this->pStr==NULL) {
+		return 0u;
+	}
+
+	unsigned h0 = 0u;
+	unsigned h1 = 0u;
+	unsigned c;
+	unsigned i;
+	for (i=0u; (c = this->pStr[i]); i++) {
+		//
+		// odd 
+		//
+		if (i&1u) {
+			h1 = stringIdFastHash[h1 ^ c];
+		}
+		//
+		// even 
+		//
+		else {
+			h0 = stringIdFastHash[h0 ^ c];
+		}
+	}
+
+	//
+	// does not work well for more than 65k entries ?
+	// (because some indexes in the table will not be produced)
+	//
+	if (nBitsId>=8u) {
+		h1 = h1 << (nBitsId-8u);
+	}
+	return h1 ^ h0;
+}
+#endif // instantiateRecourceLib 
+
+//
 // this needs to be instanciated only once (normally in libCom)
 //
 #ifdef instantiateRecourceLib
@@ -719,6 +773,7 @@ const unsigned char stringId::stringIdFastHash[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
+
 #endif // instantiateRecourceLib 
 
 #endif // INCresourceLibh

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1998/06/16 03:03:07  jhill
+ * eliminated dangling ptr warning from bounds checker
+ *
  * Revision 1.11  1998/05/05 18:06:58  jhill
  * rearranged to allow compilation by g++ 2.8.1
  *
@@ -183,22 +186,7 @@ public:
 	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
 	// tsSLNode<T> is always a base class of a T.
 	//
-	T * next () 
-	{
-		if (this->pCurrent!=0) {
-			tsSLNode<T> *pCurNode = this->pCurrent;
-			this->pCurrent = pCurNode->pNext;
-		}
-		else {
-			const tsSLNode<T> &first = this->list;
-			//
-			// assume that we are starting (or restarting) at the 
-			// beginning of the list
-			//
-			this->pCurrent = first.pNext;
-		}
-		return this->pCurrent;
-	}
+	T * next ();
 
 	//
 	// move iterator forward
@@ -245,24 +233,7 @@ public:
 	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
 	// tsSLNode<T> is always a base class of a T.
 	//
-	T * next () 
-	{
-		if (this->pCurrent!=0) {
-			tsSLNode<T> *pCurNode = this->pCurrent;
-			this->pPrevious = this->pCurrent;
-			this->pCurrent = pCurNode->pNext;
-		}
-		else {
-			const tsSLNode<T> &first = this->list;
-			//
-			// assume that we are starting (or restarting) at the 
-			// beginning of the list
-			//
-			this->pCurrent = first.pNext;
-			this->pPrevious = 0;
-		}
-		return this->pCurrent;
-	}
+	T * next ();
 
 	//
 	// move iterator forward
@@ -284,29 +255,7 @@ public:
 	// the iterator to the next item. If there is 
 	// no current item this function assert fails.
 	//
-	void remove ()
-	{
-		assert (this->pCurrent!=0);
-
-		tsSLNode<T> *pPrevNode;
-		tsSLNode<T> *pCurNode = this->pCurrent;
-
-		if (this->pPrevious==0) {
-			pPrevNode = &this->list;
-			//
-			// this assert fails if it is an attempt to 
-			// delete twice without moving the iterator
-			//
-			assert (pPrevNode->pNext == this->pCurrent);
-		}
-		else {
-			pPrevNode = this->pPrevious;
-		}
-
-		pPrevNode->pNext = pCurNode->pNext;
-		this->pCurrent = this->pPrevious;
-		this->pPrevious = 0; 
-	}
+	void remove ();
 
 private:
 	T *pPrevious;
@@ -314,3 +263,97 @@ private:
 	tsSLList<T> &list;
 };
 
+//
+// tsSLIter<T>::next () 
+//
+// move iterator forward
+//
+// NULL test here is inefficient, but it appears that some architectures
+// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
+// tsSLNode<T> is always a base class of a T.
+//
+template <class T>
+T * tsSLIter<T>::next () 
+{
+	if (this->pCurrent!=0) {
+		tsSLNode<T> *pCurNode = this->pCurrent;
+		this->pCurrent = pCurNode->pNext;
+	}
+	else {
+		const tsSLNode<T> &first = this->list;
+		//
+		// assume that we are starting (or restarting) at the 
+		// beginning of the list
+		//
+		this->pCurrent = first.pNext;
+	}
+	return this->pCurrent;
+}
+
+//
+// tsSLIterRm<T>::next ()
+//
+// move iterator forward
+//
+// NULL test here is inefficient, but it appears that some architectures
+// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
+// tsSLNode<T> is always a base class of a T.
+//
+template <class T>
+T * tsSLIterRm<T>::next () 
+{
+	if (this->pCurrent!=0) {
+		tsSLNode<T> *pCurNode = this->pCurrent;
+		this->pPrevious = this->pCurrent;
+		this->pCurrent = pCurNode->pNext;
+	}
+	else {
+		const tsSLNode<T> &first = this->list;
+		//
+		// assume that we are starting (or restarting) at the 
+		// beginning of the list
+		//
+		this->pCurrent = first.pNext;
+		this->pPrevious = 0;
+	}
+	return this->pCurrent;
+}
+
+//
+// tsSLIterRm<T>::remove ()
+//
+// remove current node
+// (and move current to be the previos item -
+// the item seen by the iterator before the 
+// current one - this guarantee that the list 
+// will be accessed sequentially even if an item
+// is removed)
+//
+// This cant be called twice in a row without moving 
+// the iterator to the next item. If there is 
+// no current item this function assert fails.
+//
+template <class T>
+void tsSLIterRm<T>::remove ()
+{
+	assert (this->pCurrent!=0);
+
+	tsSLNode<T> *pPrevNode;
+	tsSLNode<T> *pCurNode = this->pCurrent;
+
+	if (this->pPrevious==0) {
+		pPrevNode = &this->list;
+		//
+		// this assert fails if it is an attempt to 
+		// delete twice without moving the iterator
+		//
+		assert (pPrevNode->pNext == this->pCurrent);
+	}
+	else {
+		pPrevNode = this->pPrevious;
+	}
+
+	pPrevNode->pNext = pCurNode->pNext;
+	this->pCurrent = this->pPrevious;
+	this->pPrevious = 0; 
+}

@@ -301,7 +301,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
                 break;
             }
         }
-
+        
         if ( piiu->state != iiu_connected ) {
             break;
         }

@@ -140,9 +140,6 @@ struct client *create_client (SOCKET sock)
     struct client           *client;
     int                     true = TRUE;
     int                     addrSize;
-    unsigned                selfPriority;
-    unsigned                below;
-    threadBoolStatus        tbs;
 
     /*
      * see TCP(4P) this seems to make unsolicited single events much
@@ -230,14 +227,8 @@ struct client *create_client (SOCKET sock)
         return NULL;
     }
 
-    selfPriority = threadGetPrioritySelf ();
-    tbs = threadHighestPriorityLevelBelow (selfPriority, &below);
-    if ( tbs != tbsSuccess ) {
-        below = selfPriority;
-    }
- 
     status = db_start_events ( client->evuser, "CAS-event", 
-                NULL, NULL, below ); 
+                NULL, NULL, threadPriorityChannelAccessServer-1 ); 
     if (status != DB_EVENT_OK) {
         errlogPrintf("CAS: unable to start the event facility\n");
         destroy_client (client);
@@ -343,7 +334,7 @@ LOCAL int req_server (void)
                 threadSleep(15.0);
                 continue;
             }
-            id = threadCreate ("CAS-client", threadPriorityChannelAccessClient,
+            id = threadCreate ("CAS-client", threadPriorityChannelAccessServer,
                     threadGetStackSize (threadStackBig),
                     (THREADFUNC)camsgtask, (void *)pClient);
             if (id==0) {
@@ -373,12 +364,12 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
     pCaBucket = NULL;
 
     threadCreate ("CAS-TCP",
-        threadPriorityChannelAccessServer,
+        threadPriorityChannelAccessServer-2,
         threadGetStackSize(threadStackMedium),
         (THREADFUNC)req_server,0);
 
     threadCreate ("CAS-UDP",
-        threadPriorityChannelAccessServer-1,
+        threadPriorityChannelAccessServer-3,
         threadGetStackSize(threadStackMedium),
         (THREADFUNC)cast_server,0);
 

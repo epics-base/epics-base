@@ -72,7 +72,8 @@ static void taskwdInitPvt(void *arg)
     ellInit(&list);
     ellInit(&anylist);
     taskwdid = threadCreate(
-        "taskwd",threadPriorityLow,threadGetStackSize(threadStackSmall),
+        "taskwd",threadPriorityChannelAccessServer-2,
+         threadGetStackSize(threadStackSmall),
         (THREADFUNC)taskwdTask,0);
 }
 void epicsShareAPI taskwdInit()

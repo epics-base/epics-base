@@ -314,7 +314,7 @@ static void errlogInitPvt(void *arg)
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
-    tid = threadCreate("errlog",threadPriorityLow,
+    tid = threadCreate("errlog",threadPriorityChannelAccessServer-2,
         threadGetStackSize(threadStackSmall),
         (THREADFUNC)errlogTask,0);
     if(tid) pvtData.errlogInitFailed = FALSE;

@@ -291,7 +291,7 @@ bool udpiiu::repeaterInstalled ()
 // udpiiu::udpiiu ()
 //
 udpiiu::udpiiu ( cac &cac ) :
-    netiiu ( cac ), shutdownCmd ( false )
+    netiiu ( cac ), shutdownCmd ( false ), sockCloseCompleted ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -430,7 +430,7 @@ udpiiu::~udpiiu ()
 
     ellFree ( &this->dest );
 
-    if ( this->sock != INVALID_SOCKET ) {
+    if ( ! this->sockCloseCompleted ) {
         socket_close ( this->sock );
     }
 }
@@ -454,8 +454,14 @@ void udpiiu::shutdown ()
         if ( status < 0 ) {
             // this knocks the UDP input thread out of recv ()
             // on all os except linux
-            socket_close ( this->sock );
-            this->sock = INVALID_SOCKET;
+            int status = socket_close ( this->sock );
+            if ( status ) {
+                errlogPrintf ("CAC UDP socket close error was %s\n", 
+                    SOCKERRSTR ( SOCKERRNO ) );
+            }
+            else {
+                this->sockCloseCompleted = true;
+            }
         }
         else {
             caHdr msg;
@@ -474,8 +480,14 @@ void udpiiu::shutdown ()
             if ( status < 0 ) {
                 // this knocks the UDP input thread out of recv ()
                 // on all os except linux
-                socket_close ( this->sock );
-                this->sock = INVALID_SOCKET;
+                int status = socket_close ( this->sock );
+                if ( status ) {
+                    errlogPrintf ("CAC UDP socket close error was %s\n", 
+                        SOCKERRSTR ( SOCKERRNO ) );
+                }
+                else {
+                    this->sockCloseCompleted = true;
+                }
             }
         }
         // wait for recv threads to exit
@@ -622,12 +634,12 @@ void udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
         errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\"\n", 
-            ca_message ( msg.m_available ), 
+            ca_message ( htonl ( msg.m_available ) ), 
             name, reinterpret_cast <const char *> ( &reqMsg + 1 ) );
     }
     else{
         errlogPrintf ( "error condition \"%s\" detected by %s\n", 
-            ca_message ( msg.m_available ), name );
+            ca_message ( htonl ( msg.m_available ) ), name );
     }
 
     return;

@@ -1,10 +1,38 @@
 /*xy240_driver.c
+ *
+ *
+/* share/src/drv @(#)xy240_driver.c	1.1     6/25/92 */
+/*
  *routines used to test and interface with Xycom240
  *digital i/o module
  *
- *B. Kornke
+ * 	Author:      B. Kornke
+ * 	Date:        11/20/91
+ *	Experimental Physics and Industrial Control System (EPICS)
  *
- *11/20/91
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * Modification Log:
+ * -----------------
+ * .01	06-25-92	bg	Added driver to code.  Added xy240_io_report
+ *				to it. Added copyright disclaimer.
  */
 
 #include "vxWorks.h"

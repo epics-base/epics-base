@@ -183,9 +183,10 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
     checkStatusQuit(status,"pthread_once","threadOnce");
 
     semMutexMustTake(onceMutex);
-    if (*id == 0) {
-    	*id = -1;
+    if (*id == 0) { /*  0 => first call */
+    	*id = -1;   /* -1 => func() active */
     	func(arg);
+    	*id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
     }
     semMutexGive(onceMutex);
 }

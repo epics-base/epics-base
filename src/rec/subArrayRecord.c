@@ -61,7 +61,7 @@
 static long init_record();
 static long process();
 #define special NULL
-#define special get_value
+#define get_value NULL
 static long cvt_dbaddr();
 static long get_array_info();
 static long put_array_info();

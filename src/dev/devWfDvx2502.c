@@ -27,10 +27,17 @@
  *
  * Modification Log:
  * -----------------
+ *	.01	92-11-24	jrw	Added some doc and the NORD parm to 
+ *					the driver call.
  * 	...
+ *
+ * NOTES:
+ *  We ignore the RARM field in the record.  The DVX system is ALWAYS 
+ *  self-rearming.
+ *
+ *  We also ignore/do not use the following fields:
+ *    RATE, PTSS, and BUSY.
  */
-
-
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -69,13 +76,15 @@ struct {
 	read_wf,
 	NULL};
 
+/*
+ * Init the record by checking the type of I/O device selected,
+ * waveform data type, and then read in a waveform by calling the driver.
+ */
 static long init_record(pwf)
 struct waveformRecord	*pwf;
 {
   unsigned short value;
   long status;
-
-printf("devWfDvx2502: init routine entered\n");
 
   /* wf.inp must be an VME_IO */
   if (pwf->inp.type != VME_IO)
@@ -85,10 +94,10 @@ printf("devWfDvx2502: init routine entered\n");
     return(S_db_badField);
   }
   /* waveform type MUST be short */
-  if (pwf->ftvl != DBF_SHORT)
+  if (pwf->ftvl != DBF_USHORT)
   {
     recGblRecordError(S_db_badField, (void *)pwf,
-	"devWfDvx2502 (init_record) waveform data type must be short");
+	"devWfDvx2502 (init_record) waveform data type must be unsigned short");
     return(S_db_badField);
   }
 
@@ -97,12 +106,20 @@ printf("devWfDvx2502: init routine entered\n");
   return(0);
 }
 
+/*
+ * Provide access to the IOSCANPVT structure associated with the DVX card
+ * number that we are reading data from.
+ */
 static long get_ioint_info(int cmd, struct waveformRecord *pwf,IOSCANPVT *ppvt)
 {
     dvx_getioscanpvt(pwf->inp.value.vmeio.card,ppvt);
     return(0);
 }
-
+
+/*
+ * process a waveform record by having the dvx driver fill in the last scanned
+ * inputs into the waveform record.
+ */
 static long read_wf(pwf)
 struct waveformRecord	*pwf;
 {
@@ -110,17 +127,12 @@ struct waveformRecord	*pwf;
   struct vmeio *pvmeio;
   long status;
 
-printf("devWfDvx2502: read routine entered\n");
-
   pvmeio = (struct vmeio *)&(pwf->inp.value);
 
-  if ((status=dvxReadWf(pvmeio->card, 0, pwf->nelm, pwf->bptr)) == 0)
-  {
-    pwf->nord = pwf->nelm;
+  if ((status=dvxReadWf(pvmeio->card, 0, pwf->nelm, pwf->bptr, &(pwf->nord))) == 0)
     return(0);
-  }
 
-  pwf->nord = 0;
+  /* driver returned an error code for some reason */
   recGblSetSevr(pwf, READ_ALARM, INVALID_ALARM);
   return(2);
 }

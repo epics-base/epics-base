@@ -17,8 +17,8 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/filio.h>
-#include <sys/sockio.h>
+/* #include <sys/filio.h> */
+/* #include <sys/sockio.h> */
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>

@@ -1086,74 +1086,56 @@ static smartGDDPointer mapControlEnumToGdd(void* v, aitIndex /*count*/)
 	return dd;
 }
 
-static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
+static int mapGraphicGddToEnum (
+    void * v, aitIndex count, const gdd & dd, 
+    const gddEnumStringTable & enumStringTable )
 {
-	dbr_gr_enum* db = (dbr_gr_enum*)v;
-	const gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
-	const gdd& vdd = dd[gddAppTypeIndex_dbr_gr_enum_value];
-	const aitFixedString* str = menu;
-	aitFixedString* f = (aitFixedString*)db->strs;
-	int i;
+	dbr_gr_enum * db = ( dbr_gr_enum * ) v;
+	const gdd & vdd = dd[gddAppTypeIndex_dbr_gr_enum_value];
 
-	vdd.getStatSevr(db->status,db->severity);
-	db->no_str=menu.getDataSizeElements();
-
-	if(str && str!=f && menu.isAtomic() )
-	{
-	    db->no_str=menu.getDataSizeElements();
-		for(i=0;i<db->no_str;i++) {
-			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
-				MAX_ENUM_STRING_SIZE);
-			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
-		}
-	}
-    else if (str && menu.isScalar()) {
-        db->no_str = 1;
-		strncpy(&(db->strs[0][0]),str->fixed_string, 
-			MAX_ENUM_STRING_SIZE);
-		db->strs[0][MAX_ENUM_STRING_SIZE-1u] = '\0';
+	vdd.getStatSevr ( db->status, db->severity );
+    unsigned noStr = enumStringTable.numberOfStrings ();
+    if ( noStr < MAX_ENUM_STATES ) {
+        db->no_str = static_cast < dbr_short_t > ( noStr );
     }
     else {
-        db->no_str = 0;
+        db->no_str = MAX_ENUM_STATES;
     }
-	for(i=db->no_str;i<MAX_ENUM_STATES;i++) {
+	for ( int i=0; i < db->no_str; i++ ) {
+        enumStringTable.getString ( i, 
+            &(db->strs[i][0]), MAX_ENUM_STRING_SIZE );
+	}
+	for ( int i = db->no_str; i < MAX_ENUM_STATES; i++ ) {
 		db->strs[i][0] = '\0';
     }
-	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
+	return mapGddToEnum ( &db->value, 
+        count, vdd, enumStringTable );
 }
 
-static int mapControlGddToEnum(void* v, aitIndex count, const gdd & dd, const gddEnumStringTable &enumStringTable)
+static int mapControlGddToEnum ( 
+    void * v, aitIndex count, const gdd & dd, 
+    const gddEnumStringTable & enumStringTable )
 {
-	dbr_ctrl_enum* db = (dbr_ctrl_enum*)v;
-	const gdd& menu = dd[gddAppTypeIndex_dbr_ctrl_enum_enums];
-	const gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_enum_value];
-	const aitFixedString* str = menu;
-	aitFixedString* f = (aitFixedString*)db->strs;
-	int i;
+	dbr_ctrl_enum* db = ( dbr_ctrl_enum * ) v;
+	const gdd & vdd = dd[gddAppTypeIndex_dbr_ctrl_enum_value];
 
-	vdd.getStatSevr(db->status,db->severity);
-	if(str && str!=f && menu.isAtomic() )
-	{
-	    db->no_str=menu.getDataSizeElements();
-		for(i=0;i<db->no_str;i++) {
-			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
-				MAX_ENUM_STRING_SIZE);
-			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
-		}
-	}
-    else if (str && menu.isScalar()) {
-        db->no_str = 1;
-		strncpy(&(db->strs[0][0]),str->fixed_string, 
-			MAX_ENUM_STRING_SIZE);
-		db->strs[0][MAX_ENUM_STRING_SIZE-1u] = '\0';
+	vdd.getStatSevr ( db->status, db->severity );
+    unsigned noStr = enumStringTable.numberOfStrings ();
+    if ( noStr < MAX_ENUM_STATES ) {
+        db->no_str = static_cast < dbr_short_t > ( noStr );
     }
     else {
-        db->no_str = 0;
+        db->no_str = MAX_ENUM_STATES;
     }
-	for(i=db->no_str;i<MAX_ENUM_STATES;i++) {
+	for ( int i=0; i < db->no_str; i++ ) {
+        enumStringTable.getString ( i, 
+            &(db->strs[i][0]), MAX_ENUM_STRING_SIZE );
+	}
+	for ( int i = db->no_str; i < MAX_ENUM_STATES; i++ ) {
 		db->strs[i][0] = '\0';
     }
-	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
+	return mapGddToEnum ( &db->value, 
+        count, vdd, enumStringTable );
 }
 
 // -------------map the char structures----------------

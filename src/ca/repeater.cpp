@@ -275,10 +275,10 @@ inline bool repeaterClient::identicalAddress ( const osiSockAddr &fromIn )
     return false;
 }
 
-inline bool repeaterClient::identicalPort ( const osiSockAddr &from )
+inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 {
-    if ( from.sa.sa_family == this->from.sa.sa_family ) {
-        if ( from.ia.sin_port == this->from.ia.sin_port) {
+    if ( fromIn.sa.sa_family == this->from.sa.sa_family ) {
+        if ( fromIn.ia.sin_port == this->from.ia.sin_port) {
             return true;
         }
     }

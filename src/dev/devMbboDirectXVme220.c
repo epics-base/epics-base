@@ -81,7 +81,7 @@ static long init_record(pmbbo)
     case (VME_IO) :
 	pvmeio = &(pmbbo->out.value.vmeio);
 	pmbbo->shft = pvmeio->signal;
-	pmbbo->mask = pmbbo->shft;
+	pmbbo->mask <<= pmbbo->shft;
 	status = xy220_read(pvmeio->card,pmbbo->mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
 	else status = 2;

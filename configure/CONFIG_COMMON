@@ -374,8 +374,6 @@ SOURCE_INC_aaa = $(addsuffix /$(file), $(dir) )
 # Command-line input support
 OP_SYS_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
 
-LDLIBS_READLINE = -lreadline -lncurses
-LDLIBS_LIBTECLA = -ltecla_r -lncurses
 OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
 
 endif

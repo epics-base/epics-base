@@ -14,10 +14,6 @@ $cwd  = cwd();
 $eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
 $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 
-# For winXX convert each instance of \ to /
-$command = $0;
-$command =~ s|\\|/|g;
-
 &get_commandline_opts;		# Read and check options
 
 #
@@ -130,8 +126,9 @@ sub get_commandline_opts { #no args
     $Debug = 1 if $opt_d;
 
 # Locate epics_base
+    my ($command) = UnixPath($0);
     if ($opt_b) {		# first choice is -b base
-	$epics_base = $opt_b;
+	$epics_base = UnixPath($opt_b);
     } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
@@ -147,7 +144,7 @@ sub get_commandline_opts { #no args
 
 # Locate template top directory
     if ($opt_T) {		# first choice is -T templ-top
-	$top = $opt_T;
+	$top = UnixPath($opt_T);
     } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
@@ -341,4 +338,11 @@ sub GetUser { # no args
     }
     die "No user name" unless $user;
     return $user;
+}
+
+# replace "\" by "/"  (for WINxx)
+sub UnixPath { # path
+    my($newpath) = $_[0];
+    $newpath =~ s|\\|/|go;
+    return $newpath;
 }

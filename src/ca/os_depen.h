@@ -40,6 +40,7 @@ static char *os_depenhSccsId = "$Id$";
  * each socket library
  */
 #ifdef UNIX
+#	include <unistd.h>
 #	include <errno.h>
 #	include <sys/types.h>
 #	include <sys/time.h>
@@ -49,6 +50,7 @@ static char *os_depenhSccsId = "$Id$";
 #	include <netinet/in.h>
 #	include <netinet/tcp.h>
 #	include <net/if.h>
+#	include <arpa/inet.h>
 #	define CA_OS_CONFIGURED
 #endif
 

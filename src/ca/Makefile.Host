@@ -26,7 +26,6 @@ LIBSRCS_WIN32   := windows_depen.c
 LIBSRCS += iocinf.c
 LIBSRCS += service.c
 LIBSRCS += conn.c
-LIBSRCS += netdb_depen.c
 LIBSRCS += flow_control.c
 LIBSRCS += syncgrp.c
 LIBSRCS += access.c

@@ -41,8 +41,8 @@ To compile EPICS on win32-x86, we need
 
 and some tools:
 
-	gnu make - www.gnu.org (we used 3.76)
-	perl - www.perl.org (we used 5.003)
+	gnu make - www.gnu.org (need 3.78.1 or later)
+	perl - www.perl.org (need 5.0 or later)
 
 The gnu make and perl executables are downloadable from www.cygwin.com
 The perl interpreter and gnu make are also available 'on the net'

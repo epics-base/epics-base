@@ -18,14 +18,14 @@ INC += guigroup.h
 LIBSRCS += dbStaticLib.c
 LIBSRCS += dbYacc.c
 LIBSRCS += dbPvdLib.c
-Db_SRCS += dbStaticNoRun.c 
-dbStatic_SRCS += dbStaticRun.c
+dbStaticHost_SRCS += dbStaticNoRun.c 
+dbStaticIoc_SRCS += dbStaticRun.c
 
 
 #       Library to build:
 #
-LIBRARY_HOST += Db
-LIBRARY_IOC += dbStatic
+LIBRARY_HOST += dbStaticHost
+LIBRARY_IOC += dbStaticIoc
 
 DLL_LIBS = Com
 
@@ -35,7 +35,7 @@ PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 
 #       libs needed by PROD:
 #
-PROD_LIBS := Db Com
+PROD_LIBS := dbStaticHost Com
 Db_DIR=.
 
 include $(TOP)/configure/RULES

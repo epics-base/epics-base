@@ -42,7 +42,6 @@ SRCS += dbBkpt.c
 SRCS += dbConvert.c
 SRCS += dbFastLinkConv.c
 SRCS += dbNotify.c 
-SRCS += iocInit.c
 SRCS += dbScan.c
 SRCS += dbEvent.c
 SRCS += dbTest.c
@@ -55,6 +54,7 @@ SRCS += dbCa.c
 SRCS += initHooks.c 
 SRCS += dbcar.c 
 
+OBJS_IOC += iocInit
 
 LIBRARY_IOC = db
 DLL_LIBS = dbStaticIoc Com

@@ -498,7 +498,7 @@ static void convert(pao,pvalue)
         } else if (pao->linr == 1){
               if (pao->eslo == 0.0) value = 0;
               else {
-                   value = (value - pao->egul) / pao->eslo + .5;
+                   value = (value - pao->egul) / pao->eslo;
               }
         }else{
 	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){

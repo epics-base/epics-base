@@ -219,25 +219,12 @@ static char *os_depenhSccsId = "$Id$";
 #define LOCAL static
 #endif
 
-/* delay for when a poll is used	 				*/
-/*	NOTE: DELAYTICKS must be less than TICKSPERSEC	*/
-#define DELAYTICKS	50L		/* (adjust units below) */
-#define TICKSPERSEC	1000L		/* mili sec per sec	*/
-
 /*
  * BSD prototypes missing from SUNOS4, MULTINET and 
  * perhaps other environments
  */
 #include <epicsTypes.h>
 #include <bsdProto.h>
-
-/*
- * order of ops is important here
- * 
- * NOTE: large OS dependent SYFREQ might cause an overflow 
- */
-#define LOCALTICKS	((SYSFREQ*DELAYTICKS)/TICKSPERSEC)
-
 
 #if defined(vxWorks)
 #	define VXTASKIDNONE	0
@@ -256,8 +243,6 @@ static char *os_depenhSccsId = "$Id$";
 #   	define socket_ioctl(A,B,C) ioctl(A,B,(int)C) 
 # 	define MYERRNO	(errnoGet()&0xffff)
 #  	define POST_IO_EV semGive(io_done_sem)
-# 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
-# 	define time(A) 		(tickGet()/SYSFREQ)
 	typedef int SOCKET;
 #	define INVALID_SOCKET (-1)
 #endif
@@ -272,7 +257,6 @@ static char *os_depenhSccsId = "$Id$";
 #   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
 # 	define MYERRNO	errno
 #  	define POST_IO_EV 
-#	define SYSFREQ		1000000L	/* 1 MHz	*/
 	typedef int SOCKET;
 #	define INVALID_SOCKET (-1)
 #endif
@@ -298,7 +282,6 @@ static char *os_depenhSccsId = "$Id$";
 #           endif
 #	endif
 #  	define POST_IO_EV 
-# 	define SYSFREQ		10000000L	/* 10 MHz	*/
 #	define LOCK
 #	define UNLOCK
 #  	define LOCKEVENTS
@@ -326,7 +309,6 @@ static char *os_depenhSccsId = "$Id$";
 #	define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
 #	define MYERRNO			WSAGetLastError()
 #	define POST_IO_EV
-#	define SYSFREQ			1000000L /* 1 MHz        */
 #endif /*WIN32*/
 
 

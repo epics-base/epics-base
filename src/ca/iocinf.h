@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.55  1996/08/05 19:21:26  jhill
+ * removed unused proto
+ *
  * Revision 1.54  1996/06/20 21:43:15  jhill
  * restored io_done_sem (removed by cleanup)
  *
@@ -473,7 +476,6 @@ struct  ca_static{
 	int		ca_event_tid;
 	int		ca_tid;
     	int		recv_tid;
-	unsigned	ca_local_ticks;
 #endif
 };
 

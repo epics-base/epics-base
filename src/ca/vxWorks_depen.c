@@ -59,6 +59,16 @@ LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
 LOCAL void ca_check_for_fp();
 
+/*
+ * order of ops is important here
+ *
+ * NOTE: large OS dependent SYFREQ might cause an overflow
+ * NOTE: POLLDELAY must be less than TICKSPERSEC
+ */
+#define POLLDELAY	50             /* milli sec 		*/
+#define TICKSPERSEC     1000           /* milli sec per sec    */
+#define LOCALTICKS      ((sysClkRateGet()*POLLDELAY)/TICKSPERSEC)
+
 
 
 /*
@@ -110,8 +120,8 @@ void cac_gettimeval(struct timeval  *pt)
 void cac_block_for_io_completion(struct timeval *pTV)
 {
         struct timeval  itimeout;
-	unsigned long 	ticks;
-	unsigned long	rate = sysClkRateGet();
+	int		ticks;
+	int		rate = sysClkRateGet();
 
 #ifdef NOASYNCRECV 
         cac_mux_io(pTV);
@@ -124,7 +134,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
         itimeout.tv_sec = 0;
         cac_mux_io(&itimeout);
         
-	ticks = pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC;
+	ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
 	ticks = min(LOCALTICKS, ticks);
 
 	semTake(io_done_sem, ticks);
@@ -178,8 +188,8 @@ void os_specific_sg_io_complete(CASG   *pcasg)
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
         struct timeval  itimeout;
-	unsigned long 	ticks;
-	unsigned long	rate = sysClkRateGet();
+	int		ticks;
+	int		rate = sysClkRateGet();
 
 #ifdef NOASYNCRECV 
 	cac_mux_io(pTV);
@@ -192,7 +202,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
         itimeout.tv_sec = 0;
         cac_mux_io(&itimeout);
         
-	ticks = pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC;
+	ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
 	ticks = min(LOCALTICKS, ticks);
 
 	semTake (pcasg->sem, ticks);
@@ -346,7 +356,6 @@ int cac_os_depen_init(struct ca_static *pcas)
 	ellInit(&pcas->ca_putNotifyQue);
 
 	pcas->ca_tid = taskIdSelf();
-	pcas->ca_local_ticks = LOCALTICKS;
 	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE);
 	assert(pcas->ca_client_lock);
 	pcas->ca_event_lock = semMCreate(SEM_DELETE_SAFE);

@@ -825,7 +825,6 @@ READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 
 
 /* class for each type's value */
-#if 0
 enum dbr_value_class { 
 		dbr_class_int, 
 		dbr_class_float, 
@@ -879,7 +878,6 @@ READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,
 };
 #endif
-#endif 
 
 
 /* 

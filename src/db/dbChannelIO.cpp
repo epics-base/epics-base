@@ -79,9 +79,11 @@ void dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue
     if ( count > LONG_MAX ) {
         throw outOfBounds();
     }
-    status = db_put_field ( &this->addr, type, pValue, static_cast <long> (count) );
+    status = db_put_field ( &this->addr, type, pValue, 
+        static_cast <long> (count) );
     if ( status ) {
-        throw -1; 
+        throw std::logic_error ( 
+           "db_put_field() completed unsuccessfully" );
     }
 }
 

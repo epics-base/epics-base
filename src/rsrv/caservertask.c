@@ -32,6 +32,7 @@
  *	.02 joh	071591	print the delay from the last interaction in
  *			client_stat().
  *	.03 joh 080991	close the socket if task create fails
+ *	.04 joh	090591	updated for v5 vxWorks
  */
 
 #include <vxWorks.h>
@@ -181,11 +182,14 @@ register struct client *client;
 		/*
 		 * Server task deleted first since close() is not reentrant
 		 */
-		if (servertid != taskIdSelf() && servertid)
-			if (td(servertid) == ERROR) {	/* delete server */
-				if (errnoGet() != S_taskLib_TASK_ID_ERROR)
+		if (servertid != taskIdSelf() && servertid){
+			if (taskIdVerify(servertid) == OK){
+				if (taskDelete(servertid) == ERROR) {
 					printErrno(errnoGet());
+				}
 			}
+		}
+
 		pciu = (struct channel_in_use *) & client->addrq;
 		while (pciu = (struct channel_in_use *) pciu->node.next)
 			while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
@@ -214,6 +218,14 @@ register struct client *client;
 		   client->addrq.node.previous,
 		   &rsrv_free_addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
+
+	if(FASTLOCKFREE(&client->send.lock)<0){
+		logMsg("cas: couldnt free sem\n");
+	}
+
+	if(FASTLOCKFREE(&client->recv.lock)<0){
+		logMsg("cas: couldnt free sem\n");
+	}
 
 	return OK;
 }

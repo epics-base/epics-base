@@ -29,6 +29,8 @@ extern "C" {
 
 #define tsStampEventCurrentTime 0
 
+struct timeval;
+
 /*
  * The number of nanoseconds past 0000 Jan 1, 1990, GMT (or UTC).
  */

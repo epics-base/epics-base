@@ -19,7 +19,10 @@ MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
 
-DBINSTALL =  dbCommonRecord.db menuGlobal.db epics.db
+DBINSTALL +=  dbCommonRecord.db 
+DBINSTALL +=  menuGlobal.db
+DBINSTALL +=  epics.db
+DBINSTALL += epicsLIBOBJS
 
 SRCS.c = \
 	../dbAccess.c\

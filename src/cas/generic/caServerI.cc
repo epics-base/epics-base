@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -252,75 +255,6 @@ void caServerI::connectCB()
                 delete pNewClient;
         }
 }
-
-
-#if 0
-//
-// caServerI::elapsedTimeCompare()
-//
-int caServerI::elapsedTimeCompare(
-			const caTime &stamp1, const caTime &stamp2)
-{
-        if (stamp1.sec == stamp2.sec) {
-                if (stamp1.nsec == stamp2.nsec) {
-                        return 0;
-                }
-                else if (stamp1.nsec > stamp2.nsec) {
-                        return 1;
-                }
-                return -1;
-        }
-        else if (stamp1.sec > stamp2.sec) {
-                return 1;
-        }
-        return -1;
-}
-#endif
-
-
-#if 0
-//
-// caServerI::getElapsedTime()
-//
-caTime caServerI::getElapsedTime (const caTime &stamp)
-{
-        caTime          elapsed;
-        caTime          current;
-        caTime          local = stamp;
-
-	//
-	// OS dependent function - see casOSDInLine.h
-	//
-        current = caServerI::getTime();
-
-        //
-        // this indicates wrap around
-        //
-        if (local.sec>current.sec) {
-                unsigned long   tmp;
-
-                tmp = ULONG_MAX - local.sec;
-                assert (tmp < ULONG_MAX - current.sec);
-                current.sec += tmp;
-                local.sec = 0;
-        }
-
-        //
-        // borrow
-        //
-        if (local.nsec > current.nsec) {
-                assert (current.sec>0);
-                assert (current.sec>=local.sec);
-                current.sec--;
-                assert (2*CAServerNSecInSec < ULONG_MAX);
-                current.nsec += CAServerNSecInSec;
-        }
-        elapsed.sec = current.sec - local.sec;
-        elapsed.nsec = current.nsec - local.nsec;
-
-        return elapsed;
-}
-#endif
 
 
 //

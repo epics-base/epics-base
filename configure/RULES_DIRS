@@ -33,9 +33,9 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-all : buildInstall
+all : install
 
-rebuild : clean all
+rebuild : clean install
 
 $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 	$(MAKE) -C $(dirPart) $(actionArchPart)

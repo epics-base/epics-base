@@ -73,19 +73,19 @@ endif
 
 all:    install
 
+install: buildInstall
+
+buildInstall : build
+
+rebuild: clean install
+
 inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(COMMON_JAVAINC)
 
 build: inc
 
 build:  $(COMMON_TESTCLASSES) $(COMMON_JAR)
 
-buildInstall : build
-
 buildInstall : $(INSTALL_JAR)
-
-install: buildInstall
-
-rebuild: clean install
 
 #This clean works only from O.* dirs.
 clean:: 
@@ -120,3 +120,4 @@ $(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
 	@echo "Installing java jar file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
+.PHONY: all install buildInstall rebuild clean build inc

@@ -102,7 +102,7 @@ static long write_bo(pbo)
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
-	status = xy220_driver(pvmeio->card,pbo->rval,pbo->mask);
+	status = xy220_driver(pvmeio->card,&pbo->rval,pbo->mask);
 	if(status!=0) {
                 recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
 	}

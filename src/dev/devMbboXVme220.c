@@ -104,7 +104,7 @@ static long write_mbbo(pmbbo)
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);
-	status = xy220_driver(pvmeio->card,pmbbo->rval,pmbbo->mask);
+	status = xy220_driver(pvmeio->card,&pmbbo->rval,pmbbo->mask);
 	if(status==0) {
 		status = xy220_read(pvmeio->card,pmbbo->mask,&value);
 		if(status==0) pmbbo->rbv = value;

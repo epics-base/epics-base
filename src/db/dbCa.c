@@ -36,6 +36,7 @@ of this distribution.
 #include "osiThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
+#include "taskwd.h"
 #include "alarm.h"
 #include "link.h"
 #include "errMdef.h"
@@ -626,6 +627,7 @@ void dbCaTask()
     short	link_action;
     int		status;
 
+    taskwdInsert(threadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(enablePreemption),
         "dbCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),

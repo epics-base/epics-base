@@ -7,12 +7,16 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-#RELEASE Location of external products
+# RELEASE: Define location of external products
 #
-# NOTE: RELEASE.$(EPICS_HOST_ARCH) files will override
+# NB: Settings in RELEASE files can be overridden in files named
+#   RELEASE.$(EPICS_HOST_ARCH)
+#   RELEASE.Common.$(T_A)
+#   RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 
 #  Tornado directory
-VX_DIR = /usr/local/vw/tornado202
+VX_DIR = /usr/local/vw/tornado202p1
+#VX_DIR = /usr/local/vw/tornado22-$(ARCH_CLASS)
 
 # If you don't want to install into $(TOP) dir then 
 # define INSTALL_LOCATION here

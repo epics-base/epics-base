@@ -28,6 +28,8 @@
 #include "osiProcess.h"
 #include "epicsSignal.h"
 #include "envDefs.h"
+#include "locationException.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
@@ -137,7 +139,8 @@ cac::cac (
     initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
-    beaconAnomalyCount ( 0u )
+    beaconAnomalyCount ( 0u ),
+    iiuUninstallInProgress ( false )
 {
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -255,7 +258,7 @@ cac::~cac ()
     //
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        while ( this->circuitList.count() > 0 ) {
+        while ( this->circuitList.count() > 0 || this->iiuUninstallInProgress ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->iiuUninstall.wait ();
         }
@@ -277,13 +280,13 @@ cac::~cac ()
         this->bheFreeList.release ( pBHE );
     }
 
-    osiSockRelease ();
-
     this->timerQueue.release ();
 
     this->ipToAEngine.release ();
 
     errlogFlush ();
+
+    osiSockRelease ();
 
     // its ok for channels and subscriptions to still
     // exist at this point. The user created them and 
@@ -1136,6 +1139,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
     {
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
+        this->iiuUninstallInProgress = true;
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
             iiu.hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
@@ -1159,11 +1163,16 @@ void cac::destroyIIU ( tcpiiu & iiu )
 
     // this destroys a timer that takes the primary mutex
     // so we must not hold the primary mutex here
+    //
+    // this waits for send/recv threads to exit
+    // this also uses the cac free lists so cac must wait 
+    // for this to finish before it shuts down
     iiu.~tcpiiu ();
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->freeListVirtualCircuit.release ( & iiu );
+        this->iiuUninstallInProgress = false;
     }
 
     // signal iiu uninstal event so that cac can properly shut down

@@ -16,6 +16,8 @@
 #include "osiUnistd.h"
 #include "epicsThread.h"
 #include "logClient.h"
+#include "errlog.h"
+#include "epicsRelease.h"
 
 #define epicsExportSharedSymbols
 #include "iocsh.h"
@@ -152,6 +154,22 @@ static void iocLogDisableCallFunc(const iocshArgBuf *args)
     iocLogDisable = args[0].ival;
 }
 
+/* eltc */
+static const iocshArg eltcArg0 = {"(0,1)=>(false,true)",iocshArgInt};
+static const iocshArg * const eltcArgs[1] = {&iocLogDisableArg0};
+static const iocshFuncDef eltcFuncDef = {"eltc",1,iocLogDisableArgs};
+static void eltcCallFunc(const iocshArgBuf *args)
+{
+    eltc(args[0].ival);
+}
+
+/* coreRelease */
+static const iocshFuncDef coreReleaseFuncDef = {"coreRelease",0,NULL};
+static void coreReleaseCallFunc(const iocshArgBuf *args)
+{
+    coreRelease ();
+}
+
 void epicsShareAPI iocUtilRegister(void)
 {
     iocshRegister(&runScriptFuncDef,runScriptCallFunc);
@@ -163,4 +181,6 @@ void epicsShareAPI iocUtilRegister(void)
     iocshRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
     iocshRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
     iocshRegister(&iocLogDisableFuncDef,iocLogDisableCallFunc);
+    iocshRegister(&eltcFuncDef,eltcCallFunc);
+    iocshRegister(&coreReleaseFuncDef,coreReleaseCallFunc);
 }

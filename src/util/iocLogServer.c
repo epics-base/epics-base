@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.34  1999/11/08 21:37:00  jhill
+ * dont print too many messages if the host runs out of fd slots
+ *
  * Revision 1.33  1999/09/02 21:41:09  jhill
  * improved the way that socket error numbers are converted to strings
  *
@@ -342,7 +345,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
          * DayName MonthName dayNum 24hourHourNum:minNum:secNum yearNum
          */
         convertStatus = fscanf (
-            pserver->poutfile, "%*s %*s %s %d %d:%d:%d %d %*[^\n] \n",
+            pserver->poutfile, " %*s %*s %15s %d %d:%d:%d %d %*[^\n] ",
             month, &theDate.tm_mday, &theDate.tm_hour, 
             &theDate.tm_min, &theDate.tm_sec, &theDate.tm_year);
         if (convertStatus==6) {

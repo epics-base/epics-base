@@ -46,7 +46,7 @@ static int errlogOpen ( DEV_HDR *, const char *, int )
 
 static int errlogWrite ( DEV_HDR *, const char * pInBuf, int nbytes )
 {
-    errlogPrintf ( "%.*s", nbytes, pInBuf );
+    errlogPrintfNoConsole ( "%.*s", nbytes, pInBuf );
     return nbytes;
 }
 

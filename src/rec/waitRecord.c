@@ -77,8 +77,9 @@
 #include        <wdLib.h>
 #include        <sysLib.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbScan.h>
@@ -468,8 +469,6 @@ static long special(paddr,after)
                 recGblRecordError(S_db_badField,(void *)pwait,
                         "wait: init_record: Illegal CALC field");
         }
-        db_post_events(pwait,&pwait->clcv,DBE_VALUE);
-        db_post_events(pwait,pwait->calc,DBE_VALUE);
         db_post_events(pwait,&pwait->clcv,DBE_VALUE);
         return(0);
     }

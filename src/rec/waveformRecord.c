@@ -67,8 +67,9 @@
 #include	<stdlib.h>
 #include	<string.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbFldTypes.h>

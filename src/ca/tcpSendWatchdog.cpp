@@ -60,3 +60,4 @@ void tcpSendWatchdog::cancel ()
 {
     this->osiTimer::cancel ();
 }
+

@@ -2,8 +2,8 @@
  * Use compiler specific key words to set up shareable library
  * external symbols and entry points
  *
- * Right now this is only necessary for WIN32 DLL,
- * the approach should be general enough for future systems, however.
+ * Right now this is only necessary for WIN32 DLL, and to a lesser extent VAXC.
+ * The approach should be general enough for future systems, however.
  *
  *
  * USAGE:
@@ -24,7 +24,7 @@
  *	class epicsShareClass a_class; 		reference a class 
  *
  * Usually the epicsShare... macros expand to
- *  "import this from a DLL"  (on WIN32, on Unix it's a NOP)
+ *  "import this from a DLL"  (on WIN32, on Unix it's a NOOP)
  *
  * In the implementation file, however, you write:
  *
@@ -72,7 +72,7 @@
  * then we should just switch on defined(_MSC_VER) here)
  *
  * Also check for "EPICS_DLL" defined so that we will not use these
- * keywords if it is a no DLL build of base under WIN32.
+ * keywords if it is an object library build of base under WIN32.
  */
 #if defined(_WIN32) && !defined(__CYGWIN32__) && defined(EPICS_DLL)
 
@@ -91,7 +91,7 @@
 	 * __declspec(xxxx))
 	 */
 #	define epicsShareAPI __stdcall
-        /*
+	/*
 	 * Variable args functions cannot be __stdcall
 	 * Use this for variable args functions
 	 * (Those using either ... or va_list arguments)

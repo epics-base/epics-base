@@ -7,6 +7,7 @@
 #include <tickLib.h>
 #include <sysLib.h>
 
+
 //
 // osiTime::synchronize()
 //
@@ -29,9 +30,8 @@ osiTime osiTime::osdGetCurrent ()
 	// for the EPICS epoch
 	//
 	ticks = tickGet();
-	sec = ticks/rate;
-	nsec = (ticks%rate)*(nSecPerSec/rate); 
+	sec = ticks / rate;
+	nsec = (ticks % rate) * (nSecPerSec / rate); 
  
-	return osiTime(sec, nsec);
+	return osiTime (sec, nsec);
 }
-

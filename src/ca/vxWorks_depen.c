@@ -283,7 +283,6 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
                 ca_printf("CAC: entering the exit handler %x\n", ptcb);
 #       endif
 
-
         /*
          * NOTE: vxWorks provides no method at this time
          * to get the task id from the ptcb so I am
@@ -291,14 +290,31 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
          * the task id - somthing which may not be true
          * on future releases of vxWorks
          */
-	ca_temp = (struct ca_static *)taskVarGet((int)ptcb, (int *) &ca_static);
+	ca_temp = (struct ca_static *)
+		taskVarGet((int)ptcb, (int *) &ca_static);
 	if (ca_temp == (struct ca_static *) ERROR){
 		return;
 	}
 
+	/*
+	 * vxWorks specific shut down
+	 */
 	cac_os_depen_exit(ca_temp, (int) ptcb);
 
+	/*
+	 * normal CA sut down
+	 */
         ca_process_exit(ca_temp);
+
+	/*
+	 * remove semaphores here so that ca_process_exit()
+	 * can use them.
+	 */
+	assert(semDelete(ca_temp->ca_client_lock)==OK);
+	assert(semDelete(ca_temp->ca_event_lock)==OK);
+	assert(semDelete(ca_temp->ca_putNotifyLock)==OK);
+	assert(semDelete(ca_temp->ca_io_done_sem)==OK);
+	assert(semDelete(ca_temp->ca_blockSem)==OK);
 }
 
 
@@ -442,12 +458,6 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 	 */
 	ellFree(&pcas->ca_local_chidlist);
 	ellFree(&pcas->ca_dbfree_ev_list);
-
-	assert(semDelete(pcas->ca_client_lock)==OK);
-	assert(semDelete(pcas->ca_event_lock)==OK);
-	assert(semDelete(pcas->ca_putNotifyLock)==OK);
-	assert(semDelete(pcas->ca_io_done_sem)==OK);
-	assert(semDelete(pcas->ca_blockSem)==OK);
 
         return ECA_NORMAL;
 }

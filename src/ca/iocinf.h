@@ -568,7 +568,7 @@ void cac_gettimeval(struct timeval  *pt);
 ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 /* returns A + B in integer secs & integer usec */
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
-void caIOBlockFree(evid pIOBlock);
+void caIOBlockFree(struct ca_static *pCAC, evid pIOBlock);
 void clearChannelResources(struct ca_static *pCAC, unsigned id);
 
 /*

@@ -26,7 +26,9 @@ INSTALL_BIN = $(INSTALL_LOCATION)/bin/$(HOST_ARCH)
 #
 PERL_BOOTSTRAP_SCRIPTS = $(notdir $(wildcard $(TOP)/src/tools/*.pl))
 PERL_BOOTSTRAP_SCRIPTS_INSTALL = $(PERL_BOOTSTRAP_SCRIPTS:%=$(INSTALL_BIN)/%)
-all host cross inc rebuild uninstall clean depends buildInstall :: $(PERL_BOOTSTRAP_SCRIPTS_INSTALL)
+all host cross inc rebuild clean depends buildInstall :: $(PERL_BOOTSTRAP_SCRIPTS_INSTALL)
+
+RMDIR=$(PERL) $(TOP)/src/tools/rm.pl -rf
 
 include $(TOP)/config/RULES_TOP
 

@@ -53,7 +53,7 @@ HOST_ARCH=$2
 MAKE=$3
 
 case $HOST_ARCH in
-    alpha | hp700)
+    alpha | hp700 | Linux)
 	# Use gcc if it can be found, or makedepend
 
 	GCC=`which gcc`

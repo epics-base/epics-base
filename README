@@ -16,14 +16,12 @@ set path = ( $path EPICS/base/tools EPICS/base/bin/HOST_ARCH )
 
 set path = ( $path /home/epics/base/tools /home/epics/base/bin/sun4 )
 
-2. If you are using GNU make (which is now THE supported make utility
-	for the build), you probably want to invoke it with the
-	--no-print-directory option when you are building at the TOP level:
+2. You must use GNU make (which is now THE supported make utility) for
+   the build. A script, gmake,  exists in the base/tools directory to invoke
+   it with the --no-print-directory option.  This option will turn off the
+   annoying messages GNU make produces upon entering a directory.
 
-make --no-print-directory
-
-This is to turn off the annoying messages GNU make produces upon
-	entering a directory.
+gmake
 
 ----------------------------------------------------------------------------
    Part 1 - Configuring and Building EPICS Base
@@ -31,13 +29,13 @@ This is to turn off the annoying messages GNU make produces upon
 
 1.1  To configure EPICS, edit the following files:
 
-   base/config/CONFIG_SITE	- Build choices/HOST_ARCH/Vx location.
-   base/config/CONFIG_SITE.*    - Location of X, etc.
-   base/config/CONFIG		- For overriding specific variables.
+   config/CONFIG_SITE      - Build choices/HOST_ARCH/Vx location.
+   config/CONFIG_SITE.*    - Location of X, etc.
+   config/CONFIG           - For overriding specific variables.
 
 1.2  To add a target architecture to EPICS:
 
-   cd epics/base/config
+   cd epics/config
    cp CONFIG_ARCH.mv167 CONFIG_ARCH.YOUR_ARCH
    edit CONFIG_ARCH.YOUR_ARCH	- For compiler flags / etc.
 
@@ -50,25 +48,27 @@ This is to turn off the annoying messages GNU make produces upon
 
 1.3  To build EPICS:
 
-   make			- To build and install EPICS.
-   make clean		- To clean temporary object files.  Clean will
-				remove files from ALL O.ARCH dirs, not
-				only those specified in BUILD_ARCHS.
+   cd epics/base
+   gmake             - To build and install EPICS.
+   gmake clean       - To clean temporary object files.  Clean will
+                       remove files from ALL O.ARCH dirs, not
+                       only those specified in BUILD_ARCHS.
 
 1.4  To create an EPICS release:
 
-   edit include/version.h	- ONLY IF you need to change the EPICS
+   edit base/include/version.h	- ONLY IF you need to change the EPICS
 					version number.
 
-   make release			- Will create Tar file, but only after
-					generating dependencies.
-   make built_release		- Same as above, but INCLUDING BINARIES.
+   gmake release			- Will create Tar file
+
+   gmake built_release         - Will create Tar file, after generating
+                                dependencies, INCLUDING BINARIES.
 
 1.5  "Partial" build commands:
 
-   make clean.sun4		- Cleans sun4 binaries in O.sun4 dirs only.
-   make install.sun4		- Builds sun4 only.
-   make install.mv167		- Builds mv167 only (a HOST_ARCH build must
+   gmake clean.sun4		- Cleans sun4 binaries in O.sun4 dirs only.
+   gmake install.sun4		- Builds sun4 only.
+   gmake install.mv167		- Builds mv167 only (a HOST_ARCH build must
 					be complete before this can be issued).
 
 NOTES:
@@ -81,8 +81,8 @@ NOTES:
 
    3. During a normal build (a "make" or "make install"), the "depends"
         dependency will NOT be invoked.  Only if "make depends" is run
-        explicitly, or a "make release" is performed will dependencies be
-        generated automatically.
+        explicitly, or a "make built_release" is performed will dependencies
+        be generated automatically.
    
    4. Temporary objects are stored in src/DIR/O.ARCH, This allows objects
 	for multiple architectures to be maintained at the same time.
@@ -229,9 +229,6 @@ RULES.Unix                   -         -             -             -
  Dependencies supported by lower level Makefiles:
 
     depends		- Generate include dependencies
-    pre_build		- Build e_flex / antelope
-    build_libs		- Builds libraries for use in "build"
-    install_libs	- Installs these libraries in lib/ARCH
     build		- Builds objects, using libraries from "build_libs"
     install		- Installs executables in bin/ARCH
     clean		- Cleans objects

@@ -16,10 +16,11 @@ AR = ar -rc
 RANLIB=
 LD = ld -r
 
-# Always keep libc shared to force using the one supplied with the
-# target machine (HP system and libc must match - important e.g. for
-# multi-CPU-systems)
-STATIC_LDFLAGS_YES = -static -l:libc.sl
+STATIC_LDFLAGS_YES= -Wl,-a,archive
+STATIC_LDFLAGS_NO =
+
+STATIC_LDLIBS_YES = -Wl,-a,default
+STATIC_LDLIBS_NO =
 
 # Switch explicitly from default DCE threads to posix threads
 POSIX_CPPFLAGS_YES += -D_REENTRANT -D_PTHREADS -D_POSIX_C_SOURCE=199506L

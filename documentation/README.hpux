@@ -75,6 +75,10 @@ Still on systems where the libraries are not found at the generic place
 environment you can point your client application to a fallback
 location.
 
+You can always change the order of search paths and disable usage of the
+internal path and/or environment variable later on in the binary without
+recompiling using the "chatr" (change attributes) command.
+
 
 Known Problems
 --------------

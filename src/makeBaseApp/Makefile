@@ -11,7 +11,6 @@ TEMPLATES += top/configure/Makefile
 TEMPLATES += top/configure/RELEASE
 TEMPLATES += top/configure/RULES
 TEMPLATES += top/configure/RULES.ioc
-TEMPLATES += top/configure/RULES.iocBoot
 TEMPLATES += top/configure/RULES_DIRS
 TEMPLATES += top/configure/RULES_TOP
 

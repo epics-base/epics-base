@@ -83,18 +83,22 @@ static char *promptPV_LINK[] = {
 	" Maximize Severity?"};
 static char *promptVME_IO[] = {
 	"  card:",
-	"signal:"};
+	"signal:",
+	"  parm:"};
 static char *promptCAMAC_IO[] = {
-	" branch:",
-	"  crate:",
-	"   slot:",
-	"channel:"};
+	"    branch:",
+	"     crate:",
+	"   station:",
+	"subaddress:",
+	"  function:",
+	" parameter:"};
 static char *promptAB_IO[] = {
 	"    link:",
 	" adapter:",
 	"    card:",
 	"  signal:",
-	"plc_flag:"};
+	"plc_flag:",
+	"    parm:"};
 static char *promptGPIB_IO[] = {
 	"link:",
 	"addr:",
@@ -115,26 +119,39 @@ static char *promptBBGPIB_IO[] = {
 static char *promptVXI_IO[] = {
 	"     Dynamic?",
 	"DYN    frame:",
-	"DYN    slot :",
-	"STATIC   la :",
+	"DYN     slot:",
+	"STATIC    la:",
+	"      Signal:",
 	"        parm:"};
-static char **promptAddr[VXI_IO+1] = {
-	promptCONSTANT,
-	promptPV_LINK,
-	promptVME_IO,
-	promptCAMAC_IO,
-	promptAB_IO,
-	promptGPIB_IO,
-	promptBITBUS_IO,
-	NULL,NULL,NULL,NULL,NULL,
-	promptINST_IO,
-	promptBBGPIB_IO,
-	promptVXI_IO};
 
-static int formlines[VXI_IO+1] = { 1,4,2,4,5,3,5,0,0,0,0,0,1,4,5 };
-
+static char **promptAddr[VXI_IO+1];
+static int formlines[VXI_IO+1];
 
 /* internal routines*/
+#ifdef __STDC__
+static void initForms(void)
+#else
+static void initForms()
+#endif /*__STDC__*/
+{
+	int i;
+
+	for(i=0; i<=VXI_IO; i++) {
+	    promptAddr[i] = NULL;
+	    formlines[i] = 0;
+	}
+	promptAddr[CONSTANT] = promptCONSTANT; formlines[CONSTANT] = 1;
+	promptAddr[PV_LINK]  = promptPV_LINK;  formlines[PV_LINK]  = 4;
+	promptAddr[VME_IO]   = promptVME_IO;   formlines[VME_IO]   = 3;
+	promptAddr[CAMAC_IO] = promptCAMAC_IO; formlines[CAMAC_IO] = 6;
+	promptAddr[AB_IO]    = promptAB_IO;    formlines[AB_IO]    = 6;
+	promptAddr[GPIB_IO]  = promptGPIB_IO;  formlines[GPIB_IO]  = 3;
+	promptAddr[BITBUS_IO]= promptBITBUS_IO;formlines[BITBUS_IO]= 5;
+	promptAddr[INST_IO]  = promptINST_IO;  formlines[INST_IO]  = 1;
+	promptAddr[BBGPIB_IO]= promptBBGPIB_IO;formlines[BBGPIB_IO]= 4;
+	promptAddr[VXI_IO]   = promptVXI_IO;   formlines[VXI_IO]   = 6;
+}
+
 #ifdef __STDC__
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
 {
@@ -171,7 +188,7 @@ char *mess;
     strcat(pmessage,mess);
     errMessage(status,pmessage);
 }
-
+
 #ifdef __STDC__
 static void zeroDbentry(DBENTRY *pdbentry)
 {
@@ -382,6 +399,7 @@ DBBASE *dbAllocBase()
 
     pdbbase = dbCalloc(1,sizeof(DBBASE));
     dbPvdInitPvt(pdbbase);
+    initForms();
     return (pdbbase);
 }
 
@@ -1283,19 +1301,21 @@ DBENTRY *pdbentry;
 		    msstring[plink->value.pv_link.maximize_sevr]);
 		break;
 	    case VME_IO:
-		sprintf(message,"#C%d S%d",
-		    plink->value.vmeio.card,plink->value.vmeio.signal);
+		sprintf(message,"#C%d S%d @%s",
+		    plink->value.vmeio.card,plink->value.vmeio.signal,
+		    plink->value.vmeio.parm);
 		break;
 	    case CAMAC_IO:
-		sprintf(message,"#B%d C%d S%d A%d",
-		    plink->value.camacio.branch,plink->value.camacio.crate,
-		    plink->value.camacio.slot,plink->value.camacio.channel);
+		sprintf(message,"#B%d C%d N%d A%d F%d @%s",
+		    plink->value.camacio.b,plink->value.camacio.c,
+		    plink->value.camacio.n,plink->value.camacio.a,
+		    plink->value.camacio.f,plink->value.camacio.parm);
 		break;
 	    case AB_IO:
-		sprintf(message,"#L%d A%d C%d S%d F%d",
+		sprintf(message,"#L%d A%d C%d S%d F%d @%s",
 		    plink->value.abio.link,plink->value.abio.adapter,
 		    plink->value.abio.card,plink->value.abio.signal,
-		    plink->value.abio.plc_flag);
+		    plink->value.abio.plc_flag,plink->value.abio.parm);
 		break;
 	    case GPIB_IO:
 		sprintf(message,"#L%d A%d @%s",
@@ -1314,16 +1334,17 @@ DBENTRY *pdbentry;
 		    plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
 		break;
 	    case INST_IO:
-		sprintf(message,"%s", plink->value.instio.string);
+		sprintf(message,"@%s", plink->value.instio.string);
 		break;
 	    case VXI_IO :
 		if (plink->value.vxiio.flag == VXIDYNAMIC)
-		    sprintf(message,"#V%d C%d @%s",
+		    sprintf(message,"#V%d C%d S%d @%s",
 			plink->value.vxiio.frame,plink->value.vxiio.slot,
-			plink->value.vxiio.parm);
+			plink->value.vxiio.signal,plink->value.vxiio.parm);
 		else
-		    sprintf(message,"#V%d @%s",
-			plink->value.vxiio.la,plink->value.vxiio.parm);
+		    sprintf(message,"#V%d S%d @%s",
+			plink->value.vxiio.la,plink->value.vxiio.signal,
+			plink->value.vxiio.parm);
 		break;
 	    default :
 	        return(NULL);
@@ -1594,6 +1615,11 @@ char *pstring;
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.vmeio.signal);
+		    plink->value.vmeio.parm[0] = 0;
+		    if(end = strchr(pstr,'@')) {
+		        pstr = end + 1;
+		        sscanf(pstr,"%31s",&plink->value.vmeio.parm[0]);
+		    }
 		}
 		break;
 	    case CAMAC_IO: {
@@ -1603,16 +1629,24 @@ char *pstring;
 		    pstr = end + 1;
 		    if(!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.branch);
+		    sscanf(pstr,"%hd",&plink->value.camacio.b);
 		    if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.crate);
-		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
+		    sscanf(pstr,"%hd",&plink->value.camacio.c);
+		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.slot);
+		    sscanf(pstr,"%hd",&plink->value.camacio.n);
 		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
 		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.channel);
+		    sscanf(pstr,"%hd",&plink->value.camacio.a);
+		    if(!(end = strchr(pstr,'F'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.camacio.f);
+		    plink->value.camacio.parm[0] = 0;
+		    if(end = strchr(pstr,'@')) {
+		        pstr = end + 1;
+		        sscanf(pstr,"%25s",&plink->value.camacio.parm[0]);
+		    }
 		}
 		break;
 	    case AB_IO: {
@@ -1638,6 +1672,11 @@ char *pstring;
 		        pstr = end + 1;
 		        sscanf(pstr,"%hd",&plink->value.abio.plc_flag);
 		    }
+		    plink->value.abio.parm[0] = 0;
+		    if(end = strchr(pstr,'@')) {
+		        pstr = end + 1;
+		        sscanf(pstr,"%25s",&plink->value.abio.parm[0]);
+		    }
 		}
 		break;
 	    case GPIB_IO: {
@@ -1654,7 +1693,7 @@ char *pstring;
 		    plink->value.gpibio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
+		        sscanf(pstr,"%31s",&plink->value.gpibio.parm[0]);
 		    }
 		}
 		break;
@@ -1686,7 +1725,7 @@ char *pstring;
 		    plink->value.bitbusio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.bitbusio.parm[0]);
+		        sscanf(pstr,"%31s",&plink->value.bitbusio.parm[0]);
 		    }
 		}
 		break;
@@ -1714,7 +1753,7 @@ char *pstring;
 		    plink->value.bbgpibio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.bbgpibio.parm[0]);
+		        sscanf(pstr,"%31s",&plink->value.bbgpibio.parm[0]);
 		    }
 		}
 		break;
@@ -1738,14 +1777,27 @@ char *pstring;
 		        pstr = end + 1;
 		        sscanf(pstr,"%hd",&plink->value.vxiio.slot);
 		    }
+		    if(end = strchr(pstr,'S')) {
+			pstr = end + 1;
+			sscanf(pstr,"%hd",&plink->value.vxiio.signal);
+		    } else {
+			plink->value.vxiio.signal = 0;
+		    }
+		    plink->value.vxiio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
+		        sscanf(pstr,"%27s",&plink->value.vxiio.parm[0]);
 		    }
 		}
 		break;
 	    case INST_IO: {
-		    sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
+	    	    char	*end;
+
+		    plink->value.instio.string[0] = 0;
+		    if(end = strchr(pstr,'@')) {
+		        pstr = end + 1;
+		        sscanf(pstr,"%35s",&plink->value.instio.string[0]);
+		    }
 		}
 		break;
 	    }
@@ -2345,15 +2397,21 @@ DBENTRY *pdbentry;
 	cvtShortToString(plink->value.vmeio.card,*value);
 	value++;
 	cvtShortToString(plink->value.vmeio.signal,*value);
+	value++;
+	strcpy(*value,plink->value.vmeio.parm);
 	break;
     case CAMAC_IO:
-	cvtShortToString(plink->value.camacio.branch,*value);
+	cvtShortToString(plink->value.camacio.b,*value);
 	value++;
-	cvtShortToString(plink->value.camacio.crate,*value);
+	cvtShortToString(plink->value.camacio.c,*value);
 	value++;
-	cvtShortToString(plink->value.camacio.slot,*value);
+	cvtShortToString(plink->value.camacio.n,*value);
 	value++;
-	cvtShortToString(plink->value.camacio.channel,*value);
+	cvtShortToString(plink->value.camacio.a,*value);
+	value++;
+	cvtShortToString(plink->value.camacio.f,*value);
+	value++;
+	strcpy(*value,plink->value.camacio.parm);
 	break;
     case AB_IO:
 	cvtShortToString(plink->value.abio.link,*value);
@@ -2365,6 +2423,8 @@ DBENTRY *pdbentry;
 	cvtShortToString(plink->value.abio.signal,*value);
 	value++;
 	strcpy(*value, (plink->value.abio.plc_flag ? "Yes" : "No"));
+	value++;
+	strcpy(*value,plink->value.abio.parm);
 	break;
     case GPIB_IO:
 	cvtShortToString(plink->value.gpibio.link,*value);
@@ -2413,6 +2473,8 @@ DBENTRY *pdbentry;
 	    cvtShortToString(plink->value.vxiio.la,*value);
 	else
 	    **value = 0;
+	value++;
+	cvtShortToString(plink->value.vxiio.signal,*value);
 	value++;
 	strcpy(*value,plink->value.vxiio.parm);
 	break;
@@ -2478,35 +2540,46 @@ char **value;
 	} else {
 	    strcpy(*verify,"Illegal. Must be number");
 	}
+	value++; verify++;
+	strncpy(plink->value.vmeio.parm,*value,VME_PARAM_SZ-1);
 	break;
     case CAMAC_IO:
 	lvalue = strtol(*value,&endp,0);
 	if(*endp==0) {
-	    plink->value.camacio.branch = lvalue; **verify = 0;
+	    plink->value.camacio.b = lvalue; **verify = 0;
 	} else {
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
 	lvalue = strtol(*value,&endp,0);
 	if(*endp==0) {
-	    plink->value.camacio.crate = lvalue; **verify = 0;
+	    plink->value.camacio.c = lvalue; **verify = 0;
 	} else {
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
 	lvalue = strtol(*value,&endp,0);
 	if(*endp==0) {
-	    plink->value.camacio.slot = lvalue; **verify = 0;
+	    plink->value.camacio.n = lvalue; **verify = 0;
 	} else {
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
 	lvalue = strtol(*value,&endp,0);
 	if(*endp==0) {
-	    plink->value.camacio.channel = lvalue; **verify = 0;
+	    plink->value.camacio.a = lvalue; **verify = 0;
 	} else {
 	    strcpy(*verify,"Illegal. Must be number");
 	}
+	value++; verify++;
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.camacio.f = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
+	value++; verify++;
+	strncpy(plink->value.camacio.parm,*value,CAMAC_PARAM_SZ-1);
 	break;
     case AB_IO:
 	lvalue = strtol(*value,&endp,0);
@@ -2539,6 +2612,8 @@ char **value;
 	value++; verify++;
 	plink->value.abio.plc_flag = 
 	    ((strchr(*value,'Y') || strchr(*value,'y') ? TRUE : FALSE));
+	value++; verify++;
+	strncpy(plink->value.abio.parm,*value,AB_PARAM_SZ-1);
 	break;
     case GPIB_IO:
 	lvalue = strtol(*value,&endp,0);
@@ -2555,7 +2630,7 @@ char **value;
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strcpy(plink->value.gpibio.parm,*value);
+	strncpy(plink->value.gpibio.parm,*value,LINK_PARAM_SZ-1);
 	**verify = 0;
 	break;
     case BITBUS_IO:
@@ -2587,11 +2662,11 @@ char **value;
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strcpy(plink->value.bitbusio.parm,*value);
+	strncpy(plink->value.bitbusio.parm,*value,LINK_PARAM_SZ-1);
 	**verify = 0;
 	break;
     case INST_IO:
-	strcpy(plink->value.instio.string,*value);
+	strncpy(plink->value.instio.string,*value,INSTIO_FLD_SZ-1);
 	**verify = 0;
 	break;
     case BBGPIB_IO:
@@ -2616,7 +2691,7 @@ char **value;
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strcpy(plink->value.bbgpibio.parm,*value);
+	strncpy(plink->value.bbgpibio.parm,*value,LINK_PARAM_SZ-1);
 	**verify = 0;
 	break;
     case VXI_IO:
@@ -2644,7 +2719,14 @@ char **value;
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strcpy(plink->value.vxiio.parm,*value);
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.vxiio.signal = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
+	value++; verify++;
+	strncpy(plink->value.vxiio.parm,*value,VXI_PARAM_SZ-1);
 	**verify = 0;
 	break;
     default :

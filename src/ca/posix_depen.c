@@ -279,6 +279,6 @@ void ca_spawn_repeater()
  */
 void caSetDefaultPrintfHandler ()
 {
-        ca_static->ca_printf_func = ca_default_printf;
+        ca_static->ca_printf_func = epicsVprintf;
 }
 

@@ -134,6 +134,7 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 #include	"net_convert.h"
+#include	<epicsPrint.h>
 #include	<stdarg.h> /* for VMS old CC include order madness */
 
 
@@ -3384,7 +3385,7 @@ int ca_channel_status(int tid)
  * ca_replace_printf_handler ()
  */
 int APIENTRY ca_replace_printf_handler (
-int (*ca_printf_func)(char *pformat, va_list args)
+int (*ca_printf_func)(const char *pformat, va_list args)
 )
 {
 	if (ca_printf_func) {
@@ -3406,13 +3407,13 @@ int (*ca_printf_func)(char *pformat, va_list args)
  */
 int ca_printf(char *pformat, ...)
 {
-	int		(*ca_printf_func)(char *pformat, va_list args);
+	int		(*ca_printf_func)(const char *pformat, va_list args);
 	va_list		theArgs;
 	int		status;
 
 	va_start(theArgs, pformat);
 
-	ca_printf_func = ca_default_printf;
+	ca_printf_func = epicsVprintf;
 	if (ca_static) {
 		if (ca_static->ca_printf_func) {
 			ca_printf_func = ca_static->ca_printf_func;
@@ -3425,22 +3426,4 @@ int ca_printf(char *pformat, ...)
 
 	return status;
 }
-
-
-/*
- *      ca_default_printf()
- *	(this default is replaced under vxWorks
- *	- see vxWorks_depen.c)
- */
-int ca_default_printf(char *pformat, va_list args)
-{
-        int             status;
-
-        status = vfprintf(
-                        stderr,
-                        pformat,
-                        args);
-        return status;
-}
-
 

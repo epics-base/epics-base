@@ -100,6 +100,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <bucketLib.h>
 #include <ellLib.h> 
 #include <envDefs.h> 
+#include <epicsPrint.h> 
 
 /*
  * CA private includes 
@@ -410,7 +411,7 @@ struct  ca_static{
 	void		(*ca_connection_func)
 				(struct connection_handler_args);
 	void		*ca_connection_arg;
-	int		(*ca_printf_func)(char *pformat, va_list args);
+	int		(*ca_printf_func)(const char *pformat, va_list args);
 	void		(*ca_fd_register_func)
 				(void *, SOCKET, int);
 	void		*ca_fd_register_arg;
@@ -594,7 +595,6 @@ ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(evid pIOBlock);
 void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler ();
-int ca_default_printf(char *pformat, va_list args);
 
 /*
  * !!KLUDGE!!

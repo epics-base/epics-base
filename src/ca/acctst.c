@@ -9,9 +9,14 @@ static char *sccsId = "@(#) $Id$";
 #include <LIB$ROUTINES.H>
 #endif
 
+/*
+ * ANSI
+ */
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<assert.h>
+#include	<math.h>
+#include	<float.h>
 
 #include	"os_depen.h"
 
@@ -219,22 +224,22 @@ int doacctst(char *pname)
 
 		double 	dval = 3.3;
 		float	fval = -8893.3;
-		double	dret;
-		float	fret;
+		double	dret = DBL_MAX;
+		float	fret = FLT_MAX;
 
 		status = ca_put(DBR_DOUBLE, chix1, &dval);
 		SEVCHK(status, NULL);
 		status = ca_get(DBR_DOUBLE, chix1, &dret);
 		SEVCHK(status, NULL);
 		ca_pend_io(30.0);
-		assert(dval - dret < .000001);
+		assert( fabs(dval-dret) < DBL_EPSILON*4);
 
 		status = ca_put(DBR_FLOAT, chix1, &fval);
 		SEVCHK(status, NULL);
 		status = ca_get(DBR_FLOAT, chix1, &fret);
 		SEVCHK(status, NULL);
 		ca_pend_io(30.0);
-		assert(fval - fret < .0001);
+		assert( fabs(fval-fret) < FLT_EPSILON*4);
 	}
 
 	/*

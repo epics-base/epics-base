@@ -34,7 +34,6 @@
 #include <callback.h>
 #include "iocinf.h"
 #include "remLib.h"
-#include <mprintf.h>
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
@@ -892,6 +891,6 @@ void cac_recv_task(int  tid)
  */
 void caSetDefaultPrintfHandler ()
 {
-	ca_static->ca_printf_func = vmprintf;
+	ca_static->ca_printf_func = epicsVprintf;
 }
 

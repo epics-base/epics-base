@@ -317,6 +317,6 @@ void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
  */
 void caSetDefaultPrintfHandler ()
 {
-        ca_static->ca_printf_func = ca_default_printf;
+        ca_static->ca_printf_func = epicsVprintf;
 }
 

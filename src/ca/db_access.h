@@ -735,12 +735,12 @@ union db_access_val{
 		 (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
-    (  ((type) >= 0 && (type) < dbf_text_dim) ? \
-        dbf_text[type] : dbf_text_invalid  )
+    (  ((type) >= -1 && (type) < dbf_text_dim-2) ? \
+        dbf_text[type+1] : dbf_text_invalid  )
 
 #define dbf_text_to_type(text, type)   \
-    for (type=dbf_text_dim-1; type>=0; type--) { \
-        if (strcmp(text, dbf_text[type]) == 0) \
+    for (type=dbf_text_dim-3; type>=0; type--) { \
+        if (strcmp(text, dbf_text[type+1]) == 0) \
         break; \
     }
 
@@ -775,7 +775,7 @@ union db_access_val{
         (type) + 4*(dbf_text_dim-2)   :  -1  )
 
 
-epicsShareExtern READONLY char	    *dbf_text[LAST_TYPE+1];
+epicsShareExtern READONLY char	    *dbf_text[LAST_TYPE+3];
 epicsShareExtern READONLY short	    dbf_text_dim;
 epicsShareExtern READONLY char      *dbf_text_invalid;
 

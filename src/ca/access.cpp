@@ -1088,14 +1088,16 @@ extern "C" epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+
 	0,					/* string			*/
 };
 
-extern "C" epicsShareDef const char *dbf_text[LAST_TYPE+1] = {
-    "DBF_STRING",
-    "DBF_SHORT",
-    "DBF_FLOAT",
-    "DBF_ENUM",
-    "DBF_CHAR",
-    "DBF_LONG",
-    "DBF_DOUBLE"
+extern "C" epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
+	"TYPENOTCONN",
+	"DBF_STRING",
+	"DBF_SHORT",
+	"DBF_FLOAT",
+	"DBF_ENUM",
+	"DBF_CHAR",
+	"DBF_LONG",
+	"DBF_DOUBLE",
+	"DBF_NO_ACCESS"
 };
 
 extern "C" epicsShareDef const char *dbf_text_invalid = "DBF_invalid";

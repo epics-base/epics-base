@@ -1263,18 +1263,28 @@ void caTaskExistTest ()
 
 verifyDataTypeMacros ()
 {
-    assert ( dbf_type_to_DBR( DBR_SHORT ) == DBR_SHORT );
-    assert ( dbf_type_to_DBR_STS( DBR_SHORT ) == DBR_STS_SHORT );
-    assert ( dbf_type_to_DBR_TIME( DBR_SHORT ) == DBR_TIME_SHORT );
-    assert ( dbf_type_to_DBR_GR( DBR_SHORT ) == DBR_GR_SHORT );
-    assert ( dbf_type_to_DBR_CTRL( DBR_SHORT ) == DBR_CTRL_SHORT );
+    short type;
+
+    type = dbf_type_to_DBR ( DBF_SHORT );
+    assert ( type == DBR_SHORT );
+    type = dbf_type_to_DBR_STS ( DBF_SHORT );
+    assert ( type == DBR_STS_SHORT );
+    type = dbf_type_to_DBR_GR ( DBF_SHORT );
+    assert ( type == DBR_GR_SHORT );
+    type = dbf_type_to_DBR_CTRL ( DBF_SHORT );
+    assert ( type == DBR_CTRL_SHORT );
+    type = dbf_type_to_DBR_TIME ( DBF_SHORT );
+    assert ( type == DBR_TIME_SHORT );
     assert ( strcmp ( dbr_type_to_text( DBR_SHORT ), "DBR_SHORT" )  == 0 );
+    assert ( strcmp ( dbf_type_to_text( DBF_SHORT ), "DBF_SHORT" )  == 0 );
     assert ( dbr_type_is_SHORT ( DBR_SHORT ) );
     assert ( dbr_type_is_valid ( DBR_SHORT ) );
-    assert ( dbf_type_is_valid ( DBR_SHORT ) );
+    assert ( dbf_type_is_valid ( DBF_SHORT ) );
     {
         int dataType;
-        dbf_text_to_type ( "DBR_SHORT", dataType ); 
+        dbf_text_to_type ( "DBF_SHORT", dataType ); 
+        assert ( dataType == DBF_SHORT );
+        dbr_text_to_type ( "DBR_SHORT", dataType ); 
         assert ( dataType == DBR_SHORT );
     }
 }

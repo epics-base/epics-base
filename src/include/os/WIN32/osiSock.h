@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-#pragma warning (disable:4237)
-
 #include <time.h>
 #include <errno.h>
 #include <winsock2.h>

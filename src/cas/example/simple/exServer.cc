@@ -27,6 +27,7 @@ const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
 //
 pvInfo exServer::bill (-1.0, "bill", 10.0f, -10.0f, excasIoSync, 1u);
 pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
+pvInfo exServer::bloaty (-1.0, "bloaty", 10.0f, -10.0f, excasIoSync, 100000);
 
 //
 // exServer::exServer()
@@ -77,10 +78,12 @@ exServer::exServer ( const char * const pvPrefix,
     // Install create on-the-fly PVs 
     // into the PV name hash table
     //
-    sprintf(pvAlias, pNameFmtStr, pvPrefix, bill.getName());
-    this->installAliasName(bill, pvAlias);
-    sprintf(pvAlias, pNameFmtStr, pvPrefix, billy.getName());
-    this->installAliasName(billy, pvAlias);
+    sprintf ( pvAlias, pNameFmtStr, pvPrefix, bill.getName() );
+    this->installAliasName ( bill, pvAlias );
+    sprintf ( pvAlias, pNameFmtStr, pvPrefix, billy.getName() );
+    this->installAliasName ( billy, pvAlias );
+    sprintf ( pvAlias, pNameFmtStr, pvPrefix, bloaty.getName() );
+    this->installAliasName ( bloaty, pvAlias );
 }
 
 //

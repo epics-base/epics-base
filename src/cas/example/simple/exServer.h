@@ -331,6 +331,7 @@ private:
     //
     static pvInfo bill;
     static pvInfo billy;
+    static pvInfo bloaty;
 };
 
 //

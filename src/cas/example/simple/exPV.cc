@@ -48,9 +48,7 @@ exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
 //
 exPV::~exPV() 
 {
-    if ( this->getCAS() ) {
-        this->timer.destroy ();
-    }
+    this->timer.destroy ();
     this->info.unlinkPV();
 }
 

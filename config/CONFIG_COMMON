@@ -9,6 +9,9 @@
 
 # Common Configuration Information 
 
+# EPICS base version
+BASE_3_14=1
+
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
 CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
  

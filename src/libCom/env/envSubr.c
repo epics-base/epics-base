@@ -74,6 +74,7 @@
 
 #define ENV_PRIVATE_DATA
 #include <envDefs.h>
+#include <epicsEnvParams.h>
 
 
 /*+/subr**********************************************************************
@@ -376,5 +377,36 @@ char	*value;		/* I pointer to value string */
 	pParam->dflt[79] = '\0';
     }
 #endif
+    return 0;
+}
+
+/*parameters meant to be modified in epicsEnvParams.h*/
+
+epicsSetEnvParams()
+{
+    printf("setting EPICS environment parameters\n");
+    envSetConfigParam(&EPICS_TS_MIN_WEST, EPICS_TS_MIN_VALUE);
+    envSetConfigParam(&EPICS_AR_PORT, "7002");
+    envSetConfigParam(&EPICS_IOC_LOG_INET, EPICS_IOC_LOG_VALUE);
+    envSetConfigParam(&EPICS_IOC_LOG_PORT, "7004");
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, EPICS_IOC_FILE_VALUE);
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, EPICS_IOC_LOG_FILE_TXT);
+    return 0;
+}
+epicsPrtEnvParams()
+{
+    envPrtConfigParam(&EPICS_TS_MIN_WEST);
+    envPrtConfigParam(&EPICS_CMD_PROTO_PORT);
+    envPrtConfigParam(&EPICS_AR_PORT);
+    envPrtConfigParam(&EPICS_IOC_LOG_INET);
+    envPrtConfigParam(&EPICS_IOC_LOG_PORT);
+    envPrtConfigParam(&EPICS_IOC_LOG_FILE_LIMIT);
+    envPrtConfigParam(&EPICS_IOC_LOG_FILE_NAME);
+    envPrtConfigParam(&EPICS_CA_ADDR_LIST);
+    envPrtConfigParam(&EPICS_CA_CONN_TMO);
+    envPrtConfigParam(&EPICS_CA_BEACON_PERIOD);
+    envPrtConfigParam(&EPICS_CA_AUTO_ADDR_LIST);
+    envPrtConfigParam(&EPICS_CA_REPEATER_PORT);
+    envPrtConfigParam(&EPICS_CA_SERVER_PORT);
     return 0;
 }

@@ -87,5 +87,7 @@ int abConfigNlinks(int nlinks);
 int abConfigVme(int link, int base, int vector, int level);
 int abConfigBaud(int link, int baud);
 int abConfigScanList(int link, int scan_list_len, char *scan_list);
+int abConfigScanListAscii(int link, char *filename,int setRackSize);
+int abConfigAuto(int link);
 
 #endif /*INCdrvAbh*/

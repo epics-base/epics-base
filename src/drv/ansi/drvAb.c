@@ -253,6 +253,7 @@ typedef struct {
 	unsigned short	baud_rate;
 	unsigned short	int_vector;
 	unsigned short	int_level;
+	unsigned short	autoconfig;
 	unsigned short	scan_list_len;
 	unsigned char	scan_list[64];
 } ab_config;
@@ -740,6 +741,7 @@ LOCAL void config_init(ab_link *plink)
     p6008 += plink->link;
     pconfig->base_address = (void *)p6008;
     pconfig->baud_rate = DEF_RATE;
+    pconfig->autoconfig = FALSE;
     pconfig->int_vector = AB_VEC_BASE + plink->link;
     pconfig->int_level = AB_INT_LEVEL;
     pconfig->scan_list_len = 8;
@@ -763,6 +765,7 @@ int abConfigVme(int link, int base, int vector, int level)
     ab_config	*pconfig;
 
     if(link<0 || link>=max_ab_6008s) return(-1);
+    if(!pab_links) pab_links = abCalloc(max_ab_6008s,sizeof(ab_link *));
     plink = pab_links[link];
     if(!plink) plink = allocLink(link);
     pconfig = plink->pconfig;
@@ -778,6 +781,7 @@ int abConfigBaud(int link, int baud)
     ab_config	*pconfig;
 
     if(link<0 || link>=max_ab_6008s) return(-1);
+    if(!pab_links) pab_links = abCalloc(max_ab_6008s,sizeof(ab_link *));
     plink = pab_links[link];
     if(!plink) plink = allocLink(link);
     pconfig = plink->pconfig;
@@ -785,13 +789,28 @@ int abConfigBaud(int link, int baud)
     else pconfig->baud_rate = FAST_RATE;
     return(0);
 }
+    
+int abConfigAuto(int link)
+{
+    ab_link	*plink;
+    ab_config	*pconfig;
 
+    if(link<0 || link>=max_ab_6008s) return(-1);
+    if(!pab_links) pab_links = abCalloc(max_ab_6008s,sizeof(ab_link *));
+    plink = pab_links[link];
+    if(!plink) plink = allocLink(link);
+    pconfig = plink->pconfig;
+    pconfig->autoconfig = TRUE;
+    return(0);
+}
+
 int abConfigScanList(int link, int scan_list_len, char *scan_list)
 {
     ab_link	*plink;
     ab_config	*pconfig;
 
     if(link<0 || link>=max_ab_6008s) return(-1);
+    if(!pab_links) pab_links = abCalloc(max_ab_6008s,sizeof(ab_link *));
     plink = pab_links[link];
     if(!plink) plink = allocLink(link);
     pconfig = plink->pconfig;
@@ -799,6 +818,49 @@ int abConfigScanList(int link, int scan_list_len, char *scan_list)
     memset(pconfig->scan_list,'\0',64);
     memcpy(pconfig->scan_list,scan_list,scan_list_len);
     return(0);
+}
+
+int abConfigScanListAscii(int link, char *filename,int setRackSize)
+{
+    FILE	*fp;
+    char	*scan_list;
+    char	buf[80];
+    unsigned	rack,group,size;
+    int		nItemsRead,nCharsRead,scan_list_len;
+
+    scan_list = abCalloc(64,sizeof(char));
+    fp = fopen(filename,"r");
+    scan_list_len = 0;
+    while(fgets(buf,80,fp)) {
+	if(buf[0] == '#') continue;
+	nItemsRead = sscanf(buf,"%u %u %n",&rack,&group,&nCharsRead);
+	if(nItemsRead!=2) {
+	    printf("abConfigScanListAscii: Illegal line %d %s\n",
+		scan_list_len,buf);
+	    fclose(fp);
+	    return(0);
+	}
+	if(!setRackSize) {
+	    size = 0x00;
+	} else if(strstr(&buf[nCharsRead],"1/4")) {
+	    size = 0x00;
+	} else if(strstr(&buf[nCharsRead],"1/2")) {
+	    size = 0x40;
+	} else if(strstr(&buf[nCharsRead],"3/4")) {
+	    size = 0x80;
+	} else if(strstr(&buf[nCharsRead],"Full")) {
+	    size = 0xc0;
+	} else {
+	    printf("abConfigScanListAscii: Illegal line %d %s\n",
+		scan_list_len,buf);
+	    fclose(fp);
+	    return(0);
+	}
+	scan_list[scan_list_len] = size | (rack<<2) | group;
+	scan_list_len++;
+    }
+    fclose(fp);
+    return(abConfigScanList(link,scan_list_len,scan_list));
 }
 
 LOCAL int ab_driver_init()
@@ -811,6 +873,7 @@ LOCAL int ab_driver_init()
         int 		vxstatus;
 	long		status;
 	int		got_one;
+	char		task_name[50];
 
 	if(!pab_links) pab_links = abCalloc(max_ab_6008s,sizeof(ab_link *));
 	/* check if any of the cards are there */
@@ -865,7 +928,8 @@ LOCAL int ab_driver_init()
 		continue;
 	    }
 	    plink->initialized = TRUE;
-            vxstatus  = taskSpawn(ABSCAN_NAME,ABSCAN_PRI,ABSCAN_OPT,
+	    sprintf(task_name,"%s%2.2d",ABSCAN_NAME,link);
+            vxstatus  = taskSpawn(task_name,ABSCAN_PRI,ABSCAN_OPT,
 		  ABSCAN_STACK,(FUNCPTR)abScanTask,(int)plink,
 		  0,0,0,0,0,0,0,0,0);
 	    if(vxstatus < 0){
@@ -874,7 +938,8 @@ LOCAL int ab_driver_init()
 	    }
 	    plink->abScanId = vxstatus;
 	    taskwdInsert(plink->abScanId,NULL,NULL);
-            vxstatus  = taskSpawn(ABDONE_NAME,ABDONE_PRI,ABDONE_OPT,
+	    sprintf(task_name,"%s%2.2d",ABDONE_NAME,link);
+            vxstatus  = taskSpawn(task_name,ABDONE_PRI,ABDONE_OPT,
 		ABDONE_STACK,(FUNCPTR)abDoneTask,(int)plink,
 		0,0,0,0,0,0,0,0,0);
 	    if(vxstatus < 0){
@@ -967,7 +1032,19 @@ LOCAL int link_init(ab_link *plink)
        not nice, but for now we'll have to assume that all
        adapters are needed and put them all in the scan list. */
     /* set scan list*/
-    for(ntry=0; ntry<maxCmdTrys; ntry++) {
+    if(pconfig->autoconfig) for(ntry=0; ntry<maxCmdTrys; ntry++) {
+	status = sc_lock(plink);
+	if(status) continue;
+	pmb->command = AUTO_CONF;
+	pmb->data_len = 0;
+	status = sc_waitcmd(plink);
+	if(status) continue;
+	if(pmb->conf_stat != 0) {
+	    sc_conferr(plink);
+	    continue;
+	}
+	break;
+    }else for(ntry=0; ntry<maxCmdTrys; ntry++) {
 	status = sc_lock(plink);
 	if(status) continue;
 	pmb->command = SCAN_LIST;
@@ -983,7 +1060,7 @@ LOCAL int link_init(ab_link *plink)
 	break;
     }
     if(ntry>=maxCmdTrys) {
-	printf("abDrv: SCAN_LIST failed link %hu\n",plink->link);
+	printf("abDrv: AUTO_CONFIG or SCAN_LIST failed link %hu\n",plink->link);
 	return(ERROR);
     }
     sc_unlock(plink);
@@ -1718,6 +1795,7 @@ LOCAL abStatus cardStatus(
     plink = pab_links[link];
     if(!plink || !plink->initialized) return(abFailure);
     padapter = plink->papadapter[adapter];
+    if(!padapter->adapter_online) return(abAdapterDown);
     pcard = padapter->papcard[card];
     if(!pcard) return(abNoCard);
     if(!padapter->adapter_online) return(abAdapterDown);

@@ -976,7 +976,7 @@ caStatus casStrmClient::claimChannelAction()
 	//
 	// attach to the PV
 	//
-	pvAttachReturn pvar = cas->pvAttach (this->ctx, pName);
+	pvAttachReturn pvar = cas->pvAttach ( this->ctx, pName );
 
 	//
 	// prevent problems when they initiate
@@ -984,6 +984,11 @@ caStatus casStrmClient::claimChannelAction()
 	// indicating so (and vise versa)
 	//
 	if ( this->asyncIOFlag ) {
+		if ( status != S_casApp_asyncCompletion ) {
+			fprintf ( stderr, 
+                "Application returned %d from cas::pvAttach()"
+                " - expected S_casApp_asyncCompletion\n", status );
+		}
 		status = S_cas_success;	
 	}
 	else if ( pvar.getStatus() == S_casApp_asyncCompletion ) {
@@ -1067,16 +1072,23 @@ caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const 
 			    fprintf ( stderr, 
                     "Application returned %d from casPV::read()"
                     " - expected S_casApp_asyncCompletion\n", status);
-			    status = S_cas_success;
 		    }
 			status = S_cas_success;
 	    }
-	    else if ( status == S_casApp_asyncCompletion)  {
+        else if ( status == S_casApp_success ) {
+            status = enumPostponedCreateChanResponse ( *pChan, hdr, nativeTypeDBR );
+        }
+	    else if ( status == S_casApp_asyncCompletion )  {
 		    status = S_cas_badParameter;
 		    errMessage ( status, 
-		        "- expected asynch IO creation from casPV::read()");
+		        "- asynch IO creation status returned, but async IO not started?");
 	    }
-        else if ( status == S_casApp_success ) {
+        else if ( status == S_casApp_postponeAsyncIO ) {
+		    status = S_cas_badParameter;
+		    errlogPrintf ( "The server library does not currently support postponment of " );
+            errlogPrintf ( "string table cache update of casPV::read()." );
+		    errlogPrintf ( "To pospone this request please postpone the PC attach IO request." );
+		    errlogPrintf ( "String table cache update did not occur." );
             status = enumPostponedCreateChanResponse ( *pChan, hdr, nativeTypeDBR );
         }
     }
@@ -1657,11 +1669,11 @@ caStatus casStrmClient::writeScalarData()
 	 * that "gddDbrToAit" will not track with changes in
 	 * the DBR_XXXX type system
 	 */
-	if (pHdr->m_dataType>=NELEMENTS(gddDbrToAit)) {
+	if ( pHdr->m_dataType >= NELEMENTS(gddDbrToAit) ) {
 		return S_cas_badType;
 	}
 	type = gddDbrToAit[pHdr->m_dataType].type;
-	if (type==aitEnumInvalid) {
+	if ( type == aitEnumInvalid ) {
 		return S_cas_badType;
 	}
 

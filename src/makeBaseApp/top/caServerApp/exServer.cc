@@ -28,7 +28,7 @@ pvInfo exServer::pvList[] = {
     pvInfo (2.0, "alan", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 100u),
     pvInfo (20.0, "albert", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1000u),
     pvInfo (-1.0, "boot", 10.0f, -10.0f, aitEnumEnum16, excasIoSync, 1u),
-    pvInfo (-1.0, "booty", 10.0f, -10.0f, aitEnumEnum16, excasIoAsync, 1u),
+    pvInfo (1.0, "booty", 10.0f, -10.0f, aitEnumEnum16, excasIoAsync, 1u),
     pvInfo (-1.0, "bill", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1u)
 };
 
@@ -55,7 +55,7 @@ exServer::exServer ( const char * const pvPrefix,
     pvInfo *pPVAfter = &exServer::pvList[pvListNElem];
     char pvAlias[256];
     const char * const pNameFmtStr = "%.100s%.20s";
-    const char * const pAliasFmtStr = "%.100s%.20s%u";
+    const char * const pAliasFmtStr = "%.100s%.20s%.6u";
 
     exPV::initFT();
 

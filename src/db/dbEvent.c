@@ -470,7 +470,11 @@ register struct event_block	*pevent;
     			flush_event.npend = 0;
 
     			if(db_post_single_event(&flush_event)==OK){
+#		ifdef V5_vxWorks
       				semTake(pflush_sem, sysClkRateGet()*10);
+#		else
+      				semTake(pflush_sem);
+#		endif
 			}
 
 			semDelete(pflush_sem);

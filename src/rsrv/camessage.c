@@ -2314,6 +2314,19 @@ int camessage ( struct client *client )
             pBody = ( void * ) ( mp + 1 );
         }
 
+        /*
+         * disconnect clients that dont send 8 byte 
+         * aligned payloads
+         */
+        if ( ( ( msgsize >> 3 ) << 3 ) != msgsize ) {
+            send_err ( &msg, ECA_INTERNAL, client, 
+                "CAS: Missaligned protocol rejected" );
+            log_header ( "CAS: Missaligned protocol rejected", 
+                client, &msg, 0, nmsg );
+            status = RSRV_ERROR;
+            break;
+        }
+
         /* problem: we have a complete header,
          * but before we check msgsize we don't know
          * if we have a complete message body

@@ -243,7 +243,7 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
     return(status);
 }
 
-void epicsMutexOsdShow(struct epicsMutexOSD *,unsigned int level)
+void epicsMutexOsdShow(struct epicsMutexOSD *pmutex,unsigned int level)
 {
     printf("ownerTid %p count %d owned %d\n",
         (void *)pmutex->ownerTid,pmutex->count,pmutex->owned);

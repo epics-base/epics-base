@@ -27,7 +27,7 @@ extern int main (int argc, const char **argv)
 	osiTime		begin(osiTime::getCurrent());
 	directoryServer	*pCAS;
 	unsigned 	debugLevel = 0u;
-	float		executionTime;
+	double		executionTime;
 	char		pvPrefix[128] = "";
 	char		fileName[128] = "pvDirectory.txt";
 	unsigned	aliasCount = 0u;
@@ -75,23 +75,21 @@ extern int main (int argc, const char **argv)
 	pCAS->setDebugLevel(debugLevel);
 
 	if (forever) {
-		osiTime	delay(1000u,0u);
 		//
 		// loop here forever
 		//
 		while (aitTrue) {
-			fileDescriptorManager.process(delay);
+			fileDescriptorManager.process (1000.0);
 		}
 	}
 	else {
-		osiTime total(executionTime);
-		osiTime delay(osiTime::getCurrent() - begin);
+		double  delay = osiTime::getCurrent() - begin;
 		//
 		// loop here untime the specified execution time
 		// expires
 		//
-		while (delay < total) {
-			fileDescriptorManager.process(delay);
+		while (delay < executionTime) {
+			fileDescriptorManager.process (delay);
 			delay = osiTime::getCurrent() - begin;
 		}
 	}

@@ -27,26 +27,14 @@ const pvInfo *pvInfo::pFirst;
 // directoryServer::directoryServer()
 //
 directoryServer::directoryServer(const char * const pvPrefix, unsigned pvCount, unsigned aliasCount) : 
-	caServer(pvCount*(aliasCount+1u))
+	caServer(pvCount*(aliasCount+1u)),
+    stringResTbl (pvCount*(aliasCount+1u))
 {
 	unsigned i;
 	const pvInfo *pPVI;
-	int resLibStatus;
 	char pvAlias[256];
 	const char * const pNameFmtStr = "%.100s%.20s";
 	const char * const pAliasFmtStr = "%.100s%.20s%u";
-
-        //
-        // hash table size may need adjustment here?
-        //
-        resLibStatus = this->stringResTbl.init(pvCount*(aliasCount+1u));
-        if (resLibStatus) {
-                fprintf(stderr, "CAS: string resource id table init failed\n");
-		//
-		// should throw an exception once this is portable
-		//
-		assert(resLibStatus==0);
-        }
 
 	//
 	// pre-create all of the simple PVs that this server will export

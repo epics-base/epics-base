@@ -2,7 +2,7 @@
 //
 // should move the time stuff into a different header
 //
-#include <osiSock.h>
+#include "osiSock.h"
 
 #define epicsExportSharedSymbols
 #include "osiTime.h"

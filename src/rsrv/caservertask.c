@@ -68,6 +68,7 @@ static char *sccsId = "@(#) $Id$";
 #include "envDefs.h"
 #include "freeList.h"
 #include "server.h"
+#include "bsdSocketResource.h"
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client, unsigned level);
@@ -498,12 +499,12 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 {
 	int			i;
 	struct channel_in_use	*pciu;
-	struct sockaddr_in 	*psaddr;
 	char			*pproto;
 	float			send_delay;
 	float			recv_delay;
 	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
+    char            clientHostName[256];
 
 	if(client->proto == IPPROTO_UDP){
 		pproto = "UDP";
@@ -538,15 +539,12 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu\n", 
 			client->send.stk,
 			client->recv.cnt - client->recv.stk);	
-		psaddr = &client->addr;
+
+        ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
+
 		printf(
-		"\tRemote Address %lu.%lu.%lu.%lu Remote Port %d State=%s\n",
-			(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
-			(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
-			(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
-			(psaddr->sin_addr.s_addr & 0x000000ff),
-			psaddr->sin_port,
-			state[client->disconnect?1:0]);
+		"\tClient's DNS Host Name %s State=%s\n",
+            clientHostName, state[client->disconnect?1:0]);
 	}
 
 	if (level>=2u) {

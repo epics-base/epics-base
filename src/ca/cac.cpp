@@ -264,6 +264,8 @@ cac::~cac ()
 
     this->timerQueue.release ();
 
+    errlogFlush ();
+
     // its ok for channels and subscriptions to still
     // exist at this point. The user created them and 
     // its his responsibility to clean them up.
@@ -1456,8 +1458,8 @@ void cac::vSignal ( int ca_status, const char *pfilenm,
      */
     if( ! ( ca_status & CA_M_SUCCESS ) && 
         CA_EXTRACT_SEVERITY ( ca_status ) != CA_K_WARNING ){
-        errlogFlush();
-        abort();
+        errlogFlush ();
+        abort ();
     }
     
     this->printf ( "..................................................................\n" );

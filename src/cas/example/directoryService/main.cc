@@ -66,7 +66,7 @@ extern int main (int argc, const char **argv)
 		return (-1);
 	}
 
-	pCAS = new directoryServer(pvPrefix, (unsigned) nPV, aliasCount);
+	pCAS = new directoryServer(pvPrefix, aliasCount);
 	if (!pCAS) {
 		return (-1);
 	}

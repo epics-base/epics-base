@@ -92,7 +92,7 @@ private:
 //
 class directoryServer : public caServer {
 public:
-	directoryServer (const char * const pvPrefix, unsigned pvCount, unsigned aliasCount);
+	directoryServer (const char * const pvPrefix, unsigned aliasCount);
 	~directoryServer();
         void show (unsigned level) const;
         pvExistReturn pvExistTest (const casCtx&, const char *pPVName);

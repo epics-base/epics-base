@@ -26,9 +26,7 @@ const pvInfo *pvInfo::pFirst;
 //
 // directoryServer::directoryServer()
 //
-directoryServer::directoryServer(const char * const pvPrefix, unsigned pvCount, unsigned aliasCount) : 
-	caServer(pvCount*(aliasCount+1u)),
-    stringResTbl (pvCount*(aliasCount+1u))
+directoryServer::directoryServer(const char * const pvPrefix, unsigned aliasCount) 
 {
 	unsigned i;
 	const pvInfo *pPVI;

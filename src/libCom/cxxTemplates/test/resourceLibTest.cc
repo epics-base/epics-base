@@ -73,21 +73,6 @@ void jane::testTraverse()
 	this->show(10);
 }
 
-//
-// explicitly instantiates on compilers that support this
-//
-#if defined(EXPL_TEMPL)
-        //
-        // From Stroustrups's "The C++ Programming Language"
-        // Appendix A: r.14.9
-        //
-        // This explicitly instantiates the template class's member
-        // functions into "templInst.o"
-        //
-	template class resTable<fred,testIntId >;	
-	template class resTable<jane,stringId>;	
-#endif
-
 int main()
 {
 	unsigned i;

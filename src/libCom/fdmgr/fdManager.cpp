@@ -53,24 +53,6 @@
 #include "fdManager.h"
 #include "locationException.h"
 
-//
-// if the compiler supports explicit instantiation of
-// template member functions
-//
-#if defined(EXPL_TEMPL)
-        //
-        // From Stroustrups's "The C++ Programming Language"
-        // Appendix A: r.14.9
-        //
-        // This explicitly instantiates the template class's member
-        // functions used by fdManager 
-        //
-        // instantiated by "fdManager fileDescriptorManager;" statement below?
-        // (according to ms vis C++)
-        //
-        template class resTable <fdReg, fdRegId>;
-#endif
-
 epicsShareDef fdManager fileDescriptorManager;
 
 //

@@ -10,6 +10,7 @@
 #include <rtems.h>
 #include <rtems/error.h>
 #include "errlog.h"
+#include "osiInterrupt.h"
 
 #define INTERRUPT_CONTEXT_MESSAGE_QUEUE_COUNT    100
 

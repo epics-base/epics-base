@@ -50,6 +50,13 @@ semBinaryCreate(int initialState)
     return (semBinaryId)sid;
 }
 
+semBinaryId semBinaryMustCreate(int initialState)
+{
+    semBinaryId id = semBinaryCreate (initialState);
+    assert (id);
+    return id;
+}
+
 void
 semBinaryDestroy(semBinaryId id)
 {
@@ -155,4 +162,42 @@ semMutexCreate(void)
     }
     rtems_interrupt_enable (level);
     return (semMutexId)sid;
+}
+
+semMutexId semMutexMustCreate(void)
+{
+    semMutexId id = semMutexCreate ();
+    assert (id);
+    return id;
+}
+
+void semMutexDestroy(semMutexId id)
+{
+	semBinaryDestroy (id);
+}
+
+void semMutexGive(semMutexId id)
+{
+	semBinaryGive (id);
+}
+
+semTakeStatus semMutexTake(semMutexId id)
+{
+	return semBinaryTake (id);
+}
+
+semTakeStatus semMutexTakeTimeout(
+    semMutexId id, double timeOut)
+{
+	return semBinaryTakeTimeout (id, timeOut);
+}
+
+semTakeStatus semMutexTakeNoWait(semMutexId id)
+{
+	return semBinaryTakeNoWait (id);
+}
+
+epicsShareFunc void semMutexShow(semMutexId id)
+{
+	semBinaryShow (id);
 }

@@ -1,7 +1,7 @@
 #ifndef osiSemh
 #define osiSemh
 
-#include <assert.h>
+#include <epicsAssert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,11 +19,11 @@ epicsShareFunc semBinaryId epicsShareAPI semBinaryMustCreate (
 epicsShareFunc void epicsShareAPI semBinaryDestroy(semBinaryId id);
 epicsShareFunc void epicsShareAPI semBinaryGive(semBinaryId id);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTake(semBinaryId id);
-epicsShareFunc void epicsShareAPI semBinaryMustTake (semBinaryId id);
+#define semBinaryMustTake(ID) assert((semBinaryTake ((ID))==semTakeOK))
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeTimeout(
     semBinaryId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait(semBinaryId id);
-epicsShareFunc void epicsShareAPI semBinaryShow(semBinaryId id);
+epicsShareFunc void epicsShareAPI semBinaryShow(semBinaryId id, int level);
 
 typedef void *semMutexId;
 epicsShareFunc semMutexId epicsShareAPI semMutexCreate(void);
@@ -31,11 +31,11 @@ epicsShareFunc semMutexId epicsShareAPI semMutexMustCreate (void);
 epicsShareFunc void epicsShareAPI semMutexDestroy(semMutexId id);
 epicsShareFunc void epicsShareAPI semMutexGive(semMutexId id);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTake(semMutexId id);
-epicsShareFunc void epicsShareAPI semMutexMustTake(semMutexId id);
+#define semMutexMustTake(ID) assert((semMutexTake((ID))==semTakeOK))
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout(
     semMutexId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait(semMutexId id);
-epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id);
+epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id, int level);
 
 /*NOTES:
     Mutex semaphores MUST implement recursive locking
@@ -47,38 +47,5 @@ epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id);
 #endif
 
 #include "osdSem.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-epicsShareFunc INLINE semBinaryId epicsShareAPI semBinaryMustCreate (
-    int initialState)
-{
-    semBinaryId id = semBinaryCreate (initialState);
-    assert (id);
-    return id;
-}
-
-epicsShareFunc INLINE void epicsShareAPI semBinaryMustTake (semBinaryId id)
-{
-    assert (semBinaryTake (id)==semTakeOK);
-}
-
-epicsShareFunc INLINE semMutexId epicsShareAPI semMutexMustCreate (void)
-{
-    semMutexId id = semMutexCreate ();
-    assert (id);
-    return id;
-}
-
-epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semMutexId id)
-{
-    assert (semMutexTake (id)==semTakeOK);
-}
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* osiSemh */

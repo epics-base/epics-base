@@ -220,3 +220,27 @@ threadGetIdSelf (void)
     rtems_task_ident (RTEMS_SELF, 0, &tid);
     return (threadId)tid;
 }
+
+extern void *rtemsTaskVariable;
+threadVarId threadPrivateCreate ()
+{
+	return NULL;
+}
+void threadPrivateDelete ()
+{
+}
+void threadPrivateSet (threadVarId id, void *ptr)
+{
+	rtems_task_variable_add (RTEMS_SELF, &rtemsTaskVariable, NULL);
+	rtemsTaskVariable = ptr;
+}
+void * threadPrivateGet (threadVarId id)
+{
+	return rtemsTaskVariable;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* osdThreadh */

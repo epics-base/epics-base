@@ -75,14 +75,14 @@ void semMutexTest(int nthreads)
     printf("calling semMutexTakeNoWait(mutex) time %d\n",time(&tp));
     status = semMutexTakeNoWait(mutex);
     if(status) printf("status %d\n",status);
-    semMutexShow(mutex);
+    semMutexShow(mutex,1);
     printf("calling semMutexGive() time %d\n",time(&tp));
     semMutexGive(mutex);
     printf("calling semMutexGive() time %d\n",time(&tp));
     semMutexGive(mutex);
     printf("calling semMutexGive() time %d\n",time(&tp));
     semMutexGive(mutex);
-    semMutexShow(mutex);
+    semMutexShow(mutex,1);
 
     if(nthreads<=0) return;
     id = calloc(nthreads,sizeof(threadId));

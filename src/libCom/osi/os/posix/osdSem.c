@@ -88,6 +88,13 @@ void semBinaryDestroy(semBinaryId id)
         strerror(status));
     free(pbinary);
 }
+
+semBinaryId semBinaryMustCreate(int initialState)
+{
+    semBinaryId id = semBinaryCreate (initialState);
+    assert (id);
+    return id;
+}
 
 void semBinaryGive(semBinaryId id)
 {
@@ -141,7 +148,7 @@ semTakeStatus semBinaryTakeNoWait(semBinaryId id)
     return(semTakeError);
 }
 
-void semBinaryShow(semBinaryId id)
+void semBinaryShow(semBinaryId id,int level)
 {
 }
 
@@ -176,6 +183,13 @@ semMutexId semMutexCreate(void) {
          cantProceed("semMutexCreate");
     }
     return((semMutexId)pmutex);
+}
+
+semMutexId semMutexMustCreate(void)
+{
+    semMutexId id = semMutexCreate ();
+    assert (id);
+    return id;
 }
 
 void semMutexDestroy(semMutexId id)
@@ -270,7 +284,7 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
     return(status);
 }
 
-void semMutexShow(semMutexId id)
+void semMutexShow(semMutexId id,int level)
 {
     mutex *pmutex = (mutex *)id;
     printf("ownerTid %p count %d owned %d\n",

@@ -244,7 +244,7 @@ unsigned		extsize
 );
 LOCAL void 	spawn_repeater();
 LOCAL int 	check_for_fp();
-LOCAL int 	ca_add_task_variable();
+LOCAL int 	ca_add_task_variable(struct ca_static *ca_temp);
 #ifdef vxWorks
 LOCAL void 	ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void 	ca_task_exit_tid(int tid);
@@ -371,6 +371,7 @@ int ca_task_initialize()
 #endif
 {
 	int			status;
+	struct ca_static	*ca_temp;
 
 	if (!ca_static) {
 
@@ -385,9 +386,18 @@ int ca_task_initialize()
 			spawn_repeater();
 		}
 
+		ca_temp = (struct ca_static *) 
+				calloc(1, sizeof(*ca_temp));
+		if (!ca_temp)
+			return ERROR;
+
 #ifdef vxWorks
-		if (ca_add_task_variable()<0)
+		if (ca_add_task_variable(ca_temp)<0){
+			free(ca_temp);
 			return ECA_ALLOCMEM;
+		}
+#else
+		ca_static = ca_temp;
 #endif
 
 		ca_static->ca_exception_func = ca_default_exception_handler;
@@ -670,9 +680,13 @@ int             tid;
  * 
  */
 #ifdef vxWorks
-LOCAL int ca_add_task_variable()
+#ifdef __STDC__
+LOCAL int ca_add_task_variable(struct ca_static *ca_temp)
+#else
+LOCAL int ca_add_task_variable(ca_temp)
+struct ca_static *ca_temp;
+#endif
 {
-	struct ca_static 	*ca_temp;
 	static char     	ca_installed;
 	TVIU			*ptviu;
 	int             	status;
@@ -717,13 +731,8 @@ LOCAL int ca_add_task_variable()
 		}
 	}
 
-	ca_temp = (struct ca_static *) calloc(1, sizeof(*ca_static));
-	if (!ca_temp)
-		return ERROR;
-
 	ptviu = calloc(1, sizeof(*ptviu));
 	if(!ptviu){
-		free(ca_temp);
 		return ERROR;
 	}
 
@@ -731,8 +740,10 @@ LOCAL int ca_add_task_variable()
 	ellAdd(&ca_temp->ca_taskVarList, &ptviu->node);	
 
 	status = taskVarAdd(VXTHISTASKID, (int *)&ca_static);
-	if (status != OK)
+	if (status != OK){
+		free(ptviu);
 		return ERROR;
+	}
 
 	ca_static = ca_temp;
 

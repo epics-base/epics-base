@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.21  1998/02/18 22:46:47  jhill
+ * fixed warning
+ *
  * Revision 1.20  1998/02/05 23:05:27  jhill
  * removed static members
  *
@@ -224,12 +227,12 @@ private:
 //
 class casClientMon : public casMonitor {
 public:
-        casClientMon(casChannelI &, caResId clientId,
-		const unsigned long count, const unsigned type,
-		const casEventMask &maskIn, osiMutex &mutexIn);
-        ~casClientMon();
+	casClientMon(casChannelI &, caResId clientId,
+	const unsigned long count, const unsigned type,
+	const casEventMask &maskIn, osiMutex &mutexIn);
+	~casClientMon();
 
-        caStatus callBack(gdd &value);
+	caStatus callBack(gdd &value);
 
 	virtual casResType resourceType() const;
 
@@ -246,41 +249,41 @@ class casCtx {
 public:
 	inline casCtx();
 
-        //
-        // get
-        //
-        inline const caHdr *getMsg() const;
-        inline void *getData() const;
-        inline caServerI * getServer() const;
-        inline casCoreClient * getClient() const;
-        inline casPVI * getPV() const;
-        inline casChannelI * getChannel() const;
+	//
+	// get
+	//
+	inline const caHdr *getMsg() const;
+	inline void *getData() const;
+	inline caServerI * getServer() const;
+	inline casCoreClient * getClient() const;
+	inline casPVI * getPV() const;
+	inline casChannelI * getChannel() const;
 
-        //
-        // set
+	//
+	// set
 	// (assumes incoming message is in network byte order)
-        //
-        inline void setMsg(const char *pBuf);
+	//
+	inline void setMsg(const char *pBuf);
 
-        inline void setData(void *p);
+	inline void setData(void *p);
 
-        inline void setServer(caServerI *p);
+	inline void setServer(caServerI *p);
 
-        inline void setClient(casCoreClient *p);
+	inline void setClient(casCoreClient *p);
 
-        inline void setPV(casPVI *p);
+	inline void setPV(casPVI *p);
 
-        inline void setChannel(casChannelI *p);
+	inline void setChannel(casChannelI *p);
 
 	void show (unsigned level) const;
 	
 private:
-        caHdr			msg;	// ca message header
+	caHdr			msg;	// ca message header
 	void			*pData; // pointer to data following header
-        caServerI               *pCAS;
-        casCoreClient		*pClient;
-        casChannelI             *pChannel;
-        casPVI                  *pPV;
+	caServerI               *pCAS;
+	casCoreClient		*pClient;
+	casChannelI             *pChannel;
+	casPVI                  *pPV;
 	unsigned		nAsyncIO; // checks for improper use of async io
 };
 
@@ -302,17 +305,17 @@ public:
 	inline caStatus init(); //constructor does not return status
 	virtual ~inBuf();
 
-        inline bufSizeT bytesPresent() const;
+	inline bufSizeT bytesPresent() const;
 
-        inline bufSizeT bytesAvailable() const ;
+	inline bufSizeT bytesAvailable() const ;
 
-        inline aitBool full() const;
+	inline aitBool full() const;
 
-        inline void clear();
+	inline void clear();
 
-        inline char *msgPtr() const;
+	inline char *msgPtr() const;
 
-        inline void removeMsg(unsigned nBytes);
+	inline void removeMsg(unsigned nBytes);
 
 	//
 	// fill the input buffer with any incoming messages
@@ -323,10 +326,10 @@ public:
 
 	virtual unsigned getDebugLevel() const = 0;
 	virtual bufSizeT incommingBytesPresent() const = 0;
-        virtual xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv) = 0;
-        virtual void clientHostName (char *pBuf, 
-			unsigned bufSize) const = 0;
+    virtual xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
+		bufSizeT &nByesRecv) = 0;
+    virtual void clientHostName (char *pBuf, 
+		unsigned bufSize) const = 0;
 
 private:
 	osiMutex	&mutex;
@@ -344,17 +347,18 @@ public:
 	dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn); 
 	virtual ~dgInBuf();
 
-        inline void clear();
+	inline void clear();
 
 	int hasAddress() const;
 
 	caNetAddr getSender() const;
 
-        xRecvStatus xRecv (char *pBufIn, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv);
+	xRecvStatus xRecv (char *pBufIn, bufSizeT nBytesToRecv,
+		bufSizeT &nByesRecv);
 
-        virtual xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv, caNetAddr &sender) = 0;
+	virtual xRecvStatus xDGRecv (char *pBuf, bufSizeT nBytesToRecv,
+		bufSizeT &nByesRecv, caNetAddr &sender) = 0;
+
 private:
 	caNetAddr	from;
 };
@@ -381,23 +385,23 @@ public:
 
 	inline bufSizeT bytesFree() const;
 
-        //
-        // flush output queue
+	//
+	// flush output queue
 	// (returns the number of bytes sent)
-        //
-        casFlushCondition flush(casFlushRequest req = casFlushAll, 
-			bufSizeT spaceRequired=0u);
+	//
+	casFlushCondition flush(casFlushRequest req = casFlushAll, 
+		bufSizeT spaceRequired=0u);
 
-        //
-        // allocate message buffer space
-        // (leaves message buffer locked)
-        //
-        caStatus allocMsg (unsigned extsize, caHdr **ppMsg, int lockRequired=1);
+	//
+	// allocate message buffer space
+	// (leaves message buffer locked)
+	//
+	caStatus allocMsg (unsigned extsize, caHdr **ppMsg, int lockRequired=1);
 
-        //
-        // commits message allocated with allocMsg()
-        //
-        void commitMsg ();
+	//
+	// commits message allocated with allocMsg()
+	//
+	void commitMsg ();
 
 	void show(unsigned level) const;
 
@@ -407,17 +411,17 @@ public:
 	//
 	// io dependent
 	//
-        virtual xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend, 
-			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent) = 0;
-        virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+	virtual xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend, 
+		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent) = 0;
+	virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
 
-        inline void clear();
-	
+	inline void clear();
+
 private:
 	osiMutex	&mutex;
-        char            *pBuf;
-        const bufSizeT  bufSize;
-        bufSizeT        stack;
+	char            *pBuf;
+	const bufSizeT  bufSize;
+	bufSizeT        stack;
 };
 
 //
@@ -425,9 +429,9 @@ private:
 //
 class dgOutBuf : public outBuf {
 public:
-        dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn);
+	dgOutBuf (osiMutex &mutexIn, unsigned bufSizeIn);
 
-        virtual ~dgOutBuf();
+	virtual ~dgOutBuf();
 
 	caNetAddr getRecipient();
 
@@ -435,11 +439,11 @@ public:
 
 	void clear();
 
-        xSendStatus xSend (char *pBufIn, bufSizeT nBytesAvailableToSend, 
-			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
+	xSendStatus xSend (char *pBufIn, bufSizeT nBytesAvailableToSend, 
+		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
 
-        virtual xSendStatus xDGSend (char *pBuf, bufSizeT nBytesNeedToBeSent, 
-			bufSizeT &nBytesSent, const caNetAddr &recipient) = 0;
+	virtual xSendStatus xDGSend (char *pBuf, bufSizeT nBytesNeedToBeSent, 
+		bufSizeT &nBytesSent, const caNetAddr &recipient) = 0;
 private:
 	caNetAddr	to;	
 };
@@ -467,7 +471,7 @@ public:
 	virtual caStatus disconnectChan(caResId id);
 	virtual void eventSignal() = 0;
 	virtual void eventFlush() = 0;
-        virtual caStatus start () = 0;
+	virtual caStatus start () = 0;
 	virtual void show (unsigned level) const;
 	virtual void installChannel (casChannelI &);
 	virtual void removeChannel (casChannelI &);
@@ -480,30 +484,30 @@ public:
 
 	inline caServerI &getCAS() const;
 
-        virtual caStatus monitorResponse(casChannelI *, 
-			const caHdr &, gdd *, const caStatus);
+	virtual caStatus monitorResponse(casChannelI *, 
+		const caHdr &, gdd *, const caStatus);
 
-        virtual caStatus accessRightsResponse(casChannelI *);
+	virtual caStatus accessRightsResponse(casChannelI *);
 
-        //
-        // one virtual function for each CA request type that has
-        // asynchronous completion
-        //
-        virtual caStatus asyncSearchResponse(
-		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
-		const caHdr &, const pvExistReturn &);
-        virtual caStatus createChanResponse(
-		const caHdr &, const pvCreateReturn &);
-        virtual caStatus readResponse(
-		casChannelI *, const caHdr &,
-                gdd *, const caStatus); 
-        virtual caStatus readNotifyResponse(
-		casChannelI *, const caHdr &, 
-		gdd *, const caStatus);
-        virtual caStatus writeResponse(
-		casChannelI *, const caHdr &, const caStatus);
-        virtual caStatus writeNotifyResponse(
-		casChannelI *, const caHdr &, const caStatus);
+	//
+	// one virtual function for each CA request type that has
+	// asynchronous completion
+	//
+	virtual caStatus asyncSearchResponse(
+	casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
+	const caHdr &, const pvExistReturn &);
+	virtual caStatus createChanResponse(
+	const caHdr &, const pvCreateReturn &);
+	virtual caStatus readResponse(
+	casChannelI *, const caHdr &,
+			gdd *, const caStatus); 
+	virtual caStatus readNotifyResponse(
+	casChannelI *, const caHdr &, 
+	gdd *, const caStatus);
+	virtual caStatus writeResponse(
+	casChannelI *, const caHdr &, const caStatus);
+	virtual caStatus writeNotifyResponse(
+	casChannelI *, const caHdr &, const caStatus);
 
 	//
 	// The following are only used with async IO for
@@ -762,6 +766,9 @@ public:
 	void processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO);
 
 	unsigned getDebugLevel() const;
+
+    virtual void clientHostName (char *pBuf, 
+		unsigned bufSize) const = 0;
 
 protected:
 

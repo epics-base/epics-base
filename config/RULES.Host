@@ -532,6 +532,11 @@ ifeq ($(HOST_ARCH),Borland)
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
+%$(EXE): %.cpp
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
@@ -549,6 +554,11 @@ else
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
+%$(EXE): %.cpp
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
@@ -561,6 +571,10 @@ endif
 	$(COMPILE.c)  $<
 
 %$(OBJ): %.cc
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+
+%$(OBJ): %.cpp
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 

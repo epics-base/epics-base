@@ -28,7 +28,7 @@ VALID_BUILDS = Ioc
 #
 ifneq "$(T_A)" ""
 RTEMS_BASE=/usr/local/RTEMS
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)/$(subst RTEMS-,,$(T_A))/Makefile.inc
+include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems/$(subst RTEMS-,,$(T_A))/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 endif

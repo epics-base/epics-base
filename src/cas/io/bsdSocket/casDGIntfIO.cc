@@ -567,7 +567,7 @@ SOCKET casDGIntfIO::makeSockDG ()
 // casDGIntfIO::getFD()
 // (avoid problems with the GNU inliner)
 //
-inline int casDGIntfIO::getFD() const
+int casDGIntfIO::getFD() const
 {
     return this->sock;
 }

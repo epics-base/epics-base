@@ -473,7 +473,7 @@ static int
 xvmeRxTask(link)
 int	link;
 {
-  int           rxStatus;       /* current state of the receiver */
+  int           rxState;       /* current state of the receiver */
 #define BBRX_HEAD	1
 #define	BBRX_DATA	2
 #define BBRX_RCMD	3
@@ -487,7 +487,7 @@ int	link;
   int		lockKey;	/* used for intLock calls */
 
   rxMsg = (unsigned char *) NULL;
-  rxStatus = BBRX_HEAD;
+  rxState = BBRX_HEAD;
   rxTCount = 0;
   rxDpvtHead = (struct dpvtBitBusHead *) NULL;
 
@@ -519,9 +519,9 @@ int	link;
     {
     /* check to see if we got a data byte or a command byte */
     if ((pXvmeLink[link]->bbRegs->fifo_stat & XVME_RCMD) == XVME_RCMD)
-      rxStatus = BBRX_RCMD;
+      rxState = BBRX_RCMD;
 
-    switch (rxStatus) {
+    switch (rxState) {
     case BBRX_HEAD:	/* getting the head of a new message */
       rxHead[rxTCount] = pXvmeLink[link]->bbRegs->data;
       if (bbDebug>21)
@@ -551,6 +551,15 @@ int	link;
               /* Delete the node from the list */
 	      listDel(&(pXvmeLink[link]->pbbLink->busyList), rxDpvtHead);
 
+	      /* If busy list is empty, stop the dog */
+              if (pXvmeLink[link]->pbbLink->busyList.head == NULL) 
+                wdCancel(pXvmeLink[link]->watchDogId);
+          
+	      /* Wake up Link Task in case was waiting on "this" node */
+              semGive(pXvmeLink[link]->pbbLink->linkEventSem); 
+
+	      FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+
               /* decrement the number of outstanding messages to the node */
               (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->txMsg.node])--;
   
@@ -560,21 +569,21 @@ int	link;
               rxDpvtHead->rxMsg.tasks = rxHead[3];
 	      rxDpvtHead->rxMsg.cmd = rxHead[4];
               rxMsg = rxDpvtHead->rxMsg.data;
-  
+
               rxDpvtHead->status = BB_OK;	/* OK, unless BB_LENGTH */
-              rxStatus = BBRX_DATA;		/* finish reading till RCMD */
+              rxState = BBRX_DATA;		/* finish reading till RCMD */
               break;				/* get out of the while() */
             }
           }
           rxDpvtHead = rxDpvtHead->next; /* Keep looking */
         }
-	FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
 
         if (rxDpvtHead == NULL)
         {
 	  if (bbDebug)
             printf("xvmeRxTask(%d): msg from node %d unsolicited!\n", link, rxHead[2]);
-          rxStatus = BBRX_IGN;	/* nothing waiting... toss it */
+	  FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+          rxState = BBRX_IGN;	/* nothing waiting... toss it */
         }
       }
       break;
@@ -583,7 +592,7 @@ int	link;
       ch = pXvmeLink[link]->bbRegs->data;
       if (rxTCount >= rxDpvtHead->rxMaxLen)
       {
-        rxStatus = BBRX_IGN;	/* toss the rest of the data */
+        rxState = BBRX_IGN;	/* toss the rest of the data */
         rxDpvtHead->status = BB_LENGTH; /* set driver status */
 	if (bbDebug>22)
 	  printf("xvmeRxTask(%d): %02.2X (Ignored)\n", link, ch);
@@ -624,20 +633,14 @@ int	link;
             printf("xvmeRxTask(%d): invoking the callbackRequest\n", link);
           callbackRequest(rxDpvtHead); /* schedule completion processing */
         }
+
         /* If there is a semaphore for synchronous I/O, unlock it */
         if (rxDpvtHead->psyncSem != NULL)
           semGive(*(rxDpvtHead->psyncSem));
-    
-	/* If busy list is empty, stop the dog */
-        if (pXvmeLink[link]->pbbLink->busyList.head == NULL) 
-          wdCancel(pXvmeLink[link]->watchDogId);
-    
-	/* Wake up Link Task in case the req queue was waiting on "this" node */
-        semGive(pXvmeLink[link]->pbbLink->linkEventSem); 
       }
       /* Reset the state of the RxTask to expect a new message */
       rxMsg = (unsigned char *) NULL;
-      rxStatus = BBRX_HEAD;
+      rxState = BBRX_HEAD;
       rxTCount = 0;
       rxDpvtHead = (struct dpvtBitBusHead *) NULL;
 
@@ -655,7 +658,7 @@ int	link;
     }
 
     rxMsg = (unsigned char *) NULL;
-    rxStatus = BBRX_HEAD;
+    rxState = BBRX_HEAD;
     rxTCount = 0;
     rxDpvtHead = (struct dpvtBitBusHead *) NULL;
 

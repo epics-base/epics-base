@@ -3,6 +3,7 @@ static int yyerror();
 static int yy_start;
 static long pvt_yy_parse(void);
 static int yyFailed = 0;
+static int yyAbort = 0;
 #include "dbLexRoutines.c"
 static char *menuString = "menu";
 %}
@@ -198,6 +199,7 @@ static long pvt_yy_parse(void)
     long	rtnval;
  
     if (!FirstFlag) {
+	yyAbort = FALSE;
 	yyFailed = FALSE;
 	yyreset();
 	yyrestart(NULL);

@@ -67,7 +67,7 @@ static void dbBreakHead(char *name);
 static void dbBreakItem(char *value);
 static void dbBreakBody(void);
 
-static void dbRecordHead(char *rectype,char*name);
+static void dbRecordHead(char *recordType,char*name);
 static void dbRecordField(char *name,char *value);
 static void dbRecordBody(void);
 
@@ -99,8 +99,7 @@ static int duplicate = FALSE;
 static void yyerrorAbort(char *str)
 {
     yyerror(str);
-    free((void *)my_buffer);
-    exit(-1);
+    yyAbort = TRUE;
 }
 
 static void allocTemp(void *pvoid)
@@ -158,6 +157,21 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     }
     return(0);
 }
+
+
+static void freeInputFileList(void)
+{
+    inputFile *pinputFileNow;
+
+    while(pinputFileNow=(inputFile *)ellFirst(&inputFileList)) {
+	if(fclose(pinputFileNow->fp)) 
+	    errPrintf(0,__FILE__, __LINE__,
+			"Closing file %s",pinputFileNow->filename);
+	free((void *)pinputFileNow->filename);
+	ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
+	free((void *)pinputFileNow);
+    }
+}
 
 static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	const char *path)
@@ -214,7 +228,9 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     }
     freeListCleanup(freeListPvt);
     free((void *)my_buffer);
-    return(0);
+    freeInputFileList();
+    dbFreePath(pdbbase);
+    return(status);
 }
 
 long dbReadDatabase(DBBASE **ppdbbase,const char *filename,const char *path)
@@ -227,6 +243,7 @@ static int db_yyinput(char *buf, int max_size)
 {
     int	l,n;
     
+    if(yyAbort) return(0);
     if(*my_buffer_ptr==0) {
 	while(fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp)==NULL) {
 	    if(fclose(pinputFileNow->fp)) 
@@ -374,20 +391,20 @@ static void dbMenuBody(void)
 
 static void dbRecordtypeHead(char *name)
 {
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     GPHENTRY		*pgphentry;
 
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recDesList);
+    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recordTypeList);
     if(pgphentry) {
 	duplicate = TRUE;
 	free((void *)name);
 	return;
     }
-    pdbRecDes = dbCalloc(1,sizeof(dbRecDes));
-    pdbRecDes->name = name;
+    pdbRecordType = dbCalloc(1,sizeof(dbRecordType));
+    pdbRecordType->name = name;
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordtypeHead tempList not empty");
-    allocTemp(pdbRecDes);
+    allocTemp(pdbRecordType);
 }
 
 static void dbRecordtypeFieldHead(char *name,char *type)
@@ -533,7 +550,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 
 static void dbRecordtypeBody(void)
 {
-    dbRecDes		*pdbRecDes;
+    dbRecordType		*pdbRecordType;
     dbFldDes		*pdbFldDes;
     int			i,j,ilink;
     GPHENTRY		*pgphentry;
@@ -548,47 +565,47 @@ static void dbRecordtypeBody(void)
 	duplicate = FALSE;
 	return;
     }
-    pdbRecDes= (dbRecDes *)popFirstTemp();
-    pdbRecDes->no_fields = no_fields = ellCount(&tempList);
-    pdbRecDes->papFldDes = dbCalloc(no_fields,sizeof(dbFldDes *));
-    pdbRecDes->papsortFldName = dbCalloc(no_fields,sizeof(char *));
-    pdbRecDes->sortFldInd = dbCalloc(no_fields,sizeof(short));
+    pdbRecordType= (dbRecordType *)popFirstTemp();
+    pdbRecordType->no_fields = no_fields = ellCount(&tempList);
+    pdbRecordType->papFldDes = dbCalloc(no_fields,sizeof(dbFldDes *));
+    pdbRecordType->papsortFldName = dbCalloc(no_fields,sizeof(char *));
+    pdbRecordType->sortFldInd = dbCalloc(no_fields,sizeof(short));
     no_prompt = no_links = 0;
     for(i=0; i<no_fields; i++) {
 	pdbFldDes = (dbFldDes *)popFirstTemp();
-	pdbFldDes->pdbRecDes = pdbRecDes;
-	pdbFldDes->indRecDes = i;
-	pdbRecDes->papFldDes[i] = pdbFldDes;
+	pdbFldDes->pdbRecordType = pdbRecordType;
+	pdbFldDes->indRecordType = i;
+	pdbRecordType->papFldDes[i] = pdbFldDes;
 	if(pdbFldDes->promptgroup) no_prompt++;
 	field_type = pdbFldDes->field_type;
 	if((field_type>=DBF_INLINK) && (field_type<=DBF_FWDLINK))no_links++;
 	if((field_type==DBF_STRING) && (pdbFldDes->size==0))
 	    fprintf(stderr,"recordtype(%s).%s size not specified\n",
-		pdbRecDes->name,pdbFldDes->name);
+		pdbRecordType->name,pdbFldDes->name);
 	if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0)) 
 	    fprintf(stderr,"recordtype(%s).%s extra not specified\n",
-		pdbRecDes->name,pdbFldDes->name);
+		pdbRecordType->name,pdbFldDes->name);
     }
     if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
-    pdbRecDes->no_prompt = no_prompt;
-    pdbRecDes->no_links = no_links;
-    pdbRecDes->link_ind = dbCalloc(no_prompt,sizeof(short));
+    pdbRecordType->no_prompt = no_prompt;
+    pdbRecordType->no_links = no_links;
+    pdbRecordType->link_ind = dbCalloc(no_prompt,sizeof(short));
     ilink = 0;
     for(i=0; i<no_fields; i++) {
-	pdbFldDes = pdbRecDes->papFldDes[i];
+	pdbFldDes = pdbRecordType->papFldDes[i];
 	field_type = pdbFldDes->field_type;
 	if((field_type>=DBF_INLINK) && (field_type<=DBF_FWDLINK))
-	    pdbRecDes->link_ind[ilink++] = i;
+	    pdbRecordType->link_ind[ilink++] = i;
 	if(strcmp(pdbFldDes->name,"VAL")==0) {
-	    pdbRecDes->pvalFldDes = pdbRecDes->papFldDes[i];
-	    pdbRecDes->indvalFlddes = i;
+	    pdbRecordType->pvalFldDes = pdbRecordType->papFldDes[i];
+	    pdbRecordType->indvalFlddes = i;
 	}
-	pdbRecDes->papsortFldName[i] = pdbFldDes->name;
-	pdbRecDes->sortFldInd[i] = i;
+	pdbRecordType->papsortFldName[i] = pdbFldDes->name;
+	pdbRecordType->sortFldInd[i] = i;
     }
    /*Now sort fields. Sorry dumb sort algorithm */
-   papsortFldName = pdbRecDes->papsortFldName;
-   sortFldInd = pdbRecDes->sortFldInd;
+   papsortFldName = pdbRecordType->papsortFldName;
+   sortFldInd = pdbRecordType->sortFldInd;
    for(i=0; i<no_fields; i++) {
 	for(j=i+1; j<no_fields; j++) {
 	    if(strcmp(papsortFldName[j],papsortFldName[i])<0 ) {
@@ -602,27 +619,27 @@ static void dbRecordtypeBody(void)
 	}
     }
     /*Initialize lists*/
-    ellInit(&pdbRecDes->recList);
-    ellInit(&pdbRecDes->devList);
-    pgphentry = gphAdd(pdbbase->pgpHash,pdbRecDes->name,&pdbbase->recDesList);
+    ellInit(&pdbRecordType->recList);
+    ellInit(&pdbRecordType->devList);
+    pgphentry = gphAdd(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
     } else {
-	pgphentry->userPvt = pdbRecDes;
+	pgphentry->userPvt = pdbRecordType;
     }
-    ellAdd(&pdbbase->recDesList,&pdbRecDes->node);
-    dbGetRecordtypeSizeOffset(pdbRecDes);
+    ellAdd(&pdbbase->recordTypeList,&pdbRecordType->node);
+    dbGetRecordtypeSizeOffset(pdbRecordType);
 }
 
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring)
 {
     devSup	*pdevSup;
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     GPHENTRY	*pgphentry;
     int		i,link_type;
 
-    pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recDesList);
+    pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
     if(!pgphentry) {
 	yyerror(" record type not found");
 	free((void *)recordtype);
@@ -644,8 +661,8 @@ static void dbDevice(char *recordtype,char *linktype,
 	yyerror("Illegal link type");
 	return;
     }
-    pdbRecDes = (dbRecDes *)pgphentry->userPvt;
-    pgphentry = gphFind(pdbbase->pgpHash,choicestring,&pdbRecDes->devList);
+    pdbRecordType = (dbRecordType *)pgphentry->userPvt;
+    pgphentry = gphFind(pdbbase->pgpHash,choicestring,&pdbRecordType->devList);
     if(pgphentry) {
 	free((void *)dsetname);
 	free((void *)choicestring);
@@ -655,13 +672,13 @@ static void dbDevice(char *recordtype,char *linktype,
     pdevSup->name = dsetname;
     pdevSup->choice = choicestring;
     pdevSup->link_type = link_type;
-    pgphentry = gphAdd(pdbbase->pgpHash,choicestring,&pdbRecDes->devList);
+    pgphentry = gphAdd(pdbbase->pgpHash,choicestring,&pdbRecordType->devList);
     if(!pgphentry) {
 	yyerror("gphAdd failed");
     } else {
 	pgphentry->userPvt = pdevSup;
     }
-    ellAdd(&pdbRecDes->devList,&pdevSup->node);
+    ellAdd(&pdbRecordType->devList,&pdevSup->node);
 }
 
 static void dbDriver(char *name)
@@ -774,7 +791,7 @@ static void dbBreakBody(void)
     if(!pbrkTable) ellAdd(&pdbbase->bptList,&pnewbrkTable->node);
 }
 
-static void dbRecordHead(char *rectype,char *name)
+static void dbRecordHead(char *recordType,char *name)
 {
     DBENTRY		*pdbentry;
     long		status;
@@ -783,7 +800,7 @@ static void dbRecordHead(char *rectype,char *name)
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordHead: tempList not empty");
     allocTemp(pdbentry);
-    status = dbFindRecdes(pdbentry,rectype);
+    status = dbFindRecordType(pdbentry,recordType);
     if(status) {
 	errMessage(status,"");
 	yyerrorAbort(NULL);
@@ -791,7 +808,7 @@ static void dbRecordHead(char *rectype,char *name)
     }
     /*Duplicate records ok. Thus dont check return status.*/
     dbCreateRecord(pdbentry,name);
-    free((void *)rectype);
+    free((void *)recordType);
     free((void *)name);
 }
 

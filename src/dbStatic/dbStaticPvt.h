@@ -35,6 +35,7 @@
 /*Following are not intended for client code */
 void dbInitDeviceMenu(DBENTRY *pdbentry);
 void dbFreeParmString(char **pparm);
+void dbFreePath(DBBASE *pdbbase);
 
 /*The following routines have different versions for run-time no-run-time*/
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName);
@@ -46,7 +47,7 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,char *pstring);
 
-void dbGetRecordtypeSizeOffset(dbRecDes *pdbRecDes);
+void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType);
 
 /* The following is for path */
 typedef struct dbPathNode {
@@ -58,14 +59,14 @@ typedef struct dbPathNode {
 /*directory*/
 typedef struct{
 	ELLNODE		node;
-	dbRecDes	*precdes;
+	dbRecordType	*precordType;
 	dbRecordNode	*precnode;
 }PVDENTRY;
 int dbPvdTableSize(int size);
 extern int dbStaticDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
-PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecDes *precdes,dbRecordNode *precnode);
+PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);
 void dbPvdDump(DBBASE *pdbbase,int verbose);

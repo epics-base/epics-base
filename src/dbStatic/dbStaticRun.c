@@ -152,23 +152,23 @@ static void doubleToString(double value,char *preturn)
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
-    dbRecDes		*pdbRecDes = pdbentry->precdes;
+    dbRecordType		*pdbRecordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
     char		*precord;
     char		*pfield;
     
-    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
-    precnode->precord = dbCalloc(1,pdbRecDes->rec_size);
+    precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
     precord = (char *)precnode->precord;
-    if(pdbRecDes->rec_size == 0) {
+    if(pdbRecordType->rec_size == 0) {
 	epicsPrintf("dbAllocRecord(%s) record_size =0\n",
-	    pdbRecDes->name);
+	    pdbRecordType->name);
 	return(S_dbLib_noRecSup);
     }
-    pflddes = pdbRecDes->papFldDes[0];
+    pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
 	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
 	return(S_dbLib_flddesNotFound);
@@ -179,9 +179,9 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
     }
     pfield = precord + pflddes->offset;
     strcpy(pfield,precordName);
-    for(i=1; i<pdbRecDes->no_fields; i++) {
+    for(i=1; i<pdbRecordType->no_fields; i++) {
 
-	pflddes = pdbRecDes->papFldDes[i];
+	pflddes = pdbRecordType->papFldDes[i];
 	if(!pflddes) continue;
 	pfield = precord + pflddes->offset;
 	pdbentry->pfield = (void *)pfield;
@@ -192,7 +192,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	    if(pflddes->initial)  {
 		if(strlen(pflddes->initial) >= pflddes->size) {
 		    epicsPrintf("initial size > size for %s.%s\n",
-			pdbRecDes->name,pflddes->name);
+			pdbRecordType->name,pflddes->name);
 		} else {
 		    strcpy(pfield,pflddes->initial);
 		}
@@ -214,7 +214,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 		status = dbPutStringNum(pdbentry,pflddes->initial);
 		if(status)
 		    epicsPrintf("Error initializing %s.%s initial %s\n",
-			pdbRecDes->name,pflddes->name,pflddes->initial);
+			pdbRecordType->name,pflddes->name,pflddes->initial);
 	    }
 	    break;
 	case DBF_DEVICE:
@@ -243,10 +243,10 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 
 long dbFreeRecord(DBENTRY *pdbentry)
 {
-    dbRecDes	*pdbRecDes = pdbentry->precdes;
+    dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
 
-    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
     free(precnode->precord);
@@ -256,11 +256,11 @@ long dbFreeRecord(DBENTRY *pdbentry)
 
 long dbGetFieldAddress(DBENTRY *pdbentry)
 {
-    dbRecDes	*pdbRecDes = pdbentry->precdes;
+    dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes = pdbentry->pflddes;
 
-    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!pflddes) return(S_dbLib_flddesNotFound);
     if(!precnode->precord) return(0);
@@ -270,16 +270,16 @@ long dbGetFieldAddress(DBENTRY *pdbentry)
 
 char *dbRecordName(DBENTRY *pdbentry)
 {
-    dbRecDes	*pdbRecDes = pdbentry->precdes;
+    dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes;
     char	*precord;
 
-    if(!pdbRecDes) return(0);
+    if(!pdbRecordType) return(0);
     if(!precnode) return(0);
     if(!precnode->precord) return(0);
     precord = (char *)precnode->precord;
-    pflddes = pdbRecDes->papFldDes[0];
+    pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) return(NULL);
     return(precord + pflddes->offset);
 }
@@ -389,14 +389,14 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    return((field==0));
 	}
 	case DBF_DEVICE: {
-		dbRecDes	*pdbRecDes = pdbentry->precdes;
+		dbRecordType	*pdbRecordType = pdbentry->precordType;
 		devSup		*pdevSup;
 
-		if(!pdbRecDes) {
-		    epicsPrintf("dbIsDefaultValue: pdbRecDes is NULL??\n");
+		if(!pdbRecordType) {
+		    epicsPrintf("dbIsDefaultValue: pdbRecordType is NULL??\n");
 		    return(FALSE);
 		}
-		pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+		pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 		if(!pdevSup) return(TRUE);
 		return(FALSE);
 	}
@@ -589,23 +589,23 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     return(status);
 }
 
-void dbGetRecordtypeSizeOffset(dbRecDes *pdbRecDes)
+void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
 {
     char	name[60];
     SYM_TYPE	type;
     STATUS	vxstatus;
     long	status;
-    int (*sizeOffset)(dbRecDes *pdbRecDes);
+    int (*sizeOffset)(dbRecordType *pdbRecordType);
 
     strcpy(name,"_");
-    strcat(name,pdbRecDes->name);
+    strcat(name,pdbRecordType->name);
     strcat(name,"RecordSizeOffset");
     vxstatus = symFindByName(sysSymTbl, name,
 	(void *)&sizeOffset, &type);
     if (vxstatus != OK) {
 	status = S_rec_noSizeOffset;
 	errPrintf(status,__FILE__,__LINE__,"%s",name);
-	exit(1);
+	taskSuspend(0);
     }
-    sizeOffset(pdbRecDes);
+    sizeOffset(pdbRecordType);
 }

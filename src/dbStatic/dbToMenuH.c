@@ -28,45 +28,56 @@ of this distribution.
 
 DBBASE *pdbbase = NULL;
 
+#define MAX_PATH_LENGTH	256
 
+static void addPath(char *path,char *newdir)
+{ 
+    if((strlen(path)+strlen(newdir)+2) > (size_t)MAX_PATH_LENGTH) {
+	fprintf(stderr,"path > 256 characters\n");
+	exit(-1);
+    }
+    if(strlen(path) > (size_t)0) strcat(path,":");
+    strcat(path,newdir);
+}
+
 int main(int argc,char **argv)
 {
-    int		arg,strip;
-    char	*path=0;
     long	status;
     dbMenu	*pdbMenu;
     char	*outFilename;
     char	*pext;
     FILE	*outFile;
-    int		i;
     char	*plastSlash;
 
-    /*Look for path, i.e. -I path or -Ipath*/
-    for(arg=1; arg<argc; arg++) {
-	if(strncmp(argv[arg],"-I",2)!=0) continue;
-	if(strlen(argv[arg])==2) {
-	    path = argv[arg+1];
+    int		strip;
+    char	path[MAX_PATH_LENGTH];
+    int		i;
+
+    /*Look for path, i.e. -I dir or -Idir*/
+    path[0] = 0;
+    while(strncmp(argv[1],"-I",2)==0) {
+	if(strlen(argv[1])==2) {
+	    addPath(path,argv[2]);
 	    strip = 2;
 	} else {
-	    path = argv[arg] + 2;
+	    addPath(path,argv[1]+2);
 	    strip = 1;
 	}
 	argc -= strip;
-	for(i=arg; i<argc; i++) argv[i] = argv[i + strip];
-	break;
+	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
     }
-    if(argc!=2) {
-	fprintf(stderr,"usage: dbToMenu -Ipath file.db\n");
-	exit(-1);
+    if(argc!=2 || (strncmp(argv[1],"-",1)==0)) {
+	fprintf(stderr,"usage: dbToMenu -Idir -Idir file.dbd\n");
+	exit(0);
     }
     /*remove path so that outFile is created where program is executed*/
     plastSlash = strrchr(argv[1],'/');
     plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
     outFilename = dbCalloc(1,strlen(plastSlash)+1);
     strcpy(outFilename,plastSlash);
-    pext = strstr(outFilename,".db");
+    pext = strstr(outFilename,".dbd");
     if(!pext) {
-	fprintf(stderr,"Input file MUST have .db extension\n");
+	fprintf(stderr,"Input file MUST have .dbd extension\n");
 	exit(-1);
     }
     strcpy(pext,".h");

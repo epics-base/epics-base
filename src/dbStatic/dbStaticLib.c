@@ -142,6 +142,33 @@ static char *promptOUT_LINK[] = {
 static char **promptAddr[OUTLINK+1];
 static int formlines[OUTLINK+1];
 
+/*Following are obsolete. Will go away next release*/
+long dbRead(DBBASE *pdbbase,FILE *fp)
+{
+    return(dbReadDatabaseFP(&pdbbase,fp,0));
+}
+long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
+{
+    fprintf(stderr,"dbWrite obsolete. It does NOTHING\n");
+    return(-1);
+}
+long dbFindRecdes(DBENTRY *pdbentry,char *recdesname)
+	{return dbFindRecordType(pdbentry,recdesname);}
+long dbFirstRecdes(DBENTRY *pdbentry)
+	{return dbFirstRecordType(pdbentry);}
+long dbNextRecdes(DBENTRY *pdbentry)
+	{return dbNextRecordType(pdbentry);}
+char *dbGetRecdesName(DBENTRY *pdbentry)
+	{return dbGetRecordTypeName(pdbentry);}
+int  dbGetNRecdes(DBENTRY *pdbentry)
+	{return dbGetNRecordTypes(pdbentry);}
+long dbFirstFielddes(DBENTRY *pdbentry,int dctonly)
+	{return dbFirstField(pdbentry,dctonly);}
+long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
+	{return dbNextField(pdbentry,dctonly);}
+char **dbGetChoices(DBENTRY *pdbentry)
+	{return dbGetMenuChoices(pdbentry);}
+
 /* internal routines*/
 /*checkDevChoice initializes INP or OUT field*/
 static char *pNullString = "";
@@ -210,7 +237,8 @@ void dbFreeParmString(char **pparm)
     if(*pparm && (*pparm != pNullString)) free((void *)(*pparm));
 }
 
-static void dbFreePath(DBBASE *pdbbase) {
+void dbFreePath(DBBASE *pdbbase)
+{
     ELLLIST	*ppathList;
     dbPathNode	*pdbPathNode;
 
@@ -262,7 +290,7 @@ static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
     char		*pname = NULL;
 
     *pmessage=0;
-    if(pdbentry->precdes) pname = pdbentry->precdes->name;
+    if(pdbentry->precordType) pname = pdbentry->precordType->name;
     if(pname) {
 	strcat(pmessage,"RecordType:");
 	strcat(pmessage,pname);
@@ -285,7 +313,7 @@ static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
 static void zeroDbentry(DBENTRY *pdbentry)
 {
     /*NOTE that pdbbase, message, and formpvt MUST NOT be set to NULL*/
-    pdbentry->precdes=NULL;
+    pdbentry->precordType=NULL;
     pdbentry->pflddes=NULL;
     pdbentry->precnode=NULL;
     pdbentry->pfield=NULL;
@@ -330,22 +358,22 @@ static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname)
 /*Public only for dbStaticRun*/
 void dbInitDeviceMenu(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes	*pflddes = pdbentry->pflddes;
     dbDeviceMenu *pdbDeviceMenu;
     devSup	*pdevSup;
     int		ind;
     int		nChoice;
 
-    if(!precdes) return;
+    if(!precordType) return;
     if(!pflddes) return;
-    nChoice = ellCount(&precdes->devList);
+    nChoice = ellCount(&precordType->devList);
     if(nChoice <= 0) return;
     pdbDeviceMenu = dbCalloc(1,sizeof(dbDeviceMenu));
     pdbDeviceMenu->nChoice = nChoice;
     pflddes->ftPvt = pdbDeviceMenu;
     pdbDeviceMenu->papChoice = dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
-    pdevSup = (devSup *)ellFirst(&precdes->devList);
+    pdevSup = (devSup *)ellFirst(&precordType->devList);
     ind = 0;
     while(pdevSup) {
 	pdbDeviceMenu->papChoice[ind] = pdevSup->choice;
@@ -390,7 +418,7 @@ dbBase *dbAllocBase(void)
 
     pdbbase = dbCalloc(1,sizeof(dbBase));
     ellInit(&pdbbase->menuList);
-    ellInit(&pdbbase->recDesList);
+    ellInit(&pdbbase->recordTypeList);
     ellInit(&pdbbase->drvList);
     ellInit(&pdbbase->bptList);
     gphInitPvt(&pdbbase->pgpHash,256);
@@ -403,8 +431,8 @@ void dbFreeBase(dbBase *pdbbase)
 {
     dbMenu	*pdbMenu;
     dbMenu	*pdbMenuNext;
-    dbRecDes	*pdbRecDes;
-    dbRecDes	*pdbRecDesNext;
+    dbRecordType	*pdbRecordType;
+    dbRecordType	*pdbRecordTypeNext;
     dbFldDes	*pdbFldDes;
     dbRecordNode *pdbRecordNode;
     dbRecordNode *pdbRecordNodeNext;
@@ -419,22 +447,22 @@ void dbFreeBase(dbBase *pdbbase)
     
 
     dbInitEntry(pdbbase,&dbentry);
-    pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    while(pdbRecDes) {
-	pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecDes->recList);
+    pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    while(pdbRecordType) {
+	pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
 	while(pdbRecordNode) {
 	    pdbRecordNodeNext = (dbRecordNode *)ellNext(&pdbRecordNode->node);
 	    if(!dbFindRecord(&dbentry,pdbRecordNode->recordname))
 		dbDeleteRecord(&dbentry);
 	    pdbRecordNode = pdbRecordNodeNext;
 	}
-	pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node);
+	pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
     }
     dbFinishEntry(&dbentry);
-    pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    while(pdbRecDes) {
-	for(i=0; i<pdbRecDes->no_fields; i++) {
-	    pdbFldDes = pdbRecDes->papFldDes[i];
+    pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    while(pdbRecordType) {
+	for(i=0; i<pdbRecordType->no_fields; i++) {
+	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    free((void *)pdbFldDes->prompt);
 	    free((void *)pdbFldDes->name);
 	    free((void *)pdbFldDes->extra);
@@ -449,25 +477,25 @@ void dbFreeBase(dbBase *pdbbase)
 	    }
 	    free((void *)pdbFldDes);
 	}
-	pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+	pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 	while(pdevSup) {
 	    pdevSupNext = (devSup *)ellNext(&pdevSup->node);
-	    ellDelete(&pdbRecDes->devList,&pdevSup->node);
+	    ellDelete(&pdbRecordType->devList,&pdevSup->node);
 	    free((void *)pdevSup->name);
 	    free((void *)pdevSup->choice);
 	    free((void *)pdevSup);
 	    pdevSup = pdevSupNext;
 	}
-	pdbRecDesNext = (dbRecDes *)ellNext(&pdbRecDes->node);
-	gphDelete(pdbbase->pgpHash,pdbRecDes->name,&pdbbase->recDesList);
-	ellDelete(&pdbbase->recDesList,&pdbRecDes->node);
-	free((void *)pdbRecDes->name);
-	free((void *)pdbRecDes->link_ind);
-	free((void *)pdbRecDes->papsortFldName);
-	free((void *)pdbRecDes->sortFldInd);
-	free((void *)pdbRecDes->papFldDes);
-	free((void *)pdbRecDes);
-	pdbRecDes = pdbRecDesNext;
+	pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
+	gphDelete(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
+	ellDelete(&pdbbase->recordTypeList,&pdbRecordType->node);
+	free((void *)pdbRecordType->name);
+	free((void *)pdbRecordType->link_ind);
+	free((void *)pdbRecordType->papsortFldName);
+	free((void *)pdbRecordType->sortFldInd);
+	free((void *)pdbRecordType->papFldDes);
+	free((void *)pdbRecordType);
+	pdbRecordType = pdbRecordTypeNext;
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
@@ -548,16 +576,6 @@ DBENTRY *dbCopyEntry(DBENTRY *pdbentry)
     return(pnew);
 }
 
-long dbRead(DBBASE *pdbbase,FILE *fp)
-{
-    return(dbReadDatabaseFP(&pdbbase,fp,0));
-}
-long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
-{
-    fprintf(stderr,"dbWrite obsolete. It does NOTHING\n");
-    return(-1);
-}
-
 long dbPath(DBBASE *pdbbase,const char *path)
 {
     if(!pdbbase) return(-1);
@@ -598,7 +616,7 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 }
 
 long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
-	char *precdesname,int level)
+	char *precordTypename,int level)
 {
     FILE	*outFile;
 
@@ -607,11 +625,11 @@ long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
 	return(-1);
     }
-    dbWriteRecordFP(ppdbbase,outFile,precdesname,level);
+    dbWriteRecordFP(ppdbbase,outFile,precordTypename,level);
     return(fclose(outFile));
 }
 
-long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
+long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -620,17 +638,17 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
 
     dctonly = ((level>1) ? FALSE : TRUE);
     dbInitEntry(pdbbase,pdbentry);
-    if(!precdesname) {
-	status = dbFirstRecdes(pdbentry);
+    if(!precordTypename) {
+	status = dbFirstRecordType(pdbentry);
 	if(status) {
 	    fprintf(stderr,"dbWriteRecordFP: No record descriptions\n");
 	    return(status);
 	}
     } else {
-	status = dbFindRecdes(pdbentry,precdesname);
+	status = dbFindRecordType(pdbentry,precordTypename);
 	if(status) {
 	    fprintf(stderr,"dbWriteRecordFP: No record description for %s\n",
-		precdesname);
+		precordTypename);
 	    return(status);
 	}
     }
@@ -638,20 +656,20 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
 	    fprintf(fp,"record(%s,\"%s\") {\n",
-		dbGetRecdesName(pdbentry),dbGetRecordName(pdbentry));
-	    status = dbFirstFielddes(pdbentry,dctonly);
+		dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+	    status = dbFirstField(pdbentry,dctonly);
 	    while(!status) {
 		if(!dbIsDefaultValue(pdbentry) || level>0) {
 		    fprintf(fp,"\tfield(%s,\"%s\")\n",
 			dbGetFieldName(pdbentry),dbGetString(pdbentry));
 		}
-		status=dbNextFielddes(pdbentry,dctonly);
+		status=dbNextField(pdbentry,dctonly);
 	    }
 	    fprintf(fp,"}\n");
 	    status = dbNextRecord(pdbentry);
 	}
-	if(precdesname) break;
-	status = dbNextRecdes(pdbentry);
+	if(precordTypename) break;
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return(0);
@@ -704,7 +722,7 @@ long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName)
     return(0);
 }
 
-long dbWriteRecDes(DBBASE *pdbbase,const char *filename,char *recdesName)
+long dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName)
 {
     FILE	*outFile;
 
@@ -713,16 +731,16 @@ long dbWriteRecDes(DBBASE *pdbbase,const char *filename,char *recdesName)
 	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
 	return(-1);
     }
-    dbWriteRecDesFP(pdbbase,outFile,recdesName);
+    dbWriteRecordTypeFP(pdbbase,outFile,recordTypeName);
     if(fclose(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);
 }
 
-long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName)
+long dbWriteRecordTypeFP(DBBASE *pdbbase,FILE *fp,char *recordTypeName)
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
@@ -731,19 +749,19 @@ long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName)
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	if(recdesName) {
-	    gotMatch = (strcmp(recdesName,pdbRecDes->name)==0) ? TRUE : FALSE;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	if(recordTypeName) {
+	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0) ? TRUE : FALSE;
 	}else {
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(fp,"recordtype(%s) {\n",pdbRecDes->name);
-	for(i=0; i<pdbRecDes->no_fields; i++) {
+	fprintf(fp,"recordtype(%s) {\n",pdbRecordType->name);
+	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    int	j;
 
-	    pdbFldDes = pdbRecDes->papFldDes[i];
+	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    fprintf(fp,"\tfield(%s,",pdbFldDes->name);
 	    for(j=0; j<DBF_NTYPES; j++) {
 		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
@@ -798,7 +816,7 @@ long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName)
 	    fprintf(fp,"\t}\n");
 	}
 	fprintf(fp,"}\n");
-	if(recdesName) break;
+	if(recordTypeName) break;
     }
     return(0);
 }
@@ -821,16 +839,16 @@ long dbWriteDevice(DBBASE *pdbbase,const char *filename)
 
 long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     devSup	*pdevSup;
 
     if(!pdbbase) {
 	fprintf(stderr,"dbWriteDeviceFP: pdbbase not specified\n");
 	return(-1);
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 	pdevSup; pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    int j;
 
@@ -842,7 +860,7 @@ long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
 		continue;
 	    }
 	    fprintf(fp,"device(%s,%s,%s,\"%s\")\n",
-		pdbRecDes->name,
+		pdbRecordType->name,
 		pamaplinkType[j].strvalue,
 		pdevSup->name,pdevSup->choice);
 	}
@@ -919,312 +937,79 @@ long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
     return(0);
 }
 
-long dbFindRecdes(DBENTRY *pdbentry,char *rectype)
+long dbFindRecordType(DBENTRY *pdbentry,char *recordType)
 {
     dbBase	*pdbbase = pdbentry->pdbbase;
     GPHENTRY	*phash;
 
     zeroDbentry(pdbentry);
-    phash = gphFind(pdbbase->pgpHash,rectype,&pdbbase->recDesList);
-    if(!phash) return(S_dbLib_recdesNotFound);
-    pdbentry->precdes = phash->userPvt;
+    phash = gphFind(pdbbase->pgpHash,recordType,&pdbbase->recordTypeList);
+    if(!phash) return(S_dbLib_recordTypeNotFound);
+    pdbentry->precordType = phash->userPvt;
     return(0);
 }
 
-long dbFirstRecdes(DBENTRY *pdbentry)
+long dbFirstRecordType(DBENTRY *pdbentry)
 {
-    dbRecDes *precdes;
+    dbRecordType *precordType;
 
     zeroDbentry(pdbentry);
-    precdes = (dbRecDes *)ellFirst(&pdbentry->pdbbase->recDesList);
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    pdbentry->precdes = precdes;
+    precordType = (dbRecordType *)ellFirst(&pdbentry->pdbbase->recordTypeList);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    pdbentry->precordType = precordType;
     return(0);
 }
 
-long dbNextRecdes(DBENTRY *pdbentry)
+long dbNextRecordType(DBENTRY *pdbentry)
 {
-    dbRecDes *precdes = pdbentry->precdes;
+    dbRecordType *precordType = pdbentry->precordType;
 
     zeroDbentry(pdbentry);
-    precdes = (dbRecDes *)ellNext(&precdes->node);
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    pdbentry->precdes = precdes;
+    precordType = (dbRecordType *)ellNext(&precordType->node);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    pdbentry->precordType = precordType;
     return(0);
 }
 
-char *dbGetRecdesName(DBENTRY *pdbentry)
+char *dbGetRecordTypeName(DBENTRY *pdbentry)
 {
-    return(pdbentry->precdes->name);
+    return(pdbentry->precordType->name);
 }
 
-int dbGetNRecdes(DBENTRY *pdbentry)
+int dbGetNRecordTypes(DBENTRY *pdbentry)
 {
-    return(ellCount(&pdbentry->pdbbase->recDesList));
-}
-
-long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
-{
-    dbRecDes		*precdes = pdbentry->precdes;
-    dbFldDes		*pdbFldDes;
-    PVDENTRY       	*ppvd;
-    ELLLIST           	*preclist = NULL;
-    dbRecordNode       	*precnode = NULL;
-    dbRecordNode       	*pNewRecNode = NULL;
-    long		status;
-    devSup		*pdevSup;
-
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    /*Get size of NAME field*/
-    pdbFldDes = precdes->papFldDes[0];
-    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
-	return(S_dbLib_nameLength);
-    if((int)strlen(precordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
-    /* clear callers entry */
-    zeroDbentry(pdbentry);
-    if(!dbFindRecord(pdbentry,precordName)) return (S_dbLib_recExists);
-    zeroDbentry(pdbentry);
-    pdbentry->precdes = precdes;
-    preclist = &precdes->recList;
-    /* create a recNode */
-    pNewRecNode = dbCalloc(1,sizeof(dbRecordNode));
-    /* create a new record of this record type */
-    pdbentry->precnode = pNewRecNode;
-    if(status = dbAllocRecord(pdbentry,precordName)) return(status);
-    pNewRecNode->recordname = dbRecordName(pdbentry);
-    /* install record node in list in sorted postion */
-    precnode = (dbRecordNode *)ellFirst(preclist);
-    while(precnode && strcmp(precordName,(char*)precnode->precord) > 0)
-	precnode = (dbRecordNode *)ellNext(&precnode->node);
-    if(precnode) 
-	ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
-    else
-	ellAdd(preclist,&pNewRecNode->node);
-    pdbentry->precnode = pNewRecNode;
-    ppvd = dbPvdAdd(pdbentry->pdbbase,precdes,pNewRecNode);
-    if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    /*If any device support exists let checkDevChoice give default for INP/OUT*/
-    pdevSup = (devSup *)ellFirst(&precdes->devList);
-    if(!pdevSup) return(0);
-    status = checkDevChoice(pdbentry,pdevSup->link_type);
-    return (status);
+    return(ellCount(&pdbentry->pdbbase->recordTypeList));
 }
 
-long dbDeleteRecord(DBENTRY *pdbentry)
-{
-    dbBase		*pdbbase = pdbentry->pdbbase;
-    dbRecDes		*precdes = pdbentry->precdes;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    ELLLIST           	*preclist;
-    long		status;
-
-    if (!precnode) return (S_dbLib_recNotFound);
-    preclist = &precdes->recList;
-    ellDelete(preclist,&precnode->node);
-    dbPvdDelete(pdbbase,precnode);
-    if(status = dbFreeRecord(pdbentry)) return(status);
-    free((void *)precnode);
-    pdbentry->precnode = NULL;
-    return (0);
-}
-
-long dbFindRecord(DBENTRY *pdbentry,char *precordName)
-{
-    dbBase	*pdbbase = pdbentry->pdbbase;
-    int         lenName=0;
-    PVDENTRY    *ppvdNode;
-    char        convName[PVNAME_SZ + 1];
-    char        *pconvName = &convName[0];
-
-    
-    zeroDbentry(pdbentry);
-    /* convert the record name */
-    while (*precordName && (*precordName != '.') && (lenName < PVNAME_SZ)) {
-	*pconvName++ = *precordName++;
-	lenName++;
-    }
-    *pconvName = 0;
-    pconvName = &convName[0];
-    ppvdNode = dbPvdFind(pdbbase,pconvName,lenName);
-    if(!ppvdNode) return(S_dbLib_recNotFound);
-    pdbentry->precnode = ppvdNode->precnode;
-    pdbentry->precdes = ppvdNode->precdes;
-    if(*precordName++=='.') return(dbFindField(pdbentry, precordName));
-    return (0);
-}
-
-int dbFoundField(DBENTRY *pdbentry)
-{
-    return((pdbentry->pfield) ? TRUE : FALSE);
-}
-
-long dbFirstRecord(DBENTRY *pdbentry)
-{
-    dbRecDes		*precdes = pdbentry->precdes;
-    dbRecordNode	*precnode;
-
-    zeroDbentry(pdbentry);
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    pdbentry->precdes = precdes;
-    precnode = (dbRecordNode *)ellFirst(&precdes->recList);
-    if(!precnode) return(S_dbLib_recNotFound);
-    pdbentry->precnode = precnode;
-    return(0);
-}
-
-long dbNextRecord(DBENTRY *pdbentry)
-{
-    dbRecordNode	*precnode=pdbentry->precnode;
-    long		status=0;
-
-    if(!precnode) return(S_dbLib_recNotFound);
-    precnode = (dbRecordNode *)ellNext(&precnode->node);
-    if(!precnode) status = S_dbLib_recNotFound;
-    pdbentry->precnode = precnode;
-    pdbentry->pfield = NULL;
-    return(status);
-}
-
-int dbGetNRecords(DBENTRY *pdbentry)
-{
-    dbRecDes		*precdes = pdbentry->precdes;
-
-    if(!precdes) return(0);
-    return(ellCount(&precdes->recList));
-}
-
-char *dbGetRecordName(DBENTRY *pdbentry)
-{
-    return(dbRecordName(pdbentry));
-}
-
-
-long dbRenameRecord(DBENTRY *pdbentry,char *newName)
-{
-    dbBase		*pdbbase = pdbentry->pdbbase;
-    dbRecDes		*precdes = pdbentry->precdes;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    PVDENTRY		*ppvd;
-    ELLLIST		*preclist;
-    dbRecordNode	*plistnode;
-    long		status;
-    DBENTRY		dbentry;
-
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    /*Get size of NAME field*/
-    pdbFldDes = precdes->papFldDes[0];
-    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
-	return(S_dbLib_nameLength);
-    if((int)strlen(newName)>=pdbFldDes->size) return(S_dbLib_nameLength);
-    if(!precnode) return(S_dbLib_recNotFound);
-    dbInitEntry(pdbentry->pdbbase,&dbentry);
-    status = dbFindRecord(&dbentry,newName);
-    dbFinishEntry(&dbentry);
-    if(!status) return(S_dbLib_recExists);
-    dbPvdDelete(pdbbase,precnode);
-    pdbentry->pflddes = precdes->papFldDes[0];
-    if(status = dbGetFieldAddress(pdbentry)) return(status);
-    strcpy(pdbentry->pfield,newName);
-    ppvd = dbPvdAdd(pdbbase,precdes,precnode);
-    if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    /*remove from record list and reinstall in sorted order*/
-    preclist = &precdes->recList;
-    ellDelete(preclist,&precnode->node);
-    plistnode = (dbRecordNode *)ellFirst(preclist);
-    while(plistnode) {
-	pdbentry->precnode =  plistnode;
-	if(strcmp(newName,dbRecordName(pdbentry)) >=0) break;
-	plistnode = (dbRecordNode *)ellNext(&plistnode->node);
-    }
-    if(plistnode)
-	ellInsert(preclist,ellPrevious(&plistnode->node),&precnode->node);
-    else
-	ellAdd(preclist,&precnode->node);
-    return(0);
-}
-
-long dbFindField(DBENTRY *pdbentry,char *pfieldName)
-{
-    dbRecDes		*precdes = pdbentry->precdes;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    char		*precord;
-    dbFldDes  		*pflddes;
-    short           	top, bottom, test;
-    char  		**papsortFldName;
-    short          	*sortFldInd;
-    long		status;
-    int			compare;
-
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    if(!precnode) return(S_dbLib_recNotFound);
-    precord = precnode->precord;
-    papsortFldName = precdes->papsortFldName;
-    sortFldInd = precdes->sortFldInd;
-    /* check for default field name or VAL to be supplied */
-    if((*pfieldName==0) || (strcmp(pfieldName,"VAL")==0)) {
-	if(!(pflddes=precdes->pvalFldDes)) 
-		return(S_dbLib_recdesNotFound);
-	pdbentry->pflddes = pflddes;
-	pdbentry->indfield = precdes->indvalFlddes;
-	status = dbGetFieldAddress(pdbentry);
-	return (status);
-    }
-    /* binary search through ordered field names */
-    top = precdes->no_fields - 1;
-    bottom = 0;
-    test = (top + bottom) / 2;
-    while (1) {
-	/* check the field name */
-	compare = strcmp(papsortFldName[test],pfieldName);
-	if (compare == 0) {
-	    if(!(pflddes=precdes->papFldDes[sortFldInd[test]]))
-		return(S_dbLib_recdesNotFound);
-	    pdbentry->pflddes = pflddes;
-	    pdbentry->indfield = sortFldInd[test];
-	    status = dbGetFieldAddress(pdbentry);
-	    return (status);
-	} else if (compare > 0) {
-	    top = test - 1;
-	    if (top < bottom) return (S_dbLib_fieldNotFound);
-	    test = (top + bottom) / 2;
-	} else {
-	    bottom = test + 1;
-	    if (top < bottom) return (S_dbLib_fieldNotFound);
-	    test = (top + bottom) / 2;
-	}
-    }
-}
-
-long dbFirstFielddes(DBENTRY *pdbentry,int dctonly)
+long dbFirstField(DBENTRY *pdbentry,int dctonly)
 {
 
     pdbentry->indfield = -1;
-    return(dbNextFielddes(pdbentry,dctonly));
+    return(dbNextField(pdbentry,dctonly));
 }
 
-long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
+long dbNextField(DBENTRY *pdbentry,int dctonly)
 {
-    dbRecDes		*precdes = pdbentry->precdes;
+    dbRecordType		*precordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes  		*pflddes;
     short		indfield = pdbentry->indfield;
     long		status;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
     indfield++;
     while(TRUE) {
-	if(indfield>=precdes->no_fields) {
+	if(indfield>=precordType->no_fields) {
 	    pdbentry->indfield = 0;
 	    pdbentry->pflddes = NULL;
 	    pdbentry->pfield = NULL;
 	    return(S_dbLib_fieldNotFound);
 	}
-	pflddes = precdes->papFldDes[indfield];
+	pflddes = precordType->papFldDes[indfield];
 	if(!dctonly || pflddes->promptgroup) {
 	    /*Skip field if dctonly and no device support*/
 	    if(!dctonly || (pflddes->field_type!=DBF_DEVICE)
-	    || (ellCount(&precdes->devList)>0)) {
+	    || (ellCount(&precordType->devList)>0)) {
 		pdbentry->indfield = indfield;
 		pdbentry->pflddes = pflddes;
 		pdbentry->indfield = indfield;
@@ -1255,14 +1040,14 @@ int  dbGetFieldType(DBENTRY *pdbentry)
 
 int dbGetNFields(DBENTRY *pdbentry,int dctonly)
 {
-    dbRecDes		*precdes = pdbentry->precdes;
+    dbRecordType		*precordType = pdbentry->precordType;
     dbFldDes  		*pflddes;
     int			indfield,n;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
     n = 0;
-    for(indfield=0; indfield<precdes->no_fields; indfield++) {
-	pflddes = precdes->papFldDes[indfield];
+    for(indfield=0; indfield<precordType->no_fields; indfield++) {
+	pflddes = precordType->papFldDes[indfield];
 	if(!dctonly || pflddes->promptgroup) n++;
     }
     return(n);
@@ -1298,6 +1083,284 @@ int dbGetPromptGroup(DBENTRY *pdbentry)
 
     if(!pflddes) return(NULL);
     return(pflddes->promptgroup);
+}
+
+long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
+{
+    dbRecordType		*precordType = pdbentry->precordType;
+    dbFldDes		*pdbFldDes;
+    PVDENTRY       	*ppvd;
+    ELLLIST           	*preclist = NULL;
+    dbRecordNode       	*precnode = NULL;
+    dbRecordNode       	*pNewRecNode = NULL;
+    long		status;
+    devSup		*pdevSup;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    /*Get size of NAME field*/
+    pdbFldDes = precordType->papFldDes[0];
+    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
+	return(S_dbLib_nameLength);
+    if((int)strlen(precordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
+    /* clear callers entry */
+    zeroDbentry(pdbentry);
+    if(!dbFindRecord(pdbentry,precordName)) return (S_dbLib_recExists);
+    zeroDbentry(pdbentry);
+    pdbentry->precordType = precordType;
+    preclist = &precordType->recList;
+    /* create a recNode */
+    pNewRecNode = dbCalloc(1,sizeof(dbRecordNode));
+    /* create a new record of this record type */
+    pdbentry->precnode = pNewRecNode;
+    if(status = dbAllocRecord(pdbentry,precordName)) return(status);
+    pNewRecNode->recordname = dbRecordName(pdbentry);
+    /* install record node in list in sorted postion */
+    precnode = (dbRecordNode *)ellFirst(preclist);
+    while(precnode && strcmp(precordName,(char*)precnode->precord) > 0)
+	precnode = (dbRecordNode *)ellNext(&precnode->node);
+    if(precnode) 
+	ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
+    else
+	ellAdd(preclist,&pNewRecNode->node);
+    pdbentry->precnode = pNewRecNode;
+    ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
+    if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    /*If any device support exists let checkDevChoice give default for INP/OUT*/
+    pdevSup = (devSup *)ellFirst(&precordType->devList);
+    if(!pdevSup) return(0);
+    status = checkDevChoice(pdbentry,pdevSup->link_type);
+    return (status);
+}
+
+long dbDeleteRecord(DBENTRY *pdbentry)
+{
+    dbBase		*pdbbase = pdbentry->pdbbase;
+    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    ELLLIST           	*preclist;
+    long		status;
+
+    if (!precnode) return (S_dbLib_recNotFound);
+    preclist = &precordType->recList;
+    ellDelete(preclist,&precnode->node);
+    dbPvdDelete(pdbbase,precnode);
+    if(status = dbFreeRecord(pdbentry)) return(status);
+    free((void *)precnode);
+    pdbentry->precnode = NULL;
+    return (0);
+}
+
+long dbFindRecord(DBENTRY *pdbentry,char *precordName)
+{
+    dbBase	*pdbbase = pdbentry->pdbbase;
+    int         lenName=0;
+    PVDENTRY    *ppvdNode;
+    char        convName[PVNAME_SZ + 1];
+    char        *pconvName = &convName[0];
+
+    
+    zeroDbentry(pdbentry);
+    /* convert the record name */
+    while (*precordName && (*precordName != '.') && (lenName < PVNAME_SZ)) {
+	*pconvName++ = *precordName++;
+	lenName++;
+    }
+    *pconvName = 0;
+    pconvName = &convName[0];
+    ppvdNode = dbPvdFind(pdbbase,pconvName,lenName);
+    if(!ppvdNode) return(S_dbLib_recNotFound);
+    pdbentry->precnode = ppvdNode->precnode;
+    pdbentry->precordType = ppvdNode->precordType;
+    if(*precordName++=='.') return(dbFindField(pdbentry, precordName));
+    return (0);
+}
+
+long dbFirstRecord(DBENTRY *pdbentry)
+{
+    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordNode	*precnode;
+
+    zeroDbentry(pdbentry);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    pdbentry->precordType = precordType;
+    precnode = (dbRecordNode *)ellFirst(&precordType->recList);
+    if(!precnode) return(S_dbLib_recNotFound);
+    pdbentry->precnode = precnode;
+    return(0);
+}
+
+long dbNextRecord(DBENTRY *pdbentry)
+{
+    dbRecordNode	*precnode=pdbentry->precnode;
+    long		status=0;
+
+    if(!precnode) return(S_dbLib_recNotFound);
+    precnode = (dbRecordNode *)ellNext(&precnode->node);
+    if(!precnode) status = S_dbLib_recNotFound;
+    pdbentry->precnode = precnode;
+    pdbentry->pfield = NULL;
+    return(status);
+}
+
+int dbGetNRecords(DBENTRY *pdbentry)
+{
+    dbRecordType		*precordType = pdbentry->precordType;
+
+    if(!precordType) return(0);
+    return(ellCount(&precordType->recList));
+}
+
+char *dbGetRecordName(DBENTRY *pdbentry)
+{
+    return(dbRecordName(pdbentry));
+}
+
+long dbRenameRecord(DBENTRY *pdbentry,char *newName)
+{
+    dbBase		*pdbbase = pdbentry->pdbbase;
+    dbRecordType	*precordType = pdbentry->precordType;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    PVDENTRY		*ppvd;
+    ELLLIST		*preclist;
+    dbRecordNode	*plistnode;
+    long		status;
+    DBENTRY		dbentry;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    /*Get size of NAME field*/
+    pdbFldDes = precordType->papFldDes[0];
+    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
+	return(S_dbLib_nameLength);
+    if((int)strlen(newName)>=pdbFldDes->size) return(S_dbLib_nameLength);
+    if(!precnode) return(S_dbLib_recNotFound);
+    dbInitEntry(pdbentry->pdbbase,&dbentry);
+    status = dbFindRecord(&dbentry,newName);
+    dbFinishEntry(&dbentry);
+    if(!status) return(S_dbLib_recExists);
+    dbPvdDelete(pdbbase,precnode);
+    pdbentry->pflddes = precordType->papFldDes[0];
+    if(status = dbGetFieldAddress(pdbentry)) return(status);
+    strcpy(pdbentry->pfield,newName);
+    ppvd = dbPvdAdd(pdbbase,precordType,precnode);
+    if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    /*remove from record list and reinstall in sorted order*/
+    preclist = &precordType->recList;
+    ellDelete(preclist,&precnode->node);
+    plistnode = (dbRecordNode *)ellFirst(preclist);
+    while(plistnode) {
+	pdbentry->precnode =  plistnode;
+	if(strcmp(newName,dbRecordName(pdbentry)) >=0) break;
+	plistnode = (dbRecordNode *)ellNext(&plistnode->node);
+    }
+    if(plistnode)
+	ellInsert(preclist,ellPrevious(&plistnode->node),&precnode->node);
+    else
+	ellAdd(preclist,&precnode->node);
+    return(0);
+}
+
+long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
+{
+    dbRecordType	*precordType = pdbentry->precordType;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    long		status;
+    DBENTRY		dbentry;
+    char		*pvalue;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    /*Get size of NAME field*/
+    pdbFldDes = precordType->papFldDes[0];
+    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
+	return(S_dbLib_nameLength);
+    if((int)strlen(newRecordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
+    if(!precnode) return(S_dbLib_recNotFound);
+    dbInitEntry(pdbentry->pdbbase,&dbentry);
+    status = dbFindRecord(&dbentry,newRecordName);
+    if(!status) {
+	if(!overWriteOK) {
+	    dbFinishEntry(&dbentry);
+	    return(S_dbLib_recExists);
+	}
+	status = dbDeleteRecord(&dbentry);
+	if(status) return(status);
+    }
+    dbFinishEntry(&dbentry);
+    if(status = dbFindRecordType(&dbentry,precordType->name)) return(status);
+    if(status = dbCreateRecord(&dbentry,newRecordName)) return(status);
+    if(status = dbFirstField(pdbentry,TRUE)) return(status);
+    if(status = dbFirstField(&dbentry,TRUE)) return(status);
+    while(!status) {
+	if(!dbIsDefaultValue(pdbentry)) {
+	    pvalue = dbGetString(pdbentry);
+	    if(status = dbPutString(&dbentry,pvalue)) return(status);
+	}
+	status = dbNextField(pdbentry,TRUE);
+	if(!status) status = dbNextField(&dbentry,TRUE);
+	if(!status && (pdbentry->pflddes!=dbentry.pflddes)) {
+	    epicsPrintf("dbCopyRecord: Logic Error\n");
+	    exit(1);
+	}
+    }
+    return(0);
+}
+
+long dbFindField(DBENTRY *pdbentry,char *pfieldName)
+{
+    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    char		*precord;
+    dbFldDes  		*pflddes;
+    short           	top, bottom, test;
+    char  		**papsortFldName;
+    short          	*sortFldInd;
+    long		status;
+    int			compare;
+
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    if(!precnode) return(S_dbLib_recNotFound);
+    precord = precnode->precord;
+    papsortFldName = precordType->papsortFldName;
+    sortFldInd = precordType->sortFldInd;
+    /* check for default field name or VAL to be supplied */
+    if((*pfieldName==0) || (strcmp(pfieldName,"VAL")==0)) {
+	if(!(pflddes=precordType->pvalFldDes)) 
+		return(S_dbLib_recordTypeNotFound);
+	pdbentry->pflddes = pflddes;
+	pdbentry->indfield = precordType->indvalFlddes;
+	status = dbGetFieldAddress(pdbentry);
+	return (status);
+    }
+    /* binary search through ordered field names */
+    top = precordType->no_fields - 1;
+    bottom = 0;
+    test = (top + bottom) / 2;
+    while (1) {
+	/* check the field name */
+	compare = strcmp(papsortFldName[test],pfieldName);
+	if (compare == 0) {
+	    if(!(pflddes=precordType->papFldDes[sortFldInd[test]]))
+		return(S_dbLib_recordTypeNotFound);
+	    pdbentry->pflddes = pflddes;
+	    pdbentry->indfield = sortFldInd[test];
+	    status = dbGetFieldAddress(pdbentry);
+	    return (status);
+	} else if (compare > 0) {
+	    top = test - 1;
+	    if (top < bottom) return (S_dbLib_fieldNotFound);
+	    test = (top + bottom) / 2;
+	} else {
+	    bottom = test + 1;
+	    if (top < bottom) return (S_dbLib_fieldNotFound);
+	    test = (top + bottom) / 2;
+	}
+    }
+}
+
+int dbFoundField(DBENTRY *pdbentry)
+{
+    return((pdbentry->pfield) ? TRUE : FALSE);
 }
 
 char *dbGetString(DBENTRY *pdbentry)
@@ -1531,7 +1594,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    long 	link_type;
 		    devSup	*pdevSup;
 
-		    pdevSup = (devSup *)ellNth(&pdbentry->precdes->devList,i+1);
+		    pdevSup = (devSup *)ellNth(&pdbentry->precordType->devList,i+1);
 		    link_type = pdevSup->link_type;
 		    /*If no INP or OUT OK */
 		    checkDevChoice(pdbentry,link_type);
@@ -1997,7 +2060,7 @@ dbMenu *dbFindMenu(dbBase *pdbbase,char *name)
     return((dbMenu *)pgph->userPvt);
 }
 
-char   **dbGetChoices(DBENTRY *pdbentry)
+char   **dbGetMenuChoices(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
 
@@ -2619,21 +2682,21 @@ char  **dbVerifyForm(DBENTRY *pdbentry,char **value)
 
 int dbGetNLinks(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordType	*precordType = pdbentry->precordType;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    return((int)precdes->no_links);
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    return((int)precordType->no_links);
 }
 
 long dbGetLinkField(DBENTRY *pdbentry,int index)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecordType	*precordType = pdbentry->precordType;
     dbFldDes	*pflddes;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
-    if(index<0 || index>=precdes->no_links) return(S_dbLib_badLink);
-    pdbentry->indfield = precdes->link_ind[index];
-    pdbentry->pflddes = pflddes = precdes->papFldDes[pdbentry->indfield];
+    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    if(index<0 || index>=precordType->no_links) return(S_dbLib_badLink);
+    pdbentry->indfield = precordType->link_ind[index];
+    pdbentry->pflddes = pflddes = precordType->papFldDes[pdbentry->indfield];
     dbGetFieldAddress(pdbentry);
     return(0);
 }
@@ -2750,13 +2813,13 @@ void dbDumpPath(DBBASE *pdbbase)
     return;
 }
 
-void dbDumpRecord(dbBase *pdbbase,char *precdesname,int level)
+void dbDumpRecord(dbBase *pdbbase,char *precordTypename,int level)
 {
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
 	return;
     }
-    dbWriteRecordFP(pdbbase,stdout,precdesname,level);
+    dbWriteRecordFP(pdbbase,stdout,precordTypename,level);
 }
 
 void dbDumpMenu(DBBASE *pdbbase,char *menuName)
@@ -2768,9 +2831,9 @@ void dbDumpMenu(DBBASE *pdbbase,char *menuName)
     dbWriteMenuFP(pdbbase,stdout,menuName);
 }
 
-void dbDumpRecDes(DBBASE *pdbbase,char *recdesName)
+void dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName)
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
@@ -2779,39 +2842,39 @@ void dbDumpRecDes(DBBASE *pdbbase,char *recdesName)
 	printf("pdbbase not specified\n");
 	return;
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	if(recdesName) {
-	    gotMatch = (strcmp(recdesName,pdbRecDes->name)==0) ? TRUE : FALSE;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	if(recordTypeName) {
+	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0) ? TRUE : FALSE;
 	}else {
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
 	printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
-	    pdbRecDes->name,pdbRecDes->no_fields,
-	    pdbRecDes->no_prompt,pdbRecDes->no_links);
+	    pdbRecordType->name,pdbRecordType->no_fields,
+	    pdbRecordType->no_prompt,pdbRecordType->no_links);
 	printf("index name\tsortind sortname\n");
-	for(i=0; i<pdbRecDes->no_fields; i++) {
-	    pdbFldDes = pdbRecDes->papFldDes[i];
+	for(i=0; i<pdbRecordType->no_fields; i++) {
+	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    printf("%5d %s\t%7d %s\n",
 		i,pdbFldDes->name,
-		pdbRecDes->sortFldInd[i],pdbRecDes->papsortFldName[i]);
+		pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
 	}
 	printf("link_ind ");
-	for(i=0; i<pdbRecDes->no_links; i++)
-	    printf(" %hd",pdbRecDes->link_ind[i]);
+	for(i=0; i<pdbRecordType->no_links; i++)
+	    printf(" %hd",pdbRecordType->link_ind[i]);
 	printf("\n");
-	printf("indvalFlddes %d name %s\n",pdbRecDes->indvalFlddes,
-	    pdbRecDes->pvalFldDes->name);
+	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
+	    pdbRecordType->pvalFldDes->name);
 	printf("struct rset * %p rec_size %d\n",
-	    pdbRecDes->prset,pdbRecDes->rec_size);
-	if(recdesName) break;
+	    pdbRecordType->prset,pdbRecordType->rec_size);
+	if(recordTypeName) break;
     }
 }
 
-void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname)
+void dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname)
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
@@ -2820,24 +2883,24 @@ void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname)
 	printf("pdbbase not specified\n");
 	return;
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	if(recdesName) {
-	    gotMatch = (strcmp(recdesName,pdbRecDes->name)==0) ? TRUE : FALSE;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	if(recordTypeName) {
+	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0) ? TRUE : FALSE;
 	}else {
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	printf("recordtype(%s) \n",pdbRecDes->name);
-	for(i=0; i<pdbRecDes->no_fields; i++) {
+	printf("recordtype(%s) \n",pdbRecordType->name);
+	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    int	j;
 
-	    pdbFldDes = pdbRecDes->papFldDes[i];
+	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    if(fname && strcmp(fname,pdbFldDes->name)!=0) continue;
 	    printf("    %s\n", pdbFldDes->name);
 	    printf("\t         prompt: %s\n",pdbFldDes->prompt);
 	    printf("\t          extra: %s\n",pdbFldDes->extra);
-	    printf("\t      indRecDes: %hd\n",pdbFldDes->indRecDes);
+	    printf("\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
 	    printf("\t        special: %hd ",pdbFldDes->special);
 	    if(pdbFldDes->special) {
 		for(j=0; j<SPC_NTYPES; j++) {
@@ -2884,13 +2947,13 @@ void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname)
 	    printf("\t           size: %hd\n",pdbFldDes->size);
 	    printf("\t         offset: %hd\n",pdbFldDes->offset);
 	}
-	if(recdesName) break;
+	if(recordTypeName) break;
     }
 }
 
-void dbDumpDevice(DBBASE *pdbbase,char *recdesName)
+void dbDumpDevice(DBBASE *pdbbase,char *recordTypeName)
 {
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     devSup	*pdevSup;
     int		gotMatch;
 
@@ -2898,23 +2961,23 @@ void dbDumpDevice(DBBASE *pdbbase,char *recdesName)
 	printf("pdbbase not specified\n");
 	return;
     }
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	if(recdesName) {
-	    gotMatch = (strcmp(recdesName,pdbRecDes->name)==0) ? TRUE : FALSE;
+    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	if(recordTypeName) {
+	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0) ? TRUE : FALSE;
 	}else {
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	printf("recordtype(%s) \n",pdbRecDes->name);
-	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+	printf("recordtype(%s) \n",pdbRecordType->name);
+	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 	pdevSup; pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    printf("\t     name: %s\n",pdevSup->name);
 	    printf("\t   choice: %s\n",pdevSup->choice);
 	    printf("\tlink_type: %d\n",pdevSup->link_type);
 	    printf("\t    pdset: %p\n",pdevSup->pdset);
 	}
-	if(recdesName) break;
+	if(recordTypeName) break;
     }
 }
 
@@ -2965,7 +3028,7 @@ void dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
     struct link	*plink;
 
     dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
+    status = dbFirstRecordType(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
@@ -2998,7 +3061,7 @@ void dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 	    }
 	    status = dbNextRecord(pdbentry);
 	}
-	status = dbNextRecdes(pdbentry);
+	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return;

@@ -137,7 +137,7 @@ PVDENTRY *dbPvdFind(dbBase *pdbbase,char *name,int lenName)
     return (NULL);
 }
 
-PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecDes *precdes,dbRecordNode *precnode)
+PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecordType *precordType,dbRecordNode *precnode)
 {
     unsigned short	hashInd;
     ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
@@ -160,7 +160,7 @@ PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecDes *precdes,dbRecordNode *precnode)
     }
     ppvdNode = dbCalloc(1, sizeof(PVDENTRY));
     ellAdd(ppvdlist, (ELLNODE*)ppvdNode);
-    ppvdNode->precdes = precdes;
+    ppvdNode->precordType = precordType;
     ppvdNode->precnode = precnode;
     return (ppvdNode);
 }

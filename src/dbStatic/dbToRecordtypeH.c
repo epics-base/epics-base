@@ -27,48 +27,58 @@ of this distribution.
 #include <gpHash.h>
 
 DBBASE *pdbbase = NULL;
+#define MAX_PATH_LENGTH 256
 
+static void addPath(char *path,char *newdir)
+{
+    if((strlen(path)+strlen(newdir)+2) > (size_t)MAX_PATH_LENGTH) {
+	fprintf(stderr,"path > 256 characters\n");
+	exit(-1);
+    }
+    if(strlen(path) > (size_t)0) strcat(path,":");
+    strcat(path,newdir);
+}
+ 
 int main(int argc,char **argv)
 {
-    int		arg,strip;
-    char	*path=0;
+    int		strip;
+    char	path[MAX_PATH_LENGTH];
+    int		i;
     long	status;
     char	*outFilename;
     char	*pext;
     FILE	*outFile;
-    int		i;
     dbMenu	*pdbMenu;
-    dbRecDes	*pdbRecDes;
+    dbRecordType	*pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		isdbCommonRecord = FALSE;
     char	*plastSlash;
 
-    /*Look for path, i.e. -I path or -Ipath*/
-    for(arg=1; arg<argc; arg++) {
-	if(strncmp(argv[arg],"-I",2)!=0) continue;
-	if(strlen(argv[arg])==2) {
-	    path = argv[arg+1];
+    /*Look for path, i.e. -I dir or -Idir*/
+    path[0] = 0;
+    while(strncmp(argv[1],"-I",2)==0) {
+	if(strlen(argv[1])==2) {
+	    addPath(path,argv[2]);
 	    strip = 2;
 	} else {
-	    path = argv[arg] + 2;
+	    addPath(path,argv[1]+2);
 	    strip = 1;
 	}
 	argc -= strip;
-	for(i=arg; i<argc; i++) argv[i] = argv[i + strip];
-	break;
+	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
     }
-    if(argc!=2) {
-	fprintf(stderr,"usage: dbToRecordtypeH -Ipath file.db\n");
-	exit(-1);
+    if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
+	fprintf(stderr,"usage: dbToRecordtypeH -Idir -Idir file.dbd\n");
+	exit(0);
     }
     /*remove path so that outFile is created where program is executed*/
     plastSlash = strrchr(argv[1],'/');
     plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
     outFilename = dbCalloc(1,strlen(plastSlash)+1);
     strcpy(outFilename,plastSlash);
-    pext = strstr(outFilename,".db");
+    pext = strstr(outFilename,".dbd");
     if(!pext) {
-	fprintf(stderr,"Input file MUST have .db extension\n");
+	fprintf(stderr,"Input file MUST have .dbd extension\n");
 	exit(-1);
     }
     strcpy(pext,".h");
@@ -106,18 +116,18 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#endif /*INC%sH*/\n",pdbMenu->name);
 	pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
     }
-    pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-    while(pdbRecDes) {
-	fprintf(outFile,"#ifndef INC%sH\n",pdbRecDes->name);
-	fprintf(outFile,"#define INC%sH\n",pdbRecDes->name);
-	fprintf(outFile,"typedef struct %s",pdbRecDes->name);
+    pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+    while(pdbRecordType) {
+	fprintf(outFile,"#ifndef INC%sH\n",pdbRecordType->name);
+	fprintf(outFile,"#define INC%sH\n",pdbRecordType->name);
+	fprintf(outFile,"typedef struct %s",pdbRecordType->name);
 	if(!isdbCommonRecord) fprintf(outFile,"Record");
 	fprintf(outFile," {\n");
-	for(i=0; i<pdbRecDes->no_fields; i++) {
+	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    char	name[256];
 	    int		j;
 
-	    pdbFldDes = pdbRecDes->papFldDes[i];
+	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    for(j=0; j< (int)strlen(pdbFldDes->name); j++)
 		name[j] = tolower(pdbFldDes->name[j]);
 	    name[strlen(pdbFldDes->name)] = 0;
@@ -178,46 +188,46 @@ int main(int argc,char **argv)
 		    fprintf(outFile,"ILLEGAL FIELD TYPE\n");
 	    }
 	}
-	fprintf(outFile,"} %s",pdbRecDes->name);
+	fprintf(outFile,"} %s",pdbRecordType->name);
 	if(!isdbCommonRecord) fprintf(outFile,"Record");
 	fprintf(outFile,";\n");
 	if(!isdbCommonRecord) {
-	    for(i=0; i<pdbRecDes->no_fields; i++) {
-		pdbFldDes = pdbRecDes->papFldDes[i];
+	    for(i=0; i<pdbRecordType->no_fields; i++) {
+		pdbFldDes = pdbRecordType->papFldDes[i];
 		fprintf(outFile,"#define %sRecord%s\t%d\n",
-		    pdbRecDes->name,pdbFldDes->name,pdbFldDes->indRecDes);
+		    pdbRecordType->name,pdbFldDes->name,pdbFldDes->indRecordType);
 	    }
 	}
-	fprintf(outFile,"#endif /*INC%sH*/\n",pdbRecDes->name);
-	pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node);
-	if(pdbRecDes) fprintf(outFile,"\n");
+	fprintf(outFile,"#endif /*INC%sH*/\n",pdbRecordType->name);
+	pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
+	if(pdbRecordType) fprintf(outFile,"\n");
     }
     if(!isdbCommonRecord) {
 	fprintf(outFile,"#ifdef GEN_SIZE_OFFSET\n");
-	pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
-	while(pdbRecDes) {
-	    fprintf(outFile,"int %sRecordSizeOffset(dbRecDes *pdbRecDes)\n{\n",
-		pdbRecDes->name);
-	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecDes->name);
-	    for(i=0; i<pdbRecDes->no_fields; i++) {
+	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+	while(pdbRecordType) {
+	    fprintf(outFile,"int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
+		pdbRecordType->name);
+	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecordType->name);
+	    for(i=0; i<pdbRecordType->no_fields; i++) {
 		char	name[256];
 		int		j;
 
-		pdbFldDes = pdbRecDes->papFldDes[i];
+		pdbFldDes = pdbRecordType->papFldDes[i];
 		for(j=0; j< (int)strlen(pdbFldDes->name); j++)
 		    name[j] = tolower(pdbFldDes->name[j]);
 		name[strlen(pdbFldDes->name)] = 0;
 		fprintf(outFile,
-		"  pdbRecDes->papFldDes[%d]->size=sizeof(prec->%s);\n",
+		"  pdbRecordType->papFldDes[%d]->size=sizeof(prec->%s);\n",
 		    i,name);
-		fprintf(outFile,"  pdbRecDes->papFldDes[%d]->offset=",i);
+		fprintf(outFile,"  pdbRecordType->papFldDes[%d]->offset=",i);
 		fprintf(outFile,
 		    "(short)((char *)&prec->%s - (char *)prec);\n",name);
 	    }
-	    fprintf(outFile,"    pdbRecDes->rec_size = sizeof(*prec);\n");
+	    fprintf(outFile,"    pdbRecordType->rec_size = sizeof(*prec);\n");
 	    fprintf(outFile,"    return(0);\n");
 	    fprintf(outFile,"}\n");
-	    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node);
+	    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
 	}
 	fprintf(outFile,"#endif /*GEN_SIZE_OFFSET*/\n");
     }

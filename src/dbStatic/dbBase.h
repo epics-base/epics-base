@@ -89,8 +89,8 @@ typedef struct dbFldDes{  /* field description */
 	char	*prompt; 	/*Prompt string for DCT*/
 	char	*name;		/*Field name*/
 	char	*extra;		/*C def for DBF_NOACCESS*/
-	struct dbRecDes *pdbRecDes;
-	short	indRecDes;	/*within dbRecDes.papFldDes */
+	struct dbRecordType *pdbRecordType;
+	short	indRecordType;	/*within dbRecordType.papFldDes */
 	short	special;	/*Special processing requirements	*/
 	dbfType	field_type;	/*Field type as defined in dbFldTypes.h */
 	short	process_passive;/*should dbPutField process passive	*/
@@ -113,7 +113,7 @@ typedef struct dbRecordNode {
 	char		*recordname;
 }dbRecordNode;
 
-typedef struct dbRecDes {
+typedef struct dbRecordType {
 	ELLNODE		node;
 	ELLLIST		recList;	/*LIST head of sorted dbRecordNodes*/
 	ELLLIST		devList;	/*List of associated device support*/
@@ -130,11 +130,11 @@ typedef struct dbRecDes {
 	/*The following are only available on run time system*/
 	struct	rset	*prset;
 	int		rec_size;	/*record size in bytes          */
-}dbRecDes;
+}dbRecordType;
 
 typedef struct dbBase {
 	ELLLIST		menuList;
-	ELLLIST		recDesList;
+	ELLLIST		recordTypeList;
 	ELLLIST		drvList;
 	ELLLIST		bptList;	/*Break Point Table Head*/
 	void		*pathPvt;

@@ -27,30 +27,41 @@ of this distribution.
 #include <gpHash.h>
 
 DBBASE *pdbbase = NULL;
+#define MAX_PATH_LENGTH 256
 
+static void addPath(char *path,char *newdir)
+{
+    if((strlen(path)+strlen(newdir)+2) > (size_t)MAX_PATH_LENGTH) {
+        fprintf(stderr,"path > 256 characters\n");
+        exit(-1);
+    }
+    if(strlen(path) > (size_t)0) strcat(path,":");
+    strcat(path,newdir);
+}
+ 
+
 int main(int argc,char **argv)
 {
-    long status;
-    int  i;
-    int	 arg,strip;
-    char *path=0;
+    long        status;
+    int         strip;
+    char        path[MAX_PATH_LENGTH];
+    int         i;
 
-    /*Look for path, i.e. -I path or -Ipath*/
-    for(arg=1; arg<argc; arg++) {
-	if(strncmp(argv[arg],"-I",2)!=0) continue;
-	if(strlen(argv[arg])==2) {
-	    path = argv[arg+1];
-	    strip = 2;
-	} else {
-	    path = argv[arg] + 2;
-	    strip = 1;
-	}
-	argc -= strip;
-	for(i=arg; i<argc; i++) argv[i] = argv[i + strip];
-	break;
+    /*Look for path, i.e. -I dir or -Idir*/
+    path[0] = 0;
+    while(strncmp(argv[1],"-I",2)==0) {
+        if(strlen(argv[1])==2) {
+            addPath(path,argv[2]);
+            strip = 2;
+        } else {
+            addPath(path,argv[1]+2);
+            strip = 1;
+        }
+        argc -= strip;
+        for(i=1; i<argc; i++) argv[i] = argv[i + strip];
     }
-    if(argc<2) {
-	printf("usage: dbReadTest file1.db file2.db ...\n");
+    if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
+	printf("usage: dbReadTest -Idir -Idir file.dbd file.dbd \n");
 	exit(0);
     }
     for(i=1; i<argc; i++) {
@@ -60,8 +71,8 @@ int main(int argc,char **argv)
 	errMessage(status,"from dbReadDatabase");
     }
 /*
-    dbDumpRecDes(pdbbase,"ai");
-    dbDumpRecDes(pdbbase,NULL);
+    dbDumpRecordType(pdbbase,"ai");
+    dbDumpRecordType(pdbbase,NULL);
     dbPvdDump(pdbbase);
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);

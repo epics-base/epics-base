@@ -62,15 +62,11 @@
 #define DCT_LINK_PV		2
 #define DCT_LINK_DEVICE		3
 
-/*options for dbRead and dbWrite*/
-#define DB_RECDES_IO		0x1
-#define DB_RECORD_IO		0x2
-
 typedef dbBase DBBASE;
 
 typedef struct{
 	DBBASE		*pdbbase;
-	dbRecDes	*precdes;
+	dbRecordType	*precordType;
 	dbFldDes	*pflddes;
 	dbRecordNode	*precnode;
 	void	 	*pfield;
@@ -93,13 +89,13 @@ long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,const char *path);
 long dbPath(DBBASE *pdbbase,const char *path);
 long dbAddPath(DBBASE *pdbbase,const char *path);
 long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
-	char *precdesname,int level);
+	char *precordTypename,int level);
 long dbWriteRecordFP(DBBASE *ppdbbase,FILE *fp,
-	char *precdesname,int level);
+	char *precordTypename,int level);
 long dbWriteMenu(DBBASE *pdbbase,const char *filename,char *menuName);
 long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName);
-long dbWriteRecDes(DBBASE *pdbbase,const char *filename,char *recdesName);
-long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName);
+long dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName);
+long dbWriteRecordTypeFP(DBBASE *pdbbase,FILE *fp,char *recordTypeName);
 long dbWriteDevice(DBBASE *pdbbase,const char *filename);
 long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp);
 long dbWriteDriver(DBBASE *pdbbase,const char *filename);
@@ -107,16 +103,36 @@ long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp);
 long dbWriteBreaktable(DBBASE *pdbbase,const char *filename);
 long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
 
-/*Following two routines are obsolete. For now dbRead calls dbAsciiRead.*/
+/*Following  are obsolete. For now dbRead calls dbAsciiRead.*/
 /*  dbWrite does nothing						*/
+#define DB_RECORDTYPE_IO	0x1
+#define DB_RECORD_IO		0x2
 long dbRead(DBBASE *pdbbase,FILE *fp);
 long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp);
-
 long dbFindRecdes(DBENTRY *pdbentry,char *recdesname);
 long dbFirstRecdes(DBENTRY *pdbentry);
 long dbNextRecdes(DBENTRY *pdbentry);
 char *dbGetRecdesName(DBENTRY *pdbentry);
 int  dbGetNRecdes(DBENTRY *pdbentry);
+long dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
+long dbNextFielddes(DBENTRY *pdbentry,int dctonly);
+char **dbGetChoices(DBENTRY *pdbentry);
+/*End obsolete routines*/
+
+long dbFindRecordType(DBENTRY *pdbentry,char *recordTypename);
+long dbFirstRecordType(DBENTRY *pdbentry);
+long dbNextRecordType(DBENTRY *pdbentry);
+char *dbGetRecordTypeName(DBENTRY *pdbentry);
+int  dbGetNRecordTypes(DBENTRY *pdbentry);
+
+long dbFirstField(DBENTRY *pdbentry,int dctonly);
+long dbNextField(DBENTRY *pdbentry,int dctonly);
+int  dbGetFieldType(DBENTRY *pdbentry);
+int  dbGetNFields(DBENTRY *pdbentry,int dctonly);
+char *dbGetFieldName(DBENTRY *pdbentry);
+char *dbGetDefault(DBENTRY *pdbentry);
+char *dbGetPrompt(DBENTRY *pdbentry);
+int dbGetPromptGroup(DBENTRY *pdbentry);
 
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName);
 long dbDeleteRecord(DBENTRY *pdbentry);
@@ -126,17 +142,10 @@ long dbNextRecord(DBENTRY *pdbentry);
 int  dbGetNRecords(DBENTRY *pdbentry);
 char *dbGetRecordName(DBENTRY *pdbentry);
 long dbRenameRecord(DBENTRY *pdbentry,char *newName);
-
-long dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
-long dbNextFielddes(DBENTRY *pdbentry,int dctonly);
-int  dbGetFieldType(DBENTRY *pdbentry);
-int  dbGetNFields(DBENTRY *pdbentry,int dctonly);
-char *dbGetFieldName(DBENTRY *pdbentry);
-char *dbGetDefault(DBENTRY *pdbentry);
-char *dbGetPrompt(DBENTRY *pdbentry);
-int dbGetPromptGroup(DBENTRY *pdbentry);
+long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK);
 
 long dbFindField(DBENTRY *pdbentry,char *pfieldName);
+int dbFoundField(DBENTRY *pdbentry);
 char *dbGetString(DBENTRY *pdbentry);
 long dbPutString(DBENTRY *pdbentry,char *pstring);
 char *dbVerify(DBENTRY *pdbentry,char *pstring);
@@ -146,7 +155,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry);
 brkTable *dbFindBrkTable(DBBASE *pdbbase,char *name);
 
 dbMenu *dbFindMenu(DBBASE *pdbbase,char *name);
-char **dbGetChoices(DBENTRY *pdbentry);
+char **dbGetMenuChoices(DBENTRY *pdbentry);
 int  dbGetMenuIndex(DBENTRY *pdbentry);
 long dbPutMenuIndex(DBENTRY *pdbentry,int index);
 int  dbGetNMenuChoices(DBENTRY *pdbentry);
@@ -166,11 +175,11 @@ long dbCvtLinkToPvlink(DBENTRY *pdbentry);
 
 /*dump routines*/
 void dbDumpPath(DBBASE *pdbbase);
-void dbDumpRecord(DBBASE *pdbbase,char *precdesname,int level);
+void dbDumpRecord(DBBASE *pdbbase,char *precordTypename,int level);
 void dbDumpMenu(DBBASE *pdbbase,char *menuName);
-void dbDumpRecDes(DBBASE *pdbbase,char *recdesName);
-void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname);
-void dbDumpDevice(DBBASE *pdbbase,char *recdesName);
+void dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName);
+void dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname);
+void dbDumpDevice(DBBASE *pdbbase,char *recordTypeName);
 void dbDumpDriver(DBBASE *pdbbase);
 void dbDumpBreaktable(DBBASE *pdbbase,char *name);
 void dbPvdDump(DBBASE *pdbbase,int verbose);
@@ -184,7 +193,7 @@ void *dbMalloc(size_t size);
 
 extern int dbStaticDebug;
 
-#define S_dbLib_recdesNotFound (M_dbLib| 1)	/*Record Type does not exist*/
+#define S_dbLib_recordTypeNotFound (M_dbLib| 1)	/*Record Type does not exist*/
 #define S_dbLib_recExists (M_dbLib| 3)		/*Record Already exists*/
 #define S_dbLib_recNotFound (M_dbLib| 5)	/*Record Not Found*/
 #define S_dbLib_flddesNotFound (M_dbLib| 7)	/*Field Description Not Found*/

@@ -1,0 +1,76 @@
+<HTML>
+<BODY>
+<PRE>
+<!-- Manpage converted by man2html 3.0.1 -->
+
+</PRE>
+<H2>VERSION $Id: freeList.3,v 1.2 1997/04/10 19:47:35</H2><PRE>
+
+</PRE>
+<H2>NAME</H2><PRE>
+     freeList.c - General Purpose memory free list library
+
+
+</PRE>
+<H2>SYNOPSIS</H2><PRE>
+     freeListInitPvt     - Initialize a free list
+     freeListCalloc - Allocate and initialize to zero a new element
+     freeListMalloc - Allocate a new element
+     freeListFree   - Free an element,i.e. put on free list
+
+
+     void freeListInitPvt(void **ppvt,int size,int nmalloc);
+     void *freeListCalloc(void *pvt);
+     void *freeListMalloc(void *pvt);
+     size_t freeListItemsAvail(void *pvt);
+     void freeListFree(void *pvt,void*pmem);
+
+     where :
+
+     pvt  - For private use by library. Caller must provide a "void *pvt"
+     size - Size in butes of each element. Note that all elements must be same size
+     nmalloc   - Number of elements top allocate when regular malloc must be called.
+
+
+
+</PRE>
+<H2>DESCRIPTION</H2><PRE>
+     This library can be used to allocate  and  free  fixed  size
+     memory  elements.   Free  elements  are maintained on a free
+     list rather then being returned to the  heap  via  calls  to
+     free.  When  it  is  necessary to call malloc, memory can be
+     allocated in multiples of the element size.
+
+
+</PRE>
+<H2>RETURNS</H2><PRE>
+     freeListCalloc and freeListMalloc return address of element allocated
+     or NULL if no more memory could be obtained via call to malloc
+
+
+</PRE>
+<H2>INCLUDES</H2><PRE>
+     freeLib.h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</PRE>
+<HR>
+<ADDRESS>
+Man(1) output converted with
+<a href="http://www.oac.uci.edu/indiv/ehood/man2html.html">man2html</a>
+</ADDRESS>
+</BODY>
+</HTML>

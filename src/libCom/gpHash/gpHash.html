@@ -1,0 +1,130 @@
+<HTML>
+<BODY>
+<PRE>
+<!-- Manpage converted by man2html 3.0.1 -->
+
+</PRE>
+<H2>VERSION $Id: gpHash.3,v 1.2 1999/09/13 19:18:04</H2><PRE>
+
+</PRE>
+<H2>NAME</H2><PRE>
+     gpHash.c - General Purpose Hash Library
+
+
+</PRE>
+<H2>SYNOPSIS</H2><PRE>
+     gphInitPvt     - Initialize
+     gphFind        - Find an element taht has been hashed
+     gphAdd         - Add a new entry
+     gphDelete - Delete an entry
+     gphFreeMem     - Free all memory allocated by gpHash
+     gphDump        - Dump current members
+
+
+     typedef struct{
+         ELLNODE     node;
+         char        *name;          /*address of name placed in directory*/
+         void        *pvtid;         /*private name for subsystem user*/
+         void        *userPvt;       /*private for user*/
+     } GPHENTRY;
+
+     void    gphInitPvt(void **ppvt);
+     GPHENTRY *gphFind(void *pvt,const char *name,void *pvtid);
+     GPHENTRY *gphAdd(void *pvt,const char *name,void *pvtid);
+     void gphDelete(void *pvt,const char *name,void *pvtid);
+     void gphFreeMem(void *pvt);
+     void gphDump(void *pvt);
+
+
+     where :
+
+     pvt  - For private use by library. Caller must provide a "void *pvt"
+     name - The character string that will be hashed and added to table
+     pvtid     - The name plus value of this pointer constitute unique entry
+
+
+
+</PRE>
+<H2>DESCRIPTION</H2><PRE>
+     This library provides a general purpose directory  of  names
+     that  is  accessed via a hash table. The hash table contains
+     256 entries. Each entry is a list of members  that  hash  to
+     the  same  value. The user can maintain seperate directories
+     via the same table by having  a  different  pvtid  for  each
+     directory.
+
+
+</PRE>
+<H2>RETURNS</H2><PRE>
+     gphFind returns the address of the GPHENTRY describing the entry or NULL if name was not found.
+     gphAdd returns the address of the new GPHENTRY describing the entry or NULL if name was already
+     present.
+
+
+</PRE>
+<H2>INCLUDES</H2><PRE>
+     gpHash.h
+
+
+
+</PRE>
+<H2>REFERENCE</H2><PRE>
+     Fast Hashing of Variable Length Text Strings, Peter K. Pear-
+     son, Communications of the ACM, June 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</PRE>
+<HR>
+<ADDRESS>
+Man(1) output converted with
+<a href="http://www.oac.uci.edu/indiv/ehood/man2html.html">man2html</a>
+</ADDRESS>
+</BODY>
+</HTML>

@@ -168,6 +168,9 @@ processFile(name)
 }
 
 
+/****************************************************************************
+INIT_SETUP
+****************************************************************************/
 static void
 init_setup(argc, argv)
     int             argc;
@@ -219,7 +222,13 @@ if ( argc != 2 ) {
 	exit(1);
     }
     strcpy(src_base, sys_top);
-
+    /* if dest_base is substring of src_base - recursion occurs */
+    if ((strstr(dest_base, src_base)) != NULL) { /* error */
+	fprintf(stderr, "####################################################\n");
+	fprintf(stderr, "%s: You can't run this tool in an application system area!\n", progName);
+	fprintf(stderr, "####################################################\n");
+	exit(1);
+    }
     /* if .applShadow doesn't exist - require touch .applShadow */
     if ((stat("./.applShadow", &stbuf)) != 0) {
 	fprintf(stderr, "\n");

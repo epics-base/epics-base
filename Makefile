@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Top Level EPICS Makefile
+# Top Level "Diabolical" EPICS Makefile
 #        by Matthew Needes and Mike Bordua
 #
 #  Notes:
@@ -17,45 +17,43 @@
 #         is complete.
 #
 
-EPICS=..
-include $(EPICS)/config/CONFIG_BASE
+include config.mk
 
 all: install
 
 depends:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-pre_build:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			TEMP=`echo $$FILE | cut -d. -f2`;		\
+			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 build_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			TEMP=`echo $$FILE | cut -d. -f2`;		\
+			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 install_libs:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			TEMP=`echo $$FILE | cut -d. -f2`;		\
+			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 build:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			TEMP=`echo $$FILE | cut -d. -f2`;		\
+			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 install:
-	@(for ARCH in ${BUILD_ARCHS};					\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			TEMP=`echo $$FILE | cut -d. -f2`;		\
+			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 release: install
@@ -111,21 +109,12 @@ depends.%: dirs.%
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 	@tools/TouchFlag $@ ${TOUCH}
 
-# Pre_build RULE  syntax:  make pre_build.arch
-#                  e.g.:   make pre_build.arch
-#  yacc/lex etc.
-
-pre_build.%: depends.%
-	@echo $*: Performing Pre Build
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs pre_build
-	@tools/TouchFlag $@ ${TOUCH}
-
 # Build_libs RULE  syntax:  make build_libs.arch
 #                  e.g.:    make build_libs.arch
 #
 #  Build libraries  (depends must be finished)
 
-build_libs.%: pre_build.%
+build_libs.%: depends.%
 	@echo $*: Building Libraries
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build_libs
 	@tools/TouchFlag $@ ${TOUCH}

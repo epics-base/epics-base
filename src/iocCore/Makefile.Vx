@@ -7,8 +7,6 @@ all: install
 
 depends:
 
-pre_build:
-
 build_libs:
 
 install_libs:

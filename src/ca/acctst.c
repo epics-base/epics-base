@@ -1576,8 +1576,8 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
     }
 
-    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
     verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
+    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
     verifyClear ( pChans );
 
     /*
@@ -1615,6 +1615,10 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         printf ( "CA pend event delay accuracy = %f %%\n", accuracy );
     }
 #endif
+
+    /* test that ca_task_exit () works when there is still one channel remaining */
+    /* status = ca_clear_channel ( chan ); */
+    /* SEVCHK ( status, NULL ); */
 
     caTaskExistTest ();
 

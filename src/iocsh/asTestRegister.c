@@ -116,33 +116,6 @@ static void ascarCallFunc(const iocshArgBuf *args)
     ascar(args[0].ival);
 }
 
-/* asDumpUag */
-static const iocshArg asDumpUagArg0 = { "uagname",iocshArgString};
-static const iocshArg * const asDumpUagArgs[] = {&asDumpUagArg0};
-static const iocshFuncDef asDumpUagFuncDef = {"asDumpUag",1,asDumpUagArgs};
-static void asDumpUagCallFunc(const iocshArgBuf *args)
-{
-    asDumpUag(args[0].sval);
-}
-
-/* asDumpHag */
-static const iocshArg asDumpHagArg0 = { "hagname",iocshArgString};
-static const iocshArg * const asDumpHagArgs[] = {&asDumpHagArg0};
-static const iocshFuncDef asDumpHagFuncDef = {"asDumpHag",1,asDumpHagArgs};
-static void asDumpHagCallFunc(const iocshArgBuf *args)
-{
-    asDumpHag(args[0].sval);
-}
-
-/* asDumpRules */
-static const iocshArg asDumpRulesArg0 = { "asgname",iocshArgString};
-static const iocshArg * const asDumpRulesArgs[] = {&asDumpRulesArg0};
-static const iocshFuncDef asDumpRulesFuncDef = {"asDumpRules",1,asDumpRulesArgs};
-static void asDumpRulesCallFunc(const iocshArgBuf *args)
-{
-    asDumpRules(args[0].sval);
-}
-
 /* asDumpHash */
 static const iocshFuncDef asDumpHashFuncDef = {"asDumpHash",0,0};
 static void asDumpHashCallFunc(const iocshArgBuf *args)
@@ -162,8 +135,5 @@ void epicsShareAPI asTestRegister(void)
     iocshRegister(&aspmemFuncDef,aspmemCallFunc);
     iocshRegister(&astacFuncDef,astacCallFunc);
     iocshRegister(&ascarFuncDef,ascarCallFunc);
-    iocshRegister(&asDumpUagFuncDef,asDumpUagCallFunc);
-    iocshRegister(&asDumpHagFuncDef,asDumpHagCallFunc);
-    iocshRegister(&asDumpRulesFuncDef,asDumpRulesCallFunc);
     iocshRegister(&asDumpHashFuncDef,asDumpHashCallFunc);
 }

@@ -1,0 +1,30 @@
+
+CAS = ../..
+TOP = $(CAS)/../..
+
+include $(TOP)/config/CONFIG_BASE
+
+CXXCMPLR = STRICT
+
+PROD_LIBS := cas ca gdd Com
+
+SRCS += main.cc
+SRCS += exServer.cc
+SRCS += exPV.cc
+SRCS += exVectorPV.cc
+SRCS += exScalarPV.cc
+SRCS += exAsyncPV.cc
+SRCS += exChannel.cc
+SRCS += templInst.cc
+
+PROD := excas
+
+include $(TOP)/config/RULES.Host
+
+clean::
+	@$(RM) excas 
+	@$(RM) fexcas 
+	@$(RM) pexcas 
+	@$(RM) -rf Templates.DB
+	@$(RM) core 
+

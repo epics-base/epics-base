@@ -1,0 +1,35 @@
+#	base/src/cvtDctsdr/Makefile.Host
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+MAN1 = sf2db.1
+
+PROD_LIBS := Com
+PROD = sf2db sdr2gblmenu sdr2driver sdr2device sdr2recordtype 
+
+#	We need explicit rules here to 
+sdr2gblmenu$(EXE): sdr2gblmenu$(OBJ) dbStaticLib$(OBJ)
+	$(LINK.c) sdr2gblmenu$(OBJ) dbStaticLib$(OBJ) $(LDLIBS)
+
+sdr2driver$(EXE): sdr2driver$(OBJ) dbStaticLib$(OBJ)
+	$(LINK.c) sdr2driver$(OBJ) dbStaticLib$(OBJ) $(LDLIBS)
+
+sdr2device$(EXE): sdr2device$(OBJ) dbStaticLib$(OBJ)
+	$(LINK.c) sdr2device$(OBJ) dbStaticLib$(OBJ) $(LDLIBS)
+
+sdr2recordtype$(EXE): sdr2recordtype$(OBJ) dbStaticLib$(OBJ)
+	$(LINK.c) sdr2recordtype$(OBJ) dbStaticLib$(OBJ) $(LDLIBS)
+
+sf2db$(EXE): sf2dbYacc$(OBJ) dbStaticLib$(OBJ)
+	$(LINK.c) sf2dbYacc$(OBJ) dbStaticLib$(OBJ) $(LDLIBS)
+
+sf2dbYacc.c: sf2dbLex.c
+
+clean::
+	$(RM) sf2dbYacc.c sf2dbLex.c 
+
+
+include $(TOP)/config/RULES.Host
+
+#	EOF base/src/cvtDctsdr/Makefile.Host

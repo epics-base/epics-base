@@ -39,71 +39,30 @@
  * .08  02-05-92	jba	Changed function arguments from paddr to precord 
  * .09  03-02-92	jba	Added function dbValueSize to replace db_value_size
  * .10  04-17-92	rcz	put in mrk's dbNameToAddr changes for dbBase
+ * .11  05-18-92	mrk	Changes for database internal structures
  */
 
 /* This is a major revision of the original implementation of database access.*/
 
 /* Global Database Access Routines
  *
- * dbScanLock(precord)		Lock for scanning records
- *	struct dbCommon		precord;
- * returns void
+ * dbCommonInit			Initialize dbCommon
  *
- * dbScanUnlock(precord)	Unlock for scanning records
- *	struct dbCommon		precord;
- * returns void
+ * dbScanLock			Lock for scanning records
+ * dbScanUnlock			Unlock for scanning records
+ * dbScanLockInit		Initialize scan lock
  *
- * dbScanLockInit(nset)		Initialize scan lock
- *	int		nset;
+ * dbScanPassive		process if record is passively scanned
+ * dbProcess			process a database record
+ * dbNameToAddr			Given "pv<.field>" compute dbAddr
+ * dbGetLink			Get via a database link
+ * dbPutLink			Put via a link
+ * dbGetField			Get from outside database
+ * dbPutField			Put from outside database
+ * dbPut			Common put routine
  *
- * dbScanPassive(precord)	process if record is passively scanned
- *	struct dbCommon		precord;
- *
- * dbProcess(precord)		process a database record
- *	struct dbCommon		precord;
- *
- * dbNameToAddr(pname,paddr) Given "pv<.field>" compute dbAddr
- *	char		*pname
- *	struct dbAddr	*paddr;	pointer to database address structure
- *
- * dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
- *	struct db_link	*pdblink;
- *      struct dbCommon	*pdest;
- *	short		dbrType;	DBR_xxx
- *	void		pbuffer;	addr of returned data
- *	long		*options;	addr of options
- *	long		*nRequest;	addr of number of elements
- *
- * dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
- *	struct db_link	*pdblink;
- *      struct dbCommon	*psource;
- *	short		dbrType;	DBR_xxx
- *	void		pbuffer;	addr of input data
- *	long		nRequest;
- *
- * dbGetField(paddr,dbrType,pbuffer,options,nRequest,pfl)
- *	struct dbAddr	*paddr;	
- *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of returned data
- *	long		*options;	addr of options
- *	long		*nRequest;	addr of number of elements
- *	struct db_field_log pfl;	addr of field_log
- *
- * dbPutField(paddr,dbrType,pbuffer,nRequest)
- *	struct dbAddr	*paddr;	
- *	short		dbrType;	DBR_xxx
- *	caddr_t		pbuffer;	addr of input data
- *	long		nRequest;
- *
- * dbBufferSize(dbr_type,options,no_elements)
- *	short	dbr_type;
- *	long	options;
- *	long	no_elements;
- * returns: number of bytes as a long
- *
- * dbValueSize(dbr_type)
- *      short     dbr_type;
- * returns: sizeof DBR request type as a long
+ * dbBufferSize			Compute buffer size
+ * dbValueSizeA			Compute size for a field
  */
 
 #include	<vxWorks.h>
@@ -122,6 +81,7 @@
 #include	<dbDefs.h>
 #include	<dbBase.h>
 #include	<dbAccess.h>
+#include	<dbManipulate.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>
@@ -132,18 +92,9 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<special.h>
-/*#include	<pvd.h>*/
 
-typedef struct pvdEntry{
-        NODE    next;
-        void    *precord;
-        short   recType;
-} PVDENTRY;
 extern struct dbBase *pdbBase;
 
-long jba_debug=0;
-
-long dbPut();
 /* Added for Channel Access Links */
 long dbCaAddInlink();
 long dbCaGetLink();
@@ -151,9 +102,6 @@ long dbCommonInit();
 
 #define MAX_LOCK 10
 
-#define MIN(x,y)        ((x < y)?x:y)
-#define MAX(x,y)        ((x > y)?x:y)
-
 struct scanLock{
 	FAST_LOCK	lock;
 	caddr_t		precord;
@@ -164,7 +112,7 @@ static struct {
 	int		nset;		/* Number of sets */
 	struct scanLock *pscanLock;	/*addr of array of struct scanLock */
 } dbScanPvt;
-
+
 long dbCommonInit(struct dbCommon *precord, int pass)
 {
 
@@ -181,7 +129,7 @@ long status;
     return status;
 
 } /* end dbCommonInit() */
-
+
 void dbScanLock(struct dbCommon *precord)
 {
 	struct scanLock *pscanLock;
@@ -294,12 +242,9 @@ long dbProcess(struct dbCommon *precord)
 		status = dbGetLink(&precord->sdis.value.db_link,precord,
 			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
 		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
-	}
-	if(precord->sdis.type == CA_LINK) 
-	{
+	} else if(precord->sdis.type == CA_LINK) {
 		status = dbCaGetLink(&(precord->sdis));
-		if(!RTN_SUCCESS(status)) 
-		    recGblRecordError(status,precord,"dbProcess");
+		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
 	} /* endif */
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
@@ -332,75 +277,37 @@ all_done:
 
 }
 
-/* forward reference for pvdGetFld */
-/* struct fldDes *pvdGetFld(); */
-
 long dbNameToAddr(pname,paddr)
 	char          *pname;
 	struct dbAddr *paddr;
 {
-	char		recName[PVNAME_SZ+1];
-	char		*precName=&recName[0];
-	PVDENTRY	*ppvdEntry;
-	char		*pfieldName;
-	short		field_offset;
-	int		lenName;
+	DBENTRY		dbEntry;
 	long		status=0;
 	struct rset	*prset;
-	struct recLoc	*precLoc;
 	struct fldDes	*pfldDes;
-	/* convert the record name */
-	lenName=0;
-	while(*pname && (*pname != '.') && (lenName<PVNAME_SZ) ){
-		*precName = *pname;
-		pname++;
-		precName++;
-		lenName++;
-	}
-	*precName = 0;
-	if(pvdSearchRecord(pdbBase,&recName[0],lenName,&ppvdEntry)) {
-		paddr->precord = (void *)-1;
-		paddr->record_type = -1;
-		return(S_db_notFound);
-	}
-	paddr->precord = ppvdEntry->precord;
-	paddr->record_type = ppvdEntry->recType;
 
-	/* convert the field name */
-	if(*pname=='.') pfieldName = pname +1;
-	else if(lenName==PVNAME_SZ && *(pname+1)=='.') pfieldName = pname+2;
-	else {/*Field name was not given. Use recName as a work area*/
-		recName[0] = 0;
-		pfieldName = &recName[0];
+	if(dbFindRecord(pdbBase,pname,&dbEntry)) return(S_db_notFound);
+	if (!dbEntry.precord) return(S_db_notFound);
+	paddr->precord = dbEntry.precord;
+	paddr->record_type = dbEntry.record_type;
+	if(!dbEntry.pfield) {
+		if ((dbFindField(pdbBase,"VAL",&dbEntry)) != 0) return(S_db_notFound);
 	}
-	if (!(pfldDes=(struct fldDes*)pvdSearchField(pdbBase,(short)paddr->record_type,(char*)pfieldName))){
-		paddr->field_type = -1;
-		paddr->pfield = (void *)-1;
-		paddr->field_size = -1;
-		return(S_db_notFound);
-	}
-	paddr->pfldDes = (caddr_t)pfldDes;
+	paddr->pfield = dbEntry.pfield;
+	pfldDes = dbEntry.pfldDes;
+	paddr->pfldDes = (void *)pfldDes;
 	paddr->field_type = pfldDes->field_type;
 	paddr->dbr_field_type = pfldDes->dbr_field_type;
 	paddr->field_size = pfldDes->size;
 	paddr->choice_set = pfldDes->choice_set;
 	paddr->special = pfldDes->special;
-	field_offset = pfldDes->offset;
-
-	/* get the memory location of the record and field */
-	if(!(precLoc=GET_PRECLOC(paddr->record_type))
-	|| (paddr->field_size+field_offset) > (precLoc->rec_size)) {
-	    recGblDbaddrError(S_db_notFound,paddr,"dbNameToAddr");
-	    return(S_db_notFound);
-	}
-	paddr->pfield=(char *)(paddr->precord)+field_offset;
 
 	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
 	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
 	/*field_size,and special*/
 	paddr->no_elements=1;
 	if( ((paddr->special)==SPC_DBADDR)
-	  && (prset=GET_PRSET(paddr->record_type))
+	  && (prset=GET_PRSET(pdbBase->precSup,paddr->record_type))
 	  && (prset->cvt_dbaddr) ) 
 		status = (*prset->cvt_dbaddr)(paddr);
 
@@ -450,7 +357,7 @@ long dbPutLink(
 	if(!RTN_SUCCESS(status)) return(status);
 
         if(paddr->pfield==(void *)&pdest->proc) status=dbProcess(pdest);
-	else if (pfldDes->process_passive) status=dbScanPassive(pdest);
+	else if (pdblink->process_passive) status=dbScanPassive(pdest);
 	if(status) recGblRecordError(status,psource,"dbPutLink");
 	return(status);
 }
@@ -2192,7 +2099,7 @@ long		offset;
     short	record_type=paddr->record_type;
     struct rset	*prset;
 
-    if((prset=GET_PRSET(record_type)) && (prset->get_precision))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -2432,7 +2339,7 @@ long		offset;
     short	record_type=paddr->record_type;
     struct rset	*prset;
 
-    if((prset=GET_PRSET(record_type)) && (prset->get_precision))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -2670,7 +2577,7 @@ long		offset;
     short	record_type=(paddr->record_type);
     long	status;
 
-    if((prset=GET_PRSET(record_type)) && (prset->get_enum_str))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_enum_str))
         return( (*prset->get_enum_str)(paddr,pbuffer) );
     status=S_db_noRSET;
     recGblRecSupError(status,paddr,"dbGetField","get_enum_str");
@@ -2891,7 +2798,7 @@ static long getGchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getGchoiceString)");
         return(S_db_onlyOne);
     }
-    if((!(pchoiceSet=GET_PCHOICE_SET(choiceGbl,choice_set)))
+    if((!(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,choice_set)))
     || (!(pchoice=GET_CHOICE(pchoiceSet,choice_ind))) ) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getGchoiceString)");
         return(S_db_badChoice);
@@ -2914,7 +2821,7 @@ static long getCchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getCchoiceString)");
         return(S_db_onlyOne);
     }
-    if (!(pchoice=GET_CHOICE(choiceCvt,choice_ind))) {
+    if (!(pchoice=GET_CHOICE(pdbBase->pchoiceCvt,choice_ind))) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getCchoiceString)");
         return(S_db_badChoice);
     }
@@ -2940,7 +2847,7 @@ static long getRchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getRchoiceString)");
         return(S_db_onlyOne);
     }
-    if((!(parrChoiceSet=GET_PARR_CHOICE_SET(choiceRec,(paddr->record_type))))
+    if((!(parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,(paddr->record_type))))
     || (!(pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,choice_set)))
     || (!(pchoice=GET_CHOICE(pchoiceSet,choice_ind))) ) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getRchoiceString)");
@@ -2966,7 +2873,7 @@ static long getDchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getDchoiceString)");
         return(S_db_onlyOne);
     }
-    if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,paddr->record_type)))
+    if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)))
     || (!(pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,choice_ind))) ) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getRchoiceString)");
         return(S_db_badChoice);
@@ -3057,7 +2964,7 @@ void		*pflin
 	long		*perr_status=NULL;
 
 
-	prset=GET_PRSET(paddr->record_type);
+	prset=GET_PRSET(pdbBase->precSup,paddr->record_type);
 
 	if(!(*options)) goto GET_DATA;
 
@@ -3184,13 +3091,13 @@ long		*options;
 		    }
 		    break;
 		case DBF_GBLCHOICE:
-		    pchoiceSet=GET_PCHOICE_SET(choiceGbl,paddr->choice_set);
+		    pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,paddr->choice_set);
 		    goto choice_common;
 		case DBF_CVTCHOICE:
-		    pchoiceSet=choiceCvt;
+		    pchoiceSet=pdbBase->pchoiceCvt;
 		    goto choice_common;
 		case DBF_RECCHOICE:
-		    parrChoiceSet=GET_PARR_CHOICE_SET(choiceRec,
+		    parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,
 			paddr->record_type);
 		    pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,paddr->choice_set);
 choice_common:
@@ -3199,7 +3106,7 @@ choice_common:
 			break;
 		    }
 		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
-		    no_str=MIN(pchoiceSet->number,i);
+		    no_str=min(pchoiceSet->number,i);
 		    pdbr_enumStrs->no_str = no_str;
 		    ptemp = &(pdbr_enumStrs->strs[0][0]);
 		    for (i=0; i<no_str; i++) {
@@ -3212,14 +3119,14 @@ choice_common:
 		    }
 		    break;
 		case DBF_DEVCHOICE:
-		    pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,
+		    pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,
 			paddr->record_type);
 		    if(pdevChoiceSet==NULL) {
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 			break;
 		    }
 		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
-		    no_str=MIN(pdevChoiceSet->number,i);
+		    no_str=min(pdevChoiceSet->number,i);
 		    pdbr_enumStrs->no_str = no_str;
 		    ptemp = &(pdbr_enumStrs->strs[0][0]);
 		    for (i=0; i<no_str; i++) {
@@ -3571,7 +3478,7 @@ long		offset;
     short       record_type=(paddr->record_type);
     long        status;
 
-    if((prset=GET_PRSET(record_type)) && (prset->put_enum_str))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->put_enum_str))
         return( (*prset->put_enum_str)(paddr,pbuffer) );
     status=S_db_noRSET;
     recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
@@ -3595,7 +3502,7 @@ long		offset;
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringGchoice)");
         return(S_db_onlyOne);
     }
-    if(pchoiceSet=GET_PCHOICE_SET(choiceGbl,choice_set)) {
+    if(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,choice_set)) {
 	for(i=0; i<pchoiceSet->number; i++) {
 	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
@@ -3624,7 +3531,7 @@ long		offset;
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringCchoice)");
         return(S_db_onlyOne);
     }
-    if(pchoiceSet=choiceCvt) {
+    if(pchoiceSet=pdbBase->pchoiceCvt) {
 	for(i=0; i<pchoiceSet->number; i++) {
 	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
@@ -3655,7 +3562,7 @@ long		offset;
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringRchoice)");
         return(S_db_onlyOne);
     }
-    if((parrChoiceSet=GET_PARR_CHOICE_SET(choiceRec,(paddr->record_type)))
+    if((parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,(paddr->record_type)))
     && (pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,choice_set))) {
 	for(i=0; i<pchoiceSet->number; i++) {
 	    if(!(pchoice=pchoiceSet->papChoice[i])) continue;
@@ -3685,7 +3592,7 @@ long		offset;
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDchoice)");
         return(S_db_onlyOne);
     }
-    if(pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,paddr->record_type)) {
+    if(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)) {
 	for(i=0; i<pdevChoiceSet->number; i++) {
 	    if(!(pchoice=pdevChoiceSet->papDevChoice[i]->pchoice)) continue;
 	    if(strcmp(pchoice,pbuffer)==0) {
@@ -5068,7 +4975,7 @@ long		offset;
     struct rset	*prset;
     short size=paddr->field_size;
 
-    if((prset=GET_PRSET(record_type)) && (prset->get_precision))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -5309,7 +5216,7 @@ long		offset;
     struct rset	*prset;
     short size=paddr->field_size;
 
-    if((prset=GET_PRSET(record_type)) && (prset->get_precision))
+    if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
@@ -5815,11 +5722,12 @@ long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
  putEnumEnum,     putEnumEnum,     putEnumEnum,     putEnumEnum}
 };
 
-long dbPut(paddr,dbrType,pbuffer,nRequest)
-struct dbAddr	*paddr;
-short		dbrType;
-caddr_t		pbuffer;
-long		nRequest;
+long dbPut(
+       struct dbAddr   *paddr,
+       short           dbrType,
+       void            *pbuffer,
+       long            nRequest
+)
 {
 	long		no_elements=paddr->no_elements;
 	long		dummy;
@@ -5847,7 +5755,7 @@ long		nRequest;
 		return(S_db_badDbrtype);
 	}
 	
-	prset=GET_PRSET(paddr->record_type);
+	prset=GET_PRSET(pdbBase->precSup,paddr->record_type);
 	
 	/* check for special processing	is required */
 	if(special) {

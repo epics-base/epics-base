@@ -305,7 +305,7 @@ static void alarm(psub)
     struct subRecord	*psub;
 {
 	double		hyst, lalm, val;
-	float		hihi, high, low, lolo;
+	double		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(psub->udf == TRUE ){

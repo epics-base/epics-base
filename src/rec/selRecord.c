@@ -285,7 +285,7 @@ static void alarm(psel)
     struct selRecord	*psel;
 {
 	double		hyst, lalm, val;
-	float		hihi, high, low, lolo;
+	double		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(psel->udf == TRUE ){

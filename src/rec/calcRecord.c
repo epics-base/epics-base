@@ -305,7 +305,7 @@ static void alarm(pcalc)
     struct calcRecord	*pcalc;
 {
 	double		val, hyst, lalm;
-	float		hihi, high, low, lolo;
+	double		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pcalc->udf == TRUE ){

@@ -315,7 +315,7 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 static void alarm(aiRecord *pai)
 {
 	double		val, hyst, lalm;
-	float		hihi, high, low, lolo;
+	double		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pai->udf == TRUE ){

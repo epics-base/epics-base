@@ -33,11 +33,11 @@
 typedef void *logClientId;
 epicsShareFunc logClientId epicsShareAPI logClientInit (void);
 epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const char *message);
-void logClientShow (logClientId id, unsigned level);
+epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level);
 
 /*
  * default log client interface
  */
-extern int iocLogDisable;
-int iocLogInit (void);
-void iocLogShow (unsigned level);
+epicsShareExtern int iocLogDisable;
+epicsShareFunc int epicsShareAPI iocLogInit (void);
+epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);

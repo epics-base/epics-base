@@ -112,7 +112,7 @@ struct longoutdset { /* longout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
 };
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static long writeValue();
 static void convert();
@@ -175,7 +175,7 @@ static long process(plongout)
 	}
 
 	/* check for alarms */
-	alarm(plongout);
+	checkAlarms(plongout);
 
         if (plongout->nsev < INVALID_ALARM )
                 status=writeValue(plongout); /* write the new value */
@@ -206,7 +206,7 @@ static long process(plongout)
 	recGblGetTimeStamp(plongout);
 
 	/* check for alarms */
-	alarm(plongout);
+	checkAlarms(plongout);
 	/* check event list */
 	monitor(plongout);
 
@@ -285,7 +285,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(plongout)
+static void checkAlarms(plongout)
     struct longoutRecord	*plongout;
 {
 	long		val;

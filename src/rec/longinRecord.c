@@ -112,7 +112,7 @@ struct longindset { /* longin input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
 };
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static long readValue();
 
@@ -173,7 +173,7 @@ static long process(plongin)
 	if (status==0) plongin->udf = FALSE;
 
 	/* check for alarms */
-	alarm(plongin);
+	checkAlarms(plongin);
 	/* check event list */
 	monitor(plongin);
 	/* process the forward scan link record */
@@ -243,7 +243,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(plongin)
+static void checkAlarms(plongin)
     struct longinRecord	*plongin;
 {
 	long		val;

@@ -145,7 +145,7 @@ typedef struct myCallback {
         struct dbCommon *precord;
 }myCallback;
 
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static long writeValue();
 
@@ -263,7 +263,7 @@ static long process(pbo)
 	}
 
 	/* check for alarms */
-	alarm(pbo);
+	checkAlarms(pbo);
 
         if (pbo->nsev < INVALID_ALARM )
                 status=writeValue(pbo); /* write the new value */
@@ -375,7 +375,7 @@ static long put_enum_str(paddr,pstring)
 }
 
 
-static void alarm(pbo)
+static void checkAlarms(pbo)
     struct boRecord	*pbo;
 {
 	unsigned short val = pbo->val;

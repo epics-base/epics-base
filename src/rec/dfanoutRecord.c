@@ -73,7 +73,7 @@ struct rset dfanoutRSET={
 	get_alarm_double };
 
 
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static void push_values();
 
@@ -88,7 +88,7 @@ static long init_record(pdfanout,pass)
 
     /* get the initial value dol is a constant*/
     if (pdfanout->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pdfanout->dol,DBF_LONG,&pdfanout->val))
+	if(recGblInitConstantLink(&pdfanout->dol,DBF_DOUBLE,&pdfanout->val))
 	    pdfanout->udf=FALSE;
     }
     return(0);
@@ -100,13 +100,13 @@ static long process(pdfanout)
     long		 status=0;
 
     if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
-	status = dbGetLink(&(pdfanout->dol),DBR_LONG,&(pdfanout->val),0,0);
+	status = dbGetLink(&(pdfanout->dol),DBR_DOUBLE,&(pdfanout->val),0,0);
 	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pdfanout->udf=FALSE;
     }
     pdfanout->pact = TRUE;
     recGblGetTimeStamp(pdfanout);
     /* Push out the data to all the forward links */
-    alarm(pdfanout);
+    checkAlarms(pdfanout);
     push_values(pdfanout);
     monitor(pdfanout);
     recGblFwdLink(pdfanout);
@@ -172,7 +172,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(pdfanout)
+static void checkAlarms(pdfanout)
     struct dfanoutRecord	*pdfanout;
 {
 	double		val;
@@ -222,7 +222,7 @@ static void monitor(pdfanout)
 {
 	unsigned short	monitor_mask;
 
-	long		delta;
+	double		delta;
 
         monitor_mask = recGblResetAlarms(pdfanout);
         /* check for value change */
@@ -259,7 +259,7 @@ struct dfanoutRecord *pdfanout;
         long            status;
 
         for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
-                status=dbPutLink(plink,DBR_LONG,&(pdfanout->val),1);
+                status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
                 if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
         }
 }

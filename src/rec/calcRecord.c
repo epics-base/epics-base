@@ -132,7 +132,7 @@ struct rset calcRSET={
 	get_control_double,
 	get_alarm_double };
 
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static int fetch_values();
 
@@ -176,7 +176,7 @@ static long process(pcalc)
 	}
 	recGblGetTimeStamp(pcalc);
 	/* check for alarms */
-	alarm(pcalc);
+	checkAlarms(pcalc);
 	/* check event list */
 	monitor(pcalc);
 	/* process the forward scan link record */
@@ -302,7 +302,7 @@ static long get_alarm_double(paddr,pad)
 }
 
 
-static void alarm(pcalc)
+static void checkAlarms(pcalc)
     struct calcRecord	*pcalc;
 {
 	double		val;

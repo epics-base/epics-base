@@ -1,6 +1,6 @@
 recordtype(dfanout) {
 	include "dbCommon.dbd" 
-	field(VAL,DBF_LONG) {
+	field(VAL,DBF_DOUBLE) {
 		prompt("Desired Output")
 		asl(ASL0)
 		pp(TRUE)
@@ -62,35 +62,35 @@ recordtype(dfanout) {
 		interest(1)
 		size(16)
 	}
-	field(HOPR,DBF_LONG) {
+	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(LOPR,DBF_LONG) {
+	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(HIHI,DBF_LONG) {
+	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOLO,DBF_LONG) {
+	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HIGH,DBF_LONG) {
+	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOW,DBF_LONG) {
+	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
@@ -124,32 +124,32 @@ recordtype(dfanout) {
 		interest(1)
 		menu(menuAlarmSevr)
 	}
-	field(HYST,DBF_LONG) {
+	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
 		promptgroup(GUI_ALARMS)
 		interest(1)
 	}
-	field(ADEL,DBF_LONG) {
+	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(MDEL,DBF_LONG) {
+	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(LALM,DBF_LONG) {
+	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(ALST,DBF_LONG) {
+	field(ALST,DBF_DOUBLE) {
 		prompt("Last Value Archived")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(MLST,DBF_LONG) {
+	field(MLST,DBF_DOUBLE) {
 		prompt("Last Val Monitored")
 		special(SPC_NOMOD)
 		interest(3)
@@ -160,7 +160,7 @@ recordtype(dfanout) {
 		interest(2)
 		menu(menuIvoa)
 	}
-	field(IVOV,DBF_LONG) {
+	field(IVOV,DBF_DOUBLE) {
 		prompt("INVALID output value")
 		promptgroup(GUI_OUTPUT)
 		interest(2)

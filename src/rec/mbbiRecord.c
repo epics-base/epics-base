@@ -121,7 +121,7 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_mbbi;/*(0,2)=>(success, success no convert)*/
 };
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static long readValue();
 
@@ -228,7 +228,7 @@ static long process(pmbbi)
 	else if(status == 2) status = 0;
 
 	/* check for alarms */
-	alarm(pmbbi);
+	checkAlarms(pmbbi);
 
 	/* check event list */
 	monitor(pmbbi);
@@ -323,7 +323,7 @@ static long put_enum_str(paddr,pstring)
 	return(S_db_badChoice);
 }
 
-static void alarm(pmbbi)
+static void checkAlarms(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
 	unsigned short *severities;

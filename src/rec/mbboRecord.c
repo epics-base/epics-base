@@ -132,7 +132,7 @@ struct mbbodset { /* multi bit binary output dset */
 };
 
 
-static void alarm();
+static void checkAlarms();
 static void convert();
 static void monitor();
 static long writeValue();
@@ -264,7 +264,7 @@ static long process(pmbbo)
 
 CONTINUE:
     /* check for alarms */
-    alarm(pmbbo);
+    checkAlarms(pmbbo);
 
     if (pmbbo->nsev < INVALID_ALARM )
             status=writeValue(pmbbo); /* write the new value */
@@ -383,7 +383,7 @@ static long put_enum_str(paddr,pstring)
 	return(S_db_badChoice);
 }
 
-static void alarm(pmbbo)
+static void checkAlarms(pmbbo)
     struct mbboRecord	*pmbbo;
 {
 	unsigned short *severities;

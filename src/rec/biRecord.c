@@ -122,7 +122,7 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	read_bi;/*(0,2)=> success and convert, don't convert)*/
                         /* if convert then raw value stored in rval */
 };
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static long readValue();
 
@@ -178,7 +178,7 @@ static long process(pbi)
 	}
 	else if(status==2) status=0;
 	/* check for alarms */
-	alarm(pbi);
+	checkAlarms(pbi);
 	/* check event list */
 	monitor(pbi);
 	/* process the forward scan link record */
@@ -241,7 +241,7 @@ static long put_enum_str(paddr,pstring)
 }
 
 
-static void alarm(pbi)
+static void checkAlarms(pbi)
     struct biRecord	*pbi;
 {
 	unsigned short val = pbi->val;

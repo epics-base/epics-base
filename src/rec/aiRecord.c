@@ -151,7 +151,7 @@ typedef struct aidset { /* analog input dset */
 extern unsigned int     gts_trigger_counter;
 */
 
-static void alarm(aiRecord *pai);
+static void checkAlarms(aiRecord *pai);
 static void convert(aiRecord *pai);
 static void monitor(aiRecord *pai);
 static long readValue(aiRecord *pai);
@@ -214,7 +214,7 @@ static long process(void *precord)
 	else if (status==2) status=0;
 
 	/* check for alarms */
-	alarm(pai);
+	checkAlarms(pai);
 	/* check event list */
 	monitor(pai);
 	/* process the forward scan link record */
@@ -313,7 +313,7 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
     return(0);
 }
 
-static void alarm(aiRecord *pai)
+static void checkAlarms(aiRecord *pai)
 {
 	double		val;
 	double		hyst, lalm, hihi, high, low, lolo;

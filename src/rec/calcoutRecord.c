@@ -130,7 +130,7 @@ struct rpvtStruct {
         short     caLinkStat; /* NO_CA_LINKS,CA_LINKS_ALL_OK,CA_LINKS_NOT_OK */
 };
 
-static void alarm();
+static void checkAlarms();
 static void monitor();
 static int fetch_values();
 static void execOutput();
@@ -241,7 +241,7 @@ static long process(pcalc)
 	}
 	recGblGetTimeStamp(pcalc);
 	/* check for alarms */
-	alarm(pcalc);
+	checkAlarms(pcalc);
 
         /* check for output link execution */
         switch(pcalc->oopt) {
@@ -495,7 +495,7 @@ static long get_alarm_double(paddr,pad)
 }
 
 
-static void alarm(pcalc)
+static void checkAlarms(pcalc)
     struct calcoutRecord	*pcalc;
 {
 	double		val;

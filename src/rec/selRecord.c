@@ -112,7 +112,7 @@ struct rset selRSET={
 #define SELECT_LOW	2
 #define SELECT_MEDIAN	3
 
-static void alarm();
+static void checkAlarms();
 static int do_sel();
 static int fetch_values();
 static void monitor();
@@ -158,7 +158,7 @@ static long process(psel)
 
 	recGblGetTimeStamp(psel);
 	/* check for alarms */
-	alarm(psel);
+	checkAlarms(psel);
 
 
 	/* check event list */
@@ -282,7 +282,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(psel)
+static void checkAlarms(psel)
     struct selRecord	*psel;
 {
 	double		val;

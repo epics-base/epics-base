@@ -145,7 +145,7 @@ struct aodset { /* analog input dset */
 
 
 
-static void alarm();
+static void checkAlarms();
 static long fetch_value();
 static void convert();
 static void monitor();
@@ -241,7 +241,7 @@ static long process(pao)
 	}
 
 	/* check for alarms */
-	alarm(pao);
+	checkAlarms(pao);
 
 	if (pao->nsev < INVALID_ALARM )
 		status=writeValue(pao); /* write the new value */
@@ -384,7 +384,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(pao)
+static void checkAlarms(pao)
     struct aoRecord	*pao;
 {
 	double		val;

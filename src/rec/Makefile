@@ -30,9 +30,6 @@ RECTYPES += mbbiDirectRecord.h
 RECTYPES += mbboRecord.h
 RECTYPES += mbboDirectRecord.h
 RECTYPES += permissiveRecord.h
-RECTYPES += pulseCounterRecord.h
-RECTYPES += pulseDelayRecord.h
-RECTYPES += pulseTrainRecord.h
 RECTYPES += selRecord.h
 RECTYPES += seqRecord.h
 RECTYPES += stateRecord.h
@@ -40,7 +37,6 @@ RECTYPES += stringinRecord.h
 RECTYPES += stringoutRecord.h
 RECTYPES += subRecord.h
 RECTYPES += subArrayRecord.h
-RECTYPES += timerRecord.h
 RECTYPES += waveformRecord.h
 
 OBJS_IOC += aaiRecord
@@ -68,9 +64,6 @@ OBJS_IOC += mbbiDirectRecord
 OBJS_IOC += mbboRecord
 OBJS_IOC += mbboDirectRecord
 OBJS_IOC += permissiveRecord
-OBJS_IOC += pulseCounterRecord
-OBJS_IOC += pulseDelayRecord
-OBJS_IOC += pulseTrainRecord
 OBJS_IOC += selRecord
 OBJS_IOC += seqRecord
 OBJS_IOC += stateRecord
@@ -78,7 +71,6 @@ OBJS_IOC += stringinRecord
 OBJS_IOC += stringoutRecord
 OBJS_IOC += subRecord
 OBJS_IOC += subArrayRecord
-OBJS_IOC += timerRecord
 OBJS_IOC += waveformRecord
 
 include $(TOP)/configure/RULES

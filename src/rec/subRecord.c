@@ -109,7 +109,7 @@ struct rset subRSET={
 	get_control_double,
 	get_alarm_double };
 
-static void alarm();
+static void checkAlarms();
 static long do_sub();
 static long fetch_values();
 static void monitor();
@@ -182,7 +182,7 @@ static long process(psub)
 	if(status==1) return(0);
 	recGblGetTimeStamp(psub);
         /* check for alarms */
-        alarm(psub);
+        checkAlarms(psub);
         /* check event list */
         monitor(psub);
         /* process the forward scan link record */
@@ -287,7 +287,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void alarm(psub)
+static void checkAlarms(psub)
     struct subRecord	*psub;
 {
 	double		val;

@@ -181,7 +181,7 @@ bpt%.dbd:: ../bpt%.data
 	$(MAKEBPT) $<
 
 ifdef DBDEXPAND
-$(DBDNAME):: ../$(DBDEXPAND)
+$(DBDNAME): ../$(DBDEXPAND)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@

@@ -21,8 +21,6 @@ SRC_DIRS += $(IOSRC)
 SRC_DIRS += $(STSRC)
 SRC_DIRS += $(CA)
 
-# sometimes it's good to have different C/C++ flags, not now:
-USR_CPPFLAGS = -DcaNetAddrSock
 #USR_CXXFLAGS = $(USR_CFLAGS)
 
 INC += casdef.h
@@ -57,6 +55,9 @@ LIBSRCS += casCtx.cc
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
 LIBSRCS += casBufferFactory.cc
+LIBSRCS += pvExistReturn.cc
+LIBSRCS += pvAttachReturn.cc
+LIBSRCS += caNetAddr.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

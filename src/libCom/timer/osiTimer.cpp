@@ -46,9 +46,81 @@
 osiTimerQueue osiDefaultTimerQueue;
 
 //
+// osiTimer::osiTimer ()
+//
+// create an active timer that will expire in delay seconds
+//
+epicsShareFunc osiTimer::osiTimer (double delay, osiTimerQueue & queueIn)
+{
+	this->arm (queueIn, delay);
+}
+
+//
+// osiTimer::osiTimer ()
+//
+// create an inactive timer
+//
+epicsShareFunc osiTimer::osiTimer () :
+curState (osiTimer::stateLimbo), pQueue (0) 
+{
+}
+
+//
+// osiTimer::~osiTimer()
+//
+epicsShareFunc osiTimer::~osiTimer()
+{
+    this->cleanup ();
+}
+
+//
+// osiTimer::cancel ()
+//
+epicsShareFunc void osiTimer::cancel ()
+{
+    this->cleanup ();
+    this->destroy ();
+}
+
+//
+// osiTimer::cleanup ()
+//
+void osiTimer::cleanup ()
+{
+    if (this->pQueue) {
+	    //
+	    // signal the timer queue if this
+	    // occurrring during the expire call
+	    // back
+	    //	    
+        if (this == this->pQueue->pExpireTmr) {
+		    this->pQueue->pExpireTmr = 0;
+	    }
+	    switch (this->curState) {
+	    case statePending:
+		    this->pQueue->pending.remove(*this);
+		    break;
+	    case stateExpired:
+		    this->pQueue->expired.remove(*this);
+		    break;
+	    case stateLimbo:
+            break;
+	    default:
+		    assert(0);
+	    }
+        this->pQueue = NULL;
+        this->curState = stateLimbo;
+    }
+    else {
+        assert (this->curState==stateLimbo);
+    }
+}
+
+
+//
 // osiTimer::arm()
 //
-epicsShareFunc void osiTimer::arm (double *pInitialDelay)
+void osiTimer::arm (osiTimerQueue & queueIn, double initialDelay)
 {
 #	ifdef DEBUG
 	unsigned preemptCount=0u;
@@ -56,15 +128,8 @@ epicsShareFunc void osiTimer::arm (double *pInitialDelay)
 	
 	//
 	// calculate absolute expiration time
-	// (dont call base's delay() virtual func
-	// in the constructor)
 	//
-	if (pInitialDelay) {
-		this->exp = osiTime::getCurrent() + *pInitialDelay;
-	}
-	else {
-		this->exp = osiTime::getCurrent() + this->delay();
-	}
+	this->exp = osiTime::getCurrent() + initialDelay;
 	
 	//
 	// insert into the pending queue
@@ -74,20 +139,20 @@ epicsShareFunc void osiTimer::arm (double *pInitialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	tsDLIterBD<osiTimer> iter = this->queue.pending.last();
+	tsDLIterBD<osiTimer> iter = queueIn.pending.last();
 	while (1) {
 		if (iter==tsDLIterBD<osiTimer>::eol()) {
 			//
 			// add to the beginning of the list
 			//
-			this->queue.pending.push (*this);
+			queueIn.pending.push (*this);
 			break;
 		}
 		if (iter->exp <= this->exp) {
 			//
 			// add after the item found that expires earlier
 			//
-			this->queue.pending.insertAfter (*this, *iter);
+			queueIn.pending.insertAfter (*this, *iter);
 			break;
 		}
 #		ifdef DEBUG
@@ -95,57 +160,24 @@ epicsShareFunc void osiTimer::arm (double *pInitialDelay)
 #		endif
 		--iter;
 	}
+
 	this->curState = osiTimer::statePending;
+	this->pQueue = &queueIn;
 	
 #	ifdef DEBUG
 	this->queue.show(10u);
 #	endif
 	
 #	ifdef DEBUG 
-	double theDelay;
-	if (pInitialDelay) {
-		theDelay = *pInitialDelay;
-	}
-	else {
-		theDelay = this->delay();
-	}
 	//
 	// name virtual function isnt always useful here because this is
 	// often called inside the constructor (unless we are
 	// rearming the same timer)
 	//
 	printf ("Arm of \"%s\" with delay %f at %lx preempting %u\n", 
-		this->name(), theDelay, (unsigned long)this, preemptCount);
+		this->name(), initialDelay, (unsigned long)this, preemptCount);
 #	endif
 	
-}
-
-//
-// osiTimer::~osiTimer()
-//
-epicsShareFunc osiTimer::~osiTimer()
-{
-	//
-	// signal the timer queue if this
-	// was deleted during its expire call
-	// back
-	//
-	if (this == this->queue.pExpireTmr) {
-		this->queue.pExpireTmr = 0;
-	}
-	switch (this->curState) {
-	case osiTimer::statePending:
-		this->queue.pending.remove(*this);
-		break;
-	case osiTimer::stateExpired:
-		this->queue.expired.remove(*this);
-		break;
-	case osiTimer::stateLimbo:
-		break;
-	default:
-		assert(0);
-	}
-	this->curState = osiTimer::stateLimbo;
 }
 
 //
@@ -178,18 +210,11 @@ epicsShareFunc double osiTimer::delay() const
 epicsShareFunc void osiTimer::show (unsigned level) const
 {
 	osiTime	cur(osiTime::getCurrent());
-	double delay;
 
 	printf ("osiTimer at %p for \"%s\" with again = %d\n", 
 		this, this->name(), this->again());
-	if (this->exp >= cur) {
-		delay = this->exp - cur;
-	}
-	else {
-		delay = cur - this->exp;
-		delay = -delay;
-	}
 	if (level>=1u) {
+	    double delay = this->exp - cur;
 		printf ("\tdelay to expire = %f, state = %d\n", 
 			delay, this->curState);
 	}
@@ -269,17 +294,18 @@ void osiTimerQueue::process()
 		pTmr->expire();
 		if (this->pExpireTmr == pTmr) {
 			if (pTmr->again()) {
-				pTmr->arm();
+				pTmr->arm (*pTmr->pQueue, pTmr->delay());
 			}
 			else {
-				pTmr->destroy();
+                pTmr->pQueue = NULL;
+				pTmr->destroy ();
 			}
 		}
 		else {
 			//
 			// no recursive calls  to process allowed
 			//
-			assert(this->pExpireTmr == 0);
+			assert (this->pExpireTmr == 0);
 		}
 	}
 	this->inProcess = false;
@@ -335,33 +361,24 @@ epicsShareFunc const char *osiTimer::name() const
 //
 // osiTimer::reschedule()
 // 
+// pull this timer out of the queue and reinstall
+// it with a new experation time
+//
+epicsShareFunc void osiTimer::reschedule (osiTimerQueue & queueIn)
+{
+    this->reschedule (this->delay(), queueIn);
+}
+
+//
+// osiTimer::reschedule()
+// 
 // pull this timer out of the queue ans reinstall
 // it with a new experation time
 //
-epicsShareFunc void osiTimer::reschedule (double newDelay)
+epicsShareFunc void osiTimer::reschedule (double newDelay, osiTimerQueue & queueIn)
 {
-	//
-	// signal the timer queue if this
-	// occurrring during the expire call
-	// back
-	//
-	if (this == this->queue.pExpireTmr) {
-		this->queue.pExpireTmr = 0;
-	}
-	switch (this->curState) {
-	case osiTimer::statePending:
-		this->queue.pending.remove(*this);
-		break;
-	case osiTimer::stateExpired:
-		this->queue.expired.remove(*this);
-		break;
-	case osiTimer::stateLimbo:
-		break;
-	default:
-		assert(0);
-	}
-	this->curState = osiTimer::stateLimbo;
-	this->arm (&newDelay);
+    this->cleanup ();
+	this->arm (queueIn, newDelay);
 }
 
 //
@@ -380,3 +397,4 @@ epicsShareFunc double osiTimer::timeRemaining ()
 		return 0.0;
 	}
 }
+

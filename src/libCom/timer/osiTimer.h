@@ -50,13 +50,42 @@ public:
     //
     class noDelaySpecified {};
 
-	epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn = osiDefaultTimerQueue) :
-		queue (queueIn)
-	{
-		this->arm (&delay);
-	}
+    //
+    // create an active timer that will expire in delay seconds
+    //
+	epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
+
+    //
+    // create an inactive timer
+    //
+	epicsShareFunc osiTimer ();
+
 
 	epicsShareFunc virtual ~osiTimer();
+
+	//
+	// change the timers expiration to newDelay
+	// seconds after when reschedule() is called
+	//	
+    epicsShareFunc void reschedule (double newDelay, osiTimerQueue & queueIn = osiDefaultTimerQueue);
+
+	//
+	// change the timers expiration to this->delay()
+	// seconds after when reschedule() is called
+	//	
+	epicsShareFunc void reschedule (osiTimerQueue & queueIn = osiDefaultTimerQueue);
+
+    //
+    // inactivate the timer and call the virtual destroy()
+    // member function
+    //
+	epicsShareFunc void cancel ();
+
+	//
+	// return the number of seconds remaining before
+	// this osiTimer will expire
+	//
+	epicsShareFunc double timeRemaining();
 
 	//
 	// called when the osiTimer expires
@@ -66,9 +95,13 @@ public:
 	//
 	// called if 
 	// 1) osiTimer exists and the osiTimerQueue is deleted
-	// 2) when the osiTimer expies and again() returs false
+	// 2) when the osiTimer expires and again() returs false
 	//
 	// osiTimer::destroy() does a "delete this"
+    //
+    // if the derived class replaces this function then it
+    // is taking responsibility for freeing (deleting)
+    // timer resources when they are nolonger needed.
 	//
 	epicsShareFunc virtual void destroy();
 
@@ -94,17 +127,6 @@ public:
 	//
 	epicsShareFunc virtual double delay() const;
 
-	//
-	// change the timers expiration to newDelay
-	// seconds after when reschedule() is called
-	//
-	epicsShareFunc void reschedule (double newDelay);
-
-	//
-	// return the number of seconds remaining before
-	// this osiTimer will expire
-	//
-	epicsShareFunc double timeRemaining();
 
 	epicsShareFunc virtual void show (unsigned level) const;
 
@@ -118,13 +140,17 @@ private:
 
 	osiTime exp; // experation time
 	state curState; // current state
-	osiTimerQueue &queue;
+	osiTimerQueue *pQueue; // pointer to current timer queue
 
 	//
-	// arm()
 	// place osiTimer in the pending queue
 	//
-	epicsShareFunc void arm (double *pInitialDelay=0);
+	void arm (osiTimerQueue & queueIn, double initialDelay);
+
+    //
+    // detach from any timer queues
+    //
+    void cleanup ();
 };
 
 //

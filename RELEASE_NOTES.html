@@ -13,6 +13,12 @@
 
 <h3>Changes since 3.13.5</h3>
 
+<p><strong>dbNotify</strong></p>
+
+<p>If a request was made to restart a putNotify but another putNotify started
+before it, then it was put on the restartList twice. This resulted in the
+cbLow task getting into an infinite loop.</p>
+
 <p><strong>dbConvert and dbFastLinkConv</strong></p>
 
 <p>When a double precision 0 is converted to a float, instead of 0 the float
@@ -85,7 +91,7 @@ code.</p>
 <ul>
   <li>Missing First Monitor Subscription Update
     <p><em>Symptom:</em></p>
-    <p>A Channel Access client, such as medm, does not receive its first 
+    <p>A Channel Access client, such as medm, does not receive its first
     monitor subscription update. An "events lost" message will show up on the
     IOC's console, and in the log server.</p>
     <p><em>Scope:</em></p>

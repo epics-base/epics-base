@@ -1,7 +1,7 @@
 /*
  *      $Id$
  *
- *	 tsSLList - type safe singly linked list templates
+ *      type safe singly linked list templates
  *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
@@ -28,57 +28,7 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.14  1998/10/23 16:40:47  jhill
- * fixed missing new line at EOF
- *
- * Revision 1.13  1998/10/23 00:20:41  jhill
- * attempted to clean up HP-UX warnings
- *
- * Revision 1.12  1998/06/16 03:03:07  jhill
- * eliminated dangling ptr warning from bounds checker
- *
- * Revision 1.11  1998/05/05 18:06:58  jhill
- * rearranged to allow compilation by g++ 2.8.1
- *
- * Revision 1.10  1998/02/18 22:53:13  jhill
- * fixed gnu warning
- *
- * Revision 1.9  1998/02/05 23:28:21  jhill
- * fixed hp sompiler warnings
- *
- * Revision 1.8  1997/06/13 09:21:53  jhill
- * fixed compiler compatibility problems
- *
- * Revision 1.7  1997/04/10 19:43:10  jhill
- * API changes
- *
- * Revision 1.6  1997/01/22 21:14:21  jhill
- * fixed class decl order for VMS
- *
- * Revision 1.5  1996/11/02 01:07:20  jhill
- * many improvements
- *
- * Revision 1.4  1996/09/04 19:57:07  jhill
- * string id resource now copies id
- *
- * Revision 1.3  1996/07/25 18:01:42  jhill
- * use pointer (not ref) for list in iter class
- *
- * Revision 1.2  1996/07/24 22:12:04  jhill
- * added remove() to iter class + made node's prev/next private
- *
- * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
- * installed  ca server templates
- *
- *
  */
-
-#ifndef assert // allow use of epicsAssert.h
-#include <assert.h>
-#endif
 
 //
 // the hp compiler complains about parameterized friend
@@ -89,8 +39,8 @@ template <class T> class tsSLIter;
 template <class T> class tsSLIterRm;
 
 //
-// tsSLNode<>
-// NOTE: T must derive from tsSLNode<T>
+// tsSLNode<T>
+// NOTE: class T must derive from tsSLNode<T>
 //
 template <class T>
 class tsSLNode {
@@ -98,81 +48,39 @@ friend class tsSLList<T>;
 friend class tsSLIter<T>;
 friend class tsSLIterRm<T>;
 public:
-	tsSLNode() : pNext(0) {}
 
-	//
-	// when someone copies into a class deriving from this
-	// do _not_ change the node pointers
-	//
-	void operator = (const tsSLNode<T> &) {}
+	tsSLNode();
+
+	void operator = (const tsSLNode<T> &) const;
 
 private:
-	T	*pNext;
 
-	//
-	// removeNextItem ()
-	//
-	// removes the item after this node
-	//
-	void removeNextItem ()
-	{
-		T *pItem = this->pNext;
-		if (pItem) {
-			tsSLNode<T> *pNode = pItem;
-			this->pNext = pNode->pNext;
-		}
-	}
+	void removeNextItem ();	// removes the item after this node
+
+	T	*pNext;
 };
 
 
 //
-// tsSLList<>
-// NOTE: T must derive from tsSLNode<T>
+// tsSLList<T>
+// NOTE: class T must derive from tsSLNode<T>
 //
 template <class T>
 class tsSLList : public tsSLNode<T> {
 public:
+    tsSLList (); // creates an empty list
 
-	//
-	// insert()
-	// (itemBefore might be the list header object and therefore
-	// will not always be of type T)
-	//
-	void insert (T &item, tsSLNode<T> &itemBefore)
-	{
-		tsSLNode<T> &node = item;
-		node.pNext = itemBefore.pNext;
-		itemBefore.pNext = &item;
-	}
+	void insert (T &item, tsSLNode<T> &itemBefore); // insert after item before
 
-	//
-	// add()
-	//
-	void add (T &item)
-	{
-		this->insert (item, *this);
-	}
+	void add (T &item); // add to the beginning of the list
 
-	//
-	// get ()
-	//
-	T * get()
-	{
-		tsSLNode<T> *pThisNode = this;
-		T *pItem = pThisNode->pNext;
-		pThisNode->removeNextItem();
-		return pItem;
-	}
+	T * get (); // remove from the beginning of the list
 
-	T * pop()
-	{
-		return get();
-	}
+	T * pop (); // same as get
 
-	void push(T &item)
-	{
-		this->add(item);
-	}
+	void push (T &item); // same as add
+private:
+    tsSLList (const tsSLList &); // intentionally _not_ implemented
 };
 
 //
@@ -181,25 +89,11 @@ public:
 template <class T>
 class tsSLIter {
 public:
-	tsSLIter(const tsSLList<T> &listIn) :
-	  pCurrent(0), list(listIn) {};
+	tsSLIter (const tsSLList<T> &listIn);
 
-	//
-	// move iterator forward
-	//
-	// NULL test here is inefficient, but it appears that some architectures
-	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
-	// tsSLNode<T> is always a base class of a T.
-	//
-	T * next ();
+	T * next (); // move iterator forward
 
-	//
-	// move iterator forward
-	//
-	T * operator () () 
-	{
-		return this->next();
-	}
+	T * operator () (); // same as next ()
 
 private:
 	T *pCurrent;
@@ -208,65 +102,146 @@ private:
 
 //
 // tsSLIterRm<T>
-// (A tsSLIter<T> that allows removing a node)
-//
-// adds remove method (and does not construct
-// with const list)
-//
-// tsSLIter isnt a base class because this
-// requires striping const from pCurrent which could get
-// us in trouble with a high quality
-// optimizing compiler
-//
-// Notes:
-// 1) No direct access to pCurrent is provided since
-//      this might allow for confusion when an item
-//      is removed (and pCurrent ends up pointing at
-//      an item that has been seen before)
-//
+// (An tsSLIter<T> that allows removing a node)
 //
 template <class T>
 class tsSLIterRm {
 public:
-	tsSLIterRm(tsSLList<T> &listIn) :
-	  pPrevious(0), pCurrent(0), list(listIn) {};
 
 	//
-	// move iterator forward
+	// exceptions
 	//
-	// NULL test here is inefficient, but it appears that some architectures
-	// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
-	// tsSLNode<T> is always a base class of a T.
-	//
-	T * next ();
+	class noCurrentItemInIterator {};
 
-	//
-	// move iterator forward
-	//
-	T * operator () () 
-	{
-		return this->next();
-	}
+	tsSLIterRm (tsSLList<T> &listIn);
 
-	//
-	// remove current node
-	// (and move current to be the previos item -
-	// the item seen by the iterator before the 
-	// current one - this guarantee that the list 
-	// will be accessed sequentially even if an item
-	// is removed)
-	//
-	// This cant be called twice in a row without moving 
-	// the iterator to the next item. If there is 
-	// no current item this function assert fails.
-	//
-	void remove ();
+	T * next (); // move iterator forward
+
+	T * operator () (); // same as next ()
+
+	void remove (); // remove current node
 
 private:
 	T *pPrevious;
 	T *pCurrent;
 	tsSLList<T> &list;
 };
+
+//////////////////////////////////////////
+//
+// tsSLNode<T> inline member functions
+//
+//////////////////////////////////////////
+
+//
+// tsSLNode<T>::tsSLNode
+//
+template <class T>
+tsSLNode<T>::tsSLNode() : pNext(0) {}
+
+//
+// tsSLNode<T>::operator =
+//
+// when someone copies into a class deriving from this
+// do _not_ change the node pointers
+//
+template <class T>
+inline void tsSLNode<T>::operator = (const tsSLNode<T> &) const {}
+
+//
+// removeNextItem ()
+//
+// removes the item after this node
+//
+template <class T>
+inline void tsSLNode<T>::removeNextItem ()
+{
+	T *pItem = this->pNext;
+	if (pItem) {
+		tsSLNode<T> *pNode = pItem;
+		this->pNext = pNode->pNext;
+	}
+}
+
+//////////////////////////////////////////
+//
+// tsSLList<T> inline memeber functions
+//
+//////////////////////////////////////////
+
+//
+// tsSLList<T>::tsSLList()
+// create an empty list
+//
+template <class T>
+inline tsSLList<T>::tsSLList ()
+{
+}
+
+//
+// tsSLList<T>::insert()
+// (itemBefore might be the list header object and therefore
+// will not always be of type T)
+//
+template <class T>
+inline void tsSLList<T>::insert (T &item, tsSLNode<T> &itemBefore)
+{
+	tsSLNode<T> &node = item;
+	node.pNext = itemBefore.pNext;
+	itemBefore.pNext = &item;
+}
+
+//
+// tsSLList<T>::add ()
+//
+template <class T>
+inline void tsSLList<T>::add (T &item)
+{
+	this->insert (item, *this);
+}
+
+//
+// tsSLList<T>::get ()
+//
+template <class T>
+inline T * tsSLList<T>::get()
+{
+	tsSLNode<T> *pThisNode = this;
+	T *pItem = pThisNode->pNext;
+	pThisNode->removeNextItem();
+	return pItem;
+}
+
+//
+// tsSLList<T>::pop ()
+//
+template <class T>
+inline T * tsSLList<T>::pop()
+{
+	return this->get();
+}
+
+//
+// tsSLList<T>::push ()
+//
+template <class T>
+inline void tsSLList<T>::push(T &item)
+{
+	this->add(item);
+}
+
+//////////////////////////////////////////
+//
+// tsSLIter<T> inline memeber functions
+//
+//////////////////////////////////////////
+
+//
+// tsSLIter<T>::tsSLIter
+//
+template <class T>
+inline tsSLIter<T>::tsSLIter (const tsSLList<T> &listIn) :
+  pCurrent (0), list (listIn) {}
 
 //
 // tsSLIter<T>::next () 
@@ -294,6 +269,43 @@ T * tsSLIter<T>::next ()
 	}
 	return this->pCurrent;
 }
+
+//
+// move iterator forward
+//
+template <class T>
+inline T * tsSLIter<T>::operator () () 
+{
+	return this->next();
+}
+
+//////////////////////////////////////////
+//
+// tsSLIterRm<T> inline memeber functions
+//
+// adds remove method (and does not construct
+// with const list)
+//
+// tsSLIter isnt a base class because this
+// requires striping const from pCurrent which could get
+// us in trouble with a high quality
+// optimizing compiler
+//
+// Notes:
+// 1) No direct access to pCurrent is provided since
+//      this might allow for confusion when an item
+//      is removed (and pCurrent ends up pointing at
+//      an item that has been seen before)
+//
+//////////////////////////////////////////
+
+//
+// tsSLIterRm<T>::tsSLIterRm ()
+//
+template <class T>
+inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
+  pPrevious (0), pCurrent (0), list (listIn) {};
+
 
 //
 // tsSLIterRm<T>::next ()
@@ -325,6 +337,15 @@ T * tsSLIterRm<T>::next ()
 }
 
 //
+// move iterator forward
+//
+template <class T>
+inline T * tsSLIterRm<T>::operator () () 
+{
+	return this->next();
+}
+
+//
 // tsSLIterRm<T>::remove ()
 //
 // remove current node
@@ -336,12 +357,14 @@ T * tsSLIterRm<T>::next ()
 //
 // This cant be called twice in a row without moving 
 // the iterator to the next item. If there is 
-// no current item this function assert fails.
+// no current item this function throws an exception.
 //
 template <class T>
 void tsSLIterRm<T>::remove ()
 {
-	assert (this->pCurrent!=0);
+	if (this->pCurrent==0) {
+		throw noCurrentItemInIterator ();
+	}
 
 	tsSLNode<T> *pPrevNode;
 	tsSLNode<T> *pCurNode = this->pCurrent;
@@ -349,10 +372,12 @@ void tsSLIterRm<T>::remove ()
 	if (this->pPrevious==0) {
 		pPrevNode = &this->list;
 		//
-		// this assert fails if it is an attempt to 
+		// fail if it is an attempt to 
 		// delete twice without moving the iterator
 		//
-		assert (pPrevNode->pNext == this->pCurrent);
+		if (pPrevNode->pNext != this->pCurrent) {
+			throw noCurrentItemInIterator ();
+		}
 	}
 	else {
 		pPrevNode = this->pPrevious;

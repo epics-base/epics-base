@@ -1,6 +1,14 @@
 /*
  *      $Id$
  *
+ *      General hash table templates for fast indexing of resources
+ *      of any base resource type and any resource identifier type. Fast 
+ *      indexing is implemented with a hash lookup. The identifier type 
+ *      implements the hash algorithm (or derives from one of the supplied 
+ *      identifier types which provide a hashing routine). 
+ *
+ *      Unsigned integer and string identifier classes are supplied here.
+ *
  *      Author  Jeffrey O. Hill 
  *				(string hash alg by Marty Kraimer and Peter K. Pearson)
  *
@@ -29,87 +37,9 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.21  1999/01/29 22:51:09  jhill
- * reinstalled const cast away
- *
- * Revision 1.20  1999/01/29 22:36:53  jhill
- * removed const cast away
- *
- * Revision 1.19  1998/10/23 19:23:46  jhill
- * fixed problem associated with deleting "const char *"
- * on the solaris compiler
- *
- * Revision 1.18  1998/10/23 00:20:40  jhill
- * attempted to clean up HP-UX warnings
- *
- * Revision 1.17  1998/06/16 03:00:19  jhill
- * cleaned up fast string hash table
- *
- * Revision 1.16  1998/04/10 23:07:33  jhill
- * fixed solaris architecture specific problem where xxx>>32 was ignored
- *
- * Revision 1.15  1998/02/05 23:25:19  jhill
- * workaround vis c++ 5.0 bug
- *
- * Revision 1.14  1997/08/05 00:53:02  jhill
- * changed some inline func to normal func
- *
- * Revision 1.13  1997/06/30 18:16:13  jhill
- * guess at DEC C++ compiler bug workaround
- *
- * Revision 1.12  1997/06/25 05:48:39  jhill
- * moved resourceLib.cc into resourceLib.h
- *
- * Revision 1.11  1997/06/13 18:26:13  jhill
- * allow epicsAssert.h
- *
- * Revision 1.10  1997/06/13 09:21:51  jhill
- * fixed compiler compatibility problems
- *
- * Revision 1.9  1997/04/23 17:11:15  jhill
- * stringId::T[] => stringIdFastHash[]
- *
- * Revision 1.8  1997/04/10 19:43:09  jhill
- * API changes
- *
- * Revision 1.7  1996/12/06 22:26:36  jhill
- * added auto cleanup of installed classes to destroy
- *
- * Revision 1.6  1996/11/02 01:07:17  jhill
- * many improvements
- *
- * Revision 1.5  1996/09/04 19:57:06  jhill
- * string id resource now copies id
- *
- * Revision 1.4  1996/08/05 19:31:59  jhill
- * fixed removes use of iter.cur()
- *
- * Revision 1.3  1996/07/25 17:58:16  jhill
- * fixed missing ref in list decl
- *
- * Revision 1.2  1996/07/24 22:12:02  jhill
- * added remove() to iter class + made node's prev/next private
- *
- * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
- * installed  ca server templates
- *
- *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
  * 	.02 class T must derive from class ID and tsSLNode<T>
- *
- *	DESIGN NOTES:
- *	.01 These routines could be made to be significantly faster if the 
- *	size of the hash table was a template parameter, and therefore
- *	known at compile time. However, there are many applications where
- *	the size of the hash table must be read in from a file or otherwise
- *	determined at runtime. The author does not see an easy way to 
- *	provide both compile time and runtime determined hash table 
- *	size without providing two nearly identical versions of these
- * 	routines, and so has provided only runtime determined hash table
- *	size capabilities.
  *	
  */
 
@@ -120,231 +50,236 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
-#ifndef assert // allow use of epicsAssert.h
-#include <assert.h>
-#endif
 
 #include "tsSLList.h"
 #include "shareLib.h"
 
-typedef int resLibStatus;
-typedef unsigned resTableIndex;
-
-#define resTableIndexBitWidth (sizeof(resTableIndex)*CHAR_BIT)
+typedef size_t resTableIndex;
+static const unsigned indexWidth = sizeof(resTableIndex)*CHAR_BIT;
 
 //
-// class T must derive from class ID and also from class tsSLNode<T>
+// class resTable <T, ID>
 //
-// NOTE: Classes installed into this table should have
-// a virtual destructor so that the delete in ~resTable() will
-// work correctly.
+// This class stores resource entires of type T which can be efficiently 
+// located with a hash key of type ID.
+//
+//
+// NOTES: 
+// 1)   class T _must_ derive from class ID and also from class tsSLNode<T>
+//
+// 2)   Classes of type T installed into this resTable must implement a
+//      "void destroy ()" method which is called by ~resTable() for each
+//      resource entry in the resTable. The destroy() method should at a minimum
+//      remove the resource from the resTable, and might also choose to (at your 
+//      own discretion) "delete" the item itself.
+//
+// 3)   If the "resTable::show (unsigned level)" member function is called then 
+//      class T must also implemt a "show (unsigned level)" member function which
+//      dumps increasing diagnostics information with increasing "level" to
+//      standard out.
+//
+// 4)   Classes of type ID must implement the following memeber functions:
+//
+//          // equivalence test
+//          bool operator == (const ID &);
+//
+//          // ID to hash index convert (see examples below)
+//          index hash (unsigned nBitsHashIndex) const; 
+//
+//          //
+//          // these determine the minimum and maximum number of elements
+//          // in the hash table. Knowing these parameters at compile
+//          // time improves performance.
+//          //
+//          // max = 1 << maxIndexBitWidth ();
+//          // min = 1 << minIndexBitWidth ();
+//          //
+//          unsigned minIndexBitWidth ();
+//          unsigned maxIndexBitWidth ();
+//
+// 3)   Storage for identifier of type ID must persist until the item of type 
+//      T is deleted from the resTable
 //
 template <class T, class ID>
 class resTable {
 public:
-	resTable() :
-		pTable(0), hashIdMask(0), hashIdNBits(0), nInUse(0) {}
 
-	int init(unsigned nHashTableEntries);
+	//
+	// exceptions thrown by this class
+	//
+	class resourceWithThatNameIsAlreadyInstalled {};
+	class dynamicMemoryAllocationFailed {};
+	class entryDidntRespondToDestroyVirtualFunction {};
+	class sizeExceedsIndexesMaxIndexWith {};
+
+	resTable (unsigned nHashTableEntries);
 
 	virtual ~resTable();
 
-	//
-	// destroy all res in the table
-	//
-	void destroyAllEntries();
+	void destroyAllEntries(); // destroy all entries
 
 	//
-	// call T::show(level) for each res in the table
+	// Call (pT->show) (level) for each entry
+	// where pT is a pointer to type T. Show
+    // returns "void". Show dumps increasing
+    // diagnostics to std out with increasing 
+    // magnitude of the its level argument.
 	//
 	void show (unsigned level) const;
 
-	//
-	// add a res to the table
-	//
+    //
+    // add entry
+    //
+    // returns -1 if the id already exits in the table
+    // and zero if successful
+    //
 	int add (T &res);
 
-	//
-	// remove a res from the table
-	//
-	T *remove (const ID &idIn)
-	{
-		tsSLList<T> &list = this->pTable[this->hash(idIn)];
-		return this->findDelete(list, idIn);
-	}
+	T *remove (const ID &idIn); // remove entry
 
-
-	//
-	// find an res in the table
-	//
-	T *lookup (const ID &idIn)
-	{
-		tsSLList<T> &list = this->pTable[this->hash(idIn)];
-		return this->find(list, idIn);
-	}
+	T *lookup (const ID &idIn) const; // locate entry
 
 #ifdef _MSC_VER
 	//
 	// required by MS vis c++ 5.0 (but not by 4.0)
 	//
-	typedef void (T::*pResTableMFArg_t)();
-#	define pResTableMFArg(ARG) pResTableMFArg_t ARG
+	typedef void (T::*pSetMFArg_t)();
+#	define pSetMFArg(ARG) pSetMFArg_t ARG
 #else
 	//
 	// required by gnu g++ 2.7.2
 	//
-#	define pResTableMFArg(ARG) void (T:: * ARG)()
+#	define pSetMFArg(ARG) void (T:: * ARG)()
 #endif
 
 	//
-	// Call (pT->*pCB) () for each item in the table
+	// Call (pT->*pCB) () for each entry
 	//
 	// where pT is a pointer to type T and pCB is
 	// a pointer to a memmber function of T with 
 	// no parameters that returns void
 	//
-	void traverse(pResTableMFArg(pCB));
+	void traverse (pSetMFArg(pCB)) const;
 
 private:
-	tsSLList<T>	*pTable;
-	unsigned	hashIdMask;
-	unsigned	hashIdNBits;
-	unsigned	nInUse;
+    tsSLList<T>     *pTable;
+    unsigned        hashIdMask;
+    unsigned        hashIdNBits;
+    unsigned        nInUse;
 
-	resTableIndex hash(const ID & idIn)
-	{
-		return idIn.resourceHash(this->hashIdNBits) 
-				& this->hashIdMask;
-	}
+	resTableIndex hash(const ID & idIn) const;
 
-	//
-	// find
-	// searches from where the iterator points to the
-	// end of the list for idIn
-	//
-	// iterator points to the item found upon return
-	// (or NULL if nothing matching was found)
-	//
-	T *find (tsSLList<T> &list, const ID &idIn);
+	T *find (tsSLList<T> &list, const ID &idIn) const;
 
-	//
-	// findDelete
-	// searches from where the iterator points to the
-	// end of the list for idIn
-	//
-	// iterator points to the item found upon return
-	// (or NULL if nothing matching was found)
-	//
-	// removes the item if it finds it
-	//
 	T *findDelete (tsSLList<T> &list, const ID &idIn);
 };
+
+//
+// resTableIntHash()
+//
+// converts any integer into a hash table index
+//
+// idWidth: the maximum number of ls bits in "id" which might
+// be set during any given call be set.
+//
+// minIndexWidth: the minimum number of bits in a hash table 
+// index. This dermines the minimum size of the hash table.
+// Knowing this value at compile time improves the performance 
+// of the hash. Set this parameter to zero if unsure of the 
+// correct minimum hash table size.
+//
+template <class T, unsigned minIndexWidth, unsigned idWidth>
+resTableIndex resTableIntHash (const T &id);
 
 //
 // Some ID classes that work with the above template
 //
 
-
 //
-// unsigned identifier
+// class intId
 //
-class epicsShareClass uintId {
+// signed or unsigned integer identifier
+//
+// this class works as type ID in resTable <class T, class ID>
+//
+// 1<<MIN_INDEX_WIDTH specifies the minimum number of
+// elements in the hash table within resTable <class T, class ID>
+//
+// 1<<MAX_ID_WIDTH specifies the maximum number of
+// elements within the hash table in resTable <class T, class ID>
+//
+// MIN_INDEX_WIDTH and MAX_ID_WIDTH are specified here at
+// compile time so that the hash index can be produced 
+// efficently. Hash indexes are produced more efficiently 
+// when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
+//
+template <class T, unsigned MIN_INDEX_WIDTH = 4, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
+class epicsShareClass intId {
 public:
-	uintId (unsigned idIn=UINT_MAX) : id(idIn) {}
-	virtual ~uintId();
-
-	int operator == (const uintId &idIn)
-	{
-	    return this->id == idIn.id;
-	}
-
-	//
-	// uintId::resourceHash()
-	//
-	resTableIndex resourceHash(unsigned nBitsId) const;
-
-	const unsigned getId() const
-	{
-		return id;
-	}
+	intId (const T &idIn);
+	bool operator == (const intId &idIn) const;
+	resTableIndex hash (unsigned nBitsIndex) const;
+	const T getId() const;
+    static unsigned minIndexBitWidth ();
+    static unsigned maxIndexBitWidth ();
 protected:
-	unsigned id;
+	T id;
 };
 
-
 //
-// special resource table which uses 
-// unsigned integer keys allocated in chronological sequence
+// class chronIntIdResTable <ITEM>
+//
+// a specialized resTable which uses unsigned integer keys which are
+// allocated in chronological sequence
 // 
-// NOTE: ITEM must public inherit from uintRes<ITEM>
+// NOTE: ITEM must public inherit from chronIntIdRes <ITEM>
 //
+typedef intId<unsigned, 8> chronIntId;
 template <class ITEM>
-class uintResTable : public resTable<ITEM, uintId> {
+class chronIntIdResTable : public resTable<ITEM, chronIntId> {
 public:
-	uintResTable() : allocId(1u) {} // hashing is faster close to zero
-	virtual ~uintResTable();
-
-	inline void installItem(ITEM &item);
+    chronIntIdResTable (unsigned nHashTableEntries);
+    virtual ~chronIntIdResTable ();
+    void add (ITEM &item);
 private:
-	unsigned 	allocId;
+    unsigned allocId;
 };
 
+//
+// class chronIntIdRes<ITEM>
 //
 // resource with unsigned chronological identifier
 //
 template <class ITEM>
-class uintRes : public uintId, public tsSLNode<ITEM> {
-friend class uintResTable<ITEM>;
+class chronIntIdRes : public chronIntId, public tsSLNode<ITEM> {
+    friend class chronIntIdResTable<ITEM>;
 public:
-	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
-	virtual ~uintRes();
+    chronIntIdRes ();
 private:
-	//
-	// workaround for bug in DEC compiler
-	//
-	void setId(unsigned newId) {this->id = newId;}
+    void setId (unsigned newId);
 };
 
 
 //
-// character string identifier
+// class stringId
 //
-// NOTE: to be robust in situations where the new()
-// in the constructor might fail a careful consumer 
-// of this class should check to see if the 
-// stringId::resourceName() below
-// returns a valid (non--NULL) string pointer.
-// Eventually an exception will be thrown if
-// new fails (when this is portable).
+// character string identifier
 //
 class epicsShareClass stringId {
 public:
-	enum allocationType {copyString, refString};
+	//
+	// exceptions
+	//
+	class dynamicMemoryAllocationFailed {};
 
-	//
-	// allocCopyString()
-	//
-	static inline char * allocCopyString(const char * const pStr)
-	{
-		char *pNewStr = new char [strlen(pStr)+1u];
-		if (pNewStr) {
-			strcpy (pNewStr, pStr);
-		}
-		return pNewStr;
-	}
+    enum allocationType {copyString, refString};
 
 	//
 	// stringId() constructor
 	//
-	// Use typeIn==refString only if the string passed in will exist
-	// and remain constant during the entire lifespan of the stringId
-	// object.
-	//
-	stringId (char const * const idIn, allocationType typeIn=copyString) :
-		pStr(typeIn==copyString?allocCopyString(idIn):idIn),
-		allocType(typeIn) {}
 
-	virtual ~ stringId();
+	stringId (const char * idIn, allocationType typeIn=copyString);
+    ~ stringId();
 
 	//
 	// The hash algorithm is a modification of the algorithm described in 
@@ -352,68 +287,146 @@ public:
 	// Communications of the ACM, June 1990 
 	// The modifications were designed by Marty Kraimer
 	//
-	resTableIndex resourceHash(unsigned nBitsId) const;
+	resTableIndex hash (unsigned nBitsIndex) const;
  
-	int operator == (const stringId &idIn)
-	{
-		if (this->pStr!=NULL && idIn.pStr!=NULL) {
-			return strcmp(this->pStr,idIn.pStr)==0;
-		}
-		else {
-			return 0u; // not equal
-		}
-	}
+	bool operator == (const stringId &idIn) const;
 
-	//
-	// return the pointer to the string
-	// (also used to test to see if "new()"
-	// failed in the constructor
-	//
-	const char * resourceName()
-	{
-		return this->pStr;
-	}
+	const char * resourceName() const; // return the pointer to the string
 
-	void show (unsigned level) const
-	{
-		if (level>2u) {
-			printf ("resource id = %s\n", this->pStr);
-		}
-	}
+	void show (unsigned level) const;
+
+    static unsigned minIndexBitWidth ();
+
+    static unsigned maxIndexBitWidth ();
+
 private:
-	const char * const pStr;
-	allocationType const allocType;
+	const char * pStr;
+	const allocationType allocType;
 	static const unsigned char stringIdFastHash[256];
 };
 
+/////////////////////////////////////////////
+// template functions
+/////////////////////////////////////////////
+
 //
-// resTable<T,ID>::init()
+// resTableIntHash()
+//
+// converts any integer into a hash table index
+//
+// idWidth: the maximum number of ls bits in "id" which might
+// be set during any given call be set.
+//
+// minIndexWidth: the minimum number of bits in a hash table 
+// index. This dermines the minimum size of the hash table.
+// Knowing this value at compile time improves the performance 
+// of the hash. Set this parameter to zero if unsure of the 
+// correct minimum hash table size.
+//
+template <class T, unsigned minIndexWidth, unsigned idWidth>
+inline resTableIndex resTableIntHash (const T &id)
+{
+	resTableIndex hashid = static_cast<resTableIndex>(id);
+
+	//
+    // On most compilers the optimizer will unroll this loop so this
+    // is actually a very small inline function
+    //
+	// Experiments using the microsoft compiler show that this isnt 
+	// slower than switching on the architecture size and urolling the
+	// loop explicitly (that solution has resulted in portability
+	// problems in the past).
+	//
+    unsigned width = idWidth;
+    do {
+        width >>= 1u;
+		hashid ^= hashid>>width;
+    } while (width>minIndexWidth);
+
+	//
+	// the result here is always masked to the
+	// proper size after it is returned to the "resTable" class
+	//
+	return hashid;
+}
+
+/////////////////////////////////////////////////
+// resTable<class T, class ID> member functions
+/////////////////////////////////////////////////
+
+//
+// resTable::resTable (unsigned nHashTableEntries)
 //
 template <class T, class ID>
-int resTable<T,ID>::init(unsigned nHashTableEntries) 
+resTable<T,ID>::resTable (unsigned nHashTableEntries) :
+	nInUse (0) 
 {
-	unsigned	nbits;
-
-	if (nHashTableEntries<1u) {
-		return -1;
-	}
+    unsigned nbits, mask;
 
 	//
 	// count the number of bits in the hash index
 	//
-	for (nbits=0; nbits<resTableIndexBitWidth; nbits++) {
-		this->hashIdMask = (1<<nbits) - 1;
-		if ( ((nHashTableEntries-1) & ~this->hashIdMask) == 0){
+	for (nbits=0; nbits<indexWidth; nbits++) {
+		mask = (1<<nbits) - 1;
+		if ( ((nHashTableEntries-1) & ~mask) == 0){
 			break;
 		}
 	}
-	this->hashIdNBits = nbits;
-	this->nInUse = 0u;
-	this->pTable = new tsSLList<T> [this->hashIdMask+1u];
-	if (!pTable) {
-		return -1;
+
+    if ( nbits > ID::maxIndexBitWidth () ) {
+        throw sizeExceedsIndexesMaxIndexWith ();
+    }
+
+    //
+    // it improves performance to round up to a 
+    // minimum table size
+    //
+    if (nbits<ID::minIndexBitWidth()) {
+        nbits = ID::minIndexBitWidth();
+        mask = (1<<nbits) - 1;
 	}
-	return 0;
+
+	this->hashIdNBits = nbits;
+    this->hashIdMask = mask;
+	this->nInUse = 0u;
+	this->pTable = new tsSLList<T> [1<<nbits];
+	if (this->pTable==0) {
+		throw dynamicMemoryAllocationFailed ();
+	}
+}
+
+//
+// resTable::remove ()
+//
+// remove a res from the resTable
+//
+template <class T, class ID>
+inline T * resTable<T,ID>::remove (const ID &idIn)
+{
+	tsSLList<T> &list = this->pTable[this->hash(idIn)];
+	return this->findDelete(list, idIn);
+}
+
+//
+// resTable::lookup ()
+//
+// find an res in the resTable
+//
+template <class T, class ID>
+inline T * resTable<T,ID>::lookup (const ID &idIn) const
+{
+	tsSLList<T> &list = this->pTable[this->hash(idIn)];
+	return this->find(list, idIn);
+}
+
+//
+// resTable::hash ()
+//
+template <class T, class ID>
+inline resTableIndex resTable<T,ID>::hash (const ID & idIn) const
+{
+	return idIn.hash(this->hashIdNBits) 
+			& this->hashIdMask;
 }
 
 //
@@ -441,12 +454,12 @@ void resTable<T,ID>::destroyAllEntries()
 		//
 		// Check to see if a defective class is
 		// installed that does not remove itself
-		// from the table when it is destroyed.
+		// from the resTable when it is destroyed.
 		//
 		{
 			tsSLIterRm<T> iter(*pList);
 			while ( (pItem=iter()) ) {
-				fprintf(stderr, 
+				fprintf (stderr, 
 "Warning: Defective class still in resTable<T,ID> after it was destroyed\n");
 				//
 				// remove defective class
@@ -505,7 +518,7 @@ void resTable<T,ID>::show (unsigned level) const
 		mean = X/(this->hashIdMask+1);
 		stdDev = sqrt(XX/(this->hashIdMask+1) - mean*mean);
 		printf( 
-	"entries/occupied table entry - mean = %f std dev = %f max = %d\n",
+	"entries/occupied resTable entry: mean = %f std dev = %f max = %d\n",
 			mean, stdDev, maxEntries);
 	}
 }
@@ -514,9 +527,9 @@ void resTable<T,ID>::show (unsigned level) const
 // resTable<T,ID>::traverse
 //
 template <class T, class ID>
-void resTable<T,ID>::traverse (pResTableMFArg(pCB))
+void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
 {
-	tsSLList<T> 	*pList;
+	tsSLList<T> *pList;
 
 	pList = this->pTable;
 	while (pList < &this->pTable[this->hashIdMask+1]) {
@@ -531,7 +544,9 @@ void resTable<T,ID>::traverse (pResTableMFArg(pCB))
 }
 
 //
-// add a res to the table
+// add a res to the resTable
+//
+// (bad status on failure)
 //
 template <class T, class ID>
 int resTable<T,ID>::add (T &res)
@@ -541,12 +556,14 @@ int resTable<T,ID>::add (T &res)
 	//
 	tsSLList<T> &list = this->pTable[this->hash(res)];
 
-	if (this->find(list, res) != 0) {
+	if ( this->find (list, res) != 0 ) {
 		return -1;
 	}
-	list.add(res);
+
+	list.add (res);
 	this->nInUse++;
-	return 0;
+
+    return 0;
 }
 
 //
@@ -558,7 +575,7 @@ int resTable<T,ID>::add (T &res)
 // (or NULL if nothing matching was found)
 //
 template <class T, class ID>
-T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn)
+T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 {
 	tsSLIter<T> iter(list);
 	T *pItem;
@@ -609,82 +626,205 @@ resTable<T,ID>::~resTable()
 {
 	if (this->pTable) {
 		this->destroyAllEntries();
-		assert (this->nInUse == 0u);
+		if (this->nInUse != 0u) {
+			throw entryDidntRespondToDestroyVirtualFunction ();
+		}
 		delete [] this->pTable;
 	}
 }
 
+
+//////////////////////////////////////////
+// chronIntIdResTable<ITEM> member functions
+//////////////////////////////////////////
+
 //
-// uintResTable<ITEM>::~uintResTable()
+// chronIntIdResTable<ITEM>::chronIntIdResTable()
+//
+template <class ITEM>
+inline chronIntIdResTable<ITEM>::chronIntIdResTable (unsigned nHashTableEntries) : 
+    resTable<ITEM, chronIntId> (nHashTableEntries),
+    allocId(1u) {} // hashing is faster close to zero
+
+//
+// chronIntIdResTable<ITEM>::~chronIntIdResTable()
 // (not inline because it is virtual)
 //
 template <class ITEM>
-uintResTable<ITEM>::~uintResTable() {}
+chronIntIdResTable<ITEM>::~chronIntIdResTable() {}
 
 //
-// uintRes<ITEM>::~uintRes()
-// (not inline because it is virtual)
-//
-template <class ITEM>
-uintRes<ITEM>::~uintRes() {}
-
-//
-// this needs to be instanciated only once (normally in libCom)
-//
-#ifdef instantiateRecourceLib
-//
-// uintId::resourceHash()
-//
-resTableIndex uintId::resourceHash(unsigned /* nBitsId */) const
-{
-	resTableIndex hashid = this->id;
-
-	//
-	// This assumes worst case hash table index width of 1 bit.
-	// We will iterate this loop 5 times on a 32 bit architecture.
-	//
-	// A good optimizer will unroll this loop?
-	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and urolling the
-	// loop explicitly (that solution has resulted in portability
-	// problems in the past).
-	//
-	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
-		hashid ^= (hashid>>i);
-	}
-
-	//
-	// the result here is always masked to the
-	// proper size after it is returned to the resource class
-	//
-	return hashid;
-}
-
-//
-// uintResTable<ITEM>::~uintResTable()
-// (not inline because it is virtual)
-//
-uintId::~uintId() {}
-
-#endif // instantiateRecourceLib 
-
-//
-// uintRes<ITEM>::installItem()
+// chronIntIdResTable<ITEM>::add()
 //
 // NOTE: This detects (and avoids) the case where 
 // the PV id wraps around and we attempt to have two 
 // resources with the same id.
 //
 template <class ITEM>
-inline void uintResTable<ITEM>::installItem(ITEM &item)
+inline void chronIntIdResTable<ITEM>::add (ITEM &item)
 {
-	int resTblStatus;
-	do {
-		item.uintRes<ITEM>::setId(allocId++);
-		resTblStatus = this->add(item);
-	}
-	while (resTblStatus);
+    int status;
+    do {
+	    item.chronIntIdRes<ITEM>::setId (allocId++);
+        status = this->resTable<ITEM,chronIntId>::add (item);
+    }
+    while (status);
 }
+
+/////////////////////////////////////////////////
+// chronIntIdRes<ITEM> member functions
+/////////////////////////////////////////////////
+
+//
+// chronIntIdRes<ITEM>::chronIntIdRes
+//
+template <class ITEM>
+inline chronIntIdRes<ITEM>::chronIntIdRes () : chronIntId (UINT_MAX) {}
+
+//
+// id<ITEM>::setId ()
+//
+// workaround for bug in DEC compiler
+//
+template <class ITEM>
+inline void chronIntIdRes<ITEM>::setId (unsigned newId) 
+{
+    this->id = newId;
+}
+
+/////////////////////////////////////////////////
+// intId member functions
+/////////////////////////////////////////////////
+
+//
+// intId::intId ()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn) 
+    : id (idIn) {}
+
+//
+// intId::operator == ()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == 
+        (const intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> &idIn) const
+{
+	return this->id == idIn.id;
+}
+
+//
+// intId::getId ()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
+{
+	return this->id;
+}
+
+//
+// intId::unsigned minIndexBitWidth ()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth ()
+{
+    return MIN_INDEX_WIDTH;
+}
+
+//
+// intId::unsigned maxIndexBitWidth ()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth ()
+{
+    return MAX_ID_WIDTH;
+}
+
+//
+// intId::hash()
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash (unsigned /* nBitsIndex */) const
+{
+    return resTableIntHash<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> (this->id);
+}
+
+////////////////////////////////////////////////////
+// stringId member functions
+////////////////////////////////////////////////////
+
+//
+// stringId::stringId()
+//
+#ifdef instantiateRecourceLib
+stringId::stringId (const char *idIn, allocationType typeIn) :
+	allocType (typeIn), pStr (idIn)
+{
+	if (typeIn==copyString) {
+		unsigned nChars = strlen (idIn) + 1u;
+
+		this->pStr = new char [nChars];
+		if (this->pStr!=0) {
+			memcpy ((void *)this->pStr, idIn, nChars);
+		}
+		else {
+			throw dynamicMemoryAllocationFailed ();
+		}
+	}
+	else {
+		this->pStr = idIn;
+	}
+}
+#endif // instantiateRecourceLib 
+
+//
+// stringId::operator == ()
+//
+inline bool stringId::operator == (const stringId &idIn) const
+{
+	if (this->pStr!=NULL && idIn.pStr!=NULL) {
+		return strcmp(this->pStr,idIn.pStr)==0;
+	}
+	else {
+		return false; // not equal
+	}
+}
+
+//
+// stringId::resourceName ()
+//
+inline const char * stringId::resourceName () const
+{
+	return this->pStr;
+}
+
+//
+// stringId::minIndexBitWidth ()
+//
+inline unsigned stringId::minIndexBitWidth ()
+{
+    return 8u;
+}
+
+//
+// stringId::maxIndexBitWidth ()
+//
+inline unsigned stringId::maxIndexBitWidth ()
+{
+    return sizeof (resTableIndex) * CHAR_BIT;
+}
+
+//
+// stringId::show ()
+//
+#ifdef instantiateRecourceLib
+void stringId::show (unsigned level) const
+{
+	if (level>2u) {
+		printf ("resource id = %s\n", this->pStr);
+	}
+}
+#endif // instantiateRecourceLib 
 
 //
 // stringId::~stringId()
@@ -724,14 +864,17 @@ stringId::~stringId()
 //
 #ifdef instantiateRecourceLib
 //
-// stringId::resourceHash()
+// stringId::hash()
 //
 // The hash algorithm is a modification of the algorithm described in 
 // Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
 // Communications of the ACM, June 1990 
 // The modifications were designed by Marty Kraimer
 //
-resTableIndex stringId::resourceHash(unsigned nBitsId) const
+// This needs to be modified so that it will work with wide characters.
+// This will require run time generation of the table.
+//
+resTableIndex stringId::hash(unsigned nBitsIndex) const
 {
 	if (this->pStr==NULL) {
 		return 0u;
@@ -760,8 +903,8 @@ resTableIndex stringId::resourceHash(unsigned nBitsId) const
 	// does not work well for more than 65k entries ?
 	// (because some indexes in the table will not be produced)
 	//
-	if (nBitsId>=8u) {
-		h1 = h1 << (nBitsId-8u);
+	if (nBitsIndex>=8u) {
+		h1 = h1 << (nBitsIndex-8u);
 	}
 	return h1 ^ h0;
 }

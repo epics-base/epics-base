@@ -27,7 +27,7 @@ SRCS += exScalarPV.cc
 SRCS += exAsyncPV.cc
 SRCS += exChannel.cc
 
-PROD_HOST = excas
+PROD_HOST = casexample
 
 include $(TOP)/configure/RULES
 

@@ -21,7 +21,6 @@ int epicsTimeTest (void)
     struct tm tmAnsi;
     tm_nano_sec ansiDate;
     unsigned long nanoSec;
-    double diff;
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
@@ -32,7 +31,7 @@ int epicsTimeTest (void)
 
         epicsTime end = epicsTime::getCurrent();
 
-        diff = end - begin;
+        double diff = end - begin;
 
         if (iTimes == 0) {
             printf ("Time per call to epicsTime::getCurrent() "
@@ -100,9 +99,10 @@ int epicsTimeTest (void)
             printf ("#%3d: Failed begin!=end\n",iTimes);
             errors += 1;
         }
-        if (!(end-begin==diff)) {
-            printf ("#%3d: Failed end-begin==diff by %12.9f\n",
-                    iTimes, fabs((end-begin)-diff));
+	double diff2 = end - begin;
+        if (!(diff2==diff)) {
+            printf ("#%3d: Failed end-begin==diff by %g\n",
+                    iTimes, fabs(diff2-diff));
             errors += 1;
         }
 

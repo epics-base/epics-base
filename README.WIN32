@@ -14,7 +14,7 @@ Right now this port of EPICS to WIN32 should allow you to
 * compile almost all of EPICS base using {Tornado, MS Visual C, perl,
   GNU make} (only {MS Visual C, perl, GNU make} if you prefer
   to compile only the host portions of EPICS base).
-* load EPICS on a PC IOC (486, pentium),
+* load EPICS on an IOC (486, pentium, 68k, ...),
   load simple databases
   (no drivers/devices for real I/O available, yet.
    Some Greenspring IP support [Relay, Dig, ADC, DAC] is in progress)
@@ -64,8 +64,8 @@ On NT, "Path" is defined by the operatin system, on Win95, it's "PATH" instead.
 MS Visual C and Tornado should be installed properly with
 these env. variables set:
 
-WIND_BASE=c:\Tornado				(required for cross development only)
-WIND_HOST_TYPE=x86-win32			(required for cross development only)
+WIND_BASE=c:\Tornado		(required for cross development only)
+WIND_HOST_TYPE=x86-win32	(required for cross development only)
 
 This way the EPICS makesystem can locate Tornado 
 without any changes to the files in base/config.
@@ -78,14 +78,15 @@ include=c:\msdev\include;c:\msdev\mfc\include
 lib=c:\msdev\lib;c:\msdev\mfc\lib
 
 Select host arch to build:
-HOST_ARCH=WIN32					(used by the make system)
+HOST_ARCH=WIN32			(used by the make system)
 
 Special note: configuring EPICS_CA_AUTO_CA_ADDR_LIST under WIN32
 ----------------------------------------------------------------
 Currently if EPICS_CA_AUTO_CA_ADDR_LIST is YES (the default)
 then the ca address list will be initialized to the broadcast address of
-one of the interfaces on the WIN32 host (in the near future this will be
-fixed so that the broadcast addresses of all interfaces is used as on other os). 
+only one of the network interfaces on the WIN32 host (most host have only
+one network interface - in the near future this will be fixed so that 
+the broadcast addresses of all interfaces is used as on other os). 
 If EPICS_CA_AUTO_CA_ADDR_LIST is NO behavior is as described in the CA
 reference manual.
 

@@ -3,9 +3,8 @@
 
 /* recMbbiDirect.c - Record Support routines for mbboDirect records */
 /*
- *      Original Author: Bob Dalesio
- *      Current Author:  Matthew Needes
- *      Date:            10-07-93
+ *      Original Author: Bob Dalesio and Matthew Needes 10-07-93
+ *      Current Author:  Johnny Tang
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -32,6 +31,7 @@
  * -----------------
  *     (modifications to mbbi apply, see mbbi record)
  *   1.   mcn    "Created" by borrowing mbbi record code, and modifying it.
+ *   2.   jt	May 20,96	Bug Fix 
  */
 
 #include	<vxWorks.h>
@@ -201,6 +201,9 @@ static long process(pmbbiDirect)
 
 	}
 	else if(status == 2) status = 0;
+
+	/* Thomas Birke of BESSY suggested */
+	refresh_bits(pmbbiDirect);
 
 	/* check event list */
 	monitor(pmbbiDirect);

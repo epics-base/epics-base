@@ -28,8 +28,6 @@
 #	vpath, of course, has the disadvantage that we need explicit rules
 #	for scripts or similar os-specific filed which have _no_ suffix...
 
-ifdef T_A
-
 vpath %.c $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
@@ -43,25 +41,25 @@ vpath %.skel.static $(USR_VPATH) $(GENERIC_SRC_DIRS)
 include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
-# Set PROD, OBJS, LIBRARY_HOST, and LIBRARY_IOC
+# Set PROD, TESTPROD, OBJS, and LIBRARY
 
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-LIBRARY_HOST += $(LIBRARY)
+LIBRARY += $(LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
 else 
-# PROD and TESTPROD not built for ioc only builds
 PROD = $(PROD_$(OS_CLASS))
 TESTPROD = $(TESTPROD_$(OS_CLASS))
-LIBRARY_HOST =
-LIBRARY_IOC += $(LIBRARY)
+ifneq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
+LIBRARY = $(LIBRARY_$(OS_CLASS))
+OBJS = $(OBJS_$(OS_CLASS))
 endif
-
+endif
 
 ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
+LIBRARY += $(LIBRARY_IOC)
 OBJS += $(OBJS_IOC)
-else
-LIBRARY_IOC =
 endif
+
 #---------------------------------------------------------------
 
 ifdef TEMPLATES_DIR
@@ -78,15 +76,15 @@ all:	install
 #---------------------------------------------------------------
 # Create included Makefile for prod,testprod, and library targets
 
-ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY_IOC) $(LIBRARY_HOST)))
+ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY)))
 
 MakefileInclude: ../Makefile
 	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY_IOC) $(LIBRARY_HOST) $@
+	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $@
 
 -include MakefileInclude
 
-endif # PROD, TESTPROD, LIBRARY_IOC or LIBRARY_HOST defined
+endif # PROD, TESTPROD, or LIBRARY defined
 
 #---------------------------------------------------------------
 #   Libraries 
@@ -103,15 +101,15 @@ endif # LIBTARGETS
 #---------------------------------------------------------------
 #	Main targets
 
-install: buildInstall 
-
-buildInstall : build 
+inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : inc 
 
-rebuild: clean install
+buildInstall : build 
 
-inc: $(DIRECTORY_TARGETS) $(INSTALL_INC) $(INSTALL_INCREC)
+install: buildInstall 
+
+rebuild: clean install
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) \
 	$(TARGETS)
@@ -123,9 +121,7 @@ buildInstall : \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
-	$(INSTALL_CONFIGS) \
-	$(INSTALL_DBS) $(INSTALL_BPTS) \
-	$(INSTALL_DBDNAME)
+	$(INSTALL_CONFIGS)
 
 ifdef BIN_INSTALLS
 buildInstall : binInstalls
@@ -134,19 +130,19 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
-	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) \
-	*.out MakefileInclude
-
+	$(INC) *$(RES) $(TARGETS) \
+	*.out MakefileInclude \
+	$(COMMON_INC)
 ifdef MUNCHNAME
 	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o nm.out
 endif
 ifdef BAF
-	@$(RM) $(PROD_BAF) $(LIB_BAF_IOC) $(LIB_BAF_HOST) *$(BOF)
+	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
 endif
 
 # WIN95/NT source browser
 #ifdef BAF
-browse: $(LIB_BAF_IOC) $(LIB_BAF_HOST) $(PROD_BAF)
+browse: $(LIB_BAF) $(PROD_BAF)
 #endif
 
 $(DIRECTORY_TARGETS) :
@@ -210,15 +206,18 @@ $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 # rename the y.tab.h file only if we
 # are creating it
 #
+ifeq ($(findstring -d, $(YACCOPT)),-d)
 %.h %.c: ../%.y
 	$(RM) $*.c y.tab.c
-ifeq ($(findstring -d, $(YACCOPT)),-d)
 	$(RM) $*.h y.tab.h
-endif
 	$(YACC) $(YACCOPT) $<
 	$(MV) y.tab.c $*.c
-ifeq ($(findstring -d, $(YACCOPT)),-d)
 	$(MV) y.tab.h $*.h
+else
+%.c: ../%.y
+	$(RM) $*.c y.tab.c
+	$(YACC) $(YACCOPT) $<
+	$(MV) y.tab.c $*.c
 endif
 
 %.c: ../%.l
@@ -256,17 +255,6 @@ endif
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
 	@$(RM) $*.st
 
-# Capfast Rules:
-%.db: %.edf
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
-
-%.db: ../%.edf
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
-
-%.edf: ../%.sch
-	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
-	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
-
 # Adl2dl rule
 %.dl : ../%.adl
 	-$(ADL2DL) $< $@
@@ -281,57 +269,10 @@ endif
 	$(MANGEN) -s $<
 	$(MV) $(<F).nr $(<F).1
 
-$(INSTALL_DBD)/%: %
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
- 
-$(INSTALL_DBD)/%: ../%
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
- 
-$(INSTALL_INCLUDE)/%Record.h: %Record.dbd
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
-	        $(DBDFLAGS)  $< $@
- 
-$(INSTALL_INCLUDE)/%Record.h: ../%Record.dbd
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
-	        $(DBDFLAGS)  $< $@
- 
-$(INSTALL_INCLUDE)/menu%.h: menu%.dbd
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE) $< $@
- 
-$(INSTALL_INCLUDE)/menu%.h: ../menu%.dbd
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE) $< $@
- 
-$(INSTALL_DBD)/bpt%.dbd: bpt%.data
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE) $< $@
-
-$(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE) $< $@
-
-ifdef DBDEXPAND
-$(INSTALL_DBD)/$(DBDNAME): $(addprefix ../,$(DBDEXPAND))
-	@echo Expanding dbd
-	@echo $^
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE) $(DBDFLAGS) $(addprefix ../,$(DBDEXPAND)) > $@
-endif
-
 # WIN95/NT source browser
 ifdef BAF
 
-$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
-	@echo "Building source browser archive $@"
-	@$(RM) $@
-	$(BAFCMD) $^
-
-$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
+$(LIB_BAF): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
@@ -361,7 +302,7 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 $(MUNCHNAME):%.munch : %.o
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	perl $(TOOLS)/munch.pl < nm.out > ctdt.c
+	$(PERL) $(TOOLS)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(GCC_LD) -o $@ $(LDFLAGS) $< ctdt.o
 
@@ -418,12 +359,16 @@ $(INSTALL_CONFIG)/%: ../%
 	@echo "Installing config file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
-	@echo "Installing os dependent include file $@"
+$(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
+	@echo "Installing generated generic include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_INCLUDE)/% : %
 	@echo "Installing generic include file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
+	@echo "Installing os dependent include file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: %
@@ -451,19 +396,13 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PRECIOUS: %.o %.c
+.PRECIOUS: $(COMMON_INC)
 
+-include $(CONFIG)/RULES.Db
 -include DEPENDS
 
 .PHONY: all inc depends build install clean rebuild buildInstall binInstalls \
 	iocBinInstalls
-
-ifneq (,$(wildcard ../base.dbd))
-$(INSTALL_DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
-else
-$(INSTALL_DBDNAME): $(RECTYPES:%.h=../%.dbd)
-endif
-
-endif # T_A defined
 
 #	EOF RULES_BUILD
 

@@ -359,7 +359,7 @@ void tcpiiu::recvBytes (
             // because it reqires a callback lock which probably
             // isnt appropriate here
             char name[64];
-            this->hostNameCacheInstance.hostName ( 
+            this->hostNameCacheInstance.getName ( 
                 name, sizeof ( name ) );
             errlogPrintf (
                 "Unexpected problem with CA circuit to"
@@ -891,7 +891,7 @@ void tcpiiu::unresponsiveCircuitNotify (
 
         if ( this->connectedList.count() ) {
             char hostNameTmp[128];
-            this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
+            this->getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
             genLocalExcep ( cbGuard, guard, this->cacRef, 
                 ECA_UNRESPTMO, hostNameTmp );
             while ( nciu * pChan = this->connectedList.get () ) {
@@ -1008,7 +1008,7 @@ void tcpiiu::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
     char buf[256];
-    this->hostNameCacheInstance.hostName ( buf, sizeof ( buf ) );
+    this->hostNameCacheInstance.getName ( buf, sizeof ( buf ) );
     ::printf ( "Virtual circuit to \"%s\" at version V%u.%u state %u\n", 
         buf, CA_MAJOR_PROTOCOL_REVISION,
         this->minorProtocolVersion, this->state );
@@ -1699,21 +1699,19 @@ void tcpiiu::requestRecvProcessPostponedFlush (
     this->recvProcessPostponedFlush = true;
 }
 
-void tcpiiu::hostName ( 
+unsigned tcpiiu::getHostName ( 
     epicsGuard < epicsMutex > & guard,
-    char *pBuf, unsigned bufLength ) const
+    char * pBuf, unsigned bufLength ) const throw ()
 {   
     guard.assertIdenticalMutex ( this->mutex );
-    this->hostNameCacheInstance.hostName ( pBuf, bufLength );
+    return this->hostNameCacheInstance.getName ( pBuf, bufLength );
 }
 
 const char * tcpiiu::pHostName (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
-    static char nameBuf [128];
-    this->hostName ( guard, nameBuf, sizeof ( nameBuf ) );
-    return nameBuf;
+    return this->hostNameCacheInstance.pointer ();
 }
 
 void tcpiiu::disconnectAllChannels ( 

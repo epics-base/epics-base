@@ -1127,11 +1127,11 @@ double udpiiu::getRTTE () const
     return epicsMax ( this->rtteMean, minRoundTripEstimate );
 }
 
-void udpiiu::hostName ( 
+unsigned udpiiu::getHostName ( 
     epicsGuard < epicsMutex > & cacGuard,
-    char *pBuf, unsigned bufLength ) const
+    char *pBuf, unsigned bufLength ) const throw ()
 {
-    netiiu::hostName ( cacGuard, pBuf, bufLength );
+    return netiiu::getHostName ( cacGuard, pBuf, bufLength );
 }
 
 const char * udpiiu::pHostName (

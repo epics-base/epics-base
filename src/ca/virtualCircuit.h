@@ -148,9 +148,9 @@ public:
     bool ca_v49_ok (
         epicsGuard < epicsMutex > & ) const;
 
-    void hostName ( 
+    unsigned getHostName ( 
         epicsGuard < epicsMutex > &,
-        char *pBuf, unsigned bufLength ) const;
+        char *pBuf, unsigned bufLength ) const throw ();
     bool alive (
         epicsGuard < epicsMutex > & ) const;
     bool connecting (

@@ -127,11 +127,11 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     epicsMutexUnlock(epicsMutexGlobalLock);
 }
 
-epicsMutex :: epicsMutex () epics_throws (( std::bad_alloc )) :
+epicsMutex :: epicsMutex () epics_throws (( epicsMutex::mutexCreateFailed )) :
     id ( epicsMutexCreate () )
 {
     if ( this->id == 0 ) {
-        throw std::bad_alloc ();
+        throw mutexCreateFailed ();
     }
 }
 
@@ -142,16 +142,16 @@ epicsMutex ::~epicsMutex ()
 }
 
 void epicsMutex::lock ()
-    epics_throws (( invalidSemaphore ))
+    epics_throws (( invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
-        throw invalidSemaphore ();
+        throw invalidMutex ();
     }
 }
 
 bool epicsMutex::lock ( double timeOut ) // X aCC 361
-    epics_throws (( invalidSemaphore ))
+    epics_throws (( invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if ( status == epicsMutexLockOK ) {
@@ -161,13 +161,13 @@ bool epicsMutex::lock ( double timeOut ) // X aCC 361
         return false;
     } 
     else {
-        throw invalidSemaphore ();
+        throw invalidMutex ();
         return false; // never here, compiler is happy
     }
 }
 
 bool epicsMutex::tryLock () // X aCC 361
-    epics_throws (( invalidSemaphore ))
+    epics_throws (( invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
@@ -177,7 +177,7 @@ bool epicsMutex::tryLock () // X aCC 361
         return false;
     } 
     else {
-        throw invalidSemaphore ();
+        throw invalidMutex ();
         return false; // never here, but compiler is happy
     }
 }

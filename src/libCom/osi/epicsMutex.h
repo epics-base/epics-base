@@ -25,21 +25,22 @@ typedef enum {
 
 class epicsShareClass epicsMutex {
 public:
-    class invalidSemaphore {}; // exception
+    class mutexCreateFailed {}; // exception
+    class invalidMutex {}; // exception
     epicsMutex ()
-        epics_throws (( std::bad_alloc ));
+        epics_throws (( mutexCreateFailed ));
     ~epicsMutex ()
         epics_throws (());
     void show ( unsigned level ) const 
         epics_throws (());
     void lock () /* blocks until success */
-        epics_throws (( invalidSemaphore )); 
+        epics_throws (( invalidMutex )); 
     void unlock () 
         epics_throws (());
     bool lock ( double timeOut ) /* true if successful */
-        epics_throws (( invalidSemaphore )); 
+        epics_throws (( invalidMutex )); 
     bool tryLock () /* true if successful */
-        epics_throws (( invalidSemaphore ));
+        epics_throws (( invalidMutex ));
 private:
     epicsMutexId id;
     epicsMutex ( const epicsMutex & );

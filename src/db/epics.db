@@ -236,3 +236,7 @@ device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 #driver(drvIpac)
 #driver(drvTip810)
 #driver(drvVmi2534)
+#include "bptTypeJdegC.db"
+#include "bptTypeJdegF.db"
+#include "bptTypeKdegC.db"
+#include "bptTypeKdegF.db"

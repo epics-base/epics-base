@@ -8,18 +8,7 @@
 
 2) At this point, support for Linux only involves channel access
    clients.  Since Vxworks is not available for Linux, you must
-   use other platforms for developing server side code.  As for
-   building databases with dct and gdct, this requires that the 
-   $EPICS/base/tools/makesdr script works properly. Since makesdr
-   is slated to be removed from the EPICS distribution in a future
-   release, we didn't feel it was important to include this capability
-   now.  Consequently, when you run make you will receive the error
-
-   gnumake[4]: *** [bldDefaultSdr] Error 127
-
-   and
-
-   gnumake[3]: *** [comsubs.o] Error 1
+   use other platforms for developing server side code.
 
 3) You MUST start caRepeater by hand before running a client.  
 Prior to running a client, you must run:

@@ -11,9 +11,8 @@ solaris directory /usr/ccs/bin is in your search path.
 2. It is not possible to compile EPICS under Solaris 2 using only the
 GNU gcc compiler -- you must have the Sun SPARCworks ANSI C compiler.
 
-3. EPICS under Solaris 2 no longer uses the UCB compatability
-libraries.  It does require the /usr/ucb/install program however.  In
-order to ensure that the /usr/ucblib files are not inherited, you
+3. EPICS under Solaris 2 no longer uses the UCB compatability libraries.
+In order to ensure that the /usr/ucblib files are not inherited, you
 should ensure that your LD_LIBRARY_PATH environment variable does not
 include /usr/ucblib when you build any of the host tools.
 

@@ -68,8 +68,8 @@ NOTES:
       base.  These tar files are then meant to be untarred at that level.
       This release will include the "epics/config" directory.
 
-   2. EPICS binaries are kept in the bin/ARCH and lib/ARCH directories. 
-      EPICS shellscripts are kept in the tools directory.
+   2. EPICS binaries and shellscripts are installed into the bin/ARCH and
+      lib/ARCH directories. 
 
    3. During a normal build (a "make" or "make install"), the "depends"
       dependency will NOT be invoked.  Only if "make depends" is run

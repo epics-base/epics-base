@@ -161,8 +161,9 @@ it specified it is used, otherwise the file template is used. This format is
 an extension of the format accepted by dbLoadTemplate. It allows templates to
 be&nbsp; expanded on the host rather via dbLoadTemplate. The file name may
 appear inside double quotation marks; these are only required if the name
-contains any environment variable macros of the form ${MOTOR} which will be
-expanded before the file is opened. 
+contains any environment variable macros of the form ${ENV_VAR} which will be
+expanded before the file is opened. Environment variable macro expansion
+is available when msi is linked with EPICS base R3.14.3 or newer.
 
 <h3>Regular substitution example</h3>
 Let the command be:

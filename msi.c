@@ -26,6 +26,10 @@
 
 #define MAX_BUFFER_SIZE 4096
 
+#if ((EPICS_VERSION <= 3) && (EPICS_REVISION <= 13))
+#define macEnvExpand(x) strdup(x)
+#endif
+
 /*Forward references to local routines*/
 static void usageExit(void);
 static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval);

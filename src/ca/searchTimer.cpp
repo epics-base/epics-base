@@ -93,7 +93,7 @@ void searchTimer::beaconAnomalyNotify (
 
 // lock must be applied
 void searchTimer::recomputeTimerPeriod ( 
-    epicsGuard < udpMutex > & guard, unsigned minRetryNew )
+    epicsGuard < udpMutex > & guard, unsigned minRetryNew ) // X aCC 431
 {
     this->minRetry = minRetryNew;
 

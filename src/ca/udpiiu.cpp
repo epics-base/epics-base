@@ -1023,7 +1023,7 @@ void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime )
     this->pSearchTmr->beaconAnomalyNotify ( guard, currentTime, delay );
 }
 
-bool udpiiu::searchMsg ( epicsGuard < udpMutex > & guard, 
+bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */, 
                         unsigned & retryNoForThisChannel )
 {
     bool success;

@@ -24,9 +24,6 @@
 #include <assert.h>
 #endif
 
-#include "locationException.h"
-
-
 //
 // the hp compiler complains about parameterized friend
 // class that has not been declared without this?

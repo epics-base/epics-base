@@ -44,7 +44,6 @@
 
 #include "tsSLList.h"
 #include "shareLib.h"
-#include "locationException.h"
 typedef size_t resTableIndex;
 
 template < class T, class ID > class resTableIter;

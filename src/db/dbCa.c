@@ -615,13 +615,9 @@ static void connectionCallback(struct connection_handler_args arg)
     pca = ca_puser(arg.chid);
     assert(pca);
     epicsMutexMustLock(pca->lock);
-    pca->isConnected = (ca_state(arg.chid)==cs_conn) ? TRUE : FALSE ;
-    if(pca->isConnected) {
-        pca->hasReadAccess = ca_read_access(arg.chid);
-        pca->hasWriteAccess = ca_write_access(arg.chid);
-    }
     plink = pca->plink;
     if(!plink) goto done;
+    pca->isConnected = (ca_state(arg.chid)==cs_conn) ? TRUE : FALSE ;
     if(!pca->isConnected) {
         struct pv_link *ppv_link = &(plink->value.pv_link);
         dbCommon	*precord = ppv_link->precord;
@@ -634,6 +630,8 @@ static void connectionCallback(struct connection_handler_args arg)
         }
         goto done;
     }
+    pca->hasReadAccess = ca_read_access(arg.chid);
+    pca->hasWriteAccess = ca_write_access(arg.chid);
     if(pca->gotFirstConnection) {
         if((pca->nelements != ca_element_count(arg.chid))
         || (pca->dbrType != ca_field_type(arg.chid))){

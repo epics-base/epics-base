@@ -54,4 +54,3 @@ LDLIBS_READLINE = -lreadline
 # or install the DarwinPorts or Fink readline package and uncomment the
 # following line to use GNU readline command-line editing:
 #COMMANDLINE_LIBRARY=READLINE
-

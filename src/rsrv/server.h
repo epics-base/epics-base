@@ -51,8 +51,6 @@ static char *serverhSccsId = "@(#) $Id$";
 #       define HDRVERSIONID(NAME,VERS)
 #endif /*CAS_VERSION_GLOBAL*/
 
-typedef int SOCKET;
-
 #define APIENTRY
 
 #include <epicsAssert.h>
@@ -74,16 +72,27 @@ typedef int SOCKET;
 #include <socket.h>
 #include <addrList.h>
 
+
+#include <net_convert.h>
+
 /*
- * !! align and buf must be next to each other !!
+ * !! buf must be the first item in this structure !!
+ * This guarantees that buf will have 8 byte natural
+ * alignement
  *
- * The dbr_double_t pad guarantees buf will have
- * proper alignment because dbr_double_t is currently 
- * the largest atomic data type passed in the CA protocol 
- * (I really should malloc the buffer)
+ * Conversions:
+ * The contents of message_buffer has to be converted
+ * from network to host format and vice versa.
+ * For efficiency reasons, the caHdr structure that's common
+ * to all messages is converted only once:
+ * 1) from net to host just after receiving it in camessage()
+ * 2) from host to net in cas_send_msg()
+ * 
+ * The remaining message_buffer content, however, is always
+ * in net format!
+ *
  */
 struct message_buffer{
-  const dbr_double_t		pad;
   char 				buf[MAX_MSG_SIZE];
   unsigned long 		stk;
   unsigned long			maxstk;
@@ -133,15 +142,15 @@ typedef struct rsrv_put_notify{
  * (stored in addrq off of a client block)
  */
 struct channel_in_use{
-  ELLNODE			node;
-  ELLLIST			eventq;
-  struct client			*client;
-  RSRVPUTNOTIFY			*pPutNotify; /* potential active put notify */
-  const unsigned 		cid;	/* client id */
-  const unsigned 		sid;	/* server id */
-  unsigned long			ticks_at_creation;	/* for UDP timeout */
-  struct db_addr		addr;
-  ASCLIENTPVT			asClientPVT;
+  	ELLNODE		node;
+  	ELLLIST		eventq;
+  	struct client	*client;
+  	RSRVPUTNOTIFY	*pPutNotify; /* potential active put notify */
+  	const unsigned 	cid;	/* client id */
+  	const unsigned 	sid;	/* server id */
+  	unsigned long	ticks_at_creation;	/* for UDP timeout */
+  	struct dbAddr	addr;
+  	ASCLIENTPVT	asClientPVT;
 };
 
 
@@ -169,6 +178,29 @@ char				get;		/* T: get F: monitor */
 #else
 # define GLBLTYPE extern
 # define GLBLTYPE_INIT(A)
+#endif
+
+
+/*
+ *	for debug-level dependent messages:
+ */
+#ifdef DEBUG
+
+#	define DLOG(level, fmt, a1, a2, a3, a4, a5, a6)	\
+		if (CASDEBUG > level)			\
+			logMsg (fmt, a1, a2, a3, a4, a5, a6)
+
+#	define DBLOCK(level, code)			\
+		if (CASDEBUG > level)			\
+		{					\
+			code;				\
+		}
+
+#else
+
+#	define DLOG(level, fmt, a1, a2, a3, a4, a5, a6)	
+#	define DBLOCK(level, code)		
+
 #endif
 
 GLBLTYPE int			CASDEBUG;

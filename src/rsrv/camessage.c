@@ -74,7 +74,7 @@ static char *sccsId = "%W% %G%";
 
 static caHdr nill_msg;
 
-#define	RECORD_NAME(PADDR) ((PADDR)->precord)
+#define	RECORD_NAME(PADDR) ((PADDR)->precord->name)
 
 LOCAL void clear_channel_reply(
 caHdr *mp,
@@ -86,7 +86,7 @@ caHdr *mp,
 struct client  *client
 );
 
-LOCAL EVENTFUNC	read_reply;
+LOCAL EVENTFUNC       read_reply;
 
 LOCAL void read_sync_reply(
 caHdr *mp,
@@ -183,7 +183,7 @@ struct channel_in_use *pciu
 
 LOCAL struct channel_in_use *casCreateChannel (
 struct client  	*client,
-struct db_addr 	*pAddr,
+struct dbAddr 	*pAddr,
 unsigned	cid
 );
 
@@ -199,7 +199,8 @@ struct client  *client,
 struct message_buffer *recv
 )
 {
-	int           		nmsg = 0;
+	unsigned long	 	tmp_postsize;
+	int            		nmsg = 0;
 	int			v41;
 	unsigned long		msgsize;
 	unsigned long		bytes_left;
@@ -214,28 +215,40 @@ struct message_buffer *recv
 		}
 	}
 
-	if (CASDEBUG > 2){
-		logMsg(	"CAS: Parsing %lu (decimal) bytes\n", 
-			recv->cnt,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	DLOG (2, "CAS: Parsing %d(decimal) bytes\n", 
+		recv->cnt, NULL, NULL, NULL, NULL, NULL);
 
 	bytes_left = recv->cnt;
-	while (bytes_left) {
+	while (bytes_left)
+	{
 
+		/* assert that we have at least a complete caHdr */
 		if(bytes_left < sizeof(*mp))
 			return OK;
 
 		mp = (caHdr *) &recv->buf[recv->stk];
 
-		msgsize = mp->m_postsize + sizeof(*mp);
+		/* problem: we have a complete header,
+		 * but before we check msgsize we don't know
+		 * if we have a complete message body
+		 * -> we may be called again with the same header
+		 *    after receiving the full message
+		 */
+		tmp_postsize = ntohs (mp->m_postsize);
+		msgsize = tmp_postsize + sizeof(*mp);
 
 		if(msgsize > bytes_left) 
 			return OK;
+
+		/* Have complete message (header + content)
+		 * -> convert the header elements
+		 */
+		mp->m_cmmd      = ntohs (mp->m_cmmd);
+		mp->m_postsize  = tmp_postsize;
+		mp->m_type      = ntohs (mp->m_type);
+		mp->m_count     = ntohs (mp->m_count);
+		mp->m_cid       = ntohl (mp->m_cid);
+		mp->m_available = ntohl (mp->m_available);
 
 		nmsg++;
 
@@ -253,6 +266,10 @@ struct message_buffer *recv
 			SEND_LOCK(client);
 			reply = ALLOC_MSG(client, 0);
 			assert (reply);
+			/*
+			 * header (host) will we converted in send,
+			 * content is still in net format:
+			 */
 			*reply = *mp;
 			END_MSG(client);
 			SEND_UNLOCK(client);
@@ -341,6 +358,26 @@ struct message_buffer *recv
 				SEND_UNLOCK(client);
 				break;
 			}
+
+#ifdef CONVERSION_REQUIRED
+			if (mp->m_type > DBR_CTRL_DOUBLE) {
+				SEND_LOCK(client);
+				send_err(
+					mp, 
+					ECA_PUTFAIL, 
+					client, 
+					RECORD_NAME(&pciu->addr));
+				SEND_UNLOCK(client);
+				break;
+			}
+
+			/* use type as index into conversion jumptable */
+			(* cac_dbr_cvrt[mp->m_type])
+				( mp + 1,
+				  mp + 1,
+				  FALSE,       /* net -> host format */
+				  mp->m_count);
+#endif
 			status = db_put_field(
 					      &pciu->addr,
 					      mp->m_type,
@@ -409,6 +446,9 @@ struct message_buffer *recv
 				NULL,
 				NULL,
 				NULL);
+			logMsg("recv->stk: %d, bytes_left: %d\n",
+				(int) recv->stk, (int) bytes_left,
+				0, 0, 0, 0);
 			return ERROR;
 		}
 
@@ -476,6 +516,10 @@ struct client  	*client
 		pciu = (struct channel_in_use *) pciu->node.next;
 	}
 	FASTUNLOCK(&client->addrqLock);
+
+	DLOG(2, "CAS: host_name_action for \"%s\"\n", 
+			(int) client->pHostName,
+			NULL, NULL, NULL, NULL, NULL);
 }
 
 
@@ -535,6 +579,10 @@ struct client  	*client
 		pciu = (struct channel_in_use *) pciu->node.next;
 	}
 	FASTUNLOCK(&client->addrqLock);
+
+	DLOG (2, "CAS: client_name_action for \"%s\"\n", 
+			(int) client->pUserName,
+			NULL, NULL, NULL, NULL, NULL);
 }
 
 
@@ -559,14 +607,21 @@ struct client  *client
 	client->minor_version_number = mp->m_available;
 
 	if (CA_V44(CA_PROTOCOL_VERSION,client->minor_version_number)) {
-		struct db_addr  tmp_addr;
+		struct dbAddr  tmp_addr;
 
 		status = db_name_to_addr(
-				mp + 1, 
+				(char *)(mp+1), 
 				&tmp_addr);
 		if (status < 0) {
 			return;
 		}
+
+		DLOG(2,"CAS: claim_ciu_action found '%s', type %d, count %d\n", 
+			(int) (mp+1),
+			tmp_addr.dbr_field_type,
+			tmp_addr.no_elements,
+			NULL, NULL, NULL);
+		
 		pciu = casCreateChannel (
 				client, 
 				&tmp_addr, 
@@ -680,10 +735,16 @@ struct client  *client
 
 		*claim_reply = nill_msg;
 		claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-		claim_reply->m_type = pciu->addr.field_type;
+		claim_reply->m_type = pciu->addr.dbr_field_type;
 		claim_reply->m_count = pciu->addr.no_elements;
 		claim_reply->m_cid = pciu->cid;
 		claim_reply->m_available = pciu->sid;
+
+		DBLOCK(3,
+			printf ("claim_cui reply:\n");
+			log_header (claim_reply, 0);
+		)
+
 		END_MSG(client);
 		SEND_UNLOCK(client);
 	}
@@ -853,6 +914,11 @@ struct client  *client
 		return;
 	}
 
+	if (mp->m_type > DBR_CTRL_DOUBLE) {
+		putNotifyErrorReply(client, mp, ECA_BADTYPE);
+		return;
+	}
+
 	if(!asCheckPut(pciu->asClientPVT)){
 		putNotifyErrorReply(client, mp, ECA_NOWTACCESS);
 		return;
@@ -911,7 +977,16 @@ struct client  *client
 	pciu->pPutNotify->busy = TRUE;
 	pciu->pPutNotify->msg = *mp;
 	pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
+#ifdef CONVERSION_REQUIRED
+	/* use type as index into conversion jumptable */
+	(* cac_dbr_cvrt[mp->m_type])
+		( mp + 1,
+		  pciu->pPutNotify->dbPutNotify.pbuffer,
+		  FALSE,       /* net -> host format */
+		  mp->m_count);
+#else
 	memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, (char *)(mp+1), size);
+#endif
 	status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_type);
 	if(status){
 		putNotifyErrorReply(client, mp, ECA_PUTFAIL);
@@ -1020,6 +1095,7 @@ caHdr *mp,
 struct client  *client
 )
 {
+	struct monops *pmo = (struct monops *) mp;
 	struct channel_in_use *pciu;
 	struct event_ext *pevext;
 	int		status;
@@ -1054,12 +1130,24 @@ struct client  *client
 			return;
 		}
 	}
+
+#ifdef CONVERSION_REQUIRED
+
+	/* I convert here is the full message that we get,
+	 * though only m_mask seems to be used
+	 */
+	dbr_ntohf (&pmo->m_info.m_lval , &pmo->m_info.m_lval);
+	dbr_ntohf (&pmo->m_info.m_hval , &pmo->m_info.m_hval);
+	dbr_ntohf (&pmo->m_info.m_toval, &pmo->m_info.m_toval);
+	pmo->m_info.m_mask = ntohs (pmo->m_info.m_mask);
+#endif
+
 	memset(pevext,0,size);
 	pevext->msg = *mp;
 	pevext->pciu = pciu;
 	pevext->send_lock = TRUE;
 	pevext->size = dbr_size_n(mp->m_type, mp->m_count);
-	pevext->mask = ((struct monops *) mp)->m_info.m_mask;
+	pevext->mask = pmo->m_info.m_mask;
 	pevext->get = FALSE;
 
 	FASTLOCK(&client->eventqLock);
@@ -1113,6 +1201,8 @@ struct client  *client
 	 * messages sent by the server).
 	 */
 
+	DLOG(3, "event_add_action: db_post_single_event (0x%X)\n",
+		(int) pevext->pdbev, 0, 0, 0, 0, 0);
 	db_post_single_event(pevext->pdbev);
 
 	/*
@@ -1120,6 +1210,8 @@ struct client  *client
 	 */
 	if(!asCheckGet(pciu->asClientPVT)){
 		db_event_disable(pevext->pdbev);
+		DLOG(3, "Disable event because cannot read\n",
+			0, 0, 0, 0, 0, 0);
 	}
 
 	return;
@@ -1326,7 +1418,7 @@ struct client  *client
  */
 LOCAL void read_reply(
 void			*pArg,
-struct db_addr 		*paddr,
+struct dbAddr 		*paddr,
 int 			eventsRemaining,
 db_field_log		*pfl
 )
@@ -1403,6 +1495,7 @@ db_field_log		*pfl
 			      reply + 1,
 			      pevext->msg.m_count,
 			      pfl);
+
 	if (status < 0) {
 		/*
 		 * I cant wait to redesign this protocol from scratch!
@@ -1414,7 +1507,6 @@ db_field_log		*pfl
 			 * on failure
 			 */
 			send_err(&pevext->msg, ECA_GETFAIL, client, RECORD_NAME(paddr));
-			log_header(&pevext->msg, 0);
 		}
 		else{
 			/*
@@ -1434,8 +1526,8 @@ db_field_log		*pfl
 			END_MSG(client);
 		}
 	}
-	else{
-		/*
+	else{   /* status of db_get_field >= 0
+		 *
 		 * New clients recv the status of the
 		 * operation directly to the
 		 * event/put/get callback.
@@ -1450,6 +1542,20 @@ db_field_log		*pfl
 			reply->m_cid = ECA_NORMAL;
 		}
 		
+#ifdef CONVERSION_REQUIRED
+		/*
+		 * assert() is safe here because the type was
+		 * checked by db_get_field()
+		 */
+		assert (pevext->msg.m_type <= DBR_CTRL_DOUBLE);
+
+		/* use type as index into conversion jumptable */
+		(* cac_dbr_cvrt[pevext->msg.m_type])
+			( reply + 1,
+			  reply + 1,
+			  TRUE,       /* host -> net format */
+			  pevext->msg.m_count);
+#endif
 		/*
 		 * force string message size to be the true size rounded to even
 		 * boundary
@@ -1579,8 +1685,8 @@ caHdr *mp,
 struct client  *client
 )
 {
-	struct db_addr  	tmp_addr;
-	caHdr 		*search_reply;
+	struct dbAddr  		tmp_addr;
+	caHdr 			*search_reply;
 	unsigned short		*pMinorVersion;
 	int        		status;
 	unsigned		sid;
@@ -1590,11 +1696,10 @@ struct client  *client
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
-			mp + 1, 
+			(char *) (mp+1), 
 			&tmp_addr);
 	if (status < 0) {
-		if (CASDEBUG > 2)
-			logMsg(	"CAS: Lookup for channel \"%s\" failed\n", 
+		DLOG (2, "CAS: Lookup for channel \"%s\" failed\n", 
 				(int)(mp+1),
 				NULL,
 				NULL,
@@ -1628,8 +1733,10 @@ struct client  *client
 	 *
 	 * New versions dont alloc the channel in response
 	 * to a search request.
+	 *
+	 * m_count, m_cid are already in host format...
 	 */
-	if (CA_V44(CA_PROTOCOL_VERSION,htons(mp->m_count))) {
+	if (CA_V44(CA_PROTOCOL_VERSION, mp->m_count)) {
 		sid = ~0U;
 		count = 0;
 		type = ca_server_port;
@@ -1640,7 +1747,7 @@ struct client  *client
 		pchannel = casCreateChannel (
 				client, 
 				&tmp_addr, 
-				ntohs(mp->m_cid));
+				mp->m_cid);
 		if (!pchannel) {
 			SEND_LOCK(client);
 			send_err(mp, 
@@ -1652,7 +1759,7 @@ struct client  *client
 		}
 		sid = pchannel->sid;
 		count =  tmp_addr.no_elements;
-		type = (ca_uint16_t) tmp_addr.field_type;
+		type = (ca_uint16_t) tmp_addr.dbr_field_type;
 	}
 
 	SEND_LOCK(client);
@@ -1680,7 +1787,6 @@ struct client  *client
 	END_MSG(client);
 	SEND_UNLOCK(client);
 
-
 	return;
 }
 
@@ -1690,7 +1796,7 @@ struct client  *client
  */
 LOCAL struct channel_in_use *casCreateChannel (
 struct client  	*client,
-struct db_addr 	*pAddr,
+struct dbAddr	*pAddr,
 unsigned	cid
 )
 {
@@ -1823,8 +1929,8 @@ char           *pformat,
 	 */
 	reply = (caHdr *) ALLOC_MSG(client, 512);
 	if (!reply){
-		int     	logMsgArgs[6];
-		unsigned	i;
+		int    	logMsgArgs[6];
+		size_t	i;
 
 		for(i=0; i< NELEMENTS(logMsgArgs); i++){
 			logMsgArgs[i] = va_arg(args, int);
@@ -1947,13 +2053,15 @@ int		mnum
 
 	pciu = MPTOPCIU(mp);
 
-	logMsg(	"CAS: cmd=%d cid=%x typ=%d cnt=%d psz=%d avail=%x\n",
+	logMsg (
+"CAS header: cmmd=%d cid=0x%x type=%d count=%d postsize=%u available=0x%x\n",
 	  	mp->m_cmmd,
 		mp->m_cid,
 	  	mp->m_type,
 	  	mp->m_count,
-	  	mp->m_postsize,
-	  	(int)mp->m_available);
+	  	(unsigned)mp->m_postsize,
+	  	(unsigned)mp->m_available);
+
 
 	logMsg(	"CAS: \tN=%d paddr=%x\n",
 	  	mnum, 

@@ -150,8 +150,8 @@ int req_server(void)
 	}
 
 	while (TRUE) {
-		struct sockaddr sockAddr;
-		int    addLen = sizeof( sockAddr );
+		struct sockaddr	sockAddr;
+		int		addLen = sizeof(sockAddr);
 
 		if ((i = accept(IOC_sock, &sockAddr, &addLen)) == ERROR) {
 			logMsg("CAS: Client accept error\n",
@@ -429,9 +429,9 @@ LOCAL int terminate_one_client(struct client *client)
 /*
  *	client_stat()
  */
-int client_stat (unsigned level)
+int client_stat(unsigned level)
 {
-	printf("\"clinet_stat\" has been replaced by \"casr\"\n");
+	printf ("\"client_stat\" has been replaced by \"casr\"\n");
 	return ellCount(&clientQ);
 }
 
@@ -529,7 +529,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		ellCount(&client->addrq));
 	if (level>=1) {
 		printf( "\tTId=0X%lX, Protocol=%3s, Socket FD=%d\n", 
-			client->tid,
+			(unsigned long) client->tid,
 			pproto, 
 			client->sock); 
 		printf( 
@@ -577,7 +577,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		i=0;
 		while (pciu){
 			printf(	"\t%s(%d%c%c)", 
-				pciu->addr.precord,
+				pciu->addr.precord->name,
 				ellCount(&pciu->eventq),
 				asCheckGet(pciu->asClientPVT)?'r':'-',
 				asCheckPut(pciu->asClientPVT)?'w':'-');

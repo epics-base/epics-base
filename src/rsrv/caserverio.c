@@ -97,6 +97,44 @@ int		lock_needed;
 	}
 
 	if(pclient->send.stk){
+#ifdef CONVERSION_REQUIRED
+		/*	Convert all caHdr into net format.
+		 *	The remaining bytes must already be in
+		 *	net format, because here we have no clue
+		 *	how to convert them.
+		 */
+		char		*buf;
+		unsigned long	msg_size, num_bytes;
+		caHdr		*mp;
+
+		
+		buf       = (char *) pclient->send.buf;
+		num_bytes = pclient->send.stk;
+
+		/* convert only if we have at least a complete caHdr */
+		while (num_bytes >= sizeof(caHdr))
+		{
+			mp = (caHdr *) buf;
+
+			msg_size  = sizeof (caHdr) + mp->m_postsize;
+
+			DLOG(3,"CAS: sending cmmd %d, postsize %d\n",
+				mp->m_cmmd, (int)mp->m_postsize,
+				NULL, NULL);
+
+			/* convert the complete header into host format */
+			mp->m_cmmd      = htons (mp->m_cmmd);
+			mp->m_postsize  = htons (mp->m_postsize);
+			mp->m_type      = htons (mp->m_type);
+			mp->m_count     = htons (mp->m_count);
+			mp->m_cid       = htonl (mp->m_cid);
+			mp->m_available = htonl (mp->m_available);
+
+			/* get next message: */
+			buf       += msg_size;
+			num_bytes -= msg_size;
+		}
+#endif
 
   		status = sendto(	
 			pclient->sock,
@@ -119,7 +157,7 @@ int		lock_needed;
 						CASDEBUG>2){
 
 						logMsg(
-		"CAS: TCP send failed because \"%s\"\n",
+					"CAS: TCP send failed because \"%s\"\n",
 							(int)strerror(anerrno),
 							NULL,
 							NULL,
@@ -131,7 +169,7 @@ int		lock_needed;
 				}
 				else if (pclient->proto == IPPROTO_UDP) {
 					logMsg(
-		"CAS: UDP send failed because \"%s\"\n",
+					"CAS: UDP send failed because \"%s\"\n",
 							(int)strerror(anerrno),
 							NULL,
 							NULL,
@@ -145,7 +183,7 @@ int		lock_needed;
 			}
 			else{
 				logMsg(
-		"CAS: blk sock partial send: req %d sent %d \n",
+				"CAS: blk sock partial send: req %d sent %d \n",
 					pclient->send.stk,
 					status,
 					NULL,
@@ -164,6 +202,8 @@ int		lock_needed;
 	if(lock_needed){
 		SEND_UNLOCK(pclient);
 	}
+
+  	DLOG(3, "------------------------------\n\n", 0,0,0,0,0,0);
 
 	return;
 }

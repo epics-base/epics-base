@@ -212,9 +212,9 @@ FAST int 		sock;
 			NULL,
 			NULL,
 			NULL);
-   		logMsg(	"from addr %x, port %x \n", 
-			client->addr.sin_addr.s_addr, 
-			client->addr.sin_port,
+   		logMsg(	"from addr %s, port %d \n", 
+			(int) inet_ntoa (client->addr.sin_addr), 
+			ntohs (client->addr.sin_port),
 			NULL,
 			NULL,
 			NULL,
@@ -322,12 +322,11 @@ FAST int 		sock;
 
 		status = camessage(client, &client->recv);
 		if(status == OK){
-
 			/*
 			 * if there is a partial message
 			 * align it with the start of the buffer
 			 */
-			if(client->recv.cnt >= client->recv.stk){
+			if (client->recv.cnt >= client->recv.stk) {
 				unsigned bytes_left;
 				char *pbuf;
 

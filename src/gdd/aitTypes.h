@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:33  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.2  1996/06/17 15:24:07  jbk
  * *many mods, string class corrections.
@@ -68,7 +71,7 @@ typedef	struct {
 #define aitTotal 13
 #define aitFirst aitEnumInvalid
 #define aitLast aitEnumContainer
-#define aitValid(x) ((x)<=aitLast)
+#define aitValid(x) ((x)<=aitLast && (x)>aitFirst)
 
 /* all conversion types */
 #define aitConvertTotal 11

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.4  1996/08/06 19:14:13  jbk
+// Fixes to the string class.
+// Changes units field to a aitString instead of aitInt8.
+//
 // Revision 1.3  1996/07/26 02:23:18  jbk
 // Fixed the spelling error with Scalar.
 //
@@ -47,7 +51,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// Just describe the menu - allow the block of choiced to be
 	// referenced in.
-	gddAtomic* add_enum = new gddAtomic(0,aitEnumFixedString,1);
+	gddAtomic* add_enum = new gddAtomic(0,aitEnumFixedString,1,16);
 
 	// ----------------------------------------------------------------
 	// register simple types
@@ -78,8 +82,11 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	int type_awlow=registerApplicationType(GDD_NAME_ALARM_WARN_LOW);
 	int type_maxele=registerApplicationType(GDD_NAME_MAX_ELEMENTS);
 	int type_value=registerApplicationType(GDD_NAME_VALUE);
+	int type_menu=registerApplicationType(GDD_NAME_ENUM);
 	int type_units=registerApplicationTypeWithProto(GDD_NAME_UNITS,add_units);
-	int type_menu=registerApplicationTypeWithProto(GDD_NAME_ENUM,add_enum);
+
+	// old menu method
+	// int type_menu=registerApplicationTypeWithProto(GDD_NAME_ENUM,add_enum);
 
 	// ----------------------------------------------------------------
 	// register container types - not as easy
@@ -143,7 +150,8 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// DBR_GR_ENUM
 	gddContainer* cdd_gr_enum=new gddContainer(0);
-	cdd_gr_enum->insert(getDD(type_menu)); 
+	// old menu method: cdd_gr_enum->insert(getDD(type_menu)); 
+	cdd_gr_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
 	cdd_gr_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_gr_enum",cdd_gr_enum);
 
@@ -215,7 +223,8 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// DBR_CTRL_ENUM
 	gddContainer* cdd_ctrl_enum=new gddContainer(0);
-	cdd_ctrl_enum->insert(getDD(type_menu)); 
+	// old method: cdd_ctrl_enum->insert(getDD(type_menu)); 
+	cdd_ctrl_enum->insert(new gddAtomic(type_menu,aitEnumFixedString,1)); 
 	cdd_ctrl_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_ctrl_enum",cdd_ctrl_enum);
 

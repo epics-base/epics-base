@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.2  1996/08/13 15:07:42  jbk
+// changes for better string manipulation and fixes for the units field
+//
 // Revision 1.1  1996/06/25 19:11:28  jbk
 // new in EPICS base
 //
@@ -72,7 +75,7 @@ static void aitConvertStringFixedString(void* d,const void* s,aitIndex c)
 	aitString* out = (aitString*)d;
 	aitFixedString* in = (aitFixedString*)s;
 
-	for(i=0;i<c;i++) out[i].copy(in[i].fixed_string);
+	for(i=0;i<c;i++) out[i].installString(in[i].fixed_string);
 }
 
 static void aitConvertFixedStringString(void* d,const void* s,aitIndex c)

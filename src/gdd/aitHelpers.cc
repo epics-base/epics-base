@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.3  1996/08/09 02:28:08  jbk
+// rewrite of aitString class - more intuitive now, I think
+//
 // Revision 1.2  1996/08/06 19:14:06  jbk
 // Fixes to the string class.
 // Changes units field to a aitString instead of aitInt8.
@@ -59,6 +62,7 @@ aitIndex aitString::compact(aitString* array, aitIndex arraySize,
 		if(str[i].string())
 		{
 			memcpy(&ptr[pos],str[i].string(),str[i].length()+1); // include NULL
+			str[i].init();
 			str[i]=&ptr[pos];
 			pos+=str[i].length()+1;
 		}

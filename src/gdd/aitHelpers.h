@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1996/08/14 12:30:10  jbk
+ * fixes for converting aitString to aitInt8* and back
+ * fixes for managing the units field for the dbr types
+ *
  * Revision 1.5  1996/08/12 15:37:46  jbk
  * Re-added the installString() function I took out.
  *
@@ -185,18 +189,26 @@ public:
 	int copy(const aitString* p);
 	int copy(const aitString& p);
 	int copy(const char* p);
-	void installString(char* p) { copy(p); }
+
+	int installString(aitString* p);
+	int installString(aitString& p);
+	int installString(char* p);
+	int installString(const aitString* p);
+	int installString(const aitString& p);
+	int installString(const char* p);
 
 	// set data in the aitString and retrieve data from the aitString
 	void replaceData(const char* p);
 	void replaceData(const aitString* p);
 	void replaceData(aitString& p);
+	void replaceData(const aitString& p);
 	void extractString(char* to_here);
 
 	// special function to change the string - internal use with gdd library
 	void force(char* x)				{ str=x; }
 	void force(unsigned char* x)	{ str=(char*)x; }
 	void force(unsigned long x)		{ str=(char*)x; }
+	void forceConstant(void)		{ type=aitStrConst; }
 	void init(void);
 
 	// take the aitString array, and put it and all the string into buf,
@@ -279,8 +291,23 @@ inline void aitString::replaceData(const aitString* p)
 	{ if(p && str) strncpy(str,p->string(),len); }
 inline void aitString::replaceData(aitString& p)
 	{ if(str) strncpy(str,p.string(),len); }
+inline void aitString::replaceData(const aitString& p)
+	{ if(str) strncpy(str,p.string(),len); }
 inline void aitString::extractString(char* p)
 	{ if(p && str) strcpy(p,str); }
+
+inline int aitString::installString(const char* p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+inline int aitString::installString(char* p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+inline int aitString::installString(aitString* p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+inline int aitString::installString(aitString& p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+inline int aitString::installString(const aitString* p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+inline int aitString::installString(const aitString& p)
+	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
 
 inline aitString& aitString::operator=(const aitString& p)
 	{ this->copy(p); return *this; }

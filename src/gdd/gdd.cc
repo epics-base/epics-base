@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.8  1996/08/14 12:30:14  jbk
+// fixes for converting aitString to aitInt8* and back
+// fixes for managing the units field for the dbr types
+//
 // Revision 1.7  1996/08/13 15:07:46  jbk
 // changes for better string manipulation and fixes for the units field
 //
@@ -122,6 +126,7 @@ void gdd::init(int app, aitEnum prim, int dimen)
 	flags=0;
 	bounds=NULL;
 	setData(NULL);
+	setStatSevr(0u,0u);
 
 	if(dim)
 	{
@@ -172,7 +177,7 @@ gdd::~gdd(void)
 				destruct->destroy(dataAddress());
 			else
 			{
-				aitString* s = (aitString*)&data;
+				aitString* s = (aitString*)dataAddress();
 				s->clear();
 			}
 		}
@@ -180,10 +185,10 @@ gdd::~gdd(void)
 	else if(isContainer())
 	{
 		if(destruct)
-			destruct->destroy(voidData());
+			destruct->destroy(dataPointer());
 		else
 		{
-			for(dd=(gdd*)voidData();dd;)
+			for(dd=(gdd*)dataPointer();dd;)
 			{
 				temp=dd;
 				dd=dd->next();
@@ -194,7 +199,7 @@ gdd::~gdd(void)
 	}
 	else
 	{
-		if(destruct) destruct->destroy(voidData());
+		if(destruct) destruct->destroy(dataPointer());
 		if(bounds) freeBounds();
 	}
 }
@@ -212,6 +217,25 @@ void gdd::freeBounds(void)
 		default: delete bounds; break;
 		}
 		bounds=NULL;
+	}
+	dim=0;	// Reflect the fact that this now a scalar? Bounds and dim
+			// should be tightly coupled, so no bounds means no dimension.
+}
+
+void gdd::setDimension(int d)
+{
+	if(dim!=d)
+	{
+		freeBounds();
+		dim=(aitUint8)d;
+		switch(dim)
+		{
+		case 0:  break;
+		case 1:  bounds=(gddBounds*)new gddBounds1D; bounds->set(0,0); break;
+		case 2:  bounds=(gddBounds*)new gddBounds2D; break;
+		case 3:  bounds=(gddBounds*)new gddBounds3D; break;
+		default: bounds=(gddBounds*)new gddBounds[dim]; break;
+		}
 	}
 }
 
@@ -241,23 +265,25 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 	gddStatus rc=0;
 
 	if(isScalar())
-		aitConvert(primitiveType(),&data,t,d,1);
+		aitConvert(primitiveType(),dataAddress(),t,d,1);
 	else if(isAtomic())
 	{
-		if(!voidData())
+		if(!dataPointer())
 		{
-			sz=DescribedDataSizeBytes();
+			sz=describedDataSizeBytes();
 			if((buf=new aitInt8[sz])==NULL)
 				rc=gddErrorNewFailed;
 			else
 			{
 				setData(buf);
 				destruct=new gddDestructor;
-				aitConvert(primitiveType(),voidData(),t,d,getDataSizeElements());
+				aitConvert(primitiveType(),dataPointer(),t,d,
+					getDataSizeElements());
 			}
 		}
 		else
-			aitConvert(primitiveType(),voidData(),t,d,getDataSizeElements());
+			aitConvert(primitiveType(),dataPointer(),t,d,
+				getDataSizeElements());
 	}
 	else
 		rc=gddErrorTypeMismatch;
@@ -328,7 +354,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 		{
 			pdd=new gdd(ndd->applicationType(),
 				ndd->primitiveType(),ndd->dimension());
-			pdd->setNext((gdd*)voidData());
+			pdd->setNext((gdd*)dataPointer());
 			setData(pdd);
 			bounds->setSize(bounds->size()+1);
 			pdd->copyStuff(ndd,ctype);
@@ -354,7 +380,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 				if(array=new aitUint8[a_size])
 				{
 					destruct=new gddDestructor;
-					memcpy(array,dd->voidData(),a_size);
+					memcpy(array,dd->dataPointer(),a_size);
 					setData(array);
 				}
 				else
@@ -404,14 +430,14 @@ size_t gdd::getDataSizeBytes(void) const
 	return sz;
 }
 
-size_t gdd::DescribedDataSizeBytes(void) const
+size_t gdd::describedDataSizeBytes(void) const
 {
 	size_t sz=0;
 
 	// does not work well for aitString - only reports the aitString info
 
 	if(!isContainer())
-		sz+=(size_t)(DescribedDataSizeElements())*aitSize[primitiveType()];
+		sz+=(size_t)(describedDataSizeElements())*aitSize[primitiveType()];
 
 	return sz;
 }
@@ -471,14 +497,14 @@ aitUint32 gdd::getDataSizeElements(void) const
 		total=1;
 	else
 	{
-		if(voidData())
+		if(dataPointer())
 			for(i=0;i<dimension();i++) total+=bounds[i].size();
 	}
 
 	return total;
 }
 
-aitUint32 gdd::DescribedDataSizeElements(void) const
+aitUint32 gdd::describedDataSizeElements(void) const
 {
 	unsigned long total=0;
 	unsigned i;
@@ -544,8 +570,8 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 		{
 			if(data.FString)
 				memcpy((char*)&pdd[pos],data.FString,sizeof(aitFixedString));
-			else
-				pdd[0].data.FString=(aitFixedString*)&pdd[pos];
+
+			pdd[0].data.FString=(aitFixedString*)&pdd[pos];
 		}
 		else if(primitiveType()==aitEnumString)
 		{
@@ -554,6 +580,7 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 			{
 				memcpy((char*)&pdd[pos],str->string(),str->length()+1);
 				str->force((char*)&pdd[pos]);
+				str->forceConstant();
 			}
 			else
 				str->init();
@@ -562,7 +589,7 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 	else if(isContainer())
 	{
 		// need to check for bounds in the container and flatten them
-		if(voidData())
+		if(dataPointer())
 		{
 			// process all the container's DDs
 			spos=pos;
@@ -587,16 +614,17 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 			bnds=(gddBounds*)(&pdd[pos]);
 			for(i=0;i<dimension();i++) bnds[i]=bounds[i];
 			pdd[0].bounds=bnds;
-			if(voidData())
+			if(dataPointer())
 			{
 				if(primitiveType()==aitEnumString)
 				{
 					// not very good way to do it, size info bad
-					aitString::compact((aitString*)dataPointer(),
-						getDataSizeElements(),&bnds[i],size);
+					aitString* str = (aitString*)dataPointer();
+					aitString::compact(str,getDataSizeElements(),&bnds[i],size);
+					str->forceConstant();
 				}
 				else
-					memcpy(&bnds[i],voidData(),getDataSizeBytes());
+					memcpy(&bnds[i],dataPointer(),getDataSizeBytes());
 
 				pdd[0].setData(&bnds[i]);
 			}
@@ -653,19 +681,21 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 				ptr+=j*sizeof(gddBounds);
 
 				// copy the data
-				if(dd[i].voidData())
+				if(dd[i].dataPointer())
 				{
 					if(dd[i].primitiveType()==aitEnumString)
 					{
 						// not very good way to do it, size info bad
-						sz=aitString::compact((aitString*)dd[i].dataPointer(),
+						aitString* str = (aitString*)dd[i].dataPointer();
+						sz=aitString::compact(str,
 							dd[i].getDataSizeElements(),ptr,size);
+						str->forceConstant();
 					}
 					else
 					{
 						// need to copy data here, align to size of double
 						sz=dd[i].getDataSizeBytes();
-						memcpy(ptr,dd[i].voidData(),sz);
+						memcpy(ptr,dd[i].dataPointer(),sz);
 					}
 					dd[i].setData(ptr);
 					ptr+=align8(sz); // do alignment
@@ -687,6 +717,7 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 				{
 					memcpy(ptr,str->string(),str->length()+1);
 					str->force((char*)ptr);
+					str->forceConstant();
 					ptr+=str->length()+1;
 				}
 				else
@@ -728,7 +759,7 @@ int gdd::flattenDDs(gddContainer* dd, void* buf, size_t size)
 	{
 		if(ptr[i].isContainer())
 		{
-			if(ptr[i].voidData())
+			if(ptr[i].dataPointer())
 			{
 				spos=pos;
 				pos+=flattenDDs((gddContainer*)&ptr[i],&ptr[pos],
@@ -750,7 +781,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 {
 	aitUint8* pdd = (aitUint8*)this;
 	aitUint32 bnds = (aitUint32)(bounds);
-	aitUint32 dp = (aitUint32)(voidData());
+	aitUint32 dp = (aitUint32)(dataPointer());
 	gdd* tdd;
 	gddContainer* cdd;
 	gddCursor cur;
@@ -818,7 +849,7 @@ gddStatus gdd::convertAddressToOffsets(void)
 {
 	aitUint8* pdd = (aitUint8*)this;
 	aitUint8* bnds = (aitUint8*)(bounds);
-	aitUint8* dp = (aitUint8*)(voidData());
+	aitUint8* dp = (aitUint8*)(dataPointer());
 	gddContainer* tdd;
 	gddCursor cur;
 	gdd *cdd,*ddd;
@@ -883,6 +914,25 @@ gddStatus gdd::convertAddressToOffsets(void)
 	return 0;
 }
 
+gddStatus gdd::clearData(void)
+{
+	gddStatus rc=0;
+	
+	if(isContainer())
+		rc=gddErrorNotAllowed;
+	else
+	{
+		if(destruct)
+		{
+			destruct->destroy(dataPointer());
+			destruct=NULL;
+		}
+		freeBounds();
+		setData(NULL);
+	}
+	return rc;
+}
+
 gddStatus gdd::clear(void)
 {
 	if(isFlat()||isManaged())
@@ -892,7 +942,7 @@ gddStatus gdd::clear(void)
 	{
 		if(destruct)
 		{
-			destruct->destroy(voidData());
+			destruct->destroy(dataPointer());
 			destruct=NULL;
 		}
 		freeBounds();
@@ -959,12 +1009,12 @@ void gdd::get(aitString& d)
 		if(isConstant())
 		{
 			const char* ci=(const char*)dataPointer();
-			d.copy(ci);
+			d.installString(ci);
 		}
 		else
 		{
 			char* i=(char*)dataPointer();
-			d.copy(i);
+			d.installString(i);
 		}
 	}
 	else
@@ -987,12 +1037,12 @@ void gdd::getConvert(aitString& d)
 		if(isConstant())
 		{
 			const char* ci=(const char*)dataPointer();
-			d.copy(ci);
+			d.installString(ci);
 		}
 		else
 		{
 			char* i=(char*)dataPointer();
-			d.copy(i);
+			d.installString(i);
 		}
 	}
 	else
@@ -1007,18 +1057,40 @@ void gdd::getConvert(aitFixedString& d)
 		get(aitEnumFixedString,d.fixed_string);
 }
 
-void gdd::put(aitString d)
+gddStatus gdd::put(aitString d)
 {
-	aitString* s=(aitString*)dataAddress();
-	*s=d;
-	setPrimType(aitEnumString);
+	gddStatus rc=0;
+	if(isScalar())
+	{
+		aitString* s=(aitString*)dataAddress();
+		*s=d;
+		setPrimType(aitEnumString);
+	}
+	else
+		rc=gddErrorNotAllowed;
+
+	return rc;
 }
 
 // this is dangerous, should the fixed string be copied here?
-void gdd::put(aitFixedString& d)
+gddStatus gdd::put(aitFixedString& d)
 {
-	data.FString=&d;
-	setPrimType(aitEnumFixedString);
+	gddStatus rc=0;
+
+	if(primitiveType()==aitEnumFixedString)
+	{
+		if(data.FString==NULL)
+			data.FString=new aitFixedString;
+	}
+	else
+	{
+		// this is so bad, like the other put() functions, need fixen
+		setPrimType(aitEnumFixedString);
+		data.FString=new aitFixedString;
+	}
+
+	memcpy(data.FString->fixed_string,d.fixed_string,sizeof(d.fixed_string));
+	return rc;
 }
 
 void gdd::putConvert(aitString d)
@@ -1052,14 +1124,7 @@ void gdd::putConvert(aitFixedString& d)
 // copy each of the strings into this DDs storage area
 gddStatus gdd::put(const aitString* const d)
 {
-	gddStatus rc=0;
-
-	if(isAtomic())
-	  aitConvert(primitiveType(),voidData(),aitEnumString,d,getDataSizeElements());
-	else
-		rc=gddErrorTypeMismatch;
-
-	return rc;
+	return genCopy(aitEnumString,d);
 }
 
 // copy each of the strings into this DDs storage area
@@ -1068,12 +1133,11 @@ gddStatus gdd::put(const aitFixedString* const d)
 	gddStatus rc=0;
 
 	if(isAtomic())
-		if(data.FString)
-		{
-			aitConvert(primitiveType(),voidData(),aitEnumFixedString,d,
+		if(dataPointer())
+			aitConvert(primitiveType(),dataPointer(),aitEnumFixedString,d,
 				getDataSizeElements());
-		}
-		// should have else error condition
+		else
+			genCopy(aitEnumFixedString,d);
 	else
 		rc=gddErrorTypeMismatch;
 
@@ -1084,25 +1148,107 @@ gddStatus gdd::put(const gdd* dd)
 {
 	gddStatus rc=0;
 
+	// bail out quickly is either dd is a container
 	if(isContainer() || dd->isContainer())
-		rc=gddErrorNotSupported;
-	else if(isScalar() && dd->isScalar())
+		return gddErrorNotSupported;
+		
+	if(!aitConvertValid(primitiveType()))
+	{
+		// can't change application type here
+		int app = applicationType();
+		init(app,dd->primitiveType(),dd->dimension());
+	}
+
+	if(isScalar() && dd->isScalar())
 	{
 		// this is the simple case - just make this scaler look like the other
-		// not protected against screwing up the string type
-		setPrimType(dd->primitiveType());
-		put(((aitType*)dd->dataAddress()));
-		// set(dd->primitiveType(),dd->dataAddress());
+		// need to make sure that aitString and aitFixedString work right
+
+		if(primitiveType()==aitEnumFixedString && data.FString==NULL)
+			data.FString=new aitFixedString;
+
+		if(dd->primitiveType()==aitEnumFixedString)
+			set(dd->primitiveType(),dd->dataPointer());
+		else
+			set(dd->primitiveType(),dd->dataAddress());
 	}
-	else if(isAtomic() && dd->isAtomic())
+	else if(isScalar()) // dd must be atomic if this is true
+	{
+		if((primitiveType()==aitEnumString ||
+			primitiveType()==aitEnumFixedString) &&
+			dd->primitiveType()==aitEnumInt8)
+		{
+			// special case for aitInt8--->aitString (hate this)
+			aitInt8* i1=(aitInt8*)dd->dataPointer();
+			put(i1);
+		}
+		else
+		{
+			if(primitiveType()==aitEnumFixedString && data.FString==NULL)
+				data.FString=new aitFixedString;
+
+			set(dd->primitiveType(),dd->dataPointer());
+		}
+	}
+	else if(dd->isScalar()) // this must be atomic if true
+	{
+		if(primitiveType()==aitEnumInt8 &&
+		   dd->primitiveType()==aitEnumString)
+		{
+			// special case for aitString--->aitInt8
+			aitString* s1=(aitString*)dd->dataAddress();
+			put(*s1);
+		}
+		else if(primitiveType()==aitEnumInt8 &&
+				dd->primitiveType()==aitEnumFixedString)
+		{
+			// special case for aitFixedString--->aitInt8
+			aitFixedString* s2=data.FString;
+			if(s2) put(*s2);
+		}
+		else
+		{
+			if(getDataSizeElements()>0)
+			{
+				aitConvert(primitiveType(),dataPointer(),
+					dd->primitiveType(),dd->dataAddress(),1);
+			}
+			else
+			{
+				// this may expose an inconsistancy in the library.
+				// you can register a gdd with bounds and no data
+				// which marks it flat
+
+				if(isFlat())
+					rc=gddErrorNotAllowed;
+				else
+				{
+					// convert it to a scalar - is this OK to do?
+					clearData();
+					setPrimType(dd->primitiveType());
+					setApplType(applicationType());
+					setDimension(0);
+					put((aitType*)dd->dataAddress());
+				}
+			}
+		}
+	}
+	else // both dd and this must be atomic
 	{
 		// carefully place values from dd into this
-		if(dd->getDataSizeElements()>getDataSizeElements())
+		if(dataPointer()==NULL)
+		{
+			if(destruct)
+				rc=gddErrorNotAllowed;
+			else
+				rc=copyData(dd); // is this the correct thing to do?
+		}
+		else if(dd->getDataSizeElements()>getDataSizeElements())
 			rc=gddErrorOutOfBounds;
 		else
 		{
 			if(dd->dimension()>1)
-				return gddErrorNotSupported;
+				rc=gddErrorNotSupported;
 			else
 			{
 				aitUint8* arr = (aitUint8*)dataPointer();
@@ -1113,89 +1259,8 @@ gddStatus gdd::put(const gdd* dd)
 					dd->dataPointer(),
 					dd->getBounds()->size());
 			}
-#if 0
-			// should handle single dimensional array as a special case
-			const Bounds* b = dd->getBounds();
-			const Bounds* bs = getBounds();
-			aitIndex x[dd->dimension()];
-			aitIndex offset,mult;
-			aitUint8* arr_dest=(aitUint8*)dataPointer();
-			aitUint8* arr_src=(aitUint8*)dd->dataPointer();
-			int d = dd->dimension();
-			int i,j;
 
-			for(i=0;i<d;i++) x[i]=b[i].first();
-
-			// look at this ugly mess - slow and horrible, but generic
-			// this is so unbelievably sucky, I hate it
-			j=0;
-			while(x[d-1]<b[d-1].size())
-			{
-				// modify coordinate here
-				for(offset=x[0],mult=1,i=1;i<d;i++)
-				{
-					mult*=bs[i];
-					offset+=x[i]*mult;
-				}
-
-				aitConvert(primitiveType(),
-					arr_dest[offset*aitSize[dd->primitiveType()],
-					dd->primitiveType(),arr_src[j],1);
-
-				if(++x[0]>=b[0].size())
-				{
-					for(i=0;i<(d-1);i++)
-					{
-						if(x[i]>=b[i].size())
-						{
-							++x[i+1];
-							x[i]=b[i].first();
-						}
-					}
-				}
-				j++;
-			}
-#endif
 		}
-	}
-	else if((primitiveType()==aitEnumString ||
-			 primitiveType()==aitEnumFixedString) &&
-			dd->primitiveType()==aitEnumInt8 &&
-			isScalar() && dd->isAtomic())
-	{
-		// special case for aitInt8--->aitString (hate this)
-		aitInt8* i1=(aitInt8*)dd->dataPointer();
-		put(i1);
-	}
-	else if(primitiveType()==aitEnumInt8 &&
-			dd->primitiveType()==aitEnumString &&
-			dd->isScalar() && isAtomic())
-	{
-		// special case for aitString--->aitInt8
-		aitString* s1=(aitString*)dd->dataAddress();
-		put(*s1);
-	}
-	else if(primitiveType()==aitEnumInt8 &&
-			dd->primitiveType()==aitEnumFixedString &&
-			dd->isScalar() && isAtomic())
-	{
-		// special case for aitFixedString--->aitInt8
-		aitFixedString* s2=data.FString;
-		if(s2) put(*s2);
-	}
-	else if(isScalar())
-	{
-		// just put first element of dd into this scaler - sucks
-		if(dd->getDataSizeElements()>0)
-			aitConvert(primitiveType(),dataAddress(),
-				dd->primitiveType(),dd->dataPointer(),1);
-	}
-	else
-	{
-		// just put dd scaler into first element of this - sucks
-		if(getDataSizeElements()>0)
-			aitConvert(primitiveType(),dataPointer(),
-				dd->primitiveType(),dd->dataAddress(),1);
 	}
 
 	aitTimeStamp ts;
@@ -1203,6 +1268,36 @@ gddStatus gdd::put(const gdd* dd)
 	dd->getTimeStamp(&ts);
 	setTimeStamp(&ts);
 
+	return rc;
+}
+
+gddStatus gdd::copyData(const gdd* dd)
+{
+	gddStatus rc=0;
+
+	if(isFlat() || isManaged() || isContainer())
+		rc=gddErrorNotAllowed;
+	else
+	{
+		if((rc=clear())==0)
+		{
+			int i;
+			init(dd->applicationType(),dd->primitiveType(),dd->dimension());
+			const gddBounds* bnds = dd->getBounds();
+			for(i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
+
+			size_t sz = dd->getDataSizeBytes();
+			aitUint8* arr;
+			if((arr=new aitUint8[sz]))
+			{
+				destruct=new gddDestructor;
+				memcpy(arr,dd->dataPointer(),sz);
+				setData(arr);
+			}
+			else
+				rc=gddErrorNewFailed;
+		}
+	}
 	return rc;
 }
 
@@ -1336,7 +1431,7 @@ gddContainer::gddContainer(gddContainer* ec)
 gdd* gddContainer::getDD(aitIndex index)
 {
 	aitIndex i;
-	gdd* dd=(gdd*)voidData();
+	gdd* dd=(gdd*)dataPointer();
 	for(i=0;i<index && i<bounds->size();i++) dd=(gdd*)dd->next();
 	return dd;
 }
@@ -1398,3 +1493,49 @@ gdd* gddCursor::operator[](int index)
 	return dd;
 }
 
+
+#if 0
+	code section for handling transfer of element from
+	multidimensional space
+			// should handle single dimensional array as a special case
+			const Bounds* b = dd->getBounds();
+			const Bounds* bs = getBounds();
+			aitIndex x[dd->dimension()];
+			aitIndex offset,mult;
+			aitUint8* arr_dest=(aitUint8*)dataPointer();
+			aitUint8* arr_src=(aitUint8*)dd->dataPointer();
+			int d = dd->dimension();
+			int i,j;
+
+			for(i=0;i<d;i++) x[i]=b[i].first();
+
+			// look at this ugly mess - slow and horrible, but generic
+			// this is so unbelievably sucky, I hate it
+			j=0;
+			while(x[d-1]<b[d-1].size())
+			{
+				// modify coordinate here
+				for(offset=x[0],mult=1,i=1;i<d;i++)
+				{
+					mult*=bs[i];
+					offset+=x[i]*mult;
+				}
+
+				aitConvert(primitiveType(),
+					arr_dest[offset*aitSize[dd->primitiveType()],
+					dd->primitiveType(),arr_src[j],1);
+
+				if(++x[0]>=b[0].size())
+				{
+					for(i=0;i<(d-1);i++)
+					{
+						if(x[i]>=b[i].size())
+						{
+							++x[i+1];
+							x[i]=b[i].first();
+						}
+					}
+				}
+				j++;
+			}
+#endif

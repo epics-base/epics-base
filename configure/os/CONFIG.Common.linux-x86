@@ -27,6 +27,7 @@ OP_SYS_LDFLAGS =
 OP_SYS_LDLIBS = -lreadline -lcurses -lrt
 
 ARCH_DEP_CPPFLAGS += -D_X86_
+ARCH_DEP_CFLAGS += -mpentium
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu

@@ -372,7 +372,6 @@ struct link	*plink;		/* I/O link structure from record */
     pmsgLink->queue[j].head = NULL;
     pmsgLink->queue[j].tail = NULL;
     FASTLOCKINIT(&(pmsgLink->queue[j].lock));
-    FASTUNLOCK(&(pmsgLink->queue[j].lock));
   }
   pmsgLink->linkEventSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 

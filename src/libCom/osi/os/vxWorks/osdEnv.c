@@ -50,20 +50,16 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (char *name, char *value)
 /*
  * Show the value of the specified, or all, environment variables
  */
-epicsShareFunc void epicsShareAPI epicsEnvShow (int argc, char **argv)
+epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name)
 {
-    if (argc <= 1) {
+    if (name == NULL) {
         envShow (0);
     }
     else {
-        int i;
-
-        for (i = 1 ; i < argc ; i++) {
-            const char *cp = getenv (argv[i]);
-            if (cp == NULL)
-                printf ("%s is not an environment variable.\n", argv[i]);
-            else
-                printf ("%s=%s\n", argv[i], cp);
-        }
+        const char *cp = getenv (name);
+        if (cp == NULL)
+            printf ("%s is not an environment variable.\n", name);
+        else
+            printf ("%s=%s\n", name, cp);
     }
 }

@@ -122,12 +122,12 @@ static void epicsParamShowCallFunc(const ioccrfArgBuf *args)
 }
 
 /* epicsEnvShow */
-static const ioccrfArg epicsEnvShowArg0 = { "[name ...]", ioccrfArgArgv};
+static const ioccrfArg epicsEnvShowArg0 = { "[name]",ioccrfArgString};
 static const ioccrfArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
 static const ioccrfFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs};
 static void epicsEnvShowCallFunc(const ioccrfArgBuf *args)
 {
-    epicsEnvShow (args[0].aval.ac, args[0].aval.av);
+    epicsEnvShow (args[0].sval);
 }
 
 /* iocLogInit */

@@ -1,4 +1,4 @@
-/*   @(#)epicsEnvParams.c	1.5        6/11/93
+/*   $Id$
  *      Author: Roger A. Cole
  #      Date:   07-20-91
  *
@@ -31,22 +31,23 @@
  * .04	09-18-92	jba	Changed EPICS_TS_MIN_WEST back to 360
  * 	...
  */
+#include <epicsEnvParams.h>
 #include <envDefs.h>
 
 epicsSetEnvParams()
 {
     printf("setting EPICS environment parameters\n");
-    envSetConfigParam(&EPICS_TS_MIN_WEST, "480");
-    envSetConfigParam(&EPICS_SYSCLK_INET, "128.3.112.85");
-    envSetConfigParam(&EPICS_IOCMCLK_INET, "131.243.192.31");
+    envSetConfigParam(&EPICS_TS_MIN_WEST, EPICS_TS_MIN_VALUE);
+    envSetConfigParam(&EPICS_SYSCLK_INET, EPICS_SYSCLK_VALUE);
+    envSetConfigParam(&EPICS_IOCMCLK_INET, EPICS_IOCMCLK_VALUE);
     envSetConfigParam(&EPICS_SYSCLK_PORT, "2200");
     envSetConfigParam(&EPICS_IOCMCLK_PORT, "2300");
     envSetConfigParam(&EPICS_AR_PORT, "7002");
     envSetConfigParam(&EPICS_CMD_PROTO_PORT, "7003");
-    envSetConfigParam(&EPICS_IOC_LOG_INET, "128.3.112.85");
+    envSetConfigParam(&EPICS_IOC_LOG_INET, EPICS_IOC_LOG_VALUE);
     envSetConfigParam(&EPICS_IOC_LOG_PORT, "7004");
-    envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, "400000");
-    envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, "/home/dfs/epics/apple/log/iocLog.text");
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, EPICS_IOC_FILE_VALUE);
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, EPICS_IOC_LOG_FILE_TXT);
     return 0;
 }
 epicsPrtEnvParams()

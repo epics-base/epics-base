@@ -35,12 +35,51 @@ $topbin = "${top}/bin/${arch}";
 #skip check that top/bin/${arch} exists; src may not have been builT
 print OUT "topbin = \"$topbin\"\n";
 $release = "$top/configure/RELEASE";
-if (-r "$release") {
-    open(IN, "$release") or die "Cannot open $release\n";
+ProcessFile($release);
+close OUT;
+
+sub ProcessFile
+{
+  local *IN;
+  my ($file) = @_;
+  my $line;
+  my $prefix;
+  my $base;
+  my ($macro,$post);
+
+  if (-r "$file") {
+    open(IN, "$file") or return;
     while ($line = <IN>) {
         next if ( $line =~ /\s*#/ );
 	chomp($line);
+		$line =~ s/[ 	]//g; # remove blanks and tabs
+        next if ( $line =~ /^$/ ); # skip empty lines
+
         $_ = $line;
+
+        #the following looks for
+        # include $(macro)post
+        ($macro,$post) = /include\s*\$\((.*)\)(.*)/;
+        if ($macro ne "") { # true if macro is present
+            $base = $applications{$macro};
+            if ($base eq "") {
+                #print "error: $macro was not previously defined\n";
+                next;
+            } else {
+                $post = $base . $post;
+                ProcessFile(${post});
+                next;
+            }
+        }
+
+        # the following looks for
+        # include post
+        ($post) = /include\s*(.*)/;
+        if ($post ne "") {
+            ProcessFile(${post});
+            next;
+        }
+
         #the following looks for
         # prefix = $(macro)post
         ($prefix,$macro,$post) = /(.*)\s*=\s*\$\((.*)\)(.*)/;
@@ -51,7 +90,7 @@ if (-r "$release") {
         } else {
             $base = $applications{$macro};
             if ($base eq "") {
-                print "error: $macro was not previously defined\n";
+                #print "error: $macro was not previously defined\n";
             } else {
                 $post = $base . $post;
             }
@@ -66,5 +105,7 @@ if (-r "$release") {
         }
     }
     close IN;
+    return ;
+  }
 }
-close OUT;
+

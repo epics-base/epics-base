@@ -19,15 +19,54 @@ print OUT "#This file is created during the build.\n";
 @files =();
 push(@files,"$top/configure/RELEASE");
 push(@files,"$top/configure/RELEASE.${hostarch}");
-foreach $file (@files) {
+foreach $filename (@files) {
+  ProcessFile($filename);
+}
+
+
+sub ProcessFile
+{
+  local *IN;
+  my ($file) = @_;
+  my $line;
+  my $app_post;
+  my $prefix;
+  my $base;
+  my ($macro,$post);
+
   if (-r "$file") {
-    open(IN, "$file") or die "Cannot open $file\n";
+    open(IN, "$file") or return;
     while ($line = <IN>) {
         next if ( $line =~ /\s*#/ );
 	chomp($line);
 		$line =~ s/[ 	]//g; # remove blanks and tabs
         next if ( $line =~ /^$/ ); # skip empty lines
+
         $_ = $line;
+
+        #the following looks for
+        # include $(macro)post
+        ($macro,$post) = /include\s*\$\((.*)\)(.*)/;
+        if ($macro ne "") { # true if macro is present
+            $base = $applications{$macro};
+            if ($base eq "") {
+                #print "error: $macro was not previously defined\n";
+                next;
+            } else {
+                $post = $base . $post;
+                ProcessFile(${post});
+                next;
+            }
+        }
+
+        # the following looks for
+        # include post
+        ($post) = /include\s*(.*)/;
+        if ($post ne "") {
+            ProcessFile(${post});
+            next;
+        }
+
         #the following looks for
         # prefix = $(macro)post
         ($prefix,$macro,$post) = /(.*)\s*=\s*\$\((.*)\)(.*)/;
@@ -55,5 +94,6 @@ foreach $file (@files) {
         }
     }
     close IN;
+    return ;
   }
 }

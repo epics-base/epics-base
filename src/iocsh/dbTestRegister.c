@@ -16,9 +16,9 @@ of this distribution.
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
+#include "ioccrf.h"
 #define epicsExportSharedSymbols
 #include "dbTestRegister.h"
-#include "ioccrf.h"
 
 /* dba */
 static ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};

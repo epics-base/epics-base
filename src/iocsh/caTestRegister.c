@@ -14,8 +14,8 @@ of this distribution.
 
 #include "rsrv.h"
 #include "dbEvent.h"
-#define epicsExportSharedSymbols
 #include "ioccrf.h"
+#define epicsExportSharedSymbols
 #include "caTestRegister.h"
 
 /* casr */

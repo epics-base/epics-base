@@ -13,8 +13,8 @@ of this distribution.
 #include <ctype.h>
 
 #include "asDbLib.h"
-#define epicsExportSharedSymbols
 #include "ioccrf.h"
+#define epicsExportSharedSymbols
 #include "asTestRegister.h"
 
 /* asSetFilename */

@@ -295,7 +295,6 @@ foreach $app ( @apps )
 	print OUT "include \$(TOP)/config/RULES.Vx\n";
 	print OUT "#----------------------------------------\n";
 	print OUT "#  ADD RULES AFTER THIS LINE\n";
-	print OUT "inc:: \$(INSTALL_INCREC)\n";
 
 	close OUT;
 

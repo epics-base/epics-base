@@ -262,7 +262,6 @@ do
 		include $(TOP)/config/RULES.Vx
 		#----------------------------------------
 		#  ADD RULES AFTER THIS LINE
-		inc:: $(INSTALL_INCREC)
 	END
 	cat > src/Makefile.Host <<-\END
 		# Makefile.Host

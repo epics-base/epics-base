@@ -43,11 +43,12 @@ int macEnvExpandTest(void)
 {
     int bad = 0;
 
+    printf ("Expect one message about failure to expand ${FOOBAR}.\n");
     epicsEnvSet("FOO","BLETCH");
     epicsEnvSet("BAR","GLEEP");
     bad |= check ("${FOO}", "BLETCH");
     bad |= check ("${FOO}/${BAR}", "BLETCH/GLEEP");
-    bad |= check ("${FOOBAR}", NULL);
+    bad |= !check ("${FOOBAR}", NULL);
     epicsEnvSet("FOO","${BAR}");
     epicsEnvSet("BAR","${STR1}");
     epicsEnvSet("STR1","VAL1");

@@ -391,8 +391,7 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
             else if (addr.sa.sa_family==AF_INET) {
                 addrField = addr.ia.sin_addr.s_addr;
 
-                status = sendto (this->beaconSock, &msg, length, 0, 
-                    &pAddr->addr.sa, sizeof(pAddr->addr.sa));
+                status = send ( this->beaconSock, &msg, length, 0 );
                 if (status < 0) {
                     ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
                     errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",

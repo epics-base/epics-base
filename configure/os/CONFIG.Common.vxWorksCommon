@@ -21,6 +21,7 @@ EXE =
 OBJ = .o
 LIB_PREFIX =lib
 LIB_SUFFIX = .a
+LIB_EXT = .a
 MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------

@@ -28,7 +28,7 @@
 
 #define epicsExportSharedSymbols
 #include "udpiiu.h"
-#include "cadef.h" // for ECA_STRTOBIG and TYPENOTCONN etc
+#include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
 #undef epicsExportSharedSymbols
 
@@ -54,7 +54,7 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
 {
     // second constraint is imposed by size field in protocol header
     if ( this->nameLength > MAX_UDP_SEND - sizeof ( caHdr ) || this->nameLength > 0xffff ) {
-        throwWithLocation ( caErrorCode ( ECA_STRTOBIG ) );
+        throwWithLocation ( caErrorCode ( ECA_BADSTR ) );
     }
 
     this->pNameStr = new char [ this->nameLength ];

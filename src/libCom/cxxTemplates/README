@@ -1,5 +1,8 @@
 
-C++ templates
+C++ templates:
+tsSLList.h - type safe single linked list template
+tsDLList.h - type safe double linked list template
+resourceLib.h - hash table template
 
 the test subdir contains examples
 

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1999/05/10 23:42:25  jhill
+ * fixed many const releated problems
+ *
  * Revision 1.4  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -99,9 +102,6 @@ inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
 inline void gdd::getTimeStamp(struct TS_STAMP* const ts) const { time_stamp.get(*ts); }
 inline void gdd::setTimeStamp(const struct TS_STAMP* const ts) { time_stamp=*ts; }
 
-inline void gdd::getTimeStamp(osiTime* const ts) const { time_stamp.get(*ts); }
-inline void gdd::setTimeStamp(const osiTime* const ts) { time_stamp=*ts; }
-
 inline void gdd::setStatus(aitUint32 s)		{ status=s; }
 inline void gdd::getStatus(aitUint32& s) const { s=status; }
 inline void gdd::setStatus(aitUint16 high, aitUint16 low)
@@ -141,7 +141,7 @@ inline gddStatus gdd::noReferencing(void)
 	else			flags|=GDD_NOREF_MASK;
 	return rc;
 }
-inline gddStatus gdd::reference(void)
+inline gddStatus gdd::reference(void) const
 {
 	int rc=0;
 
@@ -161,7 +161,7 @@ inline gddStatus gdd::reference(void)
 	return rc;
 }
 
-inline gddStatus gdd::unreference(void)
+inline gddStatus gdd::unreference(void) const
 {
 	int rc=0;
 
@@ -177,7 +177,7 @@ inline gddStatus gdd::unreference(void)
 		{
 			// managed dd always destroys the entire thing
 			ref_cnt=1;
-			if(destruct) destruct->destroy(this);
+			if(destruct) destruct->destroy((void *)this);
 			destruct=NULL;
 		}
 		else if(!isFlat())
@@ -608,6 +608,7 @@ inline gdd& gdd::operator=(const aitString& d)
 	{ put(d); return *this; }
 
 // ------------- primitive type pointer = gdd x functions --------------
+
 inline gdd::operator aitFloat64*(void)
 	{ return (aitFloat64*)dataPointer(); }
 inline gdd::operator aitFloat32*(void)

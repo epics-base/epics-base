@@ -19,8 +19,6 @@ vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
-#vpath %Include.dbd $(COMMON_DIR)
-
 ##################################################### dbdflags
 
 # dbExpand
@@ -284,6 +282,11 @@ dbInstalls:  $(DB_INSTALLS)
 .PRECIOUS: $(COMMON_DBS)
 
 ##################################################### register record,device,driver support
+
+%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
+	@$(RM) $@ temp.cpp
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) > temp.cpp
+	$(MV) temp.cpp $@
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
 	@$(RM) $@ temp.cpp

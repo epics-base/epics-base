@@ -67,7 +67,7 @@
 		interest(1)
 	}
 	field(MLOK,DBF_NOACCESS) {
-		prompt("Monitor fastlock")
+		prompt("Monitor lock")
 		special(SPC_NOMOD)
 		interest(4)
 		extra("semId	mlok")

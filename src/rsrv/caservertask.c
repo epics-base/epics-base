@@ -265,6 +265,12 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
 	/*
+	 * exit flow control so the event system will
+	 * shutdown correctly
+	 */
+	db_event_flow_ctrl_mode_off(client->evuser);
+
+	/*
 	 * Server task deleted first since close() is not reentrant
 	 */
 	servertid = client->tid;

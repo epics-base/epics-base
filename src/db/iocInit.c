@@ -54,6 +54,7 @@
  * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
  * .25	07-15-93	mrk	Changed dbLoad for new dbStaticLib support
  * .26	02-09-94	jbk changed to new time stamp support software ts_init()
+ * .27	03-23-94	mrk	Added asInit
  *
  */
 
@@ -196,6 +197,7 @@ int iocInit(char * pResourceFilename)
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
+    asInit();
     rsrv_init();
     logMsg("iocInit: All initialization complete\n",0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKatEnd);

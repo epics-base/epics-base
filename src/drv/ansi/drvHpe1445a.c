@@ -1044,7 +1044,7 @@ unsigned long		npoints
 		double		dacPeakAmplitude;
 		double		dacOffset;
 		double		*pwf;
-		unsigned short	*pdata_port;
+		uint16_t	*pdata_port;
 
 		pdata_port = (unsigned short *) epvxiA24Base(la);
 		pdata_port += (HPE1445_DATA_PORT_OFFSET/sizeof(*pdata_port));

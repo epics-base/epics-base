@@ -71,8 +71,8 @@ epvxiFetchPConfig((LA), hpe1368aDriverId, (PC))
 
 struct hpe1368a_config{
 	FAST_LOCK	lock;		/* mutual exclusion */
-	unsigned short	pending;	/* switch position pending int */
-	unsigned short	shadow;		/* shadow of actual switch pos */
+	uint16_t	pending;	/* switch position pending int */
+	uint16_t	shadow;		/* shadow of actual switch pos */
 	int		busy;		/* relays active */
         IOSCANPVT 	ioscanpvt;
 };

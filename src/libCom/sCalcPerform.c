@@ -27,6 +27,7 @@
  * Modification Log:
  * -----------------
  * 03-18-98 tmm Essentially rewritten to support string operators
+ * 5/21/98 fixed ?: operator
  */
 
 /* This module contains the code for processing the arithmetic
@@ -98,6 +99,7 @@ struct stackElement {
 	char *s;
 };
 
+#define OVERRIDESTDCALC 0
 #define DEBUG 0
 volatile int sCalcPerformDebug = 0;
 #if DEBUG
@@ -244,7 +246,7 @@ static char *findConversionIndicator(char *s)
 	return(retval);
 }
 
-#if 0
+#if OVERRIDESTDCALC
 /* Override standard EPICS expression evaluator (if we're loaded after it) */
 epicsShareFunc long epicsShareAPI 
 	calcPerform(double *parg, double *presult, char *post)
@@ -405,7 +407,7 @@ epicsShareFunc long epicsShareAPI
 					switch(post[1]) {
 					case LITERAL: post+=8; break;
 					case COND_IF: got_if++; break;
-					case COND_ELSE: got_if--; break;
+					case COND_END: got_if--; break;
 					case FETCH: post++; break;
 					}
 				}
@@ -806,7 +808,7 @@ printf(") \n");
 					case LITERAL:	post+=8; break;
 					case SLITERAL:	post++; while (post[1]) post++; break;
 					case COND_IF:	got_if++; break;
-					case COND_ELSE:	got_if--; break;
+					case COND_END:	got_if--; break;
 					case FETCH: case SFETCH: post++; break;
 					}
 				}

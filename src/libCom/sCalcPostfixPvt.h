@@ -29,11 +29,15 @@
  * 
  */
 
+#ifndef INCpostfixh
+#include <sCalcPostfix.h>
+#endif
 #ifndef INCpostfixPvth
 #define INCpostfixPvth
 
+/* #define		BAD_EXPRESSION	0 */
+
 /*	defines for element table      */
-#define		BAD_EXPRESSION	0
 /* elements that define a value */
 #define 	FETCH		1
 #define 	SFETCH		2
@@ -104,7 +108,7 @@
 #define		SUBRANGE	63
 #define		TO_STRING	64
 #define		REPLACE		65
-#define		END_STACK	127
+/* #define		END_STACK	127 */
 
 #define USES_STRING 126
 #define NO_STRING 125

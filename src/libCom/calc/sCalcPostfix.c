@@ -107,6 +107,7 @@
 #include	"sCalcPostfixPvt.h"
 
 
+#define OVERRIDESTDCALC 0
 #define DEBUG 0
 volatile int sCalcPostfixDebug=0;
 
@@ -161,7 +162,8 @@ struct	expression_element{
  * then try to find BS therefore ABS must be first in this list
  */
 static struct expression_element	elements[] = {
-/* element	i_s_p	i_c_p	type_element	internal_rep */
+/*
+element	i_s_p	i_c_p	type_element	internal_rep */
 "ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
 "NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
 "-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG, /* unary negate (or binary op) */
@@ -341,7 +343,7 @@ register short	*pno_bytes, *parg;
 	
 }
 
-#if 0
+#if OVERRIDESTDCALC
 /* Override standard EPICS expression evaluator (if we're loaded after it). */
 long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 {

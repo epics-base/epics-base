@@ -32,7 +32,8 @@
 #ifndef INCpostfixh
 #define INCpostfixh
 
-#include "shareLib.h"
+#define		BAD_EXPRESSION	0
+#define		END_STACK	127
 
 long epicsShareAPI sCalcPostfix(char *pinfix, char **pp_postfix, short *perror);
 epicsShareFunc long epicsShareAPI 

@@ -431,7 +431,6 @@ struct selRecord *psel;  /* pointer to selection record  */
 		}
 		break;
 	case (SELECT_MEDIAN):
-		/* order only those fetched from another record */
 		plink = &psel->inpa;
 		order_inx = 0;
 		for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){

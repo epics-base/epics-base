@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.03 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
    <TITLE>EPICS Release baseR3.13.0.beta12
 </TITLE>
 </HEAD>
@@ -11,7 +11,7 @@
 EPICS Release baseR3.13.0.beta12</H1>
 
 <H4>
-Feb 19, 1998</H4>
+April 15, 1998</H4>
 All major functionality that will be in R3.13 is now in place. It has been
 build on solaris, sunos, HPUX, alpha, SG, and winXX. There are still some
 c++ related problems. In particular c++ code does not build properly on
@@ -44,12 +44,46 @@ endif #ifndef T_A</PRE>
 aoRecord</H3>
 This did not work properly if DOL&nbsp; is a channel access link that fails.
 <H3>
+Semaphores</H3>
+Most locking semaphores have been changed from semBCreate to semMCreate
+with the options :
+<BR>SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY
+
+<P>The performance difference is small. Executing the loop
+<BLOCKQUOTE>
+<PRE>for(i=0; i&lt;niterations; i++) {
+&nbsp;&nbsp;&nbsp; semTake(sem,WAIT_FOREVER);
+&nbsp;&nbsp;&nbsp; semGive(bsem);
+}</PRE>
+</BLOCKQUOTE>
+in a mv167 took&nbsp; (4.5 ,5.0) microseonds per iteration when (semBCreate,semMCreate)
+was used. The extra options as well as allowing a task to lock recursively
+are worth the slight difference in performance.
+<H3>
+Task Priorities</H3>
+The priority of the channel access client for database links was changed
+from 100 to 68, which makes it lower than all scan tasks but higher than
+the sequencer or any channel access tasks.
+<H4>
+cvtDoubleToString</H4>
+This was changed to print numbers with precision&lt;=8 and magnitude &lt;1e16
+in fixed format with up to 3 digits after the decimal point. As an example
+if PREC=1 and a number is 363000000.1 previously it was convetred to
+
+<P>363000000
+
+<P>Now it is converted to
+
+<P>363000000.1
+
+<P>All you RF folks can cheer.
+<H3>
 Access Security</H3>
 Previously it was possible to crash an IOC if access security was restarted
 after iocInit. This is now fixed. Two major changes were made.
 <OL>
 <LI>
-asCaTask is no ]longer deleted and restarted. Instead it just clears all
+asCaTask is no longer deleted and restarted. Instead it just clears all
 channels and than adds the new channels</LI>
 
 <LI>
@@ -60,6 +94,10 @@ Fixed bug that caused asRegisterClientCallback to fail on UNIX.</LI>
 
 <LI>
 asLib_lex.l changed to allow more characters(like dbLoadxxx)</LI>
+
+<LI>
+Fixed bug that could cause deadlock when an ASG field is changed at run
+time.</LI>
 </OL>
 Access Security now supports macro substitutions. A new vxWorks shell command
 is:
@@ -127,6 +165,21 @@ the default.
 (record type) and VERS (verssion) mare now supported. In addition a new
 request type DBR_CLASS is supported. See Application Developer's guide
 for details.
+<H3>
+Runtime database access</H3>
+
+<UL>
+<LI>
+A new routine dbGetLinkDBFtype is now available. It returns the field type
+of a database link.</LI>
+
+<LI>
+dbNotify was fixed to work correctly for putNotify as well as put.</LI>
+
+<LI>
+scanppl now accepts an argumeny rate. scanpel accepts an argument event_number.</LI>
+</UL>
+
 <H3>
 base.dbd</H3>
 
@@ -205,10 +258,10 @@ the raw value so that the raw value is >= 0. When they were written neither
 RVAL or EOFF existed.</UL>
 
 <H3>
-64 bit architectures</H3>
-Some changes were made to build on 64 bit architectures. A new include
-and source file (adjustment.h and adjustment.c) were created to aid this
-support. We can thank Peregrine McGehee for this new support.
+RISC architectures</H3>
+Some changes were made to build on RISC architectures. A new include and
+source file (adjustment.h and adjustment.c) were created to aid this support.
+We can thank Peregrine McGehee for this new support.
 <H3>
 errlog</H3>
 This is a replacement for the old code that implemented errMessage, errPrintf,

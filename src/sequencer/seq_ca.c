@@ -239,8 +239,8 @@ long seq_disconnect(SPROG *pSP)
 #ifdef	DEBUG_DISCONNECT
 		logMsg("seq_disconnect: ca_import_cancel\n");
 #endif	/*DEBUG_DISCONNECT*/
-		/*ca_import_cancel(taskIdSelf());*/
-		status = taskVarDelete(taskIdSelf(), &ca_static);
+		SEVCHK(ca_import_cancel(taskIdSelf(), 
+			"seq_disconnect: ca_import_cancel() failed?");
 	}
 
 	return 0;

@@ -81,10 +81,8 @@ nciu::~nciu ()
 }
 
 void nciu::connect ( unsigned nativeType, 
-	unsigned nativeCount, unsigned sidIn )
+	unsigned nativeCount, unsigned sidIn, bool v41Ok )
 {
-    bool v41Ok;
-
     if ( ! this->f_claimSent ) {
         this->cacCtx.printf (
             "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
@@ -112,12 +110,6 @@ void nciu::connect ( unsigned nativeType,
         }
     }
 
-    if ( this->piiu ) {
-        v41Ok = this->piiu->ca_v41_ok ();
-    }
-    else {
-        v41Ok = false;
-    }    
     this->typeCode = static_cast < unsigned short > ( nativeType );
     this->count = nativeCount;
     this->sid = sidIn;

@@ -45,7 +45,7 @@ public:
     nciu ( cac &, netiiu &, 
         cacChannelNotify &, const char *pNameIn );
     void connect ( unsigned nativeType, 
-        unsigned nativeCount, unsigned sid );
+        unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
     void disconnect ( netiiu &newiiu );
     bool searchMsg ( unsigned short retrySeqNumber, 
@@ -160,7 +160,7 @@ inline unsigned nciu::getRetrySeqNo () const
 // this is to only be used by early protocol revisions
 inline void nciu::connect ()
 {
-    this->connect ( this->typeCode, this->count, this->sid );
+    this->connect ( this->typeCode, this->count, this->sid, false );
 }
 
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 

@@ -49,13 +49,8 @@ int dbLoadTemplate(char* sub_file);
 
 int dbLoadRecords(char* pfilename, char* pattern);
 
-#ifdef vxWorks
 #define VAR_MAX_VAR_STRING 5000
 #define VAR_MAX_VARS 100
-#else
-#define VAR_MAX_VAR_STRING 50000
-#define VAR_MAX_VARS 700
-#endif
 
 static char *sub_collect = NULL;
 static MAC_HANDLE *macHandle = NULL;
@@ -320,45 +315,3 @@ int dbLoadTemplate(char* sub_file)
 	return 0;
 }
 
-#ifndef vxWorks
-/* this is template loader similar to vxWorks one for .db files */
-int main(int argc, char** argv)
-{
-	extern char* optarg;
-	extern int optind;
-	char* name = (char*)NULL;
-	int no_error = 1;
-	int c;
-
-	while(no_error && (c=getopt(argc,argv,"s:"))!=-1)
-	{
-		switch(c)
-		{
-		case 's':
-			if(name) dbmfFree(name);
-			name = dbmfMalloc(strlen(optarg));
-			strcpy(name,optarg);
-			break;
-		default: no_error=0; break;
-		}
-	}
-
-	if(!no_error || optind>=argc)
-	{
-		fprintf(stderr,"Usage: %s <-s name> sub_file\n",argv[0]);
-		fprintf(stderr,"\n\twhere name is the output database name and\n");
-		fprintf(stderr,"\tsub_file in the variable substitution file\n");
-		fprintf(stderr,"\n\tThis program used the sub_file to produce a\n");
-		fprintf(stderr,"\tdatabase of name name to standard out.\n");
-		exit(1);
-	}
-
-	if(!name) {
-	    name = dbmfMalloc(strlen("Composite") + 1);
-	    strcpy(name,"Composite");
-	}
-	dbLoadTemplate(argv[1]);
-	dbmfFree((void *)name);
-	return(0);
-}
-#endif

@@ -243,7 +243,9 @@ COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(SOURCE_CXXFLAG)
 #--------------------------------------------------
 # Build depends command here
 
+HOST_HDEPENDS_CMD = MKMF
 CROSS_HDEPENDS_CMD = MKMF
+
 HDEPENDS_CMD = $($(BUILD_CLASS)_HDEPENDS_CMD)
 
 HDEPENDS.c_CMPLR = $(CC)

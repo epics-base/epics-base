@@ -34,8 +34,9 @@
  * .05  09-10-91        joh     printf() -> logMsg()
  * .06  09-10-91        joh     print message only on failure
  * .07  08-30-91	rcz	completed .02 fix
- * .04  10-10-91        rcz     changed getResources to accomodate EPICS_
+ * .08  10-10-91        rcz     changed getResources to accomodate EPICS_
  *                              parameters in a structure (first try)
+ * .09  12-02-91        mrk     Added finishDevSup 
  *				
  */
 
@@ -73,6 +74,7 @@ extern long sdrLoad();
 long initDrvSup();
 long initRecSup();
 long initDevSup();
+long finishDevSup();
 long initDatabase();
 long addToSet();
 long initialProcess();
@@ -116,6 +118,7 @@ char * pResourceFilename;
     if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
     ts_init();
     if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n");
+    if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
 
     /* if user exit exists call it */
     strcpy(name,"_");
@@ -161,6 +164,7 @@ static long initDrvSup() /* Locate all driver support entry tables */
 	    if(rtnval==OK) rtnval=status;
 	    continue;
 	}
+	if(!(drvSup->papDrvet[i]->init)) continue;
 	status = (*(drvSup->papDrvet[i]->init))();
 	if(rtnval==OK) rtnval=status;
     }
@@ -236,6 +240,7 @@ static long initDevSup() /* Locate all device support entry tables */
 	    rtnval = (long)symFindByName(sysSymTbl,name,
 		&(pdevSup->papDset[j]),&type);
 	    if( rtnval!=OK || ( type&N_TEXT == 0) ) {
+                pdevSup->papDset[j]=NULL;
 		strcpy(message,"device support entry table not found for ");
 		strcat(message,pname);
 		status = S_dev_noDSET;
@@ -244,7 +249,7 @@ static long initDevSup() /* Locate all device support entry tables */
 		continue;
 	    }
 	    if(!(pdevSup->papDset[j]->init)) continue;
-	    status = (*(pdevSup->papDset[j]->init))();
+	    status = (*(pdevSup->papDset[j]->init))(0);
 	    if(rtnval==OK)rtnval=status;
 	}
     
@@ -262,6 +267,25 @@ static long initDevSup() /* Locate all device support entry tables */
     }
     return(rtnval);
 }
+
+static long finishDevSup() 
+{
+    int		i,j;
+    struct devSup	*pdevSup;
+    
+    if(!devSup) return(0);
+    for(i=0; i< (devSup->number); i++) {
+	if((pdevSup = devSup->papDevSup[i]) == NULL) continue;
+	for(j=0; j < (pdevSup->number); j++) {
+	    if(!(pdevSup->papDset[j])) continue;
+	    if(!(pdevSup->papDset[j]->init)) continue;
+	    (*(pdevSup->papDset[j]->init))(1);
+	}
+    
+    }
+    return(0);
+}
+
 
 static long initDatabase()
 {

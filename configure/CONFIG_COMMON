@@ -165,11 +165,6 @@ PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
 LIB_BAF=$(addsuffix $(BAF),$(basename $(LIBRARY)))
 
 #--------------------------------------------------
-#  Command-line input support default
-COMMANDLINE_LIBRARY = EPICS
-OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
-
-#--------------------------------------------------
 # C preprocessor, compiler, and linker flag defaults
 
 # Target architecture specific (solaris,sun4,mv167,...) flags
@@ -217,7 +212,7 @@ TARGET_CPPFLAGS += $($(basename $@)_CPPFLAGS_$(OS_CLASS)) $($(basename $@)_CPPFL
 # Level of ansi conformance flags
 CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(CMPLR))
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
-CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_CMPLR))
+CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
 
 # Warnings flags
 WARN_CFLAGS = $(WARN_CFLAGS_$($(BUILD_CLASS)_WARN))
@@ -237,6 +232,11 @@ STATIC_CFLAGS = $(STATIC_CFLAGS_$(STATIC_BUILD))
 STATIC_CXXCFLAGS = $(STATIC_CXXFLAGS_$(STATIC_BUILD))
 STATIC_LDFLAGS = $(STATIC_LDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $(STATIC_LDLIBS_$(STATIC_BUILD))
+
+#--------------------------------------------------
+#  Command-line input support default
+COMMANDLINE_LIBRARY = EPICS
+OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
 
 #--------------------------------------------------
 # Flags

@@ -386,8 +386,10 @@ char  *pMac_pairs[];
 		pSync->pSdata = NULL;
 		if(strlen(pSync->pName) > 0){
 		    char  name_str[db_name_dim];
-		    gsdl_main_macro(name_str, pSync->pName, pMac_pairs);
-		    strcpy(pSync->pName, name_str);
+		    if(pMac_pairs != NULL){
+		    	gsdl_main_macro(name_str, pSync->pName, pMac_pairs, db_name_dim);
+		    	strcpy(pSync->pName, name_str);
+		    }
 /*		    printf("new_str = %s\n", pSync->pName);*/
 		    SEVCHK(ca_build_and_connect(pSync->pName, TYPENOTCONN, 0,
 			&(pSync->pChid), (VOID *) NULL, 

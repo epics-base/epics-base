@@ -24,7 +24,7 @@ include "mbbiDirectRecord.dbd"
 include "mbboRecord.dbd"
 include "mbboDirectRecord.dbd"
 include "permissiveRecord.dbd"
-include "pidRecord.dbd"
+#include "pidRecord.dbd"
 #include "pulseCounterRecord.dbd"
 #include "pulseDelayRecord.dbd"
 #include "pulseTrainRecord.dbd"
@@ -201,7 +201,7 @@ device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 #device(mbbi,VME_IO,devMbbiVmic2534,"Vmic2534")
 #device(mbbo,VME_IO,devMbboVmic2534,"Vmic2534")
 
-include "symb.dbd"
+#include "symb.dbd"
 
 #device(ai,AB_IO,devAiAbSlcDcm,"AB-SLC500DCM")
 #device(ai,AB_IO,devAiAbSlcDcmSigned,"AB-SLC500DCM-Signed")

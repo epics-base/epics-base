@@ -24,7 +24,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/mbboRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/mbboDirectRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/palRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/permissiveRecord.o
-LIBOBJS += $(EPICS_BASE_BIN)/pidRecord.o
+#LIBOBJS += $(EPICS_BASE_BIN)/pidRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseCounterRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseDelayRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/pulseTrainRecord.o
@@ -113,7 +113,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/devMbboSoftRaw.o
 LIBOBJS += $(EPICS_BASE_BIN)/devMbboTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboXVme220.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMz8310.o
-LIBOBJS += $(EPICS_BASE_BIN)/devPtSoft.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devPtSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSASoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiTestAsyn.o
@@ -151,7 +151,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devVmic2534.o
 
-LIBOBJS += $(EPICS_BASE_BIN)/symb
+#LIBOBJS += $(EPICS_BASE_BIN)/symb
 
 #
 # Driver support ANSI

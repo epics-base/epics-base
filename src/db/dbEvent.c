@@ -332,21 +332,47 @@ db_event_get_field(paddr, buffer_type, pbuffer, no_elements, pfl)
   db_field_log	*pfl;
 {
   int status;
+  char * pfield_save;
 
-  status = db_get_field(paddr,buffer_type,pbuffer,no_elements);
-
-  if (pfl == NULL) return(status);
-  if (buffer_type >= DBR_STS_STRING && buffer_type <= DBR_CTRL_DOUBLE) {
-	struct dbr_sts_string *pstatus = (struct dbr_sts_string *) pbuffer;
-	pstatus->status = pfl->stat;
-	pstatus->severity = pfl->sevr;
+  if(no_elements>1) return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
+  pfield_save = paddr->pfield;
+  if(buffer_type>=DBR_INT && buffer_type<=DBR_DOUBLE) {
+	if(pfl!=NULL)paddr->pfield = (char *)(&pfl->field);
+	status = db_get_field(paddr,buffer_type,pbuffer,no_elements);
+	paddr->pfield = pfield_save;
+	return(status);
   }
-  if (buffer_type >= DBR_TIME_STRING && buffer_type <= DBR_TIME_DOUBLE) {
-	struct dbr_time_string *ptime = (struct dbr_time_string *) pbuffer;
-	ptime->stamp = pfl->time;
-  }
-  return(status);
+ if(buffer_type>=DBR_STS_INT && buffer_type<=DBR_STS_DOUBLE) {
+	struct dbr_sts_int *ps = (struct dbr_sts_int *)pbuffer;
+	short request_type = buffer_type - DBR_STS_STRING;
 
+	if(pfl!=NULL) {
+		ps->status = pfl->stat;
+		ps->severity = pfl->sevr;
+		paddr->pfield = (char *)(&pfl->field);
+		status=db_get_field(paddr,request_type,&ps->value,no_elements);
+		paddr->pfield = pfield_save;
+		return(status);
+	}
+	return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
+  }
+  if(buffer_type>=DBR_TIME_INT && buffer_type<=DBR_TIME_DOUBLE) {
+	struct dbr_time_short *ps = (struct dbr_time_short *)pbuffer;
+	short request_type = buffer_type - DBR_TIME_STRING;
+
+	if(pfl!=NULL) {
+		ps->status = pfl->stat;
+		ps->severity = pfl->sevr;
+		ps->stamp = pfl->time;
+		paddr->pfield = (char *)(&pfl->field);
+		status=db_get_field(paddr,request_type,&ps->value,no_elements);
+		paddr->pfield = pfield_save;
+		return(status);
+	}
+	return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
+  }
+
+ return(db_get_field(paddr,buffer_type,pbuffer,no_elements));
 }
 
 

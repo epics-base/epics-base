@@ -43,7 +43,7 @@ receiver(void *arg)
             if (expectmsg[sender-1] != msgNum)
                 printf("%s received %d '%.*s' -- expected %d\n", epicsThreadGetNameSelf(), len, len, cbuf, expectmsg[sender-1]);
             expectmsg[sender-1] = msgNum + 1;
-            epicsThreadSleep(0.001 * (random() % 20));
+            epicsThreadSleep(0.001 * (rand() % 20));
         }
         else {
             printf("%s received %d '%.*s'\n", epicsThreadGetNameSelf(), len, len, cbuf);
@@ -66,8 +66,8 @@ sender(void *arg)
     for (;;) {
         len = sprintf(cbuf, "%s -- %d.", epicsThreadGetNameSelf(), ++i);
         while (q->send((void *)cbuf, len) == false)
-            epicsThreadSleep(0.005 * (random() % 5));
-        epicsThreadSleep(0.005 * (random() % 20));
+            epicsThreadSleep(0.005 * (rand() % 5));
+        epicsThreadSleep(0.005 * (rand() % 20));
     }
 }
 

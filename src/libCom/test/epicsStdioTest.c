@@ -88,8 +88,8 @@ int epicsStdioTest (const char *report)
             }
         }
     }
-    fprintf(stdout,"This is first line of sample report");
-    fprintf(stdout,"\nThis is second and last line of sample report\n");
+    printf("This is first line of sample report");
+    printf("\nThis is second and last line of sample report\n");
     errno = 0;
     if(stream) {
         epicsSetStdout(0);

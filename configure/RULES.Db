@@ -12,8 +12,8 @@
 #####################################################  vpath
 
 vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD))
-vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
-vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
+vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB))
+vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB))
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
@@ -192,9 +192,17 @@ $(INSTALL_DB)/%.template: %.template
 
 ##################################################### INC files
 
+$(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
+	@$(RM) $@
+	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+
+$(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
+	@$(RM) $@
+	$(DBTOMENUH) $< $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@
@@ -236,7 +244,7 @@ dbdInstalls:  $(DBD_INSTALLS)
 	@echo "Installing $(^F)"
 	@$(INSTALL) -d -m 555 $^ $(INSTALL_DBD)
 
-.PRECIOUS: $(COMMON_DBDS)
+.PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%Include.dbd
 
 ##################################################### DB files
 

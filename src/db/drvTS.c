@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.14  1995/08/30 15:38:39  jbk
+ * *** empty log message ***
+ *
  * Revision 1.13  1995/08/18  13:19:31  mrk
  * Made changes for ansi c
  *
@@ -506,6 +509,8 @@ long TSinit(void)
 		TSregisterErrorHandler = TSregisterErrorHandlerError;
 		TSforceSync = TSforceSoftSync;
 		TSgetTime = TSgetCurrentTime;
+		TSdriverInit = TSdriverInitError;
+		TSdirectTime = TSdirectTimeError;
 		TSdata.sync_event=ER_EVENT_RESET_TICK;
 	}
 

@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.13  1996/06/19 18:01:09  jhill
+ * log entries in header were different
+ *
  */
 
 #include <string.h>
@@ -52,9 +55,9 @@
 #include <semLib.h>
 #include <rebootLib.h>
 
-#include <epicsPrint.h>
-#include <envDefs.h>
-#include <task_params.h>
+#include "epicsPrint.h"
+#include "envDefs.h"
+#include "task_params.h"
 
 /*
  * for use by the vxWorks shell
@@ -128,7 +131,7 @@ int iocLogInit(void)
 			LOG_RESTART_STACK, 
 			(FUNCPTR)logRestart,
 			0,0,0,0,0,0,0,0,0,0);
-	if (status<0) {
+	if (status==ERROR) {
 		printf("Unable to start log server connection watch dog\n");
 	}
 

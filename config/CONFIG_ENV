@@ -56,7 +56,7 @@ EPICS_CA_SERVER_PORT=5064
 #	point to point interfaces) of the corresponding interfaces
 #	will be accepted by the server. If this parameter is empty 
 #	then TCP/IP connections are accepted from any interface
-#	(and any search messages addresed to the host are accepted). 
+#	(and any search messages addressed to the host are accepted). 
 #	Beacons are sent only to the broadcast address of each interface 
 #	in this list (or the destination address of point to point 
 #	interfaces) if EPICS_CA_AUTO_ADDR_LIST is YES. 
@@ -79,6 +79,38 @@ EPICS_CA_SERVER_PORT=5064
 #	using the user specified UDP port number, but will be connecting to
 #	the servers using whatever TCP port has been assigned.
 #
+#   If experiencing trouble getting clients to connect
+#	--------------------------------------------------
+#
+#	o Make sure that the broadcast addresses are identical on the
+#	server's host and on the client's host. This can be checked with
+#	"netstat -i" or "ifconfig -a".
+#	
+#	o Make sure that the client and server are using the same UDP
+#	port. Check the server's port by running "netstat -a | grep nnn"
+#	where nnn is the port number involved. If you do not set 
+#	EPICS_CA_SERVER_PORT or EPICS_CAS_SERVER_PORT 
+#	then the default port will be 5064.
+#	
+#	o Two servers can run on the same host with the same server port number
+#	if the following restrictions are understood (good luck). If the host has a
+#	modern IP kernel it is possible to have two servers on the same UDP port.
+#	It is not possible for two servers to run on the same host using the same 
+#	TCP IP server port. If the CA server library detects that a 2nd server is attempting
+#	to start on the same port as an existing CA server then both servers will use the 
+#	same UDP port if it is a modern IP kernel, and the 2nd server will
+#	be allocated a new TCP port. In this situation the clients will still be
+#	configured to use the same port number for both servers. The clients
+#	will find the 2nd server via the shared UDP port, and transparently
+#	connect to the 2nd server's allocated TCP port. Be aware that If there are 
+#	two server's running on the same host on the same UDP port then they will 
+#	both receive all UDP search requests sent as broadcasts, but will unfortunately (due to 
+#	what I consider to be a real weakness of most IP kernel implementations) only one 
+#	of the servers will typically receive UDP search requests sent to unicast addresses (i.e. 
+#	a specific host's ip address). 
+#
+
+
 EPICS_CA_BEACON_PERIOD=15.0
 EPICS_CAS_INTF_ADDR_LIST=""
 EPICS_CAS_BEACON_ADDR_LIST=""

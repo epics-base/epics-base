@@ -37,4 +37,6 @@ $(INSTALL_INC)/asLib.h:../asLib.h
 clean::
 	@$(RM) asLib.c asLib_lex.c 
 
-depends: asLib_lex.c
+depends: asLib.c
+asLib.c : asLib_lex.c
+

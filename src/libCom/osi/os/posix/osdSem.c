@@ -33,6 +33,9 @@ typedef struct mutex {
     pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;
     pthread_cond_t	waitToBeOwner;
+#ifdef _POSIX_THREAD_PROCESS_SHARED
+    pthread_condattr_t  condAttr;
+#endif
     int			count;
     int			owned;  /* TRUE | FALSE */
     pthread_t		ownerTid;
@@ -180,7 +183,16 @@ semMutexId semMutexCreate(void) {
 #endif
     status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
     checkStatusQuit(status,"pthread_mutex_init","semMutexCreate");
+#ifdef _POSIX_THREAD_PROCESS_SHARED
+    status = pthread_condattr_init(&pmutex->condAttr);
+    checkStatus(status,"pthread_condattr_init");
+    status = pthread_condattr_setpshared(&pmutex->condAttr,
+        _POSIX_THREAD_PROCESS_SHARED);
+    checkStatus(status,"pthread_condattr_setpshared");
+    status = pthread_cond_init(&pmutex->waitToBeOwner,&pmutex->condAttr);
+#else
     status = pthread_cond_init(&pmutex->waitToBeOwner,0);
+#endif
     checkStatusQuit(status,"pthread_cond_init","semMutexCreate");
     return((semMutexId)pmutex);
 }

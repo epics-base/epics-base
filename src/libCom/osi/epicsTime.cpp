@@ -815,7 +815,7 @@ extern "C" {
     }
     epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
     {
-    return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
+        return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
     }
     epicsShareFunc void epicsShareAPI epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
     {

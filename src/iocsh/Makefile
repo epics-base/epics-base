@@ -26,7 +26,6 @@ INC += envRegister.h
 #
 
 LIBSRCS += ioccrf.cpp
-LIBSRCS += epicsReadline.c
 LIBSRCS += osiRegister.c
 LIBSRCS += dbStaticRegister.c
 LIBSRCS += dbTestRegister.c

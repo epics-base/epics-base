@@ -17,8 +17,11 @@ SRC_DIRS += $(LIBCOM)/ring
 USR_CFLAGS += -I$(LIBCOM)/ring
 INC += epicsRingPointer.h
 INC += epicsRingBytes.h
+INC += epicsReadline.h
+INC += osdReadline.h
 SRCS += epicsRingPointer.cpp
 SRCS += epicsRingBytes.cpp
+SRCS += epicsReadline.c
 
 SRC_DIRS += $(LIBCOM)/calc
 #following needed for locating postfixPvt.h and sCalcPostfixPvt.h

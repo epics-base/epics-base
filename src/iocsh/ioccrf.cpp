@@ -123,53 +123,6 @@ void epicsShareAPI ioccrfFree(void)
 }
 
 /*
- * Read a line of input
- */
-static char *
-my_readline (FILE *fp, const char *prompt)
-{
-    char c;
-    char *line = NULL;
-    int linelen = 0;
-    int linesize = 50;
-
-    if (fp == NULL)
-#ifdef IOCSH_USE_READLINE
-        return epics_readline (prompt);
-#else
-        fp = stdin;
-#endif
-    line = (char *)malloc (linesize * sizeof *line);
-    if (line == NULL) {
-        printf ("Out of memory!\n");
-        return NULL;
-    }
-    if (prompt)
-        fputs (prompt, stdout);
-    while ((c = getc (fp)) !=  '\n') {
-        if (c == EOF) {
-            free (line);
-            return NULL;
-        }
-        if ((linelen + 1) >= linesize) {
-            char *cp;
-
-            linesize += 50;
-            cp = (char *)realloc (line, linesize * sizeof *line);
-            if (cp == NULL) {
-                printf ("Out of memory!\n");
-                free (line);
-                return NULL;
-            }
-            line = cp;
-        }
-        line[linelen++] = c;
-    }
-    line[linelen] = '\0';
-    return line;
-}
-
-/*
  * Report an error
  */
 static void
@@ -269,13 +222,13 @@ ioccrf (const char *pathname)
             prompt = "iocsh> ";
         if (((historySize = getenv ("IOCSH_HISTSIZE")) == NULL)
          && ((historySize = getenv ("HISTSIZE")) == NULL))
-            historySize = "10";
+            historySize = "20";
         if (pathname == NULL) {
-            epics_stifle_history (atoi (historySize));
+            epicsStifleHistory (atoi (historySize));
             /*
              * FIXME: Could enable tab-completion of commands here
              */
-            epics_bind_keys();
+            epicsBindKeys();
         }
         else {
             fp = stdin;
@@ -303,7 +256,7 @@ ioccrf (const char *pathname)
          */
         lineno++;
         free (line);
-        line = my_readline (fp, prompt);
+        line = epicsReadline (fp, prompt);
         if (line == NULL)
             break;
 
@@ -311,7 +264,7 @@ ioccrf (const char *pathname)
          * If using readline, add non-blank lines to history
          */
         if ((fp == NULL) && *line)
-            epics_add_history (line);
+            epicsAddHistory (line);
 
         /*
          * Ignore comment lines

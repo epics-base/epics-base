@@ -10,14 +10,13 @@
 /*epicsStrtod.c*/
 /*Author: Eric Norum */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
+#include "epicsString.h"
 
 #define epicsExportSharedSymbols
-#include "epicsString.h"
+#include "epicsStdlib.h"
 
 
 epicsShareFunc double epicsShareAPI epicsStrtod( 

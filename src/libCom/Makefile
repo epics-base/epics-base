@@ -134,6 +134,7 @@ SRCS += adjustment.c
 SRCS += cantProceed.c
 SRCS += epicsConvert.c
 SRCS += epicsExit.c
+SRCS += epicsScanReal.c
 SRCS += epicsString.c
 SRCS += epicsStrtod.c
 SRCS += truncateFile.c

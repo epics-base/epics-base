@@ -7,22 +7,35 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*epicsStdlib.h*/
+/*epicsScanReal.c*/
 /*Author: Eric Norum */
 
-#include <shareLib.h>
+#include <epicsStdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define epicsExportSharedSymbols
+#include "epicsStdio.h"
 
-epicsShareFunc int epicsShareAPI epicsStrScanDouble(const char *str, double *dest);
-epicsShareFunc int epicsShareAPI epicsStrScanFloat(const char *str, float *dest);
 
-#include <stdlib.h>
-#include <osdStrtod.h>
+epicsShareFunc int epicsShareAPI epicsStrScanDouble(const char *str, double *dest)
+{
+    char *endp;
+    double dtmp;
 
-#ifdef __cplusplus
+    dtmp = epicsStrtod(str, &endp);
+    if (endp == str)
+        return 0;
+    *dest = dtmp;
+    return 1;
 }
-#endif
 
+epicsShareFunc int epicsShareAPI epicsStrScanFloat(const char *str, float *dest)
+{
+    char *endp;
+    double dtmp;
+
+    dtmp = epicsStrtod(str, &endp);
+    if (endp == str)
+        return 0;
+    *dest = dtmp;
+    return 1;
+}

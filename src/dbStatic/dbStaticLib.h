@@ -70,134 +70,135 @@ typedef struct{
 } DBENTRY;
 
 /* Static database access routines*/
-DBBASE *dbAllocBase(void);
-void dbFreeBase(DBBASE *pdbbase);
-DBENTRY *dbAllocEntry(DBBASE *pdbbase);
-void dbFreeEntry(DBENTRY *pdbentry);
-void dbInitEntry(DBBASE *pdbbase,DBENTRY *pdbentry);
-void dbFinishEntry(DBENTRY *pdbentry);
-DBENTRY *dbCopyEntry(DBENTRY *pdbentry);
-void dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto);
+epicsShareFunc DBBASE * epicsShareAPI dbAllocBase(void);
+epicsShareFunc void epicsShareAPI dbFreeBase(DBBASE *pdbbase);
+epicsShareFunc DBENTRY * epicsShareAPI dbAllocEntry(DBBASE *pdbbase);
+epicsShareFunc void epicsShareAPI dbFreeEntry(DBENTRY *pdbentry);
+epicsShareFunc void epicsShareAPI dbInitEntry(DBBASE *pdbbase,DBENTRY *pdbentry);
+epicsShareFunc void epicsShareAPI dbFinishEntry(DBENTRY *pdbentry);
+epicsShareFunc DBENTRY * epicsShareAPI dbCopyEntry(DBENTRY *pdbentry);
+epicsShareFunc void epicsShareAPI dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto);
 
-long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
+epicsShareFunc long epicsShareAPI dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 	const char *path,const char *substitutions);
-long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
+epicsShareFunc long epicsShareAPI dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
 	const char *path,const char *substitutions);
-long dbPath(DBBASE *pdbbase,const char *path);
-long dbAddPath(DBBASE *pdbbase,const char *path);
-long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
+epicsShareFunc long epicsShareAPI dbPath(DBBASE *pdbbase,const char *path);
+epicsShareFunc long epicsShareAPI dbAddPath(DBBASE *pdbbase,const char *path);
+epicsShareFunc long epicsShareAPI dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 	char *precordTypename,int level);
-long dbWriteRecordFP(DBBASE *ppdbbase,FILE *fp,
+epicsShareFunc long epicsShareAPI dbWriteRecordFP(DBBASE *ppdbbase,FILE *fp,
 	char *precordTypename,int level);
-long dbWriteMenu(DBBASE *pdbbase,const char *filename,char *menuName);
-long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName);
-long dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName);
-long dbWriteRecordTypeFP(DBBASE *pdbbase,FILE *fp,char *recordTypeName);
-long dbWriteDevice(DBBASE *pdbbase,const char *filename);
-long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp);
-long dbWriteDriver(DBBASE *pdbbase,const char *filename);
-long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp);
-long dbWriteBreaktable(DBBASE *pdbbase,const char *filename);
-long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
+epicsShareFunc long epicsShareAPI dbWriteMenu(DBBASE *pdbbase,const char *filename,char *menuName);
+epicsShareFunc long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName);
+epicsShareFunc long epicsShareAPI dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName);
+epicsShareFunc long epicsShareAPI dbWriteRecordTypeFP(DBBASE *pdbbase,FILE *fp,char *recordTypeName);
+epicsShareFunc long epicsShareAPI dbWriteDevice(DBBASE *pdbbase,const char *filename);
+epicsShareFunc long epicsShareAPI dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp);
+epicsShareFunc long epicsShareAPI dbWriteDriver(DBBASE *pdbbase,const char *filename);
+epicsShareFunc long epicsShareAPI dbWriteDriverFP(DBBASE *pdbbase,FILE *fp);
+epicsShareFunc long epicsShareAPI dbWriteBreaktable(DBBASE *pdbbase,const char *filename);
+epicsShareFunc long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
 
 /*Following  are obsolete. For now dbRead calls dbAsciiRead.*/
 /*  dbWrite does nothing						*/
 #define DB_RECORDTYPE_IO	0x1
 #define DB_RECORD_IO		0x2
-long dbRead(DBBASE *pdbbase,FILE *fp);
-long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp);
-long dbFindRecdes(DBENTRY *pdbentry,char *recdesname);
-long dbFirstRecdes(DBENTRY *pdbentry);
-long dbNextRecdes(DBENTRY *pdbentry);
-char *dbGetRecdesName(DBENTRY *pdbentry);
-int  dbGetNRecdes(DBENTRY *pdbentry);
-long dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
-long dbNextFielddes(DBENTRY *pdbentry,int dctonly);
-char **dbGetChoices(DBENTRY *pdbentry);
-void dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName);
+epicsShareFunc long epicsShareAPI dbRead(DBBASE *pdbbase,FILE *fp);
+epicsShareFunc long epicsShareAPI dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp);
+epicsShareFunc long epicsShareAPI dbFindRecdes(DBENTRY *pdbentry,char *recdesname);
+epicsShareFunc long epicsShareAPI dbFirstRecdes(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbNextRecdes(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetRecdesName(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNRecdes(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
+epicsShareFunc long epicsShareAPI dbNextFielddes(DBENTRY *pdbentry,int dctonly);
+epicsShareFunc char ** epicsShareAPI dbGetChoices(DBENTRY *pdbentry);
+epicsShareFunc void epicsShareAPI dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName);
 /*End obsolete routines*/
 
-long dbFindRecordType(DBENTRY *pdbentry,char *recordTypename);
-long dbFirstRecordType(DBENTRY *pdbentry);
-long dbNextRecordType(DBENTRY *pdbentry);
-char *dbGetRecordTypeName(DBENTRY *pdbentry);
-int  dbGetNRecordTypes(DBENTRY *pdbentry);
-long dbPutRecordAttribute(DBENTRY *pdbentry,char *name,char*value);
-long dbGetRecordAttribute(DBENTRY *pdbentry,char *name);
+epicsShareFunc long epicsShareAPI dbFindRecordType(DBENTRY *pdbentry,char *recordTypename);
+epicsShareFunc long epicsShareAPI dbFirstRecordType(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbNextRecordType(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetRecordTypeName(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNRecordTypes(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbPutRecordAttribute(DBENTRY *pdbentry,char *name,char*value);
+epicsShareFunc long epicsShareAPI dbGetRecordAttribute(DBENTRY *pdbentry,char *name);
 
-long dbFirstField(DBENTRY *pdbentry,int dctonly);
-long dbNextField(DBENTRY *pdbentry,int dctonly);
-int  dbGetFieldType(DBENTRY *pdbentry);
-int  dbGetNFields(DBENTRY *pdbentry,int dctonly);
-char *dbGetFieldName(DBENTRY *pdbentry);
-char *dbGetDefault(DBENTRY *pdbentry);
-char *dbGetPrompt(DBENTRY *pdbentry);
-int dbGetPromptGroup(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbFirstField(DBENTRY *pdbentry,int dctonly);
+epicsShareFunc long epicsShareAPI dbNextField(DBENTRY *pdbentry,int dctonly);
+epicsShareFunc int  epicsShareAPI dbGetFieldType(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNFields(DBENTRY *pdbentry,int dctonly);
+epicsShareFunc char * epicsShareAPI dbGetFieldName(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetDefault(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetPrompt(DBENTRY *pdbentry);
+epicsShareFunc int epicsShareAPI dbGetPromptGroup(DBENTRY *pdbentry);
 
-long dbCreateRecord(DBENTRY *pdbentry,char *precordName);
-long dbDeleteRecord(DBENTRY *pdbentry);
-long dbFreeRecords(DBBASE *pdbbase);
-long dbFindRecord(DBENTRY *pdbentry,const char *precordName);
-long dbFirstRecord(DBENTRY *pdbentry); /*first of record type*/
-long dbNextRecord(DBENTRY *pdbentry);
-int  dbGetNRecords(DBENTRY *pdbentry);
-char *dbGetRecordName(DBENTRY *pdbentry);
-long dbRenameRecord(DBENTRY *pdbentry,char *newName);
-long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK);
+epicsShareFunc long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,char *precordName);
+epicsShareFunc long epicsShareAPI dbDeleteRecord(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbFreeRecords(DBBASE *pdbbase);
+epicsShareFunc long epicsShareAPI dbFindRecord(DBENTRY *pdbentry,const char *precordName);
+epicsShareFunc long epicsShareAPI dbFirstRecord(DBENTRY *pdbentry); /*first of record type*/
+epicsShareFunc long epicsShareAPI dbNextRecord(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNRecords(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetRecordName(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbRenameRecord(DBENTRY *pdbentry,char *newName);
+epicsShareFunc long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK);
 
-long dbVisibleRecord(DBENTRY *pdbentry);
-long dbInvisibleRecord(DBENTRY *pdbentry);
-int dbIsVisibleRecord(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbVisibleRecord(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbInvisibleRecord(DBENTRY *pdbentry);
+epicsShareFunc int epicsShareAPI dbIsVisibleRecord(DBENTRY *pdbentry);
 
-long dbFindField(DBENTRY *pdbentry,const char *pfieldName);
-int dbFoundField(DBENTRY *pdbentry);
-char *dbGetString(DBENTRY *pdbentry);
-long dbPutString(DBENTRY *pdbentry,char *pstring);
-char *dbVerify(DBENTRY *pdbentry,char *pstring);
-char *dbGetRange(DBENTRY *pdbentry);
-int  dbIsDefaultValue(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbFindField(DBENTRY *pdbentry,const char *pfieldName);
+epicsShareFunc int epicsShareAPI dbFoundField(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetString(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring);
+epicsShareFunc char * epicsShareAPI dbVerify(DBENTRY *pdbentry,char *pstring);
+epicsShareFunc char * epicsShareAPI dbGetRange(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry);
 
-brkTable *dbFindBrkTable(DBBASE *pdbbase,char *name);
+epicsShareFunc brkTable * epicsShareAPI dbFindBrkTable(DBBASE *pdbbase,char *name);
 
-dbMenu *dbFindMenu(DBBASE *pdbbase,char *name);
-char **dbGetMenuChoices(DBENTRY *pdbentry);
-int  dbGetMenuIndex(DBENTRY *pdbentry);
-long dbPutMenuIndex(DBENTRY *pdbentry,int index);
-int  dbGetNMenuChoices(DBENTRY *pdbentry);
-char *dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index);
-int dbGetMenuIndexFromString(DBENTRY *pdbentry, char *choice);
+epicsShareFunc dbMenu * epicsShareAPI dbFindMenu(DBBASE *pdbbase,char *name);
+epicsShareFunc char ** epicsShareAPI dbGetMenuChoices(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index);
+epicsShareFunc int  epicsShareAPI dbGetNMenuChoices(DBENTRY *pdbentry);
+epicsShareFunc char * epicsShareAPI dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index);
+epicsShareFunc int epicsShareAPI dbGetMenuIndexFromString(DBENTRY *pdbentry, char *choice);
 
-int  dbAllocForm(DBENTRY *pdbentry);
-long  dbFreeForm(DBENTRY *pdbentry);
-char  **dbGetFormPrompt(DBENTRY *pdbentry);
-char  **dbGetFormValue(DBENTRY *pdbentry);
-long  dbPutForm(DBENTRY *pdbentry,char **value);
-char  **dbVerifyForm(DBENTRY *pdbentry,char **value);
-char *dbGetRelatedField(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbAllocForm(DBENTRY *pdbentry);
+epicsShareFunc long  epicsShareAPI dbFreeForm(DBENTRY *pdbentry);
+epicsShareFunc char  ** epicsShareAPI dbGetFormPrompt(DBENTRY *pdbentry);
+epicsShareFunc char  ** epicsShareAPI dbGetFormValue(DBENTRY *pdbentry);
+epicsShareFunc long  epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value);
+epicsShareFunc char  ** epicsShareAPI dbVerifyForm(DBENTRY *pdbentry,char **value);
+epicsShareFunc char * epicsShareAPI dbGetRelatedField(DBENTRY *pdbentry);
 
-int  dbGetNLinks(DBENTRY *pdbentry);
-long dbGetLinkField(DBENTRY *pdbentry,int index);
-int  dbGetLinkType(DBENTRY *pdbentry);
-long dbCvtLinkToConstant(DBENTRY *pdbentry);
-long dbCvtLinkToPvlink(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNLinks(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbGetLinkField(DBENTRY *pdbentry,int index);
+epicsShareFunc int  epicsShareAPI dbGetLinkType(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbCvtLinkToConstant(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbCvtLinkToPvlink(DBENTRY *pdbentry);
 
 /*dump routines*/
-void dbDumpPath(DBBASE *pdbbase);
-void dbDumpRecord(DBBASE *pdbbase,char *precordTypename,int level);
-void dbDumpMenu(DBBASE *pdbbase,char *menuName);
-void dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName);
-void dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname);
-void dbDumpDevice(DBBASE *pdbbase,char *recordTypeName);
-void dbDumpDriver(DBBASE *pdbbase);
-void dbDumpBreaktable(DBBASE *pdbbase,char *name);
-void dbPvdDump(DBBASE *pdbbase,int verbose);
-void dbReportDeviceConfig(DBBASE *pdbbase,FILE *report);
+epicsShareFunc void epicsShareAPI dbDumpPath(DBBASE *pdbbase);
+epicsShareFunc void epicsShareAPI dbDumpRecord(DBBASE *pdbbase,char *precordTypename,int level);
+epicsShareFunc void epicsShareAPI dbDumpMenu(DBBASE *pdbbase,char *menuName);
+epicsShareFunc void epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName);
+epicsShareFunc void epicsShareAPI dbDumpFldDes(DBBASE *pdbbase,char *recordTypeName,char *fname);
+epicsShareFunc void epicsShareAPI dbDumpDevice(DBBASE *pdbbase,char *recordTypeName);
+epicsShareFunc void epicsShareAPI dbDumpDriver(DBBASE *pdbbase);
+epicsShareFunc void epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,char *name);
+epicsShareFunc void epicsShareAPI dbPvdDump(DBBASE *pdbbase,int verbose);
+epicsShareFunc void epicsShareAPI dbReportDeviceConfig(DBBASE *pdbbase,FILE *report);
 
 /* Misc useful routines*/
 /*general purpose allocation routines to invoke calloc and maloc	*/
 /* NOTE: These routines do NOT return if they fail.			*/
-void *dbCalloc(size_t nobj,size_t size);
-void *dbMalloc(size_t size);
+epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
+epicsShareFunc void * epicsShareAPI dbMalloc(size_t size);
+epicsShareFunc void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *separator);
 
 extern int dbStaticDebug;
 

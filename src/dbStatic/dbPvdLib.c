@@ -19,8 +19,12 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "ellLib.h"
+#include "dbBase.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+
 
 int dbPvdHashTableSize = 512;
 static int dbPvdHashTableShift;
@@ -217,7 +221,7 @@ void dbPvdFreeMem(dbBase *pdbbase)
     pdbbase->ppvd = NULL;
 }
 
-void dbPvdDump(dbBase *pdbbase,int verbose)
+void epicsShareAPI dbPvdDump(dbBase *pdbbase,int verbose)
 {
     unsigned short	hashInd;
     ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;

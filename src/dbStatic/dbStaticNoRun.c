@@ -26,8 +26,12 @@ of this distribution.
 #include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
+ 
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+ 
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
@@ -183,7 +187,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(TRUE);}
 
-int  dbIsDefaultValue(DBENTRY *pdbentry)
+int  epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void       	*pfield = pdbentry->pfield;
@@ -314,7 +318,7 @@ void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
     return;
 }
 
-int dbGetMenuIndex(DBENTRY *pdbentry)
+int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     int		nChoices,choice;
@@ -333,7 +337,7 @@ int dbGetMenuIndex(DBENTRY *pdbentry)
     return(-1);
 }
 
-long dbPutMenuIndex(DBENTRY *pdbentry,int index)
+long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index)
 {
     int		nChoices;
     char	**menuChoices;

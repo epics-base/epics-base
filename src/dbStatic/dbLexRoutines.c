@@ -33,8 +33,6 @@ of this distribution.
 #include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
-#include "dbStaticLib.h"
-#include "dbStaticPvt.h"
 #include "ellLib.h"
 #include "gpHash.h"
 #include "freeList.h"
@@ -42,6 +40,12 @@ of this distribution.
 #include "special.h"
 #include "link.h"
 #include "macLib.h"
+
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+
 
 /*private routines */
 static void yyerrorAbort(char *str);
@@ -289,11 +293,11 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     return(status);
 }
 
-long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
+long epicsShareAPI dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 	const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,filename,0,path,substitutions));}
 
-long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
+long epicsShareAPI dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
 	const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
 

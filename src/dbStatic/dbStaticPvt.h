@@ -36,7 +36,6 @@
 dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry);
 void dbFreeLinkContents(struct link *plink);
 void dbFreePath(DBBASE *pdbbase);
-void dbCatString(char **string,int *stringLength,char *new,char *separator);
 int dbIsMacroOk(DBENTRY *pdbentry);
 
 /*The following routines have different versions for run-time no-run-time*/
@@ -71,5 +70,4 @@ PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);
-void dbPvdDump(DBBASE *pdbbase,int verbose);
 #endif /*INCdbStaticPvth*/

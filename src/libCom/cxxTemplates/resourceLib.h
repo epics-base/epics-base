@@ -328,21 +328,23 @@ inline resTableIndex resTable<T,ID>::hash ( const ID & idIn ) const
 template <class T, class ID>
 void resTable<T,ID>::show ( unsigned level ) const
 {
-    tsSLList<T> * pList = this->pTable;
     unsigned N = this->tableSize ();
 
     printf ( "%u bucket hash table with %u items of type %s installed\n", 
         N, this->nInUse, typeid(T).name() );
 
-    while ( pList < &this->pTable[N] ) {
-        tsSLIter<T> pItem = pList->firstIter ();
-        while ( pItem.valid () ) {
-            tsSLIter<T> pNext = pItem;
-            pNext++;
-            pItem.pointer()->show ( level );
-            pItem = pNext;
+    {
+        tsSLList<T> * pList = this->pTable;
+        while ( pList < &this->pTable[N] ) {
+            tsSLIter<T> pItem = pList->firstIter ();
+            while ( pItem.valid () ) {
+                tsSLIter<T> pNext = pItem;
+                pNext++;
+                pItem.pointer()->show ( level );
+                pItem = pNext;
+            }
+            pList++;
         }
-        pList++;
     }
 
     if ( level >=1u ) {

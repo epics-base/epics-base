@@ -174,7 +174,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     return netChange;
 }
 
-void bhe::show ( unsigned level ) const
+void bhe::show ( unsigned /* level */ ) const
 {
     ::printf ( "CA beacon hash entry at %p with average period %f\n", 
         static_cast <const void *> ( this ), this->averagePeriod );

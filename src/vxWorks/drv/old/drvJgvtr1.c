@@ -228,8 +228,7 @@ jgvtr1Stat jgvtr1_init(void)
 	jgvtr1_max_card_count = wf_num_cards[JGVTR1];
 
 	if(pjgvtr1_config){
-		if(FASTLOCKFREE(&pjgvtr1_config->lock)<0)
-			return ERROR;
+		FASTLOCKFREE(&pjgvtr1_config->lock);
 		free(pjgvtr1_config);
 	}
 

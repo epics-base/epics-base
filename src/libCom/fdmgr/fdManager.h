@@ -41,6 +41,7 @@
 #include "resourceLib.h"
 #include "tsStamp.h"
 #include "osiSock.h"
+#include "osiTimer.h"
 
 static const unsigned hashTableIndexBits = 8;
 

@@ -59,6 +59,7 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<epicsPrint.h>
 #include	<dbEvent.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
@@ -120,7 +121,7 @@ static long init_record(psub,pass)
     FUNCPTR	psubroutine;
     char	sub_type;
     char	temp[40];
-    long	status;
+    long	status = 0;
     STATUS	ret;
     struct link *plink;
     int i;
@@ -136,22 +137,29 @@ static long init_record(psub,pass)
         }
     }
 
-    /* convert the initialization subroutine name  */
-    temp[0] = 0;			/* all global variables start with _ */
-    if (psub->inam[0] != '_'){
-	strcpy(temp,"_");
-    }
-    strcat(temp,psub->inam);
-    ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
-    if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
-	recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
-	return(S_db_BadSub);
+    if(strlen(psub->inam)!=0) {
+        /* convert the initialization subroutine name  */
+        temp[0] = 0;			/* all global variables start with _ */
+        if (psub->inam[0] != '_'){
+	    strcpy(temp,"_");
+        }
+        strcat(temp,psub->inam);
+        ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
+        if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
+	    recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
+	    return(S_db_BadSub);
+        }
+
+        /* invoke the initialization subroutine */
+        psubroutine = (FUNCPTR)(psub->sadr);
+        status = psubroutine(psub,process);
     }
 
-    /* invoke the initialization subroutine */
-    psubroutine = (FUNCPTR)(psub->sadr);
-    status = psubroutine(psub,process);
-
+    if(strlen(psub->snam)==0) {
+	epicsPrintf("%s snam not specified\n",psub);
+	psub->pact = TRUE;
+	return(0);
+    }
     /* convert the subroutine name to an address and type */
     /* convert the processing subroutine name  */
     temp[0] = 0;			/* all global variables start with _ */
@@ -174,7 +182,7 @@ static long process(psub)
 	long		 status=0;
 	unsigned char	pact=psub->pact;
 
-        if(!psub->pact){
+        if(!psub->pact || !psub->sadr){
 		psub->pact = TRUE;
 		status = fetch_values(psub);
 		psub->pact = FALSE;

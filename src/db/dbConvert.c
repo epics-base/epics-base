@@ -16,6 +16,8 @@ of this distribution.
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <float.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -32,6 +34,18 @@ of this distribution.
 #include "recGbl.h"
 #include "dbConvert.h"
 
+/*safe double to float conversion*/
+static void safeDoubleToFloat(double *pd,float *pf)
+{
+    double abs = fabs(*pd);
+    if(abs>=FLT_MAX) {
+        if(*pd>0.0) *pf = FLT_MAX; else *pf = -FLT_MAX;
+    } else if(abs<=FLT_MIN) {
+        if(*pd>0.0) *pf = FLT_MIN; else *pf = -FLT_MIN;
+    } else {
+        *pf = *pd;
+    }
+}
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
 static long getStringString (
@@ -1881,12 +1895,13 @@ static long getDoubleFloat(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+        safeDoubleToFloat(psrc,pbuffer);
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+        safeDoubleToFloat(psrc,pbuffer);
+        ++psrc; ++pbuffer;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -4090,12 +4105,13 @@ static long putDoubleFloat(
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+        safeDoubleToFloat(pbuffer,pdest);
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+        safeDoubleToFloat(pbuffer,pdest);
+        ++pbuffer; ++pdest;
 	if(++offset==no_elements) pdest=(float *)paddr->pfield;
 	nRequest--;
     }

@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <float.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -932,7 +934,17 @@ static long cvt_d_f(
      double *from,
      float *to,
      struct dbAddr *paddr)
- { *to=*from; return(0); }
+{
+    double abs = fabs(*from);
+    if(abs>=FLT_MAX) {
+        if(*from>0.0) *to = FLT_MAX; else *to = -FLT_MAX;
+    } else if(abs<=FLT_MIN) {
+        if(*from>0.0) *to = FLT_MIN; else *to = -FLT_MIN;
+    } else {
+        *to = *from;
+    }
+    return(0);
+}
 
 /* Convert Double to Double */
 static long cvt_d_d(

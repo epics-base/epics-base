@@ -331,7 +331,8 @@ inline bool osiTime::operator > (const osiTime &rhs) const
 
 inline osiTime & osiTime::operator = (const tm_nano_sec &rhs)
 {
-	return *this = osiTime (rhs);
+    *this = osiTime (rhs);
+	return *this;
 }
 
 inline osiTime & osiTime::operator = (const struct timespec &rhs)

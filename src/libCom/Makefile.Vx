@@ -3,7 +3,6 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 SRCS.c += ../calcPerform.c
-SRCS.c += ../cvtBpt.c
 SRCS.c += ../cvtFast.c
 SRCS.c += ../gpHashLib.c
 SRCS.c += ../freeListLib.c
@@ -22,26 +21,25 @@ SRCS.c += errSymTbl.c
 SRCS.c += ../errPrintfVX.c
 SRCS.c += ../assertVX.c
 
-OBJS += calcPerform.o
-OBJS += cvtBpt.o
-OBJS += cvtFast.o
-OBJS += ellLib.o
-OBJS += envSubr.o
-OBJS += envData.o
-OBJS += errSymLib.o
-OBJS += errSymTbl.o
-OBJS += nextFieldSubr.o
-OBJS += postfix.o
-OBJS += bucketLib.o
-OBJS += tsSubr.o
-OBJS += gpHashLib.o
-OBJS += freeListLib.o
-OBJS += pal.o
-OBJS += paldef.o
-OBJS += errPrintfVX.o
-OBJS += assertVX.o
+LIBOBJS += calcPerform.o
+LIBOBJS += cvtFast.o
+LIBOBJS += ellLib.o
+LIBOBJS += envData.o
+LIBOBJS += envSubr.o
+LIBOBJS += errSymLib.o
+LIBOBJS += errSymTbl.o
+LIBOBJS += nextFieldSubr.o
+LIBOBJS += postfix.o
+LIBOBJS += bucketLib.o
+LIBOBJS += tsSubr.o
+LIBOBJS += gpHashLib.o
+LIBOBJS += freeListLib.o
+LIBOBJS += pal.o
+LIBOBJS += paldef.o
+LIBOBJS += errPrintfVX.o
+LIBOBJS += assertVX.o
 
-PROD = libCom
+LIBNAME = libCom
 
 include $(EPICS)/config/RULES.Vx
 
@@ -60,8 +58,4 @@ envData.c: $(EPICS_BASE)/include/envDefs.h $(EPICS)/config/CONFIG_ENV \
 
 pre_build:
 	@test -f errInc.c || ln -s ../errInc.c errInc.c
-
-libCom: $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

@@ -21,10 +21,6 @@
 #include <string.h>
 #include <malloc.h>
 
-#if defined(_WIN32)
-#include <getopt.h>
-#endif
-
 #define epicsAlarmGLOBAL
 #include <alarm.h>
 #undef epicsAlarmGLOBAL

@@ -21,15 +21,12 @@
 #include <string.h>
 #include <malloc.h>
 
-#if defined(_WIN32)
-#include <getopt.h>
-#endif
-
 #include <alarm.h>
 #include <tsDefs.h>
 #include <cadef.h>
 
 #include "tool_lib.h"
+#include "parseOptions.h"
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
 #define PEND_EVENT_SLICES 5     /* No. of pend_event slices for callback requests */
@@ -58,17 +55,17 @@ void usage (void)
     "  -n: Print DBF_ENUM values as number (default are enum string values)\n"
     "  -d <type>: Request specific dbr type; use string (DBR_ prefix may be omitted)\n"
     "      or number of one of the following types:\n"
-    "   DBR_STRING     0  DBR_STS_FLOAT    9  DBR_TIME_LONG   19  DBR_CTRL_SHORT    29\n"
-    "   DBR_INT        1  DBR_STS_ENUM    10  DBR_TIME_DOUBLE 20  DBR_CTRL_INT      29\n"
-    "   DBR_SHORT      1  DBR_STS_CHAR    11  DBR_GR_STRING   21  DBR_CTRL_FLOAT    30\n"
-    "   DBR_FLOAT      2  DBR_STS_LONG    12  DBR_GR_SHORT    22  DBR_CTRL_ENUM     31\n"
-    "   DBR_ENUM       3  DBR_STS_DOUBLE  13  DBR_GR_INT      22  DBR_CTRL_CHAR     32\n"
-    "   DBR_CHAR       4  DBR_TIME_STRING 14  DBR_GR_FLOAT    23  DBR_CTRL_LONG     33\n"
-    "   DBR_LONG       5  DBR_TIME_INT    15  DBR_GR_ENUM     24  DBR_CTRL_DOUBLE   34\n"
-    "   DBR_DOUBLE     6  DBR_TIME_SHORT  15  DBR_GR_CHAR     25  DBR_STSACK_STRING 37\n"
-    "   DBR_STS_STRING 7  DBR_TIME_FLOAT  16  DBR_GR_LONG     26  DBR_CLASS_NAME    38\n"
-    "   DBR_STS_SHORT  8  DBR_TIME_ENUM   17  DBR_GR_DOUBLE   27\n"
-    "   DBR_STS_INT    8  DBR_TIME_CHAR   18  DBR_CTRL_STRING 28\n"
+    " DBR_STRING     0  DBR_STS_FLOAT    9  DBR_TIME_LONG   19  DBR_CTRL_SHORT    29\n"
+    " DBR_INT        1  DBR_STS_ENUM    10  DBR_TIME_DOUBLE 20  DBR_CTRL_INT      29\n"
+    " DBR_SHORT      1  DBR_STS_CHAR    11  DBR_GR_STRING   21  DBR_CTRL_FLOAT    30\n"
+    " DBR_FLOAT      2  DBR_STS_LONG    12  DBR_GR_SHORT    22  DBR_CTRL_ENUM     31\n"
+    " DBR_ENUM       3  DBR_STS_DOUBLE  13  DBR_GR_INT      22  DBR_CTRL_CHAR     32\n"
+    " DBR_CHAR       4  DBR_TIME_STRING 14  DBR_GR_FLOAT    23  DBR_CTRL_LONG     33\n"
+    " DBR_LONG       5  DBR_TIME_INT    15  DBR_GR_ENUM     24  DBR_CTRL_DOUBLE   34\n"
+    " DBR_DOUBLE     6  DBR_TIME_SHORT  15  DBR_GR_CHAR     25  DBR_STSACK_STRING 37\n"
+    " DBR_STS_STRING 7  DBR_TIME_FLOAT  16  DBR_GR_LONG     26  DBR_CLASS_NAME    38\n"
+    " DBR_STS_SHORT  8  DBR_TIME_ENUM   17  DBR_GR_DOUBLE   27\n"
+    " DBR_STS_INT    8  DBR_TIME_CHAR   18  DBR_CTRL_STRING 28\n"
     "Arrays: Value format: print number of requested values, then list of values\n"
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
@@ -137,7 +134,8 @@ void event_handler (evargs args)
 int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
            chtype dbrType, unsigned long reqElems)
 {
-    int i, n, result;
+    unsigned int i;
+    int n, result;
 
     for (n = 0; n < nPvs; n++) {
 
@@ -322,7 +320,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,0);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhe:f:#:d:0:w:")) != -1) {
+    while ((opt = parseOptions(argc, argv, ":taicnhe:f:#:d:0:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -339,13 +337,13 @@ int main (int argc, char *argv[])
         case 'd':               /* Data type specification */
             complainIfNotPlainAndSet(&format, specifiedDbr);
                                 /* Argument (type) may be text or number */
-            if (sscanf(optarg, "%d", &type) != 1)
+            if (sscanf(optArgument, "%d", &type) != 1)
             {
-                dbr_text_to_type(optarg, type);
+                dbr_text_to_type(optArgument, type);
                 if (type == -1)                   /* Invalid? Try prefix DBR_ */
                 {
                     char str[30] = "DBR_";
-                    strncat(str, optarg, 25);
+                    strncat(str, optArgument, 25);
                     dbr_text_to_type(str, type);
                 }
             }
@@ -361,26 +359,26 @@ int main (int argc, char *argv[])
             charAsNr=1;
             break;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &timeout) != 1)
+            if(sscanf(optArgument,"%lf", &timeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('caget -h' for help.)\n", optArgument);
                 timeout = DEFAULT_TIMEOUT;
             }
             break;
         case '#':               /* Array count */
-            if (sscanf(optarg,"%d", &count) != 1)
+            if (sscanf(optArgument,"%d", &count) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid array element count "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('caget -h' for help.)\n", optArgument);
                 count = 0;
             }
             break;
         case 'e':               /* Select %e format, using <arg> digits */
-            if (sscanf(optarg, "%d", &digits) != 1)
+            if (sscanf(optArgument, "%d", &digits) != 1)
                 fprintf(stderr, 
                         "Invalid precision argument '%s' "
-                        "for option '-e' - ignored.\n", optarg);
+                        "for option '-e' - ignored.\n", optArgument);
             else
             {
                 if (digits>=0 && digits<=VALID_DOUBLE_DIGITS)
@@ -391,9 +389,9 @@ int main (int argc, char *argv[])
             }
             break;
         case 'f':               /* Select %f format, using <arg> digits */
-            if (sscanf(optarg, "%d", &digits) != 1)
+            if (sscanf(optArgument, "%d", &digits) != 1)
                 fprintf(stderr, "Invalid precision argument '%s' "
-                        "for option '-f' - ignored.\n", optarg);
+                        "for option '-f' - ignored.\n", optArgument);
             else
             {
                 if (digits>=0 && digits<=VALID_DOUBLE_DIGITS)
@@ -405,24 +403,24 @@ int main (int argc, char *argv[])
             break;
         case '0':               /* Select integer format */
             type = DBR_LONG;
-            switch ((char) *optarg) {
+            switch ((char) *optArgument) {
             case 'x': outType = hex; break;    /* 0x print Hex */
             case 'b': outType = bin; break;    /* 0b print Binary */
             case 'o': outType = oct; break;    /* 0o print Octal */
             default :
                 fprintf(stderr, "Invalid argument '%s' "
-                        "for option '-0' - ignored.\n", optarg);
+                        "for option '-0' - ignored.\n", optArgument);
             }
             break;
         case '?':
             fprintf(stderr,
                     "Unrecognized option: '-%c'. ('caget -h' for help.)\n",
-                    optopt);
+                    optChar);
             return 1;
         case ':':
             fprintf(stderr,
                     "Option '-%c' requires an argument. ('caget -h' for help.)\n",
-                    optopt);
+                    optChar);
             return 1;
         default :
             usage();
@@ -430,7 +428,7 @@ int main (int argc, char *argv[])
         }
     }
 
-    nPvs = argc - optind;       /* Remaining arg list are PV names */
+    nPvs = argc - optIndex;     /* Remaining arg list are PV names */
 
     if (nPvs < 1)
     {
@@ -455,8 +453,8 @@ int main (int argc, char *argv[])
     }
                                 /* Connect channels */
 
-    for (n = 0; optind < argc; n++, optind++)
-        pvs[n].name = argv[optind];            /* Copy PV names from command line */
+    for (n = 0; optIndex < argc; n++, optIndex++)
+        pvs[n].name = argv[optIndex];       /* Copy PV names from command line */
 
     connect_pvs(pvs, nPvs);
 

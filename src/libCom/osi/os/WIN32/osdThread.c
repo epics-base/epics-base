@@ -31,6 +31,7 @@ typedef struct {
     HANDLE handle;
     THREADFUNC funptr;
     void *parm;
+    char *pName;
     DWORD id;
     char isSuspended;
 } win32ThreadParam;
@@ -42,6 +43,83 @@ typedef struct osdThreadPrivate {
 } osdThreadPrivate;
 
 #define osdPriorityStateCount 7
+
+static HANDLE win32ThreadGlobalMutex = 0;
+static int win32ThreadInitOK = 0;
+
+/*
+ * threadCleanupWIN32 ()
+ */
+static void threadCleanupWIN32 (void)
+{
+    if (tlsIndexWIN32!=0xFFFFFFFF) {
+        TlsFree (tlsIndexWIN32);
+        tlsIndexWIN32 = 0xFFFFFFFF;
+    }
+
+    if (win32ThreadGlobalMutex) {
+        CloseHandle (win32ThreadGlobalMutex);
+        win32ThreadGlobalMutex = NULL;
+    }
+}
+
+/*
+ * threadInitWin32 ()
+ */
+static void threadInitWin32 () 
+{
+    HANDLE win32ThreadGlobalMutexTmp;
+    DWORD status;
+    BOOL success;
+    int crtlStatus;
+
+    if (win32ThreadGlobalMutex) {
+        /* wait for init to complete */
+        status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+        assert ( status == WAIT_OBJECT_0 );
+        success = ReleaseMutex (win32ThreadGlobalMutex);
+        assert (success);
+        return;
+    }
+    else {
+        win32ThreadGlobalMutexTmp = CreateMutex (NULL, TRUE, NULL);
+        if ( win32ThreadGlobalMutexTmp == 0 ) {
+            return;
+        }
+
+        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
+        if (InterlockedCompareExchange ( (PVOID *) &win32ThreadGlobalMutex, (PVOID) win32ThreadGlobalMutexTmp, (PVOID)0 ) != 0) {
+            CloseHandle (win32ThreadGlobalMutexTmp);
+            /* wait for init to complete */
+            status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+            assert ( status == WAIT_OBJECT_0 );
+            success = ReleaseMutex (win32ThreadGlobalMutex);
+            assert (success);
+            return;
+        }
+    }
+
+    if (tlsIndexWIN32==0xFFFFFFFF) {
+        tlsIndexWIN32 = TlsAlloc();
+        if (tlsIndexWIN32==0xFFFFFFFF) {
+            success = ReleaseMutex (win32ThreadGlobalMutex);
+            assert (success);
+            return;
+        }
+    }
+
+    crtlStatus = atexit (threadCleanupWIN32);
+    if (crtlStatus) {
+        success = ReleaseMutex (win32ThreadGlobalMutex);
+        assert (success);
+        return;
+    }
+
+    win32ThreadInitOK = TRUE;
+
+    success = ReleaseMutex (win32ThreadGlobalMutex);
+    assert (success);
+}
 
 /*
  * threadGetOsdPriorityValue ()
@@ -142,7 +220,6 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
 static DWORD WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
 {
     win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
-    HANDLE threadHandle;
     BOOL stat;
 
     stat = TlsSetValue (tlsIndexWIN32, pParm);
@@ -152,25 +229,17 @@ static DWORD WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
 
     (*pParm->funptr) (pParm->parm);
 
-    threadHandle = pParm->handle;
-    free (pParm);
-    CloseHandle (threadHandle); 
+    /*
+     * CAUTION: !!!! the thread id might continue to be used after its thread exits !!!!
+     */
     TlsSetValue (tlsIndexWIN32, 0);
+    CloseHandle (pParm->handle); 
+    free (pParm->pName);
+    free (pParm);
 
     return 1;
 }
 
-/*
- * freeThreadLocalStorageIndex ()
- */
-static void freeThreadLocalStorageIndex (void)
-{
-    if (tlsIndexWIN32!=0xFFFFFFFF) {
-        TlsFree (tlsIndexWIN32);
-        tlsIndexWIN32 = 0xFFFFFFFF;
-    }
-}
- 
 /*
  * threadCreate()
  */
@@ -182,26 +251,25 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
     DWORD wstat;
     BOOL bstat;
 
-    if (tlsIndexWIN32==0xFFFFFFFF) {
-        tlsIndexWIN32 = TlsAlloc();
-        if (tlsIndexWIN32==0xFFFFFFFF) {
-            return 0;
-        }
-        else {
-            int status;
-            status = atexit (freeThreadLocalStorageIndex);
-            if (status) {
-                freeThreadLocalStorageIndex ();
-                return NULL;
-            }
+    if (!win32ThreadInitOK) {
+        threadInitWin32 ();
+        if (!win32ThreadInitOK) {
+            return NULL;
         }
     }
  
-    pParmWIN32 = malloc (sizeof(*pParmWIN32));
+    pParmWIN32 = malloc ( sizeof (*pParmWIN32) );
     if (pParmWIN32==NULL) {
         return NULL;
     }
 
+    /* potential for fragmentation of pool here */
+    pParmWIN32->pName = malloc ( strlen (pName) + 1 );
+    if (!pParmWIN32->pName) {
+        free (pParmWIN32);
+        return NULL;
+    }
+    strcpy (pParmWIN32->pName, pName);
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
     pParmWIN32->isSuspended = 0;
@@ -236,11 +304,18 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
 epicsShareFunc void epicsShareAPI threadSuspendSelf ()
 {
     win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
+    BOOL success;
     DWORD stat;
 
     if (pParm) {
+        stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+        assert ( stat == WAIT_OBJECT_0 );
+
         stat =  SuspendThread ( pParm->handle );
         pParm->isSuspended = 1;
+
+        success = ReleaseMutex (win32ThreadGlobalMutex);
+        assert (success);
     }
     else {
         stat =  SuspendThread ( GetCurrentThread () );
@@ -254,11 +329,19 @@ epicsShareFunc void epicsShareAPI threadSuspendSelf ()
 epicsShareFunc void epicsShareAPI threadResume (threadId id)
 {
     win32ThreadParam *pParm = (win32ThreadParam *) id;
+    BOOL success;
     DWORD stat;
 
+    stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+    assert ( stat == WAIT_OBJECT_0 );
+
     stat =  ResumeThread ( pParm->handle );
-    assert (stat!=0xFFFFFFFF);
     pParm->isSuspended = 0;
+
+    success = ReleaseMutex (win32ThreadGlobalMutex);
+    assert (success);
+
+    assert (stat!=0xFFFFFFFF);
 }
 
 /*
@@ -347,35 +430,73 @@ epicsShareFunc threadId epicsShareAPI threadGetIdSelf (void)
  */
 epicsShareFunc const char * epicsShareAPI threadGetNameSelf (void)
 {
-    /* not implemented (WFL) */
-    return (const char *) "";
+    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
+
+    if (pParm) {
+        return pParm->pName;
+    }
+    else {
+        return "anonymous";
+    }
 }
 
 /*
  * threadGetName ()
  */
-epicsShareFunc void epicsShareAPI threadGetName (threadId id, char *name, size_t size)
+epicsShareFunc void epicsShareAPI threadGetName (threadId id, char *pName, size_t size)
 {
-    /* not implemented (WFL) */
-    *name = '\0';
+    win32ThreadParam *pParm = (win32ThreadParam *) id;
+
+    if (size) {
+        size_t sizeMinusOne = size-1;
+        strncpy (pName, pParm->pName, sizeMinusOne);
+        pName [sizeMinusOne] = '\0';
+    }
 }
 
 /*
  * threadShow ()
  */
-
-epicsShareFunc void epicsShareAPI threadShow(void)
+epicsShareFunc void epicsShareAPI threadShow (void)
 {
-    printf("threadShow not implemented\n");
+    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
+
+    if (pParm) {
+        printf ("thread \"%s\" HANDLE=%p func=%p parm=%p %s %d\n",
+            pParm->pName, pParm->handle, pParm->funptr, pParm->parm,
+            pParm->isSuspended?"suspended":"running", pParm->id);
+    }
+    else {
+        printf ("thread was not created by threadCreate()\n");
+    }
 }
 
-epicsShareFunc void epicsShareAPI threadOnce(
+/*
+ * threadOnce ()
+ */
+epicsShareFunc void epicsShareAPI threadOnceOsd (
     threadOnceId *id, void (*func)(void *), void *arg)
 {
-    printf("threadOnce not implemented\n");
-    cantProceed("threadOnce");
+
+    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    BOOL success;
+    DWORD stat;
+
+    stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+    assert ( stat == WAIT_OBJECT_0 );
+
+    if (!*id) {
+        *id = 1;
+        (*func) (arg);
+    }
+
+    success = ReleaseMutex (win32ThreadGlobalMutex);
+    assert (success);
 }
 
+/*
+ * threadPrivateCreate ()
+ */
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()
 {
     osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));
@@ -389,13 +510,20 @@ epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate ()
     return (threadPrivateId) p;
 }
 
+/*
+ * threadPrivateDelete ()
+ */
 epicsShareFunc void epicsShareAPI threadPrivateDelete (threadPrivateId id)
 {
     osdThreadPrivate *p = (osdThreadPrivate *) id;
     BOOL stat = TlsFree (p->key);
     assert (stat);
+    free (p);
 }
 
+/*
+ * threadPrivateSet ()
+ */
 epicsShareFunc void epicsShareAPI threadPrivateSet (threadPrivateId id, void *pVal)
 {
     struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
@@ -403,6 +531,9 @@ epicsShareFunc void epicsShareAPI threadPrivateSet (threadPrivateId id, void *pV
     assert (stat);
 }
 
+/*
+ * threadPrivateGet ()
+ */
 epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId id)
 {
     struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;

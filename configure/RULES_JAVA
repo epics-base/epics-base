@@ -64,6 +64,7 @@ JARMANIFEST += $(firstword $(MANIFEST) $(JAR_MANIFEST))
 JARINPUT += $(subst .java,.class,$(JAR_INPUT))
 JARDEPFILES += $(addprefix $(INSTALL_JAVA)/,$(subst .java,.class,$(JAVA))) $(JARINPUT)
 JARPACKAGES += $(foreach pkg,$(JAR_PACKAGES),-C $(INSTALL_JAVA) $(subst .,/,$(pkg)))
+PACKAGEDIRS += $(foreach pkg,$(JAR_PACKAGES),$(addprefix $(INSTALL_JAVA)/,$(subst .,/,$(pkg))))
 
 ifneq ($(JARMANIFEST),)
 JAR_OPTIONS = cvmf $(JARMANIFEST)
@@ -100,7 +101,7 @@ buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
 #This clean works only from O.* dirs.
 clean:: 
-	@$(RMDIR) $(INSTALL_CLASSES)
+	@$(RMDIR) $(INSTALL_CLASSES) $(PACKAGEDIRS)
 	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
 

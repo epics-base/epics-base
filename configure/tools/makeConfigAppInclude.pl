@@ -5,9 +5,10 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 use Cwd;
 
-$arch = $ARGV[0];
-$outfile = $ARGV[1];
-$top = $ARGV[2];
+$hostarch = $ARGV[0];
+$arch = $ARGV[1];
+$outfile = $ARGV[2];
+$top = $ARGV[3];
 
 unlink("${outfile}");
 open(OUT,">${outfile}") or die "$! opening ${outfile}";
@@ -16,7 +17,7 @@ print OUT "#This file is created during the build.\n";
 
 @files =();
 push(@files,"$top/configure/RELEASE");
-push(@files,"$top/configure/RELEASE.${arch}");
+push(@files,"$top/configure/RELEASE.${hostarch}");
 foreach $file (@files) {
   if (-r "$file") {
     open(IN, "$file") or die "Cannot open $file\n";
@@ -24,6 +25,7 @@ foreach $file (@files) {
         next if ( $line =~ /\s*#/ );
 	chomp($line);
 		$line =~ s/[ 	]//g; # remove blanks and tabs
+        next if ( $line =~ /^$/ ); # skip empty lines
         $_ = $line;
         #the following looks for
         # prefix = $(macro)post
@@ -60,5 +62,3 @@ foreach $file (@files) {
     close IN;
   }
 }
-close OUT;
-

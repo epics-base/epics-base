@@ -228,7 +228,6 @@ static char	*(userOffOn[]) = {"USER OFF;", "USER ON;", NULL};
  * supported for this type of instrument.
  *
  ******************************************************************************/
-#define dg535FILL  {0,0,0,NULL,NULL,0,0,NULL,0,0,NULL,NULL,-1}
 
 /* forward declarations of some custom convert routines */
 int setDelay();
@@ -236,8 +235,8 @@ int rdDelay();
 
 static struct gpibCmd gpibCmds[] = 
 {
-    /* Param 0, (model)   */
-dg535FILL,
+  /* Param 0, (model)   */
+  FILL,
 
   /* Channel A Delay and Output */
   /* Param 1, write A delay  */
@@ -245,7 +244,7 @@ dg535FILL,
   setDelay, 0, 0, NULL, NULL, -1},
 
   /* Param 2, currently undefined */
-  dg535FILL,
+  FILL,
 
   /* Param 3, read A Delay */
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "DT 2\n", NULL, 0, 32, 
@@ -309,7 +308,7 @@ dg535FILL,
   setDelay, 0, 0, NULL, NULL, -1},
 
   /* Param 18, currently undefined */
-  dg535FILL,
+  FILL,
 
   /* Param 19, read B Delay */
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "DT 3\n", NULL, 0, 32, 
@@ -414,7 +413,7 @@ dg535FILL,
   setDelay, 0, 0, NULL, NULL, -1},
 
   /* Param 44, currently undefined */
-  dg535FILL,
+  FILL,
 
   /* Param 45, read C Delay */
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "DT 5\n", NULL, 0, 32,
@@ -478,7 +477,7 @@ dg535FILL,
   setDelay, 0, 0, NULL, NULL, -1},
 
   /* Param 60, currently undefined */
-  dg535FILL,
+  FILL,
 
   /* Param 61, read D Delay */
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "DT 6\n", NULL, 0, 32,
@@ -678,7 +677,7 @@ dg535FILL,
  ******************************************************************************/
 struct  devGpibParmBlock devSupParms = {
   &Dg535Debug,          /* debugging flag pointer */
-  0,                    /* set if the device responds to writes */
+  -1,                   /* set to -1 if the device does NOT respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
   NULL,                 /* hwpvt list head */
   gpibCmds,             /* GPIB command array */
@@ -945,14 +944,14 @@ struct gpibDpvt *pdpvt;
      defined as a GPIBWRITE. The cmd string in the gpibCmd is initialized
      to make this work */
   
-  if(xxGpibWork(pdpvt, GPIBREAD) == ERROR) 
+  if(devGpibLib_xxGpibWork(pdpvt, GPIBREAD, -1) == ERROR) 
   {  /* abort operation if read failed */
      return(ERROR);             /* return, signalling an error */
   }
 
   /* Due to a fluke in the DG535, read again to insure accurate data */
 
-  if(xxGpibWork(pdpvt, GPIBREAD) == ERROR) 
+  if(devGpibLib_xxGpibWork(pdpvt, GPIBREAD, -1) == ERROR) 
   { /* abort operation if read failed */
     return(ERROR);             /* return, signalling an error */
   }

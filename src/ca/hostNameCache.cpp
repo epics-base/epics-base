@@ -16,6 +16,8 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include <string.h>
+
 #include "iocinf.h"
 #include "hostNameCache.h"
 

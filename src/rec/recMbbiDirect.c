@@ -256,7 +256,7 @@ static void monitor(pmbbiDirect)
         monitor_mask = recGblResetAlarms(pmbbiDirect);
         monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask)
-           db_post_events(pmbbiDirect,pmbbiDirect->val,monitor_mask);
+           db_post_events(pmbbiDirect,&pmbbiDirect->val,monitor_mask);
 
         /* check for value change */
         if (pmbbiDirect->mlst != pmbbiDirect->val) {

@@ -267,7 +267,7 @@ static void monitor(pdfanout)
         monitor_mask = recGblResetAlarms(pdfanout);
         monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask)
-           db_post_events(pdfanout,pdfanout->val,monitor_mask);
+           db_post_events(pdfanout,&pdfanout->val,monitor_mask);
 
         /* check for value change */
         delta = pdfanout->mlst - pdfanout->val;

@@ -38,7 +38,6 @@ static char *sccsId = "@(#) $Id$";
 /*
  * ansi includes
  */
-#include <assert.h>
 #include <string.h>
 
 /*

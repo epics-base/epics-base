@@ -30,7 +30,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
@@ -38,6 +37,7 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 
+#include <epicsAssert.h>
 #include <epicsPrint.h>
 
 

@@ -95,7 +95,6 @@ static char	*pSccsId = "@(#) $Id$";
  * ANSI
  */
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -109,6 +108,7 @@ static char	*pSccsId = "@(#) $Id$";
 #include <selectLib.h>
 #endif
 
+#include <epicsAssert.h>
 #include <fdmgr.h>
 
 #ifndef TRUE

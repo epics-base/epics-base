@@ -35,12 +35,12 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 
+#include <epicsAssert.h>
 #include <bucketLib.h>
 
 #ifndef NBBY

@@ -31,7 +31,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
@@ -46,6 +45,7 @@
 #include <error.h>
 #include <logLib.h>
 
+#include <epicsAssert.h>
 #include <ellLib.h>
 #include <dbDefs.h>
 #include <task_params.h>

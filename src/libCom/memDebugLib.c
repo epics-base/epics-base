@@ -30,10 +30,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 
+#include <epicsAssert.h>
 #include <ellLib.h>
 
 #ifdef vxWorks

@@ -55,6 +55,8 @@ typedef int SOCKET;
 
 #define APIENTRY
 
+#include <epicsAssert.h>
+
 #include <vxLib.h>
 #include <ellLib.h>
 #include <fast_lock.h>

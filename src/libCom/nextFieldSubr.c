@@ -140,7 +140,7 @@
 #   include <ctype.h>
 #   include <stdio.h>
 #endif
-#include <assert.h>
+#include <epicsAssert.h>
 
 /*-----------------------------------------------------------------------------
 *    the preamble skips over leading white space, stopping either at

@@ -46,7 +46,6 @@
 
 static char *sccsId = "@(#) $Id$";
 #include <stdio.h>
-#include <assert.h>
 #include <unistd.h>
 
 #include <vxWorks.h>

@@ -52,7 +52,6 @@
 
 static char *sccsId = "%W% %G%";
 
-#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

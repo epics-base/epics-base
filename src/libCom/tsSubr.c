@@ -130,7 +130,7 @@
 #endif
 #endif
 
-#   include <assert.h>
+#include <epicsAssert.h>
 
 #include <envDefs.h>
 #define TS_PRIVATE_DATA
@@ -598,7 +598,6 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
     	long	retStat=S_ts_OK;/* return status to caller */
 
 #ifdef vxWorks
-<<<<<<< tsSubr.c
 	retStat = TScurrentTimeStamp((struct timespec*)pStamp);
 	if (retStat == 0) {
 		return S_ts_OK;
@@ -606,16 +605,6 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	else {
 		return S_ts_sysTimeError;
 	}
-=======
-#  if 0	/* 'test' code, for ioc core without time of day service */
-    assert(pStamp != NULL);
-    pStamp->nsec = 987000000;
-    pStamp->secPastEpoch = 30 * 86400 + 495;	/* 0815 Jan 31 of epoch year */
-#  else
-	if(!TScurrentTimeStamp((struct timespec*)pStamp)) return(S_ts_OK);
-	return(S_ts_sysTimeError);
-#  endif
->>>>>>> 1.16
 #else
     	struct timeval curtime;
 

@@ -32,8 +32,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <assert.h>
 
+#include <epicsAssert.h>
 #include <epicsPrint.h>
 
 

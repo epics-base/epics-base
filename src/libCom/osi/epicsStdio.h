@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
 #include "shareLib.h"
 
 epicsShareFunc int epicsShareAPI epicsSnprintf(

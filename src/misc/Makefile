@@ -11,6 +11,8 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
+DBD += base.dbd
+
 INC +=  epicsRelease.h
 INC +=  iocInit.h
 INC +=  asSubRecordFunctions.h

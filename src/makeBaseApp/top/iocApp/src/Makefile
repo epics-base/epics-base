@@ -14,7 +14,8 @@ DBD += _APPNAME_.dbd
 
 # _APPNAME_.dbd will be made up from these files:
 _APPNAME__DBD += base.dbd
-_APPNAME__DBD += xxxSupport.dbd
+#include definitions for any other support applications needed
+#_APPNAME__DBD += xxx.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp

@@ -36,6 +36,7 @@
 #include <errno.h>
 
 #include <vxWorks.h>
+#include <vxLib.h>
 #include <taskLib.h>
 #include <errnoLib.h>
 #include <intLib.h>
@@ -81,12 +82,11 @@ LOCAL struct {
 	int		printfStatus;
 }pvtData;
 
-LOCAL int errInitFirstTime=TRUE;
+LOCAL int errInitFlag=0;
 
 void errInit(void)
 {
-    if(!errInitFirstTime) return;
-    errInitFirstTime = FALSE;
+    if(!vxTas(&errInitFlag)) return;
     pvtData.oldtaskid = 0;
     if((clientWaitForTask=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
 	logMsg("semBcreate failed in errInit",0,0,0,0,0,0);
@@ -140,6 +140,7 @@ void errPrintf(long status, const char *pFileName,
 	va_end (pvar);
 	return;
     }
+    errInit();
     va_start (pvar, pformat);
     if(semTake(clientWaitForTask,WAIT_FOREVER)!=OK) {
 	logMsg("epicsPrint: semTake returned error\n",0,0,0,0,0,0);
@@ -222,6 +223,7 @@ int epicsVprintf(const char *pformat, va_list pvar)
 	va_end (pvar);
 	return status;
     }
+    errInit();
     if(semTake(clientWaitForTask,WAIT_FOREVER)!=OK) {
 	logMsg("epicsPrint: semTake returned error\n",0,0,0,0,0,0);
 	taskSuspend(taskIdSelf());

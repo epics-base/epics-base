@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.33  1995/12/19  19:29:04  jhill
+ * changed put test
+ *
  * Revision 1.32  1995/11/29  19:17:25  jhill
  * more tests
  *
@@ -155,6 +158,8 @@ int doacctst(char *pname)
 	size = dbr_size_n(DBR_GR_FLOAT, NUM);
 	ptr = (struct dbr_gr_float *) malloc(size);  
 
+	printf("Connect/disconnect test");
+	fflush(stdout);
 	for (i = 0; i < 10; i++) {
 
 		status = ca_search(
@@ -197,6 +202,9 @@ int doacctst(char *pname)
 		status = ca_pend_io(1000.0);
 		SEVCHK(status, NULL);
 
+		printf(".");
+		fflush(stdout);
+
 		assert(ca_test_io() == ECA_IODONE);
 
 		assert(ca_state(chix1) == cs_conn);
@@ -209,6 +217,7 @@ int doacctst(char *pname)
 		SEVCHK(ca_clear_channel(chix2), NULL);
 		SEVCHK(ca_clear_channel(chix1), NULL);
 	}
+	printf("\n");
 
 	status = ca_search(pname,& chix3);
 	SEVCHK(status, NULL);
@@ -336,6 +345,33 @@ int doacctst(char *pname)
 #endif
 
 	/*
+	 * ca_pend_io() must block
+	 */
+	if(ca_read_access(chix4)){
+		dbr_float_t	req = 3.3;
+		dbr_float_t	resp = 0.0;
+
+		printf ("get TMO test ...");
+		fflush(stdout);
+		SEVCHK(ca_put(DBR_FLOAT, chix4, &req),NULL);
+		SEVCHK(ca_get(DBR_FLOAT, chix4, &resp),NULL);
+		status = ca_pend_io(1.0e-12);
+		if (status==ECA_NORMAL) {
+			assert (resp == req);
+		}
+		else {
+			assert (resp == 0.0);
+		}
+			
+		resp = 0.0;
+		SEVCHK (ca_put(DBR_FLOAT, chix4, &req),NULL);
+		SEVCHK (ca_get(DBR_FLOAT, chix4, &resp),NULL);
+		SEVCHK (ca_pend_io(2000.0),NULL);
+		assert (resp == req);
+		printf ("done\n");
+	}
+
+	/*
 	 * verify we dont jam up on many uninterrupted
 	 * solicitations
 	 */
@@ -377,6 +413,7 @@ int doacctst(char *pname)
 	 * solicitations
 	 */
 	if(ca_read_access(chix1)){
+		unsigned	count=0u;
 		printf("Performing multiple get callback test...");
 		fflush(stdout);
 		for(i=0; i<10000; i++){
@@ -385,19 +422,20 @@ int doacctst(char *pname)
 					1,
 					chix1, 
 					null_event, 
-					NULL);
+					&count);
 	
 			SEVCHK(status, NULL);
 		}
 		SEVCHK(ca_flush_io(), NULL);
+		while (count<10000u) {
+			ca_pend_event(1.0);
+			printf("waiting...");
+			fflush(stdout);
+		}
 		printf("done.\n");
 	}
 	else{
 		printf("Skipped multiple get cb test - no read access\n");
-	}
-
-	if(ca_v42_ok(chix1)){
-		test_sync_groups(chix1);
 	}
 
 	/*
@@ -405,6 +443,7 @@ int doacctst(char *pname)
 	 * solicitations
 	 */
 	if(ca_write_access(chix1) && ca_v42_ok(chix1)){
+		unsigned	count=0u;
 		printf("Performing multiple put callback test...");
 		fflush(stdout);
 		for(i=0; i<10000; i++){
@@ -415,15 +454,24 @@ int doacctst(char *pname)
 					chix1, 
 					&fval,
 					null_event, 
-					NULL);
+					&count);
 		
 			SEVCHK(status, NULL);
 		}
 		SEVCHK(ca_flush_io(), NULL);
+		while (count<10000u) {
+			ca_pend_event(1.0);
+			printf("waiting...");
+			fflush(stdout);
+		}
 		printf("done.\n");
 	}
 	else{
 		printf("Skipped multiple put cb test - no write access\n");
+	}
+
+	if(ca_v42_ok(chix1)){
+		test_sync_groups(chix1);
 	}
 
 	/*
@@ -437,7 +485,7 @@ int doacctst(char *pname)
 
 		for(i=0; i<NELEMENTS(mid); i++){
 			SEVCHK(ca_add_event(DBR_GR_FLOAT, chix4, null_event,
-				(void *)0x55555555, &mid[i]),NULL);
+				NULL, &mid[i]),NULL);
 		}
 		/*
 		 * force all of the monitors requests to
@@ -472,7 +520,7 @@ int doacctst(char *pname)
 				DBR_FLOAT, 
 				chix4, 
 				EVENT_ROUTINE, 
-				(void *)0xaaaaaaaa, 
+				NULL, 
 				&monix);
 		SEVCHK(status, NULL);
 		SEVCHK(ca_clear_event(monix), NULL);
@@ -480,7 +528,7 @@ int doacctst(char *pname)
 				DBR_FLOAT, 
 				chix4, 
 				EVENT_ROUTINE, 
-				(void *)0xaaaaaaaa, 
+				NULL, 
 				&monix);
 		SEVCHK(status, NULL);
 	}
@@ -489,7 +537,7 @@ int doacctst(char *pname)
 				DBR_FLOAT, 
 				chix4, 
 				EVENT_ROUTINE, 
-				(void *)0xaaaaaaaa, 
+				NULL, 
 				&monix);
 		SEVCHK(status, NULL);
 		SEVCHK(ca_clear_event(monix), NULL);
@@ -499,14 +547,14 @@ int doacctst(char *pname)
 				DBR_FLOAT, 
 				chix3, 
 				EVENT_ROUTINE, 
-				(void *)0xaaaaaaaa, 
+				NULL, 
 				&monix);
 		SEVCHK(status, NULL);
 		status = ca_add_event(
 				DBR_FLOAT, 
 				chix3, 
 				write_event, 
-				(void *)0xaaaaaaaa, 
+				NULL, 
 				&monix);
 		SEVCHK(status, NULL);
 	}
@@ -683,7 +731,11 @@ void null_event(struct event_handler_args args)
 	static int      i;
 	dbr_double_t	fval = 3.8;
 	int		status;
+	unsigned	*pInc = (unsigned *) args.usr;
 
+	if (pInc) {
+		(*pInc)++;
+	}
 #if 0
 	if (ca_state(args.chid)==cs_conn) {
 		status = ca_put(DBR_FLOAT, args.chid, &fval);
@@ -737,10 +789,11 @@ void conn(struct connection_handler_args args)
 	ca_get_callback(DBR_GR_FLOAT, args.chid, get_cb, NULL);
 }
 
-void get_cb(struct event_handler_args args)
+void get_cb (struct event_handler_args args)
 {
 	if(!(args.status & CA_M_SUCCESS)){
-		printf("Get cb failed because \"%s\"\n", ca_message(args.status));
+		printf("Get cb failed because \"%s\"\n", 
+			ca_message(args.status));
 	}
 	conn_cb_count++;
 }
@@ -773,9 +826,9 @@ void test_sync_groups(chid chix)
 	SEVCHK(status, "SYNC GRP2");
 	status = ca_sg_test(gid1);
 	SEVCHK(status, "SYNC GRP1");
-	status = ca_sg_block(gid1, 15.0);
+	status = ca_sg_block(gid1, 500.0);
 	SEVCHK(status, "SYNC GRP1");
-	status = ca_sg_block(gid2, 15.0);
+	status = ca_sg_block(gid2, 500.0);
 	SEVCHK(status, "SYNC GRP2");
 	status = ca_sg_delete(gid2);
 	SEVCHK(status, NULL);

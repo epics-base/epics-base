@@ -89,6 +89,8 @@ IIU			*piiu,
 const struct in_addr    *pnet_addr
 );
 
+LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state);
+
 #ifdef CONVERSION_REQUIRED 
 extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
@@ -243,14 +245,14 @@ const struct in_addr  	*pnet_addr
 
 	switch (piiu->curMsg.m_cmmd) {
 
-	case IOC_NOOP:
+	case CA_PROTO_NOOP:
 		break;
 
-	case IOC_ECHO:
+	case CA_PROTO_ECHO:
 		piiu->echoPending = FALSE;
 		break;
 
-	case IOC_WRITE_NOTIFY:
+	case CA_PROTO_WRITE_NOTIFY:
 	{
 		struct event_handler_args args;
 
@@ -297,7 +299,7 @@ const struct in_addr  	*pnet_addr
 		break;
 
 	}	
-	case IOC_READ_NOTIFY:
+	case CA_PROTO_READ_NOTIFY:
 	{
 		struct event_handler_args args;
 
@@ -366,7 +368,7 @@ const struct in_addr  	*pnet_addr
 
 		break;
 	}
-	case IOC_EVENT_ADD:
+	case CA_PROTO_EVENT_ADD:
 	{
 		int v41;
 		struct event_handler_args args;
@@ -446,7 +448,7 @@ const struct in_addr  	*pnet_addr
 
 		break;
 	}
-	case IOC_READ:
+	case CA_PROTO_READ:
 	{
 		evid	pIOBlock;
 
@@ -505,15 +507,15 @@ const struct in_addr  	*pnet_addr
 		UNLOCK;
 		break;
 	}
-	case IOC_SEARCH:
+	case CA_PROTO_SEARCH:
 		perform_claim_channel(piiu, pnet_addr);
 		break;
 
-	case IOC_READ_SYNC:
+	case CA_PROTO_READ_SYNC:
 		piiu->read_seq++;
 		break;
 
-	case IOC_RSRV_IS_UP:
+	case CA_PROTO_RSRV_IS_UP:
 		LOCK;
 		{
 			struct in_addr ina;
@@ -531,20 +533,20 @@ const struct in_addr  	*pnet_addr
 #endif
 		break;
 
-	case IOC_NOT_FOUND:
+	case CA_PROTO_NOT_FOUND:
 		break;
 
-	case IOC_CLEAR_CHANNEL:
+	case CA_PROTO_CLEAR_CHANNEL:
 		clearChannelResources (piiu->curMsg.m_available);
 		break;
 
-	case IOC_ERROR:
+	case CA_PROTO_ERROR:
 	{
 		ELLLIST		*pList = NULL;
 		evid		monix;
 		char		nameBuf[64];
 		char           	context[255];
-		struct extmsg  	*req = piiu->pCurData;
+		caHdr  	*req = piiu->pCurData;
 		int             op;
 		struct exception_handler_args args;
 
@@ -559,7 +561,7 @@ const struct in_addr  	*pnet_addr
 
 		caHostFromInetAddr(pnet_addr, nameBuf, sizeof(nameBuf));
 
-		if (piiu->curMsg.m_postsize > sizeof(struct extmsg)){
+		if (piiu->curMsg.m_postsize > sizeof(caHdr)){
 			sprintf(context, 
 				"detected by: %s for: %s", 
 				nameBuf, 
@@ -579,14 +581,14 @@ const struct in_addr  	*pnet_addr
 		args.addr = NULL;
 		LOCK;
 		switch (ntohs(req->m_cmmd)) {
-		case IOC_READ_NOTIFY:
+		case CA_PROTO_READ_NOTIFY:
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
 			pList = &pend_read_list;
 			op = CA_OP_GET;
 			break;
-		case IOC_READ:
+		case CA_PROTO_READ:
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
@@ -596,20 +598,20 @@ const struct in_addr  	*pnet_addr
 			pList = &pend_read_list;
 			op = CA_OP_GET;
 			break;
-		case IOC_WRITE_NOTIFY:
+		case CA_PROTO_WRITE_NOTIFY:
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
 			pList = &pend_write_list;
 			op = CA_OP_PUT;
 			break;
-		case IOC_WRITE:
+		case CA_PROTO_WRITE:
 			op = CA_OP_PUT;
 			break;
-		case IOC_SEARCH:
+		case CA_PROTO_SEARCH:
 			op = CA_OP_SEARCH;
 			break;
-		case IOC_EVENT_ADD:
+		case CA_PROTO_EVENT_ADD:
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
@@ -618,7 +620,7 @@ const struct in_addr  	*pnet_addr
 				pList = &monix->chan->eventq;
 			}
 			break;
-		case IOC_EVENT_CANCEL:
+		case CA_PROTO_EVENT_CANCEL:
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
@@ -651,7 +653,7 @@ const struct in_addr  	*pnet_addr
 		UNLOCKEVENTS;
 		break;
 	}
-	case IOC_ACCESS_RIGHTS:
+	case CA_PROTO_ACCESS_RIGHTS:
 	{
 		int	ar;
 		chid	chan;
@@ -668,8 +670,8 @@ const struct in_addr  	*pnet_addr
 		}
 
 		ar = ntohl (piiu->curMsg.m_available);
-		chan->ar.read_access = (ar&CA_ACCESS_RIGHT_READ)?1:0;
-		chan->ar.write_access = (ar&CA_ACCESS_RIGHT_WRITE)?1:0;
+		chan->ar.read_access = (ar&CA_PROTO_ACCESS_RIGHT_READ)?1:0;
+		chan->ar.write_access = (ar&CA_PROTO_ACCESS_RIGHT_WRITE)?1:0;
 
 		if (chan->pAccessRightsFunc) {
 			struct access_rights_handler_args 	args;
@@ -680,7 +682,7 @@ const struct in_addr  	*pnet_addr
 		}
 		break;
 	}
-	case IOC_CLAIM_CIU:
+	case CA_PROTO_CLAIM_CIU:
 	{
 		chid	chan;
 
@@ -702,31 +704,10 @@ const struct in_addr  	*pnet_addr
 		reconnect_channel(piiu, chan);
 		break;
 	}
-	case IOC_CLAIM_CIU_FAILED:
-	{
-		chid	chan;
-
-		LOCK;
-		chan = bucketLookupItemUnsignedId(
-				pSlowBucket, &piiu->curMsg.m_cid);
-		UNLOCK;
-		if(!chan){
-			/*
-			 * end up here if they delete the channel
-			 * prior to this response 
-			 */
-			break;
-		}
-
-		/*
-		 * need to move the channel back to the cast IIU
-		 * (so we will be able to reconnect)
-		 */
-		LOCK;
-		cacDisconnectChannel(chan, FALSE);
-		UNLOCK;
+	case CA_PROTO_CLAIM_CIU_FAILED:
+	case CA_PROTO_SERVER_DISCONN:
+		verifyChanAndDisconnect(piiu, cs_conn);
 		break;
-	}
 	default:
 		ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
 			piiu->curMsg.m_cmmd);
@@ -735,6 +716,33 @@ const struct in_addr  	*pnet_addr
 	}
 
 	return OK;
+}
+
+/*
+ * verifyChanAndDisconnect()
+ */
+LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state)
+{
+	chid	chan;
+
+	LOCK;
+	chan = bucketLookupItemUnsignedId(
+			pSlowBucket, &piiu->curMsg.m_cid);
+	if (!chan) {
+		/*
+		 * end up here if they delete the channel
+		 * prior to this response 
+		 */
+		UNLOCK;
+		return;
+	}
+
+	/*
+	 * need to move the channel back to the cast IIU
+	 * (so we will be able to reconnect)
+	 */
+	cacDisconnectChannel(chan, chan->state);
+	UNLOCK;
 }
 
 
@@ -903,7 +911,7 @@ const struct in_addr	*pnet_addr
 	v42 = CA_V42(
 		CA_PROTOCOL_VERSION, 
 		allocpiiu->minor_version_number);
-	if(!v42){
+	if (!v42) {
 		reconnect_channel(piiu, chan);
 	}
 }
@@ -921,13 +929,19 @@ chid		chan
 	enum channel_state	prev_cs;
 	int			v41;
 
+	prev_cs = chan->state;
+	if (prev_cs == cs_conn) {
+		ca_printf("Ignored connect response to connected channel\n");
+		return;
+	}
+
 	LOCK;
 
 	v41 = CA_V41(
 			CA_PROTOCOL_VERSION, 
 			((IIU *)chan->piiu)->minor_version_number);
 
-        /*	Update rmt chid fields from extmsg fields	*/
+        /*	Update rmt chid fields from caHdr fields	*/
         chan->type  = piiu->curMsg.m_type;      
         chan->count = piiu->curMsg.m_count;      
 
@@ -937,7 +951,6 @@ chid		chan
 	 * ca_request_event() so their channel 
 	 * connect tests wont fail
  	 */
-	prev_cs = chan->state;
 	chan->state = cs_conn;
 
 	/*
@@ -996,30 +1009,3 @@ chid		chan
 	}
 }
 
-
-/*
- *
- *	cas_io_done()
- *
- *
- */
-void cac_io_done(int lock)
-{
-  	struct pending_io_event	*pioe;
-	
-  	if(ioeventlist.count==0)
-		return;
-
-	if(lock){
- 		LOCK;
-	}
-
-    	while(pioe = (struct pending_io_event *) ellGet(&ioeventlist)){
-      		(*pioe->io_done_sub)(pioe->io_done_arg);
-      		free(pioe);
-	}
-
-	if(lock){
-  		UNLOCK;
-	}
-}

@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.61  1995/12/19  19:33:02  jhill
+ * function prototype changes
+ *
  * Revision 1.60  1995/11/29  19:26:01  jhill
  * cleaned up interface to recv() and send()
  *								*/
@@ -548,7 +551,7 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
  */
 void notify_ca_repeater()
 {
-	struct extmsg   	msg;
+	caHdr			msg;
 	struct sockaddr_in	saddr;
 	int			status;
 	static int		once = FALSE;
@@ -1241,7 +1244,7 @@ LOCAL void close_ioc (IIU *piiu)
 		chix = (chid) ellFirst(&piiu->chidlist);
 		while (chix) {
 			pNext = (chid) ellNext(&chix->node);
-			cacDisconnectChannel(chix, TRUE);
+			cacDisconnectChannel(chix, cs_conn);
 			chix = pNext;
 		}
 	}
@@ -1278,8 +1281,9 @@ LOCAL void close_ioc (IIU *piiu)
 
 /*
  * cacDisconnectChannel()
+ * (LOCK must be applied when calling this routine)
  */
-void cacDisconnectChannel(chid chix, int fullDisconnect)
+void cacDisconnectChannel(chid chix, enum channel_state state)
 {
 	struct ioc_in_use *piiu;
 
@@ -1297,7 +1301,7 @@ void cacDisconnectChannel(chid chix, int fullDisconnect)
 	/*
 	 * call their connection handler as required
 	 */
-	if (fullDisconnect) {
+	if (state==cs_conn) {
 		chix->state = cs_prev_conn;
 
 		/*

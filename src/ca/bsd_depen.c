@@ -78,6 +78,13 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 			continue;
 		}
 
+		if (piiu->sock_chan>=FD_SETSIZE) {
+			ca_printf(
+			"%s.%d: file number > FD_SETSIZE=%d ignored\n",
+				__FILE__, __LINE__, FD_SETSIZE);
+			continue;
+		}
+
                 /*
                  * Dont bother receiving if we have insufficient
                  * space for the maximum UDP message

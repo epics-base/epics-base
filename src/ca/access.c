@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.81  1995/12/19  19:28:11  jhill
+ * Dont check the array element count when they add the event (just clip it)
+ *
  * Revision 1.80  1995/10/18  16:49:23  jhill
  * recv task is now running at a lower priority than the send task under vxWorks
  *
@@ -183,7 +186,7 @@ static char *sccsId = "@(#) $Id$";
 /*	Macros for syncing message insertion into send buffer	*/
 /****************************************************************/
 #define EXTMSGPTR(PIIU)\
- 	((struct extmsg *) &(PIIU)->send.buf[(PIIU)->send.wtix])
+ 	((caHdr *) &(PIIU)->send.buf[(PIIU)->send.wtix])
 
 
 
@@ -214,7 +217,7 @@ static char *sccsId = "@(#) $Id$";
 	} \
 }
 
-static struct extmsg	nullmsg;
+static caHdr	nullmsg;
 
 /*
  * local functions
@@ -223,14 +226,14 @@ static struct extmsg	nullmsg;
 LOCAL int cac_alloc_msg(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
-struct extmsg		**ppMsg
+caHdr		**ppMsg
 );
 #endif
 
 LOCAL int cac_alloc_msg_no_flush(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
-struct extmsg		**ppMsg
+caHdr		**ppMsg
 );
 LOCAL int	issue_get_callback(
 evid 		monix, 
@@ -258,7 +261,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args);
 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
-struct extmsg		*pmsg,
+caHdr		*pmsg,
 void			*pext
 );
 
@@ -282,11 +285,11 @@ LOCAL evid caIOBlockCreate(void);
  */ 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
-struct extmsg		*pmsg,
+caHdr		*pmsg,
 void			*pext
 )
 {
-	struct extmsg	msg;
+	caHdr	msg;
 	unsigned 	bytesAvailable;
 	unsigned 	actualextsize;
 	unsigned 	extsize;
@@ -431,14 +434,14 @@ void			*pext
 LOCAL int cac_alloc_msg_no_flush(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
-struct extmsg		**ppMsg
+caHdr		**ppMsg
 )
 {
 	unsigned 	msgsize;
 	unsigned long	bytesAvailable;
-	struct extmsg	*pmsg;
+	caHdr	*pmsg;
 
-	msgsize = sizeof(struct extmsg)+extsize;
+	msgsize = sizeof(caHdr)+extsize;
 
 	/*
 	 * fail if max message size exceeded
@@ -452,7 +455,7 @@ struct extmsg		**ppMsg
 		return ECA_TOLARGE;
 	}
 
-	pmsg = (struct extmsg *) &piiu->send.buf[piiu->send.wtix];
+	pmsg = (caHdr *) &piiu->send.buf[piiu->send.wtix];
 	pmsg->m_postsize = extsize;
 	*ppMsg = pmsg;
 
@@ -466,7 +469,7 @@ struct extmsg		**ppMsg
 LOCAL void cac_add_msg (IIU *piiu)
 {
 	unsigned long	size; 
-	struct extmsg 	*mp = EXTMSGPTR(piiu); 
+	caHdr 	*mp = EXTMSGPTR(piiu); 
 
 	/*
 	 * Performs worst case message alignment
@@ -477,7 +480,7 @@ LOCAL void cac_add_msg (IIU *piiu)
 	mp->m_postsize = htons(mp->m_postsize); 
 	CAC_RING_BUFFER_WRITE_ADVANCE( 
 		&piiu->send, 
-		sizeof(struct extmsg) + size); 
+		sizeof(caHdr) + size); 
 }
 
 
@@ -1077,6 +1080,8 @@ int epicsShareAPI ca_search_and_connect
 	chix->type = TYPENOTCONN; /* invalid initial type 	 */
 	chix->count = 0; 	/* invalid initial count	 */
 	chix->id.sid = ~0U;	/* invalid initial server id 	 */
+	chix->ar.read_access = FALSE;
+	chix->ar.write_access = FALSE;
 
 	chix->state = cs_never_conn;
 	ellInit(&chix->eventq);
@@ -1128,13 +1133,13 @@ int             reply_type
 	int			status;
 	int    			size;
 	int    			cmd;
-	struct extmsg		*mptr;
+	caHdr		*mptr;
 	struct ioc_in_use	*piiu;
 
 	piiu = chix->piiu;
 
 	size = strlen((char *)(chix+1))+1;
-	cmd = IOC_SEARCH;
+	cmd = CA_PROTO_SEARCH;
 
 	LOCK;
 	status = cac_alloc_msg_no_flush (piiu, size, &mptr);
@@ -1242,7 +1247,7 @@ void 		*pvalue
 	UNLOCK;
 
 	if (monix) {
-		status = issue_get_callback(monix, IOC_READ);
+		status = issue_get_callback(monix, CA_PROTO_READ);
 		if (status == ECA_NORMAL) {
 			SETPENDRECV;
 		}
@@ -1325,7 +1330,7 @@ void *arg
 	UNLOCK;
 
 	if (monix) {
-		status = issue_get_callback (monix, IOC_READ_NOTIFY);
+		status = issue_get_callback (monix, CA_PROTO_READ_NOTIFY);
 		if (status != ECA_NORMAL) {
 			LOCK;
 			if (ca_state(chix)==cs_conn) {
@@ -1450,7 +1455,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	int			status;
 	chid   			chix = monix->chan;
 	unsigned        	count;
-	struct extmsg		hdr;
+	caHdr		hdr;
 	struct ioc_in_use	*piiu;
 
 	piiu = chix->piiu;
@@ -1629,7 +1634,7 @@ void				*usrarg
 	monix->count = count;
 
 	status = issue_ca_array_put(
-			IOC_WRITE_NOTIFY, 
+			CA_PROTO_WRITE_NOTIFY, 
 			monix->id,
 			type, 
 			count, 
@@ -1752,7 +1757,7 @@ void				*pvalue
   	}
 #endif /*vxWorks*/
 
-	return issue_ca_array_put(IOC_WRITE, ~0U, type, count, chix, pvalue);
+	return issue_ca_array_put(CA_PROTO_WRITE, ~0U, type, count, chix, pvalue);
 }
 
 
@@ -1771,7 +1776,7 @@ void				*pvalue
 { 
 	int			status;
 	struct ioc_in_use	*piiu;
-	struct extmsg		hdr;
+	caHdr		hdr;
   	int  			postcnt;
   	unsigned		size_of_one;
   	unsigned		i;
@@ -2037,6 +2042,7 @@ void 		*arg
  * Undocumented entry for the VAX OPI which may vanish in the future.
  *
  */
+#if 0
 int epicsShareAPI ca_add_io_event
 (
 void 		(*ast)(),
@@ -2063,7 +2069,7 @@ void 		*astarg
 
   return ECA_NORMAL;
 }
-
+#endif
 
 
 
@@ -2256,7 +2262,7 @@ int ca_request_event(evid monix)
 	}
 
 	/* msg header	 */
-	msg.m_header.m_cmmd = htons(IOC_EVENT_ADD);
+	msg.m_header.m_cmmd = htons(CA_PROTO_EVENT_ADD);
 	msg.m_header.m_available = monix->id;
 	msg.m_header.m_type = htons(monix->type);
 	msg.m_header.m_count = htons(count);
@@ -2445,7 +2451,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 {
 	int		status;
 	chid   		chix = monix->chan;
-	struct extmsg 	hdr;
+	caHdr 	hdr;
 	evid		lkup;
 
 	/*
@@ -2499,7 +2505,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 		piiu = chix->piiu;
 
 		/* msg header	 */
-		hdr.m_cmmd = htons(IOC_EVENT_CANCEL);
+		hdr.m_cmmd = htons(CA_PROTO_EVENT_CANCEL);
 		hdr.m_available = monix->id;
 		hdr.m_type = htons(chix->type);
 		hdr.m_count = htons(chix->count);
@@ -2545,7 +2551,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	int				status;
 	evid   				monix;
 	struct ioc_in_use 		*piiu = chix->piiu;
-	struct extmsg 			hdr;
+	caHdr 			hdr;
 	enum channel_state		old_chan_state;
 
 	LOOSECHIXCHK(chix);
@@ -2631,7 +2637,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	 */
 
 	/* msg header	 */
-	hdr.m_cmmd = htons(IOC_CLEAR_CHANNEL);
+	hdr.m_cmmd = htons(CA_PROTO_CLEAR_CHANNEL);
 	hdr.m_available = chix->cid;
 	hdr.m_cid = chix->id.sid;
 	hdr.m_type = htons(0);
@@ -2771,18 +2777,12 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 
 
 		/*
-		 * If we are no longer waiting any significant
-		 * delay then return 
-		 * (dont wait forever for an itsy bitsy
-		 * delay which will no be updated if
-		 * select is called with no delay)
-		 *
-		 * current time is only updated by
-		 * cac_select_io() if we specify
-		 * at least 1 usec to wait
-		 *
+		 * If we are not waiting for any significant delay
+		 * then force the delay to zero so that we avoid
+		 * scheduling delays (which can be substantial
+		 * on some os)
 		 */
-		if (remaining <= (1.0/USEC_PER_SEC)) {
+		if (remaining <= (1.0/CLOCKS_PER_SEC)) {
 			if(early){
 				ca_pend_io_cleanup();
 				ca_static->ca_flush_pending = TRUE;
@@ -2881,7 +2881,7 @@ LOCAL	void ca_pend_io_cleanup()
 		piiu;
 		piiu = (IIU *) piiu->node.next){
 
-		struct extmsg hdr;
+		caHdr hdr;
 
 		if(piiu == piiuCast || !piiu->conn_up){
 			continue;
@@ -2890,7 +2890,7 @@ LOCAL	void ca_pend_io_cleanup()
 		piiu->cur_read_seq++;
 
 		hdr = nullmsg;
-		hdr.m_cmmd = htons(IOC_READ_SYNC);
+		hdr.m_cmmd = htons(CA_PROTO_READ_SYNC);
 		cac_push_msg(piiu, &hdr, NULL);
 	}
 	UNLOCK;
@@ -2955,6 +2955,31 @@ void epicsShareAPI ca_signal(long ca_status,char *message)
 
 
 /*
+ * ca_message (long ca_status)
+ *
+ * - if it is an unknown error code then it possible
+ * that the error string generated below 
+ * will be overwritten before (or while) the caller
+ * of this routine is calling this routine
+ * (if they call this routine again).
+ */
+const char *ca_message(long ca_status)
+{
+	unsigned msgNo = CA_EXTRACT_MSG_NO(ca_status);
+
+  	if( msgNo < NELEMENTS(ca_message_text) ){
+		return ca_message_text[msgNo];
+	}
+	else {
+		sprintf(ca_static->ca_new_err_code_msg_buf, 
+	"new CA message number %u known only by server - see caerr.h", 
+			msgNo);
+		return ca_static->ca_new_err_code_msg_buf; 
+	}
+}
+
+
+/*
  * ca_signal_with_file_and_lineno()
  */
 void epicsShareAPI ca_signal_with_file_and_lineno(
@@ -2975,16 +3000,11 @@ int		lineno)
 		"Fatal"
 		};
 
-  if( CA_EXTRACT_MSG_NO(ca_status) >= NELEMENTS(ca_message_text) ){
-    message = "corrupt status";
-    ca_status = ECA_INTERNAL;
-  }
-
   ca_printf(
 "CA.Client.Diagnostic..............................................\n");
 
   ca_printf(
-"    Message: \"%s\"\n", ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);
+"    Message: \"%s\"\n", ca_message(ca_status));
 
   if(message)
     ca_printf(
@@ -3030,7 +3050,7 @@ int		lineno)
  */
 void ca_busy_message(struct ioc_in_use *piiu)
 {
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 
 	if(!piiu){
 		return;
@@ -3043,7 +3063,7 @@ void ca_busy_message(struct ioc_in_use *piiu)
 		return;
 
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_EVENTS_OFF);
+	hdr.m_cmmd = htons(CA_PROTO_EVENTS_OFF);
 	
 	cac_push_msg(piiu, &hdr, NULL);
 
@@ -3057,7 +3077,7 @@ void ca_busy_message(struct ioc_in_use *piiu)
  */
 void ca_ready_message(struct ioc_in_use *piiu)
 {
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 
 	if(!piiu){
 		return;
@@ -3071,7 +3091,7 @@ void ca_ready_message(struct ioc_in_use *piiu)
 	}
 
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_EVENTS_ON);
+	hdr.m_cmmd = htons(CA_PROTO_EVENTS_ON);
 	
 	cac_push_msg(piiu, &hdr, NULL);
 
@@ -3087,14 +3107,14 @@ void ca_ready_message(struct ioc_in_use *piiu)
 int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 {
 	int		status;
-	struct extmsg  	*phdr;
+	caHdr  	*phdr;
 
 	status = cac_alloc_msg_no_flush (piiu, sizeof(*phdr), &phdr);
 	if (status != ECA_NORMAL) {
 		return status;
 	}
 
-	phdr->m_cmmd = htons(IOC_ECHO);
+	phdr->m_cmmd = htons(CA_PROTO_ECHO);
 	phdr->m_type = htons(0);
 	phdr->m_count = htons(0);
 	phdr->m_cid = htons(0);
@@ -3118,9 +3138,9 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
  */
 void noop_msg(struct ioc_in_use *piiu)
 {
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 
-	hdr.m_cmmd = htons(IOC_NOOP);
+	hdr.m_cmmd = htons(CA_PROTO_NOOP);
 	hdr.m_type = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_cid = htons(0);
@@ -3141,7 +3161,7 @@ void noop_msg(struct ioc_in_use *piiu)
 void issue_client_host_name(struct ioc_in_use *piiu)
 {
 	unsigned	size;
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 	char		*pName;
 
 	if(!piiu){
@@ -3170,7 +3190,7 @@ void issue_client_host_name(struct ioc_in_use *piiu)
 	pName =	ca_static->ca_pHostName, 
 	size = strlen(pName)+1;
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_HOST_NAME);
+	hdr.m_cmmd = htons(CA_PROTO_HOST_NAME);
 	hdr.m_postsize = size;
 	
 	cac_push_msg(piiu, &hdr, pName);
@@ -3188,7 +3208,7 @@ void issue_client_host_name(struct ioc_in_use *piiu)
 void issue_identify_client(struct ioc_in_use *piiu)
 {
 	unsigned	size;
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 	char		*pName;
 
 	if(!piiu){
@@ -3217,7 +3237,7 @@ void issue_identify_client(struct ioc_in_use *piiu)
 	pName =	ca_static->ca_pUserName, 
 	size = strlen(pName)+1;
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_CLIENT_NAME);
+	hdr.m_cmmd = htons(CA_PROTO_CLIENT_NAME);
 	hdr.m_postsize = size;
 	
 	cac_push_msg(piiu, &hdr, pName);
@@ -3234,7 +3254,7 @@ void issue_identify_client(struct ioc_in_use *piiu)
  */
 void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 {
-	struct extmsg  	hdr;
+	caHdr  	hdr;
 	unsigned	size;
 	char		*pName;
 
@@ -3249,7 +3269,7 @@ void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 		return;
 
 	hdr = nullmsg;
-	hdr.m_cmmd = htons(IOC_CLAIM_CIU);
+	hdr.m_cmmd = htons(CA_PROTO_CLAIM_CIU);
 
 	if(CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
 		hdr.m_cid = pchan->cid;

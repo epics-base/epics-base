@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.33  1995/11/29  19:19:05  jhill
+ * Added $log$
+ *
  */
 
 static char *sccsId = "@(#)$Id$";
@@ -142,7 +145,7 @@ void ca_repeater()
 #endif
 
 	while(TRUE){
-		struct extmsg	*pMsg;
+		caHdr	*pMsg;
 
     		size = recvfrom(	
 				sock,
@@ -167,7 +170,7 @@ void ca_repeater()
 			continue;
 		}
 
-		pMsg = (struct extmsg *) buf;
+		pMsg = (caHdr *) buf;
 
 		/*
 		 * both zero length message and a registration message
@@ -268,24 +271,29 @@ LOCAL SOCKET makeSocket(unsigned short port)
 		return sock;
 	}
 
-	status = setsockopt(	sock,	
-				SOL_SOCKET,
-				SO_REUSEADDR,
-				(char *)&true,
-				sizeof(true));
-	if(status<0){
-		ca_printf(	"%s: set socket option failed\n", 
-				__FILE__);
-	}
+	/*
+	 * no need to bind if unconstrained
+	 */
+	if (port != PORT_ANY) {
+		status = setsockopt(	sock,	
+					SOL_SOCKET,
+					SO_REUSEADDR,
+					(char *)&true,
+					sizeof(true));
+		if (status<0) {
+			ca_printf("%s: set socket option failed because \"%s\"\n", 
+					__FILE__, strerror(MYERRNO));
+		}
 
-      	memset((char *)&bd, 0, sizeof(bd));
-      	bd.sin_family = AF_INET;
-      	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = htons(port);	
-      	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
-     	if(status<0){
-		socket_close(sock);
-		return INVALID_SOCKET;
+		memset((char *)&bd, 0, sizeof(bd));
+		bd.sin_family = AF_INET;
+		bd.sin_addr.s_addr = INADDR_ANY;	
+		bd.sin_port = htons(port);	
+		status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
+		if(status<0){
+			socket_close(sock);
+			return INVALID_SOCKET;
+		}
 	}
 
 	return sock;
@@ -301,16 +309,22 @@ struct sockaddr_in 	*pFrom)
 {
   	int			status;
   	struct one_client	*pclient;
-	struct extmsg		confirm;
-	struct extmsg		noop;
+	caHdr			confirm;
+	caHdr			noop;
+
+	if (pFrom->sin_family != AF_INET) {
+		return;
+	}
 
 	for(	pclient = (struct one_client *) ellFirst(&client_list);
 		pclient;
 		pclient = (struct one_client *) ellNext(&pclient->node)){
 
 		if(	pFrom->sin_port == pclient->from.sin_port &&
-			pFrom->sin_addr.s_addr ==  pclient->from.sin_addr.s_addr)
+			pFrom->sin_addr.s_addr ==  
+				pclient->from.sin_addr.s_addr) {
 			break;
+		}
 	}		
 
 	if(!pclient){
@@ -322,7 +336,7 @@ struct sockaddr_in 	*pFrom)
 		}
 
 		pclient->sock = makeSocket(PORT_ANY);
-		if (!pclient->sock) {
+		if (pclient->sock==INVALID_SOCKET) {
 			free(pclient);
 			ca_printf("%s: no client sock because \"%s\"\n",
 					__FILE__,
@@ -336,8 +350,9 @@ struct sockaddr_in 	*pFrom)
 		if (status<0) {
 			socket_close(pclient->sock);
 			free(pclient);
-			ca_printf("%s: unable to connect client sock\n",
-					__FILE__);
+			ca_printf(
+			"%s: unable to connect client sock because \"%s\"\n",
+				__FILE__, strerror(errno));
 			return;
 		}
 
@@ -381,7 +396,7 @@ struct sockaddr_in 	*pFrom)
 	 * accumulate sockets when there are no beacons
 	 */
 	memset((char *)&noop, '\0', sizeof(noop));
-	confirm.m_cmmd = htons(IOC_NOOP);
+	confirm.m_cmmd = htons(CA_PROTO_NOOP);
 	fanOut(pFrom, (char *)&noop, sizeof(noop));
 }
 

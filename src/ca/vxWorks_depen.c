@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.21  1995/10/18  16:44:36  jhill
+ * select time out must be greater than a vxWorks tick
+ *
  * Revision 1.20  1995/10/12  01:35:31  jhill
  * Moved cac_mux_io() to iocinf.c
  *
@@ -672,14 +675,16 @@ int ca_import_cancel(int tid)
         TVIU    *ptviu;
 
         LOCK;
-        ptviu = (TVIU *) ca_static->ca_taskVarList.node.next;
-        while(ptviu){
+        ptviu = (TVIU *) ellFirst(&ca_static->ca_taskVarList);
+        while (ptviu) {
                 if(ptviu->tid == tid){
                         break;
                 }
+        	ptviu = (TVIU *) ellNext(&ptviu->node);
         }
 
         if(!ptviu){
+        	UNLOCK;
                 return ECA_NOCACTX;
         }
 

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.51  1995/12/19  19:33:07  jhill
+ * function prototype changes
+ *
  * Revision 1.50  1995/10/18  16:45:40  jhill
  * Use recast delay greater than one vxWorks tick
  *
@@ -102,6 +105,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <stdlib.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include <shareLib.h>
 
@@ -124,7 +128,7 @@ HDRVERSIONID(iocinfh, "$Id$")
  * CA private includes 
  */
 #include "addrList.h"
-#include "iocmsg.h"
+#include "caProto.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -132,10 +136,6 @@ HDRVERSIONID(iocinfh, "$Id$")
 
 #ifndef max 
 #define max(A,B) ((A)<(B)?(B):(A))
-#endif
-
-#ifndef NBBY
-# define NBBY 8 /* number of bits per byte */
 #endif
 
 #define MSEC_PER_SEC 	1000L
@@ -159,7 +159,7 @@ if(!ca_static){ \
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
 
 #define SETPENDRECV		{pndrecvcnt++;}
-#define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){cac_io_done(LOCK); POST_IO_EV;}}
+#define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){POST_IO_EV;}}
 
 struct udpmsglog{
 	long                    nbytes;
@@ -178,12 +178,6 @@ struct putCvrtBuf{
  */
 #define CA_DO_SENDS	(1<<0)
 #define CA_DO_RECVS	(1<<1)	
-
-struct pending_io_event{
-  	ELLNODE			node;
-  	void			(*io_done_sub)();
-  	void			*io_done_arg;
-};
 
 typedef struct timeval ca_time;
 
@@ -287,7 +281,6 @@ typedef struct caclient_put_notify{
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
 
 #if defined(vxWorks)
-#	define io_done_sem	(ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
 #	define event_lock	(ca_static->ca_event_lock)
@@ -358,7 +351,7 @@ typedef struct ioc_in_use{
 	unsigned long		curDataBytes;
 	struct ca_buffer	send;
 	struct ca_buffer	recv;
-	struct extmsg		curMsg;
+	caHdr			curMsg;
 	struct ca_static	*pcas;
 	void			*pCurData;
 	void			(*sendBytes)(struct ioc_in_use *);
@@ -451,12 +444,12 @@ struct  ca_static{
 	unsigned short	ca_server_port;
 	unsigned short	ca_repeater_port;
 	char		ca_sprintf_buf[256];
+	char		ca_new_err_code_msg_buf[128u];
 	unsigned 	ca_post_msg_active:1; 
 	unsigned 	ca_manage_conn_active:1; 
 	unsigned 	ca_repeater_contacted:1;
 	unsigned 	ca_flush_pending:1;
 #if defined(vxWorks)
-	SEM_ID		ca_io_done_sem;
 	SEM_ID		ca_blockSem;
 	SEM_ID		ca_client_lock; 
 	SEM_ID		ca_event_lock; /* dont allow events to preempt */
@@ -541,7 +534,6 @@ void	flow_control(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
 void	ca_repeater(void);
 void 	cac_recv_task(int tid);
-void 	cac_io_done(int lock);
 void 	ca_sg_init(void);
 void	ca_sg_shutdown(struct ca_static *ca_temp);
 int 	cac_select_io(struct timeval *ptimeout, int flags);
@@ -629,7 +621,7 @@ ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(evid pIOBlock);
 void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler (void);
-void cacDisconnectChannel(chid chix, int fullDisconnect);
+void cacDisconnectChannel(chid chix, enum channel_state state);
 int caSendMsgPending(void);
 
 /*

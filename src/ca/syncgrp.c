@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.18  1995/10/12  01:36:39  jhill
+ * New ca_flush_io() mechanism
+ *
  * Revision 1.17  1995/09/29  22:13:59  jhill
  * check for nill dbr pointer
  *
@@ -332,6 +335,42 @@ int epicsShareAPI ca_sg_reset(CA_SYNC_GID gid)
 
 
 /*
+ * ca_sg_stat
+ */
+int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid)
+{
+	CASG 	*pcasg;
+	CASGOP	*pcasgop;
+
+	LOCK;
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
+	if(!pcasg || pcasg->magic != CASG_MAGIC){
+		UNLOCK;
+		printf("Bad Sync Group Id\n");
+		return ECA_BADSYNCGRP;
+	}
+	UNLOCK;
+
+	printf("Sync Group: id=%u, magic=%lu, opPend=%u, seqNo=%u\n",
+		pcasg->id, pcasg->magic, pcasg->opPendCount,
+		pcasg->seqNo);
+
+	LOCK;
+	pcasgop = (CASGOP *) ellFirst(&ca_static->activeCASGOP);
+	while (pcasgop) {
+		if (pcasg->id == pcasgop->id) {
+			printf(
+			"pending op: id=%u pVal=%x, magic=%lu seqNo=%u\n",
+			pcasgop->id, (unsigned)pcasgop->pValue, pcasgop->magic,
+			pcasgop->seqNo);
+		}
+		pcasgop = (CASGOP *) ellNext(&pcasgop->node);
+	}
+	return ECA_NORMAL;
+}
+
+
+/*
  * ca_sg_test
  */
 int epicsShareAPI ca_sg_test(CA_SYNC_GID gid)
@@ -353,8 +392,6 @@ int epicsShareAPI ca_sg_test(CA_SYNC_GID gid)
 		return ECA_IODONE;
 	}
 }
-
-
 
 
 /*
@@ -410,6 +447,7 @@ void 		*pvalue)
 
 	if(status != ECA_NORMAL){
                 LOCK;
+		assert(pcasg->opPendCount>=1u);
                 pcasg->opPendCount--;
                 ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
                 ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
@@ -475,6 +513,7 @@ void 		*pvalue)
 
 	if(status != ECA_NORMAL){
 		LOCK;
+		assert(pcasg->opPendCount>=1u);
 		pcasg->opPendCount--;
 		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
 		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
@@ -511,7 +550,7 @@ LOCAL void io_complete(struct event_handler_args args)
 	}
 
 	assert(pcasg->magic == CASG_MAGIC);
-
+	assert(pcasg->id == pcasgop->id);
 
 	if(!(args.status&CA_M_SUCCESS)){
 		ca_printf(
@@ -534,9 +573,8 @@ LOCAL void io_complete(struct event_handler_args args)
 	/*
  	 * decrement the outstanding IO ops count
 	 */
-	if(pcasg->opPendCount!=0){
-		pcasg->opPendCount--;
-	}
+	assert(pcasg->opPendCount>=1u);
+	pcasg->opPendCount--;
 
 	UNLOCK;
 

@@ -29,7 +29,10 @@
 /*	.12 110194 joh	improved search scheduling			*/
 /*			(dont send all chans in a block)		*/
 /*									*/
-/* $Log$								*/
+/* $Log$
+ * Revision 1.34  1995/08/22  00:19:21  jhill
+ * use current time var to init time stamp in a beacon hash entry
+ *								*/
 /*_begin								*/
 /************************************************************************/
 /*									*/
@@ -208,7 +211,7 @@ void manage_conn(int silent)
 	/*
 	 * set the retry interval
 	 */
-	assert(ca_static->ca_search_retry < NBBY*sizeof(idelay));
+	assert(ca_static->ca_search_retry < CHAR_BIT*sizeof(idelay));
 	idelay = 1;
 	idelay = idelay << ca_static->ca_search_retry;
 	delay = idelay * CA_RECAST_DELAY; /* sec */	

@@ -18,9 +18,9 @@
 #include <iocinf.h>
 
 processThread::processThread (cac *pcacIn) :
-    osiThread ("CAC process", threadGetStackSize(threadStackSmall), threadPriorityMedium), 
-    pcac (pcacIn),
-    shutDown (false)
+    osiThread ( "CACprocess", threadGetStackSize (threadStackSmall), threadPriorityMedium ), 
+    pcac ( pcacIn ),
+    shutDown ( false )
 {
     this->start ();
 }

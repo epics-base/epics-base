@@ -1,6 +1,9 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
+INC += asDbLib.h
+INC += asLib.h
+
 LIBSRCS += asLib.c
 
 asIoc_SRCS += asDbLib.c

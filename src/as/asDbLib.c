@@ -37,7 +37,6 @@ of this distribution.
 #include "asDbLib.h"
 #include "dbCommon.h"
 #include "recSup.h"
-#include "subRecord.h"
 
 extern struct dbBase *pdbbase;
 
@@ -104,6 +103,11 @@ int asSetSubstitutions(char *substitutions)
     return(0);
 }
 
+static void asSpcAsCallback(struct dbCommon *precord)
+{
+    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
+}
+    
 static long asInitCommon(void)
 {
     long	status;
@@ -126,7 +130,10 @@ static long asInitCommon(void)
     }
     status = asInitFile(pacf,psubstitutions);
     if(asActive) {
-	if(!asWasActive) asDbAddRecords();
+	if(!asWasActive) {
+            dbSpcAsRegisterCallback(asSpcAsCallback);
+            asDbAddRecords();
+        }
 	asCaStart();
     }
     return(status);
@@ -180,52 +187,6 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
 	}
 	asInitTheadId = 0;
     }
-    return(0);
-}
-
-/*Interface to subroutine record*/
-static void myCallback(CALLBACK *pcallback)
-{
-    ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
-    subRecord	*precord;
-    struct rset		*prset;
-
-    callbackGetUser(precord,pcallback);
-    prset=(struct rset *)(precord->rset);
-    precord->val = 0.0;
-    if(pasdbcallback->status) {
-	recGblSetSevr(precord,READ_ALARM,precord->brsv);
-	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
-    }
-    dbScanLock((dbCommon *)precord);
-    (*prset->process)((dbCommon *)precord);
-    dbScanUnlock((dbCommon *)precord);
-}
-
-long asSubInit(subRecord *precord,int pass)
-{
-    ASDBCALLBACK *pcallback;
-
-    pcallback = (ASDBCALLBACK *)callocMustSucceed(
-        1,sizeof(ASDBCALLBACK),"asSubInit");
-    precord->dpvt = (void *)pcallback;
-    callbackSetCallback(myCallback,&pcallback->callback);
-    callbackSetUser(precord,&pcallback->callback);
-    return(0);
-}
-
-long asSubProcess(subRecord *precord)
-{
-    ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
-
-    if(!precord->pact && precord->val==1.0)  {
-	db_post_events(precord,&precord->val,DBE_VALUE);
-	callbackSetPriority(precord->prio,&pcallback->callback);
-	asInitAsyn(pcallback);
-	precord->pact=TRUE;
-	return(1);
-    }
-    db_post_events(precord,&precord->val,DBE_VALUE);
     return(0);
 }
 

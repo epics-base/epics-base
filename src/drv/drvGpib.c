@@ -262,6 +262,7 @@ reportGpib(void)
 STATIC void rebootFunc(void)
 {
   int 		i;
+  char		probeValue;
 
   if (ibDebug)
     printf("NI-GPIB driver resetting\n");
@@ -270,12 +271,14 @@ STATIC void rebootFunc(void)
   {
     if (pNiLink[i] != NULL)
     {
-      pNiLink[i]->ibregs->ch1.ccr = 0;		/* stop all channel operation */
-      pNiLink[i]->ibregs->ch0.ccr = 0;		/* stop all channel operation */
+      probeValue = 0;
+      vxMemProbe(&(pNiLink[i]->ibregs->ch1.ccr), WRITE, 1, &probeValue);
+      vxMemProbe(&(pNiLink[i]->ibregs->ch0.ccr), WRITE, 1, &probeValue);
       taskDelay(1);				/* Let it settle */
-
-      pNiLink[i]->ibregs->cfg2 = 0;
-      pNiLink[i]->ibregs->cfg2 = D_LMR;
+  
+      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, &probeValue);
+      probeValue = D_LMR;
+      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, &probeValue);
     }
   }
   taskDelay(2);

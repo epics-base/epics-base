@@ -18,7 +18,6 @@
 
 #include "server.h"
 #include "casChannelIIL.h" // casChannelI in line func
-#include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casCtxIL.h" // casCtx in line func
 
 //
@@ -39,9 +38,8 @@ casAsyncWriteIO::casAsyncWriteIO(const casCtx &ctx) :
 //
 casAsyncWriteIO::~casAsyncWriteIO()
 {
-	this->lock();
+    epicsGuard < casCoreClient > guard ( this->client );
 	this->chan.removeAsyncIO(*this);
-	this->unlock();
 }
 
 //

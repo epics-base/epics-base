@@ -420,7 +420,7 @@ private:
 // (this will eventually support direct communication
 // between the client lib and the server lib)
 //
-class casCoreClient : public epicsMutex, public ioBlocked, 
+class casCoreClient : public ioBlocked, 
 	public casEventSys {
 
 	//
@@ -450,6 +450,9 @@ public:
 
 	virtual caStatus accessRightsResponse(casChannelI *);
 
+    void lock ();
+    void unlock ();
+
 	//
 	// one virtual function for each CA request type that has
 	// asynchronous completion
@@ -476,11 +479,13 @@ public:
     virtual ca_uint32_t datagramSequenceNumber () const;
 
 protected:
+    epicsMutex mutex;
 	casCtx ctx;
 	unsigned char asyncIOFlag;
 
 private:
-	tsDLList<casAsyncIOI>   ioInProgList;
+	tsDLList < casAsyncIOI > ioInProgList;
+
 	casCoreClient ( const casCoreClient & );
 	casCoreClient & operator = ( const casCoreClient & );
 };

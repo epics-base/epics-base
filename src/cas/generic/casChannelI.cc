@@ -17,7 +17,6 @@
 
 #include "server.h"
 #include "casEventSysIL.h" // casEventSys inline func
-#include "casAsyncIOIIL.h" // casAsyncIOI inline func
 #include "casPVIIL.h" // casPVI inline func
 #include "casCtxIL.h" // casCtx inline func
 
@@ -43,7 +42,7 @@ void casChannelI::bindToClientI ( casCoreClient & client, casPVI & pv, caResId c
 //
 casChannelI::~casChannelI()
 {	
-    this->lock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
     
     //
     // cancel any pending asynchronous IO 
@@ -79,8 +78,6 @@ casChannelI::~casChannelI()
     // force PV delete if this is the last channel attached
     //
     this->pPV->deleteSignal();
-    
-    this->unlock();
 }
 
 //
@@ -88,7 +85,7 @@ casChannelI::~casChannelI()
 //
 void casChannelI::clearOutstandingReads()
 {
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
 
     //
     // cancel any pending asynchronous IO 
@@ -103,8 +100,6 @@ void casChannelI::clearOutstandingReads()
 		iterIO->serverDestroyIfReadOP();
 		iterIO = tmp;
 	}
-
-	this->unlock();
 }
 
 //
@@ -112,7 +107,7 @@ void casChannelI::clearOutstandingReads()
 //
 void casChannelI::show ( unsigned level ) const
 {
-	this->lock ();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
 
 	tsDLIterConst <casMonitor> iter = this->monitorList.firstIter ();
 	if ( iter.valid () ) {
@@ -125,8 +120,6 @@ void casChannelI::show ( unsigned level ) const
 	}
 
 	this->show ( level );
-
-	this->unlock ();
 }
 
 //
@@ -201,7 +194,7 @@ void casChannelI::destroyClientNotify ()
 //
 tsDLIter <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
 {
-	this->lock ();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
 	tsDLIter <casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
 		if ( clientIdIn == iter->getClientId () ) {
@@ -209,7 +202,6 @@ tsDLIter <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
 		}
 		iter++;
 	}
-	this->unlock ();
 	return iter;
 }
 

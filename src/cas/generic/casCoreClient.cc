@@ -18,7 +18,6 @@
 
 #include "server.h"
 #include "caServerIIL.h"	// caServerI in line func
-#include "casAsyncIOIIL.h"	// casAsyncIOI in line func
 #include "casEventSysIL.h"	// casEventSys in line func
 #include "casCtxIL.h"		// casCtx in line func
 #include "inBufIL.h"		// inBuf in line func
@@ -43,7 +42,8 @@ casCoreClient::~casCoreClient()
 		errlogPrintf ("CAS: Connection Terminated\n");
     }
 
-	this->lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
 	tsDLIter<casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
 
 	//
@@ -58,8 +58,6 @@ casCoreClient::~casCoreClient()
         iterIO->serverDestroy ();
 		iterIO = tmpIO;
 	}
-
-	this->unlock();
 }
 
 //
@@ -81,11 +79,11 @@ caStatus casCoreClient::disconnectChan(caResId)
 
 void casCoreClient::show (unsigned level) const
 {
-	printf ("Core client\n");
-	this->casEventSys::show (level);
-	printf ("\t%d io ops in progess\n", this->ioInProgList.count());
-	this->ctx.show (level);
-    this->epicsMutex::show (level);
+	printf ( "Core client\n" );
+	this->casEventSys::show ( level );
+	printf ( "\t%d io ops in progess\n", this->ioInProgList.count() );
+	this->ctx.show ( level );
+    this->mutex.show ( level );
 }
 
 //

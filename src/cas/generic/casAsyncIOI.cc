@@ -20,7 +20,6 @@
 #include "caServerIIL.h" // caServerI in line func
 #include "casCoreClientIL.h" // casCoreClient in line func
 #include "casEventSysIL.h" // casEventSys in line func
-#include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casCtxIL.h" // casCtx in line func
 
 //
@@ -78,8 +77,6 @@ casAsyncIOI::casAsyncIOI (casCoreClient &clientIn) :
 //
 casAsyncIOI::~casAsyncIOI()
 {
-	this->lock();
-
 	if (!this->serverDelete) {
 		fprintf(stderr, 
 	"WARNING: An async IO operation was deleted prematurely\n");
@@ -93,6 +90,8 @@ casAsyncIOI::~casAsyncIOI()
 	"WARNING: by deleting the async IO object.\n");
 	}
 
+    epicsGuard < casCoreClient > guard ( this->client );
+
 	//
 	// pulls itself out of the event queue
 	// if it is installed there
@@ -100,8 +99,6 @@ casAsyncIOI::~casAsyncIOI()
 	if (this->inTheEventQueue) {
 		this->client.casEventSys::removeFromEventQueue(*this);
 	}
-
-	this->unlock();
 }
 
 //
@@ -110,26 +107,22 @@ casAsyncIOI::~casAsyncIOI()
 //
 caStatus casAsyncIOI::cbFunc(class casEventSys &)
 {
-	casCoreClient	&theClient = this->client;
-	caStatus 	status;
-
 	//
 	// Use the client's lock here (which is the same as the
 	// asynch IO's lock) here because we need to leave the lock
 	// applied around the destroy() call here.
 	//
-	theClient.lock();
+    epicsGuard < casCoreClient > guard ( this->client );
 
 	this->inTheEventQueue = FALSE;
 
-	status = this->cbFuncAsyncIO();
+	caStatus status = this->cbFuncAsyncIO();
 
 	if (status == S_cas_sendBlocked) {
 		//
 		// causes this op to be pushed back on the queue 
 		//
 		this->inTheEventQueue = TRUE;
-		this->unlock();
 		return status;
 	}
 	else if (status != S_cas_success) {
@@ -143,8 +136,6 @@ caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	// object here
 	//
 	this->serverDestroy();
-
-	theClient.unlock();
 
 	return S_cas_success;
 }
@@ -164,7 +155,7 @@ caStatus casAsyncIOI::postIOCompletionI()
 		return S_cas_redundantPost;
 	}
 
-	this->lock();
+    epicsGuard < casCoreClient > guard ( this->client );
 
 	if (this->duplicate) {
 		errMessage(S_cas_badParameter, 
@@ -173,7 +164,6 @@ caStatus casAsyncIOI::postIOCompletionI()
 		// dont use "this" after potentially destroying the
 		// object here
 		//
-		this->unlock();
 		this->serverDestroy();
 		return S_cas_redundantPost;
 	}
@@ -182,7 +172,6 @@ caStatus casAsyncIOI::postIOCompletionI()
 	// verify that they dont post completion more than once
 	//
 	if (this->posted) {
-		this->unlock();
 		return S_cas_redundantPost;
 	}
 
@@ -197,8 +186,6 @@ caStatus casAsyncIOI::postIOCompletionI()
 	//
 	this->inTheEventQueue = TRUE;
 	this->client.casEventSys::addToEventQueue(*this);
-
-	this->unlock();
 
 	return S_cas_success;
 }
@@ -228,13 +215,11 @@ epicsShareFunc bool casAsyncIOI::readOP() const
 //
 void casAsyncIOI::serverDestroyIfReadOP()
 {
-    casCoreClient &clientCopy = this->client;
-    
     //
     // client lock used because this object's
     // lock may be destroyed
     //
-    clientCopy.lock();
+    epicsGuard < casCoreClient > guard ( this->client );
     
     if (this->readOP()) {
         this->serverDestroy();
@@ -244,8 +229,6 @@ void casAsyncIOI::serverDestroyIfReadOP()
     // NO REF TO THIS OBJECT BELOW HERE
     // BECAUSE OF THE DELETE ABOVE
     //
-    
-    clientCopy.unlock();
 }
 
 //

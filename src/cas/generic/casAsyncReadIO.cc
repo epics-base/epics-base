@@ -17,7 +17,6 @@
 
 
 #include "server.h"
-#include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casChannelIIL.h" // casChannelI in line func
 #include "casCtxIL.h" // casCtxI in line func
 
@@ -38,11 +37,8 @@ casAsyncReadIO::casAsyncReadIO ( const casCtx & ctx ) :
 //
 casAsyncReadIO::~casAsyncReadIO ()
 {
-	this->lock();
-
+    epicsGuard < casCoreClient > guard ( this->client );
 	this->chan.removeAsyncIO ( *this );
-
-	this->unlock();
 }
 
 //
@@ -51,11 +47,12 @@ casAsyncReadIO::~casAsyncReadIO ()
 caStatus casAsyncReadIO::postIOCompletion (caStatus completionStatusIn,
 				const gdd &valueRead)
 {
-	this->lock();
-	this->pDD = &valueRead;
-	this->unlock();
+    {
+        epicsGuard < casCoreClient > guard ( this->client );
+	    this->pDD = &valueRead;
+	    this->completionStatus = completionStatusIn;
+    }
 
-	this->completionStatus = completionStatusIn;
 	return this->postIOCompletionI();
 }
 

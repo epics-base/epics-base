@@ -48,25 +48,22 @@ void casEventSys::show(unsigned level) const
 //
 casEventSys::~casEventSys()
 {
-	casEvent 	*pE;
-	
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
-	if (this->pPurgeEvent != NULL) {
-		this->eventLogQue.remove(*this->pPurgeEvent);
+	if ( this->pPurgeEvent != NULL ) {
+		this->eventLogQue.remove ( *this->pPurgeEvent );
 		delete this->pPurgeEvent;
 	}
 
 	/*
 	 * all active event blocks must be canceled first
 	 */
-	casVerify (this->numEventBlocks==0);
+	casVerify ( this->numEventBlocks == 0 );
 
-	while ( (pE = this->eventLogQue.get()) ) {
+	while ( casEvent *pE = this->eventLogQue.get () ) {
 		delete pE;
 	}
 
-	this->mutex.unlock();
 }
 
 //
@@ -74,10 +71,9 @@ casEventSys::~casEventSys()
 //
 void casEventSys::installMonitor()
 {
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->numEventBlocks++;
 	this->maxLogEntries += averageEventEntries;
-	this->mutex.unlock();
 }
 
 //
@@ -85,73 +81,71 @@ void casEventSys::installMonitor()
 //
 void casEventSys::removeMonitor() 
 {       
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	assert (this->numEventBlocks>=1u);
 	this->numEventBlocks--;
 	this->maxLogEntries -= averageEventEntries;
-	this->mutex.unlock();
 }
 
 //
 // casEventSys::process()
 //
-casProcCond casEventSys::process()
+casProcCond casEventSys::process ()
 {
-	casEvent	*pEvent;
-	caStatus	status;
 	casProcCond	cond = casProcOk;
-	unsigned long	nAccepted = 0u;
+	unsigned long nAccepted = 0u;
 
-	this->mutex.lock();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
 
-	while (!this->dontProcess) {
+	    while (!this->dontProcess) {
 
-		pEvent = this->eventLogQue.get();
-		if (pEvent==NULL) {
-			break;
-		}
+		    casEvent *pEvent = this->eventLogQue.get ();
+		    if ( pEvent == NULL ) {
+			    break;
+		    }
 
-		//
-		// lock must remain on until the event queue
-		// event is called
-		//
+		    //
+		    // lock must remain on until the event queue
+		    // event is called
+		    //
 
-		status = pEvent->cbFunc(*this);
-		if (status==S_cas_success) {
-			/*
-			 * only remove it after it was accepted by the
-			 * client
-			 */
-			nAccepted++;
-		}
-		else if (status==S_cas_sendBlocked) {
-			/*
-			 * not accepted so return to the head of the list
-			 * (we will try again later)
-			 */
-			this->pushOnToEventQueue(*pEvent);
-			cond = casProcOk;
-			break;
-		}
-		else if (status==S_cas_disconnect) {
-			cond = casProcDisconnect;
-			break;
-		}
-		else {
-			errMessage(status, "- unexpected error processing event");
-			cond = casProcDisconnect;
-			break;
-		}
-  	}
+		    caStatus status = pEvent->cbFunc ( *this );
+		    if ( status == S_cas_success ) {
+			    /*
+			    * only remove it after it was accepted by the
+			    * client
+			    */
+			    nAccepted++;
+		    }
+		    else if ( status == S_cas_sendBlocked ) {
+			    /*
+			    * not accepted so return to the head of the list
+			    * (we will try again later)
+			    */
+			    this->pushOnToEventQueue ( *pEvent );
+			    cond = casProcOk;
+			    break;
+		    }
+		    else if ( status == S_cas_disconnect ) {
+			    cond = casProcDisconnect;
+			    break;
+		    }
+		    else {
+			    errMessage ( status, 
+                    "- unexpected error processing event" );
+			    cond = casProcDisconnect;
+			    break;
+		    }
+  	    }
 
-	/*
-	 * call flush function if they provided one 
-	 */
-	if (nAccepted > 0u) {
-		this->eventFlush ();
-	}
-
-	this->mutex.unlock();
+	    /*
+	    * call flush function if they provided one 
+	    */
+	    if ( nAccepted > 0u ) {
+		    this->eventFlush ();
+	    }
+    }
 
 	//
 	// allows the derived class to be informed that it
@@ -162,7 +156,7 @@ casProcCond casEventSys::process()
 	// the caller may be using the client's "this"
 	// pointer.
 	//
-	if (this->destroyPending) {
+	if ( this->destroyPending ) {
 		cond = casProcDisconnect;
 	}
 
@@ -174,28 +168,28 @@ casProcCond casEventSys::process()
 // 
 void casEventSys::eventsOn()
 {
-	this->mutex.lock();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
 
-	//
-	// allow multiple events for each monitor
-	//
-	this->replaceEvents = FALSE;
+	    //
+	    // allow multiple events for each monitor
+	    //
+	    this->replaceEvents = FALSE;
 
-	//
-	// allow the event queue to be processed
-	//
-	this->dontProcess = FALSE;
+	    //
+	    // allow the event queue to be processed
+	    //
+	    this->dontProcess = FALSE;
 
-	//
-	// remove purge event if it is still pending
-	//
-	if (this->pPurgeEvent != NULL) {
-		this->eventLogQue.remove (*this->pPurgeEvent);
-		delete this->pPurgeEvent;
-		this->pPurgeEvent = NULL;
-	}
-
-	this->mutex.unlock();
+	    //
+	    // remove purge event if it is still pending
+	    //
+	    if ( this->pPurgeEvent != NULL ) {
+		    this->eventLogQue.remove ( *this->pPurgeEvent );
+		    delete this->pPurgeEvent;
+		    this->pPurgeEvent = NULL;
+	    }
+    }
 
     //
     // wakes up the event queue consumer
@@ -208,7 +202,7 @@ void casEventSys::eventsOn()
 //
 caStatus casEventSys::eventsOff()
 {
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
 	//
 	// new events will replace the last event on
@@ -221,9 +215,9 @@ caStatus casEventSys::eventsOff()
 	// only after we have purged the event queue
 	// for this particular client
 	//
-	if (this->pPurgeEvent==NULL) {
+	if ( this->pPurgeEvent == NULL ) {
 		this->pPurgeEvent = new casEventPurgeEv;
-		if (this->pPurgeEvent==NULL) {
+		if ( this->pPurgeEvent == NULL ) {
 			//
 			// if there is no room for the event then immediately
 			// stop processing and sending events to the client
@@ -232,11 +226,9 @@ caStatus casEventSys::eventsOff()
 			this->dontProcess = TRUE;
 		}
 		else {
-			this->casEventSys::addToEventQueue(*this->pPurgeEvent);
+			this->casEventSys::addToEventQueue ( *this->pPurgeEvent );
 		}
 	}
-
-	this->mutex.unlock();
 
 	return S_cas_success;
 }
@@ -274,12 +266,13 @@ casRes * casEventSys::lookupRes ( const caResId &, casResType )
 //
 // casEventPurgeEv::cbFunc()
 // 
-caStatus casEventPurgeEv::cbFunc (casEventSys &evSys)
+caStatus casEventPurgeEv::cbFunc ( casEventSys & evSys )
 {
-	evSys.mutex.lock();
-	evSys.dontProcess = TRUE;
-	evSys.pPurgeEvent = NULL;
-	evSys.mutex.unlock();
+    {
+        epicsGuard < epicsMutex > guard ( evSys.mutex );
+	    evSys.dontProcess = TRUE;
+	    evSys.pPurgeEvent = NULL;
+    }
 
 	delete this;
 

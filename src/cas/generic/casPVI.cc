@@ -37,44 +37,42 @@ casPVI::casPVI () :
 //
 // casPVI::~casPVI()
 //
-casPVI::~casPVI()
+casPVI::~casPVI ()
 {
     this->destroyInProgress = true;
 
 	//
 	// only relevant if we are attached to a server
 	//
-	if (this->pCAS!=NULL) {
+	if ( this->pCAS != NULL ) {
 
-		this->lock();
+        epicsGuard < caServerI > guard ( * this->pCAS );
 
-		this->pCAS->removeItem(*this);
+		this->pCAS->removeItem ( *this );
 
 		//
 		// delete any attached channels
 		//
-		tsDLIter <casPVListChan> iter = this->chanList.firstIter ();
+		tsDLIter < casPVListChan > iter = this->chanList.firstIter ();
 		while ( iter.valid () ) {
-			tsDLIter<casPVListChan> tmp = iter;
+			tsDLIter < casPVListChan > tmp = iter;
 			++tmp;
 			iter->destroyClientNotify ();
 			iter = tmp;
 		}
-
-		this->unlock();
 	}
 
 	//
 	// all outstanding IO should have been deleted
 	// when we destroyed the channels
 	//
-	casVerify (this->nIOAttached==0u);
+	casVerify ( this->nIOAttached == 0u );
 
 	//
 	// all monitors should have been deleted
 	// when we destroyed the channels
 	//
-	casVerify (this->nMonAttached==0u);
+	casVerify ( this->nMonAttached == 0u );
 }
 
 //
@@ -83,13 +81,11 @@ casPVI::~casPVI()
 //
 void casPVI::deleteSignal ()
 {
-	caServerI *pLocalCAS = this->pCAS;
-
 	//
 	// if we are not attached to a server then the
 	// following steps are not relevant
 	//
-	if (pLocalCAS) {
+	if ( this->pCAS ) {
 		//
 		// We dont take the PV lock here because
 		// the PV may be destroyed and we must
@@ -101,18 +97,16 @@ void casPVI::deleteSignal ()
 		// lock when we add a new channel (and the
 		// PV lock is realy the server's lock)
 		//
-		pLocalCAS->lock();
+        epicsGuard < caServerI > guard ( * this->pCAS );
 
-		if (this->chanList.count()==0u) {
-            pLocalCAS->removeItem (*this);
+		if ( this->chanList.count() == 0u ) {
+            this->pCAS->removeItem ( *this );
             this->pCAS = NULL;
 			this->destroy ();
 			//
 			// !! dont access self after destroy !!
 			//
 		}
-
-		pLocalCAS->unlock();
 	}
 }
 
@@ -312,15 +306,14 @@ caStatus casPVI::registerEvent ()
 {
 	caStatus status;
 
-	this->lock();
+    epicsGuard < caServerI > guard ( * this->pCAS );
 	this->nMonAttached++;
-	if (this->nMonAttached==1u) {
+	if ( this->nMonAttached == 1u ) {
 		status = this->interestRegister ();
 	}
 	else {
 		status = S_cas_success;
 	}
-	this->unlock();
 
 	return status;
 }
@@ -330,16 +323,15 @@ caStatus casPVI::registerEvent ()
 //
 void casPVI::unregisterEvent()
 {
-	this->lock();
+    epicsGuard < caServerI > guard ( * this->pCAS );
 	this->nMonAttached--;
 	//
 	// Dont call casPV::interestDelete() when we are in 
 	// casPVI::~casPVI() (and casPV no longr exists)
 	//
-	if ( this->nMonAttached==0u && !this->destroyInProgress ) {
+	if ( this->nMonAttached == 0u && !this->destroyInProgress ) {
         this->interestDelete();
 	}
-	this->unlock();
 }
 
 //

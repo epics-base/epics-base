@@ -22,6 +22,17 @@
 #include "caServerIIL.h" // caServerI in line func 
 #include "casCtxIL.h" // casEventSys in line func 
 
+
+inline void casCoreClient::lock ()
+{
+    this->mutex.lock ();
+}
+
+inline void casCoreClient::unlock ()
+{
+    this->mutex.unlock ();
+}
+
 //
 // casCoreClient::getCAS()
 //
@@ -35,9 +46,8 @@ inline caServerI &casCoreClient::getCAS() const
 //
 inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 {
-	this->lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->ioInProgList.add(ioIn);
-	this->unlock();
 }
 
 //
@@ -45,10 +55,9 @@ inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 //
 inline void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
 {
-	this->lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	this->ioInProgList.remove(ioIn);
 	this->ctx.getServer()->ioBlockedList::signal();
-	this->unlock();
 }
 
 #endif // casCoreClientIL_h

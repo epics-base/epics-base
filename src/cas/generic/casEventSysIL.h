@@ -35,18 +35,20 @@ inline casEventSys::casEventSys () :
 //
 // casEventSys::addToEventQueue()
 //
-inline void casEventSys::addToEventQueue(casEvent &event)
+inline void casEventSys::addToEventQueue ( casEvent & event )
 {
-	this->mutex.lock();
-	this->eventLogQue.add(event);
-	this->mutex.unlock();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+	    this->eventLogQue.add ( event );
+    }
+
 	//
 	// wake up the event queue consumer only if
 	// we are not supressing events to a client that
 	// is in flow control
 	//
-	if (!this->dontProcess) {
-		this->eventSignal();
+	if ( ! this->dontProcess ) {
+		this->eventSignal ();
 	}
 }
 
@@ -59,37 +61,34 @@ inline void casEventSys::setDestroyPending()
     //
     // wakes up the event queue consumer
     //
-    this->eventSignal();
+    this->eventSignal ();
 }
 
 //
 // casEventSys::insertEventQueue()
 //
-inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
+inline void casEventSys::insertEventQueue( casEvent & insert, casEvent & prevEvent )
 {
-	this->mutex.lock();
-	this->eventLogQue.insertAfter(insert, prevEvent);
-	this->mutex.unlock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventLogQue.insertAfter ( insert, prevEvent );
 }
  
 //
 // casEventSys::pushOnToEventQueue()
 //
-inline void casEventSys::pushOnToEventQueue (casEvent &event)
+inline void casEventSys::pushOnToEventQueue ( casEvent & event )
 {
-	this->mutex.lock ();
-	this->eventLogQue.push (event);
-	this->mutex.unlock ();
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventLogQue.push ( event );
 }
  
 //
 // casEventSys::removeFromEventQueue()
 //
-inline void casEventSys::removeFromEventQueue(casEvent &event)
+inline void casEventSys::removeFromEventQueue ( casEvent & event )
 {
-	this->mutex.lock();
-	this->eventLogQue.remove(event);
-	this->mutex.unlock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	this->eventLogQue.remove ( event );
 }
  
 //
@@ -97,7 +96,7 @@ inline void casEventSys::removeFromEventQueue(casEvent &event)
 //
 inline bool casEventSys::full() // X aCC 361
 {
-	if (this->replaceEvents || this->eventLogQue.count()>=this->maxLogEntries) {
+	if ( this->replaceEvents || this->eventLogQue.count() >= this->maxLogEntries ) {
 		return true;
 	}
 	else {

@@ -217,21 +217,20 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
     bufSizeT nBytesRequired;
     outBufClient::flushCondition cond;
 
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 
-    if (this->ctxRecursCount>0) {
-        this->mutex.unlock();
+    if ( this->ctxRecursCount > 0 ) {
         return outBufClient::flushNone;
     }
 
-	if (spaceRequired>this->bufSize) {
+	if ( spaceRequired > this->bufSize ) {
 		nBytesRequired = this->stack;
 	}
 	else {
         bufSizeT stackPermitted;
 
 		stackPermitted = this->bufSize - spaceRequired;
-		if (this->stack>stackPermitted) {
+		if ( this->stack > stackPermitted ) {
 			nBytesRequired = this->stack - stackPermitted;
 		}
 		else {
@@ -239,12 +238,12 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
 		}
 	}
 
-	cond = this->client.xSend(this->pBuf, this->stack, 
-			nBytesRequired, nBytes);
-    if (cond==outBufClient::flushProgress) {
+	cond = this->client.xSend ( this->pBuf, this->stack, 
+			nBytesRequired, nBytes );
+    if ( cond == outBufClient::flushProgress ) {
 		bufSizeT len;
 
-		if (nBytes >= this->stack) {
+		if ( nBytes >= this->stack ) {
 			this->stack = 0u;	
 		}
 		else {
@@ -252,40 +251,39 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
 			//
 			// memmove() is ok with overlapping buffers
 			//
-			memmove (this->pBuf, &this->pBuf[nBytes], len);
+			memmove ( this->pBuf, &this->pBuf[nBytes], len );
 			this->stack = len;
 		}
 
-		if (this->client.getDebugLevel()>2u) {
+		if ( this->client.getDebugLevel () > 2u ) {
 		    char buf[64];
-			this->client.hostName (buf, sizeof(buf));
-			errlogPrintf ("CAS: Sent a %d byte reply to %s\n",
-				nBytes, buf);
+			this->client.hostName ( buf, sizeof ( buf ) );
+			errlogPrintf ( "CAS: Sent a %d byte reply to %s\n",
+				nBytes, buf );
 		}
     }
-	this->mutex.unlock();
 	return cond;
 }
 
 //
 // outBuf::pushCtx ()
 //
-const outBufCtx outBuf::pushCtx (bufSizeT headerSize, // X aCC 361
+const outBufCtx outBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
                                  bufSizeT maxBodySize,
-                                 void *&pHeader)
+                                 void *&pHeader ) 
 {
     bufSizeT totalSize = headerSize + maxBodySize;
     caStatus status;
 
-    status = this->allocRawMsg (totalSize, &pHeader);
-    if (status!=S_cas_success) {
+    status = this->allocRawMsg ( totalSize, & pHeader );
+    if ( status != S_cas_success ) {
         return outBufCtx ();
     }
-    else if (this->ctxRecursCount>=UINT_MAX) {
+    else if ( this->ctxRecursCount >= UINT_MAX ) {
         return outBufCtx ();
     }
     else {
-        outBufCtx result (*this);
+        outBufCtx result ( *this );
         this->pBuf = this->pBuf + this->stack + headerSize;
         this->stack = 0;
         this->bufSize = maxBodySize;

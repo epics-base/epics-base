@@ -40,7 +40,7 @@ casStrmClient::casStrmClient ( caServerI &serverInternal ) :
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
 
-	this->lock ();
+    epicsGuard < casCoreClient > guard ( * this );
 
 	this->ctx.getServer()->installClient ( this );
 
@@ -50,8 +50,6 @@ casStrmClient::casStrmClient ( caServerI &serverInternal ) :
         throw std::bad_alloc();
     }
     *this->pUserName= '\0';
-
-	this->unlock ();
 }
 
 //
@@ -59,7 +57,7 @@ casStrmClient::casStrmClient ( caServerI &serverInternal ) :
 //
 casStrmClient::~casStrmClient()
 {
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this );
 
 	//
 	// remove this from the list of connected clients
@@ -83,8 +81,6 @@ casStrmClient::~casStrmClient()
 		iter->destroyNoClientNotify();
 		iter = tmp;
 	}
-
-	this->unlock();
 }
 
 //
@@ -855,7 +851,7 @@ caStatus casStrmClient::hostNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this );
 
 	if (this->pHostName) {
 		delete [] this->pHostName;
@@ -867,8 +863,6 @@ caStatus casStrmClient::hostNameAction()
 		iter->setOwner(this->pUserName, this->pHostName);
 		++iter;
 	}
-
-	this->unlock();
 
 	return S_cas_success;
 }
@@ -903,7 +897,7 @@ caStatus casStrmClient::clientNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this );
 
 	if (this->pUserName) {
 		delete [] this->pUserName;
@@ -915,7 +909,6 @@ caStatus casStrmClient::clientNameAction()
 		iter->setOwner ( this->pUserName, this->pHostName );
 		++iter;
 	}
-	this->unlock();
 
 	return S_cas_success;
 }
@@ -977,7 +970,7 @@ caStatus casStrmClient::claimChannelAction()
 	// prevent problems such as the PV being deleted before the
 	// channel references it
 	//
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this );
 	this->asyncIOFlag = 0u;
 
 	//
@@ -1005,7 +998,6 @@ caStatus casStrmClient::claimChannelAction()
 	else {
 		status = this->createChanResponse(*mp, pvar);
 	}
-	this->unlock();
 	return status;
 }
 
@@ -1293,11 +1285,11 @@ caStatus casStrmClient::eventAddAction ()
 
 	if ( status == S_cas_success ) {
 
-		pMonitor = new casClientMon(*pciu, mp->m_available, 
-					mp->m_count, mp->m_dataType, mask, *this);
-		if (!pMonitor) {
-			status = this->sendErr(mp, ECA_ALLOCMEM, NULL);
-			if (status==S_cas_success) {
+		pMonitor = new casClientMon ( *pciu, mp->m_available, 
+					mp->m_count, mp->m_dataType, mask, this->mutex );
+		if ( ! pMonitor ) {
+			status = this->sendErr ( mp, ECA_ALLOCMEM, NULL );
+			if ( status==S_cas_success ) {
 				//
 				// If we cant allocate space for a monitor then
 				// delete (disconnect) the channel
@@ -1485,13 +1477,14 @@ caStatus casStrmClient::readSyncAction()
 	// any pending asynchronous IO associated with 
 	// a read.
 	//
-	this->lock();
-	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
-	while ( iter.valid () ) {
-		iter->clearOutstandingReads ();
-		++iter;
-	}
-	this->unlock();
+    {
+        epicsGuard < casCoreClient > guard ( * this );
+	    tsDLIter <casChannelI> iter = this->chanList.firstIter ();
+	    while ( iter.valid () ) {
+		    iter->clearOutstandingReads ();
+		    ++iter;
+	    }
+    }
 
     status = this->out.copyInHeader ( mp->m_cmmd, 0,
         mp->m_dataType, mp->m_count, 
@@ -1861,10 +1854,9 @@ inline bool caServerI::roomForNewChannel() const
 //
 void casStrmClient::installChannel(casChannelI &chan)
 {
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this );
 	this->getCAS().installItem (chan);
 	this->chanList.add(chan);
-	this->unlock();
 }
  
 //
@@ -1872,13 +1864,10 @@ void casStrmClient::installChannel(casChannelI &chan)
 //
 void casStrmClient::removeChannel(casChannelI &chan)
 {
-	casRes *pRes;
-	
-	this->lock();
-	pRes = this->getCAS().removeItem(chan);
+    epicsGuard < casCoreClient > guard ( * this );
+	casRes * pRes = this->getCAS().removeItem(chan);
 	assert (&chan == (casChannelI *)pRes);
 	this->chanList.remove(chan);
-	this->unlock();
 }
 
 //

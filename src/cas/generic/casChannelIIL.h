@@ -23,35 +23,16 @@
 #include "casEventSysIL.h"
 
 //
-// casChannelI::lock()
-//
-inline void casChannelI::lock() const
-{
-	this->pClient->lock();
-}
-
-//
-// casChannelI::unlock()
-//
-inline void casChannelI::unlock() const
-{
-	this->pClient->unlock();
-}
-
-//
 // casChannelI::postEvent()
 //
 inline void casChannelI::postEvent (const casEventMask &select, const gdd &event)
 {
-	this->lock();
-
+    epicsGuard < casCoreClient > guard ( * this->pClient );
     tsDLIter<casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
         iter->post (select, event);
 	    ++iter;
     }
-
-	this->unlock();
 }
 
 
@@ -60,13 +41,11 @@ inline void casChannelI::postEvent (const casEventMask &select, const gdd &event
 //
 inline void casChannelI::deleteMonitor(casMonitor &mon)
 {
-	casRes *pRes;
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
 	this->getClient().casEventSys::removeMonitor();
 	this->monitorList.remove(mon);
-	pRes = this->getClient().getCAS().removeItem(mon);
-	this->unlock();
-	assert(&mon == (casMonitor *)pRes);
+	casRes *pRes = this->getClient().getCAS().removeItem(mon);
+	assert ( & mon == (casMonitor *) pRes );
 }
 
 //
@@ -74,11 +53,10 @@ inline void casChannelI::deleteMonitor(casMonitor &mon)
 //
 inline void casChannelI::addMonitor(casMonitor &mon)
 {
-	this->lock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
 	this->monitorList.add(mon);
 	this->getClient().getCAS().installItem(mon);
 	this->getClient().casEventSys::installMonitor();
-	this->unlock();
 }
 
 //
@@ -100,9 +78,8 @@ inline void casChannelI::destroyNoClientNotify()
 //
 inline void casChannelI::installAsyncIO(casAsyncIOI &io)
 {
-        this->lock();
-        this->ioInProgList.add(io);
-        this->unlock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
+    this->ioInProgList.add(io);
 }
 
 //
@@ -110,10 +87,9 @@ inline void casChannelI::installAsyncIO(casAsyncIOI &io)
 //
 inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
 {
-        this->lock();
-        this->ioInProgList.remove(io);
-        this->pPV->unregisterIO();
-        this->unlock();
+    epicsGuard < casCoreClient > guard ( * this->pClient );
+    this->ioInProgList.remove(io);
+    this->pPV->unregisterIO();
 }
 
 //

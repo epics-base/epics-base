@@ -147,18 +147,17 @@ const inBufCtx inBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
 //
 // inBuf::popCtx ()
 //
-bufSizeT inBuf::popCtx (const inBufCtx &ctx) // X aCC 361
+bufSizeT inBuf::popCtx ( const inBufCtx &ctx ) // X aCC 361
 {
     if ( ctx.stat==inBufCtx::pushCtxSuccess ) {
-        this->mutex.lock();
+        epicsGuard < epicsMutex > guard ( this->mutex );
         bufSizeT bytesRemoved = this->nextReadIndex;
         this->pBuf = ctx.pBuf;
         this->bufSize = ctx.bufSize;
         this->bytesInBuffer = ctx.bytesInBuffer;
         this->nextReadIndex = ctx.nextReadIndex;
-        assert (this->ctxRecursCount>0);
+        assert ( this->ctxRecursCount > 0 );
         this->ctxRecursCount--;
-        this->mutex.unlock();
         return bytesRemoved;
     }
     else {

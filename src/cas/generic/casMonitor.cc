@@ -55,22 +55,19 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 //
 casMonitor::~casMonitor()
 {
-	casCoreClient &client = this->ciu.getClient();
-	
-	this->mutex.lock();
+    epicsGuard < epicsMutex > guard ( this->mutex );
 	
 	this->disable();
 	
 	//
 	// remove from the event system
 	//
-	if (this->ovf) {
-		client.removeFromEventQueue (this->overFlowEvent);
+	if ( this->ovf ) {
+	    casCoreClient &client = this->ciu.getClient();
+		client.removeFromEventQueue ( this->overFlowEvent );
 	}
 
-	this->ciu.deleteMonitor(*this);
-	
-	this->mutex.unlock();
+	this->ciu.deleteMonitor ( * this );
 }
 
 //
@@ -78,18 +75,15 @@ casMonitor::~casMonitor()
 //
 void casMonitor::enable()
 {
-	caStatus status;
-	
-	this->mutex.lock();
-	if (!this->enabled && this->ciu.readAccess()) {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	if ( ! this->enabled && this->ciu.readAccess() ) {
 		this->enabled = true;
-		status = this->ciu.getPVI().registerEvent();
-		if (status) {
-			errMessage(status,
-				"Server tool failed to register event\n");
+		caStatus status = this->ciu.getPVI().registerEvent();
+		if ( status ) {
+			errMessage ( status,
+				"Server tool failed to register event\n" );
 		}
 	}
-	this->mutex.unlock();
 }
 
 //
@@ -97,12 +91,11 @@ void casMonitor::enable()
 //
 void casMonitor::disable()
 {
-	this->mutex.lock();
-	if (this->enabled) {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	if ( this->enabled ) {
 		this->enabled = false;
 		this->ciu.getPVI().unregisterEvent();
 	}
-	this->mutex.unlock();
 }
 
 //
@@ -110,20 +103,18 @@ void casMonitor::disable()
 //
 void casMonitor::push (const smartConstGDDPointer &pNewValue)
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+	
 	casCoreClient	&client = this->ciu.getClient ();
-	casMonEvent 	*pLog;
-	char			full;
-	
-	this->mutex.lock();
-	
     client.getCAS().incrEventsPostedCounter ();
 
 	//
 	// get a new block if we havent exceeded quotas
 	//
-	full = ( this->nPend >= individualEventEntries ) 
+	bool full = ( this->nPend >= individualEventEntries ) 
 		|| client.casEventSys::full ();
-	if (!full) {
+	casMonEvent * pLog;
+	if ( ! full ) {
 		pLog = new casMonEvent (*this, pNewValue);
 		if (pLog) {
 			this->nPend++; // X aCC 818
@@ -133,44 +124,42 @@ void casMonitor::push (const smartConstGDDPointer &pNewValue)
 		pLog = NULL;
 	}
 	
-	if (this->ovf) {
-		if (pLog) {
+	if ( this->ovf ) {
+		if ( pLog ) {
 			//
 			// swap values
 			// (ugly - but avoids purify ukn sym type problem)
 			// (better to create a temp event object)
 			//
 			smartConstGDDPointer pValue = this->overFlowEvent.getValue ();
-            if (!pValue) {
-                assert (0);
+            if ( ! pValue ) {
+                assert ( 0 );
             }
 			this->overFlowEvent = *pLog;
-			pLog->assign (*this, pValue);
-			client.insertEventQueue (*pLog, this->overFlowEvent);
+			pLog->assign ( *this, pValue );
+			client.insertEventQueue ( *pLog, this->overFlowEvent );
 		}
 		else {
 			//
 			// replace the value with the current one
 			//
-			this->overFlowEvent.assign (*this, pNewValue);
+			this->overFlowEvent.assign ( *this, pNewValue );
 		}
-		client.removeFromEventQueue (this->overFlowEvent);
-		pLog = &this->overFlowEvent;
+		client.removeFromEventQueue ( this->overFlowEvent );
+		pLog = & this->overFlowEvent;
 	}
-	else if (!pLog) {
+	else if ( ! pLog ) {
 		//
 		// no log block
 		// => use the over flow block in the event structure
 		//
 		this->ovf = true;
-		this->overFlowEvent.assign (*this, pNewValue);
+		this->overFlowEvent.assign ( * this, pNewValue );
 		this->nPend++; // X aCC 818
 		pLog = &this->overFlowEvent;
 	}
 	
-	client.addToEventQueue (*pLog);
-	
-	this->mutex.unlock ();
+	client.addToEventQueue ( * pLog );
 }
 
 //
@@ -182,19 +171,20 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	smartConstGDDPointer pVal;
 	
 	pVal = pEV->getValue ();
-    if (!pVal) {
-        assert (0);
+    if ( ! pVal ) {
+        assert ( 0 );
     }
 	
-	this->mutex.lock ();
-	status = this->callBack (*pVal);
-	this->mutex.unlock ();
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+	    status = this->callBack ( * pVal );
+    }
 	
 	//
 	// if the event isnt accepted we will try
 	// again later (and the event returns to the queue)
 	//
-	if (status) {
+	if ( status ) {
 		return status;
 	}
 	
@@ -207,8 +197,8 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	// delete event object if it isnt a cache entry
 	// saved in the call back object
 	//
-	if (pEV == &this->overFlowEvent) {
-		assert (this->ovf);
+	if ( pEV == &this->overFlowEvent ) {
+		assert ( this->ovf );
 		this->ovf = false;
 		pEV->clear();
 	}
@@ -224,13 +214,13 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 //
 // casMonitor::show(unsigned level)
 //
-void casMonitor::show(unsigned level) const
+void casMonitor::show ( unsigned level ) const
 {
-        if (level>1u) {
-            printf(
+    if ( level > 1u ) {
+        printf (
 "\tmonitor type=%u count=%lu client id=%u enabled=%u OVF=%u nPend=%u\n",
-                        dbrType, nElem, clientId, enabled, ovf, nPend);
-		    this->mask.show(level);
-        }
+                    dbrType, nElem, clientId, enabled, ovf, nPend );
+		this->mask.show ( level );
+    }
 }
 

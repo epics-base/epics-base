@@ -230,15 +230,12 @@ public:
 	caServer *getCAS() const;
 
 protected:
-	casCoreClient &client;
+	casCoreClient & client;
 
 	//
 	// place notification of IO completion on the event queue
 	//
 	caStatus postIOCompletionI();
-
-	void lock();
-	void unlock();
 
 private:
 	unsigned inTheEventQueue:1;
@@ -328,9 +325,6 @@ public:
 
 	epicsShareFunc virtual casResType resourceType () const;
 
-	void lock () const;
-	void unlock () const;
-
 	void destroyNoClientNotify ();
     void destroyClientNotify ();
 
@@ -391,9 +385,9 @@ class casPV;
 // casPVI
 //
 class casPVI : 
-public tsSLNode<casPVI>,  // server resource table installation 
-public casRes,		// server resource table installation 
-public ioBlockedList	// list of clients io blocked on this pv
+    public tsSLNode<casPVI>,  // server resource table installation 
+    public casRes,		// server resource table installation 
+    public ioBlockedList	// list of clients io blocked on this pv
 {
 public:
     casPVI ();
@@ -480,9 +474,6 @@ private:
     unsigned                    nMonAttached;
     unsigned                    nIOAttached;
     bool                        destroyInProgress;
-   
-    inline void lock () const;
-    inline void unlock () const;
 
     epicsShareFunc virtual void destroy (); // casPVI destructor noop
 	casPVI ( const casPVI & );

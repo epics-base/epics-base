@@ -31,55 +31,21 @@ inline caServerI *casPVI::getPCAS() const
 }
 
 //
-// casPVI::lock()
-//
-inline void casPVI::lock() const
-{
-	//
-	// NOTE:
-	// if this lock becomes something else besides the
-	// server's lock then look carefully at the 
-	// comment in casPVI::deleteSignal()
-	//
-	if (this->pCAS) {
-		this->pCAS->lock();
-	}
-	else {
-		fprintf (stderr, "PV lock call when not attached to server?\n");
-	}
-}
-
-//
-// casPVI::unlock()
-//
-inline void casPVI::unlock() const
-{
-	if (this->pCAS) {
-		this->pCAS->unlock();
-	}
-	else {
-		fprintf (stderr, "PV unlock call when not attached to server?\n");
-	}
-}
-
-//
 // casPVI::installChannel()
 //
-inline void casPVI::installChannel(casPVListChan &chan)
+inline void casPVI::installChannel ( casPVListChan & chan )
 {
-	this->lock();
+    epicsGuard < caServerI > guard ( * this->pCAS );
 	this->chanList.add(chan);
-	this->unlock();
 }
  
 //
 // casPVI::removeChannel()
 //
-inline void casPVI::removeChannel(casPVListChan &chan)
+inline void casPVI::removeChannel ( casPVListChan & chan )
 {
-	this->lock();
+    epicsGuard < caServerI > guard ( * this->pCAS );
 	this->chanList.remove(chan);
-	this->unlock();
 }
 
 //
@@ -93,11 +59,11 @@ inline void casPVI::unregisterIO()
 //
 // casPVI::bestDBRType()
 //
-inline caStatus  casPVI::bestDBRType (unsigned &dbrType) // X aCC 361
+inline caStatus  casPVI::bestDBRType ( unsigned &dbrType ) // X aCC 361
 {
-	unsigned bestAIT = this->bestExternalType();
+	unsigned bestAIT = this->bestExternalType ();
 
-	if (bestAIT<NELEMENTS(gddAitToDbr)&&bestAIT!=aitEnumInvalid) {
+	if ( bestAIT < NELEMENTS ( gddAitToDbr ) && bestAIT != aitEnumInvalid ) {
 		dbrType = gddAitToDbr[bestAIT];
 		return S_cas_success;
 	}
@@ -117,17 +83,16 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType) // X aCC 361
 //
 inline void casPVI::postEvent (const casEventMask &select, const gdd &event)
 {
-	if (this->nMonAttached==0u) {
+	if ( this->nMonAttached == 0u ) {
 		return;
 	}
 
-	this->lock();
-	tsDLIter<casPVListChan> iter = this->chanList.firstIter ();
+    epicsGuard < caServerI > guard ( * this->pCAS );
+	tsDLIter < casPVListChan > iter = this->chanList.firstIter ();
     while ( iter.valid () ) {
 		iter->postEvent ( select, event );
 		++iter;
 	}
-	this->unlock();
 }
 
 //

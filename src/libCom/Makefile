@@ -206,6 +206,7 @@ SRCS_vxWorks += iocClock.c
 #
 LIBRARY=Com
 SYS_DLL_LIBS := ws2_32 advapi32 user32
+Com_RCS_WIN32 = Com.rc
 
 # For R3.13 compatibility only
 OBJLIB_vxWorks=Com

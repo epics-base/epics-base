@@ -2348,15 +2348,18 @@ more than one thread.</p>
 <h2><a name="Command">Command Line Utilities</a></h2>
 
 <h3><a name="acctst">acctst</a></h3>
-<pre>acctst &lt;PV name&gt; [channel duplication count] [test repetition count]</pre>
+<pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count] 
+                      [test repetition count] [enable preemptive callback]</pre>
 
 <h4>Description</h4>
 
 <p>Channel Access Client Library regression test.</p>
 
 <p>Test failure is indicated if the program stops prior to printing "test
-complete". If unspecified, the channel duplication count is 20000. If
-unspecified, the test repetition count is once only.</p>
+complete". If unspecified the progress logging level is zero, and no messages
+are printed while the test is progressing. If unspecified, the channel
+duplication count is 20000. If unspecified, the test repetition count is once
+only. If unspecified, preemptive callback is disabled.</p>
 
 <h3><a name="catime">catime</a></h3>
 <pre>catime &lt;PV name&gt; [channel count] [append number to pv name if true]</pre>

@@ -47,22 +47,36 @@ unsigned accessUpdateCount;
 unsigned connectionUpdateCount;
 unsigned getCallbackCount;
 
-void showProgressBegin ()
+void showProgressBegin ( const char *pTestName, unsigned interestLevel )
 {
-    printf ( "{" );
+    if ( interestLevel > 0 ) {
+        if ( interestLevel > 1 ) {
+            printf ( "%s ", pTestName );
+        }
+        printf ( "{" );
+    }
     fflush ( stdout );
 }
 
-void showProgressEnd ()
+void showProgressEnd ( unsigned interestLevel )
 {
-    printf ( "}" );
-    fflush ( stdout );
+    if ( interestLevel > 0 ) {
+        printf ( "}" );
+        if ( interestLevel > 1 ) {
+            printf ( "\n" );
+        }
+        else {
+            fflush ( stdout );
+        }
+    }
 }
 
-void showProgress ()
+void showProgress ( unsigned interestLevel )
 {
-    printf ( "." );
-    fflush ( stdout );
+    if ( interestLevel > 0 ) {
+        printf ( "." );
+        fflush ( stdout );
+    }
 }
 
 void nUpdatesTester ( struct event_handler_args args )
@@ -77,7 +91,7 @@ void nUpdatesTester ( struct event_handler_args args )
     }
 }
 
-void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
+void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned interestLevel )
 {
     int status;
     struct dbr_ctrl_double currentVal;
@@ -87,7 +101,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     evid id;
     chid chan2;
 
-    showProgressBegin ();
+    showProgressBegin ( "monitorSubscriptionFirstUpdateTest", interestLevel );
 
     /*
      * verify that the first event arrives (with evid)
@@ -202,7 +216,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     status = ca_clear_channel ( chan2 );
     SEVCHK ( status, 0 );
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 void ioTesterGet ( struct event_handler_args args )
@@ -230,14 +244,14 @@ void ioTesterEvent ( struct event_handler_args args )
     }
 }
 
-void verifyMonitorSubscriptionFlushIO ( chid chan )
+void verifyMonitorSubscriptionFlushIO ( chid chan, unsigned interestLevel  )
 {
     int status;
     unsigned eventCount = 0u;
     unsigned waitCount = 0u;
     evid id;
 
-    showProgressBegin ();
+    showProgressBegin ( "verifyMonitorSubscriptionFlushIO", interestLevel );
 
     /*
      * verify that the first event arrives
@@ -258,7 +272,7 @@ void verifyMonitorSubscriptionFlushIO ( chid chan )
     status = ca_clear_event ( id );
     SEVCHK (status, 0);
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 void accessRightsStateChange ( struct access_rights_handler_args args )
@@ -352,12 +366,13 @@ void noopSubscriptionStateChange ( struct event_handler_args args )
  *
  * 6) verify subscription can be cleared by clearing the channel
  */
-void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsigned repetitionCount )
+void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, 
+                        unsigned repetitionCount, unsigned interestLevel )
 {
     int status;
     unsigned i, j;
 
-    showProgressBegin ();
+    showProgressBegin ( "verifyConnectionHandlerConnect", interestLevel );
 
     for ( i = 0; i < repetitionCount; i++ ) {
         subscriptionUpdateCount = 0u;
@@ -392,7 +407,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
         ca_flush_io ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         while ( connectionUpdateCount < chanCount || 
             getCallbackCount < chanCount ) {
@@ -416,7 +431,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
         ca_self_test ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         for ( j = 0u; j < chanCount; j += 2 ) {
             status = ca_clear_event ( pChans[j].subscription );
@@ -425,7 +440,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
         ca_self_test ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         for ( j = 0u; j < chanCount; j++ ) {
             status = ca_clear_channel ( pChans[j].channel );
@@ -434,10 +449,10 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
         ca_self_test ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
     }
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
@@ -461,14 +476,15 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
  * 6) verify that the pending IO count goes to zero
  * if the channel is deleted before it connects.
  */
-void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repetitionCount )
+void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, 
+                            unsigned repetitionCount, unsigned interestLevel )
 {
     int status;
     unsigned i, j;
     unsigned connections;
     unsigned backgroundConnCount = ca_get_ioc_connection_count ();
 
-    showProgressBegin ();
+    showProgressBegin ( "verifyBlockingConnect", interestLevel );
 
     i = 0;
     while ( backgroundConnCount > 1u ) {
@@ -506,7 +522,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             pChans[j].accessRightsHandlerInstalled = 1;
         }
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         for ( j = 0u; j < chanCount; j += 2 ) {
             status = ca_change_connection_event ( pChans[j].channel, connectionStateChange );
@@ -533,7 +549,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 
         ca_self_test ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         assert ( ca_test_io () == ECA_IODONE );
 
@@ -550,7 +566,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 
         ca_flush_io ();
 
-        showProgress ();
+        showProgress ( interestLevel );
 
         /*
          * verify that connections to IOC's that are 
@@ -566,7 +582,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
                 assert ( ++j < 100 );
             }
         }
-        showProgress ();
+        showProgress ( interestLevel );
     }
 
     for ( j = 0u; j < chanCount; j++ ) {
@@ -622,18 +638,18 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 
     ca_self_test ();
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * 1) verify that use of NULL evid does not cause problems
  * 2) verify clear before connect
  */
-void verifyClear ( appChan *pChans )
+void verifyClear ( appChan *pChans, unsigned interestLevel )
 {
     int status;
 
-    showProgressBegin ();
+    showProgressBegin ( "verofyClear", interestLevel );
 
     /*
      * verify channel clear before connect
@@ -658,20 +674,20 @@ void verifyClear ( appChan *pChans )
 
     status = ca_clear_channel ( pChans[0].channel );
     SEVCHK ( status, NULL );
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * grEnumTest
  */
-void grEnumTest ( chid chan )
+void grEnumTest ( chid chan, unsigned interestLevel )
 {
     struct dbr_gr_enum ge;
     unsigned count;
     int status;
     unsigned i;
 
-    showProgressBegin ();
+    showProgressBegin ( "grEnumTest", interestLevel );
 
     ge.no_str = -1;
 
@@ -690,13 +706,13 @@ void grEnumTest ( chid chan )
         }
         printf ("}\n");
     }
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * ctrlDoubleTest
  */
-void ctrlDoubleTest (chid chan)
+void ctrlDoubleTest ( chid chan, unsigned interestLevel )
 {
     struct dbr_ctrl_double *pCtrlDbl;
     dbr_double_t *pDbl;
@@ -717,7 +733,7 @@ void ctrlDoubleTest (chid chan)
         return;
     }
 
-    showProgressBegin ();
+    showProgressBegin ( "ctrlDoubleTest", interestLevel );
 
     size = sizeof (*pDbl)*ca_element_count(chan);
     pDbl = malloc (size);
@@ -762,13 +778,13 @@ void ctrlDoubleTest (chid chan)
 
     free (pCtrlDbl);
     free (pDbl);
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * ca_pend_io() must block
  */
-void verifyBlockInPendIO ( chid chan )
+void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
 {
     int status;
 
@@ -777,8 +793,7 @@ void verifyBlockInPendIO ( chid chan )
         dbr_float_t req;
         dbr_float_t resp;
 
-        showProgressBegin ();
-
+        showProgressBegin ( "verifyBlockInPendIO", interestLevel );
         req = 56.57f;
         resp = -99.99f;
         SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
@@ -809,7 +824,7 @@ void verifyBlockInPendIO ( chid chan )
     "get block test failed - val read %f\n", resp);
             assert(0);
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ("skipped pend IO block test - no read access\n");
@@ -880,7 +895,7 @@ void doubleTest ( chid chan, dbr_double_t beginValue,
  * the same analog value
  */
 void verifyAnalogIO ( chid chan, int dataType, double min, double max, 
-               int minExp, int maxExp, double epsilon )
+               int minExp, int maxExp, double epsilon, unsigned interestLevel )
 {
     int i;
     double incr;
@@ -900,7 +915,7 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
         return;
     }
 
-    showProgressBegin ();
+    showProgressBegin ( "verifyAnalogIO", interestLevel );
 
     epsil = epsilon * 4.0;
     base = min;
@@ -966,14 +981,14 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
             assert ( 0 );
         }
     }
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * Verify that we can write and then read back
  * the same DBR_LONG value
  */
-void verifyLongIO ( chid chan )
+void verifyLongIO ( chid chan, unsigned interestLevel  )
 {
     int status;
 
@@ -991,7 +1006,7 @@ void verifyLongIO ( chid chan )
 
     incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
     if ( incr >= 1 ) {
-        showProgressBegin ();
+        showProgressBegin ( "verifyLongIO", interestLevel );
         incr /= 1000;
         if ( incr == 0 ) {
             incr = 1;
@@ -1005,7 +1020,7 @@ void verifyLongIO ( chid chan )
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "strange limits configured for channel \"%s\"\n", ca_name (chan) );
@@ -1016,7 +1031,7 @@ void verifyLongIO ( chid chan )
  * Verify that we can write and then read back
  * the same DBR_SHORT value
  */
-void verifyShortIO ( chid chan )
+void verifyShortIO ( chid chan, unsigned interestLevel  )
 {
     int status;
 
@@ -1034,7 +1049,7 @@ void verifyShortIO ( chid chan )
 
     incr = (dbr_short_t) ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
     if ( incr >= 1 ) {
-        showProgressBegin ();
+        showProgressBegin ( "verifyShortIO", interestLevel );
 
         incr /= 1000;
         if ( incr == 0 ) {
@@ -1050,14 +1065,14 @@ void verifyShortIO ( chid chan )
             SEVCHK ( status, "get pend failed\n" );
             assert ( iter == rdbk );
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "Strange limits configured for channel \"%s\"\n", ca_name (chan) );
     }
 }
 
-void verifyHighThroughputRead ( chid chan )
+void verifyHighThroughputRead ( chid chan, unsigned interestLevel )
 {
     int status;
     unsigned i;
@@ -1068,34 +1083,34 @@ void verifyHighThroughputRead ( chid chan )
      */
     if ( ca_read_access (chan) ) {
         dbr_float_t temp;
-        showProgressBegin ();
+        showProgressBegin ( "verifyHighThroughputRead", interestLevel );
         for ( i=0; i<10000; i++ ) {
             status = ca_get ( DBR_FLOAT, chan, &temp );
             SEVCHK ( status ,NULL );
         }
         status = ca_pend_io (2000.0);
         SEVCHK ( status, NULL );
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "Skipped highthroughput read test - no read access\n" );
     }
 }
 
-void verifyHighThroughputWrite ( chid chan ) 
+void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  ) 
 {
     int status;
     unsigned i;
 
     if (ca_write_access ( chan ) ) {
-        showProgressBegin ();
+        showProgressBegin ( "verifyHighThroughputWrite", interestLevel );
         for ( i=0; i<10000; i++ ) {
             dbr_double_t fval = 3.3;
             status = ca_put ( DBR_DOUBLE, chan, &fval );
             SEVCHK ( status, NULL );
         }
         SEVCHK ( ca_pend_io (2000.0), NULL );
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else{
         printf("Skipped multiple put test - no write access\n");
@@ -1106,14 +1121,14 @@ void verifyHighThroughputWrite ( chid chan )
  * verify we dont jam up on many uninterrupted
  * get callback requests
  */
-void verifyHighThroughputReadCallback ( chid chan ) 
+void verifyHighThroughputReadCallback ( chid chan, unsigned interestLevel ) 
 {
     unsigned i;
     int status;
 
     if ( ca_read_access ( chan ) ) { 
         unsigned count = 0u;
-        showProgressBegin ();
+        showProgressBegin ( "verifyHighThroughputReadCallback", interestLevel );
         for ( i=0; i<10000; i++ ) {
             status = ca_array_get_callback (
                     DBR_FLOAT, 1, chan, nUpdatesTester, &count );
@@ -1124,7 +1139,7 @@ void verifyHighThroughputReadCallback ( chid chan )
             epicsThreadSleep ( 0.1 );
             ca_poll (); /* emulate typical GUI */
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "Skipped multiple get cb test - no read access\n" );
@@ -1135,14 +1150,14 @@ void verifyHighThroughputReadCallback ( chid chan )
  * verify we dont jam up on many uninterrupted
  * put callback request
  */
-void verifyHighThroughputWriteCallback ( chid chan ) 
+void verifyHighThroughputWriteCallback ( chid chan, unsigned interestLevel )
 {
     unsigned i;
     int status;
 
     if ( ca_write_access (chan) && ca_v42_ok (chan) ) {
         unsigned count = 0u;
-        showProgressBegin ();
+        showProgressBegin ( "verifyHighThroughputWriteCallback", interestLevel );
         for ( i=0; i<10000; i++ ) {
             dbr_float_t fval = 3.3F;
             status = ca_array_put_callback (
@@ -1155,14 +1170,14 @@ void verifyHighThroughputWriteCallback ( chid chan )
             epicsThreadSleep ( 0.1 );
             ca_poll (); /* emulate typical GUI */
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "Skipped multiple put cb test - no write access\n" );
     }
 }
 
-void verifyBadString ( chid chan )
+void verifyBadString ( chid chan, unsigned interestLevel  )
 {
     int status;
 
@@ -1172,7 +1187,7 @@ void verifyBadString ( chid chan )
     if ( ca_write_access (chan) ) {
         dbr_string_t    stimStr;
         dbr_string_t    respStr;
-        showProgressBegin ();
+        showProgressBegin ( "verifyBadString", interestLevel );
         memset (stimStr, 'a', sizeof (stimStr) );
         status = ca_array_put ( DBR_STRING, 1u, chan, stimStr );
         assert ( status != ECA_NORMAL );
@@ -1188,7 +1203,7 @@ void verifyBadString ( chid chan )
     "Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
                 stimStr, respStr);
         }
-        showProgressEnd ();
+        showProgressEnd ( interestLevel );
     }
     else {
         printf ( "Skipped bad string test - no write access\n" );
@@ -1223,7 +1238,7 @@ void multiple_sg_requests ( chid chix, CA_SYNC_GID gid )
 /*
  * test_sync_groups()
  */
-void test_sync_groups ( chid chan )
+void test_sync_groups ( chid chan, unsigned interestLevel  )
 {
     int status;
     CA_SYNC_GID gid1=0;
@@ -1233,7 +1248,7 @@ void test_sync_groups ( chid chan )
         printf ( "skipping sync group test - server is on wrong version\n" );
     }
 
-    showProgressBegin ();
+    showProgressBegin ( "test_sync_groups", interestLevel );
 
     status = ca_sg_create ( &gid1 );
     SEVCHK ( status, NULL );
@@ -1272,7 +1287,7 @@ void test_sync_groups ( chid chan )
     status = ca_sg_delete ( gid2 );
     SEVCHK ( status, NULL );
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
@@ -1284,14 +1299,14 @@ void test_sync_groups ( chid chan )
  * 3) attempt to delete monitors while many monitors 
  *      are running
  */
-void multiSubscriptionDeleteTest ( chid chan )
+void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
 {
     unsigned count = 0u;
     evid mid[1000];
     dbr_float_t temp, getResp;
     unsigned i;
     
-    showProgressBegin ();
+    showProgressBegin ( "multiSubscriptionDeleteTest", interestLevel );
 
     for ( i=0; i < NELEMENTS (mid); i++ ) {
         SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, noopSubscriptionStateChange,
@@ -1309,7 +1324,7 @@ void multiSubscriptionDeleteTest ( chid chan )
     SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
     SEVCHK ( ca_pend_io ( 1000.0 ), NULL );
 
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * attempt to generate heavy event traffic before initiating
@@ -1322,7 +1337,7 @@ void multiSubscriptionDeleteTest ( chid chan )
         }
     }
 
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * without pausing begin deleting the event subscriptions 
@@ -1341,7 +1356,7 @@ void multiSubscriptionDeleteTest ( chid chan )
         SEVCHK ( ca_clear_event ( mid[i]), NULL );
     }
 
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * force all of the clear event requests to complete
@@ -1349,7 +1364,7 @@ void multiSubscriptionDeleteTest ( chid chan )
     SEVCHK ( ca_get (DBR_FLOAT,chan,&temp), NULL );
     SEVCHK ( ca_pend_io (1000.0), NULL );
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 } 
 
 
@@ -1360,14 +1375,14 @@ void multiSubscriptionDeleteTest ( chid chan )
  * and delete only one subscription with a high level of 
  * traffic on it
  */
-void singleSubscriptionDeleteTest ( chid chan )
+void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
 {
     unsigned count = 0u;
     evid sid;
     dbr_float_t temp, getResp;
     unsigned i;
     
-    showProgressBegin ();
+    showProgressBegin ( "singleSubscriptionDeleteTest", interestLevel );
 
     for ( i=0; i < 1000; i++ ){
         count = 0u;
@@ -1400,7 +1415,7 @@ void singleSubscriptionDeleteTest ( chid chan )
         SEVCHK ( ca_clear_event ( sid ), NULL );
     }
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 } 
 
 /*
@@ -1409,14 +1424,14 @@ void singleSubscriptionDeleteTest ( chid chan )
  * verify that we can delete a channel that has subcriptions
  * attached with heavy update traffic
  */
-void channelClearWithEventTrafficTest ( const char *pName )
+void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLevel )
 {
     unsigned count = 0u;
     evid sid;
     dbr_float_t temp, getResp;
     unsigned i;
     
-    showProgressBegin ();
+    showProgressBegin ( "channelClearWithEventTrafficTest", interestLevel );
 
     for ( i=0; i < 1000; i++ ) {
         chid chan;
@@ -1457,7 +1472,7 @@ void channelClearWithEventTrafficTest ( const char *pName )
         SEVCHK ( ca_clear_channel ( chan ), NULL );
     }
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 } 
 
 
@@ -1534,11 +1549,11 @@ void arrayEventExceptionNotify ( struct event_handler_args args )
     }
 }
 
-void exceptionTest ( chid chan )
+void exceptionTest ( chid chan, unsigned interestLevel )
 {
     int status;
 
-    showProgressBegin ();
+    showProgressBegin ( "exceptionTest", interestLevel );
 
     /*
      * force a get exception to occur
@@ -1681,7 +1696,7 @@ void exceptionTest ( chid chan )
         free ( pWS );
     }
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /*
@@ -1715,7 +1730,7 @@ void arrayWriteNotify ( struct event_handler_args args )
     }
 }
 
-void arrayTest ( chid chan, unsigned maxArrayBytes )
+void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
 {
     dbr_double_t *pRF, *pWF;
     unsigned i;
@@ -1727,7 +1742,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes )
         return;
     }
 
-    showProgressBegin ();
+    showProgressBegin ( "arrayTest", interestLevel );
 
     pRF = (dbr_double_t *) calloc ( ca_element_count (chan), sizeof (*pRF) );
     assert ( pRF != NULL );
@@ -1855,7 +1870,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes )
     free ( pRF );
     free ( pWF );
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 }
 
 /* 
@@ -1864,10 +1879,12 @@ void arrayTest ( chid chan, unsigned maxArrayBytes )
  *
  * this test must be run when no other channels are connected
  */
-void unequalServerBufferSizeTest ( const char *pName )
+void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 {
     dbr_double_t *pRF, *pWF;
     int status;
+
+    showProgressBegin ( "unequalServerBufferSizeTest", interestLevel );
 
     {
         chid newChan;
@@ -1913,6 +1930,8 @@ void unequalServerBufferSizeTest ( const char *pName )
 
     free ( pRF );
     free ( pWF );
+
+    showProgressEnd ( interestLevel );
 }
 
 /*
@@ -2014,7 +2033,7 @@ dbr_float_t monitorUpdateTestPattern ( unsigned iter )
  * 2) verify that under heavy load the last monitor
  *      returned is the last modification sent
  */
-void monitorUpdateTest ( chid chan )
+void monitorUpdateTest ( chid chan, unsigned interestLevel )
 {
     eventTest       test[100];
     dbr_float_t     temp, getResp;
@@ -2027,7 +2046,7 @@ void monitorUpdateTest ( chid chan )
         return;
     }
     
-    showProgressBegin ();
+    showProgressBegin ( "monitorUpdateTest", interestLevel );
 
     /*
      * set channel to known value
@@ -2053,7 +2072,7 @@ void monitorUpdateTest ( chid chan )
     SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp) ,NULL );
     SEVCHK ( ca_pend_io ( 1000.0 ) ,NULL );
             
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * pass the test only if we get the first monitor update
@@ -2081,7 +2100,7 @@ void monitorUpdateTest ( chid chan )
         assert ( tries++ < 50 );
     }
 
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * attempt to uncover problems where the last event isnt sent
@@ -2159,7 +2178,7 @@ void monitorUpdateTest ( chid chan )
         }
     }
 
-    showProgress ();
+    showProgress ( interestLevel );
 
     /*
      * delete the event subscriptions 
@@ -2177,7 +2196,7 @@ void monitorUpdateTest ( chid chan )
 
     /* printf ( "flow control bypassed %u events\n", flowCtrlCount ); */
 
-    showProgressEnd ();
+    showProgressEnd ( interestLevel );
 } 
 
 void verifyReasonableBeaconPeriod ( chid chan )
@@ -2318,13 +2337,13 @@ void verifyImmediateTearDown ()
 /*
  * keeping these tests together detects a bug
  */
-void eventClearAndMultipleMonitorTest ( chid chan )
+void eventClearAndMultipleMonitorTest ( chid chan, unsigned interestLevel )
 {
     eventClearTest ( chan );
-    monitorUpdateTest ( chan );
+    monitorUpdateTest ( chan, interestLevel );
 }
 
-int acctst ( char *pName, unsigned channelCount, 
+int acctst ( char *pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
@@ -2357,7 +2376,7 @@ int acctst ( char *pName, unsigned channelCount,
     assert ( connections == 0u );
 
     /* this test must be run when no channels are connected */
-    unequalServerBufferSizeTest ( pName );
+    unequalServerBufferSizeTest ( pName, interestLevel );
 
     status = ca_search ( pName, & chan );
     SEVCHK ( status, NULL );
@@ -2375,32 +2394,32 @@ int acctst ( char *pName, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
-    test_sync_groups ( chan );
+    test_sync_groups ( chan, interestLevel );
     verifyChannelPriorities ( pName );
     verifyTimeStamps ( chan );
     verifyOldPend ();
-    exceptionTest ( chan );
-    arrayTest ( chan, maxArrayBytes ); 
-    verifyMonitorSubscriptionFlushIO ( chan );
-    monitorSubscriptionFirstUpdateTest ( pName, chan );
-    grEnumTest ( chan );
-    ctrlDoubleTest ( chan );
-    verifyBlockInPendIO ( chan );
+    exceptionTest ( chan, interestLevel );
+    arrayTest ( chan, maxArrayBytes, interestLevel ); 
+    verifyMonitorSubscriptionFlushIO ( chan, interestLevel );
+    monitorSubscriptionFirstUpdateTest ( pName, chan, interestLevel );
+    grEnumTest ( chan, interestLevel );
+    ctrlDoubleTest ( chan, interestLevel );
+    verifyBlockInPendIO ( chan, interestLevel );
     verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX, 
-               FLT_MIN_EXP, FLT_MAX_EXP, FLT_EPSILON );
+               FLT_MIN_EXP, FLT_MAX_EXP, FLT_EPSILON, interestLevel );
     verifyAnalogIO ( chan, DBR_DOUBLE, DBL_MIN, DBL_MAX, 
-               DBL_MIN_EXP, DBL_MAX_EXP, DBL_EPSILON );
-    verifyLongIO ( chan );
-    verifyShortIO ( chan );
-    multiSubscriptionDeleteTest ( chan );
-    singleSubscriptionDeleteTest ( chan );
-    channelClearWithEventTrafficTest ( pName );
-    eventClearAndMultipleMonitorTest ( chan );
-    verifyHighThroughputRead ( chan );
-    verifyHighThroughputWrite ( chan );
-    verifyHighThroughputReadCallback ( chan );
-    verifyHighThroughputWriteCallback ( chan );
-    verifyBadString ( chan );
+               DBL_MIN_EXP, DBL_MAX_EXP, DBL_EPSILON, interestLevel );
+    verifyLongIO ( chan, interestLevel );
+    verifyShortIO ( chan, interestLevel );
+    multiSubscriptionDeleteTest ( chan, interestLevel );
+    singleSubscriptionDeleteTest ( chan, interestLevel );
+    channelClearWithEventTrafficTest ( pName, interestLevel );
+    eventClearAndMultipleMonitorTest ( chan, interestLevel );
+    verifyHighThroughputRead ( chan, interestLevel );
+    verifyHighThroughputWrite ( chan, interestLevel );
+    verifyHighThroughputReadCallback ( chan, interestLevel );
+    verifyHighThroughputWriteCallback ( chan, interestLevel );
+    verifyBadString ( chan, interestLevel );
 
     /*
      * CA pend event delay accuracy test
@@ -2423,9 +2442,9 @@ int acctst ( char *pName, unsigned channelCount,
         pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
     }
 
-    verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
-    verifyBlockingConnect ( pChans, channelCount, repetitionCount );
-    verifyClear ( pChans );
+    verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount, interestLevel );
+    verifyBlockingConnect ( pChans, channelCount, repetitionCount, interestLevel );
+    verifyClear ( pChans, interestLevel );
 
     verifyReasonableBeaconPeriod ( chan );
 

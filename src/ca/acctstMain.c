@@ -7,34 +7,42 @@
 
 int main ( int argc, char **argv )
 {
+    unsigned progressLoggingLevel;
     unsigned channelCount;
     unsigned repetitionCount;
 	enum ca_preemptive_callback_select preempt;
 	int aBoolean;
 
 
-    if ( argc < 2 || argc > 5 ) {
+    if ( argc < 2 || argc > 6 ) {
         printf ( 
-"usage: %s <PV name> [channel count] [repetition count] [enable preemptive callback]\n", 
+"usage: %s <PV name> [progress logging level] [channel count] [repetition count] [enable preemptive callback]\n", 
 			argv[0] );
     }
 
     if ( argc >= 3 ) {
-        channelCount = atoi ( argv[2] );
+        progressLoggingLevel = atoi ( argv[2] );
+    }
+    else {
+        progressLoggingLevel = 0;
+    }
+
+    if ( argc >= 4 ) {
+        channelCount = atoi ( argv[3] );
     }
     else {
         channelCount = 20000;
     }
 
-    if ( argc >= 4 ) {
-        repetitionCount = atoi ( argv[3] );
+    if ( argc >= 5 ) {
+        repetitionCount = atoi ( argv[4] );
     }
     else {
         repetitionCount = 1;
     }
 
-    if ( argc >= 5 ) {
-        aBoolean = atoi ( argv[4] );
+    if ( argc >= 6 ) {
+        aBoolean = atoi ( argv[5] );
     }
     else {
         aBoolean = 0;
@@ -46,7 +54,7 @@ int main ( int argc, char **argv )
 		preempt = ca_disable_preemptive_callback;
 	}
 
-    acctst ( argv[1], channelCount, repetitionCount, preempt );
+    acctst ( argv[1], progressLoggingLevel, channelCount, repetitionCount, preempt );
 
     return 0;
 }

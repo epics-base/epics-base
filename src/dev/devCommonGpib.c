@@ -3,6 +3,10 @@
 
 /*
  * $Log$
+ * Revision 1.25  1995/07/31  19:44:08  winans
+ * Changed the parameter table and associated support routines to support
+ * buffer length specifications of size long instead of short.
+ *
  * Revision 1.24  1995/03/10  16:55:40  winans
  * Added waveform writing support
  *
@@ -2351,7 +2355,8 @@ void		(*process)();
   if (parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBWRITE &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBSOFT &&
-      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREADW)
+      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREADW &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBRAWREAD)
   {
     sprintf(message, "%s: devGpibLib_initWf: invalid command type for an WF record in param %d\n", pwf->name, ((struct gpibDpvt *)pwf->dpvt)->parm);
     errMessage(S_db_badField, message);
@@ -2445,9 +2450,6 @@ struct gpibDpvt *pdpvt;
 	/**** Handle writes internally... the generic routine will not work ****/
 	if (pCmd->type == GPIBWRITE)
 	{
-		/*
-		* check to see if this node has timed out within last 10 sec
-		*/
 		if(tickGet() < (pdpvt->phwpvt->tmoVal + parmBlock->timeWindow) )
 		{
 			if (*parmBlock->debugFlag)
@@ -2455,21 +2457,31 @@ struct gpibDpvt *pdpvt;
 
 			OperationStatus = ERROR;
 		}
+		else if (pCmd->convert == NULL)
+		{
+			if (*parmBlock->debugFlag)
+				printf("devGpibLib_xxGpibWork(): Waveform write command w/o conversion routine spec'd\n");
+
+			OperationStatus = ERROR;
+		}
 		else
 		{
+			if(*parmBlock->debugFlag)
+				printf("devGpibLib_wfGpibWork: calling convert ...\n");
+
+			(*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
 
    			OperationStatus = (*(drvGpib.writeIb))(pdpvt->head.pibLink, 
-			ibnode, pdpvt->msg, pCmd->msgLen, pdpvt->head.dmaTimeout);
+			ibnode, pdpvt->msg, pwf->nord, pdpvt->head.dmaTimeout);
 
 			if(*parmBlock->debugFlag)
 				printf("devGpibLib_xxGpibWork : done, status = %d\n",OperationStatus);
-
-			/* if error occurrs then mark it with time */
-			if(OperationStatus == ERROR)
-			{
-				(pdpvt->phwpvt->tmoCount)++;        /* count timeouts */
-				pdpvt->phwpvt->tmoVal = tickGet();  /* set last timeout time */
-			}
+		}
+		/* if error occurrs then mark it with time */
+		if(OperationStatus == ERROR)
+		{
+			(pdpvt->phwpvt->tmoCount)++;        /* count timeouts */
+			pdpvt->phwpvt->tmoVal = tickGet();  /* set last timeout time */
 		}
 	}
 	else
@@ -2542,26 +2554,29 @@ int
 devGpibLib_wfGpibFinish(pdpvt)
 struct gpibDpvt *pdpvt;
 {
-    double	value;
-    struct waveformRecord *pwf = ((struct waveformRecord *)(pdpvt->precord));
-    struct devGpibParmBlock *parmBlock;
-    struct gpibCmd      *pCmd;
+	double	value;
+	struct waveformRecord *pwf = ((struct waveformRecord *)(pdpvt->precord));
+	struct devGpibParmBlock *parmBlock;
+	struct gpibCmd      *pCmd;
 
-    parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
-    pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
+	parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
+	pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
 
-    if (pCmd->convert != NULL)
-    {
-        if(*parmBlock->debugFlag)
-            printf("devGpibLib_wfGpibWork: calling convert ...\n");
+	if (pCmd->type != GPIBWRITE)
+	{
+		if (pCmd->convert != NULL)
+		{
+			if(*parmBlock->debugFlag)
+				printf("devGpibLib_wfGpibWork: calling convert ...\n");
 
-        (*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-    }
-    else  /* for waveforms no standard conversion is supplied */
-    {
-               devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
-    }
+			(*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
+		}
+		else  /* for waveforms no standard conversion is supplied */
+		{
+			devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+		}
+	}
     RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-
+	
     return(0);
 }

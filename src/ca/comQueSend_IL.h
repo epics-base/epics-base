@@ -18,6 +18,33 @@
 #ifndef comQueSend_ILh
 #define comQueSend_ILh
 
+inline bufferReservoir::~bufferReservoir ()
+{
+    this->drain ();
+}
+
+inline comBuf *bufferReservoir::fetchOneBuffer ()
+{
+    return this->reservedBufs.get ();
+}
+
+inline bool bufferReservoir::addOneBuffer ()
+{
+    comBuf *pBuf = new comBuf;
+    if ( pBuf ) {
+        this->reservedBufs.add ( *pBuf );
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+inline unsigned bufferReservoir::nBytes ()
+{
+    return ( this->reservedBufs.count () * comBuf::maxBytes () );
+}
+
 inline void bufferReservoir::drain ()
 {
     comBuf *pBuf;

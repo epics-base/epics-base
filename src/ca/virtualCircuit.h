@@ -18,7 +18,6 @@
 #define virtualCircuith
 
 #include "epicsMemory.h"
-#include "tsSLList.h"
 #include "tsDLList.h"
 
 #include "comBuf.h"

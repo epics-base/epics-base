@@ -64,14 +64,14 @@ casClient::casClient(caServerI &serverInternal, bufSizeT ioSizeMinIn) :
 //
 // find the channel associated with a resource id
 //
-casChannelI *casClient::resIdToChannel(const caResId &id)
+casChannelI *casClient::resIdToChannel(const caResId &idIn)
 {
 	casChannelI *pChan;
 
 	//
 	// look up the id in a hash table
 	//
-	pChan = this->ctx.getServer()->resIdToChannel(id);
+	pChan = this->ctx.getServer()->resIdToChannel(idIn);
 
 	//
 	// update the context

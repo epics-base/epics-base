@@ -56,9 +56,10 @@ void bhe::operator delete ( void *pCadaver, size_t size )
  * zero (so we can correctly compute the period
  * between the 1st and 2nd beacons)
  */
-bhe::bhe ( const epicsTime & initialTimeStamp, const inetAddrID & addr ) :
+bhe::bhe ( const epicsTime & initialTimeStamp, 
+          unsigned initialBeaconNumber, const inetAddrID & addr ) :
     inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
-    lastBeaconNumber ( UINT_MAX )
+    lastBeaconNumber ( initialBeaconNumber )
 {
 #   ifdef DEBUG
     {
@@ -91,8 +92,12 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     const epicsTime & currentTime, unsigned beaconNumber, 
     unsigned protocolRevision )
 {
+    //
+    // this block is enetered if the beacon was created as a side effect of
+    // creating a connection and so we dont yet know the first beacon time 
+    // and  sequence number
+    //
     if ( this->timeStamp == epicsTime () ) {
-
         if ( CA_V410 ( protocolRevision ) ) {
             this->lastBeaconNumber = beaconNumber;
         }
@@ -119,9 +124,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
         }
     }
 
-    /*
-     * compute the beacon period (if we have seen at least two beacons)
-     */
+    // compute the beacon period (if we have seen at least two beacons)
     bool netChange = false;
     double currentPeriod = currentTime - this->timeStamp;
     if ( this->averagePeriod < 0.0 ) {
@@ -191,10 +194,8 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
             netChange = true;
         }
         else {
-            /*
-             * update state of health for active virtual circuits 
-             * if the beacon looks ok
-             */
+            // update state of health for active virtual circuits 
+            // if the beacon looks ok
             tsDLIter < tcpiiu > iter = this->iiuList.firstIter ();
             while ( iter.valid() ) {
                 iter->beaconArrivalNotify ();
@@ -202,19 +203,10 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
             }
         }
     
-        /*
-         * update a running average period
-         */
-        this->averagePeriod = currentPeriod * 0.125 + this->averagePeriod * 0.875;
+        // update a running average period
+        this->averagePeriod = currentPeriod * 0.125 + 
+            this->averagePeriod * 0.875;
     }
-
-    //{
-    //    char name[64];
-    //    this->name ( name, sizeof ( name ) );
-    //
-    //    printf ( "new beacon period %f for %s\n", 
-    //        this->averagePeriod, name );
-    //}
 
     this->timeStamp = currentTime;
 
@@ -235,6 +227,11 @@ void bhe::destroy ()
 double bhe::period () const
 {
     return this->averagePeriod;
+}
+
+epicsTime bhe::updateTime () const
+{
+    return this->timeStamp;
 }
 
 void bhe::registerIIU ( tcpiiu & iiu )

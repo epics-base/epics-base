@@ -399,7 +399,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
          * time that we have seen a server's beacon
          * shortly after the program started up)
          */
-        pBHE = new bhe ( currentTime, addr );
+        pBHE = new bhe ( currentTime, beaconNumber, addr );
         if ( pBHE ) {
             if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                 pBHE->destroy ();
@@ -552,7 +552,7 @@ bool cac::lookupChannelAndTransferToTCP (
                 }
                 bhe * pBHE = this->beaconTable.lookup ( addr.ia );
                 if ( ! pBHE ) {
-                    epics_auto_ptr < bhe > pNewBHE ( new bhe ( epicsTime (), addr.ia ) );
+                    epics_auto_ptr < bhe > pNewBHE ( new bhe ( epicsTime (), 0u, addr.ia ) );
                     if ( pNewBHE.get () ) {
                         if ( this->beaconTable.add ( *pNewBHE ) >= 0 ) {
                             pBHE = pNewBHE.release ();

@@ -24,7 +24,7 @@ typedef int (*sysAtReboot)(void(func)(void));
 extern "C" {
 static void atReboot(void)
 {
-    epicsExit(0);
+    epicsExitCallAtExits();
 }
 
 } /* extern "C" */

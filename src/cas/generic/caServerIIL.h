@@ -54,16 +54,14 @@ inline caServer * caServerI::operator -> ()
 inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 {
     chronIntId      tmpId (idIn);
-    casRes          *pRes;    
 
-	this->lock();
-    pRes = this->chronIntIdResTable<casRes>::lookup (tmpId);
-	if (pRes) {
-		if (pRes->resourceType()!=type) {
+	epicsAutoMutex locker ( this->mutex );
+    casRes *pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
+	if ( pRes ) {
+		if ( pRes->resourceType() != type ) {
 			pRes = NULL;
 		}
 	}
-	this->unlock();
 	return pRes;
 }
 
@@ -178,6 +176,17 @@ inline void caServerI::clearEventsPostedCounter (void)
 {
     this->nEventsPosted = 0u;
 }
+
+inline void caServerI::lock () const
+{
+    this->mutex.lock ();
+}
+
+inline void caServerI::unlock () const
+{
+    this->mutex.unlock ();
+}
+
 
 #endif // caServerIIL_h
 

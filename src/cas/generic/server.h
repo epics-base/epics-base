@@ -389,11 +389,11 @@ protected:
 	void clear ();
 
 private:
-    epicsMutex  mutex;
-	char        *pBuf;
-	bufSizeT    bufSize;
-	bufSizeT    stack;
-    unsigned    ctxRecursCount;
+    mutable epicsMutex  mutex;
+	char                *pBuf;
+	bufSizeT            bufSize;
+	bufSizeT            stack;
+    unsigned            ctxRecursCount;
 
 	virtual unsigned getDebugLevel() const = 0;
 	virtual void sendBlockSignal() = 0;
@@ -815,7 +815,6 @@ class casClientMon;
 // caServerI
 // 
 class caServerI : 
-	public epicsMutex, 
 	public caServerOS, 
 	public caServerIO, 
 	public ioBlockedList, 
@@ -885,9 +884,13 @@ public:
     void incrEventsPostedCounter (void);
     void clearEventsPostedCounter (void);
 
+    void lock () const;
+    void unlock () const;
+
 private:
 	void advanceBeaconPeriod();
 
+	mutable epicsMutex      mutex;
 	tsDLList<casStrmClient> clientList;
     tsDLList<casIntfOS>     intfList;
 	double                  maxBeaconInterval;

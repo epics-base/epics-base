@@ -103,8 +103,7 @@ caServerI::caServerI (caServer &tool, unsigned nPV) :
  */
 caServerI::~caServerI()
 {
-
-	this->lock();
+    epicsAutoMutex locker ( this->mutex );
 
 	//
 	// delete all clients
@@ -124,8 +123,6 @@ caServerI::~caServerI()
 	while ( (pIF = this->intfList.get()) ) {
 		delete pIF;
 	}
-
-	this->unlock();
 }
 
 //
@@ -133,9 +130,8 @@ caServerI::~caServerI()
 //
 void caServerI::installClient(casStrmClient *pClient)
 {
-	this->lock();
+    epicsAutoMutex locker ( this->mutex );
 	this->clientList.add(*pClient);
-	this->unlock();
 }
 
 //
@@ -143,9 +139,8 @@ void caServerI::installClient(casStrmClient *pClient)
 //
 void caServerI::removeClient (casStrmClient *pClient)
 {
-	this->lock();
+    epicsAutoMutex locker ( this->mutex );
 	this->clientList.remove (*pClient);
-	this->unlock();
 }
 
 //
@@ -224,9 +219,10 @@ caStatus caServerI::attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
         return S_cas_noMemory;
     }
     
-    this->lock ();
-    this->intfList.add (*pIntf);
-    this->unlock ();
+    {
+        epicsAutoMutex locker ( this->mutex );
+        this->intfList.add (*pIntf);
+    }
 
     return S_cas_success;
 }
@@ -244,13 +240,14 @@ void caServerI::sendBeacon()
 	// otherwise. Also send a beacon to all configured
 	// addresses.
 	// 
-	this->lock();
-	tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
-	while ( iter.valid () ) {
-		iter->sendBeacon ();
-		iter++;
-	}
-	this->unlock();
+    {
+        epicsAutoMutex locker ( this->mutex );
+	    tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
+	    while ( iter.valid () ) {
+		    iter->sendBeacon ();
+		    iter++;
+	    }
+    }
  
 	//
 	// double the period between beacons (but dont exceed max)
@@ -276,22 +273,22 @@ void caServerI::show (unsigned level) const
     printf( "Channel Access Server Status V%d.%d\n",
         CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
     
-    this->epicsMutex::show(level);
+    this->mutex.show(level);
     
-    this->lock();
-    tsDLIterConstBD<casStrmClient> iterCl = this->clientList.firstIter ();
-    while ( iterCl.valid () ) {
-        iterCl->show (level);
-        ++iterCl;
+    {
+        epicsAutoMutex locker ( this->mutex );
+        tsDLIterConstBD<casStrmClient> iterCl = this->clientList.firstIter ();
+        while ( iterCl.valid () ) {
+            iterCl->show (level);
+            ++iterCl;
+        }
+    
+        tsDLIterConstBD<casIntfOS> iterIF = this->intfList.firstIter ();
+        while ( iterIF.valid () ) {
+            iterIF->casIntfOS::show ( level );
+            ++iterIF;
+        }
     }
-    
-    tsDLIterConstBD<casIntfOS> iterIF = this->intfList.firstIter ();
-    while ( iterIF.valid () ) {
-        iterIF->casIntfOS::show ( level );
-        ++iterIF;
-    }
-    
-    this->unlock();
     
     bytes_reserved = 0u;
 #if 0
@@ -318,9 +315,10 @@ void caServerI::show (unsigned level) const
 #endif
         printf( 
             "The server's integer resource id conversion table:\n");
-        this->lock();
-        this->chronIntIdResTable<casRes>::show(level);
-        this->unlock();
+        {
+            epicsAutoMutex locker ( this->mutex );
+            this->chronIntIdResTable<casRes>::show(level);
+        }
     }
         
     return;

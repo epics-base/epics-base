@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$
  *
@@ -5,51 +14,6 @@
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      Modification Log:
- *      -----------------
- * 	.01 091493 joh	added nEntries to struct bucket
- * 	.02 121693 joh	added bucketFree() 
- * 	.03 052395 joh	use std EPICS status 
- *	$Log$
- *	Revision 1.6  1998/02/20 21:45:10  evans
- *	Made a large number of changes to epicsShareThings in libCom routines
- *	to get imports and exports straight on WIN32.  Not everything is fixed
- *	at this time.
- *
- *	Revision 1.5  1997/05/01 19:57:13  jhill
- *	updated dll keywords
- *
- *	Revision 1.4  1997/04/29 06:17:18  jhill
- *	use free lists
- *
- *	Revision 1.3  1997/04/10 19:45:35  jhill
- *	API changes and include with  not <>
- *
- *	Revision 1.2  1996/06/19 19:44:53  jhill
- *	C++ support
- *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted

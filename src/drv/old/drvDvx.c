@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* share/src/drv/drvDvx.c
  * base/src/drv $Id$
  *
@@ -23,88 +32,6 @@
  * dvx_fempty		clears fifo from command line
  * dvx_dma_stat		displays DMA channel status
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * MS 6/22/90	Modifications to aid in debugging interface to Mizar timing
- *		system. Interrupt service routine now counts words when clearing
- *		fifo, dvx_dump provides fifo status, and dvx_fempty added to
- *		clear fifo from command line.
- *
- * MS 7/9/90	Modifications to speed up interrupt service routine.
- *
- * MS 7/23/90	Added DMA control logic.
- *
- * MS 8/20/90	Added support for interrupt scanned records.
- *
- * MS 9/20/90	Changed data conversion to offset binary 
- *			(only test routines affected)
- *
- * JH 07/25/91	added dvx_reset() and dvx_reset() on control X reboot
- *
- * JH 11/14/91	changed a sysBCLSet to sysIntEnable so ioc_core
- *		will load into the nat inst cpu030
- *
- * JH 11/14/91	removed sysBCLSet enabling STD non priv and super
- *		access since this is already enabled if we are
- *		processor 0
- * JH 11/14/91 	changed DVX_INTLEV from a mask to a level
- *		to support use of sysIntEnable() which
- *		is architecture independent
- * BG 4/22/92   added sysBusToLocalAddr() for both short and standard
- *              addresses for this module.  Moved DVX_ADDR0 to  
- *              ai_addrs[DVX2502]in module_types.h.  Also moved DVX_IVECO
- *              to module_types.h.
- * BG 6/23/92   combined dvx_driver.c and drvDvx.c 
- * BG 06/26/92   added level to dvx_io_report in drvDvx structure.
- * JH 06/29/92	moved the rest of the dvx io_report here
- * BG 7/2/92	removed the semaphores from dvx_io_report
- * JH 08/03/92 	Removed hkv2f dependent base addr
- * JH 08/03/92 	moved interrupt vector base to module_types.h	
- * JH 08/05/92	dvx driver init is called from drvDvx now	
- * JH 08/10/92	merged dvx private include file into this source
- * JH 09/09/92	ran through UNIX C beautifier and converted to ANSI C
- * JH 09/09/92 	check to see if A24 is open prior to mapping
- *		the seq ram.
- * JH 09/14/92	Made taskDelays() CPU tick rate independent 
- *		tick rate
- * JH 09/15/92	made interrupt vector CPU independent
- * MRK 09/16/92 Added support for new I/O event scanning
- * JH 09/16/92 	dont write wordcnt every time the fifo is unloaded	
- * JH 09/16/92 	Use sysLocalToBusAdrs() to translate from an internal
- *		to a VME A24 address in case the internal base for A24
- *		addressed local memory is not on a 16MB boundary.
- *		sysLocalToBusAdrs() is called for each malloc'ed
- *		pointer used by the DVX to verify that each one is
- *		within the portion of local memory mapped to A24.
- * JH 09/17/92  one more sysLocalToBusAdrs() address translation 
- * 		needed	
- * JRW 01/18/92 Replaced init code to allow user to select the interrupt
- *              level value and to select the ports that are to be read.
- * MGB 08/04/93 Removed V5/V4 and EPICS_V2 conditionals
- * FRL 11/17/93 Added gain parameter to dvx_program
- *
- *
  * NOTE (JRW 11-18-92):
  *  In a phone conversation with Analogic, Tech support said that when the start
  *  signal is de-asserted (when using external start/stop mode), the DMAC is
@@ -120,26 +47,6 @@
  * BUGS:
  *  The driver should inspect the VXI make and model codes and use a data type
  *  for the DMA buffer that is appropriate.
- *
- * $Log$
- * Revision 1.3  1997/04/30 19:02:04  mrk
- * Fixed many compiler warning messages
- *
- * Revision 1.2  1995/09/01  14:36:35  winans
- * Added ability to change default clock speed from shell.
- *
- * Revision 1.1  1995/03/30  19:35:14  jba
- * Seperated drv files into ansi and old dirs. Added combine dir.
- *
- * Revision 1.22  1995/01/06  17:03:43  winans
- * Added some ifdef'd out test code to see if the end of the sequence program
- * could be updated to NOT cause an extra sample from port zero to be taken
- * at the end of the sequence.  As it turns out, it causes more harm than
- * good.  There must be something wrong with my understanding on how it works.
- * For now, the misfeature of the extra sample at the end of the sequence will
- * have to stay.
- *
- *
  */ 
 
 static char *SccsId = "$Id$";

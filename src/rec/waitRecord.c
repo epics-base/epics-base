@@ -1,64 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recWait.c */   
 /*
  *      Original Author: Ned Arnold 
  *      Date:            05-31-94
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- *
- * Modification Log:
- * -----------------
- * 1.01  05-31-94        nda    initial try            
- * 1.02  07-11-94    mrk/nda    added "process on input change" feature
- * 1.03  08-16-94    mrk/nda    continuing "process on input change" feature
- * 1.04  08-16-94        nda    record does not get notified when a SCAN 
- *                              related field changes,so for now we have to
- *                              always add Monitors
- * 1.05  08-18-94        nda    Starting with R3.11.6, dbGetField locks the
- *                              record before fetching the data. This can
- *                              cause deadlocks within a database. Change all
- *                              dbGetField() to dbGet()
- * 1.06  08-19-94        nda    added Output data option of VAL or DOL
- * 1.07  09-14-94        nda    corrected bug that caused SCAN_DISABLE to 
- *                              lock up the record forever
- * 1.08  02-01-95        nda    added VERS and ODLY (output execution delay)
- * 1.09  02-15-95        nda    added INxP to specify which inputs should
- *                              cause the record to process when in I/O INTR
- * 2.00  02-20-95        nda    added queuing to SCAN_IO_EVENT mode so no 
- *                              transitions of data would be missed.
- * 2.01  08-07-95        nda    Multiple records with DOLN's didn't work, 
- *                              added calloc for dola structure.
- * 3.00  08-28-95        nda    Significant rewrite to add Channel Access 
- *                              for dynamic links using recDynLink.c . All
- *                              inputs are now "monitored" via Channel Access.
- *                              Removed some "callbacks" because recDynLink
- *                              lib uses it's own task context.
- *                              INxV field is used to keep track of PV 
- *                              connection status: 0-PV_OK, 
- *                              1-NotConnected,  2-NO_PV
- * 3.01  10-03-95        nda    Also post monitors on .la, .lb, .lc etc
- *                              when new values are written
- *
- *
  */
 
 #define VERSION 3.01

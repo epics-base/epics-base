@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* Alarm definitions (Must Match choiceGbl.ascii) */
 /* $Id$ */
 
@@ -5,39 +14,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .00  mm-dd-yy        iii     Comment
- * .01  07-16-92        jba     changed VALID_ALARM to INVALID_ALARM
- * .02  08-11-92        jba     added new status DISABLE_ALARM, SIMM_ALARM
- * .03  05-11-94        jba     added new status READ_ACCESS_ALARM, WRITE_ACCESS_ALARM
- * $Log$
- * Revision 1.2  1996/06/19 19:59:31  jhill
- * added missing defines/enums, corrected defines
- *
- *
  */
 
 #ifndef INCalarmh

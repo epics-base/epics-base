@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$
  *
@@ -5,91 +14,6 @@
  *              johill@lanl.gov
  *              (505) 665 1831
  *      Date:   1-95
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- * 	$Log$
- * 	Revision 1.19  1998/06/18 00:09:39  jhill
- * 	installed bwd compat casPV constructor
- *
- * 	Revision 1.18  1998/06/16 02:34:14  jhill
- * 	allow PVs to exist without a server
- *
- * 	Revision 1.17  1998/05/05 16:30:38  jhill
- * 	fixed doc
- *
- * 	Revision 1.16  1998/03/18 23:59:28  jhill
- * 	use _MSC_VER to turn of vis C++ specific warning
- *
- * 	Revision 1.15  1998/02/05 23:00:20  jhill
- * 	removed assignement operator
- *
- * 	Revision 1.14  1997/08/05 00:47:14  jhill
- * 	fixed warnings
- *
- * 	Revision 1.13  1997/06/13 09:16:01  jhill
- * 	connect proto changes
- *
- * 	Revision 1.12  1997/04/10 19:34:19  jhill
- * 	API changes
- *
- * 	Revision 1.11  1997/01/09 22:24:46  jhill
- * 	eliminate MSVC++ warning resulting from passing *this to a base
- *
- * 	Revision 1.10  1996/12/06 22:36:26  jhill
- * 	use destroyInProgress flag now functional nativeCount()
- *
- * 	Revision 1.9.2.1  1996/11/25 16:30:55  jhill
- * 	WIN32 pragma warning (disable:4355) added
- *
- * 	Revision 1.9  1996/11/22 19:52:24  jhill
- * 	doc
- *
- * 	Revision 1.8  1996/11/22 19:22:53  jhill
- * 	doc
- *
- * 	Revision 1.7  1996/11/02 00:54:26  jhill
- * 	many improvements
- *
- * 	Revision 1.6  1996/09/04 20:27:00  jhill
- * 	doccasdef.h
- *
- * 	Revision 1.5  1996/08/13 22:54:42  jhill
- * 	doc
- *
- * 	Revision 1.4  1996/07/01 19:56:15  jhill
- * 	one last update prior to first release
- *
- * 	Revision 1.3  1996/06/26 23:08:55  jhill
- * 	took path out of casInternal.h include
- *
- * 	Revision 1.2  1996/06/20 18:09:43  jhill
- * 	changed where casInternal comes from
- *
- * 	Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * 	ca server installation
- *
  *
  * TODO:
  * .03  document new event types for limits change etc

@@ -1,47 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
  *	Date:	5-88
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	.01 joh	030891	now saves old client structure for later reuse
- *	.02 joh	071591	print the delay from the last interaction in
- *			client_stat().
- *	.03 joh 080991	close the socket if task create fails
- *	.04 joh	090591	updated for v5 vxWorks
- *	.05 joh	103091	print task id and disconnect state in client_stat()
- *	.06 joh	112691	dont print client disconnect message unless
- *			debug is on.
- *	.07 joh 020592	substitute lstConcat() for lstExtract() to avoid
- *			replacing the destination list
- *	.08 joh 021492	cleaned up terminate_one_client()
- *	.09 joh 022092	print free list statistics in client_stat()
- *	.10 joh 022592	print more statistics in client_stat()
- *	.11 joh 073093	added args to taskSpawn for v5.1 vxWorks	
- *	.12 joh 020494	identifies the client in client_stat
  */
 
 static char *sccsId = "@(#) $Id$";

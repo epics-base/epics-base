@@ -1,3 +1,14 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recMbbiDirect.c */
 /* share/src/rec @(#)recMbbiDirect.c	1.2	1/4/94 */
 
@@ -6,32 +17,6 @@
  *      Original Author: Bob Dalesio and Matthew Needes 10-07-93
  *      Current Author:  Johnny Tang
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- *     (modifications to mbbi apply, see mbbi record)
- *   1.   mcn    "Created" by borrowing mbbi record code, and modifying it.
- *   2.   jt	May 20,96	Bug Fix 
  */
 
 #include	<vxWorks.h>

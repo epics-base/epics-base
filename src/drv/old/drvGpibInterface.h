@@ -1,45 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* #define GPIB_SUPER_DEBUG */
 
 /*      Author: John Winans
  *      Date:   09-10-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  09-13-91	jrw	Written on Friday the 13th :-(
- * .02	11-07-91	jrw	added srqPollInhibit() to the drvGpibSet
- * .03	01-07-92	jrw	added a reference to ibLink in dpvtGpibHead
- *
- * $Log$
- * Revision 1.1  1996/01/25 21:17:34  mrk
- * moved include files from base/include
- *
- * Revision 1.11  1995/03/17  21:25:58  winans
- * Got rid of the old bogus header in the dpvtGpibHead structure.
- *
- * Revision 1.10  1994/12/12  19:00:16  winans
- * Disabled the GPIB_SUPER_DEBUG by default.
- *
  */
 
 

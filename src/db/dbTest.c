@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbTest.c */
 /* base/src/db  $Id$ */
 /*	database access test subroutines */
@@ -5,42 +14,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  08-13-91	mrk	Added extra NULL arg to dbGetField calls
- * .02  10-23-91	mrk	Changed dbior so it also reports device support
- * .03  11-26-91	jba	Fixed initializations and added hex print to printBuffer
- * .04  02-05-92	jba	Changed function arguments from paddr to precord 
- * .05  02-28-92        jba     ANSI C changes
- * .06  04-17-92        rcz     removed dbPvd for mrk
- * .07  05-19-92        mrk	Mods for changes to internal database structures
- * .08  07-21-92        jba	ansi c changes
- * .09  09-24-93        jbk 	adjusted dbpr to print vxi links correctly
- * .10  02-02-94	mrk	added dbtpn (test dbPutNotify)
- * .11	03-18-94	mcn	added dbgrep and timing routines.
- * .12  08-14-95	mrk	Moved dbtpn to dbNotify
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell*/

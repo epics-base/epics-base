@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recBo.c */
 /* base/src/rec  $Id$ */
  
@@ -6,65 +15,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  12-9-88         lrd     lock the record during processing
- * .02  12-15-88        lrd     process the forward scan link
- * .03  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .04  01-13-89        lrd     delete db_read_bo and db_write_bo
- * .05  01-20-89        lrd     fixed vx includes
- * .06  03-29-89        lrd     make hardware errors MAJOR
- *                              remove hw severity spec from database
- *                              add continuous control
- * .07  04-06-89        lrd     add monitor detection
- * .08  05-03-89        lrd     removed process mask from arg list
- * .09  08-16-89        lrd     add ability to do softchannel momentary
- * .10  08-17-89        lrd     add soft channel support
- * .11  01-31-90        lrd     add the plc_flag arg to the ab_bodriver call
- * .12  03-21-90        lrd     add db_post_events for RVAL and RBV
- * .13  04-02-90        ba/lrd  add monitor handling for momentary outputs
- *                              remove rbv arg to ab_bodriver
- * .14  04-05-90        lrd     make momentary output handling a task
- *                              as the watchdog runs at interrupt level
- * .15  04-11-90        lrd     make locals static
- * .16  05-02-90        lrd     fix initial value set in the DOL field
- * .17  10-10-90	mrk	Changes for record and device support
- * .18  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .19  01-08-92        jba     Added cast in call to wdStart to remove compile warning message
- * .20  02-05-92	jba	Changed function arguments from paddr to precord 
- * .21  02-28-92	jba	ANSI C changes
- * .22  03-03-92	jba	Changed callback handling
- * .23  04-10-92        jba     pact now used to test for asyn processing, not status
- * .24  04-18-92        jba     removed process from dev init_record parms
- * .25  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .27  08-14-92        jba     Added simulation processing
- * .28  08-19-92        jba     Added code for invalid alarm output action
- * .29  11-01-93        jba     Added get_precision routine
- * .30	03-29-94	mcn	Converted to fast links
- * .31  04-05-94	mrk	ANSI changes to callback routines
  */
 
 #include	<vxWorks.h>

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  * Author: Jim Kowalkowski
  * Date: 2/96
@@ -5,6 +14,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5.6.1  2000/04/11 20:10:55  jba
+ * Added changes for Borland win32 build.
+ *
  * Revision 1.5  1998/04/17 17:49:25  jhill
  * fixed range problem in string to fp convert
  *

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /******************************************************************************
  *
  * TODO:
@@ -12,43 +21,6 @@
  *      Date:   09-10-91
  *      GPIB driver for the NI-1014 and NI-1014D VME cards.
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  09-13-91        jrw     Written on Friday the 13th :-(
- *				Much of the code in physIo() was stolen from
- *				a gpib driver that came from Los Alamos.  It
- *                              referenced little more than National 
- *                              Instruments and Bob Daly (from ANL) in its
- *                              credits.
- * .02	12-03-91	jrw	changed the setup of the ibLink and niLink structs
- * .03	01-21-92	jrw	moved task parameters into task_params.h
- * .04	01-31-92	jrw	added ibSrqLock code
- * .05	02-26-92	jrw	changed pnode references in the link task's
- *				busy-list checking, was an endless loop
- * .06	04-10-92	jrw	moved the device configs into module_types.h
- * .07	08-02-92	mrk	Added call to taskwdInsert
- *
  ******************************************************************************
  *
  * Notes:
@@ -59,6 +31,9 @@
  *
  *
  * $Log$
+ * Revision 1.9.8.3  2002/04/17 21:56:48  anj
+ * Added cache handling so the NI-1014 works on MC68060-based boards.
+ *
  * Revision 1.9.8.2  2001/08/30 21:16:48  anj
  * Changes to get working on PowerPC - struct alignment issues mainly,
  * plus a problem with the maximum message length check...

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 //
 // $Id$
 //
@@ -5,6 +14,9 @@
 //
 //
 // $Log$
+// Revision 1.17  1998/11/11 01:31:59  jhill
+// reduced socket buffer size
+//
 // Revision 1.16  1998/06/16 02:35:52  jhill
 // use aToIPAddr and auto attach to winsock if its a static build
 //

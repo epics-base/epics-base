@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *      $Id$
  *
@@ -29,6 +38,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8.6.2  2001/09/20 22:43:14  jhill
+ * dont use bool - early compilers dont support it
+ *
  * Revision 1.8.6.1  2000/07/13 23:37:24  jhill
  * fixed missing type in static init
  *

@@ -1,147 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*drvTs.c*/
-
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
- 
-(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-**********************************************************************/
-/*
- * $Log$
- * Revision 1.28.2.5  2001/09/18 12:25:01  mrk
- * Now uses osiSock for to handle implementation diffences.
- *
- * Revision 1.28.2.4  2000/11/10 22:00:26  mrk
- * make sure TSinit gets called
- *
- * Revision 1.28.2.3  2000/10/12 15:47:13  anj
- * Fixed TSgetMasterTime() bug - round-trip adjustment was garbage
- * Replaced TSprintf() with printf() where logging inappropriate
- *
- * Revision 1.28.2.2  1999/08/31 16:21:11  jhill
- * fixed bug where time sync UDP client was getting in a state where
- * it was using the response from the previous request, and ending
- * up setting the time 10 seconds back
- *
- * Revision 1.28.2.1  1999/07/09 14:04:03  mrk
- * encorporate latest SAFE (hop[efully) changes on 09JUL99
- *
- * Revision 1.29  1999/02/11 17:02:34  jhill
- * removed potential infinite recursion from tsForceSoftSync()
- *
- * Revision 1.28  1998/10/06 18:09:28  mrk
- * fixed sync bugs
- *
- * Revision 1.27  1998/09/29 14:11:02  mrk
- * TSsetClockFromUnix was made global
- *
- * Revision 1.26  1998/06/18 00:12:22  jhill
- * use ipAddrToA
- *
- * Revision 1.25  1998/06/16 03:20:35  jhill
- * use aToIPAddr()
- *
- * Revision 1.24  1998/06/04 19:21:14  wlupton
- * changed to use symFindByNameEPICS
- *
- * Revision 1.23  1998/03/19 20:41:15  mrk
- * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
- * in 2036. However it was modified so that no overflows should occur while convert
- * ing between NTP, UNIX, and EPICS epochs.
- * In addition the conversion of fractions of a second to nanaoseconds was changed
- * Formatting was changed so that interesting code does not run off right side of page.
- * Hopefully EPICS base is now fine for Y2K.
- * In fact it should be fine (as far as time is converned) until the Unix epoch
- * overflows a 32 unsigned integer in the year 2106.
- *
- * Revision 1.22  1998/01/22 14:48:34  mrk
- * get rid of some warning messages
- *
- * Revision 1.21  1998/01/20 16:20:04  mrk
- * Fix include statements
- *
- * Revision 1.20  1997/05/30 13:17:21  mrk
- * get rid of warning messages when using TS_1900_TO_*
- *
- * Revision 1.19  1997/03/05 13:20:44  jbk
- * Fixed a bug in TSreport - printing of IP addresses was incorrect
- *
- * Revision 1.18  1997/01/20 15:31:00  jbk
- * Print IP address on report
- *
- * Revision 1.17  1996/11/02 01:16:43  jhill
- * added byte swapping for pc arch
- *
- *
- * added net-host conversions   kuk
- *
- * Revision 1.16  1996/05/31 12:23:20  jbk
- * added support for user defined soft events
- *
- * Revision 1.15  1995/09/12 15:01:09  jbk
- * Fixed bug in TSinit - Gives defaults to TSdirectTime() and TSdriverInit() if
- * event time disabled with TSconfigure().
- *
- * Revision 1.14  1995/08/30 15:38:39  jbk
- * *** empty log message ***
- *
- * Revision 1.13  1995/08/18  13:19:31  mrk
- * Made changes for ansi c
- *
- * Revision 1.12  1995/08/17  20:35:09  jbk
- * fixed all the -pendantic errors (pain)
- *
- * Revision 1.11  1995/08/17  19:43:04  jbk
- * Completed the accurate time stamp change.  event number 0 is current time
- * updated at 60HZ, event -1 is the best time that can be provided (1000Hz in
- * the APS event system).  The vxWorks time is now correct (1970 instead of
- * 1900).
- *
- * Revision 1.10  1995/08/16  19:03:21  jbk
- * Many updates.  Added GPS ability and adjusted the printf's.
- *
- * Revision 1.9  1995/05/22  15:21:39  jbk
- * updates to allow direct read of time stamps from event systems
- *
- * Revision 1.8  1995/02/13  03:54:21  jhill
- * drvTS.c - use errMessage () as discussed with jbk
- * iocInit.c - static => LOCAL for debugging and many changes
- * 		to the parser for resource.def so that we
- * 		allow white space between tokens in env var
- *
- * Revision 1.7  1995/02/02  17:15:55  jbk
- * Removed the stinking message "Cannot contact master timing IOC ".
- *
- * Revision 1.6  1995/02/01  15:29:54  winans
- * Added a type field to the configure command to disable the use of the event
- * system hardware if desired.
- *
- * Revision 1.5  1994/12/16  15:51:21  winans
- * Changed error message in the event system error handler & added a conditional
- * based on a debug flag to print it... defaults to off.  (Per request from MRK.)
- *
- * Revision 1.4  1994/10/28  20:15:10  jbk
- * increased the USP packet time-out to 250ms, added a parm to the configure()
- * routine to let user specify it.
- *
- */
 
 /**************************************************************************
  *
  *     Author:	Jim Kowalkowski
- *
- * Modification Log:
- * -----------------
- * .01	01-06-94	jbk	initial version
- * .02	03-01-94	jbk	magic # in packets, network byte order check
- * .03	03-02-94	jbk	current time always uses 1 tick watch dog update
- * .04	17MAR98		mrk	Make safe to year 2104
- * .05	17MAR98		mrk	change nanosec conversion
- * .06	04AUG98		mrk	make TSsetClockFromUnix external - sync master
  *
  ***********************************************************************/
 

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  *
  * Implementation of utility macro substitution library (macLib)
@@ -271,6 +280,9 @@ epicsShareAPI macInstallMacros(
 
 /*
  * $Log$
+ * Revision 1.3.8.2  1999/12/15 21:28:35  jba
+ * Second try at fixing cvs log comments.
+ *
  * Revision 1.3.8.1  1999/12/15 21:13:32  jba
  * Fixed cvs comments.
  *

@@ -1,33 +1,15 @@
+/*************************************************************************\
+* Copyright (c) W.M. Keck Observatory
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devSymbFind.c - Support routines for vxWorks global var device support */
 
 /* $Id$
  *
  * Author:	William Lupton (Keck)
  * Date:	7 June 1996
- */
-
-/* modification history:
- * $Log$
- * Revision 1.1  1998/01/21 20:47:45  mrk
- * restructure; new Symb support
- *
- * Revision 1.2.2.1  1997/10/11 02:26:54  wlupton
- * now working with R3.13
- *
- * Revision 1.2  1996/10/24 18:29:20  wlupton
- * Andrew Johnson's changes (upwards-compatible)
- *
- * Revision 1.2  1996/10/22 15:30:25  anj
- * vxWorks Variable support changed to do pointer indirection at
- * run-time.  Also added device support for the Waveform record.
- *
- * Revision 1.1  1996/09/17 09:55:37  anj
- * Added William Lupton's vxWorks global variable device support, and
- * some slight adjustment to the ANB display screens.
- *
- * Revision 1.1  1996/06/09  00:52:24  wlupton
- * initial insertion
- *
  */
 
 /*

@@ -1,48 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id  */
 
 /*
  *      Author: 	Jeff Hill  
  *      Date:          	5-95 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * $Log$
- * Revision 1.3  1997/04/10 20:00:40  jhill
- * VMS changes
- *
- * Revision 1.2  1996/06/20 16:27:33  jhill
- * eliminated sbufs
- *
- * Revision 1.1  1996/01/25 21:38:48  mrk
- * moved files from /base/include
- *
- * Revision 1.7  1995/12/19 19:46:44  jhill
- * added epicsStatus typedef
- *
- * Revision 1.6  1995/09/29  21:41:41  jhill
- * added use of sbufs
- *
  */
 
 #ifndef INCepicsTypesh

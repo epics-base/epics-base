@@ -1,30 +1,19 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbAccess.h	*/
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
- 
-(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-**********************************************************************/
-
 /* $Id$ 
  *
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            6-1-90
  *
- * Modification Log:
- * -----------------
- * .01  12-18-91        jba     Changed caddr_t to void *
- * .02  03-04-92        jba     Replaced dbr_value_size with dbrValueSize in dbAccess 
- * .03  05-28-92        mrk     cleanup
- * .04  08-19-92        jba     added prototypes dbCaAddInlink,dbCaAddOutlink
- * .05  08-19-92        jba     added prototypes dbCaPutLink,dbCaGetLink
- * .06  02-02-94	mrk	added definitions for dbPutNotify
- * .07	03-18-94	mcn	added breakpoint codes, fast link protos
  */
 
 #ifndef INCdbAccessh

@@ -1,44 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  *
  *	VXI standard defines
  *
  * 	Author:      Jeff Hill
  * 	Date:        11-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01 joh 021490	changed NVXIADDR to 32 before formal release
- * .02 joh 120591	reorganized to support nivxi
- * .03 joh 010892	added message based device registers and
- *			commands
- * .04 joh 013091	moved some of the slot 0 stuff here
- * .05 joh 070692	added KSC manufacturer id
- * .06 joh 070692	added address space defines
- * .07 joh 081992	added csr typedef	
- * .08 joh 071593	typedef for device registers
- * .09 joh 051995	fixed incorrect MBC_TOP_LEVEL_CMDR def	
- *
  */
 
 #ifndef INCepvxih

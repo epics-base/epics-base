@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
 	seq_ca.c,v 1.2 1995/06/27 15:25:54 wright Exp
 
@@ -6,45 +15,6 @@
  *	Author:  Andy Kozubal
  *	Date:    July, 1991
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991-1994, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *	  The Controls and Automation Group (AT-8)
- *	  Ground Test Accelerator
- *	  Accelerator Technology Division
- *	  Los Alamos National Laboratory
- *
- *	Co-developed with
- *	  The Controls and Computing Group
- *	  Accelerator Systems Division
- *	  Advanced Photon Source
- *	  Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * 03jul91,ajk	.
- * 11dec91,ajk	Cosmetic changes (comments & names)
- * 13feb92,ajk	All seqLog() calls compile only if DEBUG is defined.
- * 28apr92,ajk	Implemented new event flag mode.
- * 21may92,ajk	Will periodically announce number of connected channels
- *		if waiting form some to connect.
- * 17feb93,ajk	Implemented code to allow sharing of a single CA task by
- *		all state programs.  Added seq_disconnect() and ca_import_cancel().
-		DB name resolution was moved to seq_main.c.
- * 19feb93,ajk	Added patched version of VxWorks 5.02b taskVarDelete().
- * 01mar94,ajk	Moved "seq_pv*()" functions to seq_if.c.
- * 28mar94,ajk	Restructured event& callback handlers to call proc_db_events().
- * 29mar94,ajk	Removed getPtrToValue().  Offset is now in db_channel structure.
- * 08apr94,ajk	Added support for time stamp.
- * 17jan96,ajk	Removed ca_import_cancel(), which is now in channel access lib.
- * 17jan96,ajk	Many routines changed to use ANSI-style function headers.
  */
 
 #define		ANSI

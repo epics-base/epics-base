@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /************************************************************************/
 /* $Id$									*/
 /*									*/
@@ -48,6 +57,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.4  2002/05/28 18:41:41  jhill
+ * fixed ellFree cause malloc and free to be in different win32 dlls
+ *
  * Revision 1.84.4.3  2002/02/07 18:49:16  jhill
  * workaround for CONNRESET error from disconnected socket on windows
  *

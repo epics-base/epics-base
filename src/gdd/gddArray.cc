@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -7,6 +16,9 @@
 //
 // $Id$
 // $Log$
+// Revision 1.2  1997/04/23 17:13:02  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.1  1997/03/21 01:56:04  jbk
 // *** empty log message ***
 //

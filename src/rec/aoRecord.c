@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recAo.c */
 /* base/src/rec  $Id$ */
   
@@ -6,68 +15,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  09-26-88        lrd     interface the Ziomek085 card
- * .02  12-12-88        lrd     lock record on entry unlock on exit
- * .03  12-15-88        lrd     Process the forward scan link
- * .04  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .05  01-13-89        lrd     deleted db_write_ao
- * .06  01-20-89        lrd     fixed vx includes
- * .07  03-03-89        lrd     mods for closed loop/supervisory control
- * .08  03-17-89        lrd     add read_ao routine and call at initialization
- * .09  03-23-89        lrd     convert AB readbacks
- * .10  03-29-89        lrd     make hardware errors MAJOR
- *                              remove hw severity spec from database
- * .11  04-06-89        lrd     remove signal conversions
- * .12  05-03-89        lrd     removed process mask from arg list
- * .13  05-08-89        lrd     fixed init to unlock on return condition
- * .14  05-25-89        lrd     added rate of change add incremental/absolute
- * .15  01-31-90        lrd     add plc_flag to ab_aodriver
- * .16  03-21-90        lrd     add db_post_events for RVAL and RBV
- * .17  04-11-90        lrd     make locals static
- * .18  07-27-90        lrd     implement the output to a database record
- * .19  10-10-90	mrk	extensible record and device support
- * .20  09-25-91	jba	added breakpoint table conversion
- * .21  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .22  02-05-92	jba	Changed function arguments from paddr to precord 
- * .23  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .24  02-28-92	jba	ANSI C changes
- * .25  04-10-92        jba     pact now used to test for asyn processing, not status
- * .26  04-18-92        jba     removed process from dev init_record parms
- * .27  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
- * .28  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .29  07-16-92        jba     added invalid alrm fwd lnk test & chngd fwd lnk to macro
- * .30  07-21-92        jba     changed alarm limits for non val related fields
- * .31  08-06-92        jba     New algorithm for calculating analog alarms
- * .32  08-19-92        jba     Added simulation processing
- * .33  08-19-92        jba     Added code for invalid alarm output action
- * .34  10-15-93        jba     modified oroc test to work on the mv162
- * .35  03-03-94	mrk	Added aslo and aoff
- * .36  03-29-94	mcn	Fast links.  Moved omsl and dol.type check
- *				out of fetch_value.
  */
 
 #include <vxWorks.h>

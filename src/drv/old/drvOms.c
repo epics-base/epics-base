@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvOms.c */
 /* base/src/drv $Id$ */
 /*
@@ -6,64 +15,6 @@
  *
  * 	Author:      Bob Dalesio
  * 	Date:        12-28-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log
- * -----------------
- * .01	02-07-90	lrd	add command to read status
- * .02	02-09-90	lrd	removed the clamp on the MR command
- * .03	03-22-90	lrd	added the acceleration
- * .04	04-12-90	lrd	only allow one record to connect to each motor
- * .05	04-28-90	lrd	request motor data at 10 Hz. Needed delay to let
- *				motor start moving
- * .06	04-30-90	lrd	fix interrupt vectors for more than one motor
- * .07	07-31-90	lrd	lock the communication to the oms card for
- *				one user
- * .08	08-01-90	lrd	fix turn off of auxilary output when move is
- *				complete
- * .09	08-01-90	lrd	fix the initialization of the card to only
- * 				enable the buffer full interrupt
- * .10	10-23-90	lrd	clamp the send value to something the motor
- *				driver can handle
- * .11	11-13-90	lrd	add intelligence in looking for an OMS card with
- *				an encoder
- * .12  05-15-91        lrd     add initialization of encoder and motor position
- * .13	09-05-91	joh	updated for v5 vxWorks
- * .14  12-10-91	 bg	added sysBusToLocalAddrs().  Added 
- *                              compu_sm_driver.c.	
- * .15  03-10-92	 bg	Added level to io_report and gave 
- *                              compu_sm_io_report() the ability to print out
- *                              contents of motor_data array if level > 1.	
- * .16	06-26-92	 bg	Combined drvOms.c with oms_driver.c
- * .17  06-29-92	joh	took file pointer arg out of io report
- * .18  08-11-92	joh	io report format cleanup	
- * .19  08-02-93	mrk	Added call to taskwdInsert
- * .20  08-05-93	jbk	took out 200000 pulse limit
- * .21  02-28-94	mrk	Replaced itob by cvtLongToString
- * .22  05-05-94	kornke	Now supports VMEX-8 and VMEX-44E
- *				(8 axis s'motors and 4 encoded s'motors)
- * .23  04-09-96	ric	Added SM_FIND_LIMIT, SM_FIND_HOME
- */
 
 /* data requests are made from the oms_task at
  * a rate of 10Hz when a motor is active

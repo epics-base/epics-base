@@ -1,51 +1,15 @@
+/*************************************************************************\
+* Copyright (c) 1993  Southeastern Universities Research Association,
+*             Continuous Electron Beam Accelerator Facility
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/libCompat  $Id$ */
-/*-----------------------------------------------------------------------------
- * Copyright (c) 1993  Southeastern Universities Research Association,
- *             Continuous Electron Beam Accelerator Facility
- *
- * This software was developed under a United States Government license
- * described in the NOTICE file included as part of this distribution.
- *
- * CEBAF Control Systems Group, 12000 Jefferson Ave., Newport News, VA 23606
- * Email:   Tel: (804) 249-7066  Fax: (804) 249-7049
- *-----------------------------------------------------------------------------
-
-		            COPYRIGHT AND LICENSE
-
-Copyright (c) 1991, 1992  Southeastern Universities Research Association,
-		          Continuous Electron Beam Accelerator Facility,
-			  12000 Jefferson Avenue, Newport News, VA 23606 
-
-This material resulted from work developed under a United States Government 
-Contract and is subject to the following license:
-
-The Government retains a paid-up, nonexclusive, irrevocable worldwide license
-to reproduce, prepare derivative works, perform publicly and display publicly
-by or for the Government including the right to distribute to other Government
-contractors. 
-
-
-                  DISCLAIMER AND LIMITATION OF WARRANTY.                    
-                                                                            
-         ALL SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY. THERE           
-         ARE NO WARRANTIES EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED        
-         WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR            
-         PURPOSE. THERE IS NO WARRANTY THAT USE WILL NOT INFRINGE           
-         ANY PATENT, COPYRIGHT OR TRADEMARK.                                
-                                                                            
-In consideration of the use of the software and other materials, user agrees
-that neither the Government nor SURA/CEBAF will be liable for any damages with 
-respect to such use, and user shall hold both the Government and SURA/CEBAF
-harmless from and indemnify them against any and all liability for damages
-arising out of the use of such software and other materials. In no event shall
-the Government or SURA/CEBAF be liable whether arising under contract, tort,
-strict liability or otherwise for any incidental, indirect or consequential loss
-or damage of any nature arising at any time from any cause whatsoever. In
-addition, the Government and SURA/CEBAF assume no obligation for defending
-against third party claims or threats of claims arising as a result of user's
-use of the software or materials either as delivered to user or as modified by
-user.  
-
  *-----------------------------------------------------------------------------
  * 
  * Description:
@@ -54,7 +18,10 @@ user.
  * Author: Pratik Gupta  , CEBAF Control Systems Group 
  * 
  * Revision History: 
- *   $Log$ 
+ *   $Log$
+ *   Revision 1.1  1994/06/27 23:51:19  mcn
+ *   HP compatibility library
+ * 
  */
 
 #include <sys/types.h>

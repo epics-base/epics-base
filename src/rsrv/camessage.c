@@ -1,52 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*	
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
  *	Date:	5-88
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	.01 joh 012290 	placed break in ca_cancel_event search so entire 
- *			list is not searched.
- *	.02 joh	011091	added missing break to error message send 
- *			chix select switch
- *	.03 joh	071291	now timestanmps channel in use block
- *	.04 joh	071291	code for CA_PROTO_CLAIM_CIU command
- *	.05 joh 082691  use db_post_single_event() instead of read_reply()
- *			to avoid deadlock condition between the client
- *			and the server.
- *	.06 joh	110491	lock added for CA_PROTO_CLAIM_CIU command
- *	.07 joh	021292	Better diagnostics
- *	.08 joh	021492	use lstFind() to verify chanel in clear_channel()
- *	.09 joh 031692	dont send exeception to the client if bad msg
- *			detected- just disconnect instead
- *	.10 joh	050692	added new routine - cas_send_heartbeat()
- *	.11 joh 062492	dont allow flow control to turn off gets
- *	.12 joh 090893	converted pointer to server id	
- *	.13 joh 091493	made events on action a subroutine for debugging
- *	.14 joh 020194	New command added for CAV4.1 - client name
- *	.15 joh 052594  Removed CA_PROTO_BUILD cmd 	
  */
 
 

@@ -1,44 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  * errSymLib.c
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log: errSymLib.c
- * -----------------
- * .01  mm-dd-yy        rcz     See below for Creation/Merge
- ****	Merged Modification Logs:
- * Modification Log: errMessage.c
- * -----------------
- * .01  10-08-91	mrk	Allow logMsg or printF
- * .02  03-10-93	joh	expanded errMessage() to accept the
- *				same format string and variable
- *				length arguments as printf()	
- *				and renamed it errPrintf()
- * .03  03-11-93        joh     added __FILE__ and __LINE__ to errPrintf()
- *				created macro errMessage() that calls
- *				errPrintf with __FILE__ and __LINE__
- *				as arguments
  * errMessage.c - Handle error messages 
  ***************************************************************************
  * This must ultimately be replaced by a facility that allows remote
@@ -47,22 +20,6 @@
  * notification of all error messages.
  * For now lets just print messages and last errno via logMsg or printf
  ***************************************************************************
- * Modification Log: errPrint.c
- * -----------------
- * .01  10-08-91	mrk	Allow logMsg or printf
- * .02  04-29-93	joh 	extra arg for errPrint()	
- * .03  04-29-93	joh 	errPrint() became errPrintStatus()	
- * .04	05-06-93	joh	errPrintStatus() get var args 
- *				for vprintf()
- * .05 	05-02-94	joh	errToLogMsg now defaults to TRUE
- *
- * Modification Log: errSymLib.c
- * -----------------
- * .01  09-04-93        rcz     Merged errMessage.c, errPrint.c, errSymFind.c
- *			rcz	into one file (errSymLib.c) and changed method
- *			rcz	of errSymTable lookup.
- * .02 	01-13-95	joh	call mprintf() instead of logMsg()	
- *				and eliminated errToLogMsg variable
  */
 
 #include <stdio.h>

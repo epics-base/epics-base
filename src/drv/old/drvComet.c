@@ -1,59 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* comet_driver.c */
 /* base/src/drv $Id$ */
 /*
  *	Author:		Leo R. Dalesio
  * 	Date:		5-92
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- * 	.01 joh 071092	added argument to calloc()
- * 	.02 joh 071092	stripped the hkv2f specific portion off the comet
- *			std addr base specification and left it at base
- *			addr zero which is most likely wrong. 
- *	.03 joh 071492	use extended (A32) address space
- *			instead of standard (A24) address space
- *			for the base address of the waveform memory
- *			(changed arg to sysBusToLocalAdrs()
- *	.04 joh 071592  fixed to use correct size when incrementing
- *			to the waveform memory of the second card
- *	.05 joh 071592	modified A16 & A32 base addr to match AT8 
- *			address standard
- *	.06  bg 071792	moved addresses to module_types.h 
- *	.07 joh	080592	added io report routines
- *	.08 ms  080692	added comet_mode routine, modified comet_driver
- *			and cometDoneTask to allow an external routine
- *			to control hardware scan mode. Added variable
- *			scan_control to flag operating mode.
- *      .09 mrk 082692  added DSET
- *	.10 joh	082792	fixed uninitialized csr pointer in comet_driver()
- *			function
- *	.11 lrd	091692	add signal support
- *	.12 joh 092992	card number validation now based on module_types.h.
- *			signal number checking now based on the array element
- *			count.
- *	.13 mrk 080293	Added call to taskwdInsert
- *	.14 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";

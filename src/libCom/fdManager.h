@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *      $Id$
  *
@@ -32,6 +41,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/10/27 22:06:46  jhill
+ * removed inline keyword
+ *
  * Revision 1.10  1998/10/23 19:47:12  jhill
  * fixed inline is too big warning
  *

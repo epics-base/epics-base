@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *      $Id$
  *
@@ -29,6 +38,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/05/06 21:40:02  jhill
+ * updated for g++ 2.8.1
+ *
  * Revision 1.8  1998/04/14 00:51:33  jhill
  * code around ms sizeof() bug V5.0
  *

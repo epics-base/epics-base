@@ -1,43 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
  *	Date:	5-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	.00 joh	030191	Fixed cast server to not block on TCP
- *	.01 joh	030891	now reuses old client structure
- *	.02 joh	032091	allways flushes if the client changes and the old
- *			client has a TCP connection.(bug introduced by .00)
- *	.03 joh 071291	changes to avoid confusion when a rebooted
- *			client uses the same port number
- *	.04 joh 080591	changed printf() to a logMsg()
- *	.05 joh 082091	tick stamp init in create_udp_client()
- *	.06 joh 112291	dont change the address until after the flush
- *	.07 joh 112291	fixed the comments
- *      .08 joh 021192  better diagnostics
  *
  *	Improvements
  *	------------

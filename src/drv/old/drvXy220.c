@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* xy220_driver.c */
 /* base/src/drv $Id$ */
 /*
@@ -5,38 +14,6 @@
  *
  * 	Author:      Bob Dalesio
  * 	Date:        5-26-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	10-31-91	bg	broke xy220 driver out of bo_driver.c 
- *				broke xy220 code out of io_report and
- *                              created xy220_io_report(). 
- *                              Added sysBusToLocalAdrs.
- * .02	02-03-92	bg	Gave xy220_io_report the ability to 
- *				read raw values from card if level > 1.
- * .03	08-10-92	joh	merged potions of bo_driver.h
- * .04	08-25-92	mrk	made masks a macro
  */
 
 static char SccsId[] = "@(#)drvXy220.c	1.6\t9/20/93";

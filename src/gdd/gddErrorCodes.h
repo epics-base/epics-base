@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDD_ERROR_CODES_H
 #define GDD_ERROR_CODES_H
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1997/04/10 19:59:26  jhill
+ * api changes
+ *
  * Revision 1.2  1996/08/27 13:05:10  jbk
  * final repairs to string functions, put() functions, and error code printing
  *

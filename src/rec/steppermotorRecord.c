@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recSteppermotor.c */
 /* base/src/rec  $Id$ */
 
@@ -7,97 +16,6 @@
  *      Current Author:  Marty Kraimer
  *      Date:            12-11-89
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  02-07-90        lrd     fix initial fetch from within the motor record
- * .02  02-07-90        lrd     add a motor command for reading current status
- * .03  04-11-90        lrd     fixed acceleration for velocity mode motor
- * .04  04-13-90        lrd     make second argument for move = 0
- * .05  04-19-90        lrd     keep first error
- *                              add retry deadband
- *                              make the retry count a database field
- * .06  04-20-90        lrd     make readback occur before setting MOVN to 0
- * .07  07-02-90        lrd     make conversion compute in floating point
- * .08  10-01-90        lrd     modify readbacks to be throttled by delta
- * .09  10-23-90        lrd     update rbv even when there are no monitors
- * .10  10-25-90        lrd     change initialization to set all variables to IVAL
- * .11  10-26-90        lrd     add DMOV to indicate all retries exhausted or
- *                              motor is at position within deadband
- * .12  10-31-90        lrd     add time stamps
- * .13  11-28-90        lrd     make initialization work when readbacks are
- *                              from LVDTs, Motor position and encoders.
- *                              Fixed sm_get_position to be aware of the motion
- *                              status before it was set in the record see .06
- * .14  11-29-90        lrd     conditionally process soft channels
- * .15  12-14-90        lrd     fixed limit switch monitor notification
- * .16  12-17-90        lrd     stop motor on overshoot
- * .17  12-17-90        lrd     fix limits on initialization
- * .18  03-15-91        lrd     change acceleration and velocity for positional
- *                              motors
- * .19  03-21-91        lrd     add forward link processing
- * .20  06-04-91        lrd     apply drive high and low software clamps before
- *                              checking if the setpoint is different
- *                              move the conversion to steps in line
- *                              apply deadband to overshoot checking
-
- * .21  06-25-91        mk      fix direction indication
- * .22  06-25-91        mk/lrd  fix encoder position divide by zero
- * .23  06-25-91        lrd     add DBE_LOG to monitors other than value
- * .24  07-02-91        rac     avoid gcc warnings
- * .25  08-28-91        lrd     add open circuit detect on limit switches
- * .26  09-16-91        lrd     fix IALG not 0 and SCAN not Passive - The motor
- *                              would continually attempt to initialize
- * .27  12-09-91        lrd     new ININVALID severity for errors that invalidate
- *                              the results
- * .28  12-17-91        lrd     changed the MDEL and ADEL deadbands so
- *                              the range for exceeding the deadband includes
- *                              the value specified. (i.e. 0 is always violated)
-
- * .21  10-15-90	mrk	extensible record and device support
- * .22  10-24-91	jba	bug fix to alarms
- * .23  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .24  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .25  02-28-92	jba	ANSI C changes
- * .26  03-18-92	mrk	move retry to callback
-				Make STOP stop even if retry>0
-				Make motor move whenever VAL field accessed
- * .27  04-08-92	mrk	break out device support
- * .28  04-18-92        jba     removed process from dev init_record parms
- * .29  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .30  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .31  07-21-92        jba     changed alarm limits for non val related fields
- * .32  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue
- * .33  01-05-93        jbk     force recalc of velo and accel each time rec processed
- * .34  07-20-93        jbk     fixed accel of zero causing divide by zero
- * .35  08-06-93	mrk	vel mode: Call recGblFwdLink only when motor
- *				Stops
- * .36  09-15-93	mrk	call monitor when starting
- * .37  03-29-94	mcn	converted to fast links
- * .38  09-27-95	lrd	fix init to limit in overshoot check and retry
- *				post monitors for mcw and mccw
- * .39  04-09-96	ric	Pos/Neg limit algos changed to move max int
- *				steps.  Dev/Drv sup will interpret meaning
  */
 
 #include	<vxWorks.h>

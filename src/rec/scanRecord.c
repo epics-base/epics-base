@@ -1,113 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 /*
  *      Original Author: Ned D. Arnold
  *      Date:            07-18-94
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- *
- * Modification Log:
- * -----------------
- * .01  07-18-94  nda   significantly expanded functionality from prototype
- * .02  08-18-94  nda   Starting with R3.11.6, dbGetField locks the record
- *                      before fetching the data. This can cause deadlocks
- *                      within a database. Change all dbGetField() to dbGet()
- * .03  08-23-94  nda   added code for checking/adjusting linear scan
- *                      params (it gets a little messy !)
- * .04  08-25-94  nda   Added check of scan positions vs Positioner Control
- *                      Limits
- * .05  08-29-94  nda   Added "viewScanPos" that puts desired positions
- *                      in D1 array any time a scan parameter is changed
- * .06  10-03-94  nda   added code for enumerated string .CMND. Changed 
- *                      .EXSC to a SHORT in record definition. Added VERSION
- *                      for .VERS field (1.06) to keep track of version. 
- * .07  10-21-94  nda   changed linear scan parameter algorithms so changing
- *                      start/end modifies step/width unless frozen. This
- *                      seems more intuitive.
- * .08  12-06-94  nda   added support for .FFO .When set to 1, frzFlag values
- *                      are saved in recPvtStruct. Restored when FFO set to 0.
- * .09  02-02-95  nda   fixed order of posting monitors to be what people
- *                      expect (i.e. .cpt, .pxdv, .dxcv)
- * .10  02-10-95  nda   fixed on-the-fly so 1st step is to end position
- * .11  02-21-95  nda   added "Return To Start" flag. If set, positioners
- *                      will be commanded to the start pos after the scan.
- * .12  03-02-95  nda   added positioner readback arrays (PxRA). These arrays
- *                      will contain actual readback positions (if RxPV are
- *                      defined. If not, the desired positions will be loaded
- *                      into them.
- * .13  03-02-95  nda   Post .val field when a new point is complete during a
- *                      scan. This will assist in poin by point plots.
- * .14  03-02-95  nda   Bug fix on filling PxRA's. ALWAYS CALL CHECK_MOTORS.
- * .15  03-15-95  nda   If no readback PV (RxPV) is specified, copy desired
- *                      value (PxDV) to current value (RxCV). Now, plotting
- *                      programs can always monitor RxCV.
- * .16  04-03-95  nda   If PV field = DESC, change to VAL                  
- * 
- * 3.00 08-28-95  nda   > Significant rewrite to add Channel Access
- *                      for dynamic links using recDynLink.c . All
- *                      inputs are now "monitored" via Channel Access.
- *                      > Name Valid field is used to keep track of PV
- *                      connection status: 0-PV_OK,
- *                      1-NotConnected,  2-NO_PV
- *                      > added relative/absolute mode on positioners 
- *                      > added retrace options of stay/start/prior 
- *                      > supports 15 detectors
- *                      > added "preview scan"
- *                      > added "Before Scan" and "After Scan" links
- *                      > fetch DRVL/DRVH/prec/egu from dynamic links
- *                      > when posting arrays at end of scan, use DBE_LOG, too
- *                      > Record timeStamp only at beginning of scan
- *                      > Record positioner readbacks when reading detectors
- *                      > "TIME" or "time" in a readback PV records time 
- *
- * 3.01 03-07-96  nda   Rearrange order of precedence of linear scan parameters
- *                      per Tim Mooney's memo duplicated at end of this file
- *
- * 3.02 03-12-96  nda   If scan request and any PV's are PV_NC, callback 3
- *                      seconds later ... if still PV_NC, abort. Also, if any
- *                      control PV's (positioners, readbacks, detctr triggers)
- *                      lose connection during a scan, abort scan.
- *                      
- * 3.02 03-12-96  nda   Changed detector reading to accommodate the possibility
- *                      of connections "coming and going" during a scan: If a
- *                      detector PV is valid at the beginning of the scan, the
- *                      value will be read each point. If the PV is not 
- *                      connected for a given point, a zero will be stored. 
- *                      Previously, nothing would be stored, which left old
- *                      data in the array for those points. Any detector PV's
- *                      added during a scan will be ignored until the next scan 
- *
- * 3.02 03-12-96  nda   Writing a 3 to the .CMND field will clear all PV's,  
- *                      set all positioners to LINEAR & ABSOLUTE, resets all
- *                      freeze flags & .FFO, sets .SCAN to Passive,RETRACE=stay
- *
- * 3.03 04-26-96  tmm   Writing a 4 to the .CMND field will clear positioner
- *                      PV's, set all positioners to LINEAR & ABSOLUTE, reset
- *                      all freeze flags & .FFO, set .SCAN to Passive, set
- *                      RETRACE=stay
- *
- * 3.13 _______   nda   changes for 3.13
- *      03-15-96        - remove pads from detFields structure
- *                      - use fieldOffset indexes
  */
 
 #define VERSION 3.13

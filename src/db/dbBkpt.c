@@ -1,47 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbBkpt.c */
 /* base/src/db $Id$ */
 /*
  *      Author:          Matthew Needes
  *      Date:            8-30-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- *  $Log$
- *  Revision 1.9  1998/01/20 16:19:48  mrk
- *  Fix include statements
- *
- *  Revision 1.8  1996/08/05 19:33:40  jhill
- *  removed ; from if
- *
- *  Revision 1.7  1996/04/22 14:30:38  mrk
- *  Changes for dynamic link modification
- *
- *  Revision 1.6  1995/11/29 14:23:28  mrk
- *  Changes for replacing default.dctsdr by all ascii files
- *
- * Revision 1.5  1995/02/23  21:45:03  mcn
- * Fixed locking error.  OOPS.
  *
  */
 

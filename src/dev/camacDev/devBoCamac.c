@@ -1,3 +1,10 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devBoCamac.c */
 /* devBoCamac.c : Generic device support for Camac binary output */
 /*
@@ -5,18 +12,6 @@
  *      Current Author:  Johnny Tang
  *      Date:            5th Aug 1993
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1993, SURA CEBAF.
- *
- *      Initial development by:
- *              MCC epics prototype team.
- *
- *      Co-developed with
- *
- * Modification Log:
- * -----------------
- *      4-28-94		jt
  */
 
 

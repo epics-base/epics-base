@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDDI_H
 #define GDDI_H
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1998/06/16 03:16:27  jhill
+ * fixed big problems with leaked ait/fixedString in gdd union
+ *
  * Revision 1.2  1997/08/05 00:51:15  jhill
  * fixed problems in aitString and the conversion matrix
  *

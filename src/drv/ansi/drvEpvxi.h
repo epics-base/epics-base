@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* 	drvEpvxi.h */
 /* 	$Id$ */
 /*
@@ -5,41 +14,6 @@
  *
  *      Author:      Jeff Hill
  *      Date:        8-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01 070792 joh 	Added MACROS to return the A24 and A32 base addr
- * .02 072992 joh 	Added  sccs id
- * .03 081992 joh 	ANSI C func proto
- * .04 082592 joh	added arg to epvxiRead() and epvxiWrite()	
- * .05 090392 joh	Now runtime links to NI trigger routing	
- * .06 092392 joh	New status from epvxiRead() - VXI_BUFFER_FULL
- * .07 033193 joh     	error codes converted to EPICS standard format
- * .08 071293 joh	record task id when opening a device	
- * .09 082793 joh	-Wall cleanup and added drvEpvxiFetchPConfig()
- *
- *
  */
 
 

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef AIT_CONVERT_H__
 #define AIT_CONVERT_H__
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5.8.1  2001/09/05 15:10:11  jhill
+ * removed ifdef on GNUC
+ *
  * Revision 1.5  1997/08/05 00:51:04  jhill
  * fixed problems in aitString and the conversion matrix
  *

@@ -1,39 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef INC_tsDefs_h
 #define INC_tsDefs_h
 /*	$Id$	
  *	Author:	Roger A. Cole
  *	Date:	08-09-90
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991-92, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- *  .01 08-09-90 rac	initial version
- *  .02 06-18-91 rac	installed in SCCS
- *  .03 08-03-92 rac	added tsRound routines
- *  .04 07-02-96 joh	added ANSI prototypes	
- *  .05 02-05-98 mrk    move pvt stuff to source file;
- *                      TsAddDouble just invokes tsAddDouble
- *
  */
 /*+/mod***********************************************************************
 * TITLE	tsDefs.h - time-stamp related definitions

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbEvent.c */
 /* share/src/db  $Id$ */
 /* routines for scheduling events to lower priority tasks via the RT kernel */
@@ -5,63 +14,6 @@
  * 	Author: 	Jeffrey O. Hill 
  *      Date:            4-1-89
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *	NOTES:
- *
- * Modification Log:
- * -----------------
- * joh	00	04xx89	Created
- * joh	01	043089	Init Release
- * joh	02	061489	changed DBCHK to PADDRCHK since we are 
- *			checking precord instead of pfield now.	
- * joh	03	072889	Added dynamic que size increase proportional 
- *			to nevents
- * joh	04	082189	Added init func to args of db_start_events()
- * joh	05	122189	fixed bug where event que not completely
- *			dealloated when there are many events.
- * joh	06	021690	changed names here and in dbCommon to avoid
- *			confusion for those maintaining this code
- *			(this change does not modify obj code).
- *			mlok became mlok
- *			mlst became mlis
- * joh	07	030590	improved db_event_list() diagnostic
- * joh	08	031590	improved flush wait in db_cancel_event()
- * joh	09	112790	added time stamp, alarm, and status logging
- * joh	10	112790	source cleanup
- * ???	11	????91	anl turned off paddr sanity checking
- * joh	12	082091	db_event_get_field() comented out
- * joh	13	091191	updated for v5 vxWorks
- * jba  14      112691  Added 'return NULL;' to end of db_event_list
- * jba  15      022892  ANSI C changes
- * joh  16    	111992  removed unused taskpri var
- * joh  17    	111992  added task priority offset arg to
- *             	   	db_start_events()
- * joh  18	072993	changed npend to unsigned long to be safe
- * joh  19	080393 	fixed sem timeout while waiting for marker bug	
- * joh  20	080393 	ANSI C changes
- * joh  21	080393 	added task watch dog	
- * joh  22	011397 	designed and installed fix for "events lost"
- *			problem
  */
 
 #include    <limits.h>

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/drv $Id$ */
 
 /*
@@ -6,56 +15,6 @@
  *
  * 	Author:      Jeff Hill
  * 	Date:        11-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	.01 joh 021490	first release
- *	.02 joh 040490	took out init of binary outs as requested by AT5
- *	.03 joh 040490	KLUDGED so DC is invarient of model number
- *	.04 joh 072590	fixed case where a missing SC module could 
- *			be accessed before checking to prevent bus error
- *	.05 joh 102990	slightly improved sync to busy in init
- *	.06 joh 032191	added code to implement a new register 
- *			interface from AT5
- *	.07 joh 080291	disable ints during control X reboot
- *	.08 joh 080291	fixed ints on before handler installed problem
- *			introduced by .06
- *	.09 joh 080291	synch source with sorce release control version
- *	.10 joh 080891	delinting
- *	.11 joh 090591	converted to v5 vxWorks
- *	.12 joh 120591	reorganized for use with new vxi support and removed 
- *			KLUDGE introduced in .03
- *	.13 joh 042492	removed support for (ifdefs for) the old
- *			style register map
- *	.14 joh 071792	added model name registration
- *	.15 joh 072992	print more raw values in io report
- *	.16 joh 081092	merged at5vxi_models.h into this source
- *	.17 joh 081992	function name change	
- *	.18 joh 082792	converted to ansi C
- *	.19 joh	111392	removed shifts on analog IO
- *	.20 joh	071593	fixed comment	
- *	.21 joh	081193	took out EPICS_V2 compile switches
  *
  *	Notes:
  *	------

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*	* base/include seqCom.h,v 1.3 1995/10/10 01:25:08 wright Exp
  *
  *	DESCRIPTION: Common definitions for state programs and run-time sequencer.
@@ -5,25 +14,6 @@
  *      Author:         Andy Kozubal
  *      Date:           01mar94
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1993 the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- * Modification Log:
- * -----------------
- * 11jul96,ajk	Changed all int types to long.
- * 22jul96,ajk	Changed PFUNC to ACTION_FUNC, EVENT_FUNC, DELAY_FUNC, & EXIT_FUNC.
- * 
  */
 #ifndef	INCLseqComh
 #define	INCLseqComh

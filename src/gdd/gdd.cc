@@ -1,9 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
 // $Id$
 // 
 // $Log$
+// Revision 1.26  1998/10/26 11:18:41  lange
+// Bug in gdd::~gdd fixed (CA gateway crashes).
+//
 // Revision 1.25  1998/06/23 15:10:36  jhill
 // fixed use of nill ptr in gdd::put(const gdd* dd)
 //

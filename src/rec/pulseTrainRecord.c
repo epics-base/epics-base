@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recPulseTrain.c */
 /* base/src/rec  $Id$ */
 
@@ -6,42 +15,6 @@
  * Author:      Janet Anderson
  * Date:     6/21/91
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  10-24-91        jba     New device support changes
- * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .03  02-05-92	jba	Changed function arguments from paddr to precord 
- * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .05  02-28-92	jba	ANSI C changes
- * .06  04-10-92        jba     pact now used to test for asyn processing, not status
- * .07  04-18-92        jba     removed process from dev init_record parms
- * .08  06-02-92        jba     changed graphic/control limits for per,oper
- * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .11  09-10-92        jba     replaced get of hgv value with call to recGblGetLinkvalue
- * .12  10-10-92        jba     replaced code with recGblGetLinkValue call
- * .13  10-18-92        jba     pact now set in recGblGetLinkValue
  */ 
 
 #include     <vxWorks.h>

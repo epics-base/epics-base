@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 //
 // $Id$
 //
@@ -5,6 +14,9 @@
 //
 //
 // $Log$
+// Revision 1.9  1998/06/16 02:35:50  jhill
+// use aToIPAddr and auto attach to winsock if its a static build
+//
 // Revision 1.8  1998/05/29 20:08:20  jhill
 // use new sock ioctl() typedef
 //

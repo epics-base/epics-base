@@ -1,41 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* errMdef.h  err.h - Error Handling definitions */
 /* share/epicsH $Id$ */
 /*
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02	12-02-91	jrw	added GPIB and BB message codes
- * .03  03-11-93        joh     added __FILE__ and __LINE__ to errMessage()
- * .04  04-01-93        joh     added vxi
- * .05  04-29-93        joh     added errPrintStatus() func proto
- * .06  09-04-93        rcz     added functions ... for errSymLib.c merge
- * .07  02-03-94	mrk	RTN_SUCCESS is true only if status=0
- * .08  02-03-94	mrk	Add access security library
- * .09  05-23-95	joh	Add bucket hashing library
  */
 
 #ifndef INCerrMdefh

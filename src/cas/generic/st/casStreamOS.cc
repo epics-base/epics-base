@@ -1,9 +1,24 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 //
 // casStreamOS.cc
 // $Id$
 //
 //
 // $Log$
+// Revision 1.10  1998/10/23 00:27:15  jhill
+// fixed problem where send was not always rearmed if this
+// was indirectly necessary in the send callback because
+// in this callback the code considered sends to be still armed
+// until the send callback completed
+//
 // Revision 1.9  1998/09/24 20:50:50  jhill
 // subtle changes which relate to not flushing the output buffer if there are bytes
 // pending in the input queue (improves performance)

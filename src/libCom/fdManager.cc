@@ -1,9 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 //
 // $Id$
 //
 //
 // $Log$
+// Revision 1.15.4.1  1999/08/12 20:38:04  jhill
+// bail out if select returns errors besides EINTR
+//
 // Revision 1.15  1998/10/23 19:47:12  jhill
 // fixed inline is too big warning
 //

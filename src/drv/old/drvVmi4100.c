@@ -1,52 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the vme analog output cards
  *
  * 	Author:      Bob Dalesio
  * 	Date:        9-26-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	11-09-88	lrd	add LED light status to Ziomek-085
- * .02	02-08-89	lrd	addresses from module_types.h
- *				use 085 structure
- * .03	03-17-89	lrd	add ao_read routine
- * .04	03-29-89	lrd	return correct status on write
- * .05	11-20-89	joh	added call to the at5 vxi driver
- * .06  06-08-90	mrk	fixed bug (R Daly found) for VMI4100
- * .07  10-31-91	 bg	broke vmi4100 driver out of ao_driver.c
- *                              broke vmi4100 code out of io_report and
- *                              created vmi400_io_report()
- * .08  01-10-92	 bg     Added levels to io_report and warning message
- *                              that raw values cannot be read from vmi4100
- *                              card even it the level is 1.
- * .09	08-05-92	joh	arguments to init routine now conform with the
- *				standard
- * .10	08-05-92	joh	added EPICS driver dispatch table	
- * .11	08-05-92	joh	moved parameters from ao_driver.h to here
- * .12	08-11-92	joh	num of cards now dyn configurable	
- * .13	08-24-93	mrk	removed use of variable base_addr
  */
 
 static char *sccsID = "@(#)drvVmi4100.c	1.5\t8/27/93";

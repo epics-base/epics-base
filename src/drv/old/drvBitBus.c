@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* #define XYCOM_DO_RESET_AND_OFFLINE */
 /* #define PEP_DO_RESET_AND_OFFLINE */
 
@@ -25,46 +34,6 @@
  *      Author: John Winans
  *      Date:   09-10-91
  *	XVME-402 and PB-bit BitBus driver
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  09-30-91        jrw     Completely redesigned and rewritten
- * .02	12-02-91	jrw	Changed priority info to arrays
- * .03	12-16-91	jrw	Made the data portion of the message a pointer
- * .04	01-21-91	jrw	moved the task parameters into task_params.h
- * .05	02-12-92	jrw	removed IRQ based transmission.
- * .06	04-08-92	jrw	moved the device configs into module_types.h
- * .07	09-28-92	jrw	upped the reset delay time to 1/2 second
- * .08	08-02-93	mrk	Added call to taskwdInsert
- * .09  06-28-94	jrw	Major work on RAC_RESET and NODE_OFFLINE stuff.
- * .10  07-01-94	jrw	Merged PEP and Xycom versions together.
- *				ANSIficated this code
- * .20  06-30-97        nda     removed alot of "debugging" code now that the
- *                              PEP board is finally behaving.
- *                              Added device support for waveforms so the
- *                              bitbus timeouts per node can be monitored 
- *                              via EPICS.
  *
  * NOTES:
  * This driver currently needs work on error message generation.

@@ -1,38 +1,15 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*	$Id$	
  *	Author:	Roger A. Cole
  *	Date:	07-20-91
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	07-20-91	rac	initial version
- * .02  08-07-91	joh	added ioc log env
- * .03  09-26-94	joh	ifdef out double inclusion	
- * .04  11-28-94	joh	new CA env var 
- * .05  04-20-95	anj	moved defaults to CONFIG_ENV
- * .06  09-11-96	joh 	ANSI prototypes	
- * .07  09-18-96	joh 	added envParamIsEmpty()	
- * .08  03-18-97	joh 	remove env param length limit	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks

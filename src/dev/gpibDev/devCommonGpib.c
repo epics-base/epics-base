@@ -1,106 +1,19 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devCommonGpib.c */
 /* base/src/dev $Id$ */
 
 /*
- * $Log$
- * Revision 1.2  1999/07/07 20:07:13  mrk
- * sscanf response now checked to be equal to 1 rather than just not zero.
- *
- * Revision 1.1  1998/01/21 20:46:55  mrk
- * restructure; new Symb support
- *
- * Revision 1.36  1998/01/20 22:08:59  mrk
- * cleanup includes
- *
- * Revision 1.35  1997/06/30 12:53:06  mrk
- * GPIBEFASTO: Last fix was TOO strict
- *
- * Revision 1.34  1997/04/30 18:58:03  mrk
- * Fixed most compiler warning messages
- *
- * Revision 1.33  1997/04/09 19:50:39  mrk
- * Forgot to compile before committing
- *
- * Revision 1.32  1997/04/09 19:35:56  mrk
- * makesure GPIBFASTO has val in range
- *
- * Revision 1.31  1997/04/09 18:33:49  mrk
- * Restore original
- *
- * Revision 1.29  1996/06/12 20:04:51  winans
- * Added better debugging code to the initXX logic.
- *
- * Revision 1.28  1996/06/06 14:35:41  winans
- * Fixed external reference to GPIB driver's DRVET
- *
- * Revision 1.27  1996/02/16 22:04:58  jba
- * Changed field reference from val to oval in devGpibLib_aoGpibWork
- *
- * Revision 1.26  1995/11/27  22:13:22  winans
- * Added raw reading capability to the waveform record support.
- *
- * Revision 1.25  1995/07/31  19:44:08  winans
- * Changed the parameter table and associated support routines to support
- * buffer length specifications of size long instead of short.
- *
- * Revision 1.24  1995/03/10  16:55:40  winans
- * Added waveform writing support
- *
- * Revision 1.23  1995/01/06  16:55:52  winans
- * Added the log parameter to the doc
- *
- *
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold
  *      Date:   		11-20-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1988, 1989, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * All rights reserved. No part of this publication may be reproduced, 
- * stored in a retrieval system, transmitted, in any form or by any
- * means,  electronic, mechanical, photocopying, recording, or otherwise
- * without prior written permission of Los Alamos National Laboratory
- * and Argonne National Laboratory.
- *
- * Modification Log:
- * -----------------
- * .01  05-30-91        nda     Initial Release
- * .02  06-18-91	nda	init_rec_mbbo must return(2) if no init value
- * .03  07-02-91	nda	renamed String/StringOut DSET's to Si/So
- * .04  07-11-91	jrw	added the callbackRequest to process()
- * .05  07-15-91	jrw	redesigned init processing... more generic
- * .06  11-01-91	jrw	major rework to fit into new GPIB driver
- * .07  11-11-91	jrw	added new version of SRQ support
- * .08  11-17-91	jrw	changed to support SR620
- * .09  11-20-91	jrw	redesigned as a library
- * .10  11-22-91	jrw	removed output formatting for all but GPIBWRITEs
- * .11	01-10-92	jrw	changed return from GPIBSOFT (propagated, was 0)
- * .12	02-05-92	jba	Changed process parameter from precord->pdba to precord
- * .13	02-18-92	jrw	Changed return from the AO init function to 2
- * .14	02-26-92	jrw	added return codes to the output work functions
- * .15	02-27-92	jrw	added the setting of PACT to 1 when init fails
- * .16	04-08-92	jrw	reordered initXx to clean up SRQ init code
- * .17  04-30-92	jrw	added waveform record support
- * .18  07-10-92	jrw	initXx endless loop looking for hwpvt
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field

@@ -1,5 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  * $Log$
+ * Revision 1.7.8.1  1999/07/15 23:07:39  jhill
+ * include the compile date
+ *
  * Revision 1.7  1997/04/30 19:12:25  mrk
  * Fix compiler warning messages
  *

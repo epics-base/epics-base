@@ -1,47 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recSup.h
  *	Record Support
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  11-11-91        jba     Added include dbCommon.h,recGblSetSevr,recGblResetSevr 
- * .02  12-18-91        jba     Changed caddr_t to void *
- * .03  03-04-92        jba     Added include for dbAccess.h
- * .04  05-18-92        rcz     removed extern
- * .05  05-18-92        rcz     Changed macro "GET_PRSET(" to "GET_PRSET(precSup,"
- * .06  05-18-92        rcz     New database access (removed extern)
- * .07  07-16-92        jba     Added macro recGblFwdLink
- * .08  07-16-92        jba     changed VALID_ALARM to INVALID_ALARM
- * .09  08-10-92        jba     added #defines for SIMM processing
- * .10  08-11-92        jba     added DB_INTEREST masks
- * .11  08-13-92        jba     added prototype for recGblGetAlarmDouble,
- * .12  08-14-92        jba     added prototypes recGblGetLinkValue,recGblPutLinkValue
- * .13  09-15-92        jba     added vxWorks ifdef
- * .14  -7-27-93	mrk	remove recGblResetSevr add recGblResetAlarms
- * .15	03-18-94	mcn	added fast link macros and prototypes
- * .16	06-13-95	mrk	moved recGbl defs to recGbl.h
  */
 
 #ifndef INCrecSuph

@@ -1,3 +1,14 @@
+/*************************************************************************\
+* Copyright (c) 2002 Lawrence Berkeley Laboratory, Advanced Light Source,
+*     Control System Group
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devVmic2534.c */
 /* share/src/dev @(#)devVmic2534.c	1.2     6/3/93 */
 
@@ -13,31 +24,6 @@ static char rcsid[] =
  *
  *      Author:      Bill Brown
  *      Date:        03/22/94
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1994, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (DE-AC03-76SF00) at Lawrence Berkeley Laboratory.
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              Control System Group
- *              Advanced Light Source
- *              Lawrence Berkeley Laboratory
- *
- *      Co-developed with
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
  *
  *      NOTES:
  *          This code is/was cloned from "devXy240.c" of EPICS R3.11
@@ -50,30 +36,6 @@ static char rcsid[] =
  *
  *          Bits 0-15 are "hard-wired" as outputs.
  *          Bits 16-31 are "hard-wired" as inputs.
- *
- *
- * Modification Log:
- * -----------------
- *
-    @(#) devVmic2534.c,v
-    @(#) Revision 1.1  1996/01/09 19:54:24  lewis
-    @(#) Add PAL record.  Remove APS eg/er records.
-    @(#) Add 4 STAR drivers, LBL 2534, and preliminaries for LBL/SLAC 9210/9325 drivers.
-    @(#)
- * Revision 1.1.1.1  1995/07/25  21:49:33  lewis
- * Baseline import R3.12 w/LBL drivers and mods.
- *
- * Revision 1.3  1994/08/19  15:17:54  wbrown
- * added debug #ifdef, printf statements
- *
- * Revision 1.2  94/07/20  09:27:01  wbrown
- * modified to dynamically assign data direction at
- *   record init time.
- * 
- * Revision 1.1  94/07/12  10:30:14  wbrown
- * Initial revision
- * 
- * 
  */
 
 

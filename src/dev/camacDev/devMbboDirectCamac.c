@@ -1,3 +1,10 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devMbboDirectCamac.c */
 /* devMbboDirectCamac.c - Device Support Routines for Camac Multi-bit binary direct output
  * -- 32 bit binary output						 	 	
@@ -6,15 +13,6 @@
  *      Current Author:  Johnny Tang
  *      Date:            6th Aug 1993
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, SURA CEBAF.
- *
- *
- *
- * Modification Log:
- * -----------------
- *      4-28-94		jt
  */
 
 

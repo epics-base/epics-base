@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *      $Id$
  *
@@ -29,6 +38,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/07/08 15:38:03  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.6  1998/06/18 00:08:30  jhill
  * deleted unused variables
  *

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recTimer.c */
 /* base/src/rec  $Id$ */
 
@@ -7,51 +16,6 @@
  *      Current Author:  Marty Kraimer
  *      Date:            1-9-89
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  01-20-89        lrd     fix vx includes
- * .02  02-06-89        lrd     add event post capability
- * .03  03-29-89        lrd     make hardware errors MAJOR
- *                              remove hw severity spec from database
- * .04  04-07-89        lrd     service monitors
- * .05  05-03-89        lrd     removed process mask from arg list
- * .06  05-03-89        lrd     modified to read the timing on startup
- * .07  05-03-89        lrd     read trigger delay from trigger origin record
- * .08  07-03-89        lrd     add processing a forward link
- * .09  08-15-89        lrd     add post events for timing pulse 1 fields
- * .10  10-15-90	mrk	extensible record and device support
- * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .12  12-02-91        jba     Added cmd control to io-interrupt processing
- * .13  12-12-91        jba     Set cmd to zero in io-interrupt processing
- * .14  02-05-92	jba	Changed function arguments from paddr to precord 
- * .15  02-28-92	jba	ANSI C changes
- * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .18  10-10-92        jba     replaced get of trdl from torg code with recGblGetLinkValue call
- * .19  09-02-93        mcn     Changed DSET structure for timers, moved code that bypassed
- *                              device support into new device support (major improvement).
- * .20  03-30-94        mcn     converted to fast links
  */
 
 #include <vxWorks.h>

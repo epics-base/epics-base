@@ -1,84 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/drv $Id$ */
 /* drvXy566.c -  Driver Support Routines for xy566 
  *
  * 	Author:      Bob Dalesio
  * 	Date:        6-13-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .00	09-14-88	lrd	check for IGEN card present before initing
- * .01	9-27-88		lrd	removed test code
- * .02	09-27-88	lrd	removed call to xy_mem_init
- * .03	10-04-88	lrd	remove IGEN support
- * .04	10-07-88	lrd	add support for the Xycom 085 arm mechanism
- *				added external latched AI and made
- *				others scan continuously 
- * .05	11-10-88	lrd	change addresses per HW Tech Note #2
- * .06	02-08-89	lrd	moved module addresses into a table in
- *				module_types.h from ai_driver.h
- * .07	02-24-89	lrd	modify for vxWorks 4.0
- *				changed sysSetBCL to sysIntEnable
- * .08	04-17-89	lrd	add callback mechanism for data take complete
- * .09	05-10-89	lrd	increased performance for xycom 566 interface
- *				by keeping the address of the memory buffers
- *				thus removing the need to calculate on each 
- *				read
- * .10	07-27-89	lrd	modified to use channel 0 not channel 1
- * .11	11-20-89	joh	added call to the at5vxi ai driver
- * .12	02-15-90	lrd	modified for new 085 card
- *	02/04/91	ges	Change taskDelay from 6 to 2 in 
- *				"xy566DoneTask". Allows rearm and data reads 
- *				for successive waveform scans up thru 
- *				10 Hz rates.
- * .13	08-27-91	 bg	broke the 566 driver out of ai_driver.c
- *                              and moved it to this file. Moved io_report code
- *                              to this file. 
- *                              added arguments and raw value read out 
- *				for analog in cards.
- * .14	10/30/91	bg	Combined the xy566 waveform driver with the
- *                               xy566 analog in drivers. Changed addressing to
- *                               use sysBusToLocalAddrs and VME_AM_STD_SUP or
- *                               VME_AM_SUP_SHORT_IO
- * .15  11-30-91         bg	Added sysBusToLocalAdrs to both ai and 
- *				waveform sections.                  
- * .16  02-05-92         bg	Changed io_report so it has an argument 
- *				level and so if the level > 1, the raw 
- *				value from the card will be printed out 
- *				for analog ins only.
- * .17	03/20/92	bg	Added the argument level to io_report, 
- *				but so far it doesn't do anything. Will 
- *				add ability to report ability to read out 
- *				raw value if there is a demand.
- * .18  08-10-92	joh	cleaned up the merge of the xy566 wf and ai
- *				drivers
- * .19  08-25-92      	mrk     replaced call to ai_driver by ai_xy566_driver
- * .20  08-26-92      	mrk     support epics I/O event scan
- * .21  08-27-92	joh	fixed routines which return with and without
- *				status	
- * .22  08-27-92	joh	fixed nonexsistant EPICS init 
- * .23  08-02-93	mrk	Added call to taskwdInsert
- * .24  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 #include	<vxWorks.h>

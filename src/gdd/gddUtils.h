@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDD_UTILS_H
 #define GDD_UTILS_H
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/05/19 19:23:51  jbk
+ * Fixed bug in new/delete operators for gddBounds1D, 2D, and 3D
+ *
  * Revision 1.3  1997/04/23 17:13:07  jhill
  * fixed export of symbols from WIN32 DLL
  *

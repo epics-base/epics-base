@@ -1,65 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * 	
- *      Modification Log:
- *      -----------------
- * 	cjm 20-Nov-95 Add code for gettimeofday
- *
- * $Log$
- * Revision 1.25  1998/06/16 00:43:12  jhill
- * moved code to libCom
- *
- * Revision 1.24  1998/04/13 19:14:35  jhill
- * fixed task variable problem
- *
- * Revision 1.23  1998/02/05 22:36:01  jhill
- * added starlet.h (SLAC's request)
- *
- * Revision 1.22  1997/06/13 09:14:27  jhill
- * connect/search proto changes
- *
- * Revision 1.21  1997/01/22 21:11:49  jhill
- * moved vms includes here
- *
- * Revision 1.20  1996/07/02 23:04:07  jhill
- * took &tz out of gettimeofday()
- *
- * Revision 1.19  1995/12/19  19:35:24  jhill
- * -cjm 20-Nov-95 Add code for gettimeofday
- *
- * Revision 1.18  1995/10/12  01:35:30  jhill
- * Moved cac_mux_io() to iocinf.c
- *
- * Revision 1.17  1995/08/22  00:27:56  jhill
- * added cvs style mod log
- *
- *
  */
 
 /*

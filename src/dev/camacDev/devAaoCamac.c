@@ -1,16 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devAaoCamac.c */
 /* devAaoCamac.c - Device Support Routines for Camac array analog output */
 /*
  *      Author:          Johnny Tang
  *      Date:            1st April 1994.
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1994, SURA CEBAF.
- *
- *
- * Modification Log:
- * -----------------
  */
 
 #include	<vxWorks.h>

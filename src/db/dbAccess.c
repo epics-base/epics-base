@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbAccess.c */
 /* base/src/db  $Id$ */
 /*
@@ -5,51 +14,6 @@
  *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  07-26-91	mrk	Allow choices to be retrieved as numeric
- * .02  08-13-91	mrk	Support db_field_log for dbGetField
- * .03  09-30-91	mrk	Support for TPRO and DISP
- * .04  10-03-91	jba	Bug fix in putStringUchar
- * .05  11-06-91	jba	Moved processing message before record process
- * .06  11-26-91	jba	Added return to dbGetLink
- *              		Fixed bug in special processing of SPC_MOD (100) 
- * .07  12-02-91	jba	Writing to PROC will always force record process
- * .08  02-05-92	jba	Changed function arguments from paddr to precord 
- * .09  03-02-92	jba	Added function dbValueSize to replace db_value_size
- * .10  04-17-92	rcz	put in mrk's dbNameToAddr changes for dbBase
- * .11  05-18-92	mrk	Changes for database internal structures
- * .12  07-16-92	jba	Added disable alarm severity, ansi c changes
- * .13  08-05-92	jba	Removed all references to dbr_field_type
- * .14  09-18-92	jba	replaced get of disa code with recGblGetLinkValue call
- * .15  07-15-93	mrk	Changes for new dbStaticLib
- * .16  02-02-94	mrk	Added dbPutNotify and caching
- * .17  02-02-94	mrk	Added init code for tsel
- * .18  03-18-94	mcn	Split dbAccess.c into dbAccess.c and dbLink.c
- * .19  03-18-94	mcn	Added breakpoint capability
- * .20  03-18-94	mcn	Added comments/whitespace
- * .21  10-20-95	mrk	Combined dbAccess and dbLink; Created dbConvert
  */
 
 

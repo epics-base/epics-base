@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvFp.c */
 /* base/src/drv $Id$ 
  * 	routines which are used to test and interface with the 
@@ -5,53 +14,6 @@
  *
  *      Author:          Matthew Stettler
  *      Date:            6-92 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01 joh 070992	integrated into GTACS & added std header
- * .02 joh 070992	merged in include file fp.h
- * .03 joh 070992	converted some symbols to LOCAL so they stay out
- *			of the vxWorks global symbol table	
- * .04 joh 070992	took out sysSetBCL() and substituted
- *			sysIntEnable() so this will not be hkv2f
- *			specific.
- * .05 joh 070992	added INUM_TO_IVEC so this will be less
- *			68k dependence (added include of iv.h)
- * .06 joh 070992	FP_ILEV	passed to call sysIntEnable() so that the
- *			interrupt level can be easily changed 
- * .07 joh 070992	changed some printf() calls to logMsg()
- *			so that driver diagnostics will show up in
- *			the log
- * .08 joh 071092	now fetches base addr from module_types.h
- * .09 joh 071092	added io_report routine
- * .10 joh 071092	added scan task wakeup from ISR	 
- * .11 joh 071092	moved ivec allocation to module_types.h
- * .12 joh 072792	added soft reboot int disable
- * .13 joh 082792	converted to V5 vxorks
- * .14 mrk 090192	support epics I/O event scan, and added DRVET
- * .15 mrk 080293	Add call to taskwdInsert
- * .16 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 

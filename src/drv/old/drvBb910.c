@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* bb910_driver.c */
 /* base/src/drv $Id$ */
 /*
@@ -5,39 +14,6 @@
  *
  * 	Author:      Bob Dalesio
  * 	Date:        6-13-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	02-09-89	lrd	moved I/O addresses to module_types.h
- * .02	11-20-89	joh 	added call to at5vxi driver
- * .03  09-11-91	 bg	added bb910_io_report
- * .04  10-31-91	 bg	broke bb910 code out of bi_driver.c
- * .05  02-04-92	 bg	added the argument level to 
- * 				bb910_io_report() and gave it the ability
- *                              to read raw values from card if level > 0 
- * .06	08-10-92	joh	made the number of cards runtime
- * .07	08-25-92	mrk	made masks a macro
  */
 
 /*

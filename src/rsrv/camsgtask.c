@@ -1,46 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
  *	Date:	6-88
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	.01 joh 08--88 	added broadcast switchover to TCP/IP
- *	.02 joh 041089 	added new event passing
- *	.03 joh 060791	camsgtask() now returns info about 
- *			partial messages
- *	.04 joh	071191	changes to recover from UDP port reuse
- *			by rebooted clients
- *	.05 joh	110691	print nil recv disconnect message only
- *			if debug is on
- *	.06 joh 021192  better diagnostics
- *	.07 joh 031692  disconnect on bad message
- *	.08 joh 111892	set TCP buffer size to be synergistic
- *			with CA buffer size
- *	.09 joh	111992	moved the event tasks prioity down
- *			(added new arg to db_start_events())
  */
 
 static char *sccsId = "@(#) $Id$";

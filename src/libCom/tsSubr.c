@@ -1,54 +1,15 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	08-09-90
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991-92, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- *  .00 08-09-90 rac	initial version
- *  .01 06-18-91 rac	installed in SCCS
- *  .02 07-20-91 rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
- *  .03 08-16-91 rac	use envGetLongConfigParam
- *  .04 09-05-91 joh	updated for v5 vxWorks
- *  .05 01-27-92 rac	fixed off-by-1 bug for leap years in tsTextToStamp
- *  .06 08-03-92 rac	added tsRound... routines
- *  .07 10-06-92 rac	minor fixes to the documentation
- *  .08 04-02-92 joh 	fixed number of days in a year uninitialized
- *  .09 02-09-94 jbk 	tsLocalTime() now calls TScurrentTimeStamp() vxWorks
- *			for the EPOCH year
- *  .10	05-04-94 pg	HPUX cpp changes. (elif to else and if)
- *  .11	01-09-95 joh	fixed ts min west out of range test	
- *  .12	02-24-95 joh	fixed TScurrentTimeStamp() => tsLocalTime ()
- *			return status mapping prob introduced by .09 above
- *  .13	05-26-95 joh 	TsAddDouble() macro isnt portable so it becomes 
- * 			a subroutine - oops - discovered tsAddDouble()
- *			so I left TsAddDouble() code - which works - 
- *			at the end of the file but commented it out
- *
- *                      malloc'd memory
- *  .05 02-05-98 mrk	move pvt stuff from tsDefs.h to here
- *			move code for nextXXX to here and made static
- *			use standard C function declarations everywhere
  */
 
 /*+/mod***********************************************************************

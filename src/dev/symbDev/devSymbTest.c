@@ -1,16 +1,15 @@
+/*************************************************************************\
+* Copyright (c) W.M. Keck Observatory 
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devSymbTest.c - Test routines for vxWorks global var device support */
 
 /* $Id$
  *
  * Author:	William Lupton (Keck)
  * Date:	8 June 1996
- */
-
-/* modification history:
- * $Log$
- * Revision 1.1  1996/06/09 00:52:25  wlupton
- * initial insertion
- *
  */
 
 /*

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 /*
  * CA test/debug routine
@@ -7,6 +16,10 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.56.2.1  2000/06/28 15:41:17  jhill
+ * changed "m_type" to "m_dataType" in order to avoid collision
+ * with MACRO supplied by WRS's Tornado II product
+ *
  * Revision 1.56  1998/10/27 00:47:28  jhill
  * fixed warnings
  *

@@ -1,41 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  * base/src/drv $Id$
  *      driver for VXI message based devices 
  *
  *      Author:      Jeff Hill
  *      Date:        042792
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      Modification Log:
- *      -----------------
- *      .01 joh 042792  first release
- *	.02 joh	052292	Always append a NULL even if at the end of
- *			the buffer in vxi_read()
- *	.03 joh 060292	Added debug mode
- *	.04 joh	072992	added signal register for the HP1404
- * 	.05 joh 082592	added arg to epvxiRead() and epvxiWrite()
- * 	.06 joh 072393	better test for nonexistent device during
- *			msg open
  *
  *	Improvements
  *	------------

@@ -1,41 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
  *
  * 	Author:      Bob Dalesio
  * 	Date:        5-26-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	10-31-91	bg	broke bb902 code out of bo_driver.c 
- * .02  02-20-92        bg      Added level to io_report.  Added ability
- *                              to read out raw values on card if level
- *                              > 0.
- * .03	08-10-92	joh	made number of cards runtime configurable 
- * .04	08-25-92	mrk	made masks a macro
- * .05	09-14-93	mrk	Let report just display one hex value
- *				 
  */
 
 static char SccsId[] = "@(#)drvBb902.c	1.6     9/14/92 ";

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *
  *	share/src/libCom/$Id$	
@@ -71,6 +80,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.30.6.1  2001/03/07 16:00:17  jba
+ * Changes for cygwin32 build.
+ *
  * Revision 1.30  1998/06/16 02:03:22  jhill
  * recover from winsock select differences
  *

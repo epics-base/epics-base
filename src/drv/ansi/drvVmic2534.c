@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvVmi2534.c */
 /* share/src/drv @(#)drvVmic2534.c	1.1     003/22/94 */
 
@@ -14,69 +23,12 @@ static char rcsid[] =
  * 	Date:        03/22/94
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1994, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(DE-AC03-76SF00) at Lawrence Berkeley Laboratory.
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		Control System Group
- *		Advanced Light Source
- *		Lawrence Berkeley Laboratory
- *
- *	Co-developed with
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
  *	NOTES:
  *	    This code is/was cloned from "drvXy240.c" of EPICS R3.11
  *
  *	    Data direction is dynamically assigned at ioInit() time.
  *	    The definition of the first bit(s) in a given byte will
  *	    determine the data direction of all bits within that byte.
- *
- * Modification Log:
- *
- *
-    @(#) drvVmi2534.c,v
-    @(#) Revision 1.1  1996/01/09 19:54:35  lewis
-    @(#) Add PAL record.  Remove APS eg/er records.
-    @(#) Add 4 STAR drivers, LBL 2534, and preliminaries for LBL/SLAC 9210/9325 drivers.
-    @(#)
- * Revision 1.1.1.1  1995/07/25  21:49:57  lewis
- * Baseline import R3.12 w/LBL drivers and mods.
- *
- * Revision 1.5  1994/09/28  09:05:51  wbrown
- * at beginning of init function, ctrl reg is set to match
- *   SYS_RESET* condition.
- *
- * Revision 1.4  94/09/27  09:44:31  wbrown
- * changed order of "writes to '2534 hardware during initialization
- * to prevent undesired output transistions when calculating
- * "output correction factor."
- * 
- * Revision 1.3  94/08/19  15:16:14  wbrown
- * added debug #ifdef, printf statements
- * fixed initialization of record definition structure
- * 
- * Revision 1.2  94/07/20  09:25:26  wbrown
- * modified to dynamically assign data direction at
- *   record init time.
- * 
- * Revision 1.1  94/05/27  09:57:51  wbrown
- * Initial revision
- * 
- * 
  */
 
 #include <vxWorks.h>

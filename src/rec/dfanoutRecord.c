@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recDfanout.c */
 /* share/src/rec @(#)recDfanout.c	1.16     6/4/93 */
 
@@ -6,11 +15,6 @@
  * Original Author: 	Matt Bickley   (Sometime in 1994)
  * Current Author:	Johnny Tang
  *
- * Modification Log:
- * -----------------
- * .01  1994        mhb     Started with longout record to make the data fanout
- * .02  May 10, 96  jt	    Bug Fix
- * .03  11SEP2000   mrk     LONG=>DOUBLE, add SELL,SELN,SELM
  */
 
 

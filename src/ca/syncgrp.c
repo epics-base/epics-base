@@ -1,67 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.26.6.1  1999/07/15 21:02:25  jhill
- * fixed bug where client disconnects while waiting to send TCP
- *
- * Revision 1.26  1997/08/04 23:37:18  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.24  1997/06/13 09:14:26  jhill
- * connect/search proto changes
- *
- * Revision 1.23  1997/04/29 06:12:42  jhill
- * use free lists
- *
- * Revision 1.22  1996/11/22 19:08:02  jhill
- * added const to API
- *
- * Revision 1.21  1996/11/02 00:51:08  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.20  1996/07/10 23:30:12  jhill
- * fixed GNU warnings
- *
- * Revision 1.19  1996/06/19 17:59:29  jhill
- * many 3.13 beta changes
- *
- * Revision 1.18  1995/10/12  01:36:39  jhill
- * New ca_flush_io() mechanism
- *
- * Revision 1.17  1995/09/29  22:13:59  jhill
- * check for nill dbr pointer
- *
- * Revision 1.16  1995/08/22  00:27:55  jhill
- * added cvs style mod log
- *
  *
  *	NOTES:
  *	1) Need to fix if the OP is on a FD that

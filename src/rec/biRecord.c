@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recBi.c */
 /* base/src/rec  $Id$ */
  
@@ -6,54 +15,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- *
- * Modification Log:
- * -----------------
- * .01  12-12-88        lrd     lock the record on entry and unlock on exit
- * .02  12-15-88        lrd     Process the forward scan link
- * .03  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .04  01-13-89        lrd     delete db_read_bi
- * .05  03-17-89        lrd     database link inputs
- * .06  03-29-89        lrd     make hardware errors MAJOR
- *                              remove hw severity spec from database
- * .07  04-06-89        lrd     add monitor detection
- * .08  05-03-89        lrd     removed process mask from arg list
- * .09  01-31-90        lrd     add the plc_flag arg to the ab_bidriver call
- * .10  03-21-90        lrd     add db_post_events for RVAL
- * .11  04-11-90        lrd     make local variables static
- * .12  10-10-90	mrk	Made changes for new record and device support
- * .13  10-24-91	jba	Moved comment
- * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .15  02-05-92	jba	Changed function arguments from paddr to precord 
- * .16  02-28-92	jba	ANSI C changes
- * .17  04-10-92        jba     pact now used to test for asyn processing, not status
- * .18  04-18-92        jba     removed process from dev init_record parms
- * .19  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .20  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .21  08-13-92        jba     Added simulation processing
- * .22	03-29-94	mcn	Converted to Fast Links
  */
 
 #include	<vxWorks.h>

@@ -1,56 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  * assertVX.c
  *      Author:         Jeff Hill
  *      Date:           02-27-95 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log: 
- * -----------------
- * $Log$
- * Revision 1.9  1998/02/20 21:45:08  evans
- * Made a large number of changes to epicsShareThings in libCom routines
- * to get imports and exports straight on WIN32.  Not everything is fixed
- * at this time.
- *
- * Revision 1.8  1997/05/01 19:57:10  jhill
- * updated dll keywords
- *
- * Revision 1.7  1997/04/10 19:45:16  jhill
- * API changes and include with  not <>
- *
- * Revision 1.6  1997/01/22 22:07:22  jhill
- * doc
- *
- * Revision 1.5  1996/06/19 17:14:12  jhill
- * print out the EPICS release when there is an assert failure
- *
- * Revision 1.4  1995/12/19  19:40:07  jhill
- * added author name
- *
- * Revision 1.3  1995/08/12  01:00:07  jhill
- *  use $log in header
- *
- ***************************************************************************
  */
 
 #include <stdio.h>

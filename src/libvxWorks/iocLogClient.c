@@ -1,58 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$ */
 /*
  *
  *      Author:         Jeffrey O. Hill 
  *      Date:           080791 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      NOTES:
- *
- * Modification Log:
- * -----------------
- * .00 joh 080791  	Created
- * .01 joh 081591	Added epics env config
- * .02 joh 011995	Allow stdio also	
- * $Log$
- * Revision 1.19  1998/06/18 00:15:03  jhill
- * use ipAddrToA
- *
- * Revision 1.18  1998/02/06 00:51:42  jhill
- * deleted extra include of assert.h
- *
- * Revision 1.17  1998/01/20 21:29:13  mrk
- * Change for new errlog implementation
- *
- * Revision 1.16  1997/06/25 06:12:49  jhill
- * added diagnostic
- *
- * Revision 1.15  1997/04/11 20:24:13  jhill
- * added const to failureNotify()
- *
- * Revision 1.14  1997/04/10 20:03:53  jhill
- * use include  not include <>
- *
- * Revision 1.13  1996/06/19 18:01:09  jhill
- * log entries in header were different
  *
  */
 

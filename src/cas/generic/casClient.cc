@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *      $Id$
  *
@@ -29,6 +38,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12.4.1  2000/06/28 22:52:14  jhill
+ * m_type => m_dataType
+ *
  * Revision 1.12  1998/09/24 20:35:16  jhill
  * send exception in correct byte order / block if no space for exception
  *

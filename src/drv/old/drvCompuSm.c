@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvCompuSm.c */
 /* base/src/drv $Id$ */
 /*
@@ -6,54 +15,6 @@
  *
  * 	Author:	Bob Dalesio
  * 	Date:	01-03-90
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	02-07-90	lrd	add command to read the motor status
- * .02	04-11-90	lrd	made velocity mode motor go active
- * .03	04-12-90	lrd	only allow one connection to a motor
- * .04	04-13-90	lrd	add externally initiated motor motion monitoring
- * .05	09-05-91	joh	updated for v5 vxWorks
- * .06	10-09-91	lrd	monitor for external motion once every 2 seconds
- *				not at 30 Hz (.04 was not implemented correctly)
- * .06	11-31-91        bg	added compu_sm_io_report. Added sysBusToLocalAdrs()
- *                              for addressing.
- * .07	03-02-92        bg	added level and ability to print raw values to 
- *                              compu_sm_io_report for level > 0.
- * .08	05-04-92        bg	added compu_sm_reset and rebootHookAdd so ioc can be
- *                              rebooted with control X. 
- * .09	06-25-92        bg	Combined drvCompuSm.c and compu_sm_driver.c
- * .10	06-26-92        bg	Added level to compu_sm_io_report in drvCompuSm 
- *                              structure   
- * .11	06-29-92	joh	took file ptr arg out of io report
- * .12	08-06-92	joh	merged compu sm include file
- * .13	08-27-92	joh	silenced ANSI C function proto warning	
- * .14	08-27-92	joh	fixed no epics init
- * .15	08-02-93	mrk	Added call to taskwdInsert
- * .16	10-29-93	jba	Fixed max number of cards to use module_types.c
- *                      Fixed error in calculating card addresses
- * .17  04-09-96	ric	Added SM_FIND_LIMIT, SM_FIND_HOME
  */
 #include <vxWorks.h>
 #include <stdlib.h>

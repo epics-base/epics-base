@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvFpm.c */
 /* base/src/drv $Id$ */
 
@@ -9,51 +18,6 @@
  *
  *      Author:          Matthew Stettler
  *      Date:            6-92
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01 joh 070992       integrated into GTACS & added std header
- * .02 joh 070992       merged in include file fpm.h
- * .03 joh 070992       converted some symbols to LOCAL so they stay out
- *                      of the vxWorks global symbol table
- * .04 joh 070992       took out sysSetBCL() and substituted
- *                      sysIntEnable() so this will not be hkv2f
- *                      specific.
- * .05 joh 070992       added INUM_TO_IVEC so this will be less
- *                      68k dependence (added include of iv.h)
- * .06 joh 070992       FP_ILEV passed to call sysIntEnable() so that the
- *                      interrupt level can be easily changed
- * .07 joh 071092       now fetches base addr from module_types.h
- * .08 joh 071092       added io report routine
- * .09 joh 071092	allocate config structure at run time so that
- *			the users can adjust the number of cards without
- *			recompilation
- * .10 joh 071092	moved ivec allocation to module_types.h
- * .11 joh 072792       added soft reboot int disable
- * .12 mrk 090292	added DRVET
- * .13 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
- *
  *
  * Routines:
  *

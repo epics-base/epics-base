@@ -1,58 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* drvJgvtr1.c */
 /* base/src/drv $Id$ */
 /*
  *	Author:      Jeff Hill
  * 	Date:        5-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- *	110689	joh	print mem not full message only once
- *	120789	joh	temporary removal of memory full check
- *	050190	joh	clear ptr to callback prior to calling 
- *			it so they can rearm from inside the callback
- *	071190  joh	check STD address after cycle complete detected
- *			to avoid erroneous card misaddressed messages
- *	071190	joh	internal sample rate status is bit reversed on the
- *			card- I added a lookup table to untwist it.
- *	020491  ges	Change taskDelay from 20 to 2 in "jgvtr1DoneTask".
- *			To allow rearm and data reads from succesive
- *				waveform scans up thru 10Hz rates. 
- * 	031491	lrd	move data into a local memory area for each card
- * 	090591	joh	converted to V5 vxWorks
- *	110591	lrd	initialization of cards other than 0 not 
- *			allocating data buffer correctly
- *      013092   bg     added sysBusToLocalAdrs.  Added levels to io_report 
- *			and the ability to read out the Joerger's raw values 
- *			in io_report if level is > 1.
- *	031992	joh	Took the vxMemProbe out of each arm and checked
- *			the card present bit instead.
- *	062592	 bg	Combined drvJgvtr1.c and jgvtr_driver.c
- *	062992	joh	removed file pointer argument added to io
- *			report by bg
- *	082792	joh	added ANSI C function prototypes
- *	080293	mrk	added call to taskwdInsert
- *	080493	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
 static char *sccsID = "@(#)drvJgvtr1.c	1.17\t9/9/93";

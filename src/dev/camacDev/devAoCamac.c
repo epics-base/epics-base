@@ -1,3 +1,10 @@
+/*************************************************************************\
+* Copyright (c) 2002 Southeastern Universities Research Association, as
+*     Operator of Thomas Jefferson National Accelerator Facility.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devAoCamac.c */
 
 /* devAoCamac.c - Device Support Routines for Generic Camac Analogue output */
@@ -6,14 +13,6 @@
  *      Current Author:  Johnny Tang
  *      Date:            27th July 1993.
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1993, SURA CEBAF.
- *
- *
- * Modification Log:
- * -----------------
- * 4/14/94	jt	use camacio data struct 
  */
 
 

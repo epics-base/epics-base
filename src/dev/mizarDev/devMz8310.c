@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devMz8310.c.c */
 /* base/src/dev $Id$ */
 
@@ -5,44 +14,6 @@
 /*
  *      Original Author: Marty Kraimer and Bob Daly
  *      Date:            6-19-91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  10-22-91	mrk	Initial Implementation
- * .02  11-26-91	jba	Initialized clockDiv to 0
- * .03  12-11-91        jba     Moved set of alarm stat and sevr to macros
- * .04  01-14-92        mrk	Added interrupt support
- * .05	03-13-92	jba	ANSI C changes
- * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
- * .05  04-13-92        jba     Removed filename fp from report
- * .06  09-20-93        jbk     disallowed load reg values < 2
- * .07	12-16-94	awr(LBL) bug fix pulseDelay clk rate calculation
- * .08	10-15-99	nda     added devMz8310wasteTimeCount and wasteTime()
- *                              for powerPC MVME2700
- * .09	10-20-00	anj     Conditional code for PPC, improved IACK* stuff
- * 
- *      ...
  */
 
 

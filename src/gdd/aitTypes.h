@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef AIT_TYPES_H
 #define AIT_TYPES_H 1
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8.6.1  2001/03/07 16:25:24  jba
+ * Changes for cygwin32 build.
+ *
  * Revision 1.8  1998/06/16 03:10:51  jhill
  * added sgi support
  *

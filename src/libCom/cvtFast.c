@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$*/
 /* Very efficient routines to convert numbers to strings
  *      Author: Bob Dalesio wrote cvtFloatToString (called FF_TO_STR)
@@ -12,40 +21,6 @@
  *
  *      Date:            12 January 1993
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	mrk	12-09-92	Taken from dbAccess and made into library
- * .02  mda	01-12-93	Add cvt[Float/Double]ToExpString,
- *				cvt[Float/Double]ToCompactString,
- *				cvtLongToHex, cvtLongToOctal routines, fix
- *				calls to gcvt, etc.
- * .03	joh	03-30-93	added bit field extract/ insert routines
- * .04	mrk	01-28-94	replaced gcvt by e conversion
- * .05	mrk	05-06-95	changed ExpString routines to just use sprintf
- *				It had a bug and performance was not that much
- *				better (2-5 times) then sprintf.
- *				Also they are not used on vxWorks
  */
 
 #ifdef vxWorks

@@ -1,68 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.25  1998/08/12 16:36:54  jhill
- * allow the user name to change when they use su
- *
- * Revision 1.24  1998/04/13 19:14:34  jhill
- * fixed task variable problem
- *
- * Revision 1.23  1997/08/04 23:37:14  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.22  1997/06/13 09:14:23  jhill
- * connect/search proto changes
- *
- * Revision 1.21  1997/04/10 19:26:17  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.20  1996/11/02 00:51:02  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.19  1996/07/09 22:41:02  jhill
- * pass nill 2nd arg to gettimeofday()
- *
- * Revision 1.18  1996/06/20 21:19:29  jhill
- * fixed posix signal problem with "cc -Xc"
- *
- * Revision 1.17  1995/12/19  19:33:42  jhill
- * added missing arg to execlp()
- *
- * Revision 1.16  1995/10/12  01:35:28  jhill
- * Moved cac_mux_io() to iocinf.c
- *
- * Revision 1.15  1995/08/22  00:22:07  jhill
- * Dont recompute connection timers if the time stamp hasnt changed
- *
- *
  */
 
 #include <unistd.h>

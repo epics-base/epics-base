@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	drvEpvxi.c
  *
@@ -6,76 +15,6 @@
  *
  * 	Author:      Jeff Hill
  * 	Date:        11-89
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- *	.01 joh 02-14-90	formal release
- *	.02 joh 04-04-90	as requested KLUDGED dynamic address so they
- *				dont have to specify model number in DCT
- *	.03 joh 04-04-90	as requested KLUDGED dynamic address so they
- *				dont have to specify model number in DCT
- *	.04 joh 07-26-90	changed from ttl trig 7 to ecl trig 0
- *	.05 joh 07-27-90	added support for multiple slot0 cards
- *	.06 joh 08-08-91	delinting
- *	.07 joh 09-05-91	converted to v5 vxWorks
- *	.08 joh 12-05-91	split vxi_driver.c into vxi_driver.c and 
- *				vxi_resman.c
- *	.09 joh 01-29-91	added MXI support & removed KLUDGE
- *	.10 joh 07-06-92	added A24 & A32 address config
- *	.11 joh 07-07-92	added routine to return A24 or A32 base
- *	.12 joh 07-13-92	merged in model hash support written by
- *				Richard Baker (summer intern)
- *	.13 joh 07-21-92	Now stores extender info in a hierarchical
- *				linked list
- *	.14 joh 07-29-92	vxi record topology needed check for
- *				device present
- *	.15 joh 07-29-92	added sccs id
- *	.16 joh 08-19-92	make name registration
- *	.17 joh 08-21-92	cleaned up A24/A32 MXI setup	
- *	.18 joh 08-26-92	dont return error if a make or model
- *				has already been registered
- *	.19 joh	09-03-92	Use the correct routine in NIVXI
- *				for CPU030 trigger routing
- *	.20 joh	09-30-92	split epvxiOpen() into epvxiOpen() and
- *				epvxiDeviceVerify()
- *	.21 joh	10-30-92	NI CPU030 trigger routing was failing
- *				due to no entry for the 030 in the resman 
- *				tables - it cant see itself in A16.
- *				A work around was installed.
- *	.22 joh 05-24-93	Fixed over-zealous parameter checks in
- *				TTL trigger route
- *      .23 joh 06-03-93        Fixed incorrect MXI BP TTL trigger enable
- *      .24 joh 07-12-93       	Record the task id when opening a device 
- *	.25 joh 07-21-93	Improved DC device allocation in MXI
- *				environment
- *	.26 joh 11-10-93	Now configures multiple DC devices per slot.
- *				Blocked address devices are preallocated
- *				where possible. Independently addressed
- *				multiple devices per slot are allocated on 
- *				demand.
- *	.27 joh 02-06-95	Force natural alignment of blocked address
- *				DC devices.
  *
  * RM unfinished items	
  * -------------------

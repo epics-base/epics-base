@@ -1,50 +1,15 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	07-20-91
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	07-20-91	rac	initial version
- * .02	08-07-91	joh	added config get for long and double C types
- * .03	08-07-91	joh	added config get for struct in_addr type
- * .04	01-11-95	joh	use getenv()/putenv() to fetch/write env 
- *				vars under vxWorks	
- * .05  04-20-95	anj	changes to use CONFIG_ENV
- * .06  05-24-95	joh	added return stmnt to epicsPrtEnvParams()	
- * .07  11-03-96	joh	fixed bug occuring when diagnostic is
- *				printed and the env var cant be found
- * .08  09-11-96        joh     ANSI prototypes
- * .09  10-18-96        joh     added envParamIsEmpty()
- * .10  03-18-97        joh    	added envGetConfigParamPtr() 
- *				(replaces envParamIsEmpty())
- * .11  03-18-97        joh    	remove env param length limits 
- *
- * make options
- *	-DvxWorks	makes a version for VxWorks
- *	-DNDEBUG	don't compile assert() checking
- *      -DDEBUG         compile various debug code, including checks on
- *                      malloc'd memory
  */
 /*+/mod***********************************************************************
 * TITLE	envSubr.c - routines to get and set EPICS environment parameters

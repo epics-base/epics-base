@@ -1,114 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$ */
 
 /*  Parameters for tasks on IOC  */
 /*
  *      Authors:         Andy Kozubal, Jeff Hill, and Bob Dalesio
  *      Date:            2-24-89
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	07-23-91	ges	Add time-stamp task.
- * .02	09-12-91	joh	stack sizes increased for v5 vxWorks.
- * .03	10-24-91	lrd	Increased stack sizes for scan tasks
- * .04  12-12-91        joh     Increased stack size for the
- *                              wfDoneTask
- * .05	12-18-91	mrk	Added  callback task priorities
- *				Changed def of PERIODSCAN_PRI and SEQUENCER_PRI
- *				Shortened length of task names
- * .06  12-18-91       	jba	Global change of WDSCAN to TASKWD
- * .07	01-21-92	rcz	Increased all stack sizes by 1000 for V5
- * .08	01-21-92	jrw	added the GPIB & BB driver task info
- * .09	01-04-92	jba	Added callback task priorities
- * .10	03-16-92	jrw	added BB rx and tx specific task info
- * .11  05-22-92        lrd     added the allen-bradley binary input Change of State scanner
- * .12  08-26-92        joh     added xy 240 stuff
- * .13  08-26-92        joh     added FP to CA repeater and on line to be safe
- * .14  02-16-92        joh    	removed historical items 
- * .15  11-19-93        joh     moved CA client priority up by one notch
- * .16	09-13-93	joh	incresed CA on line beacon maximum delay
- *				to 60 sec
- * .17	03-18-94	mcn	added entries for breakpoint tasks
- * $Log$
- * Revision 1.4.4.1  2000/06/28 14:00:23  mrk
- * no imbeded blanks in task names
- *
- * Revision 1.4  1998/09/29 14:45:50  mrk
- * Task priorities were changed so that no epics task  has higher priority than netTask.
- * Definitions for IOEVENTSCAN and TIMESTAMP were removed.
- *
- * Revision 1.3  1998/05/20 21:00:43  mrk
- * raised DB_CA_PRI to just higher than sequencer
- *
- * Revision 1.2  1998/01/20 21:49:54  mrk
- * added the arch_stack_factor for 64 bit architectures; changes for errlog
- *
- * Revision 1.1  1996/11/22 20:49:43  jhill
- * installed
- *
- * Revision 1.1  1996/06/24 13:32:35  mrk
- * added task_params.h
- *
- * Revision 1.3  1996/06/19 20:48:44  jhill
- * dounled ca stack for each ca cleint in the server
- *
- * Revision 1.2  1996/04/22 14:31:08  mrk
- * Changes for dynamic link modification
- *
- * Revision 1.1  1996/01/25 21:13:29  mrk
- * moved includes; .ascii=> .db; path changes
- *
- * Revision 1.27  1995/11/29 19:27:59  jhill
- * added $Log$
- * added Revision 1.4.4.1  2000/06/28 14:00:23  mrk
- * added no imbeded blanks in task names
- * added
- * added Revision 1.4  1998/09/29 14:45:50  mrk
- * added Task priorities were changed so that no epics task  has higher priority than netTask.
- * added Definitions for IOEVENTSCAN and TIMESTAMP were removed.
- * added
- * added Revision 1.3  1998/05/20 21:00:43  mrk
- * added raised DB_CA_PRI to just higher than sequencer
- * added
- * added Revision 1.2  1998/01/20 21:49:54  mrk
- * added added the arch_stack_factor for 64 bit architectures; changes for errlog
- * added
- * added Revision 1.1  1996/11/22 20:49:43  jhill
- * added installed
- * added
- * added Revision 1.1  1996/06/24 13:32:35  mrk
- * added added task_params.h
- * added
- * added Revision 1.3  1996/06/19 20:48:44  jhill
- * added dounled ca stack for each ca cleint in the server
- * added
- * added Revision 1.2  1996/04/22 14:31:08  mrk
- * added Changes for dynamic link modification
- * added
- * added Revision 1.1  1996/01/25 21:13:29  mrk
- * added moved includes; .ascii=> .db; path changes
- * added
- *
  */
 
 #ifndef INCtaskLibh 		

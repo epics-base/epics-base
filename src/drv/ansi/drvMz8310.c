@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 /* drvMz8310.c */
 /* base/src/drv $Id$ */
@@ -6,50 +15,6 @@
  * stc_driver.c
  *	Author:	Jeff Hill
  *	Date:	Feb 1989
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification History 
- * joh	02-20-89	Init Release 
- * joh 	04-28-89	Added read back
- * joh	11-17-89	added readback to io report
- * joh	12-10-89	DB defaults the internal/external clock
- * 			parameter to 0 or external clock.  This was the opposite 
- *			of what this driver expected. Fix was made here.
- * joh	07-06-90	print channel number with channel value in IO report
- * joh	02-25-91	made ext/int clk IO report more readable
- * joh	09-05-91	converted to v5 vxWorks
- *  bg	09-15-91	added sysBustoLocalAdrs() for addressing
- *  bg	03-10-92	added the argument, level, to mz310_io_report().
- *  bg	04-27-92	added rebootHookAdd and mz8310_reset so ioc will
- *                        not hang on ctl X reboot.
- * joh	04-28-92	added arguments to MACROS which had hidden
- *			parameters
- *  bg	06-25-92	combined drvMz8310.c and mz8310_driver.c
- *  bg	06-26-92	Added level to mz8310_io_report.
- * joh  08-05-92	callable interface now conforms with epics standard
- * mgb  08-04-93	Removed V5/V4 and EPICS_V2 conditionals
- * joh	08-24-93	Include drvStc.h and ANSI C upgrade
- * joh	09-29-93	removed superfluous error message	
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */

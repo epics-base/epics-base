@@ -1,113 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
  *      Date:  9-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.39.4.7  2002/05/28 18:41:42  jhill
- * fixed ellFree cause malloc and free to be in different win32 dlls
- *
- * Revision 1.39.4.6  2002/03/14 01:13:58  jhill
- * fixed put notify shutdown during channel delete
- *
- * Revision 1.39.4.5  2002/03/13 22:07:58  jhill
- * improved put notify cleanup when client terminates
- *
- * Revision 1.39.4.4  2002/03/08 00:16:27  jhill
- * check for floating point in correct place
- *
- * Revision 1.39.4.3  2001/03/22 20:58:43  jhill
- * fixed task names with spaces
- *
- * Revision 1.39.4.2  1999/09/02 21:16:43  jhill
- * fixed missing paramter to checkConnWatchDogs() func
- *
- * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
- * fixed bug where client disconnects while waiting to send TCP
- *
- * Revision 1.39  1998/09/24 21:22:55  jhill
- * subtle changes related to efficency when checking connection timers
- *
- * Revision 1.38  1998/06/16 00:56:03  jhill
- * moved code from here to libCom
- *
- * Revision 1.37  1998/05/08 00:20:56  jhill
- * added missing call to freeListCleanup()
- *
- * Revision 1.36  1998/05/05 16:07:59  jhill
- * Use lock macros and task variable in ca_extra_event_labor()
- *
- * Revision 1.35  1998/04/13 19:14:35  jhill
- * fixed task variable problem
- *
- * Revision 1.34  1998/02/05 22:39:46  jhill
- * use inversion safe mutex
- *
- * Revision 1.33  1997/08/04 23:37:19  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.31  1997/06/13 09:14:28  jhill
- * connect/search proto changes
- *
- * Revision 1.30  1997/04/29 06:13:49  jhill
- * use free lists
- *
- * Revision 1.29  1997/04/23 17:05:10  jhill
- * pc port changes
- *
- * Revision 1.28  1997/04/10 19:26:19  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.27  1996/11/02 00:51:10  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.26  1996/09/16 16:39:20  jhill
- * local except => except handler
- *
- * Revision 1.25  1996/08/13 23:16:23  jhill
- * removed os specific code
- *
- * Revision 1.23  1996/08/05 19:18:56  jhill
- * better msg for lack of fp
- *
- * Revision 1.22  1996/06/19 17:59:31  jhill
- * many 3.13 beta changes
- *
- * Revision 1.21  1995/10/18  16:44:36  jhill
- * select time out must be greater than a vxWorks tick
- *
- * Revision 1.20  1995/10/12  01:35:31  jhill
- * Moved cac_mux_io() to iocinf.c
- *
- * Revision 1.19  1995/08/22  00:27:58  jhill
- * added cvs style mod log
- *
- *
  */
 
 #include "callback.h"

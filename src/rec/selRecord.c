@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recSel.c */
 /* base/src/rec  $Id$ */
 
@@ -7,45 +16,6 @@
  *      Current Author:  Marty Kraimer
  *      Date:            6-2-89
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  11-16-89        lrd     fixed select algorithms not to compare against
- *                              the previous value
- * .02  10-12-90	mrk	changes for new record support
- * .03  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .04  02-05-92	jba	Changed function arguments from paddr to precord 
- * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .06  02-28-92	jba	ANSI C changes
- * .07  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
- * .08  06-18-92        jba     changed graphic/control limits from loop to range test
- * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .11  07-21-92        jba     changed alarm limits for non val related fields
- * .12  08-06-92        jba     New algorithm for calculating analog alarms
- * .13  09-10-92        jba     Changed algorithms to use all a-l which are defined
- * .14  10-10-92        jba     replaced code with recGblGetLinkValue call
- * .15  03-29-94        mcn     converted to fast links
  */
 
 #include	<vxWorks.h>

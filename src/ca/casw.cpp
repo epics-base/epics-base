@@ -206,6 +206,8 @@ int main ( int argc, char ** argv )
             }
 
             if ( epicsNTOH16 ( pCurMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
+                bool anomaly = false;
+                epicsTime previousTime;
                 struct sockaddr_in ina;
 
                 /* 
@@ -241,39 +243,15 @@ int main ( int argc, char ** argv )
 
                 epicsTime currentTime = epicsTime::getCurrent();
 
-                if ( interest > 1) {
-                    char date[64];
-                    currentTime.strftime ( date, sizeof ( date ), 
-                        "%Y-%m-%d %H:%M:%S.%09f");
-                    char host[64];
-                    ipAddrToA ( &ina, host, sizeof ( host ) );
-                    printf ( "beacon  %-40s %s\n", host, date );
-                }
-
                 /*
                  * look for it in the hash table
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    epicsTime previousTime = pBHE->updateTime ( guard );
-                    bool anomaly = pBHE->updatePeriod ( 
+                    previousTime = pBHE->updateTime ( guard );
+                    anomaly = pBHE->updatePeriod ( 
                         guard, programBeginTime, 
                         currentTime, beaconNumber, protocolRevision );
-                    if ( anomaly ) {
-                        char date[64];
-                        currentTime.strftime ( date, sizeof ( date ), 
-                            "%Y-%m-%d %H:%M:%S.%09f");
-                        char host[64];
-                        ipAddrToA ( &ina, host, sizeof ( host ) );
-                        printf ( "anomaly %-40s %s\n", 
-                            host, date );
-                        if ( interest > 0 ) {
-                            printf ( "\testimate=%f current=%f\n", 
-                                pBHE->period ( guard ), 
-                                currentTime - previousTime );
-                        }
-                        fflush(stdout);
-                    }
                 }
                 else {
                     /*
@@ -291,6 +269,30 @@ int main ( int argc, char ** argv )
                             bheFreeList.release ( pBHE );
                         }
                     }
+                }
+                if ( anomaly || interest > 1 ) {
+                    char date[64];
+                    currentTime.strftime ( date, sizeof ( date ), 
+                        "%Y-%m-%d %H:%M:%S.%09f");
+                    char host[64];
+                    ipAddrToA ( &ina, host, sizeof ( host ) );
+                    const char * pPrefix = "";
+                    if ( interest > 1 ) {
+                        if ( anomaly ) {
+                            pPrefix = "* ";
+                        }
+                        else {
+                            pPrefix = "  ";
+                        }
+                    }
+                    printf ( "%s%-40s %s\n", 
+                        pPrefix, host, date );
+                    if ( anomaly && interest > 0 ) {
+                        printf ( "\testimate=%f current=%f\n", 
+                            pBHE->period ( guard ), 
+                            currentTime - previousTime );
+                    }
+                    fflush(stdout);
                 }
             }
             pCurBuf += msgSize;

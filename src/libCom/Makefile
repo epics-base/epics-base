@@ -160,6 +160,7 @@ SRCS += osdAssert.c
 SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
+SRCS += osdEnv.c
 
 SRCS += osdThread.c
 SRCS += osdMutex.c

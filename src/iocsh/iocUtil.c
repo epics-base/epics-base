@@ -93,57 +93,41 @@ static void showCallFunc(const ioccrfArgBuf *args)
     }
 }
 
-/* putenv */
-static const ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString};
-static const ioccrfArg * const putenvArgs[1] = {&putenvArg0};
-static const ioccrfFuncDef putenvFuncDef = {"putenv",1,putenvArgs};
-static void putenvCallFunc(const ioccrfArgBuf *args)
+/* epicsEnvSet */
+static const ioccrfArg epicsEnvSetArg0 = { "name",ioccrfArgString};
+static const ioccrfArg epicsEnvSetArg1 = { "value",ioccrfArgString};
+static const ioccrfArg * const epicsEnvSetArgs[2] = {&epicsEnvSetArg0,&epicsEnvSetArg1};
+static const ioccrfFuncDef epicsEnvSetFuncDef = {"epicsEnvSet",2,epicsEnvSetArgs};
+static void epicsEnvSetCallFunc(const ioccrfArgBuf *args)
 {
-    char *arg0 = args[0].sval;
-    char *cp;
+    char *name = args[0].sval;
+    char *value = args[1].sval;
 
-    /*
-     * Some versions of putenv set the environment to 
-     * point to the string that is passed so we have
-     * to make a copy before stashing it.
-     * Yes, this will cause memory leaks if the same variable is
-     * placed in the environment more than once.
-     */
-    if (!arg0)
+    if (name == NULL) {
+        printf ("Missing environment variable name argument.\n");
         return;
-    cp = calloc(strlen(arg0)+1,sizeof(char));
-    strcpy(cp,arg0);
-    if ((cp == NULL) || putenv (cp)) {
-        free (cp);
-        printf ("putenv(%s) failed.\n", args[0].sval);
     }
+    if (value == NULL) {
+        printf ("Missing environment variable value argument.\n");
+        return;
+    }
+    epicsEnvSet (name, value);
 }
 
-/* epicsPrtEnvParams */
-static const ioccrfFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,NULL};
-static void epicsPrtEnvParamsCallFunc(const ioccrfArgBuf *args)
+/* epicsParamShow */
+static const ioccrfFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
+static void epicsParamShowCallFunc(const ioccrfArgBuf *args)
 {
     epicsPrtEnvParams ();
 }
 
-/* printEnv */
-static const ioccrfArg printEnvArg0 = { "name ...", ioccrfArgArgv};
-static const ioccrfArg * const printEnvArgs[1] = {&printEnvArg0};
-static const ioccrfFuncDef printEnvFuncDef = {"printEnv",1,printEnvArgs};
-static void printEnvCallFunc(const ioccrfArgBuf *args)
+/* epicsEnvShow */
+static const ioccrfArg epicsEnvShowArg0 = { "[name ...]", ioccrfArgArgv};
+static const ioccrfArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
+static const ioccrfFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs};
+static void epicsEnvShowCallFunc(const ioccrfArgBuf *args)
 {
-    int i = 1;
-    const char *cp;
-    int argc = args[0].aval.ac;
-    char **argv = args[0].aval.av;
-
-    for (i = 1 ; i < argc ; i++) {
-        cp = getenv (argv[i]);
-        if (cp == NULL)
-            printf ("%s is not an environment variable.\n", argv[i]);
-        else
-            printf ("%s\n", cp);
-    }
+    epicsEnvShow (args[0].aval.ac, args[0].aval.av);
 }
 
 /* iocLogInit */
@@ -159,8 +143,8 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&chdirFuncDef,chdirCallFunc);
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
-    ioccrfRegister(&putenvFuncDef,putenvCallFunc);
-    ioccrfRegister(&epicsPrtEnvParamsFuncDef,epicsPrtEnvParamsCallFunc);
-    ioccrfRegister(&printEnvFuncDef,printEnvCallFunc);
+    ioccrfRegister(&epicsEnvSetFuncDef,epicsEnvSetCallFunc);
+    ioccrfRegister(&epicsParamShowFuncDef,epicsParamShowCallFunc);
+    ioccrfRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
     ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

@@ -64,7 +64,6 @@
 *  long  envGetDoubleConfigParam(    pParam,    pDouble               )
 *  long  envGetInetAddrConfigParam(  pParam,    pAddr                 )
 *  long  envPrtConfigParam(          pParam                           )
-*  long  envSetConfigParam(          pParam,    valueString           )
 *
 * SEE ALSO
 *	$epics/share/bin/envSetupParams, envDefs.h
@@ -385,81 +384,6 @@ const ENV_PARAM *pParam)	/* pointer to config param structure */
     return 0;
 }
 
-/*+/subr**********************************************************************
-* NAME	envSetConfigParam - set value of a configuration parameter
-*
-* DESCRIPTION
-*	Sets the value of a configuration parameter.
-*
-* RETURNS
-*	0
-*
-* NOTES
-* 1.	Performs a useful function only under VxWorks.
-*
-* EXAMPLE
-* 1.	Set the value for the EPICS-defined environment parameter
-*	EPICS_TS_MIN_WEST to 360, for USA central time zone.
-*
-*	Under UNIX:
-*
-*		% setenv EPICS_TS_MIN_WEST 360
-*
-*	In a program running under VxWorks:
-*
-*		#include "envDefs.h"
-*
-*		envSetConfigParam(&EPICS_TS_MIN_WEST, "360");
-*
-*	Under the VxWorks command shell:
-*
-*		envSetConfigParam &EPICS_TS_MIN_WEST,"360"
-*
-*-*/
-long epicsShareAPI envSetConfigParam (
-const ENV_PARAM *pParam,	/* I pointer to config param structure */
-char		*value		/* I pointer to value string */
-)
-{
-	long	retCode = 0;
-	int	status;
-	char	*pEnv;
-
-	/*
-	 * space for two strings, an '=' character,
-	 * and a null termination
-	 */
-	pEnv = malloc (strlen (pParam->name) + strlen (value) + 2);
-	if (!pEnv) {
-		errPrintf(
-			-1L,
-			__FILE__,
-			__LINE__,
-"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
-			pParam->name,
-			value,
-			strerror (errno));
-		return -1L;
-	}
-
-	strcpy (pEnv, pParam->name);
-	strcat (pEnv, "=");
-	strcat (pEnv, value);
-	status = putenv (pEnv);
-	if (status<0) {
-		errPrintf(
-			-1L,
-			__FILE__,
-			__LINE__,
-"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
-			pParam->name,
-			value,
-			strerror (errno));
-		retCode = -1L;
-	}
-	return retCode;
-}
-
 /*+/subr**********************************************************************
 * NAME  epicsPrtEnvParams - print value of all configuration parameters
 *

@@ -22,7 +22,6 @@ of this distribution.
 #include "errlog.h"
 #include "ellLib.h"
 #include "epicsMutex.h"
-#include "tsStamp.h"
 #include "ellLib.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"

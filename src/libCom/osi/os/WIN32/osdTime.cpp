@@ -31,7 +31,7 @@
 // EPICS
 //
 #define epicsExportSharedSymbols
-#include "osiTime.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "epicsAssert.h"
 
@@ -83,13 +83,13 @@ static void osdTimeExit ()
  */
 static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
 {
-    static const DWORD tmoTenSec = 10 * osiTime::mSecPerSec;
+    static const DWORD tmoTenSec = 10 * epicsTime::mSecPerSec;
     int status;
 
     while ( ! osdTimeSyncThreadExit ) {
 	    Sleep (tmoTenSec); 
         status = osdTimeSych ();
-        if (status!=tsStampOK) {
+        if (status!=epicsTimeOK) {
             errlogPrintf ("osdTimeSych (): failed?\n");
         }
     }
@@ -171,7 +171,7 @@ static void osdTimeInit ()
     ReleaseMutex ( osdTimeMutex );
 
     unixStyleStatus = osdTimeSych ();
-    if ( unixStyleStatus != tsStampOK ) {
+    if ( unixStyleStatus != epicsTimeOK ) {
         CloseHandle ( osdTimeMutex );
         osdTimeMutex = NULL;
         return;
@@ -197,7 +197,7 @@ static void osdTimeInit ()
 //
 static int osdTimeSych ()
 {
-    static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
+    static const DWORD tmoTwentySec = 20 * epicsTime::mSecPerSec;
 	LONGLONG new_sec_offset, new_frac_offset;
 	LARGE_INTEGER parm;
 	LONGLONG secondsSinceBoot;
@@ -209,13 +209,13 @@ static int osdTimeSych ()
 	if (!osdTimeMutex) {
         osdTimeInit ();
         if (!osdTimeMutex) {
-            return tsStampERROR;
+            return epicsTimeERROR;
         }
     }
 
     win32SemStat = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
     if ( win32SemStat != WAIT_OBJECT_0 ) {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 
 	//
@@ -228,7 +228,7 @@ static int osdTimeSych ()
 	// has forced its code to load
     if (QueryPerformanceCounter (&parm)==0) {
          ReleaseMutex (osdTimeMutex);
-         return tsStampERROR;
+         return epicsTimeERROR;
     }
 	 
 	perf_last = parm.QuadPart;
@@ -313,18 +313,18 @@ static int osdTimeSych ()
 
     win32Stat = ReleaseMutex (osdTimeMutex);
     if (!win32Stat) {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 
-    return tsStampOK;
+    return epicsTimeOK;
 }
 
 //
-// osiTime::osdGetCurrent ()
+// epicsTime::osdGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
-    static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
+    static const DWORD tmoTwentySec = 20 * epicsTime::mSecPerSec;
 	LONGLONG time_cur, time_sec, time_remainder;
 	LARGE_INTEGER parm;
     BOOL status;
@@ -335,13 +335,13 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 	if (!osdTimeMutex) {
         osdTimeInit ();
         if (!osdTimeMutex) {
-            return tsStampERROR;
+            return epicsTimeERROR;
         }
 	}
 
     status = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
     if ( status != WAIT_OBJECT_0 ) {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 
 	//
@@ -352,7 +352,7 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 	status = QueryPerformanceCounter (&parm);
     if (!status) {
         ReleaseMutex (osdTimeMutex);
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 	time_cur = parm.QuadPart;
 	if (perf_last > time_cur) {	
@@ -389,26 +389,26 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 	perf_last = time_cur;
 
 	pDest->secPastEpoch = (unsigned long) (time_sec%ULONG_MAX);
-    pDest->nsec = (unsigned long) ((time_remainder*osiTime::nSecPerSec)/perf_freq);
+    pDest->nsec = (unsigned long) ((time_remainder*epicsTime::nSecPerSec)/perf_freq);
 
     status = ReleaseMutex (osdTimeMutex);
     if (!status) {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 
-	return tsStampOK;
+	return epicsTimeOK;
 }
 
 //
-// tsStampGetEvent ()
+// epicsTimeGetEvent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
 {
-    if (eventNumber==tsStampEventCurrentTime) {
-        return tsStampGetCurrent (pDest);
+    if (eventNumber==epicsTimeEventCurrentTime) {
+        return epicsTimeGetCurrent (pDest);
     }
     else {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 }
 

@@ -35,7 +35,7 @@
 #include "osiSock.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "db_access_routines.h"
 #include "db_access.h"
@@ -916,7 +916,7 @@ unsigned    cid
         return NULL;
     }
     ellInit(&pchannel->eventq);
-    tsStampGetCurrent(&pchannel->time_at_creation);
+    epicsTimeGetCurrent(&pchannel->time_at_creation);
     pchannel->addr = *pAddr;
     pchannel->client = client;
     /*

@@ -247,7 +247,7 @@ protected:
 	bool                    interest;
 	bool                    preCreate;
 	bool                    scanOn;
-	static osiTime	        currentTime;
+	static epicsTime        currentTime;
 
 	virtual caStatus updateValue (smartConstGDDPointer pValue) = 0;
 

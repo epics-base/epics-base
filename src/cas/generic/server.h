@@ -50,7 +50,7 @@
 #undef epicsAssertAuthor
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h" // EPICS assert() macros
-#include "osiTime.h" // EPICS os independent time
+#include "epicsTime.h" // EPICS os independent time
 #include "alarm.h" // EPICS alarm severity/condition 
 #include "errMdef.h" // EPICS error codes 
 #include "resourceLib.h" // EPICS hashing templates
@@ -500,8 +500,8 @@ public:
 
 protected:
 	unsigned	minor_version_number;
-	osiTime		lastSendTS;
-	osiTime		lastRecvTS;
+	epicsTime		lastSendTS;
+	epicsTime		lastRecvTS;
 
 	caStatus sendErrWithEpicsStatus(const caHdr *pMsg,
 			caStatus epicsStatus, caStatus clientStatus);

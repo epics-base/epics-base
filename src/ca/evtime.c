@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "cadef.h"
 #include "dbDefs.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 void event_handler (struct event_handler_args args);
 int evtime (char *pname);
@@ -66,10 +66,10 @@ void event_handler(struct event_handler_args args)
 #	define 			COUNT	0x8000
 	double			interval;
 	double			delay;
-        TS_STAMP		ts;
+        epicsTimeStamp		ts;
 
 	if(iteration_count%COUNT == 0){
-		tsStampGetCurrent(&ts);
+		epicsTimeGetCurrent(&ts);
 		current_time = ts.secPastEpoch;
 		if(last_time != 0){
 			interval = current_time - last_time;

@@ -2048,7 +2048,7 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn, bufSizeT nBytesAvaila
 		        //
 		        // !! this time fetch may be slowing things down !!
 		        //
-		        //this->lastSendTS = osiTime::getCurrent();
+		        //this->lastSendTS = epicsTime::getCurrent();
                 return outBuf::flushProgress;
             }
             else {
@@ -2062,7 +2062,7 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn, bufSizeT nBytesAvaila
 		    //
 		    // !! this time fetch may be slowing things down !!
 		    //
-		    //this->lastSendTS = osiTime::getCurrent();
+		    //this->lastSendTS = epicsTime::getCurrent();
             nActualBytes = totalBytes;
 			return outBuf::flushProgress;
 		}
@@ -2081,7 +2081,7 @@ inBuf::fillCondition casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
     //
     // this is used to set the time stamp for write GDD's
     //
-    this->lastRecvTS = osiTime::getCurrent();
+    this->lastRecvTS = epicsTime::getCurrent();
 	return stat;
 }
 

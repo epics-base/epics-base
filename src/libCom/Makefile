@@ -133,17 +133,16 @@ INC += osdPoolStatus.h
 INC += osdThread.h
 
 INC += epicsThread.h
-INC += osiTime.h
+INC += epicsTime.h
 INC += osdTime.h
 INC += osiSigPipeIgnore.h
 INC += osdSigPipeIgnore.h
-INC += tsStamp.h
 INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
 
 SRCS += epicsThread.cpp
-SRCS += osiTime.cpp
+SRCS += epicsTime.cpp
 
 SRCS += osdSock.c
 SRCS += osiSock.c
@@ -159,7 +158,6 @@ SRCS += osdTime.cpp
 SRCS += osdSigPipeIgnore.c
 SRCS += osdProcess.c
 SRCS += osdNetIntf.c
-#tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h

@@ -9,7 +9,7 @@
 //
 char exPV::hasBeenInitialized = 0;
 gddAppFuncTable<exPV> exPV::ft;
-osiTime exPV::currentTime;
+epicsTime exPV::currentTime;
 
 //
 // special gddDestructor guarantees same form of new and delete

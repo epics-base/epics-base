@@ -20,7 +20,7 @@
 #include "string.h"
 
 #include "epicsMutex.h"
-#include "osiTime.h"
+#include "epicsTime.h"
 #include "tsFreeList.h"
 #include "errMdef.h"
 
@@ -72,11 +72,11 @@ int dbPutNotifyBlocker::initiatePutNotify ( cacNotify &notify,
     // wait for current put notify to complete
     this->lock ();
     if ( this->pPN ) {
-        osiTime begin = osiTime::getCurrent ();
+        epicsTime begin = epicsTime::getCurrent ();
         do {
             this->unlock ();
             this->block.wait ( 1.0 );
-            if ( osiTime::getCurrent () - begin > 30.0 ) {
+            if ( epicsTime::getCurrent () - begin > 30.0 ) {
                 pIO->destroy ();
                 return ECA_PUTCBINPROG;
             }

@@ -193,7 +193,7 @@ extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     fdctx *pfdctx, struct timeval *ptimeout, pCallBackFDMgr pFunc, void *pParam)
 {
-    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (osiTime::uSecPerSec);
+    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     osiTimerForOldFdmgr *pTimer;
     unsigned id;
@@ -339,7 +339,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, struct timeval *ptimeout)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
-    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (osiTime::uSecPerSec);
+    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
 
 #   ifdef noExceptionsFromCXX
         pfdm->process (delay);

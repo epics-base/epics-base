@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.40  2000/12/15 15:34:40  mrk
+ * remove unnecessary calls to TSinit
+ *
  * Revision 1.39  2000/10/11 23:08:56  anj
  * Fixed bug in TSgetMasterTime() - round-trip adjustment was garbage
  * Replaced TSprintf() with printf() where logging inappropriate
@@ -587,7 +590,7 @@ long TSinit(void)
     
     if(TSinitialized) return(0);
     /*register with iocClock */
-    iocClockRegister((ptsStampGetCurrent)TScurrentTimeStamp,getEvent);
+    iocClockRegister((pepicsTimeGetCurrent)TScurrentTimeStamp,getEvent);
     TSinitialized = 1;
     /* 0=default, 1=none, 2=direct */
     

@@ -18,23 +18,23 @@ of this distribution.
 #include "errlog.h"
 #include "callback.h"
 #include "taskwd.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 typedef struct myPvt {
     CALLBACK callback;
     double   requestedDiff;
-    TS_STAMP start;
+    epicsTimeStamp start;
 }myPvt;
 
 static void myCallback(CALLBACK *pCallback)
 {
     myPvt *pmyPvt;
-    TS_STAMP end;
+    epicsTimeStamp end;
     double diff;
 
     callbackGetUser(pmyPvt,pCallback);
-    tsStampGetCurrent(&end);
-    diff = tsStampDiffInSeconds(&end,&pmyPvt->start);
+    epicsTimeGetCurrent(&end);
+    diff = epicsTimeDiffInSeconds(&end,&pmyPvt->start);
     printf("myCallback requestedDiff %f diff %f\n",pmyPvt->requestedDiff,diff);
 }
     
@@ -44,7 +44,7 @@ void callbackTest(void)
 {
     myPvt *nowait[ncallbacks];
     myPvt *wait[ncallbacks];
-    TS_STAMP start;
+    epicsTimeStamp start;
     int i;
 
     taskwdInit();
@@ -55,7 +55,7 @@ void callbackTest(void)
         callbackSetCallback(myCallback,&nowait[i]->callback);
         callbackSetUser(nowait[i],&nowait[i]->callback);
         callbackSetPriority(i%3,&nowait[i]->callback);
-        tsStampGetCurrent(&start);
+        epicsTimeGetCurrent(&start);
         nowait[i]->start = start;
         nowait[i]->requestedDiff = 0.0;
         callbackRequest(&nowait[i]->callback);
@@ -63,7 +63,7 @@ void callbackTest(void)
         callbackSetCallback(myCallback,&wait[i]->callback);
         callbackSetUser(wait[i],&wait[i]->callback);
         callbackSetPriority(i%3,&wait[i]->callback);
-        tsStampGetCurrent(&start);
+        epicsTimeGetCurrent(&start);
         wait[i]->start = start;
         wait[i]->requestedDiff = (double)i;
         callbackRequestDelayed(&wait[i]->callback,wait[i]->requestedDiff);

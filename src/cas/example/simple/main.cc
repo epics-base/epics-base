@@ -8,7 +8,7 @@
 //
 extern int main (int argc, const char **argv)
 {
-	osiTime     begin (osiTime::getCurrent());
+	epicsTime     begin (epicsTime::getCurrent());
 	exServer    *pCAS;
 	unsigned    debugLevel = 0u;
 	double      executionTime;
@@ -67,14 +67,14 @@ extern int main (int argc, const char **argv)
 		}
 	}
 	else {
-		double delay = osiTime::getCurrent() - begin;
+		double delay = epicsTime::getCurrent() - begin;
 		//
 		// loop here untill the specified execution time
 		// expires
 		//
 		while (delay < executionTime) {
 			fileDescriptorManager.process(delay);
-			delay = osiTime::getCurrent() - begin;
+			delay = epicsTime::getCurrent() - begin;
 		}
 	}
 	pCAS->show(2u);

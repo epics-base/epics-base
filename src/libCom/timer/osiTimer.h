@@ -33,11 +33,11 @@
 
 #include "shareLib.h" /* reset share lib defines */
 #include "epicsThread.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 #ifdef __cplusplus
 
-#include "osiTime.h"
+#include "epicsTime.h"
 #include "tsDLList.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
@@ -105,7 +105,7 @@ public:
      * respectively
      */
     epicsShareFunc double timeRemaining () const; /* returns seconds, but inefficent */
-    epicsShareFunc osiTime expirationDate () const; /* efficent */
+    epicsShareFunc epicsTime expirationDate () const; /* efficent */
 
     /*
      * called when the osiTimer expires
@@ -161,7 +161,7 @@ private:
     enum state {statePending, stateExpired, stateIdle, 
         numberOfTimerLists, stateLimbo};
 
-    osiTime exp; /* experation time */
+    epicsTime exp; /* experation time */
     state curState; /* current state */
     osiTimerQueue &queue; /* pointer to current timer queue */
 
@@ -212,7 +212,7 @@ private:
  */
 epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
 
-inline osiTime osiTimer::expirationDate () const
+inline epicsTime osiTimer::expirationDate () const
 {
     return this->exp;
 }
@@ -243,7 +243,7 @@ epicsShareFunc osiTimerId epicsShareAPI osiTimerCreate (const osiTimerJumpTable 
 epicsShareFunc void epicsShareAPI osiTimerArm  (osiTimerId, double delay);
 epicsShareFunc void epicsShareAPI osiTimerCancel (osiTimerId);
 epicsShareFunc double epicsShareAPI osiTimerTimeRemaining (osiTimerId);
-epicsShareFunc TS_STAMP epicsShareAPI osiTimerExpirationDate (osiTimerId);
+epicsShareFunc epicsTimeStamp epicsShareAPI osiTimerExpirationDate (osiTimerId);
 
 #ifdef __cplusplus
 }

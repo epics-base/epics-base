@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.33  2000/10/13 01:17:51  jhill
+ * made gdd param to copy const
+ *
  * Revision 1.32  2000/06/12 17:32:11  jhill
  * moved stdlib.h (an ANSI C file) outside of OS depen switch
  *
@@ -153,7 +156,7 @@ class gddContainer;
 class gddArray;
 class gddScalar;
 
-struct TS_STAMP;
+struct epicsTimeStamp;
 struct timespec;
 
 // Not Complete in this prototype:
@@ -255,11 +258,11 @@ public:
 
 	void getTimeStamp(struct timespec* const ts) const;
 	void getTimeStamp(aitTimeStamp* const ts) const;
-	void getTimeStamp(struct TS_STAMP* const ts) const;
+	void getTimeStamp(struct epicsTimeStamp* const ts) const;
 
 	void setTimeStamp(const struct timespec* const ts);
 	void setTimeStamp(const aitTimeStamp* const ts);
-	void setTimeStamp(const struct TS_STAMP* const ts);
+	void setTimeStamp(const struct epicsTimeStamp* const ts);
 
 	void setStatus(aitUint32);
 	void setStatus(aitUint16 high, aitUint16 low);

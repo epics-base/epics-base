@@ -48,7 +48,7 @@
 #include <limits.h>
 
 #include "dbDefs.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "epicsPrint.h"
 #include "dbBase.h"
 #include "dbFldTypes.h"
@@ -331,10 +331,10 @@ void epicsShareAPI recGblGetTimeStamp(void* prec)
     if(pr->tsel.type!=CONSTANT)
     {
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        status = tsStampGetEvent(&pr->time,(unsigned)pr->tse);
+        status = epicsTimeGetEvent(&pr->time,(unsigned)pr->tse);
     }
     else
-        status = tsStampGetEvent(&pr->time,(unsigned)pr->tse);
+        status = epicsTimeGetEvent(&pr->time,(unsigned)pr->tse);
     if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
 }
 

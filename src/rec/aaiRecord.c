@@ -48,7 +48,6 @@
 #include "epicsPrint.h"
 
 #include "alarm.h"
-#include "tsStamp.h"
 #include "dbAccess.h"
 #include "dbScan.h"
 #include "dbEvent.h"

@@ -18,7 +18,7 @@
 
 int main ( int argc, char **argv )
 {
-    osiTime programBeginTime = osiTime::getCurrent ();
+    epicsTime programBeginTime = epicsTime::getCurrent ();
     SOCKET sock;
     osiSockAddr addr;
     osiSocklen_t addrSize;
@@ -164,7 +164,7 @@ int main ( int argc, char **argv )
                      * shortly after the program started up)
                      */
                     netChange = false;
-                    pBHE = new bhe ( osiTime::getCurrent (), ina );
+                    pBHE = new bhe ( epicsTime::getCurrent (), ina );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
                             pBHE->destroy ();
@@ -174,7 +174,7 @@ int main ( int argc, char **argv )
 
                 if ( netChange ) {
                     char date[64];
-                    osiTime current = osiTime::getCurrent ();
+                    epicsTime current = epicsTime::getCurrent ();
                     current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
                     char host[64];
                     ipAddrToA ( &ina, host, sizeof ( host ) );

@@ -35,7 +35,7 @@
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "shareLib.h"
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +61,7 @@ struct EP_LIST {
    ELLNODE *prev_list;
    struct dbCommon *entrypoint;  /* pointer to entry point in lockset */
    unsigned long count;          /* number of times record processed */
-   TS_STAMP time;           /* time record first logged */
+   epicsTimeStamp time;           /* time record first logged */
    char sched;                   /* schedule record for next dbContTask() pass */
 };
 

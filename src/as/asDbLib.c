@@ -32,7 +32,6 @@ of this distribution.
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbStaticLib.h"
-#include "tsStamp.h"
 #include "dbAddr.h"
 #include "dbAccess.h"
 #include "db_field_log.h"

@@ -392,7 +392,7 @@ outBuf::flushCondition casDGClient::xSend (char *pBufIn,
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-		//this->lastSendTS = osiTime::getCurrent();
+		//this->lastSendTS = epicsTime::getCurrent();
         nBytesSent = totalBytes;
         return outBuf::flushProgress;
     }
@@ -423,7 +423,7 @@ inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
 		    //
 		    // !! this time fetch may be slowing things down !!
 		    //
-		    //this->lastRecvTS = osiTime::getCurrent();
+		    //this->lastRecvTS = epicsTime::getCurrent();
 	    }
         else {
             break;

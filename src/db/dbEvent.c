@@ -36,7 +36,6 @@ of this distribution.
 #include "dbBase.h"
 #include "dbFldTypes.h"
 #include "link.h"
-#include "tsStamp.h"
 #include "dbCommon.h"
 #include "caeventmask.h"
 #include "db_field_log.h"

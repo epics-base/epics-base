@@ -3,6 +3,9 @@
 // Author: Jeff HIll (LANL)
 //
 // $Log$
+// Revision 1.2  1997/04/10 19:39:26  jhill
+// API changes
+//
 // Revision 1.1  1996/12/06 22:20:22  jhill
 // moved down one level
 //
@@ -29,7 +32,7 @@ exServer	*pExampleCAS;
 //
 int excas (unsigned debugLevel, unsigned delaySec)
 {
-	osiTime		begin(osiTime::getCurrent());
+	epicsTime		begin(epicsTime::getCurrent());
 	exServer	*pCAS;
 
 	pCAS = new exServer(32u,5u,500u);
@@ -49,15 +52,15 @@ int excas (unsigned debugLevel, unsigned delaySec)
 		}
 	}
 	else {
-		osiTime total( ((float)delaySec) );
-		osiTime delay(osiTime::getCurrent() - begin);
+		epicsTime total( ((float)delaySec) );
+		epicsTime delay(epicsTime::getCurrent() - begin);
 		//
 		// loop here untill the specified execution time
 		// expires
 		//
 		while (delay < total) {
 			taskDelay(10);
-			delay = osiTime::getCurrent() - begin;
+			delay = epicsTime::getCurrent() - begin;
 		}
 	}
 	pCAS->show(debugLevel);

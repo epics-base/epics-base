@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.26  2001/01/18 19:07:49  mrk
+ *  changes for osiThread=>epicsThread
+ *
  *  Revision 1.25  2001/01/12 00:27:16  jhill
  *  fixed bugs introduced by APS's osi => epics name changes
  *
@@ -54,7 +57,7 @@ of this distribution.
  *  new way to build
  *
  *  Revision 1.12  2000/01/04 20:26:16  mrk
- *  replace osiClock calls with tsStamp calls
+ *  replace osiClock calls with epicsTime calls
  *
  *  Revision 1.11  1999/12/14 22:01:33  mrk
  *  changes for osiSem changes
@@ -113,7 +116,7 @@ of this distribution.
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "alarm.h"
@@ -779,7 +782,7 @@ int epicsShareAPI dbBkpt(dbCommon *precord)
 
         pqe->entrypoint = precord;
         pqe->count = 1;
-        tsStampGetCurrent(&pqe->time);
+        epicsTimeGetCurrent(&pqe->time);
         pqe->sched = 0;
 
 #ifdef BKPT_DIAG
@@ -945,11 +948,11 @@ long epicsShareAPI dbstat(void)
   struct LS_LIST *pnode;
   struct BP_LIST *pbl;
   struct EP_LIST *pqe;
-  TS_STAMP time;
+  epicsTimeStamp time;
 
   epicsMutexMustLock(bkpt_stack_sem);
 
-  tsStampGetCurrent(&time);
+  epicsTimeGetCurrent(&time);
 
  /*
   *  Traverse list, reporting stopped records
@@ -964,7 +967,7 @@ long epicsShareAPI dbstat(void)
       /* for each entrypoint detected, print out entrypoint statistics */
        pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue); 
        while (pqe != NULL) {
-          double diff = tsStampDiffInSeconds(&time,&pqe->time);
+          double diff = epicsTimeDiffInSeconds(&time,&pqe->time);
           if (diff) {
              printf("             Entrypoint: %-28.28s  #C: %5.5lu  C/S: %7.1f\n",
                  pqe->entrypoint->name, pqe->count,diff);

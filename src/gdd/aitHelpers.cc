@@ -5,11 +5,14 @@
 // $Id$
 //
 // $Log$
+// Revision 1.12  1999/08/05 22:15:42  jhill
+// removed knowledge of class osiTime
+//
 // Revision 1.11  1999/05/10 23:38:33  jhill
 // convert to and from other time stamp formats
 //
 // Revision 1.10  1999/05/03 16:20:51  jhill
-// allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
+// allow aitTimeStamp to convert to epicsTimeStamp (without binding to libCom)
 //
 // Revision 1.9  1998/05/05 21:08:26  jhill
 // fixed warning
@@ -189,14 +192,14 @@ int aitString::init(const char* p, aitStrType typeIn, unsigned strLengthIn, unsi
 // to link with libCom
 //
 
-struct TS_STAMP {
+struct epicsTimeStamp {
 	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
 	aitUint32    nsec;           /* nanoseconds within second */
 };
 
-aitTimeStamp::operator struct TS_STAMP () const
+aitTimeStamp::operator struct epicsTimeStamp () const
 {
-	TS_STAMP ts;
+	epicsTimeStamp ts;
 
 	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
 		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
@@ -209,7 +212,7 @@ aitTimeStamp::operator struct TS_STAMP () const
 	return ts;
 }
 
-void aitTimeStamp::get (struct TS_STAMP &ts) const
+void aitTimeStamp::get (struct epicsTimeStamp &ts) const
 {
 	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
 		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
@@ -221,13 +224,13 @@ void aitTimeStamp::get (struct TS_STAMP &ts) const
 	}
 }
 
-aitTimeStamp::aitTimeStamp (const struct TS_STAMP &ts) 
+aitTimeStamp::aitTimeStamp (const struct epicsTimeStamp &ts) 
 {
 	this->tv_sec = ts.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
 	this->tv_nsec = ts.nsec;
 }
 
-aitTimeStamp aitTimeStamp::operator = (const struct TS_STAMP &rhs)
+aitTimeStamp aitTimeStamp::operator = (const struct epicsTimeStamp &rhs)
 {
 	this->tv_sec = rhs.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
 	this->tv_nsec = rhs.nsec;

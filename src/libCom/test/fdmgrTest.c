@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "fdmgr.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "epicsAssert.h"
 
 static const unsigned uSecPerSec = 1000000;
@@ -39,14 +39,14 @@ void fdCreateDestroyHandler (void *pArg, int fd, int open)
 }
 
 typedef struct cbStuctTimer {
-    osiTime time;
+    epicsTime time;
     int done;
 } cbStruct;
 
 void alarmCB (void *parg)
 {
     cbStruct *pCBS = (cbStruct *) parg;
-    osiTimeGetCurrent (&pCBS->time);
+    epicsTimeGetCurrent (&pCBS->time);
     pCBS->done = 1;
 }
 
@@ -55,12 +55,12 @@ void testTimer (fdctx *pfdm, double delay)
     int status;
     fdmgrAlarmId aid;
     struct timeval tmo;
-    osiTime begin;
+    epicsTime begin;
     cbStruct cbs;
     double measuredDelay;
     double measuredError;
 
-    osiTimeGetCurrent (&begin);
+    epicsTimeGetCurrent (&begin);
     cbs.done = 0;
     tmo.tv_sec = (unsigned long) delay;
     tmo.tv_usec = (unsigned long) ((delay - tmo.tv_sec) * uSecPerSec);
@@ -74,7 +74,7 @@ void testTimer (fdctx *pfdm, double delay)
         assert (status==0);
     }
 
-    measuredDelay = osiTimeDiffInSeconds (&cbs.time, &begin);
+    measuredDelay = epicsTimeDiffInSeconds (&cbs.time, &begin);
     measuredError = fabs (measuredDelay-delay);
     printf ("measured delay for %lf sec was off by %lf sec (%lf %%)\n", 
         delay, measuredError, 100.0*measuredError/delay);

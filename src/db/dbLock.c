@@ -67,7 +67,6 @@ since this will delay all other threads.
 #include "dbDefs.h"
 #include "dbBase.h"
 #include "epicsMutex.h"
-#include "tsStamp.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "ellLib.h"

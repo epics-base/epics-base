@@ -84,7 +84,7 @@ of this distribution.
 
 #include "shareLib.h"
 #include "epicsTypes.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -303,7 +303,7 @@ struct dbr_sts_double{
 struct dbr_time_string{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_string_t	value;			/* current value */
 };
 
@@ -311,7 +311,7 @@ struct dbr_time_string{
 struct dbr_time_short{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_short_t	RISC_pad;		/* RISC alignment */
 	dbr_short_t	value;			/* current value */
 };
@@ -320,7 +320,7 @@ struct dbr_time_short{
 struct dbr_time_float{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_float_t	value;			/* current value */
 };
 
@@ -328,7 +328,7 @@ struct dbr_time_float{
 struct dbr_time_enum{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_short_t	RISC_pad;		/* RISC alignment */
 	dbr_enum_t	value;			/* current value */
 };
@@ -337,7 +337,7 @@ struct dbr_time_enum{
 struct dbr_time_char{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_short_t	RISC_pad0;		/* RISC alignment */
 	dbr_char_t	RISC_pad1;		/* RISC alignment */
 	dbr_char_t	value;			/* current value */
@@ -347,7 +347,7 @@ struct dbr_time_char{
 struct dbr_time_long{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_long_t	value;			/* current value */
 };
 
@@ -355,7 +355,7 @@ struct dbr_time_long{
 struct dbr_time_double{
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
-	TS_STAMP	stamp;			/* time stamp */
+	epicsTimeStamp	stamp;			/* time stamp */
 	dbr_long_t	RISC_pad;		/* RISC alignment */
 	dbr_double_t	value;			/* current value */
 };

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  2000/10/13 01:17:52  jhill
+ * made gdd param to copy const
+ *
  * Revision 1.8  1999/08/10 19:57:15  jhill
  * moved inlines in order to eliminate g++ warnings
  *
@@ -108,8 +111,8 @@ inline void gdd::setTimeStamp(const struct timespec* const ts) { time_stamp=*ts;
 inline void gdd::getTimeStamp(aitTimeStamp* const ts) const { *ts = time_stamp; }
 inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
 
-inline void gdd::getTimeStamp(struct TS_STAMP* const ts) const { time_stamp.get(*ts); }
-inline void gdd::setTimeStamp(const struct TS_STAMP* const ts) { time_stamp=*ts; }
+inline void gdd::getTimeStamp(struct epicsTimeStamp* const ts) const { time_stamp.get(*ts); }
+inline void gdd::setTimeStamp(const struct epicsTimeStamp* const ts) { time_stamp=*ts; }
 
 inline void gdd::setStatus(aitUint32 s)		{ status=s; }
 inline void gdd::getStatus(aitUint32& s) const { s=status; }

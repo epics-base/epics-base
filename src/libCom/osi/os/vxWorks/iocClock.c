@@ -26,24 +26,24 @@ of this distribution.
 #include "errlog.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "iocClock.h"
 
 #define BILLION 1000000000
 #define iocClockSyncRate 10.0
 
-static int iocClockGetCurrent(TS_STAMP *pDest);
-static int iocClockGetEvent(TS_STAMP *pDest, unsigned eventNumber);
+static int iocClockGetCurrent(epicsTimeStamp *pDest);
+static int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber);
 
 typedef struct iocClockPvt {
     epicsMutexId  lock;
-    TS_STAMP    clock;
+    epicsTimeStamp    clock;
     unsigned long lastTick;
     epicsUInt32 nanosecondsPerTick;
     int         tickRate;
     int         ticksToSkip;
-    ptsStampGetCurrent getCurrent;
-    ptsStampGetEvent getEvent;
+    pepicsTimeGetCurrent getCurrent;
+    pepicsTimeGetEvent getEvent;
     char        *pserverAddr;
 }iocClockPvt;
 static iocClockPvt *piocClockPvt = 0;
@@ -53,7 +53,7 @@ extern char* sysBootLine;
 static void syncNTP(void)
 {
     struct timespec Currtime;
-    TS_STAMP epicsTime;
+    epicsTimeStamp epicsTime;
     STATUS status;
     int prevStatusBad = 0;
     int firstTime=1;
@@ -75,9 +75,9 @@ static void syncNTP(void)
             errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet OK\n");
             prevStatusBad = 0;
         }
-        tsStampFromTimespec(&epicsTime,&Currtime);
+        epicsTimeFromTimespec(&epicsTime,&Currtime);
         epicsMutexMustLock(piocClockPvt->lock);
-        diffTime = tsStampDiffInSeconds(&epicsTime,&piocClockPvt->clock);
+        diffTime = epicsTimeDiffInSeconds(&epicsTime,&piocClockPvt->clock);
         if(diffTime>=0.0) {
             piocClockPvt->clock = epicsTime;
         } else {/*dont go back in time*/
@@ -118,8 +118,8 @@ void iocClockInit()
     return;
 }
 
-void iocClockRegister(ptsStampGetCurrent getCurrent,
-    ptsStampGetEvent getEvent)
+void iocClockRegister(pepicsTimeGetCurrent getCurrent,
+    pepicsTimeGetEvent getEvent)
 {
     if(piocClockPvt) {
         printf("iocClockRegister: iocClock already initialized\n");
@@ -130,7 +130,7 @@ void iocClockRegister(ptsStampGetCurrent getCurrent,
     piocClockPvt->getEvent = getEvent;
 }
 
-int iocClockGetCurrent(TS_STAMP *pDest)
+int iocClockGetCurrent(epicsTimeStamp *pDest)
 {
     unsigned long currentTick,nticks,nsecs;
 
@@ -162,26 +162,26 @@ int iocClockGetCurrent(TS_STAMP *pDest)
     return(0);
 }
 
-int iocClockGetEvent(TS_STAMP *pDest, unsigned eventNumber)
+int iocClockGetEvent(epicsTimeStamp *pDest, unsigned eventNumber)
 {
-     if (eventNumber==tsStampEventCurrentTime) {
+     if (eventNumber==epicsTimeEventCurrentTime) {
          *pDest = piocClockPvt->clock;
          return(0);
      }
-     return(tsStampERROR);
+     return(epicsTimeERROR);
 }
 
-int tsStampGetCurrent (TS_STAMP *pDest)
+int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
     if(piocClockPvt->getCurrent) return((*piocClockPvt->getCurrent)(pDest));
-    return(tsStampERROR);
+    return(epicsTimeERROR);
 }
 
-int tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
+int epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
 {
     if(piocClockPvt->getEvent)
         return((*piocClockPvt->getEvent)(pDest,eventNumber));
-    return(tsStampERROR);
+    return(epicsTimeERROR);
 }
 
 /* Unless
@@ -191,17 +191,17 @@ int tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
 */
 void date()
 {
-    TS_STAMP now;
+    epicsTimeStamp now;
     char nowText[40];
     size_t rtn;
 
-    rtn = tsStampGetCurrent(&now);
+    rtn = epicsTimeGetCurrent(&now);
     if(rtn) {
-        printf("tsStampGetCurrent failed\n");
+        printf("epicsTimeGetCurrent failed\n");
         return;
     }
     nowText[0] = 0;
-    rtn = tsStampToStrftime(nowText,sizeof(nowText),
+    rtn = epicsTimeToStrftime(nowText,sizeof(nowText),
         "%Y/%m/%d %H:%M:%S.%06f",&now);
     printf("%s\n",nowText);
 }

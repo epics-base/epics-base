@@ -35,13 +35,13 @@ bhe::~bhe ()
  *
  * updates beacon period, and looks for beacon anomalies
  */
-bool bhe::updatePeriod ( osiTime programBeginTime )
+bool bhe::updatePeriod ( epicsTime programBeginTime )
 {
     double currentPeriod;
     bool netChange = false;
-    osiTime current = osiTime::getCurrent ();
+    epicsTime current = epicsTime::getCurrent ();
 
-    if ( this->timeStamp == osiTime () ) {
+    if ( this->timeStamp == epicsTime () ) {
 
         if ( this->piiu ) {
             this->piiu->beaconAnomalyNotify ();

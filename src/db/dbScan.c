@@ -56,7 +56,7 @@
 #include "epicsEvent.h"
 #include "epicsInterrupt.h"
 #include "epicsThread.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "cantProceed.h"
 #include "epicsRingPointer.h"
 #include "epicsPrint.h"
@@ -495,19 +495,19 @@ static void periodicTask(void *arg)
 {
     scan_list *psl = (scan_list *)arg;
 
-    TS_STAMP	start_time,end_time;
+    epicsTimeStamp	start_time,end_time;
     double	diff;
     double	delay;
 
-    tsStampGetCurrent(&start_time);
+    epicsTimeGetCurrent(&start_time);
     while(TRUE) {
 	if(interruptAccept)scanList(psl);
-        tsStampGetCurrent(&end_time);
-        diff = tsStampDiffInSeconds(&end_time,&start_time);
+        epicsTimeGetCurrent(&end_time);
+        diff = epicsTimeDiffInSeconds(&end_time,&start_time);
 	delay = psl->rate - diff;
         delay = (delay<=0.0) ? .1 : delay;
 	epicsThreadSleep(delay);
-        tsStampGetCurrent(&start_time);
+        epicsTimeGetCurrent(&start_time);
     }
 }
 

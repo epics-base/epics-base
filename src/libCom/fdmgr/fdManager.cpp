@@ -171,7 +171,7 @@ epicsShareFunc void fdManager::process (double delay)
     }
 
     tv.tv_sec = static_cast<long> (minDelay);
-    tv.tv_usec = static_cast<long> ((minDelay-tv.tv_sec)*osiTime::uSecPerSec);
+    tv.tv_usec = static_cast<long> ((minDelay-tv.tv_sec)*epicsTime::uSecPerSec);
 
     /*
      * win32 requires this (others will

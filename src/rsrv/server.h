@@ -43,6 +43,7 @@
 #include "dbNotify.h"
 #include "caProto.h"
 #include "ellLib.h"
+#include "epicsTime.h"
 #include "epicsAssert.h"
 
 #define epicsExportSharedSymbols
@@ -101,8 +102,8 @@ struct client {
   ELLLIST               addrq;
   ELLLIST               putNotifyQue;
   struct sockaddr_in    addr;
-  TS_STAMP              time_at_last_send;
-  TS_STAMP              time_at_last_recv;
+  epicsTimeStamp              time_at_last_send;
+  epicsTimeStamp              time_at_last_recv;
   void                  *evuser;
   char                  *pUserName;
   char                  *pHostName;
@@ -138,7 +139,7 @@ struct channel_in_use {
     RSRVPUTNOTIFY   *pPutNotify; /* potential active put notify */
     const unsigned  cid;    /* client id */
     const unsigned  sid;    /* server id */
-    TS_STAMP        time_at_creation;   /* for UDP timeout */
+    epicsTimeStamp        time_at_creation;   /* for UDP timeout */
     struct dbAddr   addr;
     ASCLIENTPVT     asClientPVT;
 };

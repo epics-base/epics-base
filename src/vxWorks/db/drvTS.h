@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.7  2000/02/02 20:06:25  mrk
+ * new way to build
+ *
  * Revision 1.6  1999/12/14 21:35:34  jhill
  * use osiTime.h to get TS_STAMP
  *
@@ -79,7 +82,7 @@ of this distribution.
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 #ifdef TS_DRIVER
 #define TS_EXTERN

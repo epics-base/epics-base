@@ -230,7 +230,7 @@
 		prompt("Time")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("TS_STAMP	time")
+		extra("epicsTimeStamp	time")
 	}
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")

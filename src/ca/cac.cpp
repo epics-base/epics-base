@@ -106,7 +106,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         strncpy ( this->pUserName, tmp, len );
     }
 
-    this->programBeginTime = osiTime::getCurrent ();
+    this->programBeginTime = epicsTime::getCurrent ();
 
     status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
     if ( status ) {
@@ -412,7 +412,7 @@ bhe * cac::lookupBeaconInetAddr (const inetAddrID &ina)
 /*
  * cac::createBeaconHashEntry ()
  */
-bhe *cac::createBeaconHashEntry (const inetAddrID &ina, const osiTime &initialTimeStamp)
+bhe *cac::createBeaconHashEntry (const inetAddrID &ina, const epicsTime &initialTimeStamp)
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     bhe *pBHE;
@@ -461,7 +461,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
          * shortly after the program started up)
          */
         netChange = FALSE;
-        this->createBeaconHashEntry ( addr, osiTime::getCurrent () );
+        this->createBeaconHashEntry ( addr, epicsTime::getCurrent () );
     }
 
     if ( ! netChange ) {
@@ -548,8 +548,8 @@ int cac::pend ( double timeout, int early )
  */
 int cac::pendPrivate (double timeout, int early)
 {
-    osiTime     cur_time;
-    osiTime     beg_time;
+    epicsTime     cur_time;
+    epicsTime     beg_time;
     double      delay;
 
     this->flush ();
@@ -568,7 +568,7 @@ int cac::pendPrivate (double timeout, int early)
         return ECA_TIMEOUT;
     }
 
-    beg_time = cur_time = osiTime::getCurrent ();
+    beg_time = cur_time = epicsTime::getCurrent ();
 
     delay = 0.0;
     while ( true ) {
@@ -603,7 +603,7 @@ int cac::pendPrivate (double timeout, int early)
             return ECA_NORMAL;
         }
  
-        cur_time = osiTime::getCurrent ();
+        cur_time = epicsTime::getCurrent ();
 
         if ( timeout != 0.0 ) {
             delay = cur_time - beg_time;
@@ -929,7 +929,7 @@ tcpiiu * cac::constructTCPIIU ( const osiSockAddr &addr, unsigned minorVersion )
             }
         }
         else {
-            pBHE = this->createBeaconHashEntry ( addr.ia, osiTime () );
+            pBHE = this->createBeaconHashEntry ( addr.ia, epicsTime () );
             if ( ! pBHE ) {
                 return NULL;
             }

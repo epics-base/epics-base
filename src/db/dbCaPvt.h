@@ -60,7 +60,7 @@ typedef struct caLink
 	short		dbrType;
 	short		link_action;
 	unsigned short	sevr;
-	TS_STAMP	timeStamp;
+	epicsTimeStamp	timeStamp;
 	char		gotInNative;
 	char		gotOutNative;
 	char		gotInString;

@@ -7,6 +7,10 @@ PROD_LIBS += Com
 USR_LIBS_hpux += cma
 
 
+epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
+PROD += epicsTimeTestHost
+OBJS_IOC += epicsTimeTest
+
 epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
 PROD += epicsThreadTestHost
 OBJS_IOC += epicsThreadTest
@@ -29,10 +33,6 @@ OBJS_IOC += epicsMutexTest
 
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest
-
-osiTimeTestHost_SRCS += osiTimeTestMain.c osiTimeTest.cpp
-PROD += osiTimeTestHost
-OBJS_IOC += osiTimeTest
 
 include $(TOP)/configure/RULES
 

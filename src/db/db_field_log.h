@@ -60,7 +60,7 @@ union native_value{
 typedef struct db_field_log {
         unsigned short		stat;	/* Alarm Status         */
         unsigned short		sevr;	/* Alarm Severity       */
-	TS_STAMP		time;	/* time stamp		*/
+	epicsTimeStamp		time;	/* time stamp		*/
 	union native_value	field;	/* field value		*/
 }db_field_log;
 

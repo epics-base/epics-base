@@ -21,7 +21,7 @@
  * EPICS
  */
 #define epicsExportSharedSymbols
-#include "osiTime.h"
+#include "epicsTime.h"
 #include "errlog.h"
 
 extern "C" {
@@ -45,7 +45,7 @@ static unsigned long timeoffset;
  * Allow for this to be called before clockInit() and before
  * system time and date have been initialized.
  */
-int tsStampGetCurrent (TS_STAMP *pDest)
+int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
     struct timeval curtime;
     rtems_interval t;
@@ -56,27 +56,27 @@ int tsStampGetCurrent (TS_STAMP *pDest)
 	if (sc == RTEMS_SUCCESSFUL)
 	    break;
 	else if (sc != RTEMS_NOT_DEFINED)
-	    return tsStampERROR;
+	    return epicsTimeERROR;
 	sc = rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &t);
 	if (sc != RTEMS_SUCCESSFUL)
-	    return tsStampERROR;
+	    return epicsTimeERROR;
 	rtems_task_wake_after (t);
     }
     pDest->nsec = curtime.tv_usec * 1000;
     pDest->secPastEpoch = curtime.tv_sec - timeoffset;
-   return tsStampOK;
+   return epicsTimeOK;
 }
 	
 /*
- * tsStampGetEvent ()
+ * epicsTimeGetEvent ()
  */
-int tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
+int epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
 {
-    if (eventNumber==tsStampEventCurrentTime) {
-        return tsStampGetCurrent (pDest);
+    if (eventNumber==epicsTimeEventCurrentTime) {
+        return epicsTimeGetCurrent (pDest);
     }
     else {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 }
 

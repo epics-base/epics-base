@@ -125,7 +125,7 @@ int main(int argc,char **argv)
     fprintf(outFile,"#include \"ellLib.h\"\n");
     fprintf(outFile,"#include \"epicsMutex.h\"\n");
     fprintf(outFile,"#include \"link.h\"\n");
-    fprintf(outFile,"#include \"tsStamp.h\"\n");
+    fprintf(outFile,"#include \"epicsTime.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);

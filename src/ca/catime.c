@@ -19,7 +19,7 @@
 #include "epicsAssert.h"
 #include "cadef.h"
 #include "caProto.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 #include "caDiagnostics.h"
 
@@ -348,8 +348,8 @@ unsigned    *pInlineIter
  */
 LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
 {
-    TS_STAMP end_time;
-    TS_STAMP start_time;
+    epicsTimeStamp end_time;
+    epicsTimeStamp start_time;
     double delay;
     double X = 0u;
     double XX = 0u; 
@@ -361,16 +361,16 @@ LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
     int status;
 
     for (pi=pItems; pi<&pItems[iterations]; pi++) {
-        tsStampGetCurrent (&start_time);
+        epicsTimeGetCurrent (&start_time);
         status = ca_array_get (pi->type, pi->count, 
                         pi->chix, &pi->val);
         SEVCHK (status, NULL);
         status = ca_pend_io (100.0);
         SEVCHK (status, NULL);
 
-        tsStampGetCurrent(&end_time);
+        epicsTimeGetCurrent(&end_time);
 
-        delay = tsStampDiffInSeconds(&end_time,&start_time);
+        delay = epicsTimeDiffInSeconds(&end_time,&start_time);
 
         X += delay;
         XX += delay*delay;
@@ -426,15 +426,15 @@ LOCAL void printSearchStat ( const ti  *pi, unsigned iterations )
  */
 void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
 {
-    TS_STAMP    end_time;
-    TS_STAMP    start_time;
+    epicsTimeStamp    end_time;
+    epicsTimeStamp    start_time;
     double      delay;
     unsigned    inlineIter;
 
-    tsStampGetCurrent (&start_time);
+    epicsTimeGetCurrent (&start_time);
     (*pfunc) (pItems, iterations, &inlineIter);
-    tsStampGetCurrent (&end_time);
-    delay = tsStampDiffInSeconds (&end_time, &start_time);
+    epicsTimeGetCurrent (&end_time);
+    delay = epicsTimeDiffInSeconds (&end_time, &start_time);
     if (delay>0.0) {
         printf ("Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
             delay/(iterations*inlineIter), (iterations*inlineIter)/delay);

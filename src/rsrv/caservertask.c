@@ -39,7 +39,7 @@
 #include "osiSock.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "addrList.h"
@@ -117,8 +117,8 @@ struct client *create_base_client ()
     client->recv.cnt = 0ul;
     client->evuser = NULL;
     client->disconnect = FALSE; /* for TCP only */
-    tsStampGetCurrent(&client->time_at_last_send);
-    tsStampGetCurrent(&client->time_at_last_recv);
+    epicsTimeGetCurrent(&client->time_at_last_send);
+    epicsTimeGetCurrent(&client->time_at_last_recv);
     client->proto = IPPROTO_UDP;
     client->minor_version_number = CA_UKN_MINOR_VERSION;
     
@@ -485,7 +485,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
     double                  recv_delay;
     unsigned long           bytes_reserved;
     char                    *state[] = {"up", "down"};
-    TS_STAMP                current;
+    epicsTimeStamp                current;
     char                    clientHostName[256];
 
     ipAddrToDottedIP (&client->addr, clientHostName, sizeof(clientHostName));
@@ -500,9 +500,9 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         pproto = "UKN";
     }
 
-    tsStampGetCurrent(&current);
-    send_delay = tsStampDiffInSeconds(&current,&client->time_at_last_send);
-    recv_delay = tsStampDiffInSeconds(&current,&client->time_at_last_recv);
+    epicsTimeGetCurrent(&current);
+    send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
+    recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
     printf( "%s(%s): User=\"%s\", V%d.%u, Channel Count=%d\n", 
         clientHostName,

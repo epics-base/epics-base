@@ -42,7 +42,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 #include "ellLib.h"
-#include "tsStamp.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbFldTypes.h"

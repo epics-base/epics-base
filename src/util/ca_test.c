@@ -48,7 +48,7 @@
 #endif
 
 #include "cadef.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 int ca_test(char *pname, char *pvalue);
 LOCAL int cagft(char *pname);
@@ -520,7 +520,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_string *pvalue 
 		  = (struct dbr_time_string *) pbuffer;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
@@ -534,7 +534,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_enum *)pbuffer;
 		dbr_enum_t *pshort = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
@@ -551,7 +551,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_short *)pbuffer;
 		dbr_short_t *pshort = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",
 			pvalue->status,
@@ -570,7 +570,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_float *)pbuffer;
 		dbr_float_t *pfloat = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
@@ -587,7 +587,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_char *)pbuffer;
 		dbr_char_t *pchar = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
@@ -604,7 +604,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_long *)pbuffer;
 		dbr_long_t *plong = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
@@ -621,7 +621,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_double *)pbuffer;
 		dbr_double_t *pdouble = &pvalue->value;
 
-                tsStampToStrftime(tsString,sizeof(tsString),
+                epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);

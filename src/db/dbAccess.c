@@ -50,7 +50,7 @@ of this distribution.
 #include "errlog.h"
 #include "cantProceed.h"
 #include "cvtFast.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "alarm.h"
 #include "ellLib.h"
 #include "dbStaticLib.h"
@@ -1347,7 +1347,7 @@ long epicsShareAPI dbGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
-long epicsShareAPI dbGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
+long epicsShareAPI dbGetTimeStamp(struct link *plink,epicsTimeStamp *pstamp)
 {
     DBADDR *paddr;
 

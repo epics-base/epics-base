@@ -16,7 +16,7 @@
  * EPICS
  */
 #include "epicsAssert.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "envDefs.h"
 
 /*
@@ -1332,18 +1332,18 @@ void arrayTest ( chid chan )
 void pend_event_delay_test(dbr_double_t request)
 {
     int     status;
-    TS_STAMP    end_time;
-    TS_STAMP    start_time;
+    epicsTimeStamp    end_time;
+    epicsTimeStamp    start_time;
     dbr_double_t    delay;
     dbr_double_t    accuracy;
 
-    tsStampGetCurrent(&start_time);
+    epicsTimeGetCurrent(&start_time);
     status = ca_pend_event(request);
     if (status != ECA_TIMEOUT) {
         SEVCHK(status, NULL);
     }
-    tsStampGetCurrent(&end_time);
-    delay = tsStampDiffInSeconds(&end_time,&start_time);
+    epicsTimeGetCurrent(&end_time);
+    delay = epicsTimeDiffInSeconds(&end_time,&start_time);
     accuracy = 100.0*(delay-request)/request;
     printf("CA pend event delay = %f sec results in error = %f %%\n",
         request, accuracy);
@@ -1354,16 +1354,16 @@ void caTaskExistTest ()
 {
     int status;
 
-    TS_STAMP end_time;
-    TS_STAMP start_time;
+    epicsTimeStamp end_time;
+    epicsTimeStamp start_time;
     dbr_double_t delay;
 
-    tsStampGetCurrent ( &start_time );
+    epicsTimeGetCurrent ( &start_time );
     printf ( "entering ca_task_exit()\n" );
     status = ca_task_exit ();
     SEVCHK ( status, NULL );
-    tsStampGetCurrent ( &end_time );
-    delay = tsStampDiffInSeconds ( &end_time, &start_time );
+    epicsTimeGetCurrent ( &end_time );
+    delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
     printf ( "in ca_task_exit() for %f sec\n", delay );
 }
 
@@ -1671,20 +1671,20 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     }
 
     {
-        TS_STAMP    end_time;
-        TS_STAMP    start_time;
+        epicsTimeStamp    end_time;
+        epicsTimeStamp    start_time;
         dbr_double_t    delay;
         dbr_double_t    request = 15.0;
         dbr_double_t    accuracy;
 
-        tsStampGetCurrent(&start_time);
+        epicsTimeGetCurrent(&start_time);
         printf ("waiting for events for %f sec\n", request);
         status = ca_pend_event (request);
         if ( status != ECA_TIMEOUT ) {
             SEVCHK ( status, NULL );
         }
-        tsStampGetCurrent ( &end_time );
-        delay = tsStampDiffInSeconds ( &end_time, &start_time );
+        epicsTimeGetCurrent ( &end_time );
+        delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
         accuracy = 100.0 * ( delay - request ) / request;
         printf ( "CA pend event delay accuracy = %f %%\n", accuracy );
     }

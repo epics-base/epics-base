@@ -72,8 +72,8 @@ bool CASG::verify () const
 int CASG::block ( double timeout )
 {
     unsigned long initialSeqNo = this->seqNo;
-    osiTime cur_time;
-    osiTime beg_time;
+    epicsTime cur_time;
+    epicsTime beg_time;
     double  delay;
     double  remaining;
     int     status;
@@ -92,7 +92,7 @@ int CASG::block ( double timeout )
 
     epicsThreadPrivateSet (cacRecursionLock, &cacRecursionLock);
 
-    cur_time = osiTime::getCurrent ();
+    cur_time = epicsTime::getCurrent ();
 
     this->client.flush ();
 
@@ -133,7 +133,7 @@ int CASG::block ( double timeout )
         /*
          * force a time update 
          */
-        cur_time = osiTime::getCurrent ();
+        cur_time = epicsTime::getCurrent ();
 
         delay = cur_time - beg_time;
     }

@@ -54,7 +54,6 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "epicsPrint.h"
-#include "tsStamp.h"
 #include "ellLib.h"
 #include "dbDefs.h"
 #include "dbBase.h"

@@ -36,7 +36,6 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "cvtFast.h"
-#include "tsStamp.h"
 #include "alarm.h"
 #include "dbBase.h"
 #include "link.h"

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.21  1999/10/28 18:12:54  jhill
+ * removed use of macro max() because it was classing with the C++ RTL
+ *
  * Revision 1.20  1999/08/05 22:17:11  jhill
  * removed knowledge of class osiTime
  *
@@ -15,7 +18,7 @@
  * convert to and from other time stamp formats
  *
  * Revision 1.18  1999/05/03 16:20:51  jhill
- * allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
+ * allow aitTimeStamp to convert to epicsTimeStamp (without binding to libCom)
  *
  * Revision 1.17  1999/04/30 00:09:47  jhill
  * proper borrow
@@ -96,7 +99,7 @@ inline char* strDup(const char* x)
 
 
 struct timespec;
-struct TS_STAMP;
+struct epicsTimeStamp;
 class gdd;
 
 class epicsShareClass aitTimeStamp {
@@ -156,12 +159,12 @@ public:
 	aitTimeStamp operator = (const struct timespec &rhs);
 
 	//
-	// convert to and from EPICS TS_STAMP format
+	// convert to and from EPICS epicsTimeStamp format
 	//
-	operator struct TS_STAMP () const;
-	void get (struct TS_STAMP &) const;
-	aitTimeStamp (const struct TS_STAMP &ts);
-	aitTimeStamp operator = (const struct TS_STAMP &rhs);
+	operator struct epicsTimeStamp () const;
+	void get (struct epicsTimeStamp &) const;
+	aitTimeStamp (const struct epicsTimeStamp &ts);
+	aitTimeStamp operator = (const struct epicsTimeStamp &rhs);
 
 	static aitTimeStamp getCurrent();
 

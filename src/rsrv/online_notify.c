@@ -43,7 +43,6 @@
 #include "dbDefs.h"
 #include "osiSock.h"
 #include "osiPoolStatus.h"
-#include "tsStamp.h"
 #include "errlog.h"
 #include "envDefs.h"
 #include "addrList.h"

@@ -20,7 +20,6 @@ of this distribution.
 #include "dbDefs.h"
 #include "errlog.h"
 #include "cvtFast.h"
-#include "tsStamp.h"
 #include "dbBase.h"
 #include "link.h"
 #include "dbFldTypes.h"

@@ -17,7 +17,7 @@ of this distribution.
 #include "epicsThread.h"
 #include "osiTimer.h"
 #include "errlog.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 static void expire(void *pPrivate);
 static void destroy(void *pPrivate);
@@ -30,7 +30,7 @@ static osiTimerQueueId timerQueue;
 typedef struct myPvt {
     osiTimerId timer;
     double   requestedDiff;
-    TS_STAMP start;
+    epicsTimeStamp start;
 }myPvt;
 
     
@@ -39,14 +39,14 @@ typedef struct myPvt {
 void timerTest(void)
 {
     myPvt *timer[ntimers];
-    TS_STAMP start;
+    epicsTimeStamp start;
     int i;
 
     timerQueue = osiTimerQueueCreate(epicsThreadPriorityLow);
     for(i=0; i<ntimers ; i++) {
         timer[i] = calloc(1,sizeof(myPvt));
         timer[i]->timer = osiTimerCreate(&jumpTable,timerQueue,(void *)timer[i]);
-        tsStampGetCurrent(&start);
+        epicsTimeGetCurrent(&start);
         timer[i]->start = start;
         timer[i]->requestedDiff = (double)i;
         osiTimerArm(timer[i]->timer,(double)i);
@@ -58,11 +58,11 @@ void timerTest(void)
 void expire(void *pPrivate)
 {
     myPvt *pmyPvt = (myPvt *)pPrivate;
-    TS_STAMP end;
+    epicsTimeStamp end;
     double diff;
 
-    tsStampGetCurrent(&end);
-    diff = tsStampDiffInSeconds(&end,&pmyPvt->start);
+    epicsTimeGetCurrent(&end);
+    diff = epicsTimeDiffInSeconds(&end,&pmyPvt->start);
     printf("myCallback requestedDiff %f diff %f\n",pmyPvt->requestedDiff,diff);
 }
 

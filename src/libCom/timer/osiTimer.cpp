@@ -261,7 +261,7 @@ void osiTimer::arm (double initialDelay)
 	//
 	// calculate absolute expiration time
 	//
-	this->exp = osiTime::getCurrent () + initialDelay;
+	this->exp = epicsTime::getCurrent () + initialDelay;
 
 	//
 	// insert into the pending queue
@@ -351,7 +351,7 @@ double osiTimer::delay () const
 //
 void osiTimer::show (unsigned level) const
 {
-	osiTime	cur = osiTime::getCurrent ();
+	epicsTime	cur = epicsTime::getCurrent ();
 	printf ("osiTimer at %p for \"%s\" with again = %d\n", 
 		this, this->name(), this->again());
 	if (level>=1u) {
@@ -384,7 +384,7 @@ double osiTimer::timeRemaining () const
     this->queue.mutex.lock ();
     switch (this->curState) {
     case statePending:
-	    delay = this->exp - osiTime::getCurrent();
+	    delay = this->exp - epicsTime::getCurrent();
 	    if ( delay < 0.0 ) {
 		    delay = 0.0;
 	    }
@@ -529,7 +529,7 @@ double osiTimerQueue::delayToFirstExpire () const
 		//
 		// no timer in the queue - return a long delay - 30 min
 		//
-		delay = 30u * osiTime::secPerMin;
+		delay = 30u * epicsTime::secPerMin;
 	}
 
     this->mutex.unlock ();
@@ -549,7 +549,7 @@ void osiTimerQueue::process ()
 
 void osiTimerQueue::privateProcess ()
 {
-	osiTime cur ( osiTime::getCurrent () );
+	epicsTime cur ( epicsTime::getCurrent () );
 	osiTimer *pTmr;
 	
     this->mutex.lock ();
@@ -717,7 +717,7 @@ extern "C" epicsShareFunc double epicsShareAPI osiTimerTimeRemaining (osiTimerId
     return pTmr->timeRemaining ();
 }
 
-extern "C" epicsShareFunc TS_STAMP epicsShareAPI osiTimerExpirationDate (osiTimerId idIn)
+extern "C" epicsShareFunc epicsTimeStamp epicsShareAPI osiTimerExpirationDate (osiTimerId idIn)
 {
     osiTimerForC *pTmr = static_cast<osiTimerForC *> (idIn);
     assert (pTmr);

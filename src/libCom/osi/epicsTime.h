@@ -87,17 +87,17 @@ public:
     epicsTime (const time_t_wrapper &tv);
     epicsTime operator = (const time_t_wrapper &rhs);
 
-    // convert to and from ANSI C's "struct tm" (with nano seconds)
+    // convert to and from ANSI Cs "struct tm" (with nano seconds)
     operator tm_nano_sec () const;
     epicsTime (const tm_nano_sec &ts);
     epicsTime operator = (const tm_nano_sec &rhs);
 
-    // convert to and from POSIX RT's "struct timespec"
+    // convert to and from POSIX RTs "struct timespec"
     operator struct timespec () const;
     epicsTime (const struct timespec &ts);
     epicsTime operator = (const struct timespec &rhs);
 
-    // convert to and from BSD's "struct timeval"
+    // convert to and from BSDs "struct timeval"
     operator struct timeval () const;
     epicsTime (const struct timeval &ts);
     epicsTime operator = (const struct timeval &rhs);
@@ -107,7 +107,7 @@ public:
     epicsTime (const ntpTimeStamp &ts);
     epicsTime operator = (const ntpTimeStamp &rhs);
 
-    // convert to and from GDD's aitTimeStamp format
+    // convert to and from GDDs aitTimeStamp format
     operator aitTimeStamp () const;
     epicsTime (const aitTimeStamp &ts);
     epicsTime operator = (const aitTimeStamp &rhs);

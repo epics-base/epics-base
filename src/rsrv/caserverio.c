@@ -35,7 +35,7 @@
 
 #include "dbDefs.h"
 #include "osiSock.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "net_convert.h"
 
@@ -149,7 +149,7 @@ void cas_send_msg (struct client *pclient, int lock_needed)
         }
 
         pclient->send.stk = 0;
-        tsStampGetCurrent (&pclient->time_at_last_send);
+        epicsTimeGetCurrent (&pclient->time_at_last_send);
     }
 
     if(lock_needed){

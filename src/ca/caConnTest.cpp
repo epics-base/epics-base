@@ -4,13 +4,13 @@
 
 #include "cadef.h"
 #include "epicsAssert.h"
-#include "osiTime.h"
+#include "epicsTime.h"
 
 static unsigned channelCount = 0u;
 static unsigned connCount = 0u;
 static bool subsequentConnect = false;
 
-osiTime begin;
+epicsTime begin;
 
 extern "C" void caConnTestConnHandler ( struct connection_handler_args args )
 {
@@ -18,14 +18,14 @@ extern "C" void caConnTestConnHandler ( struct connection_handler_args args )
         if ( connCount == 0u ) {
             if ( subsequentConnect ) {
                 printf ("the first channel connected\n");
-                begin = osiTime::getCurrent ();
+                begin = epicsTime::getCurrent ();
             }
         }
         connCount++;
         // printf  ( "." );
         // fflush ( stdout );
         if ( connCount == channelCount ) {
-            osiTime current = osiTime::getCurrent ();
+            epicsTime current = epicsTime::getCurrent ();
             double delay = current - begin;
             printf ( "all channels connected after %f sec ( %f sec per channel)\n",
                 delay, delay / channelCount );
@@ -61,7 +61,7 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
 	while ( 1 ) {
         connCount = 0u;
         subsequentConnect = false;
-        begin = osiTime::getCurrent ();
+        begin = epicsTime::getCurrent ();
 
         printf ( "initializing CA client library\n" );
 

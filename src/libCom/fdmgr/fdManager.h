@@ -39,7 +39,7 @@
 #include "shareLib.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "osiSock.h"
 #include "osiTimer.h"
 

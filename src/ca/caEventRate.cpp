@@ -7,7 +7,7 @@
 
 #include "cadef.h"
 #include "dbDefs.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 
 /*
  * event_handler()

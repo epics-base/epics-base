@@ -23,7 +23,6 @@ of this distribution.
 #include "epicsInterrupt.h"
 #include "osiTimer.h"
 #include "epicsRingPointer.h"
-#include "tsStamp.h"
 #include "errlog.h"
 #include "dbStaticLib.h"
 #include "dbBase.h"

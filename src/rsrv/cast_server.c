@@ -54,7 +54,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "taskwd.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "envDefs.h"
 #include "freeList.h"
 
@@ -69,14 +69,14 @@ LOCAL void clean_addrq()
 {
     struct channel_in_use   *pciu;
     struct channel_in_use   *pnextciu;
-    TS_STAMP        current;
+    epicsTimeStamp        current;
     double          delay;
     double          maxdelay = 0;
     unsigned        ndelete=0;
     double          timeout = TIMEOUT;
     int         s;
 
-    tsStampGetCurrent(&current);
+    epicsTimeGetCurrent(&current);
 
     epicsMutexMustLock(prsrv_cast_client->addrqLock);
     pnextciu = (struct channel_in_use *) 
@@ -85,7 +85,7 @@ LOCAL void clean_addrq()
     while( (pciu = pnextciu) ) {
         pnextciu = (struct channel_in_use *)pciu->node.next;
 
-        delay = tsStampDiffInSeconds(&current,&pciu->time_at_creation);
+        delay = epicsTimeDiffInSeconds(&current,&pciu->time_at_creation);
         if (delay > timeout) {
 
             ellDelete(&prsrv_cast_client->addrq, &pciu->node);
@@ -260,7 +260,7 @@ int cast_server(void)
         else {
             prsrv_cast_client->recv.cnt = (unsigned long) status;
             prsrv_cast_client->recv.stk = 0ul;
-        tsStampGetCurrent(&prsrv_cast_client->time_at_last_recv);
+        epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
 
             /*
              * If we are talking to a new client flush to the old one 

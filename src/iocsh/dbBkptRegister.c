@@ -13,7 +13,6 @@ of this distribution.
 #include <ctype.h>
 
 #include "ellLib.h"
-#include "tsStamp.h"
 #include "errlog.h"
 #include "alarm.h"
 #include "dbBase.h"

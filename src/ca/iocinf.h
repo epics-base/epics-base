@@ -40,7 +40,7 @@
 #include "bucketLib.h"
 #include "envDefs.h" 
 #include "epicsPrint.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "tsFreeList.h"
 #include "tsDLList.h"
 #include "osiSock.h"
@@ -883,11 +883,11 @@ private:
 
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
-    epicsShareFunc bhe ( const osiTime &initialTimeStamp, const inetAddrID &addr );
+    epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
     epicsShareFunc void destroy ();
-    epicsShareFunc bool updatePeriod ( osiTime programBeginTime );
+    epicsShareFunc bool updatePeriod ( epicsTime programBeginTime );
     epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void * operator new ( size_t size );
@@ -895,7 +895,7 @@ public:
 
 private:
     tcpiiu *piiu;
-    osiTime timeStamp;
+    epicsTime timeStamp;
     double averagePeriod;
 
     static tsFreeList < class bhe, 1024 > freeList;
@@ -1067,7 +1067,7 @@ public:
     void beaconNotify ( const inetAddrID &addr );
     bhe *lookupBeaconInetAddr ( const inetAddrID &ina );
     bhe *createBeaconHashEntry ( const inetAddrID &ina, 
-            const osiTime &initialTimeStamp );
+            const epicsTime &initialTimeStamp );
     void repeaterSubscribeConfirmNotify ();
 
     // IIU routines
@@ -1134,7 +1134,7 @@ private:
         < CASG >            sgTable;
     resTable 
         < bhe, inetAddrID > beaconTable;
-    osiTime                 programBeginTime;
+    epicsTime                 programBeginTime;
     double                  connTMO;
     // defaultMutex can be applied if iiuListMutex is already applied
     mutable epicsMutex      defaultMutex; 

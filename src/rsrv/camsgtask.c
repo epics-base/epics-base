@@ -36,7 +36,7 @@
 
 #include "dbDefs.h"
 #include "osiSock.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "db_access.h"
@@ -84,7 +84,7 @@ void camsgtask (struct client *client)
             break;
         }
 
-        tsStampGetCurrent (&client->time_at_last_recv);
+        epicsTimeGetCurrent (&client->time_at_last_recv);
         client->recv.cnt += (unsigned long) nchars;
 
         status = camessage (client, &client->recv);

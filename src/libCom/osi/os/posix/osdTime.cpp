@@ -6,13 +6,13 @@
 #include "osiSock.h"
 
 #define epicsExportSharedSymbols
-#include "osiTime.h"
+#include "epicsTime.h"
 
 
 //
-// osiTime::osdGetCurrent ()
+// epicsTime::osdGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
 #   ifdef _POSIX_TIMERS
         struct timespec ts;
@@ -20,33 +20,33 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
     
         status = clock_gettime (CLOCK_REALTIME, &ts);
         if (status) {
-            return tsStampERROR;
+            return epicsTimeERROR;
         }
 
-        *pDest = osiTime (ts);
-        return tsStampOK;
+        *pDest = epicsTime (ts);
+        return epicsTimeOK;
 #   else
     	int status;
     	struct timeval tv;
     
     	status = gettimeofday (&tv, NULL);
         if (status) {
-            return tsStampERROR;
+            return epicsTimeERROR;
         }
-    	*pDest = osiTime (tv); 
-        return tsStampOK;
+    	*pDest = epicsTime (tv); 
+        return epicsTimeOK;
 #   endif
 }
 
 //
-// tsStampGetEvent ()
+// epicsTimeGetEvent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
 {
-    if (eventNumber==tsStampEventCurrentTime) {
-        return tsStampGetCurrent (pDest);
+    if (eventNumber==epicsTimeEventCurrentTime) {
+        return epicsTimeGetCurrent (pDest);
     }
     else {
-        return tsStampERROR;
+        return epicsTimeERROR;
     }
 }

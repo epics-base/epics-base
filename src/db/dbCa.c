@@ -34,7 +34,7 @@ of this distribution.
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "alarm.h"
@@ -371,7 +371,7 @@ long epicsShareAPI dbCaGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
-long epicsShareAPI dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
+long epicsShareAPI dbCaGetTimeStamp(struct link *plink,epicsTimeStamp *pstamp)
 {
     caLink	*pca;
 
@@ -379,7 +379,7 @@ long epicsShareAPI dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
     if(!pca->chid || ca_state(pca->chid)!=cs_conn) return(-1);
-    memcpy(pstamp,&pca->timeStamp,sizeof(TS_STAMP));
+    memcpy(pstamp,&pca->timeStamp,sizeof(epicsTimeStamp));
     return(0);
 }
 
@@ -496,7 +496,7 @@ static void eventCallback(struct event_handler_args arg)
     }
     pdbr_time_double = (struct dbr_time_double *)arg.dbr;
     pca->sevr = (unsigned short)pdbr_time_double->severity;
-    memcpy(&pca->timeStamp,&pdbr_time_double->stamp,sizeof(TS_STAMP));
+    memcpy(&pca->timeStamp,&pdbr_time_double->stamp,sizeof(epicsTimeStamp));
     if(precord) {
         struct pv_link *ppv_link = &(plink->value.pv_link);
 

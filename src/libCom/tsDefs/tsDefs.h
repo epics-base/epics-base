@@ -10,6 +10,7 @@
 #ifndef tsDefsh
 #define tsDefsh
 
+#include "epicsTime.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -17,7 +18,6 @@ extern "C" {
 #endif
 
 #define epicsExportSharedSymbols
-#include "tsStamp.h"
 
 /*----------------------------------------------------------------------------
 * TS_TEXT_xxx text type codes for converting between text and time stamp

@@ -40,7 +40,7 @@ epicsShareFunc long epicsShareAPI dbCaGetNelements(
 epicsShareFunc long epicsShareAPI dbCaGetSevr(
     struct link *plink,short *severity);
 epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
-    struct link *plink,TS_STAMP *pstamp);
+    struct link *plink,epicsTimeStamp *pstamp);
 epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(struct link *plink);
 epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(struct link *plink);
 

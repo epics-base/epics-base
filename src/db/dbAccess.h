@@ -15,7 +15,7 @@ of this distribution.
 #define INCdbAccessh
 
 #include "dbDefs.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "caeventmask.h"
 #include "dbFldTypes.h"
 #include "link.h"

@@ -19,7 +19,7 @@ of this distribution.
 
 #include "epicsEvent.h"
 #include "cantProceed.h"
-#include "tsStamp.h"
+#include "epicsTime.h"
 #include "errlog.h"
 #include "epicsAssert.h"
 
@@ -46,12 +46,12 @@ if(status) { \
 static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
 {
     struct timespec wait;
-    TS_STAMP stamp;
+    epicsTimeStamp stamp;
 
     if(timeout<0.0) timeout = 0.0;
     else if(timeout>3600.0) timeout = 3600.0;
-    tsStampGetCurrent(&stamp);
-    tsStampToTimespec(wakeTime, &stamp);
+    epicsTimeGetCurrent(&stamp);
+    epicsTimeToTimespec(wakeTime, &stamp);
     wait.tv_sec = timeout;
     wait.tv_nsec = (long)((timeout - (double)wait.tv_sec) * 1e9);
     wakeTime->tv_sec += wait.tv_sec;

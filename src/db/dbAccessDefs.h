@@ -30,6 +30,7 @@ of this distribution.
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
 
+#include "epicsTime.h"
 #include "shareLib.h"
 #ifdef __cplusplus
 extern "C" {
@@ -116,7 +117,7 @@ epicsShareExtern volatile int interruptAccept;
         long            precision;      /* number of decimal places*/\
         long            field_width;    /* field width             */
 #define DBRtime \
-	TS_STAMP	time;		/* time stamp*/
+	epicsTimeStamp	time;		/* time stamp*/
 #define DBRenumStrs \
 	unsigned long	no_str;		/* number of strings*/\
 	long		padenumStrs;	/*padding to force 8 byte align*/\
@@ -262,7 +263,7 @@ epicsShareFunc long epicsShareAPI dbGetUnits(
 epicsShareFunc long epicsShareAPI dbGetSevr(
     struct link *plink,short *severity);
 epicsShareFunc long epicsShareAPI dbGetTimeStamp(
-    struct link *plink,TS_STAMP *pstamp);
+    struct link *plink,epicsTimeStamp *pstamp);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */

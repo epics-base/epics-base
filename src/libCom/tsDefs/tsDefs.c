@@ -9,10 +9,10 @@ epicsShareFunc char * epicsShareAPI tsStampToText(const TS_STAMP *pTS,enum tsTex
 {
     switch (textType) {
         case TS_TEXT_MMDDYY:
-            tsStampToStrftime(textBuffer,28,"%m/%d/%y %H:%M:%S.%09f",pTS);
+            epicsTimeToStrftime(textBuffer,28,"%m/%d/%y %H:%M:%S.%09f",pTS);
             break;
         case TS_TEXT_MONDDYYYY:
-            tsStampToStrftime(textBuffer,32,"%b %d, %Y %H:%M:%S.%09f",pTS);
+            epicsTimeToStrftime(textBuffer,32,"%b %d, %Y %H:%M:%S.%09f",pTS);
             break;
         default:
             return NULL;
@@ -22,6 +22,6 @@ epicsShareFunc char * epicsShareAPI tsStampToText(const TS_STAMP *pTS,enum tsTex
 
 epicsShareFunc long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
 {
-    return tsStampGetCurrent(pStamp);
+    return epicsTimeGetCurrent(pStamp);
 }
 

@@ -21,6 +21,7 @@
 #	hp700
 #	sgi
 #	solaris
+#	solarisGnu  (GNU compiler)
 #	solaris-x86
 #	sun4
 #
@@ -46,10 +47,14 @@ endif
 #       mv2700
 #       niCpu030
 #       pc486
+#       ppc603
 #       ppc604
+#       ppc603_long (over 32MB)
+#       ppc604_long (over 32MB)
+#       sbs_pc6
 #       vxipc
 #
-CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
+CROSS_COMPILER_TARGET_ARCHS=
 
 
 #  If only a subset of the host architectures perform

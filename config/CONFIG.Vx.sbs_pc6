@@ -1,0 +1,16 @@
+# Created by Korobov for SBS PC6
+# CONFIG.Vx.sbs_pc6
+#
+# This file is maintained by the EPICS community.
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = 386
+
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = sbs_pc6
+
+ARCH_DEP_CPPFLAGS = -DCPU=PENTIUM -DCPU_VARIANT=PENTIUM -D_X86_ 
+ARCH_DEP_CFLAGS = -mpentium
+ARCH_DEP_CXXFLAGS += -x 'c++'
+ARCH_DEP_CFLAGS +=   -fno-builtin -fno-defer-pop

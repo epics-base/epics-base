@@ -15,8 +15,5 @@
 -include $(EPICS_BASE)/config/CONFIG.Host.solaris
 
 # Solaris on x86
-ARCH_DEP_CFLAGS = -DSOLARIS=$(subst 5.,,$(shell uname -r))  -D_X86_  -D__EXTENSIONS__
-
-GCC = gcc
-G++ = g++
+ARCH_DEP_CPPFLAGS += -D_X86_
 

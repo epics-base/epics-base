@@ -12,14 +12,8 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.solaris-x86
 
--include $(EPICS_BASE)/config/CONFIG.Host.solaris
+-include $(EPICS_BASE)/config/CONFIG.Host.solarisGnu
 
 # Solaris on x86
-ARCH_DEP_CFLAGS = -DSOLARIS  -D_X86_
-
-GCC = gcc
-G++ = g++
-
-ANSI=GCC
-CPLUSPLUS=G++
+ARCH_DEP_CPPFLAGS += -D_X86_
 

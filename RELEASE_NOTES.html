@@ -12,7 +12,7 @@
 EPICS Release 3.13.3</h1>
 
 <h4>
-July 5, 2000</h4>
+July 10, 2000</h4>
 
 <h3>
 Changes since 3.13.2</h3>
@@ -24,18 +24,17 @@ Base no longer requires the INC step. Formerly this was the first step
 of build. It installed header files.&nbsp; By default this step is no longer
 executed. If your applications need this step then in base/config/CONFIG_SITE
 (for all applications) or &lt;apptop>/config/CONFIG (for individual applications)/CONFIG_SITE&nbsp;
-provide the following definition<br>
-<br>
-MAKE_INC_TARGET_FIRST=YES<br>
-<br>
-<b>NOTE: If your applications relies on header files being installed as
-the first step of building, you should reorganize the order of building.&nbsp;
-The 3.14 releases of base will no longer support the INC step.</b></li>
-</ul>
+provide the following definition</li>
+
+<p><br>MAKE_INC_TARGET_FIRST=YES
+<p><b>NOTE: If your applications relies on header files being installed
+as the first step of building, you should reorganize the order of building.&nbsp;
+The 3.14 releases of base will no longer support the INC step.</b></ul>
 
 <ul>
 <li>
-Support has been added for the Borland C++ compiler on windows installed header files</li>
+Support has been added for the Borland C++ compiler on windows installed
+header files</li>
 </ul>
 
 <p><br><b>Channel Access Changes</b>
@@ -107,10 +106,19 @@ as the powerPC.
 <p>In alarm the definitions of hihi, high, low, lolo; are changed from
 float to double.
 <p><b>aoRecord.c</b>
-<p>The convert routine no longer sets udf false. Fetch_value does set udf
+<br>&nbsp;
+<ul>
+<li>
+The convert routine no longer sets udf false. Fetch_value does set udf
 false when it successfully fetched a value. Thus udf is now only set false
-when a new value is obtained.
-<p><b>dfanoutRecord.c</b>
+when a new value is obtained.</li>
+
+<li>
+RVAL/ROFF conversion: possible range overflow is fixed. convert( )&nbsp;
+uses double arithmetics until the final assignment to RVAL.</li>
+</ul>
+
+<p><br><b>dfanoutRecord.c</b>
 <p>A dbPutLink is attempted for all links even if a put for a previous
 link fails. If a dbPutLink fails&nbsp; recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM)
 is called.

@@ -12,13 +12,25 @@
 <h1>EPICS Base Release 3.14.4</h1>
 
 <h1>????4 September 2003</h1>
+
+<h2>Changes since 3.14.4</h2>
 </center>
+
+<h4>Channel Access Portable Server</h4>
+
+<p>Fixed failure occurring if client disconnected while asynchronous PV
+attach was outstanding, or, for enumerated native type process variables,
+while enumerated string table cache asynchronous IO was outstanding. This
+problem does not occur in IOCs because they are not yet based on the portable
+server library. This bug was first detected by Ken Evans in the production CA
+gateway at the APS.</p>
 
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>
 
-<h4>Format string checking</h4</h4>
+<h4>Format string checking</h4</h4></h4>
+
 <p>'printf-style' functions like errlogPrintf have their arguments verified
 against their format string when compiled with gcc.</p>
 

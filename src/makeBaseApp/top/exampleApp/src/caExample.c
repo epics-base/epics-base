@@ -9,7 +9,6 @@
 main(int argc,char **argv)
 {
     double	data;
-    int		status;
     chid	mychid;
 
     if(argc != 2) {

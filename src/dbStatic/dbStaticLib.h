@@ -164,6 +164,7 @@ long dbPutPvlink(DBENTRY *pdbentry,int pp,int ms,char *pvname);
 long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname);
 
 /*dump routines*/
+void dbDumpPath(DBBASE *pdbbase);
 void dbDumpRecord(DBBASE *pdbbase,char *precdesname,int level);
 void dbDumpMenu(DBBASE *pdbbase,char *menuName);
 void dbDumpRecDes(DBBASE *pdbbase,char *recdesName);

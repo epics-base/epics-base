@@ -2629,6 +2629,26 @@ long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname)
     }
 }
 
+void dbDumpPath(DBBASE *pdbbase)
+{
+    ELLLIST	*ppathList;
+    dbPathNode	*pdbPathNode;
+
+    if(!pdbbase) return;
+    ppathList = (ELLLIST *)pdbbase->pathPvt;
+    if(!ppathList || !(pdbPathNode = (dbPathNode *)ellFirst(ppathList))) {
+	printf("no path defined\n");
+	return;
+    }
+    while(pdbPathNode) {
+	printf("%s",pdbPathNode->directory);
+	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
+	if(pdbPathNode) printf(":");
+    }
+    printf("\n");
+    return;
+}
+
 void dbDumpRecord(dbBase *pdbbase,char *precdesname,int level)
 {
     if(!pdbbase) {

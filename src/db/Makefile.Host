@@ -29,7 +29,6 @@ MENUS += menuArrType.h
 MENUS += menuCompress.h
 MENUS += menuFtype.h
 MENUS += menuIvoa.h
-MENUS += menuLinr.h
 MENUS += menuOmsl.h
 MENUS += menuPriority.h
 MENUS += menuScan.h

@@ -11,7 +11,7 @@ inc:: $(INSTALL_BIN)/installEpics
 
 include $(TOP)/config/RULES.Unix
 
-$(INSTALL_BIN)/installEpics: installEpics
+$(INSTALL_BIN)/installEpics: ../installEpics
 	@echo "Installing $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)

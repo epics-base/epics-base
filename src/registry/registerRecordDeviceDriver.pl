@@ -167,9 +167,10 @@ if (@variables) {
 print << "END" ;
 int $subname(DBBASE *pbase)
 {
-    int i;
-
 END
+if($numberRecordType>0 || $numberDeviceSupport>0 || $numberDriverSupport>0) {
+    print "    int i;\n";
+}
 if($numberRecordType>0) {
     print << "END" ;
     for(i=0; i< $numberRecordType;  i++ ) {

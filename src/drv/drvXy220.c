@@ -206,42 +206,14 @@ register unsigned int 		*pval;
 void xy220_io_report(level)
  short int level;
 {
-   register short i,j,k,l,m,num_chans;
-   int jval,kval,lval,mval;
+   int		card;
+   unsigned int	value;
 
-   for (i = 0; i < MAX_XY220_BO_CARDS; i++){
-	if (pbo_xy220s[i]){
-           printf("BO: XY220:      card %d\n",i);
-           if (level == 1){
-               num_chans = bo_num_channels[XY220];
-               for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-                   j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m +=IOR_MAX_COLS){
-        	if(j < num_chans){
-                        xy220_read(i,masks(j),&jval);
-                 	if (jval != 0) 
-                  		 jval = 1;
-                         printf("Chan %d = %x\t ",j,jval);
-                }  
-         	if(k < num_chans){
-                        xy220_read(i,masks(k),&kval);
-                        if (kval != 0) 
-                        	kval = 1;
-                        	printf("Chan %d = %x\t ",k,kval);
-                }
-                if(l < num_chans){
-                        xy220_read(i,masks(l),&lval);
-                	if (lval != 0) 
-                        	lval = 1;
-                	printf("Chan %d = %x \t",l,lval);
-                 }
-                 if(m < num_chans){
-                        xy220_read(i,masks(m),&mval);
-                 	if (mval != 0) 
-                        	mval = 1;
-                 	printf("Chan %d = %x \n",m,mval);
-                 }
-             }
-           }
+   for (card = 0; card < MAX_XY220_BO_CARDS; card++){
+	if (pbo_xy220s[card]){
+	   value = (pbo_xy220s[card]->high_value << 16)    /* high */
+		+ pbo_xy220s[card]->low_value;               /* low */
+           printf("BO: XY220:      card %d value=0x%08.8x\n",card,value);
         }
    }  
             

@@ -508,7 +508,8 @@ static void convert(pao,pvalue)
         }
 	if(pao->aoff!=0.0) value -= pao->aoff;
 	if(pao->aslo!=0.0) value /= pao->aslo;
-	pao->rval = value;
+	if (value >= 0.0) pao->rval = value + 0.5;
+	else	pao->rval = value - 0.5;
 	pao->rval -= pao->roff;
 	return;
 }

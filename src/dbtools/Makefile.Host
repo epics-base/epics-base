@@ -28,15 +28,13 @@ else
 
 #	library to build from BSlib.c:
 #
-LIBSRCS := BSlib.c
-LIBRARY := BSlib
 
 #	products to build,
 #	all use BSlib, dbLoadTemplate needs lib Db:
 #	(it doesn't hurt if all link Db...)
 #
-PROD_LIBS := BSlib Db Com
-PROD      := subtool dbLoadTemplate rdbls rdbapplist PVSserver
+PROD_LIBS := Db Com
+PROD      := subtool dbLoadTemplate
 
 endif
 

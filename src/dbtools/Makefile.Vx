@@ -4,10 +4,13 @@ include $(TOP)/config/CONFIG_BASE
 YACCOPT = -l
 LEXOPT = -L
 
-SRCS.c =  dbLoadTemplate_lex.c dbLoadTemplate.c \
-		dbLoadRecords_lex.c dbLoadRecords.c ../BSlib.c ../PVSvx.c ../vx_stats.c ../client_stats.c
+SRCS.c =  dbLoadTemplate_lex.c
+SRCS.c += dbLoadTemplate.c
+SRCS.c += dbLoadRecords_lex.c
+SRCS.c += dbLoadRecords.c
 
-LIBOBJS =  dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o vx_stats.o client_stats.o
+LIBOBJS =  dbLoadTemplate.o
+LIBOBJS += dbLoadRecords.o
 
 LIBNAME = dbSubs
 
@@ -19,8 +22,6 @@ include $(TOP)/config/RULES.Vx
 
 USR_CFLAGS = -I../../rsrv -I../../ca
 
-#dbLoadTemplate.o: dbLoadTemplate_lex.c dbLoadTemplate.c
-#dbLoadRecords.o: dbLoadRecords_lex.c dbLoadRecords.c
 dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c
 subtool: dbLoadTemplate_lex.c

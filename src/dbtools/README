@@ -1,3 +1,5 @@
+BSlib, PVSlib and client_stats are all no used.
+Should be removed completely next release
 
 Get rid of PVS server stuff in the IOC.  Replace it with RPC/XDR.
 

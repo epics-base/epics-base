@@ -10,6 +10,8 @@
 /* epicsTime.cpp */
 /* Author Jeffrey O. Hill */
 
+#include <stdexcept>
+
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -259,7 +261,7 @@ epicsTime::operator local_tm_nano_sec () const
 
     int status = epicsTime_localtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
     if ( status != epicsTimeOK ) {
-        throw -1;
+        throw std::logic_error ( "epicsTime_gmtime failed" );
     }
 
     tm.nSec = this->nSec;
@@ -278,7 +280,7 @@ epicsTime::operator gm_tm_nano_sec () const
 
     int status = epicsTime_gmtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
     if ( status != epicsTimeOK ) {
-        throw -1;
+        throw std::logic_error ( "epicsTime_gmtime failed" );
     }
 
     tm.nSec = this->nSec;

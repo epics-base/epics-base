@@ -5,31 +5,31 @@
 # the order of following list is important
 
 DIRS = \
-	src/tools \
-	src/include \
-	src/cxxTemplates \
-	src/db \
-	src/toolsComm\
-	src/libCom \
-	src/libvxWorks\
-	src/cvtDctsdr \
-	src/dbStatic \
-	src/bpt \
-	src/ca \
-	src/gdd \
-	src/cas \
-	src/util \
-	src/misc \
-	src/sequencer \
-	src/dbtools \
-	src/rsrv\
-	src/rec\
-	src/as \
-	src/drv\
-	src/dev\
-	src/devOpt\
-	src/iocCore\
-	config
+    tools \
+    include \
+    cxxTemplates \
+    toolsComm\
+    libCom \
+    libvxWorks\
+    cvtDctsdr \
+    dbStatic \
+    db \
+    bpt \
+    ca \
+    gdd \
+    cas \
+    util \
+    misc \
+    sequencer \
+    dbtools \
+    rsrv\
+    rec\
+    as \
+    drv\
+    dev\
+    devOpt\
+    iocCore
+
 
 EPICS_BASE = $(TOP)
 

@@ -115,7 +115,7 @@ int main(int argc,char **argv)
     fprintf(outFile,"#include \"ellLib.h\"\n");
     fprintf(outFile,"#include \"osiSem.h\"\n");
     fprintf(outFile,"#include \"link.h\"\n");
-    fprintf(outFile,"#include \"tsDefs.h\"\n");
+    fprintf(outFile,"#include \"tsStamp.h\"\n");
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);

@@ -295,6 +295,7 @@
 #include	<sysLib.h>		/* library for task  support */
 #include	<semLib.h>		/* library for semaphore support */
 #include	<vme.h> 
+#include	<rebootLib.h> 
 #include 	<wdLib.h>		/* library for watchdog timer support */
 #include 	<rngLib.h>             /* library for ring buffer support */
 #include	<task_params.h>
@@ -331,8 +332,8 @@ int level;
    return(ab_io_report(level));
 }
 
-/* forward reference for ioc_reboot */
-int ioc_reboot();
+/* forward reference for ab_reboot_hook */
+int ab_reboot_hook();
 
 static long init()
 {
@@ -1288,6 +1289,7 @@ ab_driver_init()
 		if (abCOSId) td(abCOSId);
 		abCOSId = taskSpawn(ABCOS_NAME,ABCOS_PRI,ABCOS_OPT,ABCOS_STACK,ab_bi_cos_simulator);
 		taskwdInsert(abCOSId,NULL,NULL);
+		rebootHookAdd(ab_reboot_hook);
 	}
         return(0);
 }
@@ -2330,9 +2332,9 @@ int status;
     }
 }
 
-/* ioc_reboot - routine to call when IOC is rebooted with a control-x */
+/* ab_reboot_hook - routine to call when IOC is rebooted with a control-x */
 
-int ioc_reboot(boot_type)
+int ab_reboot_hook(boot_type)
 int	boot_type;
 {
 	short i;

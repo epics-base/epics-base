@@ -46,7 +46,7 @@ template <class T>
 inline void throwExceptionWithLocation (T &parm, const char *pFileName, unsigned lineNo)
 {
 #   ifdef noExceptionsFromCXX
-        fprintf (stderr, "C++ exception in file=%s" at line=%u, and no compiler support - cant proceed.\n",
+        fprintf (stderr, "C++ exception in file=%s at line=%u, and no compiler support - cant proceed.\n",
             pFileName, lineNo);
         cantProceed ("No compiler support for C++ exception");
 #   else

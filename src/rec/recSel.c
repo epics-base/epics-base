@@ -386,8 +386,10 @@ struct selRecord *psel;
 	if(psel->selm == SELECTED) {
 		plink += psel->seln;
 		pvalue += psel->seln;
-		nRequest=1;
-		(void)dbGetLink(&plink->value.db_link,psel,DBR_FLOAT,pvalue,&options,&nRequest);
+                if(plink->type==DB_LINK) {
+		        nRequest=1;
+		        (void)dbGetLink(&plink->value.db_link,psel,DBR_FLOAT,pvalue,&options,&nRequest);
+                }
 		return;
 	}
 	/* fetch all inputs*/

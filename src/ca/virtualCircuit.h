@@ -53,9 +53,9 @@ public:
     virtual ~tcpRecvThread ();
     void start ();
 private:
+    epicsThread thread;
     class tcpiiu & iiu;
     callbackMutex & cbMutex;
-    epicsThread thread;
     void run ();
 };
 

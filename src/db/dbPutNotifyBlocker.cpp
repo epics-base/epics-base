@@ -112,13 +112,13 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
     epicsTime begin;
     bool beginTimeInit = false;
     while ( true ) {
-        if ( this->pNotify ) {
-            this->pNotify = &notify;
+        if ( this->pNotify == 0 ) {
+            this->pNotify = & notify;
             break;
         }
         if ( beginTimeInit ) {
             if ( epicsTime::getCurrent () - begin > 30.0 ) {
-                throw -1;
+                throw cacChannel::requestTimedOut ();
             }
         }
         else {
@@ -139,7 +139,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsMutex &mutex, cacWriteNotify &
         throw cacChannel::badType();
     }
 
-    status = this->pn.dbrType = dbPutNotifyMapType ( 
+    status = dbPutNotifyMapType ( 
                 &this->pn, static_cast <short> ( type ) );
     if ( status ) {
         memset ( &this->pn, '\0', sizeof ( this->pn ) );

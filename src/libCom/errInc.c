@@ -10,9 +10,9 @@
 #include "devSup.h"
 #include "drvSup.h"
 #include "recSup.h"
-#include "../src/ar/arAccessLib.h"
-#include "../src/cau/tsDefs.h"
-#include "../src/util/sydDefs.h"
+#include "tsDefs.h"
+#include "arAccessLib.h"
+#include "sydDefs.h"
 #ifdef VXLIST
 /* epics vxWorks  only*/
 #endif VXLIST

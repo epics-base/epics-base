@@ -1,0 +1,4 @@
+# $Id$
+
+# osf-alpha is the new name for alpha
+-include $(EPICS_BASE)/config/CONFIG.Host.alpha

@@ -1,0 +1,4 @@
+# $Id$
+
+# sun4-sparc is the new name for sun4
+-include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.sun4

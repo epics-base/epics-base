@@ -113,11 +113,11 @@ $(DBDDEPENDS_FILES):
 
 #####################################################  build dependancies, clean rule
 
-ifdef DBD_INSTALLS
+ifneq (,$(strip $(DBD_INSTALLS)))
 buildInstall : dbdInstalls
 endif
 
-ifdef DB_INSTALLS
+ifneq (,$(strip $(DB_INSTALLS)))
 buildInstall : dbInstalls
 endif
 

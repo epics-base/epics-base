@@ -477,6 +477,8 @@ void casr (unsigned level)
 			freeListItemsAvail (rsrvChanFreeList),
 			freeListItemsAvail (rsrvEventFreeList));
 
+		printf ("The next resource ID allocated will be %u\n", getNextRsrvResourceID());
+
 		if(pCaBucket){
 			printf(	"The server's resource id conversion table:\n");
 			FASTLOCK(&clientQlock);

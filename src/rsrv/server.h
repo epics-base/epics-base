@@ -295,6 +295,8 @@ struct client   *pc
 
 void write_notify_reply(void *pArg);
 
+unsigned getNextRsrvResourceID();
+
 /*
  * !!KLUDGE!!
  *

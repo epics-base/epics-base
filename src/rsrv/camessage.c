@@ -190,6 +190,8 @@ LOCAL void *casCalloc (size_t count, size_t size);
 
 LOCAL void *casMalloc (size_t size);
 
+LOCAL unsigned 	nextRsrvResourceID;
+
 
 /*
  * CAMESSAGE()
@@ -1746,7 +1748,6 @@ struct dbAddr	*pAddr,
 unsigned	cid
 )
 {
-	static unsigned 	bucketID;
 	unsigned		*pCID;
 	struct channel_in_use 	*pchannel;
 	int			status;
@@ -1783,7 +1784,7 @@ unsigned	cid
 		 * bypass read only warning
 		 */
 		pCID = (unsigned *) &pchannel->sid;
-		*pCID = bucketID++;
+		*pCID = nextRsrvResourceID++;
 
 		/*
 		 * Verify that this id is not in use
@@ -2201,3 +2202,10 @@ LOCAL void *casMalloc(size_t size)
         return malloc(size);
 }
 
+/*
+ * getNextRsrvResourceID()
+ */
+unsigned getNextRsrvResourceID()
+{
+	return nextRsrvResourceID;
+}

@@ -42,11 +42,16 @@ REM    to override the base/configure/CONFIG_ENV defaults
 REM set EPICS_CA_ADDR_LIST=164.54.188.65 164.54.5.255
 REM set EPICS_CA_AUTO_ADDR_LIST=YES
 
-REM    --------------- vim (use cygwin vim ) ----------------
-REM HOME needed by vim to write .viminfo file.
-set HOME=c:/users/%USERNAME%
-REM VIM needed by vim to find _vimrc file.
-set VIM=c:\cygwin
+REM    --------------- cygwin vim ------------------------
+REM HOME needed by vim to find _vimrc file.
+set HOME=/home/%USERNAME%
+REM VIM needed by vim to find help files.
+set VIM=/usr/share/vim/vim61
+
+REM    --------------- remote cvs  ------------------------
+REM HOME needed by cvs for .cvsrc file (set in vim above) 
+set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/net/phoebus/epicsmgr/cvsroot
+set CVS_RSH=/bin/ssh.exe
 
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions

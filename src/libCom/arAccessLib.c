@@ -128,6 +128,11 @@
 *    AR_CHAN_DESC *arCF_mallocCHAN_DESC()   void  arCF_freeCHAN_DESC(pChanDesc)
 *---------------------------------------------------------------------------*/
 
+
+/* Forward declarations */
+long arCFChanReadTs();
+long arCFReadMIBuffers();
+
 AR_CHAN_DESC *
 arCF_mallocCHAN_DESC()
 {

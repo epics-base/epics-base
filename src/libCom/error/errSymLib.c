@@ -243,7 +243,8 @@ va_dcl
     if(pFileName && errVerbose){
 #ifdef vxWorks
       	if(errToLogMsg) {
-        	logMsg("filename=\"%s\" line number=%d\n", pFileName, lineno);
+        	logMsg("filename=\"%s\" line number=%d\n", pFileName, lineno,
+		NULL, NULL, NULL, NULL);
       	}
       	else{
         	printf("filename=\"%s\" line number=%d\n", pFileName, lineno);
@@ -273,7 +274,8 @@ va_dcl
 		}
 		else{
 #ifdef vxWorks
-		    logMsg("%s: calloc error\n", __FILE__);
+		    logMsg("%s: calloc error\n", __FILE__,
+		    NULL, NULL, NULL, NULL, NULL);
 #else
 		    printf("%s: calloc error\n", __FILE__);
 #endif
@@ -426,7 +428,7 @@ char *name;
  ***************************************************************/
 #ifndef vxWorks
 #ifdef __STDC__
-int UnixSymFind(long status, char *pname, long *pvalue);
+int UnixSymFind(long status, char *pname, long *pvalue)
 #else
 int UnixSymFind(status, pname, pvalue)
     long            status;

@@ -1953,7 +1953,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
 				pSChan->maxDataVal = (double)*pSrc;
@@ -1976,7 +1976,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = dbl;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if (pSChan->isRVAL)
 				dbl = (double)(*(unsigned short *)pSrc);
@@ -1998,7 +1998,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = *pSrc;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if (*pSrc > pSChan->maxDataVal)
 				pSChan->maxDataVal = *pSrc;
@@ -2021,7 +2021,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if (pSChan->isRVAL)
 				dbl = (double)(*(unsigned long *)pSrc);
@@ -2040,7 +2040,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    pSrc = pSChan->pInBuf[i]->tstrval.value;
 		    pDest = ((char *)pSChan->pData) +
 					sub * db_strval_dim * pSChan->elCount;
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			strcpy(pDest, pSrc);
 			pDest += db_strval_dim;
 			pSrc += db_strval_dim;
@@ -2055,7 +2055,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
 				pSChan->maxDataVal = (double)*pSrc;
@@ -2073,7 +2073,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 			pSChan->minMaxNeedInit = 0;
 		    }
-		    for (el=0; el<pSChan->elCount; el++) {
+		    for (el=0; el<(int) pSChan->elCount; el++) {
 			if (useVal) {
 			    if ((double)*pSrc > pSChan->maxDataVal)
 				pSChan->maxDataVal = (double)*pSrc;
@@ -2650,7 +2650,7 @@ int	samp;		/* I sample number in synchronous set */
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->dataChan && pSChan->elCount > 1) {
 	    (void)fprintf(out, "%s", pSChan->name);
-	    for (i=0; i<pSChan->elCount; i++) {
+	    for (i=0; i<(int) pSChan->elCount; i++) {
 		if (i%nCol == 0)
 		    (void)fprintf(out, "\n%5d", i);
 		(void)fputc(' ', out);
@@ -2743,7 +2743,7 @@ int	sampNum;	/* I sample number in sync set */
     if (special == NULL) {
 	if (flags&SHOW_AR) {
 	    (void)fprintf(out, "%d", pSChan->elCount);
-	    for (i=0; i<pSChan->elCount; i++) {
+	    for (i=0; i<(int) pSChan->elCount; i++) {
 		(void)fputc(sep, out);
 		sydSamplePrintVal(out, pSChan, sampNum, i, flags, colWidth);
 	    }
@@ -3808,7 +3808,7 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 	if (lngVal < pTest->lngVal)		change = -1;
 	else if (lngVal > pTest->lngVal)	change = 1;
     }
-#define COND_IS(ty) pTest->cond == SYD_TSTC_/**/ty
+#define COND_IS(ty) pTest->cond == SYD_TSTC_##ty
     if (change == 0) {
 	if (COND_IS(EQ) || COND_IS(LE) || COND_IS(GE))
 	    return 1;

@@ -512,7 +512,7 @@ static double random()
 
         /* random number */
         seed = (seed * multy) + addy;
-        randy = seed / 65535.0;
+        randy = (float) seed / 65535.0;
 
         /* between 0 - 1 */
         return(randy);

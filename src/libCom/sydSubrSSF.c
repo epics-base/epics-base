@@ -710,7 +710,7 @@ chtype	type;
 		bufStat = SYD_B_MISSING;
 		break;
 	    }
-	    else if (i < pSChan->elCount)
+	    else if (i < (int) pSChan->elCount)
 		*pFl++ = val;
 	}
     }
@@ -723,7 +723,7 @@ chtype	type;
 		bufStat = SYD_B_MISSING;
 		break;
 	    }
-	    else if (i < pSChan->elCount)
+	    else if (i < (int) pSChan->elCount)
 		*pSh++ = val;
 	}
     }
@@ -736,7 +736,7 @@ chtype	type;
 		bufStat = SYD_B_MISSING;
 		break;
 	    }
-	    else if (i < pSChan->elCount)
+	    else if (i < (int) pSChan->elCount)
 		*pDbl++ = val;
 	}
     }
@@ -749,7 +749,7 @@ chtype	type;
 		bufStat = SYD_B_MISSING;
 		break;
 	    }
-	    else if (i < pSChan->elCount)
+	    else if (i < (int) pSChan->elCount)
 		*pL++ = val;
 	}
     }
@@ -766,7 +766,7 @@ chtype	type;
 	    assert(nChar > 0 && nChar < db_strval_dim);
 	    if (fgets(val, nChar, ssFile) == NULL)
 		assertAlways(0);
-	    if (i < pSChan->elCount) {
+	    if (i < (int) pSChan->elCount) {
 		strcpy(pC, val);
 		pC += db_strval_dim;
 	    }
@@ -781,7 +781,7 @@ chtype	type;
 		bufStat = SYD_B_MISSING;
 		break;
 	    }
-	    else if (i < pSChan->elCount)
+	    else if (i < (int) pSChan->elCount)
 		*pC++ = val;
 	}
     }
@@ -809,7 +809,7 @@ chtype	type;
 		iState++;
 		assert(iState < db_state_dim);
 	    }
-	    if (i < pSChan->elCount)
+	    if (i < (int) pSChan->elCount)
 		*pSh++ = iState;
 	}
     }

@@ -1,0 +1,25 @@
+
+TOP=../..
+
+include $(TOP)/configure/CONFIG
+
+CMPLR = STRICT
+
+USR_CFLAGS += -DiocCore
+
+caLib_SRCS += caOsDependent.c
+caLib_SRCS += iocinf.c
+caLib_SRCS += service.c
+caLib_SRCS += conn.c
+caLib_SRCS += flow_control.c
+caLib_SRCS += syncgrp.c
+caLib_SRCS += access.c
+caLib_SRCS += convert.c
+caLib_SRCS += test_event.c
+caLib_SRCS += bsd_depen.c
+caLib_SRCS += repeater.c
+
+LIBRARY = caLib 
+
+include $(TOP)/configure/RULES_BUILD
+

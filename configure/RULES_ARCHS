@@ -23,7 +23,7 @@ hostActionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
 ifeq (Makefile, $(wildcard Makefile))
 hostDirs = $(addprefix O.,$(hostArchs))
-$(hostActionArchTargets) :: $(hostDirs)
+$(hostActionArchTargets) : $(hostDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) T_A=$(archPart) $(actionPart)
 $(hostArchs) : % :: O.% 
 	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
@@ -40,7 +40,7 @@ crossActionArchTargets = $(foreach x, $(ACTIONS), \
 	$(foreach arch, $(CROSS_COMPILER_TARGET_ARCHS), $(x)$(DIVIDER)$(arch)))
 ifeq (Makefile, $(wildcard Makefile))
 crossDirs = $(addprefix O.,$(crossArchs))
-$(crossActionArchTargets) :: $(crossDirs)
+$(crossActionArchTargets) : $(crossDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) T_A=$(archPart) $(actionPart)
 $(crossArchs) : % :: O.%
 	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
@@ -49,10 +49,10 @@ $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
-$(hostDirs) :: 
+$(hostDirs) ::
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)
 
-$(crossDirs) :: 
+$(crossDirs) ::
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)
 
 #
@@ -78,6 +78,7 @@ cross : $(crossArchs)
 #
 clean ::
 	$(RMDIR) $(hostDirs) $(crossDirs)
+
 clean$(DIVIDER)% :: 
 	$(RMDIR) O.$*
 

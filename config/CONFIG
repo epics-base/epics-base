@@ -48,6 +48,14 @@ endif
 #
 -include $(HOME)/EPICS_CONFIG
 -include $(HOME)/EPICS_CONFIG.$(HOST_ARCH)
+-include $(HOME)/EPICS_CONFIG_HOST_ARCH.$(HOST_ARCH)
+ifdef T_A
+-include $(HOME)/EPICS_CONFIG.$(BUILD_TYPE)
+ifneq ($(HOST_ARCH),$(T_A))
+-include $(HOME)/EPICS_CONFIG.$(BUILD_TYPE).$(HOST_ARCH)
+endif
+-include $(HOME)/EPICS_CONFIG.$(BUILD_TYPE).$(T_A)
+endif
 
 #  All EPICS options other than BUILD_TYPE
 #   may be overridden here.

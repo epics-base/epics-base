@@ -115,7 +115,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     static const unsigned           nelem = 100;
-    struct sockaddr_in              *pInetAddr;
     int                             status;
     struct ifconf                   ifconf;
     struct ifreq                    *pIfreqList;
@@ -150,16 +149,17 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      pIfreqListEnd--;
      
      for (pifreq = pIfreqList; pifreq <= pIfreqListEnd; pifreq = pnextifreq ) {
-         unsigned flags;
+        unsigned flags;
+        struct sockaddr dest;
 
-        /*
-         * compute the size of the current if req
-         * (hopefully works before and after BSD >= 44)
-         */
-        size = pifreq->ifr_addr.sa_len + sizeof (pifreq->ifr_name);
-        if ( size < sizeof(*pifreq)) {
+#       if BSD >= 44
+            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
+            if ( size < sizeof(*pifreq)) {
+                size = sizeof(*pifreq);
+            }
+#       else
             size = sizeof(*pifreq);
-        }
+#       endif
 
         pnextifreq = (struct ifreq *) (size + (char *) pifreq);
 
@@ -216,37 +216,26 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * save the interface's IP address
-         */
-        pInetAddr = (struct sockaddr_in *) &pifreq->ifr_ifru;
-
-        /*
          * if it isnt a wildcarded interface then look for
          * an exact match
          */
-		    if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
-			    if (pIfinfo->iiAddress.AddressIn.sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
-				    continue;
-			    }
-		    }
-        }
-
         if (pMatchAddr->sa.sa_family != AF_UNSPEC) {
-            if (pIfinfo->iiAddress.Address.sa_family != pMatchAddr->sa.sa_family) {
+            if (pifreq->ifr_ifru.ifru_addr.sa_family != pMatchAddr->sa.sa_family) {
                 continue;
             }
-            if (pIfinfo->iiAddress.Address.sa_family != AF_INET) {
+            if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
                 continue;
             }
             if (pMatchAddr->sa.sa_family != AF_INET) {
                 continue;
             }
-
-        if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
-             if (pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
-                 ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s didnt match\n", pifreq->ifr_name) );
-                 continue;
-             }
+            if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+                 struct sockaddr_in *pInetAddr = (struct sockaddr_in *) &pifreq->ifr_ifru.ifru_addr;
+                 if (pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
+                     ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s didnt match\n", pifreq->ifr_name) );
+                     continue;
+                 }
+            }
         }
 
         /*
@@ -265,8 +254,9 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 errlogPrintf ("osiSockDiscoverInterfaces(): net intf %s: bcast addr fetch fail\n", pifreq->ifr_name);
                 continue;
             }
+            dest = pifreq->ifr_ifru.ifru_broadaddr;
         }
-        else if(flags & IFF_POINTOPOINT) {
+        else if (flags & IFF_POINTOPOINT) {
             status = socket_ioctl(
                          socket, 
                          SIOCGIFDSTADDR, 
@@ -275,9 +265,10 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
                 continue;
             }
+            dest = pifreq->ifr_ifru.ifru_dstaddr;
         }
         else {
-            ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s: not pt to pt or bcast\n", pifreq->ifr_name) );
+            ifDepenDebugPrintf ( ("osiSockDiscoverInterfaces(): net intf %s: not pt to pt or bcast?\n", pifreq->ifr_name) );
             continue;
         }
 
@@ -289,7 +280,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             return;
         }
 
-        pNewNode->addr.ia = *pInetAddr;
+        pNewNode->addr.sa = dest;
 
 		/*
 		 * LOCK applied externally

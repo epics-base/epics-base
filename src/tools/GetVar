@@ -15,6 +15,9 @@
 #	are accessable in addition to all general variables.
 #
 # $Log$
+# Revision 1.1  1996/02/20 20:58:31  jba
+# Moved tools to src/tools dir. base/tools dir removed.
+#
 # Revision 1.10  1995/08/18  15:26:39  jba
 # Added pathname to gmake
 #
@@ -49,18 +52,19 @@
 
 
 if [ -z "$2" ]; then
-	echo "usage: $0 EPICS VAR_NAME [TARGET_ARCH]"
+	echo "usage: $0 EPICS MAKE VAR_NAME [TARGET_ARCH]"
 	exit 1
 fi
 
 EPICS=$1
+MAKE=$2
 
 INCLUDE=${EPICS}/config/CONFIG_BASE
 
-if [ -z "$3" ]; then
+if [ -z "$4" ]; then
 	OPTS=""
 else
-	OPTS="T_A=$3"
+	OPTS="T_A=$4"
 fi
 
 PID=$$
@@ -73,11 +77,11 @@ EPICS=$EPICS
 include ${INCLUDE}
 
 all:
-	@echo "\$($2)" > /tmp/Makefile.tmp.out.$PID
+	@echo "\$($3)" > /tmp/Makefile.tmp.out.$PID
 
 MFILE
 
-gnumake -f /tmp/Makefile.tmp.$$ $OPTS > /dev/null
+$MAKE -f /tmp/Makefile.tmp.$$ $OPTS > /dev/null
 
 # Display value
 cat /tmp/Makefile.tmp.out.$$

@@ -100,9 +100,6 @@
 
 #include	"dbDefs.h"
 
-#ifdef INCpostfixh
-#error postfix.h has been included too soon
-#endif
 #define epicsExportSharedSymbols
 #include	"postfix.h"
 

@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.10  1998/01/20 21:36:51  mrk
+ * add dbDefs.h
+ *
  * Revision 1.9  1997/05/01 19:57:09  jhill
  * updated dll keywords
  *
@@ -55,10 +58,10 @@
 #include <string.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 
 

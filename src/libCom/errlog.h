@@ -13,9 +13,9 @@ of this distribution.
 #ifndef INCerrlogh
 #define INCerrlogh
 
-#include <stdarg.h>
 
-#include <shareLib.h>
+
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +28,11 @@ extern "C" {
 #endif
 #endif
 
+#ifdef epicsPrintUseProtoANSI
+#	include <stdarg.h>
+#else
+#	include <varargs.h>
+#endif
 
 /* define errMessage with a macro so we can print the file and line number*/
 #define errMessage(S, PM) \
@@ -38,9 +43,11 @@ extern "C" {
 
 typedef void(*errlogListener) (const char *message);
 typedef enum {errlogInfo,errlogMinor,errlogMajor,errlogFatal} errlogSevEnum;
-epicsShareExtern char * errlogSevEnumString[];
-#ifdef epicsExportSharedSymbols
+
+#ifdef ERRLOG_INIT
 epicsShareDef char * errlogSevEnumString[] = {"info","minor","major","fatal"};
+#else
+epicsShareExtern char * errlogSevEnumString[];
 #endif
 
 #ifdef epicsPrintUseProtoANSI

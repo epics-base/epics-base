@@ -134,11 +134,10 @@
 #   include <sys/time.h>
 #endif
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "envDefs.h"
-
-#define epicsExportSharedSymbols
-/* The instance of glTsStatText[] will be defined */
+#define createTSSubrGlobals
 #include "tsDefs.h"
 
 

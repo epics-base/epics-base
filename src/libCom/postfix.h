@@ -39,6 +39,12 @@
 
 #include <shareLib.h>
 
+epicsShareFunc long epicsShareAPI 
+	postfix (char *pinfix, char *ppostfix, short *perror);
+
+epicsShareFunc long epicsShareAPI 
+	calcPerform(double *parg, double *presult, char  *post);
+
 /*	defines for element table      */
 #define		BAD_EXPRESSION	0
 #define 	FETCH_A		1

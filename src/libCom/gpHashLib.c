@@ -60,11 +60,10 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsPrint.h"
-
-#define epicsExportSharedSymbols
 #include "gpHash.h"
 
 typedef struct gphPvt {

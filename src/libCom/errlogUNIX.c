@@ -41,30 +41,14 @@
 #include <string.h>
 #include <errno.h>
 
+#define ERRLOG_INIT
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
-/* errlog.h is included in errMdef.h for historical reasons
- * We want to include errMdef.h here but not errlog.h
- * (If we include it here, the epicsShareThings will be declared as import)
- * Define INCerrlog to keep it from being included
- */
-#define INCerrlogh
 #include "errMdef.h"
 #include "error.h"
-/* Up to now epicsShareThings have been declared as imports
- *   (Appropriate for other stuff)
- * After setting the following they will be declared as exports
- *   (Appropriate for what we implenment)
- */
-#define epicsExportSharedSymbols
-/* Include errlog.h here (by undefining INCerrlogh) to:
- *  (1) Make the declarations be export
- *  (2) Allocate storage for errlogSevEnumString[]
- */
-#undef INCerrlogh
 #include "errlog.h"
 
 static int sevToLog=0;
-
 
 epicsShareFunc int epicsShareAPIV errlogPrintf(const char *pformat, ...)
 {

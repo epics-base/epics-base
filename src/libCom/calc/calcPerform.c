@@ -110,10 +110,9 @@
 #include	<math.h>
 
 #include	"dbDefs.h"
-#include	"postfix.h"
 
 #define epicsExportSharedSymbols
-#include "shareLib.h"
+#include	"postfix.h"
 
 static double	local_random();
 

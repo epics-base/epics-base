@@ -41,13 +41,16 @@
 #include <math.h>
 #include <time.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "freeList.h"	/* bucketLib uses freeListLib inside the DLL */
 
-#ifdef INCbucketLibh
-#error bucketLib.h has been included too soon
-#endif
-#define epicsExportSharedSymbols
+/*
+ * force these to be included before bucketLib.h
+ * includes them
+ */
+#include "errMdef.h"
+#include "epicsTypes.h"
 #include "bucketLib.h"
 
 #ifndef TRUE

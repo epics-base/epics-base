@@ -71,6 +71,11 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.28  1998/02/20 21:45:14  evans
+ * Made a large number of changes to epicsShareThings in libCom routines
+ * to get imports and exports straight on WIN32.  Not everything is fixed
+ * at this time.
+ *
  * Revision 1.27  1998/02/05 21:08:52  jhill
  * use SOCK error defs and use priority inheritance mutex
  *
@@ -129,13 +134,9 @@ static char	*pSccsId = "@(#) $Id$";
 #include <semLib.h>
 #endif
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsTypes.h"
-
-#ifdef includeFdmgrH
-#error fdmgr.h has been included too soon
-#endif
-#define epicsExportSharedSymbols
 #include "fdmgr.h"
 
 #if 0

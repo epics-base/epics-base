@@ -37,9 +37,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbmf.h"
-
 #define epicsExportSharedSymbols
+#include "dbmf.h"
 #include "macLib.h"
 
 /*
@@ -756,6 +755,11 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.7  1998/02/20 21:45:16  evans
+ * Made a large number of changes to epicsShareThings in libCom routines
+ * to get imports and exports straight on WIN32.  Not everything is fixed
+ * at this time.
+ *
  * Revision 1.6  1997/06/05 18:28:48  mrk
  * Allow message about referenced but undefined to be suppressed
  *

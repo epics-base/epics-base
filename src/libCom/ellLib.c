@@ -33,17 +33,14 @@
 
 /* #define	DEBUG_DRIVER */
 
-
+#include <stdlib.h>
 
 #ifdef vxWorks
 #include <vxWorks.h>
 #endif
 
-#include <stdlib.h>
-
-#include <epicsAssert.h>
-
 #define epicsExportSharedSymbols
+#include "epicsAssert.h"
 #include "ellLib.h"
 
 #if     !defined(NULL) 

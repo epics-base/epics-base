@@ -82,8 +82,8 @@
 #include <errnoLib.h>
 #endif
 
-#include "errMdef.h"
 #define epicsExportSharedSymbols
+#include "errMdef.h"
 #include "envDefs.h"
 
 

@@ -33,6 +33,11 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.6  1998/02/20 21:45:10  evans
+ *	Made a large number of changes to epicsShareThings in libCom routines
+ *	to get imports and exports straight on WIN32.  Not everything is fixed
+ *	at this time.
+ *
  *	Revision 1.5  1997/05/01 19:57:13  jhill
  *	updated dll keywords
  *
@@ -57,19 +62,8 @@
 extern "C" {
 #endif
 
-  /* Defer declaring export functions until appropriate */
-#ifdef epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
-#define restoreExport
-#endif
-
 #include "errMdef.h"
 #include "epicsTypes.h"
-
-#ifdef restoreExport
-#define epicsExportSharedSymbols
-#undef restoreExport
-#endif
 #include "shareLib.h"
 
 typedef	unsigned 	BUCKETID;

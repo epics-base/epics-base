@@ -27,6 +27,11 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.9  1998/02/20 21:45:08  evans
+ * Made a large number of changes to epicsShareThings in libCom routines
+ * to get imports and exports straight on WIN32.  Not everything is fixed
+ * at this time.
+ *
  * Revision 1.8  1997/05/01 19:57:10  jhill
  * updated dll keywords
  *
@@ -56,10 +61,9 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 
+#define epicsExportSharedSymbols
 #include "epicsPrint.h"
 #include "epicsVersion.h"
-
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 
 

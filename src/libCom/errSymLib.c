@@ -70,11 +70,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "ellLib.h"
-#include "dbDefs.h"
-#include "errMdef.h"
-#include "errSymTbl.h"
-
 #ifdef vxWorks
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -82,12 +77,15 @@
 #include <symLib.h>
 #include <errnoLib.h>
 
-#define epicsExportSharedSymbols
-#include "shareLib.h"
-
 extern SYMTAB_ID  statSymTbl;
 
 #endif
+
+#define epicsExportSharedSymbols
+#include "dbDefs.h"
+#include "errMdef.h"
+#include "errSymTbl.h"
+
 
 #ifdef __STDC__
 static unsigned short errhash(long errNum);

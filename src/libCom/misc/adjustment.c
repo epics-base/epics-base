@@ -35,7 +35,6 @@ of this distribution.
  *   (Appropriate for what we implenment)
  */
 #define epicsExportSharedSymbols
-#include "shareLib.h"
 #include "adjustment.h"
 
 epicsShareFunc size_t epicsShareAPI adjustToWorstCaseAlignment(size_t size)

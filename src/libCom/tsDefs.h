@@ -56,19 +56,8 @@
 extern "C" {
 #endif
 
-  /* Defer declaring export functions until appropriate */
-#ifdef epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
-#define restoreExport
-#endif
-
 #include "epicsTypes.h"
 #include "errMdef.h"	/* get M_ts for this subsystem's `number' */
-
-#ifdef restoreExport
-#define epicsExportSharedSymbols
-#undef restoreExport
-#endif
 #include "shareLib.h"
 
 /*---------------------------------------------------------------------------
@@ -255,8 +244,7 @@ epicsShareFunc long epicsShareAPI tsTimeTextToStamp();
 	(glTsStatText[TsStatusToIndex(status)])
 
 epicsShareExtern char *glTsStatText[7];
-#ifdef epicsExportSharedSymbols
-  /* #error epicsExportSharedSymbols is defined in tsDefs.h */
+#ifdef createTSSubrGlobals
     epicsShareDef char *glTsStatText[] = {
         /* S_ts_OK                */ "success",
         /* S_ts_sysTimeError      */ "error getting system time",

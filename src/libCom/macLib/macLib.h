@@ -5,23 +5,12 @@
  * William Lupton, W. M. Keck Observatory
  */
 
-/* Defer declaring export functions until appropriate */
-#ifdef epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
-#define restoreExport
-#endif
-
 /*
  * EPICS include files needed by this file
  */
 #include "ellLib.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
-
-#ifdef restoreExport
-#define epicsExportSharedSymbols
-#undef restoreExport
-#endif
 #include "shareLib.h"
 
 /*
@@ -213,6 +202,11 @@ epicsShareAPI macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.5  1998/02/20 21:45:17  evans
+ * Made a large number of changes to epicsShareThings in libCom routines
+ * to get imports and exports straight on WIN32.  Not everything is fixed
+ * at this time.
+ *
  * Revision 1.4  1997/06/05 18:28:49  mrk
  * Allow message about referenced but undefined to be suppressed
  *

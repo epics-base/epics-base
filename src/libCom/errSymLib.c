@@ -139,10 +139,14 @@ int errSymBld()
 
     if(initialized) return(0);
     hashtable = (ERRNUMNODE**)calloc(NHASH, sizeof(ERRNUMNODE*));
-    if (!hashtable) {
-	return -1;
+    if(!hashtable) {
+	printf("errSymBld: Can't allocate storage\n");
+#ifdef vxWorks
+	taskSuspend(0);
+#else
+	abort();
+#endif
     }
-
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
 	modnum = errArray->errNum >> 16;
 	if (modnum < 501) {
@@ -212,8 +216,13 @@ char *name;
     ERRNUMNODE     *pNew;
 
     pNew = (ERRNUMNODE*)calloc(1, sizeof(ERRNUMNODE));
-    if (!pNew) {
-      return -1;
+    if(!pNew) {
+	printf("errSymbolAdd: Can't allocate storage\n");
+#ifdef vxWorks
+	taskSuspend(0);
+#else
+	abort();
+#endif
     }
     pNew->errNum = errNum;
     pNew->message = name;

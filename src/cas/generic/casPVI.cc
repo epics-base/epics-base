@@ -72,6 +72,7 @@ void casPVI::casPVDestroyNotify ()
         tsDLIter < chanIntfForPV > iter = this->chanList.firstIter ();
         while ( iter.valid() ) {
             iter->casChannelDestroyNotify ( false );
+            iter++;
         }
     }
 }

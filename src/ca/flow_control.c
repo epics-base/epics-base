@@ -37,7 +37,6 @@ static char	*sccsId = "@(#) $Id$";
 
 #include		"iocinf.h"
 
-
 
 /*
  * FLOW CONTROL
@@ -62,11 +61,13 @@ void flow_control_on(struct ioc_in_use *piiu)
 		if (!piiu->client_busy) {
 			status = ca_busy_message(piiu);
 			if (status==ECA_NORMAL) {
+				assert(ca_static->ca_number_iiu_in_fc<UINT_MAX);
+				ca_static->ca_number_iiu_in_fc++;
 				piiu->client_busy = TRUE;
+#				if defined(DEBUG) 
+					printf("fc on\n");
+#				endif
 			}
-#			if defined(DEBUG) 
-				printf("fc on\n");
-#			endif
 		}
 	}
 	else {
@@ -85,12 +86,14 @@ void flow_control_off(struct ioc_in_use *piiu)
 
 	piiu->contiguous_msg_count = 0;
 	if (piiu->client_busy) {
-#		if defined(DEBUG) 
-			printf("fc off\n");
-#		endif
 		status = ca_ready_message(piiu);
 		if (status==ECA_NORMAL) {
+			assert(ca_static->ca_number_iiu_in_fc>0u);
+			ca_static->ca_number_iiu_in_fc--;
 			piiu->client_busy = FALSE;
+#			if defined(DEBUG) 
+				printf("fc off\n");
+#			endif
 		}
 	}
 

@@ -1,10 +1,11 @@
 //
-// Operator new does not throw a bad_alloc exception
+// On older version of ms visual c++ operator new 
+// does not throw a bad_alloc exception
 // when it fails. It simply returns a null pointer.
 // This behavior is not in conformance with the 
 // ANSI / ISO C++.
 // 
-#if _MSC_VER > 1000
+#if _MSC_VER > 1000 && _MSC_VER < 1300
 
 #include <new>
 #include <new.h>

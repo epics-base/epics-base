@@ -92,11 +92,11 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
     char	*fieldnames = 0;
     char 	**papfields = 0;
 
-    if (precordTypename && (!strcmp(precordTypename,"") || !strcmp(precordTypename,"*")))
+    if (precordTypename && ((*precordTypename == '\0') || !strcmp(precordTypename,"*")))
         precordTypename = NULL;
-    if (filename && !strcmp(filename,""))
+    if (filename && (*filename == '\0'))
         filename = NULL;
-    if (fields && !strcmp(fields,""))
+    if (fields && (*fields == '\0'))
         fields = NULL;
     if(fields) {
 	char *pnext;

@@ -163,7 +163,7 @@ epicsReadline (const char *prompt, void *context)
             line[linelen] = '\0';
     }
     readlineContext->line = line;
-    if (line && line[0] != '#')
+    if (line && line[0] != '\0')
         add_history (line);
     return line;
 }

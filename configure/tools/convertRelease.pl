@@ -200,8 +200,6 @@ sub configAppInclude {
 	# We can't just include TOP in the foreach list:
 	# 1. The lib directory probably doesn't exist yet, and
 	# 2. We need an abolute path but $(TOP_LIB) is relative
-	$path = $macros{"TOP"};
-	print OUT "SHRLIB_SEARCH_DIRS = $path/lib/$arch\n";
 	foreach $app (@includes) {
 	    $path = $macros{$app};
 	    next unless (-d "$path/lib/$arch");

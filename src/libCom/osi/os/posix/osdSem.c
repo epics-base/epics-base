@@ -22,9 +22,14 @@ of this distribution.
 #include "cantProceed.h"
 #include "tsStamp.h"
 #include "errlog.h"
+#include "epicsAssert.h"
+
+/* Until these can be demonstrated to work leave them undefined*/
+#undef _POSIX_THREAD_PROCESS_SHARED
+#undef _POSIX_THREAD_PRIO_INHERIT
 
 typedef struct binary {
-    pthread_mutex_t	mutex;
+    pthread_mutex_t     mutex;
     pthread_cond_t	cond;
     int                 isFull;
 }binary;
@@ -33,9 +38,9 @@ typedef struct mutex {
     pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;
     pthread_cond_t	waitToBeOwner;
-#ifdef _POSIX_THREAD_PROCESS_SHARED
+#if defined _POSIX_THREAD_PROCESS_SHARED
     pthread_condattr_t  condAttr;
-#endif
+#endif /*_POSIX_THREAD_PROCESS_SHARED*/
     int			count;
     int			owned;  /* TRUE | FALSE */
     pthread_t		ownerTid;
@@ -127,6 +132,7 @@ semTakeStatus semBinaryTake(semBinaryId id)
     if(!pbinary) return(semTakeError);
     status = pthread_mutex_lock(&pbinary->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
+    /*no need for while since caller must be prepared for no work*/
     if(!pbinary->isFull) {
         status = pthread_cond_wait(&pbinary->cond,&pbinary->mutex);
         checkStatusQuit(status,"pthread_cond_wait","semBinaryTake");
@@ -176,14 +182,14 @@ semMutexId semMutexCreate(void) {
     pmutex = callocMustSucceed(1,sizeof(mutex),"semMutexCreate");
     status = pthread_mutexattr_init(&pmutex->mutexAttr);
     checkStatusQuit(status,"pthread_mutexattr_init","semMutexCreate");
-#ifdef _POSIX_THREAD_PRIO_INHERIT
+#if defined _POSIX_THREAD_PRIO_INHERIT
     status = pthread_mutexattr_setprotocol(
         &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
     if(errVerbose) checkStatus(status,"pthread_mutexattr_setprotocal");
-#endif
+#endif /*_POSIX_THREAD_PRIO_INHERIT*/
     status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
     checkStatusQuit(status,"pthread_mutex_init","semMutexCreate");
-#ifdef _POSIX_THREAD_PROCESS_SHARED
+#if defined _POSIX_THREAD_PROCESS_SHARED
     status = pthread_condattr_init(&pmutex->condAttr);
     checkStatus(status,"pthread_condattr_init");
     status = pthread_condattr_setpshared(&pmutex->condAttr,
@@ -192,7 +198,7 @@ semMutexId semMutexCreate(void) {
     status = pthread_cond_init(&pmutex->waitToBeOwner,&pmutex->condAttr);
 #else
     status = pthread_cond_init(&pmutex->waitToBeOwner,0);
-#endif
+#endif /*_POSIX_THREAD_PROCESS_SHARED*/
     checkStatusQuit(status,"pthread_cond_init","semMutexCreate");
     return((semMutexId)pmutex);
 }
@@ -211,6 +217,9 @@ void semMutexDestroy(semMutexId id)
 
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
     checkStatus(status,"pthread_cond_destroy");
+#if defined _POSIX_THREAD_PROCESS_SHARED
+    status = pthread_condattr_destroy(&pmutex->condAttr);
+#endif /*_POSIX_THREAD_PROCESS_SHARED*/
     status = pthread_mutex_destroy(&pmutex->lock);
     checkStatus(status,"pthread_mutex_destroy");
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
@@ -221,7 +230,7 @@ void semMutexDestroy(semMutexId id)
 void semMutexGive(semMutexId id)
 {
     mutex *pmutex = (mutex *)id;
-    int status,unlockStatus;
+    int status;
 
     status = pthread_mutex_lock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","semMutexGive");

@@ -25,6 +25,11 @@ of this distribution.
 #include "osiSem.h"
 #include "cantProceed.h"
 #include "errlog.h"
+#include "epicsAssert.h"
+
+/* Until these can be demonstrated to work leave them undefined*/
+#undef _POSIX_THREAD_ATTR_STACKSIZE
+#undef _POSIX_THREAD_PRIORITY_SCHEDULING
 
 typedef struct commonAttr{
     pthread_attr_t     attr;
@@ -137,9 +142,7 @@ static threadInfo * init_threadInfo(const char *name,
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setdetachstate");
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
-#if defined (OSITHREAD_USE_DEFAULT_STACK)
-    stackSize = 0;
-#else
+#if ! defined (OSITHREAD_USE_DEFAULT_STACK)
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setstacksize");
@@ -265,7 +268,9 @@ static void * start_routine(void *arg)
 
 unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
 {
-#if defined (OSITHREAD_USE_DEFAULT_STACK)
+#if ! defined (_POSIX_THREAD_ATTR_STACKSIZE)
+    return 0;
+#elif defined (OSITHREAD_USE_DEFAULT_STACK)
     return 0;
 #else
     static const unsigned stackSizeTable[threadStackBig+1] =
@@ -281,7 +286,7 @@ unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
     }
 
     return stackSizeTable[stackSizeClass];
-#endif /* OSITHREAD_USE_DEFAULT_STACK */
+#endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
 }
 
 void threadInit(void)
@@ -318,11 +323,7 @@ threadId threadCreate(const char *name,
     int status;
 
     if(!threadInitCalled) threadInit();
-    if(pcommonAttr==0) {
-        fprintf(stderr,"It appears that threadCreate was called before threadInit.\n");
-        fprintf(stderr,"Program is exiting\n");
-        exit(-1);
-    }
+    assert(pcommonAttr);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
 			    start_routine,pthreadInfo);
@@ -371,7 +372,9 @@ unsigned int threadGetPrioritySelf(void)
 void threadSetPriority(threadId id,unsigned int priority)
 {
     threadInfo *pthreadInfo = (threadInfo *)id;
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     int status;
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
@@ -502,7 +505,7 @@ void threadShow(threadId id,unsigned int level)
 
         status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
         priority = (status ? 0 : param.sched_priority);
-	printf("%16.16s %8x %p %8d %8.8s\n", pthreadInfo->name,(threadId)
+	printf("%16.16s %p %d %8d %8.8s\n", pthreadInfo->name,(threadId)
 	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)

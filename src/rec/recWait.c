@@ -38,9 +38,14 @@
  *                              dbGetField() to dbGet()
  * .06  08-19-94        nda     added Output data option of VAL or DOL                         
  * .07  09-14-94        nda     corrected bug that caused SCAN_DISABLE to lock up the record forever
+ * .08  02-01-95        nda     added VERS and ODLY (output execution delay)
  *
  *
  */
+
+#define VERSION 1.08
+
+
 
 #include	<vxWorks.h> 
 #include	<types.h>
@@ -51,6 +56,7 @@
 #include	<tickLib.h>
 #include	<semLib.h>
 #include	<taskLib.h>
+#include        <wdLib.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>
@@ -141,6 +147,8 @@ struct {
 ***************************/
 int    waitRecDebug=0;
 static unsigned long tickStart;
+static void schedOutput();
+static void reqOutput();
 static void execOutput();
 static int fetch_values();
 static void monitor();
@@ -152,6 +160,7 @@ static void inputChanged();
 struct cbStruct {
         CALLBACK           callback;  /* code assumes CALLBACK is 1st in structure */
         struct waitRecord *pwait;     /* pointer to wait record which needs work done */
+        WDOG_ID            wd_id;     /* Watchdog used for delays */
         IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
         CAMONITOR          inpMonitor[12];  /* required structures for each input variable */
         int                procPending;     /* flag to indicate record processing is pending */
@@ -184,6 +193,7 @@ static long init_record(pwait,pass)
     short error_number;
 
     if (pass==0) {
+      pwait->vers = VERSION;
       pwait->inaa = calloc(1,sizeof(struct dbAddr));
       pwait->inba = calloc(1,sizeof(struct dbAddr));
       pwait->inca = calloc(1,sizeof(struct dbAddr));
@@ -241,6 +251,7 @@ static long init_record(pwait,pass)
     callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->callback);
     pcbst = (struct cbStruct *)pwait->cbst;
     pcbst->pwait = pwait;
+    pcbst->wd_id = wdCreate();
 
     /* Set up monitors on input channels if scan type is IO Event */
 
@@ -292,6 +303,7 @@ static long process(pwait)
             }
         }
         else {      /* SIMULATION MODE */
+            nRequest = 1;
             status  = recGblGetLinkValue(&(pwait->siol),
                      (void *)pwait,DBR_DOUBLE,&(pwait->sval),&options,&nRequest);
             if (status==0){
@@ -304,36 +316,36 @@ static long process(pwait)
         /* decide whether to write Output PV  */
         switch(pwait->oopt) {
           case REC_WAIT_OUT_OPT_EVERY:
-            callbackRequest(pwait->cbst);
+            schedOutput(pwait);
             async = TRUE;
             break;
           case REC_WAIT_OUT_OPT_CHANGE:
             if(fabs(pwait->oval - pwait->val) > pwait->mdel)  {
-              callbackRequest(pwait->cbst);
+              schedOutput(pwait);
               async = TRUE;
             }
             break;
           case REC_WAIT_OUT_OPT_CHG_TO_ZERO:
             if((pwait->oval != 0) && (pwait->val == 0)) {
-              callbackRequest(pwait->cbst);
+              schedOutput(pwait);
               async = TRUE;
             }
             break;
           case REC_WAIT_OUT_OPT_CHG_TO_NZERO:
             if((pwait->oval == 0) && (pwait->val != 0)) {
-              callbackRequest(pwait->cbst);
+              schedOutput(pwait);
               async = TRUE;
             }
             break;
           case REC_WAIT_OUT_OPT_WHEN_ZERO:
             if(!pwait->val) {
-              callbackRequest(pwait->cbst);
+              schedOutput(pwait);
               async = TRUE;
             }
             break;
           case REC_WAIT_OUT_OPT_WHEN_NZERO:
             if(pwait->val) {
-              callbackRequest(pwait->cbst);
+              schedOutput(pwait);
               async = TRUE;
             }
             break;
@@ -493,8 +505,12 @@ static long get_precision(paddr,precision)
     struct waitRecord	*pwait=(struct waitRecord *)paddr->precord;
 
     *precision = pwait->prec;
-    if(paddr->pfield == (void *)&pwait->val) return(0);
-    recGblGetPrec(paddr,precision);
+    if(paddr->pfield == (void *)&pwait->val) {
+        *precision = pwait->prec;
+    }
+    else if(paddr->pfield == (void *)&pwait->odly) {
+        *precision = 3;
+    }
     return(0);
 }
 
@@ -627,7 +643,37 @@ struct waitRecord *pwait;
         return(0);
 }
 
+/******************************************************************************
+ *
+ * The following functions schedule and/or request the execution of the output
+ * PV and output event based on the Output Execution Delay (ODLY).
+ * If .odly > 0, a watchdog is scheduled; if 0, reqOutput() is called immediately.
+ *
+ ******************************************************************************/
+static void schedOutput(pwait)
+    struct waitRecord   *pwait;
+{
 
+struct cbStruct *pcbst = (struct cbStruct *)pwait->cbst;
+
+int                   wdDelay;
+ 
+    if(pwait->odly > 0.0) {
+      /* Use the watch-dog as a delay mechanism */
+      wdDelay = pwait->odly * sysClkRateGet();
+      wdStart(pcbst->wd_id, wdDelay, (FUNCPTR)reqOutput, (int)(pwait));
+    } else {
+      reqOutput(pwait);
+    }
+}
+
+static void reqOutput(pwait)
+    struct waitRecord   *pwait;
+{
+
+    callbackRequest(pwait->cbst);
+
+}
 /******************************************************************************
  *
  * This is the code that is executed by the callback task to do the record    
@@ -668,6 +714,12 @@ static double oldDold;
 
     recGblFwdLink(pcbst->pwait);
     pcbst->pwait->pact = FALSE;
+
+    /* If I/O Interrupt scanned, see if any inputs changed during delay */
+    if((pcbst->pwait->scan == SCAN_IO_EVENT) && (pcbst->procPending == 1)) {
+       scanOnce(pcbst->pwait);
+    }
+
     return;
 }
 

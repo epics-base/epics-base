@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.30  1999/10/28 15:57:09  jhill
+// now supports copy only the addressed portions between one GDD
+// and another
+//
 // Revision 1.29  1999/05/10 23:42:25  jhill
 // fixed many const releated problems
 //
@@ -462,7 +466,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 	else
 	{
 		//
-		// OK to use init here because the clear() above set the
+		// ok to use init here because the clear() above set the
 		// scalar prim type to invalid and frees the old scalar strings
 		//
 		init(dd->applicationType(),dd->primitiveType(),dd->dimension());

@@ -95,6 +95,8 @@ LOCAL EVENTFUNC	wake_cancel;
 
 LOCAL int event_read(struct event_que *ev_que);
 
+LOCAL int db_post_single_event_private(struct event_block *event);
+
 /* what to do with unrecoverable errors */
 #define abort(S) taskSuspend((int)taskIdCurrent);
 
@@ -162,13 +164,13 @@ int db_event_list(char *name)
 		printf(" ev %lx\n", (unsigned long) pevent);
 		printf(" ev que %lx\n", (unsigned long) pevent->ev_que);
 		printf(" ev user %lx\n", (unsigned long) pevent->ev_que->evuser);
+		printf("ring space %u\n", RNGSPACE(pevent->ev_que));
 #endif
 		printf(	"task %x select %x pfield %lx behind by %ld\n",
 			pevent->ev_que->evuser->taskid,
 			pevent->select,
 			(unsigned long) pevent->paddr->pfield,
 			pevent->npend);
-		printf("ring space %u\n", RNGSPACE(pevent->ev_que));
      	}
   	UNLOCKREC(precord);
 
@@ -448,7 +450,7 @@ int	db_cancel_event(struct event_block	*pevent)
     		flush_event.user_sub = wake_cancel;
     		flush_event.user_arg = &pevu->pflush_sem;
     		flush_event.npend = 0ul;
-    		if(db_post_single_event(&flush_event)==OK){
+    		if(db_post_single_event_private(&flush_event)==OK){
 			/*
 			 * insure that the event is 
 			 * removed from the queue
@@ -571,6 +573,7 @@ int db_post_extra_labor(struct event_user *evuser)
 /*
  *	DB_POST_EVENTS()
  *
+ *	NOTE: This assumes that the db scan lock is already applied
  *
  */
 int db_post_events(
@@ -597,7 +600,7 @@ unsigned int	select
 		if ( (event->paddr->pfield == (void *)pval || pval==NULL) &&
 			(select & event->select)) {
 
-			db_post_single_event(event);
+			db_post_single_event_private(event);
 		}
   	}
 
@@ -609,8 +612,26 @@ unsigned int	select
 
 /*
  *	DB_POST_SINGLE_EVENT()
+ *
  */
 int db_post_single_event(struct event_block *event)
+{  
+	struct dbCommon *precord = event->paddr->precord;
+	int status;
+
+	dbScanLock(precord);
+	status = db_post_single_event_private(event);
+	dbScanUnlock(precord);
+	return status;
+}
+
+
+/*
+ *	DB_POST_SINGLE_EVENT_PRIVATE()
+ *
+ *	NOTE: This assumes that the db scan lock is already applied
+ */
+LOCAL int db_post_single_event_private(struct event_block *event)
 {  
   	struct event_que	*ev_que;
 	db_field_log 		*pLog;

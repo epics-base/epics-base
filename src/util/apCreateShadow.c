@@ -305,7 +305,6 @@ startFromHere()
 		    dir, dp->d_name);
 	else {
 	    sprintf(name, "%s/%s", dir, dp->d_name);
-	    printf("."); fflush(stdout);
 	    procDirEntries(name);
 	}
     }
@@ -334,6 +333,7 @@ procDirEntries(name)
 	processFile(name);
 	return;
     }
+    printf("."); fflush(stdout);
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 	/* access the last component (directory) in name */
 	ptr = (char *) strrchr(name, '/');

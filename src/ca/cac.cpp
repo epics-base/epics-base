@@ -43,6 +43,8 @@
 #include "bhe.h"
 #include "net_convert.h"
 
+static char *id="@(#) $Id$";
+
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
 {

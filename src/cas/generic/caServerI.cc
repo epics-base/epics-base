@@ -15,8 +15,6 @@
  *              505 665 1831
  */
 
-#define CAS_VERSION_GLOBAL
-
 #include "epicsGuard.h"
 
 #include "addrList.h"
@@ -24,6 +22,8 @@
 #define caServerGlobal
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
+
+static char *id="@(#) $Id$";
 
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available

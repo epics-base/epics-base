@@ -217,6 +217,8 @@ int	portNum;	/* I port number for server */
 		    break;
 		else if (strncmp(keyboard, "close", 5) == 0)
 		    break;
+		else if (strncmp(keyboard, "disconnect", 10) == 0)
+		    break;
 		else
 		    printf("null message from server\n");
 	    }

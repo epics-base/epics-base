@@ -111,11 +111,23 @@ threadWrapper (rtems_task_argument arg)
 
 /*
  * OS-dependent initialization
+ * No need to worry about making this thread-safe since
+ * it must be called before threadCreate creates
+ * any threads.
  */
-static void
-threadInitRTEMS (void *unused)
+void
+threadInit (void)
 {
-    taskVarMutex = semMutexMustCreate ();
+    static int initialized;
+
+    if (!initialized) {
+	initialized = 1;
+	taskVarMutex = semMutexCreate ();
+	if (!taskVarMutex) {
+	    syslog (LOG_CRIT, "Can't create task variable mutex");
+	    rtems_task_suspend (RTEMS_SELF);
+	}
+    }
 }
 
 /*
@@ -131,9 +143,8 @@ threadCreate (const char *name,
     rtems_status_code sc;
     rtems_unsigned32 note;
     char c[4];
-    static threadOnceId initId;
 
-    threadOnce (&initId, threadInitRTEMS, NULL);
+    threadInit ();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("threadCreate %s illegal stackSize %d\n",name,stackSize);
         return 0;
@@ -460,17 +471,36 @@ showInternalTaskInfo (rtems_id tid)
 #endif
 }
 
-void threadShow (void)
+static void
+threadShowHeader (void)
+{
+    printf ("     NAME       ID    PRI    STATE      WAIT   \n");
+    printf ("+-----------+--------+---+-----------+--------+\n");
+}
+
+void threadShow (threadId id, unsigned int level)
 {
     struct taskVar *v;
+    int shown = 0;
 
-    printf ("     NAME       ID    PRI    STATE      WAIT    \n");
-    printf ("+-----------+--------+---+-----------+--------+\n");
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
-	printf ("%12.12s %8.8x", v->name, v->id);
-	showInternalTaskInfo (v->id);
-	printf ("\n");
+	if ((id == 0) || ((rtems_id)id == v->id)) {
+	    if (!shown) {
+		threadShowHeader ();
+		shown++;
+	    }
+	    printf ("%12.12s %8.8x", v->name, v->id);
+	    showInternalTaskInfo (v->id);
+	    printf ("\n");
+	}
     }
     taskVarUnlock ();
+    if (id && !shown)
+	printf ("*** Thread %#x does not exist.\n", (unsigned int)id);
+}
+
+void threadShowAll (unsigned int level)
+{
+    threadShow (0, level);
 }

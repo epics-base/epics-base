@@ -148,8 +148,8 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
 
-%.c: %.stt
-	@echo "converting $<
+%.c: ../%.stt
+	@echo "converting $<"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $<
 

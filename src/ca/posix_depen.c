@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.18  1996/06/20 21:19:29  jhill
+ * fixed posix signal problem with "cc -Xc"
+ *
  * Revision 1.17  1995/12/19  19:33:42  jhill
  * added missing arg to execlp()
  *
@@ -56,13 +59,12 @@
  */
 void cac_gettimeval(struct timeval  *pt)
 {
-        struct timezone tz;
 	int		status;
 
 	/*
 	 * Not POSIX but available on most of the systems that we use
 	 */
-        status = gettimeofday(pt, &tz);
+        status = gettimeofday(pt, NULL);
 	assert(status == 0);
 }
 

@@ -221,7 +221,7 @@ ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbExpand $(DBDFLAGS) $< > $@
+	$(EPICS_BASE_HOST_BIN)/dbExpand $(DBDFLAGS) -o $@ $<
 
 ifneq (,$(wildcard ../base.dbd))
 $(DBDNAME): ../base.dbd

@@ -108,7 +108,7 @@ static long init_record(pstringin,pass)
     struct stringindset *pdset;
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct stringindset *)(pstringin->dset))) {
 	recGblRecordError(S_dev_noDSET,pstringin,"stringin: init_record");

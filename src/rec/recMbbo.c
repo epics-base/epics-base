@@ -151,7 +151,7 @@ static long init_record(pmbbo,pass)
     long status;
     int	i;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");

@@ -144,7 +144,7 @@ static long init_record(pcalc,pass)
     short error_number;
     char rpbuf[80];
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     plink = &pcalc->inpa;
     pvalue = &pcalc->a;

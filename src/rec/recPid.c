@@ -108,7 +108,7 @@ static long init_record(ppid,pass)
         /* Added for Channel Access Links */
         long status;
 
-        if (pass!=0) return(0);
+        if (pass==0) return(0);
 
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){

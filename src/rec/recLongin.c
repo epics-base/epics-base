@@ -111,7 +111,7 @@ static long init_record(plongin,pass)
     struct longindset *pdset;
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct longindset *)(plongin->dset))) {
 	recGblRecordError(S_dev_noDSET,plongin,"longin: init_record");

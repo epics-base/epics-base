@@ -111,7 +111,7 @@ static long init_record(pfanout,pass)
 /* Added for Channel Access Links */
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     /* get link selection if sell is a constant and nonzero*/
     if (pfanout->sell.type==CONSTANT && pfanout->sell.value.value!=0 ){

@@ -123,7 +123,7 @@ static long init_record(pbi,pass)
     struct bidset *pdset;
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct bidset *)(pbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pbi,"bi: init_record");

@@ -157,9 +157,19 @@ static long init_record(phistogram,pass)
      float         wait_time;
      void (*process)();
 
-    if (pass==0){
+     if (pass==0){
 
-     /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
+          /* allocate space for histogram array */
+          if(phistogram->bptr==NULL) {
+               if(phistogram->nelm<=0) phistogram->nelm=1;
+               phistogram->bptr = (unsigned long *)calloc(phistogram->nelm,sizeof(long));
+          }
+
+          /* calulate width of array element */
+          phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
+
+          return(0);
+     }
 
      pcallback->process = process;
      if(phistogram->wdog==NULL && phistogram->sdel!=0) {
@@ -173,21 +183,13 @@ static long init_record(phistogram,pass)
                exit(1);
           }
           pcallback->wd_id = wdCreate();
- 
+  
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
           wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
      }
 
-     /* allocate space for histogram array */
-     if(phistogram->bptr==NULL) {
-          if(phistogram->nelm<=0) phistogram->nelm=1;
-          phistogram->bptr = (unsigned long *)calloc(phistogram->nelm,sizeof(long));
-     }
-
-     /* calulate width of array element */
-     phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
-
+     /* must have device support defined */
      if(!(pdset = (struct histogramdset *)(phistogram->dset))) {
           recGblRecordError(S_dev_noDSET,phistogram,"histogram: init_record");
           return(S_dev_noDSET);
@@ -196,10 +198,7 @@ static long init_record(phistogram,pass)
      if( (pdset->number < 6) || (pdset->read_histogram == NULL) ) {
           recGblRecordError(S_dev_missingSup,phistogram,"histogram: init_record");
           return(S_dev_missingSup);
-         }
-     return(0);
      }
-
      /* call device support init_record */
      if( pdset->init_record ) {
           if((status=(*pdset->init_record)(phistogram))) return(status);

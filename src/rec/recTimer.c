@@ -146,7 +146,7 @@ static long init_record(ptimer,pass)
 /* Added for Channel Access Links */
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     /* get the delay initial value if torg is a constant*/
     if (ptimer->torg.type == CONSTANT ){

@@ -144,7 +144,7 @@ static long init_record(pmbbi,pass)
     long status;
     int i;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbi,"mbbi: init_record");

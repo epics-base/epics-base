@@ -148,7 +148,7 @@ static long init_record(pai,pass)
     struct aidset *pdset;
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct aidset *)(pai->dset))) {
 	recGblRecordError(S_dev_noDSET,pai,"ai: init_record");

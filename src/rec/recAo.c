@@ -144,7 +144,7 @@ static long init_record(pao,pass)
     long	status=0;
     double	value;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct aodset *)(pao->dset))) {
 	recGblRecordError(S_dev_noDSET,pao,"ao: init_record");

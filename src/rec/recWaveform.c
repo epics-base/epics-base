@@ -149,11 +149,12 @@ static long init_record(pwf,pass)
 	pwf->nord = 0;
 	return(0);
     }
-    /* must have read_wf function defined */
+    /* must have dset defined */
     if(!(pdset = (struct wfdset *)(pwf->dset))) {
         recGblRecordError(S_dev_noDSET,pwf,"wf: init_record");
         return(S_dev_noDSET);
     }
+    /* must have read_wf function defined */
     if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
         recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
         return(S_dev_missingSup);

@@ -179,7 +179,7 @@ static long init_record(psm,pass)
     struct smdset *pdset;
     long status;
 
-    if (pass!=0) return(0);
+    if (pass==0) return(0);
 
     if(!(pdset = (struct smdset *)(psm->dset))) {
         recGblRecordError(S_dev_noDSET,psm,"sm: init_record");

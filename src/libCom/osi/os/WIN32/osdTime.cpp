@@ -21,34 +21,21 @@
 #include <winsock2.h>
 #include <process.h>
 
-/*
- * for _ftime()
- */
-#include <sys/types.h>
-#include <sys/timeb.h>
-
 //
 // EPICS
 //
 #define epicsExportSharedSymbols
 #include "epicsTime.h"
+#include "epicsTimer.h"
 #include "errlog.h"
 #include "epicsAssert.h"
 #include "epicsThread.h"
 
-//
-// performance counter last value, ticks per sec,
-// and its offset from the EPICS epoch.
-// 
-static LONGLONG perf_last, perf_freq;
-
-//
-// divide the offset into seconds and
-// fractions of a second so that overflow is less
-// likely (we dont know the magnitude of perf_freq
-// until run time)
-//
-static LONGLONG perf_sec_offset=-1, perf_frac_offset;
+#if defined ( DEBUG ) 
+#   define debugPrintf(argsInParen) ::printf argsInParen
+#else
+#   define debugPrintf(argsInParen)
+#endif
 
 static const SYSTEMTIME epicsEpochST = {
 	1990, // year
@@ -61,294 +48,61 @@ static const SYSTEMTIME epicsEpochST = {
 	0 // milli sec
 };
 
+class currentTime : public epicsTimerNotify {
+public:
+    currentTime ();
+    ~currentTime ();
+    void getCurrentTime ( epicsTimeStamp & dest );
+    void startPLL ();
+private:
+    CRITICAL_SECTION mutex;
+    LONGLONG epicsEpochInFileTime;
+    LONGLONG lastPerfCounter;
+    LONGLONG perfCounterFreq;
+    LONGLONG epicsTimeLast; // nano-sec since the EPICS epoch
+    LONGLONG perfCounterFreqPLL;
+    LONGLONG lastPerfCounterPLL;
+    LONGLONG lastFileTimePLL;
+    epicsTimerQueueActive * pTimerQueue;
+    epicsTimer * pTimer;
+    bool perfCtrPresent;
+
+    epicsTimerNotify::expireStatus expire ( const epicsTime & );
+};
+
+static currentTime * pCurrentTime = 0;
 static bool osdTimeInitSuccess = false;
 static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
-static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
-static CRITICAL_SECTION osdTimeCriticalSection; 
-static bool osdTimeSyncThreadExit = false;
-static LONGLONG epicsEpoch;
-
-static void osdTimeInit ( void * );
-
-/*
- * osdTimeExit ()
- */
-static void osdTimeExit ()
-{
-    DeleteCriticalSection ( & osdTimeCriticalSection );
-    osdTimeSyncThreadExit = true;
-}
-
-//
-// osdTimeSychPvt ()
-//
-static int osdTimeSychPvt ()
-{
-    static const DWORD tmoTwentySec = 20 * epicsTime::mSecPerSec;
-	LONGLONG new_sec_offset, new_frac_offset;
-	LARGE_INTEGER parm;
-	LONGLONG secondsSinceBoot;
-	FILETIME currentTimeFT;
-	LONGLONG currentTime;
-
-	//
-	// its important that the following two time queries
-	// are close together (immediately adjacent to each
-	// other) in the code
-	//
-	GetSystemTimeAsFileTime (&currentTimeFT);
-	// this one is second because QueryPerformanceFrequency()
-	// has forced its code to load
-    if ( QueryPerformanceCounter ( & parm ) == 0 ) {
-        return epicsTimeERROR;
-    }
-
-    EnterCriticalSection ( & osdTimeCriticalSection );
-	 
-	perf_last = parm.QuadPart;
-	parm.LowPart = currentTimeFT.dwLowDateTime;
-	parm.HighPart = currentTimeFT.dwHighDateTime;
-	currentTime = parm.QuadPart;
-
-	//
-	// check for strange date, and clamp to the
-	// epics epoch if so
-	//
-	if (currentTime>epicsEpoch) {
-		//
-		// compute the offset from the EPICS epoch
-		//
-		LONGLONG diff = currentTime - epicsEpoch;
-
-		//
-		// compute the seconds offset and the 
-		// fractional offset part in the FILETIME timebase
-		//
-		new_sec_offset = diff / FILE_TIME_TICKS_PER_SEC;
-		new_frac_offset = diff % FILE_TIME_TICKS_PER_SEC;
-
-		//
-		// compute the fractional second offset in the performance 
-		// counter time base
-		//	
-		new_frac_offset = (new_frac_offset*perf_freq) / FILE_TIME_TICKS_PER_SEC;
-	}
-	else {
-		new_sec_offset = 0;
-		new_frac_offset = 0;
-	}
-
-	//
-	// subtract out the perormance counter ticks since the 
-	// begining of windows
-	//	
-	secondsSinceBoot = perf_last / perf_freq;
-	if (new_sec_offset>=secondsSinceBoot) {
-		new_sec_offset -= secondsSinceBoot;
-
-		LONGLONG fracSinceBoot = perf_last % perf_freq;
-		if (new_frac_offset>=fracSinceBoot) {
-			new_frac_offset -= fracSinceBoot;
-		}
-		else if (new_sec_offset>0) {
-			//
-			// borrow
-			//
-			new_sec_offset--;
-			new_frac_offset += perf_freq - fracSinceBoot;
-		}
-		else {
-			new_frac_offset = 0;
-		}
-	}
-	else {
-		new_sec_offset = 0;
-		new_frac_offset = 0;
-	}
-
-#if 0
-	//
-	// calculate the change
-	//
-	{
-		double change;
-		change = (double) (perf_sec_offset-new_sec_offset)*perf_freq +
-			(perf_frac_offset-new_frac_offset);
-		change /= perf_freq;
-		printf ("The performance counter drifted by %f sec\n", change);
-	}
-#endif
-
-	//
-	// update the current value
-	//
-	perf_sec_offset = new_sec_offset;
-	perf_frac_offset = new_frac_offset;
-
-    LeaveCriticalSection ( & osdTimeCriticalSection );
-
-    return epicsTimeOK;
-}
-
-//
-// osdTimeSych ()
-//
-static int osdTimeSych ()
-{
-    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
-    if ( ! osdTimeInitSuccess ) {
-        return epicsTimeERROR;
-    }
-
-    return osdTimeSychPvt ();
-}
-
-/*
- * osdTimeSynchThreadEntry()
- */
-static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
-{
-    static const DWORD tmoTenSec = 10 * epicsTime::mSecPerSec;
-    int status;
-
-    while ( ! osdTimeSyncThreadExit ) {
-	    Sleep (tmoTenSec); 
-        status = osdTimeSych ();
-        if ( status != epicsTimeOK ) {
-            errlogPrintf ( "osdTimeSych (): failed?\n" );
-        }
-    }
-    return 0u;
-}
+static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
+static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 
 //
 // osdTimeInit ()
 //
 static void osdTimeInit ( void * )
 {
-	LARGE_INTEGER parm;
-	BOOL success;
-    int unixStyleStatus;
-    HANDLE osdTimeThread;
-    unsigned threadAddr;
-	FILETIME epicsEpochFT;
-
-    InitializeCriticalSection ( & osdTimeCriticalSection );
-
-	//
-	// initialize elapsed time counters
-	//
-	// All CPUs running win32 currently have HR
-	// counters (Intel and Mips processors do)
-	//
-	if ( QueryPerformanceFrequency (&parm) == 0 ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-	}
-	perf_freq = parm.QuadPart;
-
-	//
-	// convert the EPICS epoch to file time
-	//
-	success = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
-    if ( ! success ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-    }
-	parm.LowPart = epicsEpochFT.dwLowDateTime;
-	parm.HighPart = epicsEpochFT.dwHighDateTime;
-	epicsEpoch = parm.QuadPart;
+    pCurrentTime = new currentTime ();
 
     // set here to avoid recursion problems
     osdTimeInitSuccess = true;
 
-    unixStyleStatus = osdTimeSychPvt ();
-    if ( unixStyleStatus != epicsTimeOK ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-    }
-
-    //
-    // spawn off a thread which periodically resynchronizes the offset
-    //
-    osdTimeThread = (HANDLE) _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
-                0, 0, &threadAddr );
-    if ( osdTimeThread == NULL ) {
-        errlogPrintf ( "osdTimeInit(): unable to start time synch thread\n" );
-    }
-    else {
-        assert ( CloseHandle ( osdTimeThread ) );
-    }
-
-    atexit ( osdTimeExit );
-
+    pCurrentTime->startPLL ();
 }
 
 //
-// epicsTime::osdGetCurrent ()
+// epicsTimeGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp *pDest )
 {
-    static const DWORD tmoTwentySec = 20 * epicsTime::mSecPerSec;
-	LONGLONG time_cur, time_sec, time_remainder;
-	LARGE_INTEGER parm;
-    BOOL status;
-
-    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
+    // double test avoids recursion problems
     if ( ! osdTimeInitSuccess ) {
-        return epicsTimeERROR;
+        epicsThreadOnce ( & osdTimeOnceFlag, osdTimeInit, 0 );
+        if ( ! ( osdTimeInitSuccess && pCurrentTime ) ) {
+            return epicsTimeERROR;
+        }
     }
 
-    EnterCriticalSection ( & osdTimeCriticalSection );
-
-	//
-	// dont need to check status since it was checked once
-	// during initialization to see if the CPU has HR
-	// counters (Intel and Mips processors do)
-	//
-	status = QueryPerformanceCounter (&parm);
-    if (!status) {
-        LeaveCriticalSection ( & osdTimeCriticalSection );
-        return epicsTimeERROR;
-    }
-	time_cur = parm.QuadPart;
-	if (perf_last > time_cur) {	
-
-		//
-		// must have been a timer roll-over
-		// It takes 9.223372036855e+18/perf_freq sec
-		// to roll over this counter (perf_freq is 1193182
-		// sec on my system). This is currently about 245118 years.
-		//
-		// attempt to add number of seconds in a 64 bit integer
-		// in case the timer resolution improves
-		//
-		perf_sec_offset += MAXLONGLONG / perf_freq;
-		perf_frac_offset += MAXLONGLONG % perf_freq;
-		if (perf_frac_offset>=perf_freq) {
-			perf_sec_offset++;
-			perf_frac_offset -= perf_freq;
-		}
-	}
-	time_sec = time_cur / perf_freq;
-	time_remainder = time_cur % perf_freq;
-
-	//
-	// add time (sec) since the EPICS epoch 
-	//
-	time_sec += perf_sec_offset;
-	time_remainder += perf_frac_offset;
-	if (time_remainder>=perf_freq) {
-		time_sec += 1;
-		time_remainder -= perf_freq;
-	}
-
-	perf_last = time_cur;
-
-	pDest->secPastEpoch = (unsigned long) (time_sec%ULONG_MAX);
-    pDest->nsec = (unsigned long) ((time_remainder*epicsTime::nSecPerSec)/perf_freq);
-
-    LeaveCriticalSection ( & osdTimeCriticalSection );
+    pCurrentTime->getCurrentTime ( *pDest );
 
 	return epicsTimeOK;
 }
@@ -356,10 +110,11 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 //
 // epicsTimeGetEvent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, unsigned eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent 
+            ( epicsTimeStamp *pDest, unsigned eventNumber )
 {
-    if (eventNumber==epicsTimeEventCurrentTime) {
-        return epicsTimeGetCurrent (pDest);
+    if ( eventNumber == epicsTimeEventCurrentTime ) {
+        return epicsTimeGetCurrent ( pDest );
     }
     else {
         return epicsTimeERROR;
@@ -481,12 +236,309 @@ int epicsTime_localtime ( const time_t *pAnsiTime, struct tm *pTM )
 
 	return epicsTimeOK;
 }
- 
 
+currentTime::currentTime () :
+    epicsEpochInFileTime ( 0 ),
+    lastPerfCounter ( 0 ),
+    perfCounterFreq ( 0 ),
+    epicsTimeLast ( 0 ),
+    perfCounterFreqPLL ( 0 ),
+    lastPerfCounterPLL ( 0 ),
+    lastFileTimePLL ( 0 ),
+    pTimerQueue ( 0 ),
+    pTimer ( 0 ),
+    perfCtrPresent ( false )
+{
+    FILETIME ft;
+    {
+	    SystemTimeToFileTime ( & epicsEpochST, & ft );
+        LARGE_INTEGER tmp;
+	    tmp.LowPart = ft.dwLowDateTime;
+	    tmp.HighPart = ft.dwHighDateTime;
+        this->epicsEpochInFileTime = tmp.QuadPart;
+    }
 
+    InitializeCriticalSection ( & this->mutex );
 
+    // avoid interruptions by briefly becoming a time critical thread
+    int originalPriority = GetThreadPriority ( GetCurrentThread () );
+    SetThreadPriority ( GetCurrentThread (), THREAD_PRIORITY_TIME_CRITICAL );
 
+    GetSystemTimeAsFileTime ( & ft );
+    LARGE_INTEGER tmp;
+	QueryPerformanceCounter ( & tmp );
+    this->lastPerfCounter = tmp.QuadPart;
+    // if no high resolution counters then default to low res file time
+	if ( QueryPerformanceFrequency ( & tmp ) ) {
+        this->perfCounterFreq = tmp.QuadPart;
+        this->perfCtrPresent = true;
+    }
+    SetThreadPriority ( GetCurrentThread (), originalPriority );
 
+    LARGE_INTEGER liFileTime;
+    liFileTime.LowPart = ft.dwLowDateTime;
+    liFileTime.HighPart = ft.dwHighDateTime;
+
+    if ( liFileTime.QuadPart >= this->epicsEpochInFileTime ) {
+        // the windows file time has a maximum resolution of 100 nS
+        // and a nominal resolution of 10 mS - 16 mS
+	    this->epicsTimeLast = 
+            ( liFileTime.QuadPart - this->epicsEpochInFileTime ) * 
+            ( EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
+    }
+    else {
+        errlogPrintf ( 
+            "win32 osdTime.cpp detected questionable system date prior to EPICS epoch\n" );
+        this->epicsTimeLast = 0;
+    }
+
+    this->perfCounterFreqPLL = this->perfCounterFreq;
+    this->lastPerfCounterPLL = this->lastPerfCounter;
+    this->lastFileTimePLL = liFileTime.QuadPart;
+
+    // create frequency estimation timer when needed
+    if ( this->perfCtrPresent ) {
+        this->pTimerQueue =  
+            & epicsTimerQueueActive::allocate ( true );
+        this->pTimer = & this->pTimerQueue->createTimer ();
+    }
+}
+
+currentTime::~currentTime ()
+{
+    DeleteCriticalSection ( & this->mutex );
+    if ( this->pTimer ) {
+        this->pTimer->destroy ();
+    }
+    if ( this->pTimerQueue ) {
+        this->pTimerQueue->release ();
+    }
+}
+
+void currentTime::getCurrentTime ( epicsTimeStamp & dest ) 
+{
+    if ( this->perfCtrPresent ) {
+        EnterCriticalSection ( & this->mutex );
+
+        LARGE_INTEGER curPerfCounter;
+	    QueryPerformanceCounter ( & curPerfCounter );
+
+        LONGLONG offset;
+	    if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
+            offset = curPerfCounter.QuadPart - this->lastPerfCounter;
+        }
+        else {
+		    //
+		    // must have been a timer roll-over event
+            //
+            // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+            // counter. This is currently about 245118 years using the perf
+            // counter freq value on my system (1193182). Nevertheless, I
+            // have code for this situation because the performance 
+            // counter resolution will more than likely improve over time.
+		    //
+            offset = ( MAXLONGLONG - this->lastPerfCounter )
+                                + ( curPerfCounter.QuadPart + MAXLONGLONG );
+	    }
+        offset *= EPICS_TIME_TICKS_PER_SEC;
+        offset /= this->perfCounterFreq;
+        LONGLONG epicsTimeCurrent = this->epicsTimeLast + offset;
+        if ( this->epicsTimeLast > epicsTimeCurrent ) {
+            errlogPrintf ( "currentTime::getCurrentTime(): time discontinuity detected\n" );
+        }
+        this->epicsTimeLast = epicsTimeCurrent;
+        this->lastPerfCounter = curPerfCounter.QuadPart;
+
+        LeaveCriticalSection ( & this->mutex );
+
+	    dest.secPastEpoch = static_cast < epicsUInt32 > 
+            ( epicsTimeCurrent / EPICS_TIME_TICKS_PER_SEC );
+        dest.nsec = static_cast < epicsUInt32 >
+            ( epicsTimeCurrent % EPICS_TIME_TICKS_PER_SEC );
+    }
+    else {
+        // if high resolution performance counters are not supported then 
+        // fall back to low res file time
+        FILETIME ft;
+    	GetSystemTimeAsFileTime ( & ft );
+        LARGE_INTEGER lift;
+	    lift.LowPart = ft.dwLowDateTime;
+	    lift.HighPart = ft.dwHighDateTime;
+
+        if ( lift.QuadPart > this->epicsEpochInFileTime ) {
+            LONGLONG fileTimeTicksSinceEpochEPICS = 
+                lift.QuadPart - this->epicsEpochInFileTime;
+	        dest.secPastEpoch = static_cast < epicsUInt32 > 
+                ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
+            dest.nsec = static_cast < epicsUInt32 >
+                ( fileTimeTicksSinceEpochEPICS * 100 );
+        }
+        else {
+	        dest.secPastEpoch = 0;
+            dest.nsec = 0;
+        }
+    }
+}
+
+//
+// Maintain corrected version of the performance counter's frequency using
+// a phase locked loop. This approach is similar to NTP's.
+//
+epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
+{
+
+    // avoid interruptions by briefly becoming a time critical thread
+    LARGE_INTEGER curFileTime;
+    LARGE_INTEGER curPerfCounter;
+    {
+        int originalPriority = GetThreadPriority ( GetCurrentThread () );
+        SetThreadPriority ( GetCurrentThread (), THREAD_PRIORITY_TIME_CRITICAL );
+        FILETIME ft;
+        GetSystemTimeAsFileTime ( & ft );
+	    QueryPerformanceCounter ( & curPerfCounter );
+        SetThreadPriority ( GetCurrentThread (), originalPriority );
+
+        curFileTime.LowPart = ft.dwLowDateTime;
+	    curFileTime.HighPart = ft.dwHighDateTime;
+    }
+
+    EnterCriticalSection ( & this->mutex );
+
+    LONGLONG perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
+	if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
+        perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
+    }
+    else {
+		//
+		// must have been a timer roll-over event
+        //
+        // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+        // counter. This is currently about 245118 years using the perf
+        // counter freq value on my system (1193182). Nevertheless, I
+        // have code for this situation because the performance 
+        // counter resolution will more than likely improve over time.
+		//
+        perfCounterDiff = ( MAXLONGLONG - this->lastPerfCounterPLL )
+                            + ( curPerfCounter.QuadPart + MAXLONGLONG );
+	}
+    this->lastPerfCounterPLL = curPerfCounter.QuadPart;
+
+    LONGLONG fileTimeDiff = curFileTime.QuadPart - this->lastFileTimePLL;
+    this->lastFileTimePLL = curFileTime.QuadPart;
+
+    // discard glitches
+    if ( fileTimeDiff == 0 ) {
+        LeaveCriticalSection( & this->mutex );
+        debugPrintf ( ( "currentTime: file time difference in PLL was zero\n" ) );
+        return expireStatus ( restart, 1.0 /* sec */ );
+    }
+
+    LONGLONG freq = ( FILE_TIME_TICKS_PER_SEC * perfCounterDiff ) / fileTimeDiff; 
+    LONGLONG delta = freq - this->perfCounterFreqPLL;
+
+    // discard glitches
+    LONGLONG bound = this->perfCounterFreqPLL >> 10;
+    if ( delta < -bound || delta > bound ) {
+        LeaveCriticalSection( & this->mutex );
+        debugPrintf ( ( "freq est out of bounds l=%d e=%d h=%d\n",
+            static_cast < int > ( -bound ),
+            static_cast < int > ( delta ),
+            static_cast < int > ( bound ) ) );
+        return expireStatus ( restart, 1.0 /* sec */ );
+    }
+
+    // update feedback loop estimating the performance counter's frequency
+    LONGLONG feedback = delta >> 8;
+    this->perfCounterFreqPLL += feedback;
+
+    LONGLONG perfCounterDiffSinceLastFetch;
+	if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
+        perfCounterDiffSinceLastFetch = 
+            curPerfCounter.QuadPart - this->lastPerfCounter;
+    }
+    else {
+		//
+		// must have been a timer roll-over event
+        //
+        // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+        // counter. This is currently about 245118 years using the perf
+        // counter freq value on my system (1193182). Nevertheless, I
+        // have code for this situation because the performance 
+        // counter resolution will more than likely improve over time.
+		//
+        perfCounterDiffSinceLastFetch = 
+            ( MAXLONGLONG - this->lastPerfCounter )
+                            + ( curPerfCounter.QuadPart + MAXLONGLONG );
+	}
+
+    // Update the current estimated time.
+    this->epicsTimeLast += 
+        ( perfCounterDiffSinceLastFetch * EPICS_TIME_TICKS_PER_SEC ) 
+            / this->perfCounterFreq;
+    this->lastPerfCounter = curPerfCounter.QuadPart;
+
+    LONGLONG epicsTimeFromCurrentFileTime = 
+        ( curFileTime.QuadPart - this->epicsEpochInFileTime )*
+        ( EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
+
+    delta = epicsTimeFromCurrentFileTime - this->epicsTimeLast;
+    if ( delta > EPICS_TIME_TICKS_PER_SEC || delta < -EPICS_TIME_TICKS_PER_SEC ) {
+        // When there is an abrupt shift in the current computed time vs 
+        // the time derived from the current file time then someone has 
+        // probabably adjusted the real time clock and the best reaction 
+        // is to just assume the new time base
+  	    this->epicsTimeLast = epicsTimeFromCurrentFileTime;
+ 	    this->perfCounterFreq = this->perfCounterFreqPLL;
+        debugPrintf ( ( "currentTime: time discontinuity detected\n" ) );
+    } 
+    else {
+        // update the effective performance counter frequency that will bring 
+        // our calculated time base in syncy with file time one second from now.
+    	this->perfCounterFreq = 
+            ( EPICS_TIME_TICKS_PER_SEC * this->perfCounterFreqPLL )
+                / ( delta + EPICS_TIME_TICKS_PER_SEC );
+
+        // limit effective performance counter frequency rate of change
+        LONGLONG lowLimit = this->perfCounterFreqPLL - bound;
+        if ( this->perfCounterFreq < lowLimit ) {
+            debugPrintf ( ( "currentTime: out of bounds low freq excursion %d\n",
+                static_cast <int> ( lowLimit - this->perfCounterFreq ) ) );
+            this->perfCounterFreq = lowLimit;
+        } 
+        else {
+            LONGLONG highLimit = this->perfCounterFreqPLL + bound;
+            if ( this->perfCounterFreq > highLimit ) {
+                debugPrintf ( ( "currentTime: out of bounds high freq excursion %d\n",
+                    static_cast <int> ( this->perfCounterFreq - highLimit ) ) );
+                this->perfCounterFreq = highLimit;
+            }
+        }
+
+#       if defined ( DEBUG ) 
+            LARGE_INTEGER sysFreq;
+	        QueryPerformanceFrequency ( & sysFreq );
+            double freqDiff = static_cast <int> 
+                ( this->perfCounterFreq - sysFreq.QuadPart );
+            freqDiff /= sysFreq.QuadPart;
+            freqDiff *= 100.0;
+            double freqEstDiff = static_cast <int> 
+                ( this->perfCounterFreqPLL - sysFreq.QuadPart );
+            freqEstDiff /= sysFreq.QuadPart;
+            freqEstDiff *= 100.0;
+            debugPrintf ( ( "currentTime: freq delta %f %% freq est delta %f %% time delta %f sec\n", 
+                freqDiff, freqEstDiff, static_cast < double > ( delta ) / EPICS_TIME_TICKS_PER_SEC ) );
+#       endif
+    }
+
+    LeaveCriticalSection ( & this->mutex );
+
+    return expireStatus ( restart, 1.0 /* sec */ );
+}
+
+void currentTime::startPLL ()
+{
+    this->pTimer->start ( *this, 1.0 );
+}
 
 
 

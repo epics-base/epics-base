@@ -321,8 +321,7 @@ void tcpRecvThread::run ()
                 }
             }
             else {
-                char buf;
-                ::recv ( this->iiu.sock, &buf, 1, MSG_PEEK );
+                this->iiu.blockUntilBytesArePendingInOS();
                 nBytesIn = 0u;
             }
  
@@ -357,9 +356,9 @@ void tcpRecvThread::run ()
                 break;
             }
 
-            // force the receive watchdog to be reset every 50 frames
+            // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
-            while ( contiguousFrameCount++ < 50 ) {
+            while ( contiguousFrameCount++ < 5 ) {
 
                 if ( nBytesIn == pComBuf->capacityBytes () ) {
                     if ( this->iiu.contigRecvMsgCount >= 
@@ -386,20 +385,18 @@ void tcpRecvThread::run ()
                     break;
                 }
 
+                if ( ! this->iiu.bytesArePendingInOS () ) {
+                    break;
+                }
+
                 // allocate a new com buf
                 pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
-                nBytesIn = 0u;
 
-                {
-                    if ( ! this->iiu.bytesArePendingInOS () ) {
-                        break;
-                    }
-                    nBytesIn = pComBuf->fillFromWire ( this->iiu );
-                    if ( nBytesIn == 0u ) {
-                        // outer loop checks to see if state is connected
-                        // ( properly set by fillFromWire() )
-                        break;
-                    }
+                nBytesIn = pComBuf->fillFromWire ( this->iiu );
+                if ( nBytesIn == 0u ) {
+                    // outer loop checks to see if state is connected
+                    // ( properly set by fillFromWire() )
+                    break;
                 }
             }
         }
@@ -1346,22 +1343,49 @@ void tcpiiu::flushRequest ()
     this->sendThreadFlushEvent.signal ();
 }
 
+void tcpiiu::blockUntilBytesArePendingInOS () const
+{
+#if 0
+    FD_SET readBits;
+    FD_ZERO ( & readBits );
+    while ( true ) {
+        FD_SET ( this->sock, & readBits );
+        struct timeval tmo;
+        tmo.tv_sec = 1;
+        tmo.tv_usec = 0;
+        int status = select ( this->sock + 1, & readBits, NULL, NULL, & tmo );
+        if ( status > 0 ) {
+            if ( FD_ISSET ( this->sock, & readBits ) ) {	
+                return;
+            }
+        }
+        else if ( status < 0 ) {
+            return;
+        }
+    }
+#else
+    char buf;
+    int status = ::recv ( this->sock, & buf, 1, MSG_PEEK );
+#endif
+}
+
 bool tcpiiu::bytesArePendingInOS () const
 {
 #if 0
     FD_SET readBits;
-
     FD_ZERO ( & readBits );
     FD_SET ( this->sock, & readBits );
-
-    int status = select ( ???, & readBits, NULL, NULL, zero tmo );
-    if ( status ) {
+    struct timeval tmo;
+    tmo.tv_sec = 0;
+    tmo.tv_usec = 0;
+    int status = select ( this->sock + 1, & readBits, NULL, NULL, & tmo );
+    if ( status > 0 ) {
         if ( FD_ISSET ( this->sock, & readBits ) ) {	
             return true;
         }
     }
-#endif
-
+    return false;
+#else
     osiSockIoctl_t bytesPending;
     int status = socket_ioctl ( this->sock, // X aCC 392
                             FIONREAD, & bytesPending );
@@ -1372,6 +1396,7 @@ bool tcpiiu::bytesArePendingInOS () const
         return true;
     }
     return false;
+#endif
 }
 
 

@@ -1,10 +1,10 @@
-# CONFIG.solaris-sparc.solaris-sparc
+# CONFIG.solaris-x86.solaris-x86
 #
 # $Id$
 # This file is maintained by the build community.
 #
 # Definitions for linux-x86 host archs
-# Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
+# Sites may override these definitions in CONFIG_SITE.solaris-x86.solaris-x86
 #-------------------------------------------------------
 
 # Include definitions common to all Unix target archs

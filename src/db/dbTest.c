@@ -126,6 +126,10 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
             return(0);
         }
     }
+    if(!pdbbase) {
+        fprintf(stderr,"no database has been loaded\n");
+        return(0);
+    }
     dbInitEntry(pdbbase,pdbentry);
     if(!precordTypename)
 	status = dbFirstRecordType(pdbentry);
@@ -173,6 +177,10 @@ long epicsShareAPI dbnr(int verbose)
     int		nrecords;
     int		total=0;
 
+    if(!pdbbase) {
+        fprintf(stderr,"no database has been loaded\n");
+        return(0);
+    }
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     if(status) printf("No record description\n");
@@ -242,6 +250,10 @@ long epicsShareAPI dbgrep(char *pmask)
     long	status;
     char	*pname;
 
+    if(!pdbbase) {
+        fprintf(stderr,"no database has been loaded\n");
+        return(0);
+    }
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {
@@ -630,6 +642,10 @@ long epicsShareAPI dbior(char	*pdrvName,int type)
     devSup		*pdevSup;
     struct dset		*pdset;
 
+    if(!pdbbase) {
+        fprintf(stderr,"no database has been loaded\n");
+        return(0);
+    }
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	pname = pdrvSup->name;
@@ -670,8 +686,8 @@ int epicsShareAPI dbhcr(char *filename)
     int		isStdout = TRUE;
 
     if(!pdbbase) {
-	printf("No database\n");
-	return(0);
+        fprintf(stderr,"no database has been loaded\n");
+        return(0);
     }
     if(filename && strlen(filename)) {
         int fd;

@@ -57,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.44  1998/05/29 00:03:20  jhill
+ * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
+ *
  * Revision 1.43  1998/04/15 21:58:29  jhill
  * fixed the doc
  *
@@ -113,6 +116,7 @@
 static char *sccsId = "@(#)$Id$";
 
 #include	"iocinf.h"
+#include	"bsdSocketResource.h"
 
 /*
  * one socket per client so we will get the ECONNREFUSED
@@ -163,6 +167,8 @@ void epicsShareAPI ca_repeater()
 	unsigned short port;
 	makeSocketReturn msr;
 
+	assert (bsdSockAttach());
+
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 
 		CA_REPEATER_PORT);
@@ -175,12 +181,14 @@ void epicsShareAPI ca_repeater()
 		 * test for server was already started
 		 */
 		if (msr.errNumber==SOCK_EADDRINUSE) {
+			bsdSockRelease();
 			exit(0);
 		}
 		ca_printf("%s: Unable to create repeater socket because %d=\"%s\"\n",
 			__FILE__,
 			msr.errNumber,
 			msr.pErrStr);
+		bsdSockRelease();
 		exit(0);
 	}
 
@@ -190,6 +198,7 @@ void epicsShareAPI ca_repeater()
 	if(status != OK){
 		ca_printf(
 	"CA Repeater: failed during initialization - no local IP address\n");
+		bsdSockRelease();
 		exit (0);
 	}
 
@@ -200,13 +209,13 @@ void epicsShareAPI ca_repeater()
 	while(TRUE){
 		caHdr	*pMsg;
 
-    		size = recvfrom(	
-				sock,
-				buf,
-				sizeof(buf),
-				0,
-				(struct sockaddr *)&from, 
-				&from_size);
+		size = recvfrom(	
+			sock,
+			buf,
+			sizeof(buf),
+			0,
+			(struct sockaddr *)&from, 
+			&from_size);
 
    	 	if(size < 0){
 #			ifdef linux

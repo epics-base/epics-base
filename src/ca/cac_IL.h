@@ -43,14 +43,3 @@ inline const char * cac::userNamePointer ()
 {
     return this->pUserName;
 }
-
-inline void cac::lockOutstandingIO () const
-{
-    this->defaultMutex.lock ();
-}
-
-inline void cac::unlockOutstandingIO () const
-{
-    this->defaultMutex.unlock ();
-}
-

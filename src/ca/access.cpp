@@ -248,35 +248,35 @@ LOCAL void ca_default_exception_handler (struct exception_handler_args args)
 /*
  * default local pv interface entry points that always fail
  */
-LOCAL pvId pvNameToIdNoop (const char *pname) 
+LOCAL pvId pvNameToIdNoop (const char *) 
 {
     return 0;
 }
-LOCAL int pvPutFieldNoop (pvId id, int src_type, 
-                         const void *psrc, int no_elements)
+LOCAL int pvPutFieldNoop (pvId, int, 
+                         const void *, int)
 {
     return -1;
 }
-LOCAL int pvGetFieldNoop (pvId id, int dest_type,
-                    void *pdest, int no_elements, void *pfl)
+LOCAL int pvGetFieldNoop (pvId, int,
+                    void *, int, void *)
 {
     return -1;
 }
-LOCAL long pvPutNotifyInitiateNoop (pvId id, 
-    unsigned type, unsigned long count, const void *pValue, 
-    void (*callback)(void *), void *usrPvt, putNotifyId * pID)
+LOCAL long pvPutNotifyInitiateNoop (pvId, 
+    unsigned, unsigned long, const void *, 
+    void (*)(void *), void *, putNotifyId *)
 {
     return -1;
 }
-LOCAL void pvPutNotifyDestroyNoop (putNotifyId idIn)
+LOCAL void pvPutNotifyDestroyNoop (putNotifyId)
 {
 }
 
-LOCAL const char * pvNameNoop (pvId id)
+LOCAL const char * pvNameNoop (pvId)
 {
     return "";
 }
-LOCAL unsigned long pvNoElementsNoop (pvId id)
+LOCAL unsigned long pvNoElementsNoop (pvId)
 {
     return 0u;
 }
@@ -284,37 +284,37 @@ short pvTypeNoop (pvId)
 {
     return -1;
 }
-LOCAL dbEventCtx pvEventQueueInitNoop (void)
+LOCAL dbEventCtx pvEventQueueInitNoop ()
 {
     return NULL;
 }
-LOCAL int pvEventQueueStartNoop (dbEventCtx ctx, const char *taskname, 
-        void (*init_func)(void *), void *init_func_arg, int priority_offset)
+LOCAL int pvEventQueueStartNoop (dbEventCtx, const char *, 
+        void (*)(void *), void *, int)
 {
     return -1;
 }
-LOCAL void pvEventQueueCloseNoop (dbEventCtx ctx)
+LOCAL void pvEventQueueCloseNoop (dbEventCtx)
 {
 }
-LOCAL dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx ctx, pvId id,
-        void (*user_sub)(void *usrArg, pvId id, int hold, struct db_field_log *pfl), 
-        void *user_arg, unsigned select)
+LOCAL dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
+        void (*)(void *, pvId, int, struct db_field_log *), 
+        void *, unsigned)
 {
     return NULL;
 }
-LOCAL int pvEventQueuePostSingleEventNoop (dbEventSubscription es)
+LOCAL int pvEventQueuePostSingleEventNoop (dbEventSubscription)
 {
     return -1;
 }
-LOCAL void pvEventQueueCancelEventNoop (dbEventSubscription dbes)
+LOCAL void pvEventQueueCancelEventNoop (dbEventSubscription)
 {
 }
-LOCAL int pvEventQueueAddExtraLaborEventNoop (dbEventCtx ctx, 
-        void (*func)(void *), void *arg)
+LOCAL int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
+        void (*)(void *), void *)
 {
     return -1;
 }
-LOCAL int pvEventQueuePostExtraLaborNoop (dbEventCtx ctx)
+LOCAL int pvEventQueuePostExtraLaborNoop (dbEventCtx)
 {
     return -1;
 }
@@ -3358,3 +3358,5 @@ epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context)
     threadPrivateSet (caClientContextId, context);
     return ECA_NORMAL;
 }
+
+

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/06/13 09:14:11  jhill
+ * connect/search proto changes
+ *
  * Revision 1.3  1997/01/22 21:08:17  jhill
  * removed use of ## for VAXC port
  *
@@ -71,6 +74,9 @@
  *
  *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
  * $Log$
+ * Revision 1.4  1997/06/13 09:14:11  jhill
+ * connect/search proto changes
+ *
  * Revision 1.3  1997/01/22 21:08:17  jhill
  * removed use of ## for VAXC port
  *
@@ -131,11 +137,12 @@
  * environment variables "EPICS_CA_REPEATER_PORT" and
  * "EPICS_CA_SERVER_PORT"
  */
-#define	CA_PORT_BASE		IPPORT_USERRESERVED + 56U
+#define CA_PORT_BASE		IPPORT_USERRESERVED + 56U
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2u)
 #define CA_REPEATER_PORT	(CA_PORT_BASE+CA_PROTOCOL_VERSION*2u+1u)
-
-#define MAX_UDP			1024u
+/* 1492(min of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) joh 8-6-97 */
+#define ETHERNET_MAX_UDP	(1482u-20u-8u)
+#define MAX_UDP			1024u /* original MAX_UDP */
 #define MAX_TCP			(MAX_UDP*16u) /* so waveforms fit */
 #define MAX_MSG_SIZE		(MAX_TCP) /* the larger of tcp and udp max */
 

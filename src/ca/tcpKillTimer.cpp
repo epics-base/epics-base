@@ -39,7 +39,7 @@ void tcpKillTimer::initialize ()
     this->timer.start ( *this, 0.0 );
 }
 
-epicsTimerNotify::expireStatus tcpKillTimer::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus tcpKillTimer::expire ( const epicsTime & /* currentTime */ )
 {
     this->clientCtx.uninstallIIU ( this->iiu );
     return noRestart;

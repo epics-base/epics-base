@@ -11,11 +11,9 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
 
-DIRECTORY_TARGETS = $(INSTALL_DB) $(INSTALL_DBD)
-
 all::	install
 
-inc::	$(DIRECTORY_TARGETS) $(INSTALL_DBS)
+inc::	$(INSTALL_DBS)
 
 rebuild:: clean install
 
@@ -27,10 +25,6 @@ clean::
 	@echo "Cleaning"
 	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw *.edf esiread.cnf
 
-$(DIRECTORY_TARGETS):
-	$(MKDIR) $@
-
-
 ##################################################### "Foreign" templates
 
 TEMPLATE_LINKS = $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
@@ -41,7 +35,7 @@ DB_NOT_FROM_SOURCE = $(filter-out $(DB_FROM_SOURCE), $(filter %.db, $(DB)))
 ifneq '$(TEMPLATE_LINKS)' ''
 build:: $(notdir $(TEMPLATE_LINKS))
 endif
-build:: $(INSTALL_DBD) $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB)
+build:: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB)
 
 $(notdir $(TEMPLATE_LINKS)): %.template:
 ifndef WIN32
@@ -56,7 +50,7 @@ endif
 
 $(INSTALL_DB)/%.db: %.db
 	@echo "Installing database $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 # Must have DBDNAME defined to use dbst optimization
 ifndef DBDNAME
@@ -95,7 +89,7 @@ endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $(@F) $(@D)
+	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
 %.substitutions: %.subst
 	@$(MV) $< $@
@@ -116,7 +110,7 @@ endif
 # Installed template files (dbLoadTemplate() on IOC side)
 $(INSTALL_DB)/%.template: %.template
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $(@F) $(@D)
+	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
 %.template: %.templ
 	@$(MV) $< $@
@@ -143,11 +137,11 @@ $(addsuffix .raw,$(DB_FROM_SOURCE)): %.db.raw: ../%.db
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 bpt%.dbd: ../bpt%.data
 	$(RM) $@

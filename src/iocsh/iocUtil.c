@@ -13,6 +13,9 @@
 #include "ioccrf.h"
 #include "iocUtilRegister.h"
 
+/* declared here because not all OS have unistd.h */
+extern char *getcwd ( char *buffer, int maxlen );
+extern int chdir ( const char *dirname );
 
 /* < (runScript) command */
 static ioccrfArg runScriptArg0 = { "file name",ioccrfArgString,0};
@@ -33,7 +36,11 @@ static ioccrfArg *chdirArgs[1] = {&chdirArg0};
 static ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(ioccrfArg **args)
 {
-    chdir((char *)args[0]->value);
+    int status;
+    status = chdir((char *)args[0]->value);
+    if (status) {
+        printf ("Invalid directory path ignored\n");
+    }
 }
 
 /* print current working directory */

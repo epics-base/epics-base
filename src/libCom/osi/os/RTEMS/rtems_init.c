@@ -35,7 +35,7 @@
  */
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#define CONFIGURE_EXECUTIVE_RAM_SIZE        (2048*1024)
+#define CONFIGURE_EXECUTIVE_RAM_SIZE        (1024*1024)
 #define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
 #define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)
 #define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
@@ -43,8 +43,8 @@
 
 #define CONFIGURE_MICROSECONDS_PER_TICK     20000
 
-#define CONFIGURE_INIT_TASK_PRIORITY    220
-#define NETWORK_TASK_PRIORITY            90
+#define CONFIGURE_INIT_TASK_PRIORITY    80
+#define NETWORK_TASK_PRIORITY           90
 
 #define CONFIGURE_INIT
 #define CONFIGURE_INIT_TASK_INITIAL_MODES (RTEMS_PREEMPT | \
@@ -53,7 +53,7 @@
                     RTEMS_INTERRUPT_LEVEL(0))
 #define CONFIGURE_INIT_TASK_INITIAL_ATTRIBUTES (RTEMS_FLOATING_POINT | \
                     RTEMS_LOCAL)
-#define CONFIGURE_INIT_TASK_STACK_SIZE  (12*1024)
+#define CONFIGURE_INIT_TASK_STACK_SIZE  (16*1024)
 rtems_task Init (rtems_task_argument argument);
 
 #define CONFIGURE_HAS_OWN_DEVICE_DRIVER_TABLE

@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.28  1998/10/06 18:09:28  mrk
+ * fixed sync bugs
+ *
  * Revision 1.27  1998/09/29 14:11:02  mrk
  * TSsetClockFromUnix was made global
  *
@@ -1733,7 +1736,6 @@ static long TSgetCurrentTime(struct timespec* ts)
 static long TSforceSoftSync(int Card)
 {
     semGive(TSdata.sync_occurred);
-    TSforceSync(0);
     return 0;
 }
 

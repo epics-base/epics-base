@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  1999/05/11 00:30:04  jhill
+ * removed unused includes
+ *
  * Revision 1.10  1999/05/10 23:40:06  jhill
  * removed timespec def and os specific ifdef maintenance nightmare
  *
@@ -147,7 +150,7 @@ typedef union {
  strings and timestamps in an obsure, horrible way with the Dumb variables
 */
 
-#ifndef AIT_TYPES_SOURCE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -160,6 +163,6 @@ epicsShareExtern double aitMin[aitTotal];
 #ifdef __cplusplus
 }
 #endif
-#endif
+
 
 #endif

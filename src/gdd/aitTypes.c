@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1998/04/17 17:49:25  jhill
+ * fixed range problem in string to fp convert
+ *
  * Revision 1.4  1997/08/05 00:51:07  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -24,10 +27,7 @@
 
 #include <limits.h>
 #include <float.h>
-
-#define AIT_TYPES_SOURCE 1
-#include <sys/types.h>
-
+#include <stddef.h>
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"

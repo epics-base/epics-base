@@ -1,4 +1,5 @@
 
+#include "cadef.h"
 
 #ifdef __cplusplus
 extern "C" {

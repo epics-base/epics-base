@@ -31,9 +31,11 @@
 #include "udpiiu.h"
 #include "inetAddrID.h"
 
-int main ( int, char ** )
+int main ( int argc, char ** argv )
 {
     epicsTime programBeginTime = epicsTime::getCurrent ();
+    bool validCommandLine = false;
+    unsigned interest = 0u;
     SOCKET sock;
     osiSockAddr addr;
     osiSocklen_t addrSize;
@@ -43,6 +45,29 @@ int main ( int, char ** )
     ca_uint16_t serverPort;
     ca_uint16_t repeaterPort;
     int status;
+
+    if ( argc == 1 ) {
+        validCommandLine = true;
+    }
+    else if ( argc == 2 ) {
+        status = sscanf ( argv[1], " -i%u ", & interest );
+        if ( status == 1 ) {
+            validCommandLine = true;
+        }
+    }
+    else if ( argc == 3 ) {
+        if ( strcmp ( argv[1], "-i" ) == 0 ) {
+            status = sscanf ( argv[2], " %u ", & interest );
+            if ( status == 1 ) {
+                validCommandLine = true;
+            }
+        }
+    }
+
+    if ( ! validCommandLine ) {
+        printf ( "usage: \"%s <-i interestLevel>\"", argv[0] );
+        return 0;
+    }
 
     serverPort =
         envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
@@ -173,7 +198,6 @@ int main ( int, char ** )
                 unsigned beaconNumber = ntohl ( pCurMsg->m_cid );
                 unsigned protocolRevision = ntohs ( pCurMsg->m_dataType );
 
-                bool netChange;
                 epicsTime currentTime = epicsTime::getCurrent();
 
                 /*
@@ -181,7 +205,22 @@ int main ( int, char ** )
                  */
                 bhe *pBHE = beaconTable.lookup ( ina );
                 if ( pBHE ) {
-                    netChange = pBHE->updatePeriod ( programBeginTime, currentTime, beaconNumber, protocolRevision );
+                    epicsTime previousTime = pBHE->updateTime ();
+                    bool anomaly = pBHE->updatePeriod ( programBeginTime, 
+                        currentTime, beaconNumber, protocolRevision );
+                    if ( anomaly ) {
+                        char date[64];
+                        currentTime.strftime ( date, sizeof ( date ), 
+                            "%a %b %d %Y %H:%M:%S.%f");
+                        char host[64];
+                        ipAddrToA ( &ina, host, sizeof ( host ) );
+                        printf ( "%-40s %s\n", 
+                            host, date );
+                        if ( interest > 0 ) {
+                            printf ( "\testimate=%f current=%f\n", 
+                                pBHE->period (), currentTime - previousTime );
+                        }
+                    }
                 }
                 else {
                     /*
@@ -191,21 +230,12 @@ int main ( int, char ** )
                      * time that we have seen a server's beacon
                      * shortly after the program started up)
                      */
-                    netChange = false;
-                    pBHE = new bhe ( currentTime, ina );
+                    pBHE = new bhe ( currentTime, beaconNumber, ina );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
                             pBHE->destroy ();
                         }
                     }
-                }
-
-                if ( netChange ) {
-                    char date[64];
-                    currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
-                    char host[64];
-                    ipAddrToA ( &ina, host, sizeof ( host ) );
-                    errlogPrintf ("CA server beacon anomaly: %s %s\n", date, host );
                 }
             }
             pCurBuf += msgSize;

@@ -57,6 +57,8 @@
 /*	031292 	joh	clear pend recv cnt even if its a poll in	*/
 /*			ca_pend_io()					*/
 /*	031892 	joh	initial broadcast retry delay is now a #define	*/
+/*	032092	joh	dont allow them to add an event which does not	*/
+/*			select anything (has a nill mask)		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -1538,6 +1540,9 @@ unsigned			mask;
 
   if(count > chix->count && chix->type != TYPENOTCONN)
     return ECA_BADCOUNT;
+
+  if(!mask)
+    return ECA_BADMASK;
 
   LOCK;
 

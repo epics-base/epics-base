@@ -7,3 +7,4 @@
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
 MSI=/home/epics/CLS/epics/extensions/bin/$(EPICS_HOST_ARCH)/msi
+#SEQ=<full path to sequencer>

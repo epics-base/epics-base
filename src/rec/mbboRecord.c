@@ -125,7 +125,10 @@ static long init_record(pmbbo,pass)
     long status;
     int	i;
 
-    if (pass==0) return(0);
+    if (pass==0) {
+        init_common(pmbbo);
+        return(0);
+    }
 
     /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (pmbbo->siml.type == CONSTANT) {
@@ -157,7 +160,7 @@ static long init_record(pmbbo,pass)
 
 	status=(*pdset->init_record)(pmbbo);
         /* init_record might set status */
-        init_common(pmbbo);
+	init_common(pmbbo);
 	if(status==0){
 		rval = pmbbo->rval;
 		if(pmbbo->shft>0) rval >>= pmbbo->shft;

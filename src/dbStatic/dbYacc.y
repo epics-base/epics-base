@@ -64,8 +64,7 @@ menu_body:	'{' choice_list '}'
 {
 	if(dbStaticDebug>2) printf("menu_body\n");
 	dbMenuBody();
-}
-	| include ;
+};
 
 choice_list:	choice_list choice | choice;
 
@@ -73,7 +72,8 @@ choice:	tokenCHOICE '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("choice %s %s\n",$3,$5);
 	dbMenuChoice($3,$5);
-} ;
+} 
+	| include;
 
 recordtype_head: '(' tokenSTRING ')'
 {
@@ -163,7 +163,17 @@ record_head: '(' tokenSTRING ',' tokenSTRING ')'
 	dbRecordHead($2,$4);
 };
 
-record_body: '{' record_field_list '}'
+record_body: /*Null*/
+{
+	if(dbStaticDebug>2) printf("null record_body\n");
+	dbRecordBody();
+}
+	| '{' '}'
+{
+	if(dbStaticDebug>2) printf("record_body - no fields\n");
+	dbRecordBody();
+}
+        | '{' record_field_list '}'
 {
 	if(dbStaticDebug>2) printf("record_body\n");
 	dbRecordBody();

@@ -66,9 +66,9 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
  *	jgvtr1_stat(card)
  *
  */
-#include <vxWorks.h>
 
 /* drvJgvtr1.c -  Driver Support Routines for Jgvtr1 */
+
 #include	<vxWorks.h>
 
 #include	<dbDefs.h>

@@ -32,6 +32,8 @@ include $(TOP)/configure/RULES
 #   independently.
 asLib$(OBJ): asLib_lex.c ../asLibRoutines.c
 
+$(INSTALL_INC)/asLib.h:../asLib.h
+
 clean::
 	@$(RM) asLib.c asLib_lex.c 
 

@@ -17,6 +17,7 @@
 #include <ctype.h>
 
 #include "asDbLib.h"
+#include "asCa.h"
 #define epicsExportSharedSymbols
 #include "iocsh.h"
 #include "asTestRegister.h"
@@ -103,6 +104,20 @@ static void astacCallFunc(const iocshArgBuf *args)
     astac(args[0].sval,args[1].sval,args[2].sval);
 }
 
+/* ascar */
+static const iocshArg ascarArg0 = { "level",iocshArgInt};
+static const iocshArg * const ascarArgs[1] = {&ascarArg0};
+static const iocshFuncDef ascarFuncDef = {"ascar",1,ascarArgs};
+static void ascarCallFunc(const iocshArgBuf *args)
+{
+    ascar(args[0].ival);
+}
+
+static int * const pasCaDebug = &asCaDebug;
+static struct iocshVarDef vardefs[] = {
+    {"asCaDebug", iocshArgInt,(void *)&asCaDebug},
+    {0,iocshArgInt,0}
+};
 
 void epicsShareAPI asTestRegister(void)
 {
@@ -115,4 +130,6 @@ void epicsShareAPI asTestRegister(void)
     iocshRegister(&asprulesFuncDef,asprulesCallFunc);
     iocshRegister(&aspmemFuncDef,aspmemCallFunc);
     iocshRegister(&astacFuncDef,astacCallFunc);
+    iocshRegister(&ascarFuncDef,ascarCallFunc);
+    iocshRegisterVariable(vardefs);
 }

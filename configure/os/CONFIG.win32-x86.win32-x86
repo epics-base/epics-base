@@ -49,8 +49,8 @@ CC = cl
 #
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
-CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0 
-CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 
+CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0
+CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0
 CONFORM_CFLAGS_TRAD = /nologo
 
 #
@@ -65,9 +65,10 @@ WARN_CFLAGS_NO =  /W1
 OPT_CFLAGS_YES = /Ox
 
 #
-# /Zi include debugging info in object files
+# /Z7 include debugging info in object files
 # /Fr create source browser file
-OPT_CFLAGS_NO = /Zi /Fr
+# /GZ catch bugs occurring only in optimized code
+OPT_CFLAGS_NO = /Z7 /GZ /DEPICS_DEBUG /D_CRTDBG_MAP_ALLOC
 
 #
 # the following options are required when
@@ -113,6 +114,7 @@ CONFORM_CXXFLAGS_STRICT = /nologo /D__STDC__=0 /GX /GR
 # /W<N> use warning level N
 # (maximum lint level warnings at level 4)
 WARN_CXXFLAGS_YES = /W3
+#WARN_CXXFLAGS_YES = /W4
 WARN_CXXFLAGS_NO =  /W1
 
 #
@@ -120,9 +122,10 @@ WARN_CXXFLAGS_NO =  /W1
 OPT_CXXFLAGS_YES = /Ox
 
 #
-# /Zi include debugging info in object files
+# /Z7 include debugging info in object files
 # /Fr create source browser file
-OPT_CXXFLAGS_NO = /Zi /Fr
+# /GZ catch bugs occurring only in optimized code
+OPT_CXXFLAGS_NO = /Z7 /GZ /DEPICS_DEBUG /D_CRTDBG_MAP_ALLOC
 
 #
 # the following options are required when
@@ -141,7 +144,8 @@ STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 #
 STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO= 
- 
+
+# add /profile here to run the ms profiler
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
 LINK_OPT_FLAGS_NO = /WARN:3 /debug 

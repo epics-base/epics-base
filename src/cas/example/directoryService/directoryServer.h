@@ -18,9 +18,9 @@
 //
 // EPICS
 //
-#include "epicsAssert.h"
 #define caNetAddrSock
 #include "casdef.h"
+#include "epicsAssert.h"
 #include "resourceLib.h"
 
 

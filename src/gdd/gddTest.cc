@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.3  1996/08/23 20:28:46  jbk
+// made dump functions print more useful information
+//
 // Revision 1.2  1996/07/26 02:23:18  jbk
 // Fixed the spelling error with Scalar.
 //
@@ -238,7 +241,8 @@ void gdd::dumpInfo(void)
 
 	if(isManaged())				fprintf(stderr," Managed");
 	if(isFlat())				fprintf(stderr," Flat");
-	if(isNetworkByteOrder())	fprintf(stderr," NetworkByteOrder");
+	if(isLocalDataFormat())		fprintf(stderr," LocalDataFormat");
+	if(isNetworkDataFormat())	fprintf(stderr," NetworkDataFormat");
 	if(isConstant())			fprintf(stderr," Constant");
 	if(isNoRef())				fprintf(stderr," NoReferencing");
 	fprintf(stderr,"\n");

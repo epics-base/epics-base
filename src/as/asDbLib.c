@@ -148,13 +148,16 @@ static long asInitCommon(void)
     long	status;
     char	buffer[BUF_SIZE];
 
-    if(!pacf) return(0);
     if(asLockInit) {
 	FASTLOCKINIT(&asLock);
 	asLockInit = FALSE;
     }
     FASTLOCK(&asLock);
     if(asActive)asCaStop();
+    if(!pacf) {
+	asActive = FALSE;
+	return(0);
+    }
     buffer[0] = 0;
     my_buffer = buffer;
     my_buffer_ptr = my_buffer;

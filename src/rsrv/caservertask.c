@@ -46,7 +46,7 @@
 static char *sccsId = "@(#)caservertask.c	1.13\t7/28/92";
 
 #include <vxWorks.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <taskLib.h>
 #include <types.h>
 #include <sockLib.h>
@@ -204,28 +204,28 @@ int free_client(struct client *client)
 		/* remove it from the list of clients */
 		/* list delete returns no status */
 		LOCK_CLIENTQ;
-		lstDelete((LIST *)&clientQ, (NODE *)client);
+		ellDelete((ELLLIST *)&clientQ, (ELLNODE *)client);
 		UNLOCK_CLIENTQ;
 		terminate_one_client(client);
 		LOCK_CLIENTQ;
-		lstAdd((LIST *)&rsrv_free_clientQ, (NODE *)client);
+		ellAdd((ELLLIST *)&rsrv_free_clientQ, (ELLNODE *)client);
 		UNLOCK_CLIENTQ;
 	} else {
 		LOCK_CLIENTQ;
-		while (client = (struct client *) lstGet(&clientQ))
+		while (client = (struct client *) ellGet(&clientQ))
 			terminate_one_client(client);
 
 		FASTLOCK(&rsrv_free_addrq_lck);
-		lstFree(&rsrv_free_addrq);
-		lstInit(&rsrv_free_addrq);
+		ellFree(&rsrv_free_addrq);
+		ellInit(&rsrv_free_addrq);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
 
 		FASTLOCK(&rsrv_free_eventq_lck);
-		lstFree(&rsrv_free_eventq);
-		lstInit(&rsrv_free_eventq);
+		ellFree(&rsrv_free_eventq);
+		ellInit(&rsrv_free_eventq);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
 
-		lstFree(&rsrv_free_clientQ);
+		ellFree(&rsrv_free_clientQ);
 
 		UNLOCK_CLIENTQ;
 	}
@@ -283,14 +283,14 @@ LOCAL int terminate_one_client(struct client *client)
 
 	pciu = (struct channel_in_use *) & client->addrq;
 	while (pciu = (struct channel_in_use *) pciu->node.next){
-		while (pevext = (struct event_ext *) lstGet((LIST *)&pciu->eventq)) {
+		while (pevext = (struct event_ext *) ellGet((ELLLIST *)&pciu->eventq)) {
 
 			status = db_cancel_event(
 					(struct event_block *)(pevext + 1));
 			if (status == ERROR)
 				taskSuspend(0);
 			FASTLOCK(&rsrv_free_eventq_lck);
-			lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
+			ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 		}
 	}
@@ -311,7 +311,7 @@ LOCAL int terminate_one_client(struct client *client)
 
 	/* free dbaddr str */
 	FASTLOCK(&rsrv_free_addrq_lck);
-	lstConcat(
+	ellConcat(
 		&rsrv_free_addrq,
 		&client->addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
@@ -341,12 +341,12 @@ int client_stat(void)
 
 
 	LOCK_CLIENTQ;
-	client = (struct client *) lstNext((NODE *)&clientQ);
+	client = (struct client *) ellNext((ELLNODE *)&clientQ);
 	while (client) {
 
 		log_one_client(client);
 
-		client = (struct client *) lstNext((NODE *)client);
+		client = (struct client *) ellNext((ELLNODE *)client);
 	}
 	UNLOCK_CLIENTQ;
 
@@ -355,19 +355,19 @@ int client_stat(void)
 	
 	bytes_reserved = 0;
 	bytes_reserved += sizeof(struct client)*
-				lstCount(&rsrv_free_clientQ);
+				ellCount(&rsrv_free_clientQ);
 	bytes_reserved += sizeof(struct channel_in_use)*
-				lstCount(&rsrv_free_addrq);
+				ellCount(&rsrv_free_addrq);
 	bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block())*
-				lstCount(&rsrv_free_eventq);
+				ellCount(&rsrv_free_eventq);
 	printf(	"There are currently %d bytes on the server's free list\n",
 		bytes_reserved);
 	printf(	"{%d client(s), %d channel(s), and %d event(s) (monitors)}\n",
-		lstCount(&rsrv_free_clientQ),
-		lstCount(&rsrv_free_addrq),
-		lstCount(&rsrv_free_eventq));
+		ellCount(&rsrv_free_clientQ),
+		ellCount(&rsrv_free_addrq),
+		ellCount(&rsrv_free_eventq));
 
-	return lstCount(&clientQ);
+	return ellCount(&clientQ);
 }
 
 
@@ -417,8 +417,8 @@ LOCAL void log_one_client(struct client *client)
 		bytes_reserved += sizeof(struct channel_in_use);
 		bytes_reserved += 
 			(sizeof(struct event_ext)+db_sizeof_event_block())*
-				lstCount((LIST *)&pciu->eventq);
-		pciu = (struct channel_in_use *) lstNext((NODE *)pciu);
+				ellCount((ELLLIST *)&pciu->eventq);
+		pciu = (struct channel_in_use *) ellNext((ELLNODE *)pciu);
 	}
 
 
@@ -431,7 +431,7 @@ LOCAL void log_one_client(struct client *client)
 	       	(psaddr->sin_addr.s_addr & 0x000000ff),
 	       	psaddr->sin_port,
 		state[client->disconnect?1:0]);
-	printf(	"\tChannel count %d\n", lstCount(&client->addrq));
+	printf(	"\tChannel count %d\n", ellCount(&client->addrq));
 	printf(	"\t%d bytes allocated\n", bytes_reserved);
 
 	pciu = (struct channel_in_use *) client->addrq.node.next;
@@ -439,7 +439,7 @@ LOCAL void log_one_client(struct client *client)
 		printf(	"\t%s(%d) ", 
 			pciu->addr.precord,
 			pciu->eventq.count);
-		pciu = (struct channel_in_use *) lstNext((NODE *)pciu);
+		pciu = (struct channel_in_use *) ellNext((ELLNODE *)pciu);
 	}
 
 	printf("\n");

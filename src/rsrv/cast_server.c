@@ -59,7 +59,7 @@
 static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <taskLib.h>
 #include <types.h>
 #include <socket.h>
@@ -335,9 +335,9 @@ clean_addrq(struct client *pclient)
 		}
 
 		if (delay > timeout) {
-			lstDelete((LIST *)&pclient->addrq, (NODE *)pciu);
+			ellDelete((ELLLIST *)&pclient->addrq, (ELLNODE *)pciu);
         		FASTLOCK(&rsrv_free_addrq_lck);
-			lstAdd((LIST *)&rsrv_free_addrq, (NODE *)pciu);
+			ellAdd((ELLLIST *)&rsrv_free_addrq, (ELLNODE *)pciu);
        			FASTUNLOCK(&rsrv_free_addrq_lck);
 			ndelete++;
 			maxdelay = max(delay, maxdelay);
@@ -368,7 +368,7 @@ struct client *create_udp_client(unsigned sock)
   	struct client *client;
 
     	LOCK_CLIENTQ;
-	client = (struct client *)lstGet(&rsrv_free_clientQ);
+	client = (struct client *)ellGet(&rsrv_free_clientQ);
     	UNLOCK_CLIENTQ;
 
 	if(!client){
@@ -401,7 +401,7 @@ struct client *create_udp_client(unsigned sock)
 	 * bfill(client, sizeof(*client), NULL);
 	 */
    
-      	lstInit(&client->addrq);
+      	ellInit(&client->addrq);
   	bfill((char *)&client->addr, sizeof(client->addr), 0);
       	client->tid = taskIdSelf();
       	client->send.stk = 0;

@@ -55,6 +55,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include <tickLib.h>
 #include <stdioLib.h>
 
+#include <ellLib.h>
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
@@ -164,7 +165,7 @@ struct message_buffer *recv
 
 			FASTLOCK(&rsrv_free_eventq_lck);
 			pevext = (struct event_ext *) 
-				lstGet(&rsrv_free_eventq);
+				ellGet(&rsrv_free_eventq);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 			if (!pevext) {
 				int size = db_sizeof_event_block() 
@@ -207,7 +208,7 @@ struct message_buffer *recv
 					RECORD_NAME(MPTOPADDR(mp)));
 				UNLOCK_CLIENT(client);
 				FASTLOCK(&rsrv_free_eventq_lck);
-				lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
+				ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
 				FASTUNLOCK(&rsrv_free_eventq_lck);
 				break;
 			}
@@ -219,8 +220,8 @@ struct message_buffer *recv
 			 * to be printed since it will not be found on
 			 * the list.
 			 */
-			lstAdd(	(LIST *)&((struct channel_in_use *)mp->m_pciu)->eventq, 
-				(NODE *)pevext);
+			ellAdd(	(ELLLIST *)&((struct channel_in_use *)mp->m_pciu)->eventq, 
+				(ELLNODE *)pevext);
 
 			/*
 			 * allways send it once at event add
@@ -367,11 +368,11 @@ struct message_buffer *recv
 			 * timeout must reconnect
 			 */
 			LOCK_CLIENT(prsrv_cast_client);
-               		status = lstFind(
+               		status = ellFind(
 					&prsrv_cast_client->addrq, 
 					mp->m_pciu);
 			if(status >= 0){
-				lstDelete(
+				ellDelete(
 					&prsrv_cast_client->addrq, 
 					mp->m_pciu);
 			}
@@ -388,7 +389,7 @@ struct message_buffer *recv
 				exit(0);
 			}
 			LOCK_CLIENT(client);
-			lstAdd(&client->addrq, mp->m_pciu);
+			ellAdd(&client->addrq, mp->m_pciu);
 			UNLOCK_CLIENT(client);
 			break;
 		default:
@@ -454,7 +455,7 @@ struct client  *client
          *
          */
         pciu = (struct channel_in_use *) mp->m_pciu;
- 	status = lstFind(
+ 	status = ellFind(
 			&client->addrq, 
 			mp->m_pciu);
 	if(status < 0){
@@ -468,14 +469,14 @@ struct client  *client
                 return;
         }
 
-        while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
+        while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
 
 		status = db_cancel_event((struct event_block *)(pevext+1));
 		if (status == ERROR){
 			taskSuspend(0);
 		}
 		FASTLOCK(&rsrv_free_eventq_lck);
-		lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
+		ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
         }
 
@@ -492,11 +493,11 @@ struct client  *client
 	*reply = *mp;
 
 	END_MSG(client);
-	lstDelete((LIST *)&client->addrq, (NODE *)pciu);
+	ellDelete((ELLLIST *)&client->addrq, (ELLNODE *)pciu);
 	UNLOCK_CLIENT(client);
 
 	FASTLOCK(&rsrv_free_addrq_lck);
-	lstAdd((LIST *)&rsrv_free_addrq, (NODE *)pciu);
+	ellAdd((ELLLIST *)&rsrv_free_addrq, (ELLNODE *)pciu);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	return;
@@ -520,7 +521,7 @@ struct client  *client
 {
 	FAST struct extmsg *reply;
 	FAST struct event_ext *pevext;
-	LIST           *peventq =
+	ELLLIST           *peventq =
 	&((struct channel_in_use *) mp->m_pciu)->eventq;
 	FAST int        status;
 
@@ -531,7 +532,7 @@ struct client  *client
 			status = db_cancel_event((struct event_block *)(pevext+1));
 			if (status == ERROR)
 				taskSuspend(0);
-			lstDelete((LIST *)peventq, (NODE *)pevext);
+			ellDelete((ELLLIST *)peventq, (ELLNODE *)pevext);
 
 			/*
 			 * send delete confirmed message
@@ -549,7 +550,7 @@ struct client  *client
 			UNLOCK_CLIENT(client);
 
 			FASTLOCK(&rsrv_free_eventq_lck);
-			lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
+			ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 
 			return;
@@ -682,7 +683,7 @@ struct extmsg *mp,
 struct client  *client
 )
 {
-	LIST           			*addrq = &client->addrq;
+	ELLLIST           			*addrq = &client->addrq;
 	FAST struct extmsg 		*search_reply;
 	FAST struct extmsg 		*get_reply;
 	FAST int        		status;
@@ -711,7 +712,7 @@ struct client  *client
 
 	/* get block off free list if possible */
 	FASTLOCK(&rsrv_free_addrq_lck);
-	pchannel = (struct channel_in_use *) lstGet(&rsrv_free_addrq);
+	pchannel = (struct channel_in_use *) ellGet(&rsrv_free_addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 	if (!pchannel) {
 		pchannel = (struct channel_in_use *) calloc(1, sizeof(*pchannel));
@@ -734,7 +735,7 @@ struct client  *client
 	LOCK_CLIENT(client);
 
 	/* store the addr block in a Q so it can be deallocated */
-	lstAdd((LIST *)addrq, (NODE *)pchannel);
+	ellAdd((ELLLIST *)addrq, (ELLNODE *)pchannel);
 
 	if (mp->m_cmmd == IOC_BUILD) {
 		FAST short      type = (mp + 1)->m_type;

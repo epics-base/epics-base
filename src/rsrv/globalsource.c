@@ -33,7 +33,7 @@
 static char *sccsId = "@(#)globalsource.c	1.5\t7/28/92";
 
 #include <vxWorks.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <types.h>
 #include <socket.h>
 #include <in.h>

@@ -33,7 +33,7 @@
 static char *sccsId = "@(#)rsrv_init.c	1.7\t7/28/92";
 
 #include <vxWorks.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <taskLib.h>
 #include <types.h>
 #include <socket.h>

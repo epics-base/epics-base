@@ -46,7 +46,7 @@
 static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
 
 #include <vxWorks.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <types.h>
 #include <socket.h>
 #include <sockLib.h>
@@ -240,7 +240,7 @@ FAST int 		sock;
   	}
 
 	LOCK_CLIENTQ;
-	lstAdd((LIST *)&clientQ, (NODE *)client);
+	ellAdd((ELLLIST *)&clientQ, (ELLNODE *)client);
 	UNLOCK_CLIENTQ;
 
 	client->evuser = (struct event_user *) db_init_events();

@@ -45,7 +45,7 @@
 static char *serverhSccsId = "$Id$\t$Date$";
 
 #include <vxLib.h>
-#include <lstLib.h>
+#include <ellLib.h>
 #include <fast_lock.h>
 
 #include <dbDefs.h>
@@ -61,11 +61,11 @@ struct message_buffer{
 };
 
 struct client{
-  NODE				node;
+  ELLNODE				node;
   int				sock;
   int				proto;
   FAST_LOCK			lock;
-  LIST				addrq;
+  ELLLIST				addrq;
   struct message_buffer		send;
   struct message_buffer		recv;
   struct sockaddr_in		addr;
@@ -82,9 +82,9 @@ struct client{
  * (stored in addrq off of a client block)
  */
 struct channel_in_use{
-  NODE			node;
+  ELLNODE			node;
   struct db_addr	addr;
-  LIST			eventq;
+  ELLLIST			eventq;
   void			*chid;	/* the chid from the client saved here */
   unsigned long		ticks_at_creation;	/* for UDP timeout */
 };
@@ -95,7 +95,7 @@ struct channel_in_use{
  * some things duplicated for speed
  */
 struct event_ext{
-NODE				node;
+ELLNODE				node;
 struct extmsg			msg;
 struct extmsg			*mp;		/* for speed (IOC_READ) */		
 struct client			*client;
@@ -117,12 +117,12 @@ char				get;		/* T: get F: monitor */
 
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
-GLBLTYPE LIST			clientQ;	/* locked by clientQlock */
-GLBLTYPE LIST			rsrv_free_clientQ; /* locked by clientQlock */
+GLBLTYPE ELLLIST			clientQ;	/* locked by clientQlock */
+GLBLTYPE ELLLIST			rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE FAST_LOCK		clientQlock;
 GLBLTYPE int			CASDEBUG;
-GLBLTYPE LIST			rsrv_free_addrq;
-GLBLTYPE LIST			rsrv_free_eventq;
+GLBLTYPE ELLLIST			rsrv_free_addrq;
+GLBLTYPE ELLLIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;

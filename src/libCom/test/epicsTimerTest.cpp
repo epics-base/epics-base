@@ -32,7 +32,7 @@ public:
     void start ( const epicsTime &expireTime );
     void setBegin ( const epicsTime & );
     double delay () const;
-    void checkError () const;
+    double checkError () const;
 protected:
     virtual ~delayVerify ();
 private:
@@ -67,7 +67,7 @@ inline double delayVerify::delay () const
     return delayVerifyOffset + this->expectedDelay;
 }
 
-void delayVerify::checkError () const
+double delayVerify::checkError () const
 {
     const double messageThresh = 0.5; // percent 
     double actualDelay =  this->expireStamp - this->beginStamp;
@@ -78,6 +78,7 @@ void delayVerify::checkError () const
         printf ( "delay error > %g %%, delay = %g sec, error = %g mSec (%f %%)\n", 
             messageThresh, this->expectedDelay, measuredError * 1000.0, percentError );
     }
+    return measuredError;
 }
 
 inline void delayVerify::start ( const epicsTime &expireTime )
@@ -119,9 +120,13 @@ void testAccuracy ()
     while ( expireCount != 0u ) {
         expireEvent.wait ();
     }
+    double averageMeasuredError;
     for ( i = 0u; i < nTimers; i++ ) {
-        pTimers[i]->checkError ();
+        averageMeasuredError += pTimers[i]->checkError ();
     }
+    averageMeasuredError /= nTimers;
+    printf ("average timer delay error %f mS\n", 
+        averageMeasuredError * 1000 );
     queue.release ();
 }
 

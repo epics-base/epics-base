@@ -100,6 +100,7 @@ private:
     mutable epicsMutex mutex;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
+    const double sleepQuantumOverTwo;
     epicsTimerQueueNotify & notify;
     timer * pExpireTmr;
     epicsThreadId processThread;
@@ -142,6 +143,7 @@ private:
     bool terminateFlag;
     void run ();
     void reschedule ();
+    double quantum ();
     epicsTimerQueue & getEpicsTimerQueue ();
 	timerQueueActive ( const timerQueueActive & );
     timerQueueActive & operator = ( const timerQueueActive & );
@@ -178,17 +180,23 @@ protected:
     timerQueuePassive & operator = ( const timerQueuePassive & );
 };
 
-struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
+struct epicsTimerQueuePassiveForC : 
+    public epicsTimerQueueNotify, public timerQueuePassive {
 public:
-    epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
+    epicsTimerQueuePassiveForC ( 
+        epicsTimerQueueNotifyReschedule, 
+        epicsTimerQueueNotifyQuantum,
+        void * pPrivate );
     void destroy ();
 protected:
     ~epicsTimerQueuePassiveForC ();
 private:
-    epicsTimerQueueRescheduleCallback pCallback;
-    void *pPrivate;
+    epicsTimerQueueNotifyReschedule pRescheduleCallback;
+    epicsTimerQueueNotifyQuantum pSleepQuantumCallback;
+    void * pPrivate;
     static epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > pFreeList;
     void reschedule ();
+    double quantum ();
 };
 
 struct epicsTimerQueueActiveForC : public timerQueueActive, 

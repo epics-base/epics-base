@@ -22,8 +22,9 @@
 epicsTimerQueue::~epicsTimerQueue () {}
 
 timerQueue::timerQueue ( epicsTimerQueueNotify &notifyIn ) :
+    sleepQuantumOverTwo ( notifyIn.quantum () / 2.0 ), 
     notify ( notifyIn ), pExpireTmr ( 0 ),  
-        processThread ( 0 ), cancelPending ( false )
+    processThread ( 0 ), cancelPending ( false )
 {
 }
 

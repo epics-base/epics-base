@@ -100,6 +100,7 @@ private:
     //
     fdReg *pCBReg; 
     void reschedule ();
+    double quantum ();
     epicsShareFunc void installReg (fdReg &reg);
     epicsShareFunc void removeReg (fdReg &reg);
     void lazyInitTimerQueue ();

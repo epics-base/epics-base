@@ -86,6 +86,11 @@ void timerQueueActive::reschedule ()
     this->rescheduleEvent.signal ();
 }
 
+double timerQueueActive::quantum ()
+{
+    return epicsThreadSleepQuantum ();
+}
+
 void timerQueueActive::show ( unsigned int level ) const
 {
     printf ( "EPICS threaded timer queue at %p\n", 

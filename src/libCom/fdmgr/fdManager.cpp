@@ -315,6 +315,13 @@ void fdManager::reschedule ()
 {
 }
 
+double fdManager::quantum ()
+{
+    // hopefully its a reasonable guess that select() and epicsThreadSleep()
+    // will have the same sleep quantum
+    return epicsThreadSleepQuantum ();
+}
+
 //
 // lookUpFD()
 //

@@ -89,6 +89,9 @@ public:
     // called when a new timer is inserted into the queue and the
     // delay to the next expire has changed
     virtual void reschedule () = 0;
+    // if there is a quantum in the scheduling of timer intervals
+    // return this quantum in seconds. If unknown then return zero.
+    virtual double quantum () = 0;
 protected:
     virtual ~epicsTimerQueueNotify () = 0;
 };
@@ -142,9 +145,11 @@ epicsShareFunc void  epicsShareAPI
 
 /* passive timer queue */
 typedef struct epicsTimerQueuePassiveForC * epicsTimerQueuePassiveId;
-typedef void ( *epicsTimerQueueRescheduleCallback ) ( void *pPrivate );
+typedef void ( * epicsTimerQueueNotifyReschedule ) ( void * pPrivate );
+typedef double ( * epicsTimerQueueNotifyQuantum ) ( void * pPrivate );
 epicsShareFunc epicsTimerQueuePassiveId epicsShareAPI
-    epicsTimerQueuePassiveCreate ( epicsTimerQueueRescheduleCallback, void *pPrivate );
+    epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule, 
+        epicsTimerQueueNotifyQuantum, void *pPrivate );
 epicsShareFunc void epicsShareAPI 
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId );
 epicsShareFunc epicsTimerId epicsShareAPI 

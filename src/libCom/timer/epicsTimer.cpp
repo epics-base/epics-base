@@ -79,10 +79,14 @@ void epicsTimerQueueActiveForC::release ()
     pMgr->release ( *this );
 }
 
-epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC 
-    ( epicsTimerQueueRescheduleCallback pCallbackIn, void * pPrivateIn ) :
+epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC ( 
+    epicsTimerQueueNotifyReschedule pRescheduleCallbackIn, 
+    epicsTimerQueueNotifyQuantum pSleepQuantumCallbackIn,
+    void * pPrivateIn ) :
         timerQueuePassive ( * static_cast < epicsTimerQueueNotify * > ( this ) ), 
-            pCallback ( pCallbackIn ), pPrivate ( pPrivateIn ) 
+        pRescheduleCallback ( pRescheduleCallbackIn ), 
+        pSleepQuantumCallback ( pSleepQuantumCallbackIn ),
+        pPrivate ( pPrivateIn )
 {
 }
 
@@ -92,7 +96,12 @@ epicsTimerQueuePassiveForC::~epicsTimerQueuePassiveForC ()
 
 void epicsTimerQueuePassiveForC::reschedule ()
 {
-    (*this->pCallback) ( this->pPrivate );
+    (*this->pRescheduleCallback) ( this->pPrivate );
+}
+
+double epicsTimerQueuePassiveForC::quantum ()
+{
+    return (*this->pSleepQuantumCallback) ( this->pPrivate );
 }
 
 void epicsTimerQueuePassiveForC::destroy ()
@@ -138,10 +147,16 @@ epicsShareFunc double epicsTimerNotify::expireStatus::expirationDelay () const
 }
 
 extern "C" epicsTimerQueuePassiveId epicsShareAPI
-    epicsTimerQueuePassiveCreate ( epicsTimerQueueRescheduleCallback pCallbackIn, void *pPrivateIn )
+    epicsTimerQueuePassiveCreate ( 
+        epicsTimerQueueNotifyReschedule pRescheduleCallbackIn, 
+        epicsTimerQueueNotifyQuantum pSleepQuantumCallbackIn,
+        void * pPrivateIn )
 {
     try {
-        return  new epicsTimerQueuePassiveForC ( pCallbackIn, pPrivateIn );
+        return new epicsTimerQueuePassiveForC ( 
+            pRescheduleCallbackIn, 
+            pSleepQuantumCallbackIn,
+            pPrivateIn );
     }
     catch ( ... ) {
         return 0;

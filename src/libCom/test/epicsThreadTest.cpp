@@ -10,7 +10,7 @@
 /* epicsThreadTest.cpp */
 
 /* Author:  Marty Kraimer Date:    26JAN2000  */
-/*          sleep accuracy tests by Jeff Hill */
+/*          sleep accuracy and sleep quantum tests by Jeff Hill */
 /*          epicsThreadGetIdSelf performance by Jeff Hill */
 
 #include <stddef.h>
@@ -59,28 +59,67 @@ void myThread::run()
     errlogPrintf("threadFunc %d stopping argvalue %p\n",myPrivate,argvalue);
 }
 
-static double threadSleepMeasureDelayError( const double & delay )
+static double threadSleepMeasureDelayError ( const double & delay )
 {
     epicsTime beg = epicsTime::getCurrent();
     epicsThreadSleep ( delay );
     epicsTime end = epicsTime::getCurrent();
     double meas = end - beg;
     double error = fabs ( delay - meas );
-    printf ( "epicsThreadSleep ( %10f ) delay err %10f sec\n", 
-        delay, error );
     return error;
 }
 
-static void threadSleepTest()
+static void threadSleepQuantumTest ()
 {
+    static const unsigned iterations = 100u;
+    const double quantum = epicsThreadSleepQuantum ();
     double errorSum = 0.0;
-    int i;
-    for ( i = 0u; i < 20; i++ ) {
-        double delay = ldexp ( 1.0 , -i );
-        errorSum += threadSleepMeasureDelayError ( delay );
+    for ( unsigned i = 0u; i < iterations; i++ ) {
+        errorSum += 
+            threadSleepMeasureDelayError ( 1e-15 );
     }
-    errorSum += threadSleepMeasureDelayError ( 0.0 );
-    printf ( "Average error %f sec\n", errorSum / ( i + 1 ) );
+    double quantumEstimate = errorSum / iterations;
+    double quantumError = fabs ( quantumEstimate - quantum ) / quantum;
+    const char * pTol = 0;
+    if ( quantumError > 0.1 ) {
+        pTol = "10%";
+    }
+    else if ( quantumError > 0.01 ) {
+        pTol = "1%";
+    }
+    else if ( quantumError > 0.001 ) {
+        pTol = ".1%";
+    }
+    if ( pTol ) {
+        printf ( 
+            "The epicsThreadSleepQuantum() call returns %f sec.\n", 
+                quantum );
+        printf (
+            "This doesnt match the quantum estimate "
+            "of %f sec within %s.\n",
+                quantumEstimate, pTol );
+    }
+}
+
+static void threadSleepTest ()
+{
+    static const int iterations = 20;
+    const double quantum = epicsThreadSleepQuantum ();
+    double errorSum = threadSleepMeasureDelayError ( 0.0 );
+    for ( int i = 0u; i < iterations; i++ ) {
+        double delay = ldexp ( 1.0 , -i );
+        double error = 
+            threadSleepMeasureDelayError ( delay );
+        errorSum += error;
+        if ( error > quantum + quantum / 8.0 ) {
+            printf ( "epicsThreadSleep ( %10f ) delay err %10f sec\n", 
+                delay, error );
+        }
+    }
+    double averageError = errorSum / ( iterations + 1 );
+    if ( averageError > quantum ) {
+        printf ( "Average sleep delay error was %f sec\n", averageError );
+    }
 }
 
 static void epicsThreadGetIdSelfPerfTest ()
@@ -117,6 +156,7 @@ extern "C" void threadTest(int ntasks,int verbose)
     epicsThreadGetIdSelfPerfTest ();
 
     threadSleepTest();
+    threadSleepQuantumTest();
 
     errVerbose = verbose;
     errlogInit(4096);

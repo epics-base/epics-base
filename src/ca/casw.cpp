@@ -247,7 +247,7 @@ int main ( int argc, char ** argv )
                     if ( anomaly ) {
                         char date[64];
                         currentTime.strftime ( date, sizeof ( date ), 
-                            "%a %b %d %Y %H:%M:%S.%f");
+                            "%Y-%m-%d %T.%09f");
                         char host[64];
                         ipAddrToA ( &ina, host, sizeof ( host ) );
                         printf ( "%-40s %s\n", 
@@ -256,6 +256,7 @@ int main ( int argc, char ** argv )
                             printf ( "\testimate=%f current=%f\n", 
                                 pBHE->period (), currentTime - previousTime );
                         }
+                        fflush(stdout);
                     }
                 }
                 else {

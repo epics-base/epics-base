@@ -36,6 +36,7 @@
 /*	050492	joh	added new fd array to select			*/
 /*	072392	joh	use SO_REUSEADDR when testing to see		*/
 /*			if the repeater has been started		*/
+/*	072792	joh	better messages					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -746,7 +747,7 @@ register struct ioc_in_use 	*piiu;
 			pmsg = (void *) (status+(char *)pmsg);
 		}
 		else if(status == 0){
-ca_printf("sent zero\n");
+ca_printf("CAC: sent zero ?\n");
 			TCPDELAY;
 		}
 #ifdef UNIX
@@ -834,7 +835,7 @@ struct timeval 	*ptimeout;
 				return;
                                              
     			if(MYERRNO == EINTR){
-				ca_printf("cac: select was interrupted\n");
+				ca_printf("CAC: select was interrupted\n");
 				TCPDELAY;
 				continue;
 			}
@@ -1340,8 +1341,7 @@ repeater_installed()
 				NULL,
 				0);
 	if(status<0){
-		ca_printf(      "%s: set socket option failed\n",
-				__FILE__);
+		ca_printf(      "CAC: set socket option reuseaddr failed\n");
 	}
 
       	memset(&bd,0,sizeof bd);

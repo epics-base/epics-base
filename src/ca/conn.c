@@ -16,6 +16,7 @@
 /*			is specified					*/
 /*	.04 043092 joh	check to see if the conn is up when setting	*/
 /*			for CA_CUURRENT_TIME to be safe			*/
+/*	.05 072792 joh	better messages					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -165,7 +166,7 @@ struct in_addr  *pnet_addr;
 	manage_conn(TRUE);
 
 #ifdef DEBUG
-	ca_printf("<%s> ",host_from_addr(pnet_addr));
+	ca_printf("CAC: <%s> ",host_from_addr(pnet_addr));
 #ifdef UNIX
     	fflush(stdout);
 #endif
@@ -239,7 +240,7 @@ struct in_addr  *pnet_addr;
 	iiu[BROADCAST_IIU].next_retry = 
 		time(NULL) + iiu[BROADCAST_IIU].retry_delay;
 #ifdef DEBUG
-	ca_printf("<Trying ukn online after pseudo random delay=%d sec> ",
+	ca_printf("CAC: <Trying ukn online after pseudo random delay=%d sec> ",
 		iiu[BROADCAST_IIU].retry_delay);
 #ifdef UNIX
     	fflush(stdout);

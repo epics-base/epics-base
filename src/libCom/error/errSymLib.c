@@ -116,11 +116,6 @@ extern ERRSYMTAB_ID errSymTbl;
 /*Declare storage for errVerbose( defined in errMdef.h)*/
 int errVerbose=0;
 
-#ifdef __STDC__
-int verrPrintStatus(long status, char *pFormatString, va_list pvar);
-#else
-int verrPrintStatus();
-#endif
 
 
 /****************************************************************
@@ -195,161 +190,6 @@ unsigned short errnum;
 	modnum = errNum >> 16;
 	errnum = errNum & 0xffff;
 	return((unsigned short)(((modnum - 500) * 20) + errnum) % NHASH);
-}
-
-/****************************************************************
- * ERRMESSAGE - now a macro to call errPrintf
- * ERRPRINTF  - print an error symbol message
- ***************************************************************/
-#ifdef __STDC__
-void errPrintf(long status, char *pFileName, int lineno, char *pformat, ...)
-#else
-void errPrintf(va_alist)
-va_dcl
-#endif
-{
-    va_list 	   pvar;
-    static char    *pReformat;
-    static int	   reformatSize;
-    static char	   pAdd[] = {'\n', '\0'};
-#ifndef __STDC__
-    long     	   status;
-    char           *pformat;
-    char	   *pFileName;
-    int		   lineno;
-#endif
-
-#ifdef __STDC__
-    va_start(pvar, pformat);
-#else
-    va_start(pvar);
-    status = va_arg(pvar, long);
-    pFileName = va_arg(pvar, char *);
-    lineno = va_arg(pvar, int);
-    pformat = va_arg(pvar, char *);
-#endif
-
-    if(pFileName && errVerbose){
-      	mprintf("filename=\"%s\" line number=%d\n", pFileName, lineno);
-    }
-
-    if (pformat != NULL) {
-	int		size;
-
-	size = strlen(pformat)+NELEMENTS(pAdd);
-	
-	if(reformatSize < size){
-		/*
-		 * use a reasonable size string
-		 */
-		size = max(0xff, size);
-		if(pReformat){
-			free(pReformat);
-		}
-
-		pReformat = (char *) malloc(size);
-		if(pReformat){
-			reformatSize = size;
-		}
-		else{
-		    mprintf ("%s: calloc error\n", __FILE__);
-		    return;
-		}
-	}
-	strcpy(pReformat, pformat);
-	strcat(pReformat, pAdd);
-
-    }
-
-    verrPrintStatus(status, pReformat, pvar);
-
-    return;
-}
-
-/****************************************************************
- * ERRPRINTSTATUS
- ***************************************************************/
-#ifdef __STDC__
-int errPrintStatus(long status, char *pFormat, ...)
-#else
-int errPrintStatus(va_alist)
-va_dcl
-#endif
-{
-	va_list        pvar;
-#ifndef __STDC__
-	long		status;
-	char		*pFormat;
-#endif
-
-#ifdef __STDC__
-	va_start(pvar, pFormat);
-#else
-	va_start(pvar);
-	status = va_arg(pvar, long);
-	pFormat = va_arg(pvar, char *);
-#endif
-
-	return verrPrintStatus(status, pFormat, pvar);
-}
-
-/****************************************************************
- * VERRPRINTSTATUS
- ***************************************************************/
-#ifdef __STDC__
-int verrPrintStatus(long status, char *pFormatString, va_list pvar)
-#else
-int verrPrintStatus(status, pFormatString, pvar)
-long 	status;
-char	*pFormatString;
-va_list	pvar;
-#endif
-{
-	static char	ctxToLarge[] = "** Context String Overflow **";
-	char 		name[256];
-	int 		rtnval;
-	int		namelen;
-	int		formatlen;
-	unsigned short modnum;
-	unsigned short errnum;
-
-
-	name[0] = '\0';
-	if(status==0) status = MYERRNO;
-	if(status >= -1){
-		rtnval = 0;
-	}
-	else {
-		rtnval = status;
-	}
-	if(status>0) {
-	    rtnval = errSymFind(status,name);
-	    modnum = status >> 16;
-	    errnum = status & 0xffff;
-	    if(rtnval) {
-		sprintf(name, 
-			"Error status (module %hu, number %hu) not in symbol table", 
-			modnum, errnum);
-	    }
-	}
-	if(pFormatString){
-		namelen = strlen(name);
-		formatlen = strlen(pFormatString);
-		strcat(name," ");
-		if(sizeof(name)-namelen-1 > formatlen){
-			strcat(name, pFormatString);
-		}
-		else if(sizeof(name)-namelen-1 > sizeof(ctxToLarge)){
-			strcat(name, ctxToLarge);
-		}
-		else{
-			mprintf(ctxToLarge);
-		}
-	}
-
-	vmprintf(name, pvar);
-
-	return rtnval;
 }
 
 /****************************************************************

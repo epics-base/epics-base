@@ -8,14 +8,14 @@ SRCS.c = \
 	../envSubr.c ../errSymLib.c \
 	../nextFieldSubr.c ../postfix.c \
 	../bucketLib.c ../memDebugLib.c ../tsSubr.c ../pal.c \
-	../paldef.c ../mprintf.c errSymTbl.c
+	../paldef.c  errSymTbl.c ../errPrintfVX.c
 
 
 OBJS = \
 	calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
 	errSymTbl.o nextFieldSubr.o postfix.o \
 	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o \
-	mprintf.o
+	errPrintfVX.o
 
 
 PROD = libCom

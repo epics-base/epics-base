@@ -11,7 +11,7 @@ SRCS.c = \
 	../gpHashLib.c ../memDebugLib.c \
 	../nextFieldSubr.c ../postfix.c \
 	../tsSubr.c errSymTbl.c ../errInc.c \
-	../realpath.c ../mprintf.c
+	../realpath.c  ../errPrintfUNIX.c
 
 LIBOBJS = \
 	tsSubr.o bucketLib.o calcPerform.o\
@@ -19,7 +19,7 @@ LIBOBJS = \
 	envSubr.o errMtst.o errSymLib.o errSymTbl.o fdmgr.o \
 	freeListLib.o gpHashLib.o \
 	memDebugLib.o  nextFieldSubr.o postfix.o \
-	realpath.o mprintf.o
+	realpath.o  errPrintfUNIX.o
 
 LIBNAME = libCom.a
 

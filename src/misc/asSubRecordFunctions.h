@@ -22,7 +22,8 @@ extern "C" {
 
 struct subRecord;
 
-epicsShareFunc long epicsShareAPI asSubInit(struct subRecord *precord,int pass);
+epicsShareFunc long epicsShareAPI asSubInit(
+    struct subRecord *precord,void *process);
 epicsShareFunc long epicsShareAPI asSubProcess(struct subRecord *precord);
 epicsShareFunc void epicsShareAPI asSubRecordFunctionsRegister(void);
 

@@ -77,7 +77,7 @@ case $HOST_ARCH in
     solaris)
 	# use -xM option of ACC to list dependencies
 
-	CC=`$EPICS/base/bin/$HOST_ARCH/GetVar $EPICS ACC $HOST_ARCH`
+	CC=`$EPICS/base/bin/$HOST_ARCH/GetVar $EPICS $MAKE ACC $HOST_ARCH`
 	FILES=`$CC -xM -D$DEF $INCLUDEH errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`

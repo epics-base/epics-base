@@ -86,18 +86,19 @@ static const unsigned indexWidth = sizeof(resTableIndex)*CHAR_BIT;
 //          // ID to hash index convert (see examples below)
 //          index hash (unsigned nBitsHashIndex) const; 
 //
-//          //
-//          // these determine the minimum and maximum number of elements
-//          // in the hash table. Knowing these parameters at compile
-//          // time improves performance.
-//          //
-//          // max = 1 << maxIndexBitWidth ();
-//          // min = 1 << minIndexBitWidth ();
-//          //
-//          unsigned minIndexBitWidth ();
-//          unsigned maxIndexBitWidth ();
+// 5)   Classes of type ID must provide the following public compile time
+//      determined static member constants. They determine the minimum and maximum 
+//      number of elements in the hash table. Knowing these parameters at 
+//      compile time improves performance. If minIndexBitWidth == maxIndexBitWidth
+//      then the hash table size is determined at compile time
 //
-// 3)   Storage for identifier of type ID must persist until the item of type 
+//          static const unsigned maxIndexBitWidth = nnnn;
+//          static const unsigned minIndexBitWidth = nnnn;
+//
+//          max number of hash table elements = 1 << maxIndexBitWidth
+//          min number of hash table elements = 1 << minIndexBitWidth;
+//
+// 6)   Storage for identifier of type ID must persist until the item of type 
 //      T is deleted from the resTable
 //
 template <class T, class ID>
@@ -181,15 +182,18 @@ private:
 //
 // class intId
 //
-// signed or unsigned integer identifier
+// signed or unsigned integer identifier (class T must be
+// a signed or unsigned interger type)
 //
 // this class works as type ID in resTable <class T, class ID>
 //
 // 1<<MIN_INDEX_WIDTH specifies the minimum number of
 // elements in the hash table within resTable <class T, class ID>
 //
-// 1<<MAX_ID_WIDTH specifies the maximum number of
-// elements within the hash table in resTable <class T, class ID>
+// MAX_ID_WIDTH specifies the maximum number of ls bits in an 
+// integer identifier which might be set at any time. Set this 
+// parameter to zero if unsure of the correct minimum hash table 
+// size.
 //
 // MIN_INDEX_WIDTH and MAX_ID_WIDTH are specified here at
 // compile time so that the hash index can be produced 
@@ -203,8 +207,12 @@ public:
 	bool operator == (const intId &idIn) const;
 	resTableIndex hash (unsigned nBitsIndex) const;
 	const T getId() const;
-    static unsigned minIndexBitWidth ();
-    static unsigned maxIndexBitWidth ();
+
+    static resTableIndex hashEngine (const T &id); // can be used by other classes
+
+    static const unsigned maxIndexBitWidth;
+    static const unsigned minIndexBitWidth;
+
 protected:
 	T id;
 };
@@ -244,93 +252,58 @@ private:
 
 
 //
-// class stringId
+// class stringIdentifier
 //
 // character string identifier
 //
-class epicsShareClass stringId {
+// 1<<MAX_INDEX_WIDTH is the maximum size of the hash table.
+// Currently MAX_INDEX_WIDTH must be less than or equal to 16.
+//
+// 1<<MIN_INDEX_WIDTH is the minimum size of the hash table.
+// Currently MIN_INDEX_WIDTH must be greater than or equal to 8.
+//
+// MAX_INDEX_WIDTH and MIN_INDEX_WIDTH are specified here at
+// compile time so that the hash index can be produced 
+// efficently. Hash indexes are produced more efficiently 
+// when (MAX_INDEX_WIDTH - MIN_INDEX_WIDTH) is minimized.
+// The highest degree of optimization occurs MAX_INDEX_WIDTH 
+// is equal to MIN_INDEX_WIDTH.
+//
+template <unsigned MAX_INDEX_WIDTH=12, unsigned MIN_INDEX_WIDTH=12>
+class stringIdentifier {
 public:
-	//
-	// exceptions
-	//
-	class dynamicMemoryAllocationFailed {};
+
+	class dynamicMemoryAllocationFailed {}; // exception
 
     enum allocationType {copyString, refString};
 
-	//
-	// stringId() constructor
-	//
-	stringId (const char * idIn, allocationType typeIn=copyString);
-    ~ stringId();
+	stringIdentifier (const char * idIn, allocationType typeIn=copyString);
+    ~ stringIdentifier();
 
-	//
-	// The hash algorithm is a modification of the algorithm described in 
-	// Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
-	// Communications of the ACM, June 1990 
-	// The modifications were designed by Marty Kraimer
-	//
 	resTableIndex hash (unsigned nBitsIndex) const;
  
-	bool operator == (const stringId &idIn) const;
+	bool operator == (const stringIdentifier &idIn) const;
 
 	const char * resourceName() const; // return the pointer to the string
 
 	void show (unsigned level) const;
 
-    static unsigned minIndexBitWidth ();
+    static const unsigned maxIndexBitWidth;
 
-    static unsigned maxIndexBitWidth ();
+    static const unsigned minIndexBitWidth;
 
 private:
 	const char * pStr;
 	const allocationType allocType;
-	static const unsigned char stringIdFastHash[256];
+	static const unsigned char fastHashPermutedIndexSpace[256];
+    static const unsigned fastHashMaxIndexBitWidth;
+    static const unsigned fastHashMinIndexBitWidth;
 };
 
-/////////////////////////////////////////////
-// template functions
-/////////////////////////////////////////////
-
 //
-// resTableIntHash()
+// class stringId
 //
-// converts any integer into a hash table index
-//
-// idWidth: the maximum number of ls bits in "id" which might
-// be set during any call to this function.
-//
-// minIndexWidth: the minimum number of bits in a hash table 
-// index. This dermines the minimum size of the hash table.
-// Knowing this value at compile time improves the performance 
-// of the hash. Set this parameter to zero if unsure of the 
-// correct minimum hash table size.
-//
-template <class T, unsigned minIndexWidth, unsigned idWidth>
-inline resTableIndex resTableIntHash (const T &id)
-{
-	resTableIndex hashid = static_cast<resTableIndex>(id);
-
-	//
-    // On most compilers the optimizer will unroll this loop so this
-    // is actually a very small inline function
-    //
-	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and urolling the
-	// loop explicitly (that solution has resulted in portability
-	// problems in the past).
-	//
-    unsigned width = idWidth;
-    do {
-        width >>= 1u;
-		hashid ^= hashid>>width;
-    } while (width>minIndexWidth);
-
-	//
-	// the result here is always masked to the
-	// proper size after it is returned to the "resTable" class
-	//
-	return hashid;
-}
+typedef stringIdentifier <16,8> stringId;
 
 /////////////////////////////////////////////////
 // resTable<class T, class ID> member functions
@@ -355,7 +328,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 		}
 	}
 
-    if ( nbits > ID::maxIndexBitWidth () ) {
+    if ( nbits > ID::maxIndexBitWidth ) {
         throw sizeExceedsIndexesMaxIndexWith ();
     }
 
@@ -363,8 +336,8 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
     // it improves performance to round up to a 
     // minimum table size
     //
-    if (nbits<ID::minIndexBitWidth()) {
-        nbits = ID::minIndexBitWidth();
+    if (nbits<ID::minIndexBitWidth) {
+        nbits = ID::minIndexBitWidth;
         mask = (1<<nbits) - 1;
 	}
 
@@ -705,22 +678,51 @@ inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
 }
 
 //
-// intId::unsigned minIndexBitWidth ()
+// const unsigned intId::minIndexBitWidth
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth ()
-{
-    return MIN_INDEX_WIDTH;
-}
+const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth = MIN_INDEX_WIDTH;
+
 
 //
-// intId::unsigned maxIndexBitWidth ()
+//  const unsigned intId::maxIndexBitWidth
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth ()
+const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth = indexWidth;
+
+//
+// intId::hashEngine()
+//
+// converts any integer into a hash table index
+//
+//
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hashEngine (const T &id)
 {
-    return MAX_ID_WIDTH;
+	resTableIndex hashid = static_cast<resTableIndex>(id);
+
+	//
+    // On most compilers the optimizer will unroll this loop so this
+    // is actually a very small inline function
+    //
+	// Experiments using the microsoft compiler show that this isnt 
+	// slower than switching on the architecture size and urolling the
+	// loop explicitly (that solution has resulted in portability
+	// problems in the past).
+	//
+    unsigned width = MAX_ID_WIDTH;
+    do {
+        width >>= 1u;
+		hashid ^= hashid>>width;
+    } while (width>MIN_INDEX_WIDTH);
+
+	//
+	// the result here is always masked to the
+	// proper size after it is returned to the "resTable" class
+	//
+	return hashid;
 }
+
 
 //
 // intId::hash()
@@ -728,18 +730,18 @@ inline unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth ()
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash (unsigned /* nBitsIndex */) const
 {
-    return resTableIntHash<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> (this->id);
+    return this->hashEngine (this->id);
 }
 
 ////////////////////////////////////////////////////
-// stringId member functions
+// stringIdentifier member functions
 ////////////////////////////////////////////////////
 
 //
-// stringId::stringId()
+// stringIdentifier::stringIdentifier()
 //
-#ifdef instantiateRecourceLib
-stringId::stringId (const char *idIn, allocationType typeIn) :
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::stringIdentifier (const char *idIn, allocationType typeIn) :
 	allocType (typeIn)
 {
 	if (typeIn==copyString) {
@@ -757,12 +759,12 @@ stringId::stringId (const char *idIn, allocationType typeIn) :
 		this->pStr = idIn;
 	}
 }
-#endif // instantiateRecourceLib 
 
 //
-// stringId::operator == ()
+// stringIdentifier::operator == ()
 //
-inline bool stringId::operator == (const stringId &idIn) const
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+inline bool stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::operator == (const stringIdentifier &idIn) const
 {
 	if (this->pStr!=NULL && idIn.pStr!=NULL) {
 		return strcmp(this->pStr,idIn.pStr)==0;
@@ -773,49 +775,52 @@ inline bool stringId::operator == (const stringId &idIn) const
 }
 
 //
-// stringId::resourceName ()
+// stringIdentifier::resourceName ()
 //
-inline const char * stringId::resourceName () const
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+inline const char * stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::resourceName () const
 {
 	return this->pStr;
 }
 
 //
-// stringId::minIndexBitWidth ()
+// const unsigned stringIdentifier::minIndexBitWidth
 //
-inline unsigned stringId::minIndexBitWidth ()
-{
-    return 8u;
-}
+// this limit is based lon limitations in the hash
+// function below
+//
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+const unsigned stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::minIndexBitWidth = 8;
+
 
 //
-// stringId::maxIndexBitWidth ()
+// const unsigned stringIdentifier::maxIndexBitWidth
 //
-inline unsigned stringId::maxIndexBitWidth ()
-{
-    return sizeof (resTableIndex) * CHAR_BIT;
-}
+// see comments related to this limit in the hash
+// function below
+//
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+const unsigned stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::maxIndexBitWidth = 16;
 
 //
-// stringId::show ()
+// stringIdentifier::show ()
 //
-#ifdef instantiateRecourceLib
-void stringId::show (unsigned level) const
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+void stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::show (unsigned level) const
 {
 	if (level>2u) {
 		printf ("resource id = %s\n", this->pStr);
 	}
 }
-#endif // instantiateRecourceLib 
 
 //
-// stringId::~stringId()
+// stringIdentifier::~stringIdentifier()
 //
 //
 // this needs to be instanciated only once (normally in libCom)
 //
-#ifdef instantiateRecourceLib
-stringId::~stringId()
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::~stringIdentifier()
 {
 	if (this->allocType==copyString) {
 		if (this->pStr!=NULL) {
@@ -839,24 +844,18 @@ stringId::~stringId()
 		}
 	}
 }
-#endif // instantiateRecourceLib 
 
 //
-// this needs to be instanciated only once (normally in libCom)
+// stringIdentifier::hash()
 //
-#ifdef instantiateRecourceLib
-//
-// stringId::hash()
-//
-// The hash algorithm is a modification of the algorithm described in 
+// This hash algorithm is a modification of the algorithm described in 
 // Fast Hashing of Variable Length Text Strings, Peter K. Pearson, 
-// Communications of the ACM, June 1990 
-// The modifications were designed by Marty Kraimer
+// Communications of the ACM, June 1990. The initial modifications 
+// were designed by Marty Kraimer. Some minor additional optimizations
+// by Jeff Hill.
 //
-// This needs to be modified so that it will work with wide characters.
-// This will require run time generation of the table.
-//
-resTableIndex stringId::hash(unsigned nBitsIndex) const
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+resTableIndex stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::hash(unsigned nBitsIndex) const
 {
     const unsigned char *pUStr = 
         reinterpret_cast<const unsigned char *>(this->pStr);
@@ -868,44 +867,66 @@ resTableIndex stringId::hash(unsigned nBitsIndex) const
 	unsigned h0 = 0u;
 	unsigned h1 = 0u;
 	unsigned c;
-	unsigned i;
-	for (i=0u; (c = pUStr[i]); i++) {
-		//
-		// odd 
-		//
-		if (i&1u) {
-			h1 = stringIdFastHash[h1 ^ c];
-		}
-		//
-		// even 
-		//
-		else {
-			h0 = stringIdFastHash[h0 ^ c];
-		}
+
+    while (true) {
+
+        c = *(pUStr++);
+        if (c==0) {
+            break;
+        }
+        h0 = fastHashPermutedIndexSpace[h0 ^ c];
+
+        c = *(pUStr++);
+        if (c==0) {
+            break;
+        }
+        h1 = fastHashPermutedIndexSpace[h1 ^ c];
 	}
 
+    //
+    // slight optimization when table size known at compile time
+    //
+    if (this->minIndexBitWidth==this->maxIndexBitWidth && this->maxIndexBitWidth>8u) {
+        h1 = h1 << (this->maxIndexBitWidth-8u);
+    }
+    //
+    // otherwize table size known only at run time
+    //
+    else if (nBitsIndex>8u) {
+        h1 = h1 << (nBitsIndex-8u);
+    }
+
 	//
-	// does not work well for more than 65k entries ?
+	// !!!! does not work well for more than 65k hash table entries !!!!
 	// (because some indexes in the table will not be produced)
-	//
-	if (nBitsIndex>8u) {
-		h1 = h1 << (nBitsIndex-8u);
-	}
-	return h1 ^ h0;
-}
-#endif // instantiateRecourceLib 
+    //
+    assert (this->maxIndexBitWidth<=fastHashMaxIndexBitWidth); // compile time evaluated
 
-//
-// this needs to be instanciated only once (normally in libCom)
-//
-#ifdef instantiateRecourceLib
+    //
+    // !!!! poor distribution results with less than 256 hash table entries  !!!!
+	//    
+    assert (this->minIndexBitWidth>=fastHashMinIndexBitWidth); // compile time evaluated
+
+    h0 = h1 ^ h0;
+
+	return h0;
+}
+
 //
 // The hash algorithm is a modification of the algorithm described in
 // Fast Hashing of Variable Length Text Strings, Peter K. Pearson,
 // Communications of the ACM, June 1990
 // The modifications were designed by Marty Kraimer
 //
-const unsigned char stringId::stringIdFastHash[256] = {
+
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+const unsigned stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::fastHashMaxIndexBitWidth = 16;
+
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+const unsigned stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::fastHashMinIndexBitWidth = 8;
+
+template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
+const unsigned char stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::fastHashPermutedIndexSpace[256] = {
  39,159,180,252, 71,  6, 13,164,232, 35,226,155, 98,120,154, 69,
 157, 24,137, 29,147, 78,121, 85,112,  8,248,130, 55,117,190,160,
 176,131,228, 64,211,106, 38, 27,140, 30, 88,210,227,104, 84, 77,
@@ -923,8 +944,6 @@ const unsigned char stringId::stringIdFastHash[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
-
-#endif // instantiateRecourceLib 
 
 #endif // INCresourceLibh
 

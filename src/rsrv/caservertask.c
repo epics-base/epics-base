@@ -278,10 +278,11 @@ LOCAL int req_server (void)
     unsigned priorityOfUDP;
     threadBoolStatus tbs;
     struct sockaddr_in serverAddr;  /* server's address */
+    osiSocklen_t addrSize;
     int status;
     SOCKET clientSock;
-    int flag;
     threadId tid;
+    int portChange;
 
     taskwdInsert ( threadGetIdSelf (), NULL, NULL );
 
@@ -300,18 +301,6 @@ LOCAL int req_server (void)
         threadSuspendSelf ();
     }
 
-    /* Zero the sock_addr structure */
-    memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons ( ca_server_port );
-
-    /* get server's Internet address */
-    if ( bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) ) < 0 ) {
-        errlogPrintf ( "CAS: TCP server port bind error was \"%s\"\n", SOCKERRSTR ( SOCKERRNO ) );
-        socket_close ( IOC_sock );
-        threadSuspendSelf ();
-    }
-
     /*
      * Note: WINSOCK appears to assign a different functionality for 
      * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
@@ -320,7 +309,8 @@ LOCAL int req_server (void)
      * they exit ( even if SO_REUSEADDR isnt set ).
      */
 #   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
-        flag = 1;
+    {
+        int flag = 1;
         status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
                     (char *) &flag, sizeof (flag) );
         if ( status < 0 ) {
@@ -329,7 +319,58 @@ LOCAL int req_server (void)
         "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
                     __FILE__, SOCKERRSTR (errnoCpy) );
         }
+    }
 #   endif
+
+    /* Zero the sock_addr structure */
+    memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl (INADDR_ANY); 
+    serverAddr.sin_port = htons ( ca_server_port );
+
+    /* get server's Internet address */
+    status = bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
+	if ( status < 0 ) {
+		if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+			//
+			// enable assignment of a default port
+			// (so the getsockname() call below will
+			// work correctly)
+			//
+			serverAddr.sin_port = ntohs (0);
+			status = bind ( IOC_sock, 
+                (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
+		}
+		if ( status < 0 ) {
+            errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
+                SOCKERRSTR (SOCKERRNO) );
+            threadSuspendSelf ();
+		}
+        portChange = 1;
+	}
+    else {
+        portChange = 0;
+    }
+
+	addrSize = ( osiSocklen_t ) sizeof ( serverAddr );
+	status = getsockname ( IOC_sock, 
+			(struct sockaddr *)&serverAddr, &addrSize);
+	if ( status ) {
+		errlogPrintf ( "CAS: getsockname() error %s\n", 
+			SOCKERRSTR(SOCKERRNO) );
+        threadSuspendSelf ();
+	}
+
+    ca_server_port = ntohs (serverAddr.sin_port);
+
+    if ( portChange ) {
+        errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
+        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n", 
+            ca_server_port );
+        errlogPrintf ( "cas warning: but now two or more severs share the same UDP port.\n");
+        errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
+        errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
+    }
 
     /* listen and accept new connections */
     if ( listen ( IOC_sock, 10 ) < 0 ) {

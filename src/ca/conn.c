@@ -31,6 +31,12 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.43.4.1  1999/07/15 20:33:46  jhill
+ * added congestion thresh to search sched alg
+ *
+ * Revision 1.43  1998/11/17 02:40:56  jhill
+ * fixed infinite loop
+ *
  * Revision 1.42  1998/10/07 14:30:41  jba
  * Modified log message.
  *
@@ -253,203 +259,234 @@ void manage_conn()
 	ca_static->ca_manage_conn_active = FALSE;
 }
 
-
 /*
  * retrySearchRequest ()
  */
 LOCAL void retrySearchRequest ()
 {
-	ciu		chan;
-	ciu		firstChan;
-	int		status;
-	unsigned	nSent=0u;
-
-	if (!piiuCast) {
-		return;
-	}
-
-	/*
-	 * check to see if there is nothing to do here 
-	 */
-	if (ellCount(&piiuCast->chidlist)==0) {
-		return;
-	}
-
-	LOCK;
-	
-	/*
-	 * increment the retry sequence number
-	 */
-	ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
-
-	/*
-	 * dynamically adjust the number of UDP frames per 
-	 * try depending how many search requests are not 
-	 * replied to
-	 *
-	 * This determines how many search request can be 
-	 * sent together (at the same instant in time).
-	 *
-	 * The variable ca_static->ca_frames_per_try
-	 * determines the number of UDP frames to be sent
-	 * each time that retrySearchRequest() is called.
-	 * If this value is too high we will waste some
-	 * network bandwidth. If it is too low we will
-	 * use very little of the incoming UDP message
-	 * buffer associated with the server's port and
-	 * will therefore take longer to connect. We 
-	 * initialize ca_static->ca_frames_per_try
-	 * to a prime number so that it is less likely that the
-	 * same channel is in the last UDP frame
-	 * sent every time that this is called (and
-	 * potentially discarded by a CA server with
-	 * a small UDP input queue). 
-	 */
-
-	/*
-	 * increase rapidly if we see better than a 75% success rate 
-	 */
-	if (ca_static->ca_search_responses > 
-		(ca_static->ca_search_tries-(ca_static->ca_search_tries/4u)) ) {
-		/*
-		 * double UDP frames per try if we have a good score
-		 */
-		if (ca_static->ca_frames_per_try < (UINT_MAX/4u) ) {
-			ca_static->ca_frames_per_try += ca_static->ca_frames_per_try;
-#ifdef DEBUG
-			printf ("Increasing frame count to %u t=%u r=%u\n", 
-				ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
-				ca_static->ca_search_responses);
+    ciu		chan;
+    ciu		firstChan;
+    int		status;
+    unsigned	nSent=0u;
+    
+    if (!piiuCast) {
+        return;
+    }
+    
+    /*
+     * check to see if there is nothing to do here 
+     */
+    if (ellCount(&piiuCast->chidlist)==0) {
+        return;
+    }
+    
+    LOCK;
+    
+    /*
+     * increment the retry sequence number
+     */
+    ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
+    
+    /*
+     * dynamically adjust the number of UDP frames per 
+     * try depending how many search requests are not 
+     * replied to
+     *
+     * This determines how many search request can be 
+     * sent together (at the same instant in time).
+     *
+     * The variable ca_static->ca_frames_per_try
+     * determines the number of UDP frames to be sent
+     * each time that retrySearchRequest() is called.
+     * If this value is too high we will waste some
+     * network bandwidth. If it is too low we will
+     * use very little of the incoming UDP message
+     * buffer associated with the server's port and
+     * will therefore take longer to connect. We 
+     * initialize ca_static->ca_frames_per_try
+     * to a prime number so that it is less likely that the
+     * same channel is in the last UDP frame
+     * sent every time that this is called (and
+     * potentially discarded by a CA server with
+     * a small UDP input queue). 
+     */
+    /*
+     * increase frames per try only if we see better than
+     * a 93.75% success rate for one pass through the list
+     */
+    if (ca_static->ca_search_responses >
+        (ca_static->ca_search_tries-(ca_static->ca_search_tries/16u)) ) {
+        /*
+         * increase UDP frames per try if we have a good score
+         */
+        if (ca_static->ca_frames_per_try < MAXTRIESPERFRAME) {
+            /*
+             * it was observed that doubling the number of frames here infuenced
+             * an mbuf starvation lock up bug to occur in vxWorks 5.3.1 under
+             * heavy load testing of CA connection activity (the SENS IP kernel 
+             * was not installed)
+             *
+             * therefore a congestion avoidance threshold similar to TCP is
+             * now used
+             */
+            if (ca_static->ca_frames_per_try<ca_static->ca_search_tries_congest_thresh) {
+                ca_static->ca_frames_per_try += ca_static->ca_frames_per_try;
+            }
+            else {
+                ca_static->ca_frames_per_try += (ca_static->ca_frames_per_try/8) + 1;
+            }
+#if 0
+            printf ("Increasing frame count to %u t=%u r=%u\n", 
+                ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
+                ca_static->ca_search_responses);
 #endif
-		}
-	}
-	/*
-	 * if we have less than a 50% success rate then reduce the count gradually
-	 */
-	else if (ca_static->ca_search_responses < (ca_static->ca_search_tries/2u) ) {
-		if (ca_static->ca_frames_per_try>1u) {
-			ca_static->ca_frames_per_try--;
-#ifdef DEBUG
-			printf ("Decreasing frame count to %u t=%u r=%u\n", 
-				ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
-				ca_static->ca_search_responses);
+        }
+    }
+    /*
+     * if we detect congestion because we have less than a 87.5% success 
+     * rate then gradually reduce the frames per try
+     */
+    else if (ca_static->ca_search_responses < 
+        (ca_static->ca_search_tries-(ca_static->ca_search_tries/8u)) ) {
+            if (ca_static->ca_frames_per_try>1) {
+                ca_static->ca_frames_per_try--;
+            }
+            ca_static->ca_search_tries_congest_thresh = 
+                ca_static->ca_frames_per_try/2 + 1;
+#if 0
+            printf ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
+                ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
+                ca_static->ca_search_responses);
 #endif
-		}
-	}
+    }
+    
+    /*
+     * a successful search_msg() sends channel to
+     * the end of the list
+     */
+    firstChan = chan = (ciu) ellFirst (&piiuCast->chidlist);
+    while (chan) {
+        
+        ca_static->ca_min_retry = 
+            min(ca_static->ca_min_retry, chan->retry);
+        
+        /*
+         * clear counter when we reach the end of the list
+         *
+         * if we are making some progress then
+         * dont increase the delay between search
+         * requests
+         */
+        if (ca_static->ca_pEndOfBCastList == chan) {
+            if (ca_static->ca_search_responses==0u) {
+#if 0
+                printf ("increasing search try interval\n");
+#endif
+                cacSetRetryInterval(ca_static->ca_min_retry+1u);
+            }
+            
+            ca_static->ca_min_retry = UINT_MAX;
+            
+            /*
+             * increment the retry sequence number
+             * (this prevents the time of the next search
+             * try from being set to the current time if
+             * we are handling a response from an old
+             * search message)
+             */
+            ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
+            
+            /*
+             * so that old search tries will not update the counters
+             */
+            ca_static->ca_seq_no_at_list_begin = ca_static->ca_search_retry_seq_no;
 
-	/*
-	 * a successful search_msg() sends channel to
-	 * the end of the list
-	 */
-	firstChan = chan = (ciu) ellFirst (&piiuCast->chidlist);
-	while (chan) {
+            /*
+             * reset the search try/response counters at the end of the list
+             * (sequence number) so that we dont overflow, but dont subtract
+             * out tries that dont have a matching response yet in case they
+             * are delayed
+             */
+            if (ca_static->ca_search_tries>ca_static->ca_search_responses) {
+                ca_static->ca_search_tries -= ca_static->ca_search_responses;
+            }
+            else {
+                ca_static->ca_search_tries = 0;
+            }
+            ca_static->ca_search_responses = 0;
 
-		ca_static->ca_min_retry = 
-			min(ca_static->ca_min_retry, chan->retry);
-
-		/*
-		 * clear counter when we reach the end of the list
-		 *
-		 * if we are making some progress then
-		 * dont increase the delay between search
-		 * requests
-		 */
-		if (ca_static->ca_pEndOfBCastList == chan) {
-			if (ca_static->ca_search_responses==0u) {
-				cacSetRetryInterval(ca_static->ca_min_retry+1u);
-			}
-
-			ca_static->ca_min_retry = UINT_MAX;
-
-			/*
-			 * increment the retry sequence number
-			 * (this prevents the time of the next search
-			 * try from being set to the current time if
-			 * we are handling a response from an old
-			 * search message)
-			 */
-			ca_static->ca_search_retry_seq_no++; /* allowed to roll over */
-
-			/*
-			 * so that old search tries will not update the counters
-			 */
-			ca_static->ca_seq_no_at_list_begin = ca_static->ca_search_retry_seq_no;
-			/*
-			 * keeps the search try/response counters in bounds
-			 * (but keep some of the info from the previous iteration)
-			 */
-			ca_static->ca_search_responses = ca_static->ca_search_responses/16u;
-			ca_static->ca_search_tries = ca_static->ca_search_tries/16u;
-#ifdef DEBUG
-			printf ("saw end of list\n");
+#if 0
+            printf ("saw end of list\n");
 #endif	
-		}
+        }
+        
+        /*
+         * this moves the channel to the end of the
+         * list (if successful)
+         */
+        status = search_msg (chan, DONTREPLY);
+        if (status != ECA_NORMAL) {
+            nSent++;
+            
+            if (nSent>=ca_static->ca_frames_per_try) {
+                break;
+            }
+            
+            /*
+             * flush out the search request buffer
+             */
+            (*piiuCast->sendBytes)(piiuCast);
+            
+            /*
+             * try again
+             */
+            status = search_msg (chan, DONTREPLY);
+            if (status != ECA_NORMAL) {
+                break;
+            }
+        }
+        chan->retrySeqNo = ca_static->ca_search_retry_seq_no;
+        chan = (ciu) ellFirst (&piiuCast->chidlist);
+        
+        /*
+         * dont send any of the channels twice within one try
+         */
+        if (chan==firstChan) {
+            /*
+             * add one to nSent because there may be 
+             * one more partial frame to be sent
+             */
+            nSent++;
+            
+            /* 
+             * cap ca_static->ca_frames_per_try to
+             * the number of frames required for all of 
+             * the unresolved channels
+             */
+            if (ca_static->ca_frames_per_try>nSent) {
+                ca_static->ca_frames_per_try = nSent;
+            }
+            
+            break;
+        }
+    }
+    
+    UNLOCK; 	
+    
+    ca_static->ca_conn_next_retry = 
+        cac_time_sum (
+        &ca_static->currentTime,
+        &ca_static->ca_conn_retry_delay);
+    LOGRETRYINTERVAL 
 
-		/*
- 		 * this moves the channel to the end of the
-		 * list (if successful)
-		 */
-		status = search_msg (chan, DONTREPLY);
-		if (status != ECA_NORMAL) {
-			nSent++;
-
-			if (nSent>=ca_static->ca_frames_per_try) {
-				break;
-			}
-
-			/*
-			 * flush out the search request buffer
-			 */
-			(*piiuCast->sendBytes)(piiuCast);
-
-			/*
-			 * try again
-			 */
-			status = search_msg (chan, DONTREPLY);
-			if (status != ECA_NORMAL) {
-				break;
-			}
-		}
-		chan->retrySeqNo = ca_static->ca_search_retry_seq_no;
-		chan = (ciu) ellFirst (&piiuCast->chidlist);
-
-		/*
-		 * dont send any of the channels twice within one try
-		 */
-		if (chan==firstChan) {
-			/*
-			 * add one to nSent because there may be 
-			 * one more partial frame to be sent
-			 */
-			nSent++;
-
-			/* 
-			 * cap ca_static->ca_frames_per_try to
-			 * the number of frames required for all of 
-			 * the unresolved channels
-			 */
-			if (ca_static->ca_frames_per_try>nSent) {
-				ca_static->ca_frames_per_try = nSent;
-			}
-
-			break;
-		}
-    	}
-
- 	UNLOCK; 	
-
-	ca_static->ca_conn_next_retry = 
-		cac_time_sum (
-			&ca_static->currentTime,
-			&ca_static->ca_conn_retry_delay);
-	LOGRETRYINTERVAL 
 #ifdef DEBUG
-printf("sent %u at cur sec=%u cur usec=%u delay sec=%u delay usec = %u\n",
-	nSent, ca_static->currentTime.tv_sec,
-	ca_static->currentTime.tv_usec,
-	ca_static->ca_conn_retry_delay.tv_sec,
-	ca_static->ca_conn_retry_delay.tv_usec);
+    printf("sent %u at cur sec=%u cur usec=%u delay sec=%u delay usec = %u\n",
+        nSent, ca_static->currentTime.tv_sec,
+        ca_static->currentTime.tv_usec,
+        ca_static->ca_conn_retry_delay.tv_sec,
+        ca_static->ca_conn_retry_delay.tv_usec);
 #endif
+
 }
 
 /* 
@@ -630,6 +667,15 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 	}
 
 	UNLOCK;
+
+#   if DEBUG
+    {
+        char buf[64];
+        ipAddrToA (pnet_addr, buf, sizeof(buf));
+        printf ("new server available: %s\n", buf);
+    }
+#   endif
+
 }
 
 /*

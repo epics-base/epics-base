@@ -1,3 +1,12 @@
+MAJOR TODO LIST
+1) convert ca and casr to osi calls
+2) sequencer: unbundle?
+3) makeBaseApp - Janet is converting to use configure
+4) src/osi/solaris - This is really src/osi/singleThreaded
+   Thus how to handle two builds for solaris?
+
+The following directories are removed and or moved from 3.13 to 3.14
+
 src/cvtDctsdr
    removed. If users are upgrading form 3.12 they will have to use 3.13
 src/libvxWorks

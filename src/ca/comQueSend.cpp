@@ -105,21 +105,6 @@ void comQueSend::clear ()
     assert ( this->nBytesPending == 0 );
 }
 
-void comQueSend::clearUncommitted () 
-{
-    while ( this->pFirstUncommited.valid() ) {
-        tsDLIter < comBuf > next = this->pFirstUncommited;
-        next++;
-        this->pFirstUncommited->clearUncommittedIncomming ();
-        if ( this->pFirstUncommited->occupiedBytes() == 0u ) {
-            this->bufs.remove ( *this->pFirstUncommited );
-            this->pFirstUncommited->~comBuf ();
-            this->comBufMemMgr.release ( this->pFirstUncommited.pointer() );
-        }
-        this->pFirstUncommited = next;
-    }
-}
-
 void comQueSend::copy_dbr_string ( const void * pValue )
 {
     this->push ( * static_cast <const dbr_string_t *> ( pValue ) );
@@ -150,46 +135,51 @@ void comQueSend::copy_dbr_double ( const void * pValue )
     this->push ( * static_cast <const dbr_double_t *> ( pValue ) );
 }
 
+void comQueSend::copy_dbr_invalid ( const void * )
+{
+    throw cacChannel::badType ();
+}
+
 const comQueSend::copyScalarFunc_t comQueSend::dbrCopyScalar [39] = {
     &comQueSend::copy_dbr_string,
     &comQueSend::copy_dbr_short,
     &comQueSend::copy_dbr_float,
-    &comQueSend::copy_dbr_short, // DBR_ENUM
+    &comQueSend::copy_dbr_short,   // DBR_ENUM
     &comQueSend::copy_dbr_char,
     &comQueSend::copy_dbr_long,
     &comQueSend::copy_dbr_double,
-    0, // DBR_STS_SHORT
-    0, // DBR_STS_FLOAT
-    0, // DBR_STS_ENUM
-    0, // DBR_STS_CHAR
-    0, // DBR_STS_LONG
-    0, // DBR_STS_DOUBLE
-    0, // DBR_TIME_STRING
-    0, // DBR_TIME_INT
-    0, // DBR_TIME_SHORT
-    0, // DBR_TIME_FLOAT
-    0, // DBR_TIME_ENUM
-    0, // DBR_TIME_CHAR
-    0, // DBR_TIME_LONG
-    0, // DBR_TIME_DOUBLE
-    0, // DBR_GR_STRING
-    0, // DBR_GR_SHORT
-    0, // DBR_GR_FLOAT
-    0, // DBR_GR_ENUM
-    0, // DBR_GR_CHAR
-    0, // DBR_GR_LONG
-    0, // DBR_GR_DOUBLE
-    0, // DBR_CTRL_STRING
-    0, // DBR_CTRL_SHORT
-    0, // DBR_CTRL_FLOAT
-    0, // DBR_CTRL_ENUM
-    0, // DBR_CTRL_CHAR
-    0, // DBR_CTRL_LONG
-    0, // DBR_CTRL_DOUBLE
-    &comQueSend::copy_dbr_short, // DBR_PUT_ACKT
-    &comQueSend::copy_dbr_short, // DBR_PUT_ACKS
-    0, // DBR_STSACK_STRING
-    0  // DBR_CLASS_NAME
+    &comQueSend::copy_dbr_invalid, // DBR_STS_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_STS_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_STS_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_STS_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_STS_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_STS_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_INT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_GR_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_GR_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_GR_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_GR_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_GR_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_GR_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_GR_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_DOUBLE
+    &comQueSend::copy_dbr_short,   // DBR_PUT_ACKT
+    &comQueSend::copy_dbr_short,   // DBR_PUT_ACKS
+    &comQueSend::copy_dbr_invalid, // DBR_STSACK_STRING
+    &comQueSend::copy_dbr_invalid  // DBR_CLASS_NAME
 };
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) 
@@ -222,46 +212,51 @@ void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem )
     this->push ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
 
+void comQueSend::copy_dbr_invalid ( const void *, unsigned )
+{
+    throw cacChannel::badType ();
+}
+
 const comQueSend::copyVectorFunc_t comQueSend::dbrCopyVector [39] = {
     &comQueSend::copy_dbr_string,
     &comQueSend::copy_dbr_short,
     &comQueSend::copy_dbr_float,
-    &comQueSend::copy_dbr_short, // DBR_ENUM
+    &comQueSend::copy_dbr_short,   // DBR_ENUM
     &comQueSend::copy_dbr_char,
     &comQueSend::copy_dbr_long,
     &comQueSend::copy_dbr_double,
-    0, // DBR_STS_SHORT
-    0, // DBR_STS_FLOAT
-    0, // DBR_STS_ENUM
-    0, // DBR_STS_CHAR
-    0, // DBR_STS_LONG
-    0, // DBR_STS_DOUBLE
-    0, // DBR_TIME_STRING
-    0, // DBR_TIME_INT
-    0, // DBR_TIME_SHORT
-    0, // DBR_TIME_FLOAT
-    0, // DBR_TIME_ENUM
-    0, // DBR_TIME_CHAR
-    0, // DBR_TIME_LONG
-    0, // DBR_TIME_DOUBLE
-    0, // DBR_GR_STRING
-    0, // DBR_GR_SHORT
-    0, // DBR_GR_FLOAT
-    0, // DBR_GR_ENUM
-    0, // DBR_GR_CHAR
-    0, // DBR_GR_LONG
-    0, // DBR_GR_DOUBLE
-    0, // DBR_CTRL_STRING
-    0, // DBR_CTRL_SHORT
-    0, // DBR_CTRL_FLOAT
-    0, // DBR_CTRL_ENUM
-    0, // DBR_CTRL_CHAR
-    0, // DBR_CTRL_LONG
-    0, // DBR_CTRL_DOUBLE
-    &comQueSend::copy_dbr_short, // DBR_PUT_ACKT
-    &comQueSend::copy_dbr_short, // DBR_PUT_ACKS
-    0, // DBR_STSACK_STRING
-    0  // DBR_CLASS_NAME
+    &comQueSend::copy_dbr_invalid, // DBR_STS_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_STS_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_STS_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_STS_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_STS_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_STS_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_INT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_TIME_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_GR_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_GR_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_GR_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_GR_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_GR_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_GR_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_GR_DOUBLE
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_STRING
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_SHORT
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_FLOAT
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_ENUM
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_CHAR
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_LONG
+    &comQueSend::copy_dbr_invalid, // DBR_CTRL_DOUBLE
+    &comQueSend::copy_dbr_short,   // DBR_PUT_ACKT
+    &comQueSend::copy_dbr_short,   // DBR_PUT_ACKS
+    &comQueSend::copy_dbr_invalid, // DBR_STSACK_STRING
+    &comQueSend::copy_dbr_invalid  // DBR_CLASS_NAME
 };
 
 comBuf * comQueSend::popNextComBufToSend () 
@@ -289,8 +284,6 @@ void comQueSend::insertRequestHeader (
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t requestDependent, bool v49Ok ) 
 {
-    this->beginMsg ();
-
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
         comBuf * pComBuf = this->bufs.last ();
         if ( ! pComBuf || pComBuf->unoccupiedBytes() < 16u ) {
@@ -326,21 +319,35 @@ void comQueSend::insertRequestHeader (
 
 void comQueSend::insertRequestWithPayLoad (
     ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
-    ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-    bool v49Ok ) 
+    ca_uint32_t cid, ca_uint32_t requestDependent, 
+    const void * pPayload, bool v49Ok ) 
 {
     if ( dataType >= comQueSendCopyDispatchSize ) {
         throw cacChannel::badType();
     }
-    ca_uint32_t size;
-    bool stringOptim;
-    if ( dataType == DBR_STRING && nElem == 1 ) {
-        const char *pStr = static_cast < const char * >  ( pPayload );
-        size = strlen ( pStr ) + 1u;
-        if ( size > MAX_STRING_SIZE ) {
-            throw cacChannel::outOfBounds();
+    ca_uint32_t size = 0u;
+    ca_uint32_t payloadSize = 0u;
+    if ( nElem == 1 ) {
+        if ( dataType == DBR_STRING  ) {
+            const char * pStr = static_cast < const char * >  ( pPayload );
+            size = strlen ( pStr ) + 1u;
+            if ( size > MAX_STRING_SIZE ) {
+                throw cacChannel::outOfBounds();
+            }
+            payloadSize = CA_MESSAGE_ALIGN ( size );
+            this->insertRequestHeader ( request, payloadSize, 
+                static_cast <ca_uint16_t> ( dataType ), 
+                nElem, cid, requestDependent, v49Ok );
+            this->pushString ( pStr, size );  
         }
-        stringOptim = true;
+        else {
+            size = dbr_size[dataType];
+            payloadSize = CA_MESSAGE_ALIGN ( size );
+            this->insertRequestHeader ( request, payloadSize, 
+                static_cast <ca_uint16_t> ( dataType ), 
+                nElem, cid, requestDependent, v49Ok );
+            ( this->*dbrCopyScalar [dataType] ) ( pPayload );
+        }
     }
     else {
         unsigned maxBytes;
@@ -348,37 +355,26 @@ void comQueSend::insertRequestWithPayLoad (
             maxBytes = 0xffffffff;
         }
         else {
-            maxBytes = MAX_TCP - 16u; // allow space for protocol header
+            maxBytes = MAX_TCP - sizeof ( caHdr ); 
         }
-        unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+        unsigned maxElem = 
+            ( maxBytes - sizeof (dbr_double_t) - dbr_size[dataType] ) / 
+                dbr_value_size[dataType];
         if ( nElem >= maxElem ) {
             throw cacChannel::outOfBounds();
         }
         size = dbr_size_n ( dataType, nElem );
-        stringOptim = false;
-    }
-    ca_uint32_t payloadSize = CA_MESSAGE_ALIGN ( size );
-    this->insertRequestHeader ( request, payloadSize, 
-        static_cast <ca_uint16_t> ( dataType ), 
-        nElem, cid, requestDependent, v49Ok );
-    if ( stringOptim ) {
-        this->pushString ( static_cast < const char * > ( pPayload ), size );  
-    }
-    else if ( nElem == 1u ) {
-        if ( ! this->dbrCopyScalar [dataType] ) {
-            throw cacChannel::badType();
-        }
-        ( this->*dbrCopyScalar [dataType] ) ( pPayload );
-    }
-    else {
-        if ( ! this->dbrCopyVector [dataType] ) {
-            throw cacChannel::badType();
-        }
+        payloadSize = CA_MESSAGE_ALIGN ( size );
+        this->insertRequestHeader ( request, payloadSize, 
+            static_cast <ca_uint16_t> ( dataType ), 
+            nElem, cid, requestDependent, v49Ok );
         ( this->*dbrCopyVector [dataType] ) ( pPayload, nElem );
     }
     // set pad bytes to nill
-    this->pushString ( cacNillBytes, payloadSize - size );
-    this->commitMsg ();
+    unsigned padSize = payloadSize - size;
+    if ( padSize ) {
+        this->pushString ( cacNillBytes, payloadSize - size );
+    }
 }
 
 void comQueSend::commitMsg () 
@@ -388,7 +384,22 @@ void comQueSend::commitMsg ()
         this->pFirstUncommited->commitIncomming ();
         this->pFirstUncommited++;
     }
+    // printf ( "NBP: %u\n", this->nBytesPending );
 }
 
 
+void comQueSend::clearUncommitedMsg ()
+{
+    while ( this->pFirstUncommited.valid() ) {
+        tsDLIter < comBuf > next = this->pFirstUncommited;
+        next++;
+        this->pFirstUncommited->clearUncommittedIncomming ();
+        if ( this->pFirstUncommited->occupiedBytes() == 0u ) {
+            this->bufs.remove ( *this->pFirstUncommited );
+            this->pFirstUncommited->~comBuf ();
+            this->comBufMemMgr.release ( this->pFirstUncommited.pointer() );
+        }
+        this->pFirstUncommited = next;
+    }
+}
 

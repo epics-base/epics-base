@@ -1,4 +1,4 @@
-/* devABANALOG.c */
+/* devABSLCDCM.c */
 /*
  *      Original Author: Ric Claus
  *      Current Author:  Stephanie Allison
@@ -82,7 +82,7 @@ typedef struct
   DEVSUPFUN	read_li;
 }  ABLIDSET;
 
-ABLIDSET devLiAb = {5, NULL, NULL, init_li, ioinfo, read_li};
+ABLIDSET devLiAbSclDcm = {5, NULL, NULL, init_li, ioinfo, read_li};
 
 LOCAL long write_lo (struct longoutRecord *prec);
 LOCAL long init_lo  (struct longoutRecord *prec);
@@ -96,7 +96,7 @@ typedef struct
   DEVSUPFUN	write_dl;
 } ABLODSET;
 
-ABLODSET devLoAb = {5, NULL, NULL, init_lo, NULL, write_lo};
+ABLODSET devLoAbSclDcm = {5, NULL, NULL, init_lo, NULL, write_lo};
 
 LOCAL long read_ai(struct aiRecord *prec);
 LOCAL long init_ai(struct aiRecord *prec);
@@ -110,7 +110,7 @@ typedef struct {
 	DEVSUPFUN	read_ai;
 	DEVSUPFUN	special_linconv;} ABAIDSET;
 
-ABAIDSET devAiAb={6, NULL, NULL, init_ai, ioinfo, read_ai, NULL};
+ABAIDSET devAiAbSclDcm={6, NULL, NULL, init_ai, ioinfo, read_ai, NULL};
 
 LOCAL long write_ao(struct aoRecord *prec);
 LOCAL long init_ao (struct aoRecord *prec);
@@ -124,7 +124,7 @@ typedef struct {
 	DEVSUPFUN	write_ao;
 	DEVSUPFUN	special_linconv;} ABAODSET;
 
-ABAODSET devAoAb={6, NULL, NULL, init_ao, NULL, write_ao, NULL};
+ABAODSET devAoAAbSclDcm{6, NULL, NULL, init_ao, NULL, write_ao, NULL};
 
 
 LOCAL void devCallback (void * drvPvt)

@@ -602,8 +602,8 @@ bool cac::transferChanToVirtCircuit (
             }
         }
 
-        this->pudpiiu->uninstallChan ( guard, *pChan );
-        piiu->installChannel ( guard, *pChan, sid, typeCode, count );
+        this->pudpiiu->uninstallChan ( cbGuard, guard, *pChan );
+        piiu->installChannel ( cbGuard, guard, *pChan, sid, typeCode, count );
 
         if ( ! piiu->ca_v42_ok () ) {
             // connect to old server with lock applied
@@ -697,7 +697,7 @@ void cac::destroyChannel ( nciu & chan )
         // o chan destroy exception has been delivered
         {
             epicsGuard < cacMutex > guard ( this->mutex );
-            chan.getPIIU()->uninstallChan ( guard, chan );
+            chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
         }
     }
 
@@ -1370,9 +1370,9 @@ void cac::disconnectChannel (
 {
     assert ( this->pudpiiu );
     this->disconnectAllIO ( guard, chan, true );
-    chan.getPIIU()->uninstallChan ( guard, chan );
-    chan.disconnect ( *this->pudpiiu, cbGuard, guard );
+    chan.getPIIU()->uninstallChan ( cbGuard, guard, chan );
     this->pudpiiu->installDisconnectedChannel ( currentTime, chan );
+    chan.circuitHangupNotify ( *this->pudpiiu, cbGuard, guard );
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
@@ -1472,17 +1472,23 @@ void cac::disconnectNotify ( tcpiiu & iiu )
     iiu.disconnectNotify ( guard );
 }
 
+void cac::unresponsiveCircuitNotify ( tcpiiu & iiu )
+{
+    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+    epicsGuard < cacMutex > guard ( this->mutex );
+    iiu.unresponsiveCircuitNotify ( cbGuard, guard );
+}
+
 void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
     int exception = ECA_DISCONN;
     char hostNameTmp[64];
     bool exceptionNeeded = false;
     epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-
     {
         epicsGuard < cacMutex > guard ( this->mutex );
 
-        if ( iiu.channelCount() ) {
+        if ( iiu.channelCount( cbGuard ) ) {
             iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
             if ( iiu.connecting () ) {
                 exception = ECA_CONNSEQTMO;
@@ -1509,7 +1515,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
     {
         epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
-        if ( iiu.channelCount() ) {
+        if ( iiu.channelCount ( cbGuard ) ) {
             char hostNameTmp[64];
             iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
             genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );

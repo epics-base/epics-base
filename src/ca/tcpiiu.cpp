@@ -37,6 +37,7 @@
 #include "net_convert.h"
 #include "bhe.h"
 #include "epicsSignal.h"
+#include "caerr.h"
 
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
@@ -344,7 +345,12 @@ void tcpRecvThread::run ()
             // only one recv thread at a time may call callbacks
             // - pendEvent() blocks until threads waiting for
             // this lock get a chance to run
-            epicsGuard < callbackMutex > guard ( this->cbMutex );
+            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+
+            if ( this->iiu.softDisconnect ) {
+                epicsGuard < cacMutex > cacGuard ( this->iiu.cacRef.mutexRef() );
+                this->iiu.responsiveCircuitNotify ( cbGuard, cacGuard );
+            }
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
@@ -368,7 +374,7 @@ void tcpRecvThread::run ()
                 pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
 
                 // execute receive labor
-                bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
+                bool protocolOK = this->iiu.processIncoming ( currentTime, cbGuard );
                 if ( ! protocolOK ) {
                     this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
                     break;
@@ -449,7 +455,8 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     earlyFlush ( false ),
     recvProcessPostponedFlush ( false ),
     discardingPendingData ( false ),
-    socketHasBeenClosed ( false )
+    socketHasBeenClosed ( false ),
+    softDisconnect ( false )
 {
     this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
@@ -637,6 +644,52 @@ void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
     this->sendThreadFlushEvent.signal ();
 }
 
+void tcpiiu::responsiveCircuitNotify ( 
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard )
+{
+    this->softDisconnect = false;
+    tsDLIter < nciu > pChan = this->channelList.firstIter ();
+    while ( pChan.valid() ) {
+        // The cac lock is released herein so there is concern that
+        // the list could be changed while we are traversing it.
+        // However, this occurs only if a circuit disconnects,
+        // a user deletes a channel, or a server disconnects a
+        // channel. The callback lock must be taken in all of
+        // these situations so this code is protected.
+        pChan->responsiveCircuitNotify ( cbGuard, guard );
+        pChan++;
+    }
+}
+
+void tcpiiu::unresponsiveCircuitNotify ( 
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard )
+{
+    this->recvDog.cancel();
+    this->sendDog.cancel();
+    this->softDisconnect = true;
+    if ( this->channelList.count() ) {
+        char hostNameTmp[128];
+        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        {
+            epicsGuardRelease < cacMutex > guardRelease ( guard );
+            genLocalExcep ( cbGuard, this->cacRef, ECA_UNRESPTMO, hostNameTmp );
+        }
+        tsDLIter < nciu > pChan = this->channelList.firstIter ();
+        while ( pChan.valid() ) {
+            // The cac lock is released herein so there is concern that
+            // the list could be changed while we are traversing it.
+            // However, this occurs only if a circuit disconnects,
+            // a user deletes a channel, or a server disconnects a
+            // channel. The callback lock must be taken in all of
+            // these situations so this code is protected.
+            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
+            pChan++;
+        }
+    }
+}
+
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
                                      epicsGuard < cacMutex > & guard )
 {
@@ -750,6 +803,7 @@ void tcpiiu::show ( unsigned level ) const
         this->recvThread.show ( level-2u );
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
         ::printf ( "IO identifier hash table:\n" );
+
         tsDLIterConst < nciu > pChan = this->channelList.firstIter ();
 	    while ( pChan.valid () ) {
             pChan->show ( level - 2u );
@@ -1301,7 +1355,9 @@ void tcpiiu::removeAllChannels (
     }
 }
 
-void tcpiiu::installChannel ( epicsGuard < cacMutex > & guard, 
+void tcpiiu::installChannel ( 
+    epicsGuard < callbackMutex > &,
+    epicsGuard < cacMutex > & guard, 
     nciu & chan, unsigned sidIn, 
     ca_uint16_t typeIn, arrayElementCount countIn )
 {
@@ -1311,8 +1367,9 @@ void tcpiiu::installChannel ( epicsGuard < cacMutex > & guard,
     this->flushRequest ();
 }
 
-void tcpiiu::uninstallChan 
-        ( epicsGuard < cacMutex > & guard, nciu & chan )
+void tcpiiu::uninstallChan ( 
+    epicsGuard < callbackMutex > &, 
+    epicsGuard < cacMutex > & guard, nciu & chan )
 {
     this->channelList.remove ( chan );
     if ( channelList.count() == 0 ) {

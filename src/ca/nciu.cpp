@@ -55,7 +55,8 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     typeCode ( USHRT_MAX ),
     priority ( static_cast <ca_uint8_t> ( pri ) ),
     f_connected ( false ),
-    f_claimSent ( false )
+    f_createChanReqSent ( false ),
+    f_createChanRespReceived ( false )
 {
 	size_t nameLengthTmp = strlen ( pNameIn ) + 1;
 
@@ -113,16 +114,16 @@ void nciu::connect ( unsigned nativeType,
     epicsGuard < callbackMutex > & cbGuard, 
     epicsGuard < cacMutex > & guard )
 {
-    if ( ! this->f_claimSent ) {
+    if ( ! this->f_createChanReqSent ) {
         this->cacCtx.printf (
             "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
             this->getId (), sidIn );
         return;
     }
 
-    if ( this->f_connected ) {
+    if ( this->f_createChanRespReceived ) {
         this->cacCtx.printf (
-            "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
+            "CAC: Ignored create channel resp to conn chan CID=%u SID=%u?\n",
             this->getId (), sidIn );
         return;
     }
@@ -138,6 +139,7 @@ void nciu::connect ( unsigned nativeType,
     this->count = nativeCount;
     this->sid = sidIn;
     this->f_connected = true;
+    this->f_createChanRespReceived = true;
 
     /*
      * if less than v4.1 then the server will never
@@ -156,16 +158,6 @@ void nciu::connect ( unsigned nativeType,
     {
         epicsGuardRelease < cacMutex > unguard ( guard );
 
-        // channel uninstal routine grabs the callback lock so
-        // a channel will not be deleted while a call back is 
-        // in progress
-        //
-        // the callback lock is also taken when a channel 
-        // disconnects to prevent a race condition with the 
-        // code below - ie we hold the callback lock here
-        // so a chanel cant be destroyed out from under us.
-        this->notify().connectNotify ();
-
         /*
          * if less than v4.1 then the server will never
          * send access rights and we know that there
@@ -175,14 +167,47 @@ void nciu::connect ( unsigned nativeType,
         if ( ! v41Ok ) {
             this->notify().accessRightsNotify ( this->accessRightState );
         }
+
+        // channel uninstal routine grabs the callback lock so
+        // a channel will not be deleted while a call back is 
+        // in progress
+        //
+        // the callback lock is also taken when a channel 
+        // disconnects to prevent a race condition with the 
+        // code below - ie we hold the callback lock here
+        // so a chanel cant be destroyed out from under us.
+        this->notify().connectNotify ();
     }
 }
 
-void nciu::disconnect ( 
-    netiiu & newiiu, epicsGuard < callbackMutex > & cbGuard, 
+void nciu::unresponsiveCircuitNotify ( 
+    epicsGuard < callbackMutex > & cbGuard, 
     epicsGuard < cacMutex > & guard )
 {
-    bool currentlyConnected = this->f_connected;
+    if ( this->f_connected ) { 
+        this->f_connected = false;
+        epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
+        this->notify().disconnectNotify ();
+        caAccessRights noRights;
+        this->notify().accessRightsNotify ( noRights );
+    }
+}
+
+void nciu::responsiveCircuitNotify ( 
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard )
+{
+    if ( ! this->f_connected ) { 
+        this->f_connected = true;
+        epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
+        this->notify().connectNotify ();
+        this->notify().accessRightsNotify ( this->accessRightState );
+    }
+}
+
+void nciu::circuitHangupNotify ( class udpiiu & newiiu, 
+    epicsGuard < callbackMutex > & cbGuard, epicsGuard < cacMutex > & guard )
+{
     this->piiu = & newiiu;
     this->retry = disconnectRetrySetpoint;
     this->typeCode = USHRT_MAX;
@@ -190,9 +215,10 @@ void nciu::disconnect (
     this->sid = UINT_MAX;
     this->accessRightState.clrReadPermit();
     this->accessRightState.clrWritePermit();
-    this->f_claimSent = false;
-    this->f_connected = false;
-    if ( currentlyConnected ) { 
+    this->f_createChanReqSent = false;
+    this->f_createChanRespReceived = false;
+    if ( this->f_connected ) { 
+        this->f_connected = false;
         epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
         this->notify().disconnectNotify ();
         this->notify().accessRightsNotify ( this->accessRightState );
@@ -259,11 +285,12 @@ void nciu::createChannelRequest (
     tcpiiu & iiu, epicsGuard < cacMutex > & guard )
 {
     iiu.createChannelRequest ( *this, guard );
-    this->f_claimSent = true;
+    this->f_createChanReqSent = true;
 }
 
-cacChannel::ioStatus nciu::read ( unsigned type, arrayElementCount countIn, 
-                     cacReadNotify &notify, ioid *pId )
+cacChannel::ioStatus nciu::read ( 
+    unsigned type, arrayElementCount countIn, 
+    cacReadNotify &notify, ioid *pId )
 {
     //
     // fail out if their arguments are invalid

@@ -17,7 +17,7 @@
 #if (defined (IOCSH_REAL_READLINE) || defined (IOCSH_FAKE_READLINE))
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #if (defined (IOCSH_REAL_READLINE))
 # include <readline/readline.h>

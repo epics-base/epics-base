@@ -23,6 +23,7 @@
 
 #include <new>
 #include <float.h>
+#include <epicsExit.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
@@ -125,7 +126,7 @@ const char * ca_message_text []
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
-extern "C" void ca_client_exit_handler ()
+extern "C" void ca_client_exit_handler (void *)
 {
     if ( caClientContextId ) {
         epicsThreadPrivateDelete ( caClientContextId );
@@ -138,7 +139,7 @@ extern "C" void ca_init_client_context ( void * )
 {
     caClientContextId = epicsThreadPrivateCreate ();
     if ( caClientContextId ) {
-        atexit ( ca_client_exit_handler );
+        epicsAtExit ( ca_client_exit_handler,0 );
     }
 }
 

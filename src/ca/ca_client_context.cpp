@@ -30,6 +30,7 @@
 #include <stdexcept>
 
 #include <stdio.h>
+#include "epicsExit.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
@@ -40,7 +41,7 @@ epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
-extern "C" void cacExitHandler ()
+extern "C" void cacExitHandler (void *)
 {
     epicsThreadPrivateDelete ( caClientCallbackThreadId );
 }
@@ -50,7 +51,7 @@ extern "C" void cacOnceFunc ( void * )
 {
     caClientCallbackThreadId = epicsThreadPrivateCreate ();
     assert ( caClientCallbackThreadId );
-    atexit ( cacExitHandler );
+    epicsAtExit ( cacExitHandler,0 );
 }
 
 extern epicsThreadPrivateId caClientContextId;

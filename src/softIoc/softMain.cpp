@@ -57,6 +57,7 @@
 
 #include "registryFunction.h"
 #include "epicsThread.h"
+#include "epicsExit.h"
 #include "dbStaticLib.h"
 #include "subRecord.h"
 #include "dbAccess.h"
@@ -74,7 +75,7 @@ const char *base_dbd = DBD_FILE(EPICS_BASE);
 
 
 static void exitSubroutine(subRecord *precord) {
-    exit((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
+    epicsExit((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static void usage(int status) {
@@ -83,7 +84,7 @@ static void usage(int status) {
     puts("\t[st.cmd]");
     puts("Compiled-in default path to softIoc.dbd is:");
     printf("\t%s\n", base_dbd);
-    exit(status);
+    epicsExit(status);
 }
 
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
     }
     
     if (dbLoadDatabase(dbd_file, NULL, NULL)) {
-	exit(EXIT_FAILURE);
+	epicsExit(EXIT_FAILURE);
     }
     
     softIoc_registerRecordDeviceDriver(pdbbase);
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 	
 	case 'd':
 	    if (dbLoadRecords(*++argv, macros)) {
-		exit(EXIT_FAILURE);
+		epicsExit(EXIT_FAILURE);
 	    }
 	    loadedDb = 1;
 	    --argc;
@@ -187,7 +188,7 @@ int main(int argc, char *argv[])
     
     /* run user's startup script */
     if (argc>0) {
-	if (iocsh(*argv)) exit(EXIT_FAILURE);
+	if (iocsh(*argv)) epicsExit(EXIT_FAILURE);
 	epicsThreadSleep(0.2);
 	loadedDb = 1;	/* Give it the benefit of the doubt... */
     }
@@ -203,5 +204,7 @@ int main(int argc, char *argv[])
 	    usage(EXIT_FAILURE);
 	}
     }
-    return EXIT_SUCCESS;
+    epicsExit( EXIT_SUCCESS);
+    /*Note that the following statement will never be executed*/
+    return 0;
 }

@@ -20,7 +20,7 @@ CPLUSPLUS = CCC
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
-RCCMD = rc -l 0x409  -fo $@ $<
+RCCMD = rc -l 0x409 -i . -i .. -i $(INSTALL_INCLUDE) -i $(EPICS_BASE_INCLUDE) -fo $@ $<
 
 ARCMD = lib /nologo /verbose /out:$@
 

@@ -1,0 +1,80 @@
+#
+#  $Id$
+#
+#  The developer may edit this file.
+# assume T_A is the host arch if not specified
+
+#
+#  Common build definitions
+#
+
+####################################################
+CONFIG = $(TOP)/configure
+INSTALL_LOCATION=$(TOP)
+include $(CONFIG)/CONFIG_EPICS_BASE
+include $(CONFIG)/CONFIG_BASE_VERSION
+####################################################
+-include $(TOP)/config/RELEASE
+-include $(TOP)/config/RELEASE.$(HOST_ARCH)
+####################################################
+
+include $(CONFIG)/CONFIG_COMMON
+ 
+#  Site-specific build options
+#
+include $(CONFIG)/CONFIG_SITE
+
+#  Host architecture specific definitions
+#
+include $(CONFIG)/CONFIG.Host.$(HOST_ARCH)
+-include $(CONFIG)/CONFIG_SITE.Host.$(HOST_ARCH)
+ 
+ifdef T_A
+
+#  Architecture specific definitions
+#
+ifneq ($(HOST_ARCH),$(T_A))
+include $(CONFIG)/CONFIG.CrossCommon
+endif
+
+include $(CONFIG)/CONFIG.Target.$(T_A)
+#
+-include $(CONFIG)/CONFIG_SITE.Target.$(T_A)
+#
+-include $(CONFIG)/CONFIG_SITE.$(HOST_ARCH).$(T_A)
+ 
+endif
+
+#  User specific definitions
+#
+-include $(HOME)/configure/CONFIG
+-include $(HOME)/configure/CONFIG.Host.$(HOST_ARCH)
+ifdef T_A
+-include $(HOME)/configure/CONFIG.$(OS_CLASS)
+-include $(HOME)/configure/CONFIG.Target.$(T_A)
+-include $(HOME)/configure/CONFIG.$(HOST_ARCH).$(T_A)
+endif
+
+#  All options
+#   may be overridden here.
+#
+# EXAMPLES
+# --------
+#  Build client objects statically ?  must be either YES or NO
+#STATIC_BUILD=NO
+#  Unix Optimization,   must be either YES or NO
+#HOST_OPT=YES
+#  VxWorks Optimization,  must be either YES or NO
+#VX_OPT=YES
+#  Generate Verbose Compiler Warnings for Unix,  must be either YES or NO
+#UNIX_WARN=YES
+#  Generate Verbose Compiler Warnings for VxWorks,  must be either YES or NO
+#VX_WARN=YES
+#etc.
+
+#CROSS_COMPILER_TARGET_ARCHS=mv167
+#ANSI=GCC
+#CPLUSPLUS=G++
+#CMPLR=STRICT
+#CXXCMPLR=STRICT
+

@@ -1,0 +1,19 @@
+#
+#  $Id$
+#
+#  EPICS Version information
+#
+# This file is interpreted by the Bourne Shell (MakeRelease), so spaces are
+# not allowed around the '=' signs or in unquoted values.
+#
+
+EPICS_VERSION=3
+EPICS_REVISION=13
+EPICS_MODIFICATION=1
+EPICS_UPDATE_NAME=
+EPICS_UPDATE_LEVEL=1
+
+EPICS_VERSION_STRING="EPICS Version ${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION}.${EPICS_UPDATE_NAME}${EPICS_UPDATE_LEVEL}"
+
+CVS_DATE="\$$Date$$"
+

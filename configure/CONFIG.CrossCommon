@@ -1,0 +1,7 @@
+# Cross compiler default definitions
+
+CROSS = YES
+
+ANSI = GCC
+CPLUSPLUS = G++
+

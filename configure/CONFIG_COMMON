@@ -1,0 +1,239 @@
+#
+#  $Id$
+#
+#  CONFIG_COMMON
+#
+#  This file is to be maintained by the community.
+#
+
+# Common Configuration Information 
+
+####################################################################
+####################################################################
+
+# CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
+CROSS1 = $(CROSS_COMPILER_TARGET_ARCHS$(word 1,$(CROSS_COMPILER_HOST_ARCHS)))
+ 
+# CROSS2 will be defined only when CROSS_COMPILER_HOST_ARCHS is defined
+# and HOST_ARCH is one of it's words  
+CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))))
+ 
+BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
+
+####################################################################
+####################################################################
+ 
+INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
+INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
+
+INSTALL_INCLUDE             = $(INSTALL_LOCATION)/include
+INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
+INSTALL_HTML                = $(INSTALL_LOCATION)/html
+INSTALL_MAN                 = $(INSTALL_LOCATION)/man
+INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
+INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
+INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
+
+DIVIDER = .
+OBJ = .
+RES = .
+
+# Default for perl if it's on the PATH,
+# otherwise override this in CONFIG_SITE.<host_arch>
+PERL=perl
+
+# install 
+TOOLS = $(CONFIG)/tools
+INSTALL = $(PERL) $(TOOLS)/installEpics.pl
+INSTALL_PRODUCT = $(INSTALL)
+INSTALL_LIBRARY = $(INSTALL)
+
+ifdef T_A
+
+INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
+
+#--------------------------------------------------
+# GNU compiler defaults
+
+GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
+GCC_AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
+GCC_CPP = $(GNU_BIN)/cpp$(CMPLR_SUFFIX)
+GCC_RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
+GCC_LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+
+NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
+MUNCH = $(GNU_BIN)/munch
+
+GCC_ANSI = $(GCC) -ansi
+GCC_STRICT = $(GCC) -ansi -pedantic
+GCC_TRAD = $(GCC) -traditional
+GCC_WARN_YES = -Wall
+GCC_WARN_NO = -w
+GCC_OPT_YES = -O
+GCC_OPT_NO = -g
+GCC_SFLAGS_YES = -static
+GCC_SFLAGS_NO =
+GCC_SLIBS_YES =
+GCC_SLIBS_NO =
+GCC_CROSSFLAGS_YES = -B$(GNU_LIB)/gcc-lib/ -nostdinc
+GCC_CPPCROSSFLAGS_YES = -nostdinc
+###############GCC_SHRLIB_CFLAGS_YES =  -fPIC
+GCC_SHRLIB_LDFLAGS_YES =  -shared
+
+G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
+G++_LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+
+G++_NORMAL = $(G++) -ansi -pedantic
+G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
+G++_TRAD = $(G++) -traditional
+G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
+G++_WARN_YES = -Wall \
+      -Wmissing-prototypes -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Wpointer-arith -Winline
+G++_WARN_NO = -w
+G++_OPT_YES = -O
+G++_OPT_NO = -g
+G++_SFLAGS_YES = -static
+G++_SFLAGS_NO =
+G++_SLIBS_YES =
+G++_SLIBS_NO =
+G++_DEPENDS_FLAG = -MM
+###############G++_SHRLIB_CFLAGS_YES =  -fPIC
+G++_SHRLIB_LDFLAGS_YES =  -shared
+
+#--------------------------------------------------
+# C compiler
+CC = $($(ANSI)_$(CMPLR)) $(GCC_CROSSFLAGS_$(CROSS))
+AR = $($(ANSI)_AR)
+CPP =  $($(ANSI)_CPP) $(GCC_CPPCROSSFLAGS_$(CROSS))
+RANLIB =  $($(ANSI)_RANLIB)
+LD = $($(ANSI)_LD)
+
+#--------------------------------------------------
+# C++ compiler
+CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CROSSFLAGS_$(CROSS))
+#####################  CXX_LD definition may not be necessary
+CXX_LD = $($(CPLUSPLUS)_LD)
+
+#---------------------------------------------------------------
+# Vendor compiler dependent options
+VENDOR_DEP_CFLAGS = $($(ANSI)_DEP_CFLAGS)
+VENDOR_DEP_CXXFLAGS = $($(CPLUSPLUS)_DEP_CFLAGS)
+
+#---------------------------------------------------------------
+# Architecture dependent options (solaris,sun4,mv167,...)
+ARCH_DEP_CFLAGS =
+ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
+ARCH_DEP_LDFLAGS =
+ARCH_DEP_LDLIBS =
+
+#---------------------------------------------------------------
+# Operating system dependent options (Unix,Vx,WIN32...)
+OP_SYS_CFLAGS =
+OP_SYS_LDFLAGS =
+OP_SYS_INCLUDES =
+OP_SYS_LDLIBS =
+
+#--------------------------------------------------
+# SOURCE* used by WIN32 only
+SOURCE_CFLAG =
+SOURCE_CXXCFLAG =
+
+#--------------------------------------------------
+# Makefile specific options
+USR_INCLUDES =
+USR_CFLAGS =
+USR_CXXFLAGS =
+USR_LDFLAGS =
+USR_LDLIBS =
+USR_CPPFLAGS =
+
+#--------------------------------------------------
+# Target specific options
+TARGET_INCLUDES = $($(basename $@)_INCLUDES)
+TARGET_CFLAGS = $($(basename $@)_CFLAGS)
+TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS)
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+TARGET_LDLIBS = $($(basename $@)_LDLIBS)
+TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS)
+TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
+
+#--------------------------------------------------
+# Depends flag
+DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
+ 
+#--------------------------------------------------
+# C++ template flag option
+TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
+ 
+#--------------------------------------------------
+#  (CONFIG.Vx will override OS_CLASS)
+OS_CLASS = $(ARCH_CLASS)
+
+#--------------------------------------------------
+# Install includes
+INSTALL_INCLUDES = -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) -I$(INSTALL_INCLUDE)
+
+#--------------------------------------------------
+# Warnings flags  (CONFIG.<arch> will override)
+WARN_CFLAGS = $($(ANSI)_WARN_$($(BUILD_TYPE)_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(BUILD_TYPE)_WARN))
+
+#--------------------------------------------------
+# Optimization flags  (CONFIG.<arch> will override)
+OPT_CFLAGS = $($(ANSI)_OPT_$($(BUILD_TYPE)_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(BUILD_TYPE)_OPT))
+OPT_LDFLAGS =
+ 
+#--------------------------------------------------
+# Static build options
+STATIC_CFLAGS = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
+STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
+STATIC_LDFLAGS = $($(ANSI)_SLDFLAGS_$(STATIC_BUILD))
+STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
+ 
+#--------------------------------------------------
+# ar definition default
+ARCMD = $(AR) $(ARFLAGS) $@
+ 
+#--------------------------------------------------
+# depends definition 
+DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
+
+#--------------------------------------------------
+# Include files
+
+INCLUDES = -I- $(USR_INCLUDES) -I. -I.. $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+
+CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
+ $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VENDOR_DEP_CFLAGS) $(STATIC_CFLAGS)\
+ $(OP_SYS_CFLAGS) $(INCLUDES)
+
+#--------------------------------------------------
+# Flags
+
+CXXFLAGS = $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS)\
+ $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(VENDOR_DEP_CXXFLAGS) $(STATIC_CXXCFLAGS)\
+ $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG) $(INCLUDES)
+
+LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS)\
+ $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS)
+
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS)\
+ $(STATIC_LDLIBS) $(OP_SYS_LDLIBS)
+
+CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)
+
+CPPSNCFLAGS = $(INCLUDES)
+
+#--------------------------------------------------
+# Build compile line here
+
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
+
+endif
+

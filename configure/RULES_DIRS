@@ -1,0 +1,50 @@
+#
+#  $Id$
+#
+ 
+
+ARCHS += $(BUILD_ARCHS) host cross
+ACTIONS += clean inc depends buildInstall
+ 
+dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
+actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)
+ 
+dirActionArchTargets = $(foreach dir, $(DIRS), \
+                       $(foreach action, $(ACTIONS) install,\
+                       $(foreach arch, $(ARCHS), \
+                       $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
+dirArchTargets += $(foreach dir, $(DIRS), \
+                  $(foreach arch, $(ARCHS),\
+                  $(dir)$(DIVIDER)$(arch)))
+dirActionTargets += $(foreach dir, $(DIRS), \
+                    $(foreach action, $(ACTIONS) install,\
+                    $(dir)$(DIVIDER)$(action)))
+actionArchTargets = $(foreach action, $(ACTIONS) install,\
+                    $(foreach arch, $(ARCHS), \
+                    $(action)$(DIVIDER)$(arch)))
+
+installArchTargets = $(foreach action, install,\
+                    $(foreach arch, $(ARCHS), \
+                    $(action)$(DIVIDER)$(arch)))
+
+all install :: inc buildInstall 
+
+rebuild:: clean all
+
+$(ARCHS) $(installArchTargets) :: inc
+
+$(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
+	$(MAKE) -C $(dirPart) $(actionArchPart)
+
+$(ARCHS) $(ACTIONS) $(actionArchTargets) ::%: \
+	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
+ 
+
+.PHONY :: $(DIRS) all install rebuild
+.PHONY :: $(ARCHS) $(ACTIONS)
+.PHONY :: $(dirActionTargets) $(dirArchTargets)
+.PHONY :: $(dirActionArchTargets)
+.PHONY :: $(actionArchTargets)
+.PHONY :: $(installArchTargets)
+
+

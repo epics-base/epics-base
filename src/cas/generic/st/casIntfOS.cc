@@ -76,7 +76,7 @@ casServerReg::~casServerReg()
 //
 // casIntfOS::show ()
 //
-void casIntfOS::show (unsigned level)
+void casIntfOS::show (unsigned level) const
 {
     printf ("casIntfOS at %p\n", this);
     this->casDGIntfOS::show (level);

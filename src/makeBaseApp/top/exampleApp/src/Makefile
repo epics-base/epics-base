@@ -47,6 +47,7 @@ _APPNAME__LIBS += xxxSupport
 #      2)To build sncExample SNCSEQ must be defined in <top>/configure/RELEASE
 
 # The following builds sncExample as a component of _APPNAME_
+# Also in _APPNAME_Include.dbd uncomment #registrar(sncExampleRegistrar)
 #_APPNAME__SRCS += sncExample.stt
 #_APPNAME__LIBS += seq pv
 

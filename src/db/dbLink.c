@@ -186,6 +186,7 @@ long dbPutField(
         	if((paddr->pfield==(void *)&precord->proc)
 		||(pfldDes->process_passive && precord->scan==0 && dbrType<DBR_PUT_ACKT)) {
 		    if(precord->pact) {
+			if(precord->tpro) printf("active:    %s\n",precord->name);
 			precord->rpro = TRUE;
 		    } else {
 			/*indicate that dbPutField called dbProcess*/
@@ -2810,7 +2811,7 @@ void		*pflin
 		memset(pbuffer,'\0',dbr_units_size);
 		*options = (*options) ^ DBR_UNITS; /*Turn off DBR_UNITS*/
 	    }
-	    pbuffer += dbr_units_size;
+	    pbuffer = (char *)pbuffer + dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
 	    struct dbr_precision *pdbr_precision=( struct dbr_precision *)pbuffer;
@@ -2823,7 +2824,7 @@ void		*pflin
 		memset(pbuffer,'\0',dbr_precision_size);
 		*options = (*options) ^ DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
-	    pbuffer += dbr_precision_size;
+	    pbuffer = (char *)pbuffer + dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
 	    if(pfl!=NULL) {
@@ -2961,7 +2962,7 @@ choice_common:
 		    *options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 		    break;
 	}
-	*ppbuffer += dbr_enumStrs_size;
+	*ppbuffer = ((char *)*ppbuffer) + dbr_enumStrs_size;
 	return;
 }
 
@@ -2986,7 +2987,7 @@ static void get_graphics(struct dbAddr *paddr,void **ppbuffer,
 		    memset(pbuffer,'\0',dbr_grLong_size);
 		    *options = (*options) ^ DBR_GR_LONG; /*Turn off option*/
 		}
-		*ppbuffer += dbr_grLong_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_grLong_size;
 	}
 	if( (*options) & (DBR_GR_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
@@ -2999,7 +3000,7 @@ static void get_graphics(struct dbAddr *paddr,void **ppbuffer,
 		    memset(pbuffer,'\0',dbr_grDouble_size);
 		    *options = (*options) ^ DBR_GR_DOUBLE; /*Turn off option*/
 		}
-		*ppbuffer += dbr_grDouble_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_grDouble_size;
 	}
 	return;
 }
@@ -3025,7 +3026,7 @@ static void get_control(struct dbAddr *paddr,void **ppbuffer,
 		    memset(pbuffer,'\0',dbr_ctrlLong_size);
 		    *options = (*options) ^ DBR_CTRL_LONG; /*Turn off option*/
 		}
-		*ppbuffer += dbr_ctrlLong_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_ctrlLong_size;
 	}
 	if( (*options) & (DBR_CTRL_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
@@ -3038,7 +3039,7 @@ static void get_control(struct dbAddr *paddr,void **ppbuffer,
 		    memset(pbuffer,'\0',dbr_ctrlDouble_size);
 		    *options = (*options) ^ DBR_CTRL_DOUBLE; /*Turn off option*/
 		}
-		*ppbuffer += dbr_ctrlDouble_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_ctrlDouble_size;
 	}
 	return;
 }
@@ -3066,7 +3067,7 @@ static void get_alarm(struct dbAddr *paddr,void	**ppbuffer,
 		    memset(pbuffer,'\0',dbr_alLong_size);
 		    *options = (*options) ^ DBR_AL_LONG; /*Turn off option*/
 		}
-		*ppbuffer += dbr_alLong_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_alLong_size;
 	}
 	if( (*options) & (DBR_AL_DOUBLE) ) {
 		char	*pbuffer=*ppbuffer;
@@ -3081,7 +3082,7 @@ static void get_alarm(struct dbAddr *paddr,void	**ppbuffer,
 		    memset(pbuffer,'\0',dbr_alDouble_size);
 		    *options = (*options) ^ DBR_AL_DOUBLE; /*Turn off option*/
 		}
-		*ppbuffer += dbr_alDouble_size;
+		*ppbuffer = ((char *)*ppbuffer) + dbr_alDouble_size;
 	}
 	return;
 }
@@ -3227,19 +3228,21 @@ long		no_elements;
 long		offset;
 {
     unsigned short  *pdest=(unsigned short *)paddr->pfield;
-    unsigned short  value;
+    float 	value;
 
+    /*Convert to float first so that numbers like 1.0e3 convert properly*/
+    /*Problem was old database access said to get unsigned short as float*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%hu",&value) == 1) {
-		*pdest = value;
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+		*pdest = (unsigned short)value;
 		return(0);
 	}
 	else return(-1);
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%hu",&value) == 1) {
-	    *pdest = value;
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+	    *pdest = (unsigned short)value;
 	} else {
 	    return(-1);
 	}
@@ -3295,19 +3298,21 @@ long		no_elements;
 long		offset;
 {
     unsigned long  *pdest=(unsigned long *)paddr->pfield;
-    unsigned long  value;
+    double  	value;
 
+    /*Convert to double first so that numbers like 1.0e3 convert properly*/
+    /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%lu",&value) == 1) {
-		*pdest = value;
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+		*pdest = (unsigned long)value;
 		return(0);
 	}
 	else return(-1);
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%lu",&value) == 1) {
-	    *pdest = value;
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	    *pdest = (unsigned long)value;
 	} else {
 	    return(-1);
 	}
@@ -5675,7 +5680,6 @@ long		no_elements;
 long		offset;
 {
     struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
-    unsigned short	acks=precord->acks;
 
     if(*pbuffer >= precord->acks) {
 	precord->acks = 0;

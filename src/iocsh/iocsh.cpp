@@ -597,6 +597,8 @@ static void varHandler(const iocshVarDef *v, const char *setString)
     }
 }
 
+extern "C" {
+
 static void varCallFunc(const iocshArgBuf *args)
 {
     struct iocshVariable *v;
@@ -613,6 +615,8 @@ static void varCallFunc(const iocshArgBuf *args)
             varHandler(v->pVarDef, args[1].sval);
         }
     }
+}
+
 }
 
 /*

@@ -892,7 +892,7 @@ LOCAL int ab_driver_init()
 		p6008 = (void *)AB_BASE_ADDR;
 		p6008 += link;
 	    }
-	    status = devRegisterAddress("drvAb",atVMEA24,(void *)p6008,
+	    status = devRegisterAddress("drvAb",atVMEA24,(long)p6008,
 		sizeof(ab_region),(void **)&p6008);
 	    if(status) {
 		errMessage(status,"drvAb");

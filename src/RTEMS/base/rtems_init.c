@@ -157,7 +157,7 @@ mustMalloc(int size, const char *msg)
     void *p;
 
     if ((p = malloc (size)) == NULL)
-        LogFatal ("Can't allocate space for %s.\n");
+        LogFatal ("Can't allocate space for %s.\n", msg);
     return p;
 }
 

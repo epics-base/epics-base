@@ -97,11 +97,12 @@ private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
 };
 
-epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
-	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdReg (fdIn, typeIn, onceOnlyIn),
-    pFunc (pFuncIn),
-    pParam (pParamIn)
+epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
+    (const SOCKET fdIn, const fdRegType typeIn, 
+	    const bool onceOnlyIn, fdManager &managerIn, 
+        pCallBackFDMgr pFuncIn, void *pParamIn) :
+    fdReg (fdIn, typeIn, onceOnlyIn, managerIn), 
+        pFunc (pFuncIn), pParam (pParamIn)
 {
     if (pFuncIn==NULL) {
         throwWithLocation ( noFunctionSpecified () );

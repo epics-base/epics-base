@@ -558,6 +558,8 @@ long seqAuxTask()
 {
 	extern		int seqAuxTaskId;
 
+	/* Register this task with the EPICS watchdog*/
+        taskwdInsert(taskIdSelf(),(VOIDFUNCPTR)0, (VOID *)0);
 	/* Set up so all state program tasks will use a common CA context */
 	ca_task_initialize();
 	seqAuxTaskId = taskIdSelf(); /* must follow ca_task_initialize() */

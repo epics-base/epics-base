@@ -26,8 +26,13 @@ of this distribution.
     extern "C" {
 #endif
 
+typedef struct ellCheckNode{
+    ELLNODE node;
+    int     isOnList;
+}ellCheckNode;
+
 typedef struct putNotify{
-        ELLNODE         restartNode;
+        ellCheckNode    restartNode;
         /*The following members MUST be set by user*/
         void            (*userCallback)(struct putNotify *);
         struct dbAddr   *paddr;         /*dbAddr set by dbNameToAddr*/
@@ -35,13 +40,12 @@ typedef struct putNotify{
         long            nRequest;       /*number of elements to be written*/
         short           dbrType;        /*database request type*/
         void            *usrPvt;        /*for private use of user*/
-        /*The following is status of request. Set dbNotify */
+        /*The following is status of request. Set by dbNotify */
         long            status;
         /*The following are private to dbNotify */
         short           state;
         int		ntimesActive;   /*number of times found pact=true*/
         CALLBACK        callback;
-        ELLLIST         waitList;       /*list of records for which to wait*/
 }putNotify;
 
 /* dbPutNotify ans dbNotifyCancel are the routines called by user*/
@@ -64,9 +68,8 @@ epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 /* dbtpn is test routine for put notify */
 epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
 
-#ifdef __cplusplus
-}
-#endif
+/* dbNotifyDump is an INVASIVE debug utility. Dont use this needlessly*/
+epicsShareFunc int epicsShareAPI dbNotifyDump(void);
 
 /* This module provides code to handle put notify. If a put causes a record to
  * be processed, then a user supplied callback is called when that record
@@ -104,6 +107,22 @@ epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
  *		put notify is waiting to complete, and 2) a list of records
  *              to restart.
  *
+ * If dbPutNotify finds it's associated record busy, either because another
+ * dbPutNotify is already active on the same record or because the record
+ * is active, the request is put on a restartList.
+ *
+ * When a putNotify becomes the owner of a record, it trys up to three times
+ * to find PACT false. If on the third try it finds the record active,
+ * it gives up and calls the userCallback with status S_db_Blocked.
+ *
+ * When a putNotify calls dbProcess, each record that is processed 
+ * is added to a waitList. The only exception is that if it finds
+ * a record already owned by another putNotify, it is not added
+ * to the waitList. The reason is that if it did it would be easy
+ * to create infinite loops of record processing.
  */
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbNotifyh*/

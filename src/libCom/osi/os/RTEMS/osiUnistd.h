@@ -38,6 +38,7 @@ extern "C" {
 
 int putenv (char *);
 char *strdup (const char *);
+char *strtok_r(char*, const char*, char**);
 
 int snprintf(char *str, size_t size, const char *format, ...);
 #include <stdarg.h>

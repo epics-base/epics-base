@@ -39,6 +39,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <float.h>
 
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
@@ -204,7 +205,12 @@ epicsShareFunc void osiTimer::destroy()
 //
 epicsShareFunc double osiTimer::delay() const
 {
-    throw noDelaySpecified();
+#   ifdef noExceptionsFromCXX
+        assert (0);
+#   else            
+        throw noDelaySpecified ();
+#   endif
+    return DBL_MAX;
 }
 
 epicsShareFunc void osiTimer::show (unsigned level) const

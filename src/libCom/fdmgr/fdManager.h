@@ -39,7 +39,7 @@
 #include "shareLib.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
-#include "osiTime.h"
+#include "tsStamp.h"
 #include "osiSock.h"
 
 static const unsigned hashTableIndexBits = 8;
@@ -209,7 +209,6 @@ inline osiTimerQueue & fdManager::timerQueueRef () const
 {
     return this->timerQueue;
 }
-
 
 #endif // fdManagerH_included
  

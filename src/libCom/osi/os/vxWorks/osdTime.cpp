@@ -4,23 +4,30 @@
 #include "osiTime.h"
 
 //
-// osiTime::synchronize()
+// osiTime::osdGetCurrent ()
 //
-void osiTime::synchronize()
+extern "C" epicsShareFunc int tsStampGetCurrent (TS_STAMP *pDest)
 {
+    int status;
+    struct timespec ts;
+
+    status = clock_gettime (CLOCK_REALTIME, &ts);
+    if (status) {
+        return -1;
+    }
+    *pDest = osiTime (ts);
+    return 0;
 }
 
 //
-// osiTime::osdGetCurrent ()
+// tsStampGetEvent ()
 //
-osiTime osiTime::osdGetCurrent ()
+extern "C" epicsShareFunc int epicsShareAPI tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
 {
-    struct timespec ts;
-    int status;
-
-    status = clock_gettime(CLOCK_REALTIME, &ts);
-    if (status!=0) {
-        throw unableToFetchCurrentTime ();
+    if (eventNumber==tsStampEventCurrentTime) {
+        return tsStampGetCurrent (pDest);
     }
-    return osiTime (ts);
+    else {
+        return tsStampERROR;
+    }
 }

@@ -70,14 +70,22 @@ epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRe
     pParam (pParamIn)
 {
     if (pFuncIn==NULL) {
-        throw noFunctionSpecified ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw noFunctionSpecified ();
+#       endif
     }
 }
 
 epicsShareFunc fdRegForOldFdmgr::~fdRegForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
-        throw doubleDelete ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw doubleDelete ();
+#       endif
     }
 }
 
@@ -137,7 +145,11 @@ osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn,
     pFunc (pFuncIn), pParam(pParamIn)
 {
     if (pFuncIn==NULL) {
-        throw noFunctionSpecified ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw noFunctionSpecified ();
+#       endif
     }
 
     this->fdmgr.resTbl.add (*this);
@@ -146,7 +158,11 @@ osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn,
 osiTimerForOldFdmgr::~osiTimerForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
-        throw doubleDelete ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw doubleDelete ();
+#       endif
     }
 
     this->pFunc = NULL;
@@ -173,13 +189,17 @@ extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 {
     oldFdmgr *pfdm;
 
-    try {
+#   ifdef noExceptionsFromCXX
         pfdm = new oldFdmgr();
-    }
-    catch (...)
-    {
-        return NULL;
-    }
+#   else            
+        try {
+            pfdm = new oldFdmgr();
+        }
+        catch (...)
+        {
+            pfdm = NULL;
+        }
+#   endif
 
     return (fdctx *) pfdm;
 }
@@ -196,27 +216,31 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
         return fdmgrNoAlarm;
     }
 
-    try {
-        while (true) {
+    while (true) {
+#       ifdef noExceptionsFromCXX
             pTimer = new osiTimerForOldFdmgr (*pfdm, delay, pFunc, pParam);
-            if (pTimer) {
-                id = pTimer->getId ();
-                if (id!=fdmgrNoAlarm) {
-                    break;
-                }
-                else {
-                    delete pTimer;
-                }
+#       else            
+            try {
+                pTimer = new osiTimerForOldFdmgr (*pfdm, delay, pFunc, pParam);
             }
-            else {
-                id = fdmgrNoAlarm;
+            catch (...)
+            {
+                pTimer = NULL;
+            }
+#       endif       
+        if (pTimer) {
+            id = pTimer->getId ();
+            if (id!=fdmgrNoAlarm) {
                 break;
             }
+            else {
+                delete pTimer;
+            }
         }
-    }
-    catch (...)
-    {
-        id = fdmgrNoAlarm;
+        else {
+            id = fdmgrNoAlarm;
+            break;
+        }
     }
 
     return id;
@@ -227,18 +251,25 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, 
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     osiTimerForOldFdmgr *pTimer;
 
-    try {
+#   ifdef noExceptionsFromCXX
         pTimer = pfdm->resTbl.remove (id);
-        if (pTimer!=NULL) {
-            delete pTimer;
+#   else
+        try {
+            pTimer = pfdm->resTbl.remove (id);
         }
-    }
-    catch (...)
-    {
+        catch (...)
+        {
+            pTimer = NULL;
+        }
+#   endif
+
+    if (pTimer==NULL) {
         return -1;
     }
-
-    return 0;
+    else {
+        delete pTimer;
+        return 0;
+    }
 }
 
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
@@ -260,18 +291,24 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
         return -1;
     }
 
-    try {
+#   ifdef noExceptionsFromCXX
         pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdi], onceOnly, *pfdm, pFunc, pParam);
-    }
-    catch (...)
-    {
-        return -1;
-    }
+#   else
+        try {
+            pfdrbc = new fdRegForOldFdmgr (fd, fdiToFdRegType[fdi], onceOnly, *pfdm, pFunc, pParam);
+        }
+        catch (...)
+        {
+            pfdrbc = NULL;
+        }
+#   endif
 
     if (pfdrbc==NULL) {
         return -1;
     }
-    return 0;
+    else {
+        return 0;
+    }
 }
  
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
@@ -284,21 +321,25 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
         return -1;
     }
 
-    try {
+#   ifdef noExceptionsFromCXX
         pFDR = pfdm->lookUpFD (fd, fdiToFdRegType[fdi]);
-    }
-    catch (...)
-    {
-        return -1;
-    }
+#   else
+        try {
+            pFDR = pfdm->lookUpFD (fd, fdiToFdRegType[fdi]);
+        }
+        catch (...)
+        {
+            pFDR = NULL;
+        }
+#   endif
 
     if (pFDR==NULL) {
         return -1;
     }
-
-    delete pFDR;
-
-    return 0;
+    else {
+        delete pFDR;
+        return 0;
+    }
 }
 
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, struct timeval *ptimeout)
@@ -306,12 +347,17 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, str
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <double> (osiTime::uSecPerSec);
 
-    try {
+#   ifdef noExceptionsFromCXX
         pfdm->process (delay);
-    }
-    catch (...) {
-        return -1;
-    }
+#   else
+        try {
+            pfdm->process (delay);
+        }
+        catch (...) {
+            return -1;
+        }
+#   endif
+
     return 0;
 }
 

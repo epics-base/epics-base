@@ -310,8 +310,14 @@ epicsShareFunc void fdManager::installReg (fdReg &reg)
     this->maxFD = tsMax(this->maxFD, reg.getFD()+1);
 	this->regList.add (reg);
 	reg.state = fdReg::pending;
-	if (this->fdTbl.add (reg)!=0) {
-        throw fdInterestSubscriptionAlreadyExits();
+
+    int status = this->fdTbl.add (reg);
+	if (status!=0) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw fdInterestSubscriptionAlreadyExits ();
+#       endif
     }
 }
 

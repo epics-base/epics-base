@@ -28,7 +28,8 @@
 // EPICS
 //
 #define epicsExportSharedSymbols
-#include <osiTime.h>
+#include "osiTime.h"
+#include "errlog.h"
 
 //
 // performance counter last value, ticks per sec,
@@ -55,28 +56,65 @@ static const SYSTEMTIME epicsEpochST = {
 	0 // milli sec
 };
 
+static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
+static HANDLE osdTimeMutex = NULL;
 static LONGLONG epicsEpoch;
 
-static LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
+static int osdTimeSych ();
 
 /*
- * synchronize()
+ * epicsWin32ThreadEntry()
  */
-void osiTime::synchronize()
+static DWORD WINAPI osdTimeSynchThreadEntry (LPVOID)
 {
-	static int init = 0;
-	LONGLONG new_sec_offset, new_frac_offset;
+    static const DWORD tmoTenSec = 10 * osiTime::mSecPerSec;
+    int status;
+
+    while (1) {
+	    Sleep (tmoTenSec); 
+        status = osdTimeSych ();
+        if (status!=tsStampOK) {
+            errlogPrintf ("osdTimeSych (): failed?\n");
+        }
+    }
+}
+
+//
+// osdTimeInit ()
+//
+static void osdTimeInit ()
+{
 	LARGE_INTEGER parm;
-	LONGLONG secondsSinceBoot;
-	FILETIME currentTimeFT;
-	LONGLONG currentTime;
 	BOOL win32Stat;
+    int unixStyleStatus;
 
 	//
 	// one time initialization of constants
 	//
-	if (!init) {
+	if (!osdTimeMutex) {
+        DWORD threadId;
+        HANDLE handle;                
 		FILETIME epicsEpochFT;
+        HANDLE mutex;
+
+        mutex = CreateMutex (NULL, TRUE, "osdTimeMutex");
+        if (mutex==NULL) {
+            return;
+        }
+        if ( GetLastError () == ERROR_ALREADY_EXISTS ) {
+            static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
+            DWORD semStatus;
+
+            //
+            // synchronize with some other thread 
+            // that is already in this routine
+            //
+            semStatus = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
+            if ( semStatus == WAIT_OBJECT_0 ) {
+                ReleaseMutex (mutex);
+            }
+            return;
+        }
 
 		//
 		// initialize elapsed time counters
@@ -85,7 +123,8 @@ void osiTime::synchronize()
 		// counters (Intel and Mips processors do)
 		//
 		if (QueryPerformanceFrequency (&parm)==0) {
-            throw unableToFetchCurrentTime ();
+            CloseHandle (mutex);
+            return;
 		}
 		perf_freq = parm.QuadPart;
 
@@ -94,14 +133,59 @@ void osiTime::synchronize()
 		//
 		win32Stat = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
         if (win32Stat==0) {
-            throw unableToFetchCurrentTime ();
+            CloseHandle (mutex);
+            return;
         }
 		parm.LowPart = epicsEpochFT.dwLowDateTime;
 		parm.HighPart = epicsEpochFT.dwHighDateTime;
 		epicsEpoch = parm.QuadPart;
 
-		init = 1;
+        unixStyleStatus = osdTimeSych ();
+        if (unixStyleStatus!=tsStampOK) {
+            CloseHandle (mutex);
+            return;
+        }
+
+        osdTimeMutex = mutex;
+        ReleaseMutex (mutex);
+        assert (win32Stat);
+
+        //
+        // spawn off a thread which periodically resynchronizes the offset
+        //
+        handle = CreateThread (NULL, 4096, osdTimeSynchThreadEntry, 
+                                    NULL, 0, &threadId);
+        if (handle==NULL) {
+            errlogPrintf ("osdTimeInit(): unable to start time synch thread\n");;
+        }
 	}
+}
+
+//
+// osdTimeSych ()
+//
+static int osdTimeSych ()
+{
+    static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
+	LONGLONG new_sec_offset, new_frac_offset;
+	LARGE_INTEGER parm;
+	LONGLONG secondsSinceBoot;
+	FILETIME currentTimeFT;
+	LONGLONG currentTime;
+	BOOL win32Stat;
+    DWORD win32SemStat;
+
+	if (!osdTimeMutex) {
+        osdTimeInit ();
+        if (!osdTimeMutex) {
+            return tsStampERROR;
+        }
+    }
+
+    win32SemStat = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
+    if ( win32SemStat != WAIT_OBJECT_0 ) {
+        return tsStampERROR;
+    }
 
 	//
 	// its important that the following two time queries
@@ -112,7 +196,8 @@ void osiTime::synchronize()
 	// this one is second because QueryPerformanceFrequency()
 	// has forced its code to load
     if (QueryPerformanceCounter (&parm)==0) {
-        throw unableToFetchCurrentTime ();
+         ReleaseMutex (osdTimeMutex);
+         return tsStampERROR;
     }
 	 
 	perf_last = parm.QuadPart;
@@ -176,7 +261,6 @@ void osiTime::synchronize()
 		new_frac_offset = 0;
 	}
 
-
 #if 0
 	//
 	// calculate the change
@@ -195,42 +279,62 @@ void osiTime::synchronize()
 	//
 	perf_sec_offset = new_sec_offset;
 	perf_frac_offset = new_frac_offset;
+
+    win32Stat = ReleaseMutex (osdTimeMutex);
+    if (!win32Stat) {
+        return tsStampERROR;
+    }
+
+    return tsStampOK;
 }
 
 //
 // osiTime::osdGetCurrent ()
 //
-osiTime osiTime::osdGetCurrent ()
+extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 {
+    static const DWORD tmoTwentySec = 20 * osiTime::mSecPerSec;
 	LONGLONG time_cur, time_sec, time_remainder;
 	LARGE_INTEGER parm;
-	unsigned long sec, nsec;
+    BOOL status;
 
-	/*
-	 * lazy init
-	 */
-	if (perf_sec_offset<0) {
-		osiTime::synchronize();
+	//
+	// lazy init
+	//
+	if (!osdTimeMutex) {
+        osdTimeInit ();
+        if (!osdTimeMutex) {
+            return tsStampERROR;
+        }
 	}
 
-	/*
-	 * dont need to check status since it was checked once
-	 * during initialization to see if the CPU has HR
-	 * counters (Intel and Mips processors do)
-	 */
-	QueryPerformanceCounter (&parm);
-	time_cur = parm.QuadPart;
-	if (perf_last > time_cur)	{	/* must have been a timer roll-over */
+    status = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
+    if ( status != WAIT_OBJECT_0 ) {
+        return tsStampERROR;
+    }
 
-		/*
-		 * must have been a timer roll-over
-		 * It takes 9.223372036855e+18/perf_freq sec
-		 * to roll over this counter (perf_freq is 1193182
-		 * sec on my system). This is currently about 245118 years.
-		 *
-		 * attempt to add number of seconds in a 64 bit integer
-		 * in case the timer resolution improves
-		 */
+	//
+	// dont need to check status since it was checked once
+	// during initialization to see if the CPU has HR
+	// counters (Intel and Mips processors do)
+	//
+	status = QueryPerformanceCounter (&parm);
+    if (!status) {
+        ReleaseMutex (osdTimeMutex);
+        return tsStampERROR;
+    }
+	time_cur = parm.QuadPart;
+	if (perf_last > time_cur) {	
+
+		//
+		// must have been a timer roll-over
+		// It takes 9.223372036855e+18/perf_freq sec
+		// to roll over this counter (perf_freq is 1193182
+		// sec on my system). This is currently about 245118 years.
+		//
+		// attempt to add number of seconds in a 64 bit integer
+		// in case the timer resolution improves
+		//
 		perf_sec_offset += MAXLONGLONG / perf_freq;
 		perf_frac_offset += MAXLONGLONG % perf_freq;
 		if (perf_frac_offset>=perf_freq) {
@@ -241,9 +345,9 @@ osiTime osiTime::osdGetCurrent ()
 	time_sec = time_cur / perf_freq;
 	time_remainder = time_cur % perf_freq;
 
-	/* 
-	 * add time (sec) since the EPICS epoch 
-	 */
+	//
+	// add time (sec) since the EPICS epoch 
+	//
 	time_sec += perf_sec_offset;
 	time_remainder += perf_frac_offset;
 	if (time_remainder>=perf_freq) {
@@ -253,9 +357,28 @@ osiTime osiTime::osdGetCurrent ()
 
 	perf_last = time_cur;
 
-	sec = (unsigned long) (time_sec%ULONG_MAX);
-	nsec = (unsigned long) ((time_remainder*nSecPerSec)/perf_freq);
-	return osiTime (sec, nsec);
+	pDest->secPastEpoch = (unsigned long) (time_sec%ULONG_MAX);
+    pDest->nSec = (unsigned long) ((time_remainder*osiTime::nSecPerSec)/perf_freq);
+
+    status = ReleaseMutex (osdTimeMutex);
+    if (!status) {
+        return tsStampERROR;
+    }
+
+	return tsStampOK;
+}
+
+//
+// tsStampGetEvent ()
+//
+extern "C" epicsShareFunc int epicsShareAPI tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
+{
+    if (eventNumber==tsStampEventCurrentTime) {
+        return tsStampGetCurrent (pDest);
+    }
+    else {
+        return tsStampERROR;
+    }
 }
 
 //
@@ -287,7 +410,7 @@ struct tm *gmtime_r (const time_t *pAnsiTime, struct tm *pTM)
 
 	win32Success = SetThreadPriority (thisThread, oldPriority);
 	if (!win32Success) {
-        throw osiTime::internalFailure();
+        return NULL;
     }
 
 	return p;
@@ -322,7 +445,7 @@ struct tm *localtime_r (const time_t *pAnsiTime, struct tm *pTM)
 
 	win32Success = SetThreadPriority (thisThread, oldPriority);
 	if (!win32Success) {
-        throw osiTime::internalFailure ();
+        return NULL;
     }
 	
 	return p;

@@ -44,7 +44,9 @@
 #include "net_convert.h"
 #include "autoPtrDestroy.h"
 
-static const char *id = "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" __DATE__;
+static const char *pVersionCAC = 
+    "@(#) " EPICS_VERSION_STRING 
+    ", CA Portable Server Library " __DATE__;
 
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
@@ -336,6 +338,10 @@ void cac::show ( unsigned level ) const
 
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
         static_cast <const void *> ( this ), this->pUserName );
+    // this also supresses the "defined, but not used" 
+    // warning message
+    ::printf ( "\trevision \"%s\"\n", pVersionCAC );
+
     if ( level > 0u ) {
         this->serverTable.show ( level - 1u );
         ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
@@ -370,7 +376,7 @@ void cac::show ( unsigned level ) const
         ::printf ( "Default mutex:\n");
         this->mutex.show ( level - 4u );
         ::printf ( "mutex:\n" );
-        this->mutex.show ( level - 3u );
+        this->mutex.show ( level - 4u );
     }
 }
 

@@ -24,7 +24,8 @@
 #include "epicsTime.h"
 #include "osiSock.h" /* pull in struct timeval */
 
-static const char *id = "@(#) " EPICS_VERSION_STRING ", Common Utilities Library" __DATE__;
+static const char *pEpicsTimeVersion = 
+    "@(#) " EPICS_VERSION_STRING ", Common Utilities Library " __DATE__;
 
 //
 // useful public constants
@@ -507,15 +508,23 @@ size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat 
 //
 // epicsTime::show (unsigned)
 //
-void epicsTime::show (unsigned) const
+void epicsTime::show ( unsigned level ) const
 {
     char bigBuffer[256];
 
-    size_t numChar = strftime (bigBuffer, sizeof(bigBuffer),
-                    "%a %b %d %Y %H:%M:%S.%09f");
-    if (numChar>0) {
-        printf ("epicsTime: %s\n", bigBuffer);
+    size_t numChar = strftime ( bigBuffer, sizeof ( bigBuffer ),
+                    "%a %b %d %Y %H:%M:%S.%09f" );
+    if ( numChar > 0 ) {
+        printf ( "epicsTime: %s\n", bigBuffer );
     }
+
+    if ( level > 1 ) {
+        // this also supresses the "defined, but not used" 
+        // warning message
+        printf ( "epicsTime: revision \"%s\"\n", 
+            pEpicsTimeVersion );
+    }
+
 }
 
 //

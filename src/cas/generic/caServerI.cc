@@ -28,7 +28,9 @@
 #include "beaconTimer.h"
 #include "beaconAnomalyGovernor.h"
 
-static const char *id = "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" "$Date$";
+static const char * pVersionCAS = 
+    "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library " 
+    "$Date$";
 
 //
 // caServerI::caServerI()
@@ -184,9 +186,10 @@ void caServerI::show (unsigned level) const
 {
     int bytes_reserved;
     
-    printf( "Channel Access Server Status V%s\n",
+    printf ( "Channel Access Server V%s\n",
         CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION ) );
-    
+    printf ( "\trevision %s\n", pVersionCAS );
+
     this->mutex.show(level);
     
     {

@@ -71,43 +71,32 @@ YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 #---------------------------------------------------------------
-# External tools and tool flags
+# External tools and tool flags - must be in path or defined in application
 
-# adl2dl 
 ifndef ADL2DL
-# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
-ADL2DL = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl) adl2dl)
+ADL2DL = adl2dl
 endif
 
 # sch2edif compiler and flags
 SCH2EDIF = sch2edif
 SCH2EDIF_PATH =
-SCH2EDIF_SYSFLAGS = -n -ap -p.+..+$(SCH2EDIF_PATH)+$(EPICS_EXTENSIONS)/templates/capfast/sym+
+SCH2EDIF_SYSFLAGS = -n -ap -p.+..+$(SCH2EDIF_PATH)+$(CAPFAST_TEMPLATES)/sym+
 SCH2EDIF_FLAGS =
  
 # e2db and flags
 #    - again there is an assumption where edb.def is installed.
 ifndef E2DB
-# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
-E2DB = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/e2db \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db) e2db)
+E2DB = e2db
 endif
-E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
+E2DB_SYSFLAGS = -ate -d $(CAPFAST_TEMPLATES)/edb.def
 E2DB_FLAGS =
 
-#dbst 
 ifndef DBST
-# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
-DBST = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/dbst \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst) dbst)
+DBST = dbst
 endif
 
-#msi
 ifndef MSI
-# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
-MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/msi$(HOSTEXE)) msi$(HOSTEXE))
+MSI = msi
 endif
 
 

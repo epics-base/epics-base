@@ -52,7 +52,7 @@
 #include        <string.h>
 #include        <dbDefs.h>
 #include        <dbAccess.h>
-#include        <rec/dbCommon.h>
+#include        <dbCommon.h>
 #include        <errMdef.h>
 #include        <recSup.h>
 

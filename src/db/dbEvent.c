@@ -80,7 +80,7 @@
 #include	<taskwd.h>
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<task_params.h>
 #include	<db_access.h>
 #include 	<dbEvent.h>

@@ -58,7 +58,7 @@
 
 /* needed for struct dbCommon ... should be removed when */
 /* MAXSEVERITY_FROM_PDBADDR moved to another header file */
-#include <rec/dbCommon.h>
+#include <dbCommon.h>
 
 /* needed for (db_field_log *) NULL parm passed to dbGet() */
 #include <db_field_log.h>

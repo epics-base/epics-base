@@ -54,7 +54,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<mbbiRecord.h>
 
 /* Create the dset for devMbbiTestAsyn */

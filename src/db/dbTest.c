@@ -107,7 +107,7 @@
 #include	<dbBase.h>
 #include	<dbRecType.h>
 #include	<dbRecords.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<drvSup.h>

@@ -53,7 +53,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<stringinRecord.h>
 
 /* Create the dset for devSiTestAsyn */

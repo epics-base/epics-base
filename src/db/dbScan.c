@@ -59,7 +59,7 @@
 #include	<taskwd.h>
 #include	<callback.h>
 #include	<dbBase.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<dbRecords.h>
 #include	<devSup.h>
 #include	<task_params.h>

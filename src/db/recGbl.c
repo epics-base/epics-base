@@ -55,7 +55,7 @@
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<devSup.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<sdrHeader.h>
 #include	<drvTS.h>
 

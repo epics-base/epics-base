@@ -42,7 +42,7 @@
 #endif
 
 #include "dbVarSub.h"
-#include <epicsVersion.h>
+#include <version.h>
 
 static int line_num;
 static int yyerror();

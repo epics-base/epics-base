@@ -54,7 +54,7 @@
 #include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<waveformRecord.h>
 
 /* Create the dset for devWfTestAsyn */

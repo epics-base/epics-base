@@ -57,7 +57,7 @@
 #include	<dbRecType.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<fast_lock.h>
 #include        <recSup.h>
 #include	<devSup.h>

@@ -5,8 +5,8 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 #	default Unix needs lib m, every system needs libs ca & Com:
-PROD_LIBS_DEFAULT := m
-PROD_LIBS_WIN32   := -nil-
+SYS_PROD_LIBS_DEFAULT := m
+SYS_PROD_LIBS_WIN32   := -nil-
 PROD_LIBS         := ca Com
 
 PROD_DEFAULT := ca_test iocLogServer startCArepeater

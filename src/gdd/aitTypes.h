@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1997/03/21 01:56:00  jbk
+ * *** empty log message ***
+ *
  * Revision 1.2  1996/08/22 21:05:40  jbk
  * More fixes to make strings and fixed string work better.
  *
@@ -30,6 +33,8 @@
 
 #include <sys/types.h>
 #include <string.h>
+
+#include "shareLib.h"
 
 typedef char			aitInt8;
 typedef unsigned char	aitUint8;
@@ -139,9 +144,9 @@ typedef union {
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern const size_t aitSize[aitTotal];
-extern const char*  aitName[aitTotal];
-extern const char*  aitStringType[aitTotal];
+epicsShareExtern const size_t aitSize[aitTotal];
+epicsShareExtern const char*  aitName[aitTotal];
+epicsShareExtern const char*  aitStringType[aitTotal];
 #ifdef __cplusplus
 }
 #endif

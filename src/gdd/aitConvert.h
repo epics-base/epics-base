@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1996/10/17 12:41:07  jbk
+ * network byte order stuff / added strDup function to Helpers
+ *
  * Revision 1.2  1996/08/13 23:13:34  jhill
  * win NT changes
  *
@@ -22,11 +25,8 @@
 
 #include <sys/types.h>
 
-#ifdef WIN32
-#include <winsock.h>
-#else
-#include <netinet/in.h>
-#endif
+#include "shareLib.h"
+#include "osiSock.h"
 
 #include "aitTypes.h"
 
@@ -50,11 +50,11 @@ extern "C" {
 #endif
 
 /* main conversion table */
-extern aitFunc aitConvertTable[aitTotal][aitTotal];
+epicsShareExtern aitFunc aitConvertTable[aitTotal][aitTotal];
 /* do not make conversion table if not needed */
 #ifdef AIT_NEED_BYTE_SWAP
-extern aitFunc aitConvertToNetTable[aitTotal][aitTotal];
-extern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
+epicsShareExtern aitFunc aitConvertToNetTable[aitTotal][aitTotal];
+epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 #else
 #define aitConvertToNetTable	aitConvertTable
 #define aitConvertFromNetTable	aitConvertTable

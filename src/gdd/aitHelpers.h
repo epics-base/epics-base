@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  1997/03/21 01:56:00  jbk
+ * *** empty log message ***
+ *
  * Revision 1.10  1996/11/02 01:28:15  jhill
  * removed merge problems
  *
@@ -63,9 +66,9 @@ inline char* strDup(const char* x)
 }
 
 class aitTimeStamp {
-	friend aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
-	friend aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
-	friend int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
+	friend inline aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
+	friend inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
+	friend inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 public:
 	aitTimeStamp () : tv_sec(0u), tv_nsec(0u) {}
 	aitTimeStamp (const aitTimeStamp &t) : tv_sec(t.tv_sec), tv_nsec(t.tv_nsec) {}

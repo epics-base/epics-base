@@ -8,12 +8,16 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:36  jbk
+ * new in EPICS base
+ *
  *
  * *Revision 1.1  1996/05/31 13:15:24  jbk
  * *add new stuff
  *
  */
 
+#include "shareLib.h"
 #include "aitTypes.h"
 #include "gdd.h"
 
@@ -49,9 +53,9 @@ struct gddDbrToAitTable {
 };
 typedef struct gddDbrToAitTable gddDbrToAitTable;
 
-extern gddDbrToAitTable gddDbrToAit[];
-extern const chtype gddAitToDbr[];
-extern gddDbrMapFuncTable gddMapDbr[];
+epicsShareExtern gddDbrToAitTable gddDbrToAit[];
+epicsShareExtern const chtype gddAitToDbr[];
+epicsShareExtern gddDbrMapFuncTable gddMapDbr[];
 void gddMakeMapDBR(gddApplicationTypeTable& tt);
 void gddMakeMapDBR(gddApplicationTypeTable* tt);
 

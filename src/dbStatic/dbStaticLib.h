@@ -135,7 +135,7 @@ int dbGetPromptGroup(DBENTRY *pdbentry);
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName);
 long dbDeleteRecord(DBENTRY *pdbentry);
 long dbFreeRecords(DBBASE *pdbbase);
-long dbFindRecord(DBENTRY *pdbentry,char *precordName);
+long dbFindRecord(DBENTRY *pdbentry,const char *precordName);
 long dbFirstRecord(DBENTRY *pdbentry); /*first of record type*/
 long dbNextRecord(DBENTRY *pdbentry);
 int  dbGetNRecords(DBENTRY *pdbentry);
@@ -147,7 +147,7 @@ long dbVisibleRecord(DBENTRY *pdbentry);
 long dbInvisibleRecord(DBENTRY *pdbentry);
 int dbIsVisibleRecord(DBENTRY *pdbentry);
 
-long dbFindField(DBENTRY *pdbentry,char *pfieldName);
+long dbFindField(DBENTRY *pdbentry,const char *pfieldName);
 int dbFoundField(DBENTRY *pdbentry);
 char *dbGetString(DBENTRY *pdbentry);
 long dbPutString(DBENTRY *pdbentry,char *pstring);

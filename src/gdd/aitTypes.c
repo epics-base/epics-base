@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1996/06/25 19:11:32  jbk
+ * new in EPICS base
+ *
  * Revision 1.1  1996/05/31 13:15:21  jbk
  * add new stuff
  *
@@ -14,7 +17,7 @@
 #include <sys/types.h>
 #include "aitTypes.h"
 
-const size_t aitSize[aitTotal] = {
+epicsShareDecl const size_t aitSize[aitTotal] = {
 	0,
 	sizeof(aitInt8),
 	sizeof(aitUint8),
@@ -30,7 +33,7 @@ const size_t aitSize[aitTotal] = {
 	0
 };
 
-const char* aitName[aitTotal] = {
+epicsShareDecl const char* aitName[aitTotal] = {
 	"aitInvalid",
 	"aitInt8",
 	"aitUint8",
@@ -46,7 +49,7 @@ const char* aitName[aitTotal] = {
 	"aitContainer"
 };
 
-const char* aitStringType[aitTotal] = {
+epicsShareDecl const char* aitStringType[aitTotal] = {
 	"%8.8x",
 	"%2.2x",
 	"%2.2x",

@@ -1338,7 +1338,7 @@ long dbFreeRecords(DBBASE *pdbbase)
     return(0);
 }
 
-long dbFindRecord(DBENTRY *pdbentry,char *precordName)
+long dbFindRecord(DBENTRY *pdbentry,const char *precordName)
 {
     dbBase	*pdbbase = pdbentry->pdbbase;
     int         lenName=0;
@@ -1522,7 +1522,7 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
     return(dbFindRecord(pdbentry,newRecordName));
 }
 
-long dbFindField(DBENTRY *pdbentry,char *pname)
+long dbFindField(DBENTRY *pdbentry,const char *pname)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;

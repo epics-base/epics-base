@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/08/27 13:05:10  jbk
+ * final repairs to string functions, put() functions, and error code printing
+ *
  * Revision 1.1  1996/06/25 19:11:43  jbk
  * new in EPICS base
  *
@@ -18,6 +21,8 @@
  * *add new stuff
  *
  */
+
+#include "shareLib.h"
 
 /*
    gdd.cc contains a table (gddErrorMessages) that has all the text
@@ -37,7 +42,7 @@ typedef long gddStatus;
 #define gddErrorOverflow		-9
 #define gddErrorUnderflow		-10
 
-extern char* gddErrorMessages[];
+epicsShareExtern char* gddErrorMessages[];
 
 #define gddPrintError(x) \
 	fprintf(stderr,"gdd Error: %s\n",gddErrorMessages[x*(-1)]);

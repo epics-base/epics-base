@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.24  1996/11/22 20:43:03  jhill
+ * doc
+ *
  * Revision 1.22  1996/11/02 02:20:36  jhill
  * use osiSock.h
  *
@@ -140,7 +143,7 @@ static void logTime (struct iocLogClient *pclient);
 static int getConfig(void);
 static int openLogFile(struct ioc_log_server *pserver);
 static void handleLogFileError(void);
-static void envFailureNotify(ENV_PARAM *pparam);
+static void envFailureNotify(const ENV_PARAM *pparam);
 static void freeLogClient(struct iocLogClient *pclient);
 
 static void sighupHandler(void);
@@ -747,7 +750,7 @@ static int getConfig(void)
  *
  *
  */
-static void envFailureNotify(ENV_PARAM *pparam)
+static void envFailureNotify(const ENV_PARAM *pparam)
 {
 	fprintf(stderr,
 		"iocLogServer: EPICS environment variable `%s' undefined\n",

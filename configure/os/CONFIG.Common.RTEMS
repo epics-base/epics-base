@@ -68,6 +68,7 @@ $(BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
 # Although RTEMS uses gcc, it wants to use gcc its own way
 CROSS_CPPFLAGS =
 CROSS_LDFLAGS =
+SHRLIB_CFLAGS =
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)

@@ -86,6 +86,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <limits.h>
 #include <stdarg.h>
 
+#include <shareLib.h>
 
 /*
  * OS dependent includes
@@ -511,7 +512,7 @@ void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 int 	ca_printf(char *pformat, ...);
 void 	manage_conn(int silent);
-void 	mark_server_available(struct in_addr *pnet_addr);
+void 	mark_server_available(const struct in_addr *pnet_addr);
 void	flow_control(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
 void	ca_repeater(void);
@@ -521,18 +522,19 @@ void 	ca_sg_init(void);
 void	ca_sg_shutdown(struct ca_static *ca_temp);
 int 	cac_select_io(struct timeval *ptimeout, int flags);
 void caHostFromInetAddr(
-	struct in_addr *pnet_addr,
-	char		*pBuf,
-	unsigned	size
+	const struct in_addr 	*pnet_addr,
+	char			*pBuf,
+	unsigned		size
 );
 int post_msg(
 	struct ioc_in_use       *piiu,
-	struct in_addr          *pnet_addr,
+	const struct in_addr	*pnet_addr,
 	char			*pInBuf,
 	unsigned long		blockSize
 );
 int alloc_ioc(
-	struct in_addr		*pnet_addr,
+	const struct in_addr	*pnet_addr,
+	int			port,
 	struct ioc_in_use	**ppiiu
 );
 unsigned long cacRingBufferWrite(
@@ -565,7 +567,8 @@ char *localHostName(void);
 
 int create_net_chan(
 struct ioc_in_use       **ppiiu,
-struct in_addr		*pnet_addr,	/* only used by TCP connections */
+const struct in_addr	*pnet_addr,	/* only used by TCP connections */
+int			port,
 int                     net_proto
 );
 
@@ -576,9 +579,9 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port);
 int ca_os_independent_init (void);
 
 void freeBeaconHash(struct ca_static *ca_temp);
-void removeBeaconInetAddr(struct in_addr *pnet_addr);
-bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr);
-bhe *createBeaconHashEntry(struct in_addr *pnet_addr);
+void removeBeaconInetAddr(const struct in_addr *pnet_addr);
+bhe *lookupBeaconInetAddr(const struct in_addr *pnet_addr);
+bhe *createBeaconHashEntry(const struct in_addr *pnet_addr);
 void close_ioc(IIU *piiu);
 void notify_ca_repeater(void);
 void cac_clean_iiu_list(void);

@@ -169,6 +169,14 @@ udpiiu::udpiiu ( cac &cac ) :
     }
 
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
+
+    // no callback lock required since this is 
+    // always called by the user thread - its
+    // better to call this here from the user 
+    // thread so the udp recv thread does not
+    // block to do this when there is data in
+    // the udp input queue
+    this->pCAC()->notifyNewFD ( this->sock );
 }
 
 /*
@@ -266,10 +274,6 @@ extern "C" void cacRecvThreadUDP ( void *pParam )
 {
     udpiiu *piiu = (udpiiu *) pParam;
     epicsThreadPrivateSet ( caClientCallbackThreadId, pParam );
-    {
-        callbackAutoMutex autoMutex ( *piiu->pCAC() );
-        piiu->pCAC()->notifyNewFD ( piiu->sock );
-    }
     do {
         piiu->recvMsg ();
     } while ( ! piiu->shutdownCmd );

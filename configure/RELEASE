@@ -17,5 +17,5 @@ VX_DIR = /usr/local/vw/tornado202
 TORNADO_VERSION_2_2 = NO
 
 # If you don't want to install into $(TOP) dir then 
-# define INSTALL_LOCATION with full path name here
-#INSTALL_LOCATION=/home/phoebus/JBA/install
+# define INSTALL_LOCATION here
+#INSTALL_LOCATION=<fullpathname>

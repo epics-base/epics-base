@@ -42,24 +42,16 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-static char *serverhSccsId = "@(#)server.h	1.10\t7/28/92";
+static char *serverhSccsId = "$Id$\t$Date$";
 
-#ifndef INCLfast_lockh
-#include <fast_lock.h>
-#endif
-
-#ifndef INCLdb_accessh
-#include <db_access.h>
-#endif
-
-#ifndef INClstLibh
+#include <vxLib.h>
 #include <lstLib.h>
-#endif
+#include <fast_lock.h>
 
-#ifndef __IOCMSG__
+#include <dbDefs.h>
+#include <db_access.h>
+#include <dbEvent.h>
 #include <iocmsg.h>
-#endif
-
 
 struct message_buffer{
   unsigned 			stk;
@@ -122,7 +114,6 @@ char				get;		/* T: get F: monitor */
 # define GLBLTYPE extern
 # define GLBLTYPE_INIT(A)
 #endif
-LOCAL keyed;
 
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
@@ -162,14 +153,27 @@ FASTUNLOCK(&(CLIENT)->lock);
 #define UNLOCK_CLIENTQ	FASTUNLOCK(&clientQlock)
 
 struct client	*existing_client();
-void            camsgtask();
-void            req_server();
-void            cast_server();
+int		camsgtask();
 void		cas_send_msg();
 struct extmsg 	*cas_alloc_msg();
-void		rsrv_online_notify_task();
-struct client 	*create_udp_client();
+int		rsrv_online_notify_task();
 void		cac_send_heartbeat();
+
+int 		client_stat(void);
+int 		req_server(void);
+int		cast_server(void);
+int 		free_client(struct client *client);
+struct client 	*create_udp_client(unsigned sock);
+int 		udp_to_tcp(struct client *client, unsigned sock);
+
+int camessage(
+struct client  *client,
+struct message_buffer *recv
+);
+
+void cas_send_heartbeat(
+struct client   *pc
+);
 
 
 #endif INCLserverh

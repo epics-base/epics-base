@@ -40,6 +40,7 @@
  *	.08 joh 021492	cleaned up terminate_one_client()
  *	.09 joh 022092	print free list statistics in client_stat()
  *	.10 joh 022592	print more statistics in client_stat()
+ *	.11 joh 073093	added args to taskSpawn for v5.1 vxWorks	
  */
 
 static char *sccsId = "@(#)caservertask.c	1.13\t7/28/92";
@@ -48,14 +49,25 @@ static char *sccsId = "@(#)caservertask.c	1.13\t7/28/92";
 #include <lstLib.h>
 #include <taskLib.h>
 #include <types.h>
+#include <sockLib.h>
 #include <socket.h>
 #include <in.h>
+#include <unistd.h>
+#include <logLib.h>
+#include <string.h>
+#include <usrLib.h>
+#include <errnoLib.h>
+#include <stdio.h>
+#include <tickLib.h>
+#include <sysLib.h>
+
+#include <taskwd.h>
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
 
-LOCAL int terminate_one_client();
-LOCAL void log_one_client();
+LOCAL int terminate_one_client(struct client *client);
+LOCAL void log_one_client(struct client *client);
 
 
 /*
@@ -68,49 +80,79 @@ LOCAL void log_one_client();
  *	handle each of them
  *
  */
-void 
-req_server()
+int req_server(void)
 {
 	struct sockaddr_in 	serverAddr;	/* server's address */
-	FAST struct client 	*client;
-	FAST int        	status;
-	FAST int        	i;
+	int        		status;
+	int			i;
 
 	if (IOC_sock != 0 && IOC_sock != ERROR)
 		if ((status = close(IOC_sock)) == ERROR)
-			logMsg("CAS: Unable to close open master socket\n");
+			logMsg( "CAS: Unable to close open master socket\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 
 	/*
 	 * Open the socket. Use ARPA Internet address format and stream
 	 * sockets. Format described in <sys/socket.h>.
 	 */
 	if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
-		logMsg("CAS: Socket creation error\n");
+		logMsg("CAS: Socket creation error\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		taskSuspend(0);
 	}
 	
+        taskwdInsert((int)taskIdCurrent,NULL,NULL);
+
 	/* Zero the sock_addr structure */
-	bfill(&serverAddr, sizeof(serverAddr), 0);
+	bfill((char *)&serverAddr, sizeof(serverAddr), 0);
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = CA_SERVER_PORT;
 
 	/* get server's Internet address */
-	if (bind(IOC_sock, &serverAddr, sizeof(serverAddr)) == ERROR) {
-		logMsg("CAS: Bind error\n");
+	if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == ERROR) {
+		logMsg("CAS: Bind error\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		close(IOC_sock);
 		taskSuspend(0);
 	}
 
 	/* listen and accept new connections */
 	if (listen(IOC_sock, 10) == ERROR) {
-		logMsg("CAS: Listen error\n");
+		logMsg("CAS: Listen error\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		close(IOC_sock);
 		taskSuspend(0);
 	}
 
 	while (TRUE) {
 		if ((i = accept(IOC_sock, NULL, 0)) == ERROR) {
-			logMsg("CAS: Accept error\n");
+			logMsg("CAS: Accept error\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 			taskSuspend(0);
 		} else {
 			status = taskSpawn(CA_CLIENT_NAME,
@@ -118,10 +160,31 @@ req_server()
 					   CA_CLIENT_OPT,
 					   CA_CLIENT_STACK,
 					   (FUNCPTR) camsgtask,
-					   i);
+					   i,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL);
 			if (status == ERROR) {
-				logMsg("CAS: task creation failed\n");
-				logMsg("CAS: (client ignored)\n");
+				logMsg("CAS: task creation failed\n",
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
+				logMsg("CAS: (client ignored)\n",
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
 				printErrno(errnoGet());
 				close(i);
 			}
@@ -135,9 +198,7 @@ req_server()
  *	free_client()
  *
  */
-STATUS
-free_client(client)
-register struct client *client;
+int free_client(struct client *client)
 {
 	if (client) {
 		/* remove it from the list of clients */
@@ -168,15 +229,15 @@ register struct client *client;
 
 		UNLOCK_CLIENTQ;
 	}
+
+	return OK;
 }
 
 
 /* 
  * TERMINATE_ONE_CLIENT
  */
-LOCAL int 
-terminate_one_client(client)
-register struct client *client;
+LOCAL int terminate_one_client(struct client *client)
 {
 	FAST int        	servertid;
 	FAST int        	tmpsock;
@@ -185,14 +246,26 @@ register struct client *client;
 	FAST struct channel_in_use *pciu;
 
 	if (client->proto != IPPROTO_TCP) {
-		logMsg("CAS: non TCP client delete ignored\n");
+		logMsg("CAS: non TCP client delete ignored\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		return ERROR;
 	}
 
 	tmpsock = client->sock;
 
 	if(CASDEBUG>0){
-		logMsg("CAS: Connection %d Terminated\n", tmpsock);
+		logMsg("CAS: Connection %d Terminated\n", 
+			tmpsock,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 	}
 
 	/*
@@ -201,6 +274,7 @@ register struct client *client;
 	servertid = client->tid;
 	if (servertid != taskIdSelf()){
 		if (taskIdVerify(servertid) == OK){
+			taskwdRemove(servertid);
 			if (taskDelete(servertid) == ERROR) {
 				printErrno(errnoGet());
 			}
@@ -211,7 +285,8 @@ register struct client *client;
 	while (pciu = (struct channel_in_use *) pciu->node.next){
 		while (pevext = (struct event_ext *) lstGet((LIST *)&pciu->eventq)) {
 
-			status = db_cancel_event(pevext + 1);
+			status = db_cancel_event(
+					(struct event_block *)(pevext + 1));
 			if (status == ERROR)
 				taskSuspend(0);
 			FASTLOCK(&rsrv_free_eventq_lck);
@@ -226,7 +301,13 @@ register struct client *client;
 			taskSuspend(0);
 	}
 	if (close(tmpsock) == ERROR)	/* close socket	 */
-		logMsg("CAS: Unable to close socket\n");
+		logMsg("CAS: Unable to close socket\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 
 	/* free dbaddr str */
 	FASTLOCK(&rsrv_free_addrq_lck);
@@ -236,7 +317,13 @@ register struct client *client;
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	if(FASTLOCKFREE(&client->lock)<0){
-		logMsg("CAS: couldnt free sem\n");
+		logMsg("CAS: couldnt free sem\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 	}
 
 	return OK;
@@ -247,8 +334,7 @@ register struct client *client;
  *	client_stat()
  *
  */
-STATUS
-client_stat()
+int client_stat(void)
 {
 	int		bytes_reserved;
 	struct client 	*client;
@@ -290,9 +376,7 @@ client_stat()
  *	log_one_client()
  *
  */
-LOCAL void 
-log_one_client(client)
-struct client *client;
+LOCAL void log_one_client(struct client *client)
 {
 	struct channel_in_use	*pciu;
 	struct sockaddr_in 	*psaddr;

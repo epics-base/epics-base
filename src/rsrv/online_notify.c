@@ -40,16 +40,22 @@ static char *sccsId = "$Id$\t$Date$";
  */
 #include <vxWorks.h>
 #include <types.h>
+#include <sockLib.h>
 #include <socket.h>
+#include <string.h>
+#include <errnoLib.h>
 #include <in.h>
+#include <logLib.h>
+#include <sysLib.h>
 
 /*
  *	EPICS includes
  */
+#include <taskwd.h>
 #include <task_params.h>
 #include <iocmsg.h>
 
-#define abort(A) taskSuspend(0)
+#define abort(A) taskSuspend((int)taskIdCurrent)
 
 
 /*
@@ -58,7 +64,7 @@ static char *sccsId = "$Id$\t$Date$";
  *
  *
  */
-void rsrv_online_notify_task()
+int rsrv_online_notify_task()
 {
 	/*
 	 * 1 sec init delay
@@ -76,7 +82,8 @@ void rsrv_online_notify_task()
 	int			sock;
 	struct sockaddr_in	lcl;
   	int			true = TRUE;
-	int 			i;
+
+	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
   	/* 
   	 *  Open the socket.
@@ -84,59 +91,81 @@ void rsrv_online_notify_task()
   	 *  Format described in <sys/socket.h>.
    	 */
   	if((sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
-    		logMsg("CAS: online socket creation error\n");
+    		logMsg("CAS: online socket creation error\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
     		abort(0);
   	}
 
 	status = local_addr(sock, &lcl);
 	if(status<0){
-		logMsg("CAS: online notify: Network interface unavailable\n");
+		logMsg("CAS: online notify: Network interface unavailable\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		abort(0);
 	}
 
       	status = setsockopt(	sock,
 				SOL_SOCKET,
 				SO_BROADCAST,
-				&true,
+				(char *)&true,
 				sizeof(true));
       	if(status<0){
     		abort(0);
       	}
 
-      	bfill(&recv_addr, sizeof recv_addr, 0);
+      	bfill((char *)&recv_addr, sizeof recv_addr, 0);
       	recv_addr.sin_family = AF_INET;
       	recv_addr.sin_addr.s_addr = htonl(INADDR_ANY); /* let slib pick lcl addr */
       	recv_addr.sin_port = htons(0);	 /* let slib pick port */
-      	status = bind(sock, &recv_addr, sizeof recv_addr);
+      	status = bind(sock, (struct sockaddr *)&recv_addr, sizeof recv_addr);
       	if(status<0)
 		abort(0);
 
-   	bfill(&msg, sizeof msg, NULL);
+   	bfill((char *)&msg, sizeof msg, NULL);
 	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
 	msg.m_available = lcl.sin_addr.s_addr;
 
  	/*  Zero the sock_addr structure */
-  	bfill(&send_addr, sizeof send_addr, 0);
+  	bfill((char *)&send_addr, sizeof send_addr, 0);
   	send_addr.sin_family 	= AF_INET;
   	send_addr.sin_port 	= htons(CA_CLIENT_PORT);
 	status = broadcast_addr(&send_addr.sin_addr);
 	if(status<0){
-		logMsg("CAS: online notify - no interface to broadcast on\n");
+		logMsg("CAS: online notify - no interface to broadcast on\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		abort(0);
 	}
 
  	while(TRUE){
         	status = sendto(
 			sock,
-        		&msg,
+        		(char *)&msg,
         		sizeof msg,
         		0,
-       			&send_addr, 
+       			(struct sockaddr *)&send_addr, 
 			sizeof send_addr);
       		if(status != sizeof msg){
 			logMsg( "%s: Socket send error was %d\n",
-				__FILE__,
-				errnoGet(taskIdSelf()) );
+				(int)__FILE__,
+				errnoGet(),
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 		}
 
 		taskDelay(delay);

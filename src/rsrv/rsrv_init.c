@@ -27,6 +27,7 @@
  *
  * 	Modification Log:
  * 	-----------------
+ *	.01 073093 Added task spawn args for 5.1 vxworks
  */
 
 static char *sccsId = "@(#)rsrv_init.c	1.7\t7/28/92";
@@ -37,6 +38,9 @@ static char *sccsId = "@(#)rsrv_init.c	1.7\t7/28/92";
 #include <types.h>
 #include <socket.h>
 #include <in.h>
+#include <errnoLib.h>
+#include <usrLib.h>
+
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
@@ -51,10 +55,8 @@ if(errnoOfTaskGet(TID)!=ERROR)td(TID);
  *
  *
  */
-rsrv_init()
+int rsrv_init()
 {
-	FAST struct client 	*client;
-
 	FASTLOCKINIT(&rsrv_free_addrq_lck);
 	FASTLOCKINIT(&rsrv_free_eventq_lck);
 	FASTLOCKINIT(&clientQlock);
@@ -73,11 +75,33 @@ rsrv_init()
 		  REQ_SRVR_PRI,
 		  REQ_SRVR_OPT,
 		  REQ_SRVR_STACK,
-		  req_server);
+		  req_server,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL);
 
 	taskSpawn(CAST_SRVR_NAME,
 		  CAST_SRVR_PRI,
 		  CAST_SRVR_OPT,
 		  CAST_SRVR_STACK,
-		  cast_server);
+		  cast_server,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL,
+		  NULL);
+
+	return OK;
 }

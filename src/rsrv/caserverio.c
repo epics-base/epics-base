@@ -45,7 +45,14 @@ static char *sccsId = "@(#)caserverio.c	1.10\t7/28/92";
 #include <in.h>
 #include <netinet/tcp.h>
 #include <errno.h>
+#include <logLib.h>
+#include <sockLib.h>
+#include <errnoLib.h>
+#include <taskLib.h>
+#include <tickLib.h>
+
 #include <server.h>
+
 
 
 /*
@@ -62,14 +69,23 @@ int		lock_needed;
 
   	if(CASDEBUG>2){
 		logMsg(	"CAS: Sending a message of %d bytes\n",
-			pclient->send.cnt);
+			pclient->send.cnt,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 	}
 
 	if(pclient->disconnect){
   		if(CASDEBUG>2){
 			logMsg(	"CAS: msg Discard for sock %d addr %x\n",
 				pclient->sock,
-				pclient->addr.sin_addr.s_addr);
+				pclient->addr.sin_addr.s_addr,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 		}
 		return;
 	}
@@ -86,13 +102,13 @@ int		lock_needed;
 			pclient->send.buf,
 			pclient->send.cnt,
 			NULL,
-			&pclient->addr,
+			(struct sockaddr *)&pclient->addr,
 			sizeof(pclient->addr));
 		if(status != pclient->send.cnt){
 			if(status < 0){
 				int	anerrno;
 
-				anerrno = errnoGet(taskIdSelf());
+				anerrno = errnoGet();
 
 				if(     (anerrno!=ECONNABORTED&&
 					anerrno!=ECONNRESET&&
@@ -102,7 +118,12 @@ int		lock_needed;
 
 					logMsg(
 		"CAS: client unreachable (errno=%d)\n",
-						anerrno);	
+						anerrno,
+						NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);	
 				}
 				pclient->disconnect = TRUE;
 				if(pclient==prsrv_cast_client){
@@ -113,7 +134,11 @@ int		lock_needed;
 				logMsg(
 		"CAS: blk sock partial send: req %d sent %d \n",
 					pclient->send.cnt,
-					status);
+					status,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
 			}
 		}
 

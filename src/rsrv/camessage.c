@@ -51,6 +51,10 @@ static char *sccsId = "$Id$\t$Date$";
 #include <taskLib.h>
 #include <types.h>
 #include <in.h>
+#include <logLib.h>
+#include <tickLib.h>
+#include <stdioLib.h>
+
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
@@ -61,15 +65,49 @@ static struct extmsg nill_msg;
 #define MPTOPADDR(MP) (&((struct channel_in_use *)(MP)->m_pciu)->addr)
 #define	RECORD_NAME(PADDR) (((struct db_addr *)(PADDR))->precord)
 
-static void  	search_reply();
-static void  	build_reply();
-static void	read_reply();
-static void	read_sync_reply();
-static void	event_cancel_reply();
-static void	clear_channel_reply();
-static void	send_err();
-static void	log_header();
-static void	search_fail_reply();
+LOCAL void clear_channel_reply(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void event_cancel_reply(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void read_reply(
+struct event_ext *pevext,
+struct db_addr *paddr,
+int             hold,	/* more on the way if true */
+void		*pfl
+);
+
+LOCAL void read_sync_reply(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void build_reply(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void search_fail_reply(
+struct extmsg 	*mp,
+struct client  	*client
+);
+
+LOCAL void send_err(
+struct extmsg  *curp,
+int            status,
+struct client  *client,
+char           *footnote
+);
+
+LOCAL void log_header(
+struct extmsg 	*mp,
+int		mnum
+);
 
 
 /*
@@ -77,9 +115,10 @@ static void	search_fail_reply();
  *
  *
  */
-camessage(client, recv)
-	struct client  *client;
-	struct message_buffer *recv;
+int camessage(
+struct client  *client,
+struct message_buffer *recv
+)
 {
 	int            		nmsg = 0;
 	unsigned		msgsize;
@@ -89,8 +128,15 @@ camessage(client, recv)
 	FAST struct event_ext 	*pevext;
 
 
-	if (CASDEBUG > 2)
-		logMsg("CAS: Parsing %d(decimal) bytes\n", recv->cnt);
+	if (CASDEBUG > 2){
+		logMsg(	"CAS: Parsing %d(decimal) bytes\n", 
+			recv->cnt,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
 
 	bytes_left = recv->cnt;
 	while (bytes_left) {
@@ -151,7 +197,7 @@ camessage(client, recv)
 					      read_reply,
 					      pevext,
 			   (unsigned) ((struct monops *) mp)->m_info.m_mask,
-					      pevext + 1);
+		  	   (struct event_block *)(pevext+1));
 			if (status == ERROR) {
 				LOCK_CLIENT(client);
 				send_err(
@@ -202,7 +248,7 @@ camessage(client, recv)
 			 * messages sent by the server).
 			 */
 
-			db_post_single_event(pevext+1);
+			db_post_single_event((struct event_block *)(pevext+1));
 
 			break;
 
@@ -216,33 +262,33 @@ camessage(client, recv)
 
 		case IOC_READ_NOTIFY:
 		case IOC_READ:
-			{
-				struct event_ext evext;
+		{
+			struct event_ext evext;
 
-				pevext = &evext;
-				pevext->mp = mp;
-				pevext->client = client;
-				pevext->send_lock = TRUE;
-				pevext->get = TRUE;
-				if (mp->m_count == 1)
-					pevext->size = dbr_size[mp->m_type];
-				else
-					pevext->size = (mp->m_count - 1) * 
-						dbr_value_size[mp->m_type] +
-						dbr_size[mp->m_type];
+			pevext = &evext;
+			pevext->mp = mp;
+			pevext->client = client;
+			pevext->send_lock = TRUE;
+			pevext->get = TRUE;
+			if (mp->m_count == 1)
+				pevext->size = dbr_size[mp->m_type];
+			else
+				pevext->size = (mp->m_count - 1) * 
+					dbr_value_size[mp->m_type] +
+					dbr_size[mp->m_type];
 
-				/*
-				 * Arguments to this routine organized in
-				 * favor of the standard db event calling
-				 * mechanism-  routine(userarg, paddr). See
-				 * events added above.
-				 * 
-				 * Hold argument set true so the send message
-				 * buffer is not flushed once each call.
-				 */
-				read_reply(pevext, MPTOPADDR(mp), TRUE, NULL);
-				break;
-			}
+			/*
+			 * Arguments to this routine organized in
+			 * favor of the standard db event calling
+			 * mechanism-  routine(userarg, paddr). See
+			 * events added above.
+			 * 
+			 * Hold argument set true so the send message
+			 * buffer is not flushed once each call.
+			 */
+			read_reply(pevext, MPTOPADDR(mp), TRUE, NULL);
+			break;
+		}
 		case IOC_SEARCH:
 		case IOC_BUILD:
 			build_reply(mp, client);
@@ -265,38 +311,42 @@ camessage(client, recv)
 			}
 			break;
 		case IOC_EVENTS_ON:
-			{
-				struct event_ext evext;
-				struct channel_in_use *pciu =
-				(struct channel_in_use *) & client->addrq;
+		{
+			struct event_ext evext;
+			struct channel_in_use *pciu;
 
-				client->eventsoff = FALSE;
+			client->eventsoff = FALSE;
 
-				LOCK_CLIENT(client);
-				while (pciu = (struct channel_in_use *) 
-					pciu->node.next) {
+			LOCK_CLIENT(client);
 
-					pevext = (struct event_ext *) 
-						& pciu->eventq;
-					while (pevext = (struct event_ext *) 
-						pevext->node.next){
+			pciu = (struct channel_in_use *) 
+				client->addrq.node.next;
+			while (pciu) {
+				pevext = (struct event_ext *) 
+					pciu->eventq.node.next;
+				while (pevext){
 
-						if (pevext->modified) {
-							evext = *pevext;
-							evext.send_lock = FALSE;
-							evext.get = TRUE;
-							read_reply(
-								&evext, 
-								MPTOPADDR(&pevext->msg), 
-								TRUE, 
-								NULL);
-							pevext->modified = FALSE;
-						}
+					if (pevext->modified) {
+						evext = *pevext;
+						evext.send_lock = FALSE;
+						evext.get = TRUE;
+						read_reply(
+							&evext, 
+							MPTOPADDR(&pevext->msg), 
+							TRUE, 
+							NULL);
+						pevext->modified = FALSE;
 					}
+					pevext = (struct event_ext *)
+						pevext->node.next;
 				}
-				UNLOCK_CLIENT(client);
-				break;
+
+				pciu = (struct channel_in_use *)
+					pciu->node.next;
 			}
+			UNLOCK_CLIENT(client);
+			break;
+		}
 		case IOC_EVENTS_OFF:
 			client->eventsoff = TRUE;
 			break;
@@ -328,7 +378,13 @@ camessage(client, recv)
 			UNLOCK_CLIENT(prsrv_cast_client);
 			if(status < 0){
        				free_client(client);
-				logMsg("CAS: client timeout disconnect\n");
+				logMsg("CAS: client timeout disconnect\n",
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
 				exit(0);
 			}
 			LOCK_CLIENT(client);
@@ -336,7 +392,13 @@ camessage(client, recv)
 			UNLOCK_CLIENT(client);
 			break;
 		default:
-			logMsg("CAS: bad msg detected\n");
+			logMsg("CAS: bad msg detected\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 			log_header(mp, nmsg);
 #if 0	
 			/* 
@@ -351,7 +413,13 @@ camessage(client, recv)
 			 * returning ERROR here disconnects
 			 * the client with the bad message
 			 */
-			logMsg("CAS: forcing disconnect ...\n");
+			logMsg("CAS: forcing disconnect ...\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 			return ERROR;
 		}
 
@@ -370,10 +438,10 @@ camessage(client, recv)
  *
  *
  */
-LOCAL void
-clear_channel_reply(mp, client)
-FAST struct extmsg *mp;
-struct client  *client;
+LOCAL void clear_channel_reply(
+struct extmsg *mp,
+struct client  *client
+)
 {
         FAST struct extmsg *reply;
         FAST struct event_ext *pevext;
@@ -390,13 +458,19 @@ struct client  *client;
 			&client->addrq, 
 			mp->m_pciu);
 	if(status < 0){
-                logMsg("CAS: Attempt to delete nonexistent channel ignored\n");
+                logMsg("CAS: Attempt to delete nonexistent channel ignored\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
                 return;
         }
 
         while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
 
-		status = db_cancel_event(pevext + 1);
+		status = db_cancel_event((struct event_block *)(pevext+1));
 		if (status == ERROR){
 			taskSuspend(0);
 		}
@@ -439,10 +513,10 @@ struct client  *client;
  * Much more efficient now since the event blocks hang off the channel in use
  * blocks not all together off the client block.
  */
-LOCAL void
-event_cancel_reply(mp, client)
-	FAST struct extmsg *mp;
-	struct client  *client;
+LOCAL void event_cancel_reply(
+struct extmsg *mp,
+struct client  *client
+)
 {
 	FAST struct extmsg *reply;
 	FAST struct event_ext *pevext;
@@ -454,7 +528,7 @@ event_cancel_reply(mp, client)
 	     pevext;
 	     pevext = (struct event_ext *) pevext->node.next)
 		if (pevext->msg.m_available == mp->m_available) {
-			status = db_cancel_event(pevext + 1);
+			status = db_cancel_event((struct event_block *)(pevext+1));
 			if (status == ERROR)
 				taskSuspend(0);
 			lstDelete((LIST *)peventq, (NODE *)pevext);
@@ -498,12 +572,12 @@ event_cancel_reply(mp, client)
  *
  *
  */
-LOCAL void
-read_reply(pevext, paddr, hold, pfl)
-FAST struct event_ext *pevext;
-FAST struct db_addr *paddr;
-int             hold;	/* more on the way if true */
-void		*pfl;
+LOCAL void read_reply(
+struct event_ext *pevext,
+struct db_addr *paddr,
+int             hold,	/* more on the way if true */
+void		*pfl
+)
 {
 	FAST struct extmsg *mp = pevext->mp;
 	FAST struct client *client = pevext->client;
@@ -575,10 +649,10 @@ void		*pfl;
  *
  *
  */
-LOCAL void
-read_sync_reply(mp, client)
-	FAST struct extmsg *mp;
-	struct client  *client;
+LOCAL void read_sync_reply(
+struct extmsg *mp,
+struct client  *client
+)
 {
 	FAST struct extmsg *reply;
 
@@ -603,10 +677,10 @@ read_sync_reply(mp, client)
  *
  *
  */
-LOCAL void
-build_reply(mp, client)
-	FAST struct extmsg *mp;
-	struct client  *client;
+LOCAL void build_reply(
+struct extmsg *mp,
+struct client  *client
+)
 {
 	LIST           			*addrq = &client->addrq;
 	FAST struct extmsg 		*search_reply;
@@ -624,7 +698,12 @@ build_reply(mp, client)
 	if (status < 0) {
 		if (CASDEBUG > 2)
 			logMsg(	"CAS: Lookup for channel \"%s\" failed\n", 
-				mp + 1);
+				(int)(mp+1),
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 		if (mp->m_type == DOREPLY)
 			search_fail_reply(mp, client);
 		return;
@@ -730,10 +809,10 @@ build_reply(mp, client)
  *
  *
  */
-LOCAL void
-search_fail_reply(mp, client)
-	FAST struct extmsg *mp;
-	struct client  *client;
+LOCAL void search_fail_reply(
+struct extmsg *mp,
+struct client  *client
+)
 {
 	FAST struct extmsg *reply;
 
@@ -759,12 +838,12 @@ search_fail_reply(mp, client)
  *	send buffer lock must be on while in this routine
  *
  */
-LOCAL void
-send_err(curp, status, client, footnote)
-	struct extmsg  *curp;
-	int             status;
-	struct client  *client;
-	char           *footnote;
+LOCAL void send_err(
+struct extmsg  *curp,
+int            status,
+struct client  *client,
+char           *footnote
+)
 {
 	FAST struct extmsg *reply;
 	FAST int        size;
@@ -819,20 +898,26 @@ send_err(curp, status, client, footnote)
  *	Debug aid - print the header part of a message.
  *
  */
-LOCAL void
-log_header (mp, mnum)
-FAST struct extmsg *mp;
-int		mnum;
+LOCAL void log_header(
+struct extmsg 	*mp,
+int		mnum
+)
 {
 	logMsg(	"CAS: N=%d cmd=%d type=%d pstsize=%d paddr=%x avail=%x\n",
 	  	mnum, 
 	  	mp->m_cmmd,
 	  	mp->m_type,
 	  	mp->m_postsize,
-	  	MPTOPADDR(mp),
-	  	mp->m_available);
+	  	(int)MPTOPADDR(mp),
+	  	(int)mp->m_available);
   	if(mp->m_cmmd==IOC_WRITE && mp->m_type==DBF_STRING)
-    		logMsg("CAS: The string written: %s \n",mp+1);
+    		logMsg("CAS: The string written: %s \n",
+			(int)(mp+1),
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 }
 
 
@@ -843,9 +928,9 @@ int		mnum;
  *
  *	lock must be applied while in this routine
  */
-void
-cas_send_heartbeat(pc)
-struct client	*pc;
+void cas_send_heartbeat(
+struct client	*pc
+)
 {
         FAST struct extmsg 	*reply;
 

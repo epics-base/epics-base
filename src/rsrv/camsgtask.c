@@ -49,10 +49,18 @@ static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
 #include <lstLib.h>
 #include <types.h>
 #include <socket.h>
+#include <sockLib.h>
 #include <ioLib.h>
 #include <in.h>
 #include <netinet/tcp.h>
 #include <errno.h>
+#include <logLib.h>
+#include <errnoLib.h>
+#include <tickLib.h>
+#include <string.h>
+#include <taskLib.h>
+
+#include <taskwd.h>
 #include <task_params.h>
 #include <db_access.h>
 #include <server.h>
@@ -64,15 +72,16 @@ static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
  *
  *	CA server TCP client task (one spawned for each client)
  */
-void camsgtask(sock)
+int camsgtask(sock)
 FAST int 		sock;
 {
   	int 			nchars;
   	FAST int		status;
-  	FAST struct client 	*client = NULL;
+	FAST struct client 	*client;
   	int			i;
     	int 			true = TRUE;
 
+	client = NULL;
 
 	/*
 	 * see TCP(4P) this seems to make unsollicited single events much
@@ -82,12 +91,18 @@ FAST int 		sock;
 				sock,
 				IPPROTO_TCP,
 				TCP_NODELAY,
-				&true,
+				(char *)&true,
 				sizeof true);
     	if(status == ERROR){
-      		logMsg("CAS: TCP_NODELAY option set failed\n");
+      		logMsg("CAS: TCP_NODELAY option set failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
       		close(sock);
-      		return;
+      		return ERROR;
     	}
 
 
@@ -99,12 +114,18 @@ FAST int 		sock;
 			sock, 
 			SOL_SOCKET, 
 			SO_KEEPALIVE,
-		    	&true, 
+		    	(char *)&true, 
 			sizeof true);
     	if(status == ERROR){
-      		logMsg("CAS: SO_KEEPALIVE option set failed\n");
+      		logMsg("CAS: SO_KEEPALIVE option set failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
       		close(sock);
-      		return;
+      		return ERROR;
     	}
 
 #ifdef MATCHING_BUFFER_SIZES
@@ -120,9 +141,15 @@ FAST int 		sock;
 			&i,
 			sizeof(i));
 	if(status < 0){
-		logMsg("CAS: SO_SNDBUF set failed\n");
+		logMsg("CAS: SO_SNDBUF set failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		close(sock);
-		return;
+		return ERROR;
 	}
 	i = MAX_MSG_SIZE;
 	status = setsockopt(
@@ -132,9 +159,15 @@ FAST int 		sock;
 			(char *)&i,
 			sizeof(i));
 	if(status < 0){
-		logMsg("CAS: SO_RCVBUF set failed\n");
+		logMsg("CAS: SO_RCVBUF set failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		close(sock);
-		return;
+		return ERROR;
 	}
 #endif
 
@@ -144,28 +177,66 @@ FAST int 		sock;
 	 */
 	client = (struct client *) create_udp_client(NULL);
 	if (!client) {
-		logMsg("CAS: client init failed\n");
+		logMsg("CAS: client init failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		close(sock);
-		return;
+		return ERROR;
 	}
-	udp_to_tcp(client, sock);
+
+	taskwdInsert( 	(int)taskIdCurrent,
+			NULL,
+			NULL);
+
+	status = udp_to_tcp(client, sock);
+	if(status<0){
+		logMsg("CAS: TCP convert failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		free_client(client);
+      		return ERROR;
+	}
 
 	i = sizeof(client->addr);
 	status = getpeername(
 			sock,
- 			&client->addr, 
+ 			(struct sockaddr *)&client->addr, 
 			&i); 
     	if(status == ERROR){
-      		logMsg("CAS: peer address fetch failed\n");
+      		logMsg("CAS: peer address fetch failed\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		free_client(client);
-      		return;
+      		return ERROR;
     	}
 				
   	if(CASDEBUG>0){
-    		logMsg(	"CAS: Recieved connection request\n");
+    		logMsg(	"CAS: Recieved connection request\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
    		logMsg(	"from addr %x, port %x \n", 
-			client->addr.sin_addr, 
-			client->addr.sin_port);
+			client->addr.sin_addr.s_addr, 
+			client->addr.sin_port,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
   	}
 
 	LOCK_CLIENTQ;
@@ -174,9 +245,15 @@ FAST int 		sock;
 
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
-		logMsg("CAS: unable to init the event facility\n");
+		logMsg("CAS: unable to init the event facility\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		free_client(client);
-		return;
+		return ERROR;
 	}
 	status = db_start_events(
 			client->evuser, 
@@ -185,9 +262,15 @@ FAST int 		sock;
 			NULL,
 			1);	/* one priority notch lower */
 	if (status == ERROR) {
-		logMsg("CAS: unable to start the event facility\n");
+		logMsg("CAS: unable to start the event facility\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 		free_client(client);
-		return;
+		return ERROR;
 	}
 
 	client->recv.cnt = 0;
@@ -201,14 +284,20 @@ FAST int 		sock;
 				0);
 		if (nchars==0){
   			if(CASDEBUG>0){
-				logMsg("CAS: nill message disconnect\n");
+				logMsg("CAS: nill message disconnect\n",
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
 			}
 			break;
 		}
 		else if(nchars<=0){
 			long	anerrno;
 
-			anerrno = errnoGet(taskIdSelf());
+			anerrno = errnoGet();
 
 			/*
 			 * normal conn lost conditions
@@ -220,7 +309,12 @@ FAST int 		sock;
 
                                 logMsg(
                                 	"CAS: client disconnect(errno=%d)\n",
-                                	anerrno);
+                                	anerrno,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
                         }
 
 			break;
@@ -228,6 +322,7 @@ FAST int 		sock;
 
 		client->ticks_at_last_io = tickGet();
 		client->recv.cnt += nchars;
+
 		status = camessage(client, &client->recv);
 		if(status == OK){
 			unsigned bytes_left;
@@ -264,22 +359,26 @@ FAST int 		sock;
 			break;
 		}
 
-	
 		/*
 		 * allow message to batch up if more are comming
 		 */
-		status = ioctl(sock, FIONREAD, &nchars);
+		status = ioctl(sock, FIONREAD, (int)&nchars);
 		if (status < 0) {
 			logMsg("CAS: io ctl err %d\n",
-				errnoGet(taskIdSelf()));
+				errnoGet(),
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 			cas_send_msg(client, TRUE);
 		}
 		else if (nchars == 0){
 			cas_send_msg(client, TRUE);
 		}
-	
 	}
 	
 	free_client(client);
-}
 
+	return OK;
+}

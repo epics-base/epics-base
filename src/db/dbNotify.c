@@ -271,12 +271,11 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
         epicsEventWait(eventId);
-        dbScanLock(precord);
         epicsMutexMustLock(notifyLock);
         ppn->pcancelEvent = 0;
+        ppn->requestCancel = 0;
         epicsEventDestroy(eventId);
         epicsMutexUnlock(notifyLock);
-        dbScanUnlock(precord);
         return;
     }
     switch(state) {

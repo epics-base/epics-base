@@ -67,7 +67,7 @@ void nciu::destroy ()
 {
     // this occurs here so that it happens when
     // a lock is not applied
-    this->piiu->disconnectAllIO ( *this );
+    this->piiu->destroyAllIO ( *this );
     this->piiu->clearChannelRequest ( *this );
     this->cacCtx.destroyNCIU ( *this );
 }

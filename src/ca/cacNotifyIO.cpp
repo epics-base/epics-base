@@ -26,7 +26,3 @@ cacNotifyIO::~cacNotifyIO ()
     }
 }
 
-void cacNotifyIO::destroy ()
-{
-    delete this;
-}

@@ -28,5 +28,4 @@ inline void netReadCopyIO::operator delete ( void *pCadaver, size_t size )
     netReadCopyIO::freeList.release ( pCadaver, size );
 }
 
-
 #endif // netReadCopyIO_ILh

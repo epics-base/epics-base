@@ -127,9 +127,3 @@ inline netiiu * nciu::getPIIU ()
     return this->piiu;
 }
 
-inline void nciu::unistallSubscription ( netSubscription &subscr )
-{
-    this->piiu->unistallSubscription ( subscr );
-}
-
-

@@ -25,9 +25,9 @@ netWriteNotifyIO::~netWriteNotifyIO ()
     // private NOOP forces pool allocation
 }
 
-void netWriteNotifyIO::destroy ()
+void netWriteNotifyIO::uninstall ()
 {
-    this->baseNMIU::destroy ();
+    this->chan.getPIIU ()->uninstallIO ( *this );
 }
 
 void netWriteNotifyIO::completionNotify ()

@@ -28,7 +28,7 @@ inline void netSubscription::operator delete ( void *pCadaver, size_t size )
     netSubscription::freeList.release ( pCadaver, size );
 }
 
-inline unsigned long netSubscription::getCount ()
+inline unsigned long netSubscription::getCount () const
 {
     if ( this->chan.connected () ) {
         unsigned long nativeCount = chan.nativeElementCount ();
@@ -47,12 +47,12 @@ inline unsigned long netSubscription::getCount ()
     }
 }
 
-inline unsigned netSubscription::getType ()
+inline unsigned netSubscription::getType () const
 {
     return this->type;
 }
 
-inline unsigned netSubscription::getMask ()
+inline unsigned netSubscription::getMask () const
 {
     return this->mask;
 }

@@ -25,12 +25,14 @@ netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long co
 
 netSubscription::~netSubscription () 
 {
-    this->chan.unistallSubscription ( *this );
+    // o netiiu lock must _not_ be applied when calling this
+    // o uninstall from channel and IIU occur in uninstall method
+    this->chan.getPIIU ()->subscriptionCancelRequest ( *this, true );
 }
 
-void netSubscription::destroy ()
+void netSubscription::uninstall ()
 {
-    delete this;
+    this->chan.getPIIU ()->uninstallIO ( *this );
 }
 
 class netSubscription * netSubscription::isSubscription ()

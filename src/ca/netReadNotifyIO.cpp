@@ -16,18 +16,14 @@
 tsFreeList < class netReadNotifyIO, 1024 > netReadNotifyIO::freeList;
 
 netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
-    cacNotifyIO ( notifyIn ), baseNMIU ( chan )
-{
-}
+    cacNotifyIO ( notifyIn ), baseNMIU ( chan ) {}
 
-netReadNotifyIO::~netReadNotifyIO () 
-{
-    // private NOOP forces pool allocation
-}
+// private NOOP forces pool allocation
+netReadNotifyIO::~netReadNotifyIO () {}
 
-void netReadNotifyIO::destroy ()
+void netReadNotifyIO::uninstall ()
 {
-    this->baseNMIU::destroy ();
+    this->chan.getPIIU ()->uninstallIO ( *this );
 }
 
 void netReadNotifyIO::completionNotify ()

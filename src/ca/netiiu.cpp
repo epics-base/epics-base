@@ -95,6 +95,28 @@ void netiiu::disconnectAllChan ( netiiu & newiiu )
     }
 }
 
+//
+// netiiu::destroyAllIO ()
+//
+// care is taken not to not hold the lock while sending event
+// subscription delete ( when the IO is deleted )
+//
+void netiiu::destroyAllIO ( nciu &chan )
+{
+    baseNMIU *pIO;
+    while ( true ) {
+        {
+            epicsAutoMutex autoMutex ( this->mutex );
+            pIO = chan.tcpiiuPrivateListOfIO::eventq.first ();
+            if ( ! pIO ) {
+                break;
+            }
+            pIO->uninstall ();
+        }
+        pIO->destroy ();
+    }
+}
+
 void netiiu::connectTimeoutNotify ()
 {
     epicsAutoMutex autoMutex ( this->mutex );
@@ -132,7 +154,6 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
     else {
         status = false;
     }
-
 
     return status;
 }
@@ -196,9 +217,8 @@ int netiiu::subscriptionRequest ( netSubscription &subscr, bool )
     return ECA_NORMAL;
 }
 
-int netiiu::subscriptionCancelRequest ( netSubscription &, bool userThread )
+void netiiu::subscriptionCancelRequest ( netSubscription &, bool userThread )
 {
-    return ECA_NORMAL;
 }
 
 int netiiu::installSubscription ( netSubscription &subscr )
@@ -210,19 +230,12 @@ int netiiu::installSubscription ( netSubscription &subscr )
         epicsAutoMutex autoMutex ( this->mutex );
         subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
     }
-    return this->subscriptionRequest ( subscr, true );
-}
-
-void netiiu::unistallSubscription ( netSubscription &subscr )
-{
-    // we must cancel the subscription first so that clean up
-    // is guaranteed to occur if a disconnect occurs beteen 
-    // these two steps
-    this->subscriptionCancelRequest ( subscr, true );
-    {
+    int status = this->subscriptionRequest ( subscr, true );
+    if ( status != ECA_NORMAL ) {
         epicsAutoMutex autoMutex ( this->mutex );
         subscr.channel ().tcpiiuPrivateListOfIO::eventq.remove ( subscr );
     }
+    return status;
 }
 
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -244,4 +257,10 @@ void netiiu::disconnectAllIO ( nciu & )
 
 void netiiu::connectAllIO ( nciu & )
 {
+}
+
+void netiiu::uninstallIO ( baseNMIU &io )
+{
+    epicsAutoMutex autoMutex ( this->mutex );
+    io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
 }

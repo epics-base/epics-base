@@ -298,7 +298,6 @@ public:
     bool identifierEquivelence ( unsigned idToMatch );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    void unistallSubscription ( class netSubscription & );
     void resetRetryCount ();
     unsigned getRetrySeqNo () const;
     void accessRightsStateChange ( const caar &arIn );
@@ -348,8 +347,9 @@ public:
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
     virtual class netSubscription * isSubscription ();
     virtual void show ( unsigned level ) const;
+    virtual void uninstall () = 0;
     ca_uint32_t getID () const;
-    nciu & channel ();
+    nciu & channel () const;
     void destroy ();
 protected:
     nciu &chan;
@@ -362,15 +362,15 @@ public:
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-    void destroy ();
-    unsigned long getCount ();
-    unsigned getType ();
-    unsigned getMask ();
+    unsigned long getCount () const;
+    unsigned getType () const;
+    unsigned getMask () const;
 private:
     unsigned long count;
     unsigned type;
     unsigned mask;
 
+    void uninstall ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
@@ -392,11 +392,11 @@ private:
     unsigned long count;
     void *pValue;
     unsigned seqNumber;
-    void destroy ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+    void uninstall ();
     ~netReadCopyIO (); // must be allocated from pool
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
 };
@@ -408,7 +408,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 private:
-    void destroy ();
+    void uninstall ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
@@ -424,7 +424,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 private:
-    void destroy ();
+    void uninstall ();
     void completionNotify ();
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
@@ -488,19 +488,18 @@ public:
     void show ( unsigned level ) const;
     unsigned channelCount () const;
     void disconnectAllChan ( netiiu & newiiu );
+    void destroyAllIO ( nciu &chan );
     void connectTimeoutNotify ();
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
     void attachChannel ( nciu &chan );
     void detachChannel ( nciu &chan );
     int installSubscription ( netSubscription &subscr );
-    void unistallSubscription ( netSubscription &subscr );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
     virtual const char * pHostName () const; // deprecated - please do not use
     virtual bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     virtual bool ca_v42_ok () const;
     virtual bool ca_v41_ok () const;
-
     virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     virtual int writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue);
     virtual int writeNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem, const void *pValue );
@@ -510,6 +509,8 @@ public:
     virtual void connectAllIO ( nciu &chan );
     virtual void disconnectAllIO ( nciu &chan );
     virtual int clearChannelRequest ( nciu & );
+    virtual void uninstallIO ( baseNMIU & );
+    virtual void subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
 
 protected:
     cac * pCAC () const;
@@ -521,7 +522,6 @@ private:
 
     virtual void lastChannelDetachNotify ();
     virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
-    virtual int subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
 };
 
 class limboiiu : public netiiu {
@@ -831,9 +831,10 @@ private:
        int status, const char *pContext, unsigned type, unsigned long count );
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
+    void uninstallIO ( baseNMIU & );
 
     int subscriptionRequest ( netSubscription &subscr, bool userThread );
-    int subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
+    void subscriptionCancelRequest ( netSubscription &subscr, bool userThread );
 
     typedef void ( tcpiiu::*pProtoStubTCP ) ();
     static const pProtoStubTCP tcpJumpTableCAC [];

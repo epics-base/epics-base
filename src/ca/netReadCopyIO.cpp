@@ -29,6 +29,11 @@ netReadCopyIO::~netReadCopyIO ()
 
 }
 
+void netReadCopyIO::uninstall ()
+{
+    this->chan.getPIIU ()->uninstallIO ( *this );
+}
+
 void netReadCopyIO::completionNotify ()
 {
     this->exceptionNotify ( ECA_INTERNAL, "get completion callback with no data?" );

@@ -88,6 +88,10 @@
 #ifndef INCLdb_accessh
 #define INCLdb_accessh
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 #include <epicsTypes.h>
@@ -1182,5 +1186,9 @@ union db_access_val{
 short db_name_to_addr();
 short db_put_field();
 short db_get_field();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLdb_accessh */

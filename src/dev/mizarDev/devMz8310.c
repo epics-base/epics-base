@@ -38,6 +38,10 @@
  * .05  04-13-92        jba     Removed filename fp from report
  * .06  09-20-93        jbk     disallowed load reg values < 2
  * .07	12-16-94	awr(LBL) bug fix pulseDelay clk rate calculation
+ * .08	10-15-99	nda     added devMz8310wasteTimeCount and wasteTime()
+ *                              for powerPC MVME2700
+ * .09	10-20-00	anj     Conditional code for PPC, improved IACK* stuff
+ * 
  *      ...
  */
 
@@ -47,31 +51,32 @@
 /* You must also understand Chapter 1 of the 			*/
 /* the Advanced Micro Devices Am9513 Technical Manual		*/
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<sysLib.h>
-#include	<rebootLib.h>
-#include	<intLib.h>
-#include	<vme.h>
-#include	<iv.h>
+#include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sysLib.h>
+#include <rebootLib.h>
+#include <intLib.h>
+#include <vme.h>
+#include <iv.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbCommon.h>
-#include	<fast_lock.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<dbScan.h>
-#include	<special.h>
-#include	<module_types.h>
-#include	<eventRecord.h>
-#include	<pulseCounterRecord.h>
-#include	<pulseDelayRecord.h>
-#include	<pulseTrainRecord.h>
-#include	<epicsPrint.h>
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "dbCommon.h"
+#include "fast_lock.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "dbScan.h"
+#include "special.h"
+#include "module_types.h"
+#include "eventRecord.h"
+#include "pulseCounterRecord.h"
+#include "pulseDelayRecord.h"
+#include "pulseTrainRecord.h"
+#include "epicsPrint.h"
 
 /* Create the dsets for devMz8310 */
 static long report();
@@ -102,6 +107,10 @@ static void mz8310_int_service(IOSCANPVT);
 
 volatile int mz8310Debug=0;
 int mz8310NoShutdown=0;
+
+#if (CPU_FAMILY==PPC)
+static volatile unsigned short *mz8310_known_cardreg=0;
+#endif
 
 static unsigned short *shortaddr;
 /* definitions related to fields of records*/
@@ -228,7 +237,7 @@ static struct mz8310_info {
 #define SRC3	0x0300
 #define SRC4	0x0400
 #define SRC5	0x0500
-static unsigned short externalCountSource[] = {SRC1,SRC2,SRC3,SRC4,SRC5};
+/*static unsigned short externalCountSource[] = {SRC1,SRC2,SRC3,SRC4,SRC5};*/
 #define F1	0x0b00
 #define F2	0x0c00
 #define F3	0x0d00
@@ -237,10 +246,25 @@ static unsigned short externalCountSource[] = {SRC1,SRC2,SRC3,SRC4,SRC5};
 static unsigned short internalCountSource[] = {F1,F2,F3,F4,F5};
 
 /*The following are used to communicate with the mz8310.		*/
+
 /*The mz8310 can not keep up when commands are sent as rapidly as possible.*/
+
+#if (CPU_FAMILY==PPC)
+int devMz8310wasteTimeCount = 75;	/* 75 works for a 233MHz mv2700 */
+#else
+int devMz8310wasteTimeCount = 0;	/* mv167 is slow enough already */
+#endif
+
+static void wasteTime()
+{
+    volatile int counter;
+    int i;
+    for(i=0; i<devMz8310wasteTimeCount; i++) counter++;
+}
 
 void putCmd(volatile unsigned char *preg,unsigned char cmd)
 {
+    wasteTime();
     *preg = cmd;
     if(mz8310Debug) printf("mz8310:putCmd:  pcmdreg=%p cmd=%x %u\n",
 	preg,cmd,cmd);
@@ -248,6 +272,7 @@ void putCmd(volatile unsigned char *preg,unsigned char cmd)
 
 void putData(volatile unsigned short *preg,unsigned short data)
 {
+    wasteTime();
     *preg = data;
     if(mz8310Debug) printf("mz8310:putData: preg=%p data=%x %u\n",
 	preg,data,data);
@@ -255,6 +280,7 @@ void putData(volatile unsigned short *preg,unsigned short data)
 
 void getCmd(volatile unsigned char *preg,unsigned char *pcmd)
 {
+    wasteTime();
     *pcmd = *preg;
     if(mz8310Debug) printf("mz8310:getCmd:  pcmdreg=%p cmd=%x %u\n",
 	preg,*pcmd,*pcmd);
@@ -262,6 +288,7 @@ void getCmd(volatile unsigned char *preg,unsigned char *pcmd)
 
 void getData(volatile unsigned short *preg,unsigned short *pdata)
 {
+    wasteTime();
     *pdata = *preg;
     if(mz8310Debug) printf("mz8310:getData: preg=%p data=%x %u\n",
 	preg,*pdata,*pdata);
@@ -340,8 +367,13 @@ static long init(after)
 	/*Initialize I/O scanning for each interrupt vector		*/
 	/*Note that interrupt vectors are not initialized until the	*/
 	/*first record is attached via get_ioint_info.			*/
-	if(mz8310_info[card].present) for(intvec=0; intvec<NUMINTVEC; intvec++) {
-	    scanIoInit(&mz8310_info[card].int_info[intvec].ioscanpvt);
+	if(mz8310_info[card].present) {
+#if (CPU_FAMILY==PPC)
+	    mz8310_known_cardreg = PDATAREG(card,0);
+#endif
+	    for(intvec=0; intvec<NUMINTVEC; intvec++) {
+		scanIoInit(&mz8310_info[card].int_info[intvec].ioscanpvt);
+	    }
 	}
     }
 
@@ -475,7 +507,15 @@ static long init_pt(pr)
 
 static void mz8310_int_service(IOSCANPVT ioscanpvt)
 {
-	scanIoRequest(ioscanpvt);
+#if (CPU_FAMILY==PPC)
+    /* Card bug: Mz8310 waits for IACK* to be negated, which the mv2700
+     * only does at its next VME cycle.  Read a register on any Mz8310
+     * known card to force a VME cycle and hence clear the interrupt. */
+    unsigned short junk;
+    getData(mz8310_known_cardreg,&junk);
+#endif
+
+    scanIoRequest(ioscanpvt);
 }
 
 static long get_ioint_info(
@@ -515,7 +555,7 @@ static long get_ioint_info(
 	    unsigned char *pvecreg;
 
 	    vector=MZ8310INTVEC(card,intvec);
-	    if(intConnect(INUM_TO_IVEC(vector),mz8310_int_service,
+	    if(intConnect(INUM_TO_IVEC((int)vector),mz8310_int_service,
 	    (int)mz8310_info[card].int_info[intvec].ioscanpvt)!=OK) {
 		recGblRecordError(0,(void *)pr,"devMz8310 (get_ioint_info) intConnect failed");
 		return(0);

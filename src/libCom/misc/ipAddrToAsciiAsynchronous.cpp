@@ -63,6 +63,18 @@ private:
     friend class ipAddrToAsciiEnginePrivate;
 };
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
+template class tsFreeList 
+    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
+
 // - this class executes the synchronous DNS query
 // - it creates one thread
 class ipAddrToAsciiEnginePrivate : 

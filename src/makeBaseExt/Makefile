@@ -14,6 +14,7 @@ TEMPLATES += top/configure/RULES
 TEMPLATES += top/configure/RULES_DIRS
 TEMPLATES += top/configure/RULES_TOP
 TEMPLATES += top/configure/RULES_PYTHON
+TEMPLATES += top/configure/RULES_IDL
 
 TEMPLATES += $(subst ../,,$(wildcard ../top/configure/os/CONFIG*))
 

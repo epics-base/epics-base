@@ -45,7 +45,7 @@ void caEventRate ( const char *pName, unsigned count )
         SEVCHK ( status, NULL );
     }
 
-    int status = ca_pend_io ( 10.0 );
+    int status = ca_pend_io ( 10000.0 );
     if ( status != ECA_NORMAL ) {
         fprintf ( stderr, " not found.\n" );
         return;

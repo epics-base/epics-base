@@ -1,0 +1,4 @@
+# $Id$
+
+# vxWorks-486 is the new R3.14 name for pc486
+include CONFIG.Vx.pc486

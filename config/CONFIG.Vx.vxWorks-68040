@@ -1,0 +1,4 @@
+# $Id$
+
+# vxWorks-68040 is the new R3.14 name for mv167
+include CONFIG.Vx.mv167

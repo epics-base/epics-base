@@ -1,0 +1,4 @@
+# $Id$
+
+# vxWorks-ppc604 is the new R3.14 name for ppc604
+include CONFIG.Vx.ppc604

@@ -52,7 +52,6 @@ void camsgtask (struct client *client)
 {
     int             nchars;
     int             status;
-    int             true = TRUE;
         
     client->tid = threadGetIdSelf ();
 
@@ -93,7 +92,7 @@ void camsgtask (struct client *client)
              * if there is a partial message
              * align it with the start of the buffer
              */
-            if (client->recv.cnt >= client->recv.stk) {
+            if (client->recv.cnt > client->recv.stk) {
                 unsigned bytes_left;
                 char *pbuf;
 

@@ -18,6 +18,8 @@
 #define epicsExportSharedSymbols
 #include "epicsSingleton.h"
 
+extern "C" void epicsSingletonMutexOnce ( void * pParm );
+
 class epicsShareClass epicsSingletonMutex {
 public: 
     epicsSingletonMutex ();
@@ -27,6 +29,7 @@ private:
     epicsThreadOnceId onceFlag;
     epicsMutex * pMutex;
     static void once ( void * );
+    friend void epicsSingletonMutexOnce ( void * pParm );
 };
 
 epicsSingletonMutex::epicsSingletonMutex () :
@@ -45,9 +48,14 @@ void epicsSingletonMutex::once ( void * pParm )
     pSM->pMutex = new epicsMutex;
 }
 
+extern "C" void epicsSingletonMutexOnce ( void * pParm )
+{
+    epicsSingletonMutex::once ( pParm );
+}
+
 epicsMutex & epicsSingletonMutex::get ()
 {
-    epicsThreadOnce ( & this->onceFlag, epicsSingletonMutex::once, this );
+    epicsThreadOnce ( & this->onceFlag, epicsSingletonMutexOnce, this );
     return * this->pMutex;
 }
 

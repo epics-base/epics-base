@@ -1270,13 +1270,15 @@ void *devLibA24Malloc(size_t size)
   void		*ret;
 
   if (devLibA24Debug)
-    printf("devLibA24Malloc(%d) entered\n", size);
+    logMsg("devLibA24Malloc(%d) entered\n", size, 0,0,0,0,0);
 
   if (A24MallocFunc == NULL)
   {
     /* See if the sysA24Malloc() function is present. */
     if(symFindByName(sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc,&stype)==ERROR)
     { /* Could not find sysA24Malloc... use the malloc one and hope we are OK */
+      if (devLibA24Debug)
+	logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);
       A24MallocFunc = malloc;
       A24FreeFunc   = free;
     }
@@ -1284,6 +1286,8 @@ void *devLibA24Malloc(size_t size)
     {
       if(symFindByName(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
       { /* That's strange... we have malloc, but no free! */
+        if (devLibA24Debug)
+	  logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);
         A24MallocFunc = malloc;
         A24FreeFunc   = free;
       }
@@ -1301,5 +1305,8 @@ void *devLibA24Malloc(size_t size)
 
 void devLibA24Free(void *pBlock)
 {
+  if (devLibA24Debug)
+    logMsg("devLibA24Free(%p) entered\n", (unsigned long)pBlock,0,0,0,0,0);
+
   A24FreeFunc(pBlock);
 }

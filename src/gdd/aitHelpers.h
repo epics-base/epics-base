@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.16  1998/05/05 21:08:49  jhill
+ * fixed warning
+ *
  * Revision 1.15  1998/04/14 00:51:33  jhill
  * code around ms sizeof() bug V5.0
  *
@@ -150,7 +153,7 @@ inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 		//
 		// wrap around
 		//
-		tv_sec = lhs.tv_sec + (ULONG_MAX - rhs.tv_sec);
+		tv_sec = 1 + lhs.tv_sec + (ULONG_MAX - rhs.tv_sec);
 	}
 	else {
 		tv_sec = lhs.tv_sec - rhs.tv_sec;
@@ -160,7 +163,7 @@ inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 		//
 		// Borrow
 		//
-		tv_nsec = lhs.tv_nsec + NSecPerSec - rhs.tv_nsec;	
+		tv_nsec = 1 + lhs.tv_nsec + (NSecPerSec - rhs.tv_nsec);	
 		tv_sec--;
 	}
 	else {

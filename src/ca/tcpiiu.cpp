@@ -226,19 +226,9 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     }
 
     if ( piiu->state == iiu_connected ) {
-        unsigned priorityOfSend;
-        epicsThreadBooleanStatus tbs  = epicsThreadLowestPriorityLevelAbove ( 
-            piiu->pCAC()->getInitializingThreadsPriority (), &priorityOfSend );
-        if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
-        }
-        else {
-            epicsThreadBooleanStatus tbsInside  = epicsThreadLowestPriorityLevelAbove ( 
-                priorityOfSend, &priorityOfSend );
-            if ( tbsInside != epicsThreadBooleanStatusSuccess ) {
-                priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
-            }
-        }
+        unsigned priorityOfSend = cac::lowestPriorityLevelAbove 
+            ( piiu->pCAC()->getInitializingThreadsPriority() );
+        priorityOfSend = cac::lowestPriorityLevelAbove ( priorityOfSend );
         epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
                 epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
         if ( ! tid ) {
@@ -284,7 +274,16 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             break;
         }
 
+        // reschedule connection activity watchdog
+        // but dont hold the lock for fear of deadlocking 
+        // because cancel is blocking for the completion
+        // of the recvDog expire which takes the lock
+        // - it take also the callback lock
+        piiu->recvDog.messageArrivalNotify (); 
+
         // only one recv thread at a time may call callbacks
+        // - pendEvent() blocks until threads waiting for
+        // this lock get a chance to run
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
 
         if ( ! piiu->pCAC()->preemptiveCallbackEnable() ) {
@@ -296,7 +295,9 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             }
         }
 
-        while ( true ) {
+        // force the receive watchdog to be reset every 50 frames
+        unsigned contiguousFrameCount = 0;
+        while ( contiguousFrameCount++ < 50 ) {
 
             if ( nBytesIn == pComBuf->capacityBytes () ) {
                 if ( piiu->contigRecvMsgCount >= 
@@ -315,12 +316,6 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 
             piiu->recvQue.pushLastComBufReceived ( *pComBuf );
             pComBuf = 0;
-
-            // reschedule connection activity watchdog
-            // but dont hold the lock for fear of deadlocking 
-            // because cancel is blocking for the completion
-            // of the recvDog expire which takes the lock
-            piiu->recvDog.messageArrivalNotify (); 
 
             // execute receive labor
             bool noProtocolViolation = piiu->processIncoming ();
@@ -474,12 +469,8 @@ tcpiiu::tcpiiu ( cac & cac, double connectionTimeout,
 
     memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
 
-    unsigned priorityOfRecv;
-    epicsThreadBooleanStatus tbs = epicsThreadHighestPriorityLevelBelow ( 
-        this->pCAC()->getInitializingThreadsPriority (), &priorityOfRecv );
-    if ( tbs != epicsThreadBooleanStatusSuccess ) {
-        priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
-    }
+    unsigned priorityOfRecv = cac::highestPriorityLevelBelow 
+        ( this->pCAC()->getInitializingThreadsPriority() );
 
     epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-recv", priorityOfRecv,
             epicsThreadGetStackSize ( epicsThreadStackBig ), 

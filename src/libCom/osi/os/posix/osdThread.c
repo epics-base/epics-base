@@ -266,10 +266,13 @@ threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
-    threadInfo *pthreadInfo = init_threadInfo(name,priority,stackSize,
-					      funptr,parm);
-    int status = pthread_create(&pthreadInfo->tid,
-				&pthreadInfo->attr,start_routine,pthreadInfo);
+    threadInfo *pthreadInfo;
+    int status;
+
+    threadInit();
+    pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
+    status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
+			    start_routine,pthreadInfo);
     checkStatusQuit(status,"pthread_create","threadCreate");
     return((threadId)pthreadInfo);
 }

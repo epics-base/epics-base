@@ -756,6 +756,9 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
                     if ( v < valend ) *v++ = '(';
                     cpy2val( name2, &v, valend );
                     if ( v < valend ) *v++ = ')';
+
+                    /* ensure string remains properly terminated */
+                    if ( v <= valend ) *v   = '\0';
                 }
                 continue;
             }
@@ -770,6 +773,9 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
                 if ( v < valend ) *v++ = '(';
                 cpy2val( name2, &v, valend );
                 if ( v < valend ) *v++ = ')';
+
+                /* ensure string remains properly terminated */
+                if ( v <= valend ) *v   = '\0';
                 continue;
             }
 

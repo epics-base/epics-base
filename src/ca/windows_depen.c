@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.26  1997/04/11 20:36:00  jhill
+ * kay's perl branch
+ *
  * Revision 1.25  1997/04/10 19:26:20  jhill
  * asynch connect, faster connect, ...
  *
@@ -470,7 +473,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	int status;
 	WSADATA WsaData;
 	TIMECAPS tc;
-	UINT     wTimerRes;
+	static UINT wTimerRes;
 
 	switch (dwReason)  {
 

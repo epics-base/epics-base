@@ -157,6 +157,13 @@ inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 #define aitFromNetFloat64 aitFromNetOrder64
 #define aitFromNetFloat32 aitFromNetOrder32
 
+bool getStringAsDouble ( const char * pString, 
+    const gddEnumStringTable *pEST, double & result );
+
+bool putDoubleToString ( 
+    const double in, const gddEnumStringTable * pEST, 
+    char * pString, size_t strSize );
+
 #if defined ( _MSC_VER ) && _MSC_VER < 1200
 #   pragma warning ( pop )
 #endif

@@ -17,6 +17,8 @@
 #define AIT_CONVERT_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#include "epicsStdio.h"
 #define epicsExportSharedSymbols
 #include "aitConvert.h"
 
@@ -37,6 +39,58 @@ int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const gd
 #endif
 
 /* put the fixed conversion functions here (ones not generated) */
+
+bool getStringAsDouble ( const char * pString, 
+    const gddEnumStringTable * pEST, double & result ) 
+{
+    if ( ! pString ) {
+        return false;
+    }
+	double ftmp;
+    unsigned itmp;
+    if ( pEST && pEST->getIndex ( pString, itmp ) ) {
+        ftmp = itmp;
+    }
+    else {
+	    int j = sscanf ( pString,"%lf", &ftmp );
+	    if ( j != 1 ) {
+		    j = sscanf ( pString,"%x", &itmp );
+            if ( j == 1 ) {
+                ftmp = itmp;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    result = ftmp;
+    return true;
+}
+
+bool putDoubleToString ( 
+    const double in, const gddEnumStringTable * pEST, 
+    char * pString, size_t strSize ) 
+{
+    if ( strSize == 0u ) {
+        return false;
+    }
+    if ( pEST && in >= 0 && in <= UINT_MAX ) {
+        unsigned utmp = static_cast < unsigned > ( in );
+        pEST->getString ( utmp, pString, strSize );
+        if ( pString[0] != '\0' ) {
+            return true;
+        }
+    }
+	int nChar = epicsSnprintf ( 
+        pString, strSize-1, "%g", in );
+	if ( nChar <= 0 ) {
+        return false;
+    }
+    size_t nCharU = static_cast < size_t > ( nChar );
+	nChar = min ( nCharU, strSize-1 ) + 1;
+	memset ( &pString[nChar], '\0', strSize - nChar );
+    return true;
+}
 
 /* ------- extra string conversion functions --------- */
 static int aitConvertStringString(void* d,const void* s,

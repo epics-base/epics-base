@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/07/08 15:38:03  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.6  1998/06/18 00:08:30  jhill
  * deleted unused variables
  *
@@ -127,7 +130,7 @@ caStatus casAsyncRdIOI::cbFuncAsyncIO()
 	switch (this->msg.m_cmmd) {
 	case CA_PROTO_READ:
 		status = client.readResponse(&this->chan, this->msg,
-				this->pDD, this->completionStatus);
+				*this->pDD, this->completionStatus);
 		break;
 
 	case CA_PROTO_READ_NOTIFY:

@@ -4,22 +4,42 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
-SRCS.c = \
-	../bucketLib.c ../calcPerform.c ../cvtFast.c \
-	../ellLib.c ../envSubr.c ../errMtst.c ../errSymLib.c \
-	../fdmgr.c  ../freeListLib.c \
-	../gpHashLib.c ../memDebugLib.c \
-	../nextFieldSubr.c ../postfix.c \
-	../tsSubr.c errSymTbl.c ../errInc.c \
-	../realpath.c  ../errPrintfUNIX.c
+SRCS.c += ../bucketLib.c
+SRCS.c += ../calcPerform.c
+SRCS.c += ../cvtFast.c
+SRCS.c += ../ellLib.c
+SRCS.c += ../envSubr.c
+SRCS.c += ../errInc.c
+SRCS.c += ../errMtst.c
+SRCS.c += ../errPrintfUNIX.c
+SRCS.c += ../errSymLib.c
+SRCS.c += errSymTbl.c
+SRCS.c += ../fdmgr.c
+SRCS.c += ../freeListLib.c
+SRCS.c += ../gpHashLib.c
+SRCS.c += ../memDebugLib.c
+SRCS.c += ../nextFieldSubr.c
+SRCS.c += ../postfix.c
+SRCS.c += ../realpath.c
+SRCS.c += ../tsSubr.c
 
-LIBOBJS = \
-	tsSubr.o bucketLib.o calcPerform.o\
-	cvtFast.o ellLib.o\
-	envSubr.o errMtst.o errSymLib.o errSymTbl.o fdmgr.o \
-	freeListLib.o gpHashLib.o \
-	memDebugLib.o  nextFieldSubr.o postfix.o \
-	realpath.o  errPrintfUNIX.o
+LIBOBJS += bucketLib.o
+LIBOBJS += calcPerform.o
+LIBOBJS += cvtFast.o
+LIBOBJS += ellLib.o
+LIBOBJS += envSubr.o
+LIBOBJS += errMtst.o
+LIBOBJS += errPrintfUNIX.o
+LIBOBJS += errSymLib.o
+LIBOBJS += errSymTbl.o
+LIBOBJS += fdmgr.o
+LIBOBJS += freeListLib.o
+LIBOBJS += gpHashLib.o
+LIBOBJS += memDebugLib.o
+LIBOBJS += nextFieldSubr.o
+LIBOBJS += postfix.o
+LIBOBJS += realpath.o
+LIBOBJS += tsSubr.o
 
 LIBNAME = libCom.a
 

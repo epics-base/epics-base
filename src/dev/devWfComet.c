@@ -129,7 +129,7 @@ struct waveformRecord   *pwf;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(comet_driver(pvmeio->card,myCallback,pwf)<0) {
+	if(comet_driver(pvmeio->card,pvmeio->signal,myCallback,pwf)<0) {
                 recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);

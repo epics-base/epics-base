@@ -89,9 +89,7 @@ epicsShareFunc int epicsShareAPIV errlogSevPrintf(
 epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar)
 {
-    char        *pnext;
     int         nchar;
-    int         totalChar=0;
  
     if(sevToLog>severity) return(0);
     fprintf(stderr,"sevr=%s ",errlogGetSevEnumString(severity));

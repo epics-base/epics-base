@@ -239,7 +239,7 @@ void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid)
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
     ELLLIST	**paplist;
-    ELLLIST	*plist;
+    ELLLIST	*plist = NULL;
     GPHENTRY	*pgphNode;
     
     if(pgphPvt==NULL) return;

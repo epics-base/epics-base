@@ -154,101 +154,101 @@ struct	expression_element{
  */
 static struct expression_element	elements[] = {
 /* element	i_s_p	i_c_p	type_element	internal_rep */
-"ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL,   /* absolute value */
-"NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG, /* unary negate */
-"-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG, /* unary negate (or binary op) */
-"SQRT",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
-"SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT,    /* square root */
-"EXP",		7,	8,	UNARY_OPERATOR,	EXP,       /* exponential function */
-"LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
-"LN",		7,	8,	UNARY_OPERATOR,	LOG_E,     /* log E */
-"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10,    /* log 10 */
-"ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
-"ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
-"ATAN2",	7,	8,	UNARY_OPERATOR,	ATAN2,     /* arc tangent */
-"ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */
-"MAX",		7,	8,	UNARY_OPERATOR,	MAX,       /* maximum of 2 args */
-"MIN",		7,	8,	UNARY_OPERATOR,	MIN,       /* minimum of 2 args */
-"CEIL",		7,	8,	UNARY_OPERATOR,	CEIL,      /* smallest integer >= */
-"FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR,     /* largest integer <=  */
-"NINT",		7,	8,	UNARY_OPERATOR,	NINT,      /* nearest integer */
-"COSH",		7,	8,	UNARY_OPERATOR,	COSH,      /* hyperbolic cosine */
-"COS",		7,	8,	UNARY_OPERATOR,	COS,       /* cosine */
-"SINH",		7,	8,	UNARY_OPERATOR,	SINH,      /* hyperbolic sine */
-"SIN",		7,	8,	UNARY_OPERATOR,	SIN,       /* sine */
-"TANH",		7,	8,	UNARY_OPERATOR,	TANH,      /* hyperbolic tangent*/
-"TAN",		7,	8,	UNARY_OPERATOR,	TAN,       /* tangent */
-"!",		7,	8,	UNARY_OPERATOR, REL_NOT,   /* not */
-"~",		7,	8,	UNARY_OPERATOR, BIT_NOT,   /* and */
-"RNDM",    	0,	0,	OPERAND,	RANDOM,    /* Random Number */
-"OR",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* or */
-"AND",		2,	2,	BINARY_OPERATOR,BIT_AND,   /* and */
-"XOR",		1,	1,	BINARY_OPERATOR,BIT_EXCL_OR, /* exclusive or */
-"PI",		0,	0,	OPERAND,	CONST_PI,	/* pi */
-"D2R",		0,	0,	OPERAND,	CONST_D2R,	/* pi/180 */
-"R2D",		0,	0,	OPERAND,	CONST_R2D,	/* 180/pi */
-"A",		0,	0,	OPERAND,	FETCH_A,   /* fetch var A */
-"B",		0,	0,	OPERAND,	FETCH_B,   /* fetch var B */
-"C",		0,	0,	OPERAND,	FETCH_C,   /* fetch var C */
-"D",		0,	0,	OPERAND,	FETCH_D,   /* fetch var D */
-"E",		0,	0,	OPERAND,	FETCH_E,   /* fetch var E */
-"F",		0,	0,	OPERAND,	FETCH_F,   /* fetch var F */
-"G",		0,	0,	OPERAND,	FETCH_G,   /* fetch var G */
-"H",		0,	0,	OPERAND,	FETCH_H,   /* fetch var H */
-"I",		0,	0,	OPERAND,	FETCH_I,   /* fetch var I */
-"J",		0,	0,	OPERAND,	FETCH_J,   /* fetch var J */
-"K",		0,	0,	OPERAND,	FETCH_K,   /* fetch var K */
-"L",		0,	0,	OPERAND,	FETCH_L,   /* fetch var L */
-"a",		0,	0,	OPERAND,	FETCH_A,   /* fetch var A */
-"b",		0,	0,	OPERAND,	FETCH_B,   /* fetch var B */
-"c",		0,	0,	OPERAND,	FETCH_C,   /* fetch var C */
-"d",		0,	0,	OPERAND,	FETCH_D,   /* fetch var D */
-"e",		0,	0,	OPERAND,	FETCH_E,   /* fetch var E */
-"f",		0,	0,	OPERAND,	FETCH_F,   /* fetch var F */
-"g",		0,	0,	OPERAND,	FETCH_G,   /* fetch var G */
-"h",		0,	0,	OPERAND,	FETCH_H,   /* fetch var H */
-"i",		0,	0,	OPERAND,	FETCH_I,   /* fetch var I */
-"j",		0,	0,	OPERAND,	FETCH_J,   /* fetch var J */
-"k",		0,	0,	OPERAND,	FETCH_K,   /* fetch var K */
-"l",		0,	0,	OPERAND,	FETCH_L,   /* fetch var L */
-"0",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"1",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"2",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"3",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"4",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"5",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"6",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"7",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"8",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"9",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-".",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
-"?",		0,	0,	CONDITIONAL,	COND_IF,   /* conditional */
-":",		0,	0,	CONDITIONAL,	COND_ELSE, /* else */
-"(",		0,	8,	UNARY_OPERATOR,	PAREN,     /* open paren */
-"^",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
-"**",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
-"+",		4,	4,	BINARY_OPERATOR,ADD,       /* addition */
+{"ABS",		7,	8,	UNARY_OPERATOR,	ABS_VAL}, /* absolute value */
+{"NOT",		7,	8,	UNARY_OPERATOR,	UNARY_NEG}, /* unary negate */
+{"-",		7,	8,	MINUS_OPERATOR,	UNARY_NEG}, /* unary negate (or binary op) */
+{"SQRT",		7,	8,	UNARY_OPERATOR,	SQU_RT}, /* square root */
+{"SQR",		7,	8,	UNARY_OPERATOR,	SQU_RT}, /* square root */
+{"EXP",		7,	8,	UNARY_OPERATOR,	EXP}, /* exponential function */
+{"LOGE",		7,	8,	UNARY_OPERATOR,	LOG_E}, /* log E */
+{"LN",		7,	8,	UNARY_OPERATOR,	LOG_E}, /* log E */
+{"LOG",		7,	8,	UNARY_OPERATOR,	LOG_10}, /* log 10 */
+{"ACOS",		7,	8,	UNARY_OPERATOR,	ACOS}, /* arc cosine */
+{"ASIN",		7,	8,	UNARY_OPERATOR,	ASIN}, /* arc sine */
+{"ATAN2",	7,	8,	UNARY_OPERATOR,	ATAN2}, /* arc tangent */
+{"ATAN",		7,	8,	UNARY_OPERATOR,	ATAN}, /* arc tangent */
+{"MAX",		7,	8,	UNARY_OPERATOR,	MAX}, /* maximum of 2 args */
+{"MIN",		7,	8,	UNARY_OPERATOR,	MIN}, /* minimum of 2 args */
+{"CEIL",		7,	8,	UNARY_OPERATOR,	CEIL}, /* smallest integer >= */
+{"FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR}, /* largest integer <=  */
+{"NINT",		7,	8,	UNARY_OPERATOR,	NINT}, /* nearest integer */
+{"COSH",		7,	8,	UNARY_OPERATOR,	COSH}, /* hyperbolic cosine */
+{"COS",		7,	8,	UNARY_OPERATOR,	COS}, /* cosine */
+{"SINH",		7,	8,	UNARY_OPERATOR,	SINH}, /* hyperbolic sine */
+{"SIN",		7,	8,	UNARY_OPERATOR,	SIN}, /* sine */
+{"TANH",		7,	8,	UNARY_OPERATOR,	TANH}, /* hyperbolic tangent*/
+{"TAN",		7,	8,	UNARY_OPERATOR,	TAN}, /* tangent */
+{"!",		7,	8,	UNARY_OPERATOR, REL_NOT}, /* not */
+{"~",		7,	8,	UNARY_OPERATOR, BIT_NOT}, /* and */
+{"RNDM",    	0,	0,	OPERAND,	RANDOM}, /* Random Number */
+{"OR",		1,	1,	BINARY_OPERATOR,BIT_OR}, /* or */
+{"AND",		2,	2,	BINARY_OPERATOR,BIT_AND}, /* and */
+{"XOR",		1,	1,	BINARY_OPERATOR,BIT_EXCL_OR}, /* exclusive or */
+{"PI",		0,	0,	OPERAND,	CONST_PI}, /* pi */
+{"D2R",		0,	0,	OPERAND,	CONST_D2R}, /* pi/180 */
+{"R2D",		0,	0,	OPERAND,	CONST_R2D}, /* 180/pi */
+{"A",		0,	0,	OPERAND,	FETCH_A}, /* fetch var A */
+{"B",		0,	0,	OPERAND,	FETCH_B}, /* fetch var B */
+{"C",		0,	0,	OPERAND,	FETCH_C}, /* fetch var C */
+{"D",		0,	0,	OPERAND,	FETCH_D}, /* fetch var D */
+{"E",		0,	0,	OPERAND,	FETCH_E}, /* fetch var E */
+{"F",		0,	0,	OPERAND,	FETCH_F}, /* fetch var F */
+{"G",		0,	0,	OPERAND,	FETCH_G}, /* fetch var G */
+{"H",		0,	0,	OPERAND,	FETCH_H}, /* fetch var H */
+{"I",		0,	0,	OPERAND,	FETCH_I}, /* fetch var I */
+{"J",		0,	0,	OPERAND,	FETCH_J}, /* fetch var J */
+{"K",		0,	0,	OPERAND,	FETCH_K}, /* fetch var K */
+{"L",		0,	0,	OPERAND,	FETCH_L}, /* fetch var L */
+{"a",		0,	0,	OPERAND,	FETCH_A}, /* fetch var A */
+{"b",		0,	0,	OPERAND,	FETCH_B}, /* fetch var B */
+{"c",		0,	0,	OPERAND,	FETCH_C}, /* fetch var C */
+{"d",		0,	0,	OPERAND,	FETCH_D}, /* fetch var D */
+{"e",		0,	0,	OPERAND,	FETCH_E}, /* fetch var E */
+{"f",		0,	0,	OPERAND,	FETCH_F}, /* fetch var F */
+{"g",		0,	0,	OPERAND,	FETCH_G}, /* fetch var G */
+{"h",		0,	0,	OPERAND,	FETCH_H}, /* fetch var H */
+{"i",		0,	0,	OPERAND,	FETCH_I}, /* fetch var I */
+{"j",		0,	0,	OPERAND,	FETCH_J}, /* fetch var J */
+{"k",		0,	0,	OPERAND,	FETCH_K}, /* fetch var K */
+{"l",		0,	0,	OPERAND,	FETCH_L}, /* fetch var L */
+{"0",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"1",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"2",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"3",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"4",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"5",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"6",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"7",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"8",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"9",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{".",		0,	0,	FLOAT_PT_CONST,	CONSTANT}, /* flt pt constant */
+{"?",		0,	0,	CONDITIONAL,	COND_IF}, /* conditional */
+{":",		0,	0,	CONDITIONAL,	COND_ELSE}, /* else */
+{"(",		0,	8,	UNARY_OPERATOR,	PAREN}, /* open paren */
+{"^",		6,	6,	BINARY_OPERATOR,EXPON}, /* exponentiation */
+{"**",		6,	6,	BINARY_OPERATOR,EXPON}, /* exponentiation */
+{"+",		4,	4,	BINARY_OPERATOR,ADD}, /* addition */
 #if 0
-"-",		4,	4,	BINARY_OPERATOR,SUB,       /* subtraction */
+{"-",		4,	4,	BINARY_OPERATOR,SUB}, /* subtraction */
 #endif
-"*",		5,	5,	BINARY_OPERATOR,MULT,      /* multiplication */
-"/",		5,	5,	BINARY_OPERATOR,DIV,       /* division */
-"%",		5,	5,	BINARY_OPERATOR,MODULO,    /* modulo */
-",",		0,	0,	SEPERATOR,	COMMA,     /* comma */
-")",		0,	0,	CLOSE_PAREN,	PAREN,     /* close paren */
-"||",		1,	1,	BINARY_OPERATOR,REL_OR,    /* or */
-"|",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* or */
-"&&",		2,	2,	BINARY_OPERATOR,REL_AND,   /* and */
-"&",		2,	2,	BINARY_OPERATOR,BIT_AND,   /* and */
-">>",		2,	2,	BINARY_OPERATOR,RIGHT_SHIFT, /* right shift */
-">=",		3,	3,	BINARY_OPERATOR,GR_OR_EQ,  /* greater or equal*/
-">",		3,	3,	BINARY_OPERATOR,GR_THAN,    /* greater than */
-"<<",		2,	2,	BINARY_OPERATOR,LEFT_SHIFT, /* left shift */
-"<=",		3,	3,	BINARY_OPERATOR,LESS_OR_EQ,/* less or equal to*/
-"<",		3,	3,	BINARY_OPERATOR,LESS_THAN, /* less than */
-"#",		3,	3,	BINARY_OPERATOR,NOT_EQ,    /* not equal */
-"=",		3,	3,	BINARY_OPERATOR,EQUAL,     /* equal */
-""
+{"*",		5,	5,	BINARY_OPERATOR,MULT}, /* multiplication */
+{"/",		5,	5,	BINARY_OPERATOR,DIV}, /* division */
+{"%",		5,	5,	BINARY_OPERATOR,MODULO}, /* modulo */
+{",",		0,	0,	SEPERATOR,	COMMA}, /* comma */
+{")",		0,	0,	CLOSE_PAREN,	PAREN}, /* close paren */
+{"||",		1,	1,	BINARY_OPERATOR,REL_OR}, /* or */
+{"|",		1,	1,	BINARY_OPERATOR,BIT_OR}, /* or */
+{"&&",		2,	2,	BINARY_OPERATOR,REL_AND}, /* and */
+{"&",		2,	2,	BINARY_OPERATOR,BIT_AND}, /* and */
+{">>",		2,	2,	BINARY_OPERATOR,RIGHT_SHIFT}, /* right shift */
+{">=",		3,	3,	BINARY_OPERATOR,GR_OR_EQ}, /* greater or equal*/
+{">",		3,	3,	BINARY_OPERATOR,GR_THAN}, /* greater than */
+{"<<",		2,	2,	BINARY_OPERATOR,LEFT_SHIFT}, /* left shift */
+{"<=",		3,	3,	BINARY_OPERATOR,LESS_OR_EQ},/* less or equal to*/
+{"<",		3,	3,	BINARY_OPERATOR,LESS_THAN}, /* less than */
+{"#",		3,	3,	BINARY_OPERATOR,NOT_EQ}, /* not equal */
+{"=",		3,	3,	BINARY_OPERATOR,EQUAL}, /* equal */
+{""}
 };
 
 /*

@@ -20,10 +20,9 @@ SHARED_LIBRARIES=NO
 
 #
 # Special flags for Darwin
-#   No fancy precompiled headers
 #   No common blocks (as required when going to shared libraries)
 #
-OP_SYS_CFLAGS += -no-cpp-precomp -fno-common
+OP_SYS_CFLAGS += -fno-common
 
 #
 # Need to get some fink-installed packages (readline, etc.).
@@ -37,6 +36,10 @@ OP_SYS_LDLIBS += -lreadline
 
 #
 # Stuff that will be needed when going to shared libraries
-# -compatibility_version $(SHRLIB_VERSION) -current_version $(SHRLIB_VERSION).1
-SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress 
-SHRLIB_SUFFIX = $(addprefix .,$(SHRLIB_VERSION)).dylib
+#
+SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
+       -install_name $(EPICS_BASE)/lib/$(HOST_ARCH)/$@ \
+       -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
+       -current_version $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+SHRLIB_SUFFIX = $(addprefix .,$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)).dylib
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)

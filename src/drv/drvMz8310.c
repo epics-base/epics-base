@@ -49,6 +49,7 @@
  * joh  08-05-92	callable interface now conforms with epics standard
  * mgb  08-04-93	Removed V5/V4 and EPICS_V2 conditionals
  * joh	08-24-93	Include drvStc.h and ANSI C upgrade
+ * joh	09-29-93	removed superfluous error message	
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */
@@ -319,7 +320,6 @@ LOCAL mz8310Stat mz8310_init_card(unsigned card)
 		MZ8310_DATA_ADDR(card,chip), 
 		master_mode);
     if(error){
-      errMessage(error, NULL);
       return error;
     }
   }

@@ -496,6 +496,11 @@ $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing jar file $@"
 	$(INSTALL) -d -m 644 $< $(@D)
 
+$(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
+	$(JAVAHCMD) $(PACKAGE).$*
+
+.PRECIOUS: $(INSTALL_CLASSES)
+
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that

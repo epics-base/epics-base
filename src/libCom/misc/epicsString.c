@@ -103,3 +103,8 @@ epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
     }
     return(0);
 }
+
+epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s)
+{
+    return strcpy(mallocMustSucceed(strlen(s)+1,"epicsStrDup"),s);
+}

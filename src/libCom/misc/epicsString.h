@@ -25,6 +25,7 @@ extern "C" {
 epicsShareFunc int epicsShareAPI dbTranslateEscape(char *s,const char *ct);
 epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
     const char *s1, const char *s2, int n);
+epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s);
 
 #ifdef __cplusplus
 }

@@ -99,14 +99,6 @@ static ELLLIST tempList;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
 
-static char *strduplicate(const char * str)
-{
-    char *tstr;
-    tstr = dbCalloc(strlen(str) + 1,sizeof(char));
-    strcpy(tstr,str);
-    return(tstr);
-}
-
 static void yyerrorAbort(char *str)
 {
     yyerror(str);
@@ -229,7 +221,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
-	pinputFile->filename = strduplicate(filename);
+	pinputFile->filename = epicsStrDup(filename);
     }
     if(!fp) {
 	FILE	*fp;
@@ -389,7 +381,7 @@ static void dbIncludeNew(char *filename)
 	free((void *)pinputFile);
 	return;
     }
-    pinputFile->filename = strduplicate(filename);
+    pinputFile->filename = epicsStrDup(filename);
     pinputFile->fp = fp;
     ellAdd(&inputFileList,&pinputFile->node);
     pinputFileNow = pinputFile;
@@ -407,15 +399,15 @@ static void dbMenuHead(char *name)
     }
     if(ellCount(&tempList)) yyerrorAbort("dbMenuHead: tempList not empty");
     pdbMenu = dbCalloc(1,sizeof(dbMenu));
-    pdbMenu->name = strduplicate(name);
+    pdbMenu->name = epicsStrDup(name);
     allocTemp(pdbMenu);
 }
 
 static void dbMenuChoice(char *name,char *value)
 {
     if(duplicate) return;
-    allocTemp(strduplicate(name));
-    allocTemp(strduplicate(value));
+    allocTemp(epicsStrDup(name));
+    allocTemp(epicsStrDup(value));
 }
 
 static void dbMenuBody(void)
@@ -466,7 +458,7 @@ static void dbRecordtypeHead(char *name)
 	return;
     }
     pdbRecordType = dbCalloc(1,sizeof(dbRecordType));
-    pdbRecordType->name = strduplicate(name);
+    pdbRecordType->name = epicsStrDup(name);
     if (pdbbase->loadCdefs) ellInit(&pdbRecordType->cdefList);
     if(ellCount(&tempList))
 	yyerrorAbort("dbRecordtypeHead tempList not empty");
@@ -481,7 +473,7 @@ static void dbRecordtypeFieldHead(char *name,char *type)
     if(duplicate) return;
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
-    pdbFldDes->name = strduplicate(name);
+    pdbFldDes->name = epicsStrDup(name);
     pdbFldDes->as_level = ASL1;
     for(i=0; i<DBF_NTYPES; i++) {
 	if(strcmp(type,pamapdbfType[i].strvalue)==0) {
@@ -509,7 +501,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	return;
     }
     if(strcmp(name,"initial")==0) {
-	pdbFldDes->initial = strduplicate(value);
+	pdbFldDes->initial = epicsStrDup(value);
 	return;
     }
     if(strcmp(name,"promptgroup")==0) {
@@ -524,7 +516,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	return;
     }
     if(strcmp(name,"prompt")==0) {
-	pdbFldDes->prompt = strduplicate(value);
+	pdbFldDes->prompt = epicsStrDup(value);
 	return;
     }
     if(strcmp(name,"special")==0) {
@@ -572,7 +564,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
 	return;
     }
     if(strcmp(name,"extra")==0) {
-	pdbFldDes->extra = strduplicate(value);
+	pdbFldDes->extra = epicsStrDup(value);
 	return;
     }
     if(strcmp(name,"menu")==0) {
@@ -594,7 +586,7 @@ static void dbRecordtypeCdef(char *text) {
     
     pdbCdef = dbCalloc(1,sizeof(dbText));
     if (text[0] == ' ') text++;	/* strip leading space if present */
-    pdbCdef->text = strduplicate(text);
+    pdbCdef->text = epicsStrDup(text);
     ellAdd(&pdbRecordType->cdefList, &pdbCdef->node);
     return;
 }
@@ -714,8 +706,8 @@ static void dbDevice(char *recordtype,char *linktype,
 	return;
     }
     pdevSup = dbCalloc(1,sizeof(devSup));
-    pdevSup->name = strduplicate(dsetname);
-    pdevSup->choice = strduplicate(choicestring);
+    pdevSup->name = epicsStrDup(dsetname);
+    pdevSup->choice = epicsStrDup(choicestring);
     pdevSup->link_type = link_type;
     pgphentry = gphAdd(pdbbase->pgpHash,pdevSup->choice,&pdbRecordType->devList);
     if(!pgphentry) {
@@ -736,7 +728,7 @@ static void dbDriver(char *name)
 	return;
     }
     pdrvSup = dbCalloc(1,sizeof(drvSup));
-    pdrvSup->name = strduplicate(name);
+    pdrvSup->name = epicsStrDup(name);
     pgphentry = gphAdd(pdbbase->pgpHash,pdrvSup->name,&pdbbase->drvList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
@@ -755,7 +747,7 @@ static void dbRegistrar(char *name)
 	return;
     }
     ptext = dbCalloc(1,sizeof(dbText));
-    ptext->text = strduplicate(name);
+    ptext->text = epicsStrDup(name);
     pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->registrarList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
@@ -775,7 +767,7 @@ static void dbBreakHead(char *name)
 	return;
     }
     pbrkTable = dbCalloc(1,sizeof(brkTable));
-    pbrkTable->name = strduplicate(name);
+    pbrkTable->name = epicsStrDup(name);
     if(ellCount(&tempList)) yyerrorAbort("dbBreakHead:tempList not empty");
     allocTemp(pbrkTable);
 }
@@ -783,7 +775,7 @@ static void dbBreakHead(char *name)
 static void dbBreakItem(char *value)
 {
     if(duplicate) return;
-    allocTemp(strduplicate(value));
+    allocTemp(epicsStrDup(value));
 }
 
 static void dbBreakBody(void)

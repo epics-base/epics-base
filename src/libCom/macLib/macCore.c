@@ -751,7 +751,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 }
 
 /*
- * strdup() implementation (because it's not always available)
+ * strdup() implementation which uses our own memory allocator
  */
 static char *Strdup( char *string )
 {

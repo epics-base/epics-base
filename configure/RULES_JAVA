@@ -25,7 +25,7 @@ JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $(COMMON_JAR) $(JARI
 #-------------------------------------------------------
 vpath %.java .. 
 
-CLASSPATH=-classpath $(INSTALL_JAVA)$(addprefix :,$(USR_CLASSPATH))
+CLASSPATH=$(addprefix -classpath ,$(USR_PRECLASSPATH) $(INSTALL_JAVA) $(USR_CLASSPATH))
 SOURCEPATH=-sourcepath .:..:../..
 
 #-------------------------------------------------------

@@ -24,10 +24,6 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-installArchTargets = $(foreach action, install,\
-                    $(foreach arch, $(ARCHS), \
-                    $(action)$(DIVIDER)$(arch)))
-
 all install : buildInstall
 
 rebuild : clean all
@@ -38,10 +34,9 @@ $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all install rebuild
+.PHONY : $(DIRS) all rebuild
 .PHONY : $(ARCHS) $(ACTIONS)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)
 .PHONY : $(actionArchTargets)
-.PHONY : $(installArchTargets)
 

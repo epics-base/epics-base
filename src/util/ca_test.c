@@ -161,7 +161,7 @@ char	*pname;
 	/* 
  	 * fetch as each type 
 	 */
-	for(i=0; i<=LAST_BUFFER_TYPE; i++){
+	for(i=0; i<=DBR_CTRL_DOUBLE; i++){
 		if(ca_field_type(chan_id)==0) {
 			if( (i!=DBR_STRING)
 			  && (i!=DBR_STS_STRING)

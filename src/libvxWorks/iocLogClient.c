@@ -1,5 +1,4 @@
 /* $Id$
- *      archive logMsg() from several IOC's to a common rotating file   
  *
  *
  *      Author:         Jeffrey O. Hill 
@@ -33,64 +32,114 @@
  * .00 joh 080791  	Created
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
+ * $Log$
  */
 
 #include <string.h>
 #include <stdio.h>
-
-#include <vxWorks.h>
-#include <ioLib.h>
-#include <taskLib.h>
+#include <errno.h>
+#include <assert.h>
 
 #include <socket.h>
 #include <in.h>
 
-#include <inetLib.h>
-#include <errnoLib.h>
+#include <ioLib.h>
+#include <taskLib.h>
 #include <logLib.h>
+#include <inetLib.h>
 #include <sockLib.h>
+#include <sysLib.h>
+#include <semLib.h>
+#include <rebootLib.h>
 
-
+#include <epicsPrint.h>
 #include <envDefs.h>
+#include <task_params.h>
 
+LOCAL FILE		*iocLogFile = NULL;
+LOCAL int 		iocLogFD = ERROR;
+LOCAL int 		iocLogDisable = 0;
+LOCAL unsigned		iocLogTries = 0U;
+LOCAL unsigned		iocLogConnectCount = 0U;
 
-FILE	*iocLogFile = NULL;
-int 	iocLogFD = ERROR;
-int 	iocLogDisable;
+LOCAL long 		ioc_log_port;
+LOCAL struct in_addr 	ioc_log_addr;
 
-static long 		ioc_log_port;
-static struct in_addr 	ioc_log_addr;
+int 			iocLogInit(void);
+LOCAL int 		getConfig(void);
+LOCAL void 		failureNotify(ENV_PARAM *pparam);
+LOCAL void 		logClientShutdown(void);
+LOCAL void 		logRestart(void);
+LOCAL int 		iocLogAttach(void);
+LOCAL void 		logClientRollLocalPort(void);
 
-int 	iocLogInit();
-static int	getConfig();
-static void	failureNoptify();
+LOCAL SEM_ID		iocLogMutex;	/* protects stdio */
+LOCAL SEM_ID		iocLogSignal;	/* reattach to log server */
 
 
 /*
- *
  *	iocLogInit()
- *
- *
  */
-int
-iocLogInit()
+int iocLogInit(void)
 {
-	int            		sock;
-        struct sockaddr_in      addr;
-	int			status;
+	int	status;
+	int	attachStatus;
+	int	options;
 
 	if(iocLogDisable){
 		return OK;
 	}
 
+	options = SEM_Q_PRIORITY|SEM_DELETE_SAFE|SEM_INVERSION_SAFE;
+	iocLogMutex = semMCreate(options);
+	if(!iocLogMutex){
+		return ERROR;
+	}
+
+	iocLogSignal = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	if(!iocLogSignal){
+		return ERROR;
+	}
+
+	attachStatus = iocLogAttach();
+
+	status = rebootHookAdd((FUNCPTR)logClientShutdown);
+	if (status<0) {
+		epicsPrintf("Unable to add log server reboot hook\n");
+	}
+
+	status = taskSpawn(	
+			LOG_RESTART_NAME, 
+			LOG_RESTART_PRI, 
+			LOG_RESTART_OPT, 
+			LOG_RESTART_STACK, 
+			(FUNCPTR)logRestart,
+			0,0,0,0,0,0,0,0,0,0);
+	if (status<0) {
+		epicsPrintf("Unable to start log server connection watch dog\n");
+	}
+
+	return attachStatus;
+}
+
+
+/*
+ *	iocLogAttach()
+ */
+int iocLogAttach(void)
+{
+
+	int            		sock;
+        struct sockaddr_in      addr;
+	int			status;
+	int			optval;
+	FILE			*fp;
+
 	status = getConfig();
 	if(status<0){
-		logMsg (
-			"iocLogClient: EPICS environment under specified\n",
-			0,0,0,0,0,0);
-		logMsg (
-			"iocLogClient: failed to initialize\n",
-			0,0,0,0,0,0);
+		epicsPrintf (
+		"iocLogClient: EPICS environment under specified\n");
+		epicsPrintf ("iocLogClient: failed to initialize\n");
 		return ERROR;
 	}
 
@@ -99,9 +148,8 @@ iocLogInit()
 		      SOCK_STREAM,	/* type         */
 		      0);		/* deflt proto  */
 	if (sock < 0){
-		logMsg(	"iocLogClient: no socket errno %d\n", 
-			errnoGet(),
-			0,0,0,0,0);
+		epicsPrintf ("iocLogClient: no socket error %s\n", 
+			strerror(errno));
 		return ERROR;
 	}
 
@@ -111,7 +159,7 @@ iocLogInit()
         /*      set the port    */
         addr.sin_port = htons(ioc_log_port);
 
-        /*      set the port    */
+        /*      set the addr */
         addr.sin_addr.s_addr = ioc_log_addr.s_addr;
 
 	/* connect */
@@ -123,25 +171,213 @@ iocLogInit()
 		char name[INET_ADDR_LEN];
 
 		inet_ntoa_b(addr.sin_addr, name);
-		logMsg(
+		if (iocLogTries==0U) {
+			epicsPrintf(
 	"iocLogClient: unable to connect to %s port %d because \"%s\"\n", 
-			(int) name,
-			addr.sin_port,
-			(int) strerror(errnoGet()),
-			0,0,0);
+				name,
+				addr.sin_port,
+				strerror(errno));
+		}
+		iocLogTries++;
 		close(sock);
 		return ERROR;
 	}
 
-	logFdAdd (sock);
+	iocLogTries=0U;
+	iocLogConnectCount++;
 
-	iocLogFile = fdopen (sock, "a");
+	/*
+	 * discover that the connection has expired
+	 * (after a long delay)
+	 */
+        optval = TRUE;
+        status = setsockopt(    sock,
+                                SOL_SOCKET,
+                                SO_KEEPALIVE,
+                                (char *) &optval,
+                                sizeof(optval));
+        if(status<0){
+                epicsPrintf ("iocLogClient: %s\n", strerror(errno));
+		close(sock);
+                return ERROR;
+        }
 
+	/*
+	 * set how long we will wait for the TCP state machine
+	 * to clean up when we issue a close(). This
+	 * guarantees that messages are serialized when we
+	 * switch connections.
+	 */
+	{
+		struct  linger		lingerval;
+
+		lingerval.l_onoff = TRUE;
+		lingerval.l_linger = 60*5; 
+		status = setsockopt(    sock,
+					SOL_SOCKET,
+					SO_LINGER,
+					(char *) &lingerval,
+					sizeof(lingerval));
+		if(status<0){
+			epicsPrintf ("iocLogClient: %s\n", strerror(errno));
+			close(sock);
+			return ERROR;
+		}
+	}
+
+	fp = fdopen (sock, "a");
+
+	/*
+	 * mutex on
+	 */
+	status = semTake(iocLogMutex, WAIT_FOREVER);
+	assert(status==OK);
+
+	/*
+	 * close any preexisting connection to the log server
+	 */
+	if (iocLogFile) {
+		logFdDelete(iocLogFD);
+		fclose(iocLogFile);
+		iocLogFile = NULL;
+		iocLogFD = ERROR;
+	}
+	else if (iocLogFD!=ERROR) {
+		logFdDelete(iocLogFD);
+		close(iocLogFD);
+		iocLogFD = ERROR;
+	}
+
+	/*
+	 * export the new connection
+	 */
 	iocLogFD = sock;
+	logFdAdd (iocLogFD);
+	iocLogFile = fp;
+
+	/*
+	 * mutex off
+	 */
+	status = semGive(iocLogMutex);
+	assert(status==OK);
 
 	return OK;
 }
 
+
+/*
+ * logRestart()
+ */
+LOCAL void logRestart(void)
+{
+	int 	status;
+	int	reattach;
+	int	delay = LOG_RESTART_DELAY;	
+
+
+	/*
+	 * roll the local port forward so that we dont collide
+	 * with the first port assigned when we reboot 
+	 */
+	logClientRollLocalPort();
+
+	while (1) {
+		semTake(iocLogSignal, delay);
+
+		/*
+		 * mutex on
+		 */
+		status = semTake(iocLogMutex, WAIT_FOREVER);
+		assert(status==OK);
+
+		if (iocLogFile==NULL) {
+			reattach = TRUE;
+		}
+		else {
+			reattach = ferror(iocLogFile);
+		}
+
+		/*
+		 * mutex off
+		 */
+		status = semGive(iocLogMutex);
+		assert(status==OK);
+
+		if (reattach==FALSE) {
+			continue;
+		}
+
+		/*
+		 * restart log server
+		 */
+		iocLogConnectCount = 0U;
+		logClientRollLocalPort();
+	}
+}
+
+
+/*
+ * logClientRollLocalPort()
+ */
+LOCAL void logClientRollLocalPort(void)
+{
+	int	status;
+
+	/*
+	 * roll the local port forward so that we dont collide
+	 * with it when we reboot
+	 */
+	while (iocLogConnectCount<10U) {
+		/*
+		 * switch to a new log server connection 
+		 */
+		status = iocLogAttach();
+		if (status==OK) {
+			/*
+			 * only print a message after the first connect
+			 */
+			if (iocLogConnectCount==1U) {
+				printf(
+		"iocLogClient: reconnected to the log server\n");
+			}
+		}
+		else {
+			/*
+			 * if we cant connect then we will roll
+			 * the port later when we can
+			 * (we must not spin on connect fail)
+			 */
+			if (errno!=ETIMEDOUT) {
+				return;
+			}
+		}
+	}
+}
+
+
+/*
+ * logClientShutdown()
+ */
+LOCAL void logClientShutdown(void)
+{
+	if (iocLogFD!=ERROR) {
+	/*
+	 * unfortunately this does not currently work because WRS
+	 * runs the reboot hooks in the order the order that
+	 * they are installed (and the network is already shutdown 
+	 * by the time we get here)
+	 */
+#if 0
+		/*
+		 * this aborts the connection because we 
+		 * have specified a nill linger interval
+		 */
+		printf("log client: lingering for connection close...");
+		close(iocLogFD);
+		printf("done\n");
+#endif 
+	}	
+}
 
 
 /*
@@ -151,8 +387,7 @@ iocLogInit()
  *
  *
  */
-static int
-getConfig()
+LOCAL int getConfig(void)
 {
 	long	status;
 
@@ -160,7 +395,7 @@ getConfig()
 			&EPICS_IOC_LOG_PORT, 
 			&ioc_log_port);
 	if(status<0){
-		failureNoptify(&EPICS_IOC_LOG_PORT);
+		failureNotify(&EPICS_IOC_LOG_PORT);
 		return ERROR;
 	}
 
@@ -168,7 +403,7 @@ getConfig()
 			&EPICS_IOC_LOG_INET, 
 			&ioc_log_addr);
 	if(status<0){
-		failureNoptify(&EPICS_IOC_LOG_INET);
+		failureNotify(&EPICS_IOC_LOG_INET);
 		return ERROR;
 	}
 
@@ -178,42 +413,59 @@ getConfig()
 
 
 /*
- *
  *	failureNotify()
- *
- *
  */
-static void
-failureNoptify(pparam)
-ENV_PARAM       *pparam;
+LOCAL void failureNotify(ENV_PARAM *pparam)
 {
-	logMsg(	"IocLogClient: EPICS environment variable \"%s\" undefined\n",
-		(int) pparam->name,
-		0,0,0,0,0);
+	epicsPrintf(
+	"IocLogClient: EPICS environment variable \"%s\" undefined\n",
+		pparam->name);
 }
-
-
 
 
 /*
- *
- *	unused
- *
- *
+ * iocLogVPrintf()
  */
-#ifdef JUNKYARD
-	ioTaskStdSet(taskIdSelf(), 1, sock);
+int iocLogVPrintf(const char *pFormat, va_list pvar)
+{
+	int status;
+	int semStatus;
 
-	while (1) {
-		date();
-/*
-		memShow(0);
-		i(0);
-		checkStack(0);
-*/
-		/*
-		 * 60 min
-		 */
-		taskDelay(sysClkRateGet() * 60 * 60);
+	if (!pFormat || iocLogDisable) {
+		return 0;
 	}
-#endif
+
+	/*
+	 * mutex on
+	 */
+	semStatus = semTake(iocLogMutex, WAIT_FOREVER);
+	assert(semStatus==OK);
+
+	if (iocLogFile) {
+		status = vfprintf(iocLogFile, pFormat, pvar);
+		if (status>0) {
+			status = fflush(iocLogFile);
+		}
+
+		if (status<0) {
+			logFdDelete(iocLogFD);
+			fclose(iocLogFile);
+			iocLogFile = NULL;
+			iocLogFD = ERROR;
+			semStatus = semGive(iocLogSignal);
+			assert(semStatus==OK);
+		}
+	}
+	else {
+		status = EOF;
+	}
+
+	/*
+	 * mutex off
+	 */
+	semStatus = semGive(iocLogMutex);
+	assert(semStatus==OK);
+
+	return status;
+}
+

@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  * $Log$
+ * Revision 1.4  1997/05/01 19:50:40  jhill
+ * updated dll keywords
+ *
  * Revision 1.3  1997/04/10 20:00:40  jhill
  * VMS changes
  *
@@ -48,7 +51,7 @@
 #ifndef INCepicsTypesh
 #define INCepicsTypesh 1
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 #ifndef stringOf
 #	ifdef __STDC__ 

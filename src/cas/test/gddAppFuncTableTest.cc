@@ -8,7 +8,7 @@
 //
 
 #include <stdio.h>
-#include <gddAppFuncTable.h>
+#include "gddAppFuncTable.h"
 
 class casPV {
 public:

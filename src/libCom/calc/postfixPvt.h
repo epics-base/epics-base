@@ -37,7 +37,7 @@
 #ifndef INCpostfixPvth
 #define INCpostfixPvth
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 /*	defines for element table      */
 #define		BAD_EXPRESSION	0

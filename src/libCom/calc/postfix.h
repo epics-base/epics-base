@@ -37,7 +37,7 @@
 #ifndef INCpostfixh
 #define INCpostfixh
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 epicsShareFunc long epicsShareAPI 
 	postfix (char *pinfix, char *ppostfix, short *perror);

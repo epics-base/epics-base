@@ -40,8 +40,8 @@
 //
 // GDD
 //
-#include <gdd.h>
-#include <gddAppTable.h>
+#include "gdd.h"
+#include "gddAppTable.h"
 
 typedef aitUint32 gddAppFuncTableStatus;
 

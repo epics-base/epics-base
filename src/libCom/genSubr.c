@@ -27,6 +27,7 @@
  * -----------------
  * .00	03-29-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02	01-29-92	rac	added wildMatch function
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -42,6 +43,17 @@
 *	EPICS programs.  Some routines are for SunOS vs. VxWorks
 *	compatibility.
 *
+* QUICK REFERENCE
+*         assert(       expression)
+*         assertAlways( expression)
+*   char *genMalloc(    nBytes)
+*   void  genBufCheck(  pBuf)
+*   void  genFree(      pBuf)
+*   void  genShellCommand(cmdBuf, resultBuf, resultDim)
+*   void  genSigInit(   pHandler)
+*    int  perror(       string)
+*    int  wildMatch(    string, pattern, ignoreCase)
+*
 * SEE ALSO
 *	genDefs.h
 *-***************************************************************************/
@@ -52,9 +64,11 @@
 #   include <stdioLib.h>
 #   include <taskLib.h>
 #   include <sigLib.h>
+#   include <ctype.h>
 #else
 #   include <stdio.h>
 #   include <signal.h>
+#   include <ctype.h>
 #endif
 
 
@@ -331,3 +345,82 @@ char    *str;	/* I string to print in conjunction with error message */
     printErrno(0);
 }
 #endif
+
+int doMatch();
+
+/*+/subr**********************************************************************
+* NAME	wildMatch - do wildcard matching on strings
+*
+* DESCRIPTION
+*	Search a text string for a match of a pattern, where the pattern
+*	can contain wildcard characters.
+*
+*	The wildcard characters and their meanings are:
+*	? matches any single character
+*	* matches any sequence of zero or more characters
+*
+* RETURNS
+*	1	if a match is obtained, or
+*	0
+*
+*-*/
+int
+wildMatch(text, p, ignoreCase)
+char	*text;		/* I the text to be checked */
+char	*p;		/* I the pattern, possibly with wildcards */
+int	ignoreCase;	/* I 0,1 to honor,ignore upper/lower case differences */
+{
+    char	*starP=NULL;	/* pointer at beginning of * wildcard */
+    char	*starText=NULL;	/* pointer at beginning of * wildcard */
+    int		matched;	/* char in text matches char in pattern */
+    char	a, b;
+
+    if (*text == '\0')
+	return 0;
+    while (*p != '\0' && *text != '\0') {
+	switch (*p) {
+	    case '*':
+		starP = ++p;
+		if (*p == '\0')
+		    return 1;
+		starText = text;
+		break;
+	    default:
+		matched = (*text == *p || *p == '?') ? 1 : 0;
+		if (ignoreCase && !matched) {
+		    a = *text; b = *p;
+		    if (isascii(a) && isascii(b) && isalpha(a) && isalpha(b)) {
+			if (isupper(a)) a = tolower(a);
+			if (isupper(b)) b = tolower(b);
+			if (a == b)
+			    matched = 1;
+		    }
+		}
+		if (matched) {
+		    text++, p++;
+		    if (*p == '\0') {
+			if (*text == '\0' || *(p-1) == '*')
+			    return 1;
+			text = ++starText;
+			p = starP;
+		    }
+		}
+		else if (starP == NULL)
+		    return 0;
+		else {
+		    text = ++starText;
+		    p = starP;
+		}
+		break;
+	}
+    }
+    if (*text == '\0') {
+	if (*p == '\0')
+	    return 1;
+	if (*p != '*')
+	    return 0;
+	if (*(++p) == '\0')
+	    return 1;
+    }
+    return 0;
+}

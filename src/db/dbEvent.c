@@ -65,6 +65,7 @@ struct evSubscrip {
     unsigned char           select;
     char                    valque;
     char                    callBackInProgress;
+    char                    enabled;
 };
 
 /*
@@ -387,12 +388,12 @@ dbEventSubscription epicsShareAPI db_add_event (
     pevent->select =    select;
     pevent->pLastLog =  NULL; /* not yet in the queue */
     pevent->callBackInProgress = FALSE;
+    pevent->enabled =   FALSE;
+    pevent->ev_que =    ev_que;
 
     LOCKEVQUE(ev_que);
     ev_que->quota += EVENTENTRIES;
     UNLOCKEVQUE(ev_que);
-    
-    pevent->ev_que =    ev_que;
 
     /*
      * Simple types values queued up for reliable interprocess
@@ -406,10 +407,6 @@ dbEventSubscription epicsShareAPI db_add_event (
     else {
         pevent->valque = FALSE;
     }
-
-    LOCKREC(precord);
-    ellAdd(&precord->mlis, &pevent->node);
-    UNLOCKREC(precord);
 
     return pevent;
 }
@@ -425,7 +422,10 @@ void epicsShareAPI db_event_enable (dbEventSubscription es)
     precord = (struct dbCommon *) pevent->paddr->precord;
 
     LOCKREC(precord);
-    ellAdd (&precord->mlis, &pevent->node);
+    if ( ! pevent->enabled ) {
+        ellAdd (&precord->mlis, &pevent->node);
+        pevent->enabled = TRUE;
+    }
     UNLOCKREC(precord);
 }
 
@@ -440,7 +440,10 @@ void epicsShareAPI db_event_disable (dbEventSubscription es)
     precord = (struct dbCommon *) pevent->paddr->precord;
 
     LOCKREC(precord);
-    ellDelete(&precord->mlis, &pevent->node);
+    if ( pevent->enabled ) {
+        ellDelete(&precord->mlis, &pevent->node);
+        pevent->enabled = FALSE;
+    }
     UNLOCKREC(precord);
 }
 
@@ -480,9 +483,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
 
     precord = ( struct dbCommon * ) pevent->paddr->precord;
 
-    LOCKREC ( precord );
-    ellDelete ( ( ELLLIST* ) &precord->mlis, &pevent->node );
-    UNLOCKREC ( precord );
+    db_event_disable ( es );
 
     /*
      * flag the event as canceled by NULLing out the callback handler 

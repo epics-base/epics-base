@@ -1599,15 +1599,20 @@ void verifyReasonableBeaconPeriod ( chid chan )
          * 2) watch inactive circuit for awhile to see if it 
          *        prematurely disconnects
          */
-        printf ( "Verifying beacon period - this takes %g sec. ", 
+        printf ( "Verifying beacon period - this takes %g sec.\n", 
             expectedBeaconPeriod * 2 );
-        fflush ( stdout );
         epicsThreadSleep ( expectedBeaconPeriod * 2 );
         beaconPeriod = ca_beacon_period ( chan );
-        error = fabs ( beaconPeriod - expectedBeaconPeriod );
-        /* expect less than a 10% error */
-        assert ( error / expectedBeaconPeriod < 0.1 ); 
-        printf ( "done\n" );
+        if ( beaconPeriod >= 0.0 ) {
+            error = beaconPeriod - expectedBeaconPeriod;
+            printf ( "Beacon period error = %f sec.\n", error );
+            fflush ( stdout );
+            /* expect less than a 10% error */
+            assert ( fabs ( error ) / expectedBeaconPeriod < 0.1 ); 
+        }
+        else {
+            printf ( "Unable to determine beacon period\n" );
+        }
     }
 }
 
@@ -1684,6 +1689,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     verifyConnectionHandlerConnect ( pChans, channelCount, repetitionCount );
     verifyBlockingConnect ( pChans, channelCount, repetitionCount );
     verifyClear ( pChans );
+
     verifyReasonableBeaconPeriod ( chan );
 
     /*

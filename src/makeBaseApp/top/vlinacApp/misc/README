@@ -39,5 +39,5 @@ To start the ioc, refer to the README file in the iocBoot
 directory.
 
 To start medm, use the following command:
-medm -local -x -macro user=nda Virtual_Linac.adl
+medm -local -x -macro user=_USER_ Virtual_Linac.adl
 

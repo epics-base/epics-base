@@ -21,137 +21,137 @@ of this distribution.
 #include "dbTestRegister.h"
 
 /* dba */
-ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *dbaArgs[1] = {&dbaArg0};
-ioccrfFuncDef dbaFuncDef = {"dba",1,dbaArgs};
-void dbaCallFunc(ioccrfArg **args) { dba((char *)args[0]->value);}
+static ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *dbaArgs[1] = {&dbaArg0};
+static ioccrfFuncDef dbaFuncDef = {"dba",1,dbaArgs};
+static void dbaCallFunc(ioccrfArg **args) { dba((char *)args[0]->value);}
 
 /* dbl */
-ioccrfArg dblArg0 = { "record type",ioccrfArgString,0};
-ioccrfArg dblArg1 = { "output file",ioccrfArgString,0};
-ioccrfArg dblArg2 = { "fields",ioccrfArgString,0};
-ioccrfArg *dblArgs[3] = {&dblArg0,&dblArg1,&dblArg2};
-ioccrfFuncDef dblFuncDef = {"dbl",3,dblArgs};
-void dblCallFunc(ioccrfArg **args)
+static ioccrfArg dblArg0 = { "record type",ioccrfArgString,0};
+static ioccrfArg dblArg1 = { "output file",ioccrfArgString,0};
+static ioccrfArg dblArg2 = { "fields",ioccrfArgString,0};
+static ioccrfArg *dblArgs[3] = {&dblArg0,&dblArg1,&dblArg2};
+static ioccrfFuncDef dblFuncDef = {"dbl",3,dblArgs};
+static void dblCallFunc(ioccrfArg **args)
 {
     dbl((char *)args[0]->value,(char *)args[1]->value,(char *)args[2]->value);
 }
 
 /* dbnr */
-ioccrfArg dbnrArg0 = { "verbose",ioccrfArgInt,0};
-ioccrfArg *dbnrArgs[1] = {&dbnrArg0};
-ioccrfFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
-void dbnrCallFunc(ioccrfArg **args) { dbnr(*(int *)args[0]->value);}
+static ioccrfArg dbnrArg0 = { "verbose",ioccrfArgInt,0};
+static ioccrfArg *dbnrArgs[1] = {&dbnrArg0};
+static ioccrfFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
+static void dbnrCallFunc(ioccrfArg **args) { dbnr(*(int *)args[0]->value);}
 
 /* dbgrep */
-ioccrfArg dbgrepArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *dbgrepArgs[1] = {&dbgrepArg0};
-ioccrfFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs};
-void dbgrepCallFunc(ioccrfArg **args) { dbgrep((char *)args[0]->value);}
+static ioccrfArg dbgrepArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *dbgrepArgs[1] = {&dbgrepArg0};
+static ioccrfFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs};
+static void dbgrepCallFunc(ioccrfArg **args) { dbgrep((char *)args[0]->value);}
 
 /* dbgf */
-ioccrfArg dbgfArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *dbgfArgs[1] = {&dbgfArg0};
-ioccrfFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs};
-void dbgfCallFunc(ioccrfArg **args) { dbgf((char *)args[0]->value);}
+static ioccrfArg dbgfArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *dbgfArgs[1] = {&dbgfArg0};
+static ioccrfFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs};
+static void dbgfCallFunc(ioccrfArg **args) { dbgf((char *)args[0]->value);}
 
 /* dbpf */
-ioccrfArg dbpfArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbpfArg1 = { "value",ioccrfArgString,0};
-ioccrfArg *dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
-ioccrfFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs};
-void dbpfCallFunc(ioccrfArg **args)
+static ioccrfArg dbpfArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbpfArg1 = { "value",ioccrfArgString,0};
+static ioccrfArg *dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
+static ioccrfFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs};
+static void dbpfCallFunc(ioccrfArg **args)
 { dbpf((char *)args[0]->value,(char *)args[1]->value);}
 
 /* dbpr */
-ioccrfArg dbprArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbprArg1 = { "interest_level",ioccrfArgInt,0};
-ioccrfArg *dbprArgs[2] = {&dbprArg0,&dbprArg1};
-ioccrfFuncDef dbprFuncDef = {"dbpr",2,dbprArgs};
-void dbprCallFunc(ioccrfArg **args)
+static ioccrfArg dbprArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbprArg1 = { "interest_level",ioccrfArgInt,0};
+static ioccrfArg *dbprArgs[2] = {&dbprArg0,&dbprArg1};
+static ioccrfFuncDef dbprFuncDef = {"dbpr",2,dbprArgs};
+static void dbprCallFunc(ioccrfArg **args)
 { dbpr((char *)args[0]->value,*(int *)args[1]->value);}
 
 /* dbtr */
-ioccrfArg dbtrArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *dbtrArgs[1] = {&dbtrArg0};
-ioccrfFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs};
-void dbtrCallFunc(ioccrfArg **args) { dbtr((char *)args[0]->value);}
+static ioccrfArg dbtrArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *dbtrArgs[1] = {&dbtrArg0};
+static ioccrfFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs};
+static void dbtrCallFunc(ioccrfArg **args) { dbtr((char *)args[0]->value);}
 
 /* dbtgf */
-ioccrfArg dbtgfArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *dbtgfArgs[1] = {&dbtgfArg0};
-ioccrfFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs};
-void dbtgfCallFunc(ioccrfArg **args) { dbtgf((char *)args[0]->value);}
+static ioccrfArg dbtgfArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *dbtgfArgs[1] = {&dbtgfArg0};
+static ioccrfFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs};
+static void dbtgfCallFunc(ioccrfArg **args) { dbtgf((char *)args[0]->value);}
 
 /* dbtpf */
-ioccrfArg dbtpfArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbtpfArg1 = { "value",ioccrfArgString,0};
-ioccrfArg *dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
-ioccrfFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs};
-void dbtpfCallFunc(ioccrfArg **args)
+static ioccrfArg dbtpfArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbtpfArg1 = { "value",ioccrfArgString,0};
+static ioccrfArg *dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
+static ioccrfFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs};
+static void dbtpfCallFunc(ioccrfArg **args)
 { dbtpf((char *)args[0]->value,(char *)args[1]->value);}
 
 /* dbior */
-ioccrfArg dbiorArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbiorArg1 = { "interest_level",ioccrfArgInt,0};
-ioccrfArg *dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
-ioccrfFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
-void dbiorCallFunc(ioccrfArg **args)
+static ioccrfArg dbiorArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbiorArg1 = { "interest_level",ioccrfArgInt,0};
+static ioccrfArg *dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
+static ioccrfFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
+static void dbiorCallFunc(ioccrfArg **args)
 { dbior((char *)args[0]->value,*(int *)args[1]->value);}
 
 /* dbhcr */
-ioccrfArg dbhcrArg0 = { "filename",ioccrfArgString,0};
-ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
-ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
-void dbhcrCallFunc(ioccrfArg **args) { dbhcr((char *)args[0]->value);}
+static ioccrfArg dbhcrArg0 = { "filename",ioccrfArgString,0};
+static ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
+static ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
+static void dbhcrCallFunc(ioccrfArg **args) { dbhcr((char *)args[0]->value);}
 
 /* gft */
-ioccrfArg gftArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg *gftArgs[1] = {&gftArg0};
-ioccrfFuncDef gftFuncDef = {"gft",1,gftArgs};
-void gftCallFunc(ioccrfArg **args) { gft((char *)args[0]->value);}
+static ioccrfArg gftArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg *gftArgs[1] = {&gftArg0};
+static ioccrfFuncDef gftFuncDef = {"gft",1,gftArgs};
+static void gftCallFunc(ioccrfArg **args) { gft((char *)args[0]->value);}
 
 /* pft */
-ioccrfArg pftArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg pftArg1 = { "value",ioccrfArgString,0};
-ioccrfArg *pftArgs[2] = {&pftArg0,&pftArg1};
-ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
-void pftCallFunc(ioccrfArg **args)
+static ioccrfArg pftArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg pftArg1 = { "value",ioccrfArgString,0};
+static ioccrfArg *pftArgs[2] = {&pftArg0,&pftArg1};
+static ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
+static void pftCallFunc(ioccrfArg **args)
 { pft((char *)args[0]->value,(char *)args[1]->value);}
 
 /* tpn */
-ioccrfArg tpnArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg tpnArg1 = { "value",ioccrfArgString,0};
-ioccrfArg *tpnArgs[2] = {&tpnArg0,&tpnArg1};
-ioccrfFuncDef tpnFuncDef = {"tpn",2,tpnArgs};
-void tpnCallFunc(ioccrfArg **args)
+static ioccrfArg tpnArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg tpnArg1 = { "value",ioccrfArgString,0};
+static ioccrfArg *tpnArgs[2] = {&tpnArg0,&tpnArg1};
+static ioccrfFuncDef tpnFuncDef = {"tpn",2,tpnArgs};
+static void tpnCallFunc(ioccrfArg **args)
 { tpn((char *)args[0]->value,(char *)args[1]->value);}
 
 /* dblsr */
-ioccrfArg dblsrArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt,0};
-ioccrfArg *dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
-ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
-void dblsrCallFunc(ioccrfArg **args)
+static ioccrfArg dblsrArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt,0};
+static ioccrfArg *dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
+static ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
+static void dblsrCallFunc(ioccrfArg **args)
 { dblsr((char *)args[0]->value,*(int *)args[1]->value);}
 
 /* scanppl */
-ioccrfArg scanpplArg0 = { "rate",ioccrfArgDouble,0};
-ioccrfArg *scanpplArgs[1] = {&scanpplArg0};
-ioccrfFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs};
-void scanpplCallFunc(ioccrfArg **args)
+static ioccrfArg scanpplArg0 = { "rate",ioccrfArgDouble,0};
+static ioccrfArg *scanpplArgs[1] = {&scanpplArg0};
+static ioccrfFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs};
+static void scanpplCallFunc(ioccrfArg **args)
 { scanppl(*(double *)args[0]->value);}
 
 /* scanpel */
-ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt,0};
-ioccrfArg *scanpelArgs[1] = {&scanpelArg0};
-ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
-void scanpelCallFunc(ioccrfArg **args)
+static ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt,0};
+static ioccrfArg *scanpelArgs[1] = {&scanpelArg0};
+static ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
+static void scanpelCallFunc(ioccrfArg **args)
 { scanpel(*(int *)args[0]->value);}
 
 /* scanpiol */
-ioccrfFuncDef scanpiolFuncDef = {"scanpiol",0,0};
-void scanpiolCallFunc(ioccrfArg **args) { scanpiol();}
+static ioccrfFuncDef scanpiolFuncDef = {"scanpiol",0,0};
+static void scanpiolCallFunc(ioccrfArg **args) { scanpiol();}
 
 void epicsShareAPI dbTestRegister(void)
 {

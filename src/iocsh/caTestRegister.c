@@ -19,20 +19,20 @@ of this distribution.
 #include "caTestRegister.h"
 
 /* casr */
-ioccrfArg casrArg0 = { "level",ioccrfArgInt,0};
-ioccrfArg *casrArgs[1] = {&casrArg0};
-ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
-void casrCallFunc(ioccrfArg **args)
+static ioccrfArg casrArg0 = { "level",ioccrfArgInt,0};
+static ioccrfArg *casrArgs[1] = {&casrArg0};
+static ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
+static void casrCallFunc(ioccrfArg **args)
 {
     casr(*(int *)args[0]->value);
 }
 
 /* dbel */
-ioccrfArg dbelArg0 = { "record name",ioccrfArgString,0};
-ioccrfArg dbelArg1 = { "level",ioccrfArgInt,0};
-ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
-ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
-void dbelCallFunc(ioccrfArg **args)
+static ioccrfArg dbelArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbelArg1 = { "level",ioccrfArgInt,0};
+static ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
+static ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
+static void dbelCallFunc(ioccrfArg **args)
 {
     dbel((char *)args[0]->value, *(int *)args[1]->value);
 }

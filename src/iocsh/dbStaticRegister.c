@@ -20,107 +20,107 @@ of this distribution.
 #include "dbStaticRegister.h"
 
 /* dbDumpRecDes */
-ioccrfArg dbDumpRecDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpRecDesArg1 = { "recordTypeName",ioccrfArgString,0};
-ioccrfArg *dbDumpRecDesArgs[2] = {&dbDumpRecDesArg0,&dbDumpRecDesArg1};
-ioccrfFuncDef dbDumpRecDesFuncDef = {"dbDumpRecDes",2,dbDumpRecDesArgs};
-void dbDumpRecDesCallFunc(ioccrfArg **args)
+static ioccrfArg dbDumpRecDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpRecDesArg1 = { "recordTypeName",ioccrfArgString,0};
+static ioccrfArg *dbDumpRecDesArgs[2] = {&dbDumpRecDesArg0,&dbDumpRecDesArg1};
+static ioccrfFuncDef dbDumpRecDesFuncDef = {"dbDumpRecDes",2,dbDumpRecDesArgs};
+static void dbDumpRecDesCallFunc(ioccrfArg **args)
 {
     dbDumpRecDes(pdbbase,(char *)args[1]->value);
 }
 
 /* dbDumpPath */
-ioccrfArg dbDumpPathArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg *dbDumpPathArgs[1] = {&dbDumpPathArg0};
-ioccrfFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs};
-void dbDumpPathCallFunc(ioccrfArg **args)
+static ioccrfArg dbDumpPathArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg *dbDumpPathArgs[1] = {&dbDumpPathArg0};
+static ioccrfFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs};
+static void dbDumpPathCallFunc(ioccrfArg **args)
 {
     dbDumpPath(pdbbase);
 }
 
 /* dbDumpRecord */
-ioccrfArg dbDumpRecordArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpRecordArg1 = { "recordTypeName",ioccrfArgString,0};
-ioccrfArg dbDumpRecordArg2 = { "interest_level",ioccrfArgInt,0};
-ioccrfArg *dbDumpRecordArgs[3] =
+static ioccrfArg dbDumpRecordArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpRecordArg1 = { "recordTypeName",ioccrfArgString,0};
+static ioccrfArg dbDumpRecordArg2 = { "interest_level",ioccrfArgInt,0};
+static ioccrfArg *dbDumpRecordArgs[3] =
     {&dbDumpRecordArg0,&dbDumpRecordArg1,&dbDumpRecordArg2};
-ioccrfFuncDef dbDumpRecordFuncDef = {"dbDumpRecord",3,dbDumpRecordArgs};
-void dbDumpRecordCallFunc(ioccrfArg **args)
+static ioccrfFuncDef dbDumpRecordFuncDef = {"dbDumpRecord",3,dbDumpRecordArgs};
+static void dbDumpRecordCallFunc(ioccrfArg **args)
 {
     dbDumpRecord(pdbbase,(char *)args[1]->value,*(int *)args[2]->value);
 }
 
 /* dbDumpMenu */
-ioccrfArg dbDumpMenuArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpMenuArg1 = { "menuName",ioccrfArgString,0};
-ioccrfArg *dbDumpMenuArgs[2] = {&dbDumpMenuArg0,&dbDumpMenuArg1};
-ioccrfFuncDef dbDumpMenuFuncDef = {"dbDumpMenu",2,dbDumpMenuArgs};
-void dbDumpMenuCallFunc(ioccrfArg **args)
+static ioccrfArg dbDumpMenuArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpMenuArg1 = { "menuName",ioccrfArgString,0};
+static ioccrfArg *dbDumpMenuArgs[2] = {&dbDumpMenuArg0,&dbDumpMenuArg1};
+static ioccrfFuncDef dbDumpMenuFuncDef = {"dbDumpMenu",2,dbDumpMenuArgs};
+static void dbDumpMenuCallFunc(ioccrfArg **args)
 {
     dbDumpMenu(pdbbase,(char *)args[1]->value);
 }
 
 /* dbDumpRecordType */
-ioccrfArg dbDumpRecordTypeArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpRecordTypeArg1 = { "recordTypeName",ioccrfArgString,0};
-ioccrfArg *dbDumpRecordTypeArgs[2] =
+static ioccrfArg dbDumpRecordTypeArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpRecordTypeArg1 = { "recordTypeName",ioccrfArgString,0};
+static ioccrfArg *dbDumpRecordTypeArgs[2] =
     {&dbDumpRecordTypeArg0,&dbDumpRecordTypeArg1};
-ioccrfFuncDef dbDumpRecordTypeFuncDef =
+static ioccrfFuncDef dbDumpRecordTypeFuncDef =
     {"dbDumpRecordType",2,dbDumpRecordTypeArgs};
-void dbDumpRecordTypeCallFunc(ioccrfArg **args)
+static void dbDumpRecordTypeCallFunc(ioccrfArg **args)
 {
     dbDumpRecordType(pdbbase,(char *)args[1]->value);
 }
 
 /* dbDumpFldDes */
-ioccrfArg dbDumpFldDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpFldDesArg1 = { "recordTypeName",ioccrfArgString,0};
-ioccrfArg dbDumpFldDesArg2 = { "fieldName",ioccrfArgString,0};
-ioccrfArg *dbDumpFldDesArgs[3] =
+static ioccrfArg dbDumpFldDesArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpFldDesArg1 = { "recordTypeName",ioccrfArgString,0};
+static ioccrfArg dbDumpFldDesArg2 = { "fieldName",ioccrfArgString,0};
+static ioccrfArg *dbDumpFldDesArgs[3] =
     {&dbDumpFldDesArg0,&dbDumpFldDesArg1,&dbDumpFldDesArg2};
-ioccrfFuncDef dbDumpFldDesFuncDef = {"dbDumpFldDes",3,dbDumpFldDesArgs};
-void dbDumpFldDesCallFunc(ioccrfArg **args)
+static ioccrfFuncDef dbDumpFldDesFuncDef = {"dbDumpFldDes",3,dbDumpFldDesArgs};
+static void dbDumpFldDesCallFunc(ioccrfArg **args)
 {
     dbDumpFldDes(pdbbase,(char *)args[1]->value,(char *)args[2]->value);
 }
 
 /* dbDumpDevice */
-ioccrfArg dbDumpDeviceArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpDeviceArg1 = { "recordTypeName",ioccrfArgString,0};
-ioccrfArg *dbDumpDeviceArgs[2] = {&dbDumpDeviceArg0,&dbDumpDeviceArg1};
-ioccrfFuncDef dbDumpDeviceFuncDef = {"dbDumpDevice",2,dbDumpDeviceArgs};
-void dbDumpDeviceCallFunc(ioccrfArg **args)
+static ioccrfArg dbDumpDeviceArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpDeviceArg1 = { "recordTypeName",ioccrfArgString,0};
+static ioccrfArg *dbDumpDeviceArgs[2] = {&dbDumpDeviceArg0,&dbDumpDeviceArg1};
+static ioccrfFuncDef dbDumpDeviceFuncDef = {"dbDumpDevice",2,dbDumpDeviceArgs};
+static void dbDumpDeviceCallFunc(ioccrfArg **args)
 {
     dbDumpDevice(pdbbase,(char *)args[1]->value);
 }
 
 /* dbDumpDriver */
-ioccrfArg dbDumpDriverArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg *dbDumpDriverArgs[1] = {&dbDumpDriverArg0};
-ioccrfFuncDef dbDumpDriverFuncDef = {"dbDumpDriver",1,dbDumpDriverArgs};
-void dbDumpDriverCallFunc(ioccrfArg **args)
+static ioccrfArg dbDumpDriverArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg *dbDumpDriverArgs[1] = {&dbDumpDriverArg0};
+static ioccrfFuncDef dbDumpDriverFuncDef = {"dbDumpDriver",1,dbDumpDriverArgs};
+static void dbDumpDriverCallFunc(ioccrfArg **args)
 {
     dbDumpDriver(pdbbase);
 }
 
 /* dbDumpBreaktable */
-ioccrfArg dbDumpBreaktableArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbDumpBreaktableArg1 = { "tableName",ioccrfArgString,0};
-ioccrfArg *dbDumpBreaktableArgs[2] =
+static ioccrfArg dbDumpBreaktableArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbDumpBreaktableArg1 = { "tableName",ioccrfArgString,0};
+static ioccrfArg *dbDumpBreaktableArgs[2] =
     {&dbDumpBreaktableArg0,&dbDumpBreaktableArg1};
-ioccrfFuncDef dbDumpBreaktableFuncDef =
+static ioccrfFuncDef dbDumpBreaktableFuncDef =
     {"dbDumpBreaktable",2,dbDumpBreaktableArgs};
-void dbDumpBreaktableCallFunc(ioccrfArg **args)
+static void dbDumpBreaktableCallFunc(ioccrfArg **args)
 {
     dbDumpBreaktable(pdbbase,(char *)args[1]->value);
 }
 
 /* dbPvdDump */
-ioccrfArg dbPvdDumpArg0 = { "pdbbase",ioccrfArgPdbbase,0};
-ioccrfArg dbPvdDumpArg1 = { "verbose",ioccrfArgInt,0};
-ioccrfArg *dbPvdDumpArgs[2] = {&dbPvdDumpArg0,&dbPvdDumpArg1};
-ioccrfFuncDef dbPvdDumpFuncDef = {"dbPvdDump",2,dbPvdDumpArgs};
-void dbPvdDumpCallFunc(ioccrfArg **args)
+static ioccrfArg dbPvdDumpArg0 = { "pdbbase",ioccrfArgPdbbase,0};
+static ioccrfArg dbPvdDumpArg1 = { "verbose",ioccrfArgInt,0};
+static ioccrfArg *dbPvdDumpArgs[2] = {&dbPvdDumpArg0,&dbPvdDumpArg1};
+static ioccrfFuncDef dbPvdDumpFuncDef = {"dbPvdDump",2,dbPvdDumpArgs};
+static void dbPvdDumpCallFunc(ioccrfArg **args)
 {
     dbPvdDump(pdbbase,*(int *)args[1]->value);
 }

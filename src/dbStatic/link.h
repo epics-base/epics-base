@@ -85,6 +85,7 @@ epicsShareExtern maplinkType pamaplinkType[];
 #define pvlOptInpString	0x80	/*Input as string*/
 #define pvlOptOutNative	0x100	/*Output native*/
 #define pvlOptOutString	0x200	/*Output as string*/
+#define pvlOptTSELisTime 0x400	/*Field TSEL is getting timeStamp*/
 
 typedef long (*LINKCVT)();
 

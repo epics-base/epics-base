@@ -20,7 +20,7 @@ OS_CLASS = vxWorks
 
 # The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
 # can be overridden for specific host architectures
-# by creating a CONFIG_SITE.Vx.<host_archfile with
+# by creating a CONFIG_SITE.Vx.<host_arch> file with
 # the override definitions.
 
 # Tornado directory definitions
@@ -41,7 +41,6 @@ VX_GNU = $(VX_GNU_$(TORNADO))
 GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
 GNU_LIB = $(VX_GNU_LIB_$(TORNADO))
 export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
-export WIND_BASE = $(VX_DIR)
 
 #--------------------------------------------------
 # VxWorks command definitions
@@ -147,5 +146,4 @@ MUNCHNAME = $(LIBNAME:%=%$(MUNCH_SUFFIX))
 # from finding wrong assembler (as).
 export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE
-
 

@@ -39,7 +39,7 @@ typedef int                     SOCKET;
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 
-#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
+#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */

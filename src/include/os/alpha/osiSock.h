@@ -43,7 +43,7 @@ typedef int                     SOCKET;
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 
-#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
+#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
 #endif /*osiSockH*/
 

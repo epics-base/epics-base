@@ -117,7 +117,7 @@ typedef int                     SOCKET;
 
 #define MAXHOSTNAMELEN 75
 
-#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
+#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 
 #endif /*osiSockH*/
 

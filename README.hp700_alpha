@@ -3,6 +3,7 @@
 #
 #
 
+
 - EPICS environment variable - set by hand prior to build
 
  For EPICS builds on HP700 and Alpha OSF/1, set an environment variable "EPICS"
@@ -11,6 +12,7 @@
 
  If you are currently in the base directory, then do the following:
  % setenv EPICS $cwd
+
 
 - set path to include gnu make and base/tools and base/bin/<arch>
 
@@ -22,3 +24,20 @@
 
  % set path=(/usr/local/bin $EPICS/base/tools $EPICS/base/bin/hp700 $path)
 
+
+- to build multiple architectures in same tree
+
+ To build multiple architectures in the same directory tree, you
+ can avoid editing CONFIG_SITE by simply issuing make with HOST_ARCH=<arch>
+
+ For example:
+
+ % make HOST_ARCH=alpha
+
+
+ Also, directory permissions may not be correct across multiple machines,
+ so a
+
+ % chmod -R ugo+rw base extensions
+
+ might be necessary.

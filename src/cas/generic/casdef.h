@@ -366,13 +366,7 @@ public:
 	//caStatus disableClients ();
 
 private:
-
-	//
-	// We do not use private inheritance here beacuse:
-	// o wish to avoid os/io dependent -I during server tool compile
-    // o server tool rebuild when internal structure of the server changes
-	//
-	caServerI       *pCAS;
+	caServerI *pCAS;
 };
 
 //

@@ -1,10 +1,15 @@
 #RULES.Db
 SUBTOOL = $(EPICS_BASE_BIN)/subtool
 PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
+ARCHS += $(BUILD_ARCHS) host cross
+ACTIONS += clean inc depends buildInstall build
+actionArchTargets = $(foreach action, $(ACTIONS) install,\
+                    $(foreach arch, $(ARCHS), \
+                    $(action)$(DIVIDER)$(arch)))
+ 
+all install :: inc buildInstall
 
-install: .DEPENDS dbd $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
-
-buildInstall:: install
+buildInstall: .DEPENDS dbd $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
 
 inc build depends:
 
@@ -38,6 +43,14 @@ $(INDDBFROMTEMPLATE):%.db: %.substitutions
 
 clean::
 	@$(RM) dbd  $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) .DEPENDS $(PROD)
+
+$(actionArchTargets) :%: 
+	$(MAKE) $(word 1, $(subst $(DIVIDER), ,$@))
+ 
+$(ARCHS):%: install
+ 
+.PHONY :: $(ARCHS) $(ACTIONS)
+.PHONY :: $(actionArchTargets)
 
 -include .DEPENDS
 

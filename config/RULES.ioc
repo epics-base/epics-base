@@ -2,10 +2,15 @@
 APPDIR := $(shell grep '.*".*App/' st.* | sed -e 's/.*"\(.*App\).*/\1/' | sort -u )
 ASCF = $(TOP)/../ascf
 TARGETBIN = $(TOP)/bin/$(ARCH)
+ARCHS = $(BUILD_ARCHS) host cross
+ACTIONS += clean inc depends buildInstall build
+actionArchTargets = $(foreach action, $(ACTIONS) install,\
+                    $(foreach arch, $(ARCHS), \
+                    $(action)$(DIVIDER)$(arch)))
  
-install: makelinks
+all install :: inc buildInstall
  
-buildInstall:: install
+buildInstall: makelinks
  
 inc build depends:
  
@@ -33,3 +38,13 @@ makelinks:
  
 clean::
 	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)
+
+$(actionArchTargets) :%: 
+	$(MAKE) $(word 1, $(subst $(DIVIDER), ,$@))
+ 
+$(ARCHS):%: install
+
+.PHONY :: $(ARCHS) $(ACTIONS)
+.PHONY :: $(actionArchTargets)
+
+

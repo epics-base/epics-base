@@ -1,13 +1,15 @@
 # CONFIG.Common.vxWorksCommon
 #
 # $Id$
-# This file is maintained by the build community.
 #
 # Definitions for vxWorks target archs
+#
+# This file is maintained by the build community.
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorksCommon
+# or CONFIG_SITE.<host>.vxWorksCommon
 
 #-------------------------------------------------------
-# Vx valid build types and include directory suffixes
+# Vx valid build types
 VALID_BUILDS = Ioc
 
 #--------------------------------------------------
@@ -34,27 +36,18 @@ INSTALL_LOCATION_LIB=$(INSTALL_LOCATION)/bin
 
 #--------------------------------------------------
 # vxWorks directory definitions
-
-# The definitions GNU_DIR, GNU_BIN and GNU_LIB
-# can be overridden for specific host architectures
-# by creating a CONFIG_SITE.Host.<host_arch> file with
-# the override definitions.
- 
 # Tornado directory definitions
 VX_INCLUDE = $(VX_DIR)/target/h
 GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
 
+#-------------------------------------------------------
+# Command definition overrides
 GCC_LD = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ld$(CMPLR_SUFFIX) -r
 
-#-------------------------------------------------------
-# GCC override
 # use ld  partial linking not ar to create libraries)
 GCC_AR = $(GCC_LD)
 ARFLAGS = -o
 GCC_RANLIB =
-
-GCC_DEP_CPPFLAGS = -D_REENTRANT
-G++_DEP_CPPFLAGS = -D_REENTRANT
 
 #--------------------------------------------------
 # C++ host processing
@@ -72,8 +65,13 @@ else
 MUNCH = $(GNU_BIN)/$(GNU_TARGET_PREFIX)munch$(EXE)
 endif
 
+#-------------------------------------------------------
+# Compile flag overrides
+GCC_DEP_CPPFLAGS = -D_REENTRANT
+G++_DEP_CPPFLAGS = -D_REENTRANT
+
 #--------------------------------------------------
-# Posix flags
+# Posix flags override
 POSIX_CPPFLAGS =
 
 #--------------------------------------------------
@@ -96,11 +94,11 @@ G++_OPT_YES = -O2
 G++_OPT_NO = -g
 
 #--------------------------------------------------
-# c++ exceptions,  YES or NO
+# c++ exceptions,  YES or NO override
 CXX_EXCEPTIONS = NO
 
 #--------------------------------------------------
-# osithead use default stack, YES or NO
+# osithead use default stack, YES or NO override
 OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------

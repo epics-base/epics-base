@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/06/26 21:18:54  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.2  1996/06/20 18:08:35  jhill
  * changed where caProto.h comes from
  *
@@ -43,7 +46,7 @@
 //
 #include <tsDLList.h>
 #include <resourceLib.h>
-#include <../src/ca/caProto.h>
+#include <caProto.h>
 
 typedef aitUint32 caResId;
 

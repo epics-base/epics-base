@@ -19,6 +19,8 @@ MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
 
+ASCII =  dbCommonRecord.ascii menuGlobal.ascii all.ascii
+
 SRCS.c = \
 	../dbAccess.c\
 	../dbBkpt.c\
@@ -66,13 +68,7 @@ LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
 
-pre_build: $(INSTALL_REC)/dbCommon.ascii $(INSTALL_REC)/menuGlobal.ascii $(INSTALL_REC)/all.ascii
-	
-$(INSTALL_REC)/dbCommon.h: ../dbCommonRecord.ascii
-	@echo "Installing $@"
-	@test -d $(INSTALL_REC) || mkdir $(INSTALL_REC)
-	@$(INSTALL) -m 644 $< $(INSTALL_REC)
-	cd $(INSTALL_REC); $(RM) $(notdir $@); \
-	../bin/$(HOST_ARCH)/dbAsciiToRecordtypeH $(notdir $<)
-
+dbCommon.h: ../dbCommonRecord.ascii
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbAsciiToRecordtypeH $<
 

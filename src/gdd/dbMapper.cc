@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.22  1999/04/30 15:24:52  jhill
+// fixed improper container index bug
+//
 // Revision 1.21  1999/01/28 19:12:46  jhill
 // fixed a mostly benign string array bounds over reach
 //
@@ -166,6 +169,14 @@ epicsShareDef gddDbrToAitTable gddDbrToAit[] = {
 
 static gddApplicationTypeTable* type_table = NULL;
 static aitDataFormat local_data_format=aitLocalDataFormat;
+
+//
+// special gddDestructor guarantees same form of new and delete
+//
+class dbMapperFixedStringDestructor: public gddDestructor {
+	virtual void run (void *);
+};
+
 
 // I generated a container for each of the important DBR types.  This
 // includes all the control and graphic structures.  The others are
@@ -1018,7 +1029,7 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 		menu.setDimension(1);
 		sz=db->no_str;
 		str=new aitFixedString[db->no_str];
-		menu.putRef(str,new gddDestructor);
+		menu.putRef(str,new dbMapperFixedStringDestructor);
 	}
 	else
 	{
@@ -1060,7 +1071,7 @@ static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 		menu.setDimension(1);
 		sz=db->no_str;
 		str=new aitFixedString[db->no_str];
-		menu.putRef(str,new gddDestructor);
+		menu.putRef(str,new dbMapperFixedStringDestructor);
 	}
 	else
 	{
@@ -1521,6 +1532,17 @@ epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable* tt)
 		gddDbrToAit[i].app=tt->getApplicationType(gddDbrToAit[i].app_name);
 		tt->storeValue(gddDbrToAit[i].app,i);
 	}
+}
+
+//
+// dbMapperFixedStringDestructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
+//
+void dbMapperFixedStringDestructor::run (void *pUntyped)
+{
+	aitFixedString *ps = (aitFixedString *) pUntyped;
+	delete [] ps;
 }
 
 // An array of one function per DBR structure is provided here so conversions

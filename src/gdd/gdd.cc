@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.27  1999/04/30 15:24:53  jhill
+// fixed improper container index bug
+//
 // Revision 1.26  1998/10/26 11:18:41  lange
 // Bug in gdd::~gdd fixed (CA gateway crashes).
 //
@@ -132,6 +135,20 @@ void gddContainerCleaner::run(void* v)
 	int i;
 	for(i=0;i<tot;i++) cdd->remove(0);
 }
+
+//
+// special gddDestructor guarantees same form of new and delete
+//
+class gddAitInt8Destructor: public gddDestructor {
+	virtual void run (void *);
+};
+
+//
+// special gddDestructor guarantees same form of new and delete
+//
+class gddAitUint8Destructor: public gddDestructor {
+	virtual void run (void *);
+};
 
 // --------------------------The gdd functions-------------------------
 
@@ -322,7 +339,7 @@ gddStatus gdd::genCopy(aitEnum t, const void* d, aitDataFormat f)
 			}
 			else
 			{
-				destruct=new gddDestructor;
+				destruct=new gddAitInt8Destructor;
 				if (destruct==NULL) {
 					gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
 					rc=gddErrorNewFailed;
@@ -472,7 +489,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 				a_size=dd->getDataSizeBytes();
 				if( (array=new aitUint8[a_size]) )
 				{
-					destruct=new gddDestructor;
+					destruct=new gddAitUint8Destructor;
 					if (destruct!=NULL) {
 						destruct->reference();
 						memcpy(array,dd->dataPointer(),a_size);
@@ -1292,7 +1309,7 @@ gddStatus gdd::put(const gdd* dd)
 				// allocate a data buffer for the user
 				if((arr=new aitUint8[sz]))
 				{
-					destruct=new gddDestructor;
+					destruct=new gddAitUint8Destructor;
 					if (destruct!=NULL) {
 						destruct->reference();
 						setData(arr);
@@ -1665,4 +1682,26 @@ const gdd* gdd::indexDD (aitIndex index) const
 		i--;
 	}
 	return dd;
+}
+
+//
+// gddAitInt8Destructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
+//
+void gddAitInt8Destructor::run (void *pUntyped)
+{
+	aitInt8 *pi8 = (aitInt8 *) pUntyped;
+	delete [] pi8;
+}
+
+//
+// gddAitUint8Destructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
+//
+void gddAitUint8Destructor::run (void *pUntyped)
+{
+	aitUint8 *pui8 = (aitUint8 *) pUntyped;
+	delete [] pui8;
 }

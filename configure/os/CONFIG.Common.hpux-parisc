@@ -15,8 +15,10 @@ ARCH_CLASS = parisc
 
 POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L
 POSIX_CPPFLAGS_NO =
-POSIX_LDLIBS_YES +=
 POSIX_LDLIBS_NO +=
+# When compiling with gcc, static builds need two more libraries (*sigh*)
+POSIX_LDLIBS_GNU_YES_STATIC_YES += -lpthread -l:libdld.sl
+POSIX_LDLIBS_YES = $(POSIX_LDLIBS_GNU_$(GNU)_STATIC_$(STATIC_BUILD))
 
 OP_SYS_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
 

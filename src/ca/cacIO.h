@@ -175,6 +175,7 @@ public:
     class notConnected {};
     class unsupportedByService {};
     class msgBodyCacheTooSmall {}; // hopefully this one goes away in the future
+    class requestTimedOut {};
 
 private:
     cacChannelNotify & callback;

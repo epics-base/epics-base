@@ -76,7 +76,7 @@ YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 # state notation language compiler (installed from base/src/sequencer)
-SNC = $(EPICS_BASE_HOST_BIN)/snc$(HOSTEXE)
+SNC = $(SEQ)/bin/$(EPICS_HOST_ARCH)/snc$(HOSTEXE)
 
 # adl2dl 
 ADL2DL = $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl

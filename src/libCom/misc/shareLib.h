@@ -24,13 +24,15 @@
  *
  *  #include <other_stuff.h>
  *  #define epicsExportSharedSymbols
+ *  #include <shareLib.h>
  *  #include <what_I_implement.h>
  *  ! no more "foreign" includes from here on ! 
  *
  * The point is: define epicsExportSharedSymbols exacly and only
  * right before you include the prototypes for what you implement!
+ * Then include shareLib.h again because this is where they get changed.
  * This time the epicsShare... macros expand to
- *  "export this from the DLL that we are building" (again only on WIN32)
+ *  "export this from the DLL that we are building". (again only on WIN32)
  *
  *	8-22-96 -kuk-
  */

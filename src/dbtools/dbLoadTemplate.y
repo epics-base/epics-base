@@ -40,7 +40,7 @@
 #include "dbmf.h"
 #include "epicsVersion.h"
 /* amazing, but true, WRS Tornado II defines _WIN32 ! */
-#if !(defined(vxWorks) && defined(_WIN32)
+#if !defined(vxWorks) && defined(_WIN32)
 #include "getopt.h"
 #endif
 

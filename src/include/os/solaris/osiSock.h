@@ -53,20 +53,10 @@ typedef int osiSockIoctl_t;
  * this requires emulation of SUN PRO's -D__`uname -s`_`uname -r` 
  * on 3rd party compilers
  */
-#if defined ( __SunOS_5_0 ) 
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_1 )
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_2 )
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_3 ) 
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_4 ) 
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_5 ) 
-    typedef int osiSocklen_t;
-#elif defined ( __SunOS_5_6 ) 
-    typedef int osiSocklen_t;
+#if      defined ( __SunOS_5_0 ) || defined ( __SunOS_5_1 ) \
+      || defined ( __SunOS_5_2 ) || defined ( __SunOS_5_3 ) \
+      || defined ( __SunOS_5_4 ) || defined ( __SunOS_5_5 ) \
+      || defined ( __SunOS_5_6 )
 #else 
     typedef uint32_t osiSocklen_t;
 #endif

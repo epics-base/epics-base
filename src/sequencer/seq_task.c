@@ -29,6 +29,9 @@
 20jul95,ajk	Add user-specified task priority to taskSpwan().
 ***************************************************************************/
 /*#define		DEBUG*/
+
+#include 	<string.h>
+
 #define		ANSI
 #include	"seqCom.h"
 #include	"seq.h"
@@ -41,12 +44,10 @@
 LOCAL	VOID seq_waitConnect(SPROG *pSP, SSCB *pSS);
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
 LOCAL	VOID seq_clearDelay(SSCB *);
-LOCAL	long seq_getTimeout(SSCB *);
+LOCAL	int seq_getTimeout(SSCB *);
 LOCAL	long seq_cleanup(int tid, SPROG *pSP, SEM_ID cleanupSem);
 
 #define		TASK_NAME_SIZE 10
-
-#define	MAX_DELAY	(10000000) /* max delay time pending for events */
 
 
 STATUS seqAddProg(SPROG *pSP);
@@ -271,19 +272,31 @@ SSCB		*pSS;
 /*
  * seq_getTimeout() - return time-out for pending on events.
  * Returns number of tics to next expected timeout of a delay() call.
- * Returns MAX_DELAY if no delays pending */
-LOCAL long seq_getTimeout(pSS)
+ * Returns INT_MAX if no delays pending 
+ * An "int" is returned because this is what semTake() expects
+ */
+LOCAL int seq_getTimeout(pSS)
 SSCB		*pSS;
 {
-	int		ndelay;
-	long		delay, delayMin, delayN;
+	int	ndelay, delayMinInit;
+	ULONG	cur, delay, delayMin, delayN;
 
 	if (pSS->numDelays == 0)
-		return MAX_DELAY;
+		return INT_MAX;
 
-	delay = tickGet() - pSS->timeEntered; /* actual delay since state entered */
+	/*
+	 * calculate the delay since this state was entered
+	 */
+	cur = tickGet();
+	if (cur>pSS->timeEntered) {
+		delay = cur - pSS->timeEntered;
+	}
+	else {
+		delay = cur + ULONG_MAX - pSS->timeEntered;
+	}
 
-	delayMin = MAX_DELAY; /* start with largest possible delay */
+	delayMinInit = 0;
+	delayMin = ULONG_MAX;
 
 	/* Find the minimum  delay among all non-expired timeouts */
 	for (ndelay = 0; ndelay < pSS->numDelays; ndelay++)
@@ -297,17 +310,43 @@ SSCB		*pSS;
 			pSS->delayExpired[ndelay] = TRUE; /* mark as expired */
 			return 0;
 		}
-		else if (delayN < delayMin)
-		{
+
+		if (delayN<=delayMin) {
+			delayMinInit=1;
 			delayMin = delayN;  /* this is the min. delay so far */
 		}
 	}
-	delay = delayMin - delay;
-	if (delay < 0)
-		delay = 0;
 
-	return delay;
+	/*
+	 * If there is no unexpired delay in the list
+	 * then wait forever until there is a PV state
+	 * change
+	 */
+	if (!delayMinInit) {
+		return INT_MAX;
+	}
+
+	/*
+	 * unexpired delay _is_ in the list
+	 */
+	if (delayMin>delay) {
+		delay = delayMin - delay;
+
+		/*
+		 * clip to the range of a valid delay in semTake()
+		 */
+		if (delay<INT_MAX) {
+			return delay;
+		}
+		else {
+			return INT_MAX;
+		}
+	}
+	else {
+		return 0;
+	}
 }
+
 /*
  * Delete all state set tasks and do general clean-up.
  * General procedure is to spawn a task that does the following:

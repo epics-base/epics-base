@@ -240,7 +240,7 @@ Init (rtems_task_argument ignored)
      */
     initConsole ();
     putenv ("TERM=xterm");
-    putenv ("IOCSH_PS1=rtems> ");
+    putenv ("IOCSH_PS1=epics> ");
     putenv ("IOCSH_HISTSIZE=20");
 
     /*
@@ -250,8 +250,12 @@ Init (rtems_task_argument ignored)
     rtems_bsdnet_initialize_network ();
     printf ("***** Initializing TFTP *****\n");
     rtems_bsdnet_initialize_tftp_filesystem ();
-    printf ("***** Initializing NTP *****\n");
-    rtems_bsdnet_synchronize_ntp (0, 0);
+    for (;;) {
+        printf ("***** Initializing NTP *****\n");
+        if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
+            break;
+        epicsThreadSleep (10.0);
+    }
     printf ("***** Initializing syslog *****\n");
     openlog ("IOC", LOG_CONS, LOG_DAEMON);
     syslog (LOG_NOTICE, "IOC started.");

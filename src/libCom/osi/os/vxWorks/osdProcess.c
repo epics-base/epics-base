@@ -43,6 +43,5 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
 epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess
     (const char *pProcessName, const char *pBaseExecutableName)
 {
-    errlogPrintf("osiSpawnDetachedProcess not implemented on vxWorks\n");
-    return osiSpawnDetachedProcessFail;
+    return osiSpawnDetachedProcessNoSupport;
 }

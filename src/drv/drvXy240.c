@@ -158,11 +158,14 @@ dio_scan()
 	int i;
 	int	first_scan,first_scan_complete;
 
- first_scan = first_scan_complete = 0;
+ for(;;){
+    if(interruptAccept) break;
+    taskDelay(vxTicksPerSecond/30);
+ }
+ first_scan_complete = FALSE;
+ first_scan = TRUE;
  for (;;) 
  {
-   if (interruptAccept & !first_scan_complete) first_scan = 1;
-
    for (i = 0; i < XY240_MAX_CARDS; i++)
     {
     if (dio[i].dptr)
@@ -180,7 +183,7 @@ dio_scan()
 	first_scan = 0;
 	first_scan_complete = 1;
     }
-    taskDelay(1);	
+    taskDelay(vxTicksPerSecond/30);	
   }
 }
 

@@ -497,7 +497,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
             channelCount, channelName );
     }
     else {
-        printf ( "Testing with %lu channels named %s\n", 
+        printf ( "Testing with %u channels named %s\n", 
              channelCount, channelName );
     }
 
@@ -505,7 +505,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
     nBytes = 0;
     for ( i=0; i < channelCount; i++ ) {
         if ( appNF == appendNumber ) {
-            sprintf ( pItemList[i].name,"%.*s%lu",
+            sprintf ( pItemList[i].name,"%.*s%u",
                 (int) (strsize - 15u), channelName, i );
         }
         else {

@@ -201,7 +201,7 @@ int cast_server(void)
     }
     
     /* tell clients we are on line again */
-    tid = threadCreate("CAonline",threadPriorityChannelAccessClient-3,
+    tid = threadCreate("CAS-beacon",threadPriorityChannelAccessClient-3,
     threadGetStackSize(threadStackSmall),
     (THREADFUNC)rsrv_online_notify_task,0);
     if(tid == 0) {

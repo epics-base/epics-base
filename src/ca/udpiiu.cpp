@@ -458,7 +458,7 @@ udpiiu::udpiiu (cac *pcac) :
             ca_printf ("CAC warning: unable to get a higher priority for a UDP recv thread\n");
         }
 
-        tid = threadCreate ("CAC UDP Recv", priorityOfRecv,
+        tid = threadCreate ("CAC-UDP-recv", priorityOfRecv,
                 threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this);
         if (tid==0) {
             ca_printf ("CA: unable to create UDP receive thread\n");
@@ -483,7 +483,7 @@ udpiiu::udpiiu (cac *pcac) :
             priorityOfSend = priorityOfSelf;
         }
 
-        tid = threadCreate ( "CAC UDP Send", priorityOfSend,
+        tid = threadCreate ( "CAC-UDP-send", priorityOfSend,
                 threadGetStackSize (threadStackMedium), cacSendThreadUDP, this );
         if (tid==0) {
             ca_printf ("CA: unable to create UDP transmitt thread\n");
@@ -524,7 +524,7 @@ udpiiu::udpiiu (cac *pcac) :
                 ca_printf ("CAC warning: unable to get a higher priority for repeater thread\n");
             }
 
-            tid = threadCreate ( "CA repeater", priorityOfRepeater,
+            tid = threadCreate ( "CAC-repeater", priorityOfRepeater,
                     threadGetStackSize (threadStackMedium), caRepeaterThread, 0);
             if (tid==0) {
                 ca_printf ("CA: unable to create CA repeater daemon thread\n");

@@ -228,7 +228,7 @@ struct client *create_client (SOCKET sock)
         return NULL;
     }
 
-    status = db_start_events (client->evuser, "CAS event", 
+    status = db_start_events (client->evuser, "CAS-event", 
                 NULL, NULL, slightlyLowerPriority); 
     if (status != DB_EVENT_OK) {
         errlogPrintf("CAS: unable to start the event facility\n");

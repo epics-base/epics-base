@@ -132,7 +132,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
             this->mutex.unlock ();
             return 0;
         }
-        status = db_start_events ( this->ctx, "CAC event", 
+        status = db_start_events ( this->ctx, "CAC-event", 
             cacAttachClientCtx, clientCtx, slightlyHigherPriority );
         if ( status ) {
             db_close_events (this->ctx);

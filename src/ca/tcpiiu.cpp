@@ -325,7 +325,7 @@ extern "C" void cacRecvThreadTCP (void *pParam)
         if ( tbs != tbsSuccess ) {
             priorityOfSend = priorityOfSelf;
         }
-        tid = threadCreate ("CAC TCP Send", priorityOfSend,
+        tid = threadCreate ("CAC-TCP-send", priorityOfSend,
                 threadGetStackSize (threadStackMedium), cacSendThreadTCP, piiu);
         if (tid) {
             while (1) {
@@ -486,7 +486,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
             priorityOfRecv = priorityOfSelf;
         }
 
-        tid = threadCreate ("CAC TCP Recv", priorityOfRecv,
+        tid = threadCreate ("CAC-TCP-recv", priorityOfRecv,
                 threadGetStackSize (threadStackMedium), cacRecvThreadTCP, this);
         if (tid==0) {
             ca_printf ("CA: unable to create CA client receive thread\n");

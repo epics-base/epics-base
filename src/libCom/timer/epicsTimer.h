@@ -41,7 +41,7 @@ public:
         double delay;
     };
 
-    epicsShareFunc virtual ~epicsTimerNotify ();
+    epicsShareFunc virtual ~epicsTimerNotify () = 0;
     // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     epicsShareFunc virtual void show ( unsigned int level ) const;
@@ -62,7 +62,7 @@ public:
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    virtual ~epicsTimer () = 0; // protected => delete() must not be called
+    epicsShareFunc virtual ~epicsTimer () = 0; // protected => delete() must not be called
 };
 
 class epicsTimerQueue {         // X aCC 655
@@ -70,7 +70,7 @@ public:
     virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    virtual ~epicsTimerQueue () = 0;
+    epicsShareFunc virtual ~epicsTimerQueue () = 0;
 };
 
 class epicsTimerQueueActive // X aCC 655
@@ -80,7 +80,7 @@ public:
         bool okToShare, unsigned threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
 protected:
-    virtual ~epicsTimerQueueActive () = 0;
+    epicsShareFunc virtual ~epicsTimerQueueActive () = 0;
 };
 
 class epicsTimerQueueNotify {   // X aCC 655
@@ -92,14 +92,14 @@ public:
     // return this quantum in seconds. If unknown then return zero.
     virtual double quantum () = 0;
 protected:
-    virtual ~epicsTimerQueueNotify () = 0;
+    epicsShareFunc virtual ~epicsTimerQueueNotify () = 0;
 };
 
 class epicsTimerQueuePassive // X aCC 655
     : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
-    virtual ~epicsTimerQueuePassive () = 0;
+    epicsShareFunc virtual ~epicsTimerQueuePassive () = 0; // ok to call delete
     virtual double process ( const epicsTime & currentTime ) = 0; // returns delay to next expire
 };
 

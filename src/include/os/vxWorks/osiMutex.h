@@ -37,7 +37,7 @@ public:
 	//
 	int init ()
 	{
-		this->mutex = semMCreate(SEM_Q_PRIORITY|SEM_INVERSION_SAFE);
+		this->mutex = semMCreate(SEM_Q_PRIORITY|SEM_INVERSION_SAFE|SEM_DELETE_SAFE);
 		if (this->mutex==NULL) 
 		{
 			return -1;

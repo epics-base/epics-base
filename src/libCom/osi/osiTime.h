@@ -280,8 +280,13 @@ inline osiTime osiTime::getEvent (const osiTimeEvent &event)
     return osiTime (current);
 }
 
-// depricated
-inline void osiTime::synchronize () {}
+inline osiTime::osiTime (const TS_STAMP &ts) 
+{
+	this->secPastEpoch = ts.secPastEpoch;
+	this->nSec = ts.nsec;
+}
+
+inline void osiTime::synchronize () {} // depricated
 
 inline osiTime::osiTime () : secPastEpoch(0u), nSec(0u) {}	
 
@@ -344,12 +349,6 @@ inline osiTime osiTime::operator = (const aitTimeStamp &rhs)
 {
 	*this = osiTime (rhs);
 	return *this;
-}
-
-inline osiTime::osiTime (const TS_STAMP &ts) 
-{
-	this->secPastEpoch = ts.secPastEpoch;
-	this->nSec = ts.nsec;
 }
 
 inline osiTime osiTime::operator = (const TS_STAMP &rhs)

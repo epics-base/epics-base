@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1998/02/05 22:56:12  jhill
+ * cosmetic
+ *
  * Revision 1.13  1997/08/05 00:47:09  jhill
  * fixed warnings
  *
@@ -77,6 +80,7 @@
 #include "tsDLList.h"
 #include "resourceLib.h"
 #include "caProto.h"
+#include "smartGDDPointer.h"
 
 typedef aitUint32 caResId;
 
@@ -176,8 +180,8 @@ public:
 
 	void assign (casMonitor &monitor, gdd *pValueIn);
 private:
-	gdd		*pValue;
-	caResId		id;
+	smartGDDPointer pValue;
+	caResId id;
 };
 
 
@@ -225,7 +229,7 @@ public:
 	osiMutex &mutex;
 	casChannelI &ciu;
 	const casEventMask mask;
-	gdd *pModifiedValue;
+	smartGDDPointer pModifiedValue;
 	caResId const clientId;
 	unsigned char const dbrType;
 	unsigned char nPend;
@@ -334,7 +338,7 @@ public:
 private:
 	caHdr const msg;
 	casChannelI &chan; 
-	gdd *pDD;
+	smartGDDPointer pDD;
 	caStatus completionStatus;
 };
 
@@ -523,13 +527,18 @@ class casPVI :
 	public ioBlockedList	// list of clients io blocked on this pv
 {
 public:
-	casPVI (caServer &cas, casPV &pvAdapter);
+	casPVI (casPV &pvAdapter);
 	virtual ~casPVI(); 
 
 	//
 	// for use by the server library
 	//
-	inline caServerI &getCAS() const;
+	inline caServerI *getPCAS() const;
+
+	//
+	// attach to a server
+	//
+	caStatus attachToServer (caServerI &cas);
 
 	//
 	// CA only does 1D arrays for now (and the new server
@@ -584,7 +593,7 @@ public:
 
 private:
 	tsDLList<casPVListChan>	chanList;
-	caServerI		&cas;
+	caServerI		*pCAS;
 	casPV			&pv;
 	unsigned		nMonAttached;
 	unsigned		nIOAttached;

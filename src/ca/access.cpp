@@ -128,7 +128,7 @@ LOCAL int cac_push_tcp_msg (tcpiiu *piiu, const caHdr *pmsg, const void *pext)
          */
         {
             /* static variables are initialized to zero */
-            const static char nullBuff[32];
+            const static char nullBuff[32] = { 0 };
             unsigned long n;
 
             n = extsize-actualextsize;

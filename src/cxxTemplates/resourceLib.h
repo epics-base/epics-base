@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.20  1999/01/29 22:36:53  jhill
+ * removed const cast away
+ *
  * Revision 1.19  1998/10/23 19:23:46  jhill
  * fixed problem associated with deleting "const char *"
  * on the solaris compiler
@@ -696,14 +699,15 @@ stringId::~stringId()
 			//
 			// the HP-UX compiler gives us a warning on
 			// each cast away of const, but in this case
-			// it cant be avoided
+			// it cant be avoided. The DEC compiler 
+			// compiler complains that const isnt really
+			// significant in a cast.
 			//
 			// I hope that deleting a pointer to "char"
 			// is the same as deleting a pointer to 
 			// "const char" on all compilers
 			//
-			//delete [] (char * const) this->pStr;
-			delete [] this->pStr;
+			delete [] (char *) this->pStr;
 		}
 	}
 }

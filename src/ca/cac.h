@@ -61,7 +61,6 @@ public:
 
     // IIU routines
     void signalRecvActivity ();
-    void processRecvBacklog ();
 
     // outstanding IO count management routines
     void incrementOutstandingIO ();
@@ -186,6 +185,7 @@ private:
     bool                    ioInProgress;
     bool                    recvProcessThreadExitRequest;
 
+    void processRecvBacklog ();
     void flushRequestPrivate ();
     void run ();
     bool setupUDP ();

@@ -36,7 +36,7 @@
 #       vxWorks-pentium
 #       vxWorks-ppc604
 #       RTEMS-gen68360
-#       RTEMS-m167
+#       RTEMS-mvme167
 #
 CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 

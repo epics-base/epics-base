@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.18  1997/01/20 15:31:00  jbk
+ * Print IP address on report
+ *
  * Revision 1.17  1996/11/02 01:16:43  jhill
  * added byte swapping for pc arch
  *
@@ -322,9 +325,9 @@ long TSreport()
 	TSprintf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
 
 	TSprintf("Broadcast address: %s\n",
-		((struct sockaddr_in*)&TSdata.hunt)->sin_addr);
+		inet_ntoa(((struct sockaddr_in*)&TSdata.hunt)->sin_addr));
 	TSprintf("Master address: %s\n",
-		((struct sockaddr_in*)&TSdata.master)->sin_addr);
+		inet_ntoa(((struct sockaddr_in*)&TSdata.master)->sin_addr));
 
 	if(TSdata.UserRequestedType)
 		TSprintf("\nForced to not use the event system\n");

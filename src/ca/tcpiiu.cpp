@@ -201,7 +201,8 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) epicsThrows (()
 
     assert ( nBytesInBuf <= INT_MAX );
 
-    while ( this->state == iiucs_connected ) {
+    while ( this->state == iiucs_connected ||
+        this->state == iiucs_clean_shutdown ) {
 
         int status = ::recv ( this->sock, static_cast <char *> ( pBuf ), 
             static_cast <int> ( nBytesInBuf ), 0 );

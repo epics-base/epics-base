@@ -115,7 +115,7 @@ if($numberDriverSupport>0) {
     for ($i=0; $i<$numberDriverSupport; $i++) {
         print "epicsShareExtern drvet *p$driverSupport[$i];\n";
     }
-    print "\nstatic char *driverSupportNames[$numberDriverSupport] = {\n";
+    print "\nstatic const char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
         print "    \"$driverSupport[$i]\"";
         if($i < $numberDriverSupport-1) { print ",";}

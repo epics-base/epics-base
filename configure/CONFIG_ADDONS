@@ -20,8 +20,9 @@
 #	USR_CPPFLAGS	c preprocesser flags
 #	INC		include-files to install
 #	LIBSRCS		source files for building library
-#	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
-#	USR_LIBS	NONEPICS libs needed by PROD and TESTPROD
+#	SHRLIB_LIBS	libs needed by shared LIBRARY
+#	PROD_LIBS	libs needed by PROD and TESTPROD
+#	USR_LIBS	libs needed by PROD and TESTPROD
 #	USR_LDFLAGS	ld flags
 #	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
 #	PROD		products to build and install
@@ -72,14 +73,6 @@ USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(OS_CLASS)))
 else
 ifdef USR_LDFLAGS_DEFAULT
 USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(HTMLS_$(OS_CLASS))),)
-HTMLS+=$(subst -nil-,,$(HTMLS_$(OS_CLASS)))
-else
-ifdef HTMLS_DEFAULT
-HTMLS+=$(HTMLS_DEFAULT)
 endif
 endif
 
@@ -189,6 +182,14 @@ PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
 else
 ifdef PROD_LIBS_DEFAULT
 PROD_LIBS += $(PROD_LIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(SHRLIB_LIBS_$(OS_CLASS))),)
+SHRLIB_LIBS += $(subst -nil-,,$(SHRLIB_LIBS_$(OS_CLASS)))
+else
+ifdef SHRLIB_LIBS_DEFAULT
+SHRLIB_LIBS += $(SHRLIB_LIBS_DEFAULT)
 endif
 endif
 

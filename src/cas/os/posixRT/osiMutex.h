@@ -4,7 +4,10 @@
 //
 
 #include <semaphore.h>
+
+#ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
+#endif
 
 class osiMutex {
 public:

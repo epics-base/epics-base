@@ -1,7 +1,13 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+INC += resourceLib.h
+INC += tsDLList.h
+INC += tsSLList.h
+INC += tsMinMax.h
+INC += tsBTree.h
+
+include $(TOP)/configure/RULES_BUILD
 

@@ -13,7 +13,17 @@ of this distribution.
 #ifndef INCadjustmenth
 #define INCadjustmenth
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc size_t epicsShareAPI adjustToWorstCaseAlignment(size_t size);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /*INCadjustmenth*/
 

@@ -28,7 +28,6 @@ changed appLoc to appList ...
 #include <dirent.h>
 #include <errno.h>
 
-#define BSIZE 128
 #define BUFLEN 256
 #define SAME 0
 

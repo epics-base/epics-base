@@ -760,7 +760,7 @@ unsigned	base_la;
 
 		epvxiLibDeviceList[addr]->mxi_dev = TRUE;
 
-		pnewvxie = calloc(1, sizeof(*pnewvxie));
+		pnewvxie = (VXIE *) calloc(1, sizeof(*pnewvxie));
 		if(!pnewvxie){
 			logMsg("%s: out of memory- MXI ignored\n",__FILE__);
 			continue;
@@ -3073,11 +3073,16 @@ epvxiSymbolTableInit()
 	{
 		int	status;
 
-   		epvxiSymbolTable = symTblCreate(MAXSYMBOLS,MAXSYMLENGTH);
+   		epvxiSymbolTable = symTblCreate(
+					EPVXI_MAX_SYMBOLS,
+					EPVXI_MAX_SYMBOL_LENGTH);
 		if(!epvxiSymbolTable){
 			return ERROR;
 		}
-  	 	status = symTblInit(pTbl,EPVXI_MAX_SYMBOLS,EPVXI_MAX_SYMBOL_LENGTH);
+  	 	status = symTblInit(
+				epvxiSymbolTable,
+				EPVXI_MAX_SYMBOLS,
+				EPVXI_MAX_SYMBOL_LENGTH);
 		if(status<0){
 			epvxiSymbolTable = NULL;
 			logMsg("epvxi: cant delete the symbol table under V4- memory lost\n");

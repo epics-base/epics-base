@@ -6,7 +6,7 @@
   <title>EPICS Release baseR3.13.3 </title>
 </head>
 
-<body>
+<body lang="en">
 <h1>EPICS Release 3.13.5</h1>
 
 <h4>June 2001</h4>
@@ -17,28 +17,28 @@
 
 <p><strong>CA Server Bug</strong></p>
 
-<p>Symptoms:  </p>
+<p>Symptoms:</p>
 
 <p>Clients disconnect unexpectedly when canceling event (monitor)
 subscriptions using ca_clear_event(), but this may not be noticed because the
 problem is probably rare under low or moderate load, and because CA clients
-automatically  reconnect. The problem was only reproducable here under heavy
+automatically  reconnect. The problem was only reproducible here under heavy
 load presented when the R3.14 client side regression tests were  run on a fast
 Linux workstation. For example, when the tests  were run on a 500 MHz NT host
 I was unable to reproduce the bug.  On vxWorks you may see threads with the
 name "CA client" and also  "CA event" even if there are no clients connected
 (the casr  diagnostic will also incorrectly report that clients are
-connected). As the IOC stays in long term operation without a reboot, and 
-depending on the frequency of occurence at your site (if any), you  may also
-notice that memory and file descriptors have been lost.  </p>
+connected). As the IOC stays in long term operation without a reboot, and
+depending on the frequency of occurrence at your site (if any), you  may also
+notice that memory and file descriptors have been lost.</p>
 
-<p>Background:  </p>
+<p>Background:</p>
 
 <p>The problem was discovered when regression testing EPICS R3.14. The cause
-was a deadlock occuring when a CA event (monitor) subscription was canceled
+was a deadlock occurring when a CA event (monitor) subscription was canceled
 when the CA circuit was simultaneously in event (monitor) flow control mode
 and the event (monitor) subscription also had a corresponding update in the
-queue.   </p>
+queue.</p>
 
 <p><br>
 <strong>PPC float to double exceptions</strong></p>
@@ -56,7 +56,7 @@ subRecordwaveformRecord</b></p>
 
 <p>Conversion from double to float checks for exponent too large.</p>
 
-<p><b>dfanoutRecord.c longoutRecord.c stringoutRecord.c </b></p>
+<p><b>dfanoutRecord.c longoutRecord.c stringoutRecord.c</b></p>
 
 <p>OMSL did not work correctly for constant links. <br>
 <br>
@@ -553,11 +553,13 @@ for vxWorks 5.3:</p>
 <ul>
   <li>makeBaseApp.pl</li>
   <br>
-   copy any non-Apps under $top; allow links for apptype directories <ul>
+   copy any non-Apps under $top; allow links for apptype directories
+  <ul>
     <li>dbExample2.template</li>
   </ul>
   <br>
-  fixed mistake <ul>
+  fixed mistake
+  <ul>
     <li>makeIocCdCommands.pl</li>
   </ul>
   <br>
@@ -952,8 +954,8 @@ NOTES:
     <ul>
     </ul>
   </li>
-  <pre>VAL = AVAL * ESLO + EGUL</pre>
 </ul>
+<pre>VAL = AVAL * ESLO + EGUL</pre>
 The original  bi-polar adc device support modules added a "bias" to the raw
 value so that the raw value is &gt;= 0. When they were written neither RVAL or
 EOFF existed.
@@ -1347,15 +1349,18 @@ The following tools are provided:
 <ul>
   <li>sdr2gblmenu [default.dctsdr]</li>
   <br>
-  All global menus are written as separate files. <ul>
+  All global menus are written as separate files.
+  <ul>
     <li>sdr2recordtype record_type record_type.h [default.dctsdr]</li>
   </ul>
   <br>
-  A record type definition file is generated. <ul>
+  A record type definition file is generated.
+  <ul>
     <li>sdr2device [default.dctsdr]</li>
   </ul>
   <br>
-  All device definitions are placed in a file called device.dbd <ul>
+  All device definitions are placed in a file called device.dbd
+  <ul>
     <li>sdr2driver [default.dctsdr]</li>
   </ul>
   <br>
@@ -1475,9 +1480,11 @@ guidlines that can be used for large applications.</p>
         by the statements:</li>
     </ul>
   </li>
-  <pre>#define GEN_SIZE_OFFSET
+</ul>
+<pre>#define GEN_SIZE_OFFSET
 
 #undef  GEN_SIZE_OFFSET</pre>
+<ul>
   <li>Any statements that initialize a field from constant links must be
     changed. Such statements always contain the characters "value.value". For
     example:</li>

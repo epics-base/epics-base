@@ -731,7 +731,7 @@ bool cac::lookupChannelAndTransferToTCP (
         // disconnects to prevent a race condition with the 
         // code below - ie we hold the callback lock here
         // so a chanel cant be destroyed out from under us.
-        pChan->connectStateNotify ();
+        pChan->connectStateNotify ( cbGuard );
 
         /*
          * if less than v4.1 then the server will never
@@ -740,7 +740,7 @@ bool cac::lookupChannelAndTransferToTCP (
          * their call back here
          */
         if ( ! v41Ok ) {
-            pChan->accessRightsNotify ();
+            pChan->accessRightsNotify ( cbGuard );
         }
     }
 
@@ -1398,13 +1398,13 @@ bool cac::readExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::writeExcep ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::writeExcep ( epicsGuard < callbackMutex > &cbLocker, tcpiiu &, 
                       const caHdrLargeArray &hdr, 
                       const char *pCtx, unsigned status )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_available );
     if ( pChan ) {
-        pChan->writeException ( status, pCtx, 
+        pChan->writeException ( cbLocker, status, pCtx, 
             hdr.m_dataType, hdr.m_count );
     }
     return true;
@@ -1468,7 +1468,7 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu
     return ( this->*pStub ) ( cbMutexIn, iiu, req, pCtx, hdr.m_available );
 }
 
-bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
+bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &, 
                        const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
@@ -1490,13 +1490,13 @@ bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
     // deleted.
     //       
     if ( pChan ) {
-        pChan->accessRightsNotify ();
+        pChan->accessRightsNotify ( cbGuard );
     }
 
     return true;
 }
 
-bool cac::claimCIURespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
+bool cac::claimCIURespAction ( epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, 
            const caHdrLargeArray & hdr, void * /*pMsgBdy */ )
 {
     nciu * pChan;
@@ -1524,7 +1524,7 @@ bool cac::claimCIURespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu,
     // the callback lock is taken when a channel is unistalled or when
     // is disconnected to prevent race conditions here
     if ( pChan ) {
-        pChan->connectStateNotify ();
+        pChan->connectStateNotify ( cbGuard );
     }
     return true; 
 }
@@ -1554,8 +1554,8 @@ void cac::disconnectChannel ( epicsGuard < callbackMutex > & cbLocker,
     chan.disconnect ( *this->pudpiiu );
     this->pudpiiu->installChannel ( chan );
     epicsGuardRelease < cacMutex > autoMutexRelease ( locker );
-    chan.connectStateNotify ();
-    chan.accessRightsNotify ();
+    chan.connectStateNotify ( cbLocker );
+    chan.accessRightsNotify ( cbLocker );
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 

@@ -43,6 +43,7 @@
 
 class cac;
 class netiiu;
+class callbackMutex;
 
 class cacPrivateListOfIO {
 public:
@@ -63,8 +64,8 @@ public:
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
-    void connectStateNotify () const;
-    void accessRightsNotify () const;
+    void connectStateNotify ( epicsGuard < callbackMutex > &  ) const;
+    void accessRightsNotify ( epicsGuard < callbackMutex > & ) const;
     void disconnect ( netiiu &newiiu );
     bool searchMsg ( class udpiiu & iiu, unsigned short retrySeqNumber, 
         unsigned & retryNoForThisChannel );
@@ -91,7 +92,8 @@ public:
     arrayElementCount nativeElementCount () const;
     bool connected () const;
     bool previouslyConnected () const;
-    void writeException ( int status, const char *pContext, unsigned type, arrayElementCount count );
+    void writeException ( epicsGuard < callbackMutex > &,
+        int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
     void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
 private:
@@ -154,7 +156,7 @@ inline void nciu::resetRetryCount ()
     this->retry = 0u;
 }
 
-inline void nciu::accessRightsStateChange ( const caAccessRights &arIn )
+inline void nciu::accessRightsStateChange ( const caAccessRights & arIn )
 {
     this->accessRightState = arIn;
 }
@@ -204,6 +206,28 @@ inline netiiu * nciu::getPIIU ()
     return this->piiu;
 }
 
+
+inline void nciu::writeException ( epicsGuard < callbackMutex > &, int status,
+    const char *pContext, unsigned typeIn, arrayElementCount countIn )
+{
+    this->notify().writeException ( status, pContext, typeIn, countIn );
+}
+
+inline void nciu::accessRightsNotify ( epicsGuard < callbackMutex > & ) const
+{
+    this->notify().accessRightsNotify ( this->accessRightState );
+}
+
+inline void nciu::connectStateNotify ( epicsGuard < callbackMutex > & ) const
+{
+    if ( this->f_connected ) {
+        this->notify().connectNotify ();
+    }
+    else {
+        this->notify().disconnectNotify ();
+    }
+}
+
 inline const netiiu * nciu::getConstPIIU () const
 {
     return this->piiu;
@@ -217,27 +241,6 @@ inline cac & nciu::getClient ()
 inline void nciu::connectTimeoutNotify ()
 {
     this->f_connectTimeOutSeen = true;
-}
-
-inline void nciu::writeException ( int status,
-    const char *pContext, unsigned typeIn, arrayElementCount countIn )
-{
-    this->notify().writeException ( status, pContext, typeIn, countIn );
-}
-
-inline void nciu::connectStateNotify () const
-{
-    if ( this->f_connected ) {
-        this->notify().connectNotify ();
-    }
-    else {
-        this->notify().disconnectNotify ();
-    }
-}
-
-inline void nciu::accessRightsNotify () const
-{
-    this->notify().accessRightsNotify ( this->accessRightState );
 }
 
 inline cacChannel::priLev nciu::getPriority () const

@@ -20,8 +20,9 @@ OBJS = \
 	module_types.o drvXy010.o drvAb.o drvBb902.o \
 	drvBb910.o drvCompuSm.o drvDvx.o drvMz8310.o \
 	drvOms.o drvStc.o drvTime.o drvVmi4100.o \
-	drvXy210.o drvXy220.o drvXy240.o drvXy566.o drvAt5Vxi.o \
-	drvHp1404a.o drvEpvxi.o drvEpvxiMsg.o drvGpib.o \
+	drvXy210.o drvXy220.o drvXy240.o \
+	drvXy566.o drvAt5Vxi.o drvHp1404a.o drvEpvxi.o \
+	drvEpvxiMsg.o drvBitBus.o drvGpib.o \
 	drvMsg.o drvBB232.o drvHpe1368a.o drvHpe1445a.o \
 	drvKscV215.o drvComet.o drvJgvtr1.o drvFp.o \
 	drvMvme162.o drvFpm.o

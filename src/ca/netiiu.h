@@ -46,7 +46,6 @@ public:
     virtual const char * pHostName () const; // deprecated - please do not use
     virtual bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     virtual bool ca_v42_ok () const;
-    virtual bool ca_v41_ok () const;
     virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     virtual void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
     virtual void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
@@ -62,6 +61,7 @@ public:
     virtual bool flushBlockThreshold () const;
     virtual void flushRequestIfAboveEarlyThreshold ();
     virtual void blockUntilSendBacklogIsReasonable ( epicsMutex & );
+    virtual void requestRecvProcessPostponedFlush ();
 protected:
     cac * pCAC () const;
 private:

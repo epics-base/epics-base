@@ -102,11 +102,6 @@ bool netiiu::ca_v42_ok () const
     return false;
 }
 
-bool netiiu::ca_v41_ok () const
-{
-    return false;
-}
-
 bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
 {
     return false;
@@ -208,3 +203,9 @@ int netiiu::printf ( const char *pformat, ... )
     
     return status;
 }
+
+void netiiu::requestRecvProcessPostponedFlush ()
+{
+    return;
+}
+

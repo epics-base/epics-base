@@ -513,6 +513,19 @@ void casStreamOS::sendCB()
 		}
 	}
 	else if (flushCond==outBuf::flushDisconnect) {
+		//
+		// ok to delete the client here
+		// because casStreamWriteReg::callBack()
+		// is called by the fdManager system
+		// and therefore we are not being
+		// called from a client member function
+		// higher up on the stack
+		//
+		this->destroy();	
+		//
+		// must _not_ touch "this" pointer
+		// after the destroy 
+		//
 		return;
 	}
 

@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.72  1998/06/16 01:07:56  jhill
+ * removed caHostFromInetAddr
+ *
  * Revision 1.71  1998/05/05 16:04:19  jhill
  * added lock count var
  *
@@ -292,7 +295,7 @@ typedef struct timeval ca_time;
 ((PCATIME)->tv_sec = (long) (FLOAT_TIME), \
 (PCATIME)->tv_usec = (long) ( ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC ))
 
-#define CLR_CA_TIME(PCATIME) ((PCATIME)->tv_sec = 0l,(PCATIME)->tv_usec = 0l)
+#define CLR_CA_TIME(PCATIME) ((PCATIME)->tv_sec = 0u,(PCATIME)->tv_usec = 0u)
 
 /*
  * these control the duration and period of name resolution
@@ -659,6 +662,7 @@ void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 epicsShareFunc int epicsShareAPI ca_printf(char *pformat, ...);
 void 	manage_conn();
+void	checkConnWatchdogs();
 void 	mark_server_available(const struct sockaddr_in *pnet_addr);
 void	flow_control_on(struct ioc_in_use *piiu);
 void	flow_control_off(struct ioc_in_use *piiu);
@@ -753,6 +757,7 @@ void removeFromChanList(ciu chan);
 void cac_create_udp_fd();
 double cac_fetch_poll_period(void);
 int caSockAddrFromHost(const char *pName, struct sockaddr *paddr);
+void cac_close_ioc (IIU *piiu);
 
 /*
  * !!KLUDGE!!

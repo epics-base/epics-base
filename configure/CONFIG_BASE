@@ -69,17 +69,37 @@ EPICS_BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_S
 #---------------------------------------------------------------
 # Epics base build tools and tool flags
 
+MAKEBPT                    = $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
+DBEXPAND                   = $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
+MAKEDBDEPENDS              = $(PERL) $(TOOLS)/makeDbDepends.pl
+MAKEDBDDEPENDS             = $(EPICS_BASE_HOST_BIN)/dbMakeDBDDepends$(HOSTEXE)
+REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
+DBTORECORDTYPEH            = $(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE)
+DBTOMENUH                  = $(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE)
+REGISTERRECORDDEVICEDRIVER = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+
 # private versions of lex/yacc from EPICS
 EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)
 ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(HOSTEXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
 YACC  = $(EYACC)
 LEX   = $(ELEX)
 
-# state notation language compiler (installed from base/src/sequencer)
-SNC = $(SEQ)/bin/$(EPICS_HOST_ARCH)/snc$(HOSTEXE)
+#---------------------------------------------------------------
+# External tools and tool flags
+
+# state notation language compiler (built in seq module)
+ifndef SNC
+# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
+SNC = $(firstword $(wildcard $(SEQ)/bin/$(EPICS_HOST_ARCH)/snc$(HOSTEXE) \
+         $(SEQ)/bin/$(HOST_OS_CLASS)/snc$(HOSTEXE)) snc$(HOSTEXE))
+endif
 
 # adl2dl 
-ADL2DL = $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl
+ifndef ADL2DL
+# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
+ADL2DL = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl \
+         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/adl2dl) adl2dl)
+endif
 
 # sch2edif compiler and flags
 SCH2EDIF = sch2edif
@@ -89,14 +109,26 @@ SCH2EDIF_FLAGS =
  
 # e2db and flags
 #    - again there is an assumption where edb.def is installed.
-E2DB = $(EPICS_EXTENSIONS_HOST_BIN)/e2db
+ifndef E2DB
+# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
+E2DB = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/e2db \
+         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/e2db) e2db)
+endif
 E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
 E2DB_FLAGS =
 
 #dbst 
-DBST = $(EPICS_EXTENSIONS_HOST_BIN)/dbst
+ifndef DBST
+# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
+DBST = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/dbst \
+         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/dbst) dbst)
+endif
 
 #msi
-MSI  = $(EPICS_EXTENSIONS_HOST_BIN)/msi$(EXE)
+ifndef MSI
+# Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
+MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
+         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/msi$(HOSTEXE)) msi$(HOSTEXE))
+endif
 
 

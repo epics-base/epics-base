@@ -45,6 +45,7 @@ private:
     dbPutNotifyBlocker &blocker;
     static tsFreeList < dbPutNotifyIO > freeList;
     ~dbPutNotifyIO (); // must allocate out of pool
+    void uninstall ();
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
@@ -65,6 +66,7 @@ private:
     unsigned long count;
     static tsFreeList < dbSubscriptionIO > freeList;
     ~dbSubscriptionIO (); // must be allocated from pool
+    void uninstall ();
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 };

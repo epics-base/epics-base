@@ -55,6 +55,10 @@ void dbSubscriptionIO::destroy ()
     delete this;
 }
 
+void dbSubscriptionIO::uninstall ()
+{
+}
+
 void * dbSubscriptionIO::operator new ( size_t size )
 {
     return dbSubscriptionIO::freeList.allocate ( size );

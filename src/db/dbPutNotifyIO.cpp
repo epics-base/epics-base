@@ -51,6 +51,10 @@ dbPutNotifyIO::~dbPutNotifyIO ()
     this->blocker.putNotifyDestroyNotify ();
 }
 
+void dbPutNotifyIO::uninstall ()
+{
+}
+
 int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type, 
                              unsigned long count, const void *pValue)
 {
@@ -98,4 +102,6 @@ void dbPutNotifyIO::completion ()
         this->cacNotifyIO::completionNotify ();
     }
 }
+
+
 

@@ -24,7 +24,7 @@ int dbTranslateEscape(char *to, const char *from)
     char        c;
     int         nto=0;
 
-    while( c = *pfrom++ ){
+    while( (c = *pfrom++ ) ){
 	if(c=='\\') {
           switch( *pfrom ){
           case 'a':  pfrom++;  *pto++ = '\a' ; nto++; break;

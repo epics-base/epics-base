@@ -93,12 +93,15 @@ epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
     int nexts1,nexts2;
     
     while(1) {
-        nexts1 = toupper(*s1++);
-        nexts2 = toupper(*s2++);
+        /* vxWorks implementation expands argument more than once!!! */
+        nexts1 = toupper(*s1);
+        nexts2 = toupper(*s2);
         if(nexts1==0) return( (nexts2==0) ? 0 : 1 );
         if(nexts2==0) return(-1);
         if(nexts1<nexts2) return(-1);
         if(nexts1>nexts2) return(1);
+        s1++;
+        s2++;
     }
     return(0);
 }
@@ -111,12 +114,15 @@ epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(
     
     while(1) {
         if(ind++ >= n) break;
-        nexts1 = toupper(*s1++);
-        nexts2 = toupper(*s2++);
+        /* vxWorks implementation expands argument more than once!!! */
+        nexts1 = toupper(*s1);
+        nexts2 = toupper(*s2);
         if(nexts1==0) return( (nexts2==0) ? 0 : 1 );
         if(nexts2==0) return(-1);
         if(nexts1<nexts2) return(-1);
         if(nexts1>nexts2) return(1);
+        s1++;
+        s2++;
     }
     return(0);
 }

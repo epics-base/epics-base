@@ -18,18 +18,32 @@
 #include "devSup.h"
 #include "drvSup.h"
 #include "cantProceed.h"
+#include "epicsFindSymbol.h"
 #define epicsExportSharedSymbols
 #include "registry.h"
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 
+static void *locateAddrName(char *name)
+{
+    char pname[100];
+    void *addr;
+
+    addr = epicsFindSymbol(name);
+    if(addr) return(addr);
+    strcpy(pname,"p");
+    strcat(pname,name);
+    addr = epicsFindSymbol(pname);
+    if(addr) return((*(void **)addr));
+    return(0);
+}
+
 int registerRecordDeviceDriver(struct dbBase *pdbbase)
 {
     dbRecordType *pdbRecordType;
+    recordTypeLocation rtl;
     recordTypeLocation *precordTypeLocation;
-    struct rset *prset;
-    computeSizeOffset sizeOffset;
     char name[100];
     drvSup *pdrvSup;
 
@@ -40,39 +54,46 @@ int registerRecordDeviceDriver(struct dbBase *pdbbase)
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        computeSizeOffset sizeOffset;
         if(registryRecordTypeFind(pdbRecordType->name)) continue;
         strcpy(name,pdbRecordType->name);
         strcat(name,"RSET");
-        prset = 0;
-        prset = registryFind(0,name);
-        if(!prset) continue;
+        rtl.prset = (rset *)locateAddrName(name);
+        if(!rtl.prset) {
+            printf("RSET %s not found\n",name);
+            continue;
+        }
         strcpy(name,pdbRecordType->name);
         strcat(name,"RecordSizeOffset");
-        sizeOffset = 0;
-        sizeOffset = (computeSizeOffset) registryFind(0,name);
-        if(!sizeOffset) continue;
+        rtl.sizeOffset = (computeSizeOffset)locateAddrName(name);
+        if(!rtl.sizeOffset) {
+            printf("SizeOfset %s not found\n",name);
+            continue;
+        }
         precordTypeLocation = callocMustSucceed(1,sizeof(recordTypeLocation),
             "registerRecordDeviceDriver");
-        precordTypeLocation->prset = prset;
-        precordTypeLocation->sizeOffset = sizeOffset;
+        precordTypeLocation->prset = rtl.prset;
+        precordTypeLocation->sizeOffset = rtl.sizeOffset;
         if(!registryRecordTypeAdd(pdbRecordType->name,precordTypeLocation)) {
             errlogPrintf("registryRecordTypeAdd failed for %s\n",
                 pdbRecordType->name);
             continue;
         }
+        sizeOffset = precordTypeLocation->sizeOffset;
         sizeOffset(pdbRecordType);
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
         devSup *pdevSup;
-        struct dset *pdset;
         for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
         pdevSup;
         pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            if(registryDeviceSupportFind(pdevSup->name)) continue;
-            pdset = registryFind(0,pdevSup->name);
-            if(!pdset) continue;
+            dset *pdset = (dset *)locateAddrName(pdevSup->name);
+            if(!pdset) {
+                printf("DSET %s not found\n",pdevSup->name);
+                continue;
+            }
             if(!registryDeviceSupportAdd(pdevSup->name,pdset)) {
                 errlogPrintf("registryRecordTypeAdd failed for %s\n",
                     pdevSup->name);
@@ -82,10 +103,11 @@ int registerRecordDeviceDriver(struct dbBase *pdbbase)
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-        struct drvet *pdrvet = 0;
-        if(registryDriverSupportFind(pdrvSup->name)) continue;
-        pdrvet = registryFind(0,pdrvSup->name);
-        if(!pdrvet) continue;
+        drvet *pdrvet = (drvet *)locateAddrName(pdrvSup->name);
+        if(!pdrvet) {
+            printf("drvet %s not found\n",pdrvSup->name);
+            continue;
+        }
         if(!registryDriverSupportAdd(pdrvSup->name,pdrvet)) {
             errlogPrintf("registryRecordTypeAdd failed for %s\n",
                 pdrvSup->name);

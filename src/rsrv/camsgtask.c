@@ -104,12 +104,12 @@ FAST int 		sock;
 	 * historical reasons
 	 */
 	client = (struct client *) create_udp_client(NULL);
-	udp_to_tcp(client, sock);
 	if (!client) {
 		logMsg("camsgtask: client init failed\n");
 		close(sock);
 		return;
 	}
+	udp_to_tcp(client, sock);
 
 	i = sizeof(client->addr);
 	status = getpeername(
@@ -118,7 +118,7 @@ FAST int 		sock;
 			&i); 
     	if(status == ERROR){
       		logMsg("camsgtask: peer address fetch failed\n");
-      		close(sock);
+		free_client(client);
       		return;
     	}
 				
@@ -225,7 +225,7 @@ FAST int 		sock;
 			printErrno(errnoGet(taskIdSelf()));
 			cas_send_msg(client, TRUE);
 		}
-		if (nchars == 0){
+		else if (nchars == 0){
 			cas_send_msg(client, TRUE);
 		}
 	

@@ -62,23 +62,26 @@
 /************************************************************************/
 /*_end									*/
 
+/*
+ * allocate error message string array 
+ * here so I can use sizeof
+ */
+#define CA_ERROR_GLBLSOURCE
+
 #if defined(VMS)
 #	include		stsdef.h
 #	include		ssdef.h
 #	include		psldef.h
 #	include		prcdef.h
 #	include 	descrip.h
+#elif defined(UNIX)
 #elif defined(vxWorks)
 #	include		<vxWorks.h>
 # 	include		<taskLib.h>
 # 	include		<task_params.h>
+#else
+	@@@@ dont compile @@@@
 #endif
-
-/*
- * allocate error message string array 
- * here so I can use sizeof
- */
-#define CA_ERROR_GLBLSOURCE
 
 /*
  * allocate db_access message strings here

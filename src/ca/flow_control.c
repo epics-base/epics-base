@@ -34,13 +34,29 @@
 /*_end									*/
 
 
-#include		<types.h>
-#include		<vxWorks.h>
-#include		<socket.h>
-#include		<ioctl.h>
-#ifdef vxWorks
-#include		<ioLib.h>
+#if defined(vxWorks)
+#	include		<vxWorks.h>
+#	include		<ioLib.h>
+#	include		<socket.h>
+#	include		<ioctl.h>
+#	ifdef V5_vxWorks
+#		include	<vxTypes.h>
+#	else
+#		include	<types.h>
+#	endif
+#elif defined(VMS)
+#	include		<sys/types.h>
+#	include		<sys/socket.h>
+#	include		<sys/ioctl.h>
+#elif defined(UNIX)
+#	include		<sys/types.h>
+#	include		<sys/socket.h>
+#	include		<sys/ioctl.h>
+#else
+	@@@@ dont compile @@@@
 #endif
+
+#include		<os_depen.h>
 #include		<cadef.h>
 #include		<iocmsg.h>
 #include		<iocinf.h>

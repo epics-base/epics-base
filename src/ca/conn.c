@@ -24,11 +24,14 @@
 /*									*/
 /************************************************************************/
 /*_end									*/
-#ifdef UNIX
-#include		<stdio.h>
+#if defined(UNIX)
+#	include		<stdio.h>
+#elif defined(VMS)
+#elif defined(vxWorks)
+#else
+	@@@@ dont compile @@@@
 #endif
 
-#include		<vxWorks.h>
 #include 		<cadef.h>
 #include		<db_access.h>
 #include		<iocmsg.h>
@@ -108,8 +111,8 @@ char			silent;
 #endif
 
     		if(!silent && retry_cnt_no_handler){
-      			sprintf(string, "%d channels outstanding", retry_cnt);
-      			ca_signal(ECA_CHIDRETRY, string);
+      			sprintf(sprintf_buf, "%d channels outstanding", retry_cnt);
+      			ca_signal(ECA_CHIDRETRY, sprintf_buf);
     		}
   	}
 

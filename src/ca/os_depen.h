@@ -25,6 +25,9 @@
 #		include <sys/time.h>
 #	endif
 #elif defined(vxWorks)
+#	ifndef INCvxWorksh
+#		include <vxWorks.h>
+#	endif
 #	ifndef INCfast_lockh
 #		include <fast_lock.h>
 #	endif

@@ -34,6 +34,7 @@
  *	.03 joh 071291	moved time stamp from client to the
  *			channel in use block
  *	.04 joh 071591	added ticks at last io to the client structure
+ *	.05 joh	103191	moved lock from msg buf to client structure
  *
  */
 #ifndef INCLfast_lockh
@@ -56,7 +57,6 @@
 struct message_buffer{
   unsigned 			stk;
   unsigned 			maxstk;
-  FAST_LOCK			lock;
   int				cnt;			
   char 				buf[MAX_MSG_SIZE];
 };
@@ -65,6 +65,7 @@ struct client{
   NODE				node;
   int				sock;
   int				proto;
+  FAST_LOCK			lock;
   LIST				addrq;
   struct message_buffer		send;
   struct message_buffer		recv;
@@ -127,11 +128,11 @@ GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
 
-#define LOCK_SEND(CLIENT)\
-FASTLOCK(&(CLIENT)->send.lock);
+#define LOCK_CLIENT(CLIENT)\
+FASTLOCK(&(CLIENT)->lock);
 
-#define UNLOCK_SEND(CLIENT)\
-FASTUNLOCK(&(CLIENT)->send.lock);
+#define UNLOCK_CLIENT(CLIENT)\
+FASTUNLOCK(&(CLIENT)->lock);
 
 #define EXTMSGPTR(CLIENT)\
  ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])

@@ -49,18 +49,31 @@
  *
  */
 
-#include		<vxWorks.h>
-#include		<lstLib.h>
-#ifdef VMS
-#include		<stsdef.h>
+#if defined(VMS)
+#	include		<stsdef.h>
+#	include		<errno.h>
+#	include		<sys/types.h>
+#	include		<sys/socket.h>
+#	include		<netinet/in.h>
+#	include		<sys/ioctl.h>
+#elif defined(UNIX)
+#	include		<errno.h>
+#	include		<sys/types.h>
+#	include		<sys/socket.h>
+#	include		<netinet/in.h>
+#	include		<sys/ioctl.h>
+#elif defined(vxWorks)
+#	include		<vxWorks.h>
+#	include		<errno.h>
+#	include		<types.h>
+#	include		<socket.h>
+#	include		<in.h>
+#	include		<ioctl.h>
+#else
+	@@@@ dont compile @@@@
 #endif
 
-#include		<errno.h>
-#include		<types.h>
-#include		<socket.h>
-#include		<in.h>
-#include		<ioctl.h>
-
+#include		<lstLib.h>
 #include		<iocmsg.h>
 #include		<os_depen.h>
 

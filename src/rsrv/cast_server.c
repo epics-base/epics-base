@@ -337,10 +337,10 @@ unsigned sock;
       	client->sock = sock;
 
       	client->send.maxstk = MAX_UDP-sizeof(client->recv.cnt);
-      	FASTLOCKINIT(&client->send.lock);
+
+      	FASTLOCKINIT(&client->lock);
 
       	client->recv.maxstk = MAX_UDP;
-      	FASTLOCKINIT(&client->recv.lock);
 
       	return client;
 }

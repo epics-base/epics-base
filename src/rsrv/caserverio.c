@@ -30,6 +30,7 @@
  * 	-----------------
  *	.01 joh 071591	log time of last io in the client structure
  *	.02 joh 091691	use greater than on the DEBUG level test
+ *	.03 joh	110491	improved diagnostics
  */
 
 #include <vxWorks.h>
@@ -54,12 +55,22 @@ int		lock_needed;
 {
 	int	status;
 
+  	if(CASDEBUG>2){
+		logMsg(	"Sending a message of %d bytes\n",
+			pclient->send.cnt);
+	}
+
 	if(pclient->disconnect){
+  		if(CASDEBUG>2){
+			logMsg(	"msg Discard for sock %d addr %x\n",
+				pclient->sock,
+				pclient->addr.sin_addr.s_addr);
+		}
 		return;
 	}
 
 	if(lock_needed){
-		LOCK_SEND(pclient);
+		LOCK_CLIENT(pclient);
 	}
 
 	if(pclient->send.stk){
@@ -72,17 +83,14 @@ int		lock_needed;
 			NULL,
 			&pclient->addr,
 			sizeof(pclient->addr));
-		if(status>=0){
-  			if(CASDEBUG>2){
-				logMsg(	"Sent a message of %d bytes\n",
-					pclient->send.cnt);
-			}
-		}
-		else{
+		if(status < 0){
 			logMsg("caserver: client unreachable\n");
 			logMsg("caserver: msg from vxWorks follows\n");
 			printErrno(errnoGet(taskIdSelf()));
 			pclient->disconnect = TRUE;
+			if(pclient==prsrv_cast_client){
+				taskSuspend(taskIdSelf());
+			}
 		}
 
   		pclient->send.stk = 0;
@@ -92,7 +100,7 @@ int		lock_needed;
 
 
 	if(lock_needed){
-		UNLOCK_SEND(pclient);
+		UNLOCK_CLIENT(pclient);
 	}
 
 	return;

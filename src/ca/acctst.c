@@ -7,17 +7,16 @@
 
 
 /* System includes		 */
-#ifdef UNIX
-#include		<stdio.h>
-#endif
-
-#include		<vxWorks.h>
-#ifdef vxWorks
-#include		<taskLib.h>
+#if defined(UNIX)
+#	include		<stdio.h>
+#elif defined(vxWorks)
+#	include		<vxWorks.h>
+#	include		<taskLib.h>
 #endif
 
 #include 		<cadef.h>
 #include		<db_access.h>
+#include		<os_depen.h>
 
 
 /*

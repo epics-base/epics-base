@@ -25,6 +25,7 @@
 /*			problems with duplicate port assigned to	*/
 /*			client after reboot go away			*/
 /*	072391	joh	added event locking for vxWorks			*/
+/*    	100391  joh     added missing ntohs() for the VAX               */
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -47,25 +48,32 @@
 /************************************************************************/
 /*_end									*/
 
-#ifdef VMS
-#include		<stsdef.h>
+#if defined(VMS)
+#	include		<sys/types.h>
+#	include		<stsdef.h>
+#elif defined(UNIX)
+#	include		<sys/types.h>
+#	include		<stdio.h>
+#elif defined(vxWorks)
+#	include		<vxWorks.h>
+#	ifdef V5_vxWorks
+#		include	<vxTypes.h>
+#	else
+#		include	<types.h>
+#	endif
+#else
+	@@@@ dont compile @@@@
 #endif
 
-#ifdef UNIX
-#include		<stdio.h>
-#endif
+#include	<os_depen.h>
+#include 	<cadef.h>
+#include 	<net_convert.h>
+#include	<db_access.h>
+#include	<iocmsg.h>
+#include 	<iocinf.h>
 
-#include		<vxWorks.h>
-
-#include		<types.h>
-#include 		<cadef.h>
-#include 		<net_convert.h>
-#include		<db_access.h>
-#include		<iocmsg.h>
-#include 		<iocinf.h>
-
-void 			reconnect_channel();
-void			ca_request_event();
+void 		reconnect_channel();
+void		ca_request_event();
 
 #define BUFSTAT 	printf("expected %d left %d\n",msgcnt,*pbufcnt);
 
@@ -79,10 +87,10 @@ void			ca_request_event();
  */
 void 
 post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
-	register struct extmsg *hdrptr;
-	register unsigned long   *pbufcnt;
-	struct in_addr  *pnet_addr;
-	struct ioc_in_use *piiu;
+	register struct extmsg 		*hdrptr;
+	register long   		*pbufcnt;
+	struct in_addr  		*pnet_addr;
+	struct ioc_in_use 		*piiu;
 {
 	evid            monix;
 	long            msgcnt;
@@ -247,6 +255,16 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			unsigned	size;
 
 			/*
+			 * ignore IOC_READ_BUILDS after 
+			 * connection occurs
+			 */
+			if(t_cmmd == IOC_READ_BUILD){
+				if(chan->state == cs_conn){
+					break;
+				}
+			}
+
+			/*
 			 * only count get returns if from the current
 			 * read seq
 			 */
@@ -294,21 +312,21 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			/*
 			 * ignore broadcast replies for deleted channels
 			 * 
+			 * lock required for client_channel_exists()
+			 * lock required around use of the sprintf buffer
 			 */
 			LOCK;
 			status = client_channel_exists(chan);
-			UNLOCK;
-
 			if (!status) {
-				char	msg[64];
-
 				sprintf(
-					msg,
-					"Search reply from %s",
+					sprintf_buf,
+					"Chid %x Search reply from %s",
+					chan,
 					host_from_addr(pnet_addr));
-				ca_signal(ECA_NOCHANMSG,msg);
+				ca_signal(ECA_NOCHANMSG, sprintf_buf);
 				break;
 			}
+			UNLOCK;
 
 			chpiiu = &iiu[chan->iocix];
 
@@ -317,13 +335,12 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				if (chpiiu->sock_addr.sin_addr.s_addr == 
 						pnet_addr->s_addr) {
 					printf("<Extra> ");
-#ifdef UNIX
-					fflush(stdout);
-#endif
+#					ifdef UNIX
+						fflush(stdout);
+#					endif
 				} else {
-					char            msg[256];
-					char            acc[64];
-					char            rej[64];
+					char	acc[128];
+					char	rej[128];
 
 					sprintf(acc, 
 						"%s",
@@ -332,26 +349,29 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 					sprintf(rej, 
 						"%s", 
 						host_from_addr(pnet_addr));
+					LOCK;
 					sprintf(
-						msg,
+						sprintf_buf,
 				"Channel: %s Accepted: %s Rejected: %s ",
 						chan + 1,
 						acc,
 						rej);
-					ca_signal(ECA_DBLCHNL, msg);
+					ca_signal(ECA_DBLCHNL, sprintf_buf);
+					UNLOCK;
 				}
-
+#				ifdef IOC_READ_FOLLOWING_BUILD
 				/*
-				 * IOC_BUILD messages allways have a
+				 * IOC_BUILD messages always have a
 				 * IOC_READ msg following. (IOC_BUILD
 				 * messages are sometimes followed by
 				 * error messages which are ignored
 				 * on double replies)
 				 */
-				if (t_cmmd == IOC_BUILD)
+				if (t_cmmd == IOC_BUILD){
 					msgcnt += sizeof(struct extmsg) +
-						(hdrptr + 1)->m_postsize;
-
+					ntohs((hdrptr + 1)->m_postsize);
+				}
+#				endif
 				break;
 			}
 			reconnect_channel(hdrptr, pnet_addr);

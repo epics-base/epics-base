@@ -37,6 +37,7 @@
  *	.05 joh 082691  use db_post_single_event() instead of read_reply()
  *			to avoid deadlock condition between the client
  *			and the server.
+ *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
  */
 
 #include <vxWorks.h>
@@ -66,7 +67,7 @@ void    search_fail_reply();
 
 
 /*
- * CAMESSSAGE()
+ * CAMESSAGE()
  *
  *
  */
@@ -119,13 +120,13 @@ camessage(client, recv)
 				pevext =
 					(struct event_ext *) malloc(size);
 				if (!pevext) {
-					LOCK_SEND(client);
+					LOCK_CLIENT(client);
 					send_err(
 						mp,
 						ECA_ALLOCMEM, 
 						client, 
 						RECORD_NAME(MPTOPADDR(mp)));
-					UNLOCK_SEND(client);
+					UNLOCK_CLIENT(client);
 					break;
 				}
 			}
@@ -148,13 +149,13 @@ camessage(client, recv)
 			   (unsigned) ((struct monops *) mp)->m_info.m_mask,
 					      pevext + 1);
 			if (status == ERROR) {
-				LOCK_SEND(client);
+				LOCK_CLIENT(client);
 				send_err(
 					mp, 
 					ECA_ADDFAIL, 
 					client, 
 					RECORD_NAME(MPTOPADDR(mp)));
-				UNLOCK_SEND(client);
+				UNLOCK_CLIENT(client);
 			}
 
 			/*
@@ -235,22 +236,24 @@ camessage(client, recv)
 					      mp->m_count
 				);
 			if (status < 0) {
-				LOCK_SEND(client);
+				LOCK_CLIENT(client);
 				send_err(
 					mp, 
 					ECA_PUTFAIL, 
 					client, 
 					RECORD_NAME(MPTOPADDR(mp)));
-				UNLOCK_SEND(client);
+				UNLOCK_CLIENT(client);
 			}
 			break;
 		case IOC_EVENTS_ON:
 			{
+				struct event_ext evext;
 				struct channel_in_use *pciu =
 				(struct channel_in_use *) & client->addrq;
 
 				client->eventsoff = FALSE;
 
+				LOCK_CLIENT(client);
 				while (pciu = (struct channel_in_use *) 
 					pciu->node.next) {
 
@@ -260,8 +263,10 @@ camessage(client, recv)
 						pevext->node.next){
 
 						if (pevext->modified) {
+							evext = *pevext;
+							evext.send_lock = FALSE;
 							read_reply(
-								pevext, 
+								&evext, 
 								MPTOPADDR(&pevext->msg), 
 								TRUE, 
 								NULL);
@@ -269,6 +274,7 @@ camessage(client, recv)
 						}
 					}
 				}
+				UNLOCK_CLIENT(client);
 				break;
 			}
 		case IOC_EVENTS_OFF:
@@ -290,26 +296,31 @@ camessage(client, recv)
 			 * channel in use block prior to
 			 * timeout must reconnect
 			 */
+			LOCK_CLIENT(prsrv_cast_client);
                		status = lstFind(
 					&prsrv_cast_client->addrq, 
 					mp->m_pciu);
-			if(status<0){
+			if(status >= 0){
+				lstDelete(
+					&prsrv_cast_client->addrq, 
+					mp->m_pciu);
+			}
+			UNLOCK_CLIENT(prsrv_cast_client);
+			if(status < 0){
        				free_client(client);
+				logMsg("cas: client timeout disconnect\n");
 				exit();
 			}
-
-			lstDelete(
-				&prsrv_cast_client->addrq, 
-				mp->m_pciu);
+			LOCK_CLIENT(client);
 			lstAdd(&client->addrq, mp->m_pciu);
+			UNLOCK_CLIENT(client);
 			break;
 		default:
 			log_header(mp, nmsg);
-			LOCK_SEND(client);
+			LOCK_CLIENT(client);
 			send_err(mp, ECA_INTERNAL, client, "Invalid Msg");
-			UNLOCK_SEND(client);
+			UNLOCK_CLIENT(client);
 			return ERROR;
-
 		}
 
 		recv->stk += msgsize;
@@ -354,18 +365,18 @@ struct client  *client;
 	/*
 	 * send delete confirmed message
 	 */
-	LOCK_SEND(client);
+	LOCK_CLIENT(client);
 	reply = (struct extmsg *) ALLOC_MSG(client, 0);
 	if (!reply) {
-		UNLOCK_SEND(client);
+		UNLOCK_CLIENT(client);
 		taskSuspend(0);
 	}
 	*reply = *mp;
 
 	END_MSG(client);
-	UNLOCK_SEND(client);
-
 	lstDelete(&client->addrq, pciu);
+	UNLOCK_CLIENT(client);
+
 	FASTLOCK(&rsrv_free_addrq_lck);
 	lstAdd(&rsrv_free_addrq, pciu);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
@@ -408,17 +419,17 @@ event_cancel_reply(mp, client)
 			/*
 			 * send delete confirmed message
 			 */
-			LOCK_SEND(client);
+			LOCK_CLIENT(client);
 			reply = (struct extmsg *) ALLOC_MSG(client, 0);
 			if (!reply) {
-				UNLOCK_SEND(client);
+				UNLOCK_CLIENT(client);
 				taskSuspend(0);
 			}
 			*reply = pevext->msg;
 			reply->m_postsize = 0;
 
 			END_MSG(client);
-			UNLOCK_SEND(client);
+			UNLOCK_CLIENT(client);
 
 			FASTLOCK(&rsrv_free_eventq_lck);
 			lstAdd(&rsrv_free_eventq, pevext);
@@ -429,9 +440,9 @@ event_cancel_reply(mp, client)
 	/*
 	 * Not Found- return an error message
 	 */
-	LOCK_SEND(client);
+	LOCK_CLIENT(client);
 	send_err(mp, ECA_BADMONID, client, NULL);
-	UNLOCK_SEND(client);
+	UNLOCK_CLIENT(client);
 
 	return;
 }
@@ -465,13 +476,13 @@ void		*pfl;
 		return;
 	}
 	if (pevext->send_lock)
-		LOCK_SEND(client);
+		LOCK_CLIENT(client);
 
 	reply = (struct extmsg *) ALLOC_MSG(client, pevext->size);
 	if (!reply) {
 		send_err(mp, ECA_TOLARGE, client, RECORD_NAME(paddr));
 		if (pevext->send_lock)
-			UNLOCK_SEND(client);
+			UNLOCK_CLIENT(client);
 		return;
 	}
 	*reply = *mp;
@@ -508,7 +519,7 @@ void		*pfl;
 	}
 
 	if (pevext->send_lock)
-		UNLOCK_SEND(client);
+		UNLOCK_CLIENT(client);
 
 	return;
 }
@@ -527,7 +538,7 @@ read_sync_reply(mp, client)
 {
 	FAST struct extmsg *reply;
 
-	LOCK_SEND(client);
+	LOCK_CLIENT(client);
 	reply = (struct extmsg *) ALLOC_MSG(client, 0);
 	if (!reply)
 		taskSuspend(0);
@@ -536,7 +547,7 @@ read_sync_reply(mp, client)
 
 	END_MSG(client);
 
-	UNLOCK_SEND(client);
+	UNLOCK_CLIENT(client);
 
 	return;
 }
@@ -582,34 +593,43 @@ build_reply(mp, client)
 	if (!pchannel) {
 		pchannel = (struct channel_in_use *) calloc(1, sizeof(*pchannel));
 		if (!pchannel) {
-			LOCK_SEND(client);
+			LOCK_CLIENT(client);
 			send_err(mp, ECA_ALLOCMEM, client, RECORD_NAME(&tmp_addr));
-			UNLOCK_SEND(client);
+			UNLOCK_CLIENT(client);
 			return;
 		}
 	}
 	pchannel->ticks_at_creation = tickGet();
 	pchannel->addr = tmp_addr;
 	pchannel->chid = (void *) mp->m_pciu;
-	/* store the addr block in a Q so it can be deallocated */
-	lstAdd(addrq, pchannel);
 
 
 	/*
-	 * ALLOC_MSG allways allocs at least the sizeof extmsg Large
-	 * requested size insures both messages sent in one reply NOTE: my
 	 * UDP reliability schemes rely on both msgs in same reply Therefore
 	 * the send buffer locked while both messages are placed
 	 */
-	LOCK_SEND(client);
+	LOCK_CLIENT(client);
+
+	/* store the addr block in a Q so it can be deallocated */
+	lstAdd(addrq, pchannel);
+
 	if (mp->m_cmmd == IOC_BUILD) {
 		FAST short      type = (mp + 1)->m_type;
 		FAST unsigned int count = (mp + 1)->m_count;
 		FAST unsigned int size;
 
-		size = (count - 1) * dbr_value_size[type] + dbr_size[type];
+		/*
+		 * must be large enough to hold both the search and the build-get
+		 * reply in one UDP message. Hence the extra sizeof(*mp) added 
+		 * in below.
+		 */
+		size = 	sizeof(*mp) + 		/* search reply hdr size 	*/
+			sizeof(*mp) +		/* build get reply hdr size 	*/
+			(count - 1) * 		/* size of n-1 array elements 	*/
+				dbr_value_size[type] 	
+			+ dbr_size[type];	/* size of the structure fetched */
 
-		get_reply = (struct extmsg *) ALLOC_MSG(client, size + sizeof(*mp));
+		get_reply = (struct extmsg *) ALLOC_MSG(client, size);
 		if (!get_reply) {
 			/* tell them that their request is to large */
 			send_err(mp, ECA_TOLARGE, client, RECORD_NAME(&tmp_addr));
@@ -631,6 +651,12 @@ build_reply(mp, client)
 			 * is not flushed once each call.
 			 */
 			read_reply(&evext, &tmp_addr, TRUE, NULL);
+
+			/*
+			 * this allows extra build replies 
+			 * to be dicarded
+			 */
+			get_reply->m_cmmd = IOC_READ_BUILD;
 		}
 	}
 	search_reply = (struct extmsg *) ALLOC_MSG(client, 0);
@@ -646,7 +672,7 @@ build_reply(mp, client)
 	search_reply->m_pciu = (void *) pchannel;
 
 	END_MSG(client);
-	UNLOCK_SEND(client);
+	UNLOCK_CLIENT(client);
 
 	return;
 }
@@ -666,7 +692,7 @@ search_fail_reply(mp, client)
 {
 	FAST struct extmsg *reply;
 
-	LOCK_SEND(client);
+	LOCK_CLIENT(client);
 	reply = (struct extmsg *) ALLOC_MSG(client, 0);
 	if (!reply) {
 		taskSuspend(0);
@@ -676,7 +702,7 @@ search_fail_reply(mp, client)
 	reply->m_postsize = 0;
 
 	END_MSG(client);
-	UNLOCK_SEND(client);
+	UNLOCK_CLIENT(client);
 
 }
 

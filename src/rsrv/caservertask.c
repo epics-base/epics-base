@@ -33,6 +33,7 @@
  *			client_stat().
  *	.03 joh 080991	close the socket if task create fails
  *	.04 joh	090591	updated for v5 vxWorks
+ *	.05 joh	103091	print task id and disconnect state in client_stat()
  */
 
 #include <vxWorks.h>
@@ -272,7 +273,7 @@ struct client *client;
 	char			*pproto;
 	unsigned long 		current;
 	unsigned long 		delay;
-	
+	char			*state[] = {"up", "down"};
 
 	if(client->proto == IPPROTO_UDP){
 		pproto = "UDP";
@@ -292,18 +293,20 @@ struct client *client;
 		delay = current + (~0L - client->ticks_at_last_io);
 	}
 
-	printf(	"Socket %d, Protocol %s, secs since last interaction %d\n", 
+	printf(	"Socket=%d, Protocol=%s, tid=%x, secs since last interaction %d\n", 
 		client->sock, 
 		pproto, 
+		client->tid,
 		delay/sysClkRateGet());
 
 	psaddr = &client->addr;
-	printf("\tRemote address %u.%u.%u.%u Remote port %d\n",
-	       (psaddr->sin_addr.s_addr & 0xff000000) >> 24,
-	       (psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
-	       (psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
-	       (psaddr->sin_addr.s_addr & 0x000000ff),
-	       psaddr->sin_port);
+	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
+	       	(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
+	       	(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
+	       	(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
+	       	(psaddr->sin_addr.s_addr & 0x000000ff),
+	       	psaddr->sin_port,
+		state[client->disconnect?1:0]);
 	printf("\tChannel count %d\n", lstCount(&client->addrq));
 	addr = (NODE *) & client->addrq;
 	while (addr = lstNext(addr))

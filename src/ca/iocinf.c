@@ -18,6 +18,12 @@
 /*			each message					*/
 /*	071291	joh	no longer sends id at TCP connect		*/
 /*	082791	joh	split send_msg() into two subroutines		*/
+/*	110491	joh	call recv_msg to free up deadlock only if 	*/
+/*			client blocks on send as before			*/
+/*	110491	joh	mark all channels disconnected prior to		*/
+/*			calling the first connection handler on		*/
+/*			disconnect					*/
+/*	110491	joh	allow cac_send_msg() to be called recursively	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -48,21 +54,23 @@
 
 #if defined(VMS)
 #	include		<iodef.h>
-#	include		<inetiodef.h>
 #	include		<stsdef.h>
-#	include		<types.h>
-#	include		<errno.h>
-#	include		<socket.h>
-#	include		<in.h>
-#	include		<tcp.h>
-#	include		<ioctl.h>
+#	include		<sys/types.h>
+#	define		__TIME /* dont include VMS CC time.h under MULTINET */
+#	include		<sys/time.h>
+#	include		<vms/inetiodef.h>
+#	include		<tcp/errno.h>
+#	include		<sys/socket.h>
+#	include		<netinet/in.h>
+#	include		<netinet/tcp.h>
+#	include		<sys/ioctl.h>
 #elif defined(UNIX)
-#	include		<types.h>
-#	include		<errno.h>
-#	include		<socket.h>
-#	include		<in.h>
-#	include		<tcp.h>
-#	include		<ioctl.h>
+#	include		<sys/types.h>
+#	include		<sys/errno.h>
+#	include		<sys/socket.h>
+#	include		<netinet/in.h>
+#	include		<netinet/tcp.h>
+#	include		<sys/ioctl.h>
 #elif defined(vxWorks)
 #	include		<vxWorks.h>
 #	ifdef V5_vxWorks
@@ -464,7 +472,7 @@ struct ioc_in_use		*piiu;
 
 
   	/*	Set up recv thread for VMS	*/
-#ifdef VMS
+#	if defined(VMS)
   	{
 		/*
 		 * request to be informed of future IO
@@ -487,8 +495,7 @@ struct ioc_in_use		*piiu;
       			exit();
     		}
   	}
-# endif
-# ifdef vxWorks
+# 	elif defined(vxWorks)
   	{  
       		void	recv_task();
       		int 	pri;
@@ -518,7 +525,7 @@ struct ioc_in_use		*piiu;
       		piiu->recv_tid = status;
 
   	}
-#endif
+#	endif
 
   	return ECA_NORMAL;
 }
@@ -582,12 +589,14 @@ void cac_send_msg()
   	if(!ca_static->ca_repeater_contacted)
 		notify_ca_repeater();
 
+#if 0
 	/*
 	 * dont call it recursively
 	 */
 	if(send_msg_active){
 		return;
 	}
+#endif
 
 	send_msg_active++;
 
@@ -596,8 +605,10 @@ void cac_send_msg()
  	 *
 	 */
 	while(TRUE){
+
+
 		done = TRUE;
-  		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
+  		for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
 
     			if(!piiu->send->stk)
 				continue;
@@ -615,7 +626,7 @@ void cac_send_msg()
 		if(done){
 			/*
 			 * allways double check that we
-			 * are finished incase somthing was added 
+			 * are finished in case somthing was added 
 			 * to a send buffer and a recursive 
 			 * ca_send_msg() call was refused above
 			 */
@@ -628,17 +639,6 @@ void cac_send_msg()
 				break;
 		}
 
-		/*
-		 * Ensure we do not accumulate extra recv
-		 * messages (for TCP)
-		 */
-		/*
-		 * free up push pull deadlock only
-		 * if recv not already in progress
-		 */
-		if(post_msg_active==0)
-			recv_msg_select(&notimeout);
-
 		if(retry_count-- <= 0){
 			char *iocname;
 			struct in_addr *inaddr;
@@ -647,7 +647,6 @@ void cac_send_msg()
 					inaddr = &piiu->sock_addr.sin_addr;
 					iocname = host_from_addr(inaddr);
 #ifdef CLOSE_ON_EXPIRED			
-			
 					ca_signal(ECA_DLCKREST, iocname);
 					close_ioc(piiu);
 #else
@@ -685,24 +684,18 @@ register struct ioc_in_use 	*piiu;
 	pmsg = (void *) piiu->send->buf;	
 
 	while(TRUE){
+		int sock;
+
+		
 		if(piiu->conn_up){
-			/* 
-			 * send UDP or TCP message depending
-			 * on whether this channel has a TCP
-			 * connection yet
-			 *
+			/*
+			 * use TCP if connection exists
 			 */
-			 status = sendto(
-					piiu->sock_chan,
-					pmsg,	
-					cnt,
-					0,
-					&piiu->sock_addr,
-					sizeof(piiu->sock_addr));
+			sock = piiu->sock_chan;
 		}
 		else{
 			/* 
-			 * send UDP message  
+			 * use UDP   
 			 *
 			 * NOTE: this does not use a broadcast
 			 * if the location of the channel is
@@ -711,26 +704,30 @@ register struct ioc_in_use 	*piiu;
 			 * (piiu->sock_addr points to the
 			 *	known address)
 			 */
-			 status = sendto(
-					iiu[BROADCAST_IIU].sock_chan,
-					pmsg,	
-					cnt,
-					0,
-					&piiu->sock_addr,
-					sizeof(piiu->sock_addr));
+			if(!iiu[BROADCAST_IIU].conn_up)
+				return ERROR;
+
+			sock = iiu[BROADCAST_IIU].sock_chan;
 		}
+		status = sendto(
+				sock,
+				pmsg,	
+				cnt,
+				0,
+				&piiu->sock_addr,
+				sizeof(piiu->sock_addr));
 
 		/*
 		 * normal fast exit
 		 */
-		if(status == cnt)
+		if(status == cnt){
 			break;
-
-		if(status>=0){
+		}
+		else if(status>=0){
 			if(status>cnt){
 				ca_signal(
 					ECA_INTERNAL,
-					"more sent than requested");
+					"more sent than requested ?");
 			}
 
 			cnt = cnt-status;
@@ -748,14 +745,25 @@ register struct ioc_in_use 	*piiu;
 					cnt);
 				piiu->send->stk = cnt;
 			}
+			/*
+			 * Ensure we do not accumulate extra recv
+			 * messages (for TCP)
+			 *
+			 * frees up push pull deadlock only
+			 * if recv not already in progress
+			 */
+			if(post_msg_active==0)
+				recv_msg_select(&notimeout);
+
 			return ERROR;
 		}
 #endif
 		else{
-			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
-			printf(	
-				"CA: error on socket send() %d\n",
-				MYERRNO);
+			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET){
+				printf(	
+					"CA: error on socket send() %d\n",
+					MYERRNO);
+			}
 			close_ioc(piiu);
 			return OK;
 		}
@@ -884,8 +892,7 @@ struct ioc_in_use	*piiu;
 void tcp_recv_msg(piiu)
 struct ioc_in_use	*piiu;
 {
-  	unsigned long		byte_cnt;
-  	unsigned long		byte_sum;
+  	long			byte_cnt;
   	int			status;
   	int			timeoutcnt;
   	struct buffer		*rcvb = 	piiu->recv;
@@ -926,9 +933,9 @@ struct ioc_in_use	*piiu;
     	}
 
 
-  	byte_cnt = (unsigned long) status;
+  	byte_cnt = (long) status;
   	if(byte_cnt>MAX_MSG_SIZE){
-    		printf(	"recv_msg(): message overflow %u\n",
+    		printf(	"recv_msg(): message overflow %l\n",
 			byte_cnt-MAX_MSG_SIZE);
 		LOCK;
 		close_ioc(piiu);
@@ -945,7 +952,7 @@ struct ioc_in_use	*piiu;
 			&byte_cnt, 
 			&piiu->sock_addr.sin_addr, 
 			piiu);
-	if(byte_cnt){
+	if(byte_cnt>0){
 		/*
 		 * realign partial message
 		 */
@@ -985,8 +992,7 @@ struct ioc_in_use	*piiu;
   	char			*ptr;
   	unsigned		nchars;
 	struct msglog{
-  		unsigned		nbytes;
-  		unsigned		RISC_pad;
+  		long			nbytes;
   		struct sockaddr_in	addr;
 	};
 	struct msglog	*pmsglog;
@@ -1024,7 +1030,7 @@ struct ioc_in_use	*piiu;
 		 * log the msg size
 		 */
 		rcvb->stk += status;
-		pmsglog->nbytes = (unsigned long) status;
+		pmsglog->nbytes = (long) status;
 #ifdef DEBUG
       		printf("recieved a udp reply of %d bytes\n",byte_cnt);
 #endif
@@ -1048,7 +1054,7 @@ struct ioc_in_use	*piiu;
 
 	pmsglog = (struct msglog *) rcvb->buf;
  	while(pmsglog < (struct msglog *)&rcvb->buf[rcvb->stk]){	
-		unsigned long msgcount;
+		long 	msgcount;
 
   		/* post message to the user */
 		msgcount = pmsglog->nbytes;
@@ -1056,7 +1062,7 @@ struct ioc_in_use	*piiu;
 				&msgcount,
 				&pmsglog->addr.sin_addr,
 				piiu);
-		if(msgcount){
+		if(msgcount != 0){
 			printf(	"CA: UDP alignment problem %d\n",
 				msgcount);
 		}
@@ -1203,12 +1209,25 @@ struct ioc_in_use	*piiu;
   	FD_CLR(piiu->sock_chan, &readch);
 # 	endif 
 
+	/*
+	 * Mark all of their channels disconnected
+	 * prior to calling handlers incase the
+	 * handler tries to use a channel before
+	 * I mark it disconnected.
+	 */
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
     		chix->type = TYPENOTCONN;
     		chix->count = 0;
     		chix->state = cs_prev_conn;
     		chix->paddr = NULL;
+  	}
+
+	/*
+	 * call their connection handler as required
+	 */
+  	chix = (chid) &piiu->chidlist.node.next;
+  	while(chix = (chid) chix->node.next){
     		if(chix->connection_func){
 			args.chid = chix;
 			args.op = CA_OP_CONN_DOWN;
@@ -1234,6 +1253,9 @@ struct ioc_in_use	*piiu;
 			ECA_DISCONN, 
 			host_from_addr(&piiu->sock_addr.sin_addr));
 
+	if(piiu == &iiu[BROADCAST_IIU]){
+		ca_signal(ECA_INTERNAL, "Unable to perform UDP broadcast\n");
+	}
 }
 
 

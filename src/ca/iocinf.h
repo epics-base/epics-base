@@ -16,6 +16,7 @@
 /*	.05 082791 joh	declaration of ca_request_event()		*/
 /*	.06 082791 joh	added send message in progress flag		*/
 /*	.07 091691 joh	moved channel_state enum to cadef.h for export	*/
+/*	.08 102991 joh	added sprintf buffer				*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -41,29 +42,33 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
+#define	DONT_COMPILE	@@@@ dont compile in this case @@@@
+
+#if defined(UNIX)
+#  	include	<sys/types.h>
+#	include	<netinet/in.h>
+#elif defined(VMS)
+# 	include	<ssdef>
+#  	include	<sys/types.h>
+#	include	<netinet/in.h>
+#elif defined(vxWorks)
+#	ifdef V5_vxWorks
+#  		include	<vxTypes.h>
+#	else
+#  		include	<types.h>
+#	endif
+#	include	<in.h>
+#else
+	DONT_COMPILE
+#endif
 
 #ifndef INClstLibh  
 #	include <lstLib.h> 
 #endif
 
-#ifndef _TYPES_
-#  	include	<types.h>
-#endif
-
-#ifndef __IN_HEADER__
-#	include	<in.h>
-#endif
-              
-#ifdef VMS
-# 	include	<ssdef>
-#endif
-
 #ifndef INCos_depenh
 #	include	<os_depen.h>
 #endif
-
-#define	DONT_COMPILE	@@@@ dont compile in this case @@@@
-
 
 
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
@@ -133,6 +138,7 @@ typedef unsigned long	ca_time;
 #define fd_register_arg	(ca_static->ca_fd_register_arg)
 #define post_msg_active	(ca_static->ca_post_msg_active)
 #define send_msg_active	(ca_static->ca_send_msg_active)
+#define sprintf_buf	(ca_static->ca_sprintf_buf)
 
 #if defined(UNIX)
 #	define readch		(ca_static->ca_readch)
@@ -172,6 +178,7 @@ struct  ca_static{
   unsigned short	ca_send_msg_active;
   short			ca_cast_available;
   struct in_addr	ca_castaddr;
+  char			ca_sprintf_buf[128];
 #if defined(UNIX)
   fd_set                ca_readch;  
 #elif defined(VMS)

@@ -44,6 +44,7 @@ SRCS.c += ../aToIPAddr.c
 SRCS.c += ../adjustment.c
 SRCS.c += ../os/vxWorks/bsdSockResource.c
 SRCS.c += ../os/vxWorks/osiSleep.c
+SRCS.c += ../logMsgToErrlog.c
 
 LIBOBJS += cvtFast.o
 LIBOBJS += ellLib.o
@@ -74,6 +75,7 @@ LIBOBJS += aToIPAddr.o
 LIBOBJS += adjustment.o
 LIBOBJS += bsdSockResource.o
 LIBOBJS += osiSleep.o
+LIBOBJS += logMsgToErrlog.o
 
 LIBNAME = libCom
 

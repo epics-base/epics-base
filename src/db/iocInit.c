@@ -57,6 +57,7 @@
 #define MODULE_TYPES_INIT 1
 #include        <module_types.h>
 
+void errlogDevInit ();
 
 LOCAL int initialized=FALSE;
 
@@ -99,6 +100,7 @@ int iocInit(char * pResourceFilename)
 	return(-1);
     }
 
+    errlogDevInit ();
 
    /* Setup initialization hooks, if  initHooks routine has been defined.  */
     strcpy(name, "_");

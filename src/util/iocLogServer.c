@@ -5,8 +5,8 @@
  *	archive logMsg() from several IOC's to a common rotating file	
  *
  *
- * 	Author: 	Jeffrey O. Hill 
- *      Date:           080791 
+ * 	    Author: 	Jeffrey O. Hill 
+ *      Date:       080791 
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -29,97 +29,8 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *	NOTES:
- *	.01	currently runs under UNIX. could be made to run under
- *		vxWorks if NFS is used.
- *
- * Modification Log:
- * -----------------
- * .01 080791 joh	Created
- * .02 102591 joh	Dont try to reopen the log file if a write fails
- * .03 110691 joh	Disconnect if sent a zero length message
- * .04 091092 joh	Print routine messages only when in debug mode	
- * .05 091092 joh	now uses SO_REUSEADDR
- * .06 091192 joh	now uses SO_KEEPALIVE
- * .07 091192 joh	added SCCS ID
- * .08 092292 joh	improved message sent to the log
- * .08 092292 joh	improved message sent to the log
- * .09 050494 pg        HPUX port changes.
- * .10 021694 joh	ANSI C	
- * $Log$
- * Revision 1.40  2000/11/08 03:56:28  jhill
- * fixed SO_REUSEADDR WIN32 strangeness
- *
- * Revision 1.39  2000/10/11 22:23:30  jhill
- * configure that WINSOCK is very different about SO_REUSEADDR
- *
- * Revision 1.38  2000/08/25 19:44:30  jhill
- * fixed Linux uses unsigned where int is used on other OS
- *
- * Revision 1.37  2000/02/10 17:47:13  jhill
- * dont include osiSockResource.h
- *
- * Revision 1.36  2000/02/04 15:52:33  mrk
- * bsdSocketResource=>osiSockResource
- *
- * Revision 1.35  1999/11/19 00:26:12  jhill
- * fixed string overwrite bug
- *
- * Revision 1.34  1999/11/08 21:37:00  jhill
- * dont print too many messages if the host runs out of fd slots
- *
- * Revision 1.33  1999/09/02 21:41:09  jhill
- * improved the way that socket error numbers are converted to strings
- *
- * Revision 1.32  1999/08/31 15:51:00  jhill
- * move to proper date in file if open old log
- *
- * Revision 1.31  1999/08/11 00:24:11  jhill
- * dont increment file pos on error
- *
- * Revision 1.30  1998/06/16 02:43:16  jhill
- * use ip addr conversion in libCom - and cosmetic changes
- *
- * Revision 1.29  1998/05/29 20:19:11  jhill
- * use new sock ioctl() typedef
- *
- * Revision 1.28  1998/02/05 23:16:35  jhill
- * fixed truncate return status logic error
- * now uses macros from osiSock.h
- *
- * Revision 1.27  1997/08/05 00:43:19  jhill
- * fixed warning
- *
- * Revision 1.26  1997/06/25 05:59:23  jhill
- * ported log server to win32
- *
- * Revision 1.25  1997/04/10 19:53:03  jhill
- * api changes
- *
- * Revision 1.24  1996/11/22 20:43:03  jhill
- * doc
- *
- * Revision 1.22  1996/11/02 02:20:36  jhill
- * use osiSock.h
- *
- * Revision 1.21  1996/06/21 01:07:46  jhill
- * use sigemptyset() and cc -Xc changes
- *
- * Revision 1.20  1996/06/19 18:03:17  jhill
- * SIGHUP changes added by KECK
- *
- * Revision 1.18  1995/11/27  22:49:36  jhill
- * included <arpa/inet.h>
- *
- * Revision 1.17  1995/11/13  16:55:03  jba
- * Added filio.h include for solaris build.
- *
- * Revision 1.16  1995/11/08  23:48:26  jhill
- * improvents for better client reconnect
  *
  */
-
-static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
 /*
  * Under solaris if dont define _POSIX_C_SOURCE or _XOPEN_SOURCE
@@ -213,9 +124,9 @@ static int sighupPipe[2];
  */
 int main()
 {
-	struct sockaddr_in 	serverAddr;	/* server's address */
+	struct sockaddr_in 	    serverAddr;	/* server's address */
 	struct timeval          timeout;
-	int			status;
+	int			            status;
 	struct ioc_log_server	*pserver;
 
 	osiSockIoctl_t	optval;

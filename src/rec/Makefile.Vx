@@ -12,7 +12,8 @@ SRCS = \
 	recStringin.c recEgevent.c recMbboDirect.c recStringout.c \
 	recEr.c recPal.c recSub.c recErevent.c \
 	recPermissive.c recSwitch.c recEvent.c recPid.c \
-	recTimer.c recFanout.c recPulseCounter.c recWaveform.c
+	recTimer.c recFanout.c recPulseCounter.c recWaveform.c \
+	recSubArray.c
 
 OBJS = \
 	$(OBDIR)/recAi.o $(OBDIR)/recGsub.o \
@@ -32,7 +33,8 @@ OBJS = \
 	$(OBDIR)/recPermissive.o $(OBDIR)/recSwitch.o \
 	$(OBDIR)/recEvent.o $(OBDIR)/recPid.o \
 	$(OBDIR)/recTimer.o $(OBDIR)/recFanout.o \
-	$(OBDIR)/recPulseCounter.o $(OBDIR)/recWaveform.o
+	$(OBDIR)/recPulseCounter.o $(OBDIR)/recWaveform.o \
+	$(OBDIR)/recSubArray.o
 
 LIBOBJS = \
 

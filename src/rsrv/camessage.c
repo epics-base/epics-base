@@ -44,6 +44,7 @@
  *	.10 joh	050692	added new routine - cas_send_heartbeat()
  *	.11 joh 062492	dont allow flow control to turn off gets
  *	.12 joh 090893	converted pointer to server id	
+ *	.13 joh 091493	made events on action a subroutine for debugging
  */
 
 static char *sccsId = "$Id$";
@@ -123,6 +124,10 @@ struct extmsg *mp
 
 LOCAL struct channel_in_use *MPTOPCIU(
 struct extmsg *mp
+);
+
+LOCAL void events_on_action(
+struct client  *client
 );
 
 LOCAL unsigned long	bucketID;
@@ -256,46 +261,15 @@ struct message_buffer *recv
 				UNLOCK_CLIENT(client);
 			}
 			break;
+
 		case IOC_EVENTS_ON:
-		{
-			struct event_ext *pevext;
-			struct event_ext evext;
-
-			client->eventsoff = FALSE;
-
-			LOCK_CLIENT(client);
-
-			pciu = (struct channel_in_use *) 
-				client->addrq.node.next;
-			while (pciu) {
-				pevext = (struct event_ext *) 
-					pciu->eventq.node.next;
-				while (pevext){
-
-					if (pevext->modified) {
-						evext = *pevext;
-						evext.send_lock = FALSE;
-						evext.get = TRUE;
-						read_reply(
-							&evext, 
-							&pciu->addr, 
-							TRUE, 
-							NULL);
-						pevext->modified = FALSE;
-					}
-					pevext = (struct event_ext *)
-						pevext->node.next;
-				}
-
-				pciu = (struct channel_in_use *)
-					pciu->node.next;
-			}
-			UNLOCK_CLIENT(client);
+			events_on_action(client);
 			break;
-		}
+
 		case IOC_EVENTS_OFF:
 			client->eventsoff = TRUE;
 			break;
+
 		case IOC_READ_SYNC:
 			read_sync_reply(mp, client);
 			break;
@@ -376,6 +350,51 @@ struct message_buffer *recv
 	return OK;
 }
 
+
+/*
+ *
+ * events_on_action()
+ *
+ */
+LOCAL void events_on_action(
+struct client  *client
+)
+{
+	struct channel_in_use 	*pciu;
+	struct event_ext *pevext;
+	struct event_ext evext;
+
+	client->eventsoff = FALSE;
+
+	LOCK_CLIENT(client);
+
+	pciu = (struct channel_in_use *) 
+		client->addrq.node.next;
+	while (pciu) {
+		pevext = (struct event_ext *) 
+			pciu->eventq.node.next;
+		while (pevext){
+
+			if (pevext->modified) {
+				evext = *pevext;
+				evext.send_lock = FALSE;
+				evext.get = TRUE;
+				read_reply(
+					&evext, 
+					&pciu->addr, 
+					TRUE, 
+					NULL);
+				pevext->modified = FALSE;
+			}
+			pevext = (struct event_ext *)
+				pevext->node.next;
+		}
+
+		pciu = (struct channel_in_use *)
+			pciu->node.next;
+	}
+	UNLOCK_CLIENT(client);
+}
 
 
 /*

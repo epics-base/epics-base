@@ -35,7 +35,13 @@ OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
 
 #
 # Command-line input support
+#
 # Install the fink libtecla1 package and uncomment the
-# following line to use libtecla command-line editing,
-COMMANDLINE_LIBRARY=LIBTECLA
+# following line to use libtecla command-line editing:
+#COMMANDLINE_LIBRARY=LIBTECLA
+# or install the fink readline package and uncomment the
+# following line to use GNU readline command-line editing:
+#COMMANDLINE_LIBRARY=READLINE
+
 LDLIBS_LIBTECLA = -ltecla_r -lncurses
+LDLIBS_READLINE = -lreadline

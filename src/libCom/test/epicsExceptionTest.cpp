@@ -48,9 +48,9 @@ const nothrow_t  nothrow ;
     static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
 #endif
 
-class myThread : public epicsThreadRunable {
+class exThread : public epicsThreadRunable {
 public:
-    myThread ();
+    exThread ();
     void waitForCompletion ();
 private:
     epicsThread thread;
@@ -81,20 +81,20 @@ static void epicsExceptionTestPrivate ()
     }
 }
 
-myThread::myThread () :
+exThread::exThread () :
     thread ( *this, "testExceptions", epicsThreadGetStackSize(epicsThreadStackSmall) ),
         done ( false )
 {
     this->thread.start ();
 }
 
-void myThread::run ()
+void exThread::run ()
 {
     epicsExceptionTestPrivate ();
     this->done = true;
 }
 
-void myThread::waitForCompletion ()
+void exThread::waitForCompletion ()
 {
     while ( ! this->done ) {
         epicsThreadSleep ( 0.1 );
@@ -103,7 +103,7 @@ void myThread::waitForCompletion ()
 
 extern "C" void epicsExceptionTest ()
 {
-    myThread athread;
+    exThread athread;
 
     epicsExceptionTestPrivate ();
 

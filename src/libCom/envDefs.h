@@ -31,6 +31,7 @@
  * .04  11-28-94	joh	new CA env var 
  * .05  04-20-95	anj	moved defaults to CONFIG_ENV
  * .06  09-11-96	joh 	ANSI prototypes	
+ * .07  09-18-96	joh 	added envParamIsEmpty()	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -58,16 +59,8 @@
 #ifndef envDefsH
 #define envDefsH
 
-#include <shareLib.h>
-
-#ifdef WIN32
-#       include <winsock.h>
-#else
-#       include <sys/types.h>
-#       include <netinet/in.h>
-#       include <arpa/inet.h>
-#endif
-
+#include "shareLib.h"
+#include "osiSock.h"
 
 typedef struct envParam {
     char	*name;		/* text name of the parameter */
@@ -83,6 +76,9 @@ epicsShareExtern ENV_PARAM EPICS_CA_BEACON_PERIOD;
 epicsShareExtern ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
 epicsShareExtern ENV_PARAM EPICS_CA_REPEATER_PORT;
 epicsShareExtern ENV_PARAM EPICS_CA_SERVER_PORT;
+epicsShareExtern ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
+epicsShareExtern ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
+epicsShareExtern ENV_PARAM EPICS_CAS_SERVER_PORT;
 epicsShareExtern ENV_PARAM EPICS_TS_MIN_WEST;
 epicsShareExtern ENV_PARAM EPICS_TS_NTP_INET;
 epicsShareExtern ENV_PARAM EPICS_IOC_LOG_PORT;
@@ -92,7 +88,7 @@ epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
 epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
 epicsShareExtern ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern ENV_PARAM EPICS_AR_PORT;
-#define EPICS_ENV_VARIABLE_COUNT 15
+#define EPICS_ENV_VARIABLE_COUNT 18
 
 /*
  * N elements added here to satisfy microsoft development tools
@@ -116,6 +112,7 @@ long epicsShareAPI envGetDoubleConfigParam(ENV_PARAM *pParam,
 			double *pDouble);
 long epicsShareAPI envGetLongConfigParam(ENV_PARAM *pParam, 
 			long *pLong);
+int epicsShareAPI envParamIsEmpty(ENV_PARAM *pParam);
 #else
 char * epicsShareAPI envGetConfigParam();
 long epicsShareAPI envPrtConfigParam();
@@ -123,6 +120,7 @@ long epicsShareAPI envSetConfigParam();
 long epicsShareAPI envGetInetAddrConfigParam();
 long epicsShareAPI envGetDoubleConfigParam();
 long epicsShareAPI envGetLongConfigParam();
+int epicsShareAPI envParamIsEmpty();
 #endif
 
 #endif /*envDefsH*/

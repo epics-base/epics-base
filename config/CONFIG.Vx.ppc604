@@ -11,7 +11,7 @@ ARCH_CLASS = ppc
 
 # Architecture specific build flags 
 ARCH_DEP_CPPFLAGS = -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
-ARCH_DEP_CFLAGS = -mcpu=604 --no-builtin 
+ARCH_DEP_CFLAGS = -mcpu=604 --no-builtin -mstrict-align
 
 # ARCH_DEP_CFLAGS== -fsigned-char     #May need for calcPerform.c
 

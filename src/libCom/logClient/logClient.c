@@ -519,7 +519,7 @@ void logClientGlobalInit ()
     if (logClientThreadId==NULL) {
         semMutexDestroy (logClientGlobalMutex);
         logClientGlobalMutex = NULL;
-        semMutexDestroy (logClientGlobalMutex);
+        semMutexDestroy (logClientGlobalSignal);
         logClientGlobalSignal = NULL;
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return;

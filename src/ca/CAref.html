@@ -451,14 +451,15 @@ the server over TCP/IP. If this echo message isn't promptly replied to then
 the client will assume that the server is no longer present on the network
 and disconnect. Disconnecting implies notification of client side application
 programs. The parameter EPICS_CA_CONN_TMO is specified in floating point
-seconds. The default is typically 15.0 seconds.</p>
+seconds. The default is typically 30 seconds.</p>
 
 <p>When a CA server initializes it sends "beacon" messages to each address
 specified in EPICS_CA_ADDR_LIST, and also any addresses auto configured from
-network interfaces found, with a short period between "beacons". However,
-this period is doubled each time that a "beacon" is sent until a plateau
-specified by EPICS_CA_BEACON_PERIOD is reached. This parameter is specified
-in floating point seconds. For efficient operation it is recommended that
+network interfaces found. Initially, there is a short period between
+"beacons". However, this period is doubled each time that a "beacon" is sent
+until a plateau specified by EPICS_CA_BEACON_PERIOD is reached. This
+parameter is specified in floating point seconds, and the default is
+typically 15 seconds. For efficient operation it is recommended that
 EPICS_CA_BEACON_PERIOD be set to at least one half of the value specified for
 EPICS_CA_CONN_TMO.</p>
 

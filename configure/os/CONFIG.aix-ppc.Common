@@ -1,0 +1,10 @@
+# CONFIG.aix-ppc.Common
+#
+# This file is maintained by the build community.
+#
+# Definitions for aix-ppc host builds
+# Sites may override these definitions in CONFIG_SITE.aix-ppc.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common

@@ -1,0 +1,11 @@
+# CONFIG.Common.aix-ppc-gnu
+#
+# This file is maintained by the build community.
+#
+# Definitions for aix-ppc target builds
+# Sites may override these definitions in CONFIG_SITE.Common.aix-ppc
+#-------------------------------------------------------
+
+# Include definitions common to all aix-ppc  target archs
+include $(CONFIG)/os/CONFIG.Common.aix-ppc
+

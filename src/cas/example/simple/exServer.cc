@@ -25,11 +25,6 @@
 #endif
 
 //
-// static data for exServer
-//
-gddAppFuncTable<exPV> exServer::ft;
-
-//
 // static list of pre-created PVs
 //
 pvInfo exServer::pvList[] = {
@@ -64,22 +59,7 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount, aitBool sca
 	const char * const pNameFmtStr = "%.100s%.20s";
 	const char * const pAliasFmtStr = "%.100s%.20s%u";
 
-	exServer::ft.installReadFunc ("status", &exPV::getStatus);
-	exServer::ft.installReadFunc ("severity", &exPV::getSeverity);
-	exServer::ft.installReadFunc ("seconds", &exPV::getSeconds);
-	exServer::ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
-	exServer::ft.installReadFunc ("precision", &exPV::getPrecision);
-	exServer::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
-	exServer::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
-	exServer::ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
-	exServer::ft.installReadFunc ("controlLow", &exPV::getLowLimit);
-	exServer::ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
-	exServer::ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
-	exServer::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
-	exServer::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
-	exServer::ft.installReadFunc ("units", &exPV::getUnits);
-	exServer::ft.installReadFunc ("value", &exPV::getValue);
-	exServer::ft.installReadFunc ("enums", &exPV::getEnums);
+	exPV::initFT();
 
 	//
 	// hash table size may need adjustment here?

@@ -5,6 +5,11 @@
 #include "exServer.h"
 #include "gddApps.h"
 
+//
+// static data for exPV
+//
+char exPV::hasBeenInitialized = 0;
+gddAppFuncTable<exPV> exPV::ft;
 osiTime exPV::currentTime;
 
 //
@@ -224,6 +229,35 @@ void exPV::show(unsigned level) const
 }
 
 //
+// exPV::initFT()
+//
+void exPV::initFT()
+{
+	if (exPV::hasBeenInitialized) {
+			return;
+	}
+
+	exPV::ft.installReadFunc ("status", &exPV::getStatus);
+	exPV::ft.installReadFunc ("severity", &exPV::getSeverity);
+	exPV::ft.installReadFunc ("seconds", &exPV::getSeconds);
+	exPV::ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
+	exPV::ft.installReadFunc ("precision", &exPV::getPrecision);
+	exPV::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
+	exPV::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
+	exPV::ft.installReadFunc ("controlHigh", &exPV::getHighLimit);
+	exPV::ft.installReadFunc ("controlLow", &exPV::getLowLimit);
+	exPV::ft.installReadFunc ("alarmHigh", &exPV::getHighLimit);
+	exPV::ft.installReadFunc ("alarmLow", &exPV::getLowLimit);
+	exPV::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
+	exPV::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
+	exPV::ft.installReadFunc ("units", &exPV::getUnits);
+	exPV::ft.installReadFunc ("value", &exPV::getValue);
+	exPV::ft.installReadFunc ("enums", &exPV::getEnums);
+
+	exPV::hasBeenInitialized = 1;
+}
+
+//
 // exPV::getStatus()
 //
 caStatus exPV::getStatus(gdd &value)
@@ -400,6 +434,6 @@ caStatus exPV::write (const casCtx &, gdd &valueIn)
 //
 caStatus exPV::read (const casCtx &, gdd &protoIn)
 {
-	return exServer::read(*this, protoIn);
+	return this->ft.read (*this, protoIn);
 }
 

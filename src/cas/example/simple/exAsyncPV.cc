@@ -25,7 +25,7 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 		return S_casApp_noMemory;
 	}
 
-        return S_casApp_asyncCompletion;
+    return S_casApp_asyncCompletion;
 }
 
 //
@@ -73,7 +73,7 @@ const char *exAsyncWriteIO::name() const
 // exAsyncReadIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-void exAsyncReadIO::expire()
+void exAsyncReadIO::expire ()
 {
 	caStatus status;
 
@@ -81,12 +81,12 @@ void exAsyncReadIO::expire()
 	// map between the prototype in and the
 	// current value
 	//
-	status = exServer::read(this->pv, this->proto);
+	status = this->pv.exPV::readNoCtx (this->proto);
 
 	//
 	// post IO completion
 	//
-	this->postIOCompletion(status, this->proto);
+	this->postIOCompletion (status, this->proto);
 }
 
 //

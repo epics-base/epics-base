@@ -185,20 +185,6 @@ public:
 	// Gets called when we add noise to the current value
 	//
 	virtual void scan() = 0;
-
-	//
-	// Std PV Attribute fetch support
-	//
-	gddAppFuncTableStatus getStatus(gdd &value);
-	gddAppFuncTableStatus getSeverity(gdd &value);
-	gddAppFuncTableStatus getSeconds(gdd &value);
-	gddAppFuncTableStatus getNanoseconds(gdd &value);
-	gddAppFuncTableStatus getPrecision(gdd &value);
-	gddAppFuncTableStatus getHighLimit(gdd &value);
-	gddAppFuncTableStatus getLowLimit(gdd &value);
-	gddAppFuncTableStatus getUnits(gdd &value);
-	gddAppFuncTableStatus getValue(gdd &value);
-	gddAppFuncTableStatus getEnums(gdd &value);
 	
 	//
 	//
@@ -222,7 +208,12 @@ public:
 
 	caStatus read (const casCtx &, gdd &protoIn);
 
-	caStatus write (const casCtx &, gdd &protoIn);
+	caStatus readNoCtx (gdd &protoIn)
+	{
+		return this->ft.read (*this, protoIn);
+	}
+
+	caStatus write (const casCtx &, gdd &value);
 
 	void destroy();
 
@@ -236,6 +227,8 @@ public:
 		return this->info.getName();
 	}
 
+	static void initFT();
+
 protected:
 	gdd			*pValue;
 	exScanTimer		*pScanTimer;
@@ -246,6 +239,27 @@ protected:
 	static osiTime	currentTime;
 
 	virtual caStatus updateValue (gdd &value) = 0;
+
+private:
+	//
+	// Std PV Attribute fetch support
+	//
+	gddAppFuncTableStatus getStatus(gdd &value);
+	gddAppFuncTableStatus getSeverity(gdd &value);
+	gddAppFuncTableStatus getSeconds(gdd &value);
+	gddAppFuncTableStatus getNanoseconds(gdd &value);
+	gddAppFuncTableStatus getPrecision(gdd &value);
+	gddAppFuncTableStatus getHighLimit(gdd &value);
+	gddAppFuncTableStatus getLowLimit(gdd &value);
+	gddAppFuncTableStatus getUnits(gdd &value);
+	gddAppFuncTableStatus getValue(gdd &value);
+	gddAppFuncTableStatus getEnums(gdd &value);
+
+	//
+	// static
+	//
+	static gddAppFuncTable<exPV> ft;
+	static char hasBeenInitialized;
 };
 
 //
@@ -292,11 +306,6 @@ public:
 	void installAliasName(pvInfo &info, const char *pAliasName);
 	inline void removeAliasName(pvEntry &entry);
 
-	static gddAppFuncTableStatus read(exPV &pv, gdd &value) 
-	{
-		return exServer::ft.read(pv, value);
-	}
-
 	//
 	// removeIO
 	//
@@ -325,8 +334,6 @@ private:
 	//
 	static pvInfo bill;
 	static pvInfo billy;
-
-	static gddAppFuncTable<exPV> ft;
 };
 
 //
@@ -345,12 +352,12 @@ public:
 	//
 	// read
 	//
-	caStatus read(const casCtx &ctxIn, gdd &value);
+	caStatus read (const casCtx &ctxIn, gdd &protoIn);
 
 	//
 	// write
 	//
-	caStatus write(const casCtx &ctxIn, gdd &value);
+	caStatus write (const casCtx &ctxIn, gdd &value);
 
 	//
 	// removeIO

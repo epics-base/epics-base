@@ -141,7 +141,7 @@ int catime (char *channelName)
 		itemList[i].val.intval = 0;
 		itemList[i].type = DBR_INT; 
 	}
-	printf ("interger test\n");
+	printf ("integer test\n");
   	test (itemList, NELEMENTS(itemList));
 
   	printf ("free test\n");

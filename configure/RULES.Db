@@ -42,6 +42,8 @@ SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h \
           $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
 
+PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
+
 #####################################################  dependancies
 
 HINC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
@@ -51,7 +53,7 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(COMMON_DBDS) \
                     $(COMMON_DBDINC) $(COMMON_DBS))
 
 DBDDEPENDS_FLAGS = $(filter .%,$(subst -I,,$(filter-out -S%,$(DBDFLAGS))))
-DBDDEPENDS_CMD=@-$(MKMF) -m $@$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
+DBDDEPENDS_CMD = -$(MKMF) -m $@$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
 
 ##################################################### 
 
@@ -90,11 +92,12 @@ inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS) \
-	$(DBDDEPENDS_FILES)
+	$(DBDDEPENDS_FILES) $(INDDBFROMTEMPLATE) $(TARGETS)
 
 clean:: 
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
+	@$(RM) $(INDDBFROMTEMPLATE) $(TARGETS)
 
 ##################################################### "Foreign" templates
 
@@ -199,6 +202,12 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 	@echo "Optimizing database $@"
 	@$(RM) $@
 	$(DBST) . $< -d > $@
+
+$(INDDBFROMTEMPLATE):%.db: %.substitutions
+	$(RM) $@
+ifndef WIN32
+	$(MSI) -S$*.substitutions $(PREFIX).template > $@
+endif
 
 RAW=.raw
 

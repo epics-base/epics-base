@@ -220,10 +220,11 @@ static void notifyCallback(CALLBACK *pcallback)
     precord = ppn->paddr->precord;
     dbScanLock(precord);
     if(ppn->callbackState==callbackCanceled) {
-	dbScanUnlock(precord);
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
-	semGive((SEM_ID)ppn->waitForCallback);
+        if(ppn->waitForCallback)
+	    semGive((SEM_ID)ppn->waitForCallback);
+	dbScanUnlock(precord);
 	return;
     }
     if(ppn->callbackState==callbackActive) {
@@ -234,6 +235,8 @@ static void notifyCallback(CALLBACK *pcallback)
 	    dbScanUnlock(precord);
 	    (ppn->userCallback)(ppn);
 	}
+    } else {
+        dbScanUnlock(precord);
     }
 }
 
@@ -251,14 +254,17 @@ void dbNotifyCancel(PUTNOTIFY *ppn)
     dbScanLock(precord);
     notifyCancel(ppn);
     if(ppn->callbackState == callbackActive) {
-	ppn->waitForCallback = (void *)semBCreate(SEM_Q_FIFO,SEM_FULL);
+	ppn->waitForCallback = (void *)semBCreate(SEM_Q_FIFO,SEM_EMPTY);
 	ppn->callbackState = callbackCanceled;
 	dbScanUnlock(precord);
 	if(semTake((SEM_ID)ppn->waitForCallback,sysClkRateGet()*10)!=OK) {
 	    errMessage(0,"dbNotifyCancel had semTake timeout");
 	    ppn->callbackState = callbackNotActive;
 	}
+        dbScanLock(precord);
 	semDelete((SEM_ID)ppn->waitForCallback);
+        ppn->waitForCallback = 0;
+        dbScanUnlock(precord);
     } else {
 	dbScanUnlock(precord);
     }

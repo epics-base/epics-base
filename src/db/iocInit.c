@@ -227,6 +227,7 @@ int iocInit(char * pResourceFilename)
     *  Process all records that have their "process at initialization"
     *      field set (pini).
     */
+    taskDelay(sysClkRateGet());
     if (initialProcess() != 0)
           epicsPrintf("iocInit: initialProcess Failed\n");
 

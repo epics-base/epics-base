@@ -14,81 +14,60 @@
 
 ARCH_CLASS = hpux
 
+SHARED_LIBRARIES=YES
+
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
 SHRLIB_SUFFIX = .sl
 
-AR = ar
+AR = ar -rc
 
 # Configure OS vendor C compiler
 ACC = cc
 ACC_ANSI = $(ACC) -Aa
 ACC_STRICT = $(ACC) -Aa
-ACC_TRAD = $(ACC)
+ACC_TRAD = $(ACC) -Ac
 ACC_WARN_YES = 
 ACC_WARN_NO =  -w
 ACC_OPT_YES =  -O
 ACC_OPT_NO = -g
-ACC_SFLAGS_YES= -Wl,-a,archive
-ACC_SFLAGS_NO=
+# Always keep libc shared to force using the one supplied with the
+# target machine (HP system and libc must match - important e.g. for
+# multi-CPU-systems)
+ACC_SLDFLAGS_YES= -Wl,-a,archive -l:libc.sl
+ACC_SFLAGS_NO =
 ACC_SLIBS_YES =
-ACC_SLIBS_NO=
-ACC_SHRLIB_CFLAGS_YES = +Z
+ACC_SLIBS_NO =
 ACC_SHRLIB_LDFLAGS_YES = -b
-ACC_DEP_CFLAGS=+DAportable
 
-# Configure OS vendor C++ compiler
-HPCC = cc 
-HPCC_ANSI = $(HPCC) -Aa
-HPCC_STRICT = $(HPCC) -Aa
-HPCC_TRAD = $(HPCC) -Ac
-HPCC_WARN_YES = 
-HPCC_WARN_NO =  -w
-HPCC_OPT_YES =  -O
-HPCC_OPT_NO = -g
-HPCC_SFLAGS_YES= -Wl,-a,archive
-HPCC_SFLAGS_NO=
-HPCC_SLIBS_YES =
-HPCC_SLIBS_NO=
-HPCC_SHRLIB_CFLAGS_YES = +Z
-HPCC_SHRLIB_LDFLAGS_YES = -b
-HPCC_DEP_CFLAGS=+DAportable
-
-#Old HP C++ compiler
-#CCC = CC
-#CCC_NORMAL = $(CCC) +p
-
-#New HP C++ compiler
+# aCC HP C++ compiler
 CCC = aCC
-# avoid treating "future errors" as actual errors
-CCC_NORMAL = $(CCC) +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
-CCC_STRICT = $(CCC) +p
+# Suppress bogus warnings created by the aCC compiler
+CCC_NORMAL = $(CCC) -AA -Aa -mt +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
+CCC_STRICT = $(CCC) -AA -Aa -mt
 CCC_TEMPL_INST_FLAG =
 CCC_WARN_YES = +w
 CCC_WARN_NO =
-CCC_OPT_YES =  -O
+CCC_OPT_YES = +O3
 CCC_OPT_NO = -g
-CCC_SFLAGS_YES= -Wl,-a,archive
+# Always keep libc shared to force using the one supplied with the
+# target machine (HP system and libc must match - important e.g. for
+# multi-CPU-systems)
+CCC_SLDFLAGS_YES= -Wl,-a,archive -l:libc.sl
 CCC_SFLAGS_NO=
 CCC_SLIBS_YES =
 CCC_SLIBS_NO=
-CCC_SHRLIB_CFLAGS_YES = +Z
-# shared libs will be found by searching environment variable SHLIB_PATH,
-# then by searching the specified path (see below)
 CCC_SHRLIB_LDFLAGS_YES = -b
 CCC_DEPENDS_FLAG = +m
-CCC_DEP_CFLAGS=+DAportable
 
-# +DAportable causes portable object code to be created for execution
-# on different PA-Risc machines
-ARCH_DEP_CFLAGS = -D_HPUX_SOURCE -DHP_UX 
-ARCH_DEP_CXXFLAGS = -D_HPUX_SOURCE -DHP_UX
-ARCH_DEP_LDLIBS =
-ARCH_DEP_LDFLAGS = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s
+# Portability across different PA-RISC architecture versions, position
+# independent code, "-mt" (s.a.) handles all the posix stuff
+ARCH_DEP_CPPFLAGS = -DHP_UX +DAportable +z
+ARCH_DEP_CFLAGS = -D_HPUX_SOURCE
 
-# Runtime ldflags
-RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH)
-RUNTIME_LDFLAGS = $(RUNTIME_LIBS:%=-Wl,-rpath,%)
-
+# Set runtime path for shared libraries
+empty:=                                      # trick from the make docs...
+space:= $(empty) $(empty)
+RUNTIME_LDFLAGS_YES = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
+RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))

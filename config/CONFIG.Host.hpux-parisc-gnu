@@ -1,0 +1,49 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE Versions 3.13.7
+# and higher are distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+# CONFIG.Host.hpux-parisc-gnu
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.hpux-parisc-gnu
+
+ARCH_CLASS = hpux
+
+SHARED_LIBRARIES=YES
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+AR = ar -rc
+ARCMD = $(AR) $@
+
+#==========================
+# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
+ANSI=GCC
+CPLUSPLUS=G++
+#==========================
+
+# Always keep libc shared to force using the one supplied with the
+# target machine (HP system and libc must match - important e.g. for
+# multi-CPU-systems)
+GCC_SLDFLAGS_YES = -l:libc.sl
+G++_SLDFLAGS_YES = -l:libc.sl
+
+# socket and nsl needed by libca.a
+#ARCH_DEP_LDLIBS += -lsocket -lnsl
+ARCH_DEP_LDLIBS += -lpthread
+ARCH_DEP_CPPFLAGS += -D_PTHREADS -DOSITHREAD_USE_DEFAULT_STACK
+
+# Allows R3.13 built extensions to load R3.14 shared libs
+SYS_DLL_LIBS_hpux += pthread
+
+# Set runtime path for shared libraries
+empty:=                                      # trick from the make docs...
+space:= $(empty) $(empty)
+RUNTIME_LDFLAGS_YES = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
+RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))

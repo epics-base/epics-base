@@ -140,15 +140,15 @@ static void osdTimeInit ()
 		parm.HighPart = epicsEpochFT.dwHighDateTime;
 		epicsEpoch = parm.QuadPart;
 
+        osdTimeMutex = mutex;
+        ReleaseMutex (mutex);
+
         unixStyleStatus = osdTimeSych ();
         if (unixStyleStatus!=tsStampOK) {
+            osdTimeMutex = NULL;
             CloseHandle (mutex);
             return;
         }
-
-        osdTimeMutex = mutex;
-        ReleaseMutex (mutex);
-        assert (win32Stat);
 
         //
         // spawn off a thread which periodically resynchronizes the offset

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.22  1996/06/19 17:59:31  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.21  1995/10/18  16:44:36  jhill
  * select time out must be greater than a vxWorks tick
  *
@@ -51,6 +54,7 @@ LOCAL void ca_extra_event_labor(void *pArg);
 LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
 LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
+LOCAL void ca_check_for_fp();
 
 
 
@@ -209,10 +213,7 @@ LOCAL int cac_add_task_variable (struct ca_static *ca_temp)
         TVIU                    *ptviu;
         int                     status;
 
-        status = ca_check_for_fp();
-        if(status != ECA_NORMAL){
-                return status;
-        }
+        ca_check_for_fp();
 	
 #       ifdef DEBUG
                 ca_printf("CAC: adding task variable\n");
@@ -620,10 +621,7 @@ int ca_import(int tid)
         struct ca_static *pcas;
         TVIU            *ptviu;
 
-        status = ca_check_for_fp();
-        if(status != ECA_NORMAL){
-                return status;
-        }
+        ca_check_for_fp();
 
 	/*
 	 * just return success if they have already done
@@ -701,15 +699,14 @@ int ca_import_cancel(int tid)
 /*
  * ca_check_for_fp()
  */
-int ca_check_for_fp()
+LOCAL void ca_check_for_fp()
 {
 	int             options;
 
 	assert(taskOptionsGet(taskIdSelf(), &options) == OK);
 	if (!(options & VX_FP_TASK)) {
-		return ECA_NEEDSFP;
+		ca_signal(ECA_NEEDSFP, taskName(taskIdSelf()));
         }
-        return ECA_NORMAL;
 }
 
 

@@ -335,7 +335,7 @@ endif # LIBRARY
 
 all::	install
 
-build:: $(LIBTARGETS) $(PROD) $(TESTPROD) \
+build:: $(LIBTARGETS) $(PROD) $(TESTPROD) $(INSTALLS) \
 	$(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
@@ -743,6 +743,8 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 .PRECIOUS: %.o %.c
 
 -include DEPENDS
+
+$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 
 .PHONY:: all inc depends build install clean rebuild buildInstall
 

@@ -48,7 +48,7 @@ rebuild:: clean install
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
-         $(LIBNAME) $(LIBNAME_CXX) $(TARGETS) $(PROD) $(DBDNAME)
+         $(LIBNAME) $(LIBNAME_CXX) $(TARGETS) $(PROD) $(DBDNAME) $(INSTALLS)
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
  

@@ -1397,3 +1397,14 @@ INITHOOKafterCaLinkInit1 is replaced by INITHOOKafterCaLinkInit
 <br>INITHOOKafterCaLinkInit2 no longer exists
 </body>
 </html>
+
+<h1>
+EPICS Base Release R3.14</h1>
+
+<h4>
+IOC Log Server</h4>
+The log server now finds the proper latest date in an old log file when it
+restarts, and begins logging (overwriting old messages) just after the
+newest message in the file. This causes the log server to overwrite only 
+the oldest message in the log file. Originally, the log server always started
+at the end of of any preexisting log file when it restarted.

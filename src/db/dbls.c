@@ -71,7 +71,6 @@
 #include <dbRecords.h>
 #include <errMdef.h>
 #include <errno.h>
-#include <error.h>
 #include <sdrHeader.h>
 
 #ifndef vxWorks
@@ -96,7 +95,7 @@ static void ChoiceRec();
 static void ChoiceDev();
 static void ChoiceCvt();
 static void ChoiceGbl();
-static void DbErrDes();
+/*static void DbErrDes();*/
 static void DbRecords();
 static void RecSup();
 static int  getSelection();
@@ -144,9 +143,11 @@ static struct PRTAB {
     {
 	"choiceGbl", ChoiceGbl
     },
+/*
     {
 	"dbErrDes", DbErrDes
     },
+*/
     {
 	"recSup", RecSup
     },
@@ -985,6 +986,8 @@ ChoiceRec(fp, fflag)
 	}
     }
 }				/* end of ChoiceRec */
+
+#if 0 /* COMMENTED OUT - needs rework for new error message structure - rcz*/
 static void
 DbErrDes(fp, fflag)
     FILE           *fp;
@@ -1028,6 +1031,10 @@ DbErrDes(fp, fflag)
 	}
     }
 }				/* end of DbErrDes */
+#endif
+
+
+
 static void
 DbRecords(fp, fflag)
     FILE           *fp;

@@ -132,11 +132,19 @@ char * pResourceFilename;
     }
     initialized = TRUE;
     taskwdInit();
+
+    /* added for Channel Access Links */
+    dbCaLinkInit((int) 1);
+
     if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n");
     if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n");
     if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
     ts_init();
     if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n");
+ 
+    /* added for Channel Access Links */
+    dbCaLinkInit((int) 2);
+
     if(finishDevSup()!=0) logMsg("iocInit: Device Support Failed during Finalization\n");
 
     /* if user exit exists call it */
@@ -217,7 +225,7 @@ static long initRecSup()
     recSup->papRset = (void *)((long)recSup + (long)sizeof(struct recSup));
 
     /* added for Channel Access Links */
-    dbCaLinkInit((int) 1);
+    /* dbCaLinkInit((int) 1); */
 
     for(i=0; i< (recSup->number); i++) {
 	if(dbRecType->papName[i] == NULL)continue;
@@ -241,7 +249,7 @@ static long initRecSup()
     }
 
     /* added for Channel Access Links */
-    dbCaLinkInit((int) 2);
+    /* dbCaLinkInit((int) 2); */
 
     return(status);
 }

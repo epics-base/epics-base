@@ -144,6 +144,8 @@ extern struct dbBase *pdbBase;
 long jba_debug=0;
 
 long dbPut();
+/* Added for Channel Access Links */
+long dbCaGetLink();
 
 #define MAX_LOCK 10
 
@@ -274,6 +276,12 @@ long dbProcess(struct dbCommon *precord)
 			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
 		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
 	}
+	if(precord->sdis.type == CA_LINK) 
+	{
+		status = dbCaGetLink(&(precord->sdis));
+		if(!RTN_SUCCESS(status)) 
+		    recGblRecordError(status,precord,"dbProcess");
+	} /* endif */
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
 		if(trace && trace_lset==lset)

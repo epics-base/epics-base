@@ -111,13 +111,8 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
     if ( status ) {
         this->connTMO = CA_CONN_VERIFY_PERIOD;
-        ca_printf (
-            "EPICS \"%s\" double fetch failed\n",
-            EPICS_CA_CONN_TMO.name);
-        ca_printf (
-            "Defaulting \"%s\" = %f\n",
-            EPICS_CA_CONN_TMO.name,
-            this->connTMO);
+        ca_printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
+        ca_printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
     }
 
     //

@@ -44,7 +44,7 @@ void recvProcessThread::entryPoint ()
     while ( ! this->shutDown ) {
 
         {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
             if ( this->enableRefCount ) {
                 this->processing = true;
             }
@@ -56,7 +56,7 @@ void recvProcessThread::entryPoint ()
 
         bool signalNeeded;
         {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
             this->processing = false;
             signalNeeded = this->blockingForCompletion > 0u;
         }
@@ -81,7 +81,7 @@ void recvProcessThread::enable ()
     unsigned copy;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         assert ( this->enableRefCount < UINT_MAX );
         copy = this->enableRefCount;
         this->enableRefCount++;
@@ -97,7 +97,7 @@ void recvProcessThread::disable ()
     bool wakeupNeeded;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
 
         if ( ! this->processing ) {
             assert ( this->enableRefCount != 0u );
@@ -113,7 +113,7 @@ void recvProcessThread::disable ()
         this->processingDone.wait ();
 
         {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
 
             if ( ! this->processing ) {
                 assert ( this->enableRefCount > 0u );
@@ -138,7 +138,7 @@ void recvProcessThread::signalActivity ()
 
 void recvProcessThread::show ( unsigned level ) const
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     printf ( "CA receive processing thread at %p state=%s\n", 
         this,  this->processing ? "busy" : "idle");
     if ( level > 0u ) {

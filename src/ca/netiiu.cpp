@@ -27,7 +27,7 @@ netiiu::~netiiu ()
 
 void netiiu::show ( unsigned level ) const
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     printf ( "network IO base class\n" );
     if ( level > 1 ) {
@@ -52,7 +52,7 @@ unsigned netiiu::channelCount () const
 // calling this
 void netiiu::attachChannel ( nciu &chan )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     this->channelList.add ( chan );
 }
 
@@ -61,7 +61,7 @@ void netiiu::attachChannel ( nciu &chan )
 void netiiu::detachChannel ( nciu &chan )
 {
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         this->channelList.remove ( chan );
         if ( this->channelList.count () == 0u ) {
             this->lastChannelDetachNotify ();
@@ -76,7 +76,7 @@ void netiiu::disconnectAllChan ( netiiu & newiiu )
     tsDLList < nciu > list;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         tsDLIterBD < nciu > chan ( this->channelList.first () );
         while ( chan.valid () ) {
             tsDLIterBD < nciu > next = chan.itemAfter ();
@@ -89,14 +89,14 @@ void netiiu::disconnectAllChan ( netiiu & newiiu )
     }
 
     {
-        osiAutoMutex autoMutex ( newiiu.mutex );
+        epicsAutoMutex autoMutex ( newiiu.mutex );
         newiiu.channelList.add ( list );
     }
 }
 
 void netiiu::connectTimeoutNotify ()
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     tsDLIterBD < nciu > chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->connectTimeoutNotify ();
@@ -106,7 +106,7 @@ void netiiu::connectTimeoutNotify ()
 
 void netiiu::resetChannelRetryCounts ()
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     tsDLIterBD < nciu > chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->resetRetryCount ();
@@ -118,7 +118,7 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
 {
     bool status;
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     tsDLIterBD < nciu > chan = this->channelList.first ();
     if ( chan.valid () ) {

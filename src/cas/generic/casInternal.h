@@ -74,7 +74,7 @@ private:
 };
 
 class ioBlockedList;
-class osiMutex;
+class epicsMutex;
 
 //
 // ioBlocked
@@ -147,7 +147,7 @@ class casMonitor : public tsDLNode<casMonitor>, public casRes {
 public:
 	casMonitor(caResId clientIdIn, casChannelI &chan, 
 	unsigned long nElem, unsigned dbrType,
-	const casEventMask &maskIn, osiMutex &mutexIn);
+	const casEventMask &maskIn, epicsMutex &mutexIn);
 	virtual ~casMonitor();
 
 	caStatus executeEvent(casMonEvent *);
@@ -179,7 +179,7 @@ public:
 private:
 	casMonEvent overFlowEvent;
 	unsigned long const nElem;
-	osiMutex &mutex;
+	epicsMutex &mutex;
 	casChannelI &ciu;
 	const casEventMask mask;
 	caResId const clientId;

@@ -276,7 +276,7 @@ void caServerI::show (unsigned level) const
     printf( "Channel Access Server Status V%d.%d\n",
         CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
     
-    this->osiMutex::show(level);
+    this->epicsMutex::show(level);
     
     this->lock();
     tsDLIterBD<casStrmClient> iterCl( this->clientList.first () );

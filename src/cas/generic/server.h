@@ -71,7 +71,7 @@
 //
 #define epicsExportSharedSymbols
 #include "casdef.h" // sets proper def for shareLib.h defines
-#include "osiMutex.h" 
+#include "epicsMutex.h" 
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp);
 void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment);
 #define serverToolDebug(COMMENT) \
@@ -146,7 +146,7 @@ public:
 
 private:
 	tsDLList<casEvent> eventLogQue;
-	osiMutex mutex;
+	epicsMutex mutex;
 	casEventPurgeEv *pPurgeEvent; // flow control purge complete event
 	unsigned numEventBlocks;	// N event blocks installed
 	unsigned maxLogEntries; // max log entries
@@ -166,7 +166,7 @@ class casClientMon : public casMonitor {
 public:
 	casClientMon(casChannelI &, caResId clientId,
 		const unsigned long count, const unsigned type,
-		const casEventMask &maskIn, osiMutex &mutexIn);
+		const casEventMask &maskIn, epicsMutex &mutexIn);
 	virtual ~casClientMon();
 
 	caStatus callBack (const smartConstGDDPointer &pValue);
@@ -294,7 +294,7 @@ protected:
 	bufSizeT popCtx (const inBufCtx &); // returns actual size
 
 private:
-    osiMutex    mutex;
+    epicsMutex  mutex;
     char        *pBuf;
     bufSizeT    bufSize;
     bufSizeT    bytesInBuffer;
@@ -389,7 +389,7 @@ protected:
 	void clear ();
 
 private:
-    osiMutex    mutex;
+    epicsMutex  mutex;
 	char        *pBuf;
 	bufSizeT    bufSize;
 	bufSizeT    stack;
@@ -411,7 +411,7 @@ private:
 // (this will eventually support direct communication
 // between the client lib and the server lib)
 //
-class casCoreClient : public osiMutex, public ioBlocked, 
+class casCoreClient : public epicsMutex, public ioBlocked, 
 	public casEventSys {
 
 	//
@@ -815,7 +815,7 @@ class casClientMon;
 // caServerI
 // 
 class caServerI : 
-	public osiMutex, // osiMutex must be first because it is used
+	public epicsMutex, // osiMutex must be first because it is used
 			// by ioBlockedList and casEventRegistry
 	public caServerOS, 
 	public caServerIO, 

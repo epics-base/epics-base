@@ -47,8 +47,8 @@
 #include "osiSem.h"
 #include "osiThread.h"
 #include "osiTimer.h"
-#include "osiMutex.h"
-#include "osiEvent.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "resourceLib.h"
 #include "localHostName.h"
 #include "ipAddrToAsciiAsynchronous.h"
@@ -236,8 +236,8 @@ class netiiu;
 
 class nciuPrivate {
 private:
-    osiMutex mutex;
-    osiEvent ptrLockReleaseWakeup;
+    epicsMutex mutex;
+    epicsEvent ptrLockReleaseWakeup;
 
     friend class nciu;
 };
@@ -521,7 +521,7 @@ public:
 
 protected:
     cac * pCAC () const;
-    mutable osiMutex mutex;
+    mutable epicsMutex mutex;
 private:
     tsDLList < nciu > channelList;
     class cac *pClientCtx;
@@ -537,7 +537,7 @@ extern limboiiu limboIIU;
 
 class udpiiu;
 
-class searchTimer : private osiTimer, private osiMutex {
+class searchTimer : private osiTimer, private epicsMutex {
 
 public:
     searchTimer ( udpiiu &iiu, osiTimerQueue &queue );
@@ -761,7 +761,7 @@ public:
     bool alive () const;
     bhe * getBHE () const;
 private:
-    osiMutex flushMutex; // only one thread flushes at a time
+    epicsMutex flushMutex; // only one thread flushes at a time
     chronIntIdResTable < baseNMIU > ioTable;
     comQueSend sendQue;
     comQueRecv recvQue;
@@ -918,11 +918,11 @@ private:
     // and therefore reduces the chance of creating
     // a deadlock window during code maintenance.
     //
-    osiEvent recvActivity;
+    epicsEvent recvActivity;
     class cac *pcac;
-    osiEvent exit;
-    osiEvent processingDone;
-    mutable osiMutex mutex;
+    epicsEvent exit;
+    epicsEvent processingDone;
+    mutable epicsMutex mutex;
     unsigned enableRefCount;
     unsigned blockingForCompletion;
     bool processing;
@@ -937,9 +937,9 @@ public:
     void signalShutDown ();
     void signalActivity ();
 private:
-    osiEvent sendActivity;
+    epicsEvent sendActivity;
     class cac &cacRef;
-    osiEvent exit;
+    epicsEvent exit;
     bool shutDown;
 };
 
@@ -994,8 +994,8 @@ private:
     unsigned magic;
     unsigned long opPendCount;
     unsigned long seqNo;
-    osiEvent sem;
-    osiMutex mutex;
+    epicsEvent sem;
+    epicsMutex mutex;
     tsDLList <syncGroupNotify> ioList;
 
     static tsFreeList < struct CASG, 128 > freeList;
@@ -1018,10 +1018,10 @@ public:
     void showOutstandingIO ( unsigned level ) const;
     void waitForCompletionOfIO ( double delaySec );
 private:
-    unsigned    pndrecvcnt;
-    unsigned    readSeq;
-    osiMutex    mutex;
-    osiEvent    ioDone;
+    unsigned pndrecvcnt;
+    unsigned readSeq;
+    epicsMutex mutex;
+    epicsEvent ioDone;
 };
 
 //
@@ -1125,9 +1125,9 @@ private:
     osiTime                 programBeginTime;
     double                  connTMO;
     // defaultMutex can be applied if iiuListMutex is already applied
-    mutable osiMutex        defaultMutex; 
+    mutable epicsMutex      defaultMutex; 
     // iiuListMutex must not be applied if defaultMutex is already applied
-    mutable osiMutex        iiuListMutex;
+    mutable epicsMutex      iiuListMutex;
     osiTimerQueue           *pTimerQueue;
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;

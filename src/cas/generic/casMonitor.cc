@@ -43,7 +43,7 @@
 //
 casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 	unsigned long nElemIn, unsigned dbrTypeIn,
-	const casEventMask &maskIn, osiMutex &mutexIn) :
+	const casEventMask &maskIn, epicsMutex &mutexIn) :
 	nElem(nElemIn),
 	mutex(mutexIn),
 	ciu(chan),

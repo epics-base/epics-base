@@ -459,7 +459,7 @@ void udpiiu::shutdown ()
     bool laborNeeded;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         laborNeeded = ! this->shutdownCmd;
         this->shutdownCmd = true;
     }
@@ -741,7 +741,7 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
         return false;
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( msgsize + this->nBytesInXmitBuf > sizeof ( this->xmitBuf ) ) {
         return false;
@@ -767,7 +767,7 @@ void udpiiu::flush ()
 {
     osiSockAddrNode  *pNode;
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( this->nBytesInXmitBuf == 0u ) {
         return;
@@ -831,7 +831,7 @@ SOCKET udpiiu::getSock () const
 
 void udpiiu::show ( unsigned level ) const
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     printf ( "Datagram IO circuit (and disconnected channel repository)\n");
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );

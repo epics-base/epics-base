@@ -23,7 +23,7 @@ inline bool tcpiiu::fullyConstructed () const
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     if ( this->pHostNameCache ) {
         this->pHostNameCache->hostName ( pBuf, bufLength );
     }
@@ -48,7 +48,7 @@ inline SOCKET tcpiiu::getSock () const
 inline void tcpiiu::flush ()
 {
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         this->flushPending = true;
     }
     semBinaryGive ( this->sendThreadFlushSignal );

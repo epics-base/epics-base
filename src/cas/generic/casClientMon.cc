@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  2000/04/28 02:23:30  jhill
+ * many, many changes
+ *
  * Revision 1.5  1999/09/15 00:00:40  jhill
  * changed the field name "m_type" to "m_dataType" to avoid
  * collision with a MACRO that is defined by the SENS IP stack
@@ -60,7 +63,7 @@
 //
 casClientMon::casClientMon(casChannelI &chan,  caResId clientIdIn,
 	const unsigned long count, const unsigned type,
-	const casEventMask &maskIn, osiMutex &mutexIn) : 
+	const casEventMask &maskIn, epicsMutex &mutexIn) : 
 	casMonitor(clientIdIn, chan, count, type, maskIn, mutexIn)
 {
 }

@@ -16,7 +16,7 @@
  */
 
 #include "tsDLList.h"
-#include "osiMutex.h"
+#include "epicsMutex.h"
 
 #include "shareLib.h"
 
@@ -158,7 +158,7 @@ public:
 private:
 };
 
-class cacServiceList : private osiMutex {
+class cacServiceList : private epicsMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );

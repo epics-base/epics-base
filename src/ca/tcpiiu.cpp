@@ -105,7 +105,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         }
 
         {
-            osiAutoMutex autoMutex ( piiu->mutex );
+            epicsAutoMutex autoMutex ( piiu->mutex );
             laborNeeded = piiu->busyStateDetected != piiu->flowControlActive;
         }
 
@@ -132,7 +132,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         }
 
         {
-            osiAutoMutex autoMutex ( piiu->mutex );
+            epicsAutoMutex autoMutex ( piiu->mutex );
             laborNeeded = piiu->echoRequestPending;
             piiu->echoRequestPending = false;
         }
@@ -148,7 +148,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         }
 
         {
-            osiAutoMutex autoMutex ( piiu->mutex );
+            epicsAutoMutex autoMutex ( piiu->mutex );
             laborNeeded = piiu->flushPending;
             piiu->flushPending = false;
         }
@@ -270,7 +270,7 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
     totalBytes = static_cast <unsigned> ( status );
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         if ( nBytesInBuf == totalBytes ) {
             if ( this->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
                 this->busyStateDetected = true;
@@ -300,7 +300,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     piiu->connect ();
 
     {
-        osiAutoMutex autoMutex ( piiu->mutex );
+        epicsAutoMutex autoMutex ( piiu->mutex );
         if ( piiu->state == iiu_connected ) {
             unsigned priorityOfSend;
             threadBoolStatus tbs;
@@ -330,7 +330,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     while ( piiu->state == iiu_connected ) {
         unsigned nBytes;
         {
-            osiAutoMutex autoMutex ( piiu->mutex );
+            epicsAutoMutex autoMutex ( piiu->mutex );
             nBytes = piiu->recvQue.occupiedBytes ();
         }
         if ( nBytes >= 0x4000 ) {
@@ -342,7 +342,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
                 unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
                 if ( nBytesIn ) {
                     {
-                        osiAutoMutex autoMutex ( piiu->mutex );
+                        epicsAutoMutex autoMutex ( piiu->mutex );
                         piiu->recvQue.pushLastComBufReceived ( *pComBuf );
                     }
                     piiu->pCAC ()->signalRecvActivity ();
@@ -434,7 +434,7 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
     int status;
     int flag;
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     this->addr = addrIn;
 
@@ -543,7 +543,7 @@ void tcpiiu::connect ()
 
             this->cancelSendWatchdog ();
 
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
 
             if ( this->state == iiu_connecting ) {
                 // put the iiu into the connected state
@@ -589,7 +589,7 @@ void tcpiiu::cleanShutdown ()
     this->cancelSendWatchdog ();
     this->cancelRecvWatchdog ();
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( this->state == iiu_connected ) {
         int status = ::shutdown ( this->sock, SD_BOTH );
@@ -635,7 +635,7 @@ void tcpiiu::forcedShutdown ()
     this->cancelSendWatchdog ();
     this->cancelRecvWatchdog ();
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     if ( this->state != iiu_disconnected ) {
         // force abortive shutdown sequence (discard outstanding sends
@@ -671,7 +671,7 @@ void tcpiiu::disconnect ()
     assert ( this->fullyConstructedFlag );
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         this->ioTable.traverse ( &baseNMIU::destroy );
     }
 
@@ -738,7 +738,7 @@ void tcpiiu::disconnect ()
      * free message body cache
      */
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
 
         if ( this->pCurData ) {
             free ( this->pCurData );
@@ -813,7 +813,7 @@ bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &add
     }
 
     if ( ! match ) {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         char acc[64];
         if ( this->pHostNameCache ) {
             this->pHostNameCache->hostName ( acc, sizeof ( acc ) );
@@ -831,7 +831,7 @@ bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &add
 
 void tcpiiu::show ( unsigned level ) const
 {
-    osiAutoMutex autoMuext ( this->mutex );
+    epicsAutoMutex autoMuext ( this->mutex );
     char buf[256];
     if ( this->pHostNameCache ) {
         this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
@@ -877,7 +877,7 @@ void tcpiiu::show ( unsigned level ) const
 bool tcpiiu::setEchoRequestPending ()
 {
     {
-        osiAutoMutex autoMuext ( this->mutex );
+        epicsAutoMutex autoMuext ( this->mutex );
         this->echoRequestPending = true;
     }
     this->flush ();
@@ -909,7 +909,7 @@ int tcpiiu::hostNameSetRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( postSize + 16u );
     if ( status == ECA_NORMAL ) {
@@ -945,7 +945,7 @@ int tcpiiu::userNameSetRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( postSize + 16u );
     if ( status == ECA_NORMAL ) {
@@ -969,7 +969,7 @@ int tcpiiu::disableFlowControlRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -990,7 +990,7 @@ int tcpiiu::enableFlowControlRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1011,7 +1011,7 @@ int tcpiiu::noopRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1032,7 +1032,7 @@ int tcpiiu::echoRequest ()
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1181,7 +1181,7 @@ void tcpiiu::exceptionRespAction ()
     caHdr *req = (caHdr *) this->pCurData;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
 
         if ( this->pHostNameCache ) {
             this->pHostNameCache->hostName ( hostName, sizeof ( hostName ) );
@@ -1263,7 +1263,7 @@ void tcpiiu::badTCPRespAction ()
     char hostName[64];
     bool hostNameInit;
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         if ( this->pHostNameCache ) {
             this->pHostNameCache->hostName ( hostName, sizeof ( hostName ) );
             hostNameInit = true;
@@ -1294,7 +1294,7 @@ void tcpiiu::processIncoming ()
         // fetch a complete message header
         //
         {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
 
             if ( ! this->msgHeaderAvailable ) {
 
@@ -1438,7 +1438,7 @@ int tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( postcnt + 16u );
     if ( status == ECA_NORMAL ) {
@@ -1501,7 +1501,7 @@ int tcpiiu::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type,
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( postcnt + 16u );
     if ( status == ECA_NORMAL ) {
@@ -1549,7 +1549,7 @@ int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *p
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1592,7 +1592,7 @@ int tcpiiu::readNotifyRequest ( nciu &chan, cacNotify &notify,
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1646,7 +1646,7 @@ int tcpiiu::createChannelRequest ( nciu &chan )
         this->flush ();
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( postCnt + 16u );
     if ( status == ECA_NORMAL ) {
@@ -1683,7 +1683,7 @@ int tcpiiu::clearChannelRequest ( nciu &chan )
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1733,7 +1733,7 @@ int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
         }
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 32u );
     if ( status == ECA_NORMAL ) {
@@ -1770,7 +1770,7 @@ int tcpiiu::subscriptionCancelRequest ( netSubscription &subscr )
         this->flushToWire ( true );
     }
 
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
 
     int status = this->sendQue.reserveSpace ( 16u );
     if ( status == ECA_NORMAL ) {
@@ -1816,13 +1816,13 @@ bool tcpiiu::flushToWire ( bool userThread )
     // only one thread at a time can perform a flush. Nevertheless,
     // the primary lock must not be held while sending in order
     // to prevent push pull deadlocks
-    osiAutoMutex autoFlushMutex ( this->flushMutex );
+    epicsAutoMutex autoFlushMutex ( this->flushMutex );
 
     while ( true ) {
         comBuf * pBuf;
 
         {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
             pBuf = this->sendQue.popNextComBufToSend ();
         }
 
@@ -1835,7 +1835,7 @@ bool tcpiiu::flushToWire ( bool userThread )
         pBuf->destroy ();
 
         if ( ! success ) {
-            osiAutoMutex autoMutex ( this->mutex );
+            epicsAutoMutex autoMutex ( this->mutex );
             while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
                 pBuf->destroy ();
             }
@@ -1853,7 +1853,7 @@ bool tcpiiu::flushToWire ( bool userThread )
 void tcpiiu::ioCompletionNotify ( unsigned id, unsigned type, 
                               unsigned long count, const void *pData )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
         pmiu->completionNotify ( type, count, pData );
@@ -1862,7 +1862,7 @@ void tcpiiu::ioCompletionNotify ( unsigned id, unsigned type,
 
 void tcpiiu::ioExceptionNotify ( unsigned id, int status, const char *pContext )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
         pmiu->exceptionNotify ( status, pContext );
@@ -1872,7 +1872,7 @@ void tcpiiu::ioExceptionNotify ( unsigned id, int status, const char *pContext )
 void tcpiiu::ioExceptionNotify ( unsigned id, int status, 
                    const char *pContext, unsigned type, unsigned long count )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
         pmiu->exceptionNotify ( status, pContext, type, count );
@@ -1884,7 +1884,7 @@ void tcpiiu::ioCompletionNotifyAndDestroy ( unsigned id )
     baseNMIU * pmiu;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         pmiu = this->ioTable.remove ( id );
         if ( pmiu ) {
             pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
@@ -1903,7 +1903,7 @@ void tcpiiu::ioCompletionNotifyAndDestroy ( unsigned id,
     baseNMIU * pmiu;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         pmiu = this->ioTable.remove ( id );
         if ( pmiu ) {
             pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
@@ -1921,7 +1921,7 @@ void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *
     baseNMIU * pmiu;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         pmiu = this->ioTable.remove ( id );
         if ( pmiu ) {
             pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
@@ -1940,7 +1940,7 @@ void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     baseNMIU * pmiu;
 
     {
-        osiAutoMutex autoMutex ( this->mutex );
+        epicsAutoMutex autoMutex ( this->mutex );
         pmiu = this->ioTable.remove ( id );
         if ( pmiu ) {
             pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
@@ -1957,7 +1957,7 @@ void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status,
 // resubscribe for monitors from this channel
 void tcpiiu::subscribeAllIO ( nciu &chan )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         tsDLIterBD < baseNMIU > iter = 
             chan.tcpiiuPrivateListOfIO::eventq.first ();
@@ -1971,7 +1971,7 @@ void tcpiiu::subscribeAllIO ( nciu &chan )
 // cancel IO operations and monitor subscriptions
 void tcpiiu::disconnectAllIO ( nciu &chan )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         tsDLIterBD < baseNMIU > iter = 
             chan.tcpiiuPrivateListOfIO::eventq.first ();
@@ -1990,7 +1990,7 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
 
 void tcpiiu::unistallSubscription ( nciu &chan, netSubscription &subscr )
 {
-    osiAutoMutex autoMutex ( this->mutex );
+    epicsAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
         baseNMIU *p = this->ioTable.remove ( subscr );
         if ( p ) {

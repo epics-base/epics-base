@@ -153,7 +153,8 @@ static long init_record(pcalc,pass)
     short error_number;
     char rpbuf[184];
 
-    struct dbAddr       *pAddr = 0;
+    struct dbAddr       dbAddr;
+    struct dbAddr       *pAddr = &dbAddr;
     struct rpvtStruct   *prpvt;
 
     if (pass==0) {
@@ -335,7 +336,8 @@ static long special(paddr,after)
 {
     struct calcoutRecord *pcalc = (struct calcoutRecord *)(paddr->precord);
     struct rpvtStruct   *prpvt = (struct rpvtStruct *)pcalc->rpvt;
-    struct dbAddr       *pAddr = 0;
+    struct dbAddr       dbAddr;
+    struct dbAddr       *pAddr = &dbAddr;
     short error_number;
     char rpbuf[184];
     int                 fieldIndex = dbGetFieldIndex(paddr);

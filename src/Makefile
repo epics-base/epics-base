@@ -27,7 +27,7 @@
 #  -----------------
 #  .01	mm-dd-yy	iii	Comment
 #  .02  08-16-93	rcz	moving most of these pre-builds back to the
-#		 Imakefile and add DependTarget($(EARLYSRC))
+# object area Imakefile and adding DependTarget($(EARLYSRC))
 #
 #  	...
 #
@@ -44,9 +44,4 @@ dlsource:
 eddsource:
 	cd opi/edd ; /bin/sh build.it
 
-seqsource:
-	cd sequencer ; /bin/sh build.it
-
-devtestsource:
-	cd toolsComm/devtest ; /bin/sh build.it
 

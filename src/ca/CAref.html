@@ -809,17 +809,17 @@ and then output to the console.</p>
 Match</a></h4>
 
 <p>Verify that the broadcast addresses are identical on the server's host and
-on the client's host. This can be checked  on UNIX with "netstat -i" or
+on the client's host. This can be checked on UNIX with "netstat -i" or
 "ifconfig -a"; on vxWorks with ifShow; and on windows with ipconfig. It is
-normal for the broadcast addresses to not be idenical if the client and
-server are not directl,y attached to the same IP subnet, and in this
-situtaion the EPICS_CA_ADDR_LIST must be set. Otherwise, if the client and
-server should be on the same IP subnet, then the problem may be that the
+normal for the broadcast addresses to not be identical if the client and
+server are not directly attached to the same IP subnet, and in this situation
+the EPICS_CA_ADDR_LIST must be set. Otherwise, if the client and server are
+intended to be on the same IP subnet, then the problem may be that the
 netmask is incorrectly set in the network interface configuration. On most
-operating systems when the host's IP address is configured the host's IP
-subnet mask is also configured .</p>
+operating systems, when the host's IP address is configured, the host's IP
+subnet mask is also configured.</p>
 
-<h4><a name="Client">Client Isnt Configured to Use the Server's Port</a></h4>
+<h4><a name="Client">Client Isn't Configured to Use the Server's Port</a></h4>
 
 <p>Verify that the client and server are using the same UDP port. Check the
 server's port by running "netstat -a | grep nnn" where nnn is the port number

@@ -5,6 +5,11 @@ endif
 #---------------------------------------------------------------
 # Epics base directories
 
+EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH)
+ifdef T_A
+EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
+endif
+
 #Definitions for extensions convenience
 Com_DIR             = $(EPICS_BASE_LIB)
 asHost_DIR          = $(EPICS_BASE_LIB)

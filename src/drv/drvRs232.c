@@ -35,6 +35,7 @@
 
 #include <vxWorks.h>
 #include <types.h>
+#if 0 /* COMMENTED OUT SOME INCLUDES */
 #include <iosLib.h>
 #include <taskLib.h>
 #include <memLib.h>
@@ -43,13 +44,15 @@
 #include <wdLib.h>
 #include <tickLib.h>
 #include <vme.h>
+#endif /* COMMENTED OUT SOME INCLUDES */
+
 
 #include <task_params.h>
 #include <module_types.h>
 #include <drvSup.h>
 #include <devSup.h>
 #include <dbDefs.h>
-#include <dbCommon.h>
+#include <rec/dbCommon.h>
 #include <dbAccess.h>
 #include <link.h>
 #include <callback.h>

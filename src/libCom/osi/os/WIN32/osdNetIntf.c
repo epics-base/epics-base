@@ -132,6 +132,20 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 	DWORD				cbBytesReturned;
     osiSockAddrNode     *pNewNode;
 
+    if ( pMatchAddr->sa.sa_family == AF_INET  ) {
+        if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
+            if ( pNewNode == NULL ) {
+                return;
+            }
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_port = 0u;
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            ellAdd ( pList, &pNewNode->node );
+            return;
+        }
+    }
+
 	/* only valid for winsock 2 and above */
 	if (wsaMajorVersion() < 2 ) {
 		fprintf(stderr, "Need to set EPICS_CA_AUTO_ADDR_LIST=NO for winsock 1\n");
@@ -165,11 +179,8 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 			continue;
 		}
 
-		/*
-		 * dont use the loop back interface
-		 */
 		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
-			continue;
+            continue;
 		}
 
 		/*
@@ -208,7 +219,8 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             return;
         }
 
-        if (pIfinfo->iiAddress.Address.sa_family == AF_INET && pIfinfo->iiFlags & IFF_BROADCAST) {
+        if (pIfinfo->iiAddress.Address.sa_family == AF_INET && 
+                pIfinfo->iiFlags & IFF_BROADCAST) {
             const unsigned mask = pIfinfo->iiNetmask.AddressIn.sin_addr.s_addr;
             const unsigned bcast = pIfinfo->iiBroadcastAddress.AddressIn.sin_addr.s_addr;
             const unsigned addr = pIfinfo->iiAddress.AddressIn.sin_addr.s_addr;

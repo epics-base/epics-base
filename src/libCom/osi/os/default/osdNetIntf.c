@@ -62,6 +62,21 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     struct ifreq                    *pifreq;
     struct ifreq                    *pnextifreq;
     osiSockAddrNode                 *pNewNode;
+
+    if ( pMatchAddr->sa.sa_family == AF_INET  ) {
+        if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
+            if ( pNewNode == NULL ) {
+                errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
+                return;
+            }
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_port = 0u;
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            ellAdd ( pList, &pNewNode->node );
+            return;
+        }
+    }
      
     /*
      * use pool so that we avoid using too much stack space
@@ -134,7 +149,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * dont use the loop back interface
+         * dont use the loop back interface 
          */
         if ( pifreq->ifr_flags & IFF_LOOPBACK ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", pifreq->ifr_name) );

@@ -50,7 +50,7 @@ dbChannelIO::~dbChannelIO ()
      * remove any subscriptions attached to this channel
      */
     tsDLIterBD <dbSubscriptionIO> iter = this->eventq.first ();
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         tsDLIterBD <dbSubscriptionIO> next = iter.itemAfter ();
         iter->destroy ();
         iter = next;

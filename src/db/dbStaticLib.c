@@ -30,6 +30,7 @@
  * -----------------
  * .01	02-03-93	mrk	Consolidated all databse defs in one place
  * .02	09-10-93	mrk	dbIsDefault always returns FALSE for DEVCHOICE
+ * .03	02-23-94	mrk	dbPutString to DEV_CHOICE. Ok if no INP or OUT
  */
 
 #ifdef vxWorks
@@ -1314,6 +1315,10 @@ DBENTRY *pdbentry;
 		doubleToString(plink->value.value,message);
 		break;
 	    case PV_LINK:
+		if(plink->value.pv_link.process_passive<0
+		||plink->value.pv_link.process_passive>1) plink->value.pv_link.process_passive=0;
+		if(plink->value.pv_link.maximize_sevr<0
+		||plink->value.pv_link.maximize_sevr>1) plink->value.pv_link.maximize_sevr=0;
 	        sprintf(message,"%s.%4.4s %s %s",
 		    plink->value.pv_link.pvname,plink->value.pv_link.fldname,
 		    ppstring[plink->value.pv_link.process_passive],
@@ -1378,10 +1383,8 @@ DBENTRY *pdbentry;
 		doubleToString(plink->value.value,message);
 		break;
 	    case PV_LINK:
-	        sprintf(message,"%s.%4.4s %s %s",
-		    plink->value.pv_link.pvname,plink->value.pv_link.fldname,
-		    ppstring[plink->value.pv_link.process_passive],
-		    msstring[plink->value.pv_link.maximize_sevr]);
+	        sprintf(message,"%s.%4.4s",
+		    plink->value.pv_link.pvname,plink->value.pv_link.fldname);
 		break;
 	    default :
 	        return(NULL);
@@ -1568,9 +1571,10 @@ char *pstring;
 		    long link_type,status;
 
 		    link_type = pdevChoiceSet->papDevChoice[i]->link_type;
-		    status = checkDevChoice(pdbentry,link_type);
-		    if(!status) *(unsigned short *)pfield = i;
-		    return(status);
+		    /*If no INP or OUT OK */
+		    checkDevChoice(pdbentry,link_type);
+		    *(unsigned short *)pfield = i;
+		    return(0);
 		}
 	    }
 	}

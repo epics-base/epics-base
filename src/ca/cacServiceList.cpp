@@ -19,44 +19,37 @@
 
 epicsShareDef cacServiceList cacGlobalServiceList;
 
-cacServiceList::cacServiceList ()
-{
-}
-
 void cacServiceList::registerService ( cacServiceIO &service )
 {
-    this->lock ();
+    epicsAutoMutex locker ( this->mutex );
     this->services.add ( service );
-    this->unlock ();
 }
 
-cacChannelIO * cacServiceList::createChannelIO ( const char *pName, 
-    cac &cacCtx, cacChannelNotify &chan )
+cacChannelIO * cacServiceList::createChannelIO ( 
+    const char *pName, cacChannelNotify &chan )
 {
     cacChannelIO *pChanIO = 0;
 
-    this->lock ();
+    epicsAutoMutex locker ( this->mutex );
     tsDLIterBD < cacServiceIO > iter = this->services.firstIter ();
     while ( iter.valid () ) {
-        pChanIO = iter->createChannelIO ( pName, cacCtx, chan );
+        pChanIO = iter->createChannelIO ( pName, chan );
         if ( pChanIO ) {
             break;
         }
         iter++;
     }
-    this->unlock ();
 
     return pChanIO;
 }
 
 void cacServiceList::show ( unsigned level ) const
 {
-    this->lock ();
+    epicsAutoMutex locker ( this->mutex );
     tsDLIterConstBD < cacServiceIO > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         iter->show ( level );
         iter++;
     }
-    this->unlock ();
 }
 

@@ -31,6 +31,7 @@
 #include "oldAccess.h"
 
 tsFreeList < struct CASG, 128 > CASG::freeList;
+epicsMutex CASG::freeListMutex;
 
 CASG::CASG (cac &cacIn) :
     client (cacIn), magic (CASG_MAGIC), opPendCount (0u), seqNo (0u)
@@ -46,13 +47,14 @@ void CASG::destroy ()
 CASG::~CASG ()
 {
     if ( this->verify () ) {
-        this->mutex.lock ();
-        tsDLIterBD <syncGroupNotify> notify = this->ioList.firstIter ();
-        while ( notify.valid () ) {
-            notify->release ();
-            notify = this->ioList.firstIter ();
+        {
+            epicsAutoMutex locker ( this->mutex );
+            tsDLIterBD <syncGroupNotify> notify = this->ioList.firstIter ();
+            while ( notify.valid () ) {
+                notify->release ();
+                notify = this->ioList.firstIter ();
+            }
         }
-        this->mutex.unlock ();
         this->client.uninstallCASG ( *this );
         this->magic = 0;
     }
@@ -82,16 +84,6 @@ int CASG::block ( double timeout )
         return ECA_TIMEOUT;
     }
 
-    /*
-     * dont allow recursion
-     */
-    void *p = epicsThreadPrivateGet ( cacRecursionLock );
-    if ( p ) {
-        return ECA_EVDISALLOW;
-    }
-
-    epicsThreadPrivateSet ( cacRecursionLock, &cacRecursionLock );
-
     cur_time = epicsTime::getCurrent ();
 
     this->client.flush ();
@@ -103,17 +95,16 @@ int CASG::block ( double timeout )
 
     status = ECA_NORMAL;
     while ( 1 ) {
-        this->mutex.lock ();
-        if ( this->seqNo != initialSeqNo ) {
-            this->mutex.unlock ();
-            break;
+        {
+            epicsAutoMutex locker ( this->mutex );
+            if ( this->seqNo != initialSeqNo ) {
+                break;
+            }
+            if ( this->opPendCount == 0u ) {
+                this->seqNo++;
+                break;
+            }
         }
-        if ( this->opPendCount == 0u ) {
-            this->seqNo++;
-            this->mutex.unlock ();
-            break;
-        }
-        this->mutex.unlock ();
 
         remaining = timeout - delay;
         if ( remaining <= CAC_SIGNIFICANT_SELECT_DELAY ) {
@@ -122,9 +113,10 @@ int CASG::block ( double timeout )
              * recv backlog at least once
              */
             status = ECA_TIMEOUT;
-            this->mutex.lock ();
-            this->seqNo++;
-            this->mutex.unlock ();
+            {
+                epicsAutoMutex locker ( this->mutex );
+                this->seqNo++;
+            }
             break;
         }
 
@@ -140,32 +132,28 @@ int CASG::block ( double timeout )
 
     this->client.disableCallbackPreemption ();
 
-    epicsThreadPrivateSet (cacRecursionLock, NULL);
-
     return status;
 }
 
 void CASG::reset ()
 {
-    this->mutex.lock ();
+    epicsAutoMutex locker ( this->mutex );
     this->opPendCount = 0;
     this->seqNo++;
-    this->mutex.unlock ();
 }
 
 void CASG::show ( unsigned level) const
 {
-    printf ("Sync Group: id=%u, magic=%u, opPend=%lu, seqNo=%lu\n",
-        this->getId (), this->magic, this->opPendCount, this->seqNo);
+    printf ( "Sync Group: id=%u, magic=%u, opPend=%lu, seqNo=%lu\n",
+        this->getId (), this->magic, this->opPendCount, this->seqNo );
 
     if ( level ) {
-        this->mutex.lock ();
-        tsDLIterConstBD <syncGroupNotify> notify = this->ioList.firstIter ();
+        epicsAutoMutex locker ( this->mutex );
+        tsDLIterConstBD < syncGroupNotify > notify = this->ioList.firstIter ();
         while ( notify.valid () ) {
             notify->show (level);
             notify++;
         }
-        this->mutex.unlock ();
     }
 }
 
@@ -176,11 +164,13 @@ bool CASG::ioComplete () const
 
 void * CASG::operator new (size_t size)
 {
+    epicsAutoMutex locker ( CASG::freeListMutex );
     return CASG::freeList.allocate ( size );
 }
 
 void CASG::operator delete (void *pCadaver, size_t size)
 {
+    epicsAutoMutex locker ( CASG::freeListMutex );
     CASG::freeList.release ( pCadaver, size );
 }
 

@@ -17,6 +17,7 @@
 #include "iocinf.h"
 
 tsFreeList < hostNameCache, 16 > hostNameCache::freeList;
+epicsMutex hostNameCache::freeListMutex;
 
 hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :
     ipAddrToAsciiAsynchronous ( addr ),

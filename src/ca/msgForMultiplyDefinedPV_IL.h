@@ -17,10 +17,12 @@
 
 void * msgForMultiplyDefinedPV::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( msgForMultiplyDefinedPV::freeListMutex );
     return msgForMultiplyDefinedPV::freeList.allocate ( size );
 }
 
 void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( msgForMultiplyDefinedPV::freeListMutex );
     msgForMultiplyDefinedPV::freeList.release ( pCadaver, size );
 }

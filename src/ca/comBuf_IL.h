@@ -36,11 +36,13 @@ inline void comBuf::destroy ()
 
 inline void * comBuf::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( comBuf::freeListMutex );
     return comBuf::freeList.allocate ( size );
 }
 
 inline void comBuf::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( comBuf::freeListMutex );
     comBuf::freeList.release ( pCadaver, size );
 }
 
@@ -116,7 +118,7 @@ inline unsigned comBuf::removeBytes ( unsigned nBytes )
     return nBytes;
 }
 
-inline unsigned comBuf::maxBytes ()
+inline unsigned comBuf::capacityBytes ()
 {
     return comBufSize;
 }

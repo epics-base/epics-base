@@ -782,8 +782,8 @@ $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
 ifdef SHRLIB_VERSION
-	@$(RM) $(@:%.$(SHRLIB_VERSION)=%)
-	ln -s $< $(@:%.$(SHRLIB_VERSION)=%) 
+	$(RM) $(subst .$(SHRLIB_VERSION),,$@)
+	ln -s $< $(subst .$(SHRLIB_VERSION),,$@)
 endif # SHRLIB_VERSION
 
 $(INSTALL_TCLLIB)/%: %

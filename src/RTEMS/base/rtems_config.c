@@ -47,5 +47,6 @@ rtems_task Init (rtems_task_argument argument);
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 
 #include <confdefs.h>

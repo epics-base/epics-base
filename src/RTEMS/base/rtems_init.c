@@ -265,6 +265,8 @@ Init (rtems_task_argument ignored)
     char *argv[3] = { arg0, arg1, NULL };
     rtems_interval ticksPerSecond;
     rtems_task_priority newpri;
+    rtems_status_code sc;
+    rtems_time_of_day now;
 
     /*
      * Get configuration
@@ -276,6 +278,12 @@ Init (rtems_task_argument ignored)
      */
 #if defined(__i386__)
     initRemoteGdb(ticksPerSecond);
+#endif
+#if defined(__PPC) && defined(HAVE_PPCBUG)
+    {
+   extern void setBootConfigFromPPCBUGNVRAM(void);
+   setBootConfigFromPPCBUGNVRAM();
+   }
 #endif
 
     /*
@@ -307,28 +315,32 @@ Init (rtems_task_argument ignored)
     rtems_bsdnet_initialize_network ();
     printf ("***** Initializing TFTP *****\n");
     rtems_bsdnet_initialize_tftp_filesystem ();
-    for (i = 0 ; ; i++) {
-        printf ("***** Initializing NTP *****\n");
-        if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
-            break;
-        rtems_task_wake_after (5*ticksPerSecond);
-        if (i >= 12) {
-            rtems_status_code sc;
-            rtems_time_of_day now;
-            printf ("    *************** WARNING ***************\n");
-            printf ("    ***** NO RESPONSE FROM NTP SERVER *****\n");
-            printf ("    *****  TIME SET TO DEFAULT VALUE  *****\n");
-            printf ("    ***************************************\n");
-            now.year = 2001;
-            now.month = 1;
-            now.day = 1;
-            now.hour = 0;
-            now.minute = 0;
-            now.second = 0;
-            now.ticks = 0;
-            if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
-                printf ("***** Can't set time: %s\n", rtems_status_text (sc));
-            break;
+
+    /*
+     * Use BSP-supplied time of day if available
+     */
+    if (rtems_clock_get(RTEMS_CLOCK_GET_TOD,&now) != RTEMS_SUCCESSFUL) {
+        for (i = 0 ; ; i++) {
+            printf ("***** Initializing NTP *****\n");
+            if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
+                break;
+            rtems_task_wake_after (5*ticksPerSecond);
+            if (i >= 12) {
+                printf ("    *************** WARNING ***************\n");
+                printf ("    ***** NO RESPONSE FROM NTP SERVER *****\n");
+                printf ("    *****  TIME SET TO DEFAULT VALUE  *****\n");
+                printf ("    ***************************************\n");
+                now.year = 2001;
+                now.month = 1;
+                now.day = 1;
+                now.hour = 0;
+                now.minute = 0;
+                now.second = 0;
+                now.ticks = 0;
+                if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
+                    printf ("***** Can't set time: %s\n", rtems_status_text (sc));
+                break;
+            }
         }
     }
 

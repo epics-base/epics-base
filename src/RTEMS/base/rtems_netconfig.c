@@ -38,7 +38,6 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
  * application directory and make the appropriate changes.
  */
 #if defined(__i386__)
-
 extern int rtems_fxp_attach (struct rtems_bsdnet_ifconfig *, int);
 static struct rtems_bsdnet_ifconfig fxp_driver_config = {
     "fxp1",                             /* name */
@@ -53,16 +52,22 @@ static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
 };
 #define FIRST_DRIVER_CONFIG &e3c509_driver_config
 
-#else
-
-/*
- * FIXME: This really belongs in the mcp750 BSP
- */
-#if defined(__PPC) && defined(mpc750) && !defined(RTEMS_BSP_NETWORK_DRIVER_NAME) && !defined(RTEMS_BSP_NETWORK_DRIVER_ATTACH)
-# define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
-# define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
-  extern int rtems_dec21140_driver_attach();
-#endif
+#elif defined(__PPC)
+ /*
+  * FIXME: This really belongs in the BSP
+  */
+# if defined(mpc750)
+#  ifndef RTEMS_BSP_NETWORK_DRIVER_NAME
+#   define RTEMS_BSP_NETWORK_DRIVER_NAME "dc1"
+#  endif
+#  ifndef RTEMS_BSP_NETWORK_DRIVER_ATTACH
+#   define RTEMS_BSP_NETWORK_DRIVER_ATTACH rtems_dec21140_driver_attach
+    extern int rtems_dec21140_driver_attach();
+#  endif
+# endif
+# if defined(HAVE_PPCBUG)
+#  define MY_DO_BOOTP NULL
+# endif
 
 static struct rtems_bsdnet_ifconfig bsp_driver_config = {
     RTEMS_BSP_NETWORK_DRIVER_NAME,      /* name */
@@ -73,9 +78,30 @@ static struct rtems_bsdnet_ifconfig bsp_driver_config = {
 
 #endif
 
+/*
+ * Allow configure/os/CONFIG_SITE.Common.RTEMS to provide domain name
+ */
+#ifdef RTEMS_NETWORK_CONFIG_DNS_DOMAINNAME
+# define XSTR(x) STR(x)
+# define STR(x) #x
+# define MY_DOMAINNAME XSTR(RTEMS_NETWORK_CONFIG_DNS_DOMAINNAME)
+#else
+# define MY_DOMAINNAME NULL
+#endif
+
+/*
+ * Allow non-BOOTP network configuration
+ */
+#ifndef MY_DO_BOOTP
+# define MY_DO_BOOTP rtems_bsdnet_do_bootp
+#endif
+
+/*
+ * Network configuration
+ */
 struct rtems_bsdnet_config rtems_bsdnet_config = {
     FIRST_DRIVER_CONFIG,   /* Link to next interface */
-    rtems_bsdnet_do_bootp, /* Use BOOTP to get network configuration */
+    MY_DO_BOOTP,           /* How to find network config */
     0,                     /* If 0 then the network daemons will run at a */
                            /*   priority just less than the lowest-priority */
                            /*   EPICS scan thread. */
@@ -83,4 +109,6 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
                            /*   at this *RTEMS* priority */
     180*1024,              /* MBUF space */
     350*1024,              /* MBUF cluster space */
+    NULL,                  /* Host name */
+    MY_DOMAINNAME,         /* Domain name */
 };

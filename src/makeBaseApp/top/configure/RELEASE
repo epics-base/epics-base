@@ -1,12 +1,14 @@
 #RELEASE Location of external products
-#Macro substitution is not allowed in the location defintions
+# Run "gnumake clean uninstall install" in the application
+# top directory each time this file is changed.
 
-# You should do a "gnumake clean uninstall install" in the application
-# top directory each time changes are made to this file
-
-EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
+
+#If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
-# If msi is in extensions bin define EPICS_EXTENSIONS
-# else define MSI = <full path to msi executable>
-#EPICS_EXTENSIONS=$(EPICS_BASE)/../extensions
+
+#If using macro substitutions, point MSI at the binary:
+#MSI=<path>extensions/bin/$(EPICS_HOST_ARCH)/msi
+
+# EPICS_BASE usually appears last so other apps can override stuff:
+EPICS_BASE=_EPICS_BASE_

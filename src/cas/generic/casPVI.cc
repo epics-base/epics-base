@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 00:54:22  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/09/04 20:23:17  jhill
  * init new member cas and add arg to serverToolDebug()
  *
@@ -59,7 +62,8 @@ casPVI::casPVI(caServerI &casIn, const char * const pNameIn,
 	cas(casIn), 
 	pv(pvAdapterIn),
 	nMonAttached(0u),
-	nIOAttached(0u)
+	nIOAttached(0u),
+	destroyInProgress(FALSE)
 {
 	assert(&this->cas);
 	assert(&this->pv);
@@ -76,6 +80,9 @@ casPVI::~casPVI()
 	casPVListChan		*pNextChan;
 
 	this->lock();
+
+	assert(!this->destroyInProgress);
+	this->destroyInProgress = TRUE;
 
 	//
 	// delete any attached channels

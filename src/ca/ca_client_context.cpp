@@ -44,6 +44,7 @@ static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 extern "C" void cacExitHandler (void *)
 {
     epicsThreadPrivateDelete ( caClientCallbackThreadId );
+    caClientCallbackThreadId = 0;
 }
 
 // runs once only for each process

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.7  1997/08/05 00:47:21  jhill
+// fixed warnings
+//
 // Revision 1.6  1997/06/30 22:54:34  jhill
 // use %p with pointers
 //
@@ -58,7 +61,7 @@ private:
 // casStreamReadReg::casStreamReadReg()
 //
 inline casStreamReadReg::casStreamReadReg (casStreamOS &osIn) :
-	os (osIn), fdReg (osIn.getFD(), fdrRead) 
+	fdReg (osIn.getFD(), fdrRead), os (osIn)
 {
 #	if defined(DEBUG) 
 		printf ("Read on %d\n", this->os.getFD());
@@ -103,7 +106,7 @@ private:
 // casStreamWriteReg::casStreamWriteReg()
 //
 inline casStreamWriteReg::casStreamWriteReg (casStreamOS &osIn) :
-	os (osIn), fdReg (osIn.getFD(), fdrWrite, TRUE) 
+	fdReg (osIn.getFD(), fdrWrite, TRUE), os (osIn)
 {
 #	if defined(DEBUG) 
 		printf ("Write on %d\n", this->os.getFD());

@@ -19,7 +19,7 @@
 class casServerReg : public fdReg {
 public:
         casServerReg (casIntfOS &osIn) :
-                os (osIn), fdReg (osIn.getFD(), fdrRead) {}
+                fdReg (osIn.getFD(), fdrRead), os (osIn) {}
         ~casServerReg ();
 private:
         casIntfOS &os;

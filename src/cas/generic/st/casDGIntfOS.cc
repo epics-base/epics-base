@@ -18,15 +18,15 @@
 //
 class casDGReadReg : public fdReg {
 public:
-        casDGReadReg (casDGIntfOS &osIn) :
-                os (osIn), fdReg (osIn.getFD(), fdrRead) {}
-        ~casDGReadReg ();
- 
-        void show (unsigned level) const;
+	casDGReadReg (casDGIntfOS &osIn) :
+		fdReg (osIn.getFD(), fdrRead), os (osIn) {}
+	~casDGReadReg ();
+
+	void show (unsigned level) const;
 private:
-        casDGIntfOS &os;
- 
-        void callBack ();
+	casDGIntfOS &os;
+
+	void callBack ();
 };
 
 

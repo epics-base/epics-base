@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/08/05 00:47:07  jhill
+ * fixed warnings
+ *
  * Revision 1.6  1997/04/10 19:34:07  jhill
  * API changes
  *
@@ -213,13 +216,13 @@ void casEventRegistry::show(unsigned level) const
 //
 casEventMaskEntry::casEventMaskEntry(
 	casEventRegistry &regIn, casEventMask maskIn, const char *pName) :
-	reg(regIn), casEventMask (maskIn), stringId (pName) 
+	casEventMask (maskIn), stringId (pName), reg (regIn)
 {
 	int 	stat;
 
-	assert(this->resourceName()!=NULL);
+	assert (this->resourceName()!=NULL);
 	stat = this->reg.add(*this);
-	assert(stat==0);
+	assert (stat==0);
 }
 
 //

@@ -25,29 +25,29 @@ INC += recGbl.h
 INC += db_access_routines.h
 INC += db_convert.h
 
-MENUS += menuAlarmSevr.h
-MENUS += menuAlarmStat.h
-MENUS += menuArrType.h
-MENUS += menuCompress.h
-MENUS += menuFtype.h
-MENUS += menuIvoa.h
-MENUS += menuLinr.h
-MENUS += menuOmsl.h
-MENUS += menuPriority.h
-MENUS += menuScan.h
-MENUS += menuYesNo.h
+DBDINC += menuAlarmSevr
+DBDINC += menuAlarmStat
+DBDINC += menuArrType
+DBDINC += menuCompress
+DBDINC += menuFtype
+DBDINC += menuIvoa
+DBDINC += menuLinr
+DBDINC += menuOmsl
+DBDINC += menuPriority
+DBDINC += menuScan
+DBDINC += menuYesNo
 
-RECTYPES += dbCommon.h
+INC += dbCommon.h
 
-DBDINSTALL +=  dbCommonRecord.dbd 
-DBDINSTALL +=  menuGlobal.dbd
+DBD+=  dbCommon.dbd
+DBD+=  menuGlobal.dbd
 
 LIBSRCS += dbLock.c
 LIBSRCS += dbAccess.c
 LIBSRCS += dbBkpt.c
 LIBSRCS += dbConvert.c
 LIBSRCS += dbFastLinkConv.c
-LIBSRCS += dbNotify.c 
+LIBSRCS += dbNotify.c
 LIBSRCS += dbScan.c
 LIBSRCS += dbEvent.c
 LIBSRCS += dbTest.c
@@ -55,23 +55,24 @@ LIBSRCS += db_access.c
 LIBSRCS += db_test.c
 LIBSRCS += recGbl.c
 LIBSRCS += callback.c
-LIBSRCS += dbCa.c 
+LIBSRCS += dbCa.c
 LIBSRCS += dbCaTest.c
-LIBSRCS += initHooks.c 
-LIBSRCS += cvtBpt.c 
+LIBSRCS += initHooks.c
+LIBSRCS += cvtBpt.c
 LIBSRCS += dbServiceIO.cpp
-LIBSRCS += dbChannelIO.cpp 
-LIBSRCS += dbPutNotifyIO.cpp 
-LIBSRCS += dbSubscriptionIO.cpp 
-LIBSRCS += dbPutNotifyBlocker.cpp 
+LIBSRCS += dbChannelIO.cpp
+LIBSRCS += dbPutNotifyIO.cpp
+LIBSRCS += dbSubscriptionIO.cpp
+LIBSRCS += dbPutNotifyBlocker.cpp
 
 LIBRARY_IOC = dbIoc
-DLL_LIBS = dbStaticIoc ca Com 
+DLL_LIBS = dbStaticIoc ca Com
 
 dbIoc_RCS_WIN32 = dbIoc.rc
 
 include $(TOP)/configure/RULES
 
-$(INSTALL_INCLUDE)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
+$(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd $(COMMON_DIR)
 	$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) -I .. $< $@
+	$(DBTORECORDTYPEH) -I .. $< $@
+

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -91,7 +94,7 @@ inline casEventMask casEventRegistry::maskAllocator()
 {
         casEventMask    evMask;
  
-        if (this->allocator>=CHAR_BIT*sizeof(casEventMask::mask)) {
+        if (this->allocator>=CHAR_BIT*sizeof(evMask.mask)) {
                 return evMask;
         }
         evMask.mask = 1u<<(this->allocator++);

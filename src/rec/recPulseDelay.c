@@ -37,6 +37,7 @@
  * .06  04-18-92        jba     removed process from dev init_record parms
  * .07  06-02-92        jba     changed graphic/control limits for dly,odly,wide,owid
  * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .09  09-16-92        jba     replaced code with calls to recGblGetLinkvalue
  */ 
 
 #include     <vxWorks.h>
@@ -173,57 +174,18 @@ static long process(ppd)
 
     if(!ppd->pact)
     {
-    	/* get soft trigger value when stl is DB_LINK */
-        switch(ppd->stl.type)
-        {
-        case DB_LINK:
-            options=0;
-            nRequest=1;
-            ppd->pact = TRUE;
-            status=dbGetLink(&ppd->stl.value.db_link,
-                             (struct dbCommon *)ppd,DBR_SHORT,
-                             &ppd->stv,&options,&nRequest);
-            ppd->pact = FALSE;
+    	/* get soft trigger value */
+        options=0;
+        nRequest=1;
+        status=recGblGetLinkValue(&(ppd->stl),(void *)ppd,DBR_SHORT,
+             &ppd->stv,&options,&nRequest);
  
-            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
- 
-            break;
+    	/* get soft gate value */
+        options=0;
+        nRequest=1;
+        status=recGblGetLinkValue(&(ppd->glnk),(void *)ppd,DBR_SHORT,
+             &ppd->gate,&options,&nRequest);
 
-        case CA_LINK:
-            ppd->pact = TRUE;
-            status=dbCaGetLink(&(ppd->stl));
-            ppd->pact = FALSE;
- 
-            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
- 
-            break;
-        }
-
-    	/* get soft gate value when glnk is DB_LINK */
-        switch(ppd->glnk.type)
-        {
-        case DB_LINK:
-            options=0;
-            nRequest=1;
-            ppd->pact = TRUE;
-            status=dbGetLink(&ppd->glnk.value.db_link,
-                             (struct dbCommon *)ppd,DBR_SHORT,
-                             &ppd->gate,&options,&nRequest);
-            ppd->pact = FALSE;
- 
-            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
- 
-            break;
-
-        case CA_LINK:
-            ppd->pact = TRUE;
-            status=dbCaGetLink(&(ppd->glnk));
-            ppd->pact = FALSE;
- 
-            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
- 
-            break;
-        }
     }
 
      if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */

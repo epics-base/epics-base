@@ -9,6 +9,7 @@
 \*************************************************************************/
 #include <signal.h>
 #include "defs.h"
+#include "epicsStdio.h"
 
 char dflag;
 char lflag;
@@ -287,11 +288,11 @@ open_files()
 	    open_error(input_file_name);
     }
 
-    action_file = tmpfile();
+    action_file = epicsTempFile();
     if (action_file == 0)
 	open_error("temp action file");
 
-    text_file = tmpfile();
+    text_file = epicsTempFile();
     if (text_file == 0)
 	open_error("temp text file");
 
@@ -307,7 +308,7 @@ open_files()
 	defines_file = fopen(defines_file_name, "w");
 	if (defines_file == 0)
 	    open_error(defines_file_name);
-	union_file = tmpfile();
+	union_file = epicsTempFile();
 	if (union_file ==  0)
 	    open_error("temp union file");
     }

@@ -662,7 +662,6 @@ int cac::pendPrivate (double timeout, int early)
         }
         else{
             remaining = timeout - delay;
-            remaining = min ( 60.0, remaining );
 
             /*
              * If we are not waiting for any significant delay

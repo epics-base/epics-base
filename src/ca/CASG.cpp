@@ -135,8 +135,6 @@ int CASG::block ( double timeout )
             break;
         }
 
-        remaining = min ( 60.0, remaining );
-
         /*
          * wait for asynch notification
          */

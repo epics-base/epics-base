@@ -407,7 +407,6 @@ PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 ifeq ($(HOST_ARCH),Borland)
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
-	@echo 44444
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(LDLIBS)),, $(PRODNAME_RESS)
 
 else
@@ -439,9 +438,7 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
 $(PROD): $(SRCS) $(PROD_OBJS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
-	@echo $(PROD_MAKE_COMMAND)
 	@$(PROD_MAKE_COMMAND)
-	@echo Done
 
 endif
 endif  #ifdef PRODNAME
@@ -523,19 +520,16 @@ ifeq ($(HOST_ARCH),Borland)
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
-	echo 11111
 	$(LINK.c) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 %$(EXE): %.cc
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	echo 22222
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	echo 33333
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 else

@@ -51,6 +51,11 @@ INSTALL = $(PERL) $(TOOLS)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)
 
+#---------------------------------------------------------------
+# tools for making header dependancies and variable replacement
+MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
+REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
+
 #-------------------------------------------------------
 # Directories
 
@@ -228,7 +233,7 @@ LDLIBS = $(PROD_LDLIBS) $(STATIC_LDLIBS)\
  $(POSIX_LDLIBS) $(ARCH_DEP_LDLIBS) $(OP_SYS_LDLIBS)
 
 CPPFLAGS += $(CONFORM_CPPFLAGS) $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS)\
- $(EPICS_BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
+ $(BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
 #--------------------------------------------------

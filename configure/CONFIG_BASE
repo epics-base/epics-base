@@ -1,3 +1,4 @@
+
 ifndef EPICS_BASE
 EPICS_BASE = $(INSTALL_LOCATION)
 endif
@@ -6,6 +7,7 @@ endif
 # Epics base directories
 
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH)
+EPICS_BASE_HOST_LIB = $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
 ifdef T_A
 EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
 endif
@@ -42,23 +44,21 @@ PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
 endif # EPICS_BASE
 
 #---------------------------------------------------------------
-# Epics base c preprocessor flags
+# Base c preprocessor flags
 
-EPICS_BASE_CPPFLAGS = 
+BASE_CPPFLAGS = 
 
 # osithread default stack
 OSITHREAD_USE_DEFAULT_STACK = YES
 OSITHREAD_DEFAULT_STACK_FLAGS_YES = -DOSITHREAD_USE_DEFAULT_STACK
 OSITHREAD_DEFAULT_STACK_FLAGS_NO =
-EPICS_BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
+BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 
 #---------------------------------------------------------------
 # Epics base build tools and tool flags
 
 MAKEBPT                    = $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
 DBEXPAND                   = $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
-MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
-REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 DBTORECORDTYPEH            = $(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE)
 DBTOMENUH                  = $(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE)
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl

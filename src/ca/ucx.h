@@ -8,6 +8,9 @@
  *      CJM     13-Jul-1994     add fd_set etc for R3.12
  *      CJM     09-Dec-1994     define fd_set etc. so it will compile for
  *                              both DEC C and Vax C
+ *      CJM     19-Nov-1995     use memset instead of bzero following advice
+ *                              from Jeff Hill and add a definition of struct
+ *                              timezone to support gettimeofday
  *
  */
 #ifndef _UCX_H_
@@ -85,7 +88,14 @@ typedef int fd_set ;
 #include <iodef.h>
 #define IO$_RECEIVE	(IO$_WRITEVBLK)
 
-#endif
-#endif
+struct timezone {
+        int      tz_minuteswest ;  /* minutes west of Greenwich */
+        int      tz_dsttime ;      /* type of dst correction */
+};
 
+#define TWOPOWER32 4294967296.0
+#define TWOPOWER31 2147483648.0
+#define UNIX_EPOCH_AS_MJD 40587.0
+#endif
+#endif
 

@@ -276,10 +276,10 @@ int ca_sg_test(CA_SYNC_GID gid)
 	UNLOCK;
 
 	if(pcasg->opPendCount){
-		return ECA_IODONE;
+		return ECA_IOINPROGRESS;
 	}
 	else{
-		return ECA_IOINPROGRESS;
+		return ECA_IODONE;
 	}
 }
 
@@ -326,6 +326,7 @@ void 		*pvalue)
 	pcasgop->magic = CASG_MAGIC;
 	pcasgop->pValue = NULL; /* handler will know its a put */
 	ellAdd(&ca_static->activeCASGOP, &pcasgop->node);
+	pcasg->opPendCount++;
 	UNLOCK;
 
 	status = ca_array_put_callback(
@@ -335,6 +336,15 @@ void 		*pvalue)
 			pvalue, 
 			io_complete, 
 			pcasgop);
+
+	if(status != ECA_NORMAL){
+		LOCK;
+		pcasg->opPendCount--;
+		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
+		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
+		UNLOCK;	
+	}
+
 	return status;
 }
 
@@ -380,7 +390,7 @@ void 		*pvalue)
 	pcasgop->magic = CASG_MAGIC;
 	pcasgop->pValue = pvalue;
 	ellAdd(&ca_static->activeCASGOP, &pcasgop->node);
-
+	pcasg->opPendCount++;
 	UNLOCK;
 
 	status = ca_array_get_callback(
@@ -389,6 +399,15 @@ void 		*pvalue)
 			chix, 
 			io_complete, 
 			pcasgop);
+
+	if(status != ECA_NORMAL){
+		LOCK;
+		pcasg->opPendCount--;
+		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
+		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
+		UNLOCK;	
+	}
+
 	return status;
 }
 
@@ -403,30 +422,29 @@ LOCAL void io_complete(struct event_handler_args args)
 	CASG 		*pcasg;
 
 	pcasgop = args.usr;
+	assert(pcasgop->magic == CASG_MAGIC);
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, pcasgop->id);
+
+	ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
+	pcasgop->magic = 0;
+	ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
 
 	/*
  	 * ignore stale replies
 	 */
+	pcasg = bucketLookupItem(pBucket, pcasgop->id);
 	if(!pcasg || pcasg->seqNo != pcasgop->seqNo){
 		UNLOCK;
 		return;
 	}
 
 	assert(pcasg->magic == CASG_MAGIC);
-	assert(pcasgop->magic == CASG_MAGIC);
-
-	ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
-	pcasgop->magic = 0;
-	ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
 
 	if(!(args.status&CA_M_SUCCESS)){
 		ca_printf(
-			"CA Sync Group (id=%d) operation failed because %d \"%s\"\n",
+			"CA Sync Group (id=%d) request failed because \"%s\"\n",
 			pcasgop->id,
-			args.status,
 			ca_message(args.status));
 		UNLOCK;
 		return;
@@ -444,8 +462,9 @@ LOCAL void io_complete(struct event_handler_args args)
 	/*
  	 * decrement the outstanding IO ops count
 	 */
-	if(pcasg->opPendCount!=0)
+	if(pcasg->opPendCount!=0){
 		pcasg->opPendCount--;
+	}
 
 	UNLOCK;
 

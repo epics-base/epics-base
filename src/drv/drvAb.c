@@ -177,6 +177,7 @@
  * .49	06-29-92	joh	removed FILE pointer argument to io report
  * .50	06-29-92	joh	moved ab reset here
  * .51	07-10-92	lrd	mode interrupt on change of state to scan once on initialization
+ * .52	08-11-92	joh	io report format cleanup
  */
 
 /*
@@ -1929,7 +1930,7 @@ ab_io_report(level)
 	/* report all of the Allen-Bradley Serial Links present */
 	for (i = 0; i < AB_MAX_LINKS; i++){
 	    if (p6008s[i])
-		printf("AB-6008SV: Card %d\tcto: %d lto: %d badres: %d\n"
+		printf("MD: AB-6008SV:\tcard %d\tcto: %d lto: %d badres: %d\n"
 		  ,i,ab_comm_to[i],ab_link_to[i],ab_bad_response[i]);
 	    else continue;
 
@@ -1955,20 +1956,20 @@ ab_io_report(level)
 		    switch (ab_config[i][adapter][card] & AB_INTERFACE_TYPE){
 
 		    case (AB_BI_INTERFACE):
-			printf("\tAdapter %d Card %d:\tBI",adapter,card);
+			printf("\tBI: AB\tadapter %d card %d",adapter,card);
 
 			if (level > 0)
 				ab_bi_report(i,adapter,card,plc_card);
 			break;
 		    case (AB_BO_INTERFACE):
-			printf("\tAdapter %d Card %d:\tBO",adapter,card);
+			printf("\tBO: AB\tadapter %d card %d",adapter,card);
                           if(level > 0)
                                ab_bo_report(i,adapter,card,plc_card);
 			    break;
 		    case (AB_AI_INTERFACE):
                         type = ab_config[i][adapter][card]&AB_CARD_TYPE;    
 			if ((ab_config[i][adapter][card]&AB_CARD_TYPE)==AB1771IXE){
-		          printf("\tAdapter %d Card %d:\tAB1771IXE\tcto: %d dto: %d sclerr: %d %d",
+		          printf("\tAI: AB1771IXE\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			      adapter,card,ab_cmd_to[i][adapter][card],
 			      ab_data_to[i][adapter][card],
 			      ab_scaling_error[i][adapter][card],
@@ -1978,7 +1979,7 @@ ab_io_report(level)
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IL){
-			    printf("\tAdapter %d Card %d:\tAB1771IL\tcto: %d dto: %d sclerr: %d %d",
+			    printf("\tAI: AB1771IL\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			      adapter,card,ab_cmd_to[i][adapter][card],
 			      ab_data_to[i][adapter][card],
 			      ab_scaling_error[i][adapter][card],
@@ -1988,7 +1989,7 @@ ab_io_report(level)
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_SE){
-			    printf("\tAdapter %d Card %d:\tAB1771IFE_SE\tcto: %d dto: %d sclerr: %d %d",
+			    printf("\tAI: AB1771IFE_SE\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			      adapter,card,ab_cmd_to[i][adapter][card],
 			      ab_data_to[i][adapter][card],
 			      ab_scaling_error[i][adapter][card],
@@ -1998,7 +1999,7 @@ ab_io_report(level)
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_4to20MA){
-			    printf("\tAdapter %d Card %d:\tAB1771IFE_4to20MA\tcto: %d dto: %d sclerr: %d %d",
+			    printf("\tAI: AB1771IFE_4to20MA\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			      adapter,card,ab_cmd_to[i][adapter][card],
 			      ab_data_to[i][adapter][card],
 			      ab_scaling_error[i][adapter][card],
@@ -2008,7 +2009,7 @@ ab_io_report(level)
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE){
-			      printf("\tAdapter %d Card %d:\tAB1771IFE\tcto: %d dto: %d sclerr: %d %d",
+			      printf("\tAI: AB1771IFE\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			         adapter,card,ab_cmd_to[i][adapter][card],
 			         ab_data_to[i][adapter][card],
 			         ab_scaling_error[i][adapter][card],
@@ -2018,7 +2019,7 @@ ab_io_report(level)
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_0to5V){
-			      printf("\tAdapter %d Card %d:\tAB1771IFE_0to5V\tcto: %d dto: %d sclerr: %d %d",
+			      printf("\tAI: AB1771IFE_0to5V\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			         adapter,card,ab_cmd_to[i][adapter][card],
 			         ab_data_to[i][adapter][card],
 			         ab_scaling_error[i][adapter][card],
@@ -2030,7 +2031,7 @@ ab_io_report(level)
                          } 
 			break;
 		    case (AB_AO_INTERFACE):
-			printf("\tAdapter %d Card %d:\tAB1771OFE\tcto: %d dto: %d",
+			printf("\tAO: AB1771OFE\tadapter %d card %d:\tcto: %d dto: %d",
 			  adapter,card,ab_cmd_to[i][adapter][card],
 			  ab_data_to[i][adapter][card]);
                               if (level > 0 ){

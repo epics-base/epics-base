@@ -13,6 +13,7 @@ of this distribution.
 #include <ctype.h>
 
 #include "epicsThread.h"
+#include "epicsMutex.h"
 #include "dbEvent.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
@@ -28,6 +29,18 @@ static void epicsThreadShowAllCallFunc(const ioccrfArgBuf *args)
     epicsThreadShowAll(args[0].ival);
 }
 
+/* epicsMutexShowAll */
+static const ioccrfArg epicsMutexShowAllArg0 = { "onlyLocked",ioccrfArgInt};
+static const ioccrfArg epicsMutexShowAllArg1 = { "level",ioccrfArgInt};
+static const ioccrfArg * const epicsMutexShowAllArgs[2] =
+    {&epicsMutexShowAllArg0,&epicsMutexShowAllArg1};
+static const ioccrfFuncDef epicsMutexShowAllFuncDef =
+    {"epicsMutexShowAll",1,epicsMutexShowAllArgs};
+static void epicsMutexShowAllCallFunc(const ioccrfArgBuf *args)
+{
+    epicsMutexShowAll(args[0].ival,args[1].ival);
+}
+
 /* epicsThreadSleep */
 static const ioccrfArg epicsThreadSleepArg0 = { "seconds",ioccrfArgDouble};
 static const ioccrfArg * const epicsThreadSleepArgs[1] = {&epicsThreadSleepArg0};
@@ -41,5 +54,6 @@ static void epicsThreadSleepCallFunc(const ioccrfArgBuf *args)
 void epicsShareAPI osiRegister(void)
 {
     ioccrfRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
+    ioccrfRegister(&epicsMutexShowAllFuncDef,epicsMutexShowAllCallFunc);
     ioccrfRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
 }

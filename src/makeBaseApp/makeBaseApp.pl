@@ -5,12 +5,6 @@ use Cwd;
 use Getopt::Std;
 use File::Copy;
 
-#Check that user is not in home directory
-$startdir=cwd();
-#	remove auto-mount path which confuses directory name comparison
-$startdir=~s:^/tmp_mnt::;
-Cleanup (1, "Shouldn't run in Home Directory") if (GetHome() eq $startdir);
-
 $user=GetUser();
 
 #get options and check for valid combinations
@@ -210,17 +204,6 @@ sub Cleanup
 	"    If not given you will be prompted\n";
 
     exit $rtncode;
-}
-
-sub GetHome # no args
-{
-    my ($home);
-
-    # add to this list if new possibilities arise,
-    # currently it's UNIX and WIN32:
-    $home=$ENV{HOME} || $ENV{HOMEPATH};
-    die "cannot locate home directory" unless $home;
-    return $home;
 }
 
 sub GetFilename # full name including path

@@ -585,15 +585,24 @@ sent to the UDP port specified in the EPICS_CA_REPEATER_PORT parameter and
 fans any beacons received out to any CA client program running on the same
 host that have registered themselves with the CA Repeater. If the CA Repeater
 is not already running on a workstation, then the "caRepeater" program must
-be in your path before using the CA client library for the first time. If a
-host based IOC is run on the same workstation with standalone CA client
-processes, then it is probably best to start the caRepeater process when the
-workstation is booted. Otherwise it is possible for the standalone CA client
-processes to become dependent on a CA repeater started within the confines of
-the host based IOC. As long as the host based IOC continues to run there is
-nothing wrong with this situation, but problems could arise if this host
-based IOC process exits before the standalone client processes which are
-relying on its CA repeater for services exit.</p>
+be in your path before using the CA client library for the first time. </p>
+
+<p>If a host based IOC is run on the same workstation with standalone CA
+client processes, then it is probably best to start the caRepeater process
+when the workstation is booted. Otherwise it is possible for the standalone
+CA client processes to become dependent on a CA repeater started within the
+confines of the host based IOC. As long as the host based IOC continues to
+run there is nothing wrong with this situation, but problems could arise if
+this host based IOC process exits before the standalone client processes
+which are relying on its CA repeater for services exit.</p>
+
+<p>Since the repeater is intended to be shared by multiple clients then it
+could be argued that it makes less sense to set up a CA repeater that listens
+for beacons on only a subset of available network interfaces. In the worst
+case situation the client library might see beacon anomalies from servers
+that it is not interested in. Modifications to the CA repeater forcing it to
+listen only on a subset of network interfaces might be considered for a
+future release if there appear to be situations that require it.</p>
 
 <h3><a name="Configurin">Configuring the Time Zone</a></h3>
 
@@ -3480,7 +3489,7 @@ void * PDBR );</code></p>
       bytes</dd>
 </dl>
 
-<p><small>$Id: CAref.html,v 1.58.2.1 2003/09/03 22:31:48 jhill Exp
+<p><small>$Id CAref.html,v 1.58.2.1 2003/09/03 22:31:48 jhill Exp
 $</small></p>
 </body>
 </html>

@@ -1414,7 +1414,7 @@ void write_notify_reply(void *pArg)
 	 */
 	status = semGive(pClient->blockSem);
 	if(status != OK){
-		logMsg("CA block sem corrupted %s\n",
+		logMsg("rsrv block sem corrupted %s\n",
 				strerror(errno),
 				NULL,
 				NULL,

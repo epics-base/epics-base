@@ -8,10 +8,16 @@
  *
  */
 
+/* ANSI C */
 #include <limits.h>
 #include <string.h>
+#include <errno.h>
+#include <stddef.h>
 
+/* POSIX */
 #include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #define epicsExportSharedSymbols
 #include "osiProcess.h"
@@ -87,10 +93,10 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, NULL);
     if (status<0) { 
-        errlogPrintf( "The executable \"%s\" couldnt be located\n", pBaseExecutableName );
-        errlogPrintf( "because of errno = \"%s\".\n", strerror (errno) );
-        errlogPrintf( "You may need to modify your PATH environment variable.\n" );
-        errlogPrintf( "Unable to start \"%s\" process.\n" pProcessName);
+        errlogPrintf ( "The executable \"%s\" couldnt be located\n", pBaseExecutableName );
+        errlogPrintf ( "because of errno = \"%s\".\n", strerror (errno) );
+        errlogPrintf ( "You may need to modify your PATH environment variable.\n" );
+        errlogPrintf ( "Unable to start \"%s\" process.\n" pProcessName);
         assert (0);
     }
     exit (0);

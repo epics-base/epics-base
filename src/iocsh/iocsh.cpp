@@ -46,7 +46,7 @@ struct iocshVariable {
 };
 static struct iocshVariable *iocshVariableHead;
 static char iocshVarID[] = "iocshVar";
-extern "C" static void varCallFunc(const iocshArgBuf *);
+extern "C" { static void varCallFunc(const iocshArgBuf *); }
 static epicsMutexId iocshTableMutex;
 static epicsThreadOnceId iocshTableOnceId = EPICS_THREAD_ONCE_INIT;
 

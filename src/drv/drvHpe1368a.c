@@ -57,9 +57,10 @@ epvxiPConfig((LA), hpe1368aDriverId, struct hpe1368a_config *)
 #define ALL_SWITCHES_OPEN	0
 
 struct hpe1368a_config{
-	FAST_LOCK	lock;
-	unsigned short	shadow;
-	int		busy;
+	FAST_LOCK	lock;		/* mutual exclusion */
+	unsigned short	pending;	/* switch position pending int */
+	unsigned short	shadow;		/* shadow of actual switch pos */
+	int		busy;		/* relays active */
 };
 
 #define HPE1368A_INT_LEVEL	1	
@@ -122,7 +123,7 @@ unsigned la;
         struct hpe1368a_config	*pc;
 	struct vxi_csr		*pcsr;
 
-        r0 = vxiOpen(
+        r0 = epvxiOpen(
                 la,
                 hpe1368aDriverId,
                 (unsigned long) sizeof(*pc),
@@ -143,6 +144,7 @@ unsigned la;
 	 * we must reset the device to a known state since
 	 * we cant read back the current state
 	 */
+	pc->pending = ALL_SWITCHES_OPEN;
 	pc->shadow = ALL_SWITCHES_OPEN;
 	ChannelEnable(pcsr) = ALL_SWITCHES_OPEN;
 
@@ -164,6 +166,10 @@ unsigned la;
  *
  * hpe1368a_int_service()
  *
+ *
+ * This device interrupts once the 
+ * switches have settled
+ *
  */
 LOCAL void
 hpe1368a_int_service(la)
@@ -176,7 +182,17 @@ unsigned	la;
                 return;
         }
 
+	/*
+	 * operation completed so we can update 
+	 * the shadow value
+	 */
+	pc->shadow = pc->pending;
 	pc->busy = FALSE;
+
+	/*
+	 * tell them that the switches have settled
+	 */
+	io_scanner_wakeup(IO_BI, HPE1368A_BI, la);
 }
 
 
@@ -237,12 +253,12 @@ unsigned int            mask;
 
 	FASTLOCK(&pc->lock);
 
-	work = pc->shadow;
+	work = pc->pending;
 
 	/* alter specified bits */
 	work = (work & ~mask) | (val & mask);
 
-	pc->shadow = work;
+	pc->pending = work;
 
 	ChannelEnable(pcsr) = work;
 

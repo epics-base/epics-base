@@ -253,7 +253,12 @@ void threadInit(void)
 /* threadOnce is a macro that calls threadOnceOsd */
 void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
-    semMutexMustTake(onceMutex);
+
+    if(semMutexTake(onceMutex) != semTakeOK) {
+        fprintf(stderr,"threadOnceOsd semMutexTake failed.\n");
+        fprintf(stderr,"Did you call threadInit? Program exiting\n");
+        exit(-1);
+    }
     if (*id == 0) { /*  0 => first call */
     	*id = -1;   /* -1 => func() active */
     	func(arg);

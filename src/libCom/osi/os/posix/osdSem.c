@@ -121,6 +121,7 @@ semTakeStatus semBinaryTake(semBinaryId id)
     binary *pbinary = (binary *)id;
     int   status;
 
+    if(!pbinary) return(semTakeError);
     status = pthread_mutex_lock(&pbinary->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
     if(!pbinary->isFull) {
@@ -234,6 +235,7 @@ semTakeStatus semMutexTake(semMutexId id)
     pthread_t tid = pthread_self();
     int status;
 
+    if(!pmutex || !tid) return(semTakeError);
     status = pthread_mutex_lock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","semMutexTake");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid))

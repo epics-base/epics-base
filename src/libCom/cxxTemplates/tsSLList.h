@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/02/05 23:28:21  jhill
+ * fixed hp sompiler warnings
+ *
  * Revision 1.8  1997/06/13 09:21:53  jhill
  * fixed compiler compatibility problems
  *
@@ -219,7 +222,7 @@ template <class T>
 class tsSLIterRm {
 public:
 	tsSLIterRm(tsSLList<T> &listIn) :  
-		pCurrent(&listIn), pPrevious(0) {}
+		pPrevious(0), pCurrent(&listIn) {}
 
 	//
 	// move iterator forward

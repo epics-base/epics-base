@@ -74,7 +74,6 @@ LIBSRCS += ipAddrToA.c
 #
 LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
 LIBSRCS += $(patsubst %,osiTimer.cc,$(strip $(CPLUSPLUS)))
-LIBSRCS += $(patsubst %,ipAddrToA.cc,$(strip $(CPLUSPLUS)))
 LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,

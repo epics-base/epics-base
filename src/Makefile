@@ -32,16 +32,11 @@
 #  	...
 #
 
-all: bld_errSym dlsource eddsource 
+all: bld_errSym
 
 bld_errSym:
 	cd libUnix; 	sh blderrSymTbl
 	cd libvxWorks; 	sh blderrSymTbl VXLIST
 
-dlsource:
-	cd opi/dl ; /bin/sh build.it
-
-eddsource:
-	cd opi/edd ; /bin/sh build.it
 
 

@@ -455,7 +455,7 @@ long dbPutField(
 		    } else {
 			/*indicate that dbPutField called dbProcess*/
 			precord->putf = TRUE;
-			status=dbScanPassive(NULL,precord);
+			status=dbProcess(precord);
 		    }
 		}
 	}

@@ -1,25 +1,21 @@
-README file for etc/macLib directory
-------------------------------------
+------------------------------------------------------------------------
 
-This directory contains all files necessary to build and test the
-EPICS macro library macLib. The specification for this library
-appears later in this file.
+EPICS R3.14.3 release
 
-Files in this release are:
+------------------------------------------------------------------------
 
--rw-r--r--  1 wlupton       141 Sep 22  1995 Makefile
--rw-r--r--  1 wlupton       522 Jun 23 20:42 Makefile.Unix
--rw-r--r--  1 wlupton       473 Jun 23 20:43 Makefile.Vx
+- Included as part of operating-system-independent IOC core.
+- Provides all features described below, plus environment-variable parameter
+  expansion:
+     char *macEnvExpand( char *src );
 
--rw-r--r--  1 wlupton      5052 Jun 25 23:17 NOTES
--rw-r--r--  1 wlupton     10429 Jun 25 23:34 README
+     This operates on a string which may contain macros defined by
+     environment variables. It parses the string looking for such
+     references and passes them to macGetValue() for translation.
+     It uses malloc to allocate space for the expanded string and
+     returns a pointer to this null-terminated string.  It returns
+     NULL if the source string contains any undefined references.
 
--rw-r--r--  1 wlupton     20158 Jun 25 23:40 macCore.c
--rw-r--r--  1 wlupton      5056 Jun 25 21:33 macLib.h
--rw-r--r--  1 wlupton      2050 Jun 25 23:18 macTest.c
--rw-r--r--  1 wlupton      7307 Jun 25 23:13 macUtil.c
-
-25-Jun-96, William Lupton (wlupton@keck.hawaii.edu), CVS tag: macLib-1-0
 ------------------------------------------------------------------------
 
 first release

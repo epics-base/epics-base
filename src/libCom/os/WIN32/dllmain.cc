@@ -39,6 +39,8 @@
 #include <stdio.h>
 
 #include "epicsVersion.h"
+#define epicsExportSharedSymbols
+#include "bsdSocketResource.h"
 
 #ifndef _WIN32
 #error This source is specific to WIN32 
@@ -47,66 +49,31 @@
 extern int init_osi_time ();
 extern int exit_osi_time ();
 
+#ifdef EPICS_DLL
 BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-	WSADATA WsaData;
 	switch (dwReason) 
 	{
 	case DLL_PROCESS_ATTACH:
-
-#if _DEBUG
-		/* for gui applications, setup console for error messages */
-		if (AllocConsole())
-		{
-			char title[256];
-			DWORD titleLength = GetConsoleTitle(title, sizeof(title));
-			if (titleLength) {
-				titleLength = strlen (title);
-				strncat (title, " " BASE_VERSION_STRING, sizeof(title));
-			}
-			else {
-				strncpy(title, BASE_VERSION_STRING, sizeof(title));	
-			}
-			title[sizeof(title)-1]= '\0';
-			SetConsoleTitle(title);
-			freopen( "CONOUT$", "a", stderr );
-			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
-		}
-#endif	 		
+		if (!bsdSockAttach()) 
+			return FALSE;
 		if (init_osi_time ())
 			return FALSE;
-
-		/*
-		 * for use of select() by the fd managers
-		 */
-		if (WSAStartup(MAKEWORD(/*major*/2,/*minor*/2), &WsaData) != 0) {
-			/*
-			 * The winsock I & II doc indicate that these steps are not required,
-			 * but experience at some sites proves otherwise. Perhaps some vendors 
-			 * do not follow the protocol described in the doc.
-			 */
-			if (WSAStartup(MAKEWORD(/*major*/1,/*minor*/1), &WsaData) != 0) {
-				if (WSAStartup(MAKEWORD(/*major*/1,/*minor*/0), &WsaData) != 0) {
-					WSACleanup();
-					fprintf(stderr,"Unable to attach to winsock version 2.2 or lower\n");
-					return FALSE;
-				}
-			}
-		}
-
-#if _DEBUG			  
-		fprintf(stderr, "EPICS Com.dll attached to winsock version %s\n", WsaData.szDescription);
-#endif	
+#		ifdef _DEBUG
+			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
+#		endif
 		break;
+
 	case DLL_PROCESS_DETACH:
+		bsdSockRelease();
 		exit_osi_time ();
-		if (WSACleanup()!=0)
-			return FALSE;
+#		ifdef _DEBUG
+			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
+#		endif
 		break;
 	}
 
 	return TRUE;
 }
-
-
+#endif
 

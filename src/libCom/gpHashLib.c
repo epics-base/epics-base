@@ -56,7 +56,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <ellLib.h>
+#include <gpHash.h>
 
 #define 	HASH_NO	256		/* number of hash table entries */
 
@@ -84,6 +84,20 @@ static unsigned char T0[256] = {
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47 
 };
 
+static void *myCalloc(size_t nobj,size_t size)
+{
+    void *p;
+
+    p=calloc(nobj,size);
+    if(p) return(p);
+#ifdef vxWorks
+    taskSuspend(0);
+#else
+    abort();
+#endif
+    return(NULL);
+}
+
 static unsigned char hash( char *pname)
 {
     unsigned char  h=0;
@@ -94,21 +108,21 @@ static unsigned char hash( char *pname)
     }
     return(h);
 }
-
+
 void gphInitPvt(void **pgphPvt)
 {
-    LIST        **pgph;
-    pgph = dbCalloc(HASH_NO, sizeof(LIST *));
+    ELLLIST        **pgph;
+    pgph = myCalloc(HASH_NO, sizeof(ELLLIST *));
     *pgphPvt = (void *)pgph;
     return;
 }
 	
 GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short  hashInd;
-    LIST          **pgph = (LIST **) gphPvt;
-    LIST           *gphlist;
-    GPHENTRY       *pgphNode;
+    unsigned short	hashInd;
+    ELLLIST		**pgph = (ELLLIST **) gphPvt;
+    ELLLIST		*gphlist;
+    GPHENTRY		*pgphNode;
     
     hashInd = (unsigned short)hash(name);
     if ((gphlist=pgph[hashInd]) == NULL) return (NULL);
@@ -117,21 +131,21 @@ GPHENTRY *gphFind(void *gphPvt,char *name,void *pvtid)
 	if(strcmp(name,(char *)pgphNode->name) == 0) {
 	    if(pvtid==pgphNode->pvtid) return(pgphNode);
 	}
-	pgphNode = (GPHENTRY *) lstNext((NODE*)pgphNode);
+	pgphNode = (GPHENTRY *) lstNext((ELLNODE*)pgphNode);
     }
     return (NULL);
 }
 
 GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short  hashInd;
-    LIST        **pgph = (LIST **) gphPvt;
-    LIST	*plist;
-    GPHENTRY    *pgphNode;
+    unsigned short	hashInd;
+    ELLLIST		**pgph = (ELLLIST **) gphPvt;
+    ELLLIST		*plist;
+    GPHENTRY		*pgphNode;
     
     hashInd = (unsigned short)hash(name);
     if (pgph[hashInd] == NULL) {
-	pgph[hashInd] = dbCalloc(1, sizeof(LIST));
+	pgph[hashInd] = myCalloc(1, sizeof(ELLLIST));
 	lstInit(pgph[hashInd]);
     }
     plist=pgph[hashInd];
@@ -139,21 +153,21 @@ GPHENTRY *gphAdd(void *gphPvt,char *name,void *pvtid)
     while(pgphNode) {
 	if((strcmp(name,(char *)pgphNode->name) == 0)
 	&&(pvtid == pgphNode->pvtid)) return(NULL);
-	pgphNode = (GPHENTRY *) lstNext((NODE*)pgphNode);
+	pgphNode = (GPHENTRY *) lstNext((ELLNODE*)pgphNode);
     }
-    pgphNode = dbCalloc(1, (unsigned) sizeof(GPHENTRY));
+    pgphNode = myCalloc(1, (unsigned) sizeof(GPHENTRY));
     pgphNode->name = name;
     pgphNode->pvtid = pvtid;
-    lstAdd(plist, (NODE*)pgphNode);
+    lstAdd(plist, (ELLNODE*)pgphNode);
     return (pgphNode);
 }
 
 void gphDelete(void *gphPvt,char *name,void *pvtid)
 {
-    unsigned short  hashInd;
-    LIST        **pgph = (LIST **) gphPvt;
-    LIST	*plist;
-    GPHENTRY    *pgphNode;
+    unsigned short	hashInd;
+    ELLLIST		**pgph = (ELLLIST **) gphPvt;
+    ELLLIST		*plist;
+    GPHENTRY		*pgphNode;
     
     hashInd = (unsigned short)hash(name);
     if (pgph[hashInd] == NULL) return;
@@ -162,22 +176,22 @@ void gphDelete(void *gphPvt,char *name,void *pvtid)
     while(pgphNode) {
 	if((strcmp(name,(char *)pgphNode->name) == 0)
 	&&(pvtid == pgphNode->pvtid)) {
-	    lstDelete(plist, (NODE*)pgphNode);
+	    lstDelete(plist, (ELLNODE*)pgphNode);
 	    free((void *)pgphNode);
 	    return;
 	}
-	pgphNode = (GPHENTRY *) lstNext((NODE*)pgphNode);
+	pgphNode = (GPHENTRY *) lstNext((ELLNODE*)pgphNode);
     }
     return;
 }
 
 void gphFreeMem(void * gphPvt)
 {
-    unsigned short  hashInd;
-    LIST          **pgph = (LIST **) gphPvt;
-    LIST           *plist;
-    GPHENTRY       *pgphNode;
-    GPHENTRY       *next;;
+    unsigned short	hashInd;
+    ELLLIST		**pgph = (ELLLIST **) gphPvt;
+    ELLLIST		*plist;
+    GPHENTRY		*pgphNode;
+    GPHENTRY		*next;;
     
     if (pgph == NULL) return;
     for (hashInd=0; hashInd<HASH_NO; hashInd++) {
@@ -185,8 +199,8 @@ void gphFreeMem(void * gphPvt)
 	plist=pgph[hashInd];
 	pgphNode = (GPHENTRY *) lstFirst(plist);
 	while(pgphNode) {
-	    next = (GPHENTRY *) lstNext((NODE*)pgphNode);
-	    lstDelete(plist,(NODE*)pgphNode);
+	    next = (GPHENTRY *) lstNext((ELLNODE*)pgphNode);
+	    lstDelete(plist,(ELLNODE*)pgphNode);
 	    free((void *)pgphNode);
 	    pgphNode = next;
 	}
@@ -197,11 +211,11 @@ void gphFreeMem(void * gphPvt)
 
 void gphDump(void * gphPvt)
 {
-    unsigned short  hashInd;
-    LIST          **pgph = (LIST **) gphPvt;
-    LIST           *plist;
-    GPHENTRY       *pgphNode;
-    int		number;
+    unsigned short	hashInd;
+    ELLLIST		**pgph = (ELLLIST **) gphPvt;
+    ELLLIST		*plist;
+    GPHENTRY		*pgphNode;
+    int			number;
     
     if (pgph == NULL) return;
     for (hashInd=0; hashInd<HASH_NO; hashInd++) {
@@ -213,7 +227,7 @@ void gphDump(void * gphPvt)
 	while(pgphNode) {
 	    printf(" %s %8x",pgphNode->name,pgphNode->pvtid);
 	    if(number++ ==2) {number=0;printf("\n        ");}
-	    pgphNode = (GPHENTRY *) lstNext((NODE*)pgphNode);
+	    pgphNode = (GPHENTRY *) lstNext((ELLNODE*)pgphNode);
 	}
     }
     printf("\n End of General Purpose Hash\n");

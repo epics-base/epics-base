@@ -86,7 +86,8 @@
 static char *sccsId = "$Id$\t$Date$";
 
 /* local function declarations */
-LOCAL void wake_cancel(SEM_ID psem);
+LOCAL EVENTFUNC	wake_cancel;
+
 LOCAL int event_read(struct event_que *ev_que);
 
 /* what to do with unrecoverable errors */
@@ -184,6 +185,7 @@ struct event_user *db_init_events(void)
 	FASTLOCKINIT(&(evuser->firstque.writelock));
 	evuser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evuser->ppendsem){
+		FASTLOCKFREE(&(evuser->firstque.writelock));
 		free(evuser);
 		return NULL;
 	}
@@ -370,7 +372,7 @@ int	db_cancel_event(struct event_block	*pevent)
 
     			flush_event = *pevent;
     			flush_event.user_sub = wake_cancel;
-    			flush_event.user_arg = pflush_sem;
+    			flush_event.user_arg = &pflush_sem;
     			flush_event.npend = 0;
 
     			if(db_post_single_event(&flush_event)==OK){
@@ -413,9 +415,16 @@ int	db_cancel_event(struct event_block	*pevent)
  * a very short routine to inform a db_clear thread that the deleted event
  * has been flushed
  */
-LOCAL void wake_cancel(SEM_ID  psem)
+LOCAL void wake_cancel(
+void 			*user_arg,
+struct db_addr 		*paddr,
+int			eventsRemaing,
+db_field_log 		*pfl)
 {
-    	semGive(psem);
+	SEM_ID  *psem;
+
+	psem = (SEM_ID *)user_arg;
+    	semGive(*psem);
 }
 
 
@@ -426,7 +435,7 @@ LOCAL void wake_cancel(SEM_ID  psem)
  */
 int db_add_overflow_event(
 struct event_user	*evuser,
-void			(*overflow_sub)(),	
+OVRFFUNC		overflow_sub,
 void			*overflow_arg
 )
 {
@@ -435,6 +444,39 @@ void			*overflow_arg
   	evuser->overflow_arg = overflow_arg;
 
   	return OK;
+}
+
+
+/*
+ * DB_AD_EXTRA_LABOR_EVENT()
+ *
+ * Specify a routine to be called
+ * when labor is offloaded to the
+ * event task
+ */
+int db_add_extra_labor_event(
+struct event_user	*evuser,
+EXTRALABORFUNC		func,
+void			*arg
+)
+{
+  	evuser->extralabor_sub = func;
+  	evuser->extralabor_arg = arg;
+
+  	return OK;
+}
+
+
+/*
+ * 	DB_POST_EXTRA_LABOR()
+ */
+int db_post_extra_labor(struct event_user *evuser)
+{
+    	/* notify the event handler of extra labor */
+	evuser->extra_labor = TRUE;
+    	semGive(evuser->ppendsem);
+
+	return OK;
 }
 
 
@@ -640,7 +682,8 @@ void			(*init_func)(),
 int			init_func_arg
 )
 {
-  	register struct event_que	*ev_que;
+	int			status;
+  	struct event_que	*ev_que;
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
@@ -660,6 +703,15 @@ int			init_func_arg
 			ev_que = ev_que->nextque)
 
       			event_read(ev_que);
+
+		/*
+		 * check to see if the caller has offloaded
+		 * labor to this task
+		 */
+		if(evuser->extra_labor){
+			evuser->extra_labor = FALSE;
+			(*evuser->extralabor_sub)(evuser->extralabor_arg);
+		}
 
 		/*
 		 * The following do not introduce event latency since they
@@ -714,6 +766,17 @@ int			init_func_arg
  			ev_que = nextque;
    		}
   	}
+
+	status = semDelete(evuser->ppendsem);
+	if(status != OK){
+		logMsg("evtsk: sem delete fail at exit\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
 
   	free(evuser);
 
@@ -773,8 +836,7 @@ LOCAL int event_read(struct event_que       *ev_que)
     		(*event->user_sub)(
 				event->user_arg, 
 				event->paddr,
-				/* NULL if no next event */
-				ev_que->evque[nextgetix],
+				ev_que->evque[nextgetix]?TRUE:FALSE,
 				pfl);
 
     		ev_que->evque[getix] = (struct event_block *) NULL;

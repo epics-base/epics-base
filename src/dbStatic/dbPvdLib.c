@@ -70,14 +70,15 @@ static unsigned short hash( char *pname, int length)
     unsigned char h0=0;
     unsigned char h1=0;
     unsigned short ind0,ind1;
-    int		even = TRUE;
-    unsigned char  c;
-    int		i;
+    int		isOdd;
+    int		i,n;
 
-    for(i=0; i<length; i++, pname++) {
-	c = *pname;
-	if(even) {h0 = T[h0^c]; even = FALSE;}
-	else {h1 = T[h1^c]; even = TRUE;}
+    isOdd = length%2; /*See if length is odd number of chanacters*/
+    n = (isOdd ? (length-1) : length);
+    if(isOdd) h0 = T[h0^*(pname + length -1)];
+    for(i=0; i<n; i+=2, pname+=2) {
+        h0 = T[h0^*pname];
+        h1 = T[h1^*(pname+1)];
     }
     ind0 = (unsigned short)h0;
     ind1 = (unsigned short)h1;

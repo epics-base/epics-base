@@ -1984,7 +1984,7 @@ int	time;
   while (length && (bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & (BB_IBSTAT_EOI|BB_IBSTAT_TMO))))
   {
     bbdpvt.rxMaxLen = length > BB_MAX_DAT_LEN ? BB_MAX_DAT_LEN+7 : length+7;
-    bbdpvt.ageLimit = 10;
+    bbdpvt.ageLimit = 0;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_LOW);
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
@@ -2072,7 +2072,7 @@ int	time;
       printf("bbGpibWrite():sending %02.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
     }
 
-    bbdpvt.ageLimit = 10;
+    bbdpvt.ageLimit = 0;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
@@ -2122,7 +2122,7 @@ int     length;
   while ((length > BB_MAX_DAT_LEN) && (bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
   {
     bbdpvt.txMsg.length = BB_MAX_DAT_LEN+7;	/* send a chunk */
-    bbdpvt.ageLimit = 10;
+    bbdpvt.ageLimit = 0;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
@@ -2132,7 +2132,7 @@ int     length;
   if ((bbdpvt.status == BB_OK) && (!(bbdpvt.rxMsg.cmd & BB_IBSTAT_TMO)))
   {
     bbdpvt.txMsg.length = length+7;		/* send the last chunk */
-    bbdpvt.ageLimit = 10;
+    bbdpvt.ageLimit = 0;
     (*(drvBitBus.qReq))(&bbdpvt, BB_Q_HIGH);
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 /* BUG -- check bitbus response */
@@ -2251,7 +2251,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
       bbDpvt.finishProc = NULL;	/* no callback when receive reply */
       bbDpvt.psyncSem = &(pbbIbLink->syncSem);
       bbDpvt.link = link;
-      bbDpvt.ageLimit = 10;
+      bbDpvt.ageLimit = 0;
   
       /* send it to the bug */
       (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);
@@ -2280,7 +2280,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
       bbDpvt.psyncSem = &(pbbIbLink->syncSem);
       bbDpvt.priority = 0;
       bbDpvt.link = link;
-      bbDpvt.ageLimit = 10;
+      bbDpvt.ageLimit = 0;
   
       /* send it to the bug */
       (*(drvBitBus.qReq))(&bbDpvt, BB_Q_HIGH);

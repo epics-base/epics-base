@@ -175,7 +175,7 @@ msgDrvGenXParm	*p;
   pdpvtBitBusHead->status = BB_OK;
 
   pdpvtBitBusHead->rxMaxLen = 0;
-  pdpvtBitBusHead->ageLimit = BBMSG_DEFAULT_AGE;
+  pdpvtBitBusHead->ageLimit = 0;
 
   if (sscanf(p->plink->value.bitbusio.parm,"%d", &(p->pmsgXact->parm)) != 1)
   {

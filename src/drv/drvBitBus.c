@@ -724,13 +724,10 @@ int	link;
   struct dpvtBitBusHead *pnode;
   struct dpvtBitBusHead *npnode;
   unsigned      long    now;
-  int			tixPerSecond;
   SEM_ID		syncSem;
 
   struct dpvtBitBusHead resetNode;
   unsigned char         resetNodeData;  /* 1-byte data field for RAC_OFFLINE */
-
-  tixPerSecond = sysClkRateGet();	/* What is the timer clock rate? */
 
   /* init the SEM used when sending the reset message */
   syncSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
@@ -744,7 +741,7 @@ int	link;
   resetNode.psyncSem = &syncSem;/* do a semGive on this SEM when done sending */
   resetNode.link = link;	/* which bitbus link to send message out on */
   resetNode.rxMaxLen = 7;       /* Chop off the response... we don't care */
-  resetNode.ageLimit = tixPerSecond*100; /* make sure this never times out */
+  resetNode.ageLimit = sysClkRateGet()*100; /* make sure this never times out */
 
   resetNode.txMsg.length = 8;
   resetNode.txMsg.route = BB_STANDARD_TX_ROUTE;
@@ -833,7 +830,7 @@ printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
           semGive(plink->linkEventSem);	/* Tell TxTask to send the message */
 
-	  if (semTake(syncSem, tixPerSecond/4) == ERROR)
+	  if (semTake(syncSem, sysClkRateGet()/4) == ERROR)
           {
 	    printf("xvmeWdTask(%d): link dead, trying manual reboot\n", link);
 	    plink->nukeEm = 1;
@@ -1026,7 +1023,10 @@ int	link;
   
               /* set the retire time */
               pnode->retire = tickGet();
-	      pnode->retire += 5*60; /*pnode->ageLimit;*/
+	      if (pnode->ageLimit)
+	        pnode->retire += pnode->ageLimit;
+	      else
+		pnode->retire += 5 * sysClkRateGet();
     
 	      if (plink->busyList.head == NULL)
 	        dogStart = 1;

@@ -69,7 +69,6 @@ STATIC long	reportBB(), initBB(), qBBReq();
 STATIC int	xvmeTmoHandler(), xvmeRxTask(), xvmeTxTask(), xvmeWdTask();
 STATIC int	xvmeIrqRdav(), xvmeIrqRcmd();
 
-STATIC int tixPerSecond = 60;
 int	bbDebug = 0;	/* set to 1 from the shell to print debugging info */
 
 /******************************************************************************
@@ -151,8 +150,6 @@ initBB()
     printf("initBB(): BB devices already initialized!\n");
     return(ERROR);
   }
-
-  tixPerSecond = sysClkRateGet();	 /* What is the timer clock rate? */
 
   /* Figure out where the short io address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
@@ -752,7 +749,7 @@ int	link;
   resetNode.psyncSem = NULL;
   resetNode.link = link;	/* which bitbus link to send message out on */
   resetNode.rxMaxLen = 10; 
-  resetNode.ageLimit = tixPerSecond*100; /* make sure this never times out */
+  resetNode.ageLimit = sysClkRateGet()*100; /* make sure this never times out */
 
   resetNode.txMsg.length = 8;
   resetNode.txMsg.route = BB_STANDARD_TX_ROUTE;
@@ -764,7 +761,7 @@ int	link;
   offlnNode.psyncSem = &syncSem;/* do a semGive on this SEM when responded to*/
   offlnNode.link = link;	/* which bitbus link to send message out on */
   offlnNode.rxMaxLen = 10; 
-  offlnNode.ageLimit = tixPerSecond*100; /* make sure this never times out */
+  offlnNode.ageLimit = sysClkRateGet()*100; /* make sure this never times out */
 
   offlnNode.txMsg.length = 8;
   offlnNode.txMsg.route = BB_STANDARD_TX_ROUTE;
@@ -862,7 +859,7 @@ int	link;
 
 	  semGive(plink->linkEventSem); /* Tell TxTask to send the messages */
 
-	  if (semTake(syncSem, (tixPerSecond) ) == ERROR) {
+	  if (semTake(syncSem, (sysClkRateGet()) ) == ERROR) {
 	    printf("xvmeWdTask(%d): link dead, trying manual reboot\n", link);
 	    plink->nukeEm = 1;
             pXvmeLink[link]->abortFlag = 1;
@@ -930,7 +927,6 @@ int	link;
   int			prio;
   int			working;
   int			dogStart;
-  int                   tixPerSecond;
   int                   stuck;
   
   int			txTCount;
@@ -942,7 +938,6 @@ int	link;
   if (bbDebug)
     printf("xvmeTxTask started for link %d\n", link);
 
-  tixPerSecond = sysClkRateGet();	/* What is the timer clock rate? */  
   plink = pXvmeLink[link]->pbbLink;
   
   while(1) {
@@ -1043,7 +1038,10 @@ int	link;
 	      
 	      /* set the retire time */
 	      pnode->retire = tickGet();
-	      pnode->retire += 5*tixPerSecond; /*pnode->ageLimit;*/
+	      if (pnode->ageLimit)
+	        pnode->retire += pnode->ageLimit;
+	      else
+		pnode->retire += 5*sysClkRateGet();
 	      
 	      if (plink->busyList.head == NULL)
 		dogStart = 1;

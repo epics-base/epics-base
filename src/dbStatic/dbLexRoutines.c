@@ -627,7 +627,7 @@ static void dbRecordtypeBody(void)
     if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     pdbRecordType->no_prompt = no_prompt;
     pdbRecordType->no_links = no_links;
-    pdbRecordType->link_ind = dbCalloc(no_prompt,sizeof(short));
+    pdbRecordType->link_ind = dbCalloc(no_links,sizeof(short));
     ilink = 0;
     for(i=0; i<no_fields; i++) {
 	pdbFldDes = pdbRecordType->papFldDes[i];

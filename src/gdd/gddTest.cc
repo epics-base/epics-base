@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:48  jbk
+// new in EPICS base
+//
 //
 
 // *Revision 1.3  1996/06/24 03:15:38  jbk
@@ -23,13 +26,13 @@ void gdd::dump(void) { }
 #else
 void gdd::dump(void)
 {
-	gddScaler* sdd;
+	gddScalar* sdd;
 	gddAtomic* add;
 	gddContainer* cdd;
 
-	if(isScaler())
+	if(isScalar())
 	{
-		sdd=(gddScaler*)this;
+		sdd=(gddScalar*)this;
 		sdd->dump();
 		return;
 	}
@@ -73,11 +76,11 @@ void gdd::dumpInfo(void)
 		fprintf(stderr," (%d) %8.8x first=%d count=%d\n",i,&bounds[i],f,c);
 	}
 
-	if(isScaler()) fprintf(stderr," Is a Scaler\n");
+	if(isScalar()) fprintf(stderr," Is a Scalar\n");
 	if(isAtomic()) fprintf(stderr," Is a Atomic\n");
 	if(isContainer()) fprintf(stderr," Is a Container\n");
 
-	if(!isContainer() && !isScaler() && !isAtomic())
+	if(!isContainer() && !isScalar() && !isAtomic())
 		 fprintf(stderr,"--------------------------------------\n");
 }
 #endif
@@ -157,9 +160,9 @@ void gddAtomic::dump(void)
 #endif
 
 #ifdef NO_DUMP_TEST
-void gddScaler::dump(void) { }
+void gddScalar::dump(void) { }
 #else
-void gddScaler::dump(void)
+void gddScalar::dump(void)
 {
 	aitFloat64 f64;	aitFloat32 f32;	aitUint32 ui32;	aitInt32 i32;
 	aitUint16 ui16;	aitInt16 i16;		aitUint8 ui8;		aitInt8 i8;
@@ -319,9 +322,9 @@ void gddAtomic::test(void)
 #endif
 
 #ifdef NO_DUMP_TEST
-void gddScaler::test(void) { }
+void gddScalar::test(void) { }
 #else
-void gddScaler::test(void)
+void gddScalar::test(void)
 {
 	int i;
 	aitFloat32 fa32,f32 = 32.0;
@@ -400,7 +403,7 @@ void gddContainer::dump(void)
 	int i;
 	gdd* dd;
 	gddAtomic* add;
-	gddScaler* sdd;
+	gddScalar* sdd;
 	gddContainer* cdd;
 
 	fprintf(stderr,"----------dumping container:\n");
@@ -412,7 +415,7 @@ void gddContainer::dump(void)
 	for(i=0;dd=getDD(i);i++)
 	{
 		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
-		if(dd->isScaler())		{ sdd=(gddScaler*)dd; sdd->dump(); }
+		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }
 		if(dd->isContainer())	{ cdd=(gddContainer*)dd; cdd->dump(); }
 	}
 }
@@ -423,8 +426,8 @@ void gddContainer::test(void) { }
 #else
 void gddContainer::test(void)
 {
-	gddScaler* sdd1 = new gddScaler(1,aitEnumInt32);
-	gddScaler* sdd2 = new gddScaler(2,aitEnumInt16);
+	gddScalar* sdd1 = new gddScalar(1,aitEnumInt32);
+	gddScalar* sdd2 = new gddScalar(2,aitEnumInt16);
 	gddAtomic* add1 = new gddAtomic(3,aitEnumFloat32,1,3);
 	gddContainer* cdd1;
 

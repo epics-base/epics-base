@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.7  1996/07/24 22:48:06  jhill
+// fixed gnu warning int=>size_t
+//
 // Revision 1.6  1996/07/23 17:13:30  jbk
 // various fixes - dbmapper incorrectly worked with enum types
 //
@@ -128,7 +131,7 @@ static gdd* mapStringToGdd(void* v,aitIndex count) {
 
 	if(count<=1)
 	{
-		dd=new gddScaler(to_app,to_type);
+		dd=new gddScalar(to_app,to_type);
 		dd->put(*db);
 	}
 	else
@@ -156,7 +159,7 @@ static gdd* mapShortToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_SHORT].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_SHORT].app);
+		dd=new gddScalar(gddDbrToAit[DBR_SHORT].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -184,7 +187,7 @@ static gdd* mapFloatToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_FLOAT].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_FLOAT].app);
+		dd=new gddScalar(gddDbrToAit[DBR_FLOAT].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -212,7 +215,7 @@ static gdd* mapEnumToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_ENUM].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_ENUM].app);
+		dd=new gddScalar(gddDbrToAit[DBR_ENUM].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -240,7 +243,7 @@ static gdd* mapCharToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_CHAR].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_CHAR].app);
+		dd=new gddScalar(gddDbrToAit[DBR_CHAR].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -268,7 +271,7 @@ static gdd* mapLongToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_LONG].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_LONG].app);
+		dd=new gddScalar(gddDbrToAit[DBR_LONG].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -296,7 +299,7 @@ static gdd* mapDoubleToGdd(void* v,aitIndex count) {
 			gddDbrToAit[DBR_DOUBLE].type,1,count);
 		dd->putRef(sv);
 	} else {
-		dd=new gddScaler(gddDbrToAit[DBR_DOUBLE].app);
+		dd=new gddScalar(gddDbrToAit[DBR_DOUBLE].app);
 		*dd=*sv;
 	}
 	return dd;
@@ -329,7 +332,7 @@ static gdd* mapStsStringToGdd(void* v,aitIndex count)
 
 	if(count<=1)
 	{
-		dd=new gddScaler(to_app,to_type);
+		dd=new gddScalar(to_app,to_type);
 		dd->put(*dbv);
 	}
 	else
@@ -464,7 +467,7 @@ static gdd* mapTimeStringToGdd(void* v,aitIndex count)
 
 	if(count<=1)
 	{
-		dd=new gddScaler(to_app,to_type);
+		dd=new gddScalar(to_app,to_type);
 		dd->put(*dbv);
 	}
 	else

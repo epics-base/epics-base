@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.2  1996/07/23 17:13:34  jbk
+// various fixes - dbmapper incorrectly worked with enum types
+//
 // Revision 1.1  1996/06/25 19:11:41  jbk
 // new in EPICS base
 //
@@ -108,147 +111,147 @@ void gddApplicationTypeTable::GenerateTypes(void)
 
 	// DBR_GR_SHORT
 	gddContainer* cdd_gr_short=new gddContainer(0);
-	cdd_gr_short->insert(new gddScaler(type_value,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_ghigh,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_glow,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_ahigh,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_alow,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_awhigh,aitEnumInt16)); 
-	cdd_gr_short->insert(new gddScaler(type_awlow,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_value,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_ghigh,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_glow,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_ahigh,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_alow,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_awhigh,aitEnumInt16)); 
+	cdd_gr_short->insert(new gddScalar(type_awlow,aitEnumInt16)); 
 	cdd_gr_short->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_gr_short",cdd_gr_short);
 
 	// DBR_GR_FLOAT
 	gddContainer* cdd_gr_float=new gddContainer(0);
-	cdd_gr_float->insert(new gddScaler(type_value,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_prec,aitEnumInt16)); 
-	cdd_gr_float->insert(new gddScaler(type_ghigh,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_glow,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_ahigh,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_alow,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_awhigh,aitEnumFloat32)); 
-	cdd_gr_float->insert(new gddScaler(type_awlow,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_value,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_prec,aitEnumInt16)); 
+	cdd_gr_float->insert(new gddScalar(type_ghigh,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_glow,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_ahigh,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_alow,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_awhigh,aitEnumFloat32)); 
+	cdd_gr_float->insert(new gddScalar(type_awlow,aitEnumFloat32)); 
 	cdd_gr_float->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_gr_float",cdd_gr_float);
 
 	// DBR_GR_ENUM
 	gddContainer* cdd_gr_enum=new gddContainer(0);
 	cdd_gr_enum->insert(getDD(type_menu)); 
-	cdd_gr_enum->insert(new gddScaler(type_value,aitEnumEnum16)); 
+	cdd_gr_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_gr_enum",cdd_gr_enum);
 
 	// DBR_GR_CHAR
 	gddContainer* cdd_gr_char=new gddContainer(0);
-	cdd_gr_char->insert(new gddScaler(type_value,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_ghigh,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_glow,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_ahigh,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_alow,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_awhigh,aitEnumInt8)); 
-	cdd_gr_char->insert(new gddScaler(type_awlow,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_value,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_ghigh,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_glow,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_ahigh,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_alow,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_awhigh,aitEnumInt8)); 
+	cdd_gr_char->insert(new gddScalar(type_awlow,aitEnumInt8)); 
 	cdd_gr_char->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_gr_char",cdd_gr_char);
 
 	// DBR_GR_LONG
 	gddContainer* cdd_gr_long=new gddContainer(0);
-	cdd_gr_long->insert(new gddScaler(type_value,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_ghigh,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_glow,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_ahigh,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_alow,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_awhigh,aitEnumInt32)); 
-	cdd_gr_long->insert(new gddScaler(type_awlow,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_value,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_ghigh,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_glow,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_ahigh,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_alow,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_awhigh,aitEnumInt32)); 
+	cdd_gr_long->insert(new gddScalar(type_awlow,aitEnumInt32)); 
 	cdd_gr_long->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_gr_long",cdd_gr_long);
 
 	// DBR_GR_DOUBLE
 	gddContainer* cdd_gr_double=new gddContainer(0);
-	cdd_gr_double->insert(new gddScaler(type_value,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_prec,aitEnumInt16)); 
-	cdd_gr_double->insert(new gddScaler(type_ghigh,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_glow,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_ahigh,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_alow,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_awhigh,aitEnumFloat64)); 
-	cdd_gr_double->insert(new gddScaler(type_awlow,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_value,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_prec,aitEnumInt16)); 
+	cdd_gr_double->insert(new gddScalar(type_ghigh,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_glow,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_ahigh,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_alow,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_awhigh,aitEnumFloat64)); 
+	cdd_gr_double->insert(new gddScalar(type_awlow,aitEnumFloat64)); 
 	cdd_gr_double->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_gr_double",cdd_gr_double);
 
 	// DBR_CTRL_SHORT
 	gddContainer* cdd_ctrl_short=new gddContainer(0);
-	cdd_ctrl_short->insert(new gddScaler(type_value,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_ghigh,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_glow,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_chigh,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_clow,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_ahigh,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_alow,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_awhigh,aitEnumInt16)); 
-	cdd_ctrl_short->insert(new gddScaler(type_awlow,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_value,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_ghigh,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_glow,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_chigh,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_clow,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_ahigh,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_alow,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_awhigh,aitEnumInt16)); 
+	cdd_ctrl_short->insert(new gddScalar(type_awlow,aitEnumInt16)); 
 	cdd_ctrl_short->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_short",cdd_ctrl_short);
 
 	// DBR_CTRL_FLOAT
 	gddContainer* cdd_ctrl_float=new gddContainer(0);
-	cdd_ctrl_float->insert(new gddScaler(type_value,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_prec,aitEnumInt16)); 
-	cdd_ctrl_float->insert(new gddScaler(type_ghigh,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_glow,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_chigh,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_clow,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_ahigh,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_alow,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_awhigh,aitEnumFloat32)); 
-	cdd_ctrl_float->insert(new gddScaler(type_awlow,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_value,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_prec,aitEnumInt16)); 
+	cdd_ctrl_float->insert(new gddScalar(type_ghigh,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_glow,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_chigh,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_clow,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_ahigh,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_alow,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_awhigh,aitEnumFloat32)); 
+	cdd_ctrl_float->insert(new gddScalar(type_awlow,aitEnumFloat32)); 
 	cdd_ctrl_float->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_float",cdd_ctrl_float);
 
 	// DBR_CTRL_ENUM
 	gddContainer* cdd_ctrl_enum=new gddContainer(0);
 	cdd_ctrl_enum->insert(getDD(type_menu)); 
-	cdd_ctrl_enum->insert(new gddScaler(type_value,aitEnumEnum16)); 
+	cdd_ctrl_enum->insert(new gddScalar(type_value,aitEnumEnum16)); 
 	registerApplicationTypeWithProto("dbr_ctrl_enum",cdd_ctrl_enum);
 
 	// DBR_CTRL_CHAR
 	gddContainer* cdd_ctrl_char=new gddContainer(0);
-	cdd_ctrl_char->insert(new gddScaler(type_value,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_ghigh,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_glow,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_chigh,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_clow,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_ahigh,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_alow,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_awhigh,aitEnumInt8)); 
-	cdd_ctrl_char->insert(new gddScaler(type_awlow,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_value,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_ghigh,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_glow,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_chigh,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_clow,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_ahigh,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_alow,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_awhigh,aitEnumInt8)); 
+	cdd_ctrl_char->insert(new gddScalar(type_awlow,aitEnumInt8)); 
 	cdd_ctrl_char->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_char",cdd_ctrl_char);
 
 	// DBR_CTRL_LONG
 	gddContainer* cdd_ctrl_long=new gddContainer(0);
-	cdd_ctrl_long->insert(new gddScaler(type_value,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_ghigh,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_glow,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_chigh,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_clow,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_ahigh,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_alow,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_awhigh,aitEnumInt32)); 
-	cdd_ctrl_long->insert(new gddScaler(type_awlow,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_value,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_ghigh,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_glow,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_chigh,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_clow,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_ahigh,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_alow,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_awhigh,aitEnumInt32)); 
+	cdd_ctrl_long->insert(new gddScalar(type_awlow,aitEnumInt32)); 
 	cdd_ctrl_long->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_long",cdd_ctrl_long);
 
 	// DBR_CTRL_DOUBLE
 	gddContainer* cdd_ctrl_double=new gddContainer(0);
-	cdd_ctrl_double->insert(new gddScaler(type_value,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_prec,aitEnumInt16)); 
-	cdd_ctrl_double->insert(new gddScaler(type_ghigh,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_glow,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_chigh,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_clow,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_ahigh,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_alow,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_awhigh,aitEnumFloat64)); 
-	cdd_ctrl_double->insert(new gddScaler(type_awlow,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_value,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_prec,aitEnumInt16)); 
+	cdd_ctrl_double->insert(new gddScalar(type_ghigh,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_glow,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_chigh,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_clow,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_ahigh,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_alow,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_awhigh,aitEnumFloat64)); 
+	cdd_ctrl_double->insert(new gddScalar(type_awlow,aitEnumFloat64)); 
 	cdd_ctrl_double->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_double",cdd_ctrl_double);
 }

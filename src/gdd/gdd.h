@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1996/07/24 22:17:17  jhill
+ * removed gdd:: from func proto
+ *
  * Revision 1.3  1996/07/23 17:13:33  jbk
  * various fixes - dbmapper incorrectly worked with enum types
  *
@@ -88,7 +91,7 @@ typedef struct timespec timespec;
 
 class gddContainer;
 class gddAtomic;
-class gddScaler;
+class gddScalar;
 
 // Not Complete in this prototype:
 // - Read only DD.
@@ -254,7 +257,7 @@ public:
 // ---------------------------------------------------------------------
 // class structure for DDs:
 //
-//      gddScaler
+//      gddScalar
 //          \
 //        gddAtomic   gddContainer
 //                \   /
@@ -328,7 +331,7 @@ public:
 	//  scaler or atomic type to container
 
 	// copyInfo() will copy  DD info only, this means appl, primitive type
-	//   and bounds.  Scaler data will be copied, but no arrays.
+	//   and bounds.  Scalar data will be copied, but no arrays.
 	// copy() will copy DD info, bounds, allocate array data buffer and
 	//   copy data into it.
 	// Dup() will copy DD info. bounds, data references copied only.
@@ -344,7 +347,7 @@ public:
 	gddStatus convertOffsetsToAddress(void);
 	gddStatus convertAddressToOffsets(void);
 
-	int isScaler(void) const;
+	int isScalar(void) const;
 	int isContainer(void) const;
 	int isAtomic(void) const;
 
@@ -645,7 +648,7 @@ inline void gdd::setStatSevr(aitInt16 st, aitInt16 se)
 inline gdd& gdd::operator=(const gdd& v)
 	{ memcpy(this,&v,sizeof(gdd)); return *this; }
 
-inline int gdd::isScaler(void) const { return dimension()==0?1:0; }
+inline int gdd::isScalar(void) const { return dimension()==0?1:0; }
 inline int gdd::isContainer(void) const
 	{ return (primitiveType()==aitEnumContainer)?1:0; }
 inline int gdd::isAtomic(void) const
@@ -982,30 +985,30 @@ private:
 // Add handling of the special case where the data is a scaler - the
 // dimension is zero
 
-class gddScaler : public gddAtomic
+class gddScalar : public gddAtomic
 {
 public:
-	gddScaler(void) { }
-	gddScaler(gddScaler* ad) : gddAtomic(ad) { }
-	gddScaler(int app) : gddAtomic(app) { }
-	gddScaler(int app,aitEnum prim) : gddAtomic(app,prim) { }
+	gddScalar(void) { }
+	gddScalar(gddScalar* ad) : gddAtomic(ad) { }
+	gddScalar(int app) : gddAtomic(app) { }
+	gddScalar(int app,aitEnum prim) : gddAtomic(app,prim) { }
 
 	void dump(void);
 	void test(void);
 
-	gddScaler& operator=(aitFloat64 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitFloat32 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitUint32 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitInt32 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitUint16 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitInt16 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitUint8 d) { *((gdd*)this)=d; return *this; }
-	gddScaler& operator=(aitInt8 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitFloat64 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitFloat32 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitUint32 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitInt32 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitUint16 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitInt16 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitUint8 d) { *((gdd*)this)=d; return *this; }
+	gddScalar& operator=(aitInt8 d) { *((gdd*)this)=d; return *this; }
 
 protected:
-	gddScaler(int app, aitEnum prim, int dimen, aitUint32* size_array):
+	gddScalar(int app, aitEnum prim, int dimen, aitUint32* size_array):
 		gddAtomic(app,prim,dimen,size_array) { }
-	~gddScaler(void) { }
+	~gddScalar(void) { }
 
 	// disallow
 	const gddBounds* getBounds(void)				{ return NULL; }
@@ -1054,7 +1057,7 @@ public:
 
 	// The following are slow and inefficient
 	gdd* getDD(aitIndex index);
-	gdd* getDD(aitIndex index,gddScaler*&);
+	gdd* getDD(aitIndex index,gddScalar*&);
 	gdd* getDD(aitIndex index,gddAtomic*&);
 	gdd* getDD(aitIndex index,gddContainer*&);
 	gdd* operator[](aitIndex index);
@@ -1083,8 +1086,8 @@ inline int gddContainer::total(void)
 	{ return bounds->size(); }
 inline gdd* gddContainer::operator[](aitIndex index)
 	{ return getDD(index); }
-inline gdd* gddContainer::getDD(aitIndex index,gddScaler*& dd)
-	{ return (gdd*)(dd=(gddScaler*)getDD(index)); }
+inline gdd* gddContainer::getDD(aitIndex index,gddScalar*& dd)
+	{ return (gdd*)(dd=(gddScalar*)getDD(index)); }
 inline gdd* gddContainer::getDD(aitIndex index,gddAtomic*& dd)
 	{ return (gdd*)(dd=(gddAtomic*)getDD(index)); }
 inline gdd* gddContainer::getDD(aitIndex index,gddContainer*& dd)
@@ -1099,17 +1102,17 @@ public:
 	gddCursor(const gddContainer* ec);
 
 	gdd* first(void);
-	gdd* first(gddScaler*&);
+	gdd* first(gddScalar*&);
 	gdd* first(gddAtomic*&);
 	gdd* first(gddContainer*&);
 
 	gdd* next(void);
-	gdd* next(gddScaler*&);
+	gdd* next(gddScalar*&);
 	gdd* next(gddAtomic*&);
 	gdd* next(gddContainer*&);
 
 	gdd* current(void);
-	gdd* current(gddScaler*&);
+	gdd* current(gddScalar*&);
 	gdd* current(gddAtomic*&);
 	gdd* current(gddContainer*&);
 
@@ -1127,8 +1130,8 @@ inline gddCursor::gddCursor(const gddContainer* ec):list(ec)
 
 inline gdd* gddCursor::first(void)
 	{ curr=list->cData(); curr_index=0; return curr; }
-inline gdd* gddCursor::first(gddScaler*& dd)
-	{ return (gdd*)(dd=(gddScaler*)first()); }
+inline gdd* gddCursor::first(gddScalar*& dd)
+	{ return (gdd*)(dd=(gddScalar*)first()); }
 inline gdd* gddCursor::first(gddAtomic*& dd)
 	{ return (gdd*)(dd=(gddAtomic*)first()); }
 inline gdd* gddCursor::first(gddContainer*& dd)
@@ -1136,8 +1139,8 @@ inline gdd* gddCursor::first(gddContainer*& dd)
 
 inline gdd* gddCursor::next(void)
 	{ if(curr) { curr_index++;curr=curr->next(); } return curr; }
-inline gdd* gddCursor::next(gddScaler*& dd)
-	{ return (gdd*)(dd=(gddScaler*)next()); }
+inline gdd* gddCursor::next(gddScalar*& dd)
+	{ return (gdd*)(dd=(gddScalar*)next()); }
 inline gdd* gddCursor::next(gddAtomic*& dd)
 	{ return (gdd*)(dd=(gddAtomic*)next()); }
 inline gdd* gddCursor::next(gddContainer*& dd)
@@ -1145,8 +1148,8 @@ inline gdd* gddCursor::next(gddContainer*& dd)
 
 inline gdd* gddCursor::current(void)
 	{ return curr; }
-inline gdd* gddCursor::current(gddScaler*& dd)
-	{ return (gdd*)(dd=(gddScaler*)current()); }
+inline gdd* gddCursor::current(gddScalar*& dd)
+	{ return (gdd*)(dd=(gddScalar*)current()); }
 inline gdd* gddCursor::current(gddAtomic*& dd)
 	{ return (gdd*)(dd=(gddAtomic*)current()); }
 inline gdd* gddCursor::current(gddContainer*& dd)

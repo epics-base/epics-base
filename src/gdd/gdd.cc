@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.4  1996/07/23 17:13:31  jbk
+// various fixes - dbmapper incorrectly worked with enum types
+//
 // Revision 1.3  1996/06/26 21:00:07  jbk
 // Fixed up code in aitHelpers, removed unused variables in others
 // Fixed potential problem in gddAppTable.cc with the map functions
@@ -137,7 +140,7 @@ gdd::~gdd(void)
 
 	// this function need to be corrected for use of aitEnumString!
 
-	if(isScaler())
+	if(isScalar())
 	{
 		if(primitiveType()==aitEnumFixedString)
 		{
@@ -222,7 +225,7 @@ gddStatus gdd::genCopy(aitEnum t, const void* d)
 	aitInt8* buf;
 	gddStatus rc=0;
 
-	if(isScaler())
+	if(isScalar())
 		aitConvert(primitiveType(),&data,t,d,1);
 	else if(isAtomic())
 	{
@@ -255,7 +258,7 @@ gddStatus gdd::changeType(int app,aitEnum prim)
 	// this should only be allowed for setting the type if it is
 	// undefined or if the data is a scaler
 
-	if(isScaler() || primitiveType()==aitEnumInvalid)
+	if(isScalar() || primitiveType()==aitEnumInvalid)
 	{
 		setApplType(app);
 		setPrimType(prim);
@@ -320,7 +323,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 	{
 		init(dd->applicationType(),dd->primitiveType(),dd->dimension());
 
-		if(dd->isScaler())
+		if(dd->isScalar())
 			data=dd->data;
 		else // atomic
 		{
@@ -408,7 +411,7 @@ size_t gdd::getTotalSizeBytes(void) const
 	sz=sizeof(gdd)+(sizeof(gddBounds)*dimension());
 
 	// special case the aitString/aitFixedString here - sucks bad
-	if(isScaler())
+	if(isScalar())
 	{
 		if(primitiveType()==aitEnumString)
 		{
@@ -519,7 +522,7 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 	// aitString or aitFixedString (even if scaler gdd)
 	// must special case the strings - that really sucks
 
-	if(isScaler())
+	if(isScalar())
 	{
 		// here is special case for the string types
 		if(primitiveType()==aitEnumFixedString)
@@ -658,7 +661,7 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 				dd[i].bounds=NULL;
 			}
 		}
-		else if(dd[i].isScaler())
+		else if(dd[i].isScalar())
 		{
 			// here is special case for String types
 			if(dd[i].primitiveType()==aitEnumString)
@@ -771,7 +774,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 				}
 			}
 		}
-		else if(isScaler())
+		else if(isScalar())
 		{
 			if(primitiveType()==aitEnumFixedString)
 				if(data.FString) setData(pdd+dp);
@@ -840,7 +843,7 @@ gddStatus gdd::convertAddressToOffsets(void)
 			setData((gdd*)(dp-pdd));
 			bounds=(gddBounds*)(bnds-pdd);
 		}
-		else if(isScaler())
+		else if(isScalar())
 		{
 			// handle the special string scaler cases
 			if(primitiveType()==aitEnumFixedString)
@@ -957,12 +960,13 @@ gddStatus gdd::put(const gdd* dd)
 
 	if(isContainer() || dd->isContainer())
 		rc=gddErrorNotSupported;
-	else if(isScaler() && dd->isScaler())
+	else if(isScalar() && dd->isScalar())
 	{
 		// this is the simple case - just make this scaler look like the other
 		// not protected against screwing up the string type
 		setPrimType(dd->primitiveType());
 		put(((aitType*)dd->dataAddress()));
+		// set(dd->primitiveType(),dd->dataAddress());
 	}
 	else if(isAtomic() && dd->isAtomic())
 	{
@@ -1028,7 +1032,7 @@ gddStatus gdd::put(const gdd* dd)
 #endif
 		}
 	}
-	else if(isScaler())
+	else if(isScalar())
 	{
 		// just put first element of dd into this scaler - sucks
 		if(dd->getDataSizeElements()>0)
@@ -1121,7 +1125,7 @@ gddStatus gddAtomic::setBoundingBoxOrigin(const aitUint32* const b)
 	return rc;
 }
 
-// --------------------The gddScaler functions---------------------
+// --------------------The gddScalar functions---------------------
 
 // --------------------The gddContainer functions---------------------
 

@@ -489,7 +489,6 @@ int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, 
 			unsigned short port, struct in_addr matchAddr)
 {
-	struct sockaddr_in 	localAddr;
 	struct sockaddr_in 	*pInetAddr;
 	struct sockaddr_in 	*pInetNetMask;
 	caAddrNode			*pNode;
@@ -564,11 +563,6 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		}
 
 		/*
-		 * save the interface's IP address
-		 */
-		localAddr = *pInetAddr;
-
-		/*
 		 * if it isnt a wildcarded interface then look for
 		 * an exact match
 		 */
@@ -591,7 +585,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		if (pIfinfo->iiFlags & IFF_BROADCAST) {
 			//pInetAddr = (struct sockaddr_in *)&pIfinfo->iiBroadcastAddress;
 			pInetAddr->sin_addr.s_addr = 
-				(localAddr.sin_addr.s_addr & pInetNetMask->sin_addr.s_addr) | ~pInetNetMask->sin_addr.s_addr;
+				(pInetAddr->sin_addr.s_addr & pInetNetMask->sin_addr.s_addr) | ~pInetNetMask->sin_addr.s_addr;
 		}
 		else if(pIfinfo->iiFlags & IFF_POINTTOPOINT){
 			//pInetAddr = (struct sockaddr_in *)&pIfinfo->iiBroadcastAddress;
@@ -607,7 +601,6 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 
 		pNode->destAddr.in = *pInetAddr;
 		pNode->destAddr.in.sin_port = htons(port);
-		pNode->srcAddr.in = localAddr;
 
 		/*
 		 * LOCK applied externally

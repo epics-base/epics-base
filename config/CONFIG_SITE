@@ -38,6 +38,7 @@ endif
 #	niCpu030
 #	pc486
 #	frc5ce
+#	hkbaja47
 #
 CROSS_COMPILER_TARGET_ARCHS=mv167
 

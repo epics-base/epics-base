@@ -3108,8 +3108,7 @@ FILE *fp;
 	    if(sdrHeader.type==SDR_ALLSUMS) {
 		if(pdbbase->sdrFileSize==0) {
 		    pdbbase->sdrFileSize = ftell(fp);
-		}else {
-		    if(pdbbase->sdrFileSize!=ftell(fp))
+		}else if(pdbbase->sdrFileSize!=ftell(fp)) {
 			status = S_sdr_sumError;
 			errMessage(status,"dbRead: SDR_ALLSUMS error");
 			return(status);

@@ -18,13 +18,13 @@
 //
 // netWriteNotifyIO inline member functions
 //
-inline void * netWriteNotifyIO::operator new (size_t size)
+inline void * netWriteNotifyIO::operator new ( size_t size )
 { 
-    return netWriteNotifyIO::freeList.allocate (size);
+    return netWriteNotifyIO::freeList.allocate ( size );
 }
 
-inline void netWriteNotifyIO::operator delete (void *pCadaver, size_t size)
+inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
 { 
-    netWriteNotifyIO::freeList.release (pCadaver,size);
+    netWriteNotifyIO::freeList.release ( pCadaver, size );
 }
 

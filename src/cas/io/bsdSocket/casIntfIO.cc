@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.7.8.1  2001/03/06 00:10:29  jhill
+// fixed R3.13 for Linux's new socklen_t
+//
 // Revision 1.7  1998/06/18 00:11:09  jhill
 // use ipAddrToA
 //
@@ -210,7 +213,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
 	struct sockaddr	newAddr;
         SOCKET          newSock;
-        int             length;
+        osiSockLen_t             length;
 	casStreamOS	*pOS;
  
         length = sizeof(newAddr);

@@ -153,7 +153,7 @@ int req_server(void)
 
 	while (TRUE) {
 		struct sockaddr	sockAddr;
-		int		addLen = sizeof(sockAddr);
+		osiSocklen_t addLen = sizeof(sockAddr);
 
 		if ((i = accept(IOC_sock, &sockAddr, &addLen)) == ERROR) {
 			logMsg("CAS: Client accept error was \"%s\"\n",

@@ -198,19 +198,19 @@ static long init_record(pao,pass)
         status=(*pdset->init_record)(pao);
         switch(status){
         case(0): /* convert */
+	    value = pao->rval + pao->roff;
+	    if(pao->aslo!=0.0) value *= pao->aslo;
+	    if(pao->aoff!=0.0) value += pao->aoff;
             if (pao->linr == 0){
-                pao->val = pao->rval;
-                pao->udf=FALSE;
+		; /*do nothing*/
             }else if (pao->linr == 1){
-                     pao->val = (pao->rval + pao->roff)*pao->eslo + pao->egul;
-                     pao->udf=FALSE;
+                     value = (pao->rval + pao->roff)*pao->eslo + pao->egul;
             }else{
-		value=pao->rval;
-                if (cvtRawToEngBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)==0){
-                     pao->val=value;
-                     pao->udf=FALSE;
-                }
+                if(cvtRawToEngBpt(&value,pao->linr,pao->init,
+			(void *)&pao->pbrk,&pao->lbrk)!=0) break;
             }
+	    pao->val = value;
+	    pao->udf=FALSE;
         break;
         case(2): /* no convert */
         break;
@@ -500,20 +500,22 @@ static void convert(pao,pvalue)
 
         /* convert */
         if (pao->linr == 0){
-                pao->rval = value;
+                ; /* do nothing*/
         } else if (pao->linr == 1){
-              if (pao->eslo == 0.0) pao->rval = 0;
+              if (pao->eslo == 0.0) value = 0;
               else {
-                   pao->rval = (value - pao->egul) / pao->eslo + .5;
-                   pao->rval -= pao->roff;
+                   value = (value - pao->egul) / pao->eslo + .5;
               }
         }else{
 	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
                    recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM);
 		   return;
 	     }
-	     pao->rval=value;
         }
+	if(pao->aoff!=0.0) value -= pao->aoff;
+	if(pao->aslo!=0.0) value /= pao->aslo;
+	pao->rval = value;
+	pao->rval -= pao->roff;
 	return;
 }
 

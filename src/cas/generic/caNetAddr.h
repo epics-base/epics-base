@@ -20,8 +20,6 @@
 #ifndef caNetAddrH
 #define caNetAddrH
 
-#include <stdexcept>
-
 #ifdef caNetAddrSock
 #   ifdef epicsExportSharedSymbols
 #       define epicsExportSharedSymbols_caNetAddrH
@@ -30,10 +28,9 @@
 #   include "osiSock.h"
 #   ifdef epicsExportSharedSymbols_caNetAddrH
 #       define epicsExportSharedSymbols
+#       include "shareLib.h"
 #   endif
 #endif
-
-#include "shareLib.h"
 
 class epicsShareClass caNetAddr {
 public:

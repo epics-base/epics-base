@@ -33,11 +33,10 @@
 
 #ifdef epicsExportSharedSymbols_casdefh
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
 #include "caNetAddr.h"
-
-#include "shareLib.h"   // EPICS compiler specific sharable lib keywords
 
 typedef aitUint32 caStatus;
 

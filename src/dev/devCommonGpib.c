@@ -2055,9 +2055,9 @@ struct gpibDpvt *pdpvt;
 int	cmdType;
 unsigned short	val;
 {
-    int status;	  	/* for GPIBREAD, contains ERROR or # of bytes read */
+    int status = OK;
     short ibnode = pdpvt->head.device;
-    short bbnode;	/* In case is a bitbus->gpib type link */
+    short bbnode = -1;	/* In case is a bitbus->gpib type link */
     struct gpibCmd      *pCmd;
     struct devGpibParmBlock *parmBlock;
 
@@ -2078,8 +2078,7 @@ unsigned short	val;
 
         return(ERROR);
     }
-    switch (cmdType)
-    {
+    switch (cmdType) {
     case GPIBWRITE:		/* write the message to the GPIB listen adrs */
 
         if(*parmBlock->debugFlag)
@@ -2165,21 +2164,23 @@ unsigned short	val;
         break;
     case GPIBEFASTO:		/* write the enumerated cmd from the P3 array */
         if (pCmd->P3[val] != NULL)
+	{
 	    status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link,
 			bbnode, ibnode, pCmd->P3[val], strlen(pCmd->P3[val]));
 
-	if ((status != ERROR) && parmBlock->respond2Writes)
-	{   /* device responds to write commands, read the response */
-
-	    status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
-
-            /* if user specified a secondary convert routine, call it */
-
-	    if (parmBlock->wrConversion != NULL)
-		status = (*(parmBlock->wrConversion))(status, pdpvt);
+	    if ((status != ERROR) && parmBlock->respond2Writes)
+	    {   /* device responds to write commands, read the response */
+    
+	        status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
+                                    bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+    
+                /* if user specified a secondary convert routine, call it */
+    
+	        if (parmBlock->wrConversion != NULL)
+		    status = (*(parmBlock->wrConversion))(status, pdpvt);
+	    }
 	}
-	break;
+        break;
     }
     if(*parmBlock->debugFlag)
         logMsg("devGpibLib_xxGpibWork : done, status = %d\n",status);

@@ -75,7 +75,7 @@ private:
     friend class udpiiu;
 };
 
-class privateInterfaceForIO {
+class privateInterfaceForIO { // X aCC 655
 public:
     virtual void ioCompletionNotify ( 
         epicsGuard < epicsMutex > &, class baseNMIU & ) = 0;

@@ -294,7 +294,7 @@ public:
 // **** Lock Hierarchy ****
 // callbackControl must be taken before mutualExclusion if both are held at
 // the same time
-class epicsShareClass cacService {
+class epicsShareClass cacService { // X aCC 655
 public:
     virtual ~cacService () = 0;
     virtual cacContext & contextCreate ( 

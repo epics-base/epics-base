@@ -14,24 +14,16 @@
  *	505 665 1831
  */
 
+#ifdef _MSC_VER
+#   pragma warning(disable:4355)
+#endif
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < oldChannelNotify, 1024 >;
-template class epicsSingleton < tsFreeList < oldChannelNotify, 1024 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > oldChannelNotify::pFreeList;
 
@@ -45,9 +37,10 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 
 oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName, 
         caCh * pConnCallBackIn, void * pPrivateIn, capri priority ) :
-    io ( cacIn.createChannel ( pName, *this, priority ) ), cacCtx ( cacIn ), 
+    cacCtx ( cacIn ), 
     pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
-    pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler )
+    pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler ),
+    io ( cacIn.createChannel ( pName, *this, priority ) )
 {
 }
 

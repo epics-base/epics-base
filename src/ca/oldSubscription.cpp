@@ -14,18 +14,6 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < oldSubscription, 1024 >;
-template class epicsSingleton < tsFreeList < oldSubscription, 1024 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
 epicsSingleton < tsFreeList < struct oldSubscription, 1024 > > oldSubscription::pFreeList;
 
 oldSubscription::~oldSubscription ()

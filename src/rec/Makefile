@@ -83,6 +83,7 @@ LIBSRCS += waveformRecord.c
 LIBRARY_IOC += recIoc
 
 recIoc_LIBS = asIoc dbIoc registryIoc dbStaticIoc ca Com
+recIoc_RCS_WIN32 = recIoc.rc
 
 # For R3.13 compatability
 OBJS_vxWorks = $(LIBSRCS:%.c=%)

@@ -5,7 +5,7 @@ TOP=..
 include $(TOP)/configure/CONFIG
 
 TARGETS = $(CONFIG_TARGETS)
-CONFIGS = $(CONFIG_INSTALLS)
+CONFIGS += $(subst ../,,$(wildcard $(CONFIG_INSTALLS)))
 
 include $(TOP)/configure/RULES
 

@@ -46,7 +46,5 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *p
     if (eventNumber==epicsTimeEventCurrentTime) {
         return epicsTimeGetCurrent (pDest);
     }
-    else {
-        return epicsTimeERROR;
-    }
+    return epicsTimeERROR;
 }

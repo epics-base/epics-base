@@ -32,7 +32,7 @@ epicsShareFunc void epicsShareAPI epicsRingPointerDelete(epicsRingPointerId id)
 epicsShareFunc void* epicsShareAPI epicsRingPointerPop(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
-    return((void *)(pvoidPointer->pop()));
+    return pvoidPointer->pop();
 }
 
 epicsShareFunc int epicsShareAPI epicsRingPointerPush(epicsRingPointerId id, void *p)

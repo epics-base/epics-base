@@ -268,6 +268,7 @@ LOCAL int req_server (void)
     struct sockaddr_in serverAddr;  /* server's address */
     int status;
     SOCKET clientSock;
+    int flag;
 
     taskwdInsert (threadGetIdSelf(), NULL, NULL);
 
@@ -296,6 +297,16 @@ LOCAL int req_server (void)
         errlogPrintf ("CAS: Bind error\n");
         socket_close (IOC_sock);
         threadSuspendSelf ();
+    }
+
+    flag = 1;
+    status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
+                (char *) &flag, sizeof (flag) );
+    if ( status < 0 ) {
+        int errnoCpy = SOCKERRNO;
+        errlogPrintf (
+    "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
+                __FILE__, SOCKERRSTR (errnoCpy) );
     }
 
     /* listen and accept new connections */

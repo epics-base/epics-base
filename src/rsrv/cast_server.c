@@ -121,13 +121,14 @@ LOCAL void clean_addrq()
 int cast_server(void)
 {
     struct sockaddr_in  sin;    
-    int         status;
-    int         count=0;
+    int                 status;
+    int                 count=0;
     struct sockaddr_in  new_recv_addr;
-    int             recv_addr_size;
+    int                 recv_addr_size;
     unsigned short      port;
-    int         nchars;
-    threadId        tid;
+    int                 nchars;
+    threadId            tid;
+    int                 flag;
 
     taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
@@ -187,6 +188,16 @@ int cast_server(void)
         epicsPrintf ("CAS: cast bind error\n");
         socket_close (IOC_cast_sock);
         threadSuspendSelf ();
+    }
+
+    flag = 1;
+    status = setsockopt ( IOC_cast_sock,  SOL_SOCKET, SO_REUSEADDR,
+                (char *)&flag, sizeof (flag) );
+    if ( status < 0 ) {
+        int errnoCpy = SOCKERRNO;
+        errlogPrintf (
+    "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
+                __FILE__, SOCKERRSTR (errnoCpy) );
     }
     
     /* tell clients we are on line again */

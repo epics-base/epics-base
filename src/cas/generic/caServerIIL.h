@@ -26,28 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.6  1999/08/04 23:52:10  jhill
- * chronIntIdResTable name change
- *
- * Revision 1.5  1997/06/13 09:15:52  jhill
- * connect proto changes
- *
- * Revision 1.4  1997/04/10 19:33:54  jhill
- * API changes
- *
- * Revision 1.3  1996/11/02 00:53:56  jhill
- * many improvements
- *
- * Revision 1.2  1996/09/16 18:23:57  jhill
- * vxWorks port changes
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -94,15 +72,15 @@ inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 //
 inline casChannelI *caServerI::resIdToChannel(const caResId &id)
 {
-        casRes *pRes;
- 
-        pRes = this->lookupRes(id, casChanT);
- 
-        //
-        // safe to cast because we have checked the type code above
-        // (and we know that casChannelI derived from casRes)
-        //
-        return (casChannelI *) pRes;
+    casRes *pRes;
+
+    pRes = this->lookupRes(id, casChanT);
+
+    //
+    // safe to cast because we have checked the type code above
+    // (and we know that casChannelI derived from casRes)
+    //
+    return (casChannelI *) pRes;
 }
 
 //
@@ -129,19 +107,76 @@ inline void caServerI::setDebugLevel(unsigned debugLevelIn)
 	this->debugLevel = debugLevelIn;
 }
 
+//
+// casEventMask caServerI::valueEventMask()
+//
 inline casEventMask caServerI::valueEventMask() const
 {
     return this->valueEvent;
 }
 
+//
+// caServerI::logEventMask()
+//
 inline casEventMask caServerI::logEventMask() const
 {
     return this->logEvent;
 }
 
+//
+// caServerI::alarmEventMask()
+//
 inline casEventMask caServerI::alarmEventMask() const
 {
     return this->alarmEvent;
+}
+
+//
+// caServerI::readEventsProcessedCounter (void) const
+//
+inline unsigned caServerI::readEventsProcessedCounter (void) const
+{
+    return this->nEventsProcessed;
+}
+
+//
+// caServerI::incEventsProcessedCounter (void)
+//
+inline void caServerI::incrEventsProcessedCounter (void)
+{
+    this->nEventsProcessed++;
+}
+
+//
+// caServerI::clearEventsProcessedCounter (void)
+//
+inline void caServerI::clearEventsProcessedCounter (void)
+{
+    this->nEventsProcessed = 0u;
+}
+
+//
+// caServerI::readEventsPostedCounter (void) const
+//
+inline unsigned caServerI::readEventsPostedCounter (void) const
+{
+    return this->nEventsPosted;
+}
+
+//
+// caServerI::incEventsPostedCounter (void)
+//
+inline void caServerI::incrEventsPostedCounter (void)
+{
+    this->nEventsPosted++;
+}
+
+//
+// caServerI::clearEventsPostedCounter (void)
+//
+inline void caServerI::clearEventsPostedCounter (void)
+{
+    this->nEventsPosted = 0u;
 }
 
 #endif // caServerIIL_h

@@ -205,6 +205,60 @@ epicsShareFunc casEventMask caServer::alarmEventMask () const
 }
 
 //
+// caServer::readEventsProcessedCounter
+//
+#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
+epicsShareFunc unsigned caServer::readEventsProcessedCounter (void) const
+{
+    if (pCAS) {
+        return this->pCAS->readEventsProcessedCounter ();
+    }
+    else {
+        return 0u;
+    }
+}
+#endif
+
+//
+// caServer::clearEventsProcessedCounter
+//
+#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
+epicsShareFunc void caServer::clearEventsProcessedCounter (void)
+{
+    if (pCAS) {
+        this->pCAS->clearEventsProcessedCounter ();
+    }
+}
+#endif
+
+//
+// caServer::readEventsPostedCounter
+//
+#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
+epicsShareFunc unsigned caServer::readEventsPostedCounter (void) const
+{
+    if (pCAS) {
+        return this->pCAS->readEventsPostedCounter ();
+    }
+    else {
+        return 0u;
+    }
+}
+#endif
+
+//
+// caServer::clearEventsPostedCounter
+//
+#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
+epicsShareFunc void caServer::clearEventsPostedCounter (void)
+{
+    if (pCAS) {
+        this->pCAS->clearEventsPostedCounter ();
+    }
+}
+#endif
+
+//
 // casRes::~casRes()
 //
 // This must be virtual so that derived destructor will

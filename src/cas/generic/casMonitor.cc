@@ -130,6 +130,8 @@ void casMonitor::push(gdd &newValue)
 	
 	this->mutex.lock();
 	
+    client.getCAS().incrEventsPostedCounter ();
+
 	//
 	// get a new block if we havent exceeded quotas
 	//
@@ -223,6 +225,8 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	else {
 		delete pEV;
 	}
+
+    this->ciu.getClient().getCAS().incrEventsProcessedCounter ();
 	
 	return S_cas_success;
 }

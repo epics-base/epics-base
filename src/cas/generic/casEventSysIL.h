@@ -37,8 +37,6 @@
 // casEventSys::casEventSys ()
 //
 inline casEventSys::casEventSys () :
-    nProcessed (0ul),
-    nPosted (0ul),
 	pPurgeEvent (NULL),
 	numEventBlocks (0u),
 	maxLogEntries (individualEventEntries),
@@ -133,22 +131,6 @@ inline casMonitor *casEventSys::resIdToMon(const caResId id)
 	// (and we know that casMonitor derived from casRes)
 	//
 	return (casMonitor *) pRes;
-}
-
-//
-// casEventSys::nEventsProcessed ()
-//
-unsigned long casEventSys::nEventsProcessed () const
-{
-    return this->nProcessed;
-}
-
-//
-// casEventSys::nEventsPosted ()
-//
-unsigned long casEventSys::nEventsPosted () const
-{
-    return this->nPosted;
 }
 
 #endif // casEventSysIL_h

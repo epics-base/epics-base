@@ -115,7 +115,7 @@ class casEventSys {
 friend class casEventPurgeEv;
 public:
 	casEventSys ();
-	virtual ~casEventSys();
+	virtual ~casEventSys ();
 
 	void show (unsigned level) const;
 	casProcCond process ();
@@ -135,11 +135,11 @@ public:
 
 	bool getNDuplicateEvents () const;
 
-	void setDestroyPending();
+	void setDestroyPending ();
 
-	void eventsOn();
+	void eventsOn ();
 
-	caStatus eventsOff();
+	caStatus eventsOff ();
 
 	virtual caStatus disconnectChan (caResId id) = 0;
 
@@ -289,7 +289,7 @@ protected:
     //
     // pushCtx() returns an outBufCtx to be restored by popCtx()
     //
-    const inBufCtx inBuf::pushCtx (bufSizeT headerSize, bufSizeT bodySize);
+    const inBufCtx pushCtx (bufSizeT headerSize, bufSizeT bodySize);
 	bufSizeT popCtx (const inBufCtx &); // returns actual size
 
 private:
@@ -513,17 +513,17 @@ protected:
 
 	caStatus processMsg();
 
-private:
-
 	//
 	// dump message to stderr
 	//
 	void dumpMsg(const caHdr *mp, const void *dp);
 
+private:
+
 	//
 	// one function for each CA request type
 	//
-	caStatus uknownMessageAction ();
+	virtual caStatus uknownMessageAction () = 0;
 	caStatus ignoreMsgAction ();
 	caStatus noopAction ();
 	virtual caStatus eventAddAction ();
@@ -626,6 +626,7 @@ private:
 	//
 	// one function for each CA request type
 	//
+    caStatus uknownMessageAction ();
 	caStatus eventAddAction ();
 	caStatus eventCancelAction ();
 	caStatus readAction ();
@@ -698,7 +699,7 @@ public:
 	// only for use with DG io
 	//
 	void sendBeacon ();
-    virtual void sendBeaconIO (char &msg, unsigned length, aitUint32 &m_ipa, aitUint16 &m_port) = 0;
+    virtual void sendBeaconIO (char &msg, unsigned length, aitUint16 &m_port) = 0;
 
 	void destroy();
 
@@ -727,6 +728,7 @@ private:
 	// one function for each CA request type
 	//
 	caStatus searchAction ();
+    caStatus uknownMessageAction ();
 
 	//
 	// searchFailResponse()
@@ -874,6 +876,14 @@ public:
 	casEventMask logEventMask() const; 	// DBE_LOG registerEvent("log") 
 	casEventMask alarmEventMask() const; // DBE_ALARM registerEvent("alarm") 
 
+    unsigned readEventsProcessedCounter (void) const;
+    void incrEventsProcessedCounter (void);
+    void clearEventsProcessedCounter (void);
+
+    unsigned readEventsPostedCounter (void) const;
+    void incrEventsPostedCounter (void);
+    void clearEventsPostedCounter (void);
+
 private:
 	void advanceBeaconPeriod();
 
@@ -883,6 +893,8 @@ private:
 	double                  beaconPeriod;
 	caServer                &adapter;
 	unsigned                debugLevel;
+    unsigned                nEventsProcessed; 
+    unsigned                nEventsPosted; 
 
     //
     // predefined event types

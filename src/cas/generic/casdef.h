@@ -243,18 +243,7 @@ class caServerI;
 // caServer - Channel Access Server API Class
 //
 class caServer {
-private:
 	friend class casPVI;
-
-	//
-	// this private data member appears first so that
-	// initialization of the constant event masks below
-	// uses this member only after it has been initialized
-	//
-	// We do not use private inheritance here in order
-	// to avoid os/io dependent -I during server tool compile
-	//
-	caServerI       *pCAS;
 
 public:
 	epicsShareFunc caServer (unsigned pvCountEstimate=1024u);
@@ -362,13 +351,39 @@ public:
 	epicsShareFunc void setDebugLevel (unsigned level);
 	epicsShareFunc unsigned getDebugLevel () const;
 
-	//
-	// show()
-	//
+    //
+    // dump internal state of server to standard out
+    //
 	epicsShareFunc virtual void show (unsigned level) const;
+
+    //
+    // examine or clear diagnostic counters
+    //
+    // eventsPosted - number of events posted by server tool to the event queue
+    // eventsProcessed - number of events removed by server library from the event queue
+    //
+    // NOTE: this is an experimental interface which may change or vanish in
+    // the future. Perhaps a better alternative is to export this sort of
+    // information via dedicated process variables.
+    //
+#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
+    epicsShareFunc unsigned readEventsProcessedCounter (void) const;
+    epicsShareFunc void clearEventsProcessedCounter (void);
+    epicsShareFunc unsigned readEventsPostedCounter (void) const;
+    epicsShareFunc void clearEventsPostedCounter (void);
+#endif
 
 	//caStatus enableClients ();
 	//caStatus disableClients ();
+
+private:
+
+	//
+	// We do not use private inheritance here beacuse:
+	// o wish to avoid os/io dependent -I during server tool compile
+    // o server tool rebuild when internal structure of the server changes
+	//
+	caServerI       *pCAS;
 };
 
 //
@@ -748,8 +763,9 @@ public:
 
 	//
 	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncReadIO object). 
-	// Only the first call to this function has any effect.
+	// (this function does not delete the casAsyncReadIO object)
+    //
+	// only the first call to this function has any effect
 	//
 	epicsShareFunc caStatus postIOCompletion (caStatus completionStatusIn, gdd &valueRead);
 
@@ -765,9 +781,9 @@ public:
 	//
 	// called by the server lib after the response message
 	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc).
+	// IO operation is canceled (client disconnects etc)
 	//
-	// default destroy executes a "delete this".
+	// default destroy executes a "delete this"
 	//
 	epicsShareFunc virtual void destroy ();
 
@@ -823,9 +839,9 @@ public:
 	//
 	// called by the server lib after the response message
 	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc).
+	// IO operation is canceled (client disconnects etc)
 	//
-	// default destroy executes a "delete this".
+	// default destroy executes a "delete this"
 	//
 	epicsShareFunc virtual void destroy ();
 
@@ -852,8 +868,9 @@ public:
 
 	//
 	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncPVExistIO object). 
-	// Only the first call to this function has any effect.
+	// (this function does not delete the casAsyncPVExistIO object)
+    //
+	// only the first call to this function has any effect.
 	//
 	epicsShareFunc caStatus postIOCompletion (const pvExistReturn &retValIn);
 
@@ -869,9 +886,9 @@ public:
 	//
 	// called by the server lib after the response message
 	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc).
+	// IO operation is canceled (client disconnects etc)
 	//
-	// default destroy executes a "delete this".
+	// default destroy executes a "delete this"
 	//
 	epicsShareFunc virtual void destroy();
 
@@ -914,9 +931,9 @@ public:
 	//
 	// called by the server lib after the response message
 	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc).
+	// IO operation is canceled (client disconnects etc)
 	//
-	// default destroy executes a "delete this".
+	// default destroy executes a "delete this"
 	//
 	epicsShareFunc virtual void destroy ();
 

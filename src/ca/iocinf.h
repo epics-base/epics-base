@@ -380,8 +380,6 @@ typedef struct {
 	ELLNODE		node;
 	fd_set          readMask;  
 	fd_set          writeMask;  
-	fd_set		writeSave;
-	fd_set		readSave;
 }caFDInfo;
 
 struct  ca_static{

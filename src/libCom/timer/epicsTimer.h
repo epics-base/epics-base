@@ -28,6 +28,8 @@ public:
     virtual void expire() = 0;
 };
 
+class epicsTimerQueue;
+
 class epicsShareClass epicsTimer {
 public:
     epicsTimer(epicsTimerNotify &,epicsTimerQueue&);

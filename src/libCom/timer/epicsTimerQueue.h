@@ -12,6 +12,7 @@ of this distribution.
 #define epicsTimerQueueH
 
 #include "epicsTimer.h"
+#include "epicsThread.h"
 
 #ifdef __cplusplus
 
@@ -19,7 +20,7 @@ of this distribution.
 
 class epicsTimerQueue {
 public:
-    epicsTimerQueue()
+    epicsTimerQueue();
     virtual ~epicsTimerQueue() = 0;
     epicsTime &getExpirationTime() const;
     double getExpirationDelay() const;
@@ -36,7 +37,7 @@ private:
 class epicsTimerQueueThreaded : public epicsTimerQueue {
 public:
     epicsTimerQueueThreaded(
-        int threadPriority = threadPriorityMin+10);
+        int threadPriority = epicsThreadPriorityMin+10);
     virtual ~epicsTimerQueueThreaded();
     int getPriority();
     virtual void show(int level) const;
@@ -44,15 +45,15 @@ private:
     class threadedImpl& threadPvt;
     friend class epicsTimer;
     //copy constructor and operator= not allowed
-    epicsTimerThreaded(const epicsTimerThreaded& rhs);
-    epicsTimerThreaded& operator=
-        (const epicsTimerThreaded& rhs);
+    epicsTimerQueueThreaded(const epicsTimerQueueThreaded& rhs);
+    epicsTimerQueueThreaded& operator=
+        (const epicsTimerQueueThreaded& rhs);
 };
 
 class epicsTimerQueueNonthreaded : public epicsTimerQueue{
 public:
     epicsTimerQueueNonthreaded();
-    virtual ~epicsTimerQueue();
+    virtual ~epicsTimerQueueNonthreaded();
     void process();
     virtual void show(int level) const;
 private:

@@ -21,6 +21,7 @@
 *				return most recent chan data if chan failed to
 *				  produce data with the associated time stamp
 *	09/03/91	joh	fixed includes for V5 vxWorks
+*	06/26/92	joh	now uses ca_printf instead of printf	
 *
 *
 * Compile:
@@ -81,7 +82,6 @@
 */
 
 #if defined(UNIX)
-#	define logMsg	printf
 #	include	<types.h>
 #	include	<stdio.h>
 #	include	<sys/time.h>
@@ -197,7 +197,7 @@ main()
 	pSync_compctrl = (struct gsd_sync_compctrl *) 
 		gsd_sync_init(pSync_data_array, CHAN_COUNT, &pfdctx, NULL);
 	if(NULL == pSync_compctrl) {
-		logMsg("unable to continue, gsd_sync_init failed\n");
+		ca_printf("unable to continue, gsd_sync_init failed\n");
 		return 1;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
@@ -205,13 +205,13 @@ main()
 
 	gsd_sync_read(PREVIOUS_SYNC_DATA, pSync_compctrl, CHAN_COUNT, &pfdctx,
 		SYNC_TIMEOUT);
-	logMsg("result of sync_read(PREVIOUS_SYNC_DATA)\n");
+	ca_printf("result of sync_read(PREVIOUS_SYNC_DATA)\n");
 	for (i = 0; i < CHAN_COUNT; ++i) {
-		logMsg("%s  valid = %d  ptr = %d  \n",
+		ca_printf("%s  valid = %d  ptr = %d  \n",
 			(pSync_ctrl->pDstruct)->pName, (pSync_ctrl->pDstruct)->svalid,
 			(pSync_ctrl->pDstruct)->pSdata);
 		if((pSync_ctrl->pDstruct)->pSdata) {
-		  logMsg("ts sec = %ld  ts nsec = %ld  value = %f\n",
+		  ca_printf("ts sec = %ld  ts nsec = %ld  value = %f\n",
 			((struct dbr_time_float *)
 			 ((pSync_ctrl->pDstruct)->pSdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *)
@@ -222,20 +222,20 @@ main()
 		++pSync_ctrl;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
-	logMsg("\n");
+	ca_printf("\n");
 
 
 	while(!gsd_sync_read(NEXTSET_SYNC_DATA, pSync_compctrl, CHAN_COUNT, &pfdctx,
 		SYNC_TIMEOUT)) {
 		;
 	}
-	logMsg("result of sync_read(NEXTSET_SYNC_DATA)\n");
+	ca_printf("result of sync_read(NEXTSET_SYNC_DATA)\n");
 	for (i = 0; i < CHAN_COUNT; ++i) {
-		logMsg("%s  valid = %d  ptr = %d  \n",
+		ca_printf("%s  valid = %d  ptr = %d  \n",
 			(pSync_ctrl->pDstruct)->pName, (pSync_ctrl->pDstruct)->svalid,
 			(pSync_ctrl->pDstruct)->pSdata);
 		if((pSync_ctrl->pDstruct)->pSdata) {
-		  logMsg("ts sec = %ld  ts nsec = %ld  value = %f\n",
+		  ca_printf("ts sec = %ld  ts nsec = %ld  value = %f\n",
 			((struct dbr_time_float *)
 			 ((pSync_ctrl->pDstruct)->pSdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *)
@@ -246,18 +246,18 @@ main()
 		++pSync_ctrl;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
-	logMsg("\n");
+	ca_printf("\n");
 
 
 	gsd_sync_read(PREVIOUS_SYNC_DATA, pSync_compctrl, CHAN_COUNT, &pfdctx,
 		SYNC_TIMEOUT);
-	logMsg("result of sync_read(PREVIOUS_SYNC_DATA)\n");
+	ca_printf("result of sync_read(PREVIOUS_SYNC_DATA)\n");
 	for (i = 0; i < CHAN_COUNT; ++i) {
-		logMsg("%s  valid = %d  ptr = %d  \n",
+		ca_printf("%s  valid = %d  ptr = %d  \n",
 			(pSync_ctrl->pDstruct)->pName, (pSync_ctrl->pDstruct)->svalid,
 			(pSync_ctrl->pDstruct)->pSdata);
 		if((pSync_ctrl->pDstruct)->pSdata) {
-		  logMsg("ts sec = %ld  ts nsec = %ld  value = %f\n",
+		  ca_printf("ts sec = %ld  ts nsec = %ld  value = %f\n",
 			((struct dbr_time_float *)
 			 ((pSync_ctrl->pDstruct)->pSdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *)
@@ -268,20 +268,20 @@ main()
 		++pSync_ctrl;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
-	logMsg("\n");
+	ca_printf("\n");
 
 
 	while(!gsd_sync_read(NEXTSET_SYNC_DATA, pSync_compctrl, CHAN_COUNT, &pfdctx,
 		SYNC_TIMEOUT)) {
 		;
 	}
-	logMsg("result of sync_read(NEXTSET_SYNC_DATA)\n");
+	ca_printf("result of sync_read(NEXTSET_SYNC_DATA)\n");
 	for (i = 0; i < CHAN_COUNT; ++i) {
-		logMsg("%s  valid = %d  ptr = %d  \n",
+		ca_printf("%s  valid = %d  ptr = %d  \n",
 			(pSync_ctrl->pDstruct)->pName, (pSync_ctrl->pDstruct)->svalid,
 			(pSync_ctrl->pDstruct)->pSdata);
 		if((pSync_ctrl->pDstruct)->pSdata) {
-		  logMsg("ts sec = %ld  ts nsec = %ld  value = %f\n",
+		  ca_printf("ts sec = %ld  ts nsec = %ld  value = %f\n",
 			((struct dbr_time_float *)
 			 ((pSync_ctrl->pDstruct)->pSdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *)
@@ -292,18 +292,18 @@ main()
 		++pSync_ctrl;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
-	logMsg("\n");
+	ca_printf("\n");
 
 
 	gsd_sync_read(PREVIOUS_SYNC_DATA, pSync_compctrl, CHAN_COUNT, &pfdctx,
 		SYNC_TIMEOUT);
-	logMsg("result of sync_read(PREVIOUS_SYNC_DATA)\n");
+	ca_printf("result of sync_read(PREVIOUS_SYNC_DATA)\n");
 	for (i = 0; i < CHAN_COUNT; ++i) {
-		logMsg("%s  valid = %d  ptr = %d  \n",
+		ca_printf("%s  valid = %d  ptr = %d  \n",
 			(pSync_ctrl->pDstruct)->pName, (pSync_ctrl->pDstruct)->svalid,
 			(pSync_ctrl->pDstruct)->pSdata);
 		if((pSync_ctrl->pDstruct)->pSdata) {
-		  logMsg("ts sec = %ld  ts nsec = %ld  value = %f\n",
+		  ca_printf("ts sec = %ld  ts nsec = %ld  value = %f\n",
 			((struct dbr_time_float *)
 			 ((pSync_ctrl->pDstruct)->pSdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *)
@@ -314,11 +314,11 @@ main()
 		++pSync_ctrl;
 	}
 	pSync_ctrl = pSync_compctrl->pCtrl;
-	logMsg("\n");
+	ca_printf("\n");
 
 
 	gsd_sync_clear(pSync_compctrl, CHAN_COUNT);
-	logMsg("End of test and demo.\n\n");
+	ca_printf("End of test and demo.\n\n");
 
 	return 0;
 }
@@ -369,13 +369,13 @@ char  *pMac_pairs[];
 	pCompctrl = (struct gsd_sync_compctrl *)
 		calloc(1, sizeof(struct gsd_sync_compctrl));
 	if(pCompctrl == NULL) {
-		logMsg("gsd_sync_init: mem alloc failed\n");
+		ca_printf("gsd_sync_init: mem alloc failed\n");
 		return NULL;
 	}
 
 	pCtrl = (struct gsd_sync_ctrl *) calloc(chan_count, sizeof(struct gsd_sync_ctrl));
 	if(pCtrl == NULL) {
-		logMsg("gsd_sync_init: mem alloc failed\n");
+		ca_printf("gsd_sync_init: mem alloc failed\n");
 		free(pCompctrl);
 		return NULL;
 	}
@@ -390,7 +390,7 @@ char  *pMac_pairs[];
 		    	gsdl_main_macro(name_str, pSync->pName, pMac_pairs, db_name_dim);
 		    	strcpy(pSync->pName, name_str);
 		    }
-/*		    printf("new_str = %s\n", pSync->pName);*/
+/*		    ca_printf("new_str = %s\n", pSync->pName);*/
 		    SEVCHK(ca_build_and_connect(pSync->pName, TYPENOTCONN, 0,
 			&(pSync->pChid), (VOID *) NULL, 
 			gsd_connevent_handler, (VOID *) pCtrl),
@@ -434,7 +434,7 @@ struct connection_handler_args args;
 				dbf_type_to_DBR_TIME(ca_field_type(args.chid)),
 				ca_element_count(args.chid)));
 			if(pSync->pSdata == NULL) {
-				logMsg("gsd_connevent_handler: mem alloc fail\n");
+				ca_printf("gsd_connevent_handler: mem alloc fail\n");
 				return;
 			}
 			pCtrl->pNdata = (VOID *) calloc(1, dbr_size_n(
@@ -443,7 +443,7 @@ struct connection_handler_args args;
 			if(pCtrl->pNdata == NULL) {
 				free(pSync->pSdata);
 				pSync->pSdata = NULL;
-				logMsg("gsd_connevent_handler: mem alloc fail\n");
+				ca_printf("gsd_connevent_handler: mem alloc fail\n");
 				return;
 			}
 			pCtrl->pAdata = (VOID *) calloc(1, dbr_size_n(
@@ -454,7 +454,7 @@ struct connection_handler_args args;
 				pSync->pSdata = NULL;
 				free(pCtrl->pNdata);
 				pCtrl->pNdata = NULL;
-				logMsg("gsd_connevent_handler: mem alloc fail\n");
+				ca_printf("gsd_connevent_handler: mem alloc fail\n");
 				return;
 			}
 
@@ -463,7 +463,7 @@ struct connection_handler_args args;
 			pSync->count = ca_element_count(pSync->pChid);
 
 /*
-			logMsg("%s  type = %d  count = %d\n",
+			ca_printf("%s  type = %d  count = %d\n",
 				pSync->pName, pSync->time_type, pSync->count);
 */
 		}
@@ -500,7 +500,7 @@ struct event_handler_args args;
 			sizeof(struct gsd_sync_linked));
 		pAlloc_data = (VOID *) calloc(1, dbr_size_n(args.type,args.count));
 		if((NULL == pAlloc_linked) || (NULL == pAlloc_data)) {
-			logMsg("gsd_event_handler: mem alloc failed.\n");
+			ca_printf("gsd_event_handler: mem alloc failed.\n");
 			/* clean-up unused memory */
 			if(pAlloc_linked != NULL) free(pAlloc_linked);
 			if(pAlloc_data != NULL) free(pAlloc_data);
@@ -523,7 +523,7 @@ struct event_handler_args args;
 			args.count));
 
 /*
-		logMsg("%s  ts sec = %ld  ts nsec = %ld  value = %f\n",
+		ca_printf("%s  ts sec = %ld  ts nsec = %ld  value = %f\n",
 			(pCtrl->pDstruct)->pName,
 			((struct dbr_time_float *) (pN->pNdata))->stamp.secPastEpoch,
 			((struct dbr_time_float *) (pN->pNdata))->stamp.nsec,
@@ -598,7 +598,7 @@ float timeout_secs;
 	int i;
 
 	if(NULL == pCompctrl) {
-		logMsg("gsd_sync_read: error NULL arg for pCompctrl\n");
+		ca_printf("gsd_sync_read: error NULL arg for pCompctrl\n");
 		return;
 	}
 
@@ -666,14 +666,14 @@ float timeout_secs;
 
 			if(pTs != NULL) {
 /*
-				logMsg("got sync data set\n");
+				ca_printf("got sync data set\n");
 */
 				gsd_syncset_findcopy(pCtrl,
 					chan_count, pTs);
 			}
 			else {
 /*
-				logMsg("settle for last \n");
+				ca_printf("settle for last \n");
 */
 				pTs = gsd_findlargest_ts(pCtrl,
 					chan_count);
@@ -810,7 +810,7 @@ int chan_count;
 		pNchan = pCtrl->pNstruct;
 		while(pNchan != NULL) {
 /*
-			logMsg(" %ld %ld >? %ld %ld\n",
+			ca_printf(" %ld %ld >? %ld %ld\n",
 				(gsd_get_ts((pCtrl->pDstruct)->time_type,
 					pNchan->pNdata))->secPastEpoch,
 				(gsd_get_ts((pCtrl->pDstruct)->time_type,
@@ -854,7 +854,7 @@ struct gsd_sync_ctrl *pCtrl;
 	while(pN != NULL) {
 		if(pN->pNdata != NULL) {
 /*
-			logMsg("free %s  %ld  %ld\n", (pCtrl->pDstruct)->pName,
+			ca_printf("free %s  %ld  %ld\n", (pCtrl->pDstruct)->pName,
 				((struct dbr_time_float *) (pN->pNdata))->stamp.secPastEpoch,
 				((struct dbr_time_float *) (pN->pNdata))->stamp.nsec);
 */
@@ -953,12 +953,12 @@ unsigned int chan_count;
 	struct gsd_sync_ctrl *pSync_ctrl = pSync_compctrl->pCtrl;
 
 	if(NULL == pSync_compctrl) {
-		logMsg("gsd_sync_clear:  error NULL pSync_compctrl\n");
+		ca_printf("gsd_sync_clear:  error NULL pSync_compctrl\n");
 		return;
 	}
 	if(NULL == pSync_ctrl) {
 		free(pSync_compctrl);
-		logMsg("gsd_sync_clear:  error NULL pSync_ctrl\n");
+		ca_printf("gsd_sync_clear:  error NULL pSync_ctrl\n");
 		return;
 	}
 
@@ -1108,7 +1108,7 @@ void **pfdctx;
 {
 	*pfdctx = (void *) fdmgr_init();
 	if(!(*pfdctx)) {
-		logMsg("gsd_ca_task_initialize: fdmgr_init failed.\n");
+		ca_printf("gsd_ca_task_initialize: fdmgr_init failed.\n");
 		abort();
 	}
 	SEVCHK(ca_add_fd_registration(gsd_fd_register, *pfdctx),

@@ -1580,7 +1580,7 @@ struct client  *client
 	int        		status;
 	unsigned		sid;
 	unsigned long		count;
-	int			type;
+	ca_uint16_t		type;
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
@@ -1643,7 +1643,7 @@ struct client  *client
 		}
 		sid = pchannel->sid;
 		count =  tmp_addr.no_elements;
-		type = tmp_addr.field_type;
+		type = (ca_uint16_t) tmp_addr.field_type;
 	}
 
 	SEND_LOCK(client);

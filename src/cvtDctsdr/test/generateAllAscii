@@ -1,7 +1,7 @@
 #!/bin/sh
 BIN=../O.solaris
 H=/usr/local/epics/R3.12.2/base/rec
-/bin/rm *.db
+/bin/rm *.dbd
 $BIN/sdr2gblmenu
 $BIN/sdr2recordtype dbCommon  $H/dbCommon.h
 $BIN/sdr2recordtype ai  $H/aiRecord.h

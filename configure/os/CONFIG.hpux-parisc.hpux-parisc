@@ -29,7 +29,7 @@ OPT_CFLAGS_NO = -g
 
 CXXCMPLR=STRICT
 
-COMPILE_FILTER.cpp = 2>&1 | $(TOP)/configure/tools/filterWarnings.pl
+COMPILE_FILTER.cpp = 2>&1 | $(EPICS_BASE)/configure/tools/filterWarnings.pl
 
 # Configure OS vendor C++ compiler
 CONFORM_CXXFLAGS_NORMAL = -AA -mt -Aa

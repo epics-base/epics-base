@@ -74,7 +74,7 @@ void netSubscription::exceptionNotify ( int statusIn,
 void netSubscription::show ( unsigned level ) const
 {
     printf ( "event subscription IO at %p, type %s, element count %lu, mask %u\n", 
-        this, dbf_type_to_text ( this->type ), this->count, this->mask );
+        this, dbf_type_to_text ( static_cast <int> (this->type) ), this->count, this->mask );
     if ( level > 0u ) {
         this->baseNMIU::show ( level - 1u );
     }

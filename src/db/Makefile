@@ -8,6 +8,7 @@ INC += dbAccess.h
 INC += dbAddr.h
 INC += dbBkpt.h
 INC += dbConvert.h
+INC += dbConvertFast.h
 INC += dbEvent.h
 INC += dbLock.h
 INC += dbNotify.h

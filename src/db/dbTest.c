@@ -33,14 +33,14 @@ of this distribution.
 #include "devSup.h"
 #include "drvSup.h"
 #include "dbCommon.h"
+#include "special.h"
+#include "db_field_log.h"
+#define epicsExportSharedSymbols
 #include "dbLock.h"
 #include "dbAccess.h"
 #include "recGbl.h"
-#include "special.h"
-#include "db_field_log.h"
 #include "dbEvent.h"
 #include "callback.h"
-#define epicsExportSharedSymbols
 #include "dbTest.h"
 
 extern struct dbBase *pdbbase;

@@ -47,13 +47,13 @@
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbCommon.h"
+#include "dbAddr.h"
+#define epicsExportSharedSymbols
 #include "dbScan.h"
 #include "dbLock.h"
 #include "callback.h"
-#include "dbAddr.h"
 #include "dbAccess.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #include "dbNotify.h"
 
 /*NODE structure attached to ppnn field of each record in list*/

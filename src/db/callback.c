@@ -28,15 +28,15 @@ of this distribution.
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
-#include "dbAccess.h"
 #include "recSup.h"
 #include "taskwd.h"
 #include "errMdef.h"
 #include "dbCommon.h"
-#include "dbLock.h"
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
+#include "dbAccess.h"
+#include "dbLock.h"
 #include "callback.h"
 
 int callbackQueueSize = 2000;

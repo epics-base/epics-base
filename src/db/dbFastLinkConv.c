@@ -40,17 +40,18 @@
 #include "alarm.h"
 #include "dbBase.h"
 #include "link.h"
-#include "dbAddr.h"
 #include "dbFldTypes.h"
-#include "dbAccess.h"
-#include "dbConvert.h"
+#include "dbAddr.h"
 #include "dbStaticLib.h"
 #include "dbCommon.h"
 #include "dbFldTypes.h"
 #include "errMdef.h"
 #include "recSup.h"
-#include "recGbl.h"
 #include "special.h"
+#define epicsExportSharedSymbols
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "dbConvertFast.h"
  
 
 /*
@@ -1100,7 +1101,7 @@ static long cvt_device_st(
  *  NULL implies the conversion is not supported.
  */
 
-long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
+epicsShareDef long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
 
  /* Convert DBF_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e },
@@ -1150,7 +1151,7 @@ long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
  *  NULL implies the conversion is not supported.
  */
 
-long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
+epicsShareDef long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
 
  /* Convert DBR_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e, cvt_st_menu, cvt_st_device},

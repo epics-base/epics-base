@@ -25,12 +25,13 @@ of this distribution.
 #include "link.h"
 #include "dbAddr.h"
 #include "dbFldTypes.h"
-#include "dbAccess.h"
-#include "dbConvert.h"
 #include "dbStaticLib.h"
 #include "errMdef.h"
 #include "recSup.h"
+#define epicsExportSharedSymbols
+#include "dbAccess.h"
 #include "recGbl.h"
+#include "dbConvert.h"
 
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
@@ -4345,7 +4346,7 @@ static long putEnumEnum(
  DBR_LONG,        DBR_ULONG,       DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
  ***************************************************************************/
 
-long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
+epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
 
 /* source is a DBF_STRING		*/
 {getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,
@@ -4395,7 +4396,7 @@ long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
  DBF_MENU,        DBF_DEVICE
  ***************************************************************************/
 
-long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
+epicsShareDef long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
 /* source is a DBR_STRING		*/
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
  putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,

@@ -65,12 +65,12 @@
 #include "dbFldTypes.h"
 #include "link.h"
 #include "devSup.h"
+#include "dbCommon.h"
+#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccess.h"
-#include "dbCommon.h"
 #include "dbLock.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #include "dbScan.h"
 
 

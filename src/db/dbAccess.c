@@ -62,20 +62,21 @@ of this distribution.
 #include "caeventmask.h"
 #include "db_field_log.h"
 #include "dbCommon.h"
+#include "dbFldTypes.h"
+#include "special.h"
+#define epicsExportSharedSymbols
+#include "callback.h"
 #include "dbScan.h"
 #include "dbLock.h"
-#include "callback.h"
-#include "dbFldTypes.h"
 #include "dbEvent.h"
 #include "errMdef.h"
-#include "recGbl.h"
-#include "special.h"
 #include "dbConvert.h"
+#include "dbConvertFast.h"
 #include "dbCa.h"
 #include "dbBkpt.h"
 #include "dbNotify.h"
-#define epicsExportSharedSymbols
 #include "dbAccess.h"
+#include "recGbl.h"
 
 extern long lset_stack_not_empty;
 epicsShareDef struct dbBase *pdbbase;

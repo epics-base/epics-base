@@ -165,7 +165,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define dbr_alDouble_size sizeof(struct dbr_alDouble)
 
 #ifndef INCerrMdefh
-#include <errMdef.h>
+#include "errMdef.h"
 #endif
 #define S_db_notFound 	(M_dbAccess| 1) /*Process Variable Not Found*/
 #define S_db_badDbrtype	(M_dbAccess| 3) /*Illegal Database Request Type*/

@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.18  2000/02/26 23:45:22  norume
+ *  Reflect routine name change from threadSuspend() to threadSuspendSelf().
+ *
  *  Revision 1.17  2000/02/25 22:26:38  mrk
  *  more changes for creating dlls
  *
@@ -98,16 +101,16 @@ of this distribution.
 #include "dbAddr.h"
 #include "dbAccess.h"
 #include "dbCommon.h"
-#include "dbScan.h"
-#include "dbLock.h"
 #include "dbFldTypes.h"
 #include "db_field_log.h"
 #include "errMdef.h"
 #include "recSup.h"
-#include "recGbl.h"
 #include "special.h"
-#include "dbTest.h"
 #define epicsExportSharedSymbols
+#include "dbScan.h"
+#include "dbLock.h"
+#include "recGbl.h"
+#include "dbTest.h"
 #include "dbBkpt.h"
 
 /* private routines */

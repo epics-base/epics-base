@@ -35,14 +35,14 @@ of this distribution.
 #include "dbBase.h"
 #include "dbFldTypes.h"
 #include "dbAddr.h"
-#include "dbLock.h"
 #include "link.h"
 #include "tsStamp.h"
 #include "dbCommon.h"
-#include "dbAccess.h"
 #include "caeventmask.h"
 #include "db_field_log.h"
 #define epicsExportSharedSymbols
+#include "dbLock.h"
+#include "dbAccess.h"
 #include "dbEvent.h"
 
 #define EVENTSPERQUE    32

@@ -43,14 +43,12 @@ of this distribution.
 #include "errMdef.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
-#define epicsExportSharedSymbols
-#include "dbCa.h"
+/*following because we cant include dbStaticLib.h*/
+epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCaPvt.h"
-/*Following is because we cant include dbAccess.h*/
-void *dbCalloc(size_t nobj,size_t size);
-/*Following is because dbScan.h causes include for dbAccess.h*/
-void scanOnce(void *precord);
-extern volatile int interruptAccept;
+#define epicsExportSharedSymbols
+#include "dbScan.h"
+#include "dbCa.h"
 
 static ELLLIST caList;	/* Work list for dbCaTask */
 static semMutexId caListSem; /*Mutual exclusions semaphores for caList*/

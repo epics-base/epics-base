@@ -89,9 +89,12 @@ LOCAL int cagft(char *pname)
 		return -1;
 	}
 
-	printf("name:\t%s\n", ca_name(chan_id));
-	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%lu\n", ca_element_count(chan_id));
+	printf("name:\t%s\n", 
+        ca_name(chan_id));
+	printf("native type:\t%s\n", 
+        dbr_type_to_text(ca_field_type(chan_id)));
+	printf("native count:\t%lu\n", 
+        ca_element_count(chan_id));
 
 
 	/* 

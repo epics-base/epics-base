@@ -417,7 +417,7 @@ long dbPutField(paddr,dbrType,pbuffer,nRequest)
 	dbScanLock(paddr->precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
-	if(RTN_SUCCESS(status) && pfldDes->process_passive) status=dbScanPassive(paddr);
+	if(RTN_SUCCESS(status) && pfldDes->process_passive) (void)dbScanPassive(paddr);
 	dbScanUnlock(paddr->precord);
 	return(status);
 }

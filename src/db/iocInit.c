@@ -84,8 +84,7 @@ char * pResourceFilename;
 	return(-1);
     }
     if(status=initBusController()) {
-	logMsg("iocInit aborting because initBusController failed\n");
-	return(-1);
+	logMsg("Xycom SRM010 Bus Controller Not Present\n");
     }
     if(status=sdrLoad(pfilename)) {
 	logMsg("iocInit aborting because sdrLoad failed\n");
@@ -98,13 +97,13 @@ char * pResourceFilename;
     logMsg("getResources completed\n");
     initialized = TRUE;
     logMsg("sdrLoad completed\n");
+    /* enable interrupt level 5 and 6 */
+    sysIntEnable(5);
+    sysIntEnable(6);
     if(initDrvSup()==0) logMsg("Drivers Initialized\n");
     if(initRecSup()==0) logMsg("Record Support Initialized\n");
     if(initDevSup()==0) logMsg("Device Support Initialized\n");
     ts_init(); logMsg("Time Stamp Driver Initialized\n");
-    /* enable interrupt level 5 and 6 */
-    sysIntEnable(5);
-    sysIntEnable(6);
     if(initDatabase()==0) logMsg("Database Initialized\n");
     /* if user exit exists call it */
     strcpy(name,"_");
@@ -508,7 +507,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     float           n_float;
     double          n_double;
     if (!fname) {
-	printf("getResources(): RETURNING because of NULL arg\n");
+	errMessage("getResources(): RETURNING because of NULL arg\n");
 	return (0);
     }
     if ((fd = open(fname, READ, 0x0)) < 0) {

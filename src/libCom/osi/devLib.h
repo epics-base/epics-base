@@ -30,6 +30,10 @@
 
 #include <dbDefs.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * epdevAddressType & EPICStovxWorksAddrType
  * devLib.c must change in unison
@@ -419,4 +423,8 @@ long devDisableInterruptLevel (epicsInterruptType intType, unsigned level);
  */
 long locationProbe (epicsAddressType addrType, char *pLocation);
 
-#endif  /* devLib.h*/
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* INCdevLibh.h*/

@@ -206,13 +206,23 @@ epicsShareFunc casEventMask caServer::alarmEventMask () const
 }
 
 //
+// caServer::alarmEventMask ()
+//
+// for now, this assumes that everything is single threaded
+//
+class epicsTimerQueue & caServer::timerQueue()
+{
+    return fileDescriptorManager.timerQueueRef();
+}
+
+//
 // caServer::readEventsProcessedCounter
 //
 #ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
 epicsShareFunc unsigned caServer::readEventsProcessedCounter (void) const
 {
     if (pCAS) {
-        return this->pCAS->readEventsProcessedCounter ();
+        return this->pCAS->readEventsProcessedCounter();
     }
     else {
         return 0u;

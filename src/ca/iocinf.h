@@ -29,7 +29,10 @@
 /*	.17 121892 joh	added TCP send buf size var			*/
 /*	.18 122192 joh	added outstanding ack var			*/
 /*	.19 012094 joh	added minor version (for each server)		*/
-/* $Log$								*/
+/* $Log$
+ * Revision 1.47  1995/08/22  00:20:27  jhill
+ * added KLUDGE def of S_db_Pending
+ *								*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -412,9 +415,11 @@ struct  ca_static{
 	void		(*ca_exception_func)
 				(struct exception_handler_args);
 	void		*ca_exception_arg;
+#if 0
 	void		(*ca_connection_func)
 				(struct connection_handler_args);
 	void		*ca_connection_arg;
+#endif
 	int		(*ca_printf_func)(const char *pformat, va_list args);
 	void		(*ca_fd_register_func)
 				(void *, SOCKET, int);
@@ -608,7 +613,7 @@ ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
 void caIOBlockFree(evid pIOBlock);
 void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler ();
-
+void cacDisconnectChannel(chid chix, int fullDisconnect);
 /*
  * !!KLUDGE!!
  *

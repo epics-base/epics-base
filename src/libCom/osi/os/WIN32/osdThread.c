@@ -236,7 +236,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
         status = epicsThreadBooleanStatusSuccess;
     }
     else {
-        status = threadBoolStatusFail;
+        status = epicsThreadBooleanStatusFail;
     }
     return status;
 }
@@ -255,7 +255,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
         status = epicsThreadBooleanStatusSuccess;
     }
     else {
-        status = threadBoolStatusFail;
+        status = epicsThreadBooleanStatusFail;
     }
     return status;
 }

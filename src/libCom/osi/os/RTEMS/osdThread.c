@@ -95,7 +95,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
         *pPriorityJustAbove = newPriority;
         return epicsThreadBooleanStatusSuccess;
     }
-    return threadBoolStatusFail;
+    return epicsThreadBooleanStatusFail;
 }
 
 /*
@@ -110,7 +110,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
         *pPriorityJustBelow = newPriority;
         return epicsThreadBooleanStatusSuccess;
     }
-    return threadBoolStatusFail;
+    return epicsThreadBooleanStatusFail;
 }
 
 #define ARCH_STACK_FACTOR 2

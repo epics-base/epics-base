@@ -94,6 +94,7 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
     DWORD stat;
 
     if ( pParm ) {
+        //fprintf ( stderr, "thread %s is exiting\n", pParm->pName );
         stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
         assert ( stat == WAIT_OBJECT_0 );
     
@@ -323,7 +324,8 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize ( epicsThreadS
 
 void epicsThreadCleanupWIN32 ()
 {
-    win32ThreadParam * pParm = (win32ThreadParam *) TlsGetValue ( tlsIndexThreadLibraryEPICS );
+    win32ThreadParam * pParm = (win32ThreadParam *) 
+        TlsGetValue ( tlsIndexThreadLibraryEPICS );
     epicsParmCleanupWIN32 ( pParm );
 }
 

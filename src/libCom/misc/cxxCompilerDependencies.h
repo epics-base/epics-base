@@ -44,10 +44,10 @@
 #   define CXX_THROW_SPECIFICATION
 #elif defined ( __GNUC__ ) 
 #   if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 95 )
-#       define CXX_PLACEMENT_DELETE
+#       define CXX_THROW_SPECIFICATION
 #   endif
 #   if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 96 )
-#       define CXX_THROW_SPECIFICATION
+#       define CXX_PLACEMENT_DELETE
 #   endif
 #else
 #   define CXX_PLACEMENT_DELETE

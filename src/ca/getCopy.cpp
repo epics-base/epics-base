@@ -36,10 +36,20 @@ getCopy::~getCopy ()
 {
 }
 
+void getCopy::cancel ()
+{
+    this->cacCtx.decrementOutstandingIO ( this->readSeq );
+}
+
+void getCopy::destroy ()
+{
+    delete this;
+}
+
 void getCopy::completion ( unsigned typeIn, 
     arrayElementCount countIn, const void *pDataIn )
 {
-    if  ( this->type == typeIn ) {
+    if ( this->type == typeIn ) {
         memcpy ( this->pValue, pDataIn, dbr_size_n ( typeIn, countIn ) );
         this->cacCtx.decrementOutstandingIO ( this->readSeq );
     }

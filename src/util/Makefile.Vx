@@ -2,9 +2,9 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-SRCS.c = ../ca_test.c ../calcTest.c ../recordTest.c
+SRCS.c = ../ca_test.c
 
-TARGETS = ca_test.o calcTest.o recordTest.o
+TARGETS = ca_test.o
 
 include $(EPICS)/config/RULES.Vx
 

@@ -2,37 +2,24 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-CMPLR = OLD
-USR_LDLIBS = -lAs -lca -lCom -lDb -lCom -lm -s
-
-DEPLIBS_BASE = $(EPICS_BASE_LIB)
-DEPLIBS = $(DEPLIBS_BASE)/libca.a\
-          $(DEPLIBS_BASE)/libDb.a \
-          $(DEPLIBS_BASE)/libCom.a \
-          $(DEPLIBS_BASE)/libAs.a
-#USR_LDLIBS = -lm -s
-USR_INCLUDES = -I$(OPENWIN)/include -I$(X11_INC)
-USR_CFLAGS = -DXWINDOWS -UvxWorks
+USR_LDLIBS = -lca -lCom -lm -s
+DEPLIBS = $(EPICS_BASE_LIB)/libca.a $(EPICS_BASE_LIB)/libCom.a
 
 SRCS.c = \
-	../bfRing.c ../ca_test.c \
-	../calcTest.c ../cmdClient.c ../extrDoc.c ../guiSubr.c \
-	../iocLogServer.c ../pprPlot.c ../racPrint.c ../recListProg.c \
-	../recordTest.c ../startCArepeater.c ../sydPlot.c
+	../ca_test.c \
+	../iocLogServer.c \
+	../startCArepeater.c
 
 OBJS = \
-	bfRing.o ca_test.o calcTest.o \
-        cmdClient.o extrDoc.o guiSubr.o iocLogServer.o pprPlot.o racPrint.o \
-	recListProg.o recordTest.o startCArepeater.o sydPlot.o
+	ca_test.o \
+	iocLogServer.o \
+	startCArepeater.o
 
-LIBOBJS = \
-	guiSubr.o pprPlot.o sydPlot.o
-
-LIBNAME = libppr.a
 
 PROD = \
-	bfRing ca_test calcTest cmdClient \
-	extrDoc iocLogServer racPrint recListProg recordTest startCArepeater
+	ca_test \
+	iocLogServer \
+	startCArepeater
 
 include $(EPICS)/config/RULES.Unix
 

@@ -67,6 +67,7 @@
 #    OBJS_IOC      ioc system object files to build and install
 #    USR_INCLUDES  include directories
 #    BIN_INSTALLS  binaries to install
+#    LIB_INSTALLS  library binaries to install
 #    RCS           win32 resource files for building libraries and prods
 #    PROD_RCS      win32 resource files for building prods
 #    LIB_RCS       win32 resource files for building libraries
@@ -218,6 +219,14 @@ BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
 else
 ifdef BIN_INSTALLS_DEFAULT
 BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_INSTALLS_$(OS_CLASS))),)
+LIB_INSTALLS+=$(subst -nil-,,$(LIB_INSTALLS_$(OS_CLASS)))
+else
+ifdef LIB_INSTALLS_DEFAULT
+LIB_INSTALLS+=$(LIB_INSTALLS_DEFAULT)
 endif
 endif
 

@@ -135,6 +135,10 @@ ifdef BIN_INSTALLS
 buildInstall : binInstalls
 endif
 
+ifdef LIB_INSTALLS
+buildInstall : libInstalls
+endif
+
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
@@ -304,6 +308,10 @@ binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
 	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
 
+libInstalls:  $(LIB_INSTALLS)
+	@echo "Installing $(^F)"
+	@$(INSTALL) -d -m 555 $^ $(INSTALL_LIB)
+
 $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	@echo "Installing os-specific script $@"
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
@@ -400,7 +408,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
-.PHONY: all inc build install clean rebuild buildInstall binInstalls
+.PHONY: all inc build install clean rebuild buildInstall binInstalls libInstalls
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

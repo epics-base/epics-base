@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.26  1998/06/18 00:12:22  jhill
+ * use ipAddrToA
+ *
  * Revision 1.25  1998/06/16 03:20:35  jhill
  * use aToIPAddr()
  *
@@ -109,11 +112,12 @@ of this distribution.
  * .01	01-06-94	jbk	initial version
  * .02	03-01-94	jbk	magic # in packets, network byte order check
  * .03	03-02-94	jbk	current time always uses 1 tick watch dog update
- * .04	17MAR98		mrk	Make safe to 2104
+ * .04	17MAR98		mrk	Make safe to year 2104
  * .05	17MAR98		mrk	change nanosec conversion
+ * .06	04AUG98		mrk	make TSsetClockFromUnix external - sync master
  *
  ***********************************************************************/
-
+
 #define MAKE_DEBUG TSdriverDebug
 #define TS_DRIVER 1
 
@@ -169,23 +173,22 @@ static int  TSgetBroadcastSocket(int port, struct sockaddr_in* sin);
 static void TSsyncServer();
 static void TSsyncClient();
 static long TSasyncClient();
-static long TSsyncTheTime(struct timespec* cts,
-							struct timespec* ts, unsigned long tol);
+static long TSsyncTheTime(struct timespec* cts, struct timespec* ts,
+    unsigned long tol);
 static long TSgetData(char* buf, int buf_size, int soc,
-					struct sockaddr* to_sin, struct sockaddr* from_sin,
-					struct timespec* round_trip);
+    struct sockaddr* to_sin, struct sockaddr* from_sin,
+    struct timespec* round_trip);
 static void TSaddStamp(	struct timespec* result,
-						struct timespec* op1, struct timespec* op2);
+    struct timespec* op1, struct timespec* op2);
 static void TSwdIncTime();
 static void TSwdIncTimeSync();
 static void TSstampServer();
 static void TSeventHandler(int Card,int EventNum,unsigned long Ticks);
 static void TSerrorHandler(int Card, int ErrorNum);
-static long TSsetClockFromUnix();
 static long TSsetClockFromMaster();
 static void TSstartSoftClock();
 static long TScalcDiff(struct timespec* a, struct timespec* b,
-						struct timespec* diff);
+    struct timespec* diff);
 
 static long TSgetCurrentTime(struct timespec* ts);
 static long TSforceSoftSync(int Card);
@@ -211,7 +214,7 @@ static long (*TSuserGet)(int event_number,struct timespec* sp);
 #ifdef __cplusplus
 extern "C" {
 #endif
-long TSinit(void);		/* called by iocInit currently */
+long TSinit(void);	/* called by iocInit currently */
 long TSreport();	/* callable from vxWorks shell */
 
 /* test functions */
@@ -1092,7 +1095,7 @@ static long TSgetMasterTime(struct timespec* tsp)
 	TSsetClockFromUnix() - query the time from boot server and set the 
 	vxworks clock.
 */
-static long TSsetClockFromUnix()
+long TSsetClockFromUnix(void)
 {
     struct timespec tp;
     unsigned long ulongtemp;

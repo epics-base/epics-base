@@ -3,6 +3,16 @@
 
 /*
  * $Log$
+ * Revision 1.2  1998/03/19 20:41:16  mrk
+ * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
+ * in 2036. However it was modified so that no overflows should occur while convert
+ * ing between NTP, UNIX, and EPICS epochs.
+ * In addition the conversion of fractions of a second to nanaoseconds was changed
+ * Formatting was changed so that interesting code does not run off right side of page.
+ * Hopefully EPICS base is now fine for Y2K.
+ * In fact it should be fine (as far as time is converned) until the Unix epoch
+ * overflows a 32 unsigned integer in the year 2106.
+ *
  * Revision 1.1  1996/01/25 21:11:56  mrk
  * moved includes; .ascii=> .db; path changes
  *
@@ -164,6 +174,7 @@ TS_EXTERN long TSgetFirstOfYearVx(struct timespec* ts);
 TS_EXTERN void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 	int master_port, int slave_port,
 	unsigned long millisecond_request_time_out, int type);
+TS_EXTERN long TSsetClockFromUnix(void);
 
 #ifndef TS_DRIVER
 TS_EXTERN TSinfo TSdata;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/08/05 00:47:11  jhill
+ * fixed warnings
+ *
  * Revision 1.8  1997/04/10 19:34:15  jhill
  * API changes
  *
@@ -65,25 +68,17 @@
 //
 // casPVI::casPVI()
 //
-casPVI::casPVI(caServer &casIn, casPV &pvAdapterIn) : 
-	cas(*casIn.pCAS), 
+casPVI::casPVI (casPV &pvAdapterIn) : 
+	pCAS(NULL), // initially there is no server attachment
 	pv(pvAdapterIn),
 	nMonAttached(0u),
 	nIOAttached(0u),
 	destroyInProgress(FALSE)
 {
 	//
-	// we would like to throw an exception for this one
-	// (but this is not portable)
-	//
-	assert(&this->cas);
-
-	//
 	// this will always be true
 	//
-	assert(&this->pv);
-
-	this->cas.installItem(*this);
+	assert (&this->pv!=NULL);
 }
 
 
@@ -92,31 +87,37 @@ casPVI::casPVI(caServer &casIn, casPV &pvAdapterIn) :
 //
 casPVI::~casPVI()
 {
-	this->lock();
-
-	this->cas.removeItem(*this);
-
-	assert(!this->destroyInProgress);
-	this->destroyInProgress = TRUE;
-
 	//
-	// delete any attached channels
+	// only relevant if we are attached to a server
 	//
-	tsDLIterBD<casPVListChan> iter(this->chanList.first());
-	const tsDLIterBD<casPVListChan> eol;
-	tsDLIterBD<casPVListChan> tmp;
-	while (iter!=eol) {
-		//
-		// deleting the channel removes it from the list
-		//
+	if (this->pCAS!=NULL) {
 
-		tmp = iter;
-		++tmp;
-		(*iter)->destroy();
-		iter = tmp;
+		this->lock();
+
+		this->pCAS->removeItem(*this);
+
+		assert (!this->destroyInProgress);
+		this->destroyInProgress = TRUE;
+
+		//
+		// delete any attached channels
+		//
+		tsDLIterBD<casPVListChan> iter(this->chanList.first());
+		const tsDLIterBD<casPVListChan> eol;
+		tsDLIterBD<casPVListChan> tmp;
+		while (iter!=eol) {
+			//
+			// deleting the channel removes it from the list
+			//
+
+			tmp = iter;
+			++tmp;
+			(*iter)->destroy();
+			iter = tmp;
+		}
+
+		this->unlock();
 	}
-
-	this->unlock();
 
 	//
 	// all outstanding IO should have been deleted
@@ -131,21 +132,42 @@ casPVI::~casPVI()
 	casVerify (this->nMonAttached==0u);
 }
 
+//
+// casPVI::attachToServer ()
+// 
+caStatus casPVI::attachToServer (caServerI &cas)
+{
+
+	if (this->pCAS) {
+		//
+		// currently we enforce that the PV can be attached to only
+		// one server at a time
+		//
+		if (this->pCAS != &cas) {
+			return S_cas_pvAlreadyAttached;
+		}
+	}
+	else {
+		//
+		// install the PV into the server
+		//
+		cas.installItem (*this);
+		this->pCAS = &cas;
+	}
+	return S_cas_success;
+}
+
 
 //
 // casPVI::show()
 //
 void casPVI::show(unsigned level) const
 {
-	this->lock();
-
 	if (level>1u) {
 		printf ("CA Server PV: nChanAttached=%u nMonAttached=%u nIOAttached=%u\n",
 			this->chanList.count(), this->nMonAttached, this->nIOAttached);
 	}
 	(*this)->show(level);
-
-	this->unlock();
 }
 
 //
@@ -164,6 +186,7 @@ caStatus casPVI::registerEvent ()
 		status = S_cas_success;
 	}
 	this->unlock();
+
 	return status;
 }
 
@@ -191,7 +214,12 @@ void casPVI::unregisterEvent()
 //
 caServer *casPVI::getExtServer() const
 {
-	return this->cas.getAdapter();
+	if (this->pCAS) {
+		return this->pCAS->getAdapter();;
+	}
+	else {
+		return NULL;
+	}
 }
 
 //
@@ -201,6 +229,10 @@ caServer *casPVI::getExtServer() const
 //
 void casPVI::destroy()
 {
+	//
+	// Flag that a server is no longer using this PV
+	//
+	this->pCAS = NULL;
 	this->pv.destroy();
 }
 

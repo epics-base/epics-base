@@ -8,7 +8,8 @@ CMPLR_SUFFIX = sparc
 ARCH_CLASS = sparc
 
 # Architecture specific build flags
-ARCH_DEP_CFLAGS = -DCPU=SPARC -DCPU_FAMILY=SPARC
+ARCH_DEP_CPPFLAGS = -DCPU=SPARC -DCPU_FAMILY=SPARC
+ARCH_DEP_CFLAGS =
 # Removed -O2 [24/12/96 PMM]
 OLD_ARCH_DEP_CXXFLAGS = -fno-builtin -ansi -pipe -nostdinc -DCPU=SPARC \
                       -DVXWORKS -Dsigned= -Dvolatile= +V  

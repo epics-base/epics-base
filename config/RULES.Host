@@ -1,4 +1,3 @@
-
 # $Id$
 #
 #	Rules for making things specified in Makefile.Host
@@ -288,12 +287,8 @@ endif
 endif
 
 #---------------------------------------------------------------
-# must use c++ linker if linking to shared libs with c++ code
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-ifneq ($(strip $(CPLUSPLUS)),)
+# always use c++ linker
 LINK.c = $(LINK.cc)
-endif # CPLUSPLUS
-endif # LIBTYPE
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
@@ -311,11 +306,12 @@ endif # EPICS_BASE
 ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
 #  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
 PROD_VERSION =$(SHRLIB_VERSION)
 ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
@@ -335,8 +331,11 @@ endif # LIBRARY
 
 all::	install
 
-build:: $(LIBTARGETS) $(PROD) $(TESTPROD) \
-	$(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
+build:: $(LIBTARGETS) $(PROD) $(TESTPROD) $(INSTALLS) \
+	$(MENUS) $(RECTYPES) $(BPTS)
+ifdef DBDEXPAND
+build::	$(DBDNAME)
+endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
 
@@ -357,7 +356,11 @@ buildInstall :: build $(TARGETS) \
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) \
+	*$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS)
+ifdef DBDEXPAND
+	@$(RM) $(DBDNAME)
+endif
 
 #---------------------------------------------------------------
 #	Products
@@ -368,7 +371,6 @@ ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
 COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(ARCH_CLASS)))
-COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
 ifdef PRODNAME
 
@@ -427,7 +429,7 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 	PRODNAME_RCS_$(ARCH_CLASS)="$($(basename $@)_RCS_$(ARCH_CLASS))"\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
-$(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+$(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 	@$(PROD_MAKE_COMMAND)
 
 endif
@@ -439,8 +441,10 @@ endif  #ifdef PROD
 #     Java classes and packages
 #
 
-INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
-DIRECTORY_TARGETS += $(INSTALL_JAVA) $(INSTALL_JAVA)/$(PACKAGE)
+DIRECTORY_TARGETS += $(INSTALL_JAVA)
+ifdef PACKAGE
+DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
+endif
 
 vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
 
@@ -502,7 +506,6 @@ $(INSTALL_JAVA)/%.jar: %.jar
 
 depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
-	touch DEPENDS
 	$(DEPENDS_RULE)
 
 %$(EXE): %.c
@@ -572,7 +575,7 @@ endif
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
 	@$(RM) $*.st
-	
+
 # Capfast Rules:
 %.db: %.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
@@ -632,10 +635,12 @@ bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
  
+ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
-	@echo expanding dbd
+	@echo Expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+endif
 
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
@@ -662,14 +667,14 @@ $(INSTALL_BIN)/%: ../%
 
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 ifdef RANLIB
 	$(RANLIB) $(RANLIBFLAGS) $@
 endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"

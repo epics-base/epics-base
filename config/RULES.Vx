@@ -69,7 +69,6 @@ endif
 
 depends:: $(SRCS.c) $(SRCS.cc)
 	$(RM) DEPENDS
-	touch DEPENDS
 	$(DEPENDS_RULE)
 
 clean::
@@ -82,11 +81,11 @@ clean::
 
 %: %.o
 	$(RM) $@
-	$(LINK.c)$@ $< $(LDLIBS)
+	$(LINK.c) $@ $< $(LDLIBS)
 
 #$(PROD): $(OBJS)
 #	$(RM) $@
-#	$(LINK.c)$@ $(OBJS)
+#	$(LINK.c) $@ $(OBJS)
 
 %.o: %.c
 	$(RM) $@
@@ -137,7 +136,7 @@ endif
 %.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
-	$(CPP) $(CPPFLAGS) $< $*.i
+	$(CPP) $(CPPFLAGS) $(CPPSNCFLAGS) $< $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
@@ -177,7 +176,6 @@ binInstalls:  $(BIN_INSTALLS)
 	$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
 
 $(INSTALL_DBD)/%: % 
-	@echo "Installing $@"
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
 

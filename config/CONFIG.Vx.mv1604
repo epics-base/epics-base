@@ -10,5 +10,6 @@ CMPLR_SUFFIX = ppc
 ARCH_CLASS = ppc
 
 # Architecture specific build flags (TRUE=1 via LBL; needed in camessage.c)
-ARCH_DEP_CFLAGS = -fno-for-scope -DCPU_FAMILY=PPC -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
+ARCH_DEP_CPPFLAGS = -DCPU_FAMILY=PPC -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
+ARCH_DEP_CFLAGS = -fno-for-scope
 

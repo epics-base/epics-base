@@ -4,11 +4,21 @@
 
 include $(TOP)/config/RULES_DIRS
 
-uninstall$(DIVIDER)%::
+$(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))::
 	@$(RMDIR)  rec.bak rec
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
-		$(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) \
+		$(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
 		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES)
+	@$(MAKE) -f Makefile  cleandirs
+
+cleandirs:
+ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
+	@$(RMDIR) $(INSTALL_LOCATION_BIN)
+endif
+ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
+	@$(RMDIR) $(INSTALL_LOCATION_LIB)
+endif
+
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
@@ -46,6 +56,8 @@ help:
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY :: uninstall tar help
-.PHONY :: $(addprefix uninstall$(DIVIDER), $(BUILDARCHS))
+.PHONY :: uninstall tar help cleandirs
+.PHONY :: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
+
+
 

@@ -11,7 +11,8 @@ CMPLR_SUFFIX = mips
 ARCH_CLASS = mips
 
 # Architecture specific build flags
-ARCH_DEP_CFLAGS = -EB -mcpu=r4000 -mips3 -mgp32 -mfp32 -non_shared -G 0 -DCPU=R4000
+ARCH_DEP_CPPFLAGS = -DCPU=R4000
+ARCH_DEP_CFLAGS = -EB -mcpu=r4000 -mips3 -mgp32 -mfp32 -non_shared -G 0
 
 # Arch specific flags
 GCC += -fsigned-char

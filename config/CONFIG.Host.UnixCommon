@@ -60,9 +60,6 @@ USR_LDFLAGS += $(sort $(USR_DIRS:%=-L%))
 USR_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $(SYS_PROD_LIBS:%=-l%)
 
-#USR_LDLIBS = $(PRODNAME_DEPLIBS:%=-L%) $(PROD_DEPLIBS:%=-L%) $(USR_DEPLIBS)\
-# $(USR_XLDLIBS)
-
 #--------------------------------------------------
 # Operating system definitions
 OP_SYS_INCLUDES =

@@ -32,7 +32,7 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 // exAsyncPV::write()
 // (virtual replacement for the default)
 //
-caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
+caStatus exAsyncPV::write (const casCtx &ctx, const gdd &valueIn)
 {
 	exAsyncWriteIO	*pIO;
 	
@@ -57,7 +57,7 @@ caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
 void exAsyncWriteIO::expire() 
 {
 	caStatus status;
-	status = this->pv.update(this->value);
+	status = this->pv.update(this->pValue);
 	this->postIOCompletion (status);
 }
 
@@ -81,12 +81,12 @@ void exAsyncReadIO::expire ()
 	// map between the prototype in and the
 	// current value
 	//
-	status = this->pv.exPV::readNoCtx (this->proto);
+	status = this->pv.exPV::readNoCtx (this->pProto);
 
 	//
 	// post IO completion
 	//
-	this->postIOCompletion (status, this->proto);
+	this->postIOCompletion (status, *this->pProto );
 }
 
 //

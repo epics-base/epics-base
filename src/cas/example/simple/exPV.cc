@@ -71,7 +71,7 @@ void exPV::destroy()
 //
 // exPV::update()
 //
-caStatus exPV::update(gdd &valueIn)
+caStatus exPV::update(smartConstGDDPointer pValueIn)
 {
 	caServer *pCAS = this->getCAS();
 	caStatus cas;
@@ -81,7 +81,7 @@ caStatus exPV::update(gdd &valueIn)
 		valueIn.dump();
 #	endif
 
-	cas = this->updateValue (valueIn);
+	cas = this->updateValue (pValueIn);
 	if ( cas || ( ! this->pValue.valid() ) ) {
 		return cas;
 	}
@@ -343,7 +343,7 @@ caStatus exPV::getValue(gdd &value)
 // exPV::write()
 // (synchronous default)
 //
-caStatus exPV::write (const casCtx &, gdd &valueIn)
+caStatus exPV::write (const casCtx &, const gdd &valueIn)
 {
 	return this->update (valueIn);
 }

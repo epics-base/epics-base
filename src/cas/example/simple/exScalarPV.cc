@@ -66,7 +66,7 @@ void exScalarPV::scan()
 	limit = (float) this->info.getLopr();
 	newValue = tsMax (newValue, limit);
 	*pDD = newValue;
-	status = this->update (*pDD);
+	status = this->update (pDD);
 	if (status!=S_casApp_success) {
 		errMessage (status, "scalar scan update failed\n");
 	}
@@ -84,17 +84,21 @@ void exScalarPV::scan()
 // result in each value change events retaining an
 // independent value on the event queue.
 //
-caStatus exScalarPV::updateValue (gdd &valueIn)
+caStatus exScalarPV::updateValue (smartConstGDDPointer pValueIn)
 {
+    if ( ! pValueIn.valid () ) {
+        return S_casApp_undefined;
+    }
+
 	//
 	// Really no need to perform this check since the
 	// server lib verifies that all requests are in range
 	//
-	if (!valueIn.isScalar()) {
+	if (!pValueIn->isScalar()) {
 		return S_casApp_outOfBounds;
 	}
 
-	this->pValue = &valueIn;
+	this->pValue = pValueIn;
 
 	return S_casApp_success;
 }

@@ -51,14 +51,15 @@ aitIndex exVectorPV::maxBound (unsigned dimension) const
 //
 void exVectorPV::scan()
 {
-	caStatus		status;
-	double          radians;
-	smartGDDPointer	pDD;
-	aitFloat32		*pF, *pFE, *pCF;
-	float			newValue;
-	float			limit;
-	exVecDestructor	*pDest;
-	int				gddStatus;
+	caStatus		    status;
+	double              radians;
+	smartGDDPointer	    pDD;
+	aitFloat32          *pF, *pFE;
+    const aitFloat32    *pCF;
+	float			    newValue;
+	float			    limit;
+	exVecDestructor	    *pDest;
+	int				    gddStatus;
 
 	//
 	// update current time (so we are not required to do
@@ -131,7 +132,7 @@ void exVectorPV::scan()
 		*(pF++) = newValue;
 	}
 
-	status = this->update (*pDD);
+	status = this->update (pDD);
 	if (status!=S_casApp_success) {
 		errMessage (status, "vector scan update failed\n");
 	}
@@ -151,16 +152,17 @@ void exVectorPV::scan()
 // this may result in too much memory consumtion on
 // the event queue.
 //
-caStatus exVectorPV::updateValue(gdd &valueIn)
+caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
 {
-	//
-	// replace means here throwing away the old gdd
-	// and "replacing" it with the one passed in
-	//
-	enum {replace, dontReplace} replFlag = dontReplace;
     gddStatus gdds;
     smartGDDPointer pNewValue;
-	
+	exVecDestructor *pDest;
+    unsigned i;
+
+    if ( ! pValueIn.valid () ) {
+        return S_casApp_undefined;
+    }
+
 	//
 	// Check bounds of incoming request
 	// (and see if we are replacing all elements -
@@ -169,99 +171,81 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 	// Perhaps much of this is unnecessary since the
 	// server lib checks the bounds of all requests
 	//
-	if (valueIn.isAtomic()) {
-		if (valueIn.dimension()!=1u) {
+	if (pValueIn->isAtomic()) {
+		if (pValueIn->dimension()!=1u) {
 			return S_casApp_badDimension;
 		}
-		const gddBounds* pb = valueIn.getBounds();
+		const gddBounds* pb = pValueIn->getBounds();
 		if (pb[0u].first()!=0u) {
 			return S_casApp_outOfBounds;
-		}
-		if (pb[0u].size()==this->info.getElementCount()) {
-			replFlag = replace;
 		}
 		else if (pb[0u].size()>this->info.getElementCount()) {
 			return S_casApp_outOfBounds;
 		}
 	}
-	else if (!valueIn.isScalar()) {
+	else if (!pValueIn->isScalar()) {
 		//
 		// no containers
 		//
 		return S_casApp_outOfBounds;
 	}
 	
-	if (replFlag==replace) {
-		//
-		// replacing all elements is efficient
-		//
-		pNewValue = &valueIn;
+	aitFloat32 *pF;
+	int gddStatus;
+	
+	//
+	// Create a new array data descriptor
+	// (so that old values that may be referenced on the
+	// event queue are not replaced)
+	//
+	pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat32, 
+		1u, this->info.getElementCount());
+	if ( ! pNewValue.valid () ) {
+		return S_casApp_noMemory;
 	}
-	else {
-		aitFloat32 *pF, *pFE;
-		int gddStatus;
-		
-		//
-		// Create a new array data descriptor
-		// (so that old values that may be referenced on the
-		// event queue are not replaced)
-		//
-		pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat32, 
-			1u, this->info.getElementCount());
-		if ( ! pNewValue.valid () ) {
-			return S_casApp_noMemory;
-		}
-		
-		//
-		// smart pointer class takes care of the reference count
-		// from here down
-		//
-		gddStatus = pNewValue->unreference();
-		assert (!gddStatus);
+	
+	//
+	// smart pointer class takes care of the reference count
+	// from here down
+	//
+	gddStatus = pNewValue->unreference();
+	assert (!gddStatus);
 
-		//
-		// copy over the old values if they exist
-		// (or initialize all elements to zero)
-		//
-		if ( this->pValue.valid () ) {
-			gdds = pNewValue->copy( &(*this->pValue) );
-			if ( gdds ) {
-				return S_cas_noConvert;
-			}
-		}
-		else {
-			//
-			// allocate array buffer
-			//
-			pF = new aitFloat32 [this->info.getElementCount()];
-			if (!pF) {
-				return S_casApp_noMemory;
-			}
-			
-			//
-			// Install (and initialize) array buffer
-			// if no old values exist
-			//
-			pFE = &pF[this->info.getElementCount()];
-			while (pF<pFE) {
-				*(pF++) = 0.0f;
-			}
-			*pNewValue = pF;
-		}
-		
-		//
-		// insert the values that they are writing
-		//
-		gdds = pNewValue->put(&valueIn);
-		if (gdds) {
-			return S_cas_noConvert;
-		}
+	//
+	// allocate array buffer
+	//
+	pF = new aitFloat32 [this->info.getElementCount()];
+	if (!pF) {
+		return S_casApp_noMemory;
+	}
+	
+	//
+	// Install (and initialize) array buffer
+	// if no old values exist
+	//
+    unsigned count = this->info.getElementCount();
+    for ( i = 0u; i < count; i++ ) {
+        pF[i] = 0.0f;
+    }
 
-	    aitTimeStamp ts;
-        valueIn.getTimeStamp (&ts);
-	    pNewValue->setTimeStamp (&ts);
-	    pNewValue->setStat (valueIn.getStat());
-	    pNewValue->setSevr (valueIn.getSevr());
+	pDest = new exVecDestructor;
+	if (!pDest) {
+		delete [] pF;
+		return S_casApp_noMemory;
+	}
+
+	//
+	// install the buffer into the DD
+	// (do this before we increment pF)
+	//
+	pNewValue->putRef(pF, pDest);
+	
+	//
+	// copy in the values that they are writing
+	//
+	gdds = pNewValue->put( & (*pValueIn) );
+	if (gdds) {
+		return S_cas_noConvert;
 	}
 	
 	this->pValue = pNewValue;

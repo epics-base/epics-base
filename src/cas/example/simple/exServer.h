@@ -189,7 +189,7 @@ public:
 	//
 	// This gets called when the pv gets a new value
 	//
-	caStatus update (gdd &value);
+	caStatus update (smartConstGDDPointer pValue);
 
 	//
 	// Gets called when we add noise to the current value
@@ -213,12 +213,12 @@ public:
 
 	caStatus read (const casCtx &, gdd &protoIn);
 
-	caStatus readNoCtx (gdd &protoIn)
+	caStatus readNoCtx (smartGDDPointer pProtoIn)
 	{
-		return this->ft.read (*this, protoIn);
+		return this->ft.read (*this, *pProtoIn);
 	}
 
-	caStatus write (const casCtx &, gdd &value);
+	caStatus write (const casCtx &, const gdd &value);
 
 	void destroy();
 
@@ -241,15 +241,15 @@ public:
 		const char * const pUserName, const char * const pHostName);
 
 protected:
-	smartGDDPointer pValue;
-	exScanTimer     *pScanTimer;
-	pvInfo &        info; 
-	bool            interest;
-	bool            preCreate;
-	bool            scanOn;
-	static osiTime	currentTime;
+	smartConstGDDPointer    pValue;
+	exScanTimer             *pScanTimer;
+	pvInfo &                info; 
+	bool                    interest;
+	bool                    preCreate;
+	bool                    scanOn;
+	static osiTime	        currentTime;
 
-	virtual caStatus updateValue (gdd &value) = 0;
+	virtual caStatus updateValue (smartConstGDDPointer pValue) = 0;
 
 private:
 	//
@@ -270,7 +270,7 @@ private:
 };
 
 //
-// exScalerPV
+// exScalarPV
 //
 class exScalarPV : public exPV {
 public:
@@ -278,7 +278,7 @@ public:
 			exPV (setup, preCreateFlag, scanOnIn) {}
 	void scan();
 private:
-	caStatus updateValue (gdd &value);
+	caStatus updateValue (smartConstGDDPointer pValue);
 };
 
 //
@@ -294,7 +294,7 @@ public:
 	aitIndex maxBound (unsigned dimension) const;
 
 private:
- 	caStatus updateValue (gdd &value);
+ 	caStatus updateValue (smartConstGDDPointer pValue);
 };
 
 //
@@ -364,7 +364,7 @@ public:
 	//
 	// write
 	//
-	caStatus write (const casCtx &ctxIn, gdd &value);
+	caStatus write (const casCtx &ctxIn, const gdd &value);
 
 	//
 	// removeIO
@@ -427,21 +427,15 @@ public:
 	//
 	// exAsyncWriteIO() 
 	//
-	exAsyncWriteIO (const casCtx &ctxIn, exAsyncPV &pvIn, gdd &valueIn) :
-		casAsyncWriteIO(ctxIn), exOSITimer(0.1), pv(pvIn), value(valueIn)
+	exAsyncWriteIO (const casCtx &ctxIn, exAsyncPV &pvIn, const gdd &valueIn) :
+		casAsyncWriteIO(ctxIn), exOSITimer(0.1), pv(pvIn), pValue(valueIn)
 	{
-		int gddStatus;
-		gddStatus = this->value.reference();
-		assert (!gddStatus);
 	}
 
 	~exAsyncWriteIO()
 	{
-		int gddStatus;
 		this->pv.removeIO();
-		gddStatus = this->value.unreference();
-		assert (!gddStatus);
-	}
+    }
 
 	//
 	// expire()
@@ -453,8 +447,8 @@ public:
 	const char *name() const;
 
 private:
-	exAsyncPV	&pv;
-	gdd		&value;
+	exAsyncPV               &pv;
+    smartConstGDDPointer    pValue;
 };
 
 //
@@ -466,19 +460,13 @@ public:
 	// exAsyncReadIO()
 	//
 	exAsyncReadIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn) :
-		casAsyncReadIO(ctxIn), exOSITimer(0.1), pv(pvIn), proto(protoIn)
+		casAsyncReadIO(ctxIn), exOSITimer(0.1), pv(pvIn), pProto(protoIn)
 	{
-		int gddStatus;
-		gddStatus = this->proto.reference();
-		assert (!gddStatus);
 	}
 
 	~exAsyncReadIO()
 	{
-		int gddStatus;
 		this->pv.removeIO();
-		gddStatus = this->proto.unreference();
-		assert (!gddStatus);
 	}
 
 	//
@@ -491,8 +479,8 @@ public:
 	const char *name() const;
 
 private:
-	exAsyncPV	&pv;
-	gdd		&proto;
+	exAsyncPV	        &pv;
+    smartGDDPointer     pProto;
 };
 
 //
@@ -523,7 +511,7 @@ public:
 	const char *name() const;
 private:
 	const pvInfo	&pvi;
-	exServer	&cas;
+	exServer	    &cas;
 };
 
  
@@ -555,9 +543,9 @@ public:
 
 	const char *name() const;
 private:
-	pvInfo	&pvi;
+	pvInfo	    &pvi;
 	exServer	&cas;
-	bool	scanOn;
+	bool	    scanOn;
 };
 
 //

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.9  1996/08/06 19:14:10  jbk
+// Fixes to the string class.
+// Changes units field to a aitString instead of aitInt8.
+//
 // Revision 1.8  1996/07/26 02:23:15  jbk
 // Fixed the spelling error with Scalar.
 //
@@ -634,9 +638,9 @@ static gdd* mapGraphicShortToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_SHORT].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_short_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_gr_short_units].put(str);
+	aitString* str=NULL;
+	dd[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_gr_short_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_gr_short_graphicHigh]=db->upper_disp_limit;
@@ -666,9 +670,9 @@ static gdd* mapControlShortToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_SHORT].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_short_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_ctrl_short_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_ctrl_short_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_ctrl_short_graphicHigh]=db->upper_disp_limit;
@@ -699,9 +703,9 @@ static int mapGraphicGddToShort(void* v, gdd* dd)
 	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_short_value];
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_gr_short_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicHigh];
@@ -727,9 +731,9 @@ static int mapControlGddToShort(void* v, gdd* dd)
 	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_short_value];
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_ctrl_short_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicHigh];
@@ -759,9 +763,9 @@ static gdd* mapGraphicFloatToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_FLOAT].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_float_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_gr_float_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_gr_float_precision]=db->precision;
 	dd[gddAppTypeIndex_dbr_gr_float_graphicLow]=db->lower_disp_limit;
@@ -792,9 +796,9 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_FLOAT].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_float_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_ctrl_float_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_ctrl_float_precision]=db->precision;
 	dd[gddAppTypeIndex_dbr_ctrl_float_graphicLow]=db->lower_disp_limit;
@@ -826,9 +830,9 @@ static int mapGraphicGddToFloat(void* v, gdd* dd)
 	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_float_value];
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_gr_float_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->precision=dd[gddAppTypeIndex_dbr_gr_float_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_float_graphicLow];
@@ -855,9 +859,9 @@ static int mapControlGddToFloat(void* v, gdd* dd)
 	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_float_value];
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_ctrl_float_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->precision=dd[gddAppTypeIndex_dbr_ctrl_float_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_float_graphicLow];
@@ -977,9 +981,9 @@ static gdd* mapGraphicCharToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_CHAR].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_char_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_gr_char_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_gr_char_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_gr_char_graphicHigh]=db->upper_disp_limit;
@@ -1009,9 +1013,9 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_CHAR].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_char_value];
 
-	aitString str = db->units;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_ctrl_char_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_ctrl_char_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_ctrl_char_graphicHigh]=db->upper_disp_limit;
@@ -1042,9 +1046,9 @@ static int mapGraphicGddToChar(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_char_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_gr_char_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicHigh];
@@ -1070,9 +1074,9 @@ static int mapControlGddToChar(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_char_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_ctrl_char_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicHigh];
@@ -1102,9 +1106,9 @@ static gdd* mapGraphicLongToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_LONG].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_long_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_gr_long_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_gr_long_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_gr_long_graphicHigh]=db->upper_disp_limit;
@@ -1134,9 +1138,9 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_LONG].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_long_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_ctrl_long_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_ctrl_long_graphicLow]=db->lower_disp_limit;
 	dd[gddAppTypeIndex_dbr_ctrl_long_graphicHigh]=db->upper_disp_limit;
@@ -1167,9 +1171,9 @@ static int mapGraphicGddToLong(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_long_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_gr_long_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicHigh];
@@ -1195,9 +1199,9 @@ static int mapControlGddToLong(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_long_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_ctrl_long_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicHigh];
@@ -1227,9 +1231,9 @@ static gdd* mapGraphicDoubleToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_GR_DOUBLE].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_double_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_gr_double_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_gr_double_precision]=db->precision;
 	dd[gddAppTypeIndex_dbr_gr_double_graphicLow]=db->lower_disp_limit;
@@ -1260,9 +1264,9 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 	gdd* dd = type_table->getDD(gddDbrToAit[DBR_CTRL_DOUBLE].app);
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_double_value];
 
-	aitString str;
-	str.installString(db->units);
-	dd[gddAppTypeIndex_dbr_ctrl_double_units].put(str);
+	aitString* str = NULL;
+	dd[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
+	str->copy(db->units);
 
 	dd[gddAppTypeIndex_dbr_ctrl_double_precision]=db->precision;
 	dd[gddAppTypeIndex_dbr_ctrl_double_graphicLow]=db->lower_disp_limit;
@@ -1294,9 +1298,9 @@ static int mapGraphicGddToDouble(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_double_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_gr_double_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->precision=dd[gddAppTypeIndex_dbr_gr_double_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_double_graphicLow];
@@ -1323,9 +1327,9 @@ static int mapControlGddToDouble(void* v, gdd* dd)
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_double_value];
 	int sz=1;
 
-	aitString str;
-	dd[gddAppTypeIndex_dbr_ctrl_double_units].get(str);
-	strcpy(db->units,str.string());
+	aitString* str;
+	dd[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
+	strcpy(db->units,str->string());
 
 	db->precision=dd[gddAppTypeIndex_dbr_ctrl_double_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_double_graphicLow];

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.6  1996/08/06 19:14:11  jbk
+// Fixes to the string class.
+// Changes units field to a aitString instead of aitInt8.
+//
 // Revision 1.5  1996/07/26 02:23:16  jbk
 // Fixed the spelling error with Scalar.
 //
@@ -110,11 +114,11 @@ void gdd::init(int app, aitEnum prim, int dimen)
 	setApplType(app);
 	setPrimType(prim);
 	dim=(aitUint8)dimen;
-	setData(NULL);
 	destruct=NULL;
 	ref_cnt=1;
 	flags=0;
 	bounds=NULL;
+	setData(NULL);
 
 	if(dim)
 	{
@@ -125,6 +129,11 @@ void gdd::init(int app, aitEnum prim, int dimen)
 		case 3:  bounds=(gddBounds*)new gddBounds3D; break;
 		default: bounds=(gddBounds*)new gddBounds[dim]; break;
 		}
+	}
+	else if(primitiveType()==aitEnumString)
+	{
+		aitString* str=(aitString*)dataAddress();
+		str->init();
 	}
 }
 
@@ -541,8 +550,10 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 			if(str->string())
 			{
 				memcpy((char*)&pdd[pos],str->string(),str->length()+1);
-				*str=(char*)&pdd[pos];
+				str->force((char*)&pdd[pos]);
 			}
+			else
+				str->init();
 		}
 	}
 	else if(isContainer())
@@ -672,9 +683,11 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 				if(str->string())
 				{
 					memcpy(ptr,str->string(),str->length()+1);
-					*str=(char*)ptr;
+					str->force((char*)ptr);
 					ptr+=str->length()+1;
 				}
+				else
+					str->init();
 			}
 			else if(dd[i].primitiveType()==aitEnumFixedString)
 			{
@@ -773,6 +786,8 @@ gddStatus gdd::convertOffsetsToAddress(void)
 						cstr=str[i].string();
 						str[i].force(pdd+(unsigned long)cstr);
 					}
+					else
+						str[i].init();
 				}
 			}
 		}
@@ -788,6 +803,8 @@ gddStatus gdd::convertOffsetsToAddress(void)
 					cstr=str->string();
 					str->force(pdd+(unsigned long)cstr);
 				}
+				else
+					str->init();
 			}
 		}
 	}
@@ -839,6 +856,7 @@ gddStatus gdd::convertAddressToOffsets(void)
 				{
 					cstr=str[i].string();
 					if(cstr) str[i].force(cstr-(const char*)pdd);
+					else str[i].init();
 				}
 			}
 			// bounds and data of atomic to offsets
@@ -855,6 +873,7 @@ gddStatus gdd::convertAddressToOffsets(void)
 				str=(aitString*)dataAddress();
 				cstr=str->string();
 				if(cstr) str->force(cstr-(const char*)pdd);
+				else str->init();
 			}
 		}
 	}
@@ -923,6 +942,108 @@ gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 		setBound(i,0,cnt[i]);
 
 	return 0;
+}
+
+void gdd::get(aitString& d)
+{
+	if(primitiveType()==aitEnumString)
+	{
+		aitString* s=(aitString*)dataAddress();
+		d=*s;
+	}
+	else if(dim==1 && primitiveType()==aitEnumInt8) 
+	{
+		if(isConstant())
+		{
+			const char* ci=(const char*)dataPointer();
+			d.copy(ci);
+		}
+		else
+		{
+			char* i=(char*)dataPointer();
+			d.copy(i);
+		}
+	}
+	else
+		get(aitEnumString,&d);
+}
+void gdd::get(aitFixedString& d)
+{
+	if(primitiveType()==aitEnumFixedString)
+		strcpy(d.fixed_string,data.FString->fixed_string);
+	else if(primitiveType()==aitEnumInt8 && dim==1)
+		strcpy(d.fixed_string,(char*)dataPointer());
+	else
+		get(aitEnumFixedString,&d);
+}
+
+void gdd::getConvert(aitString& d)
+{
+	if(primitiveType()==aitEnumInt8 && dim==1)
+	{
+		if(isConstant())
+		{
+			const char* ci=(const char*)dataPointer();
+			d.copy(ci);
+		}
+		else
+		{
+			char* i=(char*)dataPointer();
+			d.copy(i);
+		}
+	}
+	else
+		get(aitEnumString,&d);
+}
+
+void gdd::getConvert(aitFixedString& d)
+{
+	if(primitiveType()==aitEnumInt8 && dim==1)
+		strcpy(d.fixed_string,(char*)dataPointer());
+	else
+		get(aitEnumFixedString,d.fixed_string);
+}
+
+void gdd::put(aitString d)
+{
+	aitString* s=(aitString*)dataAddress();
+	*s=d;
+	setPrimType(aitEnumString);
+}
+
+// this is dangerous, should the fixed string be copied here?
+void gdd::put(aitFixedString& d)
+{
+	data.FString=&d;
+	setPrimType(aitEnumFixedString);
+}
+
+void gdd::putConvert(aitString d)
+{
+	if(primitiveType()==aitEnumInt8 && dim==1)
+	{
+		aitUint32 len = getDataSizeElements();
+		char* cp = (char*)dataPointer();
+		if(d.length()<len) len=d.length();
+		strncpy(cp,d.string(),len);
+		cp[len]='\0';
+	}
+	else
+		set(aitEnumString,&d);
+}
+
+void gdd::putConvert(aitFixedString& d)
+{
+	if(primitiveType()==aitEnumInt8 && dim==1)
+	{
+		aitUint32 len = getDataSizeElements();
+		char* cp = (char*)dataPointer();
+		if(sizeof(d.fixed_string)<len) len=sizeof(d.fixed_string);
+		strncpy(cp,d.fixed_string,len);
+		cp[len]='\0';
+	}
+	else
+		set(aitEnumFixedString,d.fixed_string);
 }
 
 // copy each of the strings into this DDs storage area

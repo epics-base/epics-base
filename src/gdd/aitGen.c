@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/06/27 14:33:13  jbk
+ * changes data type to string conversions to use installString(), not copy()
+ *
  * Revision 1.1  1996/06/25 19:11:30  jbk
  * new in EPICS base
  *
@@ -159,14 +162,25 @@ void MakeStringFuncFrom(int i,int j,int k)
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\tchar temp[AIT_FIXED_STRING_SIZE];\n");
+	pr(dfd,"\taitString* out=(aitString*)d;\n");
+	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
+
+#if 0
+	if(j==aitEnumInt8)
+	{
+		pr(dfd,"\n\t// assume source s is string if count c is 1\n");
+		pr(dfd,"\n\tif(c==1) {\n");
+		pr(dfd,"\t\tout->copy((char*)in);\n");
+		pr(dfd,"\t\treturn;\n");
+		pr(dfd,"\t}\n\n");
+	}
+#endif
 
 	if(j==aitEnumInt8)
 		pr(dfd,"\taitInt32 itmp;\n");
 	else if(j==aitEnumUint8)
 		pr(dfd,"\taitUint32 itmp;\n");
 
-	pr(dfd,"\taitString* out=(aitString*)d;\n");
-	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 
 	if(j==aitEnumInt8)
@@ -196,15 +210,25 @@ void MakeStringFuncTo(int i,int j,int k)
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitString* in=(aitString*)s;\n");
+	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 
 	/* I special cased the Int8 and Uint8 - yuck */
+#if 0
+	if(i==aitEnumInt8)
+	{
+		pr(dfd,"\n\t// assume dest d is string if count c is 1\n");
+		pr(dfd,"\n\tif(c==1) {\n");
+		pr(dfd,"\t\tin->extractString((char*)out);\n");
+		pr(dfd,"\t\treturn;\n");
+		pr(dfd,"\t}\n\n");
+	}
+#endif
 
 	if(i==aitEnumInt8)
 		pr(dfd,"\taitInt32 itmp;\n");
 	else if(i==aitEnumUint8)
 		pr(dfd,"\taitUint32 itmp;\n");
 
-	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 	pr(dfd,"\t\tif(in[i].string()) {\n");
 
@@ -235,14 +259,25 @@ void MakeFStringFuncFrom(int i,int j,int k)
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
+	pr(dfd,"\taitFixedString* out=(aitFixedString*)d;\n");
+	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
+
+#if 0
+	if(j==aitEnumInt8)
+	{
+		pr(dfd,"\n\t// assume source s is string if count c is 1\n");
+		pr(dfd,"\n\tif(c==1) {\n");
+		pr(dfd,"\t\tstrcpy(out->fixed_string,(char*)in);\n");
+		pr(dfd,"\t\treturn;\n");
+		pr(dfd,"\t}\n\n");
+	}
+#endif
 
 	if(j==aitEnumInt8)
 		pr(dfd,"\taitInt32 itmp;\n");
 	else if(j==aitEnumUint8)
 		pr(dfd,"\taitUint32 itmp;\n");
 
-	pr(dfd,"\taitFixedString* out=(aitFixedString*)d;\n");
-	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 
 	if(j==aitEnumInt8)
@@ -270,15 +305,25 @@ void MakeFStringFuncTo(int i,int j,int k)
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitFixedString* in=(aitFixedString*)s;\n");
+	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 
 	/* I special cased the Int8 and Uint8 - yuck */
+#if 0
+	if(i==aitEnumInt8)
+	{
+		pr(dfd,"\n\t// assume dest d is string if count c is 1\n");
+		pr(dfd,"\n\tif(c==1) {\n");
+		pr(dfd,"\t\tstrcpy((char*)out,in->fixed_string);\n");
+		pr(dfd,"\t\treturn;\n");
+		pr(dfd,"\t}\n\n");
+	}
+#endif
 
 	if(i==aitEnumInt8)
 		pr(dfd,"\taitInt32 itmp;\n");
 	else if(i==aitEnumUint8)
 		pr(dfd,"\taitUint32 itmp;\n");
 
-	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 
 	if(i==aitEnumInt8)

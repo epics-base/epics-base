@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1996/08/09 02:29:16  jbk
+ * fix getRef(aitString*&) to return the correct value if gdd is scalar
+ *
  * Revision 1.6  1996/08/06 19:14:12  jbk
  * Fixes to the string class.
  * Changes units field to a aitString instead of aitInt8.
@@ -805,8 +808,6 @@ inline void gdd::getConvert(aitUint16& d)	{ get(aitEnumUint16,&d); }
 inline void gdd::getConvert(aitInt16& d)	{ get(aitEnumInt16,&d); }
 inline void gdd::getConvert(aitUint8& d)	{ get(aitEnumUint8,&d); }
 inline void gdd::getConvert(aitInt8& d)		{ get(aitEnumInt8,&d); }
-inline void gdd::getConvert(aitString& d)	{ get(aitEnumString,&d); }
-inline void gdd::getConvert(aitFixedString& d){get(aitEnumFixedString,d.fixed_string);}
 
 inline void gdd::putConvert(aitFloat64 d){ set(aitEnumFloat64,&d); }
 inline void gdd::putConvert(aitFloat32 d){ set(aitEnumFloat32,&d); }
@@ -816,8 +817,6 @@ inline void gdd::putConvert(aitUint16 d) { set(aitEnumUint16,&d); }
 inline void gdd::putConvert(aitInt16 d)  { set(aitEnumInt16,&d); }
 inline void gdd::putConvert(aitUint8 d)  { set(aitEnumUint8,&d); }
 inline void gdd::putConvert(aitInt8 d)	 { set(aitEnumInt8,&d); }
-inline void gdd::putConvert(aitString d) { set(aitEnumString,&d); }
-inline void gdd::putConvert(aitFixedString& d) { set(aitEnumFixedString,d.fixed_string); }
 
 inline gddStatus gdd::put(const aitFloat64* const d)
 	{ return genCopy(aitEnumFloat64,d); }
@@ -833,8 +832,23 @@ inline gddStatus gdd::put(const aitInt16* const d)
 	{ return genCopy(aitEnumInt16,d); }
 inline gddStatus gdd::put(const aitUint8* const d)
 	{ return genCopy(aitEnumUint8,d); }
+
+// special case for aitInt8 array to aitString scalar
 inline gddStatus gdd::put(const aitInt8* const d)
-	{ return genCopy(aitEnumInt8,d); }
+{
+	if(primitiveType()==aitEnumString && dim==0)
+	{
+		aitString* p = (aitString*)dataAddress();
+		if(isConstant())
+			p->copy((char*)d);
+		else
+			p->replaceData((char*)d);
+	}
+	else if(primitiveType()==aitEnumFixedString && dim==0)
+		strcpy(data.FString->fixed_string,(char*)d);
+	else
+		return genCopy(aitEnumInt8,d);
+}
 
 // currently unprotected from destroying an atomic gdd
 inline void gdd::put(aitFloat64 d){ data.Float64=d;setPrimType(aitEnumFloat64);}
@@ -846,10 +860,6 @@ inline void gdd::put(aitInt16 d)  { data.Int16=d; setPrimType(aitEnumInt16); }
 inline void gdd::put(aitUint8 d)  { data.Uint8=d; setPrimType(aitEnumUint8); }
 inline void gdd::put(aitInt8 d)   { data.Int8=d; setPrimType(aitEnumInt8); }
 inline void gdd::put(aitType* d)  { data=*d; }
-inline void gdd::put(aitString d)
-	{ aitString* s=(aitString*)&data; *s=d; setPrimType(aitEnumString); }
-inline void gdd::put(aitFixedString& d)
-	{ data.FString=&d; setPrimType(aitEnumFixedString); }
 
 inline void gdd::get(void* d)
  { aitConvert(primitiveType(),d,primitiveType(),voidData(),getDataSizeElements());}
@@ -869,12 +879,24 @@ inline void gdd::get(aitInt16* d)
  { aitConvert(aitEnumInt16,d,primitiveType(),voidData(),getDataSizeElements()); }
 inline void gdd::get(aitUint8* d)
  { aitConvert(aitEnumUint8,d,primitiveType(),voidData(),getDataSizeElements()); }
-inline void gdd::get(aitInt8* d)
- { aitConvert(aitEnumInt8,d,primitiveType(),voidData(),getDataSizeElements()); }
 inline void gdd::get(aitString* d)
  { aitConvert(aitEnumString,d,primitiveType(),voidData(),getDataSizeElements()); }
 inline void gdd::get(aitFixedString* d)
  { aitConvert(aitEnumFixedString,d,primitiveType(),voidData(),getDataSizeElements()); }
+
+// special case for string scalar to aitInt8 array!
+inline void gdd::get(aitInt8* d)
+{
+	if(primitiveType()==aitEnumString && dim==0)
+	{
+		aitString* str = (aitString*)dataAddress();
+		strcpy((char*)d,str->string());
+	}
+	else if(primitiveType()==aitEnumFixedString && dim==0)
+		strcpy((char*)d,data.FString->fixed_string);
+	else
+		aitConvert(aitEnumInt8,d,primitiveType(),voidData(),getDataSizeElements());
+}
 
 inline void gdd::get(aitFloat64& d) {
 	if(primitiveType()==aitEnumFloat64) d=getData().Float64;
@@ -907,14 +929,6 @@ inline void gdd::get(aitUint8& d) {
 inline void gdd::get(aitInt8& d) {
 	if(primitiveType()==aitEnumInt8) d=getData().Int8;
 	else get(aitEnumInt8,&d);
-}
-inline void gdd::get(aitString& d) {
-	if(primitiveType()==aitEnumString) {aitString* s=(aitString*)&data; d=*s; }
-	else get(aitEnumString,&d);
-}
-inline void gdd::get(aitFixedString& d)	{
-	if(primitiveType()==aitEnumFixedString) { d=*(getData().FString); }
-	else get(aitEnumFixedString,&d);
 }
 inline void gdd::get(aitType& d)	{ d=data; }
 

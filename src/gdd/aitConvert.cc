@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.1  1996/06/25 19:11:28  jbk
+// new in EPICS base
+//
 //
 // *Revision 0.4  1996/06/25 18:58:58  jbk
 // *more fixes for the aitString management functions and mapping menus
@@ -69,7 +72,7 @@ static void aitConvertStringFixedString(void* d,const void* s,aitIndex c)
 	aitString* out = (aitString*)d;
 	aitFixedString* in = (aitFixedString*)s;
 
-	for(i=0;i<c;i++) out[i].installString(in[i].fixed_string);
+	for(i=0;i<c;i++) out[i].copy(in[i].fixed_string);
 }
 
 static void aitConvertFixedStringString(void* d,const void* s,aitIndex c)

@@ -43,18 +43,18 @@ void blockingSockTest ()
     epicsThreadSleep ( 1.0 );
     assert ( ! blockingSockWakeup );
 
-    epicsSignalRaiseSigAlarm ( id );
+    status = shutdown ( s, SHUT_RDWR );
+    assert ( status == 0 );
     epicsThreadSleep ( 1.0 );
     char * pStr = "esscimqi_?????";
     if ( blockingSockWakeup ) {
-        pStr = "esscimqi_socketSigAlarmRequired";
+        pStr = "esscimqi_socketBothShutdownRequired";
     }
     else {
-        status = shutdown ( s, SHUT_RDWR );
-        assert ( status == 0 );
+        epicsSignalRaiseSigAlarm ( id );
         epicsThreadSleep ( 1.0 );
         if ( blockingSockWakeup ) {
-            pStr = "esscimqi_socketBothShutdownRequired";
+            pStr = "esscimqi_socketSigAlarmRequired";
         }
         else {
             epicsSocketDestroy ( s );

@@ -70,8 +70,7 @@ TORNADO=YES
  
 #  VxWorks directory for TORNADO=YES
 #VX_DIR_YES=c:\\Tornado
-#VX_DIR_YES = /usr/local/vw/tornado101
-VX_DIR_YES = /usr/local/vw/tornado202
+VX_DIR_YES = /usr/local/vw/tornado202p1
 
 #  VxWorks directory for TORNADO=NO
 #VX_DIR_NO=$(VW)

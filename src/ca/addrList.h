@@ -35,7 +35,6 @@ typedef union ca_addr {
 
 typedef struct {
         ELLNODE		node;
-        caAddr		srcAddr;
         caAddr		destAddr;
 }caAddrNode;
 

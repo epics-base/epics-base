@@ -39,13 +39,18 @@ static char	*sccsId = "@(#) $Id$";
 
 #include "iocinf.h"
 
+#ifdef DEBUG
+#define ifDepenDebufPrintf(argsInParen) printf argsInParen
+#else
+#define ifDepenDebufPrintf(argsInParen)
+#endif
+
 /*
  * Dont use ca_static based lock macros here because this is
  * also called by the server. All locks required are applied at
  * a higher level.
  */
 
-
 /*
  * local_addr()
  * 
@@ -86,9 +91,8 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 		ifconf.ifc_len = 0;
 	}
 
-#ifdef DEBUG
-	ca_printf("CAC: %d net intf found\n", ifconf.ifc_len/sizeof(*pifreq));
-#endif
+	ifDepenDebufPrintf ( ("local_addr: %ld net intf(s) found\n", 
+        (unsigned long) (ifconf.ifc_len/sizeof(*pifreq))) );
 
 	for (	pifreq = ifconf.ifc_req;
 	    	((size_t)ifconf.ifc_len) >= sizeof(*pifreq);
@@ -96,42 +100,35 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 
 		status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
 		if (status == ERROR){
-			ca_printf("CAC: net intf flags fetch for %s failed\n", pifreq->ifr_name);
+			ca_printf("local_addr: net intf flags fetch for %s failed\n", pifreq->ifr_name);
 			continue;
 		}
 
 		if (!(pifreq->ifr_flags & IFF_UP)) {
-#ifdef DEBUG
-			ca_printf("CAC: net intf %s was down\n", pifreq->ifr_name);
-#endif
+			ifDepenDebufPrintf ( ("local_addr: net intf %s was down\n", pifreq->ifr_name) );
 			continue;
 		}
 		
-#ifdef DEBUG
-		ca_printf("CAC: net intf %s found\n", pifreq->ifr_name);
-#endif
-
 		/*
 		 * dont use the loop back interface
 		 */
 		if (pifreq->ifr_flags & IFF_LOOPBACK) {
+			ifDepenDebufPrintf ( ("local_addr: ignoring loopback interface: %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
 		status = socket_ioctl(s, SIOCGIFADDR, pifreq);
 		if (status == ERROR){
-#ifdef DEBUG
-			ca_printf("CAC: could not obtain addr for %s\n", pifreq->ifr_name);
-#endif
+			ifDepenDebufPrintf ( ("local_addr: could not obtain addr for %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
 		if (pifreq->ifr_addr.sa_family != AF_INET){
-#ifdef DEBUG
-			ca_printf("CAC: interface %s was not AF_INET\n", pifreq->ifr_name);
-#endif
+			ifDepenDebufPrintf ( ("local_addr: interface %s was not AF_INET\n", pifreq->ifr_name) );
 			continue;
 		}
+
+		ifDepenDebufPrintf ( ("local_addr: net intf %s found\n", pifreq->ifr_name) );
 
 		tmpaddr = (struct sockaddr_in *) &pifreq->ifr_addr;
 
@@ -148,8 +145,6 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	return OK;
 }
 
-
-
 /*
  *  	caDiscoverInterfaces()
  *
@@ -172,14 +167,13 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 void epicsShareAPI caDiscoverInterfaces
 	(ELLLIST *pList, int socket, unsigned short port, struct in_addr matchAddr)
 {
-	struct sockaddr_in 	localAddr;
-	struct sockaddr_in 	*pInetAddr;
-	caAddrNode		*pNode;
-	int             	status;
-	struct ifconf   	ifconf;
-	struct ifreq    	*pIfreqList;
-	struct ifreq   		*pifreq;
-	unsigned		nelem;
+    struct sockaddr_in  *pInetAddr;
+    caAddrNode          *pNode;
+    int                 status;
+    struct ifconf       ifconf;
+    struct ifreq        *pIfreqList;
+    struct ifreq        *pifreq;
+    unsigned long       nelem;
 
 	/*
 	 * use pool so that we avoid using to much stack space
@@ -203,9 +197,12 @@ void epicsShareAPI caDiscoverInterfaces
 	}
 
 	nelem = ifconf.ifc_len/sizeof(struct ifreq);
+	ifDepenDebufPrintf ( ("caDiscoverInterfaces: %ld net intf(s) found\n", nelem) );
+
 	for (pifreq = pIfreqList; pifreq<(pIfreqList+nelem); pifreq++){
 		status = socket_ioctl(socket, SIOCGIFFLAGS, pifreq);
-		if (status){
+		if (status) {
+            ca_printf ("caDiscoverInterfaces: net intf flags fetch for %s failed\n", pifreq->ifr_name);
 			continue;
 		}
 
@@ -213,6 +210,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 * dont bother with interfaces that have been disabled
 		 */
 		if (!(pifreq->ifr_flags & IFF_UP)) {
+			ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s was down\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -220,6 +218,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 * dont use the loop back interface
 		 */
 		if (pifreq->ifr_flags & IFF_LOOPBACK) {
+			ifDepenDebufPrintf ( ("caDiscoverInterfaces: ignoring loopback interface: %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -228,6 +227,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 */
 		status = socket_ioctl(socket, SIOCGIFADDR, pifreq);
 		if (status){
+			ifDepenDebufPrintf ( ("caDiscoverInterfaces: could not obtain addr for %s\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -236,6 +236,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 * then dont use it.
 		 */
 		if (pifreq->ifr_addr.sa_family != AF_INET) {
+			ifDepenDebufPrintf ( ("caDiscoverInterfaces: interface %s was not AF_INET\n", pifreq->ifr_name) );
 			continue;
 		}
 
@@ -243,7 +244,6 @@ void epicsShareAPI caDiscoverInterfaces
 		 * save the interface's IP address
 		 */
 		pInetAddr = (struct sockaddr_in *)&pifreq->ifr_addr;
-		localAddr = *pInetAddr;
 
 		/*
 		 * if it isnt a wildcarded interface then look for
@@ -251,6 +251,7 @@ void epicsShareAPI caDiscoverInterfaces
 		 */
 		if (matchAddr.s_addr != htonl(INADDR_ANY)) {
 			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
+                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s didnt match\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
@@ -270,7 +271,8 @@ void epicsShareAPI caDiscoverInterfaces
 					socket, 
 					SIOCGIFBRDADDR, 
 					pifreq);
-			if (status){
+			if (status) {
+                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: bcast addr fetch fail\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
@@ -280,21 +282,25 @@ void epicsShareAPI caDiscoverInterfaces
 					SIOCGIFDSTADDR, 
 					pifreq);
 			if (status){
+                ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
 				continue;
 			}
 		}
 		else{
+            ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s: not pt to pt or bcast\n", pifreq->ifr_name) );
 			continue;
 		}
 
+        ifDepenDebufPrintf ( ("caDiscoverInterfaces: net intf %s found\n", pifreq->ifr_name) );
+
 		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
 		if(!pNode){
+            ca_printf ("caDiscoverInterfaces: malloc failed for net intf %s: \n", pifreq->ifr_name);
 			continue;
 		}
 
 		pNode->destAddr.in = *pInetAddr;
 		pNode->destAddr.in.sin_port = htons(port);
-		pNode->srcAddr.in = localAddr;
 
 		/*
 		 * LOCK applied externally

@@ -820,7 +820,7 @@ extern void format_pinpoint_message PROTO((char[], char[]));
 extern void pinpoint_message PROTO((char[]));
 
 extern void synerr PROTO((char []));	/* report a syntax error */
-extern int yyparse PROTO(());	/* the YACC parser */
+/* extern int yyparse PROTO(());*/ 	/* the YACC parser */
 
 
 /* from file scan.l */

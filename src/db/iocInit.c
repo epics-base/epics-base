@@ -80,42 +80,42 @@ char * pResourceFilename;
     UTINY type;
 
     if(initialized) {
-	logMsg("iocInit can only be called once\n");
+	printf("iocInit can only be called once\n");
 	return(-1);
     }
     if(status=initBusController()) {
-	logMsg("Xycom SRM010 Bus Controller Not Present\n");
+	printf("Xycom SRM010 Bus Controller Not Present\n");
     }
     if(status=sdrLoad(pfilename)) {
-	logMsg("iocInit aborting because sdrLoad failed\n");
+	printf("iocInit aborting because sdrLoad failed\n");
 	return(-1);
     }
     if(status=getResources(pResourceFilename)) {
-	logMsg("iocInit aborting because getResources failed\n");
+	printf("iocInit aborting because getResources failed\n");
 	return(-1);
     }
-    logMsg("getResources completed\n");
+    printf("getResources completed\n");
     initialized = TRUE;
-    logMsg("sdrLoad completed\n");
+    printf("sdrLoad completed\n");
     /* enable interrupt level 5 and 6 */
     sysIntEnable(5);
     sysIntEnable(6);
-    if(initDrvSup()==0) logMsg("Drivers Initialized\n");
-    if(initRecSup()==0) logMsg("Record Support Initialized\n");
-    if(initDevSup()==0) logMsg("Device Support Initialized\n");
-    ts_init(); logMsg("Time Stamp Driver Initialized\n");
-    if(initDatabase()==0) logMsg("Database Initialized\n");
+    if(initDrvSup()==0) printf("Drivers Initialized\n");
+    if(initRecSup()==0) printf("Record Support Initialized\n");
+    if(initDevSup()==0) printf("Device Support Initialized\n");
+    ts_init(); printf("Time Stamp Driver Initialized\n");
+    if(initDatabase()==0) printf("Database Initialized\n");
     /* if user exit exists call it */
     strcpy(name,"_");
     strcat(name,"dbUserExit");
     rtnval = symFindByName(sysSymTbl,name,&pdbUserExit,&type);
     if(rtnval==OK && (type&N_TEXT!=0)) {
 	(*pdbUserExit)();
-	logMsg("User Exit was called\n");
+	printf("User Exit was called\n");
     }
-    scan_init(); logMsg("Scanners Initialized\n");
-    rsrv_init(); logMsg("Channel Access Servers Initialized\n");
-    logMsg("iocInit: All initialization complete\n");
+    scan_init(); printf("Scanners Initialized\n");
+    rsrv_init(); printf("Channel Access Servers Initialized\n");
+    printf("iocInit: All initialization complete\n");
 
     return(0);
 }
@@ -128,7 +128,6 @@ static long initBusController(){ /*static */
     /* initialize the  Xycom SRM010 bus controller card */
     ctemp = XY_LED;
     if (vxMemProbe(SRM010_ADDR, WRITE,1,&ctemp) == -1) {
-    	errMessage(-1L,"Xycom SRM010 Bus Controller Not Present");
     	return(-1);
     }
     return(0);
@@ -506,10 +505,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     long            n_long;
     float           n_float;
     double          n_double;
-    if (!fname) {
-	errMessage(0L,"getResources(): RETURNING because of NULL arg\n");
-	return (0);
-    }
+    if (!fname) return (0);
     if ((fd = open(fname, READ, 0x0)) < 0) {
 	errMessage(0L, "getResources: No such Resource file");
 	return (-1);

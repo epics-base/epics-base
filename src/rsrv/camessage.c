@@ -563,14 +563,18 @@ db_field_log        *pfl
          * assert() is safe here because the type was
          * checked by db_get_field()
          */
-        assert (pevext->msg.m_dataType < NELEMENTS(cac_dbr_cvrt));
-
-        /* use type as index into conversion jumptable */
-        (* cac_dbr_cvrt[pevext->msg.m_dataType])
-            ( reply + 1,
-              reply + 1,
-              TRUE,       /* host -> net format */
-              pevext->msg.m_count);
+        if (pevext->msg.m_dataType >= NELEMENTS(cac_dbr_cvrt)) {
+            memset((void *)(reply+1), 0, pevext->size);
+            reply->m_cid = ECA_GETFAIL;
+        }
+        else {
+            /* use type as index into conversion jumptable */
+            (* cac_dbr_cvrt[pevext->msg.m_dataType])
+                ( reply + 1,
+                  reply + 1,
+                  TRUE,       /* host -> net format */
+                  pevext->msg.m_count);
+        }
 #endif
         /*
          * force string message size to be the true size rounded to even

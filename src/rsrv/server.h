@@ -41,6 +41,7 @@
 #include "dbNotify.h"
 #include "caProto.h"
 #include "ellLib.h"
+#include "epicsAssert.h"
 
 #define epicsExportSharedSymbols
 #include "rsrv.h"

@@ -116,7 +116,7 @@ Documentation
      EPICS documentation is available on the WWW via the EPICS home
      page at APS:  URL http://www.aps.anl.gov/Epics
 
-     This README.htm is in the base distribution file and will be available
+     This README.1st is in the base distribution file and will be available
      on the IOC software R3.14 EPICS WWW page which can be accessed
      from the APS EPICS home page.
 
@@ -204,12 +204,13 @@ Directory Structure
 
 Build related components
 
-     base/README* files 
-     README.htm           Instructions for setup and building epics base 
-                          (i.e. this document) 
+     base/documentation/README* files 
+     README.1st           Instructions for setup and building epics base 
+     README.html          (html version of README.1st) 
      README.WIN32         Microsoft WIN32 specific instructions 
      README.cxxTemplates  Information about C++ templates in EPICS base 
      README.niCpu030      NI cpu030 specific instructions 
+     README.darwin        Installation notes for Mac OS X (Darwin)
        
      base/startup directory - contains scripts to set environment and path 
      EpicsHostArch       c shell script to set EPICS_HOST_ARCH env variable 

@@ -49,15 +49,15 @@ for legal terms of usage.</blockquote>
 Supported platforms</h3>
 
 <blockquote>Currently this version of EPICS base has been built on the
-following hosts and targets. If you are trying to build EPICS base on a
-different host or for a different target machine you must have the proper
-host/target cross compiler and header files and you will have to add the
-appropriate configure files to the base/configure/os/directory. You can
-start by copying existing configuration files in the configure/os directory
-and then make changes for your new platforms.</blockquote>
+following hosts for the following targets. If you are trying to build EPICS
+base on a different host or for a different target machine you must get
+the proper host/target cross compiler and header files and you will have
+to create and add the appropriate new configure files to the base/configure/os/directory.
+You can start by copying existing configuration files in the configure/os
+directory and then make changes for your new platforms.</blockquote>
 
-<blockquote><b>Host target platforms (operating system - architecture -
-&lt;alternate c++ compiler>)</b>
+<blockquote><b>Host platforms (operating system - architecture - &lt;alternate
+c++ compiler>)</b>
 <blockquote><tt>solaris-sparc</tt>
 <br><tt>solaris-sparc-gnu</tt>
 <br><tt>linux-x86</tt>
@@ -113,13 +113,13 @@ files needed to build for these target systems. The full path location
 to Tornado 2.0 must be specified in the base/configure/RELEASE or base/configure/RELEASE.&lt;hostarch>
 file. You will also need one or more board support packages. Consult the
 vxWorks documentation for details.
-<p><b>GNU compiler for solaris-sparc&nbsp; and win32-x86 hosts</b>
-<br>The host architecture build requires that g++ be in your path if you
-wish to run "gnumake depends" (not required) to create header dependancy
-include files for c/c++ source code. Also, if you have state notation language
-source files which require c preprocessing to generate solaris-sparc object
-files (*.st files),&nbsp; gcc must be in your path.
-<br>&nbsp;</blockquote>
+<p><b>Optional GNU compiler requirement for solaris-sparc&nbsp; and win32-x86
+hosts</b>
+<br>If you wish to run "gnumake depends"&nbsp; to create header dependancy
+include files for c/c++ source code, g++ must be be in your path. Also,
+if you have state notation language source files (*.st files) which require
+c preprocessing before conversion to c source,&nbsp; gcc must be in your
+path.</blockquote>
 
 <h3>
 Host system storage requirements</h3>
@@ -278,7 +278,7 @@ Build related components</h3>
 <li>
 base/README* files</li>
 
-<p><br><tt>README.htm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt>README.htm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Instructions for setup and building epics base</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (i.e. this document)</tt>
@@ -292,7 +292,7 @@ instructions</tt>
 <li>
 base/startup directory - contains scripts to set environment and path</li>
 
-<p><br><tt>EpicsHostArch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c shell script
+<br><tt>EpicsHostArch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c shell script
 to set EPICS_HOST_ARCH env variable</tt>
 <br><tt>EpicsHostArch.pl&nbsp;&nbsp;&nbsp; perl script to set EPICS_HOST_ARCH
 env variable</tt>
@@ -308,9 +308,7 @@ WIN32 bat file to set path and env variables</tt>
 <li>
 base/configure&nbsp; directory - contains build definitions and rules</li>
 
-<br>&nbsp;
-<p>&nbsp;
-<p><tt>CONFIG.CrossCommon&nbsp;&nbsp;&nbsp; Cross build definitions</tt>
+<br><tt>CONFIG.CrossCommon&nbsp;&nbsp;&nbsp; Cross build definitions</tt>
 <br><tt>CONFIG_ADDONS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Definitions
 for &lt;osclass> and DEFAULT options</tt>
 <br><tt>CONFIG_BASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -347,9 +345,7 @@ Rules specific to a &lt;top> dir (uninstall and tar)</tt>
 <li>
 base/configure/os directory - contains os-arch specific definitions</li>
 
-<br>&nbsp;
-<p>&nbsp;
-<p><tt>CONFIG.&lt;host>.&lt;target>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific
+<br><tt>CONFIG.&lt;host>.&lt;target>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific
 host-target build definitions</tt>
 <br><tt>CONFIG.Common.&lt;target>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific
 target definitions for all hosts</tt>
@@ -365,9 +361,7 @@ R3.13 arch compatibility definitions</tt>
 <li>
 base/configure/tools directory - contains Perl scripts used for the build</li>
 
-<br>&nbsp;
-<p>&nbsp;
-<p><tt>cp.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt>cp.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 This Perl script copies an existing file</tt>
 <br><tt>installEpics.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Installs built files into install directories.</tt>
@@ -401,14 +395,23 @@ S<b>et environment variable</b>
 EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
 base/startup directory has been provided to help set EPICS_HOST_ARCH. You
 should have EPICS_HOST_ARCH set to your host operating system followed
-by a dash and then your host architecture, e.g. solaris-sparc.</blockquote>
+by a dash and then your host architecture, e.g. solaris-sparc.
+<p>On WIN32, some versions of Perl require that&nbsp; the environment variable
+PERLLIB be set to &lt;perl directory location>.</blockquote>
 <b>Check path requirements</b>
 <blockquote>As already mentioned, you must have the perl executable and
 you may need C and C++ compilers in your search path. For building base
 you also must have echo in your search path. For Unix host builds you also
 need touch, cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod
 must exist. On some Unix systems you may also need ar and ranlib in you
-path, and the c compiler may require ld in your path..</blockquote>
+path, and the c compiler may require ld in your path.
+<p>If you plan to build EPICS base shared libraries instead of archive
+libraries, on Unix systems you will need to add&nbsp; fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)
+to your LD_LIBRARY_PATH&nbsp;environment variable. On WIN32 systems, building
+shared libraries is the default setting and you will need to add&nbsp;
+fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) to your path.
+Building shared libraries is determined by the value of the macro SHARED_LIBRARIES&nbsp;in
+CONFIG_SITE (YES or NO).</blockquote>
 <b>Do site-specific build configuration</b>
 <blockquote><b>Site configuration</b>
 <br>To configure EPICS, you may want to modify the default definitions
@@ -441,7 +444,7 @@ settings</blockquote>
 <b>R3.13 compatibility configuration</b>
 <br>To configure EPICS base for building with R3.13 extensions and ioc
 applications , you will want to modify the default definitions in the base/config/CONFIG_SITE*&nbsp;
-files to agree with the definitions in your configure/base files.</blockquote>
+files to agree with the definitions in your base/configure files.</blockquote>
 
 <h4>
 <b>Build EPICS base</b></h4>

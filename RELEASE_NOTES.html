@@ -2,81 +2,144 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.72 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
    <title>EPICS Release baseR3.14
 </title>
 </head>
 <body>
 
 <h1>
-EPICS Release base 3.14.0alpha1</h1>
-This is the first release of 3.14. This is the first release that supports
-iocCore on platforms besides vxWorks.
-<p>iocCore is now supported on the following platforms:
+EPICS Release base 3.14.0alpha2</h1>
+
+<h3>
+Build changes</h3>
+Build changes were made to base/configure files and base/src Makefiles
+to make all os independant build created files created in an O.Common subdirectory
+and then installed instead of created directly in an install directory.Build
+definition names (e.g. RECTYPES, MENUS, DBDNAME, and BPTS) have been changed
+to specify names of the files to be created and installed instead of the
+source file names. All db and dbd related definitions and rules have been
+moved into base/configure/RULES.Db file and the rules now allow multiple
+dbd files and registerRecordDeviceDriver files to be created in a single
+application Makefile. Also "gnumake depends" no longer depends on a complete
+buildInstall.
+<h3>
+Converting alpha1 applications to alpha2</h3>
+Build modifications in alpha2 require the following changes to existing
+R3.14 applications.
 <ul>
 <li>
-vxWorks</li>
+&nbsp;Remove the now unused RULES files</li>
 
-<br>Tornado II is required.
-<li>
-RTEMS</li>
+<ul>&nbsp;
+<br>./configure/RULES.Db
+<br>./configure/RULES.registerRecordDeviceDriver
+<br>&nbsp;</ul>
 
-<br>An open source real time operating system. It has been tested on MVME167
-and MC68360 processors. RTEMS also supports powerPC.
 <li>
-solaris</li>
+Delete the following line in ./configure/RULES</li>
 
-<br>Has been tested on solaris 2.6 and solaris 8.
-<li>
-Linux</li>
-
-<br>Has been tested on Redhat x86 platforms.
-<li>
-winNT</li>
+<ul>&nbsp;
+<br>include $(TOP)/configure/RULES.registerRecordDeviceDriver</ul>
 </ul>
-A new version of the Application Developers Guide is available. The following
-gives links to the new Application Developer's Guide and to RTEMS information.
-<p>http://www.aps.anl.gov/epics/modules/base/R3-14.php
-<p>Most of the Application Developer's Guide has only minor changes. The
-following are new.
+
 <ul>
 <li>
-Chapter 2 describes the new features for 3.14.</li>
+&nbsp; In &lt;top>/configure/Makefile please change</li>
 
-<li>
-Chapter 4 describes the build facility for 3.14</li>
-
-<li>
-Chapters 19 and 20 describe libCom, which was not previously documented.</li>
+<ul>&nbsp;
+<br>@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)</ul>
+to
+<ul>@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A)
+$@ $(TOP)
+<br>&nbsp;</ul>
+and add the line
+<ul>&nbsp;
+<br>depends: install
+<br>&nbsp;</ul>
+to the bottom of the Makefile.
+<ul>&nbsp;</ul>
 </ul>
 
-<p><br>It must be emphasized that this is an alpha release.
 <ul>
 <li>
-Please don't use it for existing operational systems</li>
+In all *App/*Db/Makefileschange</li>
+
+<ul>&nbsp;
+<br>include $(TOP)/configure/RULES.Db</ul>
+to
+<ul>include $(TOP)/configure/RULES
+<br>&nbsp;</ul>
 
 <li>
-Don't build your operational CA clients with it.</li>
+In all *App/src/Makefile files</li>
+
+<ul>&nbsp;</ul>
+change&nbsp;&nbsp;&nbsp; DBDNAME = &lt;name>App&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;
+DBD += &lt;name>
+<ul>&nbsp;</ul>
+and remove the line
+<br>&nbsp;
+<ul>DBDEXPAND = &lt;name>Include.dbd
+<br>&nbsp;</ul>
+NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you should
+make these same changes in that *Db dirctory.
+<br>&nbsp;
+<li>
+In all *App/src/Makefile Makefiles</li>
+
+<ul>&nbsp;</ul>
+change&nbsp;&nbsp;&nbsp; RECTYPES=&lt;name>.h&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;
+DBDINC+=&lt;name>
+<ul>&nbsp;</ul>
+change&nbsp;&nbsp;&nbsp; MENUS=&lt;name>.h&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+DBDINC+=&lt;name></ul>
+
+<ul>change&nbsp;&nbsp;&nbsp; BPTS&nbsp;&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;&nbsp;
+DBD
+<p>change&nbsp;&nbsp;&nbsp;&nbsp; INSTALLDB&nbsp;&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;
+DB
+<p>change&nbsp;&nbsp;&nbsp; DBDINSTALL&nbsp;&nbsp;&nbsp; to&nbsp;&nbsp;&nbsp;&nbsp;
+DBD
+<br>&nbsp;
+<li>
+In all example *App/src/Makefile files change</li>
+
+<ul>&nbsp;
+<br>example_SRCS_DEFAULT += registerRecordDeviceDriver.c</ul>
+to
+<ul>example_SRCS_DEFAULT += &lt;name>_registerRecordDeviceDriver.cpp
+<br>&nbsp;</ul>
+where &lt;name> is the base name of a &lt;name>.dbd file which was created
+from a &lt;name>Include.dbd file and which will be loaded in a st.cmd or
+stcmd.host script (e.g. example).
+<br>&nbsp;
+<li>
+In ./iocBoot/ioc&lt;name>/st.cmd files change</li>
+
+<br>&nbsp;
+<ul>dbLoadDatabase("dbd/exampleApp.dbd")</ul>
+to
+<ul>dbLoadDatabase("dbd/example.dbd")
+<br>&nbsp;</ul>
 
 <li>
-The APIs for new components in libCom are still evolving so if you use
-them be prepared for changes.</li>
+In &lt;top>/iocBoot/ioc&lt;name>/stcmd.host files change</li>
 
-<li>
-HPUX - No support currently because we could not find good support for
-multithreading.</li>
+<ul>&nbsp;
+<br>dbLoadDatabase("../../dbd/exampleApp.dbd",0,0)</ul>
+to
+<ul>dbLoadDatabase("../../dbd/example.dbd",0,0)</ul>
 </ul>
-Building Applications
-<ul>
-<li>
-For new applications see Chapters 2 (New Features) and Chapter 4 (Build
-Facility) of the Application Developer's Guide.</li>
 
-<li>
-For existing applications the old config rules are still supported. Some
-changes, however, are needed. Documentation is being prepared and will
-appear in these release notes sooon.</li>
-</ul>
-
+<h3>
+EPICS_HOST_ARCH changes</h3>
+GNU compiler builds are now determined by the value of EPICS_HOST_ARCH
+and are no longer specified in CONFIG_SITE.&nbsp; All references to the
+ANSI (ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed.
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;
 </body>
 </html>

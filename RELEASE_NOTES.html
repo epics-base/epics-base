@@ -11,6 +11,18 @@
 
 <h2>Changes since 3.13.8</h2>
 
+<h3>Channel Access</h3>
+<ul>
+  <li>Fixed CA server send thread freeze when socket library returns ENOBUFS
+    (system is low on network buffers).</li>
+  <li>Fixed raw use of fork() system call when spawning CA repeater and it is
+    not in the path.</li>
+</ul>
+
+<h1>EPICS Release 3.13.9</h1>
+
+<h2>Changes since 3.13.8</h2>
+
 <h3>Fixed dbExpand problem</h3>
 
 <p>A syntax error in an xxInclude.dbd file is now noticed - make stops before

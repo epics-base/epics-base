@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,11 +25,11 @@
  *
  * Modification Log:
  * -----------------
- * .00	11-23-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02	09-05-91	joh	updated for v5 vxWorks
- *				included systime.h for utime.h
- * .03	12-08-91	rac	added a comment for ezsFopenToFd
+ *  .00 11-23-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 09-05-91 joh	updated for v5 vxWorks; included systime.h for utime.h
+ *  .03 12-08-91 rac	added a comment for ezsFopenToFd
+ *  .04 10-09-92 rac	use SO_REUSEADDR with socket
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -74,11 +74,11 @@
 #   include <ioLib.h>
 #   include <taskLib.h>
 #   include <types.h>
-#	ifdef V5_vxWorks
-#   		include <systime.h>
-#	else
-#   		include <utime.h>
-#	endif
+#   ifdef V5_vxWorks
+#	include <systime.h>
+#   else
+#	include <utime.h>
+#   endif
 #   include <socket.h>
 #   include <inetLib.h>
 #   include <in.h>
@@ -212,6 +212,11 @@ char	*message;	/* O message from server (dimension of 80 assumed) */
     *pServerSock = socket(AF_INET, SOCK_STREAM, 0);
     if (*pServerSock < 0)
 	return -1;
+    if (setsockopt(*pServerSock, SOL_SOCKET, SO_REUSEADDR, NULL, 0) != 0) {
+	close(*pServerSock);
+	*pServerSock = -1;
+	return -1;
+    }
     if (connect(*pServerSock, &server, sizeof(server)) < 0) {
 	close(*pServerSock);
 	*pServerSock = -1;

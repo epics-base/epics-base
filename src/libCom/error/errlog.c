@@ -250,49 +250,39 @@ epicsShareFunc int epicsShareAPI eltc(int yesno)
 }
 
 epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName, 
-	int lineno, const char *pformat, ...)
+                                             int lineno, const char *pformat, ...)
 {
-    va_list	pvar;
-    char	*pnext;
-    int		nchar;
-    int		totalChar=0;
+    va_list pvar;
+    char    *pnext;
+    int     nchar;
+    int     totalChar=0;
 
     if(epicsInterruptIsInterruptContext()) {
-	epicsInterruptContextMessage("errPrintf called from interrupt level\n");
-	return;
+        epicsInterruptContextMessage("errPrintf called from interrupt level\n");
+        return;
     }
     errlogInit(0);
     pnext = msgbufGetFree();
     if(!pnext) return;
     if(pFileName){
-	nchar = sprintf(pnext,"filename=\"%s\" line number=%d\n",
-	    pFileName, lineno);
-	pnext += nchar; totalChar += nchar;
+        nchar = sprintf(pnext,"filename=\"%s\" line number=%d\n",
+            pFileName, lineno);
+        pnext += nchar; totalChar += nchar;
     }
     if(status==0) status = errno;
     if(status>0) {
-	int		rtnval;
-	char    	name[256];
+         char    name[256];
 
-	rtnval = errSymFind(status,name);
-	if(rtnval) {
-	    unsigned modnum, errnum;
-
-	    modnum = (unsigned) ((status >> 16) & 0xffff); 
-        errnum = (unsigned) (status & 0xffff);
-	    nchar = sprintf(pnext, "status (%u,%u) not in symbol table ",
-		 modnum, errnum);
-	} else {
-	    nchar = sprintf(pnext,"%s ",name);
-	}
-	pnext += nchar; totalChar += nchar;
+        errSymLookup(status,name,sizeof(name));
+        nchar = sprintf(pnext,"%s ",name);
+        pnext += nchar; totalChar += nchar;
     }
     va_start (pvar, pformat);
     nchar = vsprintf(pnext,pformat,pvar);
     va_end (pvar);
     if(nchar>0) {
-	pnext += nchar;
-	totalChar += nchar;
+        pnext += nchar;
+        totalChar += nchar;
     }
     sprintf(pnext,"\n");
     totalChar += 2; /*include the \n and the \0*/

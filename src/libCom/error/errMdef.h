@@ -69,9 +69,7 @@ extern "C" {
 #define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
 
 #ifdef errMDefUseProtoANSI
-epicsShareFunc int epicsShareAPI errSymFind(long status, char *name);
-epicsShareFunc int epicsShareAPI UnixSymFind(long status, char *name, long *value);
-epicsShareFunc int epicsShareAPI ModSymFind(long status, char *name, long *value);
+epicsShareFunc void epicsShareAPI errSymLookup(long status, char *pBuf, unsigned bufLength);
 epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
 epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
 epicsShareFunc int epicsShareAPI errSymBld(void);
@@ -79,17 +77,18 @@ epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
 epicsShareFunc void epicsShareAPI errSymDump(void);
 epicsShareFunc void epicsShareAPI tstErrSymFind(void);
 
+epicsShareFunc int epicsShareAPI errSymFind(long status, char *pBuf); /* depricated */
+
 #else /* errMDefUseProtoANSI */ 
 
 epicsShareFunc void epicsShareAPI errSymTest();
-epicsShareFunc int epicsShareAPI errSymFind();
-epicsShareFunc int epicsShareAPI UnixSymFind();
-epicsShareFunc int epicsShareAPI ModSymFind();
 epicsShareFunc void epicsShareAPI errSymTestPrint();
 epicsShareFunc int epicsShareAPI errSymBld();
 epicsShareFunc int epicsShareAPI errSymbolAdd();
 epicsShareFunc void epicsShareAPI errSymDump();
 epicsShareFunc void epicsShareAPI tstErrSymFind();
+
+epicsShareFunc void epicsShareAPI errSymFind();/* depricated */
 #endif /* errMDefUseProtoANSI */ 
 
 #ifdef __cplusplus

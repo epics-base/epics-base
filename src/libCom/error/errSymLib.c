@@ -26,9 +26,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <math.h>
+#include <limits.h>
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
+#include "epicsAssert.h"
 #include "dbDefs.h"
 #include "errMdef.h"
 #include "errSymTbl.h"
@@ -134,69 +137,110 @@ int epicsShareAPI errSymbolAdd (long errNum,char *name)
     ellAdd(perrnumlist,(ELLNODE*)pNew);
     return(0);
 }
+
+/****************************************************************
+ * errRawCopy
+ ***************************************************************/
+static void errRawCopy ( long statusToDecode, char *pBuf, unsigned bufLength )
+{
+    unsigned modnum, errnum;
+    unsigned nChar;
+    int status;
+
+    modnum = (unsigned) statusToDecode; 
+    modnum >>= 16;
+    modnum &= 0xffff;
+    errnum = (unsigned) statusToDecode;
+    errnum &= 0xffff;
+
+    if ( bufLength ) {
+        if ( modnum == 0 ) {
+            if ( bufLength > 11 ) {
+                status = sprintf ( pBuf, "err = %d", errnum );
+            }
+            else if ( bufLength > 5 ) {
+                status = sprintf ( pBuf, "%d", errnum );
+            }
+            else {
+                strncpy ( pBuf,"<err copy fail>", bufLength );
+                pBuf[bufLength-1] = '\0';
+                status = 0;
+            }
+        }
+        else {
+            if ( bufLength > 50 ) {
+                status = sprintf ( pBuf, 
+                    "status = (%d,%d) not in symbol table", modnum, errnum );
+            }
+            else if ( bufLength > 25 ) {
+                status = sprintf ( pBuf, 
+                    "status = (%d,%d)", modnum, errnum );
+            }
+            else if ( bufLength > 15 ) {
+                status = sprintf ( pBuf, 
+                    "(%d,%d)", modnum, errnum );
+            }
+            else {
+                strncpy ( pBuf, 
+                    "<err copy fail>", bufLength);
+                pBuf[bufLength-1] = '\0';
+                status = 0;
+            }
+        }
+        assert (status >= 0 );
+        nChar = (unsigned) status;
+        assert ( nChar < bufLength );
+    }
+}
 
 /****************************************************************
- * MODSYMFIND
+ * errSymFind - deprecated
  ***************************************************************/
-int epicsShareAPI ModSymFind(long status, char *pname, long *pvalue)
+int epicsShareAPI errSymFind (long status, char * pBuf)
 {
-    unsigned short  modNum;
-    unsigned short  hashInd;
+    errSymLookup ( status, pBuf, UINT_MAX );
+    return 0;
+}
+
+/****************************************************************
+ * errSymLookup
+ ***************************************************************/
+void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
+{
+    unsigned modNum;
+    unsigned hashInd;
     ERRNUMNODE *pNextNode;
     ERRNUMNODE **phashnode = NULL;
 
     if(!initialized) errSymBld();
-    modNum = (unsigned short) (status >> 16);
-    if (modNum < 501) {
-	*pvalue = -1;
-	return(0);
-    }
-    hashInd = errhash(status);
-    phashnode = (ERRNUMNODE**)&hashtable[hashInd];
-    pNextNode = *phashnode;
-    while (pNextNode) {
-        if (pNextNode->errNum == status) {
-    	    strcpy(pname, pNextNode->message);
-    	    *pvalue = status;
-    	    return(0);
+
+    modNum = (unsigned) status;
+    modNum >>= 16;
+    modNum &= 0xffff;
+    if ( modNum <= 500 ) {
+        const char * pStr = strerror ((int) status);
+        if ( pStr ) {
+            strncpy(pBuf, pStr,bufLength);
+            pBuf[bufLength-1] = '\0';
+            return;
         }
-	phashnode = &pNextNode->hashnode;
-	pNextNode = *phashnode;
     }
-    *pname  = 0;
-    *pvalue = -1;
-    return(0);
-}
-
-/****************************************************************
- * ERRSYMFIND
- ***************************************************************/
-int epicsShareAPI errSymFind(long status, char *name)
-{
-    long            value = 0;
-    unsigned short  modnum;
-
-    if (!initialized) errSymBld();
-
-    modnum = (unsigned short) (status >> 16);
-    if (modnum <= 500) {
-		const char *pStr = strerror(status);
-		if (pStr) {
-			strcpy(name,strerror(status));
-			value = status;
-		}
-		else {
-			sprintf(name,"err = %ld", status);
-		}
-    } else {
-	ModSymFind(status, name, &value);
+    else {
+        hashInd = errhash(status);
+        phashnode = (ERRNUMNODE**)&hashtable[hashInd];
+        pNextNode = *phashnode;
+        while(pNextNode) {
+            if(pNextNode->errNum==status){
+                strncpy(pBuf, pNextNode->message, bufLength);
+                pBuf[bufLength-1] = '\0';
+                return;
+            }
+            phashnode = &pNextNode->hashnode;
+            pNextNode = *phashnode;
+        }
     }
-    if (value != status)
-	return (-1);
-    else
-	return (0);
+    errRawCopy(status, pBuf, bufLength);
 }
-
 
 /****************************************************************
  * errSymDump
@@ -256,7 +300,7 @@ void epicsShareAPI errSymTestPrint(long errNum)
         printf("errSymTestPrint: module number < 501 \n");
         return;
     }
-    errSymFind(errNum, message);
+    errSymLookup(errNum, message, sizeof(message));
     if ( message[0] == '\0' ) return;
     printf("module %hu number %hu message=\"%s\"\n",
 		modnum, errnum, message);

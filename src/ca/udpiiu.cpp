@@ -95,13 +95,13 @@ void udpiiu::recvMsg ()
         ca_printf ( "Unexpected UDP recv error was \"%s\"\n", 
             SOCKERRSTR (errnoCpy) );
     }
-    else if (status > 0) {
+    else if ( status > 0 ) {
         status = this->postMsg ( src,
                     this->recvBuf, (unsigned long) status );
         if ( status != ECA_NORMAL ) {
             char buf[64];
 
-            sockAddrToA ( &src.sa, buf, sizeof (buf) );
+            sockAddrToA ( &src.sa, buf, sizeof ( buf ) );
 
             ca_printf (
                 "%s: bad UDP msg from %s because \"%s\"\n", __FILE__, 

@@ -32,24 +32,24 @@ of this distribution.
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
-#include <dbDefs.h>
+#include "dbDefs.h"
 #define LINK_GBLSOURCE
-#include <link.h>
+#include "link.h"
 #undef LINK_GBLSOURCE
-#include <dbFldTypes.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <ellLib.h>
-#include <cvtFast.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <devSup.h>
-#include <drvSup.h>
-#include <special.h>
-#include <gpHash.h>
-#include <guigroup.h>
-#include <special.h>
-#include <dbmf.h>
+#include "dbFldTypes.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "ellLib.h"
+#include "cvtFast.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "devSup.h"
+#include "drvSup.h"
+#include "special.h"
+#include "gpHash.h"
+#include "guigroup.h"
+#include "special.h"
+#include "dbmf.h"
 
 int dbStaticDebug = 0;
 #define messagesize	100
@@ -760,6 +760,7 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
     const char	*pcolon;
     const char	*pdir;
     int		len;
+    int		emptyName;
 
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
@@ -769,18 +770,29 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 	pdbbase->pathPvt = (void *)ppathList;
     }
     pdir = path;
-    while(pdir) {
-	if(*pdir == ':') {
-	    pdir++;
-	    continue;
-	}
-	pdbPathNode = (dbPathNode *)dbCalloc(1,sizeof(dbPathNode));
+    /*an empty name at beginning, middle, or end means current directory*/
+    while(pdir && *pdir) {
+	emptyName = ((*pdir == ':') ? TRUE : FALSE);
+	if(emptyName) ++pdir;
+	pdbPathNode = (dbPathNode *)calloc(1,sizeof(dbPathNode));
 	ellAdd(ppathList,&pdbPathNode->node);
-	pcolon = strchr(pdir,':');
-	len = (pcolon ? (pcolon - pdir) : strlen(pdir));
-	pdbPathNode->directory = (char *)dbCalloc(1,len + 1);
-	strncpy(pdbPathNode->directory,pdir,len);
-	pdir = (pcolon ? (pcolon+1) : 0);
+	if(!emptyName) {
+	    pcolon = strchr(pdir,':');
+	    len = (pcolon ? (pcolon - pdir) : strlen(pdir));
+	    if(len>0)  {
+		pdbPathNode->directory = (char *)calloc(len+1,sizeof(char));
+		strncpy(pdbPathNode->directory,pdir,len);
+		pdir = pcolon;
+		/*unless at end skip past first colon*/
+		if(pdir && *(pdir+1)!=0) ++pdir;
+	    } else { /*must have been trailing : */
+		emptyName=TRUE;
+	    }
+	}
+	if(emptyName) {
+	    pdbPathNode->directory = (char *)calloc(2,sizeof(char));
+	    strcpy(pdbPathNode->directory,".");
+	}
     }
     return(0);
 }
@@ -1114,7 +1126,7 @@ long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
 	fprintf(fp,"breaktable(%s) {\n",pbrkTable->name);
 	for(ind=0; ind<pbrkTable->number; ind++) {
 	    pbrkInt = pbrkTable->papBrkInt[ind];
-	    fprintf(fp,"\t%f %f\n",pbrkInt->raw,pbrkInt->eng);
+	    fprintf(fp,"\t%e %e\n",pbrkInt->raw,pbrkInt->eng);
 	}
 	fprintf(fp,"}\n");
     }

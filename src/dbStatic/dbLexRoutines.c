@@ -27,21 +27,21 @@ of this distribution.
 #include <stdio.h>
 #include <string.h>
 
-#include <dbmf.h>
+#include "dbmf.h"
 
-#include <dbDefs.h>
-#include <dbFldTypes.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <ellLib.h>
-#include <gpHash.h>
-#include <freeList.h>
-#include <guigroup.h>
-#include <special.h>
-#include <link.h>
-#include <macLib.h>
+#include "dbDefs.h"
+#include "dbFldTypes.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "ellLib.h"
+#include "gpHash.h"
+#include "freeList.h"
+#include "guigroup.h"
+#include "special.h"
+#include "link.h"
+#include "macLib.h"
 
 /*private routines */
 static void yyerrorAbort(char *str);

@@ -19,12 +19,14 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <dbBase.h>
-#include <gpHash.h>
+
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "dbBase.h"
+#include "gpHash.h"
 
 DBBASE *pdbbase = NULL;
 

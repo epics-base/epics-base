@@ -22,12 +22,12 @@ of this distribution.
 #include <string.h>
 #include <math.h>
 
-#include <dbDefs.h>
-#include <dbFldTypes.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
+#include "dbDefs.h"
+#include "dbFldTypes.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
@@ -206,9 +206,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	case DBF_DOUBLE:
 	case DBF_ENUM: 
 	    if(!pflddes->initial) {
-		if((strtod((char *)pfield,&endp)==0.0) && (*endp=='\0'))
-			return(TRUE);
-		return(FALSE);
+		return((strlen((char *)pfield)==0)?TRUE:FALSE);
 	    }
 	    return(strcmp((char *)pfield,(char *)pflddes->initial)==0);
 	case DBF_MENU: {
@@ -240,11 +238,8 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 		if(!plink) return(FALSE);
 		if(plink->type!=CONSTANT) return(FALSE);
 		if(!plink->value.constantStr) return(TRUE);
-		if(!pflddes->initial) {
-		    if((strtod((char *)plink->value.constantStr,&endp)==0.0)
-		    && (*endp=='\0')) return(TRUE);
-		    return(FALSE);
-		}
+		if(!pflddes->initial)
+		    return((strlen((char *)plink->value.constantStr)==0)?TRUE:FALSE);
 		if(strcmp(plink->value.constantStr,pflddes->initial)==0)
 		   return(TRUE);
 		return(FALSE);

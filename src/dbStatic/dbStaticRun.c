@@ -27,15 +27,15 @@ of this distribution.
 #include <symLib.h>
 #include <sysSymTbl.h>   /* for sysSymTbl*/
 
-#include <dbDefs.h>
-#include <errMdef.h>
-#include <epicsPrint.h>
-#include <ellLib.h>
-#include <dbDefs.h>
-#include <cvtFast.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <special.h>
+#include "dbDefs.h"
+#include "errMdef.h"
+#include "epicsPrint.h"
+#include "ellLib.h"
+#include "dbDefs.h"
+#include "cvtFast.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "special.h"
 
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};

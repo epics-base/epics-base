@@ -19,12 +19,14 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <epicsPrint.h>
-#include <errMdef.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
-#include <dbBase.h>
-#include <gpHash.h>
+
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
+#include "dbBase.h"
+#include "gpHash.h"
 
 DBBASE *pdbbase = NULL;
 
@@ -45,7 +47,7 @@ int main(int argc,char **argv)
 
     /*Look for options*/
     if(argc<2) {
-	printf("usage: dbReadTest -Idir -Idir file.dbd file.dbd \n");
+	printf("usage: dbReadTest -Idir -Smacsub file.dbd file.db \n");
 	exit(0);
     }
     while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
@@ -84,8 +86,8 @@ int main(int argc,char **argv)
     dbPvdDump(pdbbase);
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);
-*/
     dbDumpRecord(pdbbase,NULL,0);
     dbFreeBase(pdbbase);
+*/
     return(0);
 }

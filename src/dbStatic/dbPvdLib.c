@@ -17,10 +17,10 @@ of this distribution.
 #include <stdio.h>
 #include <string.h>
 
-#include <ellLib.h>
-#include <dbDefs.h>
-#include <dbStaticLib.h>
-#include <dbStaticPvt.h>
+#include "dbDefs.h"
+#include "ellLib.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 
 int dbPvdHashTableSize = 512;
 static int dbPvdHashTableShift;

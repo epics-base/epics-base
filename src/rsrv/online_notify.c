@@ -149,7 +149,7 @@ int rsrv_online_notify_task()
  
             status = connect (sock, &pNode->addr.sa, sizeof(pNode->addr.sa));
             if (status<0) {
-                ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
+                ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                 errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                     __FILE__, buf, SOCKERRSTR(SOCKERRNO));
             }
@@ -167,7 +167,7 @@ int rsrv_online_notify_task()
 
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
-                        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
+                        ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                         errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                             __FILE__, buf, SOCKERRSTR(SOCKERRNO));
                     }

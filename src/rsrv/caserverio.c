@@ -115,7 +115,7 @@ void cas_send_msg (struct client *pclient, int lock_needed)
 
                 anerrno = SOCKERRNO;
 
-                ipAddrToA (&pclient->addr, buf, sizeof(buf));
+                ipAddrToDottedIP (&pclient->addr, buf, sizeof(buf));
 
                 if(pclient->proto == IPPROTO_TCP) {
                     if (    (anerrno!=SOCK_ECONNABORTED&&

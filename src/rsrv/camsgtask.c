@@ -120,7 +120,7 @@ void camsgtask (struct client *client)
             /*
              * disconnect when there are severe message errors
              */
-            ipAddrToA (&client->addr, buf, sizeof(buf));
+            ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
             epicsPrintf ("CAS: forcing disconnect from %s\n", buf);
                 break;
         }

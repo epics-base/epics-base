@@ -250,7 +250,7 @@ struct client *create_client (SOCKET sock)
 
     if (CASDEBUG>0) {
         char buf[64];
-        ipAddrToA (&client->addr, buf, sizeof(buf));
+        ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
         errlogPrintf ("CAS: conn req from %s\n", buf);
     }
 
@@ -436,7 +436,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
     TS_STAMP                current;
     char                    clientHostName[256];
 
-    ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
+    ipAddrToDottedIP (&client->addr, clientHostName, sizeof(clientHostName));
 
     if(client->proto == IPPROTO_UDP){
         pproto = "UDP";

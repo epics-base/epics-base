@@ -233,7 +233,7 @@ LOCAL void log_header (
     struct channel_in_use *pciu;
     char hostName[256];
 
-    ipAddrToA (&client->addr, hostName, sizeof(hostName));
+    ipAddrToDottedIP (&client->addr, hostName, sizeof(hostName));
 
     pciu = MPTOPCIU(mp);
 

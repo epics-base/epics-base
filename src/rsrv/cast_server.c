@@ -271,7 +271,7 @@ int cast_server(void)
             if (CASDEBUG>1) {
                 char    buf[40];
     
-                ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
+                ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
                 errlogPrintf ("CAS: cast server msg of %d bytes from addr %s\n", 
                     prsrv_cast_client->recv.cnt, buf);
             }
@@ -286,7 +286,7 @@ int cast_server(void)
                     prsrv_cast_client->recv.stk){
                     char buf[40];
         
-                    ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
+                    ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
 
                     epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
                         prsrv_cast_client->recv.cnt-prsrv_cast_client->recv.stk, buf);
@@ -295,7 +295,7 @@ int cast_server(void)
             else {
                 char buf[40];
     
-                ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
+                ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
 
                 epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
             }

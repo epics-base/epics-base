@@ -31,8 +31,8 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 {
     ipAddrToAsciiAsynchronous * pItem = this->labor.first ();
 
-    this->event.signal ();
     this->exitFlag = true;
+    this->event.signal ();
     this->threadExit.wait ();
 
     // force IO completion for any items that remain

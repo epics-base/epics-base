@@ -45,23 +45,28 @@
 #define CHIPCHAN                (channel%CHANONCHIP)
 #define CHIPNUM                 (channel/CHANONCHIP)
 
-#define STC_RESET               *pcmd = 0xffU
-#define STC_BUS16               *pcmd = 0xefU
-#define STC_SET_MASTER_MODE(D)  {*pcmd = 0x17U; *pdata=(D);}
-#define STC_MASTER_MODE         (*pcmd = 0x17U, *pdata)
+#define STC_RESET               stcWriteCmd(pcmd,0xffU);
+#define STC_BUS16               stcWriteCmd(pcmd,0xefU);
+#define STC_BUS16               stcWriteCmd(pcmd,0xefU);
+#define STC_SET_MASTER_MODE(D)  {stcWriteCmd(pcmd,0x17U); \
+				stcWriteData(pdata,(D));} 
+#define STC_MASTER_MODE         (stcWriteCmd(pcmd,0x17U), stcReadData(pdata))
 
 #define STC_CTR_INIT(MODE,LOAD,HOLD)\
-{*pcmd = CHIPCHAN+1; *pdata = (MODE); *pdata = (LOAD); *pdata= (HOLD);}
+{stcWriteCmd(pcmd,CHIPCHAN+1); stcWriteData(pdata,(MODE)); \
+stcWriteData(pdata,(LOAD)); stcWriteData(pdata,(HOLD));}
 
 #define STC_CTR_READ(MODE,LOAD,HOLD)\
-{*pcmd = CHIPCHAN+1; (MODE) = *pdata; (LOAD) = *pdata; (HOLD) = *pdata;}
+{stcWriteCmd(pcmd,CHIPCHAN+1); (MODE) = stcReadData(pdata); \
+(LOAD) = stcReadData(pdata); (HOLD) = stcReadData(pdata);}
 
-#define STC_SET_TC(D)           *pcmd = 0xe0U | ((D)?8:0)|(CHIPCHAN+1U)
+#define STC_SET_TC(D)           stcWriteCmd(pcmd, \
+				0xe0U | ((D)?8:0)|(CHIPCHAN+1U) )
 
-#define STC_LOAD                *pcmd = 0x40U | 1<<(CHIPCHAN)
-#define STC_STEP                *pcmd = 0xf0U | (CHIPCHAN+1U)
-#define STC_ARM                 *pcmd = 0x20U | 1<<CHIPCHAN
-#define STC_DISARM              *pcmd = 0xc0U | 1<<CHIPCHAN
+#define STC_LOAD                stcWriteCmd(pcmd, 0x40U | 1<<(CHIPCHAN))
+#define STC_STEP                stcWriteCmd(pcmd, 0xf0U | (CHIPCHAN+1U))
+#define STC_ARM                 stcWriteCmd(pcmd, 0x20U | 1<<CHIPCHAN)
+#define STC_DISARM              stcWriteCmd(pcmd, 0xc0U | 1<<CHIPCHAN)
 
 
 
@@ -104,4 +109,8 @@ volatile uint16_t	*pdata,
 unsigned 		channel,
 unsigned 		int_source 
 );
+
+void stcWriteData(volatile uint16_t *pdata, uint16_t data);
+uint16_t stcReadData(volatile uint16_t *pdata);
+void stcWriteCmd(volatile uint8_t *pcmd, uint8_t cmd);
 

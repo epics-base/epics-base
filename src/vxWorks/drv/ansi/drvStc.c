@@ -49,6 +49,7 @@
 #include	<vxWorks.h>
 #include	<stdioLib.h>
 #include	<vxLib.h>
+#include	<taskLib.h>
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
@@ -286,5 +287,29 @@ unsigned 		int_source
   return STC_SUCCESS;
 }
    
+/*
+ * stcWriteData()
+ */
+void stcWriteData(volatile uint16_t *pdata, uint16_t data)
+{
+	*pdata = data;
+}
 
+/*
+ * stcReadData()
+ */
+uint16_t stcReadData(volatile uint16_t *pdata)
+{
+	uint16_t data;
+	data = *pdata;
+	return data;
+}
+
+/*
+ * stcWriteCmd()
+ */
+void stcWriteCmd(volatile uint8_t *pcmd, uint8_t cmd)
+{
+	*pcmd = cmd;
+}
 

@@ -7,7 +7,7 @@ IOC_LIBRARY_vxWorks = iocCore
 
 include $(TOP)/configure/RULES_BUILD
 
-IOC_LIBRARY_OBJS = \
+LIBOBJS = \
 	$(INSTALL_BIN)/asLibrary \
 	$(INSTALL_BIN)/caLib \
 	$(INSTALL_BIN)/dbLib \

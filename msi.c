@@ -28,6 +28,7 @@ of this distribution.
 #define MAX_BUFFER_SIZE 1024
 
 /*Forward references to local routines*/
+static void usageExit(void);
 static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval);
 static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName);
 
@@ -41,17 +42,10 @@ static void inputNewIncludeFile(void *inputPvt,char *name);
 static void inputErrPrint(void *inputPvt);
 
 /*Routines that read the substitution file */
-static void substituteConstruct(void **substitutePvt);
 static void substituteDestruct(void *substitutePvt);
-static void substituteOpen(void *substitutePvt,char *substitutionName);
+static void substituteOpen(void **substitutePvt,char *substitutionName);
+static int substituteGetNextSet(void *substitutePvt,char **filename);
 static char *substituteGetReplacements(void *substitutePvt);
-#define USAGEEXIT \
-{\
-   fprintf(stderr,"usage: msi -V -Ipath ... -Msub ... -Ssubfile  template \n");\
-   fprintf(stderr,"    Specifying path will replace the default '.'\n");\
-   fprintf(stderr,"    stdin is used if template is not given\n");\
-   exit(1);\
-}
 
 int main(int argc,char **argv)
 {
@@ -80,47 +74,70 @@ int main(int argc,char **argv)
 	    macSuppressWarning(macPvt,FALSE);
 	    narg = 1; /* no argument for this option */
 	} else {
-	    USAGEEXIT
+	    usageExit();
 	}
 	argc -= narg;
 	for(i=1; i<argc; i++) argv[i] = argv[i + narg];
     }
     if(argc>2) {
 	fprintf(stderr,"too many files\n");
-	USAGEEXIT
+	usageExit();
     }
-    if(argc==2) templateName = argv[1];
+    if(argc==2) {
+        templateName = calloc(strlen(argv[1])+1,sizeof(char));
+        strcpy(templateName,argv[1]);
+    }
     if(!substitutionName) {
 	makeSubstitutions(inputPvt,macPvt,templateName);
     } else {
 	void *substitutePvt;
+        char *filename = 0;
 
-	if(!templateName) {
-	    fprintf(stderr,"stdin not legal with substitution file\n");
-	    USAGEEXIT
-	}
-	substituteConstruct(&substitutePvt);
-	substituteOpen(substitutePvt,substitutionName);
-	while(pval = substituteGetReplacements(substitutePvt)){
-	    addMacroReplacements(macPvt,pval);
-	    makeSubstitutions(inputPvt,macPvt,templateName);
-	}
+	substituteOpen(&substitutePvt,substitutionName);
+        while(substituteGetNextSet(substitutePvt,&filename)) {
+            if(templateName) filename = templateName;
+            if(!filename) {
+	        fprintf(stderr,"no template file\n");
+	        usageExit();
+            }
+	    while(pval = substituteGetReplacements(substitutePvt)){
+	        addMacroReplacements(macPvt,pval);
+	        makeSubstitutions(inputPvt,macPvt,filename);
+	    }
+        }
         substituteDestruct(substitutePvt);
     }
     inputDestruct(inputPvt);
+    free((void *)templateName);
+    free((void *)substitutionName);
     return(0);
 }
 
+void usageExit(void)
+{
+    fprintf(stderr,"usage: msi -V -Ipath ... -Msub ... -Ssubfile  template\n");
+    fprintf(stderr,"    Specifying path will replace the default '.'\n");
+    fprintf(stderr,"    stdin is used if template is not given\n");
+    exit(1);
+}
+
 static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
 {
     char **pairs;
     long status;
 
     status = macParseDefns(macPvt,pval,&pairs);
+    if(!status) {
+        fprintf(stderr,"Error macParseDefns error\n");
+        usageExit();
+    }
     status = macInstallMacros(macPvt,pairs);
+    if(!status) {
+        fprintf(stderr,"Error macInstallMacros error\n");
+        usageExit();
+    }
     free((void *)pairs);
 }
-
 
 #define cmdNumberOf 2
 typedef enum {cmdInclude,cmdSubstitute} cmdType;
@@ -172,8 +189,11 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
 		}
 		++p;
 	    }
-	    if(*p==0) goto endif;
 	    pend = p;
+	    if(*p==0) goto endif;
+            /*skip quote and any trailing blanks*/
+            while(*++p==' ') ;
+            if(*p != '\n' && *p !=0) goto endif;
 	    copy = calloc(pend-pstart+1,sizeof(char));
 	    strncpy(copy,pstart,pend-pstart);
 	    switch(cmdind) {
@@ -221,10 +241,10 @@ typedef struct inputData {
     char	inputBuffer[MAX_BUFFER_SIZE];
 }inputData;
 
-static char *inputOpenFile(inputData *pinputData,char *filename);
+static void inputOpenFile(inputData *pinputData,char *filename);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
-
+
 static void inputConstruct(void **ppvt)
 {
     inputData	*pinputData;
@@ -248,7 +268,7 @@ static void inputDestruct(void *pvt)
     }
     free(pvt);
 }
-
+
 static void inputAddPath(void *pvt, char *path)
 {
     inputData	*pinputData = (inputData *)pvt;
@@ -344,7 +364,7 @@ static void inputErrPrint(void *pvt)
     fprintf(stderr,"\n");
 }
 
-static char *inputOpenFile(inputData *pinputData,char *filename)
+static void inputOpenFile(inputData *pinputData,char *filename)
 {
     ELLLIST	*ppathList = &pinputData->pathList;
     pathNode	*ppathNode = 0;
@@ -372,7 +392,8 @@ static char *inputOpenFile(inputData *pinputData,char *filename)
     }
     if(!fp) {
 	fprintf(stderr,"Could not open %s\n",filename);
-	return(0);
+        inputErrPrint((void *)pinputData);
+        exit(1);
     }
     pinputFile = calloc(1,sizeof(inputFile));
     if(ppathNode) {
@@ -388,9 +409,8 @@ static char *inputOpenFile(inputData *pinputData,char *filename)
     }
     pinputFile->fp = fp;
     ellInsert(&pinputData->inputFileList,0,&pinputFile->node);
-    return(0);
 }
-
+
 static void inputCloseFile(inputData *pinputData)
 {
     inputFile *pinputFile;
@@ -435,6 +455,8 @@ typedef struct patternNode {
 
 typedef struct subInfo {
     subFile	*psubFile;
+    int		isFile;
+    char	*filename;
     int		isPattern;
     ELLLIST	patternList;
     char	macroReplacements[MAX_BUFFER_SIZE];
@@ -443,61 +465,105 @@ typedef struct subInfo {
 static char *subGetNextLine(subFile *psubFile);
 static tokenType subGetNextToken(subFile *psubFile);
 static void subFileErrPrint(subFile *psubFile,char * message);
-
-static void substituteConstruct(void **pvt)
-{
-    subFile	*psubFile;
-    subInfo	*psubInfo;
+static void freeSubFile(subInfo *psubInfo);
+static void freePattern(subInfo *psubInfo);
 
-    psubInfo = calloc(1,sizeof(subInfo));
-    psubFile = calloc(1,sizeof(subFile));
-    ellInit(&psubInfo->patternList);
-    psubInfo->psubFile = psubFile;
-    *pvt = psubInfo;
-    return;
+void freeSubFile(subInfo *psubInfo)
+{
+    subFile	*psubFile = psubInfo->psubFile;
+    if(psubFile->fp) {
+        if(fclose(psubFile->fp))
+            fprintf(stderr,"fclose failed on substitution file\n");
+    }
+    free((void *)psubFile);
+    free((void *)psubInfo->filename);
+    psubInfo->psubFile = 0;
 }
 
-static void substituteDestruct(void *pvt)
+void freePattern(subInfo *psubInfo)
 {
-    subInfo	*psubInfo = (subInfo *)pvt;
-    subFile	*psubFile = psubInfo->psubFile;
     patternNode	*ppatternNode;
-
-    if(fclose(psubFile->fp))
-	fprintf(stderr,"fclose failed on substitution file\n");
     while(ppatternNode = (patternNode *)ellFirst(&psubInfo->patternList)) {
 	ellDelete(&psubInfo->patternList,&ppatternNode->node);
 	free(ppatternNode->var);
 	free(ppatternNode);
     }
-    free((void *)psubFile);
-    free((void *)psubInfo);
-    return;
+    psubInfo->isPattern = FALSE;
 }
 
-static void substituteOpen(void *pvt,char *substitutionName)
+static void substituteDestruct(void *pvt)
 {
     subInfo	*psubInfo = (subInfo *)pvt;
     subFile	*psubFile = psubInfo->psubFile;
+
+    freePattern(psubInfo);
+    freeSubFile(psubInfo);
+    free((void *)psubInfo);
+    return;
+}
+
+static void substituteOpen(void **ppvt,char *substitutionName)
+{
+    subInfo	*psubInfo;
+    subFile	*psubFile;
     FILE	*fp;
     patternNode	*ppatternNode;
 
+    psubInfo = calloc(1,sizeof(subInfo));
+    *ppvt = (void *)psubInfo;
+    psubFile = calloc(1,sizeof(subFile));
+    psubInfo->psubFile = psubFile;
+    ellInit(&psubInfo->patternList);
     fp = fopen(substitutionName,"r");
     if(!fp) {
 	fprintf(stderr,"Could not open %s\n",substitutionName);
-	exit(1);
+        exit(1);
     }
     psubFile->substitutionName = substitutionName;
     psubFile->fp = fp;
     psubFile->lineNum = 0;
     psubFile->inputBuffer[0] = 0;
     psubFile->pnextChar = &psubFile->inputBuffer[0];
-    while(subGetNextToken(psubFile)==tokenSeparater);
+    subGetNextToken(psubFile);
+    return;
+}
+
+static int substituteGetNextSet(void *pvt,char **filename)
+{
+    subInfo	*psubInfo = (subInfo *)pvt;
+    subFile	*psubFile = psubInfo->psubFile;
+    FILE	*fp;
+    patternNode	*ppatternNode;
+
+    *filename = 0;
+    while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
+    if(psubFile->token==tokenEOF) return(FALSE);
+    if(psubFile->token==tokenString && strcmp(psubFile->string,"file")==0) {
+        psubInfo->isFile = TRUE;
+        if(subGetNextToken(psubFile)!=tokenString) {
+            subFileErrPrint(psubFile,"Expecting filename");
+            exit(1);
+        }
+        freePattern(psubInfo);
+        free((void *)psubInfo->filename);
+        psubInfo->filename = calloc(strlen(psubFile->string)+1,sizeof(char));
+        strcpy(psubInfo->filename,psubFile->string);
+        while(subGetNextToken(psubFile)==tokenSeparater);
+        if(psubFile->token!=tokenLBrace) {
+            subFileErrPrint(psubFile,"Expecting {");
+            exit(1);
+        }
+        subGetNextToken(psubFile);
+    }
+    *filename = psubInfo->filename;
+    while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
+    if(psubFile->token==tokenLBrace) return(TRUE);
     if(psubFile->token!=tokenString
     || strcmp(psubFile->string,"pattern")!=0) {
-	psubInfo->isPattern = FALSE;
-	return;
+        subFileErrPrint(psubFile,"Expecting pattern");
+        exit(1);
     }
+    freePattern(psubInfo);
     psubInfo->isPattern = TRUE;
     while(subGetNextToken(psubFile)==tokenSeparater);
     if(psubFile->token!=tokenLBrace) {
@@ -505,22 +571,19 @@ static void substituteOpen(void *pvt,char *substitutionName)
 	exit(1);
     }
     while(TRUE) {
-	subGetNextToken(psubFile);
-	if(psubFile->token==tokenSeparater) continue;
-	if(psubFile->token==tokenString) {
-	    ppatternNode = calloc(1,sizeof(patternNode));
-	    ellAdd(&psubInfo->patternList,&ppatternNode->node);
-	    ppatternNode->var = calloc(strlen(psubFile->string)+1,sizeof(char));
-	    strcpy(ppatternNode->var,psubFile->string);
-	    continue;
-	}
-	break;
+        while(subGetNextToken(psubFile)==tokenSeparater);
+	if(psubFile->token!=tokenString) break;
+	ppatternNode = calloc(1,sizeof(patternNode));
+	ellAdd(&psubInfo->patternList,&ppatternNode->node);
+	ppatternNode->var = calloc(strlen(psubFile->string)+1,sizeof(char));
+	strcpy(ppatternNode->var,psubFile->string);
     }
     if(psubFile->token!=tokenRBrace) {
 	subFileErrPrint(psubFile,"Expecting }");
 	exit(1);
     }
-    return;
+    subGetNextToken(psubFile);
+    return(TRUE);
 }
 
 static char *substituteGetReplacements(void *pvt)
@@ -532,45 +595,50 @@ static char *substituteGetReplacements(void *pvt)
 
     pNext = &psubInfo->macroReplacements[0];
     psubInfo->macroReplacements[0] = 0;
-    while(psubFile->token!=tokenLBrace) {
-	if(psubFile->token==tokenEOF) return(0);
-	subGetNextToken(psubFile);
+    while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
+    if(psubFile->token==tokenRBrace && psubInfo->isFile) {
+        psubInfo->isFile = FALSE;
+        free((void *)psubInfo->filename);
+        psubInfo->filename = 0;
+        freePattern(psubInfo);
+        subGetNextToken(psubFile);
+        return(0);
     }
-    if(psubFile->token!=tokenLBrace) {
-	subFileErrPrint(psubFile,"Expecting {");
-	exit(1);
-    }
+    if(psubFile->token==tokenEOF) return(0);
+    if(psubFile->token!=tokenLBrace) return(0);
     if(psubInfo->isPattern) {
 	int gotFirstPattern = FALSE;
 
+        while(subGetNextToken(psubFile)==tokenSeparater);
 	ppatternNode = (patternNode *)ellFirst(&psubInfo->patternList);
-	if(!ppatternNode) {
-	    subFileErrPrint(psubFile,"No patterns");
-	    exit(1);
-	}
 	while(TRUE) {
-	    switch(subGetNextToken(psubFile)) {
-	        case tokenSeparater: continue;
-	        case tokenRBrace: return(psubInfo->macroReplacements);
-	        case tokenString:
-		    if(gotFirstPattern) {
-			strcat(psubInfo->macroReplacements,",");
-		    }
-		    gotFirstPattern = TRUE;
-	            strcat(psubInfo->macroReplacements,ppatternNode->var);
-	            strcat(psubInfo->macroReplacements,"=");
-	            strcat(psubInfo->macroReplacements,psubFile->string);
-		    break;
-		default:
-		    subFileErrPrint(psubFile,"Illegal token");
-		    exit(1);
-	    }
-	    ppatternNode = (patternNode *)ellNext(&ppatternNode->node);
-
+            if(psubFile->token==tokenRBrace) {
+                if(ppatternNode) 
+                    subFileErrPrint(psubFile,"less values than patterns");
+                subGetNextToken(psubFile);
+                return(psubInfo->macroReplacements);
+            }
+            if(psubFile->token!=tokenString) {
+                subFileErrPrint(psubFile,"Illegal token");
+                exit(-1);
+            }
+	    if(gotFirstPattern) strcat(psubInfo->macroReplacements,",");
+	    gotFirstPattern = TRUE;
+            if(ppatternNode) {
+	        strcat(psubInfo->macroReplacements,ppatternNode->var);
+	        strcat(psubInfo->macroReplacements,"=");
+	        strcat(psubInfo->macroReplacements,psubFile->string);
+                ppatternNode = (patternNode *)ellNext(&ppatternNode->node);
+            } else {
+                subFileErrPrint(psubFile,"more values than patterns");
+            }
+            while(subGetNextToken(psubFile)==tokenSeparater);
 	}
     } else while(TRUE) {
-	switch(subGetNextToken(psubFile)) {
-	    case tokenRBrace: return(psubInfo->macroReplacements);
+        switch(subGetNextToken(psubFile)) {
+	    case tokenRBrace:
+                subGetNextToken(psubFile);
+                return(psubInfo->macroReplacements);
 	    case tokenSeparater:
 		strcat(psubInfo->macroReplacements,",");
 		break;
@@ -589,6 +657,7 @@ static char *subGetNextLine(subFile *psubFile)
     char *pline;
 
     pline = fgets(psubFile->inputBuffer,MAX_BUFFER_SIZE,psubFile->fp);
+    ++psubFile->lineNum;
     while(pline && psubFile->inputBuffer[0]=='#') {
 	pline = fgets(psubFile->inputBuffer,MAX_BUFFER_SIZE,psubFile->fp);
         ++psubFile->lineNum;
@@ -600,7 +669,6 @@ static char *subGetNextLine(subFile *psubFile)
 	return(0);
     }
     psubFile->pnextChar = &psubFile->inputBuffer[0];
-    ++psubFile->lineNum;
     return(&psubFile->inputBuffer[0]);
 }
 
@@ -619,11 +687,11 @@ static tokenType subGetNextToken(subFile *psubFile)
     char	*pto;
 
     p = psubFile->pnextChar;
-    if(!p) return(tokenEOF);
-    if(*p==0 || *p=='\n') {
+    if(!p) { psubFile->token = tokenEOF; return(tokenEOF);}
+    if(*p==0 || *p=='\n' || *p=='#') {
 	p = subGetNextLine(psubFile);
-	if(!p) return(tokenEOF);
-	else return(tokenSeparater);
+	if(!p) { psubFile->token = tokenEOF; return(tokenEOF);}
+        else { psubFile->token = tokenSeparater; return(tokenSeparater);}
     }
     while(isspace(*p)) p++;
     if(*p=='{') {
@@ -636,7 +704,7 @@ static tokenType subGetNextToken(subFile *psubFile)
 	psubFile->pnextChar = ++p;
 	return(tokenRBrace);
     }
-    if(isspace(*p) || *p==',') {
+    if(*p==0 || isspace(*p) || *p==',') {
 	while(isspace(*p) || *p==',') p++;
 	psubFile->token = tokenSeparater;
 	psubFile->pnextChar = p;
@@ -647,7 +715,7 @@ static tokenType subGetNextToken(subFile *psubFile)
 	pto = &psubFile->string[0];
 	*pto++ = *p++;
 	while(*p!='"') {
-	    if(*p==0) {
+	    if(*p==0 || *p=='\n') {
 		subFileErrPrint(psubFile,"Strings must be on single line\n");
 		exit(1);
 	    }
@@ -665,7 +733,7 @@ static tokenType subGetNextToken(subFile *psubFile)
 	psubFile->token = tokenString;
 	return(tokenString);
     }
-    /*Now take anything up to next non String token*/
+    /*Now take anything up to next non String token and not space*/
     pto = &psubFile->string[0];
     while(!isspace(*p) && (strspn(p,"\",{}")==0)) *pto++ = *p++; 
     *pto = 0;

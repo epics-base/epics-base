@@ -142,6 +142,7 @@ void casPVI::updateEnumStringTable ()
 {
     static const aitUint32 stringTableTypeStaticInit = 0xffffffff;
     static aitUint32 stringTableType = stringTableTypeStaticInit;
+    unsigned nativeType;
     caStatus status;
     gdd *pTmp;
 
@@ -154,7 +155,7 @@ void casPVI::updateEnumStringTable ()
     //
     // fetch the native type
     //
-	status = pPV->bestDBRType (nativeType);
+	status = this->bestDBRType (nativeType);
 	if (status) {
 		errMessage(status, "best external dbr type fetch failed");
         return;

@@ -49,7 +49,7 @@ void timer::destroy ()
 {
     timerQueue & queueTmp ( this->queue );
     this->~timer ();
-    //timer::operator delete ( this, queueTmp.timerFreeList ) ;
+    queueTmp.timerFreeList.release ( this );
 }
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )

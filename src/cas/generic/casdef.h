@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-//	$Id$
+//  $Id$
 //
 //      Author: Jeffrey O. Hill
 //              johill@lanl.gov
@@ -37,7 +37,7 @@
 #endif
 
 #include "caNetAddr.h"
-#include "casEventMask.h"	// EPICS event select class 
+#include "casEventMask.h"   // EPICS event select class 
 
 typedef aitUint32 caStatus;
 
@@ -106,7 +106,7 @@ typedef aitUint32 caStatus;
 // retry the request later).
 //
 enum pvExistReturnEnum { pverExistsHere, pverDoesNotExistHere, 
-	pverAsyncCompletion };
+    pverAsyncCompletion };
 
 class casPV;
 class casCtx;
@@ -114,19 +114,19 @@ class casChannel;
 
 class epicsShareClass pvExistReturn { // X aCC 361
 public:
-	// most server tools will use this
-	pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );
-	// directory service server tools will use this (see caNetAddr.h)
-	pvExistReturn ( const caNetAddr & );
+    // most server tools will use this
+    pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );
+    // directory service server tools will use this (see caNetAddr.h)
+    pvExistReturn ( const caNetAddr & );
     ~pvExistReturn ();
-	const pvExistReturn & operator = ( pvExistReturnEnum rhs );
-	const pvExistReturn & operator = ( const caNetAddr & rhs );
-	pvExistReturnEnum getStatus () const;
+    const pvExistReturn & operator = ( pvExistReturnEnum rhs );
+    const pvExistReturn & operator = ( const caNetAddr & rhs );
+    pvExistReturnEnum getStatus () const;
     caNetAddr getAddr () const;
     bool addrIsValid () const;
 private:
-	caNetAddr address;
-	pvExistReturnEnum status;
+    caNetAddr address;
+    pvExistReturnEnum status;
 };
 
 //
@@ -134,124 +134,124 @@ private:
 //
 class epicsShareClass pvAttachReturn {
 public:
-	pvAttachReturn ();
-	pvAttachReturn ( caStatus statIn );
-	pvAttachReturn ( casPV & pv );
-	const pvAttachReturn & operator = ( caStatus rhs );
-	const pvAttachReturn & operator = ( casPV * pPVIn );
+    pvAttachReturn ();
+    pvAttachReturn ( caStatus statIn );
+    pvAttachReturn ( casPV & pv );
+    const pvAttachReturn & operator = ( caStatus rhs );
+    const pvAttachReturn & operator = ( casPV * pPVIn );
     caStatus getStatus() const ;
-	casPV * getPV() const;
+    casPV * getPV() const;
 private:
-	casPV * pPV;
-	caStatus stat;
+    casPV * pPV;
+    caStatus stat;
 };
 
 //
 // caServer - Channel Access Server API Class
 //
 class caServer {
-	friend class casPVI;
+    friend class casPVI;
 public:
-	epicsShareFunc caServer ();
-	epicsShareFunc virtual ~caServer() = 0;
+    epicsShareFunc caServer ();
+    epicsShareFunc virtual ~caServer() = 0;
 
-	//
-	// pvExistTest()
-	//
-	// This function is called by the server library when it needs to 
-	// determine if a named PV exists (or could be created) in the 
-	// server tool.
-	//
-	// The request is allowed to complete asynchronously
-	// (see Asynchronous IO Classes below).
-	//
-	// The server tool is encouraged to accept multiple PV name
-	// aliases for the same PV here. 
-	//
-	// example return from this procedure:
-	// return pverExistsHere;	// server has PV
-	// return pverDoesNotExistHere;	// server does know of this PV
-	// return pverAsynchCompletion;	// deferred result 
-	//
-	// Return pverDoesNotExistHere if too many simultaneous
-	// asynchronous IO operations are pending against the server. 
-	// The client library will retry the request at some time
-	// in the future.
-	//
-	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
-		const caNetAddr & clientAddress, const char * pPVAliasName );
+    //
+    // pvExistTest()
+    //
+    // This function is called by the server library when it needs to 
+    // determine if a named PV exists (or could be created) in the 
+    // server tool.
+    //
+    // The request is allowed to complete asynchronously
+    // (see Asynchronous IO Classes below).
+    //
+    // The server tool is encouraged to accept multiple PV name
+    // aliases for the same PV here. 
+    //
+    // example return from this procedure:
+    // return pverExistsHere;   // server has PV
+    // return pverDoesNotExistHere; // server does know of this PV
+    // return pverAsynchCompletion; // deferred result 
+    //
+    // Return pverDoesNotExistHere if too many simultaneous
+    // asynchronous IO operations are pending against the server. 
+    // The client library will retry the request at some time
+    // in the future.
+    //
+    epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+        const caNetAddr & clientAddress, const char * pPVAliasName );
 
-	//
-	// pvAttach() 
-	//
-	// This function is called _every_ time that a client attaches to the PV.
-	// The name supplied here will be either a canonical PV name or an alias 
-	// PV name.
-	//	
-	// The request is allowed to complete asynchronously
-	// (see Asynchronous IO Classes below).
-	//
-	// IMPORTANT: 
-	// It is a responsibility of the server tool to detect attempts by 
-	// the server library to attach to an existing PV. If the PV does not 
-	// exist then the server tool should create it. Otherwise, the server 
-	// tool typically will return a pointer to the preexisting PV. 
-	//
-	// The server tool is encouraged to accept multiple PV name aliases 
-	// for the same PV here. 
-	//
-	// In most situations the server tool should avoid PV duplication 
-	// by returning a pointer to an existing PV if the PV alias name
-	// matches a preexisting PV's name or any of its aliases.
-	//
-	// example return from this procedure:
-	// return pPV;	// success (pass by pointer)
-	// return PV;	// success (pass by ref)
-	// return S_casApp_pvNotFound; // no PV by that name here
-	// return S_casApp_noMemory; // no resource to create pv
-	// return S_casApp_asyncCompletion; // deferred completion
-	//
-	// Return S_casApp_postponeAsyncIO if too many simultaneous
-	// asynchronous IO operations are pending against the server. 
-	// The server library will retry the request whenever an
-	// asynchronous IO operation (create or exist) completes
-	// against the server.
-	//
-	// In certain specialized rare situations the server tool may choose
-	// to create client private process variables that are not shared between
-	// clients. In this situation there might be several process variables
-	// with the same name. One for each client. For example, a server tool
-	// might be written that provides access to archival storage of the
-	// historic values of a set of process variables. Each client would 
-	// specify its date of interest by writing into a client private process 
-	// variable. Next the client would determine the current value of its 
-	// subset of named process variables at its privately specified date by 
-	// attaching to additional client private process variables.
-	//
-	epicsShareFunc virtual pvAttachReturn pvAttach ( const casCtx &ctx,
-		const char *pPVAliasName );
+    //
+    // pvAttach() 
+    //
+    // This function is called _every_ time that a client attaches to the PV.
+    // The name supplied here will be either a canonical PV name or an alias 
+    // PV name.
+    //  
+    // The request is allowed to complete asynchronously
+    // (see Asynchronous IO Classes below).
+    //
+    // IMPORTANT: 
+    // It is a responsibility of the server tool to detect attempts by 
+    // the server library to attach to an existing PV. If the PV does not 
+    // exist then the server tool should create it. Otherwise, the server 
+    // tool typically will return a pointer to the preexisting PV. 
+    //
+    // The server tool is encouraged to accept multiple PV name aliases 
+    // for the same PV here. 
+    //
+    // In most situations the server tool should avoid PV duplication 
+    // by returning a pointer to an existing PV if the PV alias name
+    // matches a preexisting PV's name or any of its aliases.
+    //
+    // example return from this procedure:
+    // return pPV;  // success (pass by pointer)
+    // return PV;   // success (pass by ref)
+    // return S_casApp_pvNotFound; // no PV by that name here
+    // return S_casApp_noMemory; // no resource to create pv
+    // return S_casApp_asyncCompletion; // deferred completion
+    //
+    // Return S_casApp_postponeAsyncIO if too many simultaneous
+    // asynchronous IO operations are pending against the server. 
+    // The server library will retry the request whenever an
+    // asynchronous IO operation (create or exist) completes
+    // against the server.
+    //
+    // In certain specialized rare situations the server tool may choose
+    // to create client private process variables that are not shared between
+    // clients. In this situation there might be several process variables
+    // with the same name. One for each client. For example, a server tool
+    // might be written that provides access to archival storage of the
+    // historic values of a set of process variables. Each client would 
+    // specify its date of interest by writing into a client private process 
+    // variable. Next the client would determine the current value of its 
+    // subset of named process variables at its privately specified date by 
+    // attaching to additional client private process variables.
+    //
+    epicsShareFunc virtual pvAttachReturn pvAttach ( const casCtx &ctx,
+        const char *pPVAliasName );
 
-	//
+    //
     // obtain an event mask for a named event type
     // to be used with casPV::postEvent()
     //
-	epicsShareFunc casEventMask registerEvent ( const char *pName );
+    epicsShareFunc casEventMask registerEvent ( const char *pName );
 
     //
-	// common event masks 
-	// (what is currently used by the CA clients)
-	//
-	epicsShareFunc casEventMask valueEventMask () const; // DBE_VALUE 
-	epicsShareFunc casEventMask logEventMask () const; 	// DBE_LOG 
-	epicsShareFunc casEventMask alarmEventMask () const; // DBE_ALARM 
+    // common event masks 
+    // (what is currently used by the CA clients)
+    //
+    epicsShareFunc casEventMask valueEventMask () const; // DBE_VALUE 
+    epicsShareFunc casEventMask logEventMask () const;  // DBE_LOG 
+    epicsShareFunc casEventMask alarmEventMask () const; // DBE_ALARM 
 
-	epicsShareFunc void setDebugLevel ( unsigned level );
-	epicsShareFunc unsigned getDebugLevel () const;
+    epicsShareFunc void setDebugLevel ( unsigned level );
+    epicsShareFunc unsigned getDebugLevel () const;
 
     //
     // dump internal state of server to standard out
     //
-	epicsShareFunc virtual void show ( unsigned level ) const;
+    epicsShareFunc virtual void show ( unsigned level ) const;
 
     //
     // server diagnostic counters (allowed to roll over)
@@ -268,17 +268,17 @@ public:
 
     epicsShareFunc void generateBeaconAnomaly ();
 
-	// caStatus enableClients ();
-	// caStatus disableClients ();
+    // caStatus enableClients ();
+    // caStatus disableClients ();
 
 private:
-	class caServerI * pCAS;
+    class caServerI * pCAS;
 
-	// deprecated interfaces (will be deleted in a future release)
-	epicsShareFunc virtual class pvCreateReturn createPV ( const casCtx & ctx,
-		const char * pPVAliasName );
-	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
-		const char * pPVAliasName );
+    // deprecated interfaces (will be deleted in a future release)
+    epicsShareFunc virtual class pvCreateReturn createPV ( const casCtx & ctx,
+        const char * pPVAliasName );
+    epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+        const char * pPVAliasName );
 };
 
 //
@@ -435,7 +435,7 @@ public:
     //
     // array -  maxDimension() returns 1
     //          maxBounds(0) supplies number of elements in array
-    //	
+    //  
     // plane -  maxDimension() returns 2
     //          maxBounds(0) supplies number of elements in X dimension
     //          maxBounds(1) supplies number of elements in Y dimension
@@ -511,7 +511,7 @@ public:
     
 private:
     casPVI * pPVI;
-	casPV & operator = ( const casPV & );
+    casPV & operator = ( const casPV & );
 
     friend class casStrmClient;
 public:
@@ -551,25 +551,25 @@ public:
 //
 class casChannel {
 public:
-	epicsShareFunc casChannel ( const casCtx & ctx );
-	epicsShareFunc virtual ~casChannel ();
+    epicsShareFunc casChannel ( const casCtx & ctx );
+    epicsShareFunc virtual ~casChannel ();
 
-	//
-	// Called when the user name and the host name are changed
-	// for a live connection.
-	//
-	epicsShareFunc virtual void setOwner ( const char * const pUserName, 
-		const char * const pHostName );
+    //
+    // Called when the user name and the host name are changed
+    // for a live connection.
+    //
+    epicsShareFunc virtual void setOwner ( const char * const pUserName, 
+        const char * const pHostName );
 
-	//
-	// the following are encouraged to change during an channel's
-	// lifetime
-	//
-	epicsShareFunc virtual bool readAccess () const;
-	epicsShareFunc virtual bool writeAccess () const;
-	// return true to hint that the opi should ask the operator
-	// for confirmation prior writing to this PV
-	epicsShareFunc virtual bool confirmationRequested () const;
+    //
+    // the following are encouraged to change during an channel's
+    // lifetime
+    //
+    epicsShareFunc virtual bool readAccess () const;
+    epicsShareFunc virtual bool writeAccess () const;
+    // return true to hint that the opi should ask the operator
+    // for confirmation prior writing to this PV
+    epicsShareFunc virtual bool confirmationRequested () const;
 
     //
     // If this function is not provided in the derived class then casPV::beginTransaction()
@@ -599,46 +599,46 @@ public:
     //
     epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
 
-	//
-	// This is called for each channel in the server if
-	// caServer::show() is called and the level is high 
-	// enough
-	//
-	epicsShareFunc virtual void show ( unsigned level ) const;
+    //
+    // This is called for each channel in the server if
+    // caServer::show() is called and the level is high 
+    // enough
+    //
+    epicsShareFunc virtual void show ( unsigned level ) const;
 
-	//
-	// destroy() is called when 
-	// 1) there is a client initiated channel delete 
-	// 2) there is a server tool initiated PV delete
-	//
-	// the casChannel::destroy() executes a "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
+    //
+    // destroy() is called when 
+    // 1) there is a client initiated channel delete 
+    // 2) there is a server tool initiated PV delete
+    //
+    // the casChannel::destroy() executes a "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
 
-	//
-	// server tool calls this to indicate change in access
-	// rights has occurred
-	//
-	epicsShareFunc void postAccessRightsEvent ();
+    //
+    // server tool calls this to indicate change in access
+    // rights has occurred
+    //
+    epicsShareFunc void postAccessRightsEvent ();
 
-	//
-	// Find the PV associated with this channel 
-	// ****WARNING****
-	// this returns NULL if the channel isnt currently installed 
-	// into a PV (this situation will exist only if
-	// the channel isnt deleted in a derived classes replacement
-	// for virtual casChannel::destroy() 
-	// ***************
-	//
-	epicsShareFunc casPV * getPV ();
+    //
+    // Find the PV associated with this channel 
+    // ****WARNING****
+    // this returns NULL if the channel isnt currently installed 
+    // into a PV (this situation will exist only if
+    // the channel isnt deleted in a derived classes replacement
+    // for virtual casChannel::destroy() 
+    // ***************
+    //
+    epicsShareFunc casPV * getPV ();
 
     void destroyRequest ();
 
 private:
     class casChannelI * pChanI;
 
-	casChannel ( const casChannel & );
-	casChannel & operator = ( const casChannel & );
+    casChannel ( const casChannel & );
+    casChannel & operator = ( const casChannel & );
     friend class casStrmClient;
 };
 
@@ -647,12 +647,12 @@ private:
 //
 // The following virtual functions allow for asynchronous completion:
 //
-//	Virtual Function        Asynchronous IO Class
-//	-----------------       ---------------------
-// 	caServer::pvExistTest() casAsyncPVExistIO
-// 	caServer::pvAttach()    casAsyncPVAttachIO
-// 	casPV::read()           casAsyncReadIO
-// 	casPV::write()          casAsyncWriteIO
+//  Virtual Function        Asynchronous IO Class
+//  -----------------       ---------------------
+//  caServer::pvExistTest() casAsyncPVExistIO
+//  caServer::pvAttach()    casAsyncPVAttachIO
+//  casPV::read()           casAsyncReadIO
+//  casPV::write()          casAsyncWriteIO
 //
 // To initiate asynchronous completion create a corresponding
 // asynchronous IO object from within one of the virtual 
@@ -701,45 +701,45 @@ private:
 class casAsyncReadIO {
 public:
 
-	//
-	// casAsyncReadIO()
-	//
-	epicsShareFunc casAsyncReadIO ( const casCtx & ctx );
-	epicsShareFunc virtual ~casAsyncReadIO (); 
-
-	//
-	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncReadIO object)
     //
-	// only the first call to this function has any effect
-	//
-	epicsShareFunc caStatus postIOCompletion ( 
+    // casAsyncReadIO()
+    //
+    epicsShareFunc casAsyncReadIO ( const casCtx & ctx );
+    epicsShareFunc virtual ~casAsyncReadIO (); 
+
+    //
+    // place notification of IO completion on the event queue
+    // (this function does not delete the casAsyncReadIO object)
+    //
+    // only the first call to this function has any effect
+    //
+    epicsShareFunc caStatus postIOCompletion ( 
         caStatus completionStatusIn, const gdd & valueRead );
 
-	//
-	// Find the server associated with this async IO 
-	// ****WARNING****
-	// this returns NULL if the async io isnt currently installed 
-	// into a server
-	// ***************
-	//
-	epicsShareFunc caServer * getCAS () const;
+    //
+    // Find the server associated with this async IO 
+    // ****WARNING****
+    // this returns NULL if the async io isnt currently installed 
+    // into a server
+    // ***************
+    //
+    epicsShareFunc caServer * getCAS () const;
 
     void serverInitiatedDestroy ();
 
 private:
     class casAsyncReadIOI * pAsyncReadIOI;
-	//
-	// called by the server lib after the response message
-	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc)
-	//
-	// default destroy executes a "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
+    //
+    // called by the server lib after the response message
+    // is succesfully queued to the client or when the
+    // IO operation is canceled (client disconnects etc)
+    //
+    // default destroy executes a "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
 
-	casAsyncReadIO ( const casAsyncReadIO & );
-	casAsyncReadIO & operator = ( const casAsyncReadIO & );
+    casAsyncReadIO ( const casAsyncReadIO & );
+    casAsyncReadIO & operator = ( const casAsyncReadIO & );
 };
 
 //
@@ -759,43 +759,43 @@ private:
 //
 class casAsyncWriteIO {
 public:
-	//
-	// casAsyncWriteIO()
-	//
-	epicsShareFunc casAsyncWriteIO ( const casCtx & ctx );
-	epicsShareFunc virtual ~casAsyncWriteIO (); 
+    //
+    // casAsyncWriteIO()
+    //
+    epicsShareFunc casAsyncWriteIO ( const casCtx & ctx );
+    epicsShareFunc virtual ~casAsyncWriteIO (); 
 
-	//
-	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncWriteIO object). 
-	// Only the first call to this function has any effect.
-	//
+    //
+    // place notification of IO completion on the event queue
+    // (this function does not delete the casAsyncWriteIO object). 
+    // Only the first call to this function has any effect.
+    //
     epicsShareFunc caStatus postIOCompletion ( caStatus completionStatusIn );
 
-	//
-	// Find the server associated with this async IO 
-	// ****WARNING****
-	// this returns NULL if the async io isnt currently installed 
-	// into a server
-	// ***************
-	//
-	epicsShareFunc caServer * getCAS () const;
+    //
+    // Find the server associated with this async IO 
+    // ****WARNING****
+    // this returns NULL if the async io isnt currently installed 
+    // into a server
+    // ***************
+    //
+    epicsShareFunc caServer * getCAS () const;
 
     void serverInitiatedDestroy ();
 
 private:
     class casAsyncWriteIOI * pAsyncWriteIOI;
-	//
-	// called by the server lib after the response message
-	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc)
-	//
-	// default destroy executes a "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
+    //
+    // called by the server lib after the response message
+    // is succesfully queued to the client or when the
+    // IO operation is canceled (client disconnects etc)
+    //
+    // default destroy executes a "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
 
-	casAsyncWriteIO ( const casAsyncWriteIO & );
-	casAsyncWriteIO & operator = ( const casAsyncWriteIO & );
+    casAsyncWriteIO ( const casAsyncWriteIO & );
+    casAsyncWriteIO & operator = ( const casAsyncWriteIO & );
 };
 
 //
@@ -805,45 +805,45 @@ private:
 class casAsyncPVExistIO {
 public:
 
-	//
-	// casAsyncPVExistIO()
-	//
-	epicsShareFunc casAsyncPVExistIO ( const casCtx & ctx );
-	epicsShareFunc virtual ~casAsyncPVExistIO (); 
-
-	//
-	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncPVExistIO object)
     //
-	// only the first call to this function has any effect.
-	//
-	epicsShareFunc caStatus postIOCompletion ( const pvExistReturn & retValIn );
+    // casAsyncPVExistIO()
+    //
+    epicsShareFunc casAsyncPVExistIO ( const casCtx & ctx );
+    epicsShareFunc virtual ~casAsyncPVExistIO (); 
 
-	//
-	// Find the server associated with this async IO 
-	// ****WARNING****
-	// this returns NULL if the async io isnt currently installed 
-	// into a server
-	// ***************
-	//
-	epicsShareFunc caServer * getCAS () const;
+    //
+    // place notification of IO completion on the event queue
+    // (this function does not delete the casAsyncPVExistIO object)
+    //
+    // only the first call to this function has any effect.
+    //
+    epicsShareFunc caStatus postIOCompletion ( const pvExistReturn & retValIn );
+
+    //
+    // Find the server associated with this async IO 
+    // ****WARNING****
+    // this returns NULL if the async io isnt currently installed 
+    // into a server
+    // ***************
+    //
+    epicsShareFunc caServer * getCAS () const;
 
    void serverInitiatedDestroy ();
 
 private:
     class casAsyncPVExistIOI * pAsyncPVExistIOI;
 
-	//
-	// called by the server lib after the response message
-	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc)
-	//
-	// default destroy executes a "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
+    //
+    // called by the server lib after the response message
+    // is succesfully queued to the client or when the
+    // IO operation is canceled (client disconnects etc)
+    //
+    // default destroy executes a "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
  
-	casAsyncPVExistIO ( const casAsyncPVExistIO & );
-	casAsyncPVExistIO & operator = ( const casAsyncPVExistIO & );
+    casAsyncPVExistIO ( const casAsyncPVExistIO & );
+    casAsyncPVExistIO & operator = ( const casAsyncPVExistIO & );
 };
 
 //
@@ -852,44 +852,44 @@ private:
 //
 class casAsyncPVAttachIO {
 public:
-	//
-	// casAsyncPVAttachIO()
-	//
-	epicsShareFunc casAsyncPVAttachIO ( const casCtx & ctx );
-	epicsShareFunc virtual ~casAsyncPVAttachIO (); 
+    //
+    // casAsyncPVAttachIO()
+    //
+    epicsShareFunc casAsyncPVAttachIO ( const casCtx & ctx );
+    epicsShareFunc virtual ~casAsyncPVAttachIO (); 
 
-	//
-	// place notification of IO completion on the event queue
-	// (this function does not delete the casAsyncPVAttachIO object). 
-	// Only the first call to this function has any effect.
-	//
-	epicsShareFunc caStatus postIOCompletion ( const pvAttachReturn & retValIn );
+    //
+    // place notification of IO completion on the event queue
+    // (this function does not delete the casAsyncPVAttachIO object). 
+    // Only the first call to this function has any effect.
+    //
+    epicsShareFunc caStatus postIOCompletion ( const pvAttachReturn & retValIn );
 
-	//
-	// Find the server associated with this async IO 
-	// ****WARNING****
-	// this returns NULL if the async io isnt currently installed 
-	// into a server
-	// ***************
-	//
-	epicsShareFunc caServer * getCAS () const;
+    //
+    // Find the server associated with this async IO 
+    // ****WARNING****
+    // this returns NULL if the async io isnt currently installed 
+    // into a server
+    // ***************
+    //
+    epicsShareFunc caServer * getCAS () const;
 
    void serverInitiatedDestroy ();
 
 private:
     class casAsyncPVAttachIOI * pAsyncPVAttachIOI;
 
-	//
-	// called by the server lib after the response message
-	// is succesfully queued to the client or when the
-	// IO operation is canceled (client disconnects etc)
-	//
-	// default destroy executes a "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
+    //
+    // called by the server lib after the response message
+    // is succesfully queued to the client or when the
+    // IO operation is canceled (client disconnects etc)
+    //
+    // default destroy executes a "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
 
-	casAsyncPVAttachIO ( const casAsyncPVAttachIO & );
-	casAsyncPVAttachIO & operator = ( const casAsyncPVAttachIO & );
+    casAsyncPVAttachIO ( const casAsyncPVAttachIO & );
+    casAsyncPVAttachIO & operator = ( const casAsyncPVAttachIO & );
 };
 
 //
@@ -898,11 +898,11 @@ private:
 //
 class casAsyncPVCreateIO : private casAsyncPVAttachIO {
 public:
-	epicsShareFunc casAsyncPVCreateIO ( const casCtx & ctx );
-	epicsShareFunc virtual ~casAsyncPVCreateIO ();
+    epicsShareFunc casAsyncPVCreateIO ( const casCtx & ctx );
+    epicsShareFunc virtual ~casAsyncPVCreateIO ();
 private:
-	casAsyncPVCreateIO ( const casAsyncPVCreateIO & );
-	casAsyncPVCreateIO & operator = ( const casAsyncPVCreateIO & );
+    casAsyncPVCreateIO ( const casAsyncPVCreateIO & );
+    casAsyncPVCreateIO & operator = ( const casAsyncPVCreateIO & );
 };
 
 //
@@ -911,39 +911,39 @@ private:
 //
 class epicsShareClass pvCreateReturn : public pvAttachReturn {
 public:
-	pvCreateReturn ( caStatus statIn ) : pvAttachReturn ( statIn ) {};
-	pvCreateReturn ( casPV & pvIn ) : pvAttachReturn ( pvIn ) {};
+    pvCreateReturn ( caStatus statIn ) : pvAttachReturn ( statIn ) {};
+    pvCreateReturn ( casPV & pvIn ) : pvAttachReturn ( pvIn ) {};
 };
 
 // TODO:
 // .03  document new event types for limits change etc
 // .04  certain things like native type cant be changed during
-//	pv id's life time or we will be required to have locking
-//	(doc this)
-// .08	Need a mechanism by which an error detail string can be returned
-//	to the server from a server app (in addition to the normal
-//	error constant)
-// .12 	Should the server have an interface so that all PV names
-//	can be obtained (even ones created after init)? This
-//	would be used to implement update of directory services and 
-// 	wild cards? Problems here with knowing PV name structure and 
-//	maximum permutations of name components.
-// .16 	go through this file and make sure that we are consistent about
-//	the use of const - use a pointer only in spots where NULL is
-//	allowed?
+//  pv id's life time or we will be required to have locking
+//  (doc this)
+// .08  Need a mechanism by which an error detail string can be returned
+//  to the server from a server app (in addition to the normal
+//  error constant)
+// .12  Should the server have an interface so that all PV names
+//  can be obtained (even ones created after init)? This
+//  would be used to implement update of directory services and 
+//  wild cards? Problems here with knowing PV name structure and 
+//  maximum permutations of name components.
+// .16  go through this file and make sure that we are consistent about
+//  the use of const - use a pointer only in spots where NULL is
+//  allowed?
 // NOTES:
 // .01  When this code is used in a multi threaded situation we
-// 	must be certain that the derived class's virtual function 
-// 	are not called between derived class destruction and base
-// 	class destruction (or prevent problems if they are).
-//	Possible solutions
-//	1) in the derived classes destructor set a variable which
-// 	inhibits use of the derived classes virtual function.
-//	Each virtual function must check this inhibit bit and return 
-//	an error if it is set
-//	2) call a method on the base which prevents further use
-// 	of it by the server from the derived class destructor.
-//	3) some form of locking (similar to (1) above)
+//  must be certain that the derived class's virtual function 
+//  are not called between derived class destruction and base
+//  class destruction (or prevent problems if they are).
+//  Possible solutions
+//  1) in the derived classes destructor set a variable which
+//  inhibits use of the derived classes virtual function.
+//  Each virtual function must check this inhibit bit and return 
+//  an error if it is set
+//  2) call a method on the base which prevents further use
+//  of it by the server from the derived class destructor.
+//  3) some form of locking (similar to (1) above)
 //
 
 #endif // ifdef includecasdefh (this must be the last line in this file) 

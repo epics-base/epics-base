@@ -244,7 +244,7 @@ int main ( int argc, char ** argv )
                 if ( interest > 1) {
                     char date[64];
                     currentTime.strftime ( date, sizeof ( date ), 
-                        "%Y-%m-%d %T.%09f");
+                        "%Y-%m-%d %H:%M:%S.%09f");
                     char host[64];
                     ipAddrToA ( &ina, host, sizeof ( host ) );
                     printf ( "beacon  %-40s %s\n", host, date );
@@ -262,7 +262,7 @@ int main ( int argc, char ** argv )
                     if ( anomaly ) {
                         char date[64];
                         currentTime.strftime ( date, sizeof ( date ), 
-                            "%Y-%m-%d %T.%09f");
+                            "%Y-%m-%d %H:%M:%S.%09f");
                         char host[64];
                         ipAddrToA ( &ina, host, sizeof ( host ) );
                         printf ( "anomaly %-40s %s\n", 

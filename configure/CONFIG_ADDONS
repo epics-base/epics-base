@@ -193,6 +193,14 @@ PROD_OBJS+=$(PROD_OBJS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(USR_OBJS_$(OS_CLASS))),)
+USR_OBJS+=$(subst -nil-,,$(USR_OBJS_$(OS_CLASS)))
+else
+ifneq (,$(strip $(USR_OBJS_DEFAULT)))
+USR_OBJS+=$(USR_OBJS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(OBJS_$(OS_CLASS))),)
 OBJS+=$(subst -nil-,,$(OBJS_$(OS_CLASS)))
 else

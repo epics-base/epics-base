@@ -142,10 +142,10 @@ JAR =
 
 TARGET_OBJS =  $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS)))
 
-PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(PROD_OBJS)))
+PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(USR_OBJS) $(PROD_OBJS)))
 PROD_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(PRODUCT_OBJS)
 
-LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(LIB_SRCS) $(LIBSRCS) $(LIB_OBJS)))
+LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(LIB_SRCS) $(LIBSRCS) $(USR_OBJS) $(LIB_OBJS)))
 LIBRARY_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------

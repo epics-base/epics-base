@@ -36,7 +36,7 @@ PROD_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
 
 PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
-PROD_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))
+DIR_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))
 
 #-------------------------------------------------------
 # Prod definitions
@@ -50,7 +50,7 @@ NMS = $(PRODNAME:%$(EXE)=%.nm)
 OBJLIB += $(OBJLIB_$(OS_CLASS))
 OBJLIB_SUFFIX = Library.o
 OBJLIBNAME = $(addsuffix $(OBJLIB_SUFFIX),$(basename $(OBJLIB)))
-OBJLIB_LD_OBJS = $(LDOBJS) $(TARGET_OBJS)
+OBJLIB_LD_OBJS = $(USR_OBJLIBS) $(TARGET_OBJS)
 OBJLIB_LD_OBJS += $(addsuffix $(OBJ),$(basename $(OBJLIB_SRCS) $(OBJLIB_OBJS)))
 PRODTARGETS += $(OBJLIBNAME)
 INSTALL_PROD += $(OBJLIBNAME:%=$(INSTALL_BIN)/%)
@@ -118,7 +118,7 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 #--------------------------------------------------
 # Definitions for compile of *_ctdt.c file

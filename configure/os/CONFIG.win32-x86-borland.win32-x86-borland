@@ -148,7 +148,7 @@ STATIC_LDLIBS_NO=
 # -w display warnings on
 LINK_OPT_FLAGS_YES = -c -C -Gi -Gn -Tpd -x -w
 LINK_OPT_FLAGS_NO = -c -C -Gi -Gn -Tpd -x -w-
-WIN32_DLLFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
+WIN32_DLLFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT)) $(LIB_LDFLAGS)
 OPT_LDFLAGS =
 
 ARCH_DEP_CFLAGS=
@@ -263,7 +263,7 @@ LDFLAGS += -c -C -Gn -Tpe -x -w -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk
 LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 
-LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
+LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
 LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 #--------------------------------------------------

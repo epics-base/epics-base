@@ -57,7 +57,7 @@
 #	If you define INC, e.g. INC = getopt.h, the source
 #	(getopt.h) must be in the source directory (..) and/or
 #	in one or more ../os/<OS_CLASS> directories.
-#	The INC source files cannot be created by the build.
+
 #
 
 ifneq ($(strip $(USR_CFLAGS_$(T_A))),)
@@ -121,6 +121,22 @@ USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(OS_CLASS)))
 else
 ifdef USR_LDFLAGS_DEFAULT
 USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_LDFLAGS_$(OS_CLASS))),)
+PROD_LDFLAGS+=$(subst -nil-,,$(PROD_LDFLAGS_$(OS_CLASS)))
+else
+ifdef PROD_LDFLAGS_DEFAULT
+PROD_LDFLAGS+=$(PROD_LDFLAGS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_LDFLAGS_$(OS_CLASS))),)
+LIB_LDFLAGS+=$(subst -nil-,,$(LIB_LDFLAGS_$(OS_CLASS)))
+else
+ifdef LIB_LDFLAGS_DEFAULT
+LIB_LDFLAGS+=$(LIB_LDFLAGS_DEFAULT)
 endif
 endif
 
@@ -225,11 +241,27 @@ OBJS_HOST+=$(OBJS_HOST_DEFAULT)
 endif
 endif
 
-ifneq ($(strip $(LDOBJS_$(OS_CLASS))),)
-LDOBJS+=$(subst -nil-,,$(LDOBJS_$(OS_CLASS)))
+ifneq ($(strip $(PROD_OBJLIBS_$(OS_CLASS))),)
+PROD_OBJLIBS+=$(subst -nil-,,$(PROD_OBJLIBS_$(OS_CLASS)))
 else
-ifneq (,$(strip $(LDOBJS_DEFAULT)))
-LDOBJS+=$(LDOBJS_DEFAULT)
+ifdef PROD_OBJLIBS_DEFAULT
+PROD_OBJLIBS+=$(PROD_OBJLIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LIB_OBJLIBS_$(OS_CLASS))),)
+LIB_OBJLIBS+=$(subst -nil-,,$(LIB_OBJLIBS_$(OS_CLASS)))
+else
+ifdef LIB_OBJLIBS_DEFAULT
+LIB_OBJLIBS+=$(LIB_OBJLIBS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_OBJLIBS_$(OS_CLASS))),)
+USR_OBJLIBS+=$(subst -nil-,,$(USR_OBJLIBS_$(OS_CLASS)))
+else
+ifdef USR_OBJLIBS_DEFAULT
+USR_OBJLIBS+=$(USR_OBJLIBS_DEFAULT)
 endif
 endif
 

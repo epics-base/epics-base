@@ -197,7 +197,7 @@ OP_SYS_LDLIBS =
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY = @12
 
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS)
+WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(LIB_LDFLAGS)
 
 #
 # specify dll .def file only if it exists
@@ -265,7 +265,7 @@ SHRLIB_LDLIBS = $(DLL_DEPLIBS) $($*_SYS_DLL_LIBS:%=%.lib) \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) -out:$@ \
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:$@ \
 	$(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 

@@ -34,7 +34,7 @@ OP_SYS_LDLIBS += -lsocket -lnsl
 
 #  -R does not work unless full path names are specified
 # use loader's -R option
-PROD_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+DIR_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
 
 ifdef CROSS
    GNU_TARGET=sparc-sun-solaris2

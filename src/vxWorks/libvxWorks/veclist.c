@@ -59,8 +59,7 @@ void 	*fetch_pointer(unsigned char *);
  * veclist()
  *
  */
-veclist(all)
-int 	all;
+veclist(int all)
 {
   	int		vec;
 	int		value;

@@ -8,9 +8,9 @@
 //
 //	casPV
 //	|
-//	exPV-------------
-//	|		|
-//	exScalarPV	exVectorPV
+//	exPV-----------
+//	|             |
+//	exScalarPV    exVectorPV
 //	|
 //	exAsyncPV
 //
@@ -61,6 +61,8 @@ public:
 	{
 	}
 
+	~pvInfo ();
+
 	//
 	// for use when MSVC++ will not build a default copy constructor 
 	// for this class
@@ -80,8 +82,11 @@ public:
 	const excasIoType getIOType () const { return this->ioType; }
 	const unsigned getElementCount() const 
 		{ return this->elementCount; }
-	void destroyPV() { this->pPV=NULL; }
+	void unlinkPV() { this->pPV=NULL; }
+
 	exPV *createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn);
+	void deletePV ();
+
 private:
 	const double	scanPeriod;
 	const char		*pName;
@@ -138,6 +143,8 @@ private:
 	exPV	&pv;
 };
 
+
+
 //
 // exPV
 //
@@ -145,7 +152,7 @@ class exPV : public casPV, public tsSLNode<exPV> {
 	// allow the exScanTimer destructor to set dangling pScanTimer pointer to NULL
 	friend exScanTimer::~exScanTimer(); 
 public:
-	exPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag, aitBool scanOn);
+	exPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOn);
 	virtual ~exPV();
 
 	void show(unsigned level) const;
@@ -230,7 +237,7 @@ public:
 	static void initFT();
 
 protected:
-	gdd			*pValue;
+	smartGDDPointer	pValue;
 	exScanTimer		*pScanTimer;
 	pvInfo & 		info; 
 	aitBool		interest;
@@ -267,9 +274,8 @@ private:
 //
 class exScalarPV : public exPV {
 public:
-	exScalarPV (caServer &cas, 
-		pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
-			exPV (cas, setup, preCreateFlag, scanOnIn) {}
+	exScalarPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+			exPV (setup, preCreateFlag, scanOnIn) {}
 	void scan();
 private:
 	caStatus updateValue (gdd &value);
@@ -280,9 +286,8 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-	exVectorPV (caServer &cas, pvInfo &setup, 
-		aitBool preCreateFlag, aitBool scanOnIn) :
-			exPV (cas, setup, preCreateFlag, scanOnIn) {}
+	exVectorPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+			exPV (setup, preCreateFlag, scanOnIn) {}
 	void scan();
 
 	unsigned maxDimension() const;
@@ -299,9 +304,10 @@ class exServer : public caServer {
 public:
 	exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOn);
 	~exServer();
-        void show (unsigned level) const;
-        pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
-        pvCreateReturn createPV (const casCtx &ctx, const char *pPVName);
+
+	void show (unsigned level) const;
+	pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
+	pvCreateReturn createPV (const casCtx &ctx, const char *pPVName);
 
 	void installAliasName(pvInfo &info, const char *pAliasName);
 	inline void removeAliasName(pvEntry &entry);
@@ -344,9 +350,8 @@ public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (caServer &cas, pvInfo &setup, 
-		aitBool preCreateFlag, aitBool scanOnIn) :
-		exScalarPV (cas, setup, preCreateFlag, scanOnIn),
+	exAsyncPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+		exScalarPV (setup, preCreateFlag, scanOnIn),
 		simultAsychIOCount(0u) {}
 
 	//
@@ -417,7 +422,7 @@ private:
 //
 class exOSITimer : public osiTimer {
 public:
-	exOSITimer(double delay) : osiTimer(osiTime(delay)) {}
+	exOSITimer (double delay) : osiTimer(osiTime(delay)) {}
 
 	//
 	// this is a noop that postpones the timer expiration
@@ -436,16 +441,20 @@ public:
 	//
 	// exAsyncWriteIO() 
 	//
-	exAsyncWriteIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &valueIn) :
+	exAsyncWriteIO (const casCtx &ctxIn, exAsyncPV &pvIn, gdd &valueIn) :
 		casAsyncWriteIO(ctxIn), exOSITimer(0.1), pv(pvIn), value(valueIn)
 	{
-		this->value.reference();
+		int gddStatus;
+		gddStatus = this->value.reference();
+		assert (!gddStatus);
 	}
 
 	~exAsyncWriteIO()
 	{
+		int gddStatus;
 		this->pv.removeIO();
-		this->value.unreference();
+		gddStatus = this->value.unreference();
+		assert (!gddStatus);
 	}
 
 	//
@@ -473,13 +482,17 @@ public:
 	exAsyncReadIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn) :
 		casAsyncReadIO(ctxIn), exOSITimer(0.1), pv(pvIn), proto(protoIn)
 	{
-		this->proto.reference();
+		int gddStatus;
+		gddStatus = this->proto.reference();
+		assert (!gddStatus);
 	}
 
 	~exAsyncReadIO()
 	{
+		int gddStatus;
 		this->pv.removeIO();
-		this->proto.unreference();
+		gddStatus = this->proto.unreference();
+		assert (!gddStatus);
 	}
 
 	//
@@ -576,7 +589,7 @@ inline void exServer::removeAliasName(pvEntry &entry)
 //
 inline pvEntry::~pvEntry()
 {
-        this->cas.removeAliasName(*this);
+    this->cas.removeAliasName(*this);
 }
 
 //
@@ -585,8 +598,27 @@ inline pvEntry::~pvEntry()
 inline void pvEntry::destroy ()
 {
 	//
-	// always created with new
+	// always created with new (in this example)
 	//
 	delete this;
 }
- 
+
+inline pvInfo::~pvInfo ()
+{
+	//
+	// dont leak pre created PVs when we exit
+	//
+	if (this->pPV!=NULL) {
+		//
+		// always created with new (in this example)
+		//
+		delete this->pPV;
+	}
+}
+
+inline void pvInfo::deletePV ()
+{
+	if (this->pPV!=NULL) {
+		delete this->pPV;
+	}
+}

@@ -15,13 +15,11 @@ osiTime exPV::currentTime;
 //
 // exPV::exPV()
 //
-exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
-	casPV(casIn),
-	pValue(NULL),
-	info(setup),
-	interest(aitFalse),
-	preCreate(preCreateFlag),
-	scanOn(scanOnIn)
+exPV::exPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
+	info (setup),
+	interest (aitFalse),
+	preCreate (preCreateFlag),
+	scanOn (scanOnIn)
 {
 	//
 	// no dataless PV allowed
@@ -48,15 +46,12 @@ exPV::~exPV()
 		delete this->pScanTimer;
 		this->pScanTimer = NULL;
 	}
-	if (this->pValue) {
-		this->pValue->unreference();
-		this->pValue = NULL;
-	}
-	this->info.destroyPV();
+	this->info.unlinkPV();
 }
 
 //
 // exPV::destroy()
+//
 // this is replaced by a noop since we are 
 // pre-creating most of the PVs during init in this simple server
 //
@@ -81,17 +76,13 @@ caStatus exPV::update(gdd &valueIn)
 	struct timespec t;
 	caStatus cas;
  
-	if (!pCAS) {
-		return S_casApp_noSupport;
-	}
- 
 #	if DEBUG
 		printf("Setting %s too:\n", this->info.getName().string());
 		valueIn.dump();
 #	endif
 
 	cas = this->updateValue (valueIn);
-	if (cas || !this->pValue) {
+	if (cas || this->pValue==NULL) {
 		return cas;
 	}
 
@@ -107,9 +98,9 @@ caStatus exPV::update(gdd &valueIn)
 	//
 	// post a value change event
 	//
-	if (this->interest==aitTrue) {
-			casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
-			this->postEvent (select, *this->pValue);
+	if (this->interest==aitTrue && pCAS!=NULL) {
+		casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
+		this->postEvent (select, *this->pValue);
 	}
 
 	return S_casApp_success;
@@ -218,7 +209,7 @@ void exPV::interestDelete()
 void exPV::show(unsigned level) const
 {
 	if (level>1u) {
-		if (this->pValue) {
+		if (this->pValue!=NULL) {
 			printf("exPV: cond=%d\n", this->pValue->getStat());
 			printf("exPV: sevr=%d\n", this->pValue->getSevr());
 			printf("exPV: value=%f\n", (double) *this->pValue);
@@ -262,7 +253,7 @@ void exPV::initFT()
 //
 caStatus exPV::getStatus(gdd &value)
 {
-	if (this->pValue) {
+	if (this->pValue!=NULL) {
 		value.put(this->pValue->getStat());
 	}
 	else {
@@ -276,7 +267,7 @@ caStatus exPV::getStatus(gdd &value)
 //
 caStatus exPV::getSeverity(gdd &value)
 {
-	if (this->pValue) {
+	if (this->pValue!=NULL) {
 		value.put(this->pValue->getSevr());
 	}
 	else {
@@ -291,7 +282,7 @@ caStatus exPV::getSeverity(gdd &value)
 inline aitTimeStamp exPV::getTS()
 {
 	aitTimeStamp ts;
-	if (this->pValue) {
+	if (this->pValue!=NULL) {
 		this->pValue->getTimeStamp(&ts);
 	}
 	else {
@@ -401,7 +392,7 @@ caStatus exPV::getValue(gdd &value)
 {
 	caStatus status;
 
-	if (this->pValue) {
+	if (this->pValue!=NULL) {
 		gddStatus gdds;
 
 		gdds = gddApplicationTypeTable::

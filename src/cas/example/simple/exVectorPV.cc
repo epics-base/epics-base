@@ -50,11 +50,12 @@ void exVectorPV::scan()
 {
 	caStatus		status;
 	double		radians;
-	gdd			*pDD;
+	smartGDDPointer	pDD;
 	aitFloat32		*pF, *pFE, *pCF;
 	float			newValue;
 	float			limit;
 	exVecDestructor	*pDest;
+	int				gddStatus;
 
 	//
 	// update current time (so we are not required to do
@@ -71,18 +72,22 @@ void exVectorPV::scan()
 	}
  
 	//
+	// smart pointer class manages reference count after this point
+	//
+	gddStatus = pDD->unreference();
+	assert (!gddStatus);
+
+	//
 	// allocate array buffer
 	//
 	pF = new aitFloat32 [this->info.getElementCount()];
 	if (!pF) {
-		pDD->unreference();
 		return;
 	}
 
 	pDest = new exVecDestructor;
 	if (!pDest) {
 		delete [] pF;
-		pDD->unreference();
 		return;
 	}
 
@@ -97,7 +102,7 @@ void exVectorPV::scan()
 	// current value
 	//
 	pCF=NULL;
-	if (this->pValue) {
+	if (this->pValue!=NULL) {
 		if (this->pValue->dimension()==1u) {
 			const gddBounds *pB = this->pValue->getBounds();
 			if (pB[0u].size()==this->info.getElementCount()) {
@@ -124,11 +129,9 @@ void exVectorPV::scan()
 	}
 
 	status = this->update (*pDD);
-	if (status) {
-			errMessage (status, "scan update failed\n");
+	if (status!=S_casApp_success) {
+		errMessage (status, "vector scan update failed\n");
 	}
-
-	pDD->unreference();
 }
 
 //
@@ -153,7 +156,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 	//
 	enum {replace, dontReplace} replFlag = dontReplace;
     gddStatus gdds;
-    gdd *pNewValue;
+    smartGDDPointer pNewValue;
 	
 	//
 	// Check bounds of incoming request
@@ -189,11 +192,11 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		//
 		// replacing all elements is efficient
 		//
-		valueIn.reference();
 		pNewValue = &valueIn;
 	}
 	else {
 		aitFloat32 *pF, *pFE;
+		int gddStatus;
 		
 		//
 		// Create a new array data descriptor
@@ -207,13 +210,19 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		}
 		
 		//
+		// smart pointer class takes care of the reference count
+		// from here down
+		//
+		gddStatus = pNewValue->unreference();
+		assert (!gddStatus);
+
+		//
 		// copy over the old values if they exist
 		// (or initialize all elements to zero)
 		//
-		if (this->pValue) {
+		if (this->pValue!=NULL) {
 			gdds = pNewValue->copy(this->pValue);
 			if (gdds) {
-				pNewValue->unreference();
 				return S_cas_noConvert;
 			}
 		}
@@ -223,7 +232,6 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 			//
 			pF = new aitFloat32 [this->info.getElementCount()];
 			if (!pF) {
-				pNewValue->unreference();
 				return S_casApp_noMemory;
 			}
 			
@@ -243,14 +251,10 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		//
 		gdds = pNewValue->put(&valueIn);
 		if (gdds) {
-			pNewValue->unreference();
 			return S_cas_noConvert;
 		}
 	}
 	
-	if (this->pValue) {
-		this->pValue->unreference();
-	}
 	this->pValue = pNewValue;
 	
 	return S_casApp_success;

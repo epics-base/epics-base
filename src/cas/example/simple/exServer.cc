@@ -115,6 +115,16 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount, aitBool sca
 //
 exServer::~exServer()
 {
+	pvInfo *pPVI;
+	pvInfo *pPVAfter = 
+		&exServer::pvList[NELEMENTS(exServer::pvList)];
+
+	//
+	// delete all pre-created PVs (eliminate bounds-checker warnings)
+	//
+	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
+		pPVI->deletePV ();
+	}
 }
 
 //
@@ -258,10 +268,10 @@ exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn)
 	if (this->elementCount==1u) {
 		switch (this->ioType){
 		case excasIoSync:
-			pNewPV = new exScalarPV (exCAS, *this, preCreateFlag, scanOn);
+			pNewPV = new exScalarPV (*this, preCreateFlag, scanOn);
 			break;
 		case excasIoAsync:
-			pNewPV = new exAsyncPV (exCAS, *this, preCreateFlag, scanOn);
+			pNewPV = new exAsyncPV (*this, preCreateFlag, scanOn);
 			break;
 		default:
 			pNewPV = NULL;
@@ -270,7 +280,7 @@ exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn)
 	}
 	else {
 		if (this->ioType==excasIoSync) {
-			pNewPV = new exVectorPV (exCAS, *this, preCreateFlag, scanOn);
+			pNewPV = new exVectorPV (*this, preCreateFlag, scanOn);
 		}
 		else {
 			pNewPV = NULL;

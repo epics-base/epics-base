@@ -24,13 +24,8 @@ PROD := excas
 
 include $(TOP)/config/RULES.Host
 
-pexcas: $(PROD_OBJS) $(PRODDEPLIBS)
-	$(PURIFY) $(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
-
 clean::
 	@$(RM) excas 
-	@$(RM) fexcas 
-	@$(RM) pexcas 
 	@$(RM) -rf Templates.DB
 	@$(RM) core 
 

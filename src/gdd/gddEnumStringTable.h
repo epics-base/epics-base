@@ -1,5 +1,6 @@
 //
-// gddEnumStringTable.cpp
+// gddEnumStringTable.h
+// Author: Jeff Hill
 //
 
 #ifndef gddEnumStringTableh

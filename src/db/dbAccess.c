@@ -31,6 +31,7 @@
  * .01  07-26-91	mrk	Allow choices to be retrieved as numeric
  * .02  08-13-91	mrk	Support db_field_log for dbGetField
  * .03  09-30-91	mrk	Support for TPRO and DISP
+ * .04  10-03-91	jba	Bug fix in putStringUchar
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -3373,7 +3374,7 @@ long		no_elements;
 long		offset;
 {
     unsigned char  *pdest=(unsigned char *)paddr->pfield;
-    unsigned long  value;
+    unsigned short  value;
 
     if(nRequest==1 && offset==0) {
 	if(sscanf(pbuffer,"%hu",&value) == 1) {

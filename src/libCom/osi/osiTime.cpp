@@ -231,10 +231,10 @@ osiTime::operator tm_nano_sec () const
     //
 	// reentrant version of localtime() - from POSIX RT
     //
-    // ???? WRS prototype is incorrect ????
+    // WRS returns int and others return &tm.ansi_tm on
+    // succes?
     //
-	p = localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
-    assert (p == &tm.ansi_tm);
+	localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
 
 	tm.nSec = this->nSec;
 

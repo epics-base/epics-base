@@ -83,7 +83,7 @@ private:
                 this->wire.forcedShutdown ();
                 throw std::bad_alloc ();
             }
-            unsigned nNew =  pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
+            unsigned nNew = pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
             nCopied +=  nNew;
             this->nBytesPending += nNew * sizeof ( T );
             this->bufs.add ( *pComBuf );
@@ -215,8 +215,7 @@ public:
     tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, class bhe &bhe, 
-        ipAddrToAsciiEngine & engineIn,
-        bool preemptiveCallbackEnable );
+        ipAddrToAsciiEngine & engineIn );
     ~tcpiiu ();
     void connect ();
     void destroy ();
@@ -276,7 +275,6 @@ private:
     bool sockCloseCompleted;
     bool earlyFlush;
     bool recvProcessPostponedFlush;
-    bool preemptiveCallbackEnable;
 
     void processIncoming ();
 

@@ -756,8 +756,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         if ( ! piiu ) {
             try {
                 piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue,
-                            addr, minorVersionNumber, *pBHE, this->ipToAEngine,
-                            this->enablePreemptiveCallback );
+                            addr, minorVersionNumber, *pBHE, this->ipToAEngine );
                 if ( ! piiu ) {
                     return true;
                 }
@@ -1584,7 +1583,7 @@ void cac::vSignal ( int ca_status, const char *pfilenm,
         ca_message ( ca_status ) );
 
     if  ( pFormat ) {
-        this->printf ( "Context: \"" );
+        this->printf ( "    Context: \"" );
         this->vPrintf ( pFormat, args );
         this->printf ( "\"\n" );
     }

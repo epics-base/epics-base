@@ -42,6 +42,7 @@ This is to turn off the annoying messages GNU make produces upon
    edit CONFIG_ARCH.YOUR_ARCH	- For compiler flags / etc.
 
    cp CONFIG.Vx.68k CONFIG.Vx.YOUR_ARCH_CLASS
+   cp CONFIG_SITE.Vx.68k CONFIG_SITE.Vx.YOUR_ARCH_CLASS
        - ONLY IF you are adding a new architecture class,
                  see note in Appendix A.
 
@@ -127,7 +128,7 @@ CONFIG.BUILD_TYPE.ARCH_CLASS - Contains definitions pertaining to a
 particular architecture class.  This file's primary usefulness is to
 define compile and link flags.
 ----------------------------------------------------------------------------
-CONFIG_COMMON - Contains definitions 
+CONFIG_COMMON - Contains definitions describing the layout of base.
 ----------------------------------------------------------------------------
 HRULES - Rules for traversing hierarchical directories.
 ----------------------------------------------------------------------------
@@ -139,17 +140,19 @@ RULES.Unix - Rules for building with Unix makefiles.
     Table of files to change when building and adding architectures.
 	etc.
 
-Filename                   BUILD  ADD_VX_ARCH  ADD_UNIX_ARCH
+Filename                  SYS_MGR  ADD_VX_ARCH  ADD_UNIX_ARCH  DEVELOPER
 
-CONFIG                       m         -             -
-CONFIG_SITE                  m         m             m
-CONFIG_ARCH.ARCH             -         c             c
-CONFIG.Unix.ARCH_CLASS       -         -             c*
-CONFIG.Vx.ARCH_CLASS         -         c*            -
-CONFIG_COMMON                -         -             -
-HRULES                       -         -             -
-RULES.Vx                     -         -             -
-RULES.Unix                   -         -             -
+CONFIG                       m         -             -             m
+CONFIG_SITE                  m         m             m             -
+CONFIG_ARCH.ARCH             -         c             c             -
+CONFIG_SITE.Unix.ARCH_CLASS  m         -             c*            -
+CONFIG_SITE.Vx.ARCH_CLASS    m         c*            -             -
+CONFIG.Unix.ARCH_CLASS       -         -             c*            -
+CONFIG.Vx.ARCH_CLASS         -         c*            -             -
+CONFIG_COMMON                -         -             -             -
+HRULES                       -         -             -             -
+RULES.Vx                     -         -             -             -
+RULES.Unix                   -         -             -             -
 
      m -  Modify an existing file.
      c -  Create a new file.

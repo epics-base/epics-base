@@ -68,7 +68,7 @@ void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
 {
     epicsAutoMutex locker ( this->queue.mutex );
-    this->privateCancel ();
+    this->privateCancel ( locker );
     this->privateStart ( notify, expire );
 }
 
@@ -127,10 +127,10 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 void timer::cancel ()
 {
     epicsAutoMutex locker ( this->queue.mutex );
-    this->privateCancel ();
+    this->privateCancel ( locker );
 }
 
-void timer::privateCancel ()
+void timer::privateCancel ( epicsAutoMutex & locker )
 {
     while ( true ) {
         if ( this->curState == statePending ) {
@@ -147,7 +147,7 @@ void timer::privateCancel ()
             // make certain timer expire() does not run after cancel () returns,
             // but dont require that lock is applied while calling expire()
             {
-                epicsAutoMutexRelease autoRelease ( this->queue.mutex );
+                epicsAutoMutexRelease autoRelease ( locker );
                 while ( this->queue.cancelPending ) {
                     this->queue.cancelBlockingEvent.wait ();
                 }

@@ -147,7 +147,7 @@ ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
                     ! this->pEngine->thread.isCurrentThread() ) {
                 this->pEngine->cancelPending = true;
                 {
-                    epicsAutoMutexRelease unlocker ( ipAddrToAsciiEngine::mutex );
+                    epicsAutoMutexRelease unlocker ( locker );
                     this->pEngine->destructorBlockEvent.wait ();
                 }
                 if ( ! this->pEngine ) {

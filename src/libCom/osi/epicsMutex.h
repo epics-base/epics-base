@@ -25,9 +25,9 @@ public:
     class noMemory {}; // exception
     class invalidSemaphore {}; // exception
 private:
+    epicsMutexId id;
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
-    epicsMutexId id;
 };
 
 // Automatically applies and releases the mutex.
@@ -37,21 +37,22 @@ public:
     epicsAutoMutex ( epicsMutex & );
     ~epicsAutoMutex ();
 private:
+    epicsMutex & rMutex;
     epicsAutoMutex ( const epicsAutoMutex & );
     epicsAutoMutex & operator = ( const epicsAutoMutex & );
-    epicsMutex & rMutex;
+    friend class epicsAutoMutexRelease;
 };
 
 // Automatically releases and reapplies the mutex.
 // This is for use in situations where C++ exceptions are possible.
 class epicsAutoMutexRelease {
 public:
-    epicsAutoMutexRelease ( epicsMutex & );
+    epicsAutoMutexRelease ( epicsAutoMutex & );
     ~epicsAutoMutexRelease ();
 private:
-    epicsAutoMutexRelease ( const epicsAutoMutex & );
+    epicsAutoMutex & autoMutex;
+    epicsAutoMutexRelease ( const epicsAutoMutexRelease & );
     epicsAutoMutexRelease & operator = ( const epicsAutoMutexRelease & );
-    epicsMutex & rMutex;
 };
 
 
@@ -167,15 +168,15 @@ inline epicsAutoMutex :: ~epicsAutoMutex ()
     this->rMutex.unlock ();
 }
 
-inline epicsAutoMutexRelease :: epicsAutoMutexRelease ( epicsMutex & mutexIn ) :
-    rMutex ( mutexIn )
+inline epicsAutoMutexRelease :: epicsAutoMutexRelease ( epicsAutoMutex & autoMutexIn ) :
+    autoMutex ( autoMutexIn )
 {
-    this->rMutex.unlock ();
+    this->autoMutex.rMutex.unlock ();
 }
 
 inline epicsAutoMutexRelease :: ~epicsAutoMutexRelease ()
 {
-    this->rMutex.lock ();
+    this->autoMutex.rMutex.lock ();
 }
 
 #endif /*__cplusplus*/

@@ -60,7 +60,7 @@ private:
     epicsTimerNotify *pNotify; // callback
     timerQueue &queue;
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
-    void privateCancel ();
+    void privateCancel ( epicsAutoMutex & );
     timer & operator = ( const timer & );
     friend class timerQueue;
 };

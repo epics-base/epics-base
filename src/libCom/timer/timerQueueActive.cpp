@@ -41,7 +41,7 @@ epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, unsigne
 }
 
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
-    queue ( *this ), thread ( *this, "epicsTimerQueueActive", 
+    queue ( *this ), thread ( *this, "timerQueue", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
 {

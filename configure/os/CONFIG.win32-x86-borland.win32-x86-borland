@@ -13,7 +13,9 @@ VALID_BUILDS = Host Ioc
 
 #-------------------------------------------------------
 
-LIBRARY += $(LOADABLE_LIBRARY)
+BUILD_LIBRARY += $(LOADABLE_BUILD_LIBRARY)
+LOADABLE_LIB_PREFIX=
+LOADABLE_LIB_SUFFIX=.lib
 
 BORLAND_INC = $(BORLAND)\\include
 BORLAND_LIB = $(BORLAND)\\lib
@@ -187,7 +189,7 @@ OP_SYS_INCLUDES = -I$(BORLAND_INC)
 # specify dll .def file only if it exists
 #
 #DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
-DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
+DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(addsuffix .def,$*)))
 
 #
 #   A WIN32 dll has three parts:

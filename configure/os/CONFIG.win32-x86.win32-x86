@@ -16,7 +16,9 @@ PATH_FILTER = $(subst /,\\,$(1))
 
 #-------------------------------------------------------
 
-LIBRARY += $(LOADABLE_LIBRARY)
+BUILD_LIBRARY += $(LOADABLE_BUILD_LIBRARY)
+LOADABLE_LIB_PREFIX=
+LOADABLE_LIB_SUFFIX=.lib
 
 #
 # "\ " forces gnu make to keep this as one token
@@ -202,7 +204,7 @@ WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_
 #
 # specify dll .def file only if it exists
 #
-DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
+DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$*)))
 
 #
 #	A WIN32 dll has three parts:

@@ -95,7 +95,7 @@ LOCAL char	*getToken(char **ppString);
  */
 int alloc_ioc(
 const struct in_addr	*pnet_addr,
-int			port,
+unsigned short		port,
 struct ioc_in_use	**ppiiu
 )
 {
@@ -148,7 +148,7 @@ struct ioc_in_use	**ppiiu
 int create_net_chan(
 struct ioc_in_use 	**ppiiu,
 const struct in_addr	*pnet_addr,	/* only used by TCP connections */
-int			port,
+unsigned short		port,
 int			net_proto
 )
 {
@@ -400,7 +400,7 @@ int			net_proto
 		 * let slib pick lcl addr 
 		 */
       		saddr.sin_addr.s_addr = INADDR_ANY; 
-      		saddr.sin_port = htons(0);	
+      		saddr.sin_port = htons(0U);	
 
       		status = bind(	sock, 
 				(struct sockaddr *) &saddr, 
@@ -1196,7 +1196,7 @@ void close_ioc (struct ioc_in_use *piiu)
 		piiuCast = NULL;
 	}
 	else {
-		chid	*pNext;
+		chid	pNext;
 
 		/*
 		 * remove IOC from the hash table
@@ -1754,5 +1754,90 @@ unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort)
 	port = (unsigned short) epicsParam;
 
 	return port;
+}
+
+
+/*
+ *      CAC_MUX_IO()
+ */
+void cac_mux_io(struct timeval  *ptimeout)
+{
+        int                     count;
+        struct timeval          timeout;
+	int			eventFlush;
+
+        cac_clean_iiu_list();
+
+        /*
+         * manage search timers and detect disconnects
+         */
+        manage_conn(TRUE);
+
+        timeout = *ptimeout;
+        while (TRUE) {
+                count = cac_select_io(&timeout, CA_DO_RECVS|CA_DO_SENDS);
+		if (count<=0) {
+			/*
+			 * if its a flush then loop until all
+			 * of the send buffers are empty
+			 */
+			if (ca_static->ca_flush_pending) {
+				/*
+				 * complete flush is postponed if we are 
+				 * inside an event routine 
+				 */
+				if (EVENTLOCKTEST) {
+					break;
+				}
+				else {
+					if (caSendMsgPending()) {
+						timeout.tv_sec = 100;
+						timeout.tv_usec = 0;
+					}
+					else {
+						ca_static->ca_flush_pending 
+							= FALSE;
+						break;
+					}
+				}
+			}
+			else {
+				break;
+			}
+		}
+		ca_process_input_queue();
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+
+        }
+}
+
+
+/*
+ * caSendMsgPending()
+ */
+int caSendMsgPending()
+{
+        int                     pending = FALSE;
+        unsigned long           bytesPending;
+        struct ioc_in_use       *piiu;
+
+        LOCK;
+        for(    piiu = (IIU *) ellFirst(&iiuList);
+                piiu;
+                piiu = (IIU *) ellNext(&piiu->node)){
+
+                if(piiu == piiuCast || piiu->conn_up == FALSE){
+                        continue;
+                }
+
+                bytesPending = cacRingBufferReadSize(&piiu->send, FALSE);
+                if(bytesPending > 0U){
+                        pending = TRUE;
+                }
+        }
+        UNLOCK;
+
+        return pending;
 }
 

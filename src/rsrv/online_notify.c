@@ -67,6 +67,8 @@ int rsrv_online_notify_task()
     int                 true = TRUE;
     unsigned short      port;
     
+    casSufficentSpaceInPool = osiSufficentSpaceInPool ();
+
     taskwdInsert (threadGetIdSelf(),NULL,NULL);
     
     longStatus = envGetDoubleConfigParam (

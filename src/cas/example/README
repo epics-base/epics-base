@@ -1,5 +1,13 @@
 
 This directory contains several server tool examples (which
-use the ca server library). The original ca server example
-is in the "simple" subdirectory.
+use the ca server library). 
+
+simple - complete CA server example (includes asynchronous 
+	io and arrays)
+
+testdb - very simple ca server (does not provide some of the
+	pv attributes (ie precision and others))
+
+directoryService - fully functional pv name resolution server
+
 

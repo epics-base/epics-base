@@ -38,11 +38,11 @@ LIBSRCS += casAsyncAtIOI.cc
 LIBSRCS += casEventSys.cc
 LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
-LIBSRCS += inBuf.o 
+LIBSRCS += inBuf.cc
 LIBSRCS += outBuf.cc
-LIBSRCS += dgInBuf.o 
+LIBSRCS += dgInBuf.cc 
 LIBSRCS += dgOutBuf.cc
-LIBSRCS += casCtx.o 
+LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
 

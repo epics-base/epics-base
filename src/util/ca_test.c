@@ -177,7 +177,7 @@ LOCAL int cagft(char *pname)
  	 * fetch as each type 
 	 */
 	for(i=0; i<=DBR_CTRL_DOUBLE; i++){
-		if(ca_field_type(chan_id)==0) {
+		if(ca_field_type(chan_id)==DBR_STRING) {
 			if( (i!=DBR_STRING)
 			  && (i!=DBR_STS_STRING)
 			  && (i!=DBR_TIME_STRING)
@@ -200,14 +200,19 @@ LOCAL int cagft(char *pname)
 	 * before returning 
 	 */
 	while(ntries){
-		ca_pend_event(1.0);
+		unsigned oldOut;
+
+		oldOut = outstanding;
+		ca_pend_event (5.0);
 
 		if(!outstanding){
 			printf("\n\n");
 			return OK;
 		}
 
-		ntries--;
+		if (outstanding==oldOut) {
+			ntries--;
+		}
 	}
 
 	return	ERROR;

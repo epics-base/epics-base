@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.7  1996/07/08 15:20:02  jba
+# Moved include RULES.Unix
+#
 # Revision 1.6  1996/07/03 00:02:55  jhill
 # use ./aitGen and ./genApps per Janet's request
 #
@@ -39,6 +42,17 @@ TOP= ../../..
 # EPICS = /usr/local/epics/R3.12.2
 
 include $(TOP)/config/CONFIG_BASE
+
+INC += gdd.h
+INC += gddNewDel.h
+INC += gddUtils.h
+INC += gddErrorCodes.h
+INC += aitTypes.h
+INC += aitConvert.h
+INC += aitHelpers.h
+INC += dbMapper.h
+INC += gddAppTable.h
+INC += gddApps.h
 
 DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS
 

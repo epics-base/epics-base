@@ -40,13 +40,10 @@ typedef int SOCKET;
 #define SOCKERRSTR (strerror(errno))
 #define socket_close(S) close(S)
 
-#if 1
-	/* 
-	 * only for LynxOS v2.4.0 
-	 */
-#	define socket_ioctl(A,B,C) ioctl(A,B,(char *)C)
+#ifdef LYNXOS_RELEASE_2_4_0   /* only for LynxOS v2.4.0 */
+#	define socket_ioctl(A,B,C)     ioctl(A,B,(char *)C)
 #else
-#	define socket_ioctl(A,B,C) ioctl(A,B,C)
+#	define socket_ioctl(A,B,C)     ioctl(A,B,C)
 #endif
 
 typedef int osiSockIoctl_t;

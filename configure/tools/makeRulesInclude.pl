@@ -45,9 +45,9 @@ foreach $file (@files) {
                 $post = $base . $post;
             }
         }
+        $applications{$prefix} = $post;
         next if ( $prefix eq "EPICS_BASE" );
         next if ( $prefix eq "TEMPLATE_TOP" );
-        $applications{$prefix} = $post;
         if ( -d "$post") { #check that directory exists
             if ( -d "$post/configure") { #check that directory exists
                 print OUT "-include $app_post/configure/RULES_BUILD\n";

@@ -183,7 +183,7 @@ void osiTimer::reschedule (double newDelay)
 	// occurring during the expire call
 	// back
 	//	    
-    if (this == this->queue.pExpireTmr) {
+    if ( this == this->queue.pExpireTmr ) {
 		this->queue.pExpireTmr = 0;
 	}
     this->queue.timerLists[this->curState].remove (*this);
@@ -514,6 +514,9 @@ double osiTimerQueue::delayToFirstExpire () const
     pTmr = this->timerLists[osiTimer::statePending].first ();
 	if (pTmr) {
 		delay = pTmr->timeRemaining ();
+#       ifdef DEBUG
+	        printf ("delay for %f sec for %s\n", delay, pTmr->name () );
+#       endif
 	}
 	else {
 		//
@@ -524,9 +527,6 @@ double osiTimerQueue::delayToFirstExpire () const
 
     this->mutex.unlock ();
 
-#ifdef DEBUG
-	printf ("delay to first item on the queue %f\n", (double) delay);
-#endif
 	return delay; // seconds
 }
 

@@ -276,40 +276,21 @@ static void ioccrfRegisterRTEMS (void)
 }
 
 /*
- * Wrappers for EPICS routines which refer to file names.
  * Since RTEMS doesn't have NFS we fake it by making sure that
  * all paths refer to files in the TFTP area.
  */
-long
-dbLoadDatabaseRTEMS (char *name)
+#ifdef fopen
+# undef fopen
+  extern FILE *fopen (const char *, const char *);
+#endif
+FILE *rtems_fopen (const char *name, const char *mode)
 {
+    FILE *fp;
     char *cp = rtems_tftp_path (name);
-    int dbLoadDatabase (char *filename, char *path, char *substitutions);
 
-    dbLoadDatabase (cp, "/", NULL);
+    fp = fopen (cp, mode);
     free (cp);
-    return 0;
-}
-
-long
-dbLoadRecordsRTEMS (char *name, char *substitutions)
-{
-    char *cp = rtems_tftp_path (name);
-    int dbLoadRecords (char* pfilename, char* substitutions);
-
-    dbLoadRecords (cp, substitutions);
-    free (cp);
-    return 0;
-}
-
-void
-runScriptRTEMS (const char *name)
-{
-    char *cp;
-
-    cp = rtems_tftp_path (name);
-    ioccrf (cp);
-    free (cp);
+    return fp;
 }
 
 void
@@ -383,7 +364,7 @@ Init (rtems_task_argument ignored)
     ioccrfRegisterCommon ();
     ioccrfRegisterRTEMS ();
     registerRecordDeviceDriverRegister ();
-    runScriptRTEMS ("st.cmd");
+    ioccrf ("st.cmd");
 
     /*
      * Everything's running!

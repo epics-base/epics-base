@@ -1158,42 +1158,36 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 
 /*
  * casStrmClient::channelCreateFailed()
- *
- * If we are talking to an CA_V46 client then tell them when a channel
- * cant be created (instead of just disconnecting)
  */
 caStatus casStrmClient::channelCreateFailedResp (
-    const caHdrLargeArray & hdr, caStatus createStatus )
+    const caHdrLargeArray & hdr, const caStatus createStatus )
 {
-    caStatus status;
- 
 	if ( createStatus == S_casApp_asyncCompletion ) {
 		errMessage( S_cas_badParameter, 
-	"- no asynchronous IO create in pvAttach() ?");
+	        "- no asynchronous IO create in pvAttach() ?");
 		errMessage( S_cas_badParameter, 
-	"- or S_casApp_asyncCompletion was async IO competion code ?");
+	        "- or S_casApp_asyncCompletion was "
+            "async IO competion code ?");
 	}
-	else if ( status != S_casApp_pvNotFound ) {
-		errMessage ( createStatus, "- Server unable to create a new PV");
+	else if ( createStatus != S_casApp_pvNotFound ) {
+		errMessage ( createStatus, 
+            "- Server unable to create a new PV");
 	}
-	if ( CA_V46( this->minor_version_number ) ) {
+    caStatus status;
+	if ( CA_V46 ( this->minor_version_number ) ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        status = this->out.copyInHeader ( CA_PROTO_CLAIM_CIU_FAILED, 0,
+        status = this->out.copyInHeader ( 
+            CA_PROTO_CLAIM_CIU_FAILED, 0,
             0, 0, hdr.m_cid, 0, 0 );
-		if ( status ) {
-			return status;
+		if ( status == S_cas_success ) {
+		    this->out.commitMsg ();
 		}
-		this->out.commitMsg ();
-		createStatus = S_cas_success;
 	}
 	else {
-		status = this->sendErrWithEpicsStatus ( & hdr, createStatus, ECA_ALLOCMEM );
-		if ( status ) {
-			return status;
-		}
+		status = this->sendErrWithEpicsStatus ( 
+            & hdr, createStatus, ECA_ALLOCMEM );
 	}
-
-	return createStatus;
+	return status;
 }
 
 /*

@@ -460,7 +460,7 @@ public:
     virtual caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
         const caHdrLargeArray & hdr, unsigned dbrType );
 	virtual caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
-        caStatus createStatus );
+        const caStatus createStatus );
 
     virtual void eventSignal () = 0;
 
@@ -644,7 +644,7 @@ public:
     caStatus enumPostponedCreateChanResponse ( casChannelI & chan, 
         const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( const caHdrLargeArray &, 
-        caStatus createStatus );
+        const caStatus createStatus );
 
 	caStatus disconnectChan ( caResId id );
 

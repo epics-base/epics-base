@@ -137,7 +137,7 @@ caStatus casCoreClient::enumPostponedCreateChanResponse ( casChannelI &,
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::channelCreateFailedResp ( const caHdrLargeArray &, 
-    caStatus )
+    const caStatus )
 {
 	return S_casApp_noSupport;
 }

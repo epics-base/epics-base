@@ -105,7 +105,7 @@ void epicsTimerQueuePassiveForC::destroy ()
     delete this;
 }
 
-epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
+epicsShareFunc epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
     delay ( - DBL_MAX )
 {
     if ( restart != noRestart ) {
@@ -114,7 +114,7 @@ epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) :
     }
 }
 
-epicsTimerNotify::expireStatus::expireStatus 
+epicsShareFunc epicsTimerNotify::expireStatus::expireStatus 
     ( restart_t restartIn, const double & expireDelaySec ) :
     delay ( expireDelaySec )
 {
@@ -128,12 +128,12 @@ epicsTimerNotify::expireStatus::expireStatus
     }
 }
 
-bool epicsTimerNotify::expireStatus::restart () const
+epicsShareFunc bool epicsTimerNotify::expireStatus::restart () const
 {
     return this->delay >= 0.0;
 }
 
-double epicsTimerNotify::expireStatus::expirationDelay () const
+epicsShareFunc double epicsTimerNotify::expireStatus::expirationDelay () const
 {
     if ( this->delay < 0.0 ) {
         throw std::logic_error 

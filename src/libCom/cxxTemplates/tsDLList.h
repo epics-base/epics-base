@@ -118,9 +118,9 @@ public:
     bool operator != (const tsDLIterConstBD<T> &rhs) const;
     const T & operator * () const;
     const T * operator -> () const;
-    tsDLIterConstBD<T> operator ++ (); 
+    tsDLIterConstBD<T> & operator ++ (); 
     tsDLIterConstBD<T> operator ++ (int); 
-    tsDLIterConstBD<T> operator -- (); 
+    tsDLIterConstBD<T> & operator -- (); 
     tsDLIterConstBD<T> operator -- (int); 
     const T * pointer () const;
 protected:
@@ -145,9 +145,9 @@ public:
     bool operator != (const tsDLIterBD<T> &rhs) const;
     T & operator * () const;
     T * operator -> () const;
-    tsDLIterBD<T> operator ++ (); 
+    tsDLIterBD<T> & operator ++ (); 
     tsDLIterBD<T> operator ++ (int); 
-    tsDLIterBD<T> operator -- (); 
+    tsDLIterBD<T> & operator -- (); 
     tsDLIterBD<T> operator -- (int);  
     T * pointer () const;
 private:
@@ -498,7 +498,7 @@ inline const T * tsDLIterConstBD<T>::operator -> () const
 // prefix ++
 //
 template <class T>
-inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator ++ () 
+inline tsDLIterConstBD<T> & tsDLIterConstBD<T>::operator ++ () 
 {
     const tsDLNode<T> &node = *this->pConstEntry;
     this->pConstEntry = node.pNext;
@@ -511,7 +511,7 @@ inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator ++ ()
 template <class T>
 inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator ++ (int) 
 {
-    tsDLIterConstBD<T> tmp = *this;
+    const tsDLIterConstBD<T> tmp = *this;
     const tsDLNode<T> &node = *this->pConstEntry;
     this->pConstEntry = node.pNext;
     return tmp;
@@ -521,7 +521,7 @@ inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator ++ (int)
 // prefix -- 
 //
 template <class T>
-inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator -- () 
+inline tsDLIterConstBD<T> & tsDLIterConstBD<T>::operator -- () 
 {
     const tsDLNode<T> &entryNode = *this->pConstEntry;
     this->pConstEntry = entryNode.pPrev;
@@ -534,7 +534,7 @@ inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator -- ()
 template <class T>
 inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator -- (int) 
 {
-    tsDLIterConstBD<T> tmp = *this;
+    const tsDLIterConstBD<T> tmp = *this;
     const tsDLNode<T> &entryNode = *this->pConstEntry;
     this->pConstEntry = entryNode.pPrev;
     return tmp;
@@ -585,7 +585,7 @@ inline T * tsDLIterBD<T>::operator -> () const
 }
 
 template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ () // prefix ++
+inline tsDLIterBD<T> & tsDLIterBD<T>::operator ++ () // prefix ++
 {
     this->tsDLIterConstBD<T>::operator ++ ();
     return *this;
@@ -594,13 +594,13 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ () // prefix ++
 template <class T>
 inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ (int) // postfix ++
 {
-    tsDLIterBD<T> tmp = *this;
+    const tsDLIterBD<T> tmp = *this;
     this->tsDLIterConstBD<T>::operator ++ (1);
     return tmp;
 }
 
 template <class T>
-inline tsDLIterBD<T> tsDLIterBD<T>::operator -- () // prefix --
+inline tsDLIterBD<T> & tsDLIterBD<T>::operator -- () // prefix --
 {
     this->tsDLIterConstBD<T>::operator -- ();
     return *this;
@@ -609,7 +609,7 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator -- () // prefix --
 template <class T>
 inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int) // postfix -- 
 {
-    tsDLIterBD<T> tmp = *this;
+    const tsDLIterBD<T> tmp = *this;
     this->tsDLIterConstBD<T>::operator -- (1);
     return tmp;
 }

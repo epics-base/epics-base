@@ -633,32 +633,27 @@ epicsShareFunc int epicsShareAPI ca_clear_event
 /*  This routine pends waiting for channel events and calls the         */
 /*  functions specified with add_event when events occur. If the        */
 /*  timeout is specified as 0 an infinite timeout is assumed.           */
-/*  if the argument early is specified TRUE then CA_NORMAL is           */
-/*  returned when outstanding queries complete. Otherwise if the        */
-/*  argument early is FALSE the routine does not return until the       */
-/*  entire delay specified by the timeout argument has expired.         */
-/*  ca_flush_io() is called by this routine. If the argument            */
-/*  early is TRUE then ca_pend() will return immediately without        */
-/*  processing outstanding CA labor if no queries are outstanding       */
+/*  ca_flush_io() is called by this routine. If ca_pend_io ()           */
+/*  is called when no IO is outstanding then it will return immediately */ 
+/*  without processing.                                                 */
 /************************************************************************/
-#define ca_poll() ca_pend((1e-12), 0/*FALSE*/)
-#define ca_pend_event(TIMEOUT) ca_pend((TIMEOUT), 0/*FALSE*/)
-#define ca_pend_io(TIMEOUT) ca_pend((TIMEOUT), 1/*TRUE*/)
 
 /*
- * ca_pend()
+ * ca_pend_event()
  *
- * timeOut  R   delay in seconds
- * early    R   T: return early if all get requests (or search
- *          requests with null connection handler pointer 
- *          have completed)
- *          F: wait for the entire delay to expire
+ * timeOut  R   wait for this delay in seconds
  */
-epicsShareFunc int epicsShareAPI ca_pend
-(
-     ca_real timeOut,
-     int early
-);
+epicsShareFunc int epicsShareAPI ca_pend_event (ca_real timeOut);
+#define ca_poll() ca_pend_event((1e-12))
+
+/*
+ * ca_pend_io()
+ *
+ * timeOut  R   wait for this delay in seconds but return early 
+ *              if all get requests (or search requests with null 
+ *              connection handler pointer have completed)
+ */
+epicsShareFunc int epicsShareAPI ca_pend_io (ca_real timeOut);
 
 /*
  * ca_test_io()

@@ -43,6 +43,8 @@
 
 #include	<dbDefs.h>
 #include	<callback.h>
+#include	<dbAccess.h>
+#include	<recSup.h>
 #include	<taskwd.h>
 #include	<errMdef.h>
 #include	<task_params.h>
@@ -164,3 +166,22 @@ static void wdCallback(long ind)
     rngDelete(callbackQ[ind]);
     start(ind);
 }
+
+static void ProcessCallback(CALLBACK *pCallback)
+{
+    struct  dbCommon    *pRec;
+
+    callbackGetUser(pRec, pCallback);
+    dbScanLock(pRec);
+    ((struct rset*)(pRec->rset))->process(pRec);
+    dbScanUnlock(pRec);
+}
+void callbackRequestProcessCallback(CALLBACK *pCallback, int Priority, void *pRec)
+{
+    callbackSetCallback(ProcessCallback, pCallback);
+    callbackSetPriority(Priority, pCallback);
+    callbackSetUser(pRec, pCallback);
+    callbackRequest(pCallback);
+}
+
+

@@ -19,7 +19,7 @@ caLib_SRCS += test_event.c
 caLib_SRCS += bsd_depen.c
 caLib_SRCS += repeater.c
 
-LIBRARY = caLib 
+LIBRARY = caLib
 
 include $(TOP)/configure/RULES_BUILD
 

@@ -20,6 +20,9 @@ To build EPICS on Win95 or NT using cygwin32, we need
 Optional items 
     CVS, version 1.9 or later, available from
             http:/download.cyclic.com 
+                  windows-nt  - cvs-1.9.10.tar.gz
+                                patch.exe
+                                win32gnu.dll
     vim ( Vi IMproved), version 4.5 or later, available from
            http://www.cygnus.com/misc/gnu-win32/ 
         
@@ -49,6 +52,7 @@ BUILD INSTRUCTIONS
         
 2) Install the perl distribution
 --------------------------------
+        pw32i304.exe    (Execute and follow instructions)
 
 3) Install the epics base distribution
 --------------------------------------
@@ -58,6 +62,7 @@ BUILD INSTRUCTIONS
         cp <dirname>\<basereleasename>.Tar.gz .
         gunzip -d <basereleasename>.Tar.gz
         tar xvf <basereleasename>.Tar
+        chmod +w -R *
 
 4) Set environment variables and path
 -------------------------------------

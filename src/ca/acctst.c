@@ -377,10 +377,10 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             SEVCHK ( status, NULL );
 
             if ( ca_state ( pChans[j].channel ) == cs_conn ) {
-                assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+                assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) );
             }
             else {
-                assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+                assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) );
                 assert ( ca_test_io () == ECA_IOINPROGRESS );
             }
             
@@ -423,7 +423,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
         assert ( connections == backgroundConnCount );
 
         for ( j = 0u; j < chanCount; j++ ) {
-            assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+            assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) );
             assert ( ca_state ( pChans[j].channel ) == cs_conn );
             SEVCHK ( ca_clear_channel ( pChans[j].channel ), NULL );
         }

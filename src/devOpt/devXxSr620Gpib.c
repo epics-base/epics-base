@@ -1,5 +1,5 @@
 /* devXxSr620Gpib.c */
-/* share/src/dev $Id$ */
+/* share/src/devOpt  $Id$ */
 /*
  *      Author: John Winans
  *      Date:   11-19-91
@@ -133,6 +133,7 @@ extern int ibSrqDebug;
  * returned as errors to device support.
  */
 #define TIME_WINDOW	600		/* 10 seconds on a getTick call */
+#define	DMA_TIME	60
 
 static  char            *offOnList[] = { "Off", "On" };
 static  struct  devGpibNames   offOn = { 2, offOnList, NULL, 1 };
@@ -223,6 +224,7 @@ struct  devGpibParmBlock devSupParms = {
   NUMPARAMS,            /* number of supported parameters */
   -1,			/* magic SRQ param number */
   "devXxSr620Gpib",	/* device support module type name */
+  DMA_TIME,
 
   srqHandler,           /* pointer to SRQ handler function */
 

@@ -1,0 +1,6 @@
+registerRecordDeviceDriver.o: registerRecordDeviceDriver.c
+
+registerRecordDeviceDriver.c: $(TOP)/dbd/$(EXPANDED_DBD)
+	$(RM) registerRecordDeviceDriver.c
+	$(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl \
+	$(TOP)/dbd/$(EXPANDED_DBD) > registerRecordDeviceDriver.c

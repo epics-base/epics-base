@@ -14,9 +14,11 @@ ARCH_CLASS = solaris
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
-GCC = /opt/gnu/bin/gcc 
+GCC = /usr/local/bin/gcc 
 ACC = $(SPARCWORKS)/bin/cc
 # SUNCC doesn't exist under Solaris
+G++ = /usr/local/bin/g++
+CCC = $(SPARCWORKS)/bin/CC
 
 #
 # required by sun's C++ compiler
@@ -30,8 +32,6 @@ ARCMD = $($(CPLUSPLUS)_AR) $@
 RANLIB =
 YACC = $(EYACC)
 LEX = $(ELEX)
-G++ = /opt/gnu/bin/g++
-CCC = /opt/SUNWspro/bin/CC
 
 CP=cp
 MV=mv

@@ -23,4 +23,7 @@ SPARCWORKS = /opt/SUNWspro
 #SPECIAL_LANG = $(SPARCWORKS)/lib
 SPECIAL_LANG = .
 
+# APS overrides of CONFIG.solaris definitions 
+GCC = /opt/gnu/bin/gcc
+G++ = /opt/gnu/bin/g++
 

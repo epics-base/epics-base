@@ -1,5 +1,5 @@
 /* recMbbiDirect.c */
-/* base/src/rec  $Id$ */
+/* share/src/rec @(#)recMbbiDirect.c	1.2	1/4/94 */
 
 /* recMbbiDirect.c - Record Support routines for mbboDirect records */
 /*
@@ -31,7 +31,7 @@
  * Modification Log:
  * -----------------
  *     (modifications to mbbi apply, see mbbi record)
- *  1. 10-20-93  mcn  "Created" by borrowing mbbi record code
+ *   1.   mcn    "Created" by borrowing mbbi record code, and modifying it.
  */
 
 #include	<vxWorks.h>
@@ -111,8 +111,6 @@ static void refresh_bits(pmbbiDirect)
    int i, mask = 1;
    char *bit;
 
-   pmbbiDirect->udf = FALSE;
-
    bit = &(pmbbiDirect->b0);
    for (i=0; i<NUM_BITS; i++, mask = mask << 1, bit++) {
       if (pmbbiDirect->val & mask) {
@@ -140,22 +138,38 @@ static long init_record(pmbbiDirect,pass)
 
     if (pass==0) return(0);
 
-    if (pmbbiDirect->siml.type == CONSTANT) {
+    /* mbbi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pmbbiDirect->siml.type) {
+    case (CONSTANT) :
         pmbbiDirect->simm = pmbbiDirect->siml.value.value;
-    }
-    else {
-        status = recGblInitFastInLink(&(pmbbiDirect->siml), (void *) pmbbiDirect, DBR_ENUM, "SIMM");
-	if (status) return(status);
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pmbbiDirect->siml), (void *) pmbbiDirect, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pmbbiDirect,
+                "mbbiDirect: init_record Illegal SIML field");
+        return(S_db_badField);
     }
 
-    if (pmbbiDirect->siol.type == CONSTANT) {
+    /* mbbi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pmbbiDirect->siol.type) {
+    case (CONSTANT) :
         pmbbiDirect->sval = pmbbiDirect->siol.value.value;
-    }
-    else {
-        status = recGblInitFastInLink(&(pmbbiDirect->siol), (void *) pmbbiDirect, DBR_USHORT, "SVAL");
-
-	if (status)
-           return(status);
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pmbbiDirect->siol), (void *) pmbbiDirect, "SVAL");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pmbbiDirect,
+                "mbbiDirect: init_record Illegal SIOL field");
+        return(S_db_badField);
     }
 
     if(!(pdset = (struct mbbidset *)(pmbbiDirect->dset))) {
@@ -198,7 +212,7 @@ static long process(pmbbiDirect)
 	if ( !pact && pmbbiDirect->pact ) return(0);
 	pmbbiDirect->pact = TRUE;
 
-	recGblGetTimeStamp(pmbbiDirect);
+	tsLocalTime(&pmbbiDirect->time);
 
 	if(status==0) { /* convert the value */
 		unsigned long rval = pmbbiDirect->rval;
@@ -240,6 +254,9 @@ static void monitor(pmbbiDirect)
          */
 
         monitor_mask = recGblResetAlarms(pmbbiDirect);
+        monitor_mask |= (DBE_LOG|DBE_VALUE);
+        if(monitor_mask)
+           db_post_events(pmbbiDirect,pmbbiDirect->val,monitor_mask);
 
         /* check for value change */
         if (pmbbiDirect->mlst != pmbbiDirect->val) {
@@ -249,10 +266,10 @@ static void monitor(pmbbiDirect)
                 pmbbiDirect->mlst = pmbbiDirect->val;
         }
         /* send out monitors connected to the value field */
-        if (monitor_mask) {
+        if (monitor_mask){
                 db_post_events(pmbbiDirect,&pmbbiDirect->val,monitor_mask);
 	}
-        if(pmbbiDirect->oraw != pmbbiDirect->rval) {
+        if(pmbbiDirect->oraw!=pmbbiDirect->rval) {
                 db_post_events(pmbbiDirect,&pmbbiDirect->rval,monitor_mask|DBE_VALUE);
                 pmbbiDirect->oraw = pmbbiDirect->rval;
         }
@@ -264,6 +281,8 @@ static long readValue(pmbbiDirect)
 {
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbiDirect->dset);
+	long            nRequest=1;
+	long            options=0;
 
 	if (pmbbiDirect->pact == TRUE){
 		status=(*pdset->read_mbbi)(pmbbiDirect);
@@ -271,7 +290,8 @@ static long readValue(pmbbiDirect)
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(pmbbiDirect->siml), (void *)pmbbiDirect, &(pmbbiDirect->simm));
+	status=recGblGetLinkValue(&(pmbbiDirect->siml),
+		(void *)pmbbiDirect,DBR_ENUM,&(pmbbiDirect->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -281,13 +301,14 @@ static long readValue(pmbbiDirect)
 		return(status);
 	}
 	if (pmbbiDirect->simm == YES){
-		status=recGblGetFastLink(&(pmbbiDirect->siol), (void *)pmbbiDirect, &(pmbbiDirect->sval));
-
-		if (status==0) {
+		status=recGblGetLinkValue(&(pmbbiDirect->siol),
+			(void *)pmbbiDirect,DBR_USHORT,&(pmbbiDirect->sval),&options,&nRequest);
+		if (status==0){
 			pmbbiDirect->val=pmbbiDirect->sval;
+			pmbbiDirect->udf=FALSE;
 			refresh_bits(pmbbiDirect);
 		}
-                status=2; /* don't convert */
+                status=2; /* dont convert */
 	} else {
 		status=-1;
 		recGblSetSevr(pmbbiDirect,SOFT_ALARM,INVALID_ALARM);

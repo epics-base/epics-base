@@ -1,5 +1,5 @@
 /* recMbboDirect.c */
-/* base/src/rec  $Id$ */
+/* share/src/rec @(#)recMbboDirect.c	1.2	1/4/94 */
 
 /* recMbboDirect.c - Record Support for mbboDirect records */
 /*
@@ -115,39 +115,41 @@ static long init_record(pmbboDirect,pass)
 
     if (pass==0) return(0);
 
-    if (pmbboDirect->siml.type == CONSTANT) {
+    /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pmbboDirect->siml.type) {
+    case (CONSTANT) :
         pmbboDirect->simm = pmbboDirect->siml.value.value;
-    }
-    else {
-        status = recGblInitFastInLink(&(pmbboDirect->siml), (void *) pmbboDirect, DBR_ENUM, "SIMM");
-	if (status) return(status);
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pmbboDirect->siml), (void *) pmbboDirect, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pmbboDirect,
+                "mbboDirect: init_record Illegal SIML field");
+        return(S_db_badField);
     }
 
-    status = recGblInitFastOutLink(&(pmbboDirect->siol), (void *) pmbboDirect, DBR_USHORT, "VAL");
-    if (status)
-       return(status);
+    /* mbbo.siol may be a PV_LINK */
+    if (pmbboDirect->siol.type == PV_LINK){
+        status = dbCaAddOutlink(&(pmbboDirect->siol), (void *) pmbboDirect, "VAL");
+	if(status) return(status);
+    }
 
-    if (!(pdset = (struct mbbodset *)(pmbboDirect->dset))) {
+    if(!(pdset = (struct mbbodset *)(pmbboDirect->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)pmbboDirect,"mbboDirect: init_record");
 	return(S_dev_noDSET);
     }
     /* must have write_mbbo function defined */
-    if ((pdset->number < 5) || (pdset->write_mbbo == NULL) ) {
+    if( (pdset->number < 5) || (pdset->write_mbbo == NULL) ) {
 	recGblRecordError(S_dev_missingSup,(void *)pmbboDirect,"mbboDirect: init_record");
 	return(S_dev_missingSup);
     }
-
-    if (pmbboDirect->dol.type == CONSTANT) {
+    if (pmbboDirect->dol.type == CONSTANT){
 	pmbboDirect->val = pmbboDirect->dol.value.value;
-        pmbboDirect->udf = FALSE;
     }
-    else {
-        status = recGblInitFastInLink(&(pmbboDirect->dol), (void *) pmbboDirect, DBR_USHORT, "VAL");
-
-        if (status)
-           return(status);
-    }
-
     /* initialize mask*/
     pmbboDirect->mask = 0;
     for (i=0; i<pmbboDirect->nobt; i++) {
@@ -182,14 +184,18 @@ static long process(pmbboDirect)
     }
 
     if (!pmbboDirect->pact) {
-	if(pmbboDirect->dol.type != CONSTANT && pmbboDirect->omsl==CLOSED_LOOP) {
+	if(pmbboDirect->dol.type==DB_LINK && pmbboDirect->omsl==CLOSED_LOOP){
+	    long options=0;
+	    long nRequest=1;
 	    long status;
 	    unsigned short val;
 
-	    status = recGblGetFastLink(&pmbboDirect->dol, (void *)pmbboDirect, &val);
+	    pmbboDirect->pact = TRUE;
+	    status = dbGetLink(&pmbboDirect->dol.value.db_link,(struct dbCommon *)pmbboDirect,DBR_USHORT,
+			&val,&options,&nRequest);
+	    pmbboDirect->pact = FALSE;
 	    if(status==0) {
-		pmbboDirect->val = val;
-                pmbboDirect->udf = FALSE;
+		pmbboDirect->val= val;
 	    }
 	}
 	/* convert val to rval */
@@ -202,7 +208,7 @@ static long process(pmbboDirect)
     if ( !pact && pmbboDirect->pact ) return(0);
     pmbboDirect->pact = TRUE;
 
-    recGblGetTimeStamp(pmbboDirect);
+    tsLocalTime(&pmbboDirect->time);
     /* check event list */
     monitor(pmbboDirect);
     /* process the forward scan link record */
@@ -240,8 +246,6 @@ static long special(paddr,after)
            /* zero field */
            pmbboDirect->val &= ~offset;
         }
-
-        pmbboDirect->udf = FALSE;
  
         convert(pmbboDirect);
         return(0);
@@ -250,8 +254,8 @@ static long special(paddr,after)
         *  If OMSL changes from closed_loop to supervisory,
         *     reload value field with B0 - B15
         */
+        bit = &(pmbboDirect->b0);
         if (pmbboDirect->omsl == SUPERVISORY) {
-           bit = &(pmbboDirect->b0);
            for (i=0; i<NUM_BITS; i++, offset = offset << 1, bit++) {
               if (*bit)
                   pmbboDirect->val |= offset;
@@ -283,9 +287,12 @@ static void monitor(pmbboDirect)
 	unsigned short	monitor_mask;
 
         monitor_mask = recGblResetAlarms(pmbboDirect);
+        monitor_mask |= (DBE_LOG|DBE_VALUE);
+        if(monitor_mask)
+         db_post_events(pmbboDirect,pmbboDirect->val,monitor_mask);
 
         /* check for value change */
-        if (pmbboDirect->mlst != pmbboDirect->val) {
+        if (pmbboDirect->mlst != pmbboDirect->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
@@ -322,13 +329,16 @@ static long writeValue(pmbboDirect)
 {
 	long		status;
         struct mbbodset 	*pdset = (struct mbbodset *) (pmbboDirect->dset);
+	long            nRequest=1;
+	long            options=0;
 
 	if (pmbboDirect->pact == TRUE){
 		status=(*pdset->write_mbbo)(pmbboDirect);
 		return(status);
 	}
 
-	status=recGblGetFastLink(&(pmbboDirect->siml), (void *)pmbboDirect, &(pmbboDirect->simm));
+	status=recGblGetLinkValue(&(pmbboDirect->siml),
+		(void *)pmbboDirect,DBR_ENUM,&(pmbboDirect->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -337,7 +347,8 @@ static long writeValue(pmbboDirect)
 		return(status);
 	}
 	if (pmbboDirect->simm == YES){
-		status=recGblPutFastLink(&(pmbboDirect->siol), (void *)pmbboDirect, &(pmbboDirect->val));
+		status=recGblPutLinkValue(&(pmbboDirect->siol),
+				(void *)pmbboDirect,DBR_USHORT,&(pmbboDirect->val),&nRequest);
 	} else {
 		status=-1;
 		recGblSetSevr(pmbboDirect,SOFT_ALARM,INVALID_ALARM);

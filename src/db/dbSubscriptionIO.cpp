@@ -69,7 +69,6 @@ dbSubscriptionIO::~dbSubscriptionIO ()
 void dbSubscriptionIO::destructor ( epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->unsubscribe ( guard );
     this->~dbSubscriptionIO ();
 }
 

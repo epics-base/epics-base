@@ -311,6 +311,8 @@ void dbContext::ioCancel (
         dbSubscriptionIO *pSIO = pIO->isSubscription ();
         if ( pSIO ) {
             chan.dbContextPrivateListOfIO::eventq.remove ( *pSIO );
+            pSIO->unsubscribe ( guard );
+            pSIO->channelDeleteException ( guard );
             pSIO->destructor ( guard );
             this->dbSubscriptionIOFreeList.release ( pSIO );
         }

@@ -286,7 +286,8 @@ void ca_spawn_repeater()
  * gethostbyaddr(). This makes gethostbyaddr()
  * hang when it is called from AST level. 
  */
-void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
+void caHostFromInetAddr(const struct in_addr *pnet_addr, 
+		char *pBuf, unsigned size)
 {
         char            *pString;
 

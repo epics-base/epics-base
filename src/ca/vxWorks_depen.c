@@ -601,7 +601,10 @@ char *localUserName()
 /*
  * caHostFromInetAddr()
  */
-void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
+void caHostFromInetAddr(
+const struct in_addr 	*pnet_addr, 
+char 			*pBuf, 
+unsigned 		size)
 {
         char    str[INET_ADDR_LEN];
 

@@ -24,6 +24,7 @@
 		task variables.
 11dec91,ajk	Cleaned up comments.
 05feb92,ajk	Decreased minimum allowable stack size to SPAWN_STACK_SIZE/2.
+24feb92,ajk	Print error code for log file failure.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -465,7 +466,8 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	status = write(fd, logBfr, count);
 	if (status != count)
 	{
-		logMsg("Log file error: fd=%d, status=%d\n", fd, status);
+		logMsg("Log file error, fd=%d, error no.=%d\n", fd, errnoGet());
+		printErrno(errnoGet());
 		return;
 	}
 

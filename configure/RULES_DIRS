@@ -28,7 +28,7 @@ installArchTargets = $(foreach action, install,\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-all: install
+all install : buildInstall
 
 rebuild : clean all
 

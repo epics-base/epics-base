@@ -24,7 +24,7 @@ CXXCMPLR=NORMAL
 #STANDARD=GCC
 #CPLUSPLUS=G++
 #Note: if CPLUSPLUS is empty then C++ src codes are not built
-CPLUSPLUS=
+#CPLUSPLUS=
 
 # Special C library requirements
 #SPECIAL_LANG = /usr/lang/SC3.0.1

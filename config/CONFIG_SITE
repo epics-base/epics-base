@@ -47,31 +47,27 @@ CROSS_COMPILER_TARGET_ARCHS=mv167
 #
 #CROSS_COMPILER_HOST_ARCHS=sun4
 
-
-
-# The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
-# are used for the Vx build only. These defintions 
-# can be overridden for specific host architectures
-# by creating a CONFIG_SITE.Vx.68k.<host_arch> file
-# with the override definitions.
-
+#  Vx release Tornado?
+#        must be either YES or NO
+TORNADO=YES
+ 
 #  VxWorks directory
 #VX_DIR=$(VW)
 #VX_DIR=/usr/local/vw/vxV51.mm
 #VX_DIR=/usr/local/vw/vxV52/vw
 #VX_DIR=c:/Tornado/target
-
-ifdef VX_IS_TORNADO
+ 
+#For TORNADO=NO
+#VX_DIR=/usr/local/vw/vxV52p1/vw
+#VX_GNU = $(VX_DIR)/../vxgccV2.2.3.1
+ 
+#For TORNADO=YES
 VX_DIR = /usr/local/vw/tornado101
 VX_GNU = $(VX_DIR)/host/$(WIND_HOST_TYPE)
+
 WIND_BASE = $(VX_DIR)
 WIND_HOST_TYPE = sun4-solaris2
-else
-VX_DIR=/usr/local/vw/vxV52p1/vw
-VX_GNU = $(VX_DIR)/../vxgccV2.2.3.1
-endif
-
-
+ 
 #  Gnu directory for g++ crosscompiler
 #GNU_DIR = $(LOCAL_GNU)
 GNU_DIR = /usr/local/hideos/gnu_install-2.7.2

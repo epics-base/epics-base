@@ -19,6 +19,29 @@ MKDIR = mkdir
 RMDIR=rm -rf
 WHAT = what
 
+# The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
+# can be overridden for specific host architectures
+# by creating a CONFIG_SITE.Vx.68k.<host_arch> file
+# with the override definitions.
+ 
+# Tornado directory definitions
+VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
+VX_INCLUDE_YES = $(VX_DIR)/target/h
+VX_GNU_BIN_YES = $(VX_GNU)/bin
+VX_GNU_LIB_YES = $(VX_GNU)/lib
+
+# pre Torando directory definitions
+VX_CONFIG_DIR_NO = $(VX_DIR)/config
+VX_INCLUDE_NO = $(VX_DIR)/h
+VX_GNU_BIN_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+VX_GNU_LIB_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
+ 
+# directory definitions
+VX_CONFIG_DIR = $(VX_CONFIG_DIR_$(TORNADO))
+VX_INCLUDE = $(VX_INCLUDE_$(TORNADO))
+VX_GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
+VX_GNU_LIB = $(VX_GNU_LIB_$(TORNADO))
+
 #----------------------------
 # Only G++ currently supported
 CPLUSPLUS = G++

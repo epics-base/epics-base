@@ -30,6 +30,8 @@ ECHO=echo
 #	then c: is removed and all '\' are converted into '/'.
 SANE_WIND_BASE := $(subst \,/,$(subst c:,,$(subst C:,c:,$(WIND_BASE))))
 VX_DIR         := $(SANE_WIND_BASE)/target
+VX_CONFIG_DIR  := $(VX_DIR)/config
+VX_INCLUDE     := $(VX_DIR)/h
 VX_GNU         := $(SANE_WIND_BASE)/host/$(WIND_HOST_TYPE)
 VX_GNU_BIN     := $(VX_GNU)/bin
 VX_GNU_LIB     := $(VX_GNU)/lib

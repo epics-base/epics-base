@@ -59,20 +59,6 @@ INSTALL_PRODUCT = $(INSTALL)
 # state notation language compiler (installed from base/src/sequencer)
 SNC = $(EPICS_BASE_HOST_BIN)/snc
 
-# vxWorks definitions
-VX_IS_TORNADO = 1
-ifdef VX_IS_TORNADO
-VX_CONFIG_DIR = $(VX_DIR)/target/config
-VX_INCLUDE = $(VX_DIR)/target/h
-VX_GNU_BIN = $(VX_GNU)/bin
-VX_GNU_LIB = $(VX_GNU)/lib
-else
-VX_CONFIG_DIR = $(VX_DIR)/config
-VX_INCLUDE = $(VX_DIR)/h
-VX_GNU_BIN = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
-VX_GNU_LIB = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
-endif
-
 ifdef T_A
 
 INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)

@@ -51,6 +51,9 @@ static char *os_depenhSccsId = "$Id$";
 #	include <netinet/tcp.h>
 #	include <net/if.h>
 #	include <arpa/inet.h>
+#	include <netdb.h>
+#	include <sys/filio.h>
+#	include <sys/sockio.h>
 #	define CA_OS_CONFIGURED
 #endif
 
@@ -123,16 +126,16 @@ static char *os_depenhSccsId = "$Id$";
 #	define CA_OS_CONFIGURED
 #endif /*VMS*/
 
-#ifdef _WINDOWS
+#ifdef WIN32
 #	include <errno.h>
 #	include <time.h>
 #	include <windows.h>
 #	include <winsock.h>
 #	define CA_OS_CONFIGURED
-#endif /*_WINDOWS*/
+#endif /*WIN32*/
 
 #ifndef CA_OS_CONFIGURED
-#error Please define one of vxWorks, UNIX VMS, or _WINDOWS
+#error Please define one of vxWorks, UNIX, VMS, or WIN32 
 #endif
 
 /*
@@ -214,6 +217,13 @@ static char *os_depenhSccsId = "$Id$";
 #define TICKSPERSEC	1000L		/* mili sec per sec	*/
 
 /*
+ * BSD prototypes missing from SUNOS4, MULTINET and 
+ * perhaps other environments
+ */
+#include <epicsTypes.h>
+#include <bsdProto.h>
+
+/*
  * order of ops is important here
  * 
  * NOTE: large OS dependent SYFREQ might cause an overflow 
@@ -290,7 +300,7 @@ static char *os_depenhSccsId = "$Id$";
 #	define INVALID_SOCKET (-1)
 #endif
 
-#ifdef _WINDOWS
+#ifdef WIN32 
 #  	define LOCK
 #  	define UNLOCK  
 #  	define LOCKEVENTS
@@ -308,7 +318,7 @@ static char *os_depenhSccsId = "$Id$";
 #	define MYERRNO			WSAGetLastError()
 #	define POST_IO_EV
 #	define SYSFREQ			1000000L /* 1 MHz        */
-#endif /*_WINDOWS*/
+#endif /*WIN32*/
 
 
 #endif

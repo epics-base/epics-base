@@ -207,10 +207,15 @@ void dbLockSetRecordLock(dbCommon *precord)
 
 void dbScanLock(dbCommon *precord)
 {
-    lockRecord	*plockRecord = (lockRecord *)precord->lset;
+    lockRecord	*plockRecord;
     lockSet	*plockSet;
     STATUS	status;
 
+    if(!(plockRecord= (lockRecord *)precord->lset)) {
+	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
+	    precord->name);
+	exit(1);
+    }
     while(TRUE) {
 	if(changingLockSets) {
 	    semTake(globalWaitSemid,WAIT_FOREVER);

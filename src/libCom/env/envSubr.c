@@ -32,6 +32,8 @@
  *				vars under vxWorks	
  * .05  04-20-95	anj	changes to use CONFIG_ENV
  * .06  05-24-95	joh	added return stmnt to epicsPrtEnvParams()	
+ * .07  11-03-96	joh	fixed bug occuring when diagnostic is
+ *				printed and the env var cant be found
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -195,8 +197,9 @@ double	*pDouble;	/* O pointer to place to store value */
 	if (count == 1) {
 	    return 0;
 	}
+        (void)printf("Unable to find a real number in %s=%s\n", 
+		pParam->name, text);
     }
-    (void)printf("illegal value for %s:%s\n", pParam->name, text);
 
     return -1;
 }
@@ -250,8 +253,9 @@ struct in_addr *pAddr;	/* O pointer to struct to receive inet addr */
 	    pAddr->s_addr = status;
 	    return 0;
 	}
+        (void)printf("Unable to find an IP address in %s=%s\n", 
+		pParam->name, text);
     }
-    (void)printf("illegal value for %s:%s\n", pParam->name, text);
     return -1;
 }
 
@@ -303,8 +307,9 @@ long	*pLong;		/* O pointer to place to store value */
 	count = sscanf(text, "%ld", pLong);
 	if (count == 1)
 		return 0;
+        (void)printf("Unable to find an integer in %s=%s\n", 
+		pParam->name, text);
     }
-    (void)printf("illegal value for %s:%s\n", pParam->name, text);
     return -1;
 }
 

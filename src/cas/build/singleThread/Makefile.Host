@@ -34,6 +34,7 @@ LIBSRCS += casAsyncXXIO.cc
 LIBSRCS += casAsyncRdIOI.cc
 LIBSRCS += casAsyncWtIOI.cc
 LIBSRCS += casAsyncExIOI.cc
+LIBSRCS += casAsyncPVCIOI.cc
 LIBSRCS += casEventSys.cc
 LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
@@ -58,7 +59,6 @@ LIBSRCS += casIntfIO.cc
 LIBSRCS += casDGIntfIO.cc
 LIBSRCS += casDGIO.cc
 LIBSRCS += casStreamIO.cc
-LIBSRCS += sigPipeIgnore.c
 
 LIBRARY := cas
 

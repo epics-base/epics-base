@@ -42,7 +42,7 @@ $top = $cwd;
 #$top =~ s/^\/cygdrive\/(\w)\//$1:\//;
 $top =~ s/\/iocBoot.*$//;
 $top =~ s/\/configure.*$//;
-if ($^0 eq "cygwin") {
+if ($^O eq "cygwin") {
   chomp($top = `cygpath -m $top`);
 }
 

@@ -189,6 +189,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>"<="	RETURN(LE);
 <SNL>"%="	RETURN(MODULO_EQUAL);
 <SNL>"^="	RETURN(CMPL_EQUAL);
+<SNL>"->"	RETURN(POINTER);
 <SNL>"+"	RETURN(PLUS);
 <SNL>"-"	RETURN(MINUS);
 <SNL>"!"	RETURN(NOT);

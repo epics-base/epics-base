@@ -57,7 +57,7 @@ extern	int line_num; /* input file line no. */
 %token	R_SQ_BRACKET L_SQ_BRACKET
 %token	BAD_CHAR L_BRACKET R_BRACKET
 %token	COLON SEMI_COLON EQUAL
-%token	L_PAREN R_PAREN PERIOD COMMA OR AND
+%token	L_PAREN R_PAREN PERIOD POINTER COMMA OR AND
 %token	MONITOR ASSIGN TO WHEN CHAR SHORT INT LONG FLOAT DOUBLE STRING_DECL
 %token	EVFLAG SYNC
 %token	ASTERISK AMPERSAND
@@ -246,6 +246,8 @@ binop	/* Binary operators */
 |	COMPLEMENT	{ $$ = "^"; }
 |	MODULO		{ $$ = "%"; }
 |	COMMA		{ $$ = ","; }
+|	PERIOD		{ $$ = "."; }	/* fudges structure elements */
+|	POINTER		{ $$ = "->"; }	/* fudges ptr to structure elements */
 ;
 
 asgnop	/* Assignment operators */

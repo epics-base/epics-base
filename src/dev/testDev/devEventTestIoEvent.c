@@ -54,15 +54,6 @@ typedef struct myCallback {
     CALLBACK callback;
     IOSCANPVT ioscanpvt;
 }myCallback;
-
-static void myCallbackFunc(CALLBACK *arg)
-{
-    myCallback *pcallback;
-
-    callbackGetUser(pcallback,arg);
-    scanIoRequest(pcallback->ioscanpvt);
-}
-
 
 static long init_record(pevent,pass)
     eventRecord *pevent;
@@ -72,8 +63,6 @@ static long init_record(pevent,pass)
 
     pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
     scanIoInit(&pcallback->ioscanpvt);
-    callbackSetCallback(myCallbackFunc,&pcallback->callback);
-    callbackSetUser(pcallback,&pcallback->callback);
     pevent->dpvt = (void *)pcallback;
     return(0);
 }
@@ -97,6 +86,7 @@ static long read_event(pevent)
     if(pevent->proc<=0) return(0);
     pevent->udf = FALSE;
     printf("%s Requesting Next ioEnevt\n",pevent->name);
-    callbackRequestDelayed(&pcallback->callback,(double)pevent->proc);
+    callbackRequestProcessCallbackDelayed(&pcallback->callback,
+        pevent->prio,pevent,(double)pevent->proc);
     return(0);
 }

@@ -34,27 +34,13 @@
 #include "dbCommon.h"
 #include "aiRecord.h"
 #include "epicsExport.h"
-
-static void myCallback(CALLBACK *pcallback)
-{
-    struct dbCommon *precord;
-    struct rset     *prset;
-
-    callbackGetUser(precord,pcallback);
-    prset=(struct rset *)(precord->rset);
-    dbScanLock(precord);
-    (*prset->process)(precord);
-    dbScanUnlock(precord);
-}
-
+
 static long init_record(struct aiRecord *pai)
 {
     CALLBACK *pcallback;
     switch (pai->inp.type) {
     case (CONSTANT) :
         pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
-        callbackSetCallback(myCallback,pcallback);
-        callbackSetUser(pai,pcallback);
         pai->dpvt = (void *)pcallback;
         break;
     default :
@@ -78,7 +64,8 @@ static long read_ai(struct aiRecord *pai)
     if(pai->disv<=0) return(2);
     printf("Starting asynchronous processing: %s\n",pai->name);
     pai->pact=TRUE;
-    callbackRequestDelayed(pcallback,pai->disv);
+    callbackRequestProcessCallbackDelayed(pcallback,
+        pai->prio,pai,(double)pai->disv);
     return(0);
 }
 

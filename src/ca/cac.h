@@ -109,6 +109,14 @@ public:
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
+class cacMessageProcessingMinder {
+public:
+    cacMessageProcessingMinder ( class cac & );
+    ~cacMessageProcessingMinder ();
+private:
+    class cac & cacRef;
+};
+
 class cac : private cacRecycle, private cacDisconnectChannelPrivate,
     private callbackForMultiplyDefinedPV
 {
@@ -193,8 +201,6 @@ public:
     void initiateAbortShutdown ( tcpiiu & );
     void disconnectNotify ( tcpiiu & );
     void uninstallIIU ( tcpiiu & ); 
-    void messageArrivalNotify ();
-    void messageProcessingCompleteNotify ();
 
 private:
     localHostName hostNameCache;
@@ -340,9 +346,25 @@ private:
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
+    void messageArrivalNotify ();
+    void messageProcessingCompleteNotify ();
+
 	cac ( const cac & );
 	cac & operator = ( const cac & );
+
+    friend class cacMessageProcessingMinder;
 };
+
+inline cacMessageProcessingMinder::cacMessageProcessingMinder ( cac & cacIn ) :
+    cacRef ( cacIn )
+{
+    cacIn.messageArrivalNotify ();
+}
+
+inline cacMessageProcessingMinder::~cacMessageProcessingMinder ()
+{
+    cacRef.messageProcessingCompleteNotify ();
+}
 
 inline const char * cac::userNamePointer () const
 {

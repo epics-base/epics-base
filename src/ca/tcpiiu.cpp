@@ -323,49 +323,49 @@ void tcpRecvThread::run ()
             // - it take also the callback lock
             this->iiu.recvDog.messageArrivalNotify ( currentTime ); 
 
-            this->iiu.cacRef.messageArrivalNotify ();
+            cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
+            {
+                // only one recv thread at a time may call callbacks
+                // - pendEvent() blocks until threads waiting for
+                // this lock get a chance to run
+                epicsGuard < callbackMutex > guard ( this->cbMutex );
 
-            // only one recv thread at a time may call callbacks
-            // - pendEvent() blocks until threads waiting for
-            // this lock get a chance to run
-            epicsGuard < callbackMutex > guard ( this->cbMutex );
-
-            // force the receive watchdog to be reset every 5 frames
-            unsigned contiguousFrameCount = 0;
-            while ( nBytesIn ) {
-                if ( nBytesIn == pComBuf->capacityBytes () ) {
-                    if ( this->iiu.contigRecvMsgCount >= 
-                        contiguousMsgCountWhichTriggersFlowControl ) {
-                        this->iiu.busyStateDetected = true;
+                // force the receive watchdog to be reset every 5 frames
+                unsigned contiguousFrameCount = 0;
+                while ( nBytesIn ) {
+                    if ( nBytesIn == pComBuf->capacityBytes () ) {
+                        if ( this->iiu.contigRecvMsgCount >= 
+                            contiguousMsgCountWhichTriggersFlowControl ) {
+                            this->iiu.busyStateDetected = true;
+                        }
+                        else { 
+                            this->iiu.contigRecvMsgCount++;
+                        }
                     }
-                    else { 
-                        this->iiu.contigRecvMsgCount++;
+                    else {
+                        this->iiu.contigRecvMsgCount = 0u;
+                        this->iiu.busyStateDetected = false;
+                    }         
+                    this->iiu.unacknowledgedSendBytes = 0u;
+
+                    this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
+                    pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+
+                    // execute receive labor
+                    bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
+                    if ( ! protocolOK ) {
+                        this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
+                        break;
                     }
+
+                    if ( ! this->iiu.bytesArePendingInOS ()
+                        || ++contiguousFrameCount > 5 ) {
+                        break;
+                    }
+
+                    nBytesIn = pComBuf->fillFromWire ( this->iiu );
                 }
-                else {
-                    this->iiu.contigRecvMsgCount = 0u;
-                    this->iiu.busyStateDetected = false;
-                }         
-                this->iiu.unacknowledgedSendBytes = 0u;
-
-                this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
-                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
-
-                // execute receive labor
-                bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
-                if ( ! protocolOK ) {
-                    this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
-                    break;
-                }
-
-                if ( ! this->iiu.bytesArePendingInOS ()
-                    || ++contiguousFrameCount > 5 ) {
-                    break;
-                }
-
-                nBytesIn = pComBuf->fillFromWire ( this->iiu );
             }
-            this->iiu.cacRef.messageProcessingCompleteNotify ();
         }
 
         if ( pComBuf ) {
@@ -373,8 +373,22 @@ void tcpRecvThread::run ()
             this->iiu.comBufMemMgr.release ( pComBuf );
         }
     }
+    catch ( std::bad_alloc & ) {
+        errlogPrintf ( 
+            "CA client library tcp receive thread "
+            "terminating due to no space in pool "
+            "C++ exception\n" );
+    }
+    catch ( std::exception & except ) {
+        errlogPrintf ( 
+            "CA client library tcp receive thread "
+            "terminating due to C++ exception \"%s\"\n", 
+            except.what () );
+    }
     catch ( ... ) {
-        errlogPrintf ( "cac tcp receive thread terminating due to a c++ exception\n" );
+        errlogPrintf ( 
+            "CA client library tcp receive thread "
+            "terminating due to a C++ exception\n" );
     }
 
     // Although this is redundant in certain situations it is

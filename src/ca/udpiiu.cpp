@@ -244,8 +244,7 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
         this->recvBuf, sizeof ( this->recvBuf ), 0,
         & src.sa, & src_size );
 
-    this->cacRef.messageArrivalNotify ();
-
+    cacMessageProcessingMinder msgProcMinder ( this->cacRef );
     {
         epicsGuard < callbackMutex > guard ( cbMutex );
 
@@ -286,8 +285,6 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
                 (arrayElementCount) status, epicsTime::getCurrent() );
         }
     }
-
-    this->cacRef.messageProcessingCompleteNotify ();
 }
 
 udpRecvThread::udpRecvThread ( udpiiu & iiuIn, callbackMutex & cbMutexIn,

@@ -27,7 +27,7 @@ static registryFunctionRef mySubRef[] = {
     {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
 };
 
-void epicsShareAPI mySub(void)
+epicsShareFunc void mySub(void)
 {
     registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
 }

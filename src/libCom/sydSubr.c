@@ -1,10 +1,10 @@
-/*	$Id$
+/*	@(#)sydSubr.c	1.18 2/23/93
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1990-92, the Regents of the University of California,
+ *	Copyright 1990-93, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -43,7 +43,7 @@
  *			sydSamplePrint; sydInputStoreInSet;
  *  .07 11-02-91 rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
  *  .08 12-08-91 rac	fix alignment for printing of channel names
- *  .09 01-20-92 rac	add a code for INVALID_ALARM and handle
+ *  .09 01-20-92 rac	add a code for VALID_ALARM and handle
  *			invalid values properly
  *  .10 02-04-92 rac	allow multiple chanOpen for same name
  *  .11 02-18-92 rac	finally handle array channels on print and export;
@@ -68,8 +68,14 @@
  *			files with missing data; added a routine to prepare
  *			a channel for a new retrieval; discontinue use of
  *			special malloc routines
+ *  .16 09-30-92 rac	discard samples with earlier time stamps than the most
+ *			recent sample;
+ *  .17 01-05-93 rac	add some documentation regarding the handling of
+ *			samples with SYD_B_MISSING status; fix a bug for
+ *			the handling of SYD_B_MISSING samples; add an
+ *			option for exporting only means; fix a bug in
+ *			sydInputReset where last buffer didn't get discarded;
  *
- *  .16 07-15-92 jba    changed VALID_ALARM to INVALID alarm
  * make options
  *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert checking
@@ -150,6 +156,7 @@
 *                   SYD_ATTR_DEADBAND, 0, {"ADEL" or "MDEL"}
 *                   SYD_ATTR_MON_FN, 0, function
 *                   SYD_ATTR_USE_STATS, 1, NULL
+*                   SYD_ATTR_USE_MEANS, 1, NULL
 *
 *     long  sydTest(             pSspec					)
 *     long  sydTestAddFromText(  pSspec, text				)
@@ -1150,7 +1157,7 @@ FILE	*outStream;	/* I file pointer to receive information */
 *	The caller must periodically call ca_pend_event in order to allow
 *	Channel Access to give data to the sydXxx routines.
 *
-*	There are two main ways of dealing with samples obtaines from this
+*	There are two main ways of dealing with samples obtained from this
 *	routine--use the other sydXxx routines to manipulate it or access
 *	it directly for manipulation by user code.  The first case is
 *	the simplest, and would probably use sydSampleSetGet rather than
@@ -1204,7 +1211,9 @@ FILE	*outStream;	/* I file pointer to receive information */
 *	SydInputMarkAsSampled(pSChan)	set the input sample status to
 *		SYD_B_SAMPLED
 *
-*	Access the input value for a channel, following sydInputGet
+*	Access the input value for a channel, following sydInputGet (these
+*	macros don't do any conversion--the one that is used must match
+*	the type of the input value)
 *		SydInputValAsFloat(pSChan)	returns a float
 *		SydInputValAsDouble(pSChan)	returns a double
 *		SydInputValAsShort(pSChan)	returns a short
@@ -1223,11 +1232,14 @@ FILE	*outStream;	/* I file pointer to receive information */
 *	recent sample if they fall behind.  The technique with such
 *	programs is to repeatedly call sydInputGet until the return status
 *	is S_syd_noDataNow, and process only those cases in which the
-*	`more flag' is returned as zero.  (sydInputMarkAsSampled must
+*	`more flag' is returned as zero.  (SydInputMarkAsSampled must
 *	be called for the skipped samples, as well as for those which
-*	are processed.  It may be interesting to note that a zero value
+*	are processed.)  It may be interesting to note that a zero value
 *	doesn't guarantee that the next call will result in a status of
 *	S_syd_noDataNow.
+* 2.	A sample for a channel can have a valid time stamp and still have
+*	a status of SYD_B_MISSING.  The main way this happens is when
+*	reading a `sample set' file.
 *
 * EXAMPLE
 *	Get the next sample, then print the values and statuses for the
@@ -1438,7 +1450,8 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 		moreFlag = 0;
 	    pSChan->reused = 0;
 	}
-	else if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
+	else if (pSChan->inStatus[i] == SYD_B_SAMPLED ||
+			pSChan->inStatus[i] == SYD_B_MISSING) {
 	    if ((full_i1 || inStatus_i1 == SYD_B_MISSING) &&
 					TsCmpStampsLE(&BUFi1TS, &nextTs)) {
 		pSChan->inStatus[i] = SYD_B_EMPTY;
@@ -1456,7 +1469,8 @@ int	*pMoreFlag;	/* O pointer to flag or NULL; a return value of 1
 		    moreFlag = 0;
 	    }
 	    else {
-		pSChan->reused = 1;
+		if (pSChan->inStatus[i] == SYD_B_SAMPLED)
+		    pSChan->reused = 1;
 		pSChan->sampInBuf = i;
 		if (!full_i1)
 		    moreFlag = 0;
@@ -1515,6 +1529,8 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     long	stat;           /* status return from calls */
     SYD_CHAN	*pSChan;	/* pointer to channel in Sspec */
     int		i, i1, discard;
+    enum sydBStatus inStatus_i1;
+    int		full_i1;
 
     assert(pSspec != NULL);
     assert(pSspec->pChanHead != NULL);
@@ -1546,18 +1562,28 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 	if ((i = pSChan->firstInBuf) >= 0) {
 	    discard = 0;
 	    i1 = NEXT_INBUF(pSChan, i);
+	    inStatus_i1 = pSChan->inStatus[i1];
+	    full_i1 = inStatus_i1==SYD_B_FULL || inStatus_i1==SYD_B_RESTART ||
+		inStatus_i1==SYD_B_SAMPLED || inStatus_i1==SYD_B_SNAP_BEGIN ||
+		inStatus_i1==SYD_B_SNAP_SINGLE || inStatus_i1==SYD_B_SNAP_END;
 	    if (pSChan->inStatus[i] == SYD_B_SAMPLED) {
 		if (pSChan->sync == SYD_SY_NONF)
 		    discard = 1;
-		else if (pSChan->inStatus[i1] == SYD_B_MISSING ||
-			 pSChan->inStatus[i1] == SYD_B_FULL ||
-			 pSChan->inStatus[i1] == SYD_B_RESTART) {
+		else if (inStatus_i1 == SYD_B_MISSING || full_i1) {
 		    if (TsCmpStampsLE(&BUFi1TS, &pSspec->sampleTs))
 			discard = 1;
 		}
 	    }
 	    else if (pSChan->inStatus[i] == SYD_B_MISSING) {
-		if (TsCmpStampsLE(&BUFi1TS, &pSspec->sampleTs))
+		if (pSChan->sync == SYD_SY_NONF &&
+			TsCmpStampsLE(&BUFiTS, &pSspec->sampleTs)) {
+		    discard = 1;
+		}
+		else if (full_i1) {
+		    if (TsCmpStampsLE(&BUFi1TS, &pSspec->sampleTs))
+			discard = 1;
+		}
+		else if (inStatus_i1 == SYD_B_MISSING)
 		    discard = 1;
 	    }
 	    if (discard) {
@@ -1604,7 +1630,7 @@ skipSecondRead:
 *
 * DESCRIPTION
 *	This routine flags as EMPTY the input buffers for the channels in a
-*	synchronous set spec.  Two routines are available:
+*	synchronous set spec.  Several routines are available:
 *
 *	sydInputReset   flags as empty all buffers for all channels
 *			This routine is appropriate to use after a
@@ -1618,6 +1644,7 @@ skipSecondRead:
 *			flagging it as SAMPLED allows: a) using it if
 *			no new value comes in; or b) throwing it away
 *			if a new value does come in.
+*
 *	sydInputResetSampled   flags as empty only those buffers which
 *				are flagged as SAMPLED
 *			This routine is appropriate to use between
@@ -1635,6 +1662,10 @@ skipSecondRead:
 * BUGS
 * o	text
 *
+* NOTES
+* 1.	For retrievals from Channel Access, sydInputReset retains the
+*	newest buffer for filled channels.
+*
 *-*/
 void
 sydInputReset(pSspec)
@@ -1644,10 +1675,21 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
     int		i;
 
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
-	for (i=0; i<pSChan->nInBufs; i++)
+	i = pSChan->firstInBuf;
+	while (i >= 0 && i != pSChan->lastInBuf) {
 	    pSChan->inStatus[i] = SYD_B_EMPTY;
-	pSChan->firstInBuf = -1;
-	pSChan->lastInBuf = -1;
+	    i = NEXT_INBUF(pSChan, i);
+	    pSChan->firstInBuf = i;
+	}
+	if ((i=pSChan->firstInBuf) >= 0) {
+	    if (pSspec->type == SYD_TY_CA && pSChan->sync == SYD_SY_FILLED)
+		pSChan->inStatus[i] = SYD_B_FULL;
+	    else {
+		pSChan->inStatus[i] = SYD_B_EMPTY;
+		pSChan->firstInBuf = pSChan->lastInBuf = -1;
+	    }
+	}
+	pSChan->sampInBuf = -1;
     }
     pSspec->sampleTs.secPastEpoch = 0;
 }
@@ -1734,6 +1776,11 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 * BUGS
 * o	text
 *
+* NOTES
+* 1.	If the retrieval source is Channel Access, and if the time stamp
+*	for this sample is earlier than the previous sample, then this
+*	sample is ignored.
+*
 * SEE ALSO
 *
 * EXAMPLE
@@ -1744,18 +1791,28 @@ sydInputStoreInSet(pSspec, ignorePartial)
 SYD_SPEC *pSspec;
 int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 {
-    int		sub;		/* subscript to store sample */
+    int		sub;		/* subscript of sample */
     chtype	type;
     long	stat;
     SYD_CHAN	*pSChan;
     int		i, i1, el;
     int		useVal;		/* indicates if sample data is to be stored */
     short	alStat, alSev;
+    int		ignore=0;
  
 #define Si pSChan->inStatus[i]
 #define Si1 pSChan->inStatus[i1]
 
-    if ((ignorePartial && pSspec->partial) || !sydTest(pSspec)) {
+    sub = pSspec->lastData;
+    if (ignorePartial && pSspec->partial)
+	ignore = 1;
+    else if (!sydTest(pSspec))
+	ignore = 1;
+    else if (sub >= 0 && pSspec->type == SYD_TY_CA &&
+		TsCmpStampsLE(&pSspec->sampleTs, &pSspec->pTimeStamp[sub])) {
+	ignore = 1;
+    }
+    if (ignore) {
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	    i = pSChan->sampInBuf;
 	    if (i != pSChan->lastInBuf) {
@@ -1829,7 +1886,7 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 *	for the channel.
 *----------------------------------------------------------------------------*/
 		useVal = 1;
-		if (alSev == INVALID_ALARM) {
+		if (alSev == VALID_ALARM) {
 		    useVal = 0;
 		    pSChan->pDataCodeL[sub] = 'I';
 		}
@@ -2195,7 +2252,7 @@ SYD_SPEC **ppSspec;	/* O pointer to synchronous set spec pointer */
     (*ppSspec)->restrictDeltaSecSubtract = 0.;
     (*ppSspec)->roundNsec = 0;
     (*ppSspec)->deadband = DBE_LOG;
-    (*ppSspec)->useStats = 0;
+    (*ppSspec)->useStats = (*ppSspec)->useMeans = 0;
     (*ppSspec)->monFn = NULL;
     return S_syd_OK;
 }
@@ -2267,20 +2324,20 @@ int	samp;		/* I sample number in synchronous set */
 /*-----------------------------------------------------------------------------
 * generate headings, depending on option:
 * 1==>	"mm/dd/yy hh:mm:ss.msc"
-*	date	delta	name1	name2	...
-*	stamp	sec	egu	egu	...
+*	date	time	name1	name2	...
+*	stamp	seconds	egu	egu	...
 *
 * 2==>	"mm/dd/yy hh:mm:ss.msc"
-*	date	delta	stat	name1	stat	name2	...
-*	stamp	sec	stat	egu	stat	egu	...
+*	date	time	stat	name1	stat	name2	...
+*	stamp	seconds	stat	egu	stat	egu	...
 *
 * 3==>	"mm/dd/yy hh:mm:ss.msc"
-*	date	delta	nEl	name1	nEl	name2	...
-*	stamp	sec	nEl	egu	nEl	egu	...
+*	date	time	nEl	name1	nEl	name2	...
+*	stamp	seconds	nEl	egu	nEl	egu	...
 *
 * 4==>	"mm/dd/yy hh:mm:ss.msc"
-*	date	delta	stat	nEl	name1	stat	nEl	name2	...
-*	stamp	sec	stat	nEl	egu	stat	nEl	egu	...
+*	date	time	stat	nEl	name1	stat	nEl	name2	...
+*	stamp	seconds	stat	nEl	egu	stat	nEl	egu	...
 *----------------------------------------------------------------------------*/
     if (samp == pSspec->restrictFirstData) {
 	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"", tsStampToText(
@@ -2335,6 +2392,8 @@ int	samp;		/* I sample number in synchronous set */
 * NAME	sydSampleExportStats
 *
 * DESCRIPTION
+*	If the `useMeans' flag is set in conjunction with `useStats', then
+*	only the means are printed.
 *
 * RETURNS
 *
@@ -2358,8 +2417,12 @@ int	snap;		/* I snapshot number in synchronous set */
 *	"mm/dd/yy hh:mm:ss.msc"
 *	date	time	sample	name1	egu	name2	egu	...
 *	stamp	seconds	count	mean	stdDev	mean	stdDev	...
+*
+*	"mm/dd/yy hh:mm:ss.msc"
+*	date	time	sample	name1	name2	...
+*	stamp	seconds	count	egu	egu	...
 *----------------------------------------------------------------------------*/
-    if (snap == 0) {
+    if (snap == 0 && pSspec->useMeans == 0) {
 	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"\t\"sample\"",
 		tsStampToText(&pSspec->restrictRefTs,TS_TEXT_MMDDYY,stampText));
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
@@ -2373,14 +2436,28 @@ int	snap;		/* I snapshot number in synchronous set */
 	}
 	(void)fprintf(out, "\n");
     }
+    if (snap == 0 && pSspec->useMeans) {
+	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"\t\"sample\"",
+		tsStampToText(&pSspec->restrictRefTs,TS_TEXT_MMDDYY,stampText));
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
+	    if (pSChan->dataChan)
+		(void)fprintf(out,"\t\"%s\"",pSChan->name);
+	}
+	(void)fprintf(out, "\n\"stamp\"\t\"seconds\"\t\"count\"");
+	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
+	    if (pSChan->dataChan)
+		(void)fprintf(out,"\t\"%s\"",pSChan->EGU);
+	}
+	(void)fprintf(out, "\n");
+    }
 
 /*-----------------------------------------------------------------------------
 *    print the statistics for each channel for this snapshot.
 *----------------------------------------------------------------------------*/
     tsStampToText(&pSspec->pStatTimeStamp[snap], TS_TEXT_MMDDYY, stampText);
-    (void)fprintf(out, "\"%s\"\t%.3f\t%d", stampText,
-	pSspec->pStatDeltaSec[snap] - pSspec->restrictDeltaSecSubtract,
-	pSspec->pStatPopCount[snap]);
+    (void)fprintf(out, "\"%s\"\t%.3f", stampText,
+	pSspec->pStatDeltaSec[snap] - pSspec->restrictDeltaSecSubtract);
+    (void)fprintf(out, "\t%d", pSspec->pStatPopCount[snap]);
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (pSChan->dataChan) {
 	    dblVal = pSChan->pStats[snap].mean;
@@ -2390,13 +2467,15 @@ int	snap;		/* I snapshot number in synchronous set */
 		(void)fprintf(out, "\t%.*E", pSChan->precision, dblVal);
 	    else
 		(void)fprintf(out, "\t%.*f", pSChan->precision, dblVal);
-	    dblVal = pSChan->pStats[snap].stdDev;
-	    if (dblVal == 0.)
-		(void)fprintf(out, "\t0");
-	    else if (dblVal > -.1 && dblVal < .1)
-		(void)fprintf(out, "\t%.*E", pSChan->precision, dblVal);
-	    else
-		(void)fprintf(out, "\t%.*f", pSChan->precision, dblVal);
+	    if (pSspec->useMeans == 0) {
+		dblVal = pSChan->pStats[snap].stdDev;
+		if (dblVal == 0.)
+		    (void)fprintf(out, "\t0");
+		else if (dblVal > -.1 && dblVal < .1)
+		    (void)fprintf(out, "\t%.*E", pSChan->precision, dblVal);
+		else
+		    (void)fprintf(out, "\t%.*f", pSChan->precision, dblVal);
+	    }
 	}
     }
     (void)fprintf(out, "\n");
@@ -2468,12 +2547,12 @@ int	samp;		/* I sample number in synchronous set */
 {
     SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
     char	stampText[28];
-    int		i;
+    int		i, tmpWid;
     int		more, pass, colNum;
     SYD_CHAN	*pNext;
 
     if (colWidth < 1)
-	colWidth = 15;
+	colWidth = 10;
 
 /*-----------------------------------------------------------------------------
 *    print a heading line with channel names; if this isn't the first page,
@@ -2481,7 +2560,6 @@ int	samp;		/* I sample number in synchronous set */
 *----------------------------------------------------------------------------*/
 #define FMT_INDENT if (formatFlag) (void)fprintf(out, "    ")
 #define SKIP_STAMP (void)fprintf(out, "  %21s", " ")
-#define SKIP_STAMP_LESS_1 (void)fprintf(out, "  %20s", " ")
 
     if (headerFlag) {
 	if (formatFlag) {
@@ -2490,15 +2568,18 @@ int	samp;		/* I sample number in synchronous set */
 	    (void)fprintf(out, "\n\n");		/* 2 line top margin */
 	}
 	pNext = pSspec->pChanHead;
+	tmpWid = colWidth;
+	if (tmpWid <= 2)
+	    tmpWid = 1;
 	while (1) {
 	    pass = 0;
 	    while (1) {
 		more = 0;
 		pSChan = pNext;
-		FMT_INDENT; SKIP_STAMP_LESS_1;
+		FMT_INDENT; SKIP_STAMP;
 		for (colNum=0; colNum<nCol; colNum++) {
 		    if (pSChan->dataChan)
-			widthPrint(out, " ", pSChan->name,colWidth,pass,&more);
+			widthPrint(out, " ", pSChan->name,tmpWid,pass,&more);
 		    pSChan = pSChan->pNext;
 		    if (pSChan == NULL)
 			break;
@@ -2508,15 +2589,15 @@ int	samp;		/* I sample number in synchronous set */
 		    break;
 		pass++;
 	    }
-	    if (colWidth > 2) {
+	    if (tmpWid > 2) {
 		pass = 0;
 		while (1) {
 		    more = 0;
 		    pSChan = pNext;
-		    FMT_INDENT; SKIP_STAMP_LESS_1;
+		    FMT_INDENT; SKIP_STAMP;
 		    for (colNum=0; colNum<nCol; colNum++) {
 			if (pSChan->dataChan)
-			    widthPrint(out," ",pSChan->EGU,colWidth,pass,&more);
+			    widthPrint(out," ",pSChan->EGU,tmpWid,pass,&more);
 			pSChan = pSChan->pNext;
 			if (pSChan == NULL)
 			    break;
@@ -2527,6 +2608,7 @@ int	samp;		/* I sample number in synchronous set */
 		    pass++;
 		}
 	    }
+	    (void)fprintf(out, "\n");
 	    if ((pNext = pSChan) == NULL)
 		break;
 	}
@@ -2665,7 +2747,6 @@ int	sampNum;	/* I sample number in sync set */
     else {
 	if (flags&SHOW_AR)
 	    (void)fprintf(out, "1%c", sep);
-	(void)fputc(sep, out);
 	if (flags&USE_QUO) {
 	    if (flags&ENF_WID)
 		(void)fprintf(out, "\"%*.*s\"", colWidth, colWidth, special);
@@ -2855,10 +2936,10 @@ int	snap;		/* I snapshot number in synchronous set */
 		pSChan = pNext;
 		FMT_INDENT; SKIP_STAMP;
 		for (colNum=0; colNum<nCol; colNum++) {
-		    if (pSChan->dataChan) {
+		    if (pSChan->dataChan)
 			widthPrint(out, " ", pSChan->name,colWidth,pass,&more);
+		    if (pSChan->dataChan && pSspec->useMeans == 0)
 			widthPrint(out, " ", pSChan->EGU,colWidth,pass,&more);
-		    }
 		    pSChan = pSChan->pNext;
 		    if (pSChan == NULL)
 			break;
@@ -2868,32 +2949,37 @@ int	snap;		/* I snapshot number in synchronous set */
 		    break;
 		pass++;
 	    }
-	    (void)fprintf(out, "\n");
+	    if (pSspec->useMeans == 0)
+		(void)fprintf(out, "\n");
 	    if ((pNext = pSChan) == NULL)
 		break;
 	}
 	pSChan = pSspec->pChanHead;
 	FMT_INDENT; SKIP_STAMP;
 	for (colNum=0; colNum<nCol; colNum++) {
-	    if (pSChan->dataChan) {
+	    if (pSChan->dataChan && pSspec->useMeans == 0) {
 		(void)fprintf(out, " %*s %*s", colWidth, "mean",
 				    colWidth, "stdDev");
 	    }
+	    else if (pSChan->dataChan && pSspec->useMeans)
+		(void)fprintf(out, " %*s", colWidth, pSChan->EGU);
 	    pSChan = pSChan->pNext;
 	    if (pSChan == NULL)
 		break;
 	}
 	(void)fprintf(out, "\n");
-	pSChan = pSspec->pChanHead;
-	FMT_INDENT; SKIP_STAMP;
-	for (colNum=0; colNum<nCol; colNum++) {
-	    if (pSChan->dataChan) {
-		fprintf(out, " %.*s", colWidth*2+1,
+	if (pSspec->useMeans == 0) {
+	    pSChan = pSspec->pChanHead;
+	    FMT_INDENT; SKIP_STAMP;
+	    for (colNum=0; colNum<nCol; colNum++) {
+		if (pSChan->dataChan) {
+		    fprintf(out, " %.*s", colWidth*2+1,
 			"--------------------------------------------------");
+		}
+		pSChan = pSChan->pNext;
+		if (pSChan == NULL)
+		    break;
 	    }
-	    pSChan = pSChan->pNext;
-	    if (pSChan == NULL)
-		break;
 	}
 	(void)fprintf(out, "\n");
     }
@@ -2917,8 +3003,10 @@ int	snap;		/* I snapshot number in synchronous set */
 	    prec = pSChan->precision;
 	    cvtDblToTxt(text, colWidth, pSChan->pStats[snap].mean, prec);
 	    fprintf(out, " %*.*s", colWidth, colWidth, text);
-	    cvtDblToTxt(text, colWidth, pSChan->pStats[snap].stdDev, prec);
-	    fprintf(out, " %*.*s", colWidth, colWidth, text);
+	    if (pSChan->dataChan && pSspec->useMeans == 0) {
+		cvtDblToTxt(text, colWidth, pSChan->pStats[snap].stdDev, prec);
+		fprintf(out, " %*.*s", colWidth, colWidth, text);
+	    }
 	    colNum++;
 	}
     }
@@ -3248,6 +3336,9 @@ SYD_SPEC *pSspec;
 *	If the `useStats' flag is set in the sync set spec, then means
 *	and standard deviations are printed instead of the actual data
 *	values.  (The caller must already have called sydSampleSetStats.)
+*
+*	If the `useMeans' flag is set in conjunction with `useStats', then
+*	only the means are printed.
 *
 * RETURNS
 *	S_syd_OK
@@ -3605,6 +3696,11 @@ char	*sampDesc;	/* I description for "sample", or NULL */
 *	    sydSetAttr(pSspec, SYD_ATTR_USE_STATS, 1, NULL);
 *	(A value of 0 causes raw data to be used.)
 *
+*	Set so that printing, plotting, and exporting use sample means
+*	rather than raw data:
+*	    sydSetAttr(pSspec, SYD_ATTR_USE_MEANS, 1, NULL);
+*	(A value of 0 causes raw data to be used.)
+*
 *
 * RETURNS
 *	S_syd_OK
@@ -3635,8 +3731,14 @@ void	*pArg;		/* I pointer to value for non-numeric attributes */
     }
     else if (attr == SYD_ATTR_MON_FN)
 	pSspec->monFn = pArg;
-    else if (attr == SYD_ATTR_USE_STATS)
+    else if (attr == SYD_ATTR_USE_STATS) {
 	pSspec->useStats = value;
+	pSspec->useMeans = 0;
+    }
+    else if (attr == SYD_ATTR_USE_MEANS) {
+	pSspec->useStats = value;
+	pSspec->useMeans = value;
+    }
     else
 	assertAlways(0);
     return S_syd_OK;

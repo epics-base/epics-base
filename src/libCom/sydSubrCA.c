@@ -40,6 +40,7 @@
  *			in sampleSetSpec; move copyGr and copyVal into
  *			sydSubr.c
  *  .08 09-14-92 rac	discontinue use of special malloc routines
+ *  .09 09-29-92 rac	discard samples with duplicate time stamps
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -431,6 +432,16 @@ struct event_handler_args arg;
 
     if (pSspec->roundNsec > 0)
 	sydTsRound(&pBuf->tfltval.stamp, pSspec->roundNsec);
+/*-----------------------------------------------------------------------------
+*	If this monitor has the same time stamp as the prior monitor for
+*	this channel, discard this one.
+*----------------------------------------------------------------------------*/
+    if ((i = pSChan->lastInBuf) >= 0) {
+	if (TsCmpStampsLE(&pBuf->tfltval.stamp,
+					&pSChan->pInBuf[i]->tfltval.stamp)) {
+	    return;
+	}
+    }
 
 /*-----------------------------------------------------------------------------
 *	If the reference time stamp for the sync set hasn't been set yet,

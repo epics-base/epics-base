@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)bfSubr.c	1.3 11/12/92
  *	Author:	Roger A. Cole
  *	Date:	03-05-90
  *
@@ -28,6 +28,7 @@
  *  .01 03-05-90 rac	initial version
  *  .02 07-30-91 rac	installed in SCCS
  *  .03 09-14-92 rac	discontinue using special malloc routines
+ *  .04 10-29-92 rac	under Unix, cope with write getting EINTR status
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -143,6 +144,7 @@
 #   include <stdioLib.h>
     typedef long off_t;			/* for lseek() */
 #else
+#   include <errno.h>
 #   include <stdio.h>
 #   include <sys/types.h>
 #   include <sys/file.h>
@@ -1560,16 +1562,23 @@ BF_BLKNUM blockNum;	/* I number of the block */
 *    write the block and, if keepFlag isn't set, free the buffer
 *---------------------------------------------------------------------------*/
     offset = blockNum * BfB0BlockSize(pDesc);
-    stat = lseek((int)pDesc->fd, offset, L_SET);
-    if (stat == ERROR) {
-	perror("bfWrite: error on lseek");
+    while (1) {
+	stat = lseek((int)pDesc->fd, offset, L_SET);
+	if (stat == ERROR) {
+	    perror("bfWrite: error on lseek");
+	    return ERROR;
+	}
+	stat = write((int)pDesc->fd, (char *)pBuf, (int)BfB0BlockSize(pDesc));
+	if (stat == BfB0BlockSize(pDesc))
+	    return OK;
+#ifdef vxWorks
+	perror("bfWrite: error writing block\n");
 	return ERROR;
+#else
+	if (errno != EINTR) {
+	    perror("bfWrite: error writing block\n");
+	    return ERROR;
+	}
+#endif
     }
-    stat = write((int)pDesc->fd, (char *)pBuf, (int)BfB0BlockSize(pDesc));
-    if (stat != BfB0BlockSize(pDesc)) {
-	(void)fprintf(stderr, "bfWrite: error writing block\n");
-	return ERROR;
-    }
-
-    return OK;
 }

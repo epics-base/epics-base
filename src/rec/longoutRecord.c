@@ -114,6 +114,7 @@ struct longoutdset { /* longout input dset */
 static void alarm();
 static void monitor();
 static long writeValue();
+static void convert();
 
 
 static long init_record(plongout,pass)
@@ -151,6 +152,7 @@ static long process(plongout)
 {
 	struct longoutdset	*pdset = (struct longoutdset *)(plongout->dset);
 	long		 status=0;
+	long		value;
 	unsigned char    pact=plongout->pact;
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
@@ -158,11 +160,17 @@ static long process(plongout)
 		recGblRecordError(S_dev_missingSup,(void *)plongout,"write_longout");
 		return(S_dev_missingSup);
 	}
-        if (!plongout->pact && plongout->omsl == CLOSED_LOOP) {
-		status = dbGetLink(&(plongout->dol),DBR_LONG,
-			&(plongout->val),0,0);
-		if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))
-                   plongout->udf=FALSE;
+	if (!plongout->pact) {
+		if (plongout->omsl == CLOSED_LOOP) {
+			status = dbGetLink(&(plongout->dol),DBR_LONG,
+				&value,0,0);
+			if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))
+				plongout->udf=FALSE;
+		}
+		else {
+			value = plongout->val;
+		}
+		if (!status) convert(plongout,value);
 	}
 
 	/* check for alarms */
@@ -246,8 +254,14 @@ static long get_control_double(paddr,pcd)
     || paddr->pfield==(void *)&plongout->high
     || paddr->pfield==(void *)&plongout->low
     || paddr->pfield==(void *)&plongout->lolo){
-        pcd->upper_ctrl_limit = plongout->hopr;
-        pcd->lower_ctrl_limit = plongout->lopr;
+        /* do not change pre drvh/drvl behavior */
+        if(plongout->drvh > plongout->drvl) {
+            pcd->upper_ctrl_limit = plongout->drvh;
+            pcd->lower_ctrl_limit = plongout->drvl;
+        } else {
+            pcd->upper_ctrl_limit = plongout->hopr;
+            pcd->lower_ctrl_limit = plongout->lopr;
+        }
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
@@ -372,4 +386,16 @@ static long writeValue(plongout)
         recGblSetSevr(plongout,SIMM_ALARM,plongout->sims);
 
 	return(status);
+}
+
+static void convert(plongout,value)
+    struct longoutRecord  *plongout;
+    long value;
+{
+        /* check drive limits */
+	if(plongout->drvh > plongout->drvl) {
+        	if (value > plongout->drvh) value = plongout->drvh;
+        	else if (value < plongout->drvl) value = plongout->drvl;
+	}
+	plongout->val = value;
 }

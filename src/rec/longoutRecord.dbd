@@ -27,6 +27,18 @@ recordtype(longout) {
 		interest(1)
 		size(16)
 	}
+	field(DRVH,DBF_LONG) {
+		prompt("Drive High Limit")
+		promptgroup(GUI_OUTPUT)
+		pp(TRUE)
+		interest(1)
+	}
+	field(DRVL,DBF_LONG) {
+		prompt("Drive Low Limit")
+		promptgroup(GUI_OUTPUT)
+		pp(TRUE)
+		interest(1)
+	}
 	field(HOPR,DBF_LONG) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)

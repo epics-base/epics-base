@@ -21,6 +21,7 @@
 
 #include "errlog.h"
 #include "dbAccess.h"
+#include "macLib.h"
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -276,6 +277,7 @@ iocsh (const char *pathname)
     int argc;
     char **argv = NULL;
     int argvCapacity = 0;
+    int iarg;
     int sep;
     const char *prompt;
     const char *ifs = " \t(),";
@@ -318,8 +320,16 @@ iocsh (const char *pathname)
     /*
      * Read commands till EOF or exit
      */
+    argc = 0;
     while ((line = epicsReadline(prompt, readlineContext)) != NULL) {
         lineno++;
+
+        /*
+         * Free previous line's expanded arguments
+         */
+        for (iarg = 0 ; iarg < argc ; iarg++)
+            free(argv[iarg]);
+        argc = 0;
 
         /*
          * Ignore comment lines
@@ -340,7 +350,6 @@ iocsh (const char *pathname)
         inword = 0;
         quote = EOF;
         backslash = 0;
-        argc = 0;
         for (;;) {
             if (argc >= argvCapacity) {
                 char **av;
@@ -413,14 +422,32 @@ iocsh (const char *pathname)
         argv[argc] = NULL;
 
         /*
+         * Expand macros
+         */
+        if (argc) {
+            for (iarg = 0 ; iarg < argc ; iarg++)
+                if ((argv[iarg] = macEnvExpand(argv[iarg])) == NULL)
+                    break;
+            if (iarg < argc) {
+                while (--iarg >= 0)
+                    free(argv[iarg]);
+                argc = 0;
+                continue;
+            }
+        }
+
+        /*
          * Look up command
          */
         if (argc) {
             /*
              * Special command?
              */
-            if (strncmp (argv[0], "exit", 4) == 0)
+            if (strncmp (argv[0], "exit", 4) == 0) {
+                for (iarg = 0 ; iarg < argc ; iarg++)
+                    free(argv[iarg]);
                 break;
+            }
             if ((strcmp (argv[0], "?") == 0) 
              || (strncmp (argv[0], "help", 4) == 0)) {
                 if (argc == 1) {
@@ -453,10 +480,10 @@ iocsh (const char *pathname)
                     iocshTableUnlock ();
                 }
                 else {
-                    for (int i = 1 ; i < argc ; i++) {
-                        found = (iocshCommand *)registryFind (iocshCmdID, argv[i]);
+                    for (iarg = 1 ; iarg < argc ; iarg++) {
+                        found = (iocshCommand *)registryFind (iocshCmdID, argv[iarg]);
                         if (found == NULL) {
-                            printf ("%s -- no such command.\n", argv[i]);
+                            printf ("%s -- no such command.\n", argv[iarg]);
                         }
                         else {
                             piocshFuncDef = found->pFuncDef;
@@ -491,12 +518,12 @@ iocsh (const char *pathname)
             /*
              * Process arguments and call function
              */
-            for (int arg = 0 ; ; arg++) {
-                if (arg == piocshFuncDef->nargs) {
+            for (iarg = 0 ; ; iarg++) {
+                if (iarg == piocshFuncDef->nargs) {
                     (*found->func)(argBuf);
                     break;
                 }
-                if (arg >= argBufCapacity) {
+                if (iarg >= argBufCapacity) {
                     void *np;
 
                     argBufCapacity += 20;
@@ -508,15 +535,15 @@ iocsh (const char *pathname)
                     }
                     argBuf = (iocshArgBuf *)np;
                 }
-                if (piocshFuncDef->arg[arg]->type == iocshArgArgv) {
-                    argBuf[arg].aval.ac = argc-arg;
-                    argBuf[arg].aval.av = argv+arg;
+                if (piocshFuncDef->arg[iarg]->type == iocshArgArgv) {
+                    argBuf[iarg].aval.ac = argc-iarg;
+                    argBuf[iarg].aval.av = argv+iarg;
                     (*found->func)(argBuf);
                     break;
                 }
                 if (!cvtArg (filename, lineno,
-                                        ((arg < argc) ? argv[arg+1] : NULL),
-                                        &argBuf[arg], piocshFuncDef->arg[arg]))
+                                        ((iarg < argc) ? argv[iarg+1] : NULL),
+                                        &argBuf[iarg], piocshFuncDef->arg[iarg]))
                     break;
             }
             if((prompt != NULL) && (strcmp(argv[0], "epicsEnvSet") == 0)) {

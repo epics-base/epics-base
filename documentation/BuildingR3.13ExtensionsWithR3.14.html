@@ -9,7 +9,7 @@
 <body>
 
 <center>
-<h2>Building EPICS R3.13 extensions with R3.14.1 base</h2>
+<h2>Building EPICS R3.13 extensions with R3.14 base</h2>
 </center>
 
 <p><br>
@@ -53,11 +53,7 @@ directory.</p>
 <h3>Building your extensions with base R3.14</h3>
 
 <blockquote>
-  <ul>
-    <li><b>Library Db renamed</b></li>
-  </ul>
-  <br>
-
+  <li><b>Library Db renamed</b></li>
 
   <p>Library Db has been renamed to dbStaticHost in EPICS base R3.14. In some
   extensions lib Db is not used and Db can be removed from the USR_LIBS (or
@@ -72,11 +68,8 @@ directory.</p>
     <tt>USR_LIBS += Db</tt> <br>
     <tt>Db_DIR = $(EPICS_BASE_LIB)</tt> <br>
     <tt>endif</tt></blockquote>
-  <ul>
-    <li><b>Library dbStaticHost names changed</b></li>
-  </ul>
-  <br>
 
+  <li><b>Library dbStaticHost names changed</b></li>
 
   <p>Library functions have been renamed.  If there are calls with old db
   names, add the following lines</p>
@@ -115,11 +108,9 @@ directory.</p>
 
     <p></p>
   </blockquote>
-  <ul>
-    <li><b>Target architecture specifications changed</b></li>
-  </ul>
-  <br>
 
+
+  <li><b>Target architecture specifications changed</b></li>
 
   <p>Since target architecture specifications have been changed (solaris to
   solaris-sparc, win32 to win32-x86, ...) Makefile.Host references to and
@@ -139,20 +130,16 @@ directory.</p>
     <tt>ifeq ($(OS_CLASS),solaris)</tt> <br>
     <tt>RPCFLAGS = -K -1</tt> <br>
     <tt>endif</tt></blockquote>
-  <ul>
-    <li><b>New ca_set_puser</b></li>
-  </ul>
-  <br>
 
+
+  <li><b>New ca_set_puser</b></li>
 
   <p>Statements of the form: <tt>ca_puser(chid) = xyz</tt>; should to be
   changed to:  <tt>ca_set_puser(chid,xyz)</tt>; <br>
    </p>
-  <ul>
-    <li><b>Extern C around includes</b></li>
-  </ul>
-  <br>
 
+
+  <li><b>Extern C around includes</b></li>
 
   <p>Remove any extern "C" braces around #includes of EPICS base header
   files. <br>
@@ -166,12 +153,8 @@ directory.</p>
 
   <blockquote>
     <tt>#include "cadefs.h"</tt></blockquote>
-  <ul>
-    <li><b>Infrequently used R3.13 timestamp functions unbundled from
-    base</b></li>
-  </ul>
-  <br>
 
+  <li><b>Infrequently used R3.13 timestamp functions unbundled from base</b></li>
 
   <p>Some infrequently used R3.13 timestamp functions and macro definitions
   have been removed from EPICS base and now exist in a library, ts, created
@@ -193,25 +176,22 @@ directory.</p>
     <tt>ts_DIR = $(EPICS_EXTENSIONS_LIB)</tt> <br>
     <tt>endif</tt></p>
   </blockquote>
-  <ul>
-    <li><b>No Field name length restriction</b></li>
-  </ul>
 
-  <p><br>
-  The length restriction to database record names no longer exists in R3.14
+  <li><b>No Field name length restriction</b></li>
+
+  <p> The length restriction to database record names no longer exists in R3.14
   so the the <tt>FLDNAME_SZ macro definition was removed.from dbDefs.h. 
-  Extensions whichstill have a field name restriction should add the field
+  Extensions which still have a field name restriction should add the field
   name size definition to their code until they are updated.</tt></p>
 
   <blockquote>
     <tt>#ifndef FLDNAME_SZ</tt> <br>
     <tt>#define FLDNAME_SZ 4  /*Field Name Size*/</tt> <br>
     <tt>#endif</tt></blockquote>
-  <ul>
-    <li><b>Some EPICS base version macros removed</b></li>
-  </ul>
 
-  <p><br>
+  <li><b>Some EPICS base version macros removed</b></li>
+
+  <p>
   The EPICS base version macros that start with "BASE_" have been removed
   from epicsVersion.h. Extensions should now use only the existing macros
   which start with "EPICS_".</p>

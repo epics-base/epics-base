@@ -30,10 +30,6 @@
 #ifndef NELEMENTS
 #   define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
 #endif
- 
-#ifndef LOCAL
-#   define LOCAL static
-#endif
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_SEC    1000000L

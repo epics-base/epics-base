@@ -57,7 +57,7 @@ typedef unsigned long arrayElementCount;
  *
  *
  */
-LOCAL void cvrt_string(
+static void cvrt_string(
 const void          *s,             /* source           */
 void                *d,             /* destination          */
 int                 /* encode */,   /* cvrt HOST to NET if T    */
@@ -81,7 +81,7 @@ arrayElementCount   num             /* number of values     */
 /*
  *  CVRT_SHORT()
  */
-LOCAL void cvrt_short(
+static void cvrt_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -109,7 +109,7 @@ arrayElementCount   num         /* number of values     */
  *
  *
  */
-LOCAL void cvrt_char(
+static void cvrt_char(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -131,7 +131,7 @@ arrayElementCount   num         /* number of values     */
 /*
  *  CVRT_LONG()
  */
-LOCAL void cvrt_long(
+static void cvrt_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -159,7 +159,7 @@ arrayElementCount   num         /* number of values     */
  *
  *
  */
-LOCAL void cvrt_enum(
+static void cvrt_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -191,7 +191,7 @@ arrayElementCount   num         /* number of values     */
  *  code but better performance.
  *
  */
-LOCAL void cvrt_float(
+static void cvrt_float(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -220,7 +220,7 @@ arrayElementCount   num         /* number of values     */
 /*
  *  CVRT_DOUBLE()
  */
-LOCAL void cvrt_double(
+static void cvrt_double(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -259,7 +259,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_sts_string(
+static void cvrt_sts_string(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -297,7 +297,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_sts_short(
+static void cvrt_sts_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -332,7 +332,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_sts_float(
+static void cvrt_sts_float(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -358,7 +358,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_sts_double(
+static void cvrt_sts_double(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -387,7 +387,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_sts_enum(
+static void cvrt_sts_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -415,7 +415,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_gr_short(
+static void cvrt_gr_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -452,7 +452,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_gr_char(
+static void cvrt_gr_char(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -493,7 +493,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_gr_long(
+static void cvrt_gr_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -531,7 +531,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_gr_enum(
+static void cvrt_gr_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -564,7 +564,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_gr_double(
+static void cvrt_gr_double(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -626,7 +626,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_gr_float(
+static void cvrt_gr_float(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -689,7 +689,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_short(
+static void cvrt_ctrl_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -729,7 +729,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_long(
+static void cvrt_ctrl_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -769,7 +769,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_char(
+static void cvrt_ctrl_char(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -807,7 +807,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_double(
+static void cvrt_ctrl_double(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -871,7 +871,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_float(
+static void cvrt_ctrl_float(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -934,7 +934,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_ctrl_enum(
+static void cvrt_ctrl_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -970,7 +970,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_sts_char(
+static void cvrt_sts_char(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -1001,7 +1001,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_sts_long(
+static void cvrt_sts_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1033,7 +1033,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_time_string(
+static void cvrt_time_string(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -1065,7 +1065,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_time_short(
+static void cvrt_time_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1099,7 +1099,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_time_float(
+static void cvrt_time_float(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1127,7 +1127,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_time_double(
+static void cvrt_time_double(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1156,7 +1156,7 @@ arrayElementCount   num         /* number of values     */
 **   
 ****************************************************************************/
 
-LOCAL void cvrt_time_enum(
+static void cvrt_time_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1186,7 +1186,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_time_char(
+static void cvrt_time_char(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -1218,7 +1218,7 @@ arrayElementCount   num         /* number of values     */
 **      format
 ****************************************************************************/
 
-LOCAL void cvrt_time_long(
+static void cvrt_time_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 encode,     /* cvrt HOST to NET if T    */
@@ -1249,7 +1249,7 @@ arrayElementCount   num         /* number of values     */
  *
  *
  */
-LOCAL void cvrt_put_ackt(
+static void cvrt_put_ackt(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */
@@ -1283,7 +1283,7 @@ arrayElementCount   num         /* number of values     */
 **      format;
 ****************************************************************************/
 
-LOCAL void cvrt_stsack_string(
+static void cvrt_stsack_string(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
 int                 /*encode*/, /* cvrt HOST to NET if T    */

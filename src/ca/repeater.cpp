@@ -115,7 +115,7 @@ typedef struct {
 /*
  * makeSocket()
  */
-LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
+static makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
 {
     int status;
 	union {
@@ -319,7 +319,7 @@ bool repeaterClient::verify ()  // X aCC 361
  * verifyClients()
  * (this is required because solaris has a half baked version of sockets)
  */
-LOCAL void verifyClients()
+static void verifyClients()
 {
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
@@ -338,7 +338,7 @@ LOCAL void verifyClients()
 /*
  * fanOut()
  */
-LOCAL void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize )
+static void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize )
 {
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
@@ -364,7 +364,7 @@ LOCAL void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize 
 /*
  * register_new_client()
  */
-LOCAL void register_new_client ( osiSockAddr &from )
+static void register_new_client ( osiSockAddr &from )
 {
     int status;
     bool newClient = false;

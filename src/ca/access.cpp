@@ -40,6 +40,7 @@ void ca_client_exit_handler ()
     }
 }
 
+// runs once only for each process
 static void ca_init_client_context ( void * dummy )
 {
     caClientContextId = threadPrivateCreate ();
@@ -233,11 +234,7 @@ int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
         return caStatus;
     }
 
-    if ( name_str == NULL ) {
-        return ECA_EMPTYSTR;
-    }
-
-    if ( *name_str == '\0' ) {
+    if ( name_str == NULL || *name_str == '\0' ) {
         return ECA_EMPTYSTR;
     }
 

@@ -1,5 +1,5 @@
 /*
- *      epvxiMsgLib.c
+ *     	$Id$ 
  *
  *      driver for VXI message based devices 
  *
@@ -47,7 +47,7 @@ static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <semLib.h>
-#include <epvxiLib.h>
+#include <drvEpvxi.h>
 #include <fast_lock.h>
 #ifdef V5_vxWorks
 #	include	<iv.h>
@@ -1106,7 +1106,6 @@ vxiHP1404MsgSignalSetup()
 		return ERROR;
 	}
 
-logMsg("found HP1404 device\n");
 	msgCommanderLA = hpMsgLA;
 	hpE1404SignalConnect(hpRegLA, signalHandler);
 

@@ -1,5 +1,6 @@
 /*
- * routines for the VXI device support and resource management
+ *	$Id$
+ * 	Routines for the VXI device support and resource management.
  *
  *
  *
@@ -140,7 +141,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include <memLib.h>
 
 #define SRCepvxiLib	/* allocate externals here */
-#include <epvxiLib.h>
+#include <drvEpvxi.h>
 
 #define NICPU030
 

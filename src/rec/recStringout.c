@@ -114,8 +114,10 @@ static long init_record(pstringout)
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
-    if (pstringout->dol.type == CONSTANT && pstringout->dol.value.value!=0.0 ){
-        sprintf(pstringout->val,"%-14.7g",pstringout->dol.value.value); 
+    if (pstringout->dol.type == CONSTANT){
+	if (pstringout->dol.value.value!=0.0 ){
+       		 sprintf(pstringout->val,"%-14.7g",pstringout->dol.value.value); 
+	}
 	pstringout->udf=FALSE;
     }
     if( pdset->init_record ) {
@@ -151,7 +153,7 @@ static long process(paddr)
 					pstringout->nsev = VALID_ALARM;
 					pstringout->nsta = LINK_ALARM;
 				}
-			}
+			} else pstringout->udf=FALSE;
 		}
 	}
 

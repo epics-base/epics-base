@@ -78,6 +78,7 @@ static long init_record(pstringin)
 	        sprintf(pstringin->val,"%-14.7g",pstringin->inp.value.value);
 		pstringin->udf= FALSE;
 		}
+	pstringin->udf= FALSE;
         break;
     case (PV_LINK) :
         break;

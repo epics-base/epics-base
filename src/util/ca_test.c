@@ -69,55 +69,6 @@ static unsigned long	outstanding;
 
 
 /*
- *
- *	main
- *
- *	parse command line arguments
- */
-#ifndef vxWorks
-int main(
-int     argc,
-char    **argv
-)
-{
-
-	/*
-	 * print error and return if arguments are invalid
-	 */
-	if(argc < 2  || argc > 3){
-		printf("usage: ca_test channel_name <\"put value\">\n");
-		printf("the following arguments were received\n");
-		while(argc>0) {
-			printf("%s\n",argv[0]);
-			argv++; argc--;
-		}
-		return ERROR;
-	}
-
-
-	/*
-	 * check for supplied value
-	 */
-	if(argc == 2){
-		return ca_test(argv[1], NULL);
-	}
-	else if(argc == 3){
-		char *pt;
-
-		/* strip leading and trailing quotes*/
-		if(argv[2][1]=='"') argv[2]++;
-		if( (pt=strchr(argv[2],'"')) ) *pt = 0;
-		return ca_test(argv[1], argv[2]);
-	}
-	else{
-		return ERROR;
-	}
-
-}
-#endif
-
-
-/*
  *  	ca_test
  *
  *	find channel, write a value if supplied, and 

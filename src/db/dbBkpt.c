@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.12  2000/01/04 20:26:16  mrk
+ *  replace osiClock calls with tsStamp calls
+ *
  *  Revision 1.11  1999/12/14 22:01:33  mrk
  *  changes for osiSem changes
  *
@@ -807,7 +810,7 @@ int dbBkpt(struct dbCommon *precord)
       */
       semMutexGive(bkpt_stack_sem);
       dbScanUnlock(precord);
-      threadSuspend(pnode->taskid);
+      threadSuspend(0);
       dbScanLock(precord);
       semMutexMustTake(bkpt_stack_sem);
    }

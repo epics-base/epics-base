@@ -1,6 +1,32 @@
-
 TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+CMPLR = STRICT
+
+#	DEFAULT Unix needs lib m, every system needs libs ca & Com:
+SYS_PROD_LIBS_DEFAULT := m
+SYS_PROD_LIBS_WIN32   := -nil-
+PROD_LIBS         := ca Com
+#
+# Added winmm user32 for the non-dll build
+#
+SRCS_Host += ca_test_main.c
+SYS_PROD_LIBS_WIN32 := ws2_32 advapi32 user32
+PROD_DEFAULT = ca_test iocLogServer startCArepeater 
+PROD_WIN32   = ca_test iocLogServer
+PRODIOC_vxWorks = ca_test.o
+
+ca_test_SRCS = ca_test.c
+TARGETS = ca_test.o
+
+SCRIPTS_solaris := S99logServer S99caRepeater 
+
+include $(TOP)/configure/RULES
+ 
+S99%: ../rc2.%
+	@/usr/bin/sed -e s%:EPICS:%`chdir $(TOP); /usr/bin/pwd`% \
+		-e s%:INSTALL_BIN:%`chdir $(INSTALL_BIN); /usr/bin/pwd`% \
+		$< >$@
+
+#	EOF Makefile.Host for base/src/util

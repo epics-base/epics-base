@@ -1,8 +1,9 @@
 
 TOP=../..
-
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+LIBRARY = miscLib
 
+miscLib_SRCS =  epicsRelease.c
 
+include $(TOP)/configure/RULES

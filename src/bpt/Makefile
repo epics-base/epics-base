@@ -1,7 +1,22 @@
-
 TOP=../..
-
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+INC += cvtTable.h
 
+makeBpt_SRCS += makeBpt.c
+PROD += makeBpt
+
+MENUS += menuConvert.h
+
+bptLibrary_SRCS += cvtBpt.c
+
+LIB_IOC = bptLibrary
+
+BPTS += bptTypeJdegC.dbd
+BPTS += bptTypeJdegF.dbd
+BPTS += bptTypeKdegC.dbd
+BPTS += bptTypeKdegF.dbd
+
+include $(TOP)/configure/RULES
+
+$(BPTS): $(INSTALL_PROD)

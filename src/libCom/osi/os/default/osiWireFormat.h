@@ -44,7 +44,7 @@ public:
         bool bigEndian () const { return ! littleEndian(); }
 private:
         unsigned uint;
-        unsigned char uchar[4];
+        unsigned char uchar[sizeof(unsigned)];
 };
 
 static const endianTest endianTester;

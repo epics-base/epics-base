@@ -1,5 +1,5 @@
 EPICS = ../../..
-include $(EPICS)/config/CONFIG_vx
+include $(EPICS)/config/CONFIG
 
 SRCS = \
 	dbAccess.c dbBkpt.c dbFastLinkConv.c dbLink.c \

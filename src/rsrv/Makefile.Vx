@@ -1,5 +1,5 @@
 EPICS = ../../..
-include $(EPICS)/config/CONFIG_vx
+include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -I../ca -UUNIX
 

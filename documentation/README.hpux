@@ -16,7 +16,8 @@ Tools needed
 
   - HP's ANSI C compiler (cc)
 
-  - Recent version of HP's aCC C++ compiler aCC (we use A.03.39)
+  - Recent version of HP's aCC C++ compiler aCC
+    (we currently use A.03.45; A.03.39 should also do)
     HP's old frontend-based C++ compiler (CC) will not work.
 
  o For compiling with the GNU compilers

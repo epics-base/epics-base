@@ -10,8 +10,18 @@
 #ifndef epicsMutexh
 #define epicsMutexh
 
+#if 0
+
+#ifdef __cplusplus
+#   include <new>
+#   include <stdexcept>
+#endif
+
 #include <stdarg.h>
 #include "epicsAssert.h"
+
+#endif
+
 #include "shareLib.h"
 
 typedef struct epicsMutexOSD *epicsMutexId;
@@ -21,30 +31,27 @@ typedef enum {
 
 #ifdef __cplusplus
 
-#include <new>
-#include <stdexcept>
+#include "cxxCompilerDependencies.h"
 
-class epicsMutex {
+class epicsShareClass epicsMutex {
 public:
     class invalidSemaphore {}; // exception
-    epicsShareFunc epicsMutex ()
-        throw ( std::bad_alloc );
-    epicsShareFunc ~epicsMutex ()
-        throw ();
-    epicsShareFunc void show ( unsigned level ) const 
-        throw ();
+    epicsMutex ()
+        epics_throws (( std::bad_alloc ));
+    ~epicsMutex ()
+        epics_throws (());
+    void show ( unsigned level ) const 
+        epics_throws (());
     void lock () /* blocks until success */
-        throw ( invalidSemaphore ); 
+        epics_throws (( invalidSemaphore )); 
     void unlock () 
-        throw ();
+        epics_throws (());
     bool lock ( double timeOut ) /* true if successful */
-        throw ( invalidSemaphore ); 
+        epics_throws (( invalidSemaphore )); 
     bool tryLock () /* true if successful */
-        throw ( invalidSemaphore );
+        epics_throws (( invalidSemaphore ));
 private:
     epicsMutexId id;
-    epicsShareFunc static void throwInvalidSemaphore ()
-        throw ( invalidSemaphore );
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
 };
@@ -88,56 +95,5 @@ epicsShareFunc void epicsShareAPI epicsMutexShowAll(
 #endif
 
 #include "osdMutex.h"
-
-#ifdef __cplusplus
-
-inline void epicsMutex::lock ()
-    throw ( epicsMutex::invalidSemaphore )
-{
-    epicsMutexLockStatus status = epicsMutexLock ( this->id );
-    if ( status != epicsMutexLockOK ) {
-        epicsMutex::throwInvalidSemaphore ();
-    }
-}
-
-inline bool epicsMutex::lock ( double timeOut ) // X aCC 361
-    throw ( epicsMutex::invalidSemaphore )
-{
-    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
-    if ( status == epicsMutexLockOK ) {
-        return true;
-    } 
-    else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } 
-    else {
-        epicsMutex::throwInvalidSemaphore ();
-        return false; // never here, compiler is happy
-    }
-}
-
-inline bool epicsMutex::tryLock () // X aCC 361
-    throw ( epicsMutex::invalidSemaphore )
-{
-    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
-    if ( status == epicsMutexLockOK ) {
-        return true;
-    } 
-    else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } 
-    else {
-        epicsMutex::throwInvalidSemaphore ();
-        return false; // never here, but compiler is happy
-    }
-}
-
-inline void epicsMutex::unlock ()
-    throw ()
-{
-    epicsMutexUnlock ( this->id );
-}
-
-#endif /* __cplusplus */
 
 #endif /* epicsMutexh */

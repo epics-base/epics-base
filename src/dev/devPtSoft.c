@@ -80,6 +80,5 @@ static long write_pt(ppt)
     long status;
 
     status = dbPutLink(&(ppt->out),DBR_SHORT,&(ppt->val),1);
-    if(RTN_SUCCESS(status)) ppt->udf=FALSE;
     return(0);
 }

@@ -81,8 +81,5 @@ static long write_longout(plongout)
 
     status = dbPutLink(&plongout->out,DBR_LONG, &plongout->val,1);
 
-    if (RTN_SUCCESS(status))
-       plongout->udf=FALSE;
-
     return(0);
 }

@@ -115,7 +115,5 @@ static long write_longout(plongout)
     else
        return(1);
 
-    plongout->udf=FALSE;
-
     return(0);
 }

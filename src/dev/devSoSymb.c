@@ -118,7 +118,5 @@ static long write_stringout(pstringout)
     else 
        return(1);
 
-    pstringout->udf = FALSE;
-
     return(0);
 }

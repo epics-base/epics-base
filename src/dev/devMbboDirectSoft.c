@@ -88,6 +88,6 @@ static long write_mbbo(pmbbo)
     long status;
 
     status = dbPutLink(&pmbbo->out,DBR_USHORT,&pmbbo->val,1);
-    if (RTN_SUCCESS(status)) pmbbo->udf=FALSE;
+
     return(0);
 }

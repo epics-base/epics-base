@@ -1,7 +1,10 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-SRCS.c = ../iocLogClient.c ../veclist.c
+SRCS.c = ../iocLogClient.c ../veclist.c \
+	../epicsDynLink.c
+
+INC += epicsDynLink.h
 
 #
 # Tornado supplies this
@@ -11,7 +14,7 @@ SRCS.c += ../ldpp.c
 endif
 
 LIBOBJS = veclist.o iocLogClient.o \
-	  symFindByNameEPICS.o symFindByNameAndTypeEPICS.o
+	  epicsDynLink.o
 
 #
 # Tornado supplies this

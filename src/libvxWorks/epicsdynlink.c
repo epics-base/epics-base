@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id $
  *
  * Comments from original version:
  *   On the MIPS processor, all symbols do not have the prepended underscore.
@@ -14,13 +14,8 @@
  * 02a,03apr97,npr  changed from mips.h into symFindByNameMips.c
  * 03a,03jun98,wfl  changed Mips -> EPICS and avoid architecture knowledge
  */
- 
-#ifdef symFindByName
-#undef symFindByName
-#endif
- 
-#include "vxWorks.h"
-#include "symLib.h"
+
+#include "epicsDynLink.h"
  
 STATUS symFindByNameEPICS( SYMTAB_ID symTblId,
 	char      *name,
@@ -33,6 +28,26 @@ STATUS symFindByNameEPICS( SYMTAB_ID symTblId,
 
 	if ( status == ERROR && name[0] == '_' )
 		status = symFindByName( symTblId, (name+1), pvalue, pType );
+
+	return status;
+}
+
+STATUS symFindByNameAndTypeEPICS( 
+	SYMTAB_ID symTblId,
+	char      *name,
+	char      **pvalue,
+	SYM_TYPE  *pType,
+	SYM_TYPE  sType,
+	SYM_TYPE  mask	)
+{
+	STATUS status;
+
+	status = symFindByNameAndType( symTblId, name, pvalue,
+				       pType, sType, mask );
+
+	if ( status == ERROR && name[0] == '_' )
+		status = symFindByNameAndType( symTblId, (name+1), pvalue,
+					       pType, sType, mask );
 
 	return status;
 }

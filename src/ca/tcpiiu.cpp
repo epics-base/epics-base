@@ -764,13 +764,16 @@ void tcpiiu::responsiveCircuitNotify (
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
-    while ( nciu * pChan = this->unrespCircuit.get() ) {
-        this->subscripUpdateReqPend.add ( *pChan );
-        pChan->channelNode::listMember = 
-            channelNode::cs_subscripUpdateReqPend;
-        pChan->connect ( cbGuard, guard );
+    if ( this->unresponsiveCircuit ) {
+        this->unresponsiveCircuit = false;
+        while ( nciu * pChan = this->unrespCircuit.get() ) {
+            this->subscripUpdateReqPend.add ( *pChan );
+            pChan->channelNode::listMember = 
+                channelNode::cs_subscripUpdateReqPend;
+            pChan->connect ( cbGuard, guard );
+        }
+        this->sendThreadFlushEvent.signal ();
     }
-    this->sendThreadFlushEvent.signal ();
 }
 
 void tcpiiu::sendTimeoutNotify ( 

@@ -98,6 +98,14 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          */
         this->timeStamp = currentTime;
 
+#ifdef DEBUG
+        {
+            char name[64];
+            this->name ( name, sizeof ( name ) );
+            ::printf ( "fb %s\n", name );
+        }
+#endif
+
         return false;
     }
 
@@ -130,6 +138,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
     // compute the beacon period (if we have seen at least two beacons)
     bool netChange = false;
     double currentPeriod = currentTime - this->timeStamp;
+
     if ( this->averagePeriod < 0.0 ) {
         double totalRunningTime;
 
@@ -141,6 +150,15 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
          * initialize the average period and return.
          */
         this->averagePeriod = currentPeriod;
+
+#ifdef DEBUG
+        {
+            char name[64];
+            this->name ( name, sizeof ( name ) );
+            ::printf ( "fp=%g %s\n",
+                this->averagePeriod, name );
+        }
+#endif
 
         /*
          * ignore beacons seen for the first time shortly after
@@ -201,7 +219,17 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
             // if the beacon looks ok
             this->pIIU->beaconArrivalNotify ( currentTime );
         }
-    
+
+#ifdef DEBUG
+        {
+            char name[64];
+            this->name ( name, sizeof ( name ) );
+            ::printf ( "cp=%g ap=%g %s\n",
+                currentPeriod, this->averagePeriod,
+                name );
+        }
+#endif
+
         // update a running average period
         this->averagePeriod = currentPeriod * 0.125 + 
             this->averagePeriod * 0.875;
@@ -228,11 +256,9 @@ epicsTime bhe::updateTime () const
     return this->timeStamp;
 }
 
-void bhe::registerIIU ( tcpiiu & iiu, const epicsTime & currentTime )
+void bhe::registerIIU ( tcpiiu & iiu )
 {
     this->pIIU = & iiu;
-    this->timeStamp = currentTime;
-    this->averagePeriod = - DBL_MAX;
 }
 
 void bhe::unregisterIIU ( tcpiiu & iiu )

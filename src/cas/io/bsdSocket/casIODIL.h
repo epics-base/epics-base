@@ -24,7 +24,27 @@ inline int casDGIntfIO::getBCastFD() const
 //
 inline bool casDGIntfIO::validBCastFD() const
 {
-	return this->bcastRecvSock!=INVALID_SOCKET;
+	return this->bcastRecvSock != INVALID_SOCKET;
+}
+
+inline void * ipIgnoreEntry::operator new ( size_t size )
+{
+    return ipIgnoreEntry::pFreeList->allocate ( size );
+}
+
+inline void ipIgnoreEntry::operator delete ( void * pCadaver, size_t size )
+{
+    ipIgnoreEntry::pFreeList->release ( pCadaver, size );
+}
+
+inline ipIgnoreEntry::ipIgnoreEntry ( unsigned ipAddrIn ) :
+    ipAddr ( ipAddrIn )
+{
+}
+
+inline void ipIgnoreEntry::destroy ()
+{
+    delete this;
 }
 
 #endif // casIODILh

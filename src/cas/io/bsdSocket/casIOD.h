@@ -18,22 +18,50 @@
 #ifndef includeCASIODH
 #define includeCASIODH 
 
-#undef epicsExportSharedSymbols
+#ifdef epicsExportSharedSymbols
+#   define ipIgnoreEntryEpicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "envDefs.h"
-#define epicsExportSharedSymbols
+#include "resourceLib.h"
+#include "epicsSingleton.h"
+#include "tsFreeList.h"
+#include "osiSock.h"
+#include "inetAddrID.h"
 
-void hostNameFromIPAddr (const caNetAddr *pAddr, 
-			char *pBuf, unsigned bufSize);
+#ifdef ipIgnoreEntryEpicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
 
-class casDGClient;
+void hostNameFromIPAddr ( const class caNetAddr * pAddr, 
+			char * pBuf, unsigned bufSize );
+
+class ipIgnoreEntry : public tsSLNode < ipIgnoreEntry > {
+public:
+    ipIgnoreEntry ( unsigned ipAddr );
+    void destroy ();
+    void show ( unsigned level ) const;
+    void * operator new ( size_t size );
+    void operator delete ( void * pCadaver, size_t size );
+    bool operator == ( const ipIgnoreEntry & ) const;
+    resTableIndex hash () const;
+
+private:
+    unsigned ipAddr;
+    static epicsSingleton < tsFreeList < class ipIgnoreEntry, 1024 > > pFreeList;
+	ipIgnoreEntry ( const ipIgnoreEntry & );
+	ipIgnoreEntry & operator = ( const ipIgnoreEntry & );
+};
 
 //
 // casDGIntfIO
 //
 class casDGIntfIO : public casDGClient {
 public:
-	casDGIntfIO (caServerI &serverIn, const caNetAddr &addr, 
-		bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr=FALSE);
+	casDGIntfIO ( caServerI &serverIn, const caNetAddr &addr, 
+		bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr = false );
 	virtual ~casDGIntfIO();
 
 	int getFD () const;
@@ -41,8 +69,8 @@ public:
     bool validBCastFD () const;
 
 	void xSetNonBlocking ();
-	void sendBeaconIO (char &msg, bufSizeT length, 
-        aitUint16 &portField, aitUint32 &addrField);
+	void sendBeaconIO ( char & msg, bufSizeT length, 
+        aitUint16 &portField, aitUint32 & addrField );
 	casIOState state () const;
 
 	outBufClient::flushCondition osdSend ( const char * pBuf, bufSizeT nBytesReq,
@@ -57,6 +85,7 @@ public:
     bufSizeT incomingBytesPresent () const;
 
 private:
+    resTable < ipIgnoreEntry, ipIgnoreEntry > ignoreTable;
 	ELLLIST beaconAddrList;
 	SOCKET sock;
 	SOCKET bcastRecvSock; // fix for solaris bug
@@ -78,14 +107,14 @@ struct ioArgsToNewStreamIO {
 //
 class casStreamIO : public casStrmClient {
 public:
-	casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args);
+	casStreamIO ( caServerI & cas, const ioArgsToNewStreamIO & args );
 	~casStreamIO();
 
 	int getFD() const;
 	void xSetNonBlocking();
 
 	casIOState state() const;
-	void hostName (char *pBuf, unsigned bufSize) const;
+	void hostName ( char *pBuf, unsigned bufSize ) const;
 	
 	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
 		bufSizeT & nBytesActual );
@@ -98,11 +127,11 @@ public:
 
 	static bufSizeT optimumBufferSize ();
 
-	void osdShow (unsigned level) const;
+	void osdShow ( unsigned level ) const;
 
 	const caNetAddr getAddr() const
 	{
-		return caNetAddr(this->addr);
+		return caNetAddr ( this->addr );
 	}
 
 private:
@@ -173,7 +202,6 @@ private:
 	virtual caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
 			bool addConfigAddr) = 0;
 };
-
 
 // no additions below this line
 #endif // includeCASIODH

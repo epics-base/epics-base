@@ -21,7 +21,7 @@
 
 #include "server.h"
 #include "addrList.h"
-
+#include "casIODIL.h"
 
 /*
  * forcePort ()
@@ -130,17 +130,17 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     }
     
     status = bind ( this->sock, &serverAddr.sa, sizeof (serverAddr) );
-    if (status<0) {
+    if ( status < 0 ) {
         char buf[64];
         int errnoCpy = SOCKERRNO;
-        ipAddrToA (&serverAddr.ia, buf, sizeof(buf));
-        errPrintf (S_cas_bindFail, __FILE__, __LINE__, 
-            "- bind UDP IP addr=%s failed because %s", buf, SOCKERRSTR(errnoCpy) );
+        ipAddrToA ( &serverAddr.ia, buf, sizeof ( buf ) );
+        errPrintf ( S_cas_bindFail, __FILE__, __LINE__, 
+            "- bind UDP IP addr=%s failed because %s", buf, SOCKERRSTR ( errnoCpy ) );
         socket_close (this->sock);
         throw S_cas_bindFail;
     }
     
-    if (addConfigBeaconAddr) {
+    if ( addConfigBeaconAddr ) {
         
         //
         // by default use EPICS_CA_ADDR_LIST for the
@@ -148,22 +148,45 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         //
         const ENV_PARAM *pParam;
         
-        if (envGetConfigParamPtr(&EPICS_CAS_INTF_ADDR_LIST) || 
-            envGetConfigParamPtr(&EPICS_CAS_BEACON_ADDR_LIST)) {
-            pParam = &EPICS_CAS_BEACON_ADDR_LIST;
+        if ( envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST ) || 
+            envGetConfigParamPtr ( & EPICS_CAS_BEACON_ADDR_LIST ) ) {
+            pParam = & EPICS_CAS_BEACON_ADDR_LIST;
         }
         else {
-            pParam = &EPICS_CA_ADDR_LIST;
+            pParam = & EPICS_CA_ADDR_LIST;
         }
         
         // 
         // add in the configured addresses
         //
         addAddrToChannelAccessAddressList (
-            &BCastAddrList, pParam, beaconPort);
+            & BCastAddrList, pParam, beaconPort );
     }
  
-    removeDuplicateAddresses ( &this->beaconAddrList, &BCastAddrList, 0 );
+    removeDuplicateAddresses ( & this->beaconAddrList, & BCastAddrList, 0 );
+
+    {
+        ELLLIST parsed, filtered;
+        ellInit ( & parsed );
+        ellInit ( & filtered );
+        // we dont care what port they are coming from
+        addAddrToChannelAccessAddressList ( & parsed, & EPICS_CAS_IGNORE_ADDR_LIST, 0 );
+        removeDuplicateAddresses ( & filtered, & parsed, true );
+
+        while ( ELLNODE * pRawNode  = ellGet ( & filtered ) ) {
+		    assert ( offsetof (osiSockAddrNode, node) == 0 );
+		    osiSockAddrNode * pNode = reinterpret_cast < osiSockAddrNode * > ( pRawNode );
+            if ( pNode->addr.sa.sa_family == AF_INET ) {
+                ipIgnoreEntry * pIPI = new ipIgnoreEntry ( pNode->addr.ia.sin_addr.s_addr );
+                this->ignoreTable.add ( * pIPI );
+            }
+            else {
+                errlogPrintf ( 
+                    "Expected IP V4 address - EPICS_CAS_IGNORE_ADDR_LIST entry ignored\n" );
+            }
+            free ( pNode );
+        }
+    }
 
 	//
     // Solaris specific:
@@ -193,17 +216,17 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
             throw S_cas_internal;
         }
 
-        status = bind (this->bcastRecvSock, &serverBCastAddr.sa,
+        status = bind ( this->bcastRecvSock, &serverBCastAddr.sa,
                         sizeof (serverBCastAddr.sa) );
         if (status<0) {
             char buf[64];
             int errnoCpy = SOCKERRNO;
-            ipAddrToA (&serverBCastAddr.ia, buf, sizeof(buf));
-            errPrintf (S_cas_bindFail, __FILE__, __LINE__,
+            ipAddrToA ( & serverBCastAddr.ia, buf, sizeof ( buf ) );
+            errPrintf ( S_cas_bindFail, __FILE__, __LINE__,
                 "- bind UDP IP addr=%s failed because %s", 
-                buf, SOCKERRSTR(errnoCpy));
-            socket_close (this->sock);
-            socket_close (this->bcastRecvSock);
+                buf, SOCKERRSTR ( errnoCpy ) );
+            socket_close ( this->sock );
+            socket_close ( this->bcastRecvSock );
             throw S_cas_bindFail;
         }
     }
@@ -241,6 +264,8 @@ casDGIntfIO::~casDGIntfIO()
         nnode = nnode->next;
         free ( pnode );
     }
+
+    this->ignoreTable.traverse ( & ipIgnoreEntry::destroy );
     
     osiSockRelease ();
 }
@@ -276,36 +301,47 @@ void casDGIntfIO::xSetNonBlocking()
 //
 inBufClient::fillCondition
 casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
-                     fillParameter parm, bufSizeT & actualSize, caNetAddr & fromOut )
+    fillParameter parm, bufSizeT & actualSize, caNetAddr & fromOut )
 {
     int status;
     osiSocklen_t addrSize;
     sockaddr addr;
     SOCKET sockThisTime;
 
-    if (parm==fpUseBroadcastInterface) {
+    if ( parm == fpUseBroadcastInterface ) {
         sockThisTime = this->bcastRecvSock;
     }
     else {
         sockThisTime = this->sock;
     }
 
-    addrSize = ( osiSocklen_t ) sizeof (addr);
+    addrSize = ( osiSocklen_t ) sizeof ( addr );
     status = recvfrom ( sockThisTime, pBufIn, size, 0,
                        &addr, &addrSize );
-    if (status<=0) {
-        if (status<0) {
+    if ( status <= 0 ) {
+        if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
-            if( errnoCpy != SOCK_EWOULDBLOCK ){
-                errlogPrintf("CAS: UDP recv error was %s",
-                             SOCKERRSTR(errnoCpy));
+            if ( errnoCpy != SOCK_EWOULDBLOCK ) {
+                errlogPrintf ( "CAS: UDP recv error was %s",
+                             SOCKERRSTR ( errnoCpy ) );
             }
         }
         return casFillNone;
     }
     else {
+        // filter out and discard frames received from the ignore list
+        if ( this->ignoreTable.numEntriesInstalled () > 0 ) {
+            if ( addr.sa_family == AF_INET ) {
+                sockaddr_in * pIP = 
+                    reinterpret_cast < sockaddr_in * > ( & addr );
+                ipIgnoreEntry comapre ( pIP->sin_addr.s_addr );
+                if ( this->ignoreTable.lookup ( comapre ) ) {
+                    return casFillNone;
+                }
+            }
+        }
         fromOut = addr;
-        actualSize = (bufSizeT) status;
+        actualSize = static_cast < bufSizeT > ( status );
         return casFillProgress;
     }
 }
@@ -323,17 +359,17 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
     // (char *) cast below is for brain dead wrs prototype
     //
     struct sockaddr dest = to;
-    status = sendto (this->sock, (char *) pBufIn, size, 0,
-                     &dest, sizeof(dest));
-    if (status>=0) {
+    status = sendto ( this->sock, (char *) pBufIn, size, 0,
+                     & dest, sizeof ( dest ) );
+    if ( status >= 0 ) {
         assert ( size == (unsigned) status );
         return outBufClient::flushProgress;
     }
     else {
         int errnoCpy = SOCKERRNO;
-        if (errnoCpy != SOCK_EWOULDBLOCK) {
+        if ( errnoCpy != SOCK_EWOULDBLOCK ) {
             char buf[64];
-            sockAddrToA (&dest, buf, sizeof(buf));
+            sockAddrToA ( & dest, buf, sizeof ( buf ) );
             errlogPrintf (
                 "CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
                 buf, SOCKERRSTR(errnoCpy));
@@ -353,17 +389,17 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 	int status;
 	osiSockIoctl_t nchars = 0;
 
-	status = socket_ioctl (this->sock, FIONREAD, &nchars); // X aCC 392
-	if (status<0) {
-		errlogPrintf ("CAS: FIONREAD failed because \"%s\"\n",
-			SOCKERRSTR(SOCKERRNO));
+	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
+	if ( status < 0 ) {
+		errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
+			SOCKERRSTR ( SOCKERRNO ) );
 		return 0u;
 	}
-	else if (nchars<0) {
+	else if ( nchars < 0 ) {
 		return 0u;
 	}
 	else {
-		return (bufSizeT) nchars;
+		return ( bufSizeT ) nchars;
 	}
 }
 
@@ -381,11 +417,11 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
 
     portField = inetAddr.sin_port; // the TCP port
 
-    for (pAddr = reinterpret_cast <osiSockAddrNode *> (ellFirst(&this->beaconAddrList));
-         pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> (ellNext(&pAddr->node))) {
-        status = connect (this->beaconSock, &pAddr->addr.sa, sizeof(pAddr->addr.sa));
+    for (pAddr = reinterpret_cast <osiSockAddrNode *> ( ellFirst ( & this->beaconAddrList ) );
+         pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> ( ellNext ( & pAddr->node ) ) ) {
+        status = connect ( this->beaconSock, &pAddr->addr.sa, sizeof ( pAddr->addr.sa ) );
         if (status<0) {
-            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+            ipAddrToDottedIP ( & pAddr->addr.ia, buf, sizeof ( buf ) );
             errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                 __FILE__, buf, SOCKERRSTR(SOCKERRNO));
         }

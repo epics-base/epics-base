@@ -35,9 +35,7 @@
 #include "recGbl.h"
 #define epicsExportSharedSymbols
 
-#define GEN_SIZE_OFFSET
 #include "stringoutRecord.h"
-#undef  GEN_SIZE_OFFSET
 #include "menuOmsl.h"
 #include "menuIvoa.h"
 

@@ -34,9 +34,7 @@
 
 
 #include "egRecord.h"
-#define GEN_SIZE_OFFSET
 #include "egeventRecord.h"
-#undef  GEN_SIZE_OFFSET
 #include "egDefs.h"
 
 #define STATIC	static

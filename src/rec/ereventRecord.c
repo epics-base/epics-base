@@ -33,9 +33,7 @@
 #include "ereventDefs.h"
 #define epicsExportSharedSymbols
 
-#define GEN_SIZE_OFFSET
 #include "ereventRecord.h"
-#undef  GEN_SIZE_OFFSET
 
 #define STATIC	static
 

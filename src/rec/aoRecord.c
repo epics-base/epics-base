@@ -38,9 +38,7 @@
 #include "menuConvert.h"
 #include "menuOmsl.h"
 #define epicsExportSharedSymbols
-#define GEN_SIZE_OFFSET
 #include "aoRecord.h"
-#undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/

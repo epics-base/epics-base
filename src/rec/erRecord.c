@@ -33,9 +33,7 @@
 
 #define epicsExportSharedSymbols
 
-#define GEN_SIZE_OFFSET
 #include "erRecord.h"
-#undef  GEN_SIZE_OFFSET
 
 #define STATIC	static
 

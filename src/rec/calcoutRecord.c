@@ -40,9 +40,7 @@
 
 #define epicsExportSharedSymbols
 
-#define GEN_SIZE_OFFSET
 #include "calcoutRecord.h"
-#undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
 
 /* Create RSET - Record Support Entry Table*/

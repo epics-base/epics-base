@@ -5,7 +5,7 @@
 #include <socket.h>
 #include <in.h>
 #include <db_access.h>
-#include <taskParams.h>
+#include <task_params.h>
 #include <server.h>
 
 #define DELETE_TASK(TID)\

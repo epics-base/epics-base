@@ -19,7 +19,7 @@
 /*
  *	LAACS includes
  */
-#include <taskParams.h>
+#include <task_params.h>
 #include <iocmsg.h>
 
 #define abort taskSuspend

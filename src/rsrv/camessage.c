@@ -53,8 +53,6 @@ typedef unsigned long arrayElementCount;
 #include "net_convert.h"
 #include "server.h"
 
-static caHdr nill_msg;
-
 #define RECORD_NAME(PADDR) ((PADDR)->precord->name)
 
 LOCAL EVENTFUNC read_reply;
@@ -271,26 +269,6 @@ LOCAL void log_header (
     }
 }
 
-/*  log_old_header ()
- */
-LOCAL void log_old_header (
-    const char      *pContext,
-    struct client   *client,
-    const caHdr     *mp,
-    const void      *pPayLoad,
-    unsigned        mnum
-)
-{
-    caHdrLargeArray msg;
-    msg.m_cmmd = mp->m_cmmd;
-    msg.m_postsize = mp->m_postsize;
-    msg.m_count = mp->m_count;
-    msg.m_dataType = mp->m_dataType;
-    msg.m_cid = mp->m_cid;
-    msg.m_available = mp->m_available;
-    log_header ( pContext, client, &msg, pPayLoad, mnum );
-}
-
 /*
  * logBadIdWithFileAndLineno()
  */
@@ -343,7 +321,7 @@ LOCAL int udp_echo_action ( caHdrLargeArray *mp,
 /*
  * bad_tcp_cmd_action()
  */
-LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, const void *pPayload, 
+LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload, 
                            struct client *client )
 {
     const char *pCtx = "invalid (damaged?) request code from TCP";

@@ -35,7 +35,7 @@ extern "C" void epicsShareAPI ca_test_event ( struct event_handler_args args )
     printf ( "CAC: Value:\t<%d>\n", *(dbr_short_t *) args.dbr );
     break;
   case	DBR_LONG:
-    printf ( "CAC: Value:\t<%ld>\n", *(dbr_long_t *)args.dbr );
+    printf ( "CAC: Value:\t<%d>\n", *(dbr_long_t *)args.dbr );
     break;
   case	DBR_FLOAT:
     printf ( "CAC: Value:\t<%f>\n", *(dbr_float_t *)args.dbr );

@@ -344,7 +344,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
             send_delay, recv_delay);
         printf( 
-        "\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu, State=%s\n", 
+        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u, State=%s\n", 
             client->send.stk,
             client->recv.cnt - client->recv.stk,
             state[client->disconnect?1:0]); 
@@ -366,7 +366,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
             pciu = (struct channel_in_use *) ellNext(&pciu->node);
         }
         epicsMutexUnlock(client->addrqLock);
-        printf( "\t%ld bytes allocated\n", bytes_reserved);
+        printf( "\t%d bytes allocated\n", bytes_reserved);
 
 
         epicsMutexMustLock(client->addrqLock);

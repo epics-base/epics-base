@@ -402,14 +402,11 @@ static void epicsThreadInit ( void )
             return;
         }
 
-#if 1
-        /* not arch neutral, but at least supported by w95 and borland */
-        if ( InterlockedExchange ( (LPLONG) &win32ThreadGlobalMutex, (LONG) win32ThreadGlobalMutexTmp ) ) {
-#else
-        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
-        if ( InterlockedCompareExchange ( (PVOID *) &win32ThreadGlobalMutex, 
-            (PVOID) win32ThreadGlobalMutexTmp, (PVOID)0 ) != 0) {
-#endif
+        /* 
+         * not supported on W95 but supported on Borland 551
+         */
+        if ( InterlockedCompareExchangePointer ( &win32ThreadGlobalMutex, 
+            win32ThreadGlobalMutexTmp, 0 ) != 0) {
             CloseHandle (win32ThreadGlobalMutexTmp);
             /* wait for init to complete */
             status = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );

@@ -449,7 +449,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		/* add operators of higher or equal priority to	*/
 		/* postfix notation				*/
 		while ((pstacktop >= stack+1) &&
-		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
+		  (pstacktop->in_stack_pri >= in_coming_pri)) {
 		    *ppostfix++ = pstacktop->code;
 		    pstacktop--;
 		}
@@ -509,7 +509,7 @@ long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 		/* add operators of higher priority to	*/
 		/* postfix notation 				*/
 		while ((pstacktop >= stack+1) &&
-		  (pstacktop->in_stack_pri >= pelement->in_coming_pri)) {
+		  (pstacktop->in_stack_pri > pelement->in_coming_pri)) {
 		      *ppostfix++ = pstacktop->code;
 		      pstacktop--;
 		 }

@@ -76,6 +76,7 @@ EPICS_BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_S
 MAKEBPT                    = $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
 DBEXPAND                   = $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
 MAKEDBDEPENDS              = $(PERL) $(TOOLS)/makeDbDepends.pl
+MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
 MAKEDBDDEPENDS             = $(EPICS_BASE_HOST_BIN)/dbMakeDBDDepends$(HOSTEXE)
 REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 DBTORECORDTYPEH            = $(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE)

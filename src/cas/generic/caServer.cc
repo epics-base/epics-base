@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/06/13 09:15:50  jhill
+ * connect proto changes
+ *
  * Revision 1.5  1997/04/10 19:33:52  jhill
  * API changes
  *
@@ -52,6 +55,21 @@
 #include "dbMapper.h"        	// ait to dbr types 
 #include "gddAppTable.h"        // EPICS application type table
 
+//
+// if the compiler supports explicit instantiation of
+// template member functions
+//
+#if defined(EXPL_TEMPL)
+	//
+	// From Stroustrups's "The C++ Programming Language"
+	// Appendix A: r.14.9 
+	//
+	// This explicitly instantiates the template class's member
+	// functions into "templInst.o"
+	//
+	template class resTable <casEventMaskEntry, stringId>;
+	template class resTable <casRes, uintId>;
+#endif
 
 
 //

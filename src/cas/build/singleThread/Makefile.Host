@@ -45,7 +45,6 @@ LIBSRCS += dgOutBuf.cc
 LIBSRCS += casCtx.o 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
-LIBSRCS += templInst.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

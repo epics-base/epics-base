@@ -203,15 +203,15 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
                 unsigned nEntriesFree = RNGSPACE ( pevent->ev_que );
                 if ( nEntriesFree == 0u ) {
                     printf ( " thread=%p queue full", 
-                        pevent->ev_que->evUser->taskid );
+                        (void *) pevent->ev_que->evUser->taskid );
                 }
                 else if ( nEntriesFree == EVENTQUESIZE ) {
                     printf ( " thread=%p queue empty", 
-                        pevent->ev_que->evUser->taskid );
+                        (void *) pevent->ev_que->evUser->taskid );
                 }
                 else {
                     printf ( " thread=%p unused entries=%u", 
-                        pevent->ev_que->evUser->taskid, nEntriesFree );
+                        (void *) pevent->ev_que->evUser->taskid, nEntriesFree );
                 }
             }
 

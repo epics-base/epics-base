@@ -349,8 +349,7 @@ LOCAL int tcp_version_action ( caHdrLargeArray *mp, void *pPayload,
     unsigned epicsPriorityNew;
     unsigned epicsPrioritySelf;
 
-    if ( mp->m_dataType < CA_PROTO_PRIORITY_MIN || 
-            mp->m_dataType > CA_PROTO_PRIORITY_MAX ) {
+    if ( mp->m_dataType > CA_PROTO_PRIORITY_MAX ) {
         return RSRV_ERROR;
     }
 

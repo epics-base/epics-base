@@ -127,7 +127,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 			piiu->recvPending = FALSE;
 		}
 
-                if (flags&CA_DO_SENDS) {
+                if (flags&CA_DO_SENDS || piiu->pushPending) {
 			if (piiu->state==iiu_connecting) {
 				FD_SET (piiu->sock_chan, &pfdi->writeMask);
 				ioPending = TRUE;
@@ -183,7 +183,13 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 	}
 
 	LOCK;
-        if (status>0) {
+	/*
+	 * must run through the IIU list even if no IO is pending
+	 * if any of the IOCs are in flow control (so that an exit 
+	 * flow control msg can be sent to each of them that are)
+	 */
+        if (status>0 || 
+		(ca_static->ca_number_iiu_in_fc>0u&&status>=0) ) {
                 for (	piiu = (IIU *) iiuList.node.next;
                         piiu;
                         piiu = (IIU *) piiu->node.next) {
@@ -195,12 +201,15 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                         if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
                                 (*piiu->recvBytes)(piiu);
 				/*
-				 * if we were not waiting and there is a 
+				 * if we were not blocking and there is a 
 				 * message present then start to suspect that
 				 * we are getting behind
 				 */
-				if (ptimeout->tv_sec==0 || ptimeout->tv_usec==0) {
-					flow_control_on(piiu);
+				if (piiu->sock_proto==IPPROTO_TCP) {
+					if (ptimeout->tv_sec==0 
+						|| ptimeout->tv_usec==0) {
+						flow_control_on(piiu);
+					}
 				}
                         }
 			else if (piiu->recvPending) {
@@ -209,7 +218,9 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 				 * and there are none then we are certain that
 				 * we are not getting behind 
 				 */
-				flow_control_off(piiu);
+				if (piiu->sock_proto==IPPROTO_TCP) {
+					flow_control_off(piiu);
+				}
 			}
 
 			if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {

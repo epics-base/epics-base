@@ -107,6 +107,7 @@ static void createFunction(THREADFUNC func, void *parm)
     int tid = taskIdSelf();
 
     taskVarAdd(tid,(int *)&papTSD);
+    papTSD = 0;
     (*func)(parm);
     taskVarDelete(tid,(int *)&papTSD);
     free(papTSD);

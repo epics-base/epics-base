@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.34  1996/06/19 17:59:24  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.33  1995/11/29  19:19:05  jhill
  * Added $log$
  *
@@ -210,7 +213,7 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 	int			status;
 
 	ellInit(&theClients);
-	while (pclient=(struct one_client *)ellGet(&client_list)) {
+	while ( (pclient=(struct one_client *)ellGet(&client_list)) ) {
 		ellAdd(&theClients, &pclient->node);
 
 		/*

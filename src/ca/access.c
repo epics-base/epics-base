@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.83  1996/07/09 22:43:29  jhill
+ * silence gcc warnings and default CLOCKS_PER_SEC if it isnt defined (for sunos4 and gcc)
+ *
  * Revision 1.82  1996/06/19 17:58:59  jhill
  * many 3.13 beta changes
  *
@@ -242,12 +245,15 @@ LOCAL int	issue_get_callback(
 evid 		monix, 
 unsigned 	cmmd
 );
+#ifdef vxWorks
 LOCAL void ca_event_handler(
 evid 		monix,
 struct db_addr	*paddr,
 int		hold,
 void		*pfl
 );
+LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
+#endif
 LOCAL void 	ca_pend_io_cleanup();
 LOCAL void 	create_udp_fd();
 static int issue_ca_array_put
@@ -259,7 +265,6 @@ unsigned long			count,
 chid				chix,
 void				*pvalue
 );
-LOCAL void ca_put_notify_action(PUTNOTIFY *ppn);
 LOCAL void ca_default_exception_handler(struct exception_handler_args args);
 
 LOCAL int cac_push_msg(

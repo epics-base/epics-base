@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.19  1996/06/19 17:59:29  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.18  1995/10/12  01:36:39  jhill
  * New ca_flush_io() mechanism
  *
@@ -351,7 +354,7 @@ int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid)
 	}
 	UNLOCK;
 
-	printf("Sync Group: id=%u, magic=%lu, opPend=%u, seqNo=%u\n",
+	printf("Sync Group: id=%u, magic=%lu, opPend=%lu, seqNo=%lu\n",
 		pcasg->id, pcasg->magic, pcasg->opPendCount,
 		pcasg->seqNo);
 
@@ -360,7 +363,7 @@ int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid)
 	while (pcasgop) {
 		if (pcasg->id == pcasgop->id) {
 			printf(
-			"pending op: id=%u pVal=%x, magic=%lu seqNo=%u\n",
+			"pending op: id=%u pVal=%x, magic=%lu seqNo=%lu\n",
 			pcasgop->id, (unsigned)pcasgop->pValue, pcasgop->magic,
 			pcasgop->seqNo);
 		}

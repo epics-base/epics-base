@@ -11,14 +11,10 @@
 
 -include $(TOP)/configure/os/CONFIG_SITE.Common.Common
 
-#X11_LIB=/usr/X11R6/lib
-#X11_INC=/usr/X11R6/include/X11
-#MOTIF_LIB=/usr/X11R6/lib
-#MOTIF_INC=/usr/X11R6/include
-X11_INC=/local2/X11R6/include/X11
-X11_LIB=/local2/X11R6/lib
-MOTIF_LIB=/local2/X11R6/lib
-MOTIF_INC=/local2/X11R6/include
+X11_LIB=/usr/X11R6/lib
+X11_INC=/usr/X11R6/include/X11
+MOTIF_LIB=/usr/X11R6/lib
+MOTIF_INC=/usr/X11R6/include
 
 OPENWIN =
 WINGZ =

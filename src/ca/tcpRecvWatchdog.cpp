@@ -28,7 +28,7 @@ tcpRecvWatchdog::tcpRecvWatchdog
 
 tcpRecvWatchdog::~tcpRecvWatchdog ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )

@@ -43,12 +43,12 @@
 
 class timer : public epicsTimer, public tsDLNode < timer > {
 public:
+    void destroy ();
     void start ( class epicsTimerNotify &, const epicsTime & );
     void start ( class epicsTimerNotify &, double delaySeconds );
     void cancel ();
     expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
-    epicsTimerQueue & getQueue () const;
     class timerQueue & getPrivTimerQueue ();
 protected:
     timer ( class timerQueue & );
@@ -83,7 +83,6 @@ public:
     virtual ~timerQueue ();
     double process ( const epicsTime & currentTime );
     epicsTimer & createTimer ();
-    void destroyTimer ( epicsTimer & );
     void show ( unsigned int level ) const;
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
     void destroyTimerForC ( epicsTimerForC & );
@@ -117,7 +116,6 @@ public:
     timerQueueActive ( bool okToShare, unsigned priority );
     ~timerQueueActive () = 0;
     epicsTimer & createTimer ();
-    void destroyTimer ( epicsTimer & );
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     int threadPriority () const;
@@ -167,7 +165,6 @@ class timerQueuePassive : public epicsTimerQueuePassive {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
     epicsTimer & createTimer ();
-    void destroyTimer ( epicsTimer & );
     void show ( unsigned int level ) const;
     double process ( const epicsTime & currentTime );
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );

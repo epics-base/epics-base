@@ -117,7 +117,7 @@ casStreamEvWakeup::casStreamEvWakeup () :
 //
 casStreamEvWakeup::~casStreamEvWakeup()
 {
-    fileDescriptorManager.destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 //
@@ -185,7 +185,7 @@ casStreamIOWakeup::casStreamIOWakeup () :
 //
 casStreamIOWakeup::~casStreamIOWakeup()
 {
-    fileDescriptorManager.destroyTimer ( this->timer );
+    this->timer.deatroy ();
 }
 
 //

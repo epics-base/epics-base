@@ -46,7 +46,7 @@ public:
 
 class epicsTimer {
 public:
-    virtual ~epicsTimer () = 0; 
+    virtual void destroy () = 0; // requires existence of timer queue
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     virtual void cancel () = 0;
@@ -58,23 +58,25 @@ public:
     virtual expireInfo getExpireInfo () const = 0;
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
-    virtual class epicsTimerQueue & getQueue () const = 0;
+protected:
+    virtual ~epicsTimer () = 0; // use destroy
 };
 
 class epicsTimerQueue {
 public:
-    virtual ~epicsTimerQueue () = 0;
     virtual epicsTimer & createTimer () = 0;
-    virtual void destroyTimer ( epicsTimer & ) = 0;
     virtual void show ( unsigned int level ) const = 0;
+protected:
+    virtual ~epicsTimerQueue () = 0;
 };
 
 class epicsTimerQueueActive : public epicsTimerQueue {
 public:
-    virtual ~epicsTimerQueueActive () = 0;
     static epicsShareFunc epicsTimerQueueActive & allocate (
         bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
+protected:
+    virtual ~epicsTimerQueueActive () = 0;
 };
 
 class epicsTimerQueueNotify {
@@ -82,6 +84,8 @@ public:
     // called when a new timer is inserted into the queue and the
     // delay to the next expire has changed
     virtual void reschedule () = 0;
+protected:
+    virtual ~epicsTimerQueueNotify () = 0;
 };
 
 class epicsTimerQueuePassive : public epicsTimerQueue {

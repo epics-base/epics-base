@@ -24,7 +24,7 @@ tcpSendWatchdog::tcpSendWatchdog
 
 tcpSendWatchdog::~tcpSendWatchdog ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( const epicsTime & currentTime )

@@ -42,6 +42,13 @@ timer::~timer ()
     this->cancel ();
 }
 
+void timer::destroy () 
+{
+    epicsAutoMutex autoLock ( this->queue.mutex );
+    this->~timer ();
+    this->queue.timerFreeList.release ( this, sizeof( *this ) );
+}
+
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 {
     this->start ( notify, epicsTime::getCurrent () + delaySeconds );
@@ -175,11 +182,6 @@ void timer::show ( unsigned int level ) const
     if ( level >= 1u && this->pNotify ) {
         this->pNotify->show ( level - 1u );
     }
-}
-
-epicsTimerQueue & timer::getQueue () const
-{
-    return this->queue;
 }
 
 timerQueue & timer::getPrivTimerQueue()

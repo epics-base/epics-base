@@ -57,7 +57,7 @@ searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, epicsMutex &
 
 searchTimer::~searchTimer ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 //

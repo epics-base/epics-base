@@ -68,7 +68,7 @@ delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queueIn ) :
 
 delayVerify::~delayVerify ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 inline void delayVerify::setBegin ( const epicsTime &beginIn )
@@ -177,7 +177,7 @@ cancelVerify::cancelVerify ( epicsTimerQueue &queueIn ) :
 
 cancelVerify::~cancelVerify ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 inline void cancelVerify::start ( const epicsTime &expireTime )
@@ -271,7 +271,7 @@ periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :
 
 periodicVerify::~periodicVerify ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 inline void periodicVerify::start ( const epicsTime &expireTime )

@@ -163,13 +163,6 @@ epicsTimer & timerQueue::createTimer ()
     return * new ( pBuf ) timer ( *this );
 }
 
-void timerQueue::destroyTimer ( epicsTimer & tmr ) 
-{
-    epicsAutoMutex autoLock ( this->mutex );
-    tmr.~epicsTimer ();
-    this->timerFreeList.release ( &tmr, sizeof( tmr ) );
-}
-
 void timerQueue::show ( unsigned level ) const
 {
     epicsAutoMutex locker ( this->mutex );

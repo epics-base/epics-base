@@ -213,11 +213,6 @@ class epicsTimer & caServer::createTimer ()
     return fileDescriptorManager.createTimer ();
 }
 
-void caServer::destroyTimer ( class epicsTimer & tmr )
-{
-    fileDescriptorManager.destroyTimer ( tmr );
-}
-
 //
 // caServer::readEventsProcessedCounter
 //

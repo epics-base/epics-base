@@ -68,7 +68,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
 {
 	this->pv.removeIO();
     if ( this->pv.getCAS() ) {
-        this->pv.getCAS()->destroyTimer ( this->timer );
+        this->timer.destroy ();
     }
 }
 
@@ -102,7 +102,7 @@ exAsyncReadIO::~exAsyncReadIO()
 {
 	this->pv.removeIO ();
     if ( this->pv.getCAS() ) {
-        this->pv.getCAS()->destroyTimer ( this->timer );
+        this->timer.destroy ();
     }
 }
 

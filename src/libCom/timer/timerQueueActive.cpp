@@ -76,12 +76,6 @@ epicsTimer & timerQueueActive::createTimer ()
     return this->queue.createTimer ();
 }
 
-void timerQueueActive::destroyTimer ( epicsTimer & et )
-{
-    timer & tmr = dynamic_cast < timer & > ( et );
-    this->queue.destroyTimer ( tmr );
-}
-
 epicsTimerForC & timerQueueActive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
 {
     return this->queue.createTimerForC ( pCB, pPrivateIn );

@@ -135,7 +135,7 @@ timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn,
 timerForOldFdmgr::~timerForOldFdmgr ()
 {
     this->fdmgr.resTbl.remove ( this->getId() );
-    this->fdmgr.destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 epicsTimerNotify::expireStatus timerForOldFdmgr::expire ( const epicsTime & )

@@ -30,7 +30,7 @@ repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, epicsTimerQueue 
 
 repeaterSubscribeTimer::~repeaterSubscribeTimer ()
 {
-    this->timer.getQueue().destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ( const epicsTime & currentTime )

@@ -103,7 +103,6 @@ public:
     epicsShareFunc class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
 
     epicsTimer & createTimer ();
-    void destroyTimer ( epicsTimer & );
 
 private:
     tsDLList<fdReg> regList;
@@ -210,11 +209,6 @@ inline epicsTimer & fdManager::createTimer ()
 {
     this->lazyInitTimerQueue ();
     return this->pTimerQueue->createTimer ();
-}
-
-inline void fdManager::destroyTimer ( epicsTimer & tmr ) 
-{
-    this->pTimerQueue->destroyTimer ( tmr );
 }
 
 #endif // fdManagerH_included

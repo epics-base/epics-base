@@ -34,7 +34,7 @@ casBeaconTimer::casBeaconTimer ( double delay, caServerOS &osIn ) :
 
 casBeaconTimer::~casBeaconTimer ()
 {
-    fileDescriptorManager.destroyTimer ( this->timer );
+    this->timer.destroy ();
 }
 
 //

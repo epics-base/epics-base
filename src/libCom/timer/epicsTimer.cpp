@@ -50,6 +50,8 @@ private:
 
 epicsTimer::~epicsTimer () {}
 
+epicsTimerQueueNotify::~epicsTimerQueueNotify () {}
+
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
 epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :

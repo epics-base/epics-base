@@ -283,9 +283,11 @@ public:
 	casChannelI (const casCtx &ctx);
 	epicsShareFunc virtual ~casChannelI();
 
+    void bindToClientI ( casCoreClient & client, casPVI & pv, caResId cid );
+
 	casCoreClient &getClient () const
 	{	
-		return this->client;
+		return *this->pClient;
 	}
 	const caResId getCID () 
 	{
@@ -316,7 +318,7 @@ public:
 
 	casPVI &getPVI () const 
 	{
-		return this->pv;
+		return *this->pPV;
 	}
 
 	void installAsyncIO (casAsyncIOI &);
@@ -356,10 +358,10 @@ public:
 protected:
 	tsDLList<casMonitor>    monitorList;
 	tsDLList<casAsyncIOI>   ioInProgList;
-	casCoreClient           &client;
-	casPVI                  &pv;
-	caResId const           cid;    // client id 
-	unsigned                accessRightsEvPending:1;
+	casCoreClient           * pClient;
+	casPVI                  * pPV;
+	caResId                 cid;    // client id 
+	bool                    accessRightsEvPending:1;
 
 	epicsShareFunc virtual void destroy ();
 	casChannelI ( const casChannelI & );
@@ -372,8 +374,10 @@ protected:
 class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
-    casPVListChan (const casCtx &ctx);
+    casPVListChan ( const casCtx &ctx );
+    void bindToClient ( casCoreClient & client, casPVI & pv, caResId cid );
     epicsShareFunc virtual ~casPVListChan();
+private:
 	casPVListChan ( const casPVListChan & );
 	casPVListChan & operator = ( const casPVListChan & );
 };

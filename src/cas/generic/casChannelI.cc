@@ -24,16 +24,18 @@
 //
 // casChannelI::casChannelI()
 //
-casChannelI::casChannelI (const casCtx &ctx) :
-		client ( * (casStrmClient *) ctx.getClient ()), 
-        pv (*ctx.getPV()),
-		cid (ctx.getMsg()->m_cid),
-		accessRightsEvPending (FALSE)
+casChannelI::casChannelI ( const casCtx & ctx ) :
+		pClient ( 0 ), pPV ( 0 ), cid ( 0xffffffff ),
+		accessRightsEvPending ( false )
 {
-	assert (&this->client);
-	assert (&this->pv);
+}
 
-	this->client.installChannel (*this);
+void casChannelI::bindToClientI ( casCoreClient & client, casPVI & pv, caResId cidIn )
+{
+    this->pClient = & client;
+    this->pPV = & pv;
+	this->cid = cidIn;
+	client.installChannel ( *this );
 }
 
 //
@@ -71,12 +73,12 @@ casChannelI::~casChannelI()
         iterMon = tmpMon;
     }
     
-    this->client.removeChannel(*this);
+    this->pClient->removeChannel(*this);
     
     //
     // force PV delete if this is the last channel attached
     //
-    this->pv.deleteSignal();
+    this->pPV->deleteSignal();
     
     this->unlock();
 }
@@ -115,7 +117,7 @@ void casChannelI::show ( unsigned level ) const
 	tsDLIterConst <casMonitor> iter = this->monitorList.firstIter ();
 	if ( iter.valid () ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
-			this->pv.getName());
+			this->pPV->getName());
 	}
 	while ( iter.valid () ) {
 		iter->show ( level );
@@ -136,9 +138,9 @@ caStatus casChannelI::cbFunc(casEventSys &)
 {
 	caStatus stat;
 
-	stat = this->client.accessRightsResponse(this);
+	stat = this->pClient->accessRightsResponse(this);
 	if (stat==S_cas_success) {
-		this->accessRightsEvPending = FALSE;
+		this->accessRightsEvPending = false;
 	}
 	return stat;
 }
@@ -168,10 +170,10 @@ void casChannelI::destroyClientNotify ()
 
 	pCDEV = new casChanDelEv (this->getCID());
 	if (pCDEV) {
-		this->client.casEventSys::addToEventQueue (*pCDEV);
+		this->pClient->casEventSys::addToEventQueue (*pCDEV);
 	}
 	else {	
-		status = this->client.disconnectChan (this->getCID());
+		status = this->pClient->disconnectChan (this->getCID());
 		if (status) {
 			//
 			// At this point there is no space in pool
@@ -185,7 +187,7 @@ void casChannelI::destroyClientNotify ()
 			// will result in bugs because no doubt this
 			// could be called by a client member function.
 			//
-			this->client.setDestroyPending();
+			this->pClient->setDestroyPending();
 		}
 	}
     this->destroy();

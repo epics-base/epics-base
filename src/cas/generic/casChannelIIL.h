@@ -27,7 +27,7 @@
 //
 inline void casChannelI::lock() const
 {
-	this->client.lock();
+	this->pClient->lock();
 }
 
 //
@@ -35,7 +35,7 @@ inline void casChannelI::lock() const
 //
 inline void casChannelI::unlock() const
 {
-	this->client.unlock();
+	this->pClient->unlock();
 }
 
 //
@@ -112,7 +112,7 @@ inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
 {
         this->lock();
         this->ioInProgList.remove(io);
-        this->pv.unregisterIO();
+        this->pPV->unregisterIO();
         this->unlock();
 }
 
@@ -130,9 +130,9 @@ inline const caResId casChannelI::getSID()
 //
 inline void casChannelI::postAccessRightsEvent()
 {
-	if (!this->accessRightsEvPending) {
-		this->accessRightsEvPending = TRUE;
-		this->client.addToEventQueue(*this);
+	if ( ! this->accessRightsEvPending ) {
+		this->accessRightsEvPending = true;
+		this->pClient->addToEventQueue ( *this );
 	}
 }
 
@@ -141,7 +141,7 @@ inline void casChannelI::postAccessRightsEvent()
 //
 inline const gddEnumStringTable & casChannelI::enumStringTable () const
 {
-    return this->pv.enumStringTable ();
+    return this->pPV->enumStringTable ();
 }
 
 #endif // casChannelIIL_h

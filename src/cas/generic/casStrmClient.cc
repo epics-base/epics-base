@@ -1077,6 +1077,8 @@ caStatus casStrmClient::createChanResponse(const caHdrLargeArray &hdr, const pvA
 		return this->channelCreateFailed (&hdr, S_cas_noMemory);
 	}
 
+    pChan->bindToClient ( *this, *pPV, hdr.m_cid );
+
 	pChanI = (casChannelI *) pChan;
 
 	//

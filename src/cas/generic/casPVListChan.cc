@@ -25,7 +25,12 @@
 casPVListChan::casPVListChan (const casCtx &ctx) :
         casChannelI(ctx)
 {
-        this->pv.installChannel(*this);
+}
+
+void casPVListChan::bindToClient ( casCoreClient & client, casPVI & pv, caResId cid )
+{
+    this->bindToClientI ( client, pv, cid );
+    this->pPV->installChannel ( *this );
 }
 
 //
@@ -33,7 +38,7 @@ casPVListChan::casPVListChan (const casCtx &ctx) :
 //
 casPVListChan::~casPVListChan()
 {
-        this->pv.removeChannel(*this);
+        this->pPV->removeChannel(*this);
         //
         // delete signal to PV occurs in
         // casChannelI::~casChannelI

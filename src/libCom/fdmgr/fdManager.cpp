@@ -52,7 +52,8 @@
 #include "osiThread.h"
 #include "tsMinMax.h"
 #include "fdManager.h"
- 
+#include "locationException.h"
+
 //
 // if the compiler supports explicit instantiation of
 // template member functions
@@ -316,11 +317,7 @@ epicsShareFunc void fdManager::installReg (fdReg &reg)
 
     int status = this->fdTbl.add (reg);
 	if (status!=0) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw fdInterestSubscriptionAlreadyExits ();
-#       endif
+        throwWithLocation ( fdInterestSubscriptionAlreadyExits () );
     }
 }
 

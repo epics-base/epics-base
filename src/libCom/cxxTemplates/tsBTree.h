@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include "locationException.h"
 
 //
 // tsBTreeRMRet
@@ -100,11 +101,7 @@ private:
 			}
 		}
 		else {
-#           ifdef noExceptionsFromCXX
-                assert (0);
-#           else            
-                throw invalid_btCmp ();
-#           endif
+            throwWithLocation ( invalid_btCmp () );
 		}
 	}
 

@@ -54,6 +54,7 @@
 
 #include "tsSLList.h"
 #include "shareLib.h"
+#include "locationException.h"
 
 typedef size_t resTableIndex;
 
@@ -328,11 +329,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	}
 
     if ( nbits > ID::maxIndexBitWidth () ) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw sizeExceedsMaxIndexWidth ();
-#       endif
+        throwWithLocation ( sizeExceedsMaxIndexWidth () );
     }
 
     //
@@ -349,11 +346,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	this->nInUse = 0u;
 	this->pTable = new tsSLList<T> [1<<nbits];
 	if (this->pTable==0) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw dynamicMemoryAllocationFailed ();
-#       endif
+        throwWithLocation ( dynamicMemoryAllocationFailed () );
 	}
 }
 
@@ -588,11 +581,7 @@ resTable<T,ID>::~resTable()
 	if (this->pTable) {
 		this->destroyAllEntries();
 		if (this->nInUse != 0u) {
-#           ifdef noExceptionsFromCXX
-                assert (0);
-#           else            
-                throw entryDidntRespondToDestroyVirtualFunction ();
-#           endif
+            throwWithLocation ( entryDidntRespondToDestroyVirtualFunction () );
 		}
 		delete [] this->pTable;
 	}
@@ -826,11 +815,7 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 			memcpy ((void *)this->pStr, idIn, nChars);
 		}
 		else {
-#           ifdef noExceptionsFromCXX
-                assert (0);
-#           else            
-                throw dynamicMemoryAllocationFailed ();
-#           endif
+            throwWithLocation ( dynamicMemoryAllocationFailed () );
 		}
 	}
 	else {

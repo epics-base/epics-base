@@ -35,6 +35,9 @@
 
 #include <assert.h>
 
+#include <locationException.h>
+
+
 //
 // the hp compiler complains about parameterized friend
 // class that has not been declared without this?
@@ -368,11 +371,7 @@ template <class T>
 void tsSLIterRm<T>::remove ()
 {
 	if (this->pCurrent==0) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noCurrentItemInIterator ();
-#       endif
+        throwWithLocation ( noCurrentItemInIterator () );
 	}
 
 	tsSLNode<T> *pPrevNode;
@@ -384,12 +383,8 @@ void tsSLIterRm<T>::remove ()
 		// fail if it is an attempt to 
 		// delete twice without moving the iterator
 		//
-		if (pPrevNode->pNext != this->pCurrent) {
-#           ifdef noExceptionsFromCXX
-                assert (0);
-#           else            
-                throw noCurrentItemInIterator ();
-#           endif
+		if (pPrevNode->pNext != this->pCurrent) {   
+            throwWithLocation ( noCurrentItemInIterator ());
 		}
 	}
 	else {

@@ -117,22 +117,14 @@ epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRe
     pParam (pParamIn)
 {
     if (pFuncIn==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noFunctionSpecified ();
-#       endif
+        throwWithLocation ( noFunctionSpecified () );
     }
 }
 
 epicsShareFunc fdRegForOldFdmgr::~fdRegForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw doubleDelete ();
-#       endif
+        throwWithLocation ( doubleDelete () );
     }
 }
 
@@ -147,11 +139,7 @@ osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn,
     fdmgr (fdmgrIn), pFunc (pFuncIn), pParam(pParamIn)
 {
     if (pFuncIn==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noFunctionSpecified ();
-#       endif
+        throwWithLocation ( noFunctionSpecified () );
     }
 
     this->fdmgr.resTbl.add (*this);
@@ -160,11 +148,7 @@ osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn,
 osiTimerForOldFdmgr::~osiTimerForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw doubleDelete ();
-#       endif
+        throwWithLocation ( doubleDelete () );
     }
 
     this->pFunc = NULL;

@@ -11,4 +11,4 @@ TORNADO=YES
 
 WIND_HOST_TYPE = cygwin32
 
-PERL = C:\\Perl\\bin\\perl
+PERL = C:\\Perl\\bin\\Perl$(EXE)

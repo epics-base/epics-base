@@ -31,7 +31,7 @@ typedef struct binary {
 
 typedef struct mutex {
     pthread_mutexattr_t mutexAttr;
-    pthread_mutex_t	lock;	/*lock for structure */
+    pthread_mutex_t	lock;
     pthread_cond_t	waitToBeOwner;
     int			count;
     int			owned;  /* TRUE | FALSE */
@@ -194,15 +194,15 @@ void semMutexDestroy(semMutexId id)
     mutex *pmutex = (mutex *)id;
     int   status;
 
-    status = pthread_mutex_destroy(&pmutex->lock);
-    checkStatus(status,"pthread_mutex_destroy");
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
     checkStatus(status,"pthread_cond_destroy");
+    status = pthread_mutex_destroy(&pmutex->lock);
+    checkStatus(status,"pthread_mutex_destroy");
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
     checkStatus(status,"pthread_mutexattr_destroy");
     free(pmutex);
 }
-
+
 void semMutexGive(semMutexId id)
 {
     mutex *pmutex = (mutex *)id;

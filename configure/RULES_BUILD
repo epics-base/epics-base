@@ -206,13 +206,6 @@ depends: $(LIBSRCS_IOC) $(LIBSRCS_HOST) $(SRCS) $(COND_PROD_SRCS)
 
 $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
-	@echo $*_OBJS=$($*_OBJS)
-	@echo PROD_OBJS=$(PROD_OBJS)
-	@echo LD_OBJS=$(LD_OBJS)
-	@echo PROD_LIBS=$(PROD_LIBS)
-	@echo USR_LIBS=$(USR_LIBS)
-	@echo DEPLIB_DIRS=$(DEPLIB_DIRS)
-	@echo $*_DEPLIBS=$($*_DEPLIBS)
 	$(LINK.cpp) $(LD_OBJS) $(LD_RESS) $(LDLIBS)
 
 %$(OBJ): %.c

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.31  1998/12/19 00:04:53  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.30  1998/12/01 18:54:45  jhill
  * Use EPICS_CA_BEACON_PERIOD
  *
@@ -518,7 +521,7 @@ public:
 	inline caServerI &getCAS() const;
 
 	virtual caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
-		gdd *pDesc, const caStatus status);
+		const gdd *pDesc, const caStatus status);
 
 	virtual caStatus accessRightsResponse(casChannelI *);
 
@@ -532,13 +535,11 @@ public:
 	virtual caStatus createChanResponse(
 		const caHdr &, const pvAttachReturn &);
 	virtual caStatus readResponse(
-		casChannelI *, const caHdr &, gdd *, const caStatus); 
+		casChannelI *, const caHdr &, const gdd &, const caStatus); 
 	virtual caStatus readNotifyResponse(
-		casChannelI *, const caHdr &, gdd *, const caStatus);
-	virtual caStatus writeResponse(
-		const caHdr &, const caStatus);
-	virtual caStatus writeNotifyResponse(
-		const caHdr &, const caStatus);
+		casChannelI *, const caHdr &, const gdd *, const caStatus);
+	virtual caStatus writeResponse (const caHdr &, const caStatus);
+	virtual caStatus writeNotifyResponse (const caHdr &, const caStatus);
 
 	//
 	// The following are only used with async IO for
@@ -682,14 +683,14 @@ public:
 	//
 	virtual caStatus createChanResponse(const caHdr &, const pvAttachReturn &);
 	caStatus readResponse(casChannelI *pChan, const caHdr &msg,
-			gdd *pDesc, const caStatus status);
+			const gdd &desc, const caStatus status);
 	caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,
-			gdd *pDesc, const caStatus status);
+			const gdd *pDesc, const caStatus status);
 	caStatus writeResponse(const caHdr &msg,
 			const caStatus status);
 	caStatus writeNotifyResponse(const caHdr &msg, const caStatus status);
 	caStatus monitorResponse(casChannelI &chan, const caHdr &msg, 
-		gdd *pDesc, const caStatus status);
+		const gdd *pDesc, const caStatus status);
 
 	//
 	//
@@ -771,7 +772,7 @@ private:
 			bufSizeT &nBytesActual) = 0;
 
 	caStatus readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, gdd *pDesc, const caStatus ecaStatus);
+		const caHdr &msg, const gdd *pDesc, const caStatus ecaStatus);
 	caStatus writeNotifyResponseECA_XXX(const caHdr &msg,
 			const caStatus status);
 };

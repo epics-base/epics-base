@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/12/19 00:04:50  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.10  1998/10/28 23:51:00  jhill
  * server nolonger throws exception when a poorly formed get/put call back
  * request arrives. Instead a get/put call back response is sent which includes
@@ -163,12 +166,12 @@ caStatus casCoreClient::createChanResponse(const caHdr &, const pvAttachReturn &
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::readResponse(casChannelI *, const caHdr &, 
-	gdd *, const caStatus)
+	const gdd &, const caStatus)
 {
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::readNotifyResponse(casChannelI *, const caHdr &, 
-	gdd *, const caStatus)
+	const gdd *, const caStatus)
 {
 	return S_casApp_noSupport;
 }
@@ -183,7 +186,7 @@ caStatus casCoreClient::writeNotifyResponse(const caHdr &,
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::monitorResponse(casChannelI &, const caHdr &, 
-	gdd *, const caStatus)
+	const gdd *, const caStatus)
 {
 	return S_casApp_noSupport;
 }

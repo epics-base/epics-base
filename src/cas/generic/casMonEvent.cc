@@ -36,7 +36,7 @@ caStatus casMonEvent::cbFunc ( casCoreClient & client )
     //
 	// safe to cast because we have checked the type code 
 	//
-	casMonitor * pMon = reinterpret_cast < casMonitor * > 
+	casMonitor * pMon = static_cast < casMonitor * > 
         ( client.lookupRes ( this->id, casMonitorT ) );
     if ( ! pMon ) {
         // we know this isnt an overflow event because those are

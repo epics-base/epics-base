@@ -824,7 +824,7 @@ long dbPutLinkValue(struct link *plink,short dbrType,
 
 		status=dbPut(paddr,dbrType,pbuffer,nRequest);
 		if(ppv_link->pvlMask&pvlOptMS)
-			recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
+			recGblSetSevr(pdest,LINK_ALARM,psource->nsev);
 		if(status) return(status);
 		if((paddr->pfield==(void *)&pdest->proc)
 		|| (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {

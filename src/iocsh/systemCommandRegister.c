@@ -16,8 +16,10 @@
  */
 #include <stdlib.h>
 #include <errlog.h>
-#include <iocsh.h>
 #include <epicsExport.h>
+
+#define epicsExportSharedSymbols
+#include <iocsh.h>
 
 /* system */
 static const iocshArg systemArg0 = { "command string",iocshArgString};

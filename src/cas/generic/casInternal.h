@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1996/11/02 00:54:14  jhill
+ * many improvements
+ *
  * Revision 1.7  1996/09/16 18:24:02  jhill
  * vxWorks port changes
  *
@@ -414,7 +417,7 @@ class casPVI;
 class casChannelI : public tsDLNode<casChannelI>, public casRes {
 public:
 	casChannelI (const casCtx &ctx, casChannel &chanAdapter);
-	~casChannelI();
+	virtual ~casChannelI();
 
 	void show (unsigned level);
 
@@ -492,7 +495,7 @@ class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
         inline casPVListChan (const casCtx &ctx, casChannel &chanAdapter);
-        inline ~casPVListChan();
+        virtual ~casPVListChan();
 };
 
 class caServerI;
@@ -511,18 +514,18 @@ public:
         // for the PV in this system
         //
 	casPVI (caServerI &cas, const char * const pNameIn, casPV &pvAdapter);
-	~casPVI(); 
+	virtual ~casPVI(); 
 
         //
         // for use by the server library
         //
-        caServerI &getCAS() {return this->cas;}
+        inline caServerI &getCAS();
 
         //
         // CA only does 1D arrays for now (and the new server
         // temporarily does only scalers)
         //
-        aitIndex nativeCount() {return 1u; /* scaler */ }
+        inline aitIndex nativeCount();
 
         //
         // only for use by casMonitor
@@ -557,8 +560,6 @@ public:
 
 	inline casPV *interfaceObjectPointer() const;
 
-	inline casPV * operator -> () const;
-
 	caServer *getExtServer();
 
 	//
@@ -568,12 +569,14 @@ public:
 
 	inline aitBool okToBeginNewIO() const;
 
+	inline casPV * operator -> () const;
 private:
 	tsDLList<casPVListChan>	chanList;
 	caServerI		&cas;
 	casPV			&pv;
 	unsigned		nMonAttached;
 	unsigned		nIOAttached;
+	unsigned		destroyInProgress:1;
 
 	inline void lock();
 	inline void unlock();

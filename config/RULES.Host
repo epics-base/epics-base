@@ -536,10 +536,6 @@ $(INSTALL_TCLLIB)/%: ../%
 	@echo "Installing Tcl library $@"
 	@$(INSTALL) -m 555 $< $(INSTALL_TCLLIB)
  
-$(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
-	@echo "Updating $@"
-	@echo eval auto_mkindex $(INSTALL_TCLLIB) "$(TCLLIBNAME)" | tclsh
- 
 $(INSTALL_CONFIG)/%: %
 	@echo "Installing config file $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)

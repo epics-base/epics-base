@@ -40,6 +40,7 @@ border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
 height="31" width="88"></a></p>
 
 <p><small>Modified on $Date$</small></p>
+
 <hr>
 
 <h2>Table of Contents</h2>
@@ -101,6 +102,8 @@ style="color: #FF5F00">(under development)</span></a></h3>
       <li><a href="#Server1">A server's IP address was changed</a></li>
     </ul>
   </li>
+  <li><a href="#Requests">Put Requests Just Prior to Process Termination
+    Appear to be Ignored</a></li>
   <li><a href="#Problems">ENOBUFS Messages</a></li>
 </ul>
 
@@ -123,6 +126,8 @@ style="color: #FF5F00">(under development)</span></a></h3>
     Applications</a></li>
   <li><a href="#Avoid">Avoid Emulating Bad Practices that May Still be
     Common</a></li>
+  <li><a href="#Calling">Calling CA Functions from the vxWorks Shell
+    Thread</a></li>
 </ul>
 
 <h3>Functionality Index&nbsp;</h3>
@@ -153,8 +158,9 @@ style="color: #FF5F00">(under development)</span></a></h3>
   <li><a href="#ca_clear_channel">ca_clear_channel</a></li>
   <li><a href="#ca_clear_event">ca_clear_subscription</a></li>
   <li><a href="#ca_client_status">ca_client_status</a></li>
-  <li><a href="#ca_client_status">ca_context_status</a></li>
+  <li><a href="#ca_context_create">ca_context_create</a></li>
   <li><a href="#ca_context_destroy">ca_context_destroy</a></li>
+  <li><a href="#ca_client_status">ca_context_status</a></li>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
   <li><a href="#ca_add_event">ca_create_subscription</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
@@ -496,13 +502,28 @@ subnets. See "routeLib" in the vxWorks reference manual.</p>
 <p>If the CA client library does not see a beacon from a server that it is
 connected to for EPICS_CA_CONN_TMO seconds then an state-of-health message is
 sent to the server over TCP/IP. If this state-of-health message isn't
-promptly replied to then the client will assume that the server is no longer
-present on the network and disconnect. Disconnecting implies notification of
-client side application programs via function callbacks. The parameter
+promptly replied to then the client library will conclude that channels
+communicating with the server are no longer responsive and inform the CA
+client side application via function callbacks. The parameter
 EPICS_CA_CONN_TMO is specified in floating point seconds. The default is
 typically 30 seconds. For efficient operation it is recommended that
 EPICS_CA_CONN_TMO be set to no less than twice the value specified for
 EPICS_CA_BEACON_PERIOD.</p>
+
+<p>Prior to EPICS R3.14.5 an unresponsive server implied an immediate TCP
+circuit disconnect, immediate resumption of UDP based search requests, and
+immediate attempts to reconnect. There was concern about excessive levels of
+additional activity when servers are operated close to the edge of resource
+limitations. Therefore with version R3.14.5 and greater the CA client library
+continues to inform client side applications when channels are unresponsive,
+but does not immediately disconnect the TCP circuit. Instead the CA client
+library postpones circuit shutdown until receiving indication of circuit
+disconnect from the IP kernel. This can occur either because a server is
+restarted or because the IP kernel's internal TCP circuit inactivity keep
+alive timer has expired after a typically long duration (as is appropriate
+for IP based systems that need to avoid thrashing during periods of excessive
+load). The net result is less search and TCP circuit setup and shutdown
+activity suring periods of excessive load.</p>
 
 <h3><a name="Dynamic">Dynamic Changes in the CA Client Library Search
 Interval</a></h3>
@@ -1314,6 +1335,15 @@ if ( status != ECA_NORMAL ) {
 
 <h3><a name="Channel">Channel Access Data Types</a></h3>
 
+<p>CA channels form a virtual circuit between a process variable (PV) and a
+client side application program. It is possible to connect a wide variety of
+data sources into EPICS using the CA server library. When a CA channel
+communicates with an EPICS Input Output Controller (IOC) then a field is a
+specialization of a PV, and an EPICS record is a plug compatible function
+block that contains fields, and the meta data below frequently are mapped
+onto specific fields within the EPICS records by the EPICS record support
+(see the EPICS Application Developer Guide).</p>
+
 <p>Arguments of type chtype specifying the data type you wish to transfer.
 They expect one of the set of DBR_XXXX data type codes defined in
 db_access.h. There are data types for all of the C primitive types, and there
@@ -1595,7 +1625,9 @@ Otherwise, the user's call back functions will be called only when the main
 initiating channel access thread is executing inside of the CA client
 library. When the CA client library invokes a user's&nbsp;call back function
 it will always wait for the current callback to complete prior to executing
-another call back function.</p>
+another call back function. Programmers enabling preemptive callback should
+be familiar with using mutex locks to create a reliable multi-threaded
+program.</p>
 
 <p>To set up a traditional single threaded client you will need code like
 this (see <a href="#ca_context_create">ca_context_create</a> and <a
@@ -1606,9 +1638,9 @@ Threads</a>) .</p>
 "application pdq calling ca_context_create" );</code></p>
 
 <p>To set up a preemptive callback enabled CA client context you will need
-code like this (see <a href="#ca_context_create">ca_context_create</a>and <a
+code like this (see <a href="#ca_context_create">ca_context_create</a> and <a
 href="#Client2">CA Client Contexts and Application Specific Auxiliary
-Threads</a>) .</p>
+Threads</a>).</p>
 
 <p><code>SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
 "application pdq calling ca_context_create" );</code></p>
@@ -1616,26 +1648,39 @@ Threads</a>) .</p>
 <h3><a name="Client2">CA Client Contexts and Application Specific Auxiliary
 Threads</a></h3>
 
-<p>It may be necessary for several CA client side tools running in the same
+<p>It is often necessary for several CA client side tools running in the same
 address space (process) to be independent of each other. For example, the
 database CA links and the sequencer are designed to not use the same CA
 client library threads, network circuits, and data structures. Each thread
 that calls <a href="#ca_context_create">ca_context_create()</a> for the first
-time either directly, or implicitly when calling a CA routine for the first
-time, creates a CA client library context. A CA client library context
-contains all of the threads, network circuits, and data structures required
-to connect and communicate with the channels that a CA client application has
-created. The priority of auxiliary threads spawned by the CA client library
-are at fixed offsets from the priority of the thread that called <a
-href="#ca_context_create">ca_context_create()</a>. An application specific
-auxiliary thread can join a CA context by calling <a
+time either directly, or implicitly when calling any CA library function for
+the first time, creates a CA client library context. A CA client library
+context contains all of the threads, network circuits, and data structures
+required to connect and communicate with the channels that a CA client
+application has created. The priority of auxiliary threads spawned by the CA
+client library are at fixed offsets from the priority of the thread that
+called <a href="#ca_context_create">ca_context_create()</a>. An application
+specific auxiliary thread can join a CA context by calling <a
 href="#ca_attach_context">ca_attach_context()</a> using the CA context
 identifier that was returned from <a
-href="#ca_current_context">ca_current_context()</a> when it was called by the
-thread that called <a href="#ca_context_create">ca_context_create()</a>. A CA
-client library context can be shut down and cleaned up, after destroying any
-channels or application specific threads that are attached to it, by calling
-<a href="#ca_context_destroy">ca_context_destroy()</a>.</p>
+href="#ca_current_context">ca_current_context()</a> when it is called by the
+thread that created the context which needs to be joined. A context which is
+to be joined must be created using <a
+href="#ca_context_create">ca_context_create(ca_enable_preemptive_callback)</a>.
+It is not possible to attach a thread to a CA context created explicitly
+<em>or implicitly</em> with
+ca_create_context(ca_disable_preemptive_callback). Once a thread has joined
+with a CA context it need only make ordinary ca_xxxx() library calls to use
+the context. There is no need to specify the context identifier when invoking
+the CA y calls because the context identifier is stored in a thread
+privatelibrary calls because the context identifier is stored in a thread
+private variable by ca_attach_context().</p>
+
+<p>A CA client library context can be shut down and cleaned up, after
+destroying any channels or application specific threads that are attached to
+it, by calling <a href="#ca_context_destroy">ca_context_destroy()</a>. The
+context may be created and destroyed by different threads as long as they are
+both part of the same context.</p>
 
 <h3><a name="Polling">Polling the CA Client Library From Single Threaded
 Applications</a></h3>
@@ -1676,6 +1721,38 @@ creating the channel. This approach is implemented on all versions.
 Otherwise, you can also use <code>ca_set_puser(CHID,PUSER)</code>, but this
 function is available only after the first official (post beta) release of
 EPICS 3.13.</p>
+
+<h3><a name="Calling">Calling CA Functions from the vxWorks Shell
+Thread</a></h3>
+
+<p>Calling CA functions from the vxWorks shell thread is a somewhat
+questionable practice for the following reasons.</p>
+<ul>
+  <li>The vxWorks shell thread runs at the very highest priority in the
+    system and therefore socket calls are made at a priority that is above
+    the priority of tNetTask &#x2212; a practice that has caused the WRS IP
+    kernel to get sick in the past. That symptom was observed some time ago,
+    but we don&#x2019;t know if WRS has fixed the problem.</li>
+</ul>
+<ul>
+  <li>The vxWorks shell thread runs at the very highest priority in the
+    system and therefore certain CA auxiliary threads will not get the
+    priorities that are requested for them. This might cause problems only
+    when in a CPU saturation situations.</li>
+</ul>
+<ul>
+  <li>If the code does not call ca_context_destroy (ca_task_exit in past
+    releases) then resources are left dangling.</li>
+</ul>
+<ul>
+  <li>In EPICS R3.13 the CA client library installed vxWorks task exit
+    handlers behaved strangely if CA functions were called from the vxWorks
+    shell, ca_task_exit() wasn&#x2019;t called, and the vxWorks shell
+    restarted. In EPICS R3.14 vxWorks task exit handlers are not installed
+    and therefore cleanup is solely the responsibility of the user. With
+    EPICS R3.14 the user must call ca_context_destroy or ca_task_exit to
+    clean up on vxWorks. This is the same behavior as on all other OS.</li>
+</ul>
 
 <h2><a name="Function Call Reference"></a>Function Call Reference</h2>
 

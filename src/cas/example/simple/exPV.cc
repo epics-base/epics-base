@@ -67,6 +67,7 @@ void exPV::destroy()
 //
 caStatus exPV::update(gdd &valueIn)
 {
+	unsigned epochSecPast1970 = 7305*86400; /* 1/1/90 20 yr (5 leap) of seconds */
 	caServer *pCAS = this->getCAS();
 	//
 	// gettimeofday() is very slow under sunos4
@@ -89,7 +90,10 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	t.tv_sec = (time_t) cur.getSecTruncToLong ();
+	//
+	// this converts from a POSIX time stamp to an EPICS time stamp
+	//
+	t.tv_sec = (time_t) cur.getSecTruncToLong () - epochSecPast1970;
 	t.tv_nsec = cur.getNSecTruncToLong ();
 	this->pValue->setTimeStamp(&t);
 	this->pValue->setStat (epicsAlarmNone);
@@ -249,8 +253,12 @@ inline aitTimeStamp exPV::getTS()
 		this->pValue->getTimeStamp(&ts);
 	}
 	else {
+		unsigned epochSecPast1970 = 7305*86400; /* 1/1/90 20 yr (5 leap) of seconds */
 		osiTime cur(osiTime::getCurrent());
-		ts.tv_sec = (time_t) cur.getSecTruncToLong ();
+		//
+		// this converts from a POSIX time stamp to an EPICS time stamp
+		//
+		ts.tv_sec = (time_t) cur.getSecTruncToLong () - epochSecPast1970;
 		ts.tv_nsec = cur.getNSecTruncToLong ();
 	}
 	return ts;

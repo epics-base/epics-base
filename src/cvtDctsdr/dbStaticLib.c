@@ -57,7 +57,6 @@
 
 #define messagesize	100
 #define RPCL_LEN 184
-long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[2]={"NPP","PP"};
 static char *msstring[2]={"NMS","MS"};

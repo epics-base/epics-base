@@ -98,6 +98,7 @@ void threadInit(void)
         threadOnceMutex = semMCreate(
                 SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
         assert(threadOnceMutex);
+        TSinit();
     }
     lock = 0;
 }

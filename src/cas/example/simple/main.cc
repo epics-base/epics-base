@@ -16,7 +16,7 @@ extern int main (int argc, const char **argv)
 	unsigned    aliasCount = 1u;
 	unsigned    scanOnAsUnsignedInt = true;
     bool        scanOn;
-	bool        forever = aitTrue;
+	bool        forever = true;
 	int         i;
 
 	for (i=1; i<argc; i++) {
@@ -24,7 +24,7 @@ extern int main (int argc, const char **argv)
 			continue;
 		}
 		if (sscanf(argv[i],"-t %lf", &executionTime)==1) {
-			forever = aitFalse;
+			forever = false;
 			continue;
 		}
 		if (sscanf(argv[i],"-p %127s", pvPrefix)==1) {
@@ -62,7 +62,7 @@ extern int main (int argc, const char **argv)
 		//
 		// loop here forever
 		//
-		while (aitTrue) {
+		while (true) {
 			fileDescriptorManager.process(1000.0);
 		}
 	}

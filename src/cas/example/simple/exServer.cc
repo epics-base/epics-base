@@ -67,7 +67,7 @@ exServer::exServer(const char * const pvPrefix, unsigned aliasCount, bool scanOn
 	// pre-create all of the simple PVs that this server will export
 	//
 	for (pPVI = exServer::pvList; pPVI < pPVAfter; pPVI++) {
-		pPV = pPVI->createPV (*this, aitTrue, scanOnIn);
+		pPV = pPVI->createPV (*this, true, scanOnIn);
 		if (!pPV) {
 			fprintf(stderr, "Unable to create new PV \"%s\"\n",
 				pPVI->getName());
@@ -210,7 +210,7 @@ pvAttachReturn exServer::pvAttach
 	// If this is a synchronous PV create the PV now 
 	//
 	if (pvi.getIOType() == excasIoSync) {
-		pPV = pvi.createPV(*this, aitFalse, this->scanOn);
+		pPV = pvi.createPV(*this, false, this->scanOn);
 		if (pPV) {
 			return *pPV;
 		}
@@ -348,7 +348,7 @@ void exAsyncCreateIO::expire()
 {
 	exPV *pPV;
 
-	pPV = this->pvi.createPV(this->cas, aitFalse, this->scanOn);
+	pPV = this->pvi.createPV(this->cas, false, this->scanOn);
 	if (pPV) {
 		this->postIOCompletion (pvAttachReturn(*pPV));
 	}

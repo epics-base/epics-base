@@ -23,7 +23,7 @@ class exFixedStringDestructor: public gddDestructor {
 //
 exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) : 
 	info (setup),
-	interest (aitFalse),
+	interest (false),
 	preCreate (preCreateFlag),
 	scanOn (scanOnIn)
 {
@@ -94,7 +94,7 @@ caStatus exPV::update(gdd &valueIn)
 	//
 	// post a value change event
 	//
-	if (this->interest==aitTrue && pCAS!=NULL) {
+	if (this->interest==true && pCAS!=NULL) {
 		casEventMask select(pCAS->valueEventMask()|pCAS->logEventMask());
 		this->postEvent (select, *this->pValue);
 	}
@@ -161,7 +161,7 @@ caStatus exPV::interestRegister()
 		return S_casApp_success;
 	}
 
-	this->interest = aitTrue;
+	this->interest = true;
 
 	if (!this->scanOn) {
 		return S_casApp_success;
@@ -193,7 +193,7 @@ caStatus exPV::interestRegister()
 //
 void exPV::interestDelete()
 {
-	this->interest = aitFalse;
+	this->interest = false;
 	if (this->pScanTimer && this->scanOn) {
 		this->pScanTimer->reschedule(this->getScanPeriod());
 	}
@@ -293,7 +293,7 @@ caStatus exPV::getUnits(gdd &units)
 //
 caStatus exPV::getEnums (gdd &enums)
 {
-	unsigned nStr = 2;
+	static const unsigned nStr = 2;
 	aitFixedString *str;
 	exFixedStringDestructor *pDes;
 

@@ -21,8 +21,9 @@
 using std::cout;
 using std::endl;
 
-#ifdef vxWorks
+#if defined(vxWorks) || defined(__rtems__)
   #define MAIN epicsListTest
+  extern "C" int MAIN(int /*argc*/, char* /*argv[]*/);
 #else
   #define MAIN main
 #endif

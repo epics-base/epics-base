@@ -15,8 +15,9 @@
 
 #include "epicsAlgorithm.h"
 
-#ifdef vxWorks
+#if defined(vxWorks) || defined(__rtems__)
   #define MAIN epicsAlgorithm
+  extern "C" int MAIN(int /*argc*/, char* /*argv[]*/);
 #else
   #define MAIN main
 #endif

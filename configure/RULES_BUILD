@@ -147,13 +147,10 @@ endif
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
+	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) \
 	*.out MakefileInclude \
-	$(COMMON_INC) $(HDEPENDS_FILES)
-ifdef MUNCHNAME
-	@$(RM) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
-endif
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS)
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
 endif

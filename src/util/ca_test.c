@@ -59,7 +59,7 @@
 #define LOCAL static
 #endif
 
-#include        <cadef.h>
+#include "cadef.h"
 
 int ca_test(char *pname, char *pvalue);
 LOCAL int cagft(char *pname);
@@ -170,7 +170,7 @@ LOCAL int cagft(char *pname)
 
 	printf("name:\t%s\n", ca_name(chan_id));
 	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%d\n", ca_element_count(chan_id));
+	printf("native count:\t%u\n", ca_element_count(chan_id));
 
 
 	/* 
@@ -280,7 +280,7 @@ char		*pvalue
 
 	printf("name:\t%s\n", ca_name(chan_id));
 	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%d\n", ca_element_count(chan_id));
+	printf("native count:\t%u\n", ca_element_count(chan_id));
 
 	/*
 	 *  string value ca_put

@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39  1998/06/16 00:41:22  jhill
+ * consolodated code here into libCom
+ *
  * Revision 1.38  1998/05/29 00:03:21  jhill
  * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
  *
@@ -70,6 +73,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.39  1998/06/16 00:41:22  jhill
+ * added consolodated code here into libCom
+ * added
  * added Revision 1.38  1998/05/29 00:03:21  jhill
  * added allow CA to run systems w/o local interface query capabilities (ie cygwin32)
  * added
@@ -685,7 +691,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	free(pIfinfoList);
 }
 
-#ifdef EPICS_DLL
+#if !defined(EPICS_DLL_NO)
 
 /*
  * most of the code here was moved to ca_task_initialize and ca_task_exit()

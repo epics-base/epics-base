@@ -49,7 +49,7 @@
 extern int init_osi_time ();
 extern int exit_osi_time ();
 
-#ifdef EPICS_DLL
+#if !defined(EPICS_DLL_NO)
 BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	switch (dwReason) 

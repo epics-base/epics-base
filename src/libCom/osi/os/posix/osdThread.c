@@ -34,7 +34,6 @@ typedef struct commonAttr{
     int                schedPolicy;
 } commonAttr;
 
-
 typedef struct threadInfo {
     ELLNODE            node;
     pthread_t          tid;
@@ -48,7 +47,6 @@ typedef struct threadInfo {
     char               *name;
 } threadInfo;
 
-static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 static pthread_key_t getpthreadInfo;
 static semMutexId onceMutex;
 static semMutexId listMutex;
@@ -125,7 +123,21 @@ static threadInfo * init_threadInfo(const char *name,
     pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
     pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"threadCreate");
     strcpy(pthreadInfo->name,name);
-    return((threadId)pthreadInfo);
+    return(pthreadInfo);
+}
+
+static void free_threadInfo(threadInfo *pthreadInfo)
+{
+    int status;
+
+    semMutexMustTake(listMutex);
+    ellDelete(&pthreadList,(ELLNODE *)pthreadInfo);
+    semMutexGive(listMutex);
+    semBinaryDestroy(pthreadInfo->suspendSem);
+    status = pthread_attr_destroy(&pthreadInfo->attr);
+    checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
+    free(pthreadInfo->name);
+    free(pthreadInfo);
 }
 
 static void once(void)
@@ -137,9 +149,9 @@ static void once(void)
     onceMutex = semMutexMustCreate();
     listMutex = semMutexMustCreate();
     ellInit(&pthreadList);
-    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread::once");
+    pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"threadInit");
     status = pthread_attr_init(&pcommonAttr->attr);
-    checkStatusQuit(status,"pthread_attr_init","osdThread::once");
+    checkStatusQuit(status,"pthread_attr_init","threadInit");
     status = pthread_attr_setdetachstate(
         &pcommonAttr->attr, PTHREAD_CREATE_DETACHED);
     checkStatus(status,"pthread_attr_setdetachstate");
@@ -175,44 +187,20 @@ static void once(void)
     semMutexGive(listMutex);
 }
 
-void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
-{
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadOnce");
-
-    semMutexMustTake(onceMutex);
-    if (*id == 0) { /*  0 => first call */
-    	*id = -1;   /* -1 => func() active */
-    	func(arg);
-    	*id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
-    }
-    semMutexGive(onceMutex);
-}
-
 static void * start_routine(void *arg)
 {
     threadInfo *pthreadInfo = (threadInfo *)arg;
     int status;
+
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
-
     semMutexMustTake(listMutex);
     ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
     semMutexGive(listMutex);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
-    semMutexMustTake(listMutex);
-    ellDelete(&pthreadList,(ELLNODE *)pthreadInfo);
-    semMutexGive(listMutex);
-
-    semBinaryDestroy(pthreadInfo->suspendSem);
-    status = pthread_attr_destroy(&pthreadInfo->attr);
-    checkStatusQuit(status,"pthread_attr_destroy","start_routine");
-    free(pthreadInfo->name);
-    free(pthreadInfo);
+    free_threadInfo(pthreadInfo);
     return(0);
 }
 
@@ -245,37 +233,50 @@ unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
 #endif /* OSITHREAD_USE_DEFAULT_STACK */
 }
 
+/* the following technique is mt-safe for initializing osiThread because
+   only the main thread calls threadInit(); other libraries should use
+   threadOnce() for one-time initialization */
+void threadInit(void)
+{
+    static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+    static int initialized = 0;
+
+    if (!initialized) {
+	/* don't actually have to use pthread_once() for this; could call
+	   once() directly or include its body here */
+	int status = pthread_once(&once_control,once);
+	checkStatusQuit(status,"pthread_once","threadInit");
+	initialized = 1;
+    }
+}
+
+/* threadOnce is a macro that calls threadOnceOsd */
+void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
+{
+    semMutexMustTake(onceMutex);
+    if (*id == 0) { /*  0 => first call */
+    	*id = -1;   /* -1 => func() active */
+    	func(arg);
+    	*id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
+    }
+    semMutexGive(onceMutex);
+}
+
 threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
-    threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadCreate");
-    pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
-    status = pthread_create(&pthreadInfo->tid,
-	&pthreadInfo->attr,start_routine,pthreadInfo);
+    threadInfo *pthreadInfo = init_threadInfo(name,priority,stackSize,
+					      funptr,parm);
+    int status = pthread_create(&pthreadInfo->tid,
+				&pthreadInfo->attr,start_routine,pthreadInfo);
     checkStatusQuit(status,"pthread_create","threadCreate");
     return((threadId)pthreadInfo);
 }
 
-void threadSuspendSelf()
+void threadSuspendSelf(void)
 {
-    threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadSuspendSelf");
-    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
-    if(!pthreadInfo) {
-        errlogPrintf("threadSuspendSelf pthread_getspecific returned 0\n");
-        while(1) {
-            errlogPrintf("sleeping for 5 seconds\n");
-            threadSleep(5.0);
-        }
-    }
+    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     pthreadInfo->isSuspended = 1;
     semBinaryMustTake(pthreadInfo->suspendSem);
 }
@@ -287,13 +288,24 @@ void threadResume(threadId id)
     semBinaryGive(pthreadInfo->suspendSem);
 }
 
+void threadExitMain(void)
+{
+    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    if(pthreadInfo->createFunc) {
+        errlogPrintf("called from non-main thread\n");
+        cantProceed("threadExitMain");
+    }
+    else {
+	free_threadInfo(pthreadInfo);
+	pthread_exit(0);
+    }
+}
 
 unsigned int threadGetPriority(threadId id)
 {
     threadInfo *pthreadInfo = (threadInfo *)id;
     return(pthreadInfo->osiPriority);
 }
-
 
 void threadSetPriority(threadId id,unsigned int priority)
 {
@@ -337,22 +349,12 @@ void threadSleep(double seconds)
 }
 
 threadId threadGetIdSelf(void) {
-    threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadGetIdSelf");
-    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     return((threadId)pthreadInfo);
 }
 
 threadId threadGetId(const char *name) {
     threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadGetId");
-
     semMutexMustTake(listMutex);
     for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
 	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
@@ -364,43 +366,43 @@ threadId threadGetId(const char *name) {
 
 const char *threadGetNameSelf()
 {
-    threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadGetNameSelf");
-    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     return(pthreadInfo->name);
 }
 
 void threadGetName(threadId id, char *name, size_t size)
 {
     threadInfo *pthreadInfo = (threadInfo *)id;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadGetName");
-    strncpy (name, pthreadInfo->name, size - 1);
+    strncpy(name, pthreadInfo->name, size-1);
     name[size-1] = '\0';
 }
 
-void threadShow (void)
+void threadShowAll(unsigned int level)
 {
     threadInfo *pthreadInfo;
-    int status;
-
-    status = pthread_once(&once_control,once);
-    checkStatusQuit(status,"pthread_once","threadShow");
-
-    errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
+    threadShow(0,level);
     semMutexMustTake(listMutex);
     for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
-	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
-	errlogPrintf("%12.12s %8x %8d\n", pthreadInfo->name,(threadId)
-		pthreadInfo,pthreadInfo->osiPriority);
-    }
+	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo))
+	threadShow((threadId)pthreadInfo,level);
     semMutexGive(listMutex);
 }
+
+void threadShow(threadId id,unsigned int level)
+{
+    threadInfo *pthreadInfo = (threadInfo *)id;
+
+    if(!id) {
+	errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
+    }
+    else {
+	errlogPrintf("%12.12s %8x %8d\n", pthreadInfo->name,(threadId)
+		     pthreadInfo,pthreadInfo->osiPriority);
+	if(level>0)
+	    ; /* more info */
+    }
+}
+
 
 threadPrivateId threadPrivateCreate(void)
 {

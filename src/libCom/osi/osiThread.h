@@ -15,12 +15,12 @@ typedef void (*THREADFUNC)(void *parm);
 static const unsigned threadPriorityMax = 99;
 static const unsigned threadPriorityMin = 0;
 
-/*some generic values */
+/* some generic values */
 static const unsigned threadPriorityLow = 10;
 static const unsigned threadPriorityMedium = 50;
 static const unsigned threadPriorityHigh = 90;
 
-/*some iocCore specific values */
+/* some iocCore specific values */
 static const unsigned threadPriorityChannelAccessClient = 10;
 static const unsigned threadPriorityChannelAccessServer = 20;
 static const unsigned threadPriorityScanLow = 60;
@@ -38,19 +38,22 @@ typedef int threadOnceId;
 
 /* void threadOnce(threadOnceId *id, void (*func)(void *), void *arg); */
 /* threadOnce is implemented as a macro */
-/*threadOnceOsd should not be called by user code*/
+/* threadOnceOsd should not be called by user code */
 epicsShareFunc void epicsShareAPI threadOnceOsd(
     threadOnceId *id, void (*func)(void *), void *arg);
 
 #define threadOnce(id,func,arg) \
-if(*(id)==0) threadOnceOsd((id),(func),(arg))
+if(*(id)<=0) threadOnceOsd((id),(func),(arg))
 
+/* (threadId)0 is guaranteed to be an invalid thread id */
 typedef void *threadId;
+epicsShareFunc void epicsShareAPI threadInit(void);
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm);
 epicsShareFunc void epicsShareAPI threadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
+epicsShareFunc void epicsShareAPI threadExitMain(void);
 epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
 epicsShareFunc void epicsShareAPI threadSetPriority(
     threadId id,unsigned int priority);
@@ -67,7 +70,8 @@ epicsShareFunc const char * epicsShareAPI threadGetNameSelf(void);
 /* Failure results in an empty string stored in name */
 epicsShareFunc void epicsShareAPI threadGetName(threadId id, char *name, size_t size);
 
-epicsShareFunc void epicsShareAPI threadShow(void);
+epicsShareFunc void epicsShareAPI threadShowAll(unsigned int level);
+epicsShareFunc void epicsShareAPI threadShow(threadId id,unsigned int level);
 
 typedef void * threadPrivateId;
 epicsShareFunc threadPrivateId epicsShareAPI threadPrivateCreate (void);

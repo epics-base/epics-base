@@ -29,8 +29,8 @@ class epicsOnce {
 public:
     epicsShareFunc static epicsOnce & create ( epicsOnceNotify & notifyIn );
     virtual ~epicsOnce (); // use destroy
-    virtual void once () = 0;
-    virtual void destroy () = 0;
+    virtual void once () = 0; // run notifyIn.initialize() once only
+    virtual void destroy () = 0; // destroy this object
 };
 
 #endif // epicsOnceh

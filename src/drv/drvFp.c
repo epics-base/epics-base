@@ -312,6 +312,10 @@ void	fp_reboot()
 {
  	int i;
 
+	if(!fp){
+		return;
+	}
+
  	for (i = 0; i < bi_num_cards[AT8_FP10S_BI]; i++){
 
 		if(!fp[i].fptr){

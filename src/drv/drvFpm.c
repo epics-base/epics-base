@@ -251,6 +251,10 @@ void    fpm_reboot()
 {
         int i;
 
+	if(!fpm){
+		return;
+	}
+
         for (i = 0; i < bo_num_cards[AT8_FP10M_BO]; i++){
 
                 if(!fpm[i].fmptr){

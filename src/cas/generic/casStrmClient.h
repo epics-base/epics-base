@@ -127,10 +127,9 @@ private:
         casChannelI & chan, const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );
-    caStatus channelDestroyNotify (
+    caStatus channelDestroyEvent ( 
         epicsGuard < casClientMutex > & guard, 
-        casChannelI &, bool uninstallNeeded );
-
+        casChannelI * const pChan, ca_uint32_t sid );
 	caStatus accessRightsResponse ( 
         casChannelI * pciu );
 	caStatus accessRightsResponse ( 

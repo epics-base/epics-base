@@ -37,10 +37,11 @@ class casChannelI;
 
 class channelDestroyEvent : public casEvent {
 public:
-    channelDestroyEvent ( casChannelI &, bool uninstallNeeded );
+    channelDestroyEvent ( 
+        casChannelI * pChan, ca_uint32_t sid );
 private:
-    casChannelI & chan;
-    bool uninstallNeeded;
+    casChannelI * pChan;
+    ca_uint32_t sid;
     caStatus cbFunc ( 
         casCoreClient &, 
         epicsGuard < casClientMutex > &,
@@ -48,8 +49,8 @@ private:
 };
 
 inline channelDestroyEvent::channelDestroyEvent ( 
-    casChannelI & chanIn, bool uninstallNeededIn ) :
-    chan ( chanIn ), uninstallNeeded ( uninstallNeededIn )
+    casChannelI * pChanIn, ca_uint32_t sidIn ) :
+    pChan ( pChanIn ), sid ( sidIn )
 {
 }
 

@@ -1629,6 +1629,61 @@ caStatus casStrmClient::clearChannelAction (
 	return status;
 }
 
+//
+// If the channel pointer is nill this indicates that 
+// the existence of the channel isnt certain because 
+// it is still installed and the client or the server 
+// tool might have destroyed it. Therefore, we must 
+// locate it using the supplied server id.
+//
+// If the channel pointer isnt nill this indicates 
+// that the channel has already been uninstalled.
+//
+// In both situations we need to send a channel 
+// disconnect message to the client and destroy the 
+// channel.
+//
+caStatus casStrmClient::channelDestroyEvent ( 
+    epicsGuard < casClientMutex > & guard, 
+    casChannelI * const pChan, ca_uint32_t sid )
+{
+    casChannelI * pChanFound;
+    if ( pChan ) {
+        pChanFound = pChan;
+    }
+    else {
+        chronIntId tmpId ( sid );
+        pChanFound = 
+            this->chanTable.lookup ( tmpId );
+	    if ( ! pChanFound ) {
+            return S_cas_success;
+        }
+    }
+
+    if ( CA_V47 ( this->minor_version_number ) ) {
+        caStatus status = this->out.copyInHeader ( 
+            CA_PROTO_SERVER_DISCONN, 0,
+            0, 0, pChanFound->getCID(), 0, 0 );
+        if ( status == S_cas_sendBlocked ) {
+            return status;
+        }
+		this->out.commitMsg ();
+	}
+    else {
+        this->forceDisconnect ();
+    }
+
+    if ( ! pChan ) {
+        this->chanTable.remove ( * pChanFound );
+        this->chanList.remove ( * pChanFound );
+        pChanFound->uninstallFromPV ( this->eventSys );
+    }
+
+    delete pChanFound;
+
+    return S_cas_success;
+}
+
 // casStrmClient::casChannelDestroyNotify()
 // immediateUninstallNeeded is false when we must avoid 
 // taking the lock insituations where we would compromise 
@@ -1644,9 +1699,10 @@ void casStrmClient::casChannelDestroyNotify (
         chan.uninstallFromPV ( this->eventSys );
     }
 
-    channelDestroyEvent * pEvent = 
-        new ( std::nothrow ) channelDestroyEvent ( 
-            chan, !immediateUninstallNeeded );
+    class channelDestroyEvent * pEvent = 
+        new ( std::nothrow ) class channelDestroyEvent ( 
+            immediateUninstallNeeded ? & chan : 0,
+            chan.getSID() );
     if ( pEvent ) {
         this->eventSys.addToEventQueue ( *pEvent );
     }
@@ -1656,34 +1712,6 @@ void casStrmClient::casChannelDestroyNotify (
             delete & chan;
         }
     }
-}
-
-// casStrmClient::channelDestroyNotify()
-caStatus casStrmClient::channelDestroyNotify (
-    epicsGuard < casClientMutex > & guard, 
-    casChannelI & chan, bool uninstallNeeded )
-{
-    caStatus status = S_cas_success;
-    if ( CA_V47 ( this->minor_version_number ) ) {
-        caStatus status = this->out.copyInHeader ( 
-            CA_PROTO_SERVER_DISCONN, 0,
-            0, 0, chan.getCID(), 0, 0 );
-		if ( status == S_cas_success ) {
-		    this->out.commitMsg ();
-		}
-	}
-    else {
-        this->forceDisconnect ();
-    }
-    if ( status != S_cas_sendBlocked ) {
-        if ( uninstallNeeded ) {
-            this->chanTable.remove ( chan );
-            this->chanList.remove ( chan );
-            chan.uninstallFromPV ( this->eventSys );
-        }
-        delete & chan;
-    }
-    return status;
 }
 
 // casStrmClient::eventCancelAction()

@@ -68,6 +68,7 @@ casPVI::~casPVI ()
 void casPVI::casPVDestroyNotify ()
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
+    this->pPV = 0;
     if ( ! this->deletePending ) {
         tsDLIter < chanIntfForPV > iter = this->chanList.firstIter ();
         while ( iter.valid() ) {

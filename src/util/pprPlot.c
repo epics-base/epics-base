@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -25,13 +25,15 @@
  *
  * Modification Log:
  * -----------------
- * .01	12-04-90	rac	initial version
- * .02	07-20-91	rac	installed in SCCS; finalized "how to access"
- * .03	08-09-91	rac	fix a problem with pprMark when clipping
- * .04	09-04-91	rac	change pprAreaErase to pprRegionErase; add
- *				pprAreaErase; update documentation; add
- *				pprPixXToXFrac and pprPixYToYFrac; add
- *				various Line and Point erase functions
+ *  .01 12-04-90 rac	initial version
+ *  .02 07-20-91 rac	installed in SCCS; finalized "how to access"
+ *  .03 08-09-91 rac	fix a problem with pprMark when clipping
+ *  .04 09-04-91 rac	change pprAreaErase to pprRegionErase; add
+ *			pprAreaErase; update documentation; add pprPixXToXFrac
+ *			and pprPixYToYFrac; add various Line and Point erase
+ *			functions
+ *  .05 05-15-92 rac	add pprErrorBar; add line caps as special marks for
+ *			pprMark
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -79,6 +81,7 @@
 *     void  pprAutoRangeS(   shtAry,  nPts,    >minDbl,  >maxDbl          )
 *     void  pprChar(         pArea,   xDbl, yDbl, char, charHt, angle     )
 *   double  pprCos_deg(      angle                                        )
+*     void  pprErrorBar(     pArea,   xDbl1,    yDbl1,    xDbl2,  yDbl2   )
 *     void  pprCvtDblToTxt( >text,    width,    dblVal,   nSigDigits      )
 *     void  pprGrid(         pArea                                        )
 *     void  pprGridErase(    pArea                                        )
@@ -2433,6 +2436,42 @@ int	sigDig;		/* I max # of dec places to print */
 }
 
 /*+/subr**********************************************************************
+* NAME	pprErrorBar - plot an error bar
+*
+* DESCRIPTION
+*	Plot a line between the endpoints and draw end caps, using the color
+*	attribute of the plot area.  Other plot area attributes are ignored.
+*
+* RETURNS
+*	void
+*
+* BUGS
+* o	only linear calibration is handled
+*
+* SEE ALSO
+*	pprLine, pprMove, pprPoint, pprText
+*
+*-*/
+void
+pprErrorBar(pArea, x1, y1, x2, y2)
+PPR_AREA *pArea;	/* I pointer to plot area structure */
+double	x1;		/* I first x point */
+double	y1;		/* I first y point */
+double	x2;		/* I second x point */
+double	y2;		/* I second y point */
+{
+    pprLineSegD_ac(pArea, x1, y1, x2, y2);
+    if (x1 == x2) {
+	pprMarkD(pArea, x1, y1, -1);
+	pprMarkD(pArea, x2, y2, -1);
+    }
+    else {
+	pprMarkD(pArea, x1, y1, -2);
+	pprMarkD(pArea, x2, y2, -2);
+    }
+}
+
+/*+/subr**********************************************************************
 * NAME	pprGrid - draw a grid
 *
 * DESCRIPTION
@@ -3107,6 +3146,11 @@ short	thick;	/* I thickness in thousandths of window height */
 * RETURNS
 *	void
 *
+* NOTES
+* 1.	Several special mark numbers are available:
+*	-1	draws a short horizontal line "cap"
+*	-2	draws a short vertical line "cap"
+*
 * BUGS
 * o	only linear calibration is handled
 *
@@ -3136,8 +3180,14 @@ void	(*drawFn)();	/* I function to draw lines, using pixel coordinates */
     int		pen;
 
     pprLineThick(pArea, pArea->attr.lineThick);
-    markNum %= PPR_NMARKS;
-    pMark = pglPprMarkS[markNum];	/* use small marks */
+    if (markNum >= 0) {
+	markNum %= PPR_NMARKS;
+	pMark = pglPprMarkS[markNum];	/* use small marks */
+    }
+    else if (markNum == -1)
+	pMark = glPprMarkS_hCap;
+    else if (markNum == -2)
+	pMark = glPprMarkS_vCap;
     xp0 = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
     yp0 = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
     if (pArea->attr.clip) {
@@ -4337,7 +4387,8 @@ PPR_WIN	*pWin;
     stat = XQueryTree(pWin->pDisp, pWin->plotWindow, &rootWindow,
 				&parentWindow, &pChildWindows, &nChildren);
     PprAssert(stat != 0);
-    XFree(pChildWindows);
+    if (pChildWindows != NULL)
+	XFree(pChildWindows);
     if (rootWindow != parentWindow) {
 	XGetWindowAttributes(pWin->pDisp, parentWindow, &parentAttr);
 	actualX = parentAttr.x;

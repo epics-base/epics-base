@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include <assert.h>
 
 #include "osiSock.h"

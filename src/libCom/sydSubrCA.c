@@ -212,7 +212,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
     }
     else if (funcCode ==				SYD_FC_READ) {
 	if ((pCh = (chid)pSChan->pHandle) == NULL)
-	    return;
+	    return retStat;
 	if (pSChan->evid == NULL) {
 	    if (pSChan->pSspec->monFn == NULL) {
 		stat = ca_add_masked_array_event(pSChan->dbrType,
@@ -237,7 +237,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
     }
     else if (funcCode ==				SYD_FC_STOP) {
 	if ((pCh = (chid)pSChan->pHandle) == NULL)
-	    return;
+	    return retStat;
 	if (pSChan->evid == NULL) {
 	    ca_clear_event(pSChan->evid);
 	    pSChan->evid = NULL;

@@ -59,7 +59,6 @@
 #include <dbDefs.h>
 #include <link.h>
 #include <callback.h>
-#include <fast_lock.h>
 #include <taskwd.h>
 
 #include <drvBitBusInterface.h>
@@ -201,13 +200,12 @@ initBB()
       {
         pXvmeLink[i]->pbbLink->queue[j].head = NULL;
 	pXvmeLink[i]->pbbLink->queue[j].tail = NULL;
-        FASTLOCKINIT(&(pXvmeLink[i]->pbbLink->queue[j].sem));
-	FASTUNLOCK(&(pXvmeLink[i]->pbbLink->queue[j].sem));
+	pXvmeLink[i]->pbbLink->queue[j].sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
 	pXvmeLink[i]->pbbLink->queue[j].elements = 0;
       }
 
       /* init the busy message list */
-      FASTLOCKINIT(&(pXvmeLink[i]->pbbLink->busyList.sem));
+      pXvmeLink[i]->pbbLink->busyList.sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
       pXvmeLink[i]->pbbLink->busyList.head = NULL;
       pXvmeLink[i]->pbbLink->busyList.tail = NULL;
       pXvmeLink[i]->pbbLink->busyList.elements = 0;
@@ -543,7 +541,7 @@ int	link;
 	rxTCount += 2;		/* adjust for the link field space */
 
 	/* Lock the busy list */
-	FASTLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+	semTake(pXvmeLink[link]->pbbLink->busyList.sem, WAIT_FOREVER);
 
         rxDpvtHead = pXvmeLink[link]->pbbLink->busyList.head;
         while (rxDpvtHead != NULL)
@@ -566,15 +564,15 @@ int	link;
               if (pXvmeLink[link]->pbbLink->busyList.head == NULL) 
                 wdCancel(pXvmeLink[link]->watchDogId);
           
-	      /* Wake up Link Task in case was waiting on "this" node */
-/* BUG -- this may require miving into the BB_RCMD state */
-              semGive(pXvmeLink[link]->pbbLink->linkEventSem); 
-
-	      FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
-
               /* decrement the number of outstanding messages to the node */
               (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->txMsg.node])--;
   
+	      /* Wake up Link Task in case was waiting on "this" node */
+/* BUG -- this may require moving into the BB_RCMD state */
+              semGive(pXvmeLink[link]->pbbLink->linkEventSem); 
+
+	      semGive(pXvmeLink[link]->pbbLink->busyList.sem);
+
               rxDpvtHead->rxMsg.length = rxHead[0];
               rxDpvtHead->rxMsg.route = rxHead[1];
               rxDpvtHead->rxMsg.node = rxHead[2];
@@ -598,7 +596,7 @@ int	link;
 	    rxDpvtHead->rxMsg.length = 7;	/* we just have the header now */
 	    drvBitBusDumpMsg(&(rxDpvtHead->rxMsg));
 	  }
-	  FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+	  semGive(pXvmeLink[link]->pbbLink->busyList.sem);
           rxState = BBRX_IGN;	/* nothing waiting... toss it */
         }
       }
@@ -667,10 +665,10 @@ int	link;
   { /* Link abort state is active reset receiver link status now */
     if (rxDpvtHead != NULL)
     { /* This xact is not on the busy list, put it back on */
-      FASTLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+      semTake(pXvmeLink[link]->pbbLink->busyList.sem, WAIT_FOREVER);
       (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->txMsg.node])++;
       listAddTail(&(pXvmeLink[link]->pbbLink->busyList), rxDpvtHead);
-      FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+      semGive(pXvmeLink[link]->pbbLink->busyList.sem);
     }
 
     rxMsg = (unsigned char *) NULL;
@@ -790,7 +788,7 @@ int	link;
      * Run thru entire busy list to see if there are any transactions
      * that have been waiting on a response for too long a period.
      */
-    FASTLOCK(&(plink->busyList.sem));
+    semTake(plink->busyList.sem, WAIT_FOREVER);
     pnode = plink->busyList.head;
 
     while (pnode != NULL)
@@ -822,14 +820,14 @@ int	link;
         /* If we are not going to reboot the link... */
         if (plink->nukeEm == 0)
 	{ /* Send out a RAC_NODE_OFFLINE to the controller */
-          FASTUNLOCK(&(plink->busyList.sem));	/* so Tx and Rx can work */
+	  semGive(plink->busyList.sem);
 
 	  resetNodeData = pnode->txMsg.node;  /* mark the node number */
 printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
-          FASTLOCK(&(plink->queue[BB_Q_HIGH].sem)); /* queue the message */
+	  semTake(plink->queue[BB_Q_HIGH].sem, WAIT_FOREVER);
 	  listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
-	  FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	  semGive(plink->queue[BB_Q_HIGH].sem);
 
           semGive(plink->linkEventSem);	/* Tell TxTask to send the message */
 
@@ -848,7 +846,7 @@ printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 	  }
 	  /* Start over since released the busy list */
 
-          FASTLOCK(&(plink->busyList.sem));
+	  semTake(plink->busyList.sem, WAIT_FOREVER);
           npnode = plink->busyList.head;
 	}
       }
@@ -862,7 +860,7 @@ printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
       wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
     }
-    FASTUNLOCK(&(plink->busyList.sem));	/* don't need any more */
+    semGive(plink->busyList.sem);
 
     /* Finish the link reboot if necessary */
     if (plink->nukeEm != 0)
@@ -962,7 +960,7 @@ int	link;
       while ((prio >= 0) && (pXvmeLink[link]->abortFlag == 0))
       {
         /* see if the queue has anything in it */
-        FASTLOCK(&(plink->queue[prio].sem));	/* lock the inbound fifo */
+	semTake(plink->queue[prio].sem, WAIT_FOREVER);
   
         if ((pnode = plink->queue[prio].head) != NULL)
         {
@@ -979,7 +977,7 @@ int	link;
           /* delete the node from the inbound fifo queue */
           listDel(&(plink->queue[prio]), pnode);
   
-          FASTUNLOCK(&(plink->queue[prio].sem));	/* unlock the fifo */
+	  semGive(plink->queue[prio].sem);
       
           if (bbDebug>3)
             printf("xvmeTxTask(%d): got xact, pnode=0x%08.8X\n", link, pnode);
@@ -1022,7 +1020,7 @@ int	link;
 	    if (pnode->txMsg.cmd != RAC_RESET_SLAVE)
 	    {
 	      /* Lock the busy list */
-	      FASTLOCK(&(plink->busyList.sem));
+	      semTake(plink->busyList.sem, WAIT_FOREVER);
   
               /* set the retire time */
               pnode->retire = tickGet();
@@ -1039,7 +1037,7 @@ int	link;
               /* Count the outstanding messages */
               (plink->deviceStatus[pnode->txMsg.node])++;
     
-	      FASTUNLOCK(&(plink->busyList.sem));
+	      semGive(plink->busyList.sem);
   
               /* If just added something to an empty busy list, start the dog */
               if (dogStart)
@@ -1073,9 +1071,9 @@ int	link;
   
 	      /* have to reset the master so it won't wait on a response */
 	      resetNodeData = pnode->txMsg.node; /* mark the node number */
-	      FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	      semTake(plink->queue[BB_Q_HIGH].sem, WAIT_FOREVER);
 	      listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
-	      FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	      semGive(plink->queue[BB_Q_HIGH].sem);
 /* -- BUG -- I don't really need this */
 	      /* taskDelay(15); */ 	/* wait while bug is resetting */
 	    }
@@ -1085,9 +1083,9 @@ int	link;
 	  }
 	  else
 	  { /* Aborted transmission operation, re-queue the message */
-	    FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	    semTake(plink->queue[BB_Q_HIGH].sem, WAIT_FOREVER);
 	    listAddHead(&(plink->queue[BB_Q_HIGH]), pnode);
-	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	    semGive(plink->queue[BB_Q_HIGH].sem);
 	    printf("Message in progress when abort issued:\n");
 	    drvBitBusDumpMsg(&pnode->txMsg);
 	  }
@@ -1096,7 +1094,7 @@ int	link;
         }
         else
         { /* we have no xacts that can be processed at this time */
-          FASTUNLOCK(&(plink->queue[prio].sem));	/* unlock the fifo */
+	  semGive(plink->queue[prio].sem);
         }
      	prio--;				/* look at the next prio queue */
       }
@@ -1155,12 +1153,12 @@ int     prio;
   if (bbDebug>6)
     drvBitBusDumpMsg(&(pdpvt->txMsg));
 
-  FASTLOCK(&(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem));
+  semTake(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem, WAIT_FOREVER);
 
   /* Add to the end of the queue of waiting transactions */
   listAddTail(&(pXvmeLink[pdpvt->link]->pbbLink->queue[prio]), pdpvt);
 
-  FASTUNLOCK(&(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem));
+  semGive(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem);
 
   semGive(pXvmeLink[pdpvt->link]->pbbLink->linkEventSem);
 

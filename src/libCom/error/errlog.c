@@ -40,15 +40,8 @@
 #define LOCAL static
 #endif /* LOCAL */
 
-/* BUFFER_EXTRA_BYTES is set equal to MAX_MESSAGE_SIZE in case
-   an os can't implement vsnprintf. Such an os
-   is subject to buffer overflow. Allocating an additional
-   BUFFER_EXTRA_BYTES bytes will at least make this less likely
-*/
 #define BUFFER_SIZE 1280
 #define MAX_MESSAGE_SIZE 256
-#define BUFFER_EXTRA_BYTES MAX_MESSAGE_SIZE
-#define TRUNCATE_SIZE 80
 #define MAX_ALIGNMENT 8
 
 /*Declare storage for errVerbose */
@@ -57,7 +50,7 @@ epicsShareDef int errVerbose=0;
 LOCAL void errlogThread(void);
 
 LOCAL char *msgbufGetFree(int noConsoleMessage);
-LOCAL void msgbufSetSize(int size);
+LOCAL void msgbufSetSize(int size); /* Send 'size' chars plus trailing '\0' */
 LOCAL char * msgbufGetSend(int *noConsoleMessage);
 LOCAL void msgbufFreeSend(void);
 
@@ -94,7 +87,25 @@ LOCAL struct {
     int	         missedMessages;
     void         *pbuffer;
 }pvtData;
+
 
+/*
+ * vsnprintf with truncation message
+ */
+LOCAL int tvsnPrint(char *str, size_t size, const char *format, va_list ap)
+{
+    int nchar;
+    static const char tmsg[] = "<<TRUNCATED>>";
+
+    nchar = epicsVsnprintf(str, size, format?format:"", ap);
+    if(nchar >= size) {
+        if (size > sizeof tmsg)
+            strcpy(str+size-sizeof tmsg, tmsg);
+        nchar = size - 1;
+    }
+    return nchar;
+}
+
 epicsShareFunc int errlogPrintf( const char *pFormat, ...)
 {
     va_list	pvar;
@@ -126,8 +137,8 @@ epicsShareFunc int errlogVprintf(
     errlogInit(0);
     pbuffer = msgbufGetFree(0);
     if(!pbuffer) return(0);
-    nchar = vsprintf(pbuffer,pFormat?pFormat:"",pvar);
-    msgbufSetSize(nchar+1);/*include the \0*/
+    nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
+    msgbufSetSize(nchar);
     return nchar;
 }
 
@@ -144,7 +155,7 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
     pbuffer = msgbufGetFree(0);
     if(!pbuffer) return(0);
     strcpy(pbuffer,message);
-    msgbufSetSize(strlen(message) +1);
+    msgbufSetSize(strlen(message));
     return 0;
 }
 
@@ -179,8 +190,8 @@ epicsShareFunc int errlogVprintfNoConsole(
     errlogInit(0);
     pbuffer = msgbufGetFree(1);
     if(!pbuffer) return(0);
-    nchar = vsprintf(pbuffer,pFormat?pFormat:"",pvar);
-    msgbufSetSize(nchar+1);/*include the \0*/
+    nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
+    msgbufSetSize(nchar);
     return nchar;
 }
 
@@ -221,10 +232,10 @@ epicsShareFunc int errlogSevVprintf(
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
-    nchar = vsprintf(pnext,pFormat,pvar);
+    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE-1,pFormat,pvar);
     pnext += nchar; totalChar += nchar;
-    sprintf(pnext,"\n");
-    totalChar += 2; /*include \n and \0*/
+    strcpy(pnext,"\n");
+    totalChar++; /*include \n */
     msgbufSetSize(totalChar);
     return(nchar);
 }
@@ -322,16 +333,14 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         pnext += nchar; totalChar += nchar;
     }
     va_start (pvar, pformat);
-    /* buffer was allocated with an extra BUFFER_EXTRA_BYTES bytes*/
-    /* Thus the following will not overflow buffer              */
-    nchar = epicsVsnprintf(pnext,MAX_MESSAGE_SIZE + BUFFER_EXTRA_BYTES,pformat,pvar);
+    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE,pformat,pvar);
     va_end (pvar);
     if(nchar>0) {
         pnext += nchar;
         totalChar += nchar;
     }
-    sprintf(pnext,"\n");
-    totalChar += 2; /*include the \n and the \0*/
+    strcpy(pnext,"\n");
+    totalChar++ ; /*include the \n */
     msgbufSetSize(totalChar);
 }
 
@@ -353,8 +362,7 @@ static void errlogInitPvt(void *arg)
     pvtData.waitForFlush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.flush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.flushLock = epicsMutexMustCreate();
-    /*BUFFER_EXTRA_BYTES allows message overflow to be detected*/
-    pbuffer = pvtCalloc(pvtData.buffersize+BUFFER_EXTRA_BYTES,sizeof(char));
+    pbuffer = pvtCalloc(pvtData.buffersize,sizeof(char));
     pvtData.pbuffer = pbuffer;
     tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
@@ -479,31 +487,9 @@ LOCAL char *msgbufGetFree(int noConsoleMessage)
 
 LOCAL void msgbufSetSize(int size)
 {
-    char	*pbuffer = (char *)pvtData.pbuffer;
     msgNode	*pnextSend = pvtData.pnextSend;
-    char	*message = pnextSend->message;
 
-    if(size>MAX_MESSAGE_SIZE) {
-	int excess;
-	int nchar;
-
-        excess = size  - (pvtData.buffersize -(message - pbuffer));
-	message[TRUNCATE_SIZE] = 0;
-	if(excess> 0) {
-	    printf("errlog: A message overran buffer by %d. This is VERY bad\n",
-		excess);
-	    nchar = sprintf(&message[TRUNCATE_SIZE],
-	      "\nerrlog = previous message overran buffer. It was truncated."
-	      " size = %d excess = %d\n", size,excess);
-	} else {
-	    nchar = sprintf(&message[TRUNCATE_SIZE],
-		"\nerrlog = previous message too long. It was truncated."
-		" size=%d It was truncated\n",size);
-	}
-	pnextSend->length = TRUNCATE_SIZE + nchar +1;
-    } else {
-        pnextSend->length = size+1;
-    }
+    pnextSend->length = size+1;
     ellAdd(&pvtData.msgQueue,&pnextSend->node);
     epicsMutexUnlock(pvtData.msgQueueLock);
     epicsEventSignal(pvtData.waitForWork);

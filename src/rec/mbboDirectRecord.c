@@ -53,6 +53,7 @@
 #define GEN_SIZE_OFFSET
 #include "mbboDirectRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include	<menuIvoa.h>
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -152,6 +153,7 @@ static long init_record(pmbboDirect,pass)
 		rval = pmbboDirect->rval;
 		if(pmbboDirect->shft>0) rval >>= pmbboDirect->shft;
 		pmbboDirect->val =  (unsigned short)rval;
+		pmbboDirect->udf = FALSE;
 	} else if (status == 2) status = 0;
     }
     return(status);
@@ -175,19 +177,60 @@ static long process(pmbboDirect)
 	    long status;
 	    unsigned short val;
 
-	    pmbboDirect->pact = TRUE;
 	    status = dbGetLink(&pmbboDirect->dol,DBR_USHORT,&val,0,0);
-	    pmbboDirect->pact = FALSE;
 	    if(status==0) {
 		pmbboDirect->val= val;
 		pmbboDirect->udf= FALSE;
+	    } 
+	    else {
+		recGblSetSevr(pmbboDirect,LINK_ALARM,INVALID_ALARM);
+		goto CONTINUE;
 	    }
+	}
+	if(pmbboDirect->udf) {
+	    recGblSetSevr(pmbboDirect,UDF_ALARM,INVALID_ALARM);
+	    goto CONTINUE;
 	}
 	/* convert val to rval */
 	convert(pmbboDirect);
     }
 
-    status=writeValue(pmbboDirect);
+CONTINUE:
+    if (pmbboDirect->nsev < INVALID_ALARM ) {
+	if (pmbboDirect->sevr == INVALID_ALARM 
+	&& pmbboDirect->omsl == SUPERVISORY) {
+	    /* reload value field with B0 - B15 */
+	    int offset = 1, i;
+	    unsigned char *bit = &(pmbboDirect->b0);
+	    for (i=0; i<NUM_BITS; i++, offset = offset << 1, bit++) {
+		if (*bit)
+		    pmbboDirect->val |= offset;
+		else
+		    pmbboDirect->val &= ~offset;
+	    }
+	}
+	status=writeValue(pmbboDirect); /* write the new value */
+    }
+    else {
+	switch (pmbboDirect->ivoa) {
+	    case (menuIvoaContinue_normally) :
+		status=writeValue(pmbboDirect); /* write the new value */
+		break;
+	    case (menuIvoaDon_t_drive_outputs) :
+		break;
+	    case (menuIvoaSet_output_to_IVOV) :
+		if (pmbboDirect->pact == FALSE){
+		    pmbboDirect->val=pmbboDirect->ivov;
+		    convert(pmbboDirect);
+		}
+		status=writeValue(pmbboDirect); /* write the new value */
+		break;
+	    default :
+		status=-1;
+		recGblRecordError(S_db_badField,(void *)pmbboDirect,
+		    "mbboDirect: process Illegal IVOA field");
+	}
+    }
 
     /* check if device support set pact */
     if ( !pact && pmbboDirect->pact ) return(0);
@@ -231,6 +274,7 @@ static long special(paddr,after)
            /* zero field */
            pmbboDirect->val &= ~offset;
         }
+	pmbboDirect->udf = FALSE;
  
         convert(pmbboDirect);
         return(0);
@@ -248,6 +292,7 @@ static long special(paddr,after)
                   pmbboDirect->val &= ~offset;
             }
         }
+	pmbboDirect->udf = FALSE;
 
         return(0);
       default:

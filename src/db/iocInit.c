@@ -219,7 +219,10 @@ int iocInit(char * pResourceFilename)
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
 
     scanInit();
-    asInit();
+    if(asInit()) {
+	logMsg("iocInit: asInit Failed during initialization\n",0,0,0,0,0,0);
+	return(-1);
+    }
     (void)taskDelay(sysClkRateGet()/2);
 
     if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);

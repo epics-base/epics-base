@@ -189,12 +189,11 @@ extern "C" {
 #define epicsTimeEventBestTime -1
 #define epicsTimeEventDeviceTime -2
 
-/* convert to and from ANSI C's "time_t" */
 epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
 
-/* convert to and from ANSI C's "struct tm" with nano second */
+/* convert to and from ANSI C's "time_t" */
 epicsShareFunc int epicsShareAPI epicsTimeToTime_t (
     time_t * pDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (

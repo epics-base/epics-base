@@ -21,6 +21,7 @@ INC += pal.h
 INC += fdMgr.h
 INC += osiTime.h
 INC += osiTimer.h
+INC += macLib.h
 
 SRCS.c += ../bucketLib.c
 SRCS.c += ../calcPerform.c
@@ -44,6 +45,8 @@ SRCS.c += ../assertUNIX.c
 SRCS.c += ../fdMgr.cc
 SRCS.c += ../osiTimer.cc
 SRCS.c += ../osiTimeOSD.cc
+SRCS.c += ../macCore.c
+SRCS.c += ../macUtil.c
 
 LIBOBJS += bucketLib.o
 LIBOBJS += calcPerform.o
@@ -67,6 +70,8 @@ LIBOBJS += assertUNIX.o
 LIBOBJS += fdMgr.o
 LIBOBJS += osiTimer.o
 LIBOBJS += osiTimeOSD.o
+LIBOBJS += macCore.o
+LIBOBJS += macUtil.o
 
 LIBNAME = libCom.a
 

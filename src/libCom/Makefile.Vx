@@ -19,6 +19,8 @@ SRCS.c += ../paldef.c
 SRCS.c += errSymTbl.c
 SRCS.c += ../errPrintfVX.c
 SRCS.c += ../assertVX.c
+SRCS.c += ../macCore.c
+SRCS.c += ../macUtil.c
 
 LIBOBJS += calcPerform.o
 LIBOBJS += cvtFast.o
@@ -37,6 +39,8 @@ LIBOBJS += pal.o
 LIBOBJS += paldef.o
 LIBOBJS += errPrintfVX.o
 LIBOBJS += assertVX.o
+LIBOBJS += macCore.o
+LIBOBJS += macUtil.o
 
 LIBNAME = libCom
 

@@ -28,8 +28,8 @@ public:
     void ioAttachNotify ();
     void ioReleaseNotify ();
 
-    static void * operator new (size_t size);
-    static void operator delete (void *pCadaver, size_t size);
+    void * operator new (size_t size);
+    void operator delete (void *pCadaver, size_t size);
 
 private:
     caCh *pConnCallBack;
@@ -52,8 +52,8 @@ public:
     getCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate);
     void destroy ();
 
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 
 private:
     oldChannel &chan;
@@ -70,8 +70,8 @@ public:
     putCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
     void destroy ();
 
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 
 private:
     oldChannel &chan;
@@ -88,8 +88,8 @@ public:
     oldSubscription  ( oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
     void destroy ();
 
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 
 private:
     oldChannel          &chan;

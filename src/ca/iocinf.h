@@ -135,7 +135,7 @@ public:
     bool flushToWire ( class comQueSend & );
     unsigned fillFromWire ( class comQueRecv & );
 private:
-    static tsFreeList < class comBuf, 0x20, true > freeList;
+    static tsFreeList < class comBuf, 0x20, 1u > freeList;
 
     ~comBuf ();
     unsigned nextWriteIndex;
@@ -289,8 +289,8 @@ public:
     bool connectionInProgress ( const osiSockAddr & );
     bool identifierEquivelence ( unsigned idToMatch );
 
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 
     int subscriptionMsg ( unsigned subscriptionId, 
         unsigned typeIn, unsigned long countIn, unsigned short maskIn );
@@ -373,8 +373,8 @@ private:
     int subscriptionMsg ();
     void destroy ();
     static tsFreeList < class netSubscription, 1024 > freeList;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 };
 
 class netReadCopyIO : private baseNMIU {
@@ -397,8 +397,8 @@ private:
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 };
 
 class netReadNotifyIO : public cacNotifyIO, private baseNMIU {
@@ -415,8 +415,8 @@ private:
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netReadNotifyIO, 1024 > freeList;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 };
 
 class netWriteNotifyIO : public cacNotifyIO, private baseNMIU {
@@ -433,8 +433,8 @@ private:
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 };
 
 /*
@@ -605,6 +605,7 @@ private:
     unsigned short repeaterPort;
     unsigned short serverPort;
     bool shutdownCmd;
+    bool sockCloseCompleted;
 
     const char * pHostName () const; // deprecated - please do not use
     void hostName ( char *pBuf, unsigned bufLength ) const;
@@ -637,7 +638,8 @@ public:
     void beaconArrivalNotify ();
     void beaconAnomalyNotify ();
     void connectNotify ();
-    void show (unsigned level ) const;
+    void cancelRecvWatchdog ();
+    void show ( unsigned level ) const;
 
 private:
     void expire ();
@@ -699,8 +701,8 @@ public:
     void suicide ();
     void cleanShutdown ();
     void forcedShutdown ();
-    static void * operator new (size_t size);
-    static void operator delete (void *pCadaver, size_t size);
+    void * operator new (size_t size);
+    void operator delete (void *pCadaver, size_t size);
 
     bool fullyConstructed () const;
     void flush ();
@@ -751,6 +753,7 @@ private:
     bool flushPending;
     bool msgHeaderAvailable;
     bool claimsPending;
+    bool sockCloseCompleted;
 
     bool ca_v42_ok () const;
     void postMsg ();
@@ -820,8 +823,8 @@ public:
     bool updateBeaconPeriod ( osiTime programBeginTime );
     void show ( unsigned level) const;
 
-    static void * operator new ( size_t size );
-    static void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
 
 private:
     class cac &cac;
@@ -891,8 +894,8 @@ public:
     void destroy ();
     void show (unsigned level) const;
 
-    static void * operator new (size_t size);
-    static void operator delete (void *pCadaver, size_t size);
+    void * operator new (size_t size);
+    void operator delete (void *pCadaver, size_t size);
 
 private:
     void completionNotify ();
@@ -926,8 +929,8 @@ public:
     int get ( chid pChan, unsigned type, unsigned long count, void *pValue );
     int put ( chid pChan, unsigned type, unsigned long count, const void *pValue );
 
-    static void * operator new (size_t size);
-    static void operator delete (void *pCadaver, size_t size);
+    void * operator new (size_t size);
+    void operator delete (void *pCadaver, size_t size);
 
 private:
     cac &client;
@@ -1037,6 +1040,7 @@ public:
              const osiSockAddr & );
     void installDisconnectedChannel ( nciu &chan );
     void accessRightsNotify ( unsigned id, caar );
+    void uninstallLocalChannel ( cacLocalChannelIO & );
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );

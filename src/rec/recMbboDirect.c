@@ -347,6 +347,7 @@ static long writeValue(pmbboDirect)
 		return(status);
 	}
 	if (pmbboDirect->simm == YES){
+		nRequest=1;
 		status=recGblPutLinkValue(&(pmbboDirect->siol),
 				(void *)pmbboDirect,DBR_USHORT,&(pmbboDirect->val),&nRequest);
 	} else {

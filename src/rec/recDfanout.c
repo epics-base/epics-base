@@ -304,6 +304,7 @@ struct dfanoutRecord *pdfanout;
         long            status;
 
         for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
+                nRequest=1;
                 status=recGblPutLinkValue(plink,(void *)pdfanout,DBR_LONG,
                         &(pdfanout->val),&nRequest);
                 if (!RTN_SUCCESS(status)) return(-1);

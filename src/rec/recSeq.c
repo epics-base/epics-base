@@ -452,6 +452,7 @@ CALLBACK *pCallback;
   }
 
   /* Dump the value to the destination field */
+  nRequest = 1;
   recGblPutLinkValue(&(pcb->plinks[pcb->index]->lnk), (void *)pseq, DBR_DOUBLE, &(pcb->plinks[pcb->index]->dov), &nRequest);
 
   if (myDouble != pcb->plinks[pcb->index]->dov)

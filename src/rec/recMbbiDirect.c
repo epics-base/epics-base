@@ -301,6 +301,7 @@ static long readValue(pmbbiDirect)
 		return(status);
 	}
 	if (pmbbiDirect->simm == YES){
+		nRequest=1;
 		status=recGblGetLinkValue(&(pmbbiDirect->siol),
 			(void *)pmbbiDirect,DBR_USHORT,&(pmbbiDirect->sval),&options,&nRequest);
 		if (status==0){

@@ -387,6 +387,7 @@ struct gsubRecord *psub;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
+		nRequest=1;
 		status=recGblGetLinkValue(plink,(void *)psub,DBR_FLOAT,
 			pvalue,&options,&nRequest);
 		if (!RTN_SUCCESS(status)) return(-1);

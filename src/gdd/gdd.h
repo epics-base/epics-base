@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.24  1997/08/05 00:51:12  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.23  1997/04/23 17:12:59  jhill
  * fixed export of symbols from WIN32 DLL
  *
@@ -156,9 +159,9 @@ class gddScalar;
 // class structure for DDs:
 //
 //      gddScalar
-//          \
+//          |
 //        gddAtomic   gddContainer
-//                \   /
+//                 |  |
 //                 gdd
 //
 // All the subclasses of gdd are around to simplify creation and use of

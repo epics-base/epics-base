@@ -146,7 +146,11 @@ int cvtDoubleToString(
 
 	/* can this routine handle this conversion */
 	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
-		sprintf(pstr_value,"%12.5e\0",flt_value);
+		if (precision > 8 || flt_value > 1e16 || flt_value < -1e16) {
+		    sprintf(pstr_value,"%12.5e\0",flt_value);
+		} else {
+		    sprintf(pstr_value,"%.0f\0",flt_value);
+		}
 		return((int)strlen(pstr_value));
 	}
 	startAddr = pstr_value;

@@ -16,5 +16,4 @@
 # Alternatively the full pathname can be added to /etc/ld.so.conf
 # and ldconfig run to inform the system of the shared libraries.
 SHARED_LIBRARIES=YES
-#CROSS_COMPILER_TARGET_ARCHS += RTEMS-pc386 RTEMS-gen68360 RTEMS-mvme167
-CROSS_COMPILER_TARGET_ARCHS += RTEMS-pc386
+

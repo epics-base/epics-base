@@ -34,11 +34,13 @@ inline void dbChannelIO::destroy ()
 
 inline void * dbChannelIO::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( dbChannelIO::freeListMutex );
     return dbChannelIO::freeList.allocate ( size );
 }
 
 inline void dbChannelIO::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( dbChannelIO::freeListMutex );
     dbChannelIO::freeList.release ( pCadaver, size );
 }
 
@@ -56,16 +58,6 @@ inline void dbChannelIO::subscriptionUpdate ( unsigned type, unsigned long count
         const struct db_field_log *pfl, dbSubscriptionIO &notify )
 {
     this->serviceIO.subscriptionUpdate ( this->addr, type, count, pfl, notify );
-}
-
-inline void dbChannelIO::lock () const
-{
-    dbScanLock ( this->addr.precord );
-}
-
-inline void dbChannelIO::unlock () const
-{
-    dbScanUnlock ( this->addr.precord );
 }
 
 inline dbEventSubscription dbChannelIO::subscribe ( dbSubscriptionIO &subscr, unsigned mask )

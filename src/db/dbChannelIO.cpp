@@ -29,6 +29,7 @@
 #include "dbNotifyBlockerIL.h"
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
+epicsMutex dbChannelIO::freeListMutex;
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :
@@ -45,16 +46,16 @@ void dbChannelIO::initiateConnect ()
 
 dbChannelIO::~dbChannelIO ()
 {
-    this->lock ();
+    dbAutoScanLock ( *this->addr.precord );
 
     /*
      * remove any subscriptions attached to this channel
      */
-    tsDLIterBD <dbSubscriptionIO> iter = this->eventq.firstIter ();
+    tsDLIterBD < dbSubscriptionIO > iter = this->eventq.firstIter ();
     while ( iter.valid () ) {
         tsDLIterBD <dbSubscriptionIO> next = iter;
         next++;
-        iter->destroy ();
+        iter->cancel ();
         iter = next;
     }
 
@@ -65,8 +66,6 @@ dbChannelIO::~dbChannelIO ()
     if ( this->pGetCallbackCache ) {
         delete [] this->pGetCallbackCache;
     }
-
-    this->unlock ();
 }
 
 int dbChannelIO::read ( unsigned type, unsigned long count, void *pValue )
@@ -97,29 +96,29 @@ int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify )
         return ECA_BADCOUNT;
     }
 
-    this->lock ();
-    if ( this->getCallbackCacheSize < size) {
-        if ( this->pGetCallbackCache ) {
-            delete [] this->pGetCallbackCache;
+    {
+        dbAutoScanLock ( *this->addr.precord );
+        if ( this->getCallbackCacheSize < size) {
+            if ( this->pGetCallbackCache ) {
+                delete [] this->pGetCallbackCache;
+            }
+            this->pGetCallbackCache = new char [size];
+            if ( ! this->pGetCallbackCache ) {
+                this->getCallbackCacheSize = 0ul;
+                return ECA_ALLOCMEM;
+            }
+            this->getCallbackCacheSize = size;
         }
-        this->pGetCallbackCache = new char [size];
-        if ( ! this->pGetCallbackCache ) {
-            this->getCallbackCacheSize = 0ul;
-            this->unlock ();
-            return ECA_ALLOCMEM;
+        int status = db_get_field ( &this->addr, static_cast <int> ( type ), 
+                        this->pGetCallbackCache, static_cast <int> ( count ), 0);
+        if ( status ) {
+            notify.exceptionNotify ( *this, ECA_GETFAIL, 
+                "db_get_field () completed unsuccessfuly" );
         }
-        this->getCallbackCacheSize = size;
+        else { 
+            notify.completionNotify ( *this, type, count, this->pGetCallbackCache );
+        }
     }
-    int status = db_get_field ( &this->addr, static_cast <int> ( type ), 
-                    this->pGetCallbackCache, static_cast <int> ( count ), 0);
-    if ( status ) {
-        notify.exceptionNotify ( *this, ECA_GETFAIL, 
-            "db_get_field () completed unsuccessfuly" );
-    }
-    else { 
-        notify.completionNotify ( *this, type, count, this->pGetCallbackCache );
-    }
-    this->unlock ();
     notify.release ();
     return ECA_NORMAL;
 }
@@ -147,15 +146,13 @@ int dbChannelIO::write ( unsigned type, unsigned long count,
     }
 
     if ( ! this->pBlocker ) {
-        this->lock ();
+        dbAutoScanLock ( *this->addr.precord );
         if ( ! this->pBlocker ) {
             this->pBlocker = new dbPutNotifyBlocker ( *this );
             if ( ! this->pBlocker ) {
-                this->unlock ();
                 return ECA_ALLOCMEM;
             }
         }
-        this->unlock ();
     }
 
     // must release the lock here so that this can block
@@ -179,22 +176,14 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
         pReturnIO = pIO;
     }
     else {
-        pIO->destroy ();
+        pIO->cancel ();
     }
     return status;
 }
 
-void dbChannelIO::lockOutstandingIO () const
-{
-}
-
-void dbChannelIO::unlockOutstandingIO () const
-{
-}
-
 void dbChannelIO::show ( unsigned level ) const
 {
-    this->lock ();
+    dbAutoScanLock ( *this->addr.precord );
     printf ("channel at %p attached to local database record %s\n", 
         static_cast <const void *> ( this ), this->addr.precord->name );
 
@@ -216,5 +205,4 @@ void dbChannelIO::show ( unsigned level ) const
             this->pBlocker->show ( level - 2u );
         }
     }
-    this->unlock ();
 }

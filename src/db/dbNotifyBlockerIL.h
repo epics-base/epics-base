@@ -15,16 +15,6 @@
  *	505 665 1831
  */
 
-inline void dbPutNotifyBlocker::lock () const
-{
-    this->chan.lock ();
-}
-
-inline void dbPutNotifyBlocker::unlock () const
-{
-    this->chan.unlock ();
-}
-
 inline void dbPutNotifyBlocker::destroy ()
 {
     delete this;
@@ -32,10 +22,12 @@ inline void dbPutNotifyBlocker::destroy ()
 
 inline void * dbPutNotifyBlocker::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( dbPutNotifyBlocker::freeListMutex );
     return dbPutNotifyBlocker::freeList.allocate ( size );
 }
 
 inline void dbPutNotifyBlocker::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( dbPutNotifyBlocker::freeListMutex );
     dbPutNotifyBlocker::freeList.release ( pCadaver, size );
 }

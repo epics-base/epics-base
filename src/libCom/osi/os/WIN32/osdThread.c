@@ -686,13 +686,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsTh
 }
 
 /*
- * epicsThreadIsSuspended ()
- *
- * This implementation is deficient if the thread is not suspended by
- * epicsThreadSuspendSelf () or resumed by epicsThreadResume(). This would happen
- * if a WIN32 call was used instead of epicsThreadSuspendSelf(), or if WIN32
- * suspended the thread when it receives an unhandled run time exception.
- * 
+ * epicsThreadIsSuspended () 
  */
 epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id ) 
 {
@@ -701,8 +695,8 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
     BOOL stat;
     
     stat = GetExitCodeThread ( pParm->handle, &exitCode );
-    if (stat) {
-        if (exitCode!=STILL_ACTIVE) {
+    if ( stat ) {
+        if ( exitCode != STILL_ACTIVE ) {
             return 1;
         }
         else {
@@ -870,10 +864,10 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
     win32ThreadParam *pParm = (win32ThreadParam *) id;
 
     if ( pParm ) {
-        printf ( "%-15s %-8p %-8x %-9u %-9s %-5s", pParm->pName, 
+        printf ( "%-15s %-8p %-8x %-9u %-9s %-7s", pParm->pName, 
             (void *) pParm, pParm->id, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
-            pParm->isSuspended ? "susp" : "ok" );
+            epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
         if ( level ) {
             printf ( " %-8p %-8p %-8p ",
                 (void *) pParm->handle, (void *) pParm->funptr, 
@@ -882,7 +876,7 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
     }
     else {
         printf ( 
-            "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE" );
+            "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE  " );
         if ( level ) {
             printf ( " HANDLE   FUNCTION PARAMETER" );
         }
@@ -902,7 +896,6 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
     stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
     assert ( stat == WAIT_OBJECT_0 );
     
-    printf ( "EPICS Thread List\n" );
     epicsThreadShowPrivate ( 0, level );
     for ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ); 
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {

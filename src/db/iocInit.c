@@ -335,7 +335,7 @@ static long initDrvSup(void) /* Locate all driver support entry tables */
     
     if (!(pdrvSup=pdbBase->pdrvSup)) {
 	status = S_drv_noDrvSup;
-	errMessage(status,"No device drivers are defined");
+	errMessage(status,"");
 	return(status);
     }
 
@@ -354,7 +354,7 @@ static long initDrvSup(void) /* Locate all driver support entry tables */
 	vxstatus = symFindByName(sysSymTbl, name, (void *) &(pdrvSup->papDrvet[i]), &type);
 
 	if (vxstatus != OK) {
-	    strcpy(message,"driver entry table not found for ");
+	    strcpy(message,": ");
 	    strcat(message,pname);
 	    status = S_drv_noDrvet;
 	    errMessage(status,message);
@@ -398,7 +398,7 @@ static long initRecSup(void)
     
     if(!(precType=pdbBase->precType)) {
 	status = S_rectype_noRecs;
-	errMessage(status,"No record types defined");
+	errMessage(status,"");
 	return(status);
     }
 
@@ -444,7 +444,7 @@ static long initRecSup(void)
             (void *) (&precSup->papRset[i]), &type);
 
 	if (vxstatus != OK) {
-	    strcpy(message,"record support entry table not found for ");
+	    strcpy(message,": ");
 	    strcat(message,name);
 	    status = S_rec_noRSET;
 	    errMessage(status,message);
@@ -485,7 +485,7 @@ static long initDevSup(void)
     
     if (!(precDevSup = pdbBase->precDevSup)) {
 	status = S_dev_noDevSup;
-	errMessage(status,"No device support is defined");
+	errMessage(status,"");
 	return(status);
     }
 
@@ -517,7 +517,7 @@ static long initDevSup(void)
 
 	    if (vxstatus != OK) {
                 pdevSup->papDset[j]=NULL;
-		strcpy(message, "device support entry table not found for ");
+		strcpy(message, ": ");
 		strcat(message, pname);
 		status = S_dev_noDSET;
 		errMessage(status, message);
@@ -609,7 +609,7 @@ static long initDatabase(void)
     */
     if (!(precHeader = pdbBase->precHeader)) {
 	status = S_record_noRecords;
-	errMessage(status,"No database records are defined");
+	errMessage(status,"");
 	return(status);
     }
 
@@ -654,7 +654,7 @@ static long initDatabase(void)
 	    if (!prset) {
 		strcpy(name,precType->papName[i]);
 		strcat(name,"RSET");
-		strcpy(message,"record support entry table not found for ");
+		strcpy(message,": ");
 		strcat(message,name);
 		status = S_rec_noRSET;
 		errMessage(status,message);

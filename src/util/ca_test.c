@@ -79,6 +79,7 @@ char	*pvalue
 	else{
 		return cagft(pname);
 	}
+    ca_task_exit();
 }
 
 
@@ -110,7 +111,7 @@ LOCAL int cagft(char *pname)
 
 	printf("name:\t%s\n", ca_name(chan_id));
 	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%u\n", ca_element_count(chan_id));
+	printf("native count:\t%lu\n", ca_element_count(chan_id));
 
 
 	/* 
@@ -220,7 +221,7 @@ char		*pvalue
 
 	printf("name:\t%s\n", ca_name(chan_id));
 	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%u\n", ca_element_count(chan_id));
+	printf("native count:\t%lu\n", ca_element_count(chan_id));
 
 	/*
 	 *  string value ca_put
@@ -356,10 +357,10 @@ LOCAL void tsStampToText(char * text, const TS_STAMP *pstamp)
 
     status = tsStampToTM(&tmstruct,&nsec,pstamp);
     if(status) {
-        sprintf(text,"illegal time stamp\0");
+        sprintf(text,"illegal time stamp\n");
         return;
     }
-    sprintf(nsectext,".%09ul",nsec);
+    sprintf(nsectext,".%09lu",nsec);
     if((nsec%1000000)*1000000 == nsec) nsectext[4] = 0;
     else if((nsec%1000)*1000 == nsec) nsectext[7] = 0;
     else nsectext[10] = 0;

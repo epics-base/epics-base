@@ -14,7 +14,10 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 
-DIRS += config config/tools configure src
+ifeq ($(strip $(COMPAT_313)),YES)
+DIRS += config config/tools
+endif
+DIRS += configure src
 
 include $(TOP)/configure/RULES_TOP
 

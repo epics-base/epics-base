@@ -76,8 +76,10 @@ LIBRARY=ca
 ca_RCS_WIN32 = ca.rc
 
 # For R3.13 compatibility only
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=ca
 OBJLIB_SRCS = $(LIBSRCS)
+endif
 
 ca_LIBS = Com
 

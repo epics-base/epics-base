@@ -54,7 +54,9 @@ softDevIoc_LIBS += recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 softDevIoc_RCS_WIN32 = softDevIoc.rc
 
 # For R3.13 compatability
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJS_vxWorks = $(LIBSRCS:%.c=%)
+endif
 
 include $(TOP)/configure/RULES
 

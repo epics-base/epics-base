@@ -130,6 +130,14 @@ HOST_WARN=YES
 #	must be either YES or NO
 CROSS_WARN=YES
 
+#  Create and/or install files for R3.13 ioc application and extension builds?
+#  must be either YES or NO
+#
+#  NOTE: Set to YES only if you have existing R3.13 ioc applications
+#  or extensions that will be built with this base
+#
+COMPAT_313=NO
+
 #  Installation directory
 #Note: INSTALL_LOCATION definition moved to configure/RELEASE file
 

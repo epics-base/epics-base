@@ -80,8 +80,10 @@ dbIoc_LIBS = dbStaticIoc ca Com
 dbIoc_RCS_WIN32 = dbIoc.rc
 
 # For R3.13 compatibility only
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=dbIoc
 OBJLIB_SRCS = $(LIBSRCS)
+endif
 
 include $(TOP)/configure/RULES
 

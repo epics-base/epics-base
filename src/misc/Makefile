@@ -26,8 +26,10 @@ miscIoc_RCS_WIN32 = miscIoc.rc
 miscIoc_LIBS  = rsrvIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 
 # For R3.13 compatibility only
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=miscIoc
 OBJLIB_SRCS = $(LIBSRCS)
+endif
 
 include $(TOP)/configure/RULES
 

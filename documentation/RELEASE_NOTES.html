@@ -16,6 +16,21 @@
 <h2>Changes since 3.14.4</h2>
 </center>
 
+
+<h4>R3.13 compatability files</h4>
+
+<p>R3.13 compatability files will no longer be generated as
+default during the build. There is a new macro, COMPAT_313,
+in the configure/CONFIG_SITE file which must be set to
+YES for R3.13 compatability files to be created and installed.
+You will need to set COMPAT_313 to YES if you want R3.13 ioc
+applications or R3.13 extensions built with this R3.14 base.
+</p>
+
+<p>The COMPAT_313 macro is set to NO in the CONFIG_SITE distribution
+file.
+</p>
+
 <h4>Stringin record time-stamp soft device support</h4>
 Add simple device support for converting time to nicely-formatted string using
 INP field as epicsTimeToStrftime format string:

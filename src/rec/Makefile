@@ -86,7 +86,9 @@ recIoc_LIBS = asIoc dbIoc registryIoc dbStaticIoc ca Com
 recIoc_RCS_WIN32 = recIoc.rc
 
 # For R3.13 compatability
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJS_vxWorks = $(LIBSRCS:%.c=%)
+endif
 
 include $(TOP)/configure/RULES
 

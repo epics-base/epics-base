@@ -255,8 +255,10 @@ Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 Com_RCS_WIN32 = Com.rc
 
 # For R3.13 compatibility only
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=Com
 OBJLIB_SRCS = $(SRCS)
+endif
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = Com

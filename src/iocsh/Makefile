@@ -58,8 +58,10 @@ iocsh_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
 iocsh_RCS_WIN32 = iocsh.rc
 
 # For R3.13 compatibility only
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=iocsh
 OBJLIB_SRCS = $(LIBSRCS)
+endif
 
 include $(TOP)/configure/RULES
 

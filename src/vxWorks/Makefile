@@ -24,9 +24,11 @@ iocCore_OBJS += $(INSTALL_BIN)/iocshLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxComLibrary.o
 iocCore_SRCS += registerRecordDeviceDriver.c
 
+ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks = iocCore
 OBJLIB_OBJS += $(iocCore_OBJS)
 OBJLIB_SRCS += registerRecordDeviceDriver.c
+endif
 
 include $(TOP)/configure/RULES
 

@@ -14,8 +14,6 @@ TEMPLATES += top/config/RULES.iocBoot
 TEMPLATES += top/config/RULES_ARCHS
 TEMPLATES += top/config/RULES_DIRS
 TEMPLATES += top/config/RULES_TOP
-TEMPLATES += top/config/makeSoftLinks
-TEMPLATES += top/config/makeNfsCommands.pl
 TEMPLATES += top/config/makeIoccdcmds.pl
 
 TEMPLATES += top/exampleApp/Makefile

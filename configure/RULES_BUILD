@@ -310,12 +310,12 @@ endif
 # WIN95/NT source browser
 ifdef BAF
 
-$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIB_LD_OBJS)))
+$(LIB_BAF_HOST): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
 
-$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIB_LD_OBJS)))
+$(LIB_BAF_IOC): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
 	@echo "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^

@@ -44,7 +44,8 @@ DLL_LIBS = Com
 
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
-TESTPROD = aitGen genApps
+PROD = aitGen genApps
+PROD_vxWorks = genApps
 
 include $(TOP)/configure/RULES
 
@@ -64,11 +65,11 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 
 # Rules for generated files
 #
-aitConvertGenerated.cc: aitGen$(HOSTEXE) ../aitTypes.h
-	./aitGen$(HOSTEXE)
+aitConvertGenerated.cc: $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE) ../aitTypes.h
+	$(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
 
 gddApps.h : genApps$(EXE)
-	./genApps$(EXE) $@
+	$(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE) $@
 
 clean::
 	$(RM) aitConvertGenerated.cc gddApps.h

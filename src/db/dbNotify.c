@@ -222,8 +222,7 @@ static void notifyCallback(CALLBACK *pcallback)
     if(ppn->callbackState==callbackCanceled) {
 	ppn->restart = FALSE;
 	ppn->callbackState = callbackNotActive;
-        if(ppn->waitForCallback)
-	    semGive((SEM_ID)ppn->waitForCallback);
+        if(ppn->waitForCallback) semGive((SEM_ID)ppn->waitForCallback);
 	dbScanUnlock(precord);
 	return;
     }
@@ -235,6 +234,10 @@ static void notifyCallback(CALLBACK *pcallback)
 	    dbScanUnlock(precord);
 	    (ppn->userCallback)(ppn);
 	}
+        dbScanLock(precord);
+        if(ppn->waitForCallback) semGive((SEM_ID)ppn->waitForCallback);
+        ppn->callbackState = callbackNotActive;
+        dbScanUnlock(precord);
     } else {
         dbScanUnlock(precord);
     }

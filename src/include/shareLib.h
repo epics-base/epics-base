@@ -112,8 +112,7 @@
 #	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
 #		define epicsShareDef
 #	else
-        /* extern here is incompatible with visual C++ */
-#		define epicsShareDef __declspec(dllexport) 
+#		define epicsShareDef __declspec(dllexport) extern
 #	endif
 #	define READONLY const
 /*

@@ -65,6 +65,7 @@ int rsrv_init()
 	ellInit(&rsrv_free_clientQ);
 	ellInit(&rsrv_free_addrq);
 	ellInit(&rsrv_free_eventq);
+	ellInit(&beaconAddrList);
 	prsrv_cast_client = NULL;
 	pCaBucket = NULL;
 

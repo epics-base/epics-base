@@ -474,6 +474,8 @@ int client_stat(void)
 		FASTUNLOCK(&rsrv_free_addrq_lck);
 	}
 
+	caPrintAddrList (&beaconAddrList);
+
 	return ellCount(&clientQ);
 }
 

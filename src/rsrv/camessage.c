@@ -375,6 +375,15 @@ struct message_buffer *recv
 			claim_ciu_action(mp, client);
 			break;
 
+		case IOC_READ_BUILD:
+		case IOC_BUILD:
+			/*
+			 * starting with 3.12 CA ignores this 
+			 * protocol. No message is sent so that we avoid
+			 * a broadcast storm.
+			 */
+			break;
+
 		default:
 			logMsg("CAS: bad msg detected\n",
 				NULL,

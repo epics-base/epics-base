@@ -53,6 +53,8 @@ static char *serverhSccsId = "@(#)server.h	1.19 5/6/94";
 
 typedef int SOCKET;
 
+#define APIENTRY
+
 #include <vxLib.h>
 #include <ellLib.h>
 #include <fast_lock.h>
@@ -66,6 +68,9 @@ typedef int SOCKET;
 
 #include <asLib.h>
 #include <asDbLib.h>
+
+#include <socket.h>
+#include <addrList.h>
 
 struct message_buffer{
   unsigned long 		stk;
@@ -162,6 +167,7 @@ GLBLTYPE ELLLIST		clientQ;	/* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_addrq;
 GLBLTYPE ELLLIST		rsrv_free_eventq;
+GLBLTYPE ELLLIST		beaconAddrList;
 GLBLTYPE FAST_LOCK		clientQlock;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;

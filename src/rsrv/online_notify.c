@@ -62,7 +62,6 @@ static char *sccsId = "@(#)online_notify.c	1.14\t5/6/94";
 #include <envDefs.h>
 #include "server.h"
 #include <task_params.h>
-#include <addrList.h>
 
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
@@ -72,7 +71,6 @@ static char *sccsId = "@(#)online_notify.c	1.14\t5/6/94";
  */
 int rsrv_online_notify_task()
 {
-	ELLLIST			destAddr;
 	caAddrNode		*pNode;
   	unsigned long		delay;
 	unsigned long		maxdelay;
@@ -143,17 +141,17 @@ int rsrv_online_notify_task()
    	bfill((char *)&msg, sizeof msg, 0);
 	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
 
-	ellInit(&destAddr);
+	ellInit(&beaconAddrList);
 
 	/*
 	 * load user and auto configured
 	 * broadcast address list
 	 */
 	port = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
-	caSetupBCastAddrList (&destAddr, sock, port);
+	caSetupBCastAddrList (&beaconAddrList, sock, port);
 
 #	ifdef DEBUG
-		caPrintAddrList(&destAddr);
+		caPrintAddrList(&beaconAddrList);
 #	endif
 
  	while(TRUE){
@@ -171,7 +169,7 @@ int rsrv_online_notify_task()
 			casDontAllowSearchReplies = FALSE;
 		}
 
-		pNode = (caAddrNode *) destAddr.node.next;
+		pNode = (caAddrNode *) beaconAddrList.node.next;
 		while(pNode){
 			msg.m_available = 
 				pNode->srcAddr.inetAddr.sin_addr.s_addr;

@@ -28,6 +28,8 @@
 #include "osiProcess.h"
 #include "osiWireFormat.h"
 #include "epicsAlgorithm.h"
+#include "errlog.h"
+#include "locationException.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"
@@ -283,14 +285,13 @@ void udpiiu::shutdown (
     }
 
     {
+        this->shutdownCmd = true;
         epicsGuardRelease < epicsMutex > unguard ( guard );
         {
             epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
 
             if ( ! this->recvThread.exitWait ( 0.0 ) ) {
                 unsigned tries = 0u;
-
-                this->shutdownCmd = true;
 
                 this->wakeupMsg ();
 

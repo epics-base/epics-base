@@ -317,6 +317,8 @@ epicsShareFunc void epicsShareAPI errlogInit(int bufsize)
     taskSpawn(ERRLOG_NAME,ERRLOG_PRI,ERRLOG_OPT,
 	ERRLOG_STACK,(FUNCPTR)errlogTask,
 	0,0,0,0,0,0,0,0,0,0);
+    /*For now make sure iocLogInit is called*/
+    iocLogInit();
 }
 
 LOCAL void errlogTask(void)

@@ -68,6 +68,7 @@ LIBSRCS += caServerIO.cc
 LIBSRCS += casIntfIO.cc
 LIBSRCS += casDGIntfIO.cc
 LIBSRCS += casStreamIO.cc
+LIBSRCS += ipIgnoreEntry.cc
 
 LIBRARY = cas
 DLL_LIBS = ca gdd Com

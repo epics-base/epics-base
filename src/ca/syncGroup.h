@@ -114,8 +114,8 @@ public:
     static syncGroupWriteNotify * factory ( 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid );
-    void begin ( unsigned type, arrayElementCount count, 
-                            const void * pValueIn );
+    void begin ( unsigned type, 
+                      arrayElementCount count, const void * pValueIn );
     void destroy ( casgRecycle & );
     void show ( unsigned level ) const;
 protected:
@@ -149,6 +149,8 @@ private:
     epicsMutex mutex;
 };
 
+template < class T > class sgAutoPtr;
+
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
     CASG ( oldCAC & cacIn );
@@ -158,8 +160,8 @@ public:
     int block ( double timeout );
     void reset ();
     void show ( unsigned level ) const;
-    int get ( chid pChan, unsigned type, arrayElementCount count, void * pValue );
-    int put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue );
+    void get ( chid pChan, unsigned type, arrayElementCount count, void * pValue );
+    void put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue );
     void completionNotify ( syncGroupNotify & );
     void * operator new ( size_t size );
     void operator delete ( void * pCadaver, size_t size );
@@ -190,6 +192,9 @@ private:
 
 	CASG ( const CASG & );
 	CASG & operator = ( const CASG & );
+
+    friend class sgAutoPtr < syncGroupWriteNotify >;
+    friend class sgAutoPtr < syncGroupReadNotify >;
 };
 
 inline bool syncGroupNotify::ioInitiated () const

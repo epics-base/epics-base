@@ -32,6 +32,7 @@
  *	.02 joh 091691	use greater than on the DEBUG level test
  *	.03 joh	110491	improved diagnostics
  *	.04 joh	021292	improved diagnostics
+ *	.05 joh	022092	improved diagnostics
  */
 
 #include <vxWorks.h>
@@ -92,6 +93,7 @@ int		lock_needed;
 
 			if(     (anerrno!=ECONNABORTED&&
 				anerrno!=ECONNRESET&&
+				anerrno!=EPIPE&&
 				anerrno!=ETIMEDOUT)||
 				CASDEBUG>2){
 

@@ -204,9 +204,15 @@ $(INSTALL_BIN)/%: ../%
 	@echo "Installing $@"
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 
+#
+# avoid confusing circular dependency message when
+# INSTALL_BIN and EPICS_BASE_BIN are the same (in base)
+#
+ifneq ($(INSTALL_BIN),$(EPICS_BASE_BIN))
 $(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/% 
 	@echo "Installing $@"
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
+endif
 
 $(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
 	@echo "Installing $@"

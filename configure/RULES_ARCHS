@@ -48,9 +48,12 @@ clean ::
 clean$(DIVIDER)% :: 
 	$(RMDIR) O.$*
 
+realclean :: 
+	$(RMDIR) O.*
+
 .PHONY : $(buildActionTargets)
 .PHONY : $(buildActionArchTargets)
 .PHONY : $(buildArchs)
-.PHONY : $(ACTIONS) clean all
+.PHONY : $(ACTIONS) clean realclean all
 .PHONY : checkRelease
 

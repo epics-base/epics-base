@@ -14,7 +14,6 @@ INC += dbAddr.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recSup.h
-INC += taskwd.h
 INC += recGbl.h
 INC += dbBkpt.h
 
@@ -49,7 +48,6 @@ SRCS += db_access.c
 SRCS += db_test.c
 SRCS += recGbl.c
 SRCS += callback.c
-SRCS += taskwd.c
 SRCS += dbCa.c 
 SRCS += initHooks.c 
 SRCS += dbcar.c 

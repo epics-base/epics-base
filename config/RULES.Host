@@ -232,6 +232,7 @@ INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
+INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 
@@ -294,9 +295,9 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 ifeq ($(strip $(LIBTYPE)),SHARED)
 #
 # LIBTYPE=="SHARED" indicates build
-# DLL and also build object archive library
+# DLL and install both dll and dll link library
 #
-LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS)
+LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS) $(INSTALL_DLL_LINK_LIBS)
 endif # LIBTYPE=SHARED
 
 #  check if shared library requested: (Unix type build)

@@ -204,7 +204,17 @@ LINK.dll = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$(@:%.dll=%.lib) /out:$@
 #	on some archs), don't define (and build) any library!
 DLLNAME = $(LIBRARY).dll
 
-LIBNAME = $(LIBRARY).lib
+#
+# Under WIN32 we have the unique situation where the DLL link creates the
+# DLL link library xxx.lib and we need to be very careful to avoid replacing
+# the xxx.lib created by the dll link with an xxx.lib created by $(AR)
+#
+# LIBTYPE is empty if we are not building a DLL
+#
+DLL_LINK_LIBNAME_SHARED = $(LIBRARY).lib
+DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(LIBTYPE))
+OBJECT_LIBNAME_ = $(LIBRARY).lib
+LIBNAME = $(OBJECT_LIBNAME_$(LIBTYPE))
 
 #--------------------------------------------------
 # Dependancy definitions

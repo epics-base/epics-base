@@ -47,7 +47,7 @@ AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
-	smartGDDPointer.cc gddEnumStringTable.cc
+	gddEnumStringTable.cc
 
 LIBRARY = gdd
 

@@ -27,20 +27,9 @@
 #   pragma warning ( disable:4660 )
 #endif
 
-template class tsFreeList < epicsTimerForC, 0x20 >;
-template class tsFreeList < epicsTimerQueuePassiveForC, 0x10 >;
-template class tsFreeList < epicsTimerQueueActiveForC, 0x10 >;
-template class epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > >;
-template class epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > >;
-template class epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > >;
-
 #ifdef _MSC_VER
 #   pragma warning ( pop )
 #endif
-
-epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > > epicsTimerForC::pFreeList;
-epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > epicsTimerQueuePassiveForC::pFreeList;
-epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > > epicsTimerQueueActiveForC::pFreeList;
 
 epicsTimer::~epicsTimer () {}
 
@@ -61,7 +50,9 @@ epicsTimerForC::~epicsTimerForC ()
 
 void epicsTimerForC::destroy ()
 {
-    delete this;
+    timerQueue & queueTmp ( this->queue );
+    this->~epicsTimerForC ();
+    epicsTimerForC::operator delete ( this, queueTmp.timerForCFreeList );
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
@@ -81,7 +72,9 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 
 void epicsTimerQueueActiveForC::release ()
 {
-    pTimerQueueMgrEPICS->release ( *this );
+    epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
+        timerQueueMgrEPICS;
+    pMgr->release ( *this );
 }
 
 epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC 
@@ -186,8 +179,9 @@ extern "C" epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsTimerQueueActiveForC &tmr = 
-            pTimerQueueMgrEPICS->allocate ( okToShare ? true : false, threadPriority );
+        epicsSingleton < timerQueueActiveMgr >::reference ref = timerQueueMgrEPICS;
+        epicsTimerQueueActiveForC & tmr = 
+            ref->allocate ( okToShare ? true : false, threadPriority );
         return &tmr;
     }
     catch ( ... ) {

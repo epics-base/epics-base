@@ -18,6 +18,7 @@
  */
 
 #include <typeinfo>
+#include <stdexcept>
 
 #define epicsExportSharedSymbols
 #include "epicsGuard.h"
@@ -29,16 +30,13 @@
 #endif
 
 template class tsFreeList < timer, 0x20 >;
-template class epicsSingleton < tsFreeList < timer, 0x20 > >;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )
 #endif
 
-epicsSingleton < tsFreeList < timer, 0x20 > > timer::pFreeList;
-
-timer::timer ( timerQueue &queueIn ) :
-    curState ( stateLimbo ), pNotify ( 0 ), queue ( queueIn )
+timer::timer ( timerQueue & queueIn ) :
+    queue ( queueIn ), curState ( stateLimbo ), pNotify ( 0 )
 {
 }
 
@@ -49,7 +47,9 @@ timer::~timer ()
 
 void timer::destroy () 
 {
-    delete this;
+    timerQueue & queueTmp ( this->queue );
+    this->~timer ();
+    timer::operator delete ( this, queueTmp.timerFreeList ) ;
 }
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
@@ -223,8 +223,15 @@ void timer::show ( unsigned int level ) const
     }
 }
 
-timerQueue & timer::getPrivTimerQueue()
+void timer::operator delete ( void * pCadaver )
 {
-    return this->queue;
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
+
+void epicsTimerForC::operator delete ( void * pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 

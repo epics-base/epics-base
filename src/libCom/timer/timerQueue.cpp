@@ -157,14 +157,13 @@ double timerQueue::process ( const epicsTime & currentTime )
 
 epicsTimer & timerQueue::createTimer ()
 {
-    return * new timer ( * this );
+    return * new ( this->timerFreeList ) timer ( * this );
 }
 
 epicsTimerForC & timerQueue::createTimerForC ( epicsTimerCallback pCallback, void *pArg )
 {
-    return * new epicsTimerForC ( *this, pCallback, pArg );
+    return * new ( this->timerForCFreeList ) epicsTimerForC ( *this, pCallback, pArg );
 }
-
 
 void timerQueue::show ( unsigned level ) const
 {

@@ -22,6 +22,7 @@
 #include "epicsSingleton.h"
 #include "tsDLList.h"
 #include "epicsTimer.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 #ifdef DEBUG
 #   define debugPrintf(ARGSINPAREN) printf ARGSINPAREN
@@ -39,22 +40,23 @@ public:
     void cancel ();
     expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
-    class timerQueue & getPrivTimerQueue ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-
+    void * operator new ( size_t size, tsFreeList < timer, 0x20 > & );
+#ifdef CXX_PLACEMENT_DELETE
+    void operator delete ( void *, tsFreeList < timer, 0x20 > & );
+#endif
 protected:
-    timer ( class timerQueue & );
+    timer ( class timerQueue & ) throw ();
     ~timer (); 
+    timerQueue & queue;
 private:
     enum state { statePending = 45, stateActive = 56, stateLimbo = 78 };
     epicsTime exp; // experation time 
     state curState; // current state 
     epicsTimerNotify * pNotify; // callback
-    timerQueue & queue;
-    static epicsSingleton < tsFreeList < timer, 0x20 > > pFreeList;
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     timer & operator = ( const timer & );
+    void * operator new ( size_t size ); 
+    void operator delete ( void * ); 
     friend class timerQueue;
 };
 
@@ -62,16 +64,19 @@ struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
     void destroy ();
 protected:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) throw ();
     ~epicsTimerForC (); 
-    void * operator new ( size_t size );
-    void operator delete (  void *pCadaver, size_t size );
+    void * operator new ( size_t size, tsFreeList < epicsTimerForC, 0x20 > & );
+#ifdef CXX_PLACEMENT_DELETE
+    void operator delete ( void *, tsFreeList < epicsTimerForC, 0x20 > & );
+#endif
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
-    static epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > > pFreeList;
     expireStatus expire ( const epicsTime & currentTime );
     epicsTimerForC & operator = ( const epicsTimerForC & );
+    void * operator new ( size_t size ); 
+    void operator delete ( void * ); 
     friend class timerQueue;
 };
 
@@ -84,6 +89,8 @@ public:
     double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
 private:
+    tsFreeList < timer, 0x20 > timerFreeList;
+    tsFreeList < epicsTimerForC, 0x20 > timerForCFreeList;
     mutable epicsMutex mutex;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
@@ -94,6 +101,7 @@ private:
 	timerQueue ( const timerQueue & );
     timerQueue & operator = ( const timerQueue & );
     friend class timer;
+    friend struct epicsTimerForC;
 };
 
 class timerQueueActiveMgrPrivate { // X aCC 655
@@ -117,6 +125,8 @@ public:
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     unsigned threadPriority () const;
+    void * operator new ( size_t );
+    void operator delete ( void * );
 private:
     timerQueue queue;
     epicsEvent rescheduleEvent;
@@ -146,7 +156,7 @@ private:
     timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
 
-extern epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
+extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:
@@ -167,8 +177,6 @@ struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQu
 public:
     epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
     void destroy ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
 protected:
     virtual ~epicsTimerQueuePassiveForC ();
 private:
@@ -183,12 +191,11 @@ struct epicsTimerQueueActiveForC : public timerQueueActive,
 public:
     epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
     void release ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
+    void * operator new ( size_t );
+    void operator delete ( void * );
 protected:
     virtual ~epicsTimerQueueActiveForC ();
 private:
-    static epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > > pFreeList;
 	epicsTimerQueueActiveForC ( const epicsTimerQueueActiveForC & );
     epicsTimerQueueActiveForC & operator = ( const epicsTimerQueueActiveForC & );
 };
@@ -203,44 +210,42 @@ inline unsigned timerQueueActive::threadPriority () const
     return thread.getPriority ();
 }
 
-inline void * timer::operator new ( size_t size ) 
+inline void * timer::operator new ( size_t size, 
+                     tsFreeList < timer, 0x20 > & freeList ) 
 {
-    return timer::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void timer::operator delete ( void *pCadaver, size_t size ) 
+#ifdef CXX_PLACEMENT_DELETE
+inline void timer::operator delete ( void * pCadaver, 
+                     tsFreeList < timer, 0x20 > & freeList ) 
 {
-    timer::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver );
 }
+#endif
 
-inline void * epicsTimerForC::operator new ( size_t size ) 
+inline void * epicsTimerForC::operator new ( size_t size,
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
 {
-    return epicsTimerForC::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void epicsTimerForC::operator delete ( void *pCadaver, size_t size ) 
+#ifdef CXX_PLACEMENT_DELETE
+inline void epicsTimerForC::operator delete ( void * pCadaver, 
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
 {
-    epicsTimerForC::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver );
 }
-
-inline void * epicsTimerQueuePassiveForC::operator new ( size_t size )
-{ 
-    return epicsTimerQueuePassiveForC::pFreeList->allocate ( size );
-}
-
-inline void epicsTimerQueuePassiveForC::operator delete ( void *pCadaver, size_t size )
-{ 
-    epicsTimerQueuePassiveForC::pFreeList->release ( pCadaver, size );
-}
+#endif
 
 inline void * epicsTimerQueueActiveForC::operator new ( size_t size )
 {
-    return epicsTimerQueueActiveForC::pFreeList->allocate ( size );
+    return ::operator new ( size );
 }
 
-inline void epicsTimerQueueActiveForC::operator delete ( void *pCadaver, size_t size )
+inline void epicsTimerQueueActiveForC::operator delete ( void * pCadaver )
 {
-    epicsTimerQueueActiveForC::pFreeList->release ( pCadaver, size );
+    ::operator delete ( pCadaver );
 }
 
 #endif // epicsTimerPrivate_h

@@ -459,7 +459,7 @@ struct caFDInfo {
 class processThread : public osiThread {
 public:
     processThread ();
-    ~processThread ();
+    virtual ~processThread ();
     virtual void entryPoint ();
     void signalShutDown ();
     void installLabor (tcpiiu &iiu);

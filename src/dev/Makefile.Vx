@@ -107,6 +107,7 @@ SRCS.c += ../devAB1771IL.c
 SRCS.c += ../devAB1771IR.c
 SRCS.c += ../devAB1771IXE.c
 SRCS.c += ../devAB1771OFE.c
+SRCS.c += ../devABANALOG.c
 SRCS.c += ../devABBINARY.c
 SRCS.c += ../devABStatus.c
 SRCS.c += ../devMpc.c

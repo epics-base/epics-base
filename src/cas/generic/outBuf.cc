@@ -123,9 +123,8 @@ caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
     pHdr->m_available = epicsHTON32 ( responseSpecific );
     char * pPayload;
     if ( hdrSize == sizeof ( caHdr ) ) {
-        pHdr->m_postsize =
-            static_cast < ca_uint16_t > ( epicsHTON32 ( alignedPayloadSize ) );
-        pHdr->m_count = static_cast < ca_uint16_t > ( epicsHTON32 ( nElem ) );
+        pHdr->m_postsize = epicsHTON16 ( static_cast < epicsUInt16 > ( alignedPayloadSize ) );
+        pHdr->m_count = epicsHTON16 ( static_cast < epicsUInt16 > ( nElem ) );
         pPayload = reinterpret_cast < char * > ( pHdr + 1 );
     }
     else {

@@ -32,17 +32,6 @@
 #include <osiUnistd.h>
 #include <iocsh.h>
 
-#ifdef OMIT_NFS_SUPPORT
-# include <rtems/tftp.h>
-#else
-# ifndef RTEMS_EPICS_NFS_SERVER_PATH
-#  define RTEMS_EPICS_NFS_SERVER_PATH "/tftpboot/epics"
-# endif
-# ifndef RTEMS_EPICS_NFS_MOUNT_POINT
-#  define RTEMS_EPICS_NFS_MOUNT_POINT "/epics"
-# endif
-#endif
-
 /*
  * Architecture-dependent routines
  */
@@ -161,45 +150,114 @@ LogNetFatal (const char *msg, int err)
     delayedPanic (msg);
 }
 
+void *
+mustMalloc(int size, const char *msg)
+{
+    void *p;
+
+    if ((p = malloc (size)) == NULL)
+        LogFatal ("Can't allocate space for %s.\n");
+    return p;
+}
+
 /*
  ***********************************************************************
  *                         REMOTE FILE ACCESS                          *
  ***********************************************************************
  */
-/*
- * Add TFTP server and target prefix to pathnames
- */
+#ifdef OMIT_NFS_SUPPORT
+# include <rtems/tftp.h>
+#endif
+
 static void
-rtems_set_directory (void)
+initialize_remote_filesystem(const char **argv)
 {
+#ifdef OMIT_NFS_SUPPORT
     char *path;
     int pathsize = 200;
     int l;
 
-    if ((path = malloc (pathsize)) == NULL)
-        LogFatal ("Can't create TFTP path name -- no memory.\n");
-#ifdef OMIT_NFS_SUPPORT
-    strcpy (path, "/TFTP/BOOTP_HOST/tftpboot/epics/");
+    printf ("***** Initializing TFTP *****\n");
+    rtems_bsdnet_initialize_tftp_filesystem ();
+
+    path = mustMalloc(pathsize, "Command path name ");
+    strcpy (path, "/TFTP/BOOTP_HOST/epics/");
     l = strlen (path);
-    if (gethostname (&path[l], pathsize - l - 2) || (path[l] == '\0'))
+    if (gethostname (&path[l], pathsize - l - 10) || (path[l] == '\0'))
         LogFatal ("Can't get host name");
-    strcat (path, "/");
+    strcat (path, "/st.cmd");
+    argv[1] = path;
 #else
-    {
-    char *cp = strrchr(rtems_bsdnet_bootp_cmdline, '/');
-    if (cp == NULL)
-        l = strlen(rtems_bsdnet_bootp_cmdline);
+    char *server_path;
+    char *mount_point;
+    char *cp;
+    int l = 0;
+
+    printf ("***** Initializing NFS *****\n");
+    rpcUdpInit();
+    nfsInit(0,0);
+    /*
+     * Use first component of nvram/bootp command line pathname
+     * to set up initial NFS mount.  A "/tftpboot/" is prepended
+     * if the pathname does not begin with a '/'.  This allows
+     * NFS and TFTP to have a similar view of the remote system.
+     */
+    if (rtems_bsdnet_bootp_cmdline[0] == '/')
+        cp = rtems_bsdnet_bootp_cmdline + 1;
     else
-        l = cp - rtems_bsdnet_bootp_cmdline;
-    if (l >= pathsize)
-        LogFatal ("Boot command path too long");
-    strncpy(path, rtems_bsdnet_bootp_cmdline, l);
-    path[l] = '\0';
+        cp = rtems_bsdnet_bootp_cmdline;
+    cp = strchr(cp, '/');
+    if ((cp == NULL)
+     || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
+        LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
+    cp = mustMalloc(l + 20, "NFS mount paths");
+    server_path = cp;
+    if (rtems_bsdnet_bootp_cmdline[0] == '/') {
+        mount_point = server_path;
+        strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+        mount_point[l] = '\0';
+        argv[1] = rtems_bsdnet_bootp_cmdline;
     }
+    else {
+        char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
+        strcpy(server_path, "/tftpboot/");
+        mount_point = server_path + strlen(server_path);
+        strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+        mount_point[l] = '\0';
+        mount_point--;
+        strcpy(abspath, "/");
+        strcat(abspath, rtems_bsdnet_bootp_cmdline);
+        argv[1] = abspath;
+    }
+    nfsMount(rtems_bsdnet_bootp_server_name, server_path, mount_point);
+    free(cp);
 #endif
-    if (chdir (path) < 0)
-        LogFatal ("Can't set initial directory");
-    free(path);
+    argv[0] = rtems_bsdnet_bootp_boot_file_name;
+}
+
+/*
+ * Get to the startup script directory
+ * The TFTP filesystem requires a trailing '/' on chdir arguments.
+ */
+static void
+set_directory (const char *commandline)
+{
+    const char *cp;
+    char *directoryPath;
+    int l;
+
+    cp = strrchr(commandline, '/');
+    if (cp == NULL)
+        l = strlen(commandline);
+    else
+        l = cp - commandline;
+    directoryPath = mustMalloc(l + 2, "Command path directory ");
+    strncpy(directoryPath, commandline, l);
+    directoryPath[l] = '/';
+    directoryPath[l+1] = '\0';
+    if (chdir (directoryPath) < 0)
+        LogFatal ("Can't set initial directory: %s\n", strerror(errno));
+    free(directoryPath);
 }
 
 /*
@@ -302,9 +360,7 @@ rtems_task
 Init (rtems_task_argument ignored)
 {
     int i;
-    char arg0[] = "RTEMS_IOC";
-    char arg1[] = "st.cmd";
-    char *argv[3] = { arg0, arg1, NULL };
+    const char *argv[3] = { NULL, NULL, NULL };
     rtems_interval ticksPerSecond;
     rtems_task_priority newpri;
     rtems_status_code sc;
@@ -325,8 +381,6 @@ Init (rtems_task_argument ignored)
     {
     extern void setBootConfigFromPPCBUGNVRAM(void);
     setBootConfigFromPPCBUGNVRAM();
-    argv[0] = rtems_bsdnet_bootp_boot_file_name;
-    argv[1] = rtems_bsdnet_bootp_cmdline ;
     }
 #endif
 
@@ -357,17 +411,7 @@ Init (rtems_task_argument ignored)
     }
     printf ("***** Initializing network *****\n");
     rtems_bsdnet_initialize_network ();
-#ifdef OMIT_NFS_SUPPORT
-    printf ("***** Initializing TFTP *****\n");
-    rtems_bsdnet_initialize_tftp_filesystem ();
-#else
-    printf ("***** Initializing NFS *****\n");
-    rpcUdpInit();
-    nfsInit(0,0);
-    nfsMount(rtems_bsdnet_bootp_server_name,
-                                            RTEMS_EPICS_NFS_SERVER_PATH,
-                                            RTEMS_EPICS_NFS_MOUNT_POINT);
-#endif
+    initialize_remote_filesystem (argv);
 
     /*
      * Use BSP-supplied time of day if available
@@ -402,7 +446,7 @@ Init (rtems_task_argument ignored)
      */
     printf ("***** Starting EPICS application *****\n");
     iocshRegisterRTEMS ();
-    rtems_set_directory ();
+    set_directory (argv[1]);
     i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     exit (i);

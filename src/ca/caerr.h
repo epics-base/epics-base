@@ -115,6 +115,7 @@
 #define ECA_BADCHID         DEFMSG(CA_K_ERROR, 51)
 #define ECA_BADFUNCPTR      DEFMSG(CA_K_ERROR, 52)
 #define ECA_OPWILLBLOCK     DEFMSG(CA_K_WARNING, 53)
+#define ECA_ISATTACHED      DEFMSG(CA_K_WARNING, 54)
 
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char  *ca_message_text[];
@@ -175,7 +176,8 @@ READONLY char   *ca_message_text[]
 "Data conversion between client's type and the server's type failed",
 "Invalid channel identifier",
 "Invalid function pointer",
-"op will block (not to be returned to user)"
+"Operation will block (this code is not returned to user)",
+"Thread is already attached to a client context"
 };
 #endif
 

@@ -127,7 +127,6 @@ public:
     // beacon management
     void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime, 
         ca_uint32_t beaconNumber, unsigned protocolRevision );
-    void repeaterSubscribeConfirmNotify ();
     unsigned beaconAnomaliesSinceProgramStart (
         epicsGuard < epicsMutex > & ) const;
 

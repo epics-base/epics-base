@@ -464,13 +464,6 @@ cacChannel & cac::createChannel (
     return *pNetChan;
 }
 
-void cac::repeaterSubscribeConfirmNotify ()
-{
-    if ( this->pudpiiu ) {
-        this->pudpiiu->repeaterConfirmNotify ();
-    }
-}
-
 bool cac::transferChanToVirtCircuit ( 
     epicsGuard < epicsMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
     ca_uint16_t typeCode, arrayElementCount count, 

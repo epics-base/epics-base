@@ -701,7 +701,7 @@ bool udpiiu::beaconAction (
 bool udpiiu::repeaterAckAction ( epicsGuard < epicsMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime &)
 {
-    this->cacRef.repeaterSubscribeConfirmNotify ();
+    this->pRepeaterSubscribeTmr->confirmNotify ();
     return true;
 }
 
@@ -999,11 +999,6 @@ bool udpiiu::wakeupMsg ()
         return true;
     }
     return false;
-}
-
-void udpiiu::repeaterConfirmNotify ()
-{
-    this->pRepeaterSubscribeTmr->confirmNotify ();
 }
 
 void udpiiu::beaconAnomalyNotify ( 

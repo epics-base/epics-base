@@ -99,7 +99,6 @@ public:
     ca_uint32_t datagramSeqNumber ( epicsGuard < udpMutex > & ) const;
     void show ( unsigned level ) const;
     bool wakeupMsg ();
-    void repeaterConfirmNotify ();
     void beaconAnomalyNotify ( 
         epicsGuard < epicsMutex > & guard, const epicsTime & currentTime );
     void govExpireNotify ( const epicsTime & currentTime );

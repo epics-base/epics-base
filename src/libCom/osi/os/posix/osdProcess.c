@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h> /* OPEN_MAX defined here */
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -59,37 +58,6 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     }
 }
 
-/*
- * maxPosixFD ()
- *
- * attempt to determine the maximum file descriptor
- * on all posix systems
- */
-static int maxPosixFD ( )
-{
-	int max;
-#       if ! defined (OPEN_MAX)
-	static const int bestGuess = 1024;
-#       endif
-
-#	if defined (_SC_OPEN_MAX) /* posix */
-		max = sysconf (_SC_OPEN_MAX);
-		if (max<0) {
-#           if defined (OPEN_MAX)
-                max = OPEN_MAX;
-#           else
-			    max = bestGuess;
-#           endif
-		}
-#	elif defined (OPEN_MAX) /* posix */
-        max = OPEN_MAX; 
-#	else
-		max = bestGuess;
-#	endif
-
-	return max;
-}
-
 epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
     (const char *pProcessName, const char *pBaseExecutableName)
 {
@@ -114,17 +82,11 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
     }
 
     /*
-     * close all open files except for STDIO so they will not
-     * be inherited by the spawned process
+     * since all epics sockets are created with the FD_CLOEXEC
+     * option then we no-longer need to blindly close all open
+     * files here.
      */
-    maxfd = maxPosixFD (); 
-    for (fd = 0; fd<=maxfd; fd++) {
-        if (fd==STDIN_FILENO) continue;
-        if (fd==STDOUT_FILENO) continue;
-        if (fd==STDERR_FILENO) continue;
-        close (fd);
-    }
-    
+
     /*
      * overlay the specified executable
      */

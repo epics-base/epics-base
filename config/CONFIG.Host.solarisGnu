@@ -44,5 +44,5 @@ ARCH_DEP_LDLIBS_8 = -lCrun
 ARCH_DEP_LDLIBS += $(ARCH_DEP_LDLIBS_$(SOLARIS_VERSION))
 
 #Allows R3.13 built extensions to load R3.14 shared libs
-SYS_DLL_LIBS_solaris += posix4 pthread  $(ARCH_DEP_LDLIBS_$(SOLARIS_VERSION))
-
+SYS_DLL_LIBS_solaris_8 = Crun
+SYS_DLL_LIBS_solaris += posix4 pthread $(SYS_DLL_LIBS_solaris_$(SOLARIS_VERSION))

@@ -1,9 +1,9 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
 DIRS = antelope flex 
 
-include $(TOP)/config/RULES_DIRS
+include $(TOP)/configure/RULES_DIRS
 

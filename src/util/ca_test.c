@@ -43,10 +43,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#endif
-
 #ifndef ERROR
 #define ERROR -1
 #endif

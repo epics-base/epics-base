@@ -1,7 +1,14 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+#	install these scripts:
+#
 
+SCRIPTS += $(subst ../,,$(wildcard ../*.pl))
+SCRIPTS += installEpics
+
+include $(TOP)/configure/RULES_BUILD
+
+#	EOF base/src/tools/Makefile.Host

@@ -85,6 +85,7 @@ bool gddEnumStringTable::setString ( unsigned index, const char *pString )
     if ( this->nStrings <= index ) {
         this->nStrings = index + 1;
     }
+    return true;
 }
 
 void gddEnumStringTable::getString ( unsigned index, char *pBuf, unsigned size ) const

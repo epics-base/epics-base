@@ -43,7 +43,7 @@
 #define TASKWD_NAME		"taskwd"
 #define SMIOTEST_NAME		"smInout"
 #define SMROTTEST_NAME		"smRotate"
-#define EVENT_PEND_NAME		"event task"
+#define EVENT_PEND_NAME		"event_task"
 #define XY240_NAME              "xy_240_scan"
 #define	GPIBLINK_NAME		"gpibLink"
 #define BBLINK_NAME		"bbLinkTask"

@@ -56,8 +56,8 @@
 #include	<aiRecord.h>
 
 /* Create the dset for devAiTestAsyn */
-long init_record();
-long read_ai();
+static long init_record();
+static long read_ai();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -135,7 +135,7 @@ static long read_ai(pai)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pai->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pai->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pai->pact=TRUE;
     		return(0);
 	}

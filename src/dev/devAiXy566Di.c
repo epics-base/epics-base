@@ -50,9 +50,9 @@
 #include	<module_types.h>
 #include	<aiRecord.h>
 
-long init_record();
-long read_ai();
-long special_linconv();
+static long init_record();
+static long read_ai();
+static long special_linconv();
 
 
 struct {

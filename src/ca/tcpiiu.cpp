@@ -655,9 +655,11 @@ void tcpiiu::disconnect ()
 {
     assert ( this->fullyConstructedFlag );
 
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        this->ioTable.traverse ( &baseNMIU::destroy );
+    // if we get here and the IO is still attached then we have an
+    // io block that was not registered with a channel.
+    if ( this->ioTable.numEntriesInstalled () ) {
+        this->pCAC ()->printf ( "CA connection disconnect with %u IO items still installed?\n",
+            this->ioTable.numEntriesInstalled () );
     }
 
     this->cleanShutdown ();

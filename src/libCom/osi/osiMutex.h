@@ -1,4 +1,15 @@
 
+/* 
+ * $Id$
+ * 
+ *
+ * Author: Jeff Hill
+ *
+ */
+
+#ifndef osiMutexh
+#define osiMutexh
+
 #include "osiSem.h"
 #include "shareLib.h"
 
@@ -98,3 +109,4 @@ inline void osiMutex::show (unsigned level) const
     semMutexShow (this->id, level);
 }
 
+#endif /* osiMutexh */

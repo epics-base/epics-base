@@ -1,4 +1,15 @@
 
+/* 
+ * $Id$
+ * 
+ *
+ * Author: Jeff Hill
+ *
+ */
+
+#ifndef osiEventh
+#define osiEventh
+
 #include "osiSem.h"
 #include "shareLib.h"
 
@@ -97,4 +108,7 @@ inline void osiEvent::show (unsigned level)
 {
     semBinaryShow (this->id, level);
 }
+
+#endif /* osiEventh */
+
 

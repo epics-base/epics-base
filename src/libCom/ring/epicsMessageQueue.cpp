@@ -29,13 +29,13 @@
 #include <memory.h>
 #include <stdexcept>
 
-epicsMessageQueue::epicsMessageQueue(unsigned int capacity,
-                                     unsigned int maxMessageSize) 
+epicsMessageQueue::epicsMessageQueue(unsigned int aCapacity,
+                                     unsigned int aMaxMessageSize) 
 {
-    assert(capacity != 0);
-    assert(maxMessageSize != 0);
-    this->capacity = capacity;
-    this->maxMessageSize = maxMessageSize;
+    assert(aCapacity != 0);
+    assert(aMaxMessageSize != 0);
+    capacity = aCapacity;
+    maxMessageSize = aMaxMessageSize;
     slotSize = (sizeof(unsigned long)
               + maxMessageSize + sizeof(unsigned long) - 1)
                                                      / sizeof(unsigned long);
@@ -54,7 +54,7 @@ epicsMessageQueue::~epicsMessageQueue()
 bool
 epicsMessageQueue::send(void *message, unsigned int size)
 {
-    char *inPtr, *outPtr, *nextPtr;
+    char *myInPtr, *myOutPtr, *nextPtr;
 
     assert(size <= maxMessageSize);
     queueMutex.lock();
@@ -62,16 +62,16 @@ epicsMessageQueue::send(void *message, unsigned int size)
         queueMutex.unlock();
         return false;
     }
-    inPtr = (char *)this->inPtr;
-    outPtr = (char *)this->outPtr;
-    if (inPtr == lastMessageSlot)
+    myInPtr = (char *)inPtr;
+    myOutPtr = (char *)outPtr;
+    if (myInPtr == lastMessageSlot)
         nextPtr = firstMessageSlot;
     else
-        nextPtr = inPtr + slotSize;
-    if (nextPtr == outPtr)
+        nextPtr = myInPtr + slotSize;
+    if (nextPtr == myOutPtr)
         full = true;
-    *(volatile unsigned long *)inPtr = size;
-    memcpy((unsigned long *)inPtr + 1, message, size);
+    *(volatile unsigned long *)myInPtr = size;
+    memcpy((unsigned long *)myInPtr + 1, message, size);
     this->inPtr = nextPtr;
     queueMutex.unlock();
     queueEvent.signal();
@@ -81,12 +81,12 @@ epicsMessageQueue::send(void *message, unsigned int size)
 bool
 epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, double timeout)
 {
-    char *outPtr;
+    char *myOutPtr;
     unsigned long l;
 
     queueMutex.lock();
-    outPtr = (char *)this->outPtr;
-    while ((outPtr == inPtr) && !full) {
+    myOutPtr = (char *)outPtr;
+    while ((myOutPtr == inPtr) && !full) {
         queueMutex.unlock();
         if (withTimeout) {
             if (queueEvent.wait(timeout) == false)
@@ -96,15 +96,15 @@ epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, 
             queueEvent.wait();
         }
         queueMutex.lock();
-        outPtr = (char *)this->outPtr;
+        myOutPtr = (char *)outPtr;
     }
-    *size = l = *(unsigned long *)outPtr;
-    memcpy(message, (unsigned long *)outPtr + 1, l);
-    if (outPtr == lastMessageSlot)
-        outPtr = firstMessageSlot;
+    *size = l = *(unsigned long *)myOutPtr;
+    memcpy(message, (unsigned long *)myOutPtr + 1, l);
+    if (myOutPtr == lastMessageSlot)
+        myOutPtr = firstMessageSlot;
     else
-        outPtr = outPtr + slotSize;
-    this->outPtr = outPtr;
+        myOutPtr = myOutPtr + slotSize;
+    this->outPtr = myOutPtr;
     full = false;
     queueMutex.unlock();
     return true;
@@ -142,15 +142,15 @@ epicsMessageQueue::isEmpty()
 void
 epicsMessageQueue::show(unsigned int level) const
 {
-    char *inPtr, *outPtr;
+    char *myInPtr, *myOutPtr;
     int nmsg;
 
-    inPtr = (char *)this->inPtr;
-    outPtr = (char *)this->outPtr;
-    if (inPtr >= outPtr)
-        nmsg = (inPtr - outPtr) / slotSize;
+    myInPtr = (char *)inPtr;
+    myOutPtr = (char *)outPtr;
+    if (myInPtr >= myOutPtr)
+        nmsg = (myInPtr - myOutPtr) / slotSize;
     else
-        nmsg = capacity  - (outPtr - inPtr) / slotSize;
+        nmsg = capacity  - (myOutPtr - myInPtr) / slotSize;
     if (full)
         nmsg = capacity;
     printf("Message Queue Used:%d  Slots:%d", nmsg, capacity);
@@ -159,21 +159,19 @@ epicsMessageQueue::show(unsigned int level) const
     printf("\n");
 }
 
-extern "C" {
-
 epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
     unsigned int capacity,
-    unsigned int maximumMessageSize)
+    unsigned int maxMessageSize)
 {
-    epicsMessageQueue *id;
+    epicsMessageQueue *qid;
     
     try {
-        id = new epicsMessageQueue::epicsMessageQueue(capacity, maximumMessageSize);
+        qid = new epicsMessageQueue(capacity,  maxMessageSize);
     }
     catch (...) {
         return NULL;
     }
-    return id;
+    return qid;
 }
 
 epicsShareFunc void epicsShareAPI epicsMessageQueueDestroy(
@@ -225,5 +223,3 @@ epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
 {
     ((epicsMessageQueue *)id)->show(level);
 }
-
-} /* extern "C" */

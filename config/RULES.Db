@@ -7,7 +7,7 @@ MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
 ifndef MSI
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
 MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/msi$(HOSTEXE)) msi$(HOSTEXE))
+         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/msi$(HOSTEXE)) msi$(HOSTEXE))
 endif
 
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)

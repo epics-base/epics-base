@@ -1,5 +1,5 @@
 /*
- * RTEMS osiSem.c
+ * RTEMS osdSem.c
  *	$Id$
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
@@ -16,7 +16,7 @@
 /*
  * Create a simple binary semaphore
  */
-semId
+semBinaryId
 semBinaryCreate(int initialState) 
 {
     rtems_status_code sc;
@@ -47,21 +47,11 @@ semBinaryCreate(int initialState)
         c1++;
     }
     rtems_interrupt_enable (level);
-    return (semId)sid;
-}
-
-semId
-semBinaryMustCreate(int initialState) 
-{
-    semId sid;
-
-    if ((sid = semBinaryCreate (initialState)) == NULL)
-        cantProceed ("Can't create binary semaphore");
-    return sid;
+    return (semBinaryId)sid;
 }
 
 void
-semBinaryDestroy(semId id)
+semBinaryDestroy(semBinaryId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
@@ -72,7 +62,7 @@ semBinaryDestroy(semId id)
 }
 
 void
-semBinaryGive(semId id)
+semBinaryGive(semBinaryId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
@@ -83,7 +73,7 @@ semBinaryGive(semId id)
 }
 
 semTakeStatus
-semBinaryTake(semId id)
+semBinaryTake(semBinaryId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
@@ -94,21 +84,8 @@ semBinaryTake(semId id)
     return semTakeOK;
 }
 
-void
-semBinaryMustTake(semId id)
-{
-    rtems_id sid = (rtems_id)id;
-    rtems_status_code sc;
-    
-    sc = rtems_semaphore_obtain (sid, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-    if (sc != RTEMS_SUCCESSFUL) {
-        errlogPrintf ("Can't obtain semaphore: %s\n", rtems_status_text (sc));
-    	assert (sc == RTEMS_SUCCESSFUL);
-    }
-}
-
 semTakeStatus
-semBinaryTakeTimeout(semId id, double timeOut)
+semBinaryTakeTimeout(semBinaryId id, double timeOut)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
@@ -128,7 +105,7 @@ semBinaryTakeTimeout(semId id, double timeOut)
 }
 
 semTakeStatus
-semBinaryTakeNoWait(semId id)
+semBinaryTakeNoWait(semBinaryId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
@@ -143,11 +120,11 @@ semBinaryTakeNoWait(semId id)
 }
 
 void
-semBinaryShow(semId id)
+semBinaryShow(semBinaryId id)
 {
 }
 
-semId
+semMutexId
 semMutexCreate(void)
 {
     rtems_status_code sc;
@@ -177,15 +154,5 @@ semMutexCreate(void)
         c1++;
     }
     rtems_interrupt_enable (level);
-    return (semId)sid;
-}
-
-semId
-semMutexMustCreate(void) 
-{
-    semId sid;
-
-    if ((sid = semMutexCreate) == NULL)
-        cantProceed ("Can't create mutex semaphore");
-    return sid;
+    return (semMutexId)sid;
 }

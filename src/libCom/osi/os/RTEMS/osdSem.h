@@ -14,13 +14,36 @@ extern "C" {
 
 #include "shareLib.h"
 
-#define semMutexDestroy semBinaryDestroy
-#define semMutexGive semBinaryGive
-#define semMutexTake semBinaryTake
-#define semMutexMustTake semBinaryMustTake
-#define semMutexTakeTimeout semBinaryTakeTimeout
-#define semMutexTakeNoWait semBinaryTakeNoWait
-#define semMutexShow semBinaryShow
+epicsShareFunc INLINE void epicsShareAPI semMutexDestroy(semMutexId id)
+{
+	semBinaryDestroy (id);
+}
+
+epicsShareFunc INLINE void epicsShareAPI semMutexGive(semMutexId id)
+{
+	semBinaryGive (id);
+}
+
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTake(semMutexId id)
+{
+	return semBinaryTake (id);
+}
+
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeTimeout(
+    semMutexId id, double timeOut)
+{
+	return semBinaryTakeTimeout (id, timeOut);
+}
+
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeNoWait(semMutexId id)
+{
+	return semBinaryTakeNoWait (id);
+}
+
+epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id)
+{
+	semBinaryShow (id);
+}
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.2  1996/12/11 00:55:14  jhill
+// better message
+//
 // Revision 1.1  1996/11/02 01:01:33  jhill
 // installed
 //
@@ -249,14 +252,12 @@ void casStreamIOWakeup::expire()
 	// in case there is something in the input buffer
 	// and currently nothing to be read from TCP 
 	//
-	this->os.processInput();
-
-	//
-	// in case recv is not armed, there is space in 
+	// processInput() does an armRecv() so
+	// if recv is not armed, there is space in
 	// the input buffer, and there eventually will
-	// be something to read from TCP
+	// be something to read from TCP this works
 	//
-	this->os.armRecv();
+	this->os.processInput();
 }
 
 //
@@ -283,7 +284,6 @@ inline void casStreamOS::armSend()
 		if (!this->pWtReg) {
 			errMessage(S_cas_noMemory, "armSend() failed");
 		}
-
 	}
 }
 
@@ -554,11 +554,15 @@ void casStreamWriteReg::callBack()
 		// (once this starts sending it doesnt stop until
 		// the outgoing buf is empty)
 		//
-		if (flushCond!=casFlushCompleted) {
+		// do not test for this with flushCond since
+		// additional bytes may have been added since
+		// we flushed the out buffer
+		//
+		if (pStrmOS->outBuf::bytesPresent()>0u) {
 			casStreamOS *pStrmOS = &this->os;
 			//
-			// force the delete now so that the
-			// arm will work
+			// delete this object now so that the
+			// arm will work 
 			//
 			delete this;
 			pStrmOS->armSend();

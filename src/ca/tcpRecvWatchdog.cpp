@@ -66,7 +66,7 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
                             "- disconnecting.\n", 
                 hostName, this->period ) );
 #       endif
-        this->cacRef.initiateAbortShutdown ( this->iiu );
+        this->cacRef.unresponsiveCircuitNotify ( this->iiu );
         return noRestart;
     }
     else {

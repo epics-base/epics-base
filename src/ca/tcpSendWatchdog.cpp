@@ -52,7 +52,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif
-    this->cacRef.initiateAbortShutdown ( this->iiu );
+    this->cacRef.unresponsiveCircuitNotify ( this->iiu );
     return noRestart;
 }
 

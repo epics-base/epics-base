@@ -46,6 +46,41 @@
 
 
 /*
+ * CAC_ADD_TASK_VARIABLE()
+ */
+#ifdef __STDC__
+int cac_add_task_variable(struct ca_static *ca_temp)
+#else /*__STDC__*/
+int cac_add_task_variable(ca_temp)
+struct ca_static *ca_temp;
+#endif /*__STDC__*/
+{
+	ca_static = ca_temp;
+	return ECA_NORMAL;
+}
+
+
+/*
+ * cac_os_depen_init()
+ */
+int cac_os_depen_init(struct ca_static *pcas)
+{
+        int status;
+
+	/*
+	 * dont allow disconnect to terminate process
+	 * when running in UNIX enviroment
+	 *
+	 * allow error to be returned to sendto()
+	 * instead of handling disconnect at interrupt
+	 */
+	signal(SIGPIPE,SIG_IGN);
+
+        return ECA_NORMAL;
+}
+
+
+/*
  *
  * This should work on any POSIX compliant OS
  *
@@ -129,4 +164,15 @@ void ca_spawn_repeater()
 		assert(0);
 	}
 	exit(0);
+}
+
+
+
+/*
+ * Setup recv thread
+ * (OS dependent)
+ */
+int cac_setup_recv_thread(IIU *piiu)
+{
+	return ECA_NORMAL;
 }

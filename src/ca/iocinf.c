@@ -85,9 +85,6 @@ LOCAL void 	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	cac_udp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	notify_ca_repeater();
 LOCAL void 	udp_recv_msg(struct ioc_in_use *piiu);
-#ifdef VMS
-LOCAL void 	vms_recv_msg_ast(struct ioc_in_use *piiu);
-#endif /*VMS*/
 LOCAL void 	ca_process_tcp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_udp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_input_queue();
@@ -103,9 +100,6 @@ LOCAL void 	cac_tcp_send_msg_piiu();
 LOCAL void 	cac_udp_send_msg_piiu();
 LOCAL void 	notify_ca_repeater();
 LOCAL void	udp_recv_msg();
-#ifdef VMS
-void   		vms_recv_msg_ast();
-#endif /*VMS*/
 LOCAL void 	ca_process_tcp();
 LOCAL void 	ca_process_udp();
 LOCAL void 	ca_process_input_queue();
@@ -498,31 +492,16 @@ int			net_proto;
 	}
 
 
-  	/*	Set up recv thread for VMS	*/
-#if defined(VMS)
-  	{
-		/*
-		 * request to be informed of future IO
-		 */
-    		status = sys$qio(
-			NULL,
-			sock,
-			IO$_RECEIVE,
-			&piiu->iosb,
-			vms_recv_msg_ast,
-			piiu,
-			&peek_ast_buf,
-			sizeof(peek_ast_buf),
-			MSG_PEEK,
-			&piiu->recvfrom,
-			sizeof(piiu->recvfrom),
-			NULL);
-    		if(status != SS$_NORMAL){
-      			lib$signal(status);
-      			exit();
-    		}
-  	}
-#endif
+	/*
+	 * setup the recv thread
+	 * (OS dependent)
+	 */
+	status = cac_setup_recv_thread(piiu);
+	if(status != ECA_NORMAL){
+		free(piiu);
+        	status = socket_close(sock);
+		return status;
+	}
 
 	/*
 	 * add to the list of active IOCs
@@ -828,11 +807,6 @@ int		flags;
 	unsigned long	minfreespace;
 	unsigned long	freespace;
 
-	/*
-	 * manage search timers and detect disconnects
-	 */
-	manage_conn(TRUE);
-
 	LOCK;
 	piiu=(IIU *)iiuList.node.next;
 	while(piiu){
@@ -926,6 +900,11 @@ int		flags;
 		}
 	}
 	UNLOCK;
+
+	/*
+	 * manage search timers and detect disconnects
+	 */
+	manage_conn(TRUE);
 
 	return status;
 }
@@ -1300,66 +1279,6 @@ int		tid;
 	}
 }
 #endif /*vxWorks*/
-
-
-/*
- *
- *	VMS_RECV_MSG_AST()
- *
- *
- */
-#ifdef VMS
-#ifdef __STDC__
-LOCAL void vms_recv_msg_ast(struct ioc_in_use *piiu)
-#else /*__STDC__*/
-LOCAL void vms_recv_msg_ast(piiu)
-struct ioc_in_use	*piiu;
-#endif /*__STDC__*/
-{
-  	short		io_status;
-
-	io_status = piiu->iosb.status;
-
-  	if(io_status != SS$_NORMAL){
-		close_ioc(piiu);
-    		if(io_status != SS$_CANCEL)
-      			lib$signal(io_status);
-    		return;
-  	}
-
-  	if(!ca_static->ca_repeater_contacted)
-		notify_ca_repeater();
-
-	if(piiu->conn_up){
-		(*piiu->recvBytes)(piiu);
-		ca_process_input_queue();
-	}
-	else{
-		close_ioc(piiu);
-		return;
-	}
-	  
-	/*
-	 * request to be informed of future IO
-	 */
-  	io_status = sys$qio(
-			NULL,
-			piiu->sock_chan,
-			IO$_RECEIVE,
-			&piiu->iosb,
-			vms_recv_msg_ast,
-			piiu,
-			&peek_ast_buf,
-			sizeof(peek_ast_buf),
-			MSG_PEEK,
-			&piiu->recvfrom,
-			sizeof(piiu->recvfrom),
-			NULL);
-  	if(io_status != SS$_NORMAL)
-    		lib$signal(io_status);      
-  	return;
-}
-#endif /*VMS*/
 
 
 /*
@@ -1754,9 +1673,6 @@ int contiguous;
 		count = 0;
 	}
 
-#if 0
-	printf("%d bytes available for writing\n", count);
-#endif
 	return count;
 }
 

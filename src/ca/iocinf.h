@@ -58,7 +58,6 @@ static char	*iocinfhSccsId = "$Id$";
 /*
  * ANSI C includes
  */
-#include <unistd.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <assert.h>
@@ -524,6 +523,7 @@ void freeBeaconHash(struct ca_static *ca_temp);
 void removeBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *createBeaconHashEntry(struct in_addr *pnet_addr);
+int cac_setup_recv_thread(IIU *piiu);
 
 #else /*__STDC__*/
 int		ca_defunct();
@@ -570,6 +570,7 @@ void 		freeBeaconHash();
 void 		removeBeaconInetAddr();
 bhe 		*lookupBeaconInetAddr();
 bhe 		*createBeaconHashEntry();
+int 		cac_setup_recv_thread();
 #endif /*__STDC__*/
 
 /*

@@ -49,7 +49,8 @@
 
 #define CONNECTION_TIMER_ID 56
 
-void connectionTimer(void *astarg);
+LOCAL void connectionTimer(void *astarg);
+LOCAL void      vms_recv_msg_ast(struct ioc_in_use *piiu);
 
 struct time{
 	int		lval;
@@ -60,16 +61,35 @@ struct time timer = {-10000000,-1};
 
 
 /*
- *
+ * CAC_ADD_TASK_VARIABLE()
  */
-void setupConnectionTimer()
+int cac_add_task_variable(struct ca_static *ca_temp)
 {
-	struct time	tmo;
-	int 		status;
+        ca_static = ca_temp;
+	return ECA_NORMAL;
+}
+
+
+
+/*
+ * cac_os_depen_init()
+ */
+int cac_os_depen_init(struct ca_static *pcas)
+{
+	int status;
+
+	status = lib$get_ef(&pcas->ca_io_done_flag);
+	if (status != SS$_NORMAL){
+		lib$signal(status);
+		return ECA_INTERNAL;
+	}
 
 	status = sys$setimr(NULL, &timer, connectionTimer, CONNECTION_TIMER_ID, 0);
 	assert(status == SS$_NORMAL);
+
+	return ECA_NORMAL
 }
+
 
 
 /*
@@ -205,5 +225,92 @@ void ca_spawn_repeater()
 		lib$signal(status);
 #endif
         }
+}
+
+
+
+cac_setup_recv_thread(IIU *piiu)
+{
+
+	/*
+	 * request to be informed of future IO
+	 */
+	status = sys$qio(
+                        NULL,
+                        piiu->sock_chan,
+                        IO$_RECEIVE,
+                        &piiu->iosb,
+                        vms_recv_msg_ast,
+                        piiu,
+                        &peek_ast_buf,
+                        sizeof(peek_ast_buf),
+                        MSG_PEEK,
+                        &piiu->recvfrom,
+                        sizeof(piiu->recvfrom),
+                        NULL);
+	if(status != SS$_NORMAL){
+		lib$signal(status);
+		return ECA_INTERNAL;
+        }
+
+	return ECA_NORMAL;
+}
+
+
+/*
+ *
+ *      VMS_RECV_MSG_AST()
+ *
+ *
+ */
+#ifdef __STDC__
+LOCAL void vms_recv_msg_ast(struct ioc_in_use *piiu)
+#else /*__STDC__*/
+LOCAL void vms_recv_msg_ast(piiu)
+struct ioc_in_use       *piiu;
+#endif /*__STDC__*/
+{
+        short           io_status;
+
+        io_status = piiu->iosb.status;
+
+        if(io_status != SS$_NORMAL){
+                close_ioc(piiu);
+                if(io_status != SS$_CANCEL)
+                        lib$signal(io_status);
+                return;
+        }
+
+        if(!ca_static->ca_repeater_contacted)
+                notify_ca_repeater();
+
+        if(piiu->conn_up){
+                (*piiu->recvBytes)(piiu);
+                ca_process_input_queue();
+        }
+        else{
+                close_ioc(piiu);
+                return;
+        }
+
+        /*
+         * request to be informed of future IO
+         */
+        io_status = sys$qio(
+                        NULL,
+                        piiu->sock_chan,
+                        IO$_RECEIVE,
+                        &piiu->iosb,
+                        vms_recv_msg_ast,
+                        piiu,
+                        &peek_ast_buf,
+                        sizeof(peek_ast_buf),
+                        MSG_PEEK,
+                        &piiu->recvfrom,
+                        sizeof(piiu->recvfrom),
+                        NULL);
+        if(io_status != SS$_NORMAL)
+                lib$signal(io_status);
+        return;
 }
 

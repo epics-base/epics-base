@@ -478,9 +478,10 @@ osiTimerThread::osiTimerThread (osiTimerQueue &queueIn, unsigned priority) :
 void osiTimerThread::entryPoint ()
 {
     queue.exitFlag = false;
-    while (!queue.terminateFlag) {
+    while ( ! queue.terminateFlag ) {
         queue.process ();
-        queue.rescheduleEvent.wait ( queue.delayToFirstExpire () );
+        double delay = queue.delayToFirstExpire ();
+        queue.rescheduleEvent.wait ( delay );
     }
     queue.exitFlag = true; 
     queue.exitEvent.signal (); // no access to queue after exitEvent signal

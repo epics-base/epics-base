@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.26  1997/08/04 23:37:18  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.24  1997/06/13 09:14:26  jhill
  * connect/search proto changes
  *
@@ -304,7 +307,7 @@ int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 			 */
 			tmo.tv_sec = 0L;
 			tmo.tv_usec = 0L;
-			cac_mux_io (&tmo);
+			cac_mux_io (&tmo, TRUE);
 			status = ECA_TIMEOUT;
 			break;
 		}

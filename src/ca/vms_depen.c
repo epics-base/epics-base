@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.25  1998/06/16 00:43:12  jhill
+ * moved code to libCom
+ *
  * Revision 1.24  1998/04/13 19:14:35  jhill
  * fixed task variable problem
  *
@@ -136,7 +139,7 @@ int  gettimeofday(struct timeval *tp, struct timezone *tzp)
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-	cac_mux_io(pTV);
+	cac_mux_io(pTV, TRUE);
 }
 
 
@@ -169,7 +172,7 @@ void os_specific_sg_io_complete(CASG *pcasg)
  */
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-	cac_mux_io(pTV);
+	cac_mux_io(pTV, TRUE);
 }
 
 

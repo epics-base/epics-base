@@ -156,7 +156,14 @@ STATIC void putNotifyPvt(putNotify *ppn,dbCommon *precord)
     dbScanUnlock(precord);
     (*ppn->userCallback)(ppn);
     epicsMutexMustLock(notifyLock);
-    if(ppn->requestCancel) epicsEventSignal(*ppn->pcancelEvent);
+    if(ppn->cancelWait) {
+        ppn->cancelWait = 0;
+        epicsEventSignal(ppn->cancelEvent);
+    }
+    if(ppn->userCallbackWait) {
+        ppn->userCallbackWait = 0;
+        epicsEventSignal(ppn->userCallbackEvent);
+    }
     ppn->state = putNotifyNotActive;
     epicsMutexUnlock(notifyLock); 
     return;
@@ -175,16 +182,16 @@ STATIC void notifyCallback(CALLBACK *pcallback)
     assert(ppn->state==putNotifyRestartCallbackRequested
           || ppn->state==putNotifyUserCallbackRequested);
     assert(ellCount(&ppn->waitList)==0);
-    if(ppn->requestCancel) {
+    if(ppn->cancelWait) {
         ppn->status = putNotifyCanceled;
         if(ppn->state==putNotifyRestartCallbackRequested) {
             restartCheck(precord->ppnr);
         }
         ppn->state = putNotifyNotActive;
+        ppn->cancelWait = 0;
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
-        assert(ppn->pcancelEvent);
-        epicsEventSignal(*ppn->pcancelEvent);
+        epicsEventSignal(ppn->cancelEvent);
         return;
     }
     if(ppn->state==putNotifyRestartCallbackRequested) {
@@ -198,11 +205,40 @@ STATIC void notifyCallback(CALLBACK *pcallback)
     dbScanUnlock(precord);
     (*ppn->userCallback)(ppn);
     epicsMutexMustLock(notifyLock);
-    if(ppn->requestCancel) epicsEventSignal(*ppn->pcancelEvent);
+    if(ppn->cancelWait) {
+        ppn->cancelWait = 0;
+        epicsEventSignal(ppn->cancelEvent);
+    }
+    if(ppn->userCallbackWait) {
+        ppn->userCallbackWait = 0;
+        epicsEventSignal(ppn->userCallbackEvent);
+    }
     ppn->state = putNotifyNotActive;
     epicsMutexUnlock(notifyLock); 
 }
 
+void epicsShareAPI dbPutNotifyInit(void)
+{
+    notifyLock = epicsMutexMustCreate();
+}
+
+void epicsShareAPI putNotifyInit(putNotify *ppn)
+{
+    memset(ppn,0,sizeof(putNotify));
+    callbackSetCallback(notifyCallback,&ppn->callback);
+    callbackSetUser(ppn,&ppn->callback);
+    callbackSetPriority(priorityLow,&ppn->callback);
+    ellInit(&ppn->waitList);
+    ppn->cancelEvent = epicsEventCreate(epicsEventEmpty);
+    ppn->userCallbackEvent = epicsEventCreate(epicsEventEmpty);
+}
+
+void epicsShareAPI putNotifyCleanup(putNotify *ppn)
+{
+    epicsEventDestroy(ppn->cancelEvent);
+    epicsEventDestroy(ppn->userCallbackEvent);
+}
+
 void epicsShareAPI dbPutNotify(putNotify *ppn)
 {
     dbCommon	*precord = ppn->paddr->precord;
@@ -232,11 +268,7 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
     epicsMutexMustLock(notifyLock);
     ppn->status = 0;
     ppn->state = putNotifyNotActive;
-    ppn->requestCancel = 0;
-    callbackSetCallback(notifyCallback,&ppn->callback);
-    callbackSetUser(ppn,&ppn->callback);
-    callbackSetPriority(priorityLow,&ppn->callback);
-    ellInit(&ppn->waitList);
+    ppn->cancelWait = ppn->userCallbackWait = 0;
     if(!precord->ppnr) {/* make sure record has a putNotifyRecord*/
         precord->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
         precord->ppnr->precord = precord;
@@ -245,11 +277,6 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
     putNotifyPvt(ppn,precord);
 }
 
-void epicsShareAPI dbPutNotifyInit(void)
-{
-    notifyLock = epicsMutexMustCreate();
-}
-
 void epicsShareAPI dbNotifyCancel(putNotify *ppn)
 {
     dbCommon	*precord = ppn->paddr->precord;
@@ -264,17 +291,12 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
     if(state==putNotifyUserCallbackRequested
     || state==putNotifyRestartCallbackRequested
     || state==putNotifyUserCallbackActive) {
-        epicsEventId eventId;
-        eventId = epicsEventCreate(epicsEventEmpty);
-        ppn->pcancelEvent = &eventId;
-        ppn->requestCancel = 1;
+        ppn->cancelWait = 1;
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
-        epicsEventWait(eventId);
+        epicsEventWait(ppn->cancelEvent);
         epicsMutexMustLock(notifyLock);
-        ppn->pcancelEvent = 0;
-        ppn->requestCancel = 0;
-        epicsEventDestroy(eventId);
+        ppn->cancelWait = 0;
         epicsMutexUnlock(notifyLock);
         return;
     }
@@ -406,6 +428,7 @@ long epicsShareAPI dbtpn(char	*pname,char *pvalue)
 	return(-1);
     }
     ppn = dbCalloc(1,sizeof(putNotify));
+    putNotifyInit(ppn);
     ppn->paddr = pdbaddr;
     ppn->pbuffer = psavevalue;
     ppn->nRequest = 1;

@@ -49,14 +49,18 @@ typedef struct putNotify{
         putNotifyStatus status;
         /*The following are private to dbNotify */
         short           state;
-        short           requestCancel;
         CALLBACK        callback;
         ELLLIST         waitList; /*list of records for current putNotify*/
-        epicsEventId    *pcancelEvent;
+        short           cancelWait;
+        short           userCallbackWait;
+        epicsEventId    cancelEvent;
+        epicsEventId    userCallbackEvent;
 }putNotify;
 
 /* dbPutNotify and dbNotifyCancel are the routines called by user*/
 /* The user is normally channel access client or server               */
+epicsShareFunc void epicsShareAPI putNotifyInit(putNotify *pputNotify);
+epicsShareFunc void epicsShareAPI putNotifyCleanup(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbPutNotify(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbNotifyCancel(putNotify *pputNotify);
 

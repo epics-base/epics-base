@@ -49,13 +49,14 @@ dbPutNotifyBlocker::dbPutNotifyBlocker ( epicsMutex & mutexIn ) :
     mutex ( mutexIn ), pNotify ( 0 ), 
     maxValueSize ( sizeof ( this->dbrScalarValue ) )
 {
-    memset ( & this->pn, '\0', sizeof ( this->pn ) );
+    ::putNotifyInit(& this->pn);
     memset ( & this->dbrScalarValue, '\0', sizeof ( this->dbrScalarValue ) );
     this->pn.pbuffer = & this->dbrScalarValue;
 }
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker () 
 {
+    ::putNotifyCleanup(& this->pn);
 }
 
 void dbPutNotifyBlocker::destructor ( epicsGuard < epicsMutex > & guard )

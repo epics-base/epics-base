@@ -12,12 +12,25 @@ EPICS Base
    the optimization level to -O2.  Hopefully a new release of developer tools
    will remove this restriction.
 
-2) If broadcasts are not seen locally, then it may help to add "localhost"
+2) As distributed, EPICS on Mac OS X uses the readline library.  The easiest
+   way to get this library on to your system is to download and install it
+   using the Fink package manager which may be found at:
+        http://fink.sourceforge.net/
+   If you'd rather not use readline you can make the appropriate changes to
+        src/libCom/osi/os/Darwin/osdReadline.h
+   and then rebuild EPICS base.
+
+3) If broadcasts are not seen locally, then it may help to add "localhost"
    (127.0.0.1) to the EPICS_CA_ADDR_LIST.
 
 EPICS Extensions
 ================
-Many extensions build and run properly on OS X.  To build and run MEDM, first
-obtain the X11 and OpenMotif3 packages from the Fink distribution.  Running
-X11 applications on Darwin is quite a bit easier if you install the OroborOSX
-application as well.
+Many extensions build and run properly on OS X.  To build and run medm, first
+obtain the X11 and OpenMotif3 packages from Fink.
+Medm doesn't actually use readline, but if you're using shared libraries and
+you don't link against libreadline, you'll get Undefined Symbol messages when
+you try to run medm.  I consider this a failing of the OS X shared library
+system, but Apple doesn't seem to agree.
+Running X11 applications on Darwin is quite a bit easier if you install the
+OroborOSX application as well:
+        http://oroborosx.sourceforge.net/

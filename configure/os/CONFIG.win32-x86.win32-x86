@@ -90,7 +90,7 @@ ACC_STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 #
 # no special libs for static link
 #
-ACC_STATIC_LDLIBS_YES= 
+ACC_STATIC_LDLIBS_YES= ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 ACC_STATIC_LDLIBS_NO=
 
 # OS vendor c preprocessor
@@ -140,8 +140,8 @@ CCC_STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 #
 # no special libs for static link
 #
-CCC_STATIC_LDLIBS_YES=
-CCC_STATIC_LDLIBS_NO=
+CCC_STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
+CCC_STATIC_LDLIBS_NO= 
  
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)

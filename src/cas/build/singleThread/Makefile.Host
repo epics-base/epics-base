@@ -37,6 +37,7 @@ LIBSRCS += casAsyncExIOI.cc
 LIBSRCS += casEventSys.cc
 LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
+LIBSRCS += casOpaqueAddr.cc
 LIBSRCS += inBuf.o 
 LIBSRCS += outBuf.cc
 LIBSRCS += dgInBuf.o 

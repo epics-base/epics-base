@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:43:10  jhill
+ * API changes
+ *
  * Revision 1.6  1997/01/22 21:13:49  jhill
  * fixed class decl order for VMS
  *
@@ -587,6 +590,10 @@ public:
 	tsDLBwdIter(tsDLList<T> &listIn) : 
 		tsDLIter<T>(listIn) {}
 
+	void reset ()
+	{
+		this->tsDLIter<T>::reset();
+	}
         void reset (tsDLList<T> &listIn)
         {
                 this->tsDLIter<T>::reset(listIn);

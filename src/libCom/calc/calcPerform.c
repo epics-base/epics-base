@@ -57,6 +57,7 @@
  * .21	12-14-90	lrd	fixed post events for the variables
  * .22  03-15-91	mrk	moved code from calcRecord to here
  * .23	08-01-91	rac	don't use FETCH_G ... for V2
+ * .24	02-20-92	rcz	fixed for vxWorks build
  */
 
 /* This module contains the code for processing the arithmetic
@@ -83,7 +84,13 @@
  *		double value between 0.00 and 1.00
  */
 
-#include	<stdio.h>
+#ifdef vxWorks
+#   include <stdioLib.h>
+extern int printf();
+#else
+#   include <stdio.h>
+#endif
+
 #include	<dbDefs.h>
 #include	<post.h>
 #include	<math.h>

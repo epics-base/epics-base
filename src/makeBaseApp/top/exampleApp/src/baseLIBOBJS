@@ -62,11 +62,3 @@ LIBOBJS += $(EPICS_BASE_BIN)/devSoSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSoTestAsyn.o
 LIBOBJS += $(EPICS_BASE_BIN)/devWfSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
-
-
-#
-# Driver support ANSI
-#
-LIBOBJS_vxWorks += $(EPICS_BASE_BIN)/drvEpvxi.o
-LIBOBJS_vxWorks += $(EPICS_BASE_BIN)/drvEpvxiMsg.o
-LIBOBJS_vxWorks += $(EPICS_BASE_BIN)/drvHp1404a.o

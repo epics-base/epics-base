@@ -38,15 +38,13 @@ LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:$(LOADABLE_SHRLIB_PREFIX)%=%$(LOA
 #-------------------------------------------------------
 # shrlib: DEPLIBS, LDFLAGS, and LDLIBS definitions
 
-LIB_EXT = $(LIB_SUFFIX)
-
 # SHRLIB_LIBS deprecated
 LIB_LIBS += $(SHRLIB_LIBS)
 
 SHRLIB_DEPLIBS=$(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
 	$(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib).*, \
     $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
 SHRLIB_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(LIB_LIBS) $(USR_LIBS) \
@@ -61,7 +59,7 @@ SHRLIBDIR_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
 PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
 	$(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib).*, \
     $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
 PROD_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(PROD_LIBS) $(USR_LIBS)\

@@ -21,7 +21,6 @@ EXE =
 OBJ = .o
 LIB_PREFIX =lib
 LIB_SUFFIX = .a
-LIB_EXT = .a
 MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------
@@ -34,7 +33,7 @@ LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
     $(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib).*, \
     $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_EXT), \
+    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
 

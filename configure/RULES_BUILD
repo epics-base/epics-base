@@ -4,7 +4,7 @@
 #
 #	Some rules for filename-massage are system specific
 #	and have "ifdefs" here instead of using definitions
-#	from CONFIG.Host.$(ARCH_CLASS)  -  sorry about this,
+#	from CONFIG.Target.<arch>  -  sorry about this,
 #	but so far the rules are quite similar on all systems
 #	except WIN32 has some specials.
 #

@@ -28,7 +28,18 @@ static void threadShowAllCallFunc(ioccrfArg **args)
     threadShowAll(*(int *)args[0]->value);
 }
 
+/* threadSleep */
+static ioccrfArg threadSleepArg0 = { "seconds",ioccrfArgDouble,0};
+static ioccrfArg *threadSleepArgs[1] = {&threadSleepArg0};
+static ioccrfFuncDef threadSleepFuncDef =
+    {"threadSleep",1,threadSleepArgs};
+static void threadSleepCallFunc(ioccrfArg **args)
+{
+    threadSleep(*(double *)args[0]->value);
+}
+
 void epicsShareAPI osiRegister(void)
 {
     ioccrfRegister(&threadShowAllFuncDef,threadShowAllCallFunc);
+    ioccrfRegister(&threadSleepFuncDef,threadSleepCallFunc);
 }

@@ -16,6 +16,8 @@ of this distribution.
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
+#include "ellLib.h"
+#include "dbNotify.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
 #include "dbTestRegister.h"
@@ -119,6 +121,14 @@ static ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
 static void pftCallFunc(ioccrfArg **args)
 { pft((char *)args[0]->value,(char *)args[1]->value);}
 
+/* dbtpn */
+static ioccrfArg dbtpnArg0 = { "record name",ioccrfArgString,0};
+static ioccrfArg dbtpnArg1 = { "value",ioccrfArgString,0};
+static ioccrfArg *dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
+static ioccrfFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs};
+static void dbtpnCallFunc(ioccrfArg **args)
+{ dbtpn((char *)args[0]->value,(char *)args[1]->value);}
+
 /* tpn */
 static ioccrfArg tpnArg0 = { "record name",ioccrfArgString,0};
 static ioccrfArg tpnArg1 = { "value",ioccrfArgString,0};
@@ -169,6 +179,7 @@ void epicsShareAPI dbTestRegister(void)
     ioccrfRegister(&dbhcrFuncDef,dbhcrCallFunc);
     ioccrfRegister(&gftFuncDef,gftCallFunc);
     ioccrfRegister(&pftFuncDef,pftCallFunc);
+    ioccrfRegister(&dbtpnFuncDef,dbtpnCallFunc);
     ioccrfRegister(&tpnFuncDef,tpnCallFunc);
     ioccrfRegister(&dblsrFuncDef,dblsrCallFunc);
     ioccrfRegister(&scanpplFuncDef,scanpplCallFunc);

@@ -88,6 +88,17 @@ static void aspmemCallFunc(ioccrfArg **args)
     aspmem((char *)args[0]->value,*(int *)args[1]->value);
 }
 
+/* astac */
+static ioccrfArg astacArg0 = { "recordname",ioccrfArgString,0};
+static ioccrfArg astacArg1 = { "user",ioccrfArgString,0};
+static ioccrfArg astacArg2 = { "location",ioccrfArgString,0};
+static ioccrfArg *astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
+static ioccrfFuncDef astacFuncDef = {"astac",3,astacArgs};
+static void astacCallFunc(ioccrfArg **args)
+{
+    astac((char *)args[0]->value,(char *)args[1]->value,(char *)args[2]->value);
+}
+
 
 void epicsShareAPI asTestRegister(void)
 {
@@ -99,4 +110,5 @@ void epicsShareAPI asTestRegister(void)
     ioccrfRegister(&asphagFuncDef,asphagCallFunc);
     ioccrfRegister(&asprulesFuncDef,asprulesCallFunc);
     ioccrfRegister(&aspmemFuncDef,aspmemCallFunc);
+    ioccrfRegister(&astacFuncDef,astacCallFunc);
 }

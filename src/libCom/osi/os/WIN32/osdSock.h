@@ -30,6 +30,9 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
 #define EADDRINUSE               WSAEADDRINUSE
 #define ECONNREFUSED             WSAECONNREFUSED
 #define ECONNABORTED             WSAECONNABORTED
+#define EINPROGRESS		 WSAEINPROGRESS
+#define EISCONN			 WSAEISCONN
+#define EALREADY		 WSAEALREADY
 
 /*
  *      Under WIN32, FD_SETSIZE is the max. number of sockets,

@@ -37,11 +37,15 @@ call "C:\Program files\Microsoft Visual Studio\Vc98\bin\vcvars32.bat"
 REM    --------------- EPICS -----------------------------
 REM    R3.14 requirements
 set EPICS_HOST_ARCH=win32-x86
-set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
-set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
 REM    ===================================================
 REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
+
+REM    ---------------- EPICS tools ----------------------
+REM HOST_ARCH needed for Makefile.Host builds
+set HOST_ARCH=WIN32
+set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
+set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
 REM    --------------- GNU make flags --------------------
 REM set MAKEFLAGS=-w

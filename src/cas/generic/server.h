@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.19  1997/08/05 00:47:16  jhill
+ * fixed warnings
+ *
  * Revision 1.18  1997/06/30 22:54:30  jhill
  * use %p with pointers
  *
@@ -102,12 +105,12 @@
 // once only before epicsExportSharedSymbols is defined)
 //
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
-#include "epicsAssert.h"
-#include "osiTime.h"
-#include "alarm.h"	// EPICS alarm severity/condition 
-#include "errMdef.h"	// EPICS error codes 
-#include "gdd.h" 		// EPICS data descriptors 
-#include "resourceLib.h"
+#include "epicsAssert.h" // EPICS assert() macros
+#include "osiTime.h" // EPICS os independent time
+#include "alarm.h" // EPICS alarm severity/condition 
+#include "errMdef.h" // EPICS error codes 
+#include "gdd.h" // EPICS data descriptors 
+#include "resourceLib.h" // EPICS hashing templates
 
 //
 // CA
@@ -116,7 +119,7 @@
 #include "caerr.h"
 
 #if defined(epicsExportSharedSymbols)
-#error suspect that libCom, ca, and gdd were not imported
+#error suspect that libCom, ca, cxxTemplates, and gdd were not imported
 #endif
 
 //
@@ -512,12 +515,6 @@ protected:
 
 private:
 	tsDLList<casAsyncIOI>   ioInProgList;
-
-	//
-	// static members
-	//
-	static void loadProtoJumpTable();
-	static int msgHandlersInit;
 };
 
 //
@@ -747,8 +744,9 @@ class casDGIntfIO;
 class casDGClient : public dgInBuf, public dgOutBuf, public casClient {
 public:
 	casDGClient (caServerI &serverIn);
+	virtual ~casDGClient();
 
-	caStatus init(); //constructor does not return status
+	caStatus init(); // constructor does not return status
 
 	void show (unsigned level) const;
 
@@ -793,7 +791,6 @@ private:
 		const caHdr &msg, const pvExistReturn &);
 	caNetAddr fetchRespAddr();
 	casDGIntfIO* fetchOutIntf();
-
 
 	//
 	// IO depen

@@ -21,7 +21,7 @@ public:
     explicit epics_auto_ptr ( T *p = 0 );
     epics_auto_ptr ( const epics_auto_ptr<T> & rhs );
 	~epics_auto_ptr();
-    epics_auto_ptr<T> & operator = ( const epics_auto_ptr<T> & rhs );					
+    epics_auto_ptr<T> & operator = ( epics_auto_ptr<T> & rhs );					
 	T & operator * () const;
     T * operator -> () const;
 	T * get () const;                 
@@ -46,7 +46,7 @@ inline epics_auto_ptr<T>::~epics_auto_ptr ()
 }
 
 template < class T >	
-inline epics_auto_ptr<T> & epics_auto_ptr<T>::operator = ( const epics_auto_ptr<T> & rhs )
+inline epics_auto_ptr<T> & epics_auto_ptr<T>::operator = ( epics_auto_ptr<T> & rhs )
 {
     if ( &rhs != this) {
         delete this->p;

@@ -47,7 +47,7 @@
 #define BB_SHORT_OFF	0x1800	/* the first address of link 0's region */
 #define BB_NUM_LINKS	4	/* max number of BB ports allowed */
 #define BB_IVEC_BASE	0x90	/* vectored interrupts (2 used for each link) */
-#define BB_IRQ_LEVEL	3	/* IRQ level */
+#define BB_IRQ_LEVEL	5	/* IRQ level */
 /**************** end of stuff that does not belong here **********************/
 
 
@@ -107,7 +107,6 @@ struct {
 
 static	char	init_called = 0;	/* to insure that init is done first */
 static	char	*short_base;		/* base of short address space */
-static	char	*ram_base;		/* base of the ram on the CPU board */
 
 static	struct	xvmeLink *pXvmeLink[BB_NUM_LINKS];/* NULL if link not present */
 static	struct	bbLink	*pBbLink[BB_NUM_LINKS];	/* NULL if link not present */
@@ -170,15 +169,10 @@ initBB()
   /* figure out where the short address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
 
-  /* figure out where the CPU memory is (when viewed from the backplane) */
-  sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &ram_base, &ram_base);
-  ram_base = (char *)((ram_base - (char *)&ram_base) & 0x00FFFFFF);
-
   if (bbDebug)
   {
     printf("BB driver package initializing\n");
     printf("short_base       0x%08.8X\n", short_base);
-    printf("ram_base         0x%08.8X\n", ram_base);
     printf("BB_SHORT_OFF     0x%08.8X\n", BB_SHORT_OFF);
     printf("BB_NUM_LINKS     0x%08.8X\n", BB_NUM_LINKS);
   }

@@ -23,6 +23,8 @@ ACC_SFLAGS_YES= -Bstatic
 ACC_SFLAGS_NO=
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
+ACC_SHRLIB_CFLAGS_YES =  -KPIC
+ACC_SHRLIB_LDFLAGS_YES =  -shared
 
 # Configure OS vendor C++ compiler
 CCC = CC

@@ -7,6 +7,8 @@ ARCH_CLASS = hp700
 
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+SHRLIB_SUFFIX = .sl
  
 AR = ar
 
@@ -23,6 +25,8 @@ ACC_SFLAGS_YES= -Wl,-a,archive
 ACC_SFLAGS_NO=
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
+ACC_SHRLIB_CFLAGS_YES = +Z
+ACC_SHRLIB_LDFLAGS_YES = -b
 
 # Configure OS vendor C++ compiler
 HPCC = cc 
@@ -37,6 +41,8 @@ HPCC_SFLAGS_YES= -Wl,-a,archive
 HPCC_SFLAGS_NO=
 HPCC_SLIBS_YES =
 HPCC_SLIBS_NO=
+HPCC_SHRLIB_CFLAGS_YES = +Z
+HPCC_SHRLIB_LDFLAGS_YES = -b
 
 CCC = CC
 CCC_NORMAL = $(CCC) +p

@@ -23,6 +23,8 @@ ACC_SFLAGS_YES= -non_shared
 ACC_SFLAGS_NO= -call_shared
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
+ACC_SHRLIB_CFLAGS_YES =
+ACC_SHRLIB_LDFLAGS_YES =
 
 # Configure OS vendor C++ compiler
 CCC = cxx

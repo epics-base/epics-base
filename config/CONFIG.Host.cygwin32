@@ -22,6 +22,6 @@ CPLUSPLUS=
 #OP_SYS_INCLUDES += /usr/local/include/g++
 #==========================
  
-ARCH_DEP_CFLAGS = -DCYGWIN32
+ARCH_DEP_CFLAGS = -DCYGWIN32 -U_WIN32
 ARCH_DEP_LDLIBS = -lm
 

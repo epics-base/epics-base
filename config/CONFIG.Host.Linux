@@ -13,8 +13,15 @@ RANLIB = ranlib -t
 
 # Configure OS vendor C compiler
 ACC = acc
-ACC_ANSI = $(ACC)
-ACC_STRICT = $(ACC) -Xc
+#ACC_ANSI = $(ACC)
+ACC_ANSI = $(ACC) -ansi -D_SVID_SOURCE
+#ACC_STRICT = $(ACC) -Xc
+ACC_STRICT = $(ACC)  -ansi -pedantic -D_SVID_SOURCE
+
+
+OP_SYS_FLAGS = -D_BSD_SOURCE -D_POSIX_SOURCE
+
+
 ACC_TRAD = $(ACC)
 ACC_WARN_YES = 
 ACC_WARN_NO =  -w
@@ -24,6 +31,10 @@ ACC_SFLAGS_YES = -Bstatic
 ACC_SFLAGS_NO=
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
+ACC_SHRLIB_CFLAGS_YES =  -fPIC
+#ACC_SHRLIB_CFLAGS_YES =  -fPIC -D_BSD_SOURCE
+ACC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@ 
+
 
 # Configure OS vendor C++ compiler
 CCC = CC
@@ -39,6 +50,7 @@ CCC_SFLAGS_NO=
 CCC_SLIBS_YES =
 CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -MM
+
 
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_LDFLAGS =

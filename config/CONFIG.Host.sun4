@@ -34,6 +34,8 @@ ACC_SFLAGS_NO=
 ACC_SLIBS_YES=
 ACC_SLIBS_NO=
 #ACC_OP_SYS_LDFLAGS = -L$(SPECIAL_LANG)
+ACC_SHRLIB_CFLAGS_YES =  -pic
+ACC_SHRLIB_LDFLAGS_YES =  -assert pure-text -h $@
 
 SUNCC = cc
 SUNCC_ANSI = echo SUNCC_ANSI not defined
@@ -47,6 +49,8 @@ SUNCC_SFLAGS_YES= -Bstatic
 SUNCC_SFLAGS_NO=
 SUNCC_SLIBS_YES=
 SUNCC_SLIBS_NO=
+SUNCC_SHRLIB_CFLAGS_YES =  -pic
+SUNCC_SHRLIB_LDFLAGS_YES =  -assert pure-text -h $@
 
 # Configure OS vendor C++ compiler
 CCC = /usr/lang/CC

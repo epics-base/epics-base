@@ -230,6 +230,7 @@ INCREC +=$(RECTYPES) $(MENUS)
 
 INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
+INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
@@ -266,11 +267,19 @@ DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/os \
 	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) $(INSTALL_LIB) \
 	$(INSTALL_LOCATION_LIB) $(INSTALL_CONFIG) \
 	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN) \
-	$(INSTALL_TEMPLATES) 
+	$(INSTALL_TEMPLATES)
 
 ifdef TEMPLATES_DIR
 DIRECTORY_TARGETS += $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 endif
+
+#---------------------------------------------------------------
+# must use c++ linker if linking to shared libs with c++ code
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+ifneq ($(strip $(CPLUSPLUS)),)
+LINK.c = $(LINK.cc)
+endif # CPLUSPLUS
+endif # LIBTYPE
 
 #---------------------------------------------------------------
 #	if there are no objects LIBOBJS to include
@@ -279,31 +288,35 @@ endif
 ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS = $(INSTALL_LOCATION_LIB) $(INSTALL_LIB)
-#	check if DLL or plain lib requested:
-ifeq ($(LIBTYPE),SHARED)
+LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+
+#	check if DLL or plain lib requested: (Win32 build)
+ifeq ($(strip $(LIBTYPE)),SHARED)
 #
 # LIBTYPE=="SHARED" indicates build
 # DLL and also build object archive library
 #
-LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS) $(LIBNAME) $(INSTALL_LIBS)
-else # LIBTYPE=SHARED
-#
-# otherwise build only object archive library
-#
-LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+LIBTARGETS += $(DLLNAME) $(INSTALL_DLLS)
 endif # LIBTYPE=SHARED
+
+#  check if shared library requested: (Unix type build)
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+CFLAGS += $(SHRLIB_CFLAGS)
+CXXFLAGS += $(SHRLIB_CFLAGS)
+ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
+SHRLIB_LINKER = $(CXX)
+else
+SHRLIB_LINKER = $(CC)
+endif
+LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS)
+endif # SHARED_LIBRARIES=YES
+
 endif # LIBOBJS
-
-#
-# by default the libraries used when linking the DLL are just
-# PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
-DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
-
 endif # LIBRARY
 
 #---------------------------------------------------------------
 #	Main targets
-#
+
 all::	install
 
 build:: $(LIBTARGETS) $(PROD) $(TESTPROD) \
@@ -417,6 +430,7 @@ $(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
 	@$(RM) $@
 	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
 endif
+
 
 #---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that
@@ -569,6 +583,9 @@ $(DBDNAME): ../$(DBDEXPAND)
 $(DLLNAME): $(LIBOBJS)
 	$(LINK.dll) $(LIBOBJS) $(DLL_LDLIBS)
 
+$(SHRLIBNAME): $(LIBOBJS)
+	$(LINK.dll) $(LIBOBJS)
+
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
 	$(RM) $@
@@ -599,6 +616,14 @@ endif # RANLIB
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+
+$(INSTALL_SHRLIBS): $(SHRLIBNAME)
+	@echo "Installing library $@"
+	$(INSTALL) -m 644 $< $(INSTALL_LIB)
+ifdef SHRLIB_VERSION
+	$(RM) $(subst $(SHRLIB_VERSION),,$@)
+	ln -s $< $(subst $(SHRLIB_VERSION),,$@)
+endif # SHRLIB_VERSION
 
 $(INSTALL_TCLLIB)/%: %
 	@echo "Installing Tcl library $@"

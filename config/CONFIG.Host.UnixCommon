@@ -13,24 +13,23 @@
 LIBNAME = $(LIBRARY:%=lib%.a)
 
 #-------------------------------------------------------
-#     EPICS libs that we need to link the DLL with
-DLL_DEPLIBS = $(DLL_LIBS:%=$(firstword $(%_DIR) $(EPICS_BASE_LIB))/lib%.a)
-DLL_LDLIBS = $(DLL_DEPLIBS) $(SYS_PROD_LIBS:%=lib%.a) $(OP_SYS_LDLIBS)
-  $(ARCH_DEP_LDLIBS)
+# Shared library definitions
 
-#-------------------------------------------------------
-#	A NOOP on all UNIX systems that dont implement
-#	shared libraries
-#
-#DLLNAME = lib$(LIBRARY).???
-LINK.dll = echo share lib build for UNIX archictecture is a NOOP
+# CONFIG.Host.<arch> files may override
+SHRLIB_SUFFIX = .so
+SHRLIB_VERSION = .$(EPICS_VERSION).$(EPICS_REVISION)
+
+SHRLIBNAME = lib$(LIBRARY)$(SHRLIB_SUFFIX)$(SHRLIB_VERSION)
+SHRLIB_CFLAGS = $($(ANSI)_SHRLIB_CFLAGS_$(SHARED_LIBRARIES))
+SHRLIB_LDFLAGS = $($(ANSI)_SHRLIB_LDFLAGS_$(SHARED_LIBRARIES))
+
+LINK.dll= $(SHRLIB_LINKER) -o $@ $(CFLAGS) $(CPPFLAGS) $(SHRLIB_LDFLAGS) $(LDFLAGS)
 
 #-------------------------------------------------------
 # Unix command definitions
 
 CPP = cpp
 RANLIB = ranlib
-LD = ld -r
 
 # GNU compilers
 GCC = gcc

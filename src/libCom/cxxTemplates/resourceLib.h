@@ -210,12 +210,12 @@ private:
 // this class works as type ID in resTable <class T, class ID>
 //
 // 1<<MIN_INDEX_WIDTH specifies the minimum number of
-// elements in the hash table within resTable <class T, class ID>
+// elements in the hash table within resTable <class T, class ID>.
+// Set this parameter to zero if unsure of the correct minimum 
+// hash table size.
 //
 // MAX_ID_WIDTH specifies the maximum number of ls bits in an 
-// integer identifier which might be set at any time. Set this 
-// parameter to zero if unsure of the correct minimum hash table 
-// size.
+// integer identifier which might be set at any time. 
 //
 // MIN_INDEX_WIDTH and MAX_ID_WIDTH are specified here at
 // compile time so that the hash index can be produced 

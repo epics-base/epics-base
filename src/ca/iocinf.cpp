@@ -11,8 +11,6 @@
 
 #include "locationException.h"
 
-/*  Allocate storage for global variables in this module        */
-#define CA_GLBLSOURCE
 #include "iocinf.h"
 #include "addrList.h"
 

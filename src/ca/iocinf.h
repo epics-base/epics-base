@@ -17,12 +17,6 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-#ifdef CA_GLBLSOURCE
-#       define GLBLTYPE
-#else
-#       define GLBLTYPE extern
-#endif
-
 /*
  * ANSI C includes
  * ---- MULTINET/VMS breaks if we include ANSI time.h here ----
@@ -35,7 +29,7 @@
 #include <stdarg.h>
 
 #if defined (epicsExportSharedSymbols)
-#error suspect that libCom was not imported
+#   error suspect that libCom was not imported
 #endif
 
 /*
@@ -376,13 +370,8 @@ protected:
     friend class cac;
 };
 
-class netSubscription : public cacNotifyIO, public baseNMIU  {
+class netSubscription : private cacNotifyIO, private baseNMIU  {
 public:
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    int subscriptionMsg ();
     void disconnect ( const char *pHostName );
     static bool factory ( nciu &chan, chtype type, unsigned long count, 
         unsigned short mask, cacNotify &notify, unsigned &id );
@@ -394,19 +383,20 @@ private:
     netSubscription ( nciu &chan, chtype type, unsigned long count, 
         unsigned short mask, cacNotify &notify );
     ~netSubscription ();
+    void completionNotify ();
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+    int subscriptionMsg ();
     void destroy ();
     static tsFreeList < class netSubscription, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 };
 
-class netReadCopyIO : public baseNMIU {
+class netReadCopyIO : private baseNMIU {
 public:
     void disconnect ( const char *pHostName );
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static bool factory ( nciu &chan, unsigned type, unsigned long count, 
                               void *pValue, unsigned seqNumber, ca_uint32_t &id );
 private:
@@ -418,40 +408,44 @@ private:
                               void *pValue, unsigned seqNumber );
     ~netReadCopyIO (); // must be allocated from pool
     void destroy ();
+    void completionNotify ();
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 };
 
-class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
+class netReadNotifyIO : public cacNotifyIO, private baseNMIU {
 public:
     void disconnect ( const char *pHostName );
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
 private:
     netReadNotifyIO ( nciu &chan, cacNotify &notify );
     ~netReadNotifyIO ();
     void destroy ();
+    void completionNotify ();
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netReadNotifyIO, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 };
 
-class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
+class netWriteNotifyIO : public cacNotifyIO, private baseNMIU {
 public:
     void disconnect ( const char *pHostName );
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
 private:
     netWriteNotifyIO ( nciu &chan, cacNotify &notify );
     ~netWriteNotifyIO ();
     void destroy ();
+    void completionNotify ();
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
@@ -487,13 +481,8 @@ private:
  * CA_CONN_VERIFY_PERIOD is normally obtained from an
  * EPICS environment variable.
  */
-#define CA_ECHO_TIMEOUT     5.0 /* (sec) disconn no echo reply tmo */ 
-#define CA_CONN_VERIFY_PERIOD   30.0    /* (sec) how often to request echo */
-
-/*
- * only used when communicating with old servers
- */
-#define CA_RETRY_PERIOD     5   /* int sec to next keepalive */
+const static double CA_ECHO_TIMEOUT = 5.0; /* (sec) disconn no echo reply tmo */ 
+const static double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request echo */
 
 /*
  * this determines the number of messages received
@@ -505,8 +494,6 @@ private:
  * per network frame 
  */
 static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
-
-#define SEND_RETRY_COUNT_INIT   100
 
 enum iiu_conn_state {iiu_connecting, iiu_connected, iiu_disconnected};
 
@@ -556,7 +543,7 @@ private:
 
 class udpiiu;
 
-class searchTimer : public osiTimer, private osiMutex {
+class searchTimer : private osiTimer, private osiMutex {
 
 public:
     searchTimer ( udpiiu &iiu, osiTimerQueue &queue );
@@ -585,7 +572,7 @@ private:
     double period; /* period between tries */
 };
 
-class repeaterSubscribeTimer : public osiTimer {
+class repeaterSubscribeTimer : private osiTimer {
 public:
     repeaterSubscribeTimer (udpiiu &iiu, osiTimerQueue &queue);
     void confirmNotify ();
@@ -656,7 +643,7 @@ private:
     void repeaterAckAction ( const caHdr &msg, const osiSockAddr &net_addr );
 };
 
-class tcpRecvWatchdog : public osiTimer {
+class tcpRecvWatchdog : private osiTimer {
 public:
     tcpRecvWatchdog (double periodIn, osiTimerQueue & queueIn, bool echoProtocolAcceptedIn);
     ~tcpRecvWatchdog ();
@@ -680,10 +667,9 @@ private:
     const bool echoProtocolAccepted;
     bool responsePending;
     bool beaconAnomaly;
-    bool dead;
 };
 
-class tcpSendWatchdog : public osiTimer {
+class tcpSendWatchdog : private osiTimer {
 public:
     tcpSendWatchdog (double periodIn, osiTimerQueue & queueIn);
     ~tcpSendWatchdog ();
@@ -911,7 +897,7 @@ private:
     bool shutDown;
 };
 
-#define CASG_MAGIC      0xFAB4CAFE
+static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 
 class syncGroupNotify : public cacNotify, public tsDLNode < syncGroupNotify > {
 public:
@@ -1117,31 +1103,13 @@ extern const caHdr cacnullmsg;
 int ca_defunct (void);
 int ca_printf (const char *pformat, ...);
 int ca_vPrintf (const char *pformat, va_list args);
-void manage_conn (cac *pcac);
 epicsShareFunc void epicsShareAPI ca_repeater (void);
-
-bhe *lookupBeaconInetAddr(cac *pcac,
-        const struct sockaddr_in *pnet_addr);
 
 #define genLocalExcep( CAC, STAT, PCTX ) \
 (CAC).genLocalExcepWFL ( STAT, PCTX, __FILE__, __LINE__ )
 
-double cac_fetch_poll_period (cac *pcac);
-
-void cac_destroy (cac *pcac);
 int fetchClientContext (cac **ppcac);
 extern "C" void caRepeaterThread (void *pDummy);
 extern "C" void ca_default_exception_handler (struct exception_handler_args args);
-
-/*
- * !!KLUDGE!!
- *
- * this was extracted from dbAccess.h because we are unable
- * to include both dbAccess.h and db_access.h at the
- * same time.
- */
-#define M_dbAccess      (501 <<16) /*Database Access Routines */
-#define S_db_Blocked (M_dbAccess|39) /*Request is Blocked*/
-#define S_db_Pending (M_dbAccess|37) /*Request is pending*/
 
 #endif /* this must be the last line in this file */

@@ -4,7 +4,6 @@ include $(EPICS)/config/CONFIG_BASE
 
 INC += dbDefs.h
 INC += camacLib.h
-INC += casdef.h
 INC += epicsTypes.h
 INC += epicsVersion.h
 INC += gsd_sync_defs.h

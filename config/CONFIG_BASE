@@ -35,8 +35,8 @@ DIRS += iocCore
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
 #
-#DIRS += $(patsubst %,gdd,$(strip $(CPLUSPLUS)))
-#DIRS += $(patsubst %,cas,$(strip $(CPLUSPLUS)))
+DIRS += $(patsubst %,gdd,$(strip $(CPLUSPLUS)))
+DIRS += $(patsubst %,cas,$(strip $(CPLUSPLUS)))
 
 EPICS_BASE = $(TOP)
 

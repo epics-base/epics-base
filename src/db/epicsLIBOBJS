@@ -155,7 +155,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbbiDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devVmi2534.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devVmic2534.o
 #
 # Driver support ANSI
 #
@@ -201,4 +201,4 @@ LIBOBJS += $(EPICS_BASE_BIN)/drvHp1404a.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvXy220.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvXy240.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvXy566.o
-#LIBOBJS += $(EPICS_BASE_BIN)/drvVmi2534.o
+#LIBOBJS += $(EPICS_BASE_BIN)/drvVmic2534.o

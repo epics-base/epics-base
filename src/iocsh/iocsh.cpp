@@ -163,8 +163,8 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
             l->next = n;
         }
         n->pVarDef = piocshVarDef;
-        iocshTableUnlock ();
     }
+    iocshTableUnlock ();
 }
 
 /*

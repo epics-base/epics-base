@@ -38,6 +38,14 @@ EPICS_BASE_IOC_LIBRARIES += dbStaticIoc
 EPICS_BASE_IOC_LIBRARIES += ca
 EPICS_BASE_IOC_LIBRARIES += Com
 
+EPICS_BASE_HOST_LIBRARIES += libcas
+EPICS_BASE_HOST_LIBRARIES += libgdd
+EPICS_BASE_HOST_LIBRARIES += libiocsh
+EPICS_BASE_HOST_LIBRARIES += libasHost
+EPICS_BASE_HOST_LIBRARIES += libdbStaticHost
+EPICS_BASE_HOST_LIBRARIES += libca
+EPICS_BASE_HOST_LIBRARIES += libCom
+
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
 

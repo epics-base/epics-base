@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.18  1997/08/05 00:51:09  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.17  1997/04/23 17:12:55  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -190,17 +193,17 @@ static int mapGddToString(void* vd, aitIndex count, gdd* dd) {
 	void* v=dd->dataVoid();
 	int status;
 
-	if (count==sz) {
+	if (count<=sz) {
 		if(local_data_format==aitLocalDataFormat) {
 			if((aitFixedString*)v!=db) {
-				status = aitConvert(aitEnumFixedString,db,dd->primitiveType(),v,sz);
+				status = aitConvert(aitEnumFixedString,db,dd->primitiveType(),v,count);
 			}
 			else {
 				status = sz*sizeof(aitFixedString);
 			}
 		}
 		else {
-			status = aitConvertToNet(aitEnumFixedString,db,dd->primitiveType(),v,sz);
+			status = aitConvertToNet(aitEnumFixedString,db,dd->primitiveType(),v,count);
 		}
 	}
 	else {
@@ -485,7 +488,6 @@ static gdd* mapStsStringToGdd(void* v,aitIndex count)
 
 static int mapStsGddToString(void* v, aitIndex count, gdd* dd)
 {
-	// what about arrays of string? is this allowed?
 	dbr_sts_string* db = (dbr_sts_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
 

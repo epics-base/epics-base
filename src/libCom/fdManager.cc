@@ -194,12 +194,18 @@ epicsShareFunc void fdManager::process (double delay)
 	}
 	else if (status<0) {
         int errnoCpy = SOCKERRNO;
+
+        //
+        // print a message if its an unexpected error
+        //
 		if (errnoCpy != SOCK_EINTR) {
 			fprintf(stderr, 
 			"fdManager: select failed because \"%s\"\n",
 				SOCKERRSTR(errnoCpy));
 		}
+
 		this->processInProg = 0;
+
 		return;	
     }
 

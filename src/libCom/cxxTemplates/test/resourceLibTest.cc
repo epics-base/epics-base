@@ -19,7 +19,7 @@ void empty();
 class albert : public intId<unsigned,8>, public tsSLNode<albert> {
 public:
 	albert (resTable< albert, intId<unsigned,8> > &atIn, unsigned idIn) : 
-		at(atIn), intId<unsigned,8>(idIn) {}
+		intId<unsigned,8>(idIn), at(atIn) {}
 	void show (unsigned /* level */) 
 	{
 	}
@@ -35,7 +35,7 @@ private:
 class fred : public intId<unsigned,8>, public tsSLNode<fred> {
 public:
 	fred (const char *pNameIn, unsigned idIn) : 
-			pName(pNameIn), intId<unsigned,8>(idIn) {}
+			intId<unsigned,8>(idIn), pName(pNameIn) {}
 	void show (unsigned) 
 	{
 		printf("fred %s\n", pName);
@@ -89,7 +89,7 @@ int main()
 	unsigned i;
 	clock_t start, finish;
 	double duration;
-	const int LOOPS = 50000;
+	const unsigned LOOPS = 50000;
 	resTable<fred, intId<unsigned,8> > intTbl (8);	
 	resTable<jane, stringId> strTbl (8);	
 	fred fred0("fred0",0);

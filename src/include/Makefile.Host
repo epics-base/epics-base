@@ -12,7 +12,9 @@ INC += shareLib.h
 INC += bsdProto.h
 INC += task_params.h
 INC += osiMutexNOOP.h
+INC += unixFileName.h
 
+OSINC += osiFileName.h
 OSINC += osiSock.h
 
 include $(TOP)/config/RULES.Host

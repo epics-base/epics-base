@@ -10,7 +10,7 @@ BUILD_TYPE = Unix
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
-GCC = gcc
+GCC = /opt/gnu/bin/gcc
 ACC = $(SPARCWORKS)/bin/cc
 # SUNCC doesn't exist under Solaris
 

@@ -244,14 +244,14 @@ public:
 			return 0u; // FALSE - not found
 		}
 	}
-        //
-        // Call (pT->*pCB) () for each item in the table
-        //
-        // where pT is a pointer to type T and pCB is
-        // a pointer to a memmber function of T with
-        // no parameters and returning void
-        //
-	void traverse(void (T::*pCB)()) 
+    //
+    // Call (pT->*pCB) () for each item in the table
+    //
+    // where pT is a pointer to type T and pCB is
+    // a pointer to a memmber function of T with
+    // no parameters and returning void
+    //
+    void traverse(void (T::*pCB)()) 
 	{
 		if (this->pRoot) {
 			tsBTreeNode<T>::traverse(*this->pRoot, pCB);

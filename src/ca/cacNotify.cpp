@@ -12,8 +12,6 @@
 
 #include "iocinf.h"
 
-osiMutex cacNotify::defaultMutex;
-
 cacNotify::cacNotify () : pIO (0)
 {
 }
@@ -25,16 +23,6 @@ cacNotify::~cacNotify ()
         this->pIO = 0;
         pTmpIO->destroy ();
     }
-}
-
-void cacNotify::lock ()
-{
-    this->defaultMutex.lock ();
-}
-
-void cacNotify::unlock ()
-{
-    this->defaultMutex.unlock ();
 }
 
 void cacNotify::completionNotify ()

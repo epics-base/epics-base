@@ -33,15 +33,12 @@ public:
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
 private:
     cacNotifyIO *pIO;
-    virtual void lock ();
-    virtual void unlock ();
-    static osiMutex defaultMutex;
     friend class cacNotifyIO;
 };
 
 class epicsShareClass cacNotifyIO {
 public:
-    cacNotifyIO ( cacNotify &);
+    cacNotifyIO ( cacNotify & );
     virtual ~cacNotifyIO () = 0;
     virtual void destroy () = 0;
     void completionNotify ();
@@ -97,7 +94,6 @@ private:
     virtual void accessRightsNotify ( caar );
     virtual void exceptionNotify ( int status, const char *pContext );
     virtual void connectTimeoutNotify ();
-
 
     friend class cacChannelIO;
 };

@@ -9,12 +9,6 @@
 #define instantiateRecourceLib
 #include "resourceLib.h"
 
-#ifdef SUNOS4
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC 1000000
-#endif
-#endif
-
 void empty();
 
 class albert : public intId<unsigned,8>, public tsSLNode<albert> {

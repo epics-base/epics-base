@@ -199,8 +199,8 @@ LOCAL void asCaTask(void)
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
 	}
         SEVCHK(ca_flush_io(),"asCaTask");
-	asComputeAllAsg();
 	caInitializing = FALSE;
+	asComputeAllAsg();
 	if(asCaDebug) printf("asCaTask initialized\n");
 	epicsEventSignal(asCaTaskWait);
         epicsEventMustWait(asCaTaskClearChannels);

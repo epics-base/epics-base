@@ -80,16 +80,6 @@ lib=c:\msdev\lib;c:\msdev\mfc\lib
 Select host arch to build:
 HOST_ARCH=WIN32			(used by the make system)
 
-Special note: configuring EPICS_CA_AUTO_CA_ADDR_LIST under WIN32
-----------------------------------------------------------------
-Currently if EPICS_CA_AUTO_CA_ADDR_LIST is YES (the default)
-then the ca address list will be initialized to the broadcast address of
-only one of the network interfaces on the WIN32 host (most host have only
-one network interface - in the near future this will be fixed so that 
-the broadcast addresses of all interfaces is used as on other os). 
-If EPICS_CA_AUTO_CA_ADDR_LIST is NO behavior is as described in the CA
-reference manual.
-
 (Setting env. vars. is different: for NT, use Settings/System,
 for Win95 use autoexec.bat)
 

@@ -97,5 +97,5 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
         iteration++;
 	}
 
-    delete [] pChans;
+    //delete [] pChans;
 }

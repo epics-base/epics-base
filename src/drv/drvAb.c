@@ -384,13 +384,25 @@ int	ab_intr ();			/* interrupt service routine */
  * 0x1000 - adapter/plc flag
  *	0 - adapter
  *	1 - PLC
- * 0x0f00 - conversion (from ~gta/dbcon/h/fields.h)
+ * 0x0f00 - conversion 
+ *	For IXE
  *	0 - no conversion (use millivolt range)
  *	1 - linear (use millivolt range)
- *	2 - k - degrees F
- *	3 - k - degrees K
- *	4 - j - degrees F
- *	5 - j - degrees K
+ *	2 - K_DGF
+ *	3 - K_DGC
+ *	4 - J_DGF
+ *	5 - J_DGC
+ *	6 - E_DGF
+ *	7 - E_DGC
+ *	8 - T_DGF
+ *	9 - T_DGC
+ *	10- R_DGF
+ *	11- R_DGC
+ *	12- S_DGF
+ *	13- S_DGC
+ *	For Ir
+ *	0-  degF
+ *	1-  degC
  * 0x00e0 - interface type
  * 	0 - Not Assigned
  *	1 - Binary Input
@@ -435,6 +447,7 @@ int	abScanId;		/* id of the Allen-Bradley scan task */
 short	ab_timers[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
 #define	AB_IXE_RATE	5	/* .5 seconds */
 #define AB_IL_RATE	4	/* .4 seconds */
+#define	AB_IR_RATE	5	/* .5 seconds */
 #define AB_IFE_RATE	1	/* .1 seconds */
 #define AB_OFE_RATE	10	/* 1 seconds - written immediately */
 #define AB_INT_LEVEL    5
@@ -577,6 +590,12 @@ register short	pass;
 	    btq_err = OK;	/* assume success */
 	    if ((*pcard & AB_INTERFACE_TYPE) == AB_AI_INTERFACE){
 		    switch (*pcard&AB_CARD_TYPE){
+		    case (AB1771IrPlatinum) :
+		    case (AB1771IrCopper) :
+			if ((pass % AB_IR_RATE) == 0) {
+				btq_err = bt_queue(AB_READ,link,adapter,card,8,&msg[0]);
+			}
+			break;
 		    case (AB1771IL):
 			if ((pass % AB_IL_RATE) == 0) {
 		  		btq_err = bt_queue(AB_READ,link,adapter,card,12,&msg[0]);
@@ -630,10 +649,19 @@ short			link;
     register short	*pab_table;
 
     bfill(pmsg,64*2,0);
-
+    *pmsg = 0;
     switch (*pcard & AB_INTERFACE_TYPE){
     case (AB_AI_INTERFACE):
         switch (*pcard & AB_CARD_TYPE){
+	case (AB1771IrCopper) :
+	    *pmsg = IR_COPPER;
+	case (AB1771IrPlatinum) :
+	    i = (*pcard & AB_CONVERSION) >> 8;
+	    if(i==IR_degF) *pmsg |= IR_UNITS_DEGF;
+	    if(i==IR_Ohms) *pmsg |= IR_UNITS_OHMS;
+	    *pmsg |= IR_SIGNED;
+	    length = 1;
+            break;
         case (AB1771IXE):       /* millivolt module */
 	    /* need to base this on conversion */
 	    switch ((*pcard & AB_CONVERSION) >> 8){
@@ -987,7 +1015,31 @@ abDoneTask(){
 	    /* it was a response to a command */
 	    /* analog input response */
 	    }else if ((*pcard & AB_INTERFACE_TYPE) == AB_AI_INTERFACE){
-		if ((*pcard & AB_CARD_TYPE) == AB1771IL)
+		if((*pcard & AB_CARD_TYPE) == AB1771IrPlatinum
+		|| (*pcard & AB_CARD_TYPE) == AB1771IrCopper)
+		{
+		    struct ab1771ir_read *pmsg = (struct ab1771ir_read *) presponse->data;
+		    short under,over,overflow,polarity;
+
+		    pab_table = &ab_btdata[link][adapter][card][0];
+		    pab_sts = &ab_btsts[link][adapter][card][0];
+		    for(i=0, under = 0x1, over=0x100, overflow=0x1, polarity=0x100;
+		    i<ai_num_channels[AB1771IrPlatinum];
+		    i++, under<<=1, over<<=1, overflow<<=1, polarity<<=1) {
+			    *pab_table = pmsg->data[i];
+			    if(pmsg->pol_over&polarity) *pab_table = -*pab_table;
+			    if((pmsg->status&under) || (pmsg->status&over)
+			    || (pmsg->pol_over&overflow)) {
+			    	*pab_sts = -3;
+			    	ab_scaling_error[link][adapter][card]++;
+			    }else{
+				*pab_sts = 0;
+			    }
+			    pab_sts++;
+			    pab_table++;
+			}
+		}
+		else if ((*pcard & AB_CARD_TYPE) == AB1771IL)
 		{
 		register struct ab1771il_read *pmsg
 		  = (struct ab1771il_read *)presponse->data;
@@ -2026,6 +2078,24 @@ ab_io_report(level)
                               if (level > 0){
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
+                        } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IrPlatinum){
+			    printf("\tAI: AB1771IrPlatinum\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
+			      adapter,card,ab_cmd_to[i][adapter][card],
+			      ab_data_to[i][adapter][card],
+			      ab_scaling_error[i][adapter][card],
+			      ab_or_scaling_error[i][adapter][card]);
+                              if (level > 0){
+                              	ab_ai_report(type,i,adapter,card,plc_card);
+                              }
+                        } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IrCopper){
+			    printf("\tAI: AB1771IrPlatinum\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
+			      adapter,card,ab_cmd_to[i][adapter][card],
+			      ab_data_to[i][adapter][card],
+			      ab_scaling_error[i][adapter][card],
+			      ab_or_scaling_error[i][adapter][card]);
+                              if (level > 0){
+                              	ab_ai_report(type,i,adapter,card,plc_card);
+                              }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_SE){
 			    printf("\tAI: AB1771IFE_SE\tadapter %d card %d:\tcto: %d dto: %d sclerr: %d %d",
 			      adapter,card,ab_cmd_to[i][adapter][card],
@@ -2116,12 +2186,11 @@ ab_ai_report(type,link,adapter,card,plc_card)
 	short	i,num_chans;
         unsigned short value;
 
-        printf("\n\t");
-
 	num_chans = ai_num_channels[type];
 	for(i=0; i<num_chans; i++) {
+	    if(i%8 == 0) printf("\n\t");
 	    ab_aidriver(type,link,adapter,card,i,plc_card,&value,0);
-	    printf("%4x",value);
+	    printf(" %4x",value);
  	}
   }
 

@@ -321,4 +321,26 @@ struct ab1771ixe_read {
 	short		data[8];	/* current values */
 	unsigned short	cjcw;		/* cold junction cal word */
 };
+
+/*Conversion value passed to abb_ai_driver*/
+#define IR_degF	0
+#define IR_degC 1
+#define IR_Ohms 2
+/*Register definitions*/
+#define IR_UNITS_DEGF	0x40
+#define IR_UNITS_OHMS	0x80
+#define IR_COPPER	0x100
+#define IR_SIGNED	0x400
+/* configuration data transfer to the IR card */
+struct ab1771ir_config {
+	unsigned short	conv_rate;	/* conversion and scan rate data */
+	unsigned short	resistance;	/* 10ohm resiatance @25 degC	*/
+	unsigned short	bias[6];	/* bias				*/
+	unsigned short	calibration[6];	/* 				*/
+};
 
+struct ab1771ir_read {
+	unsigned short	status;		/* status and over/under range	*/
+	unsigned short	pol_over;	/* polarity and overflow	*/
+	short		data[6];	/* current values */
+};

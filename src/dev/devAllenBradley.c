@@ -57,6 +57,7 @@
 #include        <boRecord.h>
 #include        <mbbiRecord.h>
 #include        <mbboRecord.h>
+#include        <drvAb.h>
 
 
 
@@ -79,7 +80,10 @@ static long linconv_1771Il();
 static long init_1771Ixe();
 static long read_1771Ixe();
 static long linconv_1771Ixe();
-static int read_1771Ofe();
+static long init_1771IrPlatinum();
+static long read_1771IrPlatinum();
+static long init_1771IrCopper();
+static long read_1771IrCopper();
 typedef struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -100,8 +104,13 @@ ABAIDSET devAiAb1771Il=		{6, NULL, NULL, init_1771Il, NULL,
 				read_1771Il, linconv_1771Il};
 ABAIDSET devAiAb1771Ixe=	{6, NULL, NULL, init_1771Ixe, NULL,
 				read_1771Ixe, linconv_1771Ixe};
+ABAIDSET devAiAb1771IrPlatinum=	{6, NULL, NULL, init_1771IrPlatinum, NULL,
+				read_1771IrPlatinum, NULL};
+ABAIDSET devAiAb1771IrCopper=	{6, NULL, NULL, init_1771IrCopper, NULL,
+				read_1771IrCopper, NULL};
 
 static long init_1771Ofe();
+static int read_1771Ofe();
 static long write_1771Ofe();
 static long linconv_1771Ofe();
 typedef struct {
@@ -549,7 +558,138 @@ static long linconv_1771Ixe(struct aiRecord *pai, int after)
     return(0);
 }
 
+static long init_1771IrPlatinum(struct aiRecord *pai)
+{
+    short value;
+    struct abio *pabio;
+    short conversion;
 
+    /* ai.inp must be an AB_IO */
+    switch (pai->inp.type) {
+    case (AB_IO) :
+	break;
+    default :
+	recGblRecordError(S_db_badField,(void *)pai,
+		"devAiAb1771IrPlatinum (init_record) Illegal INP field");
+	return(S_db_badField);
+    }
+    pabio = (struct abio *)&(pai->inp.value);
+    if(pabio->parm[0]=='C') {
+	conversion=IR_degC;
+	strcpy(pai->egu,"degC");
+    } else if(pabio->parm[0]=='O') {
+	conversion = IR_Ohms;
+	strcpy(pai->egu,"ohms");
+    } else {
+	conversion = 0;
+	strcpy(pai->egu,"degF");
+    }
+    pai->linr = 0;
+    /* call driver so that it configures card */
+    /* The driver returns error for first call for a card. Ignore it. */
+    ab_aidriver(AB1771IrPlatinum,pabio->link,pabio->adapter,
+	   pabio->card,pabio->signal,pabio->plc_flag,&value,conversion);
+    return(0);
+}
+
+static long read_1771IrPlatinum(struct aiRecord *pai)
+{
+	struct abio *pabio;
+	long status;
+	short  value;
+	short conversion;
+
+	
+	pabio = (struct abio *)&(pai->inp.value);
+	if(pabio->parm[0]=='C') conversion=IR_degC;
+	else if(pabio->parm[0]=='O') conversion = IR_Ohms;
+	else conversion = 0;
+	status=ab_aidriver(AB1771IrPlatinum,pabio->link,pabio->adapter,
+	   pabio->card,pabio->signal,pabio->plc_flag,&value,conversion);
+	if(status==-2) {
+                recGblSetSevr(pai,HW_LIMIT_ALARM,INVALID_ALARM);
+		status = 0;
+	}
+	if(status==0) {
+		if(conversion==IR_Ohms) pai->val = ((double)value)/100.0;
+		else  pai->val = ((double)value)/10.0;
+		pai->udf = FALSE;
+		status=2; /*don't convert*/
+        } else if(status==-1) {
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
+		status = 2; /*don't convert*/
+        }
+	return(status);
+}
+
+static long init_1771IrCopper(struct aiRecord *pai)
+{
+    short value;
+    struct abio *pabio;
+    short conversion;
+
+    /* ai.inp must be an AB_IO */
+    switch (pai->inp.type) {
+    case (AB_IO) :
+	break;
+    default :
+	recGblRecordError(S_db_badField,(void *)pai,
+		"devAiAb1771IrCopper (init_record) Illegal INP field");
+	return(S_db_badField);
+    }
+    pabio = (struct abio *)&(pai->inp.value);
+    if(pabio->parm[0]=='C') {
+	conversion=IR_degC;
+	strcpy(pai->egu,"degC");
+    } else if(pabio->parm[0]=='O') {
+	conversion = IR_Ohms;
+	strcpy(pai->egu,"ohms");
+    } else {
+	conversion = 0;
+	strcpy(pai->egu,"degF");
+    }
+    pai->linr = 0;
+    /* call driver so that it configures card */
+    /* The driver returns error for first call for a card. Ignore it. */
+    ab_aidriver(AB1771IrCopper,pabio->link,pabio->adapter,
+	   pabio->card,pabio->signal,pabio->plc_flag,&value,conversion);
+    return(0);
+}
+
+static long read_1771IrCopper(struct aiRecord *pai)
+{
+	struct abio *pabio;
+	long status;
+	short  value;
+	short conversion;
+
+	
+	pabio = (struct abio *)&(pai->inp.value);
+	if(pabio->parm[0]=='C') conversion=IR_degC;
+	else if(pabio->parm[0]=='O') conversion = IR_Ohms;
+	else conversion = 0;
+	status=ab_aidriver(AB1771IrCopper,pabio->link,pabio->adapter,
+	   pabio->card,pabio->signal,pabio->plc_flag,&value,conversion);
+	if(status==-2) {
+                recGblSetSevr(pai,HW_LIMIT_ALARM,INVALID_ALARM);
+		status = 0;
+	}
+	if(status==0) {
+		if(conversion==IR_Ohms) pai->val = ((double)value)/100.0;
+		else  pai->val = ((double)value)/10.0;
+		pai->udf = FALSE;
+		status=2; /*don't convert*/
+        } else if(status==-1) {
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
+		status = 2; /*don't convert*/
+        }
+	return(status);
+}
+
 static long init_1771Ofe(struct aoRecord *pao)
 {
 

@@ -1,7 +1,6 @@
 //
 // Example EPICS CA server
 //
-
 #include "exServer.h"
 #include "gddApps.h"
 
@@ -68,11 +67,6 @@ void exPV::destroy()
 caStatus exPV::update(gdd &valueIn)
 {
 	caServer *pCAS = this->getCAS();
-	//
-	// gettimeofday() is very slow under sunos4
-	//
-	osiTime cur (this->currentTime);
-	struct timespec t;
 	caStatus cas;
  
 #	if DEBUG
@@ -85,9 +79,8 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	t.tv_sec = (time_t) cur.getSecTruncToLong ();
-	t.tv_nsec = cur.getNSecTruncToLong ();
-	this->pValue->setTimeStamp(&t);
+	aitTimeStamp ts (this->currentTime);
+	this->pValue->setTimeStamp (&ts);
 	this->pValue->setStat (epicsAlarmNone);
 	this->pValue->setSevr (epicsSevNone);
 
@@ -277,16 +270,15 @@ caStatus exPV::getSeverity(gdd &value)
 //
 inline aitTimeStamp exPV::getTS()
 {
-	aitTimeStamp ts;
 	if (this->pValue!=NULL) {
+		aitTimeStamp ts;
 		this->pValue->getTimeStamp(&ts);
+		return ts;
 	}
 	else {
-		osiTime cur(osiTime::getCurrentEPICS());
-		ts.tv_sec = (time_t) cur.getSecTruncToLong ();
-		ts.tv_nsec = cur.getNSecTruncToLong ();
+		return osiTime::getCurrent();
 	}
-	return ts;
+
 }
 
 //

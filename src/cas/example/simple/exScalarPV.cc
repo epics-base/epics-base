@@ -40,7 +40,7 @@ void exScalarPV::scan()
 	// throughput under sunos4 because gettimeofday() is
 	// slow)
 	//
-	this->currentTime = osiTime::getCurrentEPICS();
+	this->currentTime = osiTime::getCurrent();
 
 	pDD = new gddScalar (gddAppType_value, aitEnumFloat32);
 	if (pDD==NULL) {

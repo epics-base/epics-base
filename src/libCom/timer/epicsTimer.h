@@ -134,8 +134,9 @@ typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 epicsShareFunc epicsTimerId epicsShareAPI 
     epicsTimerQueueThreadedCreateTimer ( epicsTimerQueueThreadedId queueid, 
         epicsTimerCallback callback, void *arg );
-epicsShareFunc epicsTimerId epicsShareAPI epicsTimerQueueNonThreadedCreateTimer (
-    epicsTimerQueueNonThreadedId queueid, epicsTimerCallback pCallback, void *pArg );
+epicsShareFunc epicsTimerId epicsShareAPI 
+    epicsTimerQueueNonThreadedCreateTimer (
+        epicsTimerQueueNonThreadedId queueid, epicsTimerCallback pCallback, void *pArg );
 epicsShareFunc void epicsShareAPI 
     epicsTimerDestroy ( epicsTimerId id );
 epicsShareFunc void epicsShareAPI 

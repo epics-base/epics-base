@@ -28,9 +28,6 @@
 #include "comQueRecv.h"
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
-#include "tcpKillTimer.h"
-
-enum iiu_conn_state { iiu_connecting, iiu_connected, iiu_disconnected };
 
 // a modified ca header with capacity for large arrays
 struct  caHdrLargeArray {
@@ -52,6 +49,7 @@ public:
         const char * pName, unsigned int stackSize, unsigned int priority );
     virtual ~tcpRecvThread ();
     void start ();
+    void exitWait ();
 private:
     epicsThread thread;
     class tcpiiu & iiu;
@@ -65,7 +63,7 @@ public:
         const char * pName, unsigned int stackSize, unsigned int priority );
     virtual ~tcpSendThread ();
     void start ();
-    bool exitWait ( double delay );
+    void exitWait ();
 private:
     class tcpiiu & iiu;
     epicsThread thread;
@@ -78,15 +76,13 @@ class tcpiiu :
         private wireSendAdapter, private wireRecvAdapter {
 public:
     tcpiiu ( cac &cac, callbackMutex & cbMutex, double connectionTimeout, 
-        epicsTimerQueue & timerQueue, const osiSockAddr &addrIn, 
+        epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ( epicsGuard < callbackMutex > & );
-    void cleanShutdown ();
-    void forcedShutdown ();
-    void shutdown ( epicsGuard < callbackMutex > & cbLocker, 
-        epicsGuard < cacMutex > & guard, bool discardPendingMessages );
+    void initiateAbortShutdown ( 
+        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > & );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
@@ -94,8 +90,7 @@ public:
     bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
     void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > * pCallbackGuard, 
-        epicsGuard < cacMutex > & primaryGuard );
+        ( cacNotify & notify, epicsGuard < cacMutex > & primaryGuard );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void createChannelRequest ( nciu & );
@@ -118,7 +113,7 @@ public:
                                 class cacDisconnectChannelPrivate & );
     void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    void uninstallChannel ( epicsGuard < callbackMutex > &,
+    class tcpiiu * uninstallChanAndReturnDestroyPtr ( 
         epicsGuard < cacMutex > &, nciu & chan );
 
 private:
@@ -126,7 +121,6 @@ private:
     tcpSendThread sendThread;
     tcpRecvWatchdog recvDog;
     tcpSendWatchdog sendDog;
-    tcpKillTimer killTimer;
     comQueSend sendQue;
     comQueRecv recvQue;
     tsDLList < nciu > channelList;
@@ -137,6 +131,8 @@ private:
     cac & cacRef;
     char * pCurData;
     unsigned minorProtocolVersion;
+    enum iiu_conn_state { iiucs_connecting, iiucs_connected, 
+        iiucs_clean_shutdown, iiucs_abort_shutdown };
     iiu_conn_state state;
     epicsEvent sendThreadFlushEvent;
     epicsEvent flushBlockEvent;
@@ -150,11 +146,9 @@ private:
     bool echoRequestPending; 
     bool oldMsgHeaderAvailable;
     bool msgHeaderAvailable;
-    bool sockCloseCompleted;
     bool earlyFlush;
     bool recvProcessPostponedFlush;
 
-    void stopThreads ();
     bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
@@ -166,8 +160,8 @@ private:
     void versionMessage ( epicsGuard < cacMutex > &, const cacChannel::priLev & priority );
     void disableFlowControlRequest (epicsGuard < cacMutex > & );
     void enableFlowControlRequest (epicsGuard < cacMutex > & );
-    void hostNameSetRequest (epicsGuard < cacMutex > & );
-    void userNameSetRequest (epicsGuard < cacMutex > & );
+    void hostNameSetRequest ( epicsGuard < cacMutex > & );
+    void userNameSetRequest ( epicsGuard < cacMutex > & );
     void writeRequest ( epicsGuard < cacMutex > &, nciu &, unsigned type, unsigned nElem, const void *pValue );
     void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
     void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
@@ -200,8 +194,8 @@ inline bool tcpiiu::ca_v49_ok () const
 
 inline bool tcpiiu::alive () const // X aCC 361
 {
-    if ( this->state == iiu_connecting || 
-        this->state == iiu_connected ) {
+    if ( this->state == iiucs_connecting || 
+        this->state == iiucs_connected ) {
         return true;
     }
     else {

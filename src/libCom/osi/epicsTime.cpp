@@ -522,7 +522,7 @@ double epicsTime::operator - (const epicsTime &rhs) const
     }
 
     //
-    // next compute the difference between the seconds memebers
+    // next compute the difference between the seconds members
     // and invert the sign of the nano seconds result if there
     // is a range violation
     //

@@ -7,6 +7,8 @@ include $(EPICS)/config/CONFIG_BASE
 YACCOPT = -l
 LEXOPT = -L
 
+INC += dbVarSub.h
+
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c \
 		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.o

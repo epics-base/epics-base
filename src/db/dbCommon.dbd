@@ -92,13 +92,13 @@
 		prompt("Alarm Status")
 		special(SPC_NOMOD)
 		menu(menuAlarmStat)
-		initial("17")
+		initial("UDF")
 	}
 	field(SEVR,DBF_MENU) {
 		prompt("Alarm Severity")
 		special(SPC_NOMOD)
 		menu(menuAlarmSevr)
-		initial("3")
+		initial("INVALID")
 	}
 	field(NSTA,DBF_MENU) {
 		prompt("New Alarm Status")
@@ -123,7 +123,7 @@
 		special(SPC_NOMOD)
 		interest(2)
 		menu(menuYesNo)
-		initial("1")
+		initial("YES")
 	}
 	field(DISS,DBF_MENU) {
 		prompt("Disable Alarm Sevrty")

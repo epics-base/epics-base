@@ -108,15 +108,6 @@ static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size);
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
-static void dbprReportLink(
-	TAB_BUFFER *pMsgBuff,char *precord_name, char *pfield_name,
-	struct link *plink, short field_type,int tab_size);
-static void dbprReportMenu(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
-	unsigned short  choice_value,int tab_size);
-static void dbprReportDevice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
-	unsigned short  choice_value,int tab_size);
 
 long dba(char*pname)
 {
@@ -1035,7 +1026,16 @@ static int dbpr_report(
     short	n2;
     void	*pfield;
     char	*pfield_name;
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry = &dbentry;
+    long	status;
 
+    dbInitEntry(pdbbase,pdbentry);
+    status = dbFindRecord(pdbentry,pname);
+    if(status) {
+	errMessage(status,pname);
+	return(-1);
+    }
     pmsg = pMsgBuff->message;
     for (n2 = 0; n2 <= pdbRecordType->no_fields - 1; n2++) {
 	pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->sortFldInd[n2]];
@@ -1045,32 +1045,39 @@ static int dbpr_report(
 	    continue;
 	switch (pdbFldDes->field_type) {
 	case DBF_STRING:
-	    sprintf(pmsg, "%s: %s", pfield_name, (char *)pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
 	case DBF_USHORT:
-	    sprintf(pmsg, "%s: 0x%-8X", pfield_name,
-		    *(unsigned short *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
 	case DBF_ENUM:
-	    sprintf(pmsg, "%s: %d", pfield_name,
-		    *(unsigned short *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
 	case DBF_FLOAT:
-	    sprintf(pmsg, "%s: %-12.4G", pfield_name,
-		    *(float *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
 	case DBF_CHAR:
-	    sprintf(pmsg, "%s: %d", pfield_name, *(char *) pfield);
+	case DBF_UCHAR:
+	case DBF_SHORT:
+	case DBF_LONG:
+	case DBF_ULONG:
+	case DBF_DOUBLE:
+	case DBF_MENU:
+	case DBF_DEVICE:
+	    status = dbFindField(pdbentry,pfield_name);
+	    sprintf(pmsg, "%s: %s", pfield_name, dbGetString(pdbentry));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
-	case DBF_UCHAR:
-	    sprintf(pmsg, "%s: %d", pfield_name,
-		    *(unsigned char *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
+	case DBF_INLINK:
+	case DBF_OUTLINK:
+	case DBF_FWDLINK: {
+		DBLINK	*plink = (DBLINK *)pfield;
+		int	ind;
+
+		status = dbFindField(pdbentry,pfield_name);
+		for(ind=0; ind<LINK_NTYPES; ind++) {
+		    if(pamaplinkType[ind].value == plink->type) break;
+		}
+		if(ind>=LINK_NTYPES) {
+		    sprintf(pmsg,"%4s: Illegal Link Type", pfield_name);
+		} else {
+		    sprintf(pmsg,"%s:%s %s", pfield_name,
+		        pamaplinkType[ind].strvalue,dbGetString(pdbentry));
+		}
+		dbpr_msgOut(pMsgBuff, tab_size);
+	    }
 	    break;
 	case DBF_NOACCESS:
 	    { /* lets just print field in hex */
@@ -1092,38 +1099,6 @@ static int dbpr_report(
 		dbpr_msgOut(pMsgBuff, tab_size);
 	    }
 	    break;
-	case DBF_SHORT:
-	    sprintf(pmsg, "%s: %d", pfield_name, *(short *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
-	case DBF_LONG:
-	    sprintf(pmsg, "%s: 0x%-8X", pfield_name, *(long *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
-	case DBF_ULONG:
-	    sprintf(pmsg, "%s: 0x%-8X", pfield_name,
-		    *(unsigned long *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
-	case DBF_DOUBLE:
-	    sprintf(pmsg, "%s: %-12.4G", pfield_name,
-		    *(double *) pfield);
-	    dbpr_msgOut(pMsgBuff, tab_size);
-	    break;
-	case DBF_MENU:
-	    dbprReportMenu(pMsgBuff, paddr->precord, pdbFldDes,
-				    *(unsigned short *)pfield, tab_size);
-	    break;
-	case DBF_DEVICE:
-	    dbprReportDevice(pMsgBuff, paddr->precord, pdbFldDes,
-				    *(unsigned short *)pfield, tab_size);
-	    break;
-	case DBF_INLINK:
-	case DBF_OUTLINK:
-	case DBF_FWDLINK:
-	    dbprReportLink(pMsgBuff, paddr->precord->name,pfield_name,
-	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
-	    break;
 	default:
 	    sprintf(pmsg, "%s: dbpr: Unknown field_type", pfield_name);
 	    dbpr_msgOut(pMsgBuff, tab_size);
@@ -1132,6 +1107,7 @@ static int dbpr_report(
     }
     pmsg[0] = '\0';
     dbpr_msgOut(pMsgBuff, tab_size);
+    dbFinishEntry(pdbentry);
     return (0);
 }
 
@@ -1227,77 +1203,6 @@ static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size)
     memset(pMsgBuff->out_buff,'\0', (int) MAXLINE + 1);
     pMsgBuff->pNext = pMsgBuff->out_buff;
     pMsgBuff->pNexTab = pMsgBuff->out_buff + tab_size;
-    return;
-}
-
-static void dbprReportLink(
-	TAB_BUFFER *pMsgBuff,char *precordname,char *pfield_name,
-	struct link *plink, short field_type,int tab_size)
-{
-    char	*pmsg = pMsgBuff->message;
-    DBENTRY	dbEntry;
-    DBENTRY	*pdbEntry;
-    long	status;
-    char	*pvalue;
-
-    pdbEntry = &dbEntry;
-    dbInitEntry(pdbbase,pdbEntry);
-    status = dbFindRecord(pdbEntry,precordname);
-    if(!status) status = dbFindField(pdbEntry,pfield_name);
-    if(status) {
-        sprintf(pmsg,"%4s: dbGetString Failed", pfield_name);
-    } else {
-	int	ind;
-
-	for(ind=0; ind<LINK_NTYPES; ind++) {
-	    if(pamaplinkType[ind].value == plink->type) break;
-	}
-	if(ind>=LINK_NTYPES) {
-	    sprintf(pmsg,"%4s: Illegal Link Type", pfield_name);
-	} else {
-	    pvalue = dbGetString(pdbEntry);
-	    sprintf(pmsg,"%4s:%s %s",
-		pfield_name,
-		pamaplinkType[ind].strvalue,
-		pvalue);
-	}
-    }
-    dbpr_msgOut(pMsgBuff,tab_size);
-    dbFinishEntry(&dbEntry);
-    return;
-}
-
-static void dbprReportMenu(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
-	unsigned short  value,int tab_size)
-{
-    dbMenu	*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
-    char *pmsg = pMsgBuff->message;
-
-    if(!pdbMenu) {
-	sprintf(pmsg,"%s menu not found",pdbFldDes->name);
-    } else {
-	sprintf(pmsg,"%4s: %s",pdbFldDes->name,pdbMenu->papChoiceValue[value]);
-    }
-    dbpr_msgOut(pMsgBuff,tab_size);
-    return;
-}
-
-static void dbprReportDevice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
-	unsigned short  value,int tab_size)
-{
-    dbDeviceMenu *pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-    char *pmsg = pMsgBuff->message;
-
-    if(!pdbDeviceMenu) {
-	sprintf(pmsg,"%s menu not found",pdbFldDes->name);
-    } else if(pdbDeviceMenu->nChoice>0) {
-	sprintf(pmsg,"%4s: %s",pdbFldDes->name,pdbDeviceMenu->papChoice[value]);
-    } else {
-	sprintf(pmsg,"DTYP: none");
-    }
-    dbpr_msgOut(pMsgBuff,tab_size);
     return;
 }
 

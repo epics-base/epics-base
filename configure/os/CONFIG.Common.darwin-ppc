@@ -10,6 +10,9 @@
 # Include definitions common to all Unix targets
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
+#
+# Set OS-specific information
+#
 OS_CLASS = Darwin
 ARCH_CLASS = ppc
 
@@ -29,7 +32,6 @@ CPPSNCFLAGS += -no-cpp-precomp
 #
 OP_SYS_CPPFLAGS += -I$(FINK_DIR)/include
 OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
-OP_SYS_LDLIBS +=
 
 #
 # Stuff that will be needed when going to shared libraries
@@ -44,4 +46,3 @@ SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 #  Command-line input support
 COMMANDLINE_LIBRARY=LIBTECLA
 LDLIBS_LIBTECLA = -ltecla_r -lncurses
-

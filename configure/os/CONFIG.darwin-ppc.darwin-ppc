@@ -32,3 +32,16 @@ OPT_CXXFLAGS_YES = -O2
 # Static linking fails on OS X (missing crt0.o)
 #
 STATIC_LDFLAGS_YES =
+
+#
+# Add support for Objective-C source
+#
+vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
+%.o: %.m
+	$(COMPILE.c) -c $<
+
+#
+# Pedantic produces way too many unnecessary messages
+#
+CONFORM_CFLAGS_STRICT=-ansi
+CONFORM_CXXFLAGS_STRICT=-ansi

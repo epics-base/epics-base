@@ -51,7 +51,8 @@ TEMPLATES += top/simpleBoot/nfsCommands
 TEMPLATES += top/simpleBoot/ioc/Makefile
 TEMPLATES += top/simpleBoot/ioc/st.cmd
 
-SCRIPTS += makeBaseApp.pl
+SCRIPTS_DEFAULT += makeBaseApp.pl
+SCRIPTS_vxWorks += makeBaseApp.pl
 
 include $(TOP)/configure/RULES_BUILD
 

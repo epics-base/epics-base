@@ -5,9 +5,9 @@ include $(TOP)/configure/CONFIG
 #
 
 INC += registry.h
-INC += registryDeviceSupport.h
-INC += registryDriverSupport.h
-INC += registryRecordType.h
+#INC += registryDeviceSupport.h moved header to src/include
+#INC += registryDriverSupport.h moved header to src/include
+#INC += registryRecordType.h moved header to src/include
 
 #       general contents of library on all platforms
 #
@@ -16,15 +16,17 @@ INC += registryRecordType.h
 #	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
 #
 
-SCRIPTS += registerRecordDeviceDriver.pl
+SCRIPTS_DEFAULT += registerRecordDeviceDriver.pl
+SCRIPTS_vxWorks += registerRecordDeviceDriver.pl
 
 registryLibrary_SRCS += registry.c
 registryLibrary_SRCS += registryRecordType.c
 registryLibrary_SRCS += registryDeviceSupport.c
 registryLibrary_SRCS += registryDriverSupport.c
 
-IOC_PROD_vxWorks = registerRecordDeviceDriver.o
+PROD_vxWorks = registerRecordDeviceDriver.o
 
-IOC_LIBRARY_vxWorks = registryLibrary
+LIBRARY_vxWorks = registryLibrary
 
 include $(TOP)/configure/RULES_BUILD
+

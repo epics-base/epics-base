@@ -6,7 +6,6 @@ TOP=..
 include $(TOP)/configure/CONFIG
 
 TARGETS = CONFIG_APP_INCLUDE
-IOC_TARGETS = $(TARGETS)
 
 include $(TOP)/configure/RULES_BUILD
 

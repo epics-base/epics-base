@@ -160,7 +160,7 @@ ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo "Expanding dbd"
 	@$(RM) $@
-	$(DBEXPAND) $(USER_DBDFLAGS) $< > $@
+	$(DBEXPAND) $(USR_DBDFLAGS) $< > $@
 endif
 
 ##################################################### Dependencies

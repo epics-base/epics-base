@@ -5,7 +5,7 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 
 #----------------------------------------------------
-#  Optimization of DB files using dbst (default: NO)
+#  Optimization of DB files using dbst (DEFAULT: NO)
 #DB_OPT = YES
 
 #----------------------------------------------------

@@ -11,32 +11,23 @@ DBDNAME = exampleApp.dbd
 PROD_LIBS	+= ca
 PROD_LIBS	+= Db
 PROD_LIBS	+= Com
-PROD_LIBS	+= Osi
 ca_DIR  = $(EPICS_BASE_LIB)
 Db_DIR  = $(EPICS_BASE_LIB)
 Com_DIR = $(EPICS_BASE_LIB)
-Osi_DIR = $(EPICS_BASE_LIB)
 
-PROD += caExample
+PROD_DEFAULT += caExample
+PROD_vxWorks += -nil-
 
-IOC_LIBRARY = exampleLib
+LIBRARY_vxWorks = exampleLib
 
 exampleLib_SRCS += xxxRecord.c
 exampleLib_SRCS += devXxxSoft.c
 exampleLib_SRCS += sncExample.c
 
-LIBOBJS += $(EPICS_BASE_BIN)/iocCore
-LIBOBJS += $(EPICS_BASE_BIN)/seq
-
-#choose either
-
-#LIBOBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
-
-# or
-
 exampleLib_SRCS += registerRecordDeviceDriver.c
 
-#end choices
+LIBOBJS += $(EPICS_BASE_BIN)/iocCore
+LIBOBJS += $(EPICS_BASE_BIN)/seq
 
 -include ../baseLIBOBJS
 
@@ -44,6 +35,5 @@ exampleLib_SRCS += registerRecordDeviceDriver.c
 #library $(LIBNAME) may be HUGE (>3kB)
 #
 include $(TOP)/configure/RULES_BUILD
-include $(TOP)/configure/RULES.registerRecordDeviceDriver
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE

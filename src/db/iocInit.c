@@ -138,6 +138,10 @@ int iocInit(char * pResourceFilename)
 	logMsg("iocInit aborting because No database loaded by dbLoad\n",0,0,0,0,0,0);
 	return(-1);
     }
+    if((errSymBld())!=0) {
+	logMsg("iocInit aborting because errSymBld failed to initialize \n",0,0,0,0,0,0);
+	return(-1);
+    }
     /* if function initHooks exists setup ptr pinitHooks */
     strcpy(name,"_");
     strcat(name,"initHooks");

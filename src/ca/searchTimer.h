@@ -33,6 +33,7 @@
 #endif
 
 #include "epicsMutex.h"
+#include "epicsGuard.h"
 #include "epicsTimer.h"
 
 #ifdef searchTimerh_epicsExportSharedSymbols
@@ -42,24 +43,25 @@
 
 #include "caProto.h"
 
-class searchTimerMutex : public epicsMutex {};
+class udpMutex;
 
 class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( class udpiiu &, epicsTimerQueue & );
+    searchTimer ( class udpiiu &, epicsTimerQueue &, udpMutex & );
     virtual ~searchTimer ();
-    void notifySearchResponse ( ca_uint32_t respDatagramSeqNo, 
+    void notifySearchResponse ( epicsGuard < udpMutex > &, 
+        ca_uint32_t respDatagramSeqNo, 
         bool seqNumberIsValid, const epicsTime & currentTime );
-    void newChannleNotify ( 
+    void newChannelNotify ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, bool firstChannel );
-    void beaconAnomalyNotify ( 
+    void beaconAnomalyNotify ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, const double & delay );
     void show ( unsigned level ) const;
 private:
-    class searchTimerMutex mutex;
     double period; /* period between tries */
     epicsTimer & timer;
     class udpiiu & iiu;
+    udpMutex & mutex;
     unsigned framesPerTry; /* # of UDP frames per search try */
     unsigned framesPerTryCongestThresh; /* one half N tries w congest */
     unsigned minRetry; /* min retry number so far */
@@ -71,8 +73,8 @@ private:
     ca_uint32_t dgSeqNoAtTimerExpireBegin; 
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
     expireStatus expire ( const epicsTime & currentTime );
-    void recomputeTimerPeriod ( unsigned minRetryNew );
-    void recomputeTimerPeriodAndStartTimer ( 
+    void recomputeTimerPeriod ( epicsGuard < udpMutex > &, unsigned minRetryNew );
+    void recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, unsigned minRetryNew, 
         const double & initialDelay );
 	searchTimer ( const searchTimer & );

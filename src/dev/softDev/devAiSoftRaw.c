@@ -72,7 +72,6 @@ struct {
 
 static long init_record(aiRecord *pai)
 {
-    special_linconv(pai,1);
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
     case (CONSTANT) :
@@ -101,27 +100,5 @@ static long read_ai( aiRecord *pai)
 
 static long special_linconv(aiRecord *pai,int after)
 {
-    double eguf,egul,rawf,rawl;
-    double eslo,eoff;
-
-    if(!after) return(0);
-    if(pai->rawf == pai->rawl) {
-        errlogPrintf("%s devAiSoftRaw RAWF == RAWL\n",pai->name);
-        return(0);
-    }
-    eguf = pai->eguf;
-    egul = pai->egul;
-    rawf = (double)pai->rawf;
-    rawl = (double)pai->rawl;
-    eslo = (eguf - egul)/(rawf - rawl);
-    eoff = (rawf*egul - rawl*eguf)/(rawf - rawl);
-    if(pai->eslo != eslo) {
-        pai->eslo = eslo;
-        db_post_events(pai,&pai->eslo,DBE_VALUE|DBE_LOG);
-    }
-    if(pai->eoff != eoff) {
-        pai->eoff = eoff;
-        db_post_events(pai,&pai->eoff,DBE_VALUE|DBE_LOG);
-    }
     return(0);
 }

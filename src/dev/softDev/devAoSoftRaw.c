@@ -91,28 +91,6 @@ static long write_ao(aoRecord *pao)
 
 static long special_linconv(aoRecord *pao, int after)
 {
-    double eguf,egul,rawf,rawl;
-    double eslo,eoff;
-
-    if(!after) return(0);
-    if(pao->rawf == pao->rawl) {
-        errlogPrintf("%s devAoSoftRaw RAWF == RAWL\n",pao->name);
-        return(0);
-    }
-    eguf = pao->eguf;
-    egul = pao->egul;
-    rawf = (double)pao->rawf;
-    rawl = (double)pao->rawl;
-    eslo = (eguf - egul)/(rawf - rawl);
-    eoff = (rawf*egul - rawl*eguf)/(rawf - rawl);
-    if(pao->eslo != eslo) {
-        pao->eslo = eslo;
-        db_post_events(pao,&pao->eslo,DBE_VALUE|DBE_LOG);
-    }
-    if(pao->eoff != eoff) {
-        pao->eoff = eoff;
-        db_post_events(pao,&pao->eoff,DBE_VALUE|DBE_LOG);
-    }
     return(0);
 }
 

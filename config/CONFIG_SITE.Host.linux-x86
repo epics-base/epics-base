@@ -2,3 +2,5 @@
 
 # linux-x86 is the new name for linux
 -include $(EPICS_BASE)/config/CONFIG_SITE.Host.Linux
+
+SHARED_LIBRARY=YES

@@ -7,3 +7,9 @@
 # JBA test override values
 #CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
 
+# NOTE: If YES then LD_LIBRARY_PATH must include the full
+# pathname $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) for
+# both the base # build and when invoking base executables.
+# Alternatively the full pathname can be added to /etc/ld.so.conf
+# and ldconfig run to inform the system of the shared libraries.
+SHARED_LIBRARIES=YES

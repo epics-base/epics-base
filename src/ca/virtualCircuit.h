@@ -126,13 +126,10 @@ public:
 
     void flushRequest ( 
         epicsGuard < epicsMutex > & );
-    bool flushBlockThreshold ( 
-        epicsGuard < epicsMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( 
-        epicsGuard < epicsMutex > & );
-    void blockUntilSendBacklogIsReasonable 
-        ( cacContextNotify &, epicsGuard < epicsMutex > & );
-    virtual void show ( unsigned level ) const;
+    void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
+    void show ( unsigned level ) const;
     bool setEchoRequestPending ( 
         epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush (

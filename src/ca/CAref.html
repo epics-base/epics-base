@@ -1804,8 +1804,14 @@ void ca_context_destroy();</pre>
 <h4>Description</h4>
 
 <p>Shut down a&nbsp;channel access client context and free any resources
-allocated. On most operating systems this is performed automatically at
-process exit.</p>
+allocated. </p>
+
+<p>On many OS that execute programs in a process based environment the
+resources used by the client library such as sockets and allocated memory are
+automatically released by the system when the process exits and
+ca_context_destroy() hasn't been called, but on light weight systems such as
+vxWorks or RTEMS no cleanup occurs unless the application call
+ca_context_destroy().</p>
 
 <h4>Returns</h4>
 

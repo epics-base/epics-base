@@ -74,43 +74,33 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
 
 nciu::~nciu ()
 {
+    delete [] this->pNameStr;
 }
 
+// channels are created by the user, and only destroyed by the user
+// using this routine
 void nciu::destroy (
     epicsGuard < epicsMutex > & callbackControlGuard, 
     epicsGuard < epicsMutex > & mutualExclusionGuard )
-{
-    this->cacCtx.destroyChannel ( 
-        callbackControlGuard, mutualExclusionGuard, *this );
-}
-
-void nciu::destructor ( 
-    epicsGuard < epicsMutex > & cbGuard, 
-    epicsGuard < epicsMutex > & guard )
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    // Send any side effect IO requests w/o holding the callback lock so that 
-    // we do not dead lock.
-    // There is special protection in this routine that prevents blocking if 
-    // this is the tcp receive thread.
-    // must not hold callback lock here
-    this->cacCtx.flushIfRequired ( guard, *this->piiu );
-
-    while ( baseNMIU * pNetIO = this->eventq.first () ) {
-        assert ( this->cacCtx.destroyIO ( cbGuard, guard, 
-            pNetIO->getId (), *this ) );
-    }
-
+{    
     // if the claim reply has not returned yet then we will issue
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
-    if ( this->connected ( guard ) ) {
-        this->getPIIU(guard)->clearChannelRequest ( 
-            guard, this->sid, this->id );
+    if ( this->channelNode::isInstalledInServer ( mutualExclusionGuard ) ) {
+        while ( baseNMIU * pNetIO = this->eventq.first () ) {
+            assert ( this->cacCtx.destroyIO ( 
+                callbackControlGuard, mutualExclusionGuard, 
+                pNetIO->getId (), *this ) );
+        }
+        this->getPIIU(mutualExclusionGuard)->clearChannelRequest ( 
+            mutualExclusionGuard, this->sid, this->id );
     }
-
-    delete [] this->pNameStr;
-    this->~nciu ();
+    
+    this->piiu->uninstallChan ( 
+        callbackControlGuard, mutualExclusionGuard, *this );
+    
+    this->cacCtx.destroyChannel ( 
+        callbackControlGuard, mutualExclusionGuard, *this );
 }
 
 void * nciu::operator new ( size_t ) // X aCC 361
@@ -265,6 +255,14 @@ unsigned nciu::nameLen (
     return this->nameLength;
 }
 
+void nciu::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > * pCallbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
+{
+    this->piiu->eliminateExcessiveSendBacklog ( 
+            pCallbackGuard, mutualExclusionGuard );
+}
+
 cacChannel::ioStatus nciu::read ( 
     epicsGuard < epicsMutex > & guard,
     unsigned type, arrayElementCount countIn, 
@@ -372,11 +370,12 @@ void nciu::subscribe (
     cacStateNotify & notify, ioid *pId )
 {
     netSubscription & io = this->cacCtx.subscriptionRequest ( 
-                guard, *this, *this, type, nElem, mask, notify );
+                guard, *this, *this, type, nElem, mask, notify, 
+                this->channelNode::isInstalledInServer ( guard ) );
+    this->eventq.add ( io );
     if ( pId ) {
         *pId = io.getId ();
     }
-    this->eventq.add ( io );
 }
 
 void nciu::ioCancel ( 

@@ -74,6 +74,9 @@ private:
     dbAddr addr;
     void initiateConnect (
         epicsGuard < epicsMutex > & );
+    void eliminateExcessiveSendBacklog (
+        epicsGuard < epicsMutex > * pCallbackGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     ioStatus read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 

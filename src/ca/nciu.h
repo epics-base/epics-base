@@ -58,6 +58,7 @@ class channelNode : public tsDLNode < class nciu >
 public:
     channelNode ();
     bool isConnected ( epicsGuard < epicsMutex > & ) const;
+    bool isInstalledInServer ( epicsGuard < epicsMutex > & ) const;
 private:
     enum channelState {
         cs_none,
@@ -92,9 +93,7 @@ class nciu :
 public:
     nciu ( cac &, netiiu &, cacChannelNotify &, 
         const char * pNameIn, cacChannel::priLev );
-    void destructor ( 
-        epicsGuard < epicsMutex > & cbGuard,
-        epicsGuard < epicsMutex > & guard );
+    ~nciu ();
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, 
         epicsGuard < epicsMutex > & cbGuard, 
@@ -155,9 +154,6 @@ public:
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
     bool connected ( epicsGuard < epicsMutex > & ) const;
 
-protected:
-    ~nciu ();
-
 private:
     tsDLList < class baseNMIU > eventq;
     caAccessRights accessRightState;
@@ -175,6 +171,9 @@ private:
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void initiateConnect (
         epicsGuard < epicsMutex > & );
+    void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     ioStatus read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
@@ -316,6 +315,15 @@ inline bool channelNode::isConnected ( epicsGuard < epicsMutex > & ) const
     return 
         this->listMember == cs_connected || 
         this->listMember == cs_subscripReqPend ||
+        this->listMember == cs_subscripUpdateReqPend;
+}
+
+inline bool channelNode::isInstalledInServer ( epicsGuard < epicsMutex > & ) const
+{
+    return 
+        this->listMember == cs_connected ||
+        this->listMember == cs_subscripReqPend ||
+        this->listMember == cs_unrespCircuit ||
         this->listMember == cs_subscripUpdateReqPend;
 }
 

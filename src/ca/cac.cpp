@@ -573,11 +573,8 @@ void cac::destroyChannel (
     if ( this->chanTable.remove ( chan ) != & chan ) {
         throw std::logic_error ( "Invalid channel identifier" );
     }
-
-    chan.getPIIU(guard)->uninstallChan ( cbGuard, guard, chan );
   
-    chan.destructor ( cbGuard, guard );
-
+    chan.~nciu ();
     this->channelFreeList.release ( & chan );
 }
 
@@ -614,36 +611,11 @@ int cac::printf ( epicsGuard < epicsMutex > & callbackControl,
     return status;
 }
 
-void cac::flushIfRequired ( epicsGuard < epicsMutex > & guard, netiiu & iiu )
-{
-    guard.assertIdenticalMutex ( this->mutex );
-
-    if ( iiu.flushBlockThreshold ( guard ) ) {
-        iiu.flushRequest ( guard );
-        // the process thread is not permitted to flush as this
-        // can result in a push / pull deadlock on the TCP pipe.
-        // Instead, the process thread scheduals the flush with the 
-        // send thread which runs at a higher priority than the 
-        // send thread. The same applies to the UDP thread for
-        // locking hierarchy reasons.
-        if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
-            // enable / disable of call back preemption must occur here
-            // because the tcpiiu might disconnect while waiting and its
-            // pointer to this cac might become invalid
-            iiu.blockUntilSendBacklogIsReasonable ( this->notify, guard );
-        }
-    }
-    else {
-        iiu.flushRequestIfAboveEarlyThreshold ( guard );
-    }
-}
-
 void cac::writeRequest ( 
     epicsGuard < epicsMutex > & guard, nciu & chan, unsigned type, 
     arrayElementCount nElem, const void * pValue )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
     chan.getPIIU(guard)->writeRequest ( guard, chan, type, nElem, pValue );
 }
 
@@ -656,7 +628,6 @@ netWriteNotifyIO & cac::writeNotifyRequest (
         guard, this->ioTable, *this, 
         netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, icni, notifyIn ) );
     this->ioTable.add ( *pIO );
-    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
     chan.getPIIU(guard)->writeNotifyRequest ( 
         guard, chan, *pIO, type, nElem, pValue );
     return *pIO.release();
@@ -671,7 +642,6 @@ netReadNotifyIO & cac::readNotifyRequest (
         guard, this->ioTable, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, icni, notifyIn ) );
     this->ioTable.add ( *pIO );
-    this->flushIfRequired ( guard, *chan.getPIIU(guard) );
     chan.getPIIU(guard)->readNotifyRequest ( guard, chan, *pIO, type, nElem );
     return *pIO.release();
 }
@@ -684,13 +654,10 @@ baseNMIU * cac::destroyIO (
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
 
-    // unistall the IO object so that a receive thread will not find it,
-    // but do _not_ hold the callback lock here because this could result 
-    // in deadlock
     baseNMIU * pIO = this->ioTable.remove ( idIn );
     if ( pIO ) {
         class netSubscription * pSubscr = pIO->isSubscription ();
-        if ( pSubscr && chan.connected ( guard ) ) {
+        if ( pSubscr ) {
             chan.getPIIU(guard)->subscriptionCancelRequest ( 
                 guard, chan, *pSubscr );  
         }
@@ -760,7 +727,8 @@ netSubscription & cac::subscriptionRequest (
     nciu & chan, privateInterfaceForIO & privChan,
     unsigned type, // X aCC 361
     arrayElementCount nElem, unsigned mask, 
-    cacStateNotify & notifyIn )
+    cacStateNotify & notifyIn,
+    bool chanIsInstalled )
 {
     guard.assertIdenticalMutex ( this->mutex );
     autoPtrRecycle  < netSubscription > pIO ( 
@@ -768,8 +736,7 @@ netSubscription & cac::subscriptionRequest (
         netSubscription::factory ( this->freeListSubscription,
                                    privChan, type, nElem, mask, notifyIn ) );
     this->ioTable.add ( *pIO );
-    if ( chan.connected ( guard ) ) {
-        this->flushIfRequired ( guard, *chan.getPIIU(guard) );
+    if ( chanIsInstalled ) {
         pIO->subscribeIfRequired ( guard, chan );
     }
     return *pIO.release ();

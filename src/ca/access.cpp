@@ -382,6 +382,8 @@ int epicsShareAPI ca_array_get ( chtype type,
         }
         unsigned tmpType = static_cast < unsigned > ( type );
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
         autoPtrFreeList < getCopy, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCopyFreeList,
                 new ( pChan->getClientCtx().getCopyFreeList ) 
@@ -449,6 +451,8 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         unsigned tmpType = static_cast < unsigned > ( type );
 
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
         autoPtrFreeList < getCallback, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCallbackFreeList,
             new ( pChan->getClientCtx().getCallbackFreeList )
@@ -512,6 +516,8 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
             return ECA_BADTYPE;
         }
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
         unsigned tmpType = static_cast < unsigned > ( type );
         autoPtrFreeList < putCallback, 0x400, epicsMutexNOOP > pNotify
                 ( pChan->getClientCtx().putCallbackFreeList,
@@ -575,6 +581,8 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
     int caStatus;
     try {
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
         pChan->write ( guard, tmpType, count, pValue );
         caStatus = ECA_NORMAL;
     }
@@ -683,6 +691,8 @@ int epicsShareAPI ca_create_subscription (
 
     try {
         epicsGuard < epicsMutex > guard ( pChan->getClientCtx().mutex );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
         autoPtrFreeList < oldSubscription, 0x400, epicsMutexNOOP > pSubsr
             ( pChan->getClientCtx().subscriptionFreeList,
                 new ( pChan->getClientCtx().subscriptionFreeList )
@@ -749,11 +759,15 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
     ca_client_context & cac = chan.getClientCtx ();
     if ( cac.pCallbackGuard.get() ) {
         epicsGuard < epicsMutex > guard ( cac.mutex );
+        chan.eliminateExcessiveSendBacklog ( 
+            cac.pCallbackGuard.get(), guard );
         pMon->ioCancel ( *cac.pCallbackGuard, guard );
     }
     else {
         epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
         epicsGuard < epicsMutex > guard ( cac.mutex );
+        chan.eliminateExcessiveSendBacklog ( 
+            &cbGuard, guard );
         pMon->ioCancel ( cbGuard, guard );
     }
     return ECA_NORMAL;

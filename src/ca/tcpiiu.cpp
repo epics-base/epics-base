@@ -1540,41 +1540,50 @@ bool tcpiiu::flush ( epicsGuard < epicsMutex > & guard )
     return true;
 }
 
-// ~tcpiiu() will not return while this->blockingForFlush is greater than zero
-void tcpiiu::blockUntilSendBacklogIsReasonable ( 
-          cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
+void tcpiiu::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > * pCallbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
-    guard.assertIdenticalMutex ( this->mutex );
+    mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
 
-    assert ( this->blockingForFlush < UINT_MAX );
-    this->blockingForFlush++;
-    while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiucs_connected ) {
-        epicsGuardRelease < epicsMutex > autoRelease ( guard );
-        notify.blockForEventAndEnableCallbacks ( this->flushBlockEvent, 30.0 );
+    if ( this->sendQue.flushBlockThreshold ( 0u ) ) {
+        this->flushRequest ( mutualExclusionGuard );
+        // the process thread is not permitted to flush as this
+        // can result in a push / pull deadlock on the TCP pipe.
+        // Instead, the process thread scheduals the flush with the 
+        // send thread which runs at a higher priority than the 
+        // receive thread. The same applies to the UDP thread for
+        // locking hierarchy reasons.
+        if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+            // enable / disable of call back preemption must occur here
+            // because the tcpiiu might disconnect while waiting and its
+            // pointer to this cac might become invalid            
+            assert ( this->blockingForFlush < UINT_MAX );
+            this->blockingForFlush++;
+            while ( this->sendQue.flushBlockThreshold(0u) && 
+                    this->state == iiucs_connected ) {
+                epicsGuardRelease < epicsMutex > autoRelease ( 
+                        mutualExclusionGuard );
+                if ( pCallbackGuard ) {
+                    epicsGuardRelease < epicsMutex > 
+                        autoReleaseCB ( *pCallbackGuard );
+                    this->flushBlockEvent.wait ( 30.0 );
+                }
+                else {
+                    this->flushBlockEvent.wait ( 30.0 );
+                }
+            }
+            assert ( this->blockingForFlush > 0u );
+            this->blockingForFlush--;
+            if ( this->blockingForFlush == 0 ) {
+                this->flushBlockEvent.signal ();
+            }
+        }
     }
-    assert ( this->blockingForFlush > 0u );
-    this->blockingForFlush--;
-    if ( this->blockingForFlush == 0 ) {
-        this->flushBlockEvent.signal ();
-    }
-}
-
-void tcpiiu::flushRequestIfAboveEarlyThreshold ( 
-    epicsGuard < epicsMutex > & guard )
-{
-    guard.assertIdenticalMutex ( this->mutex );
-
-    if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
+    else if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
         this->earlyFlush = true;
         this->sendThreadFlushEvent.signal ();
     }
-}
-
-bool tcpiiu::flushBlockThreshold ( 
-    epicsGuard < epicsMutex > & guard ) const
-{
-    guard.assertIdenticalMutex ( this->mutex );
-    return this->sendQue.flushBlockThreshold ( 0u );
 }
 
 osiSockAddr tcpiiu::getNetworkAddress (

@@ -115,19 +115,9 @@ void netiiu::flushRequest (
 {
 }
 
-bool netiiu::flushBlockThreshold ( 
-    epicsGuard < epicsMutex > & ) const
-{
-    return false;
-}
-
-void netiiu::flushRequestIfAboveEarlyThreshold ( 
+void netiiu::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > *,
     epicsGuard < epicsMutex > & )
-{
-}
-
-void netiiu::blockUntilSendBacklogIsReasonable 
-    ( cacContextNotify &, epicsGuard < epicsMutex > & )
 {
 }
 

@@ -221,4 +221,9 @@ void dbChannelIO::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
+void dbChannelIO::eliminateExcessiveSendBacklog (
+    epicsGuard < epicsMutex > * /* pCallbackGuard */, 
+    epicsGuard < epicsMutex > & /* mutualExclusionGuard */ )
+{
+}
 

@@ -215,12 +215,9 @@ private:
         nciu & chan, netSubscription & subscr );
     void flushRequest ( 
         epicsGuard < epicsMutex > & );
-    bool flushBlockThreshold ( 
-        epicsGuard < epicsMutex > & ) const;
-    void flushRequestIfAboveEarlyThreshold ( 
-        epicsGuard < epicsMutex > & );
-    void blockUntilSendBacklogIsReasonable 
-        ( cacContextNotify &, epicsGuard < epicsMutex > & );
+    void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & );
     osiSockAddr getNetworkAddress (

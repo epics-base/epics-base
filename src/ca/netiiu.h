@@ -49,6 +49,9 @@ public:
         epicsGuard < epicsMutex > & ) const = 0;
     virtual bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const = 0;
+    virtual void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual void writeRequest ( 
         epicsGuard < epicsMutex > &, nciu &, 
         unsigned type, arrayElementCount nElem, 
@@ -76,12 +79,6 @@ public:
         nciu & chan, netSubscription & subscr ) = 0;
     virtual void flushRequest ( 
         epicsGuard < epicsMutex > & ) = 0;
-    virtual bool flushBlockThreshold ( 
-        epicsGuard < epicsMutex > & ) const = 0;
-    virtual void flushRequestIfAboveEarlyThreshold ( 
-        epicsGuard < epicsMutex > & ) = 0;
-    virtual void blockUntilSendBacklogIsReasonable 
-        ( cacContextNotify &, epicsGuard < epicsMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & ) = 0;
     virtual osiSockAddr getNetworkAddress (

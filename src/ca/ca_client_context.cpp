@@ -189,12 +189,15 @@ void ca_client_context::destroyChannel ( oldChannelNotify & chan )
 {
     if ( this->pCallbackGuard.get() ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
+        chan.eliminateExcessiveSendBacklog ( 
+            this->pCallbackGuard.get(), guard );
         chan.destructor ( *this->pCallbackGuard.get(), guard );
         this->oldChannelNotifyFreeList.release ( & chan );
     }
     else {
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
+        chan.eliminateExcessiveSendBacklog ( &cbGuard, guard );
         chan.destructor ( cbGuard, guard );
         this->oldChannelNotifyFreeList.release ( & chan );
     }

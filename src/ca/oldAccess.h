@@ -71,6 +71,9 @@ public:
         unsigned level ) const;
     void initiateConnect (
         epicsGuard < epicsMutex > & );
+    void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
@@ -285,6 +288,8 @@ public:
         epicsGuard < epicsMutex > &, const char * pChannelName, 
         oldChannelNotify &, cacChannel::priLev pri );
     void flush ( epicsGuard < epicsMutex > & );
+    void eliminateExcessiveSendBacklog ( 
+        oldChannelNotify & chan, epicsGuard < epicsMutex > & guard );
     int pendIO ( const double & timeout );
     int pendEvent ( const double & timeout );
     bool ioComplete () const;
@@ -432,6 +437,14 @@ inline void oldChannelNotify::initiateConnect (
     epicsGuard < epicsMutex > & guard )
 {
     this->io.initiateConnect ( guard );
+}
+
+inline void oldChannelNotify::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > * pCallbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
+{
+    this->io.eliminateExcessiveSendBacklog (
+        pCallbackGuard, mutualExclusionGuard );
 }
 
 inline void oldChannelNotify::ioCancel (    
@@ -628,4 +641,11 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO (
     return this->ioSeqNo;
 }
 
+inline void ca_client_context::eliminateExcessiveSendBacklog ( 
+    oldChannelNotify & chan, epicsGuard < epicsMutex > & guard )
+{
+    chan.eliminateExcessiveSendBacklog ( 
+            this->pCallbackGuard.get(), guard );
+}
+        
 #endif // ifndef oldAccessh

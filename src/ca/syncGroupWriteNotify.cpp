@@ -35,6 +35,8 @@ void syncGroupWriteNotify::begin (
     epicsGuard < epicsMutex > & guard, unsigned type, 
     arrayElementCount count, const void * pValueIn )
 {
+    this->chan->getClientCtx().eliminateExcessiveSendBacklog ( 
+        *this->chan, guard );
     this->ioComplete = false;
     boolFlagManager mgr ( this->idIsValid );
     this->chan->write ( guard, type, count, 

@@ -184,6 +184,9 @@ public:
         unsigned level ) const = 0;
     virtual void initiateConnect (
         epicsGuard < epicsMutex > & ) = 0;
+    virtual void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > * pCallbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual ioStatus read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
@@ -285,8 +288,6 @@ public:
     virtual int vPrintf ( const char * pformat, va_list args ) const = 0;
 // backwards compatibility (from here down)
     virtual void attachToClientCtx () = 0;
-    virtual void blockForEventAndEnableCallbacks ( 
-        class epicsEvent & event, const double & timeout ) = 0;
     virtual void callbackProcessingInitiateNotify () = 0;
     virtual void callbackProcessingCompleteNotify () = 0;
 };

@@ -1229,25 +1229,10 @@ void udpiiu::flushRequest (
     netiiu::flushRequest ( guard );
 }
 
-bool udpiiu::flushBlockThreshold ( 
-    epicsGuard < epicsMutex > & guard ) const
+void udpiiu::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > *,
+    epicsGuard < epicsMutex > & )
 {
-    guard.assertIdenticalMutex ( this->cacMutex );
-    return netiiu::flushBlockThreshold ( guard );
-}
-
-void udpiiu::flushRequestIfAboveEarlyThreshold ( 
-    epicsGuard < epicsMutex > & guard )
-{
-    guard.assertIdenticalMutex ( this->cacMutex );
-    netiiu::flushRequestIfAboveEarlyThreshold ( guard );
-}
-
-void udpiiu::blockUntilSendBacklogIsReasonable ( 
-    cacContextNotify & notify, epicsGuard < epicsMutex > & guard )
-{
-    guard.assertIdenticalMutex ( this->cacMutex );
-    netiiu::blockUntilSendBacklogIsReasonable ( notify, guard );
 }
 
 void udpiiu::requestRecvProcessPostponedFlush (

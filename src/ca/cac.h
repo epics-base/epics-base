@@ -169,7 +169,7 @@ public:
     netSubscription & subscriptionRequest ( 
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
         unsigned type, arrayElementCount nElem, unsigned mask, 
-        cacStateNotify & );
+        cacStateNotify &, bool channelIsInstalled );
     baseNMIU * destroyIO (
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, 
@@ -224,7 +224,6 @@ public:
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void destroyIIU ( tcpiiu & iiu ); 
-    void flushIfRequired ( epicsGuard < epicsMutex > &, netiiu & ); 
 
 private:
     localHostName hostNameCache;

@@ -815,8 +815,7 @@ class casClientMon;
 // caServerI
 // 
 class caServerI : 
-	public epicsMutex, // osiMutex must be first because it is used
-			// by ioBlockedList and casEventRegistry
+	public epicsMutex, 
 	public caServerOS, 
 	public caServerIO, 
 	public ioBlockedList, 

@@ -230,7 +230,7 @@ int main (int argc, char *argv[])
             isArray = 1;
             break;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &caTimeout) != 1)
+            if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
                         "- ignored. ('caput -h' for help.)\n", optarg);

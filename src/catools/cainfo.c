@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 
 #include <cadef.h>
 #include <epicsGetopt.h>
@@ -136,7 +136,7 @@ int main (int argc, char *argv[])
             usage();
             return 0;
         case 'w':               /* Set CA timeout value */
-            if(sscanf(optarg,"%lf", &caTimeout) != 1)
+            if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
                         "- ignored. ('caget -h' for help.)\n", optarg);

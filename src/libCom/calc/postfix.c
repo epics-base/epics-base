@@ -55,7 +55,7 @@
  *		FLASE		expression element not found
  */
 
-#include	<stdlib.h>
+#include	<epicsStdlib.h>
 #include	<stdio.h>
 #include	<string.h>
 #include	<ctype.h>
@@ -347,7 +347,7 @@ long epicsShareAPI postfix(const char *pin,char *ppostfix,short *perror)
 		*ppostfix++ = '\0';
 
 		ppostfix = pposthold;
-		if ( sscanf(ppostfix,"%lg",&constant) != 1) {
+		if ( epicsScanDouble(ppostfix, &constant) != 1) {
 			*ppostfix = '\0';
 		} else {
 			memcpy(ppostfix,(void *)&constant,8);

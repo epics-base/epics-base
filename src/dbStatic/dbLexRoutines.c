@@ -12,7 +12,7 @@
 
 /*The routines in this module are serially reusable NOT reentrant*/
 
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -847,7 +847,7 @@ static void dbBreakBody(void)
 	
 	praw = (char *)popFirstTemp();
 	peng = (char *)popFirstTemp();
-	if((sscanf(praw,"%lf",&raw)!=1) || (sscanf(peng,"%lf",&eng)!=1) ) {
+	if((epicsScanDouble(praw, &raw)!=1) || (sscanf(peng,"%lf",&eng)!=1) ) {
 	    yyerrorAbort("dbbrkTable: Illegal table value");
 	}
 	free((void *)praw);

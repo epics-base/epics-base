@@ -11,7 +11,7 @@
 /* base/src/db  $Id$ */
 /*	database access test subroutines */
 
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -577,7 +577,7 @@ long epicsShareAPI dbtpf(const char *pname,const char *pvalue)
 	}
     } else printf("sscanf failed for DBR_ULONG\n");
     /* DBR_FLOAT */
-    if(validNumber && sscanf(pvalue,"%e",&fvalue)==1) {
+    if(validNumber && epicsScanFloat(pvalue, &fvalue)==1) {
 	status=dbPutField(&addr,DBR_FLOAT,&fvalue,1L);
 	if(status!=0) errMessage(status,"DBR_FLOAT failed");
 	else {
@@ -590,7 +590,7 @@ long epicsShareAPI dbtpf(const char *pname,const char *pvalue)
 	}
     } else printf("sscanf failed for DBR_FLOAT\n");
     /* DBR_DOUBLE */
-    if(validNumber && sscanf(pvalue,"%le",&dvalue)==1) {
+    if(validNumber && epicsScanDouble(pvalue, &dvalue)==1) {
 	status=dbPutField(&addr,DBR_DOUBLE,&dvalue,1L);
 	if(status!=0) errMessage(status,"DBR_DOUBLE failed");
 	else {

@@ -9,7 +9,7 @@
 \*************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 
 #include "caDiagnostics.h"
 
@@ -32,7 +32,7 @@ int main ( int argc, char **argv )
     }
 
     if ( argc >= 4 ) {
-        int nConverted = sscanf ( argv[3], "%lf", &delay );
+        int nConverted = epicsScanDouble( argv[3], &delay );
         if ( nConverted != 1 ) {
             printf ( "conversion failed, changing delay arg \"%s\" to %f\n",
                 argv[2], delay );

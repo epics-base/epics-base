@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI epicsStrScanDouble(const char *str, double *dest);
-epicsShareFunc int epicsShareAPI epicsStrScanFloat(const char *str, float *dest);
+epicsShareFunc int epicsShareAPI epicsScanDouble(const char *str, double *dest);
+epicsShareFunc int epicsShareAPI epicsScanFloat(const char *str, float *dest);
 
 #include <stdlib.h>
 #include <osdStrtod.h>

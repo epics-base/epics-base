@@ -16,7 +16,7 @@
  */
 
 #include <stddef.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -228,10 +228,10 @@ int  epicsShareAPI recGblInitConstantLink(
 	sscanf(plink->value.constantStr,"%lu",(unsigned long *)pdest);
 	break;
     case DBF_FLOAT : 
-	sscanf(plink->value.constantStr,"%f",(float *)pdest);
+	epicsScanFloat(plink->value.constantStr, (float *)pdest);
 	break;
     case DBF_DOUBLE : 
-	sscanf(plink->value.constantStr,"%lf",(double *)pdest);
+	epicsScanDouble(plink->value.constantStr, (double *)pdest);
 	break;
     default:
 	epicsPrintf("Error in recGblInitConstantLink: Illegal DBF type\n");

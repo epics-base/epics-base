@@ -14,7 +14,7 @@
  *      Date:              12-9-93
  */
 #include <stddef.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -196,7 +196,7 @@ static long cvt_st_ul(
 
    /*Convert to double first so that numbers like 1.0e3 convert properly*/
    /*Problem was old database access said to get unsigned long as double*/
-   if (sscanf(from, "%lf", &value) == 1) {
+   if (epicsScanDouble(from, &value) == 1) {
       *to = (epicsUInt32)value;
       return(0);
    }
@@ -216,7 +216,7 @@ static long cvt_st_f(
  {
    float value;
 
-   if (sscanf(from, "%f", &value) == 1) {
+   if (epicsScanFloat(from, &value) == 1) {
       *to = value;
       return(0);
    }
@@ -236,7 +236,7 @@ static long cvt_st_d(
  {
    double value;
 
-   if (sscanf(from, "%lf", &value) == 1) {
+   if (epicsScanDouble(from, &value) == 1) {
       *to = value;
       return(0);
    }

@@ -15,7 +15,7 @@
 */
 
 #include <stddef.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -266,7 +266,7 @@ static long getStringUlong(
     /*Convert to double first so that numbers like 1.0e3 convert properly*/
     /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(psrc,"%lf",&value) == 1) {
+	if(epicsScanDouble(psrc, &value) == 1) {
 		*pbuffer = (epicsUInt32)value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
@@ -278,7 +278,7 @@ static long getStringUlong(
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
-	if(sscanf(psrc,"%lf",&value) == 1) {
+	if(epicsScanDouble(psrc, &value) == 1) {
 	    *pbuffer = (epicsUInt32)value;
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0;
@@ -303,7 +303,7 @@ static long getStringFloat(
     float  value;
 
     if(nRequest==1 && offset==0) {
-	if(sscanf(psrc,"%f",&value) == 1) {
+	if(epicsScanFloat(psrc, &value) == 1) {
 		*pbuffer = value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
@@ -315,7 +315,7 @@ static long getStringFloat(
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
-	if(sscanf(psrc,"%f",&value) == 1) {
+	if(epicsScanFloat(psrc, &value) == 1) {
 	    *pbuffer = value;
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0.0;
@@ -340,7 +340,7 @@ static long getStringDouble(
     double  value;
 
     if(nRequest==1 && offset==0) {
-	if(sscanf(psrc,"%lf",&value) == 1) {
+	if(epicsScanDouble(psrc, &value) == 1) {
 		*pbuffer = value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
@@ -352,7 +352,7 @@ static long getStringDouble(
     }
     psrc += MAX_STRING_SIZE*offset;
     while (nRequest) {
-	if(sscanf(psrc,"%lf",&value) == 1) {
+	if(epicsScanDouble(psrc, &value) == 1) {
 	    *pbuffer = value;
 	} else if(strlen(psrc) == 0) {
 		*pbuffer = 0.0;
@@ -2368,7 +2368,7 @@ static long putStringUlong(
     /*Convert to double first so that numbers like 1.0e3 convert properly*/
     /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	if(epicsScanDouble(pbuffer, &value) == 1) {
 		*pdest = (unsigned long)value;
 		return(0);
 	}
@@ -2376,7 +2376,7 @@ static long putStringUlong(
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	if(epicsScanDouble(pbuffer, &value) == 1) {
 	    *pdest = (unsigned long)value;
 	} else {
 	    return(-1);
@@ -2399,7 +2399,7 @@ static long putStringFloat(
     float  value;
 
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%f",&value) == 1) {
+	if(epicsScanFloat(pbuffer, &value) == 1) {
 		*pdest = value;
 		return(0);
 	} else {
@@ -2408,7 +2408,7 @@ static long putStringFloat(
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%f",&value) == 1) {
+	if(epicsScanFloat(pbuffer, &value) == 1) {
 	    *pdest = value;
 	} else {
 	    return(-1);
@@ -2431,7 +2431,7 @@ static long putStringDouble(
     double  value;
 
     if(nRequest==1 && offset==0) {
-	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	if(epicsScanDouble(pbuffer, &value) == 1) {
 		*pdest = value;
 		return(0);
 	} else {
@@ -2440,7 +2440,7 @@ static long putStringDouble(
     }
     pdest += offset;
     while (nRequest) {
-	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	if(epicsScanDouble(pbuffer, &value) == 1) {
 	    *pdest = value;
 	} else {
 	    return(-1);

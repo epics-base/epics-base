@@ -1,4 +1,4 @@
-/*************************************************************************\
+epicsS*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -16,7 +16,7 @@
 
 #define AIT_CONVERT_SOURCE 1
 #include <stdio.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <limits.h>
 #include "epicsStdio.h"
 #define epicsExportSharedSymbols
@@ -52,7 +52,7 @@ bool getStringAsDouble ( const char * pString,
         ftmp = itmp;
     }
     else {
-	    int j = sscanf ( pString,"%lf", &ftmp );
+	    int j = epicsScanDouble( pString, &ftmp );
 	    if ( j != 1 ) {
 		    j = sscanf ( pString,"%x", &itmp );
             if ( j == 1 ) {

@@ -14,7 +14,7 @@
  *      Date:   4/15/88
  */
 #include <stddef.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -130,14 +130,14 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 		  printf("\n\t LONG GET failed");
 		else ca_dump_dbr(DBR_LONG,1,buffer);
 	}
-	if(sscanf(pvalue,"%f",&floatvalue)==1) {
+	if(epicsScanFloat(pvalue, &floatvalue)==1) {
 	  if (db_put_field(paddr,DBR_FLOAT,&floatvalue,1) < 0) 
 		printf("\n\t FLOAT failed ");
 	  if (db_get_field(paddr,DBR_FLOAT,buffer,1,NULL) < 0) 
 		printf("\n\t FLOAT GET failed");
 	  else ca_dump_dbr(DBR_FLOAT,1,buffer);
 	}
-	if(sscanf(pvalue,"%f",&floatvalue)==1) {
+	if(epicsScanFloat(pvalue, &floatvalue)==1) {
 	  doublevalue=floatvalue;
 	  if (db_put_field(paddr,DBR_DOUBLE,&doublevalue,1) < 0)
 			printf("\n\t DOUBLE failed ");

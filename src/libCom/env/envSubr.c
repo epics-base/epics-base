@@ -37,7 +37,7 @@
 *-***************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <string.h>
 #include <limits.h>
 
@@ -198,7 +198,7 @@ double	*pDouble	/* O pointer to place to store value */
 
     ptext = envGetConfigParam(pParam, sizeof text, text);
     if (ptext != NULL) {
-	count = sscanf(text, "%lf", pDouble);
+	count = epicsScanDouble(text, pDouble);
 	if (count == 1) {
 	    return 0;
 	}

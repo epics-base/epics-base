@@ -15,7 +15,7 @@
  *      Date:   	        07/18/91
  */
 
-#include <stdlib.h>
+#include <epicsStdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -515,7 +515,7 @@ static void initPeriodic()
 		papPeriodic[i] = psl;
                 psl->lock = epicsMutexMustCreate();
 		ellInit(&psl->list);
-		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%lf",&temp);
+		epicsScanDouble(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC], &temp);
 		psl->period = temp;
 	}
 }

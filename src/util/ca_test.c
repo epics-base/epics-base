@@ -20,6 +20,7 @@
  */
 #include <string.h>
 #include <stdio.h>
+#include <epicsStdlib.h>
 
 #ifndef LOCAL
 #define LOCAL static
@@ -258,7 +259,7 @@ char		*pvalue
 		SEVCHK(status, NULL);
 		verify_value(chan_id, DBR_LONG);
 	}
-	if(sscanf(pvalue,"%f",&floatvalue)==1) {
+	if(epicsScanFloat(pvalue, &floatvalue)==1) {
 		/*
 		 * single precision float ca_put
 		 */
@@ -269,7 +270,7 @@ char		*pvalue
 		SEVCHK(status, NULL);
 		verify_value(chan_id, DBR_FLOAT);
 	}
-	if(sscanf(pvalue,"%lf",&doublevalue)==1) {
+	if(epicsScanDouble(pvalue, &doublevalue)==1) {
 		/*
 		 * double precision float ca_put
 		 */

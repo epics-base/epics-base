@@ -182,7 +182,7 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
 
 extern "C" void cacAttachClientCtx ( void * pPrivate )
 {
-    int status = ca_attach_context ( (struct ca_client_context *) pPrivate );
+    int status = ca_attach_context ( (ca_client_context *) pPrivate );
     assert ( status == ECA_NORMAL );
 }
 

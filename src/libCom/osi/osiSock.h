@@ -62,17 +62,17 @@ epicsShareFunc void epicsShareAPI ipAddrToA
 	(const struct sockaddr_in *pInetAddr, char *pBuf, unsigned bufSize);
 
 /*
- * sockAddrToDottedA () 
+ * sockAddrToDottedIP () 
  * typically convert to raw dotted IP address with trailing port
  */
-epicsShareFunc void epicsShareAPI sockAddrToDottedA 
+epicsShareFunc void epicsShareAPI sockAddrToDottedIP 
 			( const struct sockaddr *paddr, char *pBuf, unsigned bufSize );
 
 /*
- * ipAddrToDottedA () 
+ * ipAddrToDottedIP () 
  * convert to raw dotted IP address with trailing port
  */
-epicsShareFunc void epicsShareAPI ipAddrToDottedA 
+epicsShareFunc void epicsShareAPI ipAddrToDottedIP 
 			( const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize );
 
 /*

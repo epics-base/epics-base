@@ -81,7 +81,7 @@ void epicsShareAPI ipAddrToA
 
 	len = ipAddrToHostName ( &paddr->sin_addr, pBuf, bufSize );
 	if ( len == 0 ) {
-        ipAddrToDottedA ( paddr, pBuf, bufSize );
+        ipAddrToDottedIP ( paddr, pBuf, bufSize );
 	}
     else {
         assert ( len < bufSize );
@@ -97,9 +97,9 @@ void epicsShareAPI ipAddrToA
 }
 
 /*
- * sockAddrToDottedA () 
+ * sockAddrToDottedIP () 
  */
-void epicsShareAPI sockAddrToDottedA 
+void epicsShareAPI sockAddrToDottedIP 
 			( const struct sockaddr *paddr, char *pBuf, unsigned bufSize )
 {
 	if ( paddr->sa_family != AF_INET ) {
@@ -111,14 +111,14 @@ void epicsShareAPI sockAddrToDottedA
 	}
 	else {
         const struct sockaddr_in *paddr_in = ( const struct sockaddr_in * ) paddr;
-        ipAddrToDottedA ( paddr_in, pBuf, bufSize );
+        ipAddrToDottedIP ( paddr_in, pBuf, bufSize );
     }
 }
 
 /*
- * ipAddrToDottedA () 
+ * ipAddrToDottedIP () 
  */
-void epicsShareAPI ipAddrToDottedA 
+void epicsShareAPI ipAddrToDottedIP 
 			( const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
 {
     if ( bufSize > maxDottedIPDigit ) {

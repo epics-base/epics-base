@@ -112,7 +112,7 @@ void dbCaRemoveLink( struct link *plink)
     if(!pca) return;
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
-	epicsPrintf("dbCaRemoveLink: semStatus!OK\n");
+	errlogPrintf("dbCaRemoveLink: semStatus!OK\n");
 	return; 
     }
     pca->plink = 0;
@@ -132,13 +132,13 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
     short		link_action = 0;
 
     if(!pca) {
-	epicsPrintf("dbCaGetLink: record %s pv_link.pvt is NULL\n",
+	errlogPrintf("dbCaGetLink: record %s pv_link.pvt is NULL\n",
 		plink->value.pv_link.precord);
 	return(-1);
     }
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
-	epicsPrintf("dbCaGetLink: semStatus!OK\n");
+	errlogPrintf("dbCaGetLink: semStatus!OK\n");
 	return(-1);
     }
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
@@ -207,14 +207,14 @@ long dbCaPutLink(struct link *plink,short dbrType,
     short	link_action = 0;
 
     if(!pca) {
-	epicsPrintf("dbCaPutLink: record %s pv_link.pvt is NULL\n",
+	errlogPrintf("dbCaPutLink: record %s pv_link.pvt is NULL\n",
 		plink->value.pv_link.precord);
 	return(-1);
     }
     /* put the new value in */
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
-	epicsPrintf("dbCaGetLink: semStatus!OK\n");
+	errlogPrintf("dbCaGetLink: semStatus!OK\n");
 	return(-1);
     }
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
@@ -273,17 +273,17 @@ long dbCaGetAttributes(struct link *plink,
     caAttributes *pcaAttributes;
 
     if(!plink || (plink->type!=CA_LINK)) {
-	epicsPrintf("dbCaGetAttributes: called for non CA_LINK\n");
+	errlogPrintf("dbCaGetAttributes: called for non CA_LINK\n");
 	return(-1);
     }
     pca = (caLink *)plink->value.pv_link.pvt;
     if(!pca) {
-	epicsPrintf("dbCaGetAttributes: record %s pv_link.pvt is NULL\n",
+	errlogPrintf("dbCaGetAttributes: record %s pv_link.pvt is NULL\n",
 		plink->value.pv_link.precord);
 	return(-1);
     }
     if(pca->pcaAttributes) {
-	epicsPrintf("dbCaGetAttributes: record %s duplicate call\n",
+	errlogPrintf("dbCaGetAttributes: record %s duplicate call\n",
 		plink->value.pv_link.precord);
 	return(-1);
     }
@@ -292,7 +292,7 @@ long dbCaGetAttributes(struct link *plink,
     pcaAttributes->usrPvt = usrPvt;
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
-	epicsPrintf("dbCaGetLink: semStatus!OK\n");
+	errlogPrintf("dbCaGetLink: semStatus!OK\n");
 	return(-1);
     }
     pca->pcaAttributes = pcaAttributes;
@@ -448,71 +448,73 @@ static void exceptionCallback(struct exception_handler_args args)
 
 static void eventCallback(struct event_handler_args arg)
 {
-	caLink		*pca = (caLink *)arg.usr;
-	struct link	*plink;
-	long		size;
-	STATUS		semStatus;
-	dbCommon	*precord = 0;
-	struct dbr_time_double *pdbr_time_double;
+    caLink   *pca = (caLink *)arg.usr;
+    DBLINK   *plink;
+    long     size;
+    STATUS   semStatus;
+    dbCommon *precord = 0;
+    struct dbr_time_double *pdbr_time_double;
 
-	if(!pca) {
-		epicsPrintf("eventCallback why was arg.usr NULL\n");
-		return;
-	}
-	semStatus = semTake(pca->lock,WAIT_FOREVER);
-	if(semStatus!=OK) {
-	    epicsPrintf("dbCa eventTask: semStatus!OK\n");
-	    return;
-	}
-	plink = pca->plink;
-	if(!plink) goto done;
-	precord = (dbCommon *)plink->value.pv_link.precord;
-	if(arg.status != ECA_NORMAL) {
-		if(precord) {
-			if(arg.status!=ECA_NORDACCESS)
-			epicsPrintf("dbCa: eventCallback record %s error %s\n",
-				precord->name,ca_message(arg.status));
-		 } else {
-			epicsPrintf("dbCa: eventCallback error %s\n",
-				ca_message(arg.status));
-		}
-		goto done;
-	}
-	if(!arg.dbr) {
-		epicsPrintf("eventCallback why was arg.dbr NULL\n");
-		goto done;
-	}
-	size = arg.count * dbr_value_size[arg.type];
-	if((arg.type==DBR_TIME_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
-	    memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
-	    pca->gotInString = TRUE;
-	} else switch (arg.type){
-	case DBR_TIME_STRING: 
-	case DBR_TIME_SHORT: 
-	case DBR_TIME_FLOAT:
-	case DBR_TIME_ENUM:
-	case DBR_TIME_CHAR:
-	case DBR_TIME_LONG:
-	case DBR_TIME_DOUBLE:
-	    memcpy(pca->pgetNative,dbr_value_ptr(arg.dbr,arg.type),size);
-	    pca->gotInNative = TRUE;
-	    break;
-	default:
-	    errMessage(-1,"dbCa: eventCallback Logic Error\n");
-	    break;
-	}
-	pdbr_time_double = (struct dbr_time_double *)arg.dbr;
-	pca->sevr = (unsigned short)pdbr_time_double->severity;
-	memcpy(&pca->timeStamp,&pdbr_time_double->stamp,sizeof(TS_STAMP));
-	if(precord) {
-	    struct pv_link *ppv_link = &(plink->value.pv_link);
+    if(!pca) {
+        errlogPrintf("eventCallback why was arg.usr NULL\n");
+        return;
+    }
+    semStatus = semTake(pca->lock,WAIT_FOREVER);
+    if(semStatus!=OK) {
+        errlogPrintf("dbCa eventTask: semStatus!OK\n");
+        return;
+    }
+    plink = pca->plink;
+    if(!plink) goto done;
+    precord = (dbCommon *)plink->value.pv_link.precord;
+    if(arg.status != ECA_NORMAL) {
+        if(precord) {
+            /*ECA_NORDACCESS handled by accessRightsCallback*/
+            /*ECA_GETFAIL handled by connectCallback*/
+            if((arg.status!=ECA_NORDACCESS) && (arg.status!=ECA_GETFAIL))
+            errlogPrintf("dbCa: eventCallback record %s error %s\n",
+            	precord->name,ca_message(arg.status));
+         } else {
+            errlogPrintf("dbCa: eventCallback error %s\n",
+            	ca_message(arg.status));
+        }
+        goto done;
+    }
+    if(!arg.dbr) {
+        errlogPrintf("eventCallback why was arg.dbr NULL\n");
+        goto done;
+    }
+    size = arg.count * dbr_value_size[arg.type];
+    if((arg.type==DBR_TIME_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
+        memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
+        pca->gotInString = TRUE;
+    } else switch (arg.type){
+    case DBR_TIME_STRING: 
+    case DBR_TIME_SHORT: 
+    case DBR_TIME_FLOAT:
+    case DBR_TIME_ENUM:
+    case DBR_TIME_CHAR:
+    case DBR_TIME_LONG:
+    case DBR_TIME_DOUBLE:
+        memcpy(pca->pgetNative,dbr_value_ptr(arg.dbr,arg.type),size);
+        pca->gotInNative = TRUE;
+        break;
+    default:
+        errMessage(-1,"dbCa: eventCallback Logic Error\n");
+        break;
+    }
+    pdbr_time_double = (struct dbr_time_double *)arg.dbr;
+    pca->sevr = (unsigned short)pdbr_time_double->severity;
+    memcpy(&pca->timeStamp,&pdbr_time_double->stamp,sizeof(TS_STAMP));
+    if(precord) {
+        struct pv_link *ppv_link = &(plink->value.pv_link);
 
-	    if((ppv_link->pvlMask&pvlOptCP)
-	    || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
-		scanOnce(precord);
-	}
+        if((ppv_link->pvlMask&pvlOptCP)
+        || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
+        scanOnce(precord);
+    }
 done:
-	semGive(pca->lock);
+    semGive(pca->lock);
 }
 
 static void getAttribEventCallback(struct event_handler_args arg)
@@ -524,18 +526,18 @@ const struct dbr_ctrl_double  *dbr;
 	caAttributes	*pcaAttributes = NULL;
 
 	if(!pca) {
-		epicsPrintf("getAttribEventCallback why was arg.usr NULL\n");
+		errlogPrintf("getAttribEventCallback why was arg.usr NULL\n");
 		return;
 	}
 	semStatus = semTake(pca->lock,WAIT_FOREVER);
 	if(semStatus!=OK) {
-	    epicsPrintf("getAttribEventCallback: semStatus!OK\n");
+	    errlogPrintf("getAttribEventCallback: semStatus!OK\n");
 	    return;
 	}
 	plink = pca->plink;
 	if(!plink) goto done;
 	if(!arg.dbr) {
-		epicsPrintf("getAttribEventCallback why was arg.dbr NULL\n");
+		errlogPrintf("getAttribEventCallback why was arg.dbr NULL\n");
 		goto done;
 	}
 	dbr = arg.dbr;
@@ -555,13 +557,13 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 	STATUS		semStatus;
 
 	if(!pca) {
-		epicsPrintf("accessRightsCallback why was arg.usr NULL\n");
+		errlogPrintf("accessRightsCallback why was arg.usr NULL\n");
 		return;
 	}
 	if(ca_state(pca->chid) != cs_conn) return;/*connectionCallback will handle*/
 	semStatus = semTake(pca->lock,WAIT_FOREVER);
 	if(semStatus!=OK) {
-	    epicsPrintf("dbCa accessRightsCallback: semStatus!OK\n");
+	    errlogPrintf("dbCa accessRightsCallback: semStatus!OK\n");
 	    return;
 	}
 	if(ca_read_access(arg.chid) || ca_write_access(arg.chid)) goto done;
@@ -591,7 +593,7 @@ static void connectionCallback(struct connection_handler_args arg)
     if(!pca) return;
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
-	epicsPrintf("dbCa connectionCallback: semStatus!OK\n");
+	errlogPrintf("dbCa connectionCallback: semStatus!OK\n");
 	return;
     }
     plink = pca->plink;
@@ -680,14 +682,14 @@ void dbCaTask()
 				  &(pca->chid),
 				  connectionCallback,(void *)pca);
 		    if(status!=ECA_NORMAL) {
-			epicsPrintf("dbCaTask ca_search_and_connect %s\n",
+			errlogPrintf("dbCaTask ca_search_and_connect %s\n",
 				ca_message(status));
 		        continue;
 		    }
 		    status = ca_replace_access_rights_event(pca->chid,
 				accessRightsCallback);
 		    if(status!=ECA_NORMAL)
-			epicsPrintf("dbCaTask replace_access_rights_event %s\n",
+			errlogPrintf("dbCaTask replace_access_rights_event %s\n",
 				ca_message(status));
 		    continue; /*Other options must wait until connect*/
 		}
@@ -715,7 +717,7 @@ void dbCaTask()
 			pca->chid, eventCallback,pca,0.0,0.0,0.0,
 			0);
 		    if(status!=ECA_NORMAL)
-		        epicsPrintf("dbCaTask ca_add_array_event %s\n",
+		        errlogPrintf("dbCaTask ca_add_array_event %s\n",
 			    ca_message(status));
 		}
 		if(link_action&CA_MONITOR_STRING) {
@@ -724,14 +726,14 @@ void dbCaTask()
 				pca->chid, eventCallback,pca,0.0,0.0,0.0,
 				0);
 		    if(status!=ECA_NORMAL)
-			    epicsPrintf("dbCaTask ca_add_array_event %s\n",
+			    errlogPrintf("dbCaTask ca_add_array_event %s\n",
 				ca_message(status));
 		}
 		if(link_action&CA_GET_ATTRIBUTES) {
 		    status = ca_get_callback(DBR_CTRL_DOUBLE,
 				pca->chid,getAttribEventCallback,pca);
 		    if(status!=ECA_NORMAL)
-			    epicsPrintf("dbCaTask ca_add_array_event %s\n",
+			    errlogPrintf("dbCaTask ca_add_array_event %s\n",
 				ca_message(status));
 		}
 	    } else { /* caList was empty */

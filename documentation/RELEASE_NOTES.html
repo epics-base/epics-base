@@ -14,32 +14,87 @@
 <h1>MMM DD 2002</h1>
 </center>
 
+<center>
 <h2>Changes since beta1</h2>
+</center>
 
-<p><strong>recGblGetTimeStamp</strong></p>
+<p><strong>dbCommon.dbd</strong></p>
 
-<p>If TSE is -1 then recGblGetTimeStamp does not retrieve time. This allows device/driver support to set the time.</p>
+<p>Field UDF now has a promptgroup. This allows users to set UDF false via
+DCTs.</p>
+
+<p><strong>errlog</strong></p>
+
+<p>errlog no longer contains an atexit that calls errlogFlush. This did not
+work on all operating systems. cantProceed, iocsh, and ca_task_exit all
+call errlogFlush. Other applications may also have to call if before
+terminating.</p>
+
+<p><strong>mbboRecord</strong></p>
+
+<p>mbboRecord now implements method cvt_dbaddr for the VAL field. If no state
+vales or state strings are defined then it sets field_type and dbr_field_type
+to DBF_USHORT.</p>
+
+<p><strong>timeStamp changes</strong></p>
+
+<p>Changes have been made to:</p>
+<ul>
+  <li>Allow device support to set the time stamp (field TIME) of a
+  record.</li>
+  <li>Allow a record to receive it's time stamp from another record,</li>
+</ul>
+
+<p>epicsTime.h now has the definitions:</p>
+<pre>#define epicsTimeEventBestTime -1
+#define epicsTimeEventDeviceTime -2
+
+</pre>
+
+<p>These are values for the TSE field of dbCommon.</p>
+
+<ul>
+<li><strong>epicsTimeEventBestTime</strong> means that code supplying the time
+stamp should get the most accurate time possible. Currently this only has
+meaning on vxWorks and if drvTS is supplying the time via some hardware
+timing system. It means get the latest time from the hardware system rather
+than from the vxWorks tick time. drvTs previously accepted a hardcoded value
+of -1.</li>
+
+<li><strong>epicsTimeEventDeviceTime</strong> means that
+recGblGetTimeStamp doesn't modify the time field.
+This allows device support to supply the time stamp.</li>
+</ul>
+
+<p>If the <strong>TSEL</strong> field refers to the <strong>TIME</strong>
+field of a record then <strong>recGblGetTimeStamp</strong> sets
+<strong>TIME</strong> equal to the time it gets from the record the
+<strong>TSEL</strong> references. This works for both database and channel
+access links. In this case field TSE is not used.</p>
+<pre> </pre>
 
 <p><strong>aiRecord and aoRecord: Setting eoff=egul</strong></p>
 
 <p>Instead of init_record executing code like</p>
 <pre>    if ((pai-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_linconv) {
         pai-&gt;eoff = pai-&gt;egul;
-    }
-</pre>
+    }</pre>
 
 <p>It now executes:</p>
 <pre>    if ((pai-&gt;eslo==1.0) &amp;&amp; (pai-&gt;eoff==0.0)) {
         pai-&gt;eoff = pai-&gt;egul;
-    }
-</pre>
+    }</pre>
+
 <p>aoRecord has a similar change</p>
+
+<p>This was done so that old device support which does not implement
+special_linconv still works.</p>
 
 <p><strong>CA puts to disabled record</strong></p>
 
-<p>If a CA client issues a put to a disabled record then, when the record is ena
-bled, database puts to the record will not make the record process until a CA pu
-t is again issued. This is fixed.</p>
+<p>If a CA client issues a put to a disabled record then, when the record is
+ena bled, database puts to the record will not make the record process until
+a CA pu t is again issued. This is fixed.</p>
 
 <p><strong>TPRO - trace processing</strong></p>
 
@@ -116,7 +171,9 @@ application's <top>/configure/CONFIG file (which specifies the path to
 <top>as seen by the IOC) to apply the same modifications to all paths output
 in the cdCommands file.</p>
 
+<center>
 <h2>Changes since alpha2</h2>
+</center>
 All changes for release 3.13.5 that also apply to 3.14 have been made.
 
 <p><b>devAiSoftRaw and devAoSoftRaw</b></p>

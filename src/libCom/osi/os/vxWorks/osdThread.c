@@ -119,6 +119,7 @@ threadId threadCreate(const char *name,
     THREADFUNC funptr,void *parm)
 {
     int tid;
+    if(threadOnceMutex==0) threadInit();
     if(stackSize<100) {
         errlogPrintf("threadCreate %s illegal stackSize %d\n",name,stackSize);
         return(0);

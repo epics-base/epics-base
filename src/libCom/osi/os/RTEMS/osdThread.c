@@ -237,8 +237,7 @@ threadCreate (const char *name,
     rtems_status_code sc;
     char c[4];
 
-    if (!initialized)
-	badInit ("threadCreate");
+    if (!initialized) threadInit();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("threadCreate %s illegal stackSize %d\n",name,stackSize);
         return 0;
@@ -421,8 +420,7 @@ threadId threadGetId (const char *name)
  */
 void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
 {
-    if (!initialized)
-	badInit ("threadOnce");
+    if (!initialized) threadInit();
     semMutexMustTake(onceMutex);
     if (*id == 0) {
 	    *id = -1;

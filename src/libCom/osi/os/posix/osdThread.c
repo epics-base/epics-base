@@ -52,6 +52,7 @@ static semMutexId onceMutex;
 static semMutexId listMutex;
 static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
+static int threadInitCalled = 0;
 
 #define checkStatus(status,message) \
 if((status))  {\
@@ -256,6 +257,7 @@ void threadInit(void)
 {
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     int status = pthread_once(&once_control,once);
+    threadInitCalled = 1;
     checkStatusQuit(status,"pthread_once","threadInit");
 }
 
@@ -263,6 +265,7 @@ void threadInit(void)
 void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
 
+    if(!threadInitCalled) threadInit();
     if(semMutexTake(onceMutex) != semTakeOK) {
         fprintf(stderr,"threadOnceOsd semMutexTake failed.\n");
         fprintf(stderr,"Did you call threadInit? Program exiting\n");
@@ -283,6 +286,7 @@ threadId threadCreate(const char *name,
     threadInfo *pthreadInfo;
     int status;
 
+    if(!threadInitCalled) threadInit();
     if(pcommonAttr==0) {
         fprintf(stderr,"It appears that threadCreate was called before threadInit.\n");
         fprintf(stderr,"Program is exiting\n");

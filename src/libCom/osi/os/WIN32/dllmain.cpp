@@ -23,7 +23,6 @@
 #include <stdlib.h>
 
 #define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN 
 #include <winsock2.h>
 
 #include "epicsVersion.h"
@@ -31,7 +30,7 @@
 #include "osiSock.h"
 
 #ifndef _WIN32
-#error This source is specific to WIN32 
+#   error This source is specific to WIN32 
 #endif
 
 extern "C" void epicsThreadCleanupWIN32 ();

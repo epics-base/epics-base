@@ -26,7 +26,6 @@
 // WIN32
 //
 #define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN 
 #include <winsock2.h>
 #include <process.h>
 
@@ -46,16 +45,7 @@
 #   define debugPrintf(argsInParen)
 #endif
 
-static const SYSTEMTIME epicsEpochST = {
-	1990, // year
-	1, // month
-	1, // day of the week (Monday)
-	1, // day of the month
-	0, // hour
-	0, // min
-	0, // sec
-	0 // milli sec
-};
+static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000;
 
 class currentTime : public epicsTimerNotify {
 public:
@@ -65,7 +55,6 @@ public:
     void startPLL ();
 private:
     CRITICAL_SECTION mutex;
-    LONGLONG epicsEpochInFileTime;
     LONGLONG lastPerfCounter;
     LONGLONG perfCounterFreq;
     LONGLONG epicsTimeLast; // nano-sec since the EPICS epoch
@@ -84,13 +73,27 @@ static bool osdTimeInitSuccess = false;
 static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
-
+static const LONGLONG ET_TICKS_PER_FT_TICK =
+            EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC;
 //
 // osdTimeInit ()
 //
 static void osdTimeInit ( void * )
 {
     pCurrentTime = new currentTime ();
+
+    // self test FILETIME conversion only if
+    // its a debug build
+#   if defined ( _DEBUG )
+    {
+        epicsTime ts0 = epicsTime::getCurrent ();
+        FILETIME ft = ts0;
+        epicsTime ts1 = ft;
+        double diff = fabs ( ts0 - ts1 );
+        // we expect to loose 100 nS of precision when moving to and from win32 filetime
+        assert ( diff <= 100e-9 );
+    }
+#   endif
 
     // set here to avoid recursion problems
     osdTimeInitSuccess = true;
@@ -247,7 +250,6 @@ int epicsTime_localtime ( const time_t *pAnsiTime, struct tm *pTM )
 }
 
 currentTime::currentTime () :
-    epicsEpochInFileTime ( 0 ),
     lastPerfCounter ( 0 ),
     perfCounterFreq ( 0 ),
     epicsTimeLast ( 0 ),
@@ -258,21 +260,13 @@ currentTime::currentTime () :
     pTimer ( 0 ),
     perfCtrPresent ( false )
 {
-    FILETIME ft;
-    {
-	    SystemTimeToFileTime ( & epicsEpochST, & ft );
-        LARGE_INTEGER tmp;
-	    tmp.LowPart = ft.dwLowDateTime;
-	    tmp.HighPart = ft.dwHighDateTime;
-        this->epicsEpochInFileTime = tmp.QuadPart;
-    }
-
     InitializeCriticalSection ( & this->mutex );
 
     // avoid interruptions by briefly becoming a time critical thread
     int originalPriority = GetThreadPriority ( GetCurrentThread () );
     SetThreadPriority ( GetCurrentThread (), THREAD_PRIORITY_TIME_CRITICAL );
 
+    FILETIME ft;
     GetSystemTimeAsFileTime ( & ft );
     LARGE_INTEGER tmp;
 	QueryPerformanceCounter ( & tmp );
@@ -288,12 +282,12 @@ currentTime::currentTime () :
     liFileTime.LowPart = ft.dwLowDateTime;
     liFileTime.HighPart = ft.dwHighDateTime;
 
-    if ( liFileTime.QuadPart >= this->epicsEpochInFileTime ) {
+    if ( liFileTime.QuadPart >= epicsEpochInFileTime ) {
         // the windows file time has a maximum resolution of 100 nS
         // and a nominal resolution of 10 mS - 16 mS
 	    this->epicsTimeLast = 
-            ( liFileTime.QuadPart - this->epicsEpochInFileTime ) * 
-            ( EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
+            ( liFileTime.QuadPart - epicsEpochInFileTime ) *
+            ET_TICKS_PER_FT_TICK;
     }
     else {
         errlogPrintf ( 
@@ -384,23 +378,7 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
         // fall back to low res file time
         FILETIME ft;
     	GetSystemTimeAsFileTime ( & ft );
-        LARGE_INTEGER lift;
-	    lift.LowPart = ft.dwLowDateTime;
-	    lift.HighPart = ft.dwHighDateTime;
-
-        if ( lift.QuadPart > this->epicsEpochInFileTime ) {
-            LONGLONG fileTimeTicksSinceEpochEPICS = 
-                lift.QuadPart - this->epicsEpochInFileTime;
-	        dest.secPastEpoch = static_cast < epicsUInt32 > 
-                ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
-            dest.nsec = static_cast < epicsUInt32 >
-                ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) * 
-                EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
-        }
-        else {
-	        dest.secPastEpoch = 0;
-            dest.nsec = 0;
-        }
+        dest = epicsTime ( ft );
     }
 }
 
@@ -502,8 +480,8 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
     this->lastPerfCounter = curPerfCounter.QuadPart;
 
     LONGLONG epicsTimeFromCurrentFileTime = 
-        ( curFileTime.QuadPart - this->epicsEpochInFileTime )*
-        ( EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
+        ( curFileTime.QuadPart - epicsEpochInFileTime ) *
+        ET_TICKS_PER_FT_TICK;
 
     delta = epicsTimeFromCurrentFileTime - this->epicsTimeLast;
     if ( delta > EPICS_TIME_TICKS_PER_SEC || delta < -EPICS_TIME_TICKS_PER_SEC ) {
@@ -564,14 +542,40 @@ void currentTime::startPLL ()
     this->pTimer->start ( *this, 1.0 );
 }
 
+epicsTime::operator FILETIME () const
+{
+    LARGE_INTEGER ftTicks;
+    ftTicks.QuadPart = ( this->secPastEpoch * FILE_TIME_TICKS_PER_SEC ) + 
+        ( this->nSec / ET_TICKS_PER_FT_TICK );
+    ftTicks.QuadPart += epicsEpochInFileTime;
+    FILETIME ts;
+	ts.dwLowDateTime = ftTicks.LowPart;
+	ts.dwHighDateTime = ftTicks.HighPart;
+    return ts;
+}
 
+epicsTime::epicsTime ( const FILETIME & ts )
+{
+    LARGE_INTEGER lift;
+	lift.LowPart = ts.dwLowDateTime;
+	lift.HighPart = ts.dwHighDateTime;
+    if ( lift.QuadPart > epicsEpochInFileTime ) {
+        LONGLONG fileTimeTicksSinceEpochEPICS = 
+            lift.QuadPart - epicsEpochInFileTime;
+	    this->secPastEpoch = static_cast < epicsUInt32 > 
+            ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
+        this->nSec = static_cast < epicsUInt32 >
+            ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) * 
+            ET_TICKS_PER_FT_TICK );
+    }
+    else {
+	    this->secPastEpoch = 0;
+        this->nSec = 0;
+    }
+}
 
-
-
-
-
-
-
-
-
-
+epicsTime & epicsTime::operator = ( const FILETIME & rhs )
+{
+    *this = epicsTime ( rhs );
+    return *this;
+}

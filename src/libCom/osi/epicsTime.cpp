@@ -22,6 +22,7 @@
 #include "epicsVersion.h"
 #include "envDefs.h"
 #include "epicsTime.h"
+#include "osiSock.h" /* pull in struct timeval */
 
 static const char *id = "@(#) " EPICS_VERSION_STRING ", Common Utilities Library" __DATE__;
 
@@ -417,104 +418,6 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
     unsigned long secAdj = ts.tv_nsec / epicsTime::nSecPerSec;
     unsigned long nSecAdj = ts.tv_nsec % epicsTime::nSecPerSec;
     *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
-}
-
-static const FILETIME epicsEpochInFileTime = { 0x18d64000, 0x01b41e2a };
-
-static inline bool fileTimeGreaterThanOrEqual ( const FILETIME & lhs, const FILETIME & rhs ) 
-{
-    if ( lhs.dwHighDateTime > rhs.dwHighDateTime ) {
-        return true;
-    }
-    else if ( lhs.dwHighDateTime < rhs.dwHighDateTime ) {
-        return false;
-    }
-    else if ( lhs.dwLowDateTime >= rhs.dwLowDateTime ) {
-        return true;
-    }
-    return false;
-}
-
-epicsTime::operator _FILETIME () const
-{
-    static const DWORD dwordMax = 0xffffffff;
-    static const double ticksPerLowWord = 
-        static_cast < double > ( dwordMax ) + 1.0;
-    static const double ftNanoSecPerTick = 100;
-    static const double ftTicksPerSec = 1e7;
-
-    // compute the ticks past the epics epoch in file time ticks
-    double ftTicks = this->secPastEpoch * ftTicksPerSec + this->nSec / ftNanoSecPerTick;
-    FILETIME ftTicksPastEpicsEpoch;
-    ftTicksPastEpicsEpoch.dwHighDateTime = static_cast < DWORD > ( ftTicks / ticksPerLowWord );
-    double lowPart = ftTicks - ftTicksPastEpicsEpoch.dwHighDateTime * ticksPerLowWord;
-    ftTicksPastEpicsEpoch.dwLowDateTime = static_cast < DWORD > ( lowPart );
-
-    // add the EPICS epoch offset
-    FILETIME result;
-    result.dwHighDateTime = 
-        epicsEpochInFileTime.dwHighDateTime + ftTicksPastEpicsEpoch.dwHighDateTime;
-    if ( epicsEpochInFileTime.dwLowDateTime  > dwordMax - ftTicksPastEpicsEpoch.dwLowDateTime ) {
-        // carry
-        result.dwHighDateTime++; 
-        double tmp = epicsEpochInFileTime.dwLowDateTime;
-        tmp += ftTicksPastEpicsEpoch.dwLowDateTime;
-        result.dwLowDateTime = static_cast < DWORD > ( tmp - dwordMax );
-    }
-    else {
-        result.dwLowDateTime = 
-            epicsEpochInFileTime.dwLowDateTime + ftTicksPastEpicsEpoch.dwLowDateTime;
-    }
-    return result;
-}
-
-epicsTime::epicsTime ( const _FILETIME & ts )
-{
-    static const DWORD dwordMax = 0xffffffff;
-
-    if ( fileTimeGreaterThanOrEqual ( ts , epicsEpochInFileTime ) ) {
-        // remove epics epoch offset from the incoming file time
-        FILETIME ftTicksPastEpicsEpoch;
-        ftTicksPastEpicsEpoch.dwHighDateTime = 
-            ts.dwHighDateTime - epicsEpochInFileTime.dwHighDateTime;
-        if ( ts.dwLowDateTime >= epicsEpochInFileTime.dwLowDateTime ) {
-            ftTicksPastEpicsEpoch.dwLowDateTime = 
-                ts.dwLowDateTime - epicsEpochInFileTime.dwLowDateTime;
-        }
-        else {
-            // borrow 
-            ftTicksPastEpicsEpoch.dwHighDateTime--;
-            ftTicksPastEpicsEpoch.dwLowDateTime = 
-                ( dwordMax - epicsEpochInFileTime.dwLowDateTime ) 
-                + ts.dwLowDateTime + 1;
-        }
-
-        // adjust between file time ticks and EPICS time ticks
-        static const double ticksPerLowWord = 
-            static_cast < double > ( dwordMax ) + 1.0;
-        static const double ftTicksPerSec = 1e7;
-        static const double epicsTicksPerSec = 1e9;
-        double ftTicksPastEpicsEpochFP = 
-            ticksPerLowWord * ftTicksPastEpicsEpoch.dwHighDateTime +
-            ftTicksPastEpicsEpoch.dwLowDateTime;
-        double epicsTicksPastEpicsEpoch = ftTicksPastEpicsEpochFP *
-            ( epicsTicksPerSec / ftTicksPerSec );
-        this->secPastEpoch = static_cast < unsigned long > 
-                        ( epicsTicksPastEpicsEpoch / nSecPerSec );
-        double nSecPart = epicsTicksPastEpicsEpoch - 
-                this->secPastEpoch * epicsTime::nSecPerSec;
-        this->nSec = static_cast < unsigned long > ( nSecPart );
-    }
-    else {
-	    this->secPastEpoch = 0;
-        this->nSec = 0;
-    }
-}
-
-epicsTime & epicsTime::operator = ( const _FILETIME & rhs )
-{
-    *this = epicsTime ( rhs );
-    return *this;
 }
 
 //

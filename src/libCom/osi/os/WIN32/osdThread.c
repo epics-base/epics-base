@@ -21,12 +21,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#ifndef VC_EXTRALEAN
-#   define VC_EXTRALEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN 
-#   define WIN32_LEAN_AND_MEAN 
-#endif
+#define VC_EXTRALEAN
 #include <winsock2.h>
 #include <process.h>
 

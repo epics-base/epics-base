@@ -61,16 +61,6 @@ int epicsTimeTest (void)
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
-    // test FILETIME conversion
-    {
-        epicsTime ts0 = epicsTime::getCurrent ();
-        FILETIME ft = ts0;
-        epicsTime ts1 = ft;
-        double diff = fabs ( ts0 - ts1 );
-        // we expect to loose 100 nS of precision when moving to and from win32 filetime
-        assert ( diff <= 100e-9 );
-    }
-
     for (int iTimes=0; iTimes < nTimes; ++iTimes) {
         for (i=0; i<wasteTime; i++) {
             useSomeCPU = epicsTime::getCurrent();

@@ -21,12 +21,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-#ifndef VC_EXTRALEAN
-#   define VC_EXTRALEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN 
-#   define WIN32_LEAN_AND_MEAN 
-#endif
+#define VC_EXTRALEAN
 /* including less than this causes conflicts with winsock2.h :-( */
 #define _WIN32_WINNT 0x400
 #include <winsock2.h>

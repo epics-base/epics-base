@@ -19,14 +19,5 @@
  * causes `struct timespec' to be defined in more than one place.
  */
 
-#include <inttypes.h>
-
-/* from win32 */
-typedef uint32_t DWORD;
-typedef struct _FILETIME {
-   DWORD dwLowDateTime;   /* low 32 bits  */
-   DWORD dwHighDateTime;  /* high 32 bits */
-} FILETIME;
-
 #endif /* ifndef osdTimeh */
 

@@ -17,8 +17,6 @@
 #ifndef osdTimeh
 #define osdTimeh
 
-#include <inttypes.h>
-
 /*
  * I assume that this is never defined on VMS ?
  */
@@ -26,12 +24,5 @@ struct timespec {
 	time_t tv_sec; /* seconds since some epoch */
 	long tv_nsec; /* nanoseconds within the second */
 };
-
-/* from win32 */
-typedef uint32_t DWORD;
-typedef struct _FILETIME {
-   DWORD dwLowDateTime;   /* low 32 bits  */
-   DWORD dwHighDateTime;  /* high 32 bits */
-} FILETIME;
 
 #endif /* ifndef osdTimeh */

@@ -116,16 +116,10 @@
 int coreRelease(void);
 int iocLogInit(void);
 int rsrv_init(void);
-epicsShareFunc long epicsShareAPI 
-	postfix(char *pinfix,char *ppostfix,short *perror);
-epicsShareFunc long epicsShareAPI 
-	calcPerform(double *parg, double *presult, char  *post);
 #else
 int coreRelease();
 int iocLogInit();
 int rsrv_init();
-epicsShareFunc long epicsShareAPI postfix();
-epicsShareFunc long epicsShareAPI calcPerform();
 #endif /*__STDC__*/
 
 #endif /* INCdbDefsh */

@@ -123,8 +123,8 @@ void timer::privateCancel ()
 {
     while ( true ) {
         if ( this->curState == statePending ) {
-	    if ( this->queue.timerList.first() == this ) {
-            	this->queue.notify.reschedule ();
+            if ( this->queue.timerList.first() == this ) {
+                this->queue.notify.reschedule ();
             }
             this->queue.timerList.remove ( *this );
             this->curState = stateLimbo;

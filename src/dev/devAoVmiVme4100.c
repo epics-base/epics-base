@@ -49,8 +49,6 @@ static long init_record(pao)
     struct aoRecord	*pao;
 {
     char message[100];
-    short value;
-    struct vmeio *pvmeio;
 
     /* ao.out must be an VME_IO */
     switch (pao->out.type) {
@@ -81,14 +79,13 @@ static long write_ao(pao)
 	
 	pvmeio = (struct vmeio *)&(pao->out.value);
 	value = pao->rval;
-	status = ao_driver(pvmeio->card,pvmeio->signal,pao->type,&value,&rbvalue);
+	status = ao_driver(pvmeio->card,pvmeio->signal,VMI4100,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
 		if(pao->nsev<MAJOR_ALARM ) {
 			pao->nsta = WRITE_ALARM;
 			pao->nsev = MAJOR_ALARM;
 		}
-		status=2; /*dont convert*/
 	}else if(status==-2) {
 		status=0;
 		if(pao->nsev<MAJOR_ALARM ) {
@@ -114,12 +111,11 @@ static long special_linconv(pao,after)
 static void read_ao(pao)
 struct aoRecord      *pao;
 {
-	int            status;
 	unsigned short          value;
 	struct vmeio    		*pvmeio = &pao->out.value.vmeio;
 
 	/* get the value from the ao driver */
-	ao_read(pvmeio->card,pvmeio->signal,pao->type,&value);
+	ao_read(pvmeio->card,pvmeio->signal,VMI4100,&value);
 	/* convert raw readback to egu */
 	switch (pao->linr){
 		case (LINEAR):

@@ -41,6 +41,7 @@ static long init_record(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
+
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
     case (CONSTANT) :
@@ -65,7 +66,7 @@ static long read_bi(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
-    long status,options,nRequest;
+    long options,nRequest;
 
     /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {

@@ -65,14 +65,12 @@ static long write_bo(pbo)
     struct boRecord	*pbo;
 {
     char message[100];
-    long status;
 
     /* bo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pbo->out.type) {
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        nRequest=1;
         (void)dbPutLink(&(pbo->out.value.db_link),pbo,DBR_SHORT,pbo->val,1L);
         break;
     case (CA_LINK) :

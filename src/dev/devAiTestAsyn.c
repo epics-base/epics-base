@@ -1,5 +1,5 @@
 /* devAiTestAsyn.c */
-/* share/src/dev $Id$ */
+/* share/src/dev @(#)devAiTestAsyn.c	1.1     11/8/90 */
 
 /* devAiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 
@@ -43,7 +43,7 @@ struct callback {
 	void (*callback)();
 	struct dbAddr dbAddr;
 	WDOG_ID wd_id;
-	short   completion;
+	void (*process)();
 };
 
 void callbackRequest();
@@ -54,21 +54,18 @@ static void myCallback(pcallback)
     struct aiRecord *pai=(struct aiRecord *)(pcallback->dbAddr.precord);
 
     dbScanLock(pai);
-    pcallback->completion = TRUE;
-    pai->pact=0;
-    dbScanPassive(&(pcallback->dbAddr));
+    (pcallback->process)(&pcallback->dbAddr);
     dbScanUnlock(pai);
 }
     
     
 
-static long init_record(pai)
+static long init_record(pai,process)
     struct aiRecord	*pai;
+    void (*process)();
 {
     char message[100];
     struct callback *pcallback;
-    int  precTypeIndex;
-    struct rset *prset;
 
     /* ai.inp must be a CONSTANT*/
     switch (pai->inp.type) {
@@ -80,7 +77,9 @@ static long init_record(pai)
 		logMsg("dbNameToAddr failed in init_record for devAiTestAsyn\n");
 		exit(1);
 	}
+	pcallback->process = process;
 	pcallback->wd_id = wdCreate();
+	pcallback->process = process;
 	pai->val = pai->inp.value.value;
 	break;
     default :
@@ -89,8 +88,6 @@ static long init_record(pai)
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
-    /* Make sure record processing routine does not perform any conversion*/
-    pai->linr=0;
     return(0);
 }
 
@@ -105,9 +102,8 @@ static long read_ai(pai)
     /* ai.inp must be a CONSTANT*/
     switch (pai->inp.type) {
     case (CONSTANT) :
-	if(pcallback->completion==TRUE) {
+	if(pai->pact) {
 		printf("%s Completed\n",pai->name);
-		pcallback->completion=FALSE;
 		return(0);
 	} else {
 		wait_time = (short)(pai->val);

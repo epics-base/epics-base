@@ -14,7 +14,7 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
-#include	<biRecord.h>
+#include	<boRecord.h>
 
 
 /* Create the dset for devAiBoXVme220 */
@@ -48,7 +48,7 @@ static long masks[] = {
 
 
 static long init_record(pbo)
-    struct biRecord	*pbo;
+    struct boRecord	*pbo;
 {
     char message[100];
     int value,status;
@@ -57,6 +57,7 @@ static long init_record(pbo)
     /* bo.out must be an VME_IO */
     switch (pbo->out.type) {
     case (VME_IO) :
+	pvmeio = (struct vmeio *)&(pbo->out.value);
         status = bo_read(pvmeio->card,masks[pvmeio->signal],&value,XY220);
         if(status == 0) {
                 pbo->rbv = pbo->val = (value == 0)?0:1;
@@ -82,20 +83,17 @@ static long init_record(pbo)
 }
 
 static long write_bo(pbo)
-    struct biRecord	*pbo;
+    struct boRecord	*pbo;
 {
 	struct vmeio *pvmeio;
 	int	    status;
-	long	    value;
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
 	if(pbo->val == 0) pbo->rval = 0;
 	else pbo->rval = masks[pvmeio->signal];
 	status = bo_driver(pvmeio->card,pbo->rval,masks[pvmeio->signal],XY220);
-	if(status==0) {
-		pbo->rbv = pbo->val;
-	} else {
+	if(status!=0) {
 		if(pbo->nsev<MAJOR_ALARM ) {
 			pbo->nsta = WRITE_ALARM;
 			pbo->nsev = MAJOR_ALARM;

@@ -86,7 +86,7 @@ static long write_mbbo(pmbbo)
 	if(pmbbo->sdef) {
 		unsigned long *pvalues = &(pmbbo->zrvl);
 
-		if(pmbbo->val<0 || pmbbo->val>15) {
+		if(pmbbo->val>15) {
 			if(pmbbo->nsev<MAJOR_ALARM ) {
 				pmbbo->nsta = SOFT_ALARM;
 				pmbbo->nsev = MAJOR_ALARM;

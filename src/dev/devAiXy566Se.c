@@ -43,7 +43,7 @@ static long init_record(pai)
     struct aiRecord	*pai;
 {
     char message[100];
-    short value;
+    unsigned short value;
     struct vmeio *pvmeio;
     long status;
 
@@ -75,7 +75,7 @@ static long init_record(pai)
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-	short value;
+	unsigned short value;
 	struct vmeio *pvmeio;
 	long status;
 

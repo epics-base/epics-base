@@ -1,4 +1,3 @@
-
 /* db_access.c */
 /* share/src/db $Id$ */
 /* db_access.c - Interface between old database access and new */
@@ -67,6 +66,14 @@ struct dbr_ctrl_float{
         float   upper_ctrl_limit;       /* upper control limit */
         float   lower_ctrl_limit;       /* lower control limit */
         float   value;                  /* current value */
+};
+/* structure for a control enumeration field */
+struct dbr_ctrl_enum{
+        short   status;                 /* status of value */
+        short   severity;               /* severity of alarm */
+        short   no_str;                 /* number of strings */
+        char    strs[16][26];           /* state strings */
+        short   value;                  /* current value */
 };
 
 /* From $cs/dblib/src/dbiocsubs.c
@@ -195,7 +202,6 @@ unsigned short	no_elements;
     long nRequest;
     long precision;
     short severity;
-    short no_str;
 
 
     switch(buffer_type) {
@@ -293,23 +299,31 @@ unsigned short	no_elements;
 	nRequest=no_elements;
 	status = dbGetField(paddr,DBR_FLOAT,pbuffer,&options,&nRequest);
 	break;
-    case(oldDBR_CTRL_ENUM):
+    case(oldDBR_CTRL_ENUM): {
+	short no_str,i;
+	struct dbr_enumStrs enumStrs;
+	struct dbr_ctrl_enum *poldenum=(struct dbr_ctrl_enum *)pbuffer;
+
+	bzero(pbuffer,sizeof(struct dbr_ctrl_enum));
 	/* first get status and severity */
 	options=DBR_STATUS;
 	nRequest=0;
-	status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
+	status = dbGetField(paddr,DBR_ENUM,poldenum,&options,&nRequest);
 	adjust_severity(pbuffer);
-	/* adjust pbuffer so it points to old severity and save it*/
-	pbuffer += sizeof(short);
-	severity = *((short *)pbuffer);
 	/* now get enum strs */
 	options=DBR_ENUM_STRS;
+	nRequest=0;
+	status = dbGetField(paddr,DBR_ENUM,&enumStrs,&options,&nRequest);
+	no_str = enumStrs.no_str;
+	if(no_str>16) no_str=16;
+	poldenum->no_str = no_str;
+	for (i=0; i<no_str; i++) 
+		strncpy(poldenum->strs[i],&enumStrs.strs[i],sizeof(poldenum->strs[i]));
+	/*now get values*/
+	options=DBR_ENUM_STRS;
 	nRequest=no_elements;
-	status = dbGetField(paddr,DBR_ENUM,pbuffer,&options,&nRequest);
-	/* no_str was returned as unsigned long. Convert and restore serv*/
-	no_str = (short )(*((unsigned long*)pbuffer));
-	*(((short *)pbuffer)++) = severity;
-	*((short *)pbuffer) = no_str;
+	status = dbGetField(paddr,DBR_ENUM,&poldenum->value,&options,&nRequest);
+	}
 	break;
     default:
 	return(-1);

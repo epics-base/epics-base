@@ -1,4 +1,3 @@
-
 /* iocInit.c	ioc initialization */ 
 /* share/src/db $Id$ */
 
@@ -252,9 +251,6 @@ static long initDatabase()
 		lstInit(&(precord->mlis));
 		precord->pact=FALSE;
 
-		/* set lset=0	See determine lock set below.*/
-		precord->lset = 0;
-
 		/* Init DSET NOTE that result may be NULL*/
 		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 
@@ -267,13 +263,13 @@ static long initDatabase()
 			strcat(name,".");
 			strncat(name,plink->value.pv_link.fldname,FLDNAME_SZ);
 			if(dbNameToAddr(name,&dbAddr) == 0) {
+			    ((struct dbCommon *)(dbAddr.precord))->lset = -1;
 			    plink->type = DB_LINK;
-			    plink->value.db_link.paddr =
+			    plink->value.db_link.pdbAddr =
 				(caddr_t)calloc(1,sizeof(struct dbAddr));
-			    *((struct dbAddr *)(plink->value.db_link.paddr))=dbAddr;
+			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
 			    /* show that refered to record has link. */
 			    /* See determine lock set below.*/
-			    ((struct dbCommon *)(dbAddr.precord))->lset = -1;
 			}
 			else {
 			    /*This will be replaced by channel access call*/
@@ -315,6 +311,7 @@ static long initDatabase()
 		if(precord->lset > 0) continue; /*already in a lock set */
 		lookAhead = ( (precord->lset == -1) ? TRUE : FALSE);
 		nset++;
+printf("calling addToSet\n");
 		status = addToSet(precord,i,lookAhead,i,j,nset);
 		if(status) return(status);
 	}
@@ -335,15 +332,11 @@ static long addToSet(precord,record_type,lookAhead,i,j,lset)
     long status;
     struct fldDes       *pfldDes;
     struct link		*plink;
-    struct dbCommon	*ptemp;
-    struct dbCommon	*ptemp1;
     struct recTypDes	*precTypDes;
     struct recLoc	*precLoc;
 
-
-    if(precord->lset = -1) precord->lset=0;
-    if(precord->lset != 0) {
-	if(precord->lset == lset) return(0);
+printf("%s precord->lset %d lset %d lookAhead %d\n",precord->name,precord->lset,lset,lookAhead);
+    if(precord->lset > 0) {
 	status = S_db_lsetLogic;
 	errMessage(status,"Logic Error in iocInit(addToSet)");
 	return(status);
@@ -352,12 +345,22 @@ static long addToSet(precord,record_type,lookAhead,i,j,lset)
    /* add all DB_LINKs in this record to the set */
     precTypDes = dbRecDes->papRecTypDes[record_type];
     for(k=0; k<precTypDes->no_links; k++) {
+	struct dbCommon	*pk;
+
 	pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
 	plink = (struct link *)((char *)precord + pfldDes->offset);
 	if(plink->type != DB_LINK) continue;
-	status = addToSet(
-		((struct dbAddr *)(plink->value.db_link.paddr))->precord,
-		((struct dbAddr *)(plink->value.db_link.paddr))->record_type,
+	pk = (struct dbCommon *)
+		(((struct dbAddr *)(plink->value.db_link.pdbAddr))->precord);
+	if(pk->lset > 0){
+		if(pk->lset == lset) continue; /*already in lock set*/
+		status = S_db_lsetLogic;
+		errMessage(status,"Logic Error in iocInit(addToSet)");
+		return(status);
+	}
+printf("calling addToSet recursive 1\n");
+	status = addToSet(pk,
+		((struct dbAddr *)(plink->value.db_link.pdbAddr))->record_type,
 		TRUE,i,j,lset);
 	if(status) return(status);
     }
@@ -366,29 +369,33 @@ static long addToSet(precord,record_type,lookAhead,i,j,lset)
     if(!lookAhead) return(0);
     j1st=j+1; 
     for(in=i; in<dbRecords->number; in++) {
+	struct dbCommon	*pn;
+
 	if(!(precLoc = dbRecords->papRecLoc[in])) continue;
 	precTypDes = dbRecDes->papRecTypDes[in];
 	for(jn=j1st,
-	    (char *)ptemp= (char *)(precLoc->pFirst) + jn*(precLoc->rec_size);
+	    (char *)pn= (char *)(precLoc->pFirst) + jn*(precLoc->rec_size);
 	    jn<precLoc->no_records;
-	    jn++, ((char *)ptemp) += precLoc->rec_size)  {
+	    jn++, ((char *)pn) += precLoc->rec_size)  {
 		/* If NAME is null then skip this record*/
-                if(!(ptemp->name[0])) continue;
+                if(!(pn->name[0])) continue;
 		for(k=0; k<precTypDes->no_links; k++) {
+		    struct dbCommon	*pk;
+
 		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[k]];
-		    plink = (struct link *)((char *)ptemp + pfldDes->offset);
+		    plink = (struct link *)((char *)pn + pfldDes->offset);
 		    if(plink->type != DB_LINK) continue;
-		    ptemp1 = (struct dbCommon *)
-			(((struct dbAddr *)(plink->value.db_link.paddr))->precord);
-		    if(ptemp1 != precord) continue;
-		    if(ptemp->lset != 0) {
-			if(ptemp->lset == lset) continue;
+		    pk = (struct dbCommon *)
+			(((struct dbAddr *)(plink->value.db_link.pdbAddr))->precord);
+		    if(pk != precord) continue;
+		    if(pn->lset > 0) {
+			if(pn->lset == lset) continue;
 			status = S_db_lsetLogic;
 			errMessage(status,"Logic Error in iocInit(addToSet)");
 			return(status);
 		    }
-		    itemp = ((struct dbAddr *)(plink->value.db_link.paddr))->record_type;
-		    status = addToSet(ptemp1,itemp,TRUE,i,j,lset);
+printf("calling addToSet recursive 2\n");
+		    status = addToSet(pn,in,TRUE,i,j,lset);
 		    if(status) return(status);
 		}
 	}

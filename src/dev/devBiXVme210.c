@@ -51,8 +51,6 @@ static long init_record(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
-    short value;
-    struct vmeio *pvmeio;
 
     /* bi.inp must be an VME_IO */
     switch (pbi->inp.type) {

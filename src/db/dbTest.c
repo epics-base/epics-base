@@ -61,6 +61,9 @@
  *
  * dbior(pname)			io_report
  *	char	*pname		Driver name. If null all drivers
+ *
+ * dblls(ptypeName)		list lock sets
+ *	char	*ptypeName;	Record type. If null all record types
  */
 
 #include	<vxWorks.h>
@@ -775,6 +778,52 @@ long dbior(pdrvName)
 	    (*pdrvet->report)();
 	}
 	if(pdrvName!=NULL) break;
+    }
+    return(0);
+}
+
+long dblls(ptypeName)	/* list lock set for specified record type*/
+	char	*ptypeName;
+{
+    int			rectype,beg,end,recnum;
+    struct recLoc	*precLoc;
+    struct dbCommon	*precord;
+    char		*pstr;
+    char		name[PVNAME_SZ+1];
+
+    if(dbRecType==NULL || dbRecords==NULL) return(1);
+    if(ptypeName==NULL) {
+	beg=0;
+	end=dbRecords->number - 1;
+    }
+    else {
+	for(rectype=0; rectype<dbRecType->number; rectype++) {
+	    if(!(pstr=GET_PRECTYPE(rectype))) continue;
+	    if(strcmp(pstr,ptypeName)==0){
+		beg=rectype;
+		end=rectype;
+		goto got_it;
+	    }
+	}
+	printf("Illegal Record Type\n");
+	return(1);
+    }
+got_it:
+    for(rectype=beg; rectype<=end; rectype++) {
+	if(!(precLoc=GET_PRECLOC(rectype))) continue;
+	for(recnum=0; precord=(struct dbCommon *)(GET_PRECORD(precLoc,recnum));
+	recnum++) {
+		if(precord->name[0] == 0) continue; /*deleted record*/
+		strncpy(name,precord->name,PVNAME_SZ);
+		name[PVNAME_SZ]=0;
+		printf("%4.4d %4.4d %4.4d %4.4d %4.4d %s\n",
+			precord->lset,
+			precord->lcnt,
+			precord->disv,
+			precord->disa,
+			precord->pact,
+			name);
+	}
     }
     return(0);
 }

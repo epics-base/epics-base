@@ -188,8 +188,9 @@ int recGblReportDbCommon(fp,paddr)
     if(recGblReportGblChoice(fp,precord,"SCAN",precord->scan)) return(-1);
     if(fprintf(fp,"PHAS %d\tEVNT %d\n",
 		precord->phas,precord->evnt)<0) return(-1);
-    if(fprintf(fp,"STAT %d\tSEVR %d\tACHN %d\nDTYP %5d\n",
-		precord->stat,precord->sevr,precord->achn,precord->dtyp)<0) return(-1);
+    if(fprintf(fp,"STAT %d\tSEVR %d\tNSTA %d\tNSEV %d\nDTYP %5d\n",
+		precord->stat,precord->sevr,
+		precord->nsta,precord->nsev,precord->dtyp)<0) return(-1);
     if(precord->dset != NULL) {
 	if(!(pdevSup=GET_DEVSUP(paddr->record_type))) return(-1);
 	if(fprintf(fp,"DSET %s\n",(pdevSup->dsetName[precord->dtyp]))<0)
@@ -263,7 +264,7 @@ int recGblReportLink(fp,pfield_name,plink)
 	    plink->value.db_link.process_passive,
 	    plink->value.db_link.maximize_sevr,
 	    ((struct dbCommon *)(
-		((struct dbAddr *)plink->value.db_link.paddr)
+		((struct dbAddr *)plink->value.db_link.pdbAddr)
 		->precord))->name)<0)
 	    return(-1);
 	break;

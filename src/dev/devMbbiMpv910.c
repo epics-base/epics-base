@@ -53,7 +53,6 @@ static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     char message[100];
-    struct vmeio *pvmeio;
 
     /* mbbi.inp must be an VME_IO */
     switch (pmbbi->inp.type) {
@@ -78,9 +77,9 @@ static long read_mbbi(pmbbi)
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
-	status = bi_driver(pvmeio->card,masks[pvmeio->signal],BB910,&value);
+	status = bi_driver(pvmeio->card,pmbbi->mask,BB910,&value);
 	if(status==0) {
-		pmbbi->rval = value;
+		pmbbi->rval = value >> pvmeio->signal;
 	} else {
 		if(pmbbi->nsev<MAJOR_ALARM ) {
 			pmbbi->nsta = READ_ALARM;

@@ -65,7 +65,7 @@ static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     char message[100];
-    long status,options,nRequest;
+    long options,nRequest;
 
     /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {

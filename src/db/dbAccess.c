@@ -1,4 +1,3 @@
-
 /* dbAccess.c */
 /* share/src/db $Id$ */
 
@@ -120,6 +119,8 @@
 
 long dbPut();
 
+#define MAX_LOCK 10
+
 #define MIN(x,y)        ((x < y)?x:y)
 #define MAX(x,y)        ((x > y)?x:y)
 
@@ -205,35 +206,54 @@ long dbProcess(paddr)
 	struct rset	*prset;
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	long		status;
-	long		options=0;
-	long		nRequest=1;
 	
 
 	/* If already active dont process */
-	if(precord->pact) return(0);
+	if(precord->pact) {
+	        struct rset     *prset;
+		struct valueDes valueDes;
 
-	/* set nsta and nsev to 0. Everyone else maximizes nsev.*/
-	/* process must raise alarm if nsta!=stat or nsev!=nsev */
-	precord->nsta = 0;
-	precord->nsev = 0;
+		/* raise scan alarm after MAX_LOCK times */
+		if(precord->stat==SCAN_ALARM) return(0);
+		if(precord->lcnt++ <=MAX_LOCK) return(0);
+		precord->sevr = MAJOR_ALARM;
+		precord->stat = SCAN_ALARM;
+		precord->nsev = 0;
+		precord->nsta = 0;
+		/* anyone waiting for an event on this record?*/
+		if(precord->mlis.count==0) return(0);
+		db_post_events(precord,&precord->stat,DBE_VALUE);
+		db_post_events(precord,&precord->sevr,DBE_VALUE);
+	        prset=GET_PRSET(paddr->record_type);
+		if( prset && prset->get_value ){
+			(*prset->get_value)(precord,&valueDes);
+			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM|DBE_LOG);
+		}
+		return(0);
+	} else precord->lcnt=0;
+		
+
 
 	/* get the scan disable link if defined*/
 	if(precord->sdis.type == DB_LINK) {
-	    (status = dbGetLink(precord->sdis.value.db_link,precord,
-		DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest));
-	    if(!RTN_SUCCESS(status)) {
-		recGblDbaddrError(status,paddr,"dbProcess");
-		return(status);
-	    }
+		long	options=0;
+		long	nRequest=1;
+
+		(status = dbGetLink(precord->sdis.value.db_link,precord,
+			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest));
+		if(!RTN_SUCCESS(status)) {
+			recGblDbaddrError(status,paddr,"dbProcess");
+			return(status);
+	    	}
 	}
 	/* if disabled just return success */
-	if(precord->disa) return(0);
+	if(precord->disa == precord->disv) return(0);
 
 	/* locate record processing routine */
 	if(!(prset=GET_PRSET(paddr->record_type)) || !(prset->process)) {
-	    precord->pact=1;/*set pact TRUE so error is issued only once*/
-	    recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
-	    return(S_db_noRSET);
+		precord->pact=1;/*set pact TRUE so error is issued only once*/
+		recGblRecSupError(S_db_noRSET,paddr,"dbProcess","process");
+		return(S_db_noRSET);
 	}
 
 	/* process record */
@@ -254,7 +274,7 @@ struct dbAddr	*paddr;
 	short		field_offset;
 	short		record_number;
 	short		n;
-	long		status;
+	long		status=0;
 	struct rset	*prset;
 	struct recLoc	*precLoc;
 	char*		precord;
@@ -324,7 +344,7 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	long		*options;
 	long		*nRequest;
 {
-	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->paddr);
+	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
 	long	status;
 
 	if(pdblink->process_passive) {
@@ -335,8 +355,8 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
 
 		if(pfrom->sevr>pdest->sevr) {
-			pdest->sevr = pfrom->sevr;
-			pdest->stat = LINK_ALARM;
+			pdest->nsev = pfrom->sevr;
+			pdest->nsta = LINK_ALARM;
 		}
 	
 	}
@@ -351,7 +371,7 @@ long dbPutLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	long		*options;
 	long		*nRequest;
 {
-	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->paddr);
+	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
 	long	status;
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
@@ -359,8 +379,8 @@ long dbPutLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
 
 		if(pfrom->sevr>pdest->sevr) {
-			pdest->sevr = pfrom->sevr;
-			pdest->stat = LINK_ALARM;
+			pdest->nsev = pfrom->sevr;
+			pdest->nsta = LINK_ALARM;
 		}
 	}
 	if(!RTN_SUCCESS(status)) return(status);
@@ -3088,6 +3108,7 @@ long		*options;
 	struct devChoiceSet	*pdevChoiceSet;
 	unsigned long		no_str;
 	char			*ptemp;
+	struct dbr_enumStrs	*pdbr_enumStrs;
 	int			i;
 
 	switch(field_type) {
@@ -3115,7 +3136,8 @@ choice_common:
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 			break;
 		    }
-		    no_str=MIN(pchoiceSet->number,16);
+		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
+		    no_str=MIN(pchoiceSet->number,i);
 		    *(unsigned long*)pbuffer = no_str;
 		    ptemp = pbuffer + sizeof(unsigned long);
 		    for (i=0; i<no_str; i++) {
@@ -3134,7 +3156,8 @@ choice_common:
 			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
 			break;
 		    }
-		    no_str=MIN(pdevChoiceSet->number,16);
+		    i = sizeof(pdbr_enumStrs->strs)/sizeof(pdbr_enumStrs->strs[0]);
+		    no_str=MIN(pdevChoiceSet->number,i);
 		    *(unsigned long*)pbuffer = no_str;
 		    ptemp = pbuffer + sizeof(unsigned long);
 		    for (i=0; i<no_str; i++) {
@@ -5839,7 +5862,7 @@ long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
  putEnumEnum,     putEnumEnum,     putEnumEnum,     putEnumEnum}
 };
 
-long dbPut(paddr,dbrType,pbuffer,nRequest)
+static long dbPut(paddr,dbrType,pbuffer,nRequest)
 struct dbAddr	*paddr;
 short		dbrType;
 caddr_t		pbuffer;
@@ -5919,10 +5942,12 @@ long		nRequest;
 	    }
 	}
 
-	/* propagate events for this field (except for VAL)*/
+	/* propagate events for this field */
+	/* if the field is VAL and process_passive is true dont propagate*/
 	pfldDes = (struct fldDes *)(paddr->pfldDes);
 	pfield_name = (long *)&(pfldDes->fldname[0]);
-	if(precord->mlis.count && (*pval != *pfield_name))
+	if(precord->mlis.count &&
+	((*pval != *pfield_name) || (!pfldDes->process_passive)))
 		db_post_events(precord,paddr->pfield,DBE_VALUE);
 
 all_done: 

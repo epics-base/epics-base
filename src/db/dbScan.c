@@ -1,4 +1,3 @@
-
 /* dbScan.c */
 /* share/src/db $Id$ */
 
@@ -53,13 +52,14 @@
  *				undefined ones
  * .10	07-21-89	lrd	added support for the COMPRESS record
  * .11	01-25-90	lrd	added support for SUB records
- * .12	04-05-90	lrd	added the momentary output task
+ * .12	04-05-90	lrd	added the callback output task
  * .13  05-22-89        mrk     periodic scan now scans at correct rate
  * .14	08-08-90	lrd	removed T_AI from initialization at start up
  *				only outputs need to be read at initialization
  * .15	08-30-90	lrd	renamed the interrupt scanner wakeup from 
  *				intr_event_poster to io_scanner_wakeup
  * .16  09-14-90	mrk	changed for new record/device support
+ * .17  10-24-90	mrk	replaced momentary task by general purpose callback task
  */
 
 /*
@@ -69,7 +69,12 @@
  *    ioEventTask	Task which processes records on I/O interrupt
  *    eventTask		Task which processes records on global events
  *    wdScanTask	Task which restarts other tasks when suspended
- *    momentaryTask	Task that turns off momentary outputs
+ *    callbackTask	General purpose callback task
+ *    callbackRequest   request callback
+ *	arg
+ *		pointer to arbitrary structure with first element being
+ *		address of callback routine. When called addr of
+ *		structure is passed.
  *    scan_init		Build the scan lists and start the tasks
  *    remove_scan_tasks	Delete scan tasks, free any malloc'd memory
  *	args
@@ -267,7 +272,7 @@ struct event_list{
 #define	EVENT		0x02
 #define	PERIODIC	0x04
 #define	WDSCAN		0x08
-#define	MOMENTARY	0x10
+#define	CALLBACK	0x10
 
 int     fd;			/* used for the print list diagnostics */
 
@@ -316,15 +321,14 @@ static int	wdScanTaskId = 0;
 static int	wdScanOff = 0;
 
 
-/* MOMENTARY GLOBALS */
-/* semaphore on which the momentary output task waits */
-SEMAPHORE momentarySem;
-
-/* ring buffer into which the drivers place the binary outputs to zero */
-RING_ID momentaryQ;
-
-static int	momentaryTaskId = 0;
-extern long	masks[];	/* masks for bit numbers */
+/* CALLBACK GLOBALS */
+static SEMAPHORE callbackSem;
+static RING_ID callbackQ;
+static int	callbackTaskId = 0;
+struct callback {
+	void (*callback)();
+	/*remainder is callback dependent*/
+};
 
 /* flag to the drivers that they can start to send events to the event tasks */
 short    wakeup_init;
@@ -622,22 +626,29 @@ wdScanTask()
     }
 }
 
-/*
- * Momentary output task
- *
- * turns off momentary outputs after expired time
- */
-momentaryTask(){
-    struct intr_momentary intr_data;
+/* General purpose callback task */
+callbackTask(){
+    struct callback *pcallback;
 
     FOREVER {
 	/* wait for somebody to wake us up */
-        semTake (&momentarySem);
+        semTake (&callbackSem);
 
 	/* process requests in the command ring buffer */
-	while (rngBufGet(momentaryQ,&intr_data,sizeof(intr_data))) {
-		(*intr_data.callback)(intr_data.arg);
+	while (rngBufGet(callbackQ,&pcallback,sizeof(pcallback))) {
+		(*pcallback->callback)(pcallback);
 	}
+    }
+}
+
+/* Routine which places requests into callback queue*/
+callbackRequest(pcallback)
+    struct callback *pcallback;
+{
+    if(rngBufPut(callbackQ,&pcallback,sizeof(pcallback))!=sizeof(pcallback)) {
+	logMsg("callbackQ full\n");
+    } else {
+	semGive(&callbackSem);
     }
 }
 
@@ -651,16 +662,16 @@ momentaryTask(){
 scan_init()
 {
 	/* remove scan tasks */
-	remove_scan_tasks(EVENT | IO_EVENT | PERIODIC | MOMENTARY);
+	remove_scan_tasks(EVENT | IO_EVENT | PERIODIC | CALLBACK);
 
 	/* build the scan lists */
 	build_scan_lists(EVENT | IO_EVENT | PERIODIC);
 
 	/* create event ring buffers */
-	initialize_ring_buffers(EVENT | IO_EVENT | MOMENTARY);
+	initialize_ring_buffers(EVENT | IO_EVENT | CALLBACK);
 
 	/* Spawn scanner tasks */
-	start_scan_tasks(EVENT | IO_EVENT | PERIODIC | WDSCAN | MOMENTARY);
+	start_scan_tasks(EVENT | IO_EVENT | PERIODIC | WDSCAN | CALLBACK);
 
 	/* let drivers know we're ready to accept events */
 	wakeup_init = 1;
@@ -700,11 +711,11 @@ register short	tasks;
 		fill(event_lists,sizeof(struct event_list)*MAX_EVENTS,0);
 	}
 
-	/* delete the momentaryTask if it is running */
-	if (tasks & MOMENTARY){
-		if (momentaryTaskId)
-			if (td(momentaryTaskId) != 0)
-				momentaryTaskId = 0;
+	/* delete the callbackTask if it is running */
+	if (tasks & CALLBACK){
+		if (callbackTaskId)
+			if (td(callbackTaskId) != 0)
+				callbackTaskId = 0;
 	}
 
 	/* delete the periodicScanTask if it is running */
@@ -808,17 +819,17 @@ register short	lists;
 		semInit(&eventSem);
 	}
 
-	/* create the momentary ring buffer and semaphore */
-	if (lists & MOMENTARY){
+	/* create the callback ring buffer and semaphore */
+	if (lists & CALLBACK){
 		/* clear it if it is created */
-		if (momentaryQ){
-			rngFlush(momentaryQ);
+		if (callbackQ){
+			rngFlush(callbackQ);
 		/* create it if it does not exist */
-		}else if ((momentaryQ = rngCreate(sizeof(struct intr_momentary) * MAX_EVENTS))
+		}else if ((callbackQ = rngCreate(sizeof(struct callback *) * MAX_EVENTS))
 		  == (RING_ID)NULL){
-	 	      panic ("scan_init: momentaryQ not created\n");
+	 	      panic ("scan_init: callbackQ not created\n");
 		}
-		semInit(&momentarySem);
+		semInit(&callbackSem);
 	}
 }
 
@@ -867,13 +878,13 @@ register short	tasks;
 			    wdScanTask);
 	}
 
-	if (tasks & MOMENTARY){
-		momentaryTaskId = 
-		  taskSpawn(MOMENTARY_NAME,
-			    MOMENTARY_PRI,
-			    MOMENTARY_OPT,
-			    MOMENTARY_STACK,
-			    momentaryTask);
+	if (tasks & CALLBACK){
+		callbackTaskId = 
+		  taskSpawn(CALLBACK_NAME,
+			    CALLBACK_PRI,
+			    CALLBACK_OPT,
+			    CALLBACK_STACK,
+			    callbackTask);
 	}
 }
 

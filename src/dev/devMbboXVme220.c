@@ -62,7 +62,7 @@ static long init_record(pmbbo)
     case (VME_IO) :
 	pvmeio = &(pmbbo->out.value.vmeio);
 	pmbbo->mask = masks[pmbbo->nobt]<<pvmeio->signal;
-	status = bo_read(pvmeio->card,pmbbo->mask,&value,BB902);
+	status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
 	if(status==0) pmbbo->rval = value>> pvmeio->signal;
 	break;
     default :
@@ -86,7 +86,7 @@ static long write_mbbo(pmbbo)
 	if(pmbbo->sdef) {
 		unsigned long *pvalues = &(pmbbo->zrvl);
 
-		if(pmbbo->val<0 || pmbbo->val>15) {
+		if(pmbbo->val>15) {
 			if(pmbbo->nsev<MAJOR_ALARM ) {
 				pmbbo->nsta = SOFT_ALARM;
 				pmbbo->nsev = MAJOR_ALARM;
@@ -97,9 +97,9 @@ static long write_mbbo(pmbbo)
 		pmbbo->rval = value<<pvmeio->signal;
 	} else pmbbo->rval = ((unsigned long)(pmbbo->val))<<pvmeio->signal;
 
-	status = bo_driver(pvmeio->card,pmbbo->rval,pmbbo->mask,BB902);
+	status = bo_driver(pvmeio->card,pmbbo->rval,pmbbo->mask,XY220);
 	if(status==0) {
-		status = bo_read(pvmeio->card,pmbbo->mask,&value,BB902);
+		status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
 		if(status==0) pmbbo->rval = value>> pvmeio->signal;
 		else if(pmbbo->nsev<MAJOR_ALARM ) {
 			pmbbo->nsta = READ_ALARM;

@@ -102,8 +102,8 @@ from the st.cmd files in the iocBoot subdirectories.
     <p>Remove</p>
     <pre>ld &lt; iocCore
     </pre>
-    <p>Immediately after the dbLoadDatabase command add</p>
-    <pre>registerRecordDeviceDriver(pdbbase)
+    <p>Immediately after the dbLoadDatabase(xxx.dbd) command add</p>
+    <pre>xxx_registerRecordDeviceDriver(pdbbase)
     </pre>
   </li>
 </ul>

@@ -80,6 +80,7 @@ if [ ! -d config ]; then
 	END
 	cat > config/RULES.Vx <<-\END
 		include $(EPICS_BASE)/config/RULES.Vx
+		VX_WARN_YES = -Wall -pedantic
 	END
 	cat > config/RULES_DIRS <<-\END
 		include $(EPICS_BASE)/config/RULES_DIRS
@@ -176,11 +177,11 @@ do
 	if [ -n "${EXAMPLES}" ]; then
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
 		RECTYPES += xxxRecord.h
-		USR_INCLUDES += -I$(EPICS_BASE)/include
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 		DBDEXPAND = APPNAMEInclude.dbd
 		DBDNAME = APPNAME.dbd
-		SRCS.c += $(RECTYPES:%.h=../%.c)
+		SRCS.c += ../xxxRecord.c
+		SRCS.c += ../devXxxSoft.c
 
 		include ../baseLIBOBJS
 		LIBOBJS += xxxRecord.o
@@ -192,14 +193,14 @@ do
 	END
 	else
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
-		#RECTYPES += xxxRecord.h
-		USR_INCLUDES += -I$(EPICS_BASE)/include
+		#RECTYPES += anyRecord.h
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 		#DBDEXPAND = APPNAMEInclude.dbd
 		#DBDNAME = APPNAME.dbd
+		#SRCS.c += ../anysource.c
 
 		#include ../baseLIBOBJS
-		#LIBOBJS += xxx.o
+		#LIBOBJS += anysource.o
 		#LIBNAME = APPNAMESupport
 		#SCRIPTS += st.APPNAME
 		#SCRIPTS += vxWorks vxWorks.sym iocCore seq
@@ -223,7 +224,6 @@ do
 		#  ADD MACRO DEFINITIONS AFTER THIS LINE
 
 		#USR_CFLAGS += 
-		USR_INCLUDES += -I$(EPICS_BASE)/include
 		DEPLIBS += $(EPICS_BASE_LIB)/libca.a 
 		DEPLIBS += $(EPICS_BASE_LIB)/libCom.a
 
@@ -233,6 +233,7 @@ do
 	END
 	if [ -n "${EXAMPLES}" ]; then
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Unix <<-\END
+		SRCS.c += ../caExample.c
 		OBJS +=  caExample.o
 		PROD += caExample
 	END
@@ -325,21 +326,22 @@ do
 		/* recXxx.c */
 		/* Example record support module */
 		  
-		#include	<vxWorks.h>
-		#include	<stddef.h>
-		#include	<stdio.h>
-		#include	<lstLib.h>
-		#include	<string.h>
+		#include <vxWorks.h>
+		#include <stddef.h>
+		#include <stdio.h>
+		#include <lstLib.h>
+		#include <string.h>
 		
-		#include	<alarm.h>
-		#include	<dbDefs.h>
-		#include	<dbAccess.h>
-		#include	<devSup.h>
-		#include	<errMdef.h>
-		#include	<recSup.h>
-		#include	<special.h>
+		#include <alarm.h>
+		#include <dbEvent.h>
+		#include <dbDefs.h>
+		#include <dbAccess.h>
+		#include <devSup.h>
+		#include <errMdef.h>
+		#include <recSup.h>
+		#include <special.h>
 		#define GEN_SIZE_OFFSET
-		#include	<xxxRecord.h>
+		#include <xxxRecord.h>
 		#undef  GEN_SIZE_OFFSET
 		
 		/* Create RSET - Record Support Entry Table*/
@@ -391,7 +393,6 @@ do
 		}xxxdset;
 		
 		static void alarm(xxxRecord *pxxx);
-		static void convert(xxxRecord *pxxx);
 		static void monitor(xxxRecord *pxxx);
 		
 		static long init_record(void *precord,int pass)
@@ -729,9 +730,6 @@ do
 		#include	<devSup.h>
 		#include	<link.h>
 		#include	<xxxRecord.h>
-		/* Added for Channel Access Links */
-		long dbCaAddInlink();
-		long dbCaGetLink();
 		
 		/*Create the dset for devXxxSoft */
 		static long init_record();
@@ -756,25 +754,8 @@ do
 		static long init_record(pxxx)
 		    struct xxxRecord	*pxxx;
 		{
-		    long status;
-		
-		    /* xxx.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-		    switch (pxxx->inp.type) {
-		    case (CONSTANT) :
-		 	if(recGblInitConstantLink(&pxxx->inp,DBF_DOUBLE,&pxxx->val))
-		 	    pxxx->udf = FALSE;
-		
-		 	break;
-		    case (PV_LINK) :
-		    case (CA_LINK) :
-		    case (DB_LINK) :
-		 	break;
-		    default :
-		 	recGblRecordError(S_db_badField, (void *)pxxx,
-		 		"devXxxSoft (init_record) Illegal INP field");
-		
-		 	return(S_db_badField);
-		    }
+		    if(recGblInitConstantLink(&pxxx->inp,DBF_DOUBLE,&pxxx->val))
+		         pxxx->udf = FALSE;
 		    return(0);
 		}
 		
@@ -784,9 +765,8 @@ do
 		    long status;
 		
 		    status = dbGetLink(&(pxxx->inp),DBF_DOUBLE, &(pxxx->val),0,0);
-		
-		    if (RTN_SUCCESS(status))
-		       pxxx->udf = FALSE;
+		    /*If return was succesful then set undefined false*/
+		    if(!status) pxxx->udf = FALSE;
 		    return(0);
 		}
 	END

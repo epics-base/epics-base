@@ -155,7 +155,6 @@ void epicsShareAPI dbCaAddLink( struct link *plink)
 
     pca = (caLink*)dbCalloc(1,sizeof(caLink));
     pca->lock = epicsMutexMustCreate();
-    pca->channelCleared = epicsEventMustCreate(epicsEventEmpty);
     epicsMutexMustLock(pca->lock);
     pca->plink = plink;
     pvname = plink->value.pv_link.pvname;
@@ -178,16 +177,6 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     plink->value.pv_link.pvt = 0;
     addAction(pca,CA_CLEAR_CHANNEL);
     epicsMutexUnlock(pca->lock);
-    epicsEventMustWait(pca->channelCleared);
-    /*No need to lock since noone else should be able to access it*/
-    free(pca->pgetNative);
-    free(pca->pputNative);
-    free(pca->pgetString);
-    free(pca->pputString);
-    free(pca->pcaAttributes);
-    free(pca->pvname);
-    epicsMutexDestroy(pca->lock);
-    free(pca);
 }
 
 
@@ -746,11 +735,15 @@ void dbCaTask()
             if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_CLEAR_CHANNEL) {/*This must be first*/
-                /* Take lock in case so that dbCaRemoveLink unlocks*/
-                epicsMutexMustLock(pca->lock);
-                epicsMutexUnlock(pca->lock);
                 if(pca->chid) ca_clear_channel(pca->chid);    
-                epicsEventSignal(pca->channelCleared);
+                free(pca->pgetNative);
+                free(pca->pputNative);
+                free(pca->pgetString);
+                free(pca->pputString);
+                free(pca->pcaAttributes);
+                free(pca->pvname);
+                epicsMutexDestroy(pca->lock);
+                free(pca);
                 continue; /*No other link_action makes sense*/
             }
             pca->link_action = 0;

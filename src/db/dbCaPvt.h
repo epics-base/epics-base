@@ -59,7 +59,6 @@ typedef struct caLink
         short		hasReadAccess;
         short		hasWriteAccess;
 	epicsMutexId	lock;
-	epicsEventId	channelCleared;
 	unsigned long	nDisconnect;
 	unsigned long	nNoWrite;
 	short		dbrType;

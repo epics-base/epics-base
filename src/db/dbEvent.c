@@ -886,7 +886,6 @@ int			init_func_arg
         if (evUser->extra_labor && evUser->extralabor_sub) {
             FASTLOCK(&evUser->lock);
 		    if(evUser->extra_labor && evUser->extralabor_sub){
-			    evUser->extra_labor = FALSE;
                 pExtraLaborSub = evUser->extralabor_sub;
                 pExtraLaborArg = evUser->extralabor_arg;
 		    }
@@ -894,6 +893,7 @@ int			init_func_arg
                 pExtraLaborSub = NULL;
                 pExtraLaborArg = NULL;
             }
+			evUser->extra_labor = FALSE;
             FASTUNLOCK(&evUser->lock);
 		    if(pExtraLaborSub){
 			    (*pExtraLaborSub)(pExtraLaborArg);

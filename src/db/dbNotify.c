@@ -240,10 +240,10 @@ STATIC void notifyCallback(CALLBACK *pcallback)
             restartCheck(precord->ppnr);
         }
         pputNotifyPvt->state = putNotifyNotActive;
-        pputNotifyPvt->cancelWait = 0;
+        epicsEventSignal(pputNotifyPvt->cancelEvent);
+        putNotifyCleanup(ppn);
         epicsMutexUnlock(pnotifyGlobal->lock);
         dbScanUnlock(precord);
-        epicsEventSignal(pputNotifyPvt->cancelEvent);
         return;
     }
     if(pputNotifyPvt->state==putNotifyRestartCallbackRequested) {
@@ -364,9 +364,6 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         epicsMutexUnlock(pnotifyGlobal->lock);
         dbScanUnlock(precord);
         epicsEventWait(pputNotifyPvt->cancelEvent);
-        epicsMutexMustLock(pnotifyGlobal->lock);
-        pputNotifyPvt->cancelWait = 0;
-        epicsMutexUnlock(pnotifyGlobal->lock);
         return;
     }
     switch(state) {
@@ -392,6 +389,7 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         printf("dbNotify: illegal state for notifyCallback\n");
     }
     pputNotifyPvt->state = putNotifyNotActive;
+    putNotifyCleanup(ppn);
     epicsMutexUnlock(pnotifyGlobal->lock);
     dbScanUnlock(precord);
 }

@@ -723,6 +723,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
              unsigned minorVersionNumber, const osiSockAddr & addr,
              const epicsTime & currentTime )
 {
+    tcpiiu * pnewiiu = 0;
     unsigned  retrySeqNumber;
 
     if ( addr.sa.sa_family != AF_INET ) {
@@ -763,7 +764,8 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         }
         else {
             try {
-                piiu = new tcpiiu ( *this, this->connTMO, this->timerQueue,
+                pnewiiu = piiu = new tcpiiu ( 
+                            *this, this->connTMO, this->timerQueue,
                             addr, minorVersionNumber, this->ipToAEngine,
                             chan->getPriority() );
                 if ( ! piiu ) {
@@ -820,7 +822,8 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         //
         // the callback lock is also taken when a channel 
         // disconnects to prevent a race condition with the 
-        // code below
+        // code below - ie we hold the callback lock here
+        // so a chanel cant be destroyed out from under us.
         chan->connectStateNotify ();
 
         /*
@@ -831,6 +834,17 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
          */
         if ( ! v41Ok ) {
             chan->accessRightsNotify ();
+        }
+    }
+
+    if ( pnewiiu ) {
+        // this is done here after we release the priamry
+        // lock so that we will hold the callback lock but
+        // not the primary lock when the fd is registered
+        // with the user
+        bool success = pnewiiu->start ();
+        if ( ! success ) {
+            this->privateUninstallIIU ( *pnewiiu );
         }
     }
 
@@ -1758,6 +1772,11 @@ void cac::notifyDestroyFD ( SOCKET sock ) const
 void cac::uninstallIIU ( tcpiiu & iiu ) 
 {
     epicsAutoMutex autoMutexCB ( this->callbackMutex );
+    this->privateUninstallIIU ( iiu );
+}
+
+void cac::privateUninstallIIU ( tcpiiu & iiu )
+{
     epicsAutoMutex autoMutexCAC ( this->mutex );
     if ( iiu.channelCount() ) {
         char hostNameTmp[64];
@@ -1780,7 +1799,7 @@ void cac::uninstallIIU ( tcpiiu & iiu )
     assert ( this->pudpiiu );
     this->removeAllChan ( iiu, this->pudpiiu );
 
-    iiu.destroy ();
+    delete &iiu;
 
     this->pSearchTmr->resetPeriod ( 0.0 );
 

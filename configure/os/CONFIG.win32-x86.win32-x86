@@ -22,7 +22,7 @@ HOME = $(HOMEDRIVE)$(HOMEPATH)
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
-RCCMD = rc -l 0x409 -I. -I.. $(INSTALL_INCLUDES) -fo $@ $<
+RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
 
 ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
 ###	$(addsuffix .lib,$($*_SYS_DLL_LIBS) $(SYS_DLL_LIBS))

@@ -10,7 +10,7 @@ SRCS.c = \
 LIBOBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
 	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o \
-	convert.o
+	catime.o convert.o
 
 LIBNAME = caLib 
 

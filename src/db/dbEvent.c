@@ -69,7 +69,7 @@
 #include	<semLib.h>
 #include	<stdioLib.h>
 #include	<vxLib.h>
-#include	<lstLib.h>
+#include	<ellLib.h>
 #include	<sysLib.h>
 #include	<string.h>
 #include	<logLib.h>
@@ -316,7 +316,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	lstAdd((LIST*)&precord->mlis, (NODE*)pevent);
+  	ellAdd((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	UNLOCKREC(precord);
 
   	return OK;
@@ -346,9 +346,9 @@ int	db_cancel_event(struct event_block	*pevent)
 
   	LOCKREC(precord);
   	/* dont let a misplaced event corrupt the queue */
-  	status = lstFind((LIST*)&precord->mlis, (NODE*)pevent);
+  	status = ellFind((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	if(status!=ERROR)
-    		lstDelete((LIST*)&precord->mlis, (NODE*)pevent);
+    		ellDelete((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	UNLOCKREC(precord);
   	if(status == ERROR)
     		return ERROR;

@@ -91,6 +91,10 @@
 static char *sccsId = "@(#)drvFp.c	1.12\t6/4/93";
 
 #include "vxWorks.h"
+#include "stdlib.h"
+#include "stdio.h"
+#include "intLib.h"
+#include "rebootLib.h"
 #include "vme.h"
 #include "taskLib.h"
 #include <iv.h> /* in h/68k if this is compiling for a 68xxx */
@@ -115,6 +119,7 @@ struct {
 static long report()
 {
 	fp_io_report();
+        return(0);
 }
 
 static long init()
@@ -198,7 +203,7 @@ static void	fp_reboot();
  * interrupt service routine
  *
  */
-fp_int(card)
+int fp_int(card)
 unsigned card;
 {
  register struct fp_rec *ptr = &fp[card];
@@ -236,6 +241,7 @@ unsigned card;
  ptr->int_num++;				/* log interrupt */
  regptr->csr |= CSR_RST;			/* clear status and rearm */
  regptr->csr ^= CSR_RST;
+ return(0);
 }
 
 
@@ -246,7 +252,7 @@ unsigned card;
  *
  *
  */
-fp_init(addr)
+int fp_init(addr)
 unsigned int addr;
 {
 	int i;
@@ -356,10 +362,9 @@ void	fp_reboot()
  * (toggles the interrupt enable - joh)
  *
  */
-fp_en(card)
+int fp_en(card)
 short card;
 {
-	unsigned short temp;
 
 	if (card < 0 || (card > fp_num))
 		return -1;
@@ -376,7 +381,7 @@ short card;
  * set interrupt reporting mode
  *
  */
-fp_mode(card,mode)
+int fp_mode(card,mode)
  short card, mode;
 {
  if (card < 0 || (card > fp_num))
@@ -390,7 +395,7 @@ fp_mode(card,mode)
  * read current local inputs and enable switches
  *
  */
-fp_srd(card,option)
+int fp_srd(card,option)
  short	card;
  short	option;
 {
@@ -406,7 +411,7 @@ fp_srd(card,option)
  * read latched local inputs
  *
  */
-fp_frd(card)
+int fp_frd(card)
  short card;
 {
  if (card < 0 || (card > fp_num))
@@ -419,7 +424,7 @@ fp_frd(card)
  * read csr contents
  *
  */
-fp_csrd(card)
+int fp_csrd(card)
  short card;
 {
  if (card < 0 || (card > fp_num))
@@ -432,7 +437,7 @@ fp_csrd(card)
  * epics interface to fast protect
  *
  */
-fp_driver(card,mask,prval)
+int fp_driver(card,mask,prval)
  register unsigned short card;
  unsigned int mask;
  register unsigned int *prval;
@@ -451,7 +456,7 @@ fp_driver(card,mask,prval)
  * command line interface to fp_driver
  *
  */
-fp_read(card)
+int fp_read(card)
  short card;
 {
  unsigned int fpval,ret;
@@ -470,7 +475,7 @@ fp_read(card)
  * dump fast protect status to console
  *
  */
-fp_dump()
+int fp_dump()
 {
  int i;
 
@@ -487,11 +492,11 @@ fp_dump()
  * monitor fast protect cards and report failures to console
  *
  */
-fp_mon()
+void fp_mon()
 {
  for(semTake(fp_semid,WAIT_FOREVER);fp_dump() != 0;semTake(fp_semid,WAIT_FOREVER));
 }
-fp_monitor()
+int fp_monitor()
 {
  static char *name = "fpmon";
  int tid;
@@ -506,7 +511,7 @@ fp_monitor()
  return 0;
 }
  
-fp_io_report(level)
+int fp_io_report(level)
 int level;
 {
 	int i;
@@ -514,9 +519,10 @@ int level;
         for(i=0; i<=fp_num; i++){
                 printf("BI: AT8-FP-S:    card %d\n", i);
         }
+	return(0);
 } 
 
-fp_getioscanpvt(card,scanpvt)
+int fp_getioscanpvt(card,scanpvt)
 short 		card;
 IOSCANPVT 	*scanpvt;
 {

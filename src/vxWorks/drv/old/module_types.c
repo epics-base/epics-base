@@ -32,7 +32,7 @@
 
 #include <module_types.h>
 
-module_types()
+int module_types()
 {
 
 ai_num_cards[AB1771IL]		= 12;

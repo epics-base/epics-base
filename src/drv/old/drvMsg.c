@@ -34,17 +34,8 @@
  */
 
 #include <vxWorks.h>
-#include <types.h>
-#if 0 /* COMMENTED OUT SOME INCLUDES */
-#include <iosLib.h>
-#include <taskLib.h>
-#include <memLib.h>
-#include <semLib.h>
-#include <wdLib.h>
-#include <wdLib.h>
-#include <tickLib.h>
-#include <vme.h>
-#endif /* COMMENTED OUT SOME INCLUDES */
+#include <stdlib.h>
+#include <stdio.h>
 
 
 #include <alarm.h>
@@ -170,7 +161,7 @@ msgDset	*pdset;
   initParms.pdset = pdset;
 
   if (msgDebug)
-    printf("Message init routine entered %d, 0x%08.8X\n", parm, pdset);
+    printf("Message init routine entered %d, %p\n", parm, pdset);
 
   if(pdset->pparmBlock->pdrvBlock->drvIoctl != NULL)
     return((*(pdset->pparmBlock->pdrvBlock->drvIoctl))(MSGIOCTL_INIT, &initParms));
@@ -181,7 +172,7 @@ msgDset	*pdset;
 /******************************************************************************
  *
  ******************************************************************************/
-drvMsg_xactListAddHead(plist, pnode)
+int drvMsg_xactListAddHead(plist, pnode)
 xactQueue       *plist;
 msgXact         *pnode;
 {
@@ -201,7 +192,7 @@ msgXact         *pnode;
 /******************************************************************************
  *
  ******************************************************************************/
-drvMsg_xactListAddTail(plist, pnode)
+int drvMsg_xactListAddTail(plist, pnode)
 xactQueue       *plist;
 msgXact         *pnode;
 {
@@ -221,7 +212,7 @@ msgXact         *pnode;
 /******************************************************************************
  *
  ******************************************************************************/
-drvMsg_xactListDel(plist, pnode)
+int drvMsg_xactListDel(plist, pnode)
 xactQueue	*plist;
 msgXact		*pnode;
 {
@@ -1011,7 +1002,6 @@ long
 drvMsg_initAi(pai)
 struct aiRecord	*pai;
 {
-  char	message[100];
   long	status;
 
   pai->dpvt = drvMsg_genXact(((struct msgDset *)(pai->dset))->pparmBlock, &(pai->inp), pai);
@@ -1068,7 +1058,6 @@ long
 drvMsg_initBi(pbi)
 struct biRecord *pbi;
 {
-  char  message[100];
   long  status;
 
   pbi->dpvt = drvMsg_genXact(((struct msgDset *)(pbi->dset))->pparmBlock, &(pbi->inp), pbi);
@@ -1125,7 +1114,6 @@ long
 drvMsg_initMi(pmi)
 struct mbbiRecord *pmi;
 {
-  char  message[100];
   long  status;
 
   pmi->dpvt = drvMsg_genXact(((struct msgDset *)(pmi->dset))->pparmBlock, &(pmi->inp), pmi);
@@ -1182,7 +1170,6 @@ long
 drvMsg_initLi(pli)
 struct longinRecord *pli;
 {
-  char  message[100];
   long  status;
 
   pli->dpvt = drvMsg_genXact(((struct msgDset *)(pli->dset))->pparmBlock, &(pli->inp), pli);
@@ -1209,7 +1196,6 @@ long
 drvMsg_initLo(plo)
 struct longoutRecord *plo;
 {
-  char  message[100];
   long  status;
 
   plo->dpvt = drvMsg_genXact(((struct msgDset *)(plo->dset))->pparmBlock, &(plo->out), plo);
@@ -1237,7 +1223,6 @@ long
 drvMsg_initSi(psi)
 struct stringinRecord *psi;
 {
-  char  message[100];
   long  status;
 
   psi->dpvt = drvMsg_genXact(((struct msgDset *)(psi->dset))->pparmBlock, &(psi->inp), psi);
@@ -1264,7 +1249,6 @@ long
 drvMsg_initSo(pso)
 struct stringoutRecord *pso;
 {
-  char  message[100];
   long  status;
 
   pso->dpvt = drvMsg_genXact(((struct msgDset *)(pso->dset))->pparmBlock, &(pso->out), pso);
@@ -1292,7 +1276,6 @@ long
 drvMsg_initWf(pwf)
 struct waveformRecord *pwf;
 {
-  char  message[100];
   long  status;
 
   pwf->dpvt = drvMsg_genXact(((struct msgDset *)(pwf->dset))->pparmBlock, &(pwf->inp), pwf);

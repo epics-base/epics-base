@@ -50,6 +50,10 @@
 
 
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <vxLib.h>
+#include <sysLib.h>
 #include <vme.h>
 #include <module_types.h>
 #include <drvSup.h>
@@ -111,7 +115,7 @@ static char *xy210_addr;
  *
  * intialization for the binary input cards
  */
-xy210_driver_init(){
+int xy210_driver_init(){
 	int bimode;
         int status;
         register short  i;
@@ -146,7 +150,7 @@ xy210_driver_init(){
  *
  * interface to the xy210 binary inputs
  */
-xy210_driver(card, mask, prval)
+int xy210_driver(card, mask, prval)
 register unsigned short card;
 unsigned int            mask;
 register unsigned int	*prval;
@@ -179,7 +183,7 @@ void xy210_io_report(level)
 	 if (pbi_xy210s[card]){
            value = (pbi_xy210s[card]->high_value << 16)    /* high */
                    + pbi_xy210s[card]->low_value;               /* low */
-           printf("BI: XY210:      card %d value=0x%08.8x\n",card,value);
+           printf("BI: XY210:      card %d value=0x%8.8x\n",card,value);
 	}
    }     
 }

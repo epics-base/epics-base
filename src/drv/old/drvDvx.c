@@ -122,6 +122,9 @@
  *  for the DMA buffer that is appropriate.
  *
  * $Log$
+ * Revision 1.2  1995/09/01  14:36:35  winans
+ * Added ability to change default clock speed from shell.
+ *
  * Revision 1.1  1995/03/30  19:35:14  jba
  * Seperated drv files into ansi and old dirs. Added combine dir.
  *
@@ -139,8 +142,12 @@
 static char *SccsId = "$Id$";
 
 #include	<vxWorks.h>
-#include	<stdioLib.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<vme.h>
+#include	<rebootLib.h>
+#include	<intLib.h>
+#include	<taskLib.h>
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
@@ -378,7 +385,6 @@ dvx_int(struct dvx_rec *dvxptr)
 
 	static short i, junk;
 	register struct dvx_2502 *cptr;
-	static unsigned int tick, t, intlev;
 
 	cptr = dvxptr->pdvx2502;
 	cptr->dma_point = DMA_CSR;
@@ -507,7 +513,6 @@ LOCAL long dvx_driver_init(void)
 	int			j;
 	int			status;
 	unsigned short		card_id;
-	short 			*ramptr;
 	struct dvx_inbuf 	*ibptr;
 	struct dvx_inbuf	*ibptra;
 	int 			intvec = DVX_IVEC0;
@@ -739,6 +744,7 @@ LOCAL int muxtst(int card)
 	taskDelay(sysClkRateGet());		/* let test run */
 	dvx[card].pdvx2502->csr = dvx[card].csr_shadow;
 	dvx[card].pdvx2502->thresh = 0;	/* restore threshold */
+        return(0);
 }
 
 /*
@@ -779,9 +785,6 @@ LOCAL int muxtst(int card)
 int
 dvx_program(int card, int board, unsigned long mask, int dmaSize, int gain)
 {
-  int	i;
-  unsigned long maskCheck;
-  int	numSamp;
   static int firstTime = 1;
 
   if (dvxOnline)
@@ -791,18 +794,18 @@ dvx_program(int card, int board, unsigned long mask, int dmaSize, int gain)
   }
   if ((card < 0) || (card > ai_num_cards[DVX2502]))
   {
-    printf("dvx_program(%d, %d, 0x%08.8X): invalid card number specified\n", card, board, mask);
+    printf("dvx_program(%d, %d, 0x%8.8X): invalid card number specified\n", card, board, mask);
     return(1);
   }
   if ((board < 0) || (board > 7))
   {
-    printf("dvx_program(%d, %d, 0x%08.8X): invalid board number specified\n", card, board, mask);
+    printf("dvx_program(%d, %d, 0x%8.8X): invalid board number specified\n", card, board, mask);
     return(2);
   }
   if ((gain < 0) || (gain > 3))
   {
     errPrintf(-1, __FILE__, __LINE__, 
-	 "dvx_program(%d, %d, 0x%08.8X, %d, %d): invalid gain specified\n", card, board,
+	 "dvx_program(%d, %d, 0x%8.8X, %d, %d): invalid gain specified\n", card, board,
 				 mask, dmaSize, gain);
     return(2);
   }
@@ -931,6 +934,7 @@ int sramld(int card)
   dvx[card].pdvx2502->csr = dvx[card].csr_shadow | CSR_M_START;
   taskDelay(sysClkRateGet());     /* let scan run */
   dvx[card].pdvx2502->csr = dvx[card].csr_shadow; /* restore csr */
+  return(0);
 }
 
 
@@ -946,7 +950,6 @@ int		chan,
 short		*pval
 )
 {
-	short ival;
 
 	if ((card >= ai_num_cards[DVX2502]) || (card < 0))	/* make sure hardware exists */
 		return -1;
@@ -970,7 +973,7 @@ int dvxReadWf(int card, int start, int num, short *pwf, unsigned long *numRead)
   int	dataIndex;
   
   if(dvxDebug)
-    printf("dvxReadWf(%d, %d, %d, 0x%08.8X, 0x%08.8X)\n", card, start, num, pwf, numRead);
+    printf("dvxReadWf(%d, %d, %d, 0x%8.8X, 0x%8.8X)\n", card, start, num, pwf, numRead);
 
   *numRead = 0;			/* in case we have an error condition */
 
@@ -1017,6 +1020,7 @@ int	dvx_dread(int card,int chan)
 	volts = data * 10./32767. - 10;
 	printf("channel # %d\tdata = %x\tvolts = %f\n"
 	    ,chan,data,volts);
+        return(0);
 }
 
 
@@ -1029,7 +1033,6 @@ int	dvx_dread(int card,int chan)
 int dvx_dump(int card,int firstchan,int lastchan)
 {
 	int i, port, ix, printing, tmp;
-	short unsigned data;
 	unsigned long mask;
 	float volts;
 
@@ -1067,7 +1070,7 @@ int dvx_dump(int card,int firstchan,int lastchan)
 	    tmp &= 0x0000ffff;
 
 	    volts = tmp * 10./32767.;
-            printf("signal %2d, board %d, port %2d, data 0x%04.4X, voltage %f\n", ix, i, port, tmp, volts);
+            printf("signal %2d, board %d, port %2d, data 0x%4.4X, voltage %f\n", ix, i, port, tmp, volts);
 	  }
 
           ix++;
@@ -1084,7 +1087,7 @@ int dvx_dump(int card,int firstchan,int lastchan)
   return 0;
 }
 
-dvx_getioscanpvt(int card, IOSCANPVT *scanpvt)
+int dvx_getioscanpvt(int card, IOSCANPVT *scanpvt)
 {
 	if ((card >= ai_num_cards[DVX2502]) || (card < 0))return(0);
 	if (dvx[card].pdvx2502 == 0) return(0);
@@ -1101,7 +1104,6 @@ dvx_getioscanpvt(int card, IOSCANPVT *scanpvt)
 long dvx_io_report(int level)
 {
 	short int i;
-	unsigned short card_id;
 
 	for (i = 0; i < ai_num_cards[DVX2502]; i++){
 		if (!dvx[i].pdvx2502)
@@ -1150,7 +1152,7 @@ LOCAL int dvx_fempty(int card)
 }
 
 
-LOCAL dvx_dma_reset(struct dvx_2502 *dev)
+LOCAL int dvx_dma_reset(struct dvx_2502 *dev)
 {
   dev->dma_point = DMA_CSR;
   dev->dma_data = CMR_RESET;	/* reset the thing */
@@ -1165,11 +1167,11 @@ LOCAL dvx_dma_reset(struct dvx_2502 *dev)
  * local to A24 bus addr conversions below are necessary on processors
  * that dont place the local base for A24 on an even 16 MB boundary
  */
-LOCAL dvx_dma_init(struct dvx_rec *ptr)
+LOCAL int dvx_dma_init(struct dvx_rec *ptr)
 {
-	int i, j;
+	int i;
 	int status;
-	short *cptr, *cptra, *cptr0, *pext;
+	short *cptr, *cptra, *cptr0;
 	short *BusPtr;
 	struct dvx_2502 *dev;
 	struct dvx_inbuf *bpnt;

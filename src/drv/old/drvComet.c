@@ -69,8 +69,9 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
  *
  */
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <iv.h>
-#include <types.h>
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>
@@ -83,7 +84,6 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
 #define COMET_NCHAN			4
 #define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */
 #define COMET_DATA_MEM_SIZE		(COMET_CHANNEL_MEM_SIZE*COMET_NCHAN)
-static char	*shortaddr;
 static short	scan_control;	/* scan type/rate (if >0 normal, <=0 external control) */
   
 /* comet conrtol register map */ 
@@ -185,7 +185,6 @@ cometDoneTask()
 {
   register unsigned		card;
   register struct comet_config	*pconfig;
-  register long			i;
 
   while(TRUE)
     {
@@ -287,7 +286,7 @@ cometDoneTask()
  * intialize the driver for the COMET digitizer from omnibyte
  *
  */
-comet_init()
+int comet_init()
 {
   register struct comet_config	*pconfig;
   short				readback,got_one,card;
@@ -308,18 +307,18 @@ comet_init()
       if (pcomet_config == 0)
        {
          logMsg("\nCOMET: Couldn't allocate memory for the configuration data");
-         return;
+         return(0);
        }
     }
 
 /* get the standard and short address locations */
   if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,wf_addrs[COMET],&pcomet_cr)) != OK){
 	logMsg("\nCOMET: failed to map VME A16 base address\n");
-	return;
+	return(0);
         } 
   if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,wf_memaddrs[COMET],&extaddr)) != OK){
 	logMsg("\nCOMET: failed to map VME A32 base address\n");
-	return;
+	return(0);
         }
 
 /* determine which cards are present */
@@ -376,6 +375,7 @@ comet_init()
       cometDoneTaskId = taskSpawn("cometWFTask",WFDONE_PRI,WFDONE_OPT,WFDONE_STACK,(FUNCPTR) cometDoneTask);
       taskwdInsert(cometDoneTaskId,NULL,NULL);
     }         
+    return(0);
 }
 
 
@@ -400,7 +400,7 @@ static long init()
  * initiate waveform read
  *
  */
-comet_driver(card, signal, pcbroutine, parg, nelements)
+int comet_driver(card, signal, pcbroutine, parg, nelements)
 register short		card;
 register unsigned short	signal;
 unsigned int		*pcbroutine;
@@ -409,8 +409,6 @@ unsigned long nelements;
 {
   register struct comet_cr			*pcomet_csr;
   register struct comet_config			*pconfig;
-  register unsigned short			*pcomet_data;
-  register char 				*dummy;
 
 /*  printf("comet_driver: BEGIN...\n"); */
 /*  printf("comet_driver: nelements: %d ...\n",nelements); */
@@ -485,7 +483,7 @@ unsigned long nelements;
  *
  *	print status for all cards in the specified COMET address range
  */
-comet_io_report(level)
+int comet_io_report(level)
 short int level;
 {
 	struct comet_config	*pconfig;
@@ -566,12 +564,11 @@ unsigned	n;
  *	controls and reports operating mode
  *
  */
-comet_mode(card,mode,arg,val)
+int comet_mode(card,mode,arg,val)
 short		 card;
 unsigned short	mode, arg, val;
 {
  unsigned char *cptr;
- int i;
 
  if (card >= wf_num_cards[COMET])
 	return ERROR;
@@ -614,7 +611,7 @@ unsigned short	mode, arg, val;
 }
 
 /*********************************************/
-cometGetioscanpvt(card,scanpvt)
+int cometGetioscanpvt(card,scanpvt)
 short           card;
 IOSCANPVT       *scanpvt;
 {

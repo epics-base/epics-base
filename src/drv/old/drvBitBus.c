@@ -65,6 +65,9 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.4  1997/03/13 16:57:49  mrk
+ * Test version to diagnose bitbus problems
+ *
  * Revision 1.3  1996/05/03 19:04:44  winans
  * Fixed a reversed set of parms to a semBCreate().
  * Changed the data type of a parameter to memory probe call.
@@ -106,10 +109,11 @@
  */
 
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <iosLib.h>
 #include <taskLib.h>
-#include <memLib.h>
 #include <semLib.h>
 #include <rngLib.h>
 #include <wdLib.h>
@@ -118,11 +122,8 @@
 #include <iv.h>
 #include <rebootLib.h>
 #include <logLib.h>
-#include <sysLib.h>
 #include <intLib.h>
-#include <stdio.h>
 #include <vxLib.h>
-#include <string.h>
 
 #include <task_params.h>
 #include <module_types.h>
@@ -2554,6 +2555,7 @@ STATIC int pepTxTask(int link)
 	  PepLink3ConsecutiveDelay++;
 	  break;
 	default:
+	  break;
 	}
 	/* End unpleasant patch */
 

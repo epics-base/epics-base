@@ -48,6 +48,11 @@ static char SccsId[] = "@(#)drvBb902.c	1.6     9/14/92 ";
  */
 
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <vxLib.h>
+#include <sysLib.h>
+
 #include <vme.h>
 #include <module_types.h>
 #include <drvSup.h>
@@ -67,7 +72,6 @@ struct {
 static long report(level)
     int level;
 {
-    int i;
 
     bb902_io_report(level);
     return(0);
@@ -75,7 +79,6 @@ static long report(level)
 
 static long init()
 {
-    int status;
 
     bb902_driver_init();
     return(0);
@@ -174,7 +177,6 @@ unsigned short	card;
 unsigned int	mask;
 unsigned int	*pval;
 {
-    unsigned int work;
 
 	/* verify card exists */
 	if (!pbo_bb902s[card]) return (-1);
@@ -195,7 +197,7 @@ void bb902_io_report(level)
 	if (pbo_bb902s[card]){
 	   value = (pbo_bb902s[card]->high_value << 16) 
 		+ pbo_bb902s[card]->low_value;
-           printf("BO: BB902:      card %d value=0x%08.8x\n",card,value);
+           printf("BO: BB902:      card %d value=0x%8.8x\n",card,value);
         }
    }  
             

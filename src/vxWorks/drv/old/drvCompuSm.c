@@ -56,9 +56,13 @@
  * .17  04-09-96	ric	Added SM_FIND_LIMIT, SM_FIND_HOME
  */
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <vme.h>
-#include <sysLib.h>
 #include <semLib.h>		/* library for semaphore support */
+#include <intLib.h>		/* library for semaphore support */
+#include <vxLib.h>		/* library for semaphore support */
+#include <rebootLib.h>		/* library for semaphore support */
 #include <wdLib.h>
 #include <rngLib.h>		/* library for ring buffer support */
 
@@ -388,10 +392,9 @@ struct motor_data	compu_motor_data_array[MAX_COMPU_MOTORS];
  * is returned to the database library layer every .1 second while a motor
  * is moving
  */
-compu_resp_task()
+int compu_resp_task()
 {
     unsigned char		resp[RESPBUF_SZ];
-    register short		i;
     register struct motor_data	*pmotor_data;
 
     FOREVER {
@@ -477,7 +480,7 @@ char compu_pos_reqs[] =  { SM_GET_ABS_ENC, SM_GET_Z_REL_POS, SM_GET_MOV_STAT };
  * task to solicit currnet status from the compumotor 1830 cards while they
  * are active
  */
-compu_task()
+int compu_task()
 {
     register short		inactive_count;
     register short		card;
@@ -518,7 +521,7 @@ compu_task()
  *
  * interrupt vector for the compumotor 1830 card
  */
-compu_intr(mdnum)
+int compu_intr(mdnum)
 register int mdnum;
 {
     register struct compumotor	*pmtr;	/* memory port to motor card */
@@ -633,7 +636,7 @@ short trigger = 0;
  *
  * driver interface to the database library layer
  */
-compu_driver(card, channel, value_flag,arg1,arg2)
+int compu_driver(card, channel, value_flag,arg1,arg2)
 register short	card;
 short	channel;
 short		value_flag;
@@ -771,7 +774,7 @@ register int	arg2;
  * send a message to the compumotor 1830
  */
 int	wait_count;
-compu_send_msg(pmotor,pmsg,count)
+int compu_send_msg(pmotor,pmsg,count)
 register struct	compumotor	*pmotor;
 register char			*pmsg;
 register short			count;
@@ -798,6 +801,7 @@ register short			count;
 			pmotor->cm_cb = SND_MORE;
 		}
         }
+        return(0);
 }
 
 
@@ -827,7 +831,6 @@ long compu_sm_io_report(level)
 VOID compu_sm_stat(compu_num)
  short int compu_num;
  {
- struct motor_data  *pmotor_data;
   printf("\tCW limit = %d\t,CCW limit = %d\tMoving = %d\tDirection = %d\n",
          compu_motor_data_array[compu_num].cw_limit,
          compu_motor_data_array[compu_num].ccw_limit,

@@ -34,17 +34,8 @@
 #define	DRVBB232_C
 
 #include <vxWorks.h>
-#include <types.h>
-#if 0 /* COMMENTED OUT SOME INCLUDES */
-#include <iosLib.h>
-#include <taskLib.h>
-#include <memLib.h>
-#include <semLib.h>
-#include <wdLib.h>
-#include <wdLib.h>
-#include <tickLib.h>
-#include <vme.h>
-#endif /* COMMENTED OUT SOME INCLUDES */
+#include <stdlib.h>
+#include <stdio.h>
 
 
 #include <task_params.h>
@@ -241,12 +232,13 @@ static long
 genLink(p)
 msgDrvGenLParm	*p;
 {
-  char	name[20];
   char	message[100];
   drvBB232Link	*pdrvBB232Link;
 
   if (drvBB232Debug)
-    printf("BB232 genLink, link = %d, node = %d\n", p->plink->value.bitbusio.link, p->plink->value.bitbusio.node, p->plink->value.bitbusio.port);
+    printf("BB232 genLink, link = %d, node = %d port = %d\n",
+	p->plink->value.bitbusio.link, p->plink->value.bitbusio.node,
+	p->plink->value.bitbusio.port);
 
   switch (p->op) {
   case MSG_GENLINK_CREATE:
@@ -351,7 +343,7 @@ ioctlCommand	*p;
   }
 
   if (drvBB232Debug)
-    printf("drvBB232.control: bad command 0x%02.2X\n", p->cmd);
+    printf("drvBB232.control: bad command 0x%2.2X\n", p->cmd);
   return(ERROR);
 }
 
@@ -422,7 +414,7 @@ msgStrParm	*pwrParm;
   if ((pdpvtBitBusHead->status != BB_OK) || (pdpvtBitBusHead->rxMsg.cmd & 1))
   {
     if (drvBB232Debug)
-      printf("BB232 write error on link %d, node %d, port %d, driver %02.2X, message %02.2X\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port, pdpvtBitBusHead->status, pdpvtBitBusHead->rxMsg.cmd);
+      printf("BB232 write error on link %d, node %d, port %d, driver %2.2X, message %2.2X\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port, pdpvtBitBusHead->status, pdpvtBitBusHead->rxMsg.cmd);
 
     pxact->status = XACT_IOERR;
   }
@@ -450,7 +442,6 @@ msgStrParm	*prdParm;
   struct dpvtBitBusHead *pdpvtBitBusHead = (struct dpvtBitBusHead *) pxact->p;
   int		len = prdParm->len;
   int		loopLen = 0;
-  unsigned char *tmp = pdpvtBitBusHead->rxMsg.data;
 
   /* check if data already loaded into pdpvtBitBusHead->rxMsg */
   if ((pdpvtBitBusHead->rxMsg.length > BB_MSG_HEADER_SIZE) && (pdpvtBitBusHead->status == BB_OK))

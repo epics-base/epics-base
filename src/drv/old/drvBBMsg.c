@@ -32,10 +32,10 @@
  */
 
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <iosLib.h>
 #include <taskLib.h>
-#include <memLib.h>
 #include <semLib.h>
 #include <wdLib.h>
 #include <wdLib.h>

@@ -35,7 +35,8 @@
  *
  */
 #include <vxWorks.h>
-#include <stdioLib.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <rebootLib.h>
 
 #include <drvEpvxi.h>

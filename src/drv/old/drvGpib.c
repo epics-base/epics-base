@@ -59,6 +59,10 @@
  *
  *
  * $Log$
+ * Revision 1.6  1996/05/03 19:05:36  winans
+ * Added the EOS logic from Mark Rivers.  (It is only supported for HiDEOS
+ * GPIB interfaces.)
+ *
  * Revision 1.5  1996/03/06 14:17:34  mrk
  * Made STATIC static
  *
@@ -99,12 +103,14 @@
 
 #define INCLUDE_HIDEOS_INTERFACE
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sysLib.h>
+#include <intLib.h>
+#include <rebootLib.h>
 #include <iosLib.h>
 #include <taskLib.h>
 #include <semLib.h>
-#include <memLib.h>
-#include <sysLib.h>
 #include <iv.h>
 #include <vme.h>
 #include <wdLib.h>
@@ -329,7 +335,7 @@ reportGpib(void)
     {
       if (pNiLink[i])
       {
-        printf("Link %d (address 0x%08.8X) present and initialized.\n", i, pNiLink[i]->ibregs);
+        printf("Link %d (address %p) present and initialized.\n", i, pNiLink[i]->ibregs);
 	printf("        total niGpibCmd() taskDelay() calls = %lu\n", pNiLink[i]->cmdSpins);
 	printf("        worst case delay in niGpibCmd() = %lu\n", pNiLink[i]->maxSpins);
       }
@@ -359,7 +365,7 @@ STATIC void rebootFunc(void)
   {
     if (pNiLink[i] != NULL)
     {
-      sprintf(msg, "GPIB link %d rebooting");
+      sprintf(msg, "GPIB link %d rebooting",i);
       GpibDebug(&pNiLink[i]->ibLink, 0, msg, 1);
       probeValue = 0;
       vxMemProbe(&(pNiLink[i]->ibregs->ch1.ccr), WRITE, 1, (char *)&probeValue);
@@ -391,7 +397,6 @@ STATIC void rebootFunc(void)
 initGpib(void)
 {
   int	i;
-  int	j;
   int	probeValue;
   struct ibregs	*pibregs;
   char	s;
@@ -415,9 +420,9 @@ initGpib(void)
   if (ibDebug)
   {
     logMsg("Gpib NI1014 driver initializing\n");
-    logMsg("short_base            0x%08.8X\n", short_base);
-    logMsg("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
-    logMsg("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
+    logMsg("short_base            %p\n", short_base);
+    logMsg("NIGPIB_SHORT_OFF        0x%8.8X\n", NIGPIB_SHORT_OFF);
+    logMsg("NIGPIB_NUM_LINKS        0x%8.8X\n", NIGPIB_NUM_LINKS);
   }
 
   /* When probing, send out a reset signal to reset the DMAC and the TLC */
@@ -434,13 +439,13 @@ initGpib(void)
       pNiLink[i] = (struct niLink *) NULL;
 
       if (ibDebug)
-	logMsg("Probing of address 0x%08.8X failed\n", pibregs);
+	logMsg("Probing of address %p failed\n", pibregs);
 
     }
     else
     { /* GPIB board found... reserve space for structures & reset the thing */
       if (ibDebug)
-	logMsg("GPIB card found at address 0x%08.8X\n", pibregs);
+	logMsg("GPIB card found at address %p\n", pibregs);
 
       if ((pNiLink[i] = (struct niLink *)malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
@@ -567,7 +572,7 @@ initGpib(void)
 STATIC int
 niDumpDmac(int link)
 {
-    logMsg("ch0: ccr=%02.2X csr=%02.2X cer=%02.2X mtc=%04.4X mar=%08.8X btc=%04.4X bar=%08.8X\n", 
+    logMsg("ch0: ccr=%2.2X csr=%2.2X cer=%2.2X mtc=%4.4X mar=%8.8X btc=%4.4X bar=%8.8X\n", 
 	pNiLink[link]->ibregs->ch0.ccr & 0xff,
 	pNiLink[link]->ibregs->ch0.csr & 0xff, 
 	pNiLink[link]->ibregs->ch0.cer & 0xff,
@@ -576,7 +581,7 @@ niDumpDmac(int link)
 	pNiLink[link]->ibregs->ch0.btc & 0xffff,
 	niRdLong(&(pNiLink[link]->ibregs->ch0.bar)));
 
-    logMsg("ch1: ccr=%02.2X csr=%02.2X cer=%02.2X mtc=%04.4X mar=%08.8X btc=%04.4X bar=%08.8X\n", 
+    logMsg("ch1: ccr=%2.2X csr=%2.2X cer=%2.2X mtc=%4.4X mar=%8.8X btc=%4.4X bar=%8.8X\n", 
 	pNiLink[link]->ibregs->ch1.ccr & 0xff,
 	pNiLink[link]->ibregs->ch1.csr & 0xff, 
 	pNiLink[link]->ibregs->ch1.cer & 0xff,
@@ -629,7 +634,7 @@ int	link;
 
     niDumpDmac(link);
 
-    logMsg("r_isr1=%02.2X r_isr2=%02.2X\n", 
+    logMsg("r_isr1=%2.2X r_isr2=%2.2X\n", 
 		pNiLink[link]->r_isr1 & 0xff, 
 		pNiLink[link]->r_isr2 & 0xff);
 
@@ -746,7 +751,7 @@ int     length;
   spins = 0;
 
   if (ibDebug)
-    logMsg("niGpibCmd(%d, 0x%08.8X, %d): command string >%s<\n", link, buffer, length, buffer);
+    logMsg("niGpibCmd(%d, 0x%8.8X, %d): command string >%s<\n", link, buffer, length, buffer);
 
   tooLong = TOOLONG;	/* limit to wait for ctrlr's command buffer */
   pNiLink[link]->ibregs->auxmr = AUX_TCA;	/* take control of the bus */
@@ -769,7 +774,7 @@ int     length;
       if (!(tooLong--))
       {
 	/* errMsg() */
-	logMsg("niGpibCmd(%d, 0x%08.8X, %d): Timeout while writing command >%s<\n", link, buffer, length, buffer);
+	logMsg("niGpibCmd(%d, 0x%8.8X, %d): Timeout while writing command >%s<\n", link, buffer, length, buffer);
 	pNiLink[link]->ibregs->auxmr = AUX_GTS;
         if (spins > pNiLink[link]->maxSpins)
 	  pNiLink[link]->maxSpins = spins;
@@ -803,7 +808,7 @@ int     length;
     }
   }
   /* errMsg() */
-  logMsg("niGpibCmd(%d, 0x%08.8X, %d): Timeout after writing command >%s<\n", link, buffer, length, buffer);
+  logMsg("niGpibCmd(%d, 0x%8.8X, %d): Timeout after writing command >%s<\n", link, buffer, length, buffer);
   pNiLink[link]->ibregs->auxmr = AUX_GTS;
   if (spins > pNiLink[link]->maxSpins)
     pNiLink[link]->maxSpins = spins;
@@ -825,7 +830,7 @@ int	time;
   int	err;
 
   if(ibDebug)
-    logMsg("niGpibRead(%d, 0x%08.8X, %d, %d)\n",link, buffer, length, time);
+    logMsg("niGpibRead(%d, 0x%8.8X, %d, %d)\n",link, buffer, length, time);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -855,7 +860,7 @@ int	time;
   int	err;
 
   if(ibDebug)
-    logMsg("niGpibWrite(%d, 0x%08.8X, %d, %d)\n",link, buffer, length, time);
+    logMsg("niGpibWrite(%d, 0x%8.8X, %d, %d)\n",link, buffer, length, time);
 
   if (niCheckLink(link) == ERROR)
   {
@@ -927,7 +932,7 @@ caddr_t	p;
   int stat = OK;
 
   if(ibDebug)
-    logMsg("niGpibIoctl(%d, %d, %d, %08.8X)\n",link, cmd, v, p);
+    logMsg("niGpibIoctl(%d, %d, %d, %8.8X)\n",link, cmd, v, p);
 
   if (cmd != IBGENLINK && niCheckLink(link) == ERROR)
   {
@@ -1350,7 +1355,7 @@ int	link;
   int   lockKey;
 
   if(ibDebug || ibSrqDebug)
-    logMsg("niSrqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+    logMsg("niSrqIntEnable(%d): ch0.csr = 0x%2.2X, gsr=0x%2.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
   lockKey = intLock();  /* lock out ints because something likes to glitch */
 
@@ -1386,7 +1391,7 @@ int	link;
   int	lockKey;
 
   if(ibDebug || ibSrqDebug)
-    logMsg("niSrqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+    logMsg("niSrqIntDisable(%d): ch0.csr = 0x%2.2X, gsr=0x%2.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
   lockKey = intLock();  /* lock out ints because something likes to glitch */
   pNiLink[link]->ibregs->ch0.ccr = 0;           /* Don't allow SRQ ints */
@@ -1418,7 +1423,7 @@ struct ibLink *plink;
   int	j;
 
   if(ibDebug || bbibDebug)
-    logMsg("ibLinkInit(%08.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
+    logMsg("ibLinkInit(%8.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
 
 #ifdef GPIB_SUPER_DEBUG
   plink->History.Sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
@@ -1458,7 +1463,7 @@ ibLinkStart(struct ibLink *plink)
 	char	tName[20];
 
 	if (ibDebug || bbibDebug)
-		logMsg("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
+		logMsg("ibLinkStart(%8.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
 
 	/* fire out an interface clear */
 	ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC, -1, NULL);
@@ -1538,7 +1543,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
   /* send out a UNL and UNT to test-drive the link */
   if (writeIbCmd(plink, "?_", 2) == ERROR)
   {
-    logMsg("ibLinkTask(%08.08X): init failed for link type %d, link %d\n", plink->linkType, plink, plink->linkId);
+    logMsg("ibLinkTask(%8.08X): init failed for link type %d, link %d\n", plink->linkType, plink, plink->linkId);
     return(ERROR);
   }
 
@@ -1598,7 +1603,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
           {
             ringData.device = pollAddress;
 	    if (ibDebug || ibSrqDebug)
-	      logMsg("ibLinkTask(%d, %d): device %d srq status = 0x%02.2X\n", plink->linkType, plink->linkId, pollAddress, ringData.status);
+	      logMsg("ibLinkTask(%d, %d): device %d srq status = 0x%2.2X\n", plink->linkType, plink->linkId, pollAddress, ringData.status);
             if (plink->srqHandler[ringData.device] != NULL)
             { /* there is a registered SRQ handler for this device */
               rngBufPut(plink->srqRing, (char *) &ringData, sizeof(ringData));
@@ -1656,7 +1661,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
     if (pnode != NULL)
     {
       if (ibDebug)
-        logMsg("ibLinkTask(%d, %d): got Hi Pri xact, pnode= 0x%08.8X\n", plink->linkType, plink->linkId, pnode);
+        logMsg("ibLinkTask(%d, %d): got Hi Pri xact, pnode= 0x%8.8X\n", plink->linkType, plink->linkId, pnode);
 
       plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
       working=1;
@@ -1678,7 +1683,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
       if (pnode != NULL)
       {
         if(ibDebug)
-          logMsg("ibLinkTask(%d, %d): got Lo Pri xact, pnode= 0x%08.8X\n", plink->linkType, plink->linkId, pnode);
+          logMsg("ibLinkTask(%d, %d): got Lo Pri xact, pnode= 0x%8.8X\n", plink->linkType, plink->linkId, pnode);
         plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
         working=1;
       }
@@ -1712,7 +1717,7 @@ int		time;
 
   
   if(verbose && (ibDebug || ibSrqDebug))
-    logMsg("pollIb(0x%08.8X, %d, %d, %d)\n", plink, gpibAddr, verbose, time);
+    logMsg("pollIb(0x%8.8X, %d, %d, %d)\n", plink, gpibAddr, verbose, time);
 
   tsSave = timeoutSquelch;
   timeoutSquelch = !verbose;	/* keep the I/O routines quiet if desired */
@@ -1729,7 +1734,7 @@ int		time;
     status = pollResult[0];
     if (ibDebug || ibSrqDebug)
     {
-      logMsg("pollIb(%d, %d): poll status = 0x%02.2X\n", plink->linkId, gpibAddr, status);
+      logMsg("pollIb(%d, %d): poll status = 0x%2.2X\n", plink->linkId, gpibAddr, status);
     }
   }
 
@@ -1900,7 +1905,7 @@ int				(*handler)(),	/* Function invoked upon SRQ detection */
 void			*parm)			/* So caller can have a parm passed back */
 {
 	if(ibDebug || ibSrqDebug)
-		logMsg("registerSrqCallback(%08.8X, %d, 0x%08.8X, %08.8X)\n", pibLink, device, handler, parm);
+		logMsg("registerSrqCallback(%8.8X, %d, 0x%8.8X, %8.8X)\n", pibLink, device, handler, parm);
 
 	pibLink->srqHandler[device] = handler;
 	pibLink->srqParm[device] = parm;
@@ -1923,7 +1928,6 @@ ioctlIb(
 	int		v,
 	void	*p)
 {
-	int	stat;
 
 	if (linkType == GPIB_IO)
 	{
@@ -1936,7 +1940,7 @@ ioctlIb(
 		return(bbGpibIoctl(link, bug, cmd, v, p));
   
 	if (ibDebug || bbibDebug)
-		logMsg("ioctlIb(%d, %d, %d, %d, %08.8X, %08.8X): invalid link type\n", linkType, link, bug, cmd, v, p);
+		logMsg("ioctlIb(%d, %d, %d, %d, %8.8X, %8.8X): invalid link type\n", linkType, link, bug, cmd, v, p);
 
 	return(ERROR);
 }
@@ -1963,7 +1967,7 @@ int					prio)
 
 	if (pdpvt->pibLink == NULL)
 	{
-		logMsg("qGpibReq(%08.8X, %d): dpvt->pibLink == NULL!\n", pdpvt, prio);
+		logMsg("qGpibReq(%8.8X, %d): dpvt->pibLink == NULL!\n", pdpvt, prio);
 		return(ERROR);
 	}
 
@@ -1981,11 +1985,11 @@ int					prio)
 		semGive(pdpvt->pibLink->linkEventSem);
 		break;
 	default:              /* invalid priority */
-		logMsg("invalid priority requested in call to qgpibreq(%08.8X, %d)\n", pdpvt, prio);
+		logMsg("invalid priority requested in call to qgpibreq(%8.8X, %d)\n", pdpvt, prio);
 		return(ERROR);
 	}
 	if (ibDebug)
-		logMsg("qgpibreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
+		logMsg("qgpibreq(0x%8.8X, %d): transaction queued\n", pdpvt, prio);
 	return(OK);
 }
 
@@ -2014,7 +2018,7 @@ int				time)
 	int		stat;
 
 	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-		logMsg("writeIb(%08.8X, %d, 0x%08.8X, %d, %d)\n", pibLink, gpibAddr, data, length, time);
+		logMsg("writeIb(%8.8X, %d, 0x%8.8X, %d, %d)\n", pibLink, gpibAddr, data, length, time);
 
 	if (pibLink->linkType == GPIB_IO)
 	{
@@ -2090,7 +2094,7 @@ int         eos)        /* End-of-string character, -1 if none */
 	int   stat;
 
 	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-		logMsg("readIb(%08.8X, %d, 0x%08.8X, %d)\n", pibLink, gpibAddr, data, length);
+		logMsg("readIb(%8.8X, %d, 0x%8.8X, %d)\n", pibLink, gpibAddr, data, length);
 
 	if (pibLink->linkType == GPIB_IO)
 	{
@@ -2141,7 +2145,7 @@ int				length) 	/* Number of bytes to write out */
 {
 
 	if(ibDebug || (bbibDebug & (pibLink->linkType == BBGPIB_IO)))
-		logMsg("writeIbCmd(%08.8X, %08.8X, %d)\n", pibLink, data, length);
+		logMsg("writeIbCmd(%8.8X, %8.8X, %d)\n", pibLink, data, length);
 
 	if (pibLink->linkType == GPIB_IO)
 	{
@@ -2182,7 +2186,7 @@ int	time;
   int                   bytesRead;
   char			msg[150];
 
-  sprintf(msg, "bbGpibRead(%08.8X, %d, %08.8X, %d, %d): entered", pibLink, device, buffer, length, time);
+  sprintf(msg, "bbGpibRead(%p, %d, %p, %d, %d): entered", pibLink, device, buffer, length, time);
   GpibDebug(pibLink, device, msg, 1);
 
   bytesRead = 0;
@@ -2213,7 +2217,7 @@ int	time;
     }
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
-    sprintf(msg, "bbGpibRead(): %02.2X >%.13s< driver status 0x%02.2X", bbdpvt.rxMsg.cmd, bbdpvt.rxMsg.data, bbdpvt.status);
+    sprintf(msg, "bbGpibRead(): %2.2X >%.13s< driver status 0x%2.2X", bbdpvt.rxMsg.cmd, bbdpvt.rxMsg.data, bbdpvt.status);
     GpibDebug(pibLink, device, msg, 1);
 
     bbdpvt.txMsg.cmd = BB_IBCMD_READ;	/* in case have more reading to do */
@@ -2250,7 +2254,7 @@ int	time;
   int			bytesSent;
   char			msg[150];
 
-  sprintf(msg, "bbGpibWrite(%08.8X, %d, %08.8X, %d, %d): entered", pibLink, device, buffer, length, time);
+  sprintf(msg, "bbGpibWrite(%p, %d, %p, %d, %d): entered", pibLink, device, buffer, length, time);
   GpibDebug(pibLink, device, msg, 1);
 
   bytesSent = length;	/* we either get an error or send them all */
@@ -2297,12 +2301,12 @@ int	time;
     {
       bcopy(bbdpvt.txMsg.data, dbugBuf, bbdpvt.txMsg.length-7);
       dbugBuf[bbdpvt.txMsg.length-7] = '\0';
-      logMsg("bbGpibWrite():sending %02.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
+      logMsg("bbGpibWrite():sending %2.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
     }
 #else
     bcopy(bbdpvt.txMsg.data, dbugBuf, bbdpvt.txMsg.length-7);
     dbugBuf[bbdpvt.txMsg.length-7] = '\0';
-    sprintf(msg, "bbGpibWrite():sending %02.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
+    sprintf(msg, "bbGpibWrite():sending %2.2X >%s<", bbdpvt.txMsg.cmd, dbugBuf);
     GpibDebug(pibLink, device, msg, 1);
 #endif
 
@@ -2315,7 +2319,7 @@ int	time;
 
     semTake(*(bbdpvt.psyncSem), WAIT_FOREVER);	/* wait for response */
 
-    sprintf(msg, " RAC status = 0x%02.2X driver status = 0x%02.2X", bbdpvt.rxMsg.cmd, bbdpvt.status);
+    sprintf(msg, " RAC status = 0x%2.2X driver status = 0x%2.2X", bbdpvt.rxMsg.cmd, bbdpvt.status);
     GpibDebug(pibLink, device, msg, 1);
 
     bbdpvt.txMsg.data += BB_MAX_DAT_LEN;	/* in case there is more */
@@ -2343,7 +2347,7 @@ int     length;
   int			bytesSent;
   char			msg[150];
 
-  sprintf(msg, "bbGpibCmd(%08.8X, %08.8X, %d): entered", pibLink, buffer, length);
+  sprintf(msg, "bbGpibCmd(%p, %p, %d): entered", pibLink, buffer, length);
   GpibDebug(pibLink, 0, msg, 1);
 
   bytesSent = length;
@@ -2484,7 +2488,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
   unsigned char		buf[BB_MAX_DAT_LEN];
 
   if (ibDebug || bbibDebug)
-    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X, %08.8X): called\n", link, bug, cmd, v, p);
+    logMsg("bbGpibIoctl(%d, %d, %d, %8.8X, %8.8X): called\n", link, bug, cmd, v, p);
 
 /* No checkLink() is done, because findBBLink() is done when needed */
 
@@ -2568,7 +2572,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
     *(struct ibLink **)p = &(findBBLink(link, bug)->ibLink);
     break;
   default:
-    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X, %08.8X): invalid command requested\n", link, bug, cmd, v, p);
+    logMsg("bbGpibIoctl(%d, %d, %d, %8.8X, %8.8X): invalid command requested\n", link, bug, cmd, v, p);
   }
   return(stat);
 }
@@ -2594,7 +2598,7 @@ int	bug;
       bbIbLink = bbIbLink->next;
   }
   if (ibDebug || bbibDebug)
-    logMsg("findBBLink(%d, %d): returning %08.8X\n", link, bug, bbIbLink);
+    logMsg("findBBLink(%d, %d): returning %8.8X\n", link, bug, bbIbLink);
 
   return(bbIbLink);
 }
@@ -2711,7 +2715,7 @@ STATIC HideosIbLinkStruct *findHiDEOSIbLink(int link)
 			pHideosIbLink = pHideosIbLink->pNext;
 	}
 	if (ibDebug)
-		logMsg("findHiDEOSIbLink(%d): returning %08.8X\n", link, pHideosIbLink);
+		logMsg("findHiDEOSIbLink(%d): returning %8.8X\n", link, pHideosIbLink);
 
 	return(pHideosIbLink);
 }
@@ -2860,7 +2864,7 @@ HiDEOSGpibIoctl(int link, int cmd, int v, void *p)
 	int		stat = ERROR;
 
 	if (ibDebug)
-		logMsg("HiDEOSGpibIoctl(%d, %d, %08.8X, %08.8X): called\n", link, cmd, v, p);
+		logMsg("HiDEOSGpibIoctl(%d, %d, %8.8X, %8.8X): called\n", link, cmd, v, p);
 
 	switch (cmd) {
 	case IBTMO:		/* set timeout time for next transaction only */
@@ -2885,7 +2889,7 @@ HiDEOSGpibIoctl(int link, int cmd, int v, void *p)
 		*(struct ibLink **)p = &(findHiDEOSIbLink(link)->ibLink);
 		break;
 	default:
-		logMsg("HiDEOSGpibIoctl(%d, %d, %08.8X, %08.8X): invalid command requested\n", link, cmd, v, p);
+		logMsg("HiDEOSGpibIoctl(%d, %d, %8.8X, %8.8X): invalid command requested\n", link, cmd, v, p);
 	}
 	return(stat);
 }

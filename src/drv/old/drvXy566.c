@@ -82,6 +82,10 @@
  */
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<rebootLib.h>
+#include	<intLib.h>
 #include	<vme.h>
 #include	<dbDefs.h>
 #include	<dbScan.h>
@@ -132,6 +136,7 @@ static long report()
 {
     ai_xy566_io_report();
     xy566_io_report();
+    return(0);
 }
 
 #define MAX_SE_CARDS	(ai_num_cards[XY566SE])
@@ -257,9 +262,10 @@ static VOID 	rval_convert();
 static VOID 	xy566_rval_report();
 
 
-static acro_intr(ap)
+static int acro_intr(ap)
 register struct acroregs *ap;
 {
+    return(0);
 }
 
 /*      The following two subroutines introduce a delay between
@@ -275,14 +281,14 @@ unsigned short val;
         *addr = val;
 }
  
-senb (addr, val)
+void senb (addr, val)
 unsigned char *addr;
 unsigned char val;
 {
         *addr = val;
 }
 
-ai566_intr(i)
+int ai566_intr(i)
 short	i;
 {
 	register struct ai566 *ap;
@@ -293,7 +299,7 @@ short	i;
 
 	/* reset the CSR - needed to allow next interrupt */
 	senw(&ap->a566_csr,XY566L_CSR);
-
+        return(0);
 }
 
 /*
@@ -620,7 +626,7 @@ register short		***pppmem_present;
     return OK;
 }
 
-ai_xy566_getioscanpvt(card,scanpvt)
+int ai_xy566_getioscanpvt(card,scanpvt)
 unsigned short        card;
 IOSCANPVT *scanpvt;
 {
@@ -628,7 +634,7 @@ IOSCANPVT *scanpvt;
       return(0);
 }
 
-ai_xy566_driver(card,chan,type,prval)
+int ai_xy566_driver(card,chan,type,prval)
 register short		card;
 short			chan;
 register unsigned int	type;
@@ -636,8 +642,6 @@ register unsigned short *prval;
 {
 	/* the register short i is used to calculate the delay for the	*/
 	/* conversion of the XYCOM 566. Make sure it stays a register	*/
-	register unsigned short *pcard;
-	register unsigned short i;
 
 	/* check on the card and channel number as kept in module_types.h */
 	if (card >= ai_num_cards[type]) return(-1);
@@ -647,7 +651,6 @@ register unsigned short *prval;
 
 	case (XY566SE):
 	{
-		register struct ai566 *pai566;
 
 		/* check card specified exists */
 		if (pai_xy566se[card] == 0) return(-1);
@@ -660,7 +663,6 @@ register unsigned short *prval;
 
 	case (XY566DI):
 	{
-		register struct ai566 *pai566;
 
 		/* check card specified exists */
 		if (pai_xy566di[card] == 0) return(-1);
@@ -675,7 +677,6 @@ register unsigned short *prval;
 
 	case (XY566DIL):
 	{
-		register struct ai566 *pai566;
 
 		/* check card specified exists */
 		if (pai_xy566dil[card] == 0) return(-1);
@@ -755,8 +756,7 @@ VOID xy566_reset(){
 long ai_xy566_io_report(level)
   char level;
 {
-    short i,j;
-    unsigned short rval;
+    short i;
    
     
     for (i = 0; i < MAX_SE_CARDS; i++){
@@ -798,7 +798,7 @@ long ai_xy566_io_report(level)
 VOID  xy566_rval_report(card,type)
    short int card,type;
  { 
-	short	i,j,k,l,m,num_chans;
+	short	j,k,l,m,num_chans;
         unsigned short jrval,krval,lrval,mrval;
 
         printf("\n");
@@ -845,7 +845,7 @@ VOID  xy566_rval_report(card,type)
  * xy566_driver
  *
  */
-xy566_driver(slot,pcbroutine,parg)
+int xy566_driver(slot,pcbroutine,parg)
 register unsigned short	slot;
 register unsigned int	*pcbroutine;
 register unsigned int	*parg;	/* number of values read */
@@ -886,7 +886,7 @@ register unsigned int	*parg;	/* number of values read */
  * polls the busy bit on the Xycom 566 latched waveform records
  * The busy bit is set externally when data collection is completed
  */
-xy566DoneTask()
+int xy566DoneTask()
 {
     register unsigned int	**pproutines;
     register unsigned int	(*pcbroutine)();
@@ -923,7 +923,7 @@ xy566DoneTask()
  *
  * intialize the xycom 566 waveform input card
  */
-xy566_init()
+int xy566_init()
 {
 	register struct ai566	**pcards_present = pwf_xy566;
 	register struct wf085	**parms_present = pwf_xy085;
@@ -1135,7 +1135,7 @@ long
 xy566_io_report(level)
 short int level;
 {
-	int i,xy566_bytes;
+	int i;
 
 	/* report all of the xy566 waveform inputs present */
 	for (i = 0; i < wf_num_cards[XY566WF]; i++)
@@ -1143,6 +1143,7 @@ short int level;
          	  	printf("WF: XY566:      card %d\n",i);
                 }
                            
+        return(0);
 }
 
 

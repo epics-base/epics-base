@@ -49,6 +49,10 @@
 
 
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <vxLib.h>
+#include <sysLib.h>
 #include <vme.h>
 #include <module_types.h>
 #include <drvSup.h>
@@ -68,14 +72,12 @@ struct {
 static long report(level)
     int level;
 {
-    register int i;
 
     bb910_io_report(level);
     return(0);
 }
 static long init()
 {
-    int status;
 
     bb910_driver_init();
     return(0);
@@ -109,7 +111,7 @@ static char *bb910_shortaddr;
  * intialization for the binary input cards
  */
 
-bb910_driver_init(){
+int bb910_driver_init(){
 	int bimode;
         int status;
         register short  i;
@@ -146,7 +148,7 @@ bb910_driver_init(){
 }
 
 
-bb910_driver(card,mask,prval)
+int bb910_driver(card,mask,prval)
        
 	register unsigned short card;
 	unsigned int            mask;

@@ -49,6 +49,10 @@ static char SccsId[] = "@(#)drvXy220.c	1.6\t9/20/93";
  */
 
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sysLib.h>
+#include <vxLib.h>
 #include <vme.h>
 #include "module_types.h"
 #include <drvSup.h>
@@ -182,7 +186,6 @@ register unsigned short	card;
 unsigned int		mask;
 register unsigned int 		*pval;
 {
-    register unsigned int work;
 
 	/* verify card exists */
 	if (!pbo_xy220s[card])
@@ -213,7 +216,7 @@ void xy220_io_report(level)
 	if (pbo_xy220s[card]){
 	   value = (pbo_xy220s[card]->high_value << 16)    /* high */
 		+ pbo_xy220s[card]->low_value;               /* low */
-           printf("BO: XY220:      card %d value=0x%08.8x\n",card,value);
+           printf("BO: XY220:      card %d value=0x%8.8x\n",card,value);
         }
    }  
             

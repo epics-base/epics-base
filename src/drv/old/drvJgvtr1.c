@@ -72,11 +72,10 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.17\t9/9/93";
 /* drvJgvtr1.c -  Driver Support Routines for Jgvtr1 */
 
 #include	<vxWorks.h>
-#include	<types.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include	<vme.h>
 #include	<iv.h>
-#include 	<sysLib.h>
-#include 	<stdioLib.h>
 
 #include	<dbDefs.h>
 #include	<drvSup.h>

@@ -2,6 +2,7 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
+VX_WARN_YES = -Wall -pedantic
 #	The pc486 cross-compiler has no "nobitfield" option   -kuk-
 ifeq ($(ARCH_CLASS),pc486)
 USR_CFLAGS = -fshared-data -fvolatile -traditional

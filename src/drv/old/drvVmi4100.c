@@ -52,6 +52,9 @@
 static char *sccsID = "@(#)drvVmi4100.c	1.5\t8/27/93";
 
 #include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <vxLib.h>
 #include <vme.h>
 #include <dbDefs.h>
 #include <drvSup.h>
@@ -139,7 +142,7 @@ long vmi4100_init()
  *
  * VMI4100 analog output driver
  */
-vmi4100_driver(card,chan,prval,prbval)
+int vmi4100_driver(card,chan,prval,prbval)
 register unsigned short card;
 register unsigned short chan;
 unsigned short 		*prval;
@@ -162,12 +165,11 @@ unsigned short 		*prbval;
  *
  * VME analog output driver
  */
-vmi4100_read(card,chan,pval)
+int vmi4100_read(card,chan,pval)
 register unsigned short card;
 register unsigned short chan;
 unsigned short 		*pval;
 {
-	register unsigned short	*pcard;
 
         /* check on the card and channel number as kept in module_types.h */
 

@@ -40,6 +40,10 @@
 static char	*sccsID = "@(#)drvXy010.c	1.3\t6/3/93";
 
 #include 	<vxWorks.h>
+#include 	<stdlib.h>
+#include 	<stdio.h>
+#include 	<sysLib.h>
+#include 	<vxLib.h>
 #include 	<vme.h>
 
 #include	<drvSup.h>
@@ -163,7 +167,6 @@ char	*pBase;
  */
 long xy010_io_report(int level)
 {
-   	char id;
 
 	if(xy010_map()<0){
 		return ERROR;

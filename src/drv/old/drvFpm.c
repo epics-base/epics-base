@@ -83,8 +83,13 @@
 
 static char *sccsId = "@(#)drvFpm.c	1.12\t8/4/93";
 
-#include "vxWorks.h"
-#include "vme.h"
+#include <vxWorks.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <rebootLib.h>
+#include <intLib.h>
+#include <vxLib.h>
+#include <vme.h>
 #include <iv.h> /* in h/68k if this is compiling for a 68xxx */
 #include "module_types.h"
 #include <dbDefs.h>
@@ -104,6 +109,7 @@ struct {
 static long report()
 {
         fpm_io_report();
+        return(0);
 }
 
 static long init()
@@ -173,7 +179,7 @@ static void 	fpm_reboot();
  * interrupt service routine
  *
  */
-fpm_int(ptr)
+int fpm_int(ptr)
  register struct fpm_rec *ptr;
 {
  register struct fp10m *regptr;
@@ -190,6 +196,7 @@ fpm_int(ptr)
    break;
   }
  ptr->int_num++;
+ return(0);
 }
 /*
  * fpm_init
@@ -197,7 +204,7 @@ fpm_int(ptr)
  * initialization for fp10m fast protect master modules
  *
  */
-fpm_init(addr)
+int fpm_init(addr)
  unsigned int addr;
 {
  int i;
@@ -290,7 +297,7 @@ void    fpm_reboot()
  * (toggles the int enable state - joh)
  *
  */
-fpm_en(card)
+int fpm_en(card)
  short card;
 {
  if (card < 0 || (card > fpm_num))
@@ -308,7 +315,7 @@ fpm_en(card)
  * set interrupt reporting mode
  *
  */
-fpm_mode(card,mode)
+int fpm_mode(card,mode)
  short card, mode;
 {
  if (card < 0 || (card > fpm_num))
@@ -322,7 +329,7 @@ fpm_mode(card,mode)
  * carrier disable (1), enable (0)
  *
  */
-fpm_cdis(card,disable)
+int fpm_cdis(card,disable)
  short card, disable;
 {
  unsigned short temp;
@@ -341,7 +348,7 @@ fpm_cdis(card,disable)
  * set failure mode
  *
  */
-fpm_fail(card,mode)
+int fpm_fail(card,mode)
  short card, mode;
 {
  unsigned short temp;
@@ -360,7 +367,7 @@ fpm_fail(card,mode)
  * read status bits
  *
  */
-fpm_srd(card)
+int fpm_srd(card)
  short card;
 {
  if (card < 0 || ( card > fpm_num))
@@ -373,7 +380,7 @@ fpm_srd(card)
  * epics interface to fast protect master
  *
  */
-fpm_driver(card,mask,prval)
+int fpm_driver(card,mask,prval)
 register unsigned short card;
 unsigned int mask;
 register unsigned int prval;
@@ -392,7 +399,7 @@ register unsigned int prval;
  * command line interface to fpm_driver
  *
  */
-fpm_write(card,val)
+int fpm_write(card,val)
  short card;
  unsigned int val;
 {
@@ -404,7 +411,7 @@ fpm_write(card,val)
  * read the current control register contents (readback)
  *
  */
-fpm_read(card,mask,pval)
+int fpm_read(card,mask,pval)
 register unsigned short card;
 unsigned int mask;
 register unsigned int *pval;
@@ -421,7 +428,7 @@ register unsigned int *pval;
  * fpm_io_report()
  *
  */
-fpm_io_report(level)
+int fpm_io_report(level)
 int	level;
 {
 	int	i;
@@ -429,4 +436,5 @@ int	level;
 	for(i=0; i<=fpm_num; i++){
 		printf("BO: AT8-FP-M:    card %d\n", i);
 	}
+	return(0);
 }

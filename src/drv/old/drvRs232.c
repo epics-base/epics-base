@@ -34,18 +34,8 @@
 #define	DRVRS232_C
 
 #include <vxWorks.h>
-#include <types.h>
-#if 0 /* COMMENTED OUT SOME INCLUDES */
-#include <iosLib.h>
-#include <taskLib.h>
-#include <memLib.h>
-#include <semLib.h>
-#include <wdLib.h>
-#include <wdLib.h>
-#include <tickLib.h>
-#include <vme.h>
-#endif /* COMMENTED OUT SOME INCLUDES */
-
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <task_params.h>
 #include <module_types.h>

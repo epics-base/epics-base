@@ -73,8 +73,11 @@
 
 /* drvOms.c -  Driver Support Routines for Oms */
 #include	<vxWorks.h>
-#include	<stdioLib.h>
-#include 	<sysLib.h>             /* library for task  support */
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<intLib.h>
+#include	<vxLib.h>
+#include	<rebootLib.h>
 #include	<taskLib.h>
 #include	<rngLib.h>             /* library for ring buffer support */
 #include	<semLib.h>
@@ -106,12 +109,12 @@ static long report(level)
     int level;
 {
     oms_io_report(level);
+    return(0);
 }
 
 
 static long init()
 {
-    int status;
     oms_driver_init();
     return(0);
 }
@@ -152,7 +155,7 @@ char	read_buffer[MAX_OMS_CARDS][34];
 VOID oms_reset();
 
 
-oms_intr(card)
+int oms_intr(card)
 register short	card;
 {
     register struct vmex_motor	*pmotor;
@@ -215,7 +218,7 @@ short		oms_state[MAX_OMS_CARDS];
 char		off_msg[40];
 int		oms_debug = 0;
 int		oms_compare = 3;
-oms_resp_task()
+int oms_resp_task()
 {
     unsigned char		resp[OMS_MSG_SZ*4];
     register struct motor_data	*pmotor_data_array;
@@ -223,7 +226,7 @@ oms_resp_task()
     short			*pchannel;
     int				(*psmcb_routine)();
     register short		*pstate;
-    register short		card,i;
+    register short		card;
     int				temp;
 
     FOREVER {
@@ -345,7 +348,7 @@ oms_resp_task()
     }
 }
 
-oms_task()
+int oms_task()
 {
     register short		motor_active;
     register short		card,channel;
@@ -384,12 +387,11 @@ oms_task()
  *
  * initialize all oms drivers present
  */
-oms_driver_init(){
+int oms_driver_init(){
 	struct vmex_motor	*pmotor;
         short                   i,j,got_one;
         int			status;
 	short			dummy;
-	char			oms_init_msg[20];	
 	int			taskId;
 
 	for (i = 0; i < MAX_OMS_CARDS; i++){
@@ -479,7 +481,7 @@ oms_driver_init(){
  * interface routine called from the database library
  */
 #define	MOTOR_POS	1
-oms_driver(card,channel,value_flag,arg1,arg2)
+int oms_driver(card,channel,value_flag,arg1,arg2)
 register short	card;
 register short	channel;
 short		 value_flag;
@@ -596,7 +598,7 @@ int	oms_count,oms_icount,oms_illcmd,oms_sleep,oms_isleep;
  *
  * Gives messages to the OMS card
  */
-oms_send_msg(pmotor,pmsg)
+int oms_send_msg(pmotor,pmsg)
 struct vmex_motor		*pmotor;
 register char			*pmsg;
 {
@@ -631,9 +633,10 @@ i = 0;
 	}
 	/* release the mutual exclusion semaphore */
         semGive(oms_send_sem);
+	return(0);
 }
 
-oms_io_report(level)
+int oms_io_report(level)
 short int level;
 {
     register short int i,j;
@@ -648,6 +651,7 @@ short int level;
                 }
              
         }
+	return(0);
  }
 
 VOID oms_sm_stat(card,channel)

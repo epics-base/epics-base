@@ -152,7 +152,7 @@ dio_int(ptr)
  *task to check for change of state
  *
  */
-dio_scan()
+int dio_scan()
  
 {	
 	int i;
@@ -193,7 +193,7 @@ dio_scan()
  *
  *initialize xy240 dig i/o card
  */
-xy240_init()
+int xy240_init()
 {
 	short 			junk;
 	register short 		i;
@@ -261,7 +261,7 @@ xy240_init()
 
 } 	
 
-xy240_getioscanpvt(card,scanpvt)
+int xy240_getioscanpvt(card,scanpvt)
 short 		card;
 IOSCANPVT 	*scanpvt;
 {
@@ -277,7 +277,7 @@ IOSCANPVT 	*scanpvt;
  *interface to binary inputs
  */
 
-xy240_bi_driver(card,mask,prval)
+int xy240_bi_driver(card,mask,prval)
 register short 		card;
 unsigned int		mask;
 register unsigned int	*prval;
@@ -300,7 +300,7 @@ register unsigned int	*prval;
  *interface to binary outputs
  */
 
-xy240_bo_read(card,mask,prval)
+int xy240_bo_read(card,mask,prval)
 register short 		card;
 unsigned int		mask;
 register unsigned int	*prval;
@@ -325,7 +325,7 @@ register unsigned int	*prval;
  *interface to binary outputs
  */
 
-xy240_bo_driver(card,val,mask)
+int xy240_bo_driver(card,val,mask)
 register short 		card;
 unsigned int		mask;
 register unsigned int	val;
@@ -354,7 +354,7 @@ register unsigned int	val;
  *
  *test routine for xy240 output 
  */
-dio_out(card,port,val)
+int dio_out(card,port,val)
 short	card,port,val;
 {
 
@@ -404,7 +404,7 @@ else{
  *command line interface to test bo driver
  *
  */
-xy240_write(card,val)
+int xy240_write(card,val)
         short card;
         unsigned int val;
  {
@@ -429,15 +429,14 @@ short int level;
                    }
                 }
         }
- 
+        return(0); 
 }
 
                           
 void xy240_bi_io_report(int card)
 {
-        short int num_chans,j,k,l,m,status;
-        int ival,jval,kval,lval,mval;
-        unsigned int   *prval;
+        short int num_chans,j,k,l,m;
+        int jval,kval,lval,mval;
 
         num_chans = XY240_MAX_CHANS;
 
@@ -481,9 +480,8 @@ void xy240_bi_io_report(int card)
 
 void xy240_bo_io_report(int card)
 {
-        short int num_chans,j,k,l,m,status;
-        int ival,jval,kval,lval,mval;
-        unsigned int   *prval;
+        short int num_chans,j,k,l,m;
+        int jval,kval,lval,mval;
 
         num_chans = XY240_MAX_CHANS;
 

@@ -701,9 +701,6 @@ static void printBuffer(
     unsigned short  stat,
                     severity;
     long            precision;
-    unsigned long   epoch_seconds;
-    unsigned long   nano_seconds;
-    unsigned long   no_strs;
     short           svalue;
     unsigned short  usvalue;
     char           *pmsg;
@@ -713,103 +710,123 @@ static void printBuffer(
 
     if (reqOptions & DBR_STATUS) {
 	if (retOptions & DBR_STATUS) {
-	    stat = *((unsigned short *) pbuffer);
-	    severity = *((unsigned short *) (pbuffer + 2));
-	    printf("status=%u severity=%u\n", stat, severity);
+	    struct dbr_status *pdbr_status = (void *)pbuffer;
+
+	    printf("status=%u severity=%u\n",
+		pdbr_status->status, pdbr_status->severity);
 	} else
 	    printf("status and severity not returned\n");
 	pbuffer += dbr_status_size;
     }
     if (reqOptions & DBR_UNITS) {
-	if (retOptions & DBR_UNITS)
-	    printf("units=%-8s\n", pbuffer);
-	else
+	if (retOptions & DBR_UNITS) {
+	    struct dbr_units *pdbr_units = (void *)pbuffer;
+
+	    printf("units=%-8s\n", &pdbr_units->units[0]);
+	}else{
 	    printf("units not returned\n");
+	}
 	pbuffer += dbr_units_size;
     }
     if (reqOptions & DBR_PRECISION) {
 	precision = *((long *) pbuffer);
-	if (retOptions & DBR_PRECISION)
-	    printf("precision=%ld\n", precision);
-	else
+	if (retOptions & DBR_PRECISION){
+	    struct dbr_precision *pdbr_precision = (void *)pbuffer;
+
+	    printf("precision=%ld\n", pdbr_precision->precision);
+	}else{
 	    printf("precision not returned\n");
+	}
 	pbuffer += dbr_precision_size;
     }
     if (reqOptions & DBR_TIME) {
-	epoch_seconds = *((unsigned long *) pbuffer);
-	nano_seconds = *((unsigned long *) (pbuffer + 4));
-	if (retOptions & DBR_TIME)
-	    printf("time=%lu %lu\n", epoch_seconds, nano_seconds);
-	else
+	if (retOptions & DBR_TIME) {
+	    struct dbr_time *pdbr_time =  (void *)pbuffer;
+
+	    printf("time=%lu %lu\n", pdbr_time->time.secPastEpoch,
+		pdbr_time->time.nsec);
+	}else{
 	    printf("time not returned\n");
+	}
 	pbuffer += dbr_time_size;
     }
     if (reqOptions & DBR_ENUM_STRS) {
 	if (retOptions & DBR_ENUM_STRS) {
-	    no_strs = *((unsigned long *) pbuffer);
-	    printf("no_strs=%lu\n", no_strs);
-	    for (i = 0; i < *((unsigned long *) pbuffer); i++)
-		printf("%s\n", (pbuffer + 8 + i * 26));
+	    struct dbr_enumStrs *pdbr_enumStrs = (void *)pbuffer;
+
+	    printf("no_strs=%lu\n", pdbr_enumStrs->no_str);
+	    for (i = 0; i <pdbr_enumStrs->no_str; i++) 
+		printf("%s\n",&pdbr_enumStrs->strs[i][0]);
 	} else
 	    printf("enum strings not returned\n");
 	pbuffer += dbr_enumStrs_size;
     }
     if (reqOptions & DBR_GR_LONG) {
-	if (retOptions & DBR_GR_LONG)
-	    printf("grLong: %ld %ld\n",
-		   *(long *) (pbuffer),
-		   *(long *) (pbuffer + 4));
-	else
+	if (retOptions & DBR_GR_LONG) {
+	    struct dbr_grLong *pdbr_grLong = (void *)pbuffer;
+
+	    printf("grLong: %ld %ld\n",pdbr_grLong->upper_disp_limit,
+		pdbr_grLong->lower_disp_limit);
+	}else{
 	    printf("DBRgrLong not returned\n");
+	}
 	pbuffer += dbr_grLong_size;
     }
     if (reqOptions & DBR_GR_DOUBLE) {
-	if (retOptions & DBR_GR_DOUBLE)
-	    printf("grDouble: %lg %lg\n",
-		   *(double *) (pbuffer),
-		   *(double *) (pbuffer + 8));
-	else
+	if (retOptions & DBR_GR_DOUBLE) {
+	    struct dbr_grDouble *pdbr_grDouble = (void *)pbuffer;
+
+	    printf("grDouble: %lg %lg\n",pdbr_grDouble->upper_disp_limit,
+		pdbr_grDouble->lower_disp_limit);
+	}else{
 	    printf("DBRgrDouble not returned\n");
+	}
 	pbuffer += dbr_grDouble_size;
     }
     if (reqOptions & DBR_CTRL_LONG) {
-	if (retOptions & DBR_CTRL_LONG)
-	    printf("ctrlLong: %ld %ld\n",
-		   *(long *) (pbuffer),
-		   *(long *) (pbuffer + 4));
-	else
+	if (retOptions & DBR_CTRL_LONG){
+	    struct dbr_ctrlLong *pdbr_ctrlLong = (void *)pbuffer;
+
+	    printf("ctrlLong: %ld %ld\n",pdbr_ctrlLong->upper_ctrl_limit,
+		pdbr_ctrlLong->lower_ctrl_limit);
+	}else{
 	    printf("DBRctrlLong not returned\n");
+	}
 	pbuffer += dbr_ctrlLong_size;
     }
     if (reqOptions & DBR_CTRL_DOUBLE) {
-	if (retOptions & DBR_CTRL_DOUBLE)
-	    printf("ctrlDouble: %lg %lg\n",
-		   *(double *) (pbuffer),
-		   *(double *) (pbuffer + 8));
-	else
+	if (retOptions & DBR_CTRL_DOUBLE) {
+	    struct dbr_ctrlDouble *pdbr_ctrlDouble = (void *)pbuffer;
+
+	    printf("ctrlDouble: %lg %lg\n",pdbr_ctrlDouble->upper_ctrl_limit,
+		pdbr_ctrlDouble->lower_ctrl_limit);
+	}else{
 	    printf("DBRctrlDouble not returned\n");
+	}
 	pbuffer += dbr_ctrlDouble_size;
     }
     if (reqOptions & DBR_AL_LONG) {
-	if (retOptions & DBR_AL_LONG)
+	if (retOptions & DBR_AL_LONG) {
+	    struct dbr_alLong *pdbr_alLong = (void *)pbuffer;
+
 	    printf("alLong: %ld %ld %ld %ld\n",
-		   *(long *) (pbuffer),
-		   *(long *) (pbuffer + 4),
-		   *(long *) (pbuffer + 8),
-		   *(long *) (pbuffer + 12));
-	else
+		pdbr_alLong->upper_alarm_limit,pdbr_alLong->upper_warning_limit,
+		pdbr_alLong->lower_warning_limit,pdbr_alLong->lower_alarm_limit);
+	}else{
 	    printf("DBRalLong not returned\n");
+	}
 	pbuffer += dbr_alLong_size;
     }
     if (reqOptions & DBR_AL_DOUBLE) {
-	if (retOptions & DBR_AL_DOUBLE)
+	if (retOptions & DBR_AL_DOUBLE) {
+	    struct dbr_alDouble *pdbr_alDouble = (void *)pbuffer;
+
 	    printf("alDouble: %lg %lg %lg %lg\n",
-		   *(double *) (pbuffer),
-		   *(double *) (pbuffer + 8),
-		   *(double *) (pbuffer + 16),
-		   *(double *) (pbuffer + 24));
-	else
+		pdbr_alDouble->upper_alarm_limit,pdbr_alDouble->upper_warning_limit,
+		pdbr_alDouble->lower_warning_limit,pdbr_alDouble->lower_alarm_limit);
+	}else{
 	    printf("DBRalDouble not returned\n");
+	}
 	pbuffer += dbr_alDouble_size;
     }
     /* Now print values */

@@ -383,39 +383,40 @@ static long initDatabase(void)
     }
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	if(!(prset=GET_PRSET(precSup,i))) {
-	    strcpy(name,precType->papName[i]);
-	    strcat(name,"RSET");
-	    strcpy(message,"record support entry table not found for ");
-	    strcat(message,name);
-	    status = S_rec_noRSET;
-	    errMessage(status,message);
-	    continue;
-	}
+	prset = GET_PRSET(precSup,i);
 	precTypDes = precDes->papRecTypDes[i];
 	pdevSup = GET_PDEVSUP(pdbBase->precDevSup,i);
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-		precord = precNode->precord;
-		/* If NAME is null then skip this record*/
-		if(!(precord->name[0])) continue;
-		/*initialize fields rset*/
-		(struct rset *)(precord->rset) = prset;
-		/* initialize mlok and mlis*/
-		FASTLOCKINIT(&precord->mlok);
-		ellInit(&(precord->mlis));
-		precord->pact=FALSE;
-		/* set lset=0 See determine lock set below*/
-		precord->lset = 0;
-		/* Init DSET NOTE that result may be NULL*/
-		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
-		/* call record support init_record routine - First pass */
-		rtnval = dbCommonInit(precord,0);
-		if(!(precSup->papRset[i]->init_record)) continue;
-		rtnval = (*(precSup->papRset[i]->init_record))(precord,0);
-		if(status==0) status = rtnval;
-		}
+	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
+	    if(!prset) {
+		strcpy(name,precType->papName[i]);
+		strcat(name,"RSET");
+		strcpy(message,"record support entry table not found for ");
+		strcat(message,name);
+		status = S_rec_noRSET;
+		errMessage(status,message);
+		break;
+	    }
+	    precord = precNode->precord;
+	    /* If NAME is null then skip this record*/
+	    if(!(precord->name[0])) continue;
+	    /*initialize fields rset*/
+	    (struct rset *)(precord->rset) = prset;
+	    /* initialize mlok and mlis*/
+	    FASTLOCKINIT(&precord->mlok);
+	    ellInit(&(precord->mlis));
+	    precord->pact=FALSE;
+	    /* set lset=0 See determine lock set below*/
+	    precord->lset = 0;
+	    /* Init DSET NOTE that result may be NULL*/
+	    precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
+	    /* call record support init_record routine - First pass */
+	    rtnval = dbCommonInit(precord,0);
+	    if(!(precSup->papRset[i]->init_record)) continue;
+	    rtnval = (*(precSup->papRset[i]->init_record))(precord,0);
+	    if(status==0) status = rtnval;
 	}
+    }
     /* Second pass to resolve links*/
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
@@ -860,9 +861,8 @@ int dbLoad(char * pfilename)
 	fclose(fp);
 	gotSdrSum = TRUE;
     }
-    if(strcmp(pdbBase->psdrSum->allSdrSums,sdrSum.allSdrSums)!=0) {
-printf("pdbBase->psdrSum->allSdrSums = |%s|\n",pdbBase->psdrSum->allSdrSums);
-printf("sdrSum.allSdrSums = |%s|\n",sdrSum.allSdrSums);
+    if(strncmp(pdbBase->psdrSum->allSdrSums,sdrSum.allSdrSums,
+    strlen(pdbBase->psdrSum->allSdrSums))!=0) {
 	errMessage(-1,"dbLoad: check sdrSum Error: Database out of date");
 	return(-1);
     }

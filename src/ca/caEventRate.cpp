@@ -11,10 +11,10 @@
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
+#include <assert.h>
 
 #include "cadef.h"
 #include "dbDefs.h"
-#include "epicsTime.h"
 #include "errlog.h"
 
 /*
@@ -31,7 +31,6 @@ extern "C" void eventCallBack ( struct event_handler_args args )
  */
 void caEventRate ( const char *pName, unsigned count )
 {
-    unsigned i;
     static const double initialSamplePeriod = 1.0;
     static const double maxSamplePeriod = 60.0 * 5.0;
 
@@ -41,8 +40,7 @@ void caEventRate ( const char *pName, unsigned count )
 
     chid * pChidTable = new chid [ count ];
     assert ( pChidTable );
-    epicsTime begin = epicsTime::getCurrent ();
-    for ( i = 0u; i < count; i++ ) {
+    for ( unsigned i = 0u; i < count; i++ ) {
         int status = ca_search ( pName,  & pChidTable[i] );
         SEVCHK ( status, NULL );
     }
@@ -52,15 +50,13 @@ void caEventRate ( const char *pName, unsigned count )
         fprintf ( stderr, " not found.\n" );
         return;
     }
-    epicsTime end = epicsTime::getCurrent ();
 
-    printf ( " done(%f sec).\n", end - begin );
+    printf ( " done.\n" );
 
     printf ( "Subscribing %u times.", count );
     fflush ( stdout );
 
     unsigned eventCount = 0u;
-    begin = epicsTime::getCurrent ();
     for ( i = 0u; i < count; i++ ) {
         status = ca_add_event ( DBR_FLOAT, 
             pChidTable[i], eventCallBack, &eventCount, NULL);
@@ -70,24 +66,20 @@ void caEventRate ( const char *pName, unsigned count )
     status = ca_flush_io ();
     SEVCHK ( status, __FILE__ );
 
-    end = epicsTime::getCurrent ();
-
-    printf ( " done(%f sec).\n", end - begin );
+    printf ( " done.\n" );
         
     printf ( "Waiting for initial value events." );
     fflush ( stdout );
 
     // let the first one go by 
-    begin = epicsTime::getCurrent ();
     while ( eventCount < count ) {
         status = ca_pend_event ( 0.01 );
         if ( status != ECA_TIMEOUT ) {
             SEVCHK ( status, NULL );
         }
     }
-    end = epicsTime::getCurrent ();
 
-    printf ( " done(%f sec).\n", end - begin );
+    printf ( " done.\n" );
 
     double samplePeriod = initialSamplePeriod;
     double X = 0.0;
@@ -96,11 +88,9 @@ void caEventRate ( const char *pName, unsigned count )
     while ( true ) {
         unsigned nEvents, lastEventCount, curEventCount;
 
-        epicsTime begin = epicsTime::getCurrent ();
         lastEventCount = eventCount;
         status = ca_pend_event ( samplePeriod );
         curEventCount = eventCount;
-        epicsTime end = epicsTime::getCurrent ();
         if ( status != ECA_TIMEOUT ) {
             SEVCHK ( status, NULL );
         }
@@ -114,21 +104,33 @@ void caEventRate ( const char *pName, unsigned count )
 
         N++;
 
-        double period = end - begin;
-        double Hz = nEvents / period;
-
-        X += Hz;
-        XX += Hz * Hz;
-
-        double mean = X / N;
-        double stdDev = sqrt ( XX / N - mean * mean );
-
-        printf ( "CA Event Rate (Hz): current %g mean %g std dev %g\n", 
-            Hz, mean, stdDev );
-
         if ( samplePeriod < maxSamplePeriod ) {
             samplePeriod += samplePeriod;
         }
     }
+}
+
+int main ( int argc, char **argv )
+{
+    if ( argc < 2 || argc > 3 ) {
+        fprintf ( stderr, "usage: %s < PV name > [subscription count]\n", argv[0] );
+        return 0;
+    }
+
+    unsigned count;
+    if ( argc == 3 ) {
+        int status = sscanf ( argv[2], " %u ", & count );
+        if ( status != 1 ) {
+            fprintf ( stderr, "expected unsigned integer 2nd argument\n" );
+            return 0;
+        }
+    }
+    else {
+        count = 1;
+    }
+
+    caEventRate ( argv[1], count );
+
+    return 0;
 }
 

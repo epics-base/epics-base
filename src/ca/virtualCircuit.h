@@ -82,8 +82,9 @@ public:
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ( epicsGuard < callbackMutex > & );
-    void initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
-                                    epicsGuard <cacMutex > & guard ); 
+    void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
+                                    epicsGuard <cacMutex > & ); 
+    void disconnectNotify ( epicsGuard <cacMutex > & );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
@@ -115,6 +116,7 @@ public:
     void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
+    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
 
 private:
     tcpRecvThread recvThread;
@@ -131,9 +133,13 @@ private:
     cac & cacRef;
     char * pCurData;
     unsigned minorProtocolVersion;
-    enum iiu_conn_state { iiucs_connecting, iiucs_connected, 
-        iiucs_clean_shutdown, iiucs_abort_shutdown };
-    iiu_conn_state state;
+    enum iiu_conn_state { 
+        iiucs_connecting, // pending circuit connect
+        iiucs_connected, // live circuit
+        iiucs_clean_shutdown, // live circuit will shutdown when flush completes
+        iiucs_disconnected, // socket informed us of disconnect
+        iiucs_abort_shutdown // socket has been closed
+                } state;
     epicsEvent sendThreadFlushEvent;
     epicsEvent flushBlockEvent;
     SOCKET sock;
@@ -149,7 +155,6 @@ private:
     bool earlyFlush;
     bool recvProcessPostponedFlush;
 
-    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
     bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
@@ -195,13 +200,8 @@ inline bool tcpiiu::ca_v49_ok () const
 
 inline bool tcpiiu::alive () const // X aCC 361
 {
-    if ( this->state == iiucs_connecting || 
-        this->state == iiucs_connected ) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return ( this->state == iiucs_connecting || 
+        this->state == iiucs_connected );
 }
 
 inline void tcpiiu::beaconAnomalyNotify ()

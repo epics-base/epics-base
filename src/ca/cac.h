@@ -177,6 +177,7 @@ public:
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void initiateAbortShutdown ( tcpiiu & );
+    void disconnectNotify ( tcpiiu & );
     void uninstallIIU ( tcpiiu & ); 
 
 private:

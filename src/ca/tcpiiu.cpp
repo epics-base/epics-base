@@ -153,13 +153,13 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
 
             // winsock indicates disconnect by returniing zero here
             if ( status == 0 ) {
-                this->cacRef.initiateAbortShutdown ( *this );
+                this->cacRef.disconnectNotify ( *this );
                 nBytes = 0u;
                 break;
             }
 
             if ( localError == SOCK_SHUTDOWN ) {
-                this->cacRef.initiateAbortShutdown ( *this );
+                this->cacRef.disconnectNotify ( *this );
                 nBytes = 0u;
                 break;
             }
@@ -174,7 +174,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                     SOCKERRSTR ( localError ) );
             }
 
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             nBytes = 0u;
             break;
         }
@@ -200,12 +200,12 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         int localErrno = SOCKERRNO;
 
         if ( status == 0 ) {
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             return 0u;
         }
 
         if ( localErrno == SOCK_SHUTDOWN ) {
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             return 0u;
         }
 
@@ -214,19 +214,19 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         }
         
         if ( localErrno == SOCK_ECONNABORTED ) {
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             return 0u;
         }
 
         if ( localErrno == SOCK_ECONNRESET ) {
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             return 0u;
         }
 
         {
             char name[64];
             this->hostName ( name, sizeof ( name ) );
-            this->printf ( "Disconnecting from CA server %s because: %s\n", 
+            this->printf ( "Unexpected problem with circuit to CA server \"%s\" was \"%s\" - disconnecting\n", 
                 name, SOCKERRSTR ( localErrno ) );
         }
 
@@ -270,7 +270,7 @@ void tcpRecvThread::run ()
         this->iiu.sendThread.start ();
 
         if ( this->iiu.state != tcpiiu::iiucs_connected ) {
-            this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
+            this->iiu.cacRef.disconnectNotify ( this->iiu );
             return;
         }
 
@@ -561,7 +561,7 @@ void tcpiiu::connect ()
             this->sendDog.cancel ();
             this->printf ( "Unable to connect because %d=\"%s\"\n", 
                 errnoCpy, SOCKERRSTR ( errnoCpy ) );
-            this->cacRef.initiateAbortShutdown ( *this );
+            this->cacRef.disconnectNotify ( *this );
             return;
         }
     }
@@ -575,6 +575,13 @@ void tcpiiu::initiateCleanShutdown ( epicsGuard < cacMutex > & )
     this->sendThreadFlushEvent.signal ();
 }
 
+void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
+{
+    if ( this->state == iiucs_connected || this->state == iiucs_connecting ) {
+        this->state = iiucs_disconnected;
+    }
+    this->sendThreadFlushEvent.signal ();
+}
 
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
                                     epicsGuard <cacMutex > & guard )
@@ -601,7 +608,7 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
 
         // linux threads in recv() dont wakeup unless we also
         // call shutdown ( close() by itself is not enough )
-        if ( oldState != iiucs_connecting ) {
+        if ( oldState == iiucs_connected ) {
             status = ::shutdown ( this->sock, SD_BOTH );
             if ( status ) {
                 errlogPrintf ("CAC TCP socket shutdown error was %s\n", 

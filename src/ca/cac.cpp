@@ -229,20 +229,18 @@ cac::~cac ()
 
     //
     // shutdown all tcp circuits
-    // (take both locks here in the proper order to avoid deadlocks)
     //
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
         resTableIter < tcpiiu, caServerID > iter = this->serverTable.firstIter ();
         while ( iter.valid() ) {
-            iter->initiateAbortShutdown ( cbGuard, guard );
+            iter->initiateCleanShutdown (  guard );
             iter++;
         }
     }
 
     //
-    // wait for tcp threads to exit
+    // wait for all tcp threads to exit
     //
     // this will block for oustanding sends to go out so dont 
     // hold a lock while waiting
@@ -1488,6 +1486,12 @@ void cac::notifyNewFD ( epicsGuard < callbackMutex > &, SOCKET sock ) const
 void cac::notifyDestroyFD ( epicsGuard < callbackMutex > &, SOCKET sock ) const
 {
     this->notify.fdWasDestroyed ( sock );
+}
+
+void cac::disconnectNotify ( tcpiiu & iiu )
+{
+    epicsGuard < cacMutex > guard ( this->mutex );
+    iiu.disconnectNotify ( guard );
 }
 
 void cac::initiateAbortShutdown ( tcpiiu & iiu )

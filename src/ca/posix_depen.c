@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.25  1998/08/12 16:36:54  jhill
+ * allow the user name to change when they use su
+ *
  * Revision 1.24  1998/04/13 19:14:34  jhill
  * fixed task variable problem
  *
@@ -88,7 +91,7 @@ void cac_gettimeval(struct timeval  *pt)
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-	cac_mux_io (pTV);
+	cac_mux_io (pTV, TRUE);
 }
 
 /*
@@ -96,7 +99,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
  */
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-	cac_mux_io (pTV);
+	cac_mux_io (pTV, TRUE);
 }
 
 
@@ -204,6 +207,30 @@ char *localUserName()
 	return pTmp;
 }
 
+/*
+ * max_unix_fd()
+ *
+ * attempt to determine the maximum file descriptor
+ * on all UNIX systems
+ */
+int max_unix_fd( )
+{
+	int max;
+	static const int bestGuess = 1024;
+
+#	if defined(OPEN_MAX)
+		max = OPEN_MAX; /* posix */
+#	elif defined(_SC_OPEN_MAX)
+		max = sysconf (_SC_OPEN_MAX);
+		if (max<0) {
+			max = bestGuess;
+		}
+#	else
+		max = bestGuess;
+#	endif
+
+	return max;
+}
 
 
 /*
@@ -213,7 +240,9 @@ void ca_spawn_repeater()
 {
 	int     status;
 	char	*pImageName;
-
+    int     fd;
+    int     maxfd;
+  
 	/*
 	 * create a duplicate process
 	 */
@@ -229,6 +258,18 @@ void ca_spawn_repeater()
 	 */
 	if (status){
 		return;
+	}
+
+	/*
+	 * close all open files except for STDIO so they will not
+	 * be inherited by the repeater task
+	 */
+	maxfd = max_unix_fd (); 
+	for (fd = 0; fd<=maxfd; fd++) {
+		if (fd==STDIN_FILENO) continue;
+		if (fd==STDOUT_FILENO) continue;
+		if (fd==STDERR_FILENO) continue;
+		close (fd);
 	}
 
 	/*

@@ -168,7 +168,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 }
 <SNL>{NAME} {
 		nc = strlen(yytext);
-		bcopy(yytext, str_next, nc+1);
+		memcpy(str_next, yytext, nc+1);
 		yylval.pchar = str_next;
 		str_next += nc+1;
 		RETURN(NAME);
@@ -219,7 +219,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>","	RETURN(COMMA);
 <SNL>{FPNUM} {
 		nc = strlen(yytext);
-		bcopy(yytext, str_next, nc+1);
+		memcpy(str_next, yytext, nc+1);
 		yylval.pchar = str_next;
 		str_next += nc+1;
 		RETURN(NUMBER);

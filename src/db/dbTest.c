@@ -1042,6 +1042,7 @@ static int dbpr_report(
     short	n2;
     void	*pfield;
     char	*pfield_name;
+    char	*pfield_value;
     DBENTRY	dbentry;
     DBENTRY	*pdbentry = &dbentry;
     long	status;
@@ -1073,7 +1074,9 @@ static int dbpr_report(
 	case DBF_MENU:
 	case DBF_DEVICE:
 	    status = dbFindField(pdbentry,pfield_name);
-	    sprintf(pmsg, "%s: %s", pfield_name, dbGetString(pdbentry));
+            pfield_value = dbGetString(pdbentry);
+	    sprintf(pmsg, "%s: %s", pfield_name,
+                (pfield_value ? pfield_value : "<nil>"));
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_INLINK:

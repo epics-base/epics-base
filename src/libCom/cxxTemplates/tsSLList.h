@@ -141,14 +141,14 @@ private:
 // tsSLNode<T>::tsSLNode ()
 //
 template < class T >
-tsSLNode < T > :: tsSLNode () : pNext ( 0 ) {}
+inline tsSLNode < T > :: tsSLNode () : pNext ( 0 ) {}
 
 //
 // tsSLNode<T>::tsSLNode ( const tsSLNode < T > & )
 // private - not to be used - implemented to eliminate warnings
 //
 template < class T >
-tsSLNode < T > :: tsSLNode ( const tsSLNode < T > & )
+inline tsSLNode < T > :: tsSLNode ( const tsSLNode < T > & )
 {
 }
 

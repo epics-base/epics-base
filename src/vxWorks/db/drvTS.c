@@ -1,4 +1,7 @@
 
+/*
+ * $Log$
+ */
 
 /**************************************************************************
  *
@@ -168,7 +171,7 @@ void TSprintCurrentTime();
 /* data used by all */
 TSinfo TSdata = { TS_master_dead, TS_async_slave, TS_async_none,
 					0,NULL,
-					TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,0,
+					TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
 					TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,
 					NULL, NULL,NULL };
 
@@ -231,6 +234,7 @@ long TSreport()
 	printf("Master communications port = %d\n",TSdata.master_port);
 	printf("Slave communications port = %d\n",TSdata.slave_port);
 	printf("Total events supported = %d\n",TSdata.total_events);
+	printf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
 
 	return 0;
 }
@@ -242,7 +246,7 @@ long TSreport()
 	It's job is to set operating parameters for the time stamp support code.
 */
 void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
-				int master_port, int slave_port)
+				int master_port, int slave_port, unsigned long time_out)
 {
 	if(master) TSdata.master_timing_IOC=1;
 	else TSdata.master_timing_IOC=0;
@@ -260,6 +264,9 @@ void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 
 	if(slave_port) TSdata.slave_port=slave_port;
 	else TSdata.slave_port=TS_SLAVE_PORT;
+
+	if(time_out) TSdata.time_out=time_out;
+	else TSdata.time_out=TS_TIME_OUT_MS;
 
 	return;
 }
@@ -1562,8 +1569,14 @@ static long TSgetData(char* buf, int buf_size, int soc,
 	int retry_count=0;
 	int num,mlen,flen;
 	fd_set readfds;
+	volatile unsigned long s,us;
 	struct timeval timeOut;
 	struct timespec send_time,recv_time;
+
+	/* convert millisecond time out to seconds/microseconds */
+	s=TSdata.time_out/1000; us=(TSdata.time_out-(s*1000))*1000;
+	Debug(6,"time_out Second=%lu\n",s);
+	Debug(6,"time_out Microsecond=%lu\n",us);
 
 	do
 	{
@@ -1573,9 +1586,7 @@ static long TSgetData(char* buf, int buf_size, int soc,
 			{ perror("sendto failed"); return -1; }
 
 		FD_ZERO(&readfds); FD_SET(soc,&readfds);
-		timeOut.tv_sec=0;
-		timeOut.tv_usec=TSdata.clock_conv * 2; /* 2 times clock period */
-		timeOut.tv_usec=(1000000/sysClkRateGet())*2; /* 2 times clock period */
+		timeOut.tv_sec=s; timeOut.tv_usec=us;
 
 		num=select(FD_SETSIZE,&readfds,(fd_set*)NULL,(fd_set*)NULL,&timeOut);
 		if(round_trip) clock_gettime(CLOCK_REALTIME,&recv_time);

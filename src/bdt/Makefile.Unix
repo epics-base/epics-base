@@ -2,6 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
+INC += bdt.h
 
 LIBOBJS += bdt.o
 

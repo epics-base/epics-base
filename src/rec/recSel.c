@@ -38,6 +38,7 @@
  * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .06  02-28-92	jba	ANSI C changes
  * .07  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .07  06-18-92        jba     changed graphic/control limits from loop to range test
  */
 
 #include	<vxWorks.h>
@@ -237,15 +238,15 @@ static long get_graphic_double(paddr,pgd)
         return(0);
     }
 
-    pvalue = &psel->a;
-    plvalue = &psel->la;
-    for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
-        if(paddr->pfield==(void *)&pvalue
-        || paddr->pfield==(void *)&plvalue){
-            pgd->upper_disp_limit = psel->hopr;
-            pgd->lower_disp_limit = psel->lopr;
-            return(0);
-        }
+    if(paddr->pfield>=(void *)&psel->a && paddr->pfield<=(void *)&psel->l){
+        pgd->upper_disp_limit = psel->hopr;
+        pgd->lower_disp_limit = psel->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&psel->la && paddr->pfield<=(void *)&psel->ll){
+        pgd->upper_disp_limit = psel->hopr;
+        pgd->lower_disp_limit = psel->lopr;
+        return(0);
     }
     recGblGetGraphicDouble(paddr,pgd);
     return(0);
@@ -269,13 +270,15 @@ static long get_control_double(paddr,pcd)
         return(0);
     }
 
-    pvalue = &psel->a;
-    for(i=0; i<SEL_MAX; i++, pvalue++) {
-        if(paddr->pfield==(void *)&pvalue){
-            pcd->upper_ctrl_limit = psel->hopr;
-            pcd->lower_ctrl_limit = psel->lopr;
-            return(0);
-        }
+    if(paddr->pfield>=(void *)&psel->a && paddr->pfield<=(void *)&psel->l){
+        pcd->upper_ctrl_limit = psel->hopr;
+        pcd->lower_ctrl_limit = psel->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&psel->la && paddr->pfield<=(void *)&psel->ll){
+        pcd->upper_ctrl_limit = psel->hopr;
+        pcd->lower_ctrl_limit = psel->lopr;
+        return(0);
     }
     recGblGetControlDouble(paddr,pcd);
     return(0);

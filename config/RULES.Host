@@ -347,11 +347,6 @@ buildInstall :: build $(TARGETS) \
 	$(INSTALL_DBDNAME) $(INSTALL_INCREC) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
 
-depends:: $(LIBSRCS) $(SRCS) 
-	$(RM) DEPENDS
-	touch DEPENDS
-	$(DEPENDS_RULE)
-
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) *$(RES) $(TARGETS)
@@ -496,6 +491,11 @@ $(INSTALL_JAVA)/%.class: %.class
 #
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
+
+depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
+	$(RM) DEPENDS
+	touch DEPENDS
+	$(DEPENDS_RULE)
 
 %$(EXE): %.c
 	@$(RM) $@

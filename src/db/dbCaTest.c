@@ -73,6 +73,7 @@ long epicsShareAPI dbcar(char	*precordname,int level)
     int			j;
 
 
+    if(precordname && *precordname==0) precordname=0;
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {

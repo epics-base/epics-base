@@ -46,3 +46,4 @@ epicsShareFunc unsigned epicsShareAPI wsaMajorVersion();
 #ifdef __cplusplus
 }
 #endif
+

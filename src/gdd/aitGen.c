@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  2001/10/20 00:11:09  jhill
+ * remove use of std lib for now
+ *
  * Revision 1.11  2001/07/03 00:58:18  jhill
  * changed interface so that unreferenced table will not optimize away
  *
@@ -142,7 +145,7 @@ void initMinMaxAIT ()
 	aitMin [ aitEnumUint32 ] = 0u;
 	aitMin [ aitEnumFloat32 ] = -FLT_MAX;
 	aitMin [ aitEnumFloat64 ] = -DBL_MAX;
-};
+}
 
 int main(int argc,char* argv[])
 {

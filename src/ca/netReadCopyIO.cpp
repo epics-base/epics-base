@@ -74,7 +74,7 @@ void netReadCopyIO::exceptionNotify ( int status,
 void netReadCopyIO::show ( unsigned level ) const
 {
     printf ( "read copy IO at %p, type %s, element count %u\n", 
-        this, this->type, this->count );
+        this, dbf_type_to_text ( this->type ), this->count );
     if ( level > 0u ) {
         printf ( "\tsequence number %u, user's storage %p\n",
             this->seqNumber, this->pValue );

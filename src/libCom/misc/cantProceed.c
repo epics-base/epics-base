@@ -14,11 +14,12 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "cantProceed.h"
 #include "osiThread.h"
 
-void *callocMustSucceed(size_t count, size_t size, const char *errorMessage)
+epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size, const char *errorMessage)
 {
     void *mem = calloc(count,size);
     if(mem==0) {
@@ -29,7 +30,7 @@ void *callocMustSucceed(size_t count, size_t size, const char *errorMessage)
     return(mem);
 }
 
-void *mallocMustSucceed(size_t size, const char *errorMessage)
+epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *errorMessage)
 {
     void *mem = malloc(size);
     if(mem==0) {
@@ -40,7 +41,7 @@ void *mallocMustSucceed(size_t size, const char *errorMessage)
     return(mem);
 }
 
-void cantProceed(const char *errorMessage)
+epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
 {
     errlogPrintf("fatal error: %s\n",errorMessage);
     threadSuspend(threadGetIdSelf());

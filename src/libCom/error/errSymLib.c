@@ -69,11 +69,10 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-
-#include "cantProceed.h"
 #include <errno.h>
 
 #define epicsExportSharedSymbols
+#include "cantProceed.h"
 #include "dbDefs.h"
 #include "errMdef.h"
 #include "errSymTbl.h"

@@ -5,9 +5,11 @@
 extern "C" {
 #endif
 
-void cantProceed(const char *errorMessage);
-void *callocMustSucceed(size_t count, size_t size, const char *errorMessage);
-void *mallocMustSucceed(size_t size, const char *errorMessage);
+#include "shareLib.h"
+
+epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage);
+epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size, const char *errorMessage);
+epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *errorMessage);
 #ifdef __cplusplus
 }
 #endif

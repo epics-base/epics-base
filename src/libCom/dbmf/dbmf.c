@@ -11,9 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "osiSem.h"
-
 #define epicsExportSharedSymbols
+#include "osiSem.h"
 #include "ellLib.h"
 #include "dbmf.h"
 

@@ -29,6 +29,12 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
+ * fixed bug where client disconnects while waiting to send TCP
+ *
+ * Revision 1.39  1998/09/24 21:22:55  jhill
+ * subtle changes related to efficency when checking connection timers
+ *
  * Revision 1.38  1998/06/16 00:56:03  jhill
  * moved code from here to libCom
  *
@@ -166,7 +172,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	int		rate = sysClkRateGet();
 
 #ifdef NOASYNCRECV 
-	cac_mux_io(pTV);
+	cac_mux_io(pTV, TRUE);
 #else
 	/*
 	 * flush outputs
@@ -174,7 +180,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	 */
 	itimeout.tv_usec = 0;
 	itimeout.tv_sec = 0;
-	cac_mux_io (&itimeout);
+	cac_mux_io (&itimeout, TRUE);
         
 	ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
 	ticks = min(LOCALTICKS, ticks);
@@ -229,31 +235,31 @@ void os_specific_sg_io_complete(CASG   *pcasg)
  */
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-        struct timeval  itimeout;
-	int		ticks;
-	int		rate = sysClkRateGet();
-
+    struct timeval  itimeout;
+    int             ticks;
+    int             rate = sysClkRateGet();
+    
 #ifdef NOASYNCRECV 
-	cac_mux_io(pTV);
+    cac_mux_io(pTV, TRUE);
 #else
-	/*
-	 * flush outputs
-	 * (recv occurs in another thread)
-	 */
-        itimeout.tv_usec = 0;
-        itimeout.tv_sec = 0;
-        cac_mux_io(&itimeout);
-        
-	ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
-	ticks = min(LOCALTICKS, ticks);
-
-	semTake (pcasg->sem, ticks);
-	/*
-	 * force a time update because we are not
-	 * going to get one with a nill timeout in
-	 * ca_mux_io()
-	 */
-	cac_gettimeval (&ca_static->currentTime);
+    /*
+     * flush outputs
+     * (recv occurs in another thread)
+     */
+    itimeout.tv_usec = 0;
+    itimeout.tv_sec = 0;
+    cac_mux_io(&itimeout, TRUE);
+    
+    ticks = (int) (pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC);
+    ticks = min(LOCALTICKS, ticks);
+    
+    semTake (pcasg->sem, ticks);
+    /*
+     * force a time update because we are not
+     * going to get one with a nill timeout in
+     * ca_mux_io()
+     */
+    cac_gettimeval (&ca_static->currentTime);
 #endif
 }
 

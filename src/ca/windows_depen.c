@@ -1,9 +1,9 @@
 /*
  *	$Id$
  *      Author: Jeffrey O. Hill, Chris Timossi
- *              hill@luke.lanl.gov
- *		CATimossi@lbl.gov
- *              (505) 665 1831
+ *              hill@luke.lanl.gov (505) 665 1831
+ *              CATimossi@lbl.gov
+ *             
  *      Date:  9-93
  *
  *      Experimental Physics and Industrial Control System (EPICS)
@@ -29,114 +29,6 @@
  *
  *		Lawrence Berkley National Laboratory
  *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.43  1998/09/24 23:52:57  jhill
- * eliminated DLL run-down call to ca_task_exit()
- *
- * Revision 1.42  1998/09/24 21:22:56  jhill
- * conn.c
- *
- * Revision 1.41  1998/07/07 23:01:42  jhill
- * use high precision timers
- *
- * Revision 1.40  1998/06/22 22:32:03  jhill
- * EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
- *
- * Revision 1.39  1998/06/16 00:41:22  jhill
- * consolodated code here into libCom
- *
- * Revision 1.38  1998/05/29 00:03:21  jhill
- * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
- *
- * Revision 1.37  1998/04/15 21:53:02  jhill
- * fixed incomplete init problem
- *
- * Revision 1.36  1998/04/13 19:14:36  jhill
- * fixed task variable problem
- *
- * Revision 1.35  1998/04/10 23:00:57  jhill
- * link with user32 lib under WIN32
- *
- * Revision 1.34  1998/03/24 20:55:06  jhill
- * fixed console title/correct repeater spawn/correct winsock II URL
- *
- * Revision 1.33  1998/03/12 20:39:11  jhill
- * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
- *
- * Revision 1.32  1998/02/27 01:05:04  jhill
- * integrated Timossi's win sock II changes
- *
- * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
- * 	Interim release from jeff hill
- *
- * Revision 1.23  1996/11/02 00:51:12  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.22  1996/09/16 16:40:13  jhill
- * make EPICS version be the console title
- *
- * Revision 1.21  1996/08/05 19:20:29  jhill
- * removed incorrect ver number
- *
- * Revision 1.20  1995/12/19  19:36:20  jhill
- * function prototype changes
- *
- * Revision 1.19  1995/11/29  19:15:42  jhill
- * added $Log$
- * added Revision 1.43  1998/09/24 23:52:57  jhill
- * added eliminated DLL run-down call to ca_task_exit()
- * added
- * added Revision 1.42  1998/09/24 21:22:56  jhill
- * added conn.c
- * added
- * added Revision 1.41  1998/07/07 23:01:42  jhill
- * added use high precision timers
- * added
- * added Revision 1.40  1998/06/22 22:32:03  jhill
- * added EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
- * added
- * added Revision 1.39  1998/06/16 00:41:22  jhill
- * added consolodated code here into libCom
- * added
- * added Revision 1.38  1998/05/29 00:03:21  jhill
- * added allow CA to run systems w/o local interface query capabilities (ie cygwin32)
- * added
- * added Revision 1.37  1998/04/15 21:53:02  jhill
- * added fixed incomplete init problem
- * added
- * added Revision 1.36  1998/04/13 19:14:36  jhill
- * added fixed task variable problem
- * added
- * added Revision 1.35  1998/04/10 23:00:57  jhill
- * added link with user32 lib under WIN32
- * added
- * added Revision 1.34  1998/03/24 20:55:06  jhill
- * added fixed console title/correct repeater spawn/correct winsock II URL
- * added
- * added Revision 1.33  1998/03/12 20:39:11  jhill
- * added fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
- * added
- * added Revision 1.32  1998/02/27 01:05:04  jhill
- * added integrated Timossi's win sock II changes
- * added
- * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
- * 	Interim release from jeff hill
- *
- * added Revision 1.23  1996/11/02 00:51:12  jhill
- * added many pc port, const in API, and other changes
- * added
- * added Revision 1.22  1996/09/16 16:40:13  jhill
- * added make EPICS version be the console title
- * added
- * added Revision 1.21  1996/08/05 19:20:29  jhill
- * added removed incorrect ver number
- * added
- * Revision 1.20  1995/12/19  19:36:20  jhill
- * function prototype changes
- * to the header
- *
  */
 
 #include <math.h>
@@ -159,7 +51,6 @@
 static long offset_time;  /* time diff (sec) between 1970 and when windows started */
 static LARGE_INTEGER time_prev, time_freq;
 
-
 /*
  * cac_gettimeval
  */
@@ -213,16 +104,14 @@ void cac_gettimeval(struct timeval  *pt)
 	time_prev = time_cur;
 }
 
-
 /*
  * cac_block_for_io_completion()
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-	cac_mux_io(pTV);
+	cac_mux_io(pTV, TRUE);
 }
 
-
 /*
  * os_specific_sg_io_complete()
  */
@@ -230,24 +119,22 @@ void os_specific_sg_io_complete(CASG *pcasg)
 {
 }
 
-
 /*
  * does nothing but satisfy undefined
  */
 void os_specific_sg_create(CASG *pcasg)
 {
 }
+
 void os_specific_sg_delete(CASG *pcasg)
 {
 }
 
-
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-	cac_mux_io(pTV);
+	cac_mux_io(pTV, TRUE);
 }
 
-
 /*
  *	ca_task_initialize()
  */
@@ -300,7 +187,6 @@ int epicsShareAPI ca_task_initialize(void)
     return ECA_NORMAL;
 }
 
-
 /*
  * ca_task_exit ()
  *
@@ -325,7 +211,6 @@ int epicsShareAPI ca_task_exit (void)
 	return ECA_NORMAL;
 }
 
-
 /*
  *
  * obtain the local user name
@@ -351,8 +236,6 @@ char *localUserName()
 	return pTmp;
 }
 
-
-
 /*
  * ca_spawn_repeater()
  */
@@ -461,7 +344,6 @@ void ca_spawn_repeater()
 	//}
 }
 
-
 /*
  * caSetDefaultPrintfHandler ()
  * use the normal default here
@@ -473,7 +355,6 @@ void caSetDefaultPrintfHandler ()
 }
 
 
-
 /*
  *
  * Network interface routines
@@ -586,7 +467,6 @@ int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 	return -1;
 }
 
-
 /*
  *  	caDiscoverInterfaces()
  *

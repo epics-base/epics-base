@@ -142,7 +142,7 @@ epicsMutex ::~epicsMutex ()
 }
 
 void epicsMutex::lock ()
-    epics_throws (( invalidMutex ))
+    epics_throws (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
@@ -151,7 +151,7 @@ void epicsMutex::lock ()
 }
 
 bool epicsMutex::lock ( double timeOut ) // X aCC 361
-    epics_throws (( invalidMutex ))
+    epics_throws (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if ( status == epicsMutexLockOK ) {
@@ -167,7 +167,7 @@ bool epicsMutex::lock ( double timeOut ) // X aCC 361
 }
 
 bool epicsMutex::tryLock () // X aCC 361
-    epics_throws (( invalidMutex ))
+    epics_throws (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {

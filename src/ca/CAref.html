@@ -46,10 +46,11 @@ height="31" width="88"></a></p>
   Information</a></li>
   <li><a href="#port">IP port numbers</a></li>
   <li><a href="#Environmen">WAN Environment</a></li>
-  <li><a href="#Dynamic">Disconnect Time Out Interval / Server Beacon
+  <li><a href="#Disconnect">Disconnect Time Out Interval / Server Beacon
     Period</a></li>
   <li><a href="#Dynamic">Dynamic Changes in the CA Client Library Search
     Interval</a></li>
+  <li><a href="#Repeater">The CA Repeater</a></li>
   <li><a href="#Configurin">Configuring the Time Zone</a></li>
   <li><a href="#Configurin1">Configuring the maximum array size</a></li>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
@@ -425,6 +426,18 @@ number will default to EPICS_CA_SERVER_PORT.</p>
   </tbody>
 </table>
 
+<h4><a name="Routing">Routing restiction on vxWorks systems</a></h4>
+
+<p>Frequently vxWorks systems boot by default with routes limiting access
+only to the local subnet. If a EPICS system is operating in a WAN environment
+it may be necessary to configure routes into the vxWorks system which enable
+a vxWorks based CA server to respond to requests originating outside it's
+subnet. These routing restrinctions can also apply to vxWorks base CA clients
+communicating with off subnet servers. An EPICS system manager can implemnt
+an rudamentary, but robust, form of access control for a particular host by
+not providing routes in that host that reach outside of a limited set of
+subnets. See "routeLib" in the vxWorks reference manual.</p>
+
 <h3><a name="Disconnect">Disconnect Time Out Interval</a></h3>
 
 <p>If the CA client library does not see a beacon from a server that it is
@@ -486,6 +499,28 @@ beacon might be when the client isnt on the same IP subnet as the server, the
 EPICS_CA_ADDR_LIST was modified to include a destination address for the
 server, but the server's beacon address list was not modified so that it's
 beacons are received by the client.</p>
+
+<h3><a name="Repeater">The CA Repeater</a></h3>
+
+<p>When several client processes run on the same host it is not possible for
+all of them to all directly receive a copy of the server beacon messages when
+the beacon messages are sent to unicast addresses, or when legacy IP kernels
+are still in use. To avoid confusion over these restrictions a special UDP
+server, the CA Repeater, is auotomatically spawned by the CA client library
+when it is not found to be running. This program listens for server beacons
+sent to the UDP port specified in the EPICS_CA_REPEATER_PORT parameter and
+fans any beacons received out to any CA client program running on the same
+host that have registered themselves with the CA Repeater. If the CA Repeater
+is not already running on a workstation, then the "caRepeater" program must
+be in your path before using the CA client library for the first time. If a
+host based IOC is run on the same workstation with standalone CA client
+processes, then it is probably best to start the caRepeater process when the
+workstation is booted. Otherwise it is possible for the standalone CA client
+processes to become dependent on a CA repeater started within the confines of
+the host based IOC. As long as the host based IOC continues to run there is
+nothing wrong with this situation, but problems could arise if this host
+based IOC process exits before the standalone client processes which are
+relying on its CA repeater for services exit.</p>
 
 <h3><a name="Configurin">Configuring the Time Zone</a></h3>
 
@@ -580,7 +615,7 @@ request transportation of large arrays.</p>
     <tr>
       <td>EPICS_CAS_BEACON_ADDR_LIST</td>
       <td>{N.N.N.NN.N.N.N:P...}</td>
-      <td>EPICS_CA_ADDR_LIST</td>
+      <td>EPICS_CA_ADDR_LIST<sup>1</sup></td>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_PERIOD</td>
@@ -600,14 +635,16 @@ request transportation of large arrays.</p>
   </tbody>
 </table>
 
+<h4>Server Port</h4>
+
+<p>The server configures its port number from the EPICS_CAS_SERVER_PORT
+environment variable if it is specified. Otherwise the EPICS_CA_SERVER_PORT
+environment variable determines the server's port number. Two servers can
+share the same UDP port number on the same machine, but there are
+restrictions - see a <a href="#Unicast">discussion of unicast addresses and
+two servers sharing the same UDP port on the same host</a>.</p>
+
 <h4>Server Beacons</h4>
-
-<p>CA servers send "beacon" messages to each address specified in
-EPICS_CAS_BEACON_ADDR_LIST, and also any addresses auto configured from
-network interfaces found if EPICS_CAS_AUTO_BEACON_ADDR_LIST is "yes" or
-"YES".</p>
-
-<h4>Configuring the Server's Beacon Period</h4>
 
 <p>The  EPICS_CAS_BEACON_PERIOD parameter determines the server's beacon
 period and is specified in floating point seconds. The default is typically
@@ -615,40 +652,39 @@ period and is specified in floating point seconds. The default is typically
 href="#Dynamic">Dynamic Changes in the CA Client Library Search
 Interval</a>.</p>
 
-<p>The server configures its port number from the EPICS_CAS_SERVER_PORT
-environment variable if it is specified. Otherwise the EPICS_CA_SERVER_PORT
-environment variable determines the server's port number. Two servers can
-share the same UDP port number on the same machine, but there are
-restrictions - see a <a href="#Unicast">discussion of unicast addresses and
-two servers shareing the same UDP port on the same host</a>.</p>
-
 <p>CA servers build a list of addresses to send beacons to during
 initialization. If EPICS_CAS_AUTO_BEACON_ADDR_LIST has the value "YES" then
 the beacon address list will contain at least the broadcast address of all
 LAN interfaces found in the host and the destination address of all
-point-to-point interfaces found in the host. If EPICS_CAS_BEACON_ADDR_LIST is
-defined then its contents will be used to augment this list. Individual
-entries in EPICS_CAS_BEACON_ADDR_LIST may override the destination port
-number if ":nnn" follows the host name or IP address there. Only if
-EPICS_CAS_BEACON_ADDR_LIST is not defined, EPICS_CA_ADDR_LIST is defined, and
-EPICS_CAS_INTF_ADDR_LIST is not defined, then the contents of
-EPICS_CA_ADDR_LIST will inetead be used to augment this list.</p>
+point-to-point interfaces found in the host.</p>
+
+<p>If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents will be used to
+augment this list. Individual entries in EPICS_CAS_BEACON_ADDR_LIST may
+override the destination port number if ":nnn" follows the host name or IP
+address there. <sup>1</sup>Alternatively, if EPICS_CAS_BEACON_ADDR_LIST is
+not defined, EPICS_CA_ADDR_LIST is defined, and EPICS_CAS_INTF_ADDR_LIST is
+not defined, then the contents of EPICS_CA_ADDR_LIST will be used to augment
+the list. Otherwise, the list is not augmented.</p>
+
+<p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for
+server beacons. The only exception to this occurs when  ports are specified
+in EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
+EPICS_CAS_BEACON_PORT is not specified then beacons are sent to the port
+specified in EPICS_CA_REPEATER_PORT.</p>
+
+<h4>Binding a Server to a Limited Set of Network Interfaces</h4>
 
 <p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself
 to a limited set of network interfaces (each specified by its IP address). By
 defualt, the CA server is accessible from all network interfaces configured
-into its host.  <em>In R3.14 and R3.13 the CA server employed by
-iocCore does not implemet this feature</em>.</p>
+into its host.  <em>In R3.14 and R3.13 the CA server employed by iocCore does
+not implemet this feature</em>.</p>
+
+<h4>Client Configuration that also Applies to Servers</h4>
 
 <p>See also <a href="#Configurin1">Configuring the Maximum Array Size</a>.</p>
 
-<p>Typically vxWorks hosts boot with routes configured for the host's subnet.
-If a EPICS system is operating in a WAN environment it may be necessary to
-configure routes into the vxWorks system which enable a vxWorks based CA
-server to respond to requests originating outside it's subnet. An EPICS
-system manager can implemnt an rudamentary, but robust, form of access
-control for a particular host by not providing routes in that host that reach
-outside of a limited set of subnets.</p>
+<p>See also <a href="#Routing">Routing restiction on vxWorks systems</a>.</p>
 
 <h2><a name="Troublesho">Troubleshooting</a></h2>
 
@@ -2505,7 +2541,7 @@ and then output to the console.</p>
     <dd>write access denied</dd>
 </dl>
 
-<p><small>CVS Revision $Id$</small></p>
+<p><small>CVS Revision $Id: CAref.html,v 1.26 2002/08/08 15:37:05 jhill Exp
+$</small></p>
 </body>
 </html>
- 

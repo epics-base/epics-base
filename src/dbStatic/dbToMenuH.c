@@ -97,16 +97,16 @@ int main(int argc,char **argv)
     outFilename = dbCalloc(1,strlen(argv[2])+1);
     strcpy(outFilename,argv[2]);
     }
-    outFile = fopen(outFilename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",outFilename);
-	exit(-1);
-    }
     pdbbase = dbAllocBase();
     pdbbase->ignoreMissingMenus = TRUE;
     status = dbReadDatabase(&pdbbase,argv[1],path,sub);
     if(status)  {
 	fprintf(stderr,"Terminal error For input file %s\n",argv[1]);
+	exit(-1);
+    }
+    outFile = fopen(outFilename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",outFilename);
 	exit(-1);
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);

@@ -1,9 +1,9 @@
-# CONFIG_SITE.win32-x86-cygwin.Common
+# CONFIG_SITE.cygwin-x86.Common
 #
 # $Id$
 # This file is maintained by the build community.
 #
-# Site override definitions for win32-x86-cygwin host builds
+# Site override definitions for cygwin-x86 host builds
 #-------------------------------------------------------
  
 CROSS_COMPILER_TARGET_ARCHS =

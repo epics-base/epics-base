@@ -1,9 +1,9 @@
-#  CONFIG.win32-x86-cygwin.win32-x86-cygwin
+#  CONFIG.cygwin-x86.cygwin-x86
 #
 # $Id$
 #
-# Definitions for win32-x86-cygwin host - win32-x86-cygwin target builds
-# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.win32-x86-cygwin
+# Definitions for cygwin-x86 host - cygwin-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.cygwin-x86.cygwin-x86
 #-------------------------------------------------------
 
 # Include common gnu compiler definitions

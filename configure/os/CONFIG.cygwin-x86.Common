@@ -1,10 +1,10 @@
-# CONFIG.win32-x86-cygwin.Common
+# CONFIG.cygwin-x86.Common
 #
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for win32-x86-cygwin host archs
-# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.Common
+# Definitions for cygwin-x86 host archs
+# Sites may override these definitions in CONFIG_SITE.cygwin-x86.Common
 #-------------------------------------------------------
 
 #Include definitions common to unix hosts

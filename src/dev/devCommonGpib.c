@@ -46,13 +46,13 @@
  * .10  11-22-91	jrw	removed output formatting for all but GPIBWRITEs
  * .11	01-10-92	jrw	changed return from GPIBSOFT (propagated, was 0)
  * .12	02-05-92	jba	Changed process parameter from precord->pdba to precord
+ * .13	02-18-92	jrw	Changed return from the AO init function to 2
+ * .14	02-26-92	jrw	added return codes to the output work functions
+ * .15	02-27-92	jrw	added the setting of PACT to 1 when init fails
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
  *  when operating on SI and SO records.  The strncpy looks like a waste.
- *
- *  The calls to report and init need dset references somehow.  The iocInit
- *  processing code should be altered to provide it.
  */
 
 /* This MUST be deleted when the new dbScanner stuff is put into EPICS! */
@@ -156,7 +156,7 @@ gDset	*dset;	/* pointer to dset used to reference the init function */
 
   parmBlock = (struct devGpibParmBlock *)(dset->funPtr[dset->number]);
 
-  if (parm == 0)
+  if ((parm == 0) && *parmBlock->debugFlag)
     printf("%s: Device Support Initializing ...\n", parmBlock->name);
 
   return(OK);
@@ -196,9 +196,10 @@ void		(*process)();
       parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBSOFT &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBREADW)
   {
-            sprintf(message, "%s: devGpibLib_initAi: invalid command type for an AI record in param %d\n", pai->name, ((struct gpibDpvt *)pai->dpvt)->parm);
-            errMessage(S_db_badField, message);
-            return(S_db_badField);
+    sprintf(message, "%s: devGpibLib_initAi: invalid command type for an AI record in param %d\n", pai->name, ((struct gpibDpvt *)pai->dpvt)->parm);
+    errMessage(S_db_badField, message);
+    pai->pact = TRUE;
+    return(S_db_badField);
   }
   return(0);
 }
@@ -234,12 +235,10 @@ void 		(*process)();
   {
       sprintf(message, "%s: devGpibLib_initAo: invalid command type for an AO record in param %d\n", pao->name, ((struct gpibDpvt *)pao->dpvt)->parm);
       errMessage(S_db_badField, message);
+      pao->pact = TRUE;
       return(S_db_badField);
   }
-
-/* BUG -- fill in the initial value in here */
-
-  return(0);
+  return(2);	/* Don't let record processing do an RVAL to VAL conversion */
 }
 
 /******************************************************************************
@@ -250,7 +249,7 @@ void 		(*process)();
 
 long
 devGpibLib_initLi(pli, process)
-struct aiRecord *pli;
+struct longinRecord *pli;
 void            (*process)();
 {
   long          result;
@@ -273,6 +272,7 @@ void            (*process)();
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an LI record in param %d\n", pli->name, ((struct gpibDpvt *)pli->dpvt)->parm);
     errMessage(S_db_badField, message);
+    pli->pact = TRUE;
     return(S_db_badField);
   }
 
@@ -308,11 +308,9 @@ void            (*process)();
   {
       sprintf(message, "%s: devGpibLib_initLo: invalid command type for an LO record in param %d\n", plo->name, ((struct gpibDpvt *)plo->dpvt)->parm);
       errMessage(S_db_badField, message);
+      plo->pact = TRUE;
       return(S_db_badField);
   }
-
-
-/* BUG -- fill in initial value in here */
 
   return(0);
 }
@@ -349,6 +347,7 @@ void (*process)();
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an BI record in param %d\n", pbi->name, ((struct gpibDpvt *)pbi->dpvt)->parm);
     errMessage(S_db_badField, message);
+    pbi->pact = TRUE;
     return(S_db_badField);
   }
 
@@ -398,6 +397,7 @@ void 		(*process)();
   {
       sprintf(message, "%s: devGpibLib_initBo: invalid command type for an BO record in param %d\n", pbo->name, ((struct gpibDpvt *)pbo->dpvt)->parm);
       errMessage(S_db_badField, message);
+      pbo->pact = TRUE;
       return(S_db_badField);
   }
   /* see if there are names asociated with the record that should */
@@ -453,6 +453,7 @@ void 			(*process)();
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an MBBI record in param %d\n", pmbbi->name, ((struct gpibDpvt *)pmbbi->dpvt)->parm);
     errMessage(S_db_badField, message);
+    pmbbi->pact = TRUE;
     return(S_db_badField);
   }
 
@@ -470,6 +471,7 @@ void 			(*process)();
         {
             sprintf(message, "%s: init_rec_mbbi: MBBI value list wrong for param #%d\n", pmbbi->name, dpvt->parm);
             errMessage(S_db_badField, message);
+	    pmbbi->pact = TRUE;
             return(S_db_badField);
         }
         pmbbi->nobt = parmBlock->gpibCmds[dpvt->parm].namelist->nobt;
@@ -525,6 +527,7 @@ void (*process)();
   {
       sprintf(message, "%s: devGpibLib_initMbbo: invalid command type for an MBBO record in param %d\n", pmbbo->name, ((struct gpibDpvt *)pmbbo->dpvt)->parm);
       errMessage(S_db_badField, message);
+      pmbbo->pact = TRUE;
       return(S_db_badField);
   }
 
@@ -541,6 +544,7 @@ void (*process)();
         {
             sprintf(message, "%s: init_rec_mbbo: MBBO value list wrong for param #%d\n", pmbbo->name, dpvt->parm);
             errMessage(S_db_badField, message);
+	    pmbbo->pact = TRUE;
             return(S_db_badField);
         }
 
@@ -594,6 +598,7 @@ void 			(*process)();
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an SI record in param %d\n", psi->name, ((struct gpibDpvt *)psi->dpvt)->parm);
     errMessage(S_db_badField, message);
+    psi->pact = TRUE;
     return(S_db_badField);
   }
   return(0);
@@ -632,6 +637,7 @@ void 			(*process)();
   {
       sprintf(message, "%s: devGpibLib_initSo: invalid command typefor a SO record in param %d\n", pso->name, ((struct gpibDpvt *)pso->dpvt)->parm);
       errMessage(S_db_badField, message);
+      pso->pact = TRUE;
       return(S_db_badField);
   }
 
@@ -689,6 +695,7 @@ struct link	*plink;
         strcpy(message, pdbCommon->name);
 	sprintf(message,": init_record : GPIB link type %ld is invalid", plink->type);
 	errMessage(S_db_badField, message);
+        prec->pact = TRUE;		/* keep record from being processed */
 	return(S_db_badField);
 	break;
     }
@@ -734,7 +741,9 @@ struct link	*plink;
       pdpvt->phwpvt->unsolicitedDpvt = NULL;
       pdpvt->phwpvt->parm = (caddr_t)NULL;
 
-printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
+      if (*parmBlock->debugFlag)
+        printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
+
       /* Tell the driver we are going to use this link some time */
       (*(drvGpib.ioctl))(pdpvt->phwpvt->linkType, pdpvt->phwpvt->link, pdpvt->phwpvt->bug, IBGENLINK, -1, NULL);
     }
@@ -748,6 +757,7 @@ printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
         strcpy(message, pdbCommon->name);
         strcat(message,": init_record : GPIB address out of range");
         errMessage(S_db_badField,message);
+	prec->pact = TRUE;		/* keep record from being processed */
         return(S_db_badField);
     }
   
@@ -757,6 +767,7 @@ printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
         strcpy(message, pdbCommon->name);
         strcat(message,": init_record : GPIB parameter # out of range");
         errMessage(S_db_badField,message);
+	prec->pact = TRUE;		/* keep record from being processed */
         return(S_db_badField);
     }
 
@@ -765,6 +776,7 @@ printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
     {
 	sprintf(message, "%s: init_record: record type invalid for spec'd GPIB param #%d", pdbCommon->name, pdpvt->parm);
         errMessage(S_db_badField,message);
+	prec->pact = TRUE;		/* keep record from being processed */
         return(S_db_badField);
     }
     pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
@@ -782,6 +794,7 @@ printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
 	 strcpy(message, pdbCommon->name);
 	 strcat(message,": init_record: can only have 1 SRQ scanned record per GPIB device");
 	 errMessage(S_db_badField,message);
+	 prec->pact = TRUE;		/* keep record from being processed */
 	 return(S_db_badField);
        }
        if (pdbCommon->scan == SCAN_IO_EVENT)
@@ -1364,6 +1377,7 @@ struct gpibDpvt *pdpvt;
     pdpvt->head.header.callback.finishProc = pdpvt->process;
     pdpvt->head.header.callback.priority = pdpvt->processPri;
     callbackRequest(pdpvt);		/* jrw */
+    return(IDLE);
 }
 
 /******************************************************************************
@@ -1532,6 +1546,7 @@ struct gpibDpvt *pdpvt;
     pdpvt->head.header.callback.finishProc = pdpvt->process;
     pdpvt->head.header.callback.priority = pdpvt->processPri;
     callbackRequest(pdpvt);             /* jrw */
+    return(IDLE);
 }
 
 /******************************************************************************
@@ -1699,6 +1714,7 @@ struct gpibDpvt *pdpvt;
     pdpvt->head.header.callback.finishProc = pdpvt->process;
     pdpvt->head.header.callback.priority = pdpvt->processPri;
     callbackRequest(pdpvt);
+    return(IDLE);
 }
 
 /******************************************************************************
@@ -1868,6 +1884,7 @@ struct gpibDpvt *pdpvt;
     pdpvt->head.header.callback.finishProc = pdpvt->process;
     pdpvt->head.header.callback.priority = pdpvt->processPri;
     callbackRequest(pdpvt);		/* jrw */
+    return(IDLE);
 }
 
 /******************************************************************************
@@ -2027,6 +2044,7 @@ struct gpibDpvt *pdpvt;
     pdpvt->head.header.callback.finishProc = pdpvt->process;
     pdpvt->head.header.callback.priority = pdpvt->processPri;
     callbackRequest(pdpvt);		/* jrw */
+    return(IDLE);
 }
 
 /******************************************************************************

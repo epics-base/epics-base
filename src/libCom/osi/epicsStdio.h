@@ -12,13 +12,13 @@
 #define epicsStdioh
 
 #include <stdio.h>
+#include <stdarg.h>
+
+#include "shareLib.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include <stdarg.h>
-#include "shareLib.h"
 
 epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...);

@@ -346,9 +346,11 @@ LOCAL const pvAdapter pvAdapterNOOP =
 /*
  * event_import()
  */
-LOCAL void event_import (void *pParam)
-{
-    threadPrivateSet (caClientContextId, pParam);
+extern "C" {
+    static void event_import (void *pParam)
+    {
+        threadPrivateSet (caClientContextId, pParam);
+    }
 }
 
 /*
@@ -722,7 +724,7 @@ cac::cac ()
  *
  * This entry point was changed to a NOOP 
  */
-int epicsShareAPI ca_modify_host_name(const char *pHostName)
+int epicsShareAPI ca_modify_host_name (const char *)
 {
     return ECA_NORMAL;
 }
@@ -735,7 +737,7 @@ int epicsShareAPI ca_modify_host_name(const char *pHostName)
  *
  * This entry point was changed to a NOOP 
  */
-int epicsShareAPI ca_modify_user_name (const char *pClientName)
+int epicsShareAPI ca_modify_user_name (const char *)
 {
     return ECA_NORMAL;
 }
@@ -1144,7 +1146,7 @@ LOCAL nmiu *caIOBlockCreate (nciu *pChan, unsigned cmdIn, chtype type,
  *
  */
 LOCAL void ca_event_handler (void *usrArg, 
-    pvId idIn, int hold, struct db_field_log *pfl)
+    pvId idIn, int /* hold */, struct db_field_log *pfl)
 {
     lmiu *monix = (lmiu *) usrArg;
     lciu *pChan = ciuToLCIU (monix->miu.pChan);
@@ -1499,7 +1501,9 @@ LOCAL int issue_put (ca_uint16_t cmd, unsigned id, nciu *chan, chtype type,
     unsigned postcnt;
     ca_uint16_t type_u16;
     ca_uint16_t count_u16;
-    void *pCvrtBuf;
+#   ifdef CONVERSION_REQUIRED
+        void *pCvrtBuf;
+#   endif /*CONVERSION_REQUIRED*/
     tcpiiu *piiu;
 
     /* 
@@ -3273,7 +3277,7 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return count;
 }
 
-LOCAL void niiuShow (netIIU *piiu, unsigned level)
+LOCAL void niiuShow (netIIU *piiu, unsigned /* level */)
 {
 	nciu                *pChan;
 

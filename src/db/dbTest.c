@@ -119,7 +119,6 @@
 
 #include	<choice.h>
 #include	<special.h>
-#include	<dbDefs.h>
 #include	<dbRecDes.h>
 #include	<dbPvd.h>
 #include	<link.h>

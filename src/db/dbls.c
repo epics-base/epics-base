@@ -128,7 +128,7 @@ dbls()
 	printf("ENTER FULL_PATH_NAME OF OUTPUT LISTING FILE : ");
 	scanf("%s", fname);
 	if ((fp = fopen(fname, "a")) == NULL) {
-	    printf("dblsseStructure: fopen error errno=%d\nfile=%s\n", MYERRNO, fname);
+	    printf("dbls: fopen error errno=%d\nfile=%s\n", MYERRNO, fname);
 	    printf("TRY:  < cd \"/full_dir_path/.\" > to correct this failure\n");
 	    return (-1);
 	}
@@ -438,15 +438,15 @@ CvtTable(fp, fflag)
 		    &cvtTable->papBrkTable[i]->number,
 		    cvtTable->papBrkTable[i]->number);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x\t\t  rawLow\t\t\t%.5f",
+	    sprintf(buffer, "%8x\t\t  rawLow\t\t\t%-.5f",
 		    &cvtTable->papBrkTable[i]->rawLow,
 		    cvtTable->papBrkTable[i]->rawLow);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x\t\t  rawHigh\t\t\t%.5f",
+	    sprintf(buffer, "%8x\t\t  rawHigh\t\t\t%-.5f",
 		    &cvtTable->papBrkTable[i]->rawHigh,
 		    cvtTable->papBrkTable[i]->rawHigh);
 	    bufOut(fp, fflag);
-	    sprintf(buffer, "%8x[%8x]\t  papBrkInt",
+	    sprintf(buffer, "%8x[%8x]\t**papBrkInt",
 		    &cvtTable->papBrkTable[i]->papBrkInt,
 		    cvtTable->papBrkTable[i]->papBrkInt);
 	    bufOut(fp, fflag);
@@ -456,15 +456,15 @@ CvtTable(fp, fflag)
 			    &cvtTable->papBrkTable[i]->papBrkInt[j],
 			    cvtTable->papBrkTable[i]->papBrkInt[j], j);
 		    bufOut(fp, fflag);
-		    sprintf(buffer, "%8x\t\t      raw\t\t\t%.5f",
+		    sprintf(buffer, "%8x\t\t      raw\t\t\t%-.5f",
 			    &cvtTable->papBrkTable[i]->papBrkInt[j]->raw,
 			    cvtTable->papBrkTable[i]->papBrkInt[j]->raw);
 		    bufOut(fp, fflag);
-		    sprintf(buffer, "%8x\t\t      slope\t\t\t%.5f",
+		    sprintf(buffer, "%8x\t\t      slope\t\t\t%-.5f",
 			    &cvtTable->papBrkTable[i]->papBrkInt[j]->slope,
 			    cvtTable->papBrkTable[i]->papBrkInt[j]->slope);
 		    bufOut(fp, fflag);
-		    sprintf(buffer, "%8x\t\t      eng\t\t\t%.5f",
+		    sprintf(buffer, "%8x\t\t      eng\t\t\t%-.5f",
 			    &cvtTable->papBrkTable[i]->papBrkInt[j]->eng,
 			    cvtTable->papBrkTable[i]->papBrkInt[j]->eng);
 		    bufOut(fp, fflag);
@@ -735,6 +735,10 @@ DbRecDes(fp, fflag)
 		sprintf(buffer, "%8x\t\t\thighfl [%d]",
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->highfl,
 			dbRecDes->papRecTypDes[i]->papFldDes[j]->highfl);
+		bufOut(fp, fflag);
+		sprintf(buffer, "%8x\t\t\tinterest [%d]",
+			&dbRecDes->papRecTypDes[i]->papFldDes[j]->interest,
+			dbRecDes->papRecTypDes[i]->papFldDes[j]->interest);
 		bufOut(fp, fflag);
 		bcopy((caddr_t) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
 		      (caddr_t) buff, 8);
@@ -1056,4 +1060,3 @@ RecSup(fp, fflag)
 	}
     }
 }				/* end of recSup */
-/****************JUNK*************/

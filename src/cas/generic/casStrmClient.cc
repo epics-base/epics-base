@@ -986,17 +986,17 @@ caStatus casStrmClient::claimChannelAction()
 	if ( this->asyncIOFlag ) {
 		status = S_cas_success;	
 	}
-	else if (pvar.getStatus() == S_casApp_asyncCompletion) {
-		status = this->createChanResponse(*mp, S_cas_badParameter);
-		errMessage(S_cas_badParameter, 
-		"- expected asynch IO creation from caServer::pvAttach()");
+	else if ( pvar.getStatus() == S_casApp_asyncCompletion ) {
+		status = this->createChanResponse ( *mp, S_cas_badParameter );
+		errMessage ( S_cas_badParameter, 
+		"- expected asynch IO creation from caServer::pvAttach()" );
 	}
-	else if (pvar.getStatus() == S_casApp_postponeAsyncIO) {
+	else if ( pvar.getStatus() == S_casApp_postponeAsyncIO ) {
 		status = S_casApp_postponeAsyncIO;
-		this->ctx.getServer()->addItemToIOBLockedList(*this);
+		this->ctx.getServer()->addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->createChanResponse(*mp, pvar);
+		status = this->createChanResponse ( *mp, pvar );
 	}
 	return status;
 }
@@ -1067,8 +1067,9 @@ caStatus casStrmClient::createChanResponse ( const caHdrLargeArray & hdr, const 
 			    fprintf ( stderr, 
                     "Application returned %d from casPV::read()"
                     " - expected S_casApp_asyncCompletion\n", status);
-			    status = S_casApp_asyncCompletion;
+			    status = S_cas_success;
 		    }
+			status = S_cas_success;
 	    }
 	    else if ( status == S_casApp_asyncCompletion)  {
 		    status = S_cas_badParameter;

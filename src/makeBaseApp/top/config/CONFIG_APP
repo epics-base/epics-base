@@ -7,22 +7,10 @@ ifdef INSTALL_LOCATION_APP
 INSTALL_LOCATION = $(INSTALL_LOCATION_APP)
 endif
 
-#Other share areas can be added similar to following
-#ifdef <share_top>
-#USR_INCLUDES += -I$(<share_top>)/include
-#<share_top>BIN = $(<share_top>)/bin/$(T_A)
-#endif
+USER_DBDFLAGS = -I. -I..
 
-ifdef SHARE
-USR_INCLUDES += -I$(SHARE)/include
-SHARE_BIN = $(SHARE)/bin/$(T_A)
-USER_DBDFLAGS += -I .. -I $(SHARE)/dbd -I $(EPICS_BASE)/dbd
-endif
-
-#Following only works if host provides soft links
-ifdef MASTER_IOCAPPS
-USR_INCLUDES += -I$(MASTER_IOCAPPS)/include
-MASTER_IOCAPPS_BIN = $(MASTER_IOCAPPS)/bin/$(T_A)
+ifdef T_A
+-include $(TOP)/config/O.$(T_A)/CONFIG_APP_INCLUDE
 endif
 
 # Where to install databases

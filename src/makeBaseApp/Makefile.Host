@@ -5,6 +5,9 @@ TEMPLATES_DIR = makeBaseApp
 TEMPLATES += top/Makefile
 TEMPLATES += top/config/CONFIG
 TEMPLATES += top/config/CONFIG_APP
+TEMPLATES += top/config/Makefile
+TEMPLATES += top/config/Makefile.Host
+TEMPLATES += top/config/Makefile.Vx
 TEMPLATES += top/config/RELEASE
 TEMPLATES += top/config/RULES.Db
 TEMPLATES += top/config/RULES.Host
@@ -16,6 +19,7 @@ TEMPLATES += top/config/RULES_DIRS
 TEMPLATES += top/config/RULES_TOP
 TEMPLATES += top/config/makeDbDepends.pl
 TEMPLATES += top/config/makeIocCdCommands.pl
+TEMPLATES += top/config/makeConfigAppInclude.pl
 TEMPLATES += top/config/replaceVAR.pl
 
 TEMPLATES += top/exampleApp/Makefile

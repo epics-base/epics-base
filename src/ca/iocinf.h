@@ -318,7 +318,7 @@ struct ca_buffer{
 
 #define TAG_CONN_DOWN(PIIU) \
 ( \
-/* ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__), */\
+/* ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__), */ \
 (PIIU)->conn_up = FALSE \
 )
 
@@ -423,6 +423,7 @@ struct  ca_static{
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
 	unsigned	ca_repeater_tries;
 	unsigned	ca_search_retry; /* search retry seq number */
+	unsigned	ca_search_responses; /* num search resp within seq # */
 	unsigned short	ca_server_port;
 	unsigned short	ca_repeater_port;
 	char		ca_sprintf_buf[256];
@@ -551,6 +552,12 @@ unsigned long cacRingBufferWriteSize(
 unsigned long cacRingBufferReadSize(
 	struct ca_buffer 	*pBuf, 
 	int 			contiguous);
+
+void caIOBlockListFree(
+	ELLLIST *pList,
+	chid    chan,
+	int     cbRequired,
+	int     status);
 
 char *localUserName(void);
 

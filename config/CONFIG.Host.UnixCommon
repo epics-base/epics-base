@@ -44,11 +44,11 @@ OBJ = .o
 
 #--------------------------------------------------
 # Dependancy definitions
-COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a))
-PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
-PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
+COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*))))
+PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 
-USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
+USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 
 #--------------------------------------------------
 # Determine ld flags

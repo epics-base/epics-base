@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.1.1.1  1996/06/20 00:28:06  jhill
+// ca server installation
+//
 //
 
 #ifndef includeCASOSDH 
@@ -21,12 +24,12 @@ extern "C" {
 // for htons() etc  
 //
 #	include <netinet/in.h>
-
+#	include <netdb.h>
 } // extern "C"
 
 #include <osiMutex.h>
 #include <osiTimer.h>
-#include <fdMgr.h>
+#include <fdManager.h>
 
 class caServerI;
 

@@ -303,14 +303,12 @@ int doacctst(char *pname)
 		printf("Skipped multiple get cb test - no read access\n");
 	}
 
-#if 0
 	test_sync_groups(chix1);
-#endif
+
 	/*
 	 * verify we dont jam up on many uninterrupted
 	 * solicitations
 	 */
-#if 0
 	if(ca_write_access(chix1)){
 		printf("Performing multiple put callback test...");
 #ifdef UNIX
@@ -334,7 +332,6 @@ int doacctst(char *pname)
 	else{
 		printf("Skipped multiple put cb test - no write access\n");
 	}
-#endif
 
 	/*
 	 * verify we can add many monitors at once

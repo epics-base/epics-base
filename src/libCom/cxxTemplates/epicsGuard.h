@@ -17,12 +17,12 @@ template < class T >
 class epicsGuard {
 public:
     epicsGuard ( T & );
+    epicsGuard ( const epicsGuard & ); 
     ~epicsGuard ();
 private:
     T & targetMutex;
-    friend class epicsGuardRelease < T >;
-    // epicsGuard ( const epicsGuard & ); visual c++ warning bug
     // epicsGuard & operator = ( const epicsGuard & ); visual c++ warning bug
+    friend class epicsGuardRelease < T >;
 };
 
 // Automatically releases and reapplies the mutex.
@@ -50,6 +50,13 @@ public:
 template < class T >
 inline epicsGuard < T > :: epicsGuard ( T & mutexIn ) :
     targetMutex ( mutexIn )
+{
+    this->targetMutex.lock ();
+}
+
+template < class T >
+epicsGuard < T > :: epicsGuard ( const epicsGuard & guardIn ) :
+    targetMutex ( guardIn.targetMutex )
 {
     this->targetMutex.lock ();
 }

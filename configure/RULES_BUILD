@@ -59,11 +59,6 @@ endif
 PROD := $(addsuffix $(EXE),$(PROD))
 TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
  
-LIBTARGETS += $(LIBNAME_HOST) $(LIBNAME_IOC) $(INSTALL_LIBS)
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-LIBTARGETS += $(SHRLIBNAME_HOST) $(SHRLIBNAME_IOC) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
-endif # SHARED_LIBRARIES=YES
-
 #---------------------------------------------------------------
 # Set PROD, OBJS, LIBRARY_HOST, and LIBRARY_IOC
 
@@ -95,81 +90,56 @@ endif
 LINK.c = $(LINK.cpp)
 
 #---------------------------------------------------------------
-#   Libraries_HOST
+#   Libraries 
 #
-#   if there are no objects LIBOBJS_HOST to include
-#   in this library (may be for e.g. base/src/libCompat
+#   if there are no objects LIBOBJS_IOC or LIBOBJS_HOST to
+#   include in a library (may be for e.g. base/src/libCompat
 #   on some archs), don't define (and build) any library!
 
-# LIBRARY_HOST
-
+# Only one LIBRARY_HOST allowed
 ifdef LIBRARY_HOST
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-SHRLIB_LINKER = $(CXX)
-LIBSRCS_HOST+=$(SRCS) $(LIBSRCS) $($(basename $(LIBRARY_HOST))_SRCS)
-ifneq ($(foreach lib,$(LIBRARY_HOST),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_HOST+= $(SRCS) $(LIBSRCS) $($(addsuffix _SRCS,$(LIBRARY_HOST)))
+ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST))),)
 LIBSRCS_HOST += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_HOST))))
 else
 LIBSRCS_HOST += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_HOST)))
 endif
-LIBOBJS_HOST+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_HOST)))
+LIBOBJS_HOST+=$(addsuffix $(OBJ),$(basename $(LIBSRCS_HOST)))
+ifneq (,$(strip $(LIBOBJS_HOST)))
+LIBTARGETS += $(LIBNAME_HOST)
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+LIBTARGETS += $(SHRLIBNAME_HOST)
+endif # SHARED_LIBRARIES=YES
+endif # LIBOBJS_HOST
 endif # LIBRARY_HOST
 
-
-ifdef LIBNAME_HOST
-ifdef LIBOBJS_HOST
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-
-#  check if shared libraries requested
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-
-PROD_VERSION =$(SHRLIB_VERSION)
-
-endif # SHARED_LIBRARIES=YES
-
-endif # LIBOBJS_HOST
-endif # LIBNAME_HOST
-
-
-#---------------------------------------------------------------
-#   Libraries_IOC
-#
-#   if there are no objects LIBOBJS_IOC to include
-#   in this library (may be for e.g. base/src/libCompat
-#   on some archs), don't define (and build) any library!
-
-# LIBRARY_IOC
-
+# Only one LIBRARY_IOC allowed
 ifdef LIBRARY_IOC
-CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-SHRLIB_LINKER = $(CXX)
-LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(basename $(LIBRARY_IOC))_SRCS)
-ifneq ($(foreach lib,$(LIBRARY_IOC),$($(lib)_SRCS_$(OS_CLASS))),)
+LIBSRCS_IOC+= $(SRCS) $(LIBSRCS) $($(addsuffix _SRCS,$(LIBRARY_IOC)))
+ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC))),)
 LIBSRCS_IOC += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY_IOC))))
 else
 LIBSRCS_IOC += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY_IOC)))
 endif
 LIBOBJS_IOC+=$(addsuffix $(OBJ), $(basename $(LIBSRCS_IOC))) $(LIBOBJS)
+ifneq (,$(strip $(LIBOBJS_IOC)))
+LIBTARGETS += $(LIBNAME_IOC)
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+LIBTARGETS += $(SHRLIBNAME_IOC)
+endif # SHARED_LIBRARIES=YES
+endif # LIBOBJS_IOC
 endif # LIBRARY_IOC
 
-
-ifdef LIBNAME_IOC
-ifdef LIBOBJS_IOC
+ifneq (,$(strip $(LIBOBJS_HOST) $(LIBOBJS_IOC)))
+LIBTARGETS += $(INSTALL_LIBS)
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
-
-#  check if shared libraries requested
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-
 PROD_VERSION =$(SHRLIB_VERSION)
-
+SHRLIB_LINKER = $(CXX)
+LIBTARGETS += $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 endif # SHARED_LIBRARIES=YES
-
-endif # LIBOBJS_IOC
-endif # LIBNAME_IOC
+endif
 
 #---------------------------------------------------------------
 #	Main targets

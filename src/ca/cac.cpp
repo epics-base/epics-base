@@ -212,14 +212,14 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     freeListInitPvt ( &this->tcpSmallRecvBufFreeList, MAX_TCP, 1 );
     if ( ! this->tcpSmallRecvBufFreeList ) {
         osiSockRelease ();
-        free ( this->pUserName );
+        delete [] this->pUserName;
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
 
     freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
     if ( ! this->tcpLargeRecvBufFreeList ) {
         osiSockRelease ();
-        free ( this->pUserName );
+        delete [] this->pUserName;
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
@@ -227,7 +227,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
     if ( ! this->pTimerQueue ) {
         osiSockRelease ();
-        free ( this->pUserName );
+        delete [] this->pUserName;
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
         freeListCleanup ( this->tcpLargeRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
@@ -237,7 +237,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
         this->pCallbackLocker = new ( std::nothrow ) callbackAutoMutex ( *this );
         if ( ! this->pCallbackLocker ) {
             osiSockRelease ();
-            free ( this->pUserName );
+            delete [] this->pUserName;
             freeListCleanup ( this->tcpSmallRecvBufFreeList );
             freeListCleanup ( this->tcpLargeRecvBufFreeList );
             this->pTimerQueue->release ();
@@ -300,7 +300,7 @@ cac::~cac ()
     }
 
     delete this->pudpiiu;
-    delete this->pUserName;
+    delete [] this->pUserName;
 
     this->beaconTable.traverse ( &bhe::destroy );
 

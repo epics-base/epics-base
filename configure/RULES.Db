@@ -6,6 +6,7 @@ vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath %.edf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbdflags
 
@@ -21,14 +22,13 @@ DBD += $(DBDNAME)
 DBD += $(addsuffix .dbd,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
 INC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
 
-INSTALL_DBDS += $(DBD:%= $(INSTALL_DBD)/%)
+INSTALL_DBDS += $(addprefix $(INSTALL_DBD)/,$(notdir $(DBD)))
 
 COMMON_DBDS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DBD), \
     $(firstword  $(SOURCE_DBD) $(COMMON_DIR)/$(file) ) ) )
 SOURCE_DBD = $(wildcard $(file) $(SOURCE_DBD_bbb) )
 SOURCE_DBD_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DBD_aaa)  )
 SOURCE_DBD_aaa = $(addsuffix /$(file), $(dir) )
-DBDDEPENDS_FILES += $(subst .dbd,$(DEP),$(COMMON_DBDS))
 
 INSTALL_DBS += $(addprefix $(INSTALL_DB)/,$(notdir $(DB)))
 
@@ -37,10 +37,20 @@ COMMON_DBS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DB), \
 SOURCE_DB = $(wildcard $(file) $(SOURCE_DB_bbb) )
 SOURCE_DB_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DB_aaa)  )
 SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
-DBDEPENDS_FILES += $(subst .db,$(DEP),$(COMMON_DBS))
 
-COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
+COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h \
+          $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
 
+#####################################################  dependancies
+
+HINC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
+COMMON_DBDINC += $(addprefix $(COMMON_DIR),$(HINC))
+
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(COMMON_DBDS) \
+                    $(COMMON_DBDINC) $(COMMON_DBS))
+
+DBDDEPENDS_FLAGS = $(filter .%,$(subst -I,,$(filter-out -S%,$(DBDFLAGS))))
+DBDDEPENDS_CMD=@-$(MKMF) -m $@$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
 
 ##################################################### 
 
@@ -67,15 +77,22 @@ rebuild: clean install
 
 endif # T_A defined
 
+ifneq (,$(strip $(DBDDEPENDS_FILES)))
+-include $(DBDDEPENDS_FILES)
+endif
+
+$(DBDDEPENDS_FILES):
+
 #####################################################  build dependancies, clean rule
 
 inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : $(COMMON_DBDS) $(COMMON_DBS) \
-	$(INSTALL_DBDS) $(INSTALL_DBS)
+	$(INSTALL_DBDS) $(INSTALL_DBS) \
+	$(DBDDEPENDS_FILES)
 
 clean:: 
-	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES) $(DBDEPENDS_FILES)
+	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
 
 ##################################################### "Foreign" templates
@@ -109,7 +126,7 @@ $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS)
 #$(COMMON_DIR)/%.substitutions: ../%.substitutions $(COMMON_DIR)/%.template 
 #	@$(CP) $< $@
 
-#  WARNING: CREATESUBSTITUTIONS script need output dir on command line
+#  WARNING: CREATESUBSTITUTIONS script needs output dir on command line
 
 ifdef CREATESUBSTITUTIONS
 $(COMMON_DIR)/%.substitutions:
@@ -158,10 +175,6 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
 
 ##################################################### DBD files
 
-ifneq (,$(strip $(DBDDEPENDS_FILES)))
--include $(DBDDEPENDS_FILES)
-endif
-
 $(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
 	@$(RM) $@
 	$(MAKEBPT) $< $@
@@ -171,22 +184,20 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $@
 
 $(COMMON_DIR)/%.dbd: ../%Include.dbd 
-	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
-	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
-$(INSTALL_DBD)/%: $(COMMON_DIR)/%
-	@echo "Installing dbd file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
-
-$(INSTALL_DBD)/%: ../%
+$(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
@@ -194,26 +205,18 @@ $(INSTALL_DBD)/%: ../%
 
 ##################################################### DB files
 
-ifneq (,$(strip $(DBDEPENDS_FILES)))
--include $(DBDEPENDS_FILES)
-endif
-
-$(COMMON_DIR)/%.db$(RAW): ../%.db 
+$(COMMON_DIR)/%.db$(RAW): %.db 
 	$(CP) $< $@
 
-$(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
-	@$(REPLACEVAR) < $@.VAR > $@
-	@$(RM) $@.VAR
-
-$(COMMON_DIR)/%.db$(RAW): ../%.edf 
+$(COMMON_DIR)/%.db$(RAW): %.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
 	@echo "Inflating database from $<"
-	@$(MAKEDBDEPENDS) $@ $< $(COMMON_DIR)/$*$(DEP)
 	@$(RM) $@
 	$(MSI) -S $^  > $@
 
@@ -227,15 +230,9 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 RAW=.raw
 
 .PRECIOUS: $(DB:%=$(COMMON_DIR)/%$(RAW))
-else
-
-$(INSTALL_DB)/%: %
-	@echo "Installing db file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
-
 endif
 
-$(INSTALL_DB)/%: $(COMMON_DIR)/%
+$(INSTALL_DB)/%: %
 	@echo "Installing db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
@@ -243,11 +240,7 @@ $(INSTALL_DB)/%: $(COMMON_DIR)/%
 
 ##################################################### register record,device,driver support
 
-%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
-	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $< > $@
-
-%_registerRecordDeviceDriver.cpp: ../%.dbd 
+%_registerRecordDeviceDriver.cpp: %.dbd 
 	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $< > $@
 

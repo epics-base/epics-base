@@ -26,8 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *      Modification Log:
- *      -----------------
  *
  */
 
@@ -35,7 +33,6 @@
 #include "osiSleep.h"
 #include "bsdSocketResource.h"
 
-
 /*
  * cac_select_io()
  *

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/16 16:32:49  jhill
+ * added CA version string
+ *
  * Revision 1.1  1996/06/20 18:02:22  jhill
  * installed into CVS
  *
@@ -65,6 +68,9 @@
  *
  *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
  * $Log$
+ * Revision 1.2  1996/09/16 16:32:49  jhill
+ * added CA version string
+ *
  * Revision 1.1  1996/06/20 18:02:22  jhill
  * installed into CVS
  *
@@ -80,20 +86,9 @@
  * CA protocol number
  * TCP/UDP port number (bumped each major protocol change) 
  */
-#define CA_PROTOCOL_VERSION_STR	4
-#define CA_MINOR_VERSION_STR	7
-
-/* 
- * add unsigned to the above numbers for numerical
- * comparisons (two defines above are used to create 
- * version number string - prefer not to have u there)
- */
-#ifndef CONCAT
-#define CONCAT(A,B) A ## B
-#endif
-#define UNSIGNED(N) CONCAT(N,u) 
-#define CA_PROTOCOL_VERSION	UNSIGNED(CA_PROTOCOL_VERSION_STR)
-#define CA_MINOR_VERSION	UNSIGNED(CA_MINOR_VERSION_STR)	
+#define CA_PROTOCOL_VERSION	4u
+#define CA_MINOR_VERSION	7u
+#define CA_VERSION_STRING 	"4.7"
 #define CA_UKN_MINOR_VERSION	0u /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4u
 #define CA_V41(MAJOR,MINOR)	((MINOR)>=1u) 
@@ -248,15 +243,6 @@ struct	monops {			/* monitor req opi to ioc */
  * PV names greater than this length assumed to be invalid
  */
 #define unreasonablePVNameSize 500u
-
-#ifndef STRINGOF
-#define STRINGOF(A) #A
-#endif 
-#ifndef EXPANDTOSTRING 
-#define EXPANDTOSTRING(A) STRINGOF(A)
-#endif 
-#define CA_VERSION_STRING \
-(EXPANDTOSTRING(CA_PROTOCOL_VERSION_STR)"."EXPANDTOSTRING(CA_MINOR_VERSION_STR))
 
 #endif /* __CAPROTO__ */
 

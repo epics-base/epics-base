@@ -32,17 +32,17 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "virtualCircuit.h"
 #include "tsFreeList.h"
 #include "epicsMemory.h"
 #include "cxxCompilerDependencies.h"
+#include "osiSock.h"
 
 #ifdef oldAccessh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #   include "shareLib.h"
 #endif
 
-#include "cac.h"
+#include "caProto.h"
 #include "cacIO.h"
 #include "cadef.h"
 #include "syncGroup.h"
@@ -285,7 +285,7 @@ private:
     epicsMutex callbackMutex; 
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
-    epics_auto_ptr < cac > pClientCtx;
+    epics_auto_ptr < class cac > pClientCtx;
     epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
@@ -536,59 +536,6 @@ inline void getCallback::operator delete ( void *pCadaver,
     freeList.release ( pCadaver );
 }
 #endif
-
-inline void ca_client_context::registerService ( cacService &service )
-{
-    this->pClientCtx->registerService ( service );
-}
-
-inline cacChannel & ca_client_context::createChannel ( const char * name_str, 
-             oldChannelNotify & chan, cacChannel::priLev pri )
-{
-    return this->pClientCtx->createChannel ( name_str, chan, pri );
-}
-
-inline void ca_client_context::flushRequest ()
-{
-    this->pClientCtx->flushRequest ();
-}
-
-inline unsigned ca_client_context::connectionCount () const
-{
-    return this->pClientCtx->connectionCount ();
-}
-
-inline unsigned ca_client_context::beaconAnomaliesSinceProgramStart () const
-{
-    return this->pClientCtx->beaconAnomaliesSinceProgramStart ();
-}
-
-inline CASG * ca_client_context::lookupCASG ( unsigned id )
-{
-    return this->pClientCtx->lookupCASG ( id );
-}
-
-inline void ca_client_context::installCASG ( CASG &sg )
-{
-    this->pClientCtx->installCASG ( sg );
-}
-
-inline void ca_client_context::uninstallCASG ( CASG &sg )
-{
-    this->pClientCtx->uninstallCASG ( sg );
-}
-
-inline void ca_client_context::vSignal ( int ca_status, const char *pfilenm, 
-                     int lineno, const char *pFormat, va_list args )
-{
-    this->pClientCtx->vSignal ( ca_status, pfilenm, 
-                     lineno, pFormat, args );
-}
-
-inline void ca_client_context::selfTest ()
-{
-    this->pClientCtx->selfTest ();
-}
 
 inline bool ca_client_context::preemptiveCallbakIsEnabled () const
 {

@@ -34,6 +34,7 @@
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
+#include "cac.h"
 
 extern epicsThreadPrivateId caClientContextId;
 
@@ -549,4 +550,57 @@ void ca_client_context::changeConnCallBack (
         }
     }
     pConnCallBack = pfunc;
+}
+
+void ca_client_context::registerService ( cacService &service )
+{
+    this->pClientCtx->registerService ( service );
+}
+
+cacChannel & ca_client_context::createChannel ( const char * name_str, 
+             oldChannelNotify & chan, cacChannel::priLev pri )
+{
+    return this->pClientCtx->createChannel ( name_str, chan, pri );
+}
+
+void ca_client_context::flushRequest ()
+{
+    this->pClientCtx->flushRequest ();
+}
+
+unsigned ca_client_context::connectionCount () const
+{
+    return this->pClientCtx->connectionCount ();
+}
+
+unsigned ca_client_context::beaconAnomaliesSinceProgramStart () const
+{
+    return this->pClientCtx->beaconAnomaliesSinceProgramStart ();
+}
+
+CASG * ca_client_context::lookupCASG ( unsigned id )
+{
+    return this->pClientCtx->lookupCASG ( id );
+}
+
+void ca_client_context::installCASG ( CASG &sg )
+{
+    this->pClientCtx->installCASG ( sg );
+}
+
+void ca_client_context::uninstallCASG ( CASG &sg )
+{
+    this->pClientCtx->uninstallCASG ( sg );
+}
+
+void ca_client_context::vSignal ( int ca_status, const char *pfilenm, 
+                     int lineno, const char *pFormat, va_list args )
+{
+    this->pClientCtx->vSignal ( ca_status, pfilenm, 
+                     lineno, pFormat, args );
+}
+
+void ca_client_context::selfTest ()
+{
+    this->pClientCtx->selfTest ();
 }

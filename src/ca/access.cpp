@@ -22,6 +22,7 @@
  */
 
 #include <new>
+#include <float.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
@@ -41,6 +42,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
+#include "cac.h"
 
 epicsThreadPrivateId caClientContextId;
 

@@ -49,6 +49,7 @@
 #include "cacIO.h"
 #include "netIO.h"
 #include "localHostName.h"
+#include "virtualCircuit.h"
 
 class netWriteNotifyIO;
 class netReadNotifyIO;

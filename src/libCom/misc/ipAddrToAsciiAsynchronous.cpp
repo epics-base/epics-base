@@ -273,8 +273,10 @@ void ipAddrToAsciiEnginePrivate::run ()
 
             this->callbackInProgress = false;
 
-            this->pCurrent->pending = false;
-            this->pCurrent = 0;
+            if ( this->pCurrent ) {
+                this->pCurrent->pending = false;
+                this->pCurrent = 0;
+            }
             if ( this->cancelPendingCount  ) {
                 this->destructorBlockEvent.signal ();
             }

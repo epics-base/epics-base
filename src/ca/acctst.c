@@ -1009,12 +1009,12 @@ unsigned    iterations)
 void null_event (struct event_handler_args args)
 {
     unsigned    *pInc = (unsigned *) args.usr;
-    int status;
 
     /*
      * no pend event in event call back test
      */
 #if 0
+    int status;
     status = ca_pend_event (1e-6);
     assert (status==ECA_EVDISALLOW);
 #endif

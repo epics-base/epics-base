@@ -240,98 +240,74 @@ extern "C" void ca_default_exception_handler (struct exception_handler_args args
     }
 }
 
-extern "C" pvId pvNameToIdNoop (const char *);
-extern "C" int pvPutFieldNoop (pvId, int, const void *, int);
-extern "C" int pvGetFieldNoop (pvId, int, void *, int, void *);
-extern "C" long pvPutNotifyInitiateNoop (pvId, 
-    unsigned, unsigned long, const void *, 
-    void (*)(void *), void *, putNotifyId *);
-extern "C" void pvPutNotifyDestroyNoop (putNotifyId);
-extern "C" const char * pvNameNoop (pvId);
-extern "C" unsigned long pvNoElementsNoop (pvId);
-extern "C" short pvTypeNoop (pvId);
-extern "C" dbEventCtx pvEventQueueInitNoop ();
-extern "C" int pvEventQueueStartNoop (dbEventCtx, const char *, 
-        void (*)(void *), void *, int);
-extern "C" void pvEventQueueCloseNoop (dbEventCtx);
-extern "C" dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
-        void (*)(void *, pvId, int, struct db_field_log *), 
-        void *, unsigned);
-extern "C" int pvEventQueuePostSingleEventNoop (dbEventSubscription);
-extern "C" void pvEventQueueCancelEventNoop (dbEventSubscription);
-extern "C" int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
-            void (*)(void *), void *);
-extern "C" int pvEventQueuePostExtraLaborNoop (dbEventCtx);
-extern "C" void event_import (void *pParam);
-
 /*
  * default local pv interface entry points that always fail
  */
-static pvId pvNameToIdNoop (const char *) 
+extern "C" pvId pvNameToIdNoop (const char *) 
 {
     return 0;
 }
-static int pvPutFieldNoop (pvId, int, 
+extern "C" int pvPutFieldNoop (pvId, int, 
                          const void *, int)
 {
     return -1;
 }
-static int pvGetFieldNoop (pvId, int, void *, int, void *)
+extern "C" int pvGetFieldNoop (pvId, int, void *, int, void *)
 {
     return -1;
 }
-static long pvPutNotifyInitiateNoop (pvId, 
+extern "C" long pvPutNotifyInitiateNoop (pvId, 
     unsigned, unsigned long, const void *, 
     void (*)(void *), void *, putNotifyId *)
 {
     return -1;
 }
-static void pvPutNotifyDestroyNoop (putNotifyId)
+extern "C" void pvPutNotifyDestroyNoop (putNotifyId)
 {
 }
-static const char * pvNameNoop (pvId)
+extern "C" const char * pvNameNoop (pvId)
 {
     return "";
 }
-static unsigned long pvNoElementsNoop (pvId)
+extern "C" unsigned long pvNoElementsNoop (pvId)
 {
     return 0u;
 }
-static short pvTypeNoop (pvId)
+extern "C" short pvTypeNoop (pvId)
 {
     return -1;
 }
-static dbEventCtx pvEventQueueInitNoop ()
+extern "C" dbEventCtx pvEventQueueInitNoop ()
 {
     return NULL;
 }
-static int pvEventQueueStartNoop (dbEventCtx, const char *, 
+extern "C" int pvEventQueueStartNoop (dbEventCtx, const char *, 
         void (*)(void *), void *, int)
 {
     return -1;
 }
-static void pvEventQueueCloseNoop (dbEventCtx)
+extern "C" void pvEventQueueCloseNoop (dbEventCtx)
 {
 }
-static dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
+extern "C" dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
         void (*)(void *, pvId, int, struct db_field_log *), 
         void *, unsigned)
 {
     return NULL;
 }
-static int pvEventQueuePostSingleEventNoop (dbEventSubscription)
+extern "C" int pvEventQueuePostSingleEventNoop (dbEventSubscription)
 {
     return -1;
 }
-static void pvEventQueueCancelEventNoop (dbEventSubscription)
+extern "C" void pvEventQueueCancelEventNoop (dbEventSubscription)
 {
 }
-static int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
+extern "C" int pvEventQueueAddExtraLaborEventNoop (dbEventCtx, 
         void (*)(void *), void *)
 {
     return -1;
 }
-static int pvEventQueuePostExtraLaborNoop (dbEventCtx)
+extern "C" int pvEventQueuePostExtraLaborNoop (dbEventCtx)
 {
     return -1;
 }
@@ -359,7 +335,7 @@ LOCAL const pvAdapter pvAdapterNOOP =
 /*
  * event_import()
  */
-static void event_import (void *pParam)
+extern "C" void cac_event_import (void *pParam)
 {
     threadPrivateSet (caClientContextId, pParam);
 }
@@ -388,7 +364,7 @@ LOCAL int constructLocalIIU (cac *pcac, const pvAdapter *pva, lclIIU *piiu)
 
         /* higher priority */
 	    status = (*piiu->pva->p_pvEventQueueStart)
-             (piiu->evctx, "CAC Event", event_import, pcac, +1); 
+             (piiu->evctx, "CAC Event", cac_event_import, pcac, +1); 
         if (status) {
             (*piiu->pva->p_pvEventQueueClose) (piiu->evctx);
             semMutexDestroy (piiu->putNotifyLock);
@@ -1150,129 +1126,124 @@ LOCAL nmiu *caIOBlockCreate (nciu *pChan, unsigned cmdIn, chtype type,
 }
 
 /*
- *
- *  CA_EVENT_HANDLER()
- *  (only for clients attached to local PVs)
- *
+ *  cac_lcl_event_handler ()
  */
-extern "C" {
-    LOCAL void ca_event_handler (void *usrArg, 
+extern "C" void cac_lcl_event_handler (void *usrArg, 
         pvId idIn, int /* hold */, struct db_field_log *pfl)
-    {
-        lmiu *monix = (lmiu *) usrArg;
-        lciu *pChan = ciuToLCIU (monix->miu.pChan);
-        lclIIU *piiu = iiuToLIIU (pChan->ciu.piiu);
-        union db_access_val valbuf;
-        unsigned long count;
-        unsigned long nativeElementCount;
-        void *pval;
+{
+    lmiu *monix = (lmiu *) usrArg;
+    lciu *pChan = ciuToLCIU (monix->miu.pChan);
+    lclIIU *piiu = iiuToLIIU (pChan->ciu.piiu);
+    union db_access_val valbuf;
+    unsigned long count;
+    unsigned long nativeElementCount;
+    void *pval;
+    size_t size;
+    int status;
+    struct tmp_buff {
+        ELLNODE node;
         size_t size;
-        int status;
-        struct tmp_buff {
-            ELLNODE node;
-            size_t size;
-        };
-        struct tmp_buff *pbuf = NULL;
+    };
+    struct tmp_buff *pbuf = NULL;
 
-        nativeElementCount = (*piiu->pva->p_pvNoElements) (pChan->id);
+    nativeElementCount = (*piiu->pva->p_pvNoElements) (pChan->id);
 
-        /*
-         * clip to the native count
-         * and set to the native count if they specify zero
-         */
-        if (monix->miu.count > nativeElementCount || monix->miu.count == 0){
-            count = nativeElementCount;
-        }
-        else {
-            count = monix->miu.count;
-        }
-
-        size = dbr_size_n (monix->miu.type, count);
-
-        if ( size <= sizeof(valbuf) ) {
-            pval = (void *) &valbuf;
-        }
-        else {
-             /*
-              * find a preallocated block which fits
-              * (stored with largest block first)
-              */
-             LOCK (piiu->iiu.pcas);
-             pbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
-             if (pbuf && pbuf->size >= size) {
-                 ellDelete (&piiu->buffList, &pbuf->node);
-             }
-             else {
-                 pbuf = NULL;
-             }
-             UNLOCK (piiu->iiu.pcas);
- 
-             /* 
-              * test again so malloc is not inside LOCKED
-              * section
-              */
-             if (!pbuf) {
-                 pbuf = (struct tmp_buff *) malloc(sizeof(*pbuf)+size);
-                 if (!pbuf) {
-                     ca_printf (piiu->iiu.pcas,
-                         "%s: No Mem, Event Discarded\n",
-                         __FILE__);
-                     return;
-                 }
-                 pbuf->size = size;
-             }
-             pval = (void *) (pbuf+1);
-        }
-        status = (*piiu->pva->p_pvGetField) (idIn, monix->miu.type, 
-            pval, count, pfl);
-
-        /*
-         * Call user's callback
-         */
-        LOCK (piiu->iiu.pcas);
-        if (monix->miu.usr_func) {
-             struct event_handler_args args;
- 
-             args.usr = (void *) monix->miu.usr_arg;
-             args.chid = monix->miu.pChan;
-             args.type = monix->miu.type;
-             args.count = count;
-             args.dbr = pval;
- 
-             if (status) {
-                 args.status = ECA_GETFAIL;
-             }
-             else{
-                 args.status = ECA_NORMAL;
-             }
- 
-             (*monix->miu.usr_func)(args);
-        }
-     
-        /*
-         * insert the buffer back into the que in size order if
-         * one was used.
-         */
-        if(pbuf){
-            struct tmp_buff     *ptbuf;
-
-            for (ptbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
-                ptbuf; ptbuf = (struct tmp_buff *) ellNext (&pbuf->node) ){
-
-                if(ptbuf->size <= pbuf->size){
-                    break;
-                }
-            }
-            if (ptbuf) {
-                ptbuf = (struct tmp_buff *) ptbuf->node.previous;
-            }
-
-            ellInsert (&piiu->buffList, &ptbuf->node, &pbuf->node);
-        }
-        UNLOCK (piiu->iiu.pcas);
-     
-        return;
+    /*
+     * clip to the native count
+     * and set to the native count if they specify zero
+     */
+    if (monix->miu.count > nativeElementCount || monix->miu.count == 0){
+        count = nativeElementCount;
     }
+    else {
+        count = monix->miu.count;
+    }
+
+    size = dbr_size_n (monix->miu.type, count);
+
+    if ( size <= sizeof(valbuf) ) {
+        pval = (void *) &valbuf;
+    }
+    else {
+         /*
+          * find a preallocated block which fits
+          * (stored with largest block first)
+          */
+         LOCK (piiu->iiu.pcas);
+         pbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
+         if (pbuf && pbuf->size >= size) {
+             ellDelete (&piiu->buffList, &pbuf->node);
+         }
+         else {
+             pbuf = NULL;
+         }
+         UNLOCK (piiu->iiu.pcas);
+
+         /* 
+          * test again so malloc is not inside LOCKED
+          * section
+          */
+         if (!pbuf) {
+             pbuf = (struct tmp_buff *) malloc(sizeof(*pbuf)+size);
+             if (!pbuf) {
+                 ca_printf (piiu->iiu.pcas,
+                     "%s: No Mem, Event Discarded\n",
+                     __FILE__);
+                 return;
+             }
+             pbuf->size = size;
+         }
+         pval = (void *) (pbuf+1);
+    }
+    status = (*piiu->pva->p_pvGetField) (idIn, monix->miu.type, 
+        pval, count, pfl);
+
+    /*
+     * Call user's callback
+     */
+    LOCK (piiu->iiu.pcas);
+    if (monix->miu.usr_func) {
+         struct event_handler_args args;
+
+         args.usr = (void *) monix->miu.usr_arg;
+         args.chid = monix->miu.pChan;
+         args.type = monix->miu.type;
+         args.count = count;
+         args.dbr = pval;
+
+         if (status) {
+             args.status = ECA_GETFAIL;
+         }
+         else{
+             args.status = ECA_NORMAL;
+         }
+
+         (*monix->miu.usr_func)(args);
+    }
+ 
+    /*
+     * insert the buffer back into the que in size order if
+     * one was used.
+     */
+    if(pbuf){
+        struct tmp_buff     *ptbuf;
+
+        for (ptbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
+            ptbuf; ptbuf = (struct tmp_buff *) ellNext (&pbuf->node) ){
+
+            if(ptbuf->size <= pbuf->size){
+                break;
+            }
+        }
+        if (ptbuf) {
+            ptbuf = (struct tmp_buff *) ptbuf->node.previous;
+        }
+
+        ellInsert (&piiu->buffList, &ptbuf->node, &pbuf->node);
+    }
+    UNLOCK (piiu->iiu.pcas);
+ 
+    return;
 }
 
 /*
@@ -1396,7 +1367,7 @@ int epicsShareAPI ca_array_get_callback (chtype type, unsigned long count, chid 
         ev.miu.pChan = pChan;
         ev.miu.type = type;
         ev.miu.count = count;
-        ca_event_handler (&ev, pLocalChan->id, 0, NULL);
+        cac_lcl_event_handler (&ev, pLocalChan->id, 0, NULL);
         return ECA_NORMAL;
     }
     else {
@@ -1654,31 +1625,29 @@ LOCAL int issue_put (ca_uint16_t cmd, unsigned id, nciu *chan, chtype type,
 }
 
 /*
- *  ca_put_notify_action
+ *  cac_put_notify_action
  */
-extern "C" {
-    LOCAL void ca_put_notify_action (void *pPrivate)
-    {
-        lciu *pChan = (lciu *) pPrivate;
-        lclIIU *pliiu = iiuToLIIU (pChan->ciu.piiu);
+extern "C" void cac_put_notify_action (void *pPrivate)
+{
+    lciu *pChan = (lciu *) pPrivate;
+    lclIIU *pliiu = iiuToLIIU (pChan->ciu.piiu);
 
-        /*
-         * independent lock used here in order to
-         * avoid any possibility of blocking
-         * the database (or indirectly blocking
-         * one client on another client).
-         */
-        semMutexMustTake (pliiu->putNotifyLock);
-        ellAdd (&pliiu->putNotifyQue, &pChan->ppn->node);
-        semMutexGive (pliiu->putNotifyLock);
+    /*
+     * independent lock used here in order to
+     * avoid any possibility of blocking
+     * the database (or indirectly blocking
+     * one client on another client).
+     */
+    semMutexMustTake (pliiu->putNotifyLock);
+    ellAdd (&pliiu->putNotifyQue, &pChan->ppn->node);
+    semMutexGive (pliiu->putNotifyLock);
 
-        /*
-         * offload the labor for this to the
-         * event task so that we never block
-         * the db or another client.
-         */
-        (*pliiu->pva->p_pvEventQueuePostExtraLabor) (pliiu->evctx);
-    }
+    /*
+     * offload the labor for this to the
+     * event task so that we never block
+     * the db or another client.
+     */
+    (*pliiu->pva->p_pvEventQueuePostExtraLabor) (pliiu->evctx);
 }
 
 /*
@@ -1734,7 +1703,7 @@ int localPutNotifyInitiate (lciu *pChan, chtype type, unsigned long count,
     pChan->ppn->caUserArg = usrArg;
 
     dbStatus = (*pliiu->pva->p_pvPutNotifyInitiate) 
-        (pChan->id, type, count, pChan->ppn->pValue, ca_put_notify_action, pChan, 
+        (pChan->id, type, count, pChan->ppn->pValue, cac_put_notify_action, pChan, 
         &pChan->ppn->dbPutNotify);
     UNLOCK (pChan->ciu.piiu->pcas);
     if (dbStatus!=0 && dbStatus!=S_db_Pending) {
@@ -2012,7 +1981,7 @@ int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, c
 
         pLclMon->es = (*pChan->piiu->pcas->localIIU.pva->p_pvEventQueueAddEvent) 
                 (pChan->piiu->pcas->localIIU.evctx,
-                pLocalChan->id, ca_event_handler, pLclMon, mask);
+                pLocalChan->id, cac_lcl_event_handler, pLclMon, mask);
 
         if (!pLclMon->es) {
             freeListFree (pChan->piiu->pcas->localIIU.localSubscrFreeListPVT, pLclMon); 
@@ -2336,16 +2305,14 @@ void cacFlushAllIIU (cac *pcac)
 }
 
 /*
- * noopConnHandler()
+ * cacNoopConnHandler ()
  * This is installed into channels which dont have
  * a connection handler when ca_pend_io() times
  * out so that we will not decrement the pending
  * recv count in the future.
  */
-extern "C" {
-    LOCAL void noopConnHandler (struct  connection_handler_args)
-    {
-    }
+extern "C" void cacNoopConnHandler (struct  connection_handler_args)
+{
 }
 
 /*
@@ -2365,7 +2332,7 @@ LOCAL void ca_pend_io_cleanup (cac *pcac)
     pchan = (nciu *) ellFirst (&pcac->pudpiiu->niiu.chidList);
     while (pchan) {
         if (!pchan->ciu.pConnFunc) {
-            pchan->ciu.pConnFunc = noopConnHandler;
+            pchan->ciu.pConnFunc = cacNoopConnHandler;
         }
         pchan = (nciu *) ellNext (&pchan->node);
     }

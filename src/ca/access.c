@@ -89,6 +89,7 @@
 /*			vxWorks						*/
 /*	120293	joh	flush in ca_pend_io() if no IO oustanding	*/
 /*	121693	joh	fixed bucketLib level memory leak		*/
+/*	011394	joh	fixed bucketLib level memory leak (vxWorks)	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -113,7 +114,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$";
+static char *sccsId = "@(#)access.c	1.45 1/14/94";
 
 /*
  * allocate error message string array 
@@ -1024,7 +1025,7 @@ LOCAL void ca_process_exit()
 				 * release entries in the bucket table
 				 */
 				status = bucketRemoveItem(
-						pBucket, 
+						ca_temp->ca_pBucket, 
 						chix->cid, 
 						chix);
 				if(status != BUCKET_SUCCESS){
@@ -1079,7 +1080,7 @@ LOCAL void ca_process_exit()
 		/*
 		 * free top level bucket
 		 */
-		status = bucketFree(pBucket);
+		status = bucketFree(ca_temp->ca_pBucket);
 		if(status != BUCKET_SUCCESS){
 			ca_signal(ECA_INTERNAL, "top level bucket free failed");
 		}
@@ -1092,9 +1093,9 @@ LOCAL void ca_process_exit()
 			bhe	**ppBHE;
 			bhe	*pBHE;
 
-			len = NELEMENTS(ca_static->ca_beaconHash);
-			for(	ppBHE = ca_static->ca_beaconHash;
-				ppBHE < &ca_static->ca_beaconHash[len];
+			len = NELEMENTS(ca_temp->ca_beaconHash);
+			for(	ppBHE = ca_temp->ca_beaconHash;
+				ppBHE < &ca_temp->ca_beaconHash[len];
 				ppBHE++){
 				pBHE = *ppBHE;
 				while(pBHE){
@@ -2528,8 +2529,10 @@ int			early;
 	 * Flush the send buffers
 	 */
     	if(pndrecvcnt<1 && early){
+		LOCK;
       		manage_conn(TRUE);
   		cac_send_msg();
+		UNLOCK;
         	return ECA_NORMAL;
 	}
 

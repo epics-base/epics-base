@@ -184,6 +184,7 @@ private:
     bool                    enablePreemptiveCallback;
     bool                    ioInProgress;
     bool                    recvProcessThreadExitRequest;
+    bool                    recvProcessPending;
 
     void processRecvBacklog ();
     void flushRequestPrivate ();

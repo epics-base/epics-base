@@ -121,7 +121,8 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     readSeq ( 0u ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn ),
     ioInProgress ( false ),
-    recvProcessThreadExitRequest ( false )
+    recvProcessThreadExitRequest ( false ),
+    recvProcessPending ( false )
 {
 	long status;
     unsigned abovePriority;
@@ -599,6 +600,10 @@ int cac::pendEvent ( const double &timeout )
             else if ( timeout >= CAC_SIGNIFICANT_SELECT_DELAY ) {
                 epicsThreadSleep ( timeout );
             }
+            // give up the processor if there is recv processing to be done
+            else if ( this->recvProcessPending ) {
+                epicsThreadSleep ( timeout );
+            }
         }
 
         this->disableCallbackPreemption ();
@@ -683,9 +688,11 @@ void cac::run ()
     this->attachToClientCtx ();
     while ( ! this->recvProcessThreadExitRequest ) {
         {
+            this->recvProcessPending = true;
             epicsAutoMutex autoMutexPCB ( this->preemptiveCallbackLock );
             epicsAutoMutex autoMutex ( this->mutex );
             this->processRecvBacklog ();
+            this->recvProcessPending = false;
         }
         this->recvProcessActivityEvent.wait ();
     }

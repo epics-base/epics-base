@@ -274,7 +274,7 @@ long dbGetNelements(struct link *plink,long *nelements);
 int dbIsLinkConnected(struct link *plink);
 long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
-void dbScanFwdLink(dbCommon *precord, struct link *plink);
+void dbScanFwdLink(struct link *plink);
 long dbProcess(struct dbCommon *precord);
 long dbNameToAddr(char *pname,struct dbAddr *);
 long dbGetLinkValue(struct link *,short dbrType,

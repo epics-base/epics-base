@@ -464,19 +464,20 @@ long dbScanLink(dbCommon *pfrom, dbCommon *pto)
     return(status);
 }
 
-void dbScanFwdLink(dbCommon *precord, struct link *plink)
+void dbScanFwdLink(struct link *plink)
 {
+    dbCommon		*precord;
     struct pv_link      *pvlink;
     short               fwdLinkValue;
 
-    if(plink->type==CONSTANT) return;
+    if(plink->type!=DB_LINK && plink->type!=CA_LINK) return;
+    pvlink = &plink->value.pv_link;
+    precord = pvlink->precord;
     if(plink->type==DB_LINK) {
         DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
         dbScanPassive(precord,paddr->precord);
         return;
     }
-    if(plink->type!=CA_LINK) return;
-    pvlink = &plink->value.pv_link;
     if(!(pvlink->pvlMask & pvlOptFWD)) return;
     fwdLinkValue = 1;
     dbCaPutLink(plink,DBR_SHORT,&fwdLinkValue,1);

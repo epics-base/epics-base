@@ -1,7 +1,5 @@
-/* recFanout.c */
+/* fanoutRecord.c */
 /* base/src/rec  $Id$ */
-
-/* recFanout.c - Record Support Routines for Fanout records */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -136,8 +134,7 @@ static long process(pfanout)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(plink->type!=CONSTANT)
-		dbScanFwdLink((dbCommon *)pfanout,plink);
+            if(plink->type!=CONSTANT) dbScanFwdLink(plink);
         }
         break;
     case (fanoutSELM_Specified):
@@ -149,8 +146,7 @@ static long process(pfanout)
             break;
         }
         plink=&(pfanout->lnk1);
-        plink += (pfanout->seln-1);
-	dbScanFwdLink((dbCommon *)pfanout,plink);
+        plink += (pfanout->seln-1); dbScanFwdLink(plink);
         break;
     case (fanoutSELM_Mask):
         if(pfanout->seln==0) {
@@ -163,8 +159,7 @@ static long process(pfanout)
         plink=&(pfanout->lnk1);
         state=pfanout->seln;
         for ( i=0; i<6; i++, state>>=1, plink++) {
-            if(state & 1 && plink->type!=CONSTANT)
-		dbScanFwdLink((dbCommon *)pfanout,plink);
+            if(state & 1 && plink->type!=CONSTANT) dbScanFwdLink(plink);
         }
         break;
     default:

@@ -1,7 +1,5 @@
-/* recCompress.c */
+/* compressRecord.c */
 /* base/src/rec  $Id$ */
-
-/* recCompress.c - Record Support Routines for Compression records*/
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer

@@ -81,6 +81,19 @@ if(status) { \
     exit(-1);\
 }
 
+/* myAtExit just cancels all threads. Someday propercleanup is needed*/
+static void myAtExit(void)
+{
+    threadInfo *pthreadInfo;
+    semMutexMustTake(listMutex);
+    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    while(pthreadInfo) {
+        pthread_cancel(pthreadInfo->tid);
+        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
+    }
+    semMutexGive(listMutex);
+}
+
 static int getOssPriorityValue(threadInfo *pthreadInfo)
 {
     double maxPriority,minPriority,slope,oss;
@@ -149,7 +162,7 @@ static void free_threadInfo(threadInfo *pthreadInfo)
     int status;
 
     semMutexMustTake(listMutex);
-    ellDelete(&pthreadList,(ELLNODE *)pthreadInfo);
+    ellDelete(&pthreadList,&pthreadInfo->node);
     semMutexGive(listMutex);
     semBinaryDestroy(pthreadInfo->suspendSem);
     status = pthread_attr_destroy(&pthreadInfo->attr);
@@ -203,8 +216,10 @@ static void once(void)
     checkStatusOnceQuit(status,"pthread_setspecific","threadInit");
     status = semMutexTake(listMutex);
     checkStatusOnceQuit(status,"semMutexTake","threadInit");
-    ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
+    ellAdd(&pthreadList,&pthreadInfo->node);
     semMutexGive(listMutex);
+    status = atexit(myAtExit);
+    checkStatusOnce(status,"atexit");
 }
 
 static void * start_routine(void *arg)
@@ -215,7 +230,7 @@ static void * start_routine(void *arg)
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
     semMutexMustTake(listMutex);
-    ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
+    ellAdd(&pthreadList,&pthreadInfo->node);
     semMutexGive(listMutex);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
@@ -421,9 +436,10 @@ threadId threadGetIdSelf(void) {
 threadId threadGetId(const char *name) {
     threadInfo *pthreadInfo;
     semMutexMustTake(listMutex);
-    for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
-	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
+    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    while(pthreadInfo) {
 	if(strcmp(name,pthreadInfo->name) == 0) break;
+        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
     semMutexGive(listMutex);
     return((threadId)pthreadInfo);
@@ -447,9 +463,11 @@ void threadShowAll(unsigned int level)
     threadInfo *pthreadInfo;
     threadShow(0,level);
     semMutexMustTake(listMutex);
-    for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
-	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo))
+    pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
+    while(pthreadInfo) {
 	threadShow((threadId)pthreadInfo,level);
+        pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
+    }
     semMutexGive(listMutex);
 }
 

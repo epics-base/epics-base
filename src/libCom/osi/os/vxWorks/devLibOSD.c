@@ -97,7 +97,7 @@ static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *
 
 static void *devA24Malloc(size_t size);
 static void devA24Free(void *pBlock);
-static void devInit(void) { return 0;}
+static long devInit(void) { return 0;}
 
 /*
  * used by dynamic bind in devLib.c

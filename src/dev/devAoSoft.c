@@ -50,8 +50,8 @@ static long write_ao(pao)
 	status = dbPutLink(&pao->out.value.db_link,pao,DBR_DOUBLE,
 		&pao->oval,1L);
         if(status!=0) {
-                if(pao->nsev<MAJOR_ALARM) {
-                        pao->nsev = MAJOR_ALARM;
+                if(pao->nsev<VALID_ALARM) {
+                        pao->nsev = VALID_ALARM;
                         pao->nsta = LINK_ALARM;
                 }
         }
@@ -59,8 +59,8 @@ static long write_ao(pao)
     case (CA_LINK) :
 	break;
     default :
-	if(pao->nsev<MAJOR_ALARM) {
-		pao->nsev = MAJOR_ALARM;
+	if(pao->nsev<VALID_ALARM) {
+		pao->nsev = VALID_ALARM;
 		pao->nsta = SOFT_ALARM;
 		if(pao->stat!=SOFT_ALARM) {
 			strcpy(message,pao->name);

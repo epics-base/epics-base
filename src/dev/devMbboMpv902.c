@@ -77,14 +77,14 @@ static long write_mbbo(pmbbo)
 	if(status==0) {
 		status = bo_read(pvmeio->card,pmbbo->mask,&value,BB902);
 		if(status==0) pmbbo->rbv = value;
-		else if(pmbbo->nsev<MAJOR_ALARM ) {
+		else if(pmbbo->nsev<VALID_ALARM ) {
 			pmbbo->nsta = READ_ALARM;
-			pmbbo->nsev = MAJOR_ALARM;
+			pmbbo->nsev = VALID_ALARM;
 		}
 	} else {
-		if(pmbbo->nsev<MAJOR_ALARM ) {
+		if(pmbbo->nsev<VALID_ALARM ) {
 			pmbbo->nsta = WRITE_ALARM;
-			pmbbo->nsev = MAJOR_ALARM;
+			pmbbo->nsev = VALID_ALARM;
 		}
 	}
 	return(status);

@@ -1,5 +1,5 @@
 /* devAoTestAsyn.c */
-/* share/src/dev @(#)devAoTestAsyn.c	1.1     11/8/90 */
+/* share/src/dev $Id$ */
 
 /* devAoTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 
@@ -80,7 +80,6 @@ static long init_record(pao,process)
 	}
 	pcallback->wd_id = wdCreate();
 	pcallback->process = process;
-	pao->val = pao->inp.value.value;
 	break;
     default :
 	strcpy(message,pao->name);
@@ -106,15 +105,15 @@ static long write_ao(pao)
 		printf("%s Completed\n",pao->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (int)(pao->val * vxTicksPerSecond);
+		wait_time = (int)(pao->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pao->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 		return(1);
 	}
     default :
-	if(pao->nsev<MAJOR_ALARM) {
-		pao->nsev = MAJOR_ALARM;
+	if(pao->nsev<VALID_ALARM) {
+		pao->nsev = VALID_ALARM;
 		pao->nsta = SOFT_ALARM;
 		if(pao->stat!=SOFT_ALARM) {
 			strcpy(message,pao->name);

@@ -88,8 +88,8 @@ static long read_ai(pai)
     case (CA_LINK) :
 	break;
     default :
-	if(pai->nsev<MAJOR_ALARM) {
-		pai->nsev = MAJOR_ALARM;
+	if(pai->nsev<VALID_ALARM) {
+		pai->nsev = VALID_ALARM;
 		pai->nsta = SOFT_ALARM;
 		if(pai->stat!=SOFT_ALARM) {
 			strcpy(message,pai->name);

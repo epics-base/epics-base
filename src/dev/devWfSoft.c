@@ -79,8 +79,8 @@ static long read_wf(pwf)
     case (CA_LINK) :
 	break;
     default :
-	if(pwf->nsev<MAJOR_ALARM) {
-		pwf->nsev = MAJOR_ALARM;
+	if(pwf->nsev<VALID_ALARM) {
+		pwf->nsev = VALID_ALARM;
 		pwf->nsta = SOFT_ALARM;
 		if(pwf->stat!=SOFT_ALARM) {
 			strcpy(message,pwf->name);

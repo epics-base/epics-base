@@ -80,7 +80,6 @@ static long init_record(pbo,process)
 	}
 	pcallback->wd_id = wdCreate();
 	pcallback->process = process;
-	pbo->val = pbo->inp.value.value;
 	break;
     default :
 	strcpy(message,pbo->name);
@@ -106,15 +105,15 @@ static long write_bo(pbo)
 		printf("%s Completed\n",pbo->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (int)(pbo->val * vxTicksPerSecond);
+		wait_time = (int)(pbo->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pbo->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 		return(1);
 	}
     default :
-	if(pbo->nsev<MAJOR_ALARM) {
-		pbo->nsev = MAJOR_ALARM;
+	if(pbo->nsev<VALID_ALARM) {
+		pbo->nsev = VALID_ALARM;
 		pbo->nsta = SOFT_ALARM;
 		if(pbo->stat!=SOFT_ALARM) {
 			strcpy(message,pbo->name);

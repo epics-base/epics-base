@@ -100,16 +100,16 @@ static long read_ai(pai)
 	*((unsigned short*)(&pai->rval))=value;
 	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-		if(pai->nsev<MAJOR_ALARM ) {
+		if(pai->nsev<VALID_ALARM ) {
                 	pai->nsta = READ_ALARM;
-                	pai->nsev = MAJOR_ALARM;
+                	pai->nsev = VALID_ALARM;
 		}
 		status=2; /*don't convert*/
         }else if(status==-2) {
                 status=0;
-                if(pai->nsev<MAJOR_ALARM ) {
+                if(pai->nsev<VALID_ALARM ) {
                         pai->nsta = HW_LIMIT_ALARM;
-                        pai->nsev = MAJOR_ALARM;
+                        pai->nsev = VALID_ALARM;
                 }
         }
 	return(status);

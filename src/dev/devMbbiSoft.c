@@ -86,8 +86,8 @@ static long read_mbbi(pmbbi)
     case (CA_LINK) :
         break;
     default :
-        if(pmbbi->nsev<MAJOR_ALARM) {
-                pmbbi->nsev = MAJOR_ALARM;
+        if(pmbbi->nsev<VALID_ALARM) {
+                pmbbi->nsev = VALID_ALARM;
                 pmbbi->nsta = SOFT_ALARM;
                 if(pmbbi->stat!=SOFT_ALARM) {
                         strcpy(message,pmbbi->name);

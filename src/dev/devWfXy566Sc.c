@@ -60,9 +60,9 @@ static void myCallback(pcallback,no_read,pdata)
 	} else {
 		recGblRecSupError(S_db_badField,&pcallback->dbAddr,
 			"read_wf - illegal ftvl");
-		if(pwf->nsev<MAJOR_ALARM ) {
+		if(pwf->nsev<VALID_ALARM ) {
                         pwf->nsta = READ_ALARM;
-                        pwf->nsev = MAJOR_ALARM;
+                        pwf->nsev = VALID_ALARM;
 
                 }
 	}
@@ -127,9 +127,9 @@ struct waveformRecord   *pwf;
 
 	pwf->busy = TRUE;
 	if(wf_driver(XY566WF,pvmeio->card,myCallback,pwf->dpvt)<0) {
-		if(pwf->nsev<MAJOR_ALARM ) {
+		if(pwf->nsev<VALID_ALARM ) {
                 	pwf->nsta = READ_ALARM;
-                	pwf->nsev = MAJOR_ALARM;
+                	pwf->nsev = VALID_ALARM;
 
 		}
 		pwf->busy = FALSE;

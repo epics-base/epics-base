@@ -104,17 +104,17 @@ static long read_mbbi(pmbbi)
     case (CONSTANT) :
 	if(pmbbi->pact) {
 		printf("%s Completed\n",pmbbi->name);
-		return(0);
+		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pmbbi->val * vxTicksPerSecond);
+		wait_time = (int)(pmbbi->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pmbbi->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 		return(1);
 	}
     default :
-	if(pmbbi->nsev<MAJOR_ALARM) {
-		pmbbi->nsev = MAJOR_ALARM;
+	if(pmbbi->nsev<VALID_ALARM) {
+		pmbbi->nsev = VALID_ALARM;
 		pmbbi->nsta = SOFT_ALARM;
 		if(pmbbi->stat!=SOFT_ALARM) {
 			strcpy(message,pmbbi->name);

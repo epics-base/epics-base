@@ -49,8 +49,8 @@ static long write_bo(pbo)
     case (DB_LINK) :
         status = dbPutLink(&pbo->out.value.db_link,pbo,DBR_USHORT,&pbo->val,1L);
         if(status!=0) {
-                if(pbo->nsev<MAJOR_ALARM) {
-                        pbo->nsev = MAJOR_ALARM;
+                if(pbo->nsev<VALID_ALARM) {
+                        pbo->nsev = VALID_ALARM;
                         pbo->nsta = LINK_ALARM;
                 }
         }
@@ -58,8 +58,8 @@ static long write_bo(pbo)
     case (CA_LINK) :
         break;
     default :
-        if(pbo->nsev<MAJOR_ALARM) {
-                pbo->nsev = MAJOR_ALARM;
+        if(pbo->nsev<VALID_ALARM) {
+                pbo->nsev = VALID_ALARM;
                 pbo->nsta = SOFT_ALARM;
                 if(pbo->stat!=SOFT_ALARM) {
                         strcpy(message,pbo->name);

@@ -70,9 +70,9 @@ static long read_mbbi(pmbbi)
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {
-		if(pmbbi->nsev<MAJOR_ALARM ) {
+		if(pmbbi->nsev<VALID_ALARM ) {
 			pmbbi->nsta = READ_ALARM;
-			pmbbi->nsev = MAJOR_ALARM;
+			pmbbi->nsev = VALID_ALARM;
 		}
 	}
 	return(status);

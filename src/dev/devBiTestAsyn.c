@@ -104,17 +104,17 @@ static long read_bi(pbi)
     case (CONSTANT) :
 	if(pbi->pact) {
 		printf("%s Completed\n",pbi->name);
-		return(0);
+		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pbi->val * vxTicksPerSecond);
+		wait_time = (int)(pbi->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pbi->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 		return(1);
 	}
     default :
-	if(pbi->nsev<MAJOR_ALARM) {
-		pbi->nsev = MAJOR_ALARM;
+	if(pbi->nsev<VALID_ALARM) {
+		pbi->nsev = VALID_ALARM;
 		pbi->nsta = SOFT_ALARM;
 		if(pbi->stat!=SOFT_ALARM) {
 			strcpy(message,pbi->name);

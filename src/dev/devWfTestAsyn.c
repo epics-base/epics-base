@@ -56,7 +56,7 @@ static void myCallback(pcallback)
     dbScanUnlock(pwf);
 }
 static long init_record(pwf,process)
-    struct wfRecord	*pwf;
+    struct waveformRecord	*pwf;
     void (*process)();
 {
     char message[100];

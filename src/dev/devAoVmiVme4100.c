@@ -82,15 +82,15 @@ static long write_ao(pao)
 	status = ao_driver(pvmeio->card,pvmeio->signal,VMI4100,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
-		if(pao->nsev<MAJOR_ALARM ) {
+		if(pao->nsev<VALID_ALARM ) {
 			pao->nsta = WRITE_ALARM;
-			pao->nsev = MAJOR_ALARM;
+			pao->nsev = VALID_ALARM;
 		}
 	}else if(status==-2) {
 		status=0;
-		if(pao->nsev<MAJOR_ALARM ) {
+		if(pao->nsev<VALID_ALARM ) {
 			pao->nsta = HW_LIMIT_ALARM;
-			pao->nsev = MAJOR_ALARM;
+			pao->nsev = VALID_ALARM;
 		}
 	}
 	return(status);

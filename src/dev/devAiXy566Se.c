@@ -84,16 +84,16 @@ static long read_ai(pai)
 	status=ai_driver(pvmeio->card,pvmeio->signal,XY566SE,&value);
         if(status==-1) {
 		status = 2; /*don't convert*/
-		if(pai->nsev<MAJOR_ALARM ) {
+		if(pai->nsev<VALID_ALARM ) {
                 	pai->nsta = READ_ALARM;
-                	pai->nsev = MAJOR_ALARM;
+                	pai->nsev = VALID_ALARM;
 		}
 		return(status);
         }else if(status==-2) {
                 status=0;
-                if(pai->nsev<MAJOR_ALARM ) {
+                if(pai->nsev<VALID_ALARM ) {
                         pai->nsta = HW_LIMIT_ALARM;
-                        pai->nsev = MAJOR_ALARM;
+                        pai->nsev = VALID_ALARM;
                 }
         }
 	if(status!=0) return(status);

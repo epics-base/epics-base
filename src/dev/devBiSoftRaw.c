@@ -87,8 +87,8 @@ static long read_bi(pbi)
     case (CA_LINK) :
         break;
     default :
-        if(pbi->nsev<MAJOR_ALARM) {
-                pbi->nsev = MAJOR_ALARM;
+        if(pbi->nsev<VALID_ALARM) {
+                pbi->nsev = VALID_ALARM;
                 pbi->nsta = SOFT_ALARM;
                 if(pbi->stat!=SOFT_ALARM) {
                         strcpy(message,pbi->name);

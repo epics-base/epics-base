@@ -84,9 +84,9 @@ static long write_bo(pbo)
 	pvmeio = (struct vmeio *)&(pbo->out.value);
 	status = bo_driver(pvmeio->card,pbo->rval,pbo->mask,BB902);
 	if(status!=0) {
-		if(pbo->nsev<MAJOR_ALARM ) {
+		if(pbo->nsev<VALID_ALARM ) {
 			pbo->nsta = WRITE_ALARM;
-			pbo->nsev = MAJOR_ALARM;
+			pbo->nsev = VALID_ALARM;
 		}
 	}
 	return(status);

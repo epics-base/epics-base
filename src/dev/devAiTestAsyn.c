@@ -1,5 +1,5 @@
 /* devAiTestAsyn.c */
-/* share/src/dev @(#)devAiTestAsyn.c	1.1     11/8/90 */
+/* share/src/dev $Id$ */
 
 /* devAiTestAsyn.c - Device Support Routines for testing asynchronous processing*/
 
@@ -105,17 +105,17 @@ static long read_ai(pai)
     case (CONSTANT) :
 	if(pai->pact) {
 		printf("%s Completed\n",pai->name);
-		return(0); /* don`t convert*/
+		return(2); /* don`t convert*/
 	} else {
-		wait_time = (int)(pai->rval * vxTicksPerSecond);
+		wait_time = (int)(pai->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 		return(1);
 	}
     default :
-	if(pai->nsev<MAJOR_ALARM) {
-		pai->nsev = MAJOR_ALARM;
+	if(pai->nsev<VALID_ALARM) {
+		pai->nsev = VALID_ALARM;
 		pai->nsta = SOFT_ALARM;
 		if(pai->stat!=SOFT_ALARM) {
 			strcpy(message,pai->name);

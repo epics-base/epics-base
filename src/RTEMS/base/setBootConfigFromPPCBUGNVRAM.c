@@ -27,7 +27,6 @@ struct ppcbug_nvram {
     char                BootFilenameString[64];
     char                ArgumentFilenameString[64];
 };
-#define PPCBUG_NVRAM ((void *)0xFFE81000)
 
 static char *addr(char *cbuf, rtems_unsigned32 addr)
 {
@@ -40,8 +39,6 @@ static char *addr(char *cbuf, rtems_unsigned32 addr)
 void
 setBootConfigFromPPCBUGNVRAM(void)
 {
-    char *d;
-    volatile char *s;
     static struct ppcbug_nvram nvram;
     static char ip_address[INET_ADDRSTRLEN];
     static char ip_netmask[INET_ADDRSTRLEN];
@@ -49,12 +46,20 @@ setBootConfigFromPPCBUGNVRAM(void)
     static char gateway[INET_ADDRSTRLEN];
 
     /*
-     * NVRAM must be accessed a byte at a time
+     * Get network configuation from PPCBUG.
+     * The 'correct' way to do this would be to issue a .NETCFIG PPCBUG
+     * system call.  Unfortunately it is very difficult to issue such a
+     * call once RTEMS is up and running so we just copy from the 'known'
+     * location of the network configuration parameters.
+     * Care must be taken to access the NVRAM a byte at a time.
      */
-    s = (volatile char *)PPCBUG_NVRAM;
-    d = (char *)&nvram;
-    while (d < ((char *)&nvram + sizeof(nvram)))
+    {
+    volatile char *s = (volatile char *)0xFFE81000;
+    char *d = (char *)&nvram;
+
+    while (d < ((char *)&nvram + sizeof nvram))
         *d++ = *s++;
+    }
 
     /*
      * Assume that the boot server is also the name server and log server!

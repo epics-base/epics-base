@@ -94,10 +94,11 @@ nciu::~nciu ()
     if ( this->f_connected && this->piiu ) {
         this->piiu->clearChannelRequest ( this->getId (), this->sid );
     }
+
+    this->unlockPIIU ();
     
     this->detachChanFromIIU ();
 
-    this->unlockPIIU ();
 
     this->cacCtx.unregisterChannel ( *this );
 
@@ -221,162 +222,6 @@ LOCAL int check_a_dbr_string ( const char *pStr, const unsigned count )
     return ECA_NORMAL;
 }
 
-#ifdef JUNKYARD
-
-/*
- * nciu::issuePut ()
- */
-int nciu::issuePut ( ca_uint16_t cmd, unsigned idIn, chtype type, 
-                     unsigned long countIn, const void *pvalue )
-{ 
-    int status;
-    caHdr hdr;
-    unsigned postcnt;
-#   ifdef CONVERSION_REQUIRED
-        void *pCvrtBuf;
-#   endif /*CONVERSION_REQUIRED*/
-
-    /* 
-     * fail out if the conn is down or the arguments are otherwise invalid
-     */
-    if ( ! this->f_connected ) {
-        return ECA_DISCONNCHID;
-    }
-    if ( INVALID_DB_REQ (type) ) {
-        return ECA_BADTYPE;
-    }
-    /*
-     * compound types not allowed
-     */
-    if ( dbr_value_offset[type] ) {
-        return ECA_BADTYPE;
-    }
-    if ( ! this->ar.write_access ) {
-        return ECA_NOWTACCESS;
-    }
-    if ( countIn > this->count || countIn > 0xffff || countIn == 0 ) {
-            return ECA_BADCOUNT;
-    }
-    if (type==DBR_STRING) {
-        status = check_a_dbr_string ( (char *) pvalue, countIn );
-        if (status != ECA_NORMAL) {
-            return status;
-        }
-    }
-    postcnt = dbr_size_n ( type, countIn );
-    if ( postcnt > 0xffff ) {
-        return ECA_TOLARGE;
-    }
-
-    if ( type == DBR_STRING && countIn == 1 ) {
-        char *pstr = (char *) pvalue;
-        postcnt = strlen (pstr) +1;
-    }
-    else {
-        postcnt = dbr_size_n ( type, countIn );
-    }
-
-#   ifdef CONVERSION_REQUIRED 
-    {
-        unsigned i;
-        void *pdest;
-        unsigned size_of_one;
-
-        size_of_one = dbr_size[type];
-
-#error can we eliminate this?
-        pCvrtBuf = pdest = this->cacCtx.mallocPutConvert ( postcnt );
-        if ( ! pdest ) {
-            this->unlockPIIU ();
-            return ECA_ALLOCMEM;
-        }
-
-        /*
-         * No compound types here because these types are read only
-         * and therefore only appropriate for gets or monitors
-         *
-         * I changed from a for to a while loop here to avoid bounds
-         * checker pointer out of range error, and unused pointer
-         * update when it is a single element.
-         */
-        i=0;
-        while ( TRUE ) {
-            switch ( type ) {
-            case    DBR_LONG:
-                * (dbr_long_t *) pdest = 
-                    htonl ( ( * reinterpret_cast < const dbr_long_t * > (pvalue) ) );
-                break;
-
-            case    DBR_CHAR:
-                * (dbr_char_t *) pdest = * (dbr_char_t *) pvalue;
-                break;
-
-            case    DBR_ENUM:
-            case    DBR_SHORT:
-            case    DBR_PUT_ACKT:
-            case    DBR_PUT_ACKS:
-#           if DBR_INT != DBR_SHORT
-#               error DBR_INT != DBR_SHORT ?
-#           endif /*DBR_INT != DBR_SHORT*/
-                * (dbr_short_t *) pdest = 
-                    htons ( ( * reinterpret_cast < const dbr_short_t * > (pvalue) ) );
-                break;
-
-            case    DBR_FLOAT:
-                dbr_htonf ( (dbr_float_t *) pvalue, (dbr_float_t *) pdest );
-                break;
-
-            case    DBR_DOUBLE: 
-                dbr_htond ( (dbr_double_t *) pvalue, (dbr_double_t *) pdest );
-            break;
-
-            case    DBR_STRING:
-                /*
-                 * string size checked above
-                 */
-                strcpy ( (char *) pdest, (char *) pvalue );
-                break;
-
-            default:
-                return ECA_BADTYPE;
-            }
-
-            if ( ++i >= countIn ) {
-                break;
-            }
-
-            pdest = ( (char *) pdest ) + size_of_one;
-            pvalue = ( (char *) pvalue ) + size_of_one;
-        }
-
-        pvalue = pCvrtBuf;
-    }
-#   endif /*CONVERSION_REQUIRED*/
-
-    hdr.m_cmmd = htons ( cmd );
-    hdr.m_dataType = htons ( static_cast <ca_uint16_t> ( type ) );
-    hdr.m_count = htons ( static_cast <ca_uint16_t> ( countIn ) );
-    hdr.m_cid = this->sid;
-    hdr.m_available = idIn;
-
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        status = this->piiu->pushStreamMsg ( &hdr, pvalue, postcnt );
-    }
-    else {
-        status = ECA_DISCONNCHID;
-    }
-    this->unlockPIIU ();
-
-#   ifdef CONVERSION_REQUIRED
-        this->cacCtx.freePutConvert ( pCvrtBuf );
-#   endif /*CONVERSION_REQUIRED*/
-
-    return status;
-}
-
-#endif
-
 int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
 {
     int status;
@@ -391,7 +236,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
     }
 
     if ( countIn > this->count || countIn == 0 ) {
-            return ECA_BADCOUNT;
+        return ECA_BADCOUNT;
     }
 
     if ( type == DBR_STRING ) {
@@ -651,6 +496,17 @@ void nciu::attachChanToIIU ( netiiu &iiu )
         this->piiu->mutex.unlock ();
     }
 
+    this->unlockPIIU ();
+
+    this->lock ();
+    while ( this->ptrLockCount ) {
+        this->unlock ();
+        this->cacCtx.nciuPrivate::ptrLockReleaseWakeup.wait ();
+        this->lock ();
+    }
+    this->piiu = &iiu;
+    this->unlock ();
+
     iiu.mutex.lock ();
 
     // add to the front of the list so that search requests 
@@ -658,26 +514,31 @@ void nciu::attachChanToIIU ( netiiu &iiu )
     // channels lacking a claim message prior to connecting
     // are located
     iiu.channelList.push ( *this );
-    this->piiu = &iiu;
 
     iiu.mutex.unlock ();
-
-    this->unlockPIIU ();
 }
 
 void nciu::detachChanFromIIU ()
 {
     this->lockPIIU ();
-    if ( this->piiu ) {
+     if ( this->piiu ) {
         this->piiu->mutex.lock ();
         this->piiu->channelList.remove ( *this );
         if ( this->piiu->channelList.count () == 0u ) {
             this->piiu->lastChannelDetachNotify ();
         }
         this->piiu->mutex.unlock ();
-        this->piiu = 0u;
-    }
+    }   
     this->unlockPIIU ();
+
+    this->lock ();
+    while ( this->ptrLockCount ) {
+        this->unlock ();
+        this->cacCtx.nciuPrivate::ptrLockReleaseWakeup.wait ();
+        this->lock ();
+    }
+    this->piiu = 0u;
+    this->unlock ();
 }
 
 void nciu::incrementOutstandingIO ()

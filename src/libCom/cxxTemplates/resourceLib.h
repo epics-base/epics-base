@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/24 22:12:02  jhill
+ * added remove() to iter class + made node's prev/next private
+ *
  * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
  * installed  ca server templates
  *
@@ -42,6 +45,7 @@
 #define INCresourceLibh 
 
 #include <limits.h>
+#include <string.h>
 #include <math.h>
 
 #include <tsSLList.h>
@@ -160,7 +164,7 @@ public:
 		//
 		// T must derive from ID
 		//
-		tsSLList<T> list(this->pTable[this->hash(res)]);
+		tsSLList<T> &list(this->pTable[this->hash(res)]);
 		tsSLIter<T> iter(list);
 
 		this->find(iter, res);

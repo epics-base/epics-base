@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.34  1997/04/30 18:58:03  mrk
+ * Fixed most compiler warning messages
+ *
  * Revision 1.33  1997/04/09 19:50:39  mrk
  * Forgot to compile before committing
  *
@@ -2260,21 +2263,19 @@ unsigned short	val;	/* used for EFAST operations only */
         break;
     case GPIBEFASTO:	/* write the enumerated cmd from the P3 array */
 	if(pCmd->P3==NULL) {
-	  epicsPrintf("%s devSup : GPIBEFASTO specified but no EFAST Table\n");
-	  return(ERROR);
-	} else {
-	    int i;
-	    /*Check that val in bounds*/
-            if(val>15) return(ERROR);
-            for(i=0; i<=val; i++ ) {
-              if(pCmd->P3[i]==NULL) return(ERROR);
-            }
+	    epicsPrintf("%s devSup : GPIBEFASTO specified but no EFAST Table\n",
+	        pdpvt->precord->name);
+	    return(ERROR);
+	}
+	if(val>15) {
+	    epicsPrintf("%s devSup : GPIBEFASTO specified but val = %hu\n",
+	        pdpvt->precord->name,val);
+	    return(ERROR);
 	}
         if (pCmd->P3[val] != NULL)
 	{
-	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode, pCmd->P3[val], 
-				strlen(pCmd->P3[val]), pdpvt->head.dmaTimeout);
-
+	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode,
+		pCmd->P3[val],strlen(pCmd->P3[val]), pdpvt->head.dmaTimeout);
             if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
             {   /* device responds to write commands, read the response */
                 if (parmBlock->respond2Writes > 0)

@@ -347,7 +347,7 @@ void tcpRecvThread::run ()
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
-            while ( nBytesIn && ++contiguousFrameCount <= 5 ) {
+            while ( nBytesIn ) {
                 if ( nBytesIn == pComBuf->capacityBytes () ) {
                     if ( this->iiu.contigRecvMsgCount >= 
                         contiguousMsgCountWhichTriggersFlowControl ) {
@@ -373,7 +373,8 @@ void tcpRecvThread::run ()
                     break;
                 }
 
-                if ( ! this->iiu.bytesArePendingInOS () ) {
+                if ( ! this->iiu.bytesArePendingInOS ()
+                    || ++contiguousFrameCount > 5 ) {
                     break;
                 }
 

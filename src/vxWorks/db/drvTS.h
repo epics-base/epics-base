@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.6  1999/12/14 21:35:34  jhill
+ * use osiTime.h to get TS_STAMP
+ *
  * Revision 1.5  1999/11/18 13:30:07  mrk
  * new makefile method; moved drvTS.h to vxWorks specific code
  *
@@ -76,7 +79,7 @@ of this distribution.
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include <osiTime.h>
+#include "tsStamp.h"
 
 #ifdef TS_DRIVER
 #define TS_EXTERN

@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.32  2000/01/24 21:26:55  mrk
+ * new way to build
+ *
  * Revision 1.31  1999/08/26 21:36:39  jhill
  * fixed bug where time sync UDP client was getting in a state where
  * it was using the response from the previous request, and ending
@@ -175,7 +178,7 @@
 #include "errMdef.h"
 #include "drvSup.h"
 #include "drvTS.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 #define TSprintf epicsPrintf
 

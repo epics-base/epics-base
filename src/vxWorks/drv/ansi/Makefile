@@ -11,20 +11,20 @@ INC += drvMz8310.h
 INC += drvStc.h
 INC += epvxi.h
 
-SRCS.c += ../drvAt5Vxi.c
-SRCS.c += ../drvEpvxi.c
-SRCS.c += ../drvEpvxiMsg.c
-SRCS.c += ../drvHp1404a.c
-SRCS.c += ../drvHpe1368a.c
-SRCS.c += ../drvHpe1445a.c
-SRCS.c += ../drvKscV215.c
-SRCS.c += ../drvMz8310.c
-SRCS.c += ../drvStc.c
-#SRCS.c += ../drvCaenV265.c
+SRCS += drvAt5Vxi.c
+SRCS += drvEpvxi.c
+SRCS += drvEpvxiMsg.c
+SRCS += drvHp1404a.c
+SRCS += drvHpe1368a.c
+SRCS += drvHpe1445a.c
+SRCS += drvKscV215.c
+SRCS += drvMz8310.c
+SRCS += drvStc.c
+#SRCS += drvCaenV265.c
 
-#SRCS.c += ../drvVmic2534.c
+#SRCS += drvVmic2534.c
 
-PROD += $(SRCS.c:../%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%.o)
 
 MAN3 = drvEpvxi.3
 

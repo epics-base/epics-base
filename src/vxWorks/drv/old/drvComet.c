@@ -72,14 +72,15 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
 #include <stdlib.h>
 #include <stdio.h>
 #include <iv.h>
-#include <module_types.h>
-#include <task_params.h>
-#include <fast_lock.h>
 #include <vme.h>
-#include <drvSup.h>
-#include <dbDefs.h>
-#include <dbScan.h>
-#include <taskwd.h>
+
+#include "module_types.h"
+#include "task_params.h"
+#include "fast_lock.h"
+#include "drvSup.h"
+#include "dbDefs.h"
+#include "dbScan.h"
+#include "taskwd.h"
 
 #define COMET_NCHAN			4
 #define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */

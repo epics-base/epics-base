@@ -4,7 +4,7 @@ include $(TOP)/configure/CONFIG
 
 SRCS += devWfJoergerVtr1.c
 
-OBJS_IOC += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%.o)
 
 include $(TOP)/configure/RULES
 

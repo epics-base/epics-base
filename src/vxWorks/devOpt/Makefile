@@ -12,9 +12,9 @@ SRCS+= devXxDc5009Gpib.c
 SRCS+= devXxK263Gpib.c
 SRCS+= devXxSkeletonGpib.c
 
-PROD += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%.o)
 
-LIBRARY += devLibOpt
+LIBRARY_vxWorks += devLibOpt
 
 include $(TOP)/configure/RULES
 

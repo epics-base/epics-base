@@ -25,25 +25,25 @@ INC += drvOms.h
 INC += steppermotor.h
 
 
-SRCS += ../module_types.c
-SRCS += ../drvBb902.c
-SRCS += ../drvBb910.c
-SRCS += ../drvComet.c
-SRCS += ../drvCompuSm.c
-SRCS += ../drvDvx.c
-SRCS += ../drvFp.c
-SRCS += ../drvFpm.c
-SRCS += ../drvGpib.c
-SRCS += ../drvJgvtr1.c
-SRCS += ../drvOms.c
-SRCS += ../drvVmi4100.c
-SRCS += ../drvXy010.c
-SRCS += ../drvXy210.c
-SRCS += ../drvXy220.c
-SRCS += ../drvXy240.c
-SRCS += ../drvXy566.c
+SRCS += module_types.c
+SRCS += drvBb902.c
+SRCS += drvBb910.c
+SRCS += drvComet.c
+SRCS += drvCompuSm.c
+SRCS += drvDvx.c
+SRCS += drvFp.c
+SRCS += drvFpm.c
+SRCS += drvGpib.c
+SRCS += drvJgvtr1.c
+SRCS += drvOms.c
+SRCS += drvVmi4100.c
+SRCS += drvXy010.c
+SRCS += drvXy210.c
+SRCS += drvXy220.c
+SRCS += drvXy240.c
+SRCS += drvXy566.c
 
-PROD += $(SRCS:../%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%.o)
 
 include $(TOP)/configure/RULES
 

@@ -562,6 +562,13 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	@$(RM) $@
 	$(RCCMD)
 
+
+# WIN95/NT source browser
+%.bsc: %.sbr
+	@echo "building source browser archive $@"
+	$(RM) $@
+	$(BAFCMD) $<
+
 #
 # rename the y.tab.h file only if we
 # are creating it

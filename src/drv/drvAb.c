@@ -183,6 +183,9 @@
  * .60  07-27-93	mrk	Made changes for vxWorks 5.x semLib
  * .61  08-02-93	mrk	Added call to taskwdInsert
  * .62  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
+ * .62  09-04-93	mrk	for bo and ao change value even if down
+ * .63  09-15-93	mrk	make report shorter.
+ * .64  09-16-93	mrk	ab_reset: all links; only reset scanner.
  */
 
 /*
@@ -487,7 +490,7 @@ char	ab_scan_list[AB_MAX_LINKS][AB_MAX_ADAPTERS];
 char	ab_init_cnt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
 
 /* debug variable (must be >1 to see all messages) */
-short	ab_debug = 0;
+int	ab_debug = 0;
 
 /* location to store scanner firmware revision info which is avail only temporarily */
 char	ab_firmware_info[AB_MAX_LINKS][96];
@@ -1308,7 +1311,7 @@ register short	link;
 	register short	length;
 	short mr_w_err,i;
 	register struct dp_mbox *pmb = (struct dp_mbox *)(&p6008->mail);
-	char				*pfirmware_info = &ab_firmware_info[link][0];
+	char		*pfirmware_info = &ab_firmware_info[link][0];
 
 	ab_bad_response[link]=0;
 	ab_rw_resp_err[link]=0;
@@ -1441,7 +1444,6 @@ unsigned short	link;
 		    wtrans(pmb_msg,pmsg);	/* xfer data to local mailbox */
 		}else{
 		    ab_bad_response[link]++;
-		    pmb->fl_lock = 0;
 		    if(ab_debug != 0)
 			logMsg("link %x mr_wait - bad resp on %x cmd\n"
 			    ,link,command);
@@ -1524,14 +1526,18 @@ short		link;
 	    presponse = &response;
 
 	    /* wait for the genius, who posted us, to lock the data area */
-	    while((pmb->fl_lock == 0) && (ab_post_no_lock[link] < 1000))
-		ab_post_no_lock[link] += 1;
-	    if (ab_post_no_lock[link] >= 1000){
-		logMsg("link %x exceeded stop count\n",link);
-	        ab_post_no_lock[link] = 0;
-		return;
-	    }
+	    ab_post_no_lock[link] = 0;
+	    while(TRUE) {
+		unsigned char fl_lock;
 
+		fl_lock = pmb->fl_lock;
+		if(fl_lock&0x80) break;
+		ab_post_no_lock[link] += 1;
+		if(ab_post_no_lock[link]>=1000) {
+			logMsg("link %x exceeded stop count\n",link);
+			return;
+		}
+	    }
 	    /* put the response on the queue for abDoneTask */
 	    presponse->link = link;
 	    presponse->card = pmb->address & 0x0f;
@@ -1648,15 +1654,15 @@ unsigned short          value;
 	    return(-1);
         }
 
-        /* verify that link is ok and card type is correct */
-	if (ab_adapter_status[link][adapter] == ERROR) return(-1);
-	if ((*pcard & AB_INTERFACE_TYPE) != AB_AO_INTERFACE) return(-1);
-        if ((*pcard & AB_CARD_TYPE) != card_type) return(-1);
-
         /* put the value into the table */
 	if ((unsigned short)ab_btdata[link][adapter][card][signal] == value) return(0);
         ab_btdata[link][adapter][card][signal] = value;
 	*pcard |= AB_UPDATE;
+
+        /* verify that link is ok and card type is correct */
+	if (ab_adapter_status[link][adapter] == ERROR) return(-1);
+	if ((*pcard & AB_INTERFACE_TYPE) != AB_AO_INTERFACE) return(-1);
+        if ((*pcard & AB_CARD_TYPE) != card_type) return(-1);
 
         return(0);
 }
@@ -1715,9 +1721,6 @@ unsigned long           mask;
 	/* verify there is a scanner */
         if (p6008 == 0) return(-1);
 
-	/* control-x has been used to restart - don't access the AB card */
-	if (ab_disable) return(-1);
-
         /* claim the card as a binary input */
         if (((*pcard & AB_INIT_BIT) == 0) && ((*pcard & AB_SENT_INIT) == 0)){
             *pcard = AB_BI_INTERFACE | card_type | AB_INIT_BIT;
@@ -1771,18 +1774,11 @@ unsigned long           mask;
 	/* verify there is a scanner */
         if (p6008 == 0) return(-1);
 
-	/* control-x has been used to restart - don't access the AB card */
-	if (ab_disable) return(-1);
-
-	/* claim the card as a binary input */
+	/* claim the card as a binary output */
         if (((*pcard & AB_INIT_BIT) == 0) && ((*pcard & AB_SENT_INIT) == 0)){
 	    *pcard = AB_BO_INTERFACE | card_type | AB_INIT_BIT;
 	    if (adapter_plc) *pcard |= AB_PLC;
 	}
-
-	/* verify link communication is OK */
-	/* This doesn't work in a box with no analog IO */
-	if (ab_adapter_status[link][adapter] == ERROR) return(-1);
 
 	/* eight bit byte ordering in dual ported memory */
 	/* 1100 3322 5544 7766 9988 BBAA 		 */
@@ -1803,6 +1799,9 @@ unsigned long           mask;
 		pshort = (unsigned short *)&(p6008->oit[outinx]);
 		*pshort = (*pshort & ~mask) | value;
 	}
+	/* verify link communication is OK */
+	/* This doesn't work in a box with no analog IO */
+	if (ab_adapter_status[link][adapter] == ERROR) return(-1);
 	return(0);
 }
 /*
@@ -1824,9 +1823,6 @@ unsigned long           mask;
 
 	/* verify there is a scanner */
         if (p6008 == 0) return(-1);
-
-	/* control-x has been used to restart - don't access the AB card */
-	if (ab_disable) return(-1);
 
 	/* verify link communication is OK */
 	/* This doesn't work in a box with no analog IO */
@@ -1962,22 +1958,24 @@ unsigned short	link;
 }
 
 #define  MAX_8BIT 8
-#define masks(K) ((1<<K))
 ab_io_report(level)
     short int level;
   {
-    
 	short	i,j,k,l,m,card,adapter,plc_card,x,type;
         unsigned short jrval,krval,lrval,mrval;
         unsigned long val,jval,kval,lval,mval;
         
 	/* report all of the Allen-Bradley Serial Links present */
 	for (i = 0; i < AB_MAX_LINKS; i++){
-	    if (p6008s[i])
-		printf("MD: AB-6008SV:\tcard %d\tcto: %d lto: %d badres: %d\n"
-		  ,i,ab_comm_to[i],ab_link_to[i],ab_bad_response[i]);
-	    else continue;
-
+	    if(!p6008s[i]) continue;
+	    printf("AB-6008SV:\tcard %d ",i);
+	    for(adapter=0; adapter<AB_MAX_ADAPTERS; adapter++) {
+		if(ab_adapter_status[i][adapter]==0)
+		    printf("U");else printf("D");
+	    }
+	    printf(" cto: %d lto: %d badres: %d\n",
+		ab_comm_to[i],ab_link_to[i],ab_bad_response[i]);
+	    if(level>0) printf("%s\n",ab_firmware_info[i]);
 	    /* report all cards to which the database has interfaced */
 	    /* as there is no way to poll the Allen-Bradley IO to      */
 	    /* determine which card is there we assume that any interface */
@@ -2001,15 +1999,12 @@ ab_io_report(level)
 
 		    case (AB_BI_INTERFACE):
 			printf("\tBI: AB\tadapter %d card %d",adapter,card);
-
-			if (level > 0)
-				ab_bi_report(i,adapter,card,plc_card);
+			ab_bi_report(i,adapter,card,plc_card);
 			break;
 		    case (AB_BO_INTERFACE):
 			printf("\tBO: AB\tadapter %d card %d",adapter,card);
-                          if(level > 0)
-                               ab_bo_report(i,adapter,card,plc_card);
-			    break;
+                        ab_bo_report(i,adapter,card,plc_card);
+			break;
 		    case (AB_AI_INTERFACE):
                         type = ab_config[i][adapter][card]&AB_CARD_TYPE;    
 			if ((ab_config[i][adapter][card]&AB_CARD_TYPE)==AB1771IXE){
@@ -2019,7 +2014,6 @@ ab_io_report(level)
 			      ab_scaling_error[i][adapter][card],
 			      ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IL){
@@ -2029,7 +2023,6 @@ ab_io_report(level)
 			      ab_scaling_error[i][adapter][card],
 			      ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_SE){
@@ -2039,7 +2032,6 @@ ab_io_report(level)
 			      ab_scaling_error[i][adapter][card],
 			      ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_4to20MA){
@@ -2049,7 +2041,6 @@ ab_io_report(level)
 			      ab_scaling_error[i][adapter][card],
 			      ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE){
@@ -2059,7 +2050,6 @@ ab_io_report(level)
 			         ab_scaling_error[i][adapter][card],
 			         ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                         } else if ((ab_config[i][adapter][card] & AB_CARD_TYPE) == AB1771IFE_0to5V){
@@ -2069,7 +2059,6 @@ ab_io_report(level)
 			         ab_scaling_error[i][adapter][card],
 			         ab_or_scaling_error[i][adapter][card]);
                               if (level > 0){
-                                printf("\n");
                               	ab_ai_report(type,i,adapter,card,plc_card);
                               }
                          } 
@@ -2079,7 +2068,6 @@ ab_io_report(level)
 			  adapter,card,ab_cmd_to[i][adapter][card],
 			  ab_data_to[i][adapter][card]);
                               if (level > 0 ){
-                                printf("\n");
                              	ab_ao_report(AB1771OFE,i,adapter,card,plc_card,&jrval,0);
                               }
 			break;
@@ -2097,181 +2085,59 @@ ab_io_report(level)
 
  }
 
-/*  ab_bi_report. 
-*   Reports  the raw value of all Allen Bradley Binary In cards. 
-*
-*
-*/
 ab_bi_report(link,adapter,card,plc_card)
    short link,adapter,card,plc_card;
   {
-	short	i,j,k,l,m,x,num_chans;
         unsigned short type;
-        unsigned long jval,kval,lval,mval;
-
-        printf("\n");
+        unsigned long value;
 
         type = ab_config[link][adapter][card] & AB_CARD_TYPE;
-  
-        if(type == ABBI_08_BIT) 
-             num_chans = MAX_8BIT; 
-        else
-             num_chans = AB_CHAN_CARD;
-
-        for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-            j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
-        	if(j < num_chans){
-                	ab_bidriver(type,link,adapter,card,plc_card,masks(j),&jval);
-                 	if (jval != 0) 
-                  		 jval = 1;
-                         printf("Chan %d = %x\t ",j,jval);
-                }  
-         	if(k < num_chans){
-         		ab_bidriver(type,link,adapter,card,plc_card,masks(k),&kval);
-                        if (kval != 0) 
-                        	kval = 1;
-                        	printf("Chan %d = %x\t ",k,kval);
-                }
-                if(l < num_chans){
-                	ab_bidriver(type,link,adapter,card,plc_card,masks(l),&lval);
-                	if (lval != 0) 
-                        	lval = 1;
-                	printf("Chan %d = %x \t",l,lval);
-                 }
-                  if(m < num_chans){
-                 	ab_bidriver(type,link,adapter,card,plc_card,masks(m),&mval);
-                 	if (mval != 0) 
-                        	mval = 1;
-                 	printf("Chan %d = %x \n",m,mval);
-                   }
-             }
+	ab_bidriver(type,link,adapter,card,plc_card,0xffffffff,&value);
+	printf(" value=%08.8x",value);
   }
-
-/*  ab_bo_report. 
-*   Reports  the raw value of all Allen Bradley Binary Out cards. 
-*
-*
-*/
+
 ab_bo_report(link,adapter,card)
    short link,adapter,card;
   {
-	short	i,j,k,l,m,x,num_chans;
         unsigned short type;
-        unsigned long jval,kval,lval,mval;
+        unsigned long value;
 
-        printf("\n");
 
         type = ab_config[link][adapter][card] & AB_CARD_TYPE;
-  
-        if(type == ABBO_08_BIT) 
-             num_chans = MAX_8BIT; 
-        else
-             num_chans = AB_CHAN_CARD;
-
-        for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-            j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
-        	if(j < num_chans){
-			ab_boread(type,link,adapter,card,&jval,masks(j));
-                 	if (jval != 0) 
-                  		 jval = 1;
-                         printf("Chan %d = %x\t ",j,jval);
-                }  
-         	if(k < num_chans){
-			ab_boread(type,link,adapter,card,&kval,masks(k));
-                        if (kval != 0) 
-                        	kval = 1;
-                        	printf("Chan %d = %x\t ",k,kval);
-                }
-                if(l < num_chans){
-			ab_boread(type,link,adapter,card,&lval,masks(l));
-                	if (lval != 0) 
-                        	lval = 1;
-                	printf("Chan %d = %x \t",l,lval);
-                 }
-                  if(m < num_chans){
-			ab_boread(type,link,adapter,card,&mval,masks(m));
-                 	if (mval != 0) 
-                        	mval = 1;
-                 	printf("Chan %d = %x \n",m,mval);
-                   }
-             }
+	ab_boread(type,link,adapter,card,&value,0xffffffff);
   }
 
-/*  ab_ai_report. 
-*   Reports  the raw value of all Allen Bradley Analog In cards. 
-*
-*
-*/
 ab_ai_report(type,link,adapter,card,plc_card)
       
    unsigned short type;
    short link,adapter,card,plc_card;
   {
-	short	i,j,k,l,m,num_chans;
-        unsigned short jrval,krval,lrval,mrval;
+	short	i,num_chans;
+        unsigned short value;
 
-        printf("\n");
+        printf("\n\t");
 
 	num_chans = ai_num_channels[type];
-
-        for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-            j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
-        	if(j < num_chans){
-                        ab_aidriver(type,link,adapter,card,j,plc_card,&jrval,0);
-                         printf("Chan %d = %x\t ",j,jrval);
-                }  
-         	if(k < num_chans){
-                        ab_aidriver(type,link,adapter,card,k,plc_card,&krval,0);
-                        	printf("Chan %d = %x\t ",k,krval);
-                }
-                if(l < num_chans){
-                        ab_aidriver(type,link,adapter,card,l,plc_card,&lrval,0);
-                	printf("Chan %d = %x \t",l,lrval);
-                 }
-                  if(m < num_chans){
-                        ab_aidriver(type,link,adapter,card,m,plc_card,&mrval,0);
-                 	printf("Chan %d = %x \n",m,mrval);
-                   }
-             }
+	for(i=0; i<num_chans; i++) {
+	    ab_aidriver(type,link,adapter,card,i,plc_card,&value,0);
+	    printf("%4x",value);
+ 	}
   }
-
-/*  ab_ao_report. 
-*   Reports  the raw value of all Allen Bradley Analog In cards. 
-*
-*
-*/
 
 ab_ao_report(type,link,adapter,card,plc_card)
    unsigned short type;
    short link,adapter,card,plc_card;
   {
-	short	i,j,k,l,m,x,num_chans;
-        unsigned short jrval,krval,lrval,mrval;
+	short	i,num_chans;
+        unsigned short value;
 
-        printf("\n");
-
+        printf("\n\t");
 	num_chans = ao_num_channels[type];
-
-        for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-            j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
-        	if(j < num_chans){
-                        ab_aoread(type,link,adapter,card,j,plc_card,&jrval);
-                        printf("Chan %d = %x\t ",j,jrval);
-                }  
-         	if(k < num_chans){
-                        ab_aoread(type,link,adapter,card,k,plc_card,&krval);
-                        printf("Chan %d = %x\t ",k,krval);
-                }
-                if(l < num_chans){
-                        ab_aoread(type,link,adapter,card,l,plc_card,&lrval);
-                	printf("Chan %d = %x \t",l,lrval);
-                 }
-                  if(m < num_chans){
-                        ab_aoread(type,link,adapter,card,m,plc_card,&mrval);
-                 	printf("Chan %d = %x \n",m,mrval);
-                   }
-             }
-  }
+	for(i=0; i<num_chans; i++) {
+	    ab_aoread(type,link,adapter,card,i,plc_card,&value);
+	     printf("%4x",value);
+	}
+}
 
 /*
  * abScanTask
@@ -2297,6 +2163,7 @@ int status;
 	/* check each link */
 
 	for (link=0; link < AB_MAX_LINKS; link++,p6008++){
+		if(ab_disable) break;
 		if (p6008s[link] == 0) continue;	/* no link */
 
 		/* See if we've detected any unsolicited block transfers.	*/
@@ -2368,6 +2235,7 @@ int	boot_type;
 void
 ab_reset_task()
 {
+	short			link,adapter,card;
 	struct ab_region	*pab_region=0;
 
 	/* keep track of the status and frequency */
@@ -2378,25 +2246,50 @@ ab_reset_task()
 
 	/* disable scanning during reset */
 	ab_disable = 1;
-	printf("Disable AB Scanner Task");
-	taskDelay(60);
-
+	printf("Disabled AB Scanner Task\n");
+	taskDelay(vxTicksPerSecond*2);
 	/* Signal the Scanner to Reset */
-	pab_region = p6008s[0];
-
-	pab_region->sys_fail_set2 = 0xa0a0;
-	pab_region->sys_fail_set1 = 0x0080;
-	printf("Card %d Reset\n",0);
-
-	while(pab_region->mail.conf_stat != SCANNER_POWERUP){
-		taskDelay(1);
-		ab_reset_wait++;
+	for(link=0; link<AB_MAX_LINKS; link++){
+	    pab_region = p6008s[link];
+	    if(!pab_region) continue;
+	    pab_region->sys_fail_set2 = 0xa0a0;
+	    pab_region->sys_fail_set1 = 0x0080;
+	    printf("Card %d Reset\n",0);
 	}
 
+	ab_reset_wait = 0;
+	for(link=0; link<AB_MAX_LINKS; link++){
+	    pab_region = p6008s[link];
+	    if(!pab_region) continue;
+	    /*mark all block transfer cards for initialization*/
+	    for(adapter = 0; adapter < AB_MAX_ADAPTERS; adapter++){
+		for (card = 0; card < AB_MAX_CARDS; card++){
+		    switch (ab_config[link][adapter][card] & AB_INTERFACE_TYPE){
+		    case (AB_AO_INTERFACE):
+			 ab_config[link][adapter][card] |= AB_UPDATE;
+			 break;
+		    case (AB_AI_INTERFACE):
+			ab_config[link][adapter][card]
+			    &= ~(AB_INIT_BIT | AB_SENT_INIT);
+	    		ab_btq_cnt[link][adapter][card] = 0;
+			break;
+		    default:
+		        break;
+		    }
+		}
+	    }
+	    while(pab_region->mail.conf_stat != SCANNER_POWERUP){
+		taskDelay(1);
+		ab_reset_wait++;
+	    }
+	}
+	printf("Link Power Up After %d Ticks\n",ab_reset_wait);
 	/* Reinitialize the Link */
-	printf("Link Power Up After %d Ticks",ab_reset_wait);
-	ab_driver_init();
-
+	for(link=0; link<AB_MAX_LINKS; link++){
+	    pab_region = p6008s[link];
+	    if(!pab_region) continue;
+	    link_init(link);
+	}
 	/* enable the scanner */
 	ab_disable = 0;
 }

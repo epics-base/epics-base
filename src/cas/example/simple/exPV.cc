@@ -273,28 +273,23 @@ caStatus exPV::getSeverity(gdd &value)
 }
 
 //
-// exPV::getTS()
-//
-inline aitTimeStamp exPV::getTS()
-{
-	if (this->pValue!=NULL) {
-		aitTimeStamp ts;
-		this->pValue->getTimeStamp(&ts);
-		return ts;
-	}
-	else {
-		return osiTime::getCurrent();
-	}
-
-}
-
-//
 // exPV::getSeconds()
 //
 caStatus exPV::getSeconds(gdd &value)
 {
-	aitUint32 sec (this->getTS().tv_sec);
-	value.put(sec);
+	osiTime ts;
+	aitUint32 sec;
+
+	if (this->pValue!=NULL) {
+		this->pValue->getTimeStamp (&ts);
+	}
+	else {
+		ts = osiTime::getCurrent();
+	}
+
+	sec = ts.getSec();
+	value.put (sec);
+
 	return S_cas_success;
 }
 
@@ -303,8 +298,19 @@ caStatus exPV::getSeconds(gdd &value)
 //
 caStatus exPV::getNanoseconds(gdd &value)
 {
-	aitUint32 nsec (this->getTS().tv_nsec);
-	value.put(nsec);
+	osiTime ts;
+	aitUint32 nSec;
+
+	if (this->pValue!=NULL) {
+		this->pValue->getTimeStamp (&ts);
+	}
+	else {
+		ts = osiTime::getCurrent();
+	}
+
+	nSec = ts.getNSec();
+	value.put (nSec);
+
 	return S_cas_success;
 }
 

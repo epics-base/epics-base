@@ -197,11 +197,6 @@ public:
 	virtual void scan() = 0;
 	
 	//
-	//
-	//
-	aitTimeStamp getTS();
-
-	//
 	// If no one is watching scan the PV with 10.0
 	// times the specified period
 	//

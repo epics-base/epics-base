@@ -77,6 +77,7 @@ of this distribution.
 #include "dbStaticLib.h"
 #include "initHooks.h"
 #include "asLib.h"
+#include "logClient.h"
 
 LOCAL int initialized=FALSE;
 

@@ -80,6 +80,8 @@ GCC_SFLAGS_YES = -static
 GCC_SFLAGS_NO =
 GCC_SLIBS_YES =
 GCC_SLIBS_NO =
+GCC_SHRLIB_CFLAGS_YES =  -fPIC
+GCC_SHRLIB_LDFLAGS_YES =  -shared
 
 G++_NORMAL = $(G++) -ansi -pedantic
 G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
@@ -97,13 +99,8 @@ G++_SFLAGS_NO =
 G++_SLIBS_YES =
 G++_SLIBS_NO =
 G++_DEPENDS_FLAG = -MM
-
-
-#--------------------------------------------------
-# by default the libraries used when linking the DLL are just
-# PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
-DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
-
+G++_SHRLIB_CFLAGS_YES =  -fPIC
+G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
 # C compiler
@@ -183,11 +180,6 @@ STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
  
 #--------------------------------------------------
-############# Link definitions
-#############LINK.c = $(LD) $(LDFLAGS) -o
-#############LINK.cc = $(LD_CXX) $(LDFLAGS) -o
-
-#--------------------------------------------------
 # ar definition default
 ARCMD = $(AR) $(ARFLAGS) $@
  
@@ -195,7 +187,6 @@ ARCMD = $(AR) $(ARFLAGS) $@
 # depends definition 
 DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > .DEPENDS
 
-#--------------------------------------------------
 #--------------------------------------------------
 
 # Include files

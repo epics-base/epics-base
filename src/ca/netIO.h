@@ -35,7 +35,6 @@
 class baseNMIU : public tsDLNode < baseNMIU >, // X aCC 655
         public chronIntIdRes < baseNMIU > {
 public:
-    virtual ~baseNMIU (); 
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     virtual void completion () = 0;
     virtual void exception ( int status, 
@@ -51,6 +50,11 @@ public:
 // not fond of the vf overhead to fetch this
 //
     virtual nciu & channel () const = 0;
+protected:
+    // SUN PRO generates undefined symbols if this is virtual
+    // (therefore it is protected)
+    // virtual
+    ~baseNMIU (); 
 };
 
 class netSubscription : public baseNMIU  {

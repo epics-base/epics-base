@@ -118,20 +118,16 @@ static long init_record(pwf,process)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-	long status;
-
 	
-	if(pwf->busy) return(1);
-	status = 0;
 	/* determine if wave form is to be rearmed*/
 	/* If not active then request rearm */
-	if(!pwf->pact) status = arm_wf(pwf);
+	if(!pwf->pact) arm_wf(pwf);
 	/* if already active then call is from myCallback. check rarm*/
 	else if(pwf->rarm) {
 		(void)arm_wf(pwf);
 		pwf->rarm = 0;
 	}
-	return(status);
+	return(0);
 }
 
 static long arm_wf(pwf)
@@ -140,10 +136,11 @@ struct waveformRecord   *pwf;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(wf_driver(XY566WF,pvmeio->card,myCallback,pwf)<0) {
+	if(xy566_driver(pvmeio->card,myCallback,pwf)<0) {
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);
 	}
-	return(1);
+	pwf->pact=TRUE;
+	return(0);
 }

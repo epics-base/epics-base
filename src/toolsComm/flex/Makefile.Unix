@@ -2,7 +2,7 @@ EPICS = ../../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-CMPLR = STRICT
+#CMPLR = STRICT
 
 YACC = $(EYACC)
 YACCOPT = -l -d

@@ -96,11 +96,7 @@ SRCS.c += ../recDynLink.c
 SRCS.c += ../recDynLinkTest.c
 SRCS.c += ../waveformRecord.c
 
-LIBOBJS = $(SRCS.c:../%.c=%.o)
-
-PROD = $(LIBOBJS)
-
-LIBNAME = recSup
+PROD = $(SRCS.c:../%.c=%.o)
 
 include $(TOP)/config/RULES.Vx
 

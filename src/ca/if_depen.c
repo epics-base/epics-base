@@ -54,6 +54,7 @@ static char	*sccsId = "@(#) $Id$";
  * 
  * Perhaps it is sufficient for this to return 127.0.0.1
  * (the loop back address)
+ * See Below
  */
 int local_addr(int s, struct sockaddr_in *plcladdr)
 {
@@ -141,16 +142,46 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	return OK;
 }
 
+
+#if 0
+/*
+ * An alternate sloution
+ * for os without the if routines
+ */
+/*
+ * local_addr()
+ *
+ * return 127.0.0.1
+ * (the loop back address)
+ */
+int local_addr (int s, struct sockaddr_in *plcladdr)
+{
+	ca_uint32_t	loopBackAddress = 0x7f000001;
+
+	plcladdr->sa_family = AF_INET;
+	plcladdr->sin_port = 0;
+	plcladdr->sin_addr.s_addr = ntohl (loopBackAddress);
+}
+#endif
+
 
 
 /*
- * caDiscoverInterfaces()
+ *  	caDiscoverInterfaces()
  *
- * Load the list with the broadcast address for all
- * interfaces found that support broadcast.
+ *	This routine is provided with the address of an ELLLIST a socket
+ * 	and a destination port number. When the routine returns there
+ *	will be one additional inet address (a caAddrNode) in the list 
+ *	for each inet interface found that is up and isnt a loop back 
+ *	interface. If the interface supports broadcast then I add its
+ *	broadcast address to the list. If the interface is a point to 
+ *	point link then I add the destination address of the point to
+ *	point link to the list. In either case I set the port number
+ *	in the address node to the port supplied in the argument
+ *	list.
  *
- * LOCK should be applied here for (pList)
- * (this is also called from the server)
+ * 	LOCK should be applied here for (pList)
+ * 	(this is also called from the server)
  */
 void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 {

@@ -47,6 +47,9 @@
  * .09	01-20-92	rac	add a code for VALID_ALARM and handle
  *				invalid values properly
  * .10	02-04-92	rac	allow multiple chanOpen for same name
+ * .11  02-18-92	rac	finally handle array channels on print
+ *				and export; add an export column for
+ *				text time stamp
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -302,6 +305,12 @@
 #   include <strings.h>
 #endif
 
+#define PRE_FL	1
+#define POST_FL	2
+#define SHOW_AR 4
+#define USE_QUO 8
+#define ENF_WID 16
+
 void sydChanFreeArrays();
 void sydInputGetIn();
 void sydSamplePrint1();
@@ -378,131 +387,6 @@ main()
     printf("sumBase= %f   sumLag= %f\n", sumBase, sumLag);
 }
 #endif
-
-/*+/internal******************************************************************
-* NAME	sydCvtDblToTxt - format a double for printing
-*
-* DESCRIPTION
-*	Formats a double for printing.  This routine is dedicated to
-*	getting as large a range of values as possible into a particular
-*	field width.
-*
-*	This routine doesn't attempt to handle extremely small values.
-*	It assumes that the field is large enough to handle the smallest
-*	significant value to be encountered.
-*
-* RETURNS
-*	void
-*
-* BUGS
-* o	extremely small values aren't handled well
-* o	this is the same as pprCvtDblToTxt; it ought to be in a general-
-*	purpose library somewhere
-*
-* NOTES
-* 1.	If the value can't be represented at all in the field, the sign
-*	followed by *'s appears.
-* 2.	In extreme cases, only the magnitude of the value will appear, as
-*	En or Enn.  For negative values, a - will precede the E.
-* 3.	When appropriate, the value is rounded to the nearest integer
-*	for formatting.
-*
-*-*/
-static void
-sydCvtDblToTxt(text, width, value, sigDig)
-char	*text;		/* O text representation of value */
-int	width;		/* I max width of text string (not counting '\0') */
-double	value;		/* I value to print */
-int	sigDig;		/* I max # of dec places to print */
-{
-    double	valAbs;		/* absolute value of caller's value */
-    int		wholeNdig;	/* number of digits in "whole" part of value */
-    double	logVal;		/* log10 of value */
-    int		decPlaces;	/* number of decimal places to print */
-    int		expWidth;	/* width needed for exponent field */
-    int		excess;		/* number of low order digits which
-				    won't fit into the field */
-
-    if (value == 0.) {
-	(void)strcpy(text, "0");
-	return;
-    }
-
-/*-----------------------------------------------------------------------------
-*    find out how many columns are required to represent the integer part
-*    of the value.  A - is counted as a column;  the . isn't.
-*----------------------------------------------------------------------------*/
-    valAbs = value>0 ? value : -value;
-    logVal = log10(valAbs);
-    wholeNdig = 1 + (int)logVal;
-    if (wholeNdig < 0)
-	wholeNdig = 1;
-    if (value < 0.)
-	wholeNdig++;
-    if (wholeNdig < width-1) {
-/*-----------------------------------------------------------------------------
-*    the integer part fits well within the field.  Find out how many
-*    decimal places can be printed (honoring caller's sigDig limit).
-*----------------------------------------------------------------------------*/
-	decPlaces = width - wholeNdig - 1;
-	if (sigDig < decPlaces)
-	    decPlaces = sigDig;
-	if (sigDig > 0)
-	    (void)sprintf(text, "%.*f", decPlaces, value);
-	else
-	    (void)sprintf(text, "%d", nint(value));
-    }
-    else if (wholeNdig == width || wholeNdig == width-1) {
-/*-----------------------------------------------------------------------------
-*    The integer part just fits within the field.  Print the value as an
-*    integer, without printing the superfluous decimal point.
-*----------------------------------------------------------------------------*/
-	(void)sprintf(text, "%d", nint(value));
-    }
-    else {
-/*-----------------------------------------------------------------------------
-*    The integer part is too large to fit within the caller's field.  Print
-*    with an abbreviated E notation.
-*----------------------------------------------------------------------------*/
-	expWidth = 2;				/* assume that En will work */
-	excess = wholeNdig - (width - 2);
-	if (excess > 999) {
-	    expWidth = 5;			/* no! it must be Ennnn */
-	    excess += 3;
-	}
-	else if (excess > 99) {
-	    expWidth = 4;			/* no! it must be Ennn */
-	    excess += 2;
-	}
-	else if (excess > 9) {
-	    expWidth = 3;			/* no! it must be Enn */
-	    excess += 1;
-	}
-/*-----------------------------------------------------------------------------
-*	Four progressively worse cases, with all or part of exponent fitting
-*	into field, but not enough room for any of the value
-*		Ennn		positive value; exponent fits
-*		-Ennn		negative value; exponent fits
-*		+****		positive value; exponent too big
-*		-****		negative value; exponent too big
-*----------------------------------------------------------------------------*/
-	if (value >= 0. && expWidth == width)
-	    (void)sprintf(text, "E%d", nint(logVal));
-	else if (value < 0. && expWidth == width-1)
-	    (void)sprintf(text, "-E%d", nint(logVal));
-	else if (value > 0. && expWidth > width)
-	    (void)sprintf(text, "%.*s", width, "+*******");
-	else if (value < 0. && expWidth > width-1)
-	    (void)sprintf(text, "%.*s", width, "-*******");
-	else {
-/*-----------------------------------------------------------------------------
-*	The value can fit, in exponential notation
-*----------------------------------------------------------------------------*/
-	    (void)sprintf(text, "%dE%d",
-			nint(value/exp10((double)excess)), excess);
-	}
-    }
-}
 
 /*+/subr**********************************************************************
 * NAME	sydChanClose - delete a channel from a synchronous set spec
@@ -685,24 +569,6 @@ int	trig;		/* I 0,1 if this is data,trigger channel */
     if (ppSChan != NULL)
 	*ppSChan = NULL;
 
-#if 0
-    if ((pSChan = sydChanFind(pSspec, chanName)) != NULL) {
-	if (trig == 0) {
-	    if (pSChan->dataChan == 1)
-		return S_syd_ERROR;
-	}
-	else {
-	    if (pSChan->trigChan == 0) {
-		pSChan->trigChan = 1;
-		if (ppSChan != NULL)
-		    *ppSChan = pSChan;
-	    }
-	    else
-		return S_syd_ERROR;
-	}
-    }
-#endif
-
 /*-----------------------------------------------------------------------------
 *    allocate and initialize an empty synchronous channel structure
 *----------------------------------------------------------------------------*/
@@ -843,7 +709,7 @@ SYD_CHAN *pSChan;	/* I sync channel pointer */
         pSChan->precision = 0;
     }
     if (pSChan->dbrType != DBR_TIME_ENUM) {
-	if (pSChan->precision > 10 || pSChan->precision < 0)
+	if (pSChan->precision > 10 || pSChan->precision <= 0)
 	    pSChan->precision = 3;
     }
 
@@ -1781,6 +1647,9 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 * NAME	sydInputSync - synchronize input buffers with disk for `by channel'
 *
 * DESCRIPTION
+*	Get in sync with an archiver `by channel' data file, which may
+*	have had information written to it since the sydOpen call or
+*	the last sydInputSync call.
 *
 * RETURNS
 *	S_syd_OK, or
@@ -1912,8 +1781,6 @@ TS_STAMP *pStamp;	/* I stamp at which to position; NULL to rewind */
 * RETURNS
 *
 * BUGS
-* o	doesn't handle array channels.  There needs to be an option
-*	which puts elementCount prior to printing values
 * o	options should be #defined symbols
 *
 * SEE ALSO
@@ -1928,6 +1795,8 @@ FILE	*out;		/* IO stream pointer for output */
 int	option;		/* I filtering option */
 			/*   1 spreadsheet; delta time and values */
 			/*   2 spreadsheet; delta time and values and status */
+			/*   3 spreadsheet; delta time, count, and values */
+			/*   4 spreadsheet; as for 3, with status */
 int	samp;		/* I sample number in synchronous set */
 {
     SYD_CHAN	*pSChan;	/* pointer to channel in synchronous set */
@@ -1937,27 +1806,40 @@ int	samp;		/* I sample number in synchronous set */
 /*-----------------------------------------------------------------------------
 * generate headings, depending on option:
 * 1==>	"mm/dd/yy hh:mm:ss.msc"
-*	time	name1	name2	...
+*	date	delta	name1	name2	...
+*	stamp	sec	egu	egu	...
 *
 * 2==>	"mm/dd/yy hh:mm:ss.msc"
-*	time	stat	name1	stat	name2	...
+*	date	delta	stat	name1	stat	name2	...
+*	stamp	sec	stat	egu	stat	egu	...
+*
+* 3==>	"mm/dd/yy hh:mm:ss.msc"
+*	date	delta	nEl	name1	nEl	name2	...
+*	stamp	sec	nEl	egu	nEl	egu	...
+*
+* 4==>	"mm/dd/yy hh:mm:ss.msc"
+*	date	delta	stat	nEl	name1	stat	nEl	name2	...
+*	stamp	sec	stat	nEl	egu	stat	nEl	egu	...
 *----------------------------------------------------------------------------*/
     if (samp == pSspec->firstData) {
-	(void)fprintf(out, "\"%s\"\n\"time\"", tsStampToText(
+	(void)fprintf(out, "\"%s\"\n\"date\"\t\"time\"", tsStampToText(
 		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
 	    if (pSChan->dataChan) {
-		if (option == 2)
+		if (option == 2 || option == 4)
 		    (void)fprintf(out, "\t\"stat\"");
+		if (option == 3 || option == 4)
+		    (void)fprintf(out, "\t\"nEl\"");
 		(void)fprintf(out, "\t\"%s\"", pSChan->name);
 	    }
 	}
-	(void)fprintf(out, "\n");
-	(void)fprintf(out, "\"seconds\"");
+	(void)fprintf(out, "\n\"stamp\"\t\"seconds\"");
 	for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan = pSChan->pNext) {
 	    if (pSChan->dataChan) {
-		if (option == 2)
+		if (option == 2 || option == 4)
 		    (void)fprintf(out, "\t\"stat\"");
+		if (option == 3 || option == 4)
+		    (void)fprintf(out, "\t\"nEl\"");
 		(void)fprintf(out, "\t\"%s\"", pSChan->EGU);
 	    }
 	}
@@ -1967,12 +1849,17 @@ int	samp;		/* I sample number in synchronous set */
 /*-----------------------------------------------------------------------------
 *    print the value for each channel for this sample.
 *----------------------------------------------------------------------------*/
-    (void)fprintf(out, "%.3f", pSspec->pDeltaSec[samp]);
+    tsStampToText(&pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText);
+    (void)fprintf(out, "\"%s\"%c%.3f", stampText,'\t',pSspec->pDeltaSec[samp]);
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (option == 1)
-	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, 1, 1, samp);
+	    sydSamplePrint1(pSChan, out, '\t', USE_QUO, 0, samp);
 	else if (option == 2)
-	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, 1, 1, samp);
+	    sydSamplePrint1(pSChan, out, '\t', PRE_FL|USE_QUO, 0, samp);
+	else if (option == 3)
+	    sydSamplePrint1(pSChan, out, '\t', USE_QUO|SHOW_AR, 0, samp);
+	else if (option == 4)
+	    sydSamplePrint1(pSChan, out, '\t', PRE_FL|USE_QUO|SHOW_AR, 0, samp);
     }
     (void)fprintf(out, "\n");
 }
@@ -1981,6 +1868,14 @@ int	samp;		/* I sample number in synchronous set */
 * NAME	sydSamplePrint
 *
 * DESCRIPTION
+*	Print the values for all channels in a particular sample.  Various
+*	aspects of formatting can be specified with arguments, including
+*	the printing of column headings, number of columns, column width,
+*	and the inclusion of printer control characters.
+*
+*	For array channels, only the first value of the array is printed
+*	on the line with the time stamp--the full array is printed on
+*	following lines.
 *
 * RETURNS
 *	S_syd_OK
@@ -1996,10 +1891,12 @@ int	samp;		/* I sample number in synchronous set */
 long
 sydSamplePrint(pSspec, out, formatFlag, headerFlag, nCol, colWidth, samp)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
-FILE	*out;		/* IO stream pointer for output */
+FILE	*out;		/* I stream pointer for output */
 int	formatFlag;	/* I ==1 causes page formatting for printing */
 int	headerFlag;	/* I ==1 causes printing of column headings */
-int	nCol;		/* I >0 causes that many table columns, folded lines */
+int	nCol;		/* I >0 specifies number of table columns,
+				with folded lines to accomodate excess
+				channels */
 int	colWidth;	/* I >0 specifies column width, in characters */
 int	samp;		/* I sample number in synchronous set */
 {
@@ -2111,11 +2008,27 @@ int	samp;		/* I sample number in synchronous set */
 		(void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
 		colNum = 0;
 	    }
-	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, colWidth, 0, samp);
+	    sydSamplePrint1(pSChan, out, ' ', POST_FL|ENF_WID, colWidth, samp);
 	    colNum++;
 	}
     }
     (void)fprintf(out, "\n");
+/*-----------------------------------------------------------------------------
+*    if any of the channels is an array channel, print the full array following
+*    the time-stamped line (which had only the first value)
+*----------------------------------------------------------------------------*/
+    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
+	if (pSChan->dataChan && pSChan->elCount > 1) {
+	    (void)fprintf(out, "%s", pSChan->name);
+	    for (i=0; i<pSChan->elCount; i++) {
+		if (i%nCol == 0)
+		    (void)fprintf(out, "\n%5d", i);
+		(void)fputc(' ', out);
+		sydSamplePrintVal(out, pSChan, samp, i, ENF_WID, colWidth);
+	    }
+	    (void)fprintf(out, "\n");
+	}
+    }
 
     return S_syd_OK;
 }
@@ -2128,31 +2041,29 @@ int	samp;		/* I sample number in synchronous set */
 * RETURNS
 *	void
 *
-* BUGS
-* o	doesn't yet print entire array
-*
-* SEE ALSO
-*
-* EXAMPLE
-*
 *-*/
 static void
-sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, colWidth,
-	quotes, sampNum)
+sydSamplePrint1(pSChan, out, sep, flags, colWidth, sampNum)
 SYD_CHAN *pSChan;	/* I pointer to sync channel */
 FILE	*out;		/* I file pointer for writing value */
 char	sep;		/* I character to use a a prefix for each field,
 				as a separator; usually ' ' or '\t' */
-int	preFlag;	/* I != 0 prints status flag prior to value */
-int	postFlag;	/* I != 0 prints status flag following value */
-int	showArray;	/* I != 0 to show all array elements, not just 1st */
+int	flags;		/* I flags, or'd together, or 0:
+		PRE_FL     print status flag, prior to value
+		POST_FL    print status flag, after value
+		SHOW_AR    print all array values, preceded by
+				array element count
+		ENF_WID    enforce column width
+		USE_QUO    put quotes around text items
+			*/
 int	colWidth;	/* I >0 specifies column width, in characters;
 				== 2 requests only printing status code*/
-int	quotes;		/* I != 0 prints status, etc., in quotes */
 int	sampNum;	/* I sample number in sync set */
 {
     int		i;
     chtype	type;		/* type of value */
+    char	text[100];
+    char	*special;	/* != NULL says print "msg", not value */
 
     type = pSChan->dbrType;
 
@@ -2163,96 +2074,84 @@ int	sampNum;	/* I sample number in sync set */
 	    (void)fprintf(out, " %c", pSChan->pDataCodeL[sampNum]);
 	return;
     }
-    if (preFlag || postFlag) {
+    if (flags&PRE_FL || flags&POST_FL) {
 	if (colWidth > 3)
 	    colWidth -= 3;
     }
 
-    if (preFlag) {
+    if (flags&PRE_FL) {
 	if (pSChan->pData == NULL) {
-	    if (!quotes)
-		(void)fprintf(out, "%c%c%c", sep,'M','D');
-	    else
+	    if (flags&USE_QUO)
 		(void)fprintf(out, "%c\"%c%c\"", sep,'M','D');
+	    else
+		(void)fprintf(out, "%c%c%c", sep,'M','D');
 	}
 	else {
-	    if (!quotes) {
-		(void)fprintf(out, "%c%c%c", sep,
+	    if (flags&USE_QUO) {
+		(void)fprintf(out, "%c\"%c%c\"", sep,
 		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
 	    }
 	    else {
-		(void)fprintf(out, "%c\"%c%c\"", sep,
+		(void)fprintf(out, "%c%c%c", sep,
 		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
 	    }
 	}
     }
     (void)fputc(sep, out);
-    if (pSChan->pData == NULL) {
-	if (!quotes)
-	    (void)fprintf(out, "%*s", colWidth, "no_data");
-	else
-	    (void)fprintf(out, "\"%*s\"", colWidth, "no_data");
+    special = NULL;
+    if (pSChan->pData == NULL)
+	special = "no_data";
+    else if (pSChan->pFlags[sampNum].eof)
+	special = "EOF";
+    else if (pSChan->pFlags[sampNum].missing)
+	special = "no_data";
+    else if (pSChan->pDataCodeL[sampNum] == 'I' &&
+				flags&PRE_FL == 0 && flags&POST_FL == 0) {
+	special = "invalid";
     }
-    else if (pSChan->pFlags[sampNum].eof) {
-	if (!quotes)
-	    (void)fprintf(out, "%*s", colWidth, "EOF");
+
+    if (special == NULL) {
+	if (flags&SHOW_AR) {
+	    (void)fprintf(out, "%d", pSChan->elCount);
+	    for (i=0; i<pSChan->elCount; i++) {
+		(void)fputc(sep, out);
+		sydSamplePrintVal(out, pSChan, sampNum, i, flags, colWidth);
+	    }
+	}
 	else
-	    (void)fprintf(out, "\"%*s\"", colWidth, "EOF");
-    }
-    else if (pSChan->pFlags[sampNum].missing) {
-	if (!quotes)
-	    (void)fprintf(out, "%*s", colWidth, "no_data");
-	else
-	    (void)fprintf(out, "\"%*s\"", colWidth, "no_data");
-    }
-    else if (pSChan->pDataCodeL[sampNum] == 'I' && !preFlag && !postFlag) {
-	if (!quotes)
-	    (void)fprintf(out, "%*s", colWidth, "invalid");
-	else
-	    (void)fprintf(out, "\"%*s\"", colWidth, "invalid");
+	    sydSamplePrintVal(out, pSChan, sampNum, 0, flags, colWidth);
     }
     else {
-	if (type == DBR_TIME_STRING)
-	    (void)fprintf(out, "%*s", colWidth, ((char *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_FLOAT)
-	    (void)fprintf(out, "%*.*f", colWidth,
-			pSChan->precision, ((float *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_SHORT)
-	    (void)fprintf(out, "%*d", colWidth,
-			((short *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_DOUBLE)
-	    (void)fprintf(out, "%*.*f", colWidth,
-		pSChan->precision, ((double *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_LONG)
-	    (void)fprintf(out, "%*d", colWidth, ((long *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_CHAR)
-	    (void)fprintf(out, "%*d", colWidth, ((char *)pSChan->pData)[sampNum]);
-	else if (type == DBR_TIME_ENUM) {
-	    short	val;
-
-	    val = ((short *)pSChan->pData)[sampNum];
-	    if (val < pSChan->grBuf.genmval.no_str)
-		(void)fprintf(out, "\"%*s\"", colWidth,
-				pSChan->grBuf.genmval.strs[val]);
+	if (flags&SHOW_AR)
+	    (void)fprintf(out, "1");
+	if (flags&USE_QUO) {
+	    if (flags&ENF_WID)
+		(void)fprintf(out, "\"%*.*s\"", colWidth, colWidth, special);
 	    else
-		(void)fprintf(out, "%*d", colWidth, val);
+		(void)fprintf(out, "\"%s\"", special);
+	}
+	else {
+	    if (flags&ENF_WID)
+		(void)fprintf(out, "%*.*s", colWidth, colWidth, special);
+	    else
+		(void)fprintf(out, "%s", special);
 	}
     }
 
-    if (postFlag) {
+    if (flags&POST_FL) {
 	if (pSChan->pData == NULL) {
-	    if (!quotes)
-		(void)fprintf(out, "%c%c%c", sep,'M','D');
-	    else
+	    if (flags&USE_QUO)
 		(void)fprintf(out, "%c\"%c%c\"", sep,'M','D');
+	    else
+		(void)fprintf(out, "%c%c%c", sep,'M','D');
 	}
 	else {
-	    if (!quotes) {
-		(void)fprintf(out, "%c%c%c", sep,
+	    if (flags&USE_QUO) {
+		(void)fprintf(out, "%c\"%c%c\"", sep,
 		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
 	    }
 	    else {
-		(void)fprintf(out, "%c\"%c%c\"", sep,
+		(void)fprintf(out, "%c%c%c", sep,
 		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
 	    }
 	}
@@ -2260,44 +2159,85 @@ int	sampNum;	/* I sample number in sync set */
 }
 
 /*+/internal******************************************************************
-* NAME	sydSamplePrintArray
+* NAME	sydSamplePrintVal - print a single value
 *
 *-*/
 static
-sydSamplePrintArray(pSChan, sampNum)
-SYD_CHAN *pSChan;	/* I pointer to sync channel */
-int	sampNum;	/* I sample number in sync set */
+sydSamplePrintVal(out, pSChan, sampNum, sub, flags, colWidth)
+FILE	*out;
+SYD_CHAN *pSChan;
+int	sampNum;
+int	sub;		/* subscript for array channels */
+int	flags;
+int	colWidth;
 {
-    int		nEl, nBytes, i;
-    char	*pSrc;
-    double	value;
-    char	text[7];
+    int		myType;		/* 0,1,2 for lng, dbl, str */
+    chtype	type;		/* type of value */
+    char	text[100];
+    long	lngVal;
+    double	dblVal;
+    char	*strVal;
 
-    nEl = pSChan->elCount;
-    nBytes = dbr_value_size[pSChan->dbrType];
-    pSrc = (char *)pSChan->pData + sampNum * nBytes * nEl;
+    type = pSChan->dbrType;
 
-    (void)printf("%s %d\n", pSChan->name, nEl);
-    for (i=0; i<nEl; i++) {
-	if (i % 10 == 0)
-	    (void)printf("%05d ", i);
-        if      (dbr_type_is_FLOAT(pSChan->dbrType))
-            value = *(float *)pSrc;
-        else if (dbr_type_is_SHORT(pSChan->dbrType))
-            value = *(short *)pSrc;
-        else if (dbr_type_is_DOUBLE(pSChan->dbrType))
-            value = *(double *)pSrc;
-        else if (dbr_type_is_LONG(pSChan->dbrType))
-            value = *(long *)pSrc;
-        else if (dbr_type_is_CHAR(pSChan->dbrType))
-            value = *(unsigned char *)pSrc;
-        else if (dbr_type_is_ENUM(pSChan->dbrType))
-            value = *(short *)pSrc;
-	sydCvtDblToTxt(text, 6, value, pSChan->precision);
-	(void)printf(" %6s", text);
-	if ((i+1) % 10 == 0 || i+1 >= nEl)
-	    (void)printf("\n");
-	pSrc += nBytes;
+    if (type == DBR_TIME_STRING) {
+	myType = 2;
+	strVal = ((char *)pSChan->pData) +
+	    sampNum * db_strval_dim * pSChan->elCount + sub * db_strval_dim;
+    }
+    else if (type == DBR_TIME_FLOAT) {
+	float	*p;
+	myType = 1;
+	p = ((float *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	dblVal = (double)(*p);
+    }
+    else if (type == DBR_TIME_SHORT) {
+	short	*p;
+	myType = 0;
+	p = ((short *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	lngVal = (long)(*p);
+    }
+    else if (type == DBR_TIME_DOUBLE) {
+	double	*p;
+	myType = 1;
+	p = ((double *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	dblVal = *p;
+    }
+    else if (type == DBR_TIME_LONG) {
+	long	*p;
+	myType = 0;
+	p = ((long *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	lngVal = *p;
+    }
+    else if (type == DBR_TIME_CHAR) {
+	char	*p;
+	myType = 0;
+	p = ((char *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	lngVal = (long)(*p);
+    }
+    else if (type == DBR_TIME_ENUM) {
+	short	*p;
+	myType = 0;
+	p = ((short *)pSChan->pData) + sampNum * pSChan->elCount + sub;
+	lngVal = (long)(*p);
+	if (lngVal < pSChan->grBuf.genmval.no_str)
+	    myType = 2, strVal = pSChan->grBuf.genmval.strs[lngVal];
+    }
+
+    if (flags&ENF_WID) {
+	if (myType == 0)
+	    strVal=text, cvtLngToTxt(text, colWidth, lngVal);
+	else if (myType == 1)
+	    strVal=text,cvtDblToTxt(text, colWidth, dblVal, pSChan->precision);
+	(void)fprintf(out, "%*.*s", colWidth, colWidth, strVal);
+    }
+    else {
+	if (myType == 0)
+	    (void)fprintf(out, "%*d", colWidth, lngVal);
+	else if (myType == 1)
+	    (void)fprintf(out, "%*.*f", colWidth, pSChan->precision, dblVal);
+	else
+	    (void)fprintf(out, "%*s", colWidth, strVal);
     }
 }
 
@@ -2343,7 +2283,7 @@ int	samp;		/* I sample number in synchronous set */
 	    (void)fprintf(pFile, "%s %s %d %d", SydChanName(pSChan),
 		dbf_type_to_text(SydChanDbfType(pSChan)),
 		pSChan->pDataAlSev[samp], pSChan->pDataAlStat[samp]);
-	    sydSamplePrint1(pSChan, pFile, ' ', 0, 0, 1, 1, 0, samp);
+	    sydSamplePrint1(pSChan, pFile, ' ', SHOW_AR, 0, samp);
 	    (void)fprintf(pFile, "\n");
 	}
     }

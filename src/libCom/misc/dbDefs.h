@@ -105,10 +105,4 @@
 #include "errMdef.h"
 #include "epicsTypes.h"
 
-#ifdef __STDC__
-int coreRelease(void);
-#else
-int coreRelease();
-#endif /*__STDC__*/
-
 #endif /* INCdbDefsh */

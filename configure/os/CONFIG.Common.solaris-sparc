@@ -46,7 +46,7 @@ GNU_DIR = /opt/gnu
 INCLUDES_READLINE = -I$(GNU_DIR)/include
 LDFLAGS_READLINE += -R$(GNU_DIR)/lib
 LDFLAGS_READLINE += -L$(GNU_DIR)/lib
-# There is a problem with the readline shared library
-#LDLIBS_READLINE = -lreadline -lcurses
-LDLIBS_READLINE += -Bstatic -lreadline -Bdynamic -lcurses
+LDLIBS_READLINE = -lreadline -lcurses
+# Use archive if there is a problem with the readline shared library
+#LDLIBS_READLINE = -Bstatic -lreadline -Bdynamic -lcurses
 

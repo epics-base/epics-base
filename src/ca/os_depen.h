@@ -35,22 +35,12 @@
 
 static char *os_depenhSccsId = "$Id$";
 
-/*
- * errno.h is ANSI however we
- * include it here because of differences
- * between error code sets provided by
- * each socket library
- */
 #ifdef UNIX
-#	include <errno.h>
-#	include <time.h>
 #	define CA_OS_CONFIGURED
 #endif
 
 #ifdef vxWorks
 #	include <vxWorks.h>
-#	include <errno.h>
-
 #	include <ioLib.h>
 #	include <tickLib.h>
 #	include <taskHookLib.h>
@@ -73,32 +63,10 @@ static char *os_depenhSccsId = "$Id$";
 #endif
 
 #ifdef VMS
-#if !defined(UCX) 
-#	include <tcp/errno.h>
-#else
-#       include <errno>
-#endif
-#	include <ssdef>
-#	include <stsdef>
-#	include <iodef.h>
-#	include <psldef.h>
-#       include <prcdef.h>
-#       include <descrip.h>
-#	define MAXHOSTNAMELEN 75
-#ifdef UCX /* GeG 09-DEC-1992 */
-#       include <sys/ucx$inetdef.h>
-#       include <ucx.h>
-#else
-#	include	<net/if.h>
-#       include <vms/inetiodef.h>
-#       include <sys/ioctl.h>
-#endif
 #	define CA_OS_CONFIGURED
 #endif /*VMS*/
 
 #ifdef WIN32
-#	include <errno.h>
-#	include <time.h>
 #	define CA_OS_CONFIGURED
 #endif /*WIN32*/
 

@@ -95,29 +95,29 @@ char * pResourceFilename;
     }
     coreRelease();
     epicsSetEnvParams();
-
+/*
     status = iocLogInit();
     if(status!=0){
         logMsg("iocInit Failed to Initialize Ioc Log Client \n");
     }
-
+*/
     status=sdrLoad(pfilename);
-    if(status!=<0) {
+    if(status!=0) {
 	logMsg("iocInit aborting because sdrLoad failed\n");
 	return(-1);
     }
 
     status=getResources(pResourceFilename);
-    if(status!=<0) {
+    if(status!=0) {
 	logMsg("iocInit aborting because getResources failed\n");
 	return(-1);
     }
     initialized = TRUE;
-    if(initDrvSup()!=<0) logMsg("iocInit: Drivers Failed to Initialized\n");
-    if(initRecSup()!=<0) logMsg("iocInit: Record Support Failed to Initialized\n");
-    if(initDevSup()!=<0) logMsg("iocInit: Device Support Failed to Initialized\n");
+    if(initDrvSup()!=0) logMsg("iocInit: Drivers Failed during Initialization\n");
+    if(initRecSup()!=0) logMsg("iocInit: Record Support Failed during Initialization\n");
+    if(initDevSup()!=0) logMsg("iocInit: Device Support Failed during Initialization\n");
     ts_init();
-    if(initDatabase()!=<0) logMsg("iocInit: Database Failed to Initialized\n");
+    if(initDatabase()!=0) logMsg("iocInit: Database Failed during Initialization\n");
 
     /* if user exit exists call it */
     strcpy(name,"_");
@@ -308,9 +308,10 @@ static long initDatabase()
 
 		/*initialize fields rset and pdba*/
 		(struct rset *)(precord->rset) = prset;
+		precord->pdba = (struct dbAddr *)calloc(1,sizeof(struct dbAddr));
 		strncpy(name,precord->name,PVNAME_SZ);
 		strcat(name,".VAL");
-		if(dbNameToAddr(name,&precord->pdba)) {
+		if(dbNameToAddr(name,precord->pdba)) {
 			status = S_db_notFound;
 			errMessage(status,
 				"initDatbase logic error: dbNameToAddr failed");

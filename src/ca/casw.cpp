@@ -241,6 +241,15 @@ int main ( int argc, char ** argv )
 
                 epicsTime currentTime = epicsTime::getCurrent();
 
+                if ( interest > 1) {
+                    char date[64];
+                    currentTime.strftime ( date, sizeof ( date ), 
+                        "%Y-%m-%d %T.%09f");
+                    char host[64];
+                    ipAddrToA ( &ina, host, sizeof ( host ) );
+                    printf ( "beacon  %-40s %s\n", host, date );
+                }
+
                 /*
                  * look for it in the hash table
                  */
@@ -256,7 +265,7 @@ int main ( int argc, char ** argv )
                             "%Y-%m-%d %T.%09f");
                         char host[64];
                         ipAddrToA ( &ina, host, sizeof ( host ) );
-                        printf ( "%-40s %s\n", 
+                        printf ( "anomaly %-40s %s\n", 
                             host, date );
                         if ( interest > 0 ) {
                             printf ( "\testimate=%f current=%f\n", 

@@ -30,6 +30,7 @@ class ipAddrToAsciiEngine : public osiThread {
 public:
     epicsShareFunc ipAddrToAsciiEngine ( const char *pName );
     epicsShareFunc ~ipAddrToAsciiEngine ();
+    epicsShareFunc void show ( unsigned level ) const;
 private:
     tsDLList < ipAddrToAsciiAsynchronous > labor;
     osiEvent event;
@@ -56,6 +57,7 @@ public:
     epicsShareFunc bool ioInitiate ( ipAddrToAsciiEngine &engine );
     epicsShareFunc bool identicalAddress ( const osiSockAddr &addr ) const;
     epicsShareFunc osiSockAddr address () const;
+    epicsShareFunc void show ( unsigned level ) const;
     virtual void ioCompletionNotify ( const char *pHostName ) = 0;
 private:
     osiSockAddr addr;

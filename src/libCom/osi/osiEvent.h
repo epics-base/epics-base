@@ -20,9 +20,9 @@ public:
     ~osiEvent ();
     void signal ();
     void wait (); /* blocks until full */
-    bool wait (double timeOut); /* false if empty at time out */
+    bool wait ( double timeOut ); /* false if empty at time out */
     bool tryWait (); /* false if empty */
-    void show (unsigned level);
+    void show ( unsigned level ) const;
 
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
@@ -89,9 +89,9 @@ inline bool osiEvent::tryWait ()
     }
 }
 
-inline void osiEvent::show (unsigned level)
+inline void osiEvent::show ( unsigned level ) const
 {
-    semBinaryShow (this->id, level);
+    semBinaryShow ( this->id, level );
 }
 
 #endif /* osiEventh */

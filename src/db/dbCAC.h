@@ -55,6 +55,7 @@ public:
     dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
     int begin ( struct dbAddr &addr, unsigned mask );
     void destroy ();
+    void show ( unsigned level ) const;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 private:
@@ -77,6 +78,7 @@ public:
     int initiatePutNotify (cacNotify &notify, struct dbAddr &addr, 
             unsigned type, unsigned long count, const void *pValue);
     void putNotifyDestroyNotify ();
+    void show ( unsigned level ) const;
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 private:
@@ -98,7 +100,7 @@ public:
     void subscriptionUpdate ( unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacNotifyIO &notify );
     dbEventSubscription subscribe ( dbSubscriptionIO &subscr, unsigned mask );
-
+    void show ( unsigned level ) const;
     static void * operator new ( size_t size);
     static void operator delete ( void *pCadaver, size_t size );
 
@@ -107,7 +109,7 @@ private:
     char *pGetCallbackCache;
     dbPutNotifyBlocker *pBlocker;
     unsigned long getCallbackCacheSize;
-    tsDLList <dbSubscriptionIO> eventq;
+    tsDLList < dbSubscriptionIO > eventq;
     dbAddr addr;
 
     static tsFreeList < dbChannelIO > freeList;
@@ -143,6 +145,7 @@ public:
     void subscriptionUpdate ( struct dbAddr &addr, unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacNotifyIO &notify );
     dbEventSubscription subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask );
+    void show ( unsigned level ) const;
 private:
     dbEventCtx ctx;
     char *pEventCallbackCache;

@@ -104,5 +104,17 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     pBlocker->block.signal ();
 }
 
+void dbPutNotifyBlocker::show ( unsigned level ) const
+{
+    printf ( "put notify blocker at %p\n", this );
+    if ( level > 0u ) {
+        printf ( "\tdbPutNotifyIO at %p\n", this->pPN );
+        printf ( "\tdbChannelIO at %p\n", &this->chan );
+    }
+    if ( level > 1u ) {
+        this->block.show ( level - 2u );
+    }
+}
+
 
 

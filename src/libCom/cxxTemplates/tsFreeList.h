@@ -75,7 +75,7 @@ void * tsFreeList < T, N, DEBUG_LEVEL >::allocate (size_t size)
 {
     tsFreeListItem < T, DEBUG_LEVEL > *p;
 
-    if ( size != sizeof ( T ) ) {
+    if ( size != sizeof ( T ) || N == 0u ) {
         return ::operator new (size);
     }
 
@@ -115,14 +115,12 @@ void tsFreeList < T, N, DEBUG_LEVEL >::release (void *pCadaver, size_t size)
     if ( size != sizeof ( T ) ) {
         ::operator delete ( pCadaver );
     }
-    else {
-        if ( pCadaver ) {
-            this->lock ();
-            tsFreeListItem < T, DEBUG_LEVEL > *p = 
-                static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
-            p->pNext = this->pFreeList;
-            this->pFreeList = p;
-            this->unlock ();
-        }
+    else if ( pCadaver ) {
+        this->lock ();
+        tsFreeListItem < T, DEBUG_LEVEL > *p = 
+            static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
+        p->pNext = this->pFreeList;
+        this->pFreeList = p;
+        this->unlock ();
     }
 }

@@ -186,3 +186,29 @@ void dbChannelIO::unlockOutstandingIO () const
 {
 }
 
+void dbChannelIO::show ( unsigned level ) const
+{
+    this->lock ();
+    printf ("channel at %p attached to local database record %s\n", 
+        this, this->addr.precord->name );
+
+    if ( level > 0u ) {
+        printf ( "\ttype %s, element count %li, field at %p\n",
+            dbf_type_to_text ( this->addr.dbr_field_type ), this->addr.no_elements,
+            this->addr.pfield );
+    }
+    if ( level > 1u ) {
+        this->serviceIO.show ( level - 2u );
+        printf ( "\tget callback cache at %p, with size %lu\n",
+            this->pGetCallbackCache, this->getCallbackCacheSize );
+        tsDLIterConstBD < dbSubscriptionIO > pItem = this->eventq.first ();
+        while ( pItem.valid () ) {
+            pItem->show ( level - 2u );
+            pItem++;
+        }
+        if ( this->pBlocker ) {
+            this->pBlocker->show ( level - 2u );
+        }
+    }
+    this->unlock ();
+}

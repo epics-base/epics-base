@@ -19,10 +19,10 @@ public:
     osiMutex ();
     ~osiMutex ();
     void lock () const; /* blocks until success */
-    bool lock (double timeOut) const; /* true if successful */
+    bool lock ( double timeOut ) const; /* true if successful */
     bool tryLock () const; /* true if successful */
     void unlock () const;
-    void show (unsigned level) const;
+    void show ( unsigned level ) const;
 
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */

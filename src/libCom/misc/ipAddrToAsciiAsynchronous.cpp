@@ -90,6 +90,30 @@ void ipAddrToAsciiEngine::entryPoint ()
     this->threadExit.signal ();
 }
 
+void ipAddrToAsciiEngine::show ( unsigned level ) const
+{
+    this->mutex.lock ();
+    printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
+        this, this->labor.count () );
+    if ( level > 0u ) {
+        tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.first ();
+        while ( pItem.valid () ) {
+            pItem->show ( level - 1u );
+        }
+        printf ( "nextId = %u\n", this->nextId );
+    }
+    if ( level > 1u ) {
+        printf ( "mutex:\n" );
+        this->mutex.show ( level - 2u );
+        printf ( "event:\n" );
+        this->event.show ( level - 2u );
+        printf ( "exitFlag  boolean = %u\n", this->exitFlag );
+        printf ( "exit event:\n" );
+        this->threadExit.show ( level - 2u );
+    }
+    this->mutex.unlock ();
+}
+
 ipAddrToAsciiAsynchronous::ipAddrToAsciiAsynchronous 
     ( const osiSockAddr &addrIn ) :
     addr ( addrIn ), pEngine ( 0u )
@@ -127,4 +151,17 @@ epicsShareFunc bool ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine 
     }
 
     return success;
+}
+
+void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
+{
+    char ipAddr [64];
+
+    ipAddrToAsciiEngine::mutex.lock ();
+    sockAddrToA ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
+    printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
+    if ( level > 0u ) {
+        printf ( "\tidentifier %u, engine %p\n", this->id, this->pEngine );
+    }
+    ipAddrToAsciiEngine::mutex.unlock ();
 }

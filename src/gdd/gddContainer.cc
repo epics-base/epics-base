@@ -16,18 +16,6 @@
 // Date:	3/97
 //
 // $Id$
-// $Log$
-// Revision 1.4  1999/05/10 23:42:25  jhill
-// fixed many const releated problems
-//
-// Revision 1.3  1999/04/30 15:24:53  jhill
-// fixed improper container index bug
-//
-// Revision 1.2  1997/04/23 17:13:03  jhill
-// fixed export of symbols from WIN32 DLL
-//
-// Revision 1.1  1997/03/21 01:56:05  jbk
-// *** empty log message ***
 //
 #define epicsExportSharedSymbols
 #include "gdd.h"

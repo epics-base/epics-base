@@ -283,28 +283,3 @@ epicsShareAPI macInstallMacros(
     return n;
 }
 
-/*********************************************************************
- * $Log$
- * Revision 1.6  2000/05/30 19:52:00  norume
- * Remove call to max().
- *
- * Revision 1.5  2000/05/30 17:08:57  jhill
- * fixed pool corruption problems
- *
- * Revision 1.4  1999/05/13 16:06:23  anj
- * Cleaned up warnings - the RCS Log: keyword was on the comment line
- * that starts with a '/' which RCS replicates for these notes...
- *
- * Revision 1.3  1997/05/01 19:57:35  jhill
- * updated dll keywords
- *
- * Revision 1.2  1996/09/16 21:07:11  jhill
- * fixed warnings
- *
- * Revision 1.1  1996/07/10 14:49:55  mrk
- * added macLib
- *
- * Revision 1.6  1996/06/26  09:43:19  wlupton
- * first released version
- *
- */

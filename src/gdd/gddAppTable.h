@@ -16,40 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.8  1999/10/28 00:23:45  jhill
- * defined new dbr types
- *
- * Revision 1.7  1999/08/05 23:44:01  jhill
- * eliminated app types "seconds" and "nanoseconds"
- * in favor of atomic app type "timeStamp"
- *
- * Revision 1.6  1999/04/30 15:24:53  jhill
- * fixed improper container index bug
- *
- * Revision 1.5  1997/04/23 17:13:02  jhill
- * fixed export of symbols from WIN32 DLL
- *
- * Revision 1.4  1997/01/12 20:32:49  jbk
- * many errors fixed
- *
- * Revision 1.3  1996/09/04 20:58:55  jhill
- * added GDD_NAME_PV_NAME
- *
- * Revision 1.2  1996/08/27 13:05:09  jbk
- * final repairs to string functions, put() functions, and error code printing
- *
- * Revision 1.1  1996/06/25 19:11:42  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.3  1996/06/24 03:15:36  jbk
- * *name changes and fixes for aitString and fixed string functions
- * *Revision 1.2  1996/06/13 21:31:58  jbk
- * *Various fixes and correction - including ref_cnt change to unsigned short
- * *Revision 1.1  1996/05/31 13:15:29  jbk
- * *add new stuff
- *
  */
 
 #include "gdd.h"

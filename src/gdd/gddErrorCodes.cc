@@ -12,12 +12,6 @@
 // Date:	3/97
 //
 // $Id$
-// $Log$
-// Revision 1.2  1999/05/11 00:32:29  jhill
-// fixed const warnings
-//
-// Revision 1.1  1997/03/21 01:56:07  jbk
-// *** empty log message ***
 //
 
 // -------------------------- Error messages -------------------------

@@ -13,34 +13,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.8  2000/10/12 21:52:48  jhill
- * changes to support compilation by borland
- *
- * Revision 1.7  1999/05/13 22:09:23  jhill
- * added new line at EOF
- *
- * Revision 1.6  1999/05/13 20:59:39  jhill
- * removed redundant includes
- *
- * Revision 1.5  1998/04/17 17:49:25  jhill
- * fixed range problem in string to fp convert
- *
- * Revision 1.4  1997/08/05 00:51:07  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.3  1997/05/01 19:54:51  jhill
- * updated dll keywords
- *
- * Revision 1.2  1997/04/10 19:59:24  jhill
- * api changes
- *
- * Revision 1.1  1996/06/25 19:11:32  jbk
- * new in EPICS base
- *
- * Revision 1.1  1996/05/31 13:15:21  jbk
- * add new stuff
- *
  */
 
 #include <limits.h>

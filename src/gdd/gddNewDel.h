@@ -16,22 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.3  1997/05/19 19:23:50  jbk
- * Fixed bug in new/delete operators for gddBounds1D, 2D, and 3D
- *
- * Revision 1.2  1997/03/21 01:56:09  jbk
- * *** empty log message ***
- *
- * Revision 1.1  1996/06/25 19:11:47  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.2  1996/06/24 03:15:37  jbk
- * *name changes and fixes for aitString and fixed string functions
- * *Revision 1.1  1996/05/31 13:15:33  jbk
- * *add new stuff
- *
  */
 
 // this file if formatted with tab stop = 4

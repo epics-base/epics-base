@@ -16,40 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.11  2002/02/13 14:34:11  lange
- * Fixed (mostly suppressed) HPUX aCC warnings
- *
- * Revision 1.10  2001/01/31 13:33:42  mrk
- * osiTime=>epicsTime
- *
- * Revision 1.9  2000/10/13 01:17:52  jhill
- * made gdd param to copy const
- *
- * Revision 1.8  1999/08/10 19:57:15  jhill
- * moved inlines in order to eliminate g++ warnings
- *
- * Revision 1.7  1999/08/10 17:23:55  jhill
- * moved inlines in order to eliminate g++ warnings
- *
- * Revision 1.6  1999/08/05 22:48:44  jhill
- * removed knowledge of class osiTime, and made ref/unref mf const
- *
- * Revision 1.5  1999/05/10 23:42:25  jhill
- * fixed many const releated problems
- *
- * Revision 1.4  1999/04/30 15:24:53  jhill
- * fixed improper container index bug
- *
- * Revision 1.3  1998/06/16 03:16:27  jhill
- * fixed big problems with leaked ait/fixedString in gdd union
- *
- * Revision 1.2  1997/08/05 00:51:15  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.1  1997/03/21 01:56:08  jbk
- * *** empty log message ***
- *
  */
 
 inline void gdd::setData(void* d)					{ data.Pointer=d; }

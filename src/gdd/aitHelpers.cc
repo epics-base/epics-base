@@ -13,54 +13,6 @@
 //
 // $Id$
 //
-// $Log$
-// Revision 1.15  2001/06/11 17:57:31  jhill
-// workarounds for problems discovered when building for RTEMS
-//
-// Revision 1.14  2001/06/11 17:08:07  jhill
-// dont pull in stdio.h in the header since it isnt referenced there
-//
-// Revision 1.13  2001/01/31 13:33:41  mrk
-// osiTime=>epicsTime
-//
-// Revision 1.12  1999/08/05 22:15:42  jhill
-// removed knowledge of class osiTime
-//
-// Revision 1.11  1999/05/10 23:38:33  jhill
-// convert to and from other time stamp formats
-//
-// Revision 1.10  1999/05/03 16:20:51  jhill
-// allow aitTimeStamp to convert to epicsTimeStamp (without binding to libCom)
-//
-// Revision 1.9  1998/05/05 21:08:26  jhill
-// fixed warning
-//
-// Revision 1.8  1997/08/05 00:51:05  jhill
-// fixed problems in aitString and the conversion matrix
-//
-// Revision 1.7  1997/06/25 06:17:33  jhill
-// fixed warnings
-//
-// Revision 1.6  1997/04/23 17:12:54  jhill
-// fixed export of symbols from WIN32 DLL
-//
-// Revision 1.5  1996/08/23 20:29:34  jbk
-// completed fixes for the aitString and fixed string management
-//
-// Revision 1.4  1996/08/22 21:05:38  jbk
-// More fixes to make strings and fixed string work better.
-//
-// Revision 1.3  1996/08/09 02:28:08  jbk
-// rewrite of aitString class - more intuitive now, I think
-//
-// Revision 1.2  1996/08/06 19:14:06  jbk
-// Fixes to the string class.
-// Changes units field to a aitString instead of aitInt8.
-//
-// Revision 1.1  1996/06/25 19:11:30  jbk
-// new in EPICS base
-//
-//
 
 #include <stdio.h>
 

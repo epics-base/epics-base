@@ -12,19 +12,6 @@
 // 
 // $Id$
 // 
-// $Log$
-// Revision 1.2  1997/06/25 06:17:37  jhill
-// fixed warnings
-//
-// Revision 1.1  1996/06/25 19:11:45  jbk
-// new in EPICS base
-//
-//
-
-// *Revision 1.2  1996/06/24 03:15:37  jbk
-// *name changes and fixes for aitString and fixed string functions
-// *Revision 1.1  1996/05/31 13:15:31  jbk
-// *add new stuff
 
 #define epicsExportSharedSymbols
 #include "gddNewDel.h"

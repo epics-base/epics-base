@@ -2,11 +2,6 @@
 #
 # Solaris rc2 script for the EPICS CA Repeater.
 #
-# $Log$
-# Revision 1.1  1995/03/30 23:17:57  jba
-# Added solaris scripts for starting caRepeater and iocLogServer - anj
-#
-#
 
 INSTALL_BIN=:INSTALL_BIN:
 EPICS=:EPICS:

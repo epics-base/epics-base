@@ -217,40 +217,6 @@ epicsShareAPI macInstallMacros(
 				/* argument implies no macros */
 );
 
-/**************************************************************************
- * $Log$
- * Revision 1.8  2002/05/06 19:01:00  mrk
- * add extern for C callable routines
- *
- * Revision 1.7  1999/05/13 16:06:22  anj
- * Cleaned up warnings - the RCS Log: keyword was on the comment line
- * that starts with a '/' which RCS replicates for these notes...
- *
- * Revision 1.6  1998/02/27 01:34:13  jhill
- * cleaned up the DLL symbol export
- *
- * Revision 1.5  1998/02/20 21:45:17  evans
- * Made a large number of changes to epicsShareThings in libCom routines
- * to get imports and exports straight on WIN32.  Not everything is fixed
- * at this time.
- *
- * Revision 1.4  1997/06/05 18:28:49  mrk
- * Allow message about referenced but undefined to be suppressed
- *
- * Revision 1.3  1997/05/01 19:57:34  jhill
- * updated dll keywords
- *
- * Revision 1.2  1996/09/16 21:07:10  jhill
- * fixed warnings
- *
- * Revision 1.1  1996/07/10 14:49:51  mrk
- * added macLib
- *
- * Revision 1.8  1996/06/26  09:43:16  wlupton
- * first released version
- *
- */
-
 #ifdef __cplusplus
 }
 #endif

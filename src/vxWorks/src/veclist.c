@@ -17,25 +17,6 @@
  *	johill@lanl.gov
  *	(505) 665 1831
  *
- *	.01 010393 Applied fix for zero C ISR param causes incorrect 
- *		   identification as MACRO ISR problem. 
- *	.02 022195 Compiler warnings fixed
- *	$Log$
- *	Revision 1.1  2001/08/01 14:33:15  mrk
- *	get rid of dev/drv support; use OBJ library only
- *	
- *	Revision 1.16  1998/06/04 19:24:30  wlupton
- *	avoided intHandlerCreate() for PPC
- *	
- *	Revision 1.15  1998/03/16 17:01:27  mrk
- *	include string.h
- *
- *	Revision 1.14  1996/09/04 22:08:50  jhill
- *	fixed gcc warnings
- *
- * Revision 1.13  1995/08/12  01:12:37  jhill
- * doc
- *
  */
 
 /*

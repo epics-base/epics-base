@@ -12,45 +12,6 @@
 // 
 // $Id$
 // 
-// $Log$
-// Revision 1.11  2002/05/29 00:37:06  jhill
-// print out a warning when there is a bogus type in the table
-//
-// Revision 1.10  1999/04/30 15:24:53  jhill
-// fixed improper container index bug
-//
-// Revision 1.9  1997/08/05 00:51:14  jhill
-// fixed problems in aitString and the conversion matrix
-//
-// Revision 1.8  1997/04/23 17:13:01  jhill
-// fixed export of symbols from WIN32 DLL
-//
-// Revision 1.7  1997/01/12 20:32:48  jbk
-// many errors fixed
-//
-// Revision 1.5  1996/10/17 12:41:48  jbk
-// took out strdup function - replaced with strDup
-//
-// Revision 1.4  1996/09/07 13:03:07  jbk
-// fixes to destroyData function
-//
-// Revision 1.3  1996/08/27 13:05:08  jbk
-// final repairs to string functions, put() functions, and error code printing
-//
-// Revision 1.2  1996/06/26 21:00:08  jbk
-// Fixed up code in aitHelpers, removed unused variables in others
-// Fixed potential problem in gddAppTable.cc with the map functions
-//
-// Revision 1.1  1996/06/25 19:11:41  jbk
-// new in EPICS base
-//
-
-// *Revision 1.3  1996/06/24 03:15:35  jbk
-// *name changes and fixes for aitString and fixed string functions
-// *Revision 1.2  1996/06/13 21:31:57  jbk
-// *Various fixes and correction - including ref_cnt change to unsigned short
-// *Revision 1.1  1996/05/31 13:15:27  jbk
-// *add new stuff
 
 #define epicsExportSharedSymbols
 #include "gddAppTable.h"

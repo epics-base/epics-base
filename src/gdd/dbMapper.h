@@ -16,53 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.14  2001/10/20 00:08:57  jhill
- * remove use of std lib for now
- *
- * Revision 1.13  2000/10/12 21:52:49  jhill
- * changes to support compilation by borland
- *
- * Revision 1.12  2000/10/12 16:10:53  jhill
- * changing include order fixes GNU warning
- *
- * Revision 1.11  2000/06/27 22:32:22  jhill
- * backed out over-zelous use of smart pointers
- *
- * Revision 1.10  2000/04/28 01:40:08  jhill
- * many changes
- *
- * Revision 1.9  2000/03/08 16:23:29  jhill
- * dont wrap include files with extern "C" - let the files themselves take care of it
- *
- * Revision 1.8  1999/10/28 23:33:41  jhill
- * use fully qualified namespace names for C++ RTL classes
- *
- * Revision 1.7  1999/10/28 00:25:44  jhill
- * defined new dbr types
- *
- * Revision 1.6  1999/05/11 00:32:29  jhill
- * fixed const warnings
- *
- * Revision 1.5  1999/04/30 15:24:53  jhill
- * fixed improper container index bug
- *
- * Revision 1.4  1997/08/05 00:51:10  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.3  1997/04/23 17:12:57  jhill
- * fixed export of symbols from WIN32 DLL
- *
- * Revision 1.2  1997/04/10 19:59:25  jhill
- * api changes
- *
- * Revision 1.1  1996/06/25 19:11:36  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.1  1996/05/31 13:15:24  jbk
- * *add new stuff
- *
  */
 
 #include "shareLib.h"

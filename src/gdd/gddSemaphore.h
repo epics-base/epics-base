@@ -14,18 +14,6 @@
  * Author:	Jim Kowalkowski
  * Date:	3/97
  *
- * $Id$
- * $Log$
- * Revision 1.3  1999/10/21 00:08:47  jhill
- * fixed thread unsafe GDD build for vxWorks
- *
- * Revision 1.2  1997/06/25 06:17:38  jhill
- * fixed warnings
- *
- * Revision 1.1  1997/03/21 01:56:10  jbk
- * *** empty log message ***
- *
- *
  */
 
 #ifdef vxWorks

@@ -15,22 +15,6 @@
  * Date:	3/97
  *
  * $Id$
- * $Log$
- * Revision 1.5  1999/08/10 17:11:01  jhill
- * moved inlines in order to eliminate g++ warnings
- *
- * Revision 1.4  1999/05/11 00:14:47  jhill
- * fixed missing arg
- *
- * Revision 1.3  1999/05/10 23:42:25  jhill
- * fixed many const releated problems
- *
- * Revision 1.2  1999/04/30 15:24:53  jhill
- * fixed improper container index bug
- *
- * Revision 1.1  1997/03/21 01:56:07  jbk
- * *** empty log message ***
- *
  *
  */
 

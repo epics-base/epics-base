@@ -16,57 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.14  2000/10/12 21:52:49  jhill
- * changes to support compilation by borland
- *
- * Revision 1.13  1999/10/21 23:41:11  jhill
- * reformatted
- *
- * Revision 1.12  1999/05/13 20:59:39  jhill
- * removed redundant includes
- *
- * Revision 1.11  1999/05/11 00:30:04  jhill
- * removed unused includes
- *
- * Revision 1.10  1999/05/10 23:40:06  jhill
- * removed timespec def and os specific ifdef maintenance nightmare
- *
- * Revision 1.9  1998/12/21 20:59:30  jhill
- * changes from Salikova
- *
- * Revision 1.8  1998/06/16 03:10:51  jhill
- * added sgi support
- *
- * Revision 1.7  1998/04/16 21:16:35  jhill
- * removed redundant solaris test
- *
- * Revision 1.6  1997/12/18 19:03:18  jba
- * Linux change.
- *
- * Revision 1.5  1997/08/05 00:51:08  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.4  1997/04/10 19:59:24  jhill
- * api changes
- *
- * Revision 1.3  1997/03/21 01:56:00  jbk
- * *** empty log message ***
- *
- * Revision 1.2  1996/08/22 21:05:40  jbk
- * More fixes to make strings and fixed string work better.
- *
- * Revision 1.1  1996/06/25 19:11:33  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.2  1996/06/17 15:24:07  jbk
- * *many mods, string class corrections.
- * *gdd operator= protection.
- * *dbmapper uses aitString array for menus now
- * *Revision 1.1  1996/05/31 13:15:22  jbk
- * *add new stuff
- *
  */
 
 /* This is the file the user sets up for a given architecture */

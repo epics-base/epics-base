@@ -16,59 +16,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.16  2002/02/13 14:34:10  lange
- * Fixed (mostly suppressed) HPUX aCC warnings
- *
- * Revision 1.15  2001/10/20 00:11:51  jhill
- * remove use of std lib for now
- *
- * Revision 1.14  2001/09/05 00:50:36  jhill
- * removed GNU compiler ifdef
- *
- * Revision 1.13  2001/07/03 00:58:18  jhill
- * changed interface so that unreferenced table will not optimize away
- *
- * Revision 1.12  2001/06/11 22:28:51  jhill
- * revert because workaround for RTEMS didnt build
- *
- * Revision 1.11  2001/06/11 20:13:42  jhill
- * workarounds for problems discovered when building for RTEMS
- *
- * Revision 1.10  2001/06/11 17:57:31  jhill
- * workarounds for problems discovered when building for RTEMS
- *
- * Revision 1.9  2000/09/27 19:45:55  jhill
- * fixed ifdef around vis c++ pragma
- *
- * Revision 1.8  1999/10/29 00:41:32  jhill
- * disable microslock warning
- *
- * Revision 1.7  1999/10/28 23:33:41  jhill
- * use fully qualified namespace names for C++ RTL classes
- *
- * Revision 1.6  1999/10/28 00:27:51  jhill
- * special case enum to string conversion
- *
- * Revision 1.5  1997/08/05 00:51:04  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.4  1997/04/10 19:59:22  jhill
- * api changes
- *
- * Revision 1.3  1996/10/17 12:41:07  jbk
- * network byte order stuff / added strDup function to Helpers
- *
- * Revision 1.2  1996/08/13 23:13:34  jhill
- * win NT changes
- *
- * Revision 1.1  1996/06/25 19:11:29  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.1  1996/05/31 13:15:18  jbk
- * *add new stuff
- *
  */
 
 #include <sys/types.h>

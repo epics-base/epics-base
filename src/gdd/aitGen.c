@@ -13,57 +13,6 @@
  *
  * $Id$
  *
- * $Log$
- * Revision 1.13  2001/10/22 18:01:05  jhill
- * removed redundant ;
- *
- * Revision 1.12  2001/10/20 00:11:09  jhill
- * remove use of std lib for now
- *
- * Revision 1.11  2001/07/03 00:58:18  jhill
- * changed interface so that unreferenced table will not optimize away
- *
- * Revision 1.10  2000/10/12 21:52:48  jhill
- * changes to support compilation by borland
- *
- * Revision 1.9  1999/10/28 23:33:41  jhill
- * use fully qualified namespace names for C++ RTL classes
- *
- * Revision 1.8  1999/10/28 00:27:20  jhill
- * special case enum to string conversion
- *
- * Revision 1.7  1997/08/05 00:51:04  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.6  1997/06/13 09:26:04  jhill
- * fixed generated conversion functions
- *
- * Revision 1.5  1997/05/01 19:54:50  jhill
- * updated dll keywords
- *
- * Revision 1.4  1996/11/02 01:24:41  jhill
- * strcpy => styrcpy (shuts up purify)
- *
- * Revision 1.3  1996/08/13 15:07:44  jbk
- * changes for better string manipulation and fixes for the units field
- *
- * Revision 1.2  1996/06/27 14:33:13  jbk
- * changes data type to string conversions to use installString(), not copy()
- *
- * Revision 1.1  1996/06/25 19:11:30  jbk
- * new in EPICS base
- *
- * Revision 1.3  1996/06/17 15:24:05  jbk
- * many mods, string class corrections.
- * gdd operator= protection.
- * dbmapper uses aitString array for menus now
- *
- * Revision 1.2  1996/06/13 21:31:52  jbk
- * Various fixes and correction - including ref_cnt change to unsigned short
- *
- * Revision 1.1  1996/05/31 13:15:19  jbk
- * add new stuff
- *
  */
 
 #include <stdio.h>

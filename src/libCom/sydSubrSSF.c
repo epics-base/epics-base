@@ -786,7 +786,7 @@ chtype	type;
 	}
     }
     else if (pSChan->dbrType == DBR_TIME_ENUM) {
-	short	*pSh;
+	unsigned short	*pSh;
 	char	state[80];
 	int	iState;
 	pSh = &pSChan->pInBuf[bufNum]->tenmval.value;

@@ -288,12 +288,8 @@ endif
 endif
 
 #---------------------------------------------------------------
-# must use c++ linker if linking to shared libs with c++ code
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
-ifneq ($(strip $(CPLUSPLUS)),)
+# always use c++ linker
 LINK.c = $(LINK.cc)
-endif # CPLUSPLUS
-endif # LIBTYPE
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
@@ -369,7 +365,6 @@ ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
 COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(ARCH_CLASS)))
-COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
 ifdef PRODNAME
 

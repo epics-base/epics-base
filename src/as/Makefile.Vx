@@ -14,7 +14,7 @@ LIBOBJS = \
 
 LIBNAME = asLibrary
 
-depends: $(OBDIR)/asLib.c
+pre_build: $(OBDIR)/asLib.c
 
 $(OBDIR)/asLib.c: asLib.y $(OBDIR)/asLib_lex.c
 	$(YACC) -l asLib.y

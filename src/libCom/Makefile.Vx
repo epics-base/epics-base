@@ -53,7 +53,7 @@ $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
 $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2): $(OBDIR)/$(LIBNAME2)
 	install -m 644 $? $@
 
-depends: bld_errSym
+pre_build: bld_errSym
 
 bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
 

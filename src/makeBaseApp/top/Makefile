@@ -1,9 +1,9 @@
 #Makefile at top of application tree
 TOP = .
 include $(TOP)/configure/CONFIG
-DIRS += configure
-DIRS += $(wildcard *App)
-DIRS += $(wildcard *app)
-DIRS += $(wildcard iocBoot)
-DIRS += $(wildcard iocboot)
+DIRS := $(DIRS) $(filter-out $(DIRS), configure)
+DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard *App))
+DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard *app))
+DIRS := $(DIRS) $(filter-out $(DIRS), iocBoot)
+DIRS := $(DIRS) $(filter-out $(DIRS), iocboot)
 include $(TOP)/configure/RULES_TOP

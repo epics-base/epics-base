@@ -32,9 +32,7 @@ recvProcessThread::recvProcessThread (cac *pcacIn) :
 recvProcessThread::~recvProcessThread ()
 {
     this->signalShutDown ();
-    while ( ! this->exit.wait ( 10.0 ) ) {
-        errlogPrintf ("recvProcessThread::~recvProcessThread (): Warning, thread object destroyed before thread exit \n");
-    }
+    this->exit.wait ();
 }
 
 void recvProcessThread::entryPoint ()

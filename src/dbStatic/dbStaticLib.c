@@ -2621,6 +2621,10 @@ int epicsShareAPI dbAllocForm(DBENTRY *psave)
     }
     dbCopyEntryContents(psave,pdbentry);
     pflddes = pdbentry->pflddes;
+    if(!pflddes) {
+	epicsPrintf("dbAllocForm called but no field is referenced\n");
+	goto done;
+    }
     if(pflddes->field_type == DBF_DEVICE) {
         status = dbFindField(pdbentry,"INP");
         if(status) status = dbFindField(pdbentry,"OUT");

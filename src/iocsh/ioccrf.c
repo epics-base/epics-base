@@ -32,8 +32,11 @@ typedef struct argvalue {
 typedef struct ioccrfFunc {
     ioccrfFuncDef *pioccrfFuncDef;
     ioccrfCallFunc func;
+    struct ioccrfFunc *pprev;
 } ioccrfFunc;
 
+static ioccrfFunc *pioccrfFuncHead = 0;
+    
 static char ioccrfID[] = "ioccrf";
 
 #ifdef IOCSH_USE_READLINE
@@ -60,11 +63,27 @@ void epicsShareAPI ioccrfRegister (ioccrfFuncDef *pioccrfFuncDef, ioccrfCallFunc
     ioccrfFunc *pioccrfFunc;
 
     pioccrfFunc = callocMustSucceed (1, sizeof(ioccrfFunc), "ioccrfRegister");
+    pioccrfFunc->pprev = pioccrfFuncHead;
+    /* keep list of allocated ioccrfFunc so they can be freed*/
+    pioccrfFuncHead = pioccrfFunc;
     pioccrfFunc->pioccrfFuncDef = pioccrfFuncDef;
     pioccrfFunc->func = func;
     if (!registryAdd(ioccrfID, pioccrfFuncDef->name, (void *)pioccrfFunc))
         errlogPrintf ("ioccrfRegister failed to add %s\n", pioccrfFuncDef->name);
 }
+
+/* free storage created by ioccrfRegister */
+void epicsShareAPI ioccrfFree(void) 
+{
+    ioccrfFunc *pioccrfFunc = pioccrfFuncHead;
+    pioccrfFuncHead = 0;
+    while(pioccrfFunc) {
+        ioccrfFunc *pprev = pioccrfFunc->pprev;
+        free(pioccrfFunc);
+        pioccrfFunc = pprev;
+    }
+}
+
 
 /*
  * Read a line of input
@@ -352,7 +371,9 @@ ioccrf (const char *pathname)
              /*
               * Look up command
               */
-            pioccrfFunc = (ioccrfFunc *)registryFind (ioccrfID, argv[0]);
+            pioccrfFunc = 0;
+            if(pioccrfFuncHead) 
+                pioccrfFunc = (ioccrfFunc *)registryFind (ioccrfID, argv[0]);
             if (!pioccrfFunc) {
                 showError (filename, lineno, "Command %s not found.", argv[0]);
                 continue;

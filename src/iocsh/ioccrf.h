@@ -41,6 +41,9 @@ typedef void (*ioccrfCallFunc)(ioccrfArg **argList);
 epicsShareFunc void epicsShareAPI ioccrfRegister(
     ioccrfFuncDef *pioccrfFuncDef,ioccrfCallFunc func);
 
+/* ioccrfFree frees storage used by ioccrfRegister*/
+/* This should only be called when ioccrf is no longer needed*/
+epicsShareFunc void epicsShareAPI ioccrfFree(void);
 
 epicsShareFunc int epicsShareAPI ioccrf(const char *pathname);
 

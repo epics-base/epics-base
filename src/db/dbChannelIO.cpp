@@ -35,7 +35,7 @@
 #   pragma warning ( disable:4660 )
 #endif
 
-template tsFreeList < dbChannelIO >;
+template class tsFreeList < dbChannelIO >;
 template class epicsSingleton < tsFreeList < dbChannelIO > >;
 
 #ifdef _MSC_VER

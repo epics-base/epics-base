@@ -19,7 +19,7 @@ archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 #
 # hostActionArchTargets
 #
-hostArchs = $(HOST_ARCH) $(filter-out $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS))
+hostArchs = $(HOST_ARCH)
 hostActionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
 ifeq (Makefile.$(BUILD_TYPE), $(wildcard Makefile.$(BUILD_TYPE)))
@@ -36,7 +36,7 @@ endif
 #
 # crossActionArchTargets
 #
-crossArchs = $(CROSS_COMPILER_TARGET_ARCHS)
+crossArchs = $(filter-out $(hostArchs),$(BUILD_ARCHS))
 crossActionArchTargets = $(foreach x, $(ACTIONS), \
 	$(foreach arch, $(CROSS_COMPILER_TARGET_ARCHS), $(x)$(DIVIDER)$(arch)))
 ifeq (Makefile.Vx, $(wildcard Makefile.Vx))

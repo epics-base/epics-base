@@ -5,6 +5,9 @@
 // File descriptor management C++ class library
 //
 // $Log$
+// Revision 1.1  1996/06/21 01:08:53  jhill
+// add fdMgr.h fdMgr.cc
+//
 //
 
 //
@@ -60,9 +63,11 @@ fdMgr::~fdMgr()
 	fdReg	*pReg;
 
 	while ( (pReg = this->regList.get()) ) {
+		pReg->state = fdrLimbo;
 		pReg->destroy();
 	}
 	while ( (pReg = this->activeList.get()) ) {
+		pReg->state = fdrLimbo;
 		pReg->destroy();
 	}
 }

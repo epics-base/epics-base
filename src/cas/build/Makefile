@@ -3,7 +3,7 @@ TOP=../../..
 
 include $(TOP)/config/CONFIG_BASE
 
-DIRS = singleThread 
+DIRS = singleThread multiThread
 
 include $(TOP)/config/RULES_DIRS
 

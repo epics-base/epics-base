@@ -10,3 +10,6 @@
 #Include definitions common to linux-x86 hosts
 include $(CONFIG)/os/CONFIG.linux-x86.Common
 
+# Make all crosscompiler builds debug builds
+#CROSS_OPT=NO
+

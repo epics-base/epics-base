@@ -50,7 +50,8 @@
  * .14	02-26-92	jrw	added return codes to the output work functions
  * .15	02-27-92	jrw	added the setting of PACT to 1 when init fails
  * .16	04-08-92	jrw	reordered initXx to clean up SRQ init code
- * .17  04-30-93	jrw	added waveform record support
+ * .17  04-30-92	jrw	added waveform record support
+ * .18  07-10-92	jrw	initXx endless loop looking for hwpvt
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
@@ -666,6 +667,8 @@ struct link	*plink;
 
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(prec->dset))->funPtr[prec->dset->number]);
 
+    if (*parmBlock->debugFlag)
+      printf("initXx dealing with record >%s< device >%s<\n", prec->name, parmBlock->name);
     /* allocate space for the private structure */
     pdpvt = (struct gpibDpvt *) malloc(sizeof(struct gpibDpvt));
     prec->dpvt = (void *) pdpvt;
@@ -705,10 +708,20 @@ struct link	*plink;
 	break;
     }
     /* Try to find the hardware private structure */
+
+    if (*parmBlock->debugFlag > 5)
+      printf("%s: looking for hwpvt structure for link %d device %d\n",
+		 parmBlock->name, pdpvt->head.link, pdpvt->head.device);
+
     foundIt = 0;
     pdpvt->phwpvt = parmBlock->hwpvtHead;
     while ((pdpvt->phwpvt != NULL) && !foundIt)
     {
+      if (*parmBlock->debugFlag > 5)
+	printf("%s: Checking hwpvt 0x%08.8X, type %d, link %d, device %d\n",
+	    parmBlock->name, pdpvt->phwpvt, pdpvt->phwpvt->linkType, 
+	    pdpvt->phwpvt->link, pdpvt->phwpvt->device);
+
       if (pdpvt->phwpvt->linkType == plink->type && 
 	  pdpvt->phwpvt->link == pdpvt->head.link && 
 	  pdpvt->phwpvt->device == pdpvt->head.device)
@@ -716,6 +729,8 @@ struct link	*plink;
 	{
 	  if (pdpvt->phwpvt->bug == pdpvt->head.bitBusDpvt->txMsg.node)
 	    foundIt = 1;
+          else
+	    pdpvt->phwpvt = pdpvt->phwpvt->next;
 	}
 	else
 	  foundIt = 1;
@@ -754,7 +769,16 @@ struct link	*plink;
     }
     /* Fill in the dpvt->ibLink field (The driver uses it) */
 
+    if (*parmBlock->debugFlag)
+      printf("initXx doing an ioctl-IBGETLINK for record >%s< device >%s<\n", prec->name, parmBlock->name);
+    
     (*(drvGpib.ioctl))(pdpvt->phwpvt->linkType, pdpvt->phwpvt->link, pdpvt->phwpvt->bug, IBGETLINK, -1, &(pdpvt->head.pibLink));
+
+    if (*parmBlock->debugFlag)
+      printf("ioctl-IBGETLINK returned 0x%08.8X\n", pdpvt->head.pibLink);
+
+    if (*parmBlock->debugFlag > 5)
+      printf("initXx checking GPIB address for record >%s< device >%s<\n", prec->name, parmBlock->name);
 
     /* Check for valid GPIB address */
     if ((pdpvt->head.device < 0) || (pdpvt->head.device >= IBAPERLINK))
@@ -766,6 +790,9 @@ struct link	*plink;
         return(S_db_badField);
     }
   
+    if (*parmBlock->debugFlag > 5)
+      printf("initXx checking param entry for record >%s< device >%s<\n", prec->name, parmBlock->name);
+
     /* Check for valid param entry */
     if ((pdpvt->parm < 0) || (pdpvt->parm > parmBlock->numparams))
     {
@@ -775,6 +802,9 @@ struct link	*plink;
 	prec->pact = TRUE;		/* keep record from being processed */
         return(S_db_badField);
     }
+
+    if (*parmBlock->debugFlag > 5)
+      printf("initXx checking record coherency for record >%s< device >%s<\n", prec->name, parmBlock->name);
 
     /* make sure that the record type matches the GPIB port type (jrw) */
     if (parmBlock->gpibCmds[pdpvt->parm].rec_typ != (gDset *)prec->dset )

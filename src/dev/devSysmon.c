@@ -59,6 +59,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.6  1995/01/06  16:55:04  winans
+ * enabled irq services and rearranged the parm names and meanings.
+ *
  * Revision 1.5  1994/12/07  15:11:13  winans
  * Fixed array index for temerature reading.
  *
@@ -84,27 +87,29 @@
 #include	<alarm.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
-#include        <recSup.h>
+#include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<fast_lock.h>
 
-#include        <boRecord.h>
-#include        <biRecord.h>
-#include        <mbboRecord.h>
-#include        <mbbiRecord.h>
+#include	<aiRecord.h>
+#include	<boRecord.h>
+#include	<biRecord.h>
+#include	<mbboRecord.h>
+#include	<mbbiRecord.h>
 
-#include        <dbScan.h>
-#include        <errMdef.h>
-#include        <eventRecord.h>
+#include	<dbScan.h>
+#include	<errMdef.h>
+#include	<eventRecord.h>
 
 
 #define		NUM_LINKS	1	/* max number of allowed sysmon cards */
-#define         STATIC
+#define		STATIC
 
 int SysmonConfig();
 STATIC long SysmonInit();
 STATIC long SysmonReport();
+STATIC long SysmonInitAiRec(), SysmonReadAi();
 STATIC long SysmonInitBoRec(), SysmonInitBiRec();
 STATIC long SysmonInitMbboRec(), SysmonInitMbbiRec();
 STATIC long SysmonWriteBo(), SysmonReadBi();
@@ -255,6 +260,15 @@ struct dset_sysmon {
 	DEVSUPFUN	read_write;	/* output command goes here */
 };
 typedef struct dset_sysmon DSET_SYSMON;
+
+DSET_SYSMON devAiSysmon={
+	5,
+	NULL,
+	SysmonInit,
+	SysmonInitAiRec,
+	NULL,
+	SysmonReadAi
+};
 
 DSET_SYSMON devBoSysmon={
 	5,
@@ -546,7 +560,75 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
     
     return(0);
 }
+
+/***************************************************************************
+ *
+ ***************************************************************************/
+STATIC long SysmonInitAiRec(struct aiRecord *pRecord)
+{
+	struct vmeio*	pvmeio = (struct vmeio*)&(pRecord->inp.value);
+	int 			status = 0;
+	PvtStruct		*pvt;
 
+	status = generic_init_record((struct dbCommon *)pRecord, &pRecord->inp);
+	if(status)
+	{
+		pRecord->dpvt = NULL;
+		return(status);
+	}
+
+	pvt = (PvtStruct *)(pRecord->dpvt);
+
+	if (pvt->index != SYSMON_PARM_TEMP)
+	{
+		pRecord->dpvt = NULL;
+		if (devSysmonDebug >= 10)
+			logMsg("devSysmon: Illegal parm field ->%s<- \n", pvmeio->parm);
+
+		recGblRecordError(S_dev_badSignal,(void *)pRecord, "devSysmon (init_record) Illegal parm field");
+		return(S_dev_badSignal);
+	}
+	return(0);
+}
+
+/***************************************************************************
+ *
+ ***************************************************************************/
+STATIC long SysmonReadAi(struct aiRecord *pRecord)
+{
+    struct			vmeio *pvmeio = (struct vmeio*)&(pRecord->inp.value);
+    unsigned short	regVal;
+    PvtStruct		*pvt = (PvtStruct *)pRecord->dpvt;
+
+    if (pvt == NULL)
+		return(0);
+
+    FASTLOCK(&cards[pvmeio->card].lock);
+
+    regVal = cards[pvmeio->card].SysmonBase->SysmonTemperature & 0xff;
+
+    FASTUNLOCK(&cards[pvmeio->card].lock);
+
+	if (devSysmonDebug)
+		printf("Sysmon AI temperature raw value %d\n", regVal);
+    
+    switch(regVal)
+	{
+	case 0xfe: pRecord->val = 20; break;
+	case 0xfc: pRecord->val = 25; break;
+	case 0xf8: pRecord->val = 30; break;
+	case 0xf0: pRecord->val = 35; break;
+	case 0xe0: pRecord->val = 40; break;
+	case 0xc0: pRecord->val = 45; break;
+	case 0x80: pRecord->val = 50; break;
+	case 0x00: pRecord->val = 55; break;
+	default:
+		devGpibLib_setPvSevr(pRecord,MAJOR_ALARM,INVALID_ALARM);
+		return(0);
+	}
+    pRecord->udf = FALSE;
+    return(2);		/* Don't do a conversion */
+}
 
 /**************************************************************************
  *

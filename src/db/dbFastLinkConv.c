@@ -270,17 +270,40 @@ static long cvt_st_e(
      unsigned short *to,
      struct dbAddr *paddr)
  {
-   struct rset *prset = 0;
-   long status;
+   struct rset 		*prset = 0;
+   long 		status;
+   unsigned short	*pfield= (unsigned short*)(paddr->pfield);
+   unsigned int		nchoices,ind;
+   int			nargs,nchars;
+   struct dbr_enumStrs	enumStrs;
 
-   if(paddr) prset = dbGetRset(paddr);
-
-   if (prset && prset->put_enum_str)
-      return (*prset->put_enum_str)(paddr, from);
-
-   status = S_db_noRSET;
-   recGblRecSupError(status, paddr, "dbPutField", "put_enum_str"); 
-   return(S_db_badDbrtype);
+    if(paddr && (prset=dbGetRset(paddr))
+    && (prset->put_enum_str)) {
+	status = (*prset->put_enum_str)(paddr,from);
+	if(!status) return(0);
+	if(prset->get_enum_strs) {
+	    status = (*prset->get_enum_strs)(paddr,&enumStrs);
+	    if(!status) {
+		nchoices = enumStrs.no_str;
+		nargs = sscanf(from," %u %n",&ind,&nchars);
+		if(nargs==1 && nchars==strlen(from) && ind<nchoices) {
+		    *pfield = ind;
+		    return(0);
+		}
+		status = S_db_badChoice;
+	    }
+	}else {
+	    status=S_db_noRSET;
+	}
+    } else {
+	status=S_db_noRSET;
+    }
+    if(status == S_db_noRSET) {
+	recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
+    } else {
+	recGblRecordError(status,(void *)paddr->precord,from);
+    }
+    return(status);
  }
 
 /* Convert String to Menu */

@@ -27,3 +27,4 @@ USR_SYS_LIBS += pthread
 
 # C++ templates need PIC definition also in link phase
 SHRLIB_LDFLAGS += -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS += $(SHRLIB_LDFLAGS)

@@ -13,6 +13,8 @@ VALID_BUILDS = Host Ioc
 
 #-------------------------------------------------------
 
+LIBRARY += $(LOADABLE_LIBRARY)
+
 BORLAND_INC = $(BORLAND)\\include
 BORLAND_LIB = $(BORLAND)\\lib
 BORLAND_BIN = $(BORLAND)\\bin

@@ -41,6 +41,7 @@ STATIC_LDLIBS_YES= -Bdynamic
 STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS = -shared
+LOADABLE_SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS)
 
 #############  ???????????
 #####ACC_SFLAGS_YES= -non_shared

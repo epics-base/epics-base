@@ -16,6 +16,8 @@ PATH_FILTER = $(subst /,\\,$(1))
 
 #-------------------------------------------------------
 
+LIBRARY += $(LOADABLE_LIBRARY)
+
 #
 # "\ " forces gnu make to keep this as one token
 #

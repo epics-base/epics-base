@@ -36,6 +36,7 @@ include $(CONFIG)/CONFIG_ADDONS
 
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 LIBRARY += $(LIBRARY_HOST)
+LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
 PROD += $(PROD_HOST)
 SCRIPTS += $(SCRIPTS_HOST)
@@ -74,15 +75,15 @@ endif
 #---------------------------------------------------------------
 # Create included Makefile for prod,testprod, and library targets
 
-ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY)))
+ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY)))
 
 MakefileInclude: ../Makefile
 	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $@
+	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) $@
 
 -include MakefileInclude
 
-endif # PROD, TESTPROD, or LIBRARY defined
+endif # PROD, TESTPROD, LIBRARY, or LOADABLE_LIBRARY defined
 
 #---------------------------------------------------------------
 #   Products and Object libraries
@@ -93,10 +94,10 @@ PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 #   Libraries 
 #
 
-LIBTARGETS += $(LIBNAME)
-LIBTARGETS += $(INSTALL_LIBS)
-LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) \
-              $(DLL_LINK_LIBNAME) $(INSTALL_DLL_LINK_LIBS)
+LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
+              $(SHRLIBNAME) $(INSTALL_SHRLIBS) \
+              $(DLL_LINK_LIBNAME) $(INSTALL_DLL_LINK_LIBS) \
+              $(LOADABLE_SHRLIBNAME) $(INSTALL_LOADABLE_SHRLIBS)
 
 #---------------------------------------------------------------
 ifneq ($(CONFIG),$(TOP)/configure)
@@ -137,7 +138,7 @@ clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
-	*.out MakefileInclude \
+	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS)
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
@@ -268,6 +269,10 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(
 	@$(RM) $@
 	$(LINK.shrlib)
 
+$(LOADABLE_SHRLIBNAME):$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
+	@$(RM) $@
+	$(LINK.loadable_shrlib)
+
 # C++ munching for VxWorks
 %.nm : %$(EXE)
 	@$(RM) $@
@@ -340,6 +345,10 @@ $(INSTALL_TCLLIB)/%: ../%
 	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
 endif
 
+$(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
+	@echo "Installing loadable shared library $@"
+	@$(INSTALL) -d -m 555 $< $(INSTALL_SHRLIB)
+ 
 $(INSTALL_CONFIG)/%: %
 	@echo "Installing config file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)

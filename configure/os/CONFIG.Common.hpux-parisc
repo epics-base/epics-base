@@ -21,6 +21,8 @@ OP_SYS_CFLAGS = -D_HPUX_SOURCE
 OP_SYS_CXXFLAGS =
 
 SHRLIB_SUFFIX = .sl$(addprefix .,$(SHRLIB_VERSION))
+LOADABLE_SHRLIB_SUFFIX = .sl$(addprefix .,$(SHRLIB_VERSION))
+LOADABLE_SHRLIB_PREFIX =
 
 # Set runtime path for shared libraries
 empty:=                                      # trick from the make docs...

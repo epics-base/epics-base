@@ -57,6 +57,8 @@
 #    LIBRARY       products to build and install
 #    LIBRARY_HOST  products to build and install
 #    LIBRARY_IOC   products to build and install
+#    LOADABLE_LIBRARY        module to build and install
+#    LOADABLE_LIBRARY_HOST   module to build and install
 #    SCRIPTS       scripts and install
 #    SCRIPTS_HOST  host system scripts to install
 #    SCRIPTS_IOC   ioc system scripts to install
@@ -323,6 +325,22 @@ LIBRARY_HOST+=$(subst -nil-,,$(LIBRARY_HOST_$(OS_CLASS)))
 else
 ifneq (,$(strip $(LIBRARY_HOST_DEFAULT)))
 LIBRARY_HOST+=$(LIBRARY_HOST_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LOADABLE_LIBRARY_$(OS_CLASS))),)
+LOADABLE_LIBRARY+=$(subst -nil-,,$(LOADABLE_LIBRARY_$(OS_CLASS)))
+else
+ifneq (,$(strip $(LOADABLE_LIBRARY_DEFAULT)))
+LOADABLE_LIBRARY+=$(LOADABLE_LIBRARY_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(LOADABLE_LIBRARY_HOST_$(OS_CLASS))),)
+LOADABLE_LIBRARY_HOST+=$(subst -nil-,,$(LOADABLE_LIBRARY_HOST_$(OS_CLASS)))
+else
+ifneq (,$(strip $(LOADABLE_LIBRARY_HOST_DEFAULT)))
+LOADABLE_LIBRARY_HOST+=$(LOADABLE_LIBRARY_HOST_DEFAULT)
 endif
 endif
 

@@ -107,6 +107,7 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "\n";
 	print OUT "ifeq (\$(filter ${name},\$(LIBRARY)),${name})\n";
+	print OUT "ifneq (\$(filter ${name},\$(LOADABLE_LIBRARY)),${name})\n";
 	print OUT "ifneq (,\$(strip \$(${name}_OBJS) \$(LIBRARY_OBJS)))\n";
 	print OUT "BUILD_LIBRARY += ${name}\n";
 	print OUT "endif\n";
@@ -127,6 +128,27 @@ foreach $name ( @nameList ) {
 	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_DEPLIBS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_DLL_DEPLIBS)\n";
+	print OUT "endif\n";
+	print OUT "endif\n";
+	print OUT "ifeq (\$(filter ${name},\$(LOADABLE_LIBRARY)),${name})\n";
+	print OUT "ifneq (,\$(strip \$(${name}_OBJS) \$(LIBRARY_OBJS)))\n";
+	print OUT "LOADABLE_BUILD_LIBRARY += ${name}\n";
+	print OUT "endif\n";
+	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
+	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
+	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
+	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT "${name}_DLL_DEPLIBS=\$(foreach lib, \$(${name}_DLL_LIBS),\\\n";
+	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib)\*,\\\n";
+	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
+	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_EXT),\\\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
+	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_DEPLIBS)\n";
+	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_DLL_DEPLIBS)\n";
 	print OUT "endif\n";
 	print OUT "\n";
 }

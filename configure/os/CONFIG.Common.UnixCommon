@@ -24,6 +24,8 @@ OBJ = .o
 LIB_PREFIX = lib
 LIB_SUFFIX = .a
 SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
+LOADABLE_SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
+LOADABLE_SHRLIB_PREFIX =
 
 #-------------------------------------------------------
 #	names of libraries to build 
@@ -31,6 +33,7 @@ SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 # <lib> ->  lib<lib>.so.<version>
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
+LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:$(LOADABLE_SHRLIB_PREFIX)%=%$(LOADABLE_SHRLIB_SUFFIX))
 
 #-------------------------------------------------------
 # shrlib: DEPLIBS, LDFLAGS, and LDLIBS definitions
@@ -78,6 +81,8 @@ LINK.cpp = $(CCC) -o $@ $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS)
 LINK.cpp += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
 LINK.shrlib = $(CCC) -o $@ $(SHRLIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
 LINK.shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+LINK.loadable_shrlib = $(CCC) -o $@ $(LOADABLE_SHRLIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
+LINK.loadable_shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 
 #--------------------------------------------------
 # Operating system definitions

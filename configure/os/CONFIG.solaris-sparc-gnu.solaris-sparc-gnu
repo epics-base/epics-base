@@ -25,4 +25,5 @@ STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS = -G -h $@ -z ignore -z combreloc -z lazyload
 SHRLIB_LDFLAGS += -z defs
+LOADABLE_SHRLIB_LDFLAGS = -G -h $@ -z ignore -z combreloc -z lazyload
 

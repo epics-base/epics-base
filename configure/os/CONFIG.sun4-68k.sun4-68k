@@ -45,4 +45,5 @@ STATIC_LDLIBS_YES= -Bdynamic
 STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS = -assert pure-text -h $@
+LOADABLE_SHRLIB_LDFLAGS = -assert pure-text -h $@
 

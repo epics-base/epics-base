@@ -21,14 +21,15 @@ extern "C" {
 
 typedef void (*REGISTRAR)(void);
 
-#define EPICS_EXPORT_POBJ(obj) p ## obj
+#define EPICS_EXPORT_POBJ(typ,obj) pvar_ ## typ ## _ ## obj
+#define EPICS_EXPORT_PFUNC(obj) pvar_func_ ## obj
 
 #define epicsExportAddress(typ,obj) \
-epicsShareExtern typ *EPICS_EXPORT_POBJ(obj); \
-epicsShareDef typ *EPICS_EXPORT_POBJ(obj) = (typ *)&obj
+epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
+epicsShareDef typ *EPICS_EXPORT_POBJ(typ,obj) = (typ *)&obj
 
 #define epicsExportRegistrar(func) \
-epicsShareFunc REGISTRAR EPICS_EXPORT_POBJ(func) = (REGISTRAR)(void*)&func
+epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(func) = (REGISTRAR)(void*)&func
 
 #ifdef __cplusplus
 }

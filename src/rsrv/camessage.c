@@ -375,6 +375,7 @@ LOCAL int tcp_version_action ( caHdrLargeArray *mp, void *pPayload,
             db_event_change_priority ( client->evuser, priorityOfEvents );
             epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsPriorityNew );
         }
+        client->priority = mp->m_dataType;
     }
     return RSRV_OK;
 }

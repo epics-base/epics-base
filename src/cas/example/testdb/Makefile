@@ -1,4 +1,6 @@
 
+# $Log$
+
 TOP=../../../..
 
 include $(TOP)/config/CONFIG_BASE

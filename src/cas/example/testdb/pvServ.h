@@ -1,4 +1,9 @@
 
+/*
+ * $Id$
+ * $Log$
+ */
+
 #include "casdef.h"
 #include "osiTimer.h"
 

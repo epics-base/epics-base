@@ -6,6 +6,6 @@
 #include <float.h>
 
 #define isnan(D) _isnan(D)
-#define isinf(D) _isinf(D)
+#define isinf(D) (!_finite(D))
 
 #endif /* epicsMathh */

@@ -3,19 +3,6 @@
 #
 # This file is maintained by the EPICS community.
 
-# OLDINSTALL def used only for releases prior to R3.12.2.2
-# Unix Compiler and other Utilities
-ifeq ($(HOST_ARCH),hp700)
-OLDINSTALL = bsdinstall
-else
-ifeq ($(HOST_ARCH),solaris)
-# use ucb install on solaris until a base/tools/installEpics is created
-OLDINSTALL = /usr/ucb/install
-else
-OLDINSTALL = install
-endif
-endif
-
 AR = $(VX_GNU_BIN)/ar68k
 RANLIB = $(VX_GNU_BIN)/ranlib68k
 YACC = $(EYACC)

@@ -10,8 +10,6 @@
 GCC = gcc
 ACC = acc
 SUNCC = cc
-# OLDINSTALL def used in pre R3.12.2.2 releases
-OLDINSTALL = install
 AR = ar
 ARFLAGS = r
 RANLIB = ranlib

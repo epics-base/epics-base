@@ -9,8 +9,6 @@
 GCC = gcc
 ACC = /usr/lang/acc
 SUNCC = cc
-# OLDINSTALL def used only in releases prior to R3.12.2.2
-OLDINSTALL = install
 AR = ar
 ARFLAGS = r
 RANLIB = ranlib

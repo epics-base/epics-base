@@ -10,10 +10,6 @@ GCC = gcc
 ACC = $(SPARCWORKS)/bin/cc
 # SUNCC doesn't exist under Solaris
 
-# OLDINSTALL def used only in releases prior to R3.12.2.2
-# use ucb install until a base/tools/installEpics is created
-OLDINSTALL = /usr/ucb/install
-
 AR = ar
 RANLIB =
 YACC = $(EYACC)

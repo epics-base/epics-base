@@ -10,8 +10,6 @@ ACC = cc -Aa
 HPACC = cc -Aa
 HPCC = cc -Ac
 TRADCC = cc
-# OLDINSTALL def used only in releases prior to R3.12.2.2
-OLDINSTALL = bsdinstall
 AR = ar
 RANLIB = ranlib
 YACC = $(EYACC)

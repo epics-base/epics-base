@@ -9,8 +9,6 @@
 GCC = cc
 ACC = cc
 KRCC = cc -cckr
-# OLDINSTALL def used only in pre R3.12.2.2 releases
-OLDINSTALL = sgiinstall
 AR = ar
 ARFLAGS = r
 RANLIB = ls

@@ -8,8 +8,6 @@
 GCC = gcc
 ACC = cc -std
 TRADCC = cc -traditional
-# OLDINSTALL def used in releases prior to R3.12.2.2
-OLDINSTALL = installbsd
 AR = ar
 RANLIB = ranlib
 YACC = $(EYACC)

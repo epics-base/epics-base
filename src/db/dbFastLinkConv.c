@@ -781,8 +781,6 @@ static long cvt_f_st(
  
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
-   else
-     status = S_db_precision;
    cvtFloatToString(*from, to, precision);
    return(status);
  }
@@ -864,8 +862,6 @@ static long cvt_d_st(
  
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
-   else
-     status = S_db_precision;
    cvtDoubleToString(*from, to, precision);
    return(status);
  }

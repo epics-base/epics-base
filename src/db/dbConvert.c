@@ -1556,8 +1556,6 @@ static long getFloatString(
     if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
-    else
-	status=S_db_precision;
     if(nRequest==1 && offset==0) {
 	cvtFloatToString(*psrc,pbuffer,precision);
 	return(status);
@@ -1758,8 +1756,6 @@ static long getDoubleString(
     if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
-    else
-	status=S_db_precision;
     if(nRequest==1 && offset==0) {
 	cvtDoubleToString(*psrc,pbuffer,precision);
 	return(status);
@@ -3768,9 +3764,6 @@ static long putFloatString(
     if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
-    else
-	status=S_db_precision;
-
     if(nRequest==1 && offset==0) {
 	cvtFloatToString(*pbuffer,pdest,precision);
 	return(status);
@@ -3972,9 +3965,6 @@ static long putDoubleString(
     if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
-    else
-	status=S_db_precision;
-
     if(nRequest==1 && offset==0) {
 	cvtDoubleToString(*pbuffer,pdest,precision);
 	return(status);

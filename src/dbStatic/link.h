@@ -93,6 +93,11 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 #define pvlOptCP	0x8	/*CA + process on monitor*/
 #define pvlOptCPP	0x10	/*CA + process passive record on monitor*/
 #define pvlOptFWD	0x20	/*Generate ca_put for forward link*/
+#define pvlOptInpNative	0x40	/*Input native*/
+#define pvlOptInpString	0x80	/*Input as string*/
+#define pvlOptOutNative	0x100	/*Output native*/
+#define pvlOptOutString	0x200	/*Output as string*/
+
 typedef long (*LINKCVT)();
 struct pv_link {
 	char	*pvname;	/*pvname to link to*/

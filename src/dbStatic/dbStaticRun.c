@@ -408,6 +408,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    if(!plink) return(FALSE);
 	    if(plink->type!=CONSTANT) return(FALSE);
 	    if(plink->value.constantStr == 0) return(TRUE);
+	    if(!pflddes->initial) return(FALSE);
 	    if(strcmp(plink->value.constantStr,pflddes->initial)==0)
 		return(TRUE);
 	    return(FALSE);

@@ -968,6 +968,9 @@ long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
 
 			    plink->type = CA_LINK;
 			    plink->value.pv_link.precord = precord;
+			    if(pfldDes->field_type==DBF_INLINK) {
+				plink->value.pv_link.pvlMask |= pvlOptInpNative;
+			    }
 			    dbCaAddLink(plink);
 			    if(pfldDes->field_type==DBF_FWDLINK) {
 				pperiod = strrchr(plink->value.pv_link.pvname,
@@ -1078,7 +1081,7 @@ long dbPut(DBADDR *paddr,short dbrType,void *pbuffer,long nRequest)
 	    status = putSpecial(paddr,0);
 	    if(status) return(status);
 	}
-	if((no_elements<=1) && (!prset || !(prset->put_array_info))) {
+	if(no_elements<=1) {
 		status = (*dbFastPutConvertRoutine[dbrType][field_type])
 			(pbuffer,paddr->pfield, paddr);
 	} else {

@@ -468,6 +468,9 @@ LOCAL long initDatabase(void)
 		    } else {/*It is a CA link*/
 			char	*pperiod;
 
+			if(pdbFldDes->field_type==DBF_INLINK) {
+			    plink->value.pv_link.pvlMask |= pvlOptInpNative;
+			}
 			dbCaAddLink(plink);
 			if(pdbFldDes->field_type==DBF_FWDLINK) {
 			    pperiod = strrchr(plink->value.pv_link.pvname,'.');

@@ -20,15 +20,16 @@ of this distribution.
 *
 * Modification Log:
 * -----------------
-* .01  08APR96	mrk	Made separate module for dbcal
+* .01  08APR96	mrk	Made separate module for dbcar
 ****************************************************************/
 
-/* for input links */
-#define	CA_CONNECT		1
-#define	CA_DELETE		2
-#define	CA_WRITE_NATIVE		3
-#define	CA_WRITE_STRING		4
-#define	CA_MONITOR_STRING	5
+/* link_action mask */
+#define	CA_DELETE			0x1
+#define	CA_CONNECT			0x2
+#define	CA_WRITE_NATIVE			0x4
+#define	CA_WRITE_STRING			0x8
+#define	CA_MONITOR_NATIVE		0x10
+#define	CA_MONITOR_STRING		0x20
 typedef struct caLink
 {
 	ELLNODE		node;
@@ -49,5 +50,7 @@ typedef struct caLink
 	char		gotOutNative;
 	char		gotInString;
 	char		gotOutString;
-	char		newWrite;
+	char		newOutNative;
+	char		newOutString;
+	char		gotFirstConnection;
 }caLink;

@@ -193,9 +193,13 @@ static long putParmString(char **pparm,char *pstring)
 {
     size_t	size;
 
-    size = strlen(pstring) + 1;
-    if(size>=MAX_STRING_SIZE) return(S_dbLib_badLink);
     if(*pparm && (*pparm != pNullString)) free((void *)(*pparm));
+    if(!pstring) return(0);
+    if(!(pstring = strchr(pstring,'@'))) return(0);
+    pstring++;
+    size = strlen(pstring) + 1;
+    if(size==1) return(0);
+    if(size>=MAX_STRING_SIZE) return(S_dbLib_badLink);
     *pparm = dbCalloc(size, sizeof(char *));
     strcpy(*pparm,pstring);
     return(0);
@@ -1909,6 +1913,7 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
 	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
 	    pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
 	    if(!pdbDeviceMenu) return(NULL);
+	    if(pdbDeviceMenu->nChoice == 0) return(NULL);
 	    for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
 		if (!(pchoice = pdbDeviceMenu->papChoice[i]))
 		    continue;

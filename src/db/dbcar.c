@@ -85,7 +85,7 @@ long dbcar(char	*precordname,int level)
 			    if(!ca_read_access(pca->chid)) noReadAccess++;
 			    if(!ca_write_access(pca->chid)) noWriteAccess++;
 			    if(level>1) {
-				printf("    connected");
+				printf("    connected ");
 				printf("%s",ca_host_name(pca->chid));
 				if(!ca_read_access(pca->chid))
 					printf(" no_read_access");
@@ -95,15 +95,21 @@ long dbcar(char	*precordname,int level)
 				    precord->name,
 				    pdbFldDes->name,
 				    plink->value.pv_link.pvname);
-				printf(" nDisconnect %lu nNoWrite %lu\n",
-				    pca->nDisconnect,pca->nNoWrite);
+				if(nDisconnect)
+				    printf(" nDisconnect %lu",pca->nDisconnect);
+				if(nNoWrite)
+				    printf(" nNoWrite %lu",pca->nNoWrite);
+				printf("\n");
 			    }
 			} else { 
 			    if(level>0) {
 				printf("not_connected %s.%s",
 					precord->name,pdbFldDes->name);
-				printf(" nDisconnect %lu nNoWrite %lu\n",
-				    pca->nDisconnect,pca->nNoWrite);
+				if(nDisconnect)
+				    printf(" nDisconnect %lu",pca->nDisconnect);
+				if(nNoWrite)
+				    printf(" nNoWrite %lu",pca->nNoWrite);
+				printf("\n");
 			    }
 			}
 		    }

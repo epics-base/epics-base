@@ -47,8 +47,30 @@ void scanOnce(void *precord);
 static ELLLIST caList;	/* Work list for dbCaTask */
 static SEM_ID caListSem; /*Mutual exclusions semaphores for caList*/
 static SEM_ID caWakeupSem; /*wakeup semaphore for dbCaTask*/
-void dbCaTask(); /*The Channel Access Task*/
+void dbCaTask(void); /*The Channel Access Task*/
+
+/* caLink locking
+ * 1) dbCaTask never locks because ca_xxx calls can block
+ * 2) Everything else locks.
+ * The above means that everything MUST be ok while dbCaTask is executing
+ * Key to making things work is as follows
+ * 1) pcaLink->link_action only read/changed while caListSem held
+ * 2) If any void *p fields in caLink need to be changed free entire caLink
+ *    and allocate a brand new one.
+*/
 
+static void addAction(caLink *pca, short link_action)
+{ 
+    int callAdd = FALSE;
+
+    semTake(caListSem,WAIT_FOREVER);
+    if(pca->link_action==0) callAdd = TRUE;
+    pca->link_action |= link_action;
+    if(callAdd) ellAdd(&caList,&pca->node);
+    semGive(caListSem);
+    if(callAdd) semGive(caWakeupSem);
+}
+
 void dbCaLinkInit(void)
 {
 	ellInit(&caList);
@@ -75,28 +97,25 @@ void dbCaAddLink( struct link *plink)
 		printf("dbCaAddLink: semBCreate failed\n");
 		taskSuspend(0);
 	}
-	semTake(caListSem,WAIT_FOREVER);
-	pca->link_action = CA_CONNECT;
-	ellAdd(&caList,&pca->node);
-	semGive(caListSem);
-	semGive(caWakeupSem);
+	addAction(pca,CA_CONNECT);
 	return;
 }
 
 void dbCaRemoveLink( struct link *plink)
 {
-	caLink	*pca = (caLink *)plink->value.pv_link.pvt;
+    caLink	*pca = (caLink *)plink->value.pv_link.pvt;
+    STATUS		semStatus;
 
-	if(!pca) return;
-	semTake(caListSem,WAIT_FOREVER);
-	pca->link_action = CA_DELETE;
-	if(!pca->link_action){/*If not on work list add it*/
-		ellAdd(&caList,&pca->node);
-	}
-	plink->value.pv_link.pvt = 0;
-	pca->plink = 0;
-	semGive(caListSem);
-	semGive(caWakeupSem);
+    if(!pca) return;
+    semStatus = semTake(pca->lock,WAIT_FOREVER);
+    if(semStatus!=OK) {
+	epicsPrintf("dbCaRemoveLink: semStatus!OK\n");
+	return; 
+    }
+    pca->plink = 0;
+    plink->value.pv_link.pvt = 0;
+    semGive(pca->lock);
+    addAction(pca,CA_DELETE);
 }
 
 
@@ -107,6 +126,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
     long		status = 0;
     long		(*pconvert)();
     STATUS		semStatus;
+    short		link_action = 0;
 
     if(!pca) {
 	epicsPrintf("dbCaGetLink: record %s pv_link.pvt is NULL\n",
@@ -116,9 +136,9 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
 	epicsPrintf("dbCaGetLink: semStatus!OK\n");
-	taskSuspend(0);
+	return(-1);
     }
-    if(ca_field_type(pca->chid) == TYPENOTCONN){
+    if(ca_state(pca->chid) != cs_conn) {
 	pca->sevr = INVALID_ALARM;
 	goto done;
     }
@@ -126,24 +146,11 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	pca->sevr = INVALID_ALARM;
 	goto done;
     }
-    if((pca->dbrType == DBR_ENUM)
-    && (dbDBRnewToDBRold[dbrType] == DBR_STRING)) {
+    if((pca->dbrType == DBR_ENUM) && (dbDBRnewToDBRold[dbrType] == DBR_STRING)){
 	/*Must ask server for DBR_STRING*/
 	if(!pca->pgetString) {
-	    pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
-	    semGive(pca->lock);
-	    semTake(caListSem,WAIT_FOREVER);
-	    if(!pca->link_action){/*If not on work list add it*/
-	        pca->link_action = CA_MONITOR_STRING;
-		ellAdd(&caList,&pca->node);
-	    }
-	    semGive(caListSem);
-	    semGive(caWakeupSem);
-	    semStatus = semTake(pca->lock,WAIT_FOREVER);
-	    if(semStatus!=OK) {
-		epicsPrintf("dbCaGetLink: semStatus!OK\n");
-		taskSuspend(0);
-	    }
+	    plink->value.pv_link.pvlMask |= pvlOptInpString;
+	    link_action |= CA_MONITOR_STRING;
 	}
 	if(!pca->gotInString) {
 	    pca->sevr = INVALID_ALARM;
@@ -154,6 +161,10 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
        	status = (*(pconvert))(pca->pgetString, pdest, 0);
 	goto done;
     }
+    if(!pca->pgetNative) {
+	plink->value.pv_link.pvlMask |= pvlOptInpNative;
+	link_action |= CA_MONITOR_NATIVE;
+    }
     if(!pca->gotInNative){
 	pca->sevr = INVALID_ALARM;
 	goto done;
@@ -161,7 +172,6 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
     if(!nelements || *nelements == 1){
 	pconvert=
 	    dbFastGetConvertRoutine[dbDBRoldToDBFnew[pca->dbrType]][dbrType];
-	/*Ignore error routine*/
        	(*(pconvert))(pca->pgetNative, pdest, 0);
     }else{
 	unsigned long ntoget = *nelements;
@@ -174,12 +184,13 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	dbAddr.pfield = pca->pgetNative;
 	/*Following will only be used for pca->dbrType == DBR_STRING*/
 	dbAddr.field_size = MAX_STRING_SIZE;
-	/*Ignore error routine*/
+	/*Ignore error return*/
 	(*(pconvert))(&dbAddr,pdest,ntoget,ntoget,0);
     }
 done:
     if(psevr) *psevr = pca->sevr;
     semGive(pca->lock);
+    if(link_action) addAction(pca,link_action);
     return(status);
 }
 
@@ -190,7 +201,7 @@ long dbCaPutLink(struct link *plink,short dbrType,
     long	(*pconvert)();
     long	status = 0;
     STATUS	semStatus;
-    short	link_action;
+    short	link_action = 0;
 
     if(!pca) {
 	epicsPrintf("dbCaPutLink: record %s pv_link.pvt is NULL\n",
@@ -201,22 +212,30 @@ long dbCaPutLink(struct link *plink,short dbrType,
     semStatus = semTake(pca->lock,WAIT_FOREVER);
     if(semStatus!=OK) {
 	epicsPrintf("dbCaGetLink: semStatus!OK\n");
-	taskSuspend(0);
+	return(-1);
     }
     if(ca_state(pca->chid) != cs_conn) {
 	semGive(pca->lock);
 	return(-1);
     }
-    if((pca->dbrType == DBR_ENUM)
-    && (dbDBRnewToDBRold[dbrType] == DBR_STRING)) {
+    if((pca->dbrType == DBR_ENUM) && (dbDBRnewToDBRold[dbrType] == DBR_STRING)){
 	/*Must send DBR_STRING*/
-	if(!pca->pputString)
+	if(!pca->pputString) {
 	    pca->pputString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
+	    plink->value.pv_link.pvlMask |= pvlOptOutString;
+	}
 	pconvert=dbFastPutConvertRoutine[dbrType][dbDBRoldToDBFnew[DBR_STRING]];
 	status = (*(pconvert))(psource,pca->pputString, 0);
-	link_action = CA_WRITE_STRING;
+	link_action |= CA_WRITE_STRING;
 	pca->gotOutString = TRUE;
+	if(pca->newOutString) pca->nNoWrite++;
+	pca->newOutString = TRUE;
     } else {
+	if(!pca->pputNative) {
+	    pca->pputNative = dbCalloc(pca->nelements,
+		dbr_value_size[ca_field_type(pca->chid)]);
+	    plink->value.pv_link.pvlMask |= pvlOptOutString;
+	}
 	if(nelements == 1){
 	    pconvert = dbFastPutConvertRoutine
 		[dbrType][dbDBRoldToDBFnew[pca->dbrType]];
@@ -231,20 +250,13 @@ long dbCaPutLink(struct link *plink,short dbrType,
 	    dbAddr.field_size = MAX_STRING_SIZE;
 	    status = (*(pconvert))(&dbAddr,psource,nelements,pca->nelements,0);
 	}
-	link_action = CA_WRITE_NATIVE;
+	link_action |= CA_WRITE_NATIVE;
 	pca->gotOutNative = TRUE;
+	if(pca->newOutNative) pca->nNoWrite++;
+	pca->newOutNative = TRUE;
     }
-    if(pca->newWrite) pca->nNoWrite++;
-    pca->newWrite = TRUE;
     semGive(pca->lock);
-    /* link it into the action list */
-    semTake(caListSem,WAIT_FOREVER);
-    if(!pca->link_action && ca_write_access(pca->chid)){
-	pca->link_action = link_action;
-	ellAdd(&caList,&pca->node);
-    }
-    semGive(caListSem);
-    semGive(caWakeupSem);
+    addAction(pca,link_action);
     return(status);
 }
 
@@ -253,16 +265,22 @@ static void eventCallback(struct event_handler_args arg)
 	caLink		*pca = (caLink *)arg.usr;
 	struct link	*plink;
 	long		size;
+	STATUS		semStatus;
+	dbCommon	*precord = 0;
 
 	if(!pca) {
 		epicsPrintf("eventCallback why was arg.usr NULL\n");
 		return;
 	}
+	semStatus = semTake(pca->lock,WAIT_FOREVER);
+	if(semStatus!=OK) {
+	    epicsPrintf("dbCa eventTask: semStatus!OK\n");
+	    return;
+	}
 	plink = pca->plink;
+	if(!plink) goto done;
+	precord = (dbCommon *)plink->value.pv_link.precord;
 	if(arg.status != ECA_NORMAL) {
-		dbCommon	*precord = 0;
-
-		if(plink) precord = (dbCommon *)plink->value.pv_link.precord;
 		if(precord) {
 			if(arg.status!=ECA_NORDACCESS)
 			epicsPrintf("dbCa: eventCallback record %s error %s\n",
@@ -271,16 +289,14 @@ static void eventCallback(struct event_handler_args arg)
 			epicsPrintf("dbCa: eventCallback error %s\n",
 				ca_message(arg.status));
 		}
-		return;
+		goto done;
 	}
 	if(!arg.dbr) {
 		epicsPrintf("eventCallback why was arg.dbr NULL\n");
-		return;
+		goto done;
 	}
-	semTake(pca->lock,WAIT_FOREVER);
 	size = arg.count * dbr_value_size[arg.type];
-	if((arg.type==DBR_STS_STRING)
-	&& (ca_field_type(pca->chid)==DBR_ENUM)) {
+	if((arg.type==DBR_STS_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
 	    memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
 	    pca->gotInString = TRUE;
 	} else switch (arg.type){
@@ -299,17 +315,14 @@ static void eventCallback(struct event_handler_args arg)
 	    break;
 	}
 	pca->sevr=(unsigned short)((struct dbr_sts_double *)arg.dbr)->severity;
-	plink = pca->plink;
-	if(plink) {
+	if(precord) {
 	    struct pv_link *ppv_link = &(plink->value.pv_link);
-	    dbCommon	*precord = ppv_link->precord;
 
-	    if(precord) {
-		if((ppv_link->pvlMask&pvlOptCP)
-		|| ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
-				scanOnce(precord);
-	    }
+	    if((ppv_link->pvlMask&pvlOptCP)
+	    || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
+		scanOnce(precord);
 	}
+done:
 	semGive(pca->lock);
 }
 
@@ -317,12 +330,19 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 {
 	caLink		*pca = (caLink *)ca_puser(arg.chid);
 	struct link	*plink;
+	STATUS		semStatus;
 
 	if(!pca) {
 		epicsPrintf("accessRightsCallback why was arg.usr NULL\n");
 		return;
 	}
-	if(ca_read_access(arg.chid) || ca_write_access(arg.chid)) return;
+	if(ca_state(pca->chid) != cs_conn) return;/*connectionCallback will handle*/
+	semStatus = semTake(pca->lock,WAIT_FOREVER);
+	if(semStatus!=OK) {
+	    epicsPrintf("dbCa accessRightsCallback: semStatus!OK\n");
+	    return;
+	}
+	if(ca_read_access(arg.chid) || ca_write_access(arg.chid)) goto done;
 	plink = pca->plink;
 	if(plink) {
 	    struct pv_link *ppv_link = &(plink->value.pv_link);
@@ -331,65 +351,72 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
 	    if(precord) {
 		if((ppv_link->pvlMask&pvlOptCP)
 		|| ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
-				scanOnce(precord);
+			scanOnce(precord);
 	    }
 	}
+done:
+	semGive(pca->lock);
 }
 
 static void connectionCallback(struct connection_handler_args arg)
 {
     caLink	*pca;
-    int	status;
+    short	link_action = 0;
+    struct link	*plink;
+    STATUS	semStatus;
 
     pca = ca_puser(arg.chid);
     if(!pca) return;
-    if(ca_state(arg.chid) != cs_conn){
-	pca->nDisconnect++;
+    semStatus = semTake(pca->lock,WAIT_FOREVER);
+    if(semStatus!=OK) {
+	epicsPrintf("dbCa connectionCallback: semStatus!OK\n");
 	return;
     }
-    semTake(pca->lock,WAIT_FOREVER);
-    if((pca->nelements != ca_element_count(arg.chid))
-    || (pca->dbrType != ca_field_type(arg.chid))){
-	DBLINK	*plink = pca->plink;
+    plink = pca->plink;
+    if(!plink) goto done;
+    if(ca_state(arg.chid) != cs_conn){
+	struct pv_link *ppv_link = &(plink->value.pv_link);
+	dbCommon	*precord = ppv_link->precord;
 
-	if(plink) plink->value.pv_link.getCvt = 0;
-	free(pca->pgetNative);
-	free(pca->pputNative);
-	pca->pgetNative = NULL;
-	pca->pputNative = NULL;
-	pca->gotInNative = FALSE;
-	pca->gotOutNative = FALSE;
-	pca->gotInString = FALSE;
+	pca->nDisconnect++;
+	if(precord) {
+	    if((ppv_link->pvlMask&pvlOptCP)
+	    || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
+		scanOnce(precord);
+	}
+	goto done;
     }
-    if(pca->pgetNative == NULL){
-	short	element_size;
-
-	pca->nelements = ca_element_count(arg.chid);
-	pca->dbrType = ca_field_type(arg.chid);
-	element_size = dbr_value_size[ca_field_type(arg.chid)];
-	pca->pgetNative = dbCalloc(pca->nelements,element_size);
-	pca->pputNative = dbCalloc(pca->nelements,element_size);
-	status = ca_add_array_event(
-	    ca_field_type(arg.chid)+DBR_STS_STRING, ca_element_count(arg.chid),
-	    arg.chid, eventCallback,pca,0.0,0.0,0.0,0);
-	if(status!=ECA_NORMAL)
-	    epicsPrintf("dbCaTask ca_search_and_connect %s\n",
-		ca_message(status));
-	if(pca->pgetString) {
-	    status = ca_add_array_event(DBR_STS_STRING,1,
-		arg.chid, eventCallback,pca,0.0,0.0,0.0,0);
-	    if(status!=ECA_NORMAL)
-		epicsPrintf("dbCaTask ca_search_and_connect %s\n",
-		    ca_message(status));
+    if(pca->gotFirstConnection) {
+	if((pca->nelements != ca_element_count(arg.chid))
+	|| (pca->dbrType != ca_field_type(arg.chid))){
+	    /* field type or nelements changed */
+	    /*Only safe thing is to delete old caLink and allocate a new one*/
+	    pca->plink = 0;
+	    plink->value.pv_link.pvt = 0;
+	    semGive(pca->lock);
+	    addAction(pca,CA_DELETE);
+	    dbCaAddLink(plink);
+	    return;
 	}
     }
-    semGive(pca->lock);
-    semTake(caListSem,WAIT_FOREVER);
-    if(pca->gotOutNative && !pca->link_action) {
-	pca->link_action = CA_WRITE_NATIVE;
-	ellAdd(&caList,&pca->node);
+    pca->gotFirstConnection = TRUE;
+    pca->nelements = ca_element_count(arg.chid);
+    pca->dbrType = ca_field_type(arg.chid);
+    if((plink->value.pv_link.pvlMask & pvlOptInpNative) && (!pca->pgetNative)){
+	link_action |= CA_MONITOR_NATIVE;
     }
-    semGive(caListSem);
+    if((plink->value.pv_link.pvlMask & pvlOptInpString) && (!pca->pgetString)){
+	link_action |= CA_MONITOR_STRING;
+    }
+    if((plink->value.pv_link.pvlMask & pvlOptOutNative) && (pca->gotOutNative)){
+	link_action |= CA_WRITE_NATIVE;
+    }
+    if((plink->value.pv_link.pvlMask & pvlOptOutString) && (pca->gotOutString)){
+	link_action |= CA_WRITE_STRING;
+    }
+done:
+    semGive(pca->lock);
+    if(link_action) addAction(pca,link_action);
 }
 
 void dbCaTask()
@@ -409,24 +436,7 @@ void dbCaTask()
 		link_action = pca->link_action;
 		pca->link_action = 0;
 		semGive(caListSem); /*Give it back immediately*/
-		switch(link_action) {
-		case CA_CONNECT:
-		    status = ca_search_and_connect(
-				  pca->plink->value.pv_link.pvname,
-				  &(pca->chid),
-				  connectionCallback,(void *)pca);
-		    if(status!=ECA_NORMAL) {
-			epicsPrintf("dbCaTask ca_search_and_connect %s\n",
-				ca_message(status));
-			break;
-		    }
-		    status = ca_replace_access_rights_event(pca->chid,
-				accessRightsCallback);
-		    if(status!=ECA_NORMAL)
-			epicsPrintf("dbCaTask ca_replace_access_rights_event %s\n",
-				ca_message(status));
-		    break;
-		case CA_DELETE:
+		if(link_action&CA_DELETE) {/*This must be first*/
 		    if(pca->chid) ca_clear_channel(pca->chid);	
 		    free(pca->pgetNative);
 		    free(pca->pputNative);
@@ -434,42 +444,66 @@ void dbCaTask()
 		    free(pca->pputString);
 		    semDelete(pca->lock);
 		    free(pca);
-		    break;
-		case CA_WRITE_NATIVE:
-		    if(ca_state(pca->chid) == cs_conn){
-			status = ca_array_put(
+		    continue; /*No other link_action makes sense*/
+		}
+		if(link_action&CA_CONNECT) {
+		    status = ca_search_and_connect(
+				  pca->plink->value.pv_link.pvname,
+				  &(pca->chid),
+				  connectionCallback,(void *)pca);
+		    if(status!=ECA_NORMAL) {
+			epicsPrintf("dbCaTask ca_search_and_connect %s\n",
+				ca_message(status));
+		        continue;
+		    }
+		    status = ca_replace_access_rights_event(pca->chid,
+				accessRightsCallback);
+		    if(status!=ECA_NORMAL)
+			epicsPrintf("dbCaTask replace_access_rights_event %s\n",
+				ca_message(status));
+		    continue; /*Other options must wait until connect*/
+		}
+		if(ca_state(pca->chid) != cs_conn) continue;
+		if(link_action&CA_WRITE_NATIVE) {
+		    status = ca_array_put(
 			    pca->dbrType,pca->nelements,
 			    pca->chid,pca->pputNative);
-			if(status==ECA_NORMAL){
-			    pca->newWrite = FALSE;
-			}
-		    }
-		    break;
-		case CA_WRITE_STRING:
-		    if(ca_state(pca->chid) == cs_conn){
-			status = ca_array_put(
+		    if(status==ECA_NORMAL) pca->newOutNative = FALSE;
+		}
+		if(link_action&CA_WRITE_STRING) {
+		    status = ca_array_put(
 			    DBR_STRING,1,
 			    pca->chid,pca->pputString);
-			if(status==ECA_NORMAL) {
-			    pca->newWrite = FALSE;
-			}
-		    }
-		    break;
-		case CA_MONITOR_STRING:
-		    if(ca_state(pca->chid) == cs_conn){
-			status = ca_add_array_event(DBR_STS_STRING,1,
-				pca->chid, eventCallback,pca,0.0,0.0,0.0,0);
-			if(status!=ECA_NORMAL)
+		    if(status==ECA_NORMAL) pca->newOutString = FALSE;
+		}
+		if(link_action&CA_MONITOR_NATIVE) {
+		    short  element_size;
+
+		    element_size = dbr_value_size[ca_field_type(pca->chid)];
+		    pca->pgetNative = dbCalloc(pca->nelements,element_size);
+		    status = ca_add_array_event(
+			ca_field_type(pca->chid)+DBR_STS_STRING,
+			ca_element_count(pca->chid),
+			pca->chid, eventCallback,pca,0.0,0.0,0.0,
+			0);
+		    if(status!=ECA_NORMAL)
+		        epicsPrintf("dbCaTask ca_add_array_event %s\n",
+			    ca_message(status));
+		}
+		if(link_action&CA_MONITOR_STRING) {
+		    pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
+		    status = ca_add_array_event(DBR_STS_STRING,1,
+				pca->chid, eventCallback,pca,0.0,0.0,0.0,
+				0);
+		    if(status!=ECA_NORMAL)
 			    epicsPrintf("dbCaTask ca_add_array_event %s\n",
 				ca_message(status));
-		    }
-		    break;
-		}/*switch*/
-	    } else {
+		}
+	    } else { /* caList was empty */
 		semGive(caListSem);
 		break; /*caList is empty*/
 	    }
 	}
-	SEVCHK(ca_flush_io(),0);
+	SEVCHK(ca_flush_io(),"dbCaTask");
     }
 }

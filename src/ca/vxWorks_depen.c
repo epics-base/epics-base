@@ -26,78 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.41  1999/09/02 21:44:50  jhill
- * improved the way that socket error numbers are converted to strings,
- * changed () to (void) in func proto, and fixed missing parameter to
- * checkConnWatchdogs() bug resulting from this
- *
- * Revision 1.40  1999/07/16 21:08:02  jhill
- * fixed bug occurring when connection dropped while waiting to send
- *
- * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
- * fixed bug where client disconnects while waiting to send TCP
- *
- * Revision 1.39  1998/09/24 21:22:55  jhill
- * subtle changes related to efficency when checking connection timers
- *
- * Revision 1.38  1998/06/16 00:56:03  jhill
- * moved code from here to libCom
- *
- * Revision 1.37  1998/05/08 00:20:56  jhill
- * added missing call to freeListCleanup()
- *
- * Revision 1.36  1998/05/05 16:07:59  jhill
- * Use lock macros and task variable in ca_extra_event_labor()
- *
- * Revision 1.35  1998/04/13 19:14:35  jhill
- * fixed task variable problem
- *
- * Revision 1.34  1998/02/05 22:39:46  jhill
- * use inversion safe mutex
- *
- * Revision 1.33  1997/08/04 23:37:19  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.31  1997/06/13 09:14:28  jhill
- * connect/search proto changes
- *
- * Revision 1.30  1997/04/29 06:13:49  jhill
- * use free lists
- *
- * Revision 1.29  1997/04/23 17:05:10  jhill
- * pc port changes
- *
- * Revision 1.28  1997/04/10 19:26:19  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.27  1996/11/02 00:51:10  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.26  1996/09/16 16:39:20  jhill
- * local except => except handler
- *
- * Revision 1.25  1996/08/13 23:16:23  jhill
- * removed os specific code
- *
- * Revision 1.23  1996/08/05 19:18:56  jhill
- * better msg for lack of fp
- *
- * Revision 1.22  1996/06/19 17:59:31  jhill
- * many 3.13 beta changes
- *
- * Revision 1.21  1995/10/18  16:44:36  jhill
- * select time out must be greater than a vxWorks tick
- *
- * Revision 1.20  1995/10/12  01:35:31  jhill
- * Moved cac_mux_io() to iocinf.c
- *
- * Revision 1.19  1995/08/22  00:27:58  jhill
- * added cvs style mod log
- *
- *
  */
 
 #include "callback.h"
@@ -125,8 +53,12 @@ LOCAL int event_import(int tid);
 #define TICKSPERSEC     1000           /* milli sec per sec    */
 #define LOCALTICKS      ((sysClkRateGet()*POLLDELAY)/TICKSPERSEC)
 
+#ifdef DEBUG
+#define ifDepenDebugPrintf(argsInParen) printf argsInParen
+#else
+#define ifDepenDebugPrintf(argsInParen)
+#endif
 
-
 /*
  * cac_gettimeval()
  */
@@ -169,7 +101,6 @@ void cac_gettimeval(struct timeval  *pt)
         pt->tv_usec = ((current-sec*rate)*USEC_PER_SEC)/rate;
 }
 
-
 /*
  * cac_block_for_io_completion()
  */
@@ -203,7 +134,6 @@ void cac_block_for_io_completion(struct timeval *pTV)
 #endif
 }
 
-
 /*
  * os_specific_sg_create()
  */
@@ -213,7 +143,6 @@ void os_specific_sg_create(CASG   *pcasg)
 	assert (pcasg->sem);
 }
 
-
 /*
  * os_specific_sg_delete()
  */
@@ -225,7 +154,6 @@ void os_specific_sg_delete(CASG   *pcasg)
 	assert (status == OK);
 }
 
-
 /*
  * os_specific_sg_io_complete()
  */
@@ -237,7 +165,6 @@ void os_specific_sg_io_complete(CASG   *pcasg)
 	assert (status == OK);
 }
 
-
 /*
  * cac_block_for_sg_completion()
  */
@@ -271,8 +198,6 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 #endif
 }
 
-
-
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
@@ -349,7 +274,6 @@ LOCAL int cac_add_task_variable (struct CA_STATIC *ca_temp)
         return ECA_NORMAL;
 }
 
-
 /*
  *      CA_TASK_EXIT_TCBX()
  *
@@ -401,7 +325,6 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
         }
 }
 
-
 /*
  * ca_task_initialize()
  */
@@ -486,7 +409,6 @@ int ca_task_initialize ()
 	return ECA_NORMAL;
 }
 
-
 /*
  * ca_task_exit ()
  */
@@ -503,7 +425,6 @@ int epicsShareAPI ca_task_exit (void)
 	return cac_os_depen_exit_tid (pcas, 0);
 }
 
-
 /*
  * cac_os_depen_exit_tid ()
  */
@@ -645,7 +566,6 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	return ECA_NORMAL;
 }
 
-
 /*
  * deleteCallBack()
  */
@@ -662,7 +582,6 @@ LOCAL void deleteCallBack(CALLBACK *pcb)
 	free (pcb);
 }
 
-
 /*
  *
  * localUserName() - for vxWorks
@@ -704,7 +623,6 @@ LOCAL int event_import(int tid)
 	}
 }
 
-
 /*
  * CA_IMPORT()
  *
@@ -763,7 +681,6 @@ int ca_import (int tid)
 	return ECA_NORMAL;
 }
 
-
 /*
  * CA_IMPORT_CANCEL()
  */
@@ -817,7 +734,6 @@ int ca_import_cancel(int tid)
 	return ECA_NORMAL;
 }
 
-
 /*
  * ca_check_for_fp()
  */
@@ -831,8 +747,6 @@ LOCAL void ca_check_for_fp()
         }
 }
 
-
-
 /*
  *      ca_spawn_repeater()
  *
@@ -863,7 +777,6 @@ void ca_spawn_repeater()
         }
 }
 
-
 /*
  * ca_repeater_task()
  */
@@ -873,8 +786,6 @@ LOCAL void ca_repeater_task()
         ca_repeater();
 }
 
-
-
 /*
  *      CA_EXTRA_EVENT_LABOR
  */
@@ -938,8 +849,6 @@ LOCAL void ca_extra_event_labor (void *pArg)
 	}
 }
 
-
-
 /*
  * CAC_RECV_TASK()
  *
@@ -1005,8 +914,6 @@ void cac_recv_task(int  tid)
 	}
 }
 
-
-
 /*
  * caSetDefaultPrintfHandler()
  *
@@ -1021,4 +928,342 @@ void caSetDefaultPrintfHandler ()
 {
 	ca_static->ca_printf_func = epicsVprintf;
 }
+
+/*
+ * local_addr()
+ * 
+ * A valid non-loopback local address is required in the
+ * beacon message in certain situations where
+ * there are beacon repeaters and there are addresses
+ * in the EPICS_CA_ADDRESS_LIST for which we dont have
+ * a strictly correct local server address on a multi-interface
+ * system. In this situation we use the first valid non-loopback local
+ * address found in the beacon message.
+ *
+ * Dont use ca_static based lock macros here because this is
+ * also called by the server. All locks required are applied at
+ * a higher level.
+ *
+ * Starting with TII there are subtle differences between the vxWorks
+ * net interface API and most other UNIX implementations
+ */
+int local_addr (int s, struct sockaddr_in *plcladdr)
+{
+    int             	        status;
+    struct ifconf   	        ifconf;
+    struct ifreq    	        ifreq[25];
+    struct ifreq    	        *pifreq;
+    struct ifreq                *pIfreqListEnd;
+    struct ifreq                *pnextifreq;
+    unsigned                    size;
+    static struct sockaddr_in   addr;
+    static char     	        init = FALSE;
+    struct sockaddr_in 	        *tmpaddr;
+    
+    if (init) {
+        *plcladdr = addr;
+        return OK;
+    }
+    
+    /* 
+     *	get the addr of the first interface found 
+     *	(report inconsistent interfaces however)
+     */
+    ifconf.ifc_len = sizeof ifreq;
+    ifconf.ifc_req = ifreq;
+    status = socket_ioctl(s, SIOCGIFCONF, &ifconf);
+    if (status < 0 || ifconf.ifc_len == 0) {
+        ca_printf(
+            "CAC: SIOCGIFCONF ioctl failed because \"%s\"\n", 
+            SOCKERRSTR(SOCKERRNO));
+        ifconf.ifc_len = 0;
+    }
+
+    pIfreqListEnd = (struct ifreq *) (ifconf.ifc_len + (char *) ifreq);
+    pIfreqListEnd--;
+
+    for (pifreq = ifconf.ifc_req; pifreq<=pIfreqListEnd; pifreq = pnextifreq ) {
+        unsigned flags;
+
+        /*
+         * compute the size of the current if req
+         */
+#       if BSD >= 44
+            /*
+             * vxWorks SENS IP kernel
+             */
+            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
+            if ( size < sizeof(*pifreq)) {
+                size = sizeof(*pifreq); 
+            }
+#       else
+            /*
+             * original vxWorks
+             */
+            size = sizeof(*pifreq);
+#       endif
+
+        pnextifreq = (struct ifreq *) (size + (char *) pifreq);
+        
+        if (pifreq->ifr_addr.sa_family != AF_INET){
+            ifDepenDebugPrintf ( ("local_addr: interface %s was not AF_INET\n", pifreq->ifr_name) );
+            continue;
+        }
+        
+        status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
+        if (status == ERROR){
+            ca_printf("local_addr: net intf flags fetch for %s failed\n", pifreq->ifr_name);
+            continue;
+        }
+        
+        /*
+         * flags are now stored in a union
+         */
+        flags = (unsigned) pifreq->ifr_flags;
+
+        if (!(flags & IFF_UP)) {
+            ifDepenDebugPrintf ( ("local_addr: net intf %s was down\n", pifreq->ifr_name) );
+            continue;
+        }
+        
+        /*
+         * dont use the loop back interface
+         */
+        if (flags & IFF_LOOPBACK) {
+            ifDepenDebugPrintf ( ("local_addr: ignoring loopback interface: %s\n", pifreq->ifr_name) );
+            continue;
+        }
+        
+        status = socket_ioctl(s, SIOCGIFADDR, pifreq);
+        if (status == ERROR){
+            ifDepenDebugPrintf ( ("local_addr: could not obtain addr for %s\n", pifreq->ifr_name) );
+            continue;
+        }
+        
+        ifDepenDebugPrintf ( ("local_addr: net intf %s found\n", pifreq->ifr_name) );
+        
+        tmpaddr = (struct sockaddr_in *) &pifreq->ifr_addr;
+        
+        init = TRUE;
+        addr = *tmpaddr;
+        break;
+    }
+    
+    if(!init){
+        return ERROR;
+    }
+    
+    *plcladdr = addr;
+    return OK;
+}
+
+/*
+ *  caDiscoverInterfaces()
+ *
+ *	This routine is provided with the address of an ELLLIST, a socket
+ * 	a destination port number, and a match address. When the 
+ * 	routine returns there will be one additional inet address 
+ *	(a caAddrNode) in the list for each inet interface found that 
+ *	is up and isnt a loop back interface (match addr is INADDR_ANY)
+ *	or it matches the specified interface (match addr isnt INADDR_ANY). 
+ *	If the interface supports broadcast then I add its broadcast 
+ *	address to the list. If the interface is a point to 
+ *	point link then I add the destination address of the point to
+ *	point link to the list. In either case I set the port number
+ *	in the address node to the port supplied in the argument
+ *	list.
+ *
+ * 	LOCK should be applied here for (pList)
+ * 	(this is also called from the server)
+ *
+ *  Dont use ca_static based lock macros here because this is
+ *  also called by the server. All locks required are applied at
+ *  higher level.
+ *
+ *  Starting with TII there are subtle differences between the vxWorks
+ *  net interface API and most other UNIX implementations
+ */
+void epicsShareAPI caDiscoverInterfaces
+     (ELLLIST *pList, int socket, unsigned short port, struct in_addr matchAddr)
+{
+     static const unsigned long      nelem = 100;
+     struct sockaddr_in              *pInetAddr;
+     caAddrNode                      *pNode;
+     int                             status;
+     struct ifconf                   ifconf;
+     struct ifreq                    *pIfreqList;
+     struct ifreq                    *pIfreqListEnd;
+     struct ifreq                    *pifreq;
+     struct ifreq                    *pnextifreq;
+     unsigned                        size;
+     
+     /*
+      * use pool so that we avoid using to much stack space
+      * under vxWorks
+      *
+      * nelem is set to the maximum interfaces 
+      * on one machine here
+      */
+     pIfreqList = (struct ifreq *)calloc(nelem, sizeof(*pifreq));
+     if(!pIfreqList){
+         return;
+     }
+     
+     ifconf.ifc_len = nelem*sizeof(*pifreq);
+     ifconf.ifc_req = pIfreqList;
+     status = socket_ioctl(socket, SIOCGIFCONF, &ifconf);
+     if (status < 0 || ifconf.ifc_len == 0) {
+         free(pIfreqList);
+         return;
+     }
+     
+     pIfreqListEnd = (struct ifreq *) (ifconf.ifc_len + (char *) pIfreqList);
+     pIfreqListEnd--;
+     
+     for (pifreq = pIfreqList; pifreq <= pIfreqListEnd; pifreq = pnextifreq ){
+         unsigned flags;
+
+        /*
+         * compute the size of the current if req
+         */
+#       if BSD >= 44
+            /*
+             * vxWorks SENS IP kernel
+             */
+            size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
+            if ( size < sizeof(*pifreq)) {
+                size = sizeof(*pifreq);
+            }
+#       else
+            /*
+             * original vxWorks
+             */
+            size = sizeof(*pifreq);
+#       endif
+
+        pnextifreq = (struct ifreq *) (size + (char *) pifreq);
+
+        /*
+         * If its not an internet inteface then dont use it 
+         */
+        if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
+             ifDepenDebugPrintf ( ("caDiscoverInterfaces: interface %s was not AF_INET\n", pifreq->ifr_name) );
+             continue;
+        }
+
+        status = socket_ioctl(socket, SIOCGIFFLAGS, pifreq);
+        if (status) {
+            ca_printf ("caDiscoverInterfaces: net intf flags fetch for %s failed\n", pifreq->ifr_name);
+            continue;
+        }
+        
+        /*
+         * flags are now stored in a union
+         */
+        flags = (unsigned) pifreq->ifr_ifru.ifru_flags;
+
+        /*
+         * dont bother with interfaces that have been disabled
+         */
+        if (!(flags & IFF_UP)) {
+             ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s was down\n", pifreq->ifr_name) );
+             continue;
+        }
+
+        /*
+         * dont use the loop back interface
+         */
+        if (flags & IFF_LOOPBACK) {
+             ifDepenDebugPrintf ( ("caDiscoverInterfaces: ignoring loopback interface: %s\n", pifreq->ifr_name) );
+             continue;
+        }
+
+        /*
+         * Fetch the local address for this interface
+         */
+        status = socket_ioctl(socket, SIOCGIFADDR, pifreq);
+        if (status) {
+             ifDepenDebugPrintf ( ("caDiscoverInterfaces: could not obtain addr for %s\n", pifreq->ifr_name) );
+             continue;
+        }
+
+        /*
+         * verify the address family of the interface that was loaded
+         */
+        if (pifreq->ifr_ifru.ifru_addr.sa_family != AF_INET) {
+             ifDepenDebugPrintf ( ("caDiscoverInterfaces: interface %s was not AF_INET\n", pifreq->ifr_name) );
+             continue;
+        }
+
+        /*
+         * save the interface's IP address
+         */
+        pInetAddr = (struct sockaddr_in *)&pifreq->ifr_ifru;
+
+        /*
+         * if it isnt a wildcarded interface then look for
+         * an exact match
+         */
+        if (matchAddr.s_addr != htonl(INADDR_ANY)) {
+             if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
+                 ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s didnt match\n", pifreq->ifr_name) );
+                 continue;
+             }
+        }
+
+        /*
+         * If this is an interface that supports
+         * broadcast fetch the broadcast address.
+         *
+         * Otherwise if this is a point to point 
+         * interface then use the destination address.
+         *
+         * Otherwise CA will not query through the 
+         * interface.
+         */
+        if (flags & IFF_BROADCAST) {
+            status = socket_ioctl(
+                        socket, 
+                        SIOCGIFBRDADDR, 
+                        pifreq);
+            if (status) {
+                ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: bcast addr fetch fail\n", pifreq->ifr_name) );
+                continue;
+            }
+        }
+        else if(flags & IFF_POINTOPOINT){
+            status = socket_ioctl(
+                         socket, 
+                         SIOCGIFDSTADDR, 
+                         pifreq);
+            if (status){
+                ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: pt to pt addr fetch fail\n", pifreq->ifr_name) );
+                continue;
+            }
+        }
+        else{
+            ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s: not pt to pt or bcast\n", pifreq->ifr_name) );
+            continue;
+        }
+
+        ifDepenDebugPrintf ( ("caDiscoverInterfaces: net intf %s found\n", pifreq->ifr_name) );
+
+        pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
+        if(!pNode){
+            ca_printf ("caDiscoverInterfaces: malloc failed for net intf %s: \n", pifreq->ifr_name);
+            continue;
+        }
+
+        pNode->destAddr.in = *pInetAddr;
+        pNode->destAddr.in.sin_port = htons(port);
+
+        /*
+         * LOCK applied externally
+         */
+        ellAdd(pList, &pNode->node);
+    }
+
+    free(pIfreqList);
+}
+
 

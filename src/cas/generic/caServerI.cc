@@ -23,65 +23,28 @@
 #define caServerGlobal
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
+#include "beaconTimer.h"
+#include "beaconAnomalyGovernor.h"
 
 static const char *id = "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" "$Date$";
-
-//
-// the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available
-//
-static const double CAServerMaxBeaconPeriod = 15.0; // seconds
-
-//
-// the initial beacon period
-//
-static const double CAServerMinBeaconPeriod = 1.0e-3; // seconds
 
 //
 // caServerI::caServerI()
 //
 caServerI::caServerI (caServer &tool) :
-    //
-    // Set up periodic beacon interval
-    // (exponential back off to a plateau
-    // from this intial period)
-    //
-    beaconPeriod (CAServerMinBeaconPeriod),
     adapter (tool),
+    beaconTmr ( * new beaconTimer ( *this ) ),
+    beaconAnomalyGov ( * new beaconAnomalyGovernor ( *this ) ),
     debugLevel (0u),
     nEventsProcessed (0u),
-    nEventsPosted (0u),
-    beaconCounter (0u)
+    nEventsPosted (0u)
 {
-	caStatus status;
-	double maxPeriod;
+	assert ( & adapter != NULL );
 
-	assert (&adapter != NULL);
-
-    //
     // create predefined event types
-    //
     this->valueEvent = registerEvent ("value");
 	this->logEvent = registerEvent ("log");
 	this->alarmEvent = registerEvent ("alarm");
-
-
-    if ( envGetConfigParamPtr ( & EPICS_CAS_BEACON_PERIOD ) ) {
-        status = envGetDoubleConfigParam ( & EPICS_CAS_BEACON_PERIOD, & maxPeriod );
-    }
-    else {
-        status = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, & maxPeriod );
-    }
-	if ( status || maxPeriod <= 0.0 ) {
-		this->maxBeaconInterval = CAServerMaxBeaconPeriod;
-		errlogPrintf (
-			"EPICS \"%s\" float fetch failed\n", EPICS_CAS_BEACON_PERIOD.name );
-		errlogPrintf (
-			"Setting \"%s\" = %f\n", EPICS_CAS_BEACON_PERIOD.name, 
-			this->maxBeaconInterval);
-	}
-	else {
-		this->maxBeaconInterval = maxPeriod;
-	}
 
     this->locateInterfaces ();
 
@@ -101,9 +64,10 @@ caServerI::~caServerI()
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
 
-	//
+    delete & this->beaconAnomalyGov;
+    delete & this->beaconTmr;
+
 	// delete all clients
-	//
 	tsDLIter <casStrmClient> iter = this->clientList.firstIter ();
     while ( iter.valid () ) {
 		tsDLIter <casStrmClient> tmp = iter;
@@ -116,7 +80,7 @@ caServerI::~caServerI()
 	}
 
 	casIntfOS *pIF;
-	while ( (pIF = this->intfList.get()) ) {
+	while ( ( pIF = this->intfList.get() ) ) {
 		delete pIF;
 	}
 }
@@ -149,27 +113,6 @@ void caServerI::connectCB ( casIntfOS & intf )
         pClient->sendVersion ();
         pClient->flush ();
     }
-}
-
-//
-// caServerI::advanceBeaconPeriod()
-//
-// compute delay to the next beacon
-//
-void caServerI::advanceBeaconPeriod()
-{
-	//
-	// return if we are already at the plateau
-	//
-	if (this->beaconPeriod >= this->maxBeaconInterval) {
-		return;
-	}
-
-	this->beaconPeriod += this->beaconPeriod;
-
-	if (this->beaconPeriod >= this->maxBeaconInterval) {
-		this->beaconPeriod = this->maxBeaconInterval;
-	}
 }
 
 //
@@ -217,42 +160,23 @@ caStatus caServerI::attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
     return S_cas_success;
 }
 
-
 //
 // caServerI::sendBeacon()
-// (implemented here because this has knowledge of the protocol)
+// send a beacon over each configured address
 //
-void caServerI::sendBeacon()
+void caServerI::sendBeacon ( ca_uint32_t beaconNo )
 {
-	//
-	// send a broadcast beacon over each configured
-	// interface unless EPICS_CA_AUTO_ADDR_LIST specifies
-	// otherwise. Also send a beacon to all configured
-	// addresses.
-	// 
-    {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-	    tsDLIter <casIntfOS> iter = this->intfList.firstIter ();
-	    while ( iter.valid () ) {
-		    iter->sendBeacon ( this->beaconCounter );
-		    iter++;
-	    }
-    }
-
-    this->beaconCounter++;
- 
-	//
-	// double the period between beacons (but dont exceed max)
-	//
-	this->advanceBeaconPeriod();
+    epicsGuard < epicsMutex > locker ( this->mutex );
+	tsDLIter <casIntfOS> iter = this->intfList.firstIter ();
+	while ( iter.valid () ) {
+		iter->sendBeacon ( beaconNo );
+		iter++;
+	}
 }
 
-//
-// caServerI::getBeaconPeriod()
-//
-double caServerI::getBeaconPeriod() const 
-{ 
-    return this->beaconPeriod; 
+void caServerI::generateBeaconAnomaly ()
+{
+    this->beaconAnomalyGov.start ();
 }
 
 //

@@ -267,12 +267,12 @@ public:
     epicsShareFunc unsigned subscriptionEventsPosted () const;
     epicsShareFunc unsigned subscriptionEventsProcessed () const;
 
-    epicsShareFunc void generateBeaconAnomaly () const;
-
     epicsShareFunc class epicsTimer & createTimer ();
 
-	//caStatus enableClients ();
-	//caStatus disableClients ();
+    epicsShareFunc void generateBeaconAnomaly ();
+
+	// caStatus enableClients ();
+	// caStatus disableClients ();
 
 private:
 	caServerI *pCAS;

@@ -205,6 +205,13 @@ epicsShareFunc unsigned caServer::subscriptionEventsPosted () const // X aCC 361
     }
 }
 
+epicsShareFunc void caServer::generateBeaconAnomaly ()
+{
+    if ( pCAS ) {
+        this->pCAS->generateBeaconAnomaly ();
+    }
+}
+
 //
 // casRes::~casRes()
 //

@@ -843,6 +843,8 @@ private:
 #include "casOSD.h" // OS dependent
 
 class casClientMon;
+class beaconTimer;
+class beaconAnomalyGovernor;
 
 //
 // caServerI
@@ -918,19 +920,18 @@ public:
     void lock () const;
     void unlock () const;
 
-private:
-	void advanceBeaconPeriod();
+    void generateBeaconAnomaly ();
 
+private:
 	mutable epicsMutex      mutex;
 	tsDLList<casStrmClient> clientList;
     tsDLList<casIntfOS>     intfList;
-	double                  maxBeaconInterval;
-	double                  beaconPeriod;
-	caServer                &adapter;
+	caServer                & adapter;
+    beaconTimer	            & beaconTmr;
+    beaconAnomalyGovernor   & beaconAnomalyGov;
 	unsigned                debugLevel;
     unsigned                nEventsProcessed; 
     unsigned                nEventsPosted; 
-    ca_uint32_t             beaconCounter;
 
     //
     // predefined event types
@@ -939,18 +940,16 @@ private:
 	casEventMask            logEvent; 	// DBE_LOG registerEvent("log") 
 	casEventMask            alarmEvent; // DBE_ALARM registerEvent("alarm")
 
-	double getBeaconPeriod () const;
-
-	//
-	// send beacon and advance beacon timer
-	//
-	void sendBeacon ();
-
 	caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
 			bool addConfigAddr);
 
+    void sendBeacon ( ca_uint32_t beaconNo );
+
 	caServerI ( const caServerI & );
 	caServerI & operator = ( const caServerI & );
+
+    friend class beaconAnomalyGovernor;
+    friend class beaconTimer;
 };
 
 #define CAServerConnectPendQueueSize 10

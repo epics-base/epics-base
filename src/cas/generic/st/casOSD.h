@@ -32,23 +32,16 @@ class caServerI;
 class caServerOS;
 
 class casServerReg;
-class casBeaconTimer;
 
 //
 // caServerOS
 //
 class caServerOS {
-	friend class casServerReg;
-    friend class casBeaconTimer;
 public:
 	caServerOS ();
 	virtual ~caServerOS ();
-
 private:
-	casBeaconTimer	*pBTmr;
-
-	virtual double getBeaconPeriod() const = 0;
-	virtual void sendBeacon() = 0;
+	friend class casServerReg;
 };
 
 class casDGReadReg;

@@ -58,6 +58,8 @@ LIBSRCS += casBufferFactory.cc
 LIBSRCS += pvExistReturn.cc
 LIBSRCS += pvAttachReturn.cc
 LIBSRCS += caNetAddr.cc
+LIBSRCS += beaconTimer.cc
+LIBSRCS += beaconAnomalyGovernor.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

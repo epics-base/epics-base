@@ -26,10 +26,6 @@ epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPri
 PROD += epicsThreadPrivateTestHost
 OBJS_IOC += epicsThreadPrivateTest
 
-timerTestHost_SRCS += timerTestMain.c timerTest.c
-PROD += timerTestHost
-OBJS_IOC += timerTest
-
 epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
 PROD += epicsTimerTestHost
 OBJS_IOC += epicsTimerTest

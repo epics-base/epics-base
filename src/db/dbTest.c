@@ -813,6 +813,7 @@ int dbhcr(void)
 	return(0);
     }
     dbReportDeviceConfig(pdbBase,stdout);
+    fflush(stdout);
     return(0);
 }
 

@@ -133,6 +133,7 @@ public:
 	//
 	osiTime ();
 	osiTime (const osiTime &t);
+    osiTime & operator = (const osiTime &rhs);
 
 	//
 	// convert to and from EPICS TS_STAMP format
@@ -286,6 +287,13 @@ inline void osiTime::synchronize () {} // depricated
 inline osiTime::osiTime () : secPastEpoch(0u), nSec(0u) {}	
 
 inline osiTime::osiTime (const osiTime &t) : secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
+
+inline osiTime & osiTime::operator = ( const osiTime &t )
+{
+    this->secPastEpoch = t.secPastEpoch;
+    this->nSec = t.nSec;
+    return *this;
+}
 
 inline osiTime osiTime::operator - (const double &rhs) const
 {

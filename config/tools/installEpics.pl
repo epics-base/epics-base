@@ -34,6 +34,7 @@ Usage ("Nothing to install") if ($num_files < 1);
 $install_dir=$ARGV[$num_files];
 $install_dir =~ s[\\][/]g;	# maybe fix DOS-style path
 $install_dir =~ s[/$][];	# remove trailing '/'
+$install_dir =~ s[//][/]g;	# replace '//' by '/'
 
 #	Do we have to create the directory?
 unless (-d $install_dir)

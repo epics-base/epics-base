@@ -94,7 +94,6 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.name_server[0] = gev("rtems-dns-server");
     if (rtems_bsdnet_config.name_server[0] == NULL)
         rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
-    rtems_bsdnet_config.log_host = rtems_bsdnet_bootp_server_name;
     cp = gev("rtems-dns-domainname");
     if (cp)
         rtems_bsdnet_config.domainname = cp;
@@ -176,8 +175,7 @@ setBootConfigFromNVRAM(void)
      * Assume that the boot server is also the name server and log server!
      */
     rtems_bsdnet_config.name_server[0] =
-      rtems_bsdnet_bootp_server_name   =
-      rtems_bsdnet_config.log_host     = addr(server, nvram.ServerIPAddress);
+      rtems_bsdnet_bootp_server_name   = addr(server, nvram.ServerIPAddress);
     rtems_bsdnet_bootp_server_address.s_addr = nvram.ServerIPAddress;
 
     /*
@@ -220,7 +218,6 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_bootp_server_name = env("SERVER", "192.168.0.1");
     rtems_bsdnet_config.name_server[0] = env("NAMESERVER", rtems_bsdnet_bootp_server_name);
     rtems_bsdnet_config.ntp_server[0] = env("NTPSERVER", rtems_bsdnet_bootp_server_name);
-    rtems_bsdnet_config.log_host = env("LOGSERVER", rtems_bsdnet_bootp_server_name);
     if (rtems_bsdnet_config.domainname == NULL)
         rtems_bsdnet_config.domainname = env("DOMAIN", "local");
     rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");

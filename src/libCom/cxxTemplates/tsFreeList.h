@@ -42,6 +42,7 @@ public:
 private:
     tsFreeListItem < T, DEBUG_LEVEL > *pFreeList;
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunkList;
+    tsFreeListItem < T, DEBUG_LEVEL > * allocateFromNewChunk ();
 };
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
@@ -71,37 +72,22 @@ tsFreeList < T, N, DEBUG_LEVEL >::~tsFreeList ()
 }
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
-void * tsFreeList < T, N, DEBUG_LEVEL >::allocate (size_t size)
+inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
 {
     tsFreeListItem < T, DEBUG_LEVEL > *p;
 
     if ( size != sizeof ( T ) || N == 0u ) {
-        return ::operator new (size);
+        return ::operator new ( size );
     }
 
     this->lock ();
 
     p = this->pFreeList;
-
     if ( p ) {
         this->pFreeList = p->pNext;
     }
     else {
-        unsigned i;
-
-        tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
-        if ( ! pChunk) {
-            return 0;
-        }
-
-        for ( i=1u; i < N-1; i++ ) {
-            pChunk->items[i].pNext = &pChunk->items[i+1];
-        }
-        pChunk->items[N-1].pNext = 0;
-        p = &pChunk->items[0];
-        this->pFreeList = &pChunk->items[1u];
-        pChunk->pNext = this->pChunkList;
-        this->pChunkList = pChunk;
+        p = allocateFromNewChunk ();
     }
 
     this->unlock ();
@@ -110,9 +96,30 @@ void * tsFreeList < T, N, DEBUG_LEVEL >::allocate (size_t size)
 }
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >
-void tsFreeList < T, N, DEBUG_LEVEL >::release (void *pCadaver, size_t size)
+tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFromNewChunk ()
 {
-    if ( size != sizeof ( T ) ) {
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
+    if ( ! pChunk) {
+        return 0;
+    }
+
+    for ( unsigned i=1u; i < N-1; i++ ) {
+        pChunk->items[i].pNext = &pChunk->items[i+1];
+    }
+    pChunk->items[N-1].pNext = 0;
+    if ( N > 1 ) {
+        this->pFreeList = &pChunk->items[1u];
+    }
+    pChunk->pNext = this->pChunkList;
+    this->pChunkList = pChunk;
+
+    return &pChunk->items[0];
+}
+
+template < class T, unsigned N, unsigned DEBUG_LEVEL >
+inline void tsFreeList < T, N, DEBUG_LEVEL >::release ( void *pCadaver, size_t size )
+{
+    if ( size != sizeof ( T ) || N == 0u ) {
         ::operator delete ( pCadaver );
     }
     else if ( pCadaver ) {

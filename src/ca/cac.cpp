@@ -492,7 +492,7 @@ void cac::transferChanToVirtCircuit (
     if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
         if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
             char acc[64];
-            pChan->getPIIU(guard)->hostName ( guard, acc, sizeof ( acc ) );
+            pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
                 msgForMultiplyDefinedPV ( this->ipToAEngine, 
                     *this, pChan->pName ( guard ), acc );
@@ -585,9 +585,8 @@ void cac::disconnectAllIO (
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
-
     char buf[128];
-    sprintf ( buf, "host = %.100s", chan.pHostName ( guard ) );
+    chan.getHostName ( guard, buf, sizeof ( buf ) );
 
     tsDLIter < baseNMIU > pNetIO = ioList.firstIter();
     while ( pNetIO.valid () ) {
@@ -923,7 +922,7 @@ bool cac::defaultExcep (
     epicsGuard < epicsMutex > guard ( this->mutex );
     char buf[512];
     char hostName[64];
-    iiu.hostName ( guard, hostName, sizeof ( hostName ) );
+    iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
     sprintf ( buf, "host=%s ctx=%.400s", hostName, pCtx );
     this->notify.exception ( guard, status, buf, 0, 0u );
     return true;
@@ -1105,7 +1104,7 @@ bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu,
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     char hostName[64];
-    iiu.hostName ( guard, hostName, sizeof ( hostName ) );
+    iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
     errlogPrintf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
         hdr.m_cmmd, hostName );
     return false;
@@ -1142,7 +1141,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
         this->iiuUninstallInProgress = true;
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
-            iiu.hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
+            iiu.getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
             genLocalExcep ( cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
         }
         osiSockAddr addr = iiu.getNetworkAddress ( guard );

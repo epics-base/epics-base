@@ -44,6 +44,8 @@
  * .13  08-05-92	jba	Removed all references to dbr_field_type
  * .14  09-18-92	jba	replaced get of disa code with recGblGetLinkValue call
  * .15  07-15-93	mrk	Changes for new dbStaticLib
+ * .16  02-02-94	mrk	added dbPutNotify and caching
+ * .17  02-02-94	mrk	added init code for tsel
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -63,6 +65,7 @@
  * dbPutLink			Put via a link
  * dbGetField			Get from outside database
  * dbPutField			Put from outside database
+ * dbGet			Common get routine
  * dbPut			Common put routine
  *
  * dbBufferSize			Compute buffer size
@@ -123,18 +126,20 @@ static struct {
 long dbCommonInit(struct dbCommon *precord, int pass)
 {
 
-long status;
+    long status;
 
-    if (pass == 0)
-	status = 0L;
-    else
-	if (precord->sdis.type == PV_LINK)
-	    status = dbCaAddInlink(&(precord->sdis), (void *) precord, "DISA");
-	else
-	    status = 0L;
-
-    return status;
-
+    if(pass == 0) return(0);
+    if (precord->sdis.type == PV_LINK) {
+	status = dbCaAddInlink(&(precord->sdis), (void *) precord, "DISA");
+	if(status)
+		recGblRecordError(status,(void *)precord,"dbCommonInit: SDIS");
+    }
+    if (precord->tsel.type == PV_LINK) {
+	status = dbCaAddInlink(&(precord->tsel), (void *) precord, "TSE");
+	if(status)
+		recGblRecordError(status,(void *)precord,"dbCommonInit: TSEL");
+    }
+    return(0);
 } /* end dbCommonInit() */
 
 void dbScanLock(struct dbCommon *precord)
@@ -187,16 +192,40 @@ void dbScanLockInit(int nset)
 	return;
 }
 
-long dbScanPassive(struct dbCommon *precord)
+long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto)
 {
+    long status;
 	
-	/* if not passive just return success */
-	if(precord->scan != 0) return(0);
+    /* if not passive just return success */
+    if(pto->scan != 0) return(0);
 
-	/* return result of process */
-	return(dbProcess(precord));
+    if(pfrom && pfrom->ppn) {
+	PUTNOTIFY *ppn = pfrom->ppn;
+
+	if(pto->ppn) { /*already being used. Abandon request*/
+	    ppn->status = S_db_Blocked;
+	    dbNotifyCompletion(ppn);
+	} else {
+	    ppn->nwaiting++;
+	    pto->ppn = pfrom->ppn;
+	    /*If already active must redo*/
+	    if(pto->pact) ppn->rescan = TRUE;
+	}
+    }
+    status = dbProcess(pto);
+    if(pfrom && pfrom->ppn) {
+	PUTNOTIFY *ppn = pfrom->ppn;
+
+	if(!pto->pact) {
+	    pto->ppn = NULL;
+	} else { /*add to list of records for which to wait*/
+	    pto->ppnn = ppn->list;
+	    ppn->list = pto;
+	}
+    }
+    return(status);
 }
-
+
 long dbProcess(struct dbCommon *precord)
 {
 	struct rset	*prset;
@@ -240,7 +269,8 @@ long dbProcess(struct dbCommon *precord)
 	} else precord->lcnt=0;
 
 	/* get the scan disable link if defined*/
-	status = recGblGetLinkValue(&(precord->sdis),(void *)precord,
+	if(precord->sdis.type!=CONSTANT)
+	    status = recGblGetLinkValue(&(precord->sdis),(void *)precord,
 			DBF_SHORT,&(precord->disa),&options,&nRequest);
 
 	/* if disabled check disable alarm severity and return success */
@@ -249,6 +279,9 @@ long dbProcess(struct dbCommon *precord)
 
 		if(trace && trace_lset==lset)
 			printf("disabled:  %s\n",precord->name);
+		/*take care of caching and notifyCompletion*/
+		precord->rpro = FALSE;
+		if(precord->ppn) dbNotifyCompletion(precord->ppn);
 		/* raise disable alarm */
 		if(precord->stat==DISABLE_ALARM) goto all_done;
 		precord->sevr = precord->diss;
@@ -325,8 +358,25 @@ long dbNameToAddr(char *pname,struct dbAddr *paddr)
 
 	return(status);
 }
-
 
+long dbGetField(
+struct dbAddr	*paddr,
+short		dbrType,
+void		*pbuffer,
+long		*options,
+long		*nRequest,
+void		*pflin
+)
+{
+	struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
+	long		status;
+
+	dbScanLock(precord);
+	status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
+	dbScanUnlock(precord);
+	return(status);
+}
+
 long dbGetLink(
 	struct db_link	*pdblink,
 	struct dbCommon	*pdest,
@@ -340,17 +390,17 @@ long dbGetLink(
 	struct dbCommon *psource=paddr->precord;
 	long	status;
 
-	if(pdblink->process_passive) {
-		status=dbScanPassive(psource);
-		if(!RTN_SUCCESS(status)) return(status);
+	if(pdblink->process_passive && psource->scan!=0) {
+		status=dbScanPassive(pdest,psource);
+		if(status) return(status);
 	}
 	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
 	
-	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest,NULL);
+	status= dbGet(paddr,dbrType,pbuffer,options,nRequest,NULL);
 	if(status) recGblRecordError(status,(void *)pdest,"dbGetLink");
         return(status);
 }
-
+
 long dbPutLink(
 	struct db_link	*pdblink,
 	struct dbCommon	*psource,
@@ -365,10 +415,16 @@ long dbPutLink(
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
-	if(!RTN_SUCCESS(status)) return(status);
+	if(status) return(status);
 
-        if(paddr->pfield==(void *)&pdest->proc) status=dbProcess(pdest);
-	else if (pdblink->process_passive) status=dbScanPassive(pdest);
+        if((paddr->pfield==(void *)&pdest->proc)
+	|| (pdblink->process_passive && pdest->scan==0)) {
+	    /*Note: If ppn then dbNotifyCancel will handle reprocessing*/
+	    /*if dbPutField caused asyn record to process ask for reprocessing*/
+	    if(!psource->ppn && pdest->putf) pdest->rpro = TRUE;
+	    /* otherwise ask for the record to be processed*/
+	    else status=dbScanPassive(psource,pdest);
+	}
 	if(status) recGblRecordError(status,(void *)psource,"dbPutLink");
 	return(status);
 }
@@ -388,17 +444,158 @@ long dbPutField(
 	if(precord->disp) {
 		if((caddr_t)(&precord->disp) != paddr->pfield) return(0);
 	}
-	dbScanLock(paddr->precord);
+	dbScanLock(precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
-	if(RTN_SUCCESS(status)){
-		if(paddr->pfield==(void *)&precord->proc) status=dbProcess(precord);
-		else if (pfldDes->process_passive) status=dbScanPassive(precord);
+	if(status==0){
+        	if((paddr->pfield==(void *)&precord->proc)
+		||(pfldDes->process_passive && precord->scan==0)) {
+		    if(precord->pact) {
+			precord->rpro = TRUE;
+		    } else {
+			/*indicate that dbPutField called dbProcess*/
+			precord->putf = TRUE;
+			status=dbScanPassive(NULL,precord);
+		    }
+		}
 	}
-	dbScanUnlock(paddr->precord);
+	dbScanUnlock(precord);
 	return(status);
 }
+
+static void notifyCallback(CALLBACK *pcallback)
+{
+    PUTNOTIFY	*ppn=NULL;
+    long	status;
 
+    callbackGetUser(ppn,pcallback);
+    if(ppn->cmd==notifyCmdRepeat) {
+	status = dbPutNotify(ppn);
+    } else if(ppn->cmd==notifyCmdCallUser) {
+	(ppn->userCallback)(ppn);
+    } else {/*illegal request*/
+	recGblRecordError(-1,ppn->paddr->precord,"dbNotifyCompletion: illegal callback request");
+    }
+}
+
+static void notifyCancel(PUTNOTIFY *ppn)
+{
+    struct dbCommon *precord = ppn->list;
+
+    while(precord) {
+	void	*pnext;
+
+	if(precord->rpro) {
+	    precord->rpro = FALSE;
+	    scanOnce(precord);
+	}
+	precord->ppn = NULL;
+	pnext = precord->ppnn;
+	precord->ppnn = NULL;
+	precord = pnext;
+    }
+    ppn->list = NULL;
+}
+
+void dbNotifyCancel(PUTNOTIFY *ppn)
+{
+    struct dbCommon *precord = ppn->list;
+
+    dbScanLock(precord);
+    notifyCancel(ppn);
+    dbScanUnlock(precord);
+}
+
+long dbPutNotify(PUTNOTIFY *ppn)
+{
+    struct dbAddr *paddr = ppn->paddr;
+    short         dbrType = ppn->dbrType;
+    void          *pbuffer = ppn->pbuffer;
+    long          nRequest = ppn->nRequest;
+    long	  status=0;
+    struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
+    struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
+
+    /*check for putField disabled*/
+    if(precord->disp) {
+	if((caddr_t)(&precord->disp) != paddr->pfield) {
+	    ppn->status = 0;
+	    return(0);
+	}
+    }
+    dbScanLock(precord);
+    status=dbPut(paddr,dbrType,pbuffer,nRequest);
+    if(status) recGblDbaddrError(status,paddr,"dbPutField");
+    ppn->status = status;
+    if(status==0){
+       	if((paddr->pfield==(void *)&precord->proc)
+	||(pfldDes->process_passive && precord->scan==0)) {
+	    if(precord->ppn) {
+		/*record already has attached ppn. Blocked*/
+
+		ppn->status = status = S_db_Blocked;
+		return(status);
+	    }
+	    ppn->nwaiting = 1;
+	    ppn->rescan = FALSE;
+	    ppn->list = NULL;
+	    callbackSetCallback(notifyCallback,&ppn->callback);
+	    callbackSetUser(ppn,&ppn->callback);
+	    callbackSetPriority(priorityLow,&ppn->callback);
+	    precord->ppn = ppn;
+	    precord->ppnn = NULL;
+	    if(precord->pact) {/*blocked wait for dbNotifyCompletion*/
+		ppn->rescan = TRUE;
+		ppn->status = status = S_db_Pending;
+		return(status);
+	    }
+	    status=dbProcess(precord);
+	    if(status==0) {
+		if(!precord->pact) {
+		    precord->ppn = NULL;
+		} else {
+		    precord->ppnn = ppn->list;
+		    ppn->list = precord;
+		}
+		ppn->status = status = ((ppn->nwaiting == 0) ? 0 : S_db_Pending);
+	    } else {
+		ppn->status = status;
+		notifyCancel(ppn);
+	    }
+	}
+    }
+    dbScanUnlock(precord);
+    return(status);
+}
+
+void dbNotifyCompletion(PUTNOTIFY *ppn)
+{
+
+    if(ppn->status!=0 && ppn->status!=S_db_Pending) {
+	ppn->cmd = notifyCmdCallUser;
+	notifyCancel(ppn);
+	callbackRequest(&ppn->callback);
+	return;
+    }
+    /*decrement number of records being waited on*/
+    if(ppn->nwaiting<=0) {
+	recGblRecordError(-1,ppn->paddr->precord,"dbNotifyCompletion: nwaiting<-0 LOGIC");
+	return;
+    }
+    if(--ppn->nwaiting == 0) {/*original request completed*/
+	notifyCancel(ppn);
+	if(ppn->rescan) {
+	    ppn->cmd = notifyCmdRepeat;
+	    callbackRequest(&ppn->callback);
+	} else {
+	    /*issue completion callback*/
+	    ppn->cmd = notifyCmdCallUser;
+	    if(ppn->status==S_db_Pending) ppn->status = 0;
+	    callbackRequest(&ppn->callback);
+	}
+    }
+}
+
 long dbValueSize(
 	short     dbr_type
 )
@@ -1838,7 +2035,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"dbGetField","get_precision");
+	recGblRecSupError(status,paddr,"dbGet","get_precision");
 	return(status);
     }
 
@@ -2078,7 +2275,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"dbGetField","get_precision");
+	recGblRecSupError(status,paddr,"dbGet","get_precision");
 	return(status);
     }
 
@@ -2314,7 +2511,7 @@ long		offset;
     if((prset=GET_PRSET(pdbBase->precSup,record_type)) && (prset->get_enum_str))
         return( (*prset->get_enum_str)(paddr,pbuffer) );
     status=S_db_noRSET;
-    recGblRecSupError(status,paddr,"dbGetField","get_enum_str");
+    recGblRecSupError(status,paddr,"dbGet","get_enum_str");
     return(S_db_badDbrtype);
 }
 
@@ -2529,12 +2726,12 @@ static long getGchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     struct choiceSet	*pchoiceSet;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getGchoiceString)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getGchoiceString)");
         return(S_db_onlyOne);
     }
     if((!(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,choice_set)))
     || (!(pchoice=GET_CHOICE(pchoiceSet,choice_ind))) ) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getGchoiceString)");
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getGchoiceString)");
         return(S_db_badChoice);
     }
     strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
@@ -2552,11 +2749,11 @@ static long getCchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     char	*pchoice;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getCchoiceString)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getCchoiceString)");
         return(S_db_onlyOne);
     }
     if (!(pchoice=GET_CHOICE(pdbBase->pchoiceCvt,choice_ind))) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getCchoiceString)");
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getCchoiceString)");
         return(S_db_badChoice);
     }
     strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
@@ -2578,13 +2775,13 @@ static long getRchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     char       		*pchoice;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getRchoiceString)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getRchoiceString)");
         return(S_db_onlyOne);
     }
     if((!(parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,(paddr->record_type))))
     || (!(pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,choice_set)))
     || (!(pchoice=GET_CHOICE(pchoiceSet,choice_ind))) ) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getRchoiceString)");
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getRchoiceString)");
         return(S_db_badChoice);
     }
     strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
@@ -2604,12 +2801,12 @@ static long getDchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
     struct devChoice	*pdevChoice;
 
     if(no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGetField(getDchoiceString)");
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getDchoiceString)");
         return(S_db_onlyOne);
     }
     if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)))
     || (!(pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,choice_ind))) ) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGetField(getRchoiceString)");
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getRchoiceString)");
         return(S_db_badChoice);
     }
     strncpy(pbuffer,pdevChoice->pchoice,MAX_STRING_SIZE);
@@ -2672,7 +2869,7 @@ long (*get_convert_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 };
 
 
-/* forward references for private routines used by dbGetField */
+/* forward references for private routines used by dbGet */
 static void get_enum_strs(struct dbAddr *paddr,void **ppbuffer,
 	struct rset *prset,long	*options);
 static void get_graphics(struct dbAddr *paddr,void **ppbuffer,
@@ -2682,7 +2879,7 @@ static void get_control(struct dbAddr *paddr,void **ppbuffer,
 static void get_alarm(struct dbAddr *paddr,void	**ppbuffer,
 	struct rset *prset,long	*options);
 
-long dbGetField(
+long dbGet(
 struct dbAddr	*paddr,
 short		dbrType,
 void		*pbuffer,
@@ -2767,7 +2964,7 @@ GET_DATA:
 	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVCHOICE) ){
 		char message[80];
 
-		sprintf(message,"dbGetField - database request type is %d",dbrType);
+		sprintf(message,"dbGet - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
 		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
@@ -2782,7 +2979,7 @@ GET_DATA:
 	if(!(pconvert_routine=get_convert_table[field_type][dbrType])) {
 		char message[80];
 
-		sprintf(message,"dbGetField - database request type is %d",dbrType);
+		sprintf(message,"dbGet - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
 		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);

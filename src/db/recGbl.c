@@ -52,6 +52,7 @@
 #include	<dbRecType.h>
 #include	<dbRecDes.h>
 #include	<dbAccess.h>
+#include	<dbScan.h>
 #include	<devSup.h>
 #include	<rec/dbCommon.h>
 #include	<sdrHeader.h>
@@ -316,6 +317,41 @@ unsigned short recGblResetAlarms(void *precord)
     return(mask);
 }
 
+void recGblFwdLink(void *precord)
+{
+    struct dbCommon *pdbc = precord;
+
+    if(pdbc->flnk.type==DB_LINK ) {
+	struct dbAddr	*paddr = pdbc->flnk.value.db_link.pdbAddr;
+	dbScanPassive(precord,paddr->precord);
+    }
+    /*Handle dbPutFieldNotify record completions*/
+    if(pdbc->ppn) {
+	/*Note: dbNotifyCancel also handles rpro*/
+	dbNotifyCompletion(pdbc->ppn);
+    } else if(pdbc->rpro) {
+	/*If anyone requested reprocessing do it*/
+	pdbc->rpro = FALSE;
+	scanOnce(pdbc);
+    }
+    /*In case putField caused put we are all done */
+    pdbc->putf = FALSE;
+}
+
+void recGblGetTimeStamp(void *precord)
+{
+    struct dbCommon *pdbc = precord;
+    long	status;
+    long	nRequest=1;
+    long	options=0;
+
+    if(pdbc->tsel.type!=CONSTANT)
+    	recGblGetLinkValue(&(pdbc->tsel),precord,
+		DBF_SHORT,&(pdbc->tse),&options,&nRequest);
+    /* the following call must be changed for new event system*/
+    tsLocalTime(&pdbc->time);
+}
+
 static void getConRangeValue(field_type,range,plimit)
      short            field_type;
      struct range     range;
@@ -426,8 +462,8 @@ double		*prangeValue;
         /* get value of range VAR field */
         options = 0;
         nRequest = 1;
-        if(status=dbGetField(&dbAddr,DBR_DOUBLE,prangeValue,&options,&nRequest,pfl)){
-                recGblRecordError(status,(void *)precord,"getVarRangeValue(dbGetField)");
+        if(status=dbGet(&dbAddr,DBR_DOUBLE,prangeValue,&options,&nRequest,pfl)){
+                recGblRecordError(status,(void *)precord,"getVarRangeValue(dbGet)");
                 return;
         }
         return;

@@ -1,15 +1,17 @@
 /*
+ *	$Id$
  *	@(#)veclist.c	1.10
  *
  *	list fuctions attached to the interrupt vector table
  *
  *	Created 28Mar89	Jeffrey O. Hill
- *	hill@atdiv.lanl.gov
+ *	johill@lanl.gov
  *	(505) 665 1831
  *
  *	.01 010393 Applied fix for zero C ISR param causes incorrect 
  *		   identification as MACRO ISR problem. 
  *	.02 022195 Compiler warnings fixed
+ *	$Log$
  */
 
 /*

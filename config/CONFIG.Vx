@@ -51,6 +51,8 @@ LD = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
 CPLUSPLUS_YES = G++
 G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
 LD_G++ = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+NM = $(GNU_BIN)/nm$(CMPLR_SUFFIX)
+MUNCH = $(GNU_BIN)/munch
 
 #--------------------------------------------------
 # Pre Tornado C++ crosscompiler definitions

@@ -7,12 +7,6 @@
 #include "epicsThread.h"
 #include "epicsSignal.h"
 
-static SOCKET joltTestServerSock;
-static SOCKET joltTestServerCircuitSock;
-static SOCKET joltTestClientCircuitSock;
-static bool blockingClientWakeup = false;
-static bool blockingServerWakeup = false;
-
 union address {
     struct sockaddr_in ia; 
     struct sockaddr sa;
@@ -180,7 +174,7 @@ void server::daemon ()
     while ( ! this->exit ) {
         // accept client side
         address addr;
-        int addressSize = sizeof ( addr );
+        osiSocklen_t addressSize = sizeof ( addr );
         SOCKET ns = accept ( this->sock, 
             & addr.sa, & addressSize );
         assert ( ns != INVALID_SOCKET );
@@ -217,7 +211,7 @@ void blockingSockTest ()
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
-    assert ( ! blockingClientWakeup );
+    assert ( ! client.recvWakeupDetected () );
 
     client.shutdown ();
     epicsThreadSleep ( 1.0 );

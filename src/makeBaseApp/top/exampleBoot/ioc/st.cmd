@@ -8,7 +8,7 @@
 #< ../nfsCommands
 
 cd topbin
-ld < exampleLibrary
+ld < exampleLibrary.munch
 threadInit()
 TSinit()
 

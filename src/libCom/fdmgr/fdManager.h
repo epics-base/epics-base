@@ -98,7 +98,7 @@ public:
     class fdInterestSubscriptionAlreadyExits {};
 
     epicsShareFunc fdManager ();
-    epicsShareFunc ~fdManager ();
+    epicsShareFunc virtual ~fdManager ();
     epicsShareFunc void process ( double delay ); // delay parameter is in seconds
 
     // returns NULL if the fd is unknown

@@ -87,9 +87,6 @@ GCC_AR = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ar$(CMPLR_SUFFIX) -rc
 GCC_CPP = $(GCC) -x c -E
 GCC_RANLIB = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ranlib$(CMPLR_SUFFIX) 
 
-NM = $(GNU_BIN)/$(GNU_TARGET_PREFIX)nm$(CMPLR_SUFFIX)
-MUNCH = $(GNU_BIN)/$(GNU_TARGET_PREFIX)munch
-
 GCC_ANSI = $(GCC) -ansi 
 GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_TRAD = $(GCC) -traditional

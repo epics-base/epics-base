@@ -129,6 +129,10 @@ unsigned long		blockSize
 			
 			piiu->curMsgBytes += size;
 			if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
+#if 0
+				printf ("waiting for %d msg hdr bytes\n", 
+					sizeof(piiu->curMsg)-piiu->curMsgBytes);
+#endif
 				return OK;
 			}
 
@@ -174,10 +178,10 @@ unsigned long		blockSize
 			if(piiu->pCurData){
 				free(piiu->pCurData);
 			}
-			piiu->curDataMax = 0;
 			piiu->pCurData = (void *) 
 				malloc(piiu->curMsg.m_postsize);
 			if(!piiu->pCurData){
+				piiu->curDataMax = 0;
 				piiu->curMsgBytes = 0;
 				piiu->curDataBytes = 0;
 				return ERROR;
@@ -200,6 +204,10 @@ unsigned long		blockSize
 				size);
 			piiu->curDataBytes += size;
 			if(piiu->curDataBytes < piiu->curMsg.m_postsize){
+#if 0
+			printf ("waiting for %d msg bdy bytes\n", 
+				piiu->curMsg.m_postsize-piiu->curDataBytes);
+#endif
 				return OK;
 			}
 			pInBuf += size;
@@ -466,7 +474,6 @@ struct in_addr  	*pnet_addr
 		 * read seq
 		 */
 		if (VALID_MSG(piiu)){
-
 			/*
 			 * convert the data buffer from net
 			 * format to host format
@@ -478,11 +485,19 @@ struct in_addr  	*pnet_addr
 					FALSE,
 					piiu->curMsg.m_count);
 #			else
-				memcpy(
-					(char *)pIOBlock->usr_arg,
-					piiu->pCurData,
-					dbr_size_n(piiu->curMsg.m_type, 
-						piiu->curMsg.m_count));
+				if (piiu->curMsg.m_type == DBR_STRING) {
+					strcpy ((char *)pIOBlock->usr_arg,
+						piiu->pCurData);
+				}
+				else {
+					memcpy(
+						(char *)pIOBlock->usr_arg,
+						piiu->pCurData,
+						dbr_size_n (
+							piiu->curMsg.m_type, 
+							piiu->curMsg.m_count)
+						);
+				}
 #			endif
 
 			/*

@@ -2,7 +2,7 @@
 CAS = ../../
 TOP = $(CAS)/../..
 
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 #CPLUSPLUS = G++
 
@@ -76,7 +76,7 @@ GLOMBOBJ += $(BUILDDIR)casDGIO.o
 GLOMBOBJ += $(BUILDDIR)casStreamIO.o
 GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
  
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 excas: $(OBJS) $(DEPLIBS)
 	$(LINK.cc) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)

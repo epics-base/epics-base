@@ -6,7 +6,7 @@ IOSRC = $(CAS)/io/bsdSocket
 OSSRC = $(CAS)/os/posix
 VPATH = $(SRC) $(IOSRC) $(OSSRC) 
 
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/../gdd  -I$(CAS)/../gdd/O.$(T_A)
 
@@ -82,7 +82,7 @@ LIBOBJS += sigPipeIgnore.o
 
 LIBNAME = libcas.a
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 obj: $(LIBOBJS) 
 

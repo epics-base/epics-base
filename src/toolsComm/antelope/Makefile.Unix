@@ -1,5 +1,5 @@
 TOP = ../../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
@@ -15,7 +15,7 @@ OBJS = \
 
 PROD = antelope
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 $(PROD): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)

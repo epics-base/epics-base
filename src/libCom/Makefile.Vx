@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c
@@ -42,7 +42,7 @@ LIBNAME = libCom
 
 MAN3 = gpHash.3 freeList.3
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 clean::
 	@$(RM) errSymTbl.c envData.c
@@ -53,7 +53,7 @@ errSymTbl.c errInc.o: ../errInc.c
 	@$(RM) errInc.o
 	../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
 
-envData.c: ../envDefs.h $(TOP)/src/config/CONFIG_ENV \
-        $(TOP)/src/config/CONFIG_SITE_ENV
-	../bldEnvData $(TOP)/src/config
+envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV \
+        $(TOP)/config/CONFIG_SITE_ENV
+	../bldEnvData $(TOP)/config
 

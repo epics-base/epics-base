@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 YACCOPT = -l
 LEXOPT = -L
@@ -15,7 +15,7 @@ MAN1 = dbLoadTemplate.1 subtool.1
 MAN3 = dbLoadRecords.3 dbLoadTemplate.3
 MAN5 = templatefile.5 dbfile.5
  
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 #dbLoadTemplate.o: dbLoadTemplate_lex.c dbLoadTemplate.c
 #dbLoadRecords.o: dbLoadRecords_lex.c dbLoadRecords.c

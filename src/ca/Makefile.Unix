@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_LDLIBS = -lca -lCom -lm
 USR_LDFLAGS = -L.
@@ -32,7 +32,7 @@ LIBNAME = libca.a
 PROD = caRepeater 
 
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 acctst: acctst.o $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a
 	$(LINK.c) -o $@ $< $(LIBOBJS) $(DEPLIBS_BASE)/libCom.a \

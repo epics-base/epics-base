@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_INCLUDES = -I../drv/ansi -I../../drv/old
 
@@ -102,5 +102,5 @@ PROD = $(LIBOBJS)
 
 LIBNAME = recSup
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 

@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.3  1996/06/26 21:17:08  jhill
+# fixed to match config in src
+#
 # Revision 1.2  1996/06/25 19:18:10  jbk
 # moved from extensions to base - fixed trouble in dbMapper.cc
 #
@@ -22,7 +25,7 @@
 TOP=../..
 # EPICS=/usr/local/epics/R3.12.2
 
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
-include $(TOP)/src/config/RULES_ARCHS
+include $(TOP)/config/RULES_ARCHS
 

@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
@@ -13,5 +13,5 @@ LIBOBJS = \
 
 LIBNAME = caLib 
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 

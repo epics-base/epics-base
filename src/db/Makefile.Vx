@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
@@ -71,7 +71,7 @@ PROD = initHooks.o
 
 LIBNAME = dbLib
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@

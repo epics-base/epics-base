@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 INC += drvTS.h
 INC += drvSup.h
@@ -21,5 +21,5 @@ INC += recGbl.h
 INC += dbBkpt.h
 INC += devLib.h
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 

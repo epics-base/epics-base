@@ -1,5 +1,5 @@
 TOP = ../../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
  
 #CMPLR = STRICT
 
@@ -27,7 +27,7 @@ OBJS = \
 
 PROD = e_flex
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 $(PROD): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS)

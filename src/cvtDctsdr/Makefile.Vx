@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
@@ -7,5 +7,5 @@ SRCS.c =
 OBJS = 
 PROD =
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 

@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 USR_LDLIBS = -lAs -lCom -lDb -lCom -lm -s
@@ -19,7 +19,7 @@ LIBOBJS = asLib.o
 LIBNAME = libAs.a
 PROD = ascheck
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built

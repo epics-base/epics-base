@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_INCLUDES =  -I../../drv/ansi -I../../drv/old
 
@@ -125,6 +125,6 @@ LIBOBJS = $(SRCS.c:../%.c=%.o)
 PROD = $(LIBOBJS)
 LIBNAME = devSup
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 

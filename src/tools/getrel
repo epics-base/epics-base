@@ -6,7 +6,7 @@
 #
 
 USAGE="Usage:
-        getrel <EpicsNode> 
+        getrel <EpicsNodeFullPathName> 
 
 ex:     getrel  /usr/local/epics/base_R3.13
         --------- OR -----------
@@ -36,15 +36,26 @@ if [ ! -d ${BASE}/bin -o \
     exit 1
 fi
 
+FIRSTCHAR=`expr "${BASE}" : '\(.\).*'`
+if [ ${FIRSTCHAR} != "/" ]; then
+        cat <<-!usage
+    $USAGE
+
+    ${BASE} does not appear to be a full path name.
+
+!usage
+    exit 1
+fi
+
 
 /bin/rm -f \
 	epics \
 	base \
-	config \
 	target* \
 	vxWorks* \
 	vw
 
+echo EPICS_BASE=${BASE} >> EPICS_BASE
 ln -s ${BASE} base
 
 

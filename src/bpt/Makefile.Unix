@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 INC += cvtTable.h
 
@@ -7,5 +7,5 @@ SRCS.c = ../makeBpt
 OBJS = makeBpt
 PROD = makeBpt
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 

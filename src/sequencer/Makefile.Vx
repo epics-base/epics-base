@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS =
 
@@ -13,7 +13,7 @@ OBJS = \
 
 PROD = seq
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 clean::
 	@$(RM) seqVersion.c

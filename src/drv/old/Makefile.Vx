@@ -1,9 +1,6 @@
-#
-# $Id$
-#
 
 TOP = ../../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
@@ -41,5 +38,5 @@ SRCS.c += ../drvXy566.c
 
 TARGETS = $(SRCS.c:../%.c=%.o)
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 

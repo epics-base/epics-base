@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_LDLIBS =  -lCom
 USR_LDFLAGS = -L.
@@ -29,7 +29,7 @@ MAN1 = sf2db.1
 
 PROD = sf2db sdr2gblmenu sdr2driver sdr2device sdr2recordtype 
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 sdr2gblmenu: sdr2gblmenu.o dbStaticLib.o
 	$(LINK.c) -o $@  sdr2gblmenu.o dbStaticLib.o  $(LDLIBS)

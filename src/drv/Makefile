@@ -1,12 +1,9 @@
-#
-# $Id$
-#
 
 TOP=../..
 
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 DIRS = ansi old combine
 
-include $(TOP)/src/config/RULES_DIRS
+include $(TOP)/config/RULES_DIRS
 

@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_LDLIBS = -lca -lCom -lm
 DEPLIBS = $(INSTALL_LIB)/libca.a $(INSTALL_LIB)/libCom.a
@@ -25,7 +25,7 @@ PROD += S99logServer
 PROD += S99caRepeater
 endif
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
  
 S99%: ../rc2.%
 	@/usr/bin/sed -e s%:EPICS:%`chdir $(TOP); /usr/bin/pwd`% \

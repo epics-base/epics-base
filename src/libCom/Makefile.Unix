@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
@@ -74,7 +74,7 @@ LIBNAME = libCom.a
 
 MAN3 = gpHash.3 freeList.3
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix
 
 errSymTbl.o: errSymTbl.c errInc.o errIncCXX.o
 	$(COMPILE.c) -o $@ $<
@@ -83,9 +83,9 @@ errSymTbl.c errInc.o errIncCXX.o : ../errInc.c ../errIncCXX.cc
 	@$(RM) errInc.o errIncCXX.o
 	@../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
 
-envData.c: ../envDefs.h $(TOP)/src/config/CONFIG_ENV \
-        $(TOP)/src/config/CONFIG_SITE_ENV
-	../bldEnvData $(TOP)/src/config
+envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV \
+        $(TOP)/config/CONFIG_SITE_ENV
+	../bldEnvData $(TOP)/config
 
 tsTest: tsSubr.o
 	$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s

@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 INC += bdt.h
 
@@ -7,4 +7,4 @@ LIBOBJS += bdt.o
 
 LIBNAME = libBdt.a
 
-include $(TOP)/src/config/RULES.Unix
+include $(TOP)/config/RULES.Unix

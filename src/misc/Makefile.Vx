@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 SRCS.c = ../epicsRelease.c
 
@@ -7,6 +7,6 @@ LIBOBJS =  epicsRelease.o
 
 LIBNAME = miscLib
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 

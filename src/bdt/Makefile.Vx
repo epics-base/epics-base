@@ -1,5 +1,5 @@
 TOP = ../../..
-include $(TOP)/src/config/CONFIG_BASE
+include $(TOP)/config/CONFIG_BASE
 
 SRCS.c += ../bdt.c
 SRCS.c += ../bdtServ.c
@@ -13,7 +13,7 @@ OBJS += bdtServPv.o
 
 PROD = bdt
 
-include $(TOP)/src/config/RULES.Vx
+include $(TOP)/config/RULES.Vx
 
 $(PROD): $(OBJS)
 	$(RM) $@

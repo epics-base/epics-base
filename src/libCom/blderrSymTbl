@@ -52,7 +52,7 @@ fi
 TOP=$1
 MAKE=$2
 
-INCLUDE=${TOP}/src/config/CONFIG_BASE
+INCLUDE=${TOP}/config/CONFIG_BASE
 
 if [ -z "$4" ]; then
 	OPTS=""

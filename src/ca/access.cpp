@@ -34,8 +34,18 @@
 
 #include    "iocinf.h"
 
-static caHdr nullmsg;
+const static caHdr nullmsg = {
+    0,0,0,0,0,0
+};
+const static char nullBuff[32] = {
+    0,0,0,0,0,0,0,0,0,0, 
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0
+};
+
 static threadPrivateId caClientContextId;
+
 threadPrivateId cacRecursionLock;
 
 #define TYPENOTINUSE (-2)
@@ -127,13 +137,11 @@ LOCAL int cac_push_tcp_msg (tcpiiu *piiu, const caHdr *pmsg, const void *pext)
          * if present (this avoids messages from purify)
          */
         {
-            /* static variables are initialized to zero */
-            const static char nullBuff[32] = { 0 };
             unsigned long n;
 
             n = extsize-actualextsize;
             if (n) {
-                assert (n<=sizeof(nullBuff));
+                assert ( n <= sizeof (nullBuff) );
                 bytesSent = cacRingBufferWrite ( &piiu->send, nullBuff, n );
                 if ( bytesSent != n ) {
                     return ECA_DISCONNCHID;

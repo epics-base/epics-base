@@ -30,6 +30,8 @@
  * .02	07-20-91	rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
  * .03	08-16-91	rac	use envGetLongConfigParam
  * .04	09-05-91	joh	updated for v5 vxWorks
+ * .05	01-27-92	rac	fixed off-by-1 bug for leap years in
+ *				tsTextToStamp
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -1071,7 +1073,9 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 	if (t.dayMonth <= daysInMonth[t.monthNum] ||
 	     (t.monthNum == 1 && t.dayMonth <= daysInMonth[1] + t.leapYear)) {
 	    t.dayMonth--;
-	    t.dayYear = dayYear1stOfMon[t.monthNum] + t.dayMonth + t.leapYear;
+	    t.dayYear = dayYear1stOfMon[t.monthNum] + t.dayMonth;
+	    if (t.monthNum > 1)
+		t.dayYear += t.leapYear;
 	}
 	else
 	    retStat = S_ts_inputTextError;

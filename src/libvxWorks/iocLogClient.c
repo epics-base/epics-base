@@ -30,7 +30,8 @@
  *
  * Modification Log:
  * -----------------
- * joh  00      080791  Created
+ * .00 joh 080791  	Created
+ * .01 joh 081591	Added epics env config
  */
 
 #include <vxWorks.h>
@@ -41,7 +42,10 @@
 #include <inetLib.h>
 #include <envDefs.h>
 
-int 			iocLogFD;
+
+int 			iocLogFD = ERROR;
+int 			iocLogDisable;
+
 static long 		ioc_log_port;
 static struct in_addr 	ioc_log_addr;
 
@@ -49,14 +53,23 @@ int 	iocLogInit();
 int	getConfig();
 void	failureNoptify();
 
-
-
-static int
+
+/*
+ *
+ *	iocLogInit()
+ *
+ *
+ */
+int
 iocLogInit()
 {
 	int            		sock;
         struct sockaddr_in      addr;
 	int			status;
+
+	if(iocLogDisable){
+		return OK;
+	}
 
 	status = getConfig();
 	if(status<0){
@@ -91,32 +104,18 @@ iocLogInit()
 	if (status < 0) {
 		char name[INET_ADDR_LEN];
 
-		inet_ntoa_b(addr, name);
-		logMsg("iocLogClient: unable to connect to `%s'\n", 
-			name);
+		inet_ntoa_b(addr.sin_addr, name);
+		logMsg("iocLogClient: unable to connect to `%s' at port %d\n", 
+			name,
+			addr.sin_port);
 		printErrno(errnoGet(0));
 		close(sock);
 		return ERROR;
 	}
 
 	logFdAdd(sock);
+	iocLogFD = sock;
 
-#ifdef JUNKYARD
-	ioTaskStdSet(taskIdSelf(), 1, sock);
-
-	while (1) {
-		date();
-/*
-		memShow(0);
-		i(0);
-		checkStack(0);
-*/
-		/*
-		 * 60 min
-		 */
-		taskDelay(sysClkRateGet() * 60 * 60);
-	}
-#endif
 	return OK;
 }
 
@@ -170,3 +169,29 @@ ENV_PARAM       *pparam;
 	logMsg(	"IocLogClient: EPICS environment variable `%s' undefined\n",
 		pparam->name);
 }
+
+
+
+
+/*
+ *
+ *	unused
+ *
+ *
+ */
+#ifdef JUNKYARD
+	ioTaskStdSet(taskIdSelf(), 1, sock);
+
+	while (1) {
+		date();
+/*
+		memShow(0);
+		i(0);
+		checkStack(0);
+*/
+		/*
+		 * 60 min
+		 */
+		taskDelay(sysClkRateGet() * 60 * 60);
+	}
+#endif

@@ -1,6 +1,6 @@
 /*sdr2recordtype.c*/
 /* Convert recordtype and record menus from .dctsdr file to new ascii formats */
-/* sdr2recordtype <recordtype> <recordtype.h> <file.dctsdr>
+/* sdr2recordtype <recordtype> <recordtype.h> <file.dctsdr> */
 /*
  *
  *     Author:	Marty Kraimer

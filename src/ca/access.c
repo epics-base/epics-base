@@ -2277,7 +2277,7 @@ void    (*pfunc)(struct access_rights_handler_args))
 #else /*__STDC__*/
 int ca_replace_access_rights_event(chan, pfunc)
 chid	chan;
-void	(*pfunc)(struct access_rights_handler_args);
+void	(*pfunc)();
 #endif /*__STDC__*/
 {
   	INITCHK;

@@ -154,10 +154,22 @@ static void myCallback(pcallback)
 
     struct boRecord *pbo=(struct boRecord *)pcallback->precord;
     struct rset     *prset=(struct rset *)(pbo->rset);
+    int		    wait_time;
 
     dbScanLock((struct dbCommon *)pbo);
-    pbo->val = 0;
-    dbProcess((struct dbCommon *)pbo);
+    if(pbo->pact) {
+	wait_time = (int)((pbo->high) * vxTicksPerSecond);/* seconds to ticks */
+	if (pbo->val==1 && wait_time>0) {
+		struct callback *pcallback;
+		pcallback = (struct callback *)(pbo->rpvt);
+        	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
+                callbackSetPriority(pbo->prio, &pcallback->callback);
+               	wdStart(pcallback->wd_id, wait_time, (FUNCPTR)callbackRequest, (int)pcallback);
+	}
+    } else {
+	pbo->val = 0;
+	dbProcess((struct dbCommon *)pbo);
+    }
     dbScanUnlock((struct dbCommon *)pbo);
 }
 

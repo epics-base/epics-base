@@ -324,8 +324,6 @@ extern "C" void cacRecvThreadTCP (void *pParam)
         tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfSend);
         if ( tbs != tbsSuccess ) {
             priorityOfSend = priorityOfSelf;
-            ca_printf (
-                "CAC warning: unable to get a lower priority for a TCP send thread\n");
         }
         tid = threadCreate ("CAC TCP Send", priorityOfSend,
                 threadGetStackSize (threadStackMedium), cacSendThreadTCP, piiu);
@@ -486,7 +484,6 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
         tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfRecv);
         if ( tbs != tbsSuccess ) {
             priorityOfRecv = priorityOfSelf;
-            ca_printf ("CAC warning: unable to get a lower priority for a TCP recv thread\n");
         }
 
         tid = threadCreate ("CAC TCP Recv", priorityOfRecv,

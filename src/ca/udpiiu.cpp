@@ -481,7 +481,6 @@ udpiiu::udpiiu (cac *pcac) :
         tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfSend);
         if ( tbs != tbsSuccess ) {
             priorityOfSend = priorityOfSelf;
-            ca_printf ("CAC warning: unable to get a lower priority for a UDP send thread\n");
         }
 
         tid = threadCreate ( "CAC UDP Send", priorityOfSend,

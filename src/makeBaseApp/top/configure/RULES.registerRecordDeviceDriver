@@ -1,8 +1,8 @@
 registerRecordDeviceDriver.o: registerRecordDeviceDriver.c
 
-registerRecordDeviceDriver.c: $(INSTALL_DBD)/$(DBDNAME)
+registerRecordDeviceDriver.c: $(DBDNAME:%=$(INSTALL_DBD)/%)
 	$(RM) registerRecordDeviceDriver.c
-	$(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl $(INSTALL_DBD)/$(DBDNAME) > registerRecordDeviceDriver.c
+	$(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl $(DBDNAME:%=$(INSTALL_DBD)/%) > registerRecordDeviceDriver.c
 
 clean::
 	@$(RM) registerRecordDeviceDriver.c

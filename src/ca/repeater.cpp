@@ -276,7 +276,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
             ina.sin_port = PORT_ANY;
 
             /* we can only bind to a local address */
-            status = bind ( testSock, (struct sockaddr *)&ina, (int) sizeof(ina) );
+            status = bind ( testSock, (struct sockaddr *) &ina, (int) sizeof (ina) );
             if (status) {
                 return;
             }
@@ -286,26 +286,26 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         }
     }
 
-    for (pclient = (struct one_client *) ellFirst (&client_list);
-        pclient; pclient = (struct one_client *) ellNext (&pclient->node)){
+    for ( pclient = (struct one_client *) ellFirst (&client_list);
+        pclient; pclient = (struct one_client *) ellNext (&pclient->node) ){
 
-        if (pFrom->sin_port == pclient->from.sin_port) {
+        if ( pFrom->sin_port == pclient->from.sin_port ) {
             break;
         }
     }       
 
-    if (!pclient) {
-        pclient = (struct one_client *) calloc (1, sizeof(*pclient));
+    if ( ! pclient ) {
+        pclient = (struct one_client *) calloc ( 1, sizeof (*pclient) );
         if (!pclient) {
-            ca_printf ("%s: no memory for new client\n", __FILE__);
+            ca_printf ( "%s: no memory for new client\n", __FILE__ );
             return;
         }
 
         msr = makeSocket (PORT_ANY, FALSE);
         if (msr.sock==INVALID_SOCKET) {
-            free(pclient);
-            ca_printf ("%s: no client sock because %d=\"%s\"\n",
-                    __FILE__, msr.errNumber, msr.pErrStr);
+            free ( pclient );
+            ca_printf ( "%s: no client sock because %d=\"%s\"\n",
+                    __FILE__, msr.errNumber, msr.pErrStr );
             return;
         }
 
@@ -313,20 +313,20 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
 
         status = connect ( pclient->sock, 
                 (struct sockaddr *) pFrom, 
-                sizeof (*pFrom) );
-        if (status<0) {
+                sizeof ( *pFrom ) );
+        if ( status<0 ) {
             int errnoCpy = SOCKERRNO;
             ca_printf (
             "%s: unable to connect client sock because \"%s\"\n",
                 __FILE__, SOCKERRSTR(errnoCpy));
-            socket_close (pclient->sock);
-            free (pclient);
+            socket_close ( pclient->sock );
+            free ( pclient );
             return;
         }
 
         pclient->from = *pFrom;
 
-        ellAdd (&client_list, &pclient->node);
+        ellAdd ( &client_list, &pclient->node );
         newClient = TRUE;
 #ifdef DEBUG
         ca_printf ( "Added %d\n", ntohs (pFrom->sin_port) );
@@ -336,25 +336,22 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
     memset ( (char *) &confirm, '\0', sizeof (confirm) );
     confirm.m_cmmd = htons (REPEATER_CONFIRM);
     confirm.m_available = pFrom->sin_addr.s_addr;
-    status = send(
-        pclient->sock,
-        (char *)&confirm,
-        sizeof(confirm),
-        0);
-    if (status >= 0) {
-        assert(status == sizeof(confirm));
+    status = send ( pclient->sock, (char *) &confirm,
+                    sizeof (confirm), 0 );
+    if ( status >= 0 ) {
+        assert ( status == sizeof (confirm) );
     }
-    else if (SOCKERRNO == SOCK_ECONNREFUSED){
+    else if ( SOCKERRNO == SOCK_ECONNREFUSED ){
 #ifdef DEBUG
-        ca_printf ("Deleted repeater client=%d sending ack\n",
+        ca_printf ( "Deleted repeater client=%d sending ack\n",
                 ntohs (pFrom->sin_port) );
 #endif
-        ellDelete (&client_list, &pclient->node);
-        socket_close (pclient->sock);
-        free (pclient);
+        ellDelete ( &client_list, &pclient->node );
+        socket_close ( pclient->sock );
+        free ( pclient );
     }
     else {
-        ca_printf ("CA Repeater: confirm err was \"%s\"\n",
+        ca_printf ( "CA Repeater: confirm err was \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO) );
     }
 

@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.31  1999/08/11 00:24:11  jhill
+ * dont increment file pos on error
+ *
  * Revision 1.30  1998/06/16 02:43:16  jhill
  * use ip addr conversion in libCom - and cosmetic changes
  *
@@ -306,6 +309,132 @@ int main()
 	}
 }
 
+/*
+ * seekLatestLine (struct ioc_log_server *pserver)
+ */
+static int seekLatestLine (struct ioc_log_server *pserver)
+{
+    static const time_t invalidTime = (time_t) -1;
+    time_t theLatestTime = invalidTime;
+    long latestFilePos = -1;
+    int status;
+
+    /*
+     * start at the beginning
+     */
+    rewind (pserver->poutfile);
+
+    while (1) {
+        struct tm theDate;
+        int convertStatus;
+        char month[16];
+
+        /*
+         * find the line in the file with the latest date
+         *
+         * this assumes ctime() produces dates of the form:
+         * DayName MonthName dayNum 24hourHourNum:minNum:secNum yearNum
+         */
+        convertStatus = fscanf (
+            pserver->poutfile, "%*s %*s %s %d %d:%d:%d %d %*[^\n] \n",
+            month, &theDate.tm_mday, &theDate.tm_hour, 
+            &theDate.tm_min, &theDate.tm_sec, &theDate.tm_year);
+        if (convertStatus==6) {
+            static const char *pMonths[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+            static const unsigned nMonths = sizeof(pMonths)/sizeof(pMonths[0]);
+            time_t lineTime = (time_t) -1;
+            unsigned iMonth;
+
+            for (iMonth=0; iMonth<nMonths; iMonth++) {
+                if ( strcmp (pMonths[iMonth], month)==0 ) {
+                    theDate.tm_mon = iMonth;
+                    break;
+                }
+            }
+            if (iMonth<nMonths) {
+                static const int tm_epoch_year = 1900;
+                if (theDate.tm_year>tm_epoch_year) {
+                    theDate.tm_year -= tm_epoch_year;
+                    theDate.tm_isdst = -1; /* dont know */
+                    lineTime = mktime (&theDate);
+                    if ( lineTime != invalidTime ) {
+                        if (theLatestTime == invalidTime || 
+                            difftime(lineTime, theLatestTime)>=0) {
+                            latestFilePos =  ftell (pserver->poutfile);
+                            theLatestTime = lineTime;
+                        }
+                    }
+                    else {
+                        char date[128];
+                        size_t nChar;
+                        nChar = strftime (date, sizeof(date), "%a %b %d %H:%M:%S %Y\n", &theDate);
+                        if (nChar>0) {
+                            fprintf (stderr, "iocLogServer: strange date in log file: %s\n", date);
+                        }
+                        else {
+                            fprintf (stderr, "iocLogServer: strange date in log file\n");
+                        }
+                    }
+                }
+                else {
+                    fprintf (stderr, "iocLogServer: strange year in log file: %d\n", theDate.tm_year);
+                }
+            }
+            else {
+                fprintf (stderr, "iocLogServer: strange month in log file: %s\n", month);
+            }
+        }
+        else {
+            char c = fgetc (pserver->poutfile);
+ 
+            /*
+             * bypass the line if it does not match the expected format
+             */
+            while ( c!=EOF && c!='\n' ) {
+                c = fgetc (pserver->poutfile);
+            }
+
+            if (c==EOF) {
+                break;
+            }
+        }
+    }
+
+    /*
+     * move to the proper location in the file
+     */
+    if (latestFilePos != -1) {
+	    status = fseek (pserver->poutfile, latestFilePos, SEEK_SET);
+	    if (status!=IOCLS_OK) {
+		    fclose (pserver->poutfile);
+		    pserver->poutfile = stderr;
+		    return IOCLS_ERROR;
+	    }
+    }
+    else {
+	    status = fseek (pserver->poutfile, 0L, SEEK_END);
+	    if (status!=IOCLS_OK) {
+		    fclose (pserver->poutfile);
+		    pserver->poutfile = stderr;
+		    return IOCLS_ERROR;
+	    }
+    }
+
+    pserver->filePos = ftell (pserver->poutfile);
+
+    if (theLatestTime==invalidTime) {
+        if (pserver->filePos!=0) {
+            fprintf (stderr, "iocLogServer: **** Warning ****\n");
+            fprintf (stderr, "iocLogServer: no recognizable dates in \"%s\"\n", 
+                ioc_log_file_name);
+            fprintf (stderr, "iocLogServer: logging at end of file\n");
+        }
+    }
+
+	return IOCLS_OK;
+}
+
 
 /*
  *	openLogFile()
@@ -313,7 +442,6 @@ int main()
  */
 static int openLogFile (struct ioc_log_server *pserver)
 {
-	int status;
 	enum TF_RETURN ret;
 
 	if (ioc_log_file_limit==0u) {
@@ -347,23 +475,8 @@ static int openLogFile (struct ioc_log_server *pserver)
 	strcpy (pserver->outfile, ioc_log_file_name);
 	pserver->max_file_size = ioc_log_file_limit;
 
-	/*
-	 * This is not required under UNIX but does appear
-	 * to be required under WIN32. 
-	 */
-	status = fseek (pserver->poutfile, 0L, SEEK_END);
-	if (status!=IOCLS_OK) {
-		fclose (pserver->poutfile);
-		pserver->poutfile = stderr;
-		return IOCLS_ERROR;
-	}
-
-	pserver->filePos = ftell (pserver->poutfile);
-
-	return IOCLS_OK;
+    return seekLatestLine (pserver);
 }
-
-
 
 
 /*
@@ -449,7 +562,7 @@ static void acceptNewClient(void *pParam)
 	 * this task will find out and exit
 	 */
 	{
-		long	true = true;
+		long true = 1;
 
 		status = setsockopt(
 				pclient->insock,

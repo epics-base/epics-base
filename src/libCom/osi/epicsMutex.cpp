@@ -222,13 +222,10 @@ bool epicsMutex::tryLock () // X aCC 361
     if ( status == epicsMutexLockOK ) {
         return true;
     } 
-    else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } 
-    else {
+    else if ( status != epicsMutexLockTimeout ) {
         throw invalidMutex ();
-        return false; // never here, but compiler is happy
     }
+    return false;
 }
 
 void epicsMutex::unlock ()

@@ -23,6 +23,7 @@ CONFIG ?= $(TOP)/configure
 
 -include $(CONFIG)/RELEASE
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
+-include $(CONFIG)/RELEASE.Common.$(T_A)
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 
 include $(CONFIG)/CONFIG_COMMON

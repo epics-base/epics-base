@@ -76,12 +76,20 @@ $outfile = $ARGV[0];
 
 # Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
-die "Can't find configure/RELEASE file" unless (-f $relfile);
+die "Can't find configure/RELEASE file" unless (-r $relfile);
 &readRelease($relfile, \%macros, \@apps);
 
 if ($hostarch) {
-    $relfile .= ".$hostarch";
-    &readRelease($relfile, \%macros, \@apps) if (-r $relfile);
+    my ($hrelfile) = "$relfile.$hostarch";
+    &readRelease($hrelfile, \%macros, \@apps) if (-r $hrelfile);
+}
+if ($arch) {
+    my ($crelfile) = "$relfile.Common.$arch";
+    &readRelease($crelfile, \%macros, \@apps) if (-r $crelfile);
+    if ($hostarch) {
+        my ($arelfile) = "$relfile.$hostarch.$arch";
+        &readRelease($arelfile, \%macros, \@apps) if (-r $arelfile);
+    }
 }
 &expandRelease(\%macros, \@apps);
 

@@ -416,6 +416,290 @@ long		offset;
     }
     return(0);
 }
+
+static long getStringChar(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+char		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char  *psrc=(char *)paddr->pfield;
+    short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+		*pbuffer = (char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+	    *pbuffer = (char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUchar(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+unsigned char	*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char  	    *psrc=(char *)paddr->pfield;
+    unsigned short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+		*pbuffer = (unsigned char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+	    *pbuffer = (unsigned char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringShort(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+short		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUshort(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+unsigned short	*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    unsigned short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringLong(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+long		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    long  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%ld",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%ld",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUlong(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+unsigned long	*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    unsigned long  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%lu",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%lu",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringFloat(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+float		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    float  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%f",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%f",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringDouble(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+double		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    char   *psrc=(char *)paddr->pfield;
+    double  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%lf",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%lf",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringEnum(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+char		*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    return(getStringUshort(paddr,pbuffer,nRequest,no_elements,offset));
+}
 
 static long getCharString(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
@@ -2567,8 +2851,8 @@ static long getDchoiceString(paddr,pbuffer,nRequest,no_elements,offset)
 long (*get_convert_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 
 /* source is a DBF_STRING		*/
-{getStringString, NULL,            NULL,            NULL,            NULL,
-    NULL,         NULL,            NULL,            NULL,            NULL},
+{getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,
+ getStringLong,   getStringUlong,  getStringFloat,  getStringDouble, getStringEnum},
 /* source is a DBF_CHAR 		*/
 {getCharString,   getCharChar,     getCharUchar,    getCharShort,    getCharUshort,
  getCharLong,     getCharUlong,    getCharFloat,    getCharDouble,   getCharEnum},
@@ -3191,6 +3475,8 @@ long		offset;
 	if(sscanf(pbuffer,"%f",&value) == 1) {
 		*pdest = value;
 		return(0);
+	} else {
+	    return(-1);
 	}
     }
     pdest += offset;
@@ -3224,6 +3510,8 @@ long		offset;
 	if(sscanf(pbuffer,"%lf",&value) == 1) {
 		*pdest = value;
 		return(0);
+	} else {
+	    return(-1);
 	}
     }
     pdest += offset;

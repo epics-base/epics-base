@@ -1189,7 +1189,7 @@ static long cvt_dev_st(
 long (*get_cvt_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
 
  /* Convert DBF_STRING to ... */
-{ cvt_st_st, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+{ cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e },
 
  /* Convert DBF_CHAR to ... */
 { cvt_c_st, cvt_c_c, cvt_c_uc, cvt_c_s, cvt_c_us, cvt_c_l, cvt_c_ul, cvt_c_f, cvt_c_d, cvt_c_e },

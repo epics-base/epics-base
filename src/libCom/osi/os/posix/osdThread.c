@@ -85,15 +85,27 @@ if(status) { \
 static void myAtExit(void)
 {
     threadInfo *pthreadInfo;
+    static int ntimes=0;
+
+    ntimes++;
+    if(ntimes>1) {
+        fprintf(stderr,"osdThread myAtExit extered multiple times\n");
+        return;
+    }
     semMutexMustTake(listMutex);
     pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-        if(pthreadInfo->createFunc){// dont cancel main thread
+        if(pthreadInfo->createFunc){/* dont cancel main thread*/
             pthread_cancel(pthreadInfo->tid);
         }
         pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
     semMutexGive(listMutex);
+    /* delete all resources created by once */
+    free(pcommonAttr); pcommonAttr=0;
+    semMutexDestroy(listMutex);
+    semMutexDestroy(onceMutex);
+    pthread_key_delete(getpthreadInfo);
 }
 
 static int getOssPriorityValue(threadInfo *pthreadInfo)
@@ -488,7 +500,7 @@ void threadShow(threadId id,unsigned int level)
 
         status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
         priority = (status ? 0 : param.sched_priority);
-	printf("%16.16s %8x %8d %8d %8.8s\n", pthreadInfo->name,(threadId)
+	printf("%16.16s %8x %p %8d %8.8s\n", pthreadInfo->name,(threadId)
 	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)

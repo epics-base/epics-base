@@ -37,6 +37,8 @@
  * .05  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
  * .06  08-27-92	mrk	removed support for old I/O event scanning
  * .07  12-11-92	mrk	scanDelete crashed if no get_ioint_info existed.
+ * .08  02-02-94	mrk	added scanOnce
+ * .09  02-03-94	mrk	If scanAdd fails set precord->scan=SCAN_PASSIVE
  */
 
 #include	<vxWorks.h>
@@ -65,6 +67,13 @@
 extern struct dbBase *pdbBase;
 extern volatile int interruptAccept;
 
+/* SCAN ONCE */
+#define ONCE_QUEUE_SIZE 256
+static SEM_ID onceSem;
+static RING_ID onceQ;
+static int onceTaskId;
+
+/*all other scan types */
 struct scan_list{
 	FAST_LOCK	lock;
 	ELLLIST		list;
@@ -103,6 +112,8 @@ struct io_scan_list {
 static struct io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 
 /* Private routines */
+static void onceTask(void);
+static void initOnce(void);
 static void periodicTask(struct scan_list *psl);
 static void initPeriodic(void);
 static void spawnPeriodic(int ind);
@@ -122,6 +133,7 @@ long scanInit()
 {
 	int i;
 
+	initOnce();
 	initPeriodic();
 	initEvent();
 	buildScanLists();
@@ -169,6 +181,7 @@ void scanAdd(struct dbCommon *precord)
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
 		recGblRecordError(S_db_badField,(void *)precord,"scanAdd detected illegal EVNT value");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
@@ -187,21 +200,28 @@ void scanAdd(struct dbCommon *precord)
 
 	    if(precord->dset==NULL){
 		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no DSET) ");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    get_ioint_info=precord->dset->get_ioint_info;
 	    if(get_ioint_info==NULL) {
 		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no get_ioint_info)");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
-	    if(get_ioint_info(0,precord,&piosl)) return;/*return if error*/
+	    if(get_ioint_info(0,precord,&piosl)) {
+		precord->scan = SCAN_PASSIVE;
+		return;
+	    }
 	    if(piosl==NULL) {
 		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    priority = precord->prio;
 	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
 		recGblRecordError(-1,(void *)precord,"scanAdd: illegal prio field");
+		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    piosl += priority; /* get piosl for correct priority*/
@@ -357,6 +377,44 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
 	if(ellCount(&piosl->scan_list.list)>0) callbackRequest((void *)piosl);
     }
+}
+
+void scanOnce(void *precord)
+{
+    if(rngBufPut(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord))
+	errMessage(0,"rngBufPut overflow in scanOnce");
+    semGive(onceSem);
+}
+
+static void onceTask(void)
+{
+    void *precord=NULL;
+
+    while(TRUE) {
+	if(semTake(onceSem,WAIT_FOREVER)!=OK)
+	    errMessage(0,"dbScan: semTake returned error in onceTask");
+	while (rngNBytes(onceQ)>=sizeof(precord)){
+	    if(rngBufGet(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord))
+		errMessage(0,"dbScan: rngBufGet returned error in onceTask");
+	    dbScanLock(precord);
+	    dbProcess(precord);
+	    dbScanUnlock(precord);
+	}
+    }
+}
+
+static void initOnce(void)
+{
+    if((onceQ = rngCreate(sizeof(void *) * ONCE_QUEUE_SIZE))==NULL){
+	errMessage(0,"dbScan: initOnce failed");
+	exit(1);
+    }
+    if((onceSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+	errMessage(0,"semBcreate failed in initOnce");
+    onceTaskId = taskSpawn(SCANONCE_NAME,SCANONCE_PRI,SCANONCE_OPT,
+	SCANONCE_STACK,(FUNCPTR)onceTask,
+	0,0,0,0,0,0,0,0,0,0);
+    taskwdInsert(onceTaskId,NULL,0L);
 }
 
 static void periodicTask(struct scan_list *psl)

@@ -95,5 +95,16 @@ G++_POSIX_CPPFLAGS =
 #--------------------------------------------------
 # RTEMS is not that strict
 GCC_CMPLR_CPPFLAGS_STRICT =
-:G++_CMPLR_CPPFLAGS_STRICT =
+G++_CMPLR_CPPFLAGS_STRICT =
 
+#--------------------------------------------------
+# RTEMS uses C++ constructors to register commands/programs
+%.o: ../%.st
+	@echo "preprocessing $*.st"
+	@$(RM) $*.i
+	$(CPP) $(CPPSNCFLAGS) $< > $*.i
+	@echo "converting $*.i"
+	@$(RM) $*.c
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+	@$(RM) $@
+	$(COMPILE.cpp) -Wno-deprecated $*.c

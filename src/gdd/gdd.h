@@ -56,10 +56,6 @@ class gddScalar;
 struct epicsTimeStamp;
 struct timespec;
 
-extern "C" {
-  static void gdd_staticInit(void *);
-}
-
 // Not Complete in this prototype:
 // - Read only DD.
 // - Small array management using free lists
@@ -501,18 +497,15 @@ protected:
 	aitUint8 dim;				// 0=scaler, >0=array
 
 	gdd_NEWDEL_DATA		// required for using generic new and remove
+
 private:
 	mutable aitUint32 ref_cnt;
 	aitUint8 flags;
 
     static epicsMutex * pGlobalMutex;
-    static epicsThreadOnceId staticInitOnce;
-    static void staticInit (void);
-friend void gdd_staticInit(void *);
-
+    static staticInit ();
 	const gdd* indexDD (aitIndex index) const;
 };
-
 
 // include these to be backward compatible with first gdd library version
 #include "gddArray.h"

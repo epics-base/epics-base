@@ -27,20 +27,9 @@ gdd_NEWDEL_NEW(gdd)
 gdd_NEWDEL_DEL(gdd)
 gdd_NEWDEL_STAT(gdd)
 
-epicsMutex * gdd::pGlobalMutex = 0;
-epicsThreadOnceId gdd::staticInitOnce = EPICS_THREAD_ONCE_INIT;
+epicsMutex * gdd::pGlobalMutex;
 
-// Can't pass C++ linkage static member function gdd::staticInit
-// into epicsThreadOnce(); we need a C linkage function for that:
-extern "C" {
-  static void gdd_staticInit(void *) { gdd::staticInit(); } 
-}
-
-void gdd::staticInit (void)
-{
-    gdd::pGlobalMutex = new epicsMutex;
-    assert ( gdd::pGlobalMutex );
-}
+static epicsThreadOnceId gddOnce = EPICS_THREAD_ONCE_INIT;
 
 class gddFlattenDestructor : public gddDestructor
 {
@@ -87,22 +76,31 @@ class gddAitStringDestructor: public gddDestructor {
 
 // --------------------------The gdd functions-------------------------
 
+static void gddStaticInit ( void * p )
+{
+    epicsMutex * * pMutex = static_cast < epicsMutex * * > ( p );
+    *pMutex = new epicsMutex ();
+}
+
+gdd::staticInit () 
+{
+    epicsThreadOnce ( & gddOnce, gddStaticInit, & gdd::pGlobalMutex );
+}
+
 gdd::gdd(int app, aitEnum prim, int dimen)
 {
 	init(app,prim,dimen);
 }
 
-gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val)
+gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val) 
 {
-	int i;
 	init(app,prim,dimen);
-	for(i=0;i<dimen;i++) bounds[i].set(0,val[i]);
+	for(int i=0;i<dimen;i++) bounds[i].set(0,val[i]);
 }
 
 void gdd::init(int app, aitEnum prim, int dimen)
 {
-    epicsThreadOnce ( & gdd::staticInitOnce, gdd_staticInit, 0 );
-
+    gdd::staticInit ();
 	setApplType(app);
 	//
 	// joh - we intentionally dont call setPrimType()

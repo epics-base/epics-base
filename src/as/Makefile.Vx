@@ -1,35 +1,18 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 LDLIBS =
 
-SRCS = \
-	asDbLib.c asCa.c asLib.c
-
-OBJS = \
-
-LIBOBJS = \
-	$(OBDIR)/asDbLib.o $(OBDIR)/asCa.o $(OBDIR)/asLib.o
-
+SRCS = ../asDbLib.c ../asCa.c asLib.c
+OBJS =
+LIBOBJS = asDbLib.o asCa.o asLib.o
 LIBNAME = asLibrary
 
-pre_build: $(OBDIR)/asLib.c
-
-$(OBDIR)/asLib.c: asLib.y $(OBDIR)/asLib_lex.c
-	$(YACC) -l asLib.y
-	/bin/rm -f $(OBDIR)/asLib.c
-	/bin/mv y.tab.c $(OBDIR)/asLib.c
-
-$(OBDIR)/asLib_lex.c: asLib_lex.l
-	$(LEX) -L asLib_lex.l
-	/bin/rm -f $(OBDIR)/asLib_lex.c
-	/bin/mv lex.yy.c $(OBDIR)/asLib_lex.c
-
-$(OBDIR)/asLib.o: $(OBDIR)/asLib.c asLibRoutines.c
-	@echo "compiling asLib.c"
-	$(RM) $@
-	$(CC) -c  $(CFLAGS) -o $(OBDIR)/asLib.o $(OBDIR)/asLib.c
-	@#load  $(CFLAGS) asLib.c
+# Extra rule since asLib_lex.c is included in asLib.c
+#   In my opinion, these objects should really be built
+#   independently.
+asLib.o: asLib_lex.c ../asLibRoutines.c
 
 include $(EPICS)/config/RULES.Vx

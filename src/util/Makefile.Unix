@@ -1,5 +1,5 @@
-EPICS = ../../..
-
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_LDLIBS = -lm -s
@@ -9,29 +9,23 @@ USR_CFLAGS = -DXWINDOWS -UvxWorks -I$(OPENWIN)/include
 CC = $(oldCC)
 
 SRCS = \
-	apCreateShadow.c apStatusSync.c bfRing.c ca_test.c calcTest.c \
-	checkDvlNode.c cmdClient.c extrDoc.c guiSubr.c iocLogServer.c \
-	pprPlot.c racPrint.c recListProg.c recordTest.c startCArepeater.c \
-	sydPlot.c
+	../apCreateShadow.c ../apStatusSync.c ../bfRing.c ../ca_test.c \
+	../calcTest.c ../cmdClient.c ../extrDoc.c ../guiSubr.c \
+	../iocLogServer.c ../pprPlot.c ../racPrint.c ../recListProg.c \
+	../recordTest.c ../startCArepeater.c ../sydPlot.c
 
 OBJS = \
-	$(OBDIR)/apCreateShadow.o $(OBDIR)/apStatusSync.o $(OBDIR)/bfRing.o \
-	$(OBDIR)/ca_test.o $(OBDIR)/calcTest.o $(OBDIR)/checkDvlNode.o \
-        $(OBDIR)/cmdClient.o $(OBDIR)/extrDoc.o $(OBDIR)/guiSubr.o \
-	$(OBDIR)/iocLogServer.o $(OBDIR)/pprPlot.o $(OBDIR)/racPrint.o \
-	$(OBDIR)/recListProg.o $(OBDIR)/recordTest.o \
-	$(OBDIR)/startCArepeater.o $(OBDIR)/sydPlot.o
+	apCreateShadow.o apStatusSync.o bfRing.o ca_test.o calcTest.o \
+        cmdClient.o extrDoc.o guiSubr.o iocLogServer.o pprPlot.o racPrint.o \
+	recListProg.o recordTest.o startCArepeater.o sydPlot.o
 
 LIBOBJS = \
-	$(OBDIR)/guiSubr.o $(OBDIR)/pprPlot.o $(OBDIR)/sydPlot.o
+	guiSubr.o pprPlot.o sydPlot.o
 
 LIBNAME = libppr.a
 
 TARGETS = \
-	$(OBDIR)/apCreateShadow $(OBDIR)/apStatusSync $(OBDIR)/bfRing \
-	$(OBDIR)/ca_test $(OBDIR)/calcTest $(OBDIR)/checkDvlNode \
-	$(OBDIR)/cmdClient $(OBDIR)/extrDoc $(OBDIR)/iocLogServer \
-	$(OBDIR)/racPrint $(OBDIR)/recListProg $(OBDIR)/recordTest \
-	$(OBDIR)/startCArepeater
+	apCreateShadow apStatusSync bfRing ca_test calcTest cmdClient \
+	extrDoc iocLogServer racPrint recListProg recordTest startCArepeater
 
 include $(EPICS)/config/RULES.Unix

@@ -23,7 +23,7 @@
  */
 
 #include	"parse.h"
-#include	"y.tab.h"	/* output from yacc */
+#include	"snc.h"		/* output from yacc */
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0

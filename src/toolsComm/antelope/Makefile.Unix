@@ -1,26 +1,23 @@
-EPICS = ../../../..
-
+EPICS = ../../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
-
 CC = $(oldCC)
 
 SRCS = \
-	closure.c error.c lalr.c lr0.c main.c \
-	mkpar.c output.c reader.c skeleton.c symtab.c \
-	verbose.c warshall.c
+	../closure.c ../error.c ../lalr.c ../lr0.c ../main.c \
+	../mkpar.c ../output.c ../reader.c ../skeleton.c ../symtab.c \
+	../verbose.c ../warshall.c
 
 LIBOBJS =
 
 OBJS = \
-	$(OBDIR)/closure.o $(OBDIR)/error.o $(OBDIR)/lalr.o \
-	$(OBDIR)/lr0.o $(OBDIR)/main.o $(OBDIR)/mkpar.o \
-        $(OBDIR)/output.o $(OBDIR)/reader.o $(OBDIR)/skeleton.o \
-	$(OBDIR)/symtab.o $(OBDIR)/verbose.o $(OBDIR)/warshall.o
+	closure.o error.o lalr.o lr0.o main.o mkpar.o \
+        output.o reader.o skeleton.o symtab.o verbose.o warshall.o
 
-PROD = $(OBDIR)/antelope
+PROD = antelope
 
 pre_build: install
 

@@ -1,55 +1,54 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -D_NO_PROTO
 
 SRCS = \
-	arAccessLib.c arCSCheck.c arChanIO.c bfSubr.c bucketLib.c \
-	calcPerform.c cmdSubr.c cvtFast.c cvtNumbers.c ellLib.c \
-	envSubr.c errMtst.c errSymLib.c ezsSockSubr.c fdmgr.c \
-	freeListLib.c genSubr.c genTaskSubr.c gpHashLib.c helpSubr.c \
-	memDebugLib.c nextFieldSubr.c postfix.c sydSubr.c sydSubrCA.c \
-	sydSubrCF.c sydSubrSSF.c tsSubr.c $(OBDIR)/errSymTbl.c
+	../arAccessLib.c ../arCSCheck.c ../arChanIO.c ../bfSubr.c \
+	../bucketLib.c ../calcPerform.c ../cmdSubr.c ../cvtFast.c \
+	../cvtNumbers.c ../ellLib.c ../envSubr.c ../errMtst.c ../errSymLib.c \
+	../ezsSockSubr.c ../fdmgr.c ../freeListLib.c ../genSubr.c \
+	../genTaskSubr.c ../gpHashLib.c ../helpSubr.c ../memDebugLib.c \
+	../nextFieldSubr.c ../postfix.c ../sydSubr.c ../sydSubrCA.c \
+	../sydSubrCF.c ../sydSubrSSF.c ../tsSubr.c errSymTbl.c ../errInc.c
 
 OBJS =
 
 LIBOBJS = \
-	$(OBDIR)/arAccessLib.o $(OBDIR)/arCSCheck.o $(OBDIR)/arChanIO.o \
-	$(OBDIR)/bfSubr.o $(OBDIR)/bucketLib.o \
-        $(OBDIR)/calcPerform.o $(OBDIR)/cmdSubr.o $(OBDIR)/cvtFast.o \
-	$(OBDIR)/cvtNumbers.o $(OBDIR)/ellLib.o \
-        $(OBDIR)/envSubr.o $(OBDIR)/errMtst.o $(OBDIR)/errSymLib.o \
-	$(OBDIR)/errSymTbl.o $(OBDIR)/ezsSockSubr.o $(OBDIR)/fdmgr.o \
-        $(OBDIR)/freeListLib.o $(OBDIR)/genSubr.o $(OBDIR)/genTaskSubr.o \
-	$(OBDIR)/gpHashLib.o $(OBDIR)/helpSubr.o \
-        $(OBDIR)/memDebugLib.o $(OBDIR)/nextFieldSubr.o \
-	$(OBDIR)/postfix.o $(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
-        $(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o $(OBDIR)/tsSubr.o
+	tsSubr.o arAccessLib.o arCSCheck.o arChanIO.o bfSubr.o bucketLib.o \
+        calcPerform.o cmdSubr.o cvtFast.o cvtNumbers.o ellLib.o \
+        envSubr.o errMtst.o errSymLib.o errSymTbl.o ezsSockSubr.o fdmgr.o \
+        freeListLib.o genSubr.o genTaskSubr.o gpHashLib.o helpSubr.o \
+        memDebugLib.o nextFieldSubr.o postfix.o sydSubr.o sydSubrCA.o \
+        sydSubrCF.o sydSubrSSF.o
 
 LIBNAME = libCom.a
 
-TARGET = \
-	$(OBDIR)/cvtTest $(OBDIR)/tsTest $(OBDIR)/sydTest
+TARGET = cvtTest tsTest sydTest
 
-pre_build: bld_errSym
+build:: errSymTbl.o errInc.o
 
-bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
-
-$(OBDIR)/errSymTbl.o: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
+errSymTbl.o: errSymTbl.c errInc.o
 	$(COMPILE.c) -o $@ $<
 
-$(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
+errSymTbl.c errInc.o: errInc.c
 	@/bin/rm -f errInc.o
-	@$(EPICS_BASE)/tools/blderrSymTbl
-	@/bin/mv errSymTbl.c errInc.o $(OBDIR)
+	@$(EPICS_BASE)/tools/blderrSymTbl;
 
-$(OBDIR)/cvtTest: $(OBDIR)/cvtNumbers.o
-	$(LINK.c) -o $@ $? -lCom -lDb -lCom -lm -s
+errInc.c:
+	cp ../errInc.c errInc.c
 
-$(OBDIR)/tsTest: $(OBDIR)/tsSubr.o
-	$(LINK.c) -o $@ $? -lCom -lDb -lCom -lm -s
+cvtTest: cvtNumbers.o
+	$(LINK.c) -o $@ cvtNumbers.o -lCom -lDb -lCom -lm -s
 
-$(OBDIR)/sydTest: $(OBDIR)/sydSubr.o
-	$(LINK.c) -o $@ $? -lCom -lca -lDb -lCom -lm -s
+tsTest: tsSubr.o
+	$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
+
+sydTest: sydSubr.o
+	$(LINK.c) -o $@ sydSubr.o -lCom -lca -lDb -lCom -lm -s
+
+clean::
+	rm -f cvtTest sydTest tsTest errInc.c errSymTbl.c
 
 include $(EPICS)/config/RULES.Unix

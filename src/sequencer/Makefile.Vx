@@ -1,27 +1,26 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS =
 
 SRCS = \
-	seq_main.c seq_ca.c seq_qry.c seq_task.c \
-	seq_mac.c seq_prog.c $(OBDIR)/seqVersion.c
+	../seq_main.c ../seq_ca.c ../seq_qry.c ../seq_task.c \
+	../seq_mac.c ../seq_prog.c seqVersion.c
 
 OBJS = \
-	$(OBDIR)/seq_main.o $(OBDIR)/seq_ca.o \
-	$(OBDIR)/seq_qry.o $(OBDIR)/seq_task.o \
-	$(OBDIR)/seq_mac.o $(OBDIR)/seq_prog.o \
-	$(OBDIR)/seqVersion.o
+	seq_main.o seq_ca.o seq_qry.o seq_task.o \
+	seq_mac.o seq_prog.o seqVersion.o
 
 LIBOBJS =
 
-PROD = $(OBDIR)/seq
+PROD = seq
 
-pre_build: $(OBDIR)/seqVersion.c
+seqVersion.c: ../Version
+	/bin/rm -f seqVersion.c
+	sh ../makeSeqVersion ../Version > seqVersion.c
 
-$(OBDIR)/seqVersion.c: Version
-	/bin/rm -f $(OBDIR)/seqVersion.c
-	sh makeSeqVersion Version > seqVersion.c
-	/bin/mv seqVersion.c $(OBDIR)/seqVersion.c
+clean::
+	rm -f seq seqVersion.c
 
 include $(EPICS)/config/RULES.Vx

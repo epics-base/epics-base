@@ -1,44 +1,33 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 SRCS = \
-	dbStaticLib.c \
+	../dbStaticLib.c \
 	atdb_lex.c \
 	atdb_yacc.c \
-	dbta.c \
-	atdb.c \
-	dbl.c \
-	dbls.c
+	../dbta.c \
+	../atdb.c \
+	../dbl.c \
+	../dbls.c
 
 OBJS =
 
-LIBOBJS = \
-	dbStaticLib.o
+LIBOBJS = dbStaticLib.o
 
 LIBNAME = libDb.a
 
-TARGET = $(OBDIR)/dbta $(OBDIR)/atdb $(OBDIR)/dbl $(OBDIR)/dbls
+TARGET = dbta atdb dbl dbls
 
-$(OBDIR)/atdb: $(OBDIR)/atdb.o $(OBDIR)/atdb_yacc.o
+atdb: atdb.o atdb_yacc.o
 	$(LINK.c) -o $@ $? $(LDLIBS)
 
-pre_build: $(OBDIR)/atdb_yacc.o
-
-$(OBDIR)/atdb_yacc.o: atdb_lex.c atdb_yacc.c
-	/bin/rm -f $(OBDIR)/atdb_yacc.o
-	$(CC) $(CFLAGS) -o $@ -c atdb_yacc.c
-
-atdb_yacc.c: atdb_lex.c atdb_yacc.y
-	yacc atdb_yacc.y
-	/bin/rm -f atdb_yacc.c
-	/bin/mv y.tab.c atdb_yacc.c
-
-atdb_lex.c: atdb_lex.l
-	lex atdb_lex.l
-	/bin/rm -f atdb_lex.c
-	/bin/mv lex.yy.c atdb_lex.c
+# Extra rule since atdb_lex.c is included in atdb_yacc.c
+#   In my opinion, these objects should really be built
+#   independently.
+atdb_yacc.o: atdb_lex.c
 
 clean::
-	/bin/rm -f atdb_lex.c atdb_yacc.c
+	/bin/rm -f atdb_lex.c atdb_yacc.c dbta atdb dbl dbls
 
 include $(EPICS)/config/RULES.Unix

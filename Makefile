@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Top Level "Diabolical" EPICS Makefile
+# Top Level EPICS Makefile
 #        by Matthew Needes and Mike Bordua
 #
 #  Notes:
@@ -12,18 +12,17 @@
 #    However, the release dependencies DOES require a complete
 #         install because the release.% syntax is illegal.
 #
-#    If TOUCH=Y is included on the make command line, flags will
-#         be touched to indicate that a certain portion of the build
-#         is complete.
-#
 # $Log$
+# Revision 1.11  1994/08/19  15:38:01  mcn
+# Dependencies are now generated with a "make release".
+#
 # Revision 1.10  1994/08/12  18:51:29  mcn
 # Added Log and/or Id.
 #
 #
 
 EPICS=..
-include $(EPICS)/config/CONFIG_BASE
+include $(EPICS)/config/CONFIG_SITE
 
 all: install
 
@@ -51,11 +50,21 @@ build:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
+#  For installs, SDR utilities must be built if the current
+#	architecture is the host architecture.
+
 install:
 	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+			if [ "$$ARCH" = "${HOST_ARCH}" ];		\
+			then						\
+				${MAKE} ${MFLAGS} sdr.$$ARCH;		\
+			else						\
+				${MAKE} ${MFLAGS} $@.$$ARCH;		\
+			fi						\
 		done)
+
+sdr: sdr.${HOST_ARCH}
 
 depends:
 	@(for ARCH in ${BUILD_ARCHS};					\
@@ -71,12 +80,7 @@ built_release: depends install
 	@echo TOP: Creating Fully Built Release...
 	@tools/MakeRelease -b
 
-clean_flags:
-	@echo "TOP: Cleaning Flags"
-	@rm -f dirs.* depends.* build_libs.* \
-		install_libs.* build.* install.*
-
-clean: clean_flags
+clean:
 	@echo "TOP: Cleaning"
 	@tools/Clean
 
@@ -101,7 +105,6 @@ dirs.%:
 	@tools/CheckArch $*
 	@echo $*: Creating Directories
 	@tools/MakeDirs $*
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Pre_build RULE  syntax:  make pre_build.arch
 #                  e.g.:   make pre_build.arch
@@ -111,7 +114,6 @@ dirs.%:
 pre_build.%: dirs.%
 	@echo $*: Performing Pre Build
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs pre_build
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Build_libs RULE  syntax:  make build_libs.arch
 #                  e.g.:    make build_libs.arch
@@ -121,7 +123,6 @@ pre_build.%: dirs.%
 build_libs.%: pre_build.%
 	@echo $*: Building Libraries
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build_libs
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Install_libs RULE  syntax:  make install_libs.arch
 #                    e.g.:    make install_libs.mv167
@@ -134,7 +135,6 @@ build_libs.%: pre_build.%
 install_libs.%: build_libs.%
 	@echo $*: Installing Libraries
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install_libs
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Build RULE  syntax:  make build.arch
 #             e.g.:    make build.mv167
@@ -148,7 +148,6 @@ install_libs.%: build_libs.%
 build.%: install_libs.% 
 	@echo $*: Building
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Install RULE  syntax:  make install.arch
 #               e.g.:    make install.mv167
@@ -162,8 +161,24 @@ build.%: install_libs.%
 install.%: build.%
 	@echo $*: Installing
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
-	@tools/TouchFlag $@ ${TOUCH}
 
+# SDR RULES 	syntax:  make sdr.arch
+#		e.g.:    make sdr.sun4
+#
+# Builds headers for SDR utilities.  sdr_no_install does not
+#	make sure the objects for a particular arch are
+#	installed before it runs the SDR utilities.
+
+sdr.%: install.%
+	@echo $*: Making SDR;						\
+	cd rec;								\
+	${MAKE} ${MFLAGS} T_A=$* -f Makefile.Unix
+
+sdr_no_install.%:
+	@echo $*: Making SDR;						\
+	cd rec;								\
+	${MAKE} ${MFLAGS} T_A=$* -f Makefile.Unix
+	
 # Depends RULE  syntax:  make depends.arch
 #               e.g.:    make depends.mv167
 #
@@ -180,7 +195,6 @@ install.%: build.%
 depends.%: dirs.%
 	@echo $*: Performing Make Depends
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
-	@tools/TouchFlag $@ ${TOUCH}
 
 # Illegal Syntax
 
@@ -194,15 +208,9 @@ release.%:
 #             e.g.:    make clean.mv167
 #
 #  Clean files for a particular architecture
-#   Erase all build flags
 #
 
-clean_flags.%:
-	@echo "$*: Cleaning Flags"
-	@rm -f dirs.$* depends.$* build_libs.$* \
-		install_libs.$* build.$* install.$*
-
-clean.%: clean_flags.%
+clean.%:
 	@echo "$*: Cleaning"
 	@tools/Clean $*
 

@@ -1,43 +1,33 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -I../drv
+USR_CFLAGS = -I../../drv
 
 SRCS = \
-	recAi.c recGsub.c recPulseDelay.c recAo.c \
-	recHistogram.c recPulseTrain.c recBi.c recLongin.c \
-	recSel.c recBo.c recLongout.c recSeq.c \
-	recCalc.c recMbbi.c recState.c recCompress.c \
-	recMbbiDirect.c recSteppermotor.c recEg.c recMbbo.c \
-	recStringin.c recEgevent.c recMbboDirect.c recStringout.c \
-	recEr.c recPal.c recSub.c recErevent.c \
-	recPermissive.c recSwitch.c recEvent.c recPid.c \
-	recTimer.c recFanout.c recPulseCounter.c recWaveform.c \
-	recSubArray.c
+	../recAi.c ../recGsub.c ../recPulseDelay.c ../recAo.c \
+	../recHistogram.c ../recPulseTrain.c ../recBi.c ../recLongin.c \
+	../recSel.c ../recBo.c ../recLongout.c ../recSeq.c \
+	../recCalc.c ../recMbbi.c ../recState.c ../recCompress.c \
+	../recMbbiDirect.c ../recSteppermotor.c ../recEg.c ../recMbbo.c \
+	../recStringin.c ../recEgevent.c ../recMbboDirect.c ../recStringout.c \
+	../recEr.c ../recPal.c ../recSub.c ../recErevent.c \
+	../recPermissive.c ../recSwitch.c ../recEvent.c ../recPid.c \
+	../recTimer.c ../recFanout.c ../recPulseCounter.c ../recWaveform.c \
+	../recSubArray.c
 
 OBJS = \
-	$(OBDIR)/recAi.o $(OBDIR)/recGsub.o \
-	$(OBDIR)/recPulseDelay.o $(OBDIR)/recAo.o \
-	$(OBDIR)/recHistogram.o $(OBDIR)/recPulseTrain.o \
-	$(OBDIR)/recBi.o $(OBDIR)/recLongin.o \
-	$(OBDIR)/recSel.o $(OBDIR)/recBo.o \
-	$(OBDIR)/recLongout.o $(OBDIR)/recSeq.o \
-	$(OBDIR)/recCalc.o $(OBDIR)/recMbbi.o \
-	$(OBDIR)/recState.o $(OBDIR)/recCompress.o \
-	$(OBDIR)/recMbbiDirect.o $(OBDIR)/recSteppermotor.o \
-	$(OBDIR)/recEg.o $(OBDIR)/recMbbo.o \
-	$(OBDIR)/recStringin.o $(OBDIR)/recEgevent.o \
-	$(OBDIR)/recMbboDirect.o $(OBDIR)/recStringout.o \
-	$(OBDIR)/recEr.o $(OBDIR)/recPal.o \
-	$(OBDIR)/recSub.o $(OBDIR)/recErevent.o \
-	$(OBDIR)/recPermissive.o $(OBDIR)/recSwitch.o \
-	$(OBDIR)/recEvent.o $(OBDIR)/recPid.o \
-	$(OBDIR)/recTimer.o $(OBDIR)/recFanout.o \
-	$(OBDIR)/recPulseCounter.o $(OBDIR)/recWaveform.o \
-	$(OBDIR)/recSubArray.o
+	recAi.o recGsub.o recPulseDelay.o recAo.o recHistogram.o \
+	recPulseTrain.o recBi.o recLongin.o recSel.o recBo.o \
+	recLongout.o recSeq.o recCalc.o recMbbi.o recState.o recCompress.o \
+	recMbbiDirect.o recSteppermotor.o recEg.o recMbbo.o \
+	recStringin.o recEgevent.o recMbboDirect.o recStringout.o \
+	recEr.o recPal.o recSub.o recErevent.o recPermissive.o recSwitch.o \
+	recEvent.o recPid.o recTimer.o recFanout.o recPulseCounter.o \
+	recWaveform.o recSubArray.o
 
 LIBOBJS = \
 
-PROD = $(OBDIR)/recSup
+PROD = recSup
 
 include $(EPICS)/config/RULES.Vx

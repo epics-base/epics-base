@@ -1,15 +1,14 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 #USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-SRCS = \
-	epicsEnvParams.c epicsRelease.c
+SRCS = ../epicsEnvParams.c ../epicsRelease.c
 
 OBJS = \
 
-LIBOBJS = \
-	$(OBDIR)/epicsEnvParams.o $(OBDIR)/epicsRelease.o
+LIBOBJS = epicsEnvParams.o epicsRelease.o
 
 LIBNAME = miscLib
 

@@ -1,24 +1,22 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -ansi -I../drv
+USR_CFLAGS = -ansi -I../../drv
 LDLIBS =
 
 SRCS = \
-	devAnalytekGpib.c devXxDg535Gpib.c devXxSkeletonGpib.c \
-	devBBInteract.c devXxDig500Msg232.c devXxSoftMsg.c \
-	devGpibInteract.c devXxHvpsGpib.c devXxSr620Gpib.c \
-	devK486Gpib.c devXxK196Gpib.c devXxDc5009Gpib.c \
-	devXxK263Gpib.c
+	../devAnalytekGpib.c ../devXxDg535Gpib.c ../devXxSkeletonGpib.c \
+	../devBBInteract.c ../devXxDig500Msg232.c ../devXxSoftMsg.c \
+	../devGpibInteract.c ../devXxHvpsGpib.c ../devXxSr620Gpib.c \
+	../devK486Gpib.c ../devXxK196Gpib.c ../devXxDc5009Gpib.c \
+	../devXxK263Gpib.c
 
 OBJS = \
-        $(OBDIR)/devAnalytekGpib.c $(OBDIR)/devXxDg535Gpib.c \
-	$(OBDIR)/devXxSkeletonGpib.c $(OBDIR)/devBBInteract.c \
-	$(OBDIR)/devXxDig500Msg232.c $(OBDIR)/devXxSoftMsg.c \
-	$(OBDIR)/devGpibInteract.c $(OBDIR)/devXxHvpsGpib.c \
-	$(OBDIR)/devXxSr620Gpib.c $(OBDIR)/devK486Gpib.c \
-	$(OBDIR)/devXxK196Gpib.c $(OBDIR)/devXxDc5009Gpib.c \
-	$(OBDIR)/devXxK263Gpib.c
+        devAnalytekGpib.c devXxDg535Gpib.c devXxSkeletonGpib.c devBBInteract.c \
+	devXxDig500Msg232.c devXxSoftMsg.c devGpibInteract.c devXxHvpsGpib.c \
+	devXxSr620Gpib.c devK486Gpib.c devXxK196Gpib.c devXxDc5009Gpib.c \
+	devXxK263Gpib.c
 
 LIBOBJS =
 

@@ -1,65 +1,60 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -ansi
 
 SRCS = \
-	calcPerform.c cmdSubr.c cvtBpt.c cvtFast.c cvtNumbers.c \
-	gpHashLib.c freeListLib.c ellLib.c envSubr.c errSymLib.c \
-	ezsSockSubr.c genSubr.c genTaskSubr.c helpSubr.c \
-	nextFieldSubr.c postfix.c sydSubr.c sydSubrCA.c \
-	sydSubrCF.c sydSubrSSF.c bucketLib.c memDebugLib.c tsSubr.c \
-	pal.c paldef.c $(OBDIR)/errSymTbl.c
+	../calcPerform.c ../cmdSubr.c ../cvtBpt.c ../cvtFast.c \
+	../cvtNumbers.c ../gpHashLib.c ../freeListLib.c ../ellLib.c \
+	../envSubr.c errSymLib.c ../ezsSockSubr.c ../genSubr.c \
+	../genTaskSubr.c helpSubr.c ../nextFieldSubr.c ../postfix.c \
+	../sydSubr.c sydSubrCA.c ../sydSubrCF.c ../sydSubrSSF.c \
+	../bucketLib.c ../memDebugLib.c ../tsSubr.c ../pal.c \
+	../paldef.c errSymTbl.c
 
 OBJS =
 
 LIBOBJS = \
-        $(OBDIR)/calcPerform.o $(OBDIR)/cvtBpt.o $(OBDIR)/cvtFast.o \
-	$(OBDIR)/ellLib.o $(OBDIR)/envSubr.o $(OBDIR)/errSymLib.o \
-	$(OBDIR)/errSymTbl.o $(OBDIR)/genSubr.o $(OBDIR)/genTaskSubr.o \
-        $(OBDIR)/nextFieldSubr.o $(OBDIR)/postfix.o $(OBDIR)/bucketLib.o \
-	$(OBDIR)/tsSubr.o $(OBDIR)/gpHashLib.o $(OBDIR)/freeListLib.o \
-	$(OBDIR)/pal.o $(OBDIR)/paldef.o
+        calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
+	errSymTbl.o genSubr.o genTaskSubr.o nextFieldSubr.o postfix.o \
+	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o
 
 LIBOBJS1 = \
-	$(OBDIR)/cmdSubr.o $(OBDIR)/cvtNumbers.o $(OBDIR)/cvtFast.o \
-	$(OBDIR)/ezsSockSubr.o $(OBDIR)/helpSubr.o
+	cmdSubr.o cvtNumbers.o cvtFast.o ezsSockSubr.o helpSubr.o
 
 LIBOBJS2 = \
-	$(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
-	$(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o
+	sydSubr.o sydSubrCA.o sydSubrCF.o sydSubrSSF.o
 
 LIBNAME = libCom.o
-
 LIBNAME1 = libCom1.o
-
 LIBNAME2 = libCom2.o
 
-build_libs: $(OBDIR)/$(LIBNAME) $(OBDIR)/$(LIBNAME1) $(OBDIR)/$(LIBNAME2)
+build_libs: $(LIBNAME) $(LIBNAME1) $(LIBNAME2)
 
-$(OBDIR)/$(LIBNAME1): $(LIBOBJS1)
-	$(LD) $(LDFLAGS) $@ $?
+$(LIBNAME1): $(LIBOBJS1)
+	$(LD) $(LDFLAGS) $@ $(LIBOBJS1)
 
-$(OBDIR)/$(LIBNAME2): $(LIBOBJS2)
-	$(LD) $(LDFLAGS) $@ $?
+$(LIBNAME2): $(LIBOBJS2)
+	$(LD) $(LDFLAGS) $@ $(LIBOBJS2)
 
 install_libs: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME) \
 	      $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1) \
 	      $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2)
 
-$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
-	install -m 644 $? $@
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(LIBNAME1)
+	install -m 644 $(LIBNAME1) $@
 
-$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2): $(OBDIR)/$(LIBNAME2)
-	install -m 644 $? $@
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2): $(LIBNAME2)
+	install -m 644 $(LIBNAME2) $@
 
-pre_build: bld_errSym
+build:: errSymTbl.o errInc.o
 
-bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
-
-$(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
+errSymTbl.c errInc.o: errInc.c
 	@/bin/rm -f errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl
-	@/bin/mv errSymTbl.c errInc.o $(OBDIR)
+
+errInc.c: ../errInc.c
+	cp ../errInc.c .
 
 include $(EPICS)/config/RULES.Vx

@@ -1,10 +1,13 @@
 #
 # base $Id$
 #
-# "Diabolical" EPICS Makefile For Subdirectory Recursions
+# EPICS Makefile For Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
 # $Log$
+# Revision 1.9  1994/08/19  15:38:03  mcn
+# Dependencies are now generated with a "make release".
+#
 # Revision 1.8  1994/08/12  18:51:28  mcn
 # Added Log and/or Id.
 #
@@ -13,50 +16,53 @@
 EPICS=..
 include $(EPICS)/config/CONFIG
 
-MAKEOPT=${MFLAGS} -f Makefile.${BUILD_TYPE}
-
 all: build
 
 pre_build:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
 
 build_libs:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
 
 install_libs:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
 
 build:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
 
 install:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
 
 depends:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+	@(for DIR in ${DIRS};						\
+		do							\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR";	 	\
+			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$TMP;					\
 		done)
-
 

@@ -1,40 +1,25 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -D_NO_PROTO
 LDLIBS = -lAs -lca -lCom -lDb -lCom -s
+
 LEX = $(ELEX)
 YACC = $(EYACC)
 
-SRCS = \
-	ascheck.c asLib.c
-
-OBJS = \
-	$(OBDIR)/ascheck.o
-
-LIBOBJS = \
-	$(OBDIR)/asLib.o
-
+SRCS = ../ascheck.c ../asLib.c
+OBJS = ascheck.o
+LIBOBJS = asLib.o
 LIBNAME = libAs.a
+PROD = ascheck
 
-PROD = $(OBDIR)/ascheck
+# Extra rule since asLib_lex.c is included in asLib.c
+#   In my opinion, these objects should really be built
+#   independently.
+asLib.o: asLib_lex.c ../asLibRoutines.c
 
-pre_build: $(OBDIR)/asLib.c
-
-$(OBDIR)/asLib.c: asLib.y $(OBDIR)/asLib_lex.c
-	$(YACC) -l asLib.y
-	/bin/rm -f $(OBDIR)/asLib.c
-	/bin/mv y.tab.c $(OBDIR)/asLib.c
-
-$(OBDIR)/asLib_lex.c: asLib_lex.l
-	$(LEX) -L asLib_lex.l
-	/bin/rm -f $(OBDIR)/asLib_lex.c
-	/bin/mv lex.yy.c $(OBDIR)/asLib_lex.c
-
-$(OBDIR)/asLib.o: $(OBDIR)/asLib.c asLibRoutines.c
-	@echo "compiling asLib.c"
-	$(RM) $@
-	$(CC) -c  $(CFLAGS) -o $(OBDIR)/asLib.o $(OBDIR)/asLib.c
-	@#load  $(CFLAGS) asLib.c
+clean::
+	rm -f asLib.c asLib_lex.c ascheck
 
 include $(EPICS)/config/RULES.Unix

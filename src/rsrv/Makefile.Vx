@@ -1,33 +1,30 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -I../ca -UUNIX
+USR_CFLAGS = -I../../ca -UUNIX
 
-SRCS = \
-	caserverio.c caservertask.c camsgtask.c camessage.c \
-	rsrv_init.c cast_server.c online_notify.c globalsource.c
+SRCS =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
+	../rsrv_init.c ../cast_server.c ../online_notify.c ../globalsource.c
 
 OBJS =
 
 LIBOBJS = \
-	$(OBDIR)/caserverio.o $(OBDIR)/caservertask.o \
-	$(OBDIR)/camsgtask.o $(OBDIR)/camessage.o \
-	$(OBDIR)/rsrv_init.o $(OBDIR)/cast_server.o \
-	$(OBDIR)/online_notify.o
+	caserverio.o caservertask.o camsgtask.o camessage.o \
+	rsrv_init.o cast_server.o online_notify.o
 
 LIBNAME = dbgLib
-
 LIBNAME1 = rsrvLib
 
-build_libs: $(OBDIR)/$(LIBNAME) $(OBDIR)/$(LIBNAME1)
+build_libs: $(LIBNAME) $(LIBNAME1)
 
-$(OBDIR)/$(LIBNAME1): $(LIBOBJS) $(OBDIR)/globalsource.o
+$(LIBNAME1): $(LIBOBJS) globalsource.o
 	$(RM) $@
-	$(LINK.c) $@ $?
+	$(LINK.c) $@ $(LIBOBJS) globalsource.o
 
 install: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1)
 
-$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
-	$(INSTALL) $? $@
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(LIBNAME1)
+	$(INSTALL) $(LIBNAME1) $@
 
 include $(EPICS)/config/RULES.Vx

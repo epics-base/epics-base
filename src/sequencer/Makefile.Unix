@@ -1,54 +1,31 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS =
 LDLIBS = -ll
+YACCOPT = -d -v
 
-SRCS = \
-	snc_main.c parse.c phase2.c gen_ss_code.c \
-	gen_tables.c $(OBDIR)/sncVersion.c \
-	$(OBDIR)/snc.c $(OBDIR)/snc_lex.c
+SRCS =  ../snc_main.c ../parse.c ../phase2.c ../gen_ss_code.c \
+	../gen_tables.c sncVersion.c snc.c snc_lex.c
 
-OBJS = \
-	$(OBDIR)/snc_main.o $(OBDIR)/parse.o \
-	$(OBDIR)/phase2.o $(OBDIR)/gen_ss_code.o \
-	$(OBDIR)/gen_tables.o $(OBDIR)/sncVersion.o \
-	$(OBDIR)/snc.o $(OBDIR)/snc_lex.o
+OBJS =  snc_main.o parse.o phase2.o gen_ss_code.o \
+	gen_tables.o sncVersion.o snc.o snc_lex.o
 
 LIBOBJS =
 
-PROD = $(OBDIR)/snc
+PROD = snc
 
-pre_build: $(OBDIR)/snc_lex.c $(OBDIR)/snc.c $(OBDIR)/sncVersion.c
+#
+#  The generated lex file includes snc.h
+#
+snc_lex.c: snc.h
 
-# Rules for lex & yacc (not dependent on architecture):
-$(OBDIR)/snc_lex.c: snc_lex.l $(OBDIR)/y.tab.h
-	/bin/ln -s $(OBDIR)/y.tab.h y.tab.h
-	/bin/rm -f $(OBDIR)/snc_lex.c
-	lex snc_lex.l
-	/bin/mv lex.yy.c $(OBDIR)/snc_lex.c
+sncVersion.c: ../Version
+	/bin/rm -f sncVersion.c
+	sh ../makeVersion ../Version > sncVersion.c
 
-$(OBDIR)/snc.c $(OBDIR)/y.tab.h: snc.y
-	/bin/rm -f $(OBDIR)/snc.c $(OBDIR)/y.tab.h $(OBDIR)/y.output
-	/bin/rm -f y.tab.c y.tab.h y.output
-	yacc -d -v snc.y
-	/bin/mv y.tab.c $(OBDIR)/snc.c
-	/bin/mv y.tab.h $(OBDIR)
-	/bin/mv y.output $(OBDIR)
-
-$(OBDIR)/sncVersion.o: $(OBDIR)/sncVersion.c
-	$(COMPILE.c) -o $@ $<
-
-$(OBDIR)/sncVersion.c: Version
-	/bin/rm -f $(OBDIR)/sncVersion.c
-	sh makeVersion Version > sncVersion.c
-	/bin/mv sncVersion.c $(OBDIR)/sncVersion.c
-
-$(OBDIR)/snc.o: $(OBDIR)/snc.c
-	$(COMPILE.c) -o $@ $<
-
-$(OBDIR)/snc_lex.o: $(OBDIR)/snc_lex.c
-	$(COMPILE.c) -o $@ $<
-	/bin/rm y.tab.h
+clean::
+	rm -f y.output sncVersion.c snc_lex.c snc.c snc.h snc
 
 include $(EPICS)/config/RULES.Unix

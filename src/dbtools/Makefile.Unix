@@ -1,55 +1,31 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 LEX = $(ELEX)
 YACC = $(EYACC)
+YACCOPT = -l
+LEXOPT = -L
 
-SRCS = \
-	dbVarSub.c $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
+SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
+		dbLoadRecords_lex.c dbLoadRecords.c
 
-OBJS = \
-	$(OBDIR)/dbVarSub.o $(OBDIR)/dbLoadTemplate.o \
-	$(OBDIR)/dbLoadRecords.o
-
+OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
 LIBOBJS =
+PROD = dbLoadTemplate
+TARGET = subtool
 
-PROD = $(OBDIR)/dbLoadTemplate
+dbLoadTemplate.o: dbLoadTemplate_lex.c
+dbLoadRecords.o: dbLoadRecords_lex.c 
+subtool: dbLoadTemplate_lex.c
 
-TARGET = $(OBDIR)/subtool
-
-pre_build: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
-
-$(OBDIR)/dbLoadRecords.c: $(OBDIR)/dbLoadRecords_lex.c dbLoadRecords.y
-	/bin/rm -f $@
-	$(YACC) -l dbLoadRecords.y
-	mv y.tab.c $@
-
-$(OBDIR)/dbLoadRecords_lex.c: dbLoadRecords.l
-	/bin/rm -f $@
-	$(LEX) -t -L dbLoadRecords.l > $@
-
-$(OBDIR)/dbLoadTemplate.c: $(OBDIR)/dbLoadTemplate_lex.c dbLoadTemplate.y
-	/bin/rm -f $@
-	$(YACC) -l dbLoadTemplate.y
-	mv y.tab.c $@
-
-$(OBDIR)/dbLoadTemplate_lex.c: dbLoadTemplate.l
-	/bin/rm -f $@
-	$(LEX) -t -L dbLoadTemplate.l > $@
-
-$(OBDIR)/dbLoadRecords.o: $(OBDIR)/dbLoadRecords.c
+subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o
 	$(RM) $@
-	$(CC) -c $(CFLAGS) -o $(OBDIR)/dbLoadRecords.o \
-			       $(OBDIR)/dbLoadRecords.c
+	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c dbVarSub.o -s
 
-$(OBDIR)/dbLoadTemplate.o: $(OBDIR)/dbLoadTemplate.c
-	$(RM) $@
-	$(CC) -c $(CFLAGS) -o $(OBDIR)/dbLoadTemplate.o \
-			       $(OBDIR)/dbLoadTemplate.c
-
-$(OBDIR)/subtool: $(OBDIR)/dbLoadTemplate.o $(OBDIR)/dbVarSub.o
-	$(RM) $@
-	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o $(OBDIR)/subtool \
-	$(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbVarSub.o -s
+clean::
+	rm -f dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
+			dbLoadRecords.c subtool dbLoadTemplate
 
 include $(EPICS)/config/RULES.Unix
+

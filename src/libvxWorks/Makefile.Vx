@@ -1,15 +1,14 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS =
 
-SRCS = \
-	iocLogClient.c veclist.c
+SRCS = ../iocLogClient.c ../veclist.c
 
 OBJS = \
 
-LIBOBJS = \
-	$(OBDIR)/veclist.o $(OBDIR)/iocLogClient.o
+LIBOBJS = veclist.o iocLogClient.o
 
 LIBNAME = vxComLib
 

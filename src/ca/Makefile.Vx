@@ -1,20 +1,19 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
 SRCS = \
-	iocinf.c access.c test_event.c service.c flow_control.c \
-	repeater.c conn.c syncgrp.c if_depen.c bsd_depen.c \
-	vxWorks_depen.c
+	../iocinf.c ../access.c ../test_event.c ../service.c \
+	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
+	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c
 
 OBJS = 
 
 LIBOBJS = \
-	$(OBDIR)/iocinf.o $(OBDIR)/access.o $(OBDIR)/test_event.o \
-	$(OBDIR)/service.o $(OBDIR)/flow_control.o \
-	$(OBDIR)/repeater.o $(OBDIR)/conn.o $(OBDIR)/syncgrp.o \
-	$(OBDIR)/if_depen.o $(OBDIR)/bsd_depen.o $(OBDIR)/vxWorks_depen.o
+	iocinf.o access.o test_event.o service.o flow_control.o \
+	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o
 
 LIBNAME = caLib
 

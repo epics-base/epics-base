@@ -1,6 +1,8 @@
-EPICS = ../../../..
-
+EPICS = ../../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
+
+YACCOPT = -d
 
 SKELETON_FILE=include/flex.skel.static
 
@@ -10,30 +12,35 @@ LDLIBS = -s
 
 CC = $(oldCC)
 
-SRCS = \
-	ccl.c dfa.c ecs.c gen.c main.c \
-	misc.c nfa.c parse.c scan.c sym.c \
-	tblcmp.c yylex.c
+SRCS =  ../ccl.c ../dfa.c ../ecs.c ../gen.c ../main.c \
+	../misc.c ../nfa.c parse.c ../scan.c ../sym.c \
+	../tblcmp.c ../yylex.c
 
 LIBOBJS =
 
 OBJS = \
-	$(OBDIR)/ccl.o $(OBDIR)/dfa.o $(OBDIR)/ecs.o \
-	$(OBDIR)/gen.o $(OBDIR)/main.o $(OBDIR)/misc.o \
-        $(OBDIR)/nfa.o $(OBDIR)/parse.o $(OBDIR)/scan.o \
-	$(OBDIR)/sym.o $(OBDIR)/tblcmp.o $(OBDIR)/yylex.o
+	ccl.o dfa.o ecs.o gen.o main.o misc.o \
+        nfa.o parse.o scan.o sym.o tblcmp.o yylex.o
 
-PROD = $(OBDIR)/e_flex
+PROD = e_flex
 
-all :: parse.h parse.c $(PROD)
+# all :: $(PROD)
+
+#
+#  If you need parse.h, you must recompile parse.c
+#
+#parse.c::
+#	mv y.tab.h parse.h
 
 pre_build: install
 
-parse.h parse.c : parse.y
-	rm -f parse.h parse.c
-	$(YACC) -d parse.y
-	@mv y.tab.c parse.c
-	@mv y.tab.h parse.h
+#parse.h parse.c : parse.y
+#	rm -f parse.h parse.c
+#	$(YACC) -d parse.y
+#	@mv y.tab.c parse.c
+#	@mv y.tab.h parse.h
 
+clean::
+	rm -f parse.c parse.h e_flex
 
 include $(EPICS)/config/RULES.Unix

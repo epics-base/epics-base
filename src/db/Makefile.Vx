@@ -1,26 +1,27 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
+all: install
+
 SRCS = \
-	dbAccess.c dbBkpt.c dbFastLinkConv.c dbLink.c \
-	dbStaticLib.c iocInit.c drvTS.c dbScan.c \
-	dbEvent.c dbTest.c dbls.c db_access.c \
-	db_test.c recGbl.c callback.c taskwd.c \
-	dbCaLink.c dbCaDblink.c devLib.c initHooks.c
+	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
+	../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \
+	../dbEvent.c ../dbTest.c ../dbls.c ../db_access.c \
+	../db_test.c ../recGbl.c ../callback.c ../taskwd.c \
+	../dbCaLink.c ../dbCaDblink.c ../devLib.c ../initHooks.c
 
 OBJS = \
 
 LIBOBJS = \
-	$(OBDIR)/dbAccess.o $(OBDIR)/dbBkpt.o $(OBDIR)/dbFastLinkConv.o \
-	$(OBDIR)/dbLink.o $(OBDIR)/dbStaticLib.o $(OBDIR)/iocInit.o \
-	$(OBDIR)/drvTS.o $(OBDIR)/dbScan.o $(OBDIR)/dbEvent.o \
-	$(OBDIR)/dbTest.o $(OBDIR)/dbls.o $(OBDIR)/db_access.o \
-	$(OBDIR)/db_test.o $(OBDIR)/recGbl.o $(OBDIR)/callback.o \
-	$(OBDIR)/taskwd.o $(OBDIR)/dbCaLink.o $(OBDIR)/dbCaDblink.o \
-	$(OBDIR)/devLib.o
+	dbAccess.o dbBkpt.o dbFastLinkConv.o dbLink.o dbStaticLib.o \
+	iocInit.o drvTS.o dbScan.o dbEvent.o dbTest.o dbls.o db_access.o \
+	db_test.o recGbl.o callback.o taskwd.o dbCaLink.o dbCaDblink.o \
+	devLib.o
 
 LIBNAME = dbLib
 
-TARGET = $(OBDIR)/initHooks.o
+TARGET = initHooks.o
 
 include $(EPICS)/config/RULES.Vx
+

@@ -1,4 +1,5 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_LDLIBS = -lm -s
@@ -6,20 +7,19 @@ USR_LDLIBS =
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
 SRCS = \
-	iocinf.c access.c test_event.c service.c flow_control.c \
-	repeater.c conn.c acctst.c syncgrp.c if_depen.c \
-	netdb_depen.c bsd_depen.c posix_depen.c caRepeater.c
+	../iocinf.c ../access.c ../test_event.c ../service.c \
+	../flow_control.c ../repeater.c ../conn.c ../acctst.c \
+	../syncgrp.c ../if_depen.c ../netdb_depen.c ../bsd_depen.c \
+	../posix_depen.c ../caRepeater.c
 
 OBJS = 
 
 LIBOBJS = \
-	$(OBDIR)/iocinf.o $(OBDIR)/access.o $(OBDIR)/test_event.o \
-	$(OBDIR)/service.o $(OBDIR)/flow_control.o $(OBDIR)/repeater.o \
-	$(OBDIR)/conn.o $(OBDIR)/syncgrp.o $(OBDIR)/if_depen.o \
-	$(OBDIR)/netdb_depen.o $(OBDIR)/bsd_depen.o $(OBDIR)/posix_depen.o
+	iocinf.o access.o test_event.o service.o flow_control.o repeater.o \
+	conn.o syncgrp.o if_depen.o netdb_depen.o bsd_depen.o posix_depen.o
 
 LIBNAME = libca.a
 
-TARGET = $(OBDIR)/caRepeater
+TARGET = caRepeater
 
 include $(EPICS)/config/RULES.Unix

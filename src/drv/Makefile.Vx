@@ -1,48 +1,38 @@
-EPICS = ../../..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
 SRCS = \
-	module_types.c drvXy010.c drvAb.c drvBb902.c \
-	drvBb910.c drvCompuSm.c drvDvx.c drvMz8310.c \
-	drvOms.c drvStc.c drvTime.c drvVmi4100.c \
-	drvXy210.c drvXy220.c drvXy240.c \
-	drvXy566.c drvAt5Vxi.c drvHp1404a.c drvEpvxi.c \
-	drvEpvxiMsg.c drvBitBus.c drvPEPBitBus.c drvGpib.c \
-	drvMsg.c drvBB232.c drvHpe1368a.c drvHpe1445a.c \
-	drvKscV215.c drvComet.c drvJgvtr1.c drvFp.c \
-	drvMvme162.c drvFpm.c
+	../module_types.c ../drvXy010.c ../drvAb.c ../drvBb902.c \
+	../drvBb910.c ../drvCompuSm.c ../drvDvx.c ../drvMz8310.c \
+	../drvOms.c ../drvStc.c ../drvTime.c ../drvVmi4100.c \
+	../drvXy210.c ../drvXy220.c ../drvXy240.c \
+	../drvXy566.c ../drvAt5Vxi.c ../drvHp1404a.c ../drvEpvxi.c \
+	../drvEpvxiMsg.c ../drvBitBus.c ../drvPEPBitBus.c ../drvGpib.c \
+	../drvMsg.c ../drvBB232.c ../drvHpe1368a.c ../drvHpe1445a.c \
+	../drvKscV215.c ../drvComet.c ../drvJgvtr1.c ../drvFp.c \
+	../drvMvme162.c ../drvFpm.c
 
 OBJS = \
-	$(OBDIR)/module_types.o $(OBDIR)/drvXy010.o \
-	$(OBDIR)/drvAb.o $(OBDIR)/drvBb902.o \
-	$(OBDIR)/drvBb910.o $(OBDIR)/drvCompuSm.o \
-	$(OBDIR)/drvDvx.o $(OBDIR)/drvMz8310.o \
-	$(OBDIR)/drvOms.o $(OBDIR)/drvStc.o \
-	$(OBDIR)/drvTime.o $(OBDIR)/drvVmi4100.o \
-	$(OBDIR)/drvXy210.o \
-	$(OBDIR)/drvXy220.o $(OBDIR)/drvXy240.o \
-	$(OBDIR)/drvXy566.o $(OBDIR)/drvAt5Vxi.o \
-	$(OBDIR)/drvHp1404a.o $(OBDIR)/drvEpvxi.o \
-	$(OBDIR)/drvEpvxiMsg.o $(OBDIR)/drvGpib.o \
-	$(OBDIR)/drvMsg.o $(OBDIR)/drvBB232.o \
-	$(OBDIR)/drvHpe1368a.o $(OBDIR)/drvHpe1445a.o \
-	$(OBDIR)/drvKscV215.o $(OBDIR)/drvComet.o \
-	$(OBDIR)/drvJgvtr1.o $(OBDIR)/drvFp.o \
-	$(OBDIR)/drvMvme162.o $(OBDIR)/drvFpm.o
+	module_types.o drvXy010.o drvAb.o drvBb902.o \
+	drvBb910.o drvCompuSm.o drvDvx.o drvMz8310.o \
+	drvOms.o drvStc.o drvTime.o drvVmi4100.o \
+	drvXy210.o drvXy220.o drvXy240.o drvXy566.o drvAt5Vxi.o \
+	drvHp1404a.o drvEpvxi.o drvEpvxiMsg.o drvGpib.o \
+	drvMsg.o drvBB232.o drvHpe1368a.o drvHpe1445a.o \
+	drvKscV215.o drvComet.o drvJgvtr1.o drvFp.o \
+	drvMvme162.o drvFpm.o
 
-OBJS1 = \
-	$(OBDIR)/drvBitBus.o
-
-OBJS2 = \
-	$(OBDIR)/drvPEPBitBus.o
+OBJS1 = drvBitBus.o
+OBJS2 = drvPEPBitBus.o
 
 LIBOBJS =
 
-PROD1 = $(OBDIR)/drvSup
+PROD1 = drvSup
 
-PROD2 = $(OBDIR)/drvSupPEP
+PROD2 = drvSupPEP
 
 PRODS = $(PROD1) $(PROD2)
 
@@ -51,12 +41,12 @@ install: install_prods
 install_prods: $(PRODS)
 	$(INSTALL) $? $(EPICS_BASE_BIN)/$(T_A)
 
-build: $(PROD1) $(PROD2)
+build:: $(PROD1) $(PROD2)
 
-$(OBDIR)/drvSup: $(OBJS) $(OBJS1)
+drvSup: $(OBJS) $(OBJS1)
 	$(LINK.c) $@ $? $(LDLIBS)
 
-$(OBDIR)/drvSupPEP: $(OBJS) $(OBJS2)
+drvSupPEP: $(OBJS) $(OBJS2)
 	$(LINK.c) $@ $? $(LDLIBS)
 
 include $(EPICS)/config/RULES.Vx

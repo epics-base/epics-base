@@ -798,7 +798,7 @@ CLEAR:	memset(buff, '\0',  MAX);
 
 static gotSdrSum=FALSE;
 static struct sdrSum sdrSum;
-int dbLoad(char * pfilename)
+int dbLoad(char * pfilename, char * pattern)
 {
     long	status;
     FILE	*fp;
@@ -809,7 +809,7 @@ int dbLoad(char * pfilename)
 	return(-1);
     }
     if(pdbBase==NULL) pdbBase = dbAllocBase();
-    status=dbRead(pdbBase, fp);
+    status=dbRead(pdbBase, fp, pattern);
     fclose(fp);
     if(status!=0) {
 	errMessage(status,"dbLoad aborting because dbRead failed");

@@ -326,14 +326,11 @@ void epicsShareAPI recGblFwdLink(void *precord)
 void epicsShareAPI recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
-    int status;
+    int status = 0;
  
-    if(pr->tsel.type!=CONSTANT)
-    {
+    if(pr->tsel.type!=CONSTANT) 
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        status = epicsTimeGetEvent(&pr->time,(unsigned)pr->tse);
-    }
-    else
+    if (pr->tse!=-1) 
         status = epicsTimeGetEvent(&pr->time,(unsigned)pr->tse);
     if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
 }

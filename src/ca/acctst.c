@@ -2325,43 +2325,62 @@ void verifyTimeStamps ( chid chan, unsigned interestLevel )
  */
 void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
 {
-    static const unsigned nPrio = 15;
-    chid chanArray[ 15 ];
-    double value;
+    static const unsigned nPrio = 30;
+    unsigned priorityIncrement;
     unsigned i;
-    int status;
 
     showProgressBegin ( "verifyChannelPriorities", interestLevel );
 
     for ( i = 0u; i < nPrio; i++ ) {
-        unsigned priority = 
-            ( i * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
-        priority += CA_PRIORITY_MIN;
+        int status;
+        double value;
+        chid chan0, chan1;
+        unsigned priority0, priority1;
+        
+        priority0 = ( i * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
+        priority0 += CA_PRIORITY_MIN;
+        if ( priority0 > CA_PRIORITY_MAX ) {
+            priority0 = CA_PRIORITY_MAX;
+        }
+
+        priority1 = ( (i+1) * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
+        priority1 += CA_PRIORITY_MIN;
+        if ( priority1 > CA_PRIORITY_MAX ) {
+            priority1 = CA_PRIORITY_MAX;
+        }
+
         status = ca_create_channel ( pName, 0, 0, 
-            priority, &chanArray[i] );
+            priority0, &chan0 );
         SEVCHK ( status, "prioritized channel create failed" );
-    }
-    status = ca_pend_io ( 100.0 );
-    SEVCHK ( status, "prioritized channel connect failed" );
-    assert ( status == ECA_NORMAL );
 
-    for ( i = 0u; i < nPrio; i++ ) {
+        status = ca_create_channel ( pName, 0, 0, 
+            priority1, &chan1 );
+        SEVCHK ( status, "prioritized channel create failed" );
+
+        status = ca_pend_io ( 100.0 );
+        SEVCHK ( status, "prioritized channel connect failed" );
+        assert ( status == ECA_NORMAL );
+
         value = i;
-        status = ca_put ( DBR_DOUBLE, chanArray[i], &value );
+        status = ca_put ( DBR_DOUBLE, chan0, &value );
         SEVCHK ( status, "prioritized channel put failed" );
-    }
-    status = ca_flush_io ();
-    SEVCHK ( status, "prioritized channel flush failed" );
+        status = ca_put ( DBR_DOUBLE, chan1, &value );
+        SEVCHK ( status, "prioritized channel put failed" );
 
-    for ( i = 0u; i < nPrio; i++ ) {
-        status = ca_get ( DBR_DOUBLE, chanArray[i], &value );
+        status = ca_flush_io ();
+        SEVCHK ( status, "prioritized channel flush failed" );
+
+        status = ca_get ( DBR_DOUBLE, chan0, &value );
         SEVCHK ( status, "prioritized channel get failed" );
-    }
-    status = ca_pend_io ( 10.0 );
-    SEVCHK ( status, "prioritized channel pend io failed" );
+        status = ca_get ( DBR_DOUBLE, chan1, &value );
+        SEVCHK ( status, "prioritized channel get failed" );
 
-    for ( i = 0u; i < nPrio; i++ ) {
-        status = ca_clear_channel ( chanArray[i] );
+        status = ca_pend_io ( 10.0 );
+        SEVCHK ( status, "prioritized channel pend io failed" );
+
+        status = ca_clear_channel ( chan0 );
+        SEVCHK ( status, "prioritized channel clear failed" );
+        status = ca_clear_channel ( chan1 );
         SEVCHK ( status, "prioritized channel clear failed" );
     }
 

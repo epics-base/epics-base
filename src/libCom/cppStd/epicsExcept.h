@@ -5,31 +5,35 @@
 #ifndef __EPICS_EXCEPT_H__
 #define __EPICS_EXCEPT_H__
 
-#define epicsThrowHere(exc, msg) \
-    throw locationException<exc>(msg, __FILE__, __LINE__)
+#define epicsThrowHere(exc) \
+    throw locationException(exc, __FILE__, __LINE__)
 
 class sourceLocation {
-public:
-    sourceLocation (const char *fileName, int lineNumber);
-    const char *fileName () const;
-    int lineNumber () const;
+public: // Functions
+    sourceLocation(const char *fileName, int lineNumber);
+//  sourceLocation(const sourceLocation&);		Copy constructable
+//  sourceLocation& operator=(const sourceLocation&);	Assignable
 
-private:
-    const char *pFileName;
-    int lineNumberCopy;
+    const char *fileName() const;
+    int lineNumber() const;
+
+private: // Hide compiler-generated member functions
+    sourceLocation();		// default constructor
+
+private: // Data
+    const char *file;
+    int line;
 };
 
 template <class T>
 class locationException : public T, public sourceLocation {
 public:
-    locationException(const char *msg, const char *fileName, int lineNumber);
-    // NB: In standard exception classes the msg argument is a string&
-    //     I've used const char* here to avoid having to include <string>
+    locationException(const T& exc, const char *fileName, int lineNumber);
 };
 
 
-/* Examples:
- *	if (status) epicsThrowHere(std::logic_error, "failed!");
+/* Example:
+ *	if (status) epicsThrowHere(std::logic_error("operation failed!"));
  *	try { ... } catch(sourceLocation& where) { ... }
  */
 
@@ -39,21 +43,21 @@ public:
 
 // sourceFileLocation
 inline sourceLocation::sourceLocation (const char *fileName, int lineNumber) :
-    pFileName (fileName) , lineNumberCopy(lineNumber) {}
+    file(fileName), line(lineNumber) {}
 
 inline const char* sourceLocation::fileName () const {
-    return this->pFileName;
+    return this->file;
 }
 
 inline int sourceLocation::lineNumber () const {
-    return this->lineNumberCopy;
+    return this->line;
 }
 
 // locationException<T>
 template <class T>
 inline locationException<T>::locationException
-    (const char* msg, const char *fileName, int lineNumber) :
-    T(msg), sourceLocation(fileName, lineNumber) {}
+    (const char *fileName, int lineNumber, const E& exc) :
+    T(exc), sourceLocation(fileName, lineNumber) {}
 
 
 #endif // __EPICS_EXCEPT_H__

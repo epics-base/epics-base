@@ -33,13 +33,20 @@
 #include "ellLib.h"
 #include "errlog.h"
 #include "logClient.h"
+#include "epicsStdio.h"
 
 
 #ifndef LOCAL
 #define LOCAL static
 #endif /* LOCAL */
 
+/* BUFFER_EXTRA_BYTES is set equal to BUFFER_SIZE because
+   on vxWorks vsnprintf is not implemented. Thus vxWorks
+   is subject to buffer overflow. Allocating an additional
+   BUFFER_SIZE bytes will at least make this less likely
+*/
 #define BUFFER_SIZE 1280
+#define BUFFER_EXTRA_BYTES BUFFER_SIZE
 #define MAX_MESSAGE_SIZE 256
 #define TRUNCATE_SIZE 80
 #define MAX_ALIGNMENT 8
@@ -278,7 +285,9 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
         pnext += nchar; totalChar += nchar;
     }
     va_start (pvar, pformat);
-    nchar = vsprintf(pnext,pformat,pvar);
+    /* buffer was allocated with an extra BUFFER_EXTRA_BYTES bytes*/
+    /* Thus the following will not overflow buffer              */
+    nchar = epicsVsnprintf(pnext,MAX_MESSAGE_SIZE + BUFFER_EXTRA_BYTES,pformat,pvar);
     va_end (pvar);
     if(nchar>0) {
         pnext += nchar;
@@ -307,8 +316,8 @@ static void errlogInitPvt(void *arg)
     pvtData.waitForFlush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.flush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.flushLock = epicsMutexMustCreate();
-    /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
-    pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
+    /*BUFFER_EXTRA_BYTES allows message overflow to be detected*/
+    pbuffer = pvtCalloc(pvtData.buffersize+BUFFER_EXTRA_BYTES,sizeof(char));
     pvtData.pbuffer = pbuffer;
     tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),

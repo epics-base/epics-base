@@ -49,7 +49,7 @@ $outfile = $ARGV[0];
 
 # TOP refers to this application
 %macros = (TOP => $top);
-@apps   = (TOP);	# Provides the order of apps in RELEASE file
+@apps   = (TOP);	# Records the order of definitions in RELEASE file
 
 # Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
@@ -70,20 +70,28 @@ for ($outfile) {
     die "Output file type \'$outfile\' not supported";
 }
 
+#
+# Parse a configure/RELEASE file.
+#
+# NB: This subroutine also appears in base/src/makeBaseApp/makeBaseApp.pl
+# If you make changes here, they will be needed there as well.
+#
 sub readRelease {
     my ($file, $Rmacros, $Rapps) = @_;
     # $Rmacros is a reference to a hash, $Rapps a ref to an array
-    my ($pre, $macro, $post, $path);
+    my ($pre, $var, $post, $macro, $path);
     local *IN;
     open(IN, $file) or die "Can't open $file: $!\n";
     while (<IN>) {
 	chomp;
+	s/\r$//;		# Shouldn't need this, but sometimes...
 	s/\s*#.*$//;		# Remove trailing comments
         next if /^\s*$/;	# Skip blank lines
 	
-	# Expand all macros in the line:
-	while (($pre,$macro,$post) = /(.*)\$\((\w+)\)(.*)/, $macro ne "") {
-	    $_ = $pre . $Rmacros->{$macro} . $post;
+	# Expand all already-defined macros in the line:
+	while (($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
+	    last unless (exists $Rmacros->{$var});
+	    $_ = $pre . $Rmacros->{$var} . $post;
 	}
 	
 	# Handle "<macro> = <path>"
@@ -98,6 +106,14 @@ sub readRelease {
 	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
     }
     close IN;
+    
+    # Expand any (possibly nested) macros that were defined after use
+    while (($macro, $path) = each %$Rmacros) {
+	while (($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
+	    $path = $pre . $Rmacros->{$var} . $post;
+	    $Rmacros->{$macro} = $path;
+	}
+    }
 }
 
 sub configAppInclude {

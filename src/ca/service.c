@@ -1042,9 +1042,11 @@ void cac_reconnect_channel(caResId cid, short type, unsigned short count)
 
 	piiu = (IIU *) chan->piiu;
 
-    if ( piiu->state != iiu_connected ) {
-		UNLOCK;
-		return;
+    if ( CA_V42( CA_PROTOCOL_VERSION, piiu->minor_version_number ) ) {
+        if ( piiu->state != iiu_connected ) {
+	        UNLOCK;
+	        return;
+        }
     }
 
 	prev_cs = chan->state;

@@ -288,8 +288,10 @@ dbEventCtx db_init_events (void)
  *  itself
  *
  */
-void db_close_events (struct event_user *evUser)
+void db_close_events (dbEventCtx ctx)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
+
     /*
      * Exit not forced on event blocks for now - this is left to channel
      * access and any other tasks using this facility which can find them
@@ -308,15 +310,10 @@ void db_close_events (struct event_user *evUser)
 /*
  * DB_ADD_EVENT()
  */
-dbEventSubscription db_add_event (
-    struct event_user   *evUser,
-    struct dbAddr       *paddr,
-    void                (*user_sub)(void *user_arg, struct dbAddr *paddr,
-                                int eventsRemaining, db_field_log *pfl),
-    void                *user_arg,
-    unsigned int        select
-)
+dbEventSubscription db_add_event (dbEventCtx ctx, struct dbAddr *paddr,
+    EVENTFUNC *user_sub, void *user_arg, unsigned select)
 {
+    struct event_user   *evUser = (struct event_user *) ctx;
     struct dbCommon     *precord;
     struct event_que    *ev_que;
     struct event_que    *tmp_que;
@@ -451,8 +448,9 @@ void db_event_disable (dbEventSubscription es)
  * This routine does not deallocate the event block since it normally will be
  * part of a larger structure.
  */
-void db_cancel_event (struct evSubscrip *pevent)
+void db_cancel_event (dbEventSubscription es)
 {
+    struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
     int status;
 
@@ -499,12 +497,10 @@ void db_cancel_event (struct evSubscrip *pevent)
  *
  * Specify a routine to be executed for event que overflow condition
  */
-int db_add_overflow_event(
-    struct event_user   *evUser,
-    OVRFFUNC            *overflow_sub,
-    void                *overflow_arg
-)
+int db_add_overflow_event (dbEventCtx ctx, OVRFFUNC *overflow_sub, 
+                           void *overflow_arg)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
 
     evUser->overflow_sub = overflow_sub;
     evUser->overflow_arg = overflow_arg;
@@ -517,10 +513,10 @@ int db_add_overflow_event(
  *
  * waits for extra labor in progress to finish
  */
-int db_flush_extra_labor_event(
-struct event_user   *evUser
-)
+int db_flush_extra_labor_event (dbEventCtx ctx)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
+
     while(evUser->extra_labor){
         threadSleep(1.0);
     }
@@ -535,12 +531,11 @@ struct event_user   *evUser
  * when labor is offloaded to the
  * event task
  */
-int db_add_extra_labor_event(
-    struct event_user   *evUser,
-    EXTRALABORFUNC      *func,
-    void                *arg
-)
+int db_add_extra_labor_event (dbEventCtx ctx, 
+                      EXTRALABORFUNC *func, void *arg)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
+
     evUser->extralabor_sub = func;
     evUser->extralabor_arg = arg;
 
@@ -550,11 +545,13 @@ int db_add_extra_labor_event(
 /*
  *  DB_POST_EXTRA_LABOR()
  */
-int db_post_extra_labor(struct event_user *evUser)
+int db_post_extra_labor (dbEventCtx ctx)
 {
-        /* notify the event handler of extra labor */
+    struct event_user *evUser = (struct event_user *) ctx;
+
+    /* notify the event handler of extra labor */
     evUser->extra_labor = TRUE;
-        semBinaryGive(evUser->ppendsem);
+    semBinaryGive(evUser->ppendsem);
     return DB_EVENT_OK;
 }
 

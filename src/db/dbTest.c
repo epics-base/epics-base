@@ -1318,18 +1318,22 @@ static void dbprReportLink(pMsgBuff,pfield_name,plink,field_type, tab_size)
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case GPIB_IO:
+#if 0
 	sprintf(pmsg,"%4s: GPIB link=%2d taddr=%2d laddr=%2d signal=%3d",
 	    pfield_name,
 	    plink->value.gpibio.link, plink->value.gpibio.taddr,
 	    plink->value.gpibio.laddr,plink->value.gpibio.signal);
 	dbpr_msgOut(pMsgBuff,tab_size);
+#endif
 	break;
     case BITBUS_IO:
+#if 0
 	sprintf(pmsg,"%4s: BITBUS link=%2d addr=%2d signal=%3d",
 	    pfield_name,
 	    plink->value.bitbusio.link,plink->value.bitbusio.addr,
 	    plink->value.bitbusio.signal);
 	dbpr_msgOut(pMsgBuff,tab_size);
+#endif
 	break;
     case DB_LINK:
 	if(field_type != DBF_FWDLINK) {

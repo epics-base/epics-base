@@ -114,6 +114,6 @@ COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-DEPEND_RULE.c = @echo echo no DEPENDS_RULE.c defined in CONFIG.Unix.alpha
-DEPEND_RULE.cc = @echo echo no DEPENDS_RULE.cc defined in CONFIG.Unix.alpha
+DEPEND_RULE.c = @echo no DEPENDS_RULE.c defined in CONFIG.Unix.alpha
+DEPEND_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.alpha
 

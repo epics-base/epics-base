@@ -28,11 +28,9 @@
 #include "comQueRecv.h"
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
+#include "tcpKillTimer.h"
 
 enum iiu_conn_state { iiu_connecting, iiu_connected, iiu_disconnected };
-
-extern "C" void cacSendThreadTCP ( void *pParam );
-extern "C" void cacRecvThreadTCP ( void *pParam );
 
 // a modified ca header with capacity for large arrays
 struct  caHdrLargeArray {
@@ -46,21 +44,47 @@ struct  caHdrLargeArray {
 
 class hostNameCache;
 class ipAddrToAsciiEngine;
+class callbackMutex;
+
+class tcpRecvThread : public epicsThreadRunable {
+public:
+    tcpRecvThread ( class tcpiiu & iiuIn, callbackMutex & cbMutexIn,
+        const char * pName, unsigned int stackSize, unsigned int priority );
+    virtual ~tcpRecvThread ();
+    void start ();
+private:
+    class tcpiiu & iiu;
+    callbackMutex & cbMutex;
+    epicsThread thread;
+    void run ();
+};
+
+class tcpSendThread : public epicsThreadRunable {
+public:
+    tcpSendThread ( class tcpiiu & iiuIn,
+        const char * pName, unsigned int stackSize, unsigned int priority );
+    virtual ~tcpSendThread ();
+    void start ();
+private:
+    class tcpiiu & iiu;
+    epicsThread thread;
+    void run ();
+};
 
 class tcpiiu : 
         public netiiu, public tsDLNode < tcpiiu >,
         public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
 public:
-    tcpiiu ( cac &cac, double connectionTimeout, 
-        epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
+    tcpiiu ( cac &cac, callbackMutex & cbMutex, double connectionTimeout, 
+        epicsTimerQueue & timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
-    bool start ( class callbackAutoMutex & );
+    void start ( epicsGuard < callbackMutex > & );
     void cleanShutdown ();
     void forcedShutdown ();
-    void shutdown ( class callbackAutoMutex & cbLocker, bool discardPendingMessages );
+    void shutdown ( epicsGuard < callbackMutex > & cbLocker, bool discardPendingMessages );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
@@ -68,7 +92,7 @@ public:
     bool flushBlockThreshold () const;
     void flushRequestIfAboveEarlyThreshold ();
     void blockUntilSendBacklogIsReasonable 
-        ( epicsAutoMutex * pCallBackLocker, epicsAutoMutex & primaryLocker );
+        ( epicsGuard < callbackMutex > * pCallbackGuard, epicsGuard < epicsMutex > & primaryGuard );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void requestRecvProcessPostponedFlush ();
@@ -81,13 +105,15 @@ public:
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use
-    bool isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     bool alive () const;
     osiSockAddr getNetworkAddress () const;
 
 private:
+    tcpRecvThread recvThread;
+    tcpSendThread sendThread;
     tcpRecvWatchdog recvDog;
     tcpSendWatchdog sendDog;
+    tcpKillTimer killTimer;
     comQueSend sendQue;
     comQueRecv recvQue;
     caHdrLargeArray curMsg;
@@ -115,10 +141,10 @@ private:
     bool recvProcessPostponedFlush;
 
     void stopThreads ();
-    bool processIncoming ( callbackAutoMutex & );
+    bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-    void lastChannelDetachNotify ( class callbackAutoMutex & cbLocker );
+    void lastChannelDetachNotify ( epicsGuard < callbackMutex > & cbLocker );
     void connect ();
 
     // send protocol stubs
@@ -137,8 +163,8 @@ private:
     void flushIfRecvProcessRequested ();
     bool flush (); // only to be called by the send thread
 
-    friend void cacSendThreadTCP ( void *pParam );
-    friend void cacRecvThreadTCP ( void *pParam );
+    friend void tcpRecvThread::run ();
+    friend void tcpSendThread::run ();
 
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );

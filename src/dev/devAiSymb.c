@@ -53,8 +53,8 @@
 #include	<aiRecord.h>
 
 /* Create the dset for devAiSymb */
-long init_record();
-long read_ai();
+static long init_record();
+static long read_ai();
 struct {
 	long		number;
 	DEVSUPFUN	report;

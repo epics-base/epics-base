@@ -55,9 +55,9 @@
 #include	<module_types.h>
 #include	<waveformRecord.h>
 
-long init_record();
-long get_ioint_info();
-long read_wf();
+static long init_record();
+static long get_ioint_info();
+static long read_wf();
 
 struct {
 	long		number;

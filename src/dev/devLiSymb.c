@@ -51,8 +51,8 @@
 #include	<longinRecord.h>
 
 /* Create the dset for devLiSymb */
-long init_record();
-long read_longin();
+static long init_record();
+static long read_longin();
 
 struct {
 	long		number;

@@ -51,8 +51,8 @@
 #include	<module_types.h>
 #include	<longoutRecord.h>
 
-long init_record();
-long write_longout();
+static long init_record();
+static long write_longout();
 
 /* Create the dset for devLoSymb */
 

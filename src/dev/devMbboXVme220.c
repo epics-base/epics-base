@@ -52,8 +52,8 @@
 
 
 /* Create the dset for devAiMbboXVme220 */
-long init_record();
-long write_mbbo();
+static long init_record();
+static long write_mbbo();
 
 struct {
 	long		number;

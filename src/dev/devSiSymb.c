@@ -52,8 +52,8 @@
 #include	<stringinRecord.h>
 
 /* Create the dset for devSiSymb */
-long init_record();
-long read_stringin();
+static long init_record();
+static long read_stringin();
 
 struct {
 	long		number;

@@ -53,8 +53,8 @@
 
 
 /* Create the dset for devAoSymb */
-long init_record();
-long write_ao();
+static long init_record();
+static long write_ao();
 struct {
 	long		number;
 	DEVSUPFUN	report;

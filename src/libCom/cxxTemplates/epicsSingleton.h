@@ -78,8 +78,8 @@ public:
     };
 
     // lock overhead every time these are called
-    operator reference ();
-    operator const reference () const;
+    operator typename epicsSingleton<TYPE>::reference ();
+    operator const typename epicsSingleton<TYPE>::reference () const;
 
 private:
     TYPE * pSingleton;

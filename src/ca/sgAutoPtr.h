@@ -43,6 +43,7 @@ private:
     T * pNotify;
     struct CASG & sg;
     epicsGuard < epicsMutex > & guard;
+	sgAutoPtr & operator = ( const sgAutoPtr & );
 };
 
 template < class T >

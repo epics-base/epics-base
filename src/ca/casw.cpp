@@ -35,10 +35,13 @@
 // Tornado 2.0.1 GNU compiler bugs
 class bheFreeStoreMgr : public bheMemoryManager {
 public:
+    bheFreeStoreMgr () {}
     void * allocate ( size_t );
     void release ( void * );
 private:
     tsFreeList < class bhe, 0x100 > freeList;
+	bheFreeStoreMgr ( const bheFreeStoreMgr & );
+	bheFreeStoreMgr & operator = ( const bheFreeStoreMgr & );
 };
 
 void * bheFreeStoreMgr::allocate ( size_t size )

@@ -1257,18 +1257,21 @@ void udpiiu::blockUntilSendBacklogIsReasonable (
 void udpiiu::requestRecvProcessPostponedFlush (
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->cacMutex );
     netiiu::requestRecvProcessPostponedFlush ( guard );
 }
 
 osiSockAddr udpiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacMutex );
     return netiiu::getNetworkAddress ( guard );
 }
 
 double udpiiu::receiveWatchdogDelay (
     epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacMutex );
     return - DBL_MAX;
 }
 

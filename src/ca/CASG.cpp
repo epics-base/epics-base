@@ -42,6 +42,8 @@ void CASG::destructor (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
+
     if ( this->verify ( guard ) ) {
         this->reset ( cbGuard, guard );
         this->client.uninstallCASG ( guard, *this );
@@ -71,6 +73,8 @@ int CASG::block (
     double delay;
     double remaining;
     int status;
+
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
 
     // prevent recursion nightmares by disabling blocking
     // for IO from within a CA callback. 
@@ -128,6 +132,7 @@ void CASG::reset (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->destroyCompletedIO ( guard );
     this->destroyPendingIO ( cbGuard, guard );
 }
@@ -136,6 +141,7 @@ void CASG::reset (
 void CASG::destroyCompletedIO ( 
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     syncGroupNotify * pNotify;
     while ( ( pNotify = this->ioCompletedList.get () ) ) {
         pNotify->destroy ( guard, * this );
@@ -146,6 +152,7 @@ void CASG::destroyPendingIO (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     syncGroupNotify * pNotify;
     while ( ( pNotify = this->ioPendingList.first () ) ) {
         pNotify->cancel ( cbGuard, guard );
@@ -171,6 +178,7 @@ void CASG::show ( unsigned level ) const
 void CASG::show ( 
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     ::printf ( "Sync Group: id=%u, magic=%u, opPend=%u\n",
         this->getId (), this->magic, this->ioPendingList.count () );
     if ( level ) {
@@ -192,9 +200,10 @@ void CASG::show (
 }
 
 bool CASG::ioComplete (
-    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->destroyCompletedIO ( guard );
     return this->ioPendingList.count () == 0u;
 }
@@ -202,6 +211,7 @@ bool CASG::ioComplete (
 void CASG::put ( epicsGuard < epicsMutex > & guard, chid pChan, 
     unsigned type, arrayElementCount count, const void * pValue )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     sgAutoPtr < syncGroupWriteNotify > pNotify ( guard, *this, this->ioPendingList );
     pNotify = syncGroupWriteNotify::factory ( 
         this->freeListWriteOP, *this, pChan );
@@ -212,6 +222,7 @@ void CASG::put ( epicsGuard < epicsMutex > & guard, chid pChan,
 void CASG::get ( epicsGuard < epicsMutex > & guard, chid pChan, 
                 unsigned type, arrayElementCount count, void *pValue )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     sgAutoPtr < syncGroupReadNotify > pNotify ( guard, *this, this->ioPendingList );
     pNotify = syncGroupReadNotify::factory ( 
         this->freeListReadOP, *this, pChan, pValue );
@@ -222,6 +233,7 @@ void CASG::get ( epicsGuard < epicsMutex > & guard, chid pChan,
 void CASG::completionNotify ( 
     epicsGuard < epicsMutex > & guard, syncGroupNotify & notify )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->ioPendingList.remove ( notify );
     this->ioCompletedList.add ( notify );
     if ( this->ioPendingList.count () == 0u ) {
@@ -232,12 +244,14 @@ void CASG::completionNotify (
 void CASG::recycleSyncGroupWriteNotify ( 
     epicsGuard < epicsMutex > & guard, syncGroupWriteNotify & io )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->freeListWriteOP.release ( & io );
 }
 
 void CASG::recycleSyncGroupReadNotify ( 
     epicsGuard < epicsMutex > & guard, syncGroupReadNotify & io )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->freeListReadOP.release ( & io );
 }
 
@@ -260,6 +274,7 @@ void CASG::exception (
     int status, const char * pContext, 
     const char * pFileName, unsigned lineNo )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     if ( status != ECA_CHANDESTROY ) {
         this->client.exception ( 
             guard, status, pContext, pFileName, lineNo );
@@ -272,6 +287,7 @@ void CASG::exception (
     const char * pFileName, unsigned lineNo, oldChannelNotify & chan, 
     unsigned type, arrayElementCount count, unsigned op )
 {
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
     if ( status != ECA_CHANDESTROY ) {
         this->client.exception ( 
             guard, status, pContext, pFileName, 

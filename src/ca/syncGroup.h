@@ -274,13 +274,13 @@ inline void CASG::operator delete ( void * pCadaver,
 #endif
 
 inline bool syncGroupWriteNotify::ioPending (  
-    epicsGuard < epicsMutex > & guard )
+    epicsGuard < epicsMutex > & /* guard */ )
 {
     return ! this->ioComplete;
 }
 
 inline bool syncGroupReadNotify::ioPending (  
-    epicsGuard < epicsMutex > & guard )
+    epicsGuard < epicsMutex > & /* guard */ )
 {
     return ! this->ioComplete;
 }

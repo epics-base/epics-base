@@ -1251,7 +1251,8 @@ void tcpiiu::versionMessage ( epicsGuard < epicsMutex > & guard, // X aCC 431
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_VERSION, 0u, 
-        priority, CA_MINOR_PROTOCOL_REVISION, 0u, 0u, 
+        static_cast < ca_uint16_t > ( priority ), 
+        CA_MINOR_PROTOCOL_REVISION, 0u, 0u, 
         CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
 }
@@ -1655,7 +1656,7 @@ void tcpiiu::removeAllChannels (
 }
 
 void tcpiiu::installChannel ( 
-    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard, 
     nciu & chan, unsigned sidIn, 
     ca_uint16_t typeIn, arrayElementCount countIn )

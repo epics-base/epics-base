@@ -275,7 +275,7 @@ inline netiiu * nciu::getPIIU (
 }
 
 inline void nciu::writeException ( 
-    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & /* cbGuard */, 
     epicsGuard < epicsMutex > & guard, 
     int status, const char * pContext, 
     unsigned typeIn, arrayElementCount countIn )

@@ -100,12 +100,14 @@ int oldChannelNotify::changeConnCallBack (
 void oldChannelNotify::setPrivatePointer ( 
     epicsGuard < epicsMutex > & guard, void *pPrivateIn )
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     this->pPrivate = pPrivateIn;
 }
 
 void * oldChannelNotify::privatePointer (
     epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->pPrivate;
 }
 

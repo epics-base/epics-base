@@ -12,6 +12,7 @@ DIRS = tools
 DIRS += include 
 DIRS += cxxTemplates 
 DIRS += toolsComm
+DIRS += makeBaseApp 
 DIRS += libCom 
 DIRS += libvxWorks
 DIRS += cvtDctsdr 

@@ -10,6 +10,9 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.10  1997/01/17 19:59:37  jba
+# Use config/CONFIG_BASE_VERSION to get version info.
+#
 # Revision 1.9  1996/09/04 21:41:36  jba
 # Top level dir no longer passed to MakeRelease
 #
@@ -101,20 +104,20 @@ if [ -z "${EPICS_VERSION}" ];
 
 RELS="R${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION}.${EPICS_UPDATE_NAME}${EPICS_UPDATE_LEVEL}";
 
-echo TOP: Creating ../${RELS}.Tar;
+echo TOP: Creating ../${RELS}.tar;
 
-if [ -f ${RELS}.Tar* ];
+if [ -f ${RELS}.tar* ];
 	then
 		echo "TOP: This release has already been created.";
-		echo "TOP: Remove Tar file or edit config/CONFIG_BASE_VERSION.";
+		echo "TOP: Remove tar file or edit config/CONFIG_BASE_VERSION.";
 		exit 1;
 	fi
 
-# Create list of files and dirs to include in Tar file
+# Create list of files and dirs to include in tar file
 
 cd ..
 
-ls base/README* | xargs tar cvf ${RELS}.Tar
+ls base/README* | xargs tar cvf ${RELS}.tar
 
 ls base/Make* > /tmp/make_release.out.$$;
 
@@ -152,7 +155,7 @@ find base/config -name CVS -prune -o -name SCCS -prune -o ! -type d -print \
 find base/src -name CVS -prune -o -name SCCS -prune -o ! -type d -print \
 		| grep -v '/O\..*$' >> /tmp/make_release.out.$$
 
-cat /tmp/make_release.out.$$ | xargs tar rvf ${RELS}.Tar 
+cat /tmp/make_release.out.$$ | xargs tar rvf ${RELS}.tar 
 		
 rm /tmp/make_release.out.$$
 

@@ -77,6 +77,7 @@ static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
+    epicsMutexMustLock(caListSem);
     if(pca->link_action==0) callAdd = TRUE;
     if((pca->link_action&CA_DELETE)!=0) {
         errlogPrintf("dbCa:addAction %d but CA_DELETE already requested\n",
@@ -92,6 +93,7 @@ static void addAction(caLink *pca, short link_action)
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&caList,&pca->node);
     if(callAdd) epicsEventSignal(caWakeupSem);
+    epicsMutexUnlock(caListSem); /*Give it back immediately*/
 }
 
 void epicsShareAPI dbCaLinkInit(void)

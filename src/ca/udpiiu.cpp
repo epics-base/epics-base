@@ -10,6 +10,10 @@
  *  Author: Jeff Hill
  */
 
+#ifdef _MSC_VER
+#   pragma warning(disable:4355)
+#endif
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "envDefs.h"
@@ -20,11 +24,11 @@
 #include "addrList.h"
 #include "caerr.h" // for ECA_NOSEARCHADDR
 #include "udpiiu.h"
-#undef epicsExportSharedSymbols
-
 #include "iocinf.h"
 #include "inetAddrID.h"
 #include "cac.h"
+#include "repeaterSubscribeTimer.h"
+#include "searchTimer.h"
 
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] = 
@@ -52,15 +56,24 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( callbackMutex & cbMutex, cac & cac ) :
-    netiiu ( &cac ), 
-        recvThread ( *this, cbMutex,
-            "CAC-UDP", 
-            epicsThreadGetStackSize ( epicsThreadStackMedium ),
-            cac::lowestPriorityLevelAbove 
-                ( this->pCAC()->getInitializingThreadsPriority () ) ),
-        shutdownCmd ( false ), 
-        sockCloseCompleted ( false )
+udpiiu::udpiiu ( epicsTimerQueueActive &timerQueue, callbackMutex & cbMutex, cac & cac ) :
+    recvThread ( *this, cbMutex,
+        "CAC-UDP", 
+        epicsThreadGetStackSize ( epicsThreadStackMedium ),
+        cac::lowestPriorityLevelAbove 
+            ( cac.getInitializingThreadsPriority () ) ),
+    cacRef ( cac ),
+    nBytesInXmitBuf ( 0 ),
+    sock ( 0 ),
+    // The udpiiu and the search timer share the same lock because
+    // this is much more efficent with recursive locks. Also, access
+    // to the udp's netiiu base list is protected.
+    pSearchTmr ( new searchTimer ( *this, timerQueue, this->mutex ) ),
+    pRepeaterSubscribeTmr ( new repeaterSubscribeTimer ( *this, timerQueue ) ),
+    repeaterPort ( 0 ),
+    serverPort ( 0 ),
+    localPort ( 0 ),
+    shutdownCmd ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -129,23 +142,15 @@ udpiiu::udpiiu ( callbackMutex & cbMutex, cac & cac ) :
         status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
             socket_close ( this->sock );
-            this->pCAC ()->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            this->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
             socket_close ( this->sock );
-            this->pCAC ()->printf ( "CAC: UDP socket was not inet addr family\n" );
+            this->printf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
         this->localPort = epicsNTOH16 ( tmpAddr.ia.sin_port );
-    }
-
-    this->nBytesInXmitBuf = 0u;
-
-    this->recvThreadExitSignal = epicsEventMustCreate ( epicsEventEmpty );
-    if ( ! this->recvThreadExitSignal ) {
-        socket_close ( this->sock );
-        throw std::bad_alloc ();
     }
 
     /*
@@ -160,16 +165,12 @@ udpiiu::udpiiu ( callbackMutex & cbMutex, cac & cac ) :
         // 2) no auxiliary threads are running at this point
         // (taking the callback lock here would break the
         // lock hierarchy and risk deadlocks)
-        genLocalExcep ( *this->pCAC (), ECA_NOSEARCHADDR, NULL );
+        genLocalExcep ( this->cacRef, ECA_NOSEARCHADDR, NULL );
     }
   
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
-}
 
-void udpiiu::start ( epicsGuard < callbackMutex > & cbGuard )
-{
     this->recvThread.start ();
-    this->pCAC()->notifyNewFD ( cbGuard, this->sock );
 }
 
 /*
@@ -177,14 +178,27 @@ void udpiiu::start ( epicsGuard < callbackMutex > & cbGuard )
  */
 udpiiu::~udpiiu ()
 {
-    // closes the udp socket and waits for its recv thread to exit
-    this->shutdown ();
+    bool closeCompleted = false;
 
-    epicsEventDestroy ( this->recvThreadExitSignal );
+    this->shutdownCmd = true;
 
-    ellFree ( &this->dest );
+    this->wakeupMsg ();
+
+    // wait for recv threads to exit
+    static const double shutdownDelay = 15.0;
+    while ( ! this->recvThread.exitWait ( shutdownDelay ) ) {
+        // this knocks the UDP input thread out of recv ()
+        // on all os except linux
+        if ( ! closeCompleted ) {
+            socket_close ( this->sock );
+            closeCompleted = true;
+        }
+        fprintf ( stderr, "cac: timing out waiting for UDP thread shutdown\n" );
+    }
+ 
+    ellFree ( & this->dest );
     
-    if ( ! this->sockCloseCompleted ) {
+    if ( ! closeCompleted ) {
         socket_close ( this->sock );
     }
 }
@@ -197,7 +211,7 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
     osiSockAddr src;
     int status;
 
-    if ( this->pCAC()->preemptiveCallbakIsEnabled() ) {
+    if ( this->cacRef.preemptiveCallbakIsEnabled() ) {
         osiSocklen_t src_size = sizeof ( src );
         status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                             &src.sa, &src_size );
@@ -215,7 +229,7 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
     {
         epicsGuard < callbackMutex > guard ( cbMutex );
 
-        if ( ! this->pCAC()->preemptiveCallbakIsEnabled() ) {
+        if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
             osiSocklen_t src_size = sizeof ( src );
             status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                             &src.sa, &src_size );
@@ -274,13 +288,28 @@ void udpRecvThread::start ()
     this->thread.start ();
 }
 
+bool udpRecvThread::exitWait ( double delay )
+{
+    return this->thread.exitWait ( delay );
+}
+
 void udpRecvThread::run ()
 {
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
+
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        this->iiu.cacRef.notifyNewFD ( cbGuard, this->iiu.sock );
+    }
+
     do {
         this->iiu.recvMsg ( this->cbMutex );
     } while ( ! this->iiu.shutdownCmd );
-    epicsEventSignal ( this->iiu.recvThreadExitSignal );
+
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        this->iiu.cacRef.notifyDestroyFD ( cbGuard, this->iiu.sock );
+    }
 }
 
 /*
@@ -290,6 +319,7 @@ void udpRecvThread::run ()
  */
 void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 {
+    epicsGuard < udpMutex > cbGuard ( this->mutex );
     caRepeaterRegistrationMessage ( this->sock, this->repeaterPort, attemptNumber );
 }
 
@@ -484,20 +514,6 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     }
 }
 
-void udpiiu::shutdown ()
-{
-    if ( this->shutdownCmd ) {
-        return;
-    }
-
-    this->shutdownCmd = true;
-
-    this->wakeupMsg ();
-
-    // wait for recv threads to exit
-    epicsEventMustWait ( this->recvThreadExitSignal );
-}
-
 bool udpiiu::badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
     const osiSockAddr &netAddr, const epicsTime &currentTime )
 {
@@ -569,12 +585,12 @@ bool udpiiu::searchRespAction ( epicsGuard < callbackMutex > & cbLocker,
     }
 
     if ( CA_V42 ( minorVersion ) ) {
-        return this->pCAC ()->lookupChannelAndTransferToTCP 
+        return this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, 0xffff, 
                 0, minorVersion, serverAddr, currentTime );
     }
     else {
-        return this->pCAC ()->lookupChannelAndTransferToTCP 
+        return this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr, currentTime );
     }
@@ -618,7 +634,7 @@ bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg,
     unsigned protocolRevision = epicsNTOH16 ( msg.m_dataType );
     unsigned beaconNumber = epicsNTOH32 ( msg.m_cid );
 
-    this->pCAC ()->beaconNotify ( ina, currentTime, 
+    this->cacRef.beaconNotify ( ina, currentTime, 
         beaconNumber, protocolRevision );
 
     return true;
@@ -627,7 +643,7 @@ bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg,
 bool udpiiu::repeaterAckAction ( epicsGuard < callbackMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime &)
 {
-    this->pCAC ()->repeaterSubscribeConfirmNotify ();
+    this->cacRef.repeaterSubscribeConfirmNotify ();
     return true;
 }
 
@@ -736,18 +752,12 @@ void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard,
     }
 }
 
-/*
- *  udpiiu::pushDatagramMsg ()
- */ 
-bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize )
+bool udpiiu::pushDatagramMsg ( const caHdr & msg, const void *pExt, ca_uint16_t extsize )
 {
-    arrayElementCount   msgsize;
-    ca_uint16_t         alignedExtSize;
-    caHdr               *pbufmsg;
+    epicsGuard < udpMutex > guard ( this->mutex );
 
-    alignedExtSize = static_cast <ca_uint16_t> (CA_MESSAGE_ALIGN ( extsize ));
-    msgsize = sizeof ( caHdr ) + alignedExtSize;
-
+    ca_uint16_t alignedExtSize = static_cast <ca_uint16_t> (CA_MESSAGE_ALIGN ( extsize ));
+    arrayElementCount msgsize = sizeof ( caHdr ) + alignedExtSize;
 
     /* fail out if max message size exceeded */
     if ( msgsize >= sizeof ( this->xmitBuf ) - 7 ) {
@@ -758,7 +768,7 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
         return false;
     }
 
-    pbufmsg = (caHdr *) &this->xmitBuf[this->nBytesInXmitBuf];
+    caHdr * pbufmsg = ( caHdr * ) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
     memcpy ( pbufmsg + 1, pExt, extsize );
     if ( extsize != alignedExtSize ) {
@@ -773,89 +783,97 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
 
 void udpiiu::datagramFlush ()
 {
-    osiSockAddrNode  *pNode;
+    epicsGuard < udpMutex > guard ( this->mutex );
 
-    if ( this->nBytesInXmitBuf == 0u ) {
-        return;
-    }
+    {
+        osiSockAddrNode  *pNode;
 
-    pNode = (osiSockAddrNode *) ellFirst ( &this->dest ); // X aCC 749
-    while ( pNode ) {
-        int status;
+        if ( this->nBytesInXmitBuf == 0u ) {
+            return;
+        }
 
-        assert ( this->nBytesInXmitBuf <= INT_MAX );
-        status = sendto ( this->sock, this->xmitBuf,   
-                (int) this->nBytesInXmitBuf, 0, 
-                &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
-        if ( status != (int) this->nBytesInXmitBuf ) {
-            if ( status >= 0 ) {
-                this->printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
-                break;
-            }
-            else {
-                int localErrno = SOCKERRNO;
+        pNode = (osiSockAddrNode *) ellFirst ( &this->dest ); // X aCC 749
+        while ( pNode ) {
+            int status;
 
-                if ( localErrno == SOCK_EINTR ) {
-                    if ( this->shutdownCmd ) {
-                        break;
-                    }
-                    else {
-                        continue;
-                    }
-                }
-                else if ( localErrno == SOCK_SHUTDOWN ) {
-                    break;
-                }
-                else if ( localErrno == SOCK_ENOTSOCK ) {
-                    break;
-                }
-                else if ( localErrno == SOCK_EBADF ) {
+            assert ( this->nBytesInXmitBuf <= INT_MAX );
+            status = sendto ( this->sock, this->xmitBuf,   
+                    (int) this->nBytesInXmitBuf, 0, 
+                    &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
+            if ( status != (int) this->nBytesInXmitBuf ) {
+                if ( status >= 0 ) {
+                    this->printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
                     break;
                 }
                 else {
-                    char buf[64];
+                    int localErrno = SOCKERRNO;
 
-                    sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
+                    if ( localErrno == SOCK_EINTR ) {
+                        if ( this->shutdownCmd ) {
+                            break;
+                        }
+                        else {
+                            continue;
+                        }
+                    }
+                    else if ( localErrno == SOCK_SHUTDOWN ) {
+                        break;
+                    }
+                    else if ( localErrno == SOCK_ENOTSOCK ) {
+                        break;
+                    }
+                    else if ( localErrno == SOCK_EBADF ) {
+                        break;
+                    }
+                    else {
+                        char buf[64];
 
-                    this->printf (
-                        "CAC: error = \"%s\" sending UDP msg to %s\n",
-                        SOCKERRSTR ( localErrno ), buf);
-                    break;
+                        sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
+
+                        this->printf (
+                            "CAC: error = \"%s\" sending UDP msg to %s\n",
+                            SOCKERRSTR ( localErrno ), buf);
+                        break;
+                    }
                 }
             }
+            pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
         }
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
-    }
 
-    this->nBytesInXmitBuf = 0u;
+        this->nBytesInXmitBuf = 0u;
+    }
 }
 
 void udpiiu::show ( unsigned level ) const
 {
+    epicsGuard < udpMutex > guard ( this->mutex );
+
     ::printf ( "Datagram IO circuit (and disconnected channel repository)\n");
     if ( level > 1u ) {
-        this->netiiu::show ( level - 1u );
-    }
-    if ( level > 2u ) {
         ::printf ("\trepeater port %u\n", this->repeaterPort );
         ::printf ("\tdefault server port %u\n", this->serverPort );
-        printChannelAccessAddressList ( &this->dest );
+        printChannelAccessAddressList ( & this->dest );
     }
-    if ( level > 3u ) {
+    if ( level > 2u ) {
         ::printf ("\tsocket identifier %d\n", this->sock );
         ::printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
         ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
         ::printf ( "\trecv thread exit signal:\n" );
-        epicsEventShow ( this->recvThreadExitSignal, level-3u );
+        this->recvThread.show ( level - 2u );
+        ::printf ( "search message timer:\n" );
+        this->pSearchTmr->show ( level - 2u );
+        ::printf ( "repeater subscribee timer:\n" );
+        this->pRepeaterSubscribeTmr->show ( level - 2u );
+        tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
+	    while ( pChan.valid () ) {
+            pChan->show ( level - 2u );
+            pChan++;
+        }
     }
 }
 
-void udpiiu::wakeupMsg ()
+bool udpiiu::wakeupMsg ()
 {
-    if ( this->sockCloseCompleted ) {
-        return;
-    }
-
     caHdr msg;
     msg.m_cmmd = epicsHTON16 ( CA_PROTO_VERSION );
     msg.m_available = epicsHTON32 ( 0u );
@@ -869,21 +887,219 @@ void udpiiu::wakeupMsg ()
     addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
     addr.ia.sin_port = epicsHTON16 ( this->localPort );
 
+    epicsGuard < udpMutex > guard ( this->mutex );
+
     // send a wakeup msg so the UDP recv thread will exit
     int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
             sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-    if ( status < 0 ) {
-        // this knocks the UDP input thread out of recv ()
-        // on all os except linux
-        status = socket_close ( this->sock );
-        if ( status == 0 ) {
-            this->sockCloseCompleted = true;
-        }
-        else {
-            errlogPrintf ("CAC UDP socket close error was %s\n", 
-                SOCKERRSTR ( SOCKERRNO ) );
+    if ( status == sizeof (msg) ) {
+        return true;
+    }
+    return false;
+}
+
+void udpiiu::repeaterConfirmNotify ()
+{
+    this->pRepeaterSubscribeTmr->confirmNotify ();
+}
+
+void udpiiu::notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime )
+{
+    // deadlock can result if this is called while holding the primary
+    // mutex (because the primary mutex is used in the search timer callback)
+    this->pSearchTmr->notifySearchResponse ( retrySeqNo, currentTime );
+}
+
+void udpiiu::resetSearchTimerPeriod ( double delay ) 
+{
+    this->pSearchTmr->resetPeriod ( delay );
+}
+
+void udpiiu::beaconAnomalyNotify () 
+{
+    static const double portTicksPerSec = 1000u;
+    static const unsigned portBasedDelayMask = 0xff;
+
+    /*
+     * This is needed when many machines
+     * have channels in a disconnected state that 
+     * dont exist anywhere on the network. This insures
+     * that we dont have many CA clients synchronously
+     * flooding the network with broadcasts (and swamping
+     * out requests for valid channels).
+     *
+     * I fetch the local UDP port number and use the low 
+     * order bits as a pseudo random delay to prevent every 
+     * one from replying at once.
+     */
+    double delay = ( this->localPort & portBasedDelayMask );
+    delay /= portTicksPerSec; 
+
+    this->pSearchTmr->resetPeriod ( delay );
+
+    {
+        epicsGuard <udpMutex> guard ( this->mutex );
+        tsDLIterBD < nciu > chan = this->channelList.firstIter ();
+        while ( chan.valid () ) {
+            chan->resetRetryCount ();
+            chan++;
         }
     }
+}
+
+void udpiiu::removeAllChannels ( epicsGuard < callbackMutex > & )
+{
+    epicsGuard < udpMutex > guard ( this->mutex );
+    static limboiiu limboIIU;
+    while ( nciu * pChan = this->channelList.get () ) {
+        // no need to own CAC lock here because the channel is being decomissioned
+        pChan->disconnect ( limboIIU );
+    }
+}
+
+void udpiiu::pendioTimeoutNotify ()
+{
+    epicsGuard < udpMutex > guard ( this->mutex );
+    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
+    while ( chan.valid () ) {
+        chan->connectTimeoutNotify ();
+        chan++;
+    }
+}
+
+bool udpiiu::searchMsg ( unsigned short retrySeqNumber, unsigned & retryNoForThisChannel )
+{
+    bool success;
+
+    if ( nciu *pChan = this->channelList.get () ) {
+        success = pChan->searchMsg ( *this, retrySeqNumber, retryNoForThisChannel );
+        if ( success ) {
+            this->channelList.add ( *pChan );
+        }
+        else {
+            this->channelList.push ( *pChan );
+        }
+    }
+    else {
+        success = false;
+    }
+
+    return success;
+}
+
+void udpiiu::installChannel ( nciu & chan )
+{
+    epicsGuard < udpMutex> guard ( this->mutex );
+    this->channelList.add ( chan );
+    this->resetSearchPeriod ( 0.0 );
+}
+
+int udpiiu::printf ( const char *pformat, ... )
+{
+    va_list theArgs;
+    int status;
+
+    va_start ( theArgs, pformat );
+    
+    status = this->cacRef.vPrintf ( pformat, theArgs );
+    
+    va_end ( theArgs );
+    
+    return status;
+}
+
+void udpiiu::uninstallChannel ( epicsGuard < callbackMutex > &, 
+                               epicsGuard < cacMutex > &, nciu & chan )
+{
+    epicsGuard < udpMutex > guard ( this->mutex );
+    this->channelList.remove ( chan );
+}
+
+void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
+{
+    netiiu::hostName ( pBuf, bufLength );
+}
+
+const char * udpiiu::pHostName () const
+{
+    return netiiu::pHostName ();
+}
+
+bool udpiiu::ca_v42_ok () const
+{
+    return netiiu::ca_v42_ok ();
+}
+
+void udpiiu::writeRequest ( epicsGuard < cacMutex > & guard, nciu & chan, unsigned type, 
+                unsigned nElem, const void * pValue )
+{
+    netiiu::writeRequest ( guard, chan, type, nElem, pValue );
+}
+
+void udpiiu::writeNotifyRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
+                netWriteNotifyIO & io, unsigned type, unsigned nElem, const void *pValue )
+{
+    netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
+}
+
+void udpiiu::readNotifyRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
+                netReadNotifyIO & io, unsigned type, unsigned nElem )
+{
+    netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
+}
+
+void udpiiu::clearChannelRequest ( epicsGuard < cacMutex > & guard, 
+                ca_uint32_t sid, ca_uint32_t cid )
+{
+    netiiu::clearChannelRequest ( guard, sid, cid );
+}
+
+void udpiiu::subscriptionRequest ( epicsGuard < cacMutex > & guard, nciu & chan, 
+                netSubscription & subscr )
+{
+    netiiu::subscriptionRequest ( guard, chan, subscr );
+}
+
+void udpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & guard, 
+                nciu & chan, netSubscription & subscr )
+{
+    return netiiu::subscriptionCancelRequest ( guard, chan, subscr );
+}
+
+void udpiiu::flushRequest ()
+{
+    netiiu::flushRequest ();
+}
+
+bool udpiiu::flushBlockThreshold ( epicsGuard < cacMutex > & guard ) const
+{
+    return netiiu::flushBlockThreshold ( guard );
+}
+
+void udpiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & guard )
+{
+    netiiu::flushRequestIfAboveEarlyThreshold ( guard );
+}
+
+void udpiiu::blockUntilSendBacklogIsReasonable 
+    ( epicsGuard < callbackMutex > * pCBGuard, epicsGuard < cacMutex > & guard )
+{
+    netiiu::blockUntilSendBacklogIsReasonable ( pCBGuard, guard );
+}
+
+void udpiiu::requestRecvProcessPostponedFlush ()
+{
+    netiiu::requestRecvProcessPostponedFlush ();
+}
+
+osiSockAddr udpiiu::getNetworkAddress () const
+{
+    return netiiu::getNetworkAddress ();
+}
+
+void udpiiu::resetSearchPeriod ( double delay )
+{
+    this->pSearchTmr->resetPeriod ( delay );
 }
 
 

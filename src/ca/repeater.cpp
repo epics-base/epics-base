@@ -61,56 +61,19 @@
 #include "tsFreeList.h"
 #include "osiWireFormat.h"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "caProto.h"
 #include "taskwd.h"
-
-#define epicsExportSharedSymbols
 #include "udpiiu.h"
-#undef epicsExportSharedSymbols
+#include "repeaterClient.h"
 
-/*
- * one socket per client so we will get the ECONNREFUSED
- * error code (and then delete the client)
- */
-class repeaterClient : public tsDLNode < repeaterClient > {
-public:
-    repeaterClient ( const osiSockAddr &from );
-    bool connect ();
-    bool sendConfirm ();
-    bool sendMessage ( const void *pBuf, unsigned bufSize );
-    void destroy ();
-    bool verify ();
-    bool identicalAddress ( const osiSockAddr &from );
-    bool identicalPort ( const osiSockAddr &from );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    ~repeaterClient ();
-private:
-    osiSockAddr from;
-    SOCKET sock;
-    unsigned short port () const;
-    static epicsSingleton < tsFreeList < class repeaterClient, 0x20 > > pFreeList;
-};
 
 /* 
  *  these can be external since there is only one instance
  *  per machine so we dont care about reentrancy
  */
 static tsDLList < repeaterClient > client_list;
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < repeaterClient, 0x20 >;
-template class epicsSingleton < tsFreeList < repeaterClient, 0x20 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
 

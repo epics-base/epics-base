@@ -39,6 +39,15 @@
 #include "cadef.h"
 #include "cacIO.h"
 
+// does the local compiler support placement delete
+#if defined (_MSC_VER) 
+#   if _MSC_VER >= 1200
+#	    define CASG_PLACEMENT_DELETE
+#   endif
+#else
+#	define CASG_PLACEMENT_DELETE
+#endif
+
 static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 
 // used to control access to CASG's recycle routines which
@@ -82,8 +91,8 @@ private:
     syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
-#   if ! defined ( NO_PLACEMENT_DELETE )
-    void operator delete ( void *, size_t, 
+#   if defined ( CASG_PLACEMENT_DELETE )
+    void operator delete ( void *, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   endif
     void completion (
@@ -92,6 +101,12 @@ private:
         int status, const char *pContext, unsigned type, arrayElementCount count );
 	syncGroupReadNotify ( const syncGroupReadNotify & );
 	syncGroupReadNotify & operator = ( const syncGroupReadNotify & );
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+        void operator delete ( void * ); // avoid visual c++ 7 bug
+#   endif
+#   if __GNUC__==2 && __GNUC_MINOR_<96 
+        void operator delete ( void *, size_t ); // avoid gnu g++ bug
+#   endif
 };
 
 class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
@@ -110,8 +125,8 @@ private:
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
-#   if ! defined ( NO_PLACEMENT_DELETE )
-    void operator delete ( void *, size_t, 
+#   if defined ( CASG_PLACEMENT_DELETE )
+    void operator delete ( void *, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   endif
     void completion ();
@@ -119,9 +134,24 @@ private:
 		unsigned type, arrayElementCount count );
 	syncGroupWriteNotify ( const syncGroupWriteNotify & );
 	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+        void operator delete ( void * ); // avoid visual c++ 7 bug
+#   endif
+#   if __GNUC__==2 && __GNUC_MINOR_<96 
+        void operator delete ( void *, size_t ); // avoid gnu g++ bug
+#   endif
 };
 
 struct oldCAC;
+
+class casgMutex {
+public:
+    void lock ();
+    void unlock ();
+    void show ( unsigned level ) const;
+private:
+    epicsMutex mutex;
+};
 
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
@@ -148,7 +178,7 @@ protected:
 private:
     tsDLList < syncGroupNotify > ioPendingList;
     tsDLList < syncGroupNotify > ioCompletedList;
-    epicsMutex mutable mutex;
+    casgMutex mutable mutex;
     epicsEvent sem;
     oldCAC & client;
     unsigned magic;
@@ -169,6 +199,21 @@ private:
 inline bool syncGroupNotify::ioInitiated () const
 {
     return this->idIsValid;
+}
+
+inline void casgMutex::lock ()
+{
+    this->mutex.lock ();
+}
+
+inline void casgMutex::unlock ()
+{
+    this->mutex.unlock ();
+}
+
+inline void casgMutex::show ( unsigned level ) const
+{
+    this->mutex.show ( level );
 }
 
 #endif // ifdef syncGrouph

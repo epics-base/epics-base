@@ -28,6 +28,8 @@
  *
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -108,11 +110,18 @@ void * syncGroupReadNotify::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#if ! defined ( NO_PLACEMENT_DELETE )
-void syncGroupReadNotify::operator delete ( void *pCadaver, size_t size, 
+#if defined ( CASG_PLACEMENT_DELETE )
+void syncGroupReadNotify::operator delete ( void *pCadaver, 
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList )
 {
-    freeList.release ( pCadaver, size );
+    freeList.release ( pCadaver, sizeof ( syncGroupReadNotify ) );
 }
 #endif
+
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+    void syncGroupReadNotify::operator delete ( void * ) // avoid visual c++ 7 bug
+    {
+        throw std::logic_error ( "_MSC_VER == 1300 bogus stub called?" );
+    }
+#   endif
 

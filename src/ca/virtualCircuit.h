@@ -65,6 +65,7 @@ public:
         const char * pName, unsigned int stackSize, unsigned int priority );
     virtual ~tcpSendThread ();
     void start ();
+    bool exitWait ( double delay );
 private:
     class tcpiiu & iiu;
     epicsThread thread;
@@ -84,19 +85,23 @@ public:
     void start ( epicsGuard < callbackMutex > & );
     void cleanShutdown ();
     void forcedShutdown ();
-    void shutdown ( epicsGuard < callbackMutex > & cbLocker, bool discardPendingMessages );
+    void shutdown ( epicsGuard < callbackMutex > & cbLocker, 
+        epicsGuard < cacMutex > & guard, bool discardPendingMessages );
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
     void flushRequest ();
-    bool flushBlockThreshold () const;
-    void flushRequestIfAboveEarlyThreshold ();
+    bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > * pCallbackGuard, epicsGuard < epicsMutex > & primaryGuard );
+        ( epicsGuard < callbackMutex > * pCallbackGuard, 
+        epicsGuard < cacMutex > & primaryGuard );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
+    void createChannelRequest ( nciu & );
     void requestRecvProcessPostponedFlush ();
-    void clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid );
+    void clearChannelRequest ( epicsGuard < cacMutex > &, 
+        ca_uint32_t sid, ca_uint32_t cid );
 
     bool ca_v41_ok () const;
     bool ca_v42_ok () const;
@@ -104,9 +109,17 @@ public:
     bool ca_v49_ok () const;
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
-    const char * pHostName () const; // deprecated - please do not use
     bool alive () const;
     osiSockAddr getNetworkAddress () const;
+    int printf ( const char *pformat, ... );
+    unsigned channelCount ();
+    void removeAllChannels ( epicsGuard < callbackMutex > & cbGuard, 
+                                epicsGuard < cacMutex > & guard,
+                                class cacDisconnectChannelPrivate & );
+    void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
+        unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
+    void uninstallChannel ( epicsGuard < callbackMutex > &,
+        epicsGuard < cacMutex > &, nciu & chan );
 
 private:
     tcpRecvThread recvThread;
@@ -116,15 +129,16 @@ private:
     tcpKillTimer killTimer;
     comQueSend sendQue;
     comQueRecv recvQue;
+    tsDLList < nciu > channelList;
     caHdrLargeArray curMsg;
     arrayElementCount curDataMax;
     arrayElementCount curDataBytes;
     epics_auto_ptr < hostNameCache > pHostNameCache;
+    cac & cacRef;
     char * pCurData;
     unsigned minorProtocolVersion;
     iiu_conn_state state;
     epicsEvent sendThreadFlushEvent;
-    epicsEvent sendThreadExitEvent;
     epicsEvent flushBlockEvent;
     SOCKET sock;
     unsigned contigRecvMsgCount;
@@ -144,22 +158,21 @@ private:
     bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-    void lastChannelDetachNotify ( epicsGuard < callbackMutex > & cbLocker );
     void connect ();
+    const char * pHostName () const;
 
     // send protocol stubs
-    void echoRequest ();
-    void versionMessage ( const cacChannel::priLev & priority );
-    void disableFlowControlRequest ();
-    void enableFlowControlRequest ();
-    void hostNameSetRequest ();
-    void userNameSetRequest ();
-    void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
-    void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
-    void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
-    void createChannelRequest ( nciu & );
-    void subscriptionRequest ( nciu &, netSubscription & subscr );
-    void subscriptionCancelRequest (  nciu & chan, netSubscription & subscr );
+    void echoRequest ( epicsGuard < cacMutex > & );
+    void versionMessage ( epicsGuard < cacMutex > &, const cacChannel::priLev & priority );
+    void disableFlowControlRequest (epicsGuard < cacMutex > & );
+    void enableFlowControlRequest (epicsGuard < cacMutex > & );
+    void hostNameSetRequest (epicsGuard < cacMutex > & );
+    void userNameSetRequest (epicsGuard < cacMutex > & );
+    void writeRequest ( epicsGuard < cacMutex > &, nciu &, unsigned type, unsigned nElem, const void *pValue );
+    void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
+    void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
+    void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, netSubscription & subscr );
+    void subscriptionCancelRequest ( epicsGuard < cacMutex > &, nciu & chan, netSubscription & subscr );
     void flushIfRecvProcessRequested ();
     bool flush (); // only to be called by the send thread
 
@@ -169,11 +182,6 @@ private:
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );
 };
-
-inline void tcpiiu::flushRequest ()
-{
-    this->sendThreadFlushEvent.signal ();
-}
 
 inline bool tcpiiu::ca_v41_ok () const
 {
@@ -217,6 +225,11 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
         this->flushRequest ();
         this->recvProcessPostponedFlush = false;
     }
+}
+
+inline unsigned tcpiiu::channelCount ()
+{
+    return this->channelList.count ();
 }
 
 #endif // ifdef virtualCircuith

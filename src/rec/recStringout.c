@@ -40,6 +40,7 @@
  * .09  08-14-92        jba     Added simulation processing
  * .10  08-19-92        jba     Added code for invalid alarm output action
  * .11  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue call
+ * .12  10-18-92        jba     pact noew set in recGblGetLinkValue
  */ 
 
 
@@ -185,10 +186,8 @@ static long process(pstringout)
 		long options=0;
 		long nRequest=1;
 
-		pstringout->pact = TRUE;
 		status = recGblGetLinkValue(&(pstringout->dol),(void *)pstringout,
 			DBR_STRING,pstringout->val,&options,&nRequest);
-		pstringout->pact = FALSE;
 		if(RTN_SUCCESS(status)) pstringout->udf=FALSE;
 	}
 

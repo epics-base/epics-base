@@ -41,6 +41,7 @@
  * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .11  09-10-92        jba     replaced get of hgv value with call to recGblGetLinkvalue
  * .12  10-10-92        jba     replaced code with recGblGetLinkValue call
+ * .13  10-18-92        jba     pact now set in recGblGetLinkValue
  */ 
 
 #include     <vxWorks.h>
@@ -178,10 +179,8 @@ static long process(ppt)
     if (!ppt->pact && ppt->gtyp == SOFTWARE){
          options=0;
          nRequest=1;
-         ppt->pact = TRUE;
          status=recGblGetLinkValue(&(ppt->sgl),(void *)ppt,DBR_SHORT,
               &(ppt->sgv),&options,&nRequest);
-         ppt->pact = FALSE;
 
          if(status==0){
               if(ppt->sgv != ppt->osgv){ /* hgv changed */

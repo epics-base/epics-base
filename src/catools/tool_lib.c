@@ -383,14 +383,15 @@ char *dbr2str (const void *value, unsigned type)
         printAbs = 1;                                                           \
     }                                                                           \
                                                                                 \
-    if (pv->firstStampPrinted)                                                  \
-    {                                                                           \
-        printf("%10.4fs ", epicsTimeDiffInSeconds(                              \
-                   &(((struct TYPE *)value)->stamp), ptsRef) );                 \
-    } else {                    /* First stamp is always absolute */            \
-        printAbs = 1;                                                           \
-        pv->firstStampPrinted = 1;                                              \
-    }                                                                           \
+    if (!printAbs)                                                              \
+        if (pv->firstStampPrinted)                                              \
+        {                                                                       \
+            printf("%10.4fs ", epicsTimeDiffInSeconds(                          \
+                       &(((struct TYPE *)value)->stamp), ptsRef) );             \
+        } else {                    /* First stamp is always absolute */        \
+            printAbs = 1;                                                       \
+            pv->firstStampPrinted = 1;                                          \
+        }                                                                       \
                                                                                 \
     if (tsType == incrementalByChan)                                            \
         pv->tsPrevious = ((struct TYPE *)value)->stamp;                         \

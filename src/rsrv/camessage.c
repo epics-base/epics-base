@@ -34,6 +34,9 @@
  *			chix select switch
  *	.03 joh	071291	now timestanmps channel in use block
  *	.04 joh	071291	code for IOC_CLAIM_CIU command
+ *	.05 joh 082691  use db_post_single_event() instead of read_reply()
+ *			to avoid deadlock condition between the client
+ *			and the server.
  */
 
 #include <vxWorks.h>
@@ -79,7 +82,7 @@ camessage(client, recv)
 	FAST struct event_ext 	*pevext;
 
 
-	if (MPDEBUG == 1)
+	if (CASDEBUG > 2)
 		logMsg("Parsing %d(decimal) bytes\n", recv->cnt);
 
 	bytes_left = recv->cnt;
@@ -97,7 +100,7 @@ camessage(client, recv)
 
 		nmsg++;
 
-		if (MPDEBUG == 1)
+		if (CASDEBUG > 2)
 			log_header(mp, nmsg);
 
 		switch (mp->m_cmmd) {
@@ -153,13 +156,34 @@ camessage(client, recv)
 					RECORD_NAME(MPTOPADDR(mp)));
 				UNLOCK_SEND(client);
 			}
+
 			/*
 			 * allways send it once at event add
-			 * 
-			 * Hold argument is supplied true so the send message
-			 * buffer is not flushed once each call.
 			 */
-			read_reply(pevext, MPTOPADDR(mp), TRUE, NULL);
+			/*
+			 * if the client program issues many monitors
+			 * in a row then I recv when the send side
+			 * of the socket would block. This prevents
+			 * a application program initiated deadlock.
+			 *
+			 * However when I am reconnecting I reissue 
+			 * the monitors and I could get deadlocked.
+			 * The client is blocked sending and the server
+			 * task for the client is blocked sending in
+			 * this case. I cant check the recv part of the
+			 * socket in the client since I am still handling an
+			 * outstanding recv ( they must be processed in order).
+			 * I handle this problem in the server by using
+			 * post_single_event() below instead of calling
+			 * read_reply() in this module. This is a complete
+			 * fix since a monitor setup is the only request
+			 * soliciting a reply in the client which is 
+			 * issued from inside of service.c (from inside
+			 * of the part of the ca client which services
+			 * messages sent by the server).
+			 */
+
+			db_post_single_event(pevext+1);
 
 			break;
 
@@ -543,7 +567,7 @@ build_reply(mp, client)
 			mp->m_cmmd == IOC_BUILD ? mp + 2 : mp + 1, 
 			&tmp_addr);
 	if (status < 0) {
-		if (MPDEBUG == 1)
+		if (CASDEBUG > 2)
 			logMsg(	"Lookup for channel \"%s\" failed\n", 
 				mp + 1);
 		if (mp->m_type == DOREPLY)

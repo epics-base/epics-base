@@ -328,10 +328,8 @@ void recGblFwdLink(void *precord)
 	dbScanPassive(precord,paddr->precord);
     }
     /*Handle dbPutFieldNotify record completions*/
-    if(pdbc->ppn) {
-	/*Note: dbNotifyCancel also handles rpro*/
-	dbNotifyCompletion(pdbc->ppn);
-    } else if(pdbc->rpro) {
+    if(pdbc->ppn) dbNotifyCompletion(pdbc);
+    if(pdbc->rpro) {
 	/*If anyone requested reprocessing do it*/
 	pdbc->rpro = FALSE;
 	scanOnce(pdbc);
@@ -344,7 +342,6 @@ void recGblFwdLink(void *precord)
 void recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
-    long status;
     long nRequest=1;
     long options=0;
  

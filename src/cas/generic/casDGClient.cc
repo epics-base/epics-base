@@ -36,6 +36,7 @@
 #include "dgInBufIL.h" // dgInBuf inline func
 #include "casCtxIL.h" // casCtx inline func
 #include "casCoreClientIL.h" // casCoreClient inline func
+#include "osiPoolStatus.h" // osi pool monitoring functions
 
 //
 // CA Server Datagram (DG) Client
@@ -81,6 +82,19 @@ void casDGClient::show (unsigned level) const
 }
 
 //
+// casDGClient::uknownMessageAction()
+//
+caStatus casDGClient::uknownMessageAction ()
+{
+	const caHdr *mp = this->ctx.getMsg();
+
+	ca_printf ("CAS: bad request code in DG =%u\n", mp->m_cmmd);
+	this->dumpMsg (mp, this->ctx.getData());
+
+	return S_cas_internal;
+}
+
+//
 // casDGClient::searchAction()
 //
 caStatus casDGClient::searchAction()
@@ -103,10 +117,9 @@ caStatus casDGClient::searchAction()
 	// search requests, and therefore dont thrash through
 	// caServer::pvExistTest() and casCreatePV::pvAttach()
 	//
-#ifdef vxWorks
-#	error code needs to be implemented here when we port
-#	error to memory limited environment 
-#endif
+    if (!osiSufficentSpaceInPool()) {
+        return S_cas_success;
+    }
 
 	//
 	// ask the server tool if this PV exists
@@ -391,7 +404,7 @@ inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
     inBuf::fillCondition stat;
     cadg *pHdr;
 
-    while (pAfter-pBuf >= MAX_UDP+sizeof(cadg)) {
+    while (pAfter-pBuf >= static_cast<int>(MAX_UDP+sizeof(cadg))) {
         pHdr = reinterpret_cast<cadg *>(pBuf);
 	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP, parm, 
             nDGBytesRecv, pHdr->cadg_addr);
@@ -462,7 +475,7 @@ caStatus casDGClient::processDG ()
     caStatus status;
  
 	status = S_cas_success;
-    while (bytesLeft = this->inBuf::bytesPresent()) {
+    while ( (bytesLeft = this->inBuf::bytesPresent()) ) {
         bufSizeT dgInBytesConsumed;
         const cadg *pReqHdr = reinterpret_cast<cadg *>(this->inBuf::msgPtr ());
 

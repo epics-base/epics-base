@@ -285,32 +285,6 @@ caStatus casClient::ignoreMsgAction ()
 	return S_cas_success;
 }
 
-/*
- * casClient::uknownMessageAction()
- */
-caStatus casClient::uknownMessageAction ()
-{
-	const caHdr *mp = this->ctx.getMsg();
-	caStatus status;
-
-	ca_printf ("CAS: bad message type=%u\n", mp->m_cmmd);
-	this->dumpMsg (mp, this->ctx.getData() );
-
-	/* 
-	 *	most clients dont recover from this
-	 */
-	status = this->sendErr (mp, ECA_INTERNAL, "Invalid Msg Type");
-	if (status) {
-		return status;
-	}
-
-	/*
-	 * returning S_cas_internal here disconnects
-	 * the client with the bad message
-	 */
-	return S_cas_internal;
-}
-
 //
 // what gets called if the derived class does not supply a
 // message handler for the message type (and it isnt a generic

@@ -405,6 +405,7 @@ LOCAL void ab_intr(int link)
     if(!p6008) return;
     pmb = &p6008->mail;
     if((pmb->fl_lock&0x80)==0) {/*Should NEVER be True*/
+	if (ab_debug != 0)
         logMsg("drvAb: Interrupt but fl_lock not locked\n", 0,0,0,0,0,0);
     }
     if(p6008->osw & UNSOLICITED_BT){
@@ -1557,6 +1558,10 @@ LOCAL long ab_io_report(int level)
 			    printf("\n");
 			}
 		    }
+		    break;
+		case (typeBt):
+		    printf("    CARD %hu: BT %s %s\n", card,
+			activeMessage[pcard->active],pcard->card_name);
 		    break;
 		default:
 		    continue;

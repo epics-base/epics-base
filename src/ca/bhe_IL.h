@@ -25,7 +25,7 @@
  * zero (so we can correctly compute the period
  * between the 1st and 2nd beacons)
  */
-inline bhe::bhe (class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr) :
+inline bhe::bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr ) :
     inetAddrID (addr), cac (cacIn), piiu (0), timeStamp (initialTimeStamp), averagePeriod (-1.0)
 {
 #   ifdef DEBUG

@@ -216,7 +216,9 @@ void dbInitDeviceMenu(DBENTRY *pdbentry)
     pdbDeviceMenu = dbCalloc(1,sizeof(dbDeviceMenu));
     pflddes->ftPvt = pdbDeviceMenu;
     pdbDeviceMenu->nChoice = ellCount(&precdes->devList);
-    pdbDeviceMenu->papChoice = dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
+    if(pdbDeviceMenu->nChoice > 0)
+        pdbDeviceMenu->papChoice =
+	    dbCalloc(pdbDeviceMenu->nChoice,sizeof(char *));
     pdevSup = (devSup *)ellFirst(&precdes->devList);
     ind = 0;
     while(pdevSup) {

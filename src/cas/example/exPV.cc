@@ -351,6 +351,14 @@ caStatus exPV::getUnits(gdd &units)
 }
 
 //
+// exPV::getEnums()
+//
+caStatus exPV::getEnums(gdd &)
+{
+	return S_cas_noConvert;
+}
+
+//
 // exPV::getValue()
 //
 caStatus exPV::getValue(gdd &value)

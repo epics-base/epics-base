@@ -9,7 +9,7 @@ case $sysname in
     Linux )
         os=linux
 		cpu=`uname -m`
-        case $cpu in i386 | i486 | i586 )
+        case $cpu in i386 | i486 | i586 | i686 )
             cpu=x86
 			;;
 		esac

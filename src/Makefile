@@ -13,7 +13,6 @@ DIRS += toolsComm
 DIRS += makeBaseApp
 DIRS += makeBaseExt
 DIRS += libCom
-DIRS += libCom/test
 DIRS += ca
 DIRS += dbStatic
 DIRS += registry
@@ -35,6 +34,7 @@ endif
 ifneq (,$(findstring RTEMS,$(BUILD_ARCHS)))
 DIRS += RTEMS
 endif
+DIRS += libCom/test
 DIRS += gdd
 DIRS += cas
 

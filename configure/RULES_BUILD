@@ -378,31 +378,38 @@ endif # LIBRARY
 #---------------------------------------------------------------
 #	Main targets
 
-all::	install
+all:	install
 
-buildInstall :: build 
+buildInstall : build 
 
-build :: inc 
+build : inc 
 
-build:: $(LIBTARGETS) $(PROD) $(TESTPROD) 
+build: $(LIBTARGETS) $(PROD) $(TESTPROD) 
 
-buildInstall :: $(TARGETS) \
+buildInstall : $(TARGETS) \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
 
-build:: $(MENUS) $(RECTYPES) $(BPTS)
+build: $(MENUS) $(RECTYPES) $(BPTS)
 
 ifdef DBDEXPAND
-build::	$(DBDNAME)
+build:	$(DBDNAME)
 endif
 
-inc:: $(INSTALL_INC)
+inc: $(INSTALL_INC)
 
-rebuild:: clean install
+# WIN95/NT source browser
+#ifdef BAF
+PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
+LIB_BAF = $(addsuffix $(BAF), $(basename $(LIBRARY)))
+browse: $(LIB_BAF) $(PROD_BAF)
+#endif
 
-install:: inc buildInstall 
+rebuild: clean install
 
-buildInstall :: $(INSTALL_MANS) \
+install: inc buildInstall 
+
+buildInstall : $(INSTALL_MANS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
@@ -411,7 +418,7 @@ buildInstall :: $(INSTALL_MANS) \
 	$(INSTALL_DBDNAME) $(INSTALL_INCREC)
 
 ifdef BIN_INSTALLS
-buildInstall :: binInstalls
+buildInstall : binInstalls
 endif
 
 clean::
@@ -419,6 +426,12 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) *$(RES) $(TARGETS) \
 	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME) *.out
+ifdef BAF
+	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
+endif
+ifdef DBDEXPAND
+	@$(RM) $(DBDNAME)
+endif
 
 #---------------------------------------------------------------
 #	Products
@@ -429,7 +442,6 @@ ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS) $($(prod)_SRCS_$(OS_CLASS)))
 COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(OS_CLASS)))
-COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
 ifdef PRODNAME
 
@@ -462,11 +474,25 @@ endif
 PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
+BROWSE_OBJECTS = $(addsuffix $(BOF), $(basename $(PRODNAME_SRCS)))
+
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(PRODNAME_RESS) $(LDLIBS)
 
+else  # ifdef PRODNAME_SRCS
+
+BROWSE_OBJECTS = $(addsuffix $(BOF), $(basename $(PRODNAME)))
+
 endif  # ifdef PRODNAME_SRCS
+
+# WIN95/NT source browser
+ifdef BAF
+$(addsuffix $(BAF), $(basename $(PRODNAME))): $(BROWSE_OBJECTS)
+	@echo "Building source browser archive $@"
+	@$(RM) $@
+	$(BAFCMD) $^
+endif
 
 else # PRODNAME not defined
 
@@ -479,7 +505,7 @@ PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
 PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile $@\
-	PRODNAME="$@"\
+	PRODNAME=$(addsuffix $(EXE), $(basename $@))\
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
 	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
 	PRODNAME_SRCS_$(OS_CLASS)="$($(basename $@)_SRCS_$(OS_CLASS))"\
@@ -491,6 +517,11 @@ PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile $@\
 $(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 	@$(PROD_MAKE_COMMAND)
 
+ifdef BAF
+$(PROD_BAF): $(PROD)
+	@$(PROD_MAKE_COMMAND)
+endif
+
 endif
 endif  #ifdef PRODNAME
 
@@ -499,6 +530,8 @@ endif  #ifdef PROD
 #---------------------------------------------------------------
 #     Java classes and packages
 #
+
+ifdef JAVA
 
 INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
 DIRECTORY_TARGETS += $(INSTALL_JAVA)
@@ -522,9 +555,9 @@ JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
 $(DIRECTORY_TARGETS) :
 #	$(MKDIR) -p $@
 
-build:: $(TESTCLASSES) $(JAR)
+build: $(TESTCLASSES) $(JAR)
 
-buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+buildInstall : $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
 
 clean::
 	@$(RM) $(TESTCLASSES) $(JAR)
@@ -548,6 +581,8 @@ $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing jar file $@"
 	$(INSTALL) -d -m 644 $< $(@D)
 
+endif  #ifdef JAVA
+
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that
@@ -564,7 +599,7 @@ $(INSTALL_JAVA)/%.jar: %.jar
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
+depends: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
@@ -572,17 +607,17 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
-	$(LINK.c)  $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.c)  $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.cc
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.cc) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
-	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	$(LINK.cc) $(notdir ,$(basename $<))$(OBJ) $(LDLIBS)
 
 # C++ munching for VxWorks
 %.out : %.o
@@ -610,6 +645,12 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	@$(RM) $@
 	$(RCCMD)
 
+# WIN95/NT source browser
+%.bsc: %.sbr
+	@echo "building source browser archive $@"
+	$(RM) $@
+	$(BAFCMD) $<
+
 #
 # rename the y.tab.h file only if we
 # are creating it
@@ -635,7 +676,7 @@ endif
 %.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
-	$(CPP) $(CPPFLAGS) $< $*.i
+	$(CPP) $(CPPFLAGS) $(CPPSNCFLAGS) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
@@ -712,6 +753,14 @@ $(DBDNAME): ../$(DBDEXPAND)
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(HOSTEXE) $(DBDFLAGS) $< > $@
 endif
 
+# WIN95/NT source browser
+ifdef BAF
+$(LIB_BAF): $(addsuffix $(BOF), $(basename $(LIBSRCS)))
+	@echo "Building source browser archive $@"
+	@$(RM) $@
+	$(BAFCMD) $^
+endif
+
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME_vxWorks): ../baseLIBOBJS
 endif
@@ -752,14 +801,14 @@ $(INSTALL_BIN)/%: ../%
 
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $(RANLIBFLAGS) $@
 endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
 
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"
@@ -839,7 +888,7 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 -include DEPENDS
 
-.PHONY:: all inc depends build install clean rebuild buildInstall binInstalls \
+.PHONY: all inc depends build install clean rebuild buildInstall binInstalls \
 	iocBinInstalls
 
 ifneq (,$(wildcard ../base.dbd))
@@ -850,14 +899,14 @@ endif
 
 else
 
-all::
-buildInstall ::
-build ::
-inc::
-rebuild::
-install::
+all:
+buildInstall :
+build :
+inc:
+rebuild:
+install:
 clean::
-depends::
+depends:
 
 endif #BUILD
 endif #T_A

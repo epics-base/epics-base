@@ -32,6 +32,7 @@ void epicsShareAPI ipAddrToA
 	const int		maxPortDigits = 5u;
 	char			name[max(INET_ADDR_LEN,MAXHOSTNAMELEN)+1];
 	int				status;
+	int				errnoCopy = errno;
 
 	if (bufSize<1) {
 		return;
@@ -61,6 +62,8 @@ void epicsShareAPI ipAddrToA
 			sprintf (pBuf, "%.*s", ((int)bufSize)-1, name);
 		}
 	}
+
+	errno = errnoCopy;
 }
 
 /*

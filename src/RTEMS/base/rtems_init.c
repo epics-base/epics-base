@@ -199,6 +199,8 @@ const void *rtemsConfigArray[] = {
 rtems_task
 Init (rtems_task_argument ignored)
 {
+    int i;
+
     /*
      * Create a reasonable environment
      */
@@ -214,11 +216,29 @@ Init (rtems_task_argument ignored)
     rtems_bsdnet_initialize_network ();
     printf ("***** Initializing TFTP *****\n");
     rtems_bsdnet_initialize_tftp_filesystem ();
-    for (;;) {
+    for (i = 0 ; ; i++) {
         printf ("***** Initializing NTP *****\n");
         if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
             break;
-        epicsThreadSleep (10.0);
+        epicsThreadSleep (5.0);
+        if (i >= 8) {
+            rtems_status_code sc;
+            rtems_time_of_day now;
+            printf ("    *************** WARNING ***************\n");
+            printf ("    ***** NO RESPONSE FROM NTP SERVER *****\n");
+            printf ("    *****  TIME SET TO DEFAULT VALUE  *****\n");
+            printf ("    ***************************************\n");
+            now.year = 2001;
+            now.month = 1;
+            now.day = 1;
+            now.hour = 0;
+            now.minute = 0;
+            now.second = 0;
+            now.ticks = 0;
+            if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
+                printf ("***** Can't set time: %s\n", rtems_status_text (sc));
+            break;
+        }
     }
     printf ("***** Initializing syslog *****\n");
     openlog ("IOC", LOG_CONS, LOG_DAEMON);

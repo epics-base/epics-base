@@ -43,6 +43,7 @@
 
 class dbService : public cacService {
 public:
+    ~dbService () {}
     cacContext & contextCreate ( 
         epicsMutex & mutualExclusion, 
         epicsMutex & callbackControl, 

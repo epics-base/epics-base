@@ -687,7 +687,35 @@ page 24 for more information on this topic.</p>
 <pre><code>if ( status != ECA_NORMAL ) { </code></pre>
 <pre><code>        printf("The requested ca_XXXX() operation didn't complete successfully because \"%s\"\n",</code></pre>
 <pre><code>                ca_message ( status ) ); </code></pre>
-<pre><code>}</code></pre>
+<pre><code>}
+
+</code></pre>
+
+<p>In the embryonic stages of EPICS it was a common practice to examine a
+channel's connection state, its native type, and its native element count by
+directly accessing fields in a structure using a pointer stored in type
+<code>chid</code>. Likewise, a user private pointer in the per channel
+structure was also commonly set by directly accessing fields in the channel
+structure. A number of difficulties arise from this practice, which has long
+since been deprecated. For example, in release R3.13 it was recognized that
+transient changes in certain private fields in the per channel structure
+would make it difficult to reliably test the channels connection state using
+these private fields directly. Therefore, in release 3.13 of EPICS the names
+of certain fields were changed to discourage the practice of directly
+accessing them in application code. In R3.14 codes written this way will not
+compile. Be advised that if your CA client tool is touching the fields in the
+channel structure directly then portability and robustness will be
+compromised. The probability of EPICS minor release upgrade recompilation
+dependency will also increase. Codes intending to maintain the highest degree
+of portability over a wide range of EPICS versions should be especially
+careful. For example such codes should replace all instances of
+"channel_id-&gt;type" with  ca_element_count(channel_id)". This approach
+should be reliable on all versions of EPICS in use today. The construct
+"ca_puser(chid) = xxxx" is particularly problematic. The best mechanisms for
+setting the per channel private pointer will be to pass the user private
+pointer in  when creating the channel. This approach is implemented on all
+versions. Otherwise, you can also use "ca_set_puser(CHID,PUSER), but this
+will work only on post beta releases of R3.13 and on R3.14. </p>
 
 <h2><a name="Function Call Reference"></a>Function Call Reference</h2>
 
@@ -709,7 +737,7 @@ channel access calls.</p>
       callbacks might be called when the thread that calls this routine is
       not executing in the CA client library. Programmers who are unfamiliar
       with mutual exclusion locking in a multi-threaded environment should
-      specify <code>ca_disable_preemptive_callback.</code> </p>
+      specify <code>ca_disable_preemptive_callback.</code></p>
     </dd>
 </dl>
 

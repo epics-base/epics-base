@@ -24,7 +24,7 @@ private:
 static int tests = 0;
 static int nak = 0;
 
-void check(bool res, const char* str, int line) {
+static void check(bool res, const char* str, int line) {
     tests++;
     if (!res) {
 	printf("Test %d failed, line %d: %s\n", tests, line, str);
@@ -125,7 +125,7 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
 	epicsList<fred*> Freda;
 	test(Freda.empty());
 	
-	swap(Fred, Freda);
+	epicsSwap(Fred, Freda);
 	test(Fred.empty());
 	test(Freda.size() == 3);
 	test(Freda.front() == apf[0]);

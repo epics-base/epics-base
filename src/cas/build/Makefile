@@ -8,6 +8,8 @@ USER_VPATH := $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/configure/CONFIG
 
+SRC_DIRS += $(CAS)/generic $(CAS)/singleThread
+
 # sometimes it's good to have different C/C++ flags, not now:
 USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
 USR_CXXFLAGS = $(USR_CFLAGS)

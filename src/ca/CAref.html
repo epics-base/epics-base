@@ -74,7 +74,7 @@ height="31" width="88"></a></p>
         Match</a></li>
       <li><a href="#Client">Client Isnt Configured to Use the Server's
         Port</a></li>
-      <li><a href="#Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does
+      <li><a href="#Unicast">Unicast Addresses in the EPICS_CA_ADDR_LIST Does
         not Reliably Contact Servers Sharing the Same UDP Port on the Same
         Host</a></li>
       <li><a href="#Problems">Client Does not See Server's Beacons</a></li>
@@ -98,7 +98,7 @@ height="31" width="88"></a></p>
   Code</a></li>
   <li><a href="#Polling">Polling the CA Client Library From Single Threaded
     Applications</a></li>
-  <li><a href="#Avoid">Avoid Emulating Bad Parctices that May Still be
+  <li><a href="#Avoid">Avoid Emulating Bad Practices that May Still be
     Common</a></li>
 </ul>
 
@@ -453,15 +453,15 @@ number will default to EPICS_CA_SERVER_PORT.</p>
   </tbody>
 </table>
 
-<h4><a name="Routing">Routing restiction on vxWorks systems</a></h4>
+<h4><a name="Routing">Routing Restrictions on vxWorks Systems</a></h4>
 
 <p>Frequently vxWorks systems boot by default with routes limiting access
 only to the local subnet. If a EPICS system is operating in a WAN environment
 it may be necessary to configure routes into the vxWorks system which enable
 a vxWorks based CA server to respond to requests originating outside it's
-subnet. These routing restrinctions can also apply to vxWorks base CA clients
-communicating with off subnet servers. An EPICS system manager can implemnt
-an rudamentary, but robust, form of access control for a particular host by
+subnet. These routing restrictions can also apply to vxWorks base CA clients
+communicating with off subnet servers. An EPICS system manager can implement
+an rudimentary, but robust, form of access control for a particular host by
 not providing routes in that host that reach outside of a limited set of
 subnets. See "routeLib" in the vxWorks reference manual.</p>
 
@@ -501,7 +501,7 @@ interval is also dynamically adjusted based on the past success rate.</p>
 <p>If name resolution requests are not responded to, then the client library
 doubles the delay between name resolution attempts and reduces the number of
 requests per interval. The delay between attempts is initially limited by a
-maxuimum however, after some long interval, if the client library does not
+maximum however, after some long interval, if the client library does not
 receive any responses it stops sending name resolution attempts altogether
 until it sees a beacon anomaly.</p>
 
@@ -533,7 +533,7 @@ beacons are received by the client.</p>
 all of them to all directly receive a copy of the server beacon messages when
 the beacon messages are sent to unicast addresses, or when legacy IP kernels
 are still in use. To avoid confusion over these restrictions a special UDP
-server, the CA Repeater, is auotomatically spawned by the CA client library
+server, the CA Repeater, is automatically spawned by the CA client library
 when it is not found to be running. This program listens for server beacons
 sent to the UDP port specified in the EPICS_CA_REPEATER_PORT parameter and
 fans any beacons received out to any CA client program running on the same
@@ -711,7 +711,7 @@ to, and therefore accept messages only from, a limited set of network
 interfaces (each specified by it's IP address). Specifically, UDP search
 messages addressed to both the IP addresses in EPICS_CAS_INTF_ADDR_LIST and
 also to the broadcast addresses of the corresponding LAN interfaces will be
-accepted by the server. By defualt, the CA server is accessible from all
+accepted by the server. By default, the CA server is accessible from all
 network interfaces configured into its host.  <em>In R3.14 and previous
 releases the CA server employed by iocCore does not implemet this
 feature</em>.</p>
@@ -727,7 +727,8 @@ implemet this feature.</em></p>
 
 <p>See also <a href="#Configurin1">Configuring the Maximum Array Size</a>.</p>
 
-<p>See also <a href="#Routing">Routing restiction on vxWorks systems</a>.</p>
+<p>See also <a href="#Routing">Routing Restrictions on vxWorks
+Systems</a>.</p>
 
 <h2><a name="Command">Command Line Utilities</a></h2>
 
@@ -739,14 +740,14 @@ implemet this feature.</em></p>
 
 <p>Channel Access Client Library regression test.</p>
 
-<p>The PV used with the test must be naytive type DBR_DOUBLE or DBR_FLOAT,
-and modified only by acctst while the test is running. Therefore,
-periodically scanned hardware attached analog input records do not work well.
-Test failure is indicated if the program stops prior to printing "test
-complete". If unspecified the progress logging level is zero, and no messages
-are printed while the test is progressing. If unspecified, the channel
-duplication count is 20000. If unspecified, the test repetition count is once
-only. If unspecified, preemptive callback is disabled.</p>
+<p>The PV used with the test must be native type DBR_DOUBLE or DBR_FLOAT, and
+modified only by acctst while the test is running. Therefore, periodically
+scanned hardware attached analog input records do not work well. Test failure
+is indicated if the program stops prior to printing "test complete". If
+unspecified the progress logging level is zero, and no messages are printed
+while the test is progressing. If unspecified, the channel duplication count
+is 20000. If unspecified, the test repetition count is once only. If
+unspecified, preemptive callback is disabled.</p>
 
 <h3><a name="catime">catime</a></h3>
 <pre>catime &lt;PV name&gt; [channel count] [append number to pv name if true]</pre>
@@ -772,7 +773,7 @@ channel names in the test are numbered as follows.</p>
 server is rebooted, network connectivity to a server is reestablished, or if
 a server's CPU exits a CPU load saturated state.</p>
 
-<p>CA clients with unresolved channels reset their search request schedualing
+<p>CA clients with unresolved channels reset their search request scheduling
 timers whenever they see a beacon anomaly.</p>
 
 <p>This program can be useful to verify that configuration problems have not
@@ -818,7 +819,7 @@ server's port by running "netstat -a | grep nnn" where nnn is the port number
 configured in the client. If you do not set EPICS_CA_SERVER_PORT or
 EPICS_CAS_SERVER_PORT then the default port will be 5064.</p>
 
-<h4><a name="Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does not
+<h4><a name="Unicast">Unicast Addresses in the EPICS_CA_ADDR_LIST Does not
 Reliably Contact Servers Sharing the Same UDP Port on the Same Host</a></h4>
 
 <p>Two servers can run on the same host with the same server port number, but
@@ -853,8 +854,8 @@ issue has to date been primarily associated with vxWorks systems where mbuf
 starvation on earlier vxWorks versions is rumored to lead to permanent IP
 communications stalls which are resolved only by a system reboot. IP kernels
 that use mbufs frequently allow the initial and maximum number of mbufs to be
-configured. Consult your OS's documenation for configuration procedures which
-vary between OS and even between different versions of the same OS.</p>
+configured. Consult your OS's documentation for configuration procedures
+which vary between OS and even between different versions of the same OS.</p>
 
 <h4>Contributing Circumstances</h4>
 <ul>
@@ -930,7 +931,7 @@ floating point field is an example of this type of error. If the server for a
 channel is located in a different address space than the client then the
 ca_xxx() operations that communicate with the server return status indicating
 the validity of the request and whether it was successfully enqueued to the
-server, but communication of completion status is defered until a user
+server, but communication of completion status is deferred until a user
 callback is called, or lacking that an exception handler is called. An error
 number and the error's severity are embedded in CA status (error) constants.
 Applications shouldn't test the success of a CA function call by checking to
@@ -942,7 +943,7 @@ topic.</p>
 SEVCHK( status, "ca_XXXX() returned failure status"); 
 
 if ( status &amp; CA_M_SUCCESS ) { 
-        printf ( "The requested ca_XXXX() operation didn't complete successfully\n"); 
+        printf ( "The requested ca_XXXX() operation didn't complete successfully"); 
 } 
 
 if ( status != ECA_NORMAL ) { 
@@ -963,7 +964,7 @@ naming convention where the C structure tag dbr_xxxx corresponds to the
 DBR_XXXX data type code. The following table provides more details on the
 structure of the CA data type space. Since data addresses are passed to the
 CA client library as typeless "void *" pointers then care should be taken to
-ensure that you have passed the corect C data type corresponding to the
+ensure that you have passed the correct C data type corresponding to the
 DBR_XXXX type that you have specified. Architecture independent types are
 provided in db_access.h to assist programmers in writing portable code. For
 example "dbr_short_t" should be used to send or receive type DBR_SHORT.</p>
@@ -1013,14 +1014,14 @@ example "dbr_short_t" should be used to send or receive type DBR_SHORT.</p>
       <td>DBR_PUT_ACKT</td>
       <td>W</td>
       <td>dbr_put_ackt_t</td>
-      <td>Used for global alarm ackknoledgement. Do transient alarms have to
+      <td>Used for global alarm acknowledgement. Do transient alarms have to
         be acknowledged? (0,1) means (no, yes).</td>
     </tr>
     <tr>
       <td>DBR_PUT_ACKS</td>
       <td>W</td>
       <td>dbr_put_acks_t</td>
-      <td>Used for global alarm ackknoledgement. The highest alarm severity
+      <td>Used for global alarm acknowledgement. The highest alarm severity
         to acknowledge. If the current alarm severity is less then or equal
         to this value the alarm is acknowledged.</td>
     </tr>
@@ -1047,7 +1048,7 @@ types. If more than one element is requested, then the individual elements
 can be accessed in an application program by indexing a pointer to the value
 field in the DBR_XXX structure. For example, the following code computes the
 sum of the elements in a array process variable and prints its time stamp.
-The <a href="#L6946">dbr_size_n</a> function can be used to detrmine the
+The <a href="#L6946">dbr_size_n</a> function can be used to determine the
 correct number of bytes to reserve when there are more than one value field
 elements in a structured CA data type.</p>
 <pre><code>#include &lt;stdio.h&gt;
@@ -1084,7 +1085,7 @@ int main ( int argc, char ** argv )
     nBytes = dbr_size_n ( DBR_TIME_DOUBLE, elementCount );
     pTD = ( struct dbr_time_double * ) malloc ( nBytes );
     if ( ! pTD ) {
-        fprintf ( stderr, "insufficent memory to complete request\n" );
+        fprintf ( stderr, "insufficient memory to complete request\n" );
         return -1;
     }
     
@@ -1190,18 +1191,18 @@ server.</p>
 <p>Application programs should assume that CA server may be restarted, and
 that network connectivity is transient. When you create a CA channel it's
 initial connection state will most commonly be disconnected. If the Process
-Variable's server is available the library will immediatly initiate the
+Variable's server is available the library will immediately initiate the
 necessary actions to make a connection with it. Otherwise, the client library
 will monitor the state of servers on the network and immediately connect or
 reconnect with the process variable's server when it becomes available.</p>
 
-<p>Two methods may be used to dermine if a channel has connected: the
+<p>Two methods may be used to determine if a channel has connected: the
 application program can block in <code><a
 href="#ca_pend_io">ca_pend_io</a></code>, or the application program can
 install a connection callback handler when it calls <code><a
 href="#ca_create_channel">ca_create_channel</a></code>. The <code><a
 href="#ca_pend_io">ca_pend_io</a></code> approach is best suited to simple
-command line programs with a short runtime duration, and the conection
+command line programs with a short runtime duration, and the connection
 callback method is best suited to toolkit components with a long runtime
 duration. If a connection state change call back function is <em>not</em>
 installed when <code>ca_create_channel </code>is called (if a nil function
@@ -1248,10 +1249,10 @@ ca_pend_io(), or ca_sg_block() or alternatively it must call ca_poll() at
 least every 100 milli-seconds. In single threaded applications a file
 descriptor manager like Xt or the interface described in fdManager.h can be
 used to monitor both mouse clicks and also CA's file descriptors so that
-ca_poll() can be called immediatly when CA server messages arrives over the
+ca_poll() can be called immediately when CA server messages arrives over the
 network.</p>
 
-<h3><a name="Avoid">Avoid Emulating Bad Parctices that May Still be
+<h3><a name="Avoid">Avoid Emulating Bad Practices that May Still be
 Common</a></h3>
 
 <p>With the embryonic releases of EPICS it was a common practice to examine a
@@ -1299,13 +1300,13 @@ callbacks will be called preemptively from more than one thread.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>SELECT</code></dt>
-    <dd>Specifies if preemptive calback is allowed. If it is allowed your
+    <dd>Specifies if preemptive callback is allowed. If it is allowed your
       callbacks might be called when the thread that calls this routine is
       not executing in the CA client library. Programmers who are unfamiliar
       with mutual exclusion locking in a multi-threaded environment should
       specify <code>ca_disable_preemptive_callback</code>. If
       ca_enable_preemptive_callback is specified then CA client background
-      activies, such as connection management, will proceed even if the
+      activities, such as connection management, will proceed even if the
       thread that calls this routine is not executing in the CA client
       library.</dd>
 </dl>
@@ -1445,7 +1446,7 @@ any time.</p>
       is running on a network or operating system that does not have native
       support for prioritized delivery or execution respectively. Specifying
       many different priorities within the same program can increase resource
-      consutption in the client and the server because an independent virtual
+      consumption in the client and the server because an independent virtual
       circuit, and associated data structures, is created for each priority
       that is used on a particular server.</dd>
 </dl>
@@ -1527,7 +1528,7 @@ back is called only after the initiated write operation and all actions
 resulting from the initiating write operation complete. If unsuccessful the
 call back function is invoked indicating bad status. If the channel
 disconnects before a put callback request can be completed, then the client's
-call back function is called with bad status, but this does not gaurantee
+call back function is called with bad status, but this does not guarantee
 that the server did not receive and process the request before the
 disconnect.</p>
 
@@ -1535,8 +1536,9 @@ disconnect.</p>
 disconnected.</p>
 
 <p>All put requests are accumulated (buffered) and not forwarded to the IOC
-until one of ca_flush_io, ca_pend_io, ca_pend_event, or ca_sg_pend are calle.
-This allows several requests to be efficiently combined into one message.</p>
+until one of ca_flush_io, ca_pend_io, ca_pend_event, or ca_sg_pend are
+called. This allows several requests to be efficiently combined into one
+message.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -1661,8 +1663,8 @@ in one message.</p>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
-    <dd>Pointer sized variable retained and then passsed back to user
-      supplied call back function above.</dd>
+    <dd>Pointer sized variable retained and then passed back to user supplied
+      call back function above.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -1882,7 +1884,7 @@ immediately <em>without processing any outstanding channel access background
 activities</em>.</p>
 
 <p>The delay specified to ca_pend_io() should take into account worst case
-network delays such as Ethernet collision exponential backoff until
+network delays such as Ethernet collision exponential back off until
 retransmission delays which can be quite long on overloaded networks.</p>
 
 <p>Unlike <code><a href="#L3249">ca_pend_event</a></code>, this routine will
@@ -2042,14 +2044,14 @@ back.</p>
 <p>When an error occurs in the server asynchronous to the clients thread then
 information about this type of error is passed from the server to the client
 in an exception message. When the client receives this exception message an
-exception handler callbackis called.The default exceptionhandler printsa
+exception handler callback is called.The default exception handler prints a
 diagnostic message on the client's standard out and terminates execution if
 the error condition is severe.</p>
 
 <p>Note that certain fields in "struct exception_handler_args" are not
 applicable in the context of some error messages. For instance, a failed get
-will supply the address in the client taskwhere thereturned value
-wasrequested tobe written. For other failed operations the value of the addr
+will supply the address in the client task where the returned value was
+requested to be written. For other failed operations the value of the addr
 field should not be used.</p>
 
 <h4>Arguments</h4>
@@ -2169,7 +2171,7 @@ specified channel.</p>
 <dl>
   <dt><code>PFUNC</code></dt>
     <dd>Address of user supplied call back function. A nil pointer uninstalls
-      the current handler. The following arguments atre passed <em>by
+      the current handler. The following arguments are passed <em>by
       value</em> to the supplied callback handler.
       <pre><code>typedef struct ca_access_rights {
     unsigned    read_access:1;
@@ -2302,7 +2304,7 @@ use at the users discretion.</p>
 <h3><code><a name="ca_state">ca_state()</a></code></h3>
 <pre><code>#include &lt;cadef.h&gt;
 enum channel_state {
-        cs_never_conn, /* valid chid, server not found or unavaliable */
+        cs_never_conn, /* valid chid, server not found or unavailable */
         cs_prev_conn,  /* valid chid, previously connected to server */
         cs_conn,       /* valid chid, connected to server */
         cs_closed };   /* channel deleted by user */
@@ -2322,7 +2324,7 @@ IO channel.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>STATE</code></dt>
-    <dd>the conection state</dd>
+    <dd>the connection state</dd>
 </dl>
 
 <h3><code><a name="L6929">ca_message()</a></code></h3>
@@ -2387,7 +2389,7 @@ specified channel and boolean false otherwise.</p>
 <dl>
   <dt><code>STRING</code></dt>
     <dd>boolean true if the client currently has read access to the specified
-      channel and boolean false otherwisex</dd>
+      channel and boolean false otherwise</dd>
 </dl>
 
 <h3><code><a name="L6941">ca_write_access()</a></code></h3>
@@ -2748,7 +2750,7 @@ reissued.</p>
 <dl>
   <dt><code>PVALUE</code></dt>
     <dd>A pointer to an application supplied buffer containing the value or
-      array of valuesReturns</dd>
+      array of values returned</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -2849,7 +2851,7 @@ int ca_context_status ( struct ca_client_context *,
 
 <h4>Description</h4>
 
-<p>Prints information about the client context including, at higher intereest
+<p>Prints information about the client context including, at higher interest
 levels, status for each channel.</p>
 
 <h4>Arguments</h4>
@@ -2908,11 +2910,11 @@ preemptively from more than one thread.</p>
     <dd>The requested data transfer is greater than available memory or
       EPICS_CA_MAX_ARRAY_BYTES</dd>
   <dt>ECA_BADTYPE</dt>
-    <dd>The data type specifed is invalid</dd>
+    <dd>The data type specified is invalid</dd>
   <dt>ECA_BADSTR</dt>
     <dd>Invalid string</dd>
   <dt>ECA_BADCHID</dt>
-    <dd>Ivalid channel identifier</dd>
+    <dd>Invalid channel identifier</dd>
   <dt>ECA_BADCOUNT</dt>
     <dd>Invalid element count requested</dd>
   <dt>ECA_PUTFAIL</dt>
@@ -2920,7 +2922,7 @@ preemptively from more than one thread.</p>
   <dt>ECA_GETFAIL</dt>
     <dd>Channel read request failed</dd>
   <dt>ECA_ADDFAIL</dt>
-    <dd>unable to instal subscription request</dd>
+    <dd>unable to install subscription request</dd>
   <dt>ECA_TIMEOUT</dt>
     <dd>User specified timeout on IO operation expired</dd>
   <dt>ECA_EVDISALLOW</dt>

@@ -15,7 +15,7 @@
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 
-int epicsShareAPI registerRecordDeviceDriverBase(struct dbBase *pdbbase)
+int registerRecordDeviceDriver(struct dbBase *pdbbase)
 {
     dbRecordType *pdbRecordType;
     recordTypeLocation *precordTypeLocation;

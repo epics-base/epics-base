@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/02/18 22:52:22  jhill
+ * fixed to run on both vis C++ 5.0 and g++
+ *
  * Revision 1.6  1998/02/05 22:47:46  jhill
  * workaround vis C++ 5.0 bug
  *
@@ -255,12 +258,12 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		return;
 	}
 	maxApp = newApplTypeMax+(1u<<6u);
-#	if defined(_MSC_VER) && (_MSC_VER<1100)
+#	if defined(_MSC_VER)
 		//
-		//      MS Visual C++ 4.0 or lower compilers allocate the
-		//      wrong amount of memory (i.e. too little)
-		//      for member function pointers,
-		//      only explicit calculation via sizeof() works.
+		// MS Visual C++ 5.0 (_MSC_VER==1100) or lower 
+		// compilers allocate the wrong amount of memory 
+		// (i.e. too little) for member function pointers,
+		// only explicit calculation via sizeof() works.
 		//
 		pMNewFuncTbl = (gddAppFuncTablePMF(*))
 			new char[sizeof(gddAppFuncTablePMF_t) * maxApp];

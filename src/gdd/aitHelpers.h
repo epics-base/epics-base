@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  1997/08/05 00:51:06  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.13  1997/04/23 17:12:54  jhill
  * fixed export of symbols from WIN32 DLL
  *
@@ -202,10 +205,10 @@ public:
 	void dump(const char* id) const;
 
 	// casts from aitString to other things - pulls info out of aitString
-	inline operator aitUint16(void) const	{ return (aitUint16)len; }
-	inline operator aitUint32(void) const	{ return (aitUint32)len; }
-	inline operator aitInt32(void) const		{ return (aitInt32)len; }
-	inline operator const char*(void) const	{ return str; }
+	inline operator aitUint16(void) const	{ return (aitUint16)this->len; }
+	inline operator aitUint32(void) const	{ return (aitUint32)this->len; }
+	inline operator aitInt32(void) const		{ return (aitInt32)this->len; }
+	inline operator const char*(void) const	{ return this->str; }
 	inline operator char*(void) const		
 	{ 
 		assert(type!=aitStrRefConst && type!=aitStrRefConstImortal); 
@@ -213,8 +216,8 @@ public:
 	}
 	inline int isConstant(void) const;
 
-	inline aitUint32 length(void) const	{ return (aitUint32)len; }
-	inline const char* string(void) const	{ return str; }
+	inline aitUint32 length(void) const	{ return (aitUint32)this->len; }
+	inline const char* string(void) const	{ return this->str; }
 
 	// completely reset the aitString to a new value
 	// - the same as copy()
@@ -282,20 +285,20 @@ private:
 
 inline void aitString::init(void) 
 { 
-	str="";
-	len=0u;
-	bufLen=1u;
-	type=aitStrRefConstImortal;
+	this->str="";
+	this->len=0u;
+	this->bufLen=1u;
+	this->type=aitStrRefConstImortal;
 }
 
 inline int aitString::isConstant(void) const
 {
-	return ( (getType()==aitStrRefConst||getType()==aitStrRefConstImortal) && str)?1:0;
+	return ( (getType()==aitStrRefConst||getType()==aitStrRefConstImortal) && this->str)?1:0;
 }
 
 inline void aitString::clear(void)
 {
-	if(str && type==aitStrCopy) delete [] str;
+	if(this->str && this->type==aitStrCopy) delete [] this->str;
 	this->init();
 }
 
@@ -304,8 +307,8 @@ inline void aitString::extractString(char* p, unsigned bufLength)
 	if (bufLength==0u) {
 		return;
 	}
-	else if (str) {
-		strncpy(p,str,bufLength);
+	else if (this->str) {
+		strncpy(p,this->str,bufLength);
 		p[bufLength-1u]='\0';
 	}
 	else {
@@ -319,7 +322,7 @@ inline void aitString::extractString(char* p, unsigned bufLength)
 inline int aitString::installBuf(const char* pString, unsigned strLengthIn, unsigned bufSizeIn)
 {
 	if (this->type==aitStrCopy) {
-		delete [] str;
+		delete [] this->str;
 	}
 	this->str = (char *) pString;
 	this->bufLen = bufSizeIn;
@@ -346,7 +349,7 @@ inline int aitString::installBuf(const char* pString, unsigned strLengthIn)
 inline int aitString::installConstBuf(const char* pString, unsigned strLengthIn, unsigned bufSizeIn)
 {
 	if (this->type==aitStrCopy) {
-		delete [] str;
+		delete [] this->str;
 	}
 	this->str = (char *) pString;
 	this->bufLen = bufSizeIn;
@@ -374,7 +377,7 @@ inline int aitString::installConstImortalBuf(const char* pString,
 					unsigned strLengthIn, unsigned bufSizeIn)
 {
 	if (this->type==aitStrCopy) {
-		delete [] str;
+		delete [] this->str;
 	}
 	this->str = (char *) pString;
 	this->bufLen = bufSizeIn;
@@ -432,7 +435,7 @@ inline aitString& aitString::operator=(const char* p)
 inline aitString::~aitString(void)
 {
 	// dump("~aitString");
-	clear();
+	this->clear();
 }
 
 inline aitString::aitString(void) 

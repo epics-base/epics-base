@@ -324,10 +324,10 @@ void *threadPrivateGet(threadPrivateId id)
         papTSD[0] = (void *)(indpthreadPrivate);
     }
     if ( (int) id <= (int) papTSD[0] ) {
-        data = 0;
+        data = papTSD[(int)id];
     }
     else {
-        data = papTSD[(int)id];
+        data = 0;
     }
     return(data);
 }

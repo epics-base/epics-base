@@ -700,7 +700,7 @@ record(stringin,"$(user):OP:stabilizerMsg") {
         field(VAL,"Sequence Off")
 }
 record(stringin,"$(user):OP:autoMsg") {
-        field(VAL,"Operator Control")
+        field(VAL,"Sequencer program not running")
 }
 record(stringin,"$(user):operatorM") {
         field(VAL,"")

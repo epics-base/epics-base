@@ -337,6 +337,7 @@ static long readValue(pbi)
 	long		status;
         struct bidset 	*pdset = (struct bidset *) (pbi->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pbi->pact == TRUE){
 		status=(*pdset->read_bi)(pbi);
@@ -344,7 +345,7 @@ static long readValue(pbi)
 	}
 
 	status=recGblGetLinkValue(&(pbi->siml),
-		(void *)pbi,DBR_ENUM,&(pbi->simm),&nRequest);
+		(void *)pbi,DBR_ENUM,&(pbi->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -354,7 +355,7 @@ static long readValue(pbi)
 	}
 	if (pbi->simm == YES){
 		status=recGblGetLinkValue(&(pbi->siol),
-				(void *)pbi,DBR_USHORT,&(pbi->sval),&nRequest);
+				(void *)pbi,DBR_USHORT,&(pbi->sval),&options,&nRequest);
 		if (status==0){
 			pbi->val=pbi->sval;
 			pbi->udf=FALSE;

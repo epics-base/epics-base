@@ -421,6 +421,7 @@ static long readValue(pmbbi)
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbi->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pmbbi->pact == TRUE){
 		status=(*pdset->read_mbbi)(pmbbi);
@@ -428,7 +429,7 @@ static long readValue(pmbbi)
 	}
 
 	status=recGblGetLinkValue(&(pmbbi->siml),
-		(void *)pmbbi,DBR_ENUM,&(pmbbi->simm),&nRequest);
+		(void *)pmbbi,DBR_ENUM,&(pmbbi->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -438,7 +439,7 @@ static long readValue(pmbbi)
 	}
 	if (pmbbi->simm == YES){
 		status=recGblGetLinkValue(&(pmbbi->siol),
-				(void *)pmbbi,DBR_USHORT,&(pmbbi->sval),&nRequest);
+			(void *)pmbbi,DBR_USHORT,&(pmbbi->sval),&options,&nRequest);
 		if (status==0){
 			pmbbi->val=pmbbi->sval;
 			pmbbi->udf=FALSE;

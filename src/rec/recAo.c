@@ -582,6 +582,7 @@ static long writeValue(pao)
 	long		status;
         struct aodset 	*pdset = (struct aodset *) (pao->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pao->pact == TRUE){
 		status=(*pdset->write_ao)(pao);
@@ -589,7 +590,7 @@ static long writeValue(pao)
 	}
 
 	status=recGblGetLinkValue(&(pao->siml),
-		(void *)pao,DBR_ENUM,&(pao->simm),&nRequest);
+		(void *)pao,DBR_ENUM,&(pao->simm),&options,&nRequest);
 	if (status)
 		return(status);
 

@@ -370,6 +370,7 @@ static long readValue(plongin)
 	long		status;
         struct longindset 	*pdset = (struct longindset *) (plongin->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (plongin->pact == TRUE){
 		status=(*pdset->read_longin)(plongin);
@@ -377,7 +378,7 @@ static long readValue(plongin)
 	}
 
 	status=recGblGetLinkValue(&(plongin->siml),
-		(void *)plongin,DBR_ENUM,&(plongin->simm),&nRequest);
+		(void *)plongin,DBR_ENUM,&(plongin->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -387,7 +388,7 @@ static long readValue(plongin)
 	}
 	if (plongin->simm == YES){
 		status=recGblGetLinkValue(&(plongin->siol),
-				(void *)plongin,DBR_LONG,&(plongin->sval),&nRequest);
+			(void *)plongin,DBR_LONG,&(plongin->sval),&options,&nRequest);
 		if (status==0){
 			plongin->val=plongin->sval;
 			plongin->udf=FALSE;

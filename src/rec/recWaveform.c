@@ -370,6 +370,7 @@ static long readValue(pwf)
         long            status;
         struct wfdset   *pdset = (struct wfdset *) (pwf->dset);
 	long            nRequest=1;
+	long            options=0;
 
 
         if (pwf->pact == TRUE){
@@ -378,7 +379,7 @@ static long readValue(pwf)
         }
 
         status=recGblGetLinkValue(&(pwf->siml),
-                (void *)pwf,DBR_ENUM,&(pwf->simm),&nRequest);
+                (void *)pwf,DBR_ENUM,&(pwf->simm),&options,&nRequest);
         if (status)
                 return(status);
 
@@ -389,7 +390,7 @@ static long readValue(pwf)
         if (pwf->simm == YES){
         	nRequest=pwf->nelm;
                 status=recGblGetLinkValue(&(pwf->siol),
-                                (void *)pwf,pwf->ftvl,pwf->bptr,&nRequest);
+                                (void *)pwf,pwf->ftvl,pwf->bptr,&options,&nRequest);
         	pwf->nord = nRequest;
                 if (status==0){
                          pwf->udf=FALSE;

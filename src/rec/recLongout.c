@@ -414,6 +414,7 @@ static long writeValue(plongout)
 	long		status;
         struct longoutdset 	*pdset = (struct longoutdset *) (plongout->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (plongout->pact == TRUE){
 		status=(*pdset->write_longout)(plongout);
@@ -421,7 +422,7 @@ static long writeValue(plongout)
 	}
 
 	status=recGblGetLinkValue(&(plongout->siml),
-		(void *)plongout,DBR_ENUM,&(plongout->simm),&nRequest);
+		(void *)plongout,DBR_ENUM,&(plongout->simm),&options,&nRequest);
 	if (status)
 		return(status);
 

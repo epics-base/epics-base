@@ -221,6 +221,7 @@ static long readValue(pevent)
         long            status;
         struct eventdset   *pdset = (struct eventdset *) (pevent->dset);
 	long            nRequest=1;
+	long            options=0;
 
         if (pevent->pact == TRUE){
                 status=(*pdset->read_event)(pevent);
@@ -228,7 +229,7 @@ static long readValue(pevent)
         }
 
         status=recGblGetLinkValue(&(pevent->siml),
-                (void *)pevent,DBR_ENUM,&(pevent->simm),&nRequest);
+                (void *)pevent,DBR_ENUM,&(pevent->simm),&options,&nRequest);
         if (status)
                 return(status);
 
@@ -238,7 +239,7 @@ static long readValue(pevent)
         }
         if (pevent->simm == YES){
                 status=recGblGetLinkValue(&(pevent->siol),
-                                (void *)pevent,DBR_USHORT,&(pevent->sval),&nRequest);
+                        (void *)pevent,DBR_USHORT,&(pevent->sval),&options,&nRequest);
                 if (status==0){
                         pevent->val=pevent->sval;
                         pevent->udf=FALSE;

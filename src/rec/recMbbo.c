@@ -492,6 +492,7 @@ static long writeValue(pmbbo)
 	long		status;
         struct mbbodset 	*pdset = (struct mbbodset *) (pmbbo->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pmbbo->pact == TRUE){
 		status=(*pdset->write_mbbo)(pmbbo);
@@ -499,7 +500,7 @@ static long writeValue(pmbbo)
 	}
 
 	status=recGblGetLinkValue(&(pmbbo->siml),
-		(void *)pmbbo,DBR_ENUM,&(pmbbo->simm),&nRequest);
+		(void *)pmbbo,DBR_ENUM,&(pmbbo->simm),&options,&nRequest);
 	if (status)
 		return(status);
 

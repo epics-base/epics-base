@@ -440,6 +440,7 @@ static long readValue(phistogram)
         long            status;
         struct histogramdset   *pdset = (struct histogramdset *) (phistogram->dset);
 	long            nRequest=1;
+	long            options=0;
 
         if (phistogram->pact == TRUE){
                 status=(*pdset->read_histogram)(phistogram);
@@ -447,7 +448,7 @@ static long readValue(phistogram)
         }
 
         status=recGblGetLinkValue(&(phistogram->siml),
-                (void *)phistogram,DBR_ENUM,&(phistogram->simm),&nRequest);
+                (void *)phistogram,DBR_ENUM,&(phistogram->simm),&options,&nRequest);
         if (status)
                 return(status);
 
@@ -457,7 +458,7 @@ static long readValue(phistogram)
         }
         if (phistogram->simm == YES){
                 status=recGblGetLinkValue(&(phistogram->siol),
-                                (void *)phistogram,DBR_DOUBLE,&(phistogram->sval),&nRequest);
+                       (void *)phistogram,DBR_DOUBLE,&(phistogram->sval),&options,&nRequest);
                 if (status==0){
                          phistogram->sgnl=phistogram->sval;
                 }

@@ -493,6 +493,7 @@ static long readValue(pai)
 	long		status;
         struct aidset 	*pdset = (struct aidset *) (pai->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pai->pact == TRUE){
 		status=(*pdset->read_ai)(pai);
@@ -500,7 +501,7 @@ static long readValue(pai)
 	}
 
 	status=recGblGetLinkValue(&(pai->siml),
-		(void *)pai,DBR_ENUM,&(pai->simm),&nRequest);
+		(void *)pai,DBR_ENUM,&(pai->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -510,7 +511,7 @@ static long readValue(pai)
 	}
 	if (pai->simm == YES){
 		status=recGblGetLinkValue(&(pai->siol),
-				(void *)pai,DBR_DOUBLE,&(pai->sval),&nRequest);
+				(void *)pai,DBR_DOUBLE,&(pai->sval),&options,&nRequest);
 		if (status==0){
 			 pai->val=pai->sval;
 			 pai->udf=FALSE;

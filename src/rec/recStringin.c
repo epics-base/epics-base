@@ -240,6 +240,7 @@ static long readValue(pstringin)
 	long		status;
         struct stringindset 	*pdset = (struct stringindset *) (pstringin->dset);
 	long            nRequest=1;
+	long            options=0;
 
 
 	if (pstringin->pact == TRUE){
@@ -248,7 +249,7 @@ static long readValue(pstringin)
 	}
 
 	status=recGblGetLinkValue(&(pstringin->siml),
-		(void *)pstringin,DBR_ENUM,&(pstringin->simm),&nRequest);
+		(void *)pstringin,DBR_ENUM,&(pstringin->simm),&options,&nRequest);
 	if (status)
 		return(status);
 
@@ -258,7 +259,7 @@ static long readValue(pstringin)
 	}
 	if (pstringin->simm == YES){
 		status=recGblGetLinkValue(&(pstringin->siol),
-				(void *)pstringin,DBR_STRING,pstringin->sval,&nRequest);
+				(void *)pstringin,DBR_STRING,pstringin->sval,&options,&nRequest);
 		if (status==0){
 			strcpy(pstringin->val,pstringin->sval);
 			pstringin->udf=FALSE;

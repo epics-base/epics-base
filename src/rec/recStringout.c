@@ -292,6 +292,7 @@ static long writeValue(pstringout)
 	long		status;
         struct stringoutdset 	*pdset = (struct stringoutdset *) (pstringout->dset);
 	long            nRequest=1;
+	long            options=0;
 
 	if (pstringout->pact == TRUE){
 		status=(*pdset->write_stringout)(pstringout);
@@ -299,7 +300,7 @@ static long writeValue(pstringout)
 	}
 
 	status=recGblGetLinkValue(&(pstringout->siml),
-		(void *)pstringout,DBR_ENUM,&(pstringout->simm),&nRequest);
+		(void *)pstringout,DBR_ENUM,&(pstringout->simm),&options,&nRequest);
 	if (status)
 		return(status);
 

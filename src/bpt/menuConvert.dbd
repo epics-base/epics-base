@@ -1,7 +1,7 @@
 menu(menuConvert) {
 	choice(menuConvertNO_CONVERSION,"NO CONVERSION")
-	choice(menuConvertLINEAR,"LINEAR")
 	choice(menuConvertSLOPE,"SLOPE")
+	choice(menuConvertLINEAR,"LINEAR")
 	choice(menuConverttypeKdegF,"typeKdegF")
 	choice(menuConverttypeKdegC,"typeKdegC")
 	choice(menuConverttypeJdegF,"typeJdegF")

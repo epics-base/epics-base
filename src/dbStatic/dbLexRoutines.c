@@ -810,6 +810,10 @@ static void dbBreakBody(void)
 	  (pnewbrkTable->papBrkInt[i+1]->eng - pnewbrkTable->papBrkInt[i]->eng)/
 	  (pnewbrkTable->papBrkInt[i+1]->raw - pnewbrkTable->papBrkInt[i]->raw);
     }
+    if(number>1) {
+        pnewbrkTable->papBrkInt[number-1]->slope =
+            pnewbrkTable->papBrkInt[number-2]->slope;
+    }
     /* Add brkTable in sorted order */
     pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     while(pbrkTable) {

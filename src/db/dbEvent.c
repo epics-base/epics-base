@@ -221,9 +221,9 @@ int epicsShareAPI dbel (const char *pname, unsigned level)
 
         if (level>3) {
             printf (" ev %p ev que %p ev user %p\n", 
-                static_cast < void * > ( pevent ), 
-                static_cast < void * > ( pevent->ev_que ), 
-                static_cast < void * > ( pevent->ev_que->evUser ) );
+                ( void * )pevent, 
+                ( void * ) pevent->ev_que, 
+                ( void * ) pevent->ev_que->evUser );
         }
 
 	    printf("\n");

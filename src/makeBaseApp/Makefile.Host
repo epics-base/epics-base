@@ -1,0 +1,42 @@
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+TEMPLATES_DIR = makeBaseApp
+TEMPLATES += top/Makefile
+TEMPLATES += top/config/CONFIG
+TEMPLATES += top/config/CONFIG_APP
+TEMPLATES += top/config/RELEASE
+TEMPLATES += top/config/RULES.Db
+TEMPLATES += top/config/RULES.Host
+TEMPLATES += top/config/RULES.Vx
+TEMPLATES += top/config/RULES.ioc
+TEMPLATES += top/config/RULES.iocBoot
+TEMPLATES += top/config/RULES_ARCHS
+TEMPLATES += top/config/RULES_DIRS
+TEMPLATES += top/config/RULES_TOP
+TEMPLATES += top/config/makeSoftLinks
+
+TEMPLATES += top/App/Makefile
+TEMPLATES += top/App/Db/Makefile
+TEMPLATES += top/App/Db/dbExample.db
+TEMPLATES += top/App/src/Makefile
+TEMPLATES += top/App/src/Makefile.Host
+TEMPLATES += top/App/src/Makefile.Vx
+TEMPLATES += top/App/src/MakefileExample.Host
+TEMPLATES += top/App/src/MakefileExample.Vx
+TEMPLATES += top/App/src/caExample.c
+TEMPLATES += top/App/src/devXxxSoft.c
+TEMPLATES += top/App/src/exampleInclude.dbd
+TEMPLATES += top/App/src/sncExample.st
+TEMPLATES += top/App/src/xxxRecord.c
+TEMPLATES += top/App/src/xxxRecord.dbd
+
+TEMPLATES += top/iocBoot/Makefile
+TEMPLATES += top/iocBoot/nfsCommands
+TEMPLATES += top/iocBoot/ioc/Makefile
+TEMPLATES += top/iocBoot/ioc/st.cmd
+TEMPLATES += top/iocBoot/ioc/st.cmdExample
+
+SCRIPTS += makeBaseApp.pl
+
+include $(TOP)/config/RULES.Host

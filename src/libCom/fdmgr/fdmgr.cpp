@@ -62,17 +62,6 @@ private:
 	epicsShareFunc virtual void callBack ();
 };
 
-class oldFdmgr : public fdManager {
-    friend class osiTimerForOldFdmgr;
-    friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
-public:
-
-    oldFdmgr ();
-
-private:
-    chronIntIdResTable <osiTimerForOldFdmgr> resTbl;
-};
-
 //
 // osiTimerForOldFdmgr
 //
@@ -107,6 +96,16 @@ private:
     unsigned id;
 };
 
+class oldFdmgr : public fdManager {
+    friend class osiTimerForOldFdmgr;
+    friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
+
+public:
+    oldFdmgr ();
+
+private:
+    chronIntIdResTable <osiTimerForOldFdmgr> resTbl;
+};
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
 	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :

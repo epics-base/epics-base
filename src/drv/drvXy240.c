@@ -1,10 +1,8 @@
-/*xy240_driver.c
- *
- *
+/* xy240_driver.c */
 /* share/src/drv @(#)xy240_driver.c	1.1     6/25/92 */
 /*
- *routines used to test and interface with Xycom240
- *digital i/o module
+ *	routines used to test and interface with Xycom240
+ *	digital i/o module
  *
  * 	Author:      B. Kornke
  * 	Date:        11/20/91
@@ -33,29 +31,67 @@
  * -----------------
  * .01	06-25-92	bg	Added driver to code.  Added xy240_io_report
  *				to it. Added copyright disclaimer.
+ * .02	08-10-92	joh	merged xy240_driver.h into this source
+ * .03	08-11-92	joh	fixed use of XY240 where XY240_BI or XY240_BO
+ *				should have been used
+ * .04  08-11-92	joh	now allows for runtime reconfiguration of
+ *				the addr map
  */
 
 #include "vxWorks.h"
-#include "module_types.h"
-#include "vme.h"
-#include "xy240_driver.h"
 #include "taskLib.h"
+#include "vme.h"
+#include "module_types.h"
+
+#define XY240_ADDR0	(bi_addrs[XY240_BI])
+#define XY240_MAX_CARDS	(bi_num_cards[XY240_BI])
+#define XY240_MAX_CHANS	(bi_num_channels[XY240_BI])
+
+/*xy240 memory structure*/
+struct dio_xy240{
+        char            begin_pad[0x80];        /*go to interface block*/
+        unsigned short  csr;                    /*control status register*/
+        unsigned short  isr;                    /*interrupt service routine*/
+        unsigned short  iclr_vec;               /*interrupt clear/vector*/
+        unsigned short  flg_dir;                /*flag&port direction*/
+        unsigned short  port0_1;                /*port0&1 16 bits value*/
+        unsigned short  port2_3;                /*por2&3 16 bits value*/
+        unsigned short  port4_5;                /*port4&5 16 bits value*/
+        unsigned short  port6_7;                /*port6&7 16 bits value*/
+        char            end_pad[0x400-0x80-16]; /*pad til next card*/
+};
+
+/*create dio control structure record*/
+struct dio_rec
+        {
+        struct dio_xy240 *dptr;                 /*pointer to registers*/
+        short num;                              /*device number*/
+        short mode;                             /*operating mode*/
+        unsigned short sport0_1;                /*saved inputs*/
+        unsigned short sport2_3;                /*saved inputs*/
+        /*short dio_vec;*/                      /*interrupt vector*/
+        /*unsigned int intr_num;*/              /*interrupt count*/
+        };
 
 
-struct dio_rec dio[XY240_MAX_CARDS];	/*define array of control structures*/
+LOCAL
+struct dio_rec *dio;	/*define array of control structures*/
 
 /*dio_int
  *
  *interrupt service routine
  *
  */
-/*dio_int(ptr)
+#if 0
+dio_int(ptr)
  register struct dio_rec *ptr;
 {
  register struct dio_xy240 *regptr;
 
- regptr = ptr->dptr;                                                                                                                                                                                                                                                                                                            
-}*/
+ regptr = ptr->dptr;
+
+}
+#endif
 
 /*
  *
@@ -84,7 +120,7 @@ dio_scan()
 		|| first_scan)
       {
 	 /* printf("io_scanner_wakeup for card no %d\n",i); */
-	  io_scanner_wakeup(IO_BI,XY240,i);	  
+	  io_scanner_wakeup(IO_BI,XY240_BI,i);	  
 	  dio[i].sport0_1 = dio[i].dptr->port0_1;
 	  dio[i].sport2_3 = dio[i].dptr->port2_3;	  
 	  }
@@ -110,9 +146,17 @@ xy240_init()
 	static char *name = "scan";
 	int tid,status;
 
-	pdio_xy240 = (struct dio_xy240 *) XY240_ADDR0;			/*point to card*/
+	/*
+	 * allow for runtime reconfiguration of the
+	 * addr map
+	 */
+	dio = (struct dio_rec *) calloc(XY240_MAX_CARDS, sizeof(*dio));
+	if(!dio){
+		return ERROR;
+	}
 
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,XY240_ADDR0,&pdio_xy240)) != OK){
+	status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,XY240_ADDR0,&pdio_xy240);
+        if (status != OK){
            printf("Addressing error in xy240 driver\n");
            return ERROR;
         }
@@ -289,14 +333,15 @@ xy240_write(card,val)
 xy240_io_report(level)
 short int level;
 {
-  short int i;
+  	short int i;
+
         for (i = 0; i < XY240_MAX_CARDS; i++){
         
                 if(dio[i].dptr){
-                   printf("XY240:      card %d\n",i);
-                   if (level < 1){
-                       printf("\tBinary In  Channels 0 - 31\n");
-                       printf("\tBinary Out Channels 0 - 31\n");
+                   printf("B*: XY240:\tcard %d\n",i);
+                   if (level >= 1){
+			xy240_bi_io_report();
+			xy240_bo_io_report();
                    }
                 }
         }
@@ -310,6 +355,8 @@ xy240_bi_io_report(){
         int ival,jval,kval,lval,mval;
         unsigned int   *prval;
         short int first_time = 0;
+
+	printf("\tBinary In  Channels 0 - 31\n");
 
         num_chans = XY240_MAX_CHANS;
 
@@ -360,6 +407,8 @@ xy240_bo_io_report(){
         int ival,jval,kval,lval,mval;
         unsigned int   *prval;
         short int first_time = 0;
+
+	printf("\tBinary Out Channels 0 - 31\n");
 
         num_chans = XY240_MAX_CHANS;
 

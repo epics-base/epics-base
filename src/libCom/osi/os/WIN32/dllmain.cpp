@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #define VC_EXTRALEAN
+#define STRICT
 #include <winsock2.h>
 
 #include "epicsVersion.h"

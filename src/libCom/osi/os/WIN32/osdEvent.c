@@ -21,7 +21,7 @@
 #include <limits.h>
 
 #define VC_EXTRALEAN
-#define _WIN32_WINNT 0x400 // currently not needed
+#define STRICT
 #include <windows.h>
 
 #define epicsExportSharedSymbols

@@ -22,7 +22,20 @@
 #include <limits.h>
 
 #define VC_EXTRALEAN
-#define _WIN32_WINNT 0x400
+#define STRICT
+/* 
+ * Defining this allows the *much* faster critical
+ * section mutex primitive to be used. Unfortunately,
+ * using certain of these functions drops support for W95 
+ * unless we specify "delay loading" when we link with the 
+ * DLL so that DLL entry points are not resolved until they 
+ * are used. The code does have run time switches so
+ * that the more advanced calls are not called unless 
+ * they are available in the windows OS, but this feature
+ * isnt going to be very useful unless we specify "delay 
+ * loading" when we link with the DLL
+ */
+#define _WIN32_WINNT 0x0400 
 #include <windows.h>
 
 #define epicsExportSharedSymbols

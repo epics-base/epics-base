@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 
+#define STRICT
 #include <windows.h>
 
 #define epicsExportSharedSymbols

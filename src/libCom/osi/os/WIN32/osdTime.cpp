@@ -26,8 +26,8 @@
 // WIN32
 //
 #define VC_EXTRALEAN
-#include <winsock2.h>
-#include <process.h>
+#define STRICT
+#include <windows.h>
 
 //
 // EPICS

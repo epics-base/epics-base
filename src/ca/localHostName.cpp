@@ -25,19 +25,17 @@
 
 epicsSingleton < localHostName > localHostNameAtLoadTime;
 
-localHostName::localHostName ()
+localHostName::localHostName () :
+    attachedToSockLib ( osiSockAttach () != 0 ), length ( 0u )
 {
-    int status = osiSockAttach ();
-    if ( status ) {
-        this->attachedToSockLib = true;
-        status = gethostname ( this->cache, sizeof ( this->cache ) - 1 );
-        if ( status ) {
-            strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
-        }
+    const char * pErrStr = "<unknown host>";
+    int status = -1;
+    if ( this->attachedToSockLib ) {
+        status = gethostname ( 
+            this->cache, sizeof ( this->cache ) );
     }
-    else {
-        this->attachedToSockLib = false;
-        strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
+    if ( status ) {
+        strncpy ( this->cache, pErrStr, sizeof ( this->cache ) );
     }
     this->cache [ sizeof ( this->cache ) - 1u ] = '\0';
     this->length = strlen ( this->cache );
@@ -48,4 +46,21 @@ localHostName::~localHostName ()
     if ( this->attachedToSockLib ) {
         osiSockRelease ();
     }
+}
+
+unsigned localHostName::getName ( 
+    char * pBuf, unsigned bufLength ) const
+{
+    if ( bufLength ) {
+        strncpy ( pBuf, this->cache, bufLength );
+        if ( this->length < bufLength ) {
+            return this->length;
+        }
+        else {
+            unsigned reducedSize = bufLength - 1;
+            pBuf [ reducedSize ] = '\0';
+            return reducedSize;
+        }
+    }
+    return 0u;
 }

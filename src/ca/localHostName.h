@@ -40,8 +40,8 @@ public:
     localHostName ();
     ~localHostName ();
     const char * pointer () const;
-    void copy ( char *pBuf, unsigned bufLength ) const;
-    unsigned stringLength () const;
+    unsigned getName ( char * pBuf, unsigned bufLength ) const;
+    unsigned nameLength () const;
 private:
     bool attachedToSockLib;
     unsigned length;
@@ -50,17 +50,9 @@ private:
 
 extern epicsSingleton < localHostName > localHostNameAtLoadTime;
 
-inline unsigned localHostName::stringLength () const
+inline unsigned localHostName::nameLength () const
 {
     return this->length;
-}
-
-inline void localHostName::copy ( char *pBuf, unsigned bufLength ) const
-{
-    if ( bufLength ) {
-        strncpy ( pBuf, this->cache, bufLength );
-        pBuf [ bufLength - 1 ] = '\0';
-    }
 }
 
 inline const char * localHostName::pointer () const

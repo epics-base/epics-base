@@ -31,6 +31,9 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.43.4.1  1999/07/15 20:33:46  jhill
+ * added congestion thresh to search sched alg
+ *
  * Revision 1.43  1998/11/17 02:40:56  jhill
  * fixed infinite loop
  *
@@ -93,7 +96,7 @@ LOCAL int updateBeaconPeriod (bhe *pBHE);
 /*
  *	checkConnWatchdogs()
  */
-void checkConnWatchdogs()
+void checkConnWatchdogs(unsigned closeAllowed)
 {
 	IIU *piiu;
 	ca_real delay;
@@ -132,7 +135,7 @@ void checkConnWatchdogs()
 			}
 		}
 
-		if (piiu->state==iiu_disconnected) {
+		if (closeAllowed && piiu->state==iiu_disconnected) {
 			cac_close_ioc (piiu);
 		}
 

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
+ * fixed bug where client disconnects while waiting to send TCP
+ *
  * Revision 1.39  1998/09/24 21:22:55  jhill
  * subtle changes related to efficency when checking connection timers
  *
@@ -983,7 +986,7 @@ void cac_recv_task(int  tid)
 
 		ca_process_input_queue ();
 
-		checkConnWatchdogs ();
+		checkConnWatchdogs (TRUE);
 #endif
 	}
 }

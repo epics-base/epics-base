@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.1  1999/07/15 20:23:57  jhill
+ * fixed bug where client disconnects while waiting to send TCP
+ *
  * Revision 1.107  1998/10/27 00:43:27  jhill
  * eliminated warning
  *
@@ -410,6 +413,16 @@ const void		*pext
 		if (piiu->state==iiu_connected) {
 			(*piiu->sendBytes)(piiu);
 		}
+
+		/*
+		 * if connection drops request
+		 * cant be completed
+		 */
+		if (piiu->state!=iiu_connected) {
+            UNLOCK;
+			return ECA_DISCONNCHID;
+		}
+
 		bytesAvailable = 
 			cacRingBufferWriteSize(&piiu->send, contig);
 
@@ -434,18 +447,19 @@ const void		*pext
 
 			UNLOCK;
 
+			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
+			cac_mux_io (&itimeout, FALSE);
+
+			LOCK;
+
 			/*
 			 * if connection drops request
 			 * cant be completed
 			 */
 			if (piiu->state!=iiu_connected) {
+                UNLOCK;
 				return ECA_DISCONNCHID;
 			}
-
-			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
-			cac_mux_io (&itimeout, FALSE);
-
-			LOCK;
 
 			bytesAvailable = cacRingBufferWriteSize(
 						&piiu->send, contig);

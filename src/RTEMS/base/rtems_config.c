@@ -8,8 +8,8 @@
  * RTEMS configuration for EPICS
  *  $Id$
  *      Author: W. Eric Norum
- *              eric@cls.usask.ca
- *              (306) 966-6055
+ *              norume@aps.anl.gov
+ *              (630) 252-4793
  */
 
 #include <rtems.h>
@@ -48,8 +48,6 @@ rtems_task Init (rtems_task_argument argument);
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-#ifndef mpc7455
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
-#endif
 
 #include <confdefs.h>

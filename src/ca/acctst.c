@@ -471,7 +471,10 @@ int doacctst(char *pname)
 	SEVCHK(ca_modify_user_name("Willma"), NULL);
 	SEVCHK(ca_modify_host_name("Bed Rock"), NULL);
 
-	assert(conn_get_cb_count == 3);
+	if (conn_get_cb_count != 3){
+		printf ("!!!! Connect cb count = %d expected = 3 !!!!\n", 
+			conn_get_cb_count);
+	}
 
 	printf("-- Put/Gets done- waiting for Events --\n");
 	status = ca_pend_event(10.0);

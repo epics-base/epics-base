@@ -81,6 +81,11 @@ void cac_mux_io(struct timeval  *ptimeout)
 
         timeout = *ptimeout;
         do{
+        	/*
+         	 * manage search timers and detect disconnects
+         	 */
+        	manage_conn(TRUE);
+
                 newInput = FALSE;
                 do{
                         count = cac_select_io(
@@ -96,10 +101,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 
                 ca_process_input_queue();
 
-        	/*
-         	 * manage search timers and detect disconnects
-         	 */
-        	manage_conn(TRUE);
         }
         while(newInput);
 
@@ -171,7 +172,9 @@ int cac_add_task_variable(struct ca_static *ca_temp)
  */
 int cac_os_depen_init(struct ca_static *pcas)
 {
-        int status;
+        int 			status;
+
+	ca_static = pcas;
 
 	/*
 	 * dont allow disconnect to terminate process
@@ -182,7 +185,22 @@ int cac_os_depen_init(struct ca_static *pcas)
 	 */
 	signal(SIGPIPE,SIG_IGN);
 
-        return ECA_NORMAL;
+	status = ca_os_independent_init ();
+
+        return status;
+}
+
+
+/*
+ * cac_os_depen_exit ()
+ */
+void cac_os_depen_exit (struct ca_static *pcas)
+{
+	ca_static = pcas;
+	ca_process_exit();
+	ca_static = NULL;
+
+	free ((char *)pcas);
 }
 
 
@@ -261,17 +279,6 @@ void ca_spawn_repeater()
 		assert(0);
 	}
 	exit(0);
-}
-
-
-
-/*
- * Setup recv thread
- * (OS dependent)
- */
-int cac_setup_recv_thread(IIU *piiu)
-{
-	return ECA_NORMAL;
 }
 
 

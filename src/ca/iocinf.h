@@ -257,8 +257,6 @@ typedef struct caclient_put_notify{
 #define pFastBucket	(ca_static->ca_pFastBucket)
 #define nextSlowBucketId (ca_static->ca_nextSlowBucketId)
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
-#define readch		(ca_static->ca_readch)
-#define writech		(ca_static->ca_writech)
 
 #if defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
@@ -370,6 +368,18 @@ typedef struct beaconHashEntry{
 	ca_real			averagePeriod;
 }bhe;
 
+/*
+ * This struct allocated off of a free list 
+ * so that the select() ctx is thread safe
+ */
+typedef struct {
+	ELLNODE		node;
+	fd_set          readMask;  
+	fd_set          writeMask;  
+	fd_set		writeSave;
+	fd_set		readSave;
+}caFDInfo;
+
 struct  ca_static{
 	ELLLIST		ca_iiuList;
 	ELLLIST		ca_ioeventlist;
@@ -381,20 +391,23 @@ struct  ca_static{
 	ELLLIST		activeCASGOP;
 	ELLLIST		freeCASGOP;
 	ELLLIST		putCvrtBuf;
+	ELLLIST		fdInfoFreeList;
+	ELLLIST		fdInfoList;
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
 	ca_time		ca_last_repeater_try;
-	fd_set          ca_readch;  
-	fd_set          ca_writech;  
 	long		ca_pndrecvcnt;
 	unsigned long	ca_nextSlowBucketId;
 	unsigned long	ca_nextFastBucketId;
 	IIU		*ca_piiuCast;
-	void		(*ca_exception_func)();
+	void		(*ca_exception_func)
+				(struct exception_handler_args);
 	void		*ca_exception_arg;
-	void		(*ca_connection_func)();
+	void		(*ca_connection_func)
+				(struct connection_handler_args);
 	void		*ca_connection_arg;
-	void		(*ca_fd_register_func)();
+	void		(*ca_fd_register_func)
+				(void *, SOCKET, int);
 	void		*ca_fd_register_arg;
 	char		*ca_pUserName;
 	char		*ca_pHostName;
@@ -473,9 +486,9 @@ struct ca_static *ca_static;
  *
  */
 
-void 	cac_send_msg();
+void 	cac_send_msg(void);
 void 	cac_mux_io(struct timeval *ptimeout);
-int	repeater_installed();
+int	repeater_installed(void);
 int	search_msg(chid chix, int reply_type);
 int	ca_request_event(evid monix);
 void 	ca_busy_message(struct ioc_in_use *piiu);
@@ -491,7 +504,7 @@ void 	manage_conn(int silent);
 void 	mark_server_available(struct in_addr *pnet_addr);
 void	flow_control(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
-void	ca_repeater();
+void	ca_repeater(void);
 void 	cac_recv_task(int tid);
 void 	cac_io_done(int lock);
 void 	ca_sg_init(void);
@@ -509,8 +522,8 @@ int post_msg(
 	unsigned long		blockSize
 );
 int alloc_ioc(
-	struct in_addr                  *pnet_addr,
-	struct ioc_in_use               **ppiiu
+	struct in_addr		*pnet_addr,
+	struct ioc_in_use	**ppiiu
 );
 unsigned long cacRingBufferWrite(
 	struct ca_buffer        *pRing,
@@ -530,9 +543,9 @@ unsigned long cacRingBufferReadSize(
 	struct ca_buffer 	*pBuf, 
 	int 			contiguous);
 
-char *localUserName();
+char *localUserName(void);
 
-char *localHostName();
+char *localHostName(void);
 
 int create_net_chan(
 struct ioc_in_use       **ppiiu,
@@ -540,36 +553,37 @@ struct in_addr		*pnet_addr,	/* only used by TCP connections */
 int                     net_proto
 );
 
-int ca_check_for_fp();
+int ca_check_for_fp(void);
+
+int ca_os_independent_init (void);
 
 void freeBeaconHash(struct ca_static *ca_temp);
 void removeBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *createBeaconHashEntry(struct in_addr *pnet_addr);
-int cac_setup_recv_thread(IIU *piiu);
 void close_ioc(IIU *piiu);
-void notify_ca_repeater();
-void cac_clean_iiu_list();
+void notify_ca_repeater(void);
+void cac_clean_iiu_list(void);
 
-void ca_process_input_queue();
-void cac_flush_internal();
+void ca_process_input_queue(void);
+void cac_flush_internal(void);
 void cac_block_for_io_completion(struct timeval *pTV);
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
 void os_specific_sg_create(CASG *pcasg);
 void os_specific_sg_delete(CASG *pcasg);
 void os_specific_sg_io_complete(CASG *pcasg);
 int cac_os_depen_init(struct ca_static *pcas);
-void ca_process_exit(struct ca_static *ca_temp);
-int cac_add_task_variable(struct ca_static *);
-void ca_spawn_repeater();
+void cac_os_depen_exit (struct ca_static *pcas);
+void ca_process_exit();
+void ca_spawn_repeater(void);
 typedef void CACVRTFUNC(void *pSrc, void *pDest, int hton, unsigned long count);
 void cac_gettimeval(struct timeval  *pt);
 /* returns A - B in floating secs */
 ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 /* returns A + B in integer secs & integer usec */
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
-void caIOBlockFree(struct ca_static *pCAC, evid pIOBlock);
-void clearChannelResources(struct ca_static *pCAC, unsigned id);
+void caIOBlockFree(evid pIOBlock);
+void clearChannelResources(unsigned id);
 
 /*
  * !!KLUDGE!!

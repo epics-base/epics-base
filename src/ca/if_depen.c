@@ -40,6 +40,14 @@ static char	*sccsId = "@(#) $Id$";
 
 #include "iocinf.h"
 
+/*
+ * Dont use ca_static based lock macros here because this is
+ * also called by the server. All locks required are applied at
+ * a higher level.
+ */
+#undef LOCK 
+#undef UNLOCK
+
 
 /*
  * local_addr()
@@ -140,6 +148,9 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
  *
  * Load the list with the broadcast address for all
  * interfaces found that support broadcast.
+ *
+ * LOCK should be applied here for (pList)
+ * (this is also called from the server)
  */
 void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 {
@@ -255,10 +266,10 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 		pNode->destAddr.inetAddr.sin_port = htons(port);
 		pNode->srcAddr.inetAddr = localAddr;
 
-		LOCK;
+		/*
+		 * LOCK applied externally
+		 */
 		ellAdd(pList, &pNode->node);
-		UNLOCK;
-
 	}
 
 	free(pIfreqList);

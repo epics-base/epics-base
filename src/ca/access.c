@@ -461,81 +461,80 @@ int APIENTRY ca_task_initialize(void)
 {
 	int			status;
 	struct ca_static	*ca_temp;
-	unsigned		sec;
 
 	if (!ca_static) {
-
 		ca_temp = (struct ca_static *) 
-				calloc(1, sizeof(*ca_temp));
-		if (!ca_temp)
-			return ECA_ALLOCMEM;
-
-		/*
-		 * os dependent
-		 */
-		status = cac_add_task_variable(ca_temp);
-		if(status != ECA_NORMAL){
-			free(ca_temp);
-			return status;
-		}
-
-		ca_static->ca_exception_func = ca_default_exception_handler;
-		ca_static->ca_exception_arg = NULL;
-
-		/* record a default user name */
-		ca_static->ca_pUserName = localUserName();
-		if(!ca_static->ca_pUserName){
-			free(ca_static);
+			calloc(1, sizeof(*ca_temp));
+		if (!ca_temp) {
 			return ECA_ALLOCMEM;
 		}
-
-		/* record a default user name */
-		ca_static->ca_pHostName = localHostName();
-		if(!ca_static->ca_pHostName){
-			free(ca_static->ca_pUserName);
-			free(ca_static);
-			return ECA_ALLOCMEM;
-		}
-
-		/* init sync group facility */
-		ca_sg_init();
-
-		/*
-		 * init broadcasted search counters
-		 */
-		ca_static->ca_search_retry = 0;
-		ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
-		sec = CA_RECAST_DELAY;
-		ca_static->ca_conn_retry_delay.tv_sec = sec;
-		ca_static->ca_conn_retry_delay.tv_usec = 
-			(CA_RECAST_DELAY-sec)*USEC_PER_SEC;
-
-		ellInit(&ca_static->ca_iiuList);
-		ellInit(&ca_static->ca_ioeventlist);
-		ellInit(&ca_static->ca_free_event_list);
-		ellInit(&ca_static->ca_pend_read_list);
-		ellInit(&ca_static->ca_pend_write_list);
-		ellInit(&ca_static->putCvrtBuf);
-
-		ca_static->ca_pSlowBucket = 
-			bucketCreate(CLIENT_HASH_TBL_SIZE);
-		assert(ca_static->ca_pSlowBucket);
-
-		ca_static->ca_pFastBucket = 
-			bucketCreate(CLIENT_HASH_TBL_SIZE);
-		assert(ca_static->ca_pFastBucket);
-
-		status = cac_os_depen_init(ca_static);
-		if(status != ECA_NORMAL){
-			free(ca_static->ca_pUserName);
-			free(ca_static);
-			return status;
-		}
-
-		if (repeater_installed()==FALSE) {
-			ca_spawn_repeater();
-		}
+		status = cac_os_depen_init (ca_temp);
+		return status;
 	}
+
+	return ECA_NORMAL;
+}
+
+
+/*
+ *	ca_os_independent_init ()
+ */
+int ca_os_independent_init (void)
+{
+	unsigned		sec;
+
+	ca_static->ca_exception_func = ca_default_exception_handler;
+	ca_static->ca_exception_arg = NULL;
+
+	/* record a default user name */
+	ca_static->ca_pUserName = localUserName();
+	if(!ca_static->ca_pUserName){
+		free(ca_static);
+		return ECA_ALLOCMEM;
+	}
+
+	/* record a default user name */
+	ca_static->ca_pHostName = localHostName();
+	if(!ca_static->ca_pHostName){
+		free(ca_static->ca_pUserName);
+		free(ca_static);
+		return ECA_ALLOCMEM;
+	}
+
+	/* init sync group facility */
+	ca_sg_init();
+
+	/*
+	 * init broadcasted search counters
+	 */
+	ca_static->ca_search_retry = 0;
+	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
+	sec = CA_RECAST_DELAY;
+	ca_static->ca_conn_retry_delay.tv_sec = sec;
+	ca_static->ca_conn_retry_delay.tv_usec = 
+	(CA_RECAST_DELAY-sec)*USEC_PER_SEC;
+
+	ellInit(&ca_static->ca_iiuList);
+	ellInit(&ca_static->ca_ioeventlist);
+	ellInit(&ca_static->ca_free_event_list);
+	ellInit(&ca_static->ca_pend_read_list);
+	ellInit(&ca_static->ca_pend_write_list);
+	ellInit(&ca_static->putCvrtBuf);
+	ellInit(&ca_static->fdInfoFreeList);
+	ellInit(&ca_static->fdInfoList);
+
+	ca_static->ca_pSlowBucket = 
+		bucketCreate(CLIENT_HASH_TBL_SIZE);
+	assert(ca_static->ca_pSlowBucket);
+
+	ca_static->ca_pFastBucket = 
+		bucketCreate(CLIENT_HASH_TBL_SIZE);
+	assert(ca_static->ca_pFastBucket);
+
+	if (repeater_installed()==FALSE) {
+		ca_spawn_repeater();
+	}
+
 	return ECA_NORMAL;
 }
 
@@ -580,17 +579,18 @@ LOCAL void create_udp_fd()
                                 4096,
                                 (FUNCPTR)cac_recv_task,
                                 (int)taskIdCurrent,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL);
-	if(status<0)
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0);
+	if (status<0) {
 		ca_signal(ECA_INTERNAL,NULL);
+	}
 
 	ca_static->recv_tid = status;
 
@@ -716,7 +716,10 @@ int APIENTRY ca_modify_user_name(char *pClientName)
  */
 int APIENTRY ca_task_exit (void)
 {
-  	ca_process_exit(ca_static);
+	/*
+	 * This indirectly calls ca_process_exit() below
+	 */
+	cac_os_depen_exit(ca_static);
 
   	return ECA_NORMAL;
 }
@@ -726,13 +729,13 @@ int APIENTRY ca_task_exit (void)
 /*
  *
  *	CA_TASK_EXIT_TID() / CA_PROCESS_EXIT()
- *	attempts to release all resources alloc to a channel access client
- *
- *	NOTE: on vxWorks if a CA task is deleted or crashes while a 
- *	lock is set then a deadlock will occur when this routine is called.
+ *	releases all resources alloc to a channel access client
+ *	
+ *	On multi thread os it is assumed that all threads are 
+ *	before calling this routine.
  *
  */
-void ca_process_exit(struct ca_static *ca_temp)
+void ca_process_exit()
 {
 	chid            	chix;
 	chid            	chixNext;
@@ -741,124 +744,127 @@ void ca_process_exit(struct ca_static *ca_temp)
 	IIU			*piiu;
 	int             	status;
 
-	if (ca_temp) {
+	assert(ca_static);
 
-		/*
-		 * after activity eliminated
-		 * close all sockets before clearing chid blocks and remote
-		 * event blocks
-		 */
-		piiu = (struct ioc_in_use *)
-			ca_temp->ca_iiuList.node.next;
-		while(piiu){
-			if(ca_temp->ca_fd_register_func){
-				(*ca_temp->ca_fd_register_func)(
-					ca_temp->ca_fd_register_arg,
-					piiu->sock_chan,
-					FALSE);
-			}
-			if (socket_close(piiu->sock_chan) < 0){
-				ca_signal(
-					ECA_INTERNAL, 
-					"Corrupt iiu list- at close");
-			}
-			piiu = (struct ioc_in_use *) piiu->node.next;
+	LOCK;
+
+	/*
+	 * after activity eliminated
+	 * close all sockets before clearing chid blocks and remote
+	 * event blocks
+	 */
+	piiu = (struct ioc_in_use *)
+		ca_static->ca_iiuList.node.next;
+	while(piiu){
+		if(ca_static->ca_fd_register_func){
+			(*ca_static->ca_fd_register_func)(
+				ca_static->ca_fd_register_arg,
+				piiu->sock_chan,
+				FALSE);
 		}
-
-		/*
-		 * remove remote chid blocks and event blocks
-		 */
-		piiu = (struct ioc_in_use *)
-			ca_temp->ca_iiuList.node.next;
-		while(piiu){
-			chix = (chid) ellFirst(&piiu->chidlist);
-			while (chix) {
-				chixNext = (chid) ellNext (&chix->node);
-				clearChannelResources (ca_temp, chix->cid);
-				chix = chixNext;
-			}
-
-			/*
-			 * free message body cache
-			 */
-			if(piiu->pCurData){
-				free(piiu->pCurData);
-				piiu->pCurData = NULL;
-				piiu->curDataMax = 0;
-			}
-
-			/*
-			 * free address list
-			 */
-			ellFree(&piiu->destAddr);
-
-			piiu = (struct ioc_in_use *) piiu->node.next;
+		if (socket_close(piiu->sock_chan) < 0){
+			ca_signal(
+				ECA_INTERNAL, 
+				"Corrupt iiu list- at close");
 		}
-
-		/* remove any pending read blocks */
-		monix = (evid) ellFirst(&ca_temp->ca_pend_read_list);
-		while (monix) {
-			monixNext = (evid) ellNext (&monix->node);
-			caIOBlockFree (ca_temp, monix);
-			monix = monixNext;
-		}
-
-		/* remove any pending write blocks */
-		monix = (evid) ellFirst(&ca_temp->ca_pend_write_list);
-		while (monix) {
-			monixNext = (evid) ellNext (&monix->node);
-			caIOBlockFree (ca_temp, monix);
-			monix = monixNext;
-		}
-
-		/* remove any pending io event blocks */
-		ellFree(&ca_temp->ca_ioeventlist);
-
-		/* remove put convert block free list */
-		ellFree(&ca_temp->putCvrtBuf);
-
-		/* reclaim sync group resources */
-		ca_sg_shutdown(ca_temp);
-
-		/* remove remote waiting ev blocks */
-		ellFree(&ca_temp->ca_free_event_list);
-
-		/*
-		 * remove IOCs in use
-		 */
-		ellFree(&ca_temp->ca_iiuList);
-
-		/*
-		 * free user name string
-		 */
-		if(ca_temp->ca_pUserName){
-			free(ca_temp->ca_pUserName);
-		}
-
-		/*
-		 * free host name string
-		 */
-		if(ca_temp->ca_pHostName){
-			free(ca_temp->ca_pHostName);
-		}
-
-		/*
-		 * free hash tables 
-		 */
-		status = bucketFree(ca_temp->ca_pSlowBucket);
-		assert(status == BUCKET_SUCCESS);
-		status = bucketFree(ca_temp->ca_pFastBucket);
-		assert(status == BUCKET_SUCCESS);
-
-		/*
-		 * free beacon hash table
-		 */
-		freeBeaconHash(ca_temp);
-
-		free((char *)ca_temp);
-		ca_static = (struct ca_static *) NULL;
-
+		piiu = (struct ioc_in_use *) piiu->node.next;
 	}
+
+	/*
+	 * remove remote chid blocks and event blocks
+	 */
+	piiu = (struct ioc_in_use *)
+		ca_static->ca_iiuList.node.next;
+	while(piiu){
+		chix = (chid) ellFirst(&piiu->chidlist);
+		while (chix) {
+			chixNext = (chid) ellNext (&chix->node);
+			clearChannelResources (chix->cid);
+			chix = chixNext;
+		}
+
+		/*
+		 * free message body cache
+		 */
+		if(piiu->pCurData){
+			free(piiu->pCurData);
+			piiu->pCurData = NULL;
+			piiu->curDataMax = 0;
+		}
+
+		/*
+		 * free address list
+		 */
+		ellFree(&piiu->destAddr);
+
+		piiu = (struct ioc_in_use *) piiu->node.next;
+	}
+
+	/* remove any pending read blocks */
+	monix = (evid) ellFirst(&ca_static->ca_pend_read_list);
+	while (monix) {
+		monixNext = (evid) ellNext (&monix->node);
+		caIOBlockFree (monix);
+		monix = monixNext;
+	}
+
+	/* remove any pending write blocks */
+	monix = (evid) ellFirst(&ca_static->ca_pend_write_list);
+	while (monix) {
+		monixNext = (evid) ellNext (&monix->node);
+		caIOBlockFree (monix);
+		monix = monixNext;
+	}
+
+	/* remove any pending io event blocks */
+	ellFree(&ca_static->ca_ioeventlist);
+
+	/* remove put convert block free list */
+	ellFree(&ca_static->putCvrtBuf);
+
+	/* reclaim sync group resources */
+	ca_sg_shutdown(ca_static);
+
+	/* remove remote waiting ev blocks */
+	ellFree(&ca_static->ca_free_event_list);
+
+	/* free select context lists */
+	ellFree(&ca_static->fdInfoFreeList);
+	ellFree(&ca_static->fdInfoList);
+
+	/*
+	 * remove IOCs in use
+	 */
+	ellFree(&ca_static->ca_iiuList);
+
+	/*
+	 * free user name string
+	 */
+	if(ca_static->ca_pUserName){
+		free(ca_static->ca_pUserName);
+	}
+
+	/*
+	 * free host name string
+	 */
+	if(ca_static->ca_pHostName){
+		free(ca_static->ca_pHostName);
+	}
+
+	/*
+	 * free hash tables 
+	 */
+	status = bucketFree(ca_static->ca_pSlowBucket);
+	assert(status == BUCKET_SUCCESS);
+	status = bucketFree(ca_static->ca_pFastBucket);
+	assert(status == BUCKET_SUCCESS);
+
+	/*
+	 * free beacon hash table
+	 */
+	freeBeaconHash(ca_static);
+
+	UNLOCK;
 }
 
 
@@ -1222,7 +1228,7 @@ void *arg
 		ev.chan = chix;
 		ev.type = type;
 		ev.count = count;
-		ca_event_handler(&ev, chix->id.paddr, NULL, NULL);
+		ca_event_handler(&ev, chix->id.paddr, 0, NULL);
 		return ECA_NORMAL;
 	}
 #endif
@@ -1290,13 +1296,13 @@ LOCAL evid caIOBlockCreate(void)
 /*
  * caIOBlockFree()
  */
-void caIOBlockFree(struct ca_static *pCAC, evid pIOBlock)
+void caIOBlockFree(evid pIOBlock)
 {
 	int	status;
 
 	LOCK;
 	status = bucketRemoveItemUnsignedId(
-			pCAC->ca_pFastBucket, 
+			ca_static->ca_pFastBucket, 
 			&pIOBlock->id);
 	assert (status == BUCKET_SUCCESS);
 	pIOBlock->id = ~0U; /* this id always invalid */
@@ -1494,7 +1500,7 @@ void				*usrarg
 			pvalue);
 	if(status != ECA_NORMAL){
 		if(chix->piiu){
-			caIOBlockFree(ca_static, monix);
+			caIOBlockFree(monix);
 		}
 		return status;
 	}
@@ -2458,7 +2464,7 @@ int APIENTRY ca_clear_channel (chid chix)
 	 */
 	if(old_chan_state != cs_conn){
 		UNLOCK;
-		clearChannelResources (ca_static, chix->cid);
+		clearChannelResources (chix->cid);
 		return ECA_NORMAL;
 	}
 
@@ -2491,7 +2497,7 @@ int APIENTRY ca_clear_channel (chid chix)
 /*
  * clearChannelResources()
  */
-void clearChannelResources(struct ca_static *pCAC, unsigned id)
+void clearChannelResources(unsigned id)
 {
 	struct ioc_in_use       *piiu;
 	chid			chix;
@@ -2501,7 +2507,7 @@ void clearChannelResources(struct ca_static *pCAC, unsigned id)
 
 	LOCK;
 
-	chix = bucketLookupItemUnsignedId(pCAC->ca_pSlowBucket, &id);
+	chix = bucketLookupItemUnsignedId(ca_static->ca_pSlowBucket, &id);
 	assert ( chix!=NULL );
 
 	piiu = chix->piiu;
@@ -2510,15 +2516,15 @@ void clearChannelResources(struct ca_static *pCAC, unsigned id)
 	 * remove any orphaned get callbacks for this
 	 * channel
 	 */
-	for (monix = (evid) ellFirst (&pCAC->ca_pend_read_list);
+	for (monix = (evid) ellFirst (&ca_static->ca_pend_read_list);
 	     monix;
 	     monix = next) {
 		next = (evid) ellNext (&monix->node);
 		if (monix->chan == chix) {
 			ellDelete (
-				&pCAC->ca_pend_read_list,
+				&ca_static->ca_pend_read_list,
 				&monix->node);
-			caIOBlockFree (pCAC, monix);
+			caIOBlockFree (monix);
 		}
 	}
 	for (monix = (evid) ellFirst (&chix->eventq);
@@ -2526,11 +2532,11 @@ void clearChannelResources(struct ca_static *pCAC, unsigned id)
 	     monix = next){
 		assert (monix->chan == chix);
 		next = (evid) ellNext (&monix->node);
-		caIOBlockFree(pCAC, monix);
+		caIOBlockFree(monix);
 	}
 	ellDelete (&piiu->chidlist, &chix->node);
 	status = bucketRemoveItemUnsignedId (
-			pCAC->ca_pSlowBucket, &chix->cid);
+			ca_static->ca_pSlowBucket, &chix->cid);
 	assert (status == BUCKET_SUCCESS);
 	free (chix);
 	if (!piiu->chidlist.count){

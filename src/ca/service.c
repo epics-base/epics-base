@@ -285,7 +285,7 @@ struct in_addr  	*pnet_addr
 		ellDelete(&pend_write_list, &monix->node);
 		UNLOCK;
 
-		caIOBlockFree(ca_static, monix);
+		caIOBlockFree(monix);
 
 		break;
 
@@ -357,7 +357,7 @@ struct in_addr  	*pnet_addr
 		LOCK;
 		ellDelete(&pend_read_list, &monix->node);
 		UNLOCK;
-		caIOBlockFree(ca_static, monix);
+		caIOBlockFree(monix);
 
 		break;
 	}
@@ -389,7 +389,7 @@ struct in_addr  	*pnet_addr
 			LOCK;
 			ellDelete(&monix->chan->eventq, &monix->node);
 			UNLOCK;
-			caIOBlockFree(ca_static, monix);
+			caIOBlockFree(monix);
 
 			break;
 		}
@@ -493,7 +493,7 @@ struct in_addr  	*pnet_addr
 		LOCK;
 		ellDelete(&pend_read_list, &pIOBlock->node);
 		UNLOCK;
-		caIOBlockFree(ca_static, pIOBlock);
+		caIOBlockFree(pIOBlock);
 		break;
 	}
 	case IOC_SEARCH:
@@ -526,7 +526,7 @@ struct in_addr  	*pnet_addr
 		break;
 
 	case IOC_CLEAR_CHANNEL:
-		clearChannelResources (ca_static, piiu->curMsg.m_available);
+		clearChannelResources (piiu->curMsg.m_available);
 		break;
 
 	case IOC_ERROR:
@@ -623,7 +623,7 @@ struct in_addr  	*pnet_addr
 		}
 
 		if (monix) {
-			caIOBlockFree(ca_static, monix);
+			caIOBlockFree(monix);
 		}
 
 		LOCK;

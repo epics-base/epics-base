@@ -425,10 +425,16 @@ int			net_proto
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
 
+		/*
+		 * LOCK is for piiu->destAddr list
+		 * (lock outside because this is used by the server also)
+		 */
+		LOCK;
 		caDiscoverInterfaces(
 			&piiu->destAddr,
 			sock,
 			CA_SERVER_PORT);
+		UNLOCK;
 
 		caAddConfiguredAddr(
 			&piiu->destAddr, 
@@ -437,7 +443,8 @@ int			net_proto
 			CA_SERVER_PORT);
 
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
-		cacRingBufferInit(&piiu->send, min(MAX_UDP, sizeof(piiu->send.buf)));
+		cacRingBufferInit(&piiu->send, min(MAX_UDP, 
+			sizeof(piiu->send.buf)));
 
 		strncpy(
 			piiu->host_name_str, 
@@ -460,18 +467,6 @@ int			net_proto
 		LOCKEVENTS;
 		(*fd_register_func)(fd_register_arg, sock, TRUE);
 		UNLOCKEVENTS;
-	}
-
-
-	/*
-	 * setup the recv thread
-	 * (OS dependent)
-	 */
-	status = cac_setup_recv_thread(piiu);
-	if(status != ECA_NORMAL){
-		free(piiu);
-        	status = socket_close(sock);
-		return status;
 	}
 
 	/*
@@ -1093,7 +1088,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
  *
  *
  */
-void close_ioc(struct ioc_in_use *piiu)
+void close_ioc (struct ioc_in_use *piiu)
 {
 	caAddrNode	*pNode;
   	chid		chix;
@@ -1224,7 +1219,7 @@ void close_ioc(struct ioc_in_use *piiu)
  *
  *	NOTE: potential race condition here can result
  *	in two copies of the repeater being spawned
- *	however the repeater detectes this, prints a message,
+ *	however the repeater detects this, prints a message,
  *	and lets the other task start the repeater.
  *
  *	QUESTION: is there a better way to test for a port in use? 

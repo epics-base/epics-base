@@ -36,6 +36,9 @@
 
 /*
  * cac_select_io()
+ *
+ * NOTE: on multithreaded systems this assumes that the
+ * local implementation of select is reentrant
  */
 int cac_select_io(struct timeval *ptimeout, int flags)
 {
@@ -43,15 +46,31 @@ int cac_select_io(struct timeval *ptimeout, int flags)
         IIU             *piiu;
         unsigned long   freespace;
 	int		maxfd;
+	caFDInfo	*pfdi;
 
         LOCK;
+	pfdi = (caFDInfo *) ellGet(&ca_static->fdInfoFreeList);
+
+	if (!pfdi) {
+		pfdi = (caFDInfo *) calloc (1, sizeof(*pfdi));
+		if (!pfdi) {
+                        ca_printf("CAC: no mem for select ctx?\n");
+			UNLOCK;
+			return -1;
+		}
+	}
+	ellAdd (&ca_static->fdInfoList, &pfdi->node);
+	UNLOCK;
+
+	FD_ZERO (&pfdi->readMask);
+	FD_ZERO (&pfdi->writeMask);
 
 	maxfd = 0;
-	for(    piiu=(IIU *)iiuList.node.next;
+	for(    piiu = (IIU *) iiuList.node.next;
 		piiu;
-		piiu=(IIU *)piiu->node.next){
+		piiu = (IIU *) piiu->node.next) {
 
-		if(!piiu->conn_up){
+		if (!piiu->conn_up) {
 			continue;
 		}
 
@@ -60,21 +79,23 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                  * space for the maximum UDP message
                  */
                 if (flags&CA_DO_RECVS) {
-                        freespace = cacRingBufferWriteSize(&piiu->recv, TRUE);
-                        if(freespace>=piiu->minfreespace){
-				maxfd = max(maxfd,piiu->sock_chan);
-                                FD_SET(piiu->sock_chan,&readch);
+                        freespace = cacRingBufferWriteSize (&piiu->recv, TRUE);
+                        if (freespace>=piiu->minfreespace) {
+				maxfd = max (maxfd,piiu->sock_chan);
+                                FD_SET (piiu->sock_chan, &pfdi->readMask);
                         }
                 }
 
                 if (flags&CA_DO_SENDS) {
-                        if(cacRingBufferReadSize(&piiu->send, FALSE)>0){
-				maxfd = max(maxfd,piiu->sock_chan);
-                                FD_SET(piiu->sock_chan,&writech);
+                        if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
+				maxfd = max (maxfd,piiu->sock_chan);
+                                FD_SET (piiu->sock_chan, &pfdi->writeMask);
                         }
                 }
         }
-        UNLOCK;
+
+pfdi->writeSave = pfdi->writeMask;
+pfdi->readSave = pfdi->readMask;
 
 #if 0
 printf(	"max fd=%d tv_usec=%d tv_sec=%d\n", 
@@ -84,52 +105,64 @@ printf(	"max fd=%d tv_usec=%d tv_sec=%d\n",
 #endif
         status = select(
                         maxfd+1,
-                        &readch,
-                        &writech,
+                        &pfdi->readMask,
+                        &pfdi->writeMask,
                         NULL,
                         ptimeout);
+
 #if 0
 printf("leaving select stat=%d errno=%d \n", status, MYERRNO);
 #endif
-        if(status<0){
-                if(MYERRNO == EINTR){
+        if (status<0) {
+                if (MYERRNO == EINTR) {
                 }
-                else if(MYERRNO == EWOULDBLOCK){
+                else if (MYERRNO == EWOULDBLOCK) {
                         ca_printf("CAC: blocked at select ?\n");
                 }                  
-                else{
-                        ca_printf(
+		else if (MYERRNO == ESRCH) {
+		}
+                else {
+                        ca_printf (
                                 "CAC: unexpected select fail: %s\n",
                                 strerror(MYERRNO));
-			return status;
                 }
         }
 
-        LOCK;
-        if(status>0){
-                for(    piiu=(IIU *)iiuList.node.next;
+	LOCK;
+        if (status>0) {
+                for (	piiu = (IIU *) iiuList.node.next;
                         piiu;
-                        piiu=(IIU *)piiu->node.next){
+                        piiu = (IIU *) piiu->node.next) {
 
-                        if(!piiu->conn_up){
+                        if (!piiu->conn_up) {
                                 continue;
                         }
 
-                        if(flags&CA_DO_SENDS &&
-                                FD_ISSET(piiu->sock_chan,&writech)){
+                        if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
                                 (*piiu->sendBytes)(piiu);
                         }
-
-                        if(flags&CA_DO_RECVS &&
-                                FD_ISSET(piiu->sock_chan,&readch)){
+#if 0
+else{
+if (FD_ISSET(piiu->sock_chan, &pfdi->writeSave)) {
+	if(FD_ISSET(piiu->sock_chan, &pfdi->readSave) &&
+		!FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
+printf("Still waiting to send on %d with recv empty\n", piiu->sock_chan);
+	}
+	if(!FD_ISSET(piiu->sock_chan, &pfdi->readSave)){
+printf("Still waiting to send on %d with no recv wait?\n", piiu->sock_chan);
+	}
+}
+}
+#endif
+                        if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
                                 (*piiu->recvBytes)(piiu);
                         }
-
-                        FD_CLR(piiu->sock_chan,&readch);
-                        FD_CLR(piiu->sock_chan,&writech);
                 }
         }
-        UNLOCK;
+
+	ellDelete (&ca_static->fdInfoList, &pfdi->node);
+	ellAdd (&ca_static->fdInfoFreeList, &pfdi->node);
+	UNLOCK;
 
         return status;
 }

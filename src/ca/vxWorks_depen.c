@@ -33,13 +33,16 @@
 
 #include <stdarg.h>
 
+#include <callback.h>
 #include "iocinf.h"
 #include "remLib.h"
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void ca_extra_event_labor(void *pArg);
-LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid);
+LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
+LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
+LOCAL void deleteCallBack(CALLBACK *pcb);
 
 #define USEC_PER_SEC 1000000
 
@@ -105,7 +108,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 	do{
 		count = cac_select_io(
 				&timeout, 
-				CA_DO_SENDS);
+				CA_DO_SENDS | CA_DO_RECVS);
 		timeout.tv_usec = 0;
 		timeout.tv_sec = 0;
 	}
@@ -199,7 +202,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
-int cac_add_task_variable(struct ca_static *ca_temp)
+LOCAL int cac_add_task_variable (struct ca_static *ca_temp)
 {
         static char             ca_installed;
         TVIU                    *ptviu;
@@ -210,7 +213,7 @@ int cac_add_task_variable(struct ca_static *ca_temp)
                 return status;
         }
 	
-#       if DEBUG
+#       ifdef DEBUG
                 ca_printf("CAC: adding task variable\n");
 #       endif
 
@@ -236,7 +239,7 @@ int cac_add_task_variable(struct ca_static *ca_temp)
                  * taskDeleteHookAdd() if you use a task variable
                  * in a task exit handler.
                  */
-#               if DEBUG
+#               ifdef DEBUG
                         ca_printf("CAC: adding delete hook\n");
 #               endif
 
@@ -251,13 +254,12 @@ int cac_add_task_variable(struct ca_static *ca_temp)
                 }
         }
 
-        ptviu = calloc(1, sizeof(*ptviu));
+        ptviu = (TVIU *) calloc(1, sizeof(*ptviu));
         if(!ptviu){
                 return ECA_INTERNAL;
         }
 
         ptviu->tid = taskIdSelf();
-        ellAdd(&ca_temp->ca_taskVarList, &ptviu->node);
 
         status = taskVarAdd(VXTHISTASKID, (int *)&ca_static);
         if (status != OK){
@@ -266,6 +268,7 @@ int cac_add_task_variable(struct ca_static *ca_temp)
         }
 
         ca_static = ca_temp;
+        ellAdd(&ca_temp->ca_taskVarList, &ptviu->node);
 
         return ECA_NORMAL;
 }
@@ -277,9 +280,10 @@ int cac_add_task_variable(struct ca_static *ca_temp)
  */
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 {
+	int			status;
 	struct ca_static	*ca_temp;
 
-#       if DEBUG
+#       ifdef DEBUG
                 ca_printf("CAC: entering the exit handler %x\n", ptcb);
 #       endif
 
@@ -297,24 +301,28 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 	}
 
 	/*
-	 * vxWorks specific shut down
+	 * Add CA task var for the exit handler
 	 */
-	cac_os_depen_exit(ca_temp, (int) ptcb);
+	if (ptcb != taskIdCurrent) {
+        	status = taskVarAdd (VXTHISTASKID, (int *)&ca_static);
+        	if (status == ERROR){
+			ca_printf ("Couldnt add task var to CA exit task\n");
+                	return;
+		}
+        }
 
 	/*
-	 * normal CA sut down
+	 * normal CA shut down
 	 */
-        ca_process_exit(ca_temp);
+	cac_os_depen_exit_tid (ca_temp, (int) ptcb);
 
-	/*
-	 * remove semaphores here so that ca_process_exit()
-	 * can use them.
-	 */
-	assert(semDelete(ca_temp->ca_client_lock)==OK);
-	assert(semDelete(ca_temp->ca_event_lock)==OK);
-	assert(semDelete(ca_temp->ca_putNotifyLock)==OK);
-	assert(semDelete(ca_temp->ca_io_done_sem)==OK);
-	assert(semDelete(ca_temp->ca_blockSem)==OK);
+	if (ptcb != taskIdCurrent) {
+        	status = taskVarDelete(VXTHISTASKID, (int *)&ca_static);
+        	if (status == ERROR){
+			ca_printf ("Couldnt remove task var from CA exit task\n");
+                	return;
+		}
+        }
 }
 
 
@@ -345,6 +353,16 @@ int cac_os_depen_init(struct ca_static *pcas)
 	pcas->ca_blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	assert(pcas->ca_blockSem);
 
+	status = cac_add_task_variable (pcas);
+	if (status != ECA_NORMAL) {
+		return status;
+	}
+
+	status = ca_os_independent_init ();
+	if (status != ECA_NORMAL){
+		return status;
+	}
+
 	evuser = (void *) db_init_events();
 	assert(evuser);
 
@@ -371,26 +389,50 @@ int cac_os_depen_init(struct ca_static *pcas)
 
 
 /*
- * cac_os_depen_exit()
+ * cac_os_depen_exit ()
  */
-LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
+void cac_os_depen_exit (struct ca_static *pcas)
 {
-	int	status;
-	chid	chix;
-	evid	monix;
-	TVIU    *ptviu;
+	cac_os_depen_exit_tid (pcas, 0);
+}
+
+
+/*
+ * cac_os_depen_exit_tid ()
+ */
+LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
+{
+	int		status;
+	chid		chix;
+	evid		monix;
+	TVIU    	*ptviu;
+	CALLBACK	*pcb;
+
+
+#       ifdef DEBUG
+                ca_printf("CAC: entering the exit routine %x %x\n", 
+			tid, pcas);
+#       endif
+
+	ca_static = pcas;
+	LOCK;
 
 	/*
 	 * stop the socket recv task
+	 * (only after we get the LOCK here)
 	 */
-	if(taskIdVerify(pcas->recv_tid)==OK){
-		taskwdRemove(pcas->recv_tid);
+	if (taskIdVerify (pcas->recv_tid)==OK) {
+		taskwdRemove (pcas->recv_tid);
 		/*
 		 * dont do a task suspend if the exit handler is
 		 * running for this task - it botches vxWorks -
 		 */
-		if(pcas->recv_tid != tid){
-			taskSuspend(pcas->recv_tid);
+		if (pcas->recv_tid != tid) {
+			status = taskSuspend (pcas->recv_tid);
+			if (status<0) {
+				ca_printf ("taskSuspend() error = %s\n",
+					strerror (MYERRNO) );
+			}
 		}
 	}
 
@@ -399,23 +441,29 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 	 * (and put call backs)
 	 */
 	chix = (chid) & pcas->ca_local_chidlist.node;
-	while (chix = (chid) chix->node.next){
+	while (chix = (chid) chix->node.next) {
 		while (monix = (evid) ellGet(&chix->eventq)) {
 			status = db_cancel_event(monix + 1);
 			assert(status == OK);
 			free(monix);
 		}
-		if(chix->ppn){
+		if (chix->ppn) {
 			CACLIENTPUTNOTIFY *ppn;
 
 			ppn = chix->ppn;
-			if(ppn->busy){
-				dbNotifyCancel(&ppn->dbPutNotify);
+			if (ppn->busy) {
+				dbNotifyCancel (&ppn->dbPutNotify);
 			}
-			free(ppn);
+			free (ppn);
 		}
 	}
 
+
+	/*
+	 * set ca_static for access.c
+	 * (run this before deleting the task variable)
+	 */
+        ca_process_exit();
 
 	/*
 	 * cancel task vars for other tasks so this
@@ -426,7 +474,11 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 	 *
 	 * db_close_events() does not require a CA context.
 	 */
-	while(ptviu = (TVIU *)ellGet(&pcas->ca_taskVarList)){
+	while (ptviu = (TVIU *)ellGet(&pcas->ca_taskVarList)) {
+#		ifdef DEBUG
+                	ca_printf("CAC: removing task var %x\n", ptviu->tid);
+#		endif
+
 		status = taskVarDelete(
 				ptviu->tid,
 				(int *)&ca_static);
@@ -438,9 +490,15 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 		free(ptviu);
 	}
 
-	if(taskIdVerify(pcas->recv_tid)==OK){
+	if (taskIdVerify(pcas->recv_tid)==OK) {
 		if(pcas->recv_tid != tid){
-			taskDelete(pcas->recv_tid);
+			pcb = (CALLBACK *) calloc(1,sizeof(*pcb));
+			if (pcb) {
+				pcb->callback = deleteCallBack;
+				pcb->priority = priorityHigh;
+				pcb->user = (void *) pcas->recv_tid;
+				callbackRequest (pcb);
+			}
 		}
 	}
 
@@ -459,7 +517,38 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 	ellFree(&pcas->ca_local_chidlist);
 	ellFree(&pcas->ca_dbfree_ev_list);
 
+
+	/*
+	 * remove semaphores here so that ca_process_exit()
+	 * can use them.
+	 */
+	assert(semDelete(pcas->ca_client_lock)==OK);
+	assert(semDelete(pcas->ca_event_lock)==OK);
+	assert(semDelete(pcas->ca_putNotifyLock)==OK);
+	assert(semDelete(pcas->ca_io_done_sem)==OK);
+	assert(semDelete(pcas->ca_blockSem)==OK);
+
+	ca_static = NULL;
+	free ((char *)pcas);
+
         return ECA_NORMAL;
+}
+
+
+/*
+ * deleteCallBack()
+ */
+LOCAL void deleteCallBack(CALLBACK *pcb)
+{
+	int status;
+
+	status = taskDelete ((int)pcb->user);
+	if (status < 0) {
+		ca_printf ("CAC: tak delete at exit failed: %s\n",
+			strerror(errno));
+	}
+
+	free (pcb);
 }
 
 
@@ -535,7 +624,7 @@ int ca_import(int tid)
                 return ECA_NORMAL;
         }
 
-        ptviu = calloc(1, sizeof(*ptviu));
+        ptviu = (TVIU *) calloc(1, sizeof(*ptviu));
         if(!ptviu){
                 return ECA_ALLOCMEM;
         }
@@ -601,13 +690,11 @@ int ca_import_cancel(int tid)
  */
 int ca_check_for_fp()
 {
-        {
-                int             options;
+	int             options;
 
-                assert(taskOptionsGet(taskIdSelf(), &options) == OK);
-                if (!(options & VX_FP_TASK)) {
-                        return ECA_NEEDSFP;
-                }
+	assert(taskOptionsGet(taskIdSelf(), &options) == OK);
+	if (!(options & VX_FP_TASK)) {
+		return ECA_NEEDSFP;
         }
         return ECA_NORMAL;
 }
@@ -629,16 +716,16 @@ void ca_spawn_repeater()
                            CA_REPEATER_OPT,
                            CA_REPEATER_STACK,
 			   (FUNCPTR)ca_repeater_task,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL,
-                           NULL);
+                           0,
+                           0,
+                           0,
+                           0,
+                           0,
+                           0,
+                           0,
+                           0,
+                           0,
+                           0);
 	if (status < 0){
        		SEVCHK(ECA_NOREPEATER, NULL);
         }
@@ -652,16 +739,6 @@ void ca_repeater_task()
 {
 	taskwdInsert((int)taskIdCurrent, NULL, NULL);
         ca_repeater();
-}
-
-
-/*
- * Setup recv thread
- * (OS dependent)
- */
-int cac_setup_recv_thread(IIU *piiu)
-{
-        return ECA_NORMAL;
 }
 
 
@@ -728,13 +805,13 @@ LOCAL void ca_extra_event_labor(void *pArg)
          */
         status = semGive(pcas->ca_blockSem);
         if(status != OK){
-                logMsg("CA block sem corrupted\n",
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL);
+                logMsg(	"CA block sem corrupted\n",
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
         }
 
 }
@@ -760,6 +837,8 @@ void cac_recv_task(int  tid)
          * ca_task_exit() is called.
          */
         while(TRUE){
+        	manage_conn(TRUE);
+
                 timeout.tv_usec = 0;
                 timeout.tv_sec = 1;
 
@@ -770,8 +849,6 @@ void cac_recv_task(int  tid)
 			CA_DO_RECVS);
 
                 ca_process_input_queue();
-
-        	manage_conn(TRUE);
         }
 }
 

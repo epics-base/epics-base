@@ -70,6 +70,9 @@ void manage_conn(int silent)
 	ca_real		delay;
 	unsigned long	idelay;
 
+	/*
+	 * prevent recursion
+	 */
 	if(ca_static->ca_manage_conn_active){
 		return;
 	}
@@ -80,6 +83,7 @@ void manage_conn(int silent)
 
         /*
          * issue connection heartbeat
+	 * (if we dont see a beacon)
          */
         LOCK;
         for(    piiu = (IIU *) iiuList.node.next;
@@ -98,7 +102,7 @@ void manage_conn(int silent)
 			delay = cac_time_diff (
 					&current, 
 					&piiu->timeAtSendBlock); 
-			if(delay > CA_RETRY_PERIOD){
+			if(delay > CA_CONN_VERIFY_PERIOD){
 				TAG_CONN_DOWN(piiu);
 				continue;
 			}
@@ -174,6 +178,7 @@ void manage_conn(int silent)
 	 * Stop here if there are not any disconnected channels
 	 */
 	if(!piiuCast) {
+		ca_static->ca_manage_conn_active = FALSE;
 		return;
 	}
 	if (piiuCast->chidlist.count == 0) {
@@ -183,10 +188,7 @@ void manage_conn(int silent)
 
 	if(ca_static->ca_conn_next_retry.tv_sec == CA_CURRENT_TIME.tv_sec &&
 	   ca_static->ca_conn_next_retry.tv_usec == CA_CURRENT_TIME.tv_usec){
-		ca_static->ca_conn_next_retry =
-			cac_time_sum (
-				&current, 
-				&ca_static->ca_conn_retry_delay);
+		ca_static->ca_conn_next_retry = current;
 		LOGRETRYINTERVAL 
 	}
 

@@ -15,24 +15,24 @@ of this distribution.
 #include "rsrv.h"
 #include "dbEvent.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "caTestRegister.h"
 
 /* casr */
-static const ioccrfArg casrArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg * const casrArgs[1] = {&casrArg0};
-static const ioccrfFuncDef casrFuncDef = {"casr",1,casrArgs};
-static void casrCallFunc(const ioccrfArgBuf *args)
+static const iocshArg casrArg0 = { "level",iocshArgInt};
+static const iocshArg * const casrArgs[1] = {&casrArg0};
+static const iocshFuncDef casrFuncDef = {"casr",1,casrArgs};
+static void casrCallFunc(const iocshArgBuf *args)
 {
     casr(args[0].ival);
 }
 
 /* dbel */
-static const ioccrfArg dbelArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dbelArg1 = { "level",ioccrfArgInt};
-static const ioccrfArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
-static const ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
-static void dbelCallFunc(const ioccrfArgBuf *args)
+static const iocshArg dbelArg0 = { "record name",iocshArgString};
+static const iocshArg dbelArg1 = { "level",iocshArgInt};
+static const iocshArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
+static const iocshFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
+static void dbelCallFunc(const iocshArgBuf *args)
 {
     dbel(args[0].sval, args[1].ival);
 }
@@ -40,6 +40,6 @@ static void dbelCallFunc(const ioccrfArgBuf *args)
 
 void epicsShareAPI caTestRegister(void)
 {
-    ioccrfRegister(&casrFuncDef,casrCallFunc);
-    ioccrfRegister(&dbelFuncDef,dbelCallFunc);
+    iocshRegister(&casrFuncDef,casrCallFunc);
+    iocshRegister(&dbelFuncDef,dbelCallFunc);
 }

@@ -14,15 +14,15 @@ of this distribution.
 
 #include "dbCaTest.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "dbCaTestRegister.h"
 
 /* dbcar */
-static const ioccrfArg dbcarArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dbcarArg1 = { "level",ioccrfArgInt};
-static const ioccrfArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
-static const ioccrfFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
-static void dbcarCallFunc(const ioccrfArgBuf *args)
+static const iocshArg dbcarArg0 = { "record name",iocshArgString};
+static const iocshArg dbcarArg1 = { "level",iocshArgInt};
+static const iocshArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
+static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
+static void dbcarCallFunc(const iocshArgBuf *args)
 {
     dbcar(args[0].sval,args[1].ival);
 }
@@ -30,5 +30,5 @@ static void dbcarCallFunc(const ioccrfArgBuf *args)
 
 void epicsShareAPI dbCaTestRegister(void)
 {
-    ioccrfRegister(&dbcarFuncDef,dbcarCallFunc);
+    iocshRegister(&dbcarFuncDef,dbcarCallFunc);
 }

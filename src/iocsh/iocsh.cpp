@@ -1,4 +1,4 @@
-/* ioccrf.cpp */
+/* iocsh.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
 /* Heavily modified by Eric Norum   Date: 03MAY2000 */
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
@@ -22,19 +22,19 @@ of this distribution.
 #include "epicsMutex.h"
 #include "registry.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "epicsReadline.h"
 
 /*
  * File-local information
  */
-struct ioccrfCommand {
-    ioccrfFuncDef const     *pFuncDef;
-    ioccrfCallFunc          func;
-    struct ioccrfCommand    *next;
+struct iocshCommand {
+    iocshFuncDef const     *pFuncDef;
+    iocshCallFunc          func;
+    struct iocshCommand    *next;
 };
-static struct ioccrfCommand *ioccrfCommandHead;
-static char ioccrfID[] = "ioccrf";
+static struct iocshCommand *iocshCommandHead;
+static char iocshID[] = "iocsh";
 static epicsMutexId commandTableMutex;
 static epicsThreadOnceId commandTableOnceId = EPICS_THREAD_ONCE_INIT;
 
@@ -69,16 +69,16 @@ commandTableUnlock (void)
 /*
  * Register a command
  */
-void epicsShareAPI ioccrfRegister (const ioccrfFuncDef *pioccrfFuncDef, ioccrfCallFunc func)
+void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef, iocshCallFunc func)
 {
-    struct ioccrfCommand *l, *p, *n;
+    struct iocshCommand *l, *p, *n;
     int i;
 
     commandTableLock ();
-    for (l = NULL, p = ioccrfCommandHead ; p != NULL ; l = p, p = p->next) {
-        i = strcmp (pioccrfFuncDef->name, p->pFuncDef->name);
+    for (l = NULL, p = iocshCommandHead ; p != NULL ; l = p, p = p->next) {
+        i = strcmp (piocshFuncDef->name, p->pFuncDef->name);
         if (i == 0) {
-            p->pFuncDef = pioccrfFuncDef;
+            p->pFuncDef = piocshFuncDef;
             p->func = func;
             commandTableUnlock ();
             return;
@@ -86,35 +86,35 @@ void epicsShareAPI ioccrfRegister (const ioccrfFuncDef *pioccrfFuncDef, ioccrfCa
         if (i < 0)
             break;
     }
-    n = (struct ioccrfCommand *)callocMustSucceed (1, sizeof *n, "ioccrfRegister");
-    if (!registryAdd(ioccrfID, pioccrfFuncDef->name, (void *)n)) {
+    n = (struct iocshCommand *)callocMustSucceed (1, sizeof *n, "iocshRegister");
+    if (!registryAdd(iocshID, piocshFuncDef->name, (void *)n)) {
         free (n);
         commandTableUnlock ();
-        errlogPrintf ("ioccrfRegister failed to add %s\n", pioccrfFuncDef->name);
+        errlogPrintf ("iocshRegister failed to add %s\n", piocshFuncDef->name);
         return;
     }
     if (l == NULL) {
-        n->next = ioccrfCommandHead;
-        ioccrfCommandHead = n;
+        n->next = iocshCommandHead;
+        iocshCommandHead = n;
     }
     else {
         n->next = l->next;
         l->next = n;
     }
-    n->pFuncDef = pioccrfFuncDef;
+    n->pFuncDef = piocshFuncDef;
     n->func = func;
     commandTableUnlock ();
 }
 
 /*
- * Free storage created by ioccrfRegister
+ * Free storage created by iocshRegister
  */
-void epicsShareAPI ioccrfFree(void) 
+void epicsShareAPI iocshFree(void) 
 {
-    struct ioccrfCommand *p, *n;
+    struct iocshCommand *p, *n;
 
     commandTableLock ();
-    for (p = ioccrfCommandHead ; p != NULL ; ) {
+    for (p = iocshCommandHead ; p != NULL ; ) {
         n = p->next;
         free (p);
         p = n;
@@ -139,12 +139,12 @@ showError (const char *filename, int lineno, const char *msg, ...)
 }
 
 static int
-cvtArg (const char *filename, int lineno, char *arg, ioccrfArgBuf *argBuf, const ioccrfArg *pioccrfArg)
+cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const iocshArg *piocshArg)
 {
     char *endp;
 
-    switch (pioccrfArg->type) {
-    case ioccrfArgInt:
+    switch (piocshArg->type) {
+    case iocshArgInt:
         if (arg && *arg) {
             argBuf->ival = strtol (arg, &endp, 0);
             if (*endp) {
@@ -157,7 +157,7 @@ cvtArg (const char *filename, int lineno, char *arg, ioccrfArgBuf *argBuf, const
         }
         break;
 
-    case ioccrfArgDouble:
+    case iocshArgDouble:
         if (arg && *arg) {
             argBuf->dval = strtod (arg, &endp);
             if (*endp) {
@@ -170,11 +170,11 @@ cvtArg (const char *filename, int lineno, char *arg, ioccrfArgBuf *argBuf, const
         }
         break;
 
-    case ioccrfArgString:
+    case iocshArgString:
         argBuf->sval = arg;
         break;
 
-    case ioccrfArgPdbbase:
+    case iocshArgPdbbase:
         /* Argument must be missing or 0 or pdbbase */
         if(!arg || !*arg || (*arg == '0') || (strcmp(arg, "pdbbase") == 0)) {
             argBuf->vval = pdbbase;
@@ -184,7 +184,7 @@ cvtArg (const char *filename, int lineno, char *arg, ioccrfArgBuf *argBuf, const
         return 0;
 
     default:
-        showError (filename, lineno, "Illegal argument type %d", pioccrfArg->type);
+        showError (filename, lineno, "Illegal argument type %d", piocshArg->type);
         return 0;
     }
     return 1;
@@ -194,7 +194,7 @@ cvtArg (const char *filename, int lineno, char *arg, ioccrfArgBuf *argBuf, const
  * The body of the command interpreter
  */
 int epicsShareAPI
-ioccrf (const char *pathname)
+iocsh (const char *pathname)
 {
     FILE *fp = NULL;
     const char *filename = NULL;
@@ -208,10 +208,10 @@ ioccrf (const char *pathname)
     int sep;
     const char *prompt;
     const char *ifs = " \t(),";
-    ioccrfArgBuf *argBuf = NULL;
+    iocshArgBuf *argBuf = NULL;
     int argBufCapacity = 0;
-    struct ioccrfCommand *found;
-    struct ioccrfFuncDef const *pioccrfFuncDef;
+    struct iocshCommand *found;
+    struct iocshFuncDef const *piocshFuncDef;
     
     /*
      * See if command interpreter is interactive
@@ -367,14 +367,14 @@ ioccrf (const char *pathname)
 
                     printf ("Type `help command_name' to get more information about a particular command.\n");
                     commandTableLock ();
-                    for (found = ioccrfCommandHead ; found != NULL ; found = found->next) {
-                        pioccrfFuncDef = found->pFuncDef;
-                        l = strlen (pioccrfFuncDef->name);
+                    for (found = iocshCommandHead ; found != NULL ; found = found->next) {
+                        piocshFuncDef = found->pFuncDef;
+                        l = strlen (piocshFuncDef->name);
                         if ((l + col) >= 79) {
                             putchar ('\n');
                             col = 0;
                         }
-                        fputs (pioccrfFuncDef->name, stdout);
+                        fputs (piocshFuncDef->name, stdout);
                         col += l;
                         if (col >= 64) {
                             putchar ('\n');
@@ -393,16 +393,16 @@ ioccrf (const char *pathname)
                 }
                 else {
                     for (int i = 1 ; i < argc ; i++) {
-                        found = (ioccrfCommand *)registryFind (ioccrfID, argv[i]);
+                        found = (iocshCommand *)registryFind (iocshID, argv[i]);
                         if (found == NULL) {
                             printf ("%s -- no such command.\n", argv[i]);
                         }
                         else {
-                            pioccrfFuncDef = found->pFuncDef;
-                            fputs (pioccrfFuncDef->name, stdout);
-                            for (int a = 0 ; a < pioccrfFuncDef->nargs ; a++) {
-                                const char *cp = pioccrfFuncDef->arg[a]->name;
-                                if ((pioccrfFuncDef->arg[a]->type == ioccrfArgArgv)
+                            piocshFuncDef = found->pFuncDef;
+                            fputs (piocshFuncDef->name, stdout);
+                            for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
+                                const char *cp = piocshFuncDef->arg[a]->name;
+                                if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
                                  || (strchr (cp, ' ') == NULL)) {
                                     printf (" %s", cp);
                                 }
@@ -420,18 +420,18 @@ ioccrf (const char *pathname)
             /*
              * Look up command
              */
-            found = (ioccrfCommand *)registryFind (ioccrfID, argv[0]);
+            found = (iocshCommand *)registryFind (iocshID, argv[0]);
             if (!found) {
                 showError (filename, lineno, "Command %s not found.", argv[0]);
                 continue;
             }
-            pioccrfFuncDef = found->pFuncDef;
+            piocshFuncDef = found->pFuncDef;
 
             /*
              * Process arguments and call function
              */
             for (int arg = 0 ; ; arg++) {
-                if (arg == pioccrfFuncDef->nargs) {
+                if (arg == piocshFuncDef->nargs) {
                     (*found->func)(argBuf);
                     break;
                 }
@@ -445,9 +445,9 @@ ioccrf (const char *pathname)
                         argBufCapacity -= 20;
                         break;
                     }
-                    argBuf = (ioccrfArgBuf *)np;
+                    argBuf = (iocshArgBuf *)np;
                 }
-                if (pioccrfFuncDef->arg[arg]->type == ioccrfArgArgv) {
+                if (piocshFuncDef->arg[arg]->type == iocshArgArgv) {
                     argBuf[arg].aval.ac = argc-arg;
                     argBuf[arg].aval.av = argv+arg;
                     (*found->func)(argBuf);
@@ -455,7 +455,7 @@ ioccrf (const char *pathname)
                 }
                 if (!cvtArg (filename, lineno,
                                         ((arg < argc) ? argv[arg+1] : NULL),
-                                        &argBuf[arg], pioccrfFuncDef->arg[arg]))
+                                        &argBuf[arg], piocshFuncDef->arg[arg]))
                     break;
             }
         }
@@ -475,34 +475,34 @@ ioccrf (const char *pathname)
 
 extern "C" {
 /* help */
-static const ioccrfArg helpArg0 = { "command",ioccrfArgInt};
-static const ioccrfArg *helpArgs[1] = {&helpArg0};
-static const ioccrfFuncDef helpFuncDef =
+static const iocshArg helpArg0 = { "command",iocshArgInt};
+static const iocshArg *helpArgs[1] = {&helpArg0};
+static const iocshFuncDef helpFuncDef =
     {"help",1,helpArgs};
-static void helpCallFunc(const ioccrfArgBuf *)
+static void helpCallFunc(const iocshArgBuf *)
 {
 }
 
 /* comment */
-static const ioccrfArg commentArg0 = { "newline-terminated comment",ioccrfArgArgv};
-static const ioccrfArg *commentArgs[1] = {&commentArg0};
-static const ioccrfFuncDef commentFuncDef = {"#",1,commentArgs};
-static void commentCallFunc(const ioccrfArgBuf *)
+static const iocshArg commentArg0 = { "newline-terminated comment",iocshArgArgv};
+static const iocshArg *commentArgs[1] = {&commentArg0};
+static const iocshFuncDef commentFuncDef = {"#",1,commentArgs};
+static void commentCallFunc(const iocshArgBuf *)
 {
 }
 
 /* exit */
-static const ioccrfFuncDef exitFuncDef =
+static const iocshFuncDef exitFuncDef =
     {"exit",0,0};
-static void exitCallFunc(const ioccrfArgBuf *)
+static void exitCallFunc(const iocshArgBuf *)
 {
 }
 
 static void localRegister (void)
 {
-    ioccrfRegister(&helpFuncDef,helpCallFunc);
-    ioccrfRegister(&commentFuncDef,helpCallFunc);
-    ioccrfRegister(&exitFuncDef,exitCallFunc);
+    iocshRegister(&helpFuncDef,helpCallFunc);
+    iocshRegister(&commentFuncDef,helpCallFunc);
+    iocshRegister(&exitFuncDef,exitCallFunc);
 }
 
 } /* extern "C" */
@@ -510,9 +510,9 @@ static void localRegister (void)
 /*
  * Register commands on application startup
  */
-#include "ioccrfRegisterCommon.h"
-class IoccrfRegister {
+#include "iocshRegisterCommon.h"
+class IocshRegister {
   public:
-    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); }
+    IocshRegister() { localRegister(); iocshRegisterCommon(); }
 };
-static IoccrfRegister ioccrfRegisterObj;
+static IocshRegister iocshRegisterObj;

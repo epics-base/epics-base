@@ -1,4 +1,4 @@
-/* ioccrfRegisterCommon.h */
+/* iocshRegisterCommon.h */
 /* Author:  Marty Kraimer Date: 27APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -7,8 +7,8 @@ described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
 
-#ifndef INCioccrfRegisterCommonH
-#define INCioccrfRegisterCommonH
+#ifndef INCiocshRegisterCommonH
+#define INCiocshRegisterCommonH
 
 #include "shareLib.h"
 
@@ -17,10 +17,10 @@ extern "C" {
 #endif
 
 /* register many useful commands */
-epicsShareFunc void epicsShareAPI ioccrfRegisterCommon(void);
+epicsShareFunc void epicsShareAPI iocshRegisterCommon(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*INCioccrfRegisterCommonH*/
+#endif /*INCiocshRegisterCommonH*/

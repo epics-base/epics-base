@@ -1,4 +1,4 @@
-/* ioccrfRegisterCommon.c */
+/* iocshRegisterCommon.c */
 /* Author:  Marty Kraimer Date: 26APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -22,11 +22,11 @@ of this distribution.
 #include "dbAccessRegister.h"
 #include "asTestRegister.h"
 #include "envRegister.h"
-#include "ioccrfRegisterCommon.h"
+#include "iocshRegisterCommon.h"
 #include "osiRegister.h"
-#include "ioccrf.h"
+#include "iocsh.h"
 
-void epicsShareAPI ioccrfRegisterCommon(void)
+void epicsShareAPI iocshRegisterCommon(void)
 {
     osiRegister();
     iocUtilRegister();

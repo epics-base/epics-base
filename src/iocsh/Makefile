@@ -4,7 +4,7 @@ include $(TOP)/configure/CONFIG
 #	includes to install from this sub-project
 #
 
-INC += ioccrf.h
+INC += iocsh.h
 INC += osiRegister.h
 INC += iocUtilRegister.h
 INC += dbStaticRegister.h
@@ -13,7 +13,7 @@ INC += dbBkptRegister.h
 INC += dbCaTestRegister.h
 INC += caTestRegister.h
 INC += dbAccessRegister.h
-INC += ioccrfRegisterCommon.h
+INC += iocshRegisterCommon.h
 INC += asTestRegister.h
 INC += envRegister.h
 
@@ -25,7 +25,7 @@ INC += envRegister.h
 #	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
 #
 
-LIBSRCS += ioccrf.cpp
+LIBSRCS += iocsh.cpp
 LIBSRCS += osiRegister.c
 LIBSRCS += dbStaticRegister.c
 LIBSRCS += dbTestRegister.c
@@ -33,7 +33,7 @@ LIBSRCS += dbBkptRegister.c
 LIBSRCS += dbCaTestRegister.c
 LIBSRCS += caTestRegister.c
 LIBSRCS += dbAccessRegister.c
-LIBSRCS += ioccrfRegisterCommon.c
+LIBSRCS += iocshRegisterCommon.c
 LIBSRCS += asTestRegister.c
 LIBSRCS += envRegister.c
 LIBSRCS += iocUtil.c

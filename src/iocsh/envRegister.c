@@ -14,14 +14,14 @@ of this distribution.
 
 #include "envDefs.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "envRegister.h"
 
 /* epicsPrtEnvParams */
-static const ioccrfFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
-static void epicsPrtEnvParamsCallFunc(const ioccrfArgBuf *args) { epicsPrtEnvParams();}
+static const iocshFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
+static void epicsPrtEnvParamsCallFunc(const iocshArgBuf *args) { epicsPrtEnvParams();}
 
 void epicsShareAPI envRegister(void)
 {
-    ioccrfRegister(&epicsPrtEnvParamsFuncDef,epicsPrtEnvParamsCallFunc);
+    iocshRegister(&epicsPrtEnvParamsFuncDef,epicsPrtEnvParamsCallFunc);
 }

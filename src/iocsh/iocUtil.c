@@ -12,23 +12,23 @@
 #include "epicsThread.h"
 
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "iocUtilRegister.h"
 
 /* < (runScript) command */
-static const ioccrfArg runScriptArg0 = { "command file name",ioccrfArgString};
-static const ioccrfArg * const runScriptArgs[1] = {&runScriptArg0};
-static const ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
-static void runScriptCallFunc(const ioccrfArgBuf *args)
+static const iocshArg runScriptArg0 = { "command file name",iocshArgString};
+static const iocshArg * const runScriptArgs[1] = {&runScriptArg0};
+static const iocshFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
+static void runScriptCallFunc(const iocshArgBuf *args)
 {
-    ioccrf (args[0].sval);
+    iocsh (args[0].sval);
 }
 
 /* chdir */
-static const ioccrfArg chdirArg0 = { "current directory name",ioccrfArgString};
-static const ioccrfArg * const chdirArgs[1] = {&chdirArg0};
-static const ioccrfFuncDef chdirFuncDef = {"cd",1,chdirArgs};
-static void chdirCallFunc(const ioccrfArgBuf *args)
+static const iocshArg chdirArg0 = { "current directory name",iocshArgString};
+static const iocshArg * const chdirArgs[1] = {&chdirArg0};
+static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs};
+static void chdirCallFunc(const iocshArgBuf *args)
 {
     int status;
     status = chdir(args[0].sval);
@@ -38,8 +38,8 @@ static void chdirCallFunc(const ioccrfArgBuf *args)
 }
 
 /* print current working directory */
-static const ioccrfFuncDef pwdFuncDef = { "pwd", 0, 0 };
-static void pwdCallFunc (const ioccrfArgBuf *args)
+static const iocshFuncDef pwdFuncDef = { "pwd", 0, 0 };
+static void pwdCallFunc (const iocshArgBuf *args)
 {
     char buf[256];
     char *pwd = getcwd ( buf, sizeof(buf) - 1 );
@@ -49,10 +49,10 @@ static void pwdCallFunc (const ioccrfArgBuf *args)
 }
 
 /* show (thread information) */
-static const ioccrfArg showArg0 = { "[-level] [task ...]", ioccrfArgArgv};
-static const ioccrfArg * const showArgs[1] = { &showArg0 };
-static const ioccrfFuncDef showFuncDef = {"show",1,showArgs};
-static void showCallFunc(const ioccrfArgBuf *args)
+static const iocshArg showArg0 = { "[-level] [task ...]", iocshArgArgv};
+static const iocshArg * const showArgs[1] = { &showArg0 };
+static const iocshFuncDef showFuncDef = {"show",1,showArgs};
+static void showCallFunc(const iocshArgBuf *args)
 {
     int i = 1;
     int first = 1;
@@ -94,11 +94,11 @@ static void showCallFunc(const ioccrfArgBuf *args)
 }
 
 /* epicsEnvSet */
-static const ioccrfArg epicsEnvSetArg0 = { "name",ioccrfArgString};
-static const ioccrfArg epicsEnvSetArg1 = { "value",ioccrfArgString};
-static const ioccrfArg * const epicsEnvSetArgs[2] = {&epicsEnvSetArg0,&epicsEnvSetArg1};
-static const ioccrfFuncDef epicsEnvSetFuncDef = {"epicsEnvSet",2,epicsEnvSetArgs};
-static void epicsEnvSetCallFunc(const ioccrfArgBuf *args)
+static const iocshArg epicsEnvSetArg0 = { "name",iocshArgString};
+static const iocshArg epicsEnvSetArg1 = { "value",iocshArgString};
+static const iocshArg * const epicsEnvSetArgs[2] = {&epicsEnvSetArg0,&epicsEnvSetArg1};
+static const iocshFuncDef epicsEnvSetFuncDef = {"epicsEnvSet",2,epicsEnvSetArgs};
+static void epicsEnvSetCallFunc(const iocshArgBuf *args)
 {
     char *name = args[0].sval;
     char *value = args[1].sval;
@@ -115,36 +115,36 @@ static void epicsEnvSetCallFunc(const ioccrfArgBuf *args)
 }
 
 /* epicsParamShow */
-static const ioccrfFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
-static void epicsParamShowCallFunc(const ioccrfArgBuf *args)
+static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
+static void epicsParamShowCallFunc(const iocshArgBuf *args)
 {
     epicsPrtEnvParams ();
 }
 
 /* epicsEnvShow */
-static const ioccrfArg epicsEnvShowArg0 = { "[name]",ioccrfArgString};
-static const ioccrfArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
-static const ioccrfFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs};
-static void epicsEnvShowCallFunc(const ioccrfArgBuf *args)
+static const iocshArg epicsEnvShowArg0 = { "[name]",iocshArgString};
+static const iocshArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
+static const iocshFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs};
+static void epicsEnvShowCallFunc(const iocshArgBuf *args)
 {
     epicsEnvShow (args[0].sval);
 }
 
 /* iocLogInit */
-static const ioccrfFuncDef iocLogInitFuncDef = {"iocLogInit",0};
-static void iocLogInitCallFunc(const ioccrfArgBuf *args)
+static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0};
+static void iocLogInitCallFunc(const iocshArgBuf *args)
 {
     iocLogInit ();
 }
 
 void epicsShareAPI iocUtilRegister(void)
 {
-    ioccrfRegister(&runScriptFuncDef,runScriptCallFunc);
-    ioccrfRegister(&chdirFuncDef,chdirCallFunc);
-    ioccrfRegister(&pwdFuncDef,pwdCallFunc);
-    ioccrfRegister(&showFuncDef,showCallFunc);
-    ioccrfRegister(&epicsEnvSetFuncDef,epicsEnvSetCallFunc);
-    ioccrfRegister(&epicsParamShowFuncDef,epicsParamShowCallFunc);
-    ioccrfRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
-    ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
+    iocshRegister(&runScriptFuncDef,runScriptCallFunc);
+    iocshRegister(&chdirFuncDef,chdirCallFunc);
+    iocshRegister(&pwdFuncDef,pwdCallFunc);
+    iocshRegister(&showFuncDef,showCallFunc);
+    iocshRegister(&epicsEnvSetFuncDef,epicsEnvSetCallFunc);
+    iocshRegister(&epicsParamShowFuncDef,epicsParamShowCallFunc);
+    iocshRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
+    iocshRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

@@ -45,7 +45,7 @@ print << "END" ;
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
-#include "ioccrf.h"
+#include "iocsh.h"
 END
 
 #definitions for recordtype
@@ -179,14 +179,14 @@ print << "END" ;
 }
 
 /* registerRecordDeviceDriver */
-static const ioccrfArg registerRecordDeviceDriverArg0 =
-                                            {"pdbbase",ioccrfArgPdbbase};
-static const ioccrfArg *registerRecordDeviceDriverArgs[1] =
+static const iocshArg registerRecordDeviceDriverArg0 =
+                                            {"pdbbase",iocshArgPdbbase};
+static const iocshArg *registerRecordDeviceDriverArgs[1] =
                                             {&registerRecordDeviceDriverArg0};
-static const ioccrfFuncDef registerRecordDeviceDriverFuncDef =
+static const iocshFuncDef registerRecordDeviceDriverFuncDef =
                 {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
 extern "C" {
-static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *)
+static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 {
     registerRecordDeviceDriver(pdbbase);
 }
@@ -197,7 +197,7 @@ static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *)
  */
 class IoccrfReg {
   public:
-    IoccrfReg() { ioccrfRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
+    IoccrfReg() { iocshRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
 };
-namespace { IoccrfReg ioccrfReg; }
+namespace { IoccrfReg iocshReg; }
 END

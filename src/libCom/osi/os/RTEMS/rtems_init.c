@@ -25,7 +25,7 @@
 
 #include <epicsThread.h>
 #include <logClient.h>
-#include <ioccrf.h>
+#include <iocsh.h>
 #include <dbStaticLib.h>
 
 static void logReset (void);
@@ -152,22 +152,22 @@ rtems_netstat (unsigned int level)
     }
 }
 
-static const ioccrfArg netStatArg0 = { "level",ioccrfArgInt};
-static const ioccrfArg * const netStatArgs[1] = {&netStatArg0};
-static const ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
-static void netStatCallFunc(const ioccrfArgBuf *args)
+static const iocshArg netStatArg0 = { "level",iocshArgInt};
+static const iocshArg * const netStatArgs[1] = {&netStatArg0};
+static const iocshFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
+static void netStatCallFunc(const iocshArgBuf *args)
 {
     rtems_netstat(args[0].ival);
 }
-static const ioccrfFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
-static void stackCheckCallFunc(const ioccrfArgBuf *args)
+static const iocshFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
+static void stackCheckCallFunc(const iocshArgBuf *args)
 {
     Stack_check_Dump_usage ();
 }
-static void ioccrfRegisterRTEMS (void)
+static void iocshRegisterRTEMS (void)
 {
-    ioccrfRegister(&netStatFuncDef, netStatCallFunc);
-    ioccrfRegister(&stackCheckFuncDef, stackCheckCallFunc);
+    iocshRegister(&netStatFuncDef, netStatCallFunc);
+    iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
 }
 
 /*
@@ -266,14 +266,14 @@ Init (rtems_task_argument ignored)
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");
-    ioccrfRegisterRTEMS ();
-    ioccrf ("st.cmd");
+    iocshRegisterRTEMS ();
+    iocsh ("st.cmd");
 
     /*
      * Everything's running!
      */
     epicsThreadSleep (2.0);
-    ioccrf (NULL);
+    iocsh (NULL);
     LogFatal ("Console command interpreter terminated");
 }
 

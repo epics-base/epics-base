@@ -14,14 +14,14 @@ of this distribution.
 #include <stdio.h>
 
 #include "epicsThread.h"
-#include "ioccrf.h"
+#include "iocsh.h"
 
 int main(int argc,char *argv[])
 {
     if(argc>=2) {    
-        ioccrf(argv[1]);
+        iocsh(argv[1]);
         epicsThreadSleep(.2);
     }
-    ioccrf(NULL);
+    iocsh(NULL);
     return(0);
 }

@@ -16,58 +16,58 @@ of this distribution.
 #include "iocInit.h"
 #include "dbLoadTemplate.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "registryRecordType.h"
 #include "dbAccessRegister.h"
-#include "ioccrf.h"
+#include "iocsh.h"
 
 /* dbLoadDatabase */
-static const ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString};
-static const ioccrfArg dbLoadDatabaseArg1 = { "path",ioccrfArgString};
-static const ioccrfArg dbLoadDatabaseArg2 = { "substitutions",ioccrfArgString};
-static const ioccrfArg * const dbLoadDatabaseArgs[3] =
+static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};
+static const iocshArg dbLoadDatabaseArg1 = { "path",iocshArgString};
+static const iocshArg dbLoadDatabaseArg2 = { "substitutions",iocshArgString};
+static const iocshArg * const dbLoadDatabaseArgs[3] =
 {
     &dbLoadDatabaseArg0,&dbLoadDatabaseArg1,&dbLoadDatabaseArg2
 };
-static const ioccrfFuncDef dbLoadDatabaseFuncDef =
+static const iocshFuncDef dbLoadDatabaseFuncDef =
     {"dbLoadDatabase",3,dbLoadDatabaseArgs};
-static void dbLoadDatabaseCallFunc(const ioccrfArgBuf *args)
+static void dbLoadDatabaseCallFunc(const iocshArgBuf *args)
 {
     dbLoadDatabase(args[0].sval,args[1].sval,args[2].sval);
 }
 
 /* dbLoadRecords */
-static const ioccrfArg dbLoadRecordsArg0 = { "file name",ioccrfArgString};
-static const ioccrfArg dbLoadRecordsArg1 = { "substitutions",ioccrfArgString};
-static const ioccrfArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
-static const ioccrfFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
-static void dbLoadRecordsCallFunc(const ioccrfArgBuf *args)
+static const iocshArg dbLoadRecordsArg0 = { "file name",iocshArgString};
+static const iocshArg dbLoadRecordsArg1 = { "substitutions",iocshArgString};
+static const iocshArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
+static const iocshFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
+static void dbLoadRecordsCallFunc(const iocshArgBuf *args)
 {
     dbLoadRecords(args[0].sval,args[1].sval);
 }
 
 /* dbLoadTemplate */
-static const ioccrfArg dbLoadTemplateArg0 = { "file name",ioccrfArgString};
-static const ioccrfArg * const dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
-static const ioccrfFuncDef dbLoadTemplateFuncDef =
+static const iocshArg dbLoadTemplateArg0 = { "file name",iocshArgString};
+static const iocshArg * const dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
+static const iocshFuncDef dbLoadTemplateFuncDef =
     {"dbLoadTemplate",1,dbLoadTemplateArgs};
-static void dbLoadTemplateCallFunc(const ioccrfArgBuf *args)
+static void dbLoadTemplateCallFunc(const iocshArgBuf *args)
 {
     dbLoadTemplate(args[0].sval);
 }
 
 /* iocInit */
-static const ioccrfFuncDef iocInitFuncDef =
+static const iocshFuncDef iocInitFuncDef =
     {"iocInit",0,0};
-static void iocInitCallFunc(const ioccrfArgBuf *args)
+static void iocInitCallFunc(const iocshArgBuf *args)
 {
     iocInit();
 }
 
 void epicsShareAPI dbAccessRegister(void)
 {
-    ioccrfRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
-    ioccrfRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);
-    ioccrfRegister(&dbLoadTemplateFuncDef,dbLoadTemplateCallFunc);
-    ioccrfRegister(&iocInitFuncDef,iocInitCallFunc);
+    iocshRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
+    iocshRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);
+    iocshRegister(&dbLoadTemplateFuncDef,dbLoadTemplateCallFunc);
+    iocshRegister(&iocInitFuncDef,iocInitCallFunc);
 }

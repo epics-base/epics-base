@@ -1,4 +1,4 @@
-/* ioccrf.cpp */
+/* iocsh.cpp */
 /* Author:  Eric Norum Date: 12DEC2001 */
 
 #include <stdio.h>

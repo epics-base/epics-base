@@ -14,87 +14,87 @@ of this distribution.
 
 #include "asDbLib.h"
 #define epicsExportSharedSymbols
-#include "ioccrf.h"
+#include "iocsh.h"
 #include "asTestRegister.h"
 
 /* asSetFilename */
-static const ioccrfArg asSetFilenameArg0 = { "ascf",ioccrfArgString};
-static const ioccrfArg * const asSetFilenameArgs[1] = {&asSetFilenameArg0};
-static const ioccrfFuncDef asSetFilenameFuncDef =
+static const iocshArg asSetFilenameArg0 = { "ascf",iocshArgString};
+static const iocshArg * const asSetFilenameArgs[1] = {&asSetFilenameArg0};
+static const iocshFuncDef asSetFilenameFuncDef =
     {"asSetFilename",1,asSetFilenameArgs};
-static void asSetFilenameCallFunc(const ioccrfArgBuf *args)
+static void asSetFilenameCallFunc(const iocshArgBuf *args)
 {
     asSetFilename(args[0].sval);
 }
 
 /* asSetSubstitutions */
-static const ioccrfArg asSetSubstitutionsArg0 = { "substitutions",ioccrfArgString};
-static const ioccrfArg * const asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
-static const ioccrfFuncDef asSetSubstitutionsFuncDef =
+static const iocshArg asSetSubstitutionsArg0 = { "substitutions",iocshArgString};
+static const iocshArg * const asSetSubstitutionsArgs[1] = {&asSetSubstitutionsArg0};
+static const iocshFuncDef asSetSubstitutionsFuncDef =
     {"asSetSubstitutions",1,asSetSubstitutionsArgs};
-static void asSetSubstitutionsCallFunc(const ioccrfArgBuf *args)
+static void asSetSubstitutionsCallFunc(const iocshArgBuf *args)
 {
     asSetSubstitutions(args[0].sval);
 }
 
 /* asInit */
-static const ioccrfFuncDef asInitFuncDef = {"asInit",0};
-static void asInitCallFunc(const ioccrfArgBuf *args)
+static const iocshFuncDef asInitFuncDef = {"asInit",0};
+static void asInitCallFunc(const iocshArgBuf *args)
 {
     asInit();
 }
 
 /* asdbdump */
-static const ioccrfFuncDef asdbdumpFuncDef = {"asdbdump",0};
-static void asdbdumpCallFunc(const ioccrfArgBuf *args)
+static const iocshFuncDef asdbdumpFuncDef = {"asdbdump",0};
+static void asdbdumpCallFunc(const iocshArgBuf *args)
 {
     asdbdump();
 }
 
 /* aspuag */
-static const ioccrfArg aspuagArg0 = { "uagname",ioccrfArgString};
-static const ioccrfArg * const aspuagArgs[1] = {&aspuagArg0};
-static const ioccrfFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs};
-static void aspuagCallFunc(const ioccrfArgBuf *args)
+static const iocshArg aspuagArg0 = { "uagname",iocshArgString};
+static const iocshArg * const aspuagArgs[1] = {&aspuagArg0};
+static const iocshFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs};
+static void aspuagCallFunc(const iocshArgBuf *args)
 {
     aspuag(args[0].sval);
 }
 
 /* asphag */
-static const ioccrfArg asphagArg0 = { "hagname",ioccrfArgString};
-static const ioccrfArg * const asphagArgs[1] = {&asphagArg0};
-static const ioccrfFuncDef asphagFuncDef = {"asphag",1,asphagArgs};
-static void asphagCallFunc(const ioccrfArgBuf *args)
+static const iocshArg asphagArg0 = { "hagname",iocshArgString};
+static const iocshArg * const asphagArgs[1] = {&asphagArg0};
+static const iocshFuncDef asphagFuncDef = {"asphag",1,asphagArgs};
+static void asphagCallFunc(const iocshArgBuf *args)
 {
     asphag(args[0].sval);
 }
 
 /* asprules */
-static const ioccrfArg asprulesArg0 = { "asgname",ioccrfArgString};
-static const ioccrfArg * const asprulesArgs[1] = {&asprulesArg0};
-static const ioccrfFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs};
-static void asprulesCallFunc(const ioccrfArgBuf *args)
+static const iocshArg asprulesArg0 = { "asgname",iocshArgString};
+static const iocshArg * const asprulesArgs[1] = {&asprulesArg0};
+static const iocshFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs};
+static void asprulesCallFunc(const iocshArgBuf *args)
 {
     asprules(args[0].sval);
 }
 
 /* aspmem */
-static const ioccrfArg aspmemArg0 = { "asgname",ioccrfArgString};
-static const ioccrfArg aspmemArg1 = { "clients",ioccrfArgInt};
-static const ioccrfArg * const aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
-static const ioccrfFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
-static void aspmemCallFunc(const ioccrfArgBuf *args)
+static const iocshArg aspmemArg0 = { "asgname",iocshArgString};
+static const iocshArg aspmemArg1 = { "clients",iocshArgInt};
+static const iocshArg * const aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
+static const iocshFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
+static void aspmemCallFunc(const iocshArgBuf *args)
 {
     aspmem(args[0].sval,args[1].ival);
 }
 
 /* astac */
-static const ioccrfArg astacArg0 = { "recordname",ioccrfArgString};
-static const ioccrfArg astacArg1 = { "user",ioccrfArgString};
-static const ioccrfArg astacArg2 = { "location",ioccrfArgString};
-static const ioccrfArg * const astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
-static const ioccrfFuncDef astacFuncDef = {"astac",3,astacArgs};
-static void astacCallFunc(const ioccrfArgBuf *args)
+static const iocshArg astacArg0 = { "recordname",iocshArgString};
+static const iocshArg astacArg1 = { "user",iocshArgString};
+static const iocshArg astacArg2 = { "location",iocshArgString};
+static const iocshArg * const astacArgs[3] = {&astacArg0,&astacArg1,&astacArg2};
+static const iocshFuncDef astacFuncDef = {"astac",3,astacArgs};
+static void astacCallFunc(const iocshArgBuf *args)
 {
     astac(args[0].sval,args[1].sval,args[2].sval);
 }
@@ -102,13 +102,13 @@ static void astacCallFunc(const ioccrfArgBuf *args)
 
 void epicsShareAPI asTestRegister(void)
 {
-    ioccrfRegister(&asSetFilenameFuncDef,asSetFilenameCallFunc);
-    ioccrfRegister(&asSetSubstitutionsFuncDef,asSetSubstitutionsCallFunc);
-    ioccrfRegister(&asInitFuncDef,asInitCallFunc);
-    ioccrfRegister(&asdbdumpFuncDef,asdbdumpCallFunc);
-    ioccrfRegister(&aspuagFuncDef,aspuagCallFunc);
-    ioccrfRegister(&asphagFuncDef,asphagCallFunc);
-    ioccrfRegister(&asprulesFuncDef,asprulesCallFunc);
-    ioccrfRegister(&aspmemFuncDef,aspmemCallFunc);
-    ioccrfRegister(&astacFuncDef,astacCallFunc);
+    iocshRegister(&asSetFilenameFuncDef,asSetFilenameCallFunc);
+    iocshRegister(&asSetSubstitutionsFuncDef,asSetSubstitutionsCallFunc);
+    iocshRegister(&asInitFuncDef,asInitCallFunc);
+    iocshRegister(&asdbdumpFuncDef,asdbdumpCallFunc);
+    iocshRegister(&aspuagFuncDef,aspuagCallFunc);
+    iocshRegister(&asphagFuncDef,asphagCallFunc);
+    iocshRegister(&asprulesFuncDef,asprulesCallFunc);
+    iocshRegister(&aspmemFuncDef,aspmemCallFunc);
+    iocshRegister(&astacFuncDef,astacCallFunc);
 }

@@ -5,7 +5,7 @@
 
 ## Register all support components
 dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
-registerRecordDeviceDriver(pdbbase) 
+_APPNAME__registerRecordDeviceDriver(pdbbase) 
 
 ## Load record instances
 dbLoadRecords("db/dbExample1.db","user=_USER_")

@@ -276,7 +276,7 @@ dbInstalls:  $(DB_INSTALLS)
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $< > $@
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) > $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
 

@@ -10,7 +10,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-$file = $ARGV[0];
+($file, $subname) = @ARGV;
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
@@ -157,7 +157,7 @@ if (@variables) {
 #Now actual registration code.
 
 print << "END" ;
-int registerRecordDeviceDriver(DBBASE *pbase)
+int $subname(DBBASE *pbase)
 {
     int i;
 
@@ -230,10 +230,10 @@ static const iocshArg registerRecordDeviceDriverArg0 =
 static const iocshArg *registerRecordDeviceDriverArgs[1] =
                                             {&registerRecordDeviceDriverArg0};
 static const iocshFuncDef registerRecordDeviceDriverFuncDef =
-                {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
+                {"$subname",1,registerRecordDeviceDriverArgs};
 static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 {
-    registerRecordDeviceDriver(pdbbase);
+    $subname(pdbbase);
 }
 
 } // ext C

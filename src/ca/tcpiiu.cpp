@@ -1051,7 +1051,7 @@ inline void insertRequestWithPayLoad (
             maxBytes = 0xffffffff;
         }
         else {
-            maxBytes = MAX_TCP;
+            maxBytes = MAX_TCP - 16u; // allow space for protocol header
         }
         unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
         if ( nElem >= maxElem ) {

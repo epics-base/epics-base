@@ -41,17 +41,6 @@
  */
 
 #include        <vxWorks.h>
-
-#if 0 /* COMMENTED OUT */
-#include        <sysLib.h>
-#include        <iosLib.h>
-#include        <types.h>
-#include        <stdioLib.h>
-#include        <strLib.h>
-#include        <rngLib.h>
-#include        <taskLib.h>
-#endif  /* COMMENTED OUT */
-
 #include        <stdio.h>
 
 #include        <alarm.h>
@@ -101,6 +90,7 @@ static int	timingStudy();
 static int	pingEm();
 static int	downLoadCode();
 static int	hex2bin();
+static int	sendOnly(void);
 
 static int firstTime = 1;
 static FAST_LOCK msgReply;
@@ -169,6 +159,11 @@ BI()
     case 's':
     case 'S':       /* one shot: send one message */
       sendMsg();
+      break;
+
+    case 'u':
+    case 'U':
+      sendOnly();	/* Send a pair of messages */
       break;
 
     case 't':
@@ -307,15 +302,29 @@ timingStudy()
   return(OK);
 }
 #endif
+static int
+sendOnly(void)
+{
+  int             msgNum;         /* index to array of messages */
 
-/* sendMsg() ***************************************************
- */
+  printf("\nEnter Message # to Send (1 thru 5) > ");
+  if (!getInt(&msgNum))
+    return(ERROR);             /* if no entry, return to main menu */
+
+  if((msgNum >= LIST_SIZE) || (msgNum < 0))
+    return(ERROR);
+
+  return((*(drvBitBus.qReq))(&(adpvt[msgNum]), BB_Q_HIGH));
+}
+
+/*****************************************************************************
+ * sendMsg()
+ *****************************************************************************/
 
 static int
 sendMsg(void)
 {
   int             msgNum;         /* index to array of messages */
-
 
   printf("\nEnter Message # to Send (1 thru 5) > ");
   if (!getInt(&msgNum))
@@ -497,7 +506,8 @@ configMsg()
 static int
 downLoadCode()
 {
-  char	str[200];			/* place to read in strings */
+  static char	fnameStr[200] = "";	/* File name for F command */
+  char	str[200];
   char	hexBuf[100];			/* place to read intel HEX file lines */
   FILE	*fp;
   unsigned int	msgBytes;		/* current number of bytes in the message being built */
@@ -509,17 +519,23 @@ downLoadCode()
   unsigned int	totalMsg;		/* total messages sent to the bug */
   int		status;
   int		inInt;
-
   struct dpvtBitBusHead    *pdpvt = &(adpvt[LIST_SIZE]);
+  int		oldDebug;
+
+  oldDebug = bbDebug;
+  bbDebug = 0;
+
 
   /* open the hex file */
-  printf("Enter (Intel-standard) HEX file name:");
+  printf("Enter (Intel-standard) HEX file name\n[%s]\n:", fnameStr);
   gets(str);
   sscanf("%s", str);
+  if (str[0] != '\0')
+    strcpy (fnameStr, str);
 
-  if ((fp = fopen(str, "r")) == NULL)
+  if ((fp = fopen(fnameStr, "r")) == NULL)
   {
-    printf("Error: Can't open file >%s<\n", str);
+    printf("Error: Can't open file >%s<\n", fnameStr);
     return(ERROR);
   }
   /* get the link number */
@@ -628,6 +644,7 @@ downLoadCode()
   printf("Total bytes down loaded to BUG = %u = 0x%04.4X\n", totalBytes, totalBytes);
   printf("Total messages sent = %u = 0x%04.4X\n", totalMsg, totalMsg);
 
+  bbDebug = oldDebug;
   return(status);
 }
 /*

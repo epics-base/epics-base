@@ -50,8 +50,8 @@ typedef enum {
     initHookAfterInitDatabase,
     initHookAfterFinishDevSup,
     initHookAfterScanInit,
-    initHookAfterInterruptAccept,
     initHookAfterInitialProcess,
+    initHookAfterInterruptAccept,
     initHookAtEnd
 }initHookState;
 

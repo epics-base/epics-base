@@ -217,12 +217,6 @@ int iocInit(char * pResourceFilename)
     (void)taskDelay(sysClkRateGet()/2);
 
     if (pinitHooks) (*pinitHooks)(initHookAfterScanInit);
-
-   /* Enable scan tasks and some driver support functions.  */
-    interruptAccept=TRUE;
-
-    if (pinitHooks) (*pinitHooks)(initHookAfterInterruptAccept);
-
    /*
     *  Process all records that have their "process at initialization"
     *      field set (pini).
@@ -232,6 +226,12 @@ int iocInit(char * pResourceFilename)
           epicsPrintf("iocInit: initialProcess Failed\n");
 
     if (pinitHooks) (*pinitHooks)(initHookAfterInitialProcess);
+
+   /* Enable scan tasks and some driver support functions.  */
+    interruptAccept=TRUE;
+
+    if (pinitHooks) (*pinitHooks)(initHookAfterInterruptAccept);
+
 
    /*  Start up CA server */
     rsrv_init();

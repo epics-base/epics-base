@@ -31,7 +31,6 @@ ACC_SFLAGS_NO=
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
 ACC_SHRLIB_CFLAGS_YES =  -fPIC
-#ACC_SHRLIB_CFLAGS_YES =  -fPIC -D_BSD_SOURCE
 ACC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@ 
 
 
@@ -49,6 +48,8 @@ CCC_SFLAGS_NO=
 CCC_SLIBS_YES =
 CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -MM
+CCC_SHRLIB_CFLAGS_YES =  -fPIC
+CCC_SHRLIB_LDFLAGS_YES =  -shared -Wl,-soname,$@ 
 
 # added smh 6/5/98 : when building fdmgr - seems to use this not ACC
 # in effect this overides orig def in CONFIG_COMMON :

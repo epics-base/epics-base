@@ -447,7 +447,7 @@ void resTable<T,ID>::show (unsigned level) const
                     pItem->show (level);
                 }
                 count++;
-                pItem = pItem->itemAfter ();
+                pItem = pItem.itemAfter ();
             }
             if ( count > 0u ) {
                 X += count;

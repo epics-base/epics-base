@@ -263,7 +263,7 @@ inline void tsSLList < T > :: push ( T &item )
 template <class T>
 inline T * tsSLList < T > :: first () const
 {
-    tsSLNode < T > *pThisNode = this;
+    const tsSLNode < T > *pThisNode = this;
     return pThisNode->pNext;
 }
 
@@ -361,7 +361,7 @@ inline bool tsSLIterConst<T>::valid () const
 // end of the list constant
 //
 template < class T >
-inline static const tsSLIterConst<T> tsSLIterConst<T>::eol ()
+inline const tsSLIterConst<T> tsSLIterConst<T>::eol ()
 {
     return 0;
 }
@@ -450,7 +450,7 @@ inline bool tsSLIter<T>::valid () const
 // end of the list constant
 //
 template < class T >
-inline static const tsSLIter<T> tsSLIter<T>::eol ()
+inline const tsSLIter<T> tsSLIter<T>::eol ()
 {
     return 0;
 }

@@ -66,7 +66,7 @@ semTakeStatus semBinaryTakeNoWait(semBinaryId id)
     return(semTakeError);
 }
 
-void semBinaryShow(semBinaryId id, int level)
+void semBinaryShow(semBinaryId id,unsigned int level)
 {
     semShow((SEM_ID)id,level);
 }
@@ -120,7 +120,7 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
     return(semTakeError);
 }
 
-void semMutexShow(semMutexId id, int level)
+void semMutexShow(semMutexId id,unsigned int level)
 {
     semShow((SEM_ID)id,level);
 }

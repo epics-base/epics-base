@@ -145,7 +145,7 @@ semTakeStatus semBinaryTakeNoWait(semBinaryId id)
     return(semTakeError);
 }
 
-void semBinaryShow(semBinaryId id, int level)
+void semBinaryShow(semBinaryId id,unsigned int level)
 {
 }
 
@@ -284,7 +284,7 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
     return(status);
 }
 
-void semMutexShow(semMutexId id, int level)
+void semMutexShow(semMutexId id,unsigned int level)
 {
     mutex *pmutex = (mutex *)id;
     printf("ownerTid %p count %d owned %d\n",

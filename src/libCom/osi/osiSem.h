@@ -23,7 +23,7 @@ epicsShareFunc semTakeStatus epicsShareAPI semBinaryTake(semBinaryId id);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeTimeout(
     semBinaryId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait(semBinaryId id);
-epicsShareFunc void epicsShareAPI semBinaryShow(semBinaryId id, int level);
+epicsShareFunc void epicsShareAPI semBinaryShow(semBinaryId id, unsigned int level);
 
 typedef void *semMutexId;
 epicsShareFunc semMutexId epicsShareAPI semMutexCreate(void);
@@ -35,7 +35,7 @@ epicsShareFunc semTakeStatus epicsShareAPI semMutexTake(semMutexId id);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout(
     semMutexId id, double timeOut);
 epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait(semMutexId id);
-epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id, int level);
+epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id,unsigned  int level);
 
 /*NOTES:
     Mutex semaphores MUST implement recursive locking

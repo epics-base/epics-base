@@ -248,6 +248,7 @@ LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLA
 # Command-line input support default
 COMMANDLINE_LIBRARY = EPICS
 OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
+OP_SYS_LDFLAGS += $(LDFLAGS_$(COMMANDLINE_LIBRARY))
 
 #--------------------------------------------------
 # Flags

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.20  1998/06/16 03:12:40  jhill
+// added comments
+//
 // Revision 1.19  1998/04/16 21:16:09  jhill
 // allow copies of less than the number of elements returned
 //
@@ -1018,9 +1021,9 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 	}
 
 	for (i=0;i<sz;i++) {
-		strncpy(str[i].fixed_string,&(db->strs[i][0]),
-			sizeof(aitFixedString));
-		str[i].fixed_string[sizeof(aitFixedString)-1u] = '\0';
+		unsigned minl = min (sizeof(aitFixedString), MAX_ENUM_STRING_SIZE) - 1;
+		strncpy (str[i].fixed_string,&(db->strs[i][0]), minl);
+		memset (&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
 	}
 	menu.setBound(0,0,sz);
 
@@ -1089,8 +1092,8 @@ static int mapGraphicGddToEnum(void* v, aitIndex count, gdd* dd)
 	{
 		for(i=0;i<db->no_str;i++) {
 			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
-				sizeof(aitFixedString));
-			db->strs[i][sizeof(aitFixedString)-1u] = '\0';
+				MAX_ENUM_STRING_SIZE);
+			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
 		}
 	}
 	return mapGddToEnum(&db->value, count, &vdd);

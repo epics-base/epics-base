@@ -65,7 +65,7 @@
 #include <link.h>
 
 #include "drvBitBus.h"
-#include "drvBitBusInterface.h"
+#include <drvBitBusInterface.h>
 
 static long	reportBB();
 static long	initBB();

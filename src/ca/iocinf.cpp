@@ -162,7 +162,7 @@ epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates
                         break;
                     }
                 }
-                pTmpNode = (osiSockAddrNode *) ellNext (&pNode->node);
+                pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node);
             }
             if (pNode) {
                 ellAdd (pDestList, &pNode->node);

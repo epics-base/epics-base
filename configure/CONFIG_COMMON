@@ -91,19 +91,19 @@ GENERIC_SRC_INCLUDES = $(addprefix -I, $(GENERIC_SRC_DIRS))
 
 #--------------------------------------------------
 # Target filename definitions
-OBJSNAME = $(addsuffix $(OBJ),$(OBJS))
-PRODNAME = $(addsuffix $(EXE),$(PROD))
-TESTPRODNAME = $(addsuffix $(EXE),$(TESTPROD))
+OBJSNAME = $(addsuffix $(OBJ),$(basename $(OBJS)))
+PRODNAME = $(addsuffix $(EXE),$(basename $(PROD)))
+TESTPRODNAME = $(addsuffix $(EXE),$(basename $(TESTPROD)))
 
 #--------------------------------------------------
 # obj files
 
 TARGET_OBJS = $(addsuffix $(OBJ),$(basename $($*_OBJS)))
 
-PROD_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS)))
-PROD_LD_OBJS = $(TARGET_OBJS) $(PROD_OBJS)
+PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS) $(PROD_OBJS)))
+PROD_LD_OBJS = $(TARGET_OBJS) $(PRODUCT_OBJS)
 
-LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(LIBSRCS)))
+LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(LIB_SRCS) $(LIBSRCS) $(LIB_OBJS)))
 LIBRARY_LD_OBJS = $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------
@@ -161,7 +161,6 @@ TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS) $($(basename $@)_CXXFLAGS_$(OS_CLAS
 TARGET_LDFLAGS = $($(basename $@)_LDFLAGS) $($(basename $@)_LDFLAGS_$(OS_CLASS))
 TARGET_LDLIBS = $($(basename $@)_LDLIBS) $($(basename $@)_LDLIBS_$(OS_CLASS))
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS) $($(basename $@)_CPPFLAGS_$(OS_CLASS))
-TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLASS))
 
 # Level of ansi conformance flags
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
@@ -211,10 +210,6 @@ CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
  $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
-CPPSNCFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
- $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
- $(OP_SYS_CPPFLAGS) $(CODE_CPPFLAGS)
-
 #--------------------------------------------------
 # ar definition default
 ARFLAGS =
@@ -223,11 +218,6 @@ ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 #--------------------------------------------------
 # ld default
 LDCMD = $(LD) -o $@ $^
-
-#--------------------------------------------------
-# snc (state notation language) flags
-# Use C++ constructors to register commands/programs (snc +i option)
-TARGET_SNCFLAGS += +i
 
 #--------------------------------------------------
 # Build compile line here
@@ -240,13 +230,14 @@ COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(SOURCE_CXXFLAG)
 
 DEPENDS.cpp = $(CCC)
 DEPENDSFLAGS += $(CPPFLAGS) $(INCLUDES) $(DEPENDS_FLAG)
-DEPENDS_CMD.cpp = -$(DEPENDS.cpp) $(DEPENDSFLAGS) $(SRC_FILES) > DEPENDS
+DEPENDS_CMD.cpp = -$(DEPENDS.cpp) $(DEPENDSFLAGS) $(DEPENDS_SRC_FILES) > DEPENDS
 
 #--------------------------------------------------
 # depends definition
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
-SRC_FILES = $(foreach src, $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS) , \
+SRC_FILES = $(foreach src, $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS) , \
     $(firstword  $(wildcard $(addsuffix /$(src),$(ALL_SRC_DIRS))) $(src)))
+DEPENDS_SRC_FILES = $(SRC_FILES)
 
 #---------------------------------------------------------------
 # Names of installed items

@@ -17,7 +17,7 @@
 template <class T>
 class locationAndType : public T {
 public:
-    locationAndType (T &);
+    locationAndType (T &, const char *fileName, unsigned lineNumber);
     unsigned lineNumber () const;
     const char *fileName () const;
     const type_info & typeInfo () const;
@@ -28,36 +28,36 @@ private:
 };
 
 template <class T>
-inline locationAndType::locationAndType (T &tIn, const char *fileName, unsigned lineNumber) :
+inline locationAndType<T>::locationAndType (T &tIn, const char *fileName, unsigned lineNumber) :
     T (tIn) , lineNumberCopy(lineNumber), pFileName (fileName) {}
 
 template <class T>
-inline unsigned locationAndType::lineNumber () const
+inline unsigned locationAndType<T>::lineNumber () const
 {
     return this->lineNumberCopy;
 }
 
 template <class T>
-inline const char * locationAndType::typeInfo () const
+inline const char * locationAndType<T>::fileName () const
+{
+    return this->pFileName;
+}
+
+template <class T>
+inline const type_info & locationAndType<T>::typeInfo () const
 {
     return typeid (T);
 }
 
 template <class T>
-inline const char * locationAndType::lineNumber () const
-{
-    return this->lineNumberCopy;
-}
-
-template <class T>
-inline const char * locationAndType::show (unsigned level) const
+inline void locationAndType<T>::show (unsigned level) const
 {
     cerr    << "C++ exception=" << typeid(T).name()
             << " in file=" << this->pFileName
             << " at line=" << this->lineNumberCopy;
 }
 
-#define throwWithLocation (parm) throwExceptionWithLocation (parm, __FILE__, __LINE__);
+#define throwWithLocation(parm) throwExceptionWithLocation (parm, __FILE__, __LINE__);
 
 template <class T>
 inline void throwExceptionWithLocation (T &parm, const char *pFileName, unsigned lineNo)

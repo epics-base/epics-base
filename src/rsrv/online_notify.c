@@ -47,7 +47,7 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
     pNode  = (osiSockAddrNode *) ellFirst ( pList );
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
-            pNode->addr.ia.sin_port = htons (port);
+            pNode->addr.ia.sin_port = htons ( port );
         }
         pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
     }
@@ -58,21 +58,25 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
  */
 void rsrv_online_notify_task(void *pParm)
 {
-    osiSockAddrNode     *pNode;
-    double              delay;
-    double              maxdelay;
-    long                longStatus;
-    double              maxPeriod;
-    caHdr               msg;
-    int                 status;
-    SOCKET              sock;
-    int                 true = TRUE;
-    unsigned short      port;
-    ca_uint32_t         beaconCounter = 0;
-    char                * pStr;
-    int                 autoBeaconAddr;
-    ELLLIST             autoAddrList;
-    char                buf[16];
+    unsigned                    priorityOfSelf = epicsThreadGetPrioritySelf ();
+    osiSockAddrNode             *pNode;
+    double                      delay;
+    double                      maxdelay;
+    long                        longStatus;
+    double                      maxPeriod;
+    caHdr                       msg;
+    int                         status;
+    SOCKET                      sock;
+    int                         true = TRUE;
+    unsigned short              port;
+    ca_uint32_t                 beaconCounter = 0;
+    char                        * pStr;
+    int                         autoBeaconAddr;
+    ELLLIST                     autoAddrList;
+    char                        buf[16];
+    unsigned                    priorityOfUDP;
+    epicsThreadBooleanStatus    tbs;
+    epicsThreadId               tid;
     
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
@@ -162,9 +166,8 @@ void rsrv_online_notify_task(void *pParm)
 		ellInit ( &tmpList );
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses (&tmpList, sock, &addr); 
+        forcePort ( &tmpList, port );
 		removeDuplicateAddresses ( &autoAddrList, &tmpList, 1 );
-
-        forcePort ( &autoAddrList, port );
     }
             
     /*
@@ -194,20 +197,30 @@ void rsrv_online_notify_task(void *pParm)
     if ( ellCount ( &beaconAddrList ) == 0 ) {
         errlogPrintf ("The CA server's beacon address list was empty after initialization?\n");
     }
-    else {
-        forcePort ( &beaconAddrList, port );
-    }
   
 #   ifdef DEBUG
         printChannelAccessAddressList (&beaconAddrList);
 #   endif
+
+    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfUDP );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
+        priorityOfUDP = priorityOfSelf;
+    }
+
+    tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
+        epicsThreadGetStackSize (epicsThreadStackMedium),
+        cast_server, 0 );
+    if ( tid == 0 ) {
+        epicsPrintf ( "CAS: unable to start UDP daemon thread\n" );
+    }
     
     while (TRUE) {  
         pNode = (osiSockAddrNode *) ellFirst (&beaconAddrList);
         while (pNode) {
             char buf[64];
  
-            status = connect (sock, &pNode->addr.sa, sizeof(pNode->addr.sa));
+            status = connect (sock, &pNode->addr.sa, 
+                sizeof(pNode->addr.sa));
             if (status<0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 

@@ -110,8 +110,6 @@ LOCAL void clean_addrq()
 void cast_server(void *pParm)
 {
     unsigned            priorityOfSelf = epicsThreadGetPrioritySelf ();
-    unsigned            priorityOfBeacon;
-    epicsThreadBooleanStatus    tbs;
     struct sockaddr_in  sin;    
     int                 status;
     int                 count=0;
@@ -217,19 +215,7 @@ void cast_server(void *pParm)
     "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
                 __FILE__, sockErrBuf );
     }
-    
-    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacon );
-    if ( tbs != epicsThreadBooleanStatusSuccess ) {
-        priorityOfBeacon = priorityOfSelf;
-    }
-
-    tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacon,
-        epicsThreadGetStackSize (epicsThreadStackSmall),
-        rsrv_online_notify_task, 0 );
-    if ( tid == 0 ) {
-        epicsPrintf ( "CAS: unable to start beacon thread\n" );
-    }
- 
+     
     /*
      * setup new client structure but reuse old structure if
      * possible

@@ -59,7 +59,7 @@ if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
 LOCAL void req_server (void *pParm)
 {
     unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
-    unsigned priorityOfUDP;
+    unsigned priorityOfBeacons;
     epicsThreadBooleanStatus tbs;
     struct sockaddr_in serverAddr;  /* server's address */
     osiSocklen_t addrSize;
@@ -180,16 +180,16 @@ LOCAL void req_server (void *pParm)
         epicsThreadSuspendSelf ();
     }
 
-    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfUDP );
+    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacons );
     if ( tbs != epicsThreadBooleanStatusSuccess ) {
-        priorityOfUDP = priorityOfSelf;
+        priorityOfBeacons = priorityOfSelf;
     }
 
-    tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
-        epicsThreadGetStackSize (epicsThreadStackMedium),
-        cast_server, 0 );
+    tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacons,
+        epicsThreadGetStackSize (epicsThreadStackSmall),
+        rsrv_online_notify_task, 0 );
     if ( tid == 0 ) {
-        epicsPrintf ( "CAS: unable to start connection request thread\n" );
+        epicsPrintf ( "CAS: unable to start beacon thread\n" );
     }
 
     while (TRUE) {

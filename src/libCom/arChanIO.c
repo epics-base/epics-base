@@ -27,6 +27,8 @@
  * -----------------
  * .01	03-09-90	rac	initial version
  * .02	07-31-91	rac	installed in SCCS
+ * .03	09-19-91	rac	add a new assert check; fix bug in writing
+ *				index blocks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -311,6 +313,7 @@ arCFAsserts()
 					needed to make structures properly
 					aligned */
     assertAlways(AR_GR_BUF_PAD >= 1);	/* block has to hold state strings */
+    assertAlways(ERROR < 0);		/* must not be a valid block number */
 
 /*----------------------------------------------------------------------------
 *    make sure that changing long to character stream and back actually works
@@ -1085,7 +1088,7 @@ rdwrCase4:
 					ArCDChanHdr(pArChanDesc).indexTail);
 	    assert(pArChanDesc->pIndexBuf->bfInfo.flink == (BF_BLKNUM)0);
 	    pArChanDesc->pIndexBuf->bfInfo.flink = (BF_BLKNUM)blockNum;
-	    ArCFModifySet(pArChanDesc->pArCfDesc, pIndexBuf);
+	    ArCFModifySet(pArChanDesc->pArCfDesc, pArChanDesc->pIndexBuf);
 	    if (arCF_IFlushAndFree(pArChanDesc) != OK) {
 		(void)fprintf(stderr,
 		    "arCF_INextDatInfo: error writing previous index block\n");

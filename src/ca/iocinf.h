@@ -17,10 +17,6 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
-
-#define NO_PLACEMENT_DELETE
-
 #ifdef DEBUG
 #   define debugPrintf(argsInParen) ::printf argsInParen
 #else
@@ -33,7 +29,6 @@
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_SEC    1000000L
-
 
 #if defined ( CLOCKS_PER_SEC )
 #   define CAC_SIGNIFICANT_DELAY ( 1.0 / CLOCKS_PER_SEC )

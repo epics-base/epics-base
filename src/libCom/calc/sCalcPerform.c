@@ -69,8 +69,8 @@
 #include	<math.h>
 
 #include	"dbDefs.h"
-#include	"cvtFast.h"
 #define epicsExportSharedSymbols
+#include	"cvtFast.h"
 #include	"sCalcPostfix.h"
 #include	"sCalcPostfixPvt.h"
 

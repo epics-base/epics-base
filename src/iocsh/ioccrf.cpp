@@ -429,9 +429,7 @@ ioccrf (const char *pathname)
             pioccrfFuncDef = found->pFuncDef;
 
             /*
-             * Process arguments
-             * Must make local copy of pioccrfFuncDef->arg[arg] to
-             * ensure that this routine is thread-safe.
+             * Process arguments and call function
              */
             for (int arg = 0 ; ; arg++) {
                 char *p = (arg < argc) ? argv[arg+1] : NULL;
@@ -448,7 +446,7 @@ ioccrf (const char *pathname)
                     if (np == NULL) {
                         fprintf (stderr, "Out of memory!\n");
                         argBufCapacity -= 20;
-                        continue;
+                        break;
                     }
                     argBuf = (ioccrfArgBuf *)np;
                 }

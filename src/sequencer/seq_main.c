@@ -16,6 +16,7 @@
 05jul91,ajk	Changed semCreate() in three places to semBCreate() or
 		semMCreate().  Modified semTake() second param. to WAIT_FOREVER.
 		These provide VX5.0 compatability.  
+16aug91,ajk	Improved "magic number" error message.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -74,7 +75,9 @@ int		stack_size;	/* stack size */
 	/* Check for correct state program format */
 	if (sp_ptr_orig->magic != MAGIC)
 	{	/* Oops */
-		logMsg("Illegal magic number in state program\n");
+		logMsg("Illegal magic number in state program.\n");
+		logMsg(" - Possible mismatch between SNC & SEQ versions\n");
+		logMsg(" - Re-compile your program?\n");
 		return -1;
 	}
 

@@ -21,6 +21,9 @@ extern "C" {
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <ioLib.h>
+#include <hostLib.h>
+#include <selectLib.h>
 
 #ifdef __cplusplus
 }

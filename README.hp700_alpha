@@ -1,0 +1,24 @@
+#
+# supplement README for HP700 and Alpha OSF/1 builds
+#
+#
+
+- EPICS environment variable - set by hand prior to build
+
+ For EPICS builds on HP700 and Alpha OSF/1, set an environment variable "EPICS"
+ to the base of the EPICS directory to do builds in (the directory where
+ this file resides, for instance).
+
+ If you are currently in the base directory, then do the following:
+ % setenv EPICS $cwd
+
+- set path to include gnu make and base/tools and base/bin/<arch>
+
+ Then set the path such that a recent version (e.g. V3.70) of gnumake
+ is available (as make) before any system supplied makes, and that
+ $EPICS/base/tools and $EPICS/base/bin/<arch> are included as well.
+
+ For example:
+
+ % set path=(/usr/local/bin $EPICS/base/tools $EPICS/base/bin/hp700 $path)
+

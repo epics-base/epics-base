@@ -388,6 +388,14 @@ PRODNAME_SRCS += $(PRODNAME_SRCS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(PRODNAME_OBJS_$(ARCH_CLASS))),)
+PRODNAME_OBJS += $(subst -nil-,,$(PRODNAME_OBJS_$(ARCH_CLASS)))
+else
+ifdef PRODNAME_OBJS_DEFAULT
+PRODNAME_OBJS += $(PRODNAME_OBJS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(PRODNAME_RCS_$(ARCH_CLASS))),)
 PRODNAME_RCS += $(subst -nil-,,$(PRODNAME_RCS_$(ARCH_CLASS)))
 else
@@ -406,8 +414,8 @@ else
 PRODNAME_LINKER = $(LINK.c)
 endif
 
-PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
-PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
+PRODNAME_OBJS+=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
+PRODNAME_RESS+=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
 ifeq ($(HOST_ARCH),Borland)
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)

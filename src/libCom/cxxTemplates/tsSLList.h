@@ -37,7 +37,7 @@
 #include <assert.h>
 #endif
 
-#include <locationException.h>
+#include "locationException.h"
 
 
 //

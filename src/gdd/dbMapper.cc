@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.27  1999/10/28 23:33:41  jhill
+// use fully qualified namespace names for C++ RTL classes
+//
 // Revision 1.26  1999/10/28 00:26:46  jhill
 // many bugs fixed
 //
@@ -113,11 +116,7 @@
 // hardcoded in same order as aitConvert.h
 // no way to detect a string type!!!!!!!
 
-//
-// C++ will not make a const decl external linkage unless
-// we explicitly specify extern
-//
-epicsShareDef extern const chtype gddAitToDbr[] = { 
+epicsShareDef const int gddAitToDbr[aitConvertLast+1] = { 
 	DBR_STRING,
 	DBR_CHAR,
 	DBR_CHAR,
@@ -132,8 +131,8 @@ epicsShareDef extern const chtype gddAitToDbr[] = {
 	DBR_STRING
 };
 
-epicsShareDef extern const unsigned gddDbrToAitNElem = 
-        sizeof(gddAitToDbr)/sizeof(chtype);
+epicsShareDef const unsigned gddDbrToAitNElem = 
+        sizeof(gddAitToDbr)/sizeof(gddAitToDbr[0]);
 
 /*
  * application type ("app" field) is initialized
@@ -195,8 +194,8 @@ epicsShareDef gddDbrToAitTable gddDbrToAit[DBM_N_DBR_TYPES] = {
 static gddApplicationTypeTable* type_table = NULL;
 static aitDataFormat local_data_format=aitLocalDataFormat;
 
-epicsShareDef extern const unsigned gddAitToDbrNElem = 
-        sizeof(gddDbrToAit)/sizeof(gddDbrToAitTable);
+epicsShareDef const unsigned gddAitToDbrNElem = 
+        sizeof(gddDbrToAit)/sizeof(gddDbrToAit[0]);
 
 //
 // special gddDestructor guarantees same form of new and delete
@@ -1792,7 +1791,7 @@ void dbMapperFixedStringDestructor::run (void *pUntyped)
 // C++ will not make a const decl external linkage unless
 // we explicitly specify extern
 //
-epicsShareDef extern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
+epicsShareDef const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
     { mapStringToGdd,       mapGddToString },           // DBR_STRING
     { mapShortToGdd,        mapGddToShort },            // DBR_SHORT
     { mapFloatToGdd,        mapGddToFloat },            // DBR_FLOAT
@@ -1838,6 +1837,6 @@ epicsShareDef extern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
 #error db mapper is out of sync with db_access.h
 #endif
 
-epicsShareDef extern const unsigned gddMapDbrNElem = 
-        sizeof(gddMapDbr)/sizeof(gddDbrMapFuncTable);
+epicsShareDef const unsigned gddMapDbrNElem = 
+        sizeof(gddMapDbr)/sizeof(gddDbrToAit[0]);
 

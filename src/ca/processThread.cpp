@@ -18,11 +18,11 @@
 #include <iocinf.h>
 
 processThread::processThread (cac *pcacIn) :
-    osiThread (), 
+    osiThread ("CAC process", 0x1000, threadPriorityMedium), 
     pcac (pcacIn),
     shutDown (false)
 {
-    start("CAC process", 0x1000, threadPriorityMedium);
+    this->start ();
 }
 
 processThread::~processThread ()

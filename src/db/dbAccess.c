@@ -331,7 +331,7 @@ long dbNameToAddr(pname,paddr)
 		lenName++;
 	}
 	*precName = 0;
-	if(pvdSearchRecord(&pdbBase,&recName[0],lenName,&ppvdEntry)) {
+	if(pvdSearchRecord(pdbBase,&recName[0],lenName,&ppvdEntry)) {
 		paddr->precord = (void *)-1;
 		paddr->record_type = -1;
 		return(S_db_notFound);
@@ -346,7 +346,7 @@ long dbNameToAddr(pname,paddr)
 		recName[0] = 0;
 		pfieldName = &recName[0];
 	}
-	if (!(pfldDes=(struct fldDes*)pvdSearchField(&pdbBase,(short)paddr->record_type,(char*)pfieldName))){
+	if (!(pfldDes=(struct fldDes*)pvdSearchField(pdbBase,(short)paddr->record_type,(char*)pfieldName))){
 		paddr->field_type = -1;
 		paddr->pfield = (void *)-1;
 		paddr->field_size = -1;

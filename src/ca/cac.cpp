@@ -1201,8 +1201,7 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
         }
         if ( enableCallbacks ) {
             char buf[128];
-            sprintf ( buf, "host = %*s", 
-                sizeof(buf)-1, chan.pHostName() );
+            sprintf ( buf, "host = %100s", chan.pHostName() );
             epicsAutoMutexRelease unlocker ( this->mutex );
             pNetIO->exception ( ECA_DISCONN, buf );
         }

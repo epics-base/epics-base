@@ -104,6 +104,10 @@ void cac_mux_io(struct timeval  *ptimeout)
         int                     count;
         struct timeval          timeout;
 
+#if NOASYNCRECV
+	cac_clean_iiu_list();
+	manage_conn(TRUE);
+#endif
         timeout = *ptimeout;
 	do{
 		count = cac_select_io(
@@ -113,6 +117,10 @@ void cac_mux_io(struct timeval  *ptimeout)
 		timeout.tv_sec = 0;
 	}
 	while(count>0);
+
+#if NOASYNCRECV 
+	ca_process_input_queue();
+#endif
 }
 
 
@@ -125,6 +133,9 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	unsigned long 	ticks;
 	unsigned long	rate = sysClkRateGet();
 
+#if NOASYNCRECV 
+        cac_mux_io(pTV);
+#else
 	/*
 	 * flush outputs
 	 * (recv occurs in another thread)
@@ -137,6 +148,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	ticks = min(LOCALTICKS, ticks);
 
 	semTake(io_done_sem, ticks);
+#endif
 }
 
 
@@ -146,7 +158,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
 void os_specific_sg_create(CASG   *pcasg)
 {
 	pcasg->sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	assert(pcasg->sem);
+	assert (pcasg->sem);
 }
 
 
@@ -158,7 +170,7 @@ void os_specific_sg_delete(CASG   *pcasg)
 	int status;
 
 	status = semDelete(pcasg->sem);
-	assert(status == OK);
+	assert (status == OK);
 }
 
 
@@ -170,7 +182,7 @@ void os_specific_sg_io_complete(CASG   *pcasg)
 	int status;
 
 	status = semGive(pcasg->sem);
-	assert(status == OK);
+	assert (status == OK);
 }
 
 
@@ -183,6 +195,9 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 	unsigned long 	ticks;
 	unsigned long	rate = sysClkRateGet();
 
+#if NOASYNCRECV 
+	cac_mux_io(pTV);
+#else
 	/*
 	 * flush outputs
 	 * (recv occurs in another thread)
@@ -194,7 +209,8 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 	ticks = pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC;
 	ticks = min(LOCALTICKS, ticks);
 
-	semTake(pcasg->sem, ticks);
+	semTake (pcasg->sem, ticks);
+#endif
 }
 
 
@@ -440,14 +456,17 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 	 * Cancel all local events
 	 * (and put call backs)
 	 *
-	 * !! temp release lock so that the event task
-	 * 	can finish !!
 	 */
-	UNLOCK;
 	chix = (chid) & pcas->ca_local_chidlist.node;
 	while (chix = (chid) chix->node.next) {
 		while (monix = (evid) ellGet(&chix->eventq)) {
+			/*
+			 * temp release lock so that the event task
+			 * 	can finish 
+			 */
+			UNLOCK;
 			status = db_cancel_event(monix + 1);
+			LOCK;
 			assert(status == OK);
 			free(monix);
 		}
@@ -461,7 +480,6 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 			free (ppn);
 		}
 	}
-	LOCK;
 
 	/*
 	 * set ca_static for access.c
@@ -841,6 +859,9 @@ void cac_recv_task(int  tid)
          * ca_task_exit() is called.
          */
         while(TRUE){
+#if NOASYNCRECV 
+		taskDelay(60);
+#else
         	manage_conn(TRUE);
 
                 timeout.tv_usec = 0;
@@ -853,6 +874,7 @@ void cac_recv_task(int  tid)
 			CA_DO_RECVS);
 
                 ca_process_input_queue();
+#endif
         }
 }
 

@@ -136,6 +136,13 @@ typedef struct osiSockAddrNode {
 } osiSockAddrNode;
 
 /*
+ * sockAddrAreIdentical() 
+ * (returns true if addresses are identical)
+ */
+epicsShareFunc int epicsShareAPI sockAddrAreIdentical 
+			( const osiSockAddr * plhs, const osiSockAddr * prhs );
+
+/*
  *  osiSockDiscoverBroadcastAddresses ()
  *  Returns the broadcast addresses of each network interface found.
  *

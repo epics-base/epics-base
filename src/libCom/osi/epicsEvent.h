@@ -27,7 +27,6 @@ public:
     void show ( unsigned level ) const;
 
     class invalidSemaphore {}; /* exception */
-    class noMemory {}; /* exception */
 private:
     epicsEvent ( const epicsEvent & );
     epicsEvent & operator = ( const epicsEvent & );

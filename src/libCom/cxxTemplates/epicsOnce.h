@@ -19,16 +19,16 @@
 
 #include "shareLib.h"
 
-class epicsShareClass epicsOnceNotify {
+class epicsOnceNotify {
 public:
-    virtual ~epicsOnceNotify ();
+    epicsShareFunc virtual ~epicsOnceNotify ();
     virtual void initialize () = 0;
 };
 
-class epicsShareClass epicsOnce {
+class epicsOnce {
 public:
-    static epicsOnce & create ( epicsOnceNotify & notifyIn );
-    virtual ~epicsOnce ();
+    epicsShareFunc static epicsOnce & create ( epicsOnceNotify & notifyIn );
+    virtual ~epicsOnce (); // use destroy
     virtual void once () = 0;
     virtual void destroy () = 0;
 };

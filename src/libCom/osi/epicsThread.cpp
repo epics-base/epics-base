@@ -12,6 +12,7 @@
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
 
+epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::stop() {};
 void epicsThreadRunable::show(unsigned int) const {};
 

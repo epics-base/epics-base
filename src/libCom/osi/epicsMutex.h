@@ -22,7 +22,6 @@ public:
     void unlock ();
     void show ( unsigned level ) const;
 
-    class noMemory {}; // exception
     class invalidSemaphore {}; // exception
 private:
     epicsMutexId id;

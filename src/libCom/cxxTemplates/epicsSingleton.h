@@ -34,15 +34,6 @@ private:
     void * factory ();
 };
 
-inline epicsSingletonBase::epicsSingletonBase () : pSingleton ( 0 )
-{
-}
-
-inline void * epicsSingletonBase::singletonPointer () const
-{
-    return this->pSingleton;
-}
-
 template < class T >
 inline epicsSingleton<T>::~epicsSingleton ()
 {

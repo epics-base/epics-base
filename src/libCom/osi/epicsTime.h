@@ -251,45 +251,6 @@ int epicsTime_gmtime ( const time_t *clock, struct tm *result );
 /* epicsTime inline member functions ,*/
 #ifdef __cplusplus
 
-inline epicsTime::epicsTime (const epicsTimeStamp &ts) 
-{
-    this->secPastEpoch = ts.secPastEpoch;
-    this->nSec = ts.nsec;
-}
-
-inline epicsTime epicsTime::getCurrent ()
-{
-    epicsTimeStamp current;
-    int status;
-
-    status = epicsTimeGetCurrent (&current);
-    if (status) {
-        throwWithLocation ( unableToFetchCurrentTime () );
-    }
-
-    return epicsTime (current);
-}
-
-inline epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
-{
-    epicsTimeStamp current;
-    int status;
-
-    status = epicsTimeGetEvent (&current, event.eventNumber);
-    if (status) {
-        throwWithLocation ( unableToFetchCurrentTime () );
-    }
-
-    return epicsTime (current);
-}
-
-inline void epicsTime::synchronize () {} // depricated
-
-inline epicsTime::epicsTime () : secPastEpoch(0u), nSec(0u) {}	
-
-inline epicsTime::epicsTime (const epicsTime &t)
-: secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
-
 inline epicsTime epicsTime::operator - (const double &rhs) const
 {
     return epicsTime::operator + (-rhs);

@@ -14,6 +14,15 @@
 
 epicsMutex epicsSingletonBase::mutex;
 
+epicsSingletonBase::epicsSingletonBase () : pSingleton ( 0 )
+{
+}
+
+void * epicsSingletonBase::singletonPointer () const
+{
+    return this->pSingleton;
+}
+
 epicsSingletonBase::~epicsSingletonBase ()
 {
 }

@@ -39,13 +39,15 @@ public:
         bool again;
         double delay;
     };
+    epicsShareFunc virtual ~epicsTimerNotify ();
     // return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )"
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
-    virtual epicsShareFunc void show ( unsigned int level ) const;
+    epicsShareFunc virtual epicsShareFunc void show ( unsigned int level ) const;
 };
 
 class epicsTimer {              // X aCC 655
 public:
+    virtual ~epicsTimer () = 0; // use destroy
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
@@ -58,8 +60,6 @@ public:
     virtual expireInfo getExpireInfo () const = 0;
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
-protected:
-    virtual ~epicsTimer () = 0; // use destroy
 };
 
 class epicsTimerQueue {         // X aCC 655

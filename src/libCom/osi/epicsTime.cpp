@@ -178,6 +178,45 @@ epicsTime::epicsTime (const time_t_wrapper &ansiTimeTicks)
     this->nSec = static_cast <unsigned long> ( (sec-this->secPastEpoch) * nSecPerSec );
 }
 
+epicsTime::epicsTime (const epicsTimeStamp &ts) 
+{
+    this->secPastEpoch = ts.secPastEpoch;
+    this->nSec = ts.nsec;
+}
+
+epicsTime::epicsTime () : secPastEpoch(0u), nSec(0u) {}	
+
+epicsTime::epicsTime (const epicsTime &t) : 
+    secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
+
+epicsTime epicsTime::getCurrent ()
+{
+    epicsTimeStamp current;
+    int status;
+
+    status = epicsTimeGetCurrent (&current);
+    if (status) {
+        throwWithLocation ( unableToFetchCurrentTime () );
+    }
+
+    return epicsTime (current);
+}
+
+epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
+{
+    epicsTimeStamp current;
+    int status;
+
+    status = epicsTimeGetEvent (&current, event.eventNumber);
+    if (status) {
+        throwWithLocation ( unableToFetchCurrentTime () );
+    }
+
+    return epicsTime (current);
+}
+
+void epicsTime::synchronize () {} // depricated
+
 //
 // operator time_t_wrapper ()
 //

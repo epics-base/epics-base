@@ -33,7 +33,6 @@
 #ifndef osdSemh
 #define osdSemh
 
-
 #ifndef VC_EXTRALEAN
 #   define VC_EXTRALEAN
 #endif
@@ -51,19 +50,19 @@ static const unsigned mSecPerSecOsdSem = 1000u;
 /*
  * semBinaryCreate ()
  */
-epicsShareFunc INLINE semId epicsShareAPI semBinaryCreate (int initialState) 
+epicsShareFunc INLINE semBinaryId epicsShareAPI semBinaryCreate (int initialState) 
 {
     HANDLE newEvent;
 
     newEvent =  CreateEvent (NULL, FALSE, initialState?TRUE:FALSE, NULL);
-    return (semId) newEvent;
+    return (semBinaryId) newEvent;
 }
 
 
 /*
  * semBinaryDestroy ()
  */
-epicsShareFunc INLINE void epicsShareAPI semBinaryDestroy (semId id) 
+epicsShareFunc INLINE void epicsShareAPI semBinaryDestroy (semBinaryId id) 
 {
     HANDLE destroyee = (HANDLE) id;
     BOOL success;
@@ -75,7 +74,7 @@ epicsShareFunc INLINE void epicsShareAPI semBinaryDestroy (semId id)
 /*
  * semBinaryGive ()
  */
-epicsShareFunc INLINE void epicsShareAPI semBinaryGive (semId id) 
+epicsShareFunc INLINE void epicsShareAPI semBinaryGive (semBinaryId id) 
 {
     HANDLE event = (HANDLE) id;
     BOOL status;
@@ -87,7 +86,7 @@ epicsShareFunc INLINE void epicsShareAPI semBinaryGive (semId id)
 /*
  * semBinaryTake ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTake (semId id) 
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTake (semBinaryId id) 
 { 
     HANDLE event = (HANDLE) id;
     DWORD status;
@@ -104,7 +103,7 @@ epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTake (semId id)
 /*
  * semBinaryTakeTimeout ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeTimeout (semId id, double timeOut)
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeTimeout (semBinaryId id, double timeOut)
 { 
     HANDLE event = (HANDLE) id;
     DWORD status;
@@ -126,7 +125,7 @@ epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeTimeout (semId id
 /*
  * semBinaryTakeNoWait ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeNoWait (semId id) 
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeNoWait (semBinaryId id) 
 { 
     HANDLE mutex = (HANDLE) id;
     DWORD status;
@@ -146,18 +145,18 @@ epicsShareFunc INLINE semTakeStatus epicsShareAPI semBinaryTakeNoWait (semId id)
 /*
  * semMutexCreate ()
  */
-epicsShareFunc INLINE semId epicsShareAPI semMutexCreate (void) 
+epicsShareFunc INLINE semMutexId epicsShareAPI semMutexCreate (void) 
 {
     HANDLE newMutex;
 
     newMutex = CreateMutex (NULL, FALSE, NULL);
-    return (semId) newMutex;
+    return (semMutexId) newMutex;
 }
 
 /*
  * semMutexDestroy ()
  */
-epicsShareFunc INLINE void epicsShareAPI semMutexDestroy (semId id) 
+epicsShareFunc INLINE void epicsShareAPI semMutexDestroy (semMutexId id) 
 {
     HANDLE destroyee = (HANDLE) id;
     BOOL success;
@@ -169,7 +168,7 @@ epicsShareFunc INLINE void epicsShareAPI semMutexDestroy (semId id)
 /*
  * semMutexGive ()
  */
-epicsShareFunc INLINE void epicsShareAPI semMutexGive (semId id) 
+epicsShareFunc INLINE void epicsShareAPI semMutexGive (semMutexId id) 
 {
     HANDLE destroyee = (HANDLE) id;
     BOOL success;
@@ -181,7 +180,7 @@ epicsShareFunc INLINE void epicsShareAPI semMutexGive (semId id)
 /*
  * semMutexTake ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTake (semId id) 
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTake (semMutexId id) 
 {
     HANDLE mutex = (HANDLE) id;
     DWORD status;
@@ -198,7 +197,7 @@ epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTake (semId id)
 /*
  * semMutexTakeTimeout ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeTimeout (semId id, double timeOut)
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeTimeout (semMutexId id, double timeOut)
 { 
     HANDLE mutex = (HANDLE) id;
     DWORD status;
@@ -220,7 +219,7 @@ epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeTimeout (semId id,
 /*
  * semMutexTakeNoWait ()
  */
-epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeNoWait (semId id) 
+epicsShareFunc INLINE semTakeStatus epicsShareAPI semMutexTakeNoWait (semMutexId id) 
 { 
     HANDLE mutex = (HANDLE) id;
     DWORD status;

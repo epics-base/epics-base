@@ -36,14 +36,14 @@
 
 /*
  * semBinaryShow ()
- *
  */
-epicsShareFunc void epicsShareAPI semBinaryShow (semId id) 
-{ }
+epicsShareFunc void epicsShareAPI semBinaryShow (semBinaryId id) 
+{ 
+}
 
 /*
  * semMutexShow ()
- *
  */
-epicsShareFunc void epicsShareAPI semMutexShow (semId id) 
-{ }
+epicsShareFunc void epicsShareAPI semMutexShow (semMutexId id) 
+{ 
+}

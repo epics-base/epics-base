@@ -358,17 +358,25 @@ void searchTimer::uninstallChan (
     epicsGuard < epicsMutex > & cacGuard, nciu & chan )
 {
     cacGuard.assertIdenticalMutex ( this->mutex );
-    if ( chan.channelNode::listMember == 
-            this->index + channelNode::cs_searchReqPending0 ) {
+    unsigned ulistmem = 
+	static_cast <unsigned> ( chan.channelNode::listMember );
+    unsigned uReqBase = 
+	static_cast <unsigned> ( channelNode::cs_searchReqPending0 );
+    if ( ulistmem == this->index + uReqBase ) {
         this->chanListReqPending.remove ( chan );
     }
-    else if ( chan.channelNode::listMember == 
-            this->index + channelNode::cs_searchRespPending0 ) {
-        this->chanListRespPending.remove ( chan );
-    }
-    else {
-        throw std::runtime_error ( 
-            "uninstalling channel search timer, but channel state is wrong" );;
+    else { 
+	unsigned uRespBase = 
+	    static_cast <unsigned > ( 
+		channelNode::cs_searchRespPending0 );
+	if ( ulistmem == this->index + uRespBase ) {
+	    this->chanListRespPending.remove ( chan );
+	}
+	else {
+	    throw std::runtime_error ( 
+		"uninstalling channel search timer, but channel "
+		"state is wrong" );
+	}
     }
     chan.channelNode::listMember = channelNode::cs_none;
 }

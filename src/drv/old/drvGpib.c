@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  1995/04/25  15:32:23  winans
+ * Changed name of HiDEOS link configuration command/function.
+ *
  * Revision 1.2  1995/04/12  19:31:41  winans
  * Added support for the HiDEOS system as a GPIB bus transport agent.
  *
@@ -974,12 +977,36 @@ char	*buffer;	/* data to transfer */
 int	length;		/* number of bytes to transfer */
 int	time;		/* time to wait on the DMA operation */
 {
-  int	status;
-  short	cnt;
-  register struct ibregs *b;
-  char	w_imr2;
-  int	temp_addr;
-  int	tmoTmp;
+  int				status = ERROR;
+  unsigned short	cnt;
+  struct ibregs		*b;
+  char				w_imr2;
+  int				temp_addr;
+  int				tmoTmp;
+
+#ifdef NI_GPIB_LOOP_LENGTH
+#define NI_GPIB_CHUNKSIZE	0x0ffff
+  while (length > 0)
+  {
+		if (length > NI_GPIB_CHUNKSIZE)
+		{
+			cnt = NI_GPIB_CHUNKSIZE;
+			length -= NI_GPIB_CHUNKSIZE;
+		}
+		else
+		{
+			cnt = length;
+			length = 0;
+		}
+#else
+	cnt = length;
+
+  if (cnt > 0x0fffe)
+  {
+	errMessage(S_IB_SIZE, "NI-1014 max length (65535) exceeded");
+	return(ERROR);
+  }
+#endif
 
   if (pNiLink[link]->A24BounceBuffer == NULL)
   {
@@ -993,25 +1020,24 @@ int	time;		/* time to wait on the DMA operation */
       logMsg("Got a bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer);
   }
 
-  if (pNiLink[link]->A24BounceSize < length)
+  if (pNiLink[link]->A24BounceSize < cnt)
   { /* Reallocate a larger bounce buffer */
 
     devLibA24Free(pNiLink[link]->A24BounceBuffer);	/* Loose the old one */
 
-    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(length)) == NULL)
+    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(cnt)) == NULL)
     {
       errMessage(S_IB_A24 ,"niPhysIo ran out of A24 memory!");
       pNiLink[link]->A24BounceSize = 0;
       pNiLink[link]->A24BounceBuffer = NULL;
       return(ERROR);
     }
-    pNiLink[link]->A24BounceSize = length;
+    pNiLink[link]->A24BounceSize = cnt;
     if(ibDebug > 5)
       logMsg("Got a new bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer);
   }
 
   b = pNiLink[link]->ibregs;
-  cnt = length;
 
   b->auxmr = AUX_GTS;	/* go to standby mode */
   b->ch1.ccr = D_SAB;	/* halt channel activity */
@@ -1049,7 +1075,7 @@ int	time;		/* time to wait on the DMA operation */
   else /* (dir == READ) */
   {
     /* We will be writing, copy data into the bounce buffer */
-    memcpy(pNiLink[link]->A24BounceBuffer, buffer, length);
+    memcpy(pNiLink[link]->A24BounceBuffer, buffer, cnt);
 
     if (cnt != 1)
       pNiLink[link]->DmaStuff->cc_byte = AUX_SEOI; /* send EOI with last byte */
@@ -1231,9 +1257,13 @@ int	time;		/* time to wait on the DMA operation */
 
   if (dir == READ)
   { /* Copy data from the bounce buffer to the user's buffer */
-    memcpy(buffer, pNiLink[link]->A24BounceBuffer, length);
+    memcpy(buffer, pNiLink[link]->A24BounceBuffer, cnt);
   }
+#ifdef NI_GPIB_LOOP_LENGTH
 
+	buffer += NI_GPIB_CHUNKSIZE;
+  }
+#endif
   return (status);
 }
 

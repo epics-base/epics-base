@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.24  1995/03/10  16:55:40  winans
+ * Added waveform writing support
+ *
  * Revision 1.23  1995/01/06  16:55:52  winans
  * Added the log parameter to the doc
  *
@@ -1302,13 +1305,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
     else
     {
@@ -1353,13 +1350,7 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_aiGpibFinish(pdpvt);	/* and finish the processing */
@@ -1404,13 +1395,7 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
         }
     }
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }
@@ -1452,13 +1437,7 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
     }
 
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(IDLE);
 }
@@ -1489,13 +1468,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
     else
     {
@@ -1540,13 +1513,7 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_liGpibFinish(pdpvt);	/* and finish the processing */
@@ -1590,13 +1557,7 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
         }
     }
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }
@@ -1638,13 +1599,7 @@ struct gpibDpvt *pdpvt;
         devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
     }
 
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
     return(IDLE);
 }
 
@@ -1671,13 +1626,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
     else   	/* interpret response that came back */   
     {
@@ -1720,13 +1669,7 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_biGpibFinish(pdpvt);        /* and finish the processing */
@@ -1773,13 +1716,7 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 	}
     }
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }
@@ -1821,14 +1758,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
     }
-
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(IDLE);
 }
@@ -1856,13 +1786,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pmbbi,WRITE_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
     else 
     {
@@ -1907,13 +1831,7 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_mbbiGpibFinish(pdpvt);        /* and finish the processing */
@@ -1960,13 +1878,7 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 	}
     }
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }
@@ -2009,14 +1921,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
     }
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     return(IDLE);
 }
 
@@ -2046,13 +1952,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
     else 
     {
@@ -2097,13 +1997,7 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_stringinGpibFinish(pdpvt);        /* and finish the processing */
@@ -2139,13 +2033,7 @@ struct gpibDpvt *pdpvt;
         psi->val[40] = '\0';
 	psi->udf = FALSE;
     }
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }
@@ -2185,14 +2073,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
     }
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     return(IDLE);
 }
 
@@ -2225,7 +2107,7 @@ unsigned short	val;	/* used for EFAST operations only */
         bbnode = pdpvt->head.bitBusDpvt->txMsg.node;
 
     /*
-     * check to see if this node has timed out within last 10 sec
+     * check to see if this node has timed out within last <timeWindow> ticks
      */
     if(tickGet() < (pdpvt->phwpvt->tmoVal + parmBlock->timeWindow) )
     {
@@ -2679,8 +2561,7 @@ struct gpibDpvt *pdpvt;
     {
                devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
     }
-
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
+    RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
 
     return(0);
 }

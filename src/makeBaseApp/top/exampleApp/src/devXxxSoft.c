@@ -36,6 +36,7 @@ static struct {
 	NULL,
 	read_xxx,
 };
+epicsShareExtern dset *pdevXxxSoft;
 epicsShareDef dset *pdevXxxSoft = (dset *)&devXxxSoft;
 
 

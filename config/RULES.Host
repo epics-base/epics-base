@@ -1,7 +1,6 @@
 # $Id$
 #
 #	Rules for making things specified in Makefile.Host
-#
 #	Some rules for filename-massage are system specific
 #	and have "ifdefs" here instead of using definitions
 #	from CONFIG.Host.$(ARCH_CLASS)  -  sorry about this,
@@ -405,10 +404,18 @@ endif
 PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
+ifeq ($(HOST_ARCH),Borland)
+$(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
+	@$(RM) $@
+	@echo 44444
+	$(PRODNAME_LINKER) $(PRODNAME_OBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(LDLIBS)),, $(PRODNAME_RESS)
+
+else
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(PRODNAME_RESS) $(LDLIBS)
 
+endif
 endif  # ifdef PRODNAME_SRCS
 
 else # PRODNAME not defined
@@ -432,7 +439,9 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
 $(PROD): $(SRCS) $(PROD_OBJS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+	@echo $(PROD_MAKE_COMMAND)
 	@$(PROD_MAKE_COMMAND)
+	@echo Done
 
 endif
 endif  #ifdef PRODNAME
@@ -510,10 +519,31 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
 	$(DEPENDS_RULE)
 
+ifeq ($(HOST_ARCH),Borland)
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
-	$(LINK.c)  $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+	echo 11111
+	$(LINK.c) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+
+%$(EXE): %.cc
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	echo 22222
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+
+%$(EXE): %.C
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	echo 33333
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+
+else
+
+%$(EXE): %.c
+	@$(RM) $@
+	$(COMPILE.c)  $<
+	$(LINK.c) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.cc
 	@$(RM) $@
@@ -524,6 +554,8 @@ depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+
+endif
 
 %$(OBJ): %.c
 	@$(RM) $@
@@ -653,9 +685,22 @@ $(DBDNAME): ../base.dbd
 endif
 endif
 
+ifeq ($(HOST_ARCH),Borland)
+$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
+	$(LINK.shrlib) $(LIBOBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(DLL_LDLIBS))
+
+else
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
+endif
+ifeq ($(HOST_ARCH),Borland)
+# rule for lib (archive of object files) creation
+$(LIBNAME): $(LIBOBJS)
+	$(RM) $@
+	$(ARCMD) $(foreach lib,$(LIBOBJS),+$(lib))
+
+else
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
 	$(RM) $@
@@ -663,6 +708,8 @@ $(LIBNAME): $(LIBOBJS)
 ifdef RANLIB
 	$(RANLIB) $@;
 endif # RANLIB
+
+endif
 
 $(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
 	@echo "Installing os-specific script $@"

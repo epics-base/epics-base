@@ -69,6 +69,15 @@ gddApps.h : genApps$(EXE)
 # )
 #
 # This rule, however, should be system-independent:
+ifeq ($(HOST_ARCH),Borland)
+
+aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
+	$(LINK.c) $^ , $@ ,,$(LINKLIBS)
+
+genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
+	$(LINK.cc) $^ , $@ ,,$(LINKLIBS)
+
+else
 aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
 	$(LINK.c) $^ 
 
@@ -78,4 +87,5 @@ genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)
 
+endif #Borland
 #	EOF base/src/gdd/Makefile.Host

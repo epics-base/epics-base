@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1998/04/17 17:49:25  jhill
+ * fixed range problem in string to fp convert
+ *
  * Revision 1.4  1997/08/05 00:51:07  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -101,6 +104,10 @@ epicsShareDef const char* aitScanf[aitTotal] = {
 /*
  * maximum value within type - joh
  */
+#if defined(__BORLANDC__)
+#define FLT_MAX         3.402823466e+38F
+#define DBL_MAX         1.7976931348623158e+308
+#endif
 epicsShareDef double aitMax[aitTotal] = {
 	-1,
 	SCHAR_MAX,

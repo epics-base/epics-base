@@ -44,7 +44,7 @@ void cacNotify::completionNotify ()
 
 void cacNotify::completionNotify ( unsigned type, unsigned long count, const void *pData )
 {
-    ca_printf ("IO completion with no handler installed? type=%u count=%u data pointer=%p\n",
+    ca_printf ("CAC: IO completion with no handler installed? type=%u count=%u data pointer=%p\n",
                 type, count, pData);
 }
 

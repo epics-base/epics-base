@@ -443,7 +443,7 @@ iocshBody (const char *pathname, const char *commandLine)
     struct iocshRedirect *redirect = NULL;
     int sep;
     const char *prompt = NULL;
-    const char *ifs = " \t(),";
+    const char *ifs = " \t(),\r";
     iocshArgBuf *argBuf = NULL;
     int argBufCapacity = 0;
     struct iocshCommand *found;

@@ -196,6 +196,11 @@ long dbgf(pname)	/* get field value*/
     struct dbAddr addr;
     long	  status;
     long	  options,no_elements;
+    static TAB_BUFFER msg_Buff;
+    TAB_BUFFER     *pMsgBuff = &msg_Buff;
+    char *pmsg = pMsgBuff->message;
+    int             tab_size;
+    tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
@@ -204,12 +209,14 @@ long dbgf(pname)	/* get field value*/
     options=0;
     if(addr.dbr_field_type==DBR_ENUM) {
 	status=dbGetField(&addr,DBR_STRING,pbuffer,&options,&no_elements);
-	printBuffer(status,DBR_STRING,pbuffer,0L,0L,no_elements);
+	printBuffer(status,DBR_STRING,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     }
     else {
 	status=dbGetField(&addr,addr.dbr_field_type,pbuffer,&options,&no_elements);
-	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     }
+    pmsg[0] = '\0';
+    dbpr_msgOut(pMsgBuff, tab_size);
     return(0);
 }
 
@@ -345,6 +352,11 @@ long dbtgf(pname)	/* test all options for dbGetField */
     long	  status;
     long	  req_options,ret_options,no_elements;
     short	  dbr_type;
+    static TAB_BUFFER msg_Buff;
+    TAB_BUFFER     *pMsgBuff = &msg_Buff;
+    char *pmsg = pMsgBuff->message;
+    int             tab_size;
+    tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
@@ -355,50 +367,51 @@ long dbtgf(pname)	/* test all options for dbGetField */
     no_elements=0;
     status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 	&ret_options,&no_elements);
-    printBuffer(status,addr.dbr_field_type,pbuffer,
-	req_options,ret_options,no_elements);
+    printBuffer(status,addr.dbr_field_type,pbuffer, req_options,ret_options,no_elements,pMsgBuff,tab_size);
     /* Now try all request types */
     ret_options=0;
     dbr_type=DBR_STRING;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/MAX_STRING_SIZE));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_CHAR;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(char)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_UCHAR;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned char)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_SHORT;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_USHORT;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_LONG;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(long)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_ULONG;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned long)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_FLOAT;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(float)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_DOUBLE;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(double)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     dbr_type=DBR_ENUM;
     no_elements=MIN(addr.no_elements,((sizeof(buffer)*4)/sizeof(unsigned short)));
     status=dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements);
-    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements);
+    printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
+    pmsg[0] = '\0';
+    dbpr_msgOut(pMsgBuff, tab_size);
     return(0);
 }
 
@@ -419,6 +432,11 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     unsigned long ulvalue;
     float	  fvalue;
     double	  dvalue;
+    static TAB_BUFFER msg_Buff;
+    TAB_BUFFER     *pMsgBuff = &msg_Buff;
+    char *pmsg = pMsgBuff->message;
+    int             tab_size;
+    tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
@@ -432,7 +450,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	options=0;
 	status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     }
     /* DBR_CHAR */
     if(sscanf(pvalue,"%hd",&svalue)==1) {
@@ -445,7 +463,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_CHAR\n");
     /* DBR_UCHAR */
@@ -459,7 +477,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_UCHAR\n");
     /* DBR_SHORT */
@@ -472,7 +490,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_SHORT\n");
     /* DBR_USHORT */
@@ -485,7 +503,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_USHORT\n");
     /* DBR_LONG */
@@ -498,7 +516,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_LONG\n");
     /* DBR_ULONG */
@@ -511,7 +529,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_ULONG\n");
     /* DBR_FLOAT */
@@ -524,7 +542,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_FLOAT\n");
     /* DBR_DOUBLE */
@@ -537,7 +555,7 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_DOUBLE\n");
     /* DBR_ENUM */
@@ -550,9 +568,11 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
 	    options=0;
 	    status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
 		&options,&no_elements);
-	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements);
+	    printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 	}
     } else printf("sscanf failed for DBR_SHORT\n");
+    pmsg[0] = '\0';
+    dbpr_msgOut(pMsgBuff, tab_size);
     return(0);
 }
 

@@ -172,7 +172,9 @@ initBB()
     else
     { /* BB board found... reserve space for structures */
 
+#if FALSE
       xvmeReset(pXvmeRegs, i);		/* finish resetting the xvme module */
+#endif
 
       if (bbDebug)
 	printf("BB card found at address 0x%08.8X\n", pXvmeRegs);
@@ -222,6 +224,8 @@ initBB()
       pXvmeLink[i]->abortFlag = 0;
       pXvmeLink[i]->txAbortAck = 0;
       pXvmeLink[i]->rxAbortAck = 0;
+
+      xvmeReset(pXvmeRegs, i);		/* finish resetting the xvme module */
 
       /* attach the interrupt handler routines */
       intConnect((BB_IVEC_BASE + 1 + (i*4)) * 4, xvmeIrqRcmd, i);

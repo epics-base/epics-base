@@ -135,11 +135,12 @@
 #   include <sys/time.h>
 #endif
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 
-#include <envDefs.h>
+#define epicsExportSharedSymbols
+#include "envDefs.h"
 #define TS_PRIVATE_DATA
-#include <tsDefs.h>
+#include "tsDefs.h"
 
 static void tsStampFromLocal();
 static void tsStampToLocal();
@@ -596,9 +597,7 @@ TS_STAMP *pStamp2;	/* pointer to second stamp */
 *	tsLocalTime(&now);
 *
 *-*/
-long epicsShareAPI
-tsLocalTime(pStamp)
-TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
+long epicsShareAPI tsLocalTime(TS_STAMP *pStamp)
 {
     	long	retStat=S_ts_OK;/* return status to caller */
 

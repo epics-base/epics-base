@@ -51,7 +51,7 @@ if(*(id)<=0) epicsThreadOnceOsd((id),(func),(arg))
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
 /* (epicsThreadId)0 is guaranteed to be an invalid thread id */
-typedef void *epicsThreadId;
+typedef struct epicsThreadOSD *epicsThreadId;
 
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
@@ -88,7 +88,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 epicsShareFunc void epicsShareAPI epicsThreadShow(
     epicsThreadId id,unsigned int level);
 
-typedef void * epicsThreadPrivateId;
+typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void);
 epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete(epicsThreadPrivateId id);
 epicsShareFunc void epicsShareAPI epicsThreadPrivateSet(epicsThreadPrivateId,void *);
@@ -128,7 +128,7 @@ public:
     /* these operate on the current thread */
     static void suspendSelf ();
     static void sleep (double seconds);
-    static epicsThread & getSelf ();
+    //static epicsThread & getSelf ();
     static const char * getNameSelf ();
 private:
     epicsThreadRunable &runable;
@@ -218,10 +218,10 @@ inline void epicsThread::sleep (double seconds)
     epicsThreadSleep (seconds);
 }
 
-inline epicsThread & epicsThread::getSelf ()
-{
-    return * static_cast<epicsThread *> ( epicsThreadGetIdSelf () );
-}
+//inline epicsThread & epicsThread::getSelf ()
+//{
+//    return * static_cast<epicsThread *> ( epicsThreadGetIdSelf () );
+//}
 
 inline const char *epicsThread::getNameSelf ()
 {

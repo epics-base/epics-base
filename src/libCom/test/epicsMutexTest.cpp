@@ -144,7 +144,7 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
         errVerbose = errVerboseSave;
         return;
     }
-    id = (void **)calloc(nthreads,sizeof(epicsThreadId));
+    id = (epicsThreadId *)calloc(nthreads,sizeof(epicsThreadId));
     name = (char **)calloc(nthreads,sizeof(char *));
     arg = (void **)calloc(nthreads,sizeof(void *));
     pinfo = (info **)calloc(nthreads,sizeof(info *));

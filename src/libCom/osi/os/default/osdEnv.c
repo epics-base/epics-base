@@ -14,11 +14,10 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include <errlog.h>
-#include <envDefs.h>
-#include <cantProceed.h>
-
 #define epicsExportSharedSymbols
+#include <errlog.h>
+#include <cantProceed.h>
+#include <envDefs.h>
 #include "epicsFindSymbol.h"
 
 /*

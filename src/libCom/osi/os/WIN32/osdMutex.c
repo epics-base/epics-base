@@ -29,6 +29,7 @@
  *              Argonne National Laboratory
  */
 
+#include <stdio.h>
 #include <limits.h>
 
 #ifndef VC_EXTRALEAN
@@ -47,13 +48,11 @@
 #include "epicsAssert.h"
 #include "cantProceed.h"
 
-static const unsigned mSecPerSecOsdSem = 1000u;
-
 #if 0
 
-typedef struct mutexSem {
+typedef struct epicsMutexOSD {
     HANDLE handle;
-}mutexSem;
+}epicsMutexOSD;
 
 
 /*
@@ -61,7 +60,7 @@ typedef struct mutexSem {
  */
 epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate (void) 
 {
-    mutexSem *pSem;
+    epicsMutexOSD *pSem;
 
     pSem = malloc ( sizeof (*pSem) );
     if (pSem) {
@@ -72,16 +71,14 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate (void)
         }
     }    
 
-    return (epicsMutexId) pSem;
+    return pSem;
 }
 
 /*
  * epicsMutexOsdDestroy ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy (epicsMutexId id) 
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy (epicsMutexId pSem) 
 {
-    mutexSem *pSem = (mutexSem *) id;
-    
     CloseHandle (pSem->handle);
     free (pSem);
 }
@@ -89,11 +86,9 @@ epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy (epicsMutexId id)
 /*
  * epicsMutexUnlock ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexUnlock (epicsMutexId id) 
+epicsShareFunc void epicsShareAPI epicsMutexUnlock (epicsMutexId pSem) 
 {
-    mutexSem *pSem = (mutexSem *) id;
     BOOL success;
-    
     success = ReleaseMutex (pSem->handle);
     assert (success);
 }
@@ -101,11 +96,9 @@ epicsShareFunc void epicsShareAPI epicsMutexUnlock (epicsMutexId id)
 /*
  * epicsMutexLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock (epicsMutexId id) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock (epicsMutexId pSem) 
 {
-    mutexSem *pSem = (mutexSem *) id;
     DWORD status;
-
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
         return epicsMutexLockOK;
@@ -118,18 +111,29 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock (epicsMutexId i
 /*
  * epicsMutexLockWithTimeout ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout (epicsMutexId id, double timeOut)
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout (epicsMutexId pSem, double timeOut)
 { 
-    mutexSem *pSem = (mutexSem *) id;
+    static const unsigned mSecPerSec = 1000u;
     DWORD status;
     DWORD tmo;
 
-    tmo = (DWORD) (timeOut * mSecPerSecOsdSem);
-    status = WaitForSingleObject (pSem->handle, tmo);
+    if ( timeOut <= 0.0 ) {
+        tmo = 0u;
+    }
+    else if ( timeOut >= INFINITE / mSecPerSec ) {
+        tmo = INFINITE - 1;
+    }
+    else {
+        tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
+        if ( tmo == 0 ) {
+            tmo = 1;
+        }
+    }
+    status = WaitForSingleObject ( pSem->handle, tmo );
     if ( status == WAIT_OBJECT_0 ) {
         return epicsMutexLockOK;
     }
-    else if (status == WAIT_TIMEOUT) {
+    else if ( status == WAIT_TIMEOUT ) {
         return epicsMutexLockTimeout;
     }
     else {
@@ -140,9 +144,8 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout (epi
 /*
  * epicsMutexTryLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock (epicsMutexId id) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock (epicsMutexId pSem) 
 { 
-    mutexSem *pSem = (mutexSem *) id;
     DWORD status;
 
     status = WaitForSingleObject (pSem->handle, 0);
@@ -160,38 +163,36 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock (epicsMutexI
 /*
  * epicsMutexShow ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexShow (epicsMutexId id, unsigned level) 
+epicsShareFunc void epicsShareAPI epicsMutexShow (epicsMutexId pSem, unsigned level) 
 { 
 }
 
 #elif 0
 
-typedef struct mutexSem {
+typedef struct epicsMutexOSD {
     CRITICAL_SECTION cs;
-} mutexSem;
+} epicsMutexOSD;
 
 /*
  * epicsMutexCreate ()
  */
 epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate ( void ) 
 {
-    mutexSem *pSem;
+    epicsMutexOSD *pSem;
 
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
         InitializeCriticalSection ( &pSem->cs );
     }    
 
-    return (epicsMutexId) pSem;
+    return pSem;
 }
 
 /*
  * epicsMutexOsdDestroy ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id ) 
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId pSem ) 
 {
-    mutexSem *pSem = ( mutexSem * ) id;
-    
     DeleteCriticalSection  ( &pSem->cs );
     free ( pSem );
 }
@@ -199,18 +200,16 @@ epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id )
 /*
  * epicsMutexUnlock ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexUnlock ( epicsMutexId id ) 
+epicsShareFunc void epicsShareAPI epicsMutexUnlock ( epicsMutexId pSem ) 
 {
-    mutexSem *pSem = ( mutexSem * ) id;
     LeaveCriticalSection ( &pSem->cs );
 }
 
 /*
  * epicsMutexLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId id ) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId pSem ) 
 {
-    mutexSem *pSem = ( mutexSem * ) id;
     EnterCriticalSection ( &pSem->cs );
     return epicsMutexLockOK;
 }
@@ -218,9 +217,8 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId 
 /*
  * epicsMutexLockWithTimeout ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( epicsMutexId id, double timeOut )
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( epicsMutexId pSem, double timeOut )
 { 
-    mutexSem *pSem = ( mutexSem * ) id;
     EnterCriticalSection ( &pSem->cs );
     return epicsMutexLockOK;
 }
@@ -228,9 +226,8 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( ep
 /*
  * epicsMutexTryLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId id ) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId pSem ) 
 { 
-    mutexSem *pSem = ( mutexSem * ) id;
     if ( TryEnterCriticalSection ( &pSem->cs ) ) {
         return epicsMutexLockOK;
     }
@@ -242,25 +239,25 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutex
 /*
  * epicsMutexShow ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId id, unsigned level ) 
+epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned level ) 
 { 
 }
 
 #else
 
-typedef struct mutexSem {
+typedef struct epicsMutexOSD {
     CRITICAL_SECTION cs;
     DWORD threadId;
     HANDLE unlockSignal;
     unsigned count;
-} mutexSem;
+} epicsMutexOSD;
 
 /*
  * epicsMutexCreate ()
  */
 epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate ( void ) 
 {
-    mutexSem *pSem;
+    epicsMutexOSD *pSem;
 
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
@@ -275,16 +272,14 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate ( void )
             pSem->count = 0u;
         }
     }    
-    return (epicsMutexId) pSem;
+    return pSem;
 }
 
 /*
  * epicsMutexOsdDestroy ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id ) 
-{
-    mutexSem *pSem = ( mutexSem * ) id;
-    
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId pSem ) 
+{    
     DeleteCriticalSection  ( &pSem->cs );
     CloseHandle ( pSem->unlockSignal );
     free ( pSem );
@@ -293,9 +288,8 @@ epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id )
 /*
  * epicsMutexUnlock ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexUnlock ( epicsMutexId id ) 
+epicsShareFunc void epicsShareAPI epicsMutexUnlock ( epicsMutexId pSem ) 
 {
-    mutexSem *pSem = ( mutexSem * ) id;
     unsigned signalNeeded;
     DWORD status;
 
@@ -321,10 +315,9 @@ epicsShareFunc void epicsShareAPI epicsMutexUnlock ( epicsMutexId id )
 /*
  * epicsMutexLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId id ) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId pSem ) 
 {
     DWORD thisThread = GetCurrentThreadId ();
-    mutexSem *pSem = ( mutexSem * ) id;
 
     EnterCriticalSection ( &pSem->cs );
 
@@ -351,11 +344,10 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock ( epicsMutexId 
 /*
  * epicsMutexLockWithTimeout ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( epicsMutexId id, double timeOut )
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( epicsMutexId pSem, double timeOut )
 { 
+    static const unsigned mSecPerSec = 1000u;
     DWORD thisThread = GetCurrentThreadId ();
-
-    mutexSem *pSem = ( mutexSem * ) id;
 
     EnterCriticalSection ( &pSem->cs );
 
@@ -364,7 +356,20 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( ep
         DWORD status;
 
         LeaveCriticalSection ( &pSem->cs );
-        tmo = ( DWORD ) ( timeOut * mSecPerSecOsdSem );
+
+        if ( timeOut <= 0.0 ) {
+            tmo = 0u;
+        }
+        else if ( timeOut >= INFINITE / mSecPerSec ) {
+            tmo = INFINITE - 1;
+        }
+        else {
+            tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
+            if ( tmo == 0 ) {
+                tmo = 1;
+            }
+        }
+
         status = WaitForSingleObject ( pSem->unlockSignal, tmo );
         if ( status == WAIT_TIMEOUT ) {
             return epicsMutexLockTimeout;
@@ -384,11 +389,9 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout ( ep
 /*
  * epicsMutexTryLock ()
  */
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId id ) 
+epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId pSem ) 
 { 
     DWORD thisThread = GetCurrentThreadId ();
-
-    mutexSem *pSem = ( mutexSem * ) id;
 
     EnterCriticalSection ( &pSem->cs );
 
@@ -409,10 +412,13 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutex
 /*
  * epicsMutexShow ()
  */
-epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId id, unsigned level ) 
+epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned level ) 
 { 
+    printf ("epicsMutex: count=%u, threadid=%x %s\n",
+        pSem->count, pSem->threadId,
+        pSem->threadId==GetCurrentThreadId()?
+            "owned by this thread":"" );
 }
-
 
 #endif
 

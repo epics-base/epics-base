@@ -39,9 +39,9 @@ typedef struct win32ThreadParam {
 
 static DWORD tlsIndexWIN32 = 0xFFFFFFFF;
 
-typedef struct osdThreadPrivate {
+typedef struct epicsThreadPrivateOSD {
     DWORD key;
-} osdThreadPrivate;
+} epicsThreadPrivateOSD;
 
 
 static HANDLE win32ThreadGlobalMutex = 0;
@@ -595,7 +595,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
  */
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
 {
-    osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));
+    epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if (p) {
         p->key = TlsAlloc ();
         if (p->key==0xFFFFFFFF) {
@@ -603,37 +603,34 @@ epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
             p = 0;
         }
     }
-    return (epicsThreadPrivateId) p;
+    return p;
 }
 
 /*
  * epicsThreadPrivateDelete ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete (epicsThreadPrivateId id)
+epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete ( epicsThreadPrivateId p )
 {
-    osdThreadPrivate *p = (osdThreadPrivate *) id;
-    BOOL stat = TlsFree (p->key);
-    assert (stat);
-    free (p);
+    BOOL stat = TlsFree ( p->key );
+    assert ( stat );
+    free ( p );
 }
 
 /*
  * epicsThreadPrivateSet ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateSet (epicsThreadPrivateId id, void *pVal)
+epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
-    struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
-    BOOL stat = TlsSetValue (pPvt->key, (void *) pVal );
+    BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
     assert (stat);
 }
 
 /*
  * epicsThreadPrivateGet ()
  */
-epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet (epicsThreadPrivateId id)
+epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
-    struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
-    return (void *) TlsGetValue (pPvt->key);
+    return ( void * ) TlsGetValue ( pPvt->key );
 }
 
 #ifdef TEST_CODES

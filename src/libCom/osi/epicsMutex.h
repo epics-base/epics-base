@@ -5,7 +5,7 @@
 #include "epicsAssert.h"
 #include "shareLib.h"
 
-typedef void *epicsMutexId;
+typedef struct epicsMutexOSD *epicsMutexId;
 typedef enum {
     epicsMutexLockOK,epicsMutexLockTimeout,epicsMutexLockError
 } epicsMutexLockStatus;

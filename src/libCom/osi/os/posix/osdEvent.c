@@ -27,11 +27,11 @@ of this distribution.
 #undef _POSIX_THREAD_PROCESS_SHARED
 #undef _POSIX_THREAD_PRIO_INHERIT
 
-typedef struct event {
+typedef struct epicsEventOSD {
     pthread_mutex_t     mutex;
     pthread_cond_t	cond;
     int                 isFull;
-}event;
+}epicsEventOSD;
 
 #define checkStatus(status,message) \
 if((status)) { \
@@ -64,10 +64,10 @@ static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
 
 epicsEventId epicsEventCreate(epicsEventInitialState initialState)
 {
-    event *pevent;
-    int   status;
+    epicsEventOSD *pevent;
+    int           status;
 
-    pevent = callocMustSucceed(1,sizeof(event),"epicsEventCreate");
+    pevent = callocMustSucceed(1,sizeof(*pevent),"epicsEventCreate");
     status = pthread_mutex_init(&pevent->mutex,0);
     checkStatusQuit(status,"pthread_mutex_init","epicsEventCreate");
     status = pthread_cond_init(&pevent->cond,0);
@@ -83,9 +83,8 @@ epicsEventId epicsEventMustCreate(epicsEventInitialState initialState)
     return id;
 }
 
-void epicsEventDestroy(epicsEventId id)
+void epicsEventDestroy(epicsEventId pevent)
 {
-    event *pevent = (event *)id;
     int   status;
 
     status = pthread_mutex_destroy(&pevent->mutex);
@@ -95,9 +94,8 @@ void epicsEventDestroy(epicsEventId id)
     free(pevent);
 }
 
-void epicsEventSignal(epicsEventId id)
+void epicsEventSignal(epicsEventId pevent)
 {
-    event *pevent = (event *)id;
     int   status;
 
     status = pthread_mutex_lock(&pevent->mutex);
@@ -111,9 +109,8 @@ void epicsEventSignal(epicsEventId id)
     checkStatusQuit(status,"pthread_mutex_unlock","epicsEventSignal");
 }
 
-epicsEventWaitStatus epicsEventWait(epicsEventId id)
+epicsEventWaitStatus epicsEventWait(epicsEventId pevent)
 {
-    event *pevent = (event *)id;
     int   status;
 
     if(!pevent) return(epicsEventWaitError);
@@ -130,9 +127,8 @@ epicsEventWaitStatus epicsEventWait(epicsEventId id)
     return(epicsEventWaitOK);
 }
 
-epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId id, double timeout)
+epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId pevent, double timeout)
 {
-    event *pevent = (event *)id;
     struct timespec wakeTime;
     int   status = 0;
     int   unlockStatus;

@@ -55,7 +55,7 @@ static void consumer(void *arg)
                 idSelf,(int)status,time(&tp));
         }
         while(epicsRingPointerGetUsed(pinfo->ring)>=2) {
-            epicsThreadId message[2];
+            epicsRingPointerId message[2];
             int i;
 
             for(i=0; i<2; i++) {

@@ -47,9 +47,9 @@
 #include "epicsAssert.h"
 #include "cantProceed.h"
 
-typedef struct eventSem {
+typedef struct epicsEventOSD {
     HANDLE handle;
-} eventSem;
+} epicsEventOSD;
 
 /*
  * epicsEventCreate ()
@@ -57,7 +57,7 @@ typedef struct eventSem {
 epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate (
     epicsEventInitialState initialState ) 
 {
-    eventSem *pSem;
+    epicsEventOSD *pSem;
 
     pSem = malloc ( sizeof ( *pSem ) );
     if ( pSem ) {
@@ -68,7 +68,7 @@ epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate (
         }
     }
 
-    return ( epicsEventId ) pSem;
+    return pSem;
 }
 
 /*
@@ -85,34 +85,28 @@ epicsShareFunc epicsEventId epicsShareAPI epicsEventMustCreate (
 /*
  * epicsEventDestroy ()
  */
-epicsShareFunc void epicsShareAPI epicsEventDestroy (epicsEventId id) 
+epicsShareFunc void epicsShareAPI epicsEventDestroy ( epicsEventId pSem ) 
 {
-    eventSem *pSem = (eventSem *) id;
-    
-    CloseHandle (pSem->handle);
-    free (pSem);
+    CloseHandle ( pSem->handle );
+    free ( pSem );
 }
 
 /*
  * epicsEventSignal ()
  */
-epicsShareFunc void epicsShareAPI epicsEventSignal (epicsEventId id) 
+epicsShareFunc void epicsShareAPI epicsEventSignal ( epicsEventId pSem ) 
 {
-    eventSem *pSem = (eventSem *) id;
     BOOL status;
-
-    status = SetEvent (pSem->handle);
-    assert (status); 
+    status = SetEvent ( pSem->handle );
+    assert ( status ); 
 }
 
 /*
  * epicsEventWait ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait (epicsEventId id) 
+epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait ( epicsEventId pSem ) 
 { 
-    eventSem *pSem = (eventSem *) id;
     DWORD status;
-
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventWaitOK;
@@ -126,10 +120,9 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait (epicsEventId i
  * epicsEventWaitWithTimeout ()
  */
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
-    epicsEventId id, double timeOut)
+    epicsEventId pSem, double timeOut )
 { 
     static const unsigned mSecPerSec = 1000;
-    eventSem *pSem = (eventSem *) id;
     DWORD status;
     DWORD tmo;
 
@@ -160,16 +153,15 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
 /*
  * epicsEventTryWait ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventTryWait (epicsEventId id) 
+epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventTryWait ( epicsEventId pSem ) 
 { 
-    eventSem *pSem = (eventSem *) id;
     DWORD status;
 
-    status = WaitForSingleObject (pSem->handle, 0);
+    status = WaitForSingleObject ( pSem->handle, 0 );
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventWaitOK;
     }
-    else if (status == WAIT_TIMEOUT) {
+    else if ( status == WAIT_TIMEOUT ) {
         return epicsEventWaitTimeout;
     }
     else {
@@ -180,6 +172,6 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventTryWait (epicsEventI
 /*
  * epicsEventShow ()
  */
-epicsShareFunc void epicsShareAPI epicsEventShow (epicsEventId id, unsigned level) 
+epicsShareFunc void epicsShareAPI epicsEventShow ( epicsEventId id, unsigned level ) 
 { 
 }

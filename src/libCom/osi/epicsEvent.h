@@ -4,7 +4,7 @@
 #include "epicsAssert.h"
 #include "shareLib.h"
 
-typedef void *epicsEventId;
+typedef struct epicsEventOSD *epicsEventId;
 
 typedef enum {
     epicsEventWaitOK,epicsEventWaitTimeout,epicsEventWaitError

@@ -149,12 +149,13 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 #define ECA_NOWTACCESS	 DEFMSG(CA_K_WARNING,	47)
 #define ECA_ANACHRONISM	 DEFMSG(CA_K_ERROR,	48)
 #define ECA_NOSEARCHADDR DEFMSG(CA_K_WARNING,	49)
+#define ECA_NOCONVERT	 DEFMSG(CA_K_WARNING,	50)
 
 
 #ifndef CA_ERROR_GLBLSOURCE
-epicsShareExtern char	*ca_message_text[];
+epicsShareExtern const char	*ca_message_text[];
 #else
-char	*ca_message_text[]
+const char	*ca_message_text[]
 =
 {
 "Normal successful completion",
@@ -206,11 +207,11 @@ char	*ca_message_text[]
 "Read access denied",
 "Write access denied",
 "Sorry, that anachronistic feature of CA is no longer supported",
-"The search request/beacon address list was empty after initialization"
+"The search request/beacon address list was empty after initialization",
+"Data conversion between client's type and the server's type failed"
 };
 #endif
 
-#define ca_message(STATUS)\
-(ca_message_text[CA_EXTRACT_MSG_NO((STATUS))])
+const char *ca_message(long ca_status);
 
 #endif

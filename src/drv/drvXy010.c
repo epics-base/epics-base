@@ -1,7 +1,7 @@
 /* 
  * initialize the  Xycom SRM010 bus controller card 
  */
-/* share/src/drv @(#)drv010.c     */
+/* share/src/drv $Id$ */
 /*      Author: Betty Ann Gunther
  *      Date:   06-30-29
  * 	Initialize xy010 bus controller
@@ -29,9 +29,15 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .00  08-11-92 joh	Verify the xy010's id to prevent confusion
+ *			with the mv167's GCSR which with an unmodified
+ *			sysLib.c will show up in the xy010's addr
+ *			space
+ * .01  08-11-92 joh	Moved base addr to module_types.h	
  *      ...
  */
+
+static char	*sccsID = "$Id$\t$Date$";
 
 #include 	<vxWorks.h>
 #include 	<vme.h>
@@ -45,10 +51,10 @@
  *	as the drivers become more autonomous
  */
 
-static long report();
-static long init();
-long xy010_io_report();
-static long xy010_init();
+long 	xy010_id_check(char *);
+long 	xy010_io_report(int);
+long	xy010_init(void);
+long	xy010_map(void);
 
 struct {
         long    	number;
@@ -56,63 +62,118 @@ struct {
         DRVSUPFUN       init;
 } drvXy010={
         2,
-        report, 
-        init};
+        xy010_io_report, 
+        xy010_init};
+
+
+#define CSR_ADDR 	0x81
+#define	XY010_ID	"VMEIDXYC010"
+#define XY_LED		0x3	/* set the Xycom status LEDs to OK */
+
+LOCAL char  *xy010_addr;
 
 
-/* 
- * VME bus setup
- *
- */
-static long report()
-{
-
-        xy010_io_report();
-	return OK;
-}
-
-static long init ()
-{
-
-        xy010_init();
-}
-
-
-
-#define CSR_ADDR 0x81
-#define SRM010_ADDR 0x0000
-
-
-static char  *xy010_addr;
-
 /* 
  * initialize the  Xycom SRM010 bus controller card 
  */
-
 long 
-xy010_init(){ /*static */
-	char	ctemp;
-	int	stat1;
-        char *pctlreg;
-        short id;
-    	if (stat1 = (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,SRM010_ADDR, &xy010_addr)) < 0){
-		printf("Addressing problem for xy010 system controller.\n");
-		return ERROR;
+xy010_init()
+{
+        char 	*pctlreg;
 
-	} else {
-         	pctlreg = xy010_addr + CSR_ADDR; /* Pointer to status control register. */
-		ctemp = XY_LED;
-		vxMemProbe(pctlreg,WRITE,1,&ctemp);
-          
-        }
-    return(0);
+	if(xy010_map()<0){
+		return ERROR;
+	}
+
+	if(xy010_id_check(xy010_addr)<0){
+		return OK;
+	}
+
+	/* Pointer to status control register. */
+       	pctlreg = xy010_addr + CSR_ADDR; 
+	*pctlreg = XY_LED;
+
+	return OK;
 }
 
-long xy010_io_report(){
-   char id;
-   	if (vxMemProbe(xy010_addr, READ,sizeof(char),&id) != -1) {
-            printf("SYS CTLR: XY010 \n");
+
+/*
+ *
+ *	xy010_map()
+ *
+ *
+ */
+LOCAL
+long xy010_map()
+{
+	int 	status;
+
+	status = sysBusToLocalAdrs(
+			VME_AM_SUP_SHORT_IO,
+			xy010ScA16Base, 
+			&xy010_addr);
+
+    	if (status < 0){
+		printf("%s: xy010 A16 base addr map failed\n", __FILE__);
+		return ERROR;
+	}
+
+	return OK;
+}
+
+
+/*
+ *
+ *	xy010_id_check()
+ *
+ *
+ */
+LOCAL
+long xy010_id_check(pBase)
+char	*pBase;
+{
+	char 	*pID;
+	char 	*pCmp;
+	char	ID;
+	int	status;
+
+	pID = pBase;
+	pCmp = XY010_ID;
+	while(*pCmp){
+		pID++;	/* ID chars stored at odd addr */
+		status = vxMemProbe(pID, READ, sizeof(ID), &ID);
+		if(status < 0){
+			return ERROR;
+		}
+		if(*pCmp != ID){
+			return ERROR;
+		}
+		pID++;
+		pCmp++;
+	}
+	return OK;
+}
+
+
+/*
+ *
+ * 	xy010_io_report()
+ *
+ *
+ */
+long xy010_io_report(int level)
+{
+   	char id;
+
+	if(xy010_map()<0){
+		return ERROR;
+	}
+
+   	if (xy010_id_check(xy010_addr) == OK) {
+            	printf("SC: XY010:\tcard 0\n");
     	}
+
+	return OK;
 }
 
 

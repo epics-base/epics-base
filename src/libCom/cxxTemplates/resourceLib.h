@@ -47,6 +47,7 @@
 #define INCresourceLibh 
 
 #include <new>
+#include <typeinfo>
 
 #include <stdio.h>
 #include <limits.h>

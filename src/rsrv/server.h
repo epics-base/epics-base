@@ -78,7 +78,7 @@ static char *serverhSccsId = "@(#) $Id$";
 /*
  * !! buf must be the first item in this structure !!
  * This guarantees that buf will have 8 byte natural
- * alignement
+ * alignment
  *
  * Conversions:
  * The contents of message_buffer has to be converted
@@ -91,16 +91,34 @@ static char *serverhSccsId = "@(#) $Id$";
  * The remaining message_buffer content, however, is always
  * in net format!
  *
+ * The terminating unsigned long pad0 field is there to force the
+ * length of the message_buffer to be a multiple of 8 bytes.
+ * This is due to the sequential placing of two message_buffer
+ * structures (trans, rec) within the client structure.
+ * Eight-byte alignment is required by the Sparc 5 and other RISC
+ * processors.
+ *
+ * CAVEAT: This assumes the following:
+ *    o an array of MAX_MSG_SIZE chars takes a multiple of 8 bytes.
+ *    o four unsigned longs also take up a multiple of 8 bytes
+ *      (usually 2).
+ * NOTE:
+ *	  o we should solve the above message alignment problems by 
+ *		allocating the message buffers
+ *
  */
 struct message_buffer{
   char 				buf[MAX_MSG_SIZE];
-  unsigned long 		stk;
-  unsigned long			maxstk;
-  unsigned long			cnt;			
+  unsigned long 	stk;
+  unsigned long		maxstk;
+  unsigned long		cnt;	
+  unsigned long		pad0;	/* force 8 byte alignement */
 };
 
 struct client{
   ELLNODE			node;
+  struct message_buffer		send;
+  struct message_buffer		recv;
   FAST_LOCK			lock;
   FAST_LOCK			putNotifyLock;
   FAST_LOCK			addrqLock;
@@ -108,8 +126,7 @@ struct client{
   ELLLIST			addrq;
   ELLLIST			putNotifyQue;
   struct sockaddr_in		addr;
-  struct message_buffer		send;
-  struct message_buffer		recv;
+
   unsigned long			ticks_at_last_send;
   unsigned long			ticks_at_last_recv;
   void				*evuser;

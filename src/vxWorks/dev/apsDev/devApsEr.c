@@ -219,13 +219,16 @@ long ErRegisterErrorHandler(int Card, ERROR_FUNC func)
  ******************************************************************************/
 long ErGetTicks(int Card, unsigned long *Ticks)
 {
+  int key;
   if (ErHaveReceiver(Card) < 0)
     return(-1);
 
   /* BUG -- Do we read the HI first or the low? */
 
+  key = intLock();
   *Ticks = ErLink[Card].pEr->EventCounterLo;
   *Ticks += ErLink[Card].pEr->EventCounterHi << 16;
+  intUnlock(key);
 
   return(0);
 }

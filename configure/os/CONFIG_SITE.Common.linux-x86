@@ -13,9 +13,9 @@
 #    the runtime search path into the executables.
 # c) the full pathname above can be added to /etc/ld.so.conf
 #    and ldconfig run to inform the system of the shared libraries.
-#SHARED_LIBRARIES=YES
+SHARED_LIBRARIES=YES
 
-# This is the absolute path to base, for SHARED_LIBRARY searches.
+# This is the absolute path to INSTALL_LOCATION, for SHARED_LIBRARY searches.
 #SHRLIB_SEARCH_DIRS += /usr/local/epics/R3.14.1/base
 
 # If readline is installed uncomment the following lines

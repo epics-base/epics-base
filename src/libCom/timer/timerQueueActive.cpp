@@ -29,13 +29,15 @@ template class epicsSingleton < timerQueueActiveMgr >;
 #   pragma warning ( pop )
 #endif
 
-epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
+epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 
 epicsTimerQueueActive::~epicsTimerQueueActive () {}
 
-epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, unsigned threadPriority )
+epicsTimerQueueActive & epicsTimerQueueActive::allocate ( bool okToShare, unsigned threadPriority )
 {
-    return pTimerQueueMgrEPICS->allocate ( okToShare, threadPriority );
+    epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
+        timerQueueMgrEPICS;
+    return pMgr->allocate ( okToShare, threadPriority );
 }
 
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :

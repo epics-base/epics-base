@@ -1,9 +1,9 @@
 
 #include <time.h>
-#include <assert.h>
 #include <stdio.h>
 
-#include <bucketLib.h>
+#include "epicsAssert.h"
+#include "bucketLib.h"
 
 main()
 {

@@ -73,7 +73,6 @@ public:
         unsigned type, unsigned long count, unsigned mask, cacChannel::ioid * );
     void destroy ();
     void show ( unsigned level ) const;
-    void channelDestroyNotify ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:

@@ -57,6 +57,8 @@ dbSubscriptionIO::~dbSubscriptionIO ()
     if ( this->es ) {
         db_cancel_event ( this->es );
     }
+    this->notify.exception ( ECA_CHANDESTROY,
+        this->chan.pName(), this->type, this->count );
 }
 
 void dbSubscriptionIO::destroy ()
@@ -81,12 +83,6 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /*
 {
     dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
     pIO->chan.callStateNotify ( pIO->type, pIO->count, pfl, pIO->notify );
-}
-
-void dbSubscriptionIO::channelDestroyNotify ()
-{
-    this->notify.exception ( ECA_CHANDESTROY,
-        this->chan.pName(), this->type, this->count );
 }
 
 void dbSubscriptionIO::show ( unsigned level ) const

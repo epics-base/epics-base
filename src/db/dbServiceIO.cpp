@@ -257,7 +257,6 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
         while ( ( pIO = chan.dbServicePrivateListOfIO::eventq.get() ) ) {
             this->ioTable.remove ( *pIO );
             tmp.add ( *pIO );
-            pIO->channelDestroyNotify ();
         }
         if ( chan.dbServicePrivateListOfIO::pBlocker ) {
             this->ioTable.remove ( *chan.dbServicePrivateListOfIO::pBlocker );

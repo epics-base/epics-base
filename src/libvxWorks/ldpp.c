@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.2  1996/09/16 21:56:03  jhill
+ * added several compiler support functions and updated to gcc 2.7.2
+ *
  * Revision 1.1  1996/01/29 17:05:58  jbk
  * Added the simple program to allow loading of C++ object modules.
  *
@@ -65,7 +68,7 @@ void cpp_main(void)
 	SYM_TYPE stype;
 	func_ptr *ctorlist;
 
-	if( symFindByName(sysSymTbl,"___CTOR_LIST__",
+	if( symFindByNameEPICS(sysSymTbl,"___CTOR_LIST__",
 			(char**)&ctorlist, &stype)==OK)
 	{
 		/* 

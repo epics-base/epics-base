@@ -8,6 +8,9 @@
 
 /* modification history:
  * $Log$
+ * Revision 1.1  1998/01/21 20:47:45  mrk
+ * restructure; new Symb support
+ *
  * Revision 1.2.2.1  1997/10/11 02:26:54  wlupton
  * now working with R3.13
  *
@@ -130,7 +133,7 @@ int devSymbFind(char *name, struct link *plink, void *pdpvt)
 	    return ERROR;
     }
 
-    if (symFindByName(sysSymTbl, nptr, (char **) &paddr, &stype))
+    if (symFindByNameEPICS(sysSymTbl, nptr, (char **) &paddr, &stype))
 	return ERROR;
 
     /* Name exists, allocate a private structure */
@@ -284,7 +287,7 @@ int test(char *string)
     error = parseInstio(string, &deref, &nptr, &index);
     printf("%s: ", error ? "error" : "ok" );
     printf("deref=%d, name=%s, index=%d", deref, nptr, index);
-    if (!symFindByName(sysSymTbl, nptr, &addr, &stype))
+    if (!symFindByNameEPICS(sysSymTbl, nptr, &addr, &stype))
     {
  	if (deref) addr = *((char **)addr);
 	addr += sizeof(long) * index;
@@ -296,7 +299,7 @@ int test(char *string)
     error = parseName(string, &deref, &nptr, &index);
     printf("%s: ", error ? "error" : "ok" );
     printf("deref=%d, name=%s, index=%d", deref, nptr, index);
-    if (!symFindByName(sysSymTbl, nptr, &addr, &stype))
+    if (!symFindByNameEPICS(sysSymTbl, nptr, &addr, &stype))
 	printf(" -> value = %d", *(long *)addr);
     printf("\n");
 

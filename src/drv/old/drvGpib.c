@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  1998/01/20 21:51:53  mrk
+ * add includes for error messages
+ *
  * Revision 1.7  1997/04/30 19:02:08  mrk
  * Fixed many compiler warning messages
  *
@@ -2823,11 +2826,11 @@ HiDEOSGpibLinkConfig(int link, int BoardId, char *TaskName)
 		return(ERROR);
 	}
 
-	if ((symFindByName(sysSymTbl,"_GpibHideosInit", (char**)&LHideosInit,&stype)==ERROR)
-		|| (symFindByName(sysSymTbl,"_GpibHideosWrite", (char**)&LHideosWrite,&stype)==ERROR)
-		|| (symFindByName(sysSymTbl,"_GpibHideosRead", (char**)&LHideosRead,&stype)==ERROR)
-		|| (symFindByName(sysSymTbl,"_GpibHideosWriteRead", (char**)&LHideosWriteRead,&stype)==ERROR)
-		|| (symFindByName(sysSymTbl,"_GpibHideosWriteCmd", (char**)&LHideosWriteCmd,&stype)==ERROR))
+	if ((symFindByNameEPICS(sysSymTbl,"_GpibHideosInit", (char**)&LHideosInit,&stype)==ERROR)
+		|| (symFindByNameEPICS(sysSymTbl,"_GpibHideosWrite", (char**)&LHideosWrite,&stype)==ERROR)
+		|| (symFindByNameEPICS(sysSymTbl,"_GpibHideosRead", (char**)&LHideosRead,&stype)==ERROR)
+		|| (symFindByNameEPICS(sysSymTbl,"_GpibHideosWriteRead", (char**)&LHideosWriteRead,&stype)==ERROR)
+		|| (symFindByNameEPICS(sysSymTbl,"_GpibHideosWriteCmd", (char**)&LHideosWriteCmd,&stype)==ERROR))
 	{
 		free (pHiDEOSIbLink);
 		logMsg("HiDEOSGpibLinkConfig: Can not locate Hideos GPIB services\n");

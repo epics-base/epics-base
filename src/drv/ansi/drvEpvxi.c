@@ -454,7 +454,7 @@ EPVXISTAT epvxiResman(void)
 		unsigned char 	*pEPICS_VXI_LA_COUNT = 0;
 		unsigned char 	*pEPICS_VXI_LA_BASE = 0;
 
-		status = symFindByName(
+		status = symFindByNameEPICS(
 				sysSymTbl,
 				"_EPICS_VXI_LA_BASE",	
 				(char **)&pEPICS_VXI_LA_BASE,
@@ -469,7 +469,7 @@ EPVXISTAT epvxiResman(void)
 			EPICS_VXI_LA_BASE = 0;
 		}
 
-		status = symFindByName(
+		status = symFindByNameEPICS(
 				sysSymTbl,
 				"_EPICS_VXI_LA_COUNT",	
 				(char **)&pEPICS_VXI_LA_COUNT,
@@ -1967,7 +1967,7 @@ VXIE	*pvxie
 			continue;
 		}
 
-		status = symFindByName(
+		status = symFindByNameEPICS(
 				sysSymTbl,
 				nivxi_func_names[i],
 				(char **) &pnivxi_func[i],
@@ -3053,7 +3053,7 @@ unsigned 	dest_size
 	SYM_TYPE	type;
 	char		*pvalue;
 
-	status = symFindByName(
+	status = symFindByNameEPICS(
 				sysSymTbl,
 				pname,	
 				&pvalue,
@@ -3082,7 +3082,7 @@ LOCAL EPVXISTAT vxi_init_ignore_list(void)
 
   	for(i=0; i<NELEMENTS(ignore_list); i++){
 		status =
-		  	symFindByName(	sysSymTbl,
+		  	symFindByNameEPICS(	sysSymTbl,
 					ignore_list[i],
 					(char **) &ignore_addr_list[i],
 					&type);
@@ -4371,7 +4371,7 @@ char *pmodel_name
 
 		free(pcopy);
 
-		status = symFindByNameAndType(
+		status = symFindByNameEPICS(
 				epvxiSymbolTable, 
 				name, 
 				&pold_model_name, 
@@ -4432,7 +4432,7 @@ char *pmake_name
 
 		free(pcopy);
 
-		status = symFindByNameAndType(
+		status = symFindByNameAndTypeEPICS(
 				epvxiSymbolTable, 
 				name, 
 				&pold_make_name, 
@@ -4476,7 +4476,7 @@ unsigned int 	*preadcount)	/* n bytes written */
  	}
 
  	sprintf(name, epvxiSymbolTableMakeIdString, make);
-	status = symFindByNameAndType(
+	status = symFindByNameAndTypeEPICS(
 			epvxiSymbolTable, 
 			name, 
 			&pmake_name, 
@@ -4522,7 +4522,7 @@ unsigned int 	*preadcount)	/* n bytes written */
  	}
 
  	sprintf(name, epvxiSymbolTableDeviceIdString, make, model);
-	status = symFindByNameAndType(
+	status = symFindByNameAndTypeEPICS(
 			epvxiSymbolTable, 
 			name, 
 			&pmodel_name, 

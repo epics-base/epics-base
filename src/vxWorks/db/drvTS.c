@@ -12,6 +12,16 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.23  1998/03/19 20:41:15  mrk
+ * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
+ * in 2036. However it was modified so that no overflows should occur while convert
+ * ing between NTP, UNIX, and EPICS epochs.
+ * In addition the conversion of fractions of a second to nanaoseconds was changed
+ * Formatting was changed so that interesting code does not run off right side of page.
+ * Hopefully EPICS base is now fine for Y2K.
+ * In fact it should be fine (as far as time is converned) until the Unix epoch
+ * overflows a 32 unsigned integer in the year 2106.
+ *
  * Revision 1.22  1998/01/22 14:48:34  mrk
  * get rid of some warning messages
  *
@@ -517,42 +527,42 @@ long TSinit(void)
 	/* default configuration probe */
 	/* ------------------------------------------------------------- */
 	/* find the lower level event system functions */
-	if(symFindByName(sysSymTbl,"_ErHaveReceiver",
+	if(symFindByNameEPICS(sysSymTbl,"_ErHaveReceiver",
 	    (char**)&TShaveReceiver,&stype)==ERROR)
 	    TShaveReceiver = TShaveReceiverError;
-	if(symFindByName(sysSymTbl,"_ErGetTicks",
+	if(symFindByNameEPICS(sysSymTbl,"_ErGetTicks",
 	    (char**)&TSgetTicks,&stype)==ERROR)
 	    TSgetTicks = TSgetTicksError;
 	
-	if(symFindByName(sysSymTbl,"_ErRegisterEventHandler",
+	if(symFindByNameEPICS(sysSymTbl,"_ErRegisterEventHandler",
 	    (char**)&TSregisterEventHandler,&stype)==ERROR)
 	    TSregisterEventHandler = TSregisterEventHandlerError;
 	
-	if(symFindByName(sysSymTbl,"_ErRegisterErrorHandler",
+	if(symFindByNameEPICS(sysSymTbl,"_ErRegisterErrorHandler",
 	    (char**)&TSregisterErrorHandler,&stype)==ERROR)
 	    TSregisterErrorHandler = TSregisterErrorHandlerError;
 	
-	if(symFindByName(sysSymTbl,"_ErForceSync",
+	if(symFindByNameEPICS(sysSymTbl,"_ErForceSync",
 	    (char**)&TSforceSync,&stype)==ERROR)
 	    TSforceSync = TSforceSoftSync;
 	
-	if(symFindByName(sysSymTbl,"_ErDirectTime",
+	if(symFindByNameEPICS(sysSymTbl,"_ErDirectTime",
 	    (char**)&TSdirectTime,&stype)==ERROR)
 	    TSdirectTime = TSdirectTimeError;
 	
-	if(symFindByName(sysSymTbl,"_ErDriverInit",
+	if(symFindByNameEPICS(sysSymTbl,"_ErDriverInit",
 	    (char**)&TSdriverInit,&stype)==ERROR)
 	    TSdriverInit = TSdriverInitError;
 	
-	if(symFindByName(sysSymTbl,"_ErGetTime",
+	if(symFindByNameEPICS(sysSymTbl,"_ErGetTime",
 	    (char**)&TSgetTime,&stype)==ERROR)
 	    TSgetTime = TSgetCurrentTime;
 	
-	if(symFindByName(sysSymTbl,"_ErUserGetTimeStamp",
+	if(symFindByNameEPICS(sysSymTbl,"_ErUserGetTimeStamp",
 	    (char**)&TSuserGet,&stype)==ERROR)
 	    TSuserGet = TSuserGetJunk;
 	
-	if(symFindByName(sysSymTbl,"_ErSyncEvent",
+	if(symFindByNameEPICS(sysSymTbl,"_ErSyncEvent",
 	    (char**)&TSsyncEvent,&stype)==ERROR)
 	    TSdata.sync_event=ER_EVENT_RESET_TICK;
 	else

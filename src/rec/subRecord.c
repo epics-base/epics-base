@@ -145,7 +145,7 @@ static long init_record(psub,pass)
 	    strcpy(temp,"_");
         }
         strcat(temp,psub->inam);
-        ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
+        ret = symFindByNameEPICS(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
         if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
 	    recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	    return(S_db_BadSub);
@@ -168,7 +168,7 @@ static long init_record(psub,pass)
     	strcpy(temp,"_");
     }
     strcat(temp,psub->snam);
-    ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
+    ret = symFindByNameEPICS(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
     if ((ret < 0) || ((sub_type & N_TEXT) == 0)){
 	recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	return(S_db_BadSub);

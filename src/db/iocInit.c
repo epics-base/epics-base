@@ -149,7 +149,7 @@ int iocInit(char * pResourceFilename)
    /* Setup initialization hooks, if  initHooks routine has been defined.  */
     strcpy(name, "_");
     strcat(name, "initHooks");
-    rtnval = symFindByName(sysSymTbl, name, (void *) &pinitHooks, &type);
+    rtnval = symFindByNameEPICS(sysSymTbl, name, (void *) &pinitHooks, &type);
     if (pinitHooks) (*pinitHooks)(initHookAtBeginning);
 
     coreRelease();
@@ -268,7 +268,7 @@ LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	strcpy(name,"_");
 	strcat(name,pdrvSup->name);
-	vxstatus = symFindByName(sysSymTbl, name,
+	vxstatus = symFindByNameEPICS(sysSymTbl, name,
 		(void *) &pdrvet, &type);
 	if (vxstatus != OK) {
 	    status = S_drv_noDrvet;
@@ -310,7 +310,7 @@ LOCAL long initRecSup(void)
 	strcpy(name,"_");
 	strcat(name,pdbRecordType->name);
 	strcat(name,"RSET");
-	vxstatus = symFindByName(sysSymTbl, name,
+	vxstatus = symFindByNameEPICS(sysSymTbl, name,
             (void *)&pdbRecordType->prset, &type);
 	if (vxstatus != OK) {
 	    status = S_rec_noRSET;
@@ -354,7 +354,7 @@ LOCAL long initDevSup(void)
 	    if(!(pname = pdevSup->name)) continue;
 	    strcpy(name, "_");
 	    strcat(name, pname);
-	    vxstatus = (long) symFindByName(sysSymTbl, name,
+	    vxstatus = (long) symFindByNameEPICS(sysSymTbl, name,
 		(void *) &pdset, &type);
 	    if (vxstatus != OK) {
 		status = S_dev_noDSET;
@@ -623,7 +623,7 @@ long getResources(char  *fname)
 
 	strcpy(name, "_");
 	strcat(name, s1);
-	status = symFindByName(sysSymTbl, name, &pSymAddr, &type);
+	status = symFindByNameEPICS(sysSymTbl, name, &pSymAddr, &type);
 	if (status!= OK) {
 	    errPrintf (
 		-1L,

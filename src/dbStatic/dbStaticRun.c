@@ -660,7 +660,7 @@ void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)
     strcpy(name,"_");
     strcat(name,pdbRecordType->name);
     strcat(name,"RecordSizeOffset");
-    vxstatus = symFindByName(sysSymTbl, name,
+    vxstatus = symFindByNameEPICS(sysSymTbl, name,
 	(void *)&sizeOffset, &type);
     if (vxstatus != OK) {
 	status = S_dbLib_noSizeOffset;

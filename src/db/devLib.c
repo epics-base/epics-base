@@ -947,7 +947,7 @@ void initHandlerAddrList(void)
  
         for(i=0; i<NELEMENTS(defaultHandlerNames); i++){
                 status =
-                        symFindByName(  sysSymTbl,
+                        symFindByNameEPICS(  sysSymTbl,
                                         defaultHandlerNames[i],
                                         (char **)&defaultHandlerAddr[i],
                                         &type);
@@ -1299,7 +1299,7 @@ void *devLibA24Malloc(size_t size)
   if (A24MallocFunc == NULL)
   {
     /* See if the sysA24Malloc() function is present. */
-    if(symFindByName(sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc,&stype)==ERROR)
+    if(symFindByNameEPICS(sysSymTbl,"_sysA24Malloc", (char**)&A24MallocFunc,&stype)==ERROR)
     { /* Could not find sysA24Malloc... use the malloc one and hope we are OK */
       if (devLibA24Debug)
 	logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);
@@ -1308,7 +1308,7 @@ void *devLibA24Malloc(size_t size)
     }
     else
     {
-      if(symFindByName(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
+      if(symFindByNameEPICS(sysSymTbl,"_sysA24Free", (char**)&A24FreeFunc, &stype) == ERROR)
       { /* That's strange... we have malloc, but no free! */
         if (devLibA24Debug)
 	  logMsg("devLibA24Malloc() using regular malloc\n",0,0,0,0,0,0);

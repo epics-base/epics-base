@@ -4,6 +4,9 @@
 * Date:			95-05-22
 *
 * $Log$
+* Revision 1.1  1995/07/27 14:22:56  winans
+* first release
+*
 */
 
 /*****************************************************************************
@@ -133,7 +136,7 @@ STATIC int BDT_ProcessConnect(BDT *Bdt)
 	printf("BDT_ProcessConnect NAME service (%s)\n", HandlerName);
 
 	/*Bdt->pHandlers = (BdthandlerFunc *)(&BDT_NameServicehandlers);*/
-	if (symFindByName(sysSymTbl, HandlerName, (char **)&(Bdt->pHandlers), &Type) != OK)
+	if (symFindByNameEPICS(sysSymTbl, HandlerName, (char **)&(Bdt->pHandlers), &Type) != OK)
 	{
 		printf("BDT_ProcessConnect Connect to unknown service (%s)\n", Buf);
 		BdtSendHeader(Bdt, BDT_Error, 0);

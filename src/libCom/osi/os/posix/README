@@ -1,0 +1,13 @@
+A knowledge of pthreads is necessary to understand osdThread.c and osdSem.c.
+
+The following are good references
+
+Programming with POSIX Threads, David R. Butenhof, Addison-weslet, 1997
+
+Multithreaded Programming with Pthreads, Bil Lewis & Daniel J. Berg,
+Sun Microsystems, 1998
+
+Pthreads Programming, Bradford Nichols etc, O'Reilly & Associates, 1996
+
+The implementation of semMutex is based on the example code by Bil Leeis
+that os available via the WWW.

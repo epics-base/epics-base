@@ -90,7 +90,7 @@ epicsShareFunc int epicsShareAPI
 	/*
 	 * check for a valid host name before giving up
 	 */
-	status = sscanf (pAddrString, "%511s:%i", hostName, &port);
+	status = sscanf (pAddrString, "%511[^:]:%i", hostName, &port );
 	if (status>=1) {
 		if (status==1) {
 			port = defaultPort;

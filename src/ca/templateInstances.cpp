@@ -67,6 +67,8 @@ template class tsFreeList < oldSubscription, 1024, epicsMutexNOOP >;
 template class tsFreeList < putCallback, 1024, epicsMutexNOOP >;
 template class tsFreeList < repeaterClient, 0x20 >;
 template class epicsSingleton < localHostName >;
+template class epics_auto_ptr < epics_auto_ptr < class searchTimer >, eapt_array >;
+
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

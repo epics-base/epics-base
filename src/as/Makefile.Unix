@@ -11,6 +11,9 @@ DEPLIBS = ./libAs.a\
 	  $(DEPLIBS_BASE)/libCom.a\
 	  $(DEPLIBS_BASE)/libDb.a
 
+INC += asDbLib.h
+INC += asLib.h
+
 SRCS.c = ../ascheck.c asLib.c
 OBJS = ascheck.o
 LIBOBJS = asLib.o

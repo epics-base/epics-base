@@ -324,7 +324,6 @@ long dvx_driver_init()
  int intvec = DVX_IVEC0;
  struct dvx_2502 *ptr;
  short *sptr;
-
  /*
   * dont continue DMA while vxWorks is control X
   * rebooting (and changing bus arbitration mode)
@@ -584,6 +583,7 @@ dvx_dump(card,firstchan,lastchan)
          ,i,data,volts);
   }
  printf("end of list\n");
+ return(0);
 }
 
 #ifndef EPICS_V2
@@ -593,7 +593,7 @@ IOSCANPVT *scanpvt;
 {
  if ((card >= ai_num_cards[DVX2502]) || (card < 0))	/* make sure hardware exists */
   return(0);
- else if (dvx[card].pdvx2502 == 0)
+ if (dvx[card].pdvx2502 == 0)
   return(0);
  *scanpvt = dvx[card].ioscanpvt;
  return(0);
@@ -844,7 +844,7 @@ void *lclToA24(void *pLocal)
 	void	*pA24;
 
 	status = sysLocalToBusAdrs(
-                        VME_AM_STD_USR_DATA,
+                        VME_AM_STD_SUP_DATA,
                         pLocal,
                         &pA24);
 	if(status<0){

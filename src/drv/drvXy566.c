@@ -76,6 +76,7 @@
  * .18  08-10-92	joh	cleaned up the merge of the xy566 wf and ai
  *				drivers
  * .19  08-25-92	mrk	replaced call to ai_driver by ai_xy566_driver
+ * .20  08-26-92	mrk	support epics I/O event scan
  */
 
 #include	<vxWorks.h>
@@ -84,6 +85,9 @@
 #include	<drvSup.h>
 #include	<module_types.h>
 #include 	<task_params.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
 
 
 static char SccsId[] = "$Id$\t$Date$ ";
@@ -180,6 +184,9 @@ struct ai566	**pai_xy566dil;
 unsigned short	**pai_xy566se_mem;
 unsigned short	**pai_xy566di_mem;
 unsigned short	**pai_xy566dil_mem;
+#ifndef EPICS_V2
+static IOSCANPVT *paioscanpvt;
+#endif
 
 
 /* reset the counter interrupt                              0x8000 */
@@ -268,11 +275,17 @@ unsigned char val;
         *addr = val;
 }
 
-ai566_intr(ap)
-register struct ai566 *ap;
+ai566_intr(i)
+short i;
 {
+	register struct ai566 *ap = pai_xy566dil[i];
+
 	/* wake up the I/O event scanner */
+#ifdef EPICS_V2
 	io_scanner_wakeup(IO_AI,XY566DIL,ap->card_number);
+#else
+        scanIoRequest(paioscanpvt[i]);
+#endif
 
 	/* reset the CSR - needed to allow next interrupt */
 	senw(&ap->a566_csr,XY566L_CSR);
@@ -432,6 +445,7 @@ register short		***pppmem_present;
 	/* latch in the first bunch of data and start continuous scan */
 	senb(&pai566->soft_start,0);
     } 
+    return(0);
 } 
 
 /*
@@ -460,6 +474,20 @@ register short		***pppmem_present;
     if(!*pppcards_present){
 	return ERROR;
     }
+
+#ifndef EPICS_V2
+    paioscanpvt = (IOSCANPVT *)calloc(num_cards, sizeof(*paioscanpvt));
+    if(!paioscanpvt) {
+        return ERROR;
+    }
+    {
+	int i;
+	for(i=0; i<num_cards; i++) {
+		paioscanpvt[i] = NULL;
+		scanIoInit(&paioscanpvt[i]);
+	}
+    }
+#endif
 
     *pppmem_present = (short **)
 	calloc(num_cards, sizeof(**pppmem_present));
@@ -506,7 +534,7 @@ register short		***pppmem_present;
 	/* taken from the XYCOM-566 Manual. Figure 4-6  Page 4-19 */
 	pai566->int_vect = AI566_VNUM + i;
   
-	intConnect((AI566_VNUM + i) * 4, ai566_intr, pai566);
+	intConnect((AI566_VNUM + i) * 4, ai566_intr, i);
         sysIntEnable(XY566_INT_LEVEL); 
 
 	/* reset the Xycom 566 board */
@@ -575,9 +603,19 @@ register short		***pppmem_present;
 	senw(&pai566->a566_csr,XY566L_CSR);
 
     }
+    return(0);
 }
 
-
+#ifndef EPICS_V2
+ai_xy566_getioscanpvt(card,scanpvt)
+unsigned short	card;
+IOSCANPVT *scanpvt;
+{
+	if((card<=MAX_DIL_CARDS) && paioscanpvt[card]) *scanpvt = paioscanpvt[card];
+	return(0);
+}
+#endif
+
 ai_xy566_driver(card,chan,type,prval)
 register unsigned short	card;
 unsigned short		chan;
@@ -636,10 +674,8 @@ register unsigned short *prval;
                 rval_convert(prval);
 		return (0);
 	}
-
-	return (0);
-
         }
+	return (0);
 
 }
 

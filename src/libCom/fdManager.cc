@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.7  1997/05/27 14:53:11  tang
+// fd_set cast in select for both Hp and Sun
+//
 // Revision 1.6  1997/05/08 19:49:12  tang
 // added int * cast in select for HP port compatibility
 //
@@ -149,8 +152,14 @@ void fdManager::process (const osiTime &delay)
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 	}
 	minDelay.getTV (tv.tv_sec, tv.tv_usec);
+#ifdef __hpux
+	status = select (this->maxFD, (int *)&this->fdSets[fdrRead], 
+		(int *)&this->fdSets[fdrWrite], (int *)&this->fdSets[fdrExcp], &tv);
+#else
 	status = select (this->maxFD, (fd_set *)&this->fdSets[fdrRead], 
 		(fd_set *)&this->fdSets[fdrWrite], (fd_set *)&this->fdSets[fdrExcp], &tv);
+#endif
+
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;

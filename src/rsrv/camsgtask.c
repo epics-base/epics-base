@@ -122,7 +122,7 @@ FAST int 		sock;
       		return;
     	}
 				
-  	if(MPDEBUG>0){
+  	if(CASDEBUG>0){
     		logMsg(	"camsgtask: Recieved connection request\n");
    		logMsg("from addr %x, port %x \n", 
 			client->addr.sin_addr, 
@@ -171,7 +171,7 @@ FAST int 		sock;
 			/*
 			 * normal conn lost conditions
 			 */
-			if(MPDEBUG==0){
+			if(CASDEBUG==0){
 				if(anerrno==ECONNABORTED||anerrno==ECONNRESET){
 					break;
 				}

@@ -302,12 +302,12 @@ long dbNameToAddr(char *pname,struct dbAddr *paddr)
 	struct rset	*prset;
 	struct fldDes	*pflddes;
 
-	if(dbFindRecord(&dbEntry,pname)) return(S_db_notFound);
-	if (!dbEntry.precnode->precord) return(S_db_notFound);
+	dbInitEntry(pdbBase,&dbEntry);
+	if(status = dbFindRecord(&dbEntry,pname)) return(status);
 	paddr->precord = dbEntry.precnode->precord;
 	paddr->record_type = dbEntry.record_type;
 	if(!dbEntry.pfield) {
-		if ((dbFindField(&dbEntry,"VAL")) != 0) return(S_db_notFound);
+		if(status=dbFindField(&dbEntry,"VAL"))return(status);
 	}
 	paddr->pfield = dbEntry.pfield;
 	pflddes = dbEntry.pflddes;

@@ -11,8 +11,10 @@
 	ENVIRONMENT: VxWorks
 
 	HISTORY:
-09dec91,ajk	original	***************************************************************************/
-
+09dec91,ajk	original
+29apr92,ajk	Added mutual exclusion locks	
+***************************************************************************/
+#define	DEBUG
 #include	"seq.h"
 
 LOCAL SEM_ID	seqProgListSemId;
@@ -43,19 +45,28 @@ int		task_id;
 	if (!seqProgListInited || task_id == 0)
 		return NULL;
 
+	semTake(seqProgListSemId, WAIT_FOREVER);
+
 	for (pNode = seqListFirst(&seqProgList); pNode != NULL;
 	     pNode = seqListNext(pNode) )
 	{
 		pSP = pNode->pSP;
 		if (pSP->task_id == task_id)
+		{
+			semGive(seqProgListSemId);
 			return pSP;
+		}
 		pSS = pSP->sscb;
 		for (n = 0; n < pSP->nss; n++, pSS++)
 		{
 			if (pSS->task_id == task_id)
+			{
+				semGive(seqProgListSemId);
 				return pSP;
+			}
 		}
 	}
+	semGive(seqProgListSemId);
 
 	return NULL; /* not in list */
 }
@@ -75,6 +86,7 @@ VOID		*param;		/* any parameter */
 	if (!seqProgListInited)
 		return ERROR;
 
+	semTake(seqProgListSemId, WAIT_FOREVER);
 	for (pNode = seqListFirst(&seqProgList); pNode != NULL;
 	     pNode = seqListNext(pNode) )
 	{
@@ -82,6 +94,7 @@ VOID		*param;		/* any parameter */
 		pFunc(pSP, param);
 	}
 
+	semGive(seqProgListSemId);
 	return OK;
 }
 
@@ -97,21 +110,35 @@ SPROG		*pSP;
 	if (!seqProgListInited)
 		seqProgListInit(); /* Initialize list */
 
+	semTake(seqProgListSemId, WAIT_FOREVER);
 	for (pNode = seqListFirst(&seqProgList); pNode != NULL;
 	     pNode = seqListNext(pNode) )
 	{
 
 		if (pSP == pNode->pSP)
+		{
+			semGive(seqProgListSemId);
+#ifdef DEBUG
+			printf("Task %d already in list\n", pSP->task_id);
+#endif
 			return ERROR; /* already in list */
+		}
 	}
 
 	/* Insert at head of list */
 	pNode = (PROG_NODE *)malloc(sizeof(PROG_NODE) );
 	if (pNode == NULL)
+	{
+		semGive(seqProgListSemId);
 		return ERROR;
+	}
 
 	pNode->pSP = pSP;
 	lstAdd(&seqProgList, pNode);
+	semGive(seqProgListSemId);
+#ifdef DEBUG
+	printf("Added task %d to list.\n", pSP->task_id);
+#endif
 
 	return OK;
 }
@@ -128,16 +155,23 @@ SPROG		*pSP;
 	if (!seqProgListInited)
 		return ERROR;
 
+	semTake(seqProgListSemId, WAIT_FOREVER);
 	for (pNode = seqListFirst(&seqProgList); pNode != NULL;
 	     pNode = seqListNext(pNode) )
 	{
 		if (pNode->pSP == pSP)
 		{
 			lstDelete(&seqProgList, pNode);
+			semGive(seqProgListSemId);
+
+#ifdef DEBUG
+			printf("Deleted task %d from list.\n", pSP->task_id);
+#endif
 			return OK;
 		}
 	}	
 
+	semGive(seqProgListSemId);
 	return ERROR; /* not in list */
 }
 
@@ -151,6 +185,7 @@ LOCAL seqProgListInit()
 
 	/* Create a semaphore for mutual exclusion */
 	seqProgListSemId = semBCreate(0);
+	semGive(seqProgListSemId);
 
 	seqProgListInited = TRUE;
 

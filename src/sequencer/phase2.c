@@ -80,7 +80,7 @@ phase2()
 gen_preamble()
 {
 	extern char		*prog_name;
-	extern int		async_flag, conn_flag, debug_flag, reent_flag;
+	extern int		async_opt, conn_opt, debug_opt, reent_opt;
 
 	/* Program name (comment) */
 	printf("/* Program \"%s\" */\n", prog_name);
@@ -92,11 +92,11 @@ gen_preamble()
 	printf("\n#define NUM_SS %d\n", num_ss);
 	printf("#define NUM_CHANNELS %d\n", num_channels);
 
-	/* #define's for compiler flags */
-	gen_flag_defn(async_flag, "ASYNC_FLAG");
-	gen_flag_defn(conn_flag,  "CONN_FLAG" );
-	gen_flag_defn(debug_flag, "DEBUG_FLAG");
-	gen_flag_defn(reent_flag, "REENT_FLAG");
+	/* #define's for compiler options */
+	gen_opt_defn(async_opt, "ASYNC_OPT");
+	gen_opt_defn(conn_opt,  "CONN_OPT" );
+	gen_opt_defn(debug_opt, "DEBUG_OPT");
+	gen_opt_defn(reent_opt, "REENT_OPT");
 	printf("\n");
 
 	/* Forward references of tables: */
@@ -106,11 +106,11 @@ gen_preamble()
 	return;
 }
 
-gen_flag_defn(flag, defn_name)
-int		flag;
+gen_opt_defn(opt, defn_name)
+int		opt;
 char		*defn_name;
 {
-	if (flag)
+	if (opt)
 		printf("#define %s TRUE\n", defn_name);
 	else
 		printf("#define %s FALSE\n", defn_name);
@@ -148,12 +148,12 @@ Expr		*ep;
 {
 	Var		*vp;
 	extern char	*stype[];
-	extern int	warn_flag;
+	extern int	warn_opt;
 
 	vp = (Var *)findVar(ep->value);
 	if (vp == 0)
 	{	/* variable not declared; add it to the variable list */
-		if (warn_flag)
+		if (warn_opt)
 			fprintf(stderr,
 			 "Warning:  variable \"%s\" is used but not declared.\n",
 			 ep->value);
@@ -218,12 +218,12 @@ gen_var_decl()
 	Var		*vp;
 	char		*vstr;
 	int		nv;
-	extern int	reent_flag;
+	extern int	reent_opt;
 
 	printf("\n/* Variable declarations */\n");
 
 	/* Convert internal type to `C' type */
-	if (reent_flag)
+	if (reent_opt)
 		printf("struct UserVar {\n");
 	for (nv=0, vp = var_list; vp != NULL; nv++, vp = vp->next)
 	{
@@ -259,7 +259,7 @@ gen_var_decl()
 
 		if (vstr != NULL)
 		{
-			if (reent_flag)
+			if (reent_opt)
 				printf("\t");
 			else
 				printf("static ");
@@ -271,7 +271,7 @@ gen_var_decl()
 			printf(";\n");
 		}
 	}
-	if (reent_flag)
+	if (reent_opt)
 		printf("};\n");
 	return;
 }		

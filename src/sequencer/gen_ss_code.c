@@ -8,6 +8,7 @@
 	ENVIRONMENT: UNIX
 	HISTORY:
 19nov91,ajk	Changed find_var() to findVar().
+28apr92,ajk	Implemented efClear() & efTestAndClear().
 ***************************************************************************/
 #include	<stdio.h>
 #include	"parse.h"
@@ -207,7 +208,7 @@ int		level;		/* indentation level */
 {
 	Expr		*epf;
 	int		nparams;
-	extern int	reent_flag;
+	extern int	reent_opt;
 	if (ep == 0)
 		return;
 
@@ -269,7 +270,7 @@ int		level;		/* indentation level */
 			eval_expr(stmt_type, ep->left, sp, level+1);
 		break;
 	case E_VAR:
-		if(reent_flag)
+		if(reent_opt)
 		{	/* Make variables point to allocated structure */
 			Var		*vp;
 			vp = (Var *)ep->left;
@@ -352,12 +353,14 @@ int		level;
 		printf("\t");
 }
 /* func_name_to_code - convert function name to a code */
-enum	fcode { F_DELAY, F_EFSET, F_EFTEST, F_PVGET, F_PVPUT,
+enum	fcode { F_DELAY, F_EFSET, F_EFTEST, F_EFCLEAR, F_EFTESTANDCLEAR,
+		F_PVGET, F_PVPUT,
 		F_PVMONITOR, F_PVSTOPMONITOR, F_PVCOUNT, F_PVINDEX,
 		F_PVSTATUS, F_PVSEVERITY, F_PVFLUSH, F_PVERROR, F_PVGETCOMPLETE,
 		F_PVCONNECTED, F_PVCHANNELCOUNT, F_PVCONNECTCOUNT, F_NONE };
 
-char	*fcode_str[] = { "delay", "efSet", "efTest", "pvGet", "pvPut",
+char	*fcode_str[] = { "delay", "efSet", "efTest", "efClear", "efTestAndClear",
+		"pvGet", "pvPut",
 		"pvMonitor", "pvStopMonitor", "pvCount", "pvIndex",
 		"pvStatus", "pvSeverity", "pvFlush", "pvError", "pvGetComplete",
 		"pvConnected", "pvChannelCount", "pvConnectCount", NULL };
@@ -377,10 +380,10 @@ char	*fname;
 }
 
 /* Process special function (returns TRUE if this is a special function)
-	Checks for special functions:
-		efSet(ef) and efGet(ef) -> set corresponding bit in ef_mask.
-		pvPut() & pvGet -> replace variable with ptr to db struct.
-		delay() - replaces delay time with delay index.
+	Checks for one of the following special functions:
+	 - event flag functions
+	 - process variable functions
+	 - delay()
 */
 special_func(stmt_type, ep, sp)
 int		stmt_type;	/* ACTION_STMT or EVENT_STMT */
@@ -415,6 +418,8 @@ Expr		*sp;		/* current State struct */
 	{
 	    case F_EFSET:
 	    case F_EFTEST:
+	    case F_EFCLEAR:
+	    case F_EFTESTANDCLEAR:
 		if (vp->type != V_EVFLAG)
 		{
 			fprintf(stderr, "Line %d: ", ep->line_num);

@@ -14,6 +14,7 @@
 19nov91,ajk	Replaced lstLib calls with built-in links.
 20nov91,ajk	Removed snc_init() - no longer did anything useful.
 20nov91,ajk	Added option_stmt() routine.
+28apr92,ajk	Implemented new event flag mode.
 ***************************************************************************/
 
 /*====================== Includes, globals, & defines ====================*/
@@ -28,7 +29,7 @@
 #define	FALSE	0
 #endif	TRUE
 
-int	debug_print_flag = 0;	/* Debug level (set by source file) */
+int	debug_print_opt = 0;	/* Debug level (set by source file) */
 
 char	*prog_name;		/* ptr to program name (string) */
 
@@ -122,28 +123,32 @@ option_stmt(option, value)
 char		*option; /* "a", "r", ... */
 int		value;	/* TRUE means +, FALSE means - */
 {
-	extern int	async_flag, conn_flag, debug_flag,
-			line_flag, reent_flag, warn_flag;
+	extern int	async_opt, conn_opt, debug_opt,
+			line_opt, reent_opt, warn_opt, newef_opt;
 
 	switch(*option)
 	{
 	    case 'a':
-		async_flag = value;
+		async_opt = value;
 		break;
 	    case 'c':
-		conn_flag = value;
+		conn_opt = value;
 		break;
 	    case 'd':
-		debug_flag = value;
+		debug_opt = value;
 		break;
 	    case 'l':
-		line_flag = value;
+		line_opt = value;
 		break;
 	    case 'r':
-		reent_flag = value;
+		reent_opt = value;
 		break;
 	    case 'w':
-		warn_flag = value;
+		warn_opt = value;
+
+	    case 'e':
+		newef_opt = value;
+
 		break;
 	}
 	return;
@@ -347,11 +352,11 @@ char		*name;	/* variable name */
 	return 0;
 }
 
-/* Set debug print flag */
-set_debug_print(flag)
-char	*flag;
+/* Set debug print opt */
+set_debug_print(opt)
+char	*opt;
 {
-	debug_print_flag = atoi(flag);
+	debug_print_opt = atoi(opt);
 }
 
 /* Parsing "program" statement */

@@ -25,6 +25,10 @@
 11dec91,ajk	Cleaned up comments.
 05feb92,ajk	Decreased minimum allowable stack size to SPAWN_STACK_SIZE/2.
 24feb92,ajk	Print error code for log file failure.
+28apr92,ajk	Implemented new event flag mode.
+29apr92,ajk	Now alocates private program structures, even when reentry option
+		is not specified.  This avoids problems with seqAddTask().
+29apr92,ajk	Implemented mutual exclusion lock in seq_log().
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -76,10 +80,12 @@ int		stack_size;	/* optional stack size (bytes) */
 	SPROG		*pSP, *alloc_task_area();
 	char		*seqMacValGet(), *pname, *pvalue, *ptask_name;
 
-	/* If no parameters specified, print version info. */
+	/* Print version & date of sequencer */
+	printf("%s\n", seqVersion);
+
+	/* Exit if no parameters specified */
 	if (pSP_orig == 0)
 	{
-		printf("%s\n", seqVersion);
 		return 0;
 	}
 
@@ -107,8 +113,7 @@ int		stack_size;	/* optional stack size (bytes) */
 	pSP = alloc_task_area(pSP_orig);
 
 	/* Make a private copy of original structures (but change pointers!) */
-	if (pSP_orig->reent_flag)
-		copy_sprog(pSP_orig, pSP);
+	copy_sprog(pSP_orig, pSP);
 
 	/* Initialize state program block */
 	init_sprog(pSP);
@@ -156,13 +161,13 @@ int		stack_size;	/* optional stack size (bytes) */
 	 pSP->name, ptask_name);
 	seq_log(pSP, "  Task id = %d = 0x%x\n", tid, tid);
 
+	/* Return task id to calling program */
 	return tid;
 }
 
 /*
  * ALLOC_TASK_AREA
- * Allocate a single block for all dynamic structures.  The size allocated
- * will depend on whether or not the reentrant flag is set.
+ * Allocate a single block for all dynamic structures
  * The pointer to the allocated area is saved for task delete hook routine.
  */
 LOCAL SPROG *alloc_task_area(pSP_orig)
@@ -187,17 +192,10 @@ SPROG	*pSP_orig;	/* original state program structure */
 	scr_size = SCRATCH_SIZE;
 
 	/* Total # bytes to allocate */
-	if (pSP_orig->reent_flag)
-	{
-		size = prog_size + ss_size + state_size +
-		 chan_size + user_size + mac_size + scr_size;
-	}
-	else
-	{
-		size = mac_size + scr_size;
-	}
+	size = prog_size + ss_size + state_size +
+	 chan_size + user_size + mac_size + scr_size;
 
-	/* Alloc the task area */
+	/* Alloc the dynamic task area */
 	dyn_ptr = dyn_ptr_start = (char *)calloc(size, 1);
 
 #ifdef	DEBUG
@@ -212,35 +210,34 @@ SPROG	*pSP_orig;	/* original state program structure */
 #endif	DEBUG
 
 	/* Set ptrs in the PROG structure */
-	if (pSP_orig->reent_flag)
-	{	/* Reentry flag set: create a new structures */
-		pSP_new = (SPROG *)dyn_ptr;
+	pSP_new = (SPROG *)dyn_ptr;
 
-		/* Copy the SPROG struct contents */
-		*pSP_new = *pSP_orig;
+	/* Copy the SPROG struct contents */
+	*pSP_new = *pSP_orig;
 
-		/* Allocate space for the other structures */
-		dyn_ptr += prog_size;
-		pSP_new->sscb = (SSCB *)dyn_ptr;
-		dyn_ptr += ss_size;
-		pSP_new->states = (STATE *)dyn_ptr;
-		dyn_ptr += state_size;
-		pSP_new->channels = (CHAN *)dyn_ptr;
-		dyn_ptr += chan_size;
+	/* Allocate space for copies of the original structures */
+	dyn_ptr += prog_size;
+	pSP_new->sscb = (SSCB *)dyn_ptr;
+	dyn_ptr += ss_size;
+	pSP_new->states = (STATE *)dyn_ptr;
+	dyn_ptr += state_size;
+	pSP_new->channels = (CHAN *)dyn_ptr;
+	dyn_ptr += chan_size;
+	if (user_size != 0)
+	{
 		pSP_new->user_area = (char *)dyn_ptr;
 		dyn_ptr += user_size;
 	}
 	else
-	{	/* Reentry flag not set: keep original structures */
-		pSP_new = pSP_orig;
-	}
-	/* Create dynamic structures for macros and scratch area */
+		pSP_new->user_area = NULL;
+
+	/* Create additional dynamic structures for macros and scratch area */
 	pSP_new->mac_ptr = (MACRO *)dyn_ptr;
 	dyn_ptr += mac_size;
 	pSP_new->scr_ptr = (char *)dyn_ptr;
 	pSP_new->scr_nleft = scr_size;
 
-	/* Save ptr to allocated area so we can free it at task delete */
+	/* Save ptr to start of allocated area so we can free it at task delete */
 	pSP_new->dyn_ptr = dyn_ptr_start;
 
 	return pSP_new;
@@ -267,8 +264,7 @@ SPROG		*pSP;	/* new ptr */
 	pSS = pSP->sscb;
 
 	/* Copy structures for each state set */
-	pST = pSP->states;
-	for (nss = 0; nss < pSP->nss; nss++)
+	for (nss = 0, pST = pSP->states; nss < pSP->nss; nss++)
 	{
 		*pSS = *pSS_orig;	/* copy SSCB */
 		pSS->states = pST; /* new ptr to 1-st STATE */
@@ -294,8 +290,11 @@ SPROG		*pSP;	/* new ptr */
 		/* Reset ptr to SPROG structure */
 		pDB->sprog = pSP;
 
-		/* Convert offset to address of the user variable */
-		pDB->var += (int)var_ptr;
+		/* +r: Convert offset to address of the user variable.
+		 * -r: var_ptr is an absolute address.
+		 */
+		if (pSP->options & OPT_REENT)
+			pDB->var += (int)var_ptr;
 
 		pDB++;
 		pDB_orig++;
@@ -334,8 +333,7 @@ SPROG	*pSP;
 	SSCB	*pSS;
 	int	nss, i;
 
-	pSS = pSP->sscb;
-	for (nss = 0; nss < pSP->nss; nss++, pSS++)
+	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
 	{
 		pSS->task_id = 0;
 		/* Create a binary semaphore for synchronizing events in a SS */
@@ -347,7 +345,7 @@ SPROG	*pSP;
 		}
 
 		/* Create a binary semaphore for pvGet() synconizing */
-		if (!pSP->async_flag)
+		if (!pSP->options & OPT_ASYNC)
 		{
 			pSS->getSemId =
 			 semBCreate(SEM_Q_FIFO, SEM_FULL);
@@ -362,8 +360,6 @@ SPROG	*pSP;
 		pSS->current_state = 0; /* initial state */
 		pSS->next_state = 0;
 		pSS->action_complete = TRUE;
-		for (i = 0; i < NWRDS; i++)
-			pSS->events[i] = 0;		/* clear events */
 	}
 	return;
 }
@@ -392,7 +388,8 @@ int		nChar;
 		return NULL;
 }
 /*
- * Initialize logging
+ * seq_logInit() - Initialize logging.
+ * If "logfile" is not specified, then we log to standard output.
  */
 LOCAL VOID seq_logInit(pSP)
 SPROG		*pSP;
@@ -422,7 +419,7 @@ SPROG		*pSP;
 	}
 }
 /*
- * seqLog
+ * seq_log
  * Log a message to the console or a file with time of day and task id.
  * The format looks like "mytask 12/13/91 10:07:43: <user's message>".
  */
@@ -461,6 +458,7 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	pBfr += count - 1;
 
 	/* Write the msg */
+	semTake(pSP->logSemId, WAIT_FOREVER); /* lock it */
 	fd = pSP->logFd;
 	count = pBfr - logBfr + 1;
 	status = write(fd, logBfr, count);
@@ -476,7 +474,7 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	{
 		ioctl(fd, FIOSYNC);
 	}
-
+	semGive(pSP->logSemId);
 	return;
 }
 
@@ -498,19 +496,20 @@ int		arg1,arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	return OK;
 }
 /*
- * seq_flagGet: return the value of an option flag.
+ * seq_optGet: return the value of an option.
  * FALSE means "-" and TRUE means "+".
  */
-BOOL seq_flagGet(pSP, flag)
+BOOL seq_optGet(pSP, opt)
 SPROG		*pSP;
-char		*flag; /* one of the snc flags as a strign (e.g. "a") */
+char		*opt; /* one of the snc options as a strign (e.g. "a") */
 {
-	switch (flag[0])
+	switch (opt[0])
 	{
-	    case 'a': return pSP->async_flag;
-	    case 'c': return pSP->conn_flag;
-	    case 'd': return pSP->debug_flag;
-	    case 'r': return pSP->reent_flag;
+	    case 'a': return ( (pSP->options & OPT_ASYNC) != 0);
+	    case 'c': return ( (pSP->options & OPT_CONN) != 0);
+	    case 'd': return ( (pSP->options & OPT_DEBUG) != 0);
+	    case 'r': return ( (pSP->options & OPT_REENT) != 0);
+	    case 'e': return ( (pSP->options & OPT_NEWEF) != 0);
 	    default:  return FALSE;
 	}
 }
@@ -547,17 +546,17 @@ SPROG		*pSP;
 	printf("  task pri=%d\n", pSP->task_priority);
 	printf("  number of state sets=%d\n", pSP->nss);
 	printf("  number of channels=%d\n", pSP->nchan);
-	printf("  async flag=%d, debug flag=%d, reent flag=%d\n",
-	 pSP->async_flag, pSP->debug_flag, pSP->reent_flag);
+	printf("  options:
+	printf("    async=%d, debug=%d, conn=%d, reent=%d, newef=%d\n",
+	 seq_optGet(pSP, 'a'), seq_optGet(pSP, 'd'), seq_optGet(pSP, 'c'),
+	 seq_optGet(pSP, 'r'), seq_optGet(pSP, 'e'));
 
-	pSS = pSP->sscb;
-	for (nss = 0; nss < pSP->nss; nss++, pSS++)
+	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
 	{
 		printf("  State Set: \"%s\"\n", pSS->name);
 		printf("  Num states=\"%d\"\n", pSS->num_states);
 		printf("  State names:\n");
-		pST = pSS->states;
-		for (nstates = 0; nstates < pSS->num_states; nstates++)
+		for (nstates = 0, pST = pSS->states; nstates < pSS->num_states; nstates++)
 		{
 			printf("    \"%s\"\n", pST->name);
 			pST++;

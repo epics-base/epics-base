@@ -7,6 +7,8 @@
 	DESCRIPTION: Generate tables for run-time sequencer.
 	See also:  phase2.c & gen_ss_code.c
 	ENVIRONMENT: UNIX
+	HISTORY:
+28apr92,ajk	Implemented new event flag mode.
 ***************************************************************************/
 
 #include	<stdio.h>
@@ -84,7 +86,7 @@ int		index;
 	Var		*vp;
 	char		*get_type_string, *put_type_string, *postfix;
 	extern char	*prog_name;
-	extern	int	reent_flag;
+	extern	int	reent_opt;
 	int		size, ev_flag, count;
 
 	vp = cp->var;
@@ -138,7 +140,7 @@ int		index;
 		postfix = "[0]";
 	else
 		postfix = "";
-	if (reent_flag)
+	if (reent_opt)
 		printf("OFFSET(struct UserVar, %s%s), ", vp->name, postfix);
 	else
 		printf("&%s%s, ", vp->name, postfix);	/* variable ptr */
@@ -168,7 +170,7 @@ int		index;
 
 	printf("0, ");			/* event id supplied by CA */
 
-	printf("0, ");			/* getSemId */
+	printf("0, ");			/* semaphore id for async. pvGet() */
 
 	printf("&%s", prog_name);	/* ptr to state program structure */
 
@@ -236,9 +238,10 @@ char		*ss_name;
 gen_state_prog_table()
 {
 	extern char		*prog_name, *prog_param;
-	extern int		async_flag, debug_flag, reent_flag, conn_flag;
+	extern int		async_opt, debug_opt, reent_opt, conn_opt, newef_opt;
 	extern int		nstates;
 	extern Expr		exit_code_list;
+	int			i;
 
 	printf("\n/* Program parameter list */\n");
 
@@ -276,7 +279,7 @@ gen_state_prog_table()
 
 	printf("\tNULL,\t/* ptr to user area (not used) */\n");
 
-	if (reent_flag)
+	if (reent_opt)
 		printf("\tsizeof(struct UserVar),\t/* user area size */\n");
 	else
 		printf("\t0,\t/* user area size (not used) */\n");
@@ -291,8 +294,13 @@ gen_state_prog_table()
 
 	printf("\tprog_param,\t/* *params */\n");
 
-	printf("\t%d, %d, %d, %d,\t/* async, debug, & reent flags */\n",
-	 async_flag, debug_flag, reent_flag, conn_flag);
+	printf("\t");
+	for (i = 0; i < NWRDS; i++)
+		printf("0, ");
+	printf("\t/* Event flags (bit encoded) */\n");
+
+	printf("\t0x%x,\t/* encoded async, debug, conn, newef & reent options */\n",
+	 encode_options() );
 
 	printf("\texit_handler,\t/* exit handler */\n");
 
@@ -301,6 +309,24 @@ gen_state_prog_table()
 	printf("};\n");
 
 	return;
+}
+
+encode_options()
+{
+	int		options;
+
+	options = 0;
+	if (async_opt)
+		options |= OPT_ASYNC;
+	if (conn_opt)
+		options |= OPT_CONN;
+	if (debug_opt)
+		options |= OPT_DEBUG;
+	if (reent_opt)
+		options |= OPT_REENT;
+	if (newef_opt)
+		options |= OPT_NEWEF;
+	return options;
 }
 /* Generate an array of state set control blocks (SSCB),
  one entry for each state set */
@@ -336,11 +362,6 @@ gen_sscb_array()
 		printf("\t%d,\t/* error_state */\n", find_error_state(ssp));
 
 		printf("\t0, FALSE,\t/* trans_number, action_complete */\n");
-
-		printf("\t/* outstanding events */\n\t");
-		for (n = 0; n < NWRDS; n++)
-			printf("0, ");
-		printf("\n");
 
 		printf("\t0,\t/* pMask - ptr to current event mask */\n");
 

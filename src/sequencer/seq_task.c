@@ -1,7 +1,8 @@
 /**************************************************************************
 			GTA PROJECT   AT division
-	Copyright, 1990, The Regents of the University of California.
-		         Los Alamos National Laboratory
+		Copyright, 1990, 1991, 1992
+		The Regents of the University of California
+		Los Alamos National Laboratory
 
 	$Id$
 	DESCRIPTION: Seq_tasks.c: Task creation and control for sequencer
@@ -12,7 +13,11 @@
 04dec91,ajk	Implemented linked list of state programs, eliminating task
 		variables.
 11dec91,ajk	Made cosmetic changes and cleaned up comments.
-19dec91,ajk	Changed algoritm in get_timeout().
+19dec91,ajk	Changed algoritm in seq_getTimeout().
+29apr92,ajk	Implemented new event flag mode.
+30apr92,ajk	Periodically call ca_pend_event() to detect connection failures.
+21may92,ajk	In sprog_delete() wait for loggin semaphore before suspending tasks.
+		Some minor changes in the way semaphores are deleted.
 ***************************************************************************/
 
 #include	"seq.h"
@@ -20,15 +25,15 @@
 /* Function declarations */
 #ifdef	ANSI
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
-LOCAL	long get_timeout(SSCB *);
+long seq_getTimeout(SSCB *);
 #else
 LOCAL	VOID ss_task_init();
-LOCAL	long get_timeout();
+long seq_getTimeout();
 #endif	ANSI
 
 #define		TASK_NAME_SIZE 10
 
-#define	MAX_TIMEOUT	(1<<30) /* like 2 years */
+#define	MAX_DELAY	(60*10) /* max delay time pending for events */
 
 /*
  * sequencer() - Sequencer main task entry point.
@@ -40,11 +45,17 @@ char		*ptask_name;	/* Parent task name */
 {
 	SSCB		*pSS;
 	STATE		*pST;
-	int		nss, task_id;
+	int		nss, task_id, i;
 	char		task_name[TASK_NAME_SIZE+10];
 	extern		VOID ss_entry();
 
 	pSP->task_id = taskIdSelf(); /* my task id */
+	pSS = pSP->sscb;
+	pSS->task_id = pSP->task_id;
+
+	/* Clear all event flags */
+	for (i = 0; i < NWRDS; i++)
+		pSP->events[i] = 0;
 
 	/* Add the program to the state program list */
 	seqAddProg(pSP);
@@ -61,8 +72,7 @@ char		*ptask_name;	/* Parent task name */
 		ptask_name[TASK_NAME_SIZE] = 0;
 
 	/* Create each additional state set task */
-	pSS = pSP->sscb + 1;
-	for (nss = 1; nss < pSP->nss; nss++, pSS++)
+	for (nss = 1, pSS = pSP->sscb + 1; nss < pSP->nss; nss++, pSS++)
 	{
 		/* Form task name from program name + state set number */
 		sprintf(task_name, "%s_%d", ptask_name, nss);
@@ -93,7 +103,6 @@ SSCB	*pSS;
 	BOOL		ev_trig;
 	STATE		*pST, *pStNext;
 	long		delay;
-	int		i;
 	char		*pVar;
 
 	pSS->task_id = taskIdSelf();
@@ -117,12 +126,6 @@ SSCB	*pSS;
 	 */
 	while (1)
 	{
-		/* Clear event bits */
-		semTake(pSP->caSemId, WAIT_FOREVER); /* Lock CA event update */
-		for (i = 0; i < NWRDS; i++)
-			pSS->events[i] = 0;
-		semGive(pSP->caSemId); /* Unlock CA event update */
-
 		pSS->time = tickGet(); /* record time we entered this state */
 
 		/* Call delay function to set up delays */
@@ -135,25 +138,34 @@ SSCB	*pSS;
 		semGive(pSS->syncSemId);
 
 		/*
-		 * Loop until an event is triggered, i.e. when()
-		 * returns TRUE.
+		 * Loop until an event is triggered, i.e. when() returns TRUE
+		 * or at least every MAX_DELAY ticks.
+		 * 
 		 */
 		do {
+			/* Allow CA to check for connect/disconnect on channels */
+			if (pSP->task_id == pSS->task_id)
+				ca_pend_event(0.001); /* returns immediately */
+
 			/* Wake up on CA event, event flag, or expired time delay */
-			delay = get_timeout(pSS);
+			delay = seq_getTimeout(pSS);
 			if (delay > 0)
 				semTake(pSS->syncSemId, delay);
 
-			/* Apply resource lock: any new events coming in will
-			   be deferred until next state is entered */
+			/* Call the event function to check for an event trigger.
+			 * The statement inside the when() statement is executed.
+			 * Note, we lock out CA events while doing this.
+			 */
 			semTake(pSP->caSemId, WAIT_FOREVER);
 
-			/* Call the event function to check for an event trigger.
-			 * Everything inside the when() statement is executed.
-			 */
-			ev_trig = pST->event_func(pSP, pSS, pVar);
+			ev_trig = pST->event_func(pSP, pSS, pVar); /* check events */
 
-			/* Unlock CA resource */
+			if ( ev_trig && (pSP->options & OPT_NEWEF) == 0 )
+			{    /* Clear all event flags (old mode only) */
+			    register	int i;
+			    for (i = 0; i < NWRDS; i++)
+				pSP->events[i] = pSP->events[i] & !pSS->pMask[i];
+			}
 			semGive(pSP->caSemId);
 
 		} while (!ev_trig);
@@ -190,39 +202,41 @@ SSCB	*pSS;
 
 	return;
 }
-/* Return time-out for delay() */
-LOCAL long get_timeout(pSS)
+/*
+ * seq_getTimeout() - return time-out for pending on events.
+ * Returns number of tics to next expected timeout of a delay() call.
+ * Returns MAX_DELAY if no delays pending */
+long seq_getTimeout(pSS)
 SSCB	*pSS;
 {
 	int		ndelay;
-	long		timeout, timeoutMin;	/* expiration clock time */
-	long		delay;		/* min. delay (tics) */
+	long		timeout;		/* expiration clock time (tics) */
+	long		delay, delayMin;	/* remaining & min. delay (tics) */
 
 	if (pSS->ndelay == 0)
-		return MAX_TIMEOUT;
+		return MAX_DELAY;
 
-	timeoutMin = MAX_TIMEOUT; /* start with largest timeout */
+	delayMin = MAX_DELAY; /* start with largest possible delay */
 
-	/* Find the minimum abs. timeout (0 means already expired) */
+	/* Find the minimum  delay among all non-expired timeouts */
 	for (ndelay = 0; ndelay < pSS->ndelay; ndelay++)
 	{
 		timeout = pSS->timeout[ndelay];
 		if (timeout == 0)
 			continue;	/* already expired */
-		if (pSS->time >= timeout)
+		delay = timeout - tickGet(); /* convert timeout to remaining delay */
+		if (delay <= 0)
 		{	/* just expired */
-			timeoutMin = pSS->time;
+			delayMin = 0;
 			pSS->timeout[ndelay] = 0; /* mark as expired */
 		}
-		else if (timeout < timeoutMin)
+		else if (delay < delayMin)
 		{
-			timeoutMin = timeout;
+			delayMin = delay;  /* this is the min. delay so far */
 		}
 	}
 
-	/* Convert minimum timeout to delay */
-	delay = timeoutMin - tickGet();
-	return delay;
+	return delayMin;
 }
 /* Set-up for delay() on entering a state.  This routine is called
 by the state program for each delay in the "when" statement  */
@@ -306,6 +320,9 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		return -1;
 	}
 
+	/* Wait for log semaphore (in case a task is doing a write) */
+	semTake(pSP->logSemId, 600);
+
 	/* Suspend all state set tasks except self */
 	pSS = pSP->sscb;
 #ifdef	DEBUG
@@ -314,7 +331,7 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
 		tid_ss = pSS->task_id;
-		if ( (tid_ss > 0) && (tid != tid_ss) )
+		if ( (tid_ss != 0) && (tid != tid_ss) )
 		{
 #ifdef	DEBUG
 			logMsg("    suspend task: tid=%d\n", tid_ss);
@@ -323,8 +340,11 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		}
 	}
 
+	/* Give back log semaphore */
+	semGive(pSP->logSemId);
+
 	/* Call user exit routine (only if task has run) */
-	if (pSP->sscb->task_id > 0)
+	if (pSP->sscb->task_id != 0)
 	{
 #ifdef	DEBUG
 		logMsg("   Call exit function\n");
@@ -350,23 +370,24 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
 		tid_ss = pSS->task_id;
-		if ( tid_ss > 0)
+		if ( (tid != tid_ss) && (tid_ss != 0) )
 		{
-			if ( (tid != tid_ss) && (tid_ss > 0) )
-			{
 #ifdef	DEBUG
-				logMsg("   delete ss task: tid=%d\n", tid_ss);
+			logMsg("   delete ss task: tid=%d\n", tid_ss);
 #endif	DEBUG
-				taskDelete(tid_ss);
-			}
-			semDelete(pSS->syncSemId);
-			if (!pSP->async_flag)
-				semDelete(pSS->getSemId);
+			taskDelete(tid_ss);
 		}
+
+		if (pSS->syncSemId != 0)
+			semDelete(pSS->syncSemId);
+
+		if (pSS->getSemId != 0)
+			semDelete(pSS->getSemId);
 	}
 
 	/* Delete program-wide semaphores */
 	semDelete(pSP->caSemId);
+	semDelete(pSP->logSemId);
 
 	/* Free the memory that was allocated for the task area */
 #ifdef	DEBUG

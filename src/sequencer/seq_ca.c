@@ -27,9 +27,12 @@
  *
  * Modification Log:
  * -----------------
- * .01 07-03-91  ajk	.
- * .02 12-11-91  ajk	Cosmetic changes (comments & names)
- * .03 02-13-92  ajk	All seqLog() calls compile only if DEBUG is defined.
+ * 03jul91,ajk	.
+ * 11dec91,ajk	Cosmetic changes (comments & names)
+ * 13feb92,ajk	All seqLog() calls compile only if DEBUG is defined.
+ * 28apr92,ajk	Implemented new event flag mode.
+ * 21may92,ajk	Will periodically announce number of connected channels
+ *		if waiting form some to connect.
  */
 
 #include	"seq.h"
@@ -105,10 +108,20 @@ SPROG		*pSP;
 	}
 	ca_flush_io();
 
-	if (pSP->conn_flag)
-	{	/* Wait for all connections to complete */
-		while (pSP->conn_count < pSP->nchan)
-			taskDelay(30);
+	if (pSP->options & OPT_CONN)
+	{	/* Wait for all connections to complete ("+c" option) */
+		for (i = 1; pSP->conn_count < pSP->nchan; i++)
+		{
+			if (i <= 2)
+				taskDelay(6); /* 1-st 2 times we delay 0.1 sec */
+			else
+				taskDelay(30); /* thereafter we delay 0.5 sec */
+			/* Log a message after about 5 sec
+			 * or about every 50 sec thereafter */
+			if (i == 12 || (i % 100) == 0)
+				logMsg("%d of %d channels connected\n",
+				 pSP->conn_count, pSP->nchan);
+		}
 	}
 
 	return 0;
@@ -197,8 +210,8 @@ struct connection_handler_args	args;
 }
 
 /*
- * seq_efSet() - Set an event flag.  The result is to wake up each state
- * set that is waiting for event processing.
+ * seq_efSet() - Set an event flag, then wake up each state
+ * set that might be waiting on that event flag.
  */
 VOID seq_efSet(pSP, dummy, ev_flag)
 SPROG		*pSP;
@@ -208,34 +221,49 @@ int		ev_flag;	/* event flag */
 	SSCB		*pSS;
 	int		nss;
 
-	pSS = pSP->sscb;
-	/* For all state sets: */
-	for (nss = 0; nss < pSP->nss; nss++, pSS++)
-	{
-		/* Apply resource lock */
-		semTake(pSP->caSemId, WAIT_FOREVER);
+	/* Set this bit (apply resource lock) */
+	semTake(pSP->caSemId, WAIT_FOREVER);
+	bitSet(pSP->events, ev_flag);
 
+	/* Check flag against mask for all state sets: */
+	for (nss = 0, 	pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
+	{
 		/* Test for possible event trig based on bit mask for this state */
 		if ( (ev_flag == 0) || bitTest(pSS->pMask, ev_flag) )
 		{
-			bitSet(pSS->events, ev_flag);
 			semGive(pSS->syncSemId); /* wake up the ss task */
 		}
 
-		/* Unlock resource */
-		semGive(pSP->caSemId);
 	}
+
+	/* Unlock resource */
+	semGive(pSP->caSemId);
 }
 
 /*
  * seq_efTest() - Test event flag against outstanding events.
  */
-seq_efTest(pSP, pSS, ev_flag)
+int seq_efTest(pSP, pSS, ev_flag)
 SPROG		*pSP;
 SSCB		*pSS;
 int		ev_flag;	/* event flag */
 {
-	return bitTest(pSS->events, ev_flag);
+	return bitTest(pSP->events, ev_flag);
+}
+
+/*
+ * seq_efClear() - Test event flag against outstanding events, then clear it.
+ */
+int seq_efClear(pSP, pSS, ev_flag)
+SPROG		*pSP;
+SSCB		*pSS;
+int		ev_flag;	/* event flag */
+{
+	int		isSet;
+
+	isSet = bitTest(pSP->events, ev_flag);
+	bitClear(pSP->events, ev_flag);
+	return isSet;
 }
 /*
  * seq_pvGet() - Get DB value (uses channel access).
@@ -256,7 +284,7 @@ CHAN	*pDB;	/* ptr to channel struct */
 	pDB->get_complete = FALSE;
 
 	/* If synchronous pvGet then clear the pvGet pend semaphore */
-	if (!pSP->async_flag)
+	if ( !(pSP->options & OPT_ASYNC) )
 	{
 		pDB->getSemId = pSS->getSemId;
 		semTake(pSS->getSemId, NO_WAIT);
@@ -270,7 +298,7 @@ CHAN	*pDB;	/* ptr to channel struct */
 			seq_callback_handler,	/* callback handler */
 			pDB);			/* user arg */
 
-	if (pSP->async_flag || (status != ECA_NORMAL) )
+	if ( (pSP->options & OPT_ASYNC) || (status != ECA_NORMAL) )
 		return status;
 
 	/* Synchronous pvGet() */
@@ -320,13 +348,13 @@ struct event_handler_args	args;
 	seq_efSet(pSP, 0, pDB->index + 1);
 
 	/* If syncronous pvGet then notify pending state set */
-	if (!pSP->async_flag)
+	if ( !(pSP->options & OPT_ASYNC) )
 		semGive(pDB->getSemId);
 
 	return;
 }
 
-/* Flush requests */
+/* Flush outstanding CA requests */
 VOID seq_pvFlush()
 {
 	ca_flush_io();

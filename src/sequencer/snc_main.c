@@ -11,6 +11,7 @@
 	HISTORY:
 20nov91,ajk	Removed call to init_snc().
 20nov91,ajk	Removed some debug stuff.
+28apr92,ajk	Implemented new event flag mode.
 ***************************************************************************/
 extern	char *sncVersion;	/* snc version and date created */
 
@@ -27,13 +28,14 @@ char		out_file[200];	/* output file name */
 char		*src_file;	/* ptr to (effective) source file name */
 int		line_num;	/* current src file line number */
 int		c_line_num;	/* line number for beginning of C code */
-/* Flags: */
-int		async_flag = FALSE;	/* do pvGet() asynchronously */
-int		conn_flag = TRUE;	/* wait for all connections to complete */
-int		debug_flag = FALSE;	/* run-time debug */
-int		line_flag = TRUE;	/* line numbering */
-int		reent_flag = FALSE;	/* reentrant at run-time */
-int		warn_flag = TRUE;	/* compiler warnings */
+/* Compile & run-time options: */
+int		async_opt = FALSE;	/* do pvGet() asynchronously */
+int		conn_opt = TRUE;	/* wait for all connections to complete */
+int		debug_opt = FALSE;	/* run-time debug */
+int		newef_opt = TRUE;	/* use new event flag mode */
+int		line_opt = TRUE;	/* line numbering */
+int		reent_opt = FALSE;	/* reentrant at run-time */
+int		warn_opt = TRUE;	/* compiler warnings */
 
 /*+************************************************************************
 *  NAME: main
@@ -125,6 +127,7 @@ char	*argv[];
 		fprintf(stderr, "  -l - supress line numbering\n");
 		fprintf(stderr, "  +r - make reentrant at run-time\n");
 		fprintf(stderr, "  -w - supress compiler warnings\n");
+		fprintf(stderr, "  -e - don't use new event flag mode\n");
 		fprintf(stderr, "example:\n snc +a -c vacuum.st\n");
 		exit(1);
 	}
@@ -133,51 +136,55 @@ char	*argv[];
 	{
 		s = *argv;
 		if (*s == '+' || *s == '-')
-			get_flag(s);
+			get_options(s);
 		else
 			get_in_file(s);
 	}
 }
 
-get_flag(s)
+get_options(s)
 char		*s;
 {
-	int		flag_val;
-	extern int	debug_flag, line_flag, reent_flag, warn_flag;
+	int		opt_val;
+	extern int	debug_opt, line_opt, reent_opt, warn_opt, async_opt, newef_opt;
 
 	if (*s == '+')
-		flag_val = TRUE;
+		opt_val = TRUE;
 	else
-		flag_val = FALSE;
+		opt_val = FALSE;
 
 	switch (s[1])
 	{
 	case 'a':
-		async_flag = flag_val;
+		async_opt = opt_val;
 		break;
 
 	case 'c':
-		conn_flag = flag_val;
+		conn_opt = opt_val;
 		break;
 
 	case 'd':
-		debug_flag = flag_val;
+		debug_opt = opt_val;
 		break;
 
 	case 'l':
-		line_flag = flag_val;
+		line_opt = opt_val;
 		break;
 
 	case 'r':
-		reent_flag = flag_val;
+		reent_opt = opt_val;
 		break;
 
 	case 'w':
-		warn_flag = flag_val;
+		warn_opt = opt_val;
+		break;
+
+	case 'e':
+		newef_opt = opt_val;
 		break;
 
 	default:
-		fprintf(stderr, "Unknown flag: \"%s\"\n", s);
+		fprintf(stderr, "Unknown option: \"%s\"\n", s);
 		break;
 	}
 }
@@ -275,9 +282,9 @@ print_line_num(line_num, src_file)
 int		line_num;
 char		*src_file;
 {
-	extern int	line_flag;
+	extern int	line_opt;
 
-	if (line_flag)
+	if (line_opt)
 		printf("# line %d \"%s\"\n", line_num, src_file);
 	return;
 }

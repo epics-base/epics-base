@@ -18,6 +18,8 @@
 19dec91,ajk	Allow task name as well as task id.
 25feb92,ajk	V5.0 accepts 0 as a valid task id: fixed it.
 26feb92,ajk	Fixed formatting of task/program listing.
+29apr92,ajk	Modified to interpret encoded options.
+21may92,ajk	Modified format for listing programs & tasks.
 ***************************************************************************/
 
 /*	#define	DEBUG	1	*/
@@ -79,19 +81,19 @@ int	tid;
 	printf("  number of state sets=%d\n", pSP->nss);
 	printf("  number of channels=%d\n", pSP->nchan);
 	printf("  number of channels connected=%d\n", pSP->conn_count);
-	printf("  async flag=%d, debug flag=%d, reent flag=%d, conn flag=%d\n",
-	 pSP->async_flag, pSP->debug_flag, pSP->reent_flag,
-	 pSP->conn_flag);
+	printf("  options: async=%d, debug=%d, reent=%d, conn=%d, newef=%d\n",
+	 ((pSP->options & OPT_ASYNC) != 0), ((pSP->options & OPT_DEBUG) != 0),
+	 ((pSP->options & OPT_REENT) != 0), ((pSP->options & OPT_CONN) != 0),
+	 ((pSP->options & OPT_NEWEF) != 0) );
 	printf("  log file fd=%d\n", pSP->logFd);
 	status = ioctl(pSP->logFd, FIOGETNAME, file_name);
 	if (status != ERROR)
 		printf("  log file name=\"%s\"\n", file_name);
 
 	printf("\n");
-	pSS = pSP->sscb;
 
 	/* Print state set info */
-	for (nss = 0; nss < pSP->nss; nss++, pSS++)
+	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
 	{
 		wait_rtn();
 
@@ -333,12 +335,24 @@ LOCAL seqShowSP(pSP)
 SPROG		*pSP;
 {
 	SSCB		*pSS;
+	int		nss;
+	char		*progName, *ptaskName;;
 
-	pSS = pSP->sscb;
 	if (seqProgCount++ == 0)
-		printf("TID        Program Name       Task Name\n");
+		printf("Program Name     Task ID    Task Name        SS Name\n\n");
 
-	printf("%-10d %-18s %-18s\n", pSP->task_id,pSP->name, taskName(pSS->task_id) );
+	progName = pSP->name;
+	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
+	{
+		if (pSS->task_id == 0)
+			ptaskName = "(no task)";
+		else
+			ptaskName = taskName(pSS->task_id);
+		printf("%-16s %-10d %-16s %-16s\n",
+		 progName, pSS->task_id, ptaskName, pSS->name );
+		progName = "";
+	}
+	printf("\n");
 }
 
 /* Print a brief summary of all state programs */

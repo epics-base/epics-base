@@ -185,6 +185,91 @@ epicsReadlineEnd (void *context)
 
 #elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_EPICS
 
+#if defined(vxWorks)
+
+#include <ledLib.h>
+#define LEDLIB_LINESIZE 1000
+
+struct readlineContext {
+    int     ledId;
+    char    line[LEDLIB_LINESIZE];
+    FILE    *in;
+};
+
+/*
+ * Create a command-line context
+ */
+void * epicsShareAPI
+epicsReadlineBegin(FILE *in)
+{
+    struct readlineContext *readlineContext;
+
+    readlineContext = malloc(sizeof *readlineContext);
+    if (readlineContext != NULL) {
+        readlineContext->ledId = ERROR;
+        readlineContext->in = in;
+        if (in == NULL) {
+            const char *histSize = getenv("IOCSH_HISTSIZE");
+            int i;
+
+            if (histSize == NULL)
+                i = 50;
+            else if ((i = atoi(histSize)) < 0)
+                i = 1;
+            readlineContext->ledId = ledOpen(fileno(stdin), fileno(stdout), i);
+            if (readlineContext->ledId == ERROR) {
+                readlineContext->in = stdin;
+                printf("Warning -- Unabled to allocate space for command-line history.\n");
+                printf("Warning -- Command-line editting disabled.\n");
+            }
+        }
+    }
+    return readlineContext;
+}
+
+/*
+ * Read a line of input
+ */
+char * epicsShareAPI
+epicsReadline (const char *prompt, void *context)
+{
+    struct readlineContext *readlineContext = context;
+    int i;
+
+    if (prompt) {
+        fputs(prompt, stdout);
+        fflush(stdout);
+    }
+    if (readlineContext->ledId != ERROR) {
+        i = ledRead(readlineContext->ledId, readlineContext->line, LEDLIB_LINESIZE-1); 
+        if (i < 0)
+            return NULL;
+        readlineContext->line[i] = '\0';
+    }
+    else {
+        if (fgets(readlineContext->line, LEDLIB_LINESIZE, readlineContext->in) == NULL)
+            return NULL;
+    }
+    return readlineContext->line;
+}
+
+/*
+ * Destroy a command-line context
+ */
+void epicsShareAPI
+epicsReadlineEnd (void *context)
+{
+    struct readlineContext *readlineContext = context;
+    
+    if (readlineContext) {
+        if (readlineContext->ledId != ERROR)
+            ledClose(readlineContext->ledId);
+        free(readlineContext);
+    }
+}
+
+#else /* !vxWorks */
+
 struct readlineContext {
     FILE    *in;
     char    *line;
@@ -234,8 +319,6 @@ epicsReadline (const char *prompt, void *context)
         printf ("Out of memory!\n");
         return NULL;
     }
-    if (prompt) {
-    }
     while ((c = getc (in)) !=  '\n') {
         if (c == EOF) {
             free (line);
@@ -273,6 +356,8 @@ epicsReadlineEnd (void *context)
         free(readlineContext);
     }
 }
+
+#endif /* !vxWorks */
 
 #else
 

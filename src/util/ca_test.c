@@ -72,10 +72,11 @@ char	*pvalue
  */
 LOCAL int cagft(char *pname)
 {	
-	chid		chan_id;
-	int		status;
-	int		i;
-	unsigned long	ntries = 10ul;
+	const unsigned maxTries = 1000ul;
+	unsigned ntries = 0u;
+	chid chan_id;
+	int status;
+	int i;
 
 	/* 
 	 *	convert name to chan id 
@@ -123,24 +124,24 @@ LOCAL int cagft(char *pname)
 	 * wait for the operation to complete
 	 * before returning 
 	 */
-	while(ntries){
+	while ( ntries < maxTries ) {
 		unsigned long oldOut;
 
 		oldOut = outstanding;
-		ca_pend_event (5.0);
+		ca_pend_event ( 0.05 );
 
-		if(!outstanding){
-            SEVCHK(ca_clear_channel(chan_id),NULL);
-			printf("\n\n");
+		if ( ! outstanding ) {
+            SEVCHK ( ca_clear_channel ( chan_id ), NULL );
+			printf ( "\n\n" );
 			return 0;
 		}
 
-		if (outstanding==oldOut) {
-			ntries--;
+		if ( outstanding == oldOut ) {
+			ntries++;
 		}
 	}
 
-    SEVCHK(ca_clear_channel(chan_id),NULL);
+    SEVCHK ( ca_clear_channel ( chan_id ), NULL );
 	return -1;
 }
 

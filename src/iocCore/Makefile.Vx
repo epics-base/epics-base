@@ -22,5 +22,4 @@ include $(TOP)/config/RULES.Vx
 
 iocCore: $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)
-	@$(WHAT) $@
 

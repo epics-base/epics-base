@@ -19,7 +19,7 @@ void caAddConfiguredAddr(
         int port);
 
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
-int caFetchPortConfig(ENV_PARAM *pEnv, int defaultPort);
+unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort);
 
 union caAddr{
         struct sockaddr_in      inetAddr;

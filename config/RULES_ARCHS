@@ -51,11 +51,16 @@ $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
-$(hostDirs) : 
+$(hostDirs) : $(EPICS_BASE)/config/makeMakefile.pl
 	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ $(BUILD_TYPE)
 
-$(crossDirs) : 
+$(crossDirs) : $(EPICS_BASE)/config/makeMakefile.pl
 	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ Vx
+
+ifneq ($(EPICS_BASE),$(TOP))
+$(EPICS_BASE)/config/makeMakefile.pl : $(TOP)/config/makeMakefile.pl
+	$(CP) $(TOP)/config/makeMakefile.pl $(EPICS_BASE)/config/makeMakefile.pl
+endif
 
 #
 # host/cross action targets

@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.36  2000/06/20 19:54:40  mrk
+ * drvTS is now optional for vxWorks
+ *
  * Revision 1.35  2000/06/16 14:08:54  mrk
  * get rid of tsSubr; more call to TSinit to os/osdThead
  *
@@ -562,6 +565,11 @@ the IOC vxWorks clock may not be in sync with time stamps if
 /*	
 TSinit() - initialize the driver, determine mode.
 */
+static int getEvent(TS_STAMP *pDest, unsigned eventNumber)
+{
+    return(TSgetTimeStamp(eventNumber,(struct timespec*)pDest));
+}
+
 long TSinit(void)
 {
     SYM_TYPE stype;
@@ -571,7 +579,7 @@ long TSinit(void)
     
     if(TSinitialized) return(0);
     /*register with iocClock */
-    iocClockRegister(TScurrentTimeStamp,TSgetTimeStamp);
+    iocClockRegister((ptsStampGetCurrent)TScurrentTimeStamp,getEvent);
     TSinitialized = 1;
     /* 0=default, 1=none, 2=direct */
     
@@ -1215,7 +1223,7 @@ static long TSsetClockFromMaster()
 TSgetBroadcastSocket() - return a broadcast socket for a port, return
 a sockaddr also.
 */
-static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
+int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
 {
     int on=1;
     int soc;
@@ -1236,50 +1244,27 @@ static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
 }
 
 /*	
-TSgetBroadcastAddr() - Determine the broadcast address, this is 
-directly from the Sun Network Programmer's guide.
+TSgetBroadcastAddr() - use the libCom/osi/osiSock.h calls
 */
 long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
 {
-    struct ifconf ifc;
-    struct ifreq* ifr;
-    struct ifreq* save;
-    char buf[BUFSIZ];
-    int tot,i;
-    
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    if(ioctl(soc,SIOCGIFCONF,(int)&ifc) < 0)
-    { perror("ioctl SIOCGIFCONF failed"); return -1; }
-    
-    ifr = ifc.ifc_req;
-    tot = ifc.ifc_len/sizeof(struct ifreq);
-    save=(struct ifreq*)NULL;
-    i=0;
-    do
-    {
-        if(ifr[i].ifr_addr.sa_family==AF_INET)
-        {
-            if(ioctl(soc,SIOCGIFFLAGS,(int)&ifr[i])<0)
-            { perror("ioctl SIOCGIFFLAGS failed"); return -1; }
-            
-            if( (ifr[i].ifr_flags&IFF_UP) && 
-                !(ifr[i].ifr_flags&IFF_LOOPBACK) &&
-                (ifr[i].ifr_flags&IFF_BROADCAST))
-            { save=&ifr[i]; }
-        }
-    } while( !save && ++i<tot );
-    
-    if(save)
-    {
-        if(ioctl(soc,SIOCGIFBRDADDR,(int)save)<0)
-        { perror("ioctl SIOCGIFBRDADDR failed"); return -1; }
-        memcpy((char*)sin,(char*)&save->ifr_broadaddr,
-            sizeof(save->ifr_broadaddr));
+    ELLLIST         tmpList;
+    osiSockAddrNode *pNode;
+
+    ellInit ( &tmpList );
+    osiSockDiscoverBroadcastAddresses ( &tmpList,soc,(const osiSockAddr*)sin);
+    /* take first */
+    pNode = (osiSockAddrNode *)ellFirst(&tmpList);
+    if(!pNode) {
+        printf("no broadcast address found\n"); return -1;
     }
-    else
-    { Debug0(1,"no broadcast address found\n"); return -1; }
-    return 0;
+    memcpy((char*)sin,(char*)&pNode->addr,sizeof(struct sockaddr));
+    /* cleanup */
+    while((pNode = (osiSockAddrNode *)ellFirst(&tmpList))) {
+        ellDelete(&tmpList,(ELLNODE *)pNode);
+        free(pNode);
+    }
+    return(0);
 }
 
 /**************************************************************************/

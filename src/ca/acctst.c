@@ -2479,6 +2479,8 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     /* SEVCHK ( status, NULL ); */
 
     caTaskExistTest ();
+    
+    free ( pChans );
 
     printf ( "\nTest Complete\n" );
 

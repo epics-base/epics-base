@@ -589,8 +589,10 @@ static char *subGetNextLine(subFile *psubFile)
     char *pline;
 
     pline = fgets(psubFile->inputBuffer,MAX_BUFFER_SIZE,psubFile->fp);
-    while(pline && psubFile->inputBuffer[0]=='#')
+    while(pline && psubFile->inputBuffer[0]=='#') {
 	pline = fgets(psubFile->inputBuffer,MAX_BUFFER_SIZE,psubFile->fp);
+        ++psubFile->lineNum;
+    }
     if(!pline) {
 	psubFile->token = tokenEOF;
 	psubFile->inputBuffer[0] = 0;

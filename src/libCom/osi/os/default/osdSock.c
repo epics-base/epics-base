@@ -115,18 +115,5 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	return ret;
 }
 
-/*
- * convertSocketErrorToString()
- */
-epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
-        char * pBuf, unsigned bufSize )
-{
-    if ( ! bufSize ) {
-        return;
-    }
-    strncpy ( pBuf, strerror ( SOCKERRNO ), bufSize );
-    pBuf[bufSize-1] = '\0';
-}
-
 
 

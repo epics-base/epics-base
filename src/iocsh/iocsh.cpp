@@ -676,7 +676,7 @@ iocshBody (const char *pathname, const char *commandLine)
             redirects[0].name = NULL;
             if (openRedirect(filename, lineno, redirects) < 0)
                 continue;
-            startRedirect(filename, linenot, redirects);
+            startRedirect(filename, lineno, redirects);
             iocshBody(commandFile, NULL);
             continue;
         }

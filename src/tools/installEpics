@@ -22,8 +22,8 @@ for i
 do
 	case $i in
 	-m)             MODE=$2; shift 2;;
-	-g | -o)        echo $USAGE; echo "$i not implemented"; shift 2;;
-	-c | -s)        echo $USAGE; echo "$i not implemented"; shift;;
+	-g | -o)        echo "$USAGE"; echo "$i not implemented"; shift 2;;
+	-c | -s)        echo "$USAGE"; echo "$i not implemented"; shift;;
 	-d)             CREATE_DIR=1;shift;;
 	--)             shift; break;;
 	esac

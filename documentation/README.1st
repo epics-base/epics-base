@@ -4,7 +4,7 @@ README.1st
 
                            EPICS base
 
-                         Release 3.14.2
+                         Release 3.14.3
 
 What is EPICS base?
 
@@ -440,11 +440,12 @@ Example application and extension
      install location bin/<hostarch> directory during the base build.
 
      Instructions for building and executing the 3.14 example application
-     can be found in the section "Example Application" of Chapter 2, "Getting
-     Started", in the  "IOC Application Developer's Guide R3.14.2". The
-     "Example IOC Application" section briefly explains how to create and
-     build an example application in a user created <top> directory. It also
-     explains how to run the example application on a vxWorks ioc or a host
-     system and run an example channel access client on the host system.
+     can be found in the section "Example Application" of Chapter 2,
+     "Getting Started", in the "IOC Application Developer's Guide" for this
+     release. The "Example IOC Application" section briefly explains how to
+     create and build an example application in a user created <top>
+     directory. It also explains how to run the example application on a
+     vxWorks ioc or a host system and run an example channel access client
+     on the host system.
 
 

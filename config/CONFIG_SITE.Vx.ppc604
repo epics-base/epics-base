@@ -1,0 +1,3 @@
+
+# Vx directory override for APS 
+VX_DIR_YES = /usr/local/vw/tornado101ppc

@@ -1617,7 +1617,6 @@ void cac::waitUntilNoRecvThreadsPending ()
 {
     if ( ! this->preemptiveCallbackEnabled ) {
         {
-            const struct timeval delay = { 0, 0 };
             fd_set mask;
             FD_ZERO ( & mask );
             int count = 0;
@@ -1633,6 +1632,7 @@ void cac::waitUntilNoRecvThreadsPending ()
                 iter++;
             }
 
+            struct timeval delay = { 0, 0 };
             int status = select ( count, & mask, 0, 0, & delay );
             if ( status <= 0 ) {
                 return;

@@ -26,7 +26,7 @@ ARCMD = lib /nologo /verbose /out:$@
 
 #
 # Configure OS vendor C compiler
-ACC = cl /nologo
+ACC = cl 
 
 #
 # __STDC__=0 is a real great idea of Jeff that gives us both:
@@ -36,9 +36,9 @@ ACC = cl /nologo
 #
 # Use of /Za would dissable DLL import/export keywords which
 # EPICS include/excludes using architecture neutral macros
-ACC_ANSI = $(ACC) /D__STDC__=0
-ACC_STRICT = $(ACC) /D__STDC__=0
-ACC_TRAD = $(ACC)
+ACC_ANSI = $(ACC) /nologo /D__STDC__=0
+ACC_STRICT = $(ACC) /nologo /D__STDC__=0
+ACC_TRAD = $(ACC) /nologo
 
 #
 # /W<N> use warning level N
@@ -65,11 +65,14 @@ ACC_OPT_NO = /Zi /Fr
 # /MTd static multithreaded C RTL (debug version)
 # /MD multithreaded C RTL in DLL
 # /MDd multithreaded C RTL in DLL (debug version)
+VISC_EPICS_DLL_NO = 
+VISC_EPICS_DLL_YES = -DEPICS_DLL
+VISC_EPICS_DLL = $(VISC_EPICS_DLL_$(SHARED_LIBRARIES))
 VISC_SFLAGS_DEBUG_NO = d
 VISC_SFLAGS_DEBUG_YES =
 VISC_SFLAGS_DEBUG = $(VISC_SFLAGS_DEBUG_$(HOST_OPT))
-ACC_SFLAGS_YES= /MT$(VISC_SFLAGS_DEBUG)
-ACC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG)
+ACC_SFLAGS_YES= /MT$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
+ACC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
 
 #
 # no special libs for static link
@@ -86,9 +89,9 @@ ACC_SLIBS_NO=
 #
 # Use of /Za would dissable DLL import/export keywords which
 # EPICS include/excludes using architecture neutral macros
-CCC = cl /nologo /D__STDC__=0
-CCC_NORMAL = $(CCC) 
-CCC_STRICT = $(CCC) 
+CCC = cl 
+CCC_NORMAL = $(CCC) /nologo /D__STDC__=0
+CCC_STRICT = $(CCC) /nologo /D__STDC__=0
 CCC_TEMPL_INST_FLAG =
 
 #
@@ -115,8 +118,8 @@ CCC_OPT_NO = /Zi /Fr
 # /MTd static multithreaded C RTL (debug version)
 # /MD multithreaded C RTL in DLL
 # /MDd multithreaded C RTL in DLL (debug version)
-CCC_SFLAGS_YES= /MT$(VISC_SFLAGS_DEBUG)
-CCC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG)
+CCC_SFLAGS_YES= /MT$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
+CCC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
 
 #
 # no special libs for static link

@@ -288,6 +288,7 @@ int dbLoadTemplate(char* sub_file)
 {
 	FILE *fp;
 	long status;
+	line_num=0;
 
 	if( !sub_file || !*sub_file)
 	{

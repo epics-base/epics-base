@@ -242,6 +242,8 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	long status;
 	DB_APP_NODE* an;
 
+	line_num=0;
+
 #ifdef vxWorks
 	if(pdbbase==NULL)
 	{

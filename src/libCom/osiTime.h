@@ -27,84 +27,56 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.10  1999/05/07 20:34:50  jhill
- * fixed operator return type
- *
- * Revision 1.9  1999/05/07 19:12:39  jhill
- * many improvements to osiTime
- *
- * Revision 1.8  1999/05/03 16:22:29  jhill
- * allow osiTime to convert toaitTimeStamp without binding to gdd
- *
- * Revision 1.7  1999/04/30 00:02:02  jhill
- * added getCurrentEPICS()
- *
- * Revision 1.6  1997/06/13 09:31:46  jhill
- * fixed warnings
- *
- * Revision 1.5  1997/04/10 19:45:41  jhill
- * API changes and include with  not <>
- *
- * Revision 1.4  1996/11/02 02:06:00  jhill
- * const param => #define
- *
- * Revision 1.3  1996/09/04 21:53:36  jhill
- * allow use with goofy vxWorks 5.2 time spec - which has unsigned sec and
- * signed nsec
- *
- * Revision 1.2  1996/07/09 23:01:04  jhill
- * added new operators
- *
- * Revision 1.1  1996/06/26 22:14:11  jhill
- * added new src files
- *
- * Revision 1.2  1996/06/21 02:03:40  jhill
- * added stdio.h include
- *
- * Revision 1.1.1.1  1996/06/20 22:15:56  jhill
- * installed  ca server templates
- *
- *
  */
-
 
 #ifndef osiTimehInclude
 #define osiTimehInclude
 
-#include <limits.h>
-#include <stdio.h>
-#ifndef assert // allows use of epicsAssert.h
-#include <assert.h> 
-#endif
+//
+// ANSI C
+//
+#include <time.h>
 
 #include "shareLib.h"
 
-struct timespec;
-struct TS_STAMP;
-class aitTimeStamp;
+struct TS_STAMP; // EPICS
+class aitTimeStamp; // GDD
+struct timespec; // POSIX real time
+
+//
+// an extended ANSI C RTL "struct tm" which includes nano seconds. 
+//
+struct tm_nano_sec {
+	tm tm; // ANSI C time details
+	unsigned long nsec; // nano seconds extension
+};
+
+//
+// wrapping this in a struct allows conversion to and
+// from ANSI time_t but does not allow unexpected
+// conversions to occur
+//
+struct time_t_wrapper {
+	time_t ts;
+};
 
 //
 // class osiTime
 //
-// NOTE: this is an unsigned data type. It is not possible
-// to store a negative time value using this class.
+// high resolution osiTime stamp
 //
 class epicsShareClass osiTime {
 public:
+
 	//
 	// fetch the current time
-	//
-	// (always returns a time value that is greater than or equal
-	// to all previous time values returned)
 	//
 	static osiTime getCurrent();
 
 	//
 	// some systems have a high resolution time source which
 	// gradually drifts away from the master time base. Calling
-	// this routine will cause osiTime to realign the high
+	// this routine will cause class "time" to realign the high
 	// resolution result from getCurrent() with some master 
 	// time base. 
 	//
@@ -117,24 +89,8 @@ public:
 	//
 	// create an osiTime for the EPICS epoch
 	//
-	osiTime () : sec(0u), nSec(0u) {}
-
-	//
-	// create an osiTime from another osiTime
-	//
-	osiTime (const osiTime &t) : sec(t.sec), nSec(t.nSec) {}
-
-	//
-	// create an osiTime from sec and fractional nano-seconds
-	//
-	osiTime (const unsigned long secIn, const unsigned long nSecIn);
-
-	//
-	// convert to and from floating point
-	//
-	osiTime (double t);
-	operator double() const;
-	operator float() const;
+	osiTime ();
+	osiTime (const osiTime &t);
 
 	//
 	// convert to and from EPICS TS_STAMP format
@@ -144,11 +100,22 @@ public:
 	osiTime operator = (const struct TS_STAMP &rhs);
 
 	//
-	// convert to and from GDD's aitTimeStamp format
+	// convert to and from ANSI C's "time_t"
 	//
-	operator aitTimeStamp () const;
-	osiTime (const aitTimeStamp &ts);
-	osiTime operator = (const aitTimeStamp &rhs);
+	// "time_t" is wrapped in another structure to avoid
+	// unsuspected type conversions
+	// fetch value as an integer
+	//
+	operator time_t_wrapper () const;
+	osiTime (const time_t_wrapper &tv);
+	osiTime operator = (const time_t_wrapper &rhs);
+
+	//
+	// convert to and from ANSI C's "struct tm" (with nano seconds)
+	//
+	operator struct tm_nano_sec () const;
+	osiTime (const struct tm_nano_sec &ts);
+	osiTime operator = (const struct tm_nano_sec &rhs);
 
 	//
 	// convert to and from POSIX RT's "struct timespec"
@@ -158,22 +125,30 @@ public:
 	osiTime operator = (const struct timespec &rhs);
 
 	//
+	// convert to and from GDD's aitTimeStamp format
+	//
+	operator aitTimeStamp () const;
+	osiTime (const aitTimeStamp &ts);
+	osiTime operator = (const aitTimeStamp &rhs);
+
+	//
 	// arithmetic operators
 	//
-	osiTime operator- (const osiTime &rhs) const;
-	osiTime operator+ (const osiTime &rhs) const;
-	osiTime operator+= (const osiTime &rhs);
-	osiTime operator-= (const osiTime &rhs);
+	long double operator- (const osiTime &rhs) const; // returns seconds
+	osiTime operator+ (const long double &rhs) const; // add rhs seconds
+	osiTime operator- (const long double &rhs) const; // subtract rhs seconds
+	osiTime operator+= (const long double &rhs); // add rhs seconds
+	osiTime operator-= (const long double &rhs); // subtract rhs seconds
 
 	//
 	// comparison operators
 	//
-	int operator == (const osiTime &rhs) const;
-	int operator != (const osiTime &rhs) const;
-	int operator <= (const osiTime &rhs) const;
-	int operator < (const osiTime &rhs) const;
-	int operator >= (const osiTime &rhs) const;
-	int operator > (const osiTime &rhs) const;
+	bool operator == (const osiTime &rhs) const;
+	bool operator != (const osiTime &rhs) const;
+	bool operator <= (const osiTime &rhs) const;
+	bool operator < (const osiTime &rhs) const;
+	bool operator >= (const osiTime &rhs) const;
+	bool operator > (const osiTime &rhs) const;
 
 	//
 	// dump current state to standard out
@@ -183,107 +158,79 @@ public:
 	//
 	// useful public constants
 	//
-	static const unsigned nSecPerSec;
-	static const unsigned mSecPerSec;
-	static const unsigned nSecPerUSec;
 	static const unsigned secPerMin;
-
-	//
-	// fetch value as an unsigned integer
-	//
-	unsigned long getSec() const;
-	unsigned long getUSec() const;
-	unsigned long getNSec() const;
-
-	//
-	// non standard calls for the many different
-	// time formats that exist
-	//
-	long getSecTruncToLong() const;
-	long getUSecTruncToLong() const;
-	long getNSecTruncToLong() const;
+	static const unsigned mSecPerSec;
+	static const unsigned uSecPerSec;
+	static const unsigned nSecPerSec;
+	static const unsigned nSecPerUSec;
 
 private:
 	unsigned long sec; /* seconds since O000 Jan 1, 1990 */
 	unsigned long nSec; /* nanoseconds within second */
 
-	static const unsigned epicsEpochSecPast1970;
 	static osiTime osdGetCurrent();
+	static unsigned long time_tToInternalSec (const time_t &tv);
+
+	//
+	// private because:
+	// a) application does not break when EPICS epoch is changed
+	// b) no assumptions about internal storage or internal precision
+	// in the application
+	// c) it would be easy to forget which argument is nanoseconds
+	// and which argument is seconds (no help from compiler)
+	//
+	osiTime (unsigned long sec, unsigned long nSec);
 };
 
-inline unsigned long osiTime::getSec() const
+/////////////////////////////////////
+//
+// time inline member functions
+//
+/////////////////////////////////////
+
+inline osiTime::osiTime () : sec(0u), nSec(0u) {}	
+
+inline osiTime::osiTime (const osiTime &t) : sec(t.sec), nSec(t.nSec) {}
+
+inline osiTime osiTime::operator - (const long double &rhs) const
 {
-	return this->sec;
+	return osiTime::operator + (-rhs);
 }
 
-inline unsigned long osiTime::getUSec() const
-{	
-	return (this->nSec/nSecPerUSec);
-}
-
-inline unsigned long osiTime::getNSec() const
-{	
-	return this->nSec;
-}
-
-inline osiTime::osiTime (double t) 
+inline osiTime osiTime::operator += (const long double &rhs)
 {
-	assert (t>=0.0);
-	this->sec = (unsigned long) t;
-	this->nSec = (unsigned long) ((t-this->sec)*nSecPerSec);
-}
-
-inline osiTime::operator double() const
-{
-	return ((double)this->nSec)/nSecPerSec+this->sec;
-}
-
-inline osiTime::operator float() const
-{
-	return ((float)this->nSec)/nSecPerSec+this->sec;
-}
-
-inline osiTime osiTime::operator + (const osiTime &rhs) const
-{
-	return osiTime(this->sec + rhs.sec, this->nSec + rhs.nSec);	
-}
-
-inline osiTime osiTime::operator += (const osiTime &rhs)
-{
-	*this = *this + rhs;
+	*this = osiTime::operator + (rhs);
 	return *this;
 }
 
-inline osiTime osiTime::operator -= (const osiTime &rhs)
+inline osiTime osiTime::operator -= (const long double &rhs)
 {
-	*this = *this - rhs;
+	*this = osiTime::operator + (-rhs);
 	return *this;
 }
 
-inline int osiTime::operator == (const osiTime &rhs) const
+inline bool osiTime::operator == (const osiTime &rhs) const
 {
 	if (this->sec == rhs.sec && this->nSec == rhs.nSec) {
-		return 1;
+		return true;
 	}
 	else {
-		return 0;
+		return false;
 	}
 }
 
-inline int osiTime::operator != (const osiTime &rhs) const
+//
+// operator !=
+//
+inline bool osiTime::operator != (const osiTime &rhs) const
 {
-	if (this->sec != rhs.sec || this->nSec != rhs.nSec) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
+	return !osiTime::operator == (rhs);
 }
 
 //
 // operator >= (const osiTime &lhs, const osiTime &rhs)
 //
-inline int osiTime::operator >= (const osiTime &rhs) const
+inline bool osiTime::operator >= (const osiTime &rhs) const
 {
 	return !(*this < rhs);
 }
@@ -291,26 +238,61 @@ inline int osiTime::operator >= (const osiTime &rhs) const
 //
 // operator > (const osiTime &lhs, const osiTime &rhs)
 //
-inline int osiTime::operator > (const osiTime &rhs) const
+inline bool osiTime::operator > (const osiTime &rhs) const
 {
 	return !(*this <= rhs);
 }
 
-inline long osiTime::getSecTruncToLong() const
+//
+// osiTime operator = (const struct tm_nano_sec &rhs)
+//
+inline osiTime osiTime::operator = (const struct tm_nano_sec &rhs)
 {
-	assert (this->sec<=LONG_MAX);
-	return (long) this->sec;
+	return *this = osiTime (rhs);
 }
 
-inline long osiTime::getUSecTruncToLong() const
-{	
-	return (long) (this->nSec/nSecPerUSec);
+//
+// operator = (const struct timespec &rhs)
+//
+inline osiTime osiTime::operator = (const struct timespec &rhs)
+{
+	*this = osiTime (rhs);
+	return *this;
 }
 
-inline long osiTime::getNSecTruncToLong() const
-{	
-	return (long) this->nSec;
+//
+// operator = (const aitTimeStamp &rhs)
+//
+inline osiTime osiTime::operator = (const aitTimeStamp &rhs)
+{
+	*this = osiTime (rhs);
+	return *this;
+}
+
+
+inline osiTime osiTime::operator = (const struct TS_STAMP &rhs)
+{
+	*this = osiTime (rhs);
+	return *this;
+}
+
+//
+// osiTime (const time_t_wrapper &tv)
+//
+inline osiTime::osiTime (const time_t_wrapper &ansiTimeTicks)
+{
+	this->sec = osiTime::time_tToInternalSec (ansiTimeTicks.ts);
+	this->nSec = 0;
+}
+
+//
+// osiTime operator = (const time_t_wrapper &rhs)
+// operator >= (const osiTime &lhs, const osiTime &rhs)
+//
+inline osiTime osiTime::operator = (const time_t_wrapper &rhs)
+{
+	*this = osiTime (rhs);
+	return *this;
 }
 
 #endif // osiTimehInclude
-

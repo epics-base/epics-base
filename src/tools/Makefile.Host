@@ -47,12 +47,12 @@ $(INSTALL_BIN)/installEpics: testmkdir installEpics
 #	make sure the scripts are executable:
 testmkdir: ../testmkdir
 	@$(RM) $@
-	@$(CP) -p  $< $@
+	@$(CP) $< $@
 	@$(CHMOD) 755 $@
 
 installEpics: ../installEpics
 	@$(RM) $@
-	@$(CP) -p  $< $@
+	@$(CP) $< $@
 	@$(CHMOD) 755 $@
 
 endif

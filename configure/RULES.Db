@@ -7,6 +7,7 @@ vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.edf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbdflags
 
@@ -123,9 +124,6 @@ $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS)
 
 ##################################################### Substitution files
 
-#$(COMMON_DIR)/%.substitutions: ../%.substitutions $(COMMON_DIR)/%.template 
-#	@$(CP) $< $@
-
 #  WARNING: CREATESUBSTITUTIONS script needs output dir on command line
 
 ifdef CREATESUBSTITUTIONS
@@ -137,18 +135,7 @@ endif
 
 ##################################################### Template files
 
-#$(COMMON_DIR)/%.template: ../%.template 
-#	@$(CP) $< $@
-
-$(COMMON_DIR)/%.template: 
-	@$(TOUCH) $@
-
-$(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
-	@$(REPLACEVAR) < $@.VAR > $@
-	@$(RM) $@.VAR
-
-$(COMMON_DIR)/%.template: ../%.edf 
+$(COMMON_DIR)/%.template: %.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
@@ -156,14 +143,6 @@ $(COMMON_DIR)/%.template: ../%.edf
 .PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.template)
 
 ##################################################### INC files
-
-$(COMMON_DIR)/%Record.h: ../%Record.dbd
-	@$(RM) $@
-	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
-
-$(COMMON_DIR)/menu%.h: ../menu%.dbd
-	@$(RM) $@
-	$(DBTOMENUH) $< $@
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $@
@@ -175,20 +154,9 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
 
 ##################################################### DBD files
 
-$(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
-	@$(RM) $@
-	$(MAKEBPT) $< $@
-
 $(COMMON_DIR)/bpt%.dbd: bpt%.data 
 	@$(RM) $@
 	$(MAKEBPT) $< $@
-
-$(COMMON_DIR)/%.dbd: ../%Include.dbd 
-	@$(RM) $@$(DEP)
-	@$(DBDDEPENDS_CMD)
-	@echo "Expanding dbd"
-	@$(RM) $@
-	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $@$(DEP)
@@ -205,9 +173,6 @@ $(INSTALL_DBD)/%: %
 
 ##################################################### DB files
 
-$(COMMON_DIR)/%.db$(RAW): %.db 
-	$(CP) $< $@
-
 $(COMMON_DIR)/%.db$(RAW): %.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
@@ -222,6 +187,9 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
+
+$(COMMON_DIR)/%.db$(RAW): %.db 
+	$(CP) $< $@
 
 $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 	@echo "Optimizing database $@"

@@ -115,8 +115,8 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 #	Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #	we have to compile xx.cc  using the flag -Tp xx.cc,
 #	i.e.  -Tp  has to be immediately before the source file name
-#	-kuk-
-COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -Tp
+
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DEXPL_TEMPL -c -Tp
 
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -Fe$@
 LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -Fe$@

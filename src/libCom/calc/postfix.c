@@ -55,14 +55,13 @@
  *		FLASE		expression element not found
  */
 
-#include	<epicsStdlib.h>
 #include	<stdio.h>
 #include	<string.h>
 #include	<ctype.h>
 
-#include	"dbDefs.h"
-
 #define epicsExportSharedSymbols
+#include	"dbDefs.h"
+#include	"epicsStdlib.h"
 #include	"postfix.h"
 #include	"postfixPvt.h"
 

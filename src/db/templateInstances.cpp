@@ -30,17 +30,16 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-
 #ifdef _MSC_VER
 #   pragma warning ( push )
 #   pragma warning ( disable:4660 )
 #endif
 
-template class tsFreeList < dbChannelIO >;
-template class tsFreeList < dbPutNotifyBlocker, 1024 >;
+template class tsFreeList < dbChannelIO, 256, epicsMutexNOOP >;
+template class tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP >;
+template class tsFreeList < dbSubscriptionIO, 256, epicsMutexNOOP >;
 template class resTable < dbBaseIO, chronIntId >;
 template class chronIntIdResTable < dbBaseIO >;
-template class tsFreeList < dbSubscriptionIO >;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

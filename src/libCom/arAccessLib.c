@@ -27,6 +27,8 @@
  * -----------------
  * .01	03-09-90	rac	initial version
  * .02	07-31-91	rac	installed in SCCS
+ * .03	09-18-91	rac	change arg for arCFChanRead to int--short
+ *				causes problems on Sun4; other minor fixes
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -697,6 +699,7 @@ TS_STAMP *pPosStamp;	/* I stamp for desired data; NULL for `rewind' */
     int		curDatInf;	/* current datInfo in index block */
     int		lastDatInf;	/* last datInfo in index block */
     int		i;		/* temp for loops */
+    chtype	type;
 
     assert(pArChanDesc != NULL);
     assert(pArChanDesc->pArCfDesc != NULL);
@@ -874,7 +877,8 @@ TS_STAMP *pPosStamp;	/* I stamp for desired data; NULL for `rewind' */
 	else if (TsCmpStampsGE(&pArChanDesc->timeStamp, pPosStamp))
 	    break;
 	else {
-	    stat = arCFChanRead(pArChanDesc, 0, (void *)NULL, 0);
+	    type = dbf_type_to_DBR(ArCFChanFieldType(pArChanDesc));
+	    stat = arCFChanRead(pArChanDesc, type, (void *)NULL, 0);
 	    if (stat != OK) {
 		retStat = ERROR;
 		break;
@@ -1139,21 +1143,21 @@ TS_STAMP *pKeepStamp;	/* I stamp for oldest data to keep; NULL says
 * o	need a way to return to caller number of elements actually read
 *
 * NOTES
-* 1.	`count' need not match native count.  A 0 value results in skipping a
-*	record, without storing to caller's buffer.  If the value is less
-*	than the native count, excess values will be discarded.
+* 1.	`count' need not match native count.  If the count is less than
+*	the native count, excess values will be discarded.  If the requested
+*	type is not a `plain' type (e.g., DBR_FLOAT), then information
+*	will be stored in the caller's buffer even if count is 0 (assuming
+*	the caller's buffer pointer isn't NULL).
 *
 *-*/
 long
 arCFChanRead(pArChanDesc, type, pAccessBuf, count)
 register
 AR_CHAN_DESC *pArChanDesc;	/* IO pointer to channel descriptor */
-chtype	type;			/* I buffer type; DBR_xxx.  Ignored if
-				     count == 0 */
+chtype	type;			/* I buffer type; DBR_xxx */
 register
-union db_access_val *pAccessBuf;/* IO pointer to caller's buffer.  Ignored if
-				     count == 0 */
-short	count;			/* I array element count for caller's buffer */
+union db_access_val *pAccessBuf;/* IO pointer to caller's buffer, or NULL */
+int	count;			/* I array element count for caller's buffer */
 {
     int		retStat=OK;	/* return status to caller */
     int		nBytes;		/* number of value bytes in file item value */
@@ -1177,7 +1181,7 @@ short	count;			/* I array element count for caller's buffer */
 *    the type is DBR_TIME_xxx.
 *----------------------------------------------------------------------------*/
     if ((retStat = arCFChanReadTs(pArChanDesc)) == OK) {
-	if (dbr_type_is_TIME(type) && count > 0)
+	if (dbr_type_is_TIME(type))
 	    pAccessBuf->tstrval.stamp = pArChanDesc->timeStamp;
     }
 
@@ -1195,7 +1199,7 @@ short	count;			/* I array element count for caller's buffer */
 	if (byte0 == AR_DAT_IC_VAL_STAT) {
 	    byte0 = ArCRFetch;
 	    byteN = ArCRFetch;
-	    if (!dbr_type_is_plain(type) && count > 0) {
+	    if (!dbr_type_is_plain(type)) {
 		pAccessBuf->sstrval.status = byte0;
 		pAccessBuf->sstrval.severity = byteN;
 	    }
@@ -1209,7 +1213,7 @@ short	count;			/* I array element count for caller's buffer */
 /*----------------------------------------------------------------------------
 * if this is DBR_GR_xxx, get graphics info from chanHdr
 *---------------------------------------------------------------------------*/
-    if (retStat == OK && dbr_type_is_GR(type) && count > 0) {
+    if (retStat == OK && dbr_type_is_GR(type)) {
 	switch (type) {
 	    case DBR_GR_STRING:
 		break;		/* no graphics for string */
@@ -1697,7 +1701,7 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
     if (!dbr_type_is_TIME(pArg->type))
 	goto error;
     if (pArg->count != ArCDChanHdr(pArChanDesc).elCount)
-	goto error;
+	goto error;	/* ignore changed count */
 
     pArChanDesc->flags &= ~AR_CDESC_SUP;	/* turn off suppress */
     
@@ -1715,8 +1719,9 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 *---------------------------------------------------------------------------*/
 
     if (TsCmpStampsLT(&((struct dbr_time_string *)pCaBuf)->stamp,
-						    &pArChanDesc->timeStamp))
-        goto error;
+						    &pArChanDesc->timeStamp)) {
+        goto error;	/* ignore time running backward */
+    }
     if (ArCDDatInfo(pArChanDesc).stamp.secPastEpoch == 0) {
 /*----------------------------------------------------------------------------
 * case 1

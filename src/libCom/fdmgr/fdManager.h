@@ -187,8 +187,12 @@ inline resTableIndex fdRegId::hash (unsigned) const
 {
     resTableIndex hashid;
         
+#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
     hashid = intId<SOCKET, hashTableIndexBits, sizeof(SOCKET)*CHAR_BIT>
         ::hashEngine(this->fd);
+#else
+    hashid = intId<SOCKET, hashTableIndexBits>::hashEngine(this->fd);
+#endif
  
 	//
 	// also evenly distribute based on the type of fdRegType

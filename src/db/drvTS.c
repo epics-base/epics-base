@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.28.2.5  2001/09/18 12:25:01  mrk
+ * Now uses osiSock for to handle implementation diffences.
+ *
  * Revision 1.28.2.4  2000/11/10 22:00:26  mrk
  * make sure TSinit gets called
  *
@@ -624,6 +627,7 @@ long TSinit(void)
 	TSgetTime = TSgetCurrentTime;
 	TSdriverInit = TSdriverInitError;
 	TSdirectTime = TSdirectTimeError;
+        TSuserGet = TSuserGetJunk;
 	TSdata.sync_event=ER_EVENT_RESET_TICK;
     }
 

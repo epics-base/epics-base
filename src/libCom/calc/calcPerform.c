@@ -41,11 +41,10 @@
 #include	<stddef.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	"epicsMath.h"
-
-#include	"dbDefs.h"
 
 #define epicsExportSharedSymbols
+#include	"dbDefs.h"
+#include	"epicsMath.h"
 #include	"postfix.h"
 #include	"postfixPvt.h"
 

@@ -45,9 +45,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "errlog.h"
 
 #define epicsExportSharedSymbols
+#include "errlog.h"
 #include "dbmf.h"
 #include "macLib.h"
 

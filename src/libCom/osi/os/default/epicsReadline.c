@@ -10,10 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "envDefs.h"
 
 #define epicsExportSharedSymbols
-
+#include "envDefs.h"
 #include "epicsReadline.h"
 
 #define EPICS_COMMANDLINE_LIBRARY_EPICS     0

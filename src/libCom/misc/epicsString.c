@@ -16,10 +16,10 @@
 #include <limits.h>
 #include <errno.h>
 #include <ctype.h>
-#include "epicsStdio.h"
-#include "cantProceed.h"
 
 #define epicsExportSharedSymbols
+#include "epicsStdio.h"
+#include "cantProceed.h"
 #include "epicsString.h"
 
 epicsShareFunc int epicsShareAPI dbTranslateEscape(char *to, const char *from)

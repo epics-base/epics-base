@@ -41,8 +41,6 @@
 #include <string.h>
 #include <limits.h>
 
-#include "shareLib.h"
-
 #define epicsExportSharedSymbols
 #include "errMdef.h"
 #include "envDefs.h"

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.34  1996/06/19 17:59:02  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.33  1995/12/19  19:29:04  jhill
  * changed put test
  *
@@ -275,13 +278,12 @@ int doacctst(char *pname)
 		ca_read_access(chix1),
 		ca_write_access(chix1));
 
-#if 0
 	/*
 	 * Verify that we can write and then read back
-	 * the same analog value
+	 * the same analog value (DBR_FLOAT)
 	 */
-	if(	(ca_field_type(chix1)==DBR_FLOAT || 
-		ca_field_type(chix1)==DBR_DOUBLE) &&
+	if(	(ca_field_type(chix1)==DBR_DOUBLE || 
+		ca_field_type(chix1)==DBR_FLOAT) && 
 		ca_read_access(chix1) && 
 		ca_write_access(chix1)){
 
@@ -294,47 +296,61 @@ int doacctst(char *pname)
 		fflush(stdout);
 		epsil = FLT_EPSILON*4;
 		base = FLT_MIN;
-		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
 			iter = FLT_MAX/fabs(incr);
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = FLT_MAX;
-		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr =  - ldexp (0.5,i);
 			iter = FLT_MAX/fabs(incr);
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = - FLT_MAX;
-		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
 			iter = FLT_MAX/fabs(incr);
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		printf ("done\n");
+	}
+
+	/*
+	 * Verify that we can write and then read back
+	 * the same analog value (DBR_DOUBLE)
+	 */
+	if(	ca_field_type(chix1)==DBR_DOUBLE &&
+		ca_read_access(chix1) && 
+		ca_write_access(chix1)){
+
+		dbr_double_t incr;
+		dbr_double_t epsil;
+		dbr_double_t base;
+		unsigned long iter;
 
 		printf ("double test ...");
 		fflush(stdout);
 		epsil = DBL_EPSILON*4;
 		base = DBL_MIN;
-		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
 			iter = DBL_MAX/fabs(incr);
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = DBL_MAX;
-		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr =  - ldexp (0.5,i);
 			iter = DBL_MAX/fabs(incr);
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = - DBL_MAX;
-		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
 			iter = DBL_MAX/fabs(incr);
 			iter = min (iter,10);
@@ -342,7 +358,6 @@ int doacctst(char *pname)
 		}
 		printf ("done\n");
 	}
-#endif
 
 	/*
 	 * ca_pend_io() must block
@@ -693,7 +708,11 @@ unsigned 	iterations)
 		SEVCHK (status, NULL);
 		status = ca_pend_io (100.0);
 		SEVCHK (status, NULL);
-		assert (fabs(fval-fretval) < epsilon);
+		if (fabs(fval-fretval) > epsilon) {
+			printf ("float test failed val written %f\n", fval);
+			printf ("float test failed val read %f\n", fretval);
+			assert(0);
+		}
 
 		fval += increment;
 	}
@@ -720,7 +739,11 @@ unsigned 	iterations)
 		SEVCHK (status, NULL);
 		status = ca_pend_io (100.0);
 		SEVCHK (status, NULL);
-		assert (fabs(fval-fretval) < epsilon);
+		if (fabs(fval-fretval) > epsilon) {
+			printf ("float test failed val written %f\n", fval);
+			printf ("float test failed val read %f\n", fretval);
+			assert(0);
+		}
 
 		fval += increment;
 	}

@@ -562,8 +562,8 @@ void conn_cb(struct event_handler_args args)
 void test_sync_groups(chid chix)
 {
 	int		status;
-	CA_SYNC_GID	gid1;
-	CA_SYNC_GID	gid2;
+	CA_SYNC_GID	gid1=0;
+	CA_SYNC_GID	gid2=0;
 
 	printf("Performing sync group test...");
 	fflush(stdout);

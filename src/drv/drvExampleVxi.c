@@ -28,15 +28,28 @@
  * Modification Log:
  * -----------------
  * .01  09-09-92	jrw	written
+ * .02  08-24-93	joh	updated for EPICS format return codes	
+ * .03  08-24-93	joh	converted to ANSI C
+ * .04  08-24-93	joh	ran through -Wall	
  *
  */
 #include <vxWorks.h>
-#include <epvxiLib.h>
-#include <drvSup.h>
+#include <stdioLib.h>
+#include <rebootLib.h>
 
-static long 	example_init();
-static void 	example_shutdown(), example_shutdown_card(),
-		example_init_card(), example_stat();
+#include <drvEpvxi.h>
+#include <drvSup.h>
+#include <devLib.h>
+
+typedef long	exVxiStat;
+
+exVxiStat vti(int make, int model);
+
+LOCAL exVxiStat	example_init(void);
+LOCAL void 	example_stat(unsigned card, int level);
+LOCAL void 	example_init_card(unsigned addr);
+LOCAL int	example_shutdown(void);
+LOCAL void 	example_shutdown_card(unsigned la);
 
 
 struct drvet drvExample={
@@ -63,17 +76,14 @@ int vxi_model_example = 0x100;	/* Set to proper model of the card */
  * This is a test entry point that allows a user to do a pseudo-init of
  * a make and model of VXI cards.
  */
-long
-vti(make, model)
-int	make;
-int	model;
+exVxiStat vti(int make, int model)
 {
   vxi_make_example = make;
   vxi_model_example = model;
 
   example_init();
-  printf("Driver ID is 0x%08.8X\n", exampleDriverID);
-  return(OK);
+  printf("Driver ID is 0x%08X\n", exampleDriverID);
+  return(VXI_SUCCESS);
 }
 
 /******************************************************************************
@@ -81,29 +91,30 @@ int	model;
  * Initialize all cards controlled by the example driver.
  *
  ******************************************************************************/
-static long
-example_init()
+LOCAL exVxiStat example_init(void)
 {
+  exVxiStat			s;
   epvxiDeviceSearchPattern  	dsp;
  
   /*
    * do nothing on crates without VXI
    */
   if(!epvxiResourceMangerOK)
-    return OK;
+    return VXI_SUCCESS;
  
-  if (rebootHookAdd(example_shutdown) < 0)
-    return(ERROR);
+  if (rebootHookAdd(example_shutdown) < 0){
+	s = S_dev_internal;
+	errMessage(s, "rebootHookAdd failed");
+    	return(s);
+  }
 
   exampleDriverID = epvxiUniqueDriverID();
  
   dsp.flags = VXI_DSP_make;
   dsp.make = vxi_make_example;
 
-  if (epvxiLookupLA(&dsp, example_init_card, (void *)NULL) < 0)
-    return(ERROR);
- 
-  return OK;
+  s = epvxiLookupLA(&dsp, example_init_card, (void *)NULL);
+  return s;
  
 }
 
@@ -112,29 +123,28 @@ example_init()
  * initialize single example card
  *
  ******************************************************************************/
-static void
-example_init_card(addr)
-unsigned addr;
+LOCAL void example_init_card(unsigned addr)
 {
+  exVxiStat		s;
   struct examplePrivate	*ep;	/* Per-card private variable area */
   struct exampleCard	*ec;	/* Physical address of the card */
  
   /* Tell the VXI sub-system that this driver is in charge of this card */
-  if (epvxiOpen(addr, exampleDriverID, PRIVATE_SIZE, example_stat) < 0)
+  s = epvxiOpen(addr, exampleDriverID, PRIVATE_SIZE, example_stat);
+  if (s)
   {
-    printf("VXI example: device open failed %d\n", addr);
+    errPrintf(s, __FILE__, __LINE__, "LA=0X%X", addr);
     return;
   }
  
-  printf("example_init_card entered for card at LA 0x%02.2X, make 0x%02.2X, model 0x%02.2X\n", addr, vxi_make_example, vxi_model_example);
+  printf("example_init_card entered for card at LA 0x%02X, make 0x%02X, model 0x%02X\n", addr, vxi_make_example, vxi_model_example);
 
   /* Allocate a private variable area for the card */
-  ep = epvxiPConfig(addr, exampleDriverID, struct examplePrivate *);
-
-  if(ep == NULL)
-  {
-    epvxiClose(addr, exampleDriverID);
-    return;
+  s = epvxiFetchPConfig(addr, exampleDriverID, ep);
+  if(s){
+	errMessage(s, NULL);
+    	epvxiClose(addr, exampleDriverID);
+	return;
   }
 
   /* Get physical base address of the card */
@@ -148,34 +158,45 @@ unsigned addr;
    ***********************************************/
 	
   /* Register the card's model and make names for reporting purposes */
-  if (epvxiRegisterModelName(vxi_make_example, vxi_model_example, "Model") < 0)
-    printf("%s: failed to register name for model 0x%02.2X\n", __FILE__, vxi_model_example);
-
-  if (epvxiRegisterMakeName(vxi_make_example, "Make Name") < 0)
-    printf( "%s: unable to register name for make 0x%02.2X\n", __FILE__, vxi_make_example);
+  s = epvxiRegisterModelName(
+		vxi_make_example, 
+		vxi_model_example, 
+		"Example Model Name");
+  if(s){
+	errMessage(s, NULL);
+  }
+  s = epvxiRegisterMakeName(
+		vxi_make_example, 
+		"Example Make Name");
+  if(s){
+	errMessage(s, NULL);
+  }
 
   return;
 }
+
 
 /******************************************************************************
  *
  * Shut the cards down beacuse a soft-boot will be taking place soon.
  *
  ******************************************************************************/
-static void
-example_shutdown()
+LOCAL int example_shutdown(void)
 {
-  epvxiDeviceSearchPattern  dsp;
+  exVxiStat			s;
+  epvxiDeviceSearchPattern  	dsp;
  
   dsp.flags = VXI_DSP_make;
   dsp.make = vxi_make_example;
-  if (epvxiLookupLA(&dsp, example_shutdown_card, (void *)NULL) < 0)
-    printf("example VXI module shutdown failed\n");
+  s = epvxiLookupLA(&dsp, example_shutdown_card, (void *)NULL);
+  if(s){
+	errMessage(s, NULL);
+  }
+
+  return OK;
 }
  
-static void
-example_shutdown_card(la)
-unsigned la;
+LOCAL void example_shutdown_card(unsigned la)
 {
 
   /*
@@ -192,10 +213,10 @@ unsigned la;
  * Print status for a single card.
  *
  ******************************************************************************/
-static void
-example_stat(card, level)
-unsigned        card;
-int             level;
+LOCAL void example_stat(
+unsigned        card,
+int             level
+)
 {
 
   /*

@@ -201,7 +201,7 @@ long dbScanPassive(paddr)
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	
 	/* if not passive and field not PROC just return success */
-	if(precord->scan != 0 && paddr->pfield != &precord->proc) return(0);
+	if(precord->scan != 0 && paddr->pfield != (caddr_t)&precord->proc) return(0);
 
 	/* return result of process */
 	return(dbProcess(paddr));

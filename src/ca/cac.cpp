@@ -312,14 +312,6 @@ void cac::show ( unsigned level ) const
         if ( this->pudpiiu ) {
             this->pudpiiu->show ( level - 2u );
         }
-        ::printf ( "\texception function %p, exception arg %p\n",
-                static_cast <void *> ( this->ca_exception_func ), 
-                static_cast <void *> ( this->ca_exception_arg ) );
-        ::printf ( "\tCA printf function %p\n",
-                static_cast <void *> ( this->pVPrintfFunc ) );
-        ::printf ( "\tfile descriptor registration function %p, file descriptor registration arg %p\n",
-                static_cast <void *> ( this->fdRegFunc ), 
-                static_cast <void *> ( this->fdRegArg ) );
         this->showOutstandingIO ( level - 2u );
     }
 

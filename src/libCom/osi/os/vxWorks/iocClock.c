@@ -49,7 +49,7 @@ typedef struct iocClockPvt {
     int         ticksToSkip;
     pepicsTimeGetCurrent getCurrent;
     pepicsTimeGetEvent getEvent;
-    char        *pserverAddr;
+    const char *pserverAddr;
 }iocClockPvt;
 static iocClockPvt *piocClockPvt = 0;
 static int nConsecutiveBad = 0;
@@ -68,7 +68,7 @@ static void syncNTP(void)
         double diffTime;
         if(!firstTime)epicsThreadSleep(iocClockSyncRate);
         firstTime = 0;
-        status = sntpcTimeGet(piocClockPvt->pserverAddr,
+        status = sntpcTimeGet((char *)piocClockPvt->pserverAddr,
             piocClockPvt->tickRate,&Currtime);
         if(status) {
             ++nConsecutiveBad;
@@ -107,9 +107,9 @@ void iocClockInit()
     piocClockPvt->tickRate = sysClkRateGet();
     piocClockPvt->getCurrent = iocClockGetCurrent;
     piocClockPvt->getEvent = iocClockGetEvent;
-    /* look first for environment variable */
-    piocClockPvt->pserverAddr = getenv("EPICS_TS_NTP_INET");
-    if(!piocClockPvt->pserverAddr) { /* next look for boot server*/
+    /* look first for environment variable or CONFIG_SITE_ENV default */
+    piocClockPvt->pserverAddr = envGetConfigParamPtr(&EPICS_TS_NTP_INET);
+    if(!piocClockPvt->pserverAddr) { /* if neither, use the boot host */
         BOOT_PARAMS bootParms;
         static char host_addr[BOOT_ADDR_LEN];
         bootStringToStruct(sysBootLine,&bootParms);
@@ -121,14 +121,13 @@ void iocClockInit()
         errlogPrintf("No NTP server is defined. Clock does not work\n");
         return;
     }
-    /* if TIMEZONE not defined set TIMEZONE from EPICS_TIMEZONE */
-    if(getenv("TIMEZONE")==(char*)NULL) {
-        char timezone[80];
-        char envtimezone[100];
-        if(envGetConfigParam(&EPICS_TIMEZONE,sizeof(timezone),timezone)==NULL
-        || strlen(timezone)==0) {
+    /* if TIMEZONE not defined, set it from EPICS_TIMEZONE */
+    if (getenv("TIMEZONE") == NULL) {
+        const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
+        if(timezone == NULL) {
             printf("iocClockInit: No Time Zone Information\n");
         } else {
+            char envtimezone[100];
             sprintf(envtimezone,"TIMEZONE=%s",timezone);
             if(putenv(envtimezone)==ERROR) {
                 printf("iocClockInit: TIMEZONE putenv failed\n");

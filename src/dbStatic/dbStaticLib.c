@@ -222,6 +222,14 @@ void dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName)
 	{dbDumpRecordType(pdbbase,recordTypeName);}
 
 /* internal routines*/
+static int fcloseNotSTD(FILE *stream)
+{
+    if(stream!=stdin && stream!=stdout && stream!=stderr) {
+	return(fclose(stream));
+    }
+    return(0);
+}
+
 static char *pNullString = "";
 long setLinkType(DBENTRY *pdbentry)
 {
@@ -788,7 +796,7 @@ long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 	return(-1);
     }
     dbWriteRecordFP(ppdbbase,outFile,precordTypename,level);
-    return(fclose(outFile));
+    return(fcloseNotSTD(outFile));
 }
 
 long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
@@ -826,8 +834,15 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
 	    status = dbFirstField(pdbentry,dctonly);
 	    while(!status) {
 		if(!dbIsDefaultValue(pdbentry) || level>0) {
-		    fprintf(fp,"\tfield(%s,\"%s\")\n",
-			dbGetFieldName(pdbentry),dbGetString(pdbentry));
+		    char *pvalstring = dbGetString(pdbentry);
+
+                    if(!pvalstring) {
+			fprintf(fp,"\tfield(%s,\"\")\n",
+			    dbGetFieldName(pdbentry));
+		    } else {
+		        fprintf(fp,"\tfield(%s,\"%s\")\n",
+			    dbGetFieldName(pdbentry),dbGetString(pdbentry));
+		    }
 		} else if(level>0) { /*generate 0 length string*/
 		    fprintf(fp,"\tfield(%s,\"\")\n",dbGetFieldName(pdbentry));
 		}
@@ -853,7 +868,7 @@ long dbWriteMenu(DBBASE *ppdbbase,const char *filename,char *menuName)
 	return(-1);
     }
     dbWriteMenuFP(ppdbbase,outFile,menuName);
-    if(fclose(outFile)) {
+    if(fcloseNotSTD(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);
@@ -900,7 +915,7 @@ long dbWriteRecordType(DBBASE *pdbbase,const char *filename,char *recordTypeName
 	return(-1);
     }
     dbWriteRecordTypeFP(pdbbase,outFile,recordTypeName);
-    if(fclose(outFile)) {
+    if(fcloseNotSTD(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);
@@ -1000,7 +1015,7 @@ long dbWriteDevice(DBBASE *pdbbase,const char *filename)
 	return(-1);
     }
     dbWriteDeviceFP(pdbbase,outFile);
-    if(fclose(outFile)) {
+    if(fcloseNotSTD(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);
@@ -1047,7 +1062,7 @@ long dbWriteDriver(DBBASE *pdbbase,const char *filename)
 	return(-1);
     }
     dbWriteDriverFP(pdbbase,outFile);
-    if(fclose(outFile)) {
+    if(fcloseNotSTD(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);
@@ -1078,7 +1093,7 @@ long dbWriteBreaktable(DBBASE *pdbbase,const char *filename)
 	return(-1);
     }
     dbWriteBreaktableFP(pdbbase,outFile);
-    if(fclose(outFile)) {
+    if(fcloseNotSTD(outFile)) {
 	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
     }
     return(0);

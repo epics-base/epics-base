@@ -76,7 +76,7 @@ INSTALL_INCLUDES += \
 #--------------------------------------------------
 # GNU compiler defaults
 
-GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX)
+GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -D INLINE=__inline__
 GCC_AR = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
 GCC_CPP = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -x c -E
 GCC_RANLIB = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)

@@ -8,8 +8,20 @@
 
 <body lang="en">
 <h1>EPICS Release 3.13.10</h1>
-
 <h2>Changes since 3.13.9</h2>
+<h3>Access Security</h3>
+<p>The access security configuration rules now accept quoted strings
+where just names were allowed previously.</p>
+<p>A new shell command "ascar(int level)" is now available.
+It produces a report of the INP channel access connections.
+Level (0,1,2) produces (a summary report, summary plus unconnected channels,
+summary plus report of all channels)</p>
+
+<h3>mbboRecord</h3>
+<p>The fields ZRST,...,FFST are now special(SPC_MOD).
+init_record now checks to see if state strings or values are defined
+during pass 0. Previously if another record had a DBR_STRING link to
+an mbboRecord it thought the field was a USHORT instead of an ENUM.</p>
 
 <h3>Channel Access</h3>
 <ul>
@@ -18,8 +30,6 @@
   <li>Fixed raw use of fork() system call when spawning CA repeater and it is
     not in the path.</li>
 </ul>
-
-<h1>EPICS Release 3.13.9</h1>
 
 <h2>Changes since 3.13.8</h2>
 

@@ -503,18 +503,20 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
             }
             else {
-                errlogPrintf ( "Currupt send buffer type code during cleanup?\n" );
+                errlogPrintf ( "cas: Corrupt send buffer free list type code=%u during client cleanup?\n",
+                    client->send.type );
             }
         }
         if ( client->recv.buf ) {
             if ( client->recv.type == mbtSmallTCP ) {
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->recv.buf );
             }
-            else if ( client->send.type == mbtLargeTCP ) {
+            else if ( client->recv.type == mbtLargeTCP ) {
                 freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
             }
             else {
-                errlogPrintf ( "Currupt recv buffer type code during cleanup?\n" );
+                errlogPrintf ( "cas: Corrupt recv buffer free list type code=%u during client cleanup?\n",
+                    client->send.type );
             }
         }
     }

@@ -41,6 +41,9 @@
 #define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
 #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    rtems_resource_unlimited(5)
 
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 30
+#define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
+
 #define CONFIGURE_MICROSECONDS_PER_TICK     20000
 
 #define CONFIGURE_INIT_TASK_PRIORITY    80
@@ -56,11 +59,8 @@
 #define CONFIGURE_INIT_TASK_STACK_SIZE  (16*1024)
 rtems_task Init (rtems_task_argument argument);
 
-#define CONFIGURE_HAS_OWN_DEVICE_DRIVER_TABLE
-rtems_driver_address_table Device_drivers[] = {
-  CONSOLE_DRIVER_TABLE_ENTRY,
-  CLOCK_DRIVER_TABLE_ENTRY,
-};
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 
 #include <confdefs.h>
 
@@ -351,9 +351,8 @@ Init (rtems_task_argument ignored)
     syslog (LOG_NOTICE, "IOC started.");
 
     /*
-     * Do some RTEMS initializations
+     * Do EPICS initialization
      */
-    clockInit ();
     threadInit ();
 
     /*

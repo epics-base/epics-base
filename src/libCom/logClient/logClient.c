@@ -13,16 +13,6 @@
  *      Date:           080791 
  */
 
-#ifdef vxWorks
-#   include <vxWorks.h>
-#   include <rebootLib.h>
-#   include <logLib.h>
-#endif
-
-#ifdef _WIN32
-#   include <io.h>
-#endif
-
 /*
  * ANSI C
  */
@@ -140,9 +130,6 @@ LOCAL void logClientReset (logClient *pClient)
      * close any preexisting connection to the log server
      */
     if ( pClient->sock != INVALID_SOCKET ) {
-#       ifdef vxWorks
-            logFdDelete ( pClient->sock );
-#       endif
         epicsSocketDestroy ( pClient->sock );
         pClient->sock = INVALID_SOCKET;
     }
@@ -171,7 +158,6 @@ LOCAL void logClientReset (logClient *pClient)
 /*
  * logClientDestroy
  */
-#   ifndef vxWorks
 LOCAL void logClientDestroy (logClient *pClient)
 {
     /*
@@ -185,7 +171,6 @@ LOCAL void logClientDestroy (logClient *pClient)
 
     free (pClient);
 }
-#endif
 
 /*
  * logClientShutdown()
@@ -198,14 +183,12 @@ LOCAL void logClientShutdown (void)
      * they are installed (and the network is already shutdown 
      * by the time we get here)
      */
-#   ifndef vxWorks
-        logClient *pClient;
-        epicsMutexMustLock (logClientGlobalMutex);
-        while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
-            logClientDestroy (pClient);
-        }
-        epicsMutexUnlock (logClientGlobalMutex);
-#   endif
+    logClient *pClient;
+    epicsMutexMustLock (logClientGlobalMutex);
+    while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
+        logClientDestroy (pClient);
+    }
+    epicsMutexUnlock (logClientGlobalMutex);
 }
 
 /* 
@@ -512,10 +495,6 @@ LOCAL void logClientConnect (logClient *pClient)
             fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);
         }
     }
-
-#   ifdef vxWorks
-        logFdAdd ( pClient->sock );
-#   endif
     
     pClient->connectCount++;
 
@@ -607,17 +586,8 @@ LOCAL void logClientGlobalInit ()
         return;
     }
 
-#   ifdef vxWorks
-    {
-        int status;
-        status = rebootHookAdd((FUNCPTR)logClientShutdown);
-        if (status<0) {
-            fprintf(stderr, "log client: unable to add log client reboot hook\n");
-        }
-    }
-#   else
-        atexit (logClientShutdown);
-#   endif
+    atexit (logClientShutdown);
+
     epicsMutexUnlock (logClientGlobalMutex);
 }
 

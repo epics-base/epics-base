@@ -27,7 +27,5 @@ osiTimeTestHost_SRCS += osiTimeTestMain.c osiTimeTest.cpp
 PROD += osiTimeTestHost
 OBJS_IOC += osiTimeTest
 
-SYS_PROD_LIBS_solaris += pthread thread posix4
-
 include $(TOP)/configure/RULES
 

@@ -29,6 +29,10 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/04 21:53:36  jhill
+ * allow use with goofy vxWorks 5.2 time spec - which has unsigned sec and
+ * signed nsec
+ *
  * Revision 1.2  1996/07/09 23:01:04  jhill
  * added new operators
  *
@@ -54,11 +58,13 @@
 #include <assert.h> 
 #endif
 
-const unsigned nSecPerSec = 1000000000u;
-const unsigned nSecPerUSec = 1000u;
-const unsigned secPerMin = 60u;
+#define nSecPerSec 1000000000u
+#define nSecPerUSec 1000u
+#define secPerMin 60u
 
-class osiTime {
+#include <shareLib.h>
+
+class epicsShareClass osiTime {
 	static friend osiTime operator+ 
 		(const osiTime &lhs, const osiTime &rhs);
 	static friend osiTime operator- 

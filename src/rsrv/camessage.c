@@ -1071,16 +1071,24 @@ struct client  *client
 
     if (CA_V44(CA_PROTOCOL_VERSION,client->minor_version_number)) {
         struct dbAddr  tmp_addr;
+        char *pName = (char *)(mp+1);
 
-        status = db_name_to_addr(
-                (char *)(mp+1), 
-                &tmp_addr);
+        /*
+         * check the sanity of the message
+         */
+        if (mp->m_postsize<=1) {
+            log_header ("empty PV name in UDP search request?", client, mp, 0);
+            return RSRV_OK;
+        }
+        pName[mp->m_postsize-1] = '\0';
+
+        status = db_name_to_addr (pName, &tmp_addr);
         if (status) {
             return RSRV_OK;
         }
 
         DLOG(2,"CAS: claim_ciu_action found '%s', type %d, count %d\n", 
-            (int) (mp+1),
+            (int) pName,
             tmp_addr.dbr_field_type,
             tmp_addr.no_elements,
             NULL, NULL, NULL);
@@ -1840,7 +1848,7 @@ LOCAL int search_reply(
     struct dbAddr   tmp_addr;
     caHdr           *search_reply;
     unsigned short  *pMinorVersion;
-    const char      *pName = (const char *)(mp+1);
+    char            *pName = (char *)(mp+1);
     int             status;
     unsigned        sid;
     ca_uint16_t     count;
@@ -1854,10 +1862,7 @@ LOCAL int search_reply(
         log_header ("empty PV name in UDP search request?", client, mp, 0);
         return RSRV_OK;
     }
-    if (pName[mp->m_postsize-1] != '\0') {
-        log_header ("unterminated PV name in UDP search request?", client, mp, 0);
-        return RSRV_OK;
-    }
+    pName[mp->m_postsize-1] = '\0';
     
     /* Exit quickly if channel not on this node */
     status = db_name_to_addr (pName, &tmp_addr);

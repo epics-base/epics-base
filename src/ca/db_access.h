@@ -760,7 +760,7 @@ union db_access_val{
         dbr_text[(type)] : dbr_text_invalid  )
 
 #define dbr_text_to_type(text, type)   \
-    for (type=dbr_text_dim-1; type>=0; type--) { \
+    for (type=dbr_text_dim-2; type>=0; type--) { \
         if (strcmp(text, dbr_text[type]) == 0) \
         break; \
     }

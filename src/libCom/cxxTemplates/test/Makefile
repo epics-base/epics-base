@@ -1,5 +1,5 @@
 
-TOP=../../..
+TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 

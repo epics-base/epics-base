@@ -28,7 +28,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-26-91        jba     Initialized fp to null
  */
 
 
@@ -132,7 +132,7 @@ dbls()
     void            (*fup) ();	/* SUBROUTINE POINTER */
     int             pos,
                     fflag;
-    FILE           *fp,
+    FILE           *fp=NULL,
                    *fopen();
     char            fname[80];
     long            status;

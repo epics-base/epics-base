@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -133,16 +136,12 @@ caHdr		**ppMsg
 void outBuf::commitMsg ()
 {
 	caHdr 		*mp;
-	bufSizeT	size;
 	bufSizeT	extSize;
 	bufSizeT	diff;
-
-	assert (this->bufSize);
 
 	mp = (caHdr *) &this->pBuf[this->stack];
 
 	extSize = CA_MESSAGE_ALIGN(mp->m_postsize);
-assert((extSize&0x7)==0);
 
 	//
 	// Guarantee that all portions of outgoing messages 
@@ -177,8 +176,7 @@ assert((extSize&0x7)==0);
 	mp->m_cid = htonl (mp->m_cid);
 	mp->m_available = htonl (mp->m_available);
 
-	size = sizeof(caHdr) + mp->m_postsize;
-    	this->stack += size;
+    	this->stack += sizeof(caHdr) + extSize;
 	assert (this->stack <= this->bufSize);
 
 	this->mutex.unlock();

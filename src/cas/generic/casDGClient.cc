@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/08/05 19:26:15  jhill
+ * made os specific code smaller
+ *
  * Revision 1.2  1996/06/26 21:18:52  jhill
  * now matches gdd api revisions
  *
@@ -207,7 +210,7 @@ caStatus casDGClient::searchResponse(casChannelI *nullPtr, const caHdr &msg,
 	*search_reply = msg;
 	search_reply->m_postsize = sizeof(*pMinorVersion);
 	search_reply->m_cid = ~0U;
-	search_reply->m_type = this->ctx.getServer()->serverPortNumber();
+	search_reply->m_type = htons(this->ctx.getServer()->serverPortNumber());
 	search_reply->m_count = 0ul;
 
 	/*

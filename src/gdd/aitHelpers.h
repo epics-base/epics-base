@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1996/08/22 21:05:39  jbk
+ * More fixes to make strings and fixed string work better.
+ *
  * Revision 1.6  1996/08/14 12:30:10  jbk
  * fixes for converting aitString to aitInt8* and back
  * fixes for managing the units field for the dbr types
@@ -33,10 +36,18 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
 #ifndef assert // allows use of epicsAssert.h
 #include <assert.h> 
 #endif
+
+inline char* strDup(const char* x)
+{
+	char* y = new char[strlen(x)+1];
+	strcpy(y,x);
+	return y;
+}
 
 const unsigned NSecPerSec = 1000000000u;
 const unsigned NSecPerUSec = 1000u;

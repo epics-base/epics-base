@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1996/08/13 23:13:34  jhill
+ * win NT changes
+ *
  * Revision 1.1  1996/06/25 19:11:29  jbk
  * new in EPICS base
  *
@@ -30,6 +33,14 @@
 #if defined(__i386) || defined(i386)
 #define AIT_NEED_BYTE_SWAP 1
 #endif
+
+#ifdef AIT_NEED_BYTE_SWAP
+#define aitLocalNetworkDataFormatSame 0
+#else
+#define aitLocalNetworkDataFormatSame 1
+#endif
+
+typedef enum { aitLocalDataFormat=0, aitNetworkDataFormat } aitDataFormat;
 
 /* all conversion functions have this prototype */
 typedef void (*aitFunc)(void* dest,const void* src,aitIndex count);

@@ -61,7 +61,8 @@ sub GetVars {
 			my ($var, $val) = ($1, $2);
 			next unless $need_var{$var};
 			$val =~ s/^"(.*)"$/$1/x;
-			$value{$var} = $val;
+			# Added chomp for win32 builds
+			$value{$var} = chomp($VAL);
 		}
 	}
 	close IN;

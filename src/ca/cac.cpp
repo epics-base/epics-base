@@ -773,7 +773,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         /*
          * Ignore duplicate search replies
          */
-        if ( chan->getPIIU()->isVirtaulCircuit( chan->pName(), addr ) ) {
+        if ( chan->getPIIU()->isVirtualCircuit( chan->pName(), addr ) ) {
             return true;
         }
 
@@ -1245,7 +1245,7 @@ void cac::connectAllIO ( nciu & chan )
             chan.getPIIU()->subscriptionRequest ( chan, *pSubscr );
         }
         catch ( ... ) {
-            this->printf ( "cac: invalid subscription request ignored\n" );
+            this->printf ( "CAC: failed to send subscription request during channel connect\n" );
         }
         pNetIO = next;
     }

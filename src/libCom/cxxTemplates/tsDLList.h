@@ -760,7 +760,7 @@ inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator -- (int)
 }
 
 template <class T>
-inline const tsDLIterBD<T> tsDLIterBD<T>::valid ()
+inline bool tsDLIterBD<T>::valid () const
 {
     return this->pEntry ? true : false;
 }
@@ -889,7 +889,7 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int)
 }
 
 template <class T>
-inline const tsDLIterBD<T> tsDLIterBD<T>::valid ()
+inline bool tsDLIterBD<T>::valid () const
 {
     return this->tsDLIterConstBD<T>::valid ();
 }

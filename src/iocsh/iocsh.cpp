@@ -163,6 +163,7 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
             l->next = n;
         }
         n->pVarDef = piocshVarDef;
+        piocshVarDef++;
     }
     iocshTableUnlock ();
 }
@@ -563,10 +564,10 @@ static void varHandler(const iocshVarDef *v, const char *setString)
         switch(v->type) {
         default: break;
         case iocshArgInt:
-            printf("%12s = %d\n", v->name, *(int *)v->pval);
+            printf("%s = %d\n", v->name, *(int *)v->pval);
             break;
         case iocshArgDouble:
-            printf("%12s = %g\n", v->name, *(double *)v->pval);
+            printf("%s = %g\n", v->name, *(double *)v->pval);
             break;
         }
     }

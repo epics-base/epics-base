@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1999/05/13 20:59:39  jhill
+ * removed redundant includes
+ *
  * Revision 1.5  1998/04/17 17:49:25  jhill
  * fixed range problem in string to fp convert
  *
@@ -135,3 +138,4 @@ epicsShareDef double aitMin[aitTotal] = {
 	+1,
 	+1
 };
+

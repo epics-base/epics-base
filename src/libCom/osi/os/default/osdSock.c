@@ -38,6 +38,7 @@
 #define epicsExportSharedSymbols
 #include "osiThread.h"
 #include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"

@@ -32,16 +32,22 @@
     astenblwas = sys$setast(FALSE);
 # define	UNLOCK\
     if(astenblwas == SS$_WASSET)sys$setast(TRUE);}
+#  define	LOCKEVENTS
+#  define	UNLOCKEVENTS
 #endif
 
 #ifdef vxWorks
-#  define	LOCK 	FASTLOCK(&client_lock);
-#  define	UNLOCK  FASTUNLOCK(&client_lock);
+#  define	LOCK 		FASTLOCK(&client_lock);
+#  define	UNLOCK  	FASTUNLOCK(&client_lock);
+#  define	LOCKEVENTS 	FASTLOCK(&event_lock);
+#  define	UNLOCKEVENTS	FASTUNLOCK(&event_lock);
 #endif
 
 #ifdef UNIX
 #  define	LOCK
 #  define	UNLOCK  
+#  define	LOCKEVENTS
+#  define	UNLOCKEVENTS
 #endif
 
 #ifdef vxWorks

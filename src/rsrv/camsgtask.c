@@ -122,9 +122,9 @@ FAST int 		sock;
       		return;
     	}
 				
-  	if(MPDEBUG==2){
+  	if(MPDEBUG>0){
     		logMsg(	"camsgtask: Recieved connection request\n");
-   		logMsg("from addr %x, udp port %x \n", 
+   		logMsg("from addr %x, port %x \n", 
 			client->addr.sin_addr, 
 			client->addr.sin_port);
   	}
@@ -171,12 +171,14 @@ FAST int 		sock;
 			/*
 			 * normal conn lost conditions
 			 */
-			if(anerrno == ECONNABORTED || anerrno == ECONNRESET){
-				break;
+			if(MPDEBUG==0){
+				if(anerrno==ECONNABORTED||anerrno==ECONNRESET){
+					break;
+				}
 			}
 
 			logMsg("camsgtask: Exiting after msg recv error\n");
-			printErrno(errnoGet(taskIdSelf()));
+			printErrno(anerrno);
 
 			break;
 		}
@@ -227,12 +229,6 @@ FAST int 		sock;
 			cas_send_msg(client, TRUE);
 		}
 	
-		/*
-		 * dont hang around if there are no 
-		 * connections to process variables
-		 */
-		if (client->addrq.count == 0)
-			break;
 	}
 	
 	free_client(client);

@@ -30,14 +30,17 @@
 /*	060591	joh	delinting					*/
 /*	061391	joh	RISC alignment in outgoing messages		*/
 /*	070191	joh	allways use memcpy in ca_put			*/
-/*	071291	joh	added CLAIM_CIU message			*/
+/*	071291	joh	added CLAIM_CIU message				*/
+/*	072391	joh	added event locking for vxWorks			*/
+/*	072591	joh	quick POLL in ca_pend_io() should return 	*/
+/*			ECA_NORMAL not ECA_TIMEOUT if pend count == 0	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
 /*									*/
 /*	Title:	IOC high level access routines				*/
-/*	File:	atcs:[ca]access.c					*/
-/*	Environment: VMS, UNIX, VRTX					*/
+/*	File:	access.c						*/
+/*	Environment: VMS, UNIX, vxWorks					*/
 /*	Equipment: VAX, SUN, VME					*/
 /*									*/
 /*									*/
@@ -50,8 +53,7 @@
 /*	Special comments						*/
 /*	------- --------						*/
 /*	Things that could be done to improve this code			*/
-/*	1)	Check timeouts on ca_pend for values to large		*/
-/*	2)	Allow them to recv channel A when channel B changes	*/
+/*	1)	Allow them to recv channel A when channel B changes	*/
 /*									*/
 /************************************************************************/
 /*_end									*/
@@ -249,6 +251,7 @@ ca_task_initialize
 			ca_static->ca_tid = taskIdSelf();
 
 			FASTLOCKINIT(&client_lock);
+			FASTLOCKINIT(&event_lock);
 
 			evuser = (void *) db_init_events();
 			if (!evuser)
@@ -781,7 +784,9 @@ ca_build_and_connect
 				args.chid = chix;
 				args.op = CA_OP_CONN_UP;
 
+				LOCKEVENTS;
 				(*chix->connection_func) (args);
+				UNLOCKEVENTS;
 			}
 			return ECA_NORMAL;
 		}
@@ -1648,6 +1653,7 @@ void			*pfl;
   	 *   I would like to tell um with the event handler but this would
   	 *   not be upward compatible. so I run the exception handler.
    	 */
+	LOCKEVENTS;
   	if(status == ERROR){
     		if(ca_static->ca_exception_func){
 			struct exception_handler_args	args;
@@ -1664,13 +1670,15 @@ void			*pfl;
         		(*ca_static->ca_exception_func)(args);
     		}
   	}
-  	else
+  	else{
    	 	(*monix->usr_func)(
 				monix->usr_arg, 
 				monix->chan, 
 				type, 
 				count,
 				pval);
+	}
+	UNLOCKEVENTS;
 
 	/*
 	 *
@@ -1962,9 +1970,8 @@ int			early;
   	cac_send_msg();
  	UNLOCK;
 
-  	if(pndrecvcnt<1)
-    		if(early)
-      			return ECA_NORMAL;
+    	if(pndrecvcnt<1 && early)
+        	return ECA_NORMAL;
 
 	/*
 	 * quick exit if a poll
@@ -1992,6 +1999,9 @@ int			early;
   			UNLOCK;
 		}
 #endif
+    		if(pndrecvcnt<1 && early)
+        		return ECA_NORMAL;
+
       	 	return ECA_TIMEOUT;
   	}
 
@@ -2034,13 +2044,12 @@ int			early;
         			lib$signal(status);
     		}    
 #endif
-    		if(pndrecvcnt<1)
-      			if(early)
-        			return ECA_NORMAL;
-
    		LOCK;
       		manage_conn(TRUE);
     		UNLOCK;
+
+    		if(pndrecvcnt<1 && early)
+        		return ECA_NORMAL;
 
     		if(timeout != 0.0){
       			if(timeout < time(NULL)-beg_time){

@@ -24,6 +24,7 @@
 /*	071291	joh	now claiming channel in use block over TCP so	*/
 /*			problems with duplicate port assigned to	*/
 /*			client after reboot go away			*/
+/*	072391	joh	added event locking for vxWorks			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -63,7 +64,9 @@
 #include		<iocmsg.h>
 #include 		<iocinf.h>
 
-void reconnect_channel();
+void 			reconnect_channel();
+void			ca_request_event();
+
 #define BUFSTAT 	printf("expected %d left %d\n",msgcnt,*pbufcnt);
 
 
@@ -162,7 +165,9 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				args.count = t_count;
 				args.dbr = (void *) (hdrptr + 1);
 
+				LOCKEVENTS;
 				(*monix->usr_func) (args);
+				UNLOCKEVENTS;
 			}
 			LOCK;
 			lstDelete(&pend_read_list, monix);
@@ -229,7 +234,9 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			args.dbr = (void *) (hdrptr + 1);
 
 			/* call their handler */
+			LOCKEVENTS;
 			(*monix->usr_func) (args);
+			UNLOCKEVENTS;
 
 			break;
 		}
@@ -494,7 +501,10 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			args.addr = (void *) (req->m_available);
 			args.stat = ntohl((int) t_available);							args.op = op;
 			args.ctx = context;
+
+			LOCKEVENTS;
 			(*ca_static->ca_exception_func) (args);
+			UNLOCKEVENTS;
 			break;
 		}
 		default:
@@ -529,7 +539,6 @@ struct in_addr			*pnet_addr;
       	evid			pevent;
 	int			status;
 
-      	void			ca_request_event();
 
 
       	LOCK;
@@ -606,7 +615,9 @@ struct in_addr			*pnet_addr;
 
 		args.chid = chan;
 		args.op = CA_OP_CONN_UP;
+		LOCKEVENTS;
         	(*chan->connection_func)(args);
+		UNLOCKEVENTS;
 	}
 	else if(chan->state==cs_never_conn){
           	/* decrement the outstanding IO count */

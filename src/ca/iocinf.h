@@ -12,6 +12,7 @@
 /*	.01 08xx87 joh	Init Release					*/
 /*	.02 01xx90 joh	fd_set in the UNIX version only			*/
 /*	.03 060691 joh	Rearanged buffer struct for SPARC port		*/
+/*	.04 072391 joh	new lock prevents event preemption on vxWorks	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -136,6 +137,7 @@ typedef unsigned long	ca_time;
 #define io_done_flag	(ca_static->ca_io_done_flag)
 #define evuser		(ca_static->ca_evuser)
 #define client_lock	(ca_static->ca_client_lock)
+#define event_lock	(ca_static->ca_event_lock)
 #define local_chidlist	(ca_static->ca_local_chidlist)
 #define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #define lcl_buff_list	(ca_static->ca_lcl_buff_list)
@@ -171,7 +173,8 @@ struct  ca_static{
 #ifdef vxWorks
   int			ca_io_done_flag;
   void			*ca_evuser;
-  FAST_LOCK		ca_client_lock;
+  FAST_LOCK		ca_client_lock; 
+  FAST_LOCK		ca_event_lock; /* dont allow events to preempt */
   int			ca_tid;
   LIST			ca_local_chidlist;
   LIST			ca_dbfree_ev_list;

@@ -123,6 +123,8 @@ void   vms_recv_msg_ast();
 /*
  *	ALLOC_IOC()
  *
+ * 	allocate and initialize an IOC info block for unallocated IOC
+ *
  *	LOCK should be on while in this routine
  */
 alloc_ioc(pnet_addr, net_proto, iocix)
@@ -202,8 +204,6 @@ client_channel_exists(chan)
 
 /*
  *	CREATE_NET_CHANNEL()
- *
- * 	allocate and initialize an IOC info block for unallocated IOC
  *
  *	LOCK should be on while in this routine
  */
@@ -337,8 +337,6 @@ struct ioc_in_use		*piiu;
         	}
 #endif
 
-
-
       		/* connect */
       		status = connect(	
 				sock,
@@ -352,7 +350,6 @@ struct ioc_in_use		*piiu;
 			}
         		return ECA_CONN;
       		}
-
       		piiu->max_msg = MAX_TCP;
 
      	 	/*	
@@ -420,7 +417,7 @@ struct ioc_in_use		*piiu;
       			ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
   	}
   	/* 	setup cac_send_msg(), recv_msg() buffers	*/
-  	if(!piiu->send)
+  	if(!piiu->send){
     		if(! (piiu->send = (struct buffer *) 
 					malloc(sizeof(struct buffer))) ){
       			status = socket_close(sock);
@@ -429,9 +426,11 @@ struct ioc_in_use		*piiu;
 			}
       			return ECA_ALLOCMEM;
     		}
+	}
+
   	piiu->send->stk = 0;
 
-  	if(!piiu->recv)
+  	if(!piiu->recv){
     		if(! (piiu->recv = (struct buffer *) 
 					malloc(sizeof(struct buffer))) ){
       			status = socket_close(sock);
@@ -440,11 +439,15 @@ struct ioc_in_use		*piiu;
 			}
       			return ECA_ALLOCMEM;
     		}
+	}
 
   	piiu->recv->stk = 0;
   	piiu->conn_up = TRUE;
-  	if(fd_register_func)
+  	if(fd_register_func){
+		LOCKEVENTS;
 		(*fd_register_func)(fd_register_arg, sock, TRUE);
+		UNLOCKEVENTS;
+	}
 
 
   	/*	Set up recv thread for VMS	*/
@@ -1099,12 +1102,17 @@ struct ioc_in_use	*piiu;
     		if(chix->connection_func){
 			args.chid = chix;
 			args.op = CA_OP_CONN_DOWN;
+			LOCKEVENTS;
       			(*chix->connection_func)(args);
+			UNLOCKEVENTS;
     		}
   	}
 
-  	if(fd_register_func)
+  	if(fd_register_func){
+		LOCKEVENTS;
 		(*fd_register_func)(fd_register_arg, piiu->sock_chan, FALSE);
+		UNLOCKEVENTS;
+	}
 
   	status = socket_close(piiu->sock_chan);
 	if(status < 0){

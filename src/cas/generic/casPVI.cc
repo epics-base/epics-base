@@ -364,11 +364,6 @@ void casPVI::show ( unsigned level )  const
 	}
 }
 
-casPV * casPVI::apiPointer ()
-{
-    return this->pPV;
-}
-
 void casPVI::installChannel ( chanIntfForPV & chan )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -477,6 +472,7 @@ caStatus casPVI::read ( const casCtx & ctx, gdd & prototype )
 
 caStatus casPVI::write ( const casCtx & ctx, const gdd & value )
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->pPV ) {
         caStatus status = this->pPV->beginTransaction ();
         if ( status != S_casApp_success ) {

@@ -1377,16 +1377,17 @@ bool cac::verifyAndDisconnectChan (
 }
 
 void cac::disconnectChannel (
-        epicsGuard < callbackMutex > & cbLocker, // X aCC 431
-        epicsGuard < cacMutex > & locker,
+        epicsGuard < callbackMutex > & cbGuard, // X aCC 431
+        epicsGuard < cacMutex > & guard,
         nciu & chan )
 {
-    this->disconnectAllIO ( locker, chan, true );
+    this->disconnectAllIO ( guard, chan, true );
+    chan.getPIIU()->uninstallChan ( guard, chan );
     chan.disconnect ( *this->pudpiiu );
     this->pudpiiu->installChannel ( chan );
-    epicsGuardRelease < cacMutex > autoMutexRelease ( locker );
-    chan.connectStateNotify ( cbLocker );
-    chan.accessRightsNotify ( cbLocker );
+    epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
+    chan.connectStateNotify ( cbGuard );
+    chan.accessRightsNotify ( cbGuard );
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 

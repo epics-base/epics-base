@@ -198,10 +198,14 @@ unsigned                level)
 	switch (intType) {
 	case intVME:
 	case intVXI:
+#		if CPU == I80386
+            return S_dev_intEnFail;
+#       else
 		s = sysIntEnable (level);
 		if(s!=OK){
 			return S_dev_intEnFail;
 		}
+#       endif
 		break;
 	case intISA:
 #		if CPU == I80386
@@ -231,10 +235,14 @@ unsigned                level)
 	switch (intType) {
 	case intVME:
 	case intVXI:
+#		if CPU == I80386
+            return S_dev_intDissFail;
+#       else
 		s = sysIntDisable (level);
 		if(s!=OK){
 			return S_dev_intDissFail;
 		}
+#       endif
 		break;
 	case intISA:
 #		if CPU == I80386

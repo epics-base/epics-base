@@ -282,16 +282,22 @@ long    devEnableInterruptLevel(
 epicsInterruptType      intType,
 unsigned                level)
 {
-	int	s;
 
 	switch(intType){
 	case intCPU:
 	case intVME:
 	case intVXI:
-		s = sysIntEnable(level);
-		if(s<0){
-			return S_dev_vxWorksIntEnFail;
-		}
+#		if CPU == I80386 || CPU == I80486 || CPU == PENTIUM
+            return S_dev_vxWorksIntEnFail;
+#       else
+        {
+	        int	s;
+		    s = sysIntEnable (level);
+		    if(s!=OK){
+			    return S_dev_vxWorksIntEnFail;
+		    }
+        }
+#       endif
 		break;
 	default:
 		return S_dev_uknIntType;
@@ -312,16 +318,22 @@ long    devDisableInterruptLevel(
 epicsInterruptType      intType,
 unsigned                level)
 {
-	int s;
 
 	switch(intType){
 	case intCPU:
 	case intVME:
 	case intVXI:
-		s = sysIntDisable(level);
-		if(s<0){
-                        return S_dev_vxWorksIntDissFail;
-		}
+#		if CPU == I80386 || CPU == I80486 || CPU == PENTIUM
+            return S_dev_vxWorksIntDissFail;
+#       else
+        {
+	        int s;
+		    s = sysIntDisable(level);
+		    if(s<0){
+                return S_dev_vxWorksIntDissFail;
+		    }
+        }
+#       endif
 		break;
 	default:
 		return S_dev_uknIntType; 

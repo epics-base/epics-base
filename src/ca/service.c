@@ -131,7 +131,7 @@ char			*pInBuf,
 unsigned long		blockSize
 )
 #else
-int post_msg(piiu, pnet_addr)
+int post_msg(piiu, pnet_addr, pInBuf, blockSize)
 struct ioc_in_use 	*piiu;
 struct in_addr  	*pnet_addr;
 char			*pInBuf;
@@ -688,7 +688,7 @@ IIU			*piiu,
 struct in_addr          *pnet_addr
 )
 #else
-LOCAL void reconnect_channel(hdrptr,pnet_addr)
+LOCAL void reconnect_channel(piiu,pnet_addr)
 IIU			*piiu;
 struct in_addr		*pnet_addr;
 #endif

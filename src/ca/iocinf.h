@@ -473,7 +473,7 @@ void 		noop_msg();
 void 		ca_busy_message();
 void 		ca_ready_message();
 void 		flow_control();
-char 		*host_from_addr();
+void		host_from_addr();
 int		ca_repeater_task();
 void		mark_server_available();
 void		issue_claim_channel();

@@ -14,6 +14,9 @@ of this distribution.
 
 #include "ioccrf.h"
 #include "dbTest.h"
+#include "db_test.h"
+#include "dbLock.h"
+#include "dbScan.h"
 #define epicsExportSharedSymbols
 #include "dbTestRegister.h"
 
@@ -102,6 +105,54 @@ ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
 ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
 void dbhcrCallFunc(ioccrfArg **args) { dbhcr((char *)args[0]->value);}
 
+/* gft */
+ioccrfArg gftArg0 = { "record name",ioccrfArgString,0};
+ioccrfArg *gftArgs[1] = {&gftArg0};
+ioccrfFuncDef gftFuncDef = {"gft",1,gftArgs};
+void gftCallFunc(ioccrfArg **args) { gft((char *)args[0]->value);}
+
+/* pft */
+ioccrfArg pftArg0 = { "record name",ioccrfArgString,0};
+ioccrfArg pftArg1 = { "value",ioccrfArgString,0};
+ioccrfArg *pftArgs[2] = {&pftArg0,&pftArg1};
+ioccrfFuncDef pftFuncDef = {"pft",2,pftArgs};
+void pftCallFunc(ioccrfArg **args)
+{ pft((char *)args[0]->value,(char *)args[1]->value);}
+
+/* tpn */
+ioccrfArg tpnArg0 = { "record name",ioccrfArgString,0};
+ioccrfArg tpnArg1 = { "value",ioccrfArgString,0};
+ioccrfArg *tpnArgs[2] = {&tpnArg0,&tpnArg1};
+ioccrfFuncDef tpnFuncDef = {"tpn",2,tpnArgs};
+void tpnCallFunc(ioccrfArg **args)
+{ tpn((char *)args[0]->value,(char *)args[1]->value);}
+
+/* dblsr */
+ioccrfArg dblsrArg0 = { "record name",ioccrfArgString,0};
+ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt,0};
+ioccrfArg *dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
+ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
+void dblsrCallFunc(ioccrfArg **args)
+{ dblsr((char *)args[0]->value,*(int *)args[1]->value);}
+
+/* scanppl */
+ioccrfArg scanpplArg0 = { "rate",ioccrfArgDouble,0};
+ioccrfArg *scanpplArgs[1] = {&scanpplArg0};
+ioccrfFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs};
+void scanpplCallFunc(ioccrfArg **args)
+{ scanppl(*(double *)args[0]->value);}
+
+/* scanpel */
+ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt,0};
+ioccrfArg *scanpelArgs[1] = {&scanpelArg0};
+ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
+void scanpelCallFunc(ioccrfArg **args)
+{ scanpel(*(int *)args[0]->value);}
+
+/* scanpiol */
+ioccrfFuncDef scanpiolFuncDef = {"scanpiol",0,0};
+void scanpiolCallFunc(ioccrfArg **args) { scanpiol();}
+
 void epicsShareAPI dbTestRegister(void)
 {
     ioccrfRegister(&dbaFuncDef,dbaCallFunc);
@@ -116,4 +167,11 @@ void epicsShareAPI dbTestRegister(void)
     ioccrfRegister(&dbtpfFuncDef,dbtpfCallFunc);
     ioccrfRegister(&dbiorFuncDef,dbiorCallFunc);
     ioccrfRegister(&dbhcrFuncDef,dbhcrCallFunc);
+    ioccrfRegister(&gftFuncDef,gftCallFunc);
+    ioccrfRegister(&pftFuncDef,pftCallFunc);
+    ioccrfRegister(&tpnFuncDef,tpnCallFunc);
+    ioccrfRegister(&dblsrFuncDef,dblsrCallFunc);
+    ioccrfRegister(&scanpplFuncDef,scanpplCallFunc);
+    ioccrfRegister(&scanpelFuncDef,scanpelCallFunc);
+    ioccrfRegister(&scanpiolFuncDef,scanpiolCallFunc);
 }

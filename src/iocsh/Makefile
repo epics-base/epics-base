@@ -5,11 +5,14 @@ include $(TOP)/configure/CONFIG
 #
 
 INC += ioccrf.h
+INC += dbStaticRegister.h
 INC += dbTestRegister.h
+INC += dbBkptRegister.h
 INC += dbCaTestRegister.h
 INC += caTestRegister.h
 INC += dbAccessRegister.h
 INC += ioccrfRegister.h
+INC += asTestRegister.h
 
 
 #       general contents of library on all platforms
@@ -20,11 +23,14 @@ INC += ioccrfRegister.h
 #
 
 LIBSRCS += ioccrf.c
+LIBSRCS += dbStaticRegister
 LIBSRCS += dbTestRegister
+LIBSRCS += dbBkptRegister
 LIBSRCS += dbCaTestRegister
 LIBSRCS += caTestRegister
 LIBSRCS += dbAccessRegister
 LIBSRCS += ioccrfRegister
+LIBSRCS += asTestRegister
 
 LIBRARY_IOC = iocsh
 iocsh_DLL_LIBS  = miscIoc dbIoc registryIoc Com

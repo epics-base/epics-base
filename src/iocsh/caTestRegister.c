@@ -14,6 +14,7 @@ of this distribution.
 
 #include "ioccrf.h"
 #include "rsrv.h"
+#include "dbEvent.h"
 #define epicsExportSharedSymbols
 #include "caTestRegister.h"
 
@@ -26,8 +27,19 @@ void casrCallFunc(ioccrfArg **args)
     casr(*(int *)args[0]->value);
 }
 
+/* dbel */
+ioccrfArg dbelArg0 = { "record name",ioccrfArgString,0};
+ioccrfArg dbelArg1 = { "level",ioccrfArgInt,0};
+ioccrfArg *dbelArgs[2] = {&dbelArg0,&dbelArg1};
+ioccrfFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
+void dbelCallFunc(ioccrfArg **args)
+{
+    dbel((char *)args[0]->value, *(int *)args[1]->value);
+}
+
 
 void epicsShareAPI caTestRegister(void)
 {
     ioccrfRegister(&casrFuncDef,casrCallFunc);
+    ioccrfRegister(&dbelFuncDef,dbelCallFunc);
 }

@@ -3,7 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 PROD = installEpics
-SCRIPTS = InstallVersion GetVar getrel gmake
+SCRIPTS = InstallVersion GetVar getrel 
 
 include $(EPICS)/config/RULES.Unix
 

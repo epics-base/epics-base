@@ -1012,9 +1012,9 @@ epicsShareFunc int epicsShareAPI ca_client_status ();
     ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
 #define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
 ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
-#define ca_poll() ca_pend((1e-12), 0/*FALSE*/)
-#define ca_pend_event(TIMEOUT) ca_pend((TIMEOUT), 0/*FALSE*/)
-#define ca_pend_io(TIMEOUT) ca_pend((TIMEOUT), 1/*TRUE*/)
+int ca_pend_event ();
+#define ca_poll() ca_pend_event(1e-12)
+int ca_pend_io ();
 #define ca_sg_get(gid, type, chan, pValue) \
 ca_sg_array_get(gid, type, 1u, chan, pValue)
 #define ca_sg_put(gid, type, chan, pValue) \

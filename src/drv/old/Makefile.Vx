@@ -30,27 +30,7 @@ SRCS.c += ../drvXy220.c
 SRCS.c += ../drvXy240.c
 SRCS.c += ../drvXy566.c
 
-TARGETS += module_types.o
-TARGETS += drvBB232.o
-TARGETS += drvBb902.o
-TARGETS += drvBb910.o
-TARGETS += drvBitBus.o
-TARGETS += drvComet.o
-TARGETS += drvCompuSm.o
-TARGETS += drvDvx.o
-TARGETS += drvFp.o
-TARGETS += drvFpm.o
-TARGETS += drvGpib.o
-TARGETS += drvJgvtr1.o
-TARGETS += drvMsg.o
-TARGETS += drvOms.o
-#	TARGETS += drvTranServ.o
-TARGETS += drvVmi4100.o
-TARGETS += drvXy010.o
-TARGETS += drvXy210.o
-TARGETS += drvXy220.o
-TARGETS += drvXy240.o
-TARGETS += drvXy566.o
+TARGETS = $(SRCS.c:../%.c=%.o)
 
 include $(EPICS)/config/RULES.Vx
 

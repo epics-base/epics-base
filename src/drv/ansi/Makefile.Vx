@@ -23,18 +23,7 @@ SRCS.c += ../drvStc.c
 SRCS.c += ../drvTime.c
 #	SRCS.c += ../drvCaenV265.c
 
-TARGETS += drvAb.o
-TARGETS += drvAt5Vxi.o
-TARGETS += drvEpvxi.o
-TARGETS += drvEpvxiMsg.o
-TARGETS += drvHp1404a.o
-TARGETS += drvHpe1368a.o
-TARGETS += drvHpe1445a.o
-TARGETS += drvKscV215.o
-TARGETS += drvMz8310.o
-TARGETS += drvStc.o
-TARGETS += drvTime.o
-#	TARGETS += drvCaenV265.o
+TARGETS = $(SRCS.c:../%.c=%.o)
 
 include $(EPICS)/config/RULES.Vx
 

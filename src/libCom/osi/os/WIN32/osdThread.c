@@ -478,7 +478,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended (epicsThreadId id)
 /*
  * epicsThreadSleep ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSleep (double seconds)
+epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
     static const double mSecPerSec = 1000;
     DWORD milliSecDelay;

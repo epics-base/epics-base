@@ -57,6 +57,7 @@
  *                              contents of motor_data array if level > 1.	
  * .16	06-26-92	 bg	Combined drvOms.c with oms_driver.c
  * .17  06-29-92	joh	took file pointer arg out of io report
+ * .18  08-11-92	joh	io report format cleanup	
  */
 
 /* data requests are made from the oms_task at
@@ -620,7 +621,7 @@ short int level;
 
         for (i = 0; i < MAX_OMS_CARDS; i++) {
                 if (oms_motor_present[i]){  
-                        printf("SM: OMS:     card %d\n",i);
+                        printf("SM: OMS:\tcard %d\n",i);
 	        	for (j = 0; j < MAX_OMS_CHANNELS; j++){
                            if (level > 0)
                               oms_sm_stat(i,j); 

@@ -342,8 +342,8 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         ellCount(&client->addrq),
         client->priority );
     if (level>=1) {
-        printf ("\tTask Id=%p, Protocol=%3s, Socket FD=%d\n", client->tid,
-            (void *) pproto, client->sock); 
+        printf ("\tTask Id=%p, Protocol=%3s, Socket FD=%d\n", (void *) client->tid,
+            pproto, client->sock); 
         printf( 
         "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
             send_delay, recv_delay);

@@ -53,6 +53,7 @@ of this distribution.
 int dbStaticDebug = 0;
 #define messagesize	100
 #define RPCL_LEN 184
+#define MAX_FIELD_NAME_LENGTH 20
 long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
@@ -88,7 +89,8 @@ static char *promptOUTLINK[] = {
 	"NPP PP CA:",
 	"NMS or MS:"};
 static char *promptFWDLINK[] = {
-	" PV Name:"};
+	" PV Name:",
+	"   PP CA:"};
 static char *promptVME_IO[] = {
 	"  card:",
 	"signal:",
@@ -279,7 +281,6 @@ static long putParmString(char **pparm,char *pstring)
     pstring++;
     size = strlen(pstring) + 1;
     if(size==1) return(0);
-    if(size>=MAX_STRING_SIZE) return(S_dbLib_strLen);
     *pparm = dbCalloc(size, sizeof(char *));
     strcpy(*pparm,pstring);
     return(0);
@@ -1451,9 +1452,9 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
     return(0);
 }
 
-long dbFindField(DBENTRY *pdbentry,char *pfieldName)
+long dbFindField(DBENTRY *pdbentry,char *pname)
 {
-    dbRecordType		*precordType = pdbentry->precordType;
+    dbRecordType	*precordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
     char		*precord;
     dbFldDes  		*pflddes;
@@ -1462,14 +1463,25 @@ long dbFindField(DBENTRY *pdbentry,char *pfieldName)
     short          	*sortFldInd;
     long		status;
     int			compare;
+    char		fieldName[MAX_FIELD_NAME_LENGTH];
+    char		*pfieldName;
+    int			ind;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     precord = precnode->precord;
     papsortFldName = precordType->papsortFldName;
     sortFldInd = precordType->sortFldInd;
+    /*copy field name. Stop at null or blank or tab*/
+    pfieldName = &fieldName[0];
+    for(ind=0; ind<MAX_FIELD_NAME_LENGTH; ind++) {
+	if(*pname=='\0' || *pname==' ' || *pname=='\t') break;
+	*pfieldName++ = *pname++;
+    }
+    *pfieldName = '\0';
+    pfieldName = &fieldName[0];
     /* check for default field name or VAL to be supplied */
-    if((*pfieldName==0) || (strcmp(pfieldName,"VAL")==0)) {
+    if((*pfieldName==0) || (strcmp(pfieldName,"VAL")==0) ) {
 	if(!(pflddes=precordType->pvalFldDes)) 
 		return(S_dbLib_recordTypeNotFound);
 	pdbentry->pflddes = pflddes;
@@ -1572,7 +1584,7 @@ char *dbGetString(DBENTRY *pdbentry)
 		if(plink->value.constantStr) {
 		    strcpy(message,plink->value.constantStr);
 		} else {
-		    strcpy(message,"0");
+		    strcpy(message,"");
 		}
 		break;
 	    case PV_LINK:
@@ -1665,12 +1677,22 @@ char *dbGetString(DBENTRY *pdbentry)
 		break;
 	    case PV_LINK:
 	    case CA_LINK:
-	    case DB_LINK:
+	    case DB_LINK: {
+		int	ppind;
+		short	pvlMask;
+
+		pvlMask = plink->value.pv_link.pvlMask;
+		if(pvlMask&pvlOptPP) ppind=1;
+		else if(pvlMask&pvlOptCA) ppind=2;
+		else ppind=0;
 		if(plink->value.pv_link.pvname)
 		    strcpy(message,plink->value.pv_link.pvname);
 		else
 		    strcpy(message,"");
+		strcat(message," ");
+		strcat(message,ppstring[ppind]);
 		break;
+	    }
 	    default :
 	        return(NULL);
 	    }
@@ -1778,6 +1800,8 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    if(!pstr || (int)strlen(pstr)<=0 ) {
 		if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
+		free((void *)plink->value.constantStr);
+		plink->value.constantStr = NULL;
 		return(0);
 	    }
 	    switch(plink->type) {
@@ -1808,10 +1832,10 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    	    end = strchr(pstr,' ');
 		    if(end) {
 			if(strstr(end,"NPP")) ppOpt = 0;
+			else if(strstr(end,"CPP")) ppOpt = pvlOptCPP;
 			else if(strstr(end,"PP")) ppOpt = pvlOptPP;
 			else if(strstr(end,"CA")) ppOpt = pvlOptCA;
 			else if(strstr(end,"CP")) ppOpt = pvlOptCP;
-			else if(strstr(end,"CPP")) ppOpt = pvlOptCPP;
 			else ppOpt = 0;
 		        if(strstr(end,"NMS")) msOpt = 0;
 		        else if(strstr(end,"MS")) msOpt = pvlOptMS;
@@ -2347,7 +2371,8 @@ int dbAllocForm(DBENTRY *psave)
     status = mapLINKTtoFORMT(plink,plinkflddes,&linkType);
     if(status) goto done;
     nlines = formlines[linkType];
-    nbytes = sizeof(struct form) + 2*nlines*(sizeof(char *) + MAX_STRING_SIZE);
+    /*Dont know how to handle string size. Just use messagesize*/
+    nbytes = sizeof(struct form) + 2*nlines*(sizeof(char *) + messagesize);
     pform = dbCalloc(1,nbytes);
     pform->linkType = linkType;
     psave->formpvt = pform;
@@ -2358,11 +2383,11 @@ int dbAllocForm(DBENTRY *psave)
     pstr = (char *)(pform->verify) + nlines*sizeof(char *);
     for(i=0; i<nlines; i++) {
 	pform->value[i] = pstr;
-	pstr += MAX_STRING_SIZE;
+	pstr += messagesize;
     }
     for(i=0; i<nlines; i++) {
 	pform->verify[i] = pstr;
-	pstr += MAX_STRING_SIZE;
+	pstr += messagesize;
     }
 done:
     dbFinishEntry(pdbentry);
@@ -3016,6 +3041,8 @@ long dbCvtLinkToConstant(DBENTRY *pdbentry)
 	    plink->value.constantStr =
 		dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
 	    strcpy(plink->value.constantStr,pflddes->initial);
+	} else {
+	    plink->value.constantStr = NULL;
 	}
 	return(0);
     default:

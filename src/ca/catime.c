@@ -510,7 +510,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
     nBytes = 0;
     for ( i=0; i < channelCount; i++ ) {
         if ( appNF == appendNumber ) {
-            sprintf ( pItemList[i].name,"%.*s%u",
+            sprintf ( pItemList[i].name,"%.*s%6u",
                 (int) (strsize - 15u), channelName, i );
         }
         else {

@@ -66,9 +66,6 @@ PROD =
 TESTPROD = 
 LIBRARY_HOST =
 LIBRARY_IOC += $(LIBRARY)
-ifdef MUNCH
-LIBRARY_IOC += $(MUNCH_LIBRARY)
-endif
 endif
 
 
@@ -111,9 +108,9 @@ endif # PROD, TESTPROD, LIBRARY_IOC or LIBRARY_HOST defined
 #   Libraries 
 #
 
-LIBTARGETS += $(LIBNAME)
+LIBTARGETS += $(LIBNAME) $(MUNCHNAME)
 ifneq (,$(strip $(LIBTARGETS)))
-LIBTARGETS += $(INSTALL_LIBS)
+LIBTARGETS += $(INSTALL_LIBS) $(INSTALL_MUNCHS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
@@ -137,7 +134,7 @@ rebuild: clean install
 inc: $(DIRECTORY_TARGETS) $(INSTALL_INC) $(INSTALL_INCREC)
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) \
-	$(TARGETS) $(MUNCHNAME)
+	$(TARGETS)
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
@@ -148,7 +145,7 @@ buildInstall : \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_CONFIGS) \
 	$(INSTALL_DBS) $(INSTALL_BPTS) \
-	$(INSTALL_DBDNAME) $(INSTALL_MUNCHS)
+	$(INSTALL_DBDNAME)
 
 ifdef BIN_INSTALLS
 buildInstall : binInstalls
@@ -194,14 +191,6 @@ depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 	@$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
-
-# C++ munching for VxWorks
-%.munch : %.o
-	@ $(RM) ctct.o ctdt.c
-	$(NM) $< | $(MUNCH) > ctdt.c
-	$(COMPILE.c) -traditional ctdt.c
-	$(LINK.c) $< ctdt.o
-	@ $(RM) ctdt.c ctdt.o
 
 $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
@@ -368,6 +357,14 @@ $(DLL_LINK_LIBNAME):$(LIB_PREFIX)%.lib: $(LIBRARY_OBJS)
 
 $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS)
 	$(LINK.shrlib) $(LIBRARY_LD_OBJS) $(SHRLIB_LDLIBS)
+
+# C++ munching for VxWorks
+$(MUNCHNAME):%.munch : %.o
+	@ $(RM) ctct.o ctdt.c
+	$(NM) $< | $(MUNCH) > ctdt.c
+	$(COMPILE.c) -traditional ctdt.c
+	$(LINK.c) $< ctdt.o
+	#@ $(RM) ctdt.c ctdt.o
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

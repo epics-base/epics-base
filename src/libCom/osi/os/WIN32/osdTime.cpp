@@ -394,7 +394,8 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 	        dest.secPastEpoch = static_cast < epicsUInt32 > 
                 ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
             dest.nsec = static_cast < epicsUInt32 >
-                ( fileTimeTicksSinceEpochEPICS * 100 );
+                ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) * 
+                EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC );
         }
         else {
 	        dest.secPastEpoch = 0;

@@ -162,12 +162,13 @@ private:
     epicsThreadId id;
     epicsMutex mutex;
     epicsEvent event;
+    epicsEvent exitEvent;
     bool * pWaitReleaseFlag;
     bool begin;
     bool cancel;
     bool terminated;
 
-    void beginWait ();
+    bool beginWait ();
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );

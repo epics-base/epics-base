@@ -37,8 +37,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     bool waitRelease = false;
     try {
         pThread->pWaitReleaseFlag = & waitRelease;
-        pThread->beginWait ();
-        if ( ! pThread->cancel ) {
+        if ( pThread->beginWait () ) {
             pThread->runable.run ();
         }
     }
@@ -82,17 +81,14 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     return;
 }
 
-void epicsThread::beginWait ()
+bool epicsThread::beginWait ()
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        while ( ! this->begin ) {
-            epicsGuardRelease < epicsMutex > unguard ( guard );
-            this->event.wait ();
-        }
-        // the event mechanism is used for other purposes
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    while ( ! this->begin && ! this->cancel ) {
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        this->event.wait ();
     }
-    this->event.signal ();
+    return this->begin && ! this->cancel;
 }
 
 void epicsThread::exit ()
@@ -111,9 +107,11 @@ bool epicsThread::exitWait (const double delay )
         epicsTime exitWaitBegin = epicsTime::getCurrent ();
         epicsGuard < epicsMutex > guard ( this->mutex );
         double elapsed = 0.0;
+        this->cancel = true;
         while ( ! this->terminated ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            this->event.wait ( delay - elapsed );
+            this->event.signal ();
+            this->exitEvent.wait ( delay - elapsed );
             epicsTime current = epicsTime::getCurrent ();
             double exitWaitElapsed = current - exitWaitBegin;
             if ( exitWaitElapsed >= delay ) {
@@ -121,24 +119,20 @@ bool epicsThread::exitWait (const double delay )
             }
         }
     }
-    // the event mechanism is used for other purposes
-    this->event.signal ();
     return this->terminated;
 }
 
 void epicsThread::exitWaitRelease ()
 {
     if ( this->isCurrentThread() ) {
+        epicsGuard < epicsMutex > guard ( this->mutex );
         if ( this->pWaitReleaseFlag ) {
             *this->pWaitReleaseFlag = true;
         }
-        {
-            // once the terminated flag is set and we release the lock
-            // then the "this" pointer must not be touched again
-            epicsGuard < epicsMutex > guard ( this->mutex );
-            this->terminated = true;
-            this->event.signal ();
-        }
+        this->terminated = true;
+        this->exitEvent.signal ();
+        // once the terminated flag is set and we release the lock
+        // then the "this" pointer must not be touched again
     }
 }
 
@@ -153,16 +147,6 @@ epicsThread::epicsThread ( epicsThreadRunable &r, const char *name,
 
 epicsThread::~epicsThread ()
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( this->terminated ) {
-            return;
-        }
-        this->cancel = true;
-    }
-    
-    this->event.signal ();
-
     while ( ! this->exitWait ( 10.0 )  ) {
         char nameBuf [256];
         this->getName ( nameBuf, sizeof ( nameBuf ) );
@@ -191,12 +175,12 @@ bool epicsThread::isCurrentThread () const
 
 void epicsThread::resume ()
 {
-    epicsThreadResume (this->id);
+    epicsThreadResume ( this->id );
 }
 
-void epicsThread::getName (char *name, size_t size) const
+void epicsThread::getName ( char *name, size_t size ) const
 {
-    epicsThreadGetName (this->id, name, size);
+    epicsThreadGetName ( this->id, name, size );
 }
 
 epicsThreadId epicsThread::getId () const

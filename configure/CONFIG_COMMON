@@ -227,11 +227,17 @@ COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(INCLUDES) $(SOURCE_FLAG)
 COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(SOURCE_CXXFLAG)
 
 #--------------------------------------------------
+# Build depends command here
+
+DEPENDS.cpp = $(CCC)
+DEPENDSFLAGS += $(CPPFLAGS) $(INCLUDES) $(DEPENDS_FLAG)
+DEPENDS_CMD.cpp = -$(DEPENDS.cpp) $(DEPENDSFLAGS) $(SRC_FILES) > DEPENDS
+
+#--------------------------------------------------
 # depends definition
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
 SRC_FILES = $(foreach src, $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS) , \
     $(firstword  $(wildcard $(addsuffix /$(src),$(ALL_SRC_DIRS))) $(src)))
-DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $(SRC_FILES) > DEPENDS
 
 #---------------------------------------------------------------
 # Names of installed items

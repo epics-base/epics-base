@@ -4,6 +4,7 @@ include $(TOP)/config/CONFIG_BASE
 SRCS.c = ../iocLogClient.c ../veclist.c ../ldpp.c
 
 LIBOBJS = veclist.o iocLogClient.o ldpp.o
+LIBOBJS_mips = symFindByNameMips.o
 
 LIBNAME = vxComLib
 SCRIPTS = vxldscript.MRI

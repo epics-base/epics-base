@@ -2,34 +2,40 @@
 # $Id$
 #
 #  EPICS RULES_ARCH
-#       by Matthew Needes and Mike Bordua and Janet Anderson
+#       by Matthew Needes and Mike Bordua and Janet Andersoni and Jeff Hill
 #
 
 all:: install
 
-DO_X += inc
-DO_X += build
-DO_X += install
-DO_X += depends 
+ACTIONS += inc
+ACTIONS += build
+ACTIONS += install
+ACTIONS += depends 
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 
+#
+# hostActionArchTargets
+#
 ifeq (Makefile.$(BUILD_TYPE), $(wildcard Makefile.$(BUILD_TYPE)))
 hostArchs = $(HOST_ARCH) $(filter-out $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS))
 hostDirs = $(addprefix O.,$(hostArchs))
-hostTargets = 	$(foreach x, $(DO_X),\
+hostActionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
-$(hostTargets) : $(hostDirs)
+$(hostActionArchTargets) : $(hostDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile.$(BUILD_TYPE) T_A=$(archPart) $(actionPart)
 endif
 
+#
+# crossActionArchTargets
+#
 ifeq (Makefile.Vx, $(wildcard Makefile.Vx))
 crossArchs = $(CROSS_COMPILER_TARGET_ARCHS)
 crossDirs = $(addprefix O.,$(crossArchs))
-crossTargets = $(foreach x, $(DO_X), \
+crossActionArchTargets = $(foreach x, $(ACTIONS), \
 	$(foreach arch, $(CROSS_COMPILER_TARGET_ARCHS), $(x)$(DIVIDER)$(arch)))
-$(crossTargets) : $(crossDirs)
+$(crossActionArchTargets) : $(crossDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile.Vx T_A=$(archPart) $(actionPart)
 endif
 
@@ -44,48 +50,36 @@ $(crossDirs) :
 	echo "include ../Makefile.Vx >> $@/Makefile
 
 #
-# action targets
+# host/cross action targets
 #
-actionTargets = $(foreach x, $(DO_X), \
-		$(addprefix $(x)$(DIVIDER), host cross))
-inc :: inc$(DIVIDER)host inc$(DIVIDER)cross
-inc$(DIVIDER)host :: $(addprefix inc$(DIVIDER), $(hostArchs))
-inc$(DIVIDER)cross :: $(addprefix inc$(DIVIDER), $(crossArchs))
+$(ACTIONS) clean : % : %$(DIVIDER)host %$(DIVIDER)cross 
+HostActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)host)
+CrossActionTargets = $(foreach x, $(ACTIONS) clean, $(x)$(DIVIDER)cross)
+$(HostActionTargets) : %$(DIVIDER)host : $(addprefix %$(DIVIDER), $(hostArchs))
+$(CrossActionTargets) : %$(DIVIDER)cross : $(addprefix %$(DIVIDER), $(crossArchs))
 
-install :: install$(DIVIDER)host install$(DIVIDER)cross
-install$(DIVIDER)host :: $(addprefix install$(DIVIDER), $(hostArchs))
-install$(DIVIDER)cross :: $(addprefix install$(DIVIDER), $(crossArchs))
-
-depends:: depends$(DIVIDER)host depends$(DIVIDER)cross
-depends$(DIVIDER)host :: $(addprefix depends$(DIVIDER), $(hostArchs))
-depends$(DIVIDER)cross :: $(addprefix depends$(DIVIDER), $(crossArchs))
-
-build :: build$(DIVIDER)host build$(DIVIDER)cross
-build$(DIVIDER)host :: $(addprefix build$(DIVIDER), $(hostArchs))
-build$(DIVIDER)cross :: $(addprefix build$(DIVIDER), $(crossArchs))
-
-actionTargets += $(addprefix clean$(DIVIDER), host cross))
-clean$(DIVIDER)host :: $(addprefix clean$(DIVIDER), $(hostArchs))
-clean$(DIVIDER)cross :: $(addprefix clean$(DIVIDER), $(crossArchs))
 
 #
 # arch targets
 #
 host : $(hostArchs)
 cross : $(crossArchs)
-$(hostArchs) : $(hostDirs)
+
+$(hostArchs) : % : O.% 
 	$(MAKE) -C O.$@ -f ../Makefile.$(BUILD_TYPE) T_A=$@ 
-$(crossArchs) : $(crossDirs)
+$(crossArchs) : % : O.%
 	$(MAKE) -C O.$@ -f ../Makefile.Vx T_A=$@
 
-clean :: $(addprefix clean$(DIVIDER), $(hostArchs) $(crossArchs) ) 
+#
+# special clean rule
+#
 clean$(DIVIDER)% : 
 	$(RMDIR) O.$*
 
-.PHONY : $(archTargets)
-.PHONY : $(cleanTargets)
-.PHONY : $(actionTargets)
+.PHONY : $(HostActionTargets)
+.PHONY : $(CrossActionTargets)
+.PHONY : $(crossActionArchTargets)
+.PHONY : $(hostActionArchTargets)
 .PHONY : $(hostArchs) $(crossArchs)
-.PHONY : $(DO_X)
-.PHONY : clean all 
-.PHONY : 
+.PHONY : $(ACTIONS) clean all host cross
+

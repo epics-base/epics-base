@@ -9,3 +9,8 @@
 
 include $(CONFIG)/os/CONFIG.solaris-sparc-gnu.solaris-sparc-gnu
 
+BUILD_CLASS = HOST
+
+CMPLR_SUFFIX=
+CMPLR_PREFIX=
+

@@ -3,15 +3,12 @@
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for linux-x86 host archs
+# Definitions for solaris-sparc host archs
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
 #-------------------------------------------------------
 
 # Include definitions common to all Unix target archs
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
-
-OS_CLASS = solaris
-ARCH_CLASS = sparc
 
 SPARCWORKS = /opt/SUNWspro
 
@@ -60,24 +57,8 @@ ACC_CPP = cpp
 #Configure gnu compiler
 GCC = gcc
 G++ = g++
-GCC_CPP = $(GCC) -x c -E
-
-GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
-G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
-
-GCC_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
-GCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
-G++_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
-G++_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
 
 RANLIB =
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o
-
-ARCH_DEP_CPPFLAGS = -DSOLARIS
-# socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
-
-# use loader's -R option
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
 

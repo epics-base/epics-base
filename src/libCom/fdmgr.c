@@ -66,6 +66,10 @@
  *			problem (send call back discarded when fdmgr pend
  *			event time out expires even if the send call back
  *			has not been called at least once).
+ *	.18 joh 051995	Changed the semantics of alarm create/delete
+ *			routines in a backwards compatible way so that
+ *			we eliminate delete ambiguity (chance of the same
+ *			being reused).
  *
  *	NOTES:
  *
@@ -73,22 +77,7 @@
  *			with the lower likelyhood of select blocking 
  *			on a fd write.	 
  *
- *      .02 joh 012093  **** WARNING ****
- *                      Assume that a timer id returned by fdmgr_add_timeout()
- *                      will be reused (and returned from a subsequent call to
- *                      fdmgr_add_timeout()) after either of the following two
- *                      circumstances occur:
- *                      1) You delete the timer referenced by the timer id with
- *                              fdmgr_clear_timeout()
- *                      2) The timer expires (and the handler which you 
- *				have established for the timer id is executed)
- *                      Take care not to attempt to delete a timer which
- *                      has already expired (and therefore executed your timer
- *                      expiration handler subroutine). Attempting to
- *                      delete a timer which has already expired could
- *                      result in deletion of the wrong timer.
- *
- *	.03 joh 012193	terse DOCUMENTATION has been added to the header file 
+ *	.02 joh 012193	terse DOCUMENTATION has been added to the header file 
  *			share/epicsH/fdmgr.h
  *
  */
@@ -102,7 +91,19 @@ static char	*pSccsId = "@(#) $Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <errno.h>
+
+/*
+ * Yuk
+ */
+#if defined (MULTINET)
+#	define select_errno socket_errno
+#elif defined (WINTCP)
+#	define select_errno uerrno
+       	extern int uerrno;
+#else
+#	include <errno.h>
+#	define select_errno errno
+#endif
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -116,6 +117,10 @@ static char	*pSccsId = "@(#) $Id$";
 
 #include <epicsAssert.h>
 #include <fdmgr.h>
+#include <epicsTypes.h>
+
+#define NOBSDNETPROTO
+#include <bsdProto.h>
 
 #ifndef TRUE
 #define TRUE 1
@@ -151,6 +156,15 @@ typedef struct{
 	int		delete_pending;
 }fdentry;
 
+typedef struct{
+        ELLNODE                 node;
+        struct timeval          t;
+        void                    (*func)(void *pParam);
+        void                    *param;
+        enum alarm_list_type    alt;
+        unsigned                id;
+}fdmgrAlarm;
+
 #if defined(vxWorks)
 #	define LOCK(PFDCTX)	assert(semTake((PFDCTX)->lock, WAIT_FOREVER)==OK);
 #	define UNLOCK(PFDCTX)	assert(semGive((PFDCTX)->lock)==OK);
@@ -169,7 +183,7 @@ typedef struct{
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
 		assert(semGive((PFDCTX)->fd_handler_lock)==OK);
 
-#elif defined(UNIX) || defined(VMS) || defined(_WIN32)
+#elif defined(UNIX) || defined(VMS) || defined(WIN32)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
@@ -228,6 +242,16 @@ fdctx *fdmgr_init(void)
 	fdctx 		*pfdctx;
 
 	pfdctx = (fdctx *) calloc(1, sizeof(fdctx));
+	if (!pfdctx) {
+		return pfdctx;
+	}
+
+	pfdctx->pAlarmBucket = bucketCreate (1024);
+	if (!pfdctx->pAlarmBucket) {
+		free (pfdctx);
+		return NULL;
+	}
+
 #	if defined(vxWorks)
 		pfdctx->lock = semMCreate (SEM_DELETE_SAFE);
 		if (pfdctx->lock == NULL){
@@ -248,12 +272,14 @@ fdctx *fdmgr_init(void)
 		pfdctx->clk_rate = sysClkRateGet();
 		pfdctx->last_tick_count = tickGet();
 #	endif
+
 	ellInit(&pfdctx->fdentry_list);
 	ellInit(&pfdctx->fdentry_in_use_list);
 	ellInit(&pfdctx->fdentry_free_list);
 	ellInit(&pfdctx->alarm_list);
 	ellInit(&pfdctx->expired_alarm_list);
 	ellInit(&pfdctx->free_alarm_list);
+
 
 	/*
  	 * returns NULL if unsuccessful
@@ -269,7 +295,9 @@ fdctx *fdmgr_init(void)
  */
 int fdmgr_delete(fdctx *pfdctx)
 {
-	int	status;
+	int		status;
+	fdmgrAlarm	*palarm;
+	fdmgrAlarm	*pnext;
 
 	if(!pfdctx){
 		return ERROR;
@@ -289,7 +317,17 @@ int fdmgr_delete(fdctx *pfdctx)
 	ellFree(&pfdctx->fdentry_list);
 	ellFree(&pfdctx->fdentry_in_use_list);
 	ellFree(&pfdctx->fdentry_free_list);
-	ellFree(&pfdctx->alarm_list);
+	for (	palarm = (fdmgrAlarm *) ellFirst (&pfdctx->alarm_list);
+		palarm;
+		palarm = pnext) {
+		pnext = (fdmgrAlarm *) ellNext (&palarm->node);
+		status = bucketRemoveItemUnsignedId(
+					pfdctx->pAlarmBucket,
+					&palarm->id);
+		assert (status == S_bucket_success);
+		free (palarm);
+	}
+	bucketFree (pfdctx->pAlarmBucket);
 	ellFree(&pfdctx->expired_alarm_list);
 	ellFree(&pfdctx->free_alarm_list);
 
@@ -300,26 +338,26 @@ int fdmgr_delete(fdctx *pfdctx)
 /*
  * 	fdmgr_add_timeout()
  */
-fdmgrAlarm *fdmgr_add_timeout(
+fdmgrAlarmId fdmgr_add_timeout(
 fdctx 		*pfdctx,
 struct timeval 	*ptimeout,
 void		(*func)(void *),
 void		*param
 )
 {
-	fdmgrAlarm		*palarm=NULL;
-	fdmgrAlarm		*pa;
+	fdmgrAlarm	*palarm=NULL;
+	fdmgrAlarm	*pa;
 	struct timeval	t;
 	int		status;
 
 	if(ptimeout->tv_sec < 0)
-		return NULL;
+		return fdmgrNoAlarm;
 	if(ptimeout->tv_usec < 0)
-		return NULL;
+		return fdmgrNoAlarm;
 
 	status = fdmgr_gettimeval(pfdctx, &t);
 	if(status < 0)
-		return NULL;
+		return fdmgrNoAlarm;
 
 	LOCK(pfdctx);
 	palarm = (fdmgrAlarm *) ellGet(&pfdctx->free_alarm_list);
@@ -327,14 +365,33 @@ void		*param
 	if(!palarm){
 		palarm = (fdmgrAlarm *) malloc(sizeof(fdmgrAlarm));
 		if(!palarm){
-			return NULL;
+			return fdmgrNoAlarm;
 		}
 	}
 
 	/*
 	 * force all fields to a known state
 	 */
-	memset((char *)palarm, 0, sizeof(*palarm));
+	memset ((char *)palarm, 0, sizeof(*palarm));
+
+	do {
+		pfdctx->nextAlarmId++;
+		palarm->id = pfdctx->nextAlarmId;
+		status = bucketAddItemUnsignedId (
+				pfdctx->pAlarmBucket,
+				&palarm->id,
+				palarm);
+		if (status == S_bucket_noMemory) {
+			free (palarm);
+			return fdmgrNoAlarm;
+		}
+	} while (status == S_bucket_idInUse);
+
+	if (status != S_bucket_success) {
+		free (palarm);
+		errMessage (status, "Alarm installation failed");
+		return fdmgrNoAlarm;
+	}
 
 	ptimeout->tv_sec += ptimeout->tv_usec/USEC_PER_SEC;
 	ptimeout->tv_usec = ptimeout->tv_usec%USEC_PER_SEC;
@@ -364,7 +421,10 @@ void		*param
 		}
 	}
 	if(pa){
-		ellInsert(&pfdctx->alarm_list, pa->node.previous, &palarm->node);
+		ellInsert (
+			&pfdctx->alarm_list, 
+			pa->node.previous, 
+			&palarm->node);
 	}
 	else{
 		ellAdd(&pfdctx->alarm_list, &palarm->node);
@@ -372,22 +432,33 @@ void		*param
 	palarm->alt = alt_alarm;
 	UNLOCK(pfdctx);
 
-	return (void *) palarm;
+	return pfdctx->nextAlarmId;
 }
 
 
 /*
- *
  *	fdmgr_clear_timeout()
- *
  */
 int fdmgr_clear_timeout(
 fdctx 		*pfdctx,
-fdmgrAlarm		*palarm
+fdmgrAlarmId	id	
 )
 {
 	int 			status;
 	enum alarm_list_type	alt;
+	fdmgrAlarm		*palarm;
+
+	palarm = bucketLookupItemUnsignedId (
+				pfdctx->pAlarmBucket,
+				&id);
+	if (!palarm) {
+		return ERROR;
+	}
+
+	status = bucketRemoveItemUnsignedId(
+				pfdctx->pAlarmBucket,
+				&id);
+	assert (status == S_bucket_success);
 
 	status = ERROR;
 
@@ -657,7 +728,7 @@ struct timeval 			*ptimeout
 {
 	int			status;
 	struct timeval		t;
-	fdmgrAlarm		*palarm;
+	fdmgrAlarmId		alarmId;
 
 
 	lockFDMGRPendEvent(pfdctx);
@@ -673,22 +744,22 @@ struct timeval 			*ptimeout
 		/*
 		 * silence gcc warnings
 		 */
-		palarm = NULL;
+		alarmId = fdmgrNoAlarm;
 	}
 	else{
 		pfdctx->select_tmo = FALSE;
-		palarm = fdmgr_add_timeout(
+		alarmId = fdmgr_add_timeout(
 				pfdctx, 
 				ptimeout, 
 				select_alarm,
 				pfdctx);
-		if(!palarm){
+		if (alarmId==fdmgrNoAlarm) {
 			return ERROR;
 		}
 		process_alarm_queue(pfdctx, &t);
 	}
 
-	while(TRUE){
+	while (TRUE) {
 		status = fdmgr_select(pfdctx, &t);
 		process_alarm_queue(pfdctx, &t);
 		if(status){
@@ -698,8 +769,8 @@ struct timeval 			*ptimeout
 			break;
 	}
 
-	if(pfdctx->select_tmo==FALSE)
-		fdmgr_clear_timeout(pfdctx, palarm);
+	if(pfdctx->select_tmo==FALSE && alarmId != fdmgrNoAlarm)
+		fdmgr_clear_timeout(pfdctx, alarmId);
 
 	UNLOCK_FDMGR_PEND_EVENT(pfdctx);
 
@@ -745,7 +816,7 @@ struct timeval 			*ptimeout
 		taskSafe();
 #	endif
 #	if defined (__hpux)
-  	status = select(
+  	status = select (
 			pfdctx->maxfd,
 			(int *)&pfdctx->readch,
 			(int *)&pfdctx->writech,
@@ -766,9 +837,9 @@ struct timeval 			*ptimeout
 		return labor_performed;
 	}
 	else if(status < 0){
-		if(errno == EINTR)
+		if(select_errno == EINTR)
 			;
-		else if(errno == EINVAL)
+		else if(select_errno == EINVAL)
 			fdmgrPrintf(	
 				"fdmgr: bad select args ? %d %d %d\n",
 				pfdctx->maxfd,
@@ -777,7 +848,7 @@ struct timeval 			*ptimeout
 		else
 			fdmgrPrintf(	
 				"fdmgr: error from select %s\n",
-				strerror(errno));
+				strerror(select_errno));
 
 		return labor_performed;
 	}
@@ -888,6 +959,10 @@ struct timeval	*poffset
 		ellDelete(&pfdctx->alarm_list, &pa->node);
 		ellAdd(&pfdctx->expired_alarm_list, &pa->node);
 		pa->alt = alt_expired;
+		status = bucketRemoveItemUnsignedId(
+					pfdctx->pAlarmBucket,
+					&pa->id);
+		assert (status == S_bucket_success);
 	}
 	UNLOCK(pfdctx);
 
@@ -984,7 +1059,7 @@ struct timeval	*pt
 {
 	struct timezone		tz;
 
-	return gettimeofday(pt, &tz);
+	return gettimeofday (pt, &tz);
 }
 #endif
 
@@ -996,7 +1071,7 @@ struct timeval	*pt
  *
  *
  */
-#ifdef _WIN32
+#ifdef WIN32
 LOCAL int fdmgr_gettimeval(
 fdctx           *pfdctx,
 struct timeval  *pt
@@ -1004,8 +1079,7 @@ struct timeval  *pt
 {
         SYSTEMTIME st;
         GetSystemTime(&st);
-        pt->tv_sec = (long)st.wSecond + (long)st.wMinute*60 + (long)st.wHour*360
-0;
+        pt->tv_sec = (long)st.wSecond + (long)st.wMinute*60 + (long)st.wHour*3600;
         pt->tv_usec = st.wMilliseconds*1000;
 
         return 0;

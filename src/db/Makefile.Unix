@@ -1,0 +1,31 @@
+BASE = ../..
+include $(BASE)/config/CONFIG
+
+USR_LDFLAGS = $(MOTIF_LDFLAGS) $(X11_LDFLAGS) -lm
+USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO $(MOTIF_CFLAGS) $(X11_CFLAGS) # -I$(SRCROOT)/ca
+
+CC = acc -Xs 
+
+SRCS = \
+	dbStaticLib.c
+
+OBJS = \
+	dbStaticLib.o
+
+LIBNAME = libDb.a
+
+PROD =
+
+all :: $(LIBNAME) $(PROD)
+
+
+install :: install_inc 
+
+install_inc : $(BASE_LIB)/libDb.a
+
+$(BASE_LIB)/libDb.a : libDb.a
+	install -m 644 libDb.a $@
+	ranlib -t $@
+
+include $(BASE)/config/RULES
+

@@ -230,13 +230,12 @@ static long process(pao)
 
 	/* fetch value and convert*/
 	if (pao->pact == FALSE) {
-                if ((pao->dol.type != CONSTANT) &&
-                    (pao->omsl == CLOSED_LOOP)) {
-
-                   status = fetch_value(pao, &value);
+                if ((pao->dol.type != CONSTANT) 
+                && (pao->omsl == CLOSED_LOOP)) {
+                    status = fetch_value(pao, &value);
                 }
                 else {
-                   value = pao->val;
+                    value = pao->val;
                 }
 		if(!status) convert(pao, value);
 	}
@@ -449,6 +448,7 @@ static long fetch_value(pao,pvalue)
            recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
            return(status);
 	}
+        pao->udf = FALSE;
 
         if (pao->oif == aoOIF_Incremental)
            *pvalue += pao->val;
@@ -467,7 +467,6 @@ static void convert(pao,value)
 	}
 	pao->val = value;
 	pao->pval = value;
-	pao->udf = FALSE;
 
 	/* now set value equal to desired output value */
         /* apply the output rate of change */

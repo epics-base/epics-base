@@ -39,7 +39,7 @@ unsigned long semMstat[4];
 #define SEMSTAT(i) 
 #endif
 
-epicsMutexOSD *
+struct epicsMutexOSD *
 epicsMutexOsdCreate(void)
 {
     rtems_status_code sc;

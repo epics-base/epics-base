@@ -600,7 +600,7 @@ void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
 }
 
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
-                                    epicsGuard <cacMutex > & guard )
+                                    epicsGuard < cacMutex > & guard )
 {
     if ( ! this->discardingPendingData ) {
         // force abortive shutdown sequence 

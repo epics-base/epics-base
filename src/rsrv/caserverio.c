@@ -25,6 +25,7 @@
 #include "osiSock.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "caerr.h"
 
 typedef unsigned long arrayElementCount;
 
@@ -146,8 +147,7 @@ void cas_send_dg_msg ( struct client * pclient )
     status = sendto ( pclient->sock, pDG, sizeDG, 0,
        (struct sockaddr *)&pclient->addr, sizeof(pclient->addr) );
     if ( status >= 0 ) {
-        unsigned transferSize = (unsigned) status;
-        if ( transferSize >= sizeDG ) {
+        if ( status >= sizeDG ) {
             epicsTimeGetCurrent ( &pclient->time_at_last_send );
         }
         else {
@@ -203,7 +203,7 @@ int cas_copy_in_header (
     ca_uint32_t alignedPayloadSize;
 
     if ( payloadSize > UINT_MAX - sizeof ( caHdr ) - 8u ) {
-        return FALSE;
+        return ECA_TOLARGE;
     }
 
     alignedPayloadSize = CA_MESSAGE_ALIGN ( payloadSize );
@@ -211,7 +211,7 @@ int cas_copy_in_header (
     msgSize = alignedPayloadSize + sizeof ( caHdr );
     if ( alignedPayloadSize >= 0xffff || nElem >= 0xffff ) {
         if ( ! CA_V49 ( pclient->minor_version_number ) ) {
-            return FALSE;
+            return ECA_OLDCLIENT;
         }
         msgSize += 2 * sizeof ( ca_uint32_t );
     }
@@ -219,7 +219,7 @@ int cas_copy_in_header (
     if ( msgSize > pclient->send.maxstk ) {
         casExpandSendBuffer ( pclient, msgSize );
         if ( msgSize > pclient->send.maxstk ) {
-            return FALSE;
+            return ECA_TOLARGE;
         }
     }
 
@@ -235,7 +235,7 @@ int cas_copy_in_header (
                 cas_send_dg_msg ( pclient );
             }
             else {
-                return FALSE;
+                return ECA_INTERNAL;
             }
         }
     }
@@ -275,7 +275,7 @@ int cas_copy_in_header (
             alignedPayloadSize - payloadSize );
     }
 
-    return TRUE;
+    return ECA_NORMAL;
 }
 
 void cas_set_header_cid ( struct client *pClient, ca_uint32_t cid )

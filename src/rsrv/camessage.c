@@ -106,7 +106,7 @@ va_list                 args
     char                    *pMsgString;
     ca_uint32_t             size;
     ca_uint32_t             cid;
-    int                     success;
+    int                     localStatus;
 
     switch ( curp->m_cmmd ) {
     case CA_PROTO_EVENT_ADD:
@@ -140,12 +140,12 @@ va_list                 args
     /*
      * allocate plenty of space for a sprintf() buffer
      */
-    success = cas_copy_in_header ( client, 
+    localStatus = cas_copy_in_header ( client, 
         CA_PROTO_ERROR, 512, 0, 0, cid, status, 
         ( void * ) &pReqOut );
-    if ( ! success ) {
-        errlogPrintf ( "caserver: Unable to deliver err msg to client => \"%s\"\n",
-            ca_message (status) );
+    if ( localStatus != ECA_NORMAL ) {
+        errlogPrintf ( "caserver: Unable to deliver err msg \"%s\" to client because \"%s\"\n",
+            ca_message (status), ca_message (localStatus) );
         errlogVprintf ( pformat, args );
         return;
     }
@@ -286,12 +286,12 @@ LOCAL int udp_echo_action ( caHdrLargeArray *mp,
                            void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
-    int success;
+    int status;
     SEND_LOCK ( pClient );
-    success = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
+    status = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
         ( void * ) &pPayloadOut );
-    if ( success ) {
+    if ( status == ECA_NORMAL ) {
         memcpy ( pPayloadOut, pPayload, mp->m_postsize );
         cas_commit_msg ( pClient, mp->m_postsize );
     }
@@ -367,12 +367,12 @@ LOCAL int tcp_echo_action ( caHdrLargeArray *mp,
                        void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
-    int success;
+    int status;
     SEND_LOCK ( pClient );
-    success = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
+    status = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
         ( void * ) &pPayloadOut );
-    if ( success ) {
+    if ( status == ECA_NORMAL ) {
         memcpy ( pPayloadOut, pPayload, mp->m_postsize );
         cas_commit_msg ( pClient, mp->m_postsize );
     }
@@ -412,7 +412,7 @@ LOCAL void no_read_access_event ( struct client *pClient,
     struct event_ext *pevext )
 {
     char *pPayloadOut;
-    int success;
+    int status;
 
     /*
      * continue to return an exception
@@ -436,15 +436,15 @@ LOCAL void no_read_access_event ( struct client *pClient,
      * The m_cid field in the protocol
      * header is abused to carry the status
      */
-    success = cas_copy_in_header ( pClient, pevext->msg.m_cmmd, pevext->size, 
+    status = cas_copy_in_header ( pClient, pevext->msg.m_cmmd, pevext->size, 
         pevext->msg.m_dataType, pevext->msg.m_count, ECA_NORDACCESS, 
         pevext->msg.m_available, ( void * ) &pPayloadOut );
-    if ( success ) {
+    if ( status == ECA_NORMAL ) {
         memset ( pPayloadOut, 0, pevext->size );
         cas_commit_msg ( pClient, pevext->size );
     }
     else {
-        send_err ( &pevext->msg, ECA_TOLARGE, pClient, 
+        send_err ( &pevext->msg, status, pClient, 
             "server unable to load read access denied response into protocol buffer PV=\"%s max bytes=%u\"",
             RECORD_NAME ( &pevext->pciu->addr ), rsrvSizeofLargeBufTCP );
     }
@@ -462,7 +462,6 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
     struct client *pClient = pevext->pciu->client;
     struct channel_in_use *pciu = pevext->pciu;
     int status;
-    int success;
     int strcnt;
     int v41;
 
@@ -487,11 +486,11 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
         cid = pciu->cid;
     }
 
-    success = cas_copy_in_header ( pClient, pevext->msg.m_cmmd, pevext->size, 
+    status = cas_copy_in_header ( pClient, pevext->msg.m_cmmd, pevext->size, 
         pevext->msg.m_dataType, pevext->msg.m_count, cid, pevext->msg.m_available,
         &pPayload );
-    if ( ! success ) {
-        send_err ( &pevext->msg, ECA_TOLARGE, pClient, 
+    if ( status != ECA_NORMAL ) {
+        send_err ( &pevext->msg, status, pClient, 
             "server unable to load read (or subscription update) response into protocol buffer PV=\"%s\" max bytes=%u",
             RECORD_NAME ( paddr ), rsrvSizeofLargeBufTCP );
         if ( ! eventsRemaining )
@@ -601,7 +600,6 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
     void *pPayload;
     int status;
     int strcnt;
-    int success;
     int v41;
 
     pciu = MPTOPCIU ( mp );
@@ -620,10 +618,10 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
 #   endif
 
     payloadSize = dbr_size_n ( mp->m_dataType, mp->m_count );
-    success = cas_copy_in_header ( pClient, mp->m_cmmd, payloadSize, 
+    status = cas_copy_in_header ( pClient, mp->m_cmmd, payloadSize, 
         mp->m_dataType, mp->m_count, pciu->cid, mp->m_available, &pPayload );
-    if ( ! success ) {
-        send_err ( mp, ECA_TOLARGE, pClient, 
+    if ( status != ECA_NORMAL ) {
+        send_err ( mp, status, pClient, 
             "server unable to load read response into protocol buffer PV=\"%s\" max bytes=%u",
             RECORD_NAME ( &pciu->addr ), rsrvSizeofLargeBufTCP );
         SEND_UNLOCK ( pClient );
@@ -1046,7 +1044,7 @@ LOCAL void access_rights_reply ( struct channel_in_use *pciu )
 {
     unsigned        ar;
     int             v41;
-    int             success;
+    int             status;
 
     assert ( pciu->client != prsrv_cast_client );
 
@@ -1068,12 +1066,12 @@ LOCAL void access_rights_reply ( struct channel_in_use *pciu )
 
     SEND_LOCK ( pciu->client );
 
-    success = cas_copy_in_header ( pciu->client, CA_PROTO_ACCESS_RIGHTS, 0, 
+    status = cas_copy_in_header ( pciu->client, CA_PROTO_ACCESS_RIGHTS, 0, 
         0, 0, pciu->cid, ar, 0 );
     /*
      * OK to just ignore the request if the connection drops
      */
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         return;
     }
     cas_commit_msg ( pciu->client, 0u );
@@ -1300,7 +1298,6 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
 
     if(v42){
         ca_uint32_t nElem;
-        int success;
 
         SEND_LOCK ( client );
 
@@ -1320,11 +1317,11 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
                 nElem = (ca_uint32_t) pciu->addr.no_elements;
             }
         }
-        success = cas_copy_in_header ( 
+        status = cas_copy_in_header ( 
             client, CA_PROTO_CLAIM_CIU, 0u,
             pciu->addr.dbr_field_type, nElem, pciu->cid, 
             pciu->sid, NULL );
-        if ( success ) {
+        if ( status == ECA_NORMAL ) {
             cas_commit_msg ( client, 0u );
         }
         SEND_UNLOCK(client);
@@ -1391,7 +1388,7 @@ void write_notify_reply(void *pArg)
     SEND_LOCK(pClient);
     while(TRUE){
         ca_uint32_t status;
-        int success;
+        int localStatus;
 
         /*
          * independent lock used here in order to
@@ -1430,10 +1427,10 @@ void write_notify_reply(void *pArg)
         else{
             status = ECA_NORMAL;
         }
-        success = cas_copy_in_header ( pClient, CA_PROTO_WRITE_NOTIFY, 
+        localStatus = cas_copy_in_header ( pClient, CA_PROTO_WRITE_NOTIFY, 
             0u, ppnb->msg.m_dataType, ppnb->msg.m_count, status, 
             ppnb->msg.m_available, 0 );
-        if ( ! success ) {
+        if ( localStatus != ECA_NORMAL ) {
             /*
              * inability to aquire buffer space
              * Indicates corruption  
@@ -1462,17 +1459,17 @@ void write_notify_reply(void *pArg)
  */
 LOCAL void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int statusCA )
 {
-    int success;
+    int status;
 
     SEND_LOCK ( client );
     /*
      * the cid field abused to contain status
      * during put cb replies
      */
-    success = cas_copy_in_header ( client, CA_PROTO_WRITE_NOTIFY, 
+    status = cas_copy_in_header ( client, CA_PROTO_WRITE_NOTIFY, 
         0u, mp->m_dataType, mp->m_count, statusCA, 
         mp->m_available, 0 );
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         errlogPrintf ("%s at %d: should always get sufficent space for put notify error reply\n",
             __FILE__, __LINE__);
         return;
@@ -1698,7 +1695,6 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
      struct event_ext *pevext;
      struct channel_in_use *pciu;
      int status;
-     int success;
      
      /*
       *
@@ -1757,10 +1753,10 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
       * send delete confirmed message
       */
      SEND_LOCK(client);
-     success = cas_copy_in_header ( client, CA_PROTO_CLEAR_CHANNEL, 
+     status = cas_copy_in_header ( client, CA_PROTO_CLEAR_CHANNEL, 
         0u, mp->m_dataType, mp->m_count, mp->m_cid, 
         mp->m_available, NULL );
-     if ( ! success ) {
+     if ( status != ECA_NORMAL ) {
         SEND_UNLOCK(client);
         return RSRV_ERROR;
      }
@@ -1805,7 +1801,7 @@ LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
 {
      struct channel_in_use  *pciu;
      struct event_ext       *pevext;
-     int                    success;
+     int                    status;
      
      /*
       *
@@ -1855,10 +1851,10 @@ LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
       */
      SEND_LOCK(client);
 
-     success = cas_copy_in_header ( client, pevext->msg.m_cmmd, 
+     status = cas_copy_in_header ( client, pevext->msg.m_cmmd, 
         0u, pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_cid, 
         pevext->msg.m_available, NULL );
-     if ( ! success ) {
+     if ( status != ECA_NORMAL ) {
          SEND_UNLOCK(client);
          return RSRV_ERROR;
      }
@@ -1875,12 +1871,12 @@ LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
  */
 LOCAL int read_sync_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
-    int success;
+    int status;
     SEND_LOCK(client);
-    success = cas_copy_in_header ( client, mp->m_cmmd, 
+    status = cas_copy_in_header ( client, mp->m_cmmd, 
         0u, mp->m_dataType, mp->m_count, mp->m_cid, 
         mp->m_available, NULL );
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         SEND_UNLOCK(client);
         return RSRV_ERROR;
     }
@@ -1897,11 +1893,11 @@ LOCAL int read_sync_reply ( caHdrLargeArray *mp, void *pPayload, struct client *
  */
 LOCAL void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client)
 {
-    int success;
+    int status;
     SEND_LOCK ( client );
-    success = cas_copy_in_header ( client, CA_PROTO_NOT_FOUND, 
+    status = cas_copy_in_header ( client, CA_PROTO_NOT_FOUND, 
         0u, mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, NULL );
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         errlogPrintf ( "%s at %d: should always get sufficent space for search fail reply?\n",
             __FILE__, __LINE__ );
         return;
@@ -1932,17 +1928,17 @@ LOCAL int udp_version_action ( caHdrLargeArray *mp, void *pPayload, struct clien
  */
 int rsrv_version_reply ( struct client *client )
 {
-    int success;
+    int status;
     SEND_LOCK ( client );
     /*
      * sequence number is specified zero when we copy in the
      * header because we dont know it until we receive a datagram 
      * from the client
      */
-    success = cas_copy_in_header ( client, CA_PROTO_VERSION, 
+    status = cas_copy_in_header ( client, CA_PROTO_VERSION, 
         0, 0, CA_MINOR_PROTOCOL_REVISION, 
         0, 0, 0 );
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         SEND_UNLOCK ( client );
         return RSRV_ERROR;
     }        
@@ -1957,7 +1953,6 @@ int rsrv_version_reply ( struct client *client )
 LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     struct dbAddr   tmp_addr;
-    int             success;
     ca_uint16_t     *pMinorVersion;
     char            *pName = (char *) pPayload;
     int             status;
@@ -2040,11 +2035,11 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
     }
     
     SEND_LOCK ( client );
-    success = cas_copy_in_header ( client, CA_PROTO_SEARCH, 
+    status = cas_copy_in_header ( client, CA_PROTO_SEARCH, 
         sizeof(*pMinorVersion), type, count, 
         sid, mp->m_available, 
         ( void * ) &pMinorVersion );
-    if ( ! success ) {
+    if ( status != ECA_NORMAL ) {
         SEND_UNLOCK ( client );
         return RSRV_ERROR;
     }

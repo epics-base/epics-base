@@ -27,6 +27,7 @@
 #include "errlog.h"
 #include "taskwd.h"
 #include "db_access.h"
+#include "caerr.h"
 
 #include "server.h"
 
@@ -47,7 +48,7 @@ void camsgtask ( struct client *client )
      */
     status = cas_copy_in_header ( client, CA_PROTO_VERSION, 0, 
         0, CA_MINOR_PROTOCOL_REVISION, 0, 0, 0 );
-    if ( ! status ) {
+    if ( status != ECA_NORMAL ) {
         LOCK_CLIENTQ;
         ellDelete ( &clientQ, &client->node );
         UNLOCK_CLIENTQ;

@@ -30,7 +30,7 @@
  */
 #define GLBLSOURCE
 
-static char *sccsId = "@(#)globalsource.c	1.5\t7/28/92";
+static char *sccsId = "@(#) $Id$";
 
 #include <vxWorks.h>
 #include <ellLib.h>

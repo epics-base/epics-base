@@ -35,7 +35,7 @@
  *	.06 joh	031992	improved diagnostics
  */
 
-static char *sccsId = "@(#)caserverio.c	1.18 5/6/94";
+static char *sccsId = "@(#) $Id$";
 
 #include <string.h>
 #include <errno.h>

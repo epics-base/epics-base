@@ -30,7 +30,7 @@
  *	.01 073093 Added task spawn args for 5.1 vxworks
  */
 
-static char *sccsId = "@(#)rsrv_init.c	1.7\t7/28/92";
+static char *sccsId = "@(#) $Id$";
 
 #include <vxWorks.h>
 #include <ellLib.h>

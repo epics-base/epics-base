@@ -33,7 +33,7 @@
 #include "sysSymTbl.h"
 
 static char *sccsID = 
-	"@(#)veclist.c	1.10\t1/3/94 J. Hill hill@atdiv.lanl.gov";
+	"@(#) $Id$";
 
 /*
  *

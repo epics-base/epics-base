@@ -50,7 +50,7 @@
  * .01	06-14-93 	joh	needs devAllocInterruptVector() routine
  */
 
-static char *sccsID = "@(#)devLib.c	1.2\t3/30/94";
+static char *sccsID = "@(#) $Id$";
 
 
 #include	<vxWorks.h>

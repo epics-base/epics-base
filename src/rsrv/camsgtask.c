@@ -43,7 +43,7 @@
  *			(added new arg to db_start_events())
  */
 
-static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
+static char *sccsId = "@(#) $Id$";
 
 #include <vxWorks.h>
 #include <ellLib.h>

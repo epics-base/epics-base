@@ -12,12 +12,13 @@
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
-int report();
-int init(); 
+static long report();
+static long init();
+
 struct {
 	long	number;
 	DRVSUPFUN	report;
-	DRVSUPFUN	init
+	DRVSUPFUN	init;
 } drvXy566={
 	2,
 	report,
@@ -30,7 +31,7 @@ static long report(fp)
     return(0);
 }
 
-static int init()
+static long init()
 {
 
     return(0);

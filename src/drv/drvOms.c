@@ -14,13 +14,13 @@
 extern struct vmex_motor        *oms_motor_present[];   /* stepper motor - OMS */
 
 /* If any of the following does not exist replace it with #define <> NULL */
-int report();
-int init(); 
+static long report();
+static long init();
 
 struct {
 	long	number;
 	DRVSUPFUN	report;
-	DRVSUPFUN	init
+	DRVSUPFUN	init;
 } drvOms={
 	2,
 	report,
@@ -39,6 +39,5 @@ static long init()
 {
     int status;
 
-    ai_init();
     return(0);
 }

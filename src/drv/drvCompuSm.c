@@ -14,13 +14,13 @@
 extern struct compumotor        *pcompu_motors[];  /* stepper motor - CM1830 */
 
 /* If any of the following does not exist replace it with #define <> NULL */
-int report();
-int init(); 
+static long report();
+static long init();
 
 struct {
 	long	number;
 	DRVSUPFUN	report;
-	DRVSUPFUN	init
+	DRVSUPFUN	init;
 } drvCompuSm={
 	2,
 	report,

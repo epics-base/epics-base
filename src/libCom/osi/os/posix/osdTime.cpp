@@ -78,7 +78,7 @@ extern "C" epicsShareFunc void epicsShareAPI
     else if(timeout>3600.0) timeout = 3600.0;
     status = clock_gettime(CLOCK_REALTIME,wakeTime);
     if(status) { 
-        printf("clock_gettime failed with error %s\n",strerror(status));
+        printf("clock_gettime failed with error %s\n",strerror(errno));
         cantProceed("convertDoubleToWakeTime"); 
     }
     wait.tv_sec = timeout;

@@ -78,11 +78,12 @@ static void threadSleepQuantumTest ()
     fflush ( stdout );
     for ( unsigned i = 0u; i < iterations; i++ ) {
         // try to gurantee a uniform probability density function
-        // by intentionally burning some CPU so we are hopefully
-        // less likely to be aligned with the schedualing clock
+        // by intentionally burning some CPU until we are less 
+        // likely to be aligned with the schedualing clock
         double interval = rand ();
         interval /= RAND_MAX;
         interval *= quantum;
+        interval += quantum / 2.0;
         epicsTime start = epicsTime::getCurrent ();
         epicsTime current = start;
         while ( current - start < interval ) {
@@ -97,6 +98,8 @@ static void threadSleepQuantumTest ()
     }
     printf ( "done\n" );
 
+    // with a uniform probability density function the
+    // sleep delay error mean is one half of the quantum
     double quantumEstimate = 2 * errorSum / iterations;
     double quantumError = fabs ( quantumEstimate - quantum ) / quantum;
     const char * pTol = 0;

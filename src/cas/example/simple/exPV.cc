@@ -86,9 +86,9 @@ caStatus exPV::update ( const gdd & valueIn )
         valueIn.dump();
 #   endif
 
-    caStatus cas = this->updateValue ( valueIn );
-    if ( cas || ( ! this->pValue.valid() ) ) {
-        return cas;
+    caStatus status = this->updateValue ( valueIn );
+    if ( status || ( ! this->pValue.valid() ) ) {
+        return status;
     }
 
     //

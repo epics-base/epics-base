@@ -9,7 +9,6 @@ include $(TOP)/configure/CONFIG
 # for c++ build add the dirs gdd and cas after ca
 # (and uncomment the c++ files in src/lbCom/Makefile.Unix)
 #
-DIRS += include
 DIRS += cxxTemplates
 DIRS += toolsComm
 DIRS += makeBaseApp

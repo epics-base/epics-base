@@ -37,7 +37,7 @@
 
 class delayVerify : public epicsTimerNotify {
 public:
-    delayVerify ( double expectedDelay, epicsTimerQueueThreaded & );
+    delayVerify ( double expectedDelay, epicsTimerQueue & );
     expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -58,7 +58,7 @@ private:
 static unsigned expireCount;
 static epicsEvent expireEvent;
 
-delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueueThreaded &queue ) :
+delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queue ) :
     timer ( queue.createTimer ( *this ) ), expectedDelay ( expectedDelayIn )
 {
 }
@@ -124,7 +124,7 @@ void testAccuracy ()
     delayVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueueThreaded &queue = epicsTimerQueueThreaded::allocate ( true, epicsThreadPriorityMax );
+    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMax );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new delayVerify ( ( nTimers - i ) * 0.1, queue );
@@ -147,7 +147,7 @@ void testAccuracy ()
 
 class cancelVerify : public epicsTimerNotify {
 public:
-    cancelVerify ( epicsTimerQueueThreaded & );
+    cancelVerify ( epicsTimerQueue & );
     expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -161,7 +161,7 @@ private:
     static tsFreeList < class cancelVerify, 0x20 > freeList;
 };
 
-cancelVerify::cancelVerify ( epicsTimerQueueThreaded &queue ) :
+cancelVerify::cancelVerify ( epicsTimerQueue &queue ) :
     timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
 {
 }
@@ -212,7 +212,7 @@ void testCancel ()
     cancelVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueueThreaded &queue = epicsTimerQueueThreaded::allocate ( true, epicsThreadPriorityMin );
+    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new cancelVerify ( queue );
@@ -232,7 +232,7 @@ void testCancel ()
 
 class periodicVerify : public epicsTimerNotify {
 public:
-    periodicVerify ( epicsTimerQueueThreaded & );
+    periodicVerify ( epicsTimerQueue & );
     expireStatus expire ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -248,7 +248,7 @@ private:
     static tsFreeList < class periodicVerify, 0x20 > freeList;
 };
 
-periodicVerify::periodicVerify ( epicsTimerQueueThreaded &queue ) :
+periodicVerify::periodicVerify ( epicsTimerQueue &queue ) :
     nExpire ( 0u ), timer ( queue.createTimer ( *this ) ), failOutIfExpireIsCalled ( false )
         
 {
@@ -309,7 +309,7 @@ void testPeriodic ()
     periodicVerify *pTimers[nTimers];
     unsigned i;
 
-    epicsTimerQueueThreaded &queue = epicsTimerQueueThreaded::allocate ( true, epicsThreadPriorityMin );
+    epicsTimerQueue &queue = epicsTimerQueue::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i] = new periodicVerify ( queue );

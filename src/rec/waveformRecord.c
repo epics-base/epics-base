@@ -216,18 +216,6 @@ static long process(pwf)
                 recGblRecordError(S_dev_missingSup,(void *)pwf,"read_wf");
                 return(S_dev_missingSup);
         }
-        /* event throttling */
-	/* will not work with new event system*/
-/*
-        if (pwf->scan == SCAN_IO_EVENT){
-                if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
-                        if ((gts_trigger_counter % pwf->evnt) != 0){
-	                        status=readValue(pwf);
-                                return(0);
-                        }
-                }
-        }
-*/
 
 	if ( pact && pwf->busy ) return(0);
 

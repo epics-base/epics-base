@@ -201,18 +201,6 @@ static long process(void *precord)
 		return(S_dev_missingSup);
 	}
 
-        /* event throttling */
-	/*Will not work with new event systems*/
-/*
-        if (pai->scan == SCAN_IO_EVENT) {
-                if ((pai->evnt != 0)  && (gts_trigger_counter != 0)){
-                        if ((gts_trigger_counter % pai->evnt) != 0){
-                                return(0);
-                        }
-                }
-        }
-*/
-
 	status=readValue(pai); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pai->pact ) return(0);

@@ -1,0 +1,58 @@
+Compiling EPICS and Building IOC Applications on HPUX 11 (hpux-parisc)
+======================================================================
+
+Please mail questions, comments, corrections, additional examples, etc.
+to Ralph.Lange@mail.bessy.de
+
+NOTE: 3.14 will ONLY compile on HPUX 11 systems. HPUX 10 does not have
+      the necessary thread support and will never ever be supported for
+      EPICS base versions >= 3.14.
+
+
+Tools needed
+------------
+
+ o HP's ANSI C compiler (cc)
+
+For compiling with the HP C++ compiler (hpux-parisc)
+ o Recent version of HP's aCC C++ compiler aCC (we use A.03.39)
+
+For compiling with GNU g++
+ o GNU g++ >= 2.95 (we use 3.2)
+
+
+Environment
+-----------
+
+Default is compiling with the generic HP aCC compiler. To use the GNU compiler,
+set the environment variable EPICS_HOST_ARCH to hpux-parisc-gnu before starting
+to compile base.
+
+
+Shared Libraries
+----------------
+
+Generating shared libraries is supported, suggested and the default.
+You have to set the appropriate search path variable in
+../configure/os/CONFIG_SITE.hpux-parisc.hpux-parisc to make shared
+libraries work properly. (You can always override with setting the
+SHLIB_PATH environment variable when executiong the binaries.)
+
+
+Known Problems
+--------------
+
+ o There is a problem with a CA client not detecting a network
+   connection going down. This only happens with some clients, though.
+
+ o Statically built binaries don't work properly (yet).
+
+ o GNU built binaries don't work properly (yet).
+
+ o The 3.13 compatibility mode isn't thoroughly tested yet.
+
+
+Please feel free to contact me if you encounter serious problems.
+
+Enjoy!
+Ralph

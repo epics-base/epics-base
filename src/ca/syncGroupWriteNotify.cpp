@@ -97,10 +97,10 @@ void * syncGroupWriteNotify::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#   if ! defined ( NO_PLACEMENT_DELETE )
+#if ! defined ( NO_PLACEMENT_DELETE )
 void syncGroupWriteNotify::operator delete ( void *pCadaver, size_t size, 
     tsFreeList < class syncGroupWriteNotify, 128 > &freeList )
 {
     freeList.release ( pCadaver, size );
 }
-#   endif
+#endif

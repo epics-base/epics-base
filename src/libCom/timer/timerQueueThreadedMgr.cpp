@@ -38,7 +38,7 @@ timerQueueThreadedMgr::~timerQueueThreadedMgr ()
     epicsAutoMutex locker ( this->mutex );
 }
     
-timerQueueThreaded & timerQueueThreadedMgr::create (
+timerQueueThreaded & timerQueueThreadedMgr::allocate (
         bool okToShare, int threadPriority )
 {
     epicsAutoMutex locker ( this->mutex );

@@ -100,7 +100,7 @@ private:
     friend class timerQueueThreadedMgr;
 };
 
-class timerQueueThreaded : public epicsTimerQueueThreaded, 
+class timerQueueThreaded : public epicsThreadedTimerQueue, 
     public epicsThreadRunable, public timerQueueNotify,
     public timerQueueThreadedMgrPrivate,
     public tsDLNode < timerQueueThreaded > {
@@ -131,12 +131,31 @@ private:
 class timerQueueThreadedMgr {
 public:
     ~timerQueueThreadedMgr ();
-    timerQueueThreaded & create ( bool okToShare, 
+    timerQueueThreaded & allocate ( bool okToShare, 
         int threadPriority = epicsThreadPriorityMin + 10 );
     void release ( timerQueueThreaded & );
 private:
     epicsMutex mutex;
     tsDLList < timerQueueThreaded > sharedQueueList;
+};
+
+class timerQueueNonThreaded : public epicsNonThreadedTimerQueue, 
+    public timerQueueNotify {
+public:
+    timerQueueNonThreaded ();
+    ~timerQueueNonThreaded ();
+    epicsTimer & createTimer ( epicsTimerNotify & );
+    void process ();
+    double getNextExpireDelay () const;
+    void reschedule ();
+    void show ( unsigned int level ) const;
+    void release ();
+    static timerQueueNonThreaded & allocate ();
+private:
+    timerQueue queue;
+    static epicsMutex mutex;
+    static timerQueueNonThreaded *pQueue;
+    static unsigned useCount;
 };
 
 inline void * timer::operator new ( size_t size )

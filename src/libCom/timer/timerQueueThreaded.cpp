@@ -33,11 +33,11 @@
 
 static timerQueueThreadedMgr queueMgr;
 
-epicsTimerQueueThreaded::~epicsTimerQueueThreaded () {}
+epicsThreadedTimerQueue::~epicsThreadedTimerQueue () {}
 
-epicsTimerQueueThreaded &epicsTimerQueueThreaded::create ( bool okToShare, int threadPriority )
+epicsThreadedTimerQueue &epicsThreadedTimerQueue::allocate ( bool okToShare, int threadPriority )
 {
-    return queueMgr.create ( okToShare, threadPriority );
+    return queueMgr.allocate ( okToShare, threadPriority );
 }
 
 tsFreeList < class timerQueueThreaded, 0x8 > timerQueueThreaded::freeList;
@@ -45,7 +45,7 @@ tsFreeList < class timerQueueThreaded, 0x8 > timerQueueThreaded::freeList;
 timerQueueThreaded::timerQueueThreaded ( bool okToShareIn, unsigned priority ) :
     queue ( *this ), thread ( *this, "epicsTimerQueue",
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
-    okToShare (okToShareIn), exitFlag ( false ), terminateFlag ( false )
+    okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
 {
     this->thread.start ();
 }

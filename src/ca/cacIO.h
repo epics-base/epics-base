@@ -53,7 +53,7 @@ private:
     friend class cacNotify;
 };
 
-class cacChannel {
+class epicsShareClass cacChannel {
 public:
     cacChannel ();
     virtual ~cacChannel () = 0;

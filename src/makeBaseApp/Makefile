@@ -28,7 +28,7 @@ TEMPLATES += top/exampleApp/src/caMonitor.c
 TEMPLATES += top/exampleApp/src/exampleInclude.dbd
 TEMPLATES += top/exampleApp/src/sncExample.stt
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
-TEMPLATES += top/exampleApp/src/exampleMain.c
+TEMPLATES += top/exampleApp/src/exampleMain.cpp
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks

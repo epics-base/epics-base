@@ -33,7 +33,7 @@ example_SRCS += caMonitor.c
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 example_SRCS += example_registerRecordDeviceDriver.cpp
-example_SRCS_DEFAULT += exampleMain.c
+example_SRCS_DEFAULT += exampleMain.cpp
 example_SRCS_vxWorks += -nil-
 
 #The following adds drvTS support for vxWorks

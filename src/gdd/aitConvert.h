@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/04/10 19:59:22  jhill
+ * api changes
+ *
  * Revision 1.3  1996/10/17 12:41:07  jbk
  * network byte order stuff / added strDup function to Helpers
  *
@@ -43,7 +46,7 @@
 typedef enum { aitLocalDataFormat=0, aitNetworkDataFormat } aitDataFormat;
 
 /* all conversion functions have this prototype */
-typedef void (*aitFunc)(void* dest,const void* src,aitIndex count);
+typedef int (*aitFunc)(void* dest,const void* src,aitIndex count);
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,28 +71,28 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus) && !defined(__GNUC__)
 
-inline void aitConvert(aitEnum desttype, void* dest,
+inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count)
-  { aitConvertTable[desttype][srctype](dest,src,count); }
+  { return (*aitConvertTable[desttype][srctype])(dest,src,count); }
 
-inline void aitConvertToNet(aitEnum desttype, void* dest,
+inline int aitConvertToNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count)
-  { aitConvertToNetTable[desttype][srctype](dest,src,count); }
+  { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count); }
 
-inline void aitConvertFromNet(aitEnum desttype, void* dest,
+inline int aitConvertFromNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count)
-  { aitConvertFromNetTable[desttype][srctype](dest,src,count); }
+  { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count); }
 
 #else
 
 #define aitConvert(DESTTYPE,DEST,SRCTYPE,SRC,COUNT) \
-  aitConvertTable[DESTTYPE][SRCTYPE](DEST,SRC,COUNT)
+  (*aitConvertTable[DESTTYPE][SRCTYPE])(DEST,SRC,COUNT)
 
 #define aitConvertToNet(DESTTYPE,DEST,SRCTYPE,SRC,COUNT) \
-  aitConvertToNetTable[DESTTYPE][SRCTYPE](DEST,SRC,COUNT)
+  (*aitConvertToNetTable[DESTTYPE][SRCTYPE])(DEST,SRC,COUNT)
 
 #define aitConvertFromNet(DESTTYPE,DEST,SRCTYPE,SRC,COUNT) \
-  aitConvertFromNetTable[DESTTYPE][SRCTYPE](DEST,SRC,COUNT)
+  (*aitConvertFromNetTable[DESTTYPE][SRCTYPE])(DEST,SRC,COUNT)
 
 #endif
 

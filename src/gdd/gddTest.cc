@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.8  1997/06/25 06:17:38  jhill
+// fixed warnings
+//
 // Revision 1.7  1997/04/23 17:13:05  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -67,8 +70,8 @@ void gdd::dumpInfo(void)
 {
 	unsigned i;
 	aitIndex f,c;
-	long sz_tot,sz_data,sz_elem;
-	const aitIndex max=20;
+	unsigned long sz_tot,sz_data,sz_elem;
+	const aitIndex max=20u;
 	aitIndex prt_tot;
 
 	sz_tot = getTotalSizeBytes();
@@ -78,14 +81,14 @@ void gdd::dumpInfo(void)
 	prt_tot=sz_elem>max?max:sz_elem;
 
 	fprintf(stderr,"----------dump This=%p---------\n", this);
-	fprintf(stderr," dimension=%d ",(int)dimension());
-	fprintf(stderr,"app-type=%d ",(int)applicationType());
+	fprintf(stderr," dimension=%u ", dimension());
+	fprintf(stderr,"app-type=%u ", applicationType());
 
 	if(isScalar()) fprintf(stderr,"Scalar\n");
 	if(isAtomic()) fprintf(stderr,"Atomic\n");
 	if(isContainer()) fprintf(stderr,"Container\n");
 
-	fprintf(stderr," prim-type=%d",(int)primitiveType());
+	fprintf(stderr," prim-type=%s",aitName[primitiveType()]);
 	switch(primitiveType())
 	{
 	case aitEnumInvalid:
@@ -181,12 +184,12 @@ void gdd::dumpInfo(void)
 		break;
 	case aitEnumFloat64:
 		fprintf(stderr,"(aitEnumFloat64)"); 
-		if(isScalar()) fprintf(stderr," value=%lf ",data.Float64);
+		if(isScalar()) fprintf(stderr," value=%f ",data.Float64);
 		if(isAtomic()&&dataPointer())
 		{
 			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
 			aitFloat64* f64=(aitFloat64*)dataPointer();
-			for(i=0;i<prt_tot;i++) fprintf(stderr,"%lf ",f64[i]);
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%f ",f64[i]);
 			fprintf(stderr,">\n");
 		}
 		break;
@@ -195,7 +198,7 @@ void gdd::dumpInfo(void)
 		if(isScalar())
 		{
 			if(data.FString)
-				fprintf(stderr," value=<%s>\n",data.FString);
+				fprintf(stderr," value=<%s>\n",(char *)data.FString);
 			else
 				fprintf(stderr," value=<NULL>\n");
 		}
@@ -246,7 +249,7 @@ void gdd::dumpInfo(void)
 	for(i=0;i<dimension();i++)
 	{
 		getBound(i,f,c);
-		fprintf(stderr," (%d) %8.8x first=%d count=%d\n",i,&bounds[i],f,c);
+		fprintf(stderr," (%d) %p first=%d count=%d\n",i,&bounds[i],f,c);
 	}
 
 	if(isManaged())				fprintf(stderr," Managed");
@@ -287,7 +290,7 @@ void gddContainer::dump(void)
 
 	// should use a cursor
 
-	for(i=1;dd=getDD(i);i++)
+	for(i=1; (dd=getDD(i)); i++)
 	{
 		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
 		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }
@@ -345,7 +348,7 @@ public:
 
 void gddAtomicDestr::run(void* v)
 {
-	fprintf(stderr,"**** gddAtomicDestr::run from gddAtomic::test %8.8x\n",v);
+	fprintf(stderr,"**** gddAtomicDestr::run from gddAtomic::test %p\n",v);
 }
 #endif
 
@@ -354,7 +357,7 @@ void gddAtomic::test(void) { }
 #else
 void gddAtomic::test(void)
 {
-	aitFloat32 f32[6] = { 32.0,2.0,1.0, 7.0,8.0,9.0 };
+	aitFloat32 f32[6] = { 32.0f,2.0f,1.0f, 7.0f,8.0f,9.0f };
 	aitFloat64 f64[6] = { 64.0,5.0,4.0, 10.0,11.0,12.0 };
 	aitInt8 i8[6] = { -8,2,1, 13,14,15 };
 	aitInt16 i16[6] = { -16,3,2, 16,17,18 };
@@ -412,7 +415,7 @@ void gddScalar::test(void) { }
 void gddScalar::test(void)
 {
 	int i;
-	aitFloat32 fa32,f32 = 32.0;
+	aitFloat32 fa32,f32 = 32.0f;
 	aitFloat64 fa64,f64 = 64.0;
 	aitInt8 ia8,i8 = -8;
 	aitInt16 ia16,i16 = -16;
@@ -492,14 +495,14 @@ void gddContainer::test(void)
 
 	aitInt16 i16 = 5;
 	aitInt32 i32 = 6;
-	aitFloat32 f32[3] = { 7.0, 8.0, 9.0 };
+	aitFloat32 f32[3] = { 7.0f, 8.0f, 9.0f };
 	aitUint8* buf;
 	size_t sz;
 
 	*sdd1=i32; *sdd2=i16; *add1=f32;
 
 	// insert two scalers and an atomic into the container
-	fprintf(stderr,"*INSERT %8.8x %8.8x %8.8x\n",sdd1,sdd2,add1);
+	fprintf(stderr,"*INSERT %p %p %p\n",sdd1,sdd2,add1);
 	clear();
 	sdd1->reference(); add1->reference(); sdd2->reference();
 	insert(sdd1); insert(sdd2); insert(add1); dump();
@@ -508,9 +511,9 @@ void gddContainer::test(void)
 	gddCursor cur = getCursor();
 	gdd* dd;
 	int i;
-	for(i=0;dd=cur[i];i++) fprintf(stderr,"%8.8x ",dd);
+	for(i=0; (dd=cur[i]); i++) fprintf(stderr,"%p ",dd);
 	fprintf(stderr,"\n");
-	for(dd=cur.first();dd;dd=cur.next()) fprintf(stderr,"%8.8x ",dd);
+	for(dd=cur.first();dd;dd=cur.next()) fprintf(stderr,"%p ",dd);
 	fprintf(stderr,"\n");
 
 	remove(0); remove(0); remove(0); dump();
@@ -520,7 +523,7 @@ void gddContainer::test(void)
 	sz = getTotalSizeBytes();
 	buf = new aitUint8[sz];
 
-	fprintf(stderr,"=====TESTING FLATTEN FUNCTION BUFFER=%8.8x:\n",buf);
+	fprintf(stderr,"=====TESTING FLATTEN FUNCTION BUFFER=%p:\n",buf);
 	flattenWithAddress(buf,sz);
 	cdd1=(gddContainer*)buf;
 	cdd1->dump();

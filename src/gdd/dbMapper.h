@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1997/04/23 17:12:57  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.2  1997/04/10 19:59:25  jhill
  * api changes
  *
@@ -39,9 +42,9 @@ typedef gdd* (*to_gdd)(void* db_struct, aitIndex element_count);
 
 // Function proto to convert from a gdd to a dbr structure, returns the
 // number of elements that the value field of db_struct points to if the
-// gdd points to an array.  The db_struct will reference the data
-// contained within the gdd (which is probably also referenced from the user).
-typedef int (*to_dbr)(void* db_struct, gdd*);
+// gdd points to an array or -1 if the number of elements in the value
+// field is not identical to element_count available in db_struct.
+typedef int (*to_dbr)(void* db_struct, aitIndex element_count, gdd*);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;
@@ -58,9 +61,10 @@ typedef struct gddDbrToAitTable gddDbrToAitTable;
 
 epicsShareExtern gddDbrToAitTable gddDbrToAit[];
 epicsShareExtern const chtype gddAitToDbr[];
-epicsShareExtern gddDbrMapFuncTable gddMapDbr[];
-epicsShareExtern void gddMakeMapDBR(gddApplicationTypeTable& tt);
-epicsShareExtern void gddMakeMapDBR(gddApplicationTypeTable* tt);
+epicsShareExtern const gddDbrMapFuncTable gddMapDbr[];
+
+epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable& tt);
+epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable* tt);
 
 #endif
 

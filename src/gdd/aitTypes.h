@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/04/10 19:59:24  jhill
+ * api changes
+ *
  * Revision 1.3  1997/03/21 01:56:00  jbk
  * *** empty log message ***
  *
@@ -36,17 +39,17 @@
 
 #include "shareLib.h"
 
-typedef char			aitInt8;
+typedef char		aitInt8;
 typedef unsigned char	aitUint8;
-typedef short			aitInt16;
+typedef short		aitInt16;
 typedef unsigned short	aitUint16;
 typedef aitUint16		aitEnum16;
 typedef int             aitInt32;
 typedef unsigned int 	aitUint32;
-typedef float			aitFloat32;
-typedef double			aitFloat64;
-typedef	aitUint32		aitIndex;
-typedef	void*			aitPointer;
+typedef float		aitFloat32;
+typedef double		aitFloat64;
+typedef aitUint32		aitIndex;
+typedef void*		aitPointer;
 typedef aitUint32		aitStatus;
 
 /* should the bool be added as a conversion type? it currently is not */
@@ -76,7 +79,8 @@ typedef	struct {
 #endif
 
 #ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(solaris) && !defined(SOLARIS)
+#if (_POSIX_C_SOURCE < 3) && !defined(solaris) && !defined(SOLARIS) && !defined(HP_UX)
+
 struct timespec
 {
 	time_t tv_sec;
@@ -146,7 +150,10 @@ extern "C" {
 #endif
 epicsShareExtern const size_t aitSize[aitTotal];
 epicsShareExtern const char*  aitName[aitTotal];
-epicsShareExtern const char*  aitStringType[aitTotal];
+epicsShareExtern const char*  aitPrintf[aitTotal];
+epicsShareExtern const char*  aitScanf[aitTotal];
+epicsShareExtern double aitMax[aitTotal];
+epicsShareExtern double aitMin[aitTotal];
 #ifdef __cplusplus
 }
 #endif

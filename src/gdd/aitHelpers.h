@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  1997/04/23 17:12:54  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.12  1997/04/10 19:59:23  jhill
  * api changes
  *
@@ -58,6 +61,10 @@
 #endif
 
 #include "shareLib.h"
+
+#ifndef max
+#define max(A,B) ((A)>(B)?(A):(B))
+#endif
 
 #define NSecPerSec 1000000000u
 #define NSecPerUSec 1000u
@@ -173,71 +180,77 @@ inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 // very simple class for string storage (for now)
 //
 //
+enum aitStrType {
+		aitStrRefConstImortal, // any constant string that always exists - ie "abc"
+		aitStrRefConst, // user provides constant string buffer for life of aitSting
+		aitStrRef, // user provides modifiable string buffer for life of aitSting
+		aitStrCopy}; // aitSting copies into internal storage
 class epicsShareClass aitString
 {
 public:
-	aitString(char* p);				// copy the user's string
-	aitString(aitString* p);		// copy the user's string
-	aitString(aitString& p);		// copy the user's string
+	inline aitString(void);
+	inline aitString(const aitString* p);
+	inline aitString(const aitString& p);
+	inline aitString(const char* p, aitStrType type=aitStrCopy);
+	inline aitString(const char* p, aitStrType type, unsigned strLength);
+	inline aitString(const char* p, aitStrType type, unsigned strLength, unsigned bufSize);
+	
+	inline ~aitString(void); // free up string is required
 
-	aitString(const char* p);		// reference a user's constant string
-	aitString(const aitString* p);	// reference a user's constant string
-	aitString(const aitString& p);	// reference a user's constant string
-
-	aitString(void);
-	~aitString(void); // free up string is required
-
-	void clear(void); // clear everything, free string if required
+	inline void clear(void); // clear everything, free string if required
 	void dump(void) const;
 	void dump(const char* id) const;
 
 	// casts from aitString to other things - pulls info out of aitString
-	operator aitUint16(void) const		{ return (aitUint16)len; }
-	operator aitUint32(void) const		{ return (aitUint32)len; }
-	operator aitInt32(void) const		{ return (aitInt32)len; }
-	operator const char*(void) const	{ return str; }
-	operator char*(void) const			{ return str; }
-	int isConstant(void) const;
+	inline operator aitUint16(void) const	{ return (aitUint16)len; }
+	inline operator aitUint32(void) const	{ return (aitUint32)len; }
+	inline operator aitInt32(void) const		{ return (aitInt32)len; }
+	inline operator const char*(void) const	{ return str; }
+	inline operator char*(void) const		
+	{ 
+		assert(type!=aitStrRefConst && type!=aitStrRefConstImortal); 
+		return str; 
+	}
+	inline int isConstant(void) const;
 
-	aitUint32 length(void) const	{ return (aitUint32)len; }
-	const char* string(void) const	{ return str; }
+	inline aitUint32 length(void) const	{ return (aitUint32)len; }
+	inline const char* string(void) const	{ return str; }
 
 	// completely reset the aitString to a new value
-	aitString& operator=(aitString& p);
-	aitString& operator=(aitString* p);
-	aitString& operator=(char* p);
-	aitString& operator=(const aitString& p);
-	aitString& operator=(const aitString* p);
-	aitString& operator=(const char* p);
+	// - the same as copy()
+	inline aitString& operator=(const aitString& pString);
+	inline aitString& operator=(const aitString* pString);
+	inline aitString& operator=(const char* pString);
 
-	// change strings into the aitString (actually makes new strings)
-	int copy(aitString* p);
-	int copy(aitString& p);
-	int copy(char* p);
-	int copy(const aitString* p);
-	int copy(const aitString& p);
-	int copy(const char* p);
+	inline int copy(const aitString* pString);
+	inline int copy(const aitString& pString);
+	inline int copy(const char* pString);
+	inline int copy(const char* pString, unsigned stringLength);
+	int copy(const char* pString, unsigned stringLength, unsigned bufSize);
 
-	int installString(aitString* p);
-	int installString(aitString& p);
-	int installString(char* p);
-	int installString(const aitString* p);
-	int installString(const aitString& p);
-	int installString(const char* p);
+	//
+	// make ait string point at string in application's modifiable buffer
+	//
+	inline int installBuf(const char* pString);
+	inline int installBuf(const char* pString, unsigned stringLength);
+	inline int installBuf(const char* pString, unsigned stringLength, unsigned bufSize);
 
-	// set data in the aitString and retrieve data from the aitString
-	void replaceData(const char* p);
-	void replaceData(const aitString* p);
-	void replaceData(aitString& p);
-	void replaceData(const aitString& p);
-	void extractString(char* to_here);
+	//
+	// make ait string point at constant string in application's constant buffer
+	//
+	inline int installConstBuf(const char* pString);
+	inline int installConstBuf(const char* pString, unsigned stringLength);
+	inline int installConstBuf(const char* pString, unsigned stringLength, unsigned bufSize);
 
-	// special function to change the string - internal use with gdd library
-	void force(char* x)				{ str=x; }
-	void force(unsigned char* x)	{ str=(char*)x; }
-	void force(unsigned long x)		{ str=(char*)x; }
-	void forceConstant(void)		{ type=aitStrConst; }
-	void init(void);
+	//
+	// make ait string point at constant string in application's constant buffer
+	// that exists forever (such as "abc")
+	//
+	inline int installConstImortalBuf(const char* pString);
+	inline int installConstImortalBuf(const char* pString, unsigned stringLength);
+	inline int installConstImortalBuf(const char* pString, unsigned stringLength, unsigned bufSize);
+
+	inline void extractString(char* to_here, unsigned bufSize);
 
 	// take the aitString array, and put it and all the string into buf,
 	// return the total length the data copied
@@ -246,126 +259,213 @@ public:
 	static aitIndex compact(aitString* array, aitIndex arraySize,
 		void* buf, aitIndex bufSize);
 
+	//
+	// for gdd's use only! (to construct class inside union)
+	// (it is possible to leak memory if this is called on
+	// an already constructed aitString). This practice should
+	// be eliminated by deriving from aitString and replacing
+	// the new operator?
+	//
+	inline void init(void);
+
 private:
-	enum aitStrType {aitStrMalloc, aitStrConst};
 
 	char* str;
-	aitUint16 len;
-	aitUint16 type;	// aitStrType goes here
+	unsigned len:14;		// actual length of string
+	unsigned bufLen:14;	// length of string buffer
+	unsigned type:4;		// aitStrType goes here
 
 	void mallocFailure(void);
-	int set(const char* p, aitUint32 len);
-	int cset(const char* p, aitUint32 len);
-	aitStrType getType(void) const { return (aitStrType)type; }
+	inline aitStrType getType(void) const { return (aitStrType)type; }
+	int init(const char* p, aitStrType type, unsigned strLength, unsigned bufSize);
 };
+
+inline void aitString::init(void) 
+{ 
+	str="";
+	len=0u;
+	bufLen=1u;
+	type=aitStrRefConstImortal;
+}
 
 inline int aitString::isConstant(void) const
 {
-	return (getType()==aitStrConst && str)?1:0;
+	return ( (getType()==aitStrRefConst||getType()==aitStrRefConstImortal) && str)?1:0;
 }
 
 inline void aitString::clear(void)
 {
-	if(str && type==aitStrMalloc) delete [] str;
-	type=aitStrConst;
-	str=NULL;
-	len=0;
+	if(str && type==aitStrCopy) delete [] str;
+	this->init();
 }
 
-inline int aitString::set(const char* p,aitUint32 l)
-{
-	int rc=0;
-	clear();
-	len=l;
-	str=new char[len+1];
-	if(str)
-	{
-		strncpy(str, p, len);
-		str[len] = '\0';
-		type=aitStrMalloc;
+inline void aitString::extractString(char* p, unsigned bufLength)
+{ 
+	if (bufLength==0u) {
+		return;
 	}
-	else
-	{
-		mallocFailure();
-		rc=-1;
+	else if (str) {
+		strncpy(p,str,bufLength);
+		p[bufLength-1u]='\0';
 	}
-	return rc;
+	else {
+		p[0u] = '\0';
+	}
 }
 
-inline int aitString::cset(const char* p,aitUint32 l)
+//
+// make ait string point at string in application's buffer
+//
+inline int aitString::installBuf(const char* pString, unsigned strLengthIn, unsigned bufSizeIn)
 {
-	clear();
-	str=(char*)p;
-	type=aitStrConst;
-	len=l;
+	if (this->type==aitStrCopy) {
+		delete [] str;
+	}
+	this->str = (char *) pString;
+	this->bufLen = bufSizeIn;
+	this->type = aitStrRef;
+	this->len = strLengthIn;
 	return 0;
 }
 
+inline int aitString::installBuf(const char* pString)
+{
+	unsigned strLengthIn = strlen(pString);
+	return this->installBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+inline int aitString::installBuf(const char* pString, unsigned strLengthIn)
+{
+	return this->installBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+
+//
+// make ait string point at constant string in application's buffer
+//
+inline int aitString::installConstBuf(const char* pString, unsigned strLengthIn, unsigned bufSizeIn)
+{
+	if (this->type==aitStrCopy) {
+		delete [] str;
+	}
+	this->str = (char *) pString;
+	this->bufLen = bufSizeIn;
+	this->type = aitStrRefConst;
+	this->len = strLengthIn;
+	return 0;
+}
+
+inline int aitString::installConstBuf(const char* pString)
+{
+	unsigned strLengthIn = strlen(pString);
+	return this->installConstBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+inline int aitString::installConstBuf(const char* pString, unsigned strLengthIn)
+{
+	return this->installConstBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+//
+// make ait string point at constant string in application's buffer
+// that always exists (such as "abc")
+//
+inline int aitString::installConstImortalBuf(const char* pString, 
+					unsigned strLengthIn, unsigned bufSizeIn)
+{
+	if (this->type==aitStrCopy) {
+		delete [] str;
+	}
+	this->str = (char *) pString;
+	this->bufLen = bufSizeIn;
+	this->type = aitStrRefConstImortal;
+	this->len = strLengthIn;
+	return 0;
+}
+
+inline int aitString::installConstImortalBuf(const char* pString)
+{
+	unsigned strLengthIn = strlen(pString);
+	return this->installConstImortalBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+inline int aitString::installConstImortalBuf(const char* pString, unsigned strLengthIn)
+{
+	return this->installConstImortalBuf(pString, strLengthIn, strLengthIn+1u);
+}
+
+
+inline int aitString::copy(const char* pString, unsigned stringLength) 
+{
+	return this->copy(pString, stringLength, max(this->bufLen,stringLength+1u));
+}
+
 inline int aitString::copy(const char* p)
-	{ return p?set(p,strlen(p)):-1; }
-inline int aitString::copy(char* p)
-	{ return p?set(p,strlen(p)):-1; }
-inline int aitString::copy(aitString* p)
-	{ return p?set((char*)*p,p->length()):-1; }
-inline int aitString::copy(aitString& p)
-	{ return set((char*)p,p.length()); }
+{
+	return this->copy(p, strlen(p));
+}
+
 inline int aitString::copy(const aitString* p)
-	{ return p?set((const char*)*p,p->length()):-1; }
+{
+	if (p->type==aitStrRefConstImortal) {
+		//
+		// fast reference if the string is constant and it
+		// exists forever
+		//
+		return this->installConstImortalBuf(p->str, p->len, p->len+1u);
+	}
+	return this->copy(p->str, p->len);
+}
+
 inline int aitString::copy(const aitString& p)
-	{ return set((const char*)p,p.length()); }
-
-inline void aitString::replaceData(const char* p)
-	{ if(p && str) strncpy(str,p,len); }
-inline void aitString::replaceData(const aitString* p)
-	{ if(p && str) strncpy(str,p->string(),len); }
-inline void aitString::replaceData(aitString& p)
-	{ if(str) strncpy(str,p.string(),len); }
-inline void aitString::replaceData(const aitString& p)
-	{ if(str) strncpy(str,p.string(),len); }
-inline void aitString::extractString(char* p)
-	{ if(p && str) strcpy(p,str); }
-
-inline int aitString::installString(const char* p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
-inline int aitString::installString(char* p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
-inline int aitString::installString(aitString* p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
-inline int aitString::installString(aitString& p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
-inline int aitString::installString(const aitString* p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
-inline int aitString::installString(const aitString& p)
-	{ int rc=0; if(isConstant()) replaceData(p); else rc=copy(p); return rc; }
+{
+	return this->copy(&p);
+}
 
 inline aitString& aitString::operator=(const aitString& p)
 	{ this->copy(p); return *this; }
 inline aitString& aitString::operator=(const aitString* p)
 	{ this->copy(p); return *this; }
-inline aitString& aitString::operator=(aitString& p)
-	{ this->copy(p); return *this; }
-inline aitString& aitString::operator=(aitString* p)
-	{ this->copy(p); return *this; }
 inline aitString& aitString::operator=(const char* p)
 	{ this->copy(p); return *this; }
-inline aitString& aitString::operator=(char* p)
-	{ this->copy(p); return *this; }
-
-inline void aitString::init(void) { str=NULL; len=0u; type=aitStrConst; }
 
 inline aitString::~aitString(void)
 {
 	// dump("~aitString");
 	clear();
 }
-inline aitString::aitString(void) { init(); }
 
-inline aitString::aitString(char* p)		{ init(); copy(p); }
-inline aitString::aitString(aitString* p)	{ init(); copy(p); }
-inline aitString::aitString(aitString& p)	{ init(); copy(p); }
+inline aitString::aitString(void) 
+{ 
+	this->init(); 
+}
 
-inline aitString::aitString(const char* p)		{ init(); copy(p); }
-inline aitString::aitString(const aitString* p)	{ init(); copy(p); }
-inline aitString::aitString(const aitString& p)	{ init(); copy(p); }
+inline aitString::aitString(const char* p, aitStrType typeIn)
+{
+	unsigned strLengthIn = strlen(p);
+	this->init(p, typeIn, strLengthIn, strLengthIn+1u);
+}
+
+inline aitString::aitString(const char* p, aitStrType typeIn, unsigned strLengthIn)
+{
+	this->init(p, typeIn, strLengthIn, strLengthIn+1u);
+}
+
+inline aitString::aitString(const char* p, aitStrType typeIn, unsigned strLength, unsigned bufSize)
+{
+	this->init(p,typeIn,strLength,bufSize);
+}
+
+inline aitString::aitString(const aitString* p)	
+{ 
+	this->init(); 
+	this->copy(p); 
+}
+
+inline aitString::aitString(const aitString& p)	
+{ 
+	this->init(); 
+	this->copy(p);
+}
 
 #endif // aitHelpersInclude

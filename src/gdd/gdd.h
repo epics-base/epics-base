@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.23  1997/04/23 17:12:59  jhill
+ * fixed export of symbols from WIN32 DLL
+ *
  * Revision 1.22  1997/03/21 01:56:03  jbk
  * *** empty log message ***
  *
@@ -99,7 +102,7 @@
 #include <limits.h>
 #include <sys/types.h>
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #       include <stdlib.h>
 #elif defined(vxWorks)
 #       include <time.h>
@@ -365,7 +368,6 @@ public:
 	gddStatus put(aitInt16 d);
 	gddStatus put(aitUint8 d);
 	gddStatus put(aitInt8 d);
-	gddStatus put(aitString& d);
 	gddStatus put(const aitString& d);
 	gddStatus put(const aitFixedString& d);
 	gddStatus put(aitType* d);
@@ -418,7 +420,6 @@ public:
 	gdd& operator=(aitInt16 d);
 	gdd& operator=(aitUint8 d);
 	gdd& operator=(aitInt8 d);
-	gdd& operator=(aitString& d);
 	gdd& operator=(const aitString& d);
 	// gdd& operator=(aitFixedString d); // not present
 

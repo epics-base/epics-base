@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.8  1997/04/23 17:13:01  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.7  1997/01/12 20:32:48  jbk
 // many errors fixed
 //
@@ -61,7 +64,7 @@ gddApplicationTypeTable::gddApplicationTypeTable(aitUint32 tot)
 	aitUint32 i,total;
 
 	// round tot up to nearest power of 2
-	for(i=1<<31;i && !(tot&i);i>>=1);
+	for(i=1u<<31;i && !(tot&i);i>>=1);
 	if(i==0)
 		total=1;
 	else if(i==tot)
@@ -96,7 +99,7 @@ void operator delete(void* x)
 
 gddApplicationTypeTable::~gddApplicationTypeTable(void)
 {
-	int i,j;
+	unsigned i,j;
 	gdd* dd;
 	aitUint8* blk;
 
@@ -104,29 +107,29 @@ gddApplicationTypeTable::~gddApplicationTypeTable(void)
 
 	if(this!=&app_table) return;
 	
-	for(i=0;i<max_groups;i++)
+	for(i=0u;i<max_groups;i++)
 	{
 		if(attr_table[i])
 		{
 			// fprintf(stderr,"Delete TypeTable: group %d exists\n",i);
-			for(j=0;j<APPLTABLE_GROUP_SIZE;j++)
+			for(j=0u;j<APPLTABLE_GROUP_SIZE;j++)
 			{
 				switch(attr_table[i][j].type)
 				{
 				case gddApplicationTypeNormal:
-					// fprintf(stderr,"Delete TypeTable: app %d normal\n",j);
+					// fprintf(stderr,"Delete TypeTable: app %u normal\n",j);
 					if(attr_table[i][j].app_name)
 						delete [] attr_table[i][j].app_name;
 					break;
 				case gddApplicationTypeProto:
-					// fprintf(stderr,"Delete TypeTable: app %d has proto\n",j);
+					// fprintf(stderr,"Delete TypeTable: app %u has proto\n",j);
 					if(attr_table[i][j].app_name)
 						delete [] attr_table[i][j].app_name;
 
 					if(attr_table[i][j].proto)
 					{
 						// if(attr_table[i][j].free_list)
-							// fprintf(stderr," app %d has free_list\n",j);
+							// fprintf(stderr," app %u has free_list\n",j);
 
 						// The proto is stored as flattened gdd
 						blk=(aitUint8*)attr_table[i][j].proto;
@@ -189,7 +192,7 @@ int gddApplicationTypeTable::describeDD(gddContainer* dd, FILE* fd,
 
 void gddApplicationTypeTable::describe(FILE* fd)
 {
-	int i,j;
+	unsigned i,j;
 	gdd* dd;
 	char* tn;
 
@@ -205,10 +208,10 @@ void gddApplicationTypeTable::describe(FILE* fd)
 				case gddApplicationTypeNormal:
 				case gddApplicationTypeProto:
 					tn=attr_table[i][j].app_name;
-					fprintf(fd,"#define gddAppType_%s\t%d\n",
+					fprintf(fd,"#define gddAppType_%s\t%u\n",
 						tn,i*APPLTABLE_GROUP_SIZE+j);
 
-					if(dd=attr_table[i][j].proto)
+					if( (dd=attr_table[i][j].proto) )
 					{
 						fprintf(fd,"#define gddAppTypeIndex_%s 0\n",tn);
 						if(dd->isContainer())
@@ -231,7 +234,7 @@ gddStatus gddApplicationTypeTable::registerApplicationType(
 	aitUint32 i,group,app,rapp;
 	gddStatus rc;
 
-	if(new_app=getApplicationType(name))
+	if( (new_app=getApplicationType(name)) )
 	{
 		// gddAutoPrint(gddErrorAlreadyDefined);
 		return gddErrorAlreadyDefined;
@@ -297,7 +300,7 @@ gddStatus gddApplicationTypeTable::registerApplicationTypeWithProto(
 	aitUint16 i;
 	gddStatus rc;
 
-	if(rc=registerApplicationType(name,new_app)) return rc;
+	if( (rc=registerApplicationType(name,new_app)) ) return rc;
 
 	rapp=new_app;
 	protoDD->setApplType(rapp);
@@ -342,7 +345,7 @@ gddStatus gddApplicationTypeTable::registerApplicationTypeWithProto(
 
 aitUint32 gddApplicationTypeTable::getApplicationType(const char* const name) const
 {
-	int i,j,rc;
+	unsigned i,j,rc;
 
 	for(i=0,rc=0;i<max_groups && attr_table[i] && rc==0;i++)
 	{
@@ -401,7 +404,7 @@ gdd* gddApplicationTypeTable::getDD(aitUint32 rapp)
 	{
 	case gddApplicationTypeProto:
 		attr_table[group][app].sem.take();
-		if(dd=attr_table[group][app].free_list)
+		if( (dd=attr_table[group][app].free_list) )
 		{
 			//fprintf(stderr,"Popping a proto DD from list! %d %8.8x\n",app,dd);
 			attr_table[group][app].free_list=dd->next();

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:08  jbk
+ * *** empty log message ***
+ *
  */
 
 inline void gdd::setData(void* d)					{ data.Pointer=d; }
@@ -221,23 +224,25 @@ inline void gdd::set(aitEnum t,const void* v,aitDataFormat f)
 inline void gdd::set(aitEnum t,const void* v,aitDataFormat)
 #endif
 {
-	if(primitiveType()==aitEnumFixedString)
-	{
-		if(dataPointer()==NULL)
-			data.FString=new aitFixedString;
-		aitConvert(primitiveType(),dataPointer(),t,v,1);
+	if (primitiveType()==aitEnumInvalid) {
+		this->prim_type = t;
+		if(t==aitEnumFixedString)
+		{
+			if(dataPointer()==NULL) 
+			{
+				data.FString = new aitFixedString;
+			}
+		}
 	}
-	else
-	{
-#if aitLocalNetworkDataFormatSame == AIT_FALSE
-		if(f!=aitLocalDataFormat)
-			aitConvertFromNet(primitiveType(),dataAddress(),t,v,1);
-		else
-#endif
-			aitConvert(primitiveType(),dataAddress(),t,v,1);
 
-		markLocalDataFormat();
-	}
+#if aitLocalNetworkDataFormatSame == AIT_FALSE
+	if(f!=aitLocalDataFormat)
+		aitConvertFromNet(primitiveType(),dataVoid(),t,v,1);
+	else
+#endif
+		aitConvert(primitiveType(),dataVoid(),t,v,1);
+
+	markLocalDataFormat();
 }
 
 // -------------------getRef(data pointer) functions----------------
@@ -343,7 +348,7 @@ inline gddStatus gdd::put(const aitInt8* const d)
 	if(primitiveType()==aitEnumString && dim==0)
 	{
 		aitString* p = (aitString*)dataAddress();
-		p->installString((char*)d);
+		p->copy((char*)d);
 	}
 	else if(primitiveType()==aitEnumFixedString && dim==0) {
 		strncpy(data.FString->fixed_string,(char*)d, 
@@ -570,8 +575,6 @@ inline gdd& gdd::operator=(aitUint8 d)
 	{ data.Uint8=d; setPrimType(aitEnumUint8); return *this; }
 inline gdd& gdd::operator=(aitInt8 d)
 	{ data.Int8=d; setPrimType(aitEnumInt8); return *this; }
-inline gdd& gdd::operator=(aitString& d)
-	{ put(d); return *this; }
 inline gdd& gdd::operator=(const aitString& d)
 	{ put(d); return *this; }
 

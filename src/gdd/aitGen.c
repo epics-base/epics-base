@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1997/06/13 09:26:04  jhill
+ * fixed generated conversion functions
+ *
  * Revision 1.5  1997/05/01 19:54:50  jhill
  * updated dll keywords
  *
@@ -167,49 +170,28 @@ void MakeStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static void %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
+	pr(dfd,"\tint status=0;\n");
 	pr(dfd,"\tchar temp[AIT_FIXED_STRING_SIZE];\n");
 	pr(dfd,"\taitString* out=(aitString*)d;\n");
 	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
 
-#if 0
-	if(j==aitEnumInt8)
-	{
-		pr(dfd,"\n\t// assume source s is string if count c is 1\n");
-		pr(dfd,"\n\tif(c==1) {\n");
-		pr(dfd,"\t\tout->copy((char*)in);\n");
-		pr(dfd,"\t\treturn;\n");
-		pr(dfd,"\t}\n\n");
-	}
-#endif
-
-	if(j==aitEnumInt8)
-		pr(dfd,"\taitInt32 itmp;\n");
-	else if(j==aitEnumUint8)
-		pr(dfd,"\taitUint32 itmp;\n");
-
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-
-	if(j==aitEnumInt8)
-		pr(dfd,"\t\titmp=(aitInt32)in[i];\n");
-	else if(j==aitEnumUint8)
-		pr(dfd,"\t\titmp=(aitUint32)in[i];\n");
-
-	if(j==aitEnumInt8)
-		pr(dfd,"\t\tsprintf(temp, \"%s\",itmp);\n", 
-				aitStringType[aitEnumInt32]);
-	else if(j==aitEnumUint8)
-		pr(dfd,"\t\tsprintf(temp, \"%s\",itmp);\n", 
-				aitStringType[aitEnumUint32]);
-	else
-		pr(dfd,"\t\tsprintf(temp, \"%s\",in[i]);\n",
-			aitStringType[j]);
-
-	pr(dfd,"\t\tout[i].installString(temp);\n");
+	pr(dfd,"\t\tint nChar;\n");
+	pr(dfd,"\t\tnChar = sprintf(temp, \"%%%s\",in[i]);\n",
+			aitPrintf[j]);
+	pr(dfd,"\t\tif (nChar>=0) {\n");
+	pr(dfd,"\t\t\tstatus += nChar;\n");
+	pr(dfd,"\t\t\tout[i].copy(temp);\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t\telse {\n");
+	pr(dfd,"\t\t\treturn -1;\n");
+	pr(dfd,"\t\t}\n");
 	pr(dfd,"\t}\n");
+	pr(dfd,"\treturn status;\n");
 	pr(dfd,"}\n");
 }
 
@@ -218,57 +200,47 @@ void MakeStringFuncTo(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
 
-	pr(dfd,"static void %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitString* in=(aitString*)s;\n");
 	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 
-	/* I special cased the Int8 and Uint8 - yuck */
-#if 0
-	if(i==aitEnumInt8)
-	{
-		pr(dfd,"\n\t// assume dest d is string if count c is 1\n");
-		pr(dfd,"\n\tif(c==1) {\n");
-		pr(dfd,"\t\tin->extractString((char*)out);\n");
-		pr(dfd,"\t\treturn;\n");
-		pr(dfd,"\t}\n\n");
-	}
-#endif
-
-	if(i==aitEnumInt8)
-		pr(dfd,"\taitInt32 itmp;\n");
-	else if(i==aitEnumUint8)
-		pr(dfd,"\taitUint32 itmp;\n");
-
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 	pr(dfd,"\t\tif(in[i].string()) {\n");
 	pr(dfd,"\t\t\tint j;\n");
+	pr(dfd,"\t\t\tdouble ftmp;\n");
 
-	if(i==aitEnumInt8)
-	{
-		pr(dfd,"\t\t\tj = sscanf(in[i],\"%s\",&itmp);\n", 
-				aitStringType[aitEnumInt32]);
-		pr(dfd,"\t\t\tout[i]=(aitInt8)itmp;\n");
-	}
-	else if(i==aitEnumUint8)
-	{
-		pr(dfd,"\t\t\tj = sscanf(in[i], \"%s\",&itmp);\n", 
-				aitStringType[aitEnumUint32]);
-		pr(dfd,"\t\t\tout[i]=(aitUint8)itmp;\n");
-	}
-	else
-		pr(dfd,"\t\t\tj = sscanf(in[i].string(), \"%s\",&out[i]);\n",
-				aitStringType[i]);
-
-	pr(dfd,"\t\t\tif (j!=1) {\n");
-	pr(dfd,"\t\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
-	pr(dfd,"\t\t\t\tout[i]=0;\n");
+	pr(dfd,"\t\t\tj = sscanf(in[i],\"%%lf\",&ftmp);\n");
+	pr(dfd,"\t\t\tif (j==1) {\n");
+	pr(dfd,"\t\t\t\tif (ftmp>=%g && ftmp<=%g) {\n",
+			aitMin[i], aitMax[i]);
+	pr(dfd,"\t\t\t\t\tout[i] = (%s) ftmp;\n", aitName[i]);
+	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\telse {\n");
+	pr(dfd,"\t\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t\t}\n");
 	pr(dfd,"\t\t\t}\n");
-	pr(dfd,"\t\t} else\n");
-	pr(dfd,"\t\t\tout[i]=0;\n");
-	pr(dfd,"\t}\n}\n");
+	pr(dfd,"\t\t\telse {\n");
+	pr(dfd,"\t\t\t\tunsigned long itmp;\n");
+	pr(dfd,"\t\t\t\tj = sscanf(in[i],\"%%lx\",&itmp);\n");
+	pr(dfd,"\t\t\t\tif (j==1) {\n");
+	pr(dfd,"\t\t\t\t\tif (%g<=(double)itmp && %g>=(double)itmp) {\n",
+			aitMin[i], aitMax[i]);
+	pr(dfd,"\t\t\t\t\t\tout[i] = (%s) itmp;\n", aitName[i]);
+	pr(dfd,"\t\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\t\telse {\n");
+	pr(dfd,"\t\t\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\telse {\n");
+	pr(dfd,"\t\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t}\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t}\n");
+	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n}\n", aitName[i]);
 }
 
 void MakeFStringFuncFrom(int i,int j,int k)
@@ -276,7 +248,7 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static void %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -294,103 +266,64 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	}
 #endif
 
-	if(j==aitEnumInt8)
-		pr(dfd,"\taitInt32 itmp;\n");
-	else if(j==aitEnumUint8)
-		pr(dfd,"\taitUint32 itmp;\n");
-
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-
-	if(j==aitEnumInt8)
-		pr(dfd,"\t\titmp=(aitInt32)in[i];\n");
-	else if(j==aitEnumUint8)
-		pr(dfd,"\t\titmp=(aitUint32)in[i];\n");
-
-	/*
-	 * shut up purify
-	 * (sprintf is so slow that is unliekly to be significant overhead)
-	 */
-	pr(dfd,"\t\tmemset(out[i].fixed_string,\'\\0\',sizeof(aitFixedString));\n");
-
-	if(j==aitEnumInt8)
-		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",itmp);\n", 
-				aitStringType[aitEnumInt32]);
-	else if(j==aitEnumUint8)
-		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",itmp);\n", 
-				aitStringType[aitEnumUint32]);
-	else
-		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",in[i]);\n",
-				aitStringType[j]);
-
-	pr(dfd,"\t}\n}\n");
+	pr(dfd,"\t\tint nChar;\n");
+	pr(dfd,"\t\tnChar = sprintf(out[i].fixed_string, \"%%%s\",in[i]);\n",
+				aitPrintf[j]);
+	pr(dfd,"\t\tif (nChar>=0) {\n");
+	pr(dfd,"\t\t\tnChar = min(nChar,AIT_FIXED_STRING_SIZE-1)+1;\n");
+	pr(dfd,"\t\t\t/* shuts up purify */\n");
+	pr(dfd,"\t\t\tmemset(&out[i].fixed_string[nChar],\'\\0\',AIT_FIXED_STRING_SIZE-nChar);\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t\telse {\n");
+	pr(dfd,"\t\t\treturn -1;\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t}\n\treturn c*AIT_FIXED_STRING_SIZE;\n}\n");
 }
 
 void MakeFStringFuncTo(int i,int j,int k)
 {
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
-
-	pr(dfd,"static void %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitFixedString* in=(aitFixedString*)s;\n");
 	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
 
-	/* I special cased the Int8 and Uint8 - yuck */
-#if 0
-	if(i==aitEnumInt8)
-	{
-		pr(dfd,"\n\t// assume dest d is string if count c is 1\n");
-		pr(dfd,"\n\tif(c==1) {\n");
-		pr(dfd,"\t\tstrcpy((char*)out,in->fixed_string);\n");
-		pr(dfd,"\t\treturn;\n");
-		pr(dfd,"\t}\n\n");
-	}
-#endif
-
-	if(i==aitEnumInt8)
-		pr(dfd,"\taitInt32 itmp;\n");
-	else if(i==aitEnumUint8)
-		pr(dfd,"\taitUint32 itmp;\n");
-
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 	pr(dfd,"\t\tint j;\n");
+	pr(dfd,"\t\tdouble ftmp;\n");
 
-	if(i==aitEnumInt8)
-	{
-		pr(dfd,"\t\tj = sscanf(in[i].fixed_string,\"%s\",&itmp);\n",
-					aitStringType[aitEnumInt32]);
-		pr(dfd,"\t\tif (j==1) {\n");
-		pr(dfd,"\t\t\tout[i]=(aitInt8)itmp;\n");
-		pr(dfd,"\t\t}\n");
-		pr(dfd,"\t\telse {\n");
-		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
-		pr(dfd,"\t\t\tout[i]=0;\n");
-		pr(dfd,"\t\t}\n");	
-	}
-	else if(i==aitEnumUint8)
-	{
-		pr(dfd,"\t\tj =sscanf(in[i].fixed_string, \"%s\",&itmp);\n", 
-					aitStringType[aitEnumUint32]);
-		pr(dfd,"\t\tif (j==1) {\n");
-		pr(dfd,"\t\t\tout[i]=(aitUint8)itmp;\n");
-		pr(dfd,"\t\t}\n");
-		pr(dfd,"\t\telse {\n");
-		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
-		pr(dfd,"\t\t\tout[i]=0;\n");
-		pr(dfd,"\t\t}\n");	
-	}
-	else {
-		pr(dfd,"\t\tj = sscanf(in[i].fixed_string, \"%s\",&out[i]);\n",
-					aitStringType[i]);
-		pr(dfd,"\t\tif (j!=1) {\n");
-		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
-		pr(dfd,"\t\t\tout[i]=0;\n");
-		pr(dfd,"\t\t}\n");	
-	}
-
-	pr(dfd,"\t}\n}\n");
+	pr(dfd,"\t\tj = sscanf(in[i].fixed_string,\"%%lf\",&ftmp);\n");
+	pr(dfd,"\t\tif (j==1) {\n");
+	pr(dfd,"\t\t\tif (ftmp>=%g && ftmp<=%g) {\n",
+			aitMin[i], aitMax[i]);
+	pr(dfd,"\t\t\t\tout[i] = (%s) ftmp;\n", aitName[i]);
+	pr(dfd,"\t\t\t}\n");
+	pr(dfd,"\t\t\telse {\n");
+	pr(dfd,"\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t}\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t\telse {\n");
+	pr(dfd,"\t\t\tunsigned long itmp;\n");
+	pr(dfd,"\t\t\tj = sscanf(in[i].fixed_string,\"%%lx\",&itmp);\n");
+	pr(dfd,"\t\t\tif (j==1) {\n");
+	pr(dfd,"\t\t\t\tif (%g<=(double)itmp && %g>=(double)itmp) {\n",
+			aitMin[i], aitMax[i]);
+	pr(dfd,"\t\t\t\t\tout[i] = (%s) itmp;\n", aitName[i]);
+	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\telse {\n");
+	pr(dfd,"\t\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t}\n");
+	pr(dfd,"\t\t\telse {\n");
+	pr(dfd,"\t\t\t\treturn -1;\n");
+	pr(dfd,"\t\t\t}\n");
+	pr(dfd,"\t\t}\n");
+	pr(dfd,"\t}\n");
+	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n}\n", aitName[i]);
 }
 
 void GenName(int i,int j,int k)
@@ -398,7 +331,7 @@ void GenName(int i,int j,int k)
 	const char* i_name = &((aitName[i])[3]);
 	const char* j_name = &((aitName[j])[3]);
 
-	pr(dfd,"static void %s%s%s(void* d,const void* s,aitIndex c)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c)\n",
 			table_type[k],i_name,j_name);
 }
 
@@ -461,7 +394,7 @@ void MakeFromFunc(int i,int j,int k)
 		pr(dfd,"\t\td_val[i]=(%s)temp;\n",aitName[i]);
 		pr(dfd,"\t}\n");
 	}
-	pr(dfd,"}\n");
+	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n}\n",aitName[i]);
 }
 
 void MakeToFunc(int i,int j,int k)
@@ -516,7 +449,7 @@ void MakeToFunc(int i,int j,int k)
 		pr(dfd,"(aitUint%s*)&temp);\n",len_msg);
 		pr(dfd,"\t}\n");
 	}
-
+	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n",aitName[i]);
 	pr(dfd,"}\n");
 }
 
@@ -533,6 +466,7 @@ void MakeNormalFunc(int i,int j,int k)
 		pr(dfd,"\tfor(i=0;i<c;i++)\n");
 		pr(dfd,"\t\td_val[i]=(%s)(s_val[i]);\n",aitName[i]);
 	}
+	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n",aitName[i]);
 	pr(dfd,"}\n");
 }
 

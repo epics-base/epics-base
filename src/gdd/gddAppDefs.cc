@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.8  1997/04/23 17:13:00  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.7  1996/09/04 20:55:02  jhill
 // add GDD_NAME_PV_NAME
 //
@@ -39,8 +42,6 @@
 
 #define epicsExportSharedSymbols
 #include "gddAppTable.h"
-
-static char* thing = "12345678";
 
 // useless utility function
 gddApplicationTypeTable* gddGenerateApplicationTypeTable(long x/*=(1<<13)*/)

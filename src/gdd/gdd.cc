@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.22  1997/06/25 06:17:34  jhill
+// fixed warnings
+//
 // Revision 1.21  1997/04/23 17:12:57  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -431,7 +434,7 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 				aitUint8* array;
 				size_t a_size;
 				a_size=dd->getDataSizeBytes();
-				if(array=new aitUint8[a_size])
+				if( (array=new aitUint8[a_size]) )
 				{
 					destruct=new gddDestructor;
 					destruct->reference();
@@ -548,15 +551,13 @@ size_t gdd::getTotalSizeBytes(void) const
 
 aitUint32 gdd::getDataSizeElements(void) const
 {
-	unsigned long total=0;
+	unsigned long total=1u;
 	unsigned i;
 
-	if(dimension()==0)
-		total=1;
-	else
+	if(dimension()>0u && dataPointer())
 	{
-		if(dataPointer())
-			for(i=0;i<dimension();i++) total+=bounds[i].size();
+		for(i=0u;i<dimension();i++) 
+			total*=bounds[i].size();
 	}
 
 	return total;
@@ -637,8 +638,7 @@ size_t gdd::flattenWithAddress(void* buf, size_t size, aitIndex* total_dd)
 			if(str->string())
 			{
 				memcpy((char*)&pdd[pos],str->string(),str->length()+1);
-				str->force((char*)&pdd[pos]);
-				str->forceConstant();
+				str->installBuf((char*)&pdd[pos],str->length(),str->length()+1);
 			}
 			else
 				str->init();
@@ -772,8 +772,7 @@ gddStatus gdd::flattenData(gdd* dd, int tot_dds, void* buf,size_t size)
 				if(str->string())
 				{
 					memcpy(ptr,str->string(),str->length()+1);
-					str->force((char*)ptr);
-					str->forceConstant();
+					str->installBuf((char *)ptr, str->length(), str->length()+1);
 					ptr+=str->length()+1;
 				}
 				else
@@ -875,7 +874,8 @@ gddStatus gdd::convertOffsetsToAddress(void)
 					if(str[i].string())
 					{
 						cstr=str[i].string();
-						str[i].force(pdd+(unsigned long)cstr);
+						str[i].installBuf((char *)(pdd+(unsigned long)cstr), 
+							str[i].length(), str[i].length()+1);
 					}
 					else
 						str[i].init();
@@ -892,7 +892,8 @@ gddStatus gdd::convertOffsetsToAddress(void)
 				if(str->string())
 				{
 					cstr=str->string();
-					str->force(pdd+(unsigned long)cstr);
+					str->installBuf((char *)(pdd+(unsigned long)cstr), 
+						str->length(), str->length()+1u);
 				}
 				else
 					str->init();
@@ -949,7 +950,8 @@ gddStatus gdd::convertAddressToOffsets(void)
 				for(i=0;i<getDataSizeElements();i++)
 				{
 					cstr=str[i].string();
-					if(cstr) str[i].force(cstr-(const char*)pdd);
+					if(cstr) str[i].installBuf((char *)(cstr-(const char*)pdd),
+							str[i].length(), str[i].length()+1u);
 					else str[i].init();
 				}
 			}
@@ -966,7 +968,8 @@ gddStatus gdd::convertAddressToOffsets(void)
 			{
 				str=(aitString*)dataAddress();
 				cstr=str->string();
-				if(cstr) str->force(cstr-(const char*)pdd);
+				if(cstr) str->installBuf((char *)(cstr-(const char*)pdd), 
+					str->length(), str->length()+1u);
 				else str->init();
 			}
 		}
@@ -1060,16 +1063,7 @@ void gdd::get(aitString& d)
 	}
 	else if(dim==1 && primitiveType()==aitEnumInt8) 
 	{
-		if(isConstant())
-		{
-			const char* ci=(const char*)dataPointer();
-			d.installString(ci);
-		}
-		else
-		{
-			char* i=(char*)dataPointer();
-			d.installString(i);
-		}
+		d.copy((char *)dataPointer());
 	}
 	else
 		get(aitEnumString,&d);
@@ -1094,16 +1088,7 @@ void gdd::getConvert(aitString& d)
 {
 	if(primitiveType()==aitEnumInt8 && dim==1)
 	{
-		if(isConstant())
-		{
-			const char* ci=(const char*)dataPointer();
-			d.installString(ci);
-		}
-		else
-		{
-			char* i=(char*)dataPointer();
-			d.installString(i);
-		}
+		d.copy((char*)dataPointer());
 	}
 	else
 		get(aitEnumString,&d);
@@ -1121,24 +1106,6 @@ void gdd::getConvert(aitFixedString& d)
 }
 
 gddStatus gdd::put(const aitString& d)
-{
-	gddStatus rc=0;
-	if(isScalar())
-	{
-		aitString* s=(aitString*)dataAddress();
-		*s=d;
-		setPrimType(aitEnumString);
-	}
-	else
-	{
-		gddAutoPrint("gdd::put(aitString&)",gddErrorNotAllowed);
-		rc=gddErrorNotAllowed;
-	}
-
-	return rc;
-}
-
-gddStatus gdd::put(aitString& d)
 {
 	gddStatus rc=0;
 	if(isScalar())
@@ -1188,7 +1155,7 @@ void gdd::putConvert(const aitString& d)
 		cp[len]='\0';
 	}
 	else
-		set(aitEnumString,(aitString*)&d);
+		set(aitEnumString,&d);
 }
 
 void gdd::putConvert(const aitFixedString& d)
@@ -1252,15 +1219,22 @@ gddStatus gdd::put(const gdd* dd)
 		gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
 		return gddErrorNotSupported;
 	}
-		
+	
+	//
+	// After careful consideration I (joh) commented this section out.
+	// It should not be necesary to initialize the primative type.
+	// Forcing the bounds and dimension to be the same as the source dd
+	// ignores the user's requested bounds.
+	//	
 	// this primitive must be valid for this is work - set to dd if invalid
-	if(!aitValid(primitiveType()))
-	{
+	//if(!aitValid(primitiveType()))
+	//{
 		// note that flags, etc. are not set here - just data related stuff
-		destroyData();
-		setPrimType(dd->primitiveType());
-		setDimension(dd->dimension(),dd->getBounds());
-	}
+		//destroyData();
+
+		//setPrimType(dd->primitiveType());
+		//setDimension(dd->dimension(),dd->getBounds());
+	//}
 
 	if(isScalar() && dd->isScalar())
 	{
@@ -1379,7 +1353,7 @@ size_t gdd::outHeader(void* buf,aitUint32 bufsize)
 	aitUint8* stat = (aitUint8*)&status;
 	aitUint8* ts_sec = (aitUint8*)&time_stamp.tv_sec;
 	aitUint8* ts_nsec = (aitUint8*)&time_stamp.tv_nsec;
-	int i,j,sz;
+	size_t i,j,sz;
 	aitIndex ff,ss;
 	aitUint8 *f,*s;
 
@@ -1405,9 +1379,9 @@ size_t gdd::outHeader(void* buf,aitUint32 bufsize)
 	else
 	{
 		*(b++)=app[1]; *(b++)=app[0];
-		for(i=sizeof(status)-1;i>=0;i--) *(b++)=stat[i];
-		for(i=sizeof(time_stamp.tv_sec)-1;i>=0;i--) *(b++)=ts_sec[i];
-		for(i=sizeof(time_stamp.tv_nsec)-1;i>=0;i--) *(b++)=ts_nsec[i];
+		i=sizeof(status)-1u; do { *(b++)=stat[i]; } while(i-->0u);
+		i=sizeof(time_stamp.tv_sec)-1u; do { *(b++)=ts_sec[i]; } while(i-->0u);
+		i=sizeof(time_stamp.tv_nsec)-1u; do { *(b++)=ts_nsec[i]; } while(i-->0u);
 	}
 
 	// put out the bounds info
@@ -1422,8 +1396,8 @@ size_t gdd::outHeader(void* buf,aitUint32 bufsize)
 		}
 		else
 		{
-			for(i=sizeof(aitIndex)-1;i>=0;i--) *(b++)=s[i];
-			for(i=sizeof(aitIndex)-1;i>=0;i--) *(b++)=f[i];
+			i=sizeof(aitIndex)-1u; do { *(b++)=s[i]; } while(i-->0u);
+			i=sizeof(aitIndex)-1u; do { *(b++)=f[i]; } while(i-->0u);
 		}
 	}
 	return sz;
@@ -1477,7 +1451,7 @@ size_t gdd::inHeader(void* buf)
 	aitUint8* stat = (aitUint8*)&status;
 	aitUint8* ts_sec = (aitUint8*)&time_stamp.tv_sec;
 	aitUint8* ts_nsec = (aitUint8*)&time_stamp.tv_nsec;
-	int i,j;
+	size_t i,j;
 	aitIndex ff,ss;
 	aitUint8 *f,*s;
 
@@ -1491,24 +1465,25 @@ size_t gdd::inHeader(void* buf)
 	{
 		app[0]=*(b++); app[1]=*(b++);
 		init(inapp,(aitEnum)inprim,indim);
-		for(i=0;i<sizeof(status);i++) stat[i]=*(b++);
-		for(i=0;i<sizeof(time_stamp.tv_sec);i++) ts_sec[i]=*(b++);
-		for(i=0;i<sizeof(time_stamp.tv_nsec);i++) ts_nsec[i]=*(b++);
+		for(i=0u;i<sizeof(status);i++) stat[i]=*(b++);
+		for(i=0u;i<sizeof(time_stamp.tv_sec);i++) ts_sec[i]=*(b++);
+		for(i=0u;i<sizeof(time_stamp.tv_nsec);i++) ts_nsec[i]=*(b++);
 	}
 	else
 	{
 		app[1]=*(b++); app[0]=*(b++);
 		init(inapp,(aitEnum)inprim,indim);
-		for(i=sizeof(status)-1;i>=0;i--) stat[i]=*(b++);
-		for(i=sizeof(time_stamp.tv_sec)-1;i>=0;i--) ts_sec[i]=*(b++);
-		for(i=sizeof(time_stamp.tv_nsec)-1;i>=0;i--) ts_nsec[i]=*(b++);
+
+		i=sizeof(status)-1u; do { stat[i]=*(b++); } while(i-->0u);
+		i=sizeof(time_stamp.tv_sec)-1u; do { ts_sec[i]=*(b++); } while(i-->0u);
+		i=sizeof(time_stamp.tv_nsec)-1u; do { ts_nsec[i]=*(b++); } while(i-->0u);
 	}
 
 	// read in the bounds info
 	f=(aitUint8*)&ff;
 	s=(aitUint8*)&ss;
 	
-	for(j=0;j<dim;j++)
+	for(j=0u;j<dim;j++)
 	{
 		if(aitLocalNetworkDataFormatSame)
 		{
@@ -1517,8 +1492,8 @@ size_t gdd::inHeader(void* buf)
 		}
 		else
 		{
-			for(i=sizeof(aitIndex)-1;i>=0;i--) s[i]=*(b++);
-			for(i=sizeof(aitIndex)-1;i>=0;i--) f[i]=*(b++);
+			i=sizeof(aitIndex)-1u; do { s[i]=*(b++); } while(i-->0u);
+			i=sizeof(aitIndex)-1u; do { f[i]=*(b++); } while(i-->0u);
 		}
 		bounds[j].setFirst(ff);
 		bounds[j].setSize(ss);

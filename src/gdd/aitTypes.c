@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1997/05/01 19:54:51  jhill
+ * updated dll keywords
+ *
  * Revision 1.2  1997/04/10 19:59:24  jhill
  * api changes
  *
@@ -16,8 +19,12 @@
  *
  */
 
+#include <limits.h>
+#include <float.h>
+
 #define AIT_TYPES_SOURCE 1
 #include <sys/types.h>
+
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
@@ -54,19 +61,74 @@ epicsShareDef const char* aitName[aitTotal] = {
 	"aitContainer"
 };
 
-epicsShareDef const char* aitStringType[aitTotal] = {
-	"%8.8x",
-	"%2.2x",
-	"%2.2x",
-	"%hd",
-	"%hu",
-	"%hu",
-	"%d",
-	"%u",
-	"%f",
-	"%lf",
-	"%s",
-	"%s",
-	"%8.8x"
+/*
+ * conversion characters used with stdio lib
+ */
+epicsShareDef const char* aitPrintf[aitTotal] = {
+	0,
+	"c",
+	"c",
+	"hd",
+	"hu",
+	"hu",
+	"d",
+	"u",
+	"g",
+	"g",
+	"s",
+	0, /* printf doesnt know about aitString */
+	0
+};
+epicsShareDef const char* aitScanf[aitTotal] = {
+	0,
+	"c",
+	"c",
+	"hd",
+	"hu",
+	"hu",
+	"d",
+	"u",
+	"g",
+	"lg",
+	"s",
+	0, /* scanf doesnt know about aitString */
+	0
 };
 
+/*
+ * maximum value within type - joh
+ */
+epicsShareDef double aitMax[aitTotal] = {
+	-1,
+	SCHAR_MAX,
+	UCHAR_MAX,
+	SHRT_MAX,
+	USHRT_MAX,
+	USHRT_MAX,
+	INT_MAX,
+	UINT_MAX,
+	FLT_MAX,
+	DBL_MAX,
+	-1,
+	-1,
+	-1
+};
+
+/*
+ * minimum value within ait type - joh
+ */
+epicsShareDef double aitMin[aitTotal] = {
+	+1,
+	SCHAR_MIN,
+	0u,
+	SHRT_MIN,
+	0u,
+	0u,
+	INT_MIN,
+	0u,
+	FLT_MIN,
+	DBL_MIN,
+	+1,
+	+1,
+	+1
+};

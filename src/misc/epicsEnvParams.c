@@ -1,0 +1,64 @@
+/*   $Id$
+ *      Author: Roger A. Cole
+ #      Date:   07-20-91
+ *
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * Modification Log:
+ * -----------------
+ * .01	mm-dd-yy	iii	Comment
+ * .02	07-29-92	rcz	Put under sccs in site directory
+ * 	...
+ */
+#include <envDefs.h>
+
+epicsSetEnvParams()
+{
+    printf("setting EPICS environment parameters\n");
+    envSetConfigParam(&EPICS_TS_MIN_WEST, "360");
+    envSetConfigParam(&EPICS_SYSCLK_INET, "130.202.241.16");
+    envSetConfigParam(&EPICS_IOCMCLK_INET, "130.202.241.124");
+    envSetConfigParam(&EPICS_SYSCLK_PORT, "2200");
+    envSetConfigParam(&EPICS_IOCMCLK_PORT, "2300");
+    envSetConfigParam(&EPICS_AR_PORT, "7002");
+    envSetConfigParam(&EPICS_CMD_PROTO_PORT, "7003");
+    envSetConfigParam(&EPICS_IOC_LOG_INET, "130.202.241.16");
+    envSetConfigParam(&EPICS_IOC_LOG_PORT, "7004");
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_LIMIT, "1000000");
+    envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, "/home/phebos1/epics/apple/log/iocLog.text");
+    return 0;
+}
+epicsPrtEnvParams()
+{
+    envPrtConfigParam(&EPICS_TS_MIN_WEST);
+    envPrtConfigParam(&EPICS_SYSCLK_INET);
+    envPrtConfigParam(&EPICS_IOCMCLK_INET);
+    envPrtConfigParam(&EPICS_SYSCLK_PORT);
+    envPrtConfigParam(&EPICS_IOCMCLK_PORT);
+    envPrtConfigParam(&EPICS_AR_PORT);
+    envPrtConfigParam(&EPICS_CMD_PROTO_PORT);
+    envPrtConfigParam(&EPICS_IOC_LOG_INET);
+    envPrtConfigParam(&EPICS_IOC_LOG_PORT);
+    envPrtConfigParam(&EPICS_IOC_LOG_FILE_LIMIT);
+    envPrtConfigParam(&EPICS_IOC_LOG_FILE_NAME);
+    return 0;
+}

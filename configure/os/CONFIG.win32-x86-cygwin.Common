@@ -1,0 +1,20 @@
+# CONFIG.win32-x86-cygwin.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for win32-x86-cygwin host archs
+# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+WIND_HOST_TYPE = x86-win32
+OSITHREAD_USE_DEFAULT_STACK = NO
+
+HOSTEXE=.exe
+
+# Needed to find dlls for base installed build tools (antelope,eflex,...)
+PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
+

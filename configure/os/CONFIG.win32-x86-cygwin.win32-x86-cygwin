@@ -1,0 +1,30 @@
+#  CONFIG.win32-x86-cygwin.win32-x86-cygwin
+#
+# $Id$
+#
+# Definitions for win32-x86-cygwin host - win32-x86-cygwin target builds
+# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.win32-x86-cygwin
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+## Shared libraries for cygwin not implemented yet
+SHARED_LIBRARIES=NO
+
+# cygwin's gcc, g++, ar, ld, and ranlib must be in user's path
+CC = gcc
+CCC = g++
+AR = ar -rc
+LD = ld -r
+RANLIB = ranlib
+
+# Avoid position-independent code is always generated message
+SHRLIB_CFLAGS =
+
+# -ansi eliminates strdup
+CONFORM_CFLAGS_ANSI =
+CONFORM_CFLAGS_STRICT = -pedantic
+CONFORM_CXXFLAGS_ANSI =
+CONFORM_CXXFLAGS_STRICT = -pedantic
+

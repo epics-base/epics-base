@@ -20,6 +20,7 @@
 #include "tcpiiu_IL.h"
 #include "nciu_IL.h"
 #include "ioCounter_IL.h"
+#include "comQueSend_IL.h"
 
 extern "C" void cacRecursionLockExitHandler ()
 {

@@ -16,8 +16,6 @@
  *	505 665 1831
  */
 
-#include "comQueSend_IL.h"
-
 inline bool tcpiiu::fullyConstructed () const
 {
     return this->fullyConstructedFlag;

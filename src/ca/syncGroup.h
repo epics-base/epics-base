@@ -44,9 +44,10 @@ public:
     syncGroupNotify  ( struct CASG &sgIn, chid );
     virtual void destroy ( casgRecycle & ) = 0;
     void show ( unsigned level ) const;
+    bool ioInitiated () const;
 protected:
     chid chan;
-    struct CASG &sg;
+    struct CASG & sg;
     const unsigned magic;
     cacChannel::ioid id;
     bool idIsValid;
@@ -57,16 +58,15 @@ class syncGroupReadNotify : public syncGroupNotify, public cacReadNotify {
 public:
     static syncGroupReadNotify * factory ( 
         tsFreeList < class syncGroupReadNotify, 128 > &, 
-        struct CASG &, chid, unsigned type, 
-        arrayElementCount count, void *pValueIn );
+        struct CASG &, chid, void *pValueIn );
+    void begin ( unsigned type, arrayElementCount count );
     void destroy ( casgRecycle & );
     void show ( unsigned level ) const;
 protected:
     virtual ~syncGroupReadNotify ();
 private:
     void *pValue;
-    syncGroupReadNotify ( struct CASG &sgIn, chid, 
-        unsigned type, arrayElementCount count, void *pValueIn );
+    syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -83,16 +83,16 @@ class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
 public:
     static syncGroupWriteNotify * factory ( 
         tsFreeList < class syncGroupWriteNotify, 128 > &, 
-        struct CASG &, chid, unsigned type, 
-        arrayElementCount count, const void *pValueIn );
+        struct CASG &, chid );
+    void begin ( unsigned type, arrayElementCount count, 
+                            const void * pValueIn );
     void destroy ( casgRecycle & );
     void show ( unsigned level ) const;
 protected:
     virtual ~syncGroupWriteNotify (); // allocate only from pool
 private:
     void *pValue;
-    syncGroupWriteNotify  ( struct CASG &, chid, unsigned type, 
-                       arrayElementCount count, const void *pValueIn );
+    syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128 > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
@@ -107,18 +107,18 @@ class oldCAC;
 
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
-    CASG ( oldCAC &cacIn );
-    bool ioComplete () const;
+    CASG ( oldCAC & cacIn );
+    bool ioComplete ();
     void destroy ();
     bool verify () const;
     int block ( double timeout );
     void reset ();
     void show ( unsigned level ) const;
-    int get ( chid pChan, unsigned type, arrayElementCount count, void *pValue );
-    int put ( chid pChan, unsigned type, arrayElementCount count, const void *pValue );
-    void destroyIO ( syncGroupNotify & );
+    int get ( chid pChan, unsigned type, arrayElementCount count, void * pValue );
+    int put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue );
+    void completionNotify ( syncGroupNotify & );
     void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
+    void operator delete ( void * pCadaver, size_t size );
     int printf ( const char * pFormat, ... );
     void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo );
@@ -128,7 +128,8 @@ public:
 protected:
     virtual ~CASG ();
 private:
-    tsDLList < syncGroupNotify > ioList;
+    tsDLList < syncGroupNotify > ioPendingList;
+    tsDLList < syncGroupNotify > ioCompletedList;
     epicsMutex mutable mutex;
     epicsEvent sem;
     oldCAC & client;
@@ -139,6 +140,15 @@ private:
     void recycleSyncGroupReadNotify ( syncGroupReadNotify &io );
     static tsFreeList < struct CASG, 128 > freeList;
     static epicsMutex freeListMutex;
+
+    void destroyPendingIO ( syncGroupNotify * );
+    void destroyCompletedIO ();
+    void destroyPendingIO ();
 };
+
+inline bool syncGroupNotify::ioInitiated () const
+{
+    return this->idIsValid;
+}
 
 #endif // ifdef syncGrouph

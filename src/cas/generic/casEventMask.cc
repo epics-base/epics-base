@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1999/08/07 01:02:31  jhill
+ * solaris compiler issues
+ *
  * Revision 1.12  1999/08/07 00:55:35  jhill
  * solaris compiler issues
  *
@@ -140,7 +143,7 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	// NOTE: pName outlives id here
 	// (so the refString option is ok)
 	//
-	stringIdentifier <16,8> id (pName, stringIdentifier <16,8>::refString);
+	stringId                id (pName, stringId::refString);
 	casEventMaskEntry       *pEntry;
 	casEventMask            mask;
 
@@ -195,7 +198,7 @@ void casEventRegistry::show(unsigned level) const
 		printf ("casEventRegistry: bit allocator = %d\n", 
 				this->allocator);
 	}
-	this->resTable <casEventMaskEntry, stringIdentifier <16,8> >::show(level);
+	this->resTable <casEventMaskEntry, stringId>::show(level);
 	this->mutex.osiUnlock();
 }
 
@@ -204,7 +207,7 @@ void casEventRegistry::show(unsigned level) const
 //
 casEventMaskEntry::casEventMaskEntry(
 	casEventRegistry &regIn, casEventMask maskIn, const char *pName) :
-	casEventMask (maskIn), stringIdentifier <16,8> (pName), reg (regIn)
+	casEventMask (maskIn), stringId (pName), reg (regIn)
 {
 	int 	stat;
 
@@ -240,6 +243,6 @@ void casEventMaskEntry::destroy()
 void casEventMaskEntry::show (unsigned level) const 
 {
 	this->casEventMask::show(level);
-	this->stringIdentifier <16,8>::show(level);
+	this->stringId::show(level);
 }
 

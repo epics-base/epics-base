@@ -31,6 +31,9 @@
 =======
  * History
  * $Log$
+ * Revision 1.12  1999/08/07 00:55:35  jhill
+ * solaris compiler issues
+ *
  * Revision 1.11  1999/08/04 23:05:29  jhill
  * applied chronIntId name change
  *
@@ -86,7 +89,7 @@
 	// This explicitly instantiates the template class's member
 	// functions into "templInst.o"
 	//
-	template class resTable <casEventMaskEntry, stringIdentifier <16,8> >;
+	template class resTable <casEventMaskEntry, stringId>;
 	template class resTable <casRes, chronIntId>;
 #endif
 

@@ -961,7 +961,7 @@ int epicsShareAPI db_start_events (
          return DB_EVENT_OK;
      }
 
-     taskpri = threadGetPriority (threadGetIdSelf());
+     taskpri = threadGetPrioritySelf ();
      taskpri -= priority_offset;
      evUser->pendexit = FALSE;
      evUser->init_func = init_func;

@@ -11,31 +11,8 @@
 #
 #	Rules for making things specified in Makefile
 #
-#	Some rules for filename-massage are system specific
-#	and have "ifdefs" here instead of using definitions
-#	from CONFIG.Target.<arch>  -  sorry about this,
-#	but so far the rules are quite similar on all systems
-#	except WIN32 has some specials.
-#
-#	Maybe there is a way to use indentation to make it
-#	easier to read this file?
-#
-#	Most things may also work if you say e.g.
-#		VAR+=ADD
-#	even if ADD is not there, but this way "VAR" would
-#	be defined in any case, that's why I try to use
-#		ifdef ADD
-#		VAR+=ADD
-#		endif
-#
-#	-kuk-
-
 #	we are in O.$(OS_CLASS), but most sources are one dir above:
 #
-#	The use of VPATH (no suffix specification) caused everything
-#	to break several times.
-#	vpath, of course, has the disadvantage that we need explicit rules
-#	for scripts or similar os-specific filed which have _no_ suffix...
 
 ifndef BASE_RULES_BUILD
 BASE_RULES_BUILD=1
@@ -175,18 +152,6 @@ $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
 
 #---------------------------------------------------------------
-#---------------------------------------------------------------
-#	Generic Rules for 'simple' targets that
-#	can be generated from a single source with same basename.
-#
-#	The usual two rules .c* -> $(OBJ) and then  $(OBJ) -> $(EXE)
-#	do not work because the $(OBJ)->$(EXE) rule wouldn't
-#	know if the original source was C or C++.
-#
-#	Hint: The $(subst...) construct removes the .c or .cpp
-#	      as well as the '../' from the filename and adds $(OBJ):
-#	      e.g.  $< = '../abc.c'   ->  'abc.o'
-#
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 

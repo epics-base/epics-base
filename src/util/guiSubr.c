@@ -47,6 +47,7 @@
  *			command frames (this requires OpenWindows Version 3);
  *			for guiGetNameFromSeln, require that selection be
  *			in caller's window;
+ *  .08 08-26-92 rac	fix a bug in guiEditorUpdateSet;
  *
  */
 #if 0	/* allow embedding comments in the header below */
@@ -459,7 +460,8 @@ Frame	frame;
     XRaiseWindow(pDisp, win);
 #endif
 #endif
-    xv_set(frame, XV_SHOW, TRUE, NULL);
+    if ((int)xv_get(frame, XV_SHOW) == 0)
+	xv_set(frame, XV_SHOW, TRUE, NULL);
 }
 
 
@@ -1857,7 +1859,7 @@ GUI_EDIT *pEdit;
 	guiEditorUpdateRst(pEdit);	/* lock attempt didn't succeed */
 	goto updateDone;
     }
-    xv_set(tsw, TEXTSW_FIRST_LINE, top);
+    xv_set(tsw, TEXTSW_FIRST_LINE, top, NULL);
     xv_set(tsw, TEXTSW_BROWSING, FALSE, NULL);
     pEdit->updFlag = 1;
     strcpy(pEdit->lockFile, lockFile);

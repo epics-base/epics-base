@@ -38,7 +38,7 @@ OP_SYS_LDLIBS += -lreadline
 # Stuff that will be needed when going to shared libraries
 #
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
-       -install_name $(EPICS_BASE)/lib/$(HOST_ARCH)/$@ \
+       -install_name $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_SUFFIX = $(addprefix .,$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)).dylib

@@ -357,7 +357,7 @@ static long process(pcompress)
     if(!dbIsLinkConnected(&pcompress->inp)
     || dbGetNelements(&pcompress->inp,&nelements)
     || nelements<=0) {
-	recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);
+	recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
     } else {
 	if(!pcompress->wptr || nelements!=pcompress->inpn) {
 	    free(pcompress->wptr);

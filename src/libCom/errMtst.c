@@ -36,7 +36,12 @@
 #endif
 
 #include <stdio.h>
-#include <errMdef.h>
+
+#ifdef __STDC__
+void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
+#else
+void errSymTest();
+#endif /* __STDC__ */
 
 
 /****************************************************************
@@ -45,18 +50,14 @@
 #ifndef vxWorks
 main()
 {
-	printf("calling errSymBld from main in errMtst.c\n");
 	errSymBld();
 #if 0
-	printf("calling errSymDump from main in errMtst.c\n");
 	errSymDump();
 #endif
 #if 0
-	printf("calling errSymFindTst from main in errMtst.c\n");
 	errSymFindTst();
 #endif
 #if 1
-	printf("calling errSymTest from main in errMtst.c\n");
 	errSymTest((unsigned short)501, 1, 17);
 #endif
 }

@@ -33,7 +33,7 @@ typedef struct itemHeader{
 
 typedef struct dbmfPrivate {
     ELLLIST    chunkList;
-    semId      sem;
+    semMutexId sem;
     size_t     size;
     size_t     allocSize;
     int        chunkItems;

@@ -469,7 +469,7 @@ fp_dump()
  */
 fp_mon()
 {
- for(semTake(fp_semid);fp_dump() != 0;semTake(fp_semid));
+ for(semTake(fp_semid,WAIT_FOREVER);fp_dump() != 0;semTake(fp_semid,WAIT_FOREVER));
 }
 fp_monitor()
 {

@@ -1,9 +1,5 @@
-/* drvAb.c */
+/* drvAb.c -  Driver Support Routines for Allen Bradley */
 /* share/src/drv $Id$ */
-
-/* drvAb.c -  Driver Support Routines for Alleb Bradley */
-
-/* share/src/drv @(#)ab_driver.c	1.4     5/15/92 */
 /*
  * routines that are used, below the ai, ao, bi and bo drivers to interface
  * to the Allen-Bradley Remote Serial IO
@@ -185,6 +181,7 @@
  * .58  07-22-93	mrk	For AB1771IL sign_bit>>= becomes sign_bit<<=
  * .59  07-27-93	mrk	Included changes made by Jeff Hill to stop warning messages
  * .60  07-27-93	mrk	Made changes for vxWorks 5.x semLib
+ * .61  08-02-93	mrk	Added call to taskwdInsert
  */
 
 /*
@@ -304,6 +301,7 @@
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
+#include	<taskwd.h>
 #include	<module_types.h>
 #include	<drvAb.h>
 
@@ -1291,15 +1289,18 @@ ab_driver_init()
 		if (abScanId) td(abScanId);
         	abScanId = taskSpawn(ABSCAN_NAME,ABSCAN_PRI,ABSCAN_OPT,
 					ABSCAN_STACK,abScanTask);
+		taskwdInsert(abScanId,NULL,NULL);
 
 		 /* spawn the done task to handle block transfer responses */
 		if (abDoneId) td(abDoneId);
 		abDoneId = taskSpawn(ABDONE_NAME,ABDONE_PRI,ABDONE_OPT,
 					ABDONE_STACK,abDoneTask);
+		taskwdInsert(abDoneId,NULL,NULL);
 
 		/* spawn the ab change of state interrupt simulator */
 		if (abCOSId) td(abCOSId);
 		abCOSId = taskSpawn(ABCOS_NAME,ABCOS_PRI,ABCOS_OPT,ABCOS_STACK,ab_bi_cos_simulator);
+		taskwdInsert(abCOSId,NULL,NULL);
 	}
         return(0);
 }

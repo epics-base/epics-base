@@ -52,6 +52,7 @@
  *	.12 joh 092992	card number validation now based on module_types.h.
  *			signal number checking now based on the array element
  *			count.
+ *	.13 mrk 080293	Added call to taskwdInsert
  */
 
 static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
@@ -80,6 +81,7 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
 #include <drvSup.h>
 #include <dbDefs.h>
 #include <dbScan.h>
+#include <taskwd.h>
 
 #define COMET_NCHAN			4
 #define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */
@@ -299,6 +301,7 @@ comet_init()
 /* free memory and delete tasks from previous initialization */
   if (cometDoneTaskId)
     {
+      taskwdRemove(cometDoneTaskId);
       if ((status = taskDelete(cometDoneTaskId)) < 0)
         logMsg("\nCOMET: Failed to delete cometDoneTask: %d",status);
     }
@@ -374,6 +377,7 @@ comet_init()
       /* start the waveform readback task */
       scan_control = 2;	              /* scan rate in vxWorks clock ticks */
       cometDoneTaskId = taskSpawn("cometWFTask",WFDONE_PRI,WFDONE_OPT,WFDONE_STACK,(FUNCPTR) cometDoneTask);
+      taskwdInsert(cometDoneTaskId,NULL,NULL);
     }         
 }
 

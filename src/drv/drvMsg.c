@@ -29,6 +29,7 @@
  * -----------------
  * .01  04-14-92	jrw	created
  * .02	05-26-92	jrw	changed enumeration of the record types
+ * .03	08-02-93	mrk	Added call to taskwdInsert
  *
  */
 
@@ -57,6 +58,7 @@
 #include <link.h>
 #include <callback.h>
 #include <fast_lock.h>
+#include <taskwd.h>
 
 #include <rec/dbCommon.h>
 #include <rec/aoRecord.h>
@@ -354,6 +356,7 @@ struct link	*plink;		/* I/O link structure from record */
   char		name[20];
   long		status;
   int		j;
+  int		taskId;
  
   if (msgDebug)
     printf("In drvMsg_genLink\n");
@@ -384,14 +387,15 @@ struct link	*plink;		/* I/O link structure from record */
     return(NULL);
   }
   sprintf(name, "%s", pparmBlock->pdrvBlock->taskName);
-  if (taskSpawn(name, pparmBlock->pdrvBlock->taskPri, pparmBlock->pdrvBlock->taskOpt, pparmBlock->pdrvBlock->taskStack, msgTask, pparmBlock->pdrvBlock, pmsgLink) == ERROR)
+  if ((taskId = taskSpawn(name, pparmBlock->pdrvBlock->taskPri, pparmBlock->pdrvBlock->taskOpt, pparmBlock->pdrvBlock->taskStack, msgTask, pparmBlock->pdrvBlock, pmsgLink)) == ERROR)
   {
     printf("Message driver: Failed to start link task %s\n", name);
 /* BUG --delete the FASTLOCK in here */
     status = ERROR;
-  }
-  else
+  } else {
+    taskwdInsert(taskId,NULL,NULL);
     status = OK;
+  }
 
   if (status == ERROR)
   {

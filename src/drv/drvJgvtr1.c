@@ -1,5 +1,5 @@
 /* drvJgvtr1.c */
-/* share/src/drv @(#)drvJgvtr1.c	1.9     8/27/92 */
+/* share/src/drv $Id$ */
 /*
  *	Author:      Jeff Hill
  * 	Date:        5-89
@@ -51,6 +51,7 @@
  *	062992	joh	removed file pointer argument added to io
  *			report by bg
  *	082792	joh	added ANSI C function prototypes
+ *	080293	mrk	added call to taskwdInsert
  */
 
 static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
@@ -76,6 +77,7 @@ static char *sccsID = "@(#)drvJgvtr1.c	1.9\t8/27/92";
 #include	<module_types.h>
 #include        <task_params.h>
 #include 	<fast_lock.h>
+#include 	<taskwd.h>
 #include	<types.h>
 #include	<vme.h>
 
@@ -284,6 +286,7 @@ long jgvtr1_init(
 				(FUNCPTR) jgvtr1DoneTask);
 	if(status == ERROR)
 	  	return ERROR;
+	taskwdInsert(status,NULL,NULL);
          
 
 #	ifdef INTERRUPT_HARDWARE_FIXED

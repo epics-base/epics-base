@@ -1,6 +1,5 @@
-
 /* drvOms.c */
-/* share/src/drv @(#)drvOms.c	1.14     4/23/93 */
+/* share/src/drv  $Id$ */
 /*
  * subroutines and tasks that are used to interface to the 
  * Oregon Micro Systems six axis stepper motor drivers
@@ -58,6 +57,7 @@
  * .16	06-26-92	 bg	Combined drvOms.c with oms_driver.c
  * .17  06-29-92	joh	took file pointer arg out of io report
  * .18  08-11-92	joh	io report format cleanup	
+ * .19  08-02-93	mrk	Added call to taskwdInsert
  */
 
 /* data requests are made from the oms_task at
@@ -80,6 +80,7 @@
 #include	<module_types.h>
 #include	<drvOms.h>
 #include	<steppermotor.h>
+#include	<taskwd.h>
 
 #define OMS_INT_LEV 5
 
@@ -354,10 +355,11 @@ oms_task()
  */
 oms_driver_init(){
 	struct vmex_motor	*pmotor;
-        short                           i,j,got_one;
-        int				status;
-	short				dummy;
-	char				oms_init_msg[20];	
+        short                   i,j,got_one;
+        int			status;
+	short			dummy;
+	char			oms_init_msg[20];	
+	int			taskId;
 
 	for (i = 0; i < MAX_OMS_CARDS; i++){
 		resp_inx[i] = 0;
@@ -418,10 +420,12 @@ oms_driver_init(){
 		if(!(oms_send_sem=semBCreate(SEM_Q_FIFO,SEM_FULL)))
 			errMessage(0,"semBcreate failed in oms_driver_init");
 		/* spawn the motor data request task */
-		taskSpawn("oms_task",42,VX_FP_TASK,8000,oms_task);
+		taskId = taskSpawn("oms_task",42,VX_FP_TASK,8000,oms_task);
+		taskwdInsert(taskId,NULL,NULL);
 
 		/* spawn the motor data request task */
-		taskSpawn("oms_resp_task",42,VX_FP_TASK,8000,oms_resp_task);
+		taskId = taskSpawn("oms_resp_task",42,VX_FP_TASK,8000,oms_resp_task);
+		taskwdInsert(taskId,NULL,NULL);
 
 		/* enable echo on each motor that is present */
               

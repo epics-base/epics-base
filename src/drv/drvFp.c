@@ -50,6 +50,7 @@
  * .12 joh 072792	added soft reboot int disable
  * .13 joh 082792	converted to V5 vxorks
  * .14 mrk 090192	support epics I/O event scan, and added DRVET
+ * .15 mrk 080293	Add call to taskwdInsert
  */
 
 
@@ -86,7 +87,7 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)drvFp.c	1.12\t6/4/93";
 
 #include "vxWorks.h"
 #include "vme.h"
@@ -100,6 +101,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include "module_types.h"
 #include <dbDefs.h>
 #include <drvSup.h>
+#include <taskwd.h>
 #ifndef EPICS_V2
 #include <dbScan.h>
 #endif
@@ -515,11 +517,13 @@ fp_monitor()
  static char *name = "fpmon";
  int tid;
 
- if ((tid = taskNameToId(name)) != ERROR)
+ if ((tid = taskNameToId(name)) != ERROR) {
+  taskwdRemove(tid);
   taskDelete(tid);
- if (taskSpawn(name,25,VX_SUPERVISOR_MODE|VX_STDIO,
-     1000,fp_mon) == ERROR)
-  return -1;
+ }
+ if((tid = taskSpawn(name,25,VX_SUPERVISOR_MODE|VX_STDIO,
+     1000,fp_mon)) == ERROR) return -1;
+ taskwdInsert(tid,NULL,NULL);
  return 0;
 }
  

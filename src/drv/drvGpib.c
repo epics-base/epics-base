@@ -40,6 +40,7 @@
  * .05	02-26-92	jrw	changed pnode references in the link task's
  *				busy-list checking, was an endless loop
  * .06	04-10-92	jrw	moved the device configs into module_types.h
+ * .07	08-02-92	mrk	Added call to taskwdInsert
  *
  ******************************************************************************
  *
@@ -70,6 +71,7 @@
 #include <dbDefs.h>
 #include <link.h>
 #include <fast_lock.h>
+#include <taskwd.h>
 
 #include <drvGpibInterface.h>
 #include <drvBitBusInterface.h>
@@ -1178,6 +1180,7 @@ ibLinkStart(plink)
 struct	ibLink *plink;
 {
   int	j;
+  int   taskId;
 
   if (ibDebug || bbibDebug)
     printf("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
@@ -1206,11 +1209,12 @@ struct	ibLink *plink;
   }
 
   /* Start a task to manage the link */
-  if (taskSpawn(GPIBLINK_NAME, GPIBLINK_PRI, GPIBLINK_OPT, GPIBLINK_STACK, ibLinkTask, plink) == ERROR)
+  if ((taskId = taskSpawn(GPIBLINK_NAME, GPIBLINK_PRI, GPIBLINK_OPT, GPIBLINK_STACK, ibLinkTask, plink)) == ERROR)
   {
     printf("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
     return(ERROR);
   }
+  taskwdInsert(taskId,NULL,NULL);
   taskDelay(10);			/* give it a chance to start running */
   return(OK);
 }

@@ -1,6 +1,5 @@
-
 /* drvCompuSm.c */
-/* share/src/drv @(#)drvCompuSm.c	1.9     8/27/92 */
+/* share/src/drv $Id$ */
 /*
  * subroutines and tasks that are used to interface to the Compumotor 1830
  * stepper motor drivers
@@ -51,6 +50,7 @@
  * .12	08-06-92	joh	merged compu sm include file
  * .13	08-27-92	joh	silenced ANSI C function proto warning	
  * .14	08-27-92	joh	fixed no epics init
+ * .15	08-02-93	mrk	Added call to taskwdInsert
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -66,6 +66,7 @@
 #include	<module_types.h>
 #include	 <steppermotor.h>
 #include	 <task_params.h>
+#include	 <taskwd.h>
 
 
 long compu_sm_io_report();
@@ -556,6 +557,7 @@ compu_driver_init(){
     struct compumotor    *pmtr;    /* memory port to motor card */
     int    cok = CBBR;			/*to reset board */
     short	none_found;		/* flags a steppermotor is present */
+    int		taskId;
 
    /* intialize each driver which is present */
     none_found = TRUE;
@@ -604,8 +606,9 @@ compu_driver_init(){
     /* spawn the sleeping motor driver command and response tasks */
     smRespId = 
 	taskSpawn("compu_resp_task",SMRESP_PRI,SMRESP_OPT,SMRESP_STACK,compu_resp_task);
-    taskSpawn("compu_task",SMRESP_PRI,SMRESP_OPT,2000,compu_task);
-
+    taskwdInsert(smRespId,NULL,NULL);
+    taskId = taskSpawn("compu_task",SMRESP_PRI,SMRESP_OPT,2000,compu_task);
+    taskwdInsert(taskId,NULL,NULL);
     return(0);
 }
 

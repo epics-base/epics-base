@@ -1,9 +1,5 @@
-
-/* drvXy566.c */
-
 /* share/src/drv $Id$ */
-/*
- * drvXy566.c -  Driver Support Routines for xy566 
+/* drvXy566.c -  Driver Support Routines for xy566 
  *
  * 	Author:      Bob Dalesio
  * 	Date:        6-13-88
@@ -81,6 +77,7 @@
  * .21  08-27-92	joh	fixed routines which return with and without
  *				status	
  * .22  08-27-92	joh	fixed nonexsistant EPICS init 
+ * .23  08-02-93	mrk	Added call to taskwdInsert
  */
 
 #include	<vxWorks.h>
@@ -92,6 +89,7 @@
 #include	<drvSup.h>
 #include	<module_types.h>
 #include 	<task_params.h>
+#include 	<taskwd.h>
 
 
 static char SccsId[] = "$Id$\t$Date$ ";
@@ -1132,6 +1130,7 @@ xy566_init()
 		WFDONE_OPT,
 		WFDONE_STACK,
 		xy566DoneTask);
+	taskwdInsert(wfDoneId,NULL,NULL);
 
     return 0;
 }

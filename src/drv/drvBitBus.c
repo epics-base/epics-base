@@ -35,6 +35,7 @@
  * .05	02-12-92	jrw	removed IRQ based transmission.
  * .06	04-08-92	jrw	moved the device configs into module_types.h
  * .07	09-28-92	jrw	upped the reset delay time to 1/2 second
+ * .08	08-02-93	mrk	Added call to taskwdInsert
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -59,6 +60,7 @@
 #include <link.h>
 #include <callback.h>
 #include <fast_lock.h>
+#include <taskwd.h>
 
 #include <drvBitBusInterface.h>
 #include "drvBitBus.h"
@@ -137,6 +139,7 @@ initBB()
   int	probeValue;
   struct xvmeRegs	*pXvmeRegs;
   char	*nameTemp[50];
+  int	taskId;
 
   if (init_called)
   {
@@ -232,22 +235,25 @@ initBB()
 
       /* start a task to manage the TX link */
       sprintf(nameTemp, "%s%d", BBTXLINK_NAME, i);
-      if (taskSpawn(nameTemp, BBTXLINK_PRI, BBTXLINK_OPT, BBTXLINK_STACK, xvmeTxTask, i) == ERROR)
+      if ((taskId=taskSpawn(nameTemp, BBTXLINK_PRI, BBTXLINK_OPT, BBTXLINK_STACK, xvmeTxTask, i)) == ERROR)
       {
         printf("initBB: failed to start TX link task for link %d\n", i);
       }
+      taskwdInsert(taskId,NULL,NULL);
       /* start a task to manage the RX link */
       sprintf(nameTemp, "%s%d", BBRXLINK_NAME, i);
-      if (taskSpawn(nameTemp, BBRXLINK_PRI, BBRXLINK_OPT, BBRXLINK_STACK, xvmeRxTask, i) == ERROR)
+      if ((taskId=taskSpawn(nameTemp, BBRXLINK_PRI, BBRXLINK_OPT, BBRXLINK_STACK, xvmeRxTask, i)) == ERROR)
       {
         printf("initBB: failed to start RX link task for link %d\n", i);
       }
+      taskwdInsert(taskId,NULL,NULL);
       /* start a task to keep an eye on the busy list */
       sprintf(nameTemp, "%s%d", BBWDTASK_NAME, i);
-      if (taskSpawn(nameTemp, BBWDTASK_PRI, BBWDTASK_OPT, BBWDTASK_STACK, xvmeWdTask, i) == ERROR)
+      if ((taskId=taskSpawn(nameTemp, BBWDTASK_PRI, BBWDTASK_OPT, BBWDTASK_STACK, xvmeWdTask, i)) == ERROR)
       {
         printf("initBB: failed to start watchdog task for link %d\n", i);
       }
+      taskwdInsert(taskId,NULL,NULL);
     }
     pXvmeRegs++;		/* ready for next board window */
   }

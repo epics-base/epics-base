@@ -1,5 +1,5 @@
 /* xy240_driver.c */
-/* share/src/drv @(#)xy240_driver.c	1.1     6/25/92 */
+/* share/src/drv $Id$ */
 /*
  *	routines used to test and interface with Xycom240
  *	digital i/o module
@@ -50,6 +50,7 @@
  *				be printed even when no xy240's are present 
  * .14	09-17-92	joh	io report now tabs over detailed info
  * .15	09-18-92	joh	documentation
+ * .16	08-02-93	mrk	Added call to taskwdInsert
  */
 
 #include "vxWorks.h"
@@ -61,6 +62,7 @@
 #ifndef EPICS_V2
 #include <dbDefs.h>
 #include <dbScan.h>
+#include <taskwd.h>
 #else
 extern short    wakeup_init;    /* flags that the database scan initialization i
 s complete */
@@ -247,6 +249,7 @@ xy240_init()
  	if (at_least_one_present) 
   	{
    		if ((tid = taskNameToId(XY240_NAME)) != ERROR){
+			taskwdRemove(tid);
    			taskDelete(tid);
 		}
 
@@ -259,6 +262,7 @@ xy240_init()
    		if (status == ERROR){
   			printf("Unable to create XY240 scan task\n");
 		}
+		else taskwdInsert(status,NULL,NULL);
   	}
 
 

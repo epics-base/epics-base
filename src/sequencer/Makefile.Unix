@@ -3,8 +3,6 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 
-LEX = $(ELEX)
-YACC = $(EYACC)
 #YACCOPT = -l
 #LEXOPT = -L
 

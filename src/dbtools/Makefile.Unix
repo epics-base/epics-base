@@ -4,8 +4,6 @@ include $(EPICS)/config/CONFIG_BASE
 
 # USR_CFLAGS = -v
 
-LEX = $(ELEX)
-YACC = $(EYACC)
 YACCOPT = -l
 LEXOPT = -L
 

@@ -2,8 +2,6 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
-LEX = $(ELEX)
-YACC = $(EYACC)
 
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic

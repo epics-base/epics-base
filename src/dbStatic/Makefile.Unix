@@ -8,8 +8,6 @@ USR_LDFLAGS = -L.
 #USR_CFLAGS = -v -g
 #CC = $(PURIFYHOME)/purify $(C_$(CMPLR))
 
-LEX = $(ELEX)
-YACC = $(EYACC)
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\

@@ -37,13 +37,23 @@
 #include "epicsAssert.h"
 #include "cantProceed.h"
 
-typedef struct epicsMutexOSD { 
+typedef struct epicsWin32CS { 
     CRITICAL_SECTION mutex;
     HANDLE unlockSignal;
     DWORD threadId;
     unsigned recursionCount;
     LONG waitingCount;
+} epicsWin32CS;
+
+typedef struct epicsMutexOSD { 
+    union {
+        HANDLE mutex;
+        epicsWin32CS cs;
+    } os;
 } epicsMutexOSD;
+
+static char thisIsNT = 0;
+static LONG weHaveInitialized = 0;
 
 /*
  * epicsMutexCreate ()
@@ -51,20 +61,39 @@ typedef struct epicsMutexOSD {
 epicsShareFunc epicsMutexId epicsShareAPI 
     epicsMutexOsdCreate ( void ) 
 {
-    epicsMutexOSD *pSem;
+    epicsMutexOSD * pSem;
 
+    if ( ! weHaveInitialized ) {
+        BOOL status;
+        OSVERSIONINFO osInfo;
+        osInfo.dwOSVersionInfoSize = sizeof ( OSVERSIONINFO );
+        status = GetVersionEx ( & osInfo );
+        thisIsNT = status && ( osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT );
+        thisIsNT = 0;
+        weHaveInitialized = 1;
+    }
+ 
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
-        pSem->unlockSignal = CreateEvent ( NULL, FALSE, FALSE, NULL );
-        if ( pSem->unlockSignal == 0 ) {
-            free ( pSem );
-            pSem = 0;
+        if ( thisIsNT ) {
+            pSem->os.cs.unlockSignal = CreateEvent ( NULL, FALSE, FALSE, NULL );
+            if ( pSem->os.cs.unlockSignal == 0 ) {
+                free ( pSem );
+                pSem = 0;
+            }
+            else {
+                InitializeCriticalSection ( &pSem->os.cs.mutex );
+                pSem->os.cs.threadId = 0;
+                pSem->os.cs.recursionCount = 0u;
+                pSem->os.cs.waitingCount = 0u;
+            }
         }
         else {
-            InitializeCriticalSection ( &pSem->mutex );
-            pSem->threadId = 0;
-            pSem->recursionCount = 0u;
-            pSem->waitingCount = 0u;
+            pSem->os.mutex = CreateMutex ( NULL, FALSE, NULL );
+            if ( pSem->os.mutex == 0 ) {
+                free ( pSem );
+                pSem = 0;
+            }
         }
     }    
     return pSem;
@@ -76,9 +105,14 @@ epicsShareFunc epicsMutexId epicsShareAPI
 epicsShareFunc void epicsShareAPI 
     epicsMutexOsdDestroy ( epicsMutexId pSem ) 
 {    
-    assert ( pSem->waitingCount == 0 );
-    DeleteCriticalSection  ( &pSem->mutex );
-    CloseHandle ( pSem->unlockSignal );
+    if ( thisIsNT ) {
+        assert ( pSem->os.cs.waitingCount == 0 );
+        DeleteCriticalSection  ( &pSem->os.cs.mutex );
+        CloseHandle ( pSem->os.cs.unlockSignal );
+    }
+    else {
+        CloseHandle ( pSem->os.mutex );
+    }
     free ( pSem );
 }
 
@@ -88,19 +122,25 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc void epicsShareAPI 
     epicsMutexUnlock ( epicsMutexId pSem ) 
 {
-    //assert ( pSem->threadId == GetCurrentThreadId () );
-    if ( pSem->recursionCount == 1 ) {
-        pSem->threadId = 0;
-        pSem->recursionCount = 0;
-        LeaveCriticalSection ( &pSem->mutex );
-        if ( pSem->waitingCount ) {
-            DWORD status = SetEvent ( pSem->unlockSignal );
-            assert ( status ); 
+    if ( thisIsNT ) {
+        //assert ( pSem->threadId == GetCurrentThreadId () );
+        if ( pSem->os.cs.recursionCount == 1 ) {
+            pSem->os.cs.threadId = 0;
+            pSem->os.cs.recursionCount = 0;
+            LeaveCriticalSection ( &pSem->os.cs.mutex );
+            if ( pSem->os.cs.waitingCount ) {
+                DWORD status = SetEvent ( pSem->os.cs.unlockSignal );
+                assert ( status ); 
+            }
+        }
+        else {
+            assert ( pSem->os.cs.recursionCount > 1u );
+            pSem->os.cs.recursionCount--;
         }
     }
     else {
-        assert ( pSem->recursionCount > 1u );
-        pSem->recursionCount--;
+        BOOL success = ReleaseMutex ( pSem->os.mutex );
+        assert ( success );
     }
 }
 
@@ -110,18 +150,24 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc epicsMutexLockStatus epicsShareAPI 
     epicsMutexLock ( epicsMutexId pSem ) 
 {
-    DWORD thisThread = GetCurrentThreadId ();
-
-    if ( pSem->threadId == thisThread ) {
-        assert ( pSem->recursionCount < UINT_MAX );
-        pSem->recursionCount++;
+    if ( thisIsNT ) {
+        DWORD thisThread = GetCurrentThreadId ();
+        if ( pSem->os.cs.threadId == thisThread ) {
+            assert ( pSem->os.cs.recursionCount < UINT_MAX );
+            pSem->os.cs.recursionCount++;
+        }
+        else {
+            EnterCriticalSection ( &pSem->os.cs.mutex );
+            pSem->os.cs.threadId = thisThread;
+            pSem->os.cs.recursionCount = 1u;
+        }
     }
     else {
-        EnterCriticalSection ( &pSem->mutex );
-        pSem->threadId = thisThread;
-        pSem->recursionCount = 1u;
+        DWORD status = WaitForSingleObject ( pSem->os.mutex, INFINITE);
+        if ( status != WAIT_OBJECT_0 ) {
+            return epicsMutexLockError;
+        }
     }
-
     return epicsMutexLockOK;
 }
 
@@ -132,20 +178,68 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
     epicsMutexLockWithTimeout ( epicsMutexId pSem, double timeOut )
 { 
     static const unsigned mSecPerSec = 1000u;
-    DWORD thisThread = GetCurrentThreadId ();
-    DWORD begin = GetTickCount ();
+    
+    if ( thisIsNT ) {
+        DWORD thisThread = GetCurrentThreadId ();
+        DWORD begin = GetTickCount ();
 
-    if ( pSem->threadId == thisThread ) {
-        assert ( pSem->recursionCount < UINT_MAX );
-        pSem->recursionCount++;
-        return epicsMutexLockOK;
+        if ( pSem->os.cs.threadId == thisThread ) {
+            assert ( pSem->os.cs.recursionCount < UINT_MAX );
+            pSem->os.cs.recursionCount++;
+            return epicsMutexLockOK;
+        }
+        else if ( ! TryEnterCriticalSection ( &pSem->os.cs.mutex ) ) {
+            DWORD delay = 0;
+            DWORD tmo;
+
+            if ( timeOut <= 0.0 ) {
+                tmo = 1;
+            }
+            else if ( timeOut >= INFINITE / mSecPerSec ) {
+                tmo = INFINITE - 1;
+            }
+            else {
+                tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
+                if ( tmo == 0 ) {
+                    tmo = 1;
+                }
+            }
+
+            assert ( pSem->os.cs.waitingCount < 0x7FFFFFFF );
+            InterlockedIncrement ( &pSem->os.cs.waitingCount );
+
+            while ( ! TryEnterCriticalSection ( &pSem->os.cs.mutex ) ) {
+                DWORD current;
+
+                WaitForSingleObject ( pSem->os.cs.unlockSignal, tmo - delay );
+
+                current = GetTickCount ();
+                if ( current >= begin ) {
+                    delay = current - begin;
+                }
+                else {
+                    delay = ( 0xffffffff - begin ) + current + 1;
+                }
+
+                if ( delay >= tmo ) {
+                    assert ( pSem->os.cs.waitingCount > 0 );
+                    InterlockedDecrement ( &pSem->os.cs.waitingCount );
+                    return epicsMutexLockTimeout;
+                }
+            }
+
+            assert ( pSem->os.cs.waitingCount > 0 );
+            InterlockedDecrement ( &pSem->os.cs.waitingCount );
+        }
+
+        pSem->os.cs.threadId = thisThread;
+        pSem->os.cs.recursionCount = 1;
     }
-    else if ( ! TryEnterCriticalSection ( &pSem->mutex ) ) {
-        DWORD delay = 0;
+    else {
         DWORD tmo;
-
+        DWORD status;
         if ( timeOut <= 0.0 ) {
-            tmo = 1;
+            tmo = 1u;
         }
         else if ( timeOut >= INFINITE / mSecPerSec ) {
             tmo = INFINITE - 1;
@@ -156,37 +250,16 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
                 tmo = 1;
             }
         }
-
-        assert ( pSem->waitingCount < 0x7FFFFFFF );
-        InterlockedIncrement ( &pSem->waitingCount );
-
-        while ( ! TryEnterCriticalSection ( &pSem->mutex ) ) {
-            DWORD current;
-
-            WaitForSingleObject ( pSem->unlockSignal, tmo - delay );
-
-            current = GetTickCount ();
-            if ( current >= begin ) {
-                delay = current - begin;
-            }
-            else {
-                delay = ( 0xffffffff - begin ) + current + 1;
-            }
-
-            if ( delay >= tmo ) {
-                assert ( pSem->waitingCount > 0 );
-                InterlockedDecrement ( &pSem->waitingCount );
+        status = WaitForSingleObject ( pSem->os.mutex, tmo );
+        if ( status != WAIT_OBJECT_0 ) {
+            if ( status == WAIT_TIMEOUT ) {
                 return epicsMutexLockTimeout;
             }
+            else {
+                return epicsMutexLockError;
+            }
         }
-
-        assert ( pSem->waitingCount > 0 );
-        InterlockedDecrement ( &pSem->waitingCount );
     }
-
-    pSem->threadId = thisThread;
-    pSem->recursionCount = 1;
-
     return epicsMutexLockOK;
 }
 
@@ -195,21 +268,33 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI
  */
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutexId pSem ) 
 { 
-    DWORD thisThread = GetCurrentThreadId ();
-
-    if ( pSem->threadId == thisThread ) {
-        assert ( pSem->recursionCount < UINT_MAX );
-        pSem->recursionCount++;
-        return epicsMutexLockOK;
-    }
-    else if ( TryEnterCriticalSection ( &pSem->mutex ) ) {
-        pSem->threadId = thisThread;
-        pSem->recursionCount = 1;
-        return epicsMutexLockOK;
+    if ( thisIsNT ) {
+        DWORD thisThread = GetCurrentThreadId ();
+        if ( pSem->os.cs.threadId == thisThread ) {
+            assert ( pSem->os.cs.recursionCount < UINT_MAX );
+            pSem->os.cs.recursionCount++;
+        }
+        else if ( TryEnterCriticalSection ( &pSem->os.cs.mutex ) ) {
+            pSem->os.cs.threadId = thisThread;
+            pSem->os.cs.recursionCount = 1;
+            return epicsMutexLockOK;
+        }
+        else {
+            return epicsMutexLockTimeout;
+        }
     }
     else {
-        return epicsMutexLockTimeout;
+        DWORD status = WaitForSingleObject ( pSem->os.mutex, 0 );
+        if ( status != WAIT_OBJECT_0 ) {
+            if (status == WAIT_TIMEOUT) {
+                return epicsMutexLockTimeout;
+            }
+            else {
+                return epicsMutexLockError;
+            }
+        }
     }
+    return epicsMutexLockOK;
 }
 
 /*
@@ -217,10 +302,16 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutex
  */
 epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned level ) 
 { 
-    printf ("epicsMutex: recursion=%u, waiting=%d, threadid=%d %s\n",
-        pSem->recursionCount, pSem->waitingCount, pSem->threadId,
-        pSem->threadId==GetCurrentThreadId()?
-            "owned by this thread":"" );
+    if ( thisIsNT ) {
+        printf ("epicsMutex: recursion=%u, waiting=%d, threadid=%d %s\n",
+            pSem->os.cs.recursionCount, pSem->os.cs.waitingCount, pSem->os.cs.threadId,
+            pSem->os.cs.threadId==GetCurrentThreadId()?
+                "owned by this thread":"" );
+    }
+    else {
+        printf ( "epicsMutex: win32 mutex at %p\n", 
+            ( void * ) pSem->os.mutex );
+    }
 }
 
 

@@ -1,7 +1,7 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG_vx
 
-USR_CFLAGS = -I../ca
+USR_CFLAGS = -I../ca -UUNIX
 
 SRCS = \
 	caserverio.c caservertask.c camsgtask.c camessage.c \

@@ -47,11 +47,6 @@
  *
  * net format: big endian and IEEE float
  * 
- * typedef void CACVRTFUNC(
- *		void *pSource, 
- *		void *pDestination, 
- *		int hton, 
- *		unsigned long count);
  */
 
 LOCAL CACVRTFUNC	cvrt_string;
@@ -160,7 +155,7 @@ epicsShareDef CACVRTFUNC *cac_dbr_cvrt[]
  *
  */
 LOCAL void cvrt_string(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -188,7 +183,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_short(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -216,7 +211,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_char(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -242,7 +237,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_long(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -270,7 +265,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_enum(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -302,7 +297,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_float(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -335,7 +330,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_double(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -377,7 +372,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_string(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -415,7 +410,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_short(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -450,7 +445,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_float(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -476,7 +471,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_double(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -505,7 +500,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_enum(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -533,7 +528,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_short(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -570,7 +565,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_char(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -611,7 +606,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_long(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -649,7 +644,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_enum(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -682,7 +677,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_double(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -744,7 +739,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_gr_float(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -807,7 +802,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_short(
-void		*s,			/* source			*/
+const void		*s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -847,7 +842,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_long(
-void		*s,			/* source			*/
+const void		*s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -887,7 +882,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_char(
-void		*s,			/* source			*/
+const void		*s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -925,7 +920,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_double(
-void		*s,			/* source			*/
+const void		*s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -989,7 +984,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_float(
-void		*s,			/* source			*/
+const void		*s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1052,7 +1047,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_ctrl_enum(
-void		*s,			/* source			*/
+const void  *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1088,7 +1083,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_char(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1119,7 +1114,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_sts_long(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1151,7 +1146,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_string(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1183,7 +1178,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_short(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1217,7 +1212,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_float(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1245,7 +1240,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_double(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1274,7 +1269,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_enum(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1304,7 +1299,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_char(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1336,7 +1331,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_time_long(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1367,7 +1362,7 @@ unsigned long	num			/* number of values		*/
  *
  */
 LOCAL void cvrt_put_ackt(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
@@ -1401,7 +1396,7 @@ unsigned long	num			/* number of values		*/
 ****************************************************************************/
 
 LOCAL void cvrt_stsack_string(
-void		*s,			/* source			*/
+const void         *s,			/* source			*/
 void		*d,			/* destination			*/
 int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/

@@ -12,7 +12,10 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
 epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList 
     (ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port);
 
-epicsShareFunc void epicsShareAPI printChannelAccessAddressList (ELLLIST *pList);
+epicsShareFunc void epicsShareAPI printChannelAccessAddressList (const ELLLIST *pList);
+
+epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates 
+    (ELLLIST *pDestList, ELLLIST *pSrcList, unsigned short port);
 
 #ifdef __cplusplus
 }

@@ -2,8 +2,6 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-CMPLR = STRICT
-
 #
 #	includes to install from this subproject
 #

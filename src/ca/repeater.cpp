@@ -123,7 +123,7 @@ LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr)
                         (char *)&flag, sizeof (flag) );
             if (status<0) {
                 int errnoCpy = SOCKERRNO;
-                errlogPrintf(
+                ca_printf (
             "%s: set socket option failed because \"%s\"\n", 
                         __FILE__, SOCKERRSTR(errnoCpy));
             }
@@ -152,7 +152,7 @@ LOCAL void verifyClients()
         msr = makeSocket ( ntohs (pclient->from.sin_port), FALSE );
         if ( msr.sock != INVALID_SOCKET ) {
 #ifdef DEBUG
-            errlogPrintf ("Deleted client %d\n",
+            ca_printf ("Deleted client %d\n",
                     ntohs (pclient->from.sin_port) );
 #endif
             ellDelete (&theClients, &pclient->node);
@@ -165,7 +165,7 @@ LOCAL void verifyClients()
              * win sock does not set SOCKERRNO when this fails
              */
             if ( msr.errNumber != SOCK_EADDRINUSE ) {
-                errlogPrintf (
+                ca_printf (
     "CA Repeater: bind test err was %d=\"%s\"\n", 
                     msr.errNumber, msr.pErrStr);
             }
@@ -199,7 +199,7 @@ LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize
         status = send ( pclient->sock, (char *)pMsg, msgSize, 0);
         if (status>=0) {
 #ifdef DEBUG
-            errlogPrintf ("Sent to %d\n", 
+            ca_printf ("Sent to %d\n", 
                 ntohs (pclient->from.sin_port));
 #endif
         }
@@ -207,13 +207,13 @@ LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize
             int errnoCpy = SOCKERRNO;
             if (errnoCpy == SOCK_ECONNREFUSED) {
 #ifdef DEBUG
-                errlogPrintf ("Deleted client %d\n",
+                ca_printf ("Deleted client %d\n",
                     ntohs (pclient->from.sin_port));
 #endif
                 verify = TRUE;
             }
             else {
-                errlogPrintf(
+                ca_printf(
 "CA Repeater: UDP fan out err was \"%s\"\n",
                     SOCKERRSTR(errnoCpy));
             }
@@ -253,7 +253,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         if (!init) {
             msr = makeSocket (PORT_ANY, TRUE);
             if ( msr.sock == INVALID_SOCKET ) {
-                errlogPrintf("%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
+                ca_printf("%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
                     __FILE__, msr.errNumber, msr.pErrStr);
             }
             else {
@@ -297,14 +297,14 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
     if (!pclient) {
         pclient = (struct one_client *) calloc (1, sizeof(*pclient));
         if (!pclient) {
-            errlogPrintf ("%s: no memory for new client\n", __FILE__);
+            ca_printf ("%s: no memory for new client\n", __FILE__);
             return;
         }
 
         msr = makeSocket (PORT_ANY, FALSE);
         if (msr.sock==INVALID_SOCKET) {
             free(pclient);
-            errlogPrintf ("%s: no client sock because %d=\"%s\"\n",
+            ca_printf ("%s: no client sock because %d=\"%s\"\n",
                     __FILE__, msr.errNumber, msr.pErrStr);
             return;
         }
@@ -316,7 +316,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
                 sizeof (*pFrom) );
         if (status<0) {
             int errnoCpy = SOCKERRNO;
-            errlogPrintf (
+            ca_printf (
             "%s: unable to connect client sock because \"%s\"\n",
                 __FILE__, SOCKERRSTR(errnoCpy));
             socket_close (pclient->sock);
@@ -329,7 +329,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         ellAdd (&client_list, &pclient->node);
         newClient = TRUE;
 #ifdef DEBUG
-        errlogPrintf ( "Added %d\n", ntohs (pFrom->sin_port) );
+        ca_printf ( "Added %d\n", ntohs (pFrom->sin_port) );
 #endif
     }
 
@@ -346,7 +346,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
     }
     else if (SOCKERRNO == SOCK_ECONNREFUSED){
 #ifdef DEBUG
-        errlogPrintf ("Deleted repeater client=%d sending ack\n",
+        ca_printf ("Deleted repeater client=%d sending ack\n",
                 ntohs (pFrom->sin_port) );
 #endif
         ellDelete (&client_list, &pclient->node);
@@ -354,7 +354,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         free (pclient);
     }
     else {
-        errlogPrintf ("CA Repeater: confirm err was \"%s\"\n",
+        ca_printf ("CA Repeater: confirm err was \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO) );
     }
 
@@ -410,7 +410,7 @@ void epicsShareAPI ca_repeater ()
             bsdSockRelease ();
             exit (0);
         }
-        errlogPrintf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
+        ca_printf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
             __FILE__, msr.errNumber, msr.pErrStr);
         bsdSockRelease ();
         exit(0);
@@ -419,7 +419,7 @@ void epicsShareAPI ca_repeater ()
     sock = msr.sock;
 
 #ifdef DEBUG
-    errlogPrintf ("CA Repeater: Attached and initialized\n");
+    ca_printf ("CA Repeater: Attached and initialized\n");
 #endif
 
     while (TRUE) {
@@ -444,7 +444,7 @@ void epicsShareAPI ca_repeater ()
                     continue;
                 }
 #           endif
-            errlogPrintf ("CA Repeater: unexpected UDP recv err: %s\n",
+            ca_printf ("CA Repeater: unexpected UDP recv err: %s\n",
                 SOCKERRSTR(errnoCpy));
             continue;
         }

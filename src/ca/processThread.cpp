@@ -17,60 +17,28 @@
 
 #include <iocinf.h>
 
-processThread::processThread () :
+processThread::processThread (cac *pcacIn) :
     osiThread ("CAC process", 0x1000, threadPriorityMedium), 
+    pcac (pcacIn),
     shutDown (false)
 {
-	ellInit (&this->recvActivity);
 }
 
 processThread::~processThread ()
 {
-    this->shutDown = true;
-    this->exit.signal ();
-    while ( !this->exit.wait (5.0) ) {
+    this->signalShutDown ();
+    while ( ! this->exit.wait ( 10.0 ) ) {
         printf ("processThread::~processThread (): Warning, thread object destroyed before thread exit \n");
     }
 }
 
 void processThread::entryPoint ()
 {
-    char *pNode;
-    tcpiiu *piiu;
-
-    while (!this->shutDown) {
-        while ( 1 ) {
-            int status;
-            unsigned bytesToProcess;
-
-            this->mutex.lock ();
-            pNode = (char *) ellGet (&this->recvActivity);
-            if (pNode) {
-                piiu = (tcpiiu *) (pNode - offsetof (tcpiiu, recvActivityNode) );
-                piiu->recvPending = FALSE;
-            }
-            this->mutex.unlock ();
-
-            if (!pNode) {
-                break;
-            }
-
-            if ( piiu->state == iiu_connected ) {
-                char *pProto = (char *) cacRingBufferReadReserveNoBlock 
-                                    (&piiu->recv, &bytesToProcess);
-                if (pProto) {
-                    status = post_msg (&piiu->niiu, &piiu->dest.ia, 
-                                pProto, bytesToProcess);
-                    if (status!=ECA_NORMAL) {
-                        initiateShutdownTCPIIU (piiu);
-                    }
-                    cacRingBufferReadCommit (&piiu->recv, bytesToProcess);
-                    cacRingBufferReadFlush (&piiu->recv);
-                }
-            }
-        }
-
-        this->wakeup.wait ();
+    int status = ca_attach_context ( this->pcac );
+    SEVCHK ( status, "attaching to client context in process thread" );
+    while ( ! this->shutDown ) {
+        pcac->processRecvBacklog ();
+        this->pcac->recvActivity.wait ();
     }
     this->exit.signal ();
 }
@@ -78,37 +46,6 @@ void processThread::entryPoint ()
 void processThread::signalShutDown ()
 {
     this->shutDown = true;
-    this->wakeup.signal ();
+    this->pcac->recvActivity.signal ();
 }
 
-void processThread::installLabor (tcpiiu &iiu)
-{
-    bool addedIt;
-
-    this->mutex.lock ();
-    if ( !iiu.recvPending ) {
-        iiu.recvPending = TRUE;
-	    ellAdd (&this->recvActivity, &iiu.recvActivityNode);
-        addedIt = true;
-    }
-    else {
-        addedIt = false;
-    }
-    this->mutex.unlock ();
-
-    //
-    // wakeup after unlock improves performance
-    //
-    if (addedIt) {
-        this->wakeup.signal ();
-    }
-}
-
-void processThread::removeLabor (tcpiiu &iiu)
-{
-    this->mutex.lock ();
-    if (iiu.recvPending) {
-        ellDelete (&this->recvActivity, &iiu.recvActivityNode);
-    }
-    this->mutex.unlock ();
-}

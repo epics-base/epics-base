@@ -12,6 +12,12 @@
 
 #include "iocinf.h"
 
+#ifdef DEBUG
+#   define debugPrintf(argsInParen) printf argsInParen
+#else
+#   define debugPrintf(argsInParen)
+#endif
+
 //
 // searchTimer::searchTimer ()
 //
@@ -33,15 +39,16 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
 //
 // searchTimer::reset ()
 //
-void searchTimer::reset (double periodIn)
+void searchTimer::reset (double delayToNextTry)
 {
-    LOCK (this->iiu.niiu.iiu.pcas);
+    LOCK (this->iiu.pcas);
     this->retry = 0;
-    this->period = periodIn;
-    UNLOCK (this->iiu.niiu.iiu.pcas);
+    this->period = CA_RECAST_DELAY;
+    UNLOCK (this->iiu.pcas);
 
-    if (this->timeRemaining()>this->period) {
-        this->reschedule (0.0);
+    if (this->timeRemaining()>delayToNextTry) {
+        this->reschedule (delayToNextTry);
+        debugPrintf ( ("reschedualed search timer for completion in %f sec\n", delayToNextTry) );
     }
 }
 
@@ -53,7 +60,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
     unsigned idelay;
     double delay;
 
-    LOCK (this->iiu.niiu.iiu.pcas);
+    LOCK (this->iiu.pcas);
 
     /*
      * set the retry number
@@ -70,11 +77,9 @@ void searchTimer::setRetryInterval (unsigned retryNo)
      */
     this->period = min (CA_RECAST_PERIOD, delay);
 
-    UNLOCK (this->iiu.niiu.iiu.pcas);
+    UNLOCK (this->iiu.pcas);
 
-#ifdef DEBUG
-    printf ("new CA search period is %f sec\n", this->period);
-#endif  
+    debugPrintf ( ("new CA search period is %f sec\n", this->period) );
 }
 
 //
@@ -86,7 +91,7 @@ void searchTimer::setRetryInterval (unsigned retryNo)
 //
 void searchTimer::notifySearchResponse (nciu *pChan)
 {
-    LOCK (this->iiu.niiu.iiu.pcas);
+    LOCK (this->iiu.pcas);
 
     if ( this->retrySeqNoAtListBegin <= pChan->retrySeqNo ) {
         if ( this->searchResponses < ULONG_MAX ) {
@@ -94,32 +99,31 @@ void searchTimer::notifySearchResponse (nciu *pChan)
         }
     }    
         
-    UNLOCK (this->iiu.niiu.iiu.pcas);
+    UNLOCK (this->iiu.pcas);
 
     if (pChan->retrySeqNo == this->retrySeqNo) {
         this->reschedule (0.0);
     }
 }
 
-
 //
 // searchTimer::expire ()
 //
 void searchTimer::expire ()
 {
-    nciu        *chan;
-    nciu        *firstChan;
-    int         status;
-    unsigned    nSent=0u;
+    tsDLIterBD<nciu>    chan(0);
+    tsDLIterBD<nciu>    firstChan(0);
+    int                 status;
+    unsigned            nSent=0u;
     
     /*
      * check to see if there is nothing to do here 
      */
-    if (ellCount(&this->iiu.niiu.chidList)==0) {
+    if ( ellCount (&this->iiu.chidList) ==0 ) {
         return;
     }   
     
-    LOCK (this->iiu.niiu.iiu.pcas);
+    LOCK ( this->iiu.pcas );
  
     /*
      * increment the retry sequence number
@@ -136,7 +140,7 @@ void searchTimer::expire ()
      *
      * The variable this->framesPerTry
      * determines the number of UDP frames to be sent
-     * each time that retrySearchRequest() is called.
+     * each time that expire() is called.
      * If this value is too high we will waste some
      * network bandwidth. If it is too low we will
      * use very little of the incoming UDP message
@@ -168,11 +172,8 @@ void searchTimer::expire ()
             else {
                 this->framesPerTry += (this->framesPerTry/8) + 1;
             }
-#if 0
-            printf ("Increasing frame count to %u t=%u r=%u\n", 
-                this->framesPerTry, this->searchTries, 
-                this->searchResponses);
-#endif
+            debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
+                this->framesPerTry, this->searchTries, this->searchResponses) );
         }
     }
     /*
@@ -185,19 +186,17 @@ void searchTimer::expire ()
                 this->framesPerTry--;
             }
             this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
-#if 0
-            printf ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
+            debugPrintf ( ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
                 this->framesPerTry, this->searchTries, 
-                this->searchResponses);
-#endif
+                this->searchResponses) );
     }
     
     /*
-     * a successful cac_search_msg() sends channel to
+     * a successful chan->searchMsg() sends channel to
      * the end of the list
      */
-    firstChan = chan = (nciu *) ellFirst (&this->iiu.niiu.chidList);
-    while (chan) {
+    firstChan = chan = this->iiu.chidList.first ();
+    while ( chan != chan.eol () ) {
         
         this->minRetry = min (this->minRetry, chan->retry);
         
@@ -208,11 +207,9 @@ void searchTimer::expire ()
          * dont increase the delay between search
          * requests
          */
-        if ( this->iiu.niiu.iiu.pcas->ca_pEndOfBCastList == chan ) {
+        if ( this->iiu.pcas->endOfBCastList == chan ) {
             if ( this->searchResponses == 0u ) {
-#if 0
-                printf ("increasing search try interval\n");
-#endif
+                debugPrintf ( ("increasing search try interval\n") );
                 this->setRetryInterval (this->minRetry + 1u);
             }
             
@@ -246,16 +243,14 @@ void searchTimer::expire ()
             }
             this->searchResponses = 0;
 
-#if 0
-            printf ("saw end of list\n");
-#endif  
+            debugPrintf ( ("saw end of list\n") );
         }
         
         /*
          * this moves the channel to the end of the
          * list (if successful)
          */
-        status = cac_search_msg (chan);
+        status = chan->searchMsg ();
         if (status != ECA_NORMAL) {
             nSent++;
             
@@ -267,7 +262,7 @@ void searchTimer::expire ()
             semBinaryGive (this->iiu.xmitSignal);
             
             /* try again */
-            status = cac_search_msg (chan);
+            status = chan->searchMsg ();
             if (status != ECA_NORMAL) {
                 break;
             }
@@ -278,8 +273,8 @@ void searchTimer::expire ()
         }
 
         chan->retrySeqNo = this->retrySeqNo;
-        chan = (nciu *) ellFirst (&this->iiu.niiu.chidList);
-        
+        chan = this->iiu.chidList.first ();
+
         /*
          * dont send any of the channels twice within one try
          */
@@ -303,15 +298,12 @@ void searchTimer::expire ()
         }
     }
     
-    UNLOCK (this->iiu.niiu.iiu.pcas);
+    UNLOCK (this->iiu.pcas);
 
     /* flush out the search request buffer */
     semBinaryGive (this->iiu.xmitSignal);
     
-#ifdef DEBUG
-    printf ("sent %u delay sec=%f\n", nSent, this->period);
-#endif
-
+    debugPrintf ( ("sent %u delay sec=%f\n", nSent, this->period) );
 }
 
 void searchTimer::destroy ()
@@ -320,11 +312,11 @@ void searchTimer::destroy ()
 
 bool searchTimer::again () const
 {
-    if (ellCount(&this->iiu.niiu.chidList)==0) {
+    if ( ellCount (&this->iiu.chidList) == 0 ) {
         return false;
     }
     else {
-        if (this->retry < MAXCONNTRIES) {
+        if ( this->retry < MAXCONNTRIES ) {
             return true;
         }
         else {

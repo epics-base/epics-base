@@ -3,8 +3,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-CMPLR = STRICT
-
 USR_CFLAGS += -DiocCore
 
 caLib_SRCS += caOsDependent.c

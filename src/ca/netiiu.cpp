@@ -1,5 +1,5 @@
-/* $Id$ */
-/*
+
+/*  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -12,10 +12,19 @@
 
 #include "iocinf.h"
 
-#ifdef DEBUG
-#define LOGRETRYINTERVAL logRetryInterval(__FILE__, __LINE__);
-LOCAL void logRetryInterval (pcac, char *pFN, unsigned lineno);
-#else
-#define LOGRETRYINTERVAL 
-#endif
+/*
+ *  constructNIIU ()
+ */
+netiiu::netiiu (cac *pcac) : baseIIU (pcac)
+{
+    ellInit (&this->chidList);
+}
+
+/*
+ *  netiiu::~netiiu ()
+ */
+netiiu::~netiiu ()
+{
+}
+
 

@@ -25,7 +25,6 @@
 #define nElementsInRing (1<<nBitsRingIndex)
 
 typedef struct ringBuffer {
-    char                buf[nElementsInRing];
     semBinaryId         readSignal;
     semBinaryId         writeSignal;
     semMutexId          readLock;
@@ -33,6 +32,7 @@ typedef struct ringBuffer {
     unsigned            rdix; /* index of last char read  */ 
     unsigned            wtix; /* index of next char to write */
     unsigned            shutDown;
+    char                buf[nElementsInRing];
 } ringBuffer;
 
 int cacRingBufferConstruct (ringBuffer *pBuf);
@@ -43,6 +43,8 @@ unsigned cacRingBufferWrite (ringBuffer *pRing,
 
 unsigned cacRingBufferRead (ringBuffer *pRing, 
                                  void *pBuf, unsigned nBytes);
+
+void cacRingBufferWriteLock (ringBuffer *pBuf);
 
 bool cacRingBufferWriteLockNoBlock (ringBuffer *pBuf, unsigned bytesRequired);
 
@@ -58,8 +60,9 @@ void *cacRingBufferReadReserveNoBlock (ringBuffer *pBuf, unsigned *pBytesAvail);
 
 void cacRingBufferReadCommit (ringBuffer *pBuf, unsigned delta);
 
-void cacRingBufferReadFlush (ringBuffer *pBuf);
-void cacRingBufferWriteFlush (ringBuffer *pBuf);
+// return true if there was something to flush and otherwise false
+bool cacRingBufferReadFlush (ringBuffer *pBuf);
+bool cacRingBufferWriteFlush (ringBuffer *pBuf);
 
 void cacRingBufferShutDown (ringBuffer *pBuf);
 

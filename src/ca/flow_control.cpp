@@ -25,7 +25,7 @@ void flow_control_on (tcpiiu *piiu)
 {
 	int status;
 
-	LOCK (piiu->niiu.iiu.pcas);
+	LOCK (piiu->pcas);
 
 	/*	
 	 * I prefer to avoid going into flow control 
@@ -33,10 +33,10 @@ void flow_control_on (tcpiiu *piiu)
 	 */
 	if (piiu->contiguous_msg_count >= MAX_CONTIGUOUS_MSG_COUNT) {
 		if (!piiu->client_busy) {
-			status = ca_busy_message(piiu);
+			status = piiu->busyRequestMsg ();
 			if (status==ECA_NORMAL) {
-				assert(piiu->niiu.iiu.pcas->ca_number_iiu_in_fc<UINT_MAX);
-				piiu->niiu.iiu.pcas->ca_number_iiu_in_fc++;
+				assert(piiu->pcas->ca_number_iiu_in_fc<UINT_MAX);
+				piiu->pcas->ca_number_iiu_in_fc++;
 				piiu->client_busy = TRUE;
 #				if defined(DEBUG) 
 					printf("fc on\n");
@@ -48,7 +48,7 @@ void flow_control_on (tcpiiu *piiu)
 		piiu->contiguous_msg_count++;
 	}
 
-	UNLOCK (piiu->niiu.iiu.pcas);
+	UNLOCK (piiu->pcas);
 	return;
 }
 
@@ -56,14 +56,14 @@ void flow_control_off (tcpiiu *piiu)
 {
 	int    		status;
 
-	LOCK (piiu->niiu.iiu.pcas);
+	LOCK (piiu->pcas);
 
 	piiu->contiguous_msg_count = 0;
 	if (piiu->client_busy) {
-		status = ca_ready_message(piiu);
+		status = piiu->readyRequestMsg ();
 		if (status==ECA_NORMAL) {
-			assert (piiu->niiu.iiu.pcas->ca_number_iiu_in_fc>0u);
-			piiu->niiu.iiu.pcas->ca_number_iiu_in_fc--;
+			assert (piiu->pcas->ca_number_iiu_in_fc>0u);
+			piiu->pcas->ca_number_iiu_in_fc--;
 			piiu->client_busy = FALSE;
 #			if defined(DEBUG) 
 				printf("fc off\n");
@@ -71,6 +71,6 @@ void flow_control_off (tcpiiu *piiu)
 		}
 	}
 
-	UNLOCK (piiu->niiu.iiu.pcas);
+	UNLOCK (piiu->pcas);
 	return;
 }

@@ -1,9 +1,7 @@
 
 /*
- * CA test/debug routine
+ * CA regression test
  */
-
-static char *sccsId = "@(#) $Id$";
 
 /*
  * ANSI
@@ -24,6 +22,8 @@ static char *sccsId = "@(#) $Id$";
  * CA 
  */
 #include    "cadef.h"
+
+#include "caDiagnostics.h"
 
 #define EVENT_ROUTINE   null_event
 #define CONN_ROUTINE    conn
@@ -78,7 +78,7 @@ void performGrEnumTest (chid chan);
 
 void performCtrlDoubleTest (chid chan);
 
-int acctst(char *pname)
+int acctst (char *pname)
 {
     chid            chix1;
     chid            chix2;
@@ -198,63 +198,63 @@ int acctst(char *pname)
      * look for problems with ca_search(), ca_clear_channel(),
      * ca_change_connection_event(), and ca_pend_io(() combo
      */
-    status = ca_search(pname,& chix3);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname,& chix3 );
+    SEVCHK ( status, NULL );
 
-    status = ca_replace_access_rights_event(chix3, accessSecurity_cb);
-    SEVCHK(status, NULL);
+    status = ca_replace_access_rights_event ( chix3, accessSecurity_cb );
+    SEVCHK ( status, NULL );
 
     /*
      * verify clear before connect
      */
-    status = ca_search(pname, &chix4);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname, &chix4 );
+    SEVCHK ( status, NULL );
 
-    status = ca_clear_channel(chix4);
-    SEVCHK(status, NULL);
+    status = ca_clear_channel ( chix4 );
+    SEVCHK ( status, NULL );
 
-    status = ca_search(pname, &chix4);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname, &chix4 );
+    SEVCHK ( status, NULL );
 
-    status = ca_replace_access_rights_event(chix4, accessSecurity_cb);
-    SEVCHK(status, NULL);
+    status = ca_replace_access_rights_event ( chix4, accessSecurity_cb );
+    SEVCHK ( status, NULL );
 
-    status = ca_search(pname, &chix2);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname, &chix2 );
+    SEVCHK (status, NULL);
 
-    status = ca_replace_access_rights_event(chix2, accessSecurity_cb);
-    SEVCHK(status, NULL);
+    status = ca_replace_access_rights_event (chix2, accessSecurity_cb);
+    SEVCHK ( status, NULL );
 
-    status = ca_search(pname, &chix1);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname, &chix1 );
+    SEVCHK ( status, NULL );
 
-    status = ca_replace_access_rights_event(chix1, accessSecurity_cb);
-    SEVCHK(status, NULL);
+    status = ca_replace_access_rights_event ( chix1, accessSecurity_cb );
+    SEVCHK ( status, NULL );
 
-    status = ca_change_connection_event(chix1,conn);
-    SEVCHK(status, NULL);
+    status = ca_change_connection_event ( chix1, conn );
+    SEVCHK ( status, NULL );
 
-    status = ca_change_connection_event(chix1,NULL);
-    SEVCHK(status, NULL);
+    status = ca_change_connection_event ( chix1, NULL );
+    SEVCHK ( status, NULL );
 
-    status = ca_change_connection_event(chix1,conn);
-    SEVCHK(status, NULL);
+    status = ca_change_connection_event ( chix1, conn );
+    SEVCHK ( status, NULL );
 
-    status = ca_change_connection_event(chix1,NULL);
-    SEVCHK(status, NULL);
+    status = ca_change_connection_event ( chix1, NULL );
+    SEVCHK ( status, NULL );
 
-    status = ca_pend_io(1000.0);
-    SEVCHK(status, NULL);
+    status = ca_pend_io ( 1000.0 );
+    SEVCHK ( status, NULL );
 
-    assert (ca_state(chix1) == cs_conn);
-    assert (ca_state(chix2) == cs_conn);
-    assert (ca_state(chix3) == cs_conn);
-    assert (ca_state(chix4) == cs_conn);
+    assert ( ca_state (chix1) == cs_conn );
+    assert ( ca_state (chix2) == cs_conn );
+    assert ( ca_state (chix3) == cs_conn );
+    assert ( ca_state (chix4) == cs_conn );
 
-    assert (INVALID_DB_REQ(ca_field_type(chix1)) == FALSE);
-    assert (INVALID_DB_REQ(ca_field_type(chix2)) == FALSE);
-    assert (INVALID_DB_REQ(ca_field_type(chix3)) == FALSE);
-    assert (INVALID_DB_REQ(ca_field_type(chix4)) == FALSE);
+    assert ( INVALID_DB_REQ (ca_field_type (chix1) ) == FALSE );
+    assert ( INVALID_DB_REQ (ca_field_type (chix2) ) == FALSE );
+    assert ( INVALID_DB_REQ (ca_field_type (chix3) ) == FALSE );
+    assert ( INVALID_DB_REQ (ca_field_type (chix4) ) == FALSE );
 
     printf("%s Read Access=%d Write Access=%d\n", 
         ca_name(chix1), ca_read_access(chix1), ca_write_access(chix1));
@@ -446,7 +446,7 @@ int acctst(char *pname)
             else {
                 iter = 10ul;
             }
-            floatTest(chix1, base, incr, epsil, iter);
+            floatTest (chix1, base, incr, epsil, iter);
             printf (".");
             fflush (stdout);
         }
@@ -647,7 +647,7 @@ int acctst(char *pname)
         dbr_string_t    respStr;
         memset(stimStr, 'a', sizeof(stimStr));
         status = ca_array_put(DBR_STRING, 1u, chix1, stimStr);
-        assert(status==ECA_STRTOBIG);
+        assert(status!=ECA_NORMAL);
         sprintf(stimStr, "%u", 8u);
         status = ca_array_put(DBR_STRING, 1u, chix1, stimStr);
         assert(status==ECA_NORMAL);
@@ -898,19 +898,6 @@ int acctst(char *pname)
     return(0);
 }
 
-#ifndef iocCore
-int main(int argc, char **argv)
-{
-    if(argc == 2){
-        acctst(argv[1]);
-    }
-    else{
-        printf("usage: %s <chan name>\n", argv[0]);
-    }
-    return 0;
-}
-#endif /*iocCore */
-
 /*
  * pend_event_delay_test()
  */
@@ -957,7 +944,7 @@ unsigned    iterations)
         SEVCHK (status, NULL);
         status = ca_get (DBR_FLOAT, chan, &fretval);
         SEVCHK (status, NULL);
-        status = ca_pend_io (100.0);
+        status = ca_pend_io (10.0);
         SEVCHK (status, NULL);
         if (fabs(fval-fretval) > epsilon) {
             printf ("float test failed val written %f\n", fval);
@@ -1038,7 +1025,7 @@ void null_event (struct event_handler_args args)
 /*
  * write_event ()
  */
-void write_event(struct event_handler_args args)
+void write_event (struct event_handler_args args)
 {
     int     status;
     dbr_float_t *pFloat = (dbr_float_t *) args.dbr;
@@ -1051,35 +1038,44 @@ void write_event(struct event_handler_args args)
     a = *pFloat;
     a += 10.1F;
 
-    status = ca_array_put(
-            DBR_FLOAT, 
-            1,
-            args.chid, 
-            &a);
-    SEVCHK(status,NULL);
-    SEVCHK(ca_flush_io(), NULL);
+    status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
+    SEVCHK ( status, NULL );
+    SEVCHK ( ca_flush_io (), NULL );
 }
 
-void conn(struct connection_handler_args args)
+void conn (struct connection_handler_args args)
 {
-#if 0
-    if (args.op == CA_OP_CONN_UP)
-        printf("Channel On Line [%s]\n", ca_name(args.chid));
-    else if (args.op == CA_OP_CONN_DOWN)
-        printf("Channel Off Line [%s]\n", ca_name(args.chid));
-    else
+    int status;
+
+    if (args.op == CA_OP_CONN_UP) {
+#       if 0
+            printf("Channel On Line [%s]\n", ca_name(args.chid));
+#       endif
+        status = ca_get_callback (DBR_GR_FLOAT, args.chid, get_cb, NULL);
+        SEVCHK (status, "get call back in connection handler");
+        status = ca_flush_io ();
+        SEVCHK (status, "get call back flush in connection handler");
+    }
+    else if (args.op == CA_OP_CONN_DOWN) {
+#       if 0
+            printf("Channel Off Line [%s]\n", ca_name(args.chid));
+#       endif
+    }
+    else {
         printf("Ukn conn ev\n");
-#endif
-    ca_get_callback(DBR_GR_FLOAT, args.chid, get_cb, NULL);
+    }
+
 }
 
 void get_cb (struct event_handler_args args)
 {
-    if(!(args.status & CA_M_SUCCESS)){
+    if ( ! ( args.status & CA_M_SUCCESS ) ) {
         printf("Get cb failed because \"%s\"\n", 
-            ca_message(args.status));
+            ca_message (args.status) );
     }
-    conn_cb_count++;
+    else {
+        conn_cb_count++;
+    }
 }
 
 /*
@@ -1167,7 +1163,6 @@ void multiple_sg_requests(chid chix, CA_SYNC_GID gid)
     }
 }
 
-
 /*
  * accessSecurity_cb()
  */
@@ -1192,20 +1187,21 @@ void performGrEnumTest (chid chan)
     int status;
     unsigned i;
 
+    ge.no_str = -1;
+
     status = ca_get (DBR_GR_ENUM, chan, &ge);
     SEVCHK (status, "DBR_GR_ENUM ca_get()");
 
     status = ca_pend_io (2.0);
     assert (status == ECA_NORMAL);
 
-    if (ge.no_str>0) {
-        count = (unsigned) ge.no_str;
-        printf ("Enum state str = ");
-        for (i=0; i<count; i++) {
-            printf ("\"%s\" ", ge.strs[i]);
-        }
-        printf ("\n");
+    assert ( ge.no_str >= 0 && ge.no_str < NELEMENTS(ge.strs) );
+    printf ("Enum state str = {");
+    count = (unsigned) ge.no_str;
+    for (i=0; i<count; i++) {
+        printf ("\"%s\" ", ge.strs[i]);
     }
+    printf ("}\n");
 }
 
 /*

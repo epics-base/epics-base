@@ -49,11 +49,11 @@
 extern "C" {
 #endif
 
-typedef void    *chid;
-typedef chid    chanId; /* for when the structures field name is "chid" */
-typedef long    chtype;
-typedef void    *evid;
-typedef double  ca_real;
+typedef struct oldChannel       *chid;
+typedef chid                    chanId; /* for when the structures field name is "chid" */
+typedef long                    chtype;
+typedef struct oldSubscription  *evid;
+typedef double                  ca_real;
 
 /* Format for the arguments to user connection handlers         */
 struct  connection_handler_args {
@@ -196,6 +196,8 @@ epicsShareFunc int epicsShareAPI ca_task_initialize (void);
 /*  Normally called automatically at task exit                          */
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_exit (void);
+
+epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
 
 /************************************************************************
  * anachronistic entry points                                           *
@@ -720,6 +722,8 @@ epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char
  * channel  R   channel identifier
  */
 epicsShareFunc const char * epicsShareAPI ca_host_name (chid channel);
+/* thread safe version */
+const void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength );
 
 /*
  *  CA_ADD_FD_REGISTRATION
@@ -870,7 +874,7 @@ epicsShareFunc int epicsShareAPI ca_sg_stat (CA_SYNC_GID gid);
  *
  * pUserName    R   new user name string copied from this location  
  */
-epicsShareFunc int epicsShareAPI ca_modify_user_name (const char *pUserName);
+epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
 
 /*
  * CA_MODIFY_HOST_NAME()
@@ -880,7 +884,7 @@ epicsShareFunc int epicsShareAPI ca_modify_user_name (const char *pUserName);
  *
  * pHostName    R   new host name string copied from this location  
  */
-epicsShareFunc int epicsShareAPI ca_modify_host_name (const char *pHostName);
+epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
 
 /*
  * ca_v42_ok()

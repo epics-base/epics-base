@@ -3,8 +3,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-CMPLR = STRICT
-
 #
 #	includes to install from this subproject
 #
@@ -14,22 +12,46 @@ INC += caeventmask.h
 INC += caProto.h
 INC += db_access.h
 INC += pvAdapter.h
+INC += addrList.h
+INC += cacIO.h
 
-#LIBSRCS += caOsDependent.c
+LIBSRCS += cacChannel.cpp
+LIBSRCS += cacChannelIO.cpp
+LIBSRCS += cacNotify.cpp
+LIBSRCS += cacNotifyIO.cpp
+LIBSRCS += cacServiceList.cpp
 LIBSRCS += access.cpp
 LIBSRCS += processThread.cpp
 LIBSRCS += iocinf.cpp
-LIBSRCS += service.cpp
-LIBSRCS += conn.cpp
 LIBSRCS += flow_control.cpp
-LIBSRCS += syncgrp.cpp
 LIBSRCS += convert.cpp
 LIBSRCS += test_event.cpp
-#LIBSRCS += bsd_depen.c
 LIBSRCS += repeater.cpp
 LIBSRCS += ringBuffer.cpp
 LIBSRCS += searchTimer.cpp
 LIBSRCS += repeaterSubscribeTimer.cpp
+LIBSRCS += tcpiiu.cpp
+LIBSRCS += udpiiu.cpp
+LIBSRCS += netiiu.cpp
+LIBSRCS += nciu.cpp
+LIBSRCS += baseNMIU.cpp
+LIBSRCS += netReadCopyIO.cpp
+LIBSRCS += netReadNotifyIO.cpp
+LIBSRCS += netWriteNotifyIO.cpp
+LIBSRCS += netSubscription.cpp
+LIBSRCS += cac.cpp
+LIBSRCS += conn.cpp
+LIBSRCS += tcpSendWatchdog.cpp
+LIBSRCS += tcpRecvWatchdog.cpp
+LIBSRCS += bhe.cpp
+LIBSRCS += oldChannel.cpp
+LIBSRCS += oldSubscription.cpp
+LIBSRCS += getCallback.cpp
+LIBSRCS += putCallback.cpp
+LIBSRCS += syncgrp.cpp
+LIBSRCS += CASG.cpp
+LIBSRCS += syncGroupNotify.cpp
+
 
 LIBRARY=ca
 
@@ -53,8 +75,8 @@ caRepeater_SRCS = caRepeater.cpp
 PROD += caRepeater
 
 PROD += catime acctst 
-catime_SRCS = catime.c
-acctst_SRCS = acctst.c
+catime_SRCS = catimeMain.c catime.c 
+acctst_SRCS = acctstMain.c acctst.c 
 
 include $(TOP)/configure/RULES
 

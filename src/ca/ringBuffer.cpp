@@ -64,19 +64,6 @@ int cacRingBufferConstruct (ringBuffer *pBuf)
  */
 void cacRingBufferDestroy (ringBuffer *pBuf)
 {
-    /*
-     * force any read/write/reserve/commit ops in
-     * other threads to complete
-     */
-    pBuf->shutDown = 1u;
-    semBinaryGive (pBuf->readSignal);
-    semBinaryGive (pBuf->writeSignal);
-    semMutexMustTake (pBuf->readLock);
-    semMutexMustTake (pBuf->writeLock);
-
-    /*
-     * clean up
-     */
     semBinaryDestroy (pBuf->readSignal);
     semBinaryDestroy (pBuf->writeSignal);
     semMutexDestroy (pBuf->readLock);
@@ -313,16 +300,16 @@ unsigned cacRingBufferWrite (ringBuffer *pRing, const void *pBuf,
     unsigned totalBytes = 0;
     unsigned curBytes;
 
-    semMutexMustTake (pRing->writeLock);
+    semMutexMustTake ( pRing->writeLock );
 
-    while (totalBytes<nBytes) {
-        curBytes = cacRingBufferWritePartial (pRing, 
-                        pBufTmp+totalBytes, nBytes-totalBytes);
-        if (curBytes==0) {
-            semBinaryGive (pRing->readSignal);
-            semBinaryMustTake (pRing->writeSignal);
-            if (pRing->shutDown) {
-                semMutexGive (pRing->writeLock);
+    while ( totalBytes < nBytes ) {
+        curBytes = cacRingBufferWritePartial ( pRing, 
+                        pBufTmp+totalBytes, nBytes-totalBytes );
+        if ( curBytes == 0 ) {
+            semBinaryGive ( pRing->readSignal );
+            semBinaryMustTake ( pRing->writeSignal );
+            if ( pRing->shutDown ) {
+                semMutexGive ( pRing->writeLock );
                 return totalBytes;
             }
         }
@@ -331,16 +318,21 @@ unsigned cacRingBufferWrite (ringBuffer *pRing, const void *pBuf,
         }
     }
 
-    semMutexGive (pRing->writeLock);
+    semMutexGive ( pRing->writeLock );
 
     return totalBytes;
+}
+
+void cacRingBufferWriteLock (ringBuffer *pBuf)
+{
+    semMutexMustTake (pBuf->writeLock);
 }
 
 bool cacRingBufferWriteLockNoBlock (ringBuffer *pBuf, unsigned bytesRequired)
 {
     semMutexMustTake (pBuf->writeLock);
 
-    if (cacRingBufferWriteSize (pBuf)<bytesRequired) {
+    if ( cacRingBufferWriteSize (pBuf) < bytesRequired ) {
         semMutexGive (pBuf->writeLock);
         return false;
     }
@@ -450,12 +442,20 @@ void cacRingBufferReadCommit (ringBuffer *pRing, unsigned delta)
     semMutexGive (pRing->readLock);
 }
 
-void cacRingBufferWriteFlush (ringBuffer *pRing)
+bool cacRingBufferWriteFlush (ringBuffer *pRing)
 {
-    semBinaryGive (pRing->readSignal);
+    if ( cacRingBufferReadSize (pRing) ) {
+        semBinaryGive (pRing->readSignal);
+        return true;
+    }
+    return false;
 }
 
-void cacRingBufferReadFlush (ringBuffer *pRing)
+bool cacRingBufferReadFlush (ringBuffer *pRing)
 {
-    semBinaryGive (pRing->writeSignal);
+    if ( cacRingBufferWriteSize (pRing) ) {
+        semBinaryGive (pRing->writeSignal);
+        return true;
+    }
+    return false;
 }

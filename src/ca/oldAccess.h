@@ -1,0 +1,101 @@
+
+/*  
+ *  $Id$
+ *
+ *                              
+ *                    L O S  A L A M O S
+ *              Los Alamos National Laboratory
+ *               Los Alamos, New Mexico 87545
+ *                                  
+ *  Copyright, The Regents of the University of California.
+ *                                  
+ *           
+ *	Author Jeffrey O. Hill
+ *	johill@lanl.gov
+ *	505 665 1831
+ */
+
+struct oldChannel : public cacChannel {
+public:
+    oldChannel (caCh *pConnCallBack, void *pPrivate);
+    void destroy ();
+    void setPrivatePointer (void *);
+    void * privatePointer () const;
+    int changeConnCallBack (caCh *pfunc);
+    int replaceAccessRightsEvent (caArh *pfunc);
+    void ioAttachNotify ();
+    void ioReleaseNotify ();
+
+    static void * operator new (size_t size);
+    static void operator delete (void *pCadaver, size_t size);
+
+private:
+    caCh *pConnCallBack;
+    void *pPrivate;
+    caArh *pAccessRightsFunc;
+
+    ~oldChannel (); // must allocate from pool
+    void connectTimeoutNotify ();
+    void connectNotify ();
+    void disconnectNotify ();
+    void accessRightsNotify ( caar );
+    static tsFreeList < struct oldChannel > freeList;
+
+    friend int epicsShareAPI ca_array_get (chtype type, unsigned long count, chid pChan, void *pValue);
+};
+
+class getCallback : public cacNotify {
+public:
+    getCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate);
+    void destroy ();
+    virtual void completionNotify (unsigned type, unsigned long count, const void *pData);
+    virtual void exceptionNotify (int status, const char *pContext);
+
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
+
+private:
+    oldChannel &chan;
+    caEventCallBackFunc *pFunc;
+    void *pPrivate;
+    ~getCallback (); // allocate only out of pool
+    static tsFreeList < class getCallback > freeList;
+};
+
+class putCallback : public cacNotify {
+public:
+    putCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
+    void destroy ();
+    virtual void completionNotify ();
+    virtual void exceptionNotify ( int status, const char *pContext );
+
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
+
+private:
+    oldChannel &chan;
+    caEventCallBackFunc *pFunc;
+    void *pPrivate;
+    ~putCallback (); // allocate only out of pool
+    static tsFreeList < class putCallback > freeList;
+};
+
+struct oldSubscription : public cacNotify {
+public:
+    oldSubscription  ( oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
+    void destroy ();
+
+    static void * operator new ( size_t size );
+    static void operator delete ( void *pCadaver, size_t size );
+
+private:
+    oldChannel          &chan;
+    caEventCallBackFunc *pFunc;
+    void                *pPrivate;
+
+    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+
+    ~oldSubscription (); // must allocate from pool
+    static tsFreeList < struct oldSubscription > freeList;
+};

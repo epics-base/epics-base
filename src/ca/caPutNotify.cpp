@@ -22,7 +22,7 @@ LOCAL void caExtraEventLabor (void *pArg)
 		 */
 		semStatus = semMutexTakeTimeout (pcac->localIIU.putNotifyLock, 60.0 /* sec */);
         if (semStatus!=semTakeOK) {
-            ca_printf (pcac, "cac: put notify deadlock condition detected\n");
+            ca_printf ("cac: put notify deadlock condition detected\n");
             (*pcac->localIIU.pdbAdapter->p_db_post_extra_labor) (pcac->localIIU.evctx);
             break;
         }

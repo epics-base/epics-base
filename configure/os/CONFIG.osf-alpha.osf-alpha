@@ -1,17 +1,17 @@
-# CONFIG.solaris-sparc.solaris-sparc
+# CONFIG.osf-alpha.osf-alpha
 #
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for linux-x86 host archs
-# Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
+# Definitions for osf-alpha host archs
+# Sites may override these definitions in CONFIG_SITE.osf-alpha.osf-alpha
 #-------------------------------------------------------
 
 # Include definitions common to all Unix target archs
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
-OS_CLASS = solaris
-ARCH_CLASS = sparc
+OS_CLASS = osf
+ARCH_CLASS = alpha
 
 SPARCWORKS = /opt/SUNWspro
 

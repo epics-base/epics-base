@@ -28,6 +28,7 @@ of this distribution.
 #include "dbStaticPvt.h"
 #include "dbBase.h"
 #include "gpHash.h"
+#include "osiFileName.h"
 
 DBBASE *pdbbase = NULL;
 
@@ -43,7 +44,7 @@ int main(int argc,char **argv)
     char	*psep;
     int		*len;
     long	status;
-    static char *pathSep = ":";
+    static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
     /*Look for options*/

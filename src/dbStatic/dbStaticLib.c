@@ -28,6 +28,7 @@ of this distribution.
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
@@ -50,6 +51,9 @@ of this distribution.
 #include "guigroup.h"
 #include "special.h"
 #include "dbmf.h"
+#include "postfix.h"
+#include "osiFileName.h"
+
 
 int dbStaticDebug = 0;
 #define messagesize	100
@@ -191,6 +195,7 @@ static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
 static void zeroDbentry(DBENTRY *pdbentry);
 static char *getpMessage(DBENTRY *pdbentry);
 static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname);
+static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /*Following are obsolete. Will go away next release*/
 long dbRead(DBBASE *pdbbase,FILE *fp)
@@ -756,46 +761,118 @@ long dbPath(DBBASE *pdbbase,const char *path)
 long dbAddPath(DBBASE *pdbbase,const char *path)
 {
     ELLLIST	*ppathList;
-    dbPathNode	*pdbPathNode;
-    const char	*pcolon;
-    const char	*pdir;
-    int		len;
-    int		emptyName;
 
+    const char	*pcolon;
+	const char	*plast;
+    int			len;
+	unsigned	expectingPath;
+	unsigned	sawMissingPath;
+	
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
     if(!ppathList) {
-	ppathList= dbCalloc(1,sizeof(ELLLIST));
-	ellInit(ppathList);
-	pdbbase->pathPvt = (void *)ppathList;
+		ppathList = dbCalloc(1,sizeof(ELLLIST));
+		ellInit(ppathList);
+		pdbbase->pathPvt = (void *)ppathList;
     }
-    pdir = path;
-    /*an empty name at beginning, middle, or end means current directory*/
-    while(pdir && *pdir) {
-	emptyName = ((*pdir == ':') ? TRUE : FALSE);
-	if(emptyName) ++pdir;
-	pdbPathNode = (dbPathNode *)calloc(1,sizeof(dbPathNode));
-	ellAdd(ppathList,&pdbPathNode->node);
-	if(!emptyName) {
-	    pcolon = strchr(pdir,':');
-	    len = (pcolon ? (pcolon - pdir) : strlen(pdir));
-	    if(len>0)  {
-		pdbPathNode->directory = (char *)calloc(len+1,sizeof(char));
-		strncpy(pdbPathNode->directory,pdir,len);
-		pdir = pcolon;
-		/*unless at end skip past first colon*/
-		if(pdir && *(pdir+1)!=0) ++pdir;
-	    } else { /*must have been trailing : */
-		emptyName=TRUE;
-	    }
+ 
+	/*
+	 * Empty path strings are ignored
+	 */
+	if (!path) {
+		return(0);
 	}
-	if(emptyName) {
-	    pdbPathNode->directory = (char *)calloc(2,sizeof(char));
-	    strcpy(pdbPathNode->directory,".");
+
+	/*
+	 * care is taken to properly deal with white space
+	 * 1) preceding and trailing white space is removed from paths
+	 * 2) white space inbetween path separator counts as an empty name
+	 *		(see below)
+	 */
+	expectingPath = FALSE;
+	sawMissingPath = FALSE;
+	while (*path) {
+		int len;
+		
+		/*
+		 * preceding white space is removed
+		 */
+		if (isspace(*path)) {
+			path++;
+			continue;
+		}
+
+		pcolon = strstr (path, OSI_PATH_LIST_SEPARATOR);
+		
+		if (pcolon==path) {
+			sawMissingPath = TRUE;
+			path += strlen (OSI_PATH_LIST_SEPARATOR);
+			continue;
+		}
+
+		if (pcolon) {
+			plast = pcolon-1u;
+			expectingPath = TRUE;
+		}
+		else {
+			plast = strlen (path) + path - 1u;
+			expectingPath = FALSE;
+		}
+		/*
+		 * trailing white space is removed
+		 */
+		while (isspace(*plast)) {
+			plast--;
+		}
+
+		/*
+		 * len is always nonzero because we found something that
+		 * 1) isnt white space
+		 * 2) isnt a path separator
+		 */
+		len = (plast - path) + 1u;
+
+		if (dbAddOnePath (pdbbase, path, len)) {
+			return (-1);
+		}
+
+		path += len;
+		if (pcolon) {
+			path += strlen(OSI_PATH_LIST_SEPARATOR);
+		}
 	}
-    }
-    return(0);
+
+	/*
+	 * an empty name at beginning, middle, or end of a path string that isnt
+	 * empty means current directory
+	 */
+	if (expectingPath||sawMissingPath) {
+		return dbAddOnePath (pdbbase, ".", 2);
+	}
+
+	return(0);
 }
+
+/*
+ * dbAddOnePath ()
+ */
+static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
+{
+	ELLLIST	*ppathList;
+    dbPathNode *pdbPathNode;
+	
+    if(!pdbbase) return(-1);
+    ppathList = (ELLLIST *)pdbbase->pathPvt;
+
+	pdbPathNode = (dbPathNode *) dbCalloc (1, sizeof(dbPathNode));
+	pdbPathNode->directory = (char *) calloc (length+1, sizeof(char));
+	strncpy (pdbPathNode->directory, path, length);
+	pdbPathNode->directory[length] = '\0';
+	ellAdd (ppathList, &pdbPathNode->node);
+
+	return 0;
+}
+
 
 long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 	char *precordTypename,int level)
@@ -3248,7 +3325,7 @@ void dbDumpPath(DBBASE *pdbbase)
     while(pdbPathNode) {
 	printf("%s",pdbPathNode->directory);
 	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
-	if(pdbPathNode) printf(":");
+	if(pdbPathNode) printf("%s", OSI_PATH_LIST_SEPARATOR);
     }
     printf("\n");
     return;

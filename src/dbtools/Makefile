@@ -21,7 +21,7 @@ include $(TOP)/configure/RULES
 #	These lex sources are included in some C sources,
 #	so they have to be created in time:
 #
-dbLoadTemplate$(OBJ): dbLoadTemplate_lex.c
+dbLoadTemplate$(OBJ): dbLoadTemplate_lex.c ../dbLoadTemplate.h
 
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c 

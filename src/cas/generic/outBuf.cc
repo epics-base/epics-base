@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/04/10 23:11:10  jhill
+ * cosmetic
+ *
  * Revision 1.6  1996/12/06 22:36:29  jhill
  * use destroyInProgress flag now functional nativeCount()
  *
@@ -180,7 +183,7 @@ void outBuf::commitMsg ()
 "CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%lx\n",
 			mp->m_cmmd,
 			mp->m_cid,
-			mp->m_type,
+			mp->m_dataType,
 			mp->m_count,
 			mp->m_postsize,
 			mp->m_available,
@@ -193,7 +196,7 @@ void outBuf::commitMsg ()
 	 */
 	mp->m_cmmd = htons (mp->m_cmmd);
 	mp->m_postsize = htons (mp->m_postsize);
-	mp->m_type = htons (mp->m_type);
+	mp->m_dataType = htons (mp->m_dataType);
 	mp->m_count = htons (mp->m_count);
 	mp->m_cid = htonl (mp->m_cid);
 	mp->m_available = htonl (mp->m_available);

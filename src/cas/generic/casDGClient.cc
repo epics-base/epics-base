@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1998/04/20 18:11:01  jhill
+ * better debug mesg
+ *
  * Revision 1.14  1998/04/10 23:13:14  jhill
  * fixed byte swap problems, and use default port if server tool returns PV IP addr, but no port
  *
@@ -303,20 +306,20 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 				// address redirect (it is never correct to use this
 				// server's port when it is a redirect).
 				//
-				search_reply->m_type = CA_SERVER_PORT;
+				search_reply->m_dataType = CA_SERVER_PORT;
 			}
 			else {
-				search_reply->m_type = ntohs (ina.sin_port);
+				search_reply->m_dataType = ntohs (ina.sin_port);
 			}
 		}
 		else {
 			search_reply->m_cid = ~0U;
-			search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+			search_reply->m_dataType = this->pOutMsgIO->serverPortNumber();
 		}
 	}
 	else {
 		search_reply->m_cid = ~0U;
-		search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+		search_reply->m_dataType = this->pOutMsgIO->serverPortNumber();
 	}
 
 	search_reply->m_count = 0ul;

@@ -160,23 +160,6 @@ void db_process(struct dbAddr *pdb_addr)
         return;
 }
 
-void new_alarm(){
-        return;
-}
-/*  FILL  fill a buffer with the designated character */
-void fill(pbuffer,size,fillchar)
- register char  *pbuffer;
- register short size;
- register char  fillchar;
- {
-        register short  i;
-
-        for (i=0; i<size; i++){
-                *pbuffer = fillchar;
-                pbuffer++;
-        }
-}
-
 /*	IOCDBACCESS.C 
  * Global Subroutines
  *

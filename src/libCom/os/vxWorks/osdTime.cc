@@ -8,6 +8,13 @@
 #include <sysLib.h>
 
 //
+// osiTime::synchronize()
+//
+void osiTime::synchronize()
+{
+}
+
+//
 // osiTime::getCurrent ()
 //
 osiTime osiTime::getCurrent ()
@@ -17,6 +24,10 @@ osiTime osiTime::getCurrent ()
 	ULONG	nsec;
 	ULONG	rate = sysClkRateGet();
  
+	//
+	// currently assuming that this has been already adjusted
+	// for the EPICS epoch
+	//
 	ticks = tickGet();
 	sec = ticks/rate;
 	nsec = (ticks%rate)*(nSecPerSec/rate); 

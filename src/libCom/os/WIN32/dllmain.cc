@@ -46,9 +46,6 @@
 #error This source is specific to WIN32 
 #endif
 
-extern int init_osi_time ();
-extern int exit_osi_time ();
-
 #if !defined(EPICS_DLL_NO)
 BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -57,8 +54,6 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		if (!bsdSockAttach()) 
 			return FALSE;
-		if (init_osi_time ())
-			return FALSE;
 #		ifdef _DEBUG
 			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
@@ -66,7 +61,6 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 	case DLL_PROCESS_DETACH:
 		bsdSockRelease();
-		exit_osi_time ();
 #		ifdef _DEBUG
 			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif

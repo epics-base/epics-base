@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/08/05 00:37:06  jhill
+ * removed warnings
+ *
  * Revision 1.8  1997/06/25 05:45:54  jhill
  * cleaned up pc port
  *
@@ -247,7 +250,7 @@ osiTime osiTimerQueue::delayToFirstExpire() const
 		//
 		// no timer in the queue - return a long delay - 30 min
 		//
-		delay = osiTime(30u * secPerMin, 0u);
+		delay = osiTime (30u * osiTime::secPerMin, 0u);
 	}
 #ifdef DEBUG
 	printf("delay to first item on the queue %f\n", (double) delay);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1999/05/03 16:22:29  jhill
+ * allow osiTime to convert toaitTimeStamp without binding to gdd
+ *
  * Revision 1.7  1999/04/30 00:02:02  jhill
  * added getCurrentEPICS()
  *
@@ -70,333 +73,237 @@
 #include <assert.h> 
 #endif
 
-#define nSecPerSec 1000000000u
-#define nSecPerUSec 1000u
-#define secPerMin 60u
-
 #include "shareLib.h"
 
+struct timespec;
+struct TS_STAMP;
+class aitTimeStamp;
+
+//
+// class osiTime
+//
+// NOTE: this is an unsigned data type. It is not possible
+// to store a negative time value using this class.
+//
 class epicsShareClass osiTime {
-	friend osiTime operator+ 
-		(const osiTime &lhs, const osiTime &rhs);
-	friend osiTime operator- 
-		(const osiTime &lhs, const osiTime &rhs);
-	friend int operator>= 
-		(const osiTime &lhs, const osiTime &rhs);
-	friend int operator> 
-		(const osiTime &lhs, const osiTime &rhs);
-	friend int operator<=
-		(const osiTime &lhs, const osiTime &rhs);
-	friend int operator< 
-		(const osiTime &lhs, const osiTime &rhs);
-	friend int operator==
-		(const osiTime &lhs, const osiTime &rhs);
 public:
-	osiTime () : sec(0u), nSec(0u) {}
-	osiTime (const osiTime &t) : sec(t.sec), nSec(t.nSec) {}
-	osiTime (const unsigned long secIn, const unsigned long nSecIn) 
-	{
-		if (nSecIn<nSecPerSec) {
-			this->sec = secIn;
-			this->nSec = nSecIn;
-		}
-		else if (nSecIn<(nSecPerSec<<1u)){
-			this->sec = secIn + 1u;
-			this->nSec = nSecIn-nSecPerSec;
-		}
-		else {
-			this->sec = nSecIn/nSecPerSec + secIn;
-			this->nSec = nSecIn%nSecPerSec;
-		}
-	}
-
-	osiTime (double t) 
-	{
-		double intPart;
-		if (t<0.0l) {
-			t = 0.0l;
-		}
-		this->sec = (unsigned long) t;
-		intPart = (double) this->sec;
-		this->nSec = (unsigned long) ((t-intPart)*nSecPerSec);
-	}
-
 	//
-	// fetch value as an integer
+	// fetch the current time
 	//
-	unsigned long getSec() const
-	{
-		return this->sec;
-	}
-	unsigned long getUSec() const
-	{	
-		return (this->nSec/nSecPerUSec);
-	}
-	unsigned long getNSec() const
-	{	
-		return this->nSec;
-	}
-
+	// (always returns a time value that is greater than or equal
+	// to all previous time values returned)
 	//
-	// non standard calls for the many strange
-	// time formats that still exist
-	//
-	long getSecTruncToLong() const
-	{
-		assert (this->sec<=LONG_MAX);
-		return (long) this->sec;
-	}
-	long getUSecTruncToLong() const
-	{	
-		return (long) (this->nSec/nSecPerUSec);
-	}
-	long getNSecTruncToLong() const
-	{	
-		assert (this->nSec<=LONG_MAX);
-		return (long) this->nSec;
-	}
-
-
-	operator double() const
-	{
-		return ((double)this->nSec)/nSecPerSec+this->sec;
-	}
-
-	operator float() const
-	{
-		return ((float)this->nSec)/nSecPerSec+this->sec;
-	}
-
 	static osiTime getCurrent();
+
+	//
+	// some systems have a high resolution time source which
+	// gradually drifts away from the master time base. Calling
+	// this routine will cause osiTime to realign the high
+	// resolution result from getCurrent() with some master 
+	// time base. 
+	//
+	// if this routine has not been called at least once so far
+	// by the current process then it is called the first time 
+	// that getCurrent() is called
+	//
+	static void synchronize();
+
+	//
+	// create an osiTime for the EPICS epoch
+	//
+	osiTime () : sec(0u), nSec(0u) {}
+
+	//
+	// create an osiTime from another osiTime
+	//
+	osiTime (const osiTime &t) : sec(t.sec), nSec(t.nSec) {}
+
+	//
+	// create an osiTime from sec and fractional nano-seconds
+	//
+	osiTime (const unsigned long secIn, const unsigned long nSecIn);
+
+	//
+	// convert to and from floating point
+	//
+	osiTime (double t);
+	operator double() const;
+	operator float() const;
 
 	//
 	// convert to and from EPICS TS_STAMP format
 	//
-	// include tsDefs.h prior to including osiTime.h
-	// if you need these capabilities
-	//
-#ifdef INC_tsDefs_h
-	operator TS_STAMP () const
-	{
-		TS_STAMP ts;
-		assert (this->sec>=osiTime::epicsEpochSecPast1970);
-		ts.secPastEpoch = this->sec - osiTime::epicsEpochSecPast1970;
-		ts.nsec = this->nSec;
-		return ts;
-	}
-
-	osiTime (const TS_STAMP &ts) 
-	{
-		this->sec = ts.secPastEpoch + osiTime::epicsEpochSecPast1970;
-		this->nSec = ts.nsec;
-	}
-
-	operator = (const TS_STAMP &rhs)
-	{
-		this->sec = rhs.secPastEpoch + osiTime::epicsEpochSecPast1970;
-		this->nSec = rhs.nsec;
-	}
-#endif
+	operator struct TS_STAMP () const;
+	osiTime (const struct TS_STAMP &ts);
+	operator = (const struct TS_STAMP &rhs);
 
 	//
 	// convert to and from GDD's aitTimeStamp format
 	//
-	// include aitHelpers.h prior to including osiTime.h
-	// if you need these capabilities
+	operator aitTimeStamp () const;
+	osiTime (const aitTimeStamp &ts);
+	operator = (const aitTimeStamp &rhs);
+
 	//
-#ifdef aitHelpersInclude
-	operator aitTimeStamp () const
-	{
-		return aitTimeStamp (this->sec, this->nSec);
-	}
+	// convert to and from POSIX RT's "struct timespec"
+	//
+	operator struct timespec () const;
+	osiTime (const struct timespec &ts);
+	operator = (const struct timespec &rhs);
 
-	osiTime (const aitTimeStamp &ts) 
-	{
-		ts.get (this->sec, this->nSec);
-	}
+	//
+	// arithmetic operators
+	//
+	osiTime operator- (const osiTime &rhs) const;
+	osiTime operator+ (const osiTime &rhs) const;
+	osiTime operator+= (const osiTime &rhs);
+	osiTime operator-= (const osiTime &rhs);
 
-	operator = (const aitTimeStamp &rhs)
-	{
-		rhs.get (this->sec, this->nSec);
-	}
-#endif
+	//
+	// comparison operators
+	//
+	int operator == (const osiTime &rhs) const;
+	int operator != (const osiTime &rhs) const;
+	int operator <= (const osiTime &rhs) const;
+	int operator < (const osiTime &rhs) const;
+	int operator >= (const osiTime &rhs) const;
+	int operator > (const osiTime &rhs) const;
 
-	osiTime operator+= (const osiTime &rhs)
-	{
-		*this = *this + rhs;
-		return *this;
-	}
+	//
+	// dump current state to standard out
+	//
+	void show (unsigned interestLevel) const;
 
-	osiTime operator-= (const osiTime &rhs)
-	{
-		*this = *this - rhs;
-		return *this;
-	}
+	//
+	// useful public constants
+	//
+	static const unsigned nSecPerSec;
+	static const unsigned mSecPerSec;
+	static const unsigned nSecPerUSec;
+	static const unsigned secPerMin;
 
-	void show(unsigned)
-	{
-		printf("osiTime: sec=%lu nSec=%lu\n", 
-			this->sec, this->nSec);
-	}
+	//
+	// fetch value as an unsigned integer
+	//
+	unsigned long getSec() const;
+	unsigned long getUSec() const;
+	unsigned long getNSec() const;
+
+	//
+	// non standard calls for the many different
+	// time formats that exist
+	//
+	long getSecTruncToLong() const;
+	long getUSecTruncToLong() const;
+	long getNSecTruncToLong() const;
+
 private:
 	unsigned long sec;
 	unsigned long nSec;
 
-	static const unsigned epicsEpochSecPast1970; 
+	static const unsigned epicsEpochSecPast1970;
+	static osiTime osdGetCurrent();
 };
 
-inline osiTime operator+ (const osiTime &lhs, const osiTime &rhs)
+inline unsigned long osiTime::getSec() const
 {
-	return osiTime(lhs.sec + rhs.sec, lhs.nSec + rhs.nSec);	
+	return this->sec;
 }
 
-//
-// like data type unsigned this assumes that the lhs > rhs
-// (otherwise we assume sec wrap around)
-//
-inline osiTime operator- (const osiTime &lhs, const osiTime &rhs)
-{
-	unsigned long nSec, sec;
-
-	if (lhs.sec<rhs.sec) {
-		//
-		// wrap around
-		//
-		sec = 1 + lhs.sec + (ULONG_MAX - rhs.sec);
-	}
-	else {
-		sec = lhs.sec - rhs.sec;
-	}
-
-	if (lhs.nSec<rhs.nSec) {
-		//
-		// Borrow
-		//
-		nSec = 1 + lhs.nSec + (nSecPerSec - rhs.nSec);	
-		sec--;
-	}
-	else {
-		nSec = lhs.nSec - rhs.nSec;	
-	}
-	return osiTime(sec, nSec);	
+inline unsigned long osiTime::getUSec() const
+{	
+	return (this->nSec/nSecPerUSec);
 }
 
-
-inline int operator <= (const osiTime &lhs, const osiTime &rhs)
-{
-	int	rc;
-//
-// Sun's CC -O generates bad code when this was rearranged 
-//
-	if (lhs.sec<rhs.sec) {
-		rc = 1;
-	}
-	else if (lhs.sec>rhs.sec) {
-		rc = 0;
-	}
-	else {
-		if (lhs.nSec<=rhs.nSec) {
-			rc = 1;
-		}
-		else {
-			rc = 0;
-		}
-	}
-	return rc;
+inline unsigned long osiTime::getNSec() const
+{	
+	return this->nSec;
 }
 
-inline int operator < (const osiTime &lhs, const osiTime &rhs)
+inline osiTime::osiTime (double t) 
 {
-	int	rc;
-//
-// Sun's CC -O generates bad code when this was rearranged 
-//
-	if (lhs.sec<rhs.sec) {
-		rc = 1;
-	}
-	else if (lhs.sec>rhs.sec) {
-		rc = 0;
-	}
-	else {
-		if (lhs.nSec<rhs.nSec) {
-			rc = 1;
-		}
-		else {
-			rc = 0;
-		}
-	}
-	return rc;
+	assert (t>0.0);
+	this->sec = (unsigned long) t;
+	this->nSec = (unsigned long) ((t-this->sec)*nSecPerSec);
 }
 
-inline int operator >= (const osiTime &lhs, const osiTime &rhs)
+inline osiTime::operator double() const
 {
-	int	rc;
-//
-// Sun's CC -O generates bad code here
-//
-//
-//
-#if 0
-	if (lhs.sec>rhs.sec) {
-		return 1;
-	}
-	else if (lhs.sec==rhs.sec) {
-		if (lhs.nSec>=rhs.nSec) {
-			return 1;
-		}
-	}
-	assert(lhs.sec<=rhs.sec);
-	return 0;
-#endif
-	if (lhs.sec>rhs.sec) {
-		rc = 1;
-	}
-	else if (lhs.sec<rhs.sec) {
-		rc = 0;
-	}
-	else {
-		if (lhs.nSec>=rhs.nSec) {
-			rc = 1;
-		}
-		else {
-			rc = 0;
-		}
-	}
-	return rc;
+	return ((double)this->nSec)/nSecPerSec+this->sec;
 }
 
-inline int operator > (const osiTime &lhs, const osiTime &rhs)
+inline osiTime::operator float() const
 {
-	int	rc;
-//
-// Sun's CC -O generates bad code when this was rearranged 
-//
-	if (lhs.sec>rhs.sec) {
-		rc = 1;
-	}
-	else if (lhs.sec<rhs.sec) {
-		rc = 0;
-	}
-	else {
-		if (lhs.nSec>rhs.nSec) {
-			rc = 1;
-		}
-		else {
-			rc = 0;
-		}
-	}
-	return rc;
+	return ((float)this->nSec)/nSecPerSec+this->sec;
 }
 
-inline int operator==
-		(const osiTime &lhs, const osiTime &rhs)
+inline osiTime osiTime::operator + (const osiTime &rhs) const
 {
-	if (lhs.sec == rhs.sec && lhs.nSec == rhs.nSec) {
+	return osiTime(this->sec + rhs.sec, this->nSec + rhs.nSec);	
+}
+
+inline osiTime osiTime::operator += (const osiTime &rhs)
+{
+	*this = *this + rhs;
+	return *this;
+}
+
+inline osiTime osiTime::operator -= (const osiTime &rhs)
+{
+	*this = *this - rhs;
+	return *this;
+}
+
+inline int osiTime::operator == (const osiTime &rhs) const
+{
+	if (this->sec == rhs.sec && this->nSec == rhs.nSec) {
 		return 1;
 	}
 	else {
 		return 0;
 	}
+}
+
+inline int osiTime::operator != (const osiTime &rhs) const
+{
+	if (this->sec != rhs.sec || this->nSec != rhs.nSec) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+//
+// operator >= (const osiTime &lhs, const osiTime &rhs)
+//
+inline int osiTime::operator >= (const osiTime &rhs) const
+{
+	return !(*this < rhs);
+}
+
+//
+// operator > (const osiTime &lhs, const osiTime &rhs)
+//
+inline int osiTime::operator > (const osiTime &rhs) const
+{
+	return !(*this <= rhs);
+}
+
+inline long osiTime::getSecTruncToLong() const
+{
+	assert (this->sec<=LONG_MAX);
+	return (long) this->sec;
+}
+
+inline long osiTime::getUSecTruncToLong() const
+{	
+	return (long) (this->nSec/nSecPerUSec);
+}
+
+inline long osiTime::getNSecTruncToLong() const
+{	
+	return (long) this->nSec;
 }
 
 #endif // osiTimehInclude

@@ -1,62 +1,199 @@
+//
+// osiTime.cc
+//
+// Author: Jeff Hill
+//
+//
 
 #include <math.h>
 #include <time.h>
+
 #include <winsock2.h>
+
+/*
+ * for _ftime()
+ */
+#include <sys/types.h>
+#include <sys/timeb.h>
 
 #define epicsExportSharedSymbols
 #include <osiTime.h>
 
-static long offset_time_s = 0;  /* time diff (sec) from 1990 when EPICS started */
-static LARGE_INTEGER time_prev, time_freq;
+//
+// performance counter last value, ticks per sec,
+// and its offset from the EPICS epoch.
+// 
+static LONGLONG perf_last, perf_freq, perf_offset;
+
+//
+// divide the offset into seconds and
+// fractions of a second so that overflow is less
+// likely (we dont know the magnitude of perf_freq
+// until run time)
+//
+static LONGLONG perf_sec_offset=-1, perf_frac_offset;
+
+static const SYSTEMTIME epicsEpochST = {
+	1990, // year
+	1, // month
+	1, // day of the week (Monday)
+	1, // day of the month
+	0, // hour
+	0, // min
+	0, // sec
+	0 // milli sec
+};
+
+static LONGLONG epicsEpoch;
+
+#define FILE_TIME_TICKS_PER_SEC 10000000L
 
 /*
- *	init_osi_time has to be called before using the timer,
- *	exit_osi_time has to be called in balance.
+ * synchronize()
  */
-int init_osi_time ()
+void osiTime::synchronize()
 {
-	if (offset_time_s == 0) {
-		/*
-		 * initialize elapsed time counters
-		 *
-		 * All CPUs running win32 currently have HR
-		 * counters (Intel and Mips processors do)
-		 */
-		if (QueryPerformanceCounter (&time_prev)==0) {
-			return 1;
-		}
-		if (QueryPerformanceFrequency (&time_freq)==0) {
-			return 1;
-		}
-		offset_time_s = (long)time(NULL) - 
-				(long)(time_prev.QuadPart/time_freq.QuadPart);
+	static int init = 0;
+	LONGLONG new_sec_offset, new_frac_offset;
+	LARGE_INTEGER parm;
+	LONGLONG secondsSinceBoot;
+	FILETIME currentTimeFT;
+	LONGLONG currentTime;
+	BOOL win32Stat;
+
+	//
+	// one time initialization of constants
+	//
+	if (!init) {
+		FILETIME epicsEpochFT;
+
+		//
+		// initialize elapsed time counters
+		//
+		// All CPUs running win32 currently have HR
+		// counters (Intel and Mips processors do)
+		//
+		assert (QueryPerformanceFrequency (&parm)!=0);
+		perf_freq = parm.QuadPart;
+
+		//
+		// convert the EPICS epoch to file time
+		//
+		win32Stat = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
+		assert (win32Stat!=0);
+		parm.LowPart = epicsEpochFT.dwLowDateTime;
+		parm.HighPart = epicsEpochFT.dwHighDateTime;
+		epicsEpoch = parm.QuadPart;
+
+		init = 1;
 	}
 
-	return 0;
+	//
+	// its important that the following two time queries
+	// are close together (immediately adjacent to each
+	// other) in the code
+	//
+	GetSystemTimeAsFileTime (&currentTimeFT);
+	// this one is second because QueryPerformanceFrequency()
+	// has forced its code to load
+	assert (QueryPerformanceCounter (&parm)!=0);
+	 
+	perf_last = parm.QuadPart;
+	parm.LowPart = currentTimeFT.dwLowDateTime;
+	parm.HighPart = currentTimeFT.dwHighDateTime;
+	currentTime = parm.QuadPart;
+
+	//
+	// check for strange date, and clamp to the
+	// epics epoch if so
+	//
+	if (currentTime>epicsEpoch) {
+		//
+		// compute the offset from the EPICS epoch
+		//
+		LONGLONG diff = currentTime - epicsEpoch;
+
+		//
+		// compute the seconds offset and the 
+		// fractional offset part in the FILETIME timebase
+		//
+		new_sec_offset = diff / FILE_TIME_TICKS_PER_SEC;
+		new_frac_offset = diff % FILE_TIME_TICKS_PER_SEC;
+
+		//
+		// compute the fractional second offset in the performance 
+		// counter time base
+		//	
+		new_frac_offset = (new_frac_offset*perf_freq) / FILE_TIME_TICKS_PER_SEC;
+	}
+	else {
+		new_sec_offset = 0;
+		new_frac_offset = 0;
+	}
+
+	//
+	// subtract out the perormance counter ticks since the 
+	// begining of windows
+	//	
+	secondsSinceBoot = perf_last / perf_freq;
+	if (new_sec_offset>=secondsSinceBoot) {
+		new_sec_offset -= secondsSinceBoot;
+
+		LONGLONG fracSinceBoot = perf_last % perf_freq;
+		if (new_frac_offset>=fracSinceBoot) {
+			new_frac_offset -= fracSinceBoot;
+		}
+		else if (new_sec_offset>0) {
+			//
+			// borrow
+			//
+			new_sec_offset--;
+			new_frac_offset += perf_freq - fracSinceBoot;
+		}
+		else {
+			new_frac_offset = 0;
+		}
+	}
+	else {
+		new_sec_offset = 0;
+		new_frac_offset = 0;
+	}
+
+
+#if 0
+	//
+	// calculate the change
+	//
+	{
+		double change;
+		change = (double) (perf_sec_offset-new_sec_offset)*perf_freq +
+			(perf_frac_offset-new_frac_offset);
+		change /= perf_freq;
+		printf ("The performance counter drifted by %f sec\n", change);
+	}
+#endif
+
+	//
+	// update the current value
+	//
+	perf_sec_offset = new_sec_offset;
+	perf_frac_offset = new_frac_offset;
 }
 
-int exit_osi_time ()
-{
-	offset_time_s = 0;
-
-	return 0;
-}
-
-
 //
-// osiTime::getCurrent ()
+// osiTime::osdGetCurrent ()
 //
-osiTime osiTime::getCurrent ()
+osiTime osiTime::osdGetCurrent ()
 {
-	LARGE_INTEGER time_cur, time_sec, time_remainder;
+	LONGLONG time_cur, time_sec, time_remainder;
+	LARGE_INTEGER parm;
 	unsigned long sec, nsec;
 
 	/*
-	 * this allows the code to work when it is in an object
-	 * library (in addition to inside a dll)
+	 * lazy init
 	 */
-	if (offset_time_s==0) {
-		init_osi_time();
+	if (perf_sec_offset<0) {
+		osiTime::synchronize();
 	}
 
 	/*
@@ -64,45 +201,42 @@ osiTime osiTime::getCurrent ()
 	 * during initialization to see if the CPU has HR
 	 * counters (Intel and Mips processors do)
 	 */
-	QueryPerformanceCounter (&time_cur);
-	if (time_prev.QuadPart > time_cur.QuadPart)	{	/* must have been a timer roll-over */
-		double offset;
+	QueryPerformanceCounter (&parm);
+	time_cur = parm.QuadPart;
+	if (perf_last > time_cur)	{	/* must have been a timer roll-over */
+
 		/*
 		 * must have been a timer roll-over
-		 * It takes 9.223372036855e+18/time_freq sec
-		 * to roll over this counter (time_freq is 1193182
+		 * It takes 9.223372036855e+18/perf_freq sec
+		 * to roll over this counter (perf_freq is 1193182
 		 * sec on my system). This is currently about 245118 years.
 		 *
 		 * attempt to add number of seconds in a 64 bit integer
 		 * in case the timer resolution improves
 		 */
-		offset = pow(2.0, 63.0)-1.0/time_freq.QuadPart;
-		if (offset<=LONG_MAX-offset_time_s) {
-			offset_time_s += (long) offset;
-		}
-		else {
-			/*
-			 * this problem cant be fixed, but hopefully will never occurr
-			 */
-			fprintf (stderr, "%s.%d Timer overflowed\n", __FILE__, __LINE__);
-			return osiTime (0, 0);
+		perf_sec_offset += MAXLONGLONG / perf_freq;
+		perf_frac_offset += MAXLONGLONG % perf_freq;
+		if (perf_frac_offset>=perf_freq) {
+			perf_sec_offset++;
+			perf_frac_offset -= perf_freq;
 		}
 	}
-	time_sec.QuadPart = time_cur.QuadPart / time_freq.QuadPart;
-	time_remainder.QuadPart = time_cur.QuadPart % time_freq.QuadPart;
-	if (time_sec.QuadPart > LONG_MAX-offset_time_s) {
-		/*
-		 * this problem cant be fixed, but hopefully will never occurr
-		 */
-		fprintf (stderr, "%s.%d Timer value larger than storage\n", __FILE__, __LINE__);
-		return osiTime (0, 0);
+	time_sec = time_cur / perf_freq;
+	time_remainder = time_cur % perf_freq;
+
+	/* 
+	 * add time (sec) since the EPICS epoch 
+	 */
+	time_sec += perf_sec_offset;
+	time_remainder += perf_frac_offset;
+	if (time_remainder>=perf_freq) {
+		time_sec += 1;
+		time_remainder -= perf_freq;
 	}
 
-	/* add time (sec) since 1970 */
-	sec = offset_time_s + (long)time_sec.QuadPart;
-	nsec = (long)((time_remainder.QuadPart*1000000000)/time_freq.QuadPart);
+	perf_last = time_cur;
 
-	time_prev = time_cur;
-
+	sec = (unsigned long) (time_sec%ULONG_MAX);
+	nsec = (unsigned long) ((time_remainder*nSecPerSec)/perf_freq);
 	return osiTime (sec, nsec);
 }

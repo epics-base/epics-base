@@ -7,6 +7,12 @@
 #define epicsExportSharedSymbols
 #include "osiTime.h"
  
+//
+// osiTime::synchronize()
+//
+void osiTime::synchronize()
+{
+}
 
 //
 // osiTime::getCurrent ()
@@ -19,6 +25,9 @@ osiTime osiTime::getCurrent ()
 	status = gettimeofday (&tv, NULL);
 	assert (status==0);
 
-	return osiTime(tv.tv_sec, tv.tv_usec * nSecPerUSec);
+	if (tv.tv_sec<osiTime::epicsEpochSecPast1970) {
+		return osiTime();
+	}
+	return osiTime (tv.tv_sec-osiTime::epicsEpochSecPast1970, tv.tv_usec * nSecPerUSec);
 }
 

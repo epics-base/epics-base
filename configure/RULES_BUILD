@@ -389,8 +389,8 @@ $(INSTALL_BIN)/%: ../%
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m 644 $< $(INSTALL_LIB)
-ifneq ($(RANLIB)xx,xx)
-	$(RANLIB) $(RANLIBFLAGS) $@
+ifneq ($(strip $(RANLIB)),)
+	$(RANLIB) $@
 endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib

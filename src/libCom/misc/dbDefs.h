@@ -92,7 +92,7 @@
 #endif
 
 /* FLDNAME_SZ must be 4 */
-#define PVNAME_STRINGSZ		29		/* includes NULL terminator for PVNAME_SZ */
+#define PVNAME_STRINGSZ		61		/* includes NULL terminator for PVNAME_SZ */
 #define	PVNAME_SZ	(PVNAME_STRINGSZ - 1)	/*Process Variable Name Size	*/
 #define	FLDNAME_SZ	4	/*Field Name Size		*/
 

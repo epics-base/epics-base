@@ -1,7 +1,7 @@
 	field(NAME,DBF_STRING) {
 		prompt("Record Name")
 		special(SPC_NOMOD)
-		size(29)
+		size(61)
 	}
 	field(DESC,DBF_STRING) {
 		prompt("Descriptor")

@@ -61,10 +61,6 @@ typedef unsigned long arrayElementCount;
 
 /*
  *  CVRT_STRING()
- *
- *
- *
- *
  */
 static void cvrt_string(
 const void          *s,             /* source           */

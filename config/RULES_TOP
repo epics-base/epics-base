@@ -1,0 +1,78 @@
+#
+#  $Id$
+#
+
+all:: install
+
+dirs::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+depends::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+build::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+install::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+clean::
+	@echo "TOP: Cleaning
+	@for DIR in ${DIRS}; do	 \
+	find $$DIR/src -type d -name "O.*" -prune -exec rm -rf {} \; ; \
+	done
+
+uninstall::
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
+
+
+
+dirs.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+depends.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+build.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+install.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+clean.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+uninstall.%::
+	@echo "TOP: Uninstalling $* "
+	@rm -rf ./bin/$* ./lib/$* dbd include man
+	@rm -rf  rec.bak rec
+

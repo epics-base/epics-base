@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.57  1999/01/28 21:12:16  jhill
+ * improved VAX floating point
+ *
  * Revision 1.56  1998/10/27 00:47:28  jhill
  * fixed warnings
  *
@@ -529,7 +532,7 @@ int doacctst(char *pname)
 		dbr_float_t base;
 		unsigned long iter;
 
-		printf ("float test ");
+		printf ("dbr_float_t test ");
 		fflush (stdout);
 		epsil = FLT_EPSILON*4.0F;
 		base = FLT_MIN;
@@ -587,7 +590,7 @@ int doacctst(char *pname)
 		dbr_double_t base;
 		unsigned long iter;
 
-		printf ("double test ");
+		printf ("dbr_double_t test ");
 		fflush(stdout);
 		epsil = DBL_EPSILON*4;
 		base = DBL_MIN;
@@ -630,6 +633,43 @@ int doacctst(char *pname)
 			fflush (stdout);
 		}
 		printf ("done\n");
+	}
+
+	/*
+	 * Verify that we can write and then read back
+	 * the same integer value (DBR_LONG)
+	 */
+	if (ca_read_access(chix1) && ca_write_access(chix1)) {
+
+		dbr_long_t iter, rdbk, incr;
+		struct dbr_ctrl_long cl;
+
+		status = ca_get (DBR_CTRL_LONG, chix1, &cl);
+		SEVCHK (status, "graphic long fetch failed\n");
+		status = ca_pend_io (10.0);
+		SEVCHK (status, "graphic long pend failed\n");
+
+		incr = (cl.upper_ctrl_limit - cl.lower_ctrl_limit);
+		if (incr>=1) {
+			incr /= 1000;
+			if (incr==0) {
+				incr = 1;
+			}
+			printf ("dbr_long_t test ");
+			fflush (stdout);
+			for (iter=cl.lower_ctrl_limit; 
+				iter<=cl.upper_ctrl_limit; iter+=incr) {
+
+				status = ca_put (DBR_LONG, chix1, &iter);
+				status = ca_get (DBR_LONG, chix1, &rdbk);
+				status = ca_pend_io (10.0);
+				SEVCHK (status, "get pend failed\n");
+				assert (iter == rdbk);
+				printf (".");
+				fflush (stdout);
+			}
+			printf ("done\n");
+		}
 	}
 
 	/*

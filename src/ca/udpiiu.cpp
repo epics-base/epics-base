@@ -807,6 +807,31 @@ LOCAL void not_here_resp_action (udpiiu * /* piiu */, caHdr * /* pMsg */,  const
 }
 
 /*
+ * udp_exception_resp_action ()
+ */
+LOCAL void udp_exception_resp_action ( udpiiu *piiu, 
+	caHdr *pMsg, const struct sockaddr_in *pnet_addr )
+{
+    caHdr *pReqMsg = pMsg + 1;
+    char name[64];
+
+    ipAddrToA ( pnet_addr, name, sizeof ( name ) );
+
+    if ( pMsg->m_postsize > sizeof (caHdr) ){
+        errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\"\n", 
+            ca_message ( ntohl ( pMsg->m_available ) ), 
+            name, reinterpret_cast <char *> ( pReqMsg + 1 ) );
+    }
+    else{
+        errlogPrintf ( "error condition \"%s\" detected by %s\n", 
+            ca_message ( ntohl ( pMsg->m_available ) ), name );
+    }
+
+    return;
+}
+
+
+/*
  * UDP protocol jump table
  */
 LOCAL const pProtoStubUDP udpJumpTableCAC[] = 
@@ -822,7 +847,7 @@ LOCAL const pProtoStubUDP udpJumpTableCAC[] =
     bad_udp_resp_action,
     bad_udp_resp_action,
     bad_udp_resp_action,
-    bad_udp_resp_action,
+    udp_exception_resp_action,
     bad_udp_resp_action,
     beacon_action,
     not_here_resp_action,

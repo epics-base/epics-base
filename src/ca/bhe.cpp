@@ -19,7 +19,16 @@
 #include "bhe.h"
 #undef epicsExportSharedSymbols 
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < class bhe, 1024 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
 epicsMutex bhe::freeListMutex;

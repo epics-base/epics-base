@@ -145,15 +145,6 @@ inline class nciu & baseNMIU::channel () const
     return this->chan;
 }
 
-inline netSubscription * netSubscription::factory ( 
-    tsFreeList < class netSubscription, 1024 > &freeList, 
-    nciu &chan, unsigned type, arrayElementCount count, 
-    unsigned mask, cacStateNotify &notify )
-{
-    return new ( freeList ) netSubscription ( chan, type, 
-                                count, mask, notify );
-}
-
 inline void * netSubscription::operator new ( size_t size, 
     tsFreeList < class netSubscription, 1024 > &freeList )
 {
@@ -171,7 +162,17 @@ inline void netSubscription::operator delete ( void *pCadaver, size_t size,
 {
     freeList.release ( pCadaver, size );
 }
+#error
 #endif
+
+inline netSubscription * netSubscription::factory ( 
+    tsFreeList < class netSubscription, 1024 > &freeList, 
+    nciu &chan, unsigned type, arrayElementCount count, 
+    unsigned mask, cacStateNotify &notify )
+{
+    return new ( freeList ) netSubscription ( chan, type, 
+                                count, mask, notify );
+}
 
 inline arrayElementCount netSubscription::getCount () const
 {

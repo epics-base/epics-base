@@ -97,9 +97,18 @@ private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
 };
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class resTable < timerForOldFdmgr, chronIntId >;
 template class tsSLNode < timerForOldFdmgr >;
 template class chronIntIdResTable < timerForOldFdmgr >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
     (const SOCKET fdIn, const fdRegType typeIn, 

@@ -19,7 +19,16 @@
 #include "cac.h"
 #include "netiiu.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsSLNode < nciu >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {

@@ -58,7 +58,9 @@
 
 // these versions of the microsoft compiler incorrectly
 // warn about a missing delete operator if only the
-// preferred delete operator with a size argument is present
+// newly preferred delete operator with a size argument 
+// is present - I expect that they will fix this in the
+// next version
 #if defined ( _MSC_VER ) && _MSC_VER <= 1200
 #   pragma warning ( disable : 4291 )  
 #endif

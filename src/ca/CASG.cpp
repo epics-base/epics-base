@@ -35,10 +35,19 @@
 #include "autoPtrDestroy.h"
 #include "cac.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsSLNode < CASG>;
 template class tsFreeList < CASG, 128, 0 >;
 template class tsFreeList < syncGroupWriteNotify, 128, 0 >;
 template class tsFreeList < syncGroupReadNotify, 128, 0 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;

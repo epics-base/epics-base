@@ -21,7 +21,16 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < class getCopy, 1024 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < class getCopy, 1024 > getCopy::freeList;
 epicsMutex getCopy::freeListMutex;

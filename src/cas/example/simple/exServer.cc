@@ -8,7 +8,16 @@
 //
 #include "exServer.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsSLNode < exPV >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 //
 // static list of pre-created PVs

@@ -4,9 +4,18 @@
 #include "exServer.h"
 #include "gddApps.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class gddAppFuncTable < exPV >;
 template class tsSLNode < pvEntry >;
 template class resTable < pvEntry, stringId >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 //
 // static data for exPV

@@ -21,7 +21,16 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < struct oldChannelNotify, 1024 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotify::freeList;
 epicsMutex oldChannelNotify::freeListMutex;

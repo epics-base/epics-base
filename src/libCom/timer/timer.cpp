@@ -32,7 +32,16 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < timer, 32, 0 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 timer::timer ( timerQueue &queueIn ) :
     curState ( stateLimbo ), pNotify ( 0 ), queue ( queueIn )

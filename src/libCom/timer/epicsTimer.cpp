@@ -32,9 +32,18 @@
 #include "epicsTimer.h"
 #include "timerPrivate.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < epicsTimerForC, 32, 0 >;
 template class tsFreeList < epicsTimerQueueActiveForC, 1024, 0 >;
 template class tsFreeList < epicsTimerQueuePassiveForC, 1024, 0 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
 public:

@@ -37,11 +37,20 @@
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsSLNode < casPVI >;
 template class tsSLNode < casRes >;
 template class resTable < casRes, chronIntId >;
 template class resTable < casEventMaskEntry, stringId >;
 template class chronIntIdResTable < casRes >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available

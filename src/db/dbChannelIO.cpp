@@ -29,7 +29,16 @@
 #include "dbChannelIOIL.h"
 #include "dbNotifyBlockerIL.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < dbChannelIO >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 epicsMutex dbChannelIO::freeListMutex;

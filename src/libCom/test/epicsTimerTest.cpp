@@ -348,9 +348,18 @@ void testPeriodic ()
     queue.release ();
 }
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < delayVerify, 32, 0 >;
 template class tsFreeList < cancelVerify, 32, 0 >;
 template class tsFreeList < periodicVerify, 32, 0 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 void epicsTimerTest ()
 {

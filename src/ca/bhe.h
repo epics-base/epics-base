@@ -27,6 +27,7 @@
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsTime.h"
+#include "epicsMutex.h"
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -40,7 +41,7 @@ class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     epicsShareFunc bhe ( const epicsTime &initialTimeStamp, const inetAddrID &addr );
     epicsShareFunc void destroy ();
-   epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
+    epicsShareFunc bool updatePeriod ( const epicsTime & programBeginTime, 
                         const epicsTime & currentTime );
     epicsShareFunc double period () const;
     epicsShareFunc void show ( unsigned level) const;

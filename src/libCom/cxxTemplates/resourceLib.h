@@ -592,6 +592,27 @@ resTable<T,ID>::~resTable()
     operator delete ( this->pTable );
 }
 
+//
+// resTable<T,ID>::resTable ( const resTable & )
+// private - not to be used - implemented to shush
+// MS warnings
+//
+template <class T, class ID>
+inline resTable<T,ID>::resTable ( const resTable & )
+{
+}
+
+//
+// resTable<T,ID>::resTable & operator = ( const resTable & )
+// private - not to be used - implemented to shush
+// MS warnings
+//
+template <class T, class ID>
+inline resTable<T,ID> & resTable<T,ID>::operator = ( const resTable & )
+{
+    return *this;
+}
+
 //////////////////////////////////////////////
 // resTableIter<T,ID> member functions
 //////////////////////////////////////////////

@@ -30,7 +30,17 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < dbSubscriptionIO >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
+
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
 epicsMutex dbSubscriptionIO::freeListMutex;
 

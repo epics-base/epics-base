@@ -25,7 +25,16 @@
 #include "caerr.h" // for ECA_DBLCHNL
 #undef epicsExportSharedSymbols
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < class msgForMultiplyDefinedPV, 16 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < class msgForMultiplyDefinedPV, 16 > 
 	msgForMultiplyDefinedPV::freeList;

@@ -32,8 +32,17 @@
 #include "db_access.h" // for INVALID_DB_REQ
 #undef epicsExportSharedSymbols
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < nciu, 1024, 0 >; 
 template class tsSLNode < baseNMIU >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < class nciu, 1024 > nciu::freeList;
 epicsMutex nciu::freeListMutex;

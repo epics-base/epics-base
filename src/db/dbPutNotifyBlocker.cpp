@@ -37,7 +37,16 @@
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
 
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < dbPutNotifyBlocker, 1024, 0 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
 
 tsFreeList < dbPutNotifyBlocker, 1024, 0 > dbPutNotifyBlocker::freeList;
 epicsMutex dbPutNotifyBlocker::freeListMutex;

@@ -99,7 +99,18 @@ private:
  *  per machine so we dont care about reentrancy
  */
 static tsDLList < repeaterClient > client_list;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( push )
+#   pragma warning ( disable: 4660 )
+#endif
+
 template class tsFreeList < repeaterClient, 0x20 >;
+
+#if defined ( _MSC_VER )
+#   pragma warning ( pop )
+#endif
+
 tsFreeList < repeaterClient, 0x20 > repeaterClient::freeList;
 epicsMutex repeaterClient::freeListMutex;
 

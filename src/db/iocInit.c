@@ -40,13 +40,14 @@
  * .10  02-10-92        jba     Changed error messages
  * .11  02-28-92        jba     ANSI C changes
  * .12  03-26-92        mrk     changed test if(status) to if(rtnval)
+ * .13  04-17-92        rcz     changed sdrLoad to dbRead
  *				
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
-#include	<lstLib.h>
 #include	<memLib.h>
+#include	<lstLib.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
@@ -74,15 +75,17 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<envDefs.h>
+#include	<dbBase.h>
 
 static initialized=FALSE;
 
 /* The following is for use by interrupt routines */
 int interruptAccept=FALSE;
 extern short wakeup_init; /*old IO_EVENT_SCAN*/
+struct dbBase *pdbBase=NULL;
 
 /* define forward references*/
-extern long sdrLoad();
+extern long dbRead();
 long initDrvSup();
 long initRecSup();
 long initDevSup();
@@ -91,7 +94,6 @@ long initDatabase();
 long addToSet();
 long initialProcess();
 long getResources();
-
 
 int iocInit(pfilename,pResourceFilename)
 char * pfilename;
@@ -109,9 +111,9 @@ char * pResourceFilename;
     }
     coreRelease();
     epicsSetEnvParams();
-    status=sdrLoad(pfilename);
+    status=dbRead(&pdbBase, pfilename);
     if(status!=0) {
-	logMsg("iocInit aborting because sdrLoad failed\n");
+	logMsg("iocInit aborting because dbRead failed\n");
 	return(-1);
     }
 
@@ -564,7 +566,6 @@ static char    *cvt_str[] = {
     "DBF_DOUBLE"
 };
 #define CVT_COUNT (sizeof(cvt_str) / sizeof(char*))
-
 static long getResources(fname) /* Resource Definition File interpreter */
     char           *fname;
 {
@@ -647,6 +648,8 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	found = 0;
 	len2 = strlen(s2);
 	for (i = 0; i < CVT_COUNT; i++) {
+
+
 	    if ((strncmp(s2, cvt_str[i], len2)) == SAME) {
 		found = 1;
 		cvType = i;

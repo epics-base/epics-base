@@ -119,7 +119,7 @@ public:
     virtual void lockOutstandingIO () const = 0;
     virtual void unlockOutstandingIO () const = 0;
 
-    virtual void show ( unsigned level ) const = 0u;
+    virtual void show ( unsigned level ) const = 0;
 
 private:
     virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;
@@ -155,7 +155,7 @@ public:
 struct cacServiceIO : public tsDLNode < cacServiceIO > {
 public:
     epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( cacChannel &chan, const char *pName ) = 0;
-    epicsShareFunc virtual void show ( unsigned level ) const = 0u;
+    epicsShareFunc virtual void show ( unsigned level ) const = 0;
 private:
 };
 

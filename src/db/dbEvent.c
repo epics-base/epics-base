@@ -478,19 +478,20 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
      * its call back changes
      */
     LOCKEVQUE (pevent->ev_que)
+
     pevent->user_sub = NULL;
     while (pevent->npend || pevent->callBackInProgress) {
         UNLOCKEVQUE(pevent->ev_que)
         epicsEventWaitWithTimeout(pevent->ev_que->evUser->pflush_sem, 1.0);
         LOCKEVQUE(pevent->ev_que)
     }
-    UNLOCKEVQUE (pevent->ev_que)
 
     /*
      * Decrement event que quota
      */
     pevent->ev_que->quota -= EVENTENTRIES;
 
+    UNLOCKEVQUE (pevent->ev_que)
 
     freeListFree (dbevEventBlockFreeList, pevent);
 

@@ -172,7 +172,6 @@ struct event_block{
 long dbel(char*pname)
 {
     struct dbAddr 	addr;
-    struct dbAddr 	*paddr;
     long		status;
     struct event_block  *peb;
     struct fldDes 	*pfldDes;
@@ -716,9 +715,9 @@ static void printDbAddr(long status,struct dbAddr *paddr)
     if(status!=0) {
 	errMessage(status,"dbNameToAddr error");
     }
-    printf("Record Address: 0x%x",paddr->precord);
-    printf(" Field Address: 0x%x",paddr->pfield);
-    printf(" Field Description: 0x%x\n",paddr->pfldDes);
+    printf("Record Address: %p",paddr->precord);
+    printf(" Field Address: %p",paddr->pfield);
+    printf(" Field Description: %p\n",paddr->pfldDes);
     printf("   No Elements: %ld\n",paddr->no_elements);
     if (!(pstr=GET_PRECNAME(pdbBase->precType,paddr->record_type))) 
     	printf("   Record Type: %d\n",paddr->record_type);
@@ -748,8 +747,6 @@ static void printBuffer(
 	long status,short dbr_type,void *pbuffer,long reqOptions,
 	long retOptions,long no_elements,TAB_BUFFER *pMsgBuff,int tab_size)
 {
-    unsigned short  stat,
-                    severity;
     long            precision;
     short           svalue;
     unsigned short  usvalue;
@@ -826,7 +823,7 @@ static void printBuffer(
 	if (retOptions & DBR_GR_DOUBLE) {
 	    struct dbr_grDouble *pdbr_grDouble = (void *)pbuffer;
 
-	    printf("grDouble: %lg %lg\n",pdbr_grDouble->upper_disp_limit,
+	    printf("grDouble: %g %g\n",pdbr_grDouble->upper_disp_limit,
 		pdbr_grDouble->lower_disp_limit);
 	}else{
 	    printf("DBRgrDouble not returned\n");
@@ -848,7 +845,7 @@ static void printBuffer(
 	if (retOptions & DBR_CTRL_DOUBLE) {
 	    struct dbr_ctrlDouble *pdbr_ctrlDouble = (void *)pbuffer;
 
-	    printf("ctrlDouble: %lg %lg\n",pdbr_ctrlDouble->upper_ctrl_limit,
+	    printf("ctrlDouble: %g %g\n",pdbr_ctrlDouble->upper_ctrl_limit,
 		pdbr_ctrlDouble->lower_ctrl_limit);
 	}else{
 	    printf("DBRctrlDouble not returned\n");
@@ -871,7 +868,7 @@ static void printBuffer(
 	if (retOptions & DBR_AL_DOUBLE) {
 	    struct dbr_alDouble *pdbr_alDouble = (void *)pbuffer;
 
-	    printf("alDouble: %lg %lg %lg %lg\n",
+	    printf("alDouble: %g %g %g %g\n",
 		pdbr_alDouble->upper_alarm_limit,pdbr_alDouble->upper_warning_limit,
 		pdbr_alDouble->lower_warning_limit,pdbr_alDouble->lower_alarm_limit);
 	}else{
@@ -893,7 +890,7 @@ static void printBuffer(
 	for(i=0; i<no_elements; i++) {
 	    len = strlen(pbuffer);
 	    if (len > 0) {
-		sprintf(pmsg, " %s", pbuffer);
+		sprintf(pmsg, " %s", (char *)pbuffer);
 		dbpr_msgOut(pMsgBuff, tab_size);
 	    }
 	    pbuffer += MAX_STRING_SIZE;
@@ -1125,7 +1122,7 @@ static int dbpr_report(
 	pLaddr = &Laddr;
 	switch (pfldDes->field_type) {
 	case DBF_STRING:
-	    sprintf(pmsg, "%s: %s", pfield_name, pLaddr->pfield);
+	    sprintf(pmsg, "%s: %s", pfield_name, (char *)pLaddr->pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_USHORT:

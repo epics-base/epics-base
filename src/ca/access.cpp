@@ -44,6 +44,81 @@
 
 epicsThreadPrivateId caClientContextId;
 
+const char * ca_message_text []
+=
+{
+"Normal successful completion",
+"Maximum simultaneous IOC connections exceeded",
+"Unknown internet host",
+"Unknown internet service",
+"Unable to allocate a new socket",
+
+"Unable to connect to internet host or service",
+"Unable to allocate additional dynamic memory",
+"Unknown IO channel",
+"Record field specified inappropriate for channel specified",
+"The requested data transfer is greater than available memory or EPICS_CA_MAX_ARRAY_BYTES",
+
+"User specified timeout on IO operation expired",
+"Sorry, that feature is planned but not supported at this time",
+"The supplied string is unusually large",
+"The request was ignored because the specified channel is disconnected",
+"The data type specifed is invalid",
+
+"Remote Channel not found",
+"Unable to locate all user specified channels",
+"Channel Access Internal Failure",
+"The requested local DB operation failed",
+"Channel read request failed",
+
+"Channel write request failed",
+"Channel subscription request failed",
+"Invalid element count requested",
+"Invalid string",
+"Virtual circuit disconnect",
+
+"Identical process variable name on multiple servers",
+"Request inappropriate within subscription (monitor) update callback",
+"Database value get for that channel failed during channel search",
+"Unable to initialize without the vxWorks VX_FP_TASK task option set",
+"Event queue overflow has prevented first pass event after event add",
+
+"Bad event subscription (monitor) identifier",
+"Remote channel has new network address",
+"New or resumed network connection",
+"Specified task isnt a member of a CA context",
+"Attempt to use defunct CA feature failed",
+
+"The supplied string is empty",
+"Unable to spawn the CA repeater thread- auto reconnect will fail",
+"No channel id match for search reply- search reply ignored",
+"Reseting dead connection- will try to reconnect",
+"Server (IOC) has fallen behind or is not responding- still waiting",
+
+"No internet interface with broadcast available",
+"Invalid event selection mask",
+"IO operations have completed",
+"IO operations are in progress",
+"Invalid synchronous group identifier",
+
+"Put callback timed out",
+"Read access denied",
+"Write access denied",
+"Requested feature is no longer supported",
+"Empty PV search address list",
+
+"No reasonable data conversion between client and server types",
+"Invalid channel identifier",
+"Invalid function pointer",
+"Thread is already attached to a client context",
+"Not supported by attached service",
+
+"User destroyed channel",
+"Invalid channel priority",
+"Preemptive callback not enabled - additional threads may not join context",
+"Client's protocol revision does not support transfers exceeding 16k bytes"
+};
+
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
 extern "C" void ca_client_exit_handler ()
@@ -322,7 +397,7 @@ int epicsShareAPI ca_array_get ( chtype type,
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        caStatus = ECA_NOTINSERVICE;
+        caStatus = ECA_UNAVAILINSERV;
     }
     catch ( cacChannel::requestTimedOut & )
     {
@@ -386,7 +461,7 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        caStatus = ECA_NOTINSERVICE;
+        caStatus = ECA_UNAVAILINSERV;
     }
     catch ( cacChannel::requestTimedOut & )
     {
@@ -449,7 +524,7 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        caStatus = ECA_NOTINSERVICE;
+        caStatus = ECA_UNAVAILINSERV;
     }
     catch ( cacChannel::requestTimedOut & )
     {
@@ -505,7 +580,7 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        caStatus = ECA_NOTINSERVICE;
+        caStatus = ECA_UNAVAILINSERV;
     }
     catch ( cacChannel::requestTimedOut & )
     {
@@ -622,7 +697,7 @@ int epicsShareAPI ca_add_masked_array_event (
     }
     catch ( cacChannel::unsupportedByService & )
     {
-        return ECA_NOTINSERVICE;
+        return ECA_UNAVAILINSERV;
     }
     catch ( std::bad_alloc & )
     {

@@ -202,6 +202,7 @@ void recGblGetControlDouble(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 
 int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest)
 {
+    if(plink->type != CONSTANT) return(FALSE);
     if(!plink->value.constantStr) return(FALSE);
     switch(dbftype) {
     case DBF_STRING:

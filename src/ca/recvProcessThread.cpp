@@ -136,7 +136,7 @@ void recvProcessThread::show ( unsigned level ) const
 {
     epicsAutoMutex autoMutex ( this->mutex );
     printf ( "CA receive processing thread at %p state=%s\n", 
-        this,  this->processing ? "busy" : "idle");
+        static_cast <const void *> ( this ),  this->processing ? "busy" : "idle");
     if ( level > 0u ) {
         printf ( "enable count %u\n", this->enableRefCount );
         printf ( "blocking for completion count %u\n", this->blockingForCompletion );

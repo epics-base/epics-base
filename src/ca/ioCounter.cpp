@@ -71,7 +71,8 @@ void ioCounter::decrementOutstandingIO ( unsigned seqNumber )
 
 void ioCounter::showOutstandingIO ( unsigned level ) const
 {
-    printf ( "ioCounter at %p\n", this );
+    printf ( "ioCounter at %p\n", 
+        static_cast <const void *> ( this ) );
     printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
             this->pndrecvcnt );
     if ( level > 0u ) {

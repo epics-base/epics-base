@@ -114,7 +114,8 @@ void syncGroupNotify::completionNotify ( cacChannelIO &,
 void syncGroupNotify::show ( unsigned /* level */ ) const
 {
     printf ( "pending sg op: pVal=%p, magic=%u seqNo=%lu sg=%p\n",
-         this->pValue, this->magic, this->seqNo, &this->sg);
+         this->pValue, this->magic, this->seqNo, 
+         static_cast <void *> ( &this->sg ) );
 }
 
 void syncGroupNotify::exceptionNotify ( cacChannelIO &io,

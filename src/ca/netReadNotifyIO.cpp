@@ -58,7 +58,8 @@ cacChannelIO & netReadNotifyIO::channelIO () const
 
 void netReadNotifyIO::show ( unsigned level ) const
 {
-    printf ( "read notify IO at %p\n", this );
+    printf ( "read notify IO at %p\n", 
+        static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         this->baseNMIU::show ( level - 1u );
     }

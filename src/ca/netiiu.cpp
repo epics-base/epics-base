@@ -39,7 +39,8 @@ void netiiu::show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        printf ( "\tcac pointer %p\n", this->pClientCtx );
+        printf ( "\tcac pointer %p\n", 
+            static_cast <void *> ( this->pClientCtx ) );
         this->mutex.show ( level - 2u );
     }
 }

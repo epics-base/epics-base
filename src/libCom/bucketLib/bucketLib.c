@@ -341,12 +341,18 @@ epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
 	/*
 	 * count the number of bits in the bucket id
 	 */
-	for (nbits=0; nbits<BUCKETID_BIT_WIDTH; nbits++) {
-		mask = (1<<nbits) - 1;
-		if ( ((nHashTableEntries-1) & ~mask) == 0){
-			break;
-		}
-	}
+    if ( BUCKETID_BIT_WIDTH > 0 ) {
+	    for (nbits=0; nbits<BUCKETID_BIT_WIDTH; nbits++) {
+		    mask = (1<<nbits) - 1;
+		    if ( ((nHashTableEntries-1) & ~mask) == 0){
+			    break;
+		    }
+	    }
+    }
+    else {
+        mask = 0;
+        nbits = 0;
+    }
 
 	/*
 	 * indexWidth must be specified at least one

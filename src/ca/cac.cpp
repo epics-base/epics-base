@@ -293,7 +293,7 @@ void cac::show ( unsigned level ) const
     epicsAutoMutex autoMutex2 ( this->defaultMutex );
 
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
-        this, this->pUserName );
+        static_cast <const void *> ( this ), this->pUserName );
     if ( level > 0u ) {
         tsDLIterConstBD < tcpiiu > piiu = this->iiuList.firstIter ();
         while ( piiu.valid () ) {
@@ -313,11 +313,13 @@ void cac::show ( unsigned level ) const
             this->pudpiiu->show ( level - 2u );
         }
         ::printf ( "\texception function %p, exception arg %p\n",
-                this->ca_exception_func, this->ca_exception_arg );
+                static_cast <void *> ( this->ca_exception_func ), 
+                static_cast <void *> ( this->ca_exception_arg ) );
         ::printf ( "\tCA printf function %p\n",
-                this->pVPrintfFunc);
+                static_cast <void *> ( this->pVPrintfFunc ) );
         ::printf ( "\tfile descriptor registration function %p, file descriptor registration arg %p\n",
-            this->fdRegFunc, this->fdRegArg );
+                static_cast <void *> ( this->fdRegFunc ), 
+                static_cast <void *> ( this->fdRegArg ) );
         this->showOutstandingIO ( level - 2u );
     }
 

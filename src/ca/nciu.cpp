@@ -11,7 +11,7 @@
  *
  * Notes:
  * 1) This class has a pointer to the IIU. This pointer always points at 
- * a valid IIU. If the client is deleted then the channel points at a
+ * a valid IIU. If the client context is deleted then the channel points at a
  * static file scope IIU. IIU's that disconnect go into an inactive state
  * and are stored on a list for later reuse. When the channel calls a
  * member function of the IIU, the IIU verifies that the channel's IIU

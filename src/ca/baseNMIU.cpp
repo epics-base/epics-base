@@ -35,7 +35,7 @@ class netSubscription * baseNMIU::isSubscription ()
 void baseNMIU::show ( unsigned /* level */ ) const
 {
     printf ( "CA IO primitive at %p for channel %s\n", 
-        this, this->chan.pName () );
+        static_cast <const void *> ( this ), this->chan.pName () );
 }
 
 

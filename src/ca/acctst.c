@@ -912,7 +912,7 @@ void verifyShortIO ( chid chan )
     status = ca_pend_io ( 10.0 );
     SEVCHK ( status, "control short pend failed\n" );
 
-    incr = ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
+    incr = (dbr_short_t) ( cl.upper_ctrl_limit - cl.lower_ctrl_limit );
     if ( incr >= 1 ) {
         showProgressBegin ();
 
@@ -920,8 +920,8 @@ void verifyShortIO ( chid chan )
         if ( incr == 0 ) {
             incr = 1;
         }
-        for ( iter = cl.lower_ctrl_limit; 
-            iter <= cl.upper_ctrl_limit; iter+=incr ) {
+        for ( iter = (dbr_short_t) cl.lower_ctrl_limit; 
+            iter <= (dbr_short_t) cl.upper_ctrl_limit; iter += incr ) {
 
             status = ca_put ( DBR_SHORT, chan, &iter );
             status = ca_get ( DBR_SHORT, chan, &rdbk );
@@ -1375,7 +1375,7 @@ void caTaskExistTest ()
 
 void verifyDataTypeMacros ()
 {
-    short type;
+    int type;
 
     type = dbf_type_to_DBR ( DBF_SHORT );
     assert ( type == DBR_SHORT );

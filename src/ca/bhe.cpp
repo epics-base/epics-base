@@ -157,9 +157,11 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
 
 void bhe::show ( unsigned level ) const
 {
-    printf ( "CA beacon hash entry at %p with average period %f\n", this, this->averagePeriod );
+    printf ( "CA beacon hash entry at %p with average period %f\n", 
+        static_cast <const void *> ( this ), this->averagePeriod );
     if ( level > 0u ) {
-        printf ( "network IO pointer %p\n", this->piiu );
+        printf ( "network IO pointer %p\n", 
+            static_cast <void *> ( this->piiu ) );
     }
 }
 

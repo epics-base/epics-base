@@ -425,7 +425,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
         pNewClient = pclient.pointer ();
     }
     else {
-        repeaterClient *pNewClient = new repeaterClient ( from );
+        pNewClient = new repeaterClient ( from );
         if ( ! pNewClient ) {
             ca_printf ( "%s: no memory for new client\n", __FILE__ );
             return;

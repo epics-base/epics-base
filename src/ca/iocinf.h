@@ -59,19 +59,23 @@ static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
 #if defined(UNIX)
 #  	include	<sys/types.h>
 #	include	<netinet/in.h>
-#elif defined(VMS)
+#else
+#  if defined(VMS)
 # 	include	<ssdef>
 #  	include	<sys/types.h>
 #	include	<netinet/in.h>
-#elif defined(vxWorks)
+#  else
+#    if defined(vxWorks)
 #	ifdef V5_vxWorks
 #  		include	<vxWorks.h>
 #	else
 #  		include	<types.h>
 #	endif
 #	include	<in.h>
-#else
+#    else
 	DONT_COMPILE
+#    endif
+#  endif
 #endif
 
 #	include <ellLib.h> 
@@ -148,7 +152,8 @@ typedef unsigned long ca_time;
 #	define readch		(ca_static->ca_readch)
 #	define writech		(ca_static->ca_writech)
 #	define excepch		(ca_static->ca_excepch)
-#elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
@@ -157,12 +162,15 @@ typedef unsigned long ca_time;
 #	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define event_tid	(ca_static->ca_event_tid)
-#elif defined(VMS)
+#  else
+#    if defined(VMS)
 #	define io_done_flag	(ca_static->ca_io_done_flag)
 #	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
 #	define ast_lock_count	(ca_static->ca_ast_lock_count)
-#else
+#    else
 	DONT_COMPILE
+#    endif
+#  endif
 #endif
 
 
@@ -188,11 +196,13 @@ struct  ca_static{
 #if defined(UNIX)
   fd_set                ca_readch;  
   fd_set                ca_excepch;  
-#elif defined(VMS)
+#else
+#  if defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
   long			ca_ast_lock_count;
-#elif defined(vxWorks)
+#  else
+#    if defined(vxWorks)
   SEM_ID		ca_io_done_sem;
   void			*ca_evuser;
   FAST_LOCK		ca_client_lock; 
@@ -203,8 +213,10 @@ struct  ca_static{
   ELLLIST			ca_lcl_buff_list;
   int			ca_event_tid;
   unsigned		ca_local_ticks;
-#else
+#    else
   DONT_COMPILE
+#    endif
+#  endif
 #endif
   struct ioc_in_use{
     unsigned		outstanding_ack_count;
@@ -232,11 +244,15 @@ struct  ca_static{
 #if defined(VMS)	/* for qio ASTs */
     struct sockaddr_in	recvfrom;
     struct iosb		iosb;
-#elif defined(vxWorks)
-    int			recv_tid;
-#elif defined(UNIX)
 #else
+#  if defined(vxWorks)
+    int			recv_tid;
+#  else
+#    if defined(UNIX)
+#    else
     DONT_COMPILE
+#    endif
+#  endif
 #endif
   }			ca_iiu[MAXIIU];
 };

@@ -38,11 +38,15 @@ static char 	*sccsId = "$Id$\t$Date$";
 
 #if defined(UNIX)
 #	include		<stdio.h>
-#elif defined(VMS)
-#elif defined(vxWorks)
-#include		<vxWorks.h>
 #else
+#  if defined(VMS)
+#  else
+#    if defined(vxWorks)
+#include		<vxWorks.h>
+#    else
 	@@@@ dont compile @@@@
+#    endif
+#  endif
 #endif
 
 #include 		<cadef.h>

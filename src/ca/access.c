@@ -125,13 +125,17 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		psldef.h
 #	include		prcdef.h
 #	include 	descrip.h
-#elif defined(UNIX)
-#elif defined(vxWorks)
+#else
+#  if defined(UNIX)
+#  else
+#    if defined(vxWorks)
 #	include		<vxWorks.h>
 # 	include		<taskLib.h>
 # 	include		<task_params.h>
-#else
+#    else
 	@@@@ dont compile @@@@
+#    endif
+#  endif
 #endif
 
 /*
@@ -356,7 +360,8 @@ int ca_task_initialize
 			if (status != SS$_NORMAL)
 				lib$signal(status);
 		}
-#elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
 		{
 			char            name[15];
 			int             status;
@@ -367,11 +372,11 @@ int ca_task_initialize
 
 			FASTLOCKINIT(&client_lock);
 			FASTLOCKINIT(&event_lock);
-#ifdef V5_vxWorks
+#    ifdef V5_vxWorks
 			io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#else
+#    else
 			io_done_sem = semCreate();
-#endif
+#    endif
 			if(!io_done_sem){
 				abort();
 			}
@@ -394,9 +399,12 @@ int ca_task_initialize
 			if (status != OK)
 				abort();
 		}
-#elif defined(UNIX)
-#else
+#  else
+#    if defined(UNIX)
+#    else
 		@@@@ dont compile in this case @@@@
+#    endif
+#  endif
 #endif
 
 	}
@@ -2316,7 +2324,7 @@ int			early;
   	beg_time = time(NULL);
 
   	while(TRUE){
-#		if defined(UNIX)
+#if defined(UNIX)
     		{
       			struct timeval	itimeout;
 
@@ -2326,16 +2334,18 @@ int			early;
       			recv_msg_select(&itimeout);
       			UNLOCK;
     		}
-#		elif defined(vxWorks)
-#ifdef	V5_vxWorks
-			semTake(io_done_sem, LOCALTICKS);
 #else
+#  if defined(vxWorks)
+#    ifdef	V5_vxWorks
+			semTake(io_done_sem, LOCALTICKS);
+#    else
 			{
 				int dummy;
 				vrtxPend(&io_done_sem->count, LOCALTICKS, &dummy);
 			}
-#endif
-#		elif defined(VMS)
+#    endif
+#  else
+#    if defined(VMS)
     		{
       			int 		status; 
       			unsigned int 	systim[2]={-LOCALTICKS,~0};
@@ -2352,9 +2362,11 @@ int			early;
       			if(status != SS$_NORMAL)
         			lib$signal(status);
     		}   
-#		else
+#    else
 			@@@@ dont compile in this case @@@@ 
-#		endif
+#    endif
+#  endif
+#endif
 
    		LOCK;
       		manage_conn(TRUE);

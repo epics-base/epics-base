@@ -20,9 +20,11 @@ static char *sccsId = "@(#)acctst.c	1.8\t2/19/93";
 /* System includes		 */
 #if defined(UNIX)
 #	include		<stdio.h>
-#elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<taskLib.h>
+#  endif
 #endif
 
 #include 		<cadef.h>

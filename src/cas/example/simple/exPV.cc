@@ -121,9 +121,9 @@ exPV::expire ( const epicsTime & /*currentTime*/ ) // X aCC 361
 //
 // exPV::bestExternalType()
 //
-aitEnum exPV::bestExternalType() const
+aitEnum exPV::bestExternalType () const
 {
-    return aitEnumFloat64;
+    return this->info.getType ();
 }
 
 //

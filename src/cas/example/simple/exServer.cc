@@ -21,12 +21,12 @@
 // static list of pre-created PVs
 //
 pvInfo exServer::pvList[] = {
-    pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync, 1u),
-    pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync, 1u),
-    pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync, 1u),
-    pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync, 1u),
-    pvInfo (2.0, "alan", 10.0f, -10.0f, excasIoSync, 100u),
-    pvInfo (20.0, "albert", 10.0f, -10.0f, excasIoSync, 1000u)
+    pvInfo (1.0e-1, "jane", 10.0f, 0.0f, aitEnumFloat64, excasIoSync, 1u),
+    pvInfo (2.0, "fred", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1u),
+    pvInfo (1.0e-1, "janet", 10.0f, 0.0f, aitEnumFloat64, excasIoAsync, 1u),
+    pvInfo (2.0, "freddy", 10.0f, -10.0f, aitEnumFloat64, excasIoAsync, 1u),
+    pvInfo (2.0, "alan", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 100u),
+    pvInfo (20.0, "albert", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1000u)
 };
 
 const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
@@ -34,9 +34,11 @@ const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
 //
 // static on-the-fly PVs
 //
-pvInfo exServer::bill (-1.0, "bill", 10.0f, -10.0f, excasIoSync, 1u);
-pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
-pvInfo exServer::bloaty (-1.0, "bloaty", 10.0f, -10.0f, excasIoSync, 100000);
+pvInfo exServer::bill (-1.0, "bill", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1u);
+pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, aitEnumFloat64, excasIoAsync, 1u);
+pvInfo exServer::bloaty (-1.0, "bloaty", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 100000u);
+pvInfo exServer::boot (-1.0, "boot", 10.0f, -10.0f, aitEnumEnum16, excasIoSync, 1u);
+pvInfo exServer::booty (-1.0, "booty", 10.0f, -10.0f, aitEnumEnum16, excasIoAsync, 1u);
 
 //
 // exServer::exServer()
@@ -93,6 +95,10 @@ exServer::exServer ( const char * const pvPrefix,
     this->installAliasName ( billy, pvAlias );
     sprintf ( pvAlias, pNameFmtStr, pvPrefix, bloaty.getName() );
     this->installAliasName ( bloaty, pvAlias );
+    sprintf ( pvAlias, pNameFmtStr, pvPrefix, boot.getName() );
+    this->installAliasName ( boot, pvAlias );
+    sprintf ( pvAlias, pNameFmtStr, pvPrefix, booty.getName() );
+    this->installAliasName ( booty, pvAlias );
 }
 
 //
@@ -132,41 +138,41 @@ void exServer::installAliasName(pvInfo &info, const char *pAliasName)
             delete pEntry;
         }
     }
-    fprintf(stderr, 
+    fprintf ( stderr, 
 "Unable to enter PV=\"%s\" Alias=\"%s\" in PV name alias hash table\n",
-        info.getName(), pAliasName);
+        info.getName(), pAliasName );
 }
 
 //
 // exServer::pvExistTest()
 //
 pvExistReturn exServer::pvExistTest // X aCC 361
-    (const casCtx& ctxIn, const char *pPVName)
+    ( const casCtx& ctxIn, const char * pPVName )
 {
     //
     // lifetime of id is shorter than lifetime of pName
     //
-    stringId id(pPVName, stringId::refString);
+    stringId id ( pPVName, stringId::refString );
     pvEntry *pPVE;
 
     //
     // Look in hash table for PV name (or PV alias name)
     //
-    pPVE = this->stringResTbl.lookup(id);
-    if (!pPVE) {
+    pPVE = this->stringResTbl.lookup ( id );
+    if ( ! pPVE ) {
         return pverDoesNotExistHere;
     }
 
-    pvInfo &pvi = pPVE->getInfo();
+    pvInfo & pvi = pPVE->getInfo();
 
     //
     // Initiate async IO if this is an async PV
     //
-    if (pvi.getIOType() == excasIoSync) {
+    if ( pvi.getIOType() == excasIoSync ) {
         return pverExistsHere;
     }
     else {
-        if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+        if ( this->simultAsychIOCount >= maxSimultAsyncIO ) {
             return pverDoesNotExistHere;
         }
 

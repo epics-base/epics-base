@@ -3623,8 +3623,10 @@ void  epicsShareAPI dbDumpField(
 	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    if(fname && strcmp(fname,pdbFldDes->name)!=0) continue;
 	    printf("    %s\n", pdbFldDes->name);
-	    printf("\t         prompt: %s\n",pdbFldDes->prompt);
-	    printf("\t          extra: %s\n",pdbFldDes->extra);
+            printf("\t         prompt: %s\n",
+                (pdbFldDes->prompt ? pdbFldDes->prompt : ""));
+            printf("\t          extra: %s\n",
+                (pdbFldDes->extra ? pdbFldDes->extra: ""));
 	    printf("\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
 	    printf("\t        special: %hd ",pdbFldDes->special);
 	    if(pdbFldDes->special) {
@@ -3658,7 +3660,8 @@ void  epicsShareAPI dbDumpField(
 	    }
 	    printf("\t       interest: %hd\n", pdbFldDes->interest);
 	    printf("\t       as_level: %hd\n",pdbFldDes->as_level);
-	    printf("\t        initial: %s\n",pdbFldDes->initial);
+            printf("\t        initial: %s\n",
+                (pdbFldDes->initial ? pdbFldDes->initial : ""));
 	    if(pdbFldDes->field_type==DBF_MENU) {
 		if(pdbFldDes->ftPvt)
 		    printf("\t\t  menu: %s\n",

@@ -121,6 +121,7 @@ static void	recv_msg();
 static void	tcp_recv_msg();
 static void	udp_recv_msg();
 static void	notify_ca_repeater();
+static void   	cac_flush_internal();
 static int	cac_send_msg_piiu();
 #ifdef VMS
 void   	vms_recv_msg_ast();
@@ -132,37 +133,6 @@ void   	vms_recv_msg_ast();
  */
 #ifndef NBBY
 # define NBBY 8	/* number of bits per byte */
-#endif
-
-#ifdef JUNKYARD
-typedef long	fd_mask;
-typedef	struct fd_set {
-	fd_mask	fds_bits[64];
-} fd_set;
-
-#ifndef NFDBITS
-#define NFDBITS (sizeof(int) * NBBY) /* bits per mask */
-#endif
-
-#ifndef FD_SET
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#endif
-
-#ifndef FD_ISSET
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#endif
-
-#ifndef FD_CLR
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#endif
-
-/* my version is faster since it is in line 	*/
-#define FD_ZERO(p)\
-{\
-  register int i;\
-  for(i=0;i<NELEMENTS((p)->fds_bits);i++)\
-    (p)->fds_bits[i]=0;\
-}
 #endif
 
 
@@ -853,6 +823,28 @@ ca_printf("CAC: sent zero ?\n");
 	return OK;
 }
 
+
+/*
+ *
+ * cac_flush_internal()
+ *
+ * Flush the output - but dont block
+ *
+ */
+static void cac_flush_internal()
+{
+	register struct ioc_in_use      *piiu;
+
+	LOCK
+	for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+
+		if(piiu->send->stk==0 || !piiu->send_needed)
+			continue;
+
+		cac_send_msg_piiu(piiu);
+	}
+	UNLOCK
+}
 
 
 /*
@@ -890,7 +882,7 @@ struct timeval 	*ptimeout;
 
   		if(status<=0){  
 			if(status == 0)
-				return;
+				break;
                                              
     			if(MYERRNO == EINTR){
 				ca_printf("CAC: select was interrupted\n");
@@ -899,9 +891,10 @@ struct timeval 	*ptimeout;
 			}
     			else if(MYERRNO == EWOULDBLOCK){
 				ca_printf("CAC: blocked at select ?\n");
-				return;
+				break;
     			}                                           
-    			else{                                                  					char text[255];                                         
+    			else{
+				char text[255];                                         
      				sprintf(
 					text,
 					"CAC: unexpected select fail: %d",
@@ -925,6 +918,7 @@ struct timeval 	*ptimeout;
     		ptmptimeout = &notimeout;
   	}
 
+	cac_flush_internal();
 }
 #endif
 
@@ -957,12 +951,6 @@ struct ioc_in_use	*piiu;
     		ca_printf("CAC: cac_send_msg: ukn protocol\n");
     		abort();
   	}  
-
-        if(piiu->send_needed){
-		LOCK
-                cac_send_msg_piiu(piiu);
-		UNLOCK
-        }
 
 	piiu->active = FALSE;
 }
@@ -1194,9 +1182,10 @@ int			moms_tid;
   	if(ca_static == (struct ca_static*)ERROR)
     		abort();
 
-  	while(piiu->conn_up)
+  	while(piiu->conn_up){
     		recv_msg(piiu);
-
+		cac_flush_internal();
+	}
 
 	/*
 	 * Exit recv task
@@ -1245,6 +1234,8 @@ struct ioc_in_use	*piiu;
 
 	recv_msg(piiu);
 
+	cac_flush_internal();
+	  
 	/*
 	 * request to be informed of future IO
 	 */

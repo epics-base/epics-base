@@ -33,6 +33,7 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03	03-13-92	jba	ANSI C changes
+ * .04	04-01-92	jba	Changed return of init_record to dont convert
  *      ...
  */
 
@@ -79,12 +80,13 @@ static long init_record(pao)
 struct aoRecord *pao;
 {
 
-long status;
+    long status=0;
 
     if (pao->out.type == PV_LINK)
 	status = dbCaAddOutlink(&(pao->out), (void *) pao, "OVAL");
-    else
-	status = 0L;
+
+    /* dont convert */
+    if ( status == 0 ) status = 2;
 
     return status;
 

@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .04  04-01-92        jba     Changed return of init_record to dont convert
  *      ...
  */
 
@@ -78,13 +79,14 @@ static long init_record(pmbbo)
 struct mbboRecord *pmbbo;
 {
  
-long status;
+    long status=0;
  
     if (pmbbo->out.type == PV_LINK)
         status = dbCaAddOutlink(&(pmbbo->out), (void *) pmbbo, "VAL");
-    else
-        status = 0L;
  
+    /* dont convert */
+    if ( status == 0 ) status=2;
+
     return status;
  
 } /* end init_record() */

@@ -104,19 +104,20 @@ $(DIRECTORY_TARGETS) :
 	$(RM) $@
 	$(COMPILE.cc) $<
 
-%.c: ../%.y
-	$(RM) y.tab.c y.tab.h
+#
+# rename the y.tab.h file only if we
+# are creating it
+#
+%.h %.c: ../%.y
+	$(RM) $*.c y.tab.c
+ifeq ($(findstring -d, $(YACCOPT)),-d)
+	$(RM) $*.h y.tab.h
+endif
 	$(YACC) $(YACCOPT) $<
-	@if [ -f y.tab.c ]; \
-		then \
-			echo "$(MV) y.tab.c $*.c"; \
-			$(MV) y.tab.c $*.c; \
-	fi
-	@if [ -f y.tab.h ]; \
-		then \
-			echo "$(MV) y.tab.h $*.h"; \
-			$(MV) y.tab.h $*.h; \
-	fi
+	$(MV) y.tab.c $*.c
+ifeq ($(findstring -d, $(YACCOPT)),-d)
+	$(MV) y.tab.h $*.h
+endif
 
 %.c: ../%.l
 	$(RM) lex.yy.c

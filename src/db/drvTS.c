@@ -1,6 +1,12 @@
 
 /*
  * $Log$
+ * Revision 1.11  1995/08/17  19:43:04  jbk
+ * Completed the accurate time stamp change.  event number 0 is current time
+ * updated at 60HZ, event -1 is the best time that can be provided (1000Hz in
+ * the APS event system).  The vxWorks time is now correct (1970 instead of
+ * 1900).
+ *
  * Revision 1.10  1995/08/16  19:03:21  jbk
  * Many updates.  Added GPS ability and adjusted the printf's.
  *
@@ -121,6 +127,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <netinet/in.h>
 #include <net/if.h>
 #include <envDefs.h>
+#include <envLib.h>
+#include <epicsPrint.h>
 
 #include <errMdef.h>
 #include <drvSup.h>
@@ -225,7 +233,7 @@ unsigned long ns_val[32] = {
     29,14,7,4,2,1,0,0
 };
 
-static long TSreturnError() { return -1; }
+/* static long TSreturnError() { return -1; } */
 static long TSdirectTimeError() { return -1; }
 static long TShaveReceiverError(int i) { return -1; }
 static long TSgetTicksError(int i,unsigned long* t) { return -1; }
@@ -424,7 +432,7 @@ long TSinit()
 	SYM_TYPE stype;
 	char tz[100],min_west[20];
 
-	Debug(5,"In TSinit()\n",0);
+	Debug0(5,"In TSinit()\n");
 
 	/* 0=default, 1=none, 2=direct */
 
@@ -497,7 +505,7 @@ long TSinit()
 
 	if( (TSdata.total_events=TShaveReceiver(0))<=0)
 	{
-		Debug(5,"TSinit() - no event receiver\n",0);
+		Debug0(5,"TSinit() - no event receiver\n");
 		TSdata.total_events=1;
 		TSdata.sync_event=0;
 		TSdata.clock_hz=sysClkRateGet();
@@ -516,7 +524,7 @@ long TSinit()
 	if(TSdata.master_timing_IOC)
 	{
 		/* master */
-		Debug(5,"TSinit() - I am master\n",0);
+		Debug0(5,"TSinit() - I am master\n");
 		if(TSdata.has_direct_time)
 			TSdata.type=TS_direct_master;
 		else
@@ -530,7 +538,7 @@ long TSinit()
 	else
 	{
 		/* slave */
-		Debug(5,"TSinit() - I am slave\n",0);
+		Debug0(5,"TSinit() - I am slave\n");
 		if(TSdata.has_direct_time)
 			TSdata.type=TS_direct_slave;
 		else
@@ -564,9 +572,9 @@ long TSinit()
 
 	else
 	{
-		Debug(5,"TSinit() - starting soft clock\n",0);
+		Debug0(5,"TSinit() - starting soft clock\n");
 		TSstartSoftClock();
-		Debug(5,"TSinit() - started soft clock\n",0);
+		Debug0(5,"TSinit() - started soft clock\n");
 	}
 */
 
@@ -584,7 +592,7 @@ long TSinit()
 			clock_gettime(CLOCK_REALTIME,&tp);
 			TSprintf("Failed to set clock from Unix server\n");
 		}
-		Debug(5,"TSinit() - tried to get clock from unix\n",0);
+		Debug0(5,"TSinit() - tried to get clock from unix\n");
 
 		/* start the time stamp info server */
 		if(TSstartStampServer()==ERROR)
@@ -592,7 +600,7 @@ long TSinit()
 			TSprintf("Failed to start stamp server\n");
 			return -1;
 		}
-		Debug(5,"TSinit() - stamp server started \n",0);
+		Debug0(5,"TSinit() - stamp server started \n");
 
 		TSdata.state = TS_master_alive;
 
@@ -605,7 +613,7 @@ long TSinit()
 				TSprintf("Failed to start sync server\n");
 				return -1;
 			}
-			Debug(5,"TSinit() - sync server started  \n",0);
+			Debug0(5,"TSinit() - sync server started  \n");
 		}
 	}
 	else
@@ -635,7 +643,7 @@ long TSinit()
 				TSprintf("Failed to start async client\n");
 				return -1;
 			}
-			Debug(5,"TSinit() - async client started  \n",0);
+			Debug0(5,"TSinit() - async client started  \n");
 		}
 		else
 		{
@@ -645,7 +653,7 @@ long TSinit()
 				TSprintf("Failed to start sync client\n");
 				return -1;
 			}
-			Debug(5,"TSinit() - sync client started  \n",0);
+			Debug0(5,"TSinit() - sync client started  \n");
 		}
 	}
 
@@ -697,12 +705,12 @@ static void TSstartSoftClock()
 	wd = wdCreate();
 	if(TSdata.has_event_system)
 	{
-		Debug(8,"Starting sync time watch dog\n",0);
+		Debug0(8,"Starting sync time watch dog\n");
 		wdStart(wd,1,(FUNCPTR)TSwdIncTimeSync,NULL);
 	}
 	else
 	{
-		Debug(8,"Starting async time watch dog\n",0);
+		Debug0(8,"Starting async time watch dog\n");
 		wdStart(wd,1,(FUNCPTR)TSwdIncTime,NULL);
 	}
 	return;
@@ -869,7 +877,7 @@ static long TSgetUnixTime(struct timespec* ts)
 	int soc;
 	char host_addr[BOOT_ADDR_LEN];
 
-	Debug(2,"in TSgetUnixTime()\n",0);
+	Debug0(2,"in TSgetUnixTime()\n");
 
 	if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
 		strlen(host_addr)==0)
@@ -881,7 +889,7 @@ static long TSgetUnixTime(struct timespec* ts)
 	}
 
 	if( (soc=TSgetSocket(0,&sin)) <0)
-		{ Debug(1,"TSgetsocket failed\n",0); return -1; }
+		{ Debug0(1,"TSgetsocket failed\n"); return -1; }
 
 	/* set up for ntp transaction to boot server */
 	Debug(5,"host addr = %s\n",host_addr);
@@ -896,7 +904,7 @@ static long TSgetUnixTime(struct timespec* ts)
 	if(TSgetData((char*)&buf_ntp,sizeof(buf_ntp),soc,
 		(struct sockaddr*)&sin,NULL,NULL)<0)
 	{
-		Debug(2,"no reply from NTP server\n",0);
+		Debug0(2,"no reply from NTP server\n");
 
 		sin.sin_port = UDP_TIME_PORT; /* well known registered time port */
 		TSdata.async_type=TS_async_time;
@@ -904,7 +912,7 @@ static long TSgetUnixTime(struct timespec* ts)
 		if(TSgetData((char*)&buf_data,sizeof(buf_data),soc,
 			(struct sockaddr*)&sin,NULL,NULL)<0)
 		{
-			Debug(2,"no reply from Time server\n",0);
+			Debug0(2,"no reply from Time server\n");
 			TSdata.async_type=TS_async_none;
 			close(soc);
 			return -1;
@@ -957,10 +965,10 @@ static long TSgetMasterTime(struct timespec* tsp)
 	struct sockaddr fs;
 	int soc;
 
-	Debug(3,"TSgetMasterTime() called\n",0);
+	Debug0(3,"TSgetMasterTime() called\n");
 
 	if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
-		{ Debug(1,"TSgetBroadcastSocket failed\n",0); return -1; }
+		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return -1; }
 
 	sin.sin_port = TSdata.master_port;
 	memcpy(&TSdata.hunt,&sin,sizeof(sin));
@@ -970,7 +978,7 @@ static long TSgetMasterTime(struct timespec* tsp)
 
 	if(TSgetData((char*)&stran,sizeof(stran),soc,
 		(struct sockaddr*)&sin,&fs,&tran_time)<0)
-		{ Debug(2,"no reply from master server\n",0); close(soc); return -1; }
+		{ Debug0(2,"no reply from master server\n"); close(soc); return -1; }
 
 	/* check the magic number */
 	if(ntohl(stran.magic)!=(TS_MAGIC))
@@ -1029,7 +1037,7 @@ static long TSsetClockFromUnix()
 {
 	struct timespec tp;
 
-	Debug(3,"in TSsetClockFromUnix()\n",0);
+	Debug0(3,"in TSsetClockFromUnix()\n");
 
 	if(TSgetUnixTime(&tp)!=0) return -1;
 
@@ -1040,7 +1048,7 @@ static long TSsetClockFromUnix()
 
 	/* set the vxWorks clock to the correct time */
 	if(clock_settime(CLOCK_REALTIME,&tp)<0)
-		{ Debug(1,"clock_settime failed\n",0); }
+		{ Debug0(1,"clock_settime failed\n"); }
 
 	/* adjust time to use the EPICS EPOCH of 1990 */
 	/* this is wrong if leap seconds accounted for */
@@ -1067,7 +1075,7 @@ static long TSsetClockFromMaster()
 	struct timespec tp;
 	int key;
 
-	Debug(3,"in TSsetClockFromMaster()\n",0);
+	Debug0(3,"in TSsetClockFromMaster()\n");
 
 	if(TSgetMasterTime(&tp)<0) return -1;
 
@@ -1156,12 +1164,11 @@ static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
 		if(ioctl(soc,SIOCGIFBRDADDR,(int)save)<0)
 			{ perror("ioctl SIOCGIFBRDADDR failed"); return -1; }
 
-		Debug(2,"Broadcast address = %8.8x\n",save->ifr_broadaddr);
 		memcpy((char*)sin,(char*)&save->ifr_broadaddr,
 				sizeof(save->ifr_broadaddr));
 	}
 	else
-		{ Debug(1,"no broadcast address found\n",0); return -1; }
+		{ Debug0(1,"no broadcast address found\n"); return -1; }
 	return 0;
 }
 
@@ -1237,7 +1244,7 @@ static void TSsyncServer()
 	int soc;
 
 	if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
-		{ Debug(1,"TSgetBroadcastSocket failed\n",0); return; }
+		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return; }
 
 	sin.sin_port = TSdata.slave_port;
 
@@ -1314,7 +1321,7 @@ static long TSasyncClient()
 	unsigned long nsecs;
 	char host_addr[BOOT_ADDR_LEN];
 
-	Debug(2,"in TSasyncClient()\n",0);
+	Debug0(2,"in TSasyncClient()\n");
 
 	/* could open two sockets here, one to contact unix, one to find master */
 
@@ -1329,14 +1336,14 @@ static long TSasyncClient()
 	}
 
 	if( (soc_unix=TSgetSocket(0,&sin_unix)) <0)
-		{ Debug(1,"TSgetSocket failed\n",0); return -1; }
+		{ Debug0(1,"TSgetSocket failed\n"); return -1; }
 
 	sin_unix.sin_addr.s_addr = inet_addr(host_addr);
 	sin_unix.sin_port = UDP_NTP_PORT;
 
 	/*------socket for finding master----------*/
 	if( (soc_bc=TSgetBroadcastSocket(0,&sin_bc)) <0)
-		{ Debug(1,"TSgetBroadcastSocket failed\n",0); return -1; }
+		{ Debug0(1,"TSgetBroadcastSocket failed\n"); return -1; }
 
 	sin_bc.sin_port = TSdata.master_port;
 	/*-----------------------------------------*/
@@ -1349,21 +1356,21 @@ static long TSasyncClient()
 		if(TSdata.state==TS_master_alive)
 		{
 			/* get socket to master */
-			Debug(5,"async_client(): master_alive\n",0);
+			Debug0(5,"async_client(): master_alive\n");
 			if( (soc_master=TSgetSocket(0,&sin_master)) <0)
-				{ Debug(1,"TSgetSocket failed\n",0); }
+				{ Debug0(1,"TSgetSocket failed\n"); }
 
 			while(TSdata.state==TS_master_alive)
 			{
 				/* sync with the master as long as it is up */
-				Debug(5,"async_client(): syncing with master\n",0);
+				Debug0(5,"async_client(): syncing with master\n");
 				stran.type=(TStype)htonl(TS_time_request);
 				stran.magic=htonl(TS_MAGIC);
 
 			    if(TSgetData((char*)&stran,sizeof(stran),soc_master,
         			&TSdata.master,NULL,&diff_time)<0)
         		{
-					Debug(2,"no reply from master server\n",0);
+					Debug0(2,"no reply from master server\n");
 					TSdata.state=TS_master_dead;
 					close(soc_master);
 				}
@@ -1392,11 +1399,11 @@ static long TSasyncClient()
 		else if(TSdata.async_type==TS_async_ntp)
 		{
 			/* sync with unix server using NTP - master check now and then */
-			Debug(5,"async_client(): using NTP sync\n",0);
+			Debug0(5,"async_client(): using NTP sync\n");
 			count=0;
 			while(TSdata.state==TS_master_dead)
 			{
-				Debug(5,"async_client(): syncing with unix\n",0);
+				Debug0(5,"async_client(): syncing with unix\n");
 				memset(&buf_ntp,0,sizeof(buf_ntp));
 				buf_ntp.info[0]=0x0b;
 				buf_size=sizeof(buf_ntp);
@@ -1404,7 +1411,7 @@ static long TSasyncClient()
 				if(TSgetData((char*)&buf_ntp,sizeof(buf_ntp),soc_unix,
 					(struct sockaddr*)&sin_unix,NULL,&diff_time)<0)
 				{
-					Debug(2,"no reply from NTP server\n",0);
+					Debug0(2,"no reply from NTP server\n");
 				}
 				else
 				{
@@ -1427,7 +1434,7 @@ static long TSasyncClient()
 			 
 					if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
-						{ Debug(2,"no reply from master server\n",0); }
+						{ Debug0(2,"no reply from master server\n"); }
 					else
 					{
 						TSdata.state=TS_master_alive;
@@ -1453,7 +1460,7 @@ static long TSasyncClient()
 
 				if(TSgetData((char*)&stran,sizeof(stran),soc_bc,
 						(struct sockaddr*)&sin_bc,&TSdata.master,&diff_time)<0)
-					{ Debug(2,"no reply from master server\n",0); }
+					{ Debug0(2,"no reply from master server\n"); }
 				else
 					TSdata.state=TS_master_alive;
 
@@ -1497,7 +1504,7 @@ static void TSsyncClient()
 			taskDelay(sysClkRateGet()*TS_SECS_SYNC_TRY_MASTER);
 
 	if( (soc=TSgetSocket(TSdata.slave_port,&sin)) <0)
-		{ Debug(1,"TSgetSocket failed\n",0); return; }
+		{ Debug0(1,"TSgetSocket failed\n"); return; }
 
 	while(1)
 	{
@@ -1523,7 +1530,7 @@ static void TSsyncClient()
 		mast_time.tv_sec=ntohl(stran.master_time.tv_sec);
 		mast_time.tv_nsec=ntohl(stran.master_time.tv_nsec);
 
-		Debug(6,"Received sync request from master\n",0);
+		Debug0(6,"Received sync request from master\n");
 		if(MAKE_DEBUG>=8)
 		{
 			TSprintf("time received=%9.9lu.%9.9lu\n",
@@ -1570,7 +1577,7 @@ static void TSstampServer()
 	TStype type;
 
 	if( (soc=TSgetSocket(TSdata.master_port,&sin)) <0)
-		{ Debug(1,"TSgetSocket failed\n",0); return; }
+		{ Debug0(1,"TSgetSocket failed\n"); return; }
 
 	stran.type=(TStype)htonl(TS_time_request);
 	stran.magic=htonl(TS_MAGIC);
@@ -1607,14 +1614,14 @@ static void TSstampServer()
 			stran.sync_rate = htonl(TSdata.sync_rate);
 			stran.clock_hz = htonl(TSdata.clock_hz);
 
-			Debug(4,"Slave requesting time\n",0);
+			Debug0(4,"Slave requesting time\n");
 
 			if(sendto(soc,(char*)&stran,sizeof(stran),0,&fs,fl)<0)
 				{ perror("sendto to slave failed"); }
 			break;
 		case TS_sync_request: TSforceSync(0); break;
 		default:
-			Debug(1,"Unknown transaction type from slave\n",0);
+			Debug0(1,"Unknown transaction type from slave\n");
 		}
 	}
 
@@ -1627,11 +1634,13 @@ static void TSstampServer()
 /*************************************************************************/
 
 /*  set the time stamp support software's current time */
+/*
 static long TSsetCurrentTime(struct timespec* sp)
 {
 	TSdata.event_table[TSdata.sync_event]=*sp;
 	return 0;
 }
+*/
 
 /* get the current time from time stamp support software */
 long TScurrentTimeStamp(struct timespec* sp)
@@ -1807,7 +1816,7 @@ static long TSgetData(char* buf, int buf_size, int soc,
 	while(num==0 && ++retry_count<TS_RETRY_COUNT);
 
 	if(retry_count >= TS_RETRY_COUNT)
-		{ Debug(5,"TSgetData - retry count exceeded\n",0); return -1; }
+		{ Debug0(5,"TSgetData - retry count exceeded\n"); return -1; }
 	else
 	{
 		/* data available */

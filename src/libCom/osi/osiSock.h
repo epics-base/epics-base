@@ -59,44 +59,62 @@ epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo
 /*
  * convert socket address to ASCII in this order
  * 1) look for matching host name and typically add trailing IP port
- * 2) convert to raw ascii address (typically this is a 
+ * 2) failing that, convert to raw ascii address (typically this is a 
  *      dotted IP address with trailing port)
+ * 3) failing that, writes "<Ukn Addr Type>" into pBuf
+ *
+ * returns the number of character elements stored in buffer not 
+ * including the null termination, but always writes at least a
+ * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc void epicsShareAPI sockAddrToA 
-			(const struct sockaddr *paddr, char *pBuf, unsigned bufSize);
+epicsShareFunc unsigned epicsShareAPI sockAddrToA (
+    const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*
  * convert IP address to ASCII in this order
  * 1) look for matching host name and add trailing port
  * 2) convert to raw dotted IP address with trailing port
+ *
+ * returns the number of character elements stored in buffer not 
+ * including the null termination, but always writes at least a
+ * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc void epicsShareAPI ipAddrToA
-	(const struct sockaddr_in *pInetAddr, char *pBuf, unsigned bufSize);
+epicsShareFunc unsigned epicsShareAPI ipAddrToA (
+    const struct sockaddr_in * pInetAddr, char * pBuf, unsigned bufSize );
 
 /*
  * sockAddrToDottedIP () 
  * typically convert to raw dotted IP address with trailing port
+ *
+ * returns the number of character elements stored in buffer not 
+ * including the null termination, but always writes at least a
+ * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc void epicsShareAPI sockAddrToDottedIP 
-			( const struct sockaddr *paddr, char *pBuf, unsigned bufSize );
+epicsShareFunc unsigned epicsShareAPI sockAddrToDottedIP ( 
+    const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*
  * ipAddrToDottedIP () 
  * convert to raw dotted IP address with trailing port
+ *
+ * returns the number of character elements stored in buffer not 
+ * including the null termination, but always writes at least a
+ * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc void epicsShareAPI ipAddrToDottedIP 
-			( const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize );
+epicsShareFunc unsigned epicsShareAPI ipAddrToDottedIP ( 
+    const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize );
 
 /*
  * convert inet address to a host name string
  *
- * returns the number of bytes stored in buffer not counting the terminating 
- * null character, or zero on failure
+ * returns the number of character elements stored in buffer not 
+ * including the null termination. This will be zero if a matching
+ * host name cant be found.
  *
  * there are many OS specific implementation stubs for this routine
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
-            (const struct in_addr *pAddr, char *pBuf, unsigned bufSize);
+epicsShareFunc unsigned epicsShareAPI ipAddrToHostName (
+    const struct in_addr * pAddr, char * pBuf, unsigned bufSize );
 
 /*
  * attempt to convert ASCII string to an IP address in this order
@@ -105,7 +123,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
  * 3) look for valid host name with optional port
  */
 epicsShareFunc int epicsShareAPI aToIPAddr
-	(const char *pAddrString, unsigned short defaultPort, struct sockaddr_in *pIP);
+	( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
 
 /*
  * attempt to convert ASCII host name string with optional port to an IP address

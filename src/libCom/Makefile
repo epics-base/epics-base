@@ -125,8 +125,6 @@ INC += osdInterrupt.h
 #Marty remove the following
 INC += osiSem.h
 INC += osdSem.h
-INC += osiMutex.h
-INC += osiEvent.h
 
 
 INC += epicsMutex.h

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/06/13 09:15:59  jhill
+ * connect proto changes
+ *
  * Revision 1.4  1997/04/10 19:34:13  jhill
  * API changes
  *
@@ -88,8 +91,8 @@ private:
         //
         // private data members
         //
-        osiTime elapsedAtLastSend;
-        osiTime elapsedAtLastRecv;
+        osiTime lastSendTS;
+        osiTime lastRecvTS;
         xBlockingStatus blockingStatus;
  
         virtual xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq,
@@ -103,8 +106,7 @@ private:
 
 casMsgIO::casMsgIO()
 {
-	this->elapsedAtLastSend = this->elapsedAtLastRecv 
-		= osiTime::getCurrent ();
+	this->lastSendTS = this->lastRecvTS = osiTime::getCurrent ();
 	this->blockingStatus = xIsBlocking;
 }
 
@@ -112,27 +114,23 @@ casMsgIO::~casMsgIO()
 {
 }
 
-
 //
 // casMsgIO::show(unsigned level) const
 //
 void casMsgIO::show(unsigned level) const
 {
-        osiTime  elapsed;
-        osiTime  current;
-        double  send_delay;
-        double  recv_delay;
-
-        if(level>=1u){
+	osiTime  current;
+	double  send_delay;
+	double  recv_delay;
+	
+	if (level>=1u) {
 		current = osiTime::getCurrent ();
-		elapsed = current - this->elapsedAtLastSend;
-		send_delay = elapsed;
-		elapsed = current - this->elapsedAtLastRecv;
-		recv_delay = elapsed;
-                printf(
-"\tSecs since last send %6.2f, Secs since last receive %6.2f\n",
-        send_delay, recv_delay);
-        }
+		send_delay = current - this->lastSendTS;
+		recv_delay = current - this->lastRecvTS;
+		printf(
+			"\tSecs since last send %6.2f, Secs since last receive %6.2f\n",
+			send_delay, recv_delay);
+	}
 }
 
 //
@@ -145,7 +143,7 @@ xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes,
 
 	stat = this->osdRecv(pBuf, nBytes, nActualBytes, from);
 	if (stat==xRecvOK) {
-		this->elapsedAtLastRecv = osiTime::getCurrent();
+		this->lastRecvTS = osiTime::getCurrent();
 	}
 	return stat;
 }
@@ -167,7 +165,7 @@ xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend,
 		stat = this->osdSend(pBuf, nBytesAvailableToSend, 
 				nActualBytes, to);
 		if (stat == xSendOK) {
-			this->elapsedAtLastSend = osiTime::getCurrent();
+			this->lastSendTS = osiTime::getCurrent();
 		}
 		return stat;
 	}
@@ -179,7 +177,7 @@ xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend,
 			return stat;
 		}
 
-		this->elapsedAtLastSend = osiTime::getCurrent();
+		this->lastSendTS = osiTime::getCurrent();
 		nActualBytes += nActualBytesDelta;
 		if (nBytesNeedToBeSent>nActualBytesDelta) {
 			nBytesNeedToBeSent -= nActualBytesDelta;

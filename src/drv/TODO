@@ -1,0 +1,8 @@
+date	person	task
+----	------	----
+		Is suspect that AB driver will not reconfigure the 
+		number of scanners and their offset at runtime.
+
+
+		The EPICS driver entry point structures in each
+		driver need to be extended

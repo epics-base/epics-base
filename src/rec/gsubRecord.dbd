@@ -1,6 +1,6 @@
 recordtype(gsub) {
 	include "dbCommon.dbd" 
-	field(VAL,DBF_FLOAT) {
+	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
 		asl(ASL0)
 		pp(TRUE)
@@ -66,35 +66,35 @@ recordtype(gsub) {
 		interest(1)
 		size(16)
 	}
-	field(HOPR,DBF_FLOAT) {
+	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(LOPR,DBF_FLOAT) {
+	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(HIHI,DBF_FLOAT) {
+	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOLO,DBF_FLOAT) {
+	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(HIGH,DBF_FLOAT) {
+	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 	}
-	field(LOW,DBF_FLOAT) {
+	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
@@ -155,71 +155,71 @@ recordtype(gsub) {
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 	}
-	field(A,DBF_FLOAT) {
+	field(A,DBF_DOUBLE) {
 		prompt("Value of Input A")
 		pp(TRUE)
 	}
-	field(B,DBF_FLOAT) {
+	field(B,DBF_DOUBLE) {
 		prompt("Value of Input B")
 		pp(TRUE)
 	}
-	field(C,DBF_FLOAT) {
+	field(C,DBF_DOUBLE) {
 		prompt("Value of Input C")
 		pp(TRUE)
 	}
-	field(D,DBF_FLOAT) {
+	field(D,DBF_DOUBLE) {
 		prompt("Value of Input D")
 		pp(TRUE)
 	}
-	field(E,DBF_FLOAT) {
+	field(E,DBF_DOUBLE) {
 		prompt("Value of Input E")
 		pp(TRUE)
 	}
-	field(F,DBF_FLOAT) {
+	field(F,DBF_DOUBLE) {
 		prompt("Value of Input F")
 		pp(TRUE)
 	}
-	field(LA,DBF_FLOAT) {
+	field(LA,DBF_DOUBLE) {
 		prompt("Prev Value of A")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LB,DBF_FLOAT) {
+	field(LB,DBF_DOUBLE) {
 		prompt("Prev Value of B")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LC,DBF_FLOAT) {
+	field(LC,DBF_DOUBLE) {
 		prompt("Prev Value of C")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LD,DBF_FLOAT) {
+	field(LD,DBF_DOUBLE) {
 		prompt("Prev Value of D")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LE,DBF_FLOAT) {
+	field(LE,DBF_DOUBLE) {
 		prompt("Prev Value of E")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LF,DBF_FLOAT) {
+	field(LF,DBF_DOUBLE) {
 		prompt("Prev Value of F")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(LALM,DBF_FLOAT) {
+	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(ALST,DBF_FLOAT) {
+	field(ALST,DBF_DOUBLE) {
 		prompt("Last Value Archived")
 		special(SPC_NOMOD)
 		interest(3)
 	}
-	field(MLST,DBF_FLOAT) {
+	field(MLST,DBF_DOUBLE) {
 		prompt("Last Value Monitored")
 		special(SPC_NOMOD)
 		interest(3)

@@ -161,7 +161,9 @@ static long process(pstringout)
 		recGblRecordError(S_dev_missingSup,(void *)pstringout,"write_stringout");
 		return(S_dev_missingSup);
 	}
-        if (!pstringout->pact && pstringout->omsl == CLOSED_LOOP){
+        if (!pstringout->pact
+        && (pstringout->dol.type != CONSTANT)
+        && (pstringout->omsl == CLOSED_LOOP)) {
 		status = dbGetLink(&(pstringout->dol),
 			DBR_STRING,pstringout->val,0,0);
 		if(pstringout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pstringout->udf=FALSE;

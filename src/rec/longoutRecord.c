@@ -161,7 +161,8 @@ static long process(plongout)
 		return(S_dev_missingSup);
 	}
 	if (!plongout->pact) {
-		if (plongout->omsl == CLOSED_LOOP) {
+                if((plongout->dol.type != CONSTANT)
+                && (plongout->omsl == CLOSED_LOOP)) {
 			status = dbGetLink(&(plongout->dol),DBR_LONG,
 				&value,0,0);
 			if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))

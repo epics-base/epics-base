@@ -112,7 +112,7 @@ static long init_record(psub,pass)
     STATUS	ret;
     struct link *plink;
     int i;
-    float *pvalue;
+    double *pvalue;
 	int 	*pcallbackdummy = NULL;  /*  dummy callback arguments */
 
     if (pass==0) return(0);
@@ -121,7 +121,7 @@ static long init_record(psub,pass)
     pvalue = &psub->a;
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
         if(plink->type==CONSTANT)
-	    recGblInitConstantLink(plink,DBF_FLOAT,pvalue);
+	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
     }
 
     /* convert the initialization subroutine name  */
@@ -283,7 +283,7 @@ static void alarm(psub)
     struct gsubRecord	*psub;
 {
 	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(psub->udf == TRUE ){
@@ -328,8 +328,8 @@ static void monitor(psub)
 {
 	unsigned short	monitor_mask;
 	double		delta;
-	float           *pnew;
-	float          *pprev;
+	double           *pnew;
+	double          *pprev;
 	int             i;
 
         monitor_mask = recGblResetAlarms(psub);
@@ -369,7 +369,7 @@ static long fetch_values(psub)
 struct gsubRecord *psub;
 {
         struct link     *plink; /* structure of the link field  */
-        float           *pvalue;
+        double           *pvalue;
         int             i;
 	long		status;
 

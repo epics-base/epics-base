@@ -21,7 +21,7 @@ recordtype(bo) {
 		promptgroup(GUI_OUTPUT)
 		interest(1)
 	}
-	field(HIGH,DBF_FLOAT) {
+	field(HIGH,DBF_DOUBLE) {
 		prompt("Seconds to Hold High")
 		promptgroup(GUI_OUTPUT)
 		interest(1)

@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.6  1995/02/01  15:29:54  winans
+ * Added a type field to the configure command to disable the use of the event
+ * system hardware if desired.
+ *
  * Revision 1.5  1994/12/16  15:51:21  winans
  * Changed error message in the event system error handler & added a conditional
  * based on a debug flag to print it... defaults to off.  (Per request from MRK.)
@@ -514,12 +518,14 @@ long TSinit()
 		{
 			struct timespec tp;
 			clock_gettime(CLOCK_REALTIME,&tp);
+			/* this should work */
 			errPrintf(FL,"Failed to set time from Unix server\n");
 		}
 
 		if( TSsetClockFromMaster()<0 )
 		{
-			errPrintf(FL,"Could not contact a master timing IOC\n");
+			/* do nothing here */
+			/* errPrintf(FL,"Could not contact a master timing IOC\n"); */
 		}
 		else
 			TSdata.state = TS_master_alive;

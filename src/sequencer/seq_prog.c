@@ -13,6 +13,7 @@
 	HISTORY:
 09dec91,ajk	original
 29apr92,ajk	Added mutual exclusion locks	
+17Jul92,rcz	Changed semBCreate call for V5 vxWorks, maybe should be semMCreate ???
 ***************************************************************************/
 #define	DEBUG
 #include	"seq.h"
@@ -184,7 +185,7 @@ LOCAL seqProgListInit()
 	lstInit(&seqProgList);
 
 	/* Create a semaphore for mutual exclusion */
-	seqProgListSemId = semBCreate(0);
+	seqProgListSemId = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	semGive(seqProgListSemId);
 
 	seqProgListInited = TRUE;

@@ -38,6 +38,7 @@
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
 #include "hostNameCache.h"
+#include "cxxCompilerDependencies.h"
 
 // a modified ca header with capacity for large arrays
 struct  caHdrLargeArray {
@@ -136,6 +137,11 @@ public:
 
     bool bytesArePendingInOS () const;
 
+    void * operator new ( size_t size, 
+        tsFreeList < class tcpiiu, 32, epicsMutexNOOP >  & );
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ));
+
 private:
     hostNameCache hostNameCacheInstance;
     tcpRecvThread recvThread;
@@ -206,7 +212,23 @@ private:
 
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );
+    void * operator new ( size_t size );
+    void operator delete ( void * );
 };
+
+inline void * tcpiiu::operator new ( size_t size, 
+    tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & mgr )
+{
+    return mgr.allocate ( size );
+}
+    
+#ifdef CXX_PLACEMENT_DELETE
+inline void tcpiiu::operator delete ( void * pCadaver, 
+    tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & mgr )
+{
+    mgr.release ( pCadaver );
+}
+#endif
 
 inline bool tcpiiu::ca_v41_ok () const
 {

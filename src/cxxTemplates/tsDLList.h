@@ -299,17 +299,17 @@ inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 template <class T>
 inline void tsDLNode<T>::operator = (const tsDLNode<T> &) const {}
 
-template <class T>
-T * tsDLNode<T>::getNext (void) const
-{ 
-    return pNext; 
-}
+//template <class T>
+//T * tsDLNode<T>::getNext (void) const
+//{ 
+//    return pNext; 
+//}
 
-template <class T>
-T * tsDLNode<T>::getPrev (void) const
-{ 
-    return pPrev; 
-}
+//template <class T>
+//T * tsDLNode<T>::getPrev (void) const
+//{ 
+//    return pPrev; 
+//}
 
 //////////////////////////////////////
 // tsDLList<T> member functions

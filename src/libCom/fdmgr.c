@@ -1,6 +1,6 @@
 /*
  *
- *	F D M G R . C
+ *	share/src/libCom/$Id$	
  *
  *	Author	Jeffrey O. Hill
  *		hill@luke.lanl.gov
@@ -28,12 +28,15 @@
  *			with select() system call operation	
  *	.09 joh 091192	fixed delete pending field uninitialized if the
  *			fdentry is reused
+ *	.10 joh 091192	added SCCS ID	
  *
  *	NOTES:
  *	.01 write fd callbacks are one shots consistent with the lower
  *	likelyhood of select blocking on a fd write.	 
  *
  */
+
+static char	*pSccsId = "$Id$\t$Date$";
 
 #if defined(vxWorks)
 #	include <vxWorks.h>

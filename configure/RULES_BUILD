@@ -201,7 +201,7 @@ $(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)
 
 %_ctdt$(OBJ) : %_ctdt.c
 	@$(RM) $@
-	$(COMPILE.c) -traditional $<
+	$(COMPILE.ctdt) -traditional $<
 
 %$(OBJ): %.c
 	@$(HDEPENDS_CMD)

@@ -1,0 +1,43 @@
+#RULES.Db
+SUBTOOL = $(EPICS_BASE_BIN)/subtool
+PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
+
+install: .DEPENDS dbd $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
+
+buildInstall:: install
+
+inc build depends:
+
+dbd:
+	@if [ ! -d $(TOP)/dbd ]; then \
+		mkdir $(TOP)/dbd ; \
+	fi 
+	@if [ ! -d dbd ]; then \
+		echo "ln -s $(TOP)/dbd dbd" ; \
+		ln -s $(TOP)/dbd dbd ; \
+	fi
+
+
+$(DBFROMTEMPLATE):%.db: %.template %.substitutions
+	$(RM) $@
+	$(SUBTOOL) $*.template $*.substitutions > $@
+
+
+$(INDDBFROMTEMPLATE):%.db: %.substitutions
+	$(RM) $@
+	$(SUBTOOL) $(PREFIX).template $*.substitutions > $@
+
+.DEPENDS: Makefile
+	@$(RM) $@
+	@for NAME in $(INDDBFROMTEMPLATE) garbage_marty ; do \
+	    if [ $$NAME != garbage_marty ] ; then \
+		PREFIX="`echo $$NAME | sed -e 's-[0-9]--g' | sed -e 's-\.db--g'`";\
+		echo "$$NAME: $$PREFIX.template" >> $@;\
+	    fi ; \
+        done 
+
+clean::
+	@$(RM) dbd  $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) .DEPENDS $(PROD)
+
+-include .DEPENDS
+

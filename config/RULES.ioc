@@ -1,0 +1,33 @@
+#RULES.ioc
+APPDIR := $(shell grep '.*".*App/' st.* | sed -e 's/.*"\(.*App\).*/\1/' | sort -u )
+ASCF = $(TOP)/../ascf
+TARGETBIN = $(TOP)/bin/$(ARCH)
+ 
+install: makelinks
+ 
+buildInstall:: install
+ 
+inc build depends:
+ 
+makelinks:
+	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)
+	ln -s $(ASCF) ascf
+	ln -s $(TARGETBIN) bin
+	ln -s $(TARGETBIN)/vxWorks vxWorks
+	ln -s $(TARGETBIN)/vxWorks.sym vxWorks.sym
+	ln -s $(TOP)/dbd dbd
+	ln -s $(SHARE) share
+	@for dir in $(APPDIR) ; do  \
+		if [ -d $(TOP)/$$dir ]; then \
+			ln -s $(TOP)/$$dir $$dir ; \
+			echo "ln -s $(TOP)/$$dir $$dir" ; \
+		elif [ -d $(MASTER_IOCAPPS)/$$dir ]; then \
+			ln -s $(MASTER_IOCAPPS)/$$dir $$dir ; \
+			echo "ln -s $(MASTER_IOCAPPS)/$$dir $$dir" ; \
+		else \
+			echo "$$dir not found" ; \
+		fi ; \
+	done
+ 
+clean::
+	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)

@@ -244,7 +244,7 @@ void epicsThreadSleep(double seconds)
         if(ticks<=0) ticks = 1;
     }
     status = taskDelay(ticks);
-    if(status) errlogPrintf(0,"epicsThreadSleep\n");
+    if(status) errlogPrintf("epicsThreadSleep\n");
 }
 
 epicsThreadId epicsThreadGetIdSelf(void)

@@ -1,4 +1,4 @@
-/*      @(#)lopi.c	1.6   6/23/92	
+ /*	@(#)lopi_def.h	1.4	2/19/93
  *	Author: Betty Ann Gunther
  *	Date:	02-15-91
  *
@@ -23,7 +23,6 @@
  *		Advanced Photon Source
  *		Argonne National Laboratory
  *
-
  * Modification Log:
  * -----------------
  * .01	02-26-91         bg     Changed cursor to move only to controls.
@@ -39,9 +38,130 @@
  * 	                        you will not crash.
  * .07  6-10-91          bg     Fixed allocation subroutines so they return NULL
  *                              if they cannot get enough memory.  
+ * .01	07-03-91	rac	changed "bw" to "lopi"
+ * .02	07-03-91	rac	eliminate some gcc warnings
  */
 
-#include "lopi_def.h"
+#include <vxWorks.h>
+#include <stdioLib.h> 
+#include <ioLib.h> 
+#include <taskLib.h>
+#include <semLib.h> 
+#include <strLib.h> 
+#include <os_depen.h> 
+#include <ctype.h>
+#include <db_access.h>
+#include <cadef.h>
+
+
+static VOID lopi_init();
+static VOID create_menu();
+static VOID get_displays(); 
+static struct mon_node *mon_alloc();   /* Allocates memory for an update.*/
+static struct txt_node *txt_alloc();  /* Allocates memory for a test label. */
+static struct ev_node  *ev_alloc();   /* Allocates memory for an event node. */
+static struct except_node *except_alloc(); /* Allocates memory for an exception node. */
+static struct window_node *win_alloc(); /* Allocates memory for a window structure. */
+static VOID init_monitors ();
+static VOID print_menu();  
+static VOID mv_cursor();
+static VOID get_key();
+static char get_esc_seq();
+static VOID make_box();
+static VOID get_value();
+static VOID blank_fill();
+static VOID mv_cursor();
+static char *skipblanks();
+static int getline();
+static VOID lopi_conn_handler();
+static VOID lopi_exception_handler();
+static VOID add_ctl();
+static VOID add_mon();
+static VOID add_txt();
+static char *skip_to_digit();
+static int int_to_short();
+static VOID read_disp_lst(); 
+static VOID display_text();
+static VOID display_file();
+static VOID display_monitors(); 
+static VOID stop_monitors();
+static VOID lopi_ev_handler();
+static VOID lopi_exception_handler();
+static VOID lopi_conn_handler();
+static VOID free_mem();
+static struct mon_node *find_channel();
+static VOID put_value();
+static int to_short();
+
+#define FN_LEN 24
+#define LIST_END -1
+#define NEWLINE  '\n'
+#define MXMENU  34
+#define ESC '\33' 
+#define L_BRACKET  '['
+#define RETURN '\15'
+#define CR  '\13'
+#define DELETE '\177'
+#define BLANK ' '
+#define UNDERSC '_'
+#define MINUS '-'
+#define COLON ':'
+#define TILDE '~'
+#define ASTER '*'    /* Legal text character. */
+#define L_ARROW '$'
+#define R_ARROW '%'
+#define U_ARROW '!'
+#define D_ARROW  '@'
+#define ILL_CHR '#'
+#define F6   '^'     /* Permits exit back to main menu. */
+#define F7 '&'
+#define DOT '.'
+
+/* VT220 Escape secquences */
+
+#define CLEAR_SCREEN fdprintf(lopi_fd,"%c", '\33');  \
+                     fdprintf(lopi_fd,"%s","[2J");   
+#define INIT_CURSOR  fdprintf(lopi_fd,"%c", '\33');    \
+                     fdprintf(lopi_fd,"%s", "[?25h"); 
+#define ERASE_LINE fdprintf(lopi_fd,"%c",ESC); \
+                   fdprintf(lopi_fd,"%s","[2K");
+#define ESCAPE fdprintf(lopi_fd,"%c",'\33');       
+#define REVERSE_VIDEO  fdprintf(lopi_fd,"%s","[7;5m");
+#define ATR_OFF fdprintf(lopi_fd,"%s","[0m");
+
+#define CTL  1
+#define MON 0
+#define DEBUG 0 
+#define OFF  0
+#define ON   1
+#define NO_CMD "\0"
+#define NEW_DATA 1
+#define NO_NEW_DATA 0
+#define NOTHING_SELECTED -1  /* Flag to indicate that lopi is waiting
+                                for the user to make a selection. */
+#define STRT_TTLE_ROW 1      /* Title row position. */
+#define STRT_TTLE_COL 30     /* Title column position. */
+#define STRT_MENU_ROW  7     /* Row position of first menu item. */
+#define STRT_MENU_COL 20     /* Column position of first menu item. */
+#define MAX_DISP_NUM 10      /* Maximum number of displays. */
+#define MAX_LIN_LEN 80       /* Maximum number of characters in a line of a 
+                                display file. */
+#define BUFF_SIZE 10
+#define MAX_SCREEN_HEIGHT 24
+#define MAX_SCREEN_WIDTH 78 
+#define CHAN_NM_SIZE 40
+#define MAX_FIELD_SIZE 8
+
+#define ERR_MSG_ROW 20
+#define ERR_MSG_COL 0
+#define BOX_IN_ROW 2
+#define BOX_IN_COL 43
+#define BEG_BOX 1
+#define END_BOX 3
+#define UNDEF 8
+#define FOUND 1
+#define NOT_FOUND 0
+
 
 struct except_node{
        long status;             /* Channel access standard status code.             */
@@ -121,16 +241,90 @@ struct except_node *except_ptr;
 static int num_times = 0;;
 extern shellTaskId;
 
+
+shell_init() 
+{
+ ioctl(1,FIOSETOPTIONS,OPT_RAW);
+}
+
+/*
+ *	CA_SIGNAL()
+ *
+ *
+ */
+
+lopi_signal(ca_status,message)
+int		ca_status;
+char		*message;
+{
+  short row = ERR_MSG_ROW; 
+  short col = ERR_MSG_COL; 
+  char prefix[MAX_LIN_LEN];
+  char txt_str[MAX_LIN_LEN];
+
+  static  char  *severity[] = 
+		{
+		"Warning",
+		"Success",
+		"Error",
+		"Info",
+		"Fatal",
+		"Fatal",
+		"Fatal",
+		"Fatal"
+		};
+
+  strcpy(txt_str, "CA.Diagnostic..........");
+  mv_cursor(&row,&col,txt_str); 
+
+  
+  if(message){
+    strcpy(prefix,"Severity:[%s] Error:[%s]Context: [%s]"); 
+    sprintf(txt_str,prefix,severity[CA_EXTRACT_SEVERITY(ca_status)],
+         ca_message_text[CA_EXTRACT_MSG_NO(ca_status)],message);
+    mv_cursor(&row,&col,txt_str); 
+  }
+  else{
+    strcpy(prefix,"Severity:[%s],Error:[%s]");
+    sprintf(txt_str,prefix,severity[CA_EXTRACT_SEVERITY(ca_status)],
+         ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);
+    mv_cursor(&row,&col,txt_str); 
+  }
+  /*
+   *
+   *
+   *	Terminate execution if unsuccessful
+   *
+   *
+   */
+  if( !(ca_status & CA_M_SUCCESS) ){
+#   ifdef VMS
+      lib$signal(0);
+#   endif
+#   ifdef vxWorks
+      ti(VXTHISTASKID);
+      tt(VXTHISTASKID);
+#   endif
+  /*  abort(ca_status); */
+  }
+
+}
+
 VOID lopi() 
 
 {
 
   /* Create and initialize semaphores protecting the keyboard and the 
      monitor linked list. */ 
+#ifdef V5_vxWorks
+  mon_sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
+  key_sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
+#else
   mon_sem = semCreate();
   key_sem = semCreate();
   semGive(mon_sem);
   semGive(key_sem); 
+#endif
   data_flg = NO_NEW_DATA;;
   except_ptr  = except_alloc();
 

@@ -323,7 +323,7 @@ sendMsg(void)
   if((msgNum >= LIST_SIZE) || (msgNum < 0))
     return(ERROR);
 
-  adpvt[msgNum].ageLimit = 10;	/* need to reset each time */
+  adpvt[msgNum].ageLimit = 0;	/* Don't really need to reset each time */
   if ((*(drvBitBus.qReq))(&(adpvt[msgNum]), BB_Q_HIGH) != ERROR)
   {
     FASTLOCK(&msgReply);	/* wait for response to return */
@@ -384,7 +384,7 @@ pingEm()
 
   while (pdpvt.txMsg.node < 255)
   {
-    pdpvt.ageLimit = 10;
+    pdpvt.ageLimit = 0;
     if ((*(drvBitBus.qReq))(&(pdpvt), BB_Q_HIGH) == ERROR)
       return(ERROR);
 
@@ -599,7 +599,7 @@ downLoadCode()
         /* length = hexBytes + header size of the bitbus message */
 	pdpvt->txMsg.length = msgBytes+7;
   
-        pdpvt->ageLimit = 30;  /* need to reset each time */
+        pdpvt->ageLimit = 0;  /* need to reset each time */
 
         if ((*(drvBitBus.qReq))(pdpvt, BB_Q_LOW) != ERROR)
 	{

@@ -224,5 +224,5 @@ epicsShareFunc TS_STAMP epicsShareAPI osiTimerExpirationDate (osiTimerId);
 }
 #endif /* __cplusplus */
 
-#endif // osiTimerHInclude
+#endif /* osiTimerHInclude */
 

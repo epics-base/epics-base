@@ -38,7 +38,11 @@
 #define NELEMENTS(A) (sizeof (A) / sizeof ((A) [0]))
 #endif
 
+#ifdef vxWorks
+#define ITERATION_COUNT 1000
+#else
 #define ITERATION_COUNT 10000
+#endif
 
 #define WAIT_FOR_ACK
 
@@ -115,12 +119,12 @@ int catime (char *channelName, enum appendNumberFlag appNF)
   	SEVCHK (ca_task_initialize(),"Unable to initialize");
 
 	if (appNF==appendNumber) {
-		printf("Testing with %u channels named %snnn\n", 
-			NELEMENTS(itemList), channelName);
+		printf("Testing with %lu channels named %snnn\n", 
+			(unsigned long) NELEMENTS(itemList), channelName);
 	}
 	else {
-		printf("Testing with %u channels named %s\n", 
-			 NELEMENTS(itemList), channelName);
+		printf("Testing with %lu channels named %s\n", 
+			 (unsigned long) NELEMENTS(itemList), channelName);
 	}
 
 	strsize = sizeof(itemList[i].name)-1;

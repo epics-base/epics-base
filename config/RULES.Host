@@ -520,9 +520,9 @@ $(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
+depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS) $(SRCS.c) $(SRCS.cc)
 	$(RM) DEPENDS
-ifneq ($(strip $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)),)
+ifneq ($(strip $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS) $(SRCS.c) $(SRCS.cc)),)
 	$(DEPENDS_RULE)
 endif
 

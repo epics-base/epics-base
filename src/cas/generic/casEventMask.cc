@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/12/01 23:32:15  jhill
+ * removed inline frm evt msk alloc
+ *
  * Revision 1.9  1998/10/27 18:28:20  jhill
  * fixed warnings
  *
@@ -108,24 +111,6 @@ main ()
 #endif
 
 //
-// casEventRegistry::initRegistry()
-//
-int casEventRegistry::initRegistry()  
-{
-	if (!this->hasBeenInitialized) {
-		int status;
-		status = this->resTable <casEventMaskEntry, stringId>::
-				init(1u<<8u);
-		if (status==0) {
-			this->hasBeenInitialized = 1u;        
-		}
-		return status;
-	}
-	return 0;
-}
-
-
-//
 // casEventRegistry::maskAllocator()
 //
 casEventMask casEventRegistry::maskAllocator()
@@ -152,12 +137,6 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	stringId 		id (pName, stringId::refString);
 	casEventMaskEntry	*pEntry;
 	casEventMask		mask;
-
-	if (!this->hasBeenInitialized) {
-		errMessage(S_cas_noMemory, 
-			"casEventRegistry: not initialized?");
-		return mask;
-	}
 
 	this->mutex.osiLock();
 	pEntry = this->lookup (id);
@@ -205,9 +184,6 @@ casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
 //
 void casEventRegistry::show(unsigned level) const
 {
-	if (!this->hasBeenInitialized) {
-		printf ("casEventRegistry: not initialized\n");
-	}
 	this->mutex.osiLock();
 	if (level>1u) {
 		printf ("casEventRegistry: bit allocator = %d\n", 

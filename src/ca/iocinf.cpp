@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "envDefs.h"
 #include "epicsAssert.h"
@@ -108,9 +109,11 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
 extern "C" void epicsShareAPI removeDuplicatesAddresses 
     ( ELLLIST *pDestList, ELLLIST *pSrcList )
 {
-    osiSockAddrNode *pNode;
+    ELLNODE *pRawNode;
 
-    while ( (pNode  = (osiSockAddrNode *) ellGet ( pSrcList ) ) ) {
+    while ( (pRawNode  = ellGet ( pSrcList ) ) ) {
+		assert ( offsetof (osiSockAddrNode, node) == 0 );
+		osiSockAddrNode *pNode = reinterpret_cast<osiSockAddrNode *> ( pRawNode );
         osiSockAddrNode *pTmpNode;
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {

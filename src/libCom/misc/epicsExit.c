@@ -14,11 +14,11 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "cantProceed.h"
-#define epicsExportSharedSymbols
 #include "epicsExit.h"
 
 typedef void (*epicsExitFunc)(void *arg);
@@ -38,13 +38,10 @@ static exitPvt exitPvtInstance;
 static exitPvt *pexitPvt = &exitPvtInstance;
 static epicsThreadOnceId createOnce = EPICS_THREAD_ONCE_INIT;
 
-static void atExit(void) {epicsExit(0);}
-
 static void createExitPvt(void)
 {
     pexitPvt->lock = epicsMutexMustCreate();
     ellInit(&pexitPvt->list);
-    atexit(atExit);
 }
 
 epicsShareFunc void epicsShareAPI epicsExitCallAtExits(void)

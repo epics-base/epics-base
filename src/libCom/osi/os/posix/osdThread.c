@@ -33,6 +33,7 @@
 #include "cantProceed.h"
 #include "errlog.h"
 #include "epicsAssert.h"
+#include "epicsExit.h"
 
 /* Until these can be demonstrated to work leave them undefined*/
 #undef _POSIX_THREAD_ATTR_STACKSIZE
@@ -106,6 +107,7 @@ static void myAtExit(void)
         fprintf(stderr,"osdThread myAtExit extered multiple times\n");
         return;
     }
+    epicsExitCallAtExits();
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
     pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);

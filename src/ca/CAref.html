@@ -709,12 +709,13 @@ compromised. The probability of EPICS minor release upgrade recompilation
 dependency will also increase. Codes intending to maintain the highest degree
 of portability over a wide range of EPICS versions should be especially
 careful. For example such codes should replace all instances of
-"channel_id-&gt;type" with  ca_element_count(channel_id)". This approach
-should be reliable on all versions of EPICS in use today. The construct
-"ca_puser(chid) = xxxx" is particularly problematic. The best mechanisms for
-setting the per channel private pointer will be to pass the user private
-pointer in  when creating the channel. This approach is implemented on all
-versions. Otherwise, you can also use "ca_set_puser(CHID,PUSER), but this
+<code>channel_id-&gt;type</code> with 
+<code>ca_element_count(channel_id)</code>. This approach should be reliable
+on all versions of EPICS in use today. The construct <code>ca_puser(chid) =
+xxxx</code> is particularly problematic. The best mechanisms for setting the
+per channel private pointer will be to pass the user priate pointer in  when
+creating the channel. This approach is implemented on all versions.
+Otherwise, you can also use <code>ca_set_puser(CHID,PUSER)</code>, but this
 will work only on post beta releases of R3.13 and on R3.14. </p>
 
 <h2><a name="Function Call Reference"></a>Function Call Reference</h2>

@@ -73,23 +73,16 @@ epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
     epicsMessageQueueId pmsg;
     unsigned int slotBytes, slotLongs;
 
+    assert(capacity != 0);
     pmsg = (epicsMessageQueueId)callocMustSucceed(1, sizeof(*pmsg), "epicsMessageQueueCreate");
     pmsg->capacity = capacity;
     pmsg->maxMessageSize = maxMessageSize;
     slotLongs = 1 + ((maxMessageSize + sizeof(unsigned long) - 1) / sizeof(unsigned long));
     slotBytes = slotLongs * sizeof(unsigned long);
-    if (pmsg->capacity == 0) {
-        pmsg->buf = NULL;
-        pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = NULL;
-        pmsg->lastMessageSlot = NULL;
-        pmsg->full = true;
-    }
-    else {
-        pmsg->buf = (unsigned long *)callocMustSucceed(pmsg->capacity, slotBytes, "epicsMessageQueueCreate");
-        pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = (char *)&pmsg->buf[0];
-        pmsg->lastMessageSlot = (char *)&pmsg->buf[(capacity - 1) * slotLongs];
-        pmsg->full = false;
-    }
+    pmsg->buf = (unsigned long *)callocMustSucceed(pmsg->capacity, slotBytes, "epicsMessageQueueCreate");
+    pmsg->inPtr = pmsg->outPtr = pmsg->firstMessageSlot = (char *)&pmsg->buf[0];
+    pmsg->lastMessageSlot = (char *)&pmsg->buf[(capacity - 1) * slotLongs];
+    pmsg->full = false;
     pmsg->slotSize = slotBytes;
     pmsg->mutex = epicsMutexMustCreate();
     ellInit(&pmsg->sendQueue);
@@ -231,15 +224,14 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
      */
     epicsMutexLock(pmsg->mutex);
     myOutPtr = (char *)pmsg->outPtr;
-    if ((pmsg->capacity != 0) && ((myOutPtr != pmsg->inPtr) || pmsg->full)) {
+    if ((myOutPtr != pmsg->inPtr) || pmsg->full) {
         l = *(unsigned long *)myOutPtr;
         memcpy(message, (unsigned long *)myOutPtr + 1, l);
         if (myOutPtr == pmsg->lastMessageSlot)
             pmsg->outPtr = pmsg->firstMessageSlot;
         else
             pmsg->outPtr += pmsg->slotSize;
-        if (pmsg->capacity)
-            pmsg->full = false;
+        pmsg->full = false;
 
         /*
          * Wake up the oldest task waiting to send

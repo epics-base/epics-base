@@ -13,11 +13,9 @@ USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/gdd
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 
-INC += casdef.h
-INC += caProto.h
-INC += casEventMask.h
-INC += casInternal.h
-INC += gddAppFuncTable.h
+INC += $(SRC)/casdef.h
+INC += $(SRC)/casEventMask.h
+INC += $(SRC)/gddAppFuncTable.h
 
 SRCS.cc += $(SRC)/caServer.cc 
 SRCS.cc += $(SRC)/caServerI.cc 

@@ -33,6 +33,7 @@ class baseNMIU : public tsDLNode < baseNMIU >,
         public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( nciu &chan );
+    /*virtual*/ ~baseNMIU ();
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     virtual void completion () = 0;
     virtual void exception ( int status, 
@@ -47,7 +48,6 @@ public:
     ca_uint32_t getID () const;
     nciu & channel () const;
 protected:
-    virtual ~baseNMIU ();
 //
 // perhaps we should not store the channel here and instead fetch it out of the 
 // notify 

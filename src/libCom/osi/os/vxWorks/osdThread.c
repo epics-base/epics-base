@@ -24,8 +24,8 @@ of this distribution.
 #include "osiThread.h"
 #include "cantProceed.h"
 #include "epicsAssert.h"
+#include "vxLib.h"
 
-BOOL vxTas(void *address);
 
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
@@ -40,6 +40,8 @@ static const unsigned stackSizeTable[threadStackBig+1] =
 /* definitions for implementation of threadPrivate */
 static void **papTSD = 0;
 static int nthreadPrivate = 0;
+
+static SEM_ID threadOnceMutex = 0;
 
 /* Just map osi 0 to 99 into vx 100 to 199 */
 /* remember that for vxWorks lower number means higher priority */
@@ -57,7 +59,7 @@ static int getOssPriorityValue(unsigned int osiPriority)
 }
 
 
-epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeClass stackSizeClass) 
+unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass) 
 {
 
     if (stackSizeClass<threadStackSmall) {
@@ -73,12 +75,29 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
     return stackSizeTable[stackSizeClass];
 }
 
+void threadInit(void)
+{
+    static int lock = 0;
+
+    while(!vxTas(&lock));
+    if(threadOnceMutex==0) {
+        threadOnceMutex = semMCreate(
+                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+        assert(threadOnceMutex);
+    }
+    lock = 0;
+}
+
 void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
-    /* not a good implementation (no guarantee that func() has finished before
-       the next task calls this routine); see the Posix implementation */
-    if(vxTas(*id))
-	func(arg);
+    threadInit();
+    assert(semTake(threadOnceMutex,WAIT_FOREVER)==OK);
+    if (*id == 0) { /*  0 => first call */
+        *id = -1;   /* -1 => func() active */
+        func(arg);
+        *id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
+    }
+    semGive(threadOnceMutex);
 }
 
 static void createFunction(THREADFUNC func, void *parm)
@@ -126,6 +145,11 @@ void threadResume(threadId id)
 
     status = taskResume(tid);
     if(status) errlogPrintf("threadResume failed\n");
+}
+
+void threadExitMain(void)
+{
+    errlogPrintf("threadExitMain was called for vxWorks. Why?\n");
 }
 
 unsigned int threadGetPriority(threadId id)
@@ -180,7 +204,7 @@ threadId threadGetId(const char *name)
     return((threadId)(tid==ERROR?0:tid));
 }
 
-const char *threadGetNameSelf (void)
+const char *threadGetNameSelf(void)
 {
     return taskName(taskIdSelf());
 }
@@ -192,6 +216,16 @@ void threadGetName (threadId id, char *name, size_t size)
     name[size-1] = '\0';
 }
 
+void threadShowAll(unsigned int level)
+{
+    taskShow(0,2);
+}
+
+void threadShow(threadId id,unsigned int level)
+{
+    int tid = (int)id;
+    taskShow(tid,level);
+}
 
 /* The following algorithm was thought of by Andrew Johnson APS/ASD .
  * The basic idea is to use a single vxWorks task variable.

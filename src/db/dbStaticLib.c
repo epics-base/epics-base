@@ -29,6 +29,7 @@
  * Modification Log:
  * -----------------
  * .01	02-03-93	mrk	Consolidated all databse defs in one place
+ * .02	09-10-93	mrk	dbIsDefault always returns FALSE for DEVCHOICE
  */
 
 #ifdef vxWorks
@@ -2076,9 +2077,11 @@ DBENTRY *pdbentry;
 	case (DBF_GBLCHOICE):
 	case (DBF_CVTCHOICE):
 	case (DBF_RECCHOICE):
-	case (DBF_DEVCHOICE):
 	case (DBF_ENUM):
 	    return((*(unsigned short *) pfield) == pflddes->initial.enum_value);
+	case (DBF_DEVCHOICE):
+	    /*Because related to INP or OUT always return FALSE*/
+	    return(FALSE);
 	case (DBF_INLINK):
 	case (DBF_OUTLINK):
 	case (DBF_FWDLINK):

@@ -207,6 +207,10 @@ static long initRecSup()
     recSup = calloc(1,nbytes);
     recSup->number = dbRecType->number;
     recSup->papRset = (void *)((long)recSup + (long)sizeof(struct recSup));
+
+    /* added for Channel Access Links */
+    dbCaLinkInit((int) 1);
+
     for(i=0; i< (recSup->number); i++) {
 	if(dbRecType->papName[i] == NULL)continue;
 	strcpy(name,"_");
@@ -227,6 +231,10 @@ static long initRecSup()
 	    if(status==0) status = rtnval;
 	}
     }
+
+    /* added for Channel Access Links */
+    dbCaLinkInit((int) 2);
+
     return(status);
 }
 
@@ -377,16 +385,27 @@ static long initDatabase()
 			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
 			}
 			else {
-			    /*This will be replaced by channel access call*/
-			    strncpy(message,precord->name,PVNAME_SZ);
-			    message[PVNAME_SZ]=0;
-			    strcat(message,".");
-			    strncat(message,pfldDes->fldname,FLDNAME_SZ);
-			    strcat(message,": link process variable =");
-			    strcat(message,name);
-			    strcat(message," not found");
-			    status = S_db_notFound;
-			    errMessage(status,message);
+                            /* not a local pvar ... assuming a CA_LINK */
+                            /* only supporting NPP, Input MS/NMS, and  */
+                            /* Output NMS links ... checking here.     */
+
+                            if (plink->value.db_link.process_passive
+                                || (pfldDes->field_type == DBF_OUTLINK
+                                    && plink->value.db_link.maximize_sevr))
+                            {
+                                /* link PP and/or Outlink MS ...    */
+                                /* neither supported under CA_LINKs */
+                                strncpy(message,precord->name,PVNAME_SZ);
+                                message[PVNAME_SZ]=0;
+                                strcat(message,".");
+                                strncat(message,pfldDes->fldname,FLDNAME_SZ);
+                                strcat(message,": link process variable =");
+                                strcat(message,name);
+                                strcat(message," not found");
+                                status = S_db_notFound;
+                                errMessage(status,message);
+                                if(rtnval==OK) rtnval=status;
+                            }
 			}
 		    }
 		}

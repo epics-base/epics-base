@@ -1396,13 +1396,13 @@ static void dbprReportLink(pMsgBuff,pfield_name,plink,field_type, tab_size)
 	}
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
-    case CA_LINK:
-	sprintf(pmsg,"%4s: CA_LINK pp=%1d ms=%1d Not Yet Implemented",
-	    pfield_name,
-	    plink->value.ca_link.process_passive,
-	    plink->value.ca_link.maximize_sevr);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
+/* case CA_LINK: */
+/* sprintf(pmsg,"%4s: CA_LINK pp=%1d ms=%1d Not Yet Implemented", */
+/* pfield_name, */
+/* plink->value.ca_link.process_passive, */
+/* plink->value.ca_link.maximize_sevr); */
+/* dbpr_msgOut(pMsgBuff,tab_size); */
+/* break; */
     default:
 	sprintf(pmsg,"%4s: dbprReportLink: Illegal link.type",
 	    pfield_name);

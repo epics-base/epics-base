@@ -50,6 +50,11 @@
 #include	<special.h>
 #include	<aoRecord.h>
 
+/* added for Channel Access Links */
+void dbCaAddOutlink();
+long dbCaPutLink();
+long init_record();
+
 /* Create the dset for devAoSoft */
 long write_ao();
 struct {
@@ -64,17 +69,41 @@ struct {
 	6,
 	NULL,
 	NULL,
-	NULL,
+	init_record,
 	NULL,
 	write_ao,
 	NULL};
 
+
+static long init_record(pao)
+struct aoRecord *pao;
+{
+
+char source_pvarname[((PVNAME_SZ)+(FLDNAME_SZ)+2)];
+struct dbAddr source_dbaddr;
+
+    if (pao->out.type == PV_LINK)
+    {
+        sprintf(source_pvarname, "%s.OVAL", pao->name);
+
+        if (dbNameToAddr(source_pvarname, &source_dbaddr))
+        printf("ERROR: devAoSoft.c init_record() problem in dbNameToAddr()\n");
+        else
+            dbCaAddOutlink(&(pao->out), (void *) pao, "OVAL");
+    } /* endif */
+
+    return ((long) 0);
+
+} /* end init_record() */
 
 static long write_ao(pao)
     struct aoRecord	*pao;
 {
     char message[100];
     long status;
+/* added for Channel Access Links */
+long options;
+long nrequest;
 
     /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pao->out.type) {
@@ -88,6 +117,9 @@ static long write_ao(pao)
         }
 	break;
     case (CA_LINK) :
+        options = (long) 0;
+        nrequest = (long) 1;
+        status = dbCaPutLink(&(pao->out), &options, &nrequest);
 	break;
     default :
         if(recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM)){

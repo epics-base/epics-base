@@ -5780,7 +5780,7 @@ long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
  putEnumEnum,     putEnumEnum,     putEnumEnum,     putEnumEnum}
 };
 
-static long dbPut(paddr,dbrType,pbuffer,nRequest)
+long dbPut(paddr,dbrType,pbuffer,nRequest)
 struct dbAddr	*paddr;
 short		dbrType;
 caddr_t		pbuffer;

@@ -34,11 +34,11 @@ public:
                         unsigned int maximumMessageSize );
     ~epicsMessageQueue ();
     bool send ( void *message, unsigned int messageSize );
-    void receive ( void *message, unsigned int *messageSize );
-    bool receive ( void *message, unsigned int *messageSize, double timeout );
+    bool send ( void *message, unsigned int messageSize, double timeout );
+    int receive ( void *message );
+    int receive ( void *message, double timeout );
     void show ( unsigned int level = 0 ) const;
-    bool isFull () const;
-    bool isEmpty ();
+    unsigned int pending () const;
 
 private: // Prevent compiler-generated member functions
     // default constructor, copy constructor, assignment operator
@@ -47,7 +47,7 @@ private: // Prevent compiler-generated member functions
     epicsMessageQueue& operator=(const epicsMessageQueue &);
 
 private:
-    bool receive ( void *message, unsigned int *messageSize, bool withTimeout, double timeout );
+    int receive ( void *message, bool withTimeout, double timeout );
 
     volatile char  *inPtr;
     volatile char  *outPtr;
@@ -76,7 +76,12 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize);
-epicsShareFunc void epicsShareAPI epicsMessageQueueReceive(
+epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
+    epicsMessageQueueId id,
+    void *message,
+    unsigned int messageSize,
+    double timeout);
+epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     epicsMessageQueueId id,
     void *message,
     unsigned int *messageSize);
@@ -85,9 +90,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     void *message,
     unsigned int *messageSize,
     double timeout);
-epicsShareFunc int epicsShareAPI epicsMessageQueueIsFull(
-    epicsMessageQueueId id);
-epicsShareFunc int epicsShareAPI epicsMessageQueueIsEmpty(
+epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     epicsMessageQueueId id);
 epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
     epicsMessageQueueId id,

@@ -78,8 +78,8 @@ epicsMessageQueue::send(void *message, unsigned int size)
     return true;
 }
 
-bool
-epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, double timeout)
+int
+epicsMessageQueue::receive(void *message, bool withTimeout, double timeout)
 {
     char *myOutPtr;
     unsigned long l;
@@ -90,7 +90,7 @@ epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, 
         queueMutex.unlock();
         if (withTimeout) {
             if (queueEvent.wait(timeout) == false)
-                return false;
+                return -1;
         }
         else {
             queueEvent.wait();
@@ -98,7 +98,7 @@ epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, 
         queueMutex.lock();
         myOutPtr = (char *)outPtr;
     }
-    *size = l = *(unsigned long *)myOutPtr;
+    l = *(unsigned long *)myOutPtr;
     memcpy(message, (unsigned long *)myOutPtr + 1, l);
     if (myOutPtr == lastMessageSlot)
         myOutPtr = firstMessageSlot;
@@ -107,36 +107,36 @@ epicsMessageQueue::receive(void *message, unsigned int *size, bool withTimeout, 
     this->outPtr = myOutPtr;
     full = false;
     queueMutex.unlock();
-    return true;
+    return l;
 }
 
-void
-epicsMessageQueue::receive(void *message, unsigned int *size)
+int
+epicsMessageQueue::receive(void *message )
 {
-    this->receive(message, size, false, 0.0);
+    return this->receive(message, false, 0.0);
 }
 
-bool
-epicsMessageQueue::receive(void *message, unsigned int *size, double timeout)
+int
+epicsMessageQueue::receive(void *message, double timeout)
 {
-    return this->receive(message, size, true, timeout);
+    return this->receive(message, true, timeout);
 }
 
-bool
-epicsMessageQueue::isFull() const
+unsigned int
+epicsMessageQueue::pending() const
 {
-    return full;
-}
+    char *myInPtr, *myOutPtr;
+    int nmsg;
 
-bool
-epicsMessageQueue::isEmpty()
-{
-    bool empty;
-
-    queueMutex.lock();
-    empty = ((outPtr == inPtr) && !full);
-    queueMutex.unlock();
-    return empty;
+    myInPtr = (char *)inPtr;
+    myOutPtr = (char *)outPtr;
+    if (myInPtr >= myOutPtr)
+        nmsg = (myInPtr - myOutPtr) / slotSize;
+    else
+        nmsg = capacity  - (myOutPtr - myInPtr) / slotSize;
+    if (full)
+        nmsg = capacity;
+    return nmsg;
 }
 
 void
@@ -188,33 +188,25 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
     return ((epicsMessageQueue *)id)->send(message, messageSize);
 }
 
-epicsShareFunc void epicsShareAPI epicsMessageQueueReceive(
+epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     epicsMessageQueueId id,
-    void *message,
-    unsigned int *messageSize)
+    void *message)
 {
-    ((epicsMessageQueue *)id)->receive(message, messageSize);
+    return ((epicsMessageQueue *)id)->receive(message);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
-    unsigned int *messageSize,
     double timeout)
 {
-    return ((epicsMessageQueue *)id)->receive(message, messageSize, timeout);
+    return ((epicsMessageQueue *)id)->receive(message, timeout);
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueIsFull(
+epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     epicsMessageQueueId id)
 {
-    return ((epicsMessageQueue *)id)->isFull();
-}
-
-epicsShareFunc int epicsShareAPI epicsMessageQueueIsEmpty(
-    epicsMessageQueueId id)
-{
-    return ((epicsMessageQueue *)id)->isEmpty();
+    return ((epicsMessageQueue *)id)->pending();
 }
 
 epicsShareFunc void epicsShareAPI epicsMessageQueueShow(

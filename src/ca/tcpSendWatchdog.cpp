@@ -44,3 +44,8 @@ const char *tcpSendWatchdog::name () const
 {
     return "TCP Send Watchdog";
 }
+
+void tcpSendWatchdog::rescheduleSendTimer ()
+{
+    this->reschedule ();
+}

@@ -151,7 +151,7 @@ LOCAL void cac_connect_tcp (tcpiiu *piiu)
      */
     piiu->state = iiu_connected;
 
-    piiu->tcpRecvWatchdog::reschedule (); // reset connection activity watchdog
+    piiu->rescheduleRecvTimer (); // reset connection activity watchdog
 
     return;
 }
@@ -301,7 +301,7 @@ void tcpiiu::recvMsg ()
     cacRingBufferWriteCommit (&this->recv, totalBytes);
     cacRingBufferWriteFlush (&this->recv);
 
-    this->tcpRecvWatchdog::reschedule (); // reschedule connection activity watchdog
+    this->rescheduleRecvTimer (); // reschedule connection activity watchdog
 
     return;
 }
@@ -609,7 +609,7 @@ bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
 void tcpiiu::flush ()
 {
     if ( cacRingBufferWriteFlush ( &this->send ) ) {
-        this->tcpSendWatchdog::reschedule ();
+        this->rescheduleSendTimer ();
     }
 }
 
@@ -1375,7 +1375,7 @@ int tcpiiu::pushStreamMsg (const caHdr *pmsg,
 
     if ( ! cacRingBufferWriteLockNoBlock ( &this->send, msgsize ) ) {
         if ( BlockingOk ) {
-            this->tcpSendWatchdog::reschedule ();
+            this->rescheduleSendTimer ();
             cacRingBufferWriteLock ( &this->send );
         }
         else {

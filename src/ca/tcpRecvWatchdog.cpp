@@ -70,3 +70,8 @@ const char *tcpRecvWatchdog::name () const
 {
     return "TCP Receive Watchdog";
 }
+
+void tcpRecvWatchdog::rescheduleRecvTimer ()
+{
+    this->reschedule ();
+}

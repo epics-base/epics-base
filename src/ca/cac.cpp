@@ -469,7 +469,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
         tcpiiu *piiu = pBHE->getIIU ();
         if ( piiu ) {
             if ( ! piiu->beaconAnomaly ) {
-                piiu->tcpRecvWatchdog::reschedule (); // reset connection activity watchdog
+                piiu->rescheduleRecvTimer (); // reset connection activity watchdog
             }
         }
     }

@@ -498,6 +498,7 @@ class tcpRecvWatchdog : public osiTimer {
 public:
     tcpRecvWatchdog (double periodIn, osiTimerQueue & queueIn, bool echoProtocolAcceptedIn);
     void echoResponseNotify ();
+    void rescheduleRecvTimer ();
 private:
     void expire ();
 	void destroy ();
@@ -516,6 +517,7 @@ private:
 class tcpSendWatchdog : public osiTimer {
 public:
     tcpSendWatchdog (double periodIn, osiTimerQueue & queueIn);
+    void rescheduleSendTimer ();
 private:
     void expire ();
 	void destroy ();

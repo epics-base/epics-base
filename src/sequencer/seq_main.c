@@ -1,12 +1,13 @@
 /**************************************************************************
 			GTA PROJECT   AT division
-	Copyright, 1990, The Regents of the University of California.
+	Copyright, 1990, 91, 92, 93, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
 	$Id$
 	DESCRIPTION: Seq() initiates a sequence as a group of cooperating
 	tasks.  An optional string parameter specifies the values for
-	macros.
+	macros.  The channel access context and task are shared by all state
+	programs.
 
 	ENVIRONMENT: VxWorks
 
@@ -29,36 +30,33 @@
 29apr92,ajk	Now alocates private program structures, even when reentry option
 		is not specified.  This avoids problems with seqAddTask().
 29apr92,ajk	Implemented mutual exclusion lock in seq_log().
+16feb93,ajk	Converted to single task for channel access, all state programs.
+16feb93,ajk	Removed VxWorks pre-v5 stuff.
+17feb93,ajk	Evaluation of channel names moved here from seq_ca.c.
+19feb93,ajk	Fixed time stamp format for seq_log().
+16jun93,ajk	Fixed taskSpawn() to have 15 args per vx5.1.
+20jul93,ajk	Replaced obsolete delete() with remove() per vx5.1 release notes.
+20jul93,ajk	Removed #define ANSI
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
 #include	"seq.h"
 
-#ifdef	ANSI
-/* ANSI functional prototypes */
+/* ANSI functional prototypes for local routines */
 LOCAL	SPROG *alloc_task_area(SPROG *);
 LOCAL	VOID copy_sprog(SPROG *, SPROG *);
 LOCAL	VOID init_sprog(SPROG *);
 LOCAL	VOID init_sscb(SPROG *);
 LOCAL	VOID seq_logInit(SPROG *);
-VOID seq_log(SPROG *);
-
-#else
-/* Archaic (i.e. Sun) functional prototypes */
-LOCAL	SPROG *alloc_task_area();
-LOCAL	VOID copy_sprog();
-LOCAL	VOID init_sprog();
-LOCAL	VOID init_sscb();
-LOCAL	VOID seq_logInit();
-VOID seq_log();
-#endif
+LOCAL	VOID seqChanNameEval(SPROG *);
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)
-
-/*	The following variable is a flag to indicate that the "taskDeleteHookAdd()"
-	routine has been called (we only want to do that once after VxWorks boots).
-*/
+/*	Globals */
+/*	Flag to indicate that "taskDeleteHookAdd()" was called */
 int	seqDeleteHookAdded = FALSE;
+
+/*	Auxillary sequencer task id; used to share CA context. */
+int	seqAuxTaskId = 0;
 
 /*
  * seq: User-callable routine to initiate a state program.
@@ -80,7 +78,8 @@ int		stack_size;	/* optional stack size (bytes) */
 	extern		sprog_delete();	/* Task delete routine */
 	extern char	*seqVersion;
 	SPROG		*pSP, *alloc_task_area();
-	char		*seqMacValGet(), *pname, *pvalue, *ptask_name;
+	char		*pname, *pvalue, *ptask_name;
+	extern		seqAuxTask();
 
 	/* Print version & date of sequencer */
 	printf("%s\n", seqVersion);
@@ -103,6 +102,15 @@ int		stack_size;	/* optional stack size (bytes) */
 #ifdef	DEBUG
 	print_sp_info(pSP_orig);
 #endif	DEBUG
+
+	/* Spawn the sequencer auxillary task */
+	if (seqAuxTaskId == 0)
+	{
+		taskSpawn("seqAux", SPAWN_PRIORITY-1, VX_FP_TASK, 2000, seqAuxTask,
+		 0,0,0,0,0,0,0,0,0,0);
+		while (seqAuxTaskId == 0)
+			taskDelay(5); /* wait for task to init. ch'l access */
+	}
 
 	/* Specify a routine to run at task delete */
 	if (!seqDeleteHookAdded)
@@ -132,6 +140,9 @@ int		stack_size;	/* optional stack size (bytes) */
 	/* Parse the macro definitions from the command line */
 	seqMacParse(macro_def, pSP);
 
+	/* Do macro substitution on channel names */
+	seqChanNameEval(pSP);
+
 	/* Initialize sequencer logging */
 	seq_logInit(pSP);
 
@@ -157,7 +168,7 @@ int		stack_size;	/* optional stack size (bytes) */
 
 	/* Spawn the initial sequencer task */
 	tid = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
-	 stack_size, sequencer, (int)pSP, stack_size, (int)ptask_name,0,0,0,0,0,0,0);
+	 stack_size, sequencer, (int)pSP, stack_size, (int)ptask_name, 0,0,0,0,0,0,0);
 
 	seq_log(pSP, "Spawning state program \"%s\", task name = \"%s\"\n",
 	 pSP->name, ptask_name);
@@ -312,6 +323,8 @@ SPROG		*pSP;	/* new ptr */
 LOCAL VOID init_sprog(pSP)
 SPROG	*pSP;
 {
+	int		i;
+
 	/* Semaphore for resource locking on CA events */
 	pSP->caSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
 	if (pSP->caSemId == NULL)
@@ -323,9 +336,12 @@ SPROG	*pSP;
 	pSP->task_is_deleted = FALSE;
 	pSP->logFd = 0;
 
+	/* Clear all event flags */
+	for (i = 0; i < NWRDS; i++)
+		pSP->events[i] = 0;
+
 	return;
 }
-
 /*
  * Initialize the state set control blocks
  */
@@ -365,6 +381,23 @@ SPROG	*pSP;
 	}
 	return;
 }
+/*
+ * Evaluate channel names by macro substitution.
+ */
+#define		MACRO_STR_LEN	(MAX_STRING_SIZE+1)
+LOCAL VOID seqChanNameEval(pSP)
+SPROG		*pSP;
+{
+	CHAN		*pDB;
+	int		i;
+
+	pDB = pSP->channels;
+	for (i = 0; i < pSP->nchan; i++, pDB++)
+	{
+		pDB->db_name = seqAlloc(pSP, MACRO_STR_LEN);
+		seqMacEval(pDB->db_uname, pDB->db_name, MACRO_STR_LEN, pSP->mac_ptr);
+	}
+}
 
 /*
  * seqAlloc: Allocate memory from the program scratch area.
@@ -396,7 +429,7 @@ int		nChar;
 LOCAL VOID seq_logInit(pSP)
 SPROG		*pSP;
 {
-	char		*pname, *pvalue, *seqMacValGet();
+	char		*pname, *pvalue;
 	int		fd;
 
 	/* Create a logging resource locking semaphore */
@@ -412,12 +445,8 @@ SPROG		*pSP;
 	pname = "logfile";
 	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
-	{	/* Create & open file for write only */
-#ifdef vxWorks
-		remove(pvalue);
-#else
-		delete(pvalue);
-#endif
+	{	/* Create & open a new log file for write only */
+		remove(pvalue); /* remove the file if it exists */
 		fd = open(pvalue, O_CREAT | O_WRONLY, 0664);
 		if (fd != ERROR)
 			pSP->logFd = fd;
@@ -444,8 +473,8 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	pBfr = logBfr;
 
 	/* Enter taskname */
-	count = sprintf(pBfr, "%s ", taskName(taskIdSelf()) );
-	pBfr += count - 1;
+	sprintf(pBfr, "%s ", taskName(taskIdSelf()) );
+	pBfr += strlen(pBfr);
 
 	/* Get time of day */
 	tsLocalTime(&timeStamp);	/* time stamp format */
@@ -453,15 +482,16 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	/* Convert to text format: "mm/dd/yy hh:mm:ss.nano-sec" */
 	tsStampToText(&timeStamp, TS_TEXT_MMDDYY, pBfr);
 	/* We're going to truncate the ".nano-sec" part */
-	pBfr += 17;
+	if (pBfr[2] == '/') /* valid t-s? */
+		pBfr += 17;
 
 	/* Insert ": " */
 	*pBfr++ = ':';
 	*pBfr++ = ' ';
 
 	/* Append the user's msg to the buffer */
-	count = sprintf(pBfr, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-	pBfr += count - 1;
+	sprintf(pBfr, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	pBfr += strlen(pBfr);
 
 	/* Write the msg */
 	semTake(pSP->logSemId, WAIT_FOREVER); /* lock it */
@@ -483,8 +513,7 @@ int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 	semGive(pSP->logSemId);
 	return;
 }
-
-/*
+/*
  * seqLog() - State program interface to seq_log().
  * Does not require ptr to state program block.
  */
@@ -519,55 +548,3 @@ char		*opt; /* one of the snc options as a strign (e.g. "a") */
 	    default:  return FALSE;
 	}
 }
-
-#ifndef	V5_vxWorks
-/*
- * Fake Vx5.0 binary semaphore creation.
- */
-SEM_ID semBCreate(flags)
-int		flags;
-{
-	SEM_ID		semId;
-
-	semId = semCreate();
-	semInit(semId);
-	semGive(semId);
-	return(semId);
-}
-#endif	V5_vxWorks
-
-#ifdef	DEBUG
-/* Debug only:  print state program info. */
-print_sp_info(pSP)
-SPROG		*pSP;
-{
-	int		nss, nstates;
-	STATE		*pST;
-	SSCB		*pSS;
-
-	printf("State Program: \"%s\"\n", pSP->name);
-	printf("  pSP=%d=0x%x\n", pSP, pSP);
-	printf("  pSP=%d=0x%x\n", pSP, pSP);
-	printf("  task id=%d=0x%x\n", pSP->task_id, pSP->task_id);
-	printf("  task pri=%d\n", pSP->task_priority);
-	printf("  number of state sets=%d\n", pSP->nss);
-	printf("  number of channels=%d\n", pSP->nchan);
-	printf("  options:");
-	printf("    async=%d, debug=%d, conn=%d, reent=%d, newef=%d\n",
-	 seq_optGet(pSP, 'a'), seq_optGet(pSP, 'd'), seq_optGet(pSP, 'c'),
-	 seq_optGet(pSP, 'r'), seq_optGet(pSP, 'e'));
-
-	for (nss = 0, pSS = pSP->sscb; nss < pSP->nss; nss++, pSS++)
-	{
-		printf("  State Set: \"%s\"\n", pSS->name);
-		printf("  Num states=\"%d\"\n", pSS->num_states);
-		printf("  State names:\n");
-		for (nstates = 0, pST = pSS->states; nstates < pSS->num_states; nstates++)
-		{
-			printf("    \"%s\"\n", pST->name);
-			pST++;
-		}
-	}
-	return 0;
-}
-#endif	DEBUG

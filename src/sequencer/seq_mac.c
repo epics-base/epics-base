@@ -12,22 +12,14 @@
 
 	HISTORY:
 ***************************************************************************/
+#define		ANSI
 #include	"seq.h"
 
-#ifdef	ANSI
 LOCAL int macNameLth(char *);
 LOCAL int seqMacParseName(char *);
 LOCAL int seqMacParseValue(char *);
 LOCAL char *skipBlanks(char *);
 LOCAL MACRO *seqMacTblGet(char *, MACRO *);
-#else
-LOCAL int macNameLth();
-LOCAL int seqMacParseName();
-LOCAL int seqMacParseValue();
-LOCAL char *skipBlanks();
-LOCAL MACRO *seqMacTblGet();
-#endif
-
 
 /*#define	DEBUG*/
 
@@ -101,7 +93,6 @@ MACRO	*macTbl;
 		printf("OutStr=%s\n", pTmp);
 #endif
 	}
-	/* lrd - was: *pOutStr == 0; */
 	*pOutStr = 0;
 }
 /* 

@@ -20,25 +20,20 @@
 26feb92,ajk	Fixed formatting of task/program listing.
 29apr92,ajk	Modified to interpret encoded options.
 21may92,ajk	Modified format for listing programs & tasks.
+21feb93,ajk	Some minor code cleanup.
 ***************************************************************************/
 
 /*	#define	DEBUG	1	*/
 
 #include	"seq.h"
 
-#ifdef	ANSI
 int	seqShow(int);
 int	seqChanShow(int);
 LOCAL	VOID wait_rtn();
 LOCAL	VOID printValue(void *, int, int, int);
 LOCAL	VOID printType(int);
-#else
-int	seqShow();
-int	seqChanShow();
-LOCAL	VOID wait_rtn();
-LOCAL	VOID printValue();
-LOCAL	VOID printType();
-#endif
+LOCAL	SPROG *seqQryFind(int);
+LOCAL	seqShowAll();
 
 /*
  * seqShow() - Querry the sequencer for state information.
@@ -55,7 +50,6 @@ int	tid;
 	int		nss, nst, nch, status, n;
 	float		time;
 	char		file_name[100];
-	extern SPROG	*seqQryFind();
 
 	/* convert (possible) name to task id */
 	if (tid != 0)
@@ -135,7 +129,6 @@ int seqChanShow(tid)
 int	tid;
 {
 	SPROG		*pSP;
-	extern SPROG	*seqQryFind();
 	CHAN		*pDB;
 	int		nch;
 	float		time;
@@ -298,7 +291,7 @@ int		type;
 }
 
 /* Find a state program associated with a given task id */
-SPROG *seqQryFind(tid)
+LOCAL SPROG *seqQryFind(tid)
 int		tid;
 {
 	SPROG		*pSP;
@@ -356,7 +349,7 @@ SPROG		*pSP;
 }
 
 /* Print a brief summary of all state programs */
-seqShowAll()
+LOCAL seqShowAll()
 {
 	SPROG		*pSP;
 

@@ -4,11 +4,7 @@
 templatefile \- The file containing rules for substitutions.
 .SH DESCRIPTION
 .LP
-This file contains the rules for performing substitutions on ascii text
-file or ".db" files.  Two formats can exist: one specifically for
-an ascii ".db" file (usually produced by GDCT) and one for a plain ascii
-text file.  Most tools will except either format; the different 
-formats exist for convenience.
+This file contains the rules for performing substitutions on ".db" files.
 .sp
 The purpose of this file is to specify a set of substitutions to be
 performed on a file.  Substitutions can be defined in one of two ways.
@@ -17,9 +13,11 @@ sets is defined as follows:
 .nf
 .sp
 .B *Version-1*
-{ set1var1=sub1, set1var2=sub2,...... }
-{ set2var1=sub1, set2var2=sub2,...... }
-{ set3var1=sub1, set3var2=sub2,...... }
+file name.db {
+    { set1var1=sub1, set1var2=sub2,...... }
+    { set2var1=sub1, set2var2=sub2,...... }
+    { set3var1=sub1, set3var2=sub2,...... }
+}
 \.
 \.
 \.
@@ -27,10 +25,12 @@ sets is defined as follows:
 - or -
 
 .B *Version-2*
-pattern{ var1,var2,var3,....... }
-{ sub1_for_set1, sub2_for_set1, sub3_for_set1, ... }
-{ sub1_for_set2, sub2_for_set2, sub3_for_set2, ... }
-{ sub1_for_set3, sub2_for_set3, sub3_for_set3, ... }
+file name.db {
+    pattern{ var1,var2,var3,....... }
+    { sub1_for_set1, sub2_for_set1, sub3_for_set1, ... }
+    { sub1_for_set2, sub2_for_set2, sub3_for_set2, ... }
+    { sub1_for_set3, sub2_for_set3, sub3_for_set3, ... }
+}
 \.
 \.
 \.
@@ -44,29 +44,9 @@ are listed in the "pattern{}" line, which must precede the braced
 substitution lines.  The braced substitution lines contains set which
 match up with the pattern{} line.  An example will be given later.
 .sp
-For some tools such as
-.B subtool(1),
-putting substitution rules into a file (only one version type 
-allowed per file) as
-above is enough for the tool to operate.  For other tools, such as
-.B dbLoadTemplate(3)
-which is capable of loading records onto an IOC, more information
-must be given.
-.sp
-.nf
-file name.db
-{
-	*put version 1 or 2 of substitutions here*
-}
-.fi
-.sp
 The keyword file identifies a
 .B dbfile(5)
 to perform the substitutions on, in this case "name.db".
-.sp
-To summarize, substitutions can be specified using version 1 or 2.  The
-files can be written in two different flavors: one way for an IOC dbfile(5),
-and one way for a plain ascii text file.
 .SH EXAMPLES
 Four simple template file examples are listed here, the first two are 
 IOC db specific, the last two are general ones.  All the examples
@@ -76,8 +56,6 @@ first set, and this=sub3 and that=sub4 for a second set.
 
 1) file test.db { { this=sub1,that=sub2 } { this=sub3,that=sub4 } }
 2) file test.db { pattern{this,that} {sub1,sub2} {sub3,sub4 } }
-3) { this=sub1, that=sub2 } { this=sub3, that=sub4 }
-4) pattern{this,that} {sub1,sub2} {sub3,sub4 }
 
 input file for 1 and 2 (see dbfile(5) for examplanation of file):
 
@@ -87,30 +65,12 @@ database(test)
 	record(ai,"$(that)record") { field(DESC,"this = $(that)") }
 }
 
-input file for 3 and 4:
-
-The first variable "this" equals $(this), the
-second variable "that" is equal to $(that).
-
 .fi
 When 1 and 2 are applied to their corresponding file, two sets of the
 record() lines will be produced: (sub1record,sub2record) and (sub3record,
 sub4record), see dbLoadTemplate(1) for a more thorough explanation.
-.sp
-When 3 and 4 are applied to their corresponding file, the following is
-produced.
-.nf
-
-The first variable "this" equals sub1, the
-second variable "that" is equal to sub2.
-
-The first variable "this" equals sub3, the
-second variable "that" is equal to sub4.
-
-.fi
 .SH NOTES
 No special spacing or carriage returns are required in this file.
 .SH "SEE ALSO"
 .BR dbLoadTemplate(1),
 .BR dbLoadTemplate(3),
-.BR subtool(1)

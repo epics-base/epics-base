@@ -14,21 +14,12 @@ LIBOBJS += dbLoadRecords.o
 
 LIBNAME = dbSubs
 
-MAN1 = dbLoadTemplate.1 subtool.1
-MAN3 = dbLoadRecords.3 dbLoadTemplate.3
-MAN5 = templatefile.5 dbfile.5
- 
 include $(TOP)/config/RULES.Vx
 
-USR_CFLAGS = -I../../rsrv -I../../ca
+#USR_CFLAGS = -I../../rsrv -I../../ca
 
 dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c
-subtool: dbLoadTemplate_lex.c
-
-subtool: dbLoadTemplate.c dbLoadTemplate_lex.c 
-	$(RM) $@
-	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c   -s
 
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \

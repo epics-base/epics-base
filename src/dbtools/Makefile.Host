@@ -10,25 +10,22 @@ LEXOPT  := -L
 
 #	includes and manual pages to install:
 #
-MAN1    := dbLoadTemplate.1 subtool.1
+MAN1    := dbLoadTemplate.1 
 MAN3    := dbLoadRecords.3 dbLoadTemplate.3
 MAN5    := templatefile.5 dbfile.5
 
 
 #	uses getopt, optind, optarg from lib Com:
 PROD_LIBS := Db Com
-PROD      := subtool dbLoadTemplate
+PROD      := dbLoadTemplate
 
 #	hard-coded dependencies and rules,
 #	hopefully system-independent
 
-#	SRCS  for subtool and dbLoadTemplate
+#	SRCS  for and dbLoadTemplate
 #
 SRCS  = dbLoadTemplate.c dbLoadRecords.c
 
-#	special CFLAGS only for subtool
-#
-subtool_CFLAGS := -DSUB_TOOL
 
 include $(TOP)/config/RULES.Host
  

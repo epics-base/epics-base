@@ -47,12 +47,7 @@ static int line_num;
 static int yyerror();
 int dbLoadTemplate(char* sub_file);
 
-#ifdef SUB_TOOL
-static int sub_it();
-#else
 int dbLoadRecords(char* pfilename, char* pattern);
-#endif
-
 
 #ifdef vxWorks
 #define VAR_MAX_VAR_STRING 5000
@@ -100,14 +95,10 @@ templs: templs templ
 templ: templ_head O_BRACE subst C_BRACE
 	| templ_head
 	{
-#ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,NULL);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
-#else
-		sub_it();
-#endif
 	}
 	;
 
@@ -158,15 +149,10 @@ sub: WORD O_BRACE vals C_BRACE
 #ifdef ERROR_STUFF
 		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
 #endif
-#ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
-#else
-		sub_it();
-#endif
-
 		dbmfFree($1);
 		sub_collect[0]='\0';
 		sub_count=0;
@@ -177,15 +163,10 @@ sub: WORD O_BRACE vals C_BRACE
 #ifdef ERROR_STUFF
 		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
 #endif
-#ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
-#else
-		sub_it();
-#endif
-
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -231,15 +212,10 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 #ifdef ERROR_STUFF
 		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
 #endif
-#ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
-#else
-		sub_it();
-#endif
-
 		dbmfFree($1);
 		sub_collect[0]='\0';
 		sub_count=0;
@@ -250,15 +226,10 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 #ifdef ERROR_STUFF
 		fprintf(stderr,"dbLoadRecords(%s)\n",sub_collect);
 #endif
-#ifndef SUB_TOOL
 		if(db_file_name)
 			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
-#else
-		sub_it();
-#endif
-
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -350,94 +321,8 @@ int dbLoadTemplate(char* sub_file)
 }
 
 #ifndef vxWorks
-#ifdef SUB_TOOL
-/* this is generic substitution on any file */
-
-char* dbfile;
-
-main(int argc, char** argv)
-{
-	if(argc!=3)
-	{
-		fprintf(stderr,"Usage: %s file sub_file\n",argv[0]);
-		fprintf(stderr,"\n\twhere file is any ascii text file\n");
-		fprintf(stderr,"\tsub_file in the variable substitution file\n");
-		fprintf(stderr,"\n\tThis program uses the sub_file to perform\n");
-		fprintf(stderr,"\tsubstitutions on to standard out.\n");
-		exit(1);
-	}
-	dbfile = argv[1];
-	dbLoadTemplate(argv[2]);
-	return 0;
-}
-
-/* use sub_collect and db_file_name to do work */
-static int sub_it()
-{
-	FILE* fp;
-	char var_buff[500];
-	char    **macPairs;
-
-#ifdef ERROR_STUFF
-	fprintf(stderr,"In sub_it()\n");
-#endif
-
-	if( *sub_collect )
-	{
-#ifdef ERROR_STUFF
-	fprintf(stderr," macCreateHandle() calling\n");
-#endif
-		if(macCreateHandle(&macHandle,NULL)) {
-		    fprintf(stderr,"dbLoadTemplate macCreateHandle error\n");
-		    exit(1);
-		}
-		macSuppressWarning(macHandle,TRUE);
-		macParseDefns(macHandle,sub_collect,&macPairs);
-		if(macPairs == NULL) {
-		    macDeleteHandle(macHandle);
-		    macHandle = NULL;
-		} else {
-		    macInstallMacros(macHandle,macPairs);
-		    free((void *)macPairs);
-		}
-	}
-	else
-	{
-		fprintf(stderr,"No valid substitutions found in table\n");
-		exit(1);
-	}
-
-	if( !(fp=fopen(dbfile,"r")) )
-	{
-		fprintf(stderr,"sub_tool: error opening file\n");
-		exit(1);
-	}
-
-	/* do the work here */
-	while( fgets(var_buff,200,fp)!=(char*)NULL )
-	{
-		int n;
-#ifdef ERROR_STUFF
-		fprintf(stderr," calling macExpandString()\n");
-#endif
-                n = macExpandString(macHandle,var_buff,sub_collect,
-		     VAR_MAX_VAR_STRING-1);
-		if(n<0) fprintf(stderr,"macExpandString failed\n"); 
-		fputs(sub_collect,stdout);
-	}
-
-#ifdef ERROR_STUFF
-	fprintf(stderr," calling macDeleteHandle()\n");
-#endif
-	macDeleteHandle(macHandle);
-	macHandle = NULL;
-	fclose(fp);
-	return 0;
-}
-
-#else
 /* this is template loader similar to vxWorks one for .db files */
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	extern char* optarg;
 	extern int optind;
@@ -474,6 +359,6 @@ main(int argc, char** argv)
 	}
 	dbLoadTemplate(argv[1]);
 	dbmfFree((void *)name);
+	return(0);
 }
-#endif
 #endif

@@ -28,18 +28,17 @@ ifndef HOST_ARCH
 	HOST_ARCH=unsupported
 endif
 
-#  The architectures to build EPICS for
+#  The cross-compiler architectures to build EPICS for
 #
 #  Currently Supporting:
-#       mv167
-#       mv162
-#       mv162lc
-#       mv147
-#       hkv2f
-#   niCpu030
-#   pc486
-#   frc5ce
-#   hkbaja47
+#       vxWorks-486
+#       vxWorks-68040
+#       vxWorks-68040lc
+#       vxWorks-68060
+#       vxWorks-pentium
+#       vxWorks-ppc604
+#       RTEMS-gen68360
+#       RTEMS-m167
 #
 CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 

@@ -28,20 +28,9 @@
 #include "cac.h"
 #include "osiWireFormat.h"
 #include "udpiiu.h"
+#include "virtualCircuit.h"
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < class nciu, 1024 >;
-template class epicsSingleton < tsFreeList < class nciu, 1024 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < class nciu, 1024 > > nciu::pFreeList;
 
@@ -92,6 +81,11 @@ nciu::~nciu ()
     }
 
     delete [] this->pNameStr;
+}
+
+void nciu::initiateConnect ()
+{   
+    this->cacCtx.initiateConnect ( *this );
 }
 
 void nciu::connect ( unsigned nativeType, 
@@ -156,7 +150,8 @@ void nciu::disconnect ( netiiu & newiiu )
 /*
  * nciu::searchMsg ()
  */
-bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
+bool nciu::searchMsg ( udpiiu & iiu, unsigned short retrySeqNumber, 
+                      unsigned &retryNoForThisChannel )
 {
     caHdr msg;
     bool success;
@@ -167,7 +162,7 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     msg.m_count = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
     msg.m_cid = this->getId ();
 
-    success = this->piiu->pushDatagramMsg ( msg, 
+    success = iiu.pushDatagramMsg ( msg, 
             this->pNameStr, this->nameLength );
     if ( success ) {
         //
@@ -195,9 +190,9 @@ unsigned nciu::nameLen () const
     return this->nameLength;
 }
 
-void nciu::createChannelRequest ()
+void nciu::createChannelRequest ( tcpiiu & iiu )
 {
-    this->piiu->createChannelRequest ( *this );
+    iiu.createChannelRequest ( *this );
     this->f_claimSent = true;
 }
 
@@ -324,34 +319,28 @@ void nciu::ioShow ( const ioid &idIn, unsigned level ) const
     this->cacCtx.ioShow ( idIn, level );
 }
 
-void nciu::initiateConnect ()
-{   
-    this->notifyStateChangeFirstConnectInCountOfOutstandingIO ();
-    this->cacCtx.installNetworkChannel ( *this, this->piiu );
-}
-
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     this->piiu->hostName ( pBuf, bufLength );
 }
 
 // deprecated - please do not use, this is _not_ thread safe
 const char * nciu::pHostName () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     return this->piiu->pHostName (); // ouch !
 }
 
 bool nciu::ca_v42_ok () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     return this->piiu->ca_v42_ok ();
 }
 
 short nciu::nativeType () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     short type;
     if ( this->f_connected ) {
         if ( this->typeCode < SHRT_MAX ) {
@@ -369,7 +358,7 @@ short nciu::nativeType () const
 
 arrayElementCount nciu::nativeElementCount () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     arrayElementCount countOut;
     if ( this->f_connected ) {
         countOut = this->count;
@@ -382,14 +371,14 @@ arrayElementCount nciu::nativeElementCount () const
 
 caAccessRights nciu::accessRights () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     caAccessRights tmp = this->accessRightState;
     return tmp;
 }
 
 unsigned nciu::searchAttempts () const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     return this->retry;
 }
 
@@ -400,7 +389,7 @@ double nciu::beaconPeriod () const
 
 void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     // test is performed via a callback so that locking is correct
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
         if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
@@ -420,7 +409,7 @@ void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 
 void nciu::show ( unsigned level ) const
 {
-    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
     if ( this->f_connected ) {
         char hostNameTmp [256];
         this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );

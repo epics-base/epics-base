@@ -59,15 +59,16 @@ class nciu : public cacChannel, public tsDLNode < nciu >,
 public:
     nciu ( cac &, netiiu &, cacChannelNotify &, 
         const char *pNameIn, cacChannel::priLev );
+    ~nciu (); // force pool allocation
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
     void connectStateNotify () const;
     void accessRightsNotify () const;
     void disconnect ( netiiu &newiiu );
-    bool searchMsg ( unsigned short retrySeqNumber, 
-        unsigned &retryNoForThisChannel );
-    void createChannelRequest ();
+    bool searchMsg ( class udpiiu & iiu, unsigned short retrySeqNumber, 
+        unsigned & retryNoForThisChannel );
+    void createChannelRequest ( class tcpiiu & iiu );
     bool identifierEquivelence ( unsigned idToMatch );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -92,8 +93,7 @@ public:
     bool previouslyConnected () const;
     void writeException ( int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
-protected:
-    ~nciu (); // force pool allocation
+    void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
 private:
     caAccessRights accessRightState;
     cac & cacCtx;
@@ -128,7 +128,6 @@ private:
     double beaconPeriod () const;
     bool ca_v42_ok () const;
     void hostName ( char *pBuf, unsigned bufLength ) const;
-    void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
     static void stringVerify ( const char *pStr, const unsigned count );
     static epicsSingleton < tsFreeList < class nciu, 1024 > > pFreeList;
 	nciu ( const nciu & );

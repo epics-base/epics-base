@@ -24,21 +24,18 @@ OS_CLASS = vxWorks
 # the override definitions.
 
 # Tornado directory definitions
-VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
 VX_INCLUDE_YES = $(VX_DIR)/target/h
 VX_GNU_YES = $(VX_DIR)/host/$(WIND_HOST_TYPE)
 VX_GNU_BIN_YES = $(VX_GNU)/bin
 VX_GNU_LIB_YES = $(VX_GNU)/lib
 
 # pre Torando directory definitions
-VX_CONFIG_DIR_NO = $(VX_DIR)/config
 VX_INCLUDE_NO = $(VX_DIR)/h
 VX_GNU_BIN_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
 VX_GNU_LIB_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
 
 # directory definitions
 VX_DIR = $(VX_DIR_$(TORNADO))
-VX_CONFIG_DIR = $(VX_CONFIG_DIR_$(TORNADO))
 VX_INCLUDE = $(VX_INCLUDE_$(TORNADO))
 VX_GNU = $(VX_GNU_$(TORNADO))
 GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
@@ -99,6 +96,7 @@ LD_CXX = $(LD_$(CPLUSPLUS))
 # Override flags in CONFIG_COMMON
 GCC_DEP_CFLAGS = -D_REENTRANT
 G++_DEP_CFLAGS = -D_REENTRANT
+POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
 
 #--------------------------------------------------
 # Operating system flags

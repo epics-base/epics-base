@@ -29,7 +29,6 @@ CXX = g++
 # the override definitions.
  
 # Tornado directory definitions
-VX_CONFIG_DIR_YES =
 VX_INCLUDE_YES =
 VX_GNU_YES =
 VX_GNU_BIN_YES =
@@ -37,14 +36,12 @@ VX_GNU_LIB_YES =
 
 
 # pre Torando directory definitions
-VX_CONFIG_DIR_NO =
 VX_INCLUDE_NO =
 VX_GNU_NO =
 VX_GNU_BIN_NO =
  
 # directory definitions
 VX_DIR =
-VX_CONFIG_DIR =
 VX_INCLUDE =
 VX_GNU = 
 

@@ -9,7 +9,6 @@ INC += epicsTypes.h
 INC += epicsVersion.h
 INC += gsd_sync_defs.h
 INC += module_types.h
-INC += sbufLib.h
 INC += shareLib.h
 INC += createSoftLinks.sh 
 INC += bsdProto.h

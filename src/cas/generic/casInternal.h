@@ -284,7 +284,7 @@ class casChannelI : public tsDLNode<casChannelI>, public casRes,
 				public casEvent {
 public:
 	casChannelI (const casCtx &ctx);
-	virtual ~casChannelI();
+	epicsShareFunc virtual ~casChannelI();
 
 	casCoreClient &getClient () const
 	{	

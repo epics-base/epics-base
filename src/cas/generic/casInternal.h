@@ -312,7 +312,7 @@ public:
 	// sane clients will require only one or two monitors 
 	// per channel)
 	//
-	tsDLIterBD <casMonitor> findMonitor (const caResId clientIdIn);
+	tsDLIter <casMonitor> findMonitor (const caResId clientIdIn);
 
 	casPVI &getPVI () const 
 	{

@@ -122,7 +122,7 @@ inline void casPVI::postEvent (const casEventMask &select, const gdd &event)
 	}
 
 	this->lock();
-	tsDLIterBD<casPVListChan> iter = this->chanList.firstIter ();
+	tsDLIter<casPVListChan> iter = this->chanList.firstIter ();
     while ( iter.valid () ) {
 		iter->postEvent ( select, event );
 		++iter;

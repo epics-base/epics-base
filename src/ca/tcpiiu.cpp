@@ -701,7 +701,7 @@ void tcpiiu::show ( unsigned level ) const
         this->recvThread.show ( level-2u );
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
         ::printf ( "IO identifier hash table:\n" );
-        tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
+        tsDLIterConst < nciu > pChan = this->channelList.firstIter ();
 	    while ( pChan.valid () ) {
             pChan->show ( level - 2u );
             pChan++;

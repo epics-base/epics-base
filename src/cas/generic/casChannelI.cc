@@ -46,12 +46,12 @@ casChannelI::~casChannelI()
     //
     // cancel any pending asynchronous IO 
     //
-    tsDLIterBD<casAsyncIOI> iterAIO = this->ioInProgList.firstIter ();
+    tsDLIter<casAsyncIOI> iterAIO = this->ioInProgList.firstIter ();
     while ( iterAIO.valid () ) {
         //
         // destructor removes from this list
         //
-        tsDLIterBD <casAsyncIOI> tmpAIO = iterAIO;
+        tsDLIter <casAsyncIOI> tmpAIO = iterAIO;
         ++tmpAIO;
         iterAIO->serverDestroy ();
         iterAIO = tmpAIO;
@@ -60,12 +60,12 @@ casChannelI::~casChannelI()
     //
     // cancel the monitors 
     //
-    tsDLIterBD <casMonitor> iterMon = this->monitorList.firstIter ();
+    tsDLIter <casMonitor> iterMon = this->monitorList.firstIter ();
     while ( iterMon.valid () ) {
         //
         // destructor removes from this list
         //
-        tsDLIterBD <casMonitor> tmpMon = iterMon;
+        tsDLIter <casMonitor> tmpMon = iterMon;
         ++tmpMon;
         iterMon->destroy ();
         iterMon = tmpMon;
@@ -91,12 +91,12 @@ void casChannelI::clearOutstandingReads()
     //
     // cancel any pending asynchronous IO 
     //
-	tsDLIterBD <casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
+	tsDLIter <casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
 	while ( iterIO.valid () ) {
 		//
 		// destructor removes from this list
 		//
-		tsDLIterBD<casAsyncIOI> tmp = iterIO;
+		tsDLIter<casAsyncIOI> tmp = iterIO;
 		++tmp;
 		iterIO->serverDestroyIfReadOP();
 		iterIO = tmp;
@@ -112,7 +112,7 @@ void casChannelI::show ( unsigned level ) const
 {
 	this->lock ();
 
-	tsDLIterConstBD <casMonitor> iter = this->monitorList.firstIter ();
+	tsDLIterConst <casMonitor> iter = this->monitorList.firstIter ();
 	if ( iter.valid () ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
 			this->pv.getName());
@@ -197,10 +197,10 @@ void casChannelI::destroyClientNotify ()
 // sane clients will require only one or two monitors
 // per channel)
 //
-tsDLIterBD <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
+tsDLIter <casMonitor> casChannelI::findMonitor (const caResId clientIdIn)
 {
 	this->lock ();
-	tsDLIterBD <casMonitor> iter = this->monitorList.firstIter ();
+	tsDLIter <casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
 		if ( clientIdIn == iter->getClientId () ) {
 			break;

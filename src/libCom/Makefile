@@ -57,7 +57,6 @@ SRCS += epicsListBase.cpp
 SRC_DIRS += $(LIBCOM)/cxxTemplates
 INC += resourceLib.h
 INC += tsDLList.h
-INC += tsDLListDeprecated.h
 INC += tsSLList.h
 INC += tsMinMax.h
 INC += tsBTree.h

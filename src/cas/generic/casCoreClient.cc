@@ -44,7 +44,7 @@ casCoreClient::~casCoreClient()
     }
 
 	this->lock();
-	tsDLIterBD<casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
+	tsDLIter<casAsyncIOI> iterIO = this->ioInProgList.firstIter ();
 
 	//
 	// cancel any pending asynchronous IO
@@ -53,7 +53,7 @@ casCoreClient::~casCoreClient()
 		//
 		// destructor removes from this list
 		//
-		tsDLIterBD <casAsyncIOI> tmpIO = iterIO;
+		tsDLIter <casAsyncIOI> tmpIO = iterIO;
 		++tmpIO;
         iterIO->serverDestroy ();
 		iterIO = tmpIO;

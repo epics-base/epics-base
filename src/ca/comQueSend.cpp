@@ -98,14 +98,14 @@ void comQueSend::clear ()
         this->nBytesPending -= pBuf->occupiedBytes ();
         pBuf->destroy ();
     }
-    this->pFirstUncommited = tsDLIterBD < comBuf > ();
+    this->pFirstUncommited = tsDLIter < comBuf > ();
     assert ( this->nBytesPending == 0 );
 }
 
 void comQueSend::clearUncommitted ()
 {
     while ( this->pFirstUncommited.valid() ) {
-        tsDLIterBD < comBuf > next = this->pFirstUncommited;
+        tsDLIter < comBuf > next = this->pFirstUncommited;
         next++;
         this->pFirstUncommited->clearUncommittedIncomming ();
         if ( this->pFirstUncommited->occupiedBytes() == 0u ) {

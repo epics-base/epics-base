@@ -35,7 +35,7 @@ epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
     if ( okToShare ) {
-        tsDLIterBD < epicsTimerQueueActiveForC > iter = this->sharedQueueList.firstIter ();
+        tsDLIter < epicsTimerQueueActiveForC > iter = this->sharedQueueList.firstIter ();
         while ( iter.valid () ) {
             if ( iter->threadPriority () == threadPriority ) {
                 assert ( iter->timerQueueActiveMgrPrivate::referenceCount < UINT_MAX );

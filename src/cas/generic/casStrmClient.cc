@@ -73,12 +73,12 @@ casStrmClient::~casStrmClient()
 	//
 	// delete all channel attached
 	//
-	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
+	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		//
 		// destroying the channel removes it from the list
 		//
-		tsDLIterBD<casChannelI> tmp = iter;
+		tsDLIter<casChannelI> tmp = iter;
 		++tmp;
 		iter->destroyNoClientNotify();
 		iter = tmp;
@@ -862,7 +862,7 @@ caStatus casStrmClient::hostNameAction()
 	}
 	this->pHostName = pMalloc;
 
-	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
+	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->setOwner(this->pUserName, this->pHostName);
 		++iter;
@@ -910,7 +910,7 @@ caStatus casStrmClient::clientNameAction()
 	}
 	this->pUserName = pMalloc;
 
-	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
+	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->setOwner ( this->pUserName, this->pHostName );
 		++iter;
@@ -1386,7 +1386,7 @@ caStatus casStrmClient::eventCancelAction ()
 	/*
 	 * verify the event (monitor)
 	 */
-    tsDLIterBD <casMonitor> pMon = pciu->findMonitor ( mp->m_available );
+    tsDLIter <casMonitor> pMon = pciu->findMonitor ( mp->m_available );
 	if ( ! pMon.valid () ) {
 		//
 		// this indicates client or server library corruption so a
@@ -1478,7 +1478,7 @@ caStatus casStrmClient::readSyncAction()
 	// a read.
 	//
 	this->lock();
-	tsDLIterBD <casChannelI> iter = this->chanList.firstIter ();
+	tsDLIter <casChannelI> iter = this->chanList.firstIter ();
 	while ( iter.valid () ) {
 		iter->clearOutstandingReads ();
 		++iter;

@@ -951,7 +951,7 @@ void udpiiu::show ( unsigned level ) const
         this->pSearchTmr->show ( level - 2u );
         ::printf ( "repeater subscribee timer:\n" );
         this->pRepeaterSubscribeTmr->show ( level - 2u );
-        tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
+        tsDLIterConst < nciu > pChan = this->channelList.firstIter ();
 	    while ( pChan.valid () ) {
             pChan->show ( level - 2u );
             pChan++;
@@ -1003,7 +1003,7 @@ void udpiiu::beaconAnomalyNotify ()
     {
         epicsGuard <udpMutex> guard ( this->mutex );
 
-        tsDLIterBD < nciu > chan = this->channelList.firstIter ();
+        tsDLIter < nciu > chan = this->channelList.firstIter ();
         while ( chan.valid () ) {
             chan->beaconAnomalyNotify ();
             chan++;

@@ -991,10 +991,10 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
 // (always called from a udp thread)
 void cac::connectAllIO ( epicsGuard < cacMutex > & guard, nciu & chan )
 {
-    tsDLIterBD < baseNMIU > pNetIO = 
+    tsDLIter < baseNMIU > pNetIO = 
         chan.cacPrivateListOfIO::eventq.firstIter ();
     while ( pNetIO.valid () ) {
-        tsDLIterBD < baseNMIU > next = pNetIO;
+        tsDLIter < baseNMIU > next = pNetIO;
         next++;
         class netSubscription *pSubscr = pNetIO->isSubscription ();
         // disconnected channels should have only subscription IO attached
@@ -1014,9 +1014,9 @@ void cac::connectAllIO ( epicsGuard < cacMutex > & guard, nciu & chan )
 // -- callback lock and cac lock must be applied here
 void cac::disconnectAllIO ( epicsGuard < cacMutex > &locker, nciu & chan, bool enableCallbacks )
 {
-    tsDLIterBD<baseNMIU> pNetIO = chan.cacPrivateListOfIO::eventq.firstIter();
+    tsDLIter<baseNMIU> pNetIO = chan.cacPrivateListOfIO::eventq.firstIter();
     while ( pNetIO.valid() ) {
-        tsDLIterBD<baseNMIU> pNext = pNetIO;
+        tsDLIter<baseNMIU> pNext = pNetIO;
         pNext++;
         if ( ! pNetIO->isSubscription() ) {
             // no use after disconnected - so uninstall it

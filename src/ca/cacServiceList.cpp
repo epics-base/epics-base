@@ -48,7 +48,7 @@ cacChannel * cacServiceList::createChannel (
     cacChannel *pChanIO = 0;
 
     epicsGuard < epicsMutex > locker ( this->mutex );
-    tsDLIterBD < cacService > iter = this->services.firstIter ();
+    tsDLIter < cacService > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         pChanIO = iter->createChannel ( pName, chan, pri );
         if ( pChanIO ) {
@@ -63,7 +63,7 @@ cacChannel * cacServiceList::createChannel (
 void cacServiceList::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
-    tsDLIterConstBD < cacService > iter = this->services.firstIter ();
+    tsDLIterConst < cacService > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         iter->show ( level );
         iter++;

@@ -122,7 +122,7 @@ void ipAddrToAsciiEngine::show ( unsigned level ) const
     printf ( "ipAddrToAsciiEngine at %p with %u requests pending\n", 
         static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
-        tsDLIterConstBD < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();
+        tsDLIterConst < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();
         while ( pItem.valid () ) {
             pItem->show ( level - 1u );
             pItem++;

@@ -75,7 +75,7 @@ bhe::~bhe ()
 
 void bhe::beaconAnomalyNotify ()
 {
-    tsDLIterBD < tcpiiu > iter = this->iiuList.firstIter ();
+    tsDLIter < tcpiiu > iter = this->iiuList.firstIter ();
     while ( iter.valid() ) {
         iter->beaconAnomalyNotify ();
         iter++;
@@ -195,7 +195,7 @@ bool bhe::updatePeriod ( const epicsTime & programBeginTime,
              * update state of health for active virtual circuits 
              * if the beacon looks ok
              */
-            tsDLIterBD < tcpiiu > iter = this->iiuList.firstIter ();
+            tsDLIter < tcpiiu > iter = this->iiuList.firstIter ();
             while ( iter.valid() ) {
                 iter->beaconArrivalNotify ();
                 iter++;

@@ -264,7 +264,7 @@ void dbServiceIO::ioShow ( const cacChannel::ioid &id, unsigned level ) const
 void dbServiceIO::showAllIO ( const dbChannelIO &chan, unsigned level ) const
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
-    tsDLIterConstBD < dbSubscriptionIO > pItem = 
+    tsDLIterConst < dbSubscriptionIO > pItem = 
         chan.dbServicePrivateListOfIO::eventq.firstIter ();
     while ( pItem.valid () ) {
         pItem->show ( level );

@@ -167,7 +167,7 @@ void timerQueue::show ( unsigned level ) const
     epicsGuard < epicsMutex > locker ( this->mutex );
     printf ( "epicsTimerQueue with %u items pending\n", this->timerList.count () );
     if ( level >= 1u ) {
-        tsDLIterConstBD < timer > iter = this->timerList.firstIter ();
+        tsDLIterConst < timer > iter = this->timerList.firstIter ();
         while ( iter.valid () ) {   
             iter->show ( level - 1u );
             ++iter;

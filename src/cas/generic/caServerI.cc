@@ -97,9 +97,9 @@ caServerI::~caServerI()
 	//
 	// delete all clients
 	//
-	tsDLIterBD <casStrmClient> iter = this->clientList.firstIter ();
+	tsDLIter <casStrmClient> iter = this->clientList.firstIter ();
     while ( iter.valid () ) {
-		tsDLIterBD <casStrmClient> tmp = iter;
+		tsDLIter <casStrmClient> tmp = iter;
 		++tmp;
 		//
 		// destructor takes client out of list
@@ -225,7 +225,7 @@ void caServerI::sendBeacon()
 	// 
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
-	    tsDLIterBD <casIntfOS> iter = this->intfList.firstIter ();
+	    tsDLIter <casIntfOS> iter = this->intfList.firstIter ();
 	    while ( iter.valid () ) {
 		    iter->sendBeacon ( this->beaconCounter );
 		    iter++;
@@ -262,13 +262,13 @@ void caServerI::show (unsigned level) const
     
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
-        tsDLIterConstBD<casStrmClient> iterCl = this->clientList.firstIter ();
+        tsDLIterConst<casStrmClient> iterCl = this->clientList.firstIter ();
         while ( iterCl.valid () ) {
             iterCl->show (level);
             ++iterCl;
         }
     
-        tsDLIterConstBD<casIntfOS> iterIF = this->intfList.firstIter ();
+        tsDLIterConst<casIntfOS> iterIF = this->intfList.firstIter ();
         while ( iterIF.valid () ) {
             iterIF->casIntfOS::show ( level );
             ++iterIF;

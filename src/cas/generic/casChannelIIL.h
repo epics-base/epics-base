@@ -45,7 +45,7 @@ inline void casChannelI::postEvent (const casEventMask &select, const gdd &event
 {
 	this->lock();
 
-    tsDLIterBD<casMonitor> iter = this->monitorList.firstIter ();
+    tsDLIter<casMonitor> iter = this->monitorList.firstIter ();
     while ( iter.valid () ) {
         iter->post (select, event);
 	    ++iter;

@@ -80,7 +80,7 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
     //
     // **** this should use a binary tree ????
     //
-    tsDLIterBD < timer > pTmr = this->queue.timerList.lastIter ();
+    tsDLIter < timer > pTmr = this->queue.timerList.lastIter ();
     while ( true ) {
         if ( ! pTmr.valid () ) {
             //

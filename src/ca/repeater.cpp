@@ -415,7 +415,7 @@ static void register_new_client ( osiSockAddr &from )
         }
     }
 
-    tsDLIterBD < repeaterClient > pclient = client_list.firstIter ();
+    tsDLIter < repeaterClient > pclient = client_list.firstIter ();
     while ( pclient.valid () ) {
         if ( pclient->identicalPort ( from ) ) {
             break;

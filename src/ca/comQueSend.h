@@ -65,7 +65,7 @@ public:
     comBuf * popNextComBufToSend ();
 private:
     tsDLList < comBuf > bufs;
-    tsDLIterBD < comBuf > pFirstUncommited;
+    tsDLIter < comBuf > pFirstUncommited;
     wireSendAdapter & wire;
     unsigned nBytesPending;
     void copy_dbr_string ( const void *pValue, unsigned nElem );

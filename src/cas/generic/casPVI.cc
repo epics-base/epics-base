@@ -53,9 +53,9 @@ casPVI::~casPVI()
 		//
 		// delete any attached channels
 		//
-		tsDLIterBD <casPVListChan> iter = this->chanList.firstIter ();
+		tsDLIter <casPVListChan> iter = this->chanList.firstIter ();
 		while ( iter.valid () ) {
-			tsDLIterBD<casPVListChan> tmp = iter;
+			tsDLIter<casPVListChan> tmp = iter;
 			++tmp;
 			iter->destroyClientNotify ();
 			iter = tmp;

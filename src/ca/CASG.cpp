@@ -159,13 +159,13 @@ void CASG::show ( unsigned level ) const
     if ( level ) {
         epicsGuard < casgMutex > locker ( this->mutex );
         ::printf ( "\tPending" );
-        tsDLIterConstBD < syncGroupNotify > notifyPending = this->ioPendingList.firstIter ();
+        tsDLIterConst < syncGroupNotify > notifyPending = this->ioPendingList.firstIter ();
         while ( notifyPending.valid () ) {
             notifyPending->show ( level - 1u );
             notifyPending++;
         }
         ::printf ( "\tCompleted" );
-        tsDLIterConstBD < syncGroupNotify > notifyCompleted = this->ioCompletedList.firstIter ();
+        tsDLIterConst < syncGroupNotify > notifyCompleted = this->ioCompletedList.firstIter ();
         while ( notifyCompleted.valid () ) {
             notifyCompleted->show ( level - 1u );
             notifyCompleted++;

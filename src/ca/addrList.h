@@ -11,21 +11,22 @@ void caSetupAddrList(
 
 void caPrintAddrList(ELLLIST *pList);
 
-void caDiscoverInterfaces(
-        ELLLIST *pList,
-        SOCKET socket,
-        unsigned short port,
+epicsShareFunc void epicsShareAPI caDiscoverInterfaces(
+	ELLLIST *pList,
+	SOCKET socket,
+	unsigned short port,
 	struct in_addr matchAddr);
 
-void caAddConfiguredAddr(
+epicsShareFunc void epicsShareAPI caAddConfiguredAddr(
         ELLLIST *pList,
         const ENV_PARAM *pEnv,
         SOCKET socket,
         unsigned short port);
 
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
-unsigned short caFetchPortConfig(const ENV_PARAM *pEnv, 
-	unsigned short defaultPort);
+
+epicsShareFunc unsigned short epicsShareAPI 
+	caFetchPortConfig(const ENV_PARAM *pEnv, unsigned short defaultPort);
 
 typedef union ca_addr {
         struct sockaddr_in      in;

@@ -53,13 +53,12 @@
 
 #include <vxWorks.h>
 #include <types.h>
-#if 0 /* COMMENTED OUT SOME INCLUDES */
 #include <iosLib.h>
 #include <taskLib.h>
 #include <semLib.h>
 #include <memLib.h>
 #include <sysLib.h>
-#endif /* COMMENTED OUT SOME INCLUDES */
+#include <iv.h>
 #include <vme.h>
 #include <wdLib.h>
 #include <rngLib.h>
@@ -76,25 +75,27 @@
 #include <drvBitBusInterface.h>
 #include "drvGpib.h"
 
-long	reportGpib();
-long	initGpib();
-int	niIrq();
-int	niIrqError();
-int	niTmoHandler();
-int	srqIntEnable();
-int	srqIntDisable();
+#define STATIC static
 
-int	qGpibReq();
-int	registerSrqCallback();
-int	writeIb();
-int	readIb();
-int	writeIbCmd();
-int	ioctlIb();
+long	reportGpib(void);
+/*STATIC*/ long	initGpib(void);
+STATIC int	niIrq();
+STATIC int	niIrqError(int link);
+STATIC int	niTmoHandler();
+STATIC int	srqIntEnable();
+STATIC int	srqIntDisable();
+
+STATIC int	qGpibReq();
+STATIC int	registerSrqCallback();
+STATIC int	writeIb();
+STATIC int	readIb();
+STATIC int	writeIbCmd();
+STATIC int	ioctlIb();
 int	srqPollInhibit();
 
-int	ibLinkInit();
-int	ibLinkStart();
-int	ibLinkTask();
+STATIC int	ibLinkInit();
+STATIC int	ibLinkStart();
+STATIC int	ibLinkTask();
 struct	bbIbLink	*findBBLink();
 
 int	ibDebug = 0;		/* Turns on debug messages from this driver */
@@ -105,13 +106,13 @@ int	ibSrqLock = 0;		/* set to 1 to stop ALL srq checking & polling */
 
 #define	STD_ADDRESS_MODE D_SUP|D_S24	/* mode to use when DMAC accesses RAM */
 
-static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
+STATIC	int	defaultTimeout;		/* in 60ths, for GPIB timeouts */
 
-static	char	init_called = 0;	/* To insure that init is done first */
-static	char	*short_base;		/* Base of short address space */
-static	char	*ram_base;		/* Base of the ram on the CPU board */
+STATIC	char	init_called = 0;	/* To insure that init is done first */
+STATIC	char	*short_base;		/* Base of short address space */
+STATIC	char	*ram_base;		/* Base of the ram on the CPU board */
 
-static int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
+STATIC int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
 
 /******************************************************************************
  *
@@ -182,8 +183,8 @@ struct	niLink {
   unsigned long	maxSpins;	/* most taskDelays in one call to niGpibCmd() */
 };
 
-static	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
-static	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];	
+STATIC	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
+STATIC	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];	
 		/* 0=pollable, 1=user inhibited, 2=no device found */
 
 /******************************************************************************
@@ -207,7 +208,7 @@ struct  bbIbLink {
   struct bbIbLink	*next;		/* Next BitBus link structure in list */
 };
 
-static	struct	bbIbLink	*rootBBLink = NULL; /* Head of bitbus structures */
+STATIC	struct	bbIbLink	*rootBBLink = NULL; /* Head of bitbus structures */
 
 /******************************************************************************
  *
@@ -216,7 +217,7 @@ static	struct	bbIbLink	*rootBBLink = NULL; /* Head of bitbus structures */
  *
  ******************************************************************************/
 long
-reportGpib()
+reportGpib(void)
 {
   int	i;
 
@@ -256,8 +257,8 @@ reportGpib()
  *
  ******************************************************************************/
 /* BUG -- this should be static */
-/*static*/ long
-initGpib()
+/*STATIC*/ long
+initGpib(void)
 {
   int	i;
   int	j;
@@ -271,6 +272,7 @@ initGpib()
       printf("initGpib(): WARNING, Gpib driver already initialized!\n");
     return(OK);
   }
+  defaultTimeout = sysClkRateGet();
 
   /* figure out where the short address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
@@ -392,8 +394,8 @@ initGpib()
 
 
       /* attach the interrupt handler routines */
-      intConnect((NIGPIB_IVEC_BASE + i*2) * 4, niIrq, i);
-      intConnect((NIGPIB_IVEC_BASE + 1 + (i*2)) * 4, niIrqError, i);
+      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+i*2), niIrq, i);
+      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+(i*2)+1), niIrqError, i);
     }
   }
 
@@ -419,9 +421,8 @@ initGpib()
   return(OK);
 }
 
-static int
-niDumpDmac(link)
-int	link;
+STATIC int
+niDumpDmac(int link)
 {
     logMsg("ch0: ccr=%02.2X csr=%02.2X cer=%02.2X mtc=%04.4X mar=%08.8X btc=%04.4X bar=%08.8X\n", 
 	pNiLink[link]->ibregs->ch0.ccr & 0xff,
@@ -458,7 +459,7 @@ int	link;
  *  some of the isr2 status.
  *
  ******************************************************************************/
-static int
+STATIC int
 niIrq(link)
 int	link;
 {
@@ -559,9 +560,8 @@ int	link;
  * never occur.
  *
  ******************************************************************************/
-static int
-niIrqError(link)
-int	link;
+STATIC int
+niIrqError(int link)
 {
   logMsg("GPIB error interrupt generated on link %d\n", link);
 
@@ -588,7 +588,7 @@ int	link;
 #define	TOOLONG	100	/* how many times to try to send the same byte */
 #define	IDELAY	1000	/* how long to busy wait while sending a byte */
 
-static int
+STATIC int
 niGpibCmd(link, buffer, length)
 int     link;
 char    *buffer;
@@ -672,7 +672,7 @@ int     length;
  * Read a buffer via Ni-based link.
  *
  ******************************************************************************/
-static int
+STATIC int
 niGpibRead(link, buffer, length, time)
 int	link;
 char	*buffer;
@@ -702,7 +702,7 @@ int	time;
  * Write a buffer out an Ni-based link.
  *
  ******************************************************************************/
-static int
+STATIC int
 niGpibWrite(link, buffer, length, time)
 int	link;
 char	*buffer;
@@ -731,7 +731,7 @@ int	time;
  * requested in a read or write request, and that actually transfered.
  *
  ******************************************************************************/
-static int
+STATIC int
 niGpibResid(link)
 int	link;
 {
@@ -751,7 +751,7 @@ int	link;
  * are passed in from user requests.
  *
  ******************************************************************************/
-static int
+STATIC int
 niCheckLink(link)
 int	link;
 {
@@ -774,7 +774,7 @@ int	link;
  * interface board.
  *
  ******************************************************************************/
-static int
+STATIC int
 niGpibIoctl(link, cmd, v, p)
 int	link;
 int	cmd;
@@ -834,7 +834,7 @@ caddr_t	p;
  * depending on if the transfer succeeds or not.
  *
  ******************************************************************************/
-static int
+STATIC int
 niPhysIo(dir, link, buffer, length, time)
 int	dir;		/* direction (READ or WRITE) */
 int	link;		/* link number to do the I/O with */
@@ -1011,7 +1011,7 @@ int	time;		/* time to wait on the DMA operation */
  * for a GPIB transaction to complete.
  *
  ******************************************************************************/
-static int
+STATIC int
 niTmoHandler(link)
 int	link;
 {
@@ -1025,7 +1025,7 @@ int	link;
  * Mark a given device as non-pollable.
  *
  ******************************************************************************/
-static int
+STATIC int
 niSrqPollInhibit(link, gpibAddr)
 int	link;
 int	gpibAddr;
@@ -1045,7 +1045,7 @@ int	gpibAddr;
  * 16-bit values.  This function writes out a 32-bit value in 2 16-bit pieces.
  *
  ******************************************************************************/
-static int
+STATIC int
 niWrLong(loc, val)
 short          *loc;
 int             val;
@@ -1072,7 +1072,7 @@ unsigned short	*loc;
  * detection of an SRQ status on the GPIB bus.
  *
  ******************************************************************************/
-static int
+STATIC int
 niSrqIntEnable(link)
 int	link;
 {
@@ -1108,7 +1108,7 @@ int	link;
  * with the detection of an SRQ status on the GPIB bus.
  *
  ******************************************************************************/
-static int
+STATIC int
 niSrqIntDisable(link)
 int	link;
 {
@@ -1140,7 +1140,7 @@ int	link;
  * Routine used to initialize the values of the fields in an ibLink structure.
  *
  ******************************************************************************/
-static int
+STATIC int
 ibLinkInit(plink)
 struct ibLink *plink;
 {
@@ -1173,7 +1173,7 @@ struct ibLink *plink;
  * Init and start an ibLinkTask
  *
  ******************************************************************************/
-static int
+STATIC int
 ibLinkStart(plink)
 struct	ibLink *plink;
 {
@@ -1229,7 +1229,7 @@ struct	ibLink *plink;
  * can operate all forms of GPIB busses.
  *
  ******************************************************************************/
-static int 
+STATIC int 
 ibLinkTask(plink)
 struct  ibLink	*plink; 	/* a reference to the link structures covered */
 {
@@ -1405,7 +1405,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
  * If there is an error during polling (timeout), the value -1 is returned.
  *
  ******************************************************************************/
-static int
+STATIC int
 pollIb(plink, gpibAddr, verbose, time)
 struct ibLink     *plink;
 int             gpibAddr;
@@ -1449,7 +1449,7 @@ int		time;
  * bus.
  *
  ******************************************************************************/
-static int
+STATIC int
 speIb(plink)
 struct ibLink     *plink;
 {
@@ -1466,7 +1466,7 @@ struct ibLink     *plink;
  * bus.
  * 
  ******************************************************************************/
-static int
+STATIC int
 spdIb(plink)
 struct ibLink     *plink;
 {
@@ -1487,10 +1487,8 @@ struct ibLink     *plink;
  * generated by the GPIB interface when it sees the SRQ line go high.
  *
  ******************************************************************************/
-static int
-srqIntEnable(linkType, link, bug)
-int	linkType;
-int	link;
+STATIC int
+srqIntEnable(int linkType, int link, int bug)
 {
   if (linkType == GPIB_IO)
     return(niSrqIntEnable(link));
@@ -1501,10 +1499,8 @@ int	link;
   return(ERROR);	/* Invalid link type specified on the call */
 }
 
-static int
-srqIntDisable(linkType, link, bug)
-int	linkType;
-int	link;
+STATIC int
+srqIntDisable(int linkType, int link, int bug)
 {
   if (linkType == GPIB_IO)
     return(niSrqIntDisable(link));
@@ -1521,7 +1517,7 @@ int	link;
  * are valid.
  *
  ******************************************************************************/
-static int
+STATIC int
 checkLink(linkType, link, bug)
 int	linkType;
 int	link;
@@ -1558,7 +1554,7 @@ int	bug;
  * when epics 3.3 is available.
  *
  ******************************************************************************/
-/* static */ int 
+/* STATIC */ int 
 srqPollInhibit(linkType, link, bug, gpibAddr)
 int	linkType;	/* link type (defined in link.h) */
 int     link;           /* the link number the handler is related to */
@@ -1591,7 +1587,7 @@ int     gpibAddr;       /* the device address the handler is for */
  * passed the requested parm and the poll-status from the gpib device.
  *
  ******************************************************************************/
-static int 
+STATIC int 
 registerSrqCallback(pibLink, device, handler, parm)
 struct	ibLink	*pibLink;
 int	device;
@@ -1613,7 +1609,7 @@ caddr_t	parm;		/* so caller can have a parm passed back */
  * This can be fatal to the driver... make sure you know what you are doing!
  *
  ******************************************************************************/
-static int
+STATIC int
 ioctlIb(linkType, link, bug, cmd, v, p)
 int     linkType;	/* link type (defined in link.h) */
 int     link;		/* the link number to use */
@@ -1650,7 +1646,7 @@ caddr_t	p;
  * Returns OK, or ERROR.
  *
  ******************************************************************************/
-static int
+STATIC int
 qGpibReq(pdpvt, prio)
 struct	dpvtGpibHead *pdpvt; /* pointer to the device private structure */
 int	prio;
@@ -1697,7 +1693,7 @@ int	prio;
  * This function returns the number of bytes written out.
  *
  ******************************************************************************/
-static int
+STATIC int
 writeIb(pibLink, gpibAddr, data, length, time)
 struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to write the data to */
@@ -1745,7 +1741,7 @@ int	time;
  * if the read operation failed.
  *
  ******************************************************************************/
-static int
+STATIC int
 readIb(pibLink, gpibAddr, data, length, time)
 struct	ibLink	*pibLink;
 int	gpibAddr;	/* the device number to read the data from */
@@ -1795,7 +1791,7 @@ int	time;		/* max time to allow for read operation */
  * This function returns the number of bytes written out.
  *
  ******************************************************************************/
-static int
+STATIC int
 writeIbCmd(pibLink, data, length)
 struct	ibLink	*pibLink;
 char    *data;  	/* the data buffer to write out */
@@ -1829,7 +1825,7 @@ int     length; 	/* number of bytes to write out from the data buffer */
  * Read a GPIB message via the BitBus driver.
  *
  ******************************************************************************/
-static int
+STATIC int
 bbGpibRead(pibLink, device, buffer, length, time)
 struct	ibLink	*pibLink;
 int	device;
@@ -1888,7 +1884,7 @@ int	time;
  * Write a GPIB message by way of the bitbus driver.
  *
  ******************************************************************************/
-static int
+STATIC int
 bbGpibWrite(pibLink, device, buffer, length, time)
 struct	ibLink	*pibLink;
 int	device;
@@ -1970,7 +1966,7 @@ int	time;
     return(bytesSent);
 }
 
-static int
+STATIC int
 bbGpibCmd(pibLink, buffer, length)
 struct	ibLink	*pibLink;
 char    *buffer;
@@ -2020,7 +2016,7 @@ int     length;
   return(bytesSent);
 }
 
-static int
+STATIC int
 bbCheckLink(link, bug)
 int	link;
 int	bug;
@@ -2031,7 +2027,7 @@ int	bug;
     return(ERROR);
 }
 
-static int
+STATIC int
 bbSrqPollInhibit(link, bug, gpibAddr)
 int	link;
 int	bug;
@@ -2047,7 +2043,7 @@ int	gpibAddr;
  * a BBGPIB_IO based link.
  *
  ******************************************************************************/
-static int
+STATIC int
 bbGenLink(link, bug)
 int	link;
 int	bug;
@@ -2098,12 +2094,8 @@ int	bug;
  * IOCTL control function for BBGPIB_IO based links.
  *
  ******************************************************************************/
-static int
-bbGpibIoctl(link, bug, cmd, v, p)
-int     link;
-int     cmd;
-int	v;
-caddr_t	p;
+STATIC int
+bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
 {
   int 			stat = ERROR;
   struct bbIbLink	*pbbIbLink;

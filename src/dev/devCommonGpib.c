@@ -1285,9 +1285,9 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
     else
     {
@@ -1332,9 +1332,9 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
 
     devGpibLib_aiGpibFinish(pdpvt);	/* and finish the processing */
@@ -1379,9 +1379,9 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
         }
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);
+    callbackRequest(&pdpvt->head.header.callback);
 
     return(0);
 }
@@ -1423,9 +1423,9 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);		/* jrw */
+    callbackRequest(&pdpvt->head.header.callback);
     return(IDLE);
 }
 
@@ -1455,9 +1455,9 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
     else
     {
@@ -1502,9 +1502,9 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
 
     devGpibLib_liGpibFinish(pdpvt);	/* and finish the processing */
@@ -1548,9 +1548,9 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
         }
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);
+    callbackRequest(&pdpvt->head.header.callback);
 
     return(0);
 }
@@ -1592,9 +1592,9 @@ struct gpibDpvt *pdpvt;
         devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);             /* jrw */
+    callbackRequest(&pdpvt->head.header.callback);
     return(IDLE);
 }
 
@@ -1621,9 +1621,9 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
     else   	/* interpret response that came back */   
     {
@@ -1666,9 +1666,9 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
 
     devGpibLib_biGpibFinish(pdpvt);        /* and finish the processing */
@@ -1715,9 +1715,9 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 	}
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);             /* jrw */
+    callbackRequest(&pdpvt->head.header.callback);             /* jrw */
 
     return(0);
 }
@@ -1760,9 +1760,9 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);
+    callbackRequest(&pdpvt->head.header.callback);
     return(IDLE);
 }
 
@@ -1789,9 +1789,9 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pmbbi,WRITE_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
     else 
     {
@@ -1836,9 +1836,9 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
 
     devGpibLib_mbbiGpibFinish(pdpvt);        /* and finish the processing */
@@ -1885,9 +1885,9 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 	}
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);
+    callbackRequest(&pdpvt->head.header.callback);
 
     return(0);
 }
@@ -1931,9 +1931,9 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);		/* jrw */
+    callbackRequest(&pdpvt->head.header.callback);		/* jrw */
     return(IDLE);
 }
 
@@ -1963,9 +1963,9 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);             /* jrw */
+        callbackRequest(&pdpvt->head.header.callback);             /* jrw */
     }
     else 
     {
@@ -2010,9 +2010,9 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(pdpvt);
+        callbackRequest(&pdpvt->head.header.callback);
     }
 
     devGpibLib_stringinGpibFinish(pdpvt);        /* and finish the processing */
@@ -2048,9 +2048,9 @@ struct gpibDpvt *pdpvt;
         psi->val[40] = '\0';
 	psi->udf = FALSE;
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);             /* jrw */
+    callbackRequest(&pdpvt->head.header.callback);             /* jrw */
 
     return(0);
 }
@@ -2091,9 +2091,9 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
-    callbackRequest(pdpvt);		/* jrw */
+    callbackRequest(&pdpvt->head.header.callback);		/* jrw */
     return(IDLE);
 }
 
@@ -2459,7 +2459,7 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest((void *)pdpvt);
     }
@@ -2506,7 +2506,7 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
         pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest((void *)pdpvt);
     }
@@ -2544,7 +2544,7 @@ struct gpibDpvt *pdpvt;
     {
                devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
     }
-    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.callback = devGpibLib_processCallback;
     pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest((void *)pdpvt);
 

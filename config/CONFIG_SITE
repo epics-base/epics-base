@@ -76,10 +76,11 @@ ANSI=ACC
 #STANDARD=HPCC
 STANDARD=ACC
  
-#  Client C++ Compiler (Not supported yet)
+#  C++ Compiler 
 #   G++     (g++)   GNU C++
-#   CCC     (CC)    SUN C++
+#   CCC     (CC)    OS VENDOR C++
 #CPLUSPLUS=G++
+#CPLUSPLUS=	# use this if site does not have C++ compiler
 CPLUSPLUS=CCC
 
 #  Build client objects statically ?

@@ -8,29 +8,34 @@
 # for c++ build add the dirs gdd and cas after ca
 # (and uncomment the c++ files in src/lbCom/Makefile.Unix)
 #
-DIRS = \
-    tools \
-    include \
-    cxxTemplates \
-    toolsComm\
-    libCom \
-    libvxWorks\
-    cvtDctsdr \
-    dbStatic \
-    db \
-    bpt \
-    ca \
-    util \
-    misc \
-    sequencer \
-    dbtools \
-    rsrv\
-    rec\
-    as \
-    drv\
-    dev\
-    devOpt\
-    iocCore
+DIRS = tools 
+DIRS += include 
+DIRS += cxxTemplates 
+DIRS += toolsComm
+DIRS += libCom 
+DIRS += libvxWorks
+DIRS += cvtDctsdr 
+DIRS += dbStatic 
+DIRS += db 
+DIRS += bpt 
+DIRS += ca 
+DIRS += util 
+DIRS += misc 
+DIRS += sequencer 
+DIRS += dbtools 
+DIRS += rsrv
+DIRS += rec
+DIRS += as 
+DIRS += drv
+DIRS += dev
+DIRS += devOpt
+DIRS += iocCore
+
+#
+# if CPLUSPLUS isnt empty then include C++ src codes
+#
+DIRS += $(patsubst %,gdd,$(strip $(CPLUSPLUS)))
+DIRS += $(patsubst %,cas,$(strip $(CPLUSPLUS)))
 
 EPICS_BASE = $(TOP)
 

@@ -88,7 +88,8 @@ main(argc, argv)
 	verbose = TRUE;
     else
 	verbose = FALSE;
-fprintf(stdout, "\n\napStatusSync: Status Started  ==>> ==>> ==>> ==>> ==>>\n");
+fprintf(stdout, "\n\n===========================================================\n");
+fprintf(stdout, "apStatusSync: Status Started  ==>> ==>> ==>> ==>> ==>>\n");
 fprintf(stdout, "===========================================================\n");
     if ((initScriptFile()) != 0)
 	return (-1);

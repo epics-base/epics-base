@@ -58,7 +58,17 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		/* for gui applications, setup console for error messages */
 		if (AllocConsole())
 		{
-			SetConsoleTitle(BASE_VERSION_STRING);
+			char title[256];
+			DWORD titleLength = GetConsoleTitle(title, sizeof(title));
+			if (titleLength) {
+				titleLength = strlen (title);
+				strncat (title, " " BASE_VERSION_STRING, sizeof(title));
+			}
+			else {
+				strncpy(title, BASE_VERSION_STRING, sizeof(title));	
+			}
+			title[sizeof(title)-1]= '\0';
+			SetConsoleTitle(title);
 			freopen( "CONOUT$", "a", stderr );
 			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
 		}

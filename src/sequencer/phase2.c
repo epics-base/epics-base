@@ -15,7 +15,8 @@
 
 #include	<stdio.h>
 #include	"parse.h"
-#include	"seq.h"
+#include <dbDefs.h>
+#include <seqU.h>
 
 int	num_channels = 0;	/* number of db channels */
 int	num_ss = 0;		/* number of state sets */

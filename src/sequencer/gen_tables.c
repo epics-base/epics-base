@@ -13,7 +13,8 @@
 
 #include	<stdio.h>
 #include	"parse.h"
-#include	"seq.h"
+#include	<dbDefs.h>
+#include	<seqU.h>
 
 /*+************************************************************************
 *  NAME: gen_tables

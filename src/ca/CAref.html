@@ -877,6 +877,81 @@ example "dbr_short_t" should be used to send or receive type DBR_SHORT.</p>
   </tbody>
 </table>
 
+<p></p>
+
+<p>Channel value arrays can also be included within the structured CA data
+types. If more than one element is requested, then the individual elements
+can be accessed in an application program by indexing a pointer to the value
+field in the DBR_XXX structure. For example, the following code computes the
+sum of the elements in a array process variable and prints its time stamp.
+The <a href="#L6946">dbr_size_n</a> function can be used to detrmine the
+correct number of bytes to reserve when there are more than one value field
+elements in a structured CA data type.</p>
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+#include "cadef.h"
+
+int main ( int argc, char ** argv )
+{    
+    struct dbr_time_double * pTD;
+    const dbr_double_t * pValue;
+    unsigned nBytes;
+    unsigned elementCount;
+    char timeString[32];
+    unsigned i;    
+    chid chan;
+    double sum;
+    int status;
+    
+    if ( argc != 2 ) {
+        fprintf ( stderr, "usage: %s &lt;channel name&gt;", argv[0] );
+        return -1;
+    }
+    
+    status = ca_create_channel ( argv[1], 0, 0, 0, &amp; chan );
+    SEVCHK ( status, "ca_create_channel()" );
+    status = ca_pend_io ( 15.0 );
+    if ( status != ECA_NORMAL ) {
+        fprintf ( stderr, "\"%s\" not found.\n", argv[1] );
+        return -1;
+    }
+
+    elementCount = ca_element_count ( chan );
+    nBytes = dbr_size_n ( DBR_TIME_DOUBLE, elementCount );
+    pTD = ( struct dbr_time_double * ) malloc ( nBytes );
+    if ( ! pTD ) {
+        fprintf ( stderr, "insufficent memory to complete request\n" );
+        return -1;
+    }
+    
+    status = ca_array_get ( DBR_TIME_DOUBLE, elementCount, chan, pTD );
+    SEVCHK ( status, "ca_array_get()" );
+    status = ca_pend_io ( 15.0 );
+    if ( status != ECA_NORMAL ) {
+        fprintf ( stderr, "\"%s\" didnt return a value.\n", argv[1] );
+        return -1;
+    }
+    
+    pValue = &amp; pTD-&gt;value;     
+    sum = 0.0;      
+    for ( i = 0; i &lt; elementCount; i++ ) {         
+        sum += pValue[i];     
+    }
+    
+    epicsTimeToStrftime ( timeString, sizeof ( timeString ),
+        "%a %b %d %Y %H:%M:%S.%f", &amp; pTD-&gt;stamp );
+
+    printf ( "The sum of elements in %s at %s was %f\n", 
+        argv[1], timeString, sum );
+    
+    ca_clear_channel ( chan );
+    ca_task_exit ();
+    free ( pTD );
+    
+    return 0;
+}</code></pre>
+
 <h3 id="User">User Supplied Callback Functions</h3>
 
 <p>Certain CA client initiated requests asynchronously execute an application
@@ -889,17 +964,24 @@ returned. The field "status" will be set to one of the CA error codes in
 caerr.h and will indicate the status of the operation performed in the IOC.
 If the status field isn't set to ECA_NORMAL or data isn't normally returned
 from the operation (i.e. put call back) then you should expect that the field
-"dbr" will be set to NULL. The fields "usr", "chid", "type", and "count" are
-set to the values specified when the operation was initiated by the
-application.</p>
+"dbr" will be set to NULL. The fields "usr", "chid", and "type" are set to
+the values specified when the request was made by the application.</p>
 <pre><code>struct event_handler_args { 
-        void *usr; /* user argument supplied when event added */ 
-        chid chid; /* channel id */ 
-        long type; /* dbr type of the value returned */ 
-        long count; /* element count of the item(s) returned */ 
-        void *dbr; /* pointer to the value returned */ 
-        int status; /* ECA_XXX status of the op from server */ 
-};</code></pre>
+    void *usr; /* user argument supplied when event added */ 
+    chid chid; /* channel id */ 
+    long type; /* dbr type of the value returned */ 
+    long count; /* element count of the item(s) returned */ 
+    const void *dbr; /* pointer to the value returned */ 
+    int status; /* ECA_XXX status of the op from server */ 
+};
+
+void myCallback ( struct event_handler_args args )
+{
+    if ( type == DBR_TIME_DOUBLE ) {
+        const struct dbr_time_double * pTD = 
+            ( const struct dbr_time_double * ) args.dbr;
+    }
+}</code></pre>
 
 <h3><a name="Channel1">Channel Access Exceptions</a></h3>
 
@@ -1169,7 +1251,11 @@ callbacks will be called preemptively from more than one thread.</p>
       range specified is mapped into an operating system specific range of
       priorities within the server. This parameter is ignored if the server
       is running on a network or operating system that does not have native
-      support for prioritized delivery or execution respectively.</dd>
+      support for prioritized delivery or execution respectively. Specifying
+      many different priorities within the same program can increase resource
+      consutption in the client and the server because an independent virtual
+      circuit, and associated data structures, is created for each priority
+      that is used on a particular server.</dd>
 </dl>
 <dl>
   <dt><code>PCHID</code></dt>

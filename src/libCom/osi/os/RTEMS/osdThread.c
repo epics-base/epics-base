@@ -60,12 +60,25 @@ static semMutexId onceMutex;
  */
 int threadGetOsiPriorityValue(int ossPriority)
 {
-    return (199 - ossPriority);
+    if (ossPriority < 100) {
+        return threadPriorityMax;
+    }
+    else if (ossPriority > 199) {
+        return threadPriorityMin;
+    }
+    else {
+        return (199u - (unsigned int)ossPriority);
+    }
 }
 
-int threadGetOssPriorityValue(int osiPriority)
+int threadGetOssPriorityValue(unsigned int osiPriority)
 {
-    return (199 - osiPriority);
+    if (osiPriority > 99) {
+        return 100;
+    }
+    else {
+        return (199 - (signed int)osiPriority);
+    }
 }
 
 /*

@@ -80,7 +80,7 @@ static void asprulesCallFunc(ioccrfArg **args)
 
 /* aspmem */
 static ioccrfArg aspmemArg0 = { "asgname",ioccrfArgString,0};
-static ioccrfArg aspmemArg1 = { "asgname",ioccrfArgInt,0};
+static ioccrfArg aspmemArg1 = { "clients",ioccrfArgInt,0};
 static ioccrfArg *aspmemArgs[2] = {&aspmemArg0,&aspmemArg1};
 static ioccrfFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs};
 static void aspmemCallFunc(ioccrfArg **args)

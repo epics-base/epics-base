@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "epicsThread.h"
 
@@ -82,4 +83,6 @@ void epicsExceptionTest ()
     epicsExceptionTestPrivate ();
 
     athread.waitForCompletion ();
+
+    printf ( "Test Complete.\n" );
 }

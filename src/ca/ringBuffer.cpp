@@ -171,7 +171,7 @@ static inline unsigned cacRingBufferContiguousWriteSize (ringBuffer *pBuf)
  * returns the number of bytes read which may be less than
  * the number requested.
  */
-static inline unsigned cacRingBufferReadPartial (ringBuffer *pRing, void *pBuf,
+static unsigned cacRingBufferReadPartial (ringBuffer *pRing, void *pBuf,
                 unsigned nBytes)
 {
     unsigned totalBytes;
@@ -256,7 +256,7 @@ unsigned cacRingBufferRead (ringBuffer *pRing, void *pBuf,
  * returns the number of bytes written which may be less than
  * the number requested.
  */
-static inline unsigned cacRingBufferWritePartial (ringBuffer *pRing, 
+static unsigned cacRingBufferWritePartial (ringBuffer *pRing, 
             const void *pBuf, unsigned nBytes)
 {
     unsigned totalBytes;

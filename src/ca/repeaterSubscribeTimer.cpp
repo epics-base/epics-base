@@ -44,7 +44,7 @@ double repeaterSubscribeTimer::delay () const
     return REPEATER_TRY_PERIOD;
 }
 
-void repeaterSubscribeTimer::show (unsigned level) const
+void repeaterSubscribeTimer::show (unsigned /* level */ ) const
 {
 }
 

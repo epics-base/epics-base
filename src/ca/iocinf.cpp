@@ -221,7 +221,7 @@ LOCAL void cac_tcp_recv_msg (tcpiiu *piiu)
 /*
  *  cacSendThreadTCP ()
  */
-LOCAL void cacSendThreadTCP (void *pParam)
+extern "C" void cacSendThreadTCP (void *pParam)
 {
     tcpiiu *piiu = (tcpiiu *) pParam;
 
@@ -279,7 +279,7 @@ LOCAL void cacSendThreadTCP (void *pParam)
 /*
  *  cacRecvThreadTCP ()
  */
-LOCAL void cacRecvThreadTCP (void *pParam)
+extern "C" void cacRecvThreadTCP (void *pParam)
 {
     tcpiiu *piiu = (tcpiiu *) pParam;
     unsigned chanDisconnectCount;
@@ -591,7 +591,7 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
 /*
  *  cacRecvThreadUDP ()
  */
-LOCAL void cacRecvThreadUDP (void *pParam)
+extern "C" void cacRecvThreadUDP (void *pParam)
 {
     udpiiu *piiu = (udpiiu *) pParam;
     int status;
@@ -724,7 +724,7 @@ void notify_ca_repeater (udpiiu *piiu)
 /*
  *  cacSendThreadUDP ()
  */
-LOCAL void cacSendThreadUDP (void *pParam)
+extern "C" void cacSendThreadUDP (void *pParam)
 {
     udpiiu *piiu = (udpiiu *) pParam;
 
@@ -856,7 +856,7 @@ LOCAL char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
  * caAddConfiguredAddr()
  */
 void caAddConfiguredAddr (cac *pcac, ELLLIST *pList, const ENV_PARAM *pEnv, 
-    SOCKET socket, unsigned short port)
+    unsigned short port)
 {
     osiSockAddrNode *pNewNode;
     const char *pStr;
@@ -938,7 +938,7 @@ void caSetupBCastAddrList (cac *pcac, ELLLIST *pList,
         osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
     }
 
-    caAddConfiguredAddr (pcac, &tmpList, &EPICS_CA_ADDR_LIST, sock, port );
+    caAddConfiguredAddr (pcac, &tmpList, &EPICS_CA_ADDR_LIST, port );
 
     /*
      * eliminate duplicates and set the port
@@ -1054,26 +1054,26 @@ int repeater_installed (udpiiu *piiu)
 // udpiiu::udpiiu ()
 //
 udpiiu::udpiiu (cac *pcac) :
-    searchTmr (*this, pcac->timerQueue), repeaterSubscribeTmr (*this, pcac->timerQueue)
+    searchTmr (*this, pcac->timerQueue), 
+    repeaterSubscribeTmr (*this, pcac->timerQueue)
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
     int boolValue = TRUE;
-    SOCKET sock;
     int status;
     threadId tid;
 
     this->repeaterPort = 
         caFetchPortConfig (pcac, &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
 
-    sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sock == INVALID_SOCKET) {
+    this->sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (this->sock == INVALID_SOCKET) {
         ca_printf (pcac, "CAC: unable to create datagram socket because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
     }
 
-    status = setsockopt ( sock, SOL_SOCKET, SO_BROADCAST, 
+    status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *) &boolValue, sizeof (boolValue) );
     if (status<0) {
         ca_printf (pcac, "CAC: unable to enable IP broadcasting because = \"%s\"\n",
@@ -1089,7 +1089,7 @@ udpiiu::udpiiu (cac *pcac) :
          * bump up the UDP recv buffer
          */
         int size = 1u<<15u;
-        status = setsockopt ( sock, SOL_SOCKET, SO_RCVBUF,
+        status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
                 (char *)&size, sizeof (size) );
         if (status<0) {
             ca_printf ("CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
@@ -1106,9 +1106,9 @@ udpiiu::udpiiu (cac *pcac) :
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
     addr.ia.sin_port = htons (PORT_ANY);   
-    status = bind (sock, &addr.sa, sizeof (addr) );
+    status = bind (this->sock, &addr.sa, sizeof (addr) );
     if (status<0) {
-        socket_close (sock);
+        socket_close (this->sock);
         ca_printf (pcac, "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
@@ -1116,7 +1116,6 @@ udpiiu::udpiiu (cac *pcac) :
 
     constructNIIU (pcac, &this->niiu);
 
-    this->sock = sock;
     this->nBytesInXmitBuf = 0u;
     this->contactRepeater = 0u;
     this->repeaterContacted = 0u;
@@ -1208,8 +1207,6 @@ udpiiu::udpiiu (cac *pcac) :
 	     */
         osptr = osiSpawnDetachedProcess ("CA Repeater", "caRepeater");
         if (osptr==osiSpawnDetachedProcessNoSupport) {
-            threadId tid;
-
             tid = threadCreate (
                     "CA repeater",
                     threadPriorityChannelAccessClient,

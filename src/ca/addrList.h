@@ -23,7 +23,6 @@ epicsShareFunc void caAddConfiguredAddr (
         cac *pcac, 
         ELLLIST *pList,
         const ENV_PARAM *pEnv,
-        SOCKET socket,
         unsigned short port);
 
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);

@@ -417,9 +417,9 @@ int epicsShareAPI ca_sg_test (const CA_SYNC_GID gid)
 }
 
 /*
- * io_complete()
+ * ca_sync_grp_io_complete ()
  */
-LOCAL void io_complete (struct event_handler_args args)
+extern "C" void ca_sync_grp_io_complete (struct event_handler_args args)
 {
     unsigned long   size;
     CASGOP          *pcasgop;
@@ -538,7 +538,7 @@ const void          *pvalue)
     UNLOCK (pcac);
 
     status = ca_array_put_callback (type, count, chix, 
-                    pvalue, io_complete, pcasgop);
+                    pvalue, ca_sync_grp_io_complete, pcasgop);
     if (status != ECA_NORMAL) {
         LOCK (pcac);
         assert (pcasg->opPendCount>=1u);
@@ -600,20 +600,16 @@ void                *pvalue)
 
     UNLOCK (pcac);
 
-    status = ca_array_get_callback(
-            type, 
-            count, 
-            chix, 
-            io_complete, 
-            pcasgop);
+    status = ca_array_get_callback (
+            type, count, chix, ca_sync_grp_io_complete, pcasgop);
 
     if(status != ECA_NORMAL){
         LOCK (pcac);
-        assert(pcasg->opPendCount>=1u);
+        assert (pcasg->opPendCount>=1u);
         pcasg->opPendCount--;
-        ellDelete(&pcac->activeCASGOP, &pcasgop->node);
+        ellDelete (&pcac->activeCASGOP, &pcasgop->node);
         UNLOCK (pcac);
-        freeListFree(pcac->ca_sgopFreeListPVT, pcasgop);
+        freeListFree (pcac->ca_sgopFreeListPVT, pcasgop);
     }
     return status;
 }

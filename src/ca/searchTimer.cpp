@@ -33,14 +33,14 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
 //
 // searchTimer::reset ()
 //
-void searchTimer::reset (double period)
+void searchTimer::reset (double periodIn)
 {
     LOCK (this->iiu.niiu.iiu.pcas);
     this->retry = 0;
-    this->period = period;
+    this->period = periodIn;
     UNLOCK (this->iiu.niiu.iiu.pcas);
 
-    if (this->timeRemaining()>period) {
+    if (this->timeRemaining()>this->period) {
         this->reschedule (0.0);
     }
 }
@@ -338,7 +338,7 @@ double searchTimer::delay () const
     return this->period;
 }
 
-void searchTimer::show (unsigned level) const
+void searchTimer::show (unsigned /* level */) const
 {
 }
 

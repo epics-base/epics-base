@@ -481,7 +481,7 @@ void epicsShareAPI ca_repeater ()
 /*
  * caRepeaterThread ()
  */
-void caRepeaterThread (void *pDummy)
+void caRepeaterThread (void * /* pDummy */ )
 {
     taskwdInsert (threadGetIdSelf(), NULL, NULL);
     ca_repeater();

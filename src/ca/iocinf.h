@@ -608,7 +608,7 @@ tcpiiu *iiuToTCPIIU (baseIIU *pIn);
 netIIU *iiuToNIIU (baseIIU *pIn);
 lclIIU *iiuToLIIU (baseIIU *pIn);
 int fetchClientContext (cac **ppcac);
-void caRepeaterThread (void *pDummy);
+extern "C" void caRepeaterThread (void *pDummy);
 unsigned short caFetchPortConfig
     (cac *pcac, const ENV_PARAM *pEnv, unsigned short defaultPort);
 

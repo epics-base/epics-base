@@ -68,10 +68,10 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 		DWORD titleLength = GetConsoleTitle(title, sizeof(title));
 		if (titleLength) {
 			titleLength = strlen (title);
-			strncat (title, " " BASE_VERSION_STRING, sizeof(title));
+			strncat (title, " " EPICS_VERSION_STRING, sizeof(title));
 		}
 		else {
-			strncpy(title, BASE_VERSION_STRING, sizeof(title));	
+			strncpy(title, EPICS_VERSION_STRING, sizeof(title));	
 		}
 		title[sizeof(title)-1]= '\0';
 		SetConsoleTitle(title);

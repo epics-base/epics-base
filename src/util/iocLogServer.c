@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.22  1996/11/02 02:20:36  jhill
+ * use osiSock.h
+ *
  * Revision 1.21  1996/06/21 01:07:46  jhill
  * use sigemptyset() and cc -Xc changes
  *
@@ -66,28 +69,29 @@
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
-#include 	<stdio.h>
+#include 	<osiSock.h>
+
+/*
+ * _XOPEN_SOURCE & _POSIX_C_SOURCE must not be defined
+ * prior to including the socket headers on solaris
+ *
+ * functions involved here:
+ * popen() stdio.h
+ * sigaction() signal.h
+ */
+#define _XOPEN_SOURCE /* for solaris and "cc -Xc"/"gcc -ansi" */
+#define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc"/"gcc -ansi" */
+
 #include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>
-
+#include 	<stdio.h>
 #include 	<unistd.h>
 #include	<signal.h>
 
 #include	<epicsAssert.h>
-#include 	<osiSock.h>
-#include 	<envDefs.h>
 #include 	<fdmgr.h>
-
-
-#if 0
-/*
- * _XOPEN_SOURCE & _POSIX_C_SOURCE must not be defined
- * prior to including the socket headers on solaris
- */
-#define _XOPEN_SOURCE /* for solaris and "cc -Xc" */
-#define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc" */
-#endif
+#include 	<envDefs.h>
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;
@@ -416,7 +420,7 @@ static void acceptNewClient(void *pParam)
         }
 
 	strncpy(pclient->name, pname, sizeof(pclient->name));
-	pclient->name[sizeof(pclient->name) - 1u] = NULL;
+	pclient->name[sizeof(pclient->name) - 1u] = '\0';
 
 	logTime(pclient);
 	
@@ -526,7 +530,7 @@ static void readFromClient(void *pParam)
 	
 	}
 
-	pclient->ptopofstack[length] = NULL;
+	pclient->ptopofstack[length] = '\0';
 	pline = pclient->recvbuf;
 	while(TRUE){
 		unsigned nchar;
@@ -846,7 +850,8 @@ static int getDirectory()
 		/*
 		 * Use popen() to execute command and grab output.
 		 */
-		if ((pipe = popen( ioc_log_file_command, "r")) == NULL) {
+		pipe = popen(ioc_log_file_command, "r");
+		if (pipe == NULL) {
 			fprintf(stderr,
 				"Problem executing `%s' because `%s'\n", 
 				ioc_log_file_command,

@@ -396,6 +396,12 @@ double nciu::beaconPeriod () const
     return this->cacCtx.beaconPeriod ( *this );
 }
 
+double nciu::receiveWatchdogDelay () const
+{
+    epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );
+    return this->piiu->receiveWatchdogDelay ();
+}
+
 void nciu::show ( unsigned level ) const
 {
     epicsGuard < cacMutex > locker ( this->cacCtx.mutexRef() );

@@ -621,12 +621,12 @@ bool udpiiu::searchRespAction ( // X aCC 361
     if ( CA_V42 ( minorVersion ) ) {
         success = this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, 0xffff, 
-                0, minorVersion, serverAddr, currentTime );
+                0, minorVersion, serverAddr );
     }
     else {
         success = this->cacRef.lookupChannelAndTransferToTCP 
             ( cbLocker, msg.m_available, msg.m_cid, msg.m_dataType, 
-                msg.m_count, minorVersion, serverAddr, currentTime );
+                msg.m_count, minorVersion, serverAddr );
     }
 
     if ( success ) {
@@ -1152,6 +1152,12 @@ osiSockAddr udpiiu::getNetworkAddress () const
 {
     return netiiu::getNetworkAddress ();
 }
+
+double udpiiu::receiveWatchdogDelay () const
+{
+    return - DBL_MAX;
+}
+
 
 
 

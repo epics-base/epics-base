@@ -80,6 +80,7 @@ public:
     caAccessRights accessRights () const; // defaults to unrestricted access
     unsigned searchAttempts () const; // defaults to zero
     double beaconPeriod () const; // defaults to negative DBL_MAX
+    double receiveWatchdogDelay () const; // defaults to negative DBL_MAX
     bool ca_v42_ok () const; 
     bool connected () const; 
     bool previouslyConnected () const;
@@ -399,6 +400,11 @@ inline unsigned oldChannelNotify::searchAttempts () const
 inline double oldChannelNotify::beaconPeriod () const
 {
     return this->io.beaconPeriod ();
+}
+
+inline double oldChannelNotify::receiveWatchdogDelay () const
+{
+    return this->io.receiveWatchdogDelay ();
 }
 
 inline bool oldChannelNotify::ca_v42_ok () const

@@ -127,6 +127,7 @@ private:
     caAccessRights accessRights () const;
     unsigned searchAttempts () const;
     double beaconPeriod () const;
+    double receiveWatchdogDelay () const;
     bool ca_v42_ok () const;
     void hostName ( char *pBuf, unsigned bufLength ) const;
     static void stringVerify ( const char *pStr, const unsigned count );

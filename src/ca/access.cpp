@@ -1088,6 +1088,12 @@ double epicsShareAPI ca_beacon_period ( chid pChan )
     return pChan->beaconPeriod ();
 }
 
+// extern "C"
+double epicsShareAPI ca_receive_watchdog_delay ( chid pChan )
+{
+    return pChan->receiveWatchdogDelay ();
+}
+
 /*
  * ca_get_ioc_connection_count()
  *

@@ -59,6 +59,11 @@ double cacChannel::beaconPeriod () const
     return - DBL_MAX;
 }
 
+double cacChannel::receiveWatchdogDelay () const
+{
+    return - DBL_MAX;
+}
+
 bool cacChannel::ca_v42_ok () const 
 {
     return true;

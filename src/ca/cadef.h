@@ -935,6 +935,8 @@ epicsShareFunc void epicsShareAPI ca_self_test (void);
 epicsShareFunc unsigned epicsShareAPI ca_beacon_anomaly_count (void);
 epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
 epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
+epicsShareFunc double epicsShareAPI ca_receive_watchdog_delay (chid chan);
+
 
 /*
  * used when an auxillary thread needs to join a CA client context started

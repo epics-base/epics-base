@@ -183,6 +183,7 @@ private:
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();
     void shutdown ( epicsGuard <cacMutex > & ); 
+    double receiveWatchdogDelay () const;
 
     // send protocol stubs
     void echoRequest ( epicsGuard < cacMutex > & );

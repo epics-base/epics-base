@@ -66,6 +66,7 @@ public:
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
     virtual void uninstallChan ( epicsGuard < cacMutex > &, nciu & ) = 0;
+    virtual double receiveWatchdogDelay () const = 0;
 };
 
 #endif // netiiuh

@@ -179,6 +179,7 @@ public:
     virtual caAccessRights accessRights () const; // defaults to unrestricted access
     virtual unsigned searchAttempts () const; // defaults to zero
     virtual double beaconPeriod () const; // defaults to negative DBL_MAX
+    virtual double receiveWatchdogDelay () const; // defaults to negative DBL_MAX
     virtual bool ca_v42_ok () const; // defaults to true
     virtual bool connected () const; // defaults to true
     virtual void hostName (

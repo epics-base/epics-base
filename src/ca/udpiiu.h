@@ -182,6 +182,7 @@ private:
         ( cacNotify &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
+    double receiveWatchdogDelay () const;
 
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );

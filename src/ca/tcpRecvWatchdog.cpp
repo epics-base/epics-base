@@ -137,6 +137,11 @@ void tcpRecvWatchdog::cancel ()
     debugPrintf ( ("canceling TCP recv watchdog\n") );
 }
 
+double tcpRecvWatchdog::delay () const
+{
+    return this->timer.getExpireDelay ();
+}
+
 void tcpRecvWatchdog::show ( unsigned level ) const
 {
     ::printf ( "Receive virtual circuit watchdog at %p, period %f\n",

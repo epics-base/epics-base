@@ -46,6 +46,7 @@ public:
     void connectNotify ();
     void cancel ();
     void show ( unsigned level ) const;
+    double delay () const;
 private:
     const double period;
     epicsTimer & timer;

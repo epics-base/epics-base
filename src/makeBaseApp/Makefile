@@ -38,8 +38,10 @@ TEMPLATES += top/exampleApp/src/xxxRecord.c
 TEMPLATES += top/exampleApp/src/devXxxSoft.c
 TEMPLATES += top/exampleApp/src/xxxSupport.dbd
 TEMPLATES += top/exampleApp/src/sncExample.stt
+TEMPLATES += top/exampleApp/src/sncProgram.st
+TEMPLATES += top/exampleApp/src/sncExample.dbd
 TEMPLATES += top/exampleApp/src/dbSubExample.c
-TEMPLATES += top/exampleApp/src/_APPNAME_Include.dbd
+TEMPLATES += top/exampleApp/src/dbSubExample.dbd
 TEMPLATES += top/exampleApp/src/_APPNAME_Main.cpp
 
 TEMPLATES += top/exampleBoot/Makefile

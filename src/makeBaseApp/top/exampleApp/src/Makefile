@@ -6,7 +6,7 @@ include $(TOP)/configure/CONFIG
 #=============================
 
 #==================================================
-# build a support library
+# Build an IOC support library
 
 LIBRARY_IOC += xxxSupport
 
@@ -25,8 +25,13 @@ xxxSupport_LIBS += $(EPICS_BASE_IOC_LIBS)
 # build an ioc application
 
 PROD_IOC = _APPNAME_
-# <name>.dbd will be created from <name>Include.dbd
+# _APPNAME_.dbd will be created and installed
 DBD += _APPNAME_.dbd
+
+# _APPNAME_.dbd will be made up from these files:
+_APPNAME__DBD += base.dbd
+_APPNAME__DBD += xxxSupport.dbd
+_APPNAME__DBD += dbSubExample.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
@@ -41,24 +46,24 @@ _APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 _APPNAME__LIBS += xxxSupport
 
-# NOTES:
-#      1)It is not possible to build sncExample both as a component of _APPNAME_
-#        and standalone. You must choose only one.
-#      2)To build sncExample SNCSEQ must be defined in <top>/configure/RELEASE
+# NOTE: To build SNL programs, SNCSEQ must be defined
+# in the <top>/configure/RELEASE file
 
-# The following builds sncExample as a component of _APPNAME_
-# Also in _APPNAME_Include.dbd uncomment #registrar(sncExampleRegistrar)
-#_APPNAME__SRCS += sncExample.stt
-#_APPNAME__LIBS += seq pv
+ifneq ($(SNCSEQ),)
+    # This builds sncExample as a component of _APPNAME_
+    _APPNAME__DBD += sncExample.dbd
+    _APPNAME__SRCS += sncExample.stt
+    _APPNAME__LIBS += seq pv
+
+    # The following builds sncProgram as a standalone application
+    PROD_HOST += sncProgram
+    sncProgram_SNCFLAGS += +m
+    sncProgram_SRCS += sncProgram.st
+    sncProgram_LIBS += seq pv
+    sncProgram_LIBS += $(EPICS_BASE_HOST_LIBS)
+endif
 
 _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
-
-# The following builds sncExample as a standalone application
-#PROD_HOST += sncExample
-#sncExample_SNCFLAGS += +m
-#sncExample_SRCS += sncExample.stt
-#sncExample_LIBS += seq pv
-#sncExample_LIBS += $(EPICS_BASE_HOST_LIBS)
 
 #===========================
 

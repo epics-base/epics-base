@@ -6,7 +6,6 @@
 #include <epicsExport.h>
 
 int mySubDebug;
-epicsExportAddress(int, mySubDebug);
 
 typedef long (*processMethod)(subRecord *precord);
 
@@ -26,13 +25,8 @@ static long mySubProcess(subRecord *precord)
     return(0);
 }
 
-static registryFunctionRef mySubRef[] = {
-    {"mySubInit",(REGISTRYFUNCTION)mySubInit},
-    {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
-};
+/* Register these symbols for use by IOC code: */
 
-static void mySubRegistrar(void)
-{
-    registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
-}
-epicsExportRegistrar(mySubRegistrar);
+epicsExportAddress(int, mySubDebug);
+epicsRegisterFunction(mySubInit);
+epicsRegisterFunction(mySubProcess);

@@ -38,7 +38,7 @@ SHRLIB_DEPLIBS = $(foreach lib,$(SHRLIB_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
 # Shared library definitions
-SHRLIB_LDFLAGS = $($(ANSI)_SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
+SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
 SHRLIB_LDLIBS = $($*_LIBS:%=-l%)
 
 SHRLIB_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(SHRLIB_DEPLIBS))
@@ -58,11 +58,6 @@ DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
 
 #--------------------------------------------------
-#  Allow code to be used in a shared library
-GCC_CODE_CFLAGS += -fPIC
-G++_CODE_CFLAGS += -fPIC
-
-#--------------------------------------------------
 # Operating system definitions
 OP_SYS_INCLUDES =
 OP_SYS_CPPFLAGS = -DUNIX 
@@ -71,8 +66,8 @@ OP_SYS_LDLIBS = -lm
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(CXX) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
-LINK.shrlib = $(CXX) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+LINK.cpp = $(CCC) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+LINK.shrlib = $(CCC) -o $@ $(SHRLIB_LDFLAGS) $(LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 
 #--------------------------------------------------
 # Allow site overrides

@@ -7,54 +7,44 @@
 # Sites may override these definitions in CONFIG_SITE.hpux-parisc.hpux-parisc
 #-------------------------------------------------------
 
-OS_CLASS = hpux
-ARCH_CLASS = parisc
-
-# Configure OS vendor C compiler
-ACC = cc
-ACC_CONFORM_CFLAGS_ANSI = -Aa
-ACC_CONFORM_CFLAGS_STRICT = -Aa
-ACC_CONFORM_CFLAGS_TRAD = -Ac
-ACC_WARN_YES = 
-ACC_WARN_NO = -w
-ACC_OPT_YES = -O
-ACC_OPT_NO = -g
-ACC_STATIC_CFLAGS_YES= -Wl,-a,archive
-ACC_STATIC_CFLAGS_NO =
-ACC_STATIC_LDLIBS_YES =
-ACC_STATIC_LDLIBS_NO =
-ACC_SHRLIB_LDFLAGS_YES = -b
-
-# Configure OS vendor C++ compiler
+CC = cc
 CCC = aCC
-# avoid treating "future errors" as actual errors
-CCC_CONFORM_CFLAGS_NORMAL = +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
-CCC_CONFORM_CFLAGS_STRICT = +p
-CCC_TEMPL_INST_FLAG =
-CCC_WARN_YES = +w
-CCC_WARN_NO =
-CCC_OPT_YES = -O
-CCC_OPT_NO = -g
-CCC_STATIC_CFLAGS_YES= +A
-CCC_STATIC_CFLAGS_NO =
-CCC_STATIC_LDLIBS_YES =
-CCC_STATIC_LDLIBS_NO =
-# shared libs will be found by searching environment variable SHLIB_PATH,
-# then by searching the specified path (see below)
-CCC_SHRLIB_LDFLAGS_YES = -b
-CCC_DEPENDS_FLAG = +m
-
-# +DAportable causes portable object code to be created for execution
-# on different PA-Risc machines
-ARCH_DEP_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
-ARCH_DEP_CFLAGS = +DAportable +z
-ARCH_DEP_CXXFLAGS = +DAportable +z
-ARCH_DEP_LDLIBS =
-ARCH_DEP_LDFLAGS = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s
-
+CPP = $(CCC) -E
+RANLIB =
 AR = ar -rc
 
-SHRLIB_SUFFIX = .sl
+# Configure OS vendor C compiler
+CONFORM_CFLAGS_ANSI = -Aa
+CONFORM_CFLAGS_STRICT = -Aa
+CONFORM_CFLAGS_TRAD = -Ac
+CODE_CFLAGS = 
+WARN_CFLAGS_YES =
+WARN_CFLAGS_NO = -w
+OPT_CFLAGS_YES = -O
+OPT_CFLAGS_NO = -g
 
 # HP's aCC will not compile things if run in STRICT mode
 CXXCMPLR=NORMAL
+
+# Configure OS vendor C++ compiler
+CONFORM_CXXFLAGS_NORMAL = +W302 +W829 +W818 +W392 +W469 +W495 +W749 +W667 +W392 +W684
+CONFORM_CXXFLAGS_STRICT = +p
+CODE_CXXFLAGS = 
+TEMPL_INST_CXXFLAG =
+WARN_CXXFLAGS_YES = +w
+WARN_CXXFLAGS_NO =
+OPT_CXXFLAGS_YES = -O
+OPT_CXXFLAGS_NO = -g
+
+STATIC_LDFLAGS_YES= -Wl,-a,archive +A
+# shared libs will be found by searching environment variable SHLIB_PATH,
+# then by searching the specified path (see below)
+STATIC_LDFLAGS_YES+= -b
+STATIC_LDFLAGS_NO = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s
+STATIC_LDLIBS_YES=
+STATIC_LDLIBS_NO=
+
+SHRLIB_LDFLAGS_YES =  -G -h $@
+
+DEPENDS_FLAG = +m
+

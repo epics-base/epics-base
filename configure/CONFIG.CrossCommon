@@ -1,10 +1,22 @@
 # Cross compiler default definitions
 
+# Build class: either HOST or CROSS
+# Used to determine OPT and WARN compiler flags
 BUILD_CLASS = CROSS
 
-ANSI = GCC
-CPLUSPLUS = G++
+# Cross build: either defined or not
+# Used in os/CONFIG.Common.<arch> files
+#   ifdef CROSS    looks better than  ifeq ($(BUILD_CLASS),CROSS)
+CROSS = YES
 
-CROSS_INCLUDES = $(addprefix -I,$(GNU_INCLUDE_DIR))
-CROSS_LDFLAGS = $(addprefix -L,$(GNU_LIB_DIR))
+GNU_TARGET_INCLUDE_DIR = $(GNU_DIR)/$(GNU_TARGET)/include
+GNU_TARGET_LIB_DIR = $(GNU_DIR)/$(GNU_TARGET)/lib
 
+CROSS_CPPFLAGS = -nostdinc
+CROSS_CFLAGS = -B$(GNU_LIB)/gcc-lib/
+CROSS_INCLUDES = $(addprefix -I,$(GNU_TARGET_INCLUDE_DIR))
+CROSS_LDFLAGS = $(addprefix -L,$(GNU_TARGET_LIB_DIR))
+
+
+# All cross builds use the gnu compiler
+include $(CONFIG)/CONFIG.gnuCommon

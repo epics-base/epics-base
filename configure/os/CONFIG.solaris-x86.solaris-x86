@@ -3,81 +3,55 @@
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for linux-x86 host archs
+# Definitions for solaris-x86 host - solaris-x86 target builds
 # Sites may override these definitions in CONFIG_SITE.solaris-x86.solaris-x86
 #-------------------------------------------------------
 
 # Include definitions common to all Unix target archs
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
-OS_CLASS = solaris
-ARCH_CLASS = x86
-
 SPARCWORKS = /opt/SUNWspro
+
+CC = $(SPARCWORKS)/bin/cc
+CCC = $(SPARCWORKS)/bin/CC
+CPP = $(CCC) -E
+RANLIB =
+# required by sun's C++ compiler
+AR = $(CCC) -xar -o
 
 #Prepare the object code for profiling with prof. (YES or NO)
 PROFILE=YES
 
 # Configure OS vendor C compiler
-ACC = $(SPARCWORKS)/bin/cc
-ACC_CONFORM_CFLAGS_ANSI = -Xa
-ACC_CONFORM_CFLAGS_STRICT = -Xc -v
-ACC_CONFORM_CFLAGS_TRAD = -Xs
-ACC_PROF_CFLAGS_YES = +p
-ACC_PROF_CFLAGS_NO =
-ACC_CODE_CFLAGS = -KPIC -D_REENTRANT $(CCC_PROF_CFLAGS_$(PROFILE))
-ACC_WARN_YES =
-ACC_WARN_NO = -w
-ACC_OPT_YES = -xO4
-ACC_OPT_NO = -g
-ACC_STATIC_LDFLAGS_YES= -Bstatic
-ACC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -lrt -Bstatic -lXext -lX
-ACC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
-ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
-ACC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+CONFORM_CFLAGS_ANSI = -Xa -v
+CONFORM_CFLAGS_STRICT = -Xc -v
+CONFORM_CFLAGS_TRAD = -Xs
+PROF_CFLAGS_YES = +p
+PROF_CFLAGS_NO =
+CODE_CFLAGS = -KPIC $(PROF_CFLAGS_$(PROFILE))
+WARN_CFLAGS_YES =
+WARN_CFLAGS_NO = -w
+OPT_CFLAGS_YES = -xO4
+OPT_CFLAGS_NO = -g
 
 # Configure OS vendor C++ compiler
-CCC = $(SPARCWORKS)/bin/CC
-CCC_CONFORM_CFLAGS_NORMAL =
-CCC_CONFORM_CFLAGS_STRICT =
-CCC_PROF_CFLAGS_YES = +p
-CCC_PROF_CFLAGS_NO =
-CCC_CODE_CFLAGS = -KPIC -D_REENTRANT $(CCC_PROF_CFLAGS_$(PROFILE))
-CCC_TEMPL_INST_FLAG =
-CCC_WARN_YES = +w
-CCC_WARN_NO =
-CCC_OPT_YES = -O
-CCC_OPT_NO = -g
-CCC_STATIC_LDFLAGS_YES= -Bstatic
-CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -lrt -Bstatic -lXext -lX
-CCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
-CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
-CCC_DEPENDS_FLAG = -xM1
-CCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS_
+CONFORM_CXXFLAGS_NORMAL =
+CONFORM_CXXFLAGS_STRICT =
+PROF_CXXFLAGS_YES = +p
+PROF_CXXFLAGS_NO =
+CODE_CXXFLAGS = -KPIC $(PROF_CXXFLAGS_$(PROFILE))
+TEMPL_INST_CXXFLAG =
+WARN_CXXFLAGS_YES = +w
+WARN_CXXFLAGS_NO =
+OPT_CXXFLAGS_YES = -O
+OPT_CXXFLAGS_NO = -g
 
-ACC_CPP = cpp
+STATIC_LDFLAGS_YES= -Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Bdynamic
+STATIC_LDLIBS_NO=
 
-#Configure gnu compiler
-GCC = gcc
-G++ = g++
-GCC_CPP = $(GCC) -x c -E
+SHRLIB_LDFLAGS_YES =  -G -h $@
 
-GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
-G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
-
-GCC_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread -lrt
-GCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
-G++_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread -lrt
-G++_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread -lrt
-
-RANLIB =
-# required by sun's C++ compiler
-AR = $(CCC) -xar -o
-
-ARCH_DEP_CPPFLAGS = -DSOLARIS -D_X86_
-# socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
-
-# use loader's -R option
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+DEPENDS_FLAG = -xM1
 

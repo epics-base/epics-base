@@ -20,7 +20,3 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 HOSTEXE=.exe
 
-#--------------------------------------------------
-# Use C++ constructors to register commands/programs (snc +i option)
-CPPSNCFLAGS += -x c
-TARGET_SNCFLAGS += +i

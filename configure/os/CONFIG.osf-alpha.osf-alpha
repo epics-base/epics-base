@@ -7,66 +7,44 @@
 # Sites may override these definitions in CONFIG_SITE.osf-alpha.osf-alpha
 #-------------------------------------------------------
 
-# Include definitions common to all Unix target archs
-include $(CONFIG)/os/CONFIG.Common.UnixCommon
-
-OS_CLASS = osf
-ARCH_CLASS = alpha
-
-SPARCWORKS = /opt/SUNWspro
+CC = cc
+CCC = cxx 
+CPP = $(CCC) -E
+RANLIB =
+AR = ar
 
 # Configure OS vendor C compiler
-ACC = $(SPARCWORKS)/bin/cc
-ACC_CONFORM_CFLAGS_ANSI = -Xa
-ACC_CONFORM_CFLAGS_STRICT = -Xc -v
-ACC_CONFORM_CFLAGS_TRAD = -Xs
-ACC_CODE_CFLAGS = -KPIC -D_REENTRANT
-ACC_WARN_YES = 
-ACC_WARN_NO =  -w
-ACC_OPT_YES =  -xO4
-ACC_OPT_NO = -g
-ACC_STATIC_LDFLAGS_YES= -Bstatic
-ACC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
-ACC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
-ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
-ACC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+CONFORM_CFLAGS_ANSI = -std
+CONFORM_CFLAGS_STRICT = -std1
+CONFORM_CFLAGS_TRAD = -std0
+CODE_CFLAGS = 
+WARN_CFLAGS_YES =
+WARN_CFLAGS_NO = -w
+OPT_CFLAGS_YES = -O
+OPT_CFLAGS_NO = -g
 
 # Configure OS vendor C++ compiler
-CCC = $(SPARCWORKS)/bin/CC
-CCC_CONFORM_CFLAGS_NORMAL = +p
-CCC_CONFORM_CFLAGS_STRICT = +p
-CCC_CODE_CFLAGS = -KPIC -D_REENTRANT
-CCC_TEMPL_INST_FLAG =
-CCC_WARN_YES = +w
-CCC_WARN_NO = 
-CCC_OPT_YES =  -xO4
-CCC_OPT_NO = -g
-CCC_STATIC_LDFLAGS_YES= -Bstatic
-CCC_STATIC_LDLIBS_YES= -lw -lintl -Bdynamic -ldl -lposix4 -lpthread -lthread -Bstatic -lXext -lX
-CCC_STATIC_LDLIBS_NO=
-CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
-CCC_DEPENDS_FLAG = -xM1
-CCC_POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D__EXTENSIONS__
+CONFORM_CXXFLAGS_NORMAL =
+CONFORM_CXXFLAGS_STRICT =
+PROF_CXXFLAGS_YES = +p
+PROF_CXXFLAGS_NO =
+CODE_CXXFLAGS =
+TEMPL_INST_CXXFLAG =
+WARN_CXXFLAGS_YES =
+WARN_CXXFLAGS_NO =
+OPT_CXXFLAGS_YES = -O
+OPT_CXXFLAGS_NO = -g
 
-ACC_CPP = cpp
+STATIC_LDFLAGS_YES= -Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Bdynamic
+STATIC_LDLIBS_NO=
 
-#Configure gnu compiler
-GCC = gcc
-G++ = g++
-GCC_CPP = $(GCC) -x c -E
+SHRLIB_LDFLAGS_YES = -shared
 
-GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
-G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
+DEPENDS_FLAG =
 
-RANLIB =
-# required by sun's C++ compiler
-AR = $(CCC) -xar -o
-
-ARCH_DEP_CPPFLAGS =
-ARCH_DEP_LDLIBS = -lposix4 -lpthread -lthread
-# socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
-
-# use loader's -R option
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+#############  ???????????
+#####ACC_SFLAGS_YES= -non_shared
+#####ACC_SFLAGS_NO= -call_shared
 

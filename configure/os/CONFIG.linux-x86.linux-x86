@@ -2,40 +2,14 @@
 #
 # $Id$
 #
-#  This file is maintained by the build community.
-#  Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86
+# Definitions for linux-x86 host - linux-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86
 #-------------------------------------------------------
 
-# Include definitions common to all Unix target archs
-include $(CONFIG)/os/CONFIG.Common.UnixCommon
-
- 
-OS_CLASS = Linux
-ARCH_CLASS = x86
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 
-# Configure OS vendor C compiler
-# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
-# since OS vendor compilers is gnu compiler
-ANSI=GCC
-CPLUSPLUS=G++
-
-# Configure gnu C compiler
-GCC = gcc
-G++ = g++
-
-AR = ar -rc
-ARFLAGS =
-RANLIB = ranlib -t
-
-# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-ARCH_DEP_CPPFLAGS += -D_BSD_SOURCE
-ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
-
-ARCH_DEP_LDFLAGS =
-ARCH_DEP_LDLIBS = -lpthread -lreadline -lcurses -lrt
-
-# Use C++ constructors to register commands/programs (snc +i option)
-CPPSNCFLAGS += -x c
-TARGET_SNCFLAGS += +i
+CC = $(GNU_BIN)/gcc
+CCC = $(GNU_BIN)/g++

@@ -1,14 +1,13 @@
 # CONFIG.Common.vxWorksCommon
 #
 # $Id$
+# This file is maintained by the build community.
 #
 # Definitions for vxWorks target archs
-#
-# This file is maintained by the build community.
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorksCommon
 # or CONFIG_SITE.<host>.vxWorksCommon
-
 #-------------------------------------------------------
+
 # Vx valid build types
 VALID_BUILDS = Ioc
 
@@ -37,17 +36,17 @@ INSTALL_LOCATION_LIB=$(INSTALL_LOCATION)/bin
 #--------------------------------------------------
 # vxWorks directory definitions
 # Tornado directory definitions
-VX_INCLUDE = $(VX_DIR)/target/h
+GNU_TARGET_INCLUDE_DIR = $(VX_DIR)/target/h
 GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
 
 #-------------------------------------------------------
 # Command definition overrides
-GCC_LD = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
+LD = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
 
 # use ld  partial linking not ar to create libraries)
-GCC_AR = $(GCC_LD)
+AR = $(LD)
 ARFLAGS = -o
-GCC_RANLIB =
+RANLIB =
 
 #--------------------------------------------------
 # C++ host processing
@@ -60,13 +59,7 @@ export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE
 
 #--------------------------------------------------
-# Posix flags override
-GCC_POSIX_CPPFLAGS = -D_POSIX_SOURCE
-G++_POSIX_CPPFLAGS = -D_POSIX_SOURCE
-
-#--------------------------------------------------
 # Operating system flags
-OP_SYS_INCLUDES = -I$(VX_INCLUDE)
 OP_SYS_CPPFLAGS = -DvxWorks
 OP_SYS_CFLAGS = -fno-builtin 
 OP_SYS_LDFLAGS =
@@ -74,14 +67,24 @@ OP_SYS_LDLIBS =
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h 
-OP_SYS_CFLAGS += -include $(VX_INCLUDE)/vxWorks.h
+OP_SYS_CFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
+
+#--------------------------------------------------
+# code flags
+CODE_CFLAGS =
+CODE_CXXFLAGS =
+
+#--------------------------------------------------
+# posix c preprocessor flags
+POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
+POSIX_CPPFLAGS_NO =
 
 #--------------------------------------------------
 # Optimization flag overrides
-GCC_OPT_YES = -O2
-GCC_OPT_NO =
-G++_OPT_YES = -O2
-G++_OPT_NO =
+OPT_CFLAGS_YES = -O2
+OPT_CFLAGS_NO =
+OPT_CXXFLAGS_YES = -O2
+OPT_CXXFLAGS_NO =
 
 #--------------------------------------------------
 # c++ exceptions,  YES or NO override
@@ -93,7 +96,7 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(GCC_LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
+LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
 
 #--------------------------------------------------
 # Uncomment these lines to, use C to compile SNC output -- all other systems use C++

@@ -17,14 +17,6 @@ VALID_BUILDS = Host Ioc
 HOME = $(HOMEDRIVE)$(HOMEPATH)
 
 #
-# You currently get Visual C++ even if you ask for GNU.
-#
-# !! borlund support needed here !!
-#
-ANSI = ACC
-CPLUSPLUS = CCC
-
-#
 # "\ " forces gnu make to keep this as one token
 #
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
@@ -41,7 +33,7 @@ DEPENDS_RULE =  @echo depends target not supported
 
 #
 # Configure OS vendor C compiler
-ACC = cl 
+CC = cl 
 
 #
 # __STDC__=0 is a real great idea of Jeff that gives us both:
@@ -51,25 +43,25 @@ ACC = cl
 #
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
-ACC_CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0 
-ACC_CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 
-ACC_CONFORM_CFLAGS_TRAD = /nologo
+CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0 
+CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 
+CONFORM_CFLAGS_TRAD = /nologo
 
 #
 # /W<N> use warning level N
 # (maximum (lint type) warnings at level 4)
-ACC_WARN_YES = /W3
-ACC_WARN_NO =  /W1
+WARN_CFLAGS_YES = /W3
+WARN_CFLAGS_NO =  /W1
 
 #
 # /Ox maximum optimizations
 # /MD use MSVCRT (run-time as DLL, multi-thread support)
-ACC_OPT_YES = /Ox
+OPT_CFLAGS_YES = /Ox
 
 #
 # /Zi include debugging info in object files
 # /Fr create source browser file
-ACC_OPT_NO = /Zi /Fr
+OPT_CFLAGS_NO = /Zi /Fr
 
 #
 # the following options are required when
@@ -86,17 +78,11 @@ VISC_DLL = $(VISC_DLL_$(SHARED_LIBRARIES))
 VISC_STATIC_CFLAGS_DEBUG_NO = d
 VISC_STATIC_CFLAGS_DEBUG_YES =
 VISC_STATIC_CFLAGS_DEBUG = $(VISC_STATIC_CFLAGS_DEBUG_$(HOST_OPT))
-ACC_STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
-ACC_STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
-
-#
-# no special libs for static link
-#
-ACC_STATIC_LDLIBS_YES= ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
-ACC_STATIC_LDLIBS_NO=
+STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 # OS vendor c preprocessor
-ACC_CPP = cl  /E
+CPP = cl  /E
 
 # Configure OS vendor C++ compiler
 #
@@ -108,24 +94,24 @@ ACC_CPP = cl  /E
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
 CCC = cl 
-CCC_CONFORM_CFLAGS_NORMAL = /nologo /D__STDC__=0 /GX
-CCC_CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0 /GX
-CCC_TEMPL_INST_FLAG =
+CONFORM_CXXFLAGS_NORMAL = /nologo /D__STDC__=0 /GX
+CONFORM_CXXFLAGS_STRICT = /nologo /D__STDC__=0 /GX
+TEMPL_INST_CXXFLAG =
 
 #
 # /W<N> use warning level N
 # (maximum lint level warnings at level 4)
-CCC_WARN_YES = /W3
-CCC_WARN_NO =  /W1
+WARN_CXXFLAGS_YES = /W3
+WARN_CXXFLAGS_NO =  /W1
 
 #
 # /Ox maximum optimizations
-CCC_OPT_YES = /Ox
+OPT_CXXFLAGS_YES = /Ox
 
 #
 # /Zi include debugging info in object files
 # /Fr create source browser file
-CCC_OPT_NO = /Zi /Fr
+OPT_CXXFLAGS_NO = /Zi /Fr
 
 #
 # the following options are required when
@@ -136,14 +122,14 @@ CCC_OPT_NO = /Zi /Fr
 # /MTd static multithreaded C RTL (debug version)
 # /MD multithreaded C RTL in DLL
 # /MDd multithreaded C RTL in DLL (debug version)
-CCC_STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
-CCC_STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CXXFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 #
 # no special libs for static link
 #
-CCC_STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
-CCC_STATIC_LDLIBS_NO= 
+STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
+STATIC_LDLIBS_NO= 
  
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
@@ -199,7 +185,7 @@ WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS)
 #
 # specify dll .def file only if it exists
 #
-DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(BUILD_LIBS).def))
+DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
 
 #	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
 #	which in turn are used in COMPILE.c[c]

@@ -20,13 +20,6 @@ BORLAND_BIN = $(BORLAND)\\bin
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)
 
-#
-# You currently get Visual C++ even if you ask for GNU.
-#
-# !! borlund support needed here !!
-#
-ANSI = ACC
-CPLUSPLUS = CCC
 
 #
 # "\ " forces gnu make to keep this as one token
@@ -50,7 +43,7 @@ ARCMD = $(BORLAND_BIN)/tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
 # -D_WIN32 macro defined to be consistant with Microsoft Visual C++
 # -D_RTLDLL macro defined to use Borland C++ RTL library
 CCLINKOPT = -q -tWM -tWD -a8 -D_WIN32 -D_RTLDLL
-ACC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
+CC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
 
 #
 # __STDC__=0 works but not as cleanly as with
@@ -60,13 +53,14 @@ ACC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
 # by defining NO_BORLAND_STDC in the Makefile.
 #
 ifdef NO_BORLAND_STDC
-ACC_CONFORM_CFLAGS_ANSI =
-ACC_CONFORM_CFLAGS_STRICT =
+CONFORM_CFLAGS_ANSI =
+CONFORM_CFLAGS_STRICT =
 else
-ACC_CONFORM_CFLAGS_ANSI = -D__STDC__=0
-ACC_CONFORM_CFLAGS_STRICT = -D__STDC__=0
+CONFORM_CFLAGS_ANSI = -D__STDC__=0
+CONFORM_CFLAGS_STRICT = -D__STDC__=0
 endif
-ACC_CONFORM_CFLAGS_TRAD =
+CONFORM_CFLAGS_TRAD =
+TEMPL_INST_CXXFLAG =
 
 # -w display warnings on
 # -g0 no limit to warning messages
@@ -75,9 +69,9 @@ ACC_CONFORM_CFLAGS_TRAD =
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-ACC_WARN_YES = -w -g0 -w-8012 -w-8060 -w-8071
+WARN_CFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
 # -w- display warnings off
-ACC_WARN_NO =  -w-
+WARN_CFLAGS_NO =  -w-
 
 #
 # -k- turn off standard stack frame
@@ -86,19 +80,13 @@ ACC_WARN_NO =  -w-
 # -O1 optimization for size
 # -v- turn off source debugging
 # -vi control expansion of inline functions
-ACC_OPT_YES = -k- -H- -R- -O1 -v- -vi
+OPT_CFLAGS_YES = -k- -H- -R- -O1 -v- -vi
 
 #
-ACC_OPT_NO =
-
-#
-# no special libs for static link
-#
-ACC_STATIC_LDLIBS_YES= 
-ACC_STATIC_LDLIBS_NO=
+OPT_CFLAGS_NO =
 
 # OS vendor c preprocessor
-##############ACC_CPP = $(BORLAND_BIN)/cl  /E
+CPP = $(BORLAND_BIN)/cl  /E
 
 # Configure OS vendor C++ compiler
 #
@@ -109,23 +97,19 @@ ACC_STATIC_LDLIBS_NO=
 # by defining NO_BORLAND_STDC in the Makefile.
 #
 CCC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
-ifdef NO_BORLAND_STDC
-CCC_NORMAL = $(CCC)
-CCC_STRICT = $(CCC)
-else
-CCC_CONFORM_CFLAGS_NORMAL = -D__STDC__=0
-CCC_CONFORM_CFLAGS_STRICT = -D__STDC__=0
+ifndef NO_BORLAND_STDC
+CONFORM_CXXFLAGS_NORMAL = -D__STDC__=0
+CONFORM_CXXFLAGS_STRICT = -D__STDC__=0
 endif
-CCC_TEMPL_INST_FLAG =
 
 # -w display warnings on
 # -g0 no limit to warning messages
 # -w-8012 Comparing signed and unsigned values
 # -w-8060 Possibly incorrect assignment
 # -w-8071 Conversion may lose significant digits
-CCC_WARN_YES = -w -g0 -w-8012 -w-8060 -w-8071
+WARN_CXXFLAGS_YES = -w -g0 -w-8012 -w-8060 -w-8071
 # -w- display warnings off
-CCC_WARN_NO = -w-
+WARN_CXXFLAGS_NO = -w-
 
 #
 # -k- turn off standard stack frame
@@ -134,16 +118,16 @@ CCC_WARN_NO = -w-
 # -O1 optimization for size
 # -v- turn off source debugging
 # -vi control expansion of inline functions
-CCC_OPT_YES = -k- -H- -R- -O1 -v- -vi
+OPT_CXXFLAGS_YES = -k- -H- -R- -O1 -v- -vi
 
 #
-CCC_OPT_NO =
+OPT_CXXFLAGS_NO =
 
 #
 # no special libs for static link
 #
-CCC_STATIC_LDLIBS_YES=
-CCC_STATIC_LDLIBS_NO=
+STATIC_LDLIBS_YES=
+STATIC_LDLIBS_NO=
  
 PROD_VERSION=3.13
 # -c case sensitive linking
@@ -194,19 +178,19 @@ OP_SYS_LDLIBS =
 #
 # specify dll .def file only if it exists
 #
-#DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(LIBRARY).def))
-DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(LIBRARY).def))
+#DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
+DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
 
 #   HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
 #   which in turn are used in COMPILE.c[c]
 #
 #   If we compile a .c, .cc into an $(OBJ),
 #   we test if this object is part of the
-#   library objects LIBRARY_LD_OBJS.
+#   library objects LIBOBJS_HOST.
 #   If so, we define _WINDLL so that
 #   e.g. include/shareLib.h works correctly.
 #
-HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
+OPT_CFLAGS_YES += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS_HOST)))
 
 #
 #   A WIN32 dll has three parts:
@@ -215,7 +199,8 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
 #   x.exp: what you need to build the dll (in no variable)
 #
 LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk c0d32.obj
-LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS))
+LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS)),
+LINK.shrlib+= $(DLL_DEF_FLAG),$(LIBRARY_LD_RESS)
 
 
 #	adjust names of libraries to build

@@ -12,6 +12,9 @@
 #
 -include $(CONFIG)/os/CONFIG.Common.UnixCommon 
 
+# Include common gnu compiler definitions
+-include $(CONFIG)/CONFIG.gnuCommon
+
 ###############################################################################
 #                                                                             #
 #           RTEMS-specific overrides of common UNIX definitions               #
@@ -42,19 +45,24 @@ CFLAGS_OPTIMIZE =
 # The RTEMS Makefiles redefine several macros, so we have to go
 # through the following contortions to get the EPICS flags back.
 #
-CFLAGS += $(CONFORM_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS)\
- $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(CODE_CFLAGS)\
- $(STATIC_CFLAGS) $(OP_SYS_CFLAGS)
+CFLAGS = $(CONFORM_CFLAGS) $(CROSS_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS)\
+ $(WARN_CFLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS)\
+ $(CODE_CFLAGS) $(STATIC_CFLAGS) $(OP_SYS_CFLAGS)
 
-CXXFLAGS +=$(CONFORM_CXXFLAGS) $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS)\
- $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(CODE_CXXFLAGS)\
- $(STATIC_CXXCFLAGS) $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG)
+CXXFLAGS = $(CONFORM_CXXFLAGS) $(CROSS_CXXFLAGS) $(OPT_CXXFLAGS)\
+ $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS) $(USR_CXXFLAGS)\
+ $(ARCH_DEP_CXXFLAGS) $(CODE_CXXFLAGS) $(STATIC_CXXCFLAGS) $(OP_SYS_CXXFLAGS)\
+ $(TEMPL_INST_CXXFLAG) $(CROSS_CXXFLAGS)
 
-LDFLAGS += $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
- $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS)
+LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(DEPLIB_LDFLAGS)\
+ $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS) $(CROSS_LDFLAGS)
 
-CPPFLAGS += $(CONFORM_CFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
- $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(DEPLIB_LDLIBS) $(STATIC_LDLIBS)\
+ $(POSIX_LDLIBS) $(ARCH_DEP_LDLIBS) $(OP_SYS_LDLIBS)
+
+CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
+ $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
+ $(OP_SYS_CPPFLAGS) $(CODE_CPPFLAGS)
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)
@@ -83,20 +91,15 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 # RTEMS has neither shared libraries nor dynamic loading
 STATIC_BUILD=YES
 SHARED_LIBRARIES=NO
-GCC_CODE_CFLAGS =
-G++_CODE_CFLAGS =
+CODE_CPPFLAGS =
 
 #--------------------------------------------------
 # RTEMS wants nothing to do with POSIX
-GCC_POSIX_CPPFLAGS = 
-G++_POSIX_CPPFLAGS = 
+POSIX_CPPFLAGS = 
+POSIX_LDLIBS = 
 
 #--------------------------------------------------
 # RTEMS is not that strict
-GCC_CONFORM_CFLAGS_STRICT =
-G++_CONFORM_CFLAGS_STRICT =
+CONFORM_CFLAGS_STRICT =
+CONFORM_CXXFLAGS_STRICT =
 
-#--------------------------------------------------
-# Use C++ constructors to register commands/programs (snc +i option)
-CPPSNCFLAGS += -x c
-TARGET_SNCFLAGS += +i

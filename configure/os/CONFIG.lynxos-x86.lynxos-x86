@@ -6,26 +6,8 @@
 #  Sites may override these definitions in CONFIG_SITE.lynxos-x86.lynxos-x86
 #-------------------------------------------------------
  
-OS_CLASS = lynxos
-ARCH_CLASS = x86
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
-
-# Configure OS vendor C compiler
-# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
-# since OS vendor compilers is gnu compiler
-ANSI=GCC
-CPLUSPLUS=G++
-
-# Configure gnu C compiler
-GCC = gcc
-G++ = g++
-
-AR = ar -rc
-ARFLAGS =
-RANLIB = ranlib -t
-
-ARCH_DEP_CPPFLAGS += -D_X86_
-ARCH_DEP_LDFLAGS =
-ARCH_DEP_LDLIBS = -lposix4d9 -lpthread
 

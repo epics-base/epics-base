@@ -36,23 +36,23 @@ dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO,
     cacNotifyIO ( notifyIn ), chan ( chanIO ), es ( 0 ), 
         type ( typeIn ), count ( countIn )
 {
-    dbAutoScanLockCA locker ( this->chan );
-    this->chan.eventq.add ( *this );
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()
 {
-    {
-        dbAutoScanLockCA locker ( this->chan );
-        this->chan.eventq.remove ( *this );
-    }
     if ( this->es ) {
         db_cancel_event ( this->es );
     }
 }
 
+void dbSubscriptionIO::destroy ()
+{
+    delete this;
+}
+
 void dbSubscriptionIO::cancel ()
 {
+    this->chan.uninstallSubscription ( *this );
     delete this;
 }
 
@@ -77,7 +77,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /*
 	int /* eventsRemaining */, struct db_field_log *pfl )
 {
     dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
-    pIO->chan.subscriptionUpdate ( pIO->type, pIO->count, pfl, *pIO );
+    pIO->chan.callReadNotify ( pIO->type, pIO->count, pfl, pIO->notify() );
 }
 
 int dbSubscriptionIO::begin ( unsigned mask )

@@ -34,8 +34,7 @@ epicsMutex dbChannelIO::freeListMutex;
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :
     cacChannelIO ( notify ), serviceIO ( serviceIO ), 
-    pGetCallbackCache ( 0 ), pBlocker ( 0 ), 
-    getCallbackCacheSize ( 0ul ), addr ( addrIn )
+    pBlocker ( 0 ), addr ( addrIn )
 {
 }
 
@@ -46,25 +45,12 @@ void dbChannelIO::initiateConnect ()
 
 dbChannelIO::~dbChannelIO ()
 {
-    dbAutoScanLock ( *this->addr.precord );
-
-    /*
-     * remove any subscriptions attached to this channel
-     */
-    tsDLIterBD < dbSubscriptionIO > iter = this->eventq.firstIter ();
-    while ( iter.valid () ) {
-        tsDLIterBD <dbSubscriptionIO> next = iter;
-        next++;
-        iter->cancel ();
-        iter = next;
+    while ( dbSubscriptionIO *pIO = this->eventq.get () ) {
+        pIO->destroy ();
     }
 
     if ( this->pBlocker ) {
         this->pBlocker->destroy ();
-    }
-
-    if ( this->pGetCallbackCache ) {
-        delete [] this->pGetCallbackCache;
     }
 }
 
@@ -88,37 +74,7 @@ int dbChannelIO::read ( unsigned type, unsigned long count, void *pValue )
 
 int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify ) 
 {
-    unsigned long size = dbr_size_n ( type, count );
-    if ( type > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-    if ( count > INT_MAX ) {
-        return ECA_BADCOUNT;
-    }
-
-    {
-        dbAutoScanLock ( *this->addr.precord );
-        if ( this->getCallbackCacheSize < size) {
-            if ( this->pGetCallbackCache ) {
-                delete [] this->pGetCallbackCache;
-            }
-            this->pGetCallbackCache = new char [size];
-            if ( ! this->pGetCallbackCache ) {
-                this->getCallbackCacheSize = 0ul;
-                return ECA_ALLOCMEM;
-            }
-            this->getCallbackCacheSize = size;
-        }
-        int status = db_get_field ( &this->addr, static_cast <int> ( type ), 
-                        this->pGetCallbackCache, static_cast <int> ( count ), 0);
-        if ( status ) {
-            notify.exceptionNotify ( *this, ECA_GETFAIL, 
-                "db_get_field () completed unsuccessfuly" );
-        }
-        else { 
-            notify.completionNotify ( *this, type, count, this->pGetCallbackCache );
-        }
-    }
+    this->serviceIO.callReadNotify ( this->addr, type, count, 0, *this, notify );
     notify.release ();
     return ECA_NORMAL;
 }
@@ -130,7 +86,7 @@ int dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue 
         return ECA_BADCOUNT;
     }
     status = db_put_field ( &this->addr, type, pValue, static_cast <long> (count) );
-    if (status) {
+    if ( status ) {
         return ECA_PUTFAIL;
     }
     else {
@@ -146,7 +102,7 @@ int dbChannelIO::write ( unsigned type, unsigned long count,
     }
 
     if ( ! this->pBlocker ) {
-        dbAutoScanLock ( *this->addr.precord );
+        dbAutoScanLock ( *this );
         if ( ! this->pBlocker ) {
             this->pBlocker = new dbPutNotifyBlocker ( *this );
             if ( ! this->pBlocker ) {
@@ -155,35 +111,35 @@ int dbChannelIO::write ( unsigned type, unsigned long count,
         }
     }
 
-    // must release the lock here so that this can block
-    // for put notify completion without monopolizing the lock
-    int status = this->pBlocker->initiatePutNotify ( notify, 
-        this->addr, type, count, pValue );
-
-    return status;
+    return this->pBlocker->initiatePutNotify ( notify, 
+                        this->addr, type, count, pValue );
 }
 
 int dbChannelIO::subscribe ( unsigned type, unsigned long count, 
     unsigned mask, cacNotify &notify, cacNotifyIO *&pReturnIO ) 
-{
+{   
+    int status;
     dbSubscriptionIO *pIO = new dbSubscriptionIO ( *this, notify, type, count );
-    if ( ! pIO ) {
-        return ECA_ALLOCMEM;
-    }
-
-    int status = pIO->begin ( mask );
-    if ( status == ECA_NORMAL ) {
-        pReturnIO = pIO;
+    if ( pIO ) {
+        status = pIO->begin ( mask );
+        if ( status == ECA_NORMAL ) {
+            dbAutoScanLock locker ( *this );
+            this->eventq.add ( *pIO );
+            pReturnIO = pIO;
+        }
+        else {
+            pIO->destroy ();
+        }
     }
     else {
-        pIO->cancel ();
+        status = ECA_ALLOCMEM;
     }
     return status;
 }
 
 void dbChannelIO::show ( unsigned level ) const
 {
-    dbAutoScanLock ( *this->addr.precord );
+    dbAutoScanLock locker ( *this );
     printf ("channel at %p attached to local database record %s\n", 
         static_cast <const void *> ( this ), this->addr.precord->name );
 
@@ -194,8 +150,6 @@ void dbChannelIO::show ( unsigned level ) const
     }
     if ( level > 1u ) {
         this->serviceIO.show ( level - 2u );
-        printf ( "\tget callback cache at %p, with size %lu\n",
-            this->pGetCallbackCache, this->getCallbackCacheSize );
         tsDLIterConstBD < dbSubscriptionIO > pItem = this->eventq.firstIter ();
         while ( pItem.valid () ) {
             pItem->show ( level - 2u );

@@ -75,11 +75,24 @@ cacChannelIO *dbServiceIO::createChannelIO (
     }
 }
 
-void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr, 
+void dbServiceIO::callReadNotify ( struct dbAddr &addr, 
         unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, dbSubscriptionIO &io )
+        const struct db_field_log *pfl, 
+        cacChannelIO &chan, cacNotify &notify )
 {
     unsigned long size = dbr_size_n ( type, count );
+
+    if ( type > INT_MAX ) {
+        notify.exceptionNotify ( chan, ECA_BADTYPE, 
+            "type code out of range (high side)" );
+        return;
+    }
+
+    if ( count > INT_MAX ) {
+        notify.exceptionNotify ( chan, ECA_BADCOUNT, 
+            "element count out of range (high side)" );
+        return;
+    }
 
     epicsAutoMutex locker ( this->mutex );
 
@@ -90,7 +103,7 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr,
         this->pEventCallbackCache = new char [size];
         if ( ! this->pEventCallbackCache ) {
             this->eventCallbackCacheSize = 0ul;
-            io.notify ().exceptionNotify ( io.channelIO (), ECA_ALLOCMEM, 
+            notify.exceptionNotify ( chan, ECA_ALLOCMEM, 
                 "unable to allocate callback cache" );
             return;
         }
@@ -100,11 +113,11 @@ void dbServiceIO::subscriptionUpdate ( struct dbAddr &addr,
     int status = db_get_field ( &addr, static_cast <int> ( type ), 
                     this->pEventCallbackCache, static_cast <int> ( count ), pvfl );
     if ( status ) {
-        io.notify ().exceptionNotify ( io.channelIO (), ECA_GETFAIL, 
-            "subscription update db_get_field () completed unsuccessfuly" );
+        notify.exceptionNotify ( chan, ECA_GETFAIL, 
+            "db_get_field() completed unsuccessfuly" );
     }
     else { 
-        io.notify ().completionNotify ( io.channelIO (), type, 
+        notify.completionNotify ( chan, type, 
             count, this->pEventCallbackCache );
     }
 }

@@ -54,13 +54,19 @@ inline short dbChannelIO::nativeType () const
     return dbDBRnewToDBRold[this->addr.field_type];
 }
 
-inline void dbChannelIO::subscriptionUpdate ( unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, dbSubscriptionIO &notify )
+inline void dbChannelIO::callReadNotify ( unsigned type, unsigned long count, 
+        const struct db_field_log *pfl, cacNotify &notify )
 {
-    this->serviceIO.subscriptionUpdate ( this->addr, type, count, pfl, notify );
+    this->serviceIO.callReadNotify ( this->addr, type, count, pfl, *this, notify );
 }
 
 inline dbEventSubscription dbChannelIO::subscribe ( dbSubscriptionIO &subscr, unsigned mask )
 {
     return this->serviceIO.subscribe ( this->addr, subscr, mask );
+}
+
+inline void dbChannelIO::uninstallSubscription ( dbSubscriptionIO &subscr )
+{
+    dbAutoScanLock locker ( *this );
+    this->eventq.remove ( subscr );
 }

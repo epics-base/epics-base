@@ -33,8 +33,8 @@
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
 
-tsFreeList <dbPutNotifyIO> dbPutNotifyIO::freeList;
-epicsMutex dbPutNotifyIO::freeListMutex;
+tsFreeList < dbPutNotifyIO > dbPutNotifyIO :: freeList;
+epicsMutex dbPutNotifyIO :: freeListMutex;
 
 dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notifyIn, dbPutNotifyBlocker &blockerIn ) :
     cacNotifyIO ( notifyIn ), blocker ( blockerIn )
@@ -49,14 +49,18 @@ dbPutNotifyIO::~dbPutNotifyIO ()
     if ( this->pn.paddr ) {
         dbNotifyCancel ( &this->pn );
     }
-    this->blocker.putNotifyDestroyNotify ();
 }
 
-void dbPutNotifyIO::cancel () 
+void dbPutNotifyIO::destroy ()
 {
     delete this;
 }
 
+void dbPutNotifyIO::cancel () 
+{
+    this->blocker.uninstallPutNotifyIO ( *this );
+    delete this;
+}
 
 cacChannelIO & dbPutNotifyIO::channelIO () const
 {
@@ -78,8 +82,8 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     this->pn.nRequest = static_cast <unsigned> ( count );
     this->pn.paddr = &addr;
     status = this->pn.dbrType = dbPutNotifyMapType ( 
-        &this->pn, static_cast <short> ( type ) );
-    if (status) {
+                &this->pn, static_cast <short> ( type ) );
+    if ( status ) {
         this->pn.paddr = 0;
         return ECA_BADTYPE;
     }
@@ -88,7 +92,7 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     if ( status && status != S_db_Pending ) {
         this->pn.paddr = 0;
         this->pn.status = status;
-        this->notify ().exceptionNotify ( this->blocker.channel (),
+        this->notify().exceptionNotify ( this->blocker.channel (),
             ECA_PUTFAIL, "dbPutNotify() returned failure" );
     }
     return ECA_NORMAL;
@@ -97,21 +101,21 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
 void dbPutNotifyIO::completion () 
 {
     if ( ! this->pn.paddr ) {
-        errlogPrintf ( "completion pn=%p\n", this );
+        errlogPrintf ( "put notify completion pn=%p?\n", this );
     }
     this->pn.paddr = 0;
     if ( this->pn.status ) {
         if ( this->pn.status == S_db_Blocked ) {
-            this->notify ().exceptionNotify ( this->blocker.channel (),
+            this->notify().exceptionNotify ( this->blocker.channel (),
                 ECA_PUTCBINPROG, "put notify blocked" );
         }
         else {
-            this->notify ().exceptionNotify ( this->blocker.channel (),
+            this->notify().exceptionNotify ( this->blocker.channel (),
                 ECA_PUTFAIL,  "put notify unsuccessful");
         }
     }
     else {
-        this->notify ().completionNotify ( this->blocker.channel () );
+        this->notify().completionNotify ( this->blocker.channel () );
     }
 }
 

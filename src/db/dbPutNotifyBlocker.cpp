@@ -46,16 +46,17 @@ dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
-    dbAutoScanLockCA ( this->chan );
     if ( this->pPN ) {
-        this->pPN->cancel ();
+        this->pPN->destroy ();
     }
 }
 
-void dbPutNotifyBlocker::putNotifyDestroyNotify ()
+dbPutNotifyBlocker::uninstallPutNotifyIO ( dbPutNotifyIO &io )
 {
-    dbAutoScanLockCA ( this->chan );
-    this->pPN = 0;
+    dbAutoScanLock ( this->chan );
+    if ( &io == this->pPN ) {
+        this->pPN = 0;
+    }
 }
 
 dbChannelIO & dbPutNotifyBlocker::channel () const
@@ -72,36 +73,46 @@ int dbPutNotifyBlocker::initiatePutNotify ( cacNotify &notify,
         return ECA_ALLOCMEM;
     }
 
+    epicsTime begin;
+    bool beginTimeInit = false;
     while ( true ) {
         {
-            dbAutoScanLockCA ( this->chan );
-            if ( ! this->pPN ) {
+            dbAutoScanLock ( this->chan );
+            if ( this->pPN == 0 ) {
                 this->pPN = pIO;
-                int status = this->pPN->initiate ( addr, type, count, pValue );
-                if ( status != ECA_NORMAL ) {
-                    pIO->cancel ();
-                    this->pPN = 0;
-                }
-                return status;
+                break;
             }
         }
-        // wait for put notify in progress to complete
-        this->block.wait ( 1.0 );
-        epicsTime begin = epicsTime::getCurrent ();
-        if ( epicsTime::getCurrent () - begin > 30.0 ) {
-            pIO->cancel ();
-            return ECA_PUTCBINPROG;
+        if ( beginTimeInit ) {
+            if ( epicsTime::getCurrent () - begin > 30.0 ) {
+                pIO->destroy ();
+                return ECA_PUTCBINPROG;
+            }
         }
+        else {
+            begin = epicsTime::getCurrent ();
+            beginTimeInit = true;
+        }
+        this->block.wait ( 1.0 );
     }
+
+    int status = pIO->initiate ( addr, type, count, pValue );
+    if ( status != ECA_NORMAL ) {
+        pIO->destroy ();
+        dbAutoScanLock ( this->chan );
+        this->pPN = 0;
+    }
+
+    return status;
 }
 
 extern "C" void putNotifyCompletion ( putNotify *ppn )
 {
     dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
     {
-        dbAutoScanLockCA ( pBlocker->chan );
         pBlocker->pPN->completion ();
-        pBlocker->pPN->cancel ();
+        pBlocker->pPN->destroy ();
+        dbAutoScanLock ( pBlocker->chan );
         pBlocker->pPN = 0;
     }
     pBlocker->block.signal ();

@@ -10,12 +10,13 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/gdd  
+USR_LDLIBS = -lcas -lm
+USR_LDFLAGS = 
+USR_CCFLAGS =  
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 
-INC += $(SRC)/casdef.h
-INC += $(SRC)/casEventMask.h
-INC += $(SRC)/gddAppFuncTable.h
+#CPLUSPLUS = G++
 
 SRCS.cc += $(SRC)/caServer.cc 
 SRCS.cc += $(SRC)/caServerI.cc 
@@ -28,22 +29,28 @@ SRCS.cc += $(SRC)/casPVI.cc
 SRCS.cc += $(SRC)/casChannel.cc 
 SRCS.cc += $(SRC)/casChannelI.cc 
 SRCS.cc += $(SRC)/casClientMon.cc 
-SRCS.cc += $(SRC)/casChanDeleteEvent.cc 
+SRCS.cc += $(SRC)/casChanDelEv.cc 
 SRCS.cc += $(SRC)/casMsgIO.cc 
 SRCS.cc += $(SRC)/casAsyncIO.cc 
 SRCS.cc += $(SRC)/casAsyncIOI.cc 
 SRCS.cc += $(SRC)/casEventSys.cc 
+SRCS.cc += $(SRC)/casMonitor.cc 
+SRCS.cc += $(SRC)/casMonEvent.cc 
 SRCS.cc += $(SRC)/outBuf.cc 
 SRCS.cc += $(SRC)/inBuf.cc 
-SRCS.cc += $(SRC)/casMapDBR.cc
+SRCS.cc += $(SRC)/osiTimerQueue.cc
+SRCS.cc += $(SRC)/osiTimer.cc
+SRCS.cc += $(SRC)/casEventMask.cc
 
 SRCS.cc += $(OSSRC)/caServerOS.cc
 SRCS.cc += $(OSSRC)/casDGOS.cc
 SRCS.cc += $(OSSRC)/casStreamOS.cc
+SRCS.cc += $(OSSRC)/osiTimeOSD.cc
 
 SRCS.cc += $(IOSRC)/caServerIO.cc
 SRCS.cc += $(IOSRC)/casDGIO.cc
 SRCS.cc += $(IOSRC)/casStreamIO.cc
+SRCS.c  += $(IOSRC)/sigPipeIgnore.c
 
 LIBOBJS += caServer.o
 LIBOBJS += caServerI.o
@@ -56,22 +63,28 @@ LIBOBJS += casPVI.o
 LIBOBJS += casChannel.o
 LIBOBJS += casChannelI.o
 LIBOBJS += casClientMon.o
-LIBOBJS += casChanDeleteEvent.o
+LIBOBJS += casChanDelEv.o
 LIBOBJS += casMsgIO.o
 LIBOBJS += casAsyncIO.o
 LIBOBJS += casAsyncIOI.o
 LIBOBJS += casEventSys.o
+LIBOBJS += casMonitor.o
+LIBOBJS += casMonEvent.o
 LIBOBJS += outBuf.o
 LIBOBJS += inBuf.o 
-LIBOBJS += casMapDBR.o
+LIBOBJS += osiTimerQueue.o
+LIBOBJS += osiTimer.o
+LIBOBJS += casEventMask.o
 
 LIBOBJS += caServerOS.o
 LIBOBJS += casDGOS.o
 LIBOBJS += casStreamOS.o
+LIBOBJS += osiTimeOSD.o
 
 LIBOBJS += caServerIO.o
 LIBOBJS += casDGIO.o
 LIBOBJS += casStreamIO.o
+LIBOBJS += sigPipeIgnore.o
 
 LIBNAME = libcas.a
 

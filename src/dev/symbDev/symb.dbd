@@ -11,3 +11,11 @@ device( "stringout", INST_IO, "devSoSymb"     , "vxWorks Variable (INST_IO)" )
 device( "waveform" , INST_IO, "devWfSymb"     , "vxWorks Variable (INST_IO)" )
 device( "mbbi"   , INST_IO, "devMbbiSymbRaw", "Raw vxWorks Variable (INST_IO)" )
 device( "mbbo"   , INST_IO, "devMbboSymbRaw", "Raw vxWorks Variable (INST_IO)" )
+
+#for compatibility with old
+device(ai,CONSTANT,devAiSymb,"vxWorks Variable")
+device(ao,CONSTANT,devAoSymb,"vxWorks Variable")
+device(longin,CONSTANT,devLiSymb,"vxWorks Variable")
+device(longout,CONSTANT,devLoSymb,"vxWorks Variable")
+device(stringin,CONSTANT,devSiSymb,"vxWorks Variable")
+device(stringin,CONSTANT,devSiSymb,"vxWorks Variable")

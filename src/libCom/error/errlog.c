@@ -295,13 +295,13 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     msgbufSetSize(totalChar);
 }
 
-epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
-{
-    static int errlogInitFlag=0;
-    void	*pbuffer;;
+typedef struct {int bufsize;} errlogInitArg;
 
-    if(errlogInitFlag) return(0);
-    errlogInitFlag = 1;
+static void errlogInitPvt(void *arg)
+{
+    int bufsize = ((errlogInitArg *)arg)->bufsize;
+    void	*pbuffer;
+
     if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
     pvtData.buffersize = bufsize;
     ellInit(&pvtData.listenerList);
@@ -316,7 +316,17 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
     threadCreate("errlog",threadPriorityLow,
         threadGetStackSize(threadStackSmall),
         (THREADFUNC)errlogTask,0);
+
     iocLogInit();
+}
+
+epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
+{
+    static threadOnceId errlogOnceFlag=OSITHREAD_ONCE_INIT;
+    errlogInitArg arg;
+
+    arg.bufsize = bufsize;
+    threadOnce(&errlogOnceFlag,errlogInitPvt,&arg);
 
     return(0);
 }

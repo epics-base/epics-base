@@ -12,9 +12,9 @@
 /*  Allocate storage for global variables in this module        */
 #define     CA_GLBLSOURCE
 #include    "iocinf.h"
-#include    "net_convert.h"
 #include    "locationException.h"
 #include    "osiProcess.h"
+#include    "addrList.h"
 
 /*
  * retryPendingClaims()
@@ -822,171 +822,6 @@ udpiiu::~udpiiu ()
 }
 
 /*
- * getToken()
- */
-LOCAL char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
-{
-    const char *pToken;
-    unsigned i;
-
-    pToken = *ppString;
-    while(isspace(*pToken)&&*pToken){
-        pToken++;
-    }
-
-    for (i=0u; i<bufSIze; i++) {
-        if (isspace(pToken[i]) || pToken[i]=='\0') {
-            pBuf[i] = '\0';
-            break;
-        }
-        pBuf[i] = pToken[i];
-    }
-
-    *ppString = &pToken[i];
-
-    if(*pToken){
-        return pBuf;
-    }
-    else{
-        return NULL;
-    }
-}
-
-/*
- * caAddConfiguredAddr()
- */
-void caAddConfiguredAddr (cac *pcac, ELLLIST *pList, const ENV_PARAM *pEnv, 
-    unsigned short port)
-{
-    osiSockAddrNode *pNewNode;
-    const char *pStr;
-    const char *pToken;
-    struct sockaddr_in addr;
-    char buf[32u]; /* large enough to hold an IP address */
-    int status;
-
-    pStr = envGetConfigParamPtr (pEnv);
-    if (!pStr) {
-        return;
-    }
-
-    while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
-        status = aToIPAddr ( pToken, port, &addr );
-        if (status<0) {
-            ca_printf (pcac, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
-            ca_printf (pcac, "\tBad internet address or host name: '%s'\n", pToken);
-            continue;
-        }
-
-        pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
-        if (pNewNode==NULL) {
-            ca_printf (pcac, "caAddConfiguredAddr(): no memory available for configuration\n");
-            return;
-        }
-
-        pNewNode->addr.ia = addr;
-
-		/*
-		 * LOCK applied externally
-		 */
-        ellAdd (pList, &pNewNode->node);
-    }
-
-    return;
-}
-
-/*
- * caSetupBCastAddrList()
- */
-void caSetupBCastAddrList (cac *pcac, ELLLIST *pList, 
-                           SOCKET sock, unsigned short port)
-{
-    osiSockAddrNode *pNode;
-    ELLLIST         tmpList;
-    char            *pstr;
-    char            yesno[32u];
-    int             yes;
-
-    /*
-     * dont load the list twice
-     */
-    assert ( ellCount(pList) == 0 );
-
-    ellInit ( &tmpList );
-
-    /*
-     * Check to see if the user has disabled
-     * initializing the search b-cast list
-     * from the interfaces found.
-     */
-    yes = TRUE;
-    pstr = envGetConfigParam (&EPICS_CA_AUTO_ADDR_LIST,       
-            sizeof(yesno), yesno);
-    if (pstr) {
-        if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
-            yes = FALSE;
-        }
-    }
-
-    /*
-     * LOCK is for piiu->destAddr list
-     * (lock outside because this is used by the server also)
-     */
-    if (yes) {
-        osiSockAddr addr;
-        addr.ia.sin_family = AF_UNSPEC;
-        osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
-    }
-
-    caAddConfiguredAddr (pcac, &tmpList, &EPICS_CA_ADDR_LIST, port );
-
-    /*
-     * eliminate duplicates and set the port
-     */
-    while ( (pNode  = (osiSockAddrNode *) ellGet ( &tmpList ) ) ) {
-        osiSockAddrNode *pTmpNode;
-
-        if ( pNode->addr.sa.sa_family == AF_INET ) {
-            /*
-             * set the correct destination port
-             */
-            pNode->addr.ia.sin_port = htons (port);
-
-            pTmpNode = (osiSockAddrNode *) ellFirst (pList);
-            while ( pTmpNode ) {
-                if (pTmpNode->addr.sa.sa_family == AF_INET) {
-                    if (pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
-                        pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
-                        char buf[64];
-                        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
-                        printf ("Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf);
-                        free (pNode);
-                        pNode = NULL;
-                        break;
-                    }
-                }
-                pTmpNode = (osiSockAddrNode *) ellNext (&pNode->node);
-            }
-            if (pNode) {
-                ellAdd (pList, &pNode->node);
-            }
-        }
-        else {
-            ellAdd (pList, &pNode->node);
-        }
-    }
-
-    /*
-     * print warning message if there is an empty search query
-     * address list
-     */
-    if ( ellCount ( pList ) == 0 ) {
-        genLocalExcep ( NULL, ECA_NOSEARCHADDR, NULL );
-        return;
-    }
-}
-
-/*
  *  repeater_installed ()
  *
  *  Test for the repeater already installed
@@ -1064,7 +899,7 @@ udpiiu::udpiiu (cac *pcac) :
     threadId tid;
 
     this->repeaterPort = 
-        caFetchPortConfig (pcac, &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
+        envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
 
     this->sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (this->sock == INVALID_SOCKET) {
@@ -1161,7 +996,10 @@ udpiiu::udpiiu (cac *pcac) :
      * broadcast address list
      */
     ellInit (&this->dest);
-    caSetupBCastAddrList (pcac, &this->dest, this->sock, pcac->ca_server_port);
+    configureChannelAccessAddressList (&this->dest, this->sock, pcac->ca_server_port);
+    if ( ellCount ( &this->dest ) == 0 ) {
+        genLocalExcep ( NULL, ECA_NOSEARCHADDR, NULL );
+    }
   
     tid = threadCreate ("CAC UDP Recv", threadPriorityChannelAccessClient,
             threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this);
@@ -1351,62 +1189,6 @@ char *localHostName ()
     return pTmp;
 }
 
-/*
- * caPrintAddrList()
- */
-void caPrintAddrList (ELLLIST *pList)
-{
-    osiSockAddrNode *pNode;
-
-    printf ("Channel Access Address List\n");
-    pNode = (osiSockAddrNode *) ellFirst (pList);
-    while (pNode) {
-        char buf[64];
-        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
-        printf ("%s\n", buf);
-        pNode = (osiSockAddrNode *) ellNext (&pNode->node);
-    }
-}
-
-/*
- * caFetchPortConfig()
- */
-unsigned short caFetchPortConfig
-    (cac *pcac, const ENV_PARAM *pEnv, unsigned short defaultPort)
-{
-    long        longStatus;
-    long        epicsParam;
-    int         port;
-
-    longStatus = envGetLongConfigParam(pEnv, &epicsParam);
-    if (longStatus!=0) {
-        epicsParam = (long) defaultPort;
-        ca_printf (pcac, "EPICS \"%s\" integer fetch failed\n", pEnv->name);
-        ca_printf (pcac, "setting \"%s\" = %ld\n", pEnv->name, epicsParam);
-    }
-
-    /*
-     * This must be a server port that will fit in an unsigned
-     * short
-     */
-    if (epicsParam<=IPPORT_USERRESERVED || epicsParam>USHRT_MAX) {
-        ca_printf (pcac, "EPICS \"%s\" out of range\n", pEnv->name);
-        /*
-         * Quit if the port is wrong due CA coding error
-         */
-        assert (epicsParam != (long) defaultPort);
-        epicsParam = (long) defaultPort;
-        ca_printf (pcac, "Setting \"%s\" = %ld\n", pEnv->name, epicsParam);
-    }
-
-    /*
-     * ok to clip to unsigned short here because we checked the range
-     */
-    port = (unsigned short) epicsParam;
-
-    return port;
-}
-
 #if 0
 /*
  * cacPushPending()
@@ -1564,4 +1346,178 @@ lclIIU *iiuToLIIU (baseIIU *pIn)
     assert (pIn == &pIn->pcas->localIIU.iiu);
     pc -= offsetof (lclIIU, iiu);
     return (lclIIU *) pc;
+}
+
+/*
+ * getToken()
+ */
+static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze)
+{
+    const char *pToken;
+    unsigned i;
+
+    pToken = *ppString;
+    while(isspace(*pToken)&&*pToken){
+        pToken++;
+    }
+
+    for (i=0u; i<bufSIze; i++) {
+        if ( isspace (pToken[i]) || pToken[i]=='\0') {
+            pBuf[i] = '\0';
+            break;
+        }
+        pBuf[i] = pToken[i];
+    }
+
+    *ppString = &pToken[i];
+
+    if(*pToken){
+        return pBuf;
+    }
+    else{
+        return NULL;
+    }
+}
+
+/*
+ * addAddrToChannelAccessAddressList ()
+ */
+epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList 
+    (ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port)
+{
+    osiSockAddrNode *pNewNode;
+    const char *pStr;
+    const char *pToken;
+    struct sockaddr_in addr;
+    char buf[32u]; /* large enough to hold an IP address */
+    int status;
+
+    pStr = envGetConfigParamPtr (pEnv);
+    if (!pStr) {
+        return;
+    }
+
+    while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
+        status = aToIPAddr ( pToken, port, &addr );
+        if (status<0) {
+            errlogPrintf ("%s: Parsing '%s'\n", __FILE__, pEnv->name);
+            errlogPrintf ("\tBad internet address or host name: '%s'\n", pToken);
+            continue;
+        }
+
+        pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
+        if (pNewNode==NULL) {
+            errlogPrintf ("addAddrToChannelAccessAddressList(): no memory available for configuration\n");
+            return;
+        }
+
+        pNewNode->addr.ia = addr;
+
+		/*
+		 * LOCK applied externally
+		 */
+        ellAdd (pList, &pNewNode->node);
+    }
+
+    return;
+}
+
+/*
+ * configureChannelAccessAddressList ()
+ */
+epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
+        (ELLLIST *pList, SOCKET sock, unsigned short port)
+{
+    osiSockAddrNode *pNode;
+    ELLLIST         tmpList;
+    char            *pstr;
+    char            yesno[32u];
+    int             yes;
+
+    /*
+     * dont load the list twice
+     */
+    assert ( ellCount(pList) == 0 );
+
+    ellInit ( &tmpList );
+
+    /*
+     * Check to see if the user has disabled
+     * initializing the search b-cast list
+     * from the interfaces found.
+     */
+    yes = TRUE;
+    pstr = envGetConfigParam (&EPICS_CA_AUTO_ADDR_LIST,       
+            sizeof(yesno), yesno);
+    if (pstr) {
+        if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
+            yes = FALSE;
+        }
+    }
+
+    /*
+     * LOCK is for piiu->destAddr list
+     * (lock outside because this is used by the server also)
+     */
+    if (yes) {
+        osiSockAddr addr;
+        addr.ia.sin_family = AF_UNSPEC;
+        osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
+    }
+
+    addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );
+
+    /*
+     * eliminate duplicates and set the port
+     */
+    while ( (pNode  = (osiSockAddrNode *) ellGet ( &tmpList ) ) ) {
+        osiSockAddrNode *pTmpNode;
+
+        if ( pNode->addr.sa.sa_family == AF_INET ) {
+            /*
+             * set the correct destination port
+             */
+            pNode->addr.ia.sin_port = htons (port);
+
+            pTmpNode = (osiSockAddrNode *) ellFirst (pList);
+            while ( pTmpNode ) {
+                if (pTmpNode->addr.sa.sa_family == AF_INET) {
+                    if (pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
+                        pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
+                        char buf[64];
+                        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
+                        errlogPrintf ("Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf);
+                        free (pNode);
+                        pNode = NULL;
+                        break;
+                    }
+                }
+                pTmpNode = (osiSockAddrNode *) ellNext (&pNode->node);
+            }
+            if (pNode) {
+                ellAdd (pList, &pNode->node);
+            }
+        }
+        else {
+            ellAdd (pList, &pNode->node);
+        }
+    }
+}
+
+
+/*
+ * printChannelAccessAddressList ()
+ */
+epicsShareFunc void epicsShareAPI printChannelAccessAddressList (ELLLIST *pList)
+{
+    osiSockAddrNode *pNode;
+
+    printf ("Channel Access Address List\n");
+    pNode = (osiSockAddrNode *) ellFirst (pList);
+    while (pNode) {
+        char buf[64];
+        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
+        printf ("%s\n", buf);
+        pNode = (osiSockAddrNode *) ellNext (&pNode->node);
+    }
 }

@@ -50,18 +50,21 @@ main()
 #if 0
 	printf("calling errSymDump from main in errMtst.c\n");
 	errSymDump();
+#endif
+#if 0
 	printf("calling errSymFindTst from main in errMtst.c\n");
 	errSymFindTst();
 #endif
+#if 1
 	printf("calling errSymTest from main in errMtst.c\n");
-	errSymTest((unsigned short)501, 0, 17);
+	errSymTest((unsigned short)501, 1, 17);
+#endif
 }
 #endif
 
 /****************************************************************
  * ERRSYMTEST
 ****************************************************************/
-/* errSymTest: test error numbers */
 #ifdef __STDC__
 void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
 #else
@@ -76,11 +79,10 @@ unsigned short endErrNum;
     if (modnum < 501)
 	return;
 
-    /* get and print the range */
-    for (errnum = begErrNum; errnum < endErrNum; errnum++) {
+    /* print range of error messages */
+    for (errnum = begErrNum; errnum < endErrNum+1; errnum++) {
 	errNum = modnum << 16;
 	errNum |= (errnum & 0xffff);
-	printf("DEBUG errSymTest: errNum=%ld\n", errNum);
-/*	errSymTestPrint(errNum);*/
+	errSymTestPrint(errNum);
     }
 }

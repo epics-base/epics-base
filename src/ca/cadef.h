@@ -131,8 +131,8 @@ HDRVERSIONID(cadefh, "@(#) $Id$")
  *	recommended that the following MACROS be used to access them.
  *
  */
-#define ca_field_type(CHID)     	((CHID)->type)
-#define ca_element_count(CHID)   	((CHID)->count)
+#define ca_field_type(CHID)     	(ca_get_field_type(CHID))
+#define ca_element_count(CHID)   	(ca_get_element_count(CHID))
 #define ca_name(CHID)           	((READONLY char *)((CHID)+1))
 /*
  * the odd cast here removes const (and allows past practice
@@ -196,9 +196,9 @@ typedef void caArh();
  */
 struct channel_in_use{
 	ELLNODE			node;		/* list ptrs			*/
-	short			type;		/* database field type 		*/
+	short			privType;		/* database field type 		*/
 #define TYPENOTCONN	(-1)			/* the type when disconnected	*/
-	unsigned short		count;		/* array element count 		*/
+	unsigned short	privCount;		/* array element count 		*/
 	union{
 	  unsigned 		sid;		/* server id			*/
 	  struct dbAddr		*paddr;		/* database address		*/
@@ -307,6 +307,9 @@ struct	exception_handler_args{
 #define CA_OP_CONN_DOWN 	7
 
 #ifdef CAC_ANSI_FUNC_PROTO
+
+epicsShareFunc short epicsShareAPI ca_get_field_type (chid chan);
+epicsShareFunc unsigned short epicsShareAPI ca_get_element_count (chid chan);
 
 /************************************************************************/
 /*	Perform Library Initialization					*/
@@ -1064,7 +1067,8 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
 #endif /*CA_DONT_INCLUDE_STDARGH*/
 
 #else /* CAC_ANSI_FUNC_PROTO */
-
+epicsShareFunc short epicsShareAPI ca_get_field_type ();
+epicsShareFunc unsigned short epicsShareAPI ca_get_element_count ();
 epicsShareFunc int epicsShareAPI ca_task_initialize ();
 epicsShareFunc int epicsShareAPI ca_task_exit ();
 epicsShareFunc int epicsShareAPI ca_search_and_connect ();

@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.100  1998/02/05 21:55:49  jhill
+ * detect attempts by user to clear bogus channel
+ *
  * Revision 1.98  1997/08/04 22:54:28  jhill
  * mutex clean up
  *
@@ -253,7 +256,7 @@ static char *sccsId = "@(#) $Id$";
 
 #define CHIXCHK(CHIX) \
 { \
-	if( (CHIX)->state != cs_conn || INVALID_DB_REQ((CHIX)->type) ){ \
+	if( (CHIX)->state != cs_conn || INVALID_DB_REQ((CHIX)->privType) ){ \
 		return ECA_BADCHID; \
 	} \
 }
@@ -264,7 +267,7 @@ static char *sccsId = "@(#) $Id$";
 /* allow them to add monitors to a disconnected channel */
 #define LOOSECHIXCHK(CHIX) \
 { \
-	if( (CHIX)->type==TYPENOTINUSE ){ \
+	if( (CHIX)->privType==TYPENOTINUSE ){ \
 		return ECA_BADCHID; \
 	} \
 }
@@ -1090,8 +1093,8 @@ int epicsShareAPI ca_search_and_connect
 			*chix->id.paddr = tmp_paddr;
 			chix->puser = puser;
 			chix->pConnFunc = conn_func;
-			chix->type = chix->id.paddr->dbr_field_type;
-			chix->count = chix->id.paddr->no_elements;
+			chix->privType = chix->id.paddr->dbr_field_type;
+			chix->privCount = chix->id.paddr->no_elements;
 			chix->piiu = NULL; /* none */
 			chix->state = cs_conn;
 			chix->ar.read_access = TRUE;
@@ -1156,8 +1159,8 @@ int epicsShareAPI ca_search_and_connect
 
 	chix->puser = (void *) puser;
 	chix->pConnFunc = conn_func;
-	chix->type = TYPENOTCONN; /* invalid initial type 	 */
-	chix->count = 0; 	/* invalid initial count	 */
+	chix->privType = TYPENOTCONN; /* invalid initial type 	 */
+	chix->privCount = 0; 	/* invalid initial count	 */
 	chix->id.sid = ~0U;	/* invalid initial server id 	 */
 	chix->ar.read_access = FALSE;
 	chix->ar.write_access = FALSE;
@@ -1282,7 +1285,7 @@ void 		*pvalue
 		return ECA_NORDACCESS;
 	}
 
-	if (count > chix->count) {
+	if (count > chix->privCount) {
 		return ECA_BADCOUNT;
 	}
 
@@ -1363,7 +1366,7 @@ const void *arg
 	if (INVALID_DB_REQ(type))
 		return ECA_BADTYPE;
 
-	if (count > chix->count)
+	if (count > chix->privCount)
 		return ECA_BADCOUNT;
 
 	if(!chix->ar.read_access){
@@ -1537,8 +1540,8 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	/*
 	 * set to the native count if they specify zero
 	 */
-	if (monix->count == 0 || monix->count > chix->count){
-		count = chix->count;
+	if (monix->count == 0 || monix->count > chix->privCount){
+		count = chix->privCount;
 	}
 	else{
 		count = monix->count;
@@ -1595,7 +1598,7 @@ const void			*usrarg
 	/*
 	 * check for valid count
 	 */
-  	if(count > chix->count || count == 0)
+  	if(count > chix->privCount || count == 0)
     		return ECA_BADCOUNT;
 
 	piiu = chix->piiu;
@@ -1811,7 +1814,7 @@ int epicsShareAPI ca_array_put (
 	/*
 	 * check for valid count
 	 */
-  	if(count > chix->count || count == 0)
+  	if(count > chix->privCount || count == 0)
     		return ECA_BADCOUNT;
 
 	if (type==DBR_STRING) {
@@ -2296,8 +2299,8 @@ int ca_request_event(evid monix)
 	 * clip to the native count and set to the native count if they
 	 * specify zero
 	 */
-	if (monix->count > chix->count || monix->count == 0){
-		count = chix->count;
+	if (monix->count > chix->privCount || monix->count == 0){
+		count = chix->privCount;
 	}
 	else{
 		count = monix->count;
@@ -2357,8 +2360,8 @@ db_field_log	*pfl
   	 * clip to the native count
   	 * and set to the native count if they specify zero
   	 */
-  	if(monix->count > monix->chan->count || monix->count == 0){
-		count = monix->chan->count;
+  	if(monix->count > monix->chan->privCount || monix->count == 0){
+		count = monix->chan->privCount;
 	}
 	else{
 		count = monix->count;
@@ -2547,8 +2550,8 @@ int epicsShareAPI ca_clear_event (evid monix)
 		/* msg header	 */
 		hdr.m_cmmd = htons(CA_PROTO_EVENT_CANCEL);
 		hdr.m_available = pMon->id;
-		hdr.m_type = htons(chix->type);
-		hdr.m_count = htons(chix->count);
+		hdr.m_type = htons(chix->privType);
+		hdr.m_count = htons(chix->privCount);
 		hdr.m_cid = chix->id.sid;
 		hdr.m_postsize = 0;
 	
@@ -2604,7 +2607,7 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	LOOSECHIXCHK(pChan);
 
 	/* disable their further use of deallocated channel */
-	pChan->type = TYPENOTINUSE;
+	pChan->privType = TYPENOTINUSE;
 	old_chan_state = pChan->state;
 	pChan->state = cs_closed;
 	pChan->pAccessRightsFunc = NULL;
@@ -3472,7 +3475,7 @@ int issue_claim_channel (chid pchan)
 		ellAdd (&piiu->chidlist, &pchan->node);
 
 		if (!CA_V42(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
-			cac_reconnect_channel(pchan->cid);
+			cac_reconnect_channel(pchan->cid, TYPENOTCONN, 0);
 		}
 	}
 	else {
@@ -3706,3 +3709,28 @@ int epicsShareAPI ca_printf(char *pformat, ...)
 	return status;
 }
 
+/*
+ * ca_get_field_type()
+ */
+short epicsShareAPI ca_get_field_type (chid chan) 
+{
+	if (chan->state==cs_conn) {
+		return chan->privType;
+	}
+	else {
+		return TYPENOTCONN;
+	}
+}
+
+/*
+ * ca_get_element_count()
+ */
+unsigned short epicsShareAPI ca_get_element_count (chid chan) 
+{
+	if (chan->state==cs_conn) {
+		return chan->privCount;
+	}
+	else {
+		return 0;
+	}
+}

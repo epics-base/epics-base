@@ -32,6 +32,11 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.68  1998/02/20 21:52:21  evans
+ * Added an explicit include of tsDefs.h before cadef.h to avoid the
+ * functions in it being declared as export and also to avoid its
+ * allocating space when it should be declaring a reference.
+ *
  * Revision 1.67  1998/02/05 22:30:34  jhill
  * fixed dll export problems
  *
@@ -736,7 +741,7 @@ void genLocalExcepWFL(long stat, char *ctx,
 	char *pFile, unsigned line);
 #define genLocalExcep(STAT, PCTX) \
 genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
-void cac_reconnect_channel(caResId id);
+void cac_reconnect_channel(caResId id, short type, unsigned short count);
 void retryPendingClaims(IIU *piiu);
 void cacSetRetryInterval(unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);

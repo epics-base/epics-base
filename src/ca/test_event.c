@@ -23,7 +23,7 @@ void epicsShareAPI ca_test_event(struct event_handler_args args)
 {
   ca_printf("CAC: ~~~### in test event for [%s] ###~~~\n",args.chid+1);
   ca_printf("CAC: User argument\t%x\n", args.usr);
-  ca_printf("CAC: Native channel data type\t%d\n", args.chid->type);
+  ca_printf("CAC: Native channel data type\t%d\n", ca_field_type(args.chid));
   ca_printf("CAC: Monitor data type\t%d\n", args.type);
   ca_printf("CAC: CA Status \"%s\"\n", ca_message(args.status));
 

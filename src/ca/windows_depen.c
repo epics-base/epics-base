@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.32  1998/02/27 01:05:04  jhill
+ * integrated Timossi's win sock II changes
+ *
  * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
  * 	Interim release from jeff hill
  *
@@ -49,6 +52,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.32  1998/02/27 01:05:04  jhill
+ * added integrated Timossi's win sock II changes
+ * added
  * Revision 1.1.1.3  1996/11/15  17:45:01  timossi
  * 	Interim release from jeff hill
  *
@@ -459,18 +465,14 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
 #endif	 			  /* init. winsock */
 		if ((status = WSAStartup(MAKEWORD(/*major*/2,/*minor*/2), &WsaData)) != 0) {
-			/*
-			 * The winsock I & II doc indicate that these steps are not required,
-			 * but experience at some sites proves otherwise. Perhaps some vendors 
-			 * do not follow the protocol described in the doc.
-			 */
-			if ((status = WSAStartup(MAKEWORD(/*major*/1,/*minor*/1), &WsaData)) != 0) {
-				if ((status = WSAStartup(MAKEWORD(/*major*/1,/*minor*/0), &WsaData)) != 0) {
-					WSACleanup();
-					fprintf(stderr,"Unable to attach to winsock version 2.2 or lower\n");
-					return FALSE;
-				}
-			}
+			WSACleanup();
+			fprintf(stderr,
+	"Unable to attach to windows sockets version 2. error=%d\n", status);
+			fprintf(stderr,
+	"A Windows Sockets II update for windows 95 is available at\n");
+			fprintf(stderr,
+	"http://www.microsoft.com/win32dev/netwrk/winsock2/ws295sdk.html");
+			return FALSE;
 		}
 		
 #if _DEBUG			  

@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.74  1998/02/05 22:29:42  jhill
+ * use osiSock macros
+ *
  * Revision 1.73  1997/08/04 23:37:09  jhill
  * added beacon anomaly flag init/allow ip 255.255.255.255
  *
@@ -1440,8 +1443,8 @@ void cacDisconnectChannel(ciu chix, enum channel_state state)
 {
 	LOCK;
 
-	chix->type = TYPENOTCONN;
-	chix->count = 0u;
+	chix->privType = TYPENOTCONN;
+	chix->privCount = 0u;
 	chix->id.sid = ~0u;
 	chix->ar.read_access = FALSE;
 	chix->ar.write_access = FALSE;

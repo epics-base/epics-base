@@ -717,7 +717,7 @@ const struct in_addr  	*pnet_addr
 		break;
 	}
 	case CA_PROTO_CLAIM_CIU:
-		cac_reconnect_channel(piiu->curMsg.m_cid);
+		cac_reconnect_channel(piiu->curMsg.m_cid, piiu->curMsg.m_type, piiu->curMsg.m_count);
 		break;
 
 	case CA_PROTO_CLAIM_CIU_FAILED:
@@ -972,6 +972,11 @@ const struct in_addr	*pnet_addr
 	 */
 	chan->id.sid = piiu->curMsg.m_cid;
 
+	if (!CA_V42(CA_PROTOCOL_VERSION, minorVersion)) {
+		chan->privType  = piiu->curMsg.m_type;      
+		chan->privCount = piiu->curMsg.m_count;
+	}
+
 	issue_claim_channel(chan);
 	UNLOCK
 }
@@ -980,7 +985,7 @@ const struct in_addr	*pnet_addr
 /*
  * cac_reconnect_channel()
  */
-void cac_reconnect_channel(caResId cid)
+void cac_reconnect_channel(caResId cid, short type, unsigned short count)
 {
 	IIU *piiu;
 	evid pevent;
@@ -1015,9 +1020,14 @@ void cac_reconnect_channel(caResId cid)
 		chan->id.sid = piiu->curMsg.m_available;
 	}
 
-	/* Update rmt chid fields from caHdr fields */
-	chan->type  = piiu->curMsg.m_type;      
-	chan->count = piiu->curMsg.m_count;      
+	/* 
+	 * Update rmt chid fields from caHdr fields 
+	 * if they are valid
+	 */
+	if (type != TYPENOTCONN) {
+		chan->privType  = type;      
+		chan->privCount = count;
+	}
 
 	/*
 	 * set state to cs_conn before caling 

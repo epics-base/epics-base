@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.49  1998/02/05 21:56:46  jhill
+ * added no pend event in event call back test
+ *
  * Revision 1.48  1997/07/10 19:33:11  jhill
  * improved CPU consumption by select() under vxWorks
  *
@@ -243,10 +246,10 @@ int doacctst(char *pname)
 		SEVCHK(status, NULL);
 
 		if (ca_test_io() == ECA_IOINPROGRESS) {
-			assert(INVALID_DB_REQ(chix1->type) == TRUE);
-			assert(INVALID_DB_REQ(chix2->type) == TRUE);
-			assert(INVALID_DB_REQ(chix3->type) == TRUE);
-			assert(INVALID_DB_REQ(chix4->type) == TRUE);
+			assert(INVALID_DB_REQ(ca_field_type(chix1)) == TRUE);
+			assert(INVALID_DB_REQ(ca_field_type(chix2)) == TRUE);
+			assert(INVALID_DB_REQ(ca_field_type(chix3)) == TRUE);
+			assert(INVALID_DB_REQ(ca_field_type(chix4)) == TRUE);
 
 			assert(ca_state(chix1) == cs_never_conn);
 			assert(ca_state(chix2) == cs_never_conn);
@@ -331,10 +334,10 @@ int doacctst(char *pname)
 	assert (ca_state(chix3) == cs_conn);
 	assert (ca_state(chix4) == cs_conn);
 
-	assert (INVALID_DB_REQ(chix1->type) == FALSE);
-	assert (INVALID_DB_REQ(chix2->type) == FALSE);
-	assert (INVALID_DB_REQ(chix3->type) == FALSE);
-	assert (INVALID_DB_REQ(chix4->type) == FALSE);
+	assert (INVALID_DB_REQ(ca_field_type(chix1)) == FALSE);
+	assert (INVALID_DB_REQ(ca_field_type(chix2)) == FALSE);
+	assert (INVALID_DB_REQ(ca_field_type(chix3)) == FALSE);
+	assert (INVALID_DB_REQ(ca_field_type(chix4)) == FALSE);
 
 	/*
 	 * clear chans before starting another test 
@@ -765,7 +768,7 @@ int doacctst(char *pname)
 	}
 	printf("done.\n");
 	
-	if (VALID_DB_REQ(chix4->type)) {
+	if (VALID_DB_REQ(ca_field_type(chix4))) {
 		status = ca_add_event(
 				DBR_FLOAT, 
 				chix4, 
@@ -782,7 +785,7 @@ int doacctst(char *pname)
 				&monix);
 		SEVCHK(status, NULL);
 	}
-	if (VALID_DB_REQ(chix4->type)) {
+	if (VALID_DB_REQ(ca_field_type(chix4))) {
 		status = ca_add_event(
 				DBR_FLOAT, 
 				chix4, 
@@ -792,7 +795,7 @@ int doacctst(char *pname)
 		SEVCHK(status, NULL);
 		SEVCHK(ca_clear_event(monix), NULL);
 	}
-	if (VALID_DB_REQ(chix3->type)) {
+	if (VALID_DB_REQ(ca_field_type(chix3))) {
 		status = ca_add_event(
 				DBR_FLOAT, 
 				chix3, 
@@ -813,7 +816,7 @@ int doacctst(char *pname)
 	pdouble = (dbr_double_t *) calloc(sizeof(*pdouble),NUM);
 	pgrfloat = (struct dbr_gr_float *) calloc(sizeof(*pgrfloat),NUM);
 
-	if (VALID_DB_REQ(chix1->type))
+	if (VALID_DB_REQ(ca_field_type(chix1)))
 		if (pfloat)
 			for (i = 0; i < NUM; i++) {
 				for (j = 0; j < NUM; j++)
@@ -853,7 +856,7 @@ int doacctst(char *pname)
 	 * o verifies that we can at least write and read back the same array
 	 * if multiple elements are present
 	 */
-	if (VALID_DB_REQ(chix1->type)) {
+	if (VALID_DB_REQ(ca_field_type(chix1))) {
 		if (ca_element_count(chix1)>1u && ca_read_access(chix1)) {
 			dbr_float_t	*pRF, *pWF, *pEF, *pT1, *pT2;
 

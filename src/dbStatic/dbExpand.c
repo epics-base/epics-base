@@ -38,6 +38,7 @@ int main(int argc,char **argv)
     char	*psep;
     int		*len;
     long	status;
+    long	returnStatus = 0;
     static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
@@ -81,6 +82,7 @@ int main(int argc,char **argv)
     for(i=1; i<argc; i++) {
 	status = dbReadDatabase(&pdbbase,argv[i],path,sub);
 	if(!status) continue;
+        returnStatus = status;
 	fprintf(stderr,"For input file %s",argv[i]);
 	errMessage(status,"from dbReadDatabase");
     }
@@ -93,5 +95,5 @@ int main(int argc,char **argv)
     dbWriteRecordFP(pdbbase,stdout,0,0);
     free((void *)path);
     free((void *)sub);
-    return(0);
+    return(returnStatus);
 }

@@ -38,9 +38,10 @@
 #undef epicsExportSharedSymbols
 
 msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
-    callbackForMultiplyDefinedPV & cbIn, const char * pChannelName, 
-    const char * pAcc, const osiSockAddr &rej ) :
-    ipAddrToAsciiAsynchronous ( rej ), cb ( cbIn )
+    ipAddrToAsciiEngine & engine,
+    callbackForMultiplyDefinedPV & cbIn, 
+    const char * pChannelName, const char * pAcc ) :
+    dnsTransaction ( engine.createTransaction () ), cb ( cbIn )
 {
     strncpy ( this->acc, pAcc, sizeof ( this->acc ) );
     this->acc[ sizeof ( this->acc ) - 1 ] = '\0';
@@ -48,11 +49,15 @@ msgForMultiplyDefinedPV::msgForMultiplyDefinedPV (
     this->channel[ sizeof ( this->channel ) - 1 ] = '\0';
 }
 
-void msgForMultiplyDefinedPV::ioCompletionNotify ( const char * pHostNameRej )
+msgForMultiplyDefinedPV::~msgForMultiplyDefinedPV ()
+{
+    this->dnsTransaction.release ();
+}
+
+void msgForMultiplyDefinedPV::transactionComplete ( const char * pHostNameRej )
 {
     this->cb.pvMultiplyDefinedNotify ( *this, this->channel, this->acc, pHostNameRej );
-    // dont touch this pointer after cb interfaces is called above because 
-    // this object may no-longer exist!
+    // !! dont touch this pointer after this point because object has been deleted !!
 }
 
 void * msgForMultiplyDefinedPV::operator new ( size_t size, 

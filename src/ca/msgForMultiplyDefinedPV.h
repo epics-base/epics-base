@@ -39,22 +39,31 @@ public:
         const char * pAcc, const char * pRej ) = 0;
 };
 
-class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
+class msgForMultiplyDefinedPV : public ipAddrToAsciiCallBack {
 public:
-    msgForMultiplyDefinedPV ( callbackForMultiplyDefinedPV &, 
-        const char * pChannelName, const char * pAcc, const osiSockAddr & rej );
+    msgForMultiplyDefinedPV ( ipAddrToAsciiEngine & engine,
+        callbackForMultiplyDefinedPV &, const char * pChannelName, 
+        const char * pAcc );
+    virtual ~msgForMultiplyDefinedPV ();
+    void ioInitiate ( const osiSockAddr & rej );
     void * operator new ( size_t size, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < class msgForMultiplyDefinedPV, 16 > & ))
 private:
     char acc[64];
     char channel[64];
+    ipAddrToAsciiTransaction & dnsTransaction;
     callbackForMultiplyDefinedPV & cb;
-    void ioCompletionNotify ( const char *pHostName );
+    void transactionComplete ( const char * pHostName );
 	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
 	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
     void * operator new ( size_t size );
     void operator delete ( void * );
 };
+
+inline void msgForMultiplyDefinedPV::ioInitiate ( const osiSockAddr & rej )
+{
+    this->dnsTransaction.ipAddrToAscii ( rej, *this );
+}
 
 #endif // ifdef msgForMultiplyDefinedPVh
 

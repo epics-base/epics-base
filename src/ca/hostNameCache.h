@@ -39,14 +39,15 @@
 #   define epicsExportSharedSymbols
 #endif
 
-class hostNameCache : public ipAddrToAsciiAsynchronous {
+class hostNameCache : public ipAddrToAsciiCallBack {
 public:
     hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
     ~hostNameCache ();
     void destroy ();
-    void ioCompletionNotify ( const char *pHostName );
+    void transactionComplete ( const char * pHostName );
     void hostName ( char *pBuf, unsigned bufLength ) const;
 private:
+    ipAddrToAsciiTransaction & dnsTransaction;
     bool ioComplete;
     char hostNameBuf [128];
 };

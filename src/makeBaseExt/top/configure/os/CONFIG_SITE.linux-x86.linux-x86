@@ -27,8 +27,6 @@ IDL =
 
 #JAVA_DIR=/usr/local/java
 JAVA_DIR=/usr/java/j2sdk1.4.1
-JAVA_INC = $(JAVA_DIR)/include
-JAVA_INCLUDES += -I$(JAVA_INC) -I$(JAVA_INC)/linux -I$(COMMON_DIR)
 
 INTERVIEWS_BIN=/usr/local/interviews/bin/O.Linux
 

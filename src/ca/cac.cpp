@@ -119,6 +119,7 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     recvProcessEnableRefCount ( 0u ),
     pndRecvCnt ( 0u ), 
     readSeq ( 0u ),
+    recvProcessCompletionSignalRequestCount ( 0u ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn ),
     ioInProgress ( false ),
     recvProcessThreadExitRequest ( false ),
@@ -589,6 +590,15 @@ int cac::pendEvent ( const double &timeout )
 
         this->flushRequestPrivate ();
 
+        bool waitForSignal;
+        if ( this->recvProcessPending ) {
+            this->recvProcessCompletionSignalRequestCount++;
+            waitForSignal = true;
+        }
+        else {
+            waitForSignal = false;
+        }
+
         this->enableCallbackPreemption ();
 
         {
@@ -601,14 +611,19 @@ int cac::pendEvent ( const double &timeout )
             else if ( timeout >= CAC_SIGNIFICANT_DELAY ) {
                 epicsThreadSleep ( timeout );
             }
-            while ( this->recvProcessPending ) {
-                // give up the processor while 
-                // there is recv processing to be done
-                epicsThreadSleep ( 0.1 );
+            if ( waitForSignal ) {
+                this->recvProcessCompleted.wait ();
             }
         }
 
         this->disableCallbackPreemption ();
+
+        if ( waitForSignal ) {
+            this->recvProcessCompletionSignalRequestCount--;
+            if ( this->recvProcessCompletionSignalRequestCount ) {
+                this->recvProcessCompleted.signal ();
+            }
+        }
     }
 
     return ECA_TIMEOUT;
@@ -689,12 +704,17 @@ void cac::run ()
 {
     this->attachToClientCtx ();
     while ( ! this->recvProcessThreadExitRequest ) {
+        bool wakeupNeeded;
         {
             this->recvProcessPending = true;
             epicsAutoMutex autoMutexPCB ( this->preemptiveCallbackLock );
             epicsAutoMutex autoMutex ( this->mutex );
             this->processRecvBacklog ();
             this->recvProcessPending = false;
+            wakeupNeeded = this->recvProcessCompletionSignalRequestCount > 0u;
+        }
+        if ( wakeupNeeded ) {
+            this->recvProcessCompleted.signal ();
         }
         this->recvProcessActivityEvent.wait ();
     }
@@ -874,7 +894,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
         }
         catch ( ... ) {
-            this->printf ( "CAC: Exception caught during virtual circuit creation\n" );
+            this->printf ( "CAC: Exception during virtual circuit creation\n" );
             return true;
         }
     }

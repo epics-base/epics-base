@@ -163,6 +163,7 @@ private:
     epicsEvent              notifyCompletionEvent;
     epicsEvent              recvProcessActivityEvent;
     epicsEvent              recvProcessThreadExit;
+    epicsEvent              recvProcessCompleted;
     epicsEvent              ioDone;
     epicsTimerQueueActive   *pTimerQueue;
     char                    *pUserName;
@@ -181,6 +182,7 @@ private:
     unsigned                recvProcessEnableRefCount;
     unsigned                pndRecvCnt;
     unsigned                readSeq;
+    unsigned                recvProcessCompletionSignalRequestCount;
     bool                    enablePreemptiveCallback;
     bool                    ioInProgress;
     bool                    recvProcessThreadExitRequest;

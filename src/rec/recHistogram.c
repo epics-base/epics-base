@@ -31,6 +31,7 @@
  * -----------------
  * .01  10-14-91        jba     Added dev sup  crtl fld and wd timer
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .03  02-28-92	jba	ANSI C changes
  */
 
 #include     <vxWorks.h>
@@ -41,6 +42,7 @@
 #include     <math.h>
 #include     <limits.h>
 #include     <wdLib.h>
+#include     <memLib.h>
 
 #include     <alarm.h>
 #include     <callback.h>
@@ -56,12 +58,12 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
+static long init_record();
 static long process();
-long special();
-long get_value();
-long cvt_dbaddr();
-long get_array_info();
+static long special();
+static long get_value();
+static long cvt_dbaddr();
+static long get_array_info();
 #define  put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
@@ -158,7 +160,7 @@ static long init_record(phistogram)
      if(phistogram->wdog==NULL && phistogram->sdel!=0) {
           /* initialize a watchdog timer */
           pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-          phistogram->wdog = (caddr_t)pcallback;
+          phistogram->wdog = (void *)pcallback;
           pcallback->callback = wdCallback;
           pcallback->priority = priorityLow;
           if(dbNameToAddr(phistogram->name,&(pcallback->dbAddr))) {
@@ -238,7 +240,6 @@ static long special(paddr,after)
      int           after;
 {
      struct histogramRecord   *phistogram = (struct histogramRecord *)(paddr->precord);
-     struct histogramdset      *pdset = (struct histogramdset *) (phistogram->dset);
      int                special_type = paddr->special;
 
      if(!after) return(0);
@@ -274,7 +275,6 @@ static void monitor(phistogram)
 {
      unsigned short  monitor_mask;
      short           stat,sevr,nsta,nsev;
-     struct callback *pcallback=(struct callback *)(phistogram->dpvt);
  
      /* get previous stat and sevr  and new stat and sevr*/
      stat=phistogram->stat;
@@ -330,7 +330,7 @@ static long cvt_dbaddr(paddr)
 
     /* This may get called before init_record. If so just call it*/
     if(phistogram->bptr==NULL) init_record(phistogram);
-    paddr->pfield = (caddr_t)(phistogram->bptr);
+    paddr->pfield = (void *)(phistogram->bptr);
     paddr->no_elements = phistogram->nelm;
     paddr->field_type = DBF_ULONG;
     paddr->field_size = sizeof(long);
@@ -356,7 +356,6 @@ static long add_count(phistogram)
      double            temp;
      unsigned long     *pdest;
      int               i;
-     double            sgnl;
 
      if(phistogram->csta==FALSE) return(0);
 

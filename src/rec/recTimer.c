@@ -45,6 +45,7 @@
  * .12  12-02-91        jba     Added cmd control to io-interrupt processing
  * .13  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * .14  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .15  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
@@ -65,10 +66,10 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -102,7 +103,7 @@ struct rset timerRSET={
 	get_alarm_double };
 
 /* because the driver does all the work just declare device support here*/
-long get_ioint_info();
+static long get_ioint_info();
 struct dset devTmMizar8310={4,NULL,NULL,NULL,get_ioint_info};
 struct dset devTmDg535={4,NULL,NULL,NULL,get_ioint_info};
 struct dset devTmVxiAt5={4,NULL,NULL,NULL,get_ioint_info};

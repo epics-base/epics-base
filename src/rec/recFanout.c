@@ -41,6 +41,7 @@
  * .10  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .11  02-05-92	jba	Changed function arguments from paddr to precord 
  * .12  02-05-92	jba	Added FWD scan link 
+ * .13  02-28-92	jba	ANSI C changes
  */
 
 #include        <vxWorks.h>
@@ -59,8 +60,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL

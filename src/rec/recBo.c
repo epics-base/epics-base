@@ -54,13 +54,15 @@
  * .18  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .19  01-08-92        jba     Added cast in call to wdStart to remove compile warning message
  * .20  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .21  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
-#include	<strLib.h>
+#include	<string.h>
+#include	<memLib.h>
 #include	<wdLib.h>
 
 #include	<alarm.h>
@@ -77,18 +79,18 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-long get_enum_str();
-long get_enum_strs();
-long put_enum_str();
+static long get_enum_str();
+static long get_enum_strs();
+static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -140,7 +142,6 @@ void monitor();
 static void myCallback(pcallback)
     struct callback *pcallback;
 {
-    short	value=0;
     struct boRecord *pbo = (struct boRecord *)(pcallback->dbAddr.precord);
 
     dbScanLock((struct dbCommon *)pbo);
@@ -172,7 +173,7 @@ static long init_record(pbo)
 	pbo->udf = FALSE;
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-    pbo->dpvt = (caddr_t)pcallback;
+    pbo->dpvt = (void *)pcallback;
     pcallback->callback = myCallback;
     pcallback->priority = priorityMedium;
     if(dbNameToAddr(pbo->name,&(pcallback->dbAddr))) {
@@ -285,7 +286,7 @@ static long get_enum_strs(paddr,pes)
     struct boRecord	*pbo=(struct boRecord *)paddr->precord;
 
     pes->no_str = 2;
-    bzero(pes->strs,sizeof(pes->strs));
+    memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbo->znam,sizeof(pbo->znam));
     strncpy(pes->strs[1],pbo->onam,sizeof(pbo->onam));
     return(0);

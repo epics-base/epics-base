@@ -51,13 +51,14 @@
  * .16  10-11-90	mrk	make changes for new record and device support
  * .17  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .18  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .19  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
-#include	<strLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -72,18 +73,18 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
-long special();
-long get_value();
+static long init_record();
+static long process();
+static long special();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-long get_enum_str();
-long get_enum_strs();
-long put_enum_str();
+static long get_enum_str();
+static long get_enum_strs();
+static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -204,7 +205,6 @@ static long process(pmbbo)
 {
     struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
     long		status=0;
-    unsigned short	rbv;
 
     if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
 	pmbbo->pact=TRUE;
@@ -321,7 +321,7 @@ static long get_enum_strs(paddr,pes)
     short		no_str;
 
     no_str=0;
-    bzero(pes->strs,sizeof(pes->strs));
+    memset(pes->strs,'\0',sizeof(pes->strs));
     for(i=0,psource=(pmbbo->zrst); i<16; i++, psource += sizeof(pmbbo->zrst) ) {
 	strncpy(pes->strs[i],psource,sizeof(pmbbo->zrst));
   	if(*psource!=0)no_str=i+1;

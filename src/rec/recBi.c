@@ -47,13 +47,14 @@
  * .13  10-24-91	jba	Moved comment
  * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .15  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .16  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
-#include	<strLib.h>
+#include	<string.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -67,22 +68,22 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-long get_enum_str();
-long get_enum_strs();
-long put_enum_str();
+static long get_enum_str();
+static long get_enum_strs();
+static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
-struct rset biRSET={
+static struct rset biRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -204,7 +205,7 @@ static long get_enum_strs(paddr,pes)
     struct biRecord	*pbi=(struct biRecord *)paddr->precord;
 
     pes->no_str = 2;
-    bzero(pes->strs,sizeof(pes->strs));
+    memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbi->znam,sizeof(pbi->znam));
     strncpy(pes->strs[1],pbi->onam,sizeof(pbi->onam));
     return(0);

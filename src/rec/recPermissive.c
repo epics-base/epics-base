@@ -33,6 +33,7 @@
  * .01  10-10-90	mrk	extensible record and device support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
@@ -51,9 +52,9 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-long process();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL

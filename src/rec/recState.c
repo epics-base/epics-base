@@ -33,12 +33,14 @@
  * .01  10-10-90	mrk	extensible record and device support
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+#include	<string.h>
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -52,9 +54,9 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-long process();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -109,7 +111,7 @@ static long get_value(pstate,pvdes)
 {
     pvdes->field_type = DBF_STRING;
     pvdes->no_elements=1;
-    pvdes->pvalue = (caddr_t)(&pstate->val[0]);
+    pvdes->pvalue = (void *)(&pstate->val[0]);
     return(0);
 }
 

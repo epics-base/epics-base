@@ -29,7 +29,8 @@
  *
  * Modification Log:
  * -----------------
- * .00  12-13-91        jba     Initial definition
+ 4 .00  12-13-91        jba     Initial definition
+ * .01  02-28-92	jba	ANSI C changes
  */
 
 #include	<vxWorks.h>
@@ -51,10 +52,10 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -142,7 +143,7 @@ static long get_value(pevent,pvdes)
 {
     pvdes->field_type = DBF_USHORT;
     pvdes->no_elements=1;
-    pvdes->pvalue = (caddr_t)(&pevent->val);
+    pvdes->pvalue = (void *)(&pevent->val);
     return(0);
 }
 

@@ -32,6 +32,7 @@
  * .01  10-24-91        jba     Removed unused code
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .04  02-28-92	jba	ANSI C changes
  */ 
 
 
@@ -53,10 +54,10 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-long init_record();
-long process();
+static long init_record();
+static long process();
 #define special NULL
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -181,7 +182,7 @@ static long get_value(pstringout,pvdes)
 {
     pvdes->field_type = DBF_STRING;
     pvdes->no_elements=1;
-    pvdes->pvalue = (caddr_t)(&pstringout->val[0]);
+    pvdes->pvalue = (void *)(&pstringout->val[0]);
     return(0);
 }
 

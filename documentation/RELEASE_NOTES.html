@@ -17,37 +17,36 @@
 <center>
 <h2>Changes since 3.14.2</h2>
 </center>
-<h4>errlog and logMsg</h4>
-<p>If logMsg was called by netTask it could cause the
-ioc to hang.
-To fix this problem the method of trapping logMsg calls has been changed.
-The fix also means that any code that calls errlogAddListener, e.g.
-CMLOG, will now receive the logMsg messages.</p>
+
 <h4>calcRecord and calcoutRecord</h4>
-<p>Previously if a dbGetLink failed on one of the input links, dbGetLink
-was not called for the remaining links. Now it is.</p>
+
+<p>Previously if a dbGetLink failed on one of the input links, dbGetLink was
+not called for the remaining links. Now it is.</p>
+
 <h4>put notify</h4>
-<p>put notify did not act properly if a record had disp=TRUE, i.e.
-if puts are disabled. It now returns putNotifyPutDisabled.</p>
+
+<p>put notify did not act properly if a record had disp=TRUE, i.e. if puts
+are disabled. It now returns putNotifyPutDisabled.</p>
+
 <h4>fastlock.h</h4>
+
 <p>This is no longer supported</p>
 
 <h4>devLib</h4>
-<p>devLib is now supported on vxWorks and RTEMS.
-It has been moved from src/vxWorks/src to src/libCom/osi.
-devLibVirtualOS has been extended to support allocating A24 addresss
-and an init method.</p>
+
+<p>devLib is now supported on vxWorks and RTEMS. It has been moved from
+src/vxWorks/src to src/libCom/osi. devLibVirtualOS has been extended to
+support allocating A24 addresss and an init method.</p>
 
 <h4>vxWorks dependent modules moved</h4>
-The following have been moved from src/vxWorks/src to src/libCom/osi/os/vxWorks:
-camacLib.h, drvTS.c, drvTS.h, epicsDynLink.c, epicsDynLink.h, module_types.h,
-task_params.h, veclist.c. Brief documentation has been added to the Application
-Developer's Guide.</p>
-
+The following have been moved from src/vxWorks/src to
+src/libCom/osi/os/vxWorks: camacLib.h, drvTS.c, drvTS.h, epicsDynLink.c,
+epicsDynLink.h, module_types.h, task_params.h, veclist.c. Brief documentation
+has been added to the Application Developer's Guide.
 
 <h4>Close-On-Exec flag set for all sockets created in EPICS base</h4>
 
-<p>On POSIX systsems if a Channel Access application spawns off 3rd party
+<p>On POSIX systems if a Channel Access application spawns off 3rd party
 software with an exec() call then all open file desriptors are inherited
 unless the close-on-exec flag is set for each file descriptor. A new wrapper
 function was created so that all sockets created in EPICS base will have the
@@ -59,8 +58,8 @@ This step was no longer required and therefore was removed from the code.</p>
 
 <p>The tmpfile() function on windows requires that all temporary files be
 stored in the root folder. The antelope (yacc) tool in base was calling
-tmpfile() and this was causing problems at sites where win32 systems have
-remmotely mounted secure file systems. A wrapper function called "FILE *
+tmpfile() and this was causing problems at sites where win32 systems use
+remotely mounted secure file systems. A wrapper function called "FILE *
 epicsTempFile()" that creates a temporary file on WIN32 with a name epicsNNN
 using one of the following paths was installed into libCom. It searches
 starting with (1) below and stops when it finds a specified path that exists.
@@ -190,7 +189,16 @@ create a specialized vxWorks device driver which calls errlogPrintf for each
 incoming message and then call logFdAdd for a file descriptor opened with
 that device driver. The desirable functional change being errlogPrintf's
 capability to discard messages when it gets behind (because of a transient
-mbuf starvation situation).</p>
+mbuf starvation situation). The fix also means that any code that calls
+errlogAddListener on vxWorks, e.g. CMLOG, will now receive the logMsg
+messages.</p>
+
+<h4>Channel Access Client Library Client Context Cleanup Race Condition</h4>
+
+<p>The symptom is a CA client program that fails with a segmentation
+violation on Linux shortly after calling ca_task_exit()or
+ca_context_destroy(). A fix will show up in R3.14.3. Regression tests were
+updated to detect this type of problem.</p>
 
 <center>
 <h2>Changes since 3.14.1</h2>

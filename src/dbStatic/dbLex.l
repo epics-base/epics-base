@@ -37,7 +37,7 @@ static int yyreset(void)
 	return(tokenSTRING); 
 	}
 
-([0-9]+|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?) { /*real number*/
+-?(([0-9]+)|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?) { /*real number*/
 	yylval.Str = (char *)dbmfMalloc(strlen(yytext)+1);
 	strcpy(yylval.Str,yytext);
 	return(tokenSTRING); 

@@ -10,8 +10,8 @@
 /* $Id  */
 
 /*
- *      Author: 	Jeff Hill  
- *      Date:          	5-95 
+ *      Author:     Jeff Hill  
+ *      Date:           5-95 
  */
 
 #ifndef INCepicsTypesh
@@ -20,36 +20,36 @@
 #include "shareLib.h"
 
 #ifndef stringOf
-#	ifdef __STDC__ 
-#		define stringOf(TOKEN) #TOKEN
-#	else
-#		define stringOf(TOKEN) "TOKEN"
-#	endif
+#   ifdef __STDC__ 
+#       define stringOf(TOKEN) #TOKEN
+#   else
+#       define stringOf(TOKEN) "TOKEN"
+#   endif
 #endif
 
 typedef enum {
-	epicsFalse=0, 
-	epicsTrue=1 } 	epicsBoolean;
+    epicsFalse=0, 
+    epicsTrue=1 }   epicsBoolean;
 
 /*
  * Architecture Independent Data Types
  * (so far this is sufficient for all archs we have ported to)
  */
-typedef char		epicsInt8;
+typedef char            epicsInt8;
 typedef unsigned char   epicsUInt8;
 typedef short           epicsInt16;
 typedef unsigned short  epicsUInt16;
-typedef epicsUInt16	epicsEnum16;
+typedef epicsUInt16     epicsEnum16;
 typedef int             epicsInt32;
-typedef unsigned 	epicsUInt32;
+typedef unsigned        epicsUInt32;
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
-typedef	unsigned long	epicsIndex;
-typedef epicsInt32	epicsStatus;	
+typedef unsigned long   epicsIndex;
+typedef epicsInt32      epicsStatus;    
 
 typedef struct {
-	unsigned	length;
-	char		*pString;
+    unsigned    length;
+    char        *pString;
 }epicsString;
 
 /*
@@ -72,24 +72,24 @@ typedef char            epicsOldString[MAX_STRING_SIZE];
  * not fit in this union.
  */
 typedef union epics_any{
-        epicsInt8       int8;
-        epicsUInt8      uInt8;
-        epicsInt16      int16;
-        epicsUInt16     uInt16;
-        epicsEnum16     enum16;
-        epicsInt32      int32;
-        epicsUInt32     uInt32;
-        epicsFloat32    float32;
-        epicsFloat64    float64;
-	epicsString	string;
+    epicsInt8       int8;
+    epicsUInt8      uInt8;
+    epicsInt16      int16;
+    epicsUInt16     uInt16;
+    epicsEnum16     enum16;
+    epicsInt32      int32;
+    epicsUInt32     uInt32;
+    epicsFloat32    float32;
+    epicsFloat64    float64;
+    epicsString     string;
 }epicsAny;
-	
+    
 /*
  * Corresponding Type Codes
  * (this enum must start at zero)
  *
  * !! Update epicsTypeToDBR_XXXX[] and DBR_XXXXToEpicsType
- * 	in db_access.h if you edit this enum !!
+ *  in db_access.h if you edit this enum !!
  */
 typedef enum {
                 epicsInt8T,
@@ -106,8 +106,8 @@ typedef enum {
 }epicsType;
 #define firstEpicsType epicsInt8T
 #define lastEpicsType epicsOldStringT 
-#define validEpicsType(x) 	((x>=firstEpicsType) && (x<=lastEpicsType))
-#define invalidEpicsType(x)	((x<firstEpicsType) || (x>lastEpicsType))
+#define validEpicsType(x)   ((x>=firstEpicsType) && (x<=lastEpicsType))
+#define invalidEpicsType(x) ((x<firstEpicsType) || (x>lastEpicsType))
 
 
 /*
@@ -116,17 +116,17 @@ typedef enum {
  */
 #ifdef epicsTypesGLOBAL
 epicsShareDef READONLY char *epicsTypeNames [lastEpicsType+1] = {
-		"epicsInt8",
-		"epicsUInt8",
-		"epicsInt16",
-		"epicsUInt16",
-		"epicsEnum16",
-		"epicsInt32",
-		"epicsUInt32",
-		"epicsFloat32",
-		"epicsFloat64",
-		"epicsString",
-		"epicsOldString",
+        "epicsInt8",
+        "epicsUInt8",
+        "epicsInt16",
+        "epicsUInt16",
+        "epicsEnum16",
+        "epicsInt32",
+        "epicsUInt32",
+        "epicsFloat32",
+        "epicsFloat64",
+        "epicsString",
+        "epicsOldString",
 };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
@@ -138,17 +138,17 @@ epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
  */
 #ifdef epicsTypesGLOBAL
 epicsShareDef READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
-		"epicsInt8T",
-		"epicsUInt8T",
-		"epicsInt16T",
-		"epicsUInt16T",
-		"epicsEnum16T",
-		"epicsInt32T",
-		"epicsUInt32T",
-		"epicsFloat32T",
-		"epicsFloat64T",
-		"epicsStringT",
-		"epicsOldStringT",
+        "epicsInt8T",
+        "epicsUInt8T",
+        "epicsInt16T",
+        "epicsUInt16T",
+        "epicsEnum16T",
+        "epicsInt32T",
+        "epicsUInt32T",
+        "epicsFloat32T",
+        "epicsFloat64T",
+        "epicsStringT",
+        "epicsOldStringT",
 };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY char *epicsTypeCodeNames [lastEpicsType+1];
@@ -156,17 +156,17 @@ epicsShareExtern READONLY char *epicsTypeCodeNames [lastEpicsType+1];
 
 #ifdef epicsTypesGLOBAL
 epicsShareDef READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
-		sizeof (epicsInt8),
-		sizeof (epicsUInt8),
-		sizeof (epicsInt16),
-		sizeof (epicsUInt16),
-		sizeof (epicsEnum16),
-		sizeof (epicsInt32),
-		sizeof (epicsUInt32),
-		sizeof (epicsFloat32),
-		sizeof (epicsFloat64),
-		sizeof (epicsString),
-		sizeof (epicsOldString),
+        sizeof (epicsInt8),
+        sizeof (epicsUInt8),
+        sizeof (epicsInt16),
+        sizeof (epicsUInt16),
+        sizeof (epicsEnum16),
+        sizeof (epicsInt32),
+        sizeof (epicsUInt32),
+        sizeof (epicsFloat32),
+        sizeof (epicsFloat64),
+        sizeof (epicsString),
+        sizeof (epicsOldString),
 };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY unsigned epicsTypeSizes [lastEpicsType+1];
@@ -177,26 +177,26 @@ epicsShareExtern READONLY unsigned epicsTypeSizes [lastEpicsType+1];
  * of type class identifiers.
  */
 typedef enum {
-	epicsIntC, 
-	epicsUIntC, 
-	epicsEnumC,
-	epicsFloatC, 
-	epicsStringC,
-	epicsOldStringC} epicsTypeClass;
+    epicsIntC, 
+    epicsUIntC, 
+    epicsEnumC,
+    epicsFloatC, 
+    epicsStringC,
+    epicsOldStringC} epicsTypeClass;
 #ifdef epicsTypesGLOBAL
 epicsShareDef READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
-		epicsIntC,
-		epicsUIntC,
-		epicsIntC,
-		epicsUIntC,
-		epicsEnumC,
-		epicsIntC,
-		epicsUIntC,
-		epicsFloatC,
-		epicsFloatC,
-		epicsStringC,
-		epicsOldStringC
-	};
+        epicsIntC,
+        epicsUIntC,
+        epicsIntC,
+        epicsUIntC,
+        epicsEnumC,
+        epicsIntC,
+        epicsUIntC,
+        epicsFloatC,
+        epicsFloatC,
+        epicsStringC,
+        epicsOldStringC
+    };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
@@ -204,18 +204,18 @@ epicsShareExtern READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 
 #ifdef epicsTypesGLOBAL
 epicsShareDef READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
-			"int8",
-			"uInt8",
-			"int16",
-			"uInt16",
-			"enum16",
-			"int32",
-			"uInt32",
-			"float32",
-			"float64",
-			"string",
-			"", /* Old Style Strings will not be in epicsAny type */
-	};
+            "int8",
+            "uInt8",
+            "int16",
+            "uInt16",
+            "enum16",
+            "int32",
+            "uInt32",
+            "float32",
+            "float64",
+            "string",
+            "", /* Old Style Strings will not be in epicsAny type */
+    };
 #else /* epicsTypesGLOBAL */
 epicsShareExtern READONLY char *epicsTypeAnyFieldName [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */

@@ -35,6 +35,8 @@ epicsShareAPI macParseDefns(
 				/* value} pair strings; all storage is */
 				/* allocated contiguously */
 {
+    static const size_t altNumMax = 4;
+    size_t numMax;
     long i;
     long num;
     long quote;
@@ -53,9 +55,10 @@ epicsShareAPI macParseDefns(
 
     /* allocate temporary pointer arrays; in worst case they need to have
        as many entries as the length of the defns string */
-    ptr = ( char ** ) malloc( strlen( defns ) * sizeof( char * ) );
-    end = ( char ** ) malloc( strlen( defns ) * sizeof( char * ) );
-    del = ( long *  ) malloc( strlen( defns ) * sizeof( long   ) );
+    numMax = max ( strlen( defns ), altNumMax );
+    ptr = ( char ** ) malloc( numMax * sizeof( char * ) );
+    end = ( char ** ) malloc( numMax * sizeof( char * ) );
+    del = ( long *  ) malloc( numMax * sizeof( long   ) );
     if ( ptr == NULL || end == NULL  || del == NULL ) goto error;
 
     /* go through definitions, noting pointers to starts and ends of macro
@@ -271,6 +274,10 @@ epicsShareAPI macInstallMacros(
 
 /*********************************************************************
  * $Log$
+ * Revision 1.4  1999/05/13 16:06:23  anj
+ * Cleaned up warnings - the RCS Log: keyword was on the comment line
+ * that starts with a '/' which RCS replicates for these notes...
+ *
  * Revision 1.3  1997/05/01 19:57:35  jhill
  * updated dll keywords
  *

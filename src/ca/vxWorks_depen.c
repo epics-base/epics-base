@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.20  1995/10/12  01:35:31  jhill
+ * Moved cac_mux_io() to iocinf.c
+ *
  * Revision 1.19  1995/08/22  00:27:58  jhill
  * added cvs style mod log
  *
@@ -45,6 +48,7 @@ LOCAL void ca_extra_event_labor(void *pArg);
 LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid);
 LOCAL int cac_add_task_variable (struct ca_static *ca_temp);
 LOCAL void deleteCallBack(CALLBACK *pcb);
+
 
 
 /*
@@ -99,7 +103,7 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	unsigned long 	ticks;
 	unsigned long	rate = sysClkRateGet();
 
-#if NOASYNCRECV 
+#ifdef NOASYNCRECV 
         cac_mux_io(pTV);
 #else
 	/*
@@ -167,7 +171,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 	unsigned long 	ticks;
 	unsigned long	rate = sysClkRateGet();
 
-#if NOASYNCRECV 
+#ifdef NOASYNCRECV 
 	cac_mux_io(pTV);
 #else
 	/*
@@ -842,12 +846,16 @@ void cac_recv_task(int  tid)
          * ca_task_exit() is called.
          */
         while(TRUE){
-#if NOASYNCRECV 
+#ifdef NOASYNCRECV 
 		taskDelay(60);
 #else
         	cac_clean_iiu_list();
 
-                timeout.tv_usec = 10000;
+		/*
+		 * NOTE: this must be longer than one vxWorks
+		 * tick or we will infinite loop 
+		 */
+                timeout.tv_usec = (4*USEC_PER_SEC)/sysClkRateGet();
                 timeout.tv_sec = 0;
 		count = cac_select_io(&timeout, CA_DO_RECVS);
 		ca_process_input_queue();

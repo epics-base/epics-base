@@ -50,8 +50,8 @@ static char *sccsID =
 static char *ignore_list[] = {"_excStub","_excIntStub"};
 
 int	veclist(int);
-int	cISRTest(void (*)(), void (**)(), void **);
-void 	*fetch_pointer(unsigned char *);
+static int	cISRTest(void (*)(), void (**)(), void **);
+static void 	*fetch_pointer(unsigned char *);
 
 
 /*

@@ -50,8 +50,8 @@ static long 		ioc_log_port;
 static struct in_addr 	ioc_log_addr;
 
 int 	iocLogInit();
-int	getConfig();
-void	failureNoptify();
+static int	getConfig();
+static void	failureNoptify();
 
 
 /*

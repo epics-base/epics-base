@@ -109,7 +109,7 @@ static void threadSleepQuantumTest ()
         pTol = "1%";
     }
     else if ( quantumError > 0.001 ) {
-        pTol = "1%";
+        pTol = "0.1%";
     }
     if ( pTol ) {
         printf ( 

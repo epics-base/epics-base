@@ -13,11 +13,11 @@
 EXE=.exe
 HOSTEXE=.exe
 
-CP   =$(PERL) $(EPICS_BASE_HOST_BIN)/cp.pl
-MV   =$(PERL) $(EPICS_BASE_HOST_BIN)/mv.pl
-RM   =$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -f
-MKDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/mkdir.pl
-RMDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -rf
+CP   =$(PERL) $(EPICS_BASE_TOOLS)/cp.pl
+MV   =$(PERL) $(EPICS_BASE_TOOLS)/mv.pl
+RM   =$(PERL) $(EPICS_BASE_TOOLS)/rm.pl -f
+MKDIR=$(PERL) $(EPICS_BASE_TOOLS)/mkdir.pl
+RMDIR=$(PERL) $(EPICS_BASE_TOOLS)/rm.pl -rf
 CHMOD=echo
 ECHO=echo
 

@@ -60,11 +60,11 @@ $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
-$(hostDirs) : 
-	$(PERL) $(EPICS_BASE_HOST_BIN)/makeMakefile.pl $@ Host
+$(hostDirs) : $(EPICS_BASE_TOOLS)/makeMakefile.pl
+	$(PERL) $(EPICS_BASE_TOOLS)/makeMakefile.pl $@ Host
 
-$(crossDirs) : 
-	$(PERL) $(EPICS_BASE_HOST_BIN)/makeMakefile.pl $@ Vx
+$(crossDirs) : $(EPICS_BASE_TOOLS)/makeMakefile.pl
+	$(PERL) $(EPICS_BASE_TOOLS)/makeMakefile.pl $@ Vx
 
 #
 # host/cross action targets

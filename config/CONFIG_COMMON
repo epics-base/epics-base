@@ -42,6 +42,7 @@ INSTALL_CONFIG              = $(INSTALL_LOCATION)/config
 INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
+EPICS_BASE_TOOLS        = $(EPICS_BASE)/config/tools
 
 DIVIDER = .
 OBJ = .
@@ -63,7 +64,7 @@ LEX   = $(ELEX)
 PERL=perl
 
 # install from EPICS
-INSTALL = $(PERL) $(EPICS_BASE_HOST_BIN)/installEpics.pl
+INSTALL = $(PERL) $(EPICS_BASE_TOOLS)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)
 

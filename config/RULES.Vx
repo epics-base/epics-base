@@ -129,7 +129,7 @@ endif
 %.out : %.o
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	$(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/munch.pl < nm.out > ctdt.c
+	$(PERL) $(EPICS_BASE_TOOLS)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(LINK.cc) $@ $< ctdt.o
 
@@ -137,7 +137,7 @@ endif
 $(MUNCHNAME):%.munch : %
 	@ $(RM) ctct.o ctdt.c nm.out
 	$(NM) $<  > nm.out
-	$(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/munch.pl < nm.out > ctdt.c
+	$(PERL) $(EPICS_BASE_TOOLS)/munch.pl < nm.out > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
 	$(LINK.cc) $@ $(LDFLAGS) $< ctdt.o
 

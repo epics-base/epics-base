@@ -156,7 +156,7 @@ int rsrv_online_notify_task()
             else {
                 struct sockaddr_in if_addr;
 
-                int size = sizeof (if_addr);
+                osiSocklen_t size = sizeof (if_addr);
                 status = getsockname (sock, (struct sockaddr *) &if_addr, &size);
                 if (status<0) {
                     errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",

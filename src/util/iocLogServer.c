@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.37  2000/02/10 17:47:13  jhill
+ * dont include osiSockResource.h
+ *
  * Revision 1.36  2000/02/04 15:52:33  mrk
  * bsdSocketResource=>osiSockResource
  *
@@ -511,36 +514,35 @@ static void handleLogFileError(void)
  *	acceptNewClient()
  *
  */
-static void acceptNewClient(void *pParam)
+static void acceptNewClient ( void *pParam )
 {
-	struct ioc_log_server	*pserver = (struct ioc_log_server *)pParam;
+	struct ioc_log_server *pserver = (struct ioc_log_server *) pParam;
 	struct iocLogClient	*pclient;
-	int			size;
-	struct sockaddr_in 	addr;
-	int			status;
-	osiSockIoctl_t	optval;
+	osiSocklen_t addrSize;
+	struct sockaddr_in addr;
+	int status;
+	osiSockIoctl_t optval;
 
-	pclient = (struct iocLogClient *) 
-			malloc(sizeof *pclient);
-	if(!pclient){
+	pclient = ( struct iocLogClient * ) malloc ( sizeof ( *pclient ) );
+	if ( ! pclient ) {
 		return;
 	}
 
-	size = sizeof(addr);
-	pclient->insock = accept(pserver->sock, (struct sockaddr *)&addr, &size);
-	if (pclient->insock<0 || size<sizeof(addr)) {
+	addrSize = sizeof ( addr );
+	pclient->insock = accept ( pserver->sock, (struct sockaddr *)&addr, &addrSize );
+	if ( pclient->insock<0 || addrSize < sizeof (addr) ) {
         static unsigned acceptErrCount;
         static int lastErrno;
         int thisErrno;
 
-		free(pclient);
-		if (SOCKERRNO==SOCK_EWOULDBLOCK || SOCKERRNO==SOCK_EINTR) {
+		free ( pclient );
+		if ( SOCKERRNO == SOCK_EWOULDBLOCK || SOCKERRNO == SOCK_EINTR ) {
             return;
 		}
 
         thisErrno = SOCKERRNO;
-        if (acceptErrCount%1000 || lastErrno!=thisErrno) {
-            fprintf(stderr, "Accept Error %d\n", SOCKERRNO);
+        if ( acceptErrCount % 1000 || lastErrno != thisErrno ) {
+            fprintf ( stderr, "Accept Error %d\n", SOCKERRNO );
         }
         acceptErrCount++;
         lastErrno = thisErrno;

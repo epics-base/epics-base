@@ -476,7 +476,6 @@ void epicsShareAPI ca_repeater ()
     int size;
     SOCKET sock;
     osiSockAddr from;
-    int from_size = sizeof ( from );
     unsigned short port;
     makeSocketReturn msr;
 
@@ -504,8 +503,7 @@ void epicsShareAPI ca_repeater ()
    debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 
    while ( true ) {
-        caHdr   *pMsg;
-
+        osiSocklen_t from_size = sizeof ( from );
         size = recvfrom ( sock, buf, sizeof (buf), 0,
                     &from.sa, &from_size );
         if ( size < 0 ) {
@@ -524,7 +522,7 @@ void epicsShareAPI ca_repeater ()
             continue;
         }
 
-        pMsg = (caHdr *) buf;
+        caHdr *pMsg = (caHdr *) buf;
 
         /*
          * both zero length message and a registration message

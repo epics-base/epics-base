@@ -57,9 +57,9 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC[] =
 //
 void udpiiu::recvMsg ()
 {
-    osiSockAddr         src;
-    int                 src_size = sizeof (src);
-    int                 status;
+    osiSockAddr src;
+    osiSocklen_t src_size = sizeof (src);
+    int status;
 
     status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                         &src.sa, &src_size );
@@ -456,7 +456,7 @@ void udpiiu::shutdown ()
     if ( laborRequired ) {
         int status;
         osiSockAddr addr;
-        int size = sizeof ( addr.sa );
+        osiSocklen_t size = sizeof ( addr.sa );
 
         status = getsockname ( this->sock, &addr.sa, &size );
         if ( status < 0 ) {

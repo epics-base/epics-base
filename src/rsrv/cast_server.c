@@ -127,7 +127,7 @@ int cast_server(void)
     int                 status;
     int                 count=0;
     struct sockaddr_in  new_recv_addr;
-    int                 recv_addr_size;
+    osiSocklen_t        recv_addr_size;
     unsigned short      port;
     int                 nchars;
     threadId            tid;

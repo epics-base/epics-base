@@ -139,7 +139,7 @@ struct client *create_client (SOCKET sock)
     int                     status;
     struct client           *client;
     int                     true = TRUE;
-    int                     addrSize;
+    osiSocklen_t            addrSize;
     unsigned                priorityOfEvents;
 
     /*
@@ -343,7 +343,7 @@ LOCAL int req_server (void)
 
     while (TRUE) {
         struct sockaddr     sockAddr;
-        int                 addLen = sizeof(sockAddr);
+        osiSocklen_t        addLen = sizeof(sockAddr);
 
         if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
             errlogPrintf("CAS: Client accept error was \"%s\"\n",

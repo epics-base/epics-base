@@ -432,9 +432,9 @@ void cac::beaconNotify ( const inetAddrID &addr )
      * from replying at once.
      */
     {
-        struct sockaddr_in  saddr;
-        int                 saddr_length = sizeof(saddr);
-        int                 status;
+        struct sockaddr_in saddr;
+        osiSocklen_t saddr_length = sizeof ( saddr );
+        int status;
 
         status = getsockname ( this->pudpiiu->getSock (), (struct sockaddr *) &saddr, &saddr_length );
         if ( status < 0 ) {

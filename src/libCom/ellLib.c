@@ -32,6 +32,10 @@
 
 /* #define	DEBUG_DRIVER */
 
+#ifdef vxWorks
+#include <vxWorks.h>
+#endif
+
 #include <stdlib.h>
 
 #include <ellLib.h>

@@ -48,6 +48,10 @@
  *				Also they are not used on vxWorks
  */
 
+#ifdef vxWorks
+#include <vxWorks.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */

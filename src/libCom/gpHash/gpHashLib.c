@@ -51,6 +51,10 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * .01  04-07-94	mrk	Initial Implementation
  */
 
+#ifdef vxWorks
+#include <vxWorks.h>
+#endif
+
 #include <dbDefs.h>
 #include <string.h>
 #include <stdlib.h>

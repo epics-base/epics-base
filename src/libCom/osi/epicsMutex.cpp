@@ -1,5 +1,5 @@
 /* epicsMutex.c */
-/*	Author: Marty Kraimer	Date: 03APR01	*/
+/*	Author: Marty Kraimer and Jeff Hill	Date: 03APR01	*/
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
 *****************************************************************
@@ -11,6 +11,8 @@ This software was developed under a United States Government license
 described on the COPYRIGHT_Combined file included as part
 of this distribution.
 **********************************************************************/
+
+#include <new>
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -58,7 +60,7 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         if(pmutexNode) {
             ellDelete(&freeList,&pmutexNode->node);
         } else {
-            pmutexNode = calloc(1,sizeof(mutexNode));
+            pmutexNode = static_cast <mutexNode *> ( calloc(1,sizeof(mutexNode)) );
         }
         pmutexNode->id = id;
         pmutexNode->pFileName = pFileName;
@@ -122,4 +124,62 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
         pmutexNode = (mutexNode *)ellNext(&pmutexNode->node);
     }
     epicsMutexUnlock(lock);
+}
+
+
+epicsMutex :: epicsMutex () :
+    id ( epicsMutexCreate () )
+{
+    if ( this->id == 0 ) {
+        throw std::bad_alloc ();
+    }
+}
+
+epicsMutex ::~epicsMutex ()
+{
+    epicsMutexDestroy ( this->id );
+}
+
+void epicsMutex :: lock ()
+{
+    epicsMutexLockStatus status = epicsMutexLock ( this->id );
+    if ( status != epicsMutexLockOK ) {
+        throwWithLocation ( invalidSemaphore () );
+    }
+}
+
+bool epicsMutex :: lock ( double timeOut )
+{
+    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
+    if (status==epicsMutexLockOK) {
+        return true;
+    } else if (status==epicsMutexLockTimeout) {
+        return false;
+    } else {
+        throwWithLocation ( invalidSemaphore () );
+    }
+    return false; // never here, compiler is happy
+}
+
+bool epicsMutex :: tryLock ()
+{
+    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
+    if ( status == epicsMutexLockOK ) {
+        return true;
+    } else if ( status == epicsMutexLockTimeout ) {
+        return false;
+    } else {
+        throwWithLocation ( invalidSemaphore () );
+    }
+    return false; // never here, but compiler is happy
+}
+
+void epicsMutex :: unlock ()
+{
+    epicsMutexUnlock ( this->id );
+}
+
+void epicsMutex :: show ( unsigned level ) const
+{
+    epicsMutexShow ( this->id, level );
 }

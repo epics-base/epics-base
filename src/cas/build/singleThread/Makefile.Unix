@@ -1,5 +1,7 @@
 
-CAS = ../../..
+#HERE := $(shell pwd)
+HERE = .
+CAS := $(HERE)/../../..
 TOP = $(CAS)/../..
 SRC = $(CAS)/generic
 CA = $(CAS)/../ca

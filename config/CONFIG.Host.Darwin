@@ -1,0 +1,20 @@
+# CONFIG.Host.Darwin
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.Darwin
+ 
+ARCH_CLASS = Darwin
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+#AR = ar -rc
+#ARCMD = $(AR) $@
+#RANLIB = ranlib -t
+
+CC=cc
+CXX=c++
+
+OP_SYS_CFLAGS += -no-cpp-precomp
+OP_SYS_INCLUDES = -I/sw/include -I/usr/X11R6/include
+OP_SYS_LDFLAGS += -L/sw/lib -L/usr/X11R6/lib

@@ -46,6 +46,7 @@ MV=mv
 RM=rm -f
 MKDIR=mkdir
 RMDIR=rm -rf
+WHAT = echo
 
 # Include files
 HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLUDE)	\

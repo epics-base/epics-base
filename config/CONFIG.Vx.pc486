@@ -12,6 +12,7 @@ CP=cp
 RMDIR=rm -rf
 MKDIR=mkdir
 CHMOD = "/bin/chmod"
+WHAT = what
 
 #	overrides defines in CONFIG_SITE that don't fit Tornado
 #

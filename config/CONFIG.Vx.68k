@@ -18,6 +18,7 @@ MV=mv
 RM=rm -f
 MKDIR = mkdir
 RMDIR=rm -rf
+WHAT = what
 
 #----------------------------
 # Only G++ currently supported

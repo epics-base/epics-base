@@ -29,6 +29,8 @@ CHMOD = "/bin/chmod"
 CP=cp
 MV=mv
 RM=rm -f
+WHAT = what
+
 EXE=
 OBJ=.o
 

@@ -32,6 +32,8 @@ RM=rm -f
 RMDIR = rm -rf
 MKDIR = mkdir
 CHMOD = "/bin/chmod"
+WHAT = what
+
 EXE=
 OBJ=.o
 

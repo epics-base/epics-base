@@ -25,6 +25,7 @@ MV = mv
 RMDIR = rm -rf
 MKDIR = mkdir
 CHMOD = "/bin/chmod"
+WHAT = what
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -w
 ACC_ANSI_INVOKE_W_YES = $(ACC)

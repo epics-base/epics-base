@@ -12,17 +12,17 @@ uninstall::
 
 tar:
 	@DIRNAME=$(notdir $(shell pwd)); \
-	echo "TOP: Creating $$DIRNAME.Tar file..."; \
-	ls Makefile* | xargs tar vcf $$DIRNAME.Tar; \
+	echo "TOP: Creating $$DIRNAME.tar file..."; \
+	ls Makefile* | xargs tar vcf $$DIRNAME.tar; \
 	if [ -f .current_rel_hist ]; then \
-		ls .current_rel_hist | xargs tar vrf $$DIRNAME.Tar ; \
+		ls .current_rel_hist | xargs tar vrf $$DIRNAME.tar ; \
 	fi ;\
 	if [ -f EPICS_BASE ]; then \
-		ls EPICS_BASE | xargs tar vrf $$DIRNAME.Tar ; \
+		ls EPICS_BASE | xargs tar vrf $$DIRNAME.tar ; \
 	fi ;\
 	for DIR in ${DIRS}; do    \
 		find $${DIR} -name CVS -prune -o ! -type d -print \
-		| grep -v "/O\..*$$" | xargs tar vrf $$DIRNAME.Tar; \
+		| grep -v "/O\..*$$" | xargs tar vrf $$DIRNAME.tar; \
 	done
 
 help:

@@ -43,6 +43,7 @@ of this distribution.
 #include "dbCa.h"
 /*Following is because dbScan.h causes include for dbAccess.h*/
 void scanOnce(void *precord);
+extern volatile int interruptAccept;
 
 static ELLLIST caList;	/* Work list for dbCaTask */
 static SEM_ID caListSem; /*Mutual exclusions semaphores for caList*/
@@ -138,7 +139,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	epicsPrintf("dbCaGetLink: semStatus!OK\n");
 	return(-1);
     }
-    if(ca_state(pca->chid) != cs_conn) {
+    if(!pca->chid || ca_state(pca->chid) != cs_conn) {
 	pca->sevr = INVALID_ALARM;
 	goto done;
     }
@@ -214,7 +215,7 @@ long dbCaPutLink(struct link *plink,short dbrType,
 	epicsPrintf("dbCaGetLink: semStatus!OK\n");
 	return(-1);
     }
-    if(ca_state(pca->chid) != cs_conn) {
+    if(!pca->chid || ca_state(pca->chid) != cs_conn) {
 	semGive(pca->lock);
 	return(-1);
     }
@@ -305,8 +306,7 @@ caAttributes *getpcaAttributes(struct link *plink)
 
     if(!plink || (plink->type!=CA_LINK)) return(NULL);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca) return(NULL);
-    if(ca_state(pca->chid)!=cs_conn) return(NULL);
+    if(!pca->chid || ca_state(pca->chid)!=cs_conn) return(NULL);
     return(pca->pcaAttributes);
 }
 
@@ -374,8 +374,7 @@ long dbCaGetNelements(struct link *plink,long *nelements)
     if(!plink) return(-1);
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca) return(-1);
-    if(ca_state(pca->chid)!=cs_conn) return(-1);
+    if(!pca->chid || ca_state(pca->chid)!=cs_conn) return(-1);
     *nelements = pca->nelements;
     return(0);
 }
@@ -387,8 +386,7 @@ long dbCaGetSevr(struct link *plink,short *severity)
     if(!plink) return(-1);
     if(plink->type != CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca) return(-1);
-    if(ca_state(pca->chid)!=cs_conn) return(-1);
+    if(!pca->chid || ca_state(pca->chid)!=cs_conn) return(-1);
     *severity = pca->sevr;
     return(0);
 }
@@ -606,6 +604,8 @@ void dbCaTask()
     int		status;
 
     SEVCHK(ca_task_initialize(),NULL);
+    /*Dont do anything until iocInit initializes database*/
+    while(!interruptAccept) taskDelay(10);
     /* channel access event loop */
     while (TRUE){
 	semTake(caWakeupSem,WAIT_FOREVER);

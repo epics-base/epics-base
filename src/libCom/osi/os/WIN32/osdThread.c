@@ -5,13 +5,20 @@
  * Author: Jeff Hill
  * 
  *
- *
  */
 
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#ifndef VC_EXTRALEAN
+#   define VC_EXTRALEAN
+#endif
+#ifndef WIN32_LEAN_AND_MEAN 
+#   define WIN32_LEAN_AND_MEAN 
+#endif
+#include <winsock2.h>
 
 #define epicsExportSharedSymbols
 #include "shareLib.h"
@@ -24,55 +31,89 @@ typedef struct {
     HANDLE handle;
     THREADFUNC funptr;
     void *parm;
-    char *pName;
-    int priority;
     DWORD id;
+    char isSuspended;
 } win32ThreadParam;
 
 static DWORD tlsIndexWIN32 = 0xFFFFFFFF;
 
-/* 
- * threadGetOsiPriorityValue ()
- */
-epicsShareFunc int epicsShareAPI threadGetOsiPriorityValue (int osdPriority) 
-{ 
-    int osiPriority;
+typedef struct osdThreadPrivate {
+    DWORD key;
+} osdThreadPrivate;
 
-    if (osdPriority<THREAD_BASE_PRIORITY_IDLE) {
-        return threadPriorityMin;
-    }
-
-    if (osdPriority>THREAD_PRIORITY_TIME_CRITICAL) {
-        return threadPriorityMax;
-    }
-
-    osiPriority = osdPriority - THREAD_BASE_PRIORITY_IDLE;
-    osiPriority *= threadPriorityMax - threadPriorityMin;
-    osiPriority /= THREAD_PRIORITY_TIME_CRITICAL - THREAD_BASE_PRIORITY_IDLE;
-    osiPriority += threadPriorityMin;
-    return osiPriority;
-}
+#define osdPriorityStateCount 7
 
 /*
- * threadGetOssPriorityValue ()
+ * threadGetOsdPriorityValue ()
  */
-epicsShareFunc int epicsShareAPI threadGetOssPriorityValue (unsigned osiPriority) 
+static int threadGetOsdPriorityValue (unsigned osiPriority) 
 {
-    unsigned osdPriority;
+    static const int osdPriorityValue [osdPriorityStateCount] = 
+    {
+        THREAD_PRIORITY_IDLE,
+        THREAD_PRIORITY_LOWEST,
+        THREAD_PRIORITY_BELOW_NORMAL,
+        THREAD_PRIORITY_NORMAL,
+        THREAD_PRIORITY_ABOVE_NORMAL,
+        THREAD_PRIORITY_HIGHEST,
+        THREAD_PRIORITY_TIME_CRITICAL,
+    };
+    unsigned index;
 
+    // optimizer will remove this one if threadPriorityMin is zero
+    // and osiPriority is unsigned
     if (osiPriority<threadPriorityMin) {
-        return THREAD_BASE_PRIORITY_IDLE;
+        osiPriority = threadPriorityMin;
     }
 
     if (osiPriority>threadPriorityMax) {
-        return THREAD_PRIORITY_TIME_CRITICAL;
+        osiPriority = threadPriorityMax;
     }
 
-    osdPriority = osiPriority - threadPriorityMin;
-    osdPriority *= THREAD_PRIORITY_TIME_CRITICAL - THREAD_BASE_PRIORITY_IDLE;
-    osdPriority /= threadPriorityMax - threadPriorityMin;
-    osdPriority += THREAD_BASE_PRIORITY_IDLE;
-    return osdPriority;
+    index = osiPriority * osdPriorityStateCount;
+    index /= (threadPriorityMax - threadPriorityMin) + 1;
+
+    return osdPriorityValue[index];
+}
+
+/* 
+ * threadGetOsiPriorityValue ()
+ */
+static unsigned threadGetOsiPriorityValue (int osdPriority) 
+{
+    unsigned index;
+    int osiPriority;
+
+    switch (osdPriority) {
+    case THREAD_PRIORITY_TIME_CRITICAL:
+        return threadPriorityMax;
+    case THREAD_PRIORITY_HIGHEST:
+        index = 5;
+        break;
+    case THREAD_PRIORITY_ABOVE_NORMAL:
+        index = 4;
+        break;
+    case THREAD_PRIORITY_NORMAL:
+        index = 3;
+        break;
+    case THREAD_PRIORITY_BELOW_NORMAL:
+        index = 2;
+        break;
+    case THREAD_PRIORITY_LOWEST:
+        index = 1;
+        break;
+    case THREAD_PRIORITY_IDLE:
+        return threadPriorityMin;
+    default:
+        assert (0);
+    }
+
+    osiPriority = index * (threadPriorityMax - threadPriorityMin);
+    osiPriority += (threadPriorityMax - threadPriorityMin)/2 + 1;
+    osiPriority /= osdPriorityStateCount;
+    osiPriority += threadPriorityMin;
+
+    return osiPriority;
 }
 
 /*
@@ -101,18 +142,20 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
 static DWORD WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
 {
     win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
+    HANDLE threadHandle;
     BOOL stat;
 
     stat = TlsSetValue (tlsIndexWIN32, pParm);
-    if (stat) {
+    if (!stat) {
         return 0;
     }
 
     (*pParm->funptr) (pParm->parm);
 
-    CloseHandle (pParm->handle); 
-    free (pParm->pName);
+    threadHandle = pParm->handle;
     free (pParm);
+    CloseHandle (threadHandle); 
+    TlsSetValue (tlsIndexWIN32, 0);
 
     return 1;
 }
@@ -124,6 +167,7 @@ static void freeThreadLocalStorageIndex (void)
 {
     if (tlsIndexWIN32!=0xFFFFFFFF) {
         TlsFree (tlsIndexWIN32);
+        tlsIndexWIN32 = 0xFFFFFFFF;
     }
 }
  
@@ -134,20 +178,20 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
     unsigned int priority, unsigned int stackSize, THREADFUNC pFunc,void *pParm)
 {
     win32ThreadParam *pParmWIN32;
+    int osdPriority;
     DWORD wstat;
     BOOL bstat;
 
     if (tlsIndexWIN32==0xFFFFFFFF) {
         tlsIndexWIN32 = TlsAlloc();
         if (tlsIndexWIN32==0xFFFFFFFF) {
-            return NULL;
+            return 0;
         }
         else {
             int status;
             status = atexit (freeThreadLocalStorageIndex);
             if (status) {
-                TlsFree (tlsIndexWIN32);
-                tlsIndexWIN32 = 0xFFFFFFFF;
+                freeThreadLocalStorageIndex ();
                 return NULL;
             }
         }
@@ -158,28 +202,20 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
         return NULL;
     }
 
-    pParmWIN32->pName = malloc (strlen(pName)+1);
-    if (pParmWIN32->pName==NULL) {
-        free (pParmWIN32);
-        return NULL;
-    }
-    strcpy (pParmWIN32->pName, pName);
-
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
-    pParmWIN32->priority = threadGetOssPriorityValue (priority);
+    pParmWIN32->isSuspended = 0;
     pParmWIN32->handle = CreateThread (NULL, stackSize, epicsWin32ThreadEntry, 
                                 pParmWIN32, CREATE_SUSPENDED , &pParmWIN32->id);
     if (pParmWIN32->handle==NULL) {
-        free (pParmWIN32->pName);
         free (pParmWIN32);
         return NULL;
     }
 
-    bstat = SetThreadPriority (pParmWIN32->handle, pParmWIN32->priority);
+    osdPriority = threadGetOsdPriorityValue (priority);
+    bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
-        CloseHandle (pParmWIN32->handle); 
-        free (pParmWIN32->pName);
+        CloseHandle ( pParmWIN32->handle ); 
         free (pParmWIN32);
         return NULL;
     }
@@ -187,7 +223,6 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
     wstat =  ResumeThread (pParmWIN32->handle);
     if (wstat==0xFFFFFFFF) {
         CloseHandle (pParmWIN32->handle); 
-        free (pParmWIN32->pName);
         free (pParmWIN32);
         return NULL;
     }
@@ -196,32 +231,20 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
 }
 
 /*
- * threadDestroy ()
- */
-epicsShareFunc void epicsShareAPI threadDestroy (threadId id) 
-{ 
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
-    BOOL stat;
-
-    stat = TerminateThread (pParm->handle, 0);
-    assert (stat);
-
-    CloseHandle (pParm->handle); 
-    free (pParm->pName);
-    free (pParm);
-
-    printf ("threadDestroy() appears to be reckless on windows\n");
-}
-
-/*
  * threadSuspend ()
  */
-epicsShareFunc void epicsShareAPI threadSuspend (threadId id)
+epicsShareFunc void epicsShareAPI threadSuspend ()
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
     DWORD stat;
 
-    stat =  SuspendThread (pParm->handle);
+    if (pParm) {
+        stat =  SuspendThread ( pParm->handle );
+        pParm->isSuspended = 1;
+    }
+    else {
+        stat =  SuspendThread ( GetCurrentThread () );
+    }
     assert (stat!=0xFFFFFFFF);
 }
 
@@ -233,8 +256,9 @@ epicsShareFunc void epicsShareAPI threadResume (threadId id)
     win32ThreadParam *pParm = (win32ThreadParam *) id;
     DWORD stat;
 
-    stat =  ResumeThread (pParm->handle);
+    stat =  ResumeThread ( pParm->handle );
     assert (stat!=0xFFFFFFFF);
+    pParm->isSuspended = 0;
 }
 
 /*
@@ -259,40 +283,8 @@ epicsShareFunc void epicsShareAPI threadSetPriority (threadId id, unsigned prior
     win32ThreadParam *pParm = (win32ThreadParam *) id;
     BOOL stat;
 
-    stat = SetThreadPriority (pParm->handle, threadGetOssPriorityValue(priority));
+    stat = SetThreadPriority (pParm->handle, threadGetOsdPriorityValue (priority) );
     assert (stat);
-}
-
-/*
- * threadSetDestroySafe ()
- */
-epicsShareFunc void epicsShareAPI threadSetDestroySafe () 
-{
-    /*
-     * no matching windows functionality ?
-     */
-    printf ("unable to create functionally correct threadSetDestroySafe() on win32\n");
-}
-
-/*
- * threadSetDestroyUnsafe ()
- */
-epicsShareFunc void epicsShareAPI threadSetDestroyUnsafe () 
-{
-    /*
-     * no matching windows functionality ?
-     */
-    printf ("unable to create functionally correct threadSetDestroyUnsafe() on win32\n");
-}
-
-/*
- * threadGetName ()
- */
-epicsShareFunc const char * epicsShareAPI threadGetName (threadId id) 
-{
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
-
-    return pParm->pName;
 }
 
 /*
@@ -300,10 +292,31 @@ epicsShareFunc const char * epicsShareAPI threadGetName (threadId id)
  */
 epicsShareFunc int epicsShareAPI threadIsEqual (threadId id1, threadId id2) 
 {
-    win32ThreadParam *pParm1 = (win32ThreadParam *) id1;
-    win32ThreadParam *pParm2 = (win32ThreadParam *) id2;
+    return ( id1 == id2 );
+}
 
-    return ( pParm1->id == pParm2->id );
+/*
+ * threadIsSuspended ()
+ *
+ * This implementation is deficient if the thread is not suspended by
+ * threadSuspend () or resumed by threadResume(). This would happen
+ * if a WIN32 call was used instead of threadSuspend(), or if WIN32
+ * suspended the thread when it receives an unhandled run time exception.
+ * 
+ */
+epicsShareFunc int epicsShareAPI threadIsSuspended (threadId id) 
+{
+    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    DWORD exitCode;
+    BOOL stat;
+    
+    stat = GetExitCodeThread (pParm->handle, &exitCode);
+    if (stat) {
+        return pParm->isSuspended;
+    }
+    else {
+        return 1;
+    }
 }
 
 /*
@@ -311,17 +324,7 @@ epicsShareFunc int epicsShareAPI threadIsEqual (threadId id1, threadId id2)
  */
 epicsShareFunc int epicsShareAPI threadIsReady (threadId id) 
 {
-    printf ("unable to create functionally correct threadIsReady() on win32\n");
-    return 1; 
-}
-
-/*
- * threadIsSuspended ()
- */
-epicsShareFunc int epicsShareAPI threadIsSuspended (threadId id) 
-{
-    printf ("unable to create functionally correct threadIsSuspended() on win32\n");
-    return 0; 
+    return !threadIsSuspended (id);
 }
 
 /*
@@ -331,7 +334,6 @@ epicsShareFunc void epicsShareAPI threadSleep (double seconds)
 {
     static const double mSecPerSec = 1000;
     DWORD milliSecDelay = (DWORD) (seconds * mSecPerSec);
-
     Sleep (milliSecDelay);
 }
 
@@ -340,48 +342,38 @@ epicsShareFunc void epicsShareAPI threadSleep (double seconds)
  */
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf (void) 
 { 
-    return (threadId) TlsGetValue (tlsIndexWIN32); 
+    return (threadId) TlsGetValue (tlsIndexWIN32);
 }
 
-/*
- * threadLockContextSwitch ()
- */
-epicsShareFunc void epicsShareAPI threadLockContextSwitch (void) 
+epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate ()
 {
-    win32ThreadParam *pParm;
-    BOOL stat;
-
-    pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
-    assert (pParm);
-
-    stat = SetThreadPriority (pParm->handle, THREAD_PRIORITY_TIME_CRITICAL);
-    assert (stat);
-
-    printf ("I doubt that this is a correct implementation of threadLockContextSwitch()\n");
+    osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));
+    if (p) {
+        p->key = TlsAlloc ();
+        if (p->key==0xFFFFFFFF) {
+            free (p);
+            p = 0;
+        }
+    }
+    return (threadVarId) p;
 }
 
-/*
- * threadUnlockContextSwitch ()
- */
-epicsShareFunc void epicsShareAPI threadUnlockContextSwitch (void) 
+epicsShareFunc void epicsShareAPI threadPrivateDelete (threadVarId id)
 {
-    win32ThreadParam *pParm;
-    BOOL stat;
-
-    pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
-    assert (pParm);
-
-    stat = SetThreadPriority (pParm->handle, pParm->priority);
+    osdThreadPrivate *p = (osdThreadPrivate *) id;
+    BOOL stat = TlsFree (p->key);
     assert (stat);
-
-    printf ("I doubt that this is a correct implementation of threadUnlockContextSwitch()\n");
 }
 
-/*
- * threadNameToId ()
- */
-epicsShareFunc threadId epicsShareAPI threadNameToId (const char *name) 
-{ 
-    printf ("threadNameToId() isnt implemented\n");
-    return 0; 
+epicsShareFunc void epicsShareAPI threadPrivateSet (threadVarId id, void *pVal)
+{
+    struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
+    BOOL stat = TlsSetValue (pPvt->key, (void *) pVal );
+    assert (stat);
+}
+
+epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId id)
+{
+    struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
+    return (void *) TlsGetValue (pPvt->key);
 }

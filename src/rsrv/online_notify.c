@@ -3,8 +3,6 @@
  *
  *	tell CA clients this a server has joined the network
  *
- *	@(#)online_notify.c
- *   @(#)online_notify.c	1.3	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -35,7 +33,7 @@
  *      .00 joh 021192  better diagnostics
  */
 
-char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "$Id$\t$Date$";
 
 /*
  *	system includes

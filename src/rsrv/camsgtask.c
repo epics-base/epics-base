@@ -39,7 +39,7 @@
  *	.07 joh 031692  disconnect on bad message
  */
 
-char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <lstLib.h>

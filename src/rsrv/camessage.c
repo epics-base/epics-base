@@ -45,7 +45,7 @@
  *	.11 joh 062492	dont allow flow control to turn off gets
  */
 
-char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
 #include <taskLib.h>

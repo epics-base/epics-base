@@ -1,0 +1,12 @@
+# CONFIG.Common.solaris-sparc-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-sparc with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.Common.solaris-sparc-debug
+#-------------------------------------------------------
+
+# Include definitions common to all solaris-sparc  target archs
+include $(CONFIG)/os/CONFIG.Common.solaris-sparc
+

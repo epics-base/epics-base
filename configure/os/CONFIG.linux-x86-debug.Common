@@ -1,0 +1,12 @@
+# CONFIG.linux-x86-debug.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-x86 debug with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.linux-x86-debug.Common
+#-------------------------------------------------------
+
+#Include definitions common to linux-x86 hosts
+include $(CONFIG)/os/CONFIG.linux-x86.Common
+

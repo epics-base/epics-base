@@ -1,0 +1,3 @@
+
+# Removes optimization and adds debugging options
+HOST_OPT=NO

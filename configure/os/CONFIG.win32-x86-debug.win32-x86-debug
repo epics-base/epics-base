@@ -1,0 +1,11 @@
+# CONFIG.solaris-x86-debug.solaris-x86-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-x86 debug compiler host - solaris-x86 debug compiler target builds
+# Sites may override these definitions in CONFIG_SITE.solaris-x86-debug.solaris-x86-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
+

@@ -104,6 +104,8 @@ long dbWriteDevice(DBBASE *pdbbase,const char *filename);
 long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp);
 long dbWriteDriver(DBBASE *pdbbase,const char *filename);
 long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp);
+long dbWriteBreaktable(DBBASE *pdbbase,const char *filename);
+long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
 
 /*Following two routines are obsolete. For now dbRead calls dbAsciiRead.*/
 /*  dbWrite does nothing						*/
@@ -171,6 +173,7 @@ void dbDumpRecDes(DBBASE *pdbbase,char *recdesName);
 void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname);
 void dbDumpDevice(DBBASE *pdbbase,char *recdesName);
 void dbDumpDriver(DBBASE *pdbbase);
+void dbDumpBreaktable(DBBASE *pdbbase,char *name);
 void dbPvdDump(DBBASE *pdbbase,int verbose);
 void dbReportDeviceConfig(DBBASE *pdbbase,FILE *report);
 

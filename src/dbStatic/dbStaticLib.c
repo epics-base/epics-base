@@ -737,7 +737,7 @@ long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
     }
     return(0);
 }
-
+
 long dbWriteDriver(DBBASE *pdbbase,const char *filename)
 {
     FILE	*outFile;
@@ -765,6 +765,44 @@ long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     pdrvSup; pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	fprintf(fp,"driver(%s)\n",pdrvSup->name);
+    }
+    return(0);
+}
+
+long dbWriteBreaktable(DBBASE *pdbbase,const char *filename)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteBreaktableFP(pdbbase,outFile);
+    if(fclose(outFile)) {
+	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
+    }
+    return(0);
+}
+
+long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
+{
+    brkTable	*pbrkTable;
+    brkInt	*pbrkInt;
+    int		ind;
+
+    if(!pdbbase) {
+	fprintf(stderr,"pdbbase not specified\n");
+	return(-1);
+    }
+    for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
+    pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
+	fprintf(fp,"breaktable(%s) {\n",pbrkTable->name);
+	for(ind=0; ind<pbrkTable->number; ind++) {
+	    pbrkInt = pbrkTable->papBrkInt[ind];
+	    fprintf(fp,"\t%f %f\n",pbrkInt->raw,pbrkInt->eng);
+	}
+	fprintf(fp,"}\n");
     }
     return(0);
 }
@@ -2824,6 +2862,29 @@ void dbDumpDriver(DBBASE *pdbbase)
 	return;
     }
     dbWriteDriverFP(pdbbase,stdout);
+}
+
+void dbDumpBreaktable(DBBASE *pdbbase,char *name)
+{
+    brkTable	*pbrkTable;
+    brkInt	*pbrkInt;
+    int		ind;
+
+    if(!pdbbase) {
+	fprintf(stderr,"pdbbase not specified\n");
+	return;
+    }
+    for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
+    pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
+	if(name && strcmp(name,pbrkTable->name)!=0) continue;
+	printf("breaktable(%s) {\n",pbrkTable->name);
+	for(ind=0; ind<pbrkTable->number; ind++) {
+	    pbrkInt = pbrkTable->papBrkInt[ind];
+	    printf("\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
+	}
+	printf("}\n");
+    }
+    return;
 }
 
 static char *bus[VXI_IO+1] = {"","","VME","CAMAC","AB",

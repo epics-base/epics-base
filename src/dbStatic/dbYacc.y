@@ -145,7 +145,9 @@ break_body : '{' break_list '}'
 	dbBreakBody();
 };
 
-break_list: break_list ',' break_item | break_item;
+break_list: break_list ',' break_item
+	| break_list break_item
+	| break_item;
 
 break_item: tokenSTRING
 {

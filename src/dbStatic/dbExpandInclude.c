@@ -63,6 +63,7 @@ int main(int argc,char **argv)
     dbWriteRecDesFP(pdbbase,stdout,0);
     dbWriteDeviceFP(pdbbase,stdout);
     dbWriteDriverFP(pdbbase,stdout);
+    dbWriteBreaktableFP(pdbbase,stdout);
     dbWriteRecordFP(pdbbase,stdout,0,0);
     return(0);
 }

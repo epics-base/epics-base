@@ -945,10 +945,9 @@ LOCAL void event_task (void *pParm)
  */
 int epicsShareAPI db_start_events (
     dbEventCtx ctx,const char *taskname, void (*init_func)(threadId), 
-    void *init_func_arg, int priority_offset)
+    void *init_func_arg, unsigned osiPriority )
 {
      struct event_user *evUser = (struct event_user *) ctx;
-     int     taskpri;
      
      semMutexMustTake (evUser->firstque.writelock);
 
@@ -961,8 +960,6 @@ int epicsShareAPI db_start_events (
          return DB_EVENT_OK;
      }
 
-     taskpri = threadGetPrioritySelf ();
-     taskpri -= priority_offset;
      evUser->pendexit = FALSE;
      evUser->init_func = init_func;
      evUser->init_func_arg = init_func_arg;
@@ -970,7 +967,7 @@ int epicsShareAPI db_start_events (
          taskname = EVENT_PEND_NAME;
      }
      evUser->taskid = threadCreate (
-         taskname, taskpri, threadGetStackSize(threadStackMedium),
+         taskname, osiPriority, threadGetStackSize(threadStackMedium),
          event_task, (void *)evUser);
      if (!evUser->taskid) {
          semMutexGive (evUser->firstque.writelock);

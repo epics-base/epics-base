@@ -136,11 +136,13 @@ struct client *create_base_client ()
  */
 struct client *create_client (SOCKET sock)
 {
-    static const unsigned   slightlyLowerPriority = 1;
     int                     status;
     struct client           *client;
     int                     true = TRUE;
     int                     addrSize;
+    unsigned                selfPriority;
+    unsigned                below;
+    threadBoolStatus        tbs;
 
     /*
      * see TCP(4P) this seems to make unsolicited single events much
@@ -228,8 +230,14 @@ struct client *create_client (SOCKET sock)
         return NULL;
     }
 
-    status = db_start_events (client->evuser, "CAS-event", 
-                NULL, NULL, slightlyLowerPriority); 
+    selfPriority = threadGetPrioritySelf ();
+    tbs = threadHighestPriorityLevelBelow (selfPriority, &below);
+    if ( tbs != tbsSuccess ) {
+        below = selfPriority;
+    }
+ 
+    status = db_start_events ( client->evuser, "CAS-event", 
+                NULL, NULL, below ); 
     if (status != DB_EVENT_OK) {
         errlogPrintf("CAS: unable to start the event facility\n");
         destroy_client (client);

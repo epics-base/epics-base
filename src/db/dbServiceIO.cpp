@@ -115,7 +115,6 @@ extern "C" void cacAttachClientCtx ( void * pPrivate )
 
 dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask )
 {
-    static const int slightlyHigherPriority = -1;
     caClientCtx clientCtx;
     dbEventSubscription es;
     int status;
@@ -132,10 +131,18 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
             this->mutex.unlock ();
             return 0;
         }
+   
+        unsigned selfPriority = threadGetPrioritySelf ();
+        unsigned above;
+        threadBoolStatus tbs = threadLowestPriorityLevelAbove 
+                                    (selfPriority, &above);
+        if ( tbs != tbsSuccess ) {
+            above = selfPriority;
+        }
         status = db_start_events ( this->ctx, "CAC-event", 
-            cacAttachClientCtx, clientCtx, slightlyHigherPriority );
+            cacAttachClientCtx, clientCtx, above );
         if ( status ) {
-            db_close_events (this->ctx);
+            db_close_events ( this->ctx );
             this->ctx = 0;
             return 0;
         }

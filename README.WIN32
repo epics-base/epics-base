@@ -193,7 +193,7 @@ not to introduce additional spaces around the &. The kill.exe command is in the
 NT resource kit.
 
 6) Issues that you should be aware of if you are building code that 
-calls EPICS, but are not using the EPICS build system.
+calls EPICS, but you are not using the EPICS build system.
 
 6a) You will need to include header files from the following paths.
     <epics>\base\include

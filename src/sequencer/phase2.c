@@ -15,6 +15,7 @@
 01mar94,ajk	Implemented new interface to sequencer (seqCom.h).
 01mar94,ajk	Implemented assignment of array elements to db channels.
 01mar94,ajk	Changed algorithm for assigning event bits.
+13jan98,wfl	Supported E_COMMA token (for compound expressions).
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -513,6 +514,7 @@ void		*argp;		/* ptr to argument to pass on to function */
 	case E_SS:
 	case E_STATE:
 	case E_FUNC:
+	case E_COMMA:
 	case E_CMPND:
 	case E_STMT:
 	case E_ELSE:

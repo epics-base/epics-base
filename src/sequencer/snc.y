@@ -14,6 +14,7 @@
 31may94,ajk	Changed method for handling global C code.
 20jul95,ajk	Added "unsigned" types (see UNSIGNED token).
 11jul96,ajk	Added character constants (CHAR_CONST).
+13jan98,wfl	Added "down a level" handling of compound expressions
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -246,7 +247,7 @@ transition	/* define a transition ("when" statment ) */
 
 expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
 	/* Expr *expression(int type, char *value, Expr *left, Expr *right) */
-:	compound_expr			{ $$ = $1; }
+:	compound_expr			{ $$ = expression(E_COMMA, "", $1, 0); }
 |	expr binop expr %prec UOP	{ $$ = expression(E_BINOP, $2, $1, $3); }
 |	expr asgnop expr		{ $$ = expression(E_ASGNOP, $2, $1, $3); }
 |	unop expr  %prec UOP		{ $$ = expression(E_UNOP, $1, $2, 0); }

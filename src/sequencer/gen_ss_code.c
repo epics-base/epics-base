@@ -10,6 +10,7 @@
 28apr92,ajk	Implemented efClear() & efTestAndClear().
 01mar94,ajk	Changed table generation to the new structures defined 
 		in seqCom.h.
+13jan98,wfl	Fixed handling of compound expressions, using E_COMMA.
 ***************************************************************************/
 #include	<stdio.h>
 #include	"parse.h"
@@ -250,7 +251,7 @@ Expr		*sp;		/* ptr to current State struct */
 int		level;		/* indentation level */
 {
 	Expr		*epf;
-	int		nparams;
+	int		nexprs;
 	extern int	reent_opt;
 	extern int	line_num;
 
@@ -354,13 +355,16 @@ int		level;		/* indentation level */
 		if (special_func(stmt_type, ep, sp))
 			break;
 		printf("%s(", ep->value);
-		for (epf = ep->left, nparams = 0; epf != 0; epf = epf->next, nparams++)
+		eval_expr(stmt_type, ep->left, sp, 0);
+		printf(") ");
+		break;
+	case E_COMMA:
+		for (epf = ep->left, nexprs = 0; epf != 0; epf = epf->next, nexprs++)
 		{
-			if (nparams > 0)
+			if (nexprs > 0)
 				printf(" ,");
 			eval_expr(stmt_type, epf, sp, 0);
 		}
-		printf(") ");
 		break;
 	case E_ASGNOP:
 	case E_BINOP:
@@ -483,7 +487,7 @@ Expr		*sp;		/* current State struct */
 	    case F_EFCLEAR:
 	    case F_EFTESTANDCLEAR:
 		/* Event flag funtions */
-		gen_ef_func(stmt_type, ep, sp, fname);
+		gen_ef_func(stmt_type, ep, sp, fname, func_code);
 		return TRUE;
 
 	    case F_PVPUT:
@@ -520,7 +524,10 @@ Expr		*sp;		/* current State struct */
 		 * Note:  name is changed by prepending "seq_". */
 		printf("seq_%s(ssId", fname);
 		/* now fill in user-supplied paramters */
-		for (ep1 = ep->left; ep1 != 0; ep1 = ep1->next)
+		ep1 = ep->left;
+		if (ep1 != 0 && ep1->type == E_COMMA)
+			ep1 = ep1->left;
+		for (; ep1 != 0; ep1 = ep1->next)
 		{
 			printf(", ");
 			eval_expr(stmt_type, ep1, sp, 0);
@@ -547,6 +554,8 @@ enum		fcode func_code;
 	Chan		*cp;
 
 	ep1 = ep->left; /* ptr to 1-st parameters */
+	if (ep1 != 0 && ep1->type == E_COMMA)
+		ep1 = ep1->left;
 	if ( (ep1 != 0) && (ep1->type == E_VAR) )
 		vp = (Var *)findVar(ep1->value);
 	else
@@ -586,6 +595,8 @@ char		*fname;		/* function name */
 	int		index;
 
 	ep1 = ep->left; /* ptr to 1-st parameter in the function */
+	if (ep1 != 0 && ep1->type == E_COMMA)
+		ep1 = ep1->left;
 	if (ep1 == 0)
 	{
 		fprintf(stderr, "Line %d: ", ep->line_num);

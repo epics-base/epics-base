@@ -164,6 +164,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void       	*pfield = pdbentry->pfield;
+    char	*endp;
 
     if(!pflddes) return(FALSE);
     switch (pflddes->field_type) {
@@ -182,13 +183,19 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	case DBF_DOUBLE:
 	case DBF_ENUM:
 	    if(!pfield) return(TRUE);
-	    if(!pflddes->initial) return(FALSE);
+	    if(!pflddes->initial) {
+		if((strtod((char *)pfield,&endp)==0.0) && (*endp=='\0'))
+			return(TRUE);
+		return(FALSE);
+	    }
 	    return(strcmp((char *)pfield,(char *)pflddes->initial)==0);
 	case DBF_MENU: {
-		unsigned short val,ival;
+		unsigned short val=0;
+		unsigned short ival;
 
-		if(!pfield) return(FALSE);
-		val = *(unsigned short *)pfield;
+		if(pfield) val = *(unsigned short *)pfield;
+		if(!pfield || pflddes->initial == 0)
+		    return((val==0)?TRUE:FALSE);
 		if(pflddes->initial == 0) return((val==0)?TRUE:FALSE);
 		sscanf(pflddes->initial,"%hu",&ival);
 		return((val==ival)?TRUE:FALSE);
@@ -212,8 +219,12 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 
 		if(!plink) return(FALSE);
 		if(plink->type!=CONSTANT) return(FALSE);
-		if(plink->value.constantStr == 0) return(TRUE);
-		if(!pflddes->initial) return(FALSE);
+		if(!plink->value.constantStr) return(TRUE);
+		if(!pflddes->initial) {
+		    if((strtod((char *)plink->value.constantStr,&endp)==0.0)
+		    && (*endp=='\0')) return(TRUE);
+		    return(FALSE);
+		}
 		if(strcmp(plink->value.constantStr,pflddes->initial)==0)
 		   return(TRUE);
 		return(FALSE);

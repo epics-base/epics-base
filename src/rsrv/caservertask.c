@@ -88,11 +88,10 @@ int req_server(void)
 	struct sockaddr_in 	serverAddr;	/* server's address */
 	int        		status;
 	int			i;
-	short			port;
 
         taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
-	port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+	ca_server_port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
 	if (IOC_sock != 0 && IOC_sock != ERROR)
 		if ((status = close(IOC_sock)) == ERROR)
@@ -122,7 +121,7 @@ int req_server(void)
 	/* Zero the sock_addr structure */
 	bfill((char *)&serverAddr, sizeof(serverAddr), 0);
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(port);
+	serverAddr.sin_port = htons(ca_server_port);
 
 	/* get server's Internet address */
 	if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == ERROR) {
@@ -322,15 +321,13 @@ LOCAL int terminate_one_client(struct client *client)
 				pCaBucket, 
 				&pciu->sid);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
-		if(status != BUCKET_SUCCESS){
-			logMsg(
-				"%s: Bad id=%d at close",
-				(int)__FILE__,
-				pciu->sid,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+		if(status != S_bucket_success){
+			errPrintf (
+				status,
+				__FILE__,
+				__LINE__,
+				"Bad id=%d at close",
+				pciu->sid);
 		}
 		status = asRemoveClient(&pciu->asClientPVT);
 		if(status!=0 && status != S_asLib_asNotActive){
@@ -469,7 +466,7 @@ int client_stat(void)
 	if(pCaBucket){
 		printf(	"The server's resource id conversion table:\n");
 		FASTLOCK(&rsrv_free_addrq_lck);
-		bucketShow(pCaBucket);
+		bucketShow (pCaBucket);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
 	}
 

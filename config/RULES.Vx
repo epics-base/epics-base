@@ -141,7 +141,7 @@ endif
 %.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
-	$(CPP) $(CPPFLAGS) $(CPPSNCFLAGS) $< $*.i
+	$(CPP) $(CPPFLAGS) $(CPPSNCFLAGS) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i

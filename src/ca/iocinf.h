@@ -32,6 +32,10 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.49  1995/10/12  01:33:12  jhill
+ * Initial delay between search frames went from .1 to .01 sec,
+ * Added flush pending flag, Make all usage of port be unsigned short.
+ *
  * Revision 1.48  1995/09/29  21:55:38  jhill
  * added func proto for cacDisconnectChannel()
  *
@@ -201,8 +205,12 @@ extern const ca_time CA_CURRENT_TIME;
  */
 #define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
 
-#define SELECT_POLL 		(0.05) 	/* units sec - polls into recast */
-#define CA_RECAST_DELAY 	(0.01)  /* initial delay to next recast (sec) */
+/*
+ * NOTE: These must be larger than one vxWorks tick or we will end up
+ * using the CPU. A vxWorks tick is usually 1/60th of a sec.
+ */
+#define SELECT_POLL 		(0.025) /* units sec - polls into recast */
+#define CA_RECAST_DELAY 	(0.025) /* initial delay to next recast (sec) */
 #define CA_RECAST_PORT_MASK	0xff	/* random retry interval off port */
 #define CA_RECAST_PERIOD 	(5.0)	/* ul on retry period long term (sec) */
 

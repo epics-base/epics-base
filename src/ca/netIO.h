@@ -80,6 +80,8 @@ public:
     unsigned getMask () const;
     void subscriptionUpdateIfRequired (
         epicsGuard < epicsMutex > &, nciu & );
+protected:
+    ~netSubscription ();
 private:
     const arrayElementCount count;
     class privateInterfaceForIO & privateChanForIO;
@@ -114,7 +116,6 @@ private:
         arrayElementCount count );
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
-    ~netSubscription ();
 };
 
 class netReadNotifyIO : public baseNMIU {
@@ -123,6 +124,8 @@ public:
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &, 
         privateInterfaceForIO &, cacReadNotify & );
     void show ( unsigned level ) const;
+protected:
+    ~netReadNotifyIO ();
 private:
     cacReadNotify & notify;
     class privateInterfaceForIO & privateChanForIO;
@@ -148,7 +151,6 @@ private:
         epicsGuard < epicsMutex > &, cacRecycle &,
         int status, const char * pContext, 
         unsigned type, arrayElementCount count );
-    ~netReadNotifyIO ();
     class netSubscription * isSubscription ();
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
@@ -160,6 +162,8 @@ public:
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &, 
         privateInterfaceForIO &, cacWriteNotify & );
     void show ( unsigned level ) const;
+protected:
+    ~netWriteNotifyIO ();
 private:
     cacWriteNotify & notify;
     privateInterfaceForIO & privateChanForIO;
@@ -188,7 +192,6 @@ private:
         arrayElementCount count );
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
-    ~netWriteNotifyIO ();
 };
 
 inline void * netSubscription::operator new ( size_t size, 

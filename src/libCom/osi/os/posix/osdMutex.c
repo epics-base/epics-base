@@ -28,11 +28,11 @@
 
 #define checkStatus(status,message) \
 if((status)) { \
-    errlogPrintf("%s failed: error %s\n",(message),strerror((status)));}
+    errlogPrintf("epicsMutex %s failed: error %s\n",(message),strerror((status)));}
 
 #define checkStatusQuit(status,message,method) \
 if(status) { \
-    errlogPrintf("%s failed: error %s\n",(message),strerror((status))); \
+    errlogPrintf("epicsMutex %s failed: error %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
 

@@ -18,10 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <alarm.h>
-#include <tsDefs.h>
 #include <cadef.h>
 #include <epicsGetopt.h>
 
@@ -45,10 +42,9 @@ void usage (void)
 
 /*+**************************************************************************
  *
- * Function:	caget
+ * Function:	cainfo
  *
- * Description:	Issue read requests, wait for incoming data
- * 		and print the data according to the selected format
+ * Description:	Print CA info data or call ca_client_status
  *
  * Arg(s) In:	pvs       -  Pointer to an array of pv structures
  *              nPvs      -  Number of elements in the pvs array

@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <alarm.h>
-#include <tsDefs.h>
 #include <cadef.h>
 #include <epicsGetopt.h>
 
@@ -159,14 +157,13 @@ int camonitor (pv *pvs, int nPvs, unsigned long reqElems)
             pvs[n].status = ECA_DISCONN;
         }
     }
-    if (!nConn) return 1;       /* No connection? We're done. */
 
+    if (nConn)
                                 /* Wait for callbacks */
-                                /* ---------------- */
-    while (1)
-        ca_pend_event(timeout);
-
-    return 0;
+                                /* ------------------ */
+        while (1) ca_pend_event(timeout);
+    else
+        return 1;       /* No connection? We're done. */
 }
 
 

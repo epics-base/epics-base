@@ -19,7 +19,7 @@
 #ifndef INCLtool_libh
 #define INCLtool_libh
 
-#include <tsDefs.h>
+#include <epicsTime.h>
 
 /* Convert status and severity to strings */
 #define stat_to_str(stat)                                       \
@@ -29,6 +29,19 @@
 #define sevr_to_str(stat)                                       \
         ((stat) >= 0 && (stat) <= (signed)lastEpicsAlarmSev) ?  \
         epicsAlarmSeverityStrings[stat] : "??"
+
+#define stat_to_str_unsigned(stat)              \
+        ((stat) <= lastEpicsAlarmCond) ?        \
+        epicsAlarmConditionStrings[stat] : "??"
+
+#define sevr_to_str_unsigned(stat)              \
+        ((stat) <= lastEpicsAlarmSev) ?         \
+        epicsAlarmSeverityStrings[stat] : "??"
+
+/* The different versions are necessary because stat and sevr are
+ * defined unsigned in CA's DBR_STSACK structure and signed in all the
+ * others. Some compilers generate warnings if you check an unsigned
+ * being >=0 */
 
 
 #define CA_PRIORITY 50          /* CA priority */
@@ -52,7 +65,7 @@ typedef struct
     unsigned long reqElems;
     int status;
     void* value;
-    TS_STAMP tsPrevious;
+    epicsTimeStamp tsPrevious;
     int firstStampPrinted;
 } pv;
 

@@ -23,25 +23,27 @@
 #define epicsAlarmGLOBAL
 #include <alarm.h>
 #undef epicsAlarmGLOBAL
-#include <tsDefs.h>
+#include <epicsTime.h>
 #include <cadef.h>
 
 #include "tool_lib.h"
 
 /* Time stamps for program start, previous value (used for relative resp.
  * incremental times with monitors) */
-static TS_STAMP tsStart, tsPrevious;
+static epicsTimeStamp tsStart, tsPrevious;
 
 static int tsInit = 0;               /* Flag: Timestamps init'd */
-static int firstStampPrinted = 0;    /* Flag: First timestamp already printed */
 
-TimeT tsType = absolute;             /* Timestamp type flag (-q or -Q option) */
+TimeT tsType = absolute;             /* Timestamp type flag (-riI options) */
 IntFormatT outType = dec;            /* For -0.. output format option */
 
-char dblFormatStr[30] = "%g"; /* Format string to print doubles (see -e -f option) */
+char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) */
+char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
 
 int charAsNr = 0;      /* used for -n option - get DBF_CHAR as number */
 double timeout = 1.0;  /* wait time default (see -w option) */
+
+#define TIMETEXTLEN 28          /* Length of timestamp text buffer */
 
 
 
@@ -164,10 +166,8 @@ char *val2str (const void *v, unsigned type, int index)
 #define FMT_TIME                                \
     "    Timestamp:      %s"
 
-#define ARGS_TIME(T)                                    \
-    tsStampToText( &(((struct T *)value)->stamp),       \
-                   TS_TEXT_MMDDYY,                      \
-                   timeText)
+#define ARGS_TIME(T)                            \
+    timeText
 
 #define FMT_STS                                 \
     "    Status:         %s\n"                  \
@@ -177,13 +177,17 @@ char *val2str (const void *v, unsigned type, int index)
     stat_to_str(((struct T *)value)->status),   \
     sevr_to_str(((struct T *)value)->severity)
 
+#define ARGS_STS_UNSIGNED(T)                            \
+    stat_to_str_unsigned(((struct T *)value)->status),  \
+    sevr_to_str_unsigned(((struct T *)value)->severity)
+
 #define FMT_ACK                                 \
     "    Ack transient?: %s\n"                  \
     "    Ack severity:   %s"
 
-#define ARGS_ACK(T)                             \
-    ((struct T *)value)->ackt ? "YES" : "NO",   \
-    sevr_to_str(((struct T *)value)->acks)
+#define ARGS_ACK(T)                                     \
+    ((struct T *)value)->ackt ? "YES" : "NO",           \
+    sevr_to_str_unsigned(((struct T *)value)->acks)
 
 #define FMT_UNITS                               \
     "    Units:          %s"
@@ -229,9 +233,11 @@ char *val2str (const void *v, unsigned type, int index)
             FMT_STS,                            \
             ARGS_STS(T))
 
-#define PRN_DBR_TIME(T)                         \
-    sprintf(str,                                \
-            FMT_TIME "\n" FMT_STS,              \
+#define PRN_DBR_TIME(T)                                         \
+    epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr,   \
+                        &(((struct T *)value)->stamp));         \
+    sprintf(str,                                                \
+            FMT_TIME "\n" FMT_STS,                              \
             ARGS_TIME(T), ARGS_STS(T))
 
 #define PRN_DBR_GR(T,F,FMT)                             \
@@ -257,7 +263,7 @@ char *val2str (const void *v, unsigned type, int index)
 #define PRN_DBR_STSACK(T)                       \
     sprintf(str,                                \
             FMT_STS "\n" FMT_ACK,               \
-            ARGS_STS(T), ARGS_ACK(T))
+            ARGS_STS_UNSIGNED(T), ARGS_ACK(T))
 
 #define PRN_DBR_X_ENUM(T)                               \
     n = ((struct T *)value)->no_str;                    \
@@ -285,7 +291,7 @@ char *val2str (const void *v, unsigned type, int index)
 char *dbr2str (const void *value, unsigned type)
 {
     static char str[DBR_PRINT_BUFFER_SIZE];
-    char timeText[28];
+    char timeText[TIMETEXTLEN];
     int n, i;
 
     switch (type) {
@@ -346,14 +352,6 @@ char *dbr2str (const void *value, unsigned type)
     return str;
 }
 
-/* tsDef.h: TsDiffAsDouble macro defined in 3.13 is no longer available in 3.14 */
-double tsDiffDbl(TS_STAMP *ts1, TS_STAMP * ts2)
-{
-    double tdiff;
-    tdiff =  ( ((double) ts1->nsec) - ((double)ts2->nsec)) / 1000000000.; 
-    tdiff += ((double) ts1->secPastEpoch) - ((double)ts2->secPastEpoch);
-    return tdiff;
-}
 
 
 /*+**************************************************************************
@@ -369,54 +367,42 @@ double tsDiffDbl(TS_STAMP *ts1, TS_STAMP * ts2)
  **************************************************************************-*/
  
 #define PRN_TIME_VAL_STS(TYPE,TYPE_ENUM)                                        \
-    if (!tsInit)                                                                \
-    {                           /* Initialize start timestamp */                \
-        tsStart = tsPrevious = ((struct TYPE *)value)->stamp;                   \
-        tsInit = 1;                                                             \
-    }                                                                           \
+    printAbs = 0;                                                               \
                                                                                 \
     switch (tsType) {                                                           \
     case relative:                                                              \
-        if (pv->firstStampPrinted)                                              \
-        {                                                                       \
-            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
-                                          &tsStart) );                          \
-        } else {                    /* First stamp is always absolute */        \
-            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
-                                        TS_TEXT_MMDDYY, timeText));             \
-            pv->firstStampPrinted = 1;                                          \
-        }                                                                       \
+        ptsRef = &tsStart;                                                      \
         break;                                                                  \
     case incremental:                                                           \
-        if (firstStampPrinted)                                                  \
-        {                                                                       \
-            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
-                                          &tsPrevious) );                       \
-        } else {                    /* First stamp is always absolute */        \
-            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
-                                        TS_TEXT_MMDDYY, timeText));             \
-            firstStampPrinted = 1;                                              \
-        }                                                                       \
+        ptsRef = &tsPrevious;                                                   \
         break;                                                                  \
     case incrementalByChan:                                                     \
-        if (pv->firstStampPrinted)                                              \
-        {                                                                       \
-            printf("%10.4fs ", tsDiffDbl( &(((struct TYPE *)value)->stamp),     \
-                                          &pv->tsPrevious) );                   \
-        } else {                    /* First stamp is always absolute */        \
-            printf("%s ", tsStampToText(&(((struct TYPE *)value)->stamp),       \
-                                        TS_TEXT_MMDDYY, timeText));             \
-            pv->firstStampPrinted = 1;                                          \
-        }                                                                       \
+        ptsRef = &pv->tsPrevious;                                               \
+        break;                                                                  \
+    default :                                                                   \
+        printAbs = 1;                                                           \
+    }                                                                           \
+                                                                                \
+    if (pv->firstStampPrinted)                                                  \
+    {                                                                           \
+        printf("%10.4fs ", epicsTimeDiffInSeconds(                              \
+                   &(((struct TYPE *)value)->stamp), ptsRef) );                 \
+    } else {                    /* First stamp is always absolute */            \
+        printAbs = 1;                                                           \
+        pv->firstStampPrinted = 1;                                              \
+    }                                                                           \
+                                                                                \
+    if (tsType == incrementalByChan)                                            \
         pv->tsPrevious = ((struct TYPE *)value)->stamp;                         \
-        break;                                                                  \
-    default : /* Absolute */                                                    \
-        printf("%s ", tsStampToText( &(((struct TYPE *)value)->stamp),          \
-                                     TS_TEXT_MMDDYY, timeText));                \
-        break;                                                                  \
+                                                                                \
+    if (printAbs) {                                                             \
+        epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr,               \
+                            &(((struct TYPE *)value)->stamp));                  \
+        printf("%s ", timeText);                                                \
     }                                                                           \
                                                                                 \
     tsPrevious = ((struct TYPE *)value)->stamp;                                 \
+                                                                                \
                              /* Print Values */                                 \
     for (i=0; i<nElems; ++i) {                                                  \
         printf ("%s ", val2str(value, TYPE_ENUM, i));                           \
@@ -434,9 +420,17 @@ double tsDiffDbl(TS_STAMP *ts1, TS_STAMP * ts2)
 
 void print_time_val_sts (pv* pv, int nElems)
 {
-    char timeText[28];
-    int i;
+    char timeText[TIMETEXTLEN];
+    int i, printAbs;
     void* value = pv->value;
+    epicsTimeStamp *ptsRef = &tsStart;
+
+    if (!tsInit)                /* Initialize start timestamp */
+    {
+        epicsTimeGetCurrent(&tsStart);
+        tsPrevious = tsStart;
+        tsInit = 1;
+    }
 
     printf("%-30s ", pv->name);
     if (pv->status == ECA_DISCONN)

@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <alarm.h>
-#include <tsDefs.h>
 #include <cadef.h>
 #include <epicsGetopt.h>
 

@@ -31,6 +31,7 @@ DIRS += db/test
 DIRS += as
 DIRS += util
 DIRS += dbtools
+DIRS += catools
 DIRS += rsrv
 DIRS += rec
 DIRS += dev

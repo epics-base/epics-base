@@ -421,12 +421,6 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 		}
 		return status;
 	}
-	//
-	// must have a descriptor if status is S_casApp_success 
-	//
-	else if (!pDesc) {
-		return this->sendErr(&msg, ECA_INTERNAL, "nill GDD pointer ?");
-	}
 
 	//
 	// setup response message
@@ -1804,7 +1798,7 @@ caStatus casStrmClient::writeScalarData()
     // copy in, and convert to native type, the incoming data
     //
     gddStat = aitConvert (pDD->primitiveType(), pDD->dataAddress(), type, 
-        this->ctx.getData(), 1, this->ctx.getPV()->enumStringTable());
+        this->ctx.getData(), 1, &this->ctx.getPV()->enumStringTable());
     if (gddStat<0) { 
         status = S_cas_noConvert;
     }
@@ -1892,7 +1886,7 @@ caStatus casStrmClient::writeArrayData()
 	// will be allowed to ref the DD
 	//
     gddStat = aitConvert (bestExternalType, pData, type, this->ctx.getData(), 
-        pHdr->m_count, this->ctx.getPV()->enumStringTable() );
+        pHdr->m_count, &this->ctx.getPV()->enumStringTable() );
     if (gddStat<0) { 
         status = S_cas_noConvert;
         delete pDestructor;

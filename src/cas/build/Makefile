@@ -60,6 +60,7 @@ LIBSRCS += pvAttachReturn.cc
 LIBSRCS += caNetAddr.cc
 LIBSRCS += beaconTimer.cc
 LIBSRCS += beaconAnomalyGovernor.cc
+LIBSRCS += clientBufMemoryManager.cpp
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

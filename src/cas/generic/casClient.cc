@@ -37,9 +37,13 @@ casClient::pCASMsgHandler casClient::msgHandlers[CA_PROTO_LAST_CMMD+1u];
 //
 // casClient::casClient()
 //
-casClient::casClient ( caServerI &serverInternal, bufSizeT ioSizeMinIn ) : 
-    casCoreClient ( serverInternal ), in ( *this, ioSizeMinIn ), out ( *this ),
-	minor_version_number ( 0 ), incommingBytesToDrain ( 0 )
+casClient::casClient ( caServerI & serverInternal, 
+         clientBufMemoryManager & mgrIn, bufSizeT ioSizeMinIn ) : 
+    casCoreClient ( serverInternal ), 
+    in ( *this, mgrIn, ioSizeMinIn ), 
+    out ( *this, mgrIn ),
+	minor_version_number ( 0 ), 
+    incommingBytesToDrain ( 0 )
 {
     //
     // static member init 

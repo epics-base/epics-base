@@ -15,7 +15,6 @@
 
 #include "epicsMutex.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "db_access.h" // should be eliminated here in the future

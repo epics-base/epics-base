@@ -27,14 +27,16 @@ inline bool casDGIntfIO::validBCastFD() const
 	return this->bcastRecvSock != INVALID_SOCKET;
 }
 
-inline void * ipIgnoreEntry::operator new ( size_t size )
+inline void * ipIgnoreEntry::operator new ( size_t size, 
+        tsFreeList < class ipIgnoreEntry, 128 > & freeList )
 {
-    return ipIgnoreEntry::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void ipIgnoreEntry::operator delete ( void * pCadaver, size_t size )
+inline void ipIgnoreEntry::operator delete ( void * pCadaver, 
+        tsFreeList < class ipIgnoreEntry, 128 > & freeList )
 {
-    ipIgnoreEntry::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver );
 }
 
 inline ipIgnoreEntry::ipIgnoreEntry ( unsigned ipAddrIn ) :

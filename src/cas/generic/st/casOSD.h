@@ -90,8 +90,9 @@ class casDGIntfOS : public casDGIntfIO {
     friend class casDGBCastReadReg;
     friend class casDGWriteReg;
 public:
-    casDGIntfOS (caServerI &serverIn, const caNetAddr &addr, 
-        bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr=FALSE);
+    casDGIntfOS ( caServerI &, clientBufMemoryManager &,
+        const caNetAddr & addr, bool autoBeaconAddr = true, 
+        bool addConfigBeaconAddr = false);
 
 	virtual ~casDGIntfOS ();
 
@@ -135,17 +136,14 @@ class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>,
 {
 	friend class casServerReg;
 public:
-	casIntfOS (caServerI &casIn, const caNetAddr &addr, 
-        bool autoBeaconAddr=true, bool addConfigBeaconAddr=false);
+	casIntfOS ( caServerI &, clientBufMemoryManager &, const caNetAddr &, 
+        bool autoBeaconAddr = true, bool addConfigBeaconAddr = false );
 	virtual ~casIntfOS();
-
-    virtual void show (unsigned level) const;
-
+    void show ( unsigned level ) const;
     caNetAddr serverAddress () const;
-
 private:
-	caServerI       &cas;
-	casServerReg    *pRdReg;
+	caServerI       & cas;
+	casServerReg    * pRdReg;
 
 	casIntfOS ( const casIntfOS & );
 	casIntfOS & operator = ( const casIntfOS & );
@@ -192,22 +190,21 @@ private:
 // casStreamOS
 //
 class casStreamOS : public casStreamIO {
-    friend class casStreamWriteReg;
-    friend class casStreamReadReg;
 public:
-	casStreamOS (caServerI &, const ioArgsToNewStreamIO &ioArgs);
+	casStreamOS ( caServerI &, clientBufMemoryManager &,
+        const ioArgsToNewStreamIO & );
 	~casStreamOS ();
 
-	void show (unsigned level) const;
+	void show ( unsigned level ) const;
 
 	casProcCond processInput ();
 
 private:
-	casStreamEvWakeup	evWk;
-	casStreamIOWakeup	ioWk;
-	casStreamWriteReg	*pWtReg;
-	casStreamReadReg	*pRdReg;
-	bool		        sendBlocked;
+	casStreamEvWakeup evWk;
+	casStreamIOWakeup ioWk;
+	casStreamWriteReg * pWtReg;
+	casStreamReadReg * pRdReg;
+	bool sendBlocked;
 	//
 	//
 	//
@@ -228,6 +225,9 @@ private:
 
 	casStreamOS ( const casStreamOS & );
 	casStreamOS & operator = ( const casStreamOS & );
+
+    friend class casStreamWriteReg;
+    friend class casStreamReadReg;
 };
 
 // no additions below this line

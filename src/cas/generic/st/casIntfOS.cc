@@ -40,11 +40,12 @@ private:
 //
 // casIntfOS::casIntfOS()
 //
-casIntfOS::casIntfOS (caServerI &casIn, const caNetAddr &addrIn, 
-    bool autoBeaconAddr, bool addConfigBeaconAddr) : 
-    casIntfIO (addrIn),
-    casDGIntfOS (casIn, addrIn, autoBeaconAddr, addConfigBeaconAddr),
-    cas (casIn)
+casIntfOS::casIntfOS ( caServerI & casIn, clientBufMemoryManager & memMgrIn,
+    const caNetAddr & addrIn, bool autoBeaconAddr, bool addConfigBeaconAddr ) : 
+    casIntfIO ( addrIn ),
+    casDGIntfOS ( casIn, memMgrIn, addrIn, autoBeaconAddr, 
+        addConfigBeaconAddr ),
+    cas ( casIn )
 {    
     this->setNonBlocking();
     
@@ -94,4 +95,6 @@ caNetAddr casIntfOS::serverAddress () const
 {
     return this->casIntfIO::serverAddress();
 }
+
+
 

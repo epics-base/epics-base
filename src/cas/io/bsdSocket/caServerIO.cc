@@ -16,8 +16,9 @@
 
 #include <ctype.h>
 
+#include "epicsSignal.h"
+
 #include "server.h"
-#include "osiSigPipeIgnore.h"
 
 static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze);
 
@@ -142,11 +143,11 @@ caServerIO::~caServerIO()
 //
 inline void caServerIO::staticInit()
 {
-	if (caServerIO::staticInitialized) {
+	if ( caServerIO::staticInitialized ) {
 		return;
 	}
 
-	installSigPipeIgnore();
+	epicsSignalInstallSigPipeIgnore ();
 
 	caServerIO::staticInitialized = TRUE;
 }

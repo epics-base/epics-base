@@ -37,13 +37,10 @@
 #endif
 
 template class tsFreeList < dbChannelIO >;
-template class epicsSingleton < tsFreeList < dbChannelIO > >;
 template class tsFreeList < dbPutNotifyBlocker, 1024 >;
-template class epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > >;
 template class resTable < dbBaseIO, chronIntId >;
 template class chronIntIdResTable < dbBaseIO >;
 template class tsFreeList < dbSubscriptionIO >;
-template class epicsSingleton < tsFreeList < dbSubscriptionIO > >;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

@@ -146,7 +146,7 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 // casStreamEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & /* currentTime */ )
+epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
     casStreamOS &os = *this->pOS;
     this->pOS = 0;
@@ -327,11 +327,10 @@ void casStreamOS::eventFlush()
 //
 // casStreamOS::casStreamOS()
 //
-casStreamOS::casStreamOS(caServerI &cas, const ioArgsToNewStreamIO &ioArgs) : 
-	casStreamIO (cas, ioArgs),
-	pWtReg (NULL),
-	pRdReg (NULL),
-	sendBlocked (FALSE)
+casStreamOS::casStreamOS ( caServerI & cas, clientBufMemoryManager & bufMgrIn,
+                          const ioArgsToNewStreamIO & ioArgs ) : 
+	    casStreamIO ( cas, bufMgrIn, ioArgs ),
+	pWtReg ( 0 ), pRdReg ( 0 ), sendBlocked ( false )
 {
 	this->xSetNonBlocking();
 	this->armRecv();

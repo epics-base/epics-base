@@ -43,15 +43,15 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 //
 // casDGIntfIO::casDGIntfIO()
 //
-casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr, 
-                          bool autoBeaconAddr, bool addConfigBeaconAddr) :
-    casDGClient (serverIn)
+casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr,
+    const caNetAddr & addr, bool autoBeaconAddr, bool addConfigBeaconAddr ) :
+    casDGClient ( serverIn, memMgr )
 {
     ELLLIST BCastAddrList;
     osiSockAddr serverAddr;
     osiSockAddr serverBCastAddr;
-    int status;
     unsigned short beaconPort;
+    int status;
     
     ellInit ( &BCastAddrList );
     ellInit ( &this->beaconAddrList );
@@ -177,7 +177,8 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
 		    assert ( offsetof (osiSockAddrNode, node) == 0 );
 		    osiSockAddrNode * pNode = reinterpret_cast < osiSockAddrNode * > ( pRawNode );
             if ( pNode->addr.sa.sa_family == AF_INET ) {
-                ipIgnoreEntry * pIPI = new ipIgnoreEntry ( pNode->addr.ia.sin_addr.s_addr );
+                ipIgnoreEntry * pIPI = new ( this->ipIgnoreEntryFreeList )
+                                ipIgnoreEntry ( pNode->addr.ia.sin_addr.s_addr );
                 this->ignoreTable.add ( * pIPI );
             }
             else {

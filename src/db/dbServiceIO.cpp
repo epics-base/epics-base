@@ -60,7 +60,8 @@ dbBaseIO::dbBaseIO () {}
 
 dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {
-    pGlobalServiceListCAC->registerService ( this->dbio );
+    epicsSingleton < cacServiceList > :: reference ref ( globalServiceListCAC );
+    ref->registerService ( this->dbio );
 }
 
 dbServiceIO::dbServiceIO () :
@@ -78,12 +79,12 @@ dbServiceIO::~dbServiceIO ()
 }
 
 cacChannel *dbServiceIO::createChannel ( // X aCC 361
-            const char *pName, cacChannelNotify &notify, 
+            const char * pName, cacChannelNotify & notify, 
             cacChannel::priLev )
 {
     struct dbAddr addr;
 
-    int status = db_name_to_addr ( pName, &addr );
+    int status = db_name_to_addr ( pName, & addr );
     if ( status ) {
         return 0;
     }
@@ -94,7 +95,8 @@ cacChannel *dbServiceIO::createChannel ( // X aCC 361
         return 0;
     }
     else {
-        return new dbChannelIO ( notify, addr, *this ); 
+        return new ( this->dbChannelIOFreeList )
+            dbChannelIO ( notify, addr, *this ); 
     }
 }
 
@@ -145,47 +147,60 @@ extern "C" void cacAttachClientCtx ( void * pPrivate )
     assert ( status == ECA_NORMAL );
 }
 
-dbEventSubscription dbServiceIO::subscribe ( struct dbAddr & addr, dbChannelIO & chan,
-             dbSubscriptionIO & subscr, unsigned mask )
+void dbServiceIO::subscribe ( 
+    struct dbAddr & addr, dbChannelIO & chan,
+    unsigned type, unsigned long count, unsigned mask, 
+    cacStateNotify & notify, cacChannel::ioid * pId )
 {
-    dbEventSubscription es;
-    int status;
+    /*
+     * the database uses type "int" to store these parameters
+     */
+    if ( type > INT_MAX ) {
+        throw cacChannel::badType();
+    }
+    if ( count > INT_MAX ) {
+        throw cacChannel::outOfBounds();
+    }
 
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
         if ( ! this->ctx ) {
             this->ctx = db_init_events ();
             if ( ! this->ctx ) {
-                return 0;
+                throw std::bad_alloc ();
             }
    
             unsigned selfPriority = epicsThreadGetPrioritySelf ();
             unsigned above;
-            epicsThreadBooleanStatus tbs = epicsThreadLowestPriorityLevelAbove (selfPriority, &above);
+            epicsThreadBooleanStatus tbs = 
+                epicsThreadLowestPriorityLevelAbove ( selfPriority, &above );
             if ( tbs != epicsThreadBooleanStatusSuccess ) {
                 above = selfPriority;
             }
-            status = db_start_events ( this->ctx, "CAC-event", 
+            int status = db_start_events ( this->ctx, "CAC-event", 
                 cacAttachClientCtx, ca_current_context (), above );
             if ( status ) {
                 db_close_events ( this->ctx );
                 this->ctx = 0;
-                return 0;
+                throw std::bad_alloc ();
             }
         }
+    }
+
+    dbSubscriptionIO & subscr =
+        * new ( this->dbSubscriptionIOFreeList ) 
+        dbSubscriptionIO ( *this, chan, 
+            addr, notify, type, count, mask, pId );
+
+    {
+        epicsGuard < epicsMutex > locker ( this->mutex );
         chan.dbServicePrivateListOfIO::eventq.add ( subscr );
         this->ioTable.add ( subscr );
     }
 
-    es = db_add_event ( this->ctx, &addr,
-        dbSubscriptionEventCallback, (void *) &subscr, mask );
-    if ( ! es ) {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-        chan.dbServicePrivateListOfIO::eventq.remove ( subscr );
-        this->ioTable.remove ( subscr );
+    if ( pId ) {
+        *pId = subscr.getId ();
     }
-
-    return es;
 }
 
 void dbServiceIO::initiatePutNotify ( 
@@ -195,7 +210,9 @@ void dbServiceIO::initiatePutNotify (
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ();
+        chan.dbServicePrivateListOfIO::pBlocker = 
+            new ( this->dbPutNotifyBlockerFreeList ) 
+                dbPutNotifyBlocker ();
         this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
     }
     chan.dbServicePrivateListOfIO::pBlocker->initiatePutNotify ( 

@@ -22,11 +22,14 @@
 //
 // outBuf::outBuf()
 //
-outBuf::outBuf ( outBufClient & clientIn ) : 
-    client ( clientIn ), bufSize ( 0 ), stack ( 0u ), ctxRecursCount ( 0u )
+outBuf::outBuf ( outBufClient & clientIn, 
+                clientBufMemoryManager & memMgrIn ) : 
+    client ( clientIn ), memMgr ( memMgrIn ), bufSize ( 0 ), 
+        stack ( 0u ), ctxRecursCount ( 0u )
 {
-    this->pBuf = pGlobalBufferFactoryCAS->newSmallBuffer ();
-    this->bufSize = pGlobalBufferFactoryCAS->smallBufferSize ();
+    casBufferParm bufParm = memMgr.allocate ( 1 );
+    this->pBuf = bufParm.pBuf;
+    this->bufSize = bufParm.bufSize;
     memset ( this->pBuf, '\0', this->bufSize );
 }
 
@@ -36,17 +39,7 @@ outBuf::outBuf ( outBufClient & clientIn ) :
 outBuf::~outBuf()
 {
     assert ( this->ctxRecursCount == 0 );
-    if ( this->bufSize == pGlobalBufferFactoryCAS->smallBufferSize () ) {
-        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
-    }
-    else if ( this->bufSize == pGlobalBufferFactoryCAS->largeBufferSize () ) {
-        pGlobalBufferFactoryCAS->destroyLargeBuffer ( this->pBuf );
-    }
-    else if ( this->pBuf ) {
-        errlogPrintf ( 
-            "cas: unusual outBuf buffer size %u in destructor - probable leak\n",
-            this->bufSize );
-    }
+    memMgr.release ( this->pBuf, this->bufSize );
 }
 
 //
@@ -324,12 +317,13 @@ void outBuf::show (unsigned level) const
 
 void outBuf::expandBuffer ()
 {
-    if ( this->bufSize < pGlobalBufferFactoryCAS->largeBufferSize () ) {
-        char * pNewBuf = pGlobalBufferFactoryCAS->newLargeBuffer ();
-        memcpy ( pNewBuf, this->pBuf, this->stack );
-        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
-        this->pBuf = pNewBuf;
-        this->bufSize = pGlobalBufferFactoryCAS->largeBufferSize ();
+    bufSizeT max = this->memMgr.maxSize();
+    if ( this->bufSize < max  ) {
+        casBufferParm bufParm = this->memMgr.allocate ( max );
+        memcpy ( bufParm.pBuf, this->pBuf, this->stack );
+        this->memMgr.release ( this->pBuf, this->bufSize );
+        this->pBuf = bufParm.pBuf;
+        this->bufSize = bufParm.bufSize;
     }
 }
 

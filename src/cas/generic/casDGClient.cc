@@ -31,8 +31,8 @@
 //
 // casDGClient::casDGClient()
 //
-casDGClient::casDGClient ( caServerI & serverIn ) :
-	casClient ( serverIn, MAX_UDP_RECV + sizeof ( cadg ) ),
+casDGClient::casDGClient ( caServerI & serverIn, clientBufMemoryManager & mgrIn ) :
+	casClient ( serverIn, mgrIn, MAX_UDP_RECV + sizeof ( cadg ) ),
     seqNoOfReq ( 0 )
 {
 }

@@ -35,7 +35,6 @@
 #include "shareLib.h"
 
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 
 #ifdef dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols
@@ -51,9 +50,11 @@ public:
             unsigned type, unsigned long count, const void * pValue );
     void cancel ();
     void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void destroy ();
+    void * operator new ( size_t size, 
+        tsFreeList < dbPutNotifyBlocker > & );
+    void operator delete ( void *, 
+        tsFreeList < dbPutNotifyBlocker > & );
 protected:
     virtual ~dbPutNotifyBlocker ();
 private:
@@ -79,20 +80,23 @@ private:
     unsigned long maxValueSize;
     dbSubscriptionIO * isSubscription ();
     void expandValueBuf ( unsigned long newSize );
-    static epicsSingleton < tsFreeList < dbPutNotifyBlocker > > pFreeList;
     friend void putNotifyCompletion ( putNotify *ppn );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
 	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
+    void * operator new ( size_t size );
+    void operator delete ( void * );
 };
 
-inline void * dbPutNotifyBlocker::operator new ( size_t size )
+inline void * dbPutNotifyBlocker::operator new ( size_t size, 
+    tsFreeList < dbPutNotifyBlocker > & freeList )
 {
-    return dbPutNotifyBlocker::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void dbPutNotifyBlocker::operator delete ( void *pCadaver, size_t size )
+inline void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
+    tsFreeList < dbPutNotifyBlocker > & freeList )
 {
-    dbPutNotifyBlocker::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver );
 }
 
 #endif // ifndef dbPutNotifyBlockerh

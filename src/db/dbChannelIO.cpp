@@ -24,12 +24,13 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #include <limits.h>
 
 #include "tsFreeList.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "epicsSingleton.h"
 #include "db_access.h"
 
 #define epicsExportSharedSymbols
@@ -37,8 +38,6 @@
 #include "dbCAC.h"
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
-
-epicsSingleton < tsFreeList < dbChannelIO > > dbChannelIO::pFreeList;
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
     const dbAddr &addrIn, dbServiceIO &serviceIO ) :
@@ -90,17 +89,10 @@ cacChannel::ioStatus dbChannelIO::write ( unsigned type, unsigned long count,
 }
 
 void dbChannelIO::subscribe ( unsigned type, unsigned long count, 
-    unsigned mask, cacStateNotify &notify, ioid *pId ) 
+    unsigned mask, cacStateNotify & notify, ioid * pId ) 
 {   
-    if ( type > INT_MAX ) {
-        throw cacChannel::badType();
-    }
-    if ( count > INT_MAX ) {
-        throw cacChannel::outOfBounds();
-    }
-
-    new dbSubscriptionIO ( this->serviceIO, *this, 
-        this->addr, notify, type, count, mask, pId );
+    this->serviceIO.subscribe ( this->addr, *this,
+        type, count, mask, notify, pId );
 }
 
 void dbChannelIO::ioCancel ( const ioid & id )
@@ -129,5 +121,10 @@ void dbChannelIO::show ( unsigned level ) const
     }
 }
 
+void dbChannelIO::operator delete ( void *pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
 
 

@@ -25,7 +25,6 @@
 
 #include "envDefs.h"
 #include "resourceLib.h"
-#include "epicsSingleton.h"
 #include "tsFreeList.h"
 #include "osiSock.h"
 #include "inetAddrID.h"
@@ -43,16 +42,19 @@ public:
     ipIgnoreEntry ( unsigned ipAddr );
     void destroy ();
     void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void * pCadaver, size_t size );
     bool operator == ( const ipIgnoreEntry & ) const;
     resTableIndex hash () const;
+    void * operator new ( size_t size, 
+        tsFreeList < class ipIgnoreEntry, 128 > & );
+    void operator delete ( void *, 
+        tsFreeList < class ipIgnoreEntry, 128 > & );
 
 private:
     unsigned ipAddr;
-    static epicsSingleton < tsFreeList < class ipIgnoreEntry, 1024 > > pFreeList;
 	ipIgnoreEntry ( const ipIgnoreEntry & );
 	ipIgnoreEntry & operator = ( const ipIgnoreEntry & );
+    void * operator new ( size_t size );
+    void operator delete ( void * );
 };
 
 //
@@ -60,8 +62,9 @@ private:
 //
 class casDGIntfIO : public casDGClient {
 public:
-	casDGIntfIO ( caServerI &serverIn, const caNetAddr &addr, 
-		bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr = false );
+	casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager &, 
+        const caNetAddr & addr, bool autoBeaconAddr = true, 
+        bool addConfigBeaconAddr = false );
 	virtual ~casDGIntfIO();
 
 	int getFD () const;
@@ -85,6 +88,7 @@ public:
     bufSizeT incomingBytesPresent () const;
 
 private:
+    tsFreeList < class ipIgnoreEntry, 128 > ipIgnoreEntryFreeList;
     resTable < ipIgnoreEntry, ipIgnoreEntry > ignoreTable;
 	ELLLIST beaconAddrList;
 	SOCKET sock;
@@ -107,13 +111,14 @@ struct ioArgsToNewStreamIO {
 //
 class casStreamIO : public casStrmClient {
 public:
-	casStreamIO ( caServerI & cas, const ioArgsToNewStreamIO & args );
-	~casStreamIO();
+	casStreamIO ( caServerI &, clientBufMemoryManager &, 
+        const ioArgsToNewStreamIO & );
+	~casStreamIO ();
 
-	int getFD() const;
-	void xSetNonBlocking();
+	int getFD () const;
+	void xSetNonBlocking ();
 
-	casIOState state() const;
+	casIOState state () const;
 	void hostName ( char *pBuf, unsigned bufSize ) const;
 	
 	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
@@ -164,7 +169,8 @@ public:
 	// called when we expect that a virtual circuit for a
 	// client can be created
 	// 
-	casStreamOS *newStreamClient(caServerI &cas) const;
+	casStreamOS * newStreamClient ( caServerI & cas, 
+        clientBufMemoryManager & ) const;
 
     caNetAddr serverAddress () const;
 

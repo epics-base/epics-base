@@ -15,6 +15,8 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
+
 #include "epicsGuard.h"
 #include "epicsVersion.h"
 
@@ -108,7 +110,7 @@ void caServerI::removeClient (casStrmClient *pClient)
 //
 void caServerI::connectCB ( casIntfOS & intf )
 {
-    casStreamOS * pClient = intf.newStreamClient ( *this );
+    casStreamOS * pClient = intf.newStreamClient ( *this, this->clientBufMemMgr );
     if ( pClient ) {
         pClient->sendVersion ();
         pClient->flush ();
@@ -142,19 +144,15 @@ void serverToolDebugFunc (const char *pFile, unsigned line, const char *pComment
 //
 // caServerI::attachInterface()
 //
-caStatus caServerI::attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
-                            bool addConfigBeaconAddr)
-{
-    casIntfOS *pIntf;
-    
-    pIntf = new casIntfOS (*this, addr, autoBeaconAddr, addConfigBeaconAddr);
-    if (pIntf==NULL) {
-        return S_cas_noMemory;
-    }
+caStatus caServerI::attachInterface ( const caNetAddr & addrIn, 
+        bool autoBeaconAddr, bool addConfigBeaconAddr)
+{    
+    casIntfOS * pIntf = new casIntfOS ( *this, this->clientBufMemMgr, 
+        addrIn, autoBeaconAddr, addConfigBeaconAddr );
     
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
-        this->intfList.add (*pIntf);
+        this->intfList.add ( *pIntf );
     }
 
     return S_cas_success;

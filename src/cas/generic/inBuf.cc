@@ -21,21 +21,18 @@
 //
 // inBuf::inBuf()
 //
-inBuf::inBuf ( inBufClient &clientIn, bufSizeT ioMinSizeIn ) :
-    client ( clientIn ), pBuf ( 0 ), bufSize ( 0u ), bytesInBuffer ( 0u ), nextReadIndex ( 0u ),
-    ioMinSize ( ioMinSizeIn ), ctxRecursCount ( 0u )
+inBuf::inBuf ( inBufClient & clientIn, clientBufMemoryManager & memMgrIn, 
+              bufSizeT ioMinSizeIn ) :
+    client ( clientIn ), memMgr ( memMgrIn ), pBuf ( 0 ), 
+        bufSize ( 0u ), bytesInBuffer ( 0u ), nextReadIndex ( 0u ), 
+        ioMinSize ( ioMinSizeIn ), ctxRecursCount ( 0u )
 {
     if ( this->ioMinSize == 0 ) {
         this->ioMinSize = 1;
     }
-    if ( this->ioMinSize <= pGlobalBufferFactoryCAS->smallBufferSize () ) {
-        this->pBuf = pGlobalBufferFactoryCAS->newSmallBuffer ();
-        this->bufSize = pGlobalBufferFactoryCAS->smallBufferSize ();
-    }
-    else {
-        this->pBuf = new char [ this->ioMinSize ];
-        this->bufSize = this->ioMinSize;
-    }
+    casBufferParm bufParm = this->memMgr.allocate ( this->ioMinSize );
+    this->pBuf = bufParm.pBuf;
+    this->bufSize = bufParm.bufSize;
 }
 
 //
@@ -45,15 +42,7 @@ inBuf::inBuf ( inBufClient &clientIn, bufSizeT ioMinSizeIn ) :
 inBuf::~inBuf ()
 {
     assert ( this->ctxRecursCount == 0 );
-    if ( this->bufSize == pGlobalBufferFactoryCAS->smallBufferSize () ) {
-        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
-    }
-    else if ( this->bufSize == pGlobalBufferFactoryCAS->largeBufferSize () ) {
-        pGlobalBufferFactoryCAS->destroyLargeBuffer ( this->pBuf );
-    }
-    else {
-        delete [] this->pBuf;
-    }
+    this->memMgr.release ( this->pBuf, this->bufSize );
 }
 
 //
@@ -61,8 +50,8 @@ inBuf::~inBuf ()
 //
 void inBuf::show (unsigned level) const
 {
-    if (level>1u) {
-        printf(
+    if ( level > 1u ) {
+        printf (
             "\tUnprocessed request bytes = %d\n",
             this->bytesAvailable());
     }
@@ -167,13 +156,14 @@ bufSizeT inBuf::popCtx ( const inBufCtx &ctx ) // X aCC 361
 
 void inBuf::expandBuffer ()
 {
-    if ( this->bufSize < pGlobalBufferFactoryCAS->largeBufferSize () ) {
-        char * pNewBuf = pGlobalBufferFactoryCAS->newLargeBuffer ();
-        memcpy ( pNewBuf, &this->pBuf[this->nextReadIndex], this->bytesPresent () );
+    bufSizeT max = this->memMgr.maxSize();
+    if ( this->bufSize <  max ) {
+        casBufferParm bufParm = this->memMgr.allocate ( max );
+        memcpy ( bufParm.pBuf, &this->pBuf[this->nextReadIndex], this->bytesPresent () );
         this->nextReadIndex = 0u;
-        pGlobalBufferFactoryCAS->destroySmallBuffer ( this->pBuf );
-        this->pBuf = pNewBuf;
-        this->bufSize = pGlobalBufferFactoryCAS->largeBufferSize ();
+        this->memMgr.release ( this->pBuf, this->bufSize );
+        this->pBuf = bufParm.pBuf;
+        this->bufSize = bufParm.bufSize;
     }
 }
 

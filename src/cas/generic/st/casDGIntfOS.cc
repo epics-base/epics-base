@@ -78,13 +78,16 @@ private:
 //
 // casDGIntfOS::casDGIntfOS()
 //
-casDGIntfOS::casDGIntfOS (caServerI &serverIn, const caNetAddr &addr, 
-        bool autoBeaconAddr, bool addConfigBeaconAddr) : 
-	casDGIntfIO (serverIn, addr, autoBeaconAddr, addConfigBeaconAddr),
+casDGIntfOS::casDGIntfOS (
+        caServerI & serverIn, clientBufMemoryManager & memMgrIn,
+        const caNetAddr & addr, bool autoBeaconAddr, 
+        bool addConfigBeaconAddr) : 
+	casDGIntfIO (serverIn, memMgrIn, addr, 
+            autoBeaconAddr, addConfigBeaconAddr),
 	pRdReg ( 0 ),
     pBCastRdReg ( 0 ),
     pWtReg ( 0 ),
-    sendBlocked (false)
+    sendBlocked ( false )
 {
 	this->xSetNonBlocking();
     this->armRecv();

@@ -22,8 +22,6 @@
 
 #include "server.h"
 
-epicsSingleton < casBufferFactory > pGlobalBufferFactoryCAS;
-
 casBufferFactory::casBufferFactory () :
     smallBufFreeList ( 0 ), largeBufFreeList ( 0 ), largeBufferSizePriv ( 0u )
 {

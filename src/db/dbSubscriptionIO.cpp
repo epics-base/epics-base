@@ -24,12 +24,13 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #include <limits.h>
 
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 
 #include "db_access.h" // need to eliminate this
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
@@ -39,22 +40,18 @@
 #include "dbChannelIO.h"
 #include "db_access_routines.h"
 
-epicsSingleton < tsFreeList < dbSubscriptionIO > > dbSubscriptionIO::pFreeList;
-
-dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
-    dbAddr &addr, cacStateNotify &notifyIn, 
-    unsigned typeIn, unsigned long countIn, unsigned maskIn,
-        cacChannel::ioid * pId ) :
+dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO & serviceIO, dbChannelIO & chanIO, 
+    dbAddr & addr, cacStateNotify & notifyIn, unsigned typeIn, unsigned long countIn, 
+    unsigned maskIn, dbEventCtx ctx ) :
     notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 
         type ( typeIn ), count ( countIn ), id ( 0u )
 {
-    this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn );
-    if ( pId ) {
-        *pId = this->getId ();
+    this->es = db_add_event ( ctx, & addr,
+        dbSubscriptionEventCallback, (void *) this, maskIn );
+    if ( this->es == 0 ) {
+        throw std::bad_alloc();
     }
-
     db_post_single_event ( this->es );
-
     db_event_enable ( this->es );
 }
 
@@ -82,14 +79,22 @@ void dbSubscriptionIO::channelDeleteException ()
         this->chan.pName(), this->type, this->count );
 }
 
-void * dbSubscriptionIO::operator new ( size_t size )
+void dbSubscriptionIO::operator delete ( void * pCadaver )
 {
-    return dbSubscriptionIO::pFreeList->allocate ( size );
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
-void dbSubscriptionIO::operator delete ( void *pCadaver, size_t size )
+void * dbSubscriptionIO::operator new ( size_t size, 
+        tsFreeList < dbSubscriptionIO > & freeList )
 {
-    dbSubscriptionIO::pFreeList->release ( pCadaver, size );
+    return freeList.allocate ( size );
+}
+
+void dbSubscriptionIO::operator delete ( void * pCadaver, 
+        tsFreeList < dbSubscriptionIO > & freeList )
+{
+    freeList.release ( pCadaver );
 }
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /* paddr */,

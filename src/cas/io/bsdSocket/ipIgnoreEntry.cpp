@@ -20,8 +20,6 @@
 #define caNetAddrSock
 #include "server.h"
 
-epicsSingleton < tsFreeList < ipIgnoreEntry, 1024 > > ipIgnoreEntry::pFreeList;
-
 void ipIgnoreEntry::show ( unsigned /* level */ ) const
 {
     char buf[256];
@@ -44,6 +42,11 @@ resTableIndex ipIgnoreEntry::hash () const
     const unsigned inetAddrMaxIndexBitWidth = 32u;
     return integerHash ( inetAddrMinIndexBitWidth, 
         inetAddrMaxIndexBitWidth, this->ipAddr );
+}
+
+void ipIgnoreEntry::operator delete ( void * pCadaver )
+{
+    throw std::logic_error ( "compiler is confused about placement delete" );
 }
 
 

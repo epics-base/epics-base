@@ -29,13 +29,13 @@ typedef unsigned long arrayElementCount;
 #include "inBufIL.h"		// inBuf inline functions
 #include "outBufIL.h"		// outBuf inline functions
 
-static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
+static const caHdr nill_msg = { 0u,0u,0u,0u,0u,0u };
 
 //
 // casStrmClient::casStrmClient()
 //
-casStrmClient::casStrmClient ( caServerI &serverInternal ) :
-	casClient ( serverInternal, 1 )
+casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & memMgr ) :
+	casClient ( cas, memMgr, 1 )
 {
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
@@ -1972,4 +1972,6 @@ void casStrmClient::flush ()
 {
     this->out.flush ();
 }
+
+
 

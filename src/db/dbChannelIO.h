@@ -40,9 +40,9 @@ public:
     void callStateNotify ( unsigned type, unsigned long count, 
             const struct db_field_log *pfl, cacStateNotify &notify );
     void show ( unsigned level ) const;
-    void * operator new ( size_t size);
-    void operator delete ( void *pCadaver, size_t size );
     const char *pName () const;
+    void * operator new ( size_t size, tsFreeList < dbChannelIO > & );
+    void operator delete ( void *, tsFreeList < dbChannelIO > & );
 protected:
     ~dbChannelIO (); // allocate only from pool
 private:
@@ -61,9 +61,10 @@ private:
     void ioShow ( const ioid &, unsigned level ) const;
     short nativeType () const;
     unsigned long nativeElementCount () const;
-    static epicsSingleton < tsFreeList < dbChannelIO > > pFreeList;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );
+    void * operator new ( size_t size );
+    void operator delete ( void * );
 };
 
 
@@ -80,14 +81,16 @@ inline void dbChannelIO::destroy ()
     delete this;
 }
 
-inline void * dbChannelIO::operator new ( size_t size )
+inline void * dbChannelIO::operator new ( size_t size, 
+    tsFreeList < dbChannelIO > & freeList )
 {
-    return dbChannelIO::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void dbChannelIO::operator delete ( void *pCadaver, size_t size )
+inline void dbChannelIO::operator delete ( void *pCadaver, 
+    tsFreeList < dbChannelIO > & freeList )
 {
-    dbChannelIO::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver );
 }
 
 inline const char *dbChannelIO::pName () const 

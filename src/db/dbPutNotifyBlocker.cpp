@@ -25,6 +25,8 @@
  *  505 665 1831
  */
 
+#include <stdexcept>
+
 #include <limits.h>
 #include <string.h>
 
@@ -32,7 +34,6 @@
 #include "epicsEvent.h"
 #include "epicsTime.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 #include "errMdef.h"
 
 #include "caerr.h" // this needs to be eliminated
@@ -42,9 +43,6 @@
 #include "dbCAC.h"
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
-
-epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > 
-                                    dbPutNotifyBlocker::pFreeList;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker () :
     pNotify ( 0 ), maxValueSize ( sizeof ( this->dbrScalarValue ) )
@@ -189,3 +187,8 @@ dbSubscriptionIO * dbPutNotifyBlocker::isSubscription ()
     return 0;
 }
 
+void dbPutNotifyBlocker::operator delete ( void * pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}

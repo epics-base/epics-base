@@ -151,7 +151,8 @@ casIntfIO::~casIntfIO()
 //
 // newStreamIO::newStreamClient()
 //
-casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
+casStreamOS *casIntfIO::newStreamClient ( caServerI & cas, 
+                               clientBufMemoryManager & bufMgr ) const
 {
     static bool oneMsgFlag = false;
     struct sockaddr	newAddr;
@@ -179,7 +180,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
     ioArgsToNewStreamIO args;
     args.addr = newAddr;
     args.sock = newSock;
-    pOS = new casStreamOS ( cas, args );
+    pOS = new casStreamOS ( cas, bufMgr, args );
     if ( ! pOS ) {
         errMessage ( S_cas_noMemory, 
             "unable to create data structures for a new client" );

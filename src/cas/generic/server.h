@@ -42,7 +42,6 @@
 #include "errMdef.h" // EPICS error codes 
 #include "resourceLib.h" // EPICS hashing templates
 #include "errlog.h" // EPICS error logging interface
-#include "epicsSingleton.h"
 
 //
 // CA
@@ -246,7 +245,19 @@ private:
     unsigned largeBufferSizePriv;
 };
 
-extern epicsSingleton < casBufferFactory > pGlobalBufferFactoryCAS;
+struct casBufferParm {
+    char * pBuf;
+    bufSizeT bufSize;
+};
+
+class clientBufMemoryManager {
+public:
+    casBufferParm allocate ( bufSizeT newMinSize );
+    void release ( char * pBuf, bufSizeT bufSize );
+    bufSizeT maxSize () const;
+private:
+    casBufferFactory bufferFactory;
+};
 
 class inBufClient {             // X aCC 655
 public:
@@ -268,7 +279,8 @@ class inBuf {
     friend class inBufCtx;
 public:
 
-    inBuf ( inBufClient &, bufSizeT ioMinSizeIn );
+    inBuf ( inBufClient &, clientBufMemoryManager &, 
+        bufSizeT ioMinSizeIn );
     virtual ~inBuf ();
     
     bufSizeT bytesPresent () const;
@@ -310,6 +322,7 @@ public:
 private:
     epicsMutex mutex;
     inBufClient & client;
+    clientBufMemoryManager & memMgr;
     char * pBuf;
     bufSizeT bufSize;
     bufSizeT bytesInBuffer;
@@ -356,7 +369,7 @@ class outBuf {
     friend class outBufCtx;
 public:
 
-	outBuf ( outBufClient & );
+	outBuf ( outBufClient &, clientBufMemoryManager & );
 	virtual ~outBuf ();
 
 	bufSizeT bytesPresent () const;
@@ -403,12 +416,13 @@ public:
 	void clear ();
 
 private:
-    mutable epicsMutex  mutex;
-    outBufClient        & client;                 
-	char                * pBuf;
-	bufSizeT            bufSize;
-	bufSizeT            stack;
-    unsigned            ctxRecursCount;
+    mutable epicsMutex mutex;
+    outBufClient & client;       
+    clientBufMemoryManager & memMgr;
+	char * pBuf;
+	bufSizeT bufSize;
+	bufSizeT stack;
+    unsigned ctxRecursCount;
 
     void expandBuffer ();
 
@@ -495,7 +509,7 @@ class casClient : public casCoreClient, public outBufClient,
     public inBufClient {
 public:
 
-	casClient ( caServerI &, bufSizeT ioMinSizeIn );
+	casClient ( caServerI &, clientBufMemoryManager &, bufSizeT ioMinSizeIn );
 	virtual ~casClient ();
 
 	virtual void show ( unsigned level ) const;
@@ -583,7 +597,7 @@ private:
 class casStrmClient : public casClient,
 	public tsDLNode<casStrmClient> {
 public:
-	casStrmClient (caServerI &cas);
+	casStrmClient ( caServerI &, clientBufMemoryManager & );
 	virtual ~casStrmClient();
 
 	void show (unsigned level) const;
@@ -714,7 +728,7 @@ class casDGIntfIO;
 //
 class casDGClient : public casClient {
 public:
-	casDGClient (caServerI &serverIn);
+	casDGClient ( caServerI &serverIn, clientBufMemoryManager & );
 	virtual ~casDGClient();
 
 	virtual void show (unsigned level) const;
@@ -923,6 +937,7 @@ public:
     void generateBeaconAnomaly ();
 
 private:
+    clientBufMemoryManager  clientBufMemMgr;
 	mutable epicsMutex      mutex;
 	tsDLList<casStrmClient> clientList;
     tsDLList<casIntfOS>     intfList;

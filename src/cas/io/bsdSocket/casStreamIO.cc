@@ -16,9 +16,11 @@
 //
 // casStreamIO::casStreamIO()
 //
-casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
-	casStrmClient(cas), sock(args.sock), addr(args.addr), blockingFlag(xIsBlocking)
-{
+casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
+                          const ioArgsToNewStreamIO & args ) :
+	casStrmClient ( cas, bufMgr ), sock ( args.sock ), addr (  args.addr), 
+        blockingFlag ( xIsBlocking )
+ {
 	assert (sock>=0);
 	int yes = TRUE;
 	int	status;

@@ -26,6 +26,8 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "localHostName.h"
 #include "iocinf.h"
@@ -219,8 +221,6 @@ void tcpSendThread::run ()
             epicsThreadSleep ( 0.1 );
         }
     }
-
-    this->thread.exitWaitRelease ();
 
     this->iiu.cacRef.destroyIIU ( this->iiu );
 }
@@ -443,7 +443,6 @@ void tcpRecvThread::run ()
             }
             if ( ! connectSuccess ) {
                 this->iiu.recvDog.shutdown ();
-                this->thread.exitWaitRelease ();
                 this->iiu.cacRef.destroyIIU ( this->iiu );
                 return;
             }

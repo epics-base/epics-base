@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/08/05 00:47:04  jhill
+ * fixed warnings
+ *
  * Revision 1.8  1997/06/30 22:54:25  jhill
  * use %p with pointers
  *
@@ -107,12 +110,12 @@ caStatus casClient::init()
 	}
 
 	serverDebugLevel = this->ctx.getServer()->getDebugLevel();
-        if (serverDebugLevel>0u) {
+	if (serverDebugLevel>0u) {
 		char pName[64u];
 
 		this->clientHostName (pName, sizeof (pName));
-                ca_printf("CAS: created a new client for %s\n", pName);
-        }
+				ca_printf("CAS: created a new client for %s\n", pName);
+	}
 
 	return S_cas_success;
 }
@@ -446,20 +449,37 @@ const char	*pformat,
 		...
 )
 {
-	va_list		args;
-        casChannelI	*pciu;
-	int        	size;
-	caHdr 		*reply;
-	char		*pMsgString;
-	int		status;
+	va_list args;
+	casChannelI *pciu;
+	unsigned size;
+	caHdr *reply;
+	char *pMsgString;
+	int status;
+	char msgBuf[1024]; /* allocate plenty of space for the message string */
 
-	va_start(args, pformat);
+	if (pformat) {
+		va_start (args, pformat);
+		status = vsprintf (msgBuf, pformat, args);
+		if (status<0) {
+			errPrintf (S_cas_internal, __FILE__, __LINE__,
+				"bad sendErr(%s)", pformat);
+			size = 0u;
+		}
+		else {
+			size = 1u + (unsigned) status;
+		}
+	}
+	else {
+		size = 0u;
+	}
 
 	/*
 	 * allocate plenty of space for a sprintf() buffer
 	 */
-	status = this->outBufRef.allocMsg(1024u, &reply);
-	if(status){
+	status = this->outBufRef.allocMsg (size+sizeof(caHdr), &reply);
+	if (status) {
+		errPrintf (S_cas_internal, __FILE__, __LINE__,
+				"bad sendErr(%s)", pformat);
 		return status;
 	}
 
@@ -478,10 +498,8 @@ const char	*pformat,
 	case CA_PROTO_READ_NOTIFY:
 	case CA_PROTO_WRITE:
 	case CA_PROTO_WRITE_NOTIFY:
-	        /*
-		 *
+		/*
 		 * Verify the channel
-		 *
 		 */
 		pciu = this->resIdToChannel(curp->m_cid);
 		if(pciu){
@@ -509,16 +527,13 @@ const char	*pformat,
 	/*
 	 * add their optional context string into the protocol
 	 */
-	if (pformat) {
-		pMsgString = (char *) (reply+2);
-		vsprintf(pMsgString, pformat, args);
-		size = strlen(pMsgString)+1;
+	if (size>0u) {
+		pMsgString = (char *) (reply+2u);
+		strncpy (pMsgString, msgBuf, size-1u);
+		pMsgString[size-1u] = '\0';
 	}
-	else {
-		size = 0;
-	}
-	size += sizeof(*curp);
-	reply->m_postsize = size;
+
+	reply->m_postsize = size + sizeof(caHdr);
 
 	this->outBufRef.commitMsg();
 

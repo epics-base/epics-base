@@ -104,7 +104,7 @@ int main(int argc,char **argv)
 	        fprintf(stderr,"no template file\n");
 	        usageExit();
             }
-	    while(pval = substituteGetReplacements(substitutePvt)){
+	    while((pval = substituteGetReplacements(substitutePvt))){
 	        addMacroReplacements(macPvt,pval);
 	        makeSubstitutions(inputPvt,macPvt,filename);
 	    }
@@ -151,10 +151,9 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
     int  n;
-    char *subStringLocation;
 
     inputBegin(inputPvt,templateName);
-    while(input = inputNextLine(inputPvt)) {
+    while((input = inputNextLine(inputPvt))) {
 	int	expand=TRUE;
 	char	*p;
 	char	*command = 0;
@@ -265,7 +264,7 @@ static void inputDestruct(void *pvt)
     pathNode	*ppathNode;
 
     inputCloseAllFiles(pinputData);
-    while(ppathNode = (pathNode *)ellFirst(&pinputData->pathList)) {
+    while((ppathNode = (pathNode *)ellFirst(&pinputData->pathList))) {
 	ellDelete(&pinputData->pathList,&ppathNode->node);
 	free((void *)ppathNode->directory);
 	free((void *)ppathNode);
@@ -314,7 +313,6 @@ static void inputAddPath(void *pvt, char *path)
 static void inputBegin(void *pvt,char *fileName)
 {
     inputData	*pinputData = (inputData *)pvt;
-    inputFile	*pinputFile;
 
     inputCloseAllFiles(pinputData);
     inputOpenFile(pinputData,fileName);
@@ -326,7 +324,7 @@ static char *inputNextLine(void *pvt)
     inputFile	*pinputFile;
     char	*pline;
 
-    while(pinputFile = (inputFile *)ellFirst(&pinputData->inputFileList)) {
+    while((pinputFile = (inputFile *)ellFirst(&pinputData->inputFileList))) {
         pline = fgets(pinputData->inputBuffer,MAX_BUFFER_SIZE,pinputFile->fp);
 	if(pline) {
 	    ++pinputFile->lineNum;
@@ -373,7 +371,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     ELLLIST	*ppathList = &pinputData->pathList;
     pathNode	*ppathNode = 0;
     inputFile	*pinputFile;
-    char	*fullname;
+    char	*fullname = 0;
     FILE	*fp = 0;
 
     if(!filename) {
@@ -432,7 +430,7 @@ static void inputCloseAllFiles(inputData *pinputData)
 {
     inputFile	*pinputFile;
 
-    while(pinputFile=(inputFile *)ellFirst(&pinputData->inputFileList)){
+    while((pinputFile=(inputFile *)ellFirst(&pinputData->inputFileList))){
 	inputCloseFile(pinputData);
     }
 }
@@ -490,7 +488,7 @@ void freeSubFile(subInfo *psubInfo)
 void freePattern(subInfo *psubInfo)
 {
     patternNode	*ppatternNode;
-    while(ppatternNode = (patternNode *)ellFirst(&psubInfo->patternList)) {
+    while((ppatternNode = (patternNode *)ellFirst(&psubInfo->patternList))) {
 	ellDelete(&psubInfo->patternList,&ppatternNode->node);
 	free(ppatternNode->var);
 	free(ppatternNode);
@@ -501,10 +499,8 @@ void freePattern(subInfo *psubInfo)
 static void substituteDestruct(void *pvt)
 {
     subInfo	*psubInfo = (subInfo *)pvt;
-    subFile	*psubFile = psubInfo->psubFile;
 
     freePattern(psubInfo);
-    freeSubFile(psubInfo);
     free((void *)psubInfo);
     return;
 }
@@ -514,7 +510,6 @@ static void substituteOpen(void **ppvt,char *substitutionName)
     subInfo	*psubInfo;
     subFile	*psubFile;
     FILE	*fp;
-    patternNode	*ppatternNode;
 
     psubInfo = calloc(1,sizeof(subInfo));
     *ppvt = (void *)psubInfo;
@@ -539,7 +534,6 @@ static int substituteGetNextSet(void *pvt,char **filename)
 {
     subInfo	*psubInfo = (subInfo *)pvt;
     subFile	*psubFile = psubInfo->psubFile;
-    FILE	*fp;
     patternNode	*ppatternNode;
 
     *filename = 0;

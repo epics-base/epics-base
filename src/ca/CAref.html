@@ -56,9 +56,10 @@ height="31" width="88"></a></p>
     Period</a></li>
   <li><a href="#Dynamic">Dynamic Changes in the CA Client Library Search
     Interval</a></li>
+  <li><a href="#Configurin3">Configuring the Maximum Search Period</a></li>
   <li><a href="#Repeater">The CA Repeater</a></li>
   <li><a href="#Configurin">Configuring the Time Zone</a></li>
-  <li><a href="#Configurin1">Configuring the maximum array size</a></li>
+  <li><a href="#Configurin1">Configuring the Maximum Array Size</a></li>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
 </ul>
 
@@ -66,9 +67,7 @@ height="31" width="88"></a></p>
 <ul>
   <li><a href="#Required1">Required Header (.h) Files</a></li>
   <li><a href="#Required">Required Libraries</a></li>
-  <li><p><a name="Compiler1" id="Compiler1" href="#Compiler">Compiler and
-    System Specific Build Options</a></p>
-  </li>
+  <li><a href="#Compiler">Compiler and System Specific Build Options</a></li>
 </ul>
 
 <h3><a href="#CommandUtils">Command Line Utilities</a></h3>
@@ -286,6 +285,11 @@ files is used.</p>
       <td>EPICS_CA_MAX_ARRAY_BYTES</td>
       <td>i &gt;= 16384</td>
       <td>16384</td>
+    </tr>
+    <tr>
+      <td>EPICS_CA_MAX_SEARCH_PERIOD</td>
+      <td>r &gt; 60 seconds</td>
+      <td>300</td>
     </tr>
     <tr>
       <td>EPICS_TS_MIN_WEST</td>
@@ -569,16 +573,26 @@ request to avoid all clients responding to a beacon anomaly at the same
 instant. The program "casw" prints a message on standard out each time that a
 CA client will detect a beacon anomaly.</p>
 
-<p>Two conclusions deserve special emphasis.<em> First, if a client does not
-see the server's beacons, then it will use additional network and server
-resources sending periodic state-of-health messages. Second, if a client does
-not see the server's beacons, then it may not connect to a newly introduced
-server that was initially inaccessible if the client timed out attempting to
-find it.</em> The typical situation where a client would not see the server's
-beacon might be when the client isnt on the same IP subnet as the server, and
-the EPICS_CA_ADDR_LIST was modified to include a destination address for the
-server, but the server's beacon address list was not modified so that it's
-beacons are received by the client.</p>
+<p>See also <a href="#Client1">When a Client Does not See the Server's
+Beacon</a>.</p>
+
+<h3><a name="Configurin3" id="Configurin3">Configuring the Maximum Search
+Period</a></h3>
+
+<p>The rate at which name resolution (search) requests are sent exponentially
+backs off to a plateau rate. The value of this plateau has an impact on
+network traffic because it determines the rate that clients search for
+channel names that are miss-spelled or otherwise don't exist in a server.
+Furthermore, for clients that are unable to see the beacon from a new server,
+the plateau rate may also determine the maximum interval that the client will
+wait until discovering a new server.</p>
+
+<p>Starting with EPICS R3.14.7 this maximum search rate interval plateau in
+seconds is determined by the EPICS_CA_MAX_SEARCH_PERIOD environment
+variable.</p>
+
+<p>See also <a href="#Client1">When a Client Does not See the Server's
+Beacon</a>.</p>
 
 <h3><a name="Repeater">The CA Repeater</a></h3>
 
@@ -1543,8 +1557,24 @@ single specific host's ip address).</p>
 
 <h4><a name="Client1">Client Does not See Server's Beacons</a></h4>
 
-<p>See <a href="#Dynamic">Dynamic Changes in the CA Client Library Search
-Interval.</a></p>
+<p>Two conclusions deserve special emphasis. <em>First, if a client does not
+see the server's beacons, then it will use additional network and server
+resources sending periodic state-of-health messages.</em> <em>Second, if a
+client does not see a newly introduced server's beacon, then it will take up
+to EPICS_CA_MAX_SEARCH_PERIOD to find that newly introduced server.</em>
+Also, starting with EPICS R3.14.7 the client library does <em>not</em>
+suspend searching for a channel after 100 unsuccessful attempts until a
+beacon anomaly is seen. Therefore, if the client library is from before
+version R3.14.7 of EPICS and it timed out attempting to find a server whoose
+beacon cant be seen by the client library then the client application might
+need to be restarted in order to connect to this new beacon-out-of-range
+server.</p>
+
+<p>The typical situation where a client would not see the server's beacon
+might be when the client isnt on the same IP subnet as the server, and the
+client's EPICS_CA_ADDR_LIST was modified to include a destination address for
+the server, but the server's beacon address list was not modified so that
+it's beacons are received by the client.</p>
 
 <h4><a name="Server1">A Server's IP Address Was Changed</a></h4>
 

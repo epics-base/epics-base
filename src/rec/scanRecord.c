@@ -1729,7 +1729,7 @@ struct scanRecord *pscan;
      positioner into p_pp. If recScanDontCheckLimits is set, it will return
      successful w/o actually checking */
 
-  if(status = checkScanLimits(pscan)) {
+  if((status = checkScanLimits(pscan))) {
       pscan->exsc = 0;   /* limits didn't pass, abort scan */
       db_post_events(pscan,&pscan->smsg,DBE_VALUE);
       db_post_events(pscan,&pscan->alrt,DBE_VALUE);

@@ -41,22 +41,23 @@
  * .10  10-20-92        jbk     added get_enum funcs, allowed defaults in fields
  */ 
 
-#include     <vxWorks.h>
-#include     <types.h>
-#include     <stdioLib.h>
-#include     <lstLib.h>
+#include <vxWorks.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include        <alarm.h>
-#include     <dbAccess.h>
-#include     <dbEvent.h>
-#include     <dbFldTypes.h>
-#include     <devSup.h>
-#include     <errMdef.h>
-#include     <recSup.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
 #define GEN_SIZE_OFFSET
-#include     <pulseDelayRecord.h>
+#include "pulseDelayRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* defines used in special routine */

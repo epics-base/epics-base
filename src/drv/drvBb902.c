@@ -1,5 +1,4 @@
 /* bb902_driver.c */
-static char SccsId[] = "@(#)bb902_driver.c $Id$ ";
 /* share/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
@@ -34,8 +33,11 @@ static char SccsId[] = "@(#)bb902_driver.c $Id$ ";
  * .02  02-20-92        bg      Added level to io_report.  Added ability
  *                              to read out raw values on card if level
  *                              > 0.
+ * .03	08-10-92	joh	made number of cards runtime configurable 
  *				 
  */
+
+static char SccsId[] = "$Id$ ";
 
 /*
  * Code Portions:
@@ -61,9 +63,9 @@ struct bo_bb902{
 static char *bb902_shortaddr;
 
 /* pointers to the binary output cards */
-struct bo_bb902	*pbo_bb902s[MAX_BB_BO_CARDS];	/* Burr-Brown 902s */
-
+struct bo_bb902	**pbo_bb902s;	/* Burr-Brown 902s */
 
+
 /*
  * BO_DRIVER_INIT
  *
@@ -74,6 +76,12 @@ int bb902_driver_init(){
         int status;
 	register short	i;
 	struct bo_bb902	*pbo_bb902;
+
+	pbo_bb902s = (struct bo_bb902 **)calloc(MAX_BB_BO_CARDS,
+						sizeof(*pbo_bb902s));
+	if(!pbo_bb902s){
+		return ERROR;
+	}
 
 	/* intialize the Burr-Brown 902 binary output cards */
 

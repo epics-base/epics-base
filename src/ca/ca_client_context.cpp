@@ -228,21 +228,6 @@ void ca_client_context::destroyPutCallback (
     this->putCallbackFreeList.release ( & pcb );
 }
 
-void  ca_client_context::clearSubscriptionPrivate ( 
-    evid pMon, epicsGuard < epicsMutex > & cbGuard  )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    oldChannelNotify & chan = pMon->channel ();
-    try {
-        chan.eliminateExcessiveSendBacklog ( 
-            &cbGuard, guard );
-    }
-    catch ( cacChannel::notConnected & ) {
-        // intentionally ignored
-    }
-    pMon->ioCancel ( cbGuard, guard );
-}
-
 void ca_client_context::destroySubscription ( 
     epicsGuard < epicsMutex > & guard, oldSubscription & os )
 {
@@ -761,3 +746,37 @@ void epicsShareAPI caInstallDefaultService ( cacService & service )
 {
     ca_client_context::installDefaultService ( service );
 }
+
+epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
+{
+    oldChannelNotify & chan = pMon->channel ();
+    ca_client_context & cac = chan.getClientCtx ();
+    epicsGuard < epicsMutex > * pCBGuard = cac.pCallbackGuard.get();
+    if ( pCBGuard ) {
+        cac.clearSubscriptionPrivate ( *pCBGuard, *pMon );
+    }
+    else {
+        epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
+        cac.clearSubscriptionPrivate ( cbGuard, *pMon );
+    }
+    return ECA_NORMAL;
+}
+
+void ca_client_context::clearSubscriptionPrivate ( 
+    epicsGuard < epicsMutex > & cbGuard, oldSubscription & subscr )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    oldChannelNotify & chan = subscr.channel ();
+    try {
+        // if this stalls out on a live circuit then an exception 
+        // can be forthcoming which we must ignore as the clear
+        // request must always be successful
+        chan.eliminateExcessiveSendBacklog ( 
+            & cbGuard, guard );
+    }
+    catch ( cacChannel::notConnected & ) {
+        // intentionally ignored
+    }
+    subscr.cancel ( cbGuard, guard );
+}
+

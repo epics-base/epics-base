@@ -282,7 +282,9 @@ endif
 
 #---------------------------------------------------------------
 # always use c++ linker
+ifneq ($(strip $(CPLUSPLUS)),)
 LINK.c = $(LINK.cc)
+endif # CPLUSPLUS
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)

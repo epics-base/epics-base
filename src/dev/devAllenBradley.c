@@ -483,7 +483,7 @@ static long init_1771Ixe(struct aiRecord *pai)
     }
     else if (linr==1) {
         /* set linear conversion slope*/
-        pai->eslo = (pai->eguf -pai->egul)/4095.0;
+        pai->eslo = (pai->eguf -pai->egul)/20000.0;
     }
     else if( linr>=2 && linr<=13 ) {
 	pai->linr=0; /* make sure record processing routine does not convert*/
@@ -505,7 +505,7 @@ static long read_1771Ixe(struct aiRecord *pai)
 	short linr;
 	struct abio *pabio;
 	long status;
-	unsigned short  value;
+	short  value;
 
 	
 	linr=pai->linr;
@@ -519,7 +519,7 @@ static long read_1771Ixe(struct aiRecord *pai)
 		status = 0;
 	}
 	if(status==0) {
-		if(linr==0)pai->rval = value;
+		if(linr<=1)pai->rval = value;
 		else {
 			pai->val = value;
 			pai->udf = FALSE;

@@ -565,7 +565,6 @@ bool udpiiu::badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg
 bool udpiiu::versionAction ( epicsGuard < callbackMutex > &,
     const caHdr & hdr, const osiSockAddr &, const epicsTime & currentTime )
 {
-
     epicsGuard < udpMutex > guard ( this->mutex );
 
     // update the round trip time estimate
@@ -856,14 +855,9 @@ bool udpiiu::pushDatagramMsg ( const caHdr & msg, const void *pExt, ca_uint16_t 
 
 void udpiiu::datagramFlush ( const epicsTime & currentTime )
 {
-    // dont send the version header by itself
-    if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
-        return;
-    }
-
     epicsGuard < udpMutex > guard ( this->mutex );
 
-    // double test optimization
+    // dont send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
         return;
     }

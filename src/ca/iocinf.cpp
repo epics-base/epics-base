@@ -51,7 +51,9 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 
     *ppString = &pToken[i];
 
-    if ( *pToken ) return pBuf;
+    if ( *pToken ) {
+		return pBuf;
+	}
     return NULL;
 }
 
@@ -103,7 +105,7 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
  * removeDuplicatesAddresses ()
  */
 extern "C" void epicsShareAPI removeDuplicatesAddresses 
-    ( ELLLIST *pDestList, ELLLIST *pSrcList )
+    ( ELLLIST *pDestList, ELLLIST *pSrcList, int silent )
 {
     ELLNODE *pRawNode;
 
@@ -124,7 +126,10 @@ extern "C" void epicsShareAPI removeDuplicatesAddresses
                     if ( exorAddr == 0u && pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
                         char buf[64];
                         ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
-                        fprintf ( stderr, "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
+						if ( ! silent ) {
+							fprintf ( stderr, 
+								"Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
+						}
                         free (pNode);
                         pNode = NULL;
                         break;
@@ -196,9 +201,12 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
      * (lock outside because this is used by the server also)
      */
     if (yes) {
+		ELLLIST bcastList;
         osiSockAddr addr;
+		ellInit ( &bcastList ); // X aCC 392
         addr.ia.sin_family = AF_UNSPEC;
-        osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
+        osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
+		removeDuplicatesAddresses ( &tmpList, &bcastList, 1 );
         if ( ellCount ( &tmpList ) == 0 ) { // X aCC 392
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
@@ -223,7 +231,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     }
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );
 
-    removeDuplicatesAddresses ( pList, &tmpList );
+    removeDuplicatesAddresses ( pList, &tmpList, 0 );
 }
 
 

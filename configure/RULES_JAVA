@@ -19,7 +19,7 @@ JAVA_BIN = $(JAVA_DIR)/bin
 JAVA_INCLUDES += -I${JAVA_INC} -I${JAVA_INC}/${OS_CLASS}
 
 JAVACCMD = $(subst \,/,$(JAVA_BIN)/javac$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVACFLAGS))
-JAVAHCMD = $(subst \,/,$(JAVA_BIN)/javah$(EXE) -d $(COMMON_DIR) -force $(CLASSPATH) $(JAVAHFLAGS))
+JAVAHCMD = $(subst \,/,$(JAVA_BIN)/javah$(EXE) -d .  -force $(CLASSPATH) $(JAVAHFLAGS))
 JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $(COMMON_JAR) $(JARINPUT))
 
 #-------------------------------------------------------
@@ -29,10 +29,16 @@ CLASSPATH=-classpath $(INSTALL_JAVA)$(addprefix :,$(USR_CLASSPATH))
 SOURCEPATH=-sourcepath .:..:../..
 
 #-------------------------------------------------------
+# Java directory
+
+ifdef JAVA
+JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)
+endif
+
+#-------------------------------------------------------
 # Java native method C header files
 
 JAVAHFLAGS += $(USR_JAVAHFLAGS)
-COMMON_JAVAINC += $(addprefix $(COMMON_DIR)/,$(JAVAINC))
 JAVAINC_CLASSFILES += $(addprefix $(INSTALL_JAVA)/,$(subst _,/,$(subst .h,.class,$(JAVAINC))))
 JAVAINC_CLASSNAMES += $(subst _,.,$(subst .h,,$(JAVAINC)))
 
@@ -64,10 +70,10 @@ endif
 
 #-------------------------------------------------------
 # Java doc  definitions
-ifeq ($(JAVADOC),YES)
+ifdef JAVADOC
 JAVADOCFLAGS += $(USR_JAVADOCFLAGS)
 JAVADOCCMD = $(subst \,/,$(JAVA_BIN)/javadoc$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVADOCFLAGS))
-INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/%.html)
+INSTALL_JAVADOC = $(addprefix $(INSTALL_HTML)/,$(JAVADOC))/index.html
 endif
 
 #-------------------------------------------------------
@@ -81,7 +87,7 @@ buildInstall : build
 
 rebuild: clean install
 
-inc:  $(INSTALL_CLASSES) $(COMMON_JAVAINC)
+inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(JAVAINC)
 
 build: inc
 
@@ -93,13 +99,18 @@ buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 clean:: 
 	@$(RMDIR) $(INSTALL_CLASSES)
 	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
-	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
+	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(JAVAINC)
+
+ifdef JAVA_DIRECTORY_TARGETS
+$(JAVA_DIRECTORY_TARGETS):
+	$(MKDIR) -p $@
+endif
 
 $(INSTALL_JAVA):
 	$(MKDIR) -p $@
 
-$(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
-	@echo Creating header files $(COMMON_JAVAINC)
+$(JAVAINC):$(JAVAINC_CLASSFILES)
+	@echo Creating header files $(JAVAINC)
 	@$(RM) $@
 	$(JAVAHCMD) $(JAVAINC_CLASSNAMES)
 
@@ -108,22 +119,22 @@ $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
 	@$(RM) $@
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
-$(INSTALL_CLASSES): $(INSTALL_JAVA) $(addprefix ../,$(DEPJAVA))
+$(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
 	@echo Creating java class files 
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^
 
-$(INSTALL_JAVADOC): $(INSTALL_JAVA) $(addprefix ../,$(DEPJAVA))
-	@echo Creating java class files 
+$(INSTALL_JAVADOC): $(addprefix ../,$(JAVA))
+	@echo Creating java doc files 
 	@$(RM) $@
-	$(JAVADOCCMD) -d $(INSTALL_JAVA) $^
+	$(JAVADOCCMD) -d $(addprefix $(INSTALL_HTML)/,$(JAVADOC)) $^
 
 $(COMMON_DIR)/%.jar: $(JARDEPFILES)
 	@echo Creating java jar file $@
 	@$(RM) $@
 	$(JARCMD)
 
-$(INSTALL_JAVA)/%.jar: $(INSTALL_JAVA) $(COMMON_DIR)/%.jar
+$(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
 	@echo "Installing java jar file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 

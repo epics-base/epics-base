@@ -2906,7 +2906,9 @@ int ca_context_status ( struct ca_client_context *,
 <h4>Description</h4>
 
 <p>Prints information about the client context including, at higher interest
-levels,&nbsp;status for each channel.</p>
+levels,&nbsp;status for each channel. Lacking a CA context pointer,
+ca_client_status() prints information about the calling threads CA
+context.</p>
 
 <h4>Arguments</h4>
 <dl>

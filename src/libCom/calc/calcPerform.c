@@ -63,6 +63,7 @@
  * .27  03-06-92        jba     added MAX and MIN binary functions
  * .28  03-10-92        jba     added multiple conditional expressions ?
  * .29  04-01-92        jba     allowed floating pt constants in expression
+ * .30  05-01-92        jba     flt pt constant string replaced with double in postfix
 >
  */
 
@@ -97,6 +98,7 @@ extern int printf();
 #   include <stdio.h>
 #endif
 
+#include	<string.h>
 #include	<dbDefs.h>
 #include	<post.h>
 #include	<math.h>
@@ -445,11 +447,13 @@ char   *post;
 		case CONSTANT:
 			++pstacktop;
 			++post;
-			if (  sscanf(post,"%lg",pstacktop) != 1 ) {
-				printf("%s bad constant in expression\n",*post);
+			if ( post == NULL ) {
+				++post;
+				printf("%.7s bad constant in expression\n",*post);
 				break;
 			}
-			while ( *post != '\0' ) ++post;
+			memcpy(pstacktop,post,8);
+			post+=7;
 			break;
 		default:
 			printf("%d bad expression element\n",*post);

@@ -39,6 +39,7 @@
  * .08  03-03-92        jba     added MAX and MIN and comma(like close paren)
  * .09  03-06-92        jba     added multiple conditional expressions ?
  * .10  04-01-92        jba     allowed floating pt constants in expression
+ * .11  05-01-92        jba     flt pt constant string replaced with double in postfix
 */
 
 /* 
@@ -84,12 +85,11 @@
 
 #ifdef vxWorks
 #   include <stdioLib.h>
-#   include <strLib.h>
 #else
 #   include <stdio.h>
-#   include <string.h>
 #endif
 
+#include	<string.h>
 #include	<dbDefs.h>
 #include	<post.h>
 
@@ -105,7 +105,7 @@
 #define	ELSE		7
 #define	SEPERATOR	8
 #define	TRASH		9
-#define	FLOAT_PT	10
+#define	FLOAT_PT_CONST	10
 
 
 /* flags end of element table */
@@ -187,17 +187,17 @@ static struct expression_element	elements[] = {
 "j",		0,	0,	OPERAND,	FETCH_J,   /* fetch var J */
 "k",		0,	0,	OPERAND,	FETCH_K,   /* fetch var K */
 "l",		0,	0,	OPERAND,	FETCH_L,   /* fetch var L */
-"0",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"1",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"2",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"3",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"4",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"5",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"6",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"7",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"8",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-"9",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
-".",		0,	0,	FLOAT_PT,	CONSTANT,  /* flt pt constant */
+"0",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"1",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"2",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"3",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"4",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"5",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"6",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"7",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"8",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+"9",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
+".",		0,	0,	FLOAT_PT_CONST,	CONSTANT,  /* flt pt constant */
 "?",		0,	0,	CONDITIONAL,	COND_IF,   /* conditional */
 ":",		0,	0,	CONDITIONAL,	COND_ELSE, /* else */
 "(",		0,	8,	UNARY_OPERATOR,	PAREN,     /* open paren */
@@ -291,6 +291,8 @@ short		*perror;
 	struct expression_element	stack[80];
 	struct expression_element	*pelement;
 	register struct expression_element	*pstacktop;
+	double		constant;
+	register char   *pposthold;	
 
 	/* place the expression elements into postfix */
 	operand_needed = TRUE;
@@ -317,7 +319,7 @@ printf ("postfix pinfix=%s \n",pinfix);
 		new_expression = FALSE;
 		break;
 
-	    case FLOAT_PT:
+	    case FLOAT_PT_CONST:
 		if (!operand_needed){
 		    *perror = 5;
 		    return(-1);
@@ -325,6 +327,7 @@ printf ("postfix pinfix=%s \n",pinfix);
 
 		/* add constant to the expression */
 		*ppostfix++ = pelement->code;
+		pposthold = ppostfix;
 
 		pinfix-=no_bytes;
 		while (TRUE) {
@@ -340,8 +343,15 @@ printf ("postfix pinfix=%s \n",pinfix);
 					}
 			} else break;
 		}
-
 		*ppostfix++ = '\0';
+
+		ppostfix = pposthold;
+		if ( sscanf(ppostfix,"%lg",&constant) != 1) {
+			*ppostfix = '\0';
+		} else {
+			memcpy(ppostfix,&constant,8);
+		}
+		ppostfix+=8;
 
 		operand_needed = FALSE;
 		new_expression = FALSE;

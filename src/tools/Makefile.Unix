@@ -2,7 +2,8 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 PROD = installEpics
-SCRIPTS = getrel 
+SCRIPTS += getrel 
+SCRIPTS += makeBaseApp
 
 include $(TOP)/config/RULES.Unix
 

@@ -335,36 +335,36 @@ static long init_common(pdbCommon,pout,nchan)
     case (VME_IO) :
 	break;
     default :
-	recGblRecordError(S_dev_badBus,pdbCommon,
+	recGblRecordError(S_dev_badBus,(void *)pdbCommon,
 		"devMz8310 (init_record) Illegal OUT Bus Type");
 	return(S_dev_badBus);
     }
     card = pvmeio->card;
     signal = pvmeio->signal;
     if(card>=MAXCARDS){
-	recGblRecordError(S_dev_badCard,pdbCommon,
+	recGblRecordError(S_dev_badCard,(void *)pdbCommon,
                 "devMz8310 (init_record) exceeded maximum supported cards");
 	return(S_dev_badCard);
     }
     if(!mz8310_info[card].present){
-	recGblRecordError(S_dev_badCard,pdbCommon,
+	recGblRecordError(S_dev_badCard,(void *)pdbCommon,
 		"devMz8310 (init_record) VME card not found");
 	return(S_dev_badCard);
     }
     if(signal >= NCHIP*CHANONCHIP
     || (nchan==2 && (signal==4 || signal==9))) {
-	recGblRecordError(S_dev_badSignal,pdbCommon,
+	recGblRecordError(S_dev_badSignal,(void *)pdbCommon,
 		"devMz8310 (init_record) Illegal SIGNAL field");
 	return(S_dev_badSignal);
     }
     chip = (signal>=CHANONCHIP ? 1 : 0);
     channel = signal - chip*CHANONCHIP;
     if((mz8310_info[card].chan_info[chip][channel].nrec_using +=1)>1) 
-	recGblRecordError(S_dev_Conflict,pdbCommon,
+	recGblRecordError(S_dev_Conflict,(void *)pdbCommon,
 		"devMz8310 (init_record) signal already used");
     if(nchan==2) {
 	if((mz8310_info[card].chan_info[chip][channel+1].nrec_using +=1)>1)
-	    recGblRecordError(S_dev_Conflict,pdbCommon,
+	    recGblRecordError(S_dev_Conflict,(void *)pdbCommon,
 		"devMz8310 (init_record) signal already used");
     }
     return(0);
@@ -419,17 +419,17 @@ static long get_ioint_info(
 	card = pvmeio->card;
 	intvec = pvmeio->signal;
 	if(card>=MAXCARDS){
-	    recGblRecordError(S_dev_badCard,pr,
+	    recGblRecordError(S_dev_badCard,(void *)pr,
 		"devMz8310 (get_ioint_info) exceeded maximum supported cards");
 	    return(0);
 	}
 	if(intvec>=NUMINTVEC) {
-	    recGblRecordError(S_dev_badSignal,pr,
+	    recGblRecordError(S_dev_badSignal,(void *)pr,
 		"devMz8310 (get_ioint_info) Illegal SIGNAL field");
 	    return(0);
 	}
 	if(!mz8310_info[card].present){
-	    recGblRecordError(S_dev_badCard,pr,
+	    recGblRecordError(S_dev_badCard,(void *)pr,
 		"devMz8310 (get_ioint_info) card not found");
 	     return(0);
 	}
@@ -446,12 +446,12 @@ static long get_ioint_info(
 	    vector=MZ8310INTVEC(card,intvec);
 	    if(intConnect(INUM_TO_IVEC(vector),(FUNCPTR)mz8310_int_service,
 	    (int)mz8310_info[card].int_info[intvec].ioscanpvt)!=OK) {
-		recGblRecordError(0,pr,"devMz8310 (get_ioint_info) intConnect failed");
+		recGblRecordError(0,(void *)pr,"devMz8310 (get_ioint_info) intConnect failed");
 		return(0);
 	    }
 	    pvecreg = PVECREG(card,intvec);
 	    if(vxMemProbe(pvecreg,WRITE,sizeof(char),&vector)!=OK) {
-		recGblRecordError(0,pr,"devMz8310 (get_ioint_info) vxMemProbe failed");
+		recGblRecordError(0,(void *)pr,"devMz8310 (get_ioint_info) vxMemProbe failed");
 		return(0);
 	    }
 	    sysIntEnable(mz8310_strap_info[intvec].irq_lev);
@@ -511,14 +511,14 @@ static long cmd_pc(pr)
 	    if(pr->gsrc==INTERNAL && pr->gate!=0) {
 		unsigned short gate = (unsigned short)pr->gate;
 
-		if(gate>5) recGblRecordError(S_db_badField,pr,
+		if(gate>5) recGblRecordError(S_db_badField,(void *)pr,
 			"devMz8310 : illegal gate value");
 		else mode |= gate<<13;
 	    }
 	    /*set count source selection*/
 	    if(pr->clks<0 || pr->clks>15) {
-                recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-		recGblRecordError(S_db_badField,pr,
+                recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+		recGblRecordError(S_db_badField,(void *)pr,
 		    "devMz8310 : illegal clks value");
 		pr->pact=TRUE;
 		break;
@@ -538,7 +538,7 @@ static long cmd_pc(pr)
 	    break;
 	default:
             recGblSetSevr(pr,WRITE_ALARM,MAJOR_ALARM);
-	    recGblRecordError(S_db_badField,pr,
+	    recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : illegal command");
 	    break;
     }
@@ -571,8 +571,8 @@ static long write_pd(pr)
     /* compute hold count and load count */
     clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
     if(clockRate<=0 || clockRate>MAX_CLOCK_RATE) {
-        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	recGblRecordError(S_db_badField,pr,
+        recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : computed illegal clock rate");
 	pr->pact=TRUE;
 	return(0);
@@ -592,8 +592,8 @@ static long write_pd(pr)
         }
     }
     if(loadCount>65536.0 || holdCount>65535.0) {
-        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	recGblRecordError(S_db_badField,pr,
+        recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : computed illegal clock rate");
 	pr->pact=TRUE;
 	return(0);
@@ -611,8 +611,8 @@ static long write_pd(pr)
 	mode |= internalCountSource[clockDiv];
     } else {/*external clock. Determine source*/
 	if(pr->clks<0 || pr->clks>15) {
-            recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	    recGblRecordError(S_db_badField,pr,
+            recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	    recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : illegal clks value");
 	    pr->pact=TRUE;
 	    return(0);
@@ -687,8 +687,8 @@ static long write_pt(pr)
     clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
     periodInClockUnits = pr->per * clockRate;
     if(clockRate<=0 || clockRate>MAX_CLOCK_RATE || periodInClockUnits<=1) {
-        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	recGblRecordError(S_db_badField,pr,
+        recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : computed illegal clock rate");
 	pr->pact=TRUE;
 	return(0);
@@ -707,8 +707,8 @@ static long write_pt(pr)
         }
     }
     if(loadCount>65536.0 || holdCount>65535.0) {
-        recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	recGblRecordError(S_db_badField,pr,
+        recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : computed illegal clock rate");
 	pr->pact=TRUE;
 	return(0);
@@ -723,7 +723,7 @@ static long write_pt(pr)
     if(pr->gsrc==INTERNAL && pr->gate!=0) {
 	unsigned short gate = (unsigned short)pr->gate;
 
-	if(gate>5) recGblRecordError(S_db_badField,pr,
+	if(gate>5) recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : illegal gate value");
 	else mode |= gate<<13;
     }
@@ -732,8 +732,8 @@ static long write_pt(pr)
 	mode |= internalCountSource[clockDiv];
     } else {/*external clock. Determine source*/
 	if(pr->clks<0 || pr->clks>15) {
-            recGblSetSevr(pr,WRITE_ALARM,VALID_ALARM);
-	    recGblRecordError(S_db_badField,pr,
+            recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+	    recGblRecordError(S_db_badField,(void *)pr,
 		"devMz8310 : illegal clks value");
 	    pr->pact=TRUE;
 	    return(0);

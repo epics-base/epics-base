@@ -82,7 +82,7 @@ static long init_record(pbi)
 	pbi->mask <<= pvmeio->signal;
 	break;
     default :
-	recGblRecordError(S_db_badField,pbi,
+	recGblRecordError(S_db_badField,(void *)pbi,
 		"devBiXVme210 (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -103,7 +103,7 @@ static long read_bi(pbi)
 		pbi->rval = value;
 		return(0);
 	} else {
-                recGblSetSevr(pbi,READ_ALARM,VALID_ALARM);
+                recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
 		return(2);
 	}
 	return(status);

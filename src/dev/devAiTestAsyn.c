@@ -111,7 +111,7 @@ static long init_record(pai)
 	pai->udf = FALSE;
 	break;
     default :
-	recGblRecordError(S_db_badField,pai,
+	recGblRecordError(S_db_badField,(void *)pai,
 		"devAiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -140,9 +140,9 @@ static long read_ai(pai)
     		return(0);
 	}
     default :
-        if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pai,
+			recGblRecordError(S_db_badField,(void *)pai,
 			   "devAiTestAsyn (read_ai) Illegal INP field");
 		}
 	}

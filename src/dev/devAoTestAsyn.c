@@ -112,7 +112,7 @@ static long init_record(pao)
 	pcallback->wd_id = wdCreate();
 	break;
     default :
-	recGblRecordError(S_db_badField,pao,
+	recGblRecordError(S_db_badField,(void *)pao,
 		"devAoTestAsyn (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
@@ -141,9 +141,9 @@ static long write_ao(pao)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM)){
 		if(pao->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pao,
+			recGblRecordError(S_db_badField,(void *)pao,
 			   "devAoTestAsyn (read_ao) Illegal OUT field");
 		}
 	}

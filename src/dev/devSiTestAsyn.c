@@ -113,7 +113,7 @@ static long init_record(pstringin)
 		}
 	break;
     default :
-	recGblRecordError(S_db_badField,pstringin,
+	recGblRecordError(S_db_badField,(void *)pstringin,
 		"devSiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -142,9 +142,9 @@ static long read_stringin(pstringin)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pstringin,SOFT_ALARM,INVALID_ALARM)){
 		if(pstringin->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pstringin,
+			recGblRecordError(S_db_badField,(void *)pstringin,
 			    "devSiTestAsyn (read_stringin) Illegal INP field");
 		}
 	}

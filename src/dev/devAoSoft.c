@@ -108,7 +108,7 @@ long nrequest;
 	status = dbPutLink(&pao->out.value.db_link,(struct dbCommon *)pao,DBR_DOUBLE,
 		&pao->oval,1L);
         if(status!=0) {
-                recGblSetSevr(pao,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
         }
 	break;
     case (CA_LINK) :
@@ -117,9 +117,9 @@ long nrequest;
         status = dbCaPutLink(&(pao->out), &options, &nrequest);
 	break;
     default :
-        if(recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM)){
 		if(pao->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pao,
+			recGblRecordError(S_db_badField,(void *)pao,
 			   "devAoSoft (write_ao) Illegal OUT field");
 		}
 	}

@@ -109,7 +109,7 @@ static long init_record(phistogram)
 	phistogram->sgnl = phistogram->svl.value.value;
 	break;
     default :
-	recGblRecordError(S_db_badField,phistogram,
+	recGblRecordError(S_db_badField,(void *)phistogram,
 	    "devHistogramTestAsyn (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
@@ -138,9 +138,9 @@ static long read_histogram(phistogram)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(phistogram,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(phistogram,SOFT_ALARM,INVALID_ALARM)){
 		if(phistogram->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,phistogram,
+			recGblRecordError(S_db_badField,(void *)phistogram,
 			    "devHistogramTestAsyn (read_histogram) Illegal SVL field");
 		}
 	}

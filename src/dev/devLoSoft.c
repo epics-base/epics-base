@@ -98,7 +98,7 @@ static long write_longout(plongout)
 	status = dbPutLink(&plongout->out.value.db_link,(struct dbCommon *)plongout,DBR_LONG,
 	               &plongout->val,1L);
         if(status!=0) {
-                recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
         }
 	break;
     case (CA_LINK) :
@@ -107,9 +107,9 @@ static long write_longout(plongout)
         status = dbCaPutLink(&(plongout->out), &options, &nrequest);
 	break;
     default :
-        if(recGblSetSevr(plongout,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM)){
 		if(plongout->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,plongout,
+			recGblRecordError(S_db_badField,(void *)plongout,
 			    "devLoSoft (write_longout) Illegal OUT field");
 		}
 	}

@@ -84,7 +84,7 @@ static long init_record(pai)
     case (VME_IO) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pai,
+	recGblRecordError(S_db_badField,(void *)pai,
 		"devAiXy566Se (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -95,7 +95,7 @@ static long init_record(pai)
     /* call driver so that it configures card */
     pvmeio = (struct vmeio *)&(pai->inp.value);
     if(status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566SE,&value)) {
-	recGblRecordError(status,pai,
+	recGblRecordError(status,(void *)pai,
 		"devAiXy566Se (init_record) ai_xy566_driver error");
 	return(status);
     }
@@ -114,11 +114,11 @@ static long read_ai(pai)
 	status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566SE,&value);
         if(status==-1) {
 		status = 2; /*don't convert*/
-                recGblSetSevr(pai,READ_ALARM,VALID_ALARM);
+                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
 		return(status);
         }else if(status==-2) {
                 status=0;
-                recGblSetSevr(pai,HW_LIMIT_ALARM,VALID_ALARM);
+                recGblSetSevr(pai,HW_LIMIT_ALARM,INVALID_ALARM);
         }
 	if(status!=0) return(status);
 	pai->rval = value & 0xfff;

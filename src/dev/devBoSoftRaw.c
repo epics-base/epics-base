@@ -100,7 +100,7 @@ static long write_bo(pbo)
         status = dbPutLink(&pbo->out.value.db_link,(struct dbCommon *)pbo,DBR_ULONG,
                 &pbo->rval,1L);
         if(status!=0) {
-                recGblSetSevr(pbo,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pbo,LINK_ALARM,INVALID_ALARM);
         }
         break;
     case (CA_LINK) :
@@ -109,9 +109,9 @@ static long write_bo(pbo)
         status = dbCaPutLink(&(pbo->out), &options, &nrequest);
         break;
     default :
-        if(recGblSetSevr(pbo,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pbo,SOFT_ALARM,INVALID_ALARM)){
                 if(pbo->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,pbo,
+                        recGblRecordError(S_db_badField,(void *)pbo,
 			    "devBoSoftRaw (write_bo) Illegal OUT field");
                 }
         }

@@ -93,7 +93,7 @@ static long init_record(pmbbi)
     case (CA_LINK) :
         break;
     default :
-	recGblRecordError(S_db_badField,pmbbi,
+	recGblRecordError(S_db_badField,(void *)pmbbi,
 		"devMbbiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -115,21 +115,21 @@ static long read_mbbi(pmbbi)
         status = dbGetLink(&(pmbbi->inp.value.db_link),(struct dbCommon *)pmbbi,DBR_ULONG,
                 &(pmbbi->rval),&options,&nRequest);
         if(status!=0) {
-                recGblSetSevr(pmbbi,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pmbbi,LINK_ALARM,INVALID_ALARM);
         }
         break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pmbbi->inp)))
         {
-            recGblSetSevr(pmbbi,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pmbbi,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pmbbi->udf = FALSE;
         break;
     default :
-        if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM)){
                 if(pmbbi->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,pmbbi,
+                        recGblRecordError(S_db_badField,(void *)pmbbi,
 			    "devMbbiSoftRaw (read_mbbi) Illegal INP field");
                 }
         }

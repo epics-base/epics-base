@@ -89,9 +89,9 @@ static void myCallback(pwf,no_read,pdata)
        		memcpy(pwf->bptr,pdata,no_read*2);
        		pwf->nord = no_read;            /* number of values read */
 	} else {
-		recGblRecordError(S_db_badField,pwf,
+		recGblRecordError(S_db_badField,(void *)pwf,
 			"read_wf - illegal ftvl");
-                recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
+                recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 	}
 	(*prset->process)(pwf);
         dbScanUnlock((struct dbCommon *)pwf);
@@ -106,7 +106,7 @@ static long init_record(pwf)
     case (VME_IO) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pwf,
+	recGblRecordError(S_db_badField,(void *)pwf,
 		"devWfXy566Sc (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -135,7 +135,7 @@ struct waveformRecord   *pwf;
 
 	pwf->busy = TRUE;
 	if(xy566_driver(pvmeio->card,myCallback,pwf)<0) {
-                recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
+                recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);
 	}

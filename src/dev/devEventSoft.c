@@ -91,7 +91,7 @@ static long init_record(pevent)
     case (CA_LINK) :
         break;
     default :
-	recGblRecordError(S_db_badField,pevent,
+	recGblRecordError(S_db_badField,(void *)pevent,
 	    "devEventSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -113,21 +113,21 @@ static long read_event(pevent)
         status = dbGetLink(&(pevent->inp.value.db_link),(struct dbCommon *)pevent,DBR_USHORT,
                 &pevent->val,&options,&nRequest);
         if(status!=0) {
-                recGblSetSevr(pevent,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pevent,LINK_ALARM,INVALID_ALARM);
         } else pevent->udf = FALSE;
         break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pevent->inp)))
         {
-            recGblSetSevr(pevent,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pevent,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pevent->udf = FALSE;
         break;
     default :
-        if(recGblSetSevr(pevent,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pevent,SOFT_ALARM,INVALID_ALARM)){
                 if(pevent->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,pevent,
+                        recGblRecordError(S_db_badField,(void *)pevent,
 			    "devEventSoft (read_event) Illegal INP field");
                 }
         }

@@ -93,7 +93,7 @@ static long init_record(pstringin)
     case (CA_LINK) :
         break;
     default :
-	recGblRecordError(S_db_badField,pstringin,
+	recGblRecordError(S_db_badField,(void *)pstringin,
 		"devSiSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -115,21 +115,21 @@ static long read_stringin(pstringin)
         status = dbGetLink(&(pstringin->inp.value.db_link),(struct dbCommon *)pstringin,DBR_STRING,
                 pstringin->val,&options,&nRequest);
         if(status!=0) {
-                recGblSetSevr(pstringin,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pstringin,LINK_ALARM,INVALID_ALARM);
         } else pstringin->udf = FALSE;
         break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pstringin->inp)))
         {
-            recGblSetSevr(pstringin,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pstringin,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pstringin->udf = FALSE;
         break;
     default :
-        if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pstringin,SOFT_ALARM,INVALID_ALARM)){
                 if(pstringin->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,pstringin,
+                        recGblRecordError(S_db_badField,(void *)pstringin,
 			    "devSiSoft (read_stringin) Illegal INP field");
                 }
         }

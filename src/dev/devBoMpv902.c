@@ -88,7 +88,7 @@ static long init_record(pbo)
 	break;
     default :
 	status = S_db_badField;
-	recGblRecordError(status,pbo,
+	recGblRecordError(status,(void *)pbo,
 		"devBoMpv902 (init_record) Illegal OUT field");
     }
     return(status);
@@ -104,7 +104,7 @@ static long write_bo(pbo)
 	pvmeio = (struct vmeio *)&(pbo->out.value);
 	status = bb902_driver(pvmeio->card,pbo->rval,pbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pbo,WRITE_ALARM,VALID_ALARM);
+                recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
 	}
 	return(status);
 }

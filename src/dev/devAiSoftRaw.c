@@ -95,7 +95,7 @@ static long init_record(pai)
     case (CA_LINK) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pai,
+	recGblRecordError(S_db_badField,(void *)pai,
 		"devAiSoftRaw (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -117,22 +117,22 @@ static long read_ai(pai)
 	status = dbGetLink(&(pai->inp.value.db_link),(struct dbCommon *)pai,DBR_LONG,
 		&(pai->rval),&options,&nRequest);
         if(status!=0) {
-                recGblSetSevr(pai,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pai,LINK_ALARM,INVALID_ALARM);
         }
 
 	break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pai->inp)))
         {
-            recGblSetSevr(pai,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pai,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pai->udf = FALSE;
 	break;
     default :
-        if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM)){
 		if(pai->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pai,
+			recGblRecordError(S_db_badField,(void *)pai,
 			   "devAiSoftRaw (read_ai) Illegal INP field");
 		}
 	}

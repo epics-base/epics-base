@@ -87,7 +87,7 @@ static long init_record(pao)
     case (VME_IO) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pao,
+	recGblRecordError(S_db_badField,(void *)pao,
 		"devAoVmiVme4100 (init_record) Illegal OUT field");
 	return(S_db_badField);
     }
@@ -113,10 +113,10 @@ static long write_ao(pao)
 	status = vmi4100_driver(pvmeio->card,pvmeio->signal,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
-                recGblSetSevr(pao,WRITE_ALARM,VALID_ALARM);
+                recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM);
 	}else if(status==-2) {
 		status=0;
-                recGblSetSevr(pao,HW_LIMIT_ALARM,VALID_ALARM);
+                recGblSetSevr(pao,HW_LIMIT_ALARM,INVALID_ALARM);
 	}
 	return(status);
 }

@@ -112,7 +112,7 @@ static long init_record(pmbbi)
 	pmbbi->udf = FALSE;
 	break;
     default :
-	recGblRecordError(S_db_badField,pmbbi,
+	recGblRecordError(S_db_badField,(void *)pmbbi,
 		"devMbbiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -141,9 +141,9 @@ static long read_mbbi(pmbbi)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM)){
 		if(pmbbi->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pmbbi,
+			recGblRecordError(S_db_badField,(void *)pmbbi,
 			    "devMbbiTestAsyn (read_mbbi) Illegal INP field");
 		}
 	}

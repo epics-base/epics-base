@@ -90,7 +90,7 @@ static long init_record(pwf)
     case (CA_LINK) :
 	break;
     default :
-	recGblRecordError(S_db_badField,pwf,
+	recGblRecordError(S_db_badField,(void *)pwf,
 		"devWfSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -111,22 +111,22 @@ static long read_wf(pwf)
 	nRequest=pwf->nelm;
 	if(dbGetLink(&(pwf->inp.value.db_link),(struct dbCommon *)pwf,pwf->ftvl,
 		pwf->bptr,&options,&nRequest)!=0){
-                       recGblSetSevr(pwf,LINK_ALARM,VALID_ALARM);
+                       recGblSetSevr(pwf,LINK_ALARM,INVALID_ALARM);
                 }
 	pwf->nord = nRequest;
 	break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pwf->inp)))
         {
-            recGblSetSevr(pwf,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pwf,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pwf->udf = FALSE;
 	break;
     default :
-        if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pwf,SOFT_ALARM,INVALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pwf,
+			recGblRecordError(S_db_badField,(void *)pwf,
 			    "devWfSoft (read_wf) Illegal INP field");
 		}
 	}

@@ -89,7 +89,7 @@ static long init_record(pmbbo)
 	break;
     default :
 	status = S_db_badField;
-	recGblRecordError(status,pmbbo,
+	recGblRecordError(status,(void *)pmbbo,
 		"devMbboXVme220 (init_record) Illegal OUT field");
     }
     return(status);
@@ -108,9 +108,9 @@ static long write_mbbo(pmbbo)
 	if(status==0) {
 		status = xy220_read(pvmeio->card,pmbbo->mask,&value);
 		if(status==0) pmbbo->rbv = value;
-                else recGblSetSevr(pmbbo,READ_ALARM,VALID_ALARM);
+                else recGblSetSevr(pmbbo,READ_ALARM,INVALID_ALARM);
 	} else {
-                recGblSetSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
+                recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM);
 	}
 	return(status);
 }

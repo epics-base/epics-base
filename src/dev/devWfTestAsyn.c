@@ -110,7 +110,7 @@ static long init_record(pwf)
 	pwf->nord = 0;
 	break;
     default :
-	recGblRecordError(S_db_badField,pwf,
+	recGblRecordError(S_db_badField,(void *)pwf,
 		"devWfTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -139,9 +139,9 @@ static long read_wf(pwf)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pwf,SOFT_ALARM,INVALID_ALARM)){
 		if(pwf->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pwf,
+			recGblRecordError(S_db_badField,(void *)pwf,
 			    "devWfTestAsyn (read_wf) Illegal INP field");
 		}
 	}

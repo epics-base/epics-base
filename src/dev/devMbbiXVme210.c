@@ -81,7 +81,7 @@ static long init_record(pmbbi)
 	pmbbi->mask <<= pmbbi->shft;
 	break;
     default :
-	recGblRecordError(S_db_badField,pmbbi,
+	recGblRecordError(S_db_badField,(void *)pmbbi,
 		"devMbbiXVme210 (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -101,7 +101,7 @@ static long read_mbbi(pmbbi)
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {
-                recGblSetSevr(pmbbi,READ_ALARM,VALID_ALARM);
+                recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
 	}
 	return(status);
 }

@@ -98,7 +98,7 @@ static long write_pt(ppt)
     case (DB_LINK) :
         status = dbPutLink(&ppt->out.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,&ppt->val,1L);
         if(status!=0) {
-                recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
         } else ppt->udf=FALSE;
         break;
     case (CA_LINK) :
@@ -107,9 +107,9 @@ static long write_pt(ppt)
         status = dbCaPutLink(&(ppt->out), &options, &nrequest);
         break;
     default :
-        if(recGblSetSevr(ppt,WRITE_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(ppt,WRITE_ALARM,INVALID_ALARM)){
                 if(ppt->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,ppt,
+                        recGblRecordError(S_db_badField,(void *)ppt,
 			    "devPtSoft (write_pt) Illegal OUT field");
                 }
         }

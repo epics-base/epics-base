@@ -92,7 +92,7 @@ static long init_record(pbi)
     case (CA_LINK) :
         break;
     default :
-	recGblRecordError(S_db_badField,pbi,
+	recGblRecordError(S_db_badField,(void *)pbi,
 		"devBiSoft (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -114,21 +114,21 @@ static long read_bi(pbi)
         status = dbGetLink(&(pbi->inp.value.db_link),(struct dbCommon *)pbi,DBR_USHORT,
                 &pbi->val,&options,&nRequest);
         if(status!=0) {
-                recGblSetSevr(pbi,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(pbi,LINK_ALARM,INVALID_ALARM);
         } else pbi->udf = FALSE;
         break;
     case (CA_LINK) :
         if (dbCaGetLink(&(pbi->inp)))
         {
-            recGblSetSevr(pbi,LINK_ALARM,VALID_ALARM);
+            recGblSetSevr(pbi,LINK_ALARM,INVALID_ALARM);
         } 
         else 
             pbi->udf = FALSE;
         break;
     default :
-        if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM)){
                 if(pbi->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,pbi,
+                        recGblRecordError(S_db_badField,(void *)pbi,
 			   "devBiSoft (read_bi) Illegal INP field");
                 }
         }

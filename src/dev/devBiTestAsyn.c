@@ -113,7 +113,7 @@ static long init_record(pbi)
 	pbi->udf = FALSE;
 	break;
     default :
-	recGblRecordError(S_db_badField,pbi,
+	recGblRecordError(S_db_badField,(void *)pbi,
 		"devBiTestAsyn (init_record) Illegal INP field");
 	return(S_db_badField);
     }
@@ -142,9 +142,9 @@ static long read_bi(pbi)
 		return(0);
 	}
     default :
-        if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){
+        if(recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM)){
 		if(pbi->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,pbi,
+			recGblRecordError(S_db_badField,(void *)pbi,
 			    "devBiTestAsyn (read_bi) Illegal INP field");
 		}
 	}

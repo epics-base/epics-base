@@ -18,6 +18,8 @@ PROD_LIBS         := As Db Com
 
 PROD := ascheck
 
+As_RCS_WIN32 = As.rc
+
 include $(TOP)/config/RULES.Host
 
 # Extra rule since asLib_lex.c is included in asLib.c

@@ -19,13 +19,13 @@ creating the relevent output file.</p>
 <h3>Enhanced vxStats device support</h3>
 
 <p>Incorporated various changes to the vxStats device support by Andy Foster
-that have been in use at APS for over a year. This version adds the ability to
-see absolute memory use in addition to the percentage figures available before,
-and also gives information on the number of file desciptors in use. These new
-figures use the longin record type, thus a new device support entry is provided
-in base.dbd to enable it. See the comments in
-<tt>src/dev/vxStatsDev/devVXStats.c</tt> for more detail on the new facilities
-and an example database.</p>
+that have been in use at APS for over a year. This version adds the ability
+to see absolute memory use in addition to the percentage figures available
+before, and also gives information on the number of file desciptors in use.
+These new figures use the longin record type, thus a new device support entry
+is provided in base.dbd to enable it. See the comments in
+<tt>src/dev/vxStatsDev/devVXStats.c</tt> for more detail on the new
+facilities and an example database.</p>
 
 <h3>double scanPeriod(int scan)</h3>
 
@@ -93,6 +93,14 @@ that device driver. The desirable functional change being errlogPrintf's
 capability to discard messages when it gets behind (because of a transient
 mbuf starvation situation). The fix also means that any code that calls
 errlogAddListener, e.g. CMLOG, will now receive the logMsg messages.</p>
+
+<h3>Revised Search Message Minimum Period Reset Values</h3>
+
+<p>The CA client library's disconnected channel search message minimum period
+now resets to a higher value if a channel disconnects or if a server beacon
+anomaly is seen. Up until this release the R3.13 behavior was to reset to the
+same search message interval used when a channel was created. The new
+behavior is closer to what is implemented in EPICS R3.14.</p>
 
 <h3>macLib</h3>
 

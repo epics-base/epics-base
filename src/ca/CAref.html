@@ -2172,8 +2172,11 @@ int ca_context_create ( enum ca_preemptive_callback_select SELECT );</code></pre
 
 <h4>Description</h4>
 
-<p>This function should be called once prior to making any of the other
-channel access calls.</p>
+<p>This function, or <a href="#ca_attach_context">ca_attach_context()</a>,
+should be called once for each thread prior to making any of the other
+Channel Access calls. If one of the above is not called before making other
+CA calls then a non-preemptive context is created by default, and future
+attempts to create a preemptive context for the current threads will fail.</p>
 
 <p>If <code>ca_disable_preemptive_callback</code> is specified then
 additional threads are <em>not </em>allowed to join the CA context using
@@ -2199,6 +2202,9 @@ callbacks will be called preemptively from more than one thread.</p>
 <p>ECA_NORMAL - Normal successful completion</p>
 
 <p>ECA_ALLOCMEM - Failed, unable to allocate space in pool</p>
+
+<p>ECA_NOTTHREADED - Current thread is already a member of a non-preemptive
+callback CA context (possibly created implicitly)</p>
 
 <h4>See Also</h4>
 
@@ -3786,6 +3792,9 @@ preemptively from more than one thread.</p>
 <h4>Returns</h4>
 
 <p>ECA_ISATTACHED - already attached to a CA context</p>
+
+<p>ECA_NOTTHREADED - the specified context is non-preemptive and therefore
+does not allow other threads to join</p>
 
 <h4>See Also</h4>
 

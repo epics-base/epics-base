@@ -78,7 +78,7 @@
 #include	<taskwd.h>
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<task_params.h>
 #include	<db_access.h>
 #include 	<dbEvent.h>

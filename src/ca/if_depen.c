@@ -45,8 +45,6 @@ static char	*sccsId = "@(#) $Id$";
  * also called by the server. All locks required are applied at
  * a higher level.
  */
-#undef LOCK 
-#undef UNLOCK
 
 
 /*
@@ -295,9 +293,9 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 			continue;
 		}
 
-		pNode->destAddr.inetAddr = *pInetAddr;
-		pNode->destAddr.inetAddr.sin_port = htons(port);
-		pNode->srcAddr.inetAddr = localAddr;
+		pNode->destAddr.in = *pInetAddr;
+		pNode->destAddr.in.sin_port = htons(port);
+		pNode->srcAddr.in = localAddr;
 
 		/*
 		 * LOCK applied externally

@@ -21,6 +21,8 @@
 
 #include <stdexcept>
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"

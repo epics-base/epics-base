@@ -30,6 +30,8 @@
 #include <stdio.h>
 
 #include "epicsExit.h"
+#include "errlog.h"
+#include "locationException.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"

@@ -87,6 +87,7 @@
 #include "tsFreeList.h"
 #include "osiWireFormat.h"
 #include "taskwd.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"

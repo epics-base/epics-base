@@ -31,6 +31,8 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"

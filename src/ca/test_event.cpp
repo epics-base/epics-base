@@ -14,6 +14,8 @@
  *  simple stub for testing monitors
  */
 
+#include <stdio.h>
+
 #define epicsExportSharedSymbols
 #include "cadef.h"
 

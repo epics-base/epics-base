@@ -21,6 +21,8 @@
 #include <string>
 #include <stdexcept>
 
+#include "errlog.h"
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"

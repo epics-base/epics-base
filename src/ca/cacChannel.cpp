@@ -25,12 +25,12 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "iocinf.h"
-#include "localHostName.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
+#include "iocinf.h"
+#include "localHostName.h"
 #include "cacIO.h"
-#undef epicsExportSharedSymbols
 
 const cacChannel::priLev cacChannel::priorityMax = 99u;
 const cacChannel::priLev cacChannel::priorityMin = 0u;

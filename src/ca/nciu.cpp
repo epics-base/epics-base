@@ -27,6 +27,8 @@
 
 #include "epicsAlgorithm.h"
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "cac.h"

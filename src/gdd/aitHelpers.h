@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.20  1999/08/05 22:17:11  jhill
+ * removed knowledge of class osiTime
+ *
  * Revision 1.19  1999/05/10 23:38:33  jhill
  * convert to and from other time stamp formats
  *
@@ -79,10 +82,6 @@
 #endif
 
 #include "shareLib.h"
-
-#ifndef max
-#define max(A,B) ((A)>(B)?(A):(B))
-#endif
 
 #define NSecPerSec 1000000000u
 #define NSecPerUSec 1000u
@@ -443,7 +442,8 @@ inline int aitString::installConstImortalBuf(const char* pString, unsigned strLe
 
 inline int aitString::copy(const char* pString, unsigned stringLength) 
 {
-	return this->copy(pString, stringLength, max(this->bufLen,stringLength+1u));
+	return this->copy(pString, stringLength, 
+        this->bufLen>(stringLength+1u) ? this->bufLen : (stringLength+1u) );
 }
 
 inline int aitString::copy(const char* p)

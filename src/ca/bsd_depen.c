@@ -143,8 +143,8 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 
 			if (errnoCpy!=SOCK_EINTR) {
 				ca_printf (
-					"CAC: unexpected select fail: %s\n",
-					SOCKERRSTR);
+					"CAC: unexpected select fail: %d=%s\n",
+					errnoCpy, SOCKERRSTR);
 			}
 		}
 	}

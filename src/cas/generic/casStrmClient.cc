@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.19  1998/02/18 22:46:25  jhill
+ * improved message
+ *
  * Revision 1.18  1997/08/05 00:47:13  jhill
  * fixed warnings
  *
@@ -361,6 +364,9 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	//
 	mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
 	if (mapDBRStatus<0) {
+		pDesc->dump();
+		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
+				pChan->getPVI()->getName(), msg.m_type, msg.m_count);
 		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
 	}
 #ifdef CONVERSION_REQUIRED
@@ -438,7 +444,7 @@ caStatus casStrmClient::readNotifyAction ()
 //
 // casStrmClient::readNotifyResponse()
 //
-caStatus casStrmClient::readNotifyResponse (casChannelI *, 
+caStatus casStrmClient::readNotifyResponse (casChannelI *pChan, 
 		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
 {
 	caHdr 		*reply;
@@ -478,7 +484,9 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *,
 			//
 			mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
 			if (mapDBRStatus<0) {
-				errMessage(S_cas_badBounds, "get notify request");
+				pDesc->dump();
+				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
+						pChan->getPVI()->getName(), msg.m_type, msg.m_count);
 				reply->m_cid = ECA_GETFAIL;
 			}
 			else {

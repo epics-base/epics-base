@@ -19,16 +19,22 @@ static void osiThreadCallEntryPoint (void *pPvt)
     pThread->exit.signal ();
 }
 
-osiThread::osiThread (const char *name, unsigned stackSize,
-                    unsigned priority)
+
+osiThread::osiThread () : id(0), exit()
 {
-    this->id =  threadCreate (name, priority, stackSize,
-        osiThreadCallEntryPoint, static_cast <void *> (this) );
 }
 
 osiThread::~osiThread ()
 {
     while ( !this->exit.wait (5.0) ) {
-        printf ("osiThread::~osiThread (): Warning, thread object destroyed before thread exit \n");
+        printf ("osiThread::~osiThread ():"
+                " Warning, thread object destroyed before thread exit \n");
     }
 }
+
+void osiThread::start(const char *name, unsigned stackSize, unsigned priority)
+{
+    id = threadCreate (name, priority, stackSize,
+        osiThreadCallEntryPoint, static_cast <void *> (this) );
+}
+

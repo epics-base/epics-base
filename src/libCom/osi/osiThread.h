@@ -99,9 +99,11 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 
 class epicsShareClass osiThread {
 public:
-    osiThread (const char *name, unsigned stackSize,
-        unsigned priority=threadPriorityLow);
+    osiThread();
     virtual ~osiThread ();
+
+    void start(const char *name, unsigned stackSize,
+        unsigned priority=threadPriorityLow);
 
     virtual void entryPoint () = 0;
 

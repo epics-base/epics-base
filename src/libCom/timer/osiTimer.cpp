@@ -438,9 +438,9 @@ osiTimerQueue::~osiTimerQueue()
 // osiTimerThread::osiTimerThread ()
 //
 osiTimerThread::osiTimerThread (osiTimerQueue &queueIn, unsigned priority) :
-    osiThread ("osiTimerQueue", threadGetStackSize (threadStackMedium), priority),
-        queue (queueIn)
+    osiThread (), queue (queueIn)
 {
+    start("osiTimerQueue", threadGetStackSize (threadStackMedium), priority);
 }
 
 //

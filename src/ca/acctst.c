@@ -1437,9 +1437,9 @@ void performMonitorUpdateTest ( chid chan )
     dbr_float_t     temp, getResp;
     unsigned        i, j;
     unsigned        flowCtrlCount = 0u;
-    unsigned        tries;
     unsigned        prevPassCount;
-    
+    unsigned        tries;
+
     if ( ! ca_read_access ( chan ) ) {
         return;
     }
@@ -1452,7 +1452,7 @@ void performMonitorUpdateTest ( chid chan )
     temp = 0.0;
     SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
 
-    for ( i=0; i < NELEMENTS (test); i++ ) {
+    for ( i = 0; i < NELEMENTS(test); i++ ) {
         test[i].count = 0;
         test[i].lastValue = -1.0;
         SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, updateTestEvent,
@@ -1501,11 +1501,14 @@ void performMonitorUpdateTest ( chid chan )
      * and hopefully get into a flow control situation
      */   
     prevPassCount = 0u;
-    for ( i=0; i < NELEMENTS ( test ); i++ ) {
-        for ( j = 0; j < NELEMENTS ( test ); j++ ) {
+    for ( i = 0; i < 10; i++ ) {
+        for ( j = 0; j < NELEMENTS(test); j++ ) {
+            SEVCHK ( ca_clear_event ( test[j].id ), NULL );
             test[j].count = 0;
             test[j].lastValue = -1.0;
-        }
+            SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, updateTestEvent,
+                &test[j], &test[j].id ) , NULL );
+        } 
 
         for ( j = 0; j <= i; j++ ) {
             temp = performMonitorUpdateTestPattern ( j );
@@ -1528,9 +1531,11 @@ void performMonitorUpdateTest ( chid chan )
         while (1) {
             unsigned passCount = 0;
             unsigned tmpFlowCtrlCount = 0u;
-            ca_pend_event ( 0.05 );
+            ca_pend_event ( 0.1 );
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
-                assert ( test[j].count <= i + 1 );
+                // we shouldnt see old monitors because 
+                // we resubscribed
+                assert ( test[j].count <= i + 2 );
                 if ( test[j].lastValue == temp ) {
                     if ( test[j].count < i + 1 ) {
                         tmpFlowCtrlCount++;
@@ -1544,15 +1549,15 @@ void performMonitorUpdateTest ( chid chan )
             }
             if ( passCount == prevPassCount ) {
                 assert ( tries++ < 500 );
-                if ( tries % 50 ) {
+                if ( tries % 50 == 0 ) {
                     for ( j = 0; j <= i; j++ ) {
-                        temp = performMonitorUpdateTestPattern ( j );
-                        if ( temp == test[0].lastValue ) {
+                        dbr_float_t pat = performMonitorUpdateTestPattern ( j );
+                        if ( pat == test[0].lastValue ) {
                             break;
                         }
                     }
                     if ( j <= i) {
-                        printf ( "-(%d)", j );
+                        printf ( "-(%d)", i-j );
                     }
                     else {
                         printf ( "." );
@@ -1588,30 +1593,30 @@ void performMonitorUpdateTest ( chid chan )
 void verifyReasonableBeaconPeriod ( chid chan )
 {
     if ( ca_get_ioc_connection_count () > 0 ) {
-        double beaconPeriod, expectedBeaconPeriod, error;
+        double beaconPeriod, expectedBeaconPeriod, error, percentError;
+        unsigned attempts = 0u;
 
         long status = envGetDoubleConfigParam ( 
             &EPICS_CA_BEACON_PERIOD, &expectedBeaconPeriod );
         assert ( status >=0 );
     
-        /* 
-         * 1) wait (hopefully) for a few beacons to arrive
-         * 2) watch inactive circuit for awhile to see if it 
-         *        prematurely disconnects
-         */
-        printf ( "Verifying beacon period - this takes %g sec.\n", 
-            expectedBeaconPeriod * 2 );
-        epicsThreadSleep ( expectedBeaconPeriod * 2 );
-        beaconPeriod = ca_beacon_period ( chan );
-        if ( beaconPeriod >= 0.0 ) {
-            error = beaconPeriod - expectedBeaconPeriod;
-            printf ( "Beacon period error = %f sec.\n", error );
-            fflush ( stdout );
-            /* expect less than a 10% error */
-            assert ( fabs ( error ) / expectedBeaconPeriod < 0.1 ); 
-        }
-        else {
-            printf ( "Unable to determine beacon period\n" );
+        while ( 1 ) {
+            static const unsigned maxAttempts = 10u;
+            const double delay = ( expectedBeaconPeriod * 4 ) / maxAttempts;
+
+            beaconPeriod = ca_beacon_period ( chan );
+            if ( beaconPeriod >= 0.0 ) {
+                error = beaconPeriod - expectedBeaconPeriod;
+                percentError = fabs ( error ) / expectedBeaconPeriod;
+                if ( percentError < 0.1 ) {
+                    break;
+                }
+                printf ( "Beacon period error estimate = %f sec.\n", error );
+            }
+            assert ( attempts++ < maxAttempts );
+            printf ( "Waiting for a better beacon period estimate result (%f sec).\n",
+                attempts * delay );
+            epicsThreadSleep ( delay );
         }
     }
 }

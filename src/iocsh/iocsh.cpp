@@ -33,43 +33,50 @@
  * File-local information
  */
 struct iocshCommand {
-    iocshFuncDef const     *pFuncDef;
+    iocshFuncDef const    *pFuncDef;
     iocshCallFunc          func;
-    struct iocshCommand    *next;
+    struct iocshCommand   *next;
 };
 static struct iocshCommand *iocshCommandHead;
-static char iocshID[] = "iocsh";
-static epicsMutexId commandTableMutex;
-static epicsThreadOnceId commandTableOnceId = EPICS_THREAD_ONCE_INIT;
+static char iocshCmdID[] = "iocshCmd";
+struct iocshVariable {
+    iocshVarDef const     *pVarDef;
+    struct iocshVariable  *next;
+};
+static struct iocshVariable *iocshVariableHead;
+static char iocshVarID[] = "iocshVar";
+static void varCallFunc(const iocshArgBuf *);
+static epicsMutexId iocshTableMutex;
+static epicsThreadOnceId iocshTableOnceId = EPICS_THREAD_ONCE_INIT;
 
 /*
  * Set up command table mutex
  */
 extern "C" {
-static void commandTableOnce (void *)
+static void iocshTableOnce (void *)
 {
-    commandTableMutex = epicsMutexMustCreate ();
+    iocshTableMutex = epicsMutexMustCreate ();
 }
 }
 
 /*
- * Lock command table mutex
+ * Lock the table mutex
  */
 static void
-commandTableLock (void)
+iocshTableLock (void)
 {
-    epicsThreadOnce (&commandTableOnceId, commandTableOnce, NULL);
-    epicsMutexMustLock (commandTableMutex);
+    epicsThreadOnce (&iocshTableOnceId, iocshTableOnce, NULL);
+    epicsMutexMustLock (iocshTableMutex);
 }
 
 /*
- * Unlock the command table mutex
+ * Unlock the table mutex
  */
 static void
-commandTableUnlock (void)
+iocshTableUnlock (void)
 {
-    epicsThreadOnce (&commandTableOnceId, commandTableOnce, NULL);
-    epicsMutexUnlock (commandTableMutex);
+    epicsThreadOnce (&iocshTableOnceId, iocshTableOnce, NULL);
+    epicsMutexUnlock (iocshTableMutex);
 }
 
 /*
@@ -80,22 +87,22 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef, iocshCallFu
     struct iocshCommand *l, *p, *n;
     int i;
 
-    commandTableLock ();
+    iocshTableLock ();
     for (l = NULL, p = iocshCommandHead ; p != NULL ; l = p, p = p->next) {
         i = strcmp (piocshFuncDef->name, p->pFuncDef->name);
         if (i == 0) {
             p->pFuncDef = piocshFuncDef;
             p->func = func;
-            commandTableUnlock ();
+            iocshTableUnlock ();
             return;
         }
         if (i < 0)
             break;
     }
     n = (struct iocshCommand *)callocMustSucceed (1, sizeof *n, "iocshRegister");
-    if (!registryAdd(iocshID, piocshFuncDef->name, (void *)n)) {
+    if (!registryAdd(iocshCmdID, piocshFuncDef->name, (void *)n)) {
         free (n);
-        commandTableUnlock ();
+        iocshTableUnlock ();
         errlogPrintf ("iocshRegister failed to add %s\n", piocshFuncDef->name);
         return;
     }
@@ -109,23 +116,76 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef, iocshCallFu
     }
     n->pFuncDef = piocshFuncDef;
     n->func = func;
-    commandTableUnlock ();
+    iocshTableUnlock ();
 }
 
 /*
- * Free storage created by iocshRegister
+ * Register variable(s)
+ */
+void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
+{
+    struct iocshVariable *l, *p, *n;
+    int i;
+    /* var */
+    static const iocshArg varArg0 = { "[variable",iocshArgString};
+    static const iocshArg varArg1 = { "[value]]",iocshArgString};
+    static const iocshArg *varArgs[2] = {&varArg0, &varArg1};
+    static const iocshFuncDef varFuncDef = {"var",2,varArgs};
+
+    iocshTableLock ();
+    if (iocshVariableHead == NULL)
+        iocshRegister(&varFuncDef,varCallFunc);
+    while((piocshVarDef!=NULL) && (piocshVarDef->name!=NULL) && (*piocshVarDef->name!='\0')) {
+        for (l = NULL, p = iocshVariableHead ; p != NULL ; l = p, p = p->next) {
+            i = strcmp (piocshVarDef->name, p->pVarDef->name);
+            if (i == 0) {
+                p->pVarDef = piocshVarDef;
+                iocshTableUnlock ();
+                return;
+            }
+            if (i < 0)
+                break;
+        }
+        n = (struct iocshVariable *)callocMustSucceed (1, sizeof *n, "iocshRegisterVariable");
+        if (!registryAdd(iocshVarID, piocshVarDef->name, (void *)n)) {
+            free (n);
+            iocshTableUnlock ();
+            errlogPrintf ("iocshRegisterVariable failed to add %s\n", piocshVarDef->name);
+            return;
+        }
+        if (l == NULL) {
+            n->next = iocshVariableHead;
+            iocshVariableHead = n;
+        }
+        else {
+            n->next = l->next;
+            l->next = n;
+        }
+        n->pVarDef = piocshVarDef;
+        iocshTableUnlock ();
+    }
+}
+
+/*
+ * Free storage created by iocshRegister/iocshRegisterVariable
  */
 void epicsShareAPI iocshFree(void) 
 {
-    struct iocshCommand *p, *n;
+    struct iocshCommand *pc, *nc;
+    struct iocshVariable *pv, *nv;
 
-    commandTableLock ();
-    for (p = iocshCommandHead ; p != NULL ; ) {
-        n = p->next;
-        free (p);
-        p = n;
+    iocshTableLock ();
+    for (pc = iocshCommandHead ; pc != NULL ; ) {
+        nc = pc->next;
+        free (pc);
+        pc = nc;
     }
-    commandTableUnlock ();
+    for (pv = iocshVariableHead ; pv != NULL ; ) {
+        nv = pv->next;
+        free (pv);
+        pv = nv;
+    }
+    iocshTableUnlock ();
 }
 
 /*
@@ -367,7 +427,7 @@ iocsh (const char *pathname)
                     int l, col = 0;
 
                     printf ("Type `help command_name' to get more information about a particular command.\n");
-                    commandTableLock ();
+                    iocshTableLock ();
                     for (found = iocshCommandHead ; found != NULL ; found = found->next) {
                         piocshFuncDef = found->pFuncDef;
                         l = strlen (piocshFuncDef->name);
@@ -390,11 +450,11 @@ iocsh (const char *pathname)
                     }
                     if (col)
                         putchar ('\n');
-                    commandTableUnlock ();
+                    iocshTableUnlock ();
                 }
                 else {
                     for (int i = 1 ; i < argc ; i++) {
-                        found = (iocshCommand *)registryFind (iocshID, argv[i]);
+                        found = (iocshCommand *)registryFind (iocshCmdID, argv[i]);
                         if (found == NULL) {
                             printf ("%s -- no such command.\n", argv[i]);
                         }
@@ -421,7 +481,7 @@ iocsh (const char *pathname)
             /*
              * Look up command
              */
-            found = (iocshCommand *)registryFind (iocshID, argv[0]);
+            found = (iocshCommand *)registryFind (iocshCmdID, argv[0]);
             if (!found) {
                 showError (filename, lineno, "Command %s not found.", argv[0]);
                 continue;
@@ -473,6 +533,74 @@ iocsh (const char *pathname)
     errlogFlush();
     epicsReadlineEnd(readlineContext);
     return 0;
+}
+
+/*
+ * Internal commands
+ */
+static void varHandler(const iocshVarDef *v, const char *setString)
+{
+    switch(v->type) {
+    default:
+        printf("Can't handle variable %s of type %d.\n", v->name, v->type);
+        return;
+    case iocshArgInt: break;
+    case iocshArgDouble: break;
+    }
+    if(setString == NULL) {
+        switch(v->type) {
+        default: break;
+        case iocshArgInt:
+            printf("%12s = %d\n", v->name, *(int *)v->pval);
+            break;
+        case iocshArgDouble:
+            printf("%12s = %g\n", v->name, *(double *)v->pval);
+            break;
+        }
+    }
+    else {
+        switch(v->type) {
+        default: break;
+        case iocshArgInt:
+          {
+            char *endp;
+            long ltmp = strtol(setString, &endp, 0);
+            if((*setString != '\0') && (*endp == '\0'))
+                *(int *)v->pval = ltmp;
+            else
+                printf("Invalid value -- value of %s not changed.\n", v->name);
+            break;
+          }
+        case iocshArgDouble:
+          {
+            char *endp;
+            double dtmp = strtod(setString, &endp);
+            if((*setString != '\0') && (*endp == '\0'))
+                *(double *)v->pval = dtmp;
+            else
+                printf("Invalid value -- value of %s not changed.\n", v->name);
+            break;
+          }
+        }
+    }
+}
+
+static void varCallFunc(const iocshArgBuf *args)
+{
+    struct iocshVariable *v;
+    if(args[0].sval == NULL) {
+        for (v = iocshVariableHead ; v != NULL ; v = v->next)
+            varHandler(v->pVarDef, args[1].sval);
+    }
+    else {
+        v = (iocshVariable *)registryFind(iocshVarID, args[0].sval);
+        if (v == NULL) {
+            printf("%s -- no such variable.\n", args[0].sval);
+        }
+        else {
+            varHandler(v->pVarDef, args[1].sval);
+        }
+    }
 }
 
 /*

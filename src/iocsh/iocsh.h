@@ -40,6 +40,12 @@ typedef union iocshArgBuf {
     }      aval;
 }iocshArgBuf;
 
+typedef struct iocshVarDef {
+    const char *name;
+    iocshArgType type;
+    void *pval;
+}iocshVarDef;
+
 typedef struct iocshArg {
     const char *name;
     iocshArgType type;

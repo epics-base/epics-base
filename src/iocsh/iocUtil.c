@@ -33,7 +33,7 @@ static void runScriptCallFunc(const iocshArgBuf *args)
 }
 
 /* chdir */
-static const iocshArg chdirArg0 = { "current directory name",iocshArgString};
+static const iocshArg chdirArg0 = { "directory name",iocshArgString};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
 static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(const iocshArgBuf *args)
@@ -56,11 +56,11 @@ static void pwdCallFunc (const iocshArgBuf *args)
     }
 }
 
-/* show (thread information) */
-static const iocshArg showArg0 = { "[-level] [task ...]", iocshArgArgv};
-static const iocshArg * const showArgs[1] = { &showArg0 };
-static const iocshFuncDef showFuncDef = {"show",1,showArgs};
-static void showCallFunc(const iocshArgBuf *args)
+/* thread (thread information) */
+static const iocshArg threadArg0 = { "[-level] [thread ...]", iocshArgArgv};
+static const iocshArg * const threadArgs[1] = { &threadArg0 };
+static const iocshFuncDef threadFuncDef = {"thread",1,threadArgs};
+static void threadCallFunc(const iocshArgBuf *args)
 {
     int i = 1;
     int first = 1;
@@ -86,7 +86,7 @@ static void showCallFunc(const iocshArgBuf *args)
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
-                printf ("*** argument %d (%s) is not a valid task name ***\n", i, cp);
+                printf ("*** argument %d (%s) is not a valid thread name ***\n", i, cp);
                 continue;
             }
         }
@@ -175,7 +175,7 @@ void epicsShareAPI iocUtilRegister(void)
     iocshRegister(&runScriptFuncDef,runScriptCallFunc);
     iocshRegister(&chdirFuncDef,chdirCallFunc);
     iocshRegister(&pwdFuncDef,pwdCallFunc);
-    iocshRegister(&showFuncDef,showCallFunc);
+    iocshRegister(&threadFuncDef,threadCallFunc);
     iocshRegister(&epicsEnvSetFuncDef,epicsEnvSetCallFunc);
     iocshRegister(&epicsParamShowFuncDef,epicsParamShowCallFunc);
     iocshRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);

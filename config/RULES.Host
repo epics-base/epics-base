@@ -195,7 +195,7 @@ ifeq ($(LIBTYPE),SHARED)
 #	create name for dll, import file
 DLLNAME:=$(LIBRARY).dll
 #	libs defined that we need to link the DLL with?
-DLL_DEP_LIBS:=$(DLL_LIBS:%=%.lib)
+DLL_DEP_LIBS:=$(DLL_LIBS:%=$(INSTALL_LIB)/%.lib)
 endif # LIBTYPE=SHARED
 endif # WIN32
 
@@ -209,7 +209,7 @@ ifdef PROD_LIBS
 
 ifdef WIN32
 PRODDEPLIBS:=$(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
-USR_LDLIBS += -libpath:$(INSTALL_LIB) $(PROD_LIBS:%=%.lib)
+USR_LDLIBS += $(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
 else
 #	On Unix: library "ca" is linked with "-lca"  etc.
 PRODDEPLIBS=$(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
@@ -225,7 +225,6 @@ ifdef SYS_PROD_LIBS
 
 ifdef WIN32
 #	add to USR_LDLIBS so that the libs are linked
-#	we need the full path because there is no "-L" option on WIN32....
 USR_LDLIBS += $(SYSPRODDEPLIBS)
 else
 #	On Unix: it is difficult to determine where the

@@ -122,13 +122,21 @@ LIBRARY:=libname
 #	if SRCS is undefined, it defaults to $(PROD).c 
 SRCS=a.c b.c c.c
 
-#	libs needed to link PROD and TESTPROD
+#	EPICS libs needed to link PROD and TESTPROD
 #
 # for all systems:
 PROD_LIBS         := Com Ca
 # for most systems:
 PROD_LIBS_DEFAULT := mathlib
 PROD_LIBS_WIN32   := -nil-
+
+#	system libs needed to link PROD and TESTPROD
+#
+# for all systems:
+SYS_PROD_LIBS     := m
+# for most systems:
+SYS_PROD_LIBS_DEFAULT := foolib
+SYS_PROD_LIBS_WIN32   := -nil-
 
 #	Product,
 #	may be   caRepeater.o -> caRepeater

@@ -90,7 +90,7 @@ OP_SYS_FLAGS = -MDd -VMG -VMV -DWIN32 -D_WIN32  -D_WINDOWS \
 
 
 HOST_LDLIBS = user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
-HOST_LDFLAGS = -nologo -libpath:$(EPICS_BASE_LIB)
+HOST_LDFLAGS = -nologo
 
 #	Files and flags needed to link DLLs (used in RULES.Host)
 #

@@ -74,6 +74,12 @@ void exVectorPV::scan()
 	}
 
 	//
+	// install the buffer into the DD
+	// (do this before we increment pF)
+	//
+	*pDD = pF;
+
+	//
 	// double check for reasonable bounds on the
 	// current value
 	//
@@ -103,11 +109,6 @@ void exVectorPV::scan()
 		newValue = max (newValue, limit);
 		*(pF++) = newValue;
 	}
-
-	//
-	// install the buffer into the DD
-	//
-	*pDD = pF;
 
         status = this->update (*pDD);
         if (status) {

@@ -60,13 +60,16 @@ sub ReplaceFilename { # (filename)
 sub ReplaceLine { # (line)
     my($line) = $_[0];
     $line =~ s/_USER_/$user/o;
-    $line =~ s/_EPICS_BASE_/$epics_base/o;
+    $line =~ s/_EPICS_BASE_/$app_epics_base/o;
     $line =~ s/_ARCH_/$arch/o;
     $line =~ s/_APPNAME_/$appname/o;
     $line =~ s/_APPTYPE_/$apptype/o;
-    $line =~ s/_TEMPLATE_TOP_/$top/o;
+    $line =~ s/_TEMPLATE_TOP_/$app_top/o;
     if ($ioc) {
 	$line =~ s/_IOC_/$ioc/o;
+    }
+    if($opt_w) {
+        $line =~ s/\//\\/go;
     }
     $line = &ReplaceLineHook($line); # Call the user-defineable hook
     return $line;
@@ -128,7 +131,7 @@ exit 0;				# END OF SCRIPT
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    ($len = @ARGV) and getopts("ldit:T:b:a:") or Cleanup(1);
+    ($len = @ARGV) and getopts("ldiwt:T:b:a:") or Cleanup(1);
 
 # Debug option
     $Debug = 1 if $opt_d;
@@ -149,6 +152,8 @@ sub get_commandline_opts { #no args
 	$epics_base =~ s|(/.*)/bin/.*makeBaseApp.*|$1|;
     }
     "$epics_base" or Cleanup(1, "Cannot find EPICS base");
+	$app_epics_base = $epics_base;
+	$app_epics_base=~s'^\.\.'$(TOP)/..';
 
 # Locate template top directory
     if ($opt_T) {		# first choice is -T templ-top
@@ -169,6 +174,8 @@ sub get_commandline_opts { #no args
 	}
     }
     "$top" or Cleanup(1, "Cannot find template top directory");
+	$app_top = $top;
+	$app_top=~s'^\.\.'$(TOP)/..';
 
 # Print application type list?
     if ($opt_l) {
@@ -314,6 +321,7 @@ where
           If not specified, base path is taken from configure/RELEASE
           If configure does not exist, base path is taken from command
  -d       Verbose output (useful for debugging)
+ -w       Windows. In generated files / is replaced by \
 
 Environment:
 EPICS_MBA_DEF_APP_TYPE  Application type you want to use as default

@@ -81,5 +81,9 @@ nciu & netWriteNotifyIO::channel () const
     return this->chan;
 }
 
-
+void netWriteNotifyIO::operator delete ( void * p )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
 

@@ -23,6 +23,8 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #ifdef _MSC_VER
 #   pragma warning(disable:4355)
 #endif
@@ -33,8 +35,6 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
-
-epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > oldChannelNotify::pFreeList;
 
 extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
@@ -59,10 +59,10 @@ oldChannelNotify::oldChannelNotify ( ca_client_context & cacIn, const char *pNam
 
 oldChannelNotify::~oldChannelNotify ()
 {
-    delete & this->io;
+    this->io.destroy ();
 
     // no need to worry about a connect preempting here because
-    // the nciu has been deleted
+    // the io (the nciu) has been destroyed above
     if ( this->pConnCallBack == 0 && ! this->currentlyConnected ) {
         this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
     }
@@ -152,7 +152,7 @@ void oldChannelNotify::disconnectNotify ()
 
 void oldChannelNotify::serviceShutdownNotify ()
 {
-    delete this;
+    this->cacCtx.destroyChannel ( *this );
 }
 
 void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
@@ -183,12 +183,9 @@ void oldChannelNotify::writeException ( int status, const char *pContext,
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
-void * oldChannelNotify::operator new ( size_t size )
+void oldChannelNotify::operator delete ( void *pCadaver )
 {
-    return oldChannelNotify::pFreeList->allocate ( size );
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
-void oldChannelNotify::operator delete ( void *pCadaver, size_t size )
-{
-    oldChannelNotify::pFreeList->release ( pCadaver, size );
-}

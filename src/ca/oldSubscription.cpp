@@ -19,18 +19,25 @@
  *  Author: Jeff Hill
  */
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
-
-epicsSingleton < tsFreeList < struct oldSubscription, 1024 > > oldSubscription::pFreeList;
 
 oldSubscription::~oldSubscription ()
 {
 }
 
+void oldSubscription::ioCancel ()
+{
+    if ( this->subscribed ) {
+        this->chan.ioCancel ( this->id );
+    }
+}
+
 void oldSubscription::current (  
-    unsigned type, arrayElementCount count, const void *pData)
+    unsigned type, arrayElementCount count, const void * pData )
 {
     struct event_handler_args args;
 
@@ -48,7 +55,8 @@ void oldSubscription::exception (
     unsigned type, arrayElementCount count )
 {
     if ( status == ECA_CHANDESTROY ) {
-        delete this;
+        ca_client_context & cac = this->chan.getClientCtx ();
+        cac.destroySubscription ( *this );
     }
     else if ( status != ECA_DISCONN ) {
         struct event_handler_args args;
@@ -60,5 +68,11 @@ void oldSubscription::exception (
         args.dbr = 0;
         ( *this->pFunc ) ( args );
     }
+}
+
+void oldSubscription::operator delete ( void *pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 

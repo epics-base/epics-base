@@ -174,11 +174,7 @@ void cac_os_depen_exit (struct ca_static *pcas)
 
 
 /*
- *
  * localUserName() - for VMS 
- *
- * o Indicates failure by setting ptr to nill
- *
  */
 char *localUserName()
 {
@@ -221,24 +217,13 @@ char *localUserName()
 			NULL,
 			NULL,
 			NULL);
+
 	if(status != SS$_NORMAL){
-		return NULL;
+		strcpy (pName, "");
 	}
 
-	/*
-	 * test for remote login
-	 */
 	if(jobTypeSize != sizeof(jobType)){
-		return NULL;
-	}
-
-/*
- * This does not appear to change when it is
- * a remote login ??
- */
-	if(jobType != JPI$K_LOCAL && jobType != JPI$K_DETACHED){
-		pTmp = "REMOTE";
-		return pTmp;
+		strcpy (pName, "");
 	}
 
 	/*

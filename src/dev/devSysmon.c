@@ -59,6 +59,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.5  1994/12/07  15:11:13  winans
+ * Fixed array index for temerature reading.
+ *
  * Revision 1.4  1994/11/30  15:10:23  winans
  * Added IRQ mode stuff
  *
@@ -123,39 +126,62 @@ int  devSysmonDebug = 0;
 typedef struct ParmTableStruct 
 {
     char *parm_name;
-    int  index;
 } ParmTableStruct;
 
 #define SYSMON_PARM_STATUS	0
-#define SYSMON_PARM_DIO		1
+#define SYSMON_PARM_DI		1
 #define SYSMON_PARM_TEMP	2
-#define SYSMON_PARM_WATCHDOG	3
+#define SYSMON_PARM_BOOTWATCHDOG 3
+#define SYSMON_PARM_DO		4
+
+#define	SYSMON_PARM_LED		5
+
+#define	SYSMON_PARM_RXWATCHDOG	6
+#define	SYSMON_PARM_RXTEMP	7
+#define	SYSMON_PARM_RXSTAT	8
+#define	SYSMON_PARM_RXRUN	9
+#define	SYSMON_PARM_RX12V	10
+#define	SYSMON_PARM_RX5V	11
+#define	SYSMON_PARM_RXFAIL	12
+
+#define	SYSMON_PARM_TXWATCHDOG	13
+#define	SYSMON_PARM_TXTEMP	14
+#define	SYSMON_PARM_TXSTAT	15
+#define	SYSMON_PARM_TXRUN	16
+#define	SYSMON_PARM_TX12V	17
+#define	SYSMON_PARM_TX5V	18
+#define	SYSMON_PARM_TXFAIL	19
 
 static ParmTableStruct ParmTable[]=
 {
-  {"StatusLink", SYSMON_PARM_STATUS},
-  {"Dio", SYSMON_PARM_DIO},
-  {"Temperature", SYSMON_PARM_TEMP},
-  {"Watchdog", SYSMON_PARM_WATCHDOG},
+  {"StatusLink"},
+  {"Di"},
+  {"Temperature"},
+  {"BootWatchdog"},
+  {"Do"},
 
-#if 0		/* This crap is pointless -- JRW */
+  {"Led"},
 
-  {"IntMask", 2},
-  {"VXIVector", 5},
-  {"IntVector", 6},
-  {"IRQ1", 7},
-  {"IRQ2", 8},
-  {"IRQ3", 9},
-  {"IRQ4", 10},
-  {"IRQ5", 11},
-  {"IRQ6", 12},
-  {"IRQ7", 13}
-#endif
+  {"RxWatchdog"},
+  {"RxTemp"},
+  {"RxStat"},
+  {"RxRun"},
+  {"Rx12v"},
+  {"Rx5v"},
+  {"RxFail"},
+
+  {"TxWatchdog"},
+  {"TxTemp"},
+  {"TxStat"},
+  {"TxRun"},
+  {"Tx12v"},
+  {"Tx5v"},
+  {"TxFail"}
 };
 #define	PARM_TABLE_SIZE	(sizeof(ParmTable)/sizeof(ParmTable[0]))
 
 /*** SysMonStatusLink   Rx, Tx ***/
-/*** SysmonDio          output, input ***/
+/*** SysmonDio          output, input *** 0-7=out, 8-15=in***/
 /*** SysmonIntMask      interrupt mask ***/
 /*** SysmonTemperature  temperature monitor ***/
 /*** SysmonWatchdog     watchdog & 4 status LEDs ***/
@@ -194,8 +220,9 @@ typedef struct SysmonStruct {
  *****************************************************************************/
 typedef struct PvtStruct 
 {
-    int index;
-    unsigned short mask;
+	int		index;	/* Parameter/operation type */
+	volatile unsigned short	*pReg;	/* Pointer to actual register */
+	unsigned short	mask;	/* value mask derived from signal number */
 } PvtStruct;
 
 /*****************************************************************************
@@ -214,8 +241,6 @@ struct ioCard {			/* structure maintained for each card */
     int		VXIintVector;	/* Generated when C008 is written to (VXI silliness) */
     int		IrqInfo[2];
 };
-
-
 
 #define         INITLEDS        0x01
 
@@ -269,7 +294,6 @@ DSET_SYSMON devMbbiSysmon={
         NULL,
         SysmonReadMbbi
 };
-
 
 STATIC long SysmonReport(void)
 {
@@ -300,7 +324,7 @@ int SysmonConfig(
   if ((Card < 0) || (Card >= NUM_LINKS))
   {
     printf("ERROR: Invalid card number specified %d\n", Card);
-    return(-1);
+    return(0);
   }
 
   cards[Card].CardValid = 0;
@@ -314,7 +338,7 @@ int SysmonConfig(
   if ((VMEintVector < 64) || (VMEintVector > 255))
   {
     printf("devSysmon: ERROR VME IRQ vector out of range\n");
-    return(-1);
+    return(0);
   }
   if (devSysmonDebug >= 5)
     printf("devSysmon: SysmonInit VME int vector = 0x%2.2X\n", VMEintVector);
@@ -322,7 +346,7 @@ int SysmonConfig(
   if ((VMEintLevel < 0) || (VMEintLevel > 7))
   {
     printf("devSysmon: ERROR VME IRQ level out of range\n");
-    return(-1);
+    return(0);
   }
   if (devSysmonDebug >= 5)
     printf("devSysmon: SysmonInit VME int level = %d\n", VMEintLevel);
@@ -330,7 +354,7 @@ int SysmonConfig(
   if ((VXIintVector < 64) || (VXIintVector > 255))
   {
     printf("devSysmon: ERROR VXI IRQ vector out of range\n");
-    return(-1);
+    return(0);
   }
   if (devSysmonDebug >= 5)
     printf("devSysmon: SysmonInit VXI int vector = 0x%2.2X\n", VXIintVector);
@@ -338,7 +362,7 @@ int SysmonConfig(
   if ((SysmonBaseA16 > 0xffff) || (SysmonBaseA16 & 0x003f))
   {
     printf("devSysmon: ERROR Invalid address specified 0x4.4X\n", SysmonBaseA16);
-    return(-1);
+    return(0);
   }
   if (devSysmonDebug >= 5)
     printf("devSysmon: SysmonInit VME (VXI) base address = %p\n", SysmonBaseA16);
@@ -390,25 +414,25 @@ STATIC long SysmonInit(int flag)
     if (cards[Card].CardValid != 0)
     {
       if (devSysmonDebug >= 5)
-	  printf("devSysmon: init link %d\n", Card);
+	  logMsg("devSysmon: init link %d\n", Card);
 
       if (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char *)cards[Card].SysmonBaseA16, (char **)&(cards[Card].SysmonBase)) == ERROR)
       {
         if (devSysmonDebug >= 5)
-           printf("devSysmon: can not find short address space\n");
+           logMsg("devSysmon: can not find short address space\n");
         return(ERROR);	/* BUG */
       }
 
       probeVal = INITLEDS;
 
       if (devSysmonDebug >= 5)
-	  printf("devSysmon: init SysmonWatchdog 0x%X\n", (char *)&cards[Card].SysmonBase->SysmonWatchdog);
+	  logMsg("devSysmon: init SysmonWatchdog 0x%X\n", (char *)&cards[Card].SysmonBase->SysmonWatchdog);
 
       if (vxMemProbe((char *)&cards[Card].SysmonBase->SysmonWatchdog, WRITE, sizeof(cards[Card].SysmonBase->SysmonWatchdog), (char *)&probeVal) != OK)
       {
 	  cards[Card].CardValid = 0;		/* No card found */
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init vxMemProbe FAILED\n");
+	      logMsg("devSysmon: init vxMemProbe FAILED\n");
       }
       else
       {
@@ -418,33 +442,33 @@ STATIC long SysmonInit(int flag)
 	  /* FASTUNLOCK(&(cards[Card].lock));	/* Init the board lock */
 
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init address\n");
+	      logMsg("devSysmon: init address\n");
 
 	  scanIoInit(&cards[Card].ioscanpvt);  /* interrupt initialized */
 
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init ScanIoInit \n");
+	      logMsg("devSysmon: init ScanIoInit \n");
 
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init address of System Monitor %8.8x \n", cards[Card].SysmonBase);
+	      logMsg("devSysmon: init address of System Monitor %8.8x \n", cards[Card].SysmonBase);
 	  
 	  cards[Card].SysmonBase->SysmonIntVector = cards[Card].VMEintVector;
 
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init Interrupt vector loaded \n");
+	      logMsg("devSysmon: init Interrupt vector loaded \n");
 
 	  if(intConnect(INUM_TO_IVEC(cards[Card].VMEintVector),(FUNCPTR)SysmonIsr, Card)!=OK)
 	  {
-	      printf("devSysmon (init) intConnect failed \n");
+	      logMsg("devSysmon (init) intConnect failed \n");
 	      return(ERROR);
 
 	      if (devSysmonDebug >= 5)
-		  printf("devSysmon: init intConnect\n");
+		  logMsg("devSysmon: init intConnect\n");
 
 	      }
 
 	  if (devSysmonDebug >= 5)
-	      printf("devSysmon: init vxMemProbe OK\n");
+	      logMsg("devSysmon: init vxMemProbe OK\n");
 
       }
       sysIntEnable(cards[Card].VMEintLevel);
@@ -471,12 +495,12 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
     }
 
     /* make sure that signal is valid */
-    if ((pvmeio->signal > 15) || (pvmeio->signal < 0))
+    if ((pvmeio->signal > 7) || (pvmeio->signal < 0))
     {
 	pr->pact = 1;          /* make sure we don't process this thing */
 
 	if (devSysmonDebug >= 10)
-	    printf("devSysmon: Illegal SIGNAL field ->%s<- \n", pr->name);
+	    logMsg("devSysmon: Illegal SIGNAL field ->%s<- \n", pr->name);
 
 	recGblRecordError(S_dev_badSignal,(void *)pr,
 			  "devSysmon (init_record) Illegal SIGNAL field");
@@ -490,9 +514,9 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
 
 	if (devSysmonDebug >= 10)
 	{
-	    printf("devSysmon: Illegal CARD field ->%s, %d<- \n", pr->name, pvmeio->card);
+	    logMsg("devSysmon: Illegal CARD field ->%s, %d<- \n", pr->name, pvmeio->card);
 	    if(!cards[pvmeio->card].CardValid)
-		printf("devSysmon: Illegal CARD field card NOT VALID \n\n");
+		logMsg("devSysmon: Illegal CARD field card NOT VALID \n\n");
 	}
 
 	recGblRecordError(S_dev_badCard,(void *)pr,
@@ -505,17 +529,15 @@ static long generic_init_record(struct dbCommon *pr, DBLINK *link)
 
     if (j >= PARM_TABLE_SIZE)
     {
-	pr->pact = 1;          /* make sure we don't process this thing */
-	
 	if (devSysmonDebug >= 10)
-	    printf("devSysmon: Illegal parm field ->%s<- \n", pr->name);
+	    logMsg("devSysmon: Illegal parm field ->%s<- \n", pr->name);
 
 	recGblRecordError(S_dev_badSignal,(void *)pr,
 			  "devSysmon (init_record) Illegal parm field");
 	return(S_dev_badSignal);
     }
     if (devSysmonDebug >= 10)
-	printf("devSysmon: %s of record type %d - %s\n", pr->name, j, ParmTable[j].parm_name);
+	logMsg("devSysmon: %s of record type %d - %s\n", pr->name, j, ParmTable[j].parm_name);
 
     pvt = (PvtStruct *) malloc(sizeof(PvtStruct));
     pvt->index = j;
@@ -535,14 +557,55 @@ STATIC long SysmonInitBoRec(struct boRecord *pbo)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pbo->out.value);
     int status = 0;
+    PvtStruct	*pvt;
 
     status = generic_init_record((struct dbCommon *)pbo, &pbo->out);
 
     if(status)
+    {
+        pbo->dpvt = NULL;
 	return(status);
+    }
 
-    ((PvtStruct *)(pbo->dpvt))->mask = 1<<pvmeio->signal;
+    pvt = (PvtStruct *)pbo->dpvt;
 
+    switch (pvt->index)
+    {
+    case SYSMON_PARM_DO:
+    	pvt->mask = 1<<pvmeio->signal;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonDio);
+	break;
+
+    case SYSMON_PARM_LED:
+	if (pvmeio->signal > 3)
+	{
+	    recGblRecordError(S_dev_badSignal,(void *)pbo,
+		"devSysmon (init_record) Illegal signal value (0-3 for LED)");
+	    return(S_dev_badSignal);
+	}
+    	pvt->mask = 1<<pvmeio->signal;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonWatchdog);
+	break;
+
+    case SYSMON_PARM_BOOTWATCHDOG:
+	pvt->mask = 1<<7;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonWatchdog);
+	break;
+
+#if 0
+    case SYSMON_PARM_DI:
+    	pvt->mask = 1<< (pvmeio->signal + 8);
+	break;
+#endif
+    default:
+	pbo->dpvt = NULL;
+	if (devSysmonDebug >= 10)
+	    logMsg("devSysmon: Illegal parm field ->%s<- \n", pvmeio->parm);
+
+	recGblRecordError(S_dev_badSignal,(void *)pbo,
+			  "devSysmon (init_record) Illegal parm field");
+	return(S_dev_badSignal);
+    }
     return (0);
 }
 
@@ -554,18 +617,132 @@ STATIC long SysmonInitBoRec(struct boRecord *pbo)
 STATIC long SysmonInitBiRec(struct biRecord *pbi)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pbi->inp.value);
+    PvtStruct   *pvt;
     int status = 0;
-    
+    int	signal;
+
     status = generic_init_record((struct dbCommon *)pbi, &pbi->inp);
 
     if(status)
+    {
+        pbi->dpvt = NULL;
 	return(status);
+    }
 
-    ((PvtStruct *)(pbi->dpvt))->mask = 1<<pvmeio->signal;
+    pvt = (PvtStruct *)pbi->dpvt;
+    switch (pvt->index)
+    {
+    case SYSMON_PARM_DO:
+    	pvt->mask = 1 << pvmeio->signal;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonDio);
+	break;
+
+    case SYSMON_PARM_DI:
+    	pvt->mask = 1<< (pvmeio->signal + 8);
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonDio);
+	break;
+
+    case SYSMON_PARM_LED:
+	if (pvmeio->signal > 3)
+	{
+	    recGblRecordError(S_dev_badSignal,(void *)pbi,
+		"devSysmon (init_record) Illegal signal value (0-3 for LED)");
+	    return(S_dev_badSignal);
+	}
+    	pvt->mask = 1<<pvmeio->signal;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonWatchdog);
+	break;
+
+    case SYSMON_PARM_BOOTWATCHDOG:
+	pvt->mask = 1<<7;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonWatchdog);
+	break;
+
+    case SYSMON_PARM_RXWATCHDOG:
+	pvt->mask = 1<<0;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RXTEMP:
+	pvt->mask = 1<<1;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RXSTAT:
+	pvt->mask = 1<<2;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RXRUN:
+	pvt->mask = 1<<3;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RX12V:
+	pvt->mask = 1<<4;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RX5V:
+	pvt->mask = 1<<5;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_RXFAIL:
+	pvt->mask = 1<<6;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+
+    case SYSMON_PARM_TXWATCHDOG:
+	pvt->mask = 1<<8;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TXTEMP:
+	pvt->mask = 1<<9;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TXSTAT:
+	pvt->mask = 1<<10;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TXRUN:
+	pvt->mask = 1<<11;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TX12V:
+	pvt->mask = 1<<12;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TX5V:
+	pvt->mask = 1<<13;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    case SYSMON_PARM_TXFAIL:
+	pvt->mask = 1<<14;
+	pvt->pReg = &(cards[pvmeio->card].SysmonBase->SysmonStatusLink);
+	break;
+
+    default:
+	pbi->dpvt = NULL;
+	if (devSysmonDebug >= 10)
+	    logMsg("devSysmon: Illegal parm field ->%s<- \n", pvmeio->parm);
+
+	recGblRecordError(S_dev_badSignal,(void *)pbi,
+			  "devSysmon (init_record) Illegal parm field");
+	return(S_dev_badSignal);
+    }
 
     return (0);
 }
 
+#if 1 /* This looks completely insane JRW */
 
 /**************************************************************************
  *
@@ -575,12 +752,28 @@ STATIC long SysmonInitBiRec(struct biRecord *pbi)
 STATIC long SysmonInitMbboRec(struct mbboRecord *pmbbo)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pmbbo->out.value);
+    PvtStruct   *pvt;
     int status = 0;
     
     status = generic_init_record((struct dbCommon *)pmbbo, &pmbbo->out);
 
     if(status)
+    {
+        pmbbo->dpvt = NULL;
 	return(status);
+    }
+    pvt = (PvtStruct *)pmbbo->dpvt;
+
+    if (pvt->index != SYSMON_PARM_TEMP)
+    {
+	pmbbo->dpvt = NULL;
+        if (devSysmonDebug >= 10)
+            logMsg("devSysmon: Illegal parm field ->%s<- \n", pvmeio->parm);
+
+        recGblRecordError(S_dev_badSignal,(void *)pmbbo,
+                          "devSysmon (init_record) Illegal parm field");
+        return(S_dev_badSignal);
+    }
 
     pmbbo->shft = pvmeio->signal;
     pmbbo->mask <<= pmbbo->shft;
@@ -588,6 +781,7 @@ STATIC long SysmonInitMbboRec(struct mbboRecord *pmbbo)
     return(0);
 
 }
+#endif
 
 /**************************************************************************
  *
@@ -598,16 +792,35 @@ STATIC long SysmonInitMbboRec(struct mbboRecord *pmbbo)
 STATIC long SysmonInitMbbiRec(struct mbbiRecord *pmbbi)
 {
     struct vmeio* pvmeio = (struct vmeio*)&(pmbbi->inp.value);
+    PvtStruct *pvt;
     int status = 0;
     
     status = generic_init_record((struct dbCommon *)pmbbi, &pmbbi->inp);
+
+    if(status)
+    {
+        pmbbi->dpvt = NULL;
+	return(status);
+    }
+
+    pvt = (PvtStruct *)pmbbi->dpvt;
+    if (pvt->index != SYSMON_PARM_TEMP)
+    {
+	pmbbi->dpvt = NULL;
+        if (devSysmonDebug >= 10)
+            logMsg("devSysmon: Illegal parm field ->%s<- \n", pvmeio->parm);
+
+        recGblRecordError(S_dev_badSignal,(void *)pmbbi,
+                          "devSysmon (init_record) Illegal parm field");
+        return(S_dev_badSignal);
+    }
 
     /* load temperature values up */
 
     if (!strcmp(ParmTable[SYSMON_PARM_TEMP].parm_name, pvmeio->parm))
     {
     	if (devSysmonDebug >= 10)
-		printf("devSysmon: mbbi record is Temperature\n");
+		logMsg("devSysmon: mbbi record is Temperature\n");
 
 	pmbbi->nobt = 0x08; /* make sure 8 bits wide */
 
@@ -630,7 +843,7 @@ STATIC long SysmonInitMbbiRec(struct mbbiRecord *pmbbi)
 	pmbbi->ffvl = 0x55;
 
 	/* load up proper string values, if you don't like it, change the strings somewhere else */
-	strcpy(pmbbi->zrst,"Calibration Error (Boy is it cold)");
+	strcpy(pmbbi->zrst,"Cal Error");
 	strcpy(pmbbi->onst,"20");
 	strcpy(pmbbi->twst,"25");
 	strcpy(pmbbi->thst,"30");
@@ -639,18 +852,15 @@ STATIC long SysmonInitMbbiRec(struct mbbiRecord *pmbbi)
 	strcpy(pmbbi->sxst,"45");
 	strcpy(pmbbi->svst,"50");
 	strcpy(pmbbi->eist,"Danger 55");
-	strcpy(pmbbi->nist,"way too hot");
-	strcpy(pmbbi->test,"undefined");
-	strcpy(pmbbi->elst,"undefined");
-	strcpy(pmbbi->tvst,"undefined");
-	strcpy(pmbbi->ttst,"undefined");
-	strcpy(pmbbi->ftst,"undefined");
-	strcpy(pmbbi->ffst,"undefined");
+	strcpy(pmbbi->nist,"Danger!");
+	strcpy(pmbbi->test,"Danger!!");
+	strcpy(pmbbi->elst,"Danger!!!");
+	strcpy(pmbbi->tvst,"Danger!!!!");
+	strcpy(pmbbi->ttst,"Danger!!!!!");
+	strcpy(pmbbi->ftst,"Danger!!!!!!");
+	strcpy(pmbbi->ffst,"AAAARRRGHH!!!");
     }
     
-    if(status)
-	return(status);
-
     pmbbi->shft = pvmeio->signal;
     pmbbi->mask <<= pmbbi->shft;
 
@@ -667,11 +877,16 @@ STATIC long SysmonWriteBo(struct boRecord *pbo)
     struct vmeio *pvmeio = (struct vmeio*)&(pbo->out.value);
     PvtStruct	*pvt = (PvtStruct *)pbo->dpvt;
 
+    if (pvt == NULL)
+	return(0);
+
     FASTLOCK(&cards[pvmeio->card].lock);
-    
+
+#if 0
     switch (pvt->index)
     {
-    case SYSMON_PARM_DIO:
+    case SYSMON_PARM_DO:
+    case SYSMON_PARM_DI:
 
       if (pbo->val)
 	cards[pvmeio->card].SysmonBase->SysmonDio |= pvt->mask;
@@ -687,6 +902,13 @@ STATIC long SysmonWriteBo(struct boRecord *pbo)
 	cards[pvmeio->card].SysmonBase->SysmonWatchdog &= ~pvt->mask;
       break;
     }
+#else
+
+    if (pbo->val)
+	*(pvt->pReg) |= pvt->mask;
+    else
+	*(pvt->pReg) &= ~pvt->mask;
+#endif
 
     FASTUNLOCK(&cards[pvmeio->card].lock);
     return(0);
@@ -702,24 +924,14 @@ STATIC long SysmonReadBi(struct biRecord *pbi)
     struct vmeio *pvmeio = (struct vmeio*)&(pbi->inp.value);
     unsigned short regVal = 0;
     PvtStruct	*pvt = (PvtStruct *)pbi->dpvt;
-    FASTLOCK(&cards[pvmeio->card].lock);
 
-    switch (pvt->index)
-    {
-    case SYSMON_PARM_STATUS:
-      regVal = cards[pvmeio->card].SysmonBase->SysmonStatusLink;
-      break;
-    case SYSMON_PARM_DIO:
-      regVal = cards[pvmeio->card].SysmonBase->SysmonDio;
-      break;
-    case SYSMON_PARM_WATCHDOG:
-      regVal = cards[pvmeio->card].SysmonBase->SysmonWatchdog;
-      break;
-    }
-    FASTUNLOCK(&cards[pvmeio->card].lock);
+    if (pvt == NULL)
+	return(0);
+
+    regVal = *(pvt->pReg);
     
     if (devSysmonDebug)
-      printf("read 0x%2.2X, masking with 0x%2.2X\n", regVal, pvt->mask);
+      logMsg("read 0x%4.4X, masking with 0x%4.4X\n", regVal, pvt->mask);
 
     regVal &= pvt->mask;
 
@@ -727,11 +939,15 @@ STATIC long SysmonReadBi(struct biRecord *pbi)
 	pbi->rval = 1;
     else
 	pbi->rval = 0;
+
+    /* Damn board's BI logic is bass-ackwards */
+    if (pvt->index == SYSMON_PARM_DI)
+	pbi->rval = pbi->rval?0:1;
     
     return(0);
 }
 
-
+#if 1 /* This looks completely insane JRW */
 /**************************************************************************
  *
  * Perform a write operation from a MBBO record
@@ -741,9 +957,14 @@ STATIC long SysmonWriteMbbo(struct mbboRecord *pmbbo)
 {
     struct vmeio *pvmeio = (struct vmeio*)&(pmbbo->out.value);
     unsigned short regVal;
+    PvtStruct	*pvt = (PvtStruct *)pmbbo->dpvt;
+
+    if (pvt == NULL)
+	return(0);
 
     FASTLOCK(&cards[pvmeio->card].lock);
 
+	/* BUG -- this looks broken, what about the shift? -- JRW */
     regVal = cards[pvmeio->card].SysmonBase->SysmonTemperature;
     regVal = (regVal & ~pmbbo->mask) | (pmbbo->rval & pmbbo->mask);
     cards[pvmeio->card].SysmonBase->SysmonTemperature = regVal;
@@ -752,6 +973,7 @@ STATIC long SysmonWriteMbbo(struct mbboRecord *pmbbo)
     
     return(0);
 }
+#endif
 
 /**************************************************************************
  *
@@ -760,9 +982,12 @@ STATIC long SysmonWriteMbbo(struct mbboRecord *pmbbo)
  **************************************************************************/
 STATIC long SysmonReadMbbi(struct mbbiRecord *pmbbi)
 {
-
     struct vmeio *pvmeio = (struct vmeio*)&(pmbbi->inp.value);
     unsigned short regVal;
+    PvtStruct	*pvt = (PvtStruct *)pmbbi->dpvt;
+
+    if (pvt == NULL)
+	return(0);
 
     FASTLOCK(&cards[pvmeio->card].lock);
 
@@ -770,11 +995,12 @@ STATIC long SysmonReadMbbi(struct mbbiRecord *pmbbi)
 
     FASTUNLOCK(&cards[pvmeio->card].lock);
     
+	/* BUG -- this looks broken, what about the shift? -- JRW */
     pmbbi->rval=regVal & pmbbi->mask;
     pmbbi->udf = 0;
     return(0);
 }
-
+
 /*****************************************************
   record support interrupt routine
  *
@@ -791,6 +1017,9 @@ static long SysmonGetIointInfoBi(
     struct vmeio *pvmeio = (struct vmeio *)(&pr->inp.value);
     int		intmask;
 
+    if (pr->dpvt == NULL)
+	return(0);
+
     if(pvmeio->card > NUM_LINKS) {
 	recGblRecordError(S_dev_badCard,(void *)pr,
 			  "devSysmon (get_int_info) exceeded maximum supported cards");
@@ -803,7 +1032,7 @@ static long SysmonGetIointInfoBi(
       intmask = (((PvtStruct *)(pr->dpvt))->mask)>>8;
 
       if (devSysmonDebug)
-	printf("SysmonGetIointInfoBi mask is %2.2X\n", intmask);
+	logMsg("SysmonGetIointInfoBi mask is %2.2X\n", intmask);
 
       cards[pvmeio->card].SysmonBase->SysmonIntMask |= intmask;
     }

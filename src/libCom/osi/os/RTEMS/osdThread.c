@@ -6,6 +6,10 @@
  *              (306) 966-6055
  */
 
+/*
+ * We want to print out some task information which is
+ * normally hidden from application programs.
+ */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
 
 #include <stddef.h>
@@ -20,8 +24,8 @@
 #include <rtems/error.h>
 
 #include "errlog.h"
-#include "ellLib.h"
 #include "osiThread.h"
+#include "osiInterrupt.h"
 #include "cantProceed.h"
 
 /*
@@ -38,6 +42,7 @@ struct taskVar {
     void                **threadVariables;
     int			threadVariablesAdded;
 };
+static semMutexId onceMutex;
 static semMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
 #define RTEMS_NOTEPAD_TASKVAR       11
@@ -113,7 +118,7 @@ threadWrapper (rtems_task_argument arg)
  * OS-dependent initialization
  * No need to worry about making this thread-safe since
  * it must be called before threadCreate creates
- * any threads.
+ * any new threads.
  */
 void
 threadInit (void)
@@ -122,11 +127,19 @@ threadInit (void)
 
     if (!initialized) {
 	initialized = 1;
+	onceMutex = semMutexCreate();
+	if (!onceMutex) {
+	    syslog (LOG_CRIT, "Can't create `once' mutex");
+	    rtems_task_suspend (RTEMS_SELF);
+	}
 	taskVarMutex = semMutexCreate ();
 	if (!taskVarMutex) {
 	    syslog (LOG_CRIT, "Can't create task variable mutex");
 	    rtems_task_suspend (RTEMS_SELF);
 	}
+	threadCreate ("ImsgDaemon", 99,
+		    threadGetStackSize (threadStackSmall),
+		    InterruptContextMessageDaemon, NULL);
     }
 }
 
@@ -340,15 +353,6 @@ threadId threadGetId (const char *name)
  */
 void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
 {
-	rtems_mode mode;
-	static semMutexId onceMutex;
-
-	if (!onceMutex) {
-		rtems_task_mode(RTEMS_NO_PREEMPT, RTEMS_PREEMPT_MASK, &mode);
-		if(!onceMutex)
-			onceMutex = semMutexMustCreate();
-		rtems_task_mode(mode, RTEMS_PREEMPT_MASK, &mode);
-	}
 	semMutexMustTake(onceMutex);
 	if (*id == 0) {
 		*id = -1;

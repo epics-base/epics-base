@@ -43,6 +43,13 @@
  *  
  */
 
+//
+// To Do:
+// 1) Add a member function that sets the size of the hash table.
+//    Dont allocate storage for the hash table until they insert
+//    the first item.
+//
+
 #ifndef INCresourceLibh
 #define INCresourceLibh 
 

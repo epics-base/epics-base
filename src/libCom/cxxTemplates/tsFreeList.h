@@ -10,6 +10,31 @@
  *  Author: Jeff Hill
  */
 
+//
+// To allow your class to be allocated off of a free list
+// using the new operator:
+// 
+// 1) add the following static, private free list data member 
+// to your class
+//
+// static tsFreeList < class classXYZ, 1024 > freeList;
+//
+// 2) add the following member functions to your class
+// 
+// inline void * classXYZ::operator new ( size_t size )
+// {
+//    return classXYZ::freeList.allocate ( size );
+// }
+//
+// inline void classXYZ::operator delete ( void *pCadaver, size_t size )
+// {
+//     classXYZ::freeList.release ( pCadaver, size );
+// }
+//
+// If you wish to force use of the new operator, then declare your class's 
+// destructor as a private member function.
+//
+
 #include <stdio.h>
 #include <typeinfo>
 #include "osiMutex.h"
@@ -17,7 +42,6 @@
 #if defined ( _MSC_VER ) && _MSC_VER <= 1200
 #   pragma warning ( disable : 4291 )  
 #endif
-
 
 template < class T, unsigned DEBUG_LEVEL >
 union tsFreeListItem {

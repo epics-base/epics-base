@@ -761,7 +761,7 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int) // postfix --
 	return tmp;
 }
 
-#include <tsDLListDeprecated.h>
+#include "tsDLListDeprecated.h"
 
 #endif // tsDLListH_include
 

@@ -3,13 +3,14 @@ C++ templates:
 tsSLList.h - type safe single linked list template
 tsDLList.h - type safe double linked list template
 resourceLib.h - hash table template
+tsFreeeList.h - free list allocator / deallocator
 
 the test subdir contains examples
 
 Since I am using templates the linked lists are type safe
 (no casting of pointers ala ellList and dllList). 
 Also, the node class in embedded in the item on the
-list (more efficent use of pool).
+list (more efficient use of pool).
 
 The file resourceLib.h provides a core hashing library 
 "resTable <itemClass, idClass>" where "itemClass" objects

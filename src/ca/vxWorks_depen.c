@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.4  2002/03/08 00:16:27  jhill
+ * check for floating point in correct place
+ *
  * Revision 1.39.4.3  2001/03/22 20:58:43  jhill
  * fixed task names with spaces
  *
@@ -544,6 +547,18 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 		}
 	}
 
+    /*
+     * turn off extra labor callbacks from the event thread
+     */
+    status = db_add_extra_labor_event ( pcas->ca_evuser, NULL, NULL );
+    assert ( status == OK );
+
+    /*
+     * wait for extra labor in progress to comple
+     */
+    status = db_flush_extra_labor_event ( pcas->ca_evuser );
+    assert(status==OK);
+
 	/*
 	 * Cancel all local events
 	 * (and put call backs)
@@ -938,7 +953,7 @@ LOCAL void ca_extra_event_labor (void *pArg)
 	 */
 	status = semGive (ca_static->ca_blockSem);
 	if (status != OK) {
-		logMsg ("CA block sem corrupted\n", 0, 0, 0, 0, 0, 0);
+		logMsg ("CAC block sem corrupted\n", 0, 0, 0, 0, 0, 0);
 	}
 }
 

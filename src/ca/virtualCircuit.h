@@ -243,12 +243,18 @@ inline unsigned tcpiiu::channelCount ()
 
 inline void tcpRecvThread::interruptSocketRecv ()
 {
-    epicsSocketInterruptSystemCall ( this->thread.getId() );
+    epicsThreadId threadId = this->thread.getId ();
+    if ( threadId ) {
+        epicsSocketInterruptSystemCall ( threadId );
+    }
 }
 
 inline void tcpSendThread::interruptSocketSend ()
 {
-    epicsSocketInterruptSystemCall ( this->thread.getId() );
+    epicsThreadId threadId = this->thread.getId ();
+    if ( threadId ) {
+        epicsSocketInterruptSystemCall ( threadId );
+    }
 }
 
 #endif // ifdef virtualCircuith

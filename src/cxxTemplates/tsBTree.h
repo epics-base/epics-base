@@ -1,7 +1,4 @@
 
-#ifndef assert // allow use of epicsAssert.h
-#include <assert.h>
-#endif
 
 //
 // tsBTreeRMRet
@@ -32,6 +29,12 @@ class tsBTreeNode
 {
 friend class tsBTree<T>;
 public:
+	//
+	// exceptions
+	//
+	class invalid_btCmp {};
+
+
 	//
 	// when someone copies into a class deriving from this
 	// do _not_ change the node pointers
@@ -96,7 +99,7 @@ private:
 			}
 		}
 		else {
-			assert(0);
+			throw invalid_btCmp ();
 		}
 	}
 

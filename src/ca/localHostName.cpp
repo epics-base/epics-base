@@ -30,7 +30,7 @@ localHostName::localHostName ()
     int status = osiSockAttach ();
     if ( status ) {
         this->attachedToSockLib = true;
-        status = gethostname ( this->cache, sizeof ( this->cache ) );
+        status = gethostname ( this->cache, sizeof ( this->cache ) - 1 );
         if ( status ) {
             strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
         }

@@ -1605,9 +1605,7 @@ int		no_elements
     return(0);
 }
 
-int dbPutNotifyMapType(ppn,oldtype)
-PUTNOTIFY *ppn;
-short oldtype;
+int dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype)
 {
     switch(oldtype) {
     case(oldDBR_STRING):

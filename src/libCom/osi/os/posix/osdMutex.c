@@ -50,11 +50,13 @@ if(status) { \
  *      a much more complicated solution is required
  */
 
-#if defined ( _POSIX_SPIN_LOCK ) && ( _POSIX_SPIN_LOCK ) >= 200112L && EPICS_TEST_SPINLOCKS
+#if defined ( _POSIX_SPIN_LOCKS ) && ( _POSIX_SPIN_LOCKS ) >= 200112L && EPICS_TEST_SPINLOCKS
 
 typedef struct epicsMutexOSD {
-    pthread_mutexattr_t mutexAttr;
     pthread_spinlock_t lock;
+    pthread_t owner;
+    unsigned recursionCount;
+    char owned;
 } epicsMutexOSD;
 
 epicsMutexOSD * epicsMutexOsdCreate ( void ) {
@@ -64,6 +66,9 @@ epicsMutexOSD * epicsMutexOsdCreate ( void ) {
     pmutex = callocMustSucceed ( 1, sizeof(*pmutex),"epicsMutexOsdCreate" );
     status = pthread_spin_init ( &pmutex->lock,PTHREAD_PROCESS_PRIVATE );
     checkStatusQuit ( status, "pthread_spin_init","epicsMutexOsdCreate" );
+    pmutex->recursionCount = 0u;
+    pmutex->owner = 0;
+    pmutex->owned = 0;
     return ( pmutex );
 }
 
@@ -80,31 +85,47 @@ void epicsMutexOsdUnlock ( struct epicsMutexOSD * pmutex )
 {
     int status;
 
+    pmutex->recursionCount--;
+    pmutex->owner = 0;
+    pmutex->owned = 0;
     status = pthread_spin_unlock(&pmutex->lock);
     checkStatusQuit ( status,"pthread_spin_unlock","epicsMutexOsdUnlock" );
 }
 
 epicsMutexLockStatus epicsMutexOsdLock ( struct epicsMutexOSD * pmutex )
 {
+    pthread_t self = pthread_self ();
     int status;
 
     if ( ! pmutex ) return ( epicsMutexLockError );
-    status = pthread_spin_lock ( &pmutex->lock );
-    checkStatusQuit ( status, "pthread_spin_lock", "epicsMutexOsdLock" );
+    if ( ! pmutex->owned || ! pthread_equal ( self, pmutex->owner ) ) {
+        status = pthread_spin_lock ( &pmutex->lock );
+        checkStatusQuit ( status, "pthread_spin_lock", "epicsMutexOsdLock" );
+        pmutex->owned = 1;
+        pmutex->owner = self;
+    }
+    pmutex->recursionCount++;
     return ( epicsMutexLockOK );
 }
 
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
 {
+    pthread_t self = pthread_self ();
     epicsMutexLockStatus status;
     int pthreadStatus;
 
     if ( ! pmutex ) return(epicsMutexLockError);
-    pthreadStatus = pthread_spin_trylock ( &pmutex->lock );
-    if ( pthreadStatus != 0 ) {
-        if ( pthreadStatus == EBUSY ) return ( epicsMutexLockTimeout );
-        checkStatusQuit ( pthreadStatus, "pthread_spin_trylock", "epicsMutexOsdTryLock" );
+    if ( ! pmutex->owned || ! pthread_equal ( self, pmutex->owner ) ) {
+        pthreadStatus = pthread_spin_trylock ( &pmutex->lock );
+        if ( pthreadStatus != 0 ) {
+           if ( pthreadStatus == EBUSY ) return ( epicsMutexLockTimeout );
+           checkStatusQuit ( pthreadStatus, 
+	       "pthread_spin_trylock", "epicsMutexOsdTryLock" );
+	}
+        pmutex->owned = 1;
+        pmutex->owner = self;
     }
+    pmutex->recursionCount++;
     return ( epicsMutexLockOK );
 }
 
@@ -168,7 +189,6 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
 
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
 {
-    epicsMutexLockStatus status;
     int pthreadStatus;
 
     if(!pmutex) return(epicsMutexLockError);

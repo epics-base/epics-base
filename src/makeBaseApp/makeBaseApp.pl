@@ -175,7 +175,7 @@ sub get_commandline_opts { #no args
 	    $arch = $opt_a;
 	} else {
 	    print "What architecture do you want to use for your IOC,";
-	    print "e.g. pc486, mv167 ? ";
+	    print "e.g. vxWorks-ppc604, vxWorks-68040 ? ";
 	    $arch = <STDIN>;
 	    chomp($arch);
 	}
@@ -304,7 +304,7 @@ where
           If not found in environment, the templates from EPICS base are used
  -l       List valid application types for this installation
 	  If this is specified the other options are not used
- -a arch  Set the IOC architecture (e.g. mv167)
+ -a arch  Set the IOC architecture (e.g. vxWorks-68040)
           If not specified, you will be prompted
  -b base  Set the location of EPICS base (full path)
           If not specified, base path is taken from configure/RELEASE

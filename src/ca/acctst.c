@@ -31,6 +31,7 @@
 #include "caDiagnostics.h"
 #include "cadef.h"
 #include "fdmgr.h"
+#include "epicsExit.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -2916,6 +2917,8 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     free ( pChans );
 
     printf ( "\nTest Complete\n" );
+
+    epicsExit ( EXIT_SUCCESS );
 
     return 0;
 }

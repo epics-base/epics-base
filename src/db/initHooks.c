@@ -55,8 +55,6 @@ int	callNumber;
 	switch (callNumber) {
 	case INITHOOKatBeginning :
 	    break;
-	case INITHOOKafterSetEnvParams :
-	    break;
 	case INITHOOKafterGetResources :
 	    break;
 	case INITHOOKafterLogInit :

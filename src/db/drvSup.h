@@ -41,7 +41,6 @@ struct drvet {	/* driver entry table */
 	long		number;		/*number of support routines*/
 	DRVSUPFUN	report;		/*print report*/
 	DRVSUPFUN	init;		/*init support*/
-	DRVSUPFUN	reboot;		/*reboot support*/
 	/*other functions are device dependent*/
 	};
 #define DRVETNUMBER ( (sizeof(struct drvet) -sizeof(long))/sizeof(DRVSUPFUN) )

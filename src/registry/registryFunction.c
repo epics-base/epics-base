@@ -27,7 +27,6 @@ static void *registryID = (void *)&function;
 epicsShareFunc int epicsShareAPI registryFunctionAdd(
     const char *name,REGISTRYFUNCTION func)
 {
-printf("regisryFunctionAdd name %s func %p\n",name,func);
     return(registryAdd(registryID,name,(void *)func));
 }
 
@@ -35,9 +34,7 @@ epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
     const char *name)
 {
     REGISTRYFUNCTION func;
-printf("regisryFunctionFind name %s\n",name);
     func = (REGISTRYFUNCTION)registryFind(registryID,name);
-printf("regisryFunctionFind name %s func %p\n",name,func);
     if(!func) {
         func = (REGISTRYFUNCTION)registryFind(0,name);
         if(func)registryFunctionAdd(name,func);

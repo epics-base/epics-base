@@ -51,7 +51,6 @@ epicsShareFunc int epicsShareAPI registryAdd(
     pentry = gphAdd(gphPvt,name,registryID);
     if(!pentry) return(FALSE);
     pentry->userPvt = (void *)data;
-printf("regsistryAdd %p %s %p\n",registryID,name,data);
     return(TRUE);
 }
 

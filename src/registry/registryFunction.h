@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-typedef void (*REGISTRYFUNCTION)();
+typedef void (*REGISTRYFUNCTION)(void);
 
 typedef struct registryFunctionRef {
     const char      *name;

@@ -12,10 +12,11 @@
 #define	DSET_WF		devWfAnalytekGpib
 
 #include        <vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
+#include        <string.h>
 #include        <taskLib.h>
 #include        <rngLib.h>
-#include        <types.h>
-#include        <stdioLib.h>
 
 #include        <alarm.h>
 #include        <cvtTable.h>
@@ -55,7 +56,7 @@ STATIC int     getamprange();          /* used to get signal amplitude range */
 STATIC int     getrange();             /* used to get signal range */
 STATIC int     getoffset();            /* used to get signal offset */
 
-int	convertWave();		/* parses waveform data from analytek digitizer */
+STATIC int     convertWave();		/* parses waveform data from analytek digitizer */
 
 /******************************************************************************
  *
@@ -754,7 +755,7 @@ STATIC int getoffset(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 	return(OK);
 }
 
-STATIC convertWave(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
+STATIC int convertWave(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
 	struct	waveformRecord	*pwf = (struct waveformRecord *) (pdpvt->precord);
 	short			*raw;

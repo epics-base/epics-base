@@ -32,7 +32,9 @@
  */
 
 #include <vxWorks.h>
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <iosLib.h>
 #include <taskLib.h>
 #include <memLib.h>

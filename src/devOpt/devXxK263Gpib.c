@@ -49,10 +49,11 @@
 #define	DSET_SO		devSoK263Gpib
 
 #include	<vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
+#include        <string.h>
 #include	<taskLib.h>
 #include	<rngLib.h>
-#include	<types.h>
-#include	<stdioLib.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>

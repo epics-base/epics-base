@@ -49,10 +49,11 @@
 #define	DSET_SO		devSoDg535Gpib
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<string.h>
 #include	<taskLib.h>
 #include	<rngLib.h>
-#include	<types.h>
-#include	<stdioLib.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>
@@ -81,7 +82,6 @@
 #define STATIC static
 
 STATIC long	init_dev_sup(), report();
-STATIC int	srqHandler();
 STATIC 	struct  devGpibParmBlock devSupParms;
 
 /* forward declarations of some custom convert routines */
@@ -761,7 +761,7 @@ STATIC int rdDelay(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 
   if(Dg535Debug)
   {
-    printf("Dg535 rdDelay(): pdpvt=%08.8X prec=%08.8X status=%ld msg=%s\n",
+    printf("Dg535 rdDelay(): pdpvt=%p prec=%p status=%ld msg=%s\n",
 	pdpvt, prec, status, pdpvt->msg);
   }
   switch (pdpvt->parm)
@@ -840,7 +840,6 @@ STATIC int rdDelay(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 
 STATIC int setDelay(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
-  int         status;
   char        curChan;
   char        tempMsg[32];
 

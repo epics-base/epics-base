@@ -56,10 +56,11 @@
 #define	DSET_SO		devSoSkeletonGpib
 
 #include	<vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
+#include        <string.h>
 #include	<taskLib.h>
 #include	<rngLib.h>
-#include	<types.h>
-#include	<stdioLib.h>
 
 #include	<alarm.h>
 #include	<cvtTable.h>
@@ -369,7 +370,7 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
   int	status = IDLE;		/* assume device will be idle when finished */
 
   if (SkeletonDebug || ibSrqDebug)
-    printf("dc5009 srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
+    printf("dc5009 srqHandler(%p, 0x%2.2X): called\n", phwpvt, srqStatus);
 
   switch (srqStatus & DC5009_GOODBITS) {
   case DC5009_OPC:
@@ -401,7 +402,7 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
     if (phwpvt->unsolicitedDpvt != NULL)
     {
       if(SkeletonDebug || ibSrqDebug)
-        printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
+        printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%2.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
 
       ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
@@ -410,7 +411,7 @@ STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
     }
     else
     {
-      printf("dc5009 srqHandler: Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
+      printf("dc5009 srqHandler: Unsolicited SRQ ignored from link %d, device %d, status = 0x%2.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
     }
   }

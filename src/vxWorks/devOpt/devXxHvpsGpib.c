@@ -47,10 +47,11 @@
  */
 
 #include	<vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
+#include        <string.h>
 #include	<taskLib.h>
 #include	<rngLib.h>
-#include	<types.h>
-#include	<stdioLib.h>
 #include	<symLib.h>
 
 #include	<alarm.h>
@@ -1403,7 +1404,7 @@ char	**P3;
     if(pMsg->acknak == ACK)
 	{
         pFirstDataByte = (pdpvt->msg)+1;
-	bcopy(pFirstDataByte,meteredData.data,56);
+	memcpy(meteredData.data,pFirstDataByte,56);
 /*	for(i=0;i<=13;i++) meteredData.data[i] = pMsg->data[i];*/
 	meteredData.acknak = ACK;
 	}

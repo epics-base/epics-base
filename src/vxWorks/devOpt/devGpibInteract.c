@@ -48,18 +48,13 @@
  */
 
 #include        <vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
 #include	<rngLib.h>
 #include        <semLib.h>
-/*
-#include        <sysLib.h>
-#include        <iosLib.h>
-#include        <types.h>
-#include        <stdioLib.h>
+#include        <tickLib.h>
 #include        <taskLib.h>
-*/
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <limits.h>
 #include <string.h>
 #include <math.h>
@@ -407,7 +402,6 @@ static int sendMsg(void)
 
 static int gpibWork(struct gpibIntCmd *pCmd)
 {
-  char    msgBuf[MAX_MSG_LENGTH + 1];
   int     status;
 
   if (GIDebug || ibDebug)
@@ -724,11 +718,11 @@ static void hexDump(unsigned char *string, int indent)
       while(x--)
 	printf(" ");
     }
-    printf("%02.2X: ", j);	/* print relative address */
+    printf("%2.2X: ", j);	/* print relative address */
     x = 0;
     while ((x < 16) && (j < strLength))
     {
-      printf("%02.2X ", string[j]);
+      printf("%2.2X ", string[j]);
       ascBuf[x] = string[j];
       if (!((ascBuf[x] >= 0x20) && (ascBuf[x] <= 0x7e)))
 	ascBuf[x] = '.';

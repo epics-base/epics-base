@@ -41,7 +41,9 @@
  */
 
 #include        <vxWorks.h>
+#include        <stdlib.h>
 #include        <stdio.h>
+#include        <taskLib.h>
 
 #include        <alarm.h>
 #include        <cvtTable.h>
@@ -428,13 +430,13 @@ configMsg()
 
   printf("\nEnter Message # to Configure (1 thru 5) > ");
   if (!getInt(&inInt))
-    return;             /* if no entry, return to main menu */
+    return(0);             /* if no entry, return to main menu */
   if((inInt >= LIST_SIZE) || (inInt < 0))
-    return;
+    return(0);
 
   msgNum = inInt;
 
-  printf("\n\n Configuring Send Message # %d at 0x%08.8X \n", msgNum, &(adpvt[msgNum].txMsg));
+  printf("\n\n Configuring Send Message # %d at %p \n", msgNum, &(adpvt[msgNum].txMsg));
 
 /* Prompt the Operator with the current value of each parameter If
  * only a <CR> is typed, keep current value, else replace value with
@@ -443,27 +445,27 @@ configMsg()
 
   adpvt[msgNum].txMsg.link = 0;
 
-  printf("Enter BB Link (hex) [%02.2X]: ", (int) adpvt[msgNum].link);
+  printf("Enter BB Link (hex) [%2.2X]: ", (int) adpvt[msgNum].link);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     adpvt[msgNum].link = inInt;
 
-  printf("Enter route   (hex) [%02.2X]: ", adpvt[msgNum].txMsg.route);
+  printf("Enter route   (hex) [%2.2X]: ", adpvt[msgNum].txMsg.route);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     adpvt[msgNum].txMsg.route = inInt;
 
-  printf("Enter Node    (hex) [%02.2X]: ", adpvt[msgNum].txMsg.node);
+  printf("Enter Node    (hex) [%2.2X]: ", adpvt[msgNum].txMsg.node);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     adpvt[msgNum].txMsg.node = inInt;
 
-  printf("Enter tasks   (hex) [%02.2X]: ", adpvt[msgNum].txMsg.tasks);
+  printf("Enter tasks   (hex) [%2.2X]: ", adpvt[msgNum].txMsg.tasks);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     adpvt[msgNum].txMsg.tasks = inInt;
 
-  printf("Enter command (hex) [%02.2X]: ", adpvt[msgNum].txMsg.cmd);
+  printf("Enter command (hex) [%2.2X]: ", adpvt[msgNum].txMsg.cmd);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     adpvt[msgNum].txMsg.cmd = inInt;
@@ -472,7 +474,7 @@ configMsg()
   printf("Enter data 1 byte per line. Enter a dot to terminate list (hex)\n");
   for (cnt=0; cnt<BB_MAX_DAT_LEN; cnt++)
   {
-    printf("[%02.2X]: ", adpvt[msgNum].txMsg.data[cnt]);
+    printf("[%2.2X]: ", adpvt[msgNum].txMsg.data[cnt]);
     gets(str);
     if (str[0] == '.')
       break;
@@ -482,6 +484,7 @@ configMsg()
   }
   printf("Transmit message #%d for BitBus link %d:\n", msgNum, adpvt[msgNum].link);
   showBbMsg(&(adpvt[msgNum].txMsg));
+  return(0);
 }
 
 /*
@@ -539,13 +542,13 @@ downLoadCode()
     return(ERROR);
   }
   /* get the link number */
-  printf("Enter BB Link (hex) [%02.2X]: ", (int) pdpvt->link);
+  printf("Enter BB Link (hex) [%2.2X]: ", (int) pdpvt->link);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     pdpvt->link = inInt;
 
   /* get the bug number */
-  printf("Enter Node    (hex) [%02.2X]: ", pdpvt->txMsg.node);
+  printf("Enter Node    (hex) [%2.2X]: ", pdpvt->txMsg.node);
   gets(str);
   if (sscanf(str, "%x", &inInt) == 1)
     pdpvt->txMsg.node = inInt;
@@ -576,7 +579,7 @@ downLoadCode()
 
     if (recType != 0)	/* unrecognised record type encountered */
     {
-      printf("Unrecognised record type 0x%02.2X in HEX file. Line:\n%s", recType, hexBuf);
+      printf("Unrecognised record type 0x%2.2X in HEX file. Line:\n%s", recType, hexBuf);
       status = ERROR;
       break;
     }
@@ -629,7 +632,7 @@ downLoadCode()
 
 	  if (pdpvt->rxMsg.cmd != 0)
 	  {
-	    printf("Bad message response status 0x%02.2X\n", pdpvt->rxMsg.cmd);
+	    printf("Bad message response status 0x%2.2X\n", pdpvt->rxMsg.cmd);
 	    status = ERROR;
 	  }
         }
@@ -641,8 +644,8 @@ downLoadCode()
   /* close the hex file */
   fclose(fp);
 
-  printf("Total bytes down loaded to BUG = %u = 0x%04.4X\n", totalBytes, totalBytes);
-  printf("Total messages sent = %u = 0x%04.4X\n", totalMsg, totalMsg);
+  printf("Total bytes down loaded to BUG = %u = 0x%4.4X\n", totalBytes, totalBytes);
+  printf("Total messages sent = %u = 0x%4.4X\n", totalMsg, totalMsg);
 
   bbDebug = oldDebug;
   return(status);
@@ -788,12 +791,13 @@ struct bitBusMsg *msg;
 {
   int	i;
 
-  printf("    0x%08.8X:link=%04.4X length=%02.2X route=%02.2X node=%02.2X tasks=%02.2X cmd=%02.2X\n",
+  printf("    %p:link=%4.4X length=%2.2X route=%2.2X node=%2.2X tasks=%2.2X cmd=%2.2X\n",
         msg, msg->link, msg->length, msg->route, msg->node, msg->tasks, msg->cmd);
   printf("    data :");
   for (i = 0; i < msg->length - 7; i++)
   {
-    printf(" %02.2X", msg->data[i]);
+    printf(" %2.2X", msg->data[i]);
   }
   putchar('\n');
+  return(0);
 }

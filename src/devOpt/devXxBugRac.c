@@ -37,10 +37,10 @@
 
 
 #include	<vxWorks.h>
+#include        <stdlib.h>
+#include        <stdio.h>
+#include        <string.h>
 #include	<vme.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<string.h>
 #include	<math.h>
 #include	<iv.h>
 

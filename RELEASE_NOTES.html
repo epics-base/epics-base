@@ -33,12 +33,87 @@ Changes between beta11 and beta12</H3>
 
 <H3>
 IOC Applications: Building</H3>
-The config.CONFIG_APP file in existing applications must be edited. Remove
-the following lines:
+Before switching applications to beta12 it is <B>STRONGLY</B> recommended
+that you execute:
+<BLOCKQUOTE>
+<PRE>cd &lt;top>
+gnumake clean uninstall</PRE>
+</BLOCKQUOTE>
+&nbsp;
+<H4>
+Changes to &lt;top>/config:</H4>
+&nbsp;
+<DT>
+<TT>CONFIG_APP</TT></DT>
+
+<DD>
+Remove the following lines:</DD>
+
+<BLOCKQUOTE>
+<BLOCKQUOTE>
 <PRE>ifndef T_A
 T_A = $(HOST_ARCH)
 endif #ifndef T_A</PRE>
+</BLOCKQUOTE>
+</BLOCKQUOTE>
 
+<DT>
+<TT>RELEASE</TT></DT>
+
+<DD>
+If desired add a definition for <TT>TEMPLATE_TOP</TT></DD>
+
+<DT>
+<TT>RULES_TOP RULES.Db RULES.ioc RULES.iocBoot</TT></DT>
+
+<DD>
+These no longer exists in base.&nbsp; Replace you version with the version
+from:</DD>
+
+<BLOCKQUOTE>
+<BLOCKQUOTE>
+<PRE>&lt;base>/templates/makeBaseApp/top/config</PRE>
+</BLOCKQUOTE>
+</BLOCKQUOTE>
+
+<DT>
+<TT>RULES_TOP</TT></DT>
+
+<DD>
+Remove the rules for creating soft&nbsp; links.</DD>
+
+<DT>
+<TT>makeIocCdCommands.pl</TT></DT>
+
+<DD>
+Copy the version from&nbsp; <TT>&lt;base>/templates/makeBaseApp/top/config</TT></DD>
+
+<DT>
+<TT>makeSoftLinks</TT></DT>
+
+<DD>
+Remove this file</DD>
+
+<BR>&nbsp;
+<H4>
+Changes to iocBoot and iocBoot/iocxxx</H4>
+iocBoot no longer needs a generated nfs.cmd file
+
+<P>iocBoot/iocxxx no longer contains soft links. Instead the following
+is done:
+<UL>
+<LI>
+A file cdCommands is generated which provides full path names for vxWorks
+cd commands</LI>
+
+<LI>
+The ld commands just give a file name with no path</LI>
+
+<LI>
+The dbLoadxxx commands must specify "../../xxxApp"</LI>
+</UL>
+See "<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
+IOC Applications: Building and Source/Release Control</A>"&nbsp; for details.
 <H3>
 aoRecord</H3>
 This did not work properly if DOL&nbsp; is a channel access link that fails.

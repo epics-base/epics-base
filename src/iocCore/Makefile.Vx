@@ -9,13 +9,15 @@ LINK.c=$(LD) $(LDFLAGS)
 
 IOC_CORE_OBJS = \
 	$(INSTALL_BIN)/asLibrary \
+	$(INSTALL_BIN)/dbStaticLib \
 	$(INSTALL_BIN)/dbLib \
 	$(INSTALL_BIN)/rsrvLib \
 	$(INSTALL_BIN)/libCom \
 	$(INSTALL_BIN)/vxComLib \
 	$(INSTALL_BIN)/caLib \
 	$(INSTALL_BIN)/miscLib \
-	$(INSTALL_BIN)/dbSubs
+	$(INSTALL_BIN)/dbSubs \
+	$(INSTALL_BIN)/pbtLib
 
 PROD = iocCore vxWorks vxWorks.sym
 

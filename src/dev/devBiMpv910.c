@@ -104,7 +104,9 @@ static long read_bi(pbi)
 		pbi->rval = value;
 		return(0);
 	} else {
-                recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbi->stat!=READ_ALARM || pbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbi,"bb910_driver Error");
 		return(2);
 	}
 }

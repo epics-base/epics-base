@@ -33,6 +33,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03	02-08-94	mrk	Prevent error message storms
  *      ...
  */
 
@@ -100,8 +101,12 @@ static long read_mbbi(pmbbi)
 	status = xy210_driver(pvmeio->card,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
+		return(0);
 	} else {
-                recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbi->stat!=READ_ALARM || pmbbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbi,"xy210_driver Error");
+		return(2);
 	}
 	return(status);
 }

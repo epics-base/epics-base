@@ -33,6 +33,7 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
  * .03	05-11-92	mrk	Remove read at init (device does not support)
+ * .04	02-08-94	mrk	Prevent error message storms
  *      ...
  */
 
@@ -113,7 +114,10 @@ static long write_ao(pao)
 	status = vmi4100_driver(pvmeio->card,pvmeio->signal,&value,&rbvalue);
 	if(status==0 || status==-2) pao->rbv = rbvalue;
 	if(status==-1) {
-                recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM);
+		status = 0;
+                if(recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pao->stat!=WRITE_ALARM || pao->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pao,"vmi4100_driver Error");
 	}else if(status==-2) {
 		status=0;
                 recGblSetSevr(pao,HW_LIMIT_ALARM,INVALID_ALARM);

@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03	02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
  *      ...
  */
 
@@ -104,7 +105,9 @@ static long write_bo(pbo)
 	pvmeio = (struct vmeio *)&(pbo->out.value);
 	status = xy220_driver(pvmeio->card,&pbo->rval,pbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbo->stat!=WRITE_ALARM || pbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbo,"xy220_driver Error");
 	}
-	return(status);
+	return(0);
 }

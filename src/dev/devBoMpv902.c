@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03	02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
  *      ...
  */
 
@@ -111,9 +112,15 @@ static long write_bo(pbo)
 	if(status==0) {
 		 status = bb902_read(pvmeio->card,mask,&value);
 		if(status==0) pbo->rbv = value;
-		else recGblSetSevr(pbo,READ_ALARM,INVALID_ALARM);
+		else{
+			if(recGblSetSevr(pbo,READ_ALARM,INVALID_ALARM) && errVerbose
+			&& (pbo->stat!=READ_ALARM || pbo->sevr!=INVALID_ALARM))
+				recGblRecordError(-1,(void *)pbo,"bb902_read Error");
+		}
 	} else {
-                recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbo->stat!=WRITE_ALARM || pbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbo,"bb902_driver Error");
 	}
-	return(status);
+	return(0);
 }

@@ -34,6 +34,7 @@
  * .02  12-02-91        jba     Added cmd control to io-interrupt processing
  * .03  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * .04	03-13-92	jba	ANSI C changes
+ * .05	02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
  * 	...
  */
 
@@ -128,7 +129,9 @@ static long read_ai(pai)
 	*((unsigned short*)(&pai->rval))=value;
 	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"dvx_driver Error");
 		status=2; /*don't convert*/
         }else if(status==-2) {
                 status=0;

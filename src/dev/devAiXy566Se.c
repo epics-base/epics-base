@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03	02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
  *      ...
  */
 
@@ -114,7 +115,9 @@ static long read_ai(pai)
 	status=ai_xy566_driver(pvmeio->card,pvmeio->signal,XY566SE,&value);
         if(status==-1) {
 		status = 2; /*don't convert*/
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ai_xy566_driver Error");
 		return(status);
         }else if(status==-2) {
                 status=0;

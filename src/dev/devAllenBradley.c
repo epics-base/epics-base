@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  08-27-92	mrk	Combined all Allen Bradley devive support
+ * .02  02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
  * 	...
  */
 
@@ -198,7 +199,9 @@ static long read_1771Ife(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
 	if(status==0 || status==-2) pai->rval = value;
 	if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status=2; /*dont convert*/
 	}else if(status==-2) {
 		status=0;
@@ -255,7 +258,9 @@ static long read_1771Ife0to5V(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
 	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status=2; /*dont convert*/
         }else if(status==-2) {
                 status=0;
@@ -312,7 +317,9 @@ static long read_1771IfeMa(struct aiRecord *pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
 	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status=2; /*dont convert*/
         }else if(status==-2) {
                 status=0;
@@ -369,7 +376,9 @@ static long read_1771IfeSe(struct aiRecord *pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
         if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status = 2; /*don`t convert*/
         }else if(status==-2) {
                 status=0;
@@ -426,7 +435,9 @@ static long read_1771Il(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
         if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status = 2; /*don't convert*/
         }else if(status==-2) {
                 status=0;
@@ -515,7 +526,9 @@ static long read_1771Ixe(struct aiRecord *pai)
 			status=2; /*don't convert*/
 		}
         } else if(status==-1) {
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pai,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pai->stat!=READ_ALARM || pai->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pai,"ab_aidriver Error");
 		status = 2; /*don't convert*/
         }
 	return(status);
@@ -569,12 +582,14 @@ static long write_1771Ofe(struct aoRecord *pao)
 	status = ab_aodriver(AB1771OFE,pabio->link,pabio->adapter,
 	   pabio->card,pabio->signal,pabio->plc_flag,value);
 	if(status==-1) {
-                recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pao->stat!=WRITE_ALARM || pao->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pao,"ab_aodriver Error");
 	}else if(status==-2) {
 		status=0;
                 recGblSetSevr(pao,HW_LIMIT_ALARM,INVALID_ALARM);
 	}
-	return(status);
+	return(0);
 }
 
 
@@ -666,7 +681,9 @@ static long read_bi(struct biRecord *pbi)
 		pbi->rval = value;
 		return(0);
 	} else {
-                recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbi->stat!=READ_ALARM || pbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbi,"ab_bidriver Error");
 		return(2);
 	}
 }
@@ -722,7 +739,9 @@ static long read_bi16(struct biRecord *pbi)
 		pbi->rval = value;
 		return(0);
 	} else {
-                recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbi->stat!=READ_ALARM || pbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbi,"ab_bidriver Error");
 		return(2);
 	}
 }
@@ -774,10 +793,13 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 	   pabio->card,pabio->plc_flag,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
+		return(0);
 	} else {
-                recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbi->stat!=READ_ALARM || pmbbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbi,"ab_bidriver Error");
+		return(2);
 	}
-	return(status);
 }
 
 static long init_mbbi16(struct mbbiRecord *pmbbi)
@@ -820,17 +842,19 @@ static long read_mbbi16(struct mbbiRecord *pmbbi)
 	struct abio *pabio;
 	int	    status;
 	unsigned long value;
-
 	
 	pabio = (struct abio *)&(pmbbi->inp.value);
 	status = ab_bidriver(ABBI_16_BIT,pabio->link,pabio->adapter,
 	   pabio->card,pabio->plc_flag,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
+		return(0);
 	} else {
-                recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbi->stat!=READ_ALARM || pmbbi->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbi,"ab_bidriver Error");
+		return(2);
 	}
-	return(status);
 }
 
 static long init_bo(struct boRecord *pbo)
@@ -868,9 +892,11 @@ static long write_bo(struct boRecord *pbo)
 	status = ab_bodriver(ABBO_08_BIT,pabio->link,pabio->adapter,
 	   pabio->card,pabio->plc_flag,pbo->rval,pbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbo->stat!=WRITE_ALARM || pbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbo,"ab_bodriver Error");
 	}
-	return(status);
+	return(0);
 }
 
 static long init_bo16(struct boRecord *pbo)
@@ -909,9 +935,11 @@ static long write_bo16(struct boRecord *pbo)
 	status = ab_bodriver(ABBO_16_BIT,pabio->link,pabio->adapter,
 	   pabio->card,pabio->plc_flag,pbo->rval,pbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pbo->stat!=WRITE_ALARM || pbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pbo,"ab_bodriver Error");
 	}
-	return(status);
+	return(0);
 }
 
 static long init_mbbo(struct mbboRecord	*pmbbo)
@@ -949,9 +977,11 @@ static long write_mbbo(struct mbboRecord *pmbbo)
 	status = ab_bodriver(ABBO_08_BIT,pabio->link,pabio->adapter,
 	   pabio->card,pabio->plc_flag,pmbbo->rval,pmbbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbo->stat!=WRITE_ALARM || pmbbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbo,"ab_bodriver Error");
 	}
-	return(status);
+	return(0);
 }
 
 static long init_mbbo16(struct mbboRecord *pmbbo)
@@ -988,7 +1018,9 @@ static long write_mbbo16(struct mbboRecord *pmbbo)
 	status = ab_bodriver(ABBO_16_BIT,pabio->link,pabio->adapter,
 	   pabio->card,pabio->plc_flag,pmbbo->rval,pmbbo->mask);
 	if(status!=0) {
-                recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM);
+                if(recGblSetSevr(pmbbo,WRITE_ALARM,INVALID_ALARM) && errVerbose
+		&& (pmbbo->stat!=WRITE_ALARM || pmbbo->sevr!=INVALID_ALARM))
+			recGblRecordError(-1,(void *)pmbbo,"ab_bodriver Error");
 	}
-	return(status);
+	return(0);
 }

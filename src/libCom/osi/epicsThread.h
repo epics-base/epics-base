@@ -108,6 +108,7 @@ class epicsShareClass epicsThreadRunable {
 public:
     virtual void run() = 0;
     virtual void stop();
+    virtual void show(unsigned int level);
 };
 
 class epicsShareClass epicsThread {

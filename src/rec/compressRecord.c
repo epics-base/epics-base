@@ -142,7 +142,7 @@ static long init_record(pcompress,pass)
 	}
         return(0);
     }
-    if(pcompress->wptr==NULL && pcompress->inp.type!=CONSTANT) {
+    if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
 	 struct dbAddr *pdbAddr =
 		(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
 

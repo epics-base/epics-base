@@ -8,6 +8,7 @@
 	ENVIRONMENT: UNIX
 	HISTORY:
 20nov91,ajk	Added OPTION token.
+15jan92,ajk	Fixed to allow "!" as a unary operator.
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -190,6 +191,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>"^="	RETURN(CMPL_EQUAL);
 <SNL>"+"	RETURN(PLUS);
 <SNL>"-"	RETURN(MINUS);
+<SNL>"!"	RETURN(NOT);
 <SNL>"/"	RETURN(SLASH);
 <SNL>"<"	RETURN(LT);
 <SNL>">"	RETURN(GT);

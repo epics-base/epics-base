@@ -125,7 +125,8 @@ void* epicsShareAPI dbmfMalloc(size_t size)
 	pdbmfPvt->nGtSize++;
 	pitemHeader = (itemHeader *)pmem;
 	pitemHeader->pchunkNode = NULL;
-	if(dbmfDebug) printf("dbmfMalloc: size %d mem %p\n",size,pmem);
+	if(dbmfDebug) printf("dbmfMalloc: size %lu mem %p\n",
+                             (unsigned long)size,pmem);
     }
     epicsMutexUnlock(pdbmfPvt->lock);
     return((void *)(pmem + sizeof(itemHeader)));
@@ -167,8 +168,9 @@ int epicsShareAPI dbmfShow(int level)
 	printf("Never initialized\n");
 	return(0);
     }
-    printf("size %d allocSize %d chunkItems %d ",
-	pdbmfPvt->size,pdbmfPvt->allocSize,pdbmfPvt->chunkItems);
+    printf("size %lu allocSize %lu chunkItems %d ",
+	(unsigned long)pdbmfPvt->size,
+	(unsigned long)pdbmfPvt->allocSize,pdbmfPvt->chunkItems);
     printf("nAlloc %d nFree %d nChunks %d nGtSize %d\n",
 	pdbmfPvt->nAlloc,pdbmfPvt->nFree,
 	ellCount(&pdbmfPvt->chunkList),pdbmfPvt->nGtSize);
@@ -178,7 +180,7 @@ int epicsShareAPI dbmfShow(int level)
         pchunkNode = (chunkNode *)ellFirst(&pdbmfPvt->chunkList);
         while(pchunkNode) {
 	    printf("pchunkNode %p nNotFree %d\n",
-		pchunkNode,pchunkNode->nNotFree);
+		(void*)pchunkNode,pchunkNode->nNotFree);
 	    pchunkNode = (chunkNode *)ellNext(&pchunkNode->node);
 	}
     }

@@ -156,12 +156,10 @@ void timer::cancel ()
                 if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
                     // make certain timer expire() does not run after cancel () returns,
                     // but dont require that lock is applied while calling expire()
-                    {
+                    while ( this->queue.cancelPending && 
+                            this->queue.pExpireTmr == this ) {
                         epicsGuardRelease < epicsMutex > autoRelease ( locker );
-                        while ( this->queue.cancelPending && 
-                                this->queue.pExpireTmr == this ) {
-                            this->queue.cancelBlockingEvent.wait ();
-                        }
+                        this->queue.cancelBlockingEvent.wait ();
                     }
                     // in case other threads are waiting
                     wakeupCancelBlockingThreads = true;

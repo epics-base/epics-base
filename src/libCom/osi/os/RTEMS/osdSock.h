@@ -80,7 +80,9 @@ typedef int osiSocklen_t;
 /*
  * For shutdown()
  */
-#define SD_BOTH	2
+#ifndef SHUT_RDWR
+#   define SHUT_RDWR 2
+#endif
 
 /*
  * Ensure that we get the right network code in default/osdNetIntf.c.

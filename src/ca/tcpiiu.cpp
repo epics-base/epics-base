@@ -636,7 +636,7 @@ void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard )
         // linux threads in recv() dont wakeup unless we also
         // call shutdown ( close() by itself is not enough )
         if ( oldState == iiucs_connected ) {
-            int status = ::shutdown ( this->sock, SD_BOTH );
+            int status = ::shutdown ( this->sock, SHUT_RDWR );
             if ( status ) {
                 errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                     SOCKERRSTR (SOCKERRNO) );

@@ -37,6 +37,10 @@ extern "C" {
 typedef u_long FAR osiSockIoctl_t;
 typedef int osiSocklen_t;
 
+#ifndef SHUT_RDWR
+#   define SHUT_RDWR SD_BOTH
+#endif
+
 #define MAXHOSTNAMELEN		75
 #define IPPORT_USERRESERVED	5000U
 

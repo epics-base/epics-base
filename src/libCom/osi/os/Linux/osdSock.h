@@ -81,8 +81,8 @@ typedef socklen_t osiSocklen_t;
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 
-#ifndef SD_BOTH
-#define SD_BOTH 2
+#ifndef SHUT_RDWR
+#   define SHUT_RDWR 2
 #endif
 
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))

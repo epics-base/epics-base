@@ -183,7 +183,7 @@ void casStreamIO::forceDisconnect ()
 {
 	if ( ! this->sockHasBeenClosed ) {
         this->sockHasBeenClosed = true;
-        int status = ::shutdown ( this->sock, SD_BOTH );
+        int status = ::shutdown ( this->sock, SHUT_RDWR );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );

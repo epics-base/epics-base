@@ -76,11 +76,11 @@ MAN3 = gpHash.3 freeList.3
 
 include $(TOP)/src/config/RULES.Unix
 
-errSymTbl.o: errSymTbl.c errInc.o
+errSymTbl.o: errSymTbl.c errInc.o errIncCXX.o
 	$(COMPILE.c) -o $@ $<
 
-errSymTbl.c errInc.o: ../errInc.c
-	@$(RM) errInc.o
+errSymTbl.c errInc.o errIncCXX.o : ../errInc.c ../errIncCXX.cc
+	@$(RM) errInc.o errIncCXX.o
 	@../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
 
 envData.c: ../envDefs.h $(TOP)/src/config/CONFIG_ENV \

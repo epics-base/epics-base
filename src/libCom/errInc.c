@@ -14,8 +14,6 @@
 #include "dbStaticLib.h"
 #include "drvEpvxi.h"
 #include "devLib.h"
-#include "casdef.h"
-#include "gddAppFuncTable.h"
 #include "errMdef.h"
 #ifdef VXLIST
 /* epics vxWorks  only*/

@@ -31,6 +31,7 @@
 #  .01	05-04-94	pg	HPUX port modifications.
 #  .02	08-25-94	mda	use makedepend for HP or Alpha if no GCC
 #  .03	04-28-95	anj	use GetVar and case for host arch
+#  .04	06-26-96	joh	support for C++	
 #  	...
 #
 
@@ -91,6 +92,7 @@ fi
 
 TMPMAKEFILE=/tmp/tmpmakefile
 SFILES=/tmp/sfiles
+SFILESCXX=/tmp/sfilescxx
 TOP=$1
 HOST_ARCH=$2
 MAKE=$3
@@ -118,6 +120,14 @@ case $HOST_ARCH in
 	      exit 1
 	   fi
 	fi
+	GXX =`which g++`
+	if [ -x "$GXX" ]; then
+		FILESCXX=`"$GXX" -M -D$DEF $INCLUDEH \
+		../errIncCXX.cc 2>/dev/null \
+		| sed -e 's/errIncCXX\.o.*: errIncCXX\.cc//' -e 's/\\\//'`
+	else
+	      echo no g++ - C++ error codes not generated
+	fi
 	;;
     solaris)
 	# use -xM option of ACC to list dependencies
@@ -127,6 +137,10 @@ case $HOST_ARCH in
 	FILES=`$CC -xM -D$DEF $INCLUDEH ../errInc.c \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
+	CXX=`GetVar $TOP $MAKE CXX $HOST_ARCH`
+	FILESCXX=`$CXX -xM -D$DEF $INCLUDEH ../errIncCXX.cc \
+	| grep "errIncCXX.o" | grep -v "errIncCXX.cc" \
+	| sed -e 's/errIncCXX\.o *://'`
         ;;
     sun4)
 	# use -M option of Sun compiler to list make dependencies
@@ -134,6 +148,11 @@ case $HOST_ARCH in
 	FILES=`cc -M -D$DEF $INCLUDEH errInc.c 2>/dev/null \
 	| grep "errInc.o" | grep -v "errInc.c" \
 	| sed -e 's/errInc\.o://'`
+
+	CXX=`GetVar $TOP $MAKE CXX $HOST_ARCH`
+	FILESCXX=`cc -xM -D$DEF $INCLUDEH errIncCXX.cc 2>/dev/null \
+	| grep "errIncCXX.o" | grep -v "errIncCXX.cc" \
+	| sed -e 's/errIncCXX\.o://'`
 	;;
     *)
 	# Unrecognised host architecture
@@ -145,22 +164,36 @@ esac
 # files with S_ defines
 grep "^#define[       ]*S_" $FILES /dev/null \
 	| sed -e 's-:.*--' | sort -u >$SFILES
-
+grep "^#define[       ]*S_" $FILESCXX /dev/null \
+	| sed -e 's-:.*--' | sort -u >$SFILESCXX
 
 # create a tmpmakefile
+echo all: errInc.o errIncCXX.o > $TMPMAKEFILE
+
+# append C stuff 
 cat $SFILES | (awk '
-BEGIN	{print "errInc.o :  ../errInc.c \\"}
+BEGIN	{print "errInc.o :  ../errInc.c \\"} \
 {print "	"$0" \\" }
 END {print "	../errMdef.h"}
 
-') > $TMPMAKEFILE
+') >> $TMPMAKEFILE
+
+# append C++ stuff 
+cat $SFILESCXX | (awk '
+BEGIN	{print "errIncCXX.o :  ../errIncCXX.cc \\"} \
+{print "	"$0" \\" }
+END {print "	../errMdef.h"}
+
+') >> $TMPMAKEFILE
 
 	cat >> $TMPMAKEFILE <<!addon
 	/bin/rm -f errSymTbl.c
-	../makeStatTbl  \`cat $SFILES\`  >errSymTbl.c
+	../makeStatTbl  \`cat $SFILES $SFILESCXX\`  >errSymTbl.c
 	/bin/rm -f  errInc.o
 	touch errInc.o
+	/bin/rm -f  errIncCXX.o
+	touch errIncCXX.o
 !addon
 	$MAKE -f $TMPMAKEFILE
-	/bin/rm -f $TMPMAKEFILE $SFILES
+	/bin/rm -f $TMPMAKEFILE $SFILES $SFILESCXX
 exit 0

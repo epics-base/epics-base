@@ -318,7 +318,7 @@ void tcpRecvThread::run ()
                 }
             }
             else {
-                this->iiu.blockUntilBytesArePendingInOS();
+                this->iiu.blockUntilBytesArePendingInOS ();
                 nBytesIn = 0u;
                 if ( this->iiu.state != tcpiiu::iiucs_connected &&
                     this->iiu.state != tcpiiu::iiucs_clean_shutdown ) {
@@ -381,6 +381,7 @@ void tcpRecvThread::run ()
 
                 nBytesIn = pComBuf->fillFromWire ( this->iiu );
             }
+            this->iiu.cacRef.signalRecvThreadActivity ();
         }
 
         if ( pComBuf ) {
@@ -1329,7 +1330,9 @@ int tcpiiu::printf ( const char *pformat, ... )
 // this is called virtually
 void tcpiiu::flushRequest ()
 {
-    this->sendThreadFlushEvent.signal ();
+    if ( this->sendQue.occupiedBytes() > 0 ) {
+        this->sendThreadFlushEvent.signal ();
+    }
 }
 
 void tcpiiu::blockUntilBytesArePendingInOS ()

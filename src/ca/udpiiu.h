@@ -98,6 +98,7 @@ public:
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     void shutdown ();
     double roundTripDelayEstimate () const;
+    void fdMaskSet ( fd_set & mask ) const;
 
     // exceptions
     class noSocket {};
@@ -219,6 +220,11 @@ inline ca_uint32_t udpiiu::datagramSeqNumber () const
 inline double udpiiu::roundTripDelayEstimate () const
 {
     return this->rtteMean;
+}
+
+inline void udpiiu::fdMaskSet ( fd_set & mask ) const
+{
+    FD_SET ( this->sock, & mask );
 }
 
 #endif // udpiiuh

@@ -133,6 +133,8 @@ public:
 
     bool bytesArePendingInOS () const;
 
+    void fdMaskSet ( fd_set & ) const;
+
 private:
     hostNameCache hostNameCacheInstance;
     tcpRecvThread recvThread;
@@ -245,6 +247,11 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
 inline unsigned tcpiiu::channelCount ()
 {
     return this->channelList.count ();
+}
+
+inline void tcpiiu::fdMaskSet ( fd_set & mask ) const
+{
+    FD_SET ( this->sock, & mask );
 }
 
 inline void tcpRecvThread::interruptSocketRecv ()

@@ -340,6 +340,7 @@ void udpRecvThread::run ()
 
     do {
         this->iiu.recvMsg ( this->cbMutex );
+        this->iiu.cacRef.signalRecvThreadActivity ();
     } while ( ! this->iiu.shutdownCmd );
 
     {

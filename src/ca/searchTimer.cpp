@@ -66,15 +66,35 @@ searchTimer::~searchTimer ()
 void searchTimer::resetPeriod ( double delayToNextTry )
 {
     bool start;
-    
-    delayToNextTry += initialRoundTripEstimate;
-    
+
+    // upper bound
+    double newPeriod = this->roundTripDelayEstimate * 2.0;
+    if ( newPeriod > initialRoundTripEstimate * 2.0 ) {
+        newPeriod = initialRoundTripEstimate * 2.0;
+    }
+    // lower bound
+    if ( newPeriod < minSearchPeriod ) {
+        newPeriod = minSearchPeriod;
+    }
+        
     this->retry = 0;
-    if ( this->iiu.channelCount () > 0 ) {
-        if ( this->period > delayToNextTry || ! this->active ) {
+    if ( this->iiu.channelCount() > 0 ) {
+        if ( ! this->active ) {
             this->active = true;
-            this->noDelay = delayToNextTry == 0.0;
+            this->noDelay = ( delayToNextTry == 0.0 );
             start = true;
+        }
+        else if ( this->period > newPeriod ) {
+            double delay = this->timer.getExpireDelay();
+            if ( delay > newPeriod ) {
+                this->active = true;
+                this->noDelay = ( delayToNextTry == 0.0 );
+                delayToNextTry = newPeriod;
+                start = true;
+            }
+            else {
+                start = false;
+            }
         }
         else {
             start = false;
@@ -83,19 +103,8 @@ void searchTimer::resetPeriod ( double delayToNextTry )
     else {
         start = false;
     }
-    // upper bound
-    //this->period = initialRoundTripEstimate * 2.0;
-    double newPeriod = this->roundTripDelayEstimate * 2.0;
-    if ( newPeriod <= initialRoundTripEstimate * 2.0 ) {
-        this->period = newPeriod;
-    }
-    else {
-        this->period = initialRoundTripEstimate * 2.0;
-    }
-    // lower bound
-    if ( this->period < minSearchPeriod ) {
-        this->period = minSearchPeriod;
-    }
+
+    this->period = newPeriod;
 
     if ( start ) {
         epicsAutoMutexRelease autoRelease ( this->mutex );
@@ -201,6 +210,10 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
         debugPrintf ( ( "all channels located - search timer terminating\n" ) );
         return noRestart;
     }   
+
+    if ( ! this->noDelay ) {
+        debugPrintf ( ( "timed out waiting for a response\n" ) );
+    }
 
     /*
      * increment the retry sequence number

@@ -18,25 +18,22 @@ $numberRegistrar = 0;
 
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
-    if( /recordtype/) {
-        /recordtype\s*\(\s*(\w+)/;
+    next if /^\s*#/;
+    if (/\brecordtype\s*\(\s*(\w+)/) {
         $recordType[$numberRecordType++] = $1;
     }
-    if( /device/) {
-        /device\s*\(\s*(\s*\w+)\W+\w+\W+(\w+)/;
+    elsif (/\bdevice\s*\(\s*(\s*\w+)\W+\w+\W+(\w+)/) {
         $deviceRecordType[$numberDeviceSupport] = $1;
         $deviceSupport[$numberDeviceSupport] = $2;
         $numberDeviceSupport++;
     }
-    if( /driver/) {
-        /driver\s*\(\s*(\w+)/;
+    elsif (/\bdriver\s*\(\s*(\w+)/) {
         $driverSupport[$numberDriverSupport++] = $1;
     }
-    if( /registrar/) {
-        /registrar\s*\(\s*(\w+)/;
+    elsif (/\bregistrar\s*\(\s*(\w+)/) {
         $registrar[$numberRegistrar++] = $1;
     }
-    if (/variable\s*\(\s*(\w+)\s*,\s*(\w+)/) {
+    elsif (/\bvariable\s*\(\s*(\w+)\s*,\s*(\w+)/) {
         $varType{$1} = $2;
         push @variables, $1;
     }

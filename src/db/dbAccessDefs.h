@@ -31,6 +31,10 @@ of this distribution.
 #define INCdbAccessDefsh
 
 #include "shareLib.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 epicsShareExtern struct dbBase *pdbbase;
 epicsShareExtern volatile int interruptAccept;
@@ -243,6 +247,25 @@ epicsShareFunc long epicsShareAPI dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+
+/* various utility routines */
+epicsShareFunc long epicsShareAPI dbGetControlLimits(
+    struct link *plink,double *low, double *high);
+epicsShareFunc long epicsShareAPI dbGetGraphicLimits(
+    struct link *plink,double *low, double *high);
+epicsShareFunc long epicsShareAPI dbGetAlarmLimits(
+    struct link *plink,double *lolo, double *low, double *high, double *hihi);
+epicsShareFunc long epicsShareAPI dbGetPrecision(
+    struct link *plink,short *precision);
+epicsShareFunc long epicsShareAPI dbGetUnits(
+    struct link *plink,char *units,int unitsSize);
+epicsShareFunc long epicsShareAPI dbGetNelements(
+    struct link *plink,long *nelements);
+epicsShareFunc long epicsShareAPI dbGetSevr(
+    struct link *plink,short *severity);
+epicsShareFunc long epicsShareAPI dbGetTimeStamp(
+    struct link *plink,TS_STAMP *pstamp);
+
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */
 epicsShareFunc void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
@@ -256,5 +279,10 @@ epicsShareFunc int epicsShareAPI  dbLoadDatabase(
 epicsShareFunc int epicsShareAPI dbLoadRecords(
     char* pfilename, char* substitutions);
 
+epicsShareFunc int epicsShareAPI iocInit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbAccessDefsh*/

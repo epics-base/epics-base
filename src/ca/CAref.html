@@ -676,13 +676,25 @@ placed in the variable EPICS_TS_MIN_WEST.</p>
 
 <h3><a name="Configurin1">Configuring the Maximum Array Size</a></h3>
 
-<p>The environment variable EPICS_CA_MAX_ARRAY_BYTES determines the size of
-the largest array that may pass through CA. This parameter must be set
-appropriately for both the CA client and the CA server. In EPICS R3.14 CA
-maintains a free list of 16384 byte network buffers that are used for
-ordinary communication. If EPICS_CA_MAX_ARRAY_BYTES&nbsp; is larger than
-16384 then a second free list of larger data buffers is established when
-clients request transportation of large arrays.</p>
+<p>Starting with version R3.14 the environment variable
+EPICS_CA_MAX_ARRAY_BYTES determines the size of the largest array that may
+pass through CA. Prior to this version only arrays smaller than 16k bytes
+could be transfered. The CA libraries maintains a free list of 16384 byte
+network buffers that are used for ordinary communication. If
+EPICS_CA_MAX_ARRAY_BYTES&nbsp; is larger than 16384 then a second free list
+of larger data buffers is established and used only after a client send its
+first large array request.</p>
+
+<p>The CA client library uses EPICS_CA_MAX_ARRAY_BYTES to determines the
+maximum array that it will send or receive. Likewise, the CA server uses
+EPICS_CA_MAX_ARRAY_BYTES to determine the maximum array that it may send or
+receive. The client does not influence the server's message size quotas and
+visa versa. In fact the value of EPICS_CA_MAX_ARRAY_BYTES need not be the
+same in the client and the server. If the server receives a request which is
+too large to read or respond to in entirety then it sends an exception
+message to the client. Likewise, if the CA client library receives a request
+to send an array larger than EPICS_CA_MAX_ARRAY_BYTES it will return
+ECA_TOLARGE.</p>
 
 <h3><a name="Configurin2">Configuring a CA Server</a></h3>
 

@@ -267,19 +267,12 @@ void tcpRecvThread::run ()
 
         this->iiu.connect ();
 
+        this->iiu.sendThread.start ();
+
         if ( this->iiu.state != tcpiiu::iiucs_connected ) {
             this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
-
-            this->thread.exitWaitRelease ();
-
-            this->iiu.cacRef.uninstallIIU ( this->iiu );
-
-            delete & this->iiu;
-
             return;
         }
-
-        this->iiu.sendThread.start ();
 
         comBuf * pComBuf = new comBuf;
         while ( this->iiu.state == tcpiiu::iiucs_connected ||
@@ -1111,6 +1104,10 @@ void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > &,
 
 bool tcpiiu::flush ()
 {
+    if ( this->sendQue.occupiedBytes() == 0 ) {
+        return true;
+    }
+
     while ( true ) {
         comBuf * pBuf;
 

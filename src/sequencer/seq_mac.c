@@ -18,6 +18,7 @@
 ***************************************************************************/
 #define		ANSI
 #include	"seq.h"
+#include	"string.h"
 
 LOCAL int seqMacParseName(char *);
 LOCAL int seqMacParseValue(char *);
@@ -119,7 +120,7 @@ char		*pName;
 
 #ifdef	DEBUG
 	logMsg("seqMacValGet: name=%s", pName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
 	{
 		if (pMac->pName != NULL)
@@ -128,14 +129,14 @@ char		*pName;
 			{
 #ifdef	DEBUG
 				logMsg(", value=%s\n", pMac->pValue);
-#endif	DEBUG
+#endif	/*DEBUG*/
 				return pMac->pValue;
 			}
 		}
 	}
 #ifdef	DEBUG
 	logMsg(", no value\n");
-#endif	DEBUG
+#endif	/*DEBUG*/
 	return NULL;
 }
 /*
@@ -148,7 +149,7 @@ long seqMacParse(pMacStr, pSP)
 char		*pMacStr;	/* macro definition string */
 SPROG		*pSP;
 {
-	int		nMac, nChar;
+	int		nChar;
 	char		*skipBlanks();
 	MACRO		*pMac;		/* macro table */
 	MACRO		*pMacTbl;	/* macro tbl entry */

@@ -20,7 +20,8 @@
 31may94,ajk	Changed handling of escaped C code.
 17feb95,ajk	Removed includes "parse.h" & "snc.h", because this module
 		now gets included in snc.y.
-20jul95,ajk   Added unsigned types.
+20jul95,ajk	Added unsigned types.
+11jul96,ajk	Added character constants
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -61,6 +62,7 @@ NAME	[a-zA-Z][a-zA-Z0-9_]*
 FPNUM	(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+)
 OCTAL	0[0-7]+
 HEX	0x([0-9a-fA-F])+
+CCONST	\'.\'
 
 %% /* Begin rules */
 <C_CODE>.	*pStr++ = yytext[0];
@@ -229,6 +231,10 @@ HEX	0x([0-9a-fA-F])+
 <SNL>{FPNUM} {
 		yylval.pchar = strdup(yytext);
 		RETURN(NUMBER);
+}
+<SNL>{CCONST} {
+		yylval.pchar = strdup(yytext);
+		RETURN(CHAR_CONST);
 }
 <SNL>[\t\ ]*	/* no action */ ;
 <SNL>.		RETURN(BAD_CHAR);

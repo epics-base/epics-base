@@ -13,6 +13,7 @@
 		qualifications to some "expr" definitions.
 31may94,ajk	Changed method for handling global C code.
 20jul95,ajk	Added "unsigned" types (see UNSIGNED token).
+11jul96,ajk	Added character constants (CHAR_CONST).
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -57,6 +58,7 @@ extern	int line_num; /* input file line no. */
 }
 %token	<pchar>	STATE STATE_SET
 %token	<pchar>	NUMBER NAME
+%token	<pchar>	CHAR_CONST
 %token	<pchar>	DEBUG_PRINT
 %token	PROGRAM EXIT OPTION
 %token	R_SQ_BRACKET L_SQ_BRACKET
@@ -253,6 +255,7 @@ expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
 |	expr AUTO_INCR  %prec UOP	{ $$ = expression(E_POST, "++", $1, 0); }
 |	expr AUTO_DECR  %prec UOP	{ $$ = expression(E_POST, "--", $1, 0); }
 |	NUMBER				{ $$ = expression(E_CONST, $1, 0, 0); }
+|	CHAR_CONST			{ $$ = expression(E_CONST, $1, 0, 0); }
 |	STRING				{ $$ = expression(E_STRING, $1, 0, 0); }
 |	NAME				{ $$ = expression(E_VAR, $1, 0, 0); }
 |	NAME L_PAREN expr R_PAREN	{ $$ = expression(E_FUNC, $1, $3, 0); }

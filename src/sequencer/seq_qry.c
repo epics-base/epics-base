@@ -27,13 +27,18 @@
 /*#define	DEBUG	1*/
 
 #include	"seq.h"
+#include	"usrLib.h"
+#include	"tickLib.h"
+#include	"string.h"
 
+/* User functions */
 int	seqShow(int);
 int	seqChanShow(int, char *);
+
 LOCAL	int wait_rtn();
 LOCAL	VOID printValue(char *, int, int);
 LOCAL	SPROG *seqQryFind(int);
-LOCAL	seqShowAll();
+LOCAL	void seqShowAll();
 
 /*
  * seqShow() - Querry the sequencer for state information.
@@ -46,8 +51,7 @@ int	tid;
 	SPROG		*pSP;
 	SSCB		*pSS;
 	STATE		*pST;
-	CHAN		*pDB;
-	int		nss, nst, nch, status, n;
+	int		nss, status;
 	float		time;
 	char		file_name[100];
 
@@ -76,7 +80,7 @@ int	tid;
 	 ((pSP->options & OPT_CONN) != 0) );
 	if ((pSP->options & OPT_REENT) != 0)
 		printf("  user variables: address=%d=0x%x, length=%d=0x%x bytes\n",
-		 pSP->pVar, pSP->pVar, pSP->varSize, pSP->varSize);
+		 (long)pSP->pVar, (long)pSP->pVar, pSP->varSize, pSP->varSize);
 	printf("  log file fd=%d\n", pSP->logFd);
 	status = ioctl(pSP->logFd, FIOGETNAME, (int)file_name);
 	if (status != ERROR)
@@ -114,7 +118,7 @@ int	tid;
 				printf(" - expired");
 			printf("\n");
 		}
-#endif	DEBUG
+#endif	/*DEBUG*/
 		printf("\n");
 	}
 
@@ -130,7 +134,6 @@ char		*pStr;	/* optional pattern matching string */
 	SPROG		*pSP;
 	CHAN		*pDB;
 	int		nch, n;
-	float		time;
 	char		tsBfr[50], connQual;
 	int		match, showAll;
 
@@ -186,7 +189,7 @@ char		*pStr;	/* optional pattern matching string */
 		printf("Channel name: \"%s\"\n", pDB->dbName);
 		printf("  Unexpanded (assigned) name: \"%s\"\n", pDB->dbAsName);
 		printf("  Variable name: \"%s\"\n", pDB->pVarName);
-		printf("    address = %d = 0x%x\n", pDB->pVar, pDB->pVar);
+		printf("    address = %d = 0x%x\n", (long)pDB->pVar, (long)pDB->pVar);
 		printf("    type = %s\n", pDB->pVarType);
 		printf("    count = %d\n", pDB->count);
 		printValue(pDB->pVar, pDB->putType, pDB->count);
@@ -355,7 +358,7 @@ int		tid;
 LOCAL int	seqProgCount;
 
 /* This routine is called by seqTraverseProg() for seqShowAll() */
-LOCAL seqShowSP(pSP)
+LOCAL void seqShowSP(pSP)
 SPROG		*pSP;
 {
 	SSCB		*pSS;
@@ -379,14 +382,16 @@ SPROG		*pSP;
 	printf("\n");
 }
 
+/* The seqTraverseProg function is in seq_prog.c */
+STATUS seqTraverseProg(VOID (*pFunc)(), VOID *param);
+
 /* Print a brief summary of all state programs */
-LOCAL seqShowAll()
+LOCAL void seqShowAll()
 {
-	SPROG		*pSP;
 
 	seqProgCount = 0;
 	seqTraverseProg(seqShowSP, 0);
 	if (seqProgCount == 0)
 		printf("No active state programs\n");
-	return 0;
+	return;
 }

@@ -49,6 +49,8 @@
 
 #define		ANSI
 #include	"seq.h"
+#include	"string.h"
+#include	"taskVarLib.h"
 
 LOCAL VOID proc_db_events(union db_access_val *, CHAN *, long);
 
@@ -57,7 +59,7 @@ LOCAL VOID proc_db_events(union db_access_val *, CHAN *, long);
 #ifdef		DEBUG
 #undef		LOCAL
 #define		LOCAL
-#endif		DEBUG
+#endif		/*DEBUG*/
 /*
  * seq_connect() - Connect to all database channels through channel access.
  */
@@ -66,7 +68,6 @@ long seq_connect(SPROG *pSP)
 	CHAN		*pDB;
 	int		status, i;
 	extern		VOID seq_conn_handler();
-	extern int	seqInitialTaskId;
 
 	/*
 	 * For each channel: connect to db & isssue monitor (if monFlag is TRUE).
@@ -80,7 +81,7 @@ long seq_connect(SPROG *pSP)
 #ifdef	DEBUG
 		logMsg("seq_connect: connect %s to %s\n",
 		 pDB->pVarName, pDB->dbName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 		/* Connect to it */
 		status = ca_build_and_connect(
 			pDB->dbName,		/* DB channel name */
@@ -146,14 +147,13 @@ LOCAL VOID proc_db_events(union db_access_val *pAccess, CHAN *pDB, long complete
 {
 	SPROG			*pSP;
 	void			*pVal;
-	int			i;
 
 #ifdef	DEBUG
 	logMsg("proc_db_events: var=%s, pv=%s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 
 	/* Copy value returned into user variable */
-	pVal = (void *)pAccess + pDB->dbOffset; /* ptr to data in CA structure */
+	pVal = (void *)((long)pAccess + pDB->dbOffset); /* ptr to data in CA structure */
 	bcopy(pVal, pDB->pVar, pDB->size * pDB->dbCount);
 
 	/* Copy status & severity */
@@ -238,8 +238,8 @@ long seq_disconnect(SPROG *pSP)
 #ifdef	DEBUG_DISCONNECT
 		logMsg("seq_disconnect: ca_import_cancel\n");
 #endif	/*DEBUG_DISCONNECT*/
-		SEVCHK(ca_import_cancel(taskIdSelf()), 
-			"seq_disconnect: ca_import_cancel() failed?");
+		SEVCHK(ca_import_cancel(taskIdSelf()),
+			"seq_disconnect: ca_import_cancel() failed!");
 	}
 
 	return 0;
@@ -268,7 +268,7 @@ VOID seq_conn_handler(struct connection_handler_args args)
 		pDB->monitored = FALSE;
 #ifdef	DEBUG
 		logMsg("%s disconnected from %s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 	}
 	else	/* PV connected */
 	{
@@ -278,7 +278,7 @@ VOID seq_conn_handler(struct connection_handler_args args)
 			pDB->monitored = TRUE;
 #ifdef	DEBUG
 		logMsg("%s connected to %s\n", pDB->VarName, pDB->dbName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 		pDB->dbCount = ca_element_count(args.chid);
 		if (pDB->dbCount > pDB->count)
 			pDB->dbCount = pDB->count;

@@ -1,4 +1,4 @@
-/*	* base/include $Id$
+/*	* base/include seqCom.h,v 1.3 1995/10/10 01:25:08 wright Exp
  *
  *	DESCRIPTION: Common definitions for state programs and run-time sequencer.
  *
@@ -21,15 +21,17 @@
  *              Los Alamos National Laboratory
  * Modification Log:
  * -----------------
- * 09aug95,ajk	added PVOIDFUNC type, added <stdio.h>, and fixed #endif.
+ * 11jul96,ajk	Changed all int types to long.
+ * 22jul96,ajk	Changed PFUNC to ACTION_FUNC, EVENT_FUNC, DELAY_FUNC, & EXIT_FUNC.
+ * 
  */
 #ifndef	INCLseqComh
 #define	INCLseqComh
 
 #define	MAGIC	940501		/* current magic number for SPROG */
 
-#include	<stdio.h>       /* standard i/o defs */
 #include	"tsDefs.h"	/* time stamp defs */
+#include	"stdio.h"	/* standard i/o defs */
 
 /* Bit encoding for run-time options */
 #define	OPT_DEBUG	(1<<0)	/* turn on debugging */
@@ -53,11 +55,14 @@ typedef long            bitMask;
 #define	FALSE		0
 #endif	/*TRUE*/
 
+typedef	long	SS_ID;		/* state set id */
+
+/* Prototype for action, event, delay, and exit functions */
+typedef	long	(*PFUNC)();
 typedef	void	(*ACTION_FUNC)();
 typedef	long	(*EVENT_FUNC)();
 typedef	void	(*DELAY_FUNC)();
-typedef	void	(*EXIT_FUNC)();	
-typedef	long	SS_ID;		/* state set id */
+typedef	void	(*EXIT_FUNC)();
 
 #ifdef	OFFSET
 #undef	OFFSET
@@ -123,8 +128,6 @@ struct	seqProgram
  * These functions appear in the module seq_if.c.
  * The SNC must generate these modules--see gen_ss_code.c.
  */
-/*#define	ANSI*/
-#ifdef	ANSI
 void	seq_efSet(SS_ID, long);		/* set an event flag */
 long	seq_efTest(SS_ID, long);	/* test an event flag */
 long	seq_efClear(SS_ID, long);	/* clear an event flag */
@@ -143,12 +146,13 @@ long	seq_pvGetComplete(SS_ID, long);	/* TRUE if last get completed */
 long	seq_pvChannelCount(SS_ID);	/* returns number of channels */
 long	seq_pvConnectCount(SS_ID);	/* returns number of channels connected */
 long	seq_pvAssignCount(SS_ID);	/* returns number of channels assigned */
-long	seq_pvCount(SS_ID, long);	/* returns number of elements in array */
+long	seq_pvCount(SS_ID, long);		/* returns number of elements in array */
 void	seq_pvFlush();			/* flush put/get requests */
 long	seq_pvIndex(SS_ID, long);	/* returns index of pv */
 long	seq_seqLog();			/* Logging: variable number of parameters */
 void	seq_delayInit(SS_ID, long, float);/* initialize a delay entry */
 long	seq_delay(SS_ID, long);		/* test a delay entry */
 char   *seq_macValueGet(SS_ID, char *);	/* Given macro name, return ptr to value */
-#endif	/*ANSI*/
+long	seq_optGet (SS_ID ssId, char *opt); /* check an option for TRUE/FALSE */
+
 #endif	/*INCLseqComh*/

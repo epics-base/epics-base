@@ -34,6 +34,8 @@
 
 #define		ANSI
 #include	"seq.h"
+#include	"tickLib.h"
+#include	"logLib.h"
 
 /* See seqCom.h for function prototypes (ANSI standard) */
 
@@ -121,7 +123,7 @@ long seq_pvGet(SS_ID ssId, long pvId)
 	sem_status = semTake(pSS->getSemId, 600);
 	if (sem_status != OK)
 	{
-		logMsg ("semTake error=%d\n", sem_status);
+		logMsg ("semTake error=%d\n", sem_status, 0,0,0,0,0);
 		return ECA_TIMEOUT;
 	}
         
@@ -135,7 +137,6 @@ long seq_pvGetComplete(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;	/* ptr to channel struct */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -155,8 +156,8 @@ long seq_pvPut(SS_ID ssId, long pvId)
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
 #ifdef	DEBUG
-	logMsg("seq_pvPut: pv name=%s, pVar=0x%x\n", pDB->dbName, pDB->pVar);
-#endif	DEBUG
+	logMsg("seq_pvPut: pv name=%s, pVar=0x%x\n", pDB->dbName, pDB->pVar, 0,0,0,0);
+#endif	/*DEBUG*/
 
 	if (!pDB->connected)
 		return ECA_DISCONN;
@@ -167,7 +168,7 @@ long seq_pvPut(SS_ID ssId, long pvId)
 	status = ca_array_put(pDB->putType, count, pDB->chid, pDB->pVar);
 
 #ifdef	DEBUG
-	logMsg("seq_pvPut: status=%d\n", status);
+	logMsg("seq_pvPut: status=%d\n", status, 0,0,0,0,0);
 	if (status != ECA_NORMAL)
 	{
 		seq_log(pSP, "pvPut on \"%s\" failed (%d)\n",
@@ -175,7 +176,7 @@ long seq_pvPut(SS_ID ssId, long pvId)
 		seq_log(pSP, "  putType=%d\n", pDB->putType);
 		seq_log(pSP, "  size=%d, count=%d\n", pDB->size, count);
 	}
-#endif	DEBUG
+#endif	/*DEBUG*/
 
 	return status;
 }
@@ -195,7 +196,7 @@ long seq_pvAssign(SS_ID ssId, long pvId, char *pvName)
 
 #ifdef	DEBUG
 	printf("Assign %s to \"%s\"\n", pDB->pVarName, pvName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 	if (pDB->assigned)
 	{	/* Disconnect this channel */
 		status = ca_clear_channel(pDB->chid);
@@ -261,7 +262,7 @@ long seq_pvMonitor(SS_ID ssId, long pvId)
 
 #ifdef	DEBUG
 	printf("monitor \"%s\"\n", pDB->dbName);
-#endif	DEBUG
+#endif	/*DEBUG*/
 
 	if (pDB->monitored || !pDB->assigned)
 		return ECA_NORMAL;
@@ -321,7 +322,6 @@ long seq_pvStopMonitor(SS_ID ssId, long pvId)
 long seq_pvChannelCount(SS_ID ssId)
 {
 	SPROG		*pSP;	/* ptr to state program */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	return pSP->numChans;
@@ -333,7 +333,6 @@ long seq_pvChannelCount(SS_ID ssId)
 long seq_pvConnectCount(SS_ID ssId)
 {
 	SPROG		*pSP;	/* ptr to state program */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	return pSP->connCount;
@@ -345,7 +344,6 @@ long seq_pvConnectCount(SS_ID ssId)
 long seq_pvAssignCount(SS_ID ssId)
 {
 	SPROG		*pSP;	/* ptr to state program */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	return pSP->assignCount;
@@ -358,7 +356,6 @@ long seq_pvConnected(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -372,7 +369,6 @@ long seq_pvAssigned(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -387,7 +383,6 @@ long seq_pvCount(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;	/* ptr to channel struct */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -401,7 +396,6 @@ long seq_pvStatus(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;	/* ptr to channel struct */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -415,7 +409,6 @@ long seq_pvSeverity(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;	/* ptr to channel struct */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -437,7 +430,6 @@ TS_STAMP seq_pvTimeStamp(SS_ID ssId, long pvId)
 {
 	SPROG		*pSP;	/* ptr to state program */
 	CHAN		*pDB;	/* ptr to channel struct */
-	int		status;
 
 	pSP = ((SSCB *)ssId)->sprog;
 	pDB = pSP->pChan + pvId;
@@ -451,15 +443,15 @@ VOID seq_efSet(SS_ID ssId, long ev_flag)
 {
 	SPROG		*pSP;
 	SSCB		*pSS;
-	int		nss;
 
 	pSS = (SSCB *)ssId;
 	pSP = pSS->sprog;
 
 #ifdef	DEBUG
-	logMsg("seq_efSet: pSP=0x%x, pSS=0x%x, ev_flag=0x%x\n", pSP, pSS, ev_flag);
+	logMsg("seq_efSet: pSP=0x%x, pSS=0x%x, ev_flag=0x%x\n", pSP, pSS, ev_flag, 
+	 0,0,0);
 	taskDelay(10);
-#endif	DEBUG
+#endif	/*DEBUG*/
 
 	/* Set this bit (apply resource lock) */
 	semTake(pSP->caSemId, WAIT_FOREVER);
@@ -487,8 +479,8 @@ long seq_efTest(SS_ID ssId, long ev_flag)
 	isSet = bitTest(pSP->pEvents, ev_flag);
 #ifdef	DEBUG
 	logMsg("seq_efTest: ev_flag=%d, event=0x%x, isSet=%d\n",
-	 ev_flag, pSP->pEvents[0], isSet);
-#endif	DEBUG
+	 ev_flag, pSP->pEvents[0], isSet, 0,0,0,0);
+#endif	/*DEBUG*/
 	return isSet;
 }
 
@@ -568,7 +560,7 @@ VOID seq_delayInit(SS_ID ssId, long delayId, float delay)
  * seq_optGet: return the value of an option (e.g. "a").
  * FALSE means "-" and TRUE means "+".
  */
-BOOL seq_optGet(SS_ID ssId, char *opt)
+long seq_optGet(SS_ID ssId, char *opt)
 {
 	SPROG		*pSP;
 

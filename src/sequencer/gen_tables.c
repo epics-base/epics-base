@@ -14,6 +14,7 @@
 01mar94,ajk	Implemented assignment of array elements to db channels.
 17may94,ajk	removed old event flag (-e) option.
 20jul95,ajk	Added unsigned types.
+22jul96,ajk	Added castS to action, event, delay, and exit functions.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -76,7 +77,7 @@ gen_db_blocks()
 #ifdef	DEBUG
 		fprintf(stderr, "gen_db_blocks: index=%d, num_elem=%d\n",
 			cp->index, cp->num_elem);
-#endif	DEBUG
+#endif	/*DEBUG*/
 
 		if (cp->num_elem == 0)
 		{	/* Variable assigned to single pv */
@@ -254,11 +255,11 @@ char		*ss_name;
 
 	printf("\t/* state name */       \"%s\",\n", sp->value);
 
-	printf("\t/* action function */  A_%s_%s,\n", ss_name, sp->value);
+	printf("\t/* action function */ (ACTION_FUNC) A_%s_%s,\n", ss_name, sp->value);
 
-	printf("\t/* event function */   E_%s_%s,\n", ss_name, sp->value);
+	printf("\t/* event function */  (EVENT_FUNC) E_%s_%s,\n", ss_name, sp->value);
 
-	printf("\t/* delay function */   D_%s_%s,\n", ss_name, sp->value);
+	printf("\t/* delay function */   (DELAY_FUNC) D_%s_%s,\n", ss_name, sp->value);
 
 	printf("\t/* event mask array */ EM_%s_%s,\n\n", ss_name, sp->value);
 
@@ -312,7 +313,7 @@ gen_prog_table()
 	printf("\t/* encoded options */    ");
 	encode_options();
 
-	printf("\t/* exit handler */       exit_handler,\n");
+	printf("\t/* exit handler */      (EXIT_FUNC) exit_handler,\n");
 
 	printf("};\n");
 
@@ -420,7 +421,7 @@ int		numEventWords;
 	for (n = 0; n < numEventWords; n++)
 		fprintf(stderr, " 0x%x", pEventWords[n]);
 	fprintf(stderr, "\n");
-#endif	DEBUG
+#endif	/*DEBUG*/
 }
 
 /* Evaluate the event mask for a given transition (when() statement). 
@@ -444,7 +445,7 @@ bitMask		*pEventWords;
 #ifdef	DEBUG
 		fprintf(stderr, " eval_event_mask: %s, ef_num=%d\n",
 		 vp->name, vp->ef_num);
-#endif
+#endif	/*DEBUG*/
 		bitSet(pEventWords, vp->ef_num);
 		return;
 	}
@@ -456,7 +457,7 @@ bitMask		*pEventWords;
 #ifdef	DEBUG
 		fprintf(stderr, " eval_event_mask: %s, db event bit=%d\n",
 		 vp->name, cp->index + 1);
-#endif
+#endif	/*DEBUG*/
 		bitSet(pEventWords, cp->index + num_events + 1);
 	}
 
@@ -495,7 +496,7 @@ bitMask		*pEventWords;
 #ifdef	DEBUG
 		fprintf(stderr, "  eval_event_mask_subscr: %s, db event bit=%d\n",
 		 vp->name, cp->index);
-#endif
+#endif	/*DEBUG*/
 		bitSet(pEventWords, cp->index + num_events + 1);
 		return;
 	}
@@ -512,7 +513,7 @@ bitMask		*pEventWords;
 #ifdef	DEBUG
 		fprintf(stderr, "  eval_event_mask_subscr: %s, db event bit=%d\n",
 		 vp->name, cp->index + subscr + 1);
-#endif
+#endif	/*DEBUG*/
 		bitSet(pEventWords, cp->index + subscr + num_events + 1);
 		return;
 	}
@@ -521,7 +522,7 @@ bitMask		*pEventWords;
 #ifdef	DEBUG
 	fprintf(stderr, "  eval_event_mask_subscr: %s, db event bits=%d..%d\n",
 	 vp->name, cp->index + 1, cp->index + vp->length1);
-#endif
+#endif	/*DEBUG*/
 	for (n = 0; n < vp->length1; n++)
 	{
 		bitSet(pEventWords, cp->index + n + num_events + 1);

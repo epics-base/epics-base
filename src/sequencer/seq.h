@@ -1,4 +1,4 @@
-/* base/include $Id$
+/*	/share/epicsH  %W%     %G%
  *
  *	DESCRIPTION: Definitions for the run-time sequencer.
  *
@@ -177,20 +177,20 @@ typedef	struct	state_program SPROG;
 #define SPAWN_PRIORITY		100
 
 /* Function declarations for internal sequencer funtions */
-long	seqConnect(SPROG *);
-VOID	seqEventHandler(struct event_handler_args);
-VOID	seqConnHandler(struct connection_handler_args);
+long	seqConnect (SPROG *);
+VOID	seqEventHandler (struct event_handler_args);
+VOID	seqConnHandler (struct connection_handler_args);
 VOID	seqCallbackHandler(struct event_handler_args);
-VOID	seqWakeup(SPROG *, long);
-long	seq(struct seqProgram *, char *, long);
-VOID	seqFree(SPROG *);
-long	sequencer(SPROG *, long, char *);
-VOID	ssEntry(SPROG *, SSCB *);
-long	sprogDelete(long);
-long	seqMacParse(char *, SPROG *);
-char	*seqMacValGet(MACRO *, char *);
-VOID	seqMacEval(char *, char *, long, MACRO *);
-STATUS	seq_log();
-SPROG	*seqFindProg(long);
+VOID	seqWakeup (SPROG *, long);
+long	seq (struct seqProgram *, char *, long);
+VOID	seqFree (SPROG *);
+long	sequencer (SPROG *, long, char *);
+VOID	ssEntry (SPROG *, SSCB *);
+long	sprogDelete (long);
+long	seqMacParse (char *, SPROG *);
+char	*seqMacValGet (MACRO *, char *);
+VOID	seqMacEval (char *, char *, long, MACRO *);
+STATUS	seq_log ();
+SPROG	*seqFindProg (long);
 
 #endif	/*INCLseqh*/

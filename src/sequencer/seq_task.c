@@ -32,28 +32,36 @@
 #define		ANSI
 #include	"seqCom.h"
 #include	"seq.h"
-#include	<taskwd.h>
+#include	"taskwd.h"
+#include	"logLib.h"
+#include	"tickLib.h"
+#include	"taskVarLib.h"
 
 /* Function declarations */
+LOCAL	VOID seq_waitConnect(SPROG *pSP, SSCB *pSS);
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
 LOCAL	VOID seq_clearDelay(SSCB *);
 LOCAL	long seq_getTimeout(SSCB *);
+LOCAL	long seq_cleanup(int tid, SPROG *pSP, SEM_ID cleanupSem);
 
 #define		TASK_NAME_SIZE 10
 
 #define	MAX_DELAY	(10000000) /* max delay time pending for events */
 
-/*
+
+STATUS seqAddProg(SPROG *pSP);
+long seq_connect(SPROG *pSP);
+long seq_disconnect(SPROG *pSP);
+/*
  * sequencer() - Sequencer main task entry point.
  */
-long sequencer(pSP, stack_size, pTaskName)
+long sequencer (pSP, stack_size, pTaskName)
 SPROG		*pSP;	/* ptr to original (global) state program table */
 long		stack_size;	/* stack size */
 char		*pTaskName;	/* Parent task name */
 {
 	SSCB		*pSS;
-	STATE		*pST;
-	int		nss, task_id, i;
+	int		nss, task_id;
 	char		task_name[TASK_NAME_SIZE+10];
 	extern		VOID ss_entry();
 	extern		int seqAuxTaskId;
@@ -95,6 +103,8 @@ char		*pTaskName;	/* Parent task name */
 
 	/* First state set jumps directly to entry point */
 	ss_entry(pSP, pSP->pSS);
+
+	return 0;
 }
 /*
  * ss_entry() - Task entry point for all state sets.
@@ -108,7 +118,6 @@ SSCB	*pSS;
 	STATE		*pST, *pStNext;
 	long		delay;
 	char		*pVar;
-	LOCAL		VOID seq_waitConnect();
 	int		nWords;
 	SS_ID		ssId;
 
@@ -220,9 +229,7 @@ SSCB	*pSS;
 }
 
 /* Wait for all channels to connect */
-LOCAL VOID seq_waitConnect(pSP, pSS)
-SPROG	*pSP;
-SSCB	*pSS;
+LOCAL VOID seq_waitConnect(SPROG *pSP, SSCB *pSS)
 {
 	STATUS		status;
 	long		delay;
@@ -234,7 +241,7 @@ SSCB	*pSS;
 		if ((status != OK) && (pSP-> taskId == pSS->taskId))
 		{
 			logMsg("%d of %d assigned channels have connected\n",
-			 pSP->connCount, pSP->assignCount);
+			 pSP->connCount, pSP->assignCount, 0,0,0,0);
 		}
 		if (delay < 2400)
 			delay = delay + 600;
@@ -318,11 +325,10 @@ SSCB		*pSS;
  * when executed in the context of ExcTask.  ExcTask is not spawned with
  * floating point option, and fp is required to do the cleanup.
  */
-sprog_delete(tid)
+long sprog_delete(tid)
 int		tid; /* task being deleted */
 {
 	SPROG		*pSP;
-	extern		int seq_cleanup();
 	SEM_ID		cleanupSem;
 	int		status;
 	
@@ -334,8 +340,8 @@ int		tid; /* task being deleted */
 	cleanupSem = semBCreate (SEM_Q_FIFO, SEM_EMPTY);
 
 	/* Spawn the cleanup task */
-	taskSpawn("tSeqCleanup", SPAWN_PRIORITY-1, VX_FP_TASK, 8000, seq_cleanup,
-	 tid, (int)pSP, (int)cleanupSem, 0,0,0,0,0,0,0);
+	taskSpawn("tSeqCleanup", SPAWN_PRIORITY-1, VX_FP_TASK, 8000,
+	 (FUNCPTR)seq_cleanup, tid, (int)pSP, (int)cleanupSem, 0,0,0,0,0,0,0);
 
 	/* Wait for cleanup task completion */
 	for (;;)
@@ -343,7 +349,7 @@ int		tid; /* task being deleted */
 		status = semTake(cleanupSem, 600);
 		if (status == OK)
 			break;
-		logMsg("sprog_delete waiting for seq_cleanup\n");
+		logMsg("sprog_delete waiting for seq_cleanup\n", 0,0,0,0,0,0);
 	}
 	semDelete(cleanupSem);
 
@@ -352,17 +358,15 @@ int		tid; /* task being deleted */
 
 /* Cleanup task */
 /*#define	DEBUG_CLEANUP*/
+STATUS seqDelProg(SPROG *pSP);
 
-seq_cleanup(tid, pSP, cleanupSem)
-int		tid; /* tid of 1-st SS to be deleted */
-SPROG		*pSP;
-SEM_ID		cleanupSem; /* indicate cleanup is finished */
+LOCAL long seq_cleanup(int tid, SPROG *pSP, SEM_ID cleanupSem)
 {
 	int		nss;
 	SSCB		*pSS;
 
 #ifdef	DEBUG_CLEANUP
-	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n", pSP->pProgName, pSP, pSP, tid);
+	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n", pSP->pProgName, pSP, pSP, tid, 0,0);
 #endif	/*DEBUG_CLEANUP*/
 
 	/* Wait for log semaphore (in case a task is doing a write) */
@@ -415,8 +419,8 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 #ifdef	DEBUG_CLEANUP
 		logMsg("   ca_import_cancel(0x%x)\n", pSS->taskId);
 #endif	/*DEBUG_CLEANUP*/
-		SEVCHK(ca_import_cancel(pSS->taskId), 
-				"CA import cancel failed!");
+		SEVCHK (ca_import_cancel(pSS->taskId),
+			"seq_cleanup:ca_import_cancel() failed")
 	}
 
 	/* Close the log file */
@@ -511,7 +515,7 @@ SPROG		*pSP;
 /* 
  * Sequencer auxillary task -- loops on ca_pend_event().
  */
-seqAuxTask()
+long seqAuxTask()
 {
 	extern		int seqAuxTaskId;
 

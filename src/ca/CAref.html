@@ -709,7 +709,7 @@ channel access calls.</p>
       callbacks might be called when the thread that calls this routine is
       not executing in the CA client library. Programmers who are unfamiliar
       with mutual exclusion locking in a multi-threaded environment should
-      specify <code>ca_disable_preemptive_callback.</code></p>
+      specify <code>ca_disable_preemptive_callback.</code> </p>
     </dd>
 </dl>
 
@@ -796,6 +796,11 @@ connection call backs relative to the order that ca_create_channel() calls
 are made by the application can't be guaranteed, and application programs may
 need to be prepared for a connected channel to enter a disconnected state at
 any time.</p>
+
+<p>If<code> ca_disable_preemptive_callback </code>is specified then
+additional threads are <em>not </em>allowed to join the CA context using
+ca_context_attach() because allowing other threads to join implies that CA
+callbacks will be called preemptively from more than one thread.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -2242,7 +2247,12 @@ returned.</p>
 
 <h4>Description</h4>
 
-<p>Become a member of the specified CA context.</p>
+<p>Become a member of the specified CA context. If<code>
+ca_disable_preemptive_callback </code>is specified when ca_context_create()
+is called  ( or if ca_task_initialize() is called ) then additional threads
+are <em>not </em>allowed to join the CA context because allowing other
+threads to join implies that CA callbacks will be called preemptively from
+more than one thread.</p>
 
 <h4>Arguments</h4>
 <dl>

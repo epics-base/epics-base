@@ -1575,6 +1575,7 @@ void arrayTest ( chid chan )
 
     if ( ! ca_write_access ( chan ) ) {
         printf ( "skipping array test - no write access\n" );
+        return;
     }
 
     showProgressBegin ();

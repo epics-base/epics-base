@@ -3,13 +3,57 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Release baseR3.13.3 </title>
+  <title>EPICS Release baseR3.13.7 </title>
 </head>
 
 <body lang="en">
-<h1>EPICS Release 3.13.6</h1>
+<h1>EPICS Release 3.13.7</h1>
 
-<h4>March 2002</h4>
+<h4>XXXX 2002</h4>
+
+<h3>Changes since 3.13.6</h3>
+
+<p><strong>dbb - database breakpoints</strong></p>
+
+<p>The database breakpoint facility was not working. This has probably been
+true for several releases. It is now fixed.</p>
+
+<p><strong>TPRO - trace processing</strong></p>
+
+<p>If dbProcess is called recursively by different tasks, it did not properly
+handle TPRO. Consider the following database:</p>
+<pre>record(ao,"mrkao") {
+    field(OUT,"mrkai CA")
+    field(TPRO,"1")
+}
+record(ai,"mrkai") {
+    field(TPRO,"1")
+}</pre>
+
+<p>If a channel access put is sent to mrkao, no message is issued when mrkai
+is processed.</p>
+
+<p>This is now fixed.</p>
+
+<p><strong>TSconfigure</strong></p>
+
+<p>If in your st.cmd file you issue the command.</p>
+
+<p>TSconfigure(0,0,0,0,0,0,1)</p>
+
+<p>And set the TSE field of any record to a non zero value, then a crash will
+occur when recGblGetTimeStamp is called.</p>
+
+<p>This is now fixed.</p>
+
+<p><strong>calcoutRecord</strong></p>
+
+<p>nsev not sevr must be checked to decide if dbPutLink should be called.</p>
+<p>This is now fixed</p>
+
+<p><strong>calcPerform</strong></p>
+<p>This now returns a non zero value if the result is nan (not a number).</p>:wq
+
 
 <h3>Changes since 3.13.5</h3>
 

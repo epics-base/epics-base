@@ -51,7 +51,16 @@ SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h \
           $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
 
-PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
+# WARNING 0-9 allowed only at end of stem
+TEMPLATE_FILENAME=$(addsuffix .template,$(addprefix ../,$(subst 0,, \
+       $(subst 1,,$(subst 2,,$(subst 3,,$(subst 4,, $(subst 5,, \
+       $(subst 6,,$(subst 7,,$(subst 8,,$(subst 9,,$*))))))))))))
+
+
+# dbst based database optimization
+ifeq '$(DB_OPT)' 'YES'
+RAW=.raw
+endif
 
 #####################################################  dependancies
 
@@ -193,12 +202,13 @@ $(COMMON_DIR)/%.db$(RAW): %.edf
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
-$(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
+$(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
+	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
 	@echo "Inflating database from $<"
 	@$(RM) $@
-	$(MSI) -S $^  > $@
+	$(MSI) -S$< $(TEMPLATE_FILENAME) > $@
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
@@ -211,14 +221,6 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 	@echo "Optimizing database $@"
 	@$(RM) $@
 	$(DBST) . $< -d > $@
-
-$(INDDBFROMTEMPLATE):%.db: %.substitutions
-	$(RM) $@
-ifndef WIN32
-	$(MSI) -S$*.substitutions $(PREFIX).template > $@
-endif
-
-RAW=.raw
 
 .PRECIOUS: $(DB:%=$(COMMON_DIR)/%$(RAW))
 endif

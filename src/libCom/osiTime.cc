@@ -347,7 +347,7 @@ void osiTime::show (unsigned) const
 	char bigBuffer[256];
 	tm_nano_sec tmns = *this;
 
-	status = strftime (bigBuffer, sizeof(bigBuffer), "%c", &tmns.ansi_tm);
+	status = strftime (bigBuffer, sizeof(bigBuffer), "%a %b %d %H:%M:%S %Y", &tmns.ansi_tm);
 	if (status>0) {
 		printf ("osiTime: %s %f\n", bigBuffer, 
 			static_cast <double> (tmns.nsec) / nSecPerSec);

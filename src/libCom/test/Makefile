@@ -17,6 +17,7 @@ PROD_LIBS += Com
 PROD_HOST += epicsListTest
 #epicsListTest build fails for vxWorks-ppc604 on win32-x86 host 
 #OBJS_IOC_vxWorks += epicsListTest
+OBJS_IOC_RTEMS += epicsListTest
 
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 PROD_HOST += epicsAlgorithmTest
@@ -98,7 +99,7 @@ blockingSockTestHost_SYS_LIBS_solaris = socket
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 
-PROD_RTEMS = $(PROD_HOST)
+OBJS_IOC_RTEMS += $(OBJS_IOC_vxWorks)
 
 include $(TOP)/configure/RULES
 

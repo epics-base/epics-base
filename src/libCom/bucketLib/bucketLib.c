@@ -119,17 +119,17 @@ main()
 
 	pb = bucketCreate(8);
 	if(!pb){
-		return BUCKET_FAILURE;
+		return -1;
 	}
 
 	id1 = 0x1000a432;
 	pValSave1 = "fred";
 	s = bucketAddItemUnsignedId(pb, &id1, pValSave1);
-	assert(s == BUCKET_SUCCESS);
+	assert (s == S_bucket_success);
 
 	pValSave2 = "jane";
 	s = bucketAddItemStringId(pb, pValSave2, pValSave2);
-	assert(s == BUCKET_SUCCESS);
+	assert (s == S_bucket_success);
 
 	start = clock();
 	for(i=0; i<LOOPS; i++){
@@ -166,7 +166,7 @@ main()
 
 	bucketShow(pb);
 
-	return BUCKET_SUCCESS;
+	return S_bucket_success;
 }
 #endif
 
@@ -364,8 +364,8 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 	pb->hashIdNBits = nbits;
 
 	pb->pTable = (ITEM **) calloc (mask+1, sizeof(*pb->pTable));
-	if(!pb->pTable){
-		free(pb);
+	if (!pb->pTable) {
+		free (pb);
 		return NULL;
 	}
 	return pb;
@@ -376,9 +376,9 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
  * bucketFree()
  */
 #ifdef __STDC__
-int	bucketFree(BUCKET *prb)
+int	bucketFree (BUCKET *prb)
 #else
-int	bucketFree(prb)
+int	bucketFree (prb)
 BUCKET	*prb;
 #endif
 {
@@ -389,7 +389,7 @@ BUCKET	*prb;
 	 * deleting a bucket with entries in use
 	 * will cause memory leaks and is not allowed
 	 */
-	assert(prb->nInUse==0);
+	assert (prb->nInUse==0);
 
 	/*
 	 * free the free list
@@ -400,10 +400,10 @@ BUCKET	*prb;
 		free (pi);
 		pi = pni;
 	}
-	free(prb->pTable);
-	free(prb);
+	free (prb->pTable);
+	free (prb);
 
-	return BUCKET_SUCCESS;
+	return S_bucket_success;
 }
 
 
@@ -425,6 +425,8 @@ int	bucketAddItemStringId(BUCKET *prb, const char *pId, void *pApp)
 LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, void *pApp)
 {
 	BUCKETID	hashid;
+	ITEM		**ppi;
+	ITEM		**ppiExists;
 	ITEM		*pi;
 
 	/*
@@ -436,9 +438,9 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, void *pA
 		prb->pFreeItems = pi->pItem;
 	}
 	else {
-		pi = (ITEM *) malloc(sizeof(ITEM));
+		pi = (ITEM *) malloc (sizeof(ITEM));
 		if(!pi){
-			return BUCKET_FAILURE;
+			return S_bucket_noMemory;
 		}
 	}
 
@@ -450,12 +452,20 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, void *pA
 	pi->pApp = pApp;
 	pi->pId = pId;
 	pi->type = pBSET->type;
-	assert((hashid & ~prb->hashIdMask) == 0);
-	pi->pItem = prb->pTable[hashid];
+	assert ((hashid & ~prb->hashIdMask) == 0);
+	ppi = &prb->pTable[hashid];
+	/*
+	 * Dont reuse a resource id !
+	 */
+	ppiExists = (*pBSET->pCompare) (ppi, pId);
+	if (ppiExists) {
+		return S_bucket_idInUse;
+	}
+	pi->pItem = *ppi;
 	prb->pTable[hashid] = pi;
 	prb->nInUse++;
 
-	return BUCKET_SUCCESS;
+	return S_bucket_success;
 }
 
 
@@ -489,7 +499,7 @@ LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 	ppi = &prb->pTable[hashid];
 	ppi = (*pBSET->pCompare) (ppi, pId);
 	if(!ppi){
-		return BUCKET_FAILURE;
+		return S_bucket_uknId;
 	}
 	prb->nInUse--;
 	pi = *ppi;
@@ -501,7 +511,7 @@ LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 	pi->pItem = prb->pFreeItems;
 	prb->pFreeItems = pi;
 
-	return BUCKET_SUCCESS;
+	return S_bucket_success;
 }
 
 
@@ -521,7 +531,7 @@ void	*bucketLookupItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtString], pId);
 }
-LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId)
+LOCAL void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 {
 	BUCKETID	hashid;
 	ITEM		**ppi;
@@ -611,7 +621,7 @@ BUCKET *pb;
 		stdDev,
 		maxEntries);
 
-	return BUCKET_SUCCESS;
+	return S_bucket_success;
 }
 
 

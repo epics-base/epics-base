@@ -261,9 +261,6 @@ static void monitor(pmbboDirect)
 	unsigned short	monitor_mask;
 
         monitor_mask = recGblResetAlarms(pmbboDirect);
-        monitor_mask |= (DBE_LOG|DBE_VALUE);
-        if(monitor_mask)
-         db_post_events(pmbboDirect,&pmbboDirect->val,monitor_mask);
 
         /* check for value change */
         if (pmbboDirect->mlst != pmbboDirect->val){

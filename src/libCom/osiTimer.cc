@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/06/26 22:14:13  jhill
+ * added new src files
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -291,6 +294,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any unexpired timers
 	//
 	while ( (pTmr = this->pending.get()) ) {	
+		pTmr->state = ositLimbo;
 		pTmr->destroy();
 	}
 
@@ -298,6 +302,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any expired timers
 	//
 	while ( (pTmr = this->expired.get()) ) {	
+		pTmr->state = ositLimbo;
 		pTmr->destroy();
 	}
 }

@@ -43,6 +43,7 @@
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
+#include "pvAdapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -924,39 +925,6 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
 epicsShareFunc unsigned epicsShareAPI ca_get_ioc_connection_count (void);
 epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
 
-/*
- * Warning - this is an temporary CA client API
- * which will probably vanish in the future.
- */
-typedef void * pvId;
-typedef void * putNotifyId;
-struct db_field_log;
-struct putNotify;
-typedef struct pvAdapter {
-    pvId (*p_pvNameToId) (const char *pname);
-    int (*p_pvPutField) (pvId, int src_type,
-                    const void *psrc, int no_elements);
-    int (*p_pvGetField) (pvId, int dest_type,
-                    void *pdest, int no_elements, void *pfl);
-    long (*p_pvPutNotifyInitiate) (pvId, unsigned type, unsigned long count, 
-        const void *pValue, void (*callback)(void *), void *usrPvt, putNotifyId * pID);
-    void (*p_pvPutNotifyDestroy) (putNotifyId);
-    const char * (*p_pvName) (pvId);
-    unsigned long (*p_pvNoElements) (pvId);
-    short (*p_pvType) (pvId);
-    void * (*p_pvEventQueueInit) (void);
-    int (*p_pvEventQueueStart) (void *, const char *taskname, 
-        void (*init_func)(void *), void *init_func_arg, int priority_offset);
-    void (*p_pvEventQueueClose) (void *);
-    int (*p_pvEventQueuePostSingleEvent) (void *es);
-    void * (*p_pvEventQueueAddEvent) (void *ctx, pvId id,
-        void (*user_sub)(void *usrArg, pvId id, int eventsRemaining, struct db_field_log *), 
-        void *user_arg, unsigned select);
-    void (*p_pvEventQueueCancelEvent) (void *es);
-    int (*p_pvEventQueueAddExtraLaborEvent) (void *, void (*func)(void *), void *arg);
-    int (*p_pvEventQueuePostExtraLabor) (void *ctx);
-} pvAdapter;
-epicsShareFunc void * epicsShareAPI ca_create_context (pvAdapter *pAdapter);
 
 /*
  * used when an auxillary thread needs to join a CA client context started

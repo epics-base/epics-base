@@ -13,6 +13,7 @@ INC += caerr.h
 INC += caeventmask.h
 INC += caProto.h
 INC += db_access.h
+INC += pvAdapter.h
 
 #LIBSRCS += caOsDependent.c
 LIBSRCS += access.cpp

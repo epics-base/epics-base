@@ -52,7 +52,8 @@ vpath %.h $(USER_VPATH)
 #	USR_CXXFLAGS	C++ flags
 #	INC		include-files to install
 #	LIBSRCS		source files for building library
-#	PROD_LIBS	libs needed by PROD
+#	PROD_LIBS	EPICS libs needed by PROD and TESTPROD
+#	SYS_PROD_LIBS	system libs needed by PROD and TESTPROD
 #	PROD		products to build and install
 #	SCRIPTS		scripts to install
 #
@@ -122,6 +123,20 @@ else
 
 ifdef PROD_LIBS_DEFAULT
 PROD_LIBS += $(PROD_LIBS_DEFAULT)
+endif
+
+endif
+
+#
+#	concat specific library contents (if defined) to SYS_PROD_LIBS
+#
+ifneq (x$(SYS_PROD_LIBS_$(ARCH_CLASS)),x)
+SYS_PROD_LIBS += $(subst -nil-,,$(SYS_PROD_LIBS_$(ARCH_CLASS)))
+
+else
+
+ifdef SYS_PROD_LIBS_DEFAULT
+SYS_PROD_LIBS += $(SYS_PROD_LIBS_DEFAULT)
 endif
 
 endif
@@ -198,12 +213,32 @@ USR_LDLIBS += $(PRODDEPLIBS)
 else
 #	On Unix: library "ca" is linked with "-lca"  etc.
 #	A library may be just newly build in the local dir: add "-L."
-PRODDEPLIBS=$(PROD_LIBS:%=lib%.a)
-USR_LDLIBS += -L. $(PROD_LIBS:%=-l%) 
+PRODDEPLIBS=$(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
+USR_LDLIBS += -L$(INSTALL_LIB) $(PROD_LIBS:%=-l%) 
 endif
 
 endif
 
+
+#	dito for system libraries used by PROD
+#
+ifdef SYS_PROD_LIBS
+
+ifdef WIN32
+PRODDEPLIBS+=$(SYS_PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
+#	add to USR_LDLIBS so that the libs are linked
+#	we need the full path because there is no "-L" option on WIN32....
+USR_LDLIBS += $(SYSPRODDEPLIBS)
+else
+#	On Unix: it is difficult to determine where the
+# 	system lib is (because of add on compilere).
+#	Therefore no additions to PRODDEPLIBS for
+#	system libraries.
+#
+USR_LDLIBS += $(SYS_PROD_LIBS:%=-l%) 
+endif
+
+endif
 
 #	adjust executables
 ifdef PROD
@@ -343,7 +378,7 @@ endif
 
 PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
 
-$(PROD): $(PROD_OBJS)
+$(PROD): $(PROD_OBJS) $(PRODDEPLIBS)
 	$(RM) $@
 	echo $(LDLIBS)
 	$(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
@@ -361,16 +396,16 @@ endif
 
 TESTPROD_OBJS=$(addsuffix $(OBJ), $(basename $(TESTPROD_SRCS)))
 
-$(TESTPROD): $(TESTPROD_OBJS)
+$(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
 	$(RM) $@
 	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
 endif
 
-%$(EXE): %.c
+%$(EXE): %.c $(PRODDEPLIBS)
 	$(RM) $@
 	$(LINK.c)  $< $(LDLIBS)
 
-%$(EXE): %.cc
+%$(EXE): %.cc $(PRODDEPLIBS)
 	$(RM) $@
 	$(LINK.cc)  $< $(LDLIBS)
 

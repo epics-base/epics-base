@@ -1246,7 +1246,7 @@ caStatus casStrmClient::createChanResponse (
     if ( ! pvar.getPV()->pPVI ) {
         // @#$!* Tornado 2 Cygnus GNU compiler bugs
 #       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-            pvar.getPV()->pPVI = new ( std::nothrow ) 
+            pvar.getPV()->pPVI = new ( std::nothrow ) // X aCC 930
                         casPVI ( *pvar.getPV() );
 #       else
             try {
@@ -1295,7 +1295,7 @@ caStatus casStrmClient::createChanResponse (
     if ( ! pChan->pChanI ) {
         // @#$!* Tornado 2 Cygnus GNU compiler bugs
 #       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-            pChan->pChanI = new ( std::nothrow ) 
+            pChan->pChanI = new ( std::nothrow ) // X aCC 930
                 casChannelI ( * this, *pChan, 
                     * pvar.getPV()->pPVI, hdr.m_cid );
 #       else
@@ -1701,7 +1701,7 @@ void casStrmClient::casChannelDestroyFromInterfaceNotify (
     }
 
     class channelDestroyEvent * pEvent = 
-        new ( std::nothrow ) class channelDestroyEvent ( 
+        new ( std::nothrow ) class channelDestroyEvent ( // X aCC 930
             immediateUninstallNeeded ? & chan : 0,
             chan.getSID() );
     if ( pEvent ) {

@@ -488,14 +488,14 @@ struct client *create_udp_client(unsigned sock)
       	client->sock = sock;
       	client->minor_version_number = CA_UKN_MINOR_VERSION;
 
-      	client->send.maxstk = MAX_UDP-sizeof(client->recv.cnt);
+      	client->send.maxstk = MAX_UDP;
 
       	FASTLOCKINIT(&client->lock);
       	FASTLOCKINIT(&client->putNotifyLock);
       	FASTLOCKINIT(&client->addrqLock);
       	FASTLOCKINIT(&client->eventqLock);
 
-      	client->recv.maxstk = MAX_UDP;
+      	client->recv.maxstk = ETHERNET_MAX_UDP;
 
       	return client;
 }

@@ -99,10 +99,10 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
                     sizeof(this->addr) );
 		}
 		if (status<0) {
-			char buf[64];
-			ipAddrToA (&this->addr, buf, sizeof(buf));
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+			char buf[64];
+			ipAddrToA (&this->addr, buf, sizeof(buf));
 			errPrintf ( S_cas_bindFail,
 				__FILE__, __LINE__,
 				"- bind TCP IP addr=%s failed because %s",

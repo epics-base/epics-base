@@ -79,45 +79,14 @@ extern struct dbBase *pdbBase;
 %%
 
 database:	DATABASE d_head d_body
-	{
-#ifdef vxWorks
-		dbFreeEntry(pdbentry);
-#endif
-	}
 	| DATABASE d_head /* jbk added for graphical thing */
-	{
-#ifdef vxWorks
-		dbFreeEntry(pdbentry);
-#endif
-	}
+	| db_components
 	;
 
 d_head:	O_PAREN WORD C_PAREN
-	{
-#ifdef vxWorks
-		/*
-		fprintf(stderr,"Warning: No EPICS version information in db file\n");
-		*/
-		pdbentry=dbAllocEntry(pdbBase);
-		free($2);
-#endif
-	}
+	{ free($2); }
 	| O_PAREN WORD COMMA VALUE C_PAREN
-	{
-#ifdef vxWorks
-		int version,revision;
-		char* v;
-
-		v=strtok($4," ."); sscanf(v,"%d",&version);
-		v=strtok(NULL," ."); sscanf(v,"%d",&revision);
-
-		if(version!=EPICS_VERSION || revision!=EPICS_REVISION)
-			fprintf(stderr,"Warning: Database not created with same version\n");
-
-		pdbentry=dbAllocEntry(pdbBase);
-		free($2); free($4);
-#endif
-	}
+	{ free($2); free($4); }
 	;
 
 d_body:	O_BRACE nowhere_records db_components C_BRACE
@@ -144,9 +113,7 @@ container: CONTAINER c_head c_body
 	;
 
 c_head: O_PAREN WORD C_PAREN
-	{
-		free($2);
-	}
+	{ free($2); }
 	;
 
 c_body: O_BRACE db_components C_BRACE
@@ -159,7 +126,7 @@ records: /* null */
 record:	RECORD r_head r_body
 	{
 #ifndef vxWorks
-		printf(" }\n");
+		 printf("}\n");
 #endif
 	}
 	;
@@ -253,32 +220,24 @@ int dbLoadRecords(char* pfilename, char* pattern, char* container)
 		return -1;
 	}
 
-#ifndef vxWorks
-	/* if(container) printf(" %s {\n",container); */
-#endif
-
 	if(is_not_inited)
 	{
-#ifdef ERROR_STUFF
-		fprintf(stderr,"initing parser\n");
-#endif
 		yyin=fp;
 		is_not_inited=0;
 	}
 	else
 	{
-#ifdef ERROR_STUFF
-		fprintf(stderr,"restarting parser\n");
-#endif
 		yyrestart(fp);
 	}
-#ifdef ERROR_STUFF
-		fprintf(stderr,"before parser startup\n");
+
+#ifdef vxWorks
+	pdbentry=dbAllocEntry(pdbBase);
 #endif
+
 	yyparse();
 
-#ifndef vxWorks
-	/* if(container) printf(" }\n"); */
+#ifdef vxWorks
+	dbFreeEntry(pdbentry);
 #endif
 
 	if(subst_used) dbFreeSubst();
@@ -303,7 +262,7 @@ static void sub_pvname(char* type, char* name)
 			if( dbCreateRecord(pdbentry,subst_buffer) )
 				fprintf(stderr,"Cannot create record %s\n",subst_buffer);
 #else
-			printf("\trecord(%s, \"%s\") {",type,subst_buffer);
+			printf("record(%s,\"%s\") {",type,subst_buffer);
 #endif
 		}
 		else
@@ -312,7 +271,7 @@ static void sub_pvname(char* type, char* name)
 			if( dbCreateRecord(pdbentry,name) )
 				fprintf(stderr,"Cannot create record %s\n",name);
 #else
-			printf("\trecord(%s, \"%s\") {",type,name);
+			printf("record(%s,\"%s\") {",type,name);
 #endif
 		}
 }

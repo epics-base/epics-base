@@ -415,9 +415,7 @@ main(int argc, char** argv)
 
 	if(!name) name = "Composite";
 
-	printf("database(name,\"%d.%d\") {\n",EPICS_VERSION,EPICS_REVISION,name);
 	dbLoadTemplate(argv[1]);
-	printf("}\n");
 }
 #endif
 #endif

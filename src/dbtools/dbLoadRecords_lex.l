@@ -7,7 +7,10 @@ value	[a-zA-Z0-9_\,\^~\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\{\}]
 
 %%
 
+\#.*\n	;
+
 "field"	    { return(FIELD); }
+"grecord"    { return(RECORD); }
 "record"    { return(RECORD); }
 "container" {  return(CONTAINER); }
 "database"  {  return(DATABASE); }

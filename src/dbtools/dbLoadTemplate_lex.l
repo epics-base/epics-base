@@ -8,6 +8,8 @@ par [\"\']
 
 %%
 
+\#.*\n	;
+
 "pattern"   { return(PATTERN); }
 "file"   { return(DBFILE); }
 "="			{ return(EQUALS); }
@@ -16,8 +18,6 @@ par [\"\']
 
 {word}+	{ yylval.Str=(char *)malloc(strlen(yytext)+1); strcpy(yylval.Str,yytext); return(WORD);	}
 
-"("	{ return(O_PAREN);	}
-")"	{ return(C_PAREN);	}
 "{"	{ return(O_BRACE);	}
 "}"	{ return(C_BRACE);	}
 

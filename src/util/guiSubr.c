@@ -28,6 +28,7 @@
  * .00	02-08-91	rac	initial version
  * .01	07-30-91	rac	installed in SCCS
  * .02	08-14-91	rac	add guiNoticeName; add more documentation
+ * .03	09-06-91	rac	add GuiCheckbox..., guiGetNameFromSeln
  *
  * make options
  *	-DXWINDOWS	to use xview/X Window System
@@ -53,8 +54,12 @@
 *       void guiCFshow_xvo(item)
 *       void guiCFshowPin_mi(menu, menuItem)
 *       void guiCFshowPin_xvo(item)
+* Panel_item guiCheckbox(label,panel,nItems,pX,pY,pHt,proc,key1,val1,key2,val2)
+*       void guiCheckboxItem(label,checkbox,itemNum,dfltFlag,pX,pY,pHt)
 *      Frame guiFrame(label, x, y, width, height, ppDisp, pServer)
 *      Frame guiFrameCmd(label, parentFrame, pPanel, resizeProc)
+*      char *guiGetNameFromSeln(pGuiCtx, textSw, headFlag, tailFlag)
+*      Icon  guiIconCreate(frame, iconBits)
 *       Menu guiMenu(proc, key1, val1, key2, val2)
 *  Menu_item guiMenuItem(label, menu, proc, inact, dflt, key1,val1,key2,val2)
 * Panel_item guiMessage(label, panel, pX, pY, pHt)
@@ -62,6 +67,10 @@
 *       void guiNoticeFile(pGuiCtx, msg, fName)
 *       void guiNoticeName(pGuiCtx, msg, name)
 * Panel_item guiTextField(lab,pan,pX,pY,pHt,proc,nStr,nDsp,key1,val1,key2,val2)
+*
+* BUGS
+* o	although they provide some isolation, these routines are still heavily
+*	XView specific
 *
 * USAGE
 *	In the synopsis for each routine, the `pGuiCtx' is intended to be
@@ -91,6 +100,9 @@
 #   include <xview/openmenu.h>
 #   include <xview/panel.h>
 #   include <xview/textsw.h>
+#   include <xview/seln.h>
+#   include <xview/svrimage.h>
+#   include <xview/icon.h>
 #endif
 
 #include <guiSubr.h>
@@ -247,6 +259,7 @@ Panel	panel;		/* I panel containing button(s) */
 * o	text
 *
 * SEE ALSO
+*	guiFrameCmd
 *
 * EXAMPLES
 *	guiButton("Dismiss", panel, ...
@@ -315,13 +328,191 @@ Xv_opaque item;
 }
 
 /*+/subr**********************************************************************
+* NAME	guiCheckbox - create an empty checkbox list
+*
+* DESCRIPTION
+*	Creates the framework for an empty checkbox selection list.  The
+*	actual checkbox items must be filled in by calls to
+*	guiCheckboxItem.
+*
+*	Checkbox lists have a fixed number of items--the number of items
+*	can't be increased or decreased after the empty list is created.
+*	Individual items on a list can be changed at any time, however.
+*
+* RETURNS
+*	Panel_item for the checkbox
+*
+* BUGS
+* o	list can't dynamically grow and shrink
+* o	the maximum size for a checkbox list is 10 items
+*
+* SEE ALSO
+*	guiCheckboxItem
+*
+* EXAMPLE
+*	Set up a 3-item checkbox.  Each of the first two items is to have
+*	an associated status message.  The appearance of the setup will
+*	resemble the following:
+*
+* Retrieve from:
+* [] text file       ________status message________
+* [] binary file     ________status message________
+* [] Channel Access
+*
+*	The third item will be the default.  When any of the items are
+*	selected, choose_xvo() is to be called; that routine uses a pointer
+*	to a `myStruct' structure for its operations.
+*
+*    struct myStruct {
+*	Panel_item	textStatus;	status for text file
+*	Panel_item	binStatus;	status for binary file
+*    } context;
+*#define PCTX 101                 (a unique integer for identifying myStruct)
+*    Panel_item	ckbx;
+*    int	x=5, y=5, ht=0;
+*    int	x1, x2, y1, y2;   (for aligning buttons and status messages)
+*
+*    ckbx = guiCheckbox("Retrieve from:", panel, 3, &x, &y, &ht,
+*					choose_xvo, PCTX, &context, 0, NULL);
+*    y += ht + 5; x = 5; ht = 0;
+*    guiCheckboxItem("text file", ckbx, 0, 0, &x, &y, &ht);
+*    x1 = x; y1 =y;
+*    y += ht + 5; x = 5; ht = 0;
+*    guiCheckboxItem("binary file", ckbx, 1, 0, &x, &y, &ht);
+*    x2 = x; y2 =y;
+*    y += ht + 5; x = 5; ht = 0;
+*    guiCheckboxItem("Channel Access", ckbx, 2, 1, &x, &y, &ht);
+*    y += ht + 5; x = 5; ht = 0;
+*    if (x1 < x2)	x1 = x2;	(which extends further right?)
+*    else		x2 = x1;
+*    context.textStatus = guiMessage("", panel, &x1, &y1, &ht);
+*    context.binStatus = guiMessage("", panel, &x2, &y2, &ht);
+*
+*-*/
+Panel_item
+guiCheckbox(label, panel, nItems, pX, pY, pHt, proc, key1, val1, key2, val2)
+char	*label;		/* I label for checkbox list */
+Panel	panel;		/* I handle of panel containing checkbox list */
+int	nItems;		/* I the number of items to be held by the list */
+int	*pX;		/* IO pointer to x position in panel, in pixels */
+int	*pY;		/* IO pointer to y position in panel, in pixels */
+int	*pHt;		/* O ptr to height used by label, in pixels, or NULL */
+void	(*proc)();	/* I pointer to procedure to handle making a choice */
+enum	key1;		/* I key for context information for object */
+void	*val1;		/* I value associated with key */
+enum	key2;		/* I key for context information for object */
+void	*val2;		/* I value associated with key */
+{
+    Panel_item	checkbox;
+    int		height;
+
+/*-----------------------------------------------------------------------------
+* NOTE:  the kludgey way this is done is because XView in SunOS 4.1 can't
+*	seem to handle defining the number of items except at compile time
+*----------------------------------------------------------------------------*/
+#define GUI_CHK checkbox=xv_create(panel,PANEL_CHECK_BOX,PANEL_CHOICE_STRINGS,
+    if (nItems == 1)	   GUI_CHK "", NULL,NULL);
+    else if (nItems == 2)  GUI_CHK "","", NULL,NULL);
+    else if (nItems == 3)  GUI_CHK "","","", NULL,NULL);
+    else if (nItems == 4)  GUI_CHK "","","","", NULL,NULL);
+    else if (nItems == 5)  GUI_CHK "","","","","", NULL,NULL);
+    else if (nItems == 6)  GUI_CHK "","","","","","", NULL,NULL);
+    else if (nItems == 7)  GUI_CHK "","","","","","","", NULL,NULL);
+    else if (nItems == 8)  GUI_CHK "","","","","","","","", NULL,NULL);
+    else if (nItems == 9)  GUI_CHK "","","","","","","","","", NULL,NULL);
+    else if (nItems == 10) GUI_CHK "","","","","","","","","","", NULL,NULL);
+    else {
+	(void)printf("guiCheckbox can only handle up to 10 items\n");
+	exit(1);
+    }
+    if (checkbox == NULL) {
+	(void)printf("error creating \"%s\"s checkbox list\n", label);
+	exit(1);
+    }
+    xv_set(checkbox,
+	PANEL_LAYOUT,		PANEL_VERTICAL,
+	PANEL_CHOOSE_ONE,	TRUE,
+	PANEL_CHOOSE_NONE,	TRUE,
+	NULL);
+    xv_set(checkbox, PANEL_VALUE, -1, NULL);
+    if (proc != NULL) {
+	if (xv_set(checkbox, PANEL_NOTIFY_PROC, proc, NULL) != XV_OK) {
+	    (void)printf("error adding proc to \"%s\"s checkbox list\n", label);
+	    exit(1);
+	}
+    }
+    if (key1 != 0) {
+	if (xv_set(checkbox, XV_KEY_DATA, key1, val1, NULL) != XV_OK) {
+	    (void)printf("error adding key1 to \"%s\" checkbox list\n", label);
+	    exit(1);
+	}
+    }
+    if (key2 != 0) {
+	if (xv_set(checkbox, XV_KEY_DATA, key2, val2, NULL) != XV_OK) {
+	    (void)printf("error adding key2 to \"%s\" checkbox list\n", label);
+	    exit(1);
+	}
+    }
+    guiMessage(label, panel, pX, pY, pHt);
+    return checkbox;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiCheckboxItem - create an item in a checkbox list
+*
+* DESCRIPTION
+*	Change one of the items in a checkbox list.  This may be either
+*	setting the item following the creation of the list with guiCheckbox,
+*	or a subsequent change to an item.
+*
+* RETURNS
+*	void
+*
+* SEE ALSO
+*	guiCheckbox
+*
+*-*/
+void
+guiCheckboxItem(label, checkbox, itemNum, dfltFlag, pX, pY, pHt)
+char	*label;		/* I label for item */
+Panel_item checkbox;	/* I handle of checkbox list */
+int	itemNum;	/* I number (starting with 0) within checkbox list */
+int	dfltFlag;	/* I if 1, then this item will be pre-selected */
+int	*pX;		/* IO pointer to x position in panel, in pixels */
+int	*pY;		/* IO pointer to y position in panel, in pixels */
+int	*pHt;		/* O ptr to height used by label, in pixels, or NULL */
+{
+    Panel	panel=(Panel)xv_get(checkbox, PANEL_PARENT_PANEL);
+
+    xv_set(checkbox,
+	PANEL_CHOICE_X,		itemNum, *pX,
+	PANEL_CHOICE_Y,		itemNum, *pY-5,
+	NULL);
+    *pX += 40;
+    *pHt = 20;
+    guiMessage(label, panel, pX, pY, pHt);
+    if (dfltFlag)
+	xv_set(checkbox, PANEL_VALUE, itemNum, NULL);
+}
+
+/*+/subr**********************************************************************
 * NAME	guiFrame - create a base frame
 *
 * DESCRIPTION
+*	Create a base frame.  The frame will have have the specified label
+*	in its title bar, as well as for its icon.  The frame will have
+*	resize corners.  If height and width are specified, they will
+*	determine the size of the frame; otherwise, it will have a
+*	default size.
+*
+*	If pointers are specified in the call, then the X11 display and
+*	the XView server are passed back to the caller.
 *
 * RETURNS
 *	Frame handle
 *
+* SEE ALSO
+*	guiFrameCmd, guiIconCreate
 *-*/
 Frame
 guiFrame(label, x, y, width, height,ppDisp, pServer)
@@ -361,6 +552,9 @@ Xv_server *pServer;	/* O pointer to xview server handle, or NULL */
 * NAME	guiFrameCmd - create a command frame
 *
 * DESCRIPTION
+*	Create a command frame and an associated panel.  If a procedure
+*	is specified for handling resize, then the frame is set to receive
+*	resize events..
 *
 * RETURNS
 *	Frame handle
@@ -399,6 +593,166 @@ void	(*resizeProc)();/* I function to handle resize, or NULL */
 	xv_set(*pPanel, WIN_WIDTH, WIN_EXTEND_TO_EDGE, NULL);
     }
     return frame;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiGetNameFromSeln - get a name from a line of selected text
+*
+* DESCRIPTION
+*	Examines the selected text to extract a name to return to the caller.
+*	A `name' is considered to be a string of characters delimited by
+*	white space.
+*
+*	If the selected text is within the caller's text subwindow, then
+*	the entire line containing the selection is treated as being
+*	selected.
+*
+*	The actual action taken depends on the arguments and whether the
+*	selected text is in the caller's text subwindow:
+*
+*	in textsw  head  tail            pointer is returned to:
+*	---------  ----  ----  -----------------------------------------------
+*	  yes       0     0    entire line containing selection
+*	  yes       1     0    first word of line containing selection
+*	  yes       0     1    last word of line containing selection
+*	   no       0     0    selected text
+*	   no       1     0    selected text
+*	   no       0     1    selected text
+*
+* RETURNS
+*	char * to name
+*
+* BUGS
+* o	this routine isn't reentrant
+* o	if the caller wants a permanent copy of the name, it must be copied
+*	prior to the next call to guiGetNameFromSeln
+*
+*-*/
+char *
+guiGetNameFromSeln(pGuiCtx, textSw, headFlag, tailFlag)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
+Textsw	textSw;		/* I handle to text subwindow to treat special */
+int	headFlag;	/* I 1 to return only the head of the line */
+int	tailFlag;	/* I 1 to return only the tail of the line */
+{
+    Seln_holder	holder;
+    Seln_request *pResponse;
+    static char	buf[100];
+    int		bufLen, i;
+    char	*pSel;
+
+    holder = selection_inquire(pGuiCtx->server, SELN_PRIMARY);
+    pResponse = selection_ask(pGuiCtx->server, &holder,
+	SELN_REQ_CONTENTS_ASCII, NULL,
+	NULL);
+    pSel = pResponse->data + sizeof(SELN_REQ_CONTENTS_ASCII);
+    bufLen = strlen(pSel);
+    if (bufLen == 0)
+	pSel = NULL;	/* no selection */
+    else {
+	if (seln_holder_same_client(&holder, textSw)) {
+	    pResponse = selection_ask(pGuiCtx->server, &holder,
+		SELN_REQ_FAKE_LEVEL,	SELN_LEVEL_LINE,
+		SELN_REQ_CONTENTS_ASCII, NULL,
+		NULL);
+	    pSel = pResponse->data;
+	    pSel += sizeof(SELN_REQ_FAKE_LEVEL);
+	    pSel += sizeof(SELN_LEVEL_LINE);
+	    pSel += sizeof(SELN_REQ_CONTENTS_ASCII);
+	    bufLen = strlen(pSel);
+	    if (bufLen > sizeof(buf)-1) {
+		guiNotice(pGuiCtx, "too much text selected");
+		return (char *)NULL;
+	    }
+	    strcpy(buf, pSel);
+
+	    if (headFlag) {
+/*-----------------------------------------------------------------------------
+*	skip leading blanks, then look for the first white space; return
+*	what's in between to the caller
+*----------------------------------------------------------------------------*/
+		pSel = buf;
+		while (*pSel == ' ') {
+		    pSel++;		/* skip leading blanks */
+		    bufLen--;
+		}
+		i = 0;
+		while (i < bufLen-1) {
+		    if (isspace(pSel[i]))
+			break;
+		    i++;
+		}
+		pSel[i] = '\0';
+	    }
+	    else if (tailFlag) {
+/*-----------------------------------------------------------------------------
+*	looking backward from end, find the first white space; return the
+*	"tail" of the line to the caller
+*----------------------------------------------------------------------------*/
+		i = bufLen - 1;
+		while (i > 0) {
+		    if (buf[i] == '\n')
+			buf[i] = '\0';
+		    else if (isspace(buf[i])) {
+			i++;
+			break;
+		    }
+		    i--;
+		}
+		pSel = &buf[i];
+	    }
+	}
+    }
+    return pSel;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiIconCreate - create an icon to attach to a frame
+*
+* DESCRIPTION
+*	Using the bit image for an icon, creates the internal structure
+*	needed to draw the icon.  The icon is then associated with the
+*	specified frame.
+*
+* RETURNS
+*	Icon handle
+*
+* BUGS
+* o	assumes an icon size of 64x64
+*
+* EXAMPLE
+*	Associate the icon in "../src/myIcon.icon" with the base frame.
+*	(myIcon.icon was produced with the OpenLook "iconedit" program.)
+*
+* #include <xview/icon.h>
+*
+*	myIcon_bits[]={
+* #include "../src/myIcon.icon"
+*	};
+*
+*	Icon	myIcon;
+*
+*	myIcon = (Icon)guiIconCreate(pGuiCtx->baseFrame, myIcon_bits);
+*
+*-*/
+Icon
+guiIconCreate(frame, iconBits)
+Frame	frame;		/* I handle for frame to receive the icon */
+short	*iconBits;	/* I array of bits for the icon (64 by 64 assuemd) */
+{
+    Server_image icon_image;
+    Icon	icon;
+
+    icon_image = (Server_image)xv_create(NULL, SERVER_IMAGE,
+		XV_WIDTH,		64,
+		XV_HEIGHT,		64,
+		SERVER_IMAGE_BITS, iconBits,
+		NULL);
+    icon = (Icon)xv_create(frame, ICON,
+		ICON_IMAGE, icon_image, NULL);
+    xv_set(frame, FRAME_ICON, icon, NULL);
+
+    return icon;
 }
 
 /*+/subr**********************************************************************

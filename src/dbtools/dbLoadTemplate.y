@@ -140,8 +140,9 @@ vars: vars var
 
 var: WORD
 	{
-	    vars[var_count++] = dbmfMalloc(strlen($1)+1);
+	    vars[var_count] = dbmfMalloc(strlen($1)+1);
 	    strcpy(vars[var_count],$1);
+	    var_count++;
 	    dbmfFree($1);
 	}
 	;

@@ -24,7 +24,7 @@ The good news is that the rules for support and ioc applications
 are now greatly simplified. The bad news is that it does mean
 changes for existing 3.14.1 applications. Please see:</p>
 <p><a href="ConvertingR3.14.1AppsToR3.14.2.html">ConvertingR3.14.1AppsToR3.14.2</a></p>
-<p>for details. If you are using the function DBD keyword it no
+<p>for details. If you are using the <strong>function</strong> DBD keyword it no
 longer exists. Please read this conversion document for details.</p>
 
 <p><strong>Application Developer's Guide</strong></p>
@@ -40,7 +40,7 @@ record to always set NORD=NELEM. Thus if an application trys
 to write a waveform via the steps:</p>
 <pre>
     prset->get_array_info(paddr,&no_elements,&offset);
-    /*write nNew elements into array*/
+    << write nNew elements into array >>
     prset->put_array_info(paddr,nNew);
 </pre>
 <p>This sets NORD = nNew.

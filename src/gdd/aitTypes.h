@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  1999/05/10 23:40:06  jhill
+ * removed timespec def and os specific ifdef maintenance nightmare
+ *
  * Revision 1.9  1998/12/21 20:59:30  jhill
  * changes from Salikova
  *
@@ -48,9 +51,6 @@
 /* This is the file the user sets up for a given architecture */
 
 #define AIT_FIXED_STRING_SIZE 40
-
-#include <sys/types.h>
-#include <string.h>
 
 #include "shareLib.h"
 

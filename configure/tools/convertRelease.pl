@@ -227,7 +227,7 @@ sub cdCommands {
     $startup =~ s/^$root/$iocroot/ if ($opt_t);
     
     print OUT "startup = \"$startup\"\n";
-    print OUT "appbin = \"$ioctop/bin/$arch\"\n";	# R3.13.1 compatibility
+    print OUT "topbin = \"$ioctop/bin/$arch\"\n";	# R3.13.1 compatibility
     
     foreach $app (@includes) {
 	$iocpath = $path = $macros{$app};

@@ -56,6 +56,7 @@
 /*			instead of the IOC in use conn up flag		*/
 /*	031292 	joh	clear pend recv cnt even if its a poll in	*/
 /*			ca_pend_io()					*/
+/*	031892 	joh	initial broadcast retry delay is now a #define	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -957,7 +958,7 @@ ca_build_and_connect
 		 */
 		iiu[BROADCAST_IIU].nconn_tries = 0;
 		iiu[BROADCAST_IIU].next_retry = CA_CURRENT_TIME;
-		iiu[BROADCAST_IIU].retry_delay = 1;	/* sec */
+		iiu[BROADCAST_IIU].retry_delay = CA_RECAST_DELAY;
 
 		build_msg(chix, DONTREPLY);
 		if (!chix->connection_func) {
@@ -2101,8 +2102,9 @@ int			early;
   	cac_send_msg();
  	UNLOCK;
 
-    	if(pndrecvcnt<1 && early)
+    	if(pndrecvcnt<1 && early){
         	return ECA_NORMAL;
+	}
 
 	/*
 	 * quick exit if a poll
@@ -2130,7 +2132,7 @@ int			early;
 #endif
   		LOCK;
       		manage_conn(!early);
-		if(pndrecvcnt<1 && early){
+		if(pndrecvcnt>0 && early){
 			ca_pend_io_cleanup();
 		}
   		UNLOCK;

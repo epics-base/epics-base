@@ -93,6 +93,11 @@ nciu & netSubscription::channel () const
     return this->chan;
 }
 
+void netSubscription::operator delete ( void * p )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
 
 
 

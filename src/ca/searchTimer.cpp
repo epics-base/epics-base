@@ -102,33 +102,28 @@ void searchTimer::recomputeTimerPeriodAndStartTimer ( unsigned minRetryNew, cons
     bool start = false;
     double totalDelay = initialDelay;
 
-    if ( this->iiu.channelCount() > 0 && this->minRetry > minRetryNew ) {
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
+    epicsGuard < searchTimerMutex > locker ( this->mutex );
 
-        // double check mutex lock optimization is important because
-        // this gets called often when a channel is created and when a 
-        // beacon anomaly occurs
-        if ( this->iiu.channelCount() == 0 || this->minRetry <= minRetryNew  ) {
-            return; 
-        }
+    if ( this->iiu.channelCount() == 0 || this->minRetry <= minRetryNew  ) {
+        return; 
+    }
 
-        double oldPeriod = this->period;
+    double oldPeriod = this->period;
 
-        this->recomputeTimerPeriod ( minRetryNew );
+    this->recomputeTimerPeriod ( minRetryNew );
 
-        totalDelay += this->period;
+    totalDelay += this->period;
 
-        if ( totalDelay < oldPeriod ) {
-            epicsTimer::expireInfo info = this->timer.getExpireInfo ();
-            if ( info.active ) {
-                double delay = epicsTime::getCurrent() - info.expireTime;
-                if ( delay > totalDelay ) {
-                    start = true;
-                }
-            }
-            else {
+    if ( totalDelay < oldPeriod ) {
+        epicsTimer::expireInfo info = this->timer.getExpireInfo ();
+        if ( info.active ) {
+            double delay = epicsTime::getCurrent() - info.expireTime;
+            if ( delay > totalDelay ) {
                 start = true;
             }
+        }
+        else {
+            start = true;
         }
     }
 

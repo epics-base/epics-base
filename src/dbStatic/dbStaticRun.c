@@ -88,11 +88,16 @@ static void realToString(double value,char *preturn,int isdouble)
     if(value<0.0) {*preturn++ = '-'; value = -value;}
     logval = (int)log10(value);
     if(logval>6 || logval<-2 ) {
+        int nout;
 	ise=TRUE;
 	prec = precision[isdouble];
-	sprintf(ptstr,"%.*e",prec,value);
+	nout = sprintf(ptstr,"%.*e",prec,value);
 	loce = strchr(ptstr,'e');
-	if(!loce) {errMessage(-1,"logic error in real to string"); return;}
+        if(!loce) {
+            ptstr[nout] = 0;
+            strcpy(preturn,ptstr);
+            return;
+        }
 	*loce++ = 0;
     } else {
 	prec = precision[isdouble]-logval;

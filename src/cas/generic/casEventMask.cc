@@ -92,7 +92,7 @@ casEventMask casEventRegistry::registerEvent ( const char *pName )
 	else {
 		mask = this->maskAllocator ();
 		if ( mask.mask == 0u ) {
-			errMessage ( S_cas_tooManyEvents, NULL );
+			errMessage ( S_cas_tooManyEvents, "casEventRegistry::registerEvent" );
 		}
 		else {
 			pEntry = new casEventMaskEntry ( *this, mask, pName );

@@ -949,7 +949,7 @@ caStatus casStrmClient::writeResponse (
 	caStatus status;
 
 	if ( completionStatus ) {
-		errMessage ( completionStatus, NULL );
+		errMessage ( completionStatus, "write failed" );
 		status = this->sendErrWithEpicsStatus ( guard, & msg, 
 				chan.getCID(), completionStatus, ECA_PUTFAIL );
 	}

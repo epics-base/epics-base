@@ -1159,7 +1159,7 @@ static ASG *asAsgAdd(char *asgName)
 		&& ellCount(&pnext->ruleList)==0)
 			return(pnext);
 	    }
-	    errMessage(S_asLib_dupAsg,NULL);
+	    errMessage(S_asLib_dupAsg,"asAsgAdd");
 	    return(NULL);
 	}
 	pnext = (ASG *)ellNext((ELLNODE *)pnext);

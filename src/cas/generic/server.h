@@ -46,13 +46,13 @@
 // are included first here so that they are included
 // once only before epicsExportSharedSymbols is defined)
 //
+#include "gdd.h" // EPICS data descriptors 
 #undef epicsAssertAuthor
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h" // EPICS assert() macros
 #include "osiTime.h" // EPICS os independent time
 #include "alarm.h" // EPICS alarm severity/condition 
 #include "errMdef.h" // EPICS error codes 
-#include "gdd.h" // EPICS data descriptors 
 #include "resourceLib.h" // EPICS hashing templates
 #include "errlog.h" // EPICS error logging interface
 

@@ -432,7 +432,8 @@ LOCAL void no_read_access_event ( struct client *pClient,
     }
     else {
         send_err ( &pevext->msg, ECA_TOLARGE, pClient, 
-            RECORD_NAME ( &pevext->pciu->addr ) );
+            "server unable to load no read access response into protocol buffer PV=\"%s max bytes=%u\"",
+            RECORD_NAME ( &pevext->pciu->addr ), rsrvSizeofLargeBufTCP );
     }
 }
 
@@ -477,7 +478,9 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
         pevext->msg.m_dataType, pevext->msg.m_count, cid, pevext->msg.m_available,
         &pPayload );
     if ( ! success ) {
-        send_err ( &pevext->msg, ECA_TOLARGE, pClient, RECORD_NAME ( paddr ) );
+        send_err ( &pevext->msg, ECA_TOLARGE, pClient, 
+            "server unable to load read (or subscription update) response into protocol buffer PV=\"%s\" max bytes=%u",
+            RECORD_NAME ( paddr ), rsrvSizeofLargeBufTCP );
         if ( ! eventsRemaining )
             cas_send_msg ( pClient, ! pevext->send_lock );
         if ( pevext->send_lock )
@@ -607,7 +610,9 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
     success = cas_copy_in_header ( pClient, mp->m_cmmd, payloadSize, 
         mp->m_dataType, mp->m_count, pciu->cid, mp->m_available, &pPayload );
     if ( ! success ) {
-        send_err ( mp, ECA_TOLARGE, pClient, RECORD_NAME ( &pciu->addr ) );
+        send_err ( mp, ECA_TOLARGE, pClient, 
+            "server unable to load read response into protocol buffer PV=\"%s\" max bytes=%u",
+            RECORD_NAME ( &pciu->addr ), rsrvSizeofLargeBufTCP );
         SEND_UNLOCK ( pClient );
         return RSRV_OK;
     }
@@ -2140,9 +2145,11 @@ int camessage ( struct client *client )
         if ( msgsize > client->recv.maxstk ) {
             casExpandRecvBuffer ( client, msgsize );
             if ( msgsize > client->recv.maxstk ) {
-                const char *pCtx = "CAS: server unable to load large request message";
-                send_err ( &msg, ECA_TOLARGE, client, pCtx );
-                log_header ( pCtx , client, &msg, 0, nmsg );
+                send_err ( &msg, ECA_TOLARGE, client, 
+                    "CAS: Server unable to load large request message. Max bytes=%lu",
+                    rsrvSizeofLargeBufTCP );
+                log_header ( "CAS: server unable to load large request message", 
+                    client, &msg, 0, nmsg );
                 assert ( client->recv.cnt <= client->recv.maxstk );
                 assert ( msgsize >= bytes_left );
                 client->recvBytesToDrain = msgsize - bytes_left;

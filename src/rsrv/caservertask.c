@@ -455,6 +455,8 @@ void epicsShareAPI casr (unsigned level)
             bucketShow (pCaBucket);
             UNLOCK_CLIENTQ;
         }
+        printf ( "The server's array size limit is %u bytes max\n",
+            rsrvSizeofLargeBufTCP );
 
         printChannelAccessAddressList (&beaconAddrList);
     }

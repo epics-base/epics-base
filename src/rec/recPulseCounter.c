@@ -1,6 +1,7 @@
 /* recPulseCounter.c */
 /* share/src/rec $Id$ */
 
+
 /* recPulseCounter.c - Record Support Routines for PulseCounter records */
 /*
  * Author:      Janet Anderson
@@ -51,6 +52,7 @@
 #include     <devSup.h>
 #include     <errMdef.h>
 #include     <recSup.h>
+#include     <callback.h>
 #include     <pulseCounterRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -114,110 +116,147 @@ struct pcdset { /* pulseCounter input dset */
 
 static void monitor();
 
+/* control block for callback*/
+struct callback {
+        CALLBACK        callback;
+        struct dbCommon *precord;
+	};
+
+void callbackRequest();
+ 
+static void myCallback(struct callback *pcallback)
+{
+ 
+    struct pulseCounterRecord *pc=(struct pulseCounterRecord *)pcallback->precord;
+    struct rset     *prset=(struct rset *)(pc->rset);
+ 
+    dbScanLock((struct dbCommon *)pc);
+    (*prset->process)(pc);
+    dbScanUnlock((struct dbCommon *)pc);
+}
+
 
-static long init_record(ppc,pass)
-    struct pulseCounterRecord	*ppc;
-    int pass;
+static long init_record(struct pulseCounterRecord *ppc, int pass)
 {
     struct pcdset *pdset;
+    struct callback *pcallback;
     long status=0;
 
     if (pass==0) return(0);
 
     /* must have device support */
-    if(!(pdset = (struct pcdset *)(ppc->dset))) {
+    if(!(pdset = (struct pcdset *)(ppc->dset)))
+    {
          recGblRecordError(S_dev_noDSET,(void *)ppc,"pc: init_record");
          return(S_dev_noDSET);
     }
+
     /* get the hgv value if sgl is a constant*/
-    if (ppc->sgl.type == CONSTANT && ppc->gtyp == SOFTWARE){
+    if (ppc->sgl.type == CONSTANT && ppc->gtyp == SOFTWARE)
+	if(ppc->sgl.value.value!=0)
          ppc->sgv = ppc->sgl.value.value;
-    }
 
     if (ppc->sgl.type == PV_LINK && ppc->gtyp == SOFTWARE)
     {
         status = dbCaAddInlink(&(ppc->sgl), (void *) ppc, "SGV");
         if(status) return(status);
-    } /* endif */
+    }
 
     /* must have cmd_pc functions defined */
-    if( (pdset->number < 5) || (pdset->cmd_pc == NULL) ) {
+    if( (pdset->number < 5) || (pdset->cmd_pc == NULL) )
+    {
          recGblRecordError(S_dev_missingSup,(void *)ppc,"pc: cmd_pc");
          return(S_dev_missingSup);
     }
+
+    pcallback=(struct callback *)malloc(sizeof(struct callback));
+    callbackSetCallback(myCallback,(CALLBACK *)pcallback);
+    pcallback->precord=(struct dbCommon *)ppc;
+
     /* call device support init_record */
-    if( pdset->init_record ) {
+    if( pdset->init_record )
+    {
          if((status=(*pdset->init_record)(ppc))) return(status);
     }
+
+    ppc->cptr=(unsigned long)&pcallback;
+
     return(0);
 }
 
-static long process(ppc)
-    struct pulseCounterRecord        *ppc;
+static long process(struct pulseCounterRecord *ppc)
 {
     struct pcdset     *pdset = (struct pcdset *)(ppc->dset);
+    struct callback *pcallback=(struct callback *)(ppc->cptr);
     long           status=0;
     long             options,nRequest;
     unsigned short   save;
     unsigned char    pact=ppc->pact;
 
     /* must have  cmd_pc functions defined */
-    if( (pdset==NULL) || (pdset->cmd_pc==NULL) ) {
+    if( (pdset==NULL) || (pdset->cmd_pc==NULL) )
+    {
          ppc->pact=TRUE;
          recGblRecordError(S_dev_missingSup,(void *)ppc,"cmd_pc");
          return(S_dev_missingSup);
     }
 
     /* get soft hgv value when sgl is a DB_LINK and gtyp from Software */
-    if (!ppc->pact && ppc->gtyp == SOFTWARE){
-         if (ppc->sgl.type == DB_LINK){
-              options=0;
-              nRequest=1;
-              ppc->pact = TRUE;
-              status=dbGetLink(&ppc->sgl.value.db_link,(struct dbCommon *)ppc,DBR_SHORT,
-                   &ppc->sgv,&options,&nRequest);
-              ppc->pact = FALSE;
-              if(status!=0) {
-                  recGblSetSevr(ppc,LINK_ALARM,INVALID_ALARM);
-              }
-         }
-         if (ppc->sgl.type == CA_LINK){
-              ppc->pact = TRUE;
-              status=dbCaGetLink(&(ppc->sgl));
-              ppc->pact = FALSE;
-              if(status!=0) {
-                  recGblSetSevr(ppc,LINK_ALARM,INVALID_ALARM);
-              }
-         }
-         if(status==0){
-              if(ppc->sgv != ppc->osgv){ /* soft hgv changed */
-                   save=ppc->cmd;
-                   if(ppc->sgv!=0){
-                        ppc->cmd=CTR_START;
-                   } else {
-                        ppc->cmd=CTR_STOP;
-                   }
-                   status=(*pdset->cmd_pc)(ppc);
-                   ppc->cmd=save;
-                   ppc->osgv=ppc->sgv;
-                   if(status!=0) {
-                       recGblSetSevr(ppc,SOFT_ALARM,INVALID_ALARM);
-                   }
-              }
-         }
-     }
+    if (!ppc->pact && ppc->gtyp == SOFTWARE)
+    {
+	options=0;
+	nRequest=1;
+	status=recGblGetLinkValue(&(ppc->sgl),
+		(void *)ppc,DBR_SHORT,&(ppc->sgv),&options,&nRequest);
 
-     if(ppc->cmd>0){
+        if(status==0)
+	{
+            if(ppc->sgv != ppc->osgv) /* sgv changed */
+	    {
+                 save=ppc->cmd;
+
+                 if(ppc->sgv!=0)
+                      ppc->cmd=CTR_START;
+	         else
+                      ppc->cmd=CTR_STOP;
+
+                 status=(*pdset->cmd_pc)(ppc);
+                 ppc->cmd=save;
+                 ppc->osgv=ppc->sgv;
+
+                 if(status!=0)
+                     recGblSetSevr(ppc,SOFT_ALARM,INVALID_ALARM);
+
+		if(ppc->pact==TRUE)
+		{
+		    callbackRequest((CALLBACK *)pcallback);
+		    return(0);
+		}
+            }
+        }
+	else
+	    recGblSetSevr(ppc,LINK_ALARM,INVALID_ALARM);
+    }
+
+     if(ppc->cmd>0)
+     {
           ppc->scmd=ppc->cmd;
           status=(*pdset->cmd_pc)(ppc);
           ppc->cmd=CTR_READ;
      }
+
+     if(ppc->pact==TRUE)
+     {
+         callbackRequest((CALLBACK *)pcallback);
+         return(0);
+     }
+
      if (status==0) status=(*pdset->cmd_pc)(ppc);
 
      /* check if device support set pact */
      if ( !pact && ppc->pact ) return(0);
-     ppc->pact = TRUE;
 
+     ppc->pact = TRUE;
      ppc->udf=FALSE;
      tsLocalTime(&ppc->time);
 
@@ -231,9 +270,7 @@ static long process(ppc)
      return(status);
 }
 
-static long get_value(ppc,pvdes)
-    struct pulseCounterRecord             *ppc;
-    struct valueDes     *pvdes;
+static long get_value(struct pulseCounterRecord *ppc, struct valueDes *pvdes)
 {
     pvdes->field_type = DBF_ULONG;
     pvdes->no_elements=1;
@@ -241,34 +278,37 @@ static long get_value(ppc,pvdes)
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble *pgd;
+static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd)
 {
-    struct pulseCounterRecord   *ppc=(struct pulseCounterRecord *)paddr->precord;
+    struct pulseCounterRecord *ppc=(struct pulseCounterRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppc->val){
+    if(paddr->pfield==(void *)&ppc->val)
+    {
         pgd->upper_disp_limit = ppc->hopr;
         pgd->lower_disp_limit = ppc->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+    }
+    else
+	recGblGetGraphicDouble(paddr,pgd);
+
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 {
-    struct pulseCounterRecord   *ppc=(struct pulseCounterRecord *)paddr->precord;
+    struct pulseCounterRecord *ppc=(struct pulseCounterRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&ppc->val){
+    if(paddr->pfield==(void *)&ppc->val)
+    {
         pcd->upper_ctrl_limit = ppc->hopr;
         pcd->lower_ctrl_limit = ppc->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+    }
+    else
+   	 recGblGetControlDouble(paddr,pcd);
+
     return(0);
 }
 
-static void monitor(ppc)
-    struct pulseCounterRecord             *ppc;
+static void monitor(struct pulseCounterRecord             *ppc)
 {
     unsigned short  monitor_mask;
     short           stat,sevr,nsta,nsev;
@@ -280,7 +320,8 @@ static void monitor(ppc)
     monitor_mask = 0;
 
     /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
+    if (stat!=nsta || sevr!=nsev)
+    {
          /* post events for alarm condition change*/
          monitor_mask = DBE_ALARM;
          /* post stat and nsev fields */
@@ -290,9 +331,12 @@ static void monitor(ppc)
 
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppc,&ppc->val,monitor_mask);
-    if (ppc->scmd != ppc->cmd) {
+
+    if (ppc->scmd != ppc->cmd)
+    {
           db_post_events(ppc,&ppc->scmd,monitor_mask);
           ppc->scmd=ppc->cmd;
     }
+
     return;
 }

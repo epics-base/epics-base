@@ -1,4 +1,4 @@
-/* dbAccessRegister.h */
+/* dbAccessRegister.c */
 /* Author:  Marty Kraimer Date: 26APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -16,6 +16,8 @@ of this distribution.
 #include "dbAccess.h"
 #include "dbLoadTemplate.h"
 #include "registryRecordType.h"
+#define epicsExportSharedSymbols
+#include "dbAccessRegister.h"
 
 /* dbLoadDatabase */
 ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString,0};

@@ -14,6 +14,8 @@ of this distribution.
 
 #include "ioccrf.h"
 #include "dbTest.h"
+#define epicsExportSharedSymbols
+#include "dbTestRegister.h"
 
 /* dba */
 ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};

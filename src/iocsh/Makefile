@@ -6,6 +6,7 @@ include $(TOP)/configure/CONFIG
 
 INC += ioccrf.h
 INC += dbTestRegister.h
+INC += dbCaTestRegister.h
 INC += dbAccessRegister.h
 INC += ioccrfRegister.h
 
@@ -19,6 +20,7 @@ INC += ioccrfRegister.h
 
 LIBSRCS += ioccrf.c
 LIBSRCS += dbTestRegister
+LIBSRCS += dbCaTestRegister
 LIBSRCS += dbAccessRegister
 LIBSRCS += ioccrfRegister
 

@@ -35,7 +35,7 @@ PERL=perl
 # Directories
 
 INSTALL_LOCATION            = $(TOP)
-TOOLS = $(CONFIG)/tools
+TOOLS                       = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin

@@ -120,7 +120,7 @@ static char *SccsId = "@(#)dvx_driver.c 1.0\t5/1/90";
 struct dvx_rec dvx[MAX_DVX_CARDS];
 static char *dvx_shortaddr;
 static char *dvx_stdaddr;
-extern SEMAPHORE dvx_rpt_sem;
+SEMAPHORE dvx_rpt_sem;
 
 /* variable used in io_report to report which cards have been found. */
 

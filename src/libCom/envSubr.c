@@ -427,14 +427,6 @@ char		*value;		/* I pointer to value string */
 #endif
 }
 
-
-/* epicsSetEnvParams not required any more - do not use */
-
-int epicsSetEnvParams()
-{
-    return 0;
-}
-
 /*+/subr**********************************************************************
 * NAME  epicsPrtEnvParams - print value of all configuration parameters
 *

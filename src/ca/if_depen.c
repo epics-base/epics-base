@@ -88,7 +88,7 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 #endif
 
 	for (	pifreq = ifconf.ifc_req;
-	    	ifconf.ifc_len >= sizeof(*pifreq);
+	    	((size_t)ifconf.ifc_len) >= sizeof(*pifreq);
 	     	pifreq++, ifconf.ifc_len -= sizeof(*pifreq)) {
 
 		status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);

@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.36  1996/07/12 00:40:48  jhill
+ * fixed client disconnect problem under solaris
+ *
  * Revision 1.32.6.1  1996/07/12 00:39:59  jhill
  * fixed client disconnect problem under solaris
  *
@@ -115,13 +118,13 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
  */
 void ca_repeater()
 {
-  	int				status;
-  	int				size;
-  	SOCKET				sock;
-	struct sockaddr_in		from;
-  	struct sockaddr_in		local;
-  	int				from_size = sizeof from;
-	unsigned short			port;
+  	int			status;
+  	int			size;
+  	SOCKET			sock;
+	struct sockaddr_in	from;
+  	struct sockaddr_in	local;
+  	int			from_size = sizeof from;
+	unsigned short		port;
 
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 
@@ -186,7 +189,7 @@ void ca_repeater()
 		 * both zero length message and a registration message
 		 * will register a new client
 		 */
-		if(size >= sizeof(*pMsg)){
+		if( ((size_t)size) >= sizeof(*pMsg)){
 			if(ntohs(pMsg->m_cmmd) == REPEATER_REGISTER){
 				register_new_client(&local, &from);
 

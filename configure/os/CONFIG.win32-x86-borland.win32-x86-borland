@@ -27,14 +27,13 @@ CPLUSPLUS = CCC
 #
 # "\ " forces gnu make to keep this as one token
 #
-MSVISC = c:\\Program\ Files\\DevStudio\\Vc
-WINLINK = ilink32 -q
+WINLINK = $(BORLAND)/ilink32 -q
 
 # -l specifies default language
 # -fo Renames the output .RES file
-RCCMD = brcc32 -i. -i.. -i$(INSTALL_INCLUDE) -i$(EPICS_BASE_INCLUDE) -l0x409  -fo$@ $<
+RCCMD = $(BORLAND)/brcc32 -i. -i.. -i$(INSTALL_INCLUDE) -i$(EPICS_BASE_INCLUDE) -l0x409  -fo$@ $<
 
-ARCMD = tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
+ARCMD = $(BORLAND)/tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
 
 #############BAFCMD = bscmake /nologo /o $@
 
@@ -47,7 +46,7 @@ ARCMD = tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
 # -D_WIN32 macro defined to be consistant with Microsoft Visual C++
 # -D_RTLDLL macro defined to use Borland C++ RTL library
 CCLINKOPT = -q -tWM -tWD -a8 -D_WIN32 -D_RTLDLL
-ACC = bcc32 $(CCLINKOPT)
+ACC = $(BORLAND)/bcc32 $(CCLINKOPT)
 
 #
 # __STDC__=0 works but not as cleanly as with
@@ -95,7 +94,7 @@ ACC_STATIC_LDLIBS_YES=
 ACC_STATIC_LDLIBS_NO=
 
 # OS vendor c preprocessor
-##############ACC_CPP = cl  /E
+##############ACC_CPP = $(BORLAND)/cl  /E
 
 # Configure OS vendor C++ compiler
 #
@@ -105,7 +104,7 @@ ACC_STATIC_LDLIBS_NO=
 # to disable many nice things. This is overridden
 # by defining NO_BORLAND_STDC in the Makefile.
 #
-CCC = bcc32 $(CCLINKOPT)
+CCC = $(BORLAND)/bcc32 $(CCLINKOPT)
 ifdef NO_BORLAND_STDC
 CCC_NORMAL = $(CCC)
 CCC_STRICT = $(CCC)
@@ -184,9 +183,9 @@ OP_SYS_CFLAGS = -DBORLAND
 #
 # Borland specific include files
 #
-OP_SYS_INCLUDES = -I$(INCLUDE)
+OP_SYS_INCLUDES = -I$(BORLAND)/Include
 #
-OP_SYS_LDLIBS =
+OP_SYS_LDLIBS = 
 
 #
 # specify dll .def file only if it exists
@@ -199,11 +198,11 @@ DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(LIBRARY).def))
 #
 #   If we compile a .c, .cc into an $(OBJ),
 #   we test if this object is part of the
-#   library objects LIBOBJS.
+#   library objects LIBRARY_LD_OBJS.
 #   If so, we define _WINDLL so that
 #   e.g. include/shareLib.h works correctly.
 #
-HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS)))
+HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
 
 #
 #   A WIN32 dll has three parts:
@@ -211,13 +210,13 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS)))
 #   x.lib: what you link to progs that use the dll (LIBNAME)
 #   x.exp: what you need to build the dll (in no variable)
 #
-LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(LIB) -L$(LIB)\\Psdk c0d32.obj
-LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS) $(LIBRARY_LD_RESS))
+LINK.shrlib = $(WINLINK) $(WIN32_DLLFLAGS) -L$(BORLAND)/lib -L$(BORLAND)/lib\\Psdk c0d32.obj
+LINK.shrlib+= $(LIBRARY_LD_OBJS) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(SHRLIB_LDLIBS)
 
 
 #	adjust names of libraries to build
 #
-#	But: if there are no objects LIBOBJS to include
+#	But: if there are no objects LIBRARY_LD_OBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
 SHRLIB_SUFFIX=.dll
@@ -278,7 +277,7 @@ LDFLAGS += -c -C -Gn -Tpe -x -w -L$(LIB) -L$(LIB)\\Psdk
 LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 
-LINK.cpp = $(WINLINK) $(LDFLAGS) $(LINKSTARTUP) $(PROD_LD_OBJS) $(PROD_LD_RESS)
+LINK.cpp = $(WINLINK) $(LDFLAGS) $(LINKSTARTUP) $(PROD_LD_OBJS)
 LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 #--------------------------------------------------

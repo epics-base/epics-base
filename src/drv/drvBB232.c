@@ -341,8 +341,6 @@ msgStrParm	*pwrParm;
   pdpvtBitBusHead->txMsg.cmd = BB_232_CMD + pdrvBB232Link->port;
   pdpvtBitBusHead->rxMsg.cmd = 0;
 
-/* BUG -- should probably check the rxMsg.cmd field here too */
-
   while (len && (pdpvtBitBusHead->status == BB_OK) &&
 	 !(pdpvtBitBusHead->rxMsg.cmd & 1))
   {
@@ -372,9 +370,11 @@ msgStrParm	*pwrParm;
     len -= loopLen;
   }
 
-  if ((pdpvtBitBusHead->status != BB_OK) && (pdpvtBitBusHead->rxMsg.cmd & 1))
+  if ((pdpvtBitBusHead->status != BB_OK) || (pdpvtBitBusHead->rxMsg.cmd & 1))
   {
-    printf("BB232 write error on link %d, node %d, port %d\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port);
+    if (drvBB232Debug)
+      printf("BB232 write error on link %d, node %d, port %d, driver %02.2X, message %02.2X\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port, pdpvtBitBusHead->status, pdpvtBitBusHead->rxMsg.cmd);
+
     pxact->status = XACT_IOERR;
   }
 
@@ -490,7 +490,8 @@ msgStrParm	*prdParm;
   /* Note that the following error check, takes priority over a length error */
   if (pdpvtBitBusHead->status != BB_OK)
   {
-    printf("BB232 read error on link %d, node %d, port %d\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port);
+    if (drvBB232Debug)
+      printf("BB232 read error on link %d, node %d, port %d\n", pdrvBB232Link->link, pdrvBB232Link->node, pdrvBB232Link->port);
     pxact->status = XACT_IOERR;
   }
     

@@ -115,12 +115,12 @@ epicsShareFunc void epicsShareAPI ellVerify (ELLLIST *pList);
 
 #else				/*DLLLIB_USE_MACROS*/
 
-void ellInit ();
-int  ellCount ();
-ELLNODE *ellFirst ();
-ELLNODE *ellNext ();
-ELLNODE *ellLast ();
-ELLNODE *ellPrevious ();
+epicsShareFunc void epicsShareAPI ellInit ();
+epicsShareFunc int epicsShareAPI ellCount ();
+epicsShareFunc ELLNODE epicsShareAPI *ellFirst ();
+epicsShareFunc ELLNODE epicsShareAPI *ellNext ();
+epicsShareFunc ELLNODE epicsShareAPI *ellLast ();
+epicsShareFunc ELLNODE epicsShareAPI *ellPrevious ();
 
 #endif				/*DLLLIB_USE_MACROS*/
 

@@ -1,21 +1,7 @@
 name  [a-zA-Z0-9_\-:\.\[\]<>;]
-BEL    \\a
-BS     \\b
-FF     \\f
-NL     \\n
-CR     \\r
-HT     \\t
-VT     \\v
-backSla  \\\\
-question \\\?
-single   \\\'
-double   \\\"
-octal  \\[0-7]+
-hexa   \\x[a-fA-F0-9]+
-escape {BEL}|{BS}|{FF}|{NL}|{CR}|{HT}|{VT}|{backSla}|{question}|{single}|{double}|{octal}|{question}|{hexa}
-spaces  [ \t]
-regular [a-zA-Z0-9_\,\^~\./\*#\[\]%:;!|\'\-&\(\)@\?\+<>=\$\{\}]
-string {regular}|{spaces}|{escape}
+notquote [^\"]
+escapequote \\\"
+string {notquote}|{escapequote}
 
 
 %{

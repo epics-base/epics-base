@@ -77,6 +77,6 @@ epicsShareFunc void epicsShareAPI
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-	cantProceed ("assert fail");
+	abort ();
 }
 

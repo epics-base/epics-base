@@ -32,6 +32,7 @@
  * -----------------
  * .18  07-18-91	mrk	major revision
  * .19  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .20	05-19-92	mrk	Changes for internal database structure changes
  */
 
 #include	<vxWorks.h>
@@ -47,12 +48,15 @@
 #include	<dbScan.h>
 #include	<taskwd.h>
 #include	<callback.h>
+#include	<dbBase.h>
 #include	<dbCommon.h>
 #include	<dbRecords.h>
 #include	<devSup.h>
 #include	<task_params.h>
 #include	<fast_lock.h>
+#include	<dbManipulate.h>
 
+extern struct dbBase *pdbBase;
 extern volatile int interruptAccept;
 
 struct scan_list{
@@ -370,29 +374,31 @@ static void initPeriodic()
 	} scanChoices;
 	struct scan_list *psl;
 	struct dbAddr		dbAddr;		/* database address */
+	struct recHeader	*precHeader;
 	struct recLoc		*precLoc;
+	RECNODE			*precNode;
 	struct dbCommon		*precord=NULL;	/* pointer to record	*/
 	long			status,nRequest,options;
 	void			*pfl=NULL;
-	int			i,j;
+	int			i;
 	char name[PVNAME_SZ+FLDNAME_SZ+2];
 	float temp;
 
-	if(dbRecords==NULL) {
+	if(!(precHeader = pdbBase->precHeader)) {
 	   errMessage(S_record_noRecords, "initPeriodic");
 	   exit(1);
 	}
 	/* look for first record */
-	for (i=0; i<dbRecords->number; i++) {
-		if((precLoc=dbRecords->papRecLoc[i])==NULL) continue;
-		for(j=0, precord=(struct dbCommon*)(precLoc->pFirst);
-		    j<precLoc->no_records;
-		    j++, ((char *)precord) += precLoc->rec_size) {
+	for (i=0; i<precHeader->number; i++) {
+		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
+		for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
+		precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+			precord = precNode->precord;
 			if(precord->name[0]!=0) goto got_record;
 		}
 	}
 	errMessage(S_record_noRecords,"initPeriodic");
-	exit(1);
+	return;
 got_record:
 	/* get database address of SCAN field */
 	name[PVNAME_SZ+1] = 0;
@@ -604,22 +610,23 @@ static void scanList(struct scan_list *psl)
 
 static void buildScanLists()
 {
+	struct recHeader	*precHeader;
 	struct recLoc		*precLoc;
+	RECNODE			*precNode;
 	struct dbCommon		*precord;	/* pointer to record	*/
-	int			i,j;
+	int			i;
 
-	if(dbRecords==NULL) {
+	if(!(precHeader = pdbBase->precHeader)) {
 		errMessage(S_record_noRecords,
 			"Error detected in build_scan_lists");
 		exit(1);
 	}
 	/* look through all of the database records and place them on lists */
-	for (i=0; i<dbRecords->number; i++) {
-		if((precLoc=dbRecords->papRecLoc[i])==NULL) continue;
-		for(j=0, precord=(struct dbCommon*)(precLoc->pFirst);
-		    j<precLoc->no_records;
-		    j++, precord = (struct dbCommon *)
-		    ((char *)precord + precLoc->rec_size)) {
+	for (i=0; i<precHeader->number; i++) {
+		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
+		for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
+		precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+			precord = precNode->precord;
 			if(precord->name[0]==0) continue;
 			scanAdd(precord);
 		}

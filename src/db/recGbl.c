@@ -30,21 +30,26 @@
  * -----------------
  * .01  11-16-91        jba     Added recGblGetGraphicDouble, recGblControlDouble
  * .02  02-28-92        jba     ANSI C changes
+ * .03	05-19-92	mrk	Changes for internal database structure changes
  */
 
 #include	<vxWorks.h>
 #include	<limits.h>
 #include	<types.h>
+#include	<lstLib.h>
 #include	<stdioLib.h>
 #include	<strLib.h>
 
 #include	<choice.h>
 #include	<dbDefs.h>
+#include	<dbBase.h>
 #include	<dbRecType.h>
 #include	<dbRecDes.h>
 #include	<dbAccess.h>
 #include	<devSup.h>
 #include	<dbCommon.h>
+
+extern struct dbBase *pdbBase;
 
 /***********************************************************************
 * The following are the global record processing rouitines
@@ -159,7 +164,7 @@ char		*psupport_name;
 	else
 		strcat(buffer,"Unknown");
 	strcat(buffer,") not available.\nRecord Type is ");
-	if(pstr=GET_PRECTYPE(paddr->record_type))
+	if(pstr=GET_PRECNAME(pdbBase->precType,paddr->record_type))
 		strcat(buffer,pstr);
 	else
 		strcat(buffer,"BAD");
@@ -334,7 +339,7 @@ double		*prangeValue;
 	precord=(struct dbCommon *)(paddr->precord);
         recType=paddr->record_type;
 
-        if(!(precTypDes=GET_PRECTYPDES(recType))){
+        if(!(precTypDes=GET_PRECTYPDES(pdbBase->precDes,recType))){
                 recGblRecordError(1,precord,"getVarRangeValue");
                 return;
         }

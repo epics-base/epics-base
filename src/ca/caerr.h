@@ -195,7 +195,7 @@ READONLY char   *ca_message_text[]
 "IO operations are in progress",
 "Invalid synchronous group identifier",
 
-"Put call back operation timed out waiting for put call back operation in progress",
+"Put callback timed out",
 "Read access denied",
 "Write access denied",
 "Sorry, that anachronistic feature of CA is no longer supported",

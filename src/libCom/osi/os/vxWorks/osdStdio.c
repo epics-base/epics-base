@@ -24,15 +24,12 @@ static STATUS outRoutine(char *buffer, int nchars, int outarg) {
     int free = poutStr->free;
     int len;
     
-    if(free<=0) { /*let fioFormatV continue to count length*/
+    if(free<=1) { /*let fioFormatV continue to count length*/
         return OK;
-    } else if(free==1) {
-        len = 1;
-    } else { /* free>1 */
-        len = min(free-1, nchars);
-        strncpy(poutStr->str, buffer, len);
-        poutStr->str += len;
     }
+    len = min(free-1, nchars);
+    strncpy(poutStr->str, buffer, len);
+    poutStr->str += len;
     poutStr->free -= len;
     /*make sure final string is null terminated*/
     *poutStr->str = 0;

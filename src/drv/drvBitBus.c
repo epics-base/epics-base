@@ -405,7 +405,7 @@ int	link;
       pXvmeLink[link]->cHead++;
   
       /* find the message this is a reply to */
-      pXvmeLink[link]->rxDpvtHead = (struct dpvtHead *) lstFirst(&(pBbLink[link]->busyList));
+      pXvmeLink[link]->rxDpvtHead = (struct dpvtBitBusHead *) lstFirst(&(pBbLink[link]->busyList));
       while (pXvmeLink[link]->rxDpvtHead != NULL)
       { /* see if node's match */
         if (pXvmeLink[link]->rxDpvtHead->txMsg->node == pXvmeLink[link]->rxHead[2])
@@ -429,7 +429,7 @@ int	link;
             break;		/* get out of the while() */
           }
         }
-        pXvmeLink[link]->rxDpvtHead = (struct dpvtHead *) lstNext(pXvmeLink[link]->rxDpvtHead); /* Keep looking */
+        pXvmeLink[link]->rxDpvtHead = (struct dpvtBitBusHead *) lstNext(pXvmeLink[link]->rxDpvtHead); /* Keep looking */
       }
       if (pXvmeLink[link]->rxDpvtHead == NULL)
       {
@@ -592,8 +592,8 @@ xvmeLinkTask(link)
 int	link;
 {
   struct  bbLink 	*plink; /* a reference to the link structures covered */
-  struct dpvtHead  *pnode;
-  struct dpvtHead  *npnode;
+  struct dpvtBitBusHead  *pnode;
+  struct dpvtBitBusHead  *npnode;
   unsigned char	intMask;
 
   if (bbDebug)
@@ -622,7 +622,7 @@ int	link;
       /* Turn off ints from this link so list integrity is maintained */
       pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT;
 
-      pnode = (struct dpvtHead *) lstFirst(&(plink->busyList));
+      pnode = (struct dpvtBitBusHead *) lstFirst(&(plink->busyList));
       while (pnode != NULL)
       {
 	pnode->ageLimit--;
@@ -630,7 +630,7 @@ int	link;
           logMsg("xvmeLinkTask(%d): (Watchdog) node 0x%08.8X.ageLimit=%d\n", link, pnode, pnode->ageLimit);
 	if (pnode->ageLimit <= 0)
 	{ /* This node has been on the busy list for too long */
-	  npnode = (struct dpvtHead *) lstNext(pnode);
+	  npnode = (struct dpvtBitBusHead *) lstNext(pnode);
 	  if ((intMask & XVME_TX_INT) && (pXvmeLink[link]->txDpvtHead == pnode))
 	  { /* Uh oh... Transmitter is stuck while sending this xact */
             logMsg("xvmeLinkTask(%d): transmitter looks stuck, link dead\n", link);
@@ -654,7 +654,7 @@ int	link;
 	  pnode = npnode;	/* Because I deleted the current one */
 	}
 	else
-	  pnode = (struct dpvtHead *) lstNext(pnode);	/* check out the rest */
+	  pnode = (struct dpvtBitBusHead *) lstNext(pnode);	/* check out the rest */
       }
       /* check the pnode pointed to by rxDpvtHead to see if rcvr is stuck */
       if (pXvmeLink[link]->rxDpvtHead != NULL)
@@ -689,10 +689,10 @@ int	link;
       intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT);
       pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT; /* stop the receiver */
   
-      if ((pnode = (struct dpvtHead *)lstFirst(&(plink->hiPriList))) != NULL)
+      if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->hiPriList))) != NULL)
       {
         while (plink->deviceStatus[pnode->txMsg->node] == BUSY)
-          if ((pnode = (struct dpvtHead *)lstNext(&(plink->hiPriList))) == NULL)
+          if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->hiPriList))) == NULL)
             break;
       }
       if (pnode != NULL)
@@ -732,10 +732,10 @@ int	link;
         intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT);
         pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT; /* stop the receiver */
   
-        if ((pnode = (struct dpvtHead *)lstFirst(&(plink->loPriList))) != NULL)
+        if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->loPriList))) != NULL)
         {
           while (plink->deviceStatus[pnode->txMsg->node] == BUSY)
-            if ((pnode = (struct dpvtHead *)lstNext(&(plink->loPriList))) == NULL)
+            if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->loPriList))) == NULL)
               break;
         }
         if (pnode != NULL)
@@ -782,7 +782,7 @@ int	link;
 static long
 qBBReq(link, pdpvt, prio)
 int     link;
-struct  dpvtHead *pdpvt;
+struct  dpvtBitBusHead *pdpvt;
 int     prio;
 {
   switch (prio) {

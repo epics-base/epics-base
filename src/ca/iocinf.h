@@ -336,7 +336,6 @@ private:
 enum iiu_conn_state {iiu_connecting, iiu_connected, iiu_disconnected};
 
 extern threadPrivateId cacRecursionLock;
-extern threadPrivateId caClientContextId;
 
 class baseIIU {
 public:

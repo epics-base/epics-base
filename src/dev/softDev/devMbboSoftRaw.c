@@ -68,6 +68,9 @@ struct mbboRecord *pmbbo;
  
     long status;
  
+    /*to preserve old functionality*/
+    if(pmbbo->nobt == 0) pmbbo->mask = 0xffffffff;
+    pmbbo->mask <<= pmbbo->shft;
     /*dont convert*/
     status = 2;
     return status;
@@ -78,7 +81,9 @@ static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
     long status;
+    unsigned long data;
 
-    status = dbPutLink(&pmbbo->out,DBR_LONG, &pmbbo->rval,1);
+    data = pmbbo->rval & pmbbo->mask;
+    status = dbPutLink(&pmbbo->out,DBR_LONG, &data,1);
     return(0);
 }

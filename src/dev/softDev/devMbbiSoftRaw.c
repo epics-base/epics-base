@@ -72,6 +72,9 @@ static long init_record(pmbbi)
     if (pmbbi->inp.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);
     }
+    /*to preserve old functionality*/
+    if(pmbbi->nobt == 0) pmbbi->mask = 0xffffffff;
+    pmbbi->mask <<= pmbbi->shft;
     return(0);
 }
 
@@ -81,5 +84,6 @@ static long read_mbbi(pmbbi)
     long status;
 
     status = dbGetLink(&pmbbi->inp,DBR_LONG,&pmbbi->rval,0,0);
+    if(status==0) pmbbi->rval &= pmbbi->mask;
     return(0);
 }

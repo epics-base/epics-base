@@ -650,6 +650,8 @@ static void dbRecordtypeBody(void)
     ilink = 0;
     for(i=0; i<no_fields; i++) {
 	pdbFldDes = pdbRecordType->papFldDes[i];
+        /* if prompt is null make it a null string */
+        if(!pdbFldDes->prompt) pdbFldDes->prompt = dbCalloc(1,sizeof(char));
 	field_type = pdbFldDes->field_type;
 	if((field_type>=DBF_INLINK) && (field_type<=DBF_FWDLINK))
 	    pdbRecordType->link_ind[ilink++] = i;

@@ -10,6 +10,10 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.1  1995/08/17  20:14:56  jba
+# Added base/tools scripts functionality to base/Makefile, removed scripts
+# Moved base/tools/MakeRelease to base dir.
+#
 # Revision 1.14  1994/12/19  18:42:08  tang
 # Make the args length compatible for HP and SUN.
 #
@@ -99,6 +103,12 @@ cd $EPICS
 ls base/README* | xargs tar cvf ${RELS}.Tar
 
 ls base/Makefile* > /tmp/make_release.out.$$;
+
+if [ -d startup ];
+	then
+		find startup -name CVS -prune -o ! -type d -print \
+				>> /tmp/make_release.out.$$;
+	fi
 
 find config base/include base/man base/tools -name CVS -prune -o \
 		! -type d -print >> /tmp/make_release.out.$$;

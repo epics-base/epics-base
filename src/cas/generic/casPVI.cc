@@ -126,12 +126,12 @@ void casPVI::destroy ()
 // 
 caStatus casPVI::attachToServer (caServerI &cas)
 {
-	if (this->pCAS) {
+	if ( this->pCAS ) {
 		//
 		// currently we enforce that the PV can be attached to only
 		// one server at a time
 		//
-		if (this->pCAS != &cas) {
+		if ( this->pCAS != &cas ) {
 			return S_cas_pvAlreadyAttached;
 		}
 	}
@@ -145,7 +145,7 @@ caStatus casPVI::attachToServer (caServerI &cas)
 		//
 		// install the PV into the server
 		//
-		cas.installItem (*this);
+		cas.installItem ( *this );
 		this->pCAS = &cas;
 	}
 	return S_cas_success;
@@ -163,9 +163,6 @@ void casPVI::updateEnumStringTable ()
 {
     static const aitUint32 stringTableTypeStaticInit = 0xffffffff;
     static aitUint32 stringTableType = stringTableTypeStaticInit;
-    unsigned nativeType;
-    caStatus status;
-    gdd *pTmp;
 
     //
     // reload the enum string table each time that the
@@ -176,33 +173,29 @@ void casPVI::updateEnumStringTable ()
     //
     // fetch the native type
     //
-	status = this->bestDBRType (nativeType);
-	if (status) {
-		errMessage(status, "best external dbr type fetch failed");
-        return;
-	}
+    aitEnum bestAIT = this->bestExternalType ();
 
     //
     // empty string table for non-enumerated PVs
     //
-    if (nativeType!=aitEnumEnum16) {
+    if ( bestAIT != aitEnumEnum16 ) {
         return;
     }
     
     //
     // lazy init
     //
-    if (stringTableType==stringTableTypeStaticInit) {
+    if ( stringTableType == stringTableTypeStaticInit ) {
         stringTableType = gddApplicationTypeTable::app_table.registerApplicationType ("enums");
     }
     
     //
     // create a gdd with the "enum string table" application type
     //
-    pTmp = new gddScalar (stringTableType);
+    gdd *pTmp = new gddScalar ( stringTableType );
     if (pTmp==NULL) {
-        errMessage (S_cas_noMemory, 
-"unable to read application type \"enums\" string conversion table for enumerated PV");
+        errMessage ( S_cas_noMemory, 
+"unable to read application type \"enums\" string conversion table for enumerated PV" );
         return;
     }
 
@@ -215,7 +208,7 @@ void casPVI::updateEnumStringTable ()
     //
     // read the enum string table
     //
-    status = this->read (ctx, *pTmp);
+    caStatus status = this->read ( ctx, *pTmp );
 	if (status == S_casApp_asyncCompletion || status == S_casApp_postponeAsyncIO) {
         pTmp->unreference ();
 		errMessage (status, 
@@ -224,43 +217,43 @@ void casPVI::updateEnumStringTable ()
 " please fetch \"enums\" string conversion table into cache during asychronous PV attach IO completion");
         return;
 	}
-    else if (status) {
+    else if ( status ) {
         pTmp->unreference ();
         errMessage (status, 
 "unable to read application type \"enums\" string conversion table for enumerated PV");
         return;
 	}
 
-    if (pTmp->isContainer()) {
+    if ( pTmp->isContainer() ) {
         errMessage (S_cas_badType, 
 "application type \"enums\" string conversion table for enumerated PV was a container (expected vector of strings)");
         pTmp->unreference ();
         return;
     }
     
-    if (pTmp->dimension()==0) {
-        if (pTmp->primitiveType()==aitEnumString) {
+    if  ( pTmp->dimension() == 0 ) {
+        if ( pTmp->primitiveType() == aitEnumString ) {
             aitString *pStr = (aitString *) pTmp->dataVoid ();
             if ( ! this->enumStrTbl.setString ( 0, pStr->string() ) ) {
                 errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
             }
         }
-        else if (pTmp->primitiveType()==aitEnumFixedString) {
+        else if ( pTmp->primitiveType()==aitEnumFixedString ) {
             aitFixedString *pStr = (aitFixedString *) pTmp->dataVoid ();
             if ( ! this->enumStrTbl.setString ( 0, pStr->fixed_string ) ) {
                 errMessage ( S_cas_noMemory, "no memory to set enumerated PV string cache" );
             }
         }
         else {
-            errMessage (S_cas_badType, 
-"application type \"enums\" string conversion table for enumerated PV isnt a string type?");
+            errMessage ( S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV isnt a string type?" );
         }
     }
-    else if (pTmp->dimension()==1) {
+    else if ( pTmp->dimension() == 1 ) {
         gddStatus gdd_status;
         aitIndex index, first, count;
         
-        gdd_status = pTmp->getBound (0, first, count);
+        gdd_status = pTmp->getBound ( 0, first, count );
         assert (gdd_status == 0);
 
         //
@@ -268,7 +261,7 @@ void casPVI::updateEnumStringTable ()
         //
         this->enumStrTbl.reserve ( count );
 
-        if (pTmp->primitiveType()==aitEnumString) {
+        if ( pTmp->primitiveType() == aitEnumString ) {
             aitString *pStr = (aitString *) pTmp->dataVoid ();
             for ( index = 0; index<count; index++ ) {
                 if ( ! this->enumStrTbl.setString ( index, pStr[index].string() ) ) {
@@ -276,7 +269,7 @@ void casPVI::updateEnumStringTable ()
                 }
             }
         }
-        else if (pTmp->primitiveType()==aitEnumFixedString) {
+        else if ( pTmp->primitiveType() == aitEnumFixedString ) {
             aitFixedString *pStr = (aitFixedString *) pTmp->dataVoid ();
             for ( index = 0; index<count; index++ ) {
                 if ( ! this->enumStrTbl.setString ( index, pStr[index].fixed_string ) ) {
@@ -285,13 +278,13 @@ void casPVI::updateEnumStringTable ()
             }
         }
         else {
-            errMessage (S_cas_badType, 
-"application type \"enums\" string conversion table for enumerated PV isnt a string type?");
+            errMessage ( S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV isnt a string type?" );
         }
     }
     else {
-        errMessage (S_cas_badType, 
-"application type \"enums\" string conversion table for enumerated PV was multi-dimensional (expected vector of strings)");
+        errMessage ( S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV was multi-dimensional (expected vector of strings)" );
     }
 
     pTmp->unreference ();

@@ -29,6 +29,8 @@
 *
 * Modification Log:
 * -----------------
+* .01  07-16-92        jba     changed VALID_ALARM to INVALID_ALARM
+* .01  07-16-92        jba     changes made to remove compile warning msgs
 *
 ****************************************************************/
 
@@ -37,6 +39,15 @@
 #include <cadef.h>
 #include <caerr.h>
 #include <db_access.h>
+
+/* needed for calloc */
+#include <stdlib.h>
+
+/* needed for sprintf */
+#include <stdioLib.h>
+
+/* needed for vxTas */
+#include <vxLib.h>
 
 /* needed for PVNAME_SZ and FLDNAME_SZ */
 #include <dbDefs.h>
@@ -673,7 +684,7 @@ long rc;
 
 		/* in dbCaDblink.c */
 		rc = dbCaMaximizeSeverity(pi->pdest_dbaddr, 
-		    (unsigned short) VALID_ALARM, (unsigned short) LINK_ALARM);
+		    (unsigned short) INVALID_ALARM, (unsigned short) LINK_ALARM);
 	    else
 	    {
 /* printf("dbCaGetLink() found channel connected and needs_reading %c\n", (pi->needs_reading ? 'T' :'F')); */
@@ -917,7 +928,7 @@ BOOL done;
 			{
 			    /* raising an alarm disconnected */
 			    status = dbCaMaximizeSeverity(po->psource_dbaddr, 
-						(unsigned short) VALID_ALARM, 
+						(unsigned short) INVALID_ALARM, 
 						(unsigned short) LINK_ALARM);
 
 			    /* pushing this node onto the disconnected list */
@@ -1083,7 +1094,7 @@ long rc;
 				if (po->valid_value && po->on_writelist)
 				    /* in dbCaDblink.c */
 				rc = dbCaMaximizeSeverity(po->psource_dbaddr, 
-					    (unsigned short) VALID_ALARM, 
+					    (unsigned short) INVALID_ALARM, 
 					    (unsigned short) LINK_ALARM);
 
 				po->valid_value = TRUE;
@@ -1120,7 +1131,7 @@ long rc;
 				/* was returned from dbCaCopyPvar() instead  */
 				    /* in dbCaDblink.c */
 				rc = dbCaMaximizeSeverity(po->psource_dbaddr, 
-					    (unsigned short) VALID_ALARM, 
+					    (unsigned short) INVALID_ALARM, 
 					    (unsigned short) LINK_ALARM);
 			    } /* endif */
 
@@ -1134,7 +1145,7 @@ long rc;
 
 			    /* in dbCaDblink.c */
 			    rc = dbCaMaximizeSeverity(po->psource_dbaddr, 
-				    (unsigned short) VALID_ALARM, 
+				    (unsigned short) INVALID_ALARM, 
 				    (unsigned short) LINK_ALARM);
 }
 		    }
@@ -1433,8 +1444,10 @@ struct input_pvar *pi;
 char errmsg[100];
 
 /* for debugging */
+/*
 char buff[100];
 char sevr_buff[20];
+*/
 char print_line[500];
 
     if (pi = (struct input_pvar *) arg.usr)

@@ -46,7 +46,7 @@ public:
 
 class epicsTimer {              // X aCC 655
 public:
-    virtual void destroy () = 0; // requires existence of timer queue
+    virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     virtual void cancel () = 0;

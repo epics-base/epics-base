@@ -917,7 +917,6 @@ LOCAL void event_task (void *pParm)
 
     semMutexDestroy(evUser->firstque.writelock);
 
-    /* joh- added this code to free additional event queues */
     {
             struct event_que    *nextque;
 

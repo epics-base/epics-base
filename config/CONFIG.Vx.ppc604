@@ -10,11 +10,5 @@ CMPLR_SUFFIX = ppc
 ARCH_CLASS = ppc
 
 # Architecture specific build flags 
-#ARCH_DEP_CPPFLAGS = -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
-#ARCH_DEP_CFLAGS = -fno-for-scope -mcpu=604 --no-builtin 
-
-ARCH_DEP_CPPFLAGS = -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
-ARCH_DEP_CFLAGS = -fno-for-scope -mcpu=604 --no-builtin 
-
-# ARCH_DEP_CFLAGS== -fsigned-char     #May need for calcPerform.c
-
+ARCH_DEP_CPPFLAGS = -DCPU=PPC604
+ARCH_DEP_CFLAGS = -fno-for-scope -mcpu=604

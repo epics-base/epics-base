@@ -17,6 +17,7 @@ INC += addrList.h
 INC += cacIO.h
 INC += caDiagnostics.h
 
+LIBSRCS += cac.cpp
 LIBSRCS += cacChannel.cpp
 LIBSRCS += cacChannelNotify.cpp
 LIBSRCS += cacNotify.cpp
@@ -39,7 +40,6 @@ LIBSRCS += baseNMIU.cpp
 LIBSRCS += netReadNotifyIO.cpp
 LIBSRCS += netWriteNotifyIO.cpp
 LIBSRCS += netSubscription.cpp
-LIBSRCS += cac.cpp
 LIBSRCS += tcpSendWatchdog.cpp
 LIBSRCS += tcpRecvWatchdog.cpp
 LIBSRCS += bhe.cpp
@@ -61,6 +61,8 @@ LIBSRCS += comBuf.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
 LIBSRCS += limboiiu.cpp
+LIBSRCS += callbackMutex.cpp
+LIBSRCS += tcpKillTimer.cpp
 
 LIBRARY=ca
 

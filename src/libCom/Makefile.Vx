@@ -29,6 +29,7 @@ SRCS.c += ../macUtil.c
 #SRCS.c += ../osiTimer.cc
 #SRCS.c += ../os/vxWorks/osdTime.cc
 SRCS.c += ../os/vxWorks/ipAddrToA.c
+SRCS.c += ../os/vxWorks/sigPipeIgnore.c
 SRCS.c += ../impLib.c
 SRCS.c += ../dbmf.c
 
@@ -54,6 +55,7 @@ LIBOBJS += macUtil.o
 #LIBOBJS += osiTimer.o
 #LIBOBJS += osdTime.o
 LIBOBJS += ipAddrToA.o
+LIBOBJS += sigPipeIgnore.o
 LIBOBJS += impLib.o
 LIBOBJS += dbmf.o
 

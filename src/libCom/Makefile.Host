@@ -57,12 +57,12 @@ LIBSRCS += postfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c
-LIBSRCS += fdManager.cc
-LIBSRCS += osiTimer.cc
+#LIBSRCS += fdManager.cc
+#LIBSRCS += osiTimer.cc
 LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
-LIBSRCS += ipAddrToA.cc
-LIBSRCS += osdTime.cc
+#LIBSRCS += ipAddrToA.cc
+#LIBSRCS += osdTime.cc
 LIBSRCS += impLib.c
 
 #	WIN32 has no getopt, we add it to the Com lib,

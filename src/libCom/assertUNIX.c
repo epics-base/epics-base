@@ -26,6 +26,7 @@
  *
  * Modification Log: 
  * -----------------
+ * $Log$
  */
 
 #include <stdlib.h>
@@ -58,7 +59,7 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg)
 "Please contact the author of this software or else send the text of\n");
 
 	epicsPrintf (
-"this message to \"tech_talk@aps.anl.gov\"\n");
+"this message to \"tech-talk@aps.anl.gov\"\n");
 
 	abort ();
 }

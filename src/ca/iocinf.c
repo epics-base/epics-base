@@ -122,6 +122,7 @@ static void	tcp_recv_msg();
 static void	udp_recv_msg();
 static void	notify_ca_repeater();
 static int	cac_send_msg_piiu();
+static int	create_net_chan();
 #ifdef VMS
 void   	vms_recv_msg_ast();
 #endif

@@ -13,8 +13,6 @@ BUILD_TYPE = Unix
 GCC = gcc 
 ACC = /usr/lang/acc
 SUNCC = cc
-AR = ar
-ARFLAGS = r
 RANLIB = ranlib
 RANLIBFLAGS = -t
 YACC = $(EYACC)
@@ -24,6 +22,21 @@ CCC = /usr/lang/CC
 MV = mv
 RMDIR = rm -rf
 MKDIR = mkdir
+
+#
+# original before use of sun C++
+#
+#ARFLAGS = r
+#AR = ar
+
+#
+# required by sun's C++ compiler
+#
+ARFLAGS = 
+_ARCHIVE_BUILDER = ar r 
+G++_ARCHIVE_BUILDER = $(_ARCHIVE_BUILDER) 
+CCC_ARCHIVE_BUILDER = $(CCC) -xar -o 
+AR = $($(CPLUSPLUS)_ARCHIVE_BUILDER)
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
@@ -96,7 +109,7 @@ OPTIM_NO =
 UNIX_OPT_FLAGS = $(OPTIM_$(UNIX_OPT))
 
 # Include files
-UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
+UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(T_A)
  
 # Operating system flags
 OP_SYS_FLAGS = -DUNIX

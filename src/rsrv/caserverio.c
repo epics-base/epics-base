@@ -29,6 +29,7 @@
  * 	Modification Log:
  * 	-----------------
  *	.01 joh 071591	log time of last io in the client structure
+ *	.02 joh 091691	use greater than on the DEBUG level test
  */
 
 #include <vxWorks.h>
@@ -72,7 +73,7 @@ int		lock_needed;
 			&pclient->addr,
 			sizeof(pclient->addr));
 		if(status>=0){
-  			if(MPDEBUG==2){
+  			if(CASDEBUG>2){
 				logMsg(	"Sent a message of %d bytes\n",
 					pclient->send.cnt);
 			}

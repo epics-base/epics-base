@@ -199,7 +199,8 @@ iocsh (const char *pathname)
     FILE *fp = NULL;
     const char *filename = NULL;
     int icin, icout;
-    int c, quote, inword, backslash;
+    char c;
+    int quote, inword, backslash;
     char *line = NULL;
     int lineno = 0;
     int argc;

@@ -2198,7 +2198,8 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtShortToString(plink->value.vmeio.signal,*value);
 	value++;
-	strcpy(*value,plink->value.vmeio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.vmeio.parm);
 	break;
     case CAMAC_IO:
 	cvtShortToString(plink->value.camacio.b,*value);
@@ -2211,7 +2212,8 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtShortToString(plink->value.camacio.f,*value);
 	value++;
-	strcpy(*value,plink->value.camacio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.camacio.parm);
 	break;
     case RF_IO:
 	cvtShortToString(plink->value.rfio.cryo,*value);
@@ -2231,14 +2233,16 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtShortToString(plink->value.abio.signal,*value);
 	value++;
-	strcpy(*value,plink->value.abio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.abio.parm);
 	break;
     case GPIB_IO:
 	cvtShortToString(plink->value.gpibio.link,*value);
 	value++;
 	cvtShortToString(plink->value.gpibio.addr,*value);
 	value++;
-	strcpy(*value,plink->value.gpibio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.gpibio.parm);
 	break;
     case BITBUS_IO:
 	cvtCharToString(plink->value.bitbusio.link,*value);
@@ -2249,10 +2253,12 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtCharToString(plink->value.bitbusio.signal,*value);
 	value++;
-	strcpy(*value,plink->value.bitbusio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.bitbusio.parm);
 	break;
     case INST_IO:
-	strcpy(*value,plink->value.instio.string);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.instio.string);
 	break;
     case BBGPIB_IO:
 	cvtCharToString(plink->value.bbgpibio.link,*value);
@@ -2261,7 +2267,8 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtCharToString(plink->value.bbgpibio.gpibaddr,*value);
 	value++;
-	strcpy(*value,plink->value.bbgpibio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.bbgpibio.parm);
 	break;
     case VXI_IO:
 	strcpy(*value,(plink->value.vxiio.flag == VXIDYNAMIC ? "Yes" : "No"));
@@ -2283,7 +2290,8 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	value++;
 	cvtShortToString(plink->value.vxiio.signal,*value);
 	value++;
-	strcpy(*value,plink->value.vxiio.parm);
+	strcpy(*value,"@");
+	strcat(*value,plink->value.vxiio.parm);
 	break;
     default :
 	return(NULL);

@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.14  1994/09/07  20:42:19  jba
+# Minor changes
+#
 # Revision 1.13  1994/09/07  19:15:17  jba
 # Modified to eork with extensions and do depends
 #
@@ -30,72 +33,64 @@
 EPICS=..
 include $(EPICS)/config/CONFIG_SITE
 
-T_A = ${BUILD_ARCHS}
-
 all: install
 
 pre_build:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 build_libs:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install_libs:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 build_prod:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install_prod:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install_man:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install_includes:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 build:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 depends:
-	@(for ARCH in ${T_A};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
-
-clean:
-	@(for ARCH in ${T_A};					\
+	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
@@ -108,9 +103,13 @@ built_release: depends install
 	@echo TOP: Creating Fully Built Release...
 	@tools/MakeRelease -b
 
-#clean:
-#	@echo "TOP: Cleaning"
-#	@tools/Clean
+clean:
+	@echo "TOP: Cleaning"
+	@tools/Clean
+
+uninstall:
+	@rm -rf bin/* lib/* rec.bak
+	@rm -f rec/default.dctsdr rec/default.sdrSum rec/*.h
 
 #  Notes for single architecture build rules:
 #    CheckArch only has to be run for dirs.% .  That
@@ -184,9 +183,15 @@ clean.%: dirs.%
 
 release.%:
 	@echo
-	@echo "The arch.release syntax is not supported by this build,"
-	@echo "   Use 'make release' instead."
+	@echo "The release.arch syntax is not supported by this build."
+	@echo "   Use 'make release' or 'make built_release' instead."
 	@echo
+
+uninstall.%:
+	@echo
+	@echo "The uninstall.arch syntax is not supported by this build."
+	@echo
+	
 
 # Clean RULE  syntax:  make clean.arch
 #             e.g.:    make clean.mv167
@@ -194,7 +199,7 @@ release.%:
 #  Clean files for a particular architecture
 #
 
-#clean.%:
-#	@echo "$*: Cleaning"
-#	@tools/Clean $*
+clean.%:
+	@echo "$*: Cleaning"
+	@tools/Clean $*
 

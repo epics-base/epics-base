@@ -5,6 +5,9 @@
 #    by Matthew Needes and Mike Bordua
 #
 # $Log$
+# Revision 1.11  1994/09/07  19:15:19  jba
+# Modified to eork with extensions and do depends
+#
 # Revision 1.10  1994/08/21  00:55:52  mcn
 # New stuff.
 #
@@ -101,10 +104,3 @@ depends:
 			cd $$TMP;					\
 		done)
 
-clean:
-	@(for DIR in ${DIRS};						\
-		do							\
-			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
-			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
-			cd $$TMP;					\
-		done)

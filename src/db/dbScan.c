@@ -61,6 +61,11 @@
  * .20  11-26-91	jba	prevented multiple error messages for ioEventTask
  *                              initialized status in add_to_scan_list
  * .21  12-02-91	jba	Added cmd control to io-interrupt processing
+ * .22  12-12-91	jba	Initialized cmd to 1 in delete_from_scan_list
+ *              	jba	Placed remove scan tasks before initialize all the fast locks
+   706
+   707          /* Initialize all the fast locks */
+
  */
 
 /*
@@ -700,6 +705,9 @@ scan_init()
 {
 	int i;
 
+	/* remove scan tasks */
+	remove_scan_tasks(EVENT | IO_EVENT | PERIODIC | CALLBACK);
+
 	/* Initialize all the fast locks */
 	for(i=0; i<NUM_LISTS; i++) {
 		FASTLOCKINIT(&lists[i].lock);
@@ -710,9 +718,6 @@ scan_init()
 	for(i=0; i<MAX_EVENTS; i++) {
 		FASTLOCKINIT(&event_lists[i].lock);
 	}
-
-	/* remove scan tasks */
-	remove_scan_tasks(EVENT | IO_EVENT | PERIODIC | CALLBACK);
 
 	/* build the scan lists */
 	build_scan_lists(EVENT | IO_EVENT | PERIODIC);
@@ -1341,7 +1346,7 @@ register struct	dbAddr *paddr;
 		short		io_type;
 		short		card_type;
 		short		card_number;
-		short		cmd;
+		short		cmd=1;
 
 		status=get_io_info(&cmd,paddr,&io_type,
 			&card_type,&card_number);

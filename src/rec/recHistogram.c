@@ -122,9 +122,7 @@ static long init_histogram(phistogram)
     struct histogramRecord *phistogram;
 {
 	int    i;
-printf("phistogram->bptr=%x \n",phistogram->bptr);
 	for (i=0;i<=phistogram->nelm-1;i++)
-printf("phistogram->bptr+i=%x \n",phistogram->bptr+i);
 	      *(phistogram->bptr+i)=0.0;
 	phistogram->init=0;
 	return(0);

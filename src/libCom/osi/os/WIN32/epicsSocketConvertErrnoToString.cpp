@@ -17,6 +17,7 @@
 
 #define epicsExportSharedSymbols
 #include "osiSock.h"
+#include "epicsStdio.h"
 
 /*
  * epicsSocketConvertErrnoToString ()
@@ -35,7 +36,7 @@ void epicsSocketConvertErrnoToString (
 		    MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */
 		    pBuf, bufSize, NULL );
 	    if ( ! success ) {
-            int status = _snprintf (
+            int status = epicsSnprintf (
                 pBuf, bufSize, "WINSOCK Error %d", theSockError );
             if ( status <= 0 ) {
                 strncpy ( pBuf, "WINSOCK Error", bufSize );

@@ -107,7 +107,10 @@ void comQueSend::clear ()
 
 void comQueSend::copy_dbr_string ( const void * pValue )
 {
-    this->push ( * static_cast <const dbr_string_t *> ( pValue ) );
+    // this extra step is required by Borland BCC 5.5
+    const dbr_string_t & str = 
+        * static_cast <const dbr_string_t *> ( pValue );
+    this->push ( str );
 }
 
 void comQueSend::copy_dbr_short ( const void * pValue )

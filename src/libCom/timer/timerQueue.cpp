@@ -30,7 +30,6 @@ timerQueue::timerQueue ( epicsTimerQueueNotify &notifyIn ) :
 timerQueue::~timerQueue ()
 {
     timer *pTmr;
-    this->mutex.lock ();
     while ( ( pTmr = this->timerList.get () ) ) {    
         pTmr->curState = timer::stateLimbo;
     }

@@ -1005,14 +1005,14 @@ LOCAL void access_rights_reply(struct channel_in_use *pciu)
 	}
 
 	SEND_LOCK(pclient);
-    reply = (caHdr *)ALLOC_MSG(pclient, 0);
+	reply = (caHdr *)ALLOC_MSG(pclient, 0);
 	assert(reply);
 
 	*reply = nill_msg;
-    reply->m_cmmd = CA_PROTO_ACCESS_RIGHTS;
+	reply->m_cmmd = CA_PROTO_ACCESS_RIGHTS;
 	reply->m_cid = pciu->cid;
 	reply->m_available = ar;
-    END_MSG(pclient);
+	END_MSG(pclient);
 	SEND_UNLOCK(pclient);
 }
 
@@ -1440,7 +1440,7 @@ struct client  *client
 		 * serialize concurrent put notifies 
 		 */
 		while(pciu->pPutNotify->busy){
-			status = semBinaryTakeTimeout(client->blockSem,1.0);
+			status = semBinaryTakeTimeout(client->blockSem,60.0);
 			if(status != semTakeOK && pciu->pPutNotify->busy){
 				log_header("put call back time out", client, mp,0);
 				dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);

@@ -305,8 +305,7 @@ LOCAL void clean_addrq()
 	while( (pciu = pnextciu) ) {
 		pnextciu = (struct channel_in_use *)pciu->node.next;
 
-		delay = tsStampDiffInSeconds(&pciu->time_at_creation,
-			&current);
+		delay = tsStampDiffInSeconds(&current,&pciu->time_at_creation);
 		if (delay > timeout) {
 
 			ellDelete(&prsrv_cast_client->addrq, &pciu->node);

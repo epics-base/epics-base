@@ -54,10 +54,6 @@ static char *sccsId = "@(#) $Id$";
 #include "envDefs.h"
 #include "server.h"
 
-LOCAL powerOfTwo[10] = {
-2.0,4.0,8.0,16.0,32.0,64.0,128.0,256.0,512.0,1024.0
-};
-
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
  */
@@ -76,7 +72,6 @@ int rsrv_online_notify_task()
     SOCKET              sock;
     int                 true = TRUE;
     unsigned short      port;
-    int 		indPowerofTwo = 0;
     
     taskwdInsert(threadGetIdSelf(),NULL,NULL);
     
@@ -181,7 +176,7 @@ int rsrv_online_notify_task()
             pNode = (caAddrNode *)pNode->node.next;
         }
         threadSleep(delay);
-	delay = delay + powerOfTwo[indPowerofTwo++];
+	delay *= 2.0;
 	if(delay>=maxdelay) delay = maxdelay;
     }
 }

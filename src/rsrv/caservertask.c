@@ -397,7 +397,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	TS_STAMP 		current;
 	char            clientHostName[256];
 
-    ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
+	ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
 
 	if(client->proto == IPPROTO_UDP){
 		pproto = "UDP";
@@ -414,8 +414,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	send_delay = tsStampDiffInSeconds(&current,&client->time_at_last_send);
 	recv_delay = tsStampDiffInSeconds(&current,&client->time_at_last_recv);
 
-	printf(	
-    "%s(%s): User=\"%s\", V%d.%u, Channel Count=%d\n", 
+	printf(	"%s(%s): User=\"%s\", V%d.%u, Channel Count=%d\n", 
         clientHostName,
 		client->pHostName,
 		client->pUserName,
@@ -434,7 +433,8 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu, State=%s\n", 
 			client->send.stk,
 			client->recv.cnt - client->recv.stk,
-            state[client->disconnect?1:0]);	
+			state[client->disconnect?1:0]);	
+
 	}
 
 	if (level>=2u) {

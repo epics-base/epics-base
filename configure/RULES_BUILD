@@ -50,7 +50,7 @@ OPT=$(HOST_OPT)
 WARN=$(HOST_WARN)
 else
 OPT=$(CROSS_OPT)
-WARN=$(CROSS_OPT)
+WARN=$(CROSS_WARN)
 endif
 
 #---------------------------------------------------------------

@@ -114,7 +114,7 @@ long dbCommonInit();
 
 struct scanLock{
 	FAST_LOCK	lock;
-	caddr_t		precord;
+	void		*precord;
 	ULONG		start_time;
 	int		task_id;
 };
@@ -442,7 +442,7 @@ long dbPutField(
 
 	/*check for putField disabled*/
 	if(precord->disp) {
-		if((caddr_t)(&precord->disp) != paddr->pfield) return(0);
+		if((void *)(&precord->disp) != paddr->pfield) return(0);
 	}
 	dbScanLock(precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
@@ -516,16 +516,18 @@ long dbPutNotify(PUTNOTIFY *ppn)
     struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
     struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
 
-    /*check for putField disabled*/
-    if(precord->disp) {
-	if((caddr_t)(&precord->disp) != paddr->pfield) {
-	    ppn->status = 0;
-	    return(0);
-	}
-    }
     callbackSetCallback(notifyCallback,&ppn->callback);
     callbackSetUser(ppn,&ppn->callback);
     callbackSetPriority(priorityLow,&ppn->callback);
+    /*check for putField disabled*/
+    if(precord->disp) {
+	if((void *)(&precord->disp) != paddr->pfield) {
+	    ppn->cmd = notifyCmdCallUser;
+	    ppn->status = S_db_putDisabled;
+	    notifyCallback(&ppn->callback);
+	    return(S_db_putDisabled);
+	}
+    }
     dbScanLock(precord);
     status=dbPut(paddr,dbrType,pbuffer,nRequest);
     if(status) recGblDbaddrError(status,paddr,"dbPutField");

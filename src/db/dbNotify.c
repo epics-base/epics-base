@@ -266,6 +266,23 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
     }
     dbScanLock(precord);
     epicsMutexMustLock(notifyLock);
+    if(ppn->state==putNotifyUserCallbackActive) {
+        ppn->userCallbackWait = 1;
+        epicsMutexUnlock(notifyLock);
+        dbScanUnlock(precord);
+        epicsEventWait(ppn->userCallbackEvent);
+        dbScanLock(precord);
+        epicsMutexMustLock(notifyLock);
+        ppn->userCallbackWait = 0;
+    }
+    if(ppn->state!=putNotifyNotActive) {
+        errlogPrintf("%s dbPutNotify call but state = %d\n",
+            precord->name,ppn->state);
+        ppn->status = putNotifyError;
+        epicsMutexUnlock(notifyLock);
+        dbScanUnlock(precord);
+        return;
+    }
     ppn->status = 0;
     ppn->state = putNotifyNotActive;
     ppn->cancelWait = ppn->userCallbackWait = 0;

@@ -12,15 +12,17 @@
 #ifndef _EPICS_GETOPT_H
 #define _EPICS_GETOPT_H
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int getopt(int argc, char * const argv[], const char *optstring);
+epicsShareFunc int getopt(int argc, char * const argv[], const char *optstring);
 
-extern char *optarg;
+epicsShareExtern char *optarg;
 
-extern int optind, opterr, optopt;
+epicsShareExtern int optind, opterr, optopt;
 
 #ifdef __cplusplus
 }

@@ -23,6 +23,7 @@
 #include <alarm.h>
 #include <tsDefs.h>
 #include <cadef.h>
+#include <epicsGetopt.h>
 
 #include "tool_lib.h"
 

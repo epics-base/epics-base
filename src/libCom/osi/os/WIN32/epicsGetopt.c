@@ -39,12 +39,18 @@ static char sccsid[] = "@(#)getopt.c	8.3 (Berkeley) 4/27/95";
 #include <stdlib.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
+#include <epicsGetopt.h>
+
 #define _getprogname() nargv[0]
 
+epicsShareDef
 int	opterr = 1,		/* if error message should be printed */
 	optind = 1,		/* index into parent argv vector */
-	optopt,			/* character checked for validity */
-	optreset;		/* reset getopt */
+	optopt;			/* character checked for validity */
+int	optreset;		/* reset getopt */
+
+epicsShareDef 
 char	*optarg;		/* argument associated with option */
 
 #define	BADCH	(int)'?'
@@ -55,8 +61,7 @@ char	*optarg;		/* argument associated with option */
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int
-getopt(nargc, nargv, ostr)
+int getopt(nargc, nargv, ostr)
 	int nargc;
 	char * const *nargv;
 	const char *ostr;

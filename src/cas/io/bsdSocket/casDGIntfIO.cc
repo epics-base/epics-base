@@ -125,11 +125,19 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         serverBCastAddr.ia = pAddr->addr.ia; 
         serverBCastAddr.ia.sin_port = htons (this->dgPort);
 
-        if (autoBeaconAddr) {
-            forcePort (&BCastAddrList,beaconPort);
+        if ( autoBeaconAddr ) {
+            forcePort ( &BCastAddrList, beaconPort );
         }
         else {
-            ellFree (&BCastAddrList);
+            // avoid use of ellFree because problems on windows occur if the
+            // free is in a different DLL than the malloc
+            ELLNODE * nnode = BCastAddrList.node.next;
+            while ( nnode )
+            {
+                ELLNODE * pnode = nnode;
+                nnode = nnode->next;
+                free ( pnode );
+            }
         }
     }
     
@@ -236,7 +244,15 @@ casDGIntfIO::~casDGIntfIO()
         socket_close ( this->beaconSock );
     }
     
-    ellFree ( &this->beaconAddrList );
+    // avoid use of ellFree because problems on windows occur if the
+    // free is in a different DLL than the malloc
+    ELLNODE * nnode = this->beaconAddrList.node.next;
+    while ( nnode )
+    {
+        ELLNODE * pnode = nnode;
+        nnode = nnode->next;
+        free ( pnode );
+    }
     
     osiSockRelease ();
 }
@@ -270,9 +286,9 @@ void casDGIntfIO::xSetNonBlocking()
 //
 // casDGIntfIO::osdRecv()
 //
-inBuf::fillCondition
-casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size, // X aCC 361
-                     fillParameter parm, bufSizeT &actualSize, caNetAddr &fromOut)
+inBufClient::fillCondition
+casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
+                     fillParameter parm, bufSizeT & actualSize, caNetAddr & fromOut )
 {
     int status;
     osiSocklen_t addrSize;
@@ -309,9 +325,9 @@ casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size, // X aCC 361
 //
 // casDGIntfIO::osdSend()
 //
-outBuf::flushCondition
-casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, // X aCC 361
-                      const caNetAddr &to)
+outBufClient::flushCondition
+casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
+                      const caNetAddr & to )
 {
     int	status;
 
@@ -323,7 +339,7 @@ casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, // X aCC 361
                      &dest, sizeof(dest));
     if (status>=0) {
         assert ( size == (unsigned) status );
-        return outBuf::flushProgress;
+        return outBufClient::flushProgress;
     }
     else {
         int errnoCpy = SOCKERRNO;
@@ -334,7 +350,7 @@ casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, // X aCC 361
                 "CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
                 buf, SOCKERRSTR(errnoCpy));
         }
-        return outBuf::flushNone;
+        return outBufClient::flushNone;
     }
 }
 
@@ -366,8 +382,8 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 //
 // casDGIntfIO::sendBeaconIO()
 // 
-void casDGIntfIO::sendBeaconIO (char &msg, unsigned length,
-                                aitUint16 &portField, aitUint32 &addrField) 
+void casDGIntfIO::sendBeaconIO ( char &msg, unsigned length,
+                                aitUint16 & portField, aitUint32 & addrField ) 
 {
     caNetAddr           addr = this->serverAddress ();
     struct sockaddr_in  inetAddr = addr.getSockIP();

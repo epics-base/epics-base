@@ -179,7 +179,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
         if ( cas.getDebugLevel()>0u) {
             char pName[64u];
             
-            pOS->clientHostName (pName, sizeof (pName));
+            pOS->hostName (pName, sizeof (pName));
             errlogPrintf("CAS: allocated client object for \"%s\"\n", pName);
         }
     }

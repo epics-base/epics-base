@@ -1,4 +1,6 @@
 
+#include "envDefs.h"
+
 #include "exServer.h"
 #include "fdManager.h"
 
@@ -15,12 +17,13 @@ extern int main (int argc, const char **argv)
     char        pvPrefix[128] = "";
     unsigned    aliasCount = 1u;
     unsigned    scanOnAsUnsignedInt = true;
+    char        arraySize[64] = "";
     bool        scanOn;
     bool        forever = true;
     int         i;
 
-    for (i=1; i<argc; i++) {
-        if (sscanf(argv[i], "-d\t%u", &debugLevel)==1) {
+    for ( i = 1; i < argc; i++ ) {
+        if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
             continue;
         }
         if (sscanf(argv[i],"-t %lf", &executionTime)==1) {
@@ -36,12 +39,21 @@ extern int main (int argc, const char **argv)
         if (sscanf(argv[i],"-s %u", &scanOnAsUnsignedInt)==1) {
             continue;
         }
+        if (sscanf(argv[i],"-a %63s", arraySize)==1) {
+            continue;
+        }
         printf ("\"%s\"?\n", argv[i]);
         printf (
-"usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> -c<numbered alias count>] -s<1=scan on (default), 0=scan off]>\n", 
+            "usage: %s [-d<debug level> -t<execution time> -p<PV name prefix> " 
+            "-c<numbered alias count> -s<1=scan on (default), 0=scan off]> "
+            "-a<max array size>]\n", 
             argv[0]);
 
         return (1);
+    }
+
+    if ( arraySize[0] != '\0' ) {
+        epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", arraySize );
     }
 
     if (scanOnAsUnsignedInt) {

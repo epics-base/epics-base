@@ -190,7 +190,7 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
         return S_casApp_outOfBounds;
     }
     
-    aitFloat32 *pF;
+    aitFloat64 *pF;
     int gddStatus;
     
     //
@@ -214,7 +214,7 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
     //
     // allocate array buffer
     //
-    pF = new aitFloat32 [this->info.getElementCount()];
+    pF = new aitFloat64 [this->info.getElementCount()];
     if (!pF) {
         return S_casApp_noMemory;
     }

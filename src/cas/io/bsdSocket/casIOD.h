@@ -36,11 +36,11 @@ public:
         aitUint16 &portField, aitUint32 &addrField);
 	casIOState state () const;
 
-	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,
-			const caNetAddr &addr);
-	inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq, 
-        fillParameter parm, bufSizeT &nBytesActual, caNetAddr &addr);
-	virtual void show (unsigned level) const;
+	outBufClient::flushCondition osdSend ( const char * pBuf, bufSizeT nBytesReq,
+			const caNetAddr & addr);
+	inBufClient::fillCondition osdRecv ( char * pBuf, bufSizeT nBytesReq, 
+        inBufClient::fillParameter parm, bufSizeT & nBytesActual, caNetAddr & addr );
+	virtual void show ( unsigned level ) const;
 
 	static bufSizeT optimumOutBufferSize ();
 	static bufSizeT optimumInBufferSize ();
@@ -76,12 +76,12 @@ public:
 	void xSetNonBlocking();
 
 	casIOState state() const;
-	void clientHostName (char *pBuf, unsigned bufSize) const;
+	void hostName (char *pBuf, unsigned bufSize) const;
 	
-	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT &nBytesActual);
-	inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT &nBytesActual);
+	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT & nBytesActual );
+	inBufClient::fillCondition osdRecv ( char *pBuf, bufSizeT nBytesReq, 
+		bufSizeT & nBytesActual );
 
 	xBlockingStatus blockingState() const;
 

@@ -47,6 +47,7 @@ LIBSRCS += outBuf.cc
 LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
+LIBSRCS += casBufferFactory.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.23  2002/02/25 15:19:51  lange
+// All HPUX warnings fixed.
+//
 // Revision 1.22  2001/07/11 23:31:45  jhill
 // adapt to new timer API
 //
@@ -175,14 +178,14 @@ casStreamIO::~casStreamIO()
 //
 // casStreamIO::osdSend()
 //
-outBuf::flushCondition casStreamIO::osdSend (const char *pInBuf, bufSizeT nBytesReq, 
-                                 bufSizeT &nBytesActual)
+outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT nBytesReq, 
+                                 bufSizeT &nBytesActual )
 {
     int	status;
     
     status = send (this->sock, (char *) pInBuf, nBytesReq, 0);
     if (status == 0) {
-        return outBuf::flushDisconnect;
+        return outBufClient::flushDisconnect;
     }
     else if (status<0) {
         int anerrno = SOCKERRNO;
@@ -192,25 +195,27 @@ outBuf::flushCondition casStreamIO::osdSend (const char *pInBuf, bufSizeT nBytes
             int errnoCpy = SOCKERRNO;
 
             ipAddrToA (&this->addr, buf, sizeof(buf));
-			errlogPrintf(
+            if ( errnoCpy != SOCK_ECONNRESET ) {
+			    errlogPrintf(
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
-				buf, SOCKERRSTR(errnoCpy));
-            return outBuf::flushDisconnect;
+				    buf, SOCKERRSTR(errnoCpy));
+            }
+            return outBufClient::flushDisconnect;
         }
         else {
-            return outBuf::flushNone;
+            return outBufClient::flushNone;
         }
     }
     nBytesActual = (bufSizeT) status;
-    return outBuf::flushProgress;
+    return outBufClient::flushProgress;
 }
 
 //
 // casStreamIO::osdRecv()
 //
-inBuf::fillCondition
-casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes, // X aCC 361
-                      bufSizeT &nBytesActual)
+inBufClient::fillCondition
+casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
+                      bufSizeT & nBytesActual )
 {
     int nchars;
 
@@ -226,10 +231,12 @@ casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes, // X aCC 361
             return casFillNone;
         }
         else  {
-            ipAddrToA (&this->addr, buf, sizeof(buf));
-            errlogPrintf(
-		"CAS: client %s disconnected because \"%s\"\n",
-                buf, SOCKERRSTR(myerrno));
+            if ( myerrno != SOCK_ECONNRESET ) {
+                ipAddrToA (&this->addr, buf, sizeof(buf));
+                errlogPrintf(
+		    "CAS: client %s disconnected because \"%s\"\n",
+                    buf, SOCKERRSTR(myerrno));
+                }
             return casFillDisconnect;
         }
     }
@@ -309,9 +316,9 @@ bufSizeT casStreamIO::incomingBytesPresent() const // X aCC 361
 }
 
 //
-// casStreamIO::clientHostName()
+// casStreamIO::hostName()
 //
-void casStreamIO::clientHostName (char *pInBuf, unsigned bufSizeIn) const
+void casStreamIO::hostName (char *pInBuf, unsigned bufSizeIn) const
 {
 	ipAddrToA (&this->addr, pInBuf, bufSizeIn);
 }

@@ -101,7 +101,7 @@ epicsTimerNotify::expireStatus
 exPV::expire ( const epicsTime & /*currentTime*/ ) // X aCC 361
 {
     this->scan();
-    if ( this->scanOn ) {
+    if ( this->scanOn && this->getScanPeriod() > 0.0 ) {
         return expireStatus ( restart, this->getScanPeriod() );
     }
     else {
@@ -130,7 +130,8 @@ caStatus exPV::interestRegister()
 
     this->interest = true;
 
-    if ( this->scanOn && this->getScanPeriod() < this->timer.getExpireDelay() ) {
+    if ( this->scanOn && this->getScanPeriod() > 0.0 && 
+            this->getScanPeriod() < this->timer.getExpireDelay() ) {
         this->timer.start ( *this, this->getScanPeriod() );
     }
 

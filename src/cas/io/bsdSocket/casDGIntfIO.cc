@@ -101,6 +101,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         ellInit ( &tmpList );
         osiSockDiscoverBroadcastAddresses (&tmpList, 
             this->sock, &serverAddr); // match addr 
+        forcePort ( &tmpList, beaconPort );
 		removeDuplicateAddresses ( &BCastAddrList, &tmpList, 1 );
         if (ellCount(&BCastAddrList)<1) {
             errMessage (S_cas_noInterface, "- unable to continue");
@@ -111,10 +112,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         serverBCastAddr.ia = pAddr->addr.ia; 
         serverBCastAddr.ia.sin_port = htons (this->dgPort);
 
-        if ( autoBeaconAddr ) {
-            forcePort ( &BCastAddrList, beaconPort );
-        }
-        else {
+        if ( ! autoBeaconAddr ) {
             // avoid use of ellFree because problems on windows occur if the
             // free is in a different DLL than the malloc
             while ( ELLNODE * pnode = ellGet ( & BCastAddrList ) ) {

@@ -108,7 +108,7 @@ epicsShareFunc int epicsShareAPI epicsSocketAccept (
             errlogPrintf ( 
                 "epicsSocketCreate: failed to "
                 "fcntl FD_CLOEXEC because \"%s\"\n",
-                buf ):
+                buf );
             close ( newSock );
             newSock = INVALID_SOCKET;
         }

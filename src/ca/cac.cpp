@@ -111,6 +111,7 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     tcpSmallRecvBufFreeList ( 0 ),
     tcpLargeRecvBufFreeList ( 0 ),
     pRecvProcessThread ( 0 ),
+    isRecvProcessId ( epicsThreadPrivateCreate() ),
     notify ( notifyIn ),
     ioNotifyInProgressId ( 0 ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
@@ -126,7 +127,12 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
 	long status;
     unsigned abovePriority;
 
+    if ( ! this->isRecvProcessId ) {
+        throw std::bad_alloc ();
+    }
+
 	if ( ! osiSockAttach () ) {
+        epicsThreadPrivateDelete ( this->isRecvProcessId );
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
 
@@ -153,6 +159,7 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
         len = strlen ( tmp ) + 1;
         this->pUserName = new char [len];
         if ( ! this->pUserName ) {
+            epicsThreadPrivateDelete ( this->isRecvProcessId );
             throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
         }
         strncpy ( this->pUserName, tmp, len );
@@ -191,12 +198,16 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     }
     freeListInitPvt ( &this->tcpSmallRecvBufFreeList, MAX_TCP, 1 );
     if ( ! this->tcpSmallRecvBufFreeList ) {
+        osiSockRelease ();
+        epicsThreadPrivateDelete ( this->isRecvProcessId );
         free ( this->pUserName );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
 
     freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
     if ( ! this->tcpLargeRecvBufFreeList ) {
+        osiSockRelease ();
+        epicsThreadPrivateDelete ( this->isRecvProcessId );
         free ( this->pUserName );
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
@@ -204,6 +215,8 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
 
     this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
     if ( ! this->pTimerQueue ) {
+        osiSockRelease ();
+        epicsThreadPrivateDelete ( this->isRecvProcessId );
         free ( this->pUserName );
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
         freeListCleanup ( this->tcpLargeRecvBufFreeList );
@@ -296,6 +309,8 @@ cac::~cac ()
 // lock must be applied
 void cac::processRecvBacklog ()
 {
+    epicsThreadPrivateSet ( this->isRecvProcessId, this );
+
     tsDLList < tcpiiu > deadIIU;
     {
         tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter ();
@@ -343,6 +358,8 @@ void cac::processRecvBacklog ()
         assert ( this->pSearchTmr );
         this->pSearchTmr->resetPeriod ( 0.0 );
     }
+
+    epicsThreadPrivateSet ( this->isRecvProcessId, 0 );
 }
 
 //
@@ -517,23 +534,17 @@ void cac::beaconNotify ( const inetAddrID &addr, const epicsTime &currentTime )
 #   endif
 }
 
-int cac::pendIO ( const double &timeout )
+int cac::pendIO ( const double & timeout )
 {
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback
-    if ( this->recvProcessThreadIsCurrentThread () ) {
+    if ( epicsThreadPrivateGet ( this->isRecvProcessId ) ) {
         return ECA_EVDISALLOW;
     }
 
     int status = ECA_NORMAL;
     epicsTime beg_time = epicsTime::getCurrent ();
-    double remaining;
-    if ( timeout == 0.0 ) {
-        remaining = 60.0;
-    }
-    else{
-        remaining = timeout;
-    }    
+    double remaining = timeout;
 
     {
         epicsAutoMutex autoMutex ( this->mutex );
@@ -551,10 +562,13 @@ int cac::pendIO ( const double &timeout )
                 this->ioDone.wait ( remaining );
             }
             this->disableCallbackPreemption ();
-            if ( timeout != 0.0 ) {
-                double delay = epicsTime::getCurrent () - beg_time;
+            double delay = epicsTime::getCurrent () - beg_time;
+            if ( delay < timeout ) {
                 remaining = timeout - delay;
-            }    
+            }
+            else {
+                remaining = 0.0;
+            }
         }
 
         this->readSeq++;
@@ -584,7 +598,7 @@ int cac::pendEvent ( const double & timeout )
 
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback
-    if ( this->recvProcessThreadIsCurrentThread () ) {
+    if ( epicsThreadPrivateGet ( this->isRecvProcessId ) ) {
         return ECA_EVDISALLOW;
     }
 
@@ -746,7 +760,7 @@ bool cac::setupUDP ()
     epicsAutoMutex autoMutex ( this->mutex );
 
     if ( ! this->pudpiiu ) {
-        this->pudpiiu = new udpiiu ( *this );
+        this->pudpiiu = new udpiiu ( *this, this->isRecvProcessId );
         if ( ! this->pudpiiu ) {
             return false;
         }
@@ -923,23 +937,14 @@ int cac::printf ( const char *pformat, ... ) const
 void cac::flushIfRequired ( nciu &chan )
 {
     if ( chan.getPIIU()->flushBlockThreshold() ) {
+        this->flushRequestPrivate ();
         // the process thread is not permitted to flush as this
         // can result in a push / pull deadlock on the TCP pipe.
         // Instead, the process thread scheduals the flush with the 
         // send thread which runs at a higher priority than the 
         // send thread. The same applies to the UDP thread for
         // locking hierarchy reasons.
-        bool blockPermit = true;
-        if ( this->recvProcessThreadIsCurrentThread () ) {
-            blockPermit = false;
-        }
-        if ( this->pudpiiu && blockPermit ) {
-            if ( this->pudpiiu->isCurrentThread () ) {
-                blockPermit = false;
-            }
-        }
-        this->flushRequestPrivate ();
-        if ( blockPermit ) {
+        if ( ! epicsThreadPrivateGet ( this->isRecvProcessId ) ) {
             // enable / disable of call back preemption must occur here
             // because the tcpiiu might disconnect while waiting and its
             // pointer to this cac might become invalid
@@ -1023,13 +1028,7 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
             if ( pSubscr ) {
                 chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
             }
-            //
-            // if preemptive callback is not enabled then 
-            // the code will block until the recv process 
-            // thread is idle before returning control back
-            // to the user
-            if ( ! this->enablePreemptiveCallback ||
-                pRecvProcessThread->isCurrentThread() ) {
+            if ( epicsThreadPrivateGet ( this->isRecvProcessId ) ) {
                 signalNeeded = false;
             }
             else {

@@ -87,12 +87,14 @@ comQueSend::comQueSend ( wireSendAdapter & wireIn,
 {
 }
 
-comQueSend::~comQueSend () epicsThrows (())
+comQueSend::~comQueSend () 
+    epicsThrows (())
 {
     this->clear ();
 }
 
-void comQueSend::clear () epicsThrows (())
+void comQueSend::clear () 
+    epicsThrows (())
 {
     comBuf *pBuf;
 
@@ -105,7 +107,8 @@ void comQueSend::clear () epicsThrows (())
     assert ( this->nBytesPending == 0 );
 }
 
-void comQueSend::clearUncommitted () epicsThrows (())
+void comQueSend::clearUncommitted () 
+    epicsThrows (())
 {
     while ( this->pFirstUncommited.valid() ) {
         tsDLIter < comBuf > next = this->pFirstUncommited;
@@ -299,7 +302,8 @@ void comQueSend::insertRequestWithPayLoad (
     this->commitMsg ();
 }
 
-void comQueSend::commitMsg () epicsThrows (())
+void comQueSend::commitMsg () 
+    epicsThrows (())
 {
     while ( this->pFirstUncommited.valid() ) {
         this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();
@@ -307,3 +311,6 @@ void comQueSend::commitMsg () epicsThrows (())
         this->pFirstUncommited++;
     }
 }
+
+
+

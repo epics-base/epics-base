@@ -82,6 +82,11 @@ private:
     tsDLIter < comBuf > pFirstUncommited;
     wireSendAdapter & wire;
     unsigned nBytesPending;
+    typedef void ( comQueSend::*copyFunc_t ) (  
+        const void *pValue, unsigned nElem )
+        epicsThrows (( std::bad_alloc ));
+    static const copyFunc_t dbrCopyVector [39];
+
     void copy_dbr_string ( const void *pValue, unsigned nElem ) 
         epicsThrows (( std::bad_alloc ));
     void copy_dbr_short ( const void *pValue, unsigned nElem ) 
@@ -94,12 +99,12 @@ private:
         epicsThrows (( std::bad_alloc ));
     void copy_dbr_double ( const void *pValue, unsigned nElem ) 
         epicsThrows (( std::bad_alloc ));
-    void pushComBuf ( comBuf & ) epicsThrows (());
-    typedef void ( comQueSend::*copyFunc_t ) (  
-        const void *pValue, unsigned nElem );
-    static const copyFunc_t dbrCopyVector [39];
-
-    void clearUncommitted () epicsThrows (());
+    void pushComBuf ( comBuf & ) 
+        epicsThrows (());
+    comBuf * newComBuf () 
+        epicsThrows (( std::bad_alloc ));
+    void clearUncommitted () 
+        epicsThrows (());
 
     //
     // visual C++ versions 6 & 7 do not allow out of 
@@ -118,7 +123,7 @@ private:
             nCopied = 0u;
         }
         while ( nElem > nCopied ) {
-            comBuf * pComBuf = new ( this->comBufMemMgr ) comBuf;
+            comBuf * pComBuf = newComBuf ();
             unsigned nNew = pComBuf->push 
                         ( &pVal[nCopied], nElem - nCopied );
             nCopied += nNew;
@@ -138,7 +143,7 @@ private:
         if ( pComBuf && pComBuf->push ( val ) ) {
             return;
         }
-        pComBuf = new ( this->comBufMemMgr ) comBuf;
+        pComBuf = newComBuf ();
         assert ( pComBuf->push ( val ) );
         this->pushComBuf ( *pComBuf );
     }
@@ -149,7 +154,8 @@ private:
 
 extern const char cacNillBytes[];
 
-inline bool comQueSend::dbr_type_ok ( unsigned type ) epicsThrows (())
+inline bool comQueSend::dbr_type_ok ( unsigned type ) 
+    epicsThrows (())
 {
     if ( type >= ( sizeof ( this->dbrCopyVector ) / sizeof ( this->dbrCopyVector[0] )  ) ) {
         return false;
@@ -184,7 +190,8 @@ inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
     this->push ( pVal, nChar );
 }
 
-inline void comQueSend::pushComBuf ( comBuf & cb ) epicsThrows (())
+inline void comQueSend::pushComBuf ( comBuf & cb ) 
+    epicsThrows (())
 {
     this->bufs.add ( cb );
     if ( ! this->pFirstUncommited.valid() ) {
@@ -192,7 +199,8 @@ inline void comQueSend::pushComBuf ( comBuf & cb ) epicsThrows (())
     }
 }
 
-inline unsigned comQueSend::occupiedBytes () const epicsThrows (())
+inline unsigned comQueSend::occupiedBytes () const 
+    epicsThrows (())
 {
     return this->nBytesPending;
 }
@@ -209,12 +217,20 @@ inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg )
     return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
 }
 
-inline void comQueSend::beginMsg () epicsThrows (())
+inline void comQueSend::beginMsg () 
+    epicsThrows (())
 {
     if ( this->pFirstUncommited.valid() ) {
         this->clearUncommitted ();
     }
     this->pFirstUncommited = this->bufs.lastIter ();
+}
+
+// wrapping this with a function avoids WRS T2.2 Cygnus GNU compiler bugs
+inline comBuf * comQueSend::newComBuf ()
+    epicsThrows (( std::bad_alloc ))
+{
+    return new ( this->comBufMemMgr ) comBuf;
 }
 
 #endif // ifndef comQueSendh

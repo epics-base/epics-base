@@ -19,7 +19,16 @@
 #ifndef casEventMaskH
 #define casEventMaskH
 
+#ifdef epicsExportSharedSymbols
+#   define epicsExportSharedSymbols_casEventMaskH
+#   undef epicsExportSharedSymbols
+#endif
 #include "resourceLib.h"
+#ifdef epicsExportSharedSymbols_casEventMaskH
+#   define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
  
 class casEventRegistry;
 

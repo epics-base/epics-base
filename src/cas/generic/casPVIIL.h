@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/07/01 19:56:13  jhill
+ * one last update prior to first release
+ *
  * Revision 1.3  1996/06/26 21:18:58  jhill
  * now matches gdd api revisions
  *
@@ -46,6 +49,26 @@
 #define casPVIIL_h
 
 #include <dbMapper.h>
+
+
+//
+// casPVI::interfaceObjectPointer()
+//
+// casPVI must always be a base for casPV
+// (the constructor assert fails if this isnt the case)
+//
+inline casPV *casPVI::interfaceObjectPointer() const
+{
+	return &this->pv;
+}
+
+//
+// casPVI::operator -> ()
+//
+casPV * casPVI::operator -> () const
+{
+	return  interfaceObjectPointer();
+}
 
 //
 // casPVI::lock()
@@ -88,8 +111,7 @@ inline void casPVI::removeChannel(casPVListChan &chan)
 //
 inline aitBool casPVI::okToBeginNewIO() const
 {
-	if (this->nIOAttached >= (*this)->maxSimultAsyncOps()) 
-	{               
+	if (this->nIOAttached >= (*this)->maxSimultAsyncOps()) {               
 		return aitFalse;
 	}
 	else {
@@ -177,7 +199,6 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
                 pChan->postEvent(select, event);
         }
 }
-
 
 #endif // casPVIIL_h
 

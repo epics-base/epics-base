@@ -2,7 +2,6 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 OSINC += osiSock.h
-OSINC += osiFileName.h
 
 include $(TOP)/config/RULES.Vx
 

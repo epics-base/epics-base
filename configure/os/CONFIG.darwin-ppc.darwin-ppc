@@ -25,3 +25,8 @@ CODE_CXXFLAGS =
 #
 OPT_CFLAGS_YES = -O2
 OPT_CXXFLAGS_YES = -O2
+
+#
+# Static linking fails on OS X (missing crt0.o)
+#
+STATIC_LDFLAGS_YES =

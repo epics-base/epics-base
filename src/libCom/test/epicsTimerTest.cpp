@@ -44,7 +44,7 @@ private:
     static epicsSingleton < tsFreeList < class delayVerify, 0x20 > > pFreeList;
 };
 
-static unsigned expireCount;
+static volatile unsigned expireCount;
 static epicsEvent expireEvent;
 
 delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queueIn ) :

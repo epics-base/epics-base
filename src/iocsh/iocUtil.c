@@ -7,15 +7,12 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "osiUnistd.h"
 #include "osiThread.h"
 
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
 #include "iocUtilRegister.h"
-
-/* declared here because not all OS have unistd.h */
-extern char *getcwd ( char *buffer, int maxlen );
-extern int chdir ( const char *dirname );
 
 /* < (runScript) command */
 static ioccrfArg runScriptArg0 = { "file name",ioccrfArgString,0};

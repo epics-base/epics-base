@@ -167,7 +167,7 @@ cac::cac ( cacNotify & notifyIn ) :
          * close(). To solve this problem we need to employ OS specific
          * mechanisms.
          */
-        epicsSignalInstallSigUrgIgnore ();
+        epicsSignalInstallSigAlarmIgnore ();
         epicsSignalInstallSigPipeIgnore ();
 
         {

@@ -33,8 +33,8 @@ epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore ( void );
  * required only if shutdown() and close() do not interrupt a thread blocking in
  * a socket system call
  */
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void );
-epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg ( struct epicsThreadOSD * );
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void );
+epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * );
 
 #ifdef __cplusplus
 }

@@ -732,7 +732,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 }
 
 /*
- * epicsThreadGetIdSelf ()
+ * epicsThreadSleepQuantum ()
  */
 double epicsShareAPI epicsThreadSleepQuantum ()
 {

@@ -1493,14 +1493,14 @@ void tcpRecvThread::interruptSocketRecv ()
 {
     epicsThreadId threadId = this->thread.getId ();
     if ( threadId ) {
-        epicsSignalRaiseSigUrg ( threadId );
+        epicsSignalRaiseSigAlarm ( threadId );
     }
 }
 void tcpSendThread::interruptSocketSend ()
 {
     epicsThreadId threadId = this->thread.getId ();
     if ( threadId ) {
-        epicsSignalRaiseSigUrg ( threadId );
+        epicsSignalRaiseSigAlarm ( threadId );
     }
 }
 

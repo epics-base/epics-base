@@ -15,6 +15,6 @@
  * NOOP
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore ( void ) {}
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void ) {}
-epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg ( struct epicsThreadOSD * /* threadid */ ) {}
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) {}
+epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * /* threadid */ ) {}
 

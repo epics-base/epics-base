@@ -8,6 +8,10 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
+/*
+ * Author: J. Hill
+ */
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -23,7 +27,7 @@ typedef void ( *pSigFunc ) ( int );
 }
 
 static pSigFunc pReplacedSigPipeFunc = 0;
-static pSigFunc pReplacedSigUrgFunc = 0;
+static pSigFunc pReplacedSigAlarmFunc = 0;
 
 /*
  * localInstallSigHandler ()
@@ -61,8 +65,6 @@ static void localInstallSigHandler ( int signalIn, pSigFunc pNewFunc,
 
 /*
  * ignoreSigPipe ()
- *
- * install NOOP SIGPIPE handler
  */
 extern "C" {
 static void ignoreSigPipe ( int signal )
@@ -74,15 +76,13 @@ static void ignoreSigPipe ( int signal )
 }
 
 /*
- * ignoreSigUrg ()
- *
- * install NOOP SIGURG handler
+ * ignoreSigAlarm ()
  */
 extern "C" {
-static void ignoreSigUrg ( int signal )
+static void ignoreSigAlarm ( int signal )
 {
-    if ( pReplacedSigUrgFunc ) {
-        ( *pReplacedSigUrgFunc ) ( signal );
+    if ( pReplacedSigAlarmFunc ) {
+        ( *pReplacedSigAlarmFunc ) ( signal );
     }
 }
 }
@@ -93,22 +93,28 @@ static void ignoreSigUrg ( int signal )
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 {
     localInstallSigHandler ( SIGPIPE, 
-        ignoreSigPipe, & pReplacedSigPipeFunc );
+        ignoreSigAlarm, & pReplacedSigPipeFunc );
 }
 
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void ) 
+/*
+ * epicsSignalInstallSigAlarmIgnore ()
+ */
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) 
 {
-    localInstallSigHandler ( SIGURG, 
-        ignoreSigUrg, & pReplacedSigUrgFunc );
+    localInstallSigHandler ( SIGALRM, 
+        ignoreSigUrg, & pReplacedSigAlarmFunc );
 }
 
-epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg 
+/*
+ * epicsSignalRaiseSigAlarm ()
+ */
+epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm 
                                         ( struct epicsThreadOSD * threadId ) 
 {
     pthread_t id = epicsThreadGetPosixThreadId ( threadId );
-    int status = pthread_kill ( id, SIGURG );
+    int status = pthread_kill ( id, SIGALRM );
     if ( status ) {
-        errlogPrintf ( "Failed to send SIGURG to thread. Status = \"%s\"\n", 
+        errlogPrintf ( "Failed to send SIGALARM to thread. Status = \"%s\"\n", 
             strerror ( status ) );
     }
 }

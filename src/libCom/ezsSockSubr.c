@@ -29,6 +29,7 @@
  * .01	06-18-91	rac	installed in SCCS
  * .02	09-05-91	joh	updated for v5 vxWorks
  *				included systime.h for utime.h
+ * .03	12-08-91	rac	added a comment for ezsFopenToFd
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -314,6 +315,13 @@ int	portNum;	/* I number of service's port */
 *
 * SEE ALSO
 *	ezsFreopenToFd(), ezsFrestoreToOldFd()
+*
+* NOTES	
+* 1.	For input streams in a client monitoring the output of a server,
+*	it will often be useful to set the stream to unbuffered:
+*		FILE	*myIn;
+*		ezsFopenToFd(&myIn, socket);
+*		setbuf(myIn, NULL);
 *
 *-*/
 int

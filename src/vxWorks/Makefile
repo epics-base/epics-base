@@ -9,8 +9,8 @@ include $(TOP)/configure/CONFIG
 DIRS += include 
 DIRS += libvxWorks
 DIRS += db
-DIRS += rec
 DIRS += drv
+DIRS += rec
 DIRS += dev
 DIRS += devOpt
 #DIRS += sequencer

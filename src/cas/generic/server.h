@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/08/05 19:27:28  jhill
+ * added process()
+ *
  * Revision 1.5  1996/07/24 22:00:50  jhill
  * added pushOnToEventQueue()
  *
@@ -321,11 +324,6 @@ public:
 private:
 };
 
-//
-// ndim == 0 => scaler
-// otherwise pIndexArray points to an array of ndim items
-//
-#define nDimScaler 0U
 class casCtx {
 public:
 	casCtx() : 
@@ -811,7 +809,7 @@ private:
         caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
 
 	caStatus writeArrayData();
-	caStatus writeScalerData();
+	caStatus writeScalarData();
 	caStatus writeString();
 };
 

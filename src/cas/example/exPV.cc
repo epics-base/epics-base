@@ -64,7 +64,7 @@ void exPV::scanPV()
 	//
 	this->currentTime = osiTime::getCurrent();
 
-	pDD = new gddScaler (gddAppType_value, aitEnumFloat32);
+	pDD = new gddScalar (gddAppType_value, aitEnumFloat32);
 	if (!pDD) {
 		return;
 	}
@@ -140,7 +140,7 @@ caStatus exPV::update(gdd &valueIn)
 			this->info.getName().string, valueIn);
 #	endif
 
-	if (valueIn.isScaler()) {
+	if (valueIn.isScalar()) {
 		pNewValue = &valueIn;
 		pNewValue->reference();
 	}
@@ -149,7 +149,7 @@ caStatus exPV::update(gdd &valueIn)
 		// this does not modify the current value 
 		// (because it may be referenced in the event queue)
 		//
-		pNewValue = new gddScaler (gddAppType_value, aitEnumFloat32);
+		pNewValue = new gddScalar (gddAppType_value, aitEnumFloat32);
 		if (!pNewValue) {
 			return S_casApp_noMemory;
 		}

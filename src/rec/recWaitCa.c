@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <rngLib.h>
-#include <ellLib.h>
 #include <vxLib.h>
 #include <dbDefs.h>
 #include <taskwd.h>
@@ -15,26 +14,23 @@
 #include <caeventmask.h>
 #include <calink.h>
 #include <task_params.h>
-#include <freeList.h>
 #include <recWaitCa.h>
 
 extern int interruptAccept;
 
 #define QUEUE_SIZE 256
 LOCAL int	taskid=0;
-LOCAL ELLLIST	capvtList;
 LOCAL RING_ID	ringQ;;
 LOCAL FAST_LOCK	lock;
-LOCAL void	*freeListPvt;
 
 typedef enum {cmdNone,cmdAdd,cmdRemove} COMMAND;
 
 typedef struct {
-    ELLNODE		node;
     RECWAITCA		*pcamonitor;
     chid		chid;
     evid		evid;
     COMMAND		cmd;
+    int			hasMonitor;
     struct dbr_sts_double rtndata; /*Not currently used */
 } CAPVT;
 
@@ -54,12 +50,10 @@ LOCAL void eventCallback(struct event_handler_args eha)
 LOCAL void recWaitCaStart(void)
 {
     FASTLOCKINIT(&lock);
-    freeListInitPvt(&freeListPvt,sizeof(CAPVT),1);
     if((ringQ = rngCreate(sizeof(void *) * QUEUE_SIZE)) == NULL) {
 	errMessage(0,"recWaitCaStart failed");
 	exit(1);
     }
-    ellInit(&capvtList);
     taskid = taskSpawn("recWaitCaTask",CA_CLIENT_PRI-1,VX_FP_TASK,
 	CA_CLIENT_STACK,(FUNCPTR)recWaitCaTask,0,0,0,0,0,0,0,0,0,0);
     if(taskid==ERROR) {
@@ -73,13 +67,15 @@ long recWaitCaAdd(RECWAITCA *pcamonitor)
 
     if(!taskid) recWaitCaStart();
     FASTLOCK(&lock);
-    pcapvt = freeListCalloc(freeListPvt);
-    pcamonitor->recWaitCaPvt = pcapvt;
-    pcapvt->pcamonitor = pcamonitor;
+    pcapvt = pcamonitor->recWaitCaPvt;
+    if(pcapvt == NULL) {
+	pcapvt = calloc(1,sizeof(CAPVT));
+	pcamonitor->recWaitCaPvt = pcapvt;
+	pcapvt->pcamonitor = pcamonitor;
+    }
     pcapvt->cmd = cmdAdd;
     if(rngBufPut(ringQ,(void *)&pcapvt,sizeof(pcapvt))
         !=sizeof(pcamonitor)) errMessage(0,"recWaitCaAdd: rngBufPut error");
-    ellAdd(&capvtList,(void *)pcapvt);
     FASTUNLOCK(&lock);
 }
 
@@ -112,20 +108,18 @@ void recWaitCaTask(void)
 	    }
     	    FASTLOCK(&lock);
 	    pcamonitor = pcapvt->pcamonitor;
-	    if(pcapvt->cmd==cmdAdd) {
+	    if(pcapvt->cmd==cmdAdd && !pcapvt->hasMonitor) {
 		SEVCHK(ca_build_and_connect(pcamonitor->channame,TYPENOTCONN,0,
 		    &pcapvt->chid,0,NULL,pcapvt),
 		    "ca_build_and_connect");
 		SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
 		    eventCallback,pcapvt,&pcapvt->evid),
 		    "ca_add_event");
-	    } else {/*must be cmdRemove*/
+		pcapvt->hasMonitor = TRUE;
+	    } else if (pcapvt->cmd==cmdRemove && pcapvt->hasMonitor) {
 		SEVCHK(ca_clear_channel(pcapvt->chid),"ca_clear_channel");
-		pcapvt->cmd=cmdNone;
-		ellDelete(&capvtList,(void *)pcapvt);
-    		freeListFree(freeListPvt,pcapvt);
+		pcapvt->hasMonitor = FALSE;
 	    }
-	    pcapvt->cmd=cmdNone;
     	    FASTUNLOCK(&lock);
 	}
 	status = ca_pend_event(.1);
@@ -139,7 +133,7 @@ static void myCallback(struct recWaitCa *pcamonitor, char inputIndex, double mon
     printf("myCallback: %s\n",pcamonitor->channame);
 }
 
-int testCaMonitor(char *name)
+int testCaMonitor(char *name,int delay)
 {
     RECWAITCA	*pcamonitor;
     long	status;
@@ -150,5 +144,15 @@ int testCaMonitor(char *name)
     strcpy(pcamonitor->channame,name);
     status = recWaitCaAdd(pcamonitor);
     if(status) errMessage(status,"testCaMonitor error");
+    if(delay>0) taskDelay(delay);
+    status = recWaitCaDelete(pcamonitor);
+    if(status) errMessage(status,"testCaMonitor error");
+    if(delay>0) taskDelay(delay);
+    status = recWaitCaAdd(pcamonitor);
+    if(status) errMessage(status,"testCaMonitor error");
+    if(delay>0) taskDelay(delay);
+    status = recWaitCaDelete(pcamonitor);
+    if(status) errMessage(status,"testCaMonitor error");
+    if(delay>0) taskDelay(delay);
     return(0);
 }

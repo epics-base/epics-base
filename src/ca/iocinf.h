@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.77  1999/09/14 23:38:18  jhill
+ * added ca_vprintf() function
+ *
  * Revision 1.76  1999/09/02 21:44:49  jhill
  * improved the way that socket error numbers are converted to strings,
  * changed () to (void) in func proto, and fixed missing parameter to
@@ -500,8 +503,8 @@ typedef struct ioc_in_use{
 	caHdr			curMsg;
 	struct CA_STATIC	*pcas;
 	void			*pCurData;
-	void			(*sendBytes)(struct ioc_in_use *);
-	void			(*recvBytes)(struct ioc_in_use *);
+	unsigned long   (*sendBytes)(struct ioc_in_use *);
+	unsigned long	(*recvBytes)(struct ioc_in_use *);
 	void			(*procInput)(struct ioc_in_use *);
 	SOCKET			sock_chan;
 	int			sock_proto;

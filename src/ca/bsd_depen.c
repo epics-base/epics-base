@@ -160,13 +160,15 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 	}
 
 	LOCK;
-	/*
-	 * must run through the IIU list even if no IO is pending
-	 * if any of the IOCs are in flow control (so that an exit 
-	 * flow control msg can be sent to each of them that are)
-	 */
-	if (status>0 || (ca_static->ca_number_iiu_in_fc>0u&&status>=0) ) {
-		for (	piiu = (IIU *) iiuList.node.next;
+
+    /*
+     * must run through the IIU list even if no IO is pending
+     * if any of the IOCs are in flow control (so that an exit 
+     * flow control msg can be sent to each of them that are)
+     */	    
+    if (status>0 || (ca_static->ca_number_iiu_in_fc>0u && status>=0)) {
+        status = 0;
+		for (piiu = (IIU *) iiuList.node.next;
 			piiu; piiu = (IIU *) piiu->node.next) {
 
 			if (piiu->state==iiu_disconnected) {
@@ -174,17 +176,22 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 			}
 
 			if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
-				(*piiu->recvBytes)(piiu);
-				/*
-				 * if we were not blocking and there is a 
-				 * message present then start to suspect that
-				 * we are getting behind
-				 */
-				if (piiu->sock_proto==IPPROTO_TCP) {
-					if (ptimeout->tv_sec==0 && ptimeout->tv_usec==0) {
-						flow_control_on(piiu);
-					}
-				}
+                unsigned long bytesReceived;
+
+				bytesReceived = (*piiu->recvBytes)(piiu);
+                if (bytesReceived>0) {
+                    status++;
+				    /*
+				     * if we are not blocking and there is a 
+				     * message present then start to suspect that
+				     * we are getting behind
+				     */
+				    if (piiu->sock_proto==IPPROTO_TCP) {
+					    if (ptimeout->tv_sec==0 && ptimeout->tv_usec==0) {
+						    flow_control_on(piiu);
+					    }
+				    }
+                }
 			}
 			else if (piiu->recvPending) {
 				/*
@@ -198,7 +205,12 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 			}
 
 			if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
-				(*piiu->sendBytes)(piiu);
+                unsigned long bytesSent;
+
+				bytesSent = (*piiu->sendBytes)(piiu);
+                if (bytesSent>0) {
+                    status++;
+                }
 			}
 		}
 	}

@@ -1063,7 +1063,7 @@ void udpiiu::subscriptionRequest ( epicsGuard < cacMutex > & guard, nciu & chan,
 void udpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > & guard, 
                 nciu & chan, netSubscription & subscr )
 {
-    return netiiu::subscriptionCancelRequest ( guard, chan, subscr );
+    netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
 void udpiiu::flushRequest ()

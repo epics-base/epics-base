@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1998/06/16 03:10:51  jhill
+ * added sgi support
+ *
  * Revision 1.7  1998/04/16 21:16:35  jhill
  * removed redundant solaris test
  *
@@ -88,7 +91,7 @@ typedef	struct {
 #endif
 
 #ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux) &&!defined(sgi)
+#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux) && !defined(sgi) && !defined(LynxOS)
 
 struct timespec
 {

@@ -20,6 +20,7 @@
 #	sgi
 #	Linux
 #	WIN32
+#	LynxOS
 #
 #  HOST_ARCH now an environment variable
 #  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)

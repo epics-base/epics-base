@@ -243,6 +243,12 @@ private:
 // type osiTime inline member functions
 //
 
+inline osiTime::osiTime (const TS_STAMP &ts) 
+{
+	this->secPastEpoch = ts.secPastEpoch;
+	this->nSec = ts.nsec;
+}
+
 //
 // getCurrent ()
 // 
@@ -278,12 +284,6 @@ inline osiTime osiTime::getEvent (const osiTimeEvent &event)
     }
 
     return osiTime (current);
-}
-
-inline osiTime::osiTime (const TS_STAMP &ts) 
-{
-	this->secPastEpoch = ts.secPastEpoch;
-	this->nSec = ts.nsec;
 }
 
 inline void osiTime::synchronize () {} // depricated

@@ -76,6 +76,7 @@
 #include	<envLib.h>
 #include	<errnoLib.h>
 
+#include	<dbDefs.h>
 #include	<ellLib.h>
 #include	<fast_lock.h>
 #include	<dbDefs.h>

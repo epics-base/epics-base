@@ -35,6 +35,7 @@
 extern long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
     (DBADDR *paddr, void *pbuffer,long nRequest, long no_elements, long offset);
 extern long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])
-    (DBADDR *paddr, void *pbuffer,long nRequest, long no_elements, long offset);
+    (DBADDR *paddr, const void *pbuffer,long nRequest, long no_elements,
+    long offset);
 extern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
 extern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();

@@ -36,6 +36,7 @@
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
+#include	<stdio.h>
 #include	<semLib.h>
 #include	<rngLib.h>
 #include 	<logLib.h>
@@ -114,7 +115,7 @@ void callbackRequest(CALLBACK *pcallback)
 /*static*/
  void callbackTask(int priority)
 {
-    volatile CALLBACK *pcallback;
+    CALLBACK *pcallback;
     int nget;
 
     ringOverflow[priority] = FALSE;

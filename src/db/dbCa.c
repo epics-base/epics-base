@@ -196,7 +196,7 @@ done:
 }
 
 long dbCaPutLink(struct link *plink,short dbrType,
-	void *psource,long nelements)
+	const void *psource,long nelements)
 {
     caLink	*pca = (caLink *)plink->value.pv_link.pvt;
     long	(*pconvert)();
@@ -475,7 +475,7 @@ static void getAttribEventCallback(struct event_handler_args arg)
 	caLink		*pca = (caLink *)arg.usr;
 	struct link	*plink;
 	STATUS		semStatus;
-struct dbr_ctrl_double  *dbr;
+const struct dbr_ctrl_double  *dbr;
 	caAttributes	*pcaAttributes = NULL;
 
 	if(!pca) {

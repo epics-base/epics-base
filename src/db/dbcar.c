@@ -103,8 +103,10 @@ long dbcar(char	*precordname,int level)
 			    }
 			} else { 
 			    if(level>0) {
-				printf("not_connected %s.%s",
-					precord->name,pdbFldDes->name);
+				printf("not_connected %s.%s %s",
+				    precord->name,
+				    pdbFldDes->name,
+				    plink->value.pv_link.pvname);
 				if(nDisconnect)
 				    printf(" nDisconnect %lu",pca->nDisconnect);
 				if(nNoWrite)

@@ -125,8 +125,8 @@ static void initPeriodic(void);
 static void spawnPeriodic(int ind);
 static void wdPeriodic(long ind);
 static void initEvent(void);
-static void eventCallback(event_scan_list *pevent_scan_list);
-static void ioeventCallback(io_scan_list *piosl);
+static void eventCallback(CALLBACK *pcallback);
+static void ioeventCallback(CALLBACK *pcallback);
 static void printList(scan_list *psl,char *message);
 static void scanList(scan_list *psl);
 static void buildScanLists(void);
@@ -179,8 +179,9 @@ void scanAdd(struct dbCommon *precord)
 	    if(!pevent_scan_list ) {
 		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
 		pevent_list[priority][evnt] = pevent_scan_list;
-		pevent_scan_list->callback.callback = eventCallback;
-		pevent_scan_list->callback.priority = priority;
+		callbackSetCallback(eventCallback,&pevent_scan_list->callback);
+		callbackSetPriority(priority,&pevent_scan_list->callback);
+		callbackSetUser(pevent_scan_list,&pevent_scan_list->callback);
 		ellInit(&pevent_scan_list->scan_list.list);
 	    }
 	    psl = &pevent_scan_list->scan_list;
@@ -363,8 +364,11 @@ int scanpiol()  /* print io_event list */
     return(0);
 }
 
-static void eventCallback(event_scan_list *pevent_scan_list)
+static void eventCallback(CALLBACK *pcallback)
 {
+    event_scan_list *pevent_scan_list;
+
+    callbackGetUser(pevent_scan_list,pcallback);
     scanList(&pevent_scan_list->scan_list);
 }
 
@@ -409,8 +413,9 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
     *ppioscanpvt=dbCalloc(NUM_CALLBACK_PRIORITIES,sizeof(io_scan_list));
     for(priority=0, piosl=*ppioscanpvt;
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
-	piosl->callback.callback = ioeventCallback;
-	piosl->callback.priority = priority;
+	callbackSetCallback(ioeventCallback,&piosl->callback);
+	callbackSetPriority(priority,&piosl->callback);
+	callbackSetUser(piosl,&piosl->callback);
 	ellInit(&piosl->scan_list.list);
 	FASTLOCKINIT(&piosl->scan_list.lock);
 	piosl->next=iosl_head[priority];
@@ -551,11 +556,12 @@ static void wdPeriodic(long ind)
     spawnPeriodic(ind);
 }
 
-static void ioeventCallback(io_scan_list *piosl)
+static void ioeventCallback(CALLBACK *pcallback)
 {
-    scan_list *psl=&piosl->scan_list;
+    io_scan_list *piosl;
 
-    scanList(psl);
+    callbackGetUser(piosl,pcallback);
+    scanList(&piosl->scan_list);
 }
 
 

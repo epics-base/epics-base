@@ -45,6 +45,7 @@ void taskwdAnyRemove(void *userpvt);
 void taskwdInit();
 void taskwdInsert();
 void taskwdAnyInsert();
+void taskwdRemove();
 void taskwdAnyRemove();
 #endif /*__STDC__*/
 #endif /*INCtaskwdh*/

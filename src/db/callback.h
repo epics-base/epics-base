@@ -53,14 +53,20 @@
 #define priorityHigh    2
 
 typedef struct callbackPvt {
-#ifdef __cplusplus
-	void	(*callback)(struct callbackPvt*);
+#ifdef __STDC__
+	void (*callback)(struct callbackPvt*);
 #else
-	void		(*callback)();
+	void(*callback)();
 #endif
 	int		priority;
 	void		*user; /*for use by callback user*/
 }CALLBACK;
+
+#ifdef __STDC__
+typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
+#else
+typedef void (*CALLBACKFUNC)();
+#endif
 
 #define callbackSetCallback(PFUN,PCALLBACK)\
 ( (PCALLBACK)->callback = (PFUN) )

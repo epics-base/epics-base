@@ -339,13 +339,13 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	    *((unsigned short *)pbuffer)++ = pcommon->ackt;
 	}
 	if( (*options) & DBR_UNITS ) {
+	    memset(pbuffer,'\0',dbr_units_size);
 	    if( prset && prset->get_units ){ 
 		char *	pchar = (char *)pbuffer;
 
 		(*prset->get_units)(paddr,pchar);
 		pchar[DB_UNITS_SIZE-1] = '\0';
 	    } else {
-		memset(pbuffer,'\0',dbr_units_size);
 		*options = (*options) ^ DBR_UNITS; /*Turn off DBR_UNITS*/
 	    }
 	    pbuffer = (char *)pbuffer + dbr_units_size;
@@ -354,6 +354,7 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	    struct dbr_precision *pdbr_precision=
 		(struct dbr_precision *)pbuffer;
 
+	    memset(pbuffer,'\0',dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){ 
 		(*prset->get_precision)(paddr,pbuffer);
@@ -361,7 +362,6 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 			pdbr_precision->field_width =
 				pdbr_precision->precision + 5;
 	    } else {
-		memset(pbuffer,'\0',dbr_precision_size);
 		*options = (*options)^DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
 	    pbuffer = (char *)pbuffer + dbr_precision_size;
@@ -773,7 +773,7 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 }
 
 long dbPutLinkValue(struct link *plink,short dbrType,
-	void *pbuffer,long nRequest)
+	const void *pbuffer,long nRequest)
 {
 	long		status=0;
 
@@ -934,7 +934,7 @@ long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
         return(status);
 }
 
-long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
+long dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 {
 	long		status = 0;
 	long		special=paddr->special;
@@ -1102,7 +1102,7 @@ long		offset;
     return(0);
 }
 
-long dbPut(DBADDR *paddr,short dbrType,void *pbuffer,long nRequest)
+long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 {
 	long		no_elements=paddr->no_elements;
 	long		dummy;

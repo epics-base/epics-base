@@ -162,7 +162,7 @@ static long process(pstringout)
         if (!pstringout->pact && pstringout->omsl == CLOSED_LOOP){
 		status = dbGetLink(&(pstringout->dol),
 			DBR_STRING,pstringout->val,0,0);
-		if(RTN_SUCCESS(status)) pstringout->udf=FALSE;
+		if(pstringout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pstringout->udf=FALSE;
 	}
 
         if(pstringout->udf == TRUE ){

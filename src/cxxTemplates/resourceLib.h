@@ -255,7 +255,7 @@ private:
 //
 // character string identifier
 //
-class stringId {
+class epicsShareClass stringId {
 public:
 
 	class dynamicMemoryAllocationFailed {}; // exception
@@ -768,7 +768,6 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 // function below
 //
 const unsigned stringId::minIndexBitWidth = 8;
-
 
 //
 // const unsigned stringId::maxIndexBitWidth

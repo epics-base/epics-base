@@ -1,5 +1,5 @@
 /* DB_EVENT.C */
-/* share/src/db  @(#)dbEvent.c	1.17     6/7/93 */
+/* share/src/db $Id$ */
 
 /* routines for scheduling events to lower priority tasks via the RT kernel */
 /*
@@ -68,7 +68,7 @@
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
 #include	<db_access.h>
-#include	<rec/dbCommon.h>
+#include	<dbCommon.h>
 #include	<task_params.h>
 
 

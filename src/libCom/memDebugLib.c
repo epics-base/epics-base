@@ -131,7 +131,7 @@ unsigned long 	size;
 	FASTUNLOCK(&memDebugLock);
 
 	if(memDebugLevel>2){
-		fprintf(stderr, "%08x=malloc(%d) %s.%d\n", 
+		fprintf(stderr, "%08x=malloc(%ld) %s.%ld\n", 
 			(unsigned) pHdr->pUser, size, pFile, line);
 	}
 
@@ -179,9 +179,9 @@ void *ptr;
 
 	if(status<0 || (pHdr->pUser != ptr)){
 		FASTUNLOCK(&memDebugLock);
-		fprintf(stderr, "%s.%d free(%08x) failed\n", 
+		fprintf(stderr, "%s.%ld free(%08x) failed\n", 
 			pFile, line, (unsigned) ptr);
-		fprintf(stderr, "malloc occured at %s.%d\n", 
+		fprintf(stderr, "malloc occured at %s.%ld\n", 
 			pHdr->pFile, pHdr->line);
 		assert(0);
 	}
@@ -191,10 +191,10 @@ void *ptr;
 	memDebugVerify(pHdr);	
 
 	if(memDebugLevel>2){
-		fprintf(stderr, "free(%08x) %s.%d\n", 
+		fprintf(stderr, "free(%08x) %s.%ld\n", 
 			(unsigned)ptr, pFile, line);
 		fprintf(stderr, 
-			"\tmalloc(%d) at %s.%d\n", 
+			"\tmalloc(%ld) at %s.%ld\n", 
 			pHdr->size,
 			pHdr->pFile,
 			pHdr->line);
@@ -224,7 +224,7 @@ DMH *pHdr;
 
 		fprintf(stderr, "block overwritten %x\n", 
 			(unsigned)pHdr->pUser);
-		fprintf(stderr, "malloc occured at %s.%d\n", 
+		fprintf(stderr, "malloc occured at %s.%ld\n", 
 			pHdr->pFile, pHdr->line);
 		return 1;
 	}
@@ -243,7 +243,7 @@ int memDebugVerifyAll()
 
 	FASTLOCK(&memDebugLock);
 	pHdr = (DMH *) ellFirst(&memDebugList);
-	while(pHdr = (DMH *) ellNext(pHdr)){
+	while( (pHdr = (DMH *) ellNext(pHdr)) ){
 		status = memDebugVerify(pHdr);
 	}
 	FASTUNLOCK(&memDebugLock);
@@ -268,7 +268,7 @@ unsigned long ignoreBeforeThisTick;
 	while(pHdr){
 		if(pHdr->tick>=ignoreBeforeThisTick){
 			fprintf(stderr, 
-				"%8x = malloc(%d) at %s.%d tick=%d\n", 
+				"%8x = malloc(%ld) at %s.%ld tick=%ld\n", 
 				(unsigned) pHdr->pUser,
 				pHdr->size,
 				pHdr->pFile,

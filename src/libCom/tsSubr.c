@@ -909,7 +909,7 @@ tsInitMinWest()
     if (error) {
 	    (void)printf(
 "tsSubr: illegal value for %s\n\
-tsSubr: default value of %d will be used\n",
+tsSubr: default value of %ld will be used\n",
 EPICS_TS_MIN_WEST.name, tsMinWest);
     }
     needToInitMinWest = 0;

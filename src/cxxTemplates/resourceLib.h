@@ -1,7 +1,9 @@
 /*
  *      $Id$
  *
- *      Author  Jeffrey O. Hill
+ *      Author  Jeffrey O. Hill 
+ *				(string hash alg by Marty Kraimer and Peter K. Pearson)
+ *
  *              johill@lanl.gov
  *              505 665 1831
  *
@@ -29,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.21  1999/01/29 22:51:09  jhill
+ * reinstalled const cast away
+ *
  * Revision 1.20  1999/01/29 22:36:53  jhill
  * removed const cast away
  *
@@ -699,9 +704,10 @@ stringId::~stringId()
 			//
 			// the HP-UX compiler gives us a warning on
 			// each cast away of const, but in this case
-			// it cant be avoided. The DEC compiler 
-			// compiler complains that const isnt really
-			// significant in a cast.
+			// it cant be avoided. 
+			//
+			// The DEC compiler complains that const isnt 
+			// really significant in a cast if it is present.
 			//
 			// I hope that deleting a pointer to "char"
 			// is the same as deleting a pointer to 

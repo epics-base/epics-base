@@ -29,6 +29,21 @@ epicsShareFunc void epicsShareAPI epicsTempName (
     char * pNameBuf, size_t nameBufLength );
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ();
 
+/*
+ * truncate to specified size (we dont use truncate()
+ * because it is not portable)
+ *
+ * pFileName - name (and optionally path) of file
+ * size - the new file size (if file is curretly larger)
+ * 
+ * returns TF_OK if the file is less than size bytes
+ * or if it was successfully truncated. Returns
+ * TF_ERROR if the file could not be truncated.
+ */
+enum TF_RETURN {TF_OK=0, TF_ERROR=1};
+epicsShareFunc enum TF_RETURN epicsShareAPI truncateFile ( const char *pFileName, unsigned size );
+
+/*The followig are for redirecting stdin,stdout,stderr */
 epicsShareFunc FILE * epicsShareAPI epicsGetStdin(void);
 epicsShareFunc FILE * epicsShareAPI epicsGetStdout(void);
 epicsShareFunc FILE * epicsShareAPI epicsGetStderr(void);
@@ -47,33 +62,19 @@ epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
 #undef stderr
 #define stderr epicsGetStderr()
 
+/*The following are for making printf be fprintf(stdout */
 #ifdef printf
 #undef printf
-#endif
-
+#endif /*printf*/
 #if defined(__STDC_VERSION__) && __STDC_VERSION__>=199901L
-#define printf(...) fprintf(stdout,__VAR_ARGS__) 
+#define printf(...) epicsStdoutPrintf(...) 
 #elif defined(__GNUC__)
-#define printf(format...) fprintf(stdout,format)
+#define printf(format...) epicsStdoutPrintf(format)
 #else
 #define printf epicsStdoutPrintf
-#endif
+#endif /* defined(__STDC_VERSION__) && __STDC_VERSION__>=199901_*/
 #endif /* epicsStdioPVT */
 
-
-/*
- * truncate to specified size (we dont use truncate()
- * because it is not portable)
- *
- * pFileName - name (and optionally path) of file
- * size - the new file size (if file is curretly larger)
- * 
- * returns TF_OK if the file is less than size bytes
- * or if it was successfully truncated. Returns
- * TF_ERROR if the file could not be truncated.
- */
-enum TF_RETURN {TF_OK=0, TF_ERROR=1};
-epicsShareFunc enum TF_RETURN epicsShareAPI truncateFile ( const char *pFileName, unsigned size );
 
 #ifdef  __cplusplus
 }

@@ -37,15 +37,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <math.h>
 #include <time.h>
 
 #include <epicsAssert.h>
 #include <bucketLib.h>
 
-#ifndef NBBY
-#define NBBY 8
-#endif /* NBBY */
 #ifndef TRUE
 #define TRUE 1
 #endif /* TRUE */
@@ -95,7 +93,7 @@ LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
 /*
  * bucket id bit width
  */
-#define BUCKETID_BIT_WIDTH 	(sizeof(BUCKETID)*NBBY)
+#define BUCKETID_BIT_WIDTH 	(sizeof(BUCKETID)*CHAR_BIT)
 
 /*
  * Maximum bucket size
@@ -183,7 +181,7 @@ LOCAL ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
 	ITEM		*pi;
 
 	id = * (unsigned *) pId;
-	while (pi = *ppi) {
+	while ( (pi = *ppi) ) {
 		if (bidtUnsigned == pi->type) {
 			pItemId = (unsigned *) pi->pId;
 			if (id == *pItemId) {
@@ -206,7 +204,7 @@ LOCAL ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 	ITEM		*pi;
 
 	ptr = * (void **) pId;
-	while (pi = *ppi) {
+	while ( (pi = *ppi) ) {
 		if (bidtPointer == pi->type ) {
 			pItemId = (void **) pi->pId;
 			if (ptr == *pItemId) {
@@ -228,7 +226,7 @@ LOCAL ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 	ITEM		*pi;
 	int		status;
 
-	while (pi = *ppi) {
+	while ( (pi = *ppi) ) {
 		if (bidtString == pi->type) {
 			status = strcmp (pStr, (char *)pi->pId);
 			if (status == '\0') {
@@ -349,11 +347,11 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 	if (nbits>=BUCKETID_BIT_WIDTH) {
 		fprintf (
 			stderr,
-		"%s at %d: Requested index width=%d to large. max=%d\n",
+		"%s at %d: Requested index width=%d to large. max=%ld\n",
 			__FILE__,
 			__LINE__,
 			nbits,
-			BUCKETID_BIT_WIDTH-1);
+			(long)(BUCKETID_BIT_WIDTH-1));
 		return NULL;
 	}
 
@@ -590,13 +588,13 @@ BUCKET *pb;
 		pi = pni;
 	}
 
-	printf(	"Bucket entries in use = %d bytes in use = %d\n",
+	printf(	"Bucket entries in use = %d bytes in use = %ld\n",
 		pb->nInUse,
-		sizeof(*pb)+(pb->hashIdMask+1)*
-			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM));
+		(long) (sizeof(*pb)+(pb->hashIdMask+1)*
+			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM)));
 
-	printf(	"Free list bytes in use = %d\n",
-		freeListCount*sizeof(ITEM));
+	printf(	"Free list bytes in use = %ld\n",
+		(long)(freeListCount*sizeof(ITEM)));
 
 	ppi = pb->pTable;
 	nElem = pb->hashIdMask+1;

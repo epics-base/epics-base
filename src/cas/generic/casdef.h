@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.18  1998/06/16 02:34:14  jhill
+ * 	allow PVs to exist without a server
+ *
  * 	Revision 1.17  1998/05/05 16:30:38  jhill
  * 	fixed doc
  *
@@ -602,6 +605,12 @@ public:
 	// casPV * and casPVI *
 	//
 	friend class casStrmClient;
+
+	//
+	// This constructor is preserved for backwards compatibility only.
+	// Please do _not_ use this constructor.
+	//
+	epicsShareFunc casPV (caServer &);
 };
 
 //

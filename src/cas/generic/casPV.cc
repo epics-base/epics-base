@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/06/16 02:30:44  jhill
+ * allow PV to be created before the server
+ *
  * Revision 1.7  1997/08/05 00:47:10  jhill
  * fixed warnings
  *
@@ -65,6 +68,15 @@
 #include "casCtxIL.h" 	// casCtx inline func
 
 epicsShareFunc casPV::casPV () :
+	casPVI (*this)
+{
+}
+
+//
+// This constructor is preserved for backwards compatibility only.
+// Please do _not_ use this constructor.
+//
+epicsShareFunc casPV::casPV (caServer &) :
 	casPVI (*this)
 {
 }

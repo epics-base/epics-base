@@ -120,6 +120,9 @@
  * BUGS:
  *  The driver should inspect the VXI make and model codes and use a data type
  *  for the DMA buffer that is appropriate.
+ *
+ * $Log$
+ *
  */ 
 
 static char *SccsId = "$Id$";
@@ -884,14 +887,13 @@ int sramld(int card)
   if (dvxDebug)
     printf("Total channels read in %d\n", dvx[card].numChan);
 
-#if 0 /* Force the user to reference board 7 on their own */
-  /* Make the extender system reset by referencing board 7 (No sample taken) */
-  *ramptr++ = GAIN_CHANNEL | ((0xF0 >> 3) & 3);
-  *ramptr++ = (((0xF0 & 7) << 3) | ((0xF0 & 0xE0) >> 5));
-#endif
-
+#if 1	/* This causes an extra sample to be taken at the end of the scan */
   *ramptr++ = 0;	/* mark the end of the sequence program */
   *ramptr++ = 0;
+#else	/* This was supposed to get rid of the extra one, but does not work */
+  *(ramptr-1) &= 0xff3f;
+  *ramptr = *(ramptr-1);
+#endif
 
   /* set scan rate and run it once */
   dvx[card].pdvx2502->samp_rate = DVX_DRATE;

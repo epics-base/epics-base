@@ -54,10 +54,10 @@ semTakeStatus semBinaryTakeTimeout(
     int status;
     int ticks;
     ticks = (int)(timeOut * (double)sysClkRateGet());
+    if(ticks<=0) ticks = 1;
     status = semTake((SEM_ID)id,ticks);
     if(status==OK) return(semTakeOK);
     if(errno==S_objLib_OBJ_TIMEOUT) return(semTakeTimeout);
-    if(ticks<=0) return(semTakeTimeout);
     return(semTakeError);
 }
 
@@ -109,9 +109,12 @@ semTakeStatus semMutexTakeTimeout(
     semMutexId id, double timeOut)
 {
     int status;
-    status = semTake((SEM_ID)id,NO_WAIT);
+    int ticks;
+    ticks = (int)(timeOut * (double)sysClkRateGet());
+    if(ticks<=0) ticks = 1;
+    status = semTake((SEM_ID)id,ticks);
     if(status==OK) return(semTakeOK);
-    if(errno==S_objLib_OBJ_UNAVAILABLE) return(semTakeTimeout);
+    if(errno==S_objLib_OBJ_TIMEOUT) return(semTakeTimeout);
     return(semTakeError);
 }
 

@@ -45,8 +45,6 @@
 #include <fast_lock.h>
 #include <epvxiLib.h>
 
-#define LOCAL
-
 #define VXI_MODEL_KSCV215 	(0x215)
 
 #define MAXTRIES 100

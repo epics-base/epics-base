@@ -123,7 +123,7 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	pasg->pavalue = asCalloc(ASMAXINP,sizeof(double));
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
-    gphInitPvt(&pasbase->phash);
+    gphInitPvt(&pasbase->phash,256);
     /*Hash each uagname and each hagname*/
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {

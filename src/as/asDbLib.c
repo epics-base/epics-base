@@ -58,9 +58,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <dbDefs.h>
 #include <taskwd.h>
+#include <alarm.h>
+#include <caeventmask.h>
 #include <dbStaticLib.h>
+#include <dbAccess.h>
 #include <asLib.h>
 #include <asDbLib.h>
 #include <dbCommon.h>
@@ -97,10 +101,10 @@ static int my_yyinput(char *buf, int max_size)
 
 static long asDbAddRecords(void)
 {
-    DBENTRY		dbentry;
-    DBENTRY		*pdbentry=&dbentry;
-    long		status;
-    struct dbCommon	*precord;
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry=&dbentry;
+    long	status;
+    dbCommon	*precord;
 
     dbInitEntry(pdbBase,pdbentry);
     status = dbFirstRecdes(pdbentry);
@@ -235,7 +239,7 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
 static void myCallback(CALLBACK *pcallback)
 {
     ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
-    struct subRecord	*precord;
+    subRecord	*precord;
     struct rset		*prset;
 
     callbackGetUser(precord,pcallback);
@@ -245,12 +249,12 @@ static void myCallback(CALLBACK *pcallback)
 	recGblSetSevr(precord,READ_ALARM,precord->brsv);
 	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
     }
-    dbScanLock((struct dbCommon *)precord);
-    (*prset->process)((struct dbCommon *)precord);
-    dbScanUnlock((struct dbCommon *)precord);
+    dbScanLock((dbCommon *)precord);
+    (*prset->process)((dbCommon *)precord);
+    dbScanUnlock((dbCommon *)precord);
 }
 
-long asSubInit(struct subRecord *precord,int pass)
+long asSubInit(subRecord *precord,int pass)
 {
     ASDBCALLBACK *pcallback;
 
@@ -261,7 +265,7 @@ long asSubInit(struct subRecord *precord,int pass)
     return(0);
 }
 
-long asSubProcess(struct subRecord *precord)
+long asSubProcess(subRecord *precord)
 {
     ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
 
@@ -278,8 +282,8 @@ long asSubProcess(struct subRecord *precord)
 
 int asDbGetAsl(void *paddress)
 {
-    struct dbAddr	*paddr = paddress;
-    struct fldDes	*pflddes;
+    DBADDR	*paddr = paddress;
+    dbFldDes	*pflddes;
 
     pflddes = paddr->pfldDes;
     return((int)pflddes->as_level);
@@ -287,8 +291,8 @@ int asDbGetAsl(void *paddress)
 
 ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
 {
-    struct dbAddr	*paddr = paddress;
-    struct dbCommon	*precord;
+    DBADDR	*paddr = paddress;
+    dbCommon	*precord;
 
     precord = paddr->precord;
     return((ASMEMBERPVT)precord->asp);
@@ -303,13 +307,13 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 
 int astac(char *pname,char *user,char *location)
 {
-    struct dbAddr	*paddr;
-    long		status;
-    ASCLIENTPVT		*pasclientpvt=NULL;
-    struct dbCommon	*precord;
-    struct fldDes	*pflddes;
+    DBADDR	*paddr;
+    long	status;
+    ASCLIENTPVT	*pasclientpvt=NULL;
+    dbCommon	*precord;
+    dbFldDes	*pflddes;
 
-    paddr = dbCalloc(1,sizeof(struct dbAddr) + sizeof(ASCLIENTPVT));
+    paddr = dbCalloc(1,sizeof(DBADDR) + sizeof(ASCLIENTPVT));
     pasclientpvt = (ASCLIENTPVT *)(paddr + 1);
     status=dbNameToAddr(pname,paddr);
     if(status) {
@@ -331,7 +335,7 @@ int astac(char *pname,char *user,char *location)
 
 static void myMemberCallback(ASMEMBERPVT memPvt)
 {
-    struct dbCommon	*precord;
+    dbCommon	*precord;
 
     precord = asGetMemberPvt(memPvt);
     if(precord) printf(" Record:%s",precord->name);

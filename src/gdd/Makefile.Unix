@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.2  1996/06/25 19:18:11  jbk
+# moved from extensions to base - fixed trouble in dbMapper.cc
+#
 # Revision 1.1  1996/06/25 19:11:25  jbk
 # new in EPICS base
 #
@@ -20,11 +23,10 @@
 
 VPATH=.:..
 
-EPICS = ../../../..
+TOP= ../../..
 # EPICS = /usr/local/epics/R3.12.2
 
-include Target.include
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
 OPTIM_YES=-g
 ifeq ($(HOST_ARCH),sun4)
@@ -75,5 +77,5 @@ genApps: genApps.o $(LIBOBJS)
 clean::
 	/bin/rm -f aitConvertGenerated.cc aitGen genApps
 
-include $(EPICS)/config/RULES.Unix
+include $(TOP)/src/config/RULES.Unix
 

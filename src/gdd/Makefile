@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.2  1996/06/25 19:18:10  jbk
+# moved from extensions to base - fixed trouble in dbMapper.cc
+#
 # Revision 1.1  1996/06/25 19:11:24  jbk
 # new in EPICS base
 #
@@ -16,10 +19,10 @@
 #
 #
 
-EPICS=../../..
+TOP=../..
 # EPICS=/usr/local/epics/R3.12.2
 
-include $(EPICS)/config/CONFIG_BASE
+include $(TOP)/src/config/CONFIG_BASE
 
-include $(EPICS)/config/RULES_ARCHS
+include $(TOP)/src/config/RULES_ARCHS
 

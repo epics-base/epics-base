@@ -64,6 +64,7 @@
  *				with and without status but left new code #if'd
  *				out until the proper status can be determined
  * .22 	08-03-92	joh	merged the include oms file
+ * .23	03-04-93	lrd	modifed to request encoders for all axis
  */
 
 /* data requests are made from the oms_task at
@@ -372,7 +373,7 @@ oms_task()
 			motor_active = TRUE;
 
 			/* request status data */
-			if ((channel <= 1) && (encoder_present[card]))
+			if (encoder_present[card])
 				strcpy(oms_msg,"A?\nRE\nRP\nRA\n");
 			else
 				strcpy(oms_msg,"A?\nRP\nRA\n");

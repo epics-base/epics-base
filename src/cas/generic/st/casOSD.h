@@ -103,16 +103,13 @@ public:
         bool autoBeaconAddr=true, bool addConfigBeaconAddr=false);
 	virtual ~casIntfOS();
 
-    virtual void show (unsigned level);
+    virtual void show (unsigned level) const;
 
     caNetAddr serverAddress () const;
 
 private:
 	caServerI       &cas;
 	casServerReg    *pRdReg;
-
-	//void recvCB ();
-	//void sendCB () {}; // NOOP satifies template
 };
 
 class casStreamWriteReg;

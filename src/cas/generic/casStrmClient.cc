@@ -569,25 +569,28 @@ caStatus casStrmClient::readNotifyResponse ( epicsGuard < casClientMutex > & gua
         const caStatus completionStatus )
 {
 	if ( completionStatus != S_cas_success ) {
-        caStatus ecaStatus =  this->readNotifyFailureResponse ( guard, msg, ECA_GETFAIL );
-    	//
-	    // send independent warning exception to the client so that they
-	    // will see the error string associated with this error code 
-	    // since the error string cant be sent with the get call back 
-	    // response (hopefully this is useful information)
-	    //
-	    // order is very important here because it determines that the get 
-	    // call back response is always sent, and that this warning exception
-	    // message will be sent at most one time (in rare instances it will
-	    // not be sent, but at least it will not be sent multiple times).
-	    // The message is logged to the console in the rare situations when
-	    // we are unable to send.
-	    //
-		caStatus tmpStatus = this->sendErrWithEpicsStatus ( guard, & msg, pChan->getCID(),
-                    completionStatus, ECA_NOCONVERT );
-		if ( tmpStatus ) {
-			errMessage ( completionStatus, "<= get callback failure detail not passed to client" );
-		}
+        caStatus ecaStatus =  this->readNotifyFailureResponse ( 
+            guard, msg, ECA_GETFAIL );
+        if ( ecaStatus != S_cas_sendBlocked ) {
+    	    //
+	        // send independent warning exception to the client so that they
+	        // will see the error string associated with this error code 
+	        // since the error string cant be sent with the get call back 
+	        // response (hopefully this is useful information)
+	        //
+	        // order is very important here because it determines that the get 
+	        // call back response is always sent, and that this warning exception
+	        // message will be sent at most one time (in rare instances it will
+	        // not be sent, but at least it will not be sent multiple times).
+	        // The message is logged to the console in the rare situations when
+	        // we are unable to send.
+	        //
+		    caStatus tmpStatus = this->sendErrWithEpicsStatus ( guard, 
+                & msg, pChan->getCID(), completionStatus, ECA_GETFAIL );
+		    if ( tmpStatus ) {
+			    errMessage ( completionStatus, "<= get callback failure detail not passed to client" );
+		    }
+        }
         return ecaStatus;
 	}
 
@@ -649,6 +652,7 @@ caStatus casStrmClient::readNotifyFailureResponse (
                 msg.m_available, & pPayload );
 	if ( ! status ) {
 	    memset ( pPayload, '\0', size );
+	    this->out.commitMsg ();
 	}
     return status;
 }
@@ -678,9 +682,6 @@ caStatus convertContainerMemberToAtomic ( gdd & dd,
  	    }
     }
     else {
-        if ( appType != dd.applicationType() ) {
-            return S_cas_badType;
-        }
         pVal = & dd;
     }
 

@@ -504,6 +504,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
 {
     win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
+    assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
     return (epicsThreadId) pParm;
 }
 

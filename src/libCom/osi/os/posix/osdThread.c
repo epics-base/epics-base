@@ -445,6 +445,7 @@ void epicsThreadSleep(double seconds)
 
 epicsThreadId epicsThreadGetIdSelf(void) {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    assert ( pthreadInfo ); /* very dangerous to allow non-unique thread id into use */
     return(pthreadInfo);
 }
 

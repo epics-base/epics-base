@@ -33,6 +33,7 @@
  * .01  11-16-89        lrd     fixed select algorithms not to compare against
  *                              the previous value
  * .02  10-12-90	mrk	changes for new record support
+ * .03  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -125,10 +126,7 @@ static long process(paddr)
 	psel->pact = TRUE;
 	if(fetch_values(psel)==0) {
 		if(do_sel(psel)!=0) {
-			if(psel->nsev<VALID_ALARM) {
-				psel->nsta = CALC_ALARM;
-				psel->nsev = VALID_ALARM;
-			}
+			recGblSetSevr(psel,CALC_ALARM,VALID_ALARM);
 		}
 	}
 
@@ -224,11 +222,7 @@ static void alarm(psel)
 
         /* undefined condition */
 	if(psel->udf ==TRUE){
-        	if (psel->nsev<VALID_ALARM){
-                        psel->nsta = UDF_ALARM;
-                        psel->nsev = VALID_ALARM; 
-                        return;
-                }
+		if(recGblSetSevr(psel,UDF_ALARM,VALID_ALARM)) return;
         }
         /* if difference is not > hysterisis use lalm not val */
         ftemp = psel->lalm - psel->val;
@@ -236,40 +230,27 @@ static void alarm(psel)
         if (ftemp < psel->hyst) val=psel->lalm;
 
         /* alarm condition hihi */
-        if (psel->nsev<psel->hhsv){
-                if (val > psel->hihi){
-                        psel->lalm = val;
-                        psel->nsta = HIHI_ALARM;
-                        psel->nsev = psel->hhsv;
-                        return;
-                }
+        if (val > psel->hihi && recGblSetSevr(psel,HIHI_ALARM,psel->hhsv)){
+                psel->lalm = val;
+                return;
         }
+
         /* alarm condition lolo */
-        if (psel->nsev<psel->llsv){
-                if (val < psel->lolo){
-                        psel->lalm = val;
-                        psel->nsta = LOLO_ALARM;
-                        psel->nsev = psel->llsv;
-                        return;
-                }
+        if (val < psel->lolo && recGblSetSevr(psel,LOLO_ALARM,psel->llsv)){
+                psel->lalm = val;
+                return;
         }
+
         /* alarm condition high */
-        if (psel->nsev<psel->hsv){
-                if (val > psel->high){
-                        psel->lalm = val;
-                        psel->nsta = HIGH_ALARM;
-                        psel->nsev =psel->hsv;
-                        return;
-                }
+        if (val > psel->high && recGblSetSevr(psel,HIGH_ALARM,psel->hsv)){
+                psel->lalm = val;
+                return;
         }
-        /* alarm condition lolo */
-        if (psel->nsev<psel->lsv){
-                if (val < psel->low){
-                        psel->lalm = val;
-                        psel->nsta = LOW_ALARM;
-                        psel->nsev = psel->lsv;
-                        return;
-                }
+
+        /* alarm condition low */
+        if (val < psel->low && recGblSetSevr(psel,LOW_ALARM,psel->lsv)){
+                psel->lalm = val;
+                return;
         }
         return;
 }
@@ -284,16 +265,8 @@ static void monitor(psel)
 	double           *pprev;
 	int             i;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        stat=psel->stat;
-        sevr=psel->sevr;
-        nsta=psel->nsta;
-        nsev=psel->nsev;
-        /*set current stat and sevr*/
-        psel->stat = nsta;
-        psel->sevr = nsev;
-        psel->nsta = 0;
-        psel->nsev = 0;
+        /* get peevious stat and sevr  and new stat and sevr*/
+        recGblResetSevr(psel,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 
@@ -417,10 +390,7 @@ struct selRecord *psel;
 			nRequest=1;
 			if(dbGetLink(&(psel->nvl.value.db_link),psel,DBR_USHORT,
 				&(psel->seln),&options,&nRequest)!=NULL) {
-				if (psel->nsev<VALID_ALARM) {
-					psel->nsta = LINK_ALARM;
-					psel->nsev = VALID_ALARM;
-				}
+		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);
 			}
 		}
@@ -430,10 +400,7 @@ struct selRecord *psel;
 		        nRequest=1;
 		        status=dbGetLink(&plink->value.db_link,psel,DBR_DOUBLE,pvalue,&options,&nRequest);
 			if(status!=0) {
-				if(psel->nsev<VALID_ALARM) {
-					psel->nsev=VALID_ALARM;
-					psel->nsta=LINK_ALARM;
-				}
+		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);
 			}
                 }
@@ -445,10 +412,7 @@ struct selRecord *psel;
 			nRequest=1;
 			status = dbGetLink(&plink->value.db_link,psel,DBR_DOUBLE,pvalue,&options,&nRequest);
 			if(status!=0) {
-				if(psel->nsev<VALID_ALARM) {
-					psel->nsev=VALID_ALARM;
-					psel->nsta=LINK_ALARM;
-				}
+		                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
 				return(-1);
 			}
 		}

@@ -39,6 +39,7 @@
  * .07  10-31-90        mrk        extensible record and device support
  * .08  09-25-91        jba     added input link for seln
  * .09  09-26-91        jba     added select_mask option
+ * .10  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include        <vxWorks.h>
@@ -131,10 +132,7 @@ static long process(paddr)
          status=dbGetLink(&(pfanout->sell.value.db_link),pfanout,DBR_USHORT,
          &(pfanout->seln),&options,&nRequest);
          if(status!=0) {
-             if (pfanout->nsev<VALID_ALARM) {
-                 pfanout->nsev = VALID_ALARM;
-                 pfanout->nsta = LINK_ALARM;
-             }
+		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
          }
     }
     switch (pfanout->selm){
@@ -148,10 +146,7 @@ static long process(paddr)
         break;
     case (SELECTED):
         if(pfanout->seln<0 || pfanout->seln>6) {
-            if(pfanout->nsev<VALID_ALARM) {
-                pfanout->nsev = VALID_ALARM;
-                pfanout->nsta = SOFT_ALARM;
-            }
+		recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
             break;
         }
         if(pfanout->seln==0) {
@@ -166,10 +161,7 @@ static long process(paddr)
             break;
         }
         if(pfanout->seln<0 || pfanout->seln>63 ) {
-            if(pfanout->nsev<VALID_ALARM) {
-                pfanout->nsev = VALID_ALARM;
-                pfanout->nsta = SOFT_ALARM;
-            }
+            recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
             break;
         }
         plink=&(pfanout->lnk1);
@@ -179,24 +171,13 @@ static long process(paddr)
         }
         break;
     default:
-        if(pfanout->nsev<VALID_ALARM) {
-            pfanout->nsev = VALID_ALARM;
-            pfanout->nsta = SOFT_ALARM;
-        }
+        recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
     }
     pfanout->udf=FALSE;
     tsLocalTime(&pfanout->time);
     /* check monitors*/
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=pfanout->stat;
-    sevr=pfanout->sevr;
-    nsta=pfanout->nsta;
-    nsev=pfanout->nsev;
-    /*set current stat and sevr*/
-    pfanout->stat = nsta;
-    pfanout->sevr = nsev;
-    pfanout->nsta = 0;
-    pfanout->nsev = 0;
+    recGblResetSevr(pfanout,stat,sevr,nsta,nsev);
     if((stat!=nsta || sevr!=nsev)){
         db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
         db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);

@@ -48,6 +48,7 @@
  * .09  07-26-90        lrd     fixed the N-to-1 character waveformion
  *                              value was not initialized
  * .10  10-11-90	mrk	Made changes for new record support
+ * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -294,15 +295,7 @@ static void monitor(pwf)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pwf->stat;
-        sevr=pwf->sevr;
-        nsta=pwf->nsta;
-        nsev=pwf->nsev;
-        /*set current stat and sevr*/
-        pwf->stat = nsta;
-        pwf->sevr = nsev;
-        pwf->nsta = 0;
-        pwf->nsev = 0;
+        recGblResetSevr(pwf,stat,sevr,nsta,nsev);
 
         /* Flags which events to fire on the value field */
         monitor_mask = 0;

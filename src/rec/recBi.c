@@ -45,6 +45,7 @@
  * .11  04-11-90        lrd     make local variables static
  * .12  10-10-90	mrk	Made changes for new record and device support
  * .13  10-24-91	jba	Moved comment
+ * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -229,33 +230,21 @@ static void alarm(pbi)
 
 
         if(pbi->udf == TRUE){
-                if (pbi->nsev<VALID_ALARM){
-                        pbi->nsta = UDF_ALARM;
-                        pbi->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(pbi,UDF_ALARM,VALID_ALARM);
                 return;
         }
 
 	if(val>1)return;
         /* check for  state alarm */
         if (val == 0){
-                if (pbi->nsev<pbi->zsv){
-                        pbi->nsta = STATE_ALARM;
-                        pbi->nsev = pbi->zsv;
-                }
+                recGblSetSevr(pbi,STATE_ALARM,pbi->zsv);
         }else{
-                if (pbi->nsev<pbi->osv){
-                        pbi->nsta = STATE_ALARM;
-                        pbi->nsev = pbi->osv;
-                }
+                recGblSetSevr(pbi,STATE_ALARM,pbi->osv);
         }
 
         /* check for cos alarm */
 	if(val == pbi->lalm) return;
-        if (pbi->nsev<pbi->cosv) {
-                pbi->nsta = COS_ALARM;
-                pbi->nsev = pbi->cosv;
-        }
+        recGblSetSevr(pbi,COS_ALARM,pbi->cosv);
 	pbi->lalm = val;
 	return;
 }
@@ -267,15 +256,7 @@ static void monitor(pbi)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pbi->stat;
-        sevr=pbi->sevr;
-        nsta=pbi->nsta;
-        nsev=pbi->nsev;
-        /*set current stat and sevr*/
-        pbi->stat = nsta;
-        pbi->sevr = nsev;
-        pbi->nsta = 0;
-        pbi->nsev = 0;
+        recGblResetSevr(pbi,stat,sevr,nsta,nsev);
 
 	monitor_mask = 0;
 

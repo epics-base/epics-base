@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  10-10-90	mrk	Made changes for new record support
+ * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -244,11 +245,7 @@ static void alarm(psub)
 
         /* undefined condition */
 	if(psub->udf == TRUE) {
-        	if (psub->nsev<VALID_ALARM){
-                        psub->nsta = UDF_ALARM;
-                        psub->nsev = VALID_ALARM;
-                        return;
-                }
+                if(recGblSetSevr(psub,UDF_ALARM,VALID_ALARM)) return;
         }
         /* if difference is not > hysterisis use lalm not val */
         ftemp = psub->lalm - psub->val;
@@ -256,42 +253,27 @@ static void alarm(psub)
         if (ftemp < psub->hyst) val=psub->lalm;
 
         /* alarm condition hihi */
-        if (psub->nsev<psub->hhsv){
-                if (val > psub->hihi){
-                        psub->lalm = val;
-                        psub->nsta = HIHI_ALARM;
-                        psub->nsev = psub->hhsv;
-                        return;
-                }
+        if (val > psub->hihi && recGblSetSevr(psub,HIHI_ALARM,psub->hhsv)){
+                psub->lalm = val;
+                return;
         }
 
         /* alarm condition lolo */
-        if (psub->nsev<psub->llsv){
-                if (val < psub->lolo){
-                        psub->lalm = val;
-                        psub->nsta = LOLO_ALARM;
-                        psub->nsev = psub->llsv;
-                        return;
-                }
+        if (val < psub->lolo && recGblSetSevr(psub,LOLO_ALARM,psub->llsv)){
+                psub->lalm = val;
+                return;
         }
 
         /* alarm condition high */
-        if (psub->nsev<psub->hsv){
-                if (val > psub->high){
-                        psub->lalm = val;
-                        psub->nsta = HIGH_ALARM;
-                        psub->nsev =psub->hsv;
-                        return;
-                }
+        if (val > psub->high && recGblSetSevr(psub,HIGH_ALARM,psub->hsv)){
+                psub->lalm = val;
+                return;
         }
-        /* alarm condition lolo */
-        if (psub->nsev<psub->lsv){
-                if (val < psub->low){
-                        psub->lalm = val;
-                        psub->nsta = LOW_ALARM;
-                        psub->nsev = psub->lsv;
-                        return;
-                }
+
+        /* alarm condition low */
+        if (val < psub->low && recGblSetSevr(psub,LOW_ALARM,psub->lsv)){
+                psub->lalm = val;
+                return;
         }
         return;
 }
@@ -307,15 +289,7 @@ static void monitor(psub)
 	int             i;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=psub->stat;
-        sevr=psub->sevr;
-        nsta=psub->nsta;
-        nsev=psub->nsev;
-        /*set current stat and sevr*/
-        psub->stat = nsta;
-        psub->sevr = nsev;
-        psub->nsta = 0;
-        psub->nsev = 0;
+        recGblResetSevr(psub,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 
@@ -375,10 +349,7 @@ struct subRecord *psub;
                 status=dbGetLink(&plink->value.db_link,psub,DBR_DOUBLE,
                         pvalue,&options,&nRequest);
                 if(status!=0) {
-                        if(psub->nsev<VALID_ALARM) {
-                                psub->nsev=VALID_ALARM;
-                                psub->nsta=LINK_ALARM;
-                        }
+                	recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
                         return(-1);
                 }
         }
@@ -395,18 +366,12 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 	/* call the subroutine */
 	psubroutine = (FUNCPTR)(psub->sadr);
 	if(psubroutine==NULL) {
-		if(psub->nsev<VALID_ALARM) {
-			psub->nsta = BAD_SUB_ALARM;
-			psub->nsev = VALID_ALARM;
-		}
+               	recGblSetSevr(psub,BAD_SUB_ALARM,VALID_ALARM);
 		return(0);
 	}
 	status = psubroutine(psub);
 	if(status < 0){
-		if (psub->nsev<psub->brsv){
-			psub->nsta = SOFT_ALARM;
-			psub->nsev = psub->brsv;
-		}
+               	recGblSetSevr(psub,SOFT_ALARM,psub->brsv);
 	} else psub->udf = FALSE;
 	return(status);
 }

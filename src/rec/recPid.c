@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  10-15-90	mrk	changes for new record support
+ * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -211,43 +212,27 @@ static void alarm(ppid)
         if (ftemp < ppid->hyst) val=ppid->lalm;
 
         /* alarm condition hihi */
-        if (ppid->nsev<ppid->hhsv){
-                if (val > ppid->hihi){
-                        ppid->lalm = val;
-                        ppid->nsta = HIHI_ALARM;
-                        ppid->nsev = ppid->hhsv;
-                        return;
-                }
+        if (val > ppid->hihi && recGblSetSevr(ppid,HIHI_ALARM,ppid->hhsv)){
+                ppid->lalm = val;
+                return;
         }
 
         /* alarm condition lolo */
-        if (ppid->nsev<ppid->llsv){
-                if (val < ppid->lolo){
-                        ppid->lalm = val;
-                        ppid->nsta = LOLO_ALARM;
-                        ppid->nsev = ppid->llsv;
-                        return;
-                }
+        if (val < ppid->lolo && recGblSetSevr(ppid,LOLO_ALARM,ppid->llsv)){
+                ppid->lalm = val;
+                return;
         }
 
         /* alarm condition high */
-        if (ppid->nsev<ppid->hsv){
-                if (val > ppid->high){
-                        ppid->lalm = val;
-                        ppid->nsta = HIGH_ALARM;
-                        ppid->nsev =ppid->hsv;
-                        return;
-                }
+        if (val > ppid->high && recGblSetSevr(ppid,HIGH_ALARM,ppid->hsv)){
+                ppid->lalm = val;
+                return;
         }
 
-        /* alarm condition lolo */
-        if (ppid->nsev<ppid->lsv){
-                if (val < ppid->low){
-                        ppid->lalm = val;
-                        ppid->nsta = LOW_ALARM;
-                        ppid->nsev = ppid->lsv;
-                        return;
-                }
+        /* alarm condition low */
+        if (val < ppid->low && recGblSetSevr(ppid,LOW_ALARM,ppid->lsv)){
+                ppid->lalm = val;
+                return;
         }
         return;
 }
@@ -260,15 +245,7 @@ static void monitor(ppid)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=ppid->stat;
-        sevr=ppid->sevr;
-        nsta=ppid->nsta;
-        nsev=ppid->nsev;
-        /*set current stat and sevr*/
-        ppid->stat = nsta;
-        ppid->sevr = nsev;
-        ppid->nsta = 0;
-        ppid->nsev = 0;
+        recGblResetSevr(ppid,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 
@@ -361,20 +338,13 @@ struct pidRecord     *ppid;
 
         /* fetch the controlled value */
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
-                if (ppid->nsev<VALID_ALARM) {
-                        ppid->nsta = SOFT_ALARM;
-                        ppid->nsev = VALID_ALARM;
-                        return(0);
-                }
+                if (recGblSetSevr(ppid,SOFT_ALARM,VALID_ALARM)) return(0);
 	}
         options=0;
         nRequest=1;
         if(dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
 	&cval,&options,&nRequest)!=NULL) {
-                if (ppid->nsev<VALID_ALARM) {
-                        ppid->nsta = LINK_ALARM;
-                        ppid->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
                 return(0);
         }
         /* fetch the setpoint */
@@ -383,19 +353,13 @@ struct pidRecord     *ppid;
         	nRequest=1;
         	if(dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
-                	if (ppid->nsev<VALID_ALARM) {
-                                ppid->nsta = LINK_ALARM;
-                                ppid->nsev = VALID_ALARM;
-                        }
+                        recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
                         return(0);
                 } else ppid->udf=FALSE;
         }
 	val = ppid->val;
 	if (ppid->udf == TRUE ) {
-                if (ppid->nsev<VALID_ALARM) {
-                         ppid->nsta = UDF_ALARM;
-                         ppid->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(ppid,UDF_ALARM,VALID_ALARM);
                 return(0);
 	}
 

@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 
@@ -169,15 +169,7 @@ static void monitor(pstringin)
     short           stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=pstringin->stat;
-    sevr=pstringin->sevr;
-    nsta=pstringin->nsta;
-    nsev=pstringin->nsev;
-    /*set current stat and sevr*/
-    pstringin->stat = nsta;
-    pstringin->sevr = nsev;
-    pstringin->nsta = 0;
-    pstringin->nsev = 0;
+    recGblResetSevr(pstringin,stat,sevr,nsta,nsev);
 
     /* Flags which events to fire on the value field */
     monitor_mask = 0;

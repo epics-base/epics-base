@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 
@@ -217,10 +217,7 @@ static void alarm(plongin)
 	long	val=plongin->val;
 
 	if(plongin->udf == TRUE ){
-		if (plongin->nsev<VALID_ALARM){
-			plongin->nsta = UDF_ALARM;
-			plongin->nsev = VALID_ALARM;
-		}
+		recGblSetSevr(plongin,UDF_ALARM,VALID_ALARM);
 		return;
 	}
 	/* if difference is not > hysterisis use lalm not val */
@@ -228,46 +225,30 @@ static void alarm(plongin)
 	if(ftemp<0) ftemp = -ftemp;
 	if (ftemp < plongin->hyst) val=plongin->lalm;
 
-	/* alarm condition hihi */
-	if (plongin->nsev<plongin->hhsv){
-		if (val > plongin->hihi){
-			plongin->lalm = val;
-			plongin->nsta = HIHI_ALARM;
-			plongin->nsev = plongin->hhsv;
-			return;
-		}
-	}
+        /* alarm condition hihi */
+        if (val > plongin->hihi && recGblSetSevr(plongin,HIHI_ALARM,plongin->hhsv)){
+                plongin->lalm = val;
+                return;
+        }
 
-	/* alarm condition lolo */
-	if (plongin->nsev<plongin->llsv){
-		if (val < plongin->lolo){
-			plongin->lalm = val;
-			plongin->nsta = LOLO_ALARM;
-			plongin->nsev = plongin->llsv;
-			return;
-		}
-	}
+        /* alarm condition lolo */
+        if (val < plongin->lolo && recGblSetSevr(plongin,LOLO_ALARM,plongin->llsv)){
+                plongin->lalm = val;
+                return;
+        }
 
-	/* alarm condition high */
-	if (plongin->nsev<plongin->hsv){
-		if (val > plongin->high){
-			plongin->lalm = val;
-			plongin->nsta = HIGH_ALARM;
-			plongin->nsev =plongin->hsv;
-			return;
-		}
-	}
+        /* alarm condition high */
+        if (val > plongin->high && recGblSetSevr(plongin,HIGH_ALARM,plongin->hsv)){
+                plongin->lalm = val;
+                return;
+        }
 
-	/* alarm condition lolo */
-	if (plongin->nsev<plongin->lsv){
-		if (val < plongin->low){
-			plongin->lalm = val;
-			plongin->nsta = LOW_ALARM;
-			plongin->nsev = plongin->lsv;
-			return;
-		}
-	}
-	return;
+        /* alarm condition low */
+        if (val < plongin->low && recGblSetSevr(plongin,LOW_ALARM,plongin->lsv)){
+                plongin->lalm = val;
+                return;
+        }
+        return;
 }
 
 static void monitor(plongin)
@@ -278,15 +259,7 @@ static void monitor(plongin)
 	short		stat,sevr,nsta,nsev;
 
 	/* get previous stat and sevr  and new stat and sevr*/
-	stat=plongin->stat;
-	sevr=plongin->sevr;
-	nsta=plongin->nsta;
-	nsev=plongin->nsev;
-	/*set current stat and sevr*/
-	plongin->stat = nsta;
-	plongin->sevr = nsev;
-	plongin->nsta = 0;
-	plongin->nsev = 0;
+        recGblResetSevr(plongin,stat,sevr,nsta,nsev);
 
         /* Flags which events to fire on the value field */
 	monitor_mask = 0;

@@ -46,6 +46,7 @@
  * .11  12-06-89        lrd     add database fetch support
  * .12  02-08-90        lrd     add Allen-Bradley PLC support
  * .13  10-31-90	mrk	changes for new record and device support
+ * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -312,35 +313,22 @@ static void alarm(pmbbi)
 
         /* check for udf alarm */
         if(pmbbi->udf == TRUE ){
-                if (pmbbi->nsev<VALID_ALARM){
-                        pmbbi->nsta = UDF_ALARM;
-                        pmbbi->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(pmbbi,UDF_ALARM,VALID_ALARM);
         }
 
         /* check for  state alarm */
         /* unknown state */
         if (val > 15){
-                if (pmbbi->nsev<pmbbi->unsv){
-                        pmbbi->nsta = STATE_ALARM;
-                        pmbbi->nsev = pmbbi->unsv;
-                }
+                recGblSetSevr(pmbbi,STATE_ALARM,pmbbi->unsv);
         } else {
         	/* in a state which is an error */
         	severities = (unsigned short *)&(pmbbi->zrsv);
-        	if (pmbbi->nsev<severities[pmbbi->val]){
-                	pmbbi->nsta = STATE_ALARM;
-                	pmbbi->nsev = severities[pmbbi->val];
-        	}
+                recGblSetSevr(pmbbi,STATE_ALARM,severities[pmbbi->val]);
 	}
 
         /* check for cos alarm */
 	if(val == pmbbi->lalm) return;
-        if (pmbbi->nsev<pmbbi->cosv){
-                pmbbi->nsta = COS_ALARM;
-                pmbbi->nsev = pmbbi->cosv;
-                return;
-        }
+        recGblSetSevr(pmbbi,COS_ALARM,pmbbi->cosv);
 	pmbbi->lalm = val;
 	return;
 }
@@ -352,18 +340,9 @@ static void monitor(pmbbi)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pmbbi->stat;
-        sevr=pmbbi->sevr;
-        nsta=pmbbi->nsta;
-        nsev=pmbbi->nsev;
-        /*set current stat and sevr*/
-        pmbbi->stat = nsta;
-        pmbbi->sevr = nsev;
-        pmbbi->nsta = 0;
-        pmbbi->nsev = 0;
+        recGblResetSevr(pmbbi,stat,sevr,nsta,nsev);
 
 	monitor_mask = 0;
-
         /* alarm condition changed this scan */
         if (stat!=nsta || sevr!=nsev){
                 /* post events for alarm condition change*/

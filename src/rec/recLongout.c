@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */ 
 
 
@@ -148,10 +148,7 @@ static long process(paddr)
 				DBR_LONG,&plongout->val,&options,&nRequest);
 			plongout->pact = FALSE;
 			if(status!=0){
-				if(plongout->nsev < VALID_ALARM) {
-					plongout->nsev = VALID_ALARM;
-					plongout->nsta = LINK_ALARM;
-				}
+				recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
 			} else plongout->udf=FALSE;
 		}
 	}
@@ -240,10 +237,7 @@ static void alarm(plongout)
 	long	val=plongout->val;
 
         if(plongout->udf == TRUE ){
-                if (plongout->nsev<VALID_ALARM){
-                        plongout->nsta = UDF_ALARM;
-                        plongout->nsev = VALID_ALARM;
-                }
+		recGblSetSevr(plongout,UDF_ALARM,VALID_ALARM);
                 return;
         }
 
@@ -253,47 +247,30 @@ static void alarm(plongout)
         if (ftemp < plongout->hyst) val=plongout->lalm;
 
         /* alarm condition hihi */
-        if (plongout->nsev<plongout->hhsv){
-                if (val > plongout->hihi){
-                        plongout->lalm = val;
-                        plongout->nsta = HIHI_ALARM;
-                        plongout->nsev = plongout->hhsv;
-                        return;
-                }
+        if (val > plongout->hihi && recGblSetSevr(plongout,HIHI_ALARM,plongout->hhsv)){
+                plongout->lalm = val;
+                return;
         }
 
         /* alarm condition lolo */
-        if (plongout->nsev<plongout->llsv){
-                if (val < plongout->lolo){
-                        plongout->lalm = val;
-                        plongout->nsta = LOLO_ALARM;
-                        plongout->nsev = plongout->llsv;
-                        return;
-                }
+        if (val < plongout->lolo && recGblSetSevr(plongout,LOLO_ALARM,plongout->llsv)){
+                plongout->lalm = val;
+                return;
         }
 
         /* alarm condition high */
-        if (plongout->nsev<plongout->hsv){
-                if (val > plongout->high){
-                        plongout->lalm = val;
-                        plongout->nsta = HIGH_ALARM;
-                        plongout->nsev =plongout->hsv;
-                        return;
-                }
+        if (val > plongout->high && recGblSetSevr(plongout,HIGH_ALARM,plongout->hsv)){
+                plongout->lalm = val;
+                return;
         }
 
-        /* alarm condition lolo */
-        if (plongout->nsev<plongout->lsv){
-                if (val < plongout->low){
-                        plongout->lalm = val;
-                        plongout->nsta = LOW_ALARM;
-                        plongout->nsev = plongout->lsv;
-                        return;
-                }
+        /* alarm condition low */
+        if (val < plongout->low && recGblSetSevr(plongout,LOW_ALARM,plongout->lsv)){
+                plongout->lalm = val;
+                return;
         }
         return;
 }
-
 
 static void monitor(plongout)
     struct longoutRecord	*plongout;
@@ -304,15 +281,7 @@ static void monitor(plongout)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=plongout->stat;
-        sevr=plongout->sevr;
-        nsta=plongout->nsta;
-        nsev=plongout->nsev;
-        /*set current stat and sevr*/
-        plongout->stat = nsta;
-        plongout->sevr = nsev;
-        plongout->nsta = 0;
-        plongout->nsev = 0;
+        recGblResetSevr(plongout,stat,sevr,nsta,nsev);
 
         /* Flags which events to fire on the value field */
 	monitor_mask = 0;

@@ -48,6 +48,7 @@
  * .09  07-26-90        lrd     fixed the N-to-1 character compression
  *                              value was not initialized
  * .10  10-11-90	mrk	Made changes for new record support
+ * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -149,10 +150,7 @@ static long process(paddr)
 	if (pcompress->inp.type != DB_LINK) {
 		status=0;
 	}else if (pcompress->wptr == NULL) {
-		if(pcompress->nsev<VALID_ALARM) {
-			pcompress->nsta = READ_ALARM;
-			pcompress->nsev = VALID_ALARM;
-		}
+		recGblSetSevr(pcompress,READ_ALARM,VALID_ALARM);
 		status=0;
 	} else {
 		struct dbAddr	*pdbAddr =
@@ -163,10 +161,7 @@ static long process(paddr)
 
 		if(dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_DOUBLE,pcompress->wptr,
 				&options,&no_elements)!=0){
-                                if(pcompress->nsev < VALID_ALARM) {
-                                        pcompress->nsev = VALID_ALARM;
-                                        pcompress->nsta = LINK_ALARM;
-                                }
+				recGblSetSevr(pcompress,LINK_ALARM,VALID_ALARM);
                         }
 
 		if(alg==AVERAGE) {
@@ -319,15 +314,7 @@ static void monitor(pcompress)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pcompress->stat;
-        sevr=pcompress->sevr;
-        nsta=pcompress->nsta;
-        nsev=pcompress->nsev;
-        /*set current stat and sevr*/
-        pcompress->stat = nsta;
-        pcompress->sevr = nsev;
-        pcompress->nsta = 0;
-        pcompress->nsev = 0;
+        recGblResetSevr(pcompress,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 

@@ -58,6 +58,7 @@
  * .18  10-10-90	mrk	Made changes for new record support
  *				Note that all calc specific details moved
  *				to libCalc
+ * .19  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -150,10 +151,7 @@ static long process(paddr)
 	pcalc->pact = TRUE;
 	if(fetch_values(pcalc)==0) {
 		if(calcPerform(&pcalc->a,&pcalc->val,pcalc->rpcl)) {
-			if(pcalc->nsev<VALID_ALARM) {
-				pcalc->nsta = CALC_ALARM;
-				pcalc->nsev = VALID_ALARM;
-			}
+			recGblSetSevr(pcalc,CALC_ALARM,VALID_ALARM);
 		} else pcalc->udf = FALSE;
 	}
 	tsLocalTime(&pcalc->time);
@@ -263,10 +261,7 @@ static void alarm(pcalc)
 	double	val=pcalc->val;
 
 	if(pcalc->udf == TRUE ) {
-		if(pcalc->nsev<VALID_ALARM) {
-			pcalc->nsev = VALID_ALARM;
-			pcalc->nsta = UDF_ALARM;
-		}
+		recGblSetSevr(pcalc,UDF_ALARM,VALID_ALARM);
 		return;
 	}
         /* if difference is not > hysterisis use lalm not val */
@@ -275,43 +270,27 @@ static void alarm(pcalc)
         if (ftemp < pcalc->hyst) val=pcalc->lalm;
 
         /* alarm condition hihi */
-        if (pcalc->nsev<pcalc->hhsv){
-                if (val > pcalc->hihi){
-                        pcalc->lalm = val;
-                        pcalc->nsta = HIHI_ALARM;
-                        pcalc->nsev = pcalc->hhsv;
-                        return;
-                }
+        if (val > pcalc->hihi && recGblSetSevr(pcalc,HIHI_ALARM,pcalc->hhsv)){
+                pcalc->lalm = val;
+                return;
         }
 
         /* alarm condition lolo */
-        if (pcalc->nsev<pcalc->llsv){
-                if (val < pcalc->lolo){
-                        pcalc->lalm = val;
-                        pcalc->nsta = LOLO_ALARM;
-                        pcalc->nsev = pcalc->llsv;
-                        return;
-                }
+        if (val < pcalc->lolo && recGblSetSevr(pcalc,LOLO_ALARM,pcalc->llsv)){
+                pcalc->lalm = val;
+                return;
         }
 
         /* alarm condition high */
-        if (pcalc->nsev<pcalc->hsv){
-                if (val > pcalc->high){
-                        pcalc->lalm = val;
-                        pcalc->nsta = HIGH_ALARM;
-                        pcalc->nsev =pcalc->hsv;
-                        return;
-                }
+        if (val > pcalc->high && recGblSetSevr(pcalc,HIGH_ALARM,pcalc->hsv)){
+                pcalc->lalm = val;
+                return;
         }
 
-        /* alarm condition lolo */
-        if (pcalc->nsev<pcalc->lsv){
-                if (val < pcalc->low){
-                        pcalc->lalm = val;
-                        pcalc->nsta = LOW_ALARM;
-                        pcalc->nsev = pcalc->lsv;
-                        return;
-                }
+        /* alarm condition low */
+        if (val < pcalc->low && recGblSetSevr(pcalc,LOW_ALARM,pcalc->lsv)){
+                pcalc->lalm = val;
+                return;
         }
         return;
 }
@@ -327,15 +306,7 @@ static void monitor(pcalc)
 	int		i;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pcalc->stat;
-        sevr=pcalc->sevr;
-        nsta=pcalc->nsta;
-        nsev=pcalc->nsev;
-        /*set current stat and sevr*/
-        pcalc->stat = nsta;
-        pcalc->sevr = nsev;
-        pcalc->nsta = 0;
-        pcalc->nsev = 0;
+        recGblResetSevr(pcalc,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 
@@ -396,10 +367,7 @@ struct calcRecord *pcalc;
 		status = dbGetLink(&plink->value.db_link,pcalc,DBR_DOUBLE,
 			pvalue,&options,&nRequest);
 		if(status!=0) {
-			if(pcalc->nsev<VALID_ALARM) {
-				pcalc->nsev=VALID_ALARM;
-				pcalc->nsta=LINK_ALARM;
-			}
+			recGblSetSevr(pcalc,LINK_ALARM,VALID_ALARM);
 			return(-1);
 		}
 

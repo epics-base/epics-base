@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */ 
 
 #include     <vxWorks.h>
@@ -219,15 +219,7 @@ static void monitor(ppd)
     short           stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=ppd->stat;
-    sevr=ppd->sevr;
-    nsta=ppd->nsta;
-    nsev=ppd->nsev;
-    /*set current stat and sevr*/
-    ppd->stat = nsta;
-    ppd->sevr = nsev;
-    ppd->nsta = 0;
-    ppd->nsev = 0;
+    recGblResetSevr(ppd,stat,sevr,nsta,nsev);
 
     /* Flags which events to fire on the value field */
     monitor_mask = 0;
@@ -243,8 +235,14 @@ static void monitor(ppd)
 
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppd,&ppd->val,monitor_mask);
-    db_post_events(ppd,&ppd->dly,monitor_mask);
-    db_post_events(ppd,&ppd->wide,monitor_mask);
+    if(ppd->odly != ppd->dly){
+         db_post_events(ppd,&ppd->dly,monitor_mask);
+         ppd->odly=ppd->dly;
+    }
+    if(ppd->owid != ppd->wide){
+         db_post_events(ppd,&ppd->wide,monitor_mask);
+         ppd->owid=ppd->wide;
+    }
 
     return;
 }

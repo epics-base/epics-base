@@ -49,6 +49,7 @@
  *                              Allen-Bradley and added PLC support
  * .15  04-11-90        lrd     make locals static
  * .16  10-11-90	mrk	make changes for new record and device support
+ * .17  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -192,7 +193,7 @@ static long init_record(pmbbo)
 		pmbbo->val =  (unsigned short)rval;
 		}
 		pmbbo->udf = FALSE;
-	} else if (status==2) status==0;
+	} else if (status==2) status=0;
     }
     init_common(pmbbo);
     return(0);
@@ -227,28 +228,19 @@ static long process(paddr)
 		pmbbo->val= val;
 		pmbbo->udf= FALSE;
 	    } else {
-		if(pmbbo->nsev < VALID_ALARM) {
-		    pmbbo->nsev = VALID_ALARM;
-		    pmbbo->nsta = LINK_ALARM;
-		}
+		recGblSetSevr(pmbbo,LINK_ALARM,VALID_ALARM);
 		goto DONT_WRITE;
 	    }
 	}
 	if(pmbbo->udf==TRUE) {
-		if(pmbbo->nsev < VALID_ALARM) {
-		    pmbbo->nsev = VALID_ALARM;
-		    pmbbo->nsta = UDF_ALARM;
-		}
+		recGblSetSevr(pmbbo,UDF_ALARM,VALID_ALARM);
 		goto DONT_WRITE;
 	}
 	if(pmbbo->sdef) {
 	    unsigned long *pvalues = &(pmbbo->zrvl);
 
 	    if(pmbbo->val>15) {
-		if(pmbbo->nsev<VALID_ALARM ) {
-		    pmbbo->nsta = SOFT_ALARM;
-		    pmbbo->nsev = VALID_ALARM;
-		}
+		recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM);
 		goto DONT_WRITE;
 	    }
 	    pmbbo->rval = pvalues[pmbbo->val];
@@ -370,26 +362,16 @@ static void alarm(pmbbo)
         /* check for  state alarm */
         /* unknown state */
         if (val > 15){
-                if (pmbbo->nsev<pmbbo->unsv){
-                        pmbbo->nsta = STATE_ALARM;
-                        pmbbo->nsev = pmbbo->unsv;
-                }
+                recGblSetSevr(pmbbo,STATE_ALARM,pmbbo->unsv);
         } else {
         	/* in a state which is an error */
         	severities = (unsigned short *)&(pmbbo->zrsv);
-        	if (pmbbo->nsev<severities[pmbbo->val]){
-                	pmbbo->nsta = STATE_ALARM;
-                	pmbbo->nsev = severities[pmbbo->val];
-        	}
+                recGblSetSevr(pmbbo,STATE_ALARM,severities[pmbbo->val]);
 	}
 
         /* check for cos alarm */
 	if(val == pmbbo->lalm) return;
-        if (pmbbo->nsev<pmbbo->cosv){
-                pmbbo->nsta = COS_ALARM;
-                pmbbo->nsev = pmbbo->cosv;
-                return;
-        }
+        if(recGblSetSevr(pmbbo,COS_ALARM,pmbbo->cosv)) return;
         pmbbo->lalm = val;
 	return;
 }
@@ -401,15 +383,7 @@ static void monitor(pmbbo)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pmbbo->stat;
-        sevr=pmbbo->sevr;
-        nsta=pmbbo->nsta;
-        nsev=pmbbo->nsev;
-        /*set current stat and sevr*/
-        pmbbo->stat = nsta;
-        pmbbo->sevr = nsev;
-        pmbbo->nsta = 0;
-        pmbbo->nsev = 0;
+        recGblResetSevr(pmbbo,stat,sevr,nsta,nsev);
 
 	monitor_mask = 0;
 

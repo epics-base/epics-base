@@ -56,6 +56,7 @@
  * .16  04-18-90	mrk	extensible record and device support
  * .17  09-18-91	jba	fixed bug in break point table conversion
  * .18  09-30-91	jba	Moved break point table conversion to libCom
+ * .19  11-11-91	jba	Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -297,10 +298,7 @@ static void alarm(pai)
 	double	val=pai->val;
 
 	if(pai->udf == TRUE ){
-		if (pai->nsev<VALID_ALARM){
-			pai->nsta = UDF_ALARM;
-			pai->nsev = VALID_ALARM;
-		}
+ 		recGblSetSevr(pai,UDF_ALARM,VALID_ALARM);
 		return;
 	}
 	/* if difference is not > hysterisis use lalm not val */
@@ -309,43 +307,27 @@ static void alarm(pai)
 	if (ftemp < pai->hyst) val=pai->lalm;
 
 	/* alarm condition hihi */
-	if (pai->nsev<pai->hhsv){
-		if (val > pai->hihi){
-			pai->lalm = val;
-			pai->nsta = HIHI_ALARM;
-			pai->nsev = pai->hhsv;
-			return;
-		}
+	if (val > pai->hihi && recGblSetSevr(pai,HIHI_ALARM,pai->hhsv)){
+		pai->lalm = val;
+		return;
 	}
 
 	/* alarm condition lolo */
-	if (pai->nsev<pai->llsv){
-		if (val < pai->lolo){
-			pai->lalm = val;
-			pai->nsta = LOLO_ALARM;
-			pai->nsev = pai->llsv;
-			return;
-		}
+	if (val < pai->lolo && recGblSetSevr(pai,LOLO_ALARM,pai->llsv)){
+		pai->lalm = val;
+		return;
 	}
 
 	/* alarm condition high */
-	if (pai->nsev<pai->hsv){
-		if (val > pai->high){
-			pai->lalm = val;
-			pai->nsta = HIGH_ALARM;
-			pai->nsev =pai->hsv;
-			return;
-		}
+	if (val > pai->high && recGblSetSevr(pai,HIGH_ALARM,pai->hsv)){
+		pai->lalm = val;
+		return;
 	}
 
-	/* alarm condition lolo */
-	if (pai->nsev<pai->lsv){
-		if (val < pai->low){
-			pai->lalm = val;
-			pai->nsta = LOW_ALARM;
-			pai->nsev = pai->lsv;
-			return;
-		}
+	/* alarm condition low */
+	if (val < pai->low && recGblSetSevr(pai,LOW_ALARM,pai->lsv)){
+		pai->lalm = val;
+		return;
 	}
 	return;
 }
@@ -372,10 +354,7 @@ struct aiRecord	*pai;
 	}
 	else { /* must use breakpoint table */
                 if (cvtRawToEngBpt(&val,pai->linr,pai->init,&pai->pbrk,&pai->lbrk)!=0) {
-	              if(pai->nsev < VALID_ALARM) {
-                           pai->nsta = SOFT_ALARM;
-                           pai->nsev = VALID_ALARM;
-                      }
+                      recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM);
                 }
 	}
 
@@ -398,15 +377,7 @@ static void monitor(pai)
 	short		stat,sevr,nsta,nsev;
 
 	/* get previous stat and sevr  and new stat and sevr*/
-	stat=pai->stat;
-	sevr=pai->sevr;
-	nsta=pai->nsta;
-	nsev=pai->nsev;
-	/*set current stat and sevr*/
-	pai->stat = nsta;
-	pai->sevr = nsev;
-	pai->nsta = 0;
-	pai->nsev = 0;
+        recGblResetSevr(pai,stat,sevr,nsta,nsev);
 
 	monitor_mask = 0;
 

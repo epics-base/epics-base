@@ -63,6 +63,7 @@
 
  * .21  10-15-90	mrk	extensible record and device support
  * .22  10-24-91	jba	bug fix to alarms
+ * .23  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -237,8 +238,8 @@ static long get_control_double(paddr,pcd)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = psm->hopr;
-    pcd->lower_ctrl_limit = psm->lopr;
+    pcd->upper_ctrl_limit = psm->drvh;
+    pcd->lower_ctrl_limit = psm->drvl;
     return(0);
 }
 
@@ -264,42 +265,25 @@ static void alarm(psm)
 	deviation = psm->val - psm->rbv;
 
         /* alarm condition hihi */
-        if (psm->nsev<psm->hhsv){
-                if (deviation > psm->hihi){
-                        psm->nsta = HIHI_ALARM;
-                        psm->nsev = psm->hhsv;
-                        return;
-                }
+        if (deviation > psm->hihi && recGblSetSevr(psm,HIHI_ALARM,psm->hhsv)){
+                return;
         }
 
         /* alarm condition lolo */
-        if (psm->nsev<psm->llsv){
-                if (deviation < psm->lolo){
-                        psm->nsta = LOLO_ALARM;
-                        psm->nsev = psm->llsv;
-                        return;
-                }
+        if (deviation < psm->lolo && recGblSetSevr(psm,LOLO_ALARM,psm->llsv)){
+                return;
         }
 
         /* alarm condition high */
-        if (psm->nsev<psm->hsv){
-                if (deviation > psm->high){
-                        psm->nsta = HIGH_ALARM;
-                        psm->nsev =psm->hsv;
-                        return;
-                }
+        if (deviation > psm->high && recGblSetSevr(psm,HIGH_ALARM,psm->hsv)){
+                return;
         }
 
-        /* alarm condition lolo */
-        if (psm->nsev<psm->lsv){
-                if (deviation < psm->low){
-                        psm->nsta = LOW_ALARM;
-                        psm->nsev = psm->lsv;
-                        return;
-                }
+        /* alarm condition low */
+        if (deviation < psm->low && recGblSetSevr(psm,LOW_ALARM,psm->lsv)){
+                return;
         }
         return;
-
 }
 
 static void monitor(psm)
@@ -465,23 +449,12 @@ psm_data->accel
 
 	/* alarm conditions for limit switches */
 	if ((psm->ccw == 0) || (psm->cw == 0)){	/* limit violation */
-		if (psm->nsev<psm->hlsv) {
-			psm->nsta = HW_LIMIT_ALARM;
-			psm->nsev = psm->hlsv;
-		}
+		recGblSetSevr(psm,HW_LIMIT_ALARM,psm->hlsv);
 	}
 
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=psm->stat;
-        sevr=psm->sevr;
-        nsta=psm->nsta;
-        nsev=psm->nsev;
-        /*set current stat and sevr*/
-        psm->stat = nsta;
-        psm->sevr = nsev;
-        psm->nsta = 0;
-        psm->nsev = 0;
+        recGblResetSevr(psm,stat,sevr,nsta,nsev);
 
         /* anyone waiting for an event on this record */
         if (psm->mlis.count!=0  && (stat!=nsta || sevr!=nsev) ){
@@ -533,7 +506,7 @@ struct steppermotorRecord      *psm;
 {
 	int	acceleration,velocity;
 	short	card,channel;
-	short		status;
+	short		status=0;
 
 	/* the motor number is the card number */
 	card = psm->out.value.vmeio.card;
@@ -554,10 +527,7 @@ struct steppermotorRecord      *psm;
 	/* initialize the motor */
 	/* set mode - first command checks card present */
 	if (sm_driver(psm->dtyp,card,channel,SM_MODE,psm->mode,0) < 0){
-		if(psm->nsev < VALID_ALARM) {
-			psm->nsta = WRITE_ALARM;
-			psm->nsev = VALID_ALARM;
-		}
+		recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 		psm->init = 1;
 		return;
 	}
@@ -590,10 +560,7 @@ struct steppermotorRecord      *psm;
 			status = sm_driver(psm->dtyp,card,channel,SM_READ,0,0);
 		}
 		if (status < 0){
-			if (psm->nsev < VALID_ALARM) {
-				psm->nsta = WRITE_ALARM;
-				psm->nsev = VALID_ALARM;
-			}
+			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 			return;
 		}
 	}else if (psm->mode == VELOCITY){
@@ -669,10 +636,7 @@ struct steppermotorRecord	*psm;
 		long nRequest=1;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
-			if (psm->nsev < VALID_ALARM) {
-				psm->nsta = LINK_ALARM;
-				psm->nsev = VALID_ALARM;
-			}
+			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf = FALSE;
 	}
@@ -722,10 +686,7 @@ struct steppermotorRecord	*psm;
 
 			/* move motor */
 			if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-				if (psm->nsev < VALID_ALARM) {
-					psm->nsta = WRITE_ALARM;
-					psm->nsev = VALID_ALARM;
-				}
+				recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 				return;
 			}
 			psm->movn = 1;
@@ -777,10 +738,7 @@ struct steppermotorRecord	*psm;
 		long nRequest=1;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
-			if (psm->nsev < VALID_ALARM) {
-				psm->nsta = LINK_ALARM;
-				psm->nsev = VALID_ALARM;
-			}
+			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf=FALSE;
 	}
@@ -817,10 +775,7 @@ struct steppermotorRecord	*psm;
 	
 			/*the last arg of next call is check for direction */
 			if(sm_driver(psm->dtyp,card,channel,SM_MOTION,1,(psm->val < 0))){
-				if (psm->nsev < VALID_ALARM) {
-					psm->stat = WRITE_ALARM;
-					psm->sevr = VALID_ALARM;
-				}
+				recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 				return;
 			}
 			psm->cvel = 0;
@@ -868,10 +823,7 @@ short                           moving;
 	reset = psm->init;
 	if (reset == 0)	psm->init = 1;
 	if(dbGetLink(&(psm->rdbl.value.db_link),psm,DBR_FLOAT,&new_pos,&options,&nRequest)){
-		if (psm->nsev < VALID_ALARM) {
-			psm->nsta = READ_ALARM;
-			psm->nsev = VALID_ALARM;
-		}
+		recGblSetSevr(psm,READ_ALARM,VALID_ALARM);
 		psm->init = reset;
 		return;
 	}

@@ -1,7 +1,7 @@
 /* recPulseCounter.c */
 /* share/src/rec $Id$ */
 
-/* recPulser.c - Record Support Routines for PulseCounter records */
+/* recPulseCounter.c - Record Support Routines for PulseCounter records */
 /*
  * Author:      Janet Anderson
  * Date:        10-17-91
@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */ 
 
 #include     <vxWorks.h>
@@ -163,10 +163,7 @@ static long process(paddr)
                    &ppc->sgv,&options,&nRequest);
               ppc->pact = FALSE;
               if(status!=0) {
-                  if (ppc->nsev<VALID_ALARM) {
-                      ppc->nsta = LINK_ALARM;
-                      ppc->nsev = VALID_ALARM;
-                  }
+                  recGblSetSevr(ppc,LINK_ALARM,VALID_ALARM);
               }
          }
          if(status=0){
@@ -181,16 +178,14 @@ static long process(paddr)
                    ppc->cmd=save;
                    ppc->osgv=ppc->sgv;
                    if(status!=0) {
-                       if (ppc->nsev<VALID_ALARM) {
-                           ppc->nsta = SOFT_ALARM;
-                           ppc->nsev = VALID_ALARM;
-                       }
+                       recGblSetSevr(ppc,SOFT_ALARM,VALID_ALARM);
                    }
               }
          }
      }
 
      if(ppc->cmd>0){
+          ppc->scmd=ppc->cmd;
           status=(*pdset->cmd_pc)(ppc);
           ppc->cmd=CTR_READ;
      }
@@ -277,15 +272,7 @@ static void monitor(ppc)
     short           stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=ppc->stat;
-    sevr=ppc->sevr;
-    nsta=ppc->nsta;
-    nsev=ppc->nsev;
-    /*set current stat and sevr*/
-    ppc->stat = nsta;
-    ppc->sevr = nsev;
-    ppc->nsta = 0;
-    ppc->nsev = 0;
+    recGblResetSevr(ppc,stat,sevr,nsta,nsev);
 
     /* Flags which events to fire on the value field */
     monitor_mask = 0;
@@ -301,7 +288,9 @@ static void monitor(ppc)
 
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppc,&ppc->val,monitor_mask);
-    db_post_events(ppc,&ppc->cmd,monitor_mask);
-
+    if (ppc->scmd != ppc->cmd) {
+          db_post_events(ppc,&ppc->scmd,monitor_mask);
+          ppc->scmd=ppc->cmd;
+    }
     return;
 }

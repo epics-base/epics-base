@@ -51,6 +51,7 @@
  * .15  04-11-90        lrd     make locals static
  * .16  05-02-90        lrd     fix initial value set in the DOL field
  * .17  10-10-90	mrk	Changes for record and device support
+ * .18  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -214,10 +215,7 @@ static long process(paddr)
 				pbo->val = val;
 				pbo->udf = FALSE;
 			}else {
-				if(pbo->nsev < VALID_ALARM) {
-					pbo->nsev = VALID_ALARM;
-					pbo->nsta = LINK_ALARM;
-				}
+       				recGblSetSevr(pbo,LINK_ALARM,VALID_ALARM);
 			}
 		}
 		if ( pbo->mask != 0 ) {
@@ -310,31 +308,19 @@ static void alarm(pbo)
 
         /* check for udf alarm */
         if(pbo->udf == TRUE ){
-                if (pbo->nsev<VALID_ALARM){
-                        pbo->nsta = UDF_ALARM;
-                        pbo->nsev = VALID_ALARM;
-                }
+			recGblSetSevr(pbo,UDF_ALARM,VALID_ALARM);
         }
 
         /* check for  state alarm */
         if (val == 0){
-                if (pbo->nsev<pbo->zsv){
-                        pbo->nsta = STATE_ALARM;
-                        pbo->nsev = pbo->zsv;
-                }
+		recGblSetSevr(pbo,STATE_ALARM,pbo->zsv);
         }else{
-                if (pbo->nsev<pbo->osv){
-                        pbo->nsta = STATE_ALARM;
-                        pbo->nsev = pbo->osv;
-                }
+		recGblSetSevr(pbo,STATE_ALARM,pbo->osv);
         }
 
         /* check for cos alarm */
 	if(val == pbo->lalm) return;
-        if (pbo->nsev<pbo->cosv) {
-                pbo->nsta = COS_ALARM;
-                pbo->nsev = pbo->cosv;
-        }
+	recGblSetSevr(pbo,COS_ALARM,pbo->cosv);
 	pbo->lalm = val;
         return;
 }
@@ -346,15 +332,7 @@ static void monitor(pbo)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pbo->stat;
-        sevr=pbo->sevr;
-        nsta=pbo->nsta;
-        nsev=pbo->nsev;
-        /*set current stat and sevr*/
-        pbo->stat = nsta;
-        pbo->sevr = nsev;
-        pbo->nsta = 0;
-        pbo->nsev = 0;
+        recGblResetSevr(pbo,stat,sevr,nsta,nsev);
 
         monitor_mask = 0;
 

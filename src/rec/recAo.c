@@ -51,6 +51,7 @@
  * .18  07-27-90        lrd     implement the output to a database record
  * .19  10-10-90	mrk	extensible record and device support
  * .20  09-25-91	jba	added breakpoint table conversion
+ * .21  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -291,8 +292,8 @@ static long get_control_double(paddr,pcd)
 {
     struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
 
-    pcd->upper_ctrl_limit = pao->hopr;
-    pcd->lower_ctrl_limit = pao->lopr;
+    pcd->upper_ctrl_limit = pao->drvh;
+    pcd->lower_ctrl_limit = pao->drvl;
     return(0);
 }
 static long get_alarm_double(paddr,pad)
@@ -316,10 +317,7 @@ static void alarm(pao)
 	double	val=pao->val;
 
         if(pao->udf == TRUE ){
-                if (pao->nsev<VALID_ALARM){
-                        pao->nsta = UDF_ALARM;
-                        pao->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(pao,UDF_ALARM,VALID_ALARM);
                 return;
         }
 
@@ -329,47 +327,30 @@ static void alarm(pao)
         if (ftemp < pao->hyst) val=pao->lalm;
 
         /* alarm condition hihi */
-        if (pao->nsev<pao->hhsv){
-                if (val > pao->hihi){
-                        pao->lalm = val;
-                        pao->nsta = HIHI_ALARM;
-                        pao->nsev = pao->hhsv;
-                        return;
-                }
+        if (val > pao->hihi && recGblSetSevr(pao,HIHI_ALARM,pao->hhsv)){
+                pao->lalm = val;
+                return;
         }
 
         /* alarm condition lolo */
-        if (pao->nsev<pao->llsv){
-                if (val < pao->lolo){
-                        pao->lalm = val;
-                        pao->nsta = LOLO_ALARM;
-                        pao->nsev = pao->llsv;
-                        return;
-                }
+        if (val < pao->lolo && recGblSetSevr(pao,LOLO_ALARM,pao->llsv)){
+                pao->lalm = val;
+                return;
         }
 
         /* alarm condition high */
-        if (pao->nsev<pao->hsv){
-                if (val > pao->high){
-                        pao->lalm = val;
-                        pao->nsta = HIGH_ALARM;
-                        pao->nsev =pao->hsv;
-                        return;
-                }
+        if (val > pao->high && recGblSetSevr(pao,HIGH_ALARM,pao->hsv)){
+                pao->lalm = val;
+                return;
         }
 
-        /* alarm condition lolo */
-        if (pao->nsev<pao->lsv){
-                if (val < pao->low){
-                        pao->lalm = val;
-                        pao->nsta = LOW_ALARM;
-                        pao->nsev = pao->lsv;
-                        return;
-                }
+        /* alarm condition low */
+        if (val < pao->low && recGblSetSevr(pao,LOW_ALARM,pao->lsv)){
+                pao->lalm = val;
+                return;
         }
         return;
 }
-
 
 static int convert(pao)
     struct aoRecord  *pao;
@@ -392,10 +373,7 @@ static int convert(pao)
 			&value,&options,&nRequest);
 		pao->pact = save_pact;
 		if(status) {
-			if(pao->nsev<VALID_ALARM) {
-				pao->nsta = LINK_ALARM;
-				pao->nsev=VALID_ALARM;
-			}
+                        recGblSetSevr(pao,LINK_ALARM,VALID_ALARM);
 			return(1);
 		}
                 if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
@@ -433,10 +411,7 @@ static int convert(pao)
               }
         }else{
 	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,&pao->pbrk,&pao->lbrk)!=0){
-	           if (pao->nsev<VALID_ALARM){
-		        pao->nsta=SOFT_ALARM;
-		        pao->nsev=VALID_ALARM;
-		   }
+                   recGblSetSevr(pao,SOFT_ALARM,VALID_ALARM);
 		   return(1);
 	     }
 	     pao->rval=value;
@@ -453,15 +428,7 @@ static void monitor(pao)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        stat=pao->stat;
-        sevr=pao->sevr;
-        nsta=pao->nsta;
-        nsev=pao->nsev;
-        /*set current stat and sevr*/
-        pao->stat = nsta;
-        pao->sevr = nsev;
-        pao->nsta = 0;
-        pao->nsev = 0;
+        recGblResetSevr(pao,stat,sevr,nsta,nsev);
 
 	monitor_mask = 0;
 

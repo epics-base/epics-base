@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  10-24-91        jba     New device support changes
+ * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */ 
 
 #include     <vxWorks.h>
@@ -164,10 +165,7 @@ static long process(paddr)
                    &ppt->sgv,&options,&nRequest);
               ppt->pact = FALSE;
               if(status!=0) {
-                  if (ppt->nsev<VALID_ALARM) {
-                      ppt->nsta = LINK_ALARM;
-                      ppt->nsev = VALID_ALARM;
-                  }
+                  recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
               }
          }
          if(status=0){
@@ -179,11 +177,8 @@ static long process(paddr)
 			status=(*pdset->write_pt)(ppt);
                         ppt->dcy=save;
                    	if(status!=0) {
-                       	    if (ppt->nsev<VALID_ALARM) {
-                               ppt->nsta = WRITE_ALARM;
-                               ppt->nsev = VALID_ALARM;
-                            }
-                       }
+                            recGblSetSevr(ppt,WRITE_ALARM,VALID_ALARM);
+                        }
                    }
                    ppt->osgv=ppt->sgv;
               }
@@ -294,15 +289,7 @@ static void monitor(ppt)
     short           stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=ppt->stat;
-    sevr=ppt->sevr;
-    nsta=ppt->nsta;
-    nsev=ppt->nsev;
-    /*set current stat and sevr*/
-    ppt->stat = nsta;
-    ppt->sevr = nsev;
-    ppt->nsta = 0;
-    ppt->nsev = 0;
+    recGblResetSevr(ppt,stat,sevr,nsta,nsev);
 
     /* Flags which events to fire on the value field */
     monitor_mask = 0;
@@ -318,8 +305,13 @@ static void monitor(ppt)
 
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppt,&ppt->val,monitor_mask);
-    db_post_events(ppt,&ppt->per,monitor_mask);
-    db_post_events(ppt,&ppt->dcy,monitor_mask);
-
+    if(ppt->oper != ppt->per){
+         db_post_events(ppt,&ppt->per,monitor_mask);
+         ppt->oper=ppt->per;
+    }
+    if(ppt->odcy != ppt->dcy){
+         db_post_events(ppt,&ppt->dcy,monitor_mask);
+         ppt->odcy=ppt->dcy;
+    }
     return;
 }

@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  10-24-91        jba     Removed unused code
+ * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */ 
 
 
@@ -148,10 +149,7 @@ static long process(paddr)
 				DBR_STRING,pstringout->val,&options,&nRequest);
 			pstringout->pact = FALSE;
 			if(!status==0){
-				if(pstringout->nsev < VALID_ALARM) {
-					pstringout->nsev = VALID_ALARM;
-					pstringout->nsta = LINK_ALARM;
-				}
+				recGblSetSevr(pstringout,LINK_ALARM,VALID_ALARM);
 			} else pstringout->udf=FALSE;
 		}
 	}
@@ -194,15 +192,7 @@ static void monitor(pstringout)
     short           stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=pstringout->stat;
-    sevr=pstringout->sevr;
-    nsta=pstringout->nsta;
-    nsev=pstringout->nsev;
-    /*set current stat and sevr*/
-    pstringout->stat = nsta;
-    pstringout->sevr = nsev;
-    pstringout->nsta = 0;
-    pstringout->nsev = 0;
+    recGblResetSevr(pstringout,stat,sevr,nsta,nsev);
 
     /* Flags which events to fire on the value field */
     monitor_mask = 0;

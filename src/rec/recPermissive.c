@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  10-10-90	mrk	extensible record and device support
+ * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  */
 
 #include	<vxWorks.h>
@@ -121,15 +122,7 @@ static void monitor(ppermissive)
     unsigned short  val,oval,wflg,oflg;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    stat=ppermissive->stat;
-    sevr=ppermissive->sevr;
-    nsta=ppermissive->nsta;
-    nsev=ppermissive->nsev;
-    /*set current stat and sevr*/
-    ppermissive->stat = nsta;
-    ppermissive->sevr = nsev;
-    ppermissive->nsta = 0;
-    ppermissive->nsev = 0;
+    recGblResetSevr(ppermissive,stat,sevr,nsta,nsev);
     /* get val,oval,wflg,oflg*/
     val=ppermissive->val;
     oval=ppermissive->oval;

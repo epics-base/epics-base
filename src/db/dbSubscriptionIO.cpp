@@ -64,7 +64,16 @@ void dbSubscriptionIO::destroy ()
     delete this;
 }
 
-void dbSubscriptionIO::channelDestroyException ()
+// lock should be applied
+void dbSubscriptionIO::unsubscribe ()
+{
+    if ( this->es ) {
+        db_cancel_event ( this->es );
+        this->es = 0;
+    }
+}
+
+void dbSubscriptionIO::channelDeleteException ()
 {
     this->notify.exception ( ECA_CHANDESTROY, 
         this->chan.pName(), this->type, this->count );

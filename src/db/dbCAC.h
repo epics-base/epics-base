@@ -72,7 +72,8 @@ public:
     dbSubscriptionIO ( dbServiceIO &, dbChannelIO &, struct dbAddr &, cacStateNotify &, 
         unsigned type, unsigned long count, unsigned mask, cacChannel::ioid * );
     void destroy ();
-    void channelDestroyException ();
+    void unsubscribe ();
+    void channelDeleteException ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );

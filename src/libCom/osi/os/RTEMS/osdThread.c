@@ -210,18 +210,20 @@ void
 threadInit (void)
 {
     if (!initialized) {
-	rtems_id tid;
-	rtems_task_priority old;
+        rtems_id tid;
+        rtems_task_priority old;
+        extern void clockInit (void);
 
-	rtems_task_set_priority (RTEMS_SELF, threadGetOssPriorityValue(99), &old);
-	onceMutex = semMutexMustCreate();
-	taskVarMutex = semMutexMustCreate ();
-	rtems_task_ident (RTEMS_SELF, 0, &tid);
-	setThreadInfo (tid, "_main_", NULL, NULL);
-	initialized = 1;
-	threadCreate ("ImsgDaemon", 99,
-		    threadGetStackSize (threadStackSmall),
-		    InterruptContextMessageDaemon, NULL);
+        clockInit ();
+        rtems_task_set_priority (RTEMS_SELF, threadGetOssPriorityValue(99), &old);
+        onceMutex = semMutexMustCreate();
+        taskVarMutex = semMutexMustCreate ();
+        rtems_task_ident (RTEMS_SELF, 0, &tid);
+        setThreadInfo (tid, "_main_", NULL, NULL);
+        initialized = 1;
+        threadCreate ("ImsgDaemon", 99,
+                threadGetStackSize (threadStackSmall),
+                InterruptContextMessageDaemon, NULL);
     }
 }
 
@@ -439,7 +441,7 @@ threadPrivateId threadPrivateCreate ()
     unsigned int taskVarIndex;
     static volatile unsigned int threadVariableCount = 0;
 
-    threadInit ();
+    if (!initialized) threadInit ();
     taskVarLock ();
     taskVarIndex = ++threadVariableCount;
     taskVarUnlock ();

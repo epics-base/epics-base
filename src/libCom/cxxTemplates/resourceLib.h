@@ -799,6 +799,28 @@ inline const char * stringId::resourceName () const
 	return this->pStr;
 }
 
+//
+// const unsigned stringId::minIndexBitWidth ()
+//
+// this limit is based on limitations in the hash
+// function below
+//
+inline const unsigned stringId::minIndexBitWidth ()
+{
+    return 8;
+}
+
+//
+// const unsigned stringId::maxIndexBitWidth ()
+//
+// see comments related to this limit in the hash
+// function below
+//
+inline const unsigned stringId::maxIndexBitWidth ()
+{
+    return 16;
+}
+
 #ifdef instantiateRecourceLib
 
 //
@@ -821,28 +843,6 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 	else {
 		this->pStr = idIn;
 	}
-}
-
-//
-// const unsigned stringId::minIndexBitWidth ()
-//
-// this limit is based on limitations in the hash
-// function below
-//
-inline const unsigned stringId::minIndexBitWidth ()
-{
-    return 8;
-}
-
-//
-// const unsigned stringId::maxIndexBitWidth ()
-//
-// see comments related to this limit in the hash
-// function below
-//
-inline const unsigned stringId::maxIndexBitWidth ()
-{
-    return 16;
 }
 
 //

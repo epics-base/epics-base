@@ -110,9 +110,9 @@
 	 */
 #	define epicsShareAPIV __cdecl
 #	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#		define epicsShareDef
+#		define epicsShareDef extern
 #	else
-#		define epicsShareDef __declspec(dllexport)
+#		define epicsShareDef extern __declspec(dllexport)
 #	endif
 #	define READONLY const
 /*

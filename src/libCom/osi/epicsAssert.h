@@ -64,12 +64,12 @@ epicsShareFunc extern void epicsShareAPI epicsAssert ();
 #if (defined(__STDC__) || defined(__cplusplus)) && !defined(VAXC)
 
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, #exp, epicsAssertAuthor);}
+( (exp) ? ( void ) 0 : epicsAssert( __FILE__, __LINE__, #exp, epicsAssertAuthor ) )
 
 #else /*__STDC__ or __cplusplus*/
 
 #define assert(exp) \
-{if (!(exp)) epicsAssert (__FILE__, __LINE__, "", epicsAssertAuthor);}
+( (exp) ? ( void ) 0 : epicsAssert( __FILE__, __LINE__, "", epicsAssertAuthor ) )
 
 #endif /* (__STDC__ or __cplusplus) and not VAXC */
 

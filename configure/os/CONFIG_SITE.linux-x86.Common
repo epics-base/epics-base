@@ -16,4 +16,3 @@
 # Alternatively the full pathname can be added to /etc/ld.so.conf
 # and ldconfig run to inform the system of the shared libraries.
 SHARED_LIBRARIES=YES
-

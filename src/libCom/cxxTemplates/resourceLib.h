@@ -160,6 +160,8 @@ public:
     void traverse ( pSetMFArg(pCB) );
     void traverseConst ( pSetMFArgConst(pCB) ) const;
 
+    unsigned numEntriesInstalled () const
+
 private:
     tsSLList<T>     *pTable;
     unsigned        hashIdMask;
@@ -338,7 +340,6 @@ resTable<T,ID>::resTable ( unsigned nHashTableEntries ) :
 
     this->hashIdNBits = nbits;
     this->hashIdMask = mask;
-    this->nInUse = 0u;
     this->pTable = new tsSLList<T> [1<<nbits];
     if (this->pTable==0) {
         throwWithLocation ( dynamicMemoryAllocationFailed () );
@@ -466,6 +467,12 @@ void resTable<T,ID>::traverseConst (pSetMFArgConst(pCB)) const
         }
         pList++;
     }
+}
+
+template <class T, class ID>
+inline void resTable<T,ID>::numEntriesInstalled () const
+{
+    return this->nInUse;
 }
 
 //

@@ -137,7 +137,7 @@ char * pResourceFilename;
     strcpy(name,"_");
     strcat(name,"initHooks");
     rtnval = symFindByName(sysSymTbl,name,(void *)&pinitHooks,&type);
-    if(!(rtnval==OK && (type&N_TEXT!=0))) {
+    if( rtnval==OK && !(type&N_TEXT!=0)) {
 	logMsg("iocInit - WARNING symbol initHooks has wrong type - skipping all init hooks\n");
 	pinitHooks=NULL;
     }

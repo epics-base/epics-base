@@ -155,14 +155,8 @@ udpiiu::udpiiu ( cac &cac ) :
     }
   
     {
-        unsigned priorityOfRecv;
-        epicsThreadBooleanStatus tbs;
-
-        tbs  = epicsThreadLowestPriorityLevelAbove ( 
-            this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
-        if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
-        }
+        unsigned priorityOfRecv = cac::lowestPriorityLevelAbove 
+            ( this->pCAC ()->getInitializingThreadsPriority() );
 
         this->recvThreadId = epicsThreadCreate ( "CAC-UDP", priorityOfRecv,
                 epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadUDP, this );

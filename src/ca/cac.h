@@ -142,6 +142,8 @@ public:
     bool preemptiveCallbackEnable () const;
     double beaconPeriod ( const nciu & chan ) const;
     void udpWakeup ();
+    static unsigned lowestPriorityLevelAbove ( unsigned priority );
+    static unsigned highestPriorityLevelBelow ( unsigned priority );
 
 private:
     ipAddrToAsciiEngine         ipToAEngine;
@@ -174,7 +176,7 @@ private:
     epicsEvent                  ioDone;
     epicsEvent                  noRecvThreadsPending;
     epicsEvent                  iiuUninstal;
-    epicsTimerQueueActive       * pTimerQueue;
+    epicsTimerQueueActive       & timerQueue;
     char                        * pUserName;
     class udpiiu                * pudpiiu;
     class searchTimer           * pSearchTmr;
@@ -261,14 +263,8 @@ private:
 
 class callbackAutoMutex {
 public:
-    callbackAutoMutex ( cac & ctxIn ) : ctx ( ctxIn )
-    {
-        this->ctx.preemptiveCallbackLock ();
-    }
-    ~callbackAutoMutex ()
-    {
-        this->ctx.preemptiveCallbackUnlock ();
-    }
+    callbackAutoMutex ( cac & ctxIn );
+    ~callbackAutoMutex ();
 private:
     cac & ctx;
 };
@@ -351,6 +347,17 @@ inline bool cac::ioComplete () const
 inline bool cac::preemptiveCallbackEnable () const
 {
     return ! this->pCallbackLocker;
+}
+
+inline callbackAutoMutex::callbackAutoMutex ( cac & ctxIn ) : 
+    ctx ( ctxIn )
+{
+    this->ctx.preemptiveCallbackLock ();
+}
+
+inline callbackAutoMutex::~callbackAutoMutex ()
+{
+    this->ctx.preemptiveCallbackUnlock ();
 }
 
 #endif // ifdef cach

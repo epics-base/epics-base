@@ -63,10 +63,11 @@ EPICS_CAS_SERVER_PORT=
 
 
 # Log Server:
-# EPICS_IOC_LOG_PORT Log server port number.
-
+# EPICS_IOC_LOG_PORT Log server port number etc.
 EPICS_IOC_LOG_PORT=7004
-
+#EPICS_IOC_LOG_INET=""
+#EPICS_IOC_LOG_FILE_LIMIT=100000
+#EPICS_IOC_LOG_FILE_NAME=/a/b/c/d/iocs.log
 
 # Other services:
 

@@ -99,23 +99,6 @@ int cac_select_io(struct timeval *ptimeout, int flags)
         }
 	UNLOCK;
 
-#	if 0
-		if (maxfd==0) {
-			printf(	"max fd=%d tv_usec=%d tv_sec=%d\n", 
-				maxfd, 	
-				ptimeout->tv_usec, 
-				ptimeout->tv_sec);
-		}
-#	endif
-
-#	if 0 && defined(vxWorks) 
-		if(client_lock->recurse>0){
-			ca_printf("lock is on and we are going to sleep %d!",
-				client_lock->recurse);
-			taskSuspend(0);
-		}
-#	endif
-
 #	if defined(__hpux)
 		status = select(
 				maxfd+1,
@@ -130,16 +113,6 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 				&pfdi->writeMask,
 				NULL,
 				&autoTimeOut);
-#	endif
-
-#	if 0
-		if(status<0){
-			printf("leaving select stat=%d - %s \n", 
-				status, strerror(MYERRNO) );
-		}
-		else if (status==0) {
-			printf("tmo in select\n");
-		}
 #	endif
 
 	cac_gettimeval (&ca_static->currentTime);

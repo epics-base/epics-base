@@ -403,7 +403,7 @@ void resTable<T,ID>::destroyAllEntries()
         //
         {
             T *pItem;
-            while ( ( pItem = pList.get () ) ) {
+            while ( ( pItem = pList->get () ) ) {
                 fprintf ( stderr, 
 "Warning: Defective class still in resTable<T,ID> after it was destroyed\n" );
                 //
@@ -529,9 +529,9 @@ T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
         if ( *pId == idIn ) {
             break;
         }
-        pItem = pItem->itemAfter ();
+        pItem = pItem.itemAfter ();
     }
-    return pItem;
+    return & (*pItem);
 }
 
 //
@@ -564,7 +564,7 @@ T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
             break;
         }
         pPrev = pItem;
-        pItem = pItem->itemAfter ();
+        pItem = pItem.itemAfter ();
     }
     return & (*pItem);
 }

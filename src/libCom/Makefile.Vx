@@ -41,6 +41,8 @@ LIBOBJS += assertVX.o
 
 LIBNAME = libCom
 
+MAN3 = gpHash.3 freeList.3
+
 include $(EPICS)/config/RULES.Vx
 
 clean::

@@ -49,6 +49,8 @@ LIBNAME = libCom.a
 
 #TARGETS = tsTest 
 
+MAN3 = gpHash.3 freeList.3
+
 include $(EPICS)/config/RULES.Unix
 
 errSymTbl.o: errSymTbl.c errInc.o

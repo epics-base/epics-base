@@ -31,5 +31,7 @@ SRCS.c += ../drvTime.c
 
 TARGETS = $(SRCS.c:../%.c=%.o)
 
+MAN3 = drvEpvxi.3
+
 include $(EPICS)/config/RULES.Vx
 

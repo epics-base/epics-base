@@ -55,12 +55,13 @@ of this.</p>
 
 <p>Database definition (.dbd) files can now contain declarations of simple
 static variables, a facility intended for driver debugging purposes. These
-<code>variable(name)</code> declarations are preserved by dbExpand, and will
-be converted by registerRecordDeviceDriver.pl into code that registers them
-with iocsh. The variables themselves must be defined in some existing C or
-C++ code and marked using the macro <code>epicsExportAddress(type,
-name)</code>. The initial implementation only supports integers, but other
-types will be added soon.</p>
+<code>variable(name)</code> or <code>variable(name,type)</code> declarations
+are preserved by dbExpand (<code>type</code> is <code>int</code> if omitted),
+and will be converted by registerRecordDeviceDriver.pl into code that
+registers them with iocsh. The variables themselves must be defined in some
+existing C or C++ code and marked using the macro
+<code>epicsExportAddress(type,name)</code>. Only plain <code>int</code> and
+<code>double</code> types are supported.</p>
 
 <p><strong>macEnvExpand</strong></p>
 

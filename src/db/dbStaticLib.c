@@ -97,6 +97,11 @@ static char *promptCAMAC_IO[] = {
 	"subaddress:",
 	"  function:",
 	" parameter:"};
+static char *promptRF_IO[] = {
+	"      cryo:",
+	"     micro:",
+	"   dataset:",
+	"   element:"};
 static char *promptAB_IO[] = {
 	"    link:",
 	" adapter:",
@@ -149,6 +154,7 @@ static void initForms()
 	promptAddr[PV_LINK]  = promptPV_LINK;  formlines[PV_LINK]  = 4;
 	promptAddr[VME_IO]   = promptVME_IO;   formlines[VME_IO]   = 3;
 	promptAddr[CAMAC_IO] = promptCAMAC_IO; formlines[CAMAC_IO] = 6;
+	promptAddr[RF_IO]    = promptRF_IO;    formlines[RF_IO]    = 4;
 	promptAddr[AB_IO]    = promptAB_IO;    formlines[AB_IO]    = 6;
 	promptAddr[GPIB_IO]  = promptGPIB_IO;  formlines[GPIB_IO]  = 3;
 	promptAddr[BITBUS_IO]= promptBITBUS_IO;formlines[BITBUS_IO]= 5;
@@ -1338,6 +1344,13 @@ DBENTRY *pdbentry;
 		    plink->value.camacio.n,plink->value.camacio.a,
 		    plink->value.camacio.f,plink->value.camacio.parm);
 		break;
+	    case RF_IO:
+		sprintf(message,"#R%d M%d D%d E%d",
+		    plink->value.rfio.cryo,
+		    plink->value.rfio.micro,
+		    plink->value.rfio.dataset,
+		    plink->value.rfio.element);
+		break;
 	    case AB_IO:
 		sprintf(message,"#L%d A%d C%d S%d F%d @%s",
 		    plink->value.abio.link,plink->value.abio.adapter,
@@ -1669,23 +1682,36 @@ char *pstring;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.camacio.n);
-		    if(!(end = strchr(pstr,'A')))  {
-			plink->value.camacio.a = 0;
-		    } else {
-		        pstr = end + 1;
-		        sscanf(pstr,"%hd",&plink->value.camacio.a);
-		    }
-		    if(!(end = strchr(pstr,'F'))) {
-			plink->value.camacio.f = 0;
-		    } else {
-		        pstr = end + 1;
-		        sscanf(pstr,"%hd",&plink->value.camacio.f);
-		    }
+		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.camacio.a);
+		    if(!(end = strchr(pstr,'F'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.camacio.f);
 		    plink->value.camacio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
 			strcpy(&plink->value.camacio.parm[0],pstr);
 		    }
+		}
+		break;
+	    case RF_IO: {
+	    	    char	*end;
+
+		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    if(!(end = strchr(pstr,'R'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.rfio.cryo);
+		    if(!(end = strchr(pstr,'M'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.rfio.micro);
+		    if(!(end = strchr(pstr,'D'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.rfio.dataset);
+		    if(!(end = strchr(pstr,'E'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.rfio.element);
 		}
 		break;
 	    case AB_IO: {
@@ -2465,6 +2491,15 @@ DBENTRY *pdbentry;
 	value++;
 	strcpy(*value,plink->value.camacio.parm);
 	break;
+    case RF_IO:
+	cvtShortToString(plink->value.rfio.cryo,*value);
+	value++;
+	cvtShortToString(plink->value.rfio.micro,*value);
+	value++;
+	cvtShortToString(plink->value.rfio.dataset,*value);
+	value++;
+	cvtShortToString(plink->value.rfio.element,*value);
+	break;
     case AB_IO:
 	cvtShortToString(plink->value.abio.link,*value);
 	value++;
@@ -2632,6 +2667,35 @@ char **value;
 	}
 	value++; verify++;
 	strncpy(plink->value.camacio.parm,*value,CAMAC_PARAM_SZ-1);
+	break;
+    case RF_IO:
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.rfio.cryo = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
+	value++; verify++;
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.rfio.micro = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
+	value++; verify++;
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.rfio.dataset = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
+	value++; verify++;
+	lvalue = strtol(*value,&endp,0);
+	if(*endp==0) {
+	    plink->value.rfio.element = lvalue; **verify = 0;
+	} else {
+	    strcpy(*verify,"Illegal. Must be number");
+	}
 	break;
     case AB_IO:
 	lvalue = strtol(*value,&endp,0);

@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <stdio.h>
+#include <string.h>
 
 #define epicsExportSharedSymbols
 #define caNetAddrSock

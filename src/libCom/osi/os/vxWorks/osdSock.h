@@ -24,6 +24,8 @@ extern "C" {
 #include <ioLib.h>
 #include <hostLib.h>
 #include <selectLib.h>
+/*This following is not defined in any vxWorks header files*/
+int sysClkRateGet(void);
 
 #ifdef __cplusplus
 }

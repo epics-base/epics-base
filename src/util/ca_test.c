@@ -106,6 +106,7 @@ LOCAL int cagft(char *pname)
 	SEVCHK(status,NULL);
 	status = ca_pend_io(2.0);
 	if(status != ECA_NORMAL){
+        SEVCHK(ca_clear_channel(chan_id),NULL);
 		printf("Not Found %s\n", pname);
 		return -1;
 	}
@@ -148,6 +149,7 @@ LOCAL int cagft(char *pname)
 		ca_pend_event (5.0);
 
 		if(!outstanding){
+            SEVCHK(ca_clear_channel(chan_id),NULL);
 			printf("\n\n");
 			return 0;
 		}
@@ -157,6 +159,7 @@ LOCAL int cagft(char *pname)
 		}
 	}
 
+    SEVCHK(ca_clear_channel(chan_id),NULL);
 	return -1;
 }
 
@@ -216,6 +219,7 @@ char		*pvalue
 	SEVCHK(status,NULL);
 	status = ca_pend_io(2.0);
 	if(status != ECA_NORMAL){
+        SEVCHK(ca_clear_channel(chan_id),NULL);
 		printf("Not Found %s\n", pname);
 		return -1;
 	}
@@ -304,6 +308,7 @@ skip_rest:
 		ca_pend_event(1.0);
 
 		if(!outstanding){
+            SEVCHK(ca_clear_channel(chan_id),NULL);
 			printf("\n\n");
 			return 0;
 		}
@@ -311,6 +316,7 @@ skip_rest:
 		ntries--;
 	}
 
+    SEVCHK(ca_clear_channel(chan_id),NULL);
 	return -1;
 }
 

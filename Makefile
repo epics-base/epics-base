@@ -22,11 +22,11 @@ include $(TOP)/config/RULES_TOP
 
 release: 
 	@echo TOP: Creating Release...
-	@./MakeRelease ${TOP}
+	@./MakeRelease
 
-built_release: install
+built_release:
 	@echo TOP: Creating Fully Built Release...
-	@./MakeRelease ${TOP} -b
+	@./MakeRelease -b $(INSTALL_LOCATION)
 
 uninstall::
 	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\

@@ -10,6 +10,9 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.8  1996/07/02 13:45:09  jba
+# Added dbd and base/config dirs. Removed epics/config and base/rec.
+#
 # Revision 1.7  1996/06/25 21:54:42  jba
 # Command line parm now base dir
 #
@@ -75,9 +78,13 @@ fi
 
 
 FULLY_BUILT=NO
-if [ "${2}" = "-b" ]; then
+if [ "${1}" = "-b" ]; then
 	FULLY_BUILT=YES
 	shift
+	if [ "${1}" != "." ]; then
+		echo "TOP: Cannot create a fully built release.";
+		exit 1;
+	fi
 fi
 
 # Retrieve EPICS release string from src/include/epicsVersion.h

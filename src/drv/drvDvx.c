@@ -85,6 +85,7 @@
  *              to module_types.h.
  * BG 6/23/92   combined dvx_driver.c and drvDvx.c 
  * BG 6/26/92   added level to dvx_io_report in drvDvx structure.
+ * JH 6/29/92	moved the rest of the dvx io_report here
  */
 
 
@@ -102,11 +103,9 @@ struct {
 	report,
 	init};
 
-static long report(fp)
-    FILE	*fp;
+static long report(level)
+int	level;
 {
-    register int i;
-
     dvx_io_report(level);
 }
 
@@ -196,8 +195,8 @@ dvx_driver_init()
   * rebooting (and changing bus arbitration mode)
   *   joh 072591
   */
-
  rebootHookAdd(dvx_reset);
+
  semInit(&dvx_rpt_sem);
  semGive(&dvx_rpt_sem);
 
@@ -441,18 +440,17 @@ dvx_dump(card,firstchan,lastchan)
  printf("end of list\n");
 }
 
+
 /*
  *
  *   dvx_io_report
  *
  *
 */
-
-
 int dvx_io_report(level)
    short int level;
  {  
-   short int i,card_id;
+   short int i, j, card_id;
    struct dvx_2502 *ptr;
    int status;
    int num_cards = 0;
@@ -478,7 +476,31 @@ int dvx_io_report(level)
                 }
           
          }
-   return num_cards;
+
+	if((level > 0 ) && (num_cards >0)){
+		for(j = 0; j < ai_num_cards[DVX2502];j++){
+			int 	dvx_card;
+			int	firstchan;
+			int	lastchan;
+
+			dvx_card = j;
+			if(dvx_cards_found[dvx_card] >0){
+				printf("Enter number of the first channel you wish to read:\n");
+				scanf("%d",&firstchan);
+				printf("First channel is %d\n",firstchan);
+				printf("Enter number of the last channel you wish to read:\n");
+				scanf("%d",&lastchan);
+				printf("Last channel is %d\n",lastchan);
+				dvx_chan_print(dvx_card,firstchan,lastchan);
+			}
+#if 0 /* ?????? joh */
+			semTake(&dvx_rpt_sem);
+			semGive(&dvx_rpt_sem);
+#endif
+		}
+	}
+
+   	return OK;
  }
 
  int dvx_chan_print(dvx_card,firstchan,lastchan)

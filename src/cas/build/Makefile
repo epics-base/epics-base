@@ -61,6 +61,7 @@ LIBSRCS += casStreamIO.cc
 LIBRARY = cas
 DLL_LIBS = ca gdd Com
 SYS_DLL_LIBS = ws2_32
+cas_RCS_WIN32 = cas.rc
 
 #PROD_LIBS := cas ca gdd Com 
 #SYS_PROD_LIBS_WIN32 := ws2_32

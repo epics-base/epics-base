@@ -1,5 +1,5 @@
-BASE = ../..
-include $(BASE)/config/CONFIG
+EPICS = ../../..
+include $(EPICS)/config/CONFIG
 
 
 USR_LDFLAGS = -lm
@@ -28,16 +28,18 @@ LIBNAME = libCom.a
 
 PROD =
 
-all :: $(LIBNAME) $(PROD)
+all :: bld_errSym $(LIBNAME) $(PROD)
 
+bld_errSym:
+	$(EPICS_BASE)/tools/blderrSymTbl
 
 install :: install_inc 
 
-install_inc : $(BASE_LIB)/libCom.a
+install_inc : $(EPICS)/libCom.a
 
 $(BASE_LIB)/libCom.a : libCom.a
 	install -m 644 libCom.a $@
 	ranlib -t $@
 
-include $(BASE)/config/RULES
+include $(EPICS)/config/RULES
 

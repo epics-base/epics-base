@@ -50,6 +50,7 @@ void callbackTest(void)
     taskwdInit();
     errlogInit(4096);
     callbackInit();
+    epicsThreadSleep(1.0);
     for(i=0; i<ncallbacks ; i++) {
         nowait[i] = calloc(1,sizeof(myPvt));
         callbackSetCallback(myCallback,&nowait[i]->callback);

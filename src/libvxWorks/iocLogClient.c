@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.7  1995/11/29  19:34:59  jhill
+ * doc updated
+ *
  */
 
 #include <string.h>
@@ -75,6 +78,8 @@ LOCAL void 		logClientRollLocalPort(void);
 
 LOCAL SEM_ID		iocLogMutex;	/* protects stdio */
 LOCAL SEM_ID		iocLogSignal;	/* reattach to log server */
+
+#define EPICS_IOC_LOG_CLIENT_CONNECT_TMO 5 /* sec */
 
 
 /*
@@ -126,13 +131,14 @@ int iocLogInit(void)
 /*
  *	iocLogAttach()
  */
-int iocLogAttach(void)
+LOCAL int iocLogAttach(void)
 {
 
 	int            		sock;
         struct sockaddr_in      addr;
 	int			status;
 	int			optval;
+	struct timeval		tval;
 	FILE			*fp;
 
 	status = getConfig();
@@ -163,10 +169,20 @@ int iocLogAttach(void)
         addr.sin_addr.s_addr = ioc_log_addr.s_addr;
 
 	/* connect */
+#ifdef vxWorks
+	tval.tv_sec = EPICS_IOC_LOG_CLIENT_CONNECT_TMO;
+	tval.tv_usec = 0;
+	status = connectWithTimeout(
+			 sock,
+			 (struct sockaddr *)&addr,
+			 sizeof(addr),
+			 &tval);
+#else
 	status = connect(
 			 sock,
 			 (struct sockaddr *)&addr,
 			 sizeof(addr));
+#endif
 	if (status < 0) {
 		char name[INET_ADDR_LEN];
 
@@ -433,6 +449,16 @@ int iocLogVPrintf(const char *pFormat, va_list pvar)
 
 	if (!pFormat || iocLogDisable) {
 		return 0;
+	}
+
+	/*
+	 * Check for init 
+	 */
+	if (!iocLogMutex) {
+		status = iocLogInit();
+		if (status) {
+			return 0;
+		}
 	}
 
 	/*

@@ -1244,7 +1244,7 @@ void				*usrarg
 	/*
 	 * compound types not allowed
 	 */
-  	if(INVALID_DB_FIELD(type)){
+  	if(dbr_value_offset[type]){
     		return ECA_BADTYPE;
 	}
 
@@ -1452,7 +1452,7 @@ void				*pvalue
 	/*
 	 * compound types not allowed
 	 */
-  	if(INVALID_DB_FIELD(type)){
+  	if(dbr_value_offset[type]){
     		return ECA_BADTYPE;
 	}
 
@@ -1563,6 +1563,8 @@ void				*pvalue
 
       		case	DBR_ENUM:
       		case	DBR_SHORT:
+		case	DBR_PUT_ACKT:
+		case	DBR_PUT_ACKS:
 #		if DBR_INT != DBR_SHORT
       		case	DBR_INT:
 #		endif /*DBR_INT != DBR_SHORT*/

@@ -1,0 +1,185 @@
+/*
+	A CA test/debug routine
+*/
+
+
+
+/*	System includes		*/
+#include		<vxWorks.h>
+#ifdef vxWorks
+#include		<taskLib.h>
+#endif
+
+#include 		<cadef.h>
+#include 		<caerr.h>
+#include		<db_access.h>
+
+/*
+#define CA_TEST_CHNL	"AI_T2000"
+*/
+#define CA_TEST_CHNL	"AI_T2000.DESC"
+#define CA_TEST_CHNL4	"AI_DOGGY"
+
+
+#define NUM		1
+
+
+#ifdef vxWorks
+spacctst()
+{
+  int acctst();
+
+  return taskSpawn("acctst",200,VX_FP_TASK,20000,acctst); 
+}
+#endif
+
+
+#ifdef vxWorks
+acctst()
+#else
+main()
+#endif
+{
+  chid			chix1;
+  chid			chix2;
+  chid			chix3;
+  chid			chix4;
+  void			ca_test_event();
+  void			null_event();
+  struct dbr_gr_float	*ptr;
+  float 		delay = .003;
+
+  long			status;
+  long			pid;
+  long			i,j;
+  float			delta = 1.0;
+  long			monix;
+  char			string[41];
+  float			value;
+  float			*pfloat;
+  struct dbr_ctrl_float	*pctrl;
+  char			pstring[NUM][MAX_STRING_SIZE];
+  void			write_event();
+
+
+  SEVCHK(ca_task_initialize(),"Unable to initialize");
+
+  printf("begin\n");
+# ifdef VMS
+  lib$init_timer();
+# endif
+
+  ptr = (struct dbr_gr_float *) 
+	malloc(dbr_size[DBR_GR_FLOAT] + dbr_value_size[DBR_GR_FLOAT]*(NUM-1));
+  for(i=0;i<2;i++){
+    status = ca_array_build(	CA_TEST_CHNL,	/* channel ASCII name	*/
+				DBR_GR_FLOAT,	/* fetch external type	*/
+				NUM,		/* array element cnt	*/
+				&chix3,		/* ptr to chid		*/
+				ptr		/* pointer to recv buf	*/
+				);
+    SEVCHK(status, NULL);
+  }
+
+
+  SEVCHK(ca_search(CA_TEST_CHNL4,&chix4),NULL);
+  SEVCHK(ca_search(CA_TEST_CHNL,&chix2),NULL);
+
+  for(i=0;i<1;i++)
+    SEVCHK(ca_search(CA_TEST_CHNL,&chix1),NULL);
+
+  status = ca_pend_io(1.0);
+
+  if(INVALID_DB_REQ(chix1->type))
+    printf("Failed to locate %s\n",CA_TEST_CHNL);
+  if(INVALID_DB_REQ(chix2->type))
+    printf("Failed to locate %s\n",CA_TEST_CHNL);
+  if(INVALID_DB_REQ(chix3->type))
+    printf("Failed to locate %s\n",CA_TEST_CHNL);
+  if(INVALID_DB_REQ(chix4->type))
+    printf("Failed to locate %s\n",CA_TEST_CHNL4);
+/*
+  SEVCHK(status,NULL);
+  if(status == ECA_TIMEOUT)
+    exit();
+*/
+
+# ifdef VMS
+  lib$show_timer();
+#endif
+
+  pfloat = &ptr->value;
+  for(i=0;i<NUM;i++)
+    printf("Value Returned from build %f\n",pfloat[i]);
+
+#ifdef VMS
+  lib$init_timer();
+# endif
+
+  if(VALID_DB_REQ(chix4->type)){
+    ca_add_event(DBR_FLOAT, chix4, ca_test_event, 0xaaaaaaaa, &monix);
+    ca_clear_event(monix);
+  }
+  if(VALID_DB_REQ(chix4->type)){
+    ca_add_event(DBR_FLOAT, chix4, ca_test_event, 0xaaaaaaaa, &monix);
+    ca_clear_event(monix);
+  }
+
+  if(VALID_DB_REQ(chix3->type)){
+    ca_add_event(DBR_FLOAT, chix3, ca_test_event, 0xaaaaaaaa, &monix);
+    ca_add_event(DBR_FLOAT, chix3, write_event, 0xaaaaaaaa, &monix);
+  }
+
+  pfloat = (float *) malloc(sizeof(float)*NUM);
+
+
+  if(VALID_DB_REQ(chix1->type))
+    if(pfloat)
+      for(i=0;i<NUM;i++){
+        for(j=0;j<NUM;j++)
+          sprintf(&pstring[j][0],"%d",j+100);
+        SEVCHK(ca_array_put(DBR_STRING,NUM,chix1,pstring),NULL)  
+        SEVCHK(ca_array_get(DBR_FLOAT,NUM,chix1,pfloat),NULL)  
+      }
+    else
+      abort();
+
+  ca_pend_io(4.0);
+
+# ifdef VMS
+  lib$show_timer();
+# endif
+  for(i=0;i<NUM;i++)
+    printf("Value Returned from put/get %f\n",pfloat[i]);
+
+
+  printf("-- Put/Gets done- waiting for Events --\n");
+  ca_pend_event(30.0);
+
+  free(ptr);
+  free(pfloat);
+
+  exit();
+}
+
+
+
+
+
+void null_event()
+{
+  printf("-");
+}
+
+
+void write_event(args)
+struct event_handler_args args; 
+{
+  float a = *(float *) args.dbr;
+
+  a += 10.1;
+
+  SEVCHK(ca_rput(args.chid, &a),"write fail in event");
+  SEVCHK(ca_flush_io(),NULL);
+}
+

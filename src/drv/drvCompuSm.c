@@ -564,7 +564,7 @@ compu_driver_init(){
     rebootHookAdd((FUNCPTR)compu_sm_reset);
     status = sysBusToLocalAdrs(
 		VME_AM_SUP_SHORT_IO,
-		(char *)sm_addrs[CM57_83E], 
+		sm_addrs[CM57_83E], 
 		(int **)&compu_addr);
     if (status != OK){ 
       printf("%s: failed to map A16 base\n", __FILE__); 

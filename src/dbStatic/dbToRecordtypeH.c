@@ -57,7 +57,7 @@ int main(int argc,char **argv)
 
     /*Look for options*/
     if(argc<2) {
-	fprintf(stderr,"usage: dbToRecordtypeH -Idir -Idir file.dbd\n");
+	fprintf(stderr,"usage: dbToRecordtypeH -Idir -Idir file.dbd [outfile]\n");
 	exit(0);
     }
     while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
@@ -81,9 +81,10 @@ int main(int argc,char **argv)
 	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
     }
     if(argc<2 || (strncmp(argv[1],"-",1)==0)) {
-	fprintf(stderr,"usage: dbToRecordtypeH -Idir -Idir file.dbd\n");
+	fprintf(stderr,"usage: dbToRecordtypeH -Idir -Idir file.dbd [outfile]\n");
 	exit(0);
     }
+    if(argc==2){
     /*remove path so that outFile is created where program is executed*/
     plastSlash = strrchr(argv[1],'/');
     if(!plastSlash)  plastSlash = strrchr(argv[1],'\\');
@@ -99,6 +100,13 @@ int main(int argc,char **argv)
     if(strcmp(outFilename,"dbCommonRecord.h")==0) {
 	strcpy(outFilename,"dbCommon.h");
 	isdbCommonRecord = TRUE;
+    }
+    }else {
+    outFilename = dbCalloc(1,strlen(argv[2])+1);
+    strcpy(outFilename,argv[2]);
+    if(strstr(outFilename,"dbCommon.h")!=0) {
+	isdbCommonRecord = TRUE;
+    }
     }
     outFile = fopen(outFilename,"w");
     if(!outFile) {

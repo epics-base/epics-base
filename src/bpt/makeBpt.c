@@ -108,10 +108,11 @@ int main(argc, argv)
     char	*plastSlash;
     
 
-    if(argc!=2) {
-	fprintf(stderr,"usage: makeBpt file.data\n");
+    if(argc<2) {
+	fprintf(stderr,"usage: makeBpt file.data [outfile]\n");
 	exit(-1);
     }
+    if (argc==2) {
     plastSlash = strrchr(argv[1],'/');
     plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
     outFilename = calloc(1,strlen(plastSlash)+2);
@@ -122,6 +123,10 @@ int main(argc, argv)
 	exit(-1);
     }
     strcpy(pext,".dbd");
+    } else {
+    outFilename = calloc(1,strlen(argv[2])+1);
+    strcpy(outFilename,argv[2]);
+    }
     inFile = fopen(argv[1],"r");
     if(!inFile) {
 	fprintf(stderr,"Error opening %s\n",argv[1]);

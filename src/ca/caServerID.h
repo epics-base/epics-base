@@ -38,12 +38,10 @@ inline caServerID::caServerID (
 
 inline bool caServerID::operator == ( const caServerID & rhs ) const
 {
-    if ( this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr ) {
-        if ( this->addr.sin_port == rhs.addr.sin_port ) {
-            if ( this->pri == rhs.pri ) {
-                return true;
-            }
-        }
+    if (    this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr && 
+            this->addr.sin_port == rhs.addr.sin_port &&
+            this->pri == rhs.pri ) {
+        return true;
     }
     return false;
 }

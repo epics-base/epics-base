@@ -373,7 +373,7 @@ struct pidRecord     *ppid;
 	float		d;	/*derivative contribution*/
 
         /* fetch the controlled value */
-        if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
+        if (ppid->cvl.type == CONSTANT) { /* nothing to control*/
                 if (recGblSetSevr(ppid,SOFT_ALARM,INVALID_ALARM)) return(0);
 	}
         if (dbGetLink(&ppid->cvl,DBR_FLOAT,&cval,0,0)) {

@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  1997/05/01 19:54:50  jhill
+ * updated dll keywords
+ *
  * Revision 1.4  1996/11/02 01:24:41  jhill
  * strcpy => styrcpy (shuts up purify)
  *
@@ -196,11 +199,14 @@ void MakeStringFuncFrom(int i,int j,int k)
 		pr(dfd,"\t\titmp=(aitUint32)in[i];\n");
 
 	if(j==aitEnumInt8)
-		pr(dfd,"\t\tsprintf(temp,aitStringType[aitEnumInt32],itmp);\n");
+		pr(dfd,"\t\tsprintf(temp, \"%s\",itmp);\n", 
+				aitStringType[aitEnumInt32]);
 	else if(j==aitEnumUint8)
-		pr(dfd,"\t\tsprintf(temp,aitStringType[aitEnumUint32],itmp);\n");
+		pr(dfd,"\t\tsprintf(temp, \"%s\",itmp);\n", 
+				aitStringType[aitEnumUint32]);
 	else
-		pr(dfd,"\t\tsprintf(temp,aitStringType[%d],in[i]);\n",j);
+		pr(dfd,"\t\tsprintf(temp, \"%s\",in[i]);\n",
+			aitStringType[j]);
 
 	pr(dfd,"\t\tout[i].installString(temp);\n");
 	pr(dfd,"\t}\n");
@@ -238,20 +244,28 @@ void MakeStringFuncTo(int i,int j,int k)
 
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
 	pr(dfd,"\t\tif(in[i].string()) {\n");
+	pr(dfd,"\t\t\tint j;\n");
 
 	if(i==aitEnumInt8)
 	{
-		pr(dfd,"\t\t\tsscanf(in[i],aitStringType[aitEnumInt32],&itmp);\n");
+		pr(dfd,"\t\t\tj = sscanf(in[i],\"%s\",&itmp);\n", 
+				aitStringType[aitEnumInt32]);
 		pr(dfd,"\t\t\tout[i]=(aitInt8)itmp;\n");
 	}
 	else if(i==aitEnumUint8)
 	{
-		pr(dfd,"\t\t\tsscanf(in[i],aitStringType[aitEnumUint32],&itmp);\n");
+		pr(dfd,"\t\t\tj = sscanf(in[i], \"%s\",&itmp);\n", 
+				aitStringType[aitEnumUint32]);
 		pr(dfd,"\t\t\tout[i]=(aitUint8)itmp;\n");
 	}
 	else
-		pr(dfd,"\t\t\tsscanf(in[i].string(),aitStringType[%d],&out[i]);\n",i);
+		pr(dfd,"\t\t\tj = sscanf(in[i].string(), \"%s\",&out[i]);\n",
+				aitStringType[i]);
 
+	pr(dfd,"\t\t\tif (j!=1) {\n");
+	pr(dfd,"\t\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
+	pr(dfd,"\t\t\t\tout[i]=0;\n");
+	pr(dfd,"\t\t\t}\n");
 	pr(dfd,"\t\t} else\n");
 	pr(dfd,"\t\t\tout[i]=0;\n");
 	pr(dfd,"\t}\n}\n");
@@ -299,11 +313,14 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	pr(dfd,"\t\tmemset(out[i].fixed_string,\'\\0\',sizeof(aitFixedString));\n");
 
 	if(j==aitEnumInt8)
-		pr(dfd,"\t\tsprintf(out[i].fixed_string,aitStringType[aitEnumInt32],itmp);\n");
+		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",itmp);\n", 
+				aitStringType[aitEnumInt32]);
 	else if(j==aitEnumUint8)
-		pr(dfd,"\t\tsprintf(out[i].fixed_string,aitStringType[aitEnumUint32],itmp);\n");
+		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",itmp);\n", 
+				aitStringType[aitEnumUint32]);
 	else
-		pr(dfd,"\t\tsprintf(out[i].fixed_string,aitStringType[%d],in[i]);\n",j);
+		pr(dfd,"\t\tsprintf(out[i].fixed_string, \"%s\",in[i]);\n",
+				aitStringType[j]);
 
 	pr(dfd,"\t}\n}\n");
 }
@@ -338,19 +355,40 @@ void MakeFStringFuncTo(int i,int j,int k)
 		pr(dfd,"\taitUint32 itmp;\n");
 
 	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
+	pr(dfd,"\t\tint j;\n");
 
 	if(i==aitEnumInt8)
 	{
-		pr(dfd,"\t\tsscanf(in[i].fixed_string,aitStringType[aitEnumInt32],&itmp);\n");
-		pr(dfd,"\t\tout[i]=(aitInt8)itmp;\n");
+		pr(dfd,"\t\tj = sscanf(in[i].fixed_string,\"%s\",&itmp);\n",
+					aitStringType[aitEnumInt32]);
+		pr(dfd,"\t\tif (j==1) {\n");
+		pr(dfd,"\t\t\tout[i]=(aitInt8)itmp;\n");
+		pr(dfd,"\t\t}\n");
+		pr(dfd,"\t\telse {\n");
+		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
+		pr(dfd,"\t\t\tout[i]=0;\n");
+		pr(dfd,"\t\t}\n");	
 	}
 	else if(i==aitEnumUint8)
 	{
-		pr(dfd,"\t\tsscanf(in[i].fixed_string,aitStringType[aitEnumUint32],&itmp);\n");
-		pr(dfd,"\t\tout[i]=(aitUint8)itmp;\n");
+		pr(dfd,"\t\tj =sscanf(in[i].fixed_string, \"%s\",&itmp);\n", 
+					aitStringType[aitEnumUint32]);
+		pr(dfd,"\t\tif (j==1) {\n");
+		pr(dfd,"\t\t\tout[i]=(aitUint8)itmp;\n");
+		pr(dfd,"\t\t}\n");
+		pr(dfd,"\t\telse {\n");
+		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
+		pr(dfd,"\t\t\tout[i]=0;\n");
+		pr(dfd,"\t\t}\n");	
 	}
-	else
-		pr(dfd,"\t\tsscanf(in[i].fixed_string,aitStringType[%d],&out[i]);\n",i);
+	else {
+		pr(dfd,"\t\tj = sscanf(in[i].fixed_string, \"%s\",&out[i]);\n",
+					aitStringType[i]);
+		pr(dfd,"\t\tif (j!=1) {\n");
+		pr(dfd,"\t\t\tprintf (\"warning scanf() failed!\\n\");\n");
+		pr(dfd,"\t\t\tout[i]=0;\n");
+		pr(dfd,"\t\t}\n");	
+	}
 
 	pr(dfd,"\t}\n}\n");
 }

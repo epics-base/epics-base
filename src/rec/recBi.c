@@ -83,7 +83,7 @@ static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
-static struct rset biRSET={
+struct rset biRSET={
 	RSETNUMBER,
 	report,
 	initialize,

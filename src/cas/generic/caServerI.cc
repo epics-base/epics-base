@@ -333,6 +333,6 @@ void caServerI::show (unsigned level) const
 //
 casEventRegistry::~casEventRegistry()
 {
-    this->traverse ( casEventMaskEntry::destroy );
+    this->traverse ( &casEventMaskEntry::destroy );
 }
 

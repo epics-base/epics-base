@@ -1834,7 +1834,6 @@ caStatus casStrmClient::accessRightsResponse (
 caStatus casStrmClient::write()
 {
 	const caHdrLargeArray *pHdr = this->ctx.getMsg();
-	casPVI * pPV = this->ctx.getPV();
 	caStatus status;
 
 	//

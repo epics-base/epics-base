@@ -182,7 +182,7 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
 void casStreamIO::forceDisconnect ()
 {
 	if ( ! this->sockHasBeenClosed ) {
-        this->sockHasBeenClosed;
+        this->sockHasBeenClosed = true;
         int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 

@@ -44,7 +44,7 @@ class gdd;
 class chanIntfForPV : public tsDLNode < chanIntfForPV > {
 public:
     chanIntfForPV ( class casCoreClient & );
-    ~chanIntfForPV ();
+    virtual ~chanIntfForPV ();
     class casCoreClient & client () const;
     virtual void casChannelDestroyNotify ( bool immediateUninstall ) = 0;
     void installMonitor ( casPVI & pv, casMonitor & mon );

@@ -127,7 +127,7 @@ private:
         casChannelI & chan, const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );
-    caStatus casStrmClient::channelDestroyNotify (
+    caStatus channelDestroyNotify (
         epicsGuard < casClientMutex > & guard, 
         casChannelI &, bool uninstallNeeded );
 

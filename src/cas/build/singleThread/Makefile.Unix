@@ -11,9 +11,6 @@ VPATH = $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/config/CONFIG_BASE
 
-#
-# Too many errors from sun's include files
-#
 CXXCMPLR = STRICT
 
 USR_INCLUDES = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) 

@@ -1,10 +1,12 @@
-Compiling EPICS on WIN32 (Windows95/NT)
----------------------------------------
+
+Compiling EPICS and Building IOC Applications on WIN32 (Windows95/NT) 
+---------------------------------------------------------------------
 
 Original port of EPICS base to WIN32 (Windows95/NT)
 was done by Kay-Uwe Kasemir 11/96
 
-questions & comments please mail to johill@lanl.gov
+please mail questions, comments, corrections, additional examples, etc 
+	to johill@lanl.gov
 
 0) what you will get
 --------------------
@@ -15,14 +17,12 @@ Right now this port of EPICS to WIN32 should allow you to
   GNU make} (only {MS Visual C, perl, GNU make} if you prefer
   to compile only the host portions of EPICS base).
 * load EPICS on an IOC (486, pentium, 68k, ...),
-  load simple databases
+  load databases
   (no drivers/devices for real I/O available, yet.
    Some Greenspring IP support [Relay, Dig, ADC, DAC] is in progress)
 * build and use ca.dll on NT or Win95 to access all IOCs,
-  as well as the Com-library, gdd-library, and cas-library as DLLs.
-  The remaining libraries are statically linked and
-  therefore only accessible from programming languages like C,
-  not general WIN32 apps.
+  as well as the Com-library, gdd-library, cas-library,
+  and all other EPICS base libraries as DLLs.
 * build gdd, cas and a demo of the new portable CA server on WIN32.
 
 1) see what you have
@@ -104,6 +104,34 @@ Known problems:
   about upper/lower case:
   WIN32 is WIN32, not win32. Gnumake fails
   if e.g. base/src/include/os/WIN32 is ...win32.
+
+4) Creating EPICS IOC applications under WIN32
+
+o create application developemnt folder
+	
+o start a DOS window and change your working directory to the folder
+	created above (with the DOS "cd" command)
+
+o to create an example application type:
+	"perl c:\epics\bin\win32\makeBaseApp.pl -b c:\\epics -e
+
+	** Note that that each "\" above in any path arguments to makeBaseApp.pl
+		must be replaced with a "\\" (this is because GNU make treats
+		all "\" characters as line continuation)
+
+	** Note that that each space in any file name or 
+        path name argument to makeBaseApp.pl must be replaced with 
+        a "\ " (this is because GNU make treats all " " seperated
+        input as independent tokins in the input stream.
+
+	** Note that c:\epics above must be replaced by the path
+		to your epics source installation (or where INSTALL_LOCATION 
+		specifies)
+
+o General infomation on EPICS IOC application development can be found in
+	the "EPICS IOC Application Developers Guide". To see all of the options 
+	supported by makeBaseApp.pl type "perl c:\epics\bin\win32\makeBaseApp.pl"
+
 
 Good luck !
 

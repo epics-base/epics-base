@@ -2,32 +2,78 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.61 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
    <title>EPICS Release baseR3.13.0.beta12
 </title>
 </head>
 <body>
 
 <h1>
-EPICS Release baseNEXT</h1>
+EPICS Release 3.13.2</h1>
 
 <h4>
-July 7, 1999</h4>
+Dec 16, 1999</h4>
 
 <h3>
 Changes since 3.13.1</h3>
-<b>config</b>
+<b>tsSubr</b>
+<p>There was a bug when converting ascii string format to time stamp. The
+bug involved the year 00 appeared in the ascii string
+<p><b>Channel Access</b>
+<p>The CA comments are from Jeff Hill.
+<p>1) I fixed a severe problem where the CA client did not exit a loop
+sending UDP to a list of addresses if an error condition was returned from
+the system call which sends a UDP frame. This problem was discovered by
+me during heavy load testing, and if
+<br>it occurs in an operational system it will probably be occurring under
+heavy network loading conditions.
+<p>2) I fixed a problem where the client library could fail and use a deallocated
+data structure if a connection dropped while it was waiting to send a message
+to a client.
+<p>3) The CA client now maintains a congestion avoidance threshold on UDP
+search transmissions similar to the congestion avoidance algorithm employed
+by modern version of TCP. There are also some small changes related to
+how the search counters are maintained without allowing them to overflow.
+This patch was made in R3.13.1 because I originally identified it as the
+fix for (1) above, but it turned out to not be the root cause.
+<p>4) A bug fix was made for Ralph Lange's problem where the CA repeater
+was inheriting on HP-UX, and possibly other UNIX systems that are not Solaris,
+certain open file descriptors when fork()/exec() are used to start the
+CA repeater.
+<p>5) Changes that allow CA to work on Microsoft Visual C++ 6.0 (which
+includes a new win sock DLL and some changes in esoteric parts of the socket
+API).
+<p>6)&nbsp; always inform client of "no write access"&nbsp; for a SPC_NOMOD
+fields.
+<p>7) calls to ca_printf removed from rsrv.
+<p>8) prevent UDP daemon from running damaged messages with TCP protocol
+and visa-versa
+<p>9) use ipAddrToA() so that address print out does not come out byte
+swapped on the PC
+<p>10) improved debug messages and added diagnostics
+<p>11)&nbsp; dont send an exception to client when bad request received
+over udp.
 <br>&nbsp;
+<p><b>config</b>
 <ul>
 <li>
 Many changes.</li>
 
 <li>
-Currently gdd and cas are not built. LEFT&nbsp;FOR&nbsp;JEFF&nbsp;TO&nbsp;MAKE&nbsp;WORK</li>
+Currently gdd and cas are not built.</li>
 </ul>
-
-<p><br><b>dbCommon.dbd</b>
-<br><b></b>&nbsp;
+<b>access security</b>
+<p>A ca exception handler was added. Thus exceptions will no longer cause
+the asCa task to suspend.
+<p><b>dbCa</b>
+<p>A ca exception handler. Thus exceptions no longer cause dbCa task to
+suspend.
+<p><b>dbScan.c</b>
+<p>pevent_scan_list->scan_list.lock was not initialized. Amazingly it did
+not cause a crash. Note that the lock is only used when the scan mechanism
+of records are dynamically changed.
+<p><b>dbCommon.dbd</b>
+<br>&nbsp;
 <ul>
 <li>
 several extra definitions were changed from void * to correct struct types.</li>
@@ -35,7 +81,7 @@ several extra definitions were changed from void * to correct struct types.</li>
 <li>
 ACKT was changed so it can be set by database configuration tools.</li>
 </ul>
-<b></b>
+
 <p><br><b>dbStaticLib</b>
 <ul>
 <li>
@@ -52,8 +98,18 @@ CALC fields are OK if either postfix or sCalcPostfix returns success.</li>
 <p>Tables names were previously forced to be alphanumeric. This restriction
 is removed.
 <p><b>drvTS.c</b>
-<p>removed potential infinite recursion from tsForceSoftSync()
-<p><b>drvSup.h</b>
+<br>&nbsp;
+<ul>
+<li>
+Removed potential infinite recursion from tsForceSoftSync().</li>
+
+<li>
+Fixed bug where time sync UDP client was getting in a state where it was
+using the response from the previous request, and ending up setting the
+time 10 seconds back.</li>
+</ul>
+
+<p><br><b>drvSup.h</b>
 <p>removed definition for&nbsp; reboot.
 <p><b>dbNotify</b>
 <p>If&nbsp; dbPutNotify called dbProcess and dbProcess returned an error
@@ -62,9 +118,28 @@ the notify completion callback was called twice. This bug is fixed.
 <p>This support was defining storage twice. A bug in the current gcc compiler
 supplied with tornado does not properl;y compile such code. The extra definitions
 are removed.
-<p><b>aiRecord and aoRecord</b>
-<p>eoff was not being reinitialized when conversion related fields were
-dynamically modified.
+<p><b>aiRecord</b>
+<ul>
+<li>
+eoff was not being reinitialized when conversion related fields were dynamically
+modified.</li>
+
+<li>
+hyst and lalm are changed from float to double</li>
+</ul>
+<b>aoRecord</b>
+<ul>
+<li>
+eoff was not being reinitialized when conversion related fields were dynamically
+modified.</li>
+
+<li>
+hyst, lalm, hihi, high, low, lolo all changed from float to double</li>
+</ul>
+<b>calcRecord&nbsp; calcoutRecord selRecord subRecord</b>
+<p>hyst and lalm changed from float to double
+<p><b>dfanoutRecord</b>
+<p>hyst, lalm, hihi, high, low, lolo all changed from float to double
 <p><b>compressRecord</b>
 <p>compressALG_N_to_1_Median (compress keeping median value) added.
 <p><b>mbbiDirectRecord</b>
@@ -73,7 +148,18 @@ were posted, no monitors on the single bit fields.
 <p><b>devApsEr.c</b>
 <p>ErGetTicks now locks while updating ticks
 <p><b>devCommonGpib</b>
-<p>sscanf response now checked to be equal to 1 rather than just not zero.
+<br>&nbsp;
+<ul>
+<li>
+sscanf response now checked to be equal to 1 rather than just not zero.</li>
+
+<li>
+all mallocs changed to callocs. This is needed for the new unbundled bitbus
+support.</li>
+</ul>
+<b>drvGpib.c</b>
+<p>all mallocs changed to callocs. This is needed for the new unbundled
+bitbus support.
 <p><b>bitbus support</b>
 <p>This support is now unbundled. DO NOT use the version in base. This
 includes the following
@@ -117,11 +203,23 @@ drvMsg.h</li>
 <li>
 drvRs232.h</li>
 </ul>
-NOTE: drvBitBusInterface.h and drvBitBusErr.h appear in both base and unbundled
-because drvGib uses it.&nbsp; Must be fixed when gpib is unbundled.
+NOTE: drvBitBus.h, drvBitBus.c, drvBitBusInterface.h, and drvBitBusErr.h
+appear in both base and unbundled because drvGib uses it.&nbsp; Must be
+fixed when gpib is unbundled.
+<p><b>drvBBMsg.c drvBBMsg.c drvRs232.c drvTy232.h</b>
+<p>Removedfrom base. Seemed to be old duplicate version of drvBB232.c or
+not used at all.
+<p><b>devXxDig500Msg232.c</b>
+<p>removed, was replaced by the digitel record type &amp; device support
+<p><b>CAN and IPAC</b>
+<p>This support has been available for some time as an unbundled product.
+It is not longer included with base.
+<p><b>Allen Bradley</b>
+<p>The allen bradley support has been available for some time as an unbundled
+product. It is not longer included with base.
 <p><b>devOpt support</b>
 <p>The following gpib support modules have been changed to fix compiler
-bug fot vxWorks 5.3:
+bug for vxWorks 5.3:
 <ul>
 <li>
 devAnalytekGpib.c</li>
@@ -156,6 +254,10 @@ devXxSr620Gpib.c</li>
 <p><b>makeBaseApp</b>
 <ul>
 <li>
+makeBaseApp.pl</li>
+
+<br>&nbsp;copy any non-Apps under $top; allow links for apptype directories
+<li>
 dbExample2.template</li>
 
 <br>fixed mistake
@@ -163,9 +265,17 @@ dbExample2.template</li>
 makeIocCdCommands.pl</li>
 
 <br>This now looks for all external products in config/RELEASE and generates
-commands
-<br>to cd to product top and product bin.</ul>
-
+command to cd to product top and product bin.</ul>
+<b>calcoutRecord</b>
+<p>Under certain conditions (an input link referencing a PV on another
+ioc and an unusually long ioc initialization), the calcout record would
+cause an&nbsp; error during iocInit by attempting to dbScanLock a record
+prematurely. This anomaly has been resolved with this version. No changes
+to the functionality of the calcout record were made.
+<p><b>dbLoadTemplate</b>
+<p>Allow pattern with no substitutions.
+<p><b>devAaoCamac.c</b>
+<p>This had an error that prevented it from compiling.
 <h3>
 Changes between beta12 and 3.13.1</h3>
 <b><tt>iocLogClient</tt></b>
@@ -414,9 +524,8 @@ in 2036. However it was modified so that no overflows should occur while
 converting between NTP, UNIX, and EPICS epochs. In addition the conversion
 of fractions of a second to nanaoseconds was changed and formatting was
 changed so that interesting code does not run off right side of page. Hopefully
-EPICS
-base is now fine for Y2K. In fact it should be fine (as far as time is
-converned) until the Unix epoch overflows a 32 unsigned integer in the
+EPICS base is now fine for Y2K. In fact it should be fine (as far as time
+is converned) until the Unix epoch overflows a 32 unsigned integer in the
 year 2106.
 <br>&nbsp;
 <h3>
@@ -1427,9 +1536,8 @@ devLoSoft, devLoSymb, devMbboDirectSoft, devMbboSoft, devPtSoft, devSoSymb
 
 <li>
 devHistogramSoft, devHistogramTestAsyn - In init_record the udf field is
-set
-to false only if svl is a constant link and recGblInitConstantLink returns
-success.</li>
+set to false only if svl is a constant link and recGblInitConstantLink
+returns success.</li>
 </ul>
 </ul>
 

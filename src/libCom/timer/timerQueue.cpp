@@ -43,7 +43,7 @@ double timerQueue::process ( const epicsTime & currentTime )
     if ( this->pExpireTmr ) {
         // if some other thread is processing the queue
         // (or if this is a recursive call)
-        timer *pTmr = this->timerList.first ();
+        timer * pTmr = this->timerList.first ();
         if ( pTmr ) {
             double delay = pTmr->exp - currentTime;
             if ( delay < 0.0 ) {
@@ -100,14 +100,17 @@ double timerQueue::process ( const epicsTime & currentTime )
             expStat = pTmpNotify->expire ( currentTime );
         }
 
+        this->pExpireTmr->curState = timer::stateLimbo;
+
         //
         // only restart if they didnt cancel() the timer
         // while the call back was running
         //
         if ( this->cancelPending ) {
-            this->pExpireTmr->curState = timer::stateLimbo;
+            this->pExpireTmr->pNotify = 0;
 
-            // 1) if another thread is canceling cancel() waits for this
+            // 1) if another thread is canceling then cancel() waits for 
+            // the event below
             // 2) if this thread is canceling in the timer callback then
             // dont touch timer or notify here because the cancel might 
             // have occurred because they destroyed the timer in the 
@@ -115,14 +118,18 @@ double timerQueue::process ( const epicsTime & currentTime )
             this->cancelPending = false;
             this->cancelBlockingEvent.signal ();
         }
+        else if ( this->pExpireTmr->pNotify ) {
+            // pNotify was cleared above so if it is valid now we know that
+            // someone has started the timer from another thread and that 
+            // predominates over the restart parameters from expire.
+            this->pExpireTmr->privateStart ( 
+                *this->pExpireTmr->pNotify, this->pExpireTmr->exp );
+        }
         else {
             // restart as nec
             if ( expStat.restart() ) {
                 this->pExpireTmr->privateStart ( 
                     *pTmpNotify, currentTime + expStat.expirationDelay() );
-            }
-            else {
-                this->pExpireTmr->curState = timer::stateLimbo;
             }
         }
         this->pExpireTmr = 0;

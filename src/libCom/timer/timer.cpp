@@ -60,7 +60,6 @@ void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
 {
     epicsGuard < epicsMutex > locker ( this->queue.mutex );
-    this->privateCancel ( locker );
     this->privateStart ( notify, expire );
 }
 
@@ -68,6 +67,20 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 {
     this->pNotify = & notify;
     this->exp = expire;
+
+    bool reschedualNeeded = false;
+    if ( this->curState == stateActive ) {
+        // above expire time and notify will override any restart parameters
+        // that may be returned from the timer expire callback
+        return;
+    }
+    else if ( this->curState == statePending ) {
+        this->queue.timerList.remove ( *this );
+        if ( this->queue.timerList.first() == this && 
+                this->queue.timerList.count() > 0 ) {
+            reschedualNeeded = true;
+        }
+    }
 
 #   ifdef DEBUG
         unsigned preemptCount=0u;
@@ -87,7 +100,7 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
             // add to the beginning of the list
             //
             this->queue.timerList.push ( *this );
-            this->queue.notify.reschedule ();
+            reschedualNeeded = true;
             break;
         }
         if ( pTmr->exp <= this->exp ) {
@@ -104,6 +117,10 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
     }
 
     this->curState = timer::statePending;
+
+    if ( reschedualNeeded ) {
+        this->queue.notify.reschedule ();
+    }
     
 #   if defined(DEBUG) && 0
         this->show ( 10u );
@@ -119,34 +136,40 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 void timer::cancel ()
 {
     if ( this->curState == statePending || this->curState == stateActive ) {
-        epicsGuard < epicsMutex > locker ( this->queue.mutex );
-        this->privateCancel ( locker );
-    }
-}
-
-void timer::privateCancel ( epicsGuard < epicsMutex > & locker )
-{
-    if ( this->curState == statePending ) {
-        if ( this->queue.timerList.first() == this ) {
-            this->queue.notify.reschedule ();
-        }
-        this->queue.timerList.remove ( *this );
-        this->curState = stateLimbo;
-        this->pNotify = 0;
-    }
-    else if ( this->curState == stateActive ) {
-        this->queue.cancelPending = true;
-        if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
-            // make certain timer expire() does not run after cancel () returns,
-            // but dont require that lock is applied while calling expire()
-            {
-                epicsGuardRelease < epicsMutex > autoRelease ( locker );
-                while ( this->queue.cancelPending && 
-                        this->queue.pExpireTmr == this ) {
-                    this->queue.cancelBlockingEvent.wait ();
+        bool reschedual = false;
+        bool wakeupCancelBlockingThreads = false;
+        {
+            epicsGuard < epicsMutex > locker ( this->queue.mutex );
+            this->pNotify = 0;
+            if ( this->curState == statePending ) {
+                this->queue.timerList.remove ( *this );
+                this->curState = stateLimbo;
+                if ( this->queue.timerList.first() == this && 
+                        this->queue.timerList.count() > 0 ) {
+                    reschedual = true;
                 }
             }
-            // in case other threads are waiting
+            else if ( this->curState == stateActive ) {
+                this->queue.cancelPending = true;
+                if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
+                    // make certain timer expire() does not run after cancel () returns,
+                    // but dont require that lock is applied while calling expire()
+                    {
+                        epicsGuardRelease < epicsMutex > autoRelease ( locker );
+                        while ( this->queue.cancelPending && 
+                                this->queue.pExpireTmr == this ) {
+                            this->queue.cancelBlockingEvent.wait ();
+                        }
+                    }
+                    // in case other threads are waiting
+                    wakeupCancelBlockingThreads = true;
+                }
+            }
+        }
+        if ( reschedual ) {
+            this->queue.notify.reschedule ();
+        }
+        if ( wakeupCancelBlockingThreads ) {
             this->queue.cancelBlockingEvent.signal ();
         }
     }

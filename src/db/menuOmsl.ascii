@@ -1,0 +1,4 @@
+menu(menuOmsl) {
+	choice(menuOmslsupervisory,"supervisory")
+	choice(menuOmslclosed_loop,"closed_loop")
+}

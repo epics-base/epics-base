@@ -1,0 +1,4435 @@
+/* dbConvert.c */
+/*
+ *      Original Author: Bob Dalesio
+ *      Current Author:  Marty Kraimer
+ *      Date:            11-7-90
+ *
+ *      Experimental Physics and Industrial Control System (EPICS)
+ *
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
+ *
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
+ *
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
+ *
+ * Modification Log:
+ * -----------------
+ * .01  11OCT95	mrk	Moved from dbLink.c
+ */
+#include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stdarg.h>
+#include	<stdio.h>
+#include	<string.h>
+
+#include	<cvtFast.h>
+#include	<dbBase.h>
+#include	<dbAccess.h>
+#include	<dbConvert.h>
+#include	<dbStaticLib.h>
+#include	<dbFldTypes.h>
+#include	<errMdef.h>
+#include	<recSup.h>
+#include	<recGbl.h>
+
+
+/* DATABASE ACCESS GET CONVERSION SUPPORT */
+
+static long getStringString (
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char  *pbuffer = (char *)pto;
+    char  *psrc=paddr->pfield;
+    short size=paddr->field_size;
+    short sizeto;
+
+    /* always force result string to be null terminated*/
+    sizeto = size;
+    if(sizeto>=MAX_STRING_SIZE) sizeto = MAX_STRING_SIZE-1;
+
+    if(nRequest==1 && offset==0) {
+	strncpy(pbuffer,psrc,sizeto);
+	*(pbuffer+sizeto) = 0;
+	return(0);
+    }
+    psrc+= (size*offset);
+    while (nRequest) {
+        strncpy(pbuffer,psrc,sizeto);
+	*(pbuffer+sizeto) = 0;
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=paddr->pfield;
+	else
+    		psrc  += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char	*pbuffer = (char *)pto;
+    char	*psrc=(char *)paddr->pfield;
+    short	value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+		*pbuffer = (char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+	    *pbuffer = (char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char	*pbuffer = (unsigned char *)pto;
+    char		*psrc=(char *)paddr->pfield;
+    unsigned short  	value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+		*pbuffer = (unsigned char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+	    *pbuffer = (unsigned char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short  *pbuffer = (short *)pto;
+    char   *psrc=(char *)paddr->pfield;
+    short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hd",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short	*pbuffer = (unsigned short *)pto;
+    char   		*psrc=(char *)paddr->pfield;
+    unsigned short  		value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%hu",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long   *pbuffer = (long *)pto;
+    char   *psrc=(char *)paddr->pfield;
+    long  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%ld",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%ld",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long	*pbuffer = (unsigned long *)pto;
+    char   		*psrc=(char *)paddr->pfield;
+    unsigned long  	value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%lu",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%lu",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float  *pbuffer = (float *)pto;
+    char   *psrc=(char *)paddr->pfield;
+    float  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%f",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%f",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    char   *psrc=(char *)paddr->pfield;
+    double  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(psrc,"%lf",&value) == 1) {
+		*pbuffer = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    psrc += MAX_STRING_SIZE*offset;
+    while (nRequest) {
+	if(sscanf(psrc,"%lf",&value) == 1) {
+	    *pbuffer = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer++;
+	if(++offset==no_elements)
+	    psrc=paddr->pfield;
+	else
+	    psrc += MAX_STRING_SIZE;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getStringEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    return(getStringUshort(paddr,pto,nRequest,no_elements,offset));
+}
+
+static long getCharString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtCharToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtCharToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(char *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getCharDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getCharEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    char *psrc=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtUcharToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtUcharToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(unsigned char *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getUcharDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUcharEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned char  *psrc=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtShortToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtShortToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(short *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+static long getShortShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getShortDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getShortEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    short *psrc=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtUshortToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtUshortToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(unsigned short *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+static long getUshortShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getUshortDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUshortEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtLongToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtLongToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(long *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getLongDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getLongEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short  *pbuffer = (unsigned short  *)pto;
+    long *psrc=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char  *pbuffer = (char  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	cvtUlongToString(*psrc,pbuffer);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtUlongToString(*psrc,pbuffer);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(unsigned long *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char  *pbuffer = (char  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char  *pbuffer = (unsigned char  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short  *pbuffer = (short  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short  *pbuffer = (unsigned short  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long  *pbuffer = (long  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long  *pbuffer = (unsigned long  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float  *pbuffer = (float  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getUlongDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double  *pbuffer = (double  *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getUlongEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned long *psrc=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    float	*psrc=(float *)(paddr->pfield);
+    long	status;
+    int		precision;
+    struct rset	*prset;
+
+    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+	status = (*prset->get_precision)(paddr,&precision);
+    else
+	status=S_db_precision;
+    if(status) {
+	recGblRecSupError(status,paddr,"dbGet","get_precision");
+	return(status);
+    }
+
+    if(nRequest==1 && offset==0) {
+	cvtFloatToString(*psrc,pbuffer,precision);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtFloatToString(*psrc,pbuffer,precision);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(float *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    float *psrc=(float *)(paddr->pfield);
+    long  ltemp;	/*vxWorks does not support float to unsigned long*/
+
+    if(nRequest==1 && offset==0) {
+	ltemp = *psrc;
+	*pbuffer = ltemp;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	ltemp = *psrc++;
+	*pbuffer++ = ltemp;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getFloatDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getFloatEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    float *psrc=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    double *psrc=(double *)(paddr->pfield);
+    long	status;
+    int		precision;
+    struct rset	*prset;
+
+    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+	status = (*prset->get_precision)(paddr,&precision);
+    else
+	status=S_db_precision;
+    if(status) {
+	recGblRecSupError(status,paddr,"dbGet","get_precision");
+	return(status);
+    }
+
+    if(nRequest==1 && offset==0) {
+	cvtDoubleToString(*psrc,pbuffer,precision);
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	cvtDoubleToString(*psrc,pbuffer,precision);
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		psrc=(double *)paddr->pfield;
+	else
+    		psrc++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    double *psrc=(double *)(paddr->pfield);
+    long   ltemp; /*vxWorks does not support double to unsigned long*/
+
+    if(nRequest==1 && offset==0) {
+	ltemp = *psrc;
+	*pbuffer = ltemp;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	ltemp = *psrc++;
+	*pbuffer++ = ltemp;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getDoubleDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getDoubleEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    double *psrc=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumString(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    struct rset	*prset;
+    long	status;
+
+    if((prset=dbGetRset(paddr)) && (prset->get_enum_str))
+        return( (*prset->get_enum_str)(paddr,pbuffer) );
+    status=S_db_noRSET;
+    recGblRecSupError(status,paddr,"dbGet","get_enum_str");
+    return(S_db_badDbrtype);
+}
+
+static long getEnumChar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    char *pbuffer = (char *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumUchar(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumShort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    short *pbuffer = (short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumUshort(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumLong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    long *pbuffer = (long *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumUlong(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumFloat(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    float *pbuffer = (float *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long getEnumDouble(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    double *pbuffer = (double *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getEnumEnum(
+    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pto;
+    unsigned short *psrc=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pbuffer = *psrc;
+	return(0);
+    }
+    psrc += offset;
+    while (nRequest) {
+	*pbuffer++ = *psrc++;
+	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long getMenuString(DBADDR *paddr, void *pto,
+    long nRequest, long no_elements, long offset)
+{
+    char		*pbuffer = (char *)pto;	
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+    char		**papChoiceValue;
+    char		*pchoice;
+    unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
+
+    if(no_elements!=1){
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getMenuString)");
+        return(S_db_onlyOne);
+    }
+    if( !pdbMenu  || choice_ind>=pdbMenu->nChoice 
+    || !(papChoiceValue = pdbMenu->papChoiceValue)
+    || !(pchoice=papChoiceValue[choice_ind])) {
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getMenuString)");
+        return(S_db_badChoice);
+    }
+    strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
+    return(0);
+}
+
+static long getDeviceString(DBADDR *paddr, void *pto,
+    long nRequest, long no_elements, long offset)
+{
+    char		*pbuffer = (char *)pto;	
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+    char		**papChoice;
+    char		*pchoice;
+    unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
+
+    if(no_elements!=1){
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getDeviceString)");
+        return(S_db_onlyOne);
+    }
+    if( !pdbDeviceMenu  || choice_ind>=pdbDeviceMenu->nChoice 
+    || !(papChoice = pdbDeviceMenu->papChoice)
+    || !(pchoice=papChoice[choice_ind])) {
+        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getDeviceString)");
+        return(S_db_badChoice);
+    }
+    strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
+    return(0);
+}
+
+/* DATABASE ACCESS PUT CONVERSION SUPPORT */
+
+static long putStringString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    char  *pdest=paddr->pfield;
+    short size=paddr->field_size;
+
+    if(nRequest==1 && offset==0) {
+	strncpy(pdest,pbuffer,size);
+	*(pdest+size-1) = 0;
+	return(0);
+    }
+    pdest+= (size*offset);
+    while (nRequest) {
+        strncpy(pdest,pbuffer,size);
+	*(pdest+size-1) = 0;
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+		pdest=paddr->pfield;
+	else
+    		pdest  += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    char  *pdest=(char *)paddr->pfield;
+    short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+		*pdest = (char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+	    *pdest = (char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned char  *pdest=(unsigned char *)paddr->pfield;
+    unsigned short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+		*pdest = (unsigned char)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+	    *pdest = (unsigned char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    short  *pdest=(short *)paddr->pfield;
+    short  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+		*pdest = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned short  *pdest=(unsigned short *)paddr->pfield;
+    float 	value;
+
+    /*Convert to float first so that numbers like 1.0e3 convert properly*/
+    /*Problem was old database access said to get unsigned short as float*/
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+		*pdest = (unsigned short)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+	    *pdest = (unsigned short)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    long  *pdest=(long *)paddr->pfield;
+    long  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%ld",&value) == 1) {
+		*pdest = value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%ld",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned long  *pdest=(unsigned long *)paddr->pfield;
+    double  	value;
+
+    /*Convert to double first so that numbers like 1.0e3 convert properly*/
+    /*Problem was old database access said to get unsigned long as double*/
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+		*pdest = (unsigned long)value;
+		return(0);
+	}
+	else return(-1);
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	    *pdest = (unsigned long)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    float  *pdest=(float *)paddr->pfield;
+    float  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+		*pdest = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    double  *pdest=(double *)paddr->pfield;
+    double  value;
+
+    if(nRequest==1 && offset==0) {
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+		*pdest = value;
+		return(0);
+	} else {
+	    return(-1);
+	}
+    }
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putStringEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    struct rset 	*prset;
+    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    long        	status;
+    unsigned int	nchoices,ind;
+    int			nargs,nchars;
+    struct dbr_enumStrs enumStrs;
+
+    if((prset=dbGetRset(paddr))
+    && (prset->put_enum_str)) {
+	status = (*prset->put_enum_str)(paddr,pbuffer);
+	if(!status) return(0);
+	if(prset->get_enum_strs) {
+	    status = (*prset->get_enum_strs)(paddr,&enumStrs);
+	    if(!status) {
+		nchoices = enumStrs.no_str;
+		nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+		if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
+		    *pfield = ind;
+		    return(0);
+		}
+		status = S_db_badChoice;
+	    }
+	}else {
+	    status=S_db_noRSET;
+	}
+    } else {
+	status=S_db_noRSET;
+    }
+    if(status == S_db_noRSET) {
+	recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
+    } else {
+	recGblDbaddrError(status,paddr,"dbPut(putStringEnum)");
+    }
+    return(status);
+}
+
+static long putStringMenu(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+    char		**papChoiceValue;
+    char		*pchoice;
+    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    unsigned int	nChoice,ind;
+    int			nargs,nchars;
+
+    if(no_elements!=1){
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringMenu)");
+        return(S_db_onlyOne);
+    }
+    if( pdbMenu  && (papChoiceValue = pdbMenu->papChoiceValue)) {
+	nChoice = pdbMenu->nChoice;
+	for(ind=0; ind<nChoice; ind++) {
+	    if(!(pchoice=papChoiceValue[ind])) continue;
+	    if(strcmp(pchoice,pbuffer)==0) {
+		*pfield = ind;
+		return(0);
+	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
+	    *pfield = ind;
+	    return(0);
+	}
+    }
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringMenu)");
+    return(S_db_badChoice);
+}
+
+static long putStringDevice(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+    char		**papChoice;
+    char		*pchoice;
+    unsigned short      *pfield= (unsigned short*)(paddr->pfield);
+    unsigned int	nChoice,ind;
+    int			nargs,nchars;
+
+    if(no_elements!=1){
+        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDevice)");
+        return(S_db_onlyOne);
+    }
+    if( pdbDeviceMenu  && (papChoice = pdbDeviceMenu->papChoice)) {
+	nChoice = pdbDeviceMenu->nChoice;
+	for(ind=0; ind<nChoice; ind++) {
+	    if(!(pchoice=papChoice[ind])) continue;
+	    if(strcmp(pchoice,pbuffer)==0) {
+		*pfield = ind;
+		return(0);
+	    }
+	}
+	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
+	    *pfield = ind;
+	    return(0);
+	}
+    }
+    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringDevice)");
+    return(S_db_badChoice);
+}
+
+static long putCharString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtCharToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtCharToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putCharDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putCharEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    char *pbuffer = (char *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtUcharToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtUcharToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putUcharDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUcharEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned char *pbuffer = (unsigned char *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtShortToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtShortToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putShortDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putShortEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    short *pbuffer = (short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtUshortToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtUshortToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putUshortDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUshortEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtLongToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtLongToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putLongDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putLongEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    long *pbuffer = (long *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtUlongToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtUlongToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putUlongDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putUlongEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned long *pbuffer = (unsigned long *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    char	*pdest=(char *)(paddr->pfield);
+    long	status;
+    int		precision;
+    struct rset	*prset;
+    short size=paddr->field_size;
+
+    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+	status = (*prset->get_precision)(paddr,&precision);
+    else
+	status=S_db_precision;
+    if(status) {
+	recGblRecSupError(status,paddr,"dbPutField","get_precision");
+	return(status);
+    }
+
+    if(nRequest==1 && offset==0) {
+	cvtFloatToString(*pbuffer,pdest,precision);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtFloatToString(*pbuffer,pdest,precision);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    char   *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    unsigned char   *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    long	   ltemp;/*vxWorks does not support float to unsigned long*/
+
+    if(nRequest==1 && offset==0) {
+	ltemp = *pbuffer;
+	*pdest = ltemp;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	ltemp = *pbuffer++;
+	*pdest++ = ltemp;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putFloatDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putFloatEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    float *pbuffer = (float *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    char	*pdest=(char *)(paddr->pfield);
+    long	status;
+    int		precision;
+    struct rset	*prset;
+    short size=paddr->field_size;
+
+    if((prset=dbGetRset(paddr)) && (prset->get_precision))
+	status = (*prset->get_precision)(paddr,&precision);
+    else
+	status=S_db_precision;
+    if(status) {
+	recGblRecSupError(status,paddr,"dbPutField","get_precision");
+	return(status);
+    }
+
+    if(nRequest==1 && offset==0) {
+	cvtDoubleToString(*pbuffer,pdest,precision);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtDoubleToString(*pbuffer,pdest,precision);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    char   *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    unsigned char   *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    long	   ltemp;/*vxWorks does not support double to unsigned long*/
+
+    if(nRequest==1 && offset==0) {
+	ltemp = *pbuffer;
+	*pdest = ltemp;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	ltemp = *pbuffer++;
+	*pdest++ = ltemp;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putDoubleDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putDoubleEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    double *pbuffer = (double *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumString(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+    short size=paddr->field_size;
+
+
+    if(nRequest==1 && offset==0) {
+	cvtUshortToString(*pbuffer,pdest);
+	return(0);
+    }
+    pdest += (size*offset);
+    while (nRequest) {
+	cvtUshortToString(*pbuffer,pdest);
+	pbuffer++;
+	if(++offset==no_elements)
+		pdest=(char *)paddr->pfield;
+	else
+    		pdest += size;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumChar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    char  *pdest=(char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumUchar(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned char  *pdest=(unsigned char *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumShort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    short  *pdest=(short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumUshort(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumLong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    long  *pdest=(long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumUlong(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumFloat(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    float  *pdest=(float *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(float *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+ 
+static long putEnumDouble(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    double  *pdest=(double *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(double *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+static long putEnumEnum(
+    DBADDR *paddr,void *pfrom,long nRequest,long no_elements,long offset)
+{
+    unsigned short *pbuffer = (unsigned short *)pfrom;
+    unsigned short  *pdest=(unsigned short *)(paddr->pfield);
+
+    if(nRequest==1 && offset==0) {
+	*pdest = *pbuffer;
+	return(0);
+    }
+    pdest += offset;
+    while (nRequest) {
+	*pdest++ = *pbuffer++;
+	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
+	nRequest--;
+    }
+    return(0);
+}
+
+/* This is the table of routines for converting database fields */
+/* the rows represent the field type of the database field */
+/* the columns represent the types of the buffer in which they are placed */
+
+/* buffer types are********************************************************
+ DBR_STRING,      DBR_CHR,         DBR_UCHAR,       DBR_SHORT,       DBR_USHORT,
+ DBR_LONG,        DBR_ULONG,       DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
+ ***************************************************************************/
+
+long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
+
+/* source is a DBF_STRING		*/
+{getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,
+ getStringLong,   getStringUlong,  getStringFloat,  getStringDouble, getStringEnum},
+/* source is a DBF_CHAR 		*/
+{getCharString,   getCharChar,     getCharUchar,    getCharShort,    getCharUshort,
+ getCharLong,     getCharUlong,    getCharFloat,    getCharDouble,   getCharEnum},
+/* source is a DBF_UCHAR		*/
+{getUcharString,  getUcharChar,    getUcharUchar,   getUcharShort,   getUcharUshort,
+ getUcharLong,    getUcharUlong,   getUcharFloat,   getUcharDouble,  getUcharEnum},
+/* source is a DBF_SHORT		*/
+{getShortString,  getShortChar,    getShortUchar,   getShortShort,   getShortUshort,
+ getShortLong,    getShortUlong,   getShortFloat,   getShortDouble,  getShortEnum},
+/* source is a DBF_USHORT		*/
+{getUshortString, getUshortChar,   getUshortUchar,  getUshortShort,  getUshortUshort,
+ getUshortLong,   getUshortUlong,  getUshortFloat,  getUshortDouble, getUshortEnum},
+/* source is a DBF_LONG		*/
+{getLongString,   getLongChar,     getLongUchar,    getLongShort,    getLongUshort,
+ getLongLong,     getLongUlong,    getLongFloat,    getLongDouble,   getLongEnum},
+/* source is a DBF_ULONG		*/
+{getUlongString,  getUlongChar,    getUlongUchar,   getUlongShort,   getUlongUshort,
+ getUlongLong,    getUlongUlong,   getUlongFloat,   getUlongDouble,  getUlongEnum},
+/* source is a DBF_FLOAT		*/
+{getFloatString,  getFloatChar,    getFloatUchar,   getFloatShort,   getFloatUshort,
+ getFloatLong,    getFloatUlong,   getFloatFloat,   getFloatDouble,  getFloatEnum},
+/* source is a DBF_DOUBLE		*/
+{getDoubleString, getDoubleChar,   getDoubleUchar,  getDoubleShort,  getDoubleUshort,
+ getDoubleLong,   getDoubleUlong,  getDoubleFloat,  getDoubleDouble, getDoubleEnum},
+/* source is a DBF_ENUM		*/
+{getEnumString,   getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
+/* source is a DBF_MENU	*/
+{getMenuString,   getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
+/* source is a DBF_DEVICE	*/
+{getDeviceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
+};
+
+/* This is the table of routines for converting database fields */
+/* the rows represent the buffer types				*/
+/* the columns represent the field types			*/
+
+/* field types are********************************************************
+ DBF_STRING,      DBF_CHAR,        DBF_UCHAR,       DBF_SHORT,       DBF_USHORT,
+ DBF_LONG,        DBF_ULONG,       DBF_FLOAT,       DBF_DOUBLE,      DBF_ENUM
+ DBF_MENU,        DBF_DEVICE
+ ***************************************************************************/
+
+long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
+/* source is a DBR_STRING		*/
+{putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
+ putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,
+ putStringMenu,putStringDevice},
+/* source is a DBR_CHAR		*/
+{putCharString,   putCharChar,     putCharUchar,    putCharShort,    putCharUshort,
+ putCharLong,     putCharUlong,    putCharFloat,    putCharDouble,   putCharEnum,
+ putCharEnum,     putCharEnum},
+/* source is a DBR_UCHAR		*/
+{putUcharString,  putUcharChar,    putUcharUchar,   putUcharShort,   putUcharUshort,
+ putUcharLong,    putUcharUlong,   putUcharFloat,   putUcharDouble,  putUcharEnum,
+ putUcharEnum,    putUcharEnum},
+/* source is a DBR_SHORT		*/
+{putShortString,  putShortChar,    putShortUchar,   putShortShort,   putShortUshort,
+ putShortLong,    putShortUlong,   putShortFloat,   putShortDouble,  putShortEnum,
+ putShortEnum,    putShortEnum},
+/* source is a DBR_USHORT		*/
+{putUshortString, putUshortChar,   putUshortUchar,  putUshortShort,  putUshortUshort,
+ putUshortLong,   putUshortUlong,  putUshortFloat,  putUshortDouble, putUshortEnum,
+ putUshortEnum,   putUshortEnum},
+/* source is a DBR_LONG		*/
+{putLongString,   putLongChar,     putLongUchar,    putLongShort,    putLongUshort,
+ putLongLong,     putLongUlong,    putLongFloat,    putLongDouble,   putLongEnum,
+ putLongEnum,     putLongEnum},
+/* source is a DBR_ULONG		*/
+{putUlongString,  putUlongChar,    putUlongUchar,   putUlongShort,   putUlongUshort,
+ putUlongLong,    putUlongUlong,   putUlongFloat,   putUlongDouble,  putUlongEnum,
+ putUlongEnum,    putUlongEnum},
+/* source is a DBR_FLOAT		*/
+{putFloatString,  putFloatChar,    putFloatUchar,   putFloatShort,   putFloatUshort,
+ putFloatLong,    putFloatUlong,   putFloatFloat,   putFloatDouble,  putFloatEnum,
+ putFloatEnum,    putFloatEnum},
+/* source is a DBR_DOUBLE		*/
+{putDoubleString, putDoubleChar,   putDoubleUchar,  putDoubleShort,  putDoubleUshort,
+ putDoubleLong,   putDoubleUlong,  putDoubleFloat,  putDoubleDouble, putDoubleEnum,
+ putDoubleEnum,   putDoubleEnum},
+/* source is a DBR_ENUM		*/
+{putEnumString,   putEnumChar,     putEnumUchar,    putEnumShort,    putEnumUshort,
+ putEnumLong,     putEnumUlong,    putEnumFloat,    putEnumDouble,   putEnumEnum,
+ putEnumEnum,     putEnumEnum}
+};

@@ -1,5 +1,5 @@
-/*atodb.c*/
-/* share/src/db @(#)atdb.c	1.7     2/25/94 */
+/*sdr2driver.c*/
+/* Convert driver support to new ascii formats*/
 /*
  *
  *     Author:	Marty Kraimer
@@ -27,7 +27,7 @@
  *
  * Modification Log:
  * -----------------
- * .01	07-13-93	mrk	Original version
+ * .01	05-10-95	mrk	Original Version
  */
 
 #include <stdlib.h>
@@ -37,57 +37,48 @@
 #include <errMdef.h>
 #include <dbDefs.h>
 #include <dbStaticLib.h>
+#include <drvSup.h>
 DBBASE	*pdbbase;
-DBENTRY	*pdbentry;
-
-#ifdef __STDC__
-main(int argc,char **argv)
-#else
-main(argc,argv)
-int argc;
-char **argv;
-#endif /*__STDC__*/
-{
-    FILE    	*fpdctsdr;
-    FILE	*fp;
-    long	status;
-    char	*ptime;
-    time_t	timeofday;
-    char	*rectype;
-    
 
-    if(argc!=3) {
-	printf("Usage: atdb default.dctsdr file.database < file.rpt\n");
-	exit(-1);
+static char *defdctsdr = "default.dctsdr";
+
+int main(int argc,char **argv)
+{
+    FILE		*fp;
+    long		status;
+    char 		*sdr_filename;
+    char		filename[40];
+    char		*pfilename = filename;
+    struct drvSup	*pdrvSup;
+    int			i,j;
+    
+    if(argc==2) {
+	sdr_filename = argv[1];
+    } else {
+	sdr_filename = defdctsdr;
     }
-    fpdctsdr = fopen(argv[1],"r");
-    if(!fpdctsdr) {
-	errMessage(0,"Error opening input file");
-	exit(-1);
-    }
-    if(fopen(argv[2],"r")) {
-	errMessage(-1,"Output File already exists");
+    fp = fopen(sdr_filename,"r");
+    if(!fp) {
+	printf("Error opening file %s\n",sdr_filename);
 	exit(-1);
     }
     pdbbase=dbAllocBase();
-    pdbentry=dbAllocEntry(pdbbase);
-    status=dbRead(pdbbase,fpdctsdr);
+    status=dbRead(pdbbase,fp);
     if(status) {
 	errMessage(status,"dbRead");
 	exit(-1);
     }
-    yyreset();
-    yyparse();
-    fp=fopen(argv[2],"w");
-    if(fp==NULL) {
-    	errMessage(0,"Error opening output file");
-    	exit(-1);
-    }
-    status = dbWrite(pdbbase,fpdctsdr,fp);
-    if(status) errMessage(status,"dbWrite");
-    fclose(fpdctsdr);
     fclose(fp);
-    dbFreeEntry(pdbentry);
-    dbFreeBase(pdbbase);
+    strcpy(pfilename,"driver.ascii");
+    fp = fopen(pfilename,"w");
+    if(!fp) {
+	printf("Error opening file %s\n",pfilename);
+	exit(-1);
+    }
+    pdrvSup = pdbbase->pdrvSup;
+    for(i=0; i<pdrvSup->number; i++) {
+	fprintf(fp,"driver(%s)\n",pdrvSup->papDrvName[i]);
+    }
+    fclose(fp);
     return(0);
 }

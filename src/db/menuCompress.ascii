@@ -1,0 +1,6 @@
+menu(menuCompress) {
+	choice(menuCompressN_to_1_First_Value,"N to 1 First Value")
+	choice(menuCompressN_to_1_Low_Value,"N to 1 Low Value")
+	choice(menuCompressN_to_1_High_Value,"N to 1 High Value")
+	choice(menuCompressN_to_1_Average,"N to 1 Average")
+}

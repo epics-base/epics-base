@@ -86,6 +86,8 @@
  * dblls(ptypeName)		list lock sets
  *	char	*ptypeName;	Record type. If null all record types
  *
+ * int dbllsdblinks(int lset)
+ *
  * dbt(record_name)		time 100 executions of "record_name"
  *                              (includes what records are processed
  *                                   as a result of that record)
@@ -103,15 +105,12 @@
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbBase.h>
-#include	<dbRecType.h>
-#include	<dbRecords.h>
 #include	<dbCommon.h>
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<drvSup.h>
-#include	<choice.h>
+#include	<recGbl.h>
 #include	<special.h>
-#include	<dbRecDes.h>
 #include	<dbStaticLib.h>
 #include	<dbEvent.h>
 #include	<ellLib.h>
@@ -133,12 +132,12 @@ typedef struct msgBuff TAB_BUFFER;
 #define MAX(x,y)        ((x > y)?x:y)
 
 /* Local Routines */
-static void printDbAddr(long status,struct dbAddr *paddr);
+static void printDbAddr(long status,DBADDR *paddr);
 static void printBuffer(
 	long status,short dbr_type,void *pbuffer,long reqOptions,
 	long retOptions,long no_elements,TAB_BUFFER *pMsgBuff,int tab_size);
 static int dbpr_report(
-	char *pname,struct dbAddr *paddr,int interest_level,
+	char *pname,DBADDR *paddr,int interest_level,
 	TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
@@ -147,24 +146,16 @@ static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbprReportLink(
 	TAB_BUFFER *pMsgBuff,char *pfield_name,struct link *plink,
 	short field_type,int tab_size);
-static void dbprReportCvtChoice(
-	TAB_BUFFER *pMsgBuff,char *pfield_name,
+static void dbprReportMenu(
+	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
 	unsigned short  choice_value,int tab_size);
-static int dbprReportGblChoice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,char *pfield_name,
+static void dbprReportDevice(
+	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
 	unsigned short  choice_value,int tab_size);
-static void dbprReportRecChoice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,char *pfield_name,
-	unsigned short choice_value,int tab_size);
-static void dbprReportDevChoice(
-	TAB_BUFFER *pMsgBuff,struct dbAddr *paddr,
-	char *pfield_name,int tab_size);
-static struct fldDes * dbprGetFldRec(short type,short fldNum);
-static struct recTypDes *dbprGetRecTypDes(short type);
 
 long dba(char*pname)
 {
-    struct dbAddr 	addr;
+    DBADDR 	addr;
     long		status;
 
     status=dbNameToAddr(pname,&addr);
@@ -174,10 +165,10 @@ long dba(char*pname)
 
 long dbel(char*pname)
 {
-    struct dbAddr 	addr;
+    DBADDR 		addr;
     long		status;
     struct event_block  *peb;
-    struct fldDes 	*pfldDes;
+    dbFldDes 		*pdbFldDes;
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
@@ -190,8 +181,8 @@ long dbel(char*pname)
 	return(0);
     }
     while(peb) {
-	pfldDes = ((struct dbAddr *)peb->paddr)->pfldDes;
-	printf("%4.4s",&pfldDes->fldname[0]);
+	pdbFldDes = ((DBADDR *)peb->paddr)->pfldDes;
+	printf("%4.4s",pdbFldDes->name);
 	if(peb->select&&DBE_VALUE) printf(" VALUE");
 	if(peb->select&&DBE_LOG) printf(" LOG");
 	if(peb->select&&DBE_ALARM) printf(" ALARM");
@@ -273,54 +264,26 @@ static int specified_by(char *ptest, char *pspec)
                 }
         }
 }
- 
+ 
 long dbgrep(char *pmask)
 {
-    int                 rectype, beg, end;
-    struct recLoc       *precLoc;
-    struct dbCommon     *precord;
-    struct recType      *precType;
-    struct recHeader    *precHeader;
-    RECNODE             *precNode;
- 
-    if (!pdbBase) {
-        printf("No database\n");
-        return(0);
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry=&dbentry;
+    long	status;
+    char	*pname;
+
+    dbInitEntry(pdbBase,pdbentry);
+    status = dbFirstRecdes(pdbentry);
+    while(!status) {
+	status = dbFirstRecord(pdbentry);
+	while(!status) {
+	    pname = dbGetRecordName(pdbentry);
+            if (specified_by(pname, pmask))  printf("%s\n", pname);
+	    status = dbNextRecord(pdbentry);
+	}
+	status = dbNextRecdes(pdbentry);
     }
- 
-    if (!(precType = pdbBase->precType))
-       return(0);
- 
-    if (!(precHeader = pdbBase->precHeader))
-       return(0);
- 
-    beg = 0;
-    end = precHeader->number - 1;
- 
-    for (rectype = beg; rectype <= end; rectype++) {
- 
-        if (!(precLoc = GET_PRECLOC(precHeader, rectype)))
-                continue;
- 
-       /*
-        *  Check if there are any record instances defined.
-        */
-        if (precLoc->preclist == NULL)
-                continue;
- 
-        precNode = (RECNODE *) ellFirst(precLoc->preclist);
- 
-        for (; precNode != NULL; precNode = (RECNODE *) ellNext(&precNode->node)) {
-                precord = precNode->precord;
-                if (precord == NULL) continue;
-                if (precord->name == NULL) continue;
-                if (precord->name[0] == 0) continue; /* deleted record */
- 
-                if (specified_by(precord->name, pmask)) {
-                        printf("%s\n", precord->name);
-                }
-        }
-    }
+    dbFinishEntry(pdbentry);
     return(0);
 }
 
@@ -329,7 +292,7 @@ long dbgf(char	*pname)
     /* declare buffer long just to ensure correct alignment */
     long 		buffer[100];
     long 		*pbuffer=&buffer[0];
-    struct dbAddr 	addr;
+    DBADDR 	addr;
     long		status;
     long		options,no_elements;
     static TAB_BUFFER 	msg_Buff;
@@ -347,11 +310,14 @@ long dbgf(char	*pname)
     options=0;
     if(addr.dbr_field_type==DBR_ENUM) {
 	status=dbGetField(&addr,DBR_STRING,pbuffer,&options,&no_elements,NULL);
-	printBuffer(status,DBR_STRING,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
+	printBuffer(status,DBR_STRING,pbuffer,0L,0L,no_elements,
+	   pMsgBuff,tab_size);
     }
     else {
-	status=dbGetField(&addr,addr.dbr_field_type,pbuffer,&options,&no_elements,NULL);
-	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
+	status=dbGetField(&addr,addr.dbr_field_type,pbuffer,
+	    &options,&no_elements,NULL);
+	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,
+	    no_elements,pMsgBuff,tab_size);
     }
     pmsg[0] = '\0';
     dbpr_msgOut(pMsgBuff, tab_size);
@@ -361,7 +327,7 @@ long dbgf(char	*pname)
 long dbpf(char	*pname,char *pvalue)
 {
     /* declare buffer long just to ensure correct alignment */
-    struct dbAddr addr;
+    DBADDR addr;
     long	  status;
 
     /* make sure value was passed*/
@@ -397,7 +363,7 @@ long dbpr(char *pname,int interest_level)
 {
     static TAB_BUFFER msg_Buff;
     TAB_BUFFER       *pMsgBuff = &msg_Buff;
-    struct dbAddr    addr;
+    DBADDR    addr;
     long             status;
     char            *pmsg;
     int              tab_size;
@@ -419,7 +385,7 @@ long dbpr(char *pname,int interest_level)
 
 long dbtr(char *pname)
 {
-    struct dbAddr addr;
+    DBADDR addr;
     long 	     status;
     struct dbCommon  *precord;
 
@@ -449,7 +415,7 @@ long dbtgf(char *pname)
     /* declare buffer long just to ensure correct alignment */
     long              buffer[400];
     long              *pbuffer=&buffer[0];
-    struct dbAddr     addr;
+    DBADDR     addr;
     long	      status;
     long	      req_options,ret_options,no_elements;
     short	      dbr_type;
@@ -524,7 +490,7 @@ long dbtpf(char	*pname,char *pvalue)
     /* declare buffer long just to ensure correct alignment */
     long          buffer[100];
     long          *pbuffer=&buffer[0];
-    struct dbAddr addr;
+    DBADDR addr;
     long	  status;
     long	  options,no_elements;
     char 	  cvalue;
@@ -686,24 +652,19 @@ long dbtpf(char	*pname,char *pvalue)
 
 long dbior(char	*pdrvName,int type)
 {
-    int		 	i,j;
     char		*pname;
-    struct drvSup	*pdrvSup;
-    struct recDevSup	*precDevSup;
+    drvSup		*pdrvSup;
     struct drvet	*pdrvet;
+    dbRecDes		*pdbRecDes;
+    devSup		*pdevSup;
+    struct dset		*pdset;
 
-    if(!pdbBase) {
-	printf("No database\n");
-	return(0);
-    }
-    if(!(pdrvSup= pdbBase->pdrvSup)) {
-	printf("No drivers\n");
-	return(0);
-    }
-    for (i=0; i<pdrvSup->number; i++) {
-	if((pname=pdrvSup->papDrvName[i])==NULL) continue;
+    for(pdrvSup = (drvSup *)ellFirst(&pdbBase->drvList); pdrvSup;
+    pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
+	pname = pdrvSup->name;
 	if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
-	if((pdrvet=pdrvSup->papDrvet[i])==NULL) {
+	pdrvet = pdrvSup->pdrvet ;
+	if(pdrvet==NULL) {
 		printf("No driver entry table is present for %s\n",pname);
 		continue;
 	}
@@ -715,28 +676,22 @@ long dbior(char	*pdrvName,int type)
 	}
     }
     /* now check devSup reports */
-    if(!(precDevSup=pdbBase->precDevSup)) {
-	printf("No device support\n");
-	return(0);
-    }
-    for (i=0; i<precDevSup->number; i++) {
-	struct devSup	*pdevSup;
-
-	if(!(pdevSup=GET_PDEVSUP(precDevSup,i))) continue;
-	for(j=0; j<pdevSup->number; j++) {
-	    struct dset	*pdset;
-
-	    if(!(pdset=GET_PDSET(pdevSup,j))) continue;
-	    if((pname=pdevSup->papDsetName[j])==NULL) continue;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+	    if(!(pdset = pdevSup->pdset)) continue;
+	    if(!(pname = pdevSup->name)) continue;
 	    if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
 	    if(pdset->report!=NULL) {
 		printf("Device Support: %s\n",pname);
-	    		(*pdset->report)(type);
+		(*pdset->report)(type);
 	    }
 	}
     }
     return(0);
 }
+
 int dbhcr(void)
 {
 
@@ -782,30 +737,27 @@ long dblls(int	lockset)
 
 static char *dbf[DBF_NTYPES]={
 	"STRING","CHAR","UCHAR","SHORT","USHORT","LONG","ULONG",
-	"FLOAT","DOUBLE","ENUM","GBLCHOICE","CVTCHOICE","RECCHOICE",
-	"DEVCHOICE","INLINK","OUTLINK","FWDLINK","NOACCESS"};
+	"FLOAT","DOUBLE","ENUM","MENU","DEVICE",
+	"INLINK","OUTLINK","FWDLINK","NOACCESS"};
 
 static char *dbr[DBR_ENUM+2]={
 	"STRING","CHAR","UCHAR","SHORT","USHORT","LONG","ULONG",
 	"FLOAT","DOUBLE","ENUM","NOACCESS"};
 
-static void printDbAddr(long status,struct dbAddr *paddr)
+static void printDbAddr(long status,DBADDR *paddr)
 {
-    char	*pstr;
     short	field_type;
     short	dbr_field_type;
+    dbFldDes	*pdbFldDes = (dbFldDes *)paddr->pfldDes;;
 
     if(status!=0) {
 	errMessage(status,"dbNameToAddr error");
     }
     printf("Record Address: %p",paddr->precord);
     printf(" Field Address: %p",paddr->pfield);
-    printf(" Field Description: %p\n",paddr->pfldDes);
+    printf(" Field Description: %p\n",pdbFldDes);
     printf("   No Elements: %ld\n",paddr->no_elements);
-    if (!(pstr=GET_PRECNAME(pdbBase->precType,paddr->record_type))) 
-    	printf("   Record Type: %d\n",paddr->record_type);
-    else
-	printf("   Record Type: %s\n",pstr);
+    printf("   Record Type: %s\n",pdbFldDes->pdbRecDes->name);
     printf("     FieldType: DBF_");
     field_type = paddr->field_type;
     if(field_type<0 || field_type>DBR_NOACCESS)
@@ -815,7 +767,6 @@ static void printDbAddr(long status,struct dbAddr *paddr)
     printf("    Field Type: %d\n",paddr->field_type);
     printf("    Field Size: %d\n",paddr->field_size);
     printf("       Special: %d\n",paddr->special);
-    printf("    Choice Set: %d\n",paddr->choice_set);
     printf("DBR Field Type: DBR_");
     dbr_field_type = paddr->dbr_field_type;
     if(dbr_field_type==DBR_NOACCESS)dbr_field_type=DBR_ENUM + 1;
@@ -1116,131 +1067,63 @@ static void printBuffer(
 }
 
 static int dbpr_report(
-	char *pname,struct dbAddr *paddr,int interest_level,
+	char *pname,DBADDR *paddr,int interest_level,
 	TAB_BUFFER *pMsgBuff,int tab_size)
 {
 
-    char           *pmsg;
-    char           *pName;
-    char           *pfname;
-    struct fldDes  *pfldDes;
-    struct recTypDes *precTypDes;
-    struct dbAddr  *pLaddr;
-    struct dbAddr   Laddr;	/* local address */
-    short           fldNum;	/* field number		 */
-    char           *pRecordName;
-    char            RecordName[PVNAME_SZ + 2];	/* pv record name */
-    char           *pfield_name;
-    char            field_name[FLDNAME_SZ + 1];	/* pv field name */
-    char           *pPvName=NULL;
-    char            PvName[PVNAME_SZ + FLDNAME_SZ + 4];	/* recordname.<pvname> */
-    short           n,n2;
-    long            status;
-    long            buffer[100];
-    void       	   *pbuffer;
-    long            options;
-    long            nRequest;
-    int             sv_tab_size;
+    char	*pmsg;
+    dbFldDes  	*pdbFldDes = paddr->pfldDes;
+    dbRecDes    *pdbRecDes = pdbFldDes->pdbRecDes;
+    short	n2;
+    void	*pfield;
+    char	*pfield_name;
+
     pmsg = pMsgBuff->message;
-
-    /* extract record name */
-    pbuffer = (char *) buffer;
-    pRecordName = &RecordName[0];
-    pName = pname;
-    n = 0;
-    while (*pName && (*pName != '.') && (n < PVNAME_SZ)) {
-	*pRecordName = *pName;
-	pName++;
-	pRecordName++;
-	n++;
-    }
-    *pRecordName = 0;
-    /* get ptr to record type descriptor */
-    if (!(precTypDes = (struct recTypDes *)
-	  dbprGetRecTypDes(paddr->record_type)))
-	return (-1);
-
-    for (n2 = 0; n2 <= precTypDes->no_fields - 1; n2++) {
-        fldNum = precTypDes->sortFldInd[n2];
-
-	/* get ptr to field descriptor */
-	if (!(pfldDes = (struct fldDes *)
-	      dbprGetFldRec(paddr->record_type, fldNum))) {
-	    return (-1);
-	}
-	/* extract field name */
-	pfield_name = field_name;
-	/* blank pad the field name */
-	pfname = pfldDes->fldname;
-	n = 0;
-	while (*(pfname) && (n < FLDNAME_SZ)) {
-	    *pfield_name = *(pfname);
-	    pfield_name++;
-	    pfname++;
-	    n++;
-	}
-	while (n < FLDNAME_SZ) {
-	    *pfield_name = ' ';
-	    pfield_name++;
-	    n++;
-	}
-	*pfield_name = 0;
-
-	pPvName = PvName;
-	pRecordName = RecordName;
-	pfield_name = field_name;
-
-	/* use complete PV name */
-	strcpy((char *) pPvName, (char *) pRecordName);
-	strcat(pPvName, ".");
-	strcat(pPvName, pfield_name);
-
-	status = dbNameToAddr(pPvName, &Laddr);
-	if(status) {
-	    printf("dbNameToAddr failed\n");
-	    return(1);
-	}
-	if (pfldDes->interest > interest_level )
+    for (n2 = 0; n2 <= pdbRecDes->no_fields - 1; n2++) {
+	pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->sortFldInd[n2]];
+	pfield_name = pdbFldDes->name;
+	pfield = ((char *)paddr->precord) + pdbFldDes->offset;
+	if (pdbFldDes->interest > interest_level )
 	    continue;
-	pLaddr = &Laddr;
-	switch (pfldDes->field_type) {
+	switch (pdbFldDes->field_type) {
 	case DBF_STRING:
-	    sprintf(pmsg, "%s: %s", pfield_name, (char *)pLaddr->pfield);
+	    sprintf(pmsg, "%s: %s", pfield_name, (char *)pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_USHORT:
 	    sprintf(pmsg, "%s: 0x%-8X", pfield_name,
-		    *(unsigned short *) pLaddr->pfield);
+		    *(unsigned short *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_ENUM:
 	    sprintf(pmsg, "%s: %d", pfield_name,
-		    *(unsigned short *) pLaddr->pfield);
+		    *(unsigned short *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_FLOAT:
 	    sprintf(pmsg, "%s: %-12.4G", pfield_name,
-		    *(float *) pLaddr->pfield);
+		    *(float *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_CHAR:
-	    sprintf(pmsg, "%s: %d", pfield_name, *(char *) pLaddr->pfield);
+	    sprintf(pmsg, "%s: %d", pfield_name, *(char *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_UCHAR:
 	    sprintf(pmsg, "%s: %d", pfield_name,
-		    *(unsigned char *) pLaddr->pfield);
+		    *(unsigned char *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_NOACCESS:
 	    { /* lets just print field in hex */
-		char * pchar = (char *)(pLaddr->pfield);
+		char * pchar = (char *)(pfield);
 		char   temp_buf[42];
 		char *ptemp_buf = &temp_buf[0];
-		short n = pLaddr->field_size;
+		short n = pdbFldDes->size;
 		short i;
 		unsigned long value;
 
+		strcpy(ptemp_buf,"0x"); ptemp_buf+=2;
 		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
 		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
 			value = *((unsigned char *)pchar);
@@ -1252,50 +1135,43 @@ static int dbpr_report(
 	    }
 	    break;
 	case DBF_SHORT:
-	    sprintf(pmsg, "%s: %d", pfield_name, *(short *) pLaddr->pfield);
+	    sprintf(pmsg, "%s: %d", pfield_name, *(short *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_LONG:
-	    sprintf(pmsg, "%s: 0x%-8X", pfield_name, *(long *) pLaddr->pfield);
+	    sprintf(pmsg, "%s: 0x%-8X", pfield_name, *(long *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_ULONG:
 	    sprintf(pmsg, "%s: 0x%-8X", pfield_name,
-		    *(unsigned long *) pLaddr->pfield);
+		    *(unsigned long *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	case DBF_DOUBLE:
 	    sprintf(pmsg, "%s: %-12.4G", pfield_name,
-		    *(double *) pLaddr->pfield);
+		    *(double *) pfield);
 	    dbpr_msgOut(pMsgBuff, tab_size);
+	    break;
+	case DBF_MENU:
+	    dbprReportMenu(pMsgBuff, paddr->precord, pdbFldDes,
+				    *(unsigned short *)pfield, tab_size);
+	    break;
+	case DBF_DEVICE:
+	    dbprReportDevice(pMsgBuff, paddr->precord, pdbFldDes,
+				    *(unsigned short *)pfield, tab_size);
 	    break;
 	case DBF_INLINK:
 	    dbprReportLink(pMsgBuff, pfield_name,
-	     (struct link *) pLaddr->pfield, pfldDes->field_type, tab_size);
+	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
 	    break;
 	case DBF_OUTLINK:
 	    dbprReportLink(pMsgBuff, pfield_name,
-	     (struct link *) pLaddr->pfield, pfldDes->field_type, tab_size);
+	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
 	    break;
 	case DBF_FWDLINK:
 	    dbprReportLink(pMsgBuff, pfield_name,
-	     (struct link *) pLaddr->pfield, pfldDes->field_type, tab_size);
+	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
 	    break;
-	case DBF_CVTCHOICE:
-	    dbprReportCvtChoice(pMsgBuff, pfield_name,
-			      *(unsigned short *) pLaddr->pfield, tab_size);
-	    break;
-	case DBF_RECCHOICE:
-	    dbprReportRecChoice(pMsgBuff, pLaddr->precord, pfield_name,
-			      *(unsigned short *) pLaddr->pfield, tab_size);
-	    break;
-	case DBF_DEVCHOICE:
-	    dbprReportDevChoice(pMsgBuff, pLaddr, pfield_name, tab_size);
-	    break;
-	case DBF_GBLCHOICE:
-	    if (dbprReportGblChoice(pMsgBuff, pLaddr->precord, pfield_name,
-				    *(short *) pLaddr->pfield, tab_size))
-		return (-1);
 	    break;
 	default:
 	    sprintf(pmsg, "%s: dbpr: Unknown field_type", pfield_name);
@@ -1305,29 +1181,6 @@ static int dbpr_report(
     }
     pmsg[0] = '\0';
     dbpr_msgOut(pMsgBuff, tab_size);
-    /* flush buffer and change tab size */
-    sv_tab_size = tab_size;
-    tab_size = 10;
-    strcpy((char *) pPvName, (char *) pRecordName);
-    strcat(pPvName, ".VAL");
-    status = dbNameToAddr(pPvName, &Laddr);
-    if (status)
-	return (1);
-    pLaddr = &Laddr;
-    pfldDes = (struct fldDes *) Laddr.pfldDes;
-    if (pLaddr->field_type != pfldDes->field_type
-	    || pLaddr->no_elements > 1) {
-	options = 0;
-	nRequest = MIN(pLaddr->no_elements,((sizeof(buffer))/pLaddr->field_size));
-	status = dbGetField(&Laddr, Laddr.dbr_field_type, pbuffer,
-			    &options, &nRequest,NULL);
-	printBuffer(status, Laddr.dbr_field_type, pbuffer,
-		    0L, 0L, nRequest, pMsgBuff, tab_size);
-	tab_size = sv_tab_size;
-	/* flush buffer and restore tab size */
-	pmsg[0] = '\0';
-	dbpr_msgOut(pMsgBuff, tab_size);
-    }
     return (0);
 }
 
@@ -1381,7 +1234,7 @@ static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size)
     pMsgBuff->pNexTab = pMsgBuff->out_buff + tab_size;
     return;
 }
-
+
 static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size)
 {
     int             current_len;
@@ -1414,7 +1267,7 @@ static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size)
     return;
 
 }
-
+
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size)
 {
     /* skip print if buffer empty */
@@ -1433,22 +1286,20 @@ static void dbprReportLink(
     char *pmsg = pMsgBuff->message;
     switch(plink->type) {
     case CONSTANT:
-	sprintf(pmsg,"%4s: %-12.4G", pfield_name, plink->value.value);
+	sprintf(pmsg,"%4s: %s", pfield_name, plink->value.constantStr);
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case PV_LINK:
 	if(field_type != DBF_FWDLINK) {
-	sprintf(pmsg,"%4s: PV_LINK pp=%1d ms=%1d %s.%.4s",
+	sprintf(pmsg,"%4s: PV_LINK pp=%1d ms=%1d %s",
 	    pfield_name,
 	    plink->value.pv_link.process_passive,
 	    plink->value.pv_link.maximize_sevr,
-	    plink->value.pv_link.pvname,
-	    plink->value.pv_link.fldname);
+	    plink->value.pv_link.pvname);
 	} else {
-	sprintf(pmsg,"%4s: PV_LINK %s.%.4s",
+	sprintf(pmsg,"%4s: PV_LINK %s",
 	    pfield_name,
-	    plink->value.pv_link.pvname,
-	    plink->value.pv_link.fldname);
+	    plink->value.pv_link.pvname);
 	}
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
@@ -1488,11 +1339,11 @@ static void dbprReportLink(
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case AB_IO:
-	sprintf(pmsg,"%4s: ABIO link=%2d adaptor=%2d card=%2d signal=%2d flag=%1d parm=%s",
+	sprintf(pmsg,"%4s: ABIO link=%2d adaptor=%2d card=%2d signal=%2d parm=%s",
 	    pfield_name,
 	    plink->value.abio.link,plink->value.abio.adapter,
 	    plink->value.abio.card,plink->value.abio.signal,
-	    plink->value.abio.plc_flag,plink->value.abio.parm);
+	    plink->value.abio.parm);
 	dbpr_msgOut(pMsgBuff,tab_size);
 	break;
     case GPIB_IO:
@@ -1526,20 +1377,18 @@ static void dbprReportLink(
 	break;
     case DB_LINK:
 	if(field_type != DBF_FWDLINK) {
-	    struct dbAddr *paddr = (struct dbAddr *)plink->value.db_link.pdbAddr;
-	    struct fldDes *pfldDes = (struct fldDes *)paddr->pfldDes;
+	    DBADDR *paddr = (DBADDR *)plink->value.db_link.pdbAddr;
 
-	    sprintf(pmsg,"%4s: DB_LINK pp=%1d ms=%1d %.32s.%.4s",
+	    sprintf(pmsg,"%4s: DB_LINK pp=%1d ms=%1d %s",
 	    pfield_name,
 	    plink->value.db_link.process_passive,
 	    plink->value.db_link.maximize_sevr,
-	    paddr->precord->name,
-	    pfldDes->fldname);
+	    paddr->precord->name);
 	}else{
 	sprintf(pmsg,"%4s: DB_LINK %.32s",
 	    pfield_name,
 	    ((struct dbCommon *)(
-		((struct dbAddr *)plink->value.db_link.pdbAddr)
+		((DBADDR *)plink->value.db_link.pdbAddr)
 		->precord))->name);
 	}
 	dbpr_msgOut(pMsgBuff,tab_size);
@@ -1557,152 +1406,38 @@ static void dbprReportLink(
     return;
 }
 
-static void dbprReportCvtChoice(
-	TAB_BUFFER *pMsgBuff,char *pfield_name,
-	unsigned short  choice_value,int tab_size)
+static void dbprReportMenu(
+	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
+	unsigned short  value,int tab_size)
 {
-    char *pchoice;
+    dbMenu	*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
     char *pmsg = pMsgBuff->message;
 
-    if(!(pchoice=GET_CHOICE(pdbBase->pchoiceCvt,choice_value))) {
-	sprintf(pmsg,"%4s Illegal Choice",pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
+    if(!pdbMenu) {
+	sprintf(pmsg,"%s menu not found",pdbFldDes->name);
+    } else {
+	sprintf(pmsg,"%4s: %s",pdbFldDes->name,pdbMenu->papChoiceValue[value]);
     }
-    else {
-	sprintf(pmsg,"%4s: %s",pfield_name,pchoice);
-	dbpr_msgOut(pMsgBuff,tab_size);
+    dbpr_msgOut(pMsgBuff,tab_size);
+    return;
+}
+
+static void dbprReportDevice(
+	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
+	unsigned short  value,int tab_size)
+{
+    dbDeviceMenu *pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+    char *pmsg = pMsgBuff->message;
+
+    if(!pdbDeviceMenu) {
+	sprintf(pmsg,"%s menu not found",pdbFldDes->name);
+    } else {
+	sprintf(pmsg,"%4s: %s",pdbFldDes->name,pdbDeviceMenu->papChoice[value]);
     }
+    dbpr_msgOut(pMsgBuff,tab_size);
     return;
 }
 
-static int dbprReportGblChoice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,char *pfield_name,
-	unsigned short  choice_value,int tab_size)
-{
-    char	     name[PVNAME_SZ+1+FLDNAME_SZ+1];
-    struct dbAddr    dbAddr;
-    struct choiceSet *pchoiceSet;
-    char	     *pchoice;
-    char *pmsg = pMsgBuff->message;
-
-    strncpy(name,precord->name,PVNAME_SZ);
-    name[PVNAME_SZ]=0;
-    strcat(name,".");
-    strncat(name,pfield_name,FLDNAME_SZ);
-    if(dbNameToAddr(name,&dbAddr)) {
-	sprintf(pmsg,"%4s dbNameToAddr failed?",pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	return(0);
-    }
-    if( !(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,dbAddr.choice_set))
-    ||  !(pchoice=GET_CHOICE(pchoiceSet,choice_value))) {
-	sprintf(pmsg,"%4s Cant find Choice",pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-    }
-    else {
-	sprintf(pmsg,"%4s: %s",pfield_name,pchoice);
-	dbpr_msgOut(pMsgBuff,tab_size);
-    }
-    return(0);
-}
-
-static void dbprReportRecChoice(
-	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,char *pfield_name,
-	unsigned short choice_value,int tab_size)
-{
-    char	        name[PVNAME_SZ+1+FLDNAME_SZ+1];
-    struct dbAddr       dbAddr;
-    struct arrChoiceSet *parrChoiceSet;
-    struct choiceSet    *pchoiceSet;
-    char	        *pchoice;
-    char *pmsg = pMsgBuff->message;
-
-    strncpy(name,precord->name,PVNAME_SZ);
-    name[PVNAME_SZ]=0;
-    strcat(name,".");
-    strncat(name,pfield_name,FLDNAME_SZ);
-    if(dbNameToAddr(name,&dbAddr)) {
-	sprintf(pmsg,"%4s: dbNameToAddr failed?",pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	return;
-    }
-    if( !(parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,dbAddr.record_type)) 
-    ||  !(pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,dbAddr.choice_set))
-    ||  !(pchoice=GET_CHOICE(pchoiceSet,choice_value))) {
-	sprintf(pmsg,"%4s: Cant find Choice",pfield_name);
-    }
-    else {
-	sprintf(pmsg,"%4s: %s",pfield_name,pchoice);
-    }
-	dbpr_msgOut(pMsgBuff,tab_size);
-    return;
-}
-
-static void dbprReportDevChoice(
-	TAB_BUFFER *pMsgBuff,struct dbAddr *paddr,
-	char *pfield_name,int tab_size)
-{
-    short      		choice_ind= *((short*)paddr->pfield);
-    struct devChoiceSet *pdevChoiceSet;
-    struct devChoice	*pdevChoice;
-    long		no_elements= paddr->no_elements;
-    char                *pmsg = pMsgBuff->message;
-    char buff[MAX_STRING_SIZE+1];
-
-    if(no_elements!=1){
-	sprintf(pmsg,
-           "%4s: Only one element allowed - dbprReportDevChoice",
-            pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-        return;
-    }
-    if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)))
-    || (!(pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,choice_ind))) ) {
-	sprintf(pmsg, "%4s: NULL",
-            pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-        return;
-    }
-    strncpy(buff,pdevChoice->pchoice,MAX_STRING_SIZE);
-    buff[MAX_STRING_SIZE] = 0;
-    sprintf(pmsg,"%4s: %s",
-            pfield_name,
-            buff);
-	dbpr_msgOut(pMsgBuff,tab_size);
-    return;
-}
-
-static struct fldDes * dbprGetFldRec(short type,short fldNum)
-{
-    struct fldDes  *pfield;
-    struct recDes  *precDes;
-    struct recTypDes *precTypDes;
-
-    if (!(precDes=pdbBase->precDes)) return (NULL);
-    if ((type < 0) || (type >= precDes->number)) return (NULL);
-    /* get and check pointer to this record's field definitions */
-    precTypDes = precDes->papRecTypDes[type];
-    if (!precTypDes)
-	return (NULL);
-    pfield = precTypDes->papFldDes[fldNum];
-    return (pfield);
-}
-
-
-static struct recTypDes *dbprGetRecTypDes(short type)
-{
-    struct recDes  *precDes;
-    struct recTypDes *precTypDes;
-
-    if (!(precDes=pdbBase->precDes)) return (NULL);
-    if ((type < 0) || (type >= precDes->number)) return (NULL);
-    /* get and check pointer to this record's field definitions */
-    precTypDes = precDes->papRecTypDes[type];
-    if (!precTypDes)
-	return (NULL);
-    return (precTypDes);
-}
-
 /*
  *  Call dbProcess() 100 times to make
  *   sure Measurement is accurate, since
@@ -1724,7 +1459,7 @@ struct dbCommon *precord;
 long dbt(record_name)
 char *record_name;
 {
-  struct dbAddr address;
+  DBADDR address;
   struct dbCommon *precord;
   long status = 0;
  
@@ -1755,51 +1490,40 @@ char *record_name;
 
 int dbllsdblinks(int lset)
 {
-    int			i,link;
-    struct recLoc	*precLoc;
-    struct recDes	*precDes;
-    struct recTypDes	*precTypDes;
-    struct recHeader	*precHeader;
-    RECNODE		*precNode;
-    struct fldDes	*pfldDes;
-    struct dbCommon	*precord;
-    struct link		*plink;
+    int			link;
+    dbRecDes		*pdbRecDes;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode 	*pdbRecordNode;
+    dbCommon		*precord;
+    DBLINK		*plink;
     
-    if(!(precHeader = pdbBase->precHeader)) return(-1);
-    if(!(precDes = pdbBase->precDes)) return(-1);
-    for(i=0; i< (precHeader->number); i++) {
-	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	if(!precLoc->preclist) continue;
-	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-	    precord = precNode->precord;
-	    /* If NAME is null then skip this record*/
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
 	    if(precord->lset != lset) continue; 
 	    printf("%s\n",precord->name);
-	    for(link=0; (link<precTypDes->no_links) ; link++) {
-		    struct dbAddr	*pdbAddr;
+	    for(link=0; (link<pdbRecDes->no_links) ; link++) {
+		DBADDR	*pdbAddr;
 
-		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
-                   /*
-                    *  Find link structure, which is at an offset in the record
-                    */
-		    plink = (struct link *)((char *)precord + pfldDes->offset);
-                   /* Ignore link if type is constant, channel access, or hardware specific */
-		    if(plink->type != DB_LINK) continue;
-		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-		    if(pfldDes->field_type==DBF_INLINK) {
+		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+		if(plink->type != DB_LINK) continue;
+		pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
+		if(pdbFldDes->field_type==DBF_INLINK) {
 			printf("\t INLINK");
-		    } else if(pfldDes->field_type==DBF_OUTLINK) {
+		} else if(pdbFldDes->field_type==DBF_OUTLINK) {
 			printf("\tOUTLINK");
-		    } else if(pfldDes->field_type==DBF_FWDLINK) {
+		} else if(pdbFldDes->field_type==DBF_FWDLINK) {
 			printf("\tFWDLINK");
-		    }
-		    printf(" %s %s",
+		}
+		printf(" %s %s",
 			((plink->value.db_link.process_passive)?" PP":"NPP"),
 			((plink->value.db_link.maximize_sevr)?" MS":"NMS"));
-		    printf(" %s\n",pdbAddr->precord->name);
+		printf(" %s\n",pdbAddr->precord->name);
 	    }
 	}
     }

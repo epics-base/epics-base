@@ -1,0 +1,12 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+
+SRCS.c = 
+OBJS = 
+PROD =
+
+include $(EPICS)/config/RULES.Vx
+

@@ -47,6 +47,7 @@
 #include	<recSup.h>
 #include	<taskwd.h>
 #include	<errMdef.h>
+#include	<dbCommon.h>
 #include	<task_params.h>
 
 #define QUEUESIZE 1000
@@ -169,14 +170,16 @@ static void wdCallback(long ind)
 
 static void ProcessCallback(CALLBACK *pCallback)
 {
-    struct  dbCommon    *pRec;
+    dbCommon    *pRec = NULL;
+    struct rset *prset = (struct rset *)pRec->rset;
 
     callbackGetUser(pRec, pCallback);
     dbScanLock(pRec);
-    ((struct rset*)(pRec->rset))->process(pRec);
+    (*prset->process)(pRec);
     dbScanUnlock(pRec);
 }
-void callbackRequestProcessCallback(CALLBACK *pCallback, int Priority, void *pRec)
+void callbackRequestProcessCallback(CALLBACK *pCallback,
+	int Priority, void *pRec)
 {
     callbackSetCallback(ProcessCallback, pCallback);
     callbackSetPriority(Priority, pCallback);

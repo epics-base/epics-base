@@ -57,15 +57,6 @@
 
 #define messagesize	100
 #define RPCL_LEN 184
-
-#if defined(EPICS_LITTLE_ENDIAN)
-#define BYTE_SWAP_4(A)            \
-  ( (((A) & 0xFF) << 24 )    |    \
-    (((A) & 0xFF00) << 8)    |    \
-    (((A) & 0xFF0000) >> 8)  |    \
-    (((A) & 0xFF000000) >> 24) )
-#endif
-
 long postfix(char *pinfix, char *ppostfix,short *perror);
 
 static char *ppstring[2]={"NPP","PP"};
@@ -439,6 +430,7 @@ DBBASE *pdbbase;
     ELLLIST           *preclist;
     int             recType;
     if (!pdbbase || !ppvd || !precType) return;
+    dbPvdFreeMem(pdbbase);
     /* loop thru the recLocs - removing lists then recLoc only */
     for (recType = 0; recType < precType->number; recType++) {
 	if (!(precLoc = GET_PRECLOC(precHeader, recType))) continue;
@@ -460,7 +452,6 @@ DBBASE *pdbbase;
 	free((void *) precLoc);
     }
     /* free the rest of the memory allocations */
-    dbPvdFreeMem(pdbbase);
     if (pdbbase->pchoiceCvt)
 	free((void *) pdbbase->pchoiceCvt);
     if (pdbbase->pchoiceDev)
@@ -749,7 +740,7 @@ char *precordName;
     struct recLoc  	*precLoc = NULL;
     short           	rec_size;
 
-    if(strlen(precordName)>(size_t)PVNAME_SZ) return(S_dbLib_nameLength);
+    if(strlen(precordName)>PVNAME_SZ) return(S_dbLib_nameLength);
     /* clear callers entry */
     zeroDbentry(pdbentry);
     if(!dbFindRecord(pdbentry,precordName)) return (S_dbLib_recExists);
@@ -947,7 +938,7 @@ char *newName;
     long		status;
     DBENTRY		dbentry;
 
-    if(strlen(newName)>(size_t)PVNAME_SZ) return(S_dbLib_nameLength);
+    if(strlen(newName)>PVNAME_SZ) return(S_dbLib_nameLength);
     if(!precnode) return(S_dbLib_recNotFound);
     dbInitEntry(pdbentry->pdbbase,&dbentry);
     status = dbFindRecord(&dbentry,newName);
@@ -1017,23 +1008,15 @@ char *pfieldName;
     bottom = 0;
     test = (top + bottom) / 2;
     while (1) {
-	unsigned int t1, t2;
-
 	/* check the field name */
-	t1 = (unsigned int) sortFldName[ test];
-	t2 = (unsigned int) *(unsigned int*)pconvName;
-#if defined(EPICS_LITTLE_ENDIAN)
-	t1 = BYTE_SWAP_4( t1);
-	t2 = BYTE_SWAP_4( t2);
-#endif
-	if(t1 == t2) {
+	if (sortFldName[test] == *(unsigned long *) pconvName) {
 	    if(!(pflddes=GET_PFLDDES(precTypDes,sortFldInd[test])))
 		return(S_dbLib_recdesNotFound);
 	    pdbentry->pflddes = pflddes;
 	    pdbentry->pfield = precord + pflddes->offset;
 	    pdbentry->indfield = sortFldInd[test];
 	    return (0);
-	} else if (t1 > t2) {
+	} else if (sortFldName[test] > *(unsigned long *) pconvName) {
 	    top = test - 1;
 	    if (top < bottom) return (S_dbLib_fieldNotFound);
 	    test = (top + bottom) / 2;
@@ -1608,7 +1591,7 @@ char *pstring;
 		if (!(pchoice = pdevChoiceSet->papDevChoice[i]->pchoice))
 		    continue;
 		if (strcmp(pchoice, pstring) == 0) {
-		    long link_type;
+		    long link_type,status;
 
 		    link_type = pdevChoiceSet->papDevChoice[i]->link_type;
 		    /*If no INP or OUT OK */
@@ -1640,7 +1623,7 @@ char *pstring;
 		if(pstr[ind]!=' ' && pstr[ind]!='\t') break;
 		pstr[ind] = '\0';
 	    }
-	    if(!pstr || strlen(pstr)==0 ) {
+	    if(!pstr || strlen(pstr)<=0 ) {
 		if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
 		return(0);
@@ -1706,18 +1689,12 @@ char *pstring;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.camacio.n);
- 		    if(!(end = strchr(pstr,'A')))  {
- 			plink->value.camacio.a = 0;
- 		    } else {
- 		        pstr = end + 1;
- 		        sscanf(pstr,"%hd",&plink->value.camacio.a);
- 		    }
- 		    if(!(end = strchr(pstr,'F'))) {
- 			plink->value.camacio.f = 0;
- 		    } else {
- 		        pstr = end + 1;
- 		        sscanf(pstr,"%hd",&plink->value.camacio.f);
- 		    }
+		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.camacio.a);
+		    if(!(end = strchr(pstr,'F'))) return (S_dbLib_badField);
+		    pstr = end + 1;
+		    sscanf(pstr,"%hd",&plink->value.camacio.f);
 		    plink->value.camacio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
@@ -4150,23 +4127,10 @@ FILE *fp;
 }
 
 /* Beginning of Process Variable Directory Routines*/
-int dbPvdHashTableSize = 512;
-static int dbPvdHashTableShift;
-#define NTABLESIZES 9
-static struct {
-	unsigned int	tablesize;
-	int		shift;
-}hashTableParms[9] = {
-	{256,0},
-	{512,1},
-	{1024,2},
-	{2048,3},
-	{4096,4},
-	{8192,5},
-	{16384,6},
-	{32768,7},
-	{65536,8}
-};
+#define 	HASH_NO	2048		/* number of hash table entries */
+#define		SHIFT 3			/*number of bits to shift*/
+
+
 /*The hash algorithm is a modification of the algorithm described in	*/
 /* Fast Hashing of Variable Length Text Strings, Peter K. Pearson,	*/
 /* Communications of the ACM, June 1990					*/
@@ -4208,7 +4172,7 @@ static unsigned short hash( char *pname, int length)
     }
     ind0 = (unsigned short)h0;
     ind1 = (unsigned short)h1;
-    return((ind1<<dbPvdHashTableShift) ^ ind0);
+    return((ind1<<SHIFT) ^ ind0);
 }
 
 #ifdef __STDC__
@@ -4218,19 +4182,9 @@ void    dbPvdInitPvt(pdbbase)
 DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
-    ELLLIST	**ppvd;
-    int		i;
+    ELLLIST **ppvd;
 
-    for(i=0; i< NTABLESIZES; i++) {
-	if((i==NTABLESIZES-1)
-	||((dbPvdHashTableSize>=hashTableParms[i].tablesize)
-	  && (dbPvdHashTableSize<hashTableParms[i+1].tablesize))) {
-	    dbPvdHashTableSize = hashTableParms[i].tablesize;
-	    dbPvdHashTableShift = hashTableParms[i].shift;
-	    break;
-	}
-    }
-    ppvd = dbCalloc(dbPvdHashTableSize, sizeof(ELLLIST *));
+    ppvd = dbCalloc(HASH_NO, sizeof(ELLLIST *));
     pdbbase->ppvd = (void *) ppvd;
     return;
 }
@@ -4316,8 +4270,7 @@ RECNODE *precnode;
     ppvdlist=ppvd[hashInd];
     ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
     while(ppvdNode) {
-	if(ppvdNode->precnode && ppvdNode->precnode->precord
-	&& strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
+	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
 	    ellDelete(ppvdlist, (ELLNODE*)ppvdNode);
 	    free((void *)ppvdNode);
 	    return;
@@ -4341,7 +4294,7 @@ DBBASE *pdbbase;
     PVDENTRY       *next;
     
     if (ppvd == NULL) return;
-    for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
+    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
@@ -4357,11 +4310,10 @@ DBBASE *pdbbase;
 }
 
 #ifdef __STDC__
-void dbPvdDump(DBBASE *pdbbase,int verbose)
+void dbPvdDump(DBBASE *pdbbase)
 #else
-void dbPvdDump(pdbbase,verbose)
+void dbPvdDump(pdbbase)
 DBBASE *pdbbase;
-int verbose;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
@@ -4371,16 +4323,14 @@ int verbose;
     int		number;
     
     if (ppvd == NULL) return;
-    printf("Process Variable Directory ");
-    printf("dbPvdHashTableSize %d dbPvdHashTableShift %d\n",
-	dbPvdHashTableSize,dbPvdHashTableShift);
-    for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
+    printf("Process Variable Directory\n");
+    for (hashInd=0; hashInd<HASH_NO; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
-	printf("\n%3.3hd=%3.3d ",hashInd,ellCount(ppvdlist));
+	printf(" %3.3hd=%3.3d\n",hashInd,ellCount(ppvdlist));
 	number=0;
-	while(ppvdNode && verbose) {
+	while(ppvdNode) {
 	    printf(" %s",(char *)ppvdNode->precnode->precord);
 	    if(number++ ==2) {number=0;printf("\n        ");}
 	    ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);

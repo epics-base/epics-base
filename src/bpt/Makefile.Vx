@@ -1,0 +1,25 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_CFLAGS = -ansi
+VX_WARN_YES = -Wall -pedantic
+
+MENUS += menuConvert.h
+
+BPTS += bptTypeJdegC.ascii
+BPTS += bptTypeJdegF.ascii
+BPTS += bptTypeKdegC.ascii
+BPTS += bptTypeKdegF.ascii
+
+
+SRCS.c = \
+	../cvtBpt.c
+
+LIBOBJS = \
+	cvtBpt.o
+
+LIBNAME = pbtLib
+
+include $(EPICS)/config/RULES.Vx
+

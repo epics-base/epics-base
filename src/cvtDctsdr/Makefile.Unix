@@ -1,0 +1,41 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_LDLIBS =  -lCom
+USR_LDFLAGS = -L.
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+
+DEPLIBS = \
+	$(DEPLIBS_BASE)/libCom.a
+
+SRCS.c = \
+	../sdr2gblmenu.c\
+	../sdr2driver.c\
+	../sdr2device.c\
+	../sdr2recordtype.c\
+	../dbStaticLib.c
+
+OBJS = \
+	sdr2gblmenu.o \
+	sdr2driver.o \
+	sdr2device.o \
+	sdr2recordtype.o \
+	dbStaticLib.o
+
+TARGETS = sdr2gblmenu sdr2driver sdr2device sdr2recordtype
+
+include $(EPICS)/config/RULES.Unix
+
+sdr2gblmenu: sdr2gblmenu.o dbStaticLib.o
+	$(LINK.c) -o $@  sdr2gblmenu.o dbStaticLib.o  $(LDLIBS)
+
+sdr2driver: sdr2driver.o dbStaticLib.o
+	$(LINK.c) -o $@  sdr2driver.o dbStaticLib.o  $(LDLIBS)
+
+sdr2device: sdr2device.o dbStaticLib.o
+	$(LINK.c) -o $@  sdr2device.o dbStaticLib.o  $(LDLIBS)
+
+sdr2recordtype: sdr2recordtype.o dbStaticLib.o
+	$(LINK.c) -o $@  sdr2recordtype.o dbStaticLib.o  $(LDLIBS)

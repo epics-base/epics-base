@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  *  $Log$
+ * Revision 1.5  1995/02/23  21:45:03  mcn
+ * Fixed locking error.  OOPS.
+ *
  */
 
 /*
@@ -68,20 +71,17 @@
 
 #include	<fast_lock.h>
 #include	<alarm.h>
-#include	<choice.h>
 #include	<dbDefs.h>
 #include	<dbBase.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
 #include	<dbFldTypes.h>
-#include 	<dbRecDes.h>
-#include 	<dbRecType.h>
-#include	<dbRecords.h>
 #include	<dbBkpt.h>
 #include	<db_field_log.h>
 #include	<errMdef.h>
 #include	<recSup.h>
+#include	<recGbl.h>
 #include	<special.h>
 #include        <task_params.h>
 

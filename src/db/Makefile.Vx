@@ -5,22 +5,74 @@ include $(EPICS)/config/CONFIG_BASE
 USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
 
+MENUS += menuAlarmSevr.h
+MENUS += menuAlarmStat.h
+MENUS += menuArrType.h
+MENUS += menuCompress.h
+MENUS += menuFtype.h
+MENUS += menuIvoa.h
+MENUS += menuLinr.h
+MENUS += menuOmsl.h
+MENUS += menuPriority.h
+MENUS += menuScan.h
+MENUS += menuYesNo.h
+
+RECTYPES += dbCommon.h
+
 SRCS.c = \
-	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
-	../dbNotify.c ../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \
-	../dbEvent.c ../dbTest.c ../dbls.c ../db_access.c \
-	../db_test.c ../recGbl.c ../callback.c ../taskwd.c \
-	../dbCaLink.c ../dbCaDblink.c ../devLib.c ../initHooks.c ../cvtBpt.c
+	../dbAccess.c\
+	../dbBkpt.c\
+	../dbConvert.c\
+	../dbFastLinkConv.c\
+	../dbNotify.c\
+	../iocInit.c\
+	../drvTS.c\
+	../dbScan.c \
+	../dbEvent.c\
+	../dbTest.c\
+	../db_access.c \
+	../db_test.c\
+	../recGbl.c\
+	../callback.c\
+	../taskwd.c \
+	../dbCaLink.c\
+	../dbCaDblink.c\
+	../devLib.c\
+	../initHooks.c
 
 LIBOBJS = \
-	dbAccess.o dbBkpt.o dbFastLinkConv.o dbLink.o dbNotify.o \
-	dbStaticLib.o iocInit.o drvTS.o dbScan.o dbEvent.o dbTest.o dbls.o \
-	db_access.o db_test.o recGbl.o callback.o taskwd.o dbCaLink.o \
-	dbCaDblink.o  devLib.o cvtBpt.o
+	dbAccess.o\
+	dbBkpt.o\
+	dbConvert.o\
+	dbFastLinkConv.o\
+	dbNotify.o \
+	iocInit.o\
+	drvTS.o\
+	dbScan.o\
+	dbEvent.o\
+	dbTest.o\
+	db_access.o\
+	db_test.o\
+	recGbl.o\
+	callback.o\
+	taskwd.o\
+	dbCaLink.o \
+	dbCaDblink.o\
+	devLib.o
 
 PROD = initHooks.o
 
 LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
+
+pre_build: $(INSTALL_REC)/dbCommon.ascii $(INSTALL_REC)/menuGlobal.ascii $(INSTALL_REC)/all.ascii
+	
+$(INSTALL_REC)/dbCommon.h: ../dbCommonRecord.ascii
+	@echo "Installing $@"
+	@test -d $(INSTALL_REC) || mkdir $(INSTALL_REC)
+	@$(INSTALL) -m 644 $< $(INSTALL_REC)
+	cd $(INSTALL_REC); $(RM) $(notdir $@); \
+	../bin/$(HOST_ARCH)/dbAsciiToRecordtypeH $(notdir $<)
+
 

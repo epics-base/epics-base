@@ -49,6 +49,7 @@
 #include	<dbCommon.h>
 #include	<errMdef.h>
 #include	<ellLib.h>
+#include	<recGbl.h>
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct {
@@ -140,7 +141,7 @@ static long putNotify(PUTNOTIFY *ppn)
     void	*pbuffer = ppn->pbuffer;
     long	nRequest = ppn->nRequest;
     long	status=0;
-    struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
+    dbFldDes	*pfldDes=(dbFldDes *)(paddr->pfldDes);
     struct dbCommon *precord = (struct dbCommon *)(paddr->precord);
 
     if(precord->ppn == ppn) {

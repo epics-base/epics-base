@@ -41,19 +41,18 @@
 #include        <fast_lock.h>
 #include        <cvtFast.h>
 #include        <alarm.h>
-#include        <choice.h>
 #include        <dbDefs.h>
 #include        <dbBase.h>
 #include        <dbAccess.h>
+#include        <dbConvert.h>
 #include        <dbStaticLib.h>
 #include        <dbScan.h>
 #include        <dbCommon.h>
 #include        <dbFldTypes.h>
-#include        <dbRecDes.h>
-#include        <dbRecType.h>
 #include        <db_field_log.h>
 #include        <errMdef.h>
 #include        <recSup.h>
+#include        <recGbl.h>
 #include        <special.h>
  
 extern struct dbBase *pdbBase;
@@ -261,7 +260,7 @@ static long cvt_st_e(
    struct rset *prset;
    long status;
 
-   prset = GET_PRSET(pdbBase->precSup, paddr->record_type);
+   prset = dbGetRset(paddr);
 
    if (prset && prset->put_enum_str)
       return (*prset->put_enum_str)(paddr, from);
@@ -271,121 +270,69 @@ static long cvt_st_e(
    return(S_db_badDbrtype);
  }
 
-/* Convert String to Global Choice */
-static long cvt_st_gbl(
+/* Convert String to Menu */
+static long cvt_st_menu(
      char *from,
      unsigned short *to,
      struct dbAddr *paddr)
- {
-   char *pchoice;
-   struct choiceSet *pchoiceSet;
-   unsigned short i;
+{
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+    char		**papChoiceValue;
+    char		*pchoice;
+    unsigned int	nChoice,ind;
+    int			nargs,nchars;
 
-   pchoiceSet = GET_PCHOICE_SET(pdbBase->pchoiceGbl, paddr->choice_set);
+    if( pdbMenu  && (papChoiceValue = pdbMenu->papChoiceValue)) {
+	nChoice = pdbMenu->nChoice;
+	for(ind=0; ind<nChoice; ind++) {
+	    if(!(pchoice=papChoiceValue[ind])) continue;
+	    if(strcmp(pchoice,from)==0) {
+		*to = ind;
+		return(0);
+	    }
+	}
+	nargs = sscanf(from," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(from) && ind<nChoice) {
+	    *to = ind;
+	    return(0);
+	}
+    }
+    recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_st_menu)");
+    return(S_db_badChoice);
+}
 
-   if (pchoiceSet) {
-      for (i=0; i < pchoiceSet->number; i++) {
-          pchoice = pchoiceSet->papChoice[i];
-          if (!pchoice)
-              continue;
-          if (strcmp(pchoice, from) == 0) {
-              *to = i;
-              return(0);
-          }
-      }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringGchoice)");
-   return(S_db_badChoice);
- }
-
-/* Convert String to Cvt Choice */
-static long cvt_st_cvt(
+/* Convert String to Device */
+static long cvt_st_device(
      char *from,
      unsigned short *to,
      struct dbAddr *paddr)
- {
-   char *pchoice;
-   struct choiceSet *pchoiceSet;
-   unsigned short i;
+{
+    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+    char		**papChoice;
+    char		*pchoice;
+    unsigned int	nChoice,ind;
+    int			nargs,nchars;
 
-   pchoiceSet = pdbBase->pchoiceCvt;
-
-   if (pchoiceSet) {
-      for (i=0; i < pchoiceSet->number; i++) {
-          pchoice = pchoiceSet->papChoice[i];
-          if (!pchoice)
-              continue;
-          if (strcmp(pchoice, from) == 0) {
-              *to = i;
-              return(0);
-          }
-      }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringCchoice)");
-   return(S_db_badChoice);
- }
-
-/* Convert String to Rec Choice */
-static long cvt_st_rec(
-     char *from,
-     unsigned short *to,
-     struct dbAddr *paddr)
- {
-   char *pchoice;
-   struct choiceSet *pchoiceSet;
-   struct arrChoiceSet *parrChoiceSet;
-   unsigned short i;
-
-   parrChoiceSet = GET_PARR_CHOICE_SET(pdbBase->pchoiceRec, paddr->record_type);
-
-   if (parrChoiceSet) {
-      pchoiceSet = GET_PCHOICE_SET(parrChoiceSet, paddr->choice_set);
-
-      if (pchoiceSet) {
-         for (i=0; i < pchoiceSet->number; i++) {
-             pchoice = pchoiceSet->papChoice[i];
-             if (!pchoice)
-                 continue;
-             if (strcmp(pchoice, from) == 0) {
-                 *to = i;
-                 return(0);
-             }
-         }
-      }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringRchoice)");
-   return(S_db_badChoice);
- }
-
-/* Convert String to Dev Choice */
-static long cvt_st_dev(
-     char *from,
-     unsigned short *to,
-     struct dbAddr *paddr)
- {
-   char *pchoice;
-   struct devChoiceSet *pdevChoiceSet;
-   unsigned short i;
-
-   pdevChoiceSet = GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev, paddr->record_type);
-
-   if (pdevChoiceSet) {
-      for (i=0; i < pdevChoiceSet->number; i++) {
-             pchoice = pdevChoiceSet->papDevChoice[i]->pchoice;
-             if (!pchoice)
-                 continue;
-             if (strcmp(pchoice, from) == 0) {
-                 *to = i;
-                 return(0);
-             }
-      }
-   }
-   recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringDchoice)");
-   return(S_db_badChoice);
- }
+    if( pdbDeviceMenu  && (papChoice = pdbDeviceMenu->papChoice)) {
+	nChoice = pdbDeviceMenu->nChoice;
+	for(ind=0; ind<nChoice; ind++) {
+	    if(!(pchoice=papChoice[ind])) continue;
+	    if(strcmp(pchoice,from)==0) {
+		*to = ind;
+		return(0);
+	    }
+	}
+	nargs = sscanf(from," %u %n",&ind,&nchars);
+	if(nargs==1 && nchars==strlen(from) && ind<nChoice) {
+	    *to = ind;
+	    return(0);
+	}
+    }
+    recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_st_device)");
+    return(S_db_badChoice);
+}
 
 /* Convert Char to String */
 static long cvt_c_st(
@@ -817,7 +764,7 @@ static long cvt_f_st(
    long status = 0;
    long precision = 2;
 
-   prset = GET_PRSET(pdbBase->precSup, paddr->record_type);
+   prset = dbGetRset(paddr);
  
    if (prset && prset->get_precision)
      (*prset->get_precision)(paddr, &precision);
@@ -907,7 +854,7 @@ static long cvt_d_st(
    long status = 0;
    long precision = 2;
 
-   prset = GET_PRSET(pdbBase->precSup, paddr->record_type);
+   prset = dbGetRset(paddr);
  
    if (prset && prset->get_precision)
      (*prset->get_precision)(paddr, &precision);
@@ -1061,7 +1008,7 @@ static long cvt_e_st_get(
    struct rset *prset;
    long status;
 
-   prset = GET_PRSET(pdbBase->precSup, paddr->record_type);
+   prset = dbGetRset(paddr);
  
    if (prset && prset->get_enum_str)
        return (*prset->get_enum_str)(paddr, to);
@@ -1079,100 +1026,47 @@ static long cvt_e_st_put(
      struct dbAddr *paddr)
  { cvtUshortToString(*from, to); return(0); }
 
-/* Get Gbl Choice to String */
-static long cvt_gbl_st(
+/* Get Menu to String */
+static long cvt_menu_st(
      unsigned short *from,
      char *to,
      struct dbAddr *paddr)
  { 
-   struct choiceSet *pchoiceSet;
-   char *pchoice;
+   dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+   dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+   char			**papChoiceValue;
+   char			*pchoice;
 
-   pchoiceSet = GET_PCHOICE_SET(pdbBase->pchoiceGbl, paddr->choice_set);
-
-   if (pchoiceSet) {
-      pchoice = GET_CHOICE(pchoiceSet, *from);
-
-      if (pchoice) {
-           strncpy(to, pchoice, MAX_STRING_SIZE);
-           return(0);
-      }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbGetField(getGchoiceString)");
-   return(S_db_badChoice);
+    if( !pdbMenu  || *from>=pdbMenu->nChoice
+    || !(papChoiceValue = pdbMenu->papChoiceValue)
+    || !(pchoice=papChoiceValue[*from])) {
+	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_menu_st)");
+	return(S_db_badChoice);
+    }
+    strncpy(to,pchoice,MAX_STRING_SIZE);
+    return(0);
  }
 
-/* Get Cvt Choice to String */
-static long cvt_cvt_st(
+
+/* Get Device to String */
+static long cvt_device_st(
      unsigned short *from,
      char *to,
      struct dbAddr *paddr)
  { 
-   char *pchoice;
+   dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+   dbDeviceMenu		*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+   char			**papChoice;
+   char			*pchoice;
 
-   pchoice = GET_CHOICE(pdbBase->pchoiceCvt, *from);
-
-   if (pchoice) {
-       strncpy(to, pchoice, MAX_STRING_SIZE);
-       return(0);
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbGetField(getCchoiceString)");
-   return(S_db_badChoice);
- }
-
-/* Get Record Choice to String */
-static long cvt_rec_st(
-     unsigned short *from,
-     char *to,
-     struct dbAddr *paddr)
- {
-   struct choiceSet *pchoiceSet;
-   struct arrChoiceSet *parrChoiceSet;
-   char *pchoice;
-
-   parrChoiceSet = GET_PARR_CHOICE_SET(pdbBase->pchoiceRec, paddr->record_type);
-
-   if (parrChoiceSet) {
-       pchoiceSet = GET_PCHOICE_SET(parrChoiceSet, paddr->choice_set);
-
-       if (pchoiceSet) {
-             pchoice = GET_CHOICE(pchoiceSet, *from);
-
-             if (pchoice) {
-                 strncpy(to, pchoice, MAX_STRING_SIZE);
-                 return(0);
-             }
-       }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbGetField(getRchoiceString)");
-   return(S_db_badChoice);
-}
-
-/* Get Dev Choice to String */
-static long cvt_dev_st(
-     unsigned short *from,
-     char *to,
-     struct dbAddr *paddr)
- { 
-   struct devChoiceSet *pdevChoiceSet;
-   struct devChoice *pdevChoice;
-
-   pdevChoiceSet = GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev, paddr->record_type);
-
-   if (pdevChoiceSet) {
-       pdevChoice = GET_DEV_CHOICE(pdevChoiceSet, *from);
-
-       if (pdevChoice) {
-           strncpy(to, pdevChoice->pchoice, MAX_STRING_SIZE);
-           return(0);
-       }
-   }
-
-   recGblDbaddrError(S_db_badChoice, paddr, "dbGetField(getRchoiceString)");
-   return(S_db_badChoice);
+    if( !pdbDeviceMenu  || *from>=pdbDeviceMenu->nChoice
+    || !(papChoice= pdbDeviceMenu->papChoice)
+    || !(pchoice=papChoice[*from])) {
+	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_device_st)");
+	return(S_db_badChoice);
+    }
+    strncpy(to,pchoice,MAX_STRING_SIZE);
+    return(0);
  }
 
 /*
@@ -1186,7 +1080,7 @@ static long cvt_dev_st(
  *  NULL implies the conversion is not supported.
  */
 
-long (*get_cvt_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
+long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
 
  /* Convert DBF_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e },
@@ -1218,17 +1112,11 @@ long (*get_cvt_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
  /* Convert DBF_ENUM to ... */
 { cvt_e_st_get, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e },
 
- /* Convert DBF_GBLCHOICE to ... */
-{ cvt_gbl_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e },
+ /* Convert DBF_MENU to ... */
+{ cvt_menu_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e },
 
- /* Convert DBF_CVTCHOICE to ... */
-{ cvt_cvt_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e },
-
- /* Convert DBF_RECCHOICE to ... */
-{ cvt_rec_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e },
-
- /* Convert DBF_DEVCHOICE to ... */
-{ cvt_dev_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e } };
+ /* Convert DBF_DEVICE to ... */
+{ cvt_device_st, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e } };
 
 /*
  *  Put conversion routine lookup table
@@ -1237,40 +1125,40 @@ long (*get_cvt_table[DBF_DEVCHOICE+1][DBR_ENUM+1])() = {
  *
  *  DBF_STRING     DBF_CHAR       DBF_UCHAR      DBF_SHORT      DBF_USHORT
  *  DBF_LONG       DBF_ULONG      DBF_FLOAT      DBF_DOUBLE     DBF_ENUM
- *  DBF_GBLCHOICE  DBF_CVTCHOICE  DBF_RECCHOICE  DBF_DEVCHOICE
+ *  DBF_MENU	   DBF_DEVICE 
  *
  *  NULL implies the conversion is not supported.
  */
 
-long (*put_cvt_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
+long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
 
  /* Convert DBR_STRING to ... */
-{ cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e, cvt_st_gbl, cvt_st_cvt, cvt_st_rec, cvt_st_dev },
+{ cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_f, cvt_st_d, cvt_st_e, cvt_st_menu, cvt_st_device},
 
  /* Convert DBR_CHAR to ... */
-{ cvt_c_st, cvt_c_c, cvt_c_uc, cvt_c_s, cvt_c_us, cvt_c_l, cvt_c_ul, cvt_c_f, cvt_c_d, cvt_c_e, cvt_c_e, cvt_c_e, cvt_c_e, cvt_c_e },
+{ cvt_c_st, cvt_c_c, cvt_c_uc, cvt_c_s, cvt_c_us, cvt_c_l, cvt_c_ul, cvt_c_f, cvt_c_d, cvt_c_e, cvt_c_e, cvt_c_e},
 
  /* Convert DBR_UCHAR to ... */
-{ cvt_uc_st, cvt_uc_c, cvt_uc_uc, cvt_uc_s, cvt_uc_us, cvt_uc_l, cvt_uc_ul, cvt_uc_f, cvt_uc_d, cvt_uc_e, cvt_uc_e, cvt_uc_e, cvt_uc_e, cvt_uc_e },
+{ cvt_uc_st, cvt_uc_c, cvt_uc_uc, cvt_uc_s, cvt_uc_us, cvt_uc_l, cvt_uc_ul, cvt_uc_f, cvt_uc_d, cvt_uc_e, cvt_uc_e, cvt_uc_e},
 
  /* Convert DBR_SHORT to ... */
-{ cvt_s_st, cvt_s_c, cvt_s_uc, cvt_s_s, cvt_s_us, cvt_s_l, cvt_s_ul, cvt_s_f, cvt_s_d, cvt_s_e, cvt_s_e, cvt_s_e, cvt_s_e, cvt_s_e },
+{ cvt_s_st, cvt_s_c, cvt_s_uc, cvt_s_s, cvt_s_us, cvt_s_l, cvt_s_ul, cvt_s_f, cvt_s_d, cvt_s_e, cvt_s_e, cvt_s_e},
 
  /* Convert DBR_USHORT to ... */
-{ cvt_us_st, cvt_us_c, cvt_us_uc, cvt_us_s, cvt_us_us, cvt_us_l, cvt_us_ul, cvt_us_f, cvt_us_d, cvt_us_e, cvt_us_e, cvt_us_e, cvt_us_e, cvt_us_e },
+{ cvt_us_st, cvt_us_c, cvt_us_uc, cvt_us_s, cvt_us_us, cvt_us_l, cvt_us_ul, cvt_us_f, cvt_us_d, cvt_us_e, cvt_us_e, cvt_us_e},
 
  /* Convert DBR_LONG to ... */
-{ cvt_l_st, cvt_l_c, cvt_l_uc, cvt_l_s, cvt_l_us, cvt_l_l, cvt_l_ul, cvt_l_f, cvt_l_d, cvt_l_e, cvt_l_e, cvt_l_e, cvt_l_e, cvt_l_e },
+{ cvt_l_st, cvt_l_c, cvt_l_uc, cvt_l_s, cvt_l_us, cvt_l_l, cvt_l_ul, cvt_l_f, cvt_l_d, cvt_l_e, cvt_l_e, cvt_l_e},
 
  /* Convert DBR_ULONG to ... */
-{ cvt_ul_st, cvt_ul_c, cvt_ul_uc, cvt_ul_s, cvt_ul_us, cvt_ul_l, cvt_ul_ul, cvt_ul_f, cvt_ul_d, cvt_ul_e, cvt_ul_e, cvt_ul_e, cvt_ul_e, cvt_ul_e },
+{ cvt_ul_st, cvt_ul_c, cvt_ul_uc, cvt_ul_s, cvt_ul_us, cvt_ul_l, cvt_ul_ul, cvt_ul_f, cvt_ul_d, cvt_ul_e, cvt_ul_e, cvt_ul_e},
 
  /* Convert DBR_FLOAT to ... */
-{ cvt_f_st, cvt_f_c, cvt_f_uc, cvt_f_s, cvt_f_us, cvt_f_l, cvt_f_ul, cvt_f_f, cvt_f_d, cvt_f_e, cvt_f_e, cvt_f_e, cvt_f_e, cvt_f_e },
+{ cvt_f_st, cvt_f_c, cvt_f_uc, cvt_f_s, cvt_f_us, cvt_f_l, cvt_f_ul, cvt_f_f, cvt_f_d, cvt_f_e, cvt_f_e, cvt_f_e},
 
  /* Convert DBR_DOUBLE to ... */
-{ cvt_d_st, cvt_d_c, cvt_d_uc, cvt_d_s, cvt_d_us, cvt_d_l, cvt_d_ul, cvt_d_f, cvt_d_d, cvt_d_e, cvt_d_e, cvt_d_e, cvt_d_e, cvt_d_e },
+{ cvt_d_st, cvt_d_c, cvt_d_uc, cvt_d_s, cvt_d_us, cvt_d_l, cvt_d_ul, cvt_d_f, cvt_d_d, cvt_d_e, cvt_d_e, cvt_d_e},
 
  /* Convert DBR_ENUM to ... */
-{ cvt_e_st_put, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e, cvt_e_e, cvt_e_e, cvt_e_e, cvt_e_e } };
+{ cvt_e_st_put, cvt_e_c, cvt_e_uc, cvt_e_s, cvt_e_us, cvt_e_l, cvt_e_ul, cvt_e_f, cvt_e_d, cvt_e_e, cvt_e_e, cvt_e_e} };
 

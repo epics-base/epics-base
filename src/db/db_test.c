@@ -67,7 +67,6 @@ short	index;
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
-	printf("   Record Type: %d\n",addr.record_type);
 	printf("Record Address: 0x%p\n",addr.precord);
 	printf("    Field Type: %d\n",addr.field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);
@@ -127,7 +126,6 @@ short	index;
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
-	printf("   Record Type: %d\n",addr.record_type);
 	printf("Record Address: 0x%p\n",addr.precord);
 	printf("    Field Type: %d\n",addr.field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);

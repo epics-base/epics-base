@@ -51,6 +51,7 @@
 
 /* needed for PVNAME_SZ and FLDNAME_SZ ... must be before dbAccess.h */
 #include <dbDefs.h>
+#include <recGbl.h>
 
 /* needed for dbNameToAddr() */
 #include <dbAccess.h>
@@ -88,11 +89,9 @@
     ((DBF) == DBF_FLOAT ? DBR_FLOAT : \
     ((DBF) == DBF_DOUBLE ? DBR_DOUBLE : \
     ((DBF) == DBF_ENUM ? DBR_ENUM : \
-    ((DBF) == DBF_GBLCHOICE ? DBR_ENUM : \
-    ((DBF) == DBF_CVTCHOICE ? DBR_ENUM : \
-    ((DBF) == DBF_RECCHOICE ? DBR_ENUM : \
-    ((DBF) == DBF_DEVCHOICE ? DBR_ENUM : \
-    INVALID_DBF ))))))))))))))
+    ((DBF) == DBF_MENU ? DBR_ENUM : \
+    ((DBF) == DBF_DEVICE ? DBR_ENUM : \
+    INVALID_DBF ))))))))))))
 
 /* this macro should be in recSup.h  */
 /* to hide the fact that the precord */

@@ -1,0 +1,5 @@
+menu(menuPriority) {
+	choice(menuPriorityLOW,"LOW")
+	choice(menuPriorityMEDIUM,"MEDIUM")
+	choice(menuPriorityHIGH,"HIGH")
+}

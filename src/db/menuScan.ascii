@@ -1,0 +1,12 @@
+menu(menuScan) {
+	choice(menuScanPassive,"Passive")
+	choice(menuScanEvent,"Event")
+	choice(menuScanI_O_Intr,"I/O Intr")
+	choice(menuScan10_second,"10 second")
+	choice(menuScan5_second,"5 second")
+	choice(menuScan2_second,"2 second")
+	choice(menuScan1_second,"1 second")
+	choice(menuScan_5_second,".5 second")
+	choice(menuScan_2_second,".2 second")
+	choice(menuScan_1_second,".1 second")
+}

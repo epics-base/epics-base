@@ -1,0 +1,11 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+
+
+SRCS.c = ../makeBpt
+OBJS = makeBpt
+PROD = makeBpt
+
+include $(EPICS)/config/RULES.Unix

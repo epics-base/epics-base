@@ -1,0 +1,12 @@
+menu(menuFtype) {
+	choice(menuFtypeSTRING,"STRING")
+	choice(menuFtypeCHAR,"CHAR")
+	choice(menuFtypeUCHAR,"UCHAR")
+	choice(menuFtypeSHORT,"SHORT")
+	choice(menuFtypeUSHORT,"USHORT")
+	choice(menuFtypeLONG,"LONG")
+	choice(menuFtypeULONG,"ULONG")
+	choice(menuFtypeFLOAT,"FLOAT")
+	choice(menuFtypeDOUBLE,"DOUBLE")
+	choice(menuFtypeENUM,"ENUM")
+}

@@ -1,0 +1,243 @@
+	field(NAME,DBF_STRING) {
+		prompt("Record Name")
+		special(SPC_NOMOD)
+		size(29)
+	}
+	field(DESC,DBF_STRING) {
+		prompt("Descriptor")
+		promptgroup(GUI_COMMON)
+		size(29)
+	}
+	field(ASG,DBF_STRING) {
+		prompt("Access Security Group")
+		promptgroup(GUI_COMMON)
+		special(SPC_AS)
+		size(29)
+	}
+	field(SCAN,DBF_MENU) {
+		prompt("Scan Mechanism")
+		promptgroup(GUI_SCAN)
+		special(SPC_SCAN)
+		interest(1)
+		menu(menuScan)
+	}
+	field(PINI,DBF_MENU) {
+		prompt("Process at iocInit")
+		promptgroup(GUI_SCAN)
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(PHAS,DBF_SHORT) {
+		prompt("Scan Phase")
+		promptgroup(GUI_SCAN)
+		special(SPC_SCAN)
+		interest(1)
+	}
+	field(EVNT,DBF_SHORT) {
+		prompt("Event Number")
+		promptgroup(GUI_SCAN)
+		special(SPC_SCAN)
+		interest(1)
+	}
+	field(TSE,DBF_SHORT) {
+		prompt("Time Stamp Event")
+		interest(1)
+	}
+	field(TSEL,DBF_INLINK) {
+		prompt("Time Stamp Link")
+		promptgroup(GUI_SCAN)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(DTYP,DBF_DEVICE) {
+		prompt("Device Type")
+		promptgroup(GUI_LINKS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(DISV,DBF_SHORT) {
+		prompt("Disable Value")
+		promptgroup(GUI_SCAN)
+		initial("1")
+	}
+	field(DISA,DBF_SHORT) {
+		prompt("Disable")
+	}
+	field(SDIS,DBF_INLINK) {
+		prompt("Scanning Disable")
+		promptgroup(GUI_SCAN)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(MLOK,DBF_NOACCESS) {
+		prompt("Monitor fastlock")
+		special(SPC_NOMOD)
+		interest(4)
+		size(8)
+		extra("FAST_LOCK	mlok")
+	}
+	field(MLIS,DBF_NOACCESS) {
+		prompt("Monitor List")
+		special(SPC_NOMOD)
+		interest(4)
+		size(12)
+		extra("ELLLIST		mlis")
+	}
+	field(DISP,DBF_UCHAR) {
+		prompt("Disable putField")
+	}
+	field(PROC,DBF_UCHAR) {
+		prompt("Force Processing")
+		pp(TRUE)
+		interest(3)
+	}
+	field(STAT,DBF_MENU) {
+		prompt("Alarm Status")
+		special(SPC_NOMOD)
+		menu(menuAlarmStat)
+	}
+	field(SEVR,DBF_MENU) {
+		prompt("Alarm Severity")
+		special(SPC_NOMOD)
+		menu(menuAlarmSevr)
+	}
+	field(NSTA,DBF_MENU) {
+		prompt("New Alarm Status")
+		special(SPC_NOMOD)
+		interest(2)
+		menu(menuAlarmStat)
+	}
+	field(NSEV,DBF_MENU) {
+		prompt("New Alarm Severity")
+		special(SPC_NOMOD)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+	field(ACKS,DBF_MENU) {
+		prompt("Alarm Ack Severity")
+		special(SPC_NOMOD)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+	field(ACKT,DBF_MENU) {
+		prompt("Alarm Ack Transient")
+		special(SPC_NOMOD)
+		interest(2)
+		menu(menuYesNo)
+	}
+	field(DISS,DBF_MENU) {
+		prompt("Disable Alarm Sevrty")
+		promptgroup(GUI_SCAN)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LSET,DBF_SHORT) {
+		prompt("Lock Set")
+		special(SPC_NOMOD)
+		interest(4)
+	}
+	field(LCNT,DBF_UCHAR) {
+		prompt("Lock Count")
+		special(SPC_NOMOD)
+		interest(2)
+	}
+	field(PACT,DBF_UCHAR) {
+		prompt("Record active")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(PUTF,DBF_UCHAR) {
+		prompt("dbPutField process")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(RPRO,DBF_UCHAR) {
+		prompt("Reprocess ")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(ASP,DBF_NOACCESS) {
+		prompt("Access Security Pvt")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*asp")
+	}
+	field(PPN,DBF_NOACCESS) {
+		prompt("addr of PUTNOTIFY")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*ppn")
+	}
+	field(PPNN,DBF_NOACCESS) {
+		prompt("next record PUTNOTIFY")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*ppnn")
+	}
+	field(SPVT,DBF_NOACCESS) {
+		prompt("Scan Private")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*spvt")
+	}
+	field(RSET,DBF_NOACCESS) {
+		prompt("Address of RSET")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*rset")
+	}
+	field(DSET,DBF_NOACCESS) {
+		prompt("DSET address")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("struct dset	*dset")
+	}
+	field(DPVT,DBF_NOACCESS) {
+		prompt("Device Private")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*dpvt")
+	}
+	field(PRIO,DBF_MENU) {
+		prompt("Scheduling Priority")
+		promptgroup(GUI_SCAN)
+		special(SPC_SCAN)
+		interest(1)
+		menu(menuPriority)
+	}
+	field(TPRO,DBF_UCHAR) {
+		prompt("Trace Processing")
+	}
+	field(BKPT,DBF_NOACCESS) {
+		prompt("Break Point")
+		special(SPC_NOMOD)
+		interest(1)
+		size(1)
+		extra("char bkpt")
+	}
+	field(UDF,DBF_UCHAR) {
+		prompt("Undefined")
+		pp(TRUE)
+		interest(1)
+		initial("1")
+	}
+	field(TIME,DBF_NOACCESS) {
+		prompt("Time")
+		special(SPC_NOMOD)
+		interest(4)
+		size(8)
+		extra("TS_STAMP	time")
+	}
+	field(FLNK,DBF_FWDLINK) {
+		prompt("Forward Process Link")
+		promptgroup(GUI_LINKS)
+		special(SPC_NOMOD)
+		interest(1)
+	}

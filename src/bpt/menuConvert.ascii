@@ -1,0 +1,16 @@
+menu(menuConvert) {
+	choice(menuConvertNO_CONVERSION,"NO CONVERSION")
+	choice(menuConvertLINEAR,"LINEAR")
+	choice(menuConverttypeKdegF,"typeKdegF")
+	choice(menuConverttypeKdegC,"typeKdegC")
+	choice(menuConverttypeJdegF,"typeJdegF")
+	choice(menuConverttypeJdegC,"typeJdegC")
+	choice(menuConverttypeEdegF,"typeEdegF(ixe only)")
+	choice(menuConverttypeEdegC,"typeEdegC(ixe only)")
+	choice(menuConverttypeTdegF,"typeTdegF")
+	choice(menuConverttypeTdegC,"typeTdegC")
+	choice(menuConverttypeRdegF,"typeRdegF")
+	choice(menuConverttypeRdegC,"typeRdegC")
+	choice(menuConverttypeSdegF,"typeSdegF")
+	choice(menuConverttypeSdegC,"typeSdegC")
+}

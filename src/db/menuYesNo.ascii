@@ -1,0 +1,4 @@
+menu(menuYesNo) {
+	choice(menuYesNoNO,"NO")
+	choice(menuYesNoYES,"YES")
+}

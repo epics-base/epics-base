@@ -41,7 +41,7 @@
  * .10  02-22-94	mrk	Make init work if 1st record has 28 char name
  * .11  05-04-94	mrk	Call taskwdRemove only if spawing again
  */
-
+
 #include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
@@ -54,14 +54,17 @@
 #include 	<sysLib.h>
 
 #include	<dbDefs.h>
+#include	<epicsPrint.h>
+#include	<dbBase.h>
+#include	<dbStaticLib.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<taskwd.h>
 #include	<callback.h>
 #include	<dbBase.h>
 #include	<dbCommon.h>
-#include	<dbRecords.h>
 #include	<devSup.h>
+#include	<recGbl.h>
 #include	<task_params.h>
 #include	<fast_lock.h>
 #include	<dbStaticLib.h>
@@ -156,7 +159,8 @@ void post_event(int event)
 	evnt = (unsigned)event;
 	/*multiple writers can exist. Thus if evnt is ever changed to use*/
 	/*something bigger than a character interrupts will have to be blocked*/
-	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))!=sizeof(unsigned char)) {
+	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))
+	!=sizeof(unsigned char)) {
 	    if(newOverflow) errMessage(0,"rngBufPut overflow in post_event");
 	    newOverflow = FALSE;
 	} else {
@@ -175,12 +179,14 @@ void scanAdd(struct dbCommon *precord)
 	scan = precord->scan;
 	if(scan==SCAN_PASSIVE) return;
 	if(scan<0 || scan>= nPeriodic+SCAN_1ST_PERIODIC) {
-	    recGblRecordError(-1,(void *)precord,"scanAdd detected illegal SCAN value");
+	    recGblRecordError(-1,(void *)precord,
+		"scanAdd detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
 	    unsigned char evnt;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
-		recGblRecordError(S_db_badField,(void *)precord,"scanAdd detected illegal EVNT value");
+		recGblRecordError(S_db_badField,(void *)precord,
+		    "scanAdd detected illegal EVNT value");
 		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
@@ -199,13 +205,15 @@ void scanAdd(struct dbCommon *precord)
 	    DEVSUPFUN get_ioint_info;
 
 	    if(precord->dset==NULL){
-		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no DSET) ");
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: I/O Intr not valid (no DSET) ");
 		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    get_ioint_info=precord->dset->get_ioint_info;
 	    if(get_ioint_info==NULL) {
-		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no get_ioint_info)");
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: I/O Intr not valid (no get_ioint_info)");
 		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
@@ -214,13 +222,15 @@ void scanAdd(struct dbCommon *precord)
 		return;
 	    }
 	    if(piosl==NULL) {
-		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid");
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: I/O Intr not valid");
 		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
 	    priority = precord->prio;
 	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
-		recGblRecordError(-1,(void *)precord,"scanAdd: illegal prio field");
+		recGblRecordError(-1,(void *)precord,
+		    "scanAdd: illegal prio field");
 		precord->scan = SCAN_PASSIVE;
 		return;
 	    }
@@ -245,18 +255,21 @@ void scanDelete(struct dbCommon *precord)
 	scan = precord->scan;
 	if(scan==SCAN_PASSIVE) return;
 	if(scan<0 || scan>= nPeriodic+SCAN_1ST_PERIODIC) {
-	   recGblRecordError(-1,(void *)precord,"scanDelete detected illegal SCAN value");
+	   recGblRecordError(-1,(void *)precord,
+		"scanDelete detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
 	    unsigned char evnt;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
-		recGblRecordError(S_db_badField,(void *)precord,"scanDelete detected illegal EVNT value");
+		recGblRecordError(S_db_badField,(void *)precord,
+		    "scanDelete detected illegal EVNT value");
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
 	    psl = papEvent[evnt];
 	    if(psl==NULL) 
-		 recGblRecordError(-1,(void *)precord,"scanDelete for bad evnt");
+		 recGblRecordError(-1,(void *)precord,
+		    "scanDelete for bad evnt");
 	    else
 		deleteFromList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
@@ -265,22 +278,26 @@ void scanDelete(struct dbCommon *precord)
 	    DEVSUPFUN get_ioint_info;
 
 	    if(precord->dset==NULL) {
-		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid (no DSET)");
+		recGblRecordError(-1,(void *)precord,
+		    "scanDelete: I/O Intr not valid (no DSET)");
 		return;
 	    }
 	    get_ioint_info=precord->dset->get_ioint_info;
 	    if(get_ioint_info==NULL) {
-		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid (no get_ioint_info)");
+		recGblRecordError(-1,(void *)precord,
+		    "scanDelete: I/O Intr not valid (no get_ioint_info)");
 		return;
 	    }
 	    if(get_ioint_info(1,precord,&piosl)) return;/*return if error*/
 	    if(piosl==NULL) {
-		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid");
+		recGblRecordError(-1,(void *)precord,
+		    "scanDelete: I/O Intr not valid");
 		return;
 	    }
 	    priority = precord->prio;
 	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
-		    recGblRecordError(-1,(void *)precord,"scanDelete: get_ioint_info returned illegal priority");
+		    recGblRecordError(-1,(void *)precord,
+			"scanDelete: get_ioint_info returned illegal priority");
 		    return;
 	    }
 	    piosl += priority; /*get piosl for correct priority*/
@@ -443,54 +460,17 @@ static void periodicTask(struct scan_list *psl)
 
 static void initPeriodic()
 {
-	struct {
-	    DBRenumStrs
-	} scanChoices;
-	struct scan_list *psl;
-	struct dbAddr		dbAddr;		/* database address */
-	struct recHeader	*precHeader;
-	struct recLoc		*precLoc;
-	RECNODE			*precNode;
-	struct dbCommon		*precord=NULL;	/* pointer to record	*/
-	long			status,nRequest,options;
-	void			*pfl=NULL;
+	dbMenu			*pmenu;
+	struct scan_list 	*psl;
+	float			temp;
 	int			i;
-	char name[PVNAME_SZ+FLDNAME_SZ+2];
-	float temp;
 
-	if(!(precHeader = pdbBase->precHeader)) {
-	   errMessage(S_record_noRecords, "initPeriodic");
-	   exit(1);
+	pmenu = dbFindMenu(pdbBase,"menuScan");
+	if(!pmenu) {
+	    epicsPrintf("initPeriodic: menuScan not present\n");
+	    return;
 	}
-	/* look for first record */
-	for (i=0; i<precHeader->number; i++) {
-		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
-		if(!precLoc->preclist) continue;
-		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-			precord = precNode->precord;
-			if(precord->name[0]!=0) goto got_record;
-		}
-	}
-	errMessage(S_record_noRecords,"initPeriodic");
-	return;
-got_record:
-	/* get database address of SCAN field */
-	name[PVNAME_SZ] = 0;
-	strncpy(name,precord->name,PVNAME_SZ);
-	strcat(name,".SCAN");
-	if ((status=dbNameToAddr(name,&dbAddr)) != 0){
-		recGblDbaddrError(status,&dbAddr,"initPeriodic");
-		exit(1);
-	}
-	options = DBR_ENUM_STRS;
-	nRequest = 0;
-	status = dbGetField(&dbAddr,DBR_ENUM,&scanChoices,&options,&nRequest,pfl);
-	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
-	if(status || options!=DBR_ENUM_STRS || nPeriodic<=0) {
-		recGblDbaddrError(status,&dbAddr,"initPeriodic");
-		exit(1);
-	}
+	nPeriodic = pmenu->nChoice - SCAN_1ST_PERIODIC;
 	papPeriodic = dbCalloc(nPeriodic,sizeof(struct scan_list*));
 	periodicTaskId = dbCalloc(nPeriodic,sizeof(int));
 	for(i=0; i<nPeriodic; i++) {
@@ -498,7 +478,7 @@ got_record:
 		papPeriodic[i] = psl;
 		FASTLOCKINIT(&psl->lock);
 		ellInit(&psl->list);
-		sscanf(scanChoices.strs[i+SCAN_1ST_PERIODIC],"%f",&temp);
+		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
 		psl->ticks = temp * vxTicksPerSecond;
 	}
 }
@@ -675,27 +655,20 @@ static void scanList(struct scan_list *psl)
 
 static void buildScanLists(void)
 {
-	struct recHeader	*precHeader;
-	struct recLoc		*precLoc;
-	RECNODE			*precNode;
-	struct dbCommon		*precord;	/* pointer to record	*/
-	int			i;
+	dbRecDes		*pdbRecDes;
+	dbRecordNode		*pdbRecordNode;
+	dbCommon		*precord;
 
-	if(!(precHeader = pdbBase->precHeader)) {
-		errMessage(S_record_noRecords,
-			"Error detected in build_scan_lists");
-		exit(1);
-	}
-	/* look through all of the database records and place them on lists */
-	for (i=0; i<precHeader->number; i++) {
-		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
-		if(!precLoc->preclist) continue;
-		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-			precord = precNode->precord;
-			if(precord->name[0]==0) continue;
-			scanAdd(precord);
-		}
+	/*Look for first record*/
+	for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+	pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	    for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	    pdbRecordNode;
+	    pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+		precord = pdbRecordNode->precord;
+		if(precord->name[0]==0) continue;
+		scanAdd(precord);
+	    }
 	}
 }
 

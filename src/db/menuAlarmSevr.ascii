@@ -1,0 +1,6 @@
+menu(menuAlarmSevr) {
+	choice(menuAlarmSevrNO_ALARM,"NO_ALARM")
+	choice(menuAlarmSevrMINOR,"MINOR")
+	choice(menuAlarmSevrMAJOR,"MAJOR")
+	choice(menuAlarmSevrINVALID,"INVALID")
+}

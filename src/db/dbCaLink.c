@@ -308,14 +308,8 @@ long rc;
 
 					/* moving source name */
 					/* into struct input_pvar */
-					strncpy(pi->source_name, 
-					    plink->value.pv_link.pvname, 
-					    PVNAME_SZ);
-					pi->source_name[PVNAME_SZ] = '\0';
-					strcat(pi->source_name, ".");
-					strncat(pi->source_name, 
-					    plink->value.pv_link.fldname, 
-					    FLDNAME_SZ);
+					strcpy(pi->source_name, 
+					    plink->value.pv_link.pvname);
 
 					/* preserving MS/NMS specification */
 					if (plink->value.pv_link.maximize_sevr)
@@ -511,15 +505,8 @@ long rc;
 					/* moving dest name into */
 					/* struct output_pvar */
 
-					strncpy(po->dest_name, 
-					    plink->value.pv_link.pvname, 
-					    PVNAME_SZ);
-					po->dest_name[PVNAME_SZ] = '\0';
-					strcat(po->dest_name, ".");
-					strncat(po->dest_name, 
-					    plink->value.pv_link.fldname, 
-					    FLDNAME_SZ);
-
+					strcpy(po->dest_name, 
+					    plink->value.pv_link.pvname);
 					/* for dbGet() */
 					po->source_new_dbr_type = 
 					    dbCaNewDbfToNewDbr(

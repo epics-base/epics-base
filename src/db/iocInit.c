@@ -77,9 +77,7 @@
 #include	<errnoLib.h>
 
 #include	<ellLib.h>
-#include	<sdrHeader.h>
 #include	<fast_lock.h>
-#include	<choice.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
@@ -88,9 +86,6 @@
 #include	<dbCommon.h>
 #include	<dbBase.h>
 #include	<dbFldTypes.h>
-#include 	<dbRecDes.h>
-#include 	<dbRecType.h>
-#include	<dbRecords.h>
 #include	<devSup.h>
 #include	<drvSup.h>
 #include	<errMdef.h>
@@ -100,10 +95,13 @@
 #include	<initHooks.h>
 #include	<drvTS.h>
 #include	<asLib.h>
+#include	<epicsPrint.h>
 
 /*This module will declare and initilize module_type variables*/
 #define MODULE_TYPES_INIT 1
 #include        <module_types.h>
+
+#define LOCAL
 
 LOCAL int initialized=FALSE;
 
@@ -111,10 +109,6 @@ LOCAL int initialized=FALSE;
 volatile int interruptAccept=FALSE;
 
 struct dbBase *pdbBase=NULL;
-
-
-/* added for Channel Access Links */
-long dbCommonInit();
 
 /* define forward references*/
 LOCAL long initDrvSup(void);
@@ -143,40 +137,29 @@ int iocInit(char * pResourceFilename)
     SYM_TYPE type;
 
     if (initialized) {
-	logMsg("iocInit can only be called once\n",0,0,0,0,0,0);
+	logMsg("iocInit can only be called once\n",
+	    0,0,0,0,0,0);
 	return(-1);
     }
 
     if (!pdbBase) {
-	logMsg("iocInit aborting because No database loaded by dbLoad\n",0,0,0,0,0,0);
+	logMsg("iocInit aborting because No database loaded by dbAsciiRead\n",
+	    0,0,0,0,0,0);
 	return(-1);
     }
 
     errInit(); /*Initialize errPrintf task*/
 
-   /*
-    *  Setup initialization hooks, but only if an initHooks routine has been defined.
-    */
+   /* Setup initialization hooks, if  initHooks routine has been defined.  */
     strcpy(name, "_");
     strcat(name, "initHooks");
     rtnval = symFindByName(sysSymTbl, name, (void *) &pinitHooks, &type);
-
-
-   /* Call the user-defined initialization hook before anything else is done */
     if (pinitHooks) (*pinitHooks)(INITHOOKatBeginning);
 
-   /*
-    *  Print out version of iocCore
-    */
     coreRelease();
-   /*
-    *  Read EPICS resources.
-    */
-    status = getResources(pResourceFilename);
-   /* Call hook for after resources are read. */
+    status = getResources(pResourceFilename); 
     if (pinitHooks) (*pinitHooks)(INITHOOKafterGetResources);
 
-   /* Initialize log client, and call hook */
     status = iocLogInit();
     if (status!=0) {
         logMsg("iocInit Failed to Initialize Ioc Log Client \n",0,0,0,0,0,0);
@@ -184,9 +167,7 @@ int iocInit(char * pResourceFilename)
     if (pinitHooks) (*pinitHooks)(INITHOOKafterLogInit);
 
 
-   /*
-    *  After this point, further calls to iocInit() are disallowed.
-    */
+   /* After this point, further calls to iocInit() are disallowed.  */
     initialized = TRUE;
 
    /*
@@ -196,93 +177,55 @@ int iocInit(char * pResourceFilename)
     */
     taskwdInit();
 
-   /*
-    *  Initialize EPICS callback tasks
-    */
     callbackInit();
 
-   /*
-    *  Wait 1/10 second to make sure that the above initializations
-    *    are complete.
-    */
+   /* Wait 1/10 second for above initializations to complete*/
     (void)taskDelay(sysClkRateGet()/10);
-
-   /* Hook after callbacks are initialized */
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCallbackInit);
 
-   /*
-    *  Initialize Channel Access Link mechanism.  Pass #1
-    *     Call hook after CA links are initialized
-    */
+   /* Initialize Channel Access Link mechanism.  Pass #1 */
     dbCaLinkInit((int) 1);
-
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit1);
 
-   /*
-    *  Initialize Driver Support, Record Support, and finally Device Support.
-    */
     if (initDrvSup() != 0)
          logMsg("iocInit: Drivers Failed during Initialization\n",0,0,0,0,0,0);
-
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDrvSup);
 
     if (initRecSup() != 0)
-         logMsg("iocInit: Record Support Failed during Initialization\n",0,0,0,0,0,0);
-
+         logMsg("iocInit: Record Support Failed during Initialization\n",
+	    0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitRecSup);
 
     if (initDevSup() != 0)
-         logMsg("iocInit: Device Support Failed during Initialization\n",0,0,0,0,0,0);
-
+         logMsg("iocInit: Device Support Failed during Initialization\n",
+	    0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDevSup);
 
-   /*
-    *  Initialize the time stamp code.  This starts up the time-stamp task.
-    */
-    /* ts_init(); */ /* old time stamp driver (jbk) */
     TSinit(); /* new time stamp driver (jbk) */
-
     if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
 
-   /*
-    *  First pass at initializing the database structure
-    */
+   /* initialize database records */
     if (initDatabase() != 0)
          logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
 
     createLockSets();
-
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
 
-   /* added for Channel Access Links */
     dbCaLinkInit((int) 2);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit2);
 
-   /*
-    *  Finish initializing device support
-    */
     if (finishDevSup() != 0)
-         logMsg("iocInit: Device Support Failed during Finalization\n",0,0,0,0,0,0);
-
+         logMsg("iocInit: Device Support Failed during Finalization\n",
+	    0,0,0,0,0,0);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
 
-   /*
-    *  Initialize Scan tasks
-    */
     scanInit();
-
-   /* wait 1/2 second to make sure all tasks are started*/
-
-   /* initialize access security */
     asInit();
-
     (void)taskDelay(sysClkRateGet()/2);
 
     if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);
 
-   /*
-    *  Enable scan tasks and some driver support functions.
-    */
+   /* Enable scan tasks and some driver support functions.  */
     interruptAccept=TRUE;
 
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
@@ -296,9 +239,7 @@ int iocInit(char * pResourceFilename)
 
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
 
-   /*
-    *  Start up CA server
-    */
+   /*  Start up CA server */
     rsrv_init();
 
     logMsg("iocInit: All initialization complete\n",0,0,0,0,0,0);
@@ -316,26 +257,13 @@ int iocInit(char * pResourceFilename)
  */
 LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
 {
-    char	*pname;
     char	name[40];
-    int		i;
     SYM_TYPE	type;
-    char	message[100];
     long	status=0;
     long	rtnval;
     STATUS	vxstatus;
-    struct drvSup *pdrvSup;
-
-   /*
-    *  Make sure at least one device driver is defined in
-    *    the ASCII file.
-    */
-    
-    if (!(pdrvSup=pdbBase->pdrvSup)) {
-	status = S_drv_noDrvSup;
-	errMessage(status,"");
-	return(status);
-    }
+    drvSup	*pdrvSup;
+    struct drvet *pdrvet;
 
    /*
     *  For every driver support module, look up the name
@@ -343,32 +271,25 @@ LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
     *    a driver entry table doesn't exist, report that
     *    fact.
     */
-    for(i=0; i< (pdrvSup->number); i++) {
-	if (!(pname = pdrvSup->papDrvName[i])) continue;
-
+    for(pdrvSup = (drvSup *)ellFirst(&pdbBase->drvList); pdrvSup;
+    pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	strcpy(name,"_");
-	strcat(name,pname);
-
-	vxstatus = symFindByName(sysSymTbl, name, (void *) &(pdrvSup->papDrvet[i]), &type);
-
+	strcat(name,pdrvSup->name);
+	vxstatus = symFindByName(sysSymTbl, name,
+		(void *) &pdrvet, &type);
 	if (vxstatus != OK) {
-	    strcpy(message,": ");
-	    strcat(message,pname);
 	    status = S_drv_noDrvet;
-	    errMessage(status,message);
+	    errPrintf(status,__FILE__,__LINE__,"%s",pdrvSup->name);
 	    continue;
 	}
-
+	pdrvSup->pdrvet = pdrvet;
        /*
         *   If an initialization routine is defined (not NULL),
         *      for the driver support call it.
         */
-	if (!(pdrvSup->papDrvet[i]->init))
-            continue;
-	rtnval = (*(pdrvSup->papDrvet[i]->init))();
-
-	if (status == 0)
-            status = rtnval;
+	if (!pdrvet->init) continue;
+	rtnval = (*(pdrvet->init))();
+	if (status == 0) status = rtnval;
     }
     return(status);
 }
@@ -383,87 +304,40 @@ LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
  */
 LOCAL long initRecSup(void)
 {
-    char	name[40];
-    int		i;
+    char	name[60];
     SYM_TYPE	type;
-    char	message[100];
     long	status=0;
     long	rtnval;
     STATUS	vxstatus;
-    int		nbytes;
-    struct recType *precType;
-    struct recSup  *precSup;
+    dbRecDes	*pdbRecDes;
+    struct rset *prset;
     
-    if(!(precType=pdbBase->precType)) {
-	status = S_rectype_noRecs;
-	errMessage(status,"");
-	return(status);
-    }
-
-   /*
-    *  Allocate record support structure, and a list of pointers
-    *     after it to point to the Record Support Entry Tables (RSETs)
-    *     of individual record types.
-    */
-    nbytes = sizeof(struct recSup) + precType->number * sizeof(void *);
-    precSup = dbCalloc(1,nbytes);
-    pdbBase->precSup = precSup;
-
-   /*  The number of record support entry tables equals the number of record types */
-    precSup->number = precType->number;
-
-   /*
-    *  The pointer to the array of pointers of Record Support Entry Tables
-    *    exists at the end of the record support structure.
-    */
-    precSup->papRset = (void *)((long)precSup + (long)sizeof(struct recSup));
-
-   /*
-    *  For every record support module, look up the name
-    *    for that function in the vxWorks symbol table.  If
-    *    a record support entry table doesn't exist, report
-    *    that fact.
-    */
-    for(i=0; i< (precSup->number); i++) {
-	if (precType->papName[i] == NULL)
-           continue;
-
-       /*
-        *  Create string that is the name of the RSET
-        *   (record support entry table) structure for
-        *   each record type.
-        */
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	strcpy(name,"_");
-	strcat(name,precType->papName[i]);
+	strcat(name,pdbRecDes->name);
 	strcat(name,"RSET");
-
-       /* Lookup name in vxWorks symbol table - and make sure it is program text */
 	vxstatus = symFindByName(sysSymTbl, name,
-            (void *) (&precSup->papRset[i]), &type);
-
+            (void *)&pdbRecDes->prset, &type);
 	if (vxstatus != OK) {
-	    strcpy(message,": ");
-	    strcat(message,name);
 	    status = S_rec_noRSET;
-	    errMessage(status,message);
+	    errPrintf(status,__FILE__,__LINE__,"%s",pdbRecDes->name);
 	    continue;
 	}
-
+	prset = pdbRecDes->prset;
        /* If an initialization routine exists for a record type, execute it */
-	if (!(precSup->papRset[i]->init))
+	if(!prset->init) {
             continue;
-	else {
-	    rtnval = (*(precSup->papRset[i]->init))();
+	} else {
+	    rtnval = (*prset->init)();
 	    if (status==0)
                 status = rtnval;
 	}
     }
-
     return(status);
 }
 
-/*
- *  Initialize Device Support
+/*  Initialize Device Support
  *      Locate all device support entry tables.
  *      Call the initialization routine (init) for each
  *        device type (First Pass).
@@ -472,101 +346,54 @@ LOCAL long initDevSup(void)
 {
     char	*pname;
     char	name[40];
-    int		i,j;
     SYM_TYPE	type;
-    char	message[100];
     long	status=0;
-    long	rtnval;
+    long	rtnval = 0;
     STATUS	vxstatus;
-    struct recDevSup	*precDevSup;
-    struct devSup	*pdevSup;
+    dbRecDes	*pdbRecDes;
+    devSup	*pdevSup;
+    struct dset *pdset;
     
-    if (!(precDevSup = pdbBase->precDevSup)) {
-	status = S_dev_noDevSup;
-	errMessage(status,"");
-	return(status);
-    }
-
-   /*
-    *  For all possible records, initialize their device support
-    *    routines.  There is usually more than one device support
-    *    routine defined for every record type, this accounts for
-    *    the doubly nested for() loops.  precDevSup->number = number
-    *    of record types.
-    */
-    for (i=0; i< (precDevSup->number); i++) {
-       /*
-        *  Find the device support routine in the array of pointers
-        */
-	if ((pdevSup = precDevSup->papDevSup[i]) == NULL)
-            continue;
-
-       /* For every device support module defined for a record type... */
-	for(j=0; j < (pdevSup->number); j++) {
-           /* Create the name */
-	    if (!(pname = pdevSup->papDsetName[j]))
-                 continue;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+	    if(!(pname = pdevSup->name)) continue;
 	    strcpy(name, "_");
 	    strcat(name, pname);
-
-           /* Lookup name in vxWorks symbol table - make sure it is program text */
 	    vxstatus = (long) symFindByName(sysSymTbl, name,
-		(void *) &(pdevSup->papDset[j]), &type);
-
+		(void *) &pdset, &type);
 	    if (vxstatus != OK) {
-                pdevSup->papDset[j]=NULL;
-		strcpy(message, ": ");
-		strcat(message, pname);
 		status = S_dev_noDSET;
-		errMessage(status, message);
+		errPrintf(status,__FILE__,__LINE__,"%s",pdevSup->name);
 		continue;
 	    }
-
-           /* If an init routine exists for the device support module, execute it */
-	    if (!(pdevSup->papDset[j]->init))
-                continue;
-
-	    rtnval = (*(pdevSup->papDset[j]->init))(0);
-
-	    if (status == 0)
-                status = rtnval;
+	    pdevSup->pdset = pdset;
+	    if(!(pdset->init)) continue;
+	    rtnval = (*pdset->init)(0);
+	    if (status == 0) status = rtnval;
 	}
     }
     return(status);
 }
 
-/*
- *  Calls the second pass for each device support
+/*  Calls the second pass for each device support
  *    initialization routine.  The second pass is made
  *    after the database records have been initialized and
  *    placed into lock sets.
  */
 LOCAL long finishDevSup(void) 
 {
-    int		i,j;
-    struct recDevSup	*precDevSup;
-    struct devSup	*pdevSup;
+    dbRecDes	*pdbRecDes;
+    devSup	*pdevSup;
+    struct dset *pdset;
 
-   /* Find pointer to device support for all record types */
-    if (!(precDevSup=pdbBase->precDevSup))
-         return(0);
-
-   /* For every record type... */
-    for(i=0; i< (precDevSup->number); i++) {
-       /* Find pointer to device support for an individual record type */
-	if ((pdevSup = precDevSup->papDevSup[i]) == NULL)
-            continue;
-
-       /* For every device support module defined for a record type */
-	for(j=0; j < (pdevSup->number); j++) {
-	    if (!(pdevSup->papDset[j]))
-                continue;
-
-           /* Call the second pass of the initialization, if the routine exists */
-	    if (!(pdevSup->papDset[j]->init))
-                continue;
-
-	    (*(pdevSup->papDset[j]->init))(1);
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
+	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+	    if(!(pdset = pdevSup->pdset)) continue;
+	    if(pdset->init) (*pdset->init)(1);
 	}
     
     }
@@ -575,104 +402,30 @@ LOCAL long finishDevSup(void)
 
 LOCAL long initDatabase(void)
 {
-    char		name[PVNAME_SZ+FLDNAME_SZ+2];
-    short		i,j;
-    char		message[120];
     long		status=0;
     long		rtnval=0;
-    struct recLoc	*precLoc;
+    dbRecDes		*pdbRecDes;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode 	*pdbRecordNode;
+    devSup		*pdevSup;
     struct rset		*prset;
-    struct recDes	*precDes;
-    struct recTypDes	*precTypDes;
-    struct recHeader	*precHeader;
-    RECNODE		*precNode;
-    struct fldDes	*pfldDes;
-    struct dbCommon	*precord;
-    struct dbAddr	dbAddr;
-    struct link		*plink;
-    struct devSup	*pdevSup;
-    struct recSup	*precSup;
-    struct recType	*precType;
+    struct dset		*pdset;
+    dbCommon		*precord;
+    DBADDR		dbaddr;
+    DBLINK		*plink;
+    int			j;
    
-   /* Find the record type and record support structures */ 
-    if(!(precType=pdbBase->precType)) return(0);
-    if(!(precSup=pdbBase->precSup)) return(0);
-
-   /*
-    *  Locate database record header
-    *    This structure contains a pointer to an array of pointers to
-    *    record location structures.  A record location structure
-    *    exists for every record type.  It contains a pointer to a
-    *    linked list of all instances of records with that type.
-    */
-    if (!(precHeader = pdbBase->precHeader)) {
-	status = S_record_noRecords;
-	errMessage(status,"");
-	return(status);
-    }
-
-   /*
-    *  Find record descriptions
-    *    The record descriptions contain every piece of information
-    *    you ever wanted to know about the individual fields in a
-    *    particular record type.  See header file for more information.
-    */
-    if (!(precDes = pdbBase->precDes)) {
-	status = S_record_noRecords;
-	errMessage(status,"Database record descriptions were not defined");
-	return(status);
-    }
-
-   /* For every record type ... */
-    for(i=0; i< (precHeader->number); i++) {
-       /* Get pointer to location structure for instances of record type 'i' */
-	if (!(precLoc = precHeader->papRecLoc[i]))continue;
-
-	if (!precLoc->preclist) continue;
-
-       /*
-        *  Find record support entry table, record description, and device
-        *     support associated with record type 'i'
-        */
-	prset = GET_PRSET(precSup,i);
-	precTypDes = precDes->papRecTypDes[i];
-	pdevSup = GET_PDEVSUP(pdbBase->precDevSup,i);
-
-       /*
-        *  For all instances of record type 'i '...
-        *     These records are contained in the linked list
-        */
-	for (precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	         precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-
-           /*
-            *   If there is not record support entry table for record
-            *     type 'i', report message, and break from for loop.
-            */
-	    if (!prset) {
-		strcpy(name,precType->papName[i]);
-		strcat(name,"RSET");
-		strcpy(message,": ");
-		strcat(message,name);
-		status = S_rec_noRSET;
-		errMessage(status,message);
-		break;
-	    }
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	prset = pdbRecDes->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    if(!prset) break;
            /* Find pointer to record instance */
-	    precord = precNode->precord;
-
-	    /* If NAME is null then skip this record*/
+	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
-
-	    /* Initialize record's record support entry table field */
 	    precord->rset = prset;
-
-           /*
-            *  Initialize mlok and mlis.
-            *    (The monitor lock - basically a semaphore) and the
-            *     monitor list field.  The list of "applications"
-            *     observing changes in a database field.
-            */
 	    FASTLOCKINIT(&precord->mlok);
 	    ellInit(&(precord->mlis));
 
@@ -680,145 +433,93 @@ LOCAL long initDatabase(void)
 	    precord->pact=FALSE;
 
 	    /* Init DSET NOTE that result may be NULL */
-	    precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
-
-           /* Initialize dbCommon structure of the record - First pass (pass=0) */
+	    pdevSup = (devSup *)ellNth(&pdbRecDes->devList,precord->dtyp+1);
+	    pdset = (pdevSup ? pdevSup->pdset : 0);
+	    precord->dset = pdset;
+           /* Initialize dbCommon - First pass (pass=0) */
 	    rtnval = dbCommonInit(precord,0);
-
-           /*
-            *  Call record support init_record routine - First pass
-            *     (pass=0).  (only if init_record is defined...)
-            */
-	    if (!(precSup->papRset[i]->init_record)) continue;
-
-	    rtnval = (*(precSup->papRset[i]->init_record))(precord,0);
-
-	    if (status==0)
-               status = rtnval;
+	    if(!prset->init_record) continue;
+	    rtnval = (*prset->init_record)(precord,0);
+	    if (status==0) status = rtnval;
 	}
     }
 
    /*
     *  Second pass to resolve links
     */
-   /* For all record types */
-    for(i=0; i< (precHeader->number); i++) {
-       /* Find record instances */
-	if (!(precLoc = precHeader->papRecLoc[i]))continue;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	prset = pdbRecDes->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    precord = pdbRecordNode->precord;
+	    if(!(precord->name[0])) continue;
+            /*
+             *  Convert all PV_LINKs to DB_LINKs or CA_LINKs
+             *    Figures out what type of link to use.  A
+             *    database link local to the IOC, or a channel
+             *    access link across the network.
+             */
+            /* For all the links in the record type... */
+	    for(j=0; j<pdbRecDes->no_links; j++) {
+		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[j]];
+		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+		if (plink->type == PV_LINK) {
+                    /*
+                     *  Lookup record name in database
+                     *    If a record is _not_ local to the IOC, it is a
+                     *    channel access link, otherwise it is a
+                     *    database link.
+                     */
+		    if(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr) == 0) {
+			DBADDR	*pdbAddr;
 
-	if (!precLoc->preclist) continue;
-
-       /* Find record field descriptions */
-	precTypDes = precDes->papRecTypDes[i];
-
-       /* For all record instances of type 'i' in the linked list... */
-	for (precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	      precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-		precord = precNode->precord;
-
-	        /* If NAME is null then skip this record*/
-		if (!(precord->name[0])) continue;
-
-               /*
-                *  Convert all PV_LINKs to DB_LINKs or CA_LINKs
-                *    Figures out what type of link to use.  A
-                *    database link local to the IOC, or a channel
-                *    access link across the network.
-                */
-               /* For all the links in the record type... */
-		for(j=0; j<precTypDes->no_links; j++) {
-		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[j]];
-
-                   /*
-                    *  The actual link structure is located at this offset
-                    *    within the link structure.
-                    */
-		    plink = (struct link *)((char *)precord + pfldDes->offset);
-
-                   /*
-                    *  Link type should be PV_LINK, unless it is
-                    *    constant or hardware-specific
-                    */
-		    if (plink->type == PV_LINK) {
-			strncpy(name,plink->value.pv_link.pvname,PVNAME_SZ);
-
-                       /* create record name */
-			name[PVNAME_SZ]=0;
-			strcat(name,".");
-			strncat(name,plink->value.pv_link.fldname,FLDNAME_SZ);
-
-                       /*
-                        *  Lookup record name in database
-                        *    If a record is _not_ local to the IOC, it is a
-                        *    channel access link, otherwise it is a
-                        *    database link.
+			plink->type = DB_LINK;
+			pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+			*pdbAddr = dbaddr; /*structure copy*/;
+			plink->value.db_link.pdbAddr = pdbAddr;
+                        /*Initialize conversion to "uninitialized" conversion */
+                        plink->value.db_link.conversion = cvt_uninit;
+		    } else {
+			/*
+			 *  Not a local process variable ... assuming a CA_LINK
+                         *  Only supporting Non Process Passive links,
+			 *  Input Maximize Severity/No Maximize Severity(MS/NMS)
+			 * , and output NMS
+                         *    links ... The following code checks for this.
                         */
-			if (dbNameToAddr(name,&dbAddr) == 0) {
-			    plink->type = DB_LINK;
-			    plink->value.db_link.pdbAddr =
-				dbCalloc(1,sizeof(struct dbAddr));
-			    *((struct dbAddr *)(plink->value.db_link.pdbAddr))=dbAddr;
-                           /*
-                            *  Initialize conversion to "uninitialized" conversion
-                            */
-                            plink->value.db_link.conversion = cvt_uninit;
-			}
-			else {
-                           /*
-                            *  Not a local process variable ... assuming a CA_LINK
-                            *    Only supporting Non Process Passive links, Input Maximize
-                            *    Severity/No Maximize Severity(MS/NMS), and output NMS
-                            *    links ... The following code checks for this.
-                            */
-                            if (errVerbose &&
-				(plink->value.db_link.process_passive
-                                || (pfldDes->field_type == DBF_OUTLINK
-                                    && plink->value.db_link.maximize_sevr)))
-                            {
-                               /*
-                                * Link PP and/or Outlink MS ...
-                                *   neither supported under CA_LINKs
-                                */
-                                strncpy(message,precord->name,PVNAME_SZ);
-                                message[PVNAME_SZ]=0;
-                                strcat(message,".");
-                                strncat(message,pfldDes->fldname,FLDNAME_SZ);
-                                strcat(message,": link process variable =");
-                                strcat(message,name);
-                                strcat(message," PP and/or MS illegal");
-                                status = S_db_badField;
-                                errMessage(status,message);
-				status = 0;
-                            }
-			}
+                        if (errVerbose &&
+			(plink->value.db_link.process_passive
+                        || (pdbFldDes->field_type == DBF_OUTLINK
+                        && plink->value.db_link.maximize_sevr))) {
+			    status = S_db_badField;
+			    errPrintf(status,__FILE__,__LINE__,"%s.%s %s",
+				precord->name,pdbFldDes->name,
+				" PP and/or MS illegal");
+			    status = 0;
+                        }
 		    }
 		}
+	    }
 	}
     }
 
-   /*
-    *  Call record support init_record routine - Second pass
-    */
-   /* For all record types... */
-    for(i=0; i< (precHeader->number); i++) {
-	if (!(precLoc = precHeader->papRecLoc[i])) continue;
-	if (!precLoc->preclist) continue;
-	if (!(prset=GET_PRSET(precSup,i))) continue;
-	precTypDes = precDes->papRecTypDes[i];
-
-       /* For all record instances of type 'i' */
-	for (precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-               /* Locate name of record */
-		precord = precNode->precord;
-	       /* If NAME is null then skip this record*/
-		if (!(precord->name[0])) continue;
-		rtnval = dbCommonInit(precord,1);
-		if (status==0) status = rtnval;
-	       /* call record support init_record routine - Second pass (pass = 1) */
-		if (!(precSup->papRset[i]->init_record)) continue;
-		rtnval = (*(precSup->papRset[i]->init_record))(precord, 1);
-		if (status == 0) status = rtnval;
+    /* Call record support init_record routine - Second pass */
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	prset = pdbRecDes->prset;
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    if(!prset) break;
+           /* Find pointer to record instance */
+	    precord = pdbRecordNode->precord;
+	    if(!(precord->name[0])) continue;
+	    precord->rset = prset;
+	    if(!prset->init_record) continue;
+	    rtnval = (*prset->init_record)(precord,1);
+	    if (status==0) status = rtnval;
 	}
     }
     return(status);
@@ -826,33 +527,25 @@ LOCAL long initDatabase(void)
 
 LOCAL void createLockSets(void)
 {
-    int			i,link;
-    struct recLoc	*precLoc;
-    struct recDes	*precDes;
-    struct recTypDes	*precTypDes;
-    struct recHeader	*precHeader;
-    RECNODE		*precNode;
-    struct fldDes	*pfldDes;
-    struct dbCommon	*precord;
-    struct link		*plink;
+    int			link;
+    dbRecDes		*pdbRecDes;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode 	*pdbRecordNode;
+    dbCommon		*precord;
+    DBLINK		*plink;
     short		nset,maxnset,newset;
     int			again;
     int			anyChange;
     
     nset = 0;
-    if(!(precHeader = pdbBase->precHeader)) return;
-    if(!(precDes = pdbBase->precDes)) return;
-    for(i=0; i< (precHeader->number); i++) {
-	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	if(!precLoc->preclist) continue;
-	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-	    precord = precNode->precord;
-	    /* If NAME is null then skip this record*/
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
 	    if(precord->lset) continue; /*already in a lock set*/
-
            /*
             *  At First, assume record is in a different lockset
             *    We shall see later if this assumption is incorrect.
@@ -865,19 +558,14 @@ LOCAL void createLockSets(void)
 	    precord->pact = TRUE; again = TRUE;
 	    while(again) {
 		again = FALSE;
-    		for(link=0; (link<precTypDes->no_links&&!again) ; link++) {
-		    struct dbAddr	*pdbAddr;
+    		for(link=0; (link<pdbRecDes->no_links&&!again) ; link++) {
+		    DBADDR	*pdbAddr;
 
-		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
-
-                   /*
-                    *  Find link structure, which is at an offset in the record
-                    */
-		    plink = (struct link *)((char *)precord + pfldDes->offset);
-                   /* Ignore link if type is constant, channel access, or hardware specific */
+		    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		    if(plink->type != DB_LINK) continue;
 
-		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+		    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
 
                    /* The current record is in a different lockset -IF-
                     *    1. Input link
@@ -885,7 +573,7 @@ LOCAL void createLockSets(void)
                     *    3. Not Maximize Severity
                     *    4. Not An Array Operation - single element only
                     */
-		    if (pfldDes->field_type==DBF_INLINK
+		    if (pdbFldDes->field_type==DBF_INLINK
 	    	          && ( !(plink->value.db_link.process_passive)
 	                  && !(plink->value.db_link.maximize_sevr))
 		          && pdbAddr->no_elements<=1) continue;
@@ -924,26 +612,20 @@ LOCAL void createLockSets(void)
 
 LOCAL void createLockSetsExtraPass(int *anyChange)
 {
-    int			i,link;
-    struct recLoc	*precLoc;
-    struct recDes	*precDes;
-    struct recTypDes	*precTypDes;
-    struct recHeader	*precHeader;
-    RECNODE		*precNode;
-    struct fldDes	*pfldDes;
-    struct dbCommon	*precord;
-    struct link		*plink;
+    int			link;
+    dbRecDes		*pdbRecDes;
+    dbFldDes		*pdbFldDes;
+    dbRecordNode 	*pdbRecordNode;
+    dbCommon		*precord;
+    DBLINK		*plink;
     int			again;
     
-    if(!(precHeader = pdbBase->precHeader)) return;
-    if(!(precDes = pdbBase->precDes)) return;
-    for(i=0; i< (precHeader->number); i++) {
-	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	if(!precLoc->preclist) continue;
-	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-	    precord = precNode->precord;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
 	    /*Prevent cycles in database graph*/
 	    precord->pact = TRUE; again = TRUE;
@@ -951,14 +633,14 @@ LOCAL void createLockSetsExtraPass(int *anyChange)
 		short newset;
 
 		again = FALSE;
-    		for(link=0; (link<precTypDes->no_links&&!again) ; link++) {
-		    struct dbAddr	*pdbAddr;
+    		for(link=0; (link<pdbRecDes->no_links&&!again) ; link++) {
+		    DBADDR	*pdbAddr;
 
-		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
-		    plink = (struct link *)((char *)precord + pfldDes->offset);
+		    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		    if(plink->type != DB_LINK) continue;
-		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-		    if (pfldDes->field_type==DBF_INLINK
+		    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
+		    if(pdbFldDes->field_type==DBF_INLINK
 	    	          && ( !(plink->value.db_link.process_passive)
 	                  && !(plink->value.db_link.maximize_sevr))
 		          && pdbAddr->no_elements<=1) continue;
@@ -979,12 +661,11 @@ LOCAL void createLockSetsExtraPass(int *anyChange)
 
 LOCAL short makeSameSet(struct dbAddr *paddr, short lset,int *anyChange)
 {
-    struct dbCommon 	*precord = paddr->precord;
+    dbCommon 		*precord = paddr->precord;
     short  		link;
-    struct fldDes       *pfldDes;
-    struct link		*plink;
-    struct recTypDes	*precTypDes;
-    struct recDes	*precDes;
+    dbRecDes		*pdbRecDes;
+    dbFldDes		*pdbFldDes;
+    DBLINK		*plink;
     int			again;
 
     /*Prevent cycles in database graph*/
@@ -1007,23 +688,20 @@ LOCAL short makeSameSet(struct dbAddr *paddr, short lset,int *anyChange)
     *     return that lock set.
     */
     if(precord->lset < lset) return(precord->lset);
-
-    if(!(precDes = pdbBase->precDes)) return(0);
-
    /* set pact to prevent cycles */
     precord->lset = lset; precord->pact = TRUE; again = TRUE;
     while(again) {
 	again = FALSE;
-	precTypDes = precDes->papRecTypDes[paddr->record_type];
-	for(link=0; link<precTypDes->no_links; link++) {
-	    struct dbAddr	*pdbAddr;
-	    short		newset;
+	pdbRecDes = ((dbFldDes *)paddr->pfldDes)->pdbRecDes;
+	for(link=0; link<pdbRecDes->no_links; link++) {
+	    DBADDR	*pdbAddr;
+	    short	newset;
 
-	    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
-	    plink = (struct link *)((char *)precord + pfldDes->offset);
+	    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
+	    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 	    if(plink->type != DB_LINK) continue;
-	    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-	    if( pfldDes->field_type==DBF_INLINK
+	    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
+	    if( pdbFldDes->field_type==DBF_INLINK
 	    && ( !(plink->value.db_link.process_passive)
 	    && !(plink->value.db_link.maximize_sevr) )
 	    && pdbAddr->no_elements<=1) continue;
@@ -1046,23 +724,19 @@ LOCAL short makeSameSet(struct dbAddr *paddr, short lset,int *anyChange)
  */
 LOCAL long initialProcess(void)
 {
-    short	i;
-    struct recHeader	*precHeader;
-    struct recLoc	*precLoc;
-    RECNODE		*precNode;
-    struct dbCommon	*precord;
+    dbRecDes		*pdbRecDes;
+    dbRecordNode 	*pdbRecordNode;
+    dbCommon		*precord;
     
-    if(!(precHeader = pdbBase->precHeader)) return(0);
-    for(i=0; i< (precHeader->number); i++) {
-	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	if(!precLoc->preclist) continue;
-	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
-		precord = precNode->precord;
-	        /* If NAME is null then skip this record*/
-		if(!(precord->name[0])) continue;
-		if(!precord->pini) continue;
-		(void)dbProcess(precord);
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
+	pdbRecordNode;
+	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+	    precord = pdbRecordNode->precord;
+	    if(!(precord->name[0])) continue;
+	    if(!precord->pini) continue;
+	    (void)dbProcess(precord);
 	}
     }
     return(0);
@@ -1420,41 +1094,12 @@ LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
         }
 	return 0;
 }
-
 
-LOCAL int gotSdrSum=FALSE;
-LOCAL struct sdrSum sdrSum;
-int dbLoad(char * pfilename)
+int dbLoadAscii(char *filename)
 {
-    long	status;
-    FILE	*fp;
-
-    fp = fopen(pfilename,"r");
-    if(!fp) {
-	errMessage(-1,"dbLoad: Error opening file");
+    if(pdbBase) {
+	epicsPrintf("Ascii file was already loaded\n");
 	return(-1);
     }
-    if(pdbBase==NULL) pdbBase = dbAllocBase();
-    status=dbRead(pdbBase, fp);
-    fclose(fp);
-    if(status!=0) {
-	errMessage(status,"dbLoad aborting because dbRead failed");
-	return(-1);
-    }
-    if(!gotSdrSum) {
-	fp = fopen("default.sdrSum","r");
-	if(!fp) {
-	    errMessage(-1,"dbLoad: Error opening default.sdrSum");
-	    return(-1);
-	}
-	fgets(sdrSum.allSdrSums,sizeof(sdrSum.allSdrSums),fp);
-	fclose(fp);
-	gotSdrSum = TRUE;
-    }
-    if(strncmp(pdbBase->psdrSum->allSdrSums,sdrSum.allSdrSums,
-    strlen(pdbBase->psdrSum->allSdrSums))!=0) {
-	errMessage(-1,"dbLoad: check sdrSum Error: Database out of date");
-	return(-1);
-    }
-    return (0);
+    return(dbAsciiRead(&pdbBase,filename));
 }

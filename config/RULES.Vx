@@ -74,7 +74,7 @@ depends:: $(SRCS.c) $(SRCS.cc)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
+	@$(RM) *.i *.o *.a *.out $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
 	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
 $(DIRECTORY_TARGETS) :
@@ -106,6 +106,14 @@ $(DIRECTORY_TARGETS) :
 %.o: ../%.cc
 	$(RM) $@
 	$(COMPILE.cc) $<
+
+# C++ munching
+%.out : %.o
+	@ $(RM) ctct.o ctdt.c
+	$(NM) $< | $(MUNCH) > ctdt.c
+	$(COMPILE.c) -traditional ctdt.c
+	$(LINK.c) $@ $< ctdt.o
+	@ $(RM) ctdt.c ctdt.o
 
 #
 # rename the y.tab.h file only if we

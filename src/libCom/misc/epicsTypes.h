@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  * $Log$
+ * Revision 1.1  1996/01/25 21:38:48  mrk
+ * moved files from /base/include
+ *
  * Revision 1.7  1995/12/19 19:46:44  jhill
  * added epicsStatus typedef
  *
@@ -48,7 +51,6 @@
 #include <stdio.h>
 
 #include <shareLib.h>
-#include <sbufLib.h>
 
 #ifndef stringOf
 #	ifdef __STDC__ 
@@ -83,34 +85,6 @@ typedef struct {
 	char		*pString;
 }epicsString;
 
-typedef struct {
-	epicsIndex	first;
-	epicsIndex	count;
-}epicsArrayIndex;
-
-/*
- * Arrays are stored in a stored in a shared buffer 
- * in order to avoid redundant copying. See "sbufLib.h".
- *
- * The first segment in a shared buffer containing an
- * EPICS array will always contain only the 
- * "epicsArrayDescriptor" described below. Subsequent
- * segments will contain the array data (in C language
- * dimension order).
- *
- * Segments in the shared buffer must end on natural 
- * boundaries for the element type stored in the array.
- *
- * nDim - the number of dimensions. nDim==0 => scaler
- * pDim - pointer to an array of lengths for each dimension
- *
- */
-typedef SBUFID		epicsArray;
-typedef struct {
-	unsigned 	nDim;	/* the number of dimensions */
-	epicsIndex	*pDim;	/* array of dimension lengths */
-}epicsArrayDescriptor;
-
 /*
  * !! Dont use this - it may vanish in the future !!
  *
@@ -141,7 +115,6 @@ typedef union epics_any{
         epicsFloat32    float32;
         epicsFloat64    float64;
 	epicsString	string;
-	epicsArray	array;
 }epicsAny;
 	
 /*

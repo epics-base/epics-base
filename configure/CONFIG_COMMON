@@ -159,7 +159,7 @@ TARGET_LDLIBS = $($(basename $@)_LDLIBS) $($(basename $@)_LDLIBS_$(OS_CLASS))
 TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS) $($(basename $@)_CPPFLAGS_$(OS_CLASS))
 TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS) $($(basename $@)_SNCFLAGS_$(OS_CLASS))
 
-# CMPLR level of ansi conformance flags
+# Level of ansi conformance flags
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
 CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
 
@@ -171,7 +171,7 @@ WARN_CXXFLAGS = $(WARN_CXXFLAGS_$($(BUILD_CLASS)_WARN))
 OPT_CFLAGS = $(OPT_CFLAGS_$($(BUILD_CLASS)_OPT))
 OPT_CXXFLAGS = $(OPT_CXXFLAGS_$($(BUILD_CLASS)_OPT))
 
-# Posix c preprocessor flags
+# Posix flags
 POSIX=YES
 POSIX_CPPFLAGS=$(POSIX_CPPFLAGS_$(POSIX))
 POSIX_LDLIBS=$(POSIX_LDLIBS_$(POSIX))

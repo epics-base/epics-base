@@ -587,6 +587,9 @@ private:
 
 extern "C" void cacRecvThreadUDP (void *pParam);
 
+epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort );
+epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
+
 class udpiiu : public netiiu {
 public:
     udpiiu ( cac &cac );
@@ -598,7 +601,6 @@ public:
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void flush ();
     SOCKET getSock () const;
-    bool repeaterInstalled ();
     void show ( unsigned level ) const;
     bool isCurrentThread () const;
 
@@ -873,18 +875,16 @@ private:
 
 class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
-    bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr );
+    epicsShareFunc bhe ( const osiTime &initialTimeStamp, const inetAddrID &addr );
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
-    void destroy ();
-    bool updateBeaconPeriod ( osiTime programBeginTime );
-    void show ( unsigned level) const;
-
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
+    epicsShareFunc void destroy ();
+    epicsShareFunc bool updateBeaconPeriod ( osiTime programBeginTime );
+    epicsShareFunc void show ( unsigned level) const;
+    epicsShareFunc void * operator new ( size_t size );
+    epicsShareFunc void operator delete ( void *pCadaver, size_t size );
 
 private:
-    class cac &cac;
     tcpiiu *piiu;
     osiTime timeStamp;
     double averagePeriod;
@@ -1056,7 +1056,6 @@ public:
     bhe *lookupBeaconInetAddr ( const inetAddrID &ina );
     bhe *createBeaconHashEntry ( const inetAddrID &ina, 
             const osiTime &initialTimeStamp );
-    void removeBeaconInetAddr ( const inetAddrID &ina );
     void repeaterSubscribeConfirmNotify ();
 
     // IIU routines

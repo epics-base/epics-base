@@ -64,7 +64,7 @@ void usage (void)
     " DBR_STS_SHORT  8  DBR_TIME_ENUM   17  DBR_GR_DOUBLE   27\n"
     " DBR_STS_INT    8  DBR_TIME_CHAR   18  DBR_CTRL_STRING 28\n"
     "Enum format:\n"
-    "  -n: Print DBF_ENUM values as number (default are enum string values)\n"
+    "  -n: Print DBF_ENUM values as numbers (default are enum strings)\n"
     "Arrays: Value format: print number of requested values, then list of values\n"
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
@@ -151,7 +151,7 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
             if (dbr_type_is_ENUM(dbrType))                  /* Enums honour -n option */
             {
-                if (charAsNr) dbrType = DBR_TIME_INT;
+                if (enumAsNr) dbrType = DBR_TIME_INT;
                 else          dbrType = DBR_TIME_STRING;
             }
         }
@@ -355,7 +355,7 @@ int main (int argc, char *argv[])
             }
             break;
         case 'n':               /* Print ENUM as index numbers */
-            charAsNr=1;
+            enumAsNr=1;
             break;
         case 'w':               /* Set CA timeout value */
             if(sscanf(optarg,"%lf", &caTimeout) != 1)

@@ -126,7 +126,7 @@ int camonitor (pv *pvs, int nPvs, unsigned long reqElems)
         dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
         if (dbr_type_is_ENUM(dbrType))                  /* Enums honour -n option */
         {
-            if (charAsNr) dbrType = DBR_TIME_INT;
+            if (enumAsNr) dbrType = DBR_TIME_INT;
             else          dbrType = DBR_TIME_STRING;
         }
                                 /* Adjust array count */
@@ -204,7 +204,7 @@ int main (int argc, char *argv[])
             usage();
             return 0;
         case 'n':               /* Print ENUM as index numbers */
-            charAsNr=1;
+            enumAsNr=1;
             break;
         case 'r':               /* Select relative timestamps */
             tsType = relative;

@@ -507,7 +507,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     float           n_float;
     double          n_double;
     if (!fname) {
-	errMessage("getResources(): RETURNING because of NULL arg\n");
+	errMessage(0L,"getResources(): RETURNING because of NULL arg\n");
 	return (0);
     }
     if ((fd = open(fname, READ, 0x0)) < 0) {

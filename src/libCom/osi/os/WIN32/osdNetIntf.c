@@ -215,7 +215,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
-            errlogPrintf ("osiSockDiscoverInterfaces(): no memory available for configuration\n");
+            errlogPrintf ("osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n");
             return;
         }
 

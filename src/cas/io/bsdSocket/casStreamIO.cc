@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.9  1997/04/10 19:40:34  jhill
+// API changes
+//
 // Revision 1.8  1997/01/10 00:00:01  jhill
 // close() => socket_close()
 //
@@ -56,6 +59,7 @@ caStatus casStreamIO::init()
 {
 	int 	yes = TRUE;
 	int	status;
+	int i;
 
         /*
          * see TCP(4P) this seems to make unsollicited single events much
@@ -90,8 +94,7 @@ caStatus casStreamIO::init()
 			__FILE__, strerror(SOCKERRNO));
 		return S_cas_internal;
         }
-#ifdef MATCHING_BUFFER_SIZES
-	int i;
+
 
         /*
          * set TCP buffer sizes to be synergistic
@@ -119,7 +122,7 @@ caStatus casStreamIO::init()
                 ca_printf("CAS: SO_RCVBUF set failed\n");
 		return S_cas_internal;
         }
-#endif
+
 	this->sockState = casOnLine;
 
 	return this->casStrmClient::init();

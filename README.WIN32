@@ -47,23 +47,28 @@ If you cannot/don't want to find them, contact me, please!
 (Setting env. vars. is different: for NT, use Settings/System,
 for Win95 use autoexec.bat)
 
-When setting paths in the EPICS CONFIG files for WIN32:
+When setting paths in the EPICS CONFIG files for WIN32 the following
+are hints in case you have trouble. You should not need to worry about 
+this unless you type a path into one of the EPICS config files that 
+includes a "\". In most situations gnu make, windows NT, the MS compiler,
+and the MS linker will accept "/" and this will result in less trouble.
 
-	** Note that that each "\" in any path variables
+	** Note that that each "\" in any path variables you set
 		must be replaced with a "\\" (this is because GNU make treats
 		all "\" characters as line continuation)
 
 	** Note that that each space in any file name or 
-        path name variable must be replaced with 
+        path name variable you set must be replaced with 
         a "\ " (this is because GNU make treats all " " separated
         input as independent tokens in the input stream.
 
 	** WIN32 will generally allow "/" and "\" interchangeably in file paths,
-		but the DOS shell appears to only accept "\".
+		but the DOS shell only accepts "\".
 
-    ** Certain command line utilities such as the MS linker are known to confuse
-        "/" in a path with command line options, and so in these situations it may be
-        necessary to replace a "/" in a configured path with "\\".
+    ** Certain command line utilities such as the MS linker are known to in rare
+        situations confuse "/" in a path with command line options, and it may
+        be necessary to replace a "/" in a path that configured with "\\", but
+        the bulk of our experience indicates that this is not the necessary.
 
 Your path should include:
 - The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32

@@ -115,9 +115,14 @@
      * does not match their documentation.
      */
 #	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#		define epicsShareDef extern 
+#		define epicsShareDef 
 #	else
-#		define epicsShareDef __declspec(dllexport) extern
+        /*
+         * strange mysteries arrise when using this __declspec(dllexport):
+         * sometimes we must use extern in front of this and other times not.
+         * This varies with different declarations.
+         */
+#		define epicsShareDef __declspec(dllexport)
 #	endif
 #	define READONLY const
 /*

@@ -160,12 +160,13 @@ unsigned epicsShareAPI ipAddrToDottedIP (
      * inet_ntoa() isnt used because it isnt thread safe
      * (and the replacements are not standardized)
      */
-    status = epicsSnprintf ( pBuf, bufSize, "%u.%u.%u.%u:%hu", 
-            chunk[3], chunk[2], chunk[1], chunk[0], 
-            ntohs ( paddr->sin_port ) );
+    status = epicsSnprintf ( 
+                pBuf, bufSize, "%u.%u.%u.%u:%hu", 
+                chunk[3], chunk[2], chunk[1], chunk[0], 
+                ntohs ( paddr->sin_port ) );
     if ( status > 0 ) {
         strLen = ( unsigned ) status;
-        if ( strLen > bufSize - 1 ) {
+        if ( strLen < bufSize - 1 ) {
             return strLen;
         }
     }

@@ -11,7 +11,7 @@ build_libs:
 
 install_libs:
 
-build:
+build: rm_iocCore
 
 install: installVX iocCore
 
@@ -23,9 +23,11 @@ $(EPICS_VX_IMAGE): $(VX_IMAGE)
 $(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM)
 	install -m 444 $? $@
 
+rm_iocCore:
+	$(RM) $(IOC_CORE)
+
 iocCore: $(IOC_CORE)
 
-$(IOC_CORE): $(IOC_CORE_OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $?
+$(IOC_CORE):
+	$(LINK.c) $@ $(IOC_CORE_OBJS)
 	@what $@

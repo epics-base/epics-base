@@ -329,11 +329,10 @@ public:
 
 	void setPrimType(aitEnum t);
 	void setApplType(int t);
-	void setDimension(int d);
+	void setDimension(int d,const gddBounds* = NULL);
 	void destroyData(void);
 	gddStatus reset(aitEnum primtype,int dimension, aitIndex* dim_counts);
 	gddStatus clear(void); // clear all fields of the DD, including arrays
-	gddStatus clearData(void);
 	gddStatus changeType(int appltype, aitEnum primtype);
 	gddStatus setBound(unsigned dim_to_set, aitIndex first, aitIndex count);
 	gddStatus getBound(unsigned dim_to_get, aitIndex& first, aitIndex& count);
@@ -374,7 +373,6 @@ public:
 	//   copy data into it.
 	// Dup() will copy DD info. bounds, data references copied only.
 
-	gddStatus copyData(const gdd*);
 	gddStatus copyInfo(gdd*);
 	gddStatus copy(gdd*);
 	gddStatus Dup(gdd*);
@@ -459,7 +457,7 @@ public:
 		aitDataFormat=aitLocalDataFormat);
 	void putRef(const aitFixedString*,gddDestructor* =0,
 		aitDataFormat=aitLocalDataFormat);
-	void putRef(const gdd*);
+	gddStatus putRef(const gdd*);
 
 	// get the data in the form the user wants (do conversion)
 	void getConvert(aitFloat64& d);
@@ -602,6 +600,7 @@ protected:
 	void freeBounds(void);
 	void dumpInfo(void);
 	gddStatus copyStuff(gdd*,int type);
+	gddStatus clearData(void);
 
 	size_t describedDataSizeBytes(void) const;
 	aitUint32 describedDataSizeElements(void) const;
@@ -651,7 +650,10 @@ inline void* gdd::dataAddress(void)	const	{ return (void*)&data; }
 inline void* gdd::dataPointer(void)	const	{ return data.Pointer; }
 
 inline void* gdd::dataVoid(void) const
-	{ return dimension()?dataPointer():dataAddress(); }
+{
+	return (dimension()||primitiveType()==aitEnumFixedString)?
+		dataPointer():dataAddress();
+}
 
 inline aitUint32 gdd::align8(unsigned long count) const
 {
@@ -820,7 +822,8 @@ inline void gdd::set(aitEnum t,void* v)
 {
 	if(primitiveType()==aitEnumFixedString)
 	{
-		if(dataPointer()==NULL) data.FString=new aitFixedString;
+		if(dataPointer()==NULL)
+			data.FString=new aitFixedString;
 		aitConvert(primitiveType(),dataPointer(),t,v,1);
 	}
 	else

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1996/09/04 20:58:55  jhill
+ * added GDD_NAME_PV_NAME
+ *
  * Revision 1.2  1996/08/27 13:05:09  jbk
  * final repairs to string functions, put() functions, and error code printing
  *
@@ -120,6 +123,7 @@ public:
 	// copy as best as possible from src to dest, one of the gdd must be
 	// managed for this to succeed
 	gddStatus smartCopy(gdd* dest, gdd* src);
+	gddStatus smartRef(gdd* dest, gdd* src);
 
 	// old style interface
 	int tagC2I(const char* const ctag, int& tag);
@@ -150,6 +154,8 @@ protected:
 
 	gddStatus copyDD_src(gdd* dest, gdd* src);
 	gddStatus copyDD_dest(gdd* dest, gdd* src);
+	gddStatus refDD_src(gdd* dest, gdd* src);
+	gddStatus refDD_dest(gdd* dest, gdd* src);
 
 private:
 	gddStatus splitApplicationType(aitUint32 r,aitUint32& g,aitUint32& a) const;

@@ -440,10 +440,12 @@ gddStatus gddApplicationTypeTable::freeDD(gdd* dd)
 		// this is done because we are allowed to register atomic protos
 		// that user can attach data to - which causes problems because
 		// the actual structure of the DD is unknown
+
 		for(i=1;i<attr_table[group][app].total_dds;i++)
 		{
 			dd[i].destroyData();
 			dd[i].setPrimType(attr_table[group][app].proto[i].primitiveType());
+			dd[i].setApplType(attr_table[group][app].proto[i].applicationType());
 		}
 
 		// fprintf(stderr,"Adding DD to free_list %d\n",app);
@@ -486,11 +488,11 @@ aitUint32 gddApplicationTypeTable::getValue(aitUint32 ap)
 	return attr_table[group][app].user_value;
 }
 
+// ----------------------smart copy functions------------------------
 // the source in the container we must walk through is this called
 gddStatus gddApplicationTypeTable::copyDD_src(gdd* dest, gdd* src)
 {
-	gddStatus rc=0;
-	gddStatus s;
+	gddStatus rc=0,s;
 	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
@@ -504,14 +506,12 @@ gddStatus gddApplicationTypeTable::copyDD_src(gdd* dest, gdd* src)
 		// go through src gdd and map app types to index into dest
 		cdd=(gddContainer*)src;
 		cur=cdd->getCursor();
-
 		for(dd=cur.first();dd;dd=dd->next()) copyDD_src(dest,dd);
 	}
 	else
 	{
 		// find src gdd in dest container and just do put()
-		s=mapAppToIndex(dest->applicationType(),
-			src->applicationType(),index);
+		s=mapAppToIndex(dest->applicationType(),src->applicationType(),index);
 
 		if(s==0)
 			rc=dest[index].put(src);
@@ -522,8 +522,7 @@ gddStatus gddApplicationTypeTable::copyDD_src(gdd* dest, gdd* src)
 // the destination in the container we must walk through is this called
 gddStatus gddApplicationTypeTable::copyDD_dest(gdd* dest, gdd* src)
 {
-	gddStatus rc=0;
-	gddStatus s;
+	gddStatus rc=0,s;
 	gddContainer* cdd;
 	gddCursor cur;
 	gdd* dd;
@@ -534,14 +533,12 @@ gddStatus gddApplicationTypeTable::copyDD_dest(gdd* dest, gdd* src)
 		// go through dest gdd and map app types to index into src
 		cdd=(gddContainer*)dest;
 		cur=cdd->getCursor();
-
 		for(dd=cur.first();dd;dd=dd->next()) copyDD_dest(dd,src);
 	}
 	else
 	{
 		// find dest gdd in src container and just do put()
-		s=mapAppToIndex(src->applicationType(),
-			dest->applicationType(),index);
+		s=mapAppToIndex(src->applicationType(),dest->applicationType(),index);
 
 		if(s==0)
 			rc=dest->put(&src[index]);
@@ -566,5 +563,83 @@ gddStatus gddApplicationTypeTable::smartCopy(gdd* dest, gdd* src)
 		rc=gddErrorNotAllowed;
 
 	gddAutoPrint("gddAppTable::smartCopy()",rc);
+	return rc;
+}
+
+// ----------------------smart reference functions------------------------
+// the source in the container we must walk through is this called
+gddStatus gddApplicationTypeTable::refDD_src(gdd* dest, gdd* src)
+{
+	gddStatus rc=0,s;
+	gddContainer* cdd;
+	gddCursor cur;
+	gdd* dd;
+	aitIndex index;
+
+	// this could be done better (faster) if we did not always recurse for
+	// each GDD.  I could have checked for type container before recursing.
+
+	if(src->isContainer())
+	{
+		// go through src gdd and map app types to index into dest
+		cdd=(gddContainer*)src;
+		cur=cdd->getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) refDD_src(dest,dd);
+	}
+	else
+	{
+		// find src gdd in dest container and just do put()
+		s=mapAppToIndex(dest->applicationType(),src->applicationType(),index);
+
+		if(s==0)
+			rc=dest[index].putRef(src);
+	}
+	return rc;
+}
+
+// the destination in the container we must walk through is this called
+gddStatus gddApplicationTypeTable::refDD_dest(gdd* dest, gdd* src)
+{
+	gddStatus rc=0,s;
+	gddContainer* cdd;
+	gddCursor cur;
+	gdd* dd;
+	aitIndex index;
+
+	if(dest->isContainer())
+	{
+		// go through dest gdd and map app types to index into src
+		cdd=(gddContainer*)dest;
+		cur=cdd->getCursor();
+		for(dd=cur.first();dd;dd=dd->next()) refDD_dest(dd,src);
+	}
+	else
+	{
+		// find dest gdd in src container and just do put()
+		s=mapAppToIndex(src->applicationType(),dest->applicationType(),index);
+
+		if(s==0)
+			rc=dest->putRef(&src[index]);
+	}
+	return rc;
+}
+
+gddStatus gddApplicationTypeTable::smartRef(gdd* dest, gdd* src)
+{
+	gddStatus rc=0;
+
+	// only works with managed containers because app table mapping
+	// feature is used.
+
+	if(dest->isContainer() && dest->isManaged())
+		rc=refDD_src(dest,src);
+	else if(src->isContainer() && src->isManaged())
+		rc=refDD_dest(dest,src);
+	else if(!src->isContainer() && !dest->isContainer())
+		rc=dest->putRef(src); // both are not containers, let gdd handle it
+	else
+		rc=gddErrorNotAllowed;
+
+	gddAutoPrint("gddAppTable::smartRef()",rc);
 	return rc;
 }

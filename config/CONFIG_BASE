@@ -52,10 +52,21 @@ EPICS_BASE = $(INSTALL_LOCATION)
 #
 # this speeds up the build by turning off implicit rules search
 # for EPICS Makefiles (which are not created from other files)
-.PHONY:: $(TOP)/config/CONFIG
-.PHONY:: $(TOP)/config/CONFIG.* $(TOP)/config/CONFIG_* 
-.PHONY:: $(TOP)/config/RULES.* $(TOP)/config/RULES_* DEPENDS
-.PHONY:: $(HOME)/EPICS_CONFIG $(HOME)/EPICS_CONFIG.$(HOST_ARCH)
+#
+.PHONY:: $(EPICS_BASE)/config/CONFIG DEPENDS
+.PHONY:: $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(T_A)
+.PHONY:: $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(HOST_ARCH)
+.PHONY:: $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE)
+.PHONY:: $(EPICS_BASE)/config/CONFIG_SITE.Host.UnixCommon
+
+.PHONY:: $(EPICS_BASE)/config/RULES.$(BUILD_TYPE)
+.PHONY:: $(EPICS_BASE)/config/RULES_ARCHS
+.PHONY:: $(EPICS_BASE)/config/RULES_DIRS $(EPICS_BASE)/config/RULES_TOP
+
+.PHONY:: $(HOME)/EPICS_CONFIG
+.PHONY:: $(HOME)/EPICS_CONFIG.$(BUILD_TYPE) $(HOME)/EPICS_CONFIG.$(HOST_ARCH)
+.PHONY:: $(HOME)/EPICS_CONFIG.$(BUILD_TYPE).$(T_A)
+.PHONY:: $(HOME)/EPICS_CONFIG.$(BUILD_TYPE).$(HOST_ARCH)
+.PHONY:: $(HOME)/EPICS_CONFIG_HOST_ARCH.$(HOST_ARCH)
+
 .PHONY:: ../Makefile.Vx ../Makefile.Unix ../Makefile.Host Makefile
-
-

@@ -8,6 +8,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+struct ifafilt;
 #endif
 
 #include <errno.h>

@@ -49,5 +49,3 @@ LDLIBS_READLINE = -lreadline -lcurses
 # Use archive if there is a problem with the readline shared library
 #LDLIBS_READLINE = -Bstatic -lreadline -Bdynamic -lcurses
 
-# Java
-JAVA_DIR=/usr/java

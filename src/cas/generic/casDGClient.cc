@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1998/02/05 22:54:19  jhill
+ * moved inline func here
+ *
  * Revision 1.12  1997/08/05 00:47:06  jhill
  * fixed warnings
  *
@@ -282,12 +285,18 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 		if (retVal.addrIsValid()) {
 			caNetAddr addr = retVal.getAddr();
 			struct sockaddr_in ina = addr.getSockIP();
-			search_reply->m_cid = ina.sin_addr.s_addr;
+			search_reply->m_cid = ntohl (ina.sin_addr.s_addr);
 			if (ina.sin_port==0u) {
-				search_reply->m_type = this->pOutMsgIO->serverPortNumber();
+				//
+				// If they dont specify a port number then the default
+				// CA server port is assumed when it it is a server
+				// address redirect (it is never correct to use this
+				// server's port when it is a redirect).
+				//
+				search_reply->m_type = CA_SERVER_PORT;
 			}
 			else {
-				search_reply->m_type = ina.sin_port;
+				search_reply->m_type = ntohs (ina.sin_port);
 			}
 		}
 		else {

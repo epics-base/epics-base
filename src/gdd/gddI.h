@@ -162,13 +162,8 @@ inline gddStatus gdd::unreference(void) const
     if ( ref_cnt > 1u ) {
         ref_cnt--;
     }
-	else if ( ref_cnt == 0u )
+	else if ( ref_cnt == 1u )
 	{
-		fprintf(stderr,"gdd reference count underflow!!\n");
-		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
-		rc=gddErrorUnderflow;
-	}
-	else {
 		if ( isManaged() ) {
 			// managed dd always destroys the entire thing
 			if(destruct) destruct->destroy((void *)this);
@@ -180,6 +175,11 @@ inline gddStatus gdd::unreference(void) const
             ref_cnt = 0; 
 			delete this;
         }
+	}
+	else {
+		fprintf(stderr,"gdd reference count underflow!!\n");
+		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
+		rc=gddErrorUnderflow;
 	}
 	return rc;
 }

@@ -180,8 +180,6 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 continue;
             }
 
-
-
             if ( 
                     localError != SOCK_EPIPE && 
                     localError != SOCK_ECONNRESET &&

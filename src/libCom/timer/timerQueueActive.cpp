@@ -53,7 +53,7 @@ timerQueueActive::~timerQueueActive ()
 {
     this->terminateFlag = true;
     this->rescheduleEvent.signal ();
-    while ( ! this->exitFlag && ! this->thread.isSuspended () ) {
+    while ( ! this->exitFlag ) {
         this->exitEvent.wait ( 1.0 );
     }
     // in case other threads are waiting here also

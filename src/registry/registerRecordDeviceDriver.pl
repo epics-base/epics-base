@@ -36,6 +36,7 @@ print << "END" ;
 #include <stdio.h>
 
 #include "dbBase.h"
+#include "errlog.h"
 #include "dbStaticLib.h"
 #include "dbAccess.h"
 #include "recSup.h"
@@ -122,7 +123,6 @@ print << "END" ;
 int registerRecordDeviceDriver(DBBASE *pdbbase)
 {
     int i;
-    int result;
 
 END
 if($numberRecordType>0) {
@@ -132,13 +132,17 @@ if($numberRecordType>0) {
         int (*sizeOffset)(dbRecordType *pdbRecordType);
         DBENTRY dbEntry;
 
-        result = registryRecordTypeAdd(recordTypeNames[i],&rtl[i]);
-        if(!result) continue;
+        if(registryRecordTypeFind(recordTypeNames[i])) continue;
+        if(!registryRecordTypeAdd(recordTypeNames[i],&rtl[i])) {
+            errlogPrintf(\"registryRecordTypeAdd failed %s\\n\",
+                recordTypeNames[i]);
+            continue;
+        }
         dbInitEntry(pdbbase,&dbEntry);
         precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
         sizeOffset = precordTypeLocation->sizeOffset;
         if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
-            printf(\"registerRecordDeviceDriver failed %s\\n\",
+            errlogPrintf(\"registerRecordDeviceDriver failed %s\\n\",
                 recordTypeNames[i]);
         } else {
             sizeOffset(dbEntry.precordType);
@@ -149,18 +153,24 @@ END
 if($numberDeviceSupport>0) {
     print << "END" ;
     for(i=0; i< $numberDeviceSupport;  i++ ) {
-        result = registryDeviceSupportAdd(deviceSupportNames[i],devsl[i]);
-        if(!result) continue;
+        if(registryDeviceSupportFind(deviceSupportNames[i])) continue;
+        if(!registryDeviceSupportAdd(deviceSupportNames[i],devsl[i])) {
+            errlogPrintf(\"registryDeviceSupportAdd failed %s\\n\",
+                deviceSupportNames[i]);
+            continue;
+        }
     }
 END
 }
 if($numberDriverSupport>0) {
     print << "END" ;
     for(i=0; i< $numberDriverSupport;  i++ ) {
-        result = registryDriverSupportAdd(driverSupportNames[i],drvsl[i]);
-        if(!result)
-            printf(\"registerRecordDeviceDriver failed %s\\n\",
-            \"driverSupportNames[i]\");
+        if(registryDriverSupportFind(driverSupportNames[i])) continue;
+        if(!registryDriverSupportAdd(driverSupportNames[i],drvsl[i])) {
+            errlogPrintf(\"registryDriverSupportAdd failed %s\\n\",
+                driverSupportNames[i]);
+            continue;
+        }
     }
 END
 }

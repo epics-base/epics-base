@@ -1841,8 +1841,10 @@ void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
         SEVCHK ( status, "exception notify install failed" );
     }
 
-    // verify that unequal send/recv buffer sizes work
-    // (a bug related to this test was detected in early R3.14)
+    /* 
+     * verify that unequal send/recv buffer sizes work
+     * (a bug related to this test was detected in early R3.14)
+     */
     {
         chid newChan;
 
@@ -2313,7 +2315,7 @@ int acctst ( char *pName, unsigned channelCount,
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
 
-    printf ( "native type was %s, native count was %u\n",
+    printf ( "native type was %s, native count was %lu\n",
         dbf_type_to_text ( ca_field_type ( chan ) ), 
         ca_element_count ( chan ) );
 

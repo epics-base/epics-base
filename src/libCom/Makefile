@@ -12,8 +12,6 @@ include $(TOP)/configure/CONFIG
 
 LIBCOM = $(TOP)/src/libCom
 
-USR_CXXFLAGS_hpux += -D_REENTRANT
-
 # Command-line input support
 epicsReadline_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
 

@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define INSTANCIATE_RES_LIB_STATIC
+#define epicsExportSharedSymbols
+#define instantiateRecourceLib
 #include "resourceLib.h"
 
 #ifdef SUNOS4
@@ -16,10 +17,10 @@
 
 void empty();
 
-class albert : public uintId, public tsSLNode<albert> {
+class albert : public intId<unsigned,8>, public tsSLNode<albert> {
 public:
-	albert (resTable<albert,uintId> &atIn, unsigned idIn) : 
-		at(atIn), uintId(idIn) {}
+	albert (resTable< albert, intId<unsigned,8> > &atIn, unsigned idIn) : 
+		at(atIn), intId<unsigned,8>(idIn) {}
 	void show (unsigned level) 
 	{
 	}
@@ -29,13 +30,13 @@ public:
 		delete this;
 	}
 private:
-	resTable<albert,uintId> &at;
+	resTable< albert, intId<unsigned,8> > &at;
 };
 
-class fred : public uintId, public tsSLNode<fred> {
+class fred : public intId<unsigned,8>, public tsSLNode<fred> {
 public:
 	fred (const char *pNameIn, unsigned idIn) : 
-			pName(pNameIn), uintId(idIn) {}
+			pName(pNameIn), intId<unsigned,8>(idIn) {}
 	void show (unsigned) 
 	{
 		printf("fred %s\n", pName);
@@ -80,7 +81,7 @@ void jane::testTraverse()
         // This explicitly instantiates the template class's member
         // functions into "templInst.o"
         //
-	template class resTable<fred,uintId>;	
+	template class resTable<fred,intId<unsigned,8>>;	
 	template class resTable<jane,stringId>;	
 #endif
 
@@ -90,52 +91,69 @@ main()
 	clock_t start, finish;
 	double duration;
 	const int LOOPS = 50000;
-	resTable<fred,uintId> intTbl;	
-	resTable<jane,stringId>	strTbl;	
+	resTable<fred, intId<unsigned,8> > intTbl (8);	
+	resTable<jane, stringId> strTbl (8);	
+	fred fred0("fred0",0);
 	fred fred1("fred1",0x1000a432);
 	fred fred2("fred2",0x0000a432);
+	fred fred3("fred3",1);
+	fred fred4("fred4",2);
+	fred fred5("fred5",3);
+	fred fred6("fred6",4);
+	fred fred7("fred7",5);
+	fred fred8("fred8",6);
+	fred fred9("fred9",7);
 	jane jane1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
 	jane jane2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
 	fred *pFred;
 	jane *pJane;
-	uintId uintId1(0x1000a432);
-	uintId uintId2(0x0000a432);
+	intId<unsigned,8> intId0 (0);
+	intId<unsigned,8> intId1 (0x1000a432);
+	intId<unsigned,8> intId2 (0x0000a432);
+	intId<unsigned,8> intId3 (1);
+	intId<unsigned,8> intId4 (2);
+	intId<unsigned,8> intId5 (3);
+	intId<unsigned,8> intId6 (4);
+	intId<unsigned,8> intId7 (5);
+	intId<unsigned,8> intId8 (6);
+	intId<unsigned,8> intId9 (7);
+
 	stringId strId1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
 	stringId strId2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
-	int status;
- 
-	status = intTbl.init(8);
-	if (status) {
-		return -1;
-	}
- 
-	status = intTbl.add(fred1);
-	assert (!status);
-	status = intTbl.add(fred2);
-	assert (!status);
+
+	assert (intTbl.add(fred0)==0);
+	assert (intTbl.add(fred1)==0);
+	assert (intTbl.add(fred2)==0);
+	assert (intTbl.add(fred3)==0);
+	assert (intTbl.add(fred4)==0);
+	assert (intTbl.add(fred5)==0);
+	assert (intTbl.add(fred6)==0);
+	assert (intTbl.add(fred7)==0);
+	assert (intTbl.add(fred8)==0);
+	assert (intTbl.add(fred9)==0);
 
 	start = clock();
 	for (i=0; i<LOOPS; i++) {
-		pFred = intTbl.lookup(uintId1);	
+		pFred = intTbl.lookup(intId1);	
 		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId1);	
-		assert(pFred==&fred1);
-		pFred = intTbl.lookup(uintId2);	
+		pFred = intTbl.lookup(intId2);	
 		assert(pFred==&fred2);
+		pFred = intTbl.lookup(intId3);	
+		assert(pFred==&fred3);
+		pFred = intTbl.lookup(intId4);	
+		assert(pFred==&fred4);
+		pFred = intTbl.lookup(intId5);	
+		assert(pFred==&fred5);
+		pFred = intTbl.lookup(intId6);	
+		assert(pFred==&fred6);
+		pFred = intTbl.lookup(intId7);	
+		assert(pFred==&fred7);
+		pFred = intTbl.lookup(intId8);	
+		assert(pFred==&fred8);
+		pFred = intTbl.lookup(intId9);	
+		assert(pFred==&fred9);
+		pFred = intTbl.lookup(intId0);	
+		assert(pFred==&fred0);
 	}
 	finish = clock();
 
@@ -149,18 +167,11 @@ main()
  
 	intTbl.show(10u);
 
-	intTbl.remove(uintId1);
-	intTbl.remove(uintId2);
-
-	status = strTbl.init(8);
-	if (status) {
-		return -1;
-	}
-
-	status = strTbl.add(jane1);
-	assert (!status);
-	status = strTbl.add(jane2);
-	assert (!status);
+	intTbl.remove(intId1);
+	intTbl.remove(intId2);
+    
+	assert (strTbl.add(jane1)==0);
+	assert (strTbl.add(jane2)==0);
 
 	start = clock();
 	for(i=0; i<LOOPS; i++){
@@ -222,29 +233,19 @@ main()
 	duration /= 10;
 	duration *= 1e6;
 	printf("It took %15.10f u sec to call an empty subroutine\n", duration);
-
+    
 	//
 	// hash distribution test
 	//
-	resTable<albert,uintId> alTbl;	
-	status = alTbl.init(10000);
-	assert(!status);
+    static const unsigned tableSize = 0x1000;
+	resTable< albert, intId<unsigned,8> > alTbl (tableSize);	
 
-	for(i=0; i<100000; i++) {
-		unsigned id = (unsigned) rand();
-		albert *pa = new albert(alTbl, id);
-		assert(pa);
-		status = alTbl.add(*pa);
-		if (status) {
-			//
-			// duplicate ids are possible
-			// and ignored
-			//
-			delete pa;
-		}
+	for (i=0; i<tableSize*8; i++) {
+		albert *pa = new albert(alTbl, i);
+		assert (pa);
+		assert (alTbl.add (*pa)==0);
 	}
 	alTbl.show(1u);
-	alTbl.destroyAllEntries();
 
 	return 0;
 }

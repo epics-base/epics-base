@@ -5,10 +5,9 @@ include $(TOP)/config/CONFIG_BASE
 CXXCMPLR = STRICT
 
 PROD_LIBS = Com
-SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 
-TESTPROD := resourceLibTest tsDLListBench tsDLListTest tsDLListTest \
-		tsSLListBench tsSLListTest minmaxTest tsBTreeBench tsBTreeTest
+TESTPROD := tsSLListTest tsDLListTest resourceLibTest tsDLListBench tsDLListBench \
+		tsSLListBench minmaxTest tsBTreeBench tsBTreeTest
 
 include $(TOP)/config/RULES.Host
 

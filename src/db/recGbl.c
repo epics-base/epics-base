@@ -206,7 +206,6 @@ void recGblGetPrec(paddr,precision)
     case(DBF_DOUBLE):
          break;
     default:
-         recGblRecordError(S_db_badChoice,precord,"recGblGetPrec");
          break;
     }
     return;

@@ -59,19 +59,20 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdio.h>
 #include <string.h>
 
-#include <dbDefs.h>
-#include <taskwd.h>
-#include <alarm.h>
-#include <caeventmask.h>
-#include <dbStaticLib.h>
-#include <dbAccess.h>
-#include <dbEvent.h>
-#include <asLib.h>
-#include <asDbLib.h>
-#include <dbCommon.h>
-#include <recSup.h>
-#include <subRecord.h>
-#include <task_params.h>
+#include "dbDefs.h"
+#include "errlog.h"
+#include "taskwd.h"
+#include "alarm.h"
+#include "caeventmask.h"
+#include "dbStaticLib.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "asLib.h"
+#include "asDbLib.h"
+#include "dbCommon.h"
+#include "recSup.h"
+#include "subRecord.h"
+#include "task_params.h"
 
 extern struct dbBase *pdbbase;
 static FILE *stream;

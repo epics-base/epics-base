@@ -55,8 +55,11 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <asLib.h>
-static char my_buffer[100];
+
+#include "dbDefs.h"
+#include "errlog.h"
+#include "asLib.h"
+static char my_buffer[1000];
 static char *my_buffer_ptr="\0";
 
 static int my_yyinput(char *buf, int max_size)

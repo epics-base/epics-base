@@ -59,14 +59,16 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <dbDefs.h>
-#include <taskwd.h>
-#include <asDbLib.h>
-#include <cadef.h>
-#include <caerr.h>
-#include <caeventmask.h>
-#include <task_params.h>
-#include <alarm.h>
+
+#include "dbDefs.h"
+#include "errlog.h"
+#include "taskwd.h"
+#include "asDbLib.h"
+#include "cadef.h"
+#include "caerr.h"
+#include "caeventmask.h"
+#include "task_params.h"
+#include "alarm.h"
 
 LOCAL int taskid=0;
 LOCAL int caInitializing=FALSE;

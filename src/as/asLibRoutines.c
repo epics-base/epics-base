@@ -56,14 +56,16 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <vxWorks.h>
 #include <taskLib.h>
 #endif
-#include <dbDefs.h>
-#include <asLib.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <gpHash.h>
-#include <freeList.h>
+
+#include "dbDefs.h"
+#include "epicsPrint.h"
+#include "asLib.h"
+#include "gpHash.h"
+#include "freeList.h"
 
 /*Declare storage for Global Variables */
 ASBASE		*pasbase=NULL;
@@ -126,7 +128,10 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	puagname = (UAGNAME *)ellFirst(&puag->list);
 	while(puagname) {
 	    pgphentry = gphAdd(pasbase->phash,puagname->user,puag);
-	    if(!pgphentry) errMessage(-1,"asInitialize: gphAdd logic error");
+	    if(!pgphentry) {
+		epicsPrintf("UAG %s duplicate user = %s\n",
+		    puag->name, puagname->user);
+	    }
 	    puagname = (UAGNAME *)ellNext((ELLNODE *)puagname);
 	}
 	puag = (UAG *)ellNext((ELLNODE *)puag);
@@ -136,7 +141,10 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	phagname = (HAGNAME *)ellFirst(&phag->list);
 	while(phagname) {
 	    pgphentry = gphAdd(pasbase->phash,phagname->host,phag);
-	    if(!pgphentry) errMessage(-1,"asInitialize: gphAdd logic error");
+	    if(!pgphentry) {
+		epicsPrintf("HAG %s duplicate host = %s\n",
+		    phag->name,phagname->host);
+	    }
 	    phagname = (HAGNAME *)ellNext((ELLNODE *)phagname);
 	}
 	phag = (HAG *)ellNext((ELLNODE *)phag);

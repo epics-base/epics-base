@@ -21,18 +21,6 @@
 #include "iocinf.h"
 #include "hostNameCache.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < hostNameCache, 16 >;
-template class epicsSingleton < tsFreeList < hostNameCache, 16 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
 epicsSingleton < tsFreeList < hostNameCache, 16 > > hostNameCache::pFreeList;
 
 hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :

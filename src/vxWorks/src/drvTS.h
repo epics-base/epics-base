@@ -1,83 +1,20 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef __DRVTS_h__
 #define __DRVTS_h__
-
-/*
- * $Log$
- * Revision 1.8  2001/01/31 13:34:02  mrk
- * osiTime=>epicsTime
- *
- * Revision 1.7  2000/02/02 20:06:25  mrk
- * new way to build
- *
- * Revision 1.6  1999/12/14 21:35:34  jhill
- * use osiTime.h to get TS_STAMP
- *
- * Revision 1.5  1999/11/18 13:30:07  mrk
- * new makefile method; moved drvTS.h to vxWorks specific code
- *
- * Revision 1.3  1998/09/29 14:11:03  mrk
- * TSsetClockFromUnix was made global
- *
- * Revision 1.2  1998/03/19 20:41:16  mrk
- * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
- * in 2036. However it was modified so that no overflows should occur while convert
- * ing between NTP, UNIX, and EPICS epochs.
- * In addition the conversion of fractions of a second to nanaoseconds was changed
- * Formatting was changed so that interesting code does not run off right side of page.
- * Hopefully EPICS base is now fine for Y2K.
- * In fact it should be fine (as far as time is converned) until the Unix epoch
- * overflows a 32 unsigned integer in the year 2106.
- *
- * Revision 1.1  1996/01/25 21:11:56  mrk
- * moved includes; .ascii=> .db; path changes
- *
- * Revision 1.12  1995/08/30  15:39:07  jbk
- * Added global variables for force accurate time stamps and direct time.
- *
- * Revision 1.11  1995/08/18  13:18:13  mrk
- * Added function prototypes for ansi c
- *
- * Revision 1.10  1995/08/17  20:35:52  jbk
- * fixed the debug macro to work with -pendantic option (yuck)
- *
- * Revision 1.9  1995/08/17  19:44:08  jbk
- * Added a new utility function to get the first of the year time stamp.
- *
- * Revision 1.8  1995/08/16  19:04:20  jbk
- * corrected vxworks time troubles
- *
- * Revision 1.7  1995/05/22  15:22:24  jbk
- * changes TS_EXTERN thing
- *
- * Revision 1.6  1995/02/01  15:30:17  winans
- * Added a type field to the configure command to disable the use of the event
- * system hardware if desired.
- *
- * Revision 1.5  1994/10/31  20:36:17  jbk
- * added new stuff
- *
- */
 
 /**************************************************************************
  *
  *     Author:	Jim Kowalkowski
  *
- * Modification Log:
- * -----------------
- * .01	01-06-94	jbk	initial version
- *
  ***********************************************************************/
-
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
- 
-(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-**********************************************************************/
 
 #include <vxWorks.h>
 #include <timers.h>

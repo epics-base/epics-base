@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 /*
  * $Id$
@@ -6,6 +15,10 @@
  * Date:   10/22/96
  *
  * $Log$
+ * Revision 1.1  1996/10/22 15:40:04  jbk
+ * New program for running programs with different priority and changing the
+ * maximum number of file descriptors.
+ *
  *
 */
 

@@ -1,23 +1,14 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*dbStaticLib.c*/
 /* share/src/db @(#)dbStaticLib.c	1.21     7/11/94 */
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
-
-(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-**********************************************************************/
-
-/*
- * Modification Log:
- * -----------------
- * .01	02-03-93	mrk	Consolidated all databse defs in one place
- * .02	09-10-93	mrk	dbIsDefault always returns FALSE for DEVCHOICE
- * .03	02-23-94	mrk	dbPutString to DEV_CHOICE. Ok if no INP or OUT
- */
 
 #include <stdlib.h>
 #include <stdio.h>

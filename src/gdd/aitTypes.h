@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef AIT_TYPES_H
 #define AIT_TYPES_H 1
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  2000/10/12 21:52:49  jhill
+ * changes to support compilation by borland
+ *
  * Revision 1.13  1999/10/21 23:41:11  jhill
  * reformatted
  *

@@ -1,9 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
 // $Id$
 // 
 // $Log$
+// Revision 1.11  2002/05/29 00:37:06  jhill
+// print out a warning when there is a bogus type in the table
+//
 // Revision 1.10  1999/04/30 15:24:53  jhill
 // fixed improper container index bug
 //

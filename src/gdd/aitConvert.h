@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef AIT_CONVERT_H__
 #define AIT_CONVERT_H__
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.16  2002/02/13 14:34:10  lange
+ * Fixed (mostly suppressed) HPUX aCC warnings
+ *
  * Revision 1.15  2001/10/20 00:11:51  jhill
  * remove use of std lib for now
  *

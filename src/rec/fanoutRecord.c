@@ -1,50 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* fanoutRecord.c */
 /* base/src/rec  $Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            12-20-88
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .02  05-03-89        lrd     removed process mask from arg list
- * .03  09-25-89        lrd     add conditional scanning
- * .04  01-21-90        lrd     unlock on scan disable exit
- * .05  04-19-90        lrd     user select disable on 0 or 1
- * .06  10-31-90        mrk        no user select disable on 0 or 1
- * .07  10-31-90        mrk        extensible record and device support
- * .08  09-25-91        jba     added input link for seln
- * .09  09-26-91        jba     added select_mask option
- * .10  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .11  02-05-92	jba	Changed function arguments from paddr to precord 
- * .12  02-05-92	jba	Added FWD scan link 
- * .13  02-28-92	jba	ANSI C changes
- * .14  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .15  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .16  09-10-92        jba     replaced fetch link selection with call to recGblGetLinkValue
- * .17	03-29-94	mcn	converted to fast links
  */
 
 #include <stddef.h>

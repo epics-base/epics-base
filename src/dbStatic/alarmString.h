@@ -1,39 +1,13 @@
-/*  $Id$
- *      Author: 
- *      Date:   
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  06-06-91        bkc     Modified alarmSeverityString: add VALID alarm,
- *				remove INFO alarm
- * .02  09-10-91        bkc     Change status string corresponding to 
- *				dbconV2/menus.c
- * .03  07-16-92        jba     changed VALID_ALARM to INVALID_ALARM
- * .04  02-03-93        jba     added 2 new status values
- * .05  05-11-94        jba     addd READ_ACCESS, WRITE_ACCESS, rmvd EPICS_V2 ifdef
- *      ...
- */
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
+/*  $Id$ */
 
 /* alarmString.h - String values for alarms (Must match alarm.h)!!!!*/
 /* share/epicsH @(#)alarmString.h	1.3     11/6/90 */

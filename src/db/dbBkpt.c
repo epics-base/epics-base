@@ -1,89 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbBkpt.c */
 /* base/src/db $Id$ */
 /*
  *      Author:          Matthew Needes
  *      Date:            8-30-93
 */
-
-/********************COPYRIGHT NOTIFICATION**********************************
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-****************************************************************************/
-
-/* Modification Log:
- * -----------------
- *  $Log$
- *  Revision 1.27  2001/01/31 13:33:35  mrk
- *  osiTime=>epicsTime
- *
- *  Revision 1.26  2001/01/18 19:07:49  mrk
- *  changes for osiThread=>epicsThread
- *
- *  Revision 1.25  2001/01/12 00:27:16  jhill
- *  fixed bugs introduced by APS's osi => epics name changes
- *
- *  Revision 1.24  2001/01/11 16:11:21  mrk
- *  replace osiSem with epicsMutex and/or epicsEvent
- *
- *  Revision 1.23  2000/04/28 18:29:48  mrk
- *  add dbior; add support for c++
- *
- *  Revision 1.22  2000/02/29 19:33:33  mrk
- *  more changes for win32 build
- *
- *  Revision 1.21  2000/02/28 20:34:04  mrk
- *  changes for building win32 dlls
- *
- *  Revision 1.20  2000/02/28 20:12:11  mrk
- *  move dbAccess.h
- *
- *  Revision 1.19  2000/02/28 19:40:55  mrk
- *  changes for creating win dlls
- *
- *  Revision 1.18  2000/02/26 23:45:22  norume
- *  Reflect routine name change from threadSuspend() to epicsThreadSuspendSelf().
- *
- *  Revision 1.17  2000/02/25 22:26:38  mrk
- *  more changes for creating dlls
- *
- *  Revision 1.16  2000/02/25 22:01:24  mrk
- *  changes for creating DLLs
- *
- *  Revision 1.15  2000/02/08 20:14:59  norume
- *  Remove task argument to threadSuspend().
- *
- *  Revision 1.14  2000/01/27 19:46:40  mrk
- *  semId => semBinaryId and epicsMutexId
- *
- *  Revision 1.13  2000/01/24 20:58:12  mrk
- *  new way to build
- *
- *  Revision 1.12  2000/01/04 20:26:16  mrk
- *  replace osiClock calls with epicsTime calls
- *
- *  Revision 1.11  1999/12/14 22:01:33  mrk
- *  changes for osiSem changes
- *
- *  Revision 1.10  1999/09/13 18:26:17  mrk
- *  changes for 3.14
- *
- *  Revision 1.9  1998/01/20 16:19:48  mrk
- *  Fix include statements
- *
- *  Revision 1.8  1996/08/05 19:33:40  jhill
- *  removed ; from if
- *
- *  Revision 1.7  1996/04/22 14:30:38  mrk
- *  Changes for dynamic link modification
- *
- *  Revision 1.6  1995/11/29 14:23:28  mrk
- *  Changes for replacing default.dctsdr by all ascii files
- *
- * Revision 1.5  1995/02/23  21:45:03  mcn
- * Fixed locking error.  OOPS.
- *
- */
 
 /*
  *   Database Breakpoint Manipulation and User Interface

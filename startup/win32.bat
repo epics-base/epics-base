@@ -1,4 +1,14 @@
 @ECHO OFF
+REM *************************************************************************
+REM  Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+REM      National Laboratory.
+REM  Copyright (c) 2002 The Regents of the University of California, as
+REM      Operator of Los Alamos National Laboratory.
+REM  EPICS BASE Versions 3.13.7
+REM  and higher are distributed subject to a Software License Agreement found
+REM  in file LICENSE that is included with this distribution.
+REM *************************************************************************
+
 REM    ===================================================
 REM    ====== REQUIRED ENVIRONMENT VARIABLES FOLLOW ======
 REM

@@ -1,58 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  * Subroutines used to convert an infix expression to a postfix expression
  *
  *      Author:          Bob Dalesio
  *      Date:            12-12-86
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  01-11-89        lrd     added right shift and left shift operations
- * .02  01-13-89        lrd     modified to load into IOCs
- * .03  02-01-89        lrd     added trigonometric functions
- * .04  04-05-89        lrd     fixed the order of some operations in the
- *                              element table and added a warning label
- * .05  11-26-90        lrd     fix SINH, COSH, TANH
- * .06	02-20-92	rcz	fixed for vxWorks build
- * .07  02-24-92        jba     add EXP and fixed trailing blanks in expression
- * .08  03-03-92        jba     added MAX_VAL and MIN_VAL and comma(like close paren)
- * .09  03-06-92        jba     added multiple conditional expressions ?
- * .10  04-01-92        jba     allowed floating pt constants in expression
- * .11  05-01-92        jba     flt pt constant string replaced with double in postfix
- * .12  08-21-92        jba     ANSI c changes
- * .13  08-21-92        jba     initialized *ppostfix: needed when calc expr not defined
- * .14  12-11-92	mrk	Removed include for stdioLib.h
- * .15  11-03-93		jba		Added test for extra close paren at end of expression
- * .16  01-24-94		jba		Changed seperator test to catch invalid commas
- * .17  05-11-94		jba		Added support for CONST_PI, CONST_R2D, and CONST_D2R
- * 								and conversion of infix expression to uppercase
- * .18  01-22-98        tmm     Changed name postfix() to calcPostfix().  Changed arg list
- *                              from pointer to postfix expression to address of pointer to
- *                              postfix expression.  calcPostfix() frees old expression, allocates
- *                              space sufficient to hold new expression, and returns pointer to it.
- *                              Added S2R, R2S (conversions between arc-seconds and radians).  Changed
- *                              CONSTANT to LITERAL to avoid conflict with link.h.  Support 26 vars (A-Z).
- * .19  03-18-98        tmm     Added string operators
  */
 
 /* 

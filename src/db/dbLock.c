@@ -1,21 +1,14 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbLock.c */
 /*	Author: Marty Kraimer	Date: 12MAR96	*/
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
-
-(C)  COPYRIGHT 1991 Regents of the University of California,
-and the University of Chicago Board of Governors.
-
-This software was developed under a United States Government license
-described on the COPYRIGHT_Combined file included as part
-of this distribution.
-**********************************************************************/
-
-/* Modification Log:
- * -----------------
- * .01	12MAR96	mrk	Initial Implementation
-*/
 
 /************** DISCUSSION OF DYNAMIC LINK MODIFICATION **********************
 

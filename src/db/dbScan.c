@@ -1,45 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbScan.c */
 /* tasks and subroutines to scan the database */
 /*
  *      Original Author:        Bob Dalesio
  *      Current Author:		Marty Kraimer
  *      Date:   	        07/18/91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  07-18-91	mrk	major revision of old scan tasks
- * .02  02-05-92	jba	Changed function arguments from paddr to precord 
- * .03	05-19-92	mrk	Changes for internal database structure changes
- * .04  08-11-92	jba	ANSI C changes
- * .05  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
- * .06  08-27-92	mrk	removed support for old I/O event scanning
- * .07  12-11-92	mrk	scanDelete crashed if no get_ioint_info existed.
- * .08  02-02-94	mrk	added scanOnce
- * .09  02-03-94	mrk	If scanAdd fails set precord->scan=SCAN_PASSIVE
- * .10  02-22-94	mrk	Make init work if 1st record has 28 char name
- * .11  05-04-94	mrk	Call taskwdRemove only if spawing again
- * .12  05-02-96	mrk	Allow multiple priority event scan 
  */
 
 #include <stdlib.h>

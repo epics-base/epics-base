@@ -1,18 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*drvTs.c*/
-
-/*****************************************************************
- COPYRIGHT NOTIFICATION
- *****************************************************************
-
-    (C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
-  
-    This software was developed under a United States Government license
-    described on the COPYRIGHT_UniversityOfChicago file included as part
-    of this distribution.
- **********************************************************************/
 
 /*
  * $Log$
+ * Revision 1.4  2002/07/12 15:16:02  mrk
+ * make event numbers int.
+ * use epicsTimeEventCurrentTime and epicsTimeEventBestTime
+ * some cleanup
+ *
  * Revision 1.3  2002/04/08 15:05:35  mrk
  * forgot to initialize this
  *

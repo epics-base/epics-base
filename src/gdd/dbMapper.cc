@@ -1,9 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
 // $Id$
 // 
 // $Log$
+// Revision 1.36  2001/10/20 00:10:18  jhill
+// remove use of std lib for now
+//
 // Revision 1.35  2001/07/03 00:58:18  jhill
 // changed interface so that unreferenced table will not optimize away
 //

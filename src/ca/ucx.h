@@ -1,16 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* 
  *
  *	U C X . H
  *	UNIX ioctl structures and defines used for VAX/UCX
- *      Author: Gerhard Grygiel (GeG)
- *
- *      GeG	09-DEC-1992	initial edit
- *      CJM     13-Jul-1994     add fd_set etc for R3.12
- *      CJM     09-Dec-1994     define fd_set etc. so it will compile for
- *                              both DEC C and Vax C
- *      CJM     19-Nov-1995     use memset instead of bzero following advice
- *                              from Jeff Hill and add a definition of struct
- *                              timezone to support gettimeofday
  *
  */
 #ifndef _UCX_H_

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDD_UTILSI_H
 #define GDD_UTILSI_H
 
@@ -7,6 +16,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.3  2002/02/13 14:34:11  lange
+ * Fixed (mostly suppressed) HPUX aCC warnings
+ *
  * Revision 1.2  1997/03/24 12:41:49  jbk
  * fixed bug in gddDestructor constructor.
  *

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/src/rec $Id$ */
   
 /* aiRecord.c - Record Support Routines for Analog Input records */
@@ -6,69 +15,6 @@
  *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
  *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- *
- * Modification Log:
- * -----------------
- * .01	8-12-88		lrd	Put in breakpoint conversions
- *				Fix conversions for bipolar xy566 cards
- * .02	12-12-88	lrd	Lock record on entry and unlock on exit
- * .03	12-15-88	lrd	Process the forward scan link
- * .04	12-23-88	lrd	Alarm on locked MAX_LOCKED times
- * .05	01-13-89	lrd	deleted db_read_ai
- * .06	01-18-89	lrd	modify adjustment offset to be independent of
- *				adjustment slope
- *				clamp xy566 breakpoint table negative values t o
- *				zero
- * .07	03-27-89	lrd	make hardware errors MAJOR alarms
- *				remove hardware severity from the database
- * .08	04-03-89	lrd	add monitor code
- *				removed signal units conversion stuff
- * .09	04-05-89	lrd	modified so that negative adjustment slope ASLO
- *				would work
- * .10	05-03-89	lrd	removed process mask from arg list
- * .11	08-01-89	lrd	only set value for constant when val != 0
- * .12	10-11-89	lrd	fix smoothing initial condition
- * .13	01-31-90	lrd	add AB plc flag to the ab_aidriver call
- * .14	03-21-90	lrd	add db_post_event for RVAL
- * .15	04-11-90	lrd	make locals static
- * .16  04-18-90	mrk	extensible record and device support
- * .17  09-18-91	jba	fixed bug in break point table conversion
- * .18  09-30-91	jba	Moved break point table conversion to libCom
- * .19  11-11-91	jba	Moved set and reset of alarm stat and sevr to macros
- * .20  12-18-91	jba	Changed E_IO_INTERRUPT to SCAN_IO_EVENT
- * .21  02-05-92	jba	Changed function arguments from paddr to precord 
- * .22  02-28-92	jba	Changed get_precision,get_graphic_double,get_control_double
- * .23  02-28-92	jba	ANSI C changes
- * .24  04-10-92	jba	pact now used to test for asyn processing, not status
- * .25  04-18-92        jba     removed process from dev init_record parms
- * .26  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
- * .28  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .29  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .30  07-21-92        jba     changed alarm limits for non val related fields
- * .31  08-06-92        jba     New algorithm for calculating analog alarms
- * .32  08-13-92        jba     Added simulation processing
- * .33  03-29-94        mcn     converted to fast links
  */
 
 #include <stddef.h>

@@ -1,62 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* compressRecord.c */
 /* base/src/rec  $Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            7-14-89 
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  11-27-89        lrd     using one more buffer entry than allocated
- * .02  11-27-89        lrd     throttle on monitor requests
- * .03  02-27-90        lrd     handle character value links for Joerger
- *                              digitizer (convert to short array for access
- * .04  03-05-90        lrd     add averaging of entire waveforms
- * .05  04-02-90        ba/lrd  fix the joerger processing and
- *                              add get_a_byte macro
- *                              fix the determination of buff_size
- * .06  04-11-90        lrd     make locals static
- * .07  05-02-90        lrd     fix mdct so that it would remain 0 on the
- *                              pass where the monitors are sent
- * .08  05-08-90        ba      mdct is never equal to mcnt during record pro-
- *                              cessing, causing some code never to run. Fix
- *                              is to check (mdct==mcnt || mdct==0) to indicate
- *                              first time through an averaging loop.
- * .09  07-26-90        lrd     fixed the N-to-1 character compression
- *                              value was not initialized
- * .10  10-11-90	mrk	Made changes for new record support
- * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .12  02-05-92	jba	Changed function arguments from paddr to precord 
- * .13  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .14  02-28-92	jba	ANSI C changes
- * .15  06-02-92        jba     changed graphic/control limits for hil,ilil 
- * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .18  05-09-94        jba     Fixed the updating of pcompress->inx in array_average
- * .19  03-16-99	wfl	Added "N to 1 Median" algorithm (implemented
- *				only for array inputs; regular "Median" is not
- *				implemented)
  */
 
 #include <stddef.h>

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDD_CONTAINER_H
 #define GDD_CONTAINER_H
 
@@ -7,6 +16,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.5  1999/08/10 17:11:01  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.4  1999/05/10 23:42:25  jhill
  * fixed many const releated problems
  *

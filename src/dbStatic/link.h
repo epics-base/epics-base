@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* link.h */
 /* base/include $Id$ */
 
@@ -5,36 +14,6 @@
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            6-1-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  12-18-91        jba     Changed caddr_t to void *
- * .02	3-16-92		frl	changed  link.value.value to double
- * .03  9-9-92		frl	added vxi link type
- * .04  12-13-93	mcn	added conversion pointer for fast links
- * .05  1-10-95		jt	added rf_io structure
- * .06	01-10-96	lrd	added ca_link structure fields
  */
 
 #include "dbDefs.h"

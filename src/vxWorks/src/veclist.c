@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /*
  *	$Id$
  *	@(#)veclist.c	1.10
@@ -12,6 +21,9 @@
  *		   identification as MACRO ISR problem. 
  *	.02 022195 Compiler warnings fixed
  *	$Log$
+ *	Revision 1.1  2001/08/01 14:33:15  mrk
+ *	get rid of dev/drv support; use OBJ library only
+ *	
  *	Revision 1.16  1998/06/04 19:24:30  wlupton
  *	avoided intHandlerCreate() for PPC
  *	

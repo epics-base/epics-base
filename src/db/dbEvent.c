@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* dbEvent.c */
 /* $Id$ */
 /* routines for scheduling events to lower priority tasks via the RT kernel */
@@ -5,18 +14,6 @@
  *  Author:     Jeffrey O. Hill 
  *      Date:            4-1-89
 */
-
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
-
-(C)  COPYRIGHT 1991 Regents of the University of California,
-and the University of Chicago Board of Governors.
-
-This software was developed under a United States Government license
-described on the COPYRIGHT_Combined file included as part
-of this distribution.
-**********************************************************************/
 
 #include <stddef.h>
 #include <stdlib.h>

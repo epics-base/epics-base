@@ -1,34 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
+*     Group, Systems Engineering Department
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recSubArray.c */
 /* recSubArray.c - Record Support Routines for SubArray records 
  *
  *
  *      Author:         Carl Lionberger
  *      Date:           090293
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *		The Control Systems Group
- *		Systems Engineering Department
- *		Lawrence Berkeley Laboratory
  *
  *      NOTES:
  * Derived from waveform record. 

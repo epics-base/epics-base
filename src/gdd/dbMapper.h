@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef DB_MAPPER_H
 #define DB_MAPPER_H
 
@@ -8,6 +17,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  2001/10/20 00:08:57  jhill
+ * remove use of std lib for now
+ *
  * Revision 1.13  2000/10/12 21:52:49  jhill
  * changes to support compilation by borland
  *

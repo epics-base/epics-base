@@ -1,48 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* iocInit.c	ioc initialization */ 
 /* base/src/db $Id$ */
 /*      Author:		Marty Kraimer   Date:	06-01-91 */
 
-/********************COPYRIGHT NOTIFICATION**********************************
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-****************************************************************************/
-
-/* Modification Log:
- * -----------------
- * .01  07-20-91	rac	print release data; set env params
- * .02	08-06-91	mrk	parm string length test changed to warning
- * .03  08-09-91        joh     added ioc log client init
- * .04  09-10-91        joh     moved VME stuff from here to initVme()
- * .05  09-10-91        joh     printf() -> logMsg()
- * .06  09-10-91        joh     print message only on failure
- * .07  08-30-91	rcz	completed .02 fix
- * .08  10-10-91        rcz     changed getResources to accomodate EPICS_
- *                              parameters in a structure (first try)
- * .09  12-02-91        mrk     Added finishDevSup 
- * .10  02-10-92        jba     Changed error messages
- * .11  02-28-92        jba     ANSI C changes
- * .12  03-26-92        mrk     changed test if(status) to if(rtnval)
- * .13  04-17-92        rcz     changed sdrLoad to dbRead
- * .14	04-17-92	mrk	Added wait before interruptAccept
- * .15	05-17-92	rcz	moved sdrSum stuff to dbReadWrite.c
- * .16	05-19-92	mrk	Changes for internal database structure changes
- * .17	06-16-92	jba	prset test to call of init_record second time
- * .18	07-31-92	rcz	moved database loading to function dbLoad
- * .19	08-14-92	jba	included dblinks with maximize severity in lockset
- * .20	08-27-92	mrk	removed wakeup_init (For old I/O Event scanning)
- * .21	09-05-92	rcz	changed dbUserExit to initHooks
- * .22	09-10-92	rcz	added many initHooks - INITHOOK*<place> argument
- * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
- * .24	09-11-92	rcz	moved setMasterTimeToSelf to a seperate C file
- * .25	07-15-93	mrk	Changed dbLoad for new dbStaticLib support
- * .26	02-09-94	jbk	changed to new time stamp support software ts_init()
- * .27	03-18-94	mcn	added comments
- * .28	03-23-94	mrk	Added asInit
- * .29	04-04-94	mcn	added code for uninitialized conversions (link conversion field)
- * .30	01-10-95	joh	Fixed no quoted strings in resource.def problem
- * .31	02-10-95	joh	static => LOCAL 
- */
 
 #include <stddef.h>
 #include <stdlib.h>

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
 /* @(#)$Id$*/
 
@@ -5,47 +14,6 @@
  *  Original Author: Marty Kraimer
  *      Author:          Jeff Hill 
  *      Date:        03-10-93   
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  03-10-93        joh     original
- * .02  03-18-93        joh     index address alloc array by fundamental type 
- * .03  03-23-93        joh     changed input parameter to be a fund
- *                              address type in favor of the argument
- *                              that the BSP will be reconfigured
- *                              to use an EPICS standard address
- *                              mode
- * .04  04-08-93    joh made unsolicitedHandlerEPICS() external
- * .05  04-08-92    joh better diagnostic if we cant find
- *              a default interrupt handler
- * .06  05-06-93        joh     added new parameter to devDisconnectInterrupt().
- *                              See comment below.
- * .07  05-28-93    joh Added block probe routines
- * .08  05-28-93    joh Added an argument to devRegisterAddress() 
- * .09  05-28-93    joh Added devAddressMap() 
- * .10  06-14-93        joh     Added devAllocAddress()
- * .11  02-21-95        joh     Fixed warning messages 
  *
  * NOTES:
  * .01  06-14-93    joh needs devAllocInterruptVector() routine

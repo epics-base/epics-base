@@ -1,9 +1,24 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
 // $Id$
 // 
 // $Log$
+// Revision 1.34  2002/05/29 00:40:35  jhill
+// 1) use proper form of delete when releasing bounds
+// 2) when gdd changes from scalar to vector make sure that old scalar data is not
+// interpreted as a pointer
+// 3)properly init when copying one container to another
+//
 // Revision 1.33  2002/01/08 01:17:29  jhill
 // use proper form of delete
 //

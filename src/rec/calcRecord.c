@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recCalc.c */
 /* base/src/rec  $Id$ */
 
@@ -6,70 +15,6 @@
  *      Original Author: Julie Sander and Bob Dalesio
  *      Current  Author: Marty Kraimer
  *      Date:            7-27-87
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  5-18-88         lrd     modified modulo and power to avoid math library
- * .02  5-19-88         lrd     modified absolute value to avoid math library
- *                              defined unary math lib routines as doubles
- *                              removed include math.h
- *                              stopped loading dinglers math routines (ml)
- *                              wrote a random number generator to return a
- *                                      double between 0 and 1
- * .03  12-09-88        lrd     fixed modulo not to perform zero division
- * .04  12-12-88        lrd     lock the record while processing
- * .05  12-13-88        lrd     made an alarm for math error
- * .06  12-15-88        lrd     Process the forward scan link
- * .07  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .08  01-11-89        lrd     Add Right and Left Shift
- * .09  02-01-89        lrd     Add Trig functions
- * .10  03-14-89        lrd     fix true on C question mark operator
- * .11  03-29-89        lrd     make hardware errors MAJOR
- *                              remove hw severity spec from database
- * .12  04-06-89        lrd     add monitor detection
- * .13  05-03-89        lrd     removed process mask from arg list
- * .14  06-05-89        lrd     check for negative square root
- * .15  08-01-89        lrd     full range of exponentiation using pow(x,y)
- * .16  04-04-90        lrd     fix post events for read and calc alarms
- *                              fix neg base raised to integer exponent
- * .17  04-06-90        lrd     change conditional to check for 0 and non-zero
- *                              instead of 0 and 1 (more 'C' like)
- * .18  10-10-90	mrk	Made changes for new record support
- *				Note that all calc specific details moved
- *				to libCalc
- * .19  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .20  02-05-92	jba	Changed function arguments from paddr to precord 
- * .21  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
- * .22  02-28-92	jba	ANSI C changes
- * .23  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
- * .24  06-16-92        jba     Increased dim of rpbuf to hold double constants in expression
- * .25  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .27  07-21-92        jba     changed alarm limits for non val related fields
- * .28  08-06-92        jba     New algorithm for calculating analog alarms
- * .29  09-10-92        jba     modified fetch_values to call recGblGetLinkValue
- * .30  05-24-94        jba     Added recGblRecordError messages for postfix status
  */
 
 #include <stddef.h>

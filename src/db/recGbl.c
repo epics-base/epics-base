@@ -1,44 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* recGbl.c - Global record processing routines */
 /* base/src/db $Id$ */
 
 /*
  *      Author:          Marty Kraimer
  *      Date:            11-7-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01  11-16-91        jba     Added recGblGetGraphicDouble, recGblGetControlDouble
- * .02  02-28-92        jba     ANSI C changes
- * .03	05-19-92	mrk	Changes for internal database structure changes
- * .04  07-16-92        jba     changes made to remove compile warning msgs
- * .05  07-21-92        jba     Added recGblGetAlarmDouble
- * .06  08-07-92        jba     Added recGblGetLinkValue, recGblPutLinkValue
- * .07  08-07-92        jba     Added RTN_SUCCESS check for status
- * .08  09-15-92        jba     changed error parm in recGblRecordError calls
- * .09  09-17-92        jba     ANSI C changes
- * .10  01-27-93        jba     set pact to true during calls to dbPutLink
- * .11  03-21-94        mcn     Added fast link routines
  */
 
 #include <stddef.h>

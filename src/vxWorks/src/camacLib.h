@@ -1,9 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* camacLib.h -- Prototypes for camacLib.o
  *
  * Marty Wise
  * 10/11/93
  *
  * $Log$
+ * Revision 1.1  2001/08/01 14:33:11  mrk
+ * get rid of dev/drv support; use OBJ library only
+ *
  * Revision 1.1  1996/01/25 21:38:38  mrk
  * moved files from /base/include
  *

@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$ */
 
 /* includes for general purpose callback tasks		*/
@@ -5,21 +14,6 @@
  *      Original Author:        Marty Kraimer
  *      Date:   	        07-18-91
 */
-
-/********************COPYRIGHT NOTIFICATION**********************************
-This software was developed under a United States Government license
-described on the COPYRIGHT_UniversityOfChicago file included as part
-of this distribution.
-****************************************************************************/
-
-/* Modification Log:
- * -----------------
- * .01	12-12-91	mrk	Initial version
- * .02	04-05-94	mrk	Remove casts on Lvalues (ANSI forbids)
- * .02	02-09-95	joh	if def'd out typedef CALLBACK for 
- *				windows
- */
-
 
 #ifndef INCcallbackh
 #define INCcallbackh 1

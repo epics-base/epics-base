@@ -1,108 +1,17 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* module_types.h */
 /* base/include $Id$ */
 /*
  * 	Author:      Bob Dalesio
  * 	Date:        12-07-88
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	12-07-88	lrd	moved IO_TYPES.H into here
- *				added interruptable indicator for each io card
- *				added arrays of pointers for info on the io cards
- * .02	02-01-89	lrd	add Allen-Bradley Modules
- *				rearrange I/O card order
- * .03	02-04-89	lrd	add bus specification
- *
- * .04	02-06-89	joh	add timing int vec #  
- * .05	02-09-89	lrd	move vectors and I/O card base addresses here
- * .06	02-11-89	lrd	changed AB num cards to 12 and OFE num chan to 4
- * .04	02-13-89	joh	fixed length of timing address array 
- * .05	04-22-89	lrd	changed AB num channels to 8 for ABBI cards
- * .06	04-24-89	lrd	moved AB 6008SV info here
- * .07  05-26-89	joh	added Joerger VTR1 transient recorder
- * .08	09-13-89	lrd	add VXI module specification to each type
- *				remove unused modules
- * .09	09-25-89	lrd	AB adapters to 8 cards to 16 and IFE channels to
- *				8
- * .10	10-17-89	lrd	AB changed number of cards from 12 to 16 for
- *				binary inputs and outputs
- * .11	11-21-89	joh	fixed card and chnl count for at5 vxi timing 
- * .12	11-30-89	lrd	add the OMS 6 axis motor driver
- * .13	12-12-89	joh	moved XY220 base to match changes made by the
- *				hardware section. 
- * .14	05-16-90	cr	add Single Ended IFE module
- * .15	05-24-90	mk	add 4-20Ma IFE
- * .16  05-23-90        lrd/ms  add DVX-2502
- * .17	07-19-90	ms	changed the mizar interrupt vector to e8
- *				wouldn't work with the CMC ethernet card
- *				used the same interrupt vector
- * .18	12-19-90	lrd	add 0-5V IFE
- * .19	03-26-91	lrd	modified the AT5-VXIBO from 16 to 32
- * .20	07-23-91	ges	Add AT830X card base addresses and vectors.
- * .21	08-14-91	ges	Add AT830X_1 card base addresses and ivectors.
- *				(These are the new gen 8308B and 8309C cards)
- * .22	06-24-92	joh	added the hp E1368a VXI video switching module
- * .23	06-25-92	 bg	stripped intitial 1 off the standard addresses
- *				in AB_BASE_ADDR,ai_memaddrs,wf_memaddrs,AT830X_
- *                               ADDRS, and AT830X_1_ADDRS so they can be mapped
-				in sysBusToLocalAdrs
- * .24  06-25-92	 bg	stripped initial ff off all short addresses so
-				they can be mapped in sysBusToLocalAdrs
- * .25	06-25-92	 bg	Moved SM_BASE_ADDR frin oms_driver.h to sm_addrs
- 				in this file.
- * .26	06-25-92	 bg	Moved dvx addresses,interrupt vectors,channel numbers
-                                and card number definitions from dvx_driver.h to here.
- 	
- * .26	06-25-92	 bg	Moved dvx addresses,interrupt vectors,channel numbers
- * .27	06-25-92	 bg	Added definitions for xy240_driver   
- * .28	06-25-92	 bg	Removed all reference to the Zio085
- * .29	06-26-92	 bg	Temporarily returned all reference to the Zio085
- * .30	06-26-92	joh	added binary input capability to the hp E1368a 
- *				VXI video switching module
- * .31	06-30-92	joh	added constant for the number of VXI LA
- * .32	07-06-92	joh	added base and size VXIA24 & A32 devices 
- * .33	07-07-92	joh	added KSC V215 VXI AI
- * .34	07-09-92	joh	added  AT8 FP10S master/slave fast 
- *				protect module
- * .35  07-10-92	joh	added FP int vec base
- * .36  07-17-92	 bg	moved addresses for Comet card from drvComet.c to
- *				here.
- * .37	07-23-92	joh	number of AI channels for AT5 VXI should be 8 not 6
- * 				number of BI channels for AT5 VXI should be 32 not 16
- * 				number of TI channels for AT5 VXI should be 10 not 5
- *				(these changes reflect the AT5 hardware upgrade)
- *
- * .38	08-04-92	joh	fixed COMET A16 base addr	
- * .39	08-10-92	joh	number of xy220 cards now matches the AT8
- *				address standard
- * .40	08-11-92	joh	moved xy010 base to here
- * .41	08-11-92	joh	took out xycom specific defines
- * .42  09-15-92	joh	DVX num cards was set allowing the DVX to
- *				overlap the VXI DC address and continue
- *				outside of VME A16. DVX num cards is now one
- * .43	06-18-93	lrd	reduced xy220 number of cards to 1 - mv167 mismatch on short address space
- * .44	05-05-94	kornke	Changed number of supported OMS cards.
  */
 
 #ifndef INCLmodule_typesh

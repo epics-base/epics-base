@@ -1,80 +1,18 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* base/include/db_access.h */
 /* $Id$ */
 
 /*      Author:          Bob Dalesio
  *      Date:            4-4-88
 */
-
-/*****************************************************************
-                          COPYRIGHT NOTIFICATION
-*****************************************************************
-
-(C)  COPYRIGHT 1991 Regents of the University of California,
-and the University of Chicago Board of Governors.
-
-This software was developed under a United States Government license
-described on the COPYRIGHT_Combined file included as part
-of this distribution.
-**********************************************************************/
-
-
-/*	Modification Log:
- *	-----------------
- * .01	05-02-88	lrd	add control enumeration field, structure & size
- * .02	05-12-88	lrd	add array structures
- *				change structure names dbf_ to dbr_
- *				add VALID_FIELD_TYPE & INVALID_FIELD_TYPE macros
- *				add db_access_val union of all access strucures
- *				add MAX_STRING_SIZE 40 define
- * .03	08-08-88	lrd	add no_elements to db_addr
- *				removed DBF_ARRAY and all DBR_ARRAY variations
- *				made value the last field of each structure
- *				db_access_val union modified for changes
- *				dbr_size array modified for changes
- * .04	11-29-88	lrd	fixed declaration of union db_access_val
- * .05	12-17-88	lrd	added extra processing field
- * .06	01-13-89	lrd	added EP_CALC for modifying calculations on-line
- * .07	03-12-90	joh	added INCLdb_accessh for auto include 
- * .08	04-06-90	lrd	add DBF_CHAR, DBF_LONG, DBF_DOUBLE
- *				and DBR_TIME
- * .09	04-06-90	joh	added dbr_size_n(type, count)
- * .10	04-06-90	joh	changed all dbr_size stuff to unsigned
- * .11	04-27-90	rac	added date to DBR_TIME structures
- * .12	05-02-90	rac	changed back to old way of doing sts and gr;
- *				added dbr and dbf keywords and macros
- * .13	08-07-90	rac	re-enter various changes since .12; change
- *				some char structure members to short; change
- *				time structures once more.
- * .14	10-29-90	joh	forced size and value size to allocate in
- *				one module alone. 
- * .15	10-29-90	joh	added the readonly keyword for VAX C after 
- *				failing to find any way to get the CA VMS share 
- *				image to work without polluting the source.
- * .16  01-07-91        rac     fix a problem with dbf_text_to_type()
- * .17	06-03-91	joh	SPARC padding. 
- * .18	06-04-91	joh	added VALID_DB_FIELD(x) & INVALID_DB_FIELD(x)
- *				macros.
- * .19  03-01-91        mda     integration of ANL/LANL code
- * .20	06-25-91	joh	added #include db_addr.h
- * .21	02-02-94	mrk	added PUTNOTIFY
- * .22	08-17-94	joh	MAX_UNITS_SIZE, MAX_ENUM_STRING_SIZE,
- *				MAX_ENUM_STATES used to declare the
- *				character arrays.
- * .23	08-17-94	joh	dbr_value_class[] definitions,
- * .24	08-17-94	joh	arch independent types
- * .25	03-06-95	joh	more arch independent types	
- * .26	05-17-95	joh	conversion between epics core types
- *				and dbr types
- * .27	05-26-95	joh	added const	
- * .28  10-10-96	joh	eliminated the dbAddr/db_addr mess
- *
- * NOTES:
- * .01	06-04-91	joh	the value must always be the last item 
- *				in the structure so arrays work.
- * .02	06-05-91	joh	structures are aligned to their largest memeber
- *				for the SPARC. CA takes care of alignment
- *				between structures as part of the CA protocol.
- */
 
 #ifndef INCLdb_accessh
 #define INCLdb_accessh

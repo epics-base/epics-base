@@ -1,79 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$ */
 /*
  *	Author: Julie Sander and Bob Dalesio
  *	Date:	07-27-87
- *
- *	Experimental Physics and Industrial Control System (EPICS)
- *
- *	Copyright 1991, the Regents of the University of California,
- *	and the University of Chicago Board of Governors.
- *
- *	This software was produced under  U.S. Government contracts:
- *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
- *	and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *	Initial development by:
- *		The Controls and Automation Group (AT-8)
- *		Ground Test Accelerator
- *		Accelerator Technology Division
- *		Los Alamos National Laboratory
- *
- *	Co-developed with
- *		The Controls and Computing Group
- *		Accelerator Systems Division
- *		Advanced Photon Source
- *		Argonne National Laboratory
- *
- * Modification Log:
- * -----------------
- * .01	5-18-88		lrd	modified modulo and power to avoid math library
- * .02	5-19-88		lrd	modified absolute value to avoid math library
- *				defined unary math lib routines as doubles
- *				removed include math.h
- *				stopped loading dinglers math routines (ml)
- *				wrote a random number generator to return a
- *					double between 0 and 1
- * .03	12-09-88	lrd	fixed modulo not to perform zero division
- * .04	12-12-88	lrd	lock the record while processing
- * .05	12-13-88	lrd	made an alarm for math error
- * .06	12-15-88	lrd	Process the forward scan link
- * .07  12-23-88        lrd     Alarm on locked MAX_LOCKED times
- * .08	01-11-89	lrd	Add Right and Left Shift
- * .09	02-01-89	lrd	Add Trig functions
- * .10	03-14-89	lrd	fix true on C question mark operator
- * .11	03-29-89	lrd	make hardware errors MAJOR
- *				remove hw severity spec from database
- * .12	04-06-89	lrd	add monitor detection
- * .13	05-03-89	lrd	removed process mask from arg list
- * .14	06-05-89	lrd	check for negative square root
- * .15	08-01-89	lrd	full range of exponentiation using pow(x,y) 
- * .16	04-04-90	lrd	fix post events for read and calc alarms
- *				fix neg base raised to integer exponent
- * .17	04-06-90	lrd	change conditional to check for 0 and non-zero
- *				instead of 0 and 1 (more 'C' like)
- * .18	09-10-90	lrd	add time stamps
- * .19	11-26-90	lrd	add bit not and relational not - fix RNDM
- * .20	11-29-90	lrd	conditionally process soft channels
- * .21	12-14-90	lrd	fixed post events for the variables
- * .22  03-15-91	mrk	moved code from calcRecord to here
- * .23	08-01-91	rac	don't use FETCH_G ... for V2
- * .24	02-20-92	rcz	fixed for vxWorks build
- * .25	02-24-92	jba	add EXP and fix for EXPON when *pstacktop is 0
- * .26	02-28-92	jba	added CEIL and FLOOR
- * .27  03-06-92        jba     added MAX and MIN binary functions
- * .28  03-10-92        jba     added multiple conditional expressions ?
- * .29  04-01-92        jba     allowed floating pt constants in expression
- * .30  05-01-92        jba     flt pt constant string replaced with double in postfix
- * .31  08-21-92        jba     ANSI c changes
- * .32  12-11-92	mrk	Removed include for stdioLib.h
- * .33  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
- * .34  05-11-94	jba	Added support for CONST_PI, CONST_D2R, and CONST_R2D
- * .34  08-18-94	jba	Must skip over constant when looking for COND_END,COND_ELSE
- * .35	10-07-94	mda	change local random() to local_random() to
- *				avoid colliding with math library random()
-
-  $Log%
-
  */
 
 /* This module contains the code for processing the arithmetic

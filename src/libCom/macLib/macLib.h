@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 /* $Id$
  *
  * Definitions for macro substitution library (macLib)
@@ -210,6 +219,9 @@ epicsShareAPI macInstallMacros(
 
 /**************************************************************************
  * $Log$
+ * Revision 1.8  2002/05/06 19:01:00  mrk
+ * add extern for C callable routines
+ *
  * Revision 1.7  1999/05/13 16:06:22  anj
  * Cleaned up warnings - the RCS Log: keyword was on the comment line
  * that starts with a '/' which RCS replicates for these notes...

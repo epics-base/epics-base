@@ -1,3 +1,12 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 #ifndef GDD_SCALAR_H
 #define GDD_SCALAR_H
 
@@ -7,6 +16,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.4  1999/08/10 16:51:06  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.3  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *

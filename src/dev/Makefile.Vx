@@ -109,7 +109,6 @@ SRCS.c += ../devAB1771OFE.c
 SRCS.c += ../devABSLCDCM.c
 SRCS.c += ../devABBINARY.c
 SRCS.c += ../devABStatus.c
-SRCS.c += ../devMpc.c
 SRCS.c += ../devVmic2534.c
 
 #	SRCS.c += ../devAiCan.c

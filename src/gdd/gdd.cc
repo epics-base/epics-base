@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:37  jbk
+// new in EPICS base
+//
 //
 
 // *Revision 1.4  1996/06/25 18:59:01  jbk
@@ -349,6 +352,7 @@ size_t gdd::getDataSizeBytes(void) const
 {
 	size_t sz=0;
 	gdd* pdd;
+	aitString* str;
 
 	if(isContainer())
 	{
@@ -362,8 +366,12 @@ size_t gdd::getDataSizeBytes(void) const
 		if(aitValid(primitiveType()))
 		{
 			if(primitiveType()==aitEnumString)
-				sz+=(size_t)(aitString::totalLength((aitString*)dataAddress(),
+			{
+				if(dimension()) str=(aitString*)dataPointer();
+				else str=(aitString*)dataAddress();
+				sz+=(size_t)(aitString::totalLength(str,
 					getDataSizeElements()));
+			}
 			else
 				sz+=(size_t)(getDataSizeElements())*aitSize[primitiveType()];
 		}

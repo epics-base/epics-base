@@ -28,6 +28,7 @@
  * .01	unknown		rac	initial version, cloned from WETF code
  * .02	02-19-92	rac	added proper treatment for fractional values
  *				and printing for integers
+ * .03	03-09-92	rac	fix bug where decPl was sometimes ignored
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -216,6 +217,8 @@ int	decPl;		/* I max # of dec places to print */
 		decPlaces = expI + decPl;
 		if (decPlaces > width -1 - minusWidth)
 		    decPlaces = roomFor + expI;
+		if (decPlaces > decPl)
+		    decPlaces = decPl;
 		(void)sprintf(tempText, "%.*f", decPlaces, value);
 		if (value < 0.)
 		    tempText[1] = '-';

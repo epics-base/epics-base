@@ -70,7 +70,8 @@
  */
 
 #include "vxWorks.h"
-ifdef V5_vxWorks
+#include "vme.h"
+#ifdef V5_vxWorks
 #       include <iv.h> /* in h/68k if this is compiling for a 68xxx */
 #else
 #       include <iv68k.h>
@@ -117,7 +118,7 @@ struct fp10m
 	unsigned short cr;		/* control register */
 	unsigned short sr;		/* status register */
 	unsigned short ivec;		/* interrupt vector */
-	char end_pad[0xff-0x6]		/* pad to 256 byte boundary */
+	char end_pad[0xff-0x6];		/* pad to 256 byte boundary */
 	};
 
 /* control structure */
@@ -173,6 +174,7 @@ fpm_init(addr)
  short junk;
  short intvec = FPM_IVEC0;
  struct fp10m *ptr;
+ int status;
 
  if(!addr){
         addr = bi_addrs[AT8_FP10M_BO];

@@ -79,8 +79,9 @@
  */
 
 #include "vxWorks.h"
+#include "vme.h"
 #include "taskLib.h"
-ifdef V5_vxWorks
+#ifdef V5_vxWorks
 #       include <iv.h> /* in h/68k if this is compiling for a 68xxx */
 #else
 #       include <iv68k.h>
@@ -136,7 +137,7 @@ struct fp1
 	unsigned short srd;		/* current status */
 	unsigned short frd;		/* latched status */
 	unsigned short ivec;		/* interrupt vector */
-        char end_pad[0xff-0x8]		/* pad to 256 byte boundary */
+        char end_pad[0xff-0x8];		/* pad to 256 byte boundary */
 	};
 
 /* fast protect control structure */
@@ -214,6 +215,7 @@ fp_init(addr)
  short junk;
  short intvec = FP_IVEC0;
  struct fp1 *ptr;
+ int status;
 
  if(!addr){
 	addr = bi_addrs[AT8_FP10S_BI];

@@ -83,23 +83,8 @@ B) Adjust Makefile.Host
   refer to Sample.Makefile.Host in the base/config dir.
 
 
-
-
 The current make-system for WIN32
 needs
 * gnumake (OK, sources for WIN32 are available)
-* several UNIX tools: sed, grep, ... (dito)
-* a UNIX-like shell (ouch!)
+* perl (OK, sources for WIN32 are available)
 
-I found no fully operational shell and no sources for WIN32 so far,
-Cygnus' bash e.g. cannot handle this:
-(echo a>a; echo b>>a)
-Right now I use the knts that I wrote and simplified scripts.
-Jeff eliminated many shell-lines in Makefile.*,
-the final solution could be:
-1) replace shell, awk, grep, sed, ... by  Perl!
-2) use C code
-
-Perl looks like a real option because it's available
-for many platforms and maybe the best idea for
-'portable scripts'.

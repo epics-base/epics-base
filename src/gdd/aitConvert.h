@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1999/10/28 00:27:51  jhill
+ * special case enum to string conversion
+ *
  * Revision 1.5  1997/08/05 00:51:04  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -34,8 +37,6 @@
 #include <vector>
 #include <string>
 
-using namespace std;
-
 #include "shareLib.h"
 #include "osiSock.h"
 
@@ -54,7 +55,7 @@ using namespace std;
 typedef enum { aitLocalDataFormat=0, aitNetworkDataFormat } aitDataFormat;
 
 /* all conversion functions have this prototype */
-typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const vector< string > &enumStringTable);
+typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const std::vector< std::string > &enumStringTable);
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,18 +80,18 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus)
 
-static const vector<string> emptyEnumStringTable;
+static const std::vector<std::string> emptyEnumStringTable;
 
 inline int aitConvert(aitEnum desttype, void* dest,
- aitEnum srctype, const void* src, aitIndex count, const vector< string > &enumStringTable = emptyEnumStringTable )
+                      aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
   { return (*aitConvertTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 inline int aitConvertToNet(aitEnum desttype, void* dest,
- aitEnum srctype, const void* src, aitIndex count, const vector< string > &enumStringTable = emptyEnumStringTable )
+ aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
   { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 inline int aitConvertFromNet(aitEnum desttype, void* dest,
- aitEnum srctype, const void* src, aitIndex count, const vector< string > &enumStringTable = emptyEnumStringTable )
+ aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
   { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 #else

@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1999/10/28 00:27:20  jhill
+ * special case enum to string conversion
+ *
  * Revision 1.7  1997/08/05 00:51:04  jhill
  * fixed problems in aitString and the conversion matrix
  *
@@ -175,7 +178,7 @@ void MakeStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -205,7 +208,7 @@ void MakeStringFuncTo(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -253,7 +256,7 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -290,7 +293,7 @@ void MakeFStringFuncTo(int i,int j,int k)
 {
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> &)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
 	pr(dfd,"\taitIndex i;\n");
@@ -336,7 +339,7 @@ void GenName(int i,int j,int k)
 	const char* i_name = &((aitName[i])[3]);
 	const char* j_name = &((aitName[j])[3]);
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const vector<string> &)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const std::vector<std::string> &)\n",
 			table_type[k],i_name,j_name);
 }
 

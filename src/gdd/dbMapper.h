@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1999/10/28 00:25:44  jhill
+ * defined new dbr types
+ *
  * Revision 1.6  1999/05/11 00:32:29  jhill
  * fixed const warnings
  *
@@ -54,7 +57,7 @@ typedef gdd* (*to_gdd)(void* db_struct, aitIndex element_count);
 // gdd points to an array or -1 if the number of elements in the value
 // field is not identical to element_count available in db_struct.
 typedef int (*to_dbr)(void* db_struct, aitIndex element_count, 
-                      const gdd &, const vector<string> &enumStringTable);
+                      const gdd &, const std::vector< std::string > &enumStringTable);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;

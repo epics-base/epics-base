@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/06/16 02:31:36  jhill
+ * allow the PV to be created before the server
+ *
  * Revision 1.9  1997/08/05 00:47:11  jhill
  * fixed warnings
  *
@@ -103,14 +106,12 @@ casPVI::~casPVI()
 		// delete any attached channels
 		//
 		tsDLIterBD<casPVListChan> iter(this->chanList.first());
-		const tsDLIterBD<casPVListChan> eol;
-		tsDLIterBD<casPVListChan> tmp;
-		while (iter!=eol) {
+		while (iter!=tsDLIterBD<casPVListChan>::eol()) {
 			//
 			// deleting the channel removes it from the list
 			//
 
-			tmp = iter;
+			tsDLIterBD<casPVListChan> tmp = iter;
 			++tmp;
 			(*iter)->destroy();
 			iter = tmp;

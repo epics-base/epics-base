@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.29  1999/05/07 23:07:11  jhill
+ * throw warning exception with get/put callback failure detail
+ *
  * Revision 1.28  1999/04/30 15:46:54  jhill
  * deal with situation where bounds on managed DD must be modified
  *
@@ -244,13 +247,11 @@ casStrmClient::~casStrmClient()
 	// delete all channel attached
 	//
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	const tsDLIterBD<casChannelI> eol;
-	tsDLIterBD<casChannelI> tmp;
-	while (iter!=eol) {
+	while (iter!=tsDLIterBD<casChannelI>::eol()) {
 		//
 		// destroying the channel removes it from the list
 		//
-		tmp = iter;
+		tsDLIterBD<casChannelI> tmp = iter;
 		++tmp;
 		iter->clientDestroy();
 		iter = tmp;
@@ -948,8 +949,7 @@ caStatus casStrmClient::hostNameAction()
 	this->pHostName = pMalloc;
 
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	const tsDLIterBD<casChannelI> eol;
-	while ( iter!=eol ) {
+	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
 		(*iter)->setOwner(this->pUserName, this->pHostName);
 		++iter;
 	}
@@ -998,8 +998,7 @@ caStatus casStrmClient::clientNameAction()
 	this->pUserName = pMalloc;
 
 	tsDLIterBD<casChannelI>	iter(this->chanList.first());
-	const tsDLIterBD<casChannelI> eol;
-	while ( iter!=eol ) {
+	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
 		(*iter)->setOwner(this->pUserName, this->pHostName);
 		++iter;
 	}
@@ -1609,8 +1608,7 @@ caStatus casStrmClient::readSyncAction()
 	//
 	this->osiLock();
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	const tsDLIterBD<casChannelI> eol;
-	while ( iter!=eol ) {
+	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
 		iter->clearOutstandingReads();
 		++iter;
 	}
@@ -2132,7 +2130,7 @@ inline aitBool caServerI::roomForNewChannel() const
 void casStrmClient::installChannel(casChannelI &chan)
 {
 	this->osiLock();
-	this->getCAS().installItem(chan);
+	this->getCAS().installItem (chan);
 	this->chanList.add(chan);
 	this->osiUnlock();
 }
@@ -2170,7 +2168,7 @@ xSendStatus casStrmClient::xSend(char *pBufIn, bufSizeT nBytesAvailableToSend,
 		stat = this->osdSend(pBufIn, nBytesAvailableToSend, 
 			nActualBytes);
 		if (stat == xSendOK) {
-			this->elapsedAtLastSend = osiTime::getCurrent();
+			this->lastSendTS = osiTime::getCurrent();
 		}
 		return stat;
 	}
@@ -2186,7 +2184,7 @@ xSendStatus casStrmClient::xSend(char *pBufIn, bufSizeT nBytesAvailableToSend,
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-		this->elapsedAtLastSend = osiTime::getCurrent();
+		this->lastSendTS = osiTime::getCurrent();
 		nActualBytes += nActualBytesDelta;
 		
 		if (nBytesNeedToBeSent <= nActualBytesDelta) {
@@ -2211,7 +2209,7 @@ xRecvStatus casStrmClient::xRecv(char *pBufIn, bufSizeT nBytes,
 		//
 		// !! this time fetch may be slowing things down !!
 		//
-		this->elapsedAtLastRecv = osiTime::getCurrent();
+		this->lastRecvTS = osiTime::getCurrent();
 	}
 	return stat;
 }

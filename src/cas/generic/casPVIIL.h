@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1999/04/30 15:36:26  jhill
+ * better range check on index to gddAitToDbr
+ *
  * Revision 1.12  1998/06/16 02:21:49  jhill
  * dont require that a server must exist before a PV is created
  *
@@ -240,8 +243,7 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
 
 	this->lock();
 	tsDLIterBD<casPVListChan> iter(this->chanList.first());
-	const tsDLIterBD<casPVListChan> eol;
-	while ( iter != eol ) {
+    while ( iter != tsDLIterBD<casPVListChan>::eol() ) {
 		iter->postEvent(select, event);
 		++iter;
 	}

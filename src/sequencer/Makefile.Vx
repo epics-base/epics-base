@@ -16,6 +16,8 @@ LIBOBJS =
 
 PROD = seq
 
+all: install
+
 seqVersion.c: ../Version
 	/bin/rm -f seqVersion.c
 	sh ../makeSeqVersion ../Version > seqVersion.c

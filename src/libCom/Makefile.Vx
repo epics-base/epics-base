@@ -2,8 +2,6 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -ansi
-
 SRCS = \
 	../calcPerform.c ../cmdSubr.c ../cvtBpt.c ../cvtFast.c \
 	../cvtNumbers.c ../gpHashLib.c ../freeListLib.c ../ellLib.c \
@@ -29,6 +27,8 @@ LIBOBJS2 = \
 LIBNAME = libCom.o
 LIBNAME1 = libCom1.o
 LIBNAME2 = libCom2.o
+
+all: install_libs install
 
 build_libs: $(LIBNAME) $(LIBNAME1) $(LIBNAME2)
 

@@ -17,4 +17,9 @@ LIBOBJS = \
 
 LIBNAME = caLib
 
+all: install_libs
+
+clean::
+	rm -f caLib
+
 include $(EPICS)/config/RULES.Vx

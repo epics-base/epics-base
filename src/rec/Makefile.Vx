@@ -2,7 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -I../../drv
+USR_INCLUDES = -I../../drv
 
 SRCS = \
 	../recAi.c ../recGsub.c ../recPulseDelay.c ../recAo.c \
@@ -29,5 +29,10 @@ OBJS = \
 LIBOBJS = \
 
 PROD = recSup
+
+all: install
+
+clean::
+	rm -f recSup
 
 include $(EPICS)/config/RULES.Vx

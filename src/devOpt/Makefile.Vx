@@ -2,8 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -ansi -I../../drv
-LDLIBS =
+USR_INCLUDES = -I../../drv
 
 SRCS = \
 	../devAnalytekGpib.c ../devXxDg535Gpib.c ../devXxSkeletonGpib.c \
@@ -21,5 +20,7 @@ OBJS = \
 LIBOBJS =
 
 TARGETS =
+
+all: install
 
 include $(EPICS)/config/RULES.Vx

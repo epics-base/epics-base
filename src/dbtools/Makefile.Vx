@@ -10,8 +10,10 @@ LEXOPT = -L
 SRCS = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
 OBJS =
-LIBOBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
+LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
 LIBNAME = dbSubs
+
+all: install_libs install
 
 dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c 
@@ -23,7 +25,7 @@ subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o
 
 clean::
 	rm -f dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
-			dbLoadRecords.c subtool dbLoadTemplate
+			dbLoadRecords.c subtool dbLoadTemplate dbSubs
 
 include $(EPICS)/config/RULES.Vx
 

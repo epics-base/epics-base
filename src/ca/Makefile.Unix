@@ -2,9 +2,8 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_LDLIBS = -lm -s
-USR_LDLIBS =
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+USR_LDLIBS = -lca -lCom -lDb
 
 SRCS = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
@@ -21,5 +20,10 @@ LIBOBJS = \
 LIBNAME = libca.a
 
 TARGET = caRepeater
+
+all: install_libs install
+
+clean::
+	rm -f caRepeater
 
 include $(EPICS)/config/RULES.Unix

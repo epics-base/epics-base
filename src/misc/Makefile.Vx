@@ -12,4 +12,9 @@ LIBOBJS = epicsEnvParams.o epicsRelease.o
 
 LIBNAME = miscLib
 
+all: install_libs
+
+clean::
+	rm -f miscLib
+
 include $(EPICS)/config/RULES.Vx

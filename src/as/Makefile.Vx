@@ -10,9 +10,14 @@ OBJS =
 LIBOBJS = asDbLib.o asCa.o asLib.o
 LIBNAME = asLibrary
 
+all: install_libs
+
 # Extra rule since asLib_lex.c is included in asLib.c
 #   In my opinion, these objects should really be built
 #   independently.
 asLib.o: asLib_lex.c ../asLibRoutines.c
+
+clean::
+	rm -f asLib_lex.c asLibrary
 
 include $(EPICS)/config/RULES.Vx

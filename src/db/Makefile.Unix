@@ -2,6 +2,8 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
+USR_LDLIBS = -lDb -lCom
+
 SRCS = \
 	../dbStaticLib.c \
 	atdb_lex.c \
@@ -19,8 +21,15 @@ LIBNAME = libDb.a
 
 TARGET = dbta atdb dbl dbls
 
+all: install_libs install
+
 atdb: atdb.o atdb_yacc.o
-	$(LINK.c) -o $@ $? $(LDLIBS)
+	$(LINK.c) -o $@ atdb.o atdb_yacc.o $(LDLIBS)
+
+dbta: $(LIBNAME)
+atdb: $(LIBNAME)
+dbl: $(LIBNAME)
+dbls: $(LIBNAME)
 
 # Extra rule since atdb_lex.c is included in atdb_yacc.c
 #   In my opinion, these objects should really be built

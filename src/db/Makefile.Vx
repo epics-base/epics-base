@@ -2,8 +2,6 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-all: install
-
 SRCS = \
 	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
 	../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \
@@ -22,6 +20,11 @@ LIBOBJS = \
 LIBNAME = dbLib
 
 TARGET = initHooks.o
+
+all: install_libs
+
+clean::
+	rm -f dbLib
 
 include $(EPICS)/config/RULES.Vx
 

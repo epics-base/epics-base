@@ -2,15 +2,11 @@ EPICS = ../../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
+CMPLR = OLD
 YACCOPT = -d
-
 SKELETON_FILE=include/flex.skel.static
-
 USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
-
-LDLIBS = -s
-
-CC = $(oldCC)
+USR_LDLIBS = -s
 
 SRCS =  ../ccl.c ../dfa.c ../ecs.c ../gen.c ../main.c \
 	../misc.c ../nfa.c parse.c ../scan.c ../sym.c \
@@ -24,21 +20,8 @@ OBJS = \
 
 PROD = e_flex
 
-# all :: $(PROD)
-
-#
-#  If you need parse.h, you must recompile parse.c
-#
-#parse.c::
-#	mv y.tab.h parse.h
-
+all: install
 pre_build: install
-
-#parse.h parse.c : parse.y
-#	rm -f parse.h parse.c
-#	$(YACC) -d parse.y
-#	@mv y.tab.c parse.c
-#	@mv y.tab.h parse.h
 
 clean::
 	rm -f parse.c parse.h e_flex

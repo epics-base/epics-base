@@ -2,9 +2,9 @@ EPICS = ../../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-LDLIBS = -lm -s
+CMPLR = OLD
+USR_LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
-CC = $(oldCC)
 
 SRCS = \
 	../closure.c ../error.c ../lalr.c ../lr0.c ../main.c \
@@ -19,6 +19,11 @@ OBJS = \
 
 PROD = antelope
 
+all: install
+
 pre_build: install
+
+clean::
+	rm -f antelope
 
 include $(EPICS)/config/RULES.Unix

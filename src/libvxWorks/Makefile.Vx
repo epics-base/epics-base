@@ -12,4 +12,9 @@ LIBOBJS = veclist.o iocLogClient.o
 
 LIBNAME = vxComLib
 
+all: install_libs
+
+clean::
+	rm -f vxComLib
+
 include $(EPICS)/config/RULES.Vx

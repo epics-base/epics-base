@@ -2,8 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS =
-LDLIBS = -ll
+USR_LDLIBS = -ll
 YACCOPT = -d -v
 
 SRCS =  ../snc_main.c ../parse.c ../phase2.c ../gen_ss_code.c \
@@ -15,6 +14,8 @@ OBJS =  snc_main.o parse.o phase2.o gen_ss_code.o \
 LIBOBJS =
 
 PROD = snc
+
+all: install
 
 #
 #  The generated lex file includes snc.h

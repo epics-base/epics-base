@@ -31,22 +31,23 @@ OBJS2 = drvPEPBitBus.o
 LIBOBJS =
 
 PROD1 = drvSup
-
 PROD2 = drvSupPEP
 
 PRODS = $(PROD1) $(PROD2)
 
+all: install
+
 install: install_prods
 
 install_prods: $(PRODS)
-	$(INSTALL) $? $(EPICS_BASE_BIN)/$(T_A)
+	$(INSTALL) $(PRODS) $(EPICS_BASE_BIN)/$(T_A)
 
 build:: $(PROD1) $(PROD2)
 
-drvSup: $(OBJS) $(OBJS1)
+$(PROD1): $(OBJS) $(OBJS1)
 	$(LINK.c) $@ $? $(LDLIBS)
 
-drvSupPEP: $(OBJS) $(OBJS2)
+$(PROD2): $(OBJS) $(OBJS2)
 	$(LINK.c) $@ $? $(LDLIBS)
 
 include $(EPICS)/config/RULES.Vx

@@ -27,6 +27,8 @@ LIBNAME = libCom.a
 
 TARGET = cvtTest tsTest sydTest
 
+all: install_libs install
+
 build:: errSymTbl.o errInc.o
 
 errSymTbl.o: errSymTbl.c errInc.o

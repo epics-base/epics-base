@@ -2,11 +2,10 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
+CMPLR = OLD
 USR_LDLIBS = -lm -s
-
-USR_CFLAGS = -DXWINDOWS -UvxWorks -I$(OPENWIN)/include
-
-CC = $(oldCC)
+USR_INCLUDES = -I$(OPENWIN)/include
+USR_CFLAGS = -DXWINDOWS -UvxWorks
 
 SRCS = \
 	../apCreateShadow.c ../apStatusSync.c ../bfRing.c ../ca_test.c \
@@ -27,5 +26,10 @@ LIBNAME = libppr.a
 TARGETS = \
 	apCreateShadow apStatusSync bfRing ca_test calcTest cmdClient \
 	extrDoc iocLogServer racPrint recListProg recordTest startCArepeater
+
+all: install_libs install
+
+clean::
+	rm -f $(TARGETS)
 
 include $(EPICS)/config/RULES.Unix

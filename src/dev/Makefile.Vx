@@ -2,8 +2,7 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -ansi -I../../drv
-LDLIBS =
+USR_INCLUDES = -I../../drv
 
 SRCS = \
 	../devAiDvx2502.c ../devAiSoft.c ../devAiSoftRaw.c \
@@ -60,5 +59,10 @@ OBJS = \
 LIBOBJS =
 
 PROD = devSup
+
+all: install
+
+clean::
+	rm -f devSup
 
 include $(EPICS)/config/RULES.Vx

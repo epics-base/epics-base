@@ -26,72 +26,9 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.4  1997/06/13 09:14:11  jhill
- * connect/search proto changes
- *
- * Revision 1.3  1997/01/22 21:08:17  jhill
- * removed use of ## for VAXC port
- *
- * Revision 1.2  1996/09/16 16:32:49  jhill
- * added CA version string
- *
- * Revision 1.1  1996/06/20 18:02:22  jhill
- * installed into CVS
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 #ifndef __CAPROTO__
-/* $Id$ */
-/*
- *	History
- * 	.01 01xx90 joh	removed status field in favor of a independent m_cmmd- 
- *			saves space on every successful operation
- *
- *	.02 041390 joh	moved server ports to above IPPORT_USERRESERVED
- *			see in.h
- *
- *	.03 060391 joh	Bumped protocol version to 4 to support changes for
- *			SPARC alignment in db_access.h
- *	
- *	.04 071291 joh	New command added - claim channel in use block
- *
- *	.05 011294 joh	New command added - write notify 
- *
- *	.06 020194 joh	New command added for CA V4.1 - client name 
- *
- *	.07 041194 joh	New command added for CA V4.2 - access rights 
- *
- *	.08 050594 joh	New command added for CA V4.3 - echo request
- *
- *	.09 050594 joh	New command added for CA V4.3 - repeater fanout regis 
- *
- *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
- * $Log$
- * Revision 1.4  1997/06/13 09:14:11  jhill
- * connect/search proto changes
- *
- * Revision 1.3  1997/01/22 21:08:17  jhill
- * removed use of ## for VAXC port
- *
- * Revision 1.2  1996/09/16 16:32:49  jhill
- * added CA version string
- *
- * Revision 1.1  1996/06/20 18:02:22  jhill
- * installed into CVS
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
- */
-
 #define __CAPROTO__ 
 
 /* 

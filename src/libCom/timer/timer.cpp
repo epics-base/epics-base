@@ -223,7 +223,7 @@ void timer::show ( unsigned int level ) const
     }
 }
 
-void timer::operator delete ( void * pCadaver )
+void timer::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat
@@ -234,7 +234,7 @@ void timer::operator delete ( void * pCadaver )
         __FILE__, __LINE__ );
 }
 
-void epicsTimerForC::operator delete ( void * pCadaver )
+void epicsTimerForC::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

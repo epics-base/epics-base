@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/10/27 18:28:20  jhill
+ * fixed warnings
+ *
  * Revision 1.8  1998/05/05 16:26:31  jhill
  * fixed warnings
  *
@@ -125,16 +128,16 @@ int casEventRegistry::initRegistry()
 //
 // casEventRegistry::maskAllocator()
 //
-inline casEventMask casEventRegistry::maskAllocator()
+casEventMask casEventRegistry::maskAllocator()
 {
-        casEventMask    evMask;
+	casEventMask    evMask;
  
 	this->mutex.osiLock();
-        if (this->allocator<CHAR_BIT*sizeof(evMask.mask)) {
-        	evMask.mask = 1u<<(this->allocator++);
-        }
+	if (this->allocator<CHAR_BIT*sizeof(evMask.mask)) {
+		evMask.mask = 1u<<(this->allocator++);
+	}
 	this->mutex.osiUnlock();
-        return evMask;
+	return evMask;
 }
 
 //

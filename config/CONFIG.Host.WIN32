@@ -127,9 +127,9 @@ CCC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
 CCC_SLIBS_YES=
 CCC_SLIBS_NO=
 
-LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
+LINK_OPT_FLAGS_YES = /warn:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
-LINK_OPT_FLAGS_NO = /WARN:3 /debug 
+LINK_OPT_FLAGS_NO = /warn:3 /debug 
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=

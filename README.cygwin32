@@ -19,7 +19,7 @@ To build EPICS on Win95 or NT using cygwin32, we need
 
 Optional items 
     CVS, version 1.9 or later, available from
-            http:/www.cyclic.com 
+            http:/download.cyclic.com 
     vim ( Vi IMproved), version 4.5 or later, available from
            http://www.cygnus.com/misc/gnu-win32/ 
         
@@ -63,6 +63,12 @@ BUILD INSTRUCTIONS
 -------------------------------------
         cd <epicsBaseReleaseDir>
         cygwin32.bat
+
+5) Install tornado
+------------------
+
+6) Set site specific parms in epics base/config files
+-----------------------------------------------------
 
 7) Build epics base
 -------------------

@@ -40,7 +40,9 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
     const char* const names[] = {
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
     };
-    for (int i=0; i<10; i++)
+    int i;
+    
+    for (i=0; i<10; i++)
 	apf[i] = new fred(names[i]);
     
     epicsList<fred*> Fred;
@@ -110,14 +112,14 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
     test(Fred.size() == 3);
     
     Fi = Fred.begin();
-    for (int i=0; Fi != Fred.end(); i++, ++Fi)
+    for (i=0; Fi != Fred.end(); i++, ++Fi)
 	test(*Fi == apf[i]);
     
     Fci = Fred.begin();
-    for (int i=0; Fci != Fred.end(); i++, ++Fci)
+    for (i=0; Fci != Fred.end(); i++, ++Fci)
 	test(*Fci == apf[i]);
     
-    for (int i=0; i<10; i++) {
+    for (i=0; i<10; i++) {
 	test(Fred.size() == 3);
 	
 	epicsList<fred*> Freda;
@@ -151,7 +153,7 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
     // Try doing this in tsDLList!
     
     epicsList<epicsList<fred*>*> llf;
-    for (int i=0; i<10; i++) {
+    for (i=0; i<10; i++) {
 	llf.push_front(new epicsList<fred*>);
 	llf.front()->push_front(apf[i]);
     }
@@ -167,7 +169,7 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
     }
     llf.clear();
     
-    for (int i=0; i<10; i++)
+    for (i=0; i<10; i++)
 	delete apf[i];
     
     cout << tests << " tests completed, " << nak << " failed." << endl;

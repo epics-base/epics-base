@@ -69,7 +69,7 @@ static char *sccsId = "%W% %G%";
 #include "ellLib.h"
 #include "freeList.h"
 #include "caerr.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 #include "server.h"
 

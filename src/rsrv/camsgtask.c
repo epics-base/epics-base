@@ -61,7 +61,7 @@ static char *sccsId = "@(#) $Id$";
 #include "taskwd.h"
 #include "db_access.h"
 #include "server.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 
 /*

@@ -77,7 +77,7 @@ static char	*sccsId = "@(#) $Id$";
 #include "envDefs.h"
 #include "freeList.h"
 #include "server.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 	
 LOCAL void clean_addrq();

@@ -66,7 +66,7 @@ static char *sccsId = "@(#) $Id$";
 #include "envDefs.h"
 #include "freeList.h"
 #include "errlog.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 #include "server.h"
 
@@ -478,14 +478,14 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 
 	if (level >= 3u) {
 		printf(	"\tSend Lock\n");
-		semMutexShow(client->lock);
+		semMutexShow(client->lock,1);
 		printf(	"\tPut Notify Lock\n");
-		semMutexShow (client->putNotifyLock);
+		semMutexShow (client->putNotifyLock,1);
 		printf(	"\tAddress Queue Lock\n");
-		semMutexShow (client->addrqLock);
+		semMutexShow (client->addrqLock,1);
 		printf(	"\tEvent Queue Lock\n");
-		semMutexShow (client->eventqLock);
+		semMutexShow (client->eventqLock,1);
 		printf(	"\tBlock Semaphore\n");
-		semBinaryShow (client->blockSem);
+		semBinaryShow (client->blockSem,1);
 	}
 }

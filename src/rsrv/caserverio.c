@@ -50,7 +50,7 @@ static char *sccsId = "@(#) $Id$";
 #include "ellLib.h"
 #include "errlog.h"
 #include "server.h"
-#include "bsdSocketResource.h"
+#include "osiSockResource.h"
 
 
 /*

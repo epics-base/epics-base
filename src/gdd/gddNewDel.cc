@@ -17,17 +17,42 @@
 #include "gddNewDel.h"
 #include <stdio.h>
 
-gddCleanUp gddBufferCleanUp;
+class gddCleanUpNode
+{
+public:
+    void* buffer;
+    gddCleanUpNode* next;
+};
 
-gddCleanUp::gddCleanUp(void) { }
+class gddCleanUp
+{
+public:
+    gddCleanUp();
+    ~gddCleanUp();
+    void Add(void*);
+private:
+    gddCleanUpNode * bufs;
+    epicsMutex lock;
+};
 
-gddCleanUp::~gddCleanUp(void) { gddCleanUp::CleanUp(); }
+static gddCleanUp * pBufferCleanUpGDD = NULL;
 
-gddCleanUpNode* gddCleanUp::bufs = NULL;
+static epicsThreadOnceId gddCleanupOnce = EPICS_THREAD_ONCE_INIT;
+static void gddCleanupInit ( void * )
+{
+    pBufferCleanUpGDD = new gddCleanUp;
+    assert ( pBufferCleanUpGDD );
+}
 
-gddSemaphore gddCleanUp::lock;
+void gddGlobalCleanupAdd ( void * pBuf )
+{
+    epicsThreadOnce ( & gddCleanupOnce, gddCleanupInit, 0 );
+    pBufferCleanUpGDD->Add ( pBuf );
+}
 
-void gddCleanUp::CleanUp(void)
+gddCleanUp::gddCleanUp() : bufs ( NULL ) {}
+
+gddCleanUp::~gddCleanUp() 
 {
 	gddCleanUpNode *p1,*p2;
 
@@ -44,9 +69,10 @@ void gddCleanUp::Add(void* v)
 {
 	gddCleanUpNode* p = new gddCleanUpNode;
 	p->buffer=v;
-	lock.take();
-	p->next=gddCleanUp::bufs;
-	gddCleanUp::bufs=p;
-	lock.give();
+    {
+        epicsGuard < epicsMutex > guard ( lock );
+	    p->next=gddCleanUp::bufs;
+	    gddCleanUp::bufs=p;
+    }
 }
 

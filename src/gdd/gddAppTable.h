@@ -79,7 +79,7 @@ public:
 	aitIndex total_dds;
 	gdd* proto;
 	gdd* free_list;
-	gddSemaphore sem;
+	epicsMutex sem;
 	gddApplicationTypeType type;
 	aitUint32 user_value;
 	aitUint16* map;
@@ -162,7 +162,7 @@ private:
 	aitUint32 max_groups;
 
 	gddApplicationTypeElement** attr_table;
-	gddSemaphore sem;
+	epicsMutex sem;
 };
 
 inline aitUint32 gddApplicationTypeTable::group(aitUint32 rapp) const

@@ -224,9 +224,10 @@ gddStatus gddApplicationTypeTable::registerApplicationType(
 		return gddErrorAtLimit;
 	}
 
-	sem.take();
-	rapp=total_registered++;
-	sem.give();
+    {
+        epicsGuard < epicsMutex > guard ( sem );
+	    rapp=total_registered++;
+    }
 
 	if((rc=splitApplicationType(rapp,group,app))<0) return rc;
 
@@ -382,16 +383,16 @@ gdd* gddApplicationTypeTable::getDD(aitUint32 rapp)
 	switch(attr_table[group][app].type)
 	{
 	case gddApplicationTypeProto:
-		attr_table[group][app].sem.take();
+		attr_table[group][app].sem.lock ();
 		if( (dd=attr_table[group][app].free_list) )
 		{
 			//fprintf(stderr,"Popping a proto DD from list! %d %8.8x\n",app,dd);
 			attr_table[group][app].free_list=dd->next();
-			attr_table[group][app].sem.give();
+			attr_table[group][app].sem.unlock ();
 		}
 		else
 		{
-			attr_table[group][app].sem.give();
+			attr_table[group][app].sem.unlock ();
 			// copy the prototype
 			blk=new aitUint8[attr_table[group][app].proto_size];
 			// fprintf(stderr,"Creating a new proto DD! %d %8.8x\n",app,blk);

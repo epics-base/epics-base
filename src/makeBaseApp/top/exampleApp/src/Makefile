@@ -17,9 +17,11 @@ Com_DIR          = $(EPICS_BASE_LIB)
 
 #=============================
 
-RECTYPES += xxxRecord.h
-DBDEXPAND = exampleInclude.dbd
-DBDNAME = exampleApp.dbd
+# xxxRecord.h will be created from xxxRecord.dbd
+DBDINC += xxxRecord
+
+# <name>.dbd will be created from <name>Include.dbd
+DBD += example.dbd
 
 #=============================
 
@@ -53,7 +55,8 @@ example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
 example_SRCS += caMonitor.c
 
-example_SRCS_DEFAULT += registerRecordDeviceDriver.cpp
+# <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
+example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
 #example_SRCS_vxWorks += sncExample.c

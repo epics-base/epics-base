@@ -87,6 +87,8 @@ public:
         epicsGuard < epicsMutex > & ) const;
     unsigned getMask (
         epicsGuard < epicsMutex > & ) const;
+    void subscribeIfRequired (
+        epicsGuard < epicsMutex > & guard, nciu & chan );
     void subscriptionUpdateIfRequired (
         epicsGuard < epicsMutex > &, nciu & );
 protected:
@@ -102,6 +104,7 @@ private:
     const unsigned type;
     const unsigned mask;
     bool updateWhileDisconnected;
+    bool subscribed;
     class netSubscription * isSubscription ();
     void * operator new ( size_t );
     void operator delete ( void * );

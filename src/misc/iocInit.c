@@ -79,6 +79,8 @@ int epicsShareAPI iocInit()
 	errlogPrintf("iocInit can only be called once\n");
 	return(-1);
     }
+    if(!epicsThreadIsOkToBlock(epicsThreadGetIdSelf()))
+        epicsThreadSetOkToBlock(epicsThreadGetIdSelf(),1);
     errlogPrintf("Starting iocInit\n");
     if (!pdbbase) {
 	errlogPrintf("iocInit aborting because No database\n");

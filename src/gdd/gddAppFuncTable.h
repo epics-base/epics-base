@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  2000/09/27 19:45:55  jhill
+ * fixed ifdef around vis c++ pragma
+ *
  * Revision 1.11  2000/03/08 16:12:08  jhill
  * fixed gnu version test
  *
@@ -273,9 +276,10 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		return;
 	}
 	maxApp = newApplTypeMax+(1u<<6u);
-#   if defined(_MSC_VER) && _MSC_VER < 1100
-		//
-		// MS Visual C++ 5.0 (_MSC_VER==1100) or lower 
+
+#   if defined(_MSC_VER) && _MSC_VER <= 1200
+        //
+		// MS Visual C++ 6.0 (_MSC_VER==1200) or lower 
 		// compilers allocate the wrong amount of memory 
 		// (i.e. too little) for member function pointers,
 		// only explicit calculation via sizeof() works.

@@ -96,12 +96,12 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK ( status, 0 );
     ca_flush_io ();
     epicsThreadSleep ( 0.1 );
-    ca_poll (); // emulate typical GUI
+    ca_poll (); /* emulate typical GUI */
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "e" );
         fflush ( stdout );
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     assert ( eventCount > 0 );
 
@@ -127,12 +127,12 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK ( status, NULL );
     ca_flush_io ();
     epicsThreadSleep ( 0.1 );
-    ca_poll (); // emulate typical GUI
+    ca_poll (); /* emulate typical GUI */
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "p" );
         fflush ( stdout );
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     assert ( eventCount > 0 );
 
@@ -158,7 +158,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
         printf ( "w" );
         fflush ( stdout );
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     assert ( eventCount > 0 );
 
@@ -189,7 +189,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
         printf ( "t" );
         fflush ( stdout );
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     assert ( eventCount > 0 );
 
@@ -243,7 +243,7 @@ void verifyMonitorSubscriptionFlushIO ( chid chan )
         printf ( "-" );
         fflush ( stdout );
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     assert ( eventCount > 0 );
     status = ca_clear_event ( id );
@@ -393,7 +393,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
         while ( connectionUpdateCount < chanCount || 
             getCallbackCount < chanCount ) {
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
 
         for ( j = 0u; j < chanCount; j++ ) {
@@ -551,7 +551,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             j=0;
             while ( ca_get_ioc_connection_count () != backgroundConnCount ) {
                 epicsThreadSleep ( 0.1 );
-                ca_poll (); // emulate typical GUI
+                ca_poll (); /* emulate typical GUI */
                 assert ( ++j < 100 );
             }
         }
@@ -589,7 +589,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             if ( ca_state( pChans[0].channel ) != cs_conn ) {
                 while ( ca_state ( pChans[0].channel ) != cs_conn ) {
                     epicsThreadSleep ( 0.1 );
-                    ca_poll (); // emulate typical GUI
+                    ca_poll (); /* emulate typical GUI */
                 }
             }
 
@@ -1110,7 +1110,7 @@ void verifyHighThroughputReadCallback ( chid chan )
         SEVCHK ( ca_flush_io (), NULL );
         while ( count < 10000u ) {
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
         showProgressEnd ();
     }
@@ -1141,7 +1141,7 @@ void verifyHighThroughputWriteCallback ( chid chan )
         SEVCHK ( ca_flush_io (), NULL );
         while ( count < 10000u ) {
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
         showProgressEnd ();
     }
@@ -1425,7 +1425,7 @@ void exceptionTest ( chid chan )
             printf ( "G" );
             fflush ( stdout );
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical gui
+            ca_poll (); /* emulate typical GUI */
         }
         status = ca_add_exception_event ( 0, 0 );
         SEVCHK ( status, "exception notify install failed" );
@@ -1447,7 +1447,7 @@ void exceptionTest ( chid chan )
             printf ( "GCB" );
             fflush ( stdout );
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
     }
 
@@ -1468,7 +1468,7 @@ void exceptionTest ( chid chan )
             printf ( "S" );
             fflush ( stdout );
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
         status = ca_clear_event ( id );
         SEVCHK ( status, "subscription clear failed" );
@@ -1500,7 +1500,7 @@ void exceptionTest ( chid chan )
             printf ( "P" );
             fflush ( stdout );
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
         status = ca_add_exception_event ( 0, 0 );
         SEVCHK ( status, "exception notify install failed" );
@@ -1531,7 +1531,7 @@ void exceptionTest ( chid chan )
             printf ( "PCB" );
             fflush ( stdout );
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
         }
         free ( pWS );
     }
@@ -1642,7 +1642,7 @@ void arrayTest ( chid chan )
     ca_flush_io ();
     while ( ! arrayWriteNotifyComplete || ! arrayReadNotifyComplete ) {
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
 
     /*
@@ -1662,7 +1662,7 @@ void arrayTest ( chid chan )
     ca_flush_io ();
     while ( ! arrayReadNotifyComplete ) {
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
     }
     status = ca_clear_event ( id );
     SEVCHK ( status, "clear event request failed" );
@@ -1830,7 +1830,7 @@ void performMonitorUpdateTest ( chid chan )
     while ( 1 ) {
         unsigned nComplete = 0u;
         epicsThreadSleep ( 0.1 );
-        ca_poll (); // emulate typical GUI
+        ca_poll (); /* emulate typical GUI */
         for ( i = 0; i < NELEMENTS ( test ); i++ ) {
             if ( test[i].count > 0 ) {
                 if ( test[i].lastValue == temp ) {
@@ -1884,7 +1884,7 @@ void performMonitorUpdateTest ( chid chan )
             unsigned passCount = 0;
             unsigned tmpFlowCtrlCount = 0u;
             epicsThreadSleep ( 0.1 );
-            ca_poll (); // emulate typical GUI
+            ca_poll (); /* emulate typical GUI */
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
 		        /*
                  * we shouldnt see old monitors because 

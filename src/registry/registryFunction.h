@@ -19,11 +19,9 @@ extern "C" {
 typedef void (*REGISTRYFUNCTION)(void);
 
 typedef struct registryFunctionRef {
-    char            *name;
+    const char      *name;
     REGISTRYFUNCTION addr;
 }registryFunctionRef;
-#define registryFunctionRefNumber(functionRefArray) \
-   (sizeof((functionRefArray))/sizeof(registryFunctionRef))
 
 /* c interface definitions */
 epicsShareFunc int epicsShareAPI registryFunctionAdd(

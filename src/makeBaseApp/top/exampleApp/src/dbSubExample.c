@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include <dbDefs.h>
 #include <registryFunction.h>
 #include <subRecord.h>
 #define epicsExportSharedSymbols
@@ -28,6 +29,6 @@ static registryFunctionRef mySubRef[] = {
 
 epicsShareFunc void epicsShareAPI mySub(void)
 {
-    registryFunctionRefAdd(mySubRef,registryFunctionRefNumber(mySubRef));
+    registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
 }
 

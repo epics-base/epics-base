@@ -7,6 +7,9 @@
 # 	Experimental Physics and Industrial Control System (EPICS)
 # 
 # $Log$
+# Revision 1.5  1996/09/16 18:41:13  jhill
+# include shareLib.h
+#
 # Revision 1.4  1996/06/25 21:48:33  jba
 # Makefile includes now from base/src/config, removed all soft links
 #
@@ -65,8 +68,8 @@ cat >${OBJ} <<!EOF
  *
  */
 
-#include <envDefs.h>
-#include <shareLib.h>
+#include "envDefs.h"
+#include "shareLib.h"
 
 !EOF
 

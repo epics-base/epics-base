@@ -13,7 +13,6 @@
  *
  *      This software was produced under  U.S. Government contracts:
  *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
  *
  *      Initial development by:
  *              The Controls and Automation Group (AT-8)
@@ -27,9 +26,10 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
+ *              Lawrence Berkley National Laboratory
+ *
  *      Modification Log:
  *      -----------------
- * $Log$
  *
  */
 
@@ -58,8 +58,7 @@ void cac_gettimeval(struct timeval  *pt)
         SYSTEMTIME st;
 
 	GetSystemTime(&st);
-	pt->tv_sec = (long)st.wSecond + (long)st.wMinute*60 + 
-		(long)st.wHour*360;
+	pt->tv_sec = time(NULL);
 	pt->tv_usec = st.wMilliseconds*1000;
 }
 
@@ -80,11 +79,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 
         cac_clean_iiu_list();
 
-	/*
-	 * manage search timers and detect disconnects
-	 */
-	manage_conn(TRUE);
-
         timeout = *ptimeout;
         do{
                 count = cac_select_io(
@@ -92,6 +86,11 @@ void cac_mux_io(struct timeval  *ptimeout)
                                 CA_DO_RECVS | CA_DO_SENDS);
 
                 ca_process_input_queue();
+
+                /*
+                 * manage search timers and detect disconnects
+                 */
+                manage_conn(TRUE);
 
                 timeout.tv_sec = 0;
                 timeout.tv_usec = 0;
@@ -291,11 +290,8 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
  */
 void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port)
 {
-	struct sockaddr_in 	localAddr;
-	struct sockaddr_in 	InetAddr;
 	struct in_addr bcast_addr;
 	caAddrNode		*pNode;
-	int             	status;
 
 	pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
 	if(!pNode){
@@ -353,6 +349,13 @@ static int get_subnet_mask ( char SubNetMaskStr[256])
    return RegTcpParams (localadr, SubNetMaskStr);
 }
 
+	   /* For NT 3.51, enumerates network interfaces returns the ip address */
+	   /* and subnet mask for the LAST interface found. This needs to be changed */
+	   /* to work in conjuction with caDiscoverInterfaces to add all the */
+	   /* add all the interfaces to the elist. Also could be more efficient in
+calling */
+	   /* RegKeyOpen                                                            */
+
 static int RegTcpParams (char IpAddrStr[256], char SubNetMaskStr[256])
 {
 #define MAX_VALUE_NAME              128
@@ -361,37 +364,65 @@ static int RegTcpParams (char IpAddrStr[256], char SubNetMaskStr[256])
   DWORD  cbDataLen;
   CHAR   cbData[256];
   DWORD  dwType;
-  int status;
+  int status, i, card_cnt;
+  char *pNetCard[16], *pData;
+
 	static char IpAddr[256], SubNetMask[256];
 
 	cbDataLen = sizeof(cbData);
-	strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards\\1");
-	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType, cbData, &cbDataLen);
+
+	/****
+	strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows
+NT\\CurrentVersion\\NetworkCards\\1");
+	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType,
+cbData, &cbDataLen);
 	if (status) {
-		strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards\\01");
-		status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType, cbData, &cbDataLen);
+		strcpy(RegPath,"SOFTWARE\\Microsoft\\Windows
+NT\\CurrentVersion\\NetworkCards\\01");
+		status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "ServiceName", &dwType,
+cbData, &cbDataLen);
 		if (status)
 			return status;
 	}
+	****/
 
-	strcpy(RegPath,"SYSTEM\\CurrentControlSet\\Services\\");
-	strcat(RegPath,cbData);
-	strcat(RegPath,"\\Parameters\\Tcpip");
+	strcpy(RegPath,"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Linkage");
+	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "Route", &dwType, cbData,
+&cbDataLen);
+	if (status) {
+		return status;
+	}
 
-	cbDataLen = sizeof(IpAddr);
-   status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "IPAddress", &dwType, IpAddr, &cbDataLen);
-   if (status)
-      return status;
+	i=0; card_cnt = 0; pData = cbData;	/* enumerate network interfaces */
+
+	while( i < 16 && (pNetCard[i]=strtok(pData,"\""))  ) {
+		strcpy(RegPath,"SYSTEM\\CurrentControlSet\\Services\\");
+		strcat(RegPath,pNetCard[i]);
+		strcat(RegPath,"\\Parameters\\Tcpip");
+
+   		cbDataLen = sizeof(IpAddr);
+   		status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "IPAddress", &dwType,
+IpAddr, &cbDataLen);
+   		if (status == 0)  {
+   			cbDataLen = sizeof(SubNetMask);
+   			status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "SubnetMask",
+&dwType, SubNetMask, &cbDataLen);
+   			if (status)
+      			return status;
+			card_cnt++;
+		}
+		pData += strlen(pNetCard[i])+3;
+		i++;
+   } 
+
+   if (card_cnt == 0)
+   		return 1;
+
    strcpy(IpAddrStr,IpAddr);
    
-   cbDataLen = sizeof(SubNetMask);
-	status = RegKeyData (RegPath, HKEY_LOCAL_MACHINE, "SubnetMask", &dwType, SubNetMask, &cbDataLen);
-   if (status)
-      return status;
-
    strcpy(SubNetMaskStr,SubNetMask);
 
-	return 0;
+   return 0;
 }
 
 
@@ -418,7 +449,8 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
     }
 
 
-  retCode = RegQueryValueEx (hKey,        // Key handle returned from RegOpenKeyEx.
+  retCode = RegQueryValueEx (hKey,        // Key handle returned from
+RegOpenKeyEx.
                           lpzValueName,   // Name of value.
                           NULL,        // Reserved, dword = NULL.
                           lpdwType,     // Type of data.
@@ -462,11 +494,15 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		break;
 
 	case DLL_THREAD_ATTACH:
+#if _DEBUG
 		fprintf(stderr, "Thread attached to ca.dll R12\n");
+#endif
 		break;
 
 	case DLL_THREAD_DETACH:
+#if _DEBUG
 		fprintf(stderr, "Thread detached from ca.dll R12\n");
+#endif
 		break;
 
 	default:
@@ -476,3 +512,5 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 return TRUE;
 
 }
+
+

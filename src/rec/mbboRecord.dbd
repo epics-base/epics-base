@@ -433,7 +433,7 @@ recordtype(mbbo) {
 	}
 	field(SHFT,DBF_USHORT) {
 		prompt("Shift")
-		special(SPC_NOMOD)
+		promptgroup(GUI_MBB)
 		interest(1)
 	}
 	field(SIOL,DBF_OUTLINK) {

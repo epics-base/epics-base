@@ -3,7 +3,6 @@ recordtype(mbboDirect) {
 	field(VAL,DBF_USHORT) {
 		prompt("Word")
 		asl(ASL0)
-		special(SPC_NOMOD)
 		pp(TRUE)
 	}
 	field(OMSL,DBF_MENU) {
@@ -178,7 +177,7 @@ recordtype(mbboDirect) {
 	}
 	field(SHFT,DBF_ULONG) {
 		prompt("Shift")
-		special(SPC_NOMOD)
+		promptgroup(GUI_MBB)
 		interest(1)
 	}
 	field(SIOL,DBF_OUTLINK) {

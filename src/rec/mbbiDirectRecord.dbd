@@ -2,8 +2,8 @@ recordtype(mbbiDirect) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_USHORT) {
 		prompt("Current Value")
-		asl(ASL0)
 		special(SPC_NOMOD)
+		asl(ASL0)
 		pp(TRUE)
 	}
 	field(NOBT,DBF_SHORT) {
@@ -48,7 +48,7 @@ recordtype(mbbiDirect) {
 	}
 	field(SHFT,DBF_USHORT) {
 		prompt("Shift")
-		special(SPC_NOMOD)
+		promptgroup(GUI_MBB)
 		interest(1)
 	}
 	field(SIOL,DBF_INLINK) {

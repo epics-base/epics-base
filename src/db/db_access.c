@@ -572,7 +572,7 @@ void fill(pbuffer,size,fillchar)
 /*
  * DB_NAME_TO_ADDR
  */
-static short mapNewToOld[]={0,4,4,1,2,5,6,2,6,3};
+static short mapNewToOld[]={0,4,4,1,5,5,6,2,6,3};
 
 short db_name_to_addr(pname,paddr)
   char           *pname;

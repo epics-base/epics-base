@@ -142,7 +142,7 @@ int iocInit(char * pResourceFilename)
     }
 
     if (!pdbbase) {
-	logMsg("iocInit aborting because No database loaded by dbAsciiRead\n",
+	logMsg("iocInit aborting because No database loaded by dbReadDatabase\n",
 	    0,0,0,0,0,0);
 	return(-1);
     }
@@ -1096,11 +1096,7 @@ LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
 	return 0;
 }
 
-int dbLoadAscii(char *filename)
+int dbLoadDatabase(char *filename,char *path)
 {
-    if(pdbbase) {
-	epicsPrintf("Ascii file was already loaded\n");
-	return(-1);
-    }
-    return(dbAsciiRead(&pdbbase,filename));
+    return(dbReadDatabase(&pdbbase,filename,path));
 }

@@ -190,17 +190,20 @@ long dbnr(int verbose)
     DBENTRY	*pdbentry=&dbentry;
     long	status;
     int		nrecords;
+    int		total=0;
 
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecdes(pdbentry);
     if(status) printf("No record description\n");
     while(!status) {
 	nrecords = dbGetNRecords(pdbentry);
+	total += nrecords;
 	if(verbose || nrecords)
 	    printf("%.4d %s\n",nrecords,dbGetRecdesName(pdbentry));
 	status = dbNextRecdes(pdbentry);
     }
     dbFinishEntry(pdbentry);
+    printf("Total Records: %d\n",total);
     return(0);
 }
 

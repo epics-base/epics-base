@@ -19,7 +19,7 @@ MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
 
-ASCII =  dbCommonRecord.ascii menuGlobal.ascii all.ascii
+DBINSTALL =  dbCommonRecord.db menuGlobal.db epics.db
 
 SRCS.c = \
 	../dbAccess.c\
@@ -68,12 +68,12 @@ LIBNAME = dbLib
 
 include $(EPICS)/config/RULES.Vx
 
-dbCommon.h: ../dbCommonRecord.ascii dbCommon.ascii
+dbCommon.h: ../dbCommonRecord.db dbCommon.db
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbAsciiToRecordtypeH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH $<
 
-dbCommon.ascii: ../dbCommon.ascii
+dbCommon.db: ../dbCommon.db
 	@test -f $@ || ln -s  $< $@
 
 clean::
-	@$(RM) dbCommon.ascii rec base
+	@$(RM) dbCommon.db rec base

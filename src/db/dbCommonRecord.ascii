@@ -1,3 +1,0 @@
-recordtype(dbCommon) {
-	include "dbCommon.ascii"
-}

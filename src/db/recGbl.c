@@ -383,6 +383,14 @@ static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
     double          *plower_limit;
 {
     switch(field_type){
+    case(DBF_CHAR):
+         *pupper_limit = -128.0;
+         *plower_limit = 127.0;
+         break;
+    case(DBF_UCHAR):
+         *pupper_limit = 255.0;
+         *plower_limit = 0.0;
+         break;
     case(DBF_SHORT):
          *pupper_limit = (double)SHRT_MAX;
          *plower_limit = (double)SHRT_MIN;

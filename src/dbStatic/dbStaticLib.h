@@ -127,15 +127,16 @@ int  dbGetNRecords(DBENTRY *pdbentry);
 char *dbGetRecordName(DBENTRY *pdbentry);
 long dbRenameRecord(DBENTRY *pdbentry,char *newName);
 
-long dbFindField(DBENTRY *pdbentry,char *pfieldName);
 long dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
 long dbNextFielddes(DBENTRY *pdbentry,int dctonly);
 int  dbGetFieldType(DBENTRY *pdbentry);
 int  dbGetNFields(DBENTRY *pdbentry,int dctonly);
 char *dbGetFieldName(DBENTRY *pdbentry);
-char *dbGetPrompt(DBENTRY *pdbentry);
+char *dbGetDefault(DBENTRY *pdbentry);
+char *dbGetString(DBENTRY *pdbentry);
 int dbGetPromptGroup(DBENTRY *pdbentry);
 
+long dbFindField(DBENTRY *pdbentry,char *pfieldName);
 char *dbGetString(DBENTRY *pdbentry);
 long dbPutString(DBENTRY *pdbentry,char *pstring);
 char *dbVerify(DBENTRY *pdbentry,char *pstring);

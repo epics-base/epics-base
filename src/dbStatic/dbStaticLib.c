@@ -1271,6 +1271,14 @@ char *dbGetFieldName(DBENTRY *pdbentry)
     return(pflddes->name);
 }
 
+char *dbGetDefault(DBENTRY *pdbentry)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+
+    if(!pflddes) return(NULL);
+    return(pflddes->initial);
+}
+
 char *dbGetPrompt(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
@@ -1987,10 +1995,8 @@ dbMenu *dbFindMenu(dbBase *pdbbase,char *name)
 char   **dbGetChoices(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
 
     if(!pflddes) return(NULL);
-    if(!pfield) return(NULL);
     switch (pflddes->field_type) {
     case DBF_MENU: {
 	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;

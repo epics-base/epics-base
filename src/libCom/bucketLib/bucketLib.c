@@ -43,6 +43,7 @@
 
 #include "epicsAssert.h"
 #include "bucketLib.h"
+#include "freeList.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -384,9 +385,6 @@ int	bucketFree (prb)
 BUCKET	*prb;
 #endif
 {
-	ITEM *pi;
-	ITEM *pni;
-
 	/*
 	 * deleting a bucket with entries in use
 	 * will cause memory leaks and is not allowed
@@ -558,7 +556,6 @@ BUCKET *pb;
 {
 	ITEM 		**ppi;
 	ITEM 		*pi;
-	ITEM 		*pni;
 	unsigned	nElem;
 	double		X;
 	double		XX;

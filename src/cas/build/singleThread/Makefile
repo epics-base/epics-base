@@ -1,4 +1,4 @@
-CAS := ../../..
+CAS := ../..
 TOP := $(CAS)/../..
 SRC := $(CAS)/generic
 CA := $(CAS)/../ca

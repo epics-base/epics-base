@@ -27,7 +27,7 @@ if ( ! $?PSPRINTTER ) then
     setenv PSPRINTER lp
 endif
 
-# Needed only by medm extension
+# Needed only by medm extension 
 #setenv EPICS_DISPLAY_PATH
 
 # Needed only by orbitscreen extension

@@ -18,7 +18,6 @@ epicsMutex oldSubscription::freeListMutex;
 
 oldSubscription::~oldSubscription ()
 {
-    this->chan.ioCancel ( this->id );
 }
 
 void oldSubscription::current (  

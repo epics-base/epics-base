@@ -78,6 +78,10 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             int anerrno = SOCKERRNO;
             char buf[64];
 
+            if ( pclient->disconnect ) {
+                break;
+            }
+
             if ( anerrno == SOCK_EINTR ) {
                 continue;
             }

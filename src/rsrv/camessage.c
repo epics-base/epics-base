@@ -676,6 +676,7 @@ struct client   *client
 
 #ifdef CONVERSION_REQUIRED      
     if (mp->m_dataType >= NELEMENTS(cac_dbr_cvrt)) {
+        log_header ("invalid data type", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp, 
@@ -728,6 +729,7 @@ struct client   *client
     pName = (char *)(mp+1);
     size = strlen(pName)+1;
     if (size > 512) {
+        log_header ("bad (very long) host name", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp, 
@@ -743,12 +745,13 @@ struct client   *client
      */
     pMalloc = malloc(size);
     if(!pMalloc){
+        log_header ("no space in pool for new host name", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp,
             ECA_ALLOCMEM,
             client,
-            "no room for new host name");
+            "no space in pool for new host name");
         SEND_UNLOCK(client);
         return RSRV_ERROR;
     }
@@ -774,6 +777,7 @@ struct client   *client
                 client->pHostName); 
         if(status != 0 && status != S_asLib_asNotActive){
             semMutexGive(client->addrqLock);
+            log_header ("unable to install new host name into access security", client, mp, 0);
             SEND_LOCK(client);
             send_err(
                 mp, 
@@ -812,12 +816,13 @@ struct client   *client
     pName = (char *)(mp+1);
     size = strlen(pName)+1;
     if (size > 512) {
+        log_header ("a very long user name was specified", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp, 
             ECA_INTERNAL, 
             client, 
-            "very long user name");
+            "a very long user name was specified");
         SEND_UNLOCK(client);
         return RSRV_ERROR;
     }
@@ -827,6 +832,7 @@ struct client   *client
      */
     pMalloc = malloc(size);
     if(!pMalloc){
+        log_header ("no memory for new user name", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp,
@@ -858,6 +864,7 @@ struct client   *client
                 client->pHostName); 
         if(status != 0 && status != S_asLib_asNotActive){
             semMutexGive(client->addrqLock);
+            log_header ("unable to install new user name into access security", client, mp, 0);
             SEND_LOCK(client);
             send_err(
                 mp,
@@ -1098,6 +1105,7 @@ struct client  *client
                 &tmp_addr, 
                 mp->m_cid);
         if (!pciu) {
+            log_header ("no memory to create new channel", client, mp, 0);
             SEND_LOCK(client);
             send_err(mp, 
                 ECA_ALLOCMEM, 
@@ -1164,8 +1172,6 @@ struct client  *client
         semMutexGive(prsrv_cast_client->addrqLock);
     }
 
-
-
     /*
      * set up access security for this channel
      */
@@ -1176,6 +1182,7 @@ struct client  *client
             client->pUserName,
             client->pHostName); 
     if(status != 0 && status != S_asLib_asNotActive){
+        log_header ("No room for security table", client, mp, 0);
         SEND_LOCK(client);
         send_err(mp, ECA_ALLOCMEM, client, "No room for security table");
         SEND_UNLOCK(client);
@@ -1208,6 +1215,7 @@ struct client  *client
         access_rights_reply(pciu);
     }
     else if (status!=0) {
+        log_header ("No room for access security state change subscription", client, mp, 0);
         SEND_LOCK(client);
         send_err(mp, ECA_ALLOCMEM, client, 
             "No room for access security state change subscription");
@@ -1415,6 +1423,7 @@ struct client  *client
     }
 
     if (mp->m_dataType > LAST_BUFFER_TYPE) {
+        log_header ("bad put notify data type", client, mp, 0);
         putNotifyErrorReply (client, mp, ECA_BADTYPE);
         return RSRV_ERROR;
     }
@@ -1460,6 +1469,7 @@ struct client  *client
         pciu->pPutNotify = (RSRVPUTNOTIFY *) 
             casCalloc(1, sizeof(*pciu->pPutNotify)+size);
         if(!pciu->pPutNotify){
+            log_header ("no memory to initiate put notify", client, mp, 0);
             putNotifyErrorReply (client, mp, ECA_ALLOCMEM);
             return RSRV_ERROR;
         }
@@ -1522,6 +1532,7 @@ LOCAL int event_add_action (caHdr *mp, struct client *client)
 
     pevext = (struct event_ext *) freeListCalloc (rsrvEventFreeList);
     if (!pevext) {
+        log_header ("no memory to add subscription", client, mp, 0);
         SEND_LOCK(client);
         send_err(
             mp,
@@ -1556,6 +1567,7 @@ LOCAL int event_add_action (caHdr *mp, struct client *client)
     pevext->pdbev = db_add_event (client->evuser, &pciu->addr,
                 read_reply, pevext, pevext->mask);
     if (pevext->pdbev == NULL) {
+        log_header ("no memory to add subscription to db", client, mp, 0);
         SEND_LOCK(client);
         send_err (mp, ECA_ADDFAIL, client, RECORD_NAME(&pciu->addr));
         SEND_UNLOCK(client);

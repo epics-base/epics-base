@@ -41,38 +41,6 @@ uninstallDirs:
 		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
 		$(INSTALL_DB)
 
-tar:
-	@DIRNAME=$(notdir $(shell pwd)); \
-	echo "TOP: Creating $$DIRNAME.tar file..."; \
-	ls Makefile* | xargs tar vcf $$DIRNAME.tar; \
-	if [ -f .current_rel_hist ]; then \
-		ls .current_rel_hist | xargs tar vrf $$DIRNAME.tar ; \
-	fi ;\
-	if [ -f EPICS_BASE ]; then \
-		ls EPICS_BASE | xargs tar vrf $$DIRNAME.tar ; \
-	fi ;\
-	for DIR in ${DIRS}; do    \
-		find $${DIR} -name CVS -prune -o ! -type d -print \
-		| grep -v "/O\..*$$" | xargs tar vrf $$DIRNAME.tar; \
-	done
-
-# tarVersion: Rule that runs from one level up, generates a temporary softlink
-# sub-directory with version number, tars, gzips, and then removes the subdirectory.
-# Usage:  "gnumake tarVersion VERSION=1.2"
-tarVersion:
-	@MODULE=$(notdir $(shell pwd)); \
-	TARNAME=$$MODULE-$(VERSION); \
-	TARFILE=$$MODULE/$$TARNAME.tar; \
-	echo "TOP: Creating $$TARNAME.tar file..."; \
-	cd ..; $(RM) $$TARNAME; ln -s $$MODULE $$TARNAME; \
-	ls $$TARNAME/READ* $$TARNAME/Makefile* | xargs tar vcf $$TARFILE; \
-	for DIR in ${DIRS}; do    \
-		find $$TARNAME/$$DIR -name CVS -prune -o ! -type d -print \
-		| grep -v "/O\..*$$" | xargs tar vrf $$TARFILE; \
-	done; \
-	gzip -f $$TARFILE; \
-	$(RM) $$TARNAME
-
 help:
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
@@ -95,10 +63,9 @@ help:
 	@echo "     uninstall      - Cleans directories created by the install."
 	@echo "     realuninstall  - Removes ALL install dirs"
 	@echo "     distclean      - Same as realclean realuninstall."
-	@echo "     tar            - Create tar file "
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY : uninstall tar help cleandirs distclean uninstallDirs
+.PHONY : uninstall help cleandirs distclean uninstallDirs realuninstall realclean distclean
 

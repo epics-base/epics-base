@@ -89,7 +89,9 @@ long epicsShareAPI dbcar(char	*precordname,int level)
 		    if (plink->type == CA_LINK) {
 			ncalinks++;
 			pca = (caLink *)plink->value.pv_link.pvt;
-			if(pca && (ca_field_type(pca->chid) != TYPENOTCONN)) {
+			if(pca
+                        && pca->chid
+                        && (ca_field_type(pca->chid) != TYPENOTCONN)) {
 			    nconnected++;
 			    nDisconnect += pca->nDisconnect;
 			    nNoWrite += pca->nNoWrite;

@@ -5,12 +5,14 @@ include $(EPICS)/config/CONFIG_BASE
 USR_LDLIBS =  -lCom
 USR_LDFLAGS = -L.
 
+
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 
 DEPLIBS = \
 	$(DEPLIBS_BASE)/libCom.a
 
 SRCS.c = \
+	sf2dbYacc.c\
 	../sdr2gblmenu.c\
 	../sdr2driver.c\
 	../sdr2device.c\
@@ -24,7 +26,9 @@ OBJS = \
 	sdr2recordtype.o \
 	dbStaticLib.o
 
-TARGETS = sdr2gblmenu sdr2driver sdr2device sdr2recordtype
+MAN1 = sf2db.1
+
+PROD = sf2db sdr2gblmenu sdr2driver sdr2device sdr2recordtype 
 
 include $(EPICS)/config/RULES.Unix
 
@@ -39,3 +43,12 @@ sdr2device: sdr2device.o dbStaticLib.o
 
 sdr2recordtype: sdr2recordtype.o dbStaticLib.o
 	$(LINK.c) -o $@  sdr2recordtype.o dbStaticLib.o  $(LDLIBS)
+
+sf2db: sf2dbYacc.o
+	$(LINK.c) -o $@ sf2dbYacc.o
+
+sf2dbYacc.o: sf2dbLex.c
+
+clean::
+	/bin/rm -f sf2dbYacc.c sf2dbLex.c
+

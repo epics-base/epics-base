@@ -1,0 +1,36 @@
+.\" @(#)
+.TH SF2DB 1 "04 Nov 1993"
+.SH NAME
+sf2db \- make a new ascii database ".db" file from an old dct short form report
+.SH SYNOPSIS
+.B sf2db
+.B name
+<
+.B short_form_rpt
+>
+.B db_file
+.SH AVAILABILITY
+The tool in available under Unix from the EPICS add_on directory.
+.SH DESCRIPTION
+.LP
+This tool reads a dct short form report file from standard in and
+writes a ".db" (new ascii database format) file to standard out.  A
+.B name
+must be given for the database.  The name specified is used to name
+the ".database" file when the ".db" file is converted to a binary ".database".
+.sp
+The output of this tool can be imported to gdct(1) for editting.
+.SH "EXAMPLE USAGE"
+.LP
+sf2db test < old.short.form > new.db
+.sp
+This command will read old.short.form and produce the file new.db.  When
+new.db is fed into db2database(1), a binary database file will be created
+named test.database.
+.SH "SEE ALSO"
+.BR gdct(1),
+.BR db2database(1),
+.BR dbLoadRecords(3),
+.BR dbfile(5),
+.sp
+.B "GDCT User's Manual"

@@ -46,7 +46,8 @@ epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
         }
     }
 
-    epicsTimerQueueActiveForC & queue = * new epicsTimerQueueActiveForC ( okToShare, threadPriority );
+    epicsTimerQueueActiveForC & queue = 
+        * new epicsTimerQueueActiveForC ( okToShare, threadPriority );
     queue.timerQueueActiveMgrPrivate::referenceCount = 1u;
     if ( okToShare ) {
         this->sharedQueueList.add ( queue );

@@ -114,7 +114,7 @@ private:
     bool f_operatorConfirmationRequest:1;
 };
 
-class epicsShareClass cacChannelNotify {
+class epicsShareClass cacChannelNotify { // X aCC 655
 public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify () = 0;

@@ -143,7 +143,7 @@ static long asInitCommon(void)
     return(status);
 }
 
-int asInit(void)
+int epicsShareAPI asInit(void)
 {
     return(asInitCommon());
 }

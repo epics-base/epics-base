@@ -31,13 +31,17 @@
 #ifndef __CAPROTO__
 #define __CAPROTO__ 
 
+#define capStrOf(A) #A
+#define capStrOfX(A) capStrOf ( A )
+
 /* 
  * CA protocol number
  * TCP/UDP port number (bumped each major protocol change) 
  */
-#define CA_PROTOCOL_VERSION     4u
-#define CA_MINOR_VERSION        8u
-#define CA_VERSION_STRING       "4.8"
+#define CA_PROTOCOL_VERSION     4
+#define CA_MINOR_VERSION        8
+#define CA_VERSION_STRING       \
+( capStrOfX ( CA_PROTOCOL_VERSION ) "." capStrOfX ( CA_MINOR_VERSION ) )
 #define CA_UKN_MINOR_VERSION    0u /* unknown minor version */
 #if CA_PROTOCOL_VERSION == 4u
 #   define CA_V41(MAJOR,MINOR) ((MINOR)>=1u) 
@@ -171,13 +175,13 @@ typedef ca_uint32_t     caResId;
  * CA server.
  */
 typedef struct  ca_hdr {
-    ca_uint16_t m_cmmd;     /* operation to be performed */
-    ca_uint16_t m_postsize; /* size of message extension */ 
-    ca_uint16_t m_dataType; /* operation data type */ 
-    ca_uint16_t m_count;    /* operation data count */
-    ca_uint32_t m_cid;      /* channel identifier */
+    ca_uint16_t m_cmmd;         /* operation to be performed */
+    ca_uint16_t m_postsize;     /* size of message extension */ 
+    ca_uint16_t m_dataType;     /* operation data type */ 
+    ca_uint16_t m_count;        /* operation data count */
+    ca_uint32_t m_cid;          /* channel identifier */
     ca_uint32_t m_available;    /* undefined message location for use
-                     * by client processes */
+                                 * by client processes */
 }caHdr;
 
 /*

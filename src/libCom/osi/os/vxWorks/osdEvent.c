@@ -41,8 +41,13 @@ epicsEventWaitStatus epicsEventWaitWithTimeout(
 {
     int status;
     int ticks;
-    ticks = (int)(timeOut * (double)sysClkRateGet());
-    if(ticks<=0) ticks = 1;
+
+    if(timeOut<=0.0) {
+        ticks = 0;
+    } else {
+        ticks = timeOut*sysClkRateGet();
+        if(ticks<=0) ticks = 1;
+    }
     status = semTake((SEM_ID)id,ticks);
     if(status==OK) return(epicsEventWaitOK);
     if(errno==S_objLib_OBJ_TIMEOUT) return(epicsEventWaitTimeout);

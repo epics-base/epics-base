@@ -353,7 +353,7 @@ sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
     my ($rtncode, @message) = @_;
 
     if (@message) {
-	print join('\n', @message), '\n';
+	print join("\n", @message), "\n";
     } else {
 	&Usage;
     }

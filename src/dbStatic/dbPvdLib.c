@@ -18,7 +18,6 @@ of this distribution.
 #include "ellLib.h"
 #include "dbBase.h"
 #define epicsExportSharedSymbols
-#include "shareLib.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 

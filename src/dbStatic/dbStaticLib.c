@@ -51,7 +51,6 @@ of this distribution.
 #include "osiFileName.h"
 
 #define epicsExportSharedSymbols
-#include "shareLib.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 

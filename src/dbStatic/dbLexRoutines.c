@@ -39,7 +39,6 @@ of this distribution.
 #include "macLib.h"
 
 #define epicsExportSharedSymbols
-#include "shareLib.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 

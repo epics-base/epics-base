@@ -9,6 +9,7 @@
 
 cd topbin
 ld < exampleLibrary
+threadInit()
 
 cd top
 dbLoadDatabase("dbd/exampleApp.dbd")

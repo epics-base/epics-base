@@ -71,6 +71,7 @@
 #include	<strLib.h>
 #include	<stdioLib.h>
 
+#include	<fast_lock.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbRecType.h>
@@ -193,6 +194,7 @@ long dbpr(pname)	/* print record */
 	printf("No record Support for this record type\n");
 	return(1);
     }
+#if 0
     if(!(report = (prset->report))) {
 	printf("No report routine in RSET\n");
 	return(1);
@@ -201,6 +203,7 @@ long dbpr(pname)	/* print record */
     fflush(stdout);
     if(!RTN_SUCCESS(status))
 	recGblRecSupError(S_db_noSupport,&addr,"dbpr","report");
+#endif
     return(0);
 }
 
@@ -212,24 +215,26 @@ long dbtr(pname)	/* test record and print*/
     long	  options,no_elements;
     struct rset   *prset;
     long int      (*process)()=NULL;
+    struct dbCommon	*precord;
 
     status=dbNameToAddr(pname,&addr);
     if(status) {
 	printf("dbNameToAddr failed\n");
 	return(1);
     }
-    if(!(prset=GET_PRSET(addr.record_type))) {
-	printf("No record Support for this record type\n");
-	return(1);
+    precord=(struct dbCommon*)(addr.precord);
+    if (precord->pact) {
+        printf("record active\n");
+        return(1);
     }
-    if(!(process = (prset->process))) {
-	printf("No process routine in RSET\n");
-	return(1);
+    if(FASTLOCKTEST(&precord->mlok)) {
+        printf("record locked\n");
+        return(1);
     }
-    status=(*process)(addr.precord);
+    status=dbProcess(&addr);
     if(!RTN_SUCCESS(status))
 	recGblRecSupError(S_db_noSupport,&addr,"dbtr","process");
-    dbpr(pname);
+    dbpr(pname,0);
     return(0);
 }
 

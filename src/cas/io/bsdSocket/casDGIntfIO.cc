@@ -72,24 +72,24 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 		this->pAltOutIO = this;
 	}
 
-        this->sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if (this->sock == INVALID_SOCKET) {
-		errMessage(S_cas_noMemory, 
-			"CAS: unable to create cast socket\n");
-                return S_cas_noMemory;
-        }
+	this->sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (this->sock == INVALID_SOCKET) {
+	errMessage(S_cas_noMemory, 
+		"CAS: unable to create cast socket\n");
+			return S_cas_noMemory;
+	}
 
-        status = setsockopt(
-                        this->sock,
-                        SOL_SOCKET,
-                        SO_BROADCAST,
-                        (char *)&yes,
-                        sizeof(yes));
-        if (status<0) {
-                errMessage(S_cas_internal,
-			"CAS: unable to set up cast socket\n");
-                return S_cas_internal;
-        }
+	status = setsockopt(
+					this->sock,
+					SOL_SOCKET,
+					SO_BROADCAST,
+					(char *)&yes,
+					sizeof(yes));
+	if (status<0) {
+			errMessage(S_cas_internal,
+		"CAS: unable to set up cast socket\n");
+			return S_cas_internal;
+	}
 
 	{
 		/*
@@ -113,22 +113,22 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 		}
 	}
 
-        /*
-         * release the port in case we exit early. Also if
-         * on a kernel with MULTICAST mods then we can have
-         * two UDP servers on the same port number (requires
-         * setting SO_REUSEADDR prior to the bind step below).
-         */
-        status = setsockopt(
-                        this->sock,
-                        SOL_SOCKET,
-                        SO_REUSEADDR,
-                        (char *) &yes,
-                        sizeof (yes));
-        if (status<0) {
-                errMessage(S_cas_internal,
-			"CAS: unable to set SO_REUSEADDR on UDP socket?\n");
-        }
+	/*
+	 * release the port in case we exit early. Also if
+	 * on a kernel with MULTICAST mods then we can have
+	 * two UDP servers on the same port number (requires
+	 * setting SO_REUSEADDR prior to the bind step below).
+	 */
+	status = setsockopt(
+					this->sock,
+					SOL_SOCKET,
+					SO_REUSEADDR,
+					(char *) &yes,
+					sizeof (yes));
+	if (status<0) {
+			errMessage(S_cas_internal,
+		"CAS: unable to set SO_REUSEADDR on UDP socket?\n");
+	}
 
 	//
 	// Fetch port configuration from EPICS environment variables
@@ -171,20 +171,17 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 		}
 	}
 
-        serverAddr.sin_port = htons (this->dgPort);
-        status = bind(
-                        this->sock,
-                        (struct sockaddr *)&serverAddr,
-                        sizeof (serverAddr));
-        if (status<0) {
+	serverAddr.sin_port = htons (this->dgPort);
+	status = bind(
+					this->sock,
+					(struct sockaddr *)&serverAddr,
+					sizeof (serverAddr));
+	if (status<0) {
 		errPrintf(S_cas_bindFail,
-			__FILE__, __LINE__,
-                        "- bind UDP IP addr=%s port=%u failed because %s",
-			inet_ntoa(serverAddr.sin_addr),
-			(unsigned) this->dgPort,
-                        strerror(SOCKERRNO));
-                return S_cas_bindFail;
-        }
+			__FILE__, __LINE__, "- bind UDP IP addr=%s port=%u failed because %s",
+			inet_ntoa(serverAddr.sin_addr), (unsigned) this->dgPort, SOCKERRSTR);
+		return S_cas_bindFail;
+	}
 
 	if (addConfigBeaconAddr) {
 
@@ -270,7 +267,7 @@ void casDGIntfIO::xSetNonBlocking()
         status = socket_ioctl(this->sock, FIONBIO, &yes);
         if (status<0) {
                 ca_printf("%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
-                                __FILE__, strerror(SOCKERRNO));
+                                __FILE__, SOCKERRSTR);
                 this->sockState = casOffLine;
         }
 }
@@ -285,25 +282,25 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 	int addrSize;
 	struct sockaddr from;
 
-        if (this->sockState!=casOnLine) {
-                return xRecvDisconnect;
-        }
+	if (this->sockState!=casOnLine) {
+		return xRecvDisconnect;
+	}
 
 	addrSize = sizeof(from);
-        status = recvfrom(this->sock, pBuf, size, 0,
-                        &from, &addrSize);
-        if (status<0) {
-                if(SOCKERRNO == EWOULDBLOCK){
+	status = recvfrom(this->sock, pBuf, size, 0,
+					&from, &addrSize);
+	if (status<0) {
+		if(SOCKERRNO == SOCK_EWOULDBLOCK){
 			actualSize = 0u;
 			return xRecvOK;
-                }
-                else {
-                        ca_printf("CAS: UDP recv error was %s",
-				strerror(SOCKERRNO));
+		}
+		else {
+			ca_printf("CAS: UDP recv error was %s",
+			SOCKERRSTR);
 			actualSize = 0u;
-                        return xRecvOK;
-                }
-        }
+			return xRecvOK;
+		}
+	}
 
 	fromOut = from;
 	actualSize = (bufSizeT) status;
@@ -316,17 +313,17 @@ xRecvStatus casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size, 
 				bufSizeT &actualSize, const caNetAddr &to)
 {
-        int		status;
-        int		anerrno;
+	int		status;
+	int		anerrno;
 
-        if (this->sockState!=casOnLine) {
-                return xSendDisconnect;
-        }
+	if (this->sockState!=casOnLine) {
+		return xSendDisconnect;
+	}
 
-        if (size==0u) {
+	if (size==0u) {
 		actualSize = 0u;
-                return xSendOK;
-        }
+		return xSendOK;
+	}
 
 	//
 	// (char *) cast below is for brain dead wrs prototype
@@ -347,12 +344,12 @@ xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size,
 	else {
 		anerrno = SOCKERRNO;
 
-		if (anerrno != EWOULDBLOCK) {
+		if (anerrno != SOCK_EWOULDBLOCK) {
 			char buf[64];
 			this->clientHostName(buf, sizeof(buf));
 			ca_printf(
 	"CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
-				buf, strerror(anerrno));
+				buf, SOCKERRSTR);
 		}
 	}
 
@@ -392,17 +389,57 @@ void casDGIntfIO::sendBeacon(char &msg, unsigned length, aitUint32 &m_ipa, aitUi
 
                         ca_printf(
         "CAS:beacon error was \"%s\" dest=%s sock=%d\n",
-                                strerror(SOCKERRNO),
-				buf,
-                                this->sock);
+								SOCKERRSTR,
+								buf,
+								this->sock);
                 }
         }
 }
 
 //
-// casDGIntfIO::optimumBufferSize()
+// casDGIntfIO::optimumInBufferSize()
 //
-bufSizeT casDGIntfIO::optimumBufferSize () 
+bufSizeT casDGIntfIO::optimumInBufferSize () 
+{
+
+#if 1
+	//
+	// must update client before the message size can be
+	// increased here
+	//
+	return ETHERNET_MAX_UDP;
+#else
+        int n;
+        int size;
+        int status;
+
+        if (this->sockState!=casOnLine) {
+                return ETHERNET_MAX_UDP;
+        }
+
+        /* fetch the TCP send buffer size */
+        n = sizeof(size);
+        status = getsockopt(
+                        this->sock,
+                        SOL_SOCKET,
+                        SO_RCVBUF,
+                        (char *)&size,
+                        &n);
+        if(status < 0 || n != sizeof(size)){
+                size = ETEHRNET_MAX_UDP;
+        }
+
+        if (size<=0) {
+                size = ETHERNET_MAX_UDP;
+        }
+        return (bufSizeT) size;
+#endif
+}
+
+//
+// casDGIntfIO::optimumOutBufferSize()
+//
+bufSizeT casDGIntfIO::optimumOutBufferSize () 
 {
 
 #if 1
@@ -438,7 +475,6 @@ bufSizeT casDGIntfIO::optimumBufferSize ()
         return (bufSizeT) size;
 #endif
 }
-
 
 //
 // casDGIntfIO::state()

@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.9  1997/08/05 00:47:24  jhill
+// fixed warnings
+//
 // Revision 1.8  1997/06/13 09:16:14  jhill
 // connect proto changes
 //
@@ -68,7 +71,8 @@ public:
 		bufSizeT &nBytesActual, caNetAddr &addr);
 	void osdShow (unsigned level) const;
 
-	static bufSizeT optimumBufferSize ();
+	static bufSizeT optimumOutBufferSize ();
+	static bufSizeT optimumInBufferSize ();
 
 	//
 	// The server's port number
@@ -102,6 +106,7 @@ class casDGIO : public casDGClient {
 public:
 	casDGIO(caServerI &cas) :
 		casDGClient(cas) {}
+	~casDGIO();
 
 	//
 	// clientHostName()
@@ -198,8 +203,9 @@ private:
 //
 class caServerIO {
 public:
+	caServerIO() {} // make hp compiler happy
 	caStatus init(caServerI &cas); //constructor does not return status
-	~caServerIO();
+	virtual ~caServerIO();
 
 	//
 	// show status of IO subsystem

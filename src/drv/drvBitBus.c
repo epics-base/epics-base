@@ -57,9 +57,11 @@
 #include <iosLib.h>
 #include <taskLib.h>
 #include <memLib.h>
+#include <semLib.h>
 #include <rngLib.h>
 #include <wdLib.h>
 #include <wdLib.h>
+#include <tickLib.h>
 #include <vme.h>
 
 #include <task_params.h>
@@ -409,7 +411,6 @@ int	link;
   return(0);
 }
 
-
 /******************************************************************************
  *
  * This interrupt handler is invoked when the BitBus controller has completed
@@ -436,18 +437,13 @@ checkLink(link)
 int	link;
 {
   if (link<0 || link>BB_NUM_LINKS)
-  {
-    /* link number out of range */
-    return(ERROR);
-  }
+    return(ERROR);		/* link number out of range */
+
   if (pXvmeLink[link] == NULL)
-  {
-    /* link number has no card installed */
-    return(ERROR);
-  }
+    return(ERROR);		/* link number has no card installed */
+
   return(OK);
 }
-
 
 /******************************************************************************
  *
@@ -492,6 +488,7 @@ int	link;
   int           rxTCount;       /* byte counter for data in rxHead */
   unsigned char	ch;
   struct dpvtBitBusHead *rxDpvtHead;  /* for message currently receiving */
+  int		lockKey;	/* used for intLock calls */
 
   rxMsg = (unsigned char *) NULL;
   rxStatus = BBRX_HEAD;
@@ -504,17 +501,23 @@ int	link;
     if ((pXvmeLink[link]->bbRegs->fifo_stat & XVME_RFNE) == 0)
     {
       /* Enable interrupts and check again because xycom blew it */
+      lockKey = intLock();
       pXvmeLink[link]->bbRegs->stat_ctl = XVME_ENABLE_INT | XVME_RX_INT;
+      intUnlock(lockKey);
       
       while (((pXvmeLink[link]->bbRegs->fifo_stat & XVME_RFNE) == 0) && (pXvmeLink[link]->abortFlag == 0))
       { 
         /* Re-enable ints here each time in case board got reset */
+	lockKey = intLock();
         pXvmeLink[link]->bbRegs->stat_ctl = XVME_ENABLE_INT | XVME_RX_INT;
+	intUnlock(lockKey);
   
         semTake(pXvmeLink[link]->rxInt, WAIT_FOREVER);	/* wait for groceries */
       }
       /* Disable RX Interrupts (prevents unnecessary context switching) */
+      lockKey = intLock();
       pXvmeLink[link]->bbRegs->stat_ctl = 0;
+      intUnlock(lockKey);
     }
     if (pXvmeLink[link]->abortFlag == 0)
     {
@@ -551,6 +554,9 @@ int	link;
   
               /* Delete the node from the list */
 	      listDel(&(pXvmeLink[link]->pbbLink->busyList), rxDpvtHead);
+
+              /* decrement the number of outstanding messages to the node */
+              (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->txMsg.node])--;
   
               rxDpvtHead->rxMsg.length = rxHead[0];
               rxDpvtHead->rxMsg.route = rxHead[1];
@@ -616,9 +622,6 @@ int	link;
         if (bbDebug>24)
           printf("xvmeRxTask(%d):RX command byte = %02.2X\n", link, rxDpvtHead->rxCmd);
     
-        /* decrement the number of outstanding messages to the node */
-        (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->rxMsg.node])--;
-    
         if (rxDpvtHead->finishProc != NULL)
         {
           if (bbDebug>8)
@@ -626,8 +629,8 @@ int	link;
           callbackRequest(rxDpvtHead); /* schedule completion processing */
         }
         /* If there is a semaphore for synchronous I/O, unlock it */
-        if (rxDpvtHead->syncLock != NULL)
-          FASTUNLOCK(rxDpvtHead->syncLock);
+        if (rxDpvtHead->psyncSem != NULL)
+          semGive(*(rxDpvtHead->psyncSem));
     
 	/* If busy list is empty, stop the dog */
         if (pXvmeLink[link]->pbbLink->busyList.head == NULL) 
@@ -647,6 +650,14 @@ int	link;
   }
   else
   { /* Link abort state is active reset receiver link status now */
+    if (rxDpvtHead != NULL)
+    { /* This xact is not on the busy list, put it back on */
+      FASTLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+      (pXvmeLink[link]->pbbLink->deviceStatus[rxDpvtHead->txMsg.node])++;
+      listAddTail(&(pXvmeLink[link]->pbbLink->busyList), rxDpvtHead);
+      FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
+    }
+
     rxMsg = (unsigned char *) NULL;
     rxStatus = BBRX_HEAD;
     rxTCount = 0;
@@ -670,6 +681,27 @@ int	link;
 
 /******************************************************************************
  *
+ * A user callable link resetter.  This sets a flag and releases the dog
+ * task to reset the link.
+ *
+ ******************************************************************************/
+int
+bbReset(link)
+int	link;
+{
+  if (checkLink(link) != ERROR)
+  {
+    pXvmeLink[link]->pbbLink->nukeEm = 1;
+    semGive(pXvmeLink[link]->watchDogSem);
+  }
+  else
+    printf("Link %d not installed.\n", link);
+
+  return(0);
+}
+
+/******************************************************************************
+ *
  ******************************************************************************/
 static int
 xvmeWdTask(link)
@@ -679,22 +711,27 @@ int	link;
   struct dpvtBitBusHead *pnode;
   struct dpvtBitBusHead *npnode;
   unsigned      long    now;
+  int			tixPerSecond;
+  SEM_ID		syncSem;
 
   struct dpvtBitBusHead resetNode;
   unsigned char         resetNodeData;  /* 1-byte data field for RAC_OFFLINE */
 
-/*
- * Hand-craft a RAC_OFFLINE  message to use when a message times out.
- *
- * NOTE that having only one copy is OK provided that this message is
- *      sent immediately following the RAC_RESET_SLAVE message. 
- */
+  tixPerSecond = sysClkRateGet();	/* What is the timer clock rate? */
 
-  resetNode.finishProc = NULL;
-  resetNode.syncLock = NULL;
-  resetNode.link = link;
+  /* init the SEM used when sending the reset message */
+  syncSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
+
+  /*
+   * Hand-craft a RAC_OFFLINE  message to use when a message times out.
+   * NOTE that having only one copy is OK provided that the dog waits for
+   * a response before sending it again!
+   */
+  resetNode.finishProc = NULL;	/* no callback routine used */
+  resetNode.psyncSem = &syncSem;/* do a semGive on this SEM when done sending */
+  resetNode.link = link;	/* which bitbus link to send message out on */
   resetNode.rxMaxLen = 7;       /* Chop off the response... we don't care */
-  resetNode.ageLimit = 20;	/* Time to wait on response */
+  resetNode.ageLimit = tixPerSecond*100; /* make sure this never times out */
 
   resetNode.txMsg.length = 8;
   resetNode.txMsg.route = BB_STANDARD_TX_ROUTE;
@@ -705,102 +742,120 @@ int	link;
 
   plink = pXvmeLink[link]->pbbLink;
 
+  plink->nukeEm = 0;		/* Make sure the nuke status is clear */
   while(1)
   {
     semTake(pXvmeLink[link]->watchDogSem, WAIT_FOREVER);
+    now = tickGet();		/* what time is it? */
+
+    if (plink->nukeEm != 0)
+      printf("Bitbus manual reset being issued on link %d\n", link);
 
     if (bbDebug>4)
       printf("xvmeWdTask(%d): (Watchdog) checking busy list\n", link);
 
-    FASTLOCK(&(plink->busyList.sem));
+    pXvmeLink[link]->rxAbortAck = 0;      /* In case we need to use them */
+    pXvmeLink[link]->txAbortAck = 0;
 
-    now = tickGet();		/* what time is it? */
+    if (plink->nukeEm != 0)
+    { /* set abort status and wait for the abort acks */
+      pXvmeLink[link]->abortFlag = 1;
+
+      /* wake up the Tx task so it can observe the abort status */
+      semGive(plink->linkEventSem);
+
+      /* wake up the Rx task so it can observe the abort ststus */
+      semGive(pXvmeLink[link]->rxInt);
+
+      /* sleep until abort ack from Tx & Rx tasks */
+      while ((pXvmeLink[link]->rxAbortAck == 0) && (pXvmeLink[link]->txAbortAck == 0))
+	taskDelay(RESET_POLL_TIME);
+    }
+    /*
+     * Run thru entire busy list to see if there are any transactions
+     * that have been waiting on a response for too long a period.
+     */
+    FASTLOCK(&(plink->busyList.sem));
     pnode = plink->busyList.head;
+
     while (pnode != NULL)
     {
-      if (pnode->retire <= now)
-      { /* This node has been on the list too long. */
+      npnode = pnode->next;   /* remember where we were in the list */
 
-        npnode = pnode->next;	/* remember where we were in the list */
+      if ((plink->nukeEm != 0) || (pnode->retire <= now))
+      {
+	/* Get rid of the request and set error status etc... */
+	listDel(&(plink->busyList), pnode);
 
-        /* Get rid of the request and set error status etc... */
-        listDel(&(plink->busyList), pnode);
-
-        /*if (bbDebug)*/
-          printf("xvmeWdTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
+	/*if (bbDebug)*/
+	  printf("xvmeWdTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
 
         (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
+	pnode->status = BB_TIMEOUT;
 
-	if (pnode == &resetNode)
-	{ /* YIKES! it is my OWN message! Link is totaly dead! */
-	  printf("BitBus link %d dead... Rebooting interface now\n", link);
+	/* Release a completion lock if one was spec'd */
+	if (pnode->psyncSem != NULL)
+	  semGive(*(pnode->psyncSem));
+	
+	/* Make the callbackRequest if one was spec'd */
+	if(pnode->finishProc != NULL)
+	  callbackRequest(pnode);     /* schedule completion processing */
 
-          /* set abort status for the link to be reset */
-	  pXvmeLink[link]->rxAbortAck = 0;	/* clear the ACK flags */
-	  pXvmeLink[link]->txAbortAck = 0;
+        /* If we are not going to reboot the link... */
+        if (plink->nukeEm == 0)
+	{ /* Send out a RAC_NODE_OFFLINE to the controller */
+          FASTUNLOCK(&(plink->busyList.sem));	/* so Tx and Rx can work */
 
-	  pXvmeLink[link]->abortFlag = 1;
+	  resetNodeData = pnode->txMsg.node;  /* mark the node number */
+printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
-	  /* wake up the Tx task so it can observe the abort status */
-	  semGive(plink->linkEventSem);
+          FASTLOCK(&(plink->queue[BB_Q_HIGH].sem)); /* queue the message */
+	  listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
+	  FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
 
-	  /* wake up the Rx task so it can observe the abort ststus */
-	  semGive(pXvmeLink[link]->rxInt);
+          semGive(plink->linkEventSem);	/* Tell TxTask to send the message */
 
-	  /* sleep until abort ack from Tx & Rx tasks */
-	  while ((pXvmeLink[link]->rxAbortAck == 0) && (pXvmeLink[link]->txAbortAck == 0))
-	  {
-	    taskDelay (RESET_POLL_TIME);
+	  if (semTake(syncSem, tixPerSecond/4) == ERROR)
+          {
+	    printf("xvmeWdTask(%d): link dead, trying manual reboot\n", link);
+	    plink->nukeEm = 1;
+
+            pXvmeLink[link]->abortFlag = 1; /* Start the abort sequence */
+            semGive(plink->linkEventSem); /* Let Tx task observe abort status */
+            semGive(pXvmeLink[link]->rxInt); /* Let Rx task observe abort ststus */
+
+            /* sleep until abort ack from Tx & Rx tasks */
+            while ((pXvmeLink[link]->rxAbortAck == 0) && (pXvmeLink[link]->txAbortAck == 0))
+	      taskDelay(RESET_POLL_TIME);
 	  }
-	  xvmeReset(pXvmeLink[link]->bbRegs, link);
+	  /* Start over since released the busy list */
 
-	  /* clear the abort_flag */
-	  pXvmeLink[link]->abortFlag = 0;
-
-	  /* signal the RxTask to re-enable its interrupts */
-	  semGive(pXvmeLink[link]->rxInt);
-
-	  /* signal the TxTask to wake up & check its queues */
-	  semGive(plink->linkEventSem);
-
+          FASTLOCK(&(plink->busyList.sem));
+          npnode = plink->busyList.head;
 	}
-	else
-	{
-          pnode->status = BB_TIMEOUT;
-    
-          /* Release a completion lock if one was spec'd */
-          if (pnode->syncLock != NULL)
-            FASTUNLOCK(pnode->syncLock);
-    
-          /* Make the callbackRequest if one was spec'd */
-          if(pnode->finishProc != NULL)
-            callbackRequest(pnode);	/* schedule completion processing */
-  
-          /* Have to reset the master so it won't wait on a response */
-          resetNodeData = pnode->txMsg.node;  /* mark the node number */
-
-	  /* No other code takes both the busy & queue sems at same time, */
-	  /* so it is ok to do so here. */
-
-          FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
-          listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
-          FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
-	}
-        pnode = npnode;		/* get @ of next node in list */
       }
-      else
-        pnode = pnode->next;	/* get @ of next node in list */
+      pnode = npnode;
     }
-    /* Restart the timer if the list is not empty */
     if (plink->busyList.head != NULL)
-    {
-      if (bbDebug>5)
-        printf("xvmeWdTask(%d): restarting watch dog timer\n", link);
+    { /* Restart the dog timer */
 
-      wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now,
-						xvmeTmoHandler, link);
+      if (bbDebug>5)
+	printf("xvmeWdTask(%d): restarting watch dog timer\n", link);
+
+      wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
     }
-    FASTUNLOCK(&(plink->busyList.sem));
+    FASTUNLOCK(&(plink->busyList.sem));	/* don't need any more */
+
+    /* Finish the link reboot if necessary */
+    if (plink->nukeEm != 0)
+    {
+      xvmeReset(pXvmeLink[link]->bbRegs, link);
+
+      /* clear the abort_flag */
+      pXvmeLink[link]->abortFlag = 0;
+
+      plink->nukeEm = 0;
+    }
   }
 }
 
@@ -841,7 +896,7 @@ int	link;
   /*      sent immediately following the RAC_RESET_SLAVE message.          */
 
   resetNode.finishProc = NULL;
-  resetNode.syncLock = NULL;
+  resetNode.psyncSem = NULL;
   resetNode.link = link;
   resetNode.rxMaxLen = 7;	/* chop it off */
   resetNode.ageLimit = 10;
@@ -870,8 +925,8 @@ int	link;
       /* if (bbDebug) */
         printf("xvmeTxTask(%d): restarting after abort\n", link);
     }
-
-    semTake(plink->linkEventSem, WAIT_FOREVER);
+    else
+      semTake(plink->linkEventSem, WAIT_FOREVER);
 
     if (bbDebug>5)
       printf("xvmeTxTask(%d): got an event\n", link);
@@ -907,9 +962,6 @@ int	link;
           if (bbDebug>3)
             printf("xvmeTxTask(%d): got xact, pnode=0x%08.8X\n", link, pnode);
       
-          /* Count the outstanding messages */
-          (plink->deviceStatus[pnode->txMsg.node])++;
-  
           /* Send the message in polled mode */
   
           txTCount = pnode->txMsg.length - 2;
@@ -945,7 +997,7 @@ int	link;
 	  {
 	    /* Lock the busy list */
 	    FASTLOCK(&(plink->busyList.sem));
-  
+
 	    if (plink->busyList.head == NULL)
 	      dogStart = 1;
             else
@@ -953,6 +1005,9 @@ int	link;
 
             /* Add pnode to the busy list */
             listAddTail(&(plink->busyList), pnode);
+
+            /* Count the outstanding messages */
+            (plink->deviceStatus[pnode->txMsg.node])++;
   
 	    FASTUNLOCK(&(plink->busyList.sem));
 
@@ -973,9 +1028,6 @@ int	link;
             /* if (bbDebug) */
               printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent, resetting node %d\n", link, pnode->txMsg.node);
 
-    	    /* decrement the number of outstanding messages to the node */
-	    (plink->deviceStatus[pnode->txMsg.node])--;
-
 	    pnode->status = BB_OK;
 
     	    if (pnode->finishProc != NULL)
@@ -987,8 +1039,8 @@ int	link;
     	    }
 
     	    /* If there is a semaphore for synchronous I/O, unlock it */
-    	    if (pnode->syncLock != NULL)
-      	      FASTUNLOCK(pnode->syncLock);
+    	    if (pnode->psyncSem != NULL)
+      	      semGive(*(pnode->psyncSem));
 
 	    /* have to reset the master so it won't wait on a response */
 	    resetNodeData = pnode->txMsg.node;	/* mark the node number */
@@ -1005,8 +1057,6 @@ int	link;
 	    FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
 	    listAddHead(&(plink->queue[BB_Q_HIGH]), pnode);
 	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
-
-	    (plink->deviceStatus[pnode->txMsg.node])--;	/* fix count/status */
 	  }
 	  break;			/* stop checking the fifo queues */
         }

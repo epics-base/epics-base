@@ -27,11 +27,12 @@
 #include "netWriteNotifyIO_IL.h"
 #include "netSubscription_IL.h"
 #include "cac_IL.h"
+#include "ioCounter_IL.h"
 
 tsFreeList < class nciu, 1024 > nciu::freeList;
 
 nciu::nciu ( cac &cacIn, cacChannel &chanIn, const char *pNameIn ) :
-    cacChannelIO ( chanIn ), cacPrivate ( cacIn )
+    cacChannelIO ( chanIn ), cacPrivateListOfIO ( cacIn )
 {
     static const caar defaultAccessRights = { false, false };
     size_t strcnt;
@@ -55,9 +56,10 @@ nciu::nciu ( cac &cacIn, cacChannel &chanIn, const char *pNameIn ) :
     this->sid = UINT_MAX; /* invalid initial server id     */
     this->ar = defaultAccessRights;
     this->nameLength = strcnt;
-    this->previousConn = 0;
+    this->f_previousConn = false;
     this->f_connected = false;
     this->f_fullyConstructed = true;
+    this->f_claimSent = false;
     this->retry = 0u;
     this->retrySeqNo = 0u;
     this->ptrLockCount = 0u;
@@ -464,9 +466,15 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
     return status;
 }
 
-void nciu::connect ( tcpiiu &iiu, unsigned nativeType, 
+void nciu::connect ( unsigned nativeType, 
 	unsigned long nativeCount, unsigned sidIn )
 {
+    if ( ! this->f_claimSent ) {
+        ca_printf (
+            "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
+            this->getId (), sidIn );
+        return;
+    }
 
     if ( this->f_connected ) {
         ca_printf (
@@ -475,20 +483,24 @@ void nciu::connect ( tcpiiu &iiu, unsigned nativeType,
         return;
     }
 
+    this->lockPIIU ();
+    bool v41Ok = this->piiu->ca_v41_ok ();
+    this->unlockPIIU ();
+
     this->lock ();
 
     this->typeCode = nativeType;
     this->count = nativeCount;
     this->sid = sidIn;
     this->f_connected = true;
-    this->previousConn = true;
+    this->f_previousConn = true;
 
     /*
      * if less than v4.1 then the server will never
      * send access rights and we know that there
      * will always be access 
      */
-    if ( ! iiu.ca_v41_ok () ) {
+    if ( ! v41Ok ) {
         this->ar.read_access = true;
         this->ar.write_access = true;
     }
@@ -506,7 +518,7 @@ void nciu::connect ( tcpiiu &iiu, unsigned nativeType,
      * will always be access and also need to call 
      * their call back here
      */
-    if ( ! iiu.ca_v41_ok () ) {
+    if ( ! v41Ok ) {
         this->accessRightsNotify ( this->ar );
     }
 }
@@ -525,6 +537,7 @@ void nciu::disconnect ()
     this->sid = UINT_MAX;
     this->ar.read_access = false;
     this->ar.write_access = false;
+    this->f_claimSent = false;
 
     if ( this->f_connected ) {
         wasConnected = true;
@@ -640,8 +653,10 @@ void nciu::attachChanToIIU ( netiiu &iiu )
 
     iiu.mutex.lock ();
 
-    // add to the front of the list so that
-    // search requests for new channels will be sent first
+    // add to the front of the list so that search requests 
+    // for new channels will be sent first and so that
+    // channels lacking a claim message prior to connecting
+    // are located
     iiu.channelList.push ( *this );
     this->piiu = &iiu;
 
@@ -692,7 +707,7 @@ void nciu::unlockOutstandingIO () const
 
 unsigned nciu::readSequence () const
 {
-    return this->cacCtx.readSequence ();
+    return this->cacCtx.readSequenceOfOutstandingIO ();
 }
 
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -773,7 +788,7 @@ channel_state nciu::state () const
     if ( this->f_connected ) {
         stateOut = cs_conn;
     }
-    else if ( this->previousConn ) {
+    else if ( this->f_previousConn ) {
         stateOut = cs_prev_conn;
     }
     else {
@@ -830,7 +845,7 @@ void nciu::show ( unsigned level ) const
         }
         printf ( "\n" );
     }
-    else if ( this->previousConn ) {
+    else if ( this->f_previousConn ) {
         printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr );
     }
     else {
@@ -847,3 +862,32 @@ void nciu::show ( unsigned level ) const
         printf ( "\tfully cunstructed boolean=%u\n", this->f_fullyConstructed );
     }
 }
+
+bool nciu::setClaimMsgCache ( claimMsgCache &cache )
+{
+    cache.clientId = this->id;
+    cache.serverId = this->sid;
+    if ( cache.v44 ) {
+        unsigned len = strlen ( this->pNameStr ) + 1u;
+        if ( cache.bufLen < len ) {
+            unsigned newBufLen = 2 * len;
+            char *pNewStr = new char [ newBufLen ];
+            if ( pNewStr ) {
+                delete [] cache.pStr;
+                cache.pStr = pNewStr;
+                cache.bufLen = newBufLen;
+            }
+            else {
+                return false;
+            }
+        }
+        strcpy ( cache.pStr, this->pNameStr );
+        cache.currentStrLen = len;
+    }
+    else {
+        cache.currentStrLen = 0u;
+    }
+    this->f_claimSent = true;
+    return true;
+}
+

@@ -111,9 +111,10 @@ inline void nciu::subscriptionCancelMsg ( ca_uint32_t clientId )
     this->unlockPIIU ();
 }
 
-inline void nciu::connect ( tcpiiu &iiu )
+// this is to only be used by early protocol revisions
+inline void nciu::connect ()
 {
-    this->connect ( iiu, this->typeCode, this->count, this->sid );
+    this->connect ( this->typeCode, this->count, this->sid );
 }
 
 inline void nciu::searchReplySetUp ( unsigned sidIn, 
@@ -133,6 +134,11 @@ inline void nciu::searchReplySetUp ( unsigned sidIn,
 inline bool nciu::connected () const
 {
     return this->f_connected;
+}
+
+inline bool nciu::claimSent () const
+{
+    return this->f_claimSent;
 }
 
 inline bool nciu::connectionInProgress ( const osiSockAddr &addrIn )

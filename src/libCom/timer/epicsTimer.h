@@ -17,7 +17,6 @@
 #include <float.h>
 
 #include "shareLib.h"
-#include "epicsAssert.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 

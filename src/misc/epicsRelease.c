@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.7  1997/04/30 19:12:25  mrk
+ * Fix compiler warning messages
+ *
  * Revision 1.6  1995/02/13  16:46:04  jba
  * Removed date from epicsRelease.
  *
@@ -23,10 +26,14 @@
 #include    <stdio.h>
 #include    <epicsVersion.h>
 
-    char *epicsRelease= "@(#)EPICS IOC CORE";
-    char *epicsRelease1 = epicsReleaseVersion;
+char *epicsRelease = "@(#)EPICS IOC CORE built on " __DATE__;
+char *epicsRelease1 = epicsReleaseVersion;
+
 int coreRelease()
 {
-    printf("############################################################################\n###  %s\n###  %s\n############################################################################\n", epicsRelease, epicsRelease1);
-    return(0);
+    printf ("############################################################################\n");
+    printf ("###  %s\n", epicsRelease);
+    printf ("###  %s\n", epicsRelease1);
+    printf ("############################################################################\n");
+    return (0);
 }

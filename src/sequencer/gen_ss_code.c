@@ -107,7 +107,7 @@ Expr		*sp;
 	extern char	*stype[];
 
 #ifdef	DEBUG
-	fprintf("stderr, "eval_delay: type=%s\n", stype[ep->type]);
+	fprintf(stderr, "eval_delay: type=%s\n", stype[ep->type]);
 #endif	DEBUG
 
 	/* Generate 1-st part of function w/ 1-st 2 parameters */

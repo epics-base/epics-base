@@ -51,9 +51,7 @@ cac::cac () :
     this->ca_exception_arg = NULL;
     this->ca_fd_register_func = NULL;
     this->ca_fd_register_arg = NULL;
-    this->ca_flush_pending = FALSE;
     this->ca_number_iiu_in_fc = 0u;
-    this->ca_manage_conn_active = FALSE;
     this->readSeq = 0u;
 
     this->ca_client_lock = semMutexCreate();
@@ -145,6 +143,18 @@ cac::~cac ()
     threadPrivateSet (caClientContextId, NULL);
 
     //
+    // destroy local IO channels
+    //
+    this->defaultMutex.lock ();
+    tsDLIterBD <cacLocalChannelIO> iter ( this->localChanList.first () );
+    while ( iter != tsDLIterBD <cacLocalChannelIO> ::eol () ) {
+        tsDLIterBD <cacLocalChannelIO> pnext = iter.itemAfter ();
+        iter->destroy ();
+        iter = pnext;
+    }
+    this->defaultMutex.unlock ();
+
+    //
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
@@ -153,7 +163,7 @@ cac::~cac ()
     //
     // shutdown all tcp connections and wait for threads to exit
     //
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
     tsDLIterBD <tcpiiu> piiu ( this->iiuListIdle.first () );
     while ( piiu != piiu.eol () ) {
         tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
@@ -166,7 +176,7 @@ cac::~cac ()
         piiu->suicide ();
         piiu = pnext;
     }
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 
     //
     // shutdown udp and wait for threads to exit
@@ -231,16 +241,16 @@ void cac::processRecvBacklog ()
         int status;
         unsigned bytesToProcess;
 
-        this->iiuListLock.lock ();
+        this->iiuListMutex.lock ();
         piiu = this->iiuListRecvPending.get ();
         if (!piiu) {
-            this->iiuListLock.unlock ();
+            this->iiuListMutex.unlock ();
             break;
         }
 
         piiu->recvPending = false;
         this->iiuListIdle.add (*piiu);
-        this->iiuListLock.unlock ();
+        this->iiuListMutex.unlock ();
 
         if (piiu->state == iiu_disconnected) {
             delete piiu;
@@ -272,7 +282,7 @@ void cac::flush ()
     /*
      * set the push pending flag on all virtual circuits
      */
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
     tsDLIterBD<tcpiiu> piiu ( this->iiuListIdle.first () );
     while ( piiu != tsDLIterBD<tcpiiu>::eol () ) {
         piiu->flush ();
@@ -283,7 +293,7 @@ void cac::flush ()
         piiu->flush ();
         piiu++;
     }
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 }
 
 
@@ -316,9 +326,9 @@ unsigned cac::connectionCount () const
 {
     unsigned count;
 
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
     count = this->iiuListIdle.count () + this->iiuListRecvPending.count ();
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
     return count;
 }
 
@@ -329,7 +339,7 @@ void cac::show (unsigned level) const
         this->pudpiiu->show (level);
     }
 
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
 
     tsDLIterConstBD <tcpiiu> piiu ( this->iiuListIdle.first () );
     while ( piiu != piiu.eol () ) {
@@ -343,17 +353,17 @@ void cac::show (unsigned level) const
         piiu++;
 	}
 
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 
     UNLOCK (this);
 }
 
 void cac::installIIU (tcpiiu &iiu)
 {
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
     iiu.recvPending = false;
     this->iiuListIdle.add (iiu);
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 
     if (this->ca_fd_register_func) {
         ( * this->ca_fd_register_func ) ( (void *) this->ca_fd_register_arg, iiu.sock, TRUE);
@@ -364,7 +374,7 @@ void cac::signalRecvActivityIIU (tcpiiu &iiu)
 {
     bool change;
 
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
 
     if ( iiu.recvPending ) {
         change = false;
@@ -376,7 +386,7 @@ void cac::signalRecvActivityIIU (tcpiiu &iiu)
         change = true;
     }
 
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 
     //
     // wakeup after unlock improves performance
@@ -388,7 +398,7 @@ void cac::signalRecvActivityIIU (tcpiiu &iiu)
 
 void cac::removeIIU (tcpiiu &iiu)
 {
-    this->iiuListLock.lock ();
+    this->iiuListMutex.lock ();
 
     if (iiu.recvPending) {
         this->iiuListRecvPending.remove (iiu);
@@ -397,7 +407,7 @@ void cac::removeIIU (tcpiiu &iiu)
         this->iiuListIdle.remove (iiu);
     }
 
-    this->iiuListLock.unlock ();
+    this->iiuListMutex.unlock ();
 }
 
 /*
@@ -787,37 +797,36 @@ void cac::registerService ( cacServiceIO &service )
 
 bool cac::createChannelIO (const char *pName, cacChannel &chan)
 {
-    cacChannelIO *pIO;
+    cacLocalChannelIO *pIO;
 
     pIO = this->services.createChannelIO ( pName, chan );
-    if ( pIO ) {
-        chan.attachIO ( *pIO );
-        return true;
-    }
-    pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
-    if ( pIO ) {
-        chan.attachIO ( *pIO );
-        return true;
-    }
-    if ( ! this->pudpiiu ) {
-        this->pudpiiu = new udpiiu ( this );
-        if ( ! this->pudpiiu ) {
-            return false;
+    if ( ! pIO ) {
+        pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
+        if ( ! pIO ) {
+            if ( ! this->pudpiiu ) {
+                this->pudpiiu = new udpiiu ( this );
+                if ( ! this->pudpiiu ) {
+                    return false;
+                }
+            }
+            nciu *pNetChan = new nciu ( this, chan, pName );
+            if ( pNetChan ) {
+                if ( ! pNetChan->fullyConstructed () ) {
+                    pNetChan->destroy ();
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                return false;
+            }
         }
     }
-    nciu *pNetChan = new nciu ( this, chan, pName );
-    if ( pNetChan ) {
-        if ( ! pNetChan->fullyConstructed () ) {
-            pNetChan->destroy ();
-            return false;
-        }
-        else {
-            chan.attachIO ( *pNetChan );
-            return true;
-        }
-    }
-    else {
-        return false;
-    }
+    this->defaultMutex.lock ();
+    this->localChanList.add ( *pIO );
+    this->defaultMutex.unlock ();
+    return true;
 }
 

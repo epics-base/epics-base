@@ -1533,6 +1533,7 @@ void arrayEventExceptionNotify ( struct event_handler_args args )
         arrayEventExceptionNotifyComplete = 1;
     }
 }
+
 void exceptionTest ( chid chan )
 {
     int status;

@@ -197,6 +197,13 @@ inline resTableIndex fdRegId::hash (unsigned) const
     return hashid;
 }
 
+inline void fdManager::lazyInitTimerQueue () 
+{
+    if ( ! this->pTimerQueue ) {
+        this->pTimerQueue = & epicsTimerQueuePassive::create ( *this );
+    }
+}
+
 inline epicsTimerQueue & fdManager::timerQueueRef () 
 {
     this->lazyInitTimerQueue ();

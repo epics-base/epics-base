@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <string.h>
 
+#define instantiateRecourceLib
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
 #include "osiSleep.h"

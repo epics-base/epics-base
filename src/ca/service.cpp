@@ -467,6 +467,7 @@ LOCAL void search_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr
     }
 
     issue_claim_channel (chan);
+    cacRingBufferWriteFlush (&allocpiiu->send);
     UNLOCK (piiu->niiu.iiu.pcas);
 }
 

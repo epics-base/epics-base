@@ -35,10 +35,12 @@ LOCAL void retryPendingClaims (tcpiiu *piiu)
     while ( (chan = (nciu *) ellFirst (&piiu->niiu.chidList)) ) {
         if (!chan->claimPending) {
             piiu->claimsPending = FALSE;
+            cacRingBufferWriteFlush (&piiu->send);
             break;
         }
         success = issue_claim_channel (chan);
         if (!success) {
+            cacRingBufferWriteFlush (&piiu->send);
             break;
         }
     }

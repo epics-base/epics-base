@@ -36,7 +36,7 @@ void epicsEventDestroy(epicsEventId id)
     semDelete((SEM_ID)id);
 }
 
-epicsEventWaitStatus epicsEventTakeWithTimeout(
+epicsEventWaitStatus epicsEventWaitWithTimeout(
     epicsEventId id, double timeOut)
 {
     int status;

@@ -37,7 +37,7 @@ void epicsMutexDestroy(epicsMutexId id)
     semDelete((SEM_ID)id);
 }
 
-epicsMutexLockStatus epicsMutexTakeWithTimeout(
+epicsMutexLockStatus epicsMutexLockWithTimeout(
     epicsMutexId id, double timeOut)
 {
     int status;

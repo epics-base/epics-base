@@ -2698,7 +2698,8 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     pend_event_delay_test ( 0.25 ); 
 
     /* ca_channel_status ( 0 ); */
-    ca_client_status ( 0u );
+    ca_client_status ( 0 );
+    /* ca_client_status ( 6u ); info about each channel */
 
     pChans = calloc ( channelCount, sizeof ( *pChans ) );
     assert ( pChans );

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1996/07/09 22:55:22  jhill
+// added cast
+//
 // Revision 1.2  1996/06/21 02:18:11  jhill
 // SOLARIS port
 //
@@ -20,7 +23,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#ifndef SUNOS4 // the SUNOS4 prototypes are trad C - see bsdProto.h
 #include <arpa/inet.h>
+#endif
 
 
 //

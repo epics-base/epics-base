@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.1.1.1  1996/06/20 00:28:18  jhill
+// ca server installation
+//
 //
 
 #ifndef includeCASIODH
@@ -21,7 +24,7 @@ extern "C" {
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#if 0 // func proto do not have args for C++
+#ifndef SUNOS4 // func proto do not have args for C++ (under sunos4)
 #include <arpa/inet.h>
 #include <netdb.h>
 #endif
@@ -42,13 +45,15 @@ typedef int                     SOCKET;
 
 void hostNameFromIPAddr (const caAddr *pAddr, 
 			char *pBuf, unsigned bufSize);
+#if 0
 //
-// assuming al posix machines are IEEE fload will be wrong
+// assuming al posix machines are IEEE float will be wrong
 //
 #define ntohf(A) (A)
 #define ntohd(A) (A)
 #define htonf(A) (A)
 #define htond(A) (A)
+#endif
 
 class caServerIO {
 public:

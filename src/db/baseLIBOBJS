@@ -51,6 +51,7 @@ LIBOBJS += $(EPICS_BASE_BIN)/waveformRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAiKscV215.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiSoftRaw.o
+#LIBOBJS += $(EPICS_BASE_BIN)/devAiStats.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiSymb.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAiXy566Di.o

@@ -777,7 +777,7 @@ struct steppermotorRecord	*psm;
         if (psm->omsl == CLOSED_LOOP) {
 		status=dbGetLink(&(psm->dol),DBR_FLOAT, &(psm->val),0,0);
 		if (!RTN_SUCCESS(status)) return;
-		psm->udf = FALSE;
+		if (psm->dol.type != CONSTANT) psm->udf = FALSE;
 	}
 
         /* check drive limits */
@@ -834,7 +834,7 @@ struct steppermotorRecord	*psm;
         if (psm->omsl == CLOSED_LOOP){
 		status=dbGetLink(&(psm->dol),DBR_FLOAT, &(psm->val),0,0);
 		if (!RTN_SUCCESS(status)) return;
-		psm->udf = FALSE;
+		if (psm->dol.type != CONSTANT) psm->udf = FALSE;
 	}
 
 	/* Motor not at desired velocity */
@@ -904,7 +904,7 @@ struct steppermotorRecord	*psm;
     float		new_pos,delta;
 
     /* get readback position */
-    if (psm->rdbl.type == DB_LINK){
+    if (psm->rdbl.type != CONSTANT){
 	/* when readback comes from another field of this record   */
 	/* the fetch will fail if the record is uninitialized      */
         /* also - prdl (process readback location) should be set   */

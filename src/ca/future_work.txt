@@ -1,9 +1,6 @@
 
 Potential upgrades to Channel Access
 
-o specify max channel count when initializing CA?
-This would allow a better hash table size allocation.
-
 o generalized access to abstract data
 o use multicast for broadcasting and ax the repeater
 o large arrays

@@ -8,7 +8,7 @@ $Id$
 Notes:
 
 1. Before you can build or use EPICS, the environemnt variable HOST_ARCH
-   must be set. The epics/startup/HostArch script file has been provided
+   must be set. The base/startup/HostArch script file has been provided
    to set HOST_ARCH.
 
 2. You must use GNU make (which is now THE supported make utility) for
@@ -98,7 +98,7 @@ Notes:
 
 NOTES:
 
-   1. EPICS binaries and shellscripts are installed into the directory
+   1. EPICS binaries and shell scripts are installed into the directory
       $(INSTALL_LOCATION)/bin/ARCH.
 
    2. EPICS libraries are installed into the $(INSTALL_LOCATION)/lib/ARCH

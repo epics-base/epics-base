@@ -533,7 +533,7 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
         nBytes += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) + 2 * sizeof (caHdr) );
     }
 
-    printf ( "search test\n" );
+    printf ( "channel connect test\n" );
     timeIt ( test_search, pItemList, channelCount, nBytes );
     printSearchStat ( pItemList, channelCount );
 

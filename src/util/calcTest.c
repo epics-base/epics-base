@@ -1,5 +1,5 @@
 /* calcTest.c */
-/* share/src/util ???  $Id$ */
+/* share/src/util   $Id$ */
 
 /* calcTest.c - calcPerform Test Program  
  *
@@ -73,19 +73,16 @@ void calcTest()
 {
 	char str[MAXLINE];
 
-	char testId[MAXLINE];
 	char expression[MAXLINE];
 	char parmList[MAXLINE];
 	char value[MAXLINE];
-	char verify[MAXLINE];
-	int  count;
+	int  fieldCount;
 	long status;
 	double	parm[12];
 	short	i;
 
 	/* get test line */
 	while ( gets(str)) {
-
 		/* print and skip null lines and comment lines */
 		if ( str[0]==NULL || str[0] == '!' ) {
 			printf("%s\n",str);
@@ -93,13 +90,13 @@ void calcTest()
 		}
 
 		/* parse input line for fields */
-		count=sscanf(str,"%s \"%[^\"]\" \"%[^\"]\" %s %s",
-			testId,expression,parmList,value,verify);
+		fieldCount=sscanf(str," \"%[^\"]\" \"%[^\"]\" %s ",
+			expression,parmList,value);
 
 		/* check field count */
-		if ( count != 5 ) {
+		if ( fieldCount < 2 || fieldCount > 3 ) {
 			printf("\n%s\n",str);
-			printf ("***** ERROR ***** field count %d is less than 5\n",count);
+			printf ("***** ERROR ***** input field count %d incorrect\n",fieldCount);
 			continue;
 		}
 
@@ -118,7 +115,7 @@ void calcTest()
 
 
 		/* execute test line */
-		status=doTestLine(expression,parm,value,verify);
+		status=doTestLine(expression,parm,value,fieldCount);
 		if ( status ){
 			printf("\n%s\n",str);
 			printf ("***** ERROR ***** status=%d %s\n",status,errmsg);
@@ -128,11 +125,11 @@ void calcTest()
 	printf ("\ncalcTest ALL DONE\n\n\n");
 }
 
-long doTestLine(expression,parm,value,verify)
+long doTestLine(expression,parm,value,fieldCount)
 char	expression[];
 double	parm[12];
 char	value[];
-char	verify[];
+int	fieldCount;
 {
 	long	status=0;
 	short	error_number=0;
@@ -158,7 +155,7 @@ char	verify[];
 	sprintf(valString,"%-g",val);
 
 	/* verify calcPerform result*/
-	if (*verify == 'V'){
+	if ( fieldCount == 3 ){
 
 		status=strcmp(value,valString);
 		if (status) {

@@ -29,8 +29,8 @@
  * 
  */
 
-#ifndef INCpostfixh
-#define INCpostfixh
+#ifndef INCsCalcPostfixH
+#define INCsCalcPostfixH
 
 #include "shareLib.h"
 
@@ -44,5 +44,5 @@ epicsShareFunc long epicsShareAPI
     char **psarg, int numSArgs, double *presult, 
     char *psresult, int lenSresult, char *post);
 
-#endif /* INCpostfixh */
+#endif /* INCsCalcPostfixH */
 

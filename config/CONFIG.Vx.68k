@@ -80,8 +80,8 @@ VX_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLU
 
 #    Warnings
 #At some time we should turn on pedantic
-#VX_WARN_YES = -Wall -pedantic
-VX_WARN_YES = -Wall
+VX_WARN_YES = -Wall -pedantic -ansi
+#VX_WARN_YES = -Wall
 VX_WARN_NO =
 VX_WARN_FLAGS = $(VX_WARN_$(VX_WARN))
  

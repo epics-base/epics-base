@@ -332,17 +332,17 @@ iocsh (const char *pathname)
             continue;
 
         /*
-         * Echo commands read from scripts
-         */
-        if ((prompt == NULL) && *raw)
-            puts(raw);
-
-        /*
          * Expand macros
          */
         free(line);
         if ((line = macEnvExpand(raw)) == NULL)
             continue;
+
+        /*
+         * Echo commands read from scripts
+         */
+        if ((prompt == NULL) && *line)
+            puts(line);
 
         /*
          * Break line into words

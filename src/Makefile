@@ -14,6 +14,7 @@ DIRS += cxxTemplates
 DIRS += toolsComm
 DIRS += makeBaseApp
 DIRS += libCom
+DIRS += libCom/test
 DIRS += dbStatic
 DIRS += db
 DIRS += ca

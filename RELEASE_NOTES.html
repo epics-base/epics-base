@@ -9,6 +9,9 @@
 <body lang="en">
 <h1>EPICS Release 3.13.10</h1>
 <h2>Changes since 3.13.9</h2>
+<h3>db_access - conversion of double to float</h3>
+<p>When a CA user asked for display or control limits as a float a 0 value
+was returned as -1.17549435E-38. This is now fixed.</p>
 <h3>seq_ca</h3>
 <p>The sequencer did not properly keep track of number of channels connected.
 It now checks if it is actually connected/disconnect before it increments/decrements the counts.</p>

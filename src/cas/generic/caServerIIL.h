@@ -55,7 +55,7 @@ inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
 {
     chronIntId      tmpId (idIn);
 
-	epicsAutoMutex locker ( this->mutex );
+	epicsGuard < epicsMutex > locker ( this->mutex );
     casRes *pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
 	if ( pRes ) {
 		if ( pRes->resourceType() != type ) {

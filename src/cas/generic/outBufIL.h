@@ -13,7 +13,7 @@ inline bufSizeT outBuf::bytesPresent () const
     // This guarantees that any pushCtx() operation
     // in progress completes before another thread checks.
     //
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     bufSizeT result = this->stack;
 	return result;
 }
@@ -29,7 +29,7 @@ inline void outBuf::clear ()
     // in progress completes before another thread 
     // clears.
     //
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 	this->stack = 0u;
 }
 

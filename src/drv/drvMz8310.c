@@ -46,6 +46,7 @@
  *			parameters
  *  bg	06-25-92	combined drvMz8310.c and mz8310_driver.c
  *  bg	06-26-92	Added level to mz8310_io_report.
+ * joh  08-05-92	callable interface now conforms with epics standard
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */
@@ -66,8 +67,8 @@
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
+long mz8310_io_report();
+long mz8310_init();
 
 struct {
 	long	number;
@@ -75,26 +76,8 @@ struct {
 	DRVSUPFUN	init;
 } drvMz8310={
 	2,
-	report,
-	init};
-
-static long report(fp)
-    FILE	*fp;
-{
-    int card;
-    int level;
-
-    for(card=0; card<tm_num_cards[MZ8310]; card++) 
-	mz8310_io_report(card,level);
-}
-
-static long init()
-{
-    int status;
-
-    return(0);
-}
-
+	mz8310_io_report,
+	mz8310_init};
 
 #define MZ8310CHIPSIZE		0x20
 #define MZ8310SIZE		0x00000100
@@ -194,8 +177,21 @@ static struct mz8310_strap_info mz8310_strap[MZ8310CHANCNT] =
 void mz8310_reset();
 
 
-mz8310_io_report(card,level)
+long mz8310_io_report(level)
 short int level;
+{
+	unsigned	card;
+
+    	for(card=0; card<tm_num_cards[MZ8310]; card++) 
+		mz8310_io_report_card(card,level);
+
+	return OK;
+}
+
+
+
+LOCAL
+int mz8310_io_report_card(card,level)
 {
   unsigned int channel, chip;
   int status;
@@ -225,12 +221,12 @@ short int level;
 }
 
 
-mz8310_init(card_count)
-register unsigned int 		card_count;
+long mz8310_init()
 {
   register unsigned int 	card;
   register int 			status;
   struct mz8310_conf 		*temp_mzconf;
+  register unsigned int 	card_count = tm_num_cards[MZ8310];
 
   if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,0,&shortaddr)) != OK){ 
   	printf("Addressing error for short address in mz8310 driver\n");

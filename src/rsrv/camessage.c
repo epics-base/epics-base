@@ -55,6 +55,7 @@ static char *sccsId = "%W% %G%";
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -1413,8 +1414,8 @@ void write_notify_reply(void *pArg)
 	 */
 	status = semGive(pClient->blockSem);
 	if(status != OK){
-		logMsg("CA block sem corrupted\n",
-				NULL,
+		logMsg("CA block sem corrupted %s\n",
+				strerror(errno),
 				NULL,
 				NULL,
 				NULL,

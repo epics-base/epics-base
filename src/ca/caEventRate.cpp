@@ -44,7 +44,7 @@ void caEventRate ( const char *pName )
 
     status = ca_pend_io ( 10.0 );
     if ( status != ECA_NORMAL ) {
-        errlogPrintf ( "caEventRate: %s not found\n", pName );
+        fprintf ( stderr, "caEventRate: %s not found\n", pName );
         return;
     }
 

@@ -131,7 +131,7 @@ epicsShareFunc void
 epicsShareAPI macSuppressWarning(
     MAC_HANDLE  *handle,        /* opaque handle */
 
-    int         falseTrue       /*0 means ussue, 1 means suppress*/
+    int         falseTrue       /*0 means issue, 1 means suppress*/
 );
 
 epicsShareFunc long             /* #chars copied, <0 if any macros are */

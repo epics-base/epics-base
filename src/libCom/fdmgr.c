@@ -97,6 +97,7 @@ static char	*pSccsId = "@(#) $Id$";
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 #ifdef vxWorks

@@ -36,12 +36,15 @@
  ***************************************************************************
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <dbDefs.h>
 #include <errMdef.h>
+#include <epicsPrint.h>
 #include "errSymTbl.h"
 
 
@@ -77,3 +80,4 @@ void errPrintf(long status, const char *pFileName,
     vprintf(pformat,pvar);
     printf("\n");
 }
+

@@ -10,7 +10,9 @@ typedef enum {
 } epicsMutexLockStatus;
 
 #ifdef __cplusplus
+
 #include "locationException.h"
+
 class epicsShareClass epicsMutex {
 public:
     epicsMutex ();
@@ -24,8 +26,23 @@ public:
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
 private:
+    epicsMutex ( const epicsMutex & );
+    epicsMutex & operator = ( const epicsMutex & );
     mutable epicsMutexId id;
 };
+
+// Automatically applies and releases the mutex.
+// This is for use in situations where C++ exceptions are possible.
+class epicsAutoMutex {
+public:
+    epicsAutoMutex ( epicsMutex & );
+    ~epicsAutoMutex ();
+private:
+    epicsAutoMutex ( const epicsAutoMutex & );
+    epicsAutoMutex & operator = ( const epicsAutoMutex & );
+    epicsMutex &mutex;
+};
+
 #endif /*__cplusplus*/
 
 #ifdef __cplusplus
@@ -59,19 +76,8 @@ epicsShareFunc void epicsShareAPI epicsMutexShow(
 
 /* The c++ implementation is inline calls to thye c code */
 #ifdef __cplusplus
-// Automatically applies and releases the mutex.
-// This is for use in situations where C++ exceptions are possible.
-class epicsAutoMutex {
-public:
-    epicsAutoMutex ( epicsMutex & );
-    ~epicsAutoMutex ();
-private:
-    epicsMutex ( const epicsMutex & );
-    epicsMutex & operator = ( const epicsMutex & );
-    epicsMutex &mutex;
-};
 
-inline epicsMutex::epicsMutex ()
+inline epicsMutex::epicsMutex () :
     id ( epicsMutexCreate () )
 {
     if ( this->id == 0 ) {

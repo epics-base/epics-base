@@ -13,7 +13,9 @@ typedef enum {
 typedef enum {epicsEventEmpty,epicsEventFull} epicsEventInitialState;
 
 #ifdef __cplusplus
+
 #include "locationException.h"
+
 class epicsShareClass epicsEvent {
 public:
     epicsEvent (epicsEventInitialState initial=epicsEventEmpty);
@@ -31,6 +33,7 @@ private:
     epicsEvent & operator = ( const epicsEvent & );
     epicsEventId id;
 };
+
 #endif /*__cplusplus */
 
 #ifdef __cplusplus

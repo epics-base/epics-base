@@ -20,6 +20,7 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "errlog.h"

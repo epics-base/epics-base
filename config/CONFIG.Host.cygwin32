@@ -24,5 +24,11 @@ SHARED_LIBRARIES=NO
 #==========================
  
 ARCH_DEP_CFLAGS = -DCYGWIN32 -U_WIN32
-ARCH_DEP_LDLIBS = -lm
+ARCH_DEP_LDLIBS =
+OP_SYS_LDLIBS =
+
+# cygwin32 overrides to eliminate following warning message -
+# -fPIC ignored for target (all code is position independent)
+GCC_DEP_CFLAGS = -D_REENTRANT
+G++_DEP_CFLAGS = -D_REENTRANT
 

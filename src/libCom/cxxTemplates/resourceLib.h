@@ -145,7 +145,7 @@ public:
 
 	T *lookup (const ID &idIn) const; // locate entry
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1100
 	//
 	// required by MS vis c++ 5.0 (but not by 4.0)
 	//

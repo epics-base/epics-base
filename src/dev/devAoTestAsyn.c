@@ -129,13 +129,13 @@ static long write_ao(pao)
     switch (pao->out.type) {
     case (CONSTANT) :
 	if(pao->pact) {
-		printf("%s Completed\n",pao->name);
+		printf("%Completed asynchronous processing: %s\n",pao->name);
 		return(0);
 	} else {
 		wait_time = (int)(pao->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pao->prio,pcallback);
-		printf("%s Starting asynchronous processing\n",pao->name);
+		printf("Starting asynchronous processing: %s\n",pao->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pao->pact=TRUE;
 		return(0);

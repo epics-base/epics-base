@@ -128,13 +128,13 @@ static long read_ai(pai)
     switch (pai->inp.type) {
     case (CONSTANT) :
 	if(pai->pact) {
-		printf("%s Completed\n",pai->name);
+		printf("%Completed asynchronous processing: %s\n",pai->name);
 		return(2); /* don`t convert*/
 	} else {
 		wait_time = (int)(pai->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pai->prio,pcallback);
-		printf("%s Starting asynchronous processing\n",pai->name);
+		printf("Starting asynchronous processing: %s\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pai->pact=TRUE;
     		return(0);

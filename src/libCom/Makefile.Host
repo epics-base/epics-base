@@ -81,8 +81,7 @@ LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c
-#LIBSRCS_WIN32 := getopt.c dllmain.cc
-LIBSRCS_WIN32 := getopt.c
+LIBSRCS_WIN32 := getopt.c dllmain.cc
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
@@ -100,6 +99,7 @@ PROD_LIBS=Com
 #TESTPROD_SRCS=tsSubr.c
 #TESTPROD=tsTest 
 #TESTPROD=envtest
+#TESTPROD=osiTimeTest fdManagerTest
 PROD := impExpand
 
 MAN3 = gpHash.3 freeList.3

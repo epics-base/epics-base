@@ -185,7 +185,7 @@ long dbPutField(
 	if(status) recGblDbaddrError(status,paddr,"dbPutField");
 	if(status==0){
         	if((paddr->pfield==(void *)&precord->proc)
-		||(pfldDes->process_passive && precord->scan==0)) {
+		||(pfldDes->process_passive && precord->scan==0 && dbrType<DBR_PUT_ACKT)) {
 		    if(precord->pact) {
 			precord->rpro = TRUE;
 		    } else {
@@ -2990,7 +2990,21 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+	    *pdest = (char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
 
 static long putStringUchar(paddr,pbuffer,nRequest,no_elements,offset)
@@ -3010,7 +3024,21 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+	    *pdest = (unsigned char)value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
 
 static long putStringShort(paddr,pbuffer,nRequest,no_elements,offset)
@@ -3030,9 +3058,23 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hd",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
-
+
 static long putStringUshort(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
 char		*pbuffer;
@@ -3050,7 +3092,21 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%hu",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
 
 static long putStringLong(paddr,pbuffer,nRequest,no_elements,offset)
@@ -3070,9 +3126,23 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%ld",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
-
+
 static long putStringUlong(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
 char		*pbuffer;
@@ -3090,7 +3160,21 @@ long		offset;
 	}
 	else return(-1);
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%lu",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
 
 static long putStringFloat(paddr,pbuffer,nRequest,no_elements,offset)
@@ -3109,9 +3193,23 @@ long		offset;
 		return(0);
 	}
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%f",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
-
+
 static long putStringDouble(paddr,pbuffer,nRequest,no_elements,offset)
 struct dbAddr	*paddr;
 char		*pbuffer;
@@ -3128,7 +3226,21 @@ long		offset;
 		return(0);
 	}
     }
-    return(-1);
+    pdest += offset;
+    while (nRequest) {
+	if(sscanf(pbuffer,"%lf",&value) == 1) {
+	    *pdest = value;
+	} else {
+	    return(-1);
+	}
+	pbuffer += MAX_STRING_SIZE;
+	if(++offset==no_elements)
+	    pdest=paddr->pfield;
+	else
+	    pdest++;
+	nRequest--;
+    }
+    return(0);
 }
 
 static long putStringEnum(paddr,pbuffer,nRequest,no_elements,offset)
@@ -5333,6 +5445,44 @@ long		offset;
     return(0);
 }
 
+static long putAckt(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+unsigned short 	*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
+
+    if(*pbuffer == precord->ackt) return(0);
+    precord->ackt = *pbuffer;
+    db_post_events(precord,&precord->ackt,DBE_VALUE|DBE_ALARM);
+    if(!precord->ackt && precord->acks>precord->sevr) {
+	precord->acks = precord->sevr;
+	db_post_events(precord,&precord->acks,DBE_VALUE|DBE_ALARM);
+    }
+    db_post_events(precord,NULL,DBE_ALARM);
+    return(0);
+}
+
+static long putAcks(paddr,pbuffer,nRequest,no_elements,offset)
+struct dbAddr	*paddr;
+unsigned short 	*pbuffer;
+long		nRequest;
+long		no_elements;
+long		offset;
+{
+    struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
+    unsigned short	acks=precord->acks;
+
+    if(*pbuffer >= precord->acks) {
+	precord->acks = 0;
+	db_post_events(precord,NULL,DBE_ALARM);
+	db_post_events(precord,&precord->acks,DBE_VALUE|DBE_ALARM);
+    }
+    return(0);
+}
+
 /* This is the table of routines for converting database fields */
 /* the rows represent the buffer types				*/
 /* the columns represent the field types			*/
@@ -5343,7 +5493,7 @@ long		offset;
  DBF_GBLCHOICE,   DBF_CVTCHOICE,   DBF_RECCHOICE,   DBF_DEVCHOICE
  ***************************************************************************/
 
-long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
+long (*put_convert_table[DBR_PUT_ACKS+1][DBF_DEVCHOICE+1])() = {
 /* source is a DBR_STRING		*/
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
  putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,
@@ -5383,7 +5533,15 @@ long (*put_convert_table[DBR_ENUM+1][DBF_DEVCHOICE+1])() = {
 /* source is a DBR_ENUM		*/
 {putEnumString,   putEnumChar,     putEnumUchar,    putEnumShort,    putEnumUshort,
  putEnumLong,     putEnumUlong,    putEnumFloat,    putEnumDouble,   putEnumEnum,
- putEnumEnum,     putEnumEnum,     putEnumEnum,     putEnumEnum}
+ putEnumEnum,     putEnumEnum,     putEnumEnum,     putEnumEnum},
+/* source is a DBR_PUT_ACKT	*/
+{putAckt,	  putAckt,	   putAckt,	    putAckt,	     putAckt,
+ putAckt,	  putAckt,	   putAckt,	    putAckt,	     putAckt,
+ putAckt,	  putAckt,	   putAckt,	    putAckt},
+/* source is a DBR_PUT_ACKS	*/
+{putAcks,	  putAcks,	   putAcks,	    putAcks,	     putAcks,
+ putAcks,	  putAcks,	   putAcks,	    putAcks,	     putAcks,
+ putAcks,	  putAcks,	   putAcks,	    putAcks}
 };
 
 long dbPut(
@@ -5407,7 +5565,6 @@ long dbPut(
 	long		*pfield_name;
 	long		special=paddr->special;
 	short		field_type=paddr->field_type;
-	unsigned short	acks=precord->acks;
 
 	/* Check for valid request */
 	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVCHOICE)
@@ -5418,6 +5575,10 @@ long dbPut(
 		sprintf(message,"dbPut - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
 		return(S_db_badDbrtype);
+	}
+	if(dbrType>=DBR_PUT_ACKT) {
+	    status=(*pconvert_routine)(paddr,pbuffer,(long)1,(long)1,(long)0);
+	    return(status);
 	}
 	
 	prset=GET_PRSET(pdbBase->precSup,paddr->record_type);
@@ -5465,20 +5626,6 @@ long dbPut(
 	    if(special<100) { /*global processing*/
 		if(special==SPC_SCAN) {
 		    scanAdd(precord);
-		} else if(special==SPC_ALARMACK) {
-		    if(paddr->pfield == (void *)&precord->acks) {
-			if(acks>0 && acks<=precord->acks) {
-			    precord->acks = 0;
-			    db_post_events(precord,&precord->acks,DBE_VALUE);
-			} else { /*Undo change*/
-			    precord->acks = acks;
-			}
-		    }else if(paddr->pfield == (void *)&precord->ackt) {
-			if(!precord->ackt && precord->acks>precord->sevr) {
-			    precord->acks = precord->sevr;
-			    db_post_events(precord,&precord->acks,DBE_VALUE);
-			}
-		    }
 		} else if(special==SPC_AS) {
 		    asChangeGroup(&precord->asp,precord->asg);
 		}

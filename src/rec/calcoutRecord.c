@@ -463,6 +463,7 @@ static long get_graphic_double(paddr,pgd)
         pgd->lower_disp_limit = pcalc->lopr;
         return(0);
     }
+    recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
@@ -492,6 +493,7 @@ static long get_control_double(paddr,pcd)
         pcd->lower_ctrl_limit = pcalc->lopr;
         return(0);
     }
+    recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(paddr,pad)

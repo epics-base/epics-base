@@ -263,13 +263,11 @@ LOCAL int iocLogAttach(void)
 	 * close any preexisting connection to the log server
 	 */
 	if (iocLogFile) {
-		logFdDelete(iocLogFD);
 		fclose(iocLogFile);
 		iocLogFile = NULL;
 		iocLogFD = ERROR;
 	}
 	else if (iocLogFD!=ERROR) {
-		logFdDelete(iocLogFD);
 		close(iocLogFD);
 		iocLogFD = ERROR;
 	}
@@ -278,7 +276,6 @@ LOCAL int iocLogAttach(void)
 	 * export the new connection
 	 */
 	iocLogFD = sock;
-	logFdAdd (iocLogFD);
 	iocLogFile = fp;
 
 	/*
@@ -481,7 +478,6 @@ void iocLogMessage(const char *message)
 		}
 
 		if (status<0) {
-			logFdDelete(iocLogFD);
 			fclose(iocLogFile);
 			iocLogFile = NULL;
 			iocLogFD = ERROR;

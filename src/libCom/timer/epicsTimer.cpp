@@ -115,11 +115,10 @@ epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) :
 }
 
 epicsTimerNotify::expireStatus::expireStatus 
-    ( restart_t, const double & expireDelaySec ) :
+    ( restart_t restartIn, const double & expireDelaySec ) :
     delay ( expireDelaySec )
 {
-    assert ( this->delay >= 0.0 );
-    if ( restart != restart ) {
+    if ( restartIn != restart ) {
         throw std::logic_error 
             ( "no timer restart was requested, but a delay was specified?" );
     }

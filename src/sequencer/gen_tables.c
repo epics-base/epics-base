@@ -16,6 +16,7 @@
 20jul95,ajk	Added unsigned types.
 22jul96,ajk	Added castS to action, event, delay, and exit functions.
 09mar98,wfl     Avoided compilation warnings under Tornado
+11mar98,wfl	Corrected calculation of number of event words.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -211,8 +212,8 @@ gen_state_blocks()
 	bitMask			*pEventMask;
 
 
-	/* Allocate an array for event mask bits */
-	numEventWords = (num_events + num_channels + NBITS - 1)/NBITS;
+	/* Allocate an array for event mask bits (NB, bit zero is not used) */
+	numEventWords = (num_events + num_channels + NBITS)/NBITS;
 	pEventMask = (bitMask *)calloc(numEventWords, sizeof (bitMask));
 
 	/* for all state sets ... */

@@ -36,6 +36,8 @@
  * .05  11-26-90        lrd     fix SINH, COSH, TANH
  * .06	02-20-92	rcz	fixed for vxWorks build
  * .07  02-24-92        jba     add EXP and fixed trailing blanks in expression
+ * .08  03-03-92        jba     added MAX and MIN and comma(like close paren)
+ * .09  03-06-92        jba     added multiple conditional expressions ?
 */
 
 /* 
@@ -100,7 +102,9 @@
 #define	CLOSE_PAREN	5
 #define	CONDITIONAL	6
 #define	ELSE		7
-#define	TRASH		8
+#define	SEPERATOR	8
+#define	TRASH		9
+
 
 /* flags end of element table */
 #define	END_ELEMENTS	-1
@@ -146,6 +150,8 @@ static struct expression_element	elements[] = {
 "ACOS",		7,	8,	UNARY_OPERATOR,	ACOS,      /* arc cosine */
 "ASIN",		7,	8,	UNARY_OPERATOR,	ASIN,      /* arc sine */
 "ATAN",		7,	8,	UNARY_OPERATOR,	ATAN,      /* arc tangent */
+"MAX",		7,	8,	UNARY_OPERATOR,	MAX,       /* maximum of 2 args */
+"MIN",		7,	8,	UNARY_OPERATOR,	MIN,       /* minimum of 2 args */
 "CEIL",		7,	8,	UNARY_OPERATOR,	CEIL,      /* smallest integer >= */
 "FLOOR",	7,	8,	UNARY_OPERATOR,	FLOOR,     /* largest integer <=  */
 "COSH",		7,	8,	UNARY_OPERATOR,	COSH,      /* hyperbolic cosine */
@@ -184,9 +190,9 @@ static struct expression_element	elements[] = {
 "j",		0,	0,	OPERAND,	FETCH_J,   /* fetch var J */
 "k",		0,	0,	OPERAND,	FETCH_K,   /* fetch var K */
 "l",		0,	0,	OPERAND,	FETCH_L,   /* fetch var L */
-"?",		0,	0,	CONDITIONAL,	COND_ELSE, /* conditional */
-":",		0,	0,	ELSE,		COND_ELSE, /* else */
-"(",		0,	8,	UNARY_OPERATOR,	PAREN,        /* open paren */
+"?",		0,	0,	CONDITIONAL,	COND_IF,   /* conditional */
+":",		0,	0,	CONDITIONAL,	COND_ELSE, /* else */
+"(",		0,	8,	UNARY_OPERATOR,	PAREN,     /* open paren */
 "^",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
 "**",		6,	6,	BINARY_OPERATOR,EXPON,     /* exponentiation */
 "+",		4,	4,	BINARY_OPERATOR,ADD,       /* addition */
@@ -194,6 +200,7 @@ static struct expression_element	elements[] = {
 "*",		5,	5,	BINARY_OPERATOR,MULT,      /* multiplication */
 "/",		5,	5,	BINARY_OPERATOR,DIV,       /* division */
 "%",		5,	5,	BINARY_OPERATOR,MODULO,    /* modulo */
+",",		0,	0,	SEPERATOR,	COMMA,     /* comma */
 ")",		0,	0,	CLOSE_PAREN,	PAREN,     /* close paren */
 "||",		1,	1,	BINARY_OPERATOR,REL_OR,    /* or */
 "|",		1,	1,	BINARY_OPERATOR,BIT_OR,    /* or */
@@ -271,8 +278,6 @@ register char	*pinfix;
 register char	*ppostfix;
 short		*perror;
 {
-	short		got_if;
-	short		got_else;
 	short		no_bytes;
 	register short	operand_needed;
 	register short	new_expression;
@@ -282,8 +287,6 @@ short		*perror;
 	register struct expression_element	*pstacktop;
 
 	/* place the expression elements into postfix */
-	got_if = FALSE;
-	got_else = FALSE;
 	operand_needed = TRUE;
 	new_expression = TRUE;
 	pstacktop = &stack[0];
@@ -347,6 +350,24 @@ short		*perror;
 		new_expression = FALSE;
 		break;
 
+	    case SEPERATOR:
+		if (operand_needed){
+		    *perror = 4;
+		    return(-1);
+		}
+
+		/* add operators to postfix until open paren */
+		while (pstacktop->element[0] != '('){
+		    if (pstacktop == &stack[1]){
+			*perror = 6;
+			return(-1);
+		    }
+		    *ppostfix++ = pstacktop->code;
+		    pstacktop--;
+		}
+		operand_needed = TRUE;
+		break;
+
 	    case CLOSE_PAREN:
 		if (operand_needed){
 		    *perror = 4;
@@ -365,27 +386,32 @@ short		*perror;
 		pstacktop--;	/* remove ( from stack */
 		break;
 
-	    /* conditional includes expression termination */
 	    case CONDITIONAL:
-		if (got_if){
-		    *perror = 9;
+		if (operand_needed){
+		    *perror = 4;
 		    return(-1);
 		}
-		got_if = TRUE;
 
-	    /* else includes expression termination */
-	    case ELSE:
-		if (pelement->type == ELSE){
-		    if (!got_if){
-			*perror = 11;
-			return(-1);
-		    }
-		    if (got_else){
-			*perror = 10;
-			return(-1);
-		    }
-		    got_else = TRUE;
+		/* add operators of higher priority to	*/
+		/* postfix notation 				*/
+		while ((pstacktop->in_stack_pri > pelement->in_coming_pri)
+		  && (pstacktop >= &stack[1])){
+		      *ppostfix++ = pstacktop->code;
+		      pstacktop--;
+		 }
+
+		/* add new element to the postfix expression */
+		*ppostfix++ = pelement->code;
+
+		/* add : operator with COND_END code to stack */
+		if (pelement->element[0] == ':'){
+		     pstacktop++;
+		     *pstacktop = *pelement;
+		     pstacktop->code = COND_END;
 		}
+
+		operand_needed = TRUE;
+		break;
 
 	    case EXPR_TERM:
 		if (operand_needed && !new_expression){

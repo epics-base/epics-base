@@ -29,7 +29,9 @@
  * -----------------
  * .01  01-11-89        lrd     add right and left shift
  * .02  02-01-89        lrd     add trig functions
- * .03  02-17-92        jba     add exp
+ * .03  02-17-92        jba     add exp, CEIL, and FLOOR
+ * .04  03-03-92        jba     added MAX, MIN, and comma
+ * .05  03-06-92        jba     added multiple conditional expressions ?
  */
 
 /*	defines for element table      */
@@ -99,4 +101,9 @@
 #define		REL_NOT		63
 #define		BIT_NOT		64
 #define		PAREN		65
+#define		MAX		66
+#define		MIN		67
+#define		COMMA		68
+#define		COND_IF		69
+#define		COND_END	70
 #define		END_STACK	-1

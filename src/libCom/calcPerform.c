@@ -60,6 +60,9 @@
  * .24	02-20-92	rcz	fixed for vxWorks build
  * .25	02-24-92	jba	add EXP and fix for EXPON when *pstacktop is 0
  * .26	02-28-92	jba	added CEIL and FLOOR
+ * .27  03-06-92        jba     added MAX and MIN binary functions
+ * .28  03-10-92        jba     added multiple conditional expressions ?
+>
  */
 
 /* This module contains the code for processing the arithmetic
@@ -115,6 +118,7 @@ char   *post;
 	int 		itop;		/* integer top value	*/
 	int 		inexttop;	/* ineteger next to top value 	*/
 	short 		cond_flag;	/* conditional else flag	*/
+	short 		got_if;
 
 	/* initialize flag  */
 	cond_flag = NOT_SET;
@@ -211,41 +215,31 @@ char   *post;
 			*pstacktop = *pstacktop / *(pstacktop+1);
 			break;
 
-		case COND_ELSE:
-			/* first conditional set cond_flag */
-			/* true */
-			if ((*pstacktop != 0.0) && (cond_flag == NOT_SET)){
-				cond_flag  = TRUE_COND;
-				--pstacktop;		/* remove condition */
-			/* false */
-			}else if ((*pstacktop==0.0) && (cond_flag==NOT_SET)){
-				cond_flag  = FALSE_COND;
-				--pstacktop;		/* remove condition */
-				/* check for else condition */
-				i = 1;
-				while (*(post+i) != COND_ELSE){
-					/* no else value */
-					if (*(post+i) == END_STACK){
-						/* skip to end of expression */
-						while (*(post+1) != END_STACK)
-							++post;
-						/* use last value as result */
-						++pstacktop;
-						*pstacktop = *presult;
-					}
-					i++;
+		case COND_IF:
+			/* if false condition then skip true expression */
+			if (*pstacktop == 0.0) {
+				/* skip to matching COND_ELSE */
+				for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
+					if (*(post+1) == COND_IF  ) got_if++;
+					if (*(post+1) == COND_ELSE) got_if--;
 				}
-			}else if (cond_flag == TRUE_COND){
-				/* skip expression - result is on stack */
-				while ((*(post+1) != COND_ELSE)
-				  && (*(post+1) != END_STACK))
-					++post;
-			}else if (cond_flag == FALSE_COND){
-				/* remove true answer from stack top */
-				--pstacktop;
 			}
+			/* remove condition from stack top */
+			--pstacktop;
 			break;
 				
+		case COND_ELSE:
+			/* result, true condition is on stack so skip false condition  */
+			/* skip to matching COND_END */
+			for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
+				if (*(post+1) == COND_IF ) got_if++;
+				if (*(post+1) == COND_END) got_if--;
+			}
+			break;
+
+		case COND_END:
+			break;
+
 		case ABS_VAL:
 			if (*pstacktop < 0) *pstacktop = -*pstacktop;
 			break;
@@ -379,6 +373,19 @@ char   *post;
 			*pstacktop = (inexttop << itop);
 			break;
 
+                case MAX:
+                        --pstacktop;
+                        if (*pstacktop < *(pstacktop+1))
+                                *pstacktop = *(pstacktop+1);
+                        break;
+ 
+                case MIN:
+                        --pstacktop;
+                        if (*pstacktop > *(pstacktop+1))
+                                *pstacktop = *(pstacktop+1);
+                        break;
+ 
+
 		case ACOS:
 			*pstacktop = acos(*pstacktop);
 			break;
@@ -473,4 +480,3 @@ static double random()
         /* between 0 - 1 */
         return(randy);
 }
-

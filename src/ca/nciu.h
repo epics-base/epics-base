@@ -108,9 +108,7 @@ public:
         epicsGuard < epicsMutex > & guard );
     void setServerAddressUnknown ( 
         udpiiu & newiiu, epicsGuard < epicsMutex > & guard );
-    bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
-    void beaconAnomalyNotify (
-        epicsGuard < epicsMutex > & );
+    bool searchMsg ( class udpiiu & iiu );
     void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights &, 
         epicsGuard < epicsMutex > & cbGuard, 

@@ -650,7 +650,8 @@ bool udpiiu::searchRespAction ( // X aCC 361
         // deadlock can result if this is called while holding the primary
         // mutex (because the primary mutex is used in the search timer callback)
         epicsGuard < udpMutex > guard ( this->mutex );
-        this->pSearchTmr->notifySearchResponse ( guard, this->lastReceivedSeqNo,
+        this->pSearchTmr->notifySuccessfulSearchResponse ( 
+            guard, this->lastReceivedSeqNo,
             this->lastReceivedSeqNoIsValid, currentTime );
     }
 
@@ -1010,12 +1011,6 @@ void udpiiu::beaconAnomalyNotify (
 {
     epicsGuard <udpMutex> guard ( this->mutex );
 
-    tsDLIter < nciu > chan = this->serverAddrRes.firstIter ();
-    while ( chan.valid () ) {
-        chan->beaconAnomalyNotify ( cacGuard );
-        chan++;
-    }
-
     static const double portTicksPerSec = 1000u;
     static const unsigned portBasedDelayMask = 0xff;
 
@@ -1037,13 +1032,12 @@ void udpiiu::beaconAnomalyNotify (
     this->pSearchTmr->beaconAnomalyNotify ( guard, currentTime, delay );
 }
 
-bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */, 
-                        unsigned & retryNoForThisChannel )
+bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */ )
 {
     bool success;
 
     if ( nciu *pChan = this->serverAddrRes.get () ) {
-        success = pChan->searchMsg ( *this, retryNoForThisChannel );
+        success = pChan->searchMsg ( *this );
         if ( success ) {
             this->serverAddrRes.add ( *pChan );
         }
@@ -1074,8 +1068,8 @@ void udpiiu::installNewChannel ( const epicsTime & currentTime, nciu & chan )
     chan.channelNode::listMember = 
         channelNode::cs_serverAddrResPend;
 
-    this->pSearchTmr->newChannelNotify ( guard, currentTime, 
-        firstChannel, 0 );
+    this->pSearchTmr->channelCreatedNotify ( 
+        guard, currentTime, firstChannel );
 }
 
 void udpiiu::installDisconnectedChannel ( nciu & chan )
@@ -1090,10 +1084,7 @@ void udpiiu::govExpireNotify ( const epicsTime & currentTime )
 {
     epicsGuard < udpMutex > guard ( this->mutex );
     if ( this->disconnGovernor.count () ) {
-        bool firstChannel = false;
-        if ( this->serverAddrRes.count() == 0 ) {
-            firstChannel = true;
-        }
+        bool firstChannel = this->serverAddrRes.count() == 0;
         // push them to the front of the list so that 
         // a search request is sent immediately, and 
         // so that the new channel's retry count is 
@@ -1104,8 +1095,8 @@ void udpiiu::govExpireNotify ( const epicsTime & currentTime )
             pChan->channelNode::listMember = 
                 channelNode::cs_serverAddrResPend;
         }
-        this->pSearchTmr->newChannelNotify ( guard, currentTime, 
-            firstChannel, disconnectRetrySetpoint );
+        this->pSearchTmr->channelDisconnectedNotify ( 
+            guard, currentTime, firstChannel );
     }
 }
 

@@ -49,14 +49,15 @@ class searchTimer : private epicsTimerNotify {
 public:
     searchTimer ( class udpiiu &, epicsTimerQueue &, udpMutex & );
     virtual ~searchTimer ();
-    void notifySearchResponse ( epicsGuard < udpMutex > &, 
+    void notifySuccessfulSearchResponse ( epicsGuard < udpMutex > &, 
         ca_uint32_t respDatagramSeqNo, 
         bool seqNumberIsValid, const epicsTime & currentTime );
-    void newChannelNotify ( epicsGuard < udpMutex > &,
-        const epicsTime &, bool firstChannel,
-        unsigned minRetryNo );
     void beaconAnomalyNotify ( epicsGuard < udpMutex > &,
         const epicsTime & currentTime, const double & delay );
+    void channelCreatedNotify ( epicsGuard < udpMutex > &,
+        const epicsTime &, bool firstChannel );
+    void channelDisconnectedNotify ( epicsGuard < udpMutex > &,
+        const epicsTime &, bool firstChannel );
     void shutdown ();
     void show ( unsigned level ) const;
 private:
@@ -66,20 +67,23 @@ private:
     udpMutex & mutex;
     double framesPerTry; /* # of UDP frames per search try */
     double framesPerTryCongestThresh; /* one half N tries w congest */
-    unsigned minRetry; /* min retry number so far */
-    unsigned minRetryThisPass;
-    unsigned searchAttempts; /* num search tries within this timer experation */
-    unsigned searchResponses; /* num search resp within this timer experation */
+    double maxPeriod;
+    unsigned retry;
+    unsigned searchAttempts; /* num search tries after last timer experation */
+    unsigned searchResponses; /* num search resp after last timer experation */
     unsigned searchAttemptsThisPass; /* num search tries within this pass */
     unsigned searchResponsesThisPass; /* num search resp within this pass */
     ca_uint32_t dgSeqNoAtTimerExpireBegin; 
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
     bool stopped;
     expireStatus expire ( const epicsTime & currentTime );
-    void recomputeTimerPeriod ( epicsGuard < udpMutex > &, unsigned minRetryNew );
+    void recomputeTimerPeriod ( epicsGuard < udpMutex > &, const unsigned minRetryNew );
     void recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > &,
-        const epicsTime & currentTime, unsigned minRetryNew, 
+        const epicsTime & currentTime, const unsigned minRetryNew, 
         const double & initialDelay );
+    void newChannelNotify ( epicsGuard < udpMutex > &,
+        const epicsTime &, bool firstChannel,
+        const unsigned minRetryNo );
 	searchTimer ( const searchTimer & );
 	searchTimer & operator = ( const searchTimer & );
 };

@@ -24,18 +24,27 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "tsMinMax.h"
+#include "envDefs.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "searchTimer.h"
 #include "udpiiu.h"
 
-static const unsigned maxSearchTries = 100u; //  max tries on unchanged net 
 static const unsigned initialTriesPerFrame = 1u; // initial UDP frames per search try
 static const unsigned maxTriesPerFrame = 64u; // max UDP frames per search try 
 
 static const double minSearchPeriod = 30e-3; // seconds
-static const double maxSearchPeriod = 5.0; // seconds
+static const double maxSearchPeriodDefault = 5.0 * 60.0; // seconds
+static const double maxSearchPeriodLowerLimit = 60.0; // seconds
+
+// This impacts the exponential backoff delay between search messages.
+// This delay is two to the power of the minimum channel retry count
+// times the estimated round trip time or the OS's delay quantum 
+// whichever is greater. So this results in about a one second delay. 
+static const unsigned successfulSearchRetrySetpoint = 6u;
+static const unsigned beaconAnomalyRetrySetpoint = 6u;
+static const unsigned disconnectRetrySetpoint = 6u;
 
 //
 // searchTimer::searchTimer ()
@@ -48,8 +57,8 @@ searchTimer::searchTimer ( udpiiu & iiuIn,
     mutex ( mutexIn ),
     framesPerTry ( initialTriesPerFrame ),
     framesPerTryCongestThresh ( DBL_MAX ),
-    minRetry ( 0 ),
-    minRetryThisPass ( UINT_MAX ),
+    maxPeriod ( maxSearchPeriodDefault ),
+    retry ( 0 ),
     searchAttempts ( 0u ),
     searchResponses ( 0u ),
     searchAttemptsThisPass ( 0u ),
@@ -58,6 +67,25 @@ searchTimer::searchTimer ( udpiiu & iiuIn,
     dgSeqNoAtTimerExpireEnd ( 0u ),
     stopped ( false )
 {
+    if ( envGetConfigParamPtr ( & EPICS_CA_MAX_SEARCH_PERIOD ) ) {
+        long longStatus = envGetDoubleConfigParam ( 
+            & EPICS_CA_MAX_SEARCH_PERIOD, & this->maxPeriod );
+        if ( ! longStatus ) {
+            if ( this->maxPeriod < maxSearchPeriodLowerLimit ) {
+                epicsPrintf ( "EPICS \"%s\" out of range (low)\n",
+                                EPICS_CA_MAX_SEARCH_PERIOD.name );
+                this->maxPeriod = maxSearchPeriodLowerLimit;
+                epicsPrintf ( "Setting \"%s\" = %f seconds\n",
+                    EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
+            }
+        }
+        else {
+            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
+                            EPICS_CA_MAX_SEARCH_PERIOD.name );
+            epicsPrintf ( "Setting \"%s\" = %f seconds\n",
+                EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
+        }
+    }
 }
 
 searchTimer::~searchTimer ()
@@ -71,9 +99,25 @@ void searchTimer::shutdown ()
     this->timer.cancel ();
 }
 
+void searchTimer::channelCreatedNotify ( 
+    epicsGuard < udpMutex > & guard,
+    const epicsTime & currentTime, bool firstChannel )
+{
+    this->newChannelNotify ( guard, currentTime, 
+        firstChannel, 0 );
+}
+
+void searchTimer::channelDisconnectedNotify ( 
+    epicsGuard < udpMutex > & guard,
+    const epicsTime & currentTime, bool firstChannel )
+{
+    this->newChannelNotify ( guard, currentTime, 
+        firstChannel, disconnectRetrySetpoint );
+}
+
 void searchTimer::newChannelNotify ( 
     epicsGuard < udpMutex > & guard, const epicsTime & currentTime, 
-    bool firstChannel, unsigned minRetryNo )
+    bool firstChannel, const unsigned minRetryNo )
 {
     if ( ! this->stopped ) {
         if ( firstChannel ) {
@@ -102,22 +146,18 @@ void searchTimer::beaconAnomalyNotify (
 
 // lock must be applied
 void searchTimer::recomputeTimerPeriod ( 
-    epicsGuard < udpMutex > & guard, unsigned minRetryNew ) // X aCC 431
+    epicsGuard < udpMutex > & guard, const unsigned retryNew ) // X aCC 431
 {
-    this->minRetry = minRetryNew;
-
-    size_t retry = static_cast < size_t > 
-        ( tsMin ( this->minRetry, maxSearchTries + 1u ) );
-
-    unsigned idelay = 1u << tsMin ( retry, CHAR_BIT * sizeof ( idelay ) - 1u );
+    this->retry = retryNew;
+    unsigned idelay = 1u << tsMin ( this->retry, CHAR_BIT * sizeof ( idelay ) - 1u );
     double delayFactor = tsMax ( 
         this->iiu.roundTripDelayEstimate ( guard ) * 2.0, minSearchPeriod );
     this->period = idelay * delayFactor; /* sec */ 
-    this->period = tsMin ( maxSearchPeriod, this->period );
+    this->period = tsMin ( this->maxPeriod, this->period );
 }
 
 void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & guard,
-    const epicsTime & currentTime, unsigned minRetryNew, const double & initialDelay )
+    const epicsTime & currentTime, const unsigned retryNew, const double & initialDelay )
 {
     if ( this->iiu.unresolvedChannelCount ( guard ) == 0 || this->stopped ) {
         return; 
@@ -126,13 +166,13 @@ void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & 
     bool start = false;
     double totalDelay = initialDelay;
     {
-        if ( this->minRetry <= minRetryNew  ) {
+        if ( this->retry <= retryNew  ) {
             return; 
         }
 
         double oldPeriod = this->period;
 
-        this->recomputeTimerPeriod ( guard, minRetryNew );
+        this->recomputeTimerPeriod ( guard, retryNew );
 
         totalDelay += this->period;
 
@@ -159,46 +199,57 @@ void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & 
 }
 
 //
-// searchTimer::notifySearchResponse ()
+// searchTimer::notifySuccessfulSearchResponse ()
 //
 // Reset the delay to the next search request if we get
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::notifySearchResponse ( epicsGuard < udpMutex > & guard,
+void searchTimer::notifySuccessfulSearchResponse ( epicsGuard < udpMutex > & guard,
     ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, const epicsTime & currentTime )
 {
     if ( this->iiu.unresolvedChannelCount ( guard ) == 0 || this->stopped ) {
         return;
     }
 
-    bool reschedualNeeded = false;
-    {
-        if ( seqNumberIsValid ) {
-            if ( this->dgSeqNoAtTimerExpireBegin <= respDatagramSeqNo && 
-                    this->dgSeqNoAtTimerExpireEnd >= respDatagramSeqNo ) {
-                if ( this->searchResponses < UINT_MAX ) {
-                    this->searchResponses++;
-                }
-            }    
-        }
-        else if ( this->searchResponses < UINT_MAX ) {
-            this->searchResponses++;
-        }
-
-        //
-        // when we get 100% success immediately send another search request
-        //
-        if ( this->searchResponses == this->searchAttempts ) {
-            reschedualNeeded = true;
-        }
+    bool validResponse = true;
+    if ( seqNumberIsValid ) {
+        validResponse = 
+            this->dgSeqNoAtTimerExpireBegin <= respDatagramSeqNo && 
+                this->dgSeqNoAtTimerExpireEnd >= respDatagramSeqNo;
     }
 
-    if ( reschedualNeeded ) {
-        debugPrintf ( ( "Response set timer delay to zero\n" ) );
-        // avoid timer cancel block deadlock
-        epicsGuardRelease < udpMutex > unguard ( guard );
-        this->timer.start ( *this, currentTime );
+    // if we receive a successful response then reset to a
+    // reasonable timer period
+    if ( validResponse ) {
+        if ( this->searchResponses < UINT_MAX ) {
+            this->searchResponses++;
+            if ( this->searchResponses == this->searchAttempts ) {
+                debugPrintf ( ( "Response set timer delay to zero\n" ) );
+                if ( this->retry > successfulSearchRetrySetpoint ) {
+                    this->recomputeTimerPeriod ( 
+                        guard, successfulSearchRetrySetpoint );
+                }
+                // avoid timer cancel block deadlock
+                epicsGuardRelease < udpMutex > unguard ( guard );
+                //
+                // when we get 100% success immediately 
+                // send another search request
+                //
+                this->timer.start ( *this, currentTime );
+            }
+            else {
+                debugPrintf ( ( "Response set timer delay to beacon anomaly set point\n" ) );
+                //
+                // otherwise, if making some progress then dont allow
+                // retry rate to drop below some reasonable minimum
+                //
+                if ( this->retry > successfulSearchRetrySetpoint ) {
+                    this->recomputeTimerPeriodAndStartTimer ( 
+                        guard, currentTime, successfulSearchRetrySetpoint, 0.0 );
+                }
+            }
+        }
     }
 }
 
@@ -322,10 +373,8 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
             // if we are making some progress then dont increase the 
             // delay between search requests
             if ( this->searchResponsesThisPass == 0u ) {
-                this->recomputeTimerPeriod ( guard, this->minRetryThisPass );
+                this->recomputeTimerPeriod ( guard, this->retry + 1 );
             }
-        
-            this->minRetryThisPass = UINT_MAX;
                 
             this->searchAttemptsThisPass = 0;
             this->searchResponsesThisPass = 0;
@@ -333,8 +382,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
             debugPrintf ( ("saw end of list\n") );
         }
     
-        unsigned retryNoForThisChannel;
-        if ( ! this->iiu.searchMsg ( guard, retryNoForThisChannel ) ) {
+        if ( ! this->iiu.searchMsg ( guard ) ) {
             nFrameSent++;
         
             if ( nFrameSent >= this->framesPerTry ) {
@@ -342,13 +390,9 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
             }
             this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ( guard );
             this->iiu.datagramFlush ( guard, currentTime );
-            if ( ! this->iiu.searchMsg ( guard, retryNoForThisChannel ) ) {
+            if ( ! this->iiu.searchMsg ( guard ) ) {
                 break;
             }
-         }
-
-        if (  this->minRetryThisPass > retryNoForThisChannel ) {
-             this->minRetryThisPass = retryNoForThisChannel;
         }
 
         if ( this->searchAttempts < UINT_MAX ) {
@@ -399,14 +443,11 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
         this->period = DBL_MAX;
         return noRestart;
     }
-    else if ( this->minRetry < maxSearchTries ) {
-        return expireStatus ( restart, this->period );
-    }
-    else {
-        debugPrintf ( ( "maximum search tries exceeded - giving up\n" ) );
-        this->period = DBL_MAX;
-        return noRestart;
-    }
+
+    // the code used to test this->minRetry < maxSearchTries here 
+    // and return no restart if the maximum tries was exceeded
+    // prior to R3.14.7
+    return expireStatus ( restart, this->period );
 }
 
 void searchTimer::show ( unsigned /* level */ ) const

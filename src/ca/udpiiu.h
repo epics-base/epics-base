@@ -95,7 +95,7 @@ public:
     void installNewChannel ( const epicsTime & currentTime, nciu & );
     void installDisconnectedChannel ( nciu & );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
-    bool searchMsg ( epicsGuard < udpMutex > &, unsigned & retryNoForThisChannel );
+    bool searchMsg ( epicsGuard < udpMutex > & );
     void datagramFlush ( epicsGuard < udpMutex > &, const epicsTime & currentTime );
     ca_uint32_t datagramSeqNumber ( epicsGuard < udpMutex > & ) const;
     void show ( unsigned level ) const;
@@ -229,14 +229,6 @@ private:
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );
 };
-
-// This impacts the exponential backoff delay between search messages.
-// This delay is two to the power of the minimum channel retry count
-// times the estimated round trip time or the OS's delay quantum 
-// whichever is greater. So this results in about a one second delay. 
-// 
-static const unsigned beaconAnomalyRetrySetpoint = 6u;
-static const unsigned disconnectRetrySetpoint = 6u;
 
 inline void udpMutex::lock ()
 {

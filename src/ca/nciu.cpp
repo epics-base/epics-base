@@ -191,7 +191,7 @@ void nciu::setServerAddressUnknown ( udpiiu & newiiu,
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     this->piiu = & newiiu;
-    this->retry = disconnectRetrySetpoint;
+    this->retry = 0;
     this->typeCode = USHRT_MAX;
     this->count = 0u;
     this->sid = UINT_MAX;
@@ -217,7 +217,7 @@ void nciu::accessRightsStateChange (
 /*
  * nciu::searchMsg ()
  */
-bool nciu::searchMsg ( udpiiu & iiu, unsigned & retryNoForThisChannel )
+bool nciu::searchMsg ( udpiiu & iiu )
 {
     caHdr msg;
     bool success;
@@ -238,7 +238,6 @@ bool nciu::searchMsg ( udpiiu & iiu, unsigned & retryNoForThisChannel )
         if ( this->retry < UINT_MAX ) {
             this->retry++;
         }
-        retryNoForThisChannel = this->retry;
     }
 
     return success;
@@ -513,15 +512,6 @@ void nciu::show (
         ::printf ( "\tserver identifier %u\n", this->sid );
         ::printf ( "\tsearch retry number=%u\n", this->retry );
         ::printf ( "\tname length=%u\n", this->nameLength );
-    }
-}
-
-void nciu::beaconAnomalyNotify (
-    epicsGuard < epicsMutex > & guard ) 
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    if ( this->retry > beaconAnomalyRetrySetpoint ) {
-        this->retry = beaconAnomalyRetrySetpoint;
     }
 }
 

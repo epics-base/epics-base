@@ -22,12 +22,12 @@ PROD = iocCore vxWorks vxWorks.sym
 include $(EPICS)/config/RULES.Vx
 
 vxWorks: $(VX_IMAGE)
+	$(RM) $@
 	cp $< .
-	chmod 444 $@
 
 vxWorks.sym: $(VX_IMAGE_SYM)
+	$(RM) $@
 	cp $< .
-	chmod 444 $@
 
 iocCore: $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/08/14 12:32:09  jbk
+ * added first() to list class, added first()/last() to iterator.
+ *
  * Revision 1.3  1996/07/25 18:01:41  jhill
  * use pointer (not ref) for list in iter class
  *
@@ -52,6 +55,8 @@
 template <class T>
 class tsDLList {
 friend class tsDLIter<T>;
+friend class tsDLFwdIter<T>;
+friend class tsDLBwdIter<T>;
 private:
 	//
 	// clear()
@@ -280,6 +285,8 @@ template <class T>
 class tsDLNode {
 friend class tsDLList<T>;
 friend class tsDLIter<T>;
+friend class tsDLFwdIter<T>;
+friend class tsDLBwdIter<T>;
 public:
 	tsDLNode() : pNext(0), pPrev(0) {}
 	//
@@ -299,11 +306,19 @@ private:
 //
 // tsDLIter<T>
 //
+// Notes:
+// 2) This iterator does not allow for removal
+//	of an item in order to avoid problems 
+//	resulting when we remove an item (and 
+//	then dont know whether to make pCurrent 
+//	point at the item before or after the 
+//	item removed
+//
 template <class T>
 class tsDLIter {
 public:
-	tsDLIter(tsDLList<T> &listIn) : 
-		pList(&listIn), pCurrent(0) {}
+	tsDLIter (const tsDLList<T> &listIn) : 
+		pCurrent(0), pList(&listIn) {}
 
 	void reset ()
 	{
@@ -321,24 +336,6 @@ public:
 		this->reset(listIn);
 	}
 
-	T * current () 
-	{
-		return this->pCurrent;
-	}
-
-	T * prev () 
-	{
-		T *pCur = this->pCurrent;
-		if (pCur==0) {
-			pCur = this->pList->pLast;
-		}
-		else {
-			pCur = pCur->tsDLNode<T>::pPrev;
-		}
-		this->pCurrent = pCur;
-		return pCur;
-	}
-
 	T * next () 
 	{
 		T *pCur = this->pCurrent;
@@ -352,49 +349,201 @@ public:
 		return pCur;
 	}
 
+        T * prev ()
+        {
+                T *pCur = this->pCurrent;
+                if (pCur==0) {
+                        pCur = this->pList->pLast;
+                }
+                else {
+                        pCur = pCur->tsDLNode<T>::pPrev;
+                }
+                this->pCurrent = pCur;
+                return pCur;
+        }
+
 	T * first()
 	{
 		this->pCurrent = this->pList->pFirst;
 		return this->pCurrent;
 	}
 
-	T * last()
-	{
-		this->pCurrent = this->pList->pLast;
-		return this->pCurrent;
-	}
+        T * last()
+        {
+                this->pCurrent = this->pList->pLast;
+                return this->pCurrent;
+        }
 
 	T * operator () () 
 	{
 		return this->next();
 	}
 
+protected:
+	T      			*pCurrent;
+	const tsDLList<T> 	*pList;
+};
+
+//
+// tsDLFwdIter<T>
+//
+// Notes:
+// 1) No direct access to pCurrent is provided since
+// 	this might allow for confusion when an item
+//	is removed (and pCurrent ends up pointing at
+//	an item that has been seen before)
+//
+// 2) This iterator only moves forward in order to 
+//	avoid problems resulting when we remove an
+//	item (and then dont know whether to make 
+//	pCurrent point at the item before or after
+// 	the item removed
+//
+template <class T>
+class tsDLFwdIter: private tsDLIter<T> {
+public:
+	tsDLFwdIter (tsDLList<T> &listIn) : 
+		tsDLIter<T>(listIn) {}
+
+	void reset ()
+	{
+		this->tsDLIter<T>::reset();
+	}
+	void reset (tsDLList<T> &listIn)
+	{
+		this->tsDLIter<T>::reset(listIn);
+	}
+	void operator = (tsDLList<T> &listIn) 
+	{
+		this->tsDLIter<T>::reset(listIn);
+	}
+        T * operator () ()
+        {
+                return this->tsDLIter<T>::next();
+        }
+	T * next () 
+	{
+		return this->tsDLIter<T>::next();
+	}
+	T * first()
+	{
+		return this->tsDLIter<T>::first();
+	}
+
 	//
 	// remove ()
-	// remove current item 
-	// (and move current to be the next item
-	// in the list)
+	// (and move current to be the item
+	// pointed to by pPrev - the item seen
+	// by the iterator before the current one -
+	// this guarantee that the list will be
+	// accessed sequentially even if an item
+	// is removed)
 	//
 	void remove ()
 	{
 		T *pCur = this->pCurrent;
+
 		if (pCur) {
 			//
-			// move current to the next item
+			// strip const
 			//
-			this->next();
+			tsDLList<T> *pMutableList = 
+				(tsDLList<T> *) this->pList;
+
+			//
+			// Move this->pCurrent to the previous item
+			//
+			this->pCurrent = pCur->tsDLNode<T>::pPrev;
+
 			//
 			// delete current item
 			//
-			this->pList->remove(*pCur);
+			pMutableList->remove(*pCur);
 		}
 	}
-protected:
-	tsDLList<T> *getList() { return pList; }
-private:
-	tsDLList<T>	*pList;
-	T      		*pCurrent;
 };
+
+//
+// tsDLBwdIter<T>
+//
+// Notes:
+// 1) No direct access to pCurrent is provided since
+// 	this might allow for confusion when an item
+//	is removed (and pCurrent ends up pointing at
+//	an item that has been seen before)
+//
+// 2) This iterator only moves backward in order to 
+//	avoid problems resulting when we remove an
+//	item (and then dont know whether to make 
+//	pCurrent point at the item before or after
+// 	the item removed
+//
+template <class T>
+class tsDLBwdIter : private tsDLIter<T> {
+public:
+	tsDLBwdIter(tsDLList<T> &listIn) : 
+		tsDLIter<T>(&listIn) {}
+
+	void reset ()
+	{
+		this->tsDLIter<T>::reset();
+	}
+	void reset (tsDLList<T> &listIn)
+	{
+		this->tsDLIter<T>::reset(listIn);
+	}
+	void operator = (tsDLList<T> &listIn) 
+	{
+		this->tsDLIter<T>::reset(listIn);
+	}
+        T * operator () ()
+        {
+                return this->tsDLIter<T>::prev();
+        }
+	T * prev () 
+	{
+		return this->tsDLIter<T>::prev();
+	}
+	T * last()
+	{
+		return this->tsDLIter<T>::last();
+	}
+
+	//
+	// remove ()
+	// remove current item 
+	// (and move current to be the item
+	// pointed to by pNext - the item seen
+	// by the iterator before the current one -
+	// this guarantee that the list will be
+	// accessed sequentially even if an item
+	// is removed)
+	//
+	void remove ()
+	{
+		T *pCur = this->pCurrent;
+
+		if (pCur) {
+			//
+			// strip const
+			//
+			tsDLList<T> *pMutableList = 
+				(tsDLList<T> *) this->pList;
+
+			//
+			// Move this->pCurrent to the item after the
+			// item being deleted 
+			//
+			this->pCurrent = pCur->tsDLNode<T>::pNext;
+
+			//
+			// delete current item
+			//
+			pMutableList->remove(*pCur);
+		}
+	}
+};
+
 
 //
 // find 
@@ -405,11 +554,11 @@ private:
 template <class T>
 inline int tsDLList<T>::find(T &item)
 {
-	tsDLIter<T>	iter(*this);
+	tsDLFwdIter<T>	iter(*this);
 	tsDLNode<T>	*pItem;
 	int		itemNo=0;
 
-	while ( (pItem = iter()) ) {
+	while ( (pItem = iter.next()) ) {
 		if (pItem == &item) {
 			return itemNo;
 		}

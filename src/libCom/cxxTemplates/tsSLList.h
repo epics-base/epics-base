@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/04 19:57:07  jhill
+ * string id resource now copies id
+ *
  * Revision 1.3  1996/07/25 18:01:42  jhill
  * use pointer (not ref) for list in iter class
  *
@@ -42,6 +45,10 @@
  *
  *
  */
+
+#ifndef assert // allows epicsAssert.h 
+#include <assert.h>
+#endif
 
 //
 // tsSLList<>
@@ -124,6 +131,15 @@ private:
 	T	*pNext;
 };
 
+//
+// tsDLFwdIter<T>
+//
+// Notes:
+// 1) No direct access to pCurrent is provided since
+//      this might allow for confusion when an item
+//      is removed (and pCurrent ends up pointing at
+//      an item that has been seen before)
+//
 template <class T>
 class tsSLIter {
 public:
@@ -147,29 +163,25 @@ public:
 		this->reset(listIn);
 	}
 
-	T * current () 
-	{
-		return this->pCurrent;
-	}
-
+	//
+	// move iterator forward
+	//
 	T * next () 
 	{
+		T *pNewCur;
 		if (this->pCurrent) {
 			this->pPrevious = this->pCurrent;
 		}
 		else {
 			this->pPrevious = this->pList;
 		}
-		this->pCurrent = this->pPrevious->pNext; 
-		return this->pCurrent;
+		this->pCurrent = pNewCur = this->pPrevious->pNext;
+		return pNewCur;
 	}
 
-	// this should move current?
-	//tsSLNode<T> * prev () const
-	//{
-	//	return this->pPrevious;
-	//}
-
+	//
+	// move iterator forward
+	//
 	T * operator () () 
 	{
 		return this->next();
@@ -177,17 +189,29 @@ public:
 
 	//
 	// remove current node
+        // (and move current to be the previos item -
+	// the item seen by the iterator before the 
+	// current one - this guarantee that the list 
+	// will be accessed sequentially even if an item
+        // is removed)
+	//
+	// **** NOTE ****
+	// This may be called once for each cycle of the 
+	// iterator. Attempts to call this twice without
+	// moving the iterator forward inbetween the two
+	// calls will assert fail
 	//
 	void remove ()
 	{
 		if (this->pCurrent) {
-			this->pCurrent = 
-				this->pCurrent->tsSLNode<T>::pNext; 
-			this->pPrevious->pNext = this->pCurrent;
+			assert(this->pPrevious);
+			this->pPrevious->pNext = this->pCurrent->pNext;
+			this->pCurrent = this->pPrevious;
+			this->pPrevious = 0; 
 		}
 	}
 private:
-	T      		*pCurrent;
+	tsSLNode<T>	*pCurrent;
 	tsSLNode<T> 	*pPrevious;
 	tsSLList<T>	*pList;
 };

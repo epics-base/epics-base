@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/04 19:57:06  jhill
+ * string id resource now copies id
+ *
  * Revision 1.4  1996/08/05 19:31:59  jhill
  * fixed removes use of iter.cur()
  *
@@ -50,6 +53,7 @@
 #ifndef INCresourceLibh
 #define INCresourceLibh 
 
+#include <stdio.h>
 #include <limits.h>
 #include <string.h>
 #include <math.h>
@@ -59,7 +63,7 @@
 typedef int 		resLibStatus;
 typedef	unsigned 	resTableIndex;
 
-const unsigned resTableIndexBitWidth = (sizeof(resTableIndex)*CHAR_BIT);
+#define resTableIndexBitWidth (sizeof(resTableIndex)*CHAR_BIT)
 
 //
 // class T must derive class ID
@@ -67,34 +71,12 @@ const unsigned resTableIndexBitWidth = (sizeof(resTableIndex)*CHAR_BIT);
 template <class T, class ID>
 class resTable {
 public:
+	enum resTableDelFlag {rtdfDelete, rtdfNoDelete};
+
 	resTable() :
 		pTable(0), hashIdMask(0), hashIdNBits(0), nInUse(0) {}
 
-	int init(unsigned nHashTableEntries) 
-	{
-		unsigned	nbits;
-
-		if (nHashTableEntries<1u) {
-			return -1;
-		}
-
-		//
-		// count the number of bits in the hash index
-		//
-		for (nbits=0; nbits<resTableIndexBitWidth; nbits++) {
-			this->hashIdMask = (1<<nbits) - 1;
-			if ( ((nHashTableEntries-1) & ~this->hashIdMask) == 0){
-				break;
-			}
-		}
-		this->hashIdNBits = nbits;
-		this->nInUse = 0u;
-		this->pTable = new tsSLList<T> [this->hashIdMask+1u];
-		if (!pTable) {
-			return -1;
-		}
-		return 0;
-	}
+	int init(unsigned nHashTableEntries);
 
 	~resTable() 
 	{
@@ -105,78 +87,18 @@ public:
 		}
 	}
 
-	void destroyAllEntries()
-	{
-		tsSLList<T> *pList = this->pTable;
+	void destroyAllEntries();
 
-		while (pList<&this->pTable[this->hashIdMask+1]) {
-			tsSLIter<T> iter(*pList);
-			T *pItem;
-			while ( (pItem = iter()) ) {
-				iter.remove();
-				delete pItem;
-        			this->nInUse--;
-			}
-			pList++;
-		}
-	}
+	void show (unsigned level);
 
-	void show (unsigned level)
-	{
-		tsSLList<T> 	*pList;
-		double		X;
-		double		XX;
-		double		mean;
-		double		stdDev;
-		unsigned	maxEntries;
-
-		printf("resTable with %d resources installed\n", this->nInUse);
-
-		if (level >=1u) {
-			pList = this->pTable;
-			X = 0.0;
-			XX = 0.0;
-			maxEntries = 0;
-			while (pList < &this->pTable[this->hashIdMask+1]) {
-				unsigned count;
-				tsSLIter<T> iter(*pList);
-				T *pItem;
-
-				count = 0;
-				while ( (pItem = iter()) ) {
-					if (level >= 3u) {
-						pItem->show (level);
-					}
-					count++;
-				}
-				X += count;
-				XX += count*count;
-				if (count>maxEntries) {
-					maxEntries = count;
-				}
-				pList++;
-			}
-		 
-			mean = X/(this->hashIdMask+1);
-			stdDev = sqrt(XX/(this->hashIdMask+1)- mean*mean);
-			printf( 
-		"entries/table index - mean = %f std dev = %f max = %d\n",
-                		mean, stdDev, maxEntries);
-		}
-	}
-
-
-public:
 	int add (T &res)
 	{
 		//
 		// T must derive from ID
 		//
 		tsSLList<T> &list = this->pTable[this->hash(res)];
-		tsSLIter<T> iter(list);
 
-		this->find(iter, res);
-		if (iter.current()) {
+		if (this->find(list, res) != 0) {
 			return -1;
 		}
 		list.add(res);
@@ -186,25 +108,15 @@ public:
 
 	T *remove (const ID &idIn)
 	{
-		tsSLIter<T> iter(this->pTable[this->hash(idIn)]);
-		T *pCur;
-
-		this->find(iter, idIn);
-		pCur = iter.current();
-		if (pCur) {
-			this->nInUse--;
-			iter.remove();
-		}
-		return pCur;
+		tsSLList<T> &list = this->pTable[this->hash(idIn)];
+		return this->find(list, idIn, rtdfDelete);
 	}
 
 
 	T *lookup (const ID &idIn)
 	{
-		tsSLIter<T> iter(this->pTable[this->hash(idIn)]);
-
-		this->find(iter, idIn);
-		return iter.current();
+		tsSLList<T> &list = this->pTable[this->hash(idIn)];
+		return this->find(list, idIn);
 	}
 
 private:
@@ -228,18 +140,24 @@ private:
 	// iterator points to the item found upon return
 	// (or NULL if nothing matching was found)
 	//
-	void find (tsSLIter<T> &iter, const ID &idIn)
+	T *find (tsSLList<T> &list, const ID &idIn, 
+		resTableDelFlag df=rtdfNoDelete)
 	{
+		tsSLIter<T> 	iter(list);
 		T		*pItem;
 		ID		*pId;
 
 		while ( (pItem = iter()) ) {
 			pId = pItem;
 			if (*pId == idIn) {
+				if (df==rtdfDelete) {
+					iter.remove();
+					this->nInUse--;
+				}
 				break;
 			}
 		}
-		return;
+		return pItem;
 	}
 };
 
@@ -425,6 +343,10 @@ public:
 private:
         char * const pStr;
 };
+
+#if defined(__SUNPRO_CC) || defined(EXPAND_TEMPLATES_HERE)
+# 	include "resourceLib.cc"
+#endif
 
 #endif // INCresourceLibh
 

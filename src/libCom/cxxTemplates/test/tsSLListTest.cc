@@ -46,9 +46,9 @@ main ()
 	list.add(*pFredII);
 	list.add(*pFred);
 	iter.reset();
-	pFredBack = iter();
-	iter.remove();
-	iter.remove();
+	while ( (pFredBack = iter()) ) {
+		iter.remove();
+	}
 	pFredBack = list.get();
 	assert (pFredBack == 0);
 	list.add(*pFred);
@@ -72,5 +72,12 @@ main ()
 	while (pFredBack = iter()) {
 		pFredBack->show();
 	}
+
+	while (pFredBack = iter()) {
+		iter.remove();
+	}
+
+	pFredBack = iter();
+	assert(pFredBack==NULL);
 }
 

@@ -26,13 +26,13 @@ private:
 
 main ()
 {
-	tsDLList<fred>	list;
-	tsDLIter<fred>	iter(list);
-	fred		*pFred;
-	unsigned 	i;
-	clock_t		clk;
-	clock_t		diff;
-	double 		delay;
+	tsDLList<fred>		list;
+	tsDLFwdIter<fred>	iter(list);
+	fred			*pFred;
+	unsigned 		i;
+	clock_t			clk;
+	clock_t			diff;
+	double 			delay;
 
 	for (i=0; i<LOOPCOUNT; i++) {
 		pFred = new fred();

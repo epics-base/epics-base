@@ -107,7 +107,6 @@ int main(int argc,char **argv)
     }
     pdbbase = dbAllocBase();
     pdbbase->ignoreMissingMenus = TRUE;
-printf("path %s\n",path);
     status = dbReadDatabase(&pdbbase,argv[1],path,sub);
     if(status)  {
 	fprintf(stderr,"Terminal error For input file %s\n",argv[1]);

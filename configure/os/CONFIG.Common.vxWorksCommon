@@ -84,9 +84,9 @@ POSIX_CPPFLAGS_NO =
 
 #--------------------------------------------------
 # Optimization flag overrides
-OPT_CFLAGS_YES = -O2
+OPT_CFLAGS_YES = -O3
 OPT_CFLAGS_NO =
-OPT_CXXFLAGS_YES = -O2
+OPT_CXXFLAGS_YES = -O3
 OPT_CXXFLAGS_NO =
 
 #--------------------------------------------------

@@ -131,11 +131,11 @@ struct motor_data	motor_data_array[MAX_OMS_CARDS][MAX_OMS_CHANNELS];
 char	oms_motor_specifier[MAX_OMS_CHANNELS+1] = {'X','Y','Z','T','U','V'};
 
 /* scan task parameters */
-LOCAL SEMAPHORE		oms_wakeup;	/* oms_task wakeup semaphore */
-LOCAL SEMAPHORE		oms_send_sem;	/* oms_task wakeup semaphore */
+LOCAL SEM_ID		oms_wakeup;	/* oms_task wakeup semaphore */
+LOCAL SEM_ID		oms_send_sem;	/* oms_task wakeup semaphore */
 
 /* response task variables */
-LOCAL SEMAPHORE		oms_resp_sem;	/* wakeup semaphore for the resp task */
+LOCAL SEM_ID		oms_resp_sem;	/* wakeup semaphore for the resp task */
 LOCAL RING_ID 		oms_resp_q;	/* queue of responses */
 
 /* interrupt routine message buffers */
@@ -179,7 +179,7 @@ register short	card;
 	      != OMS_MSG_SZ){
           	logMsg("oms_resp_q full\n");
 	    }else{
-		semGive (&oms_resp_sem);
+		semGive (oms_resp_sem);
 	    }
 	    *pinx = 0;        /* reset buffer */
 
@@ -222,12 +222,7 @@ oms_resp_task()
 
     FOREVER {
         /* wait for somebody to wake us up */
-#	ifdef V5_vxWorks
-       	 	semTake (&oms_resp_sem, WAIT_FOREVER);
-#	else
-       	 	semTake (&oms_resp_sem);
-#	endif
-
+       	semTake (oms_resp_sem, WAIT_FOREVER);
         /* process requests in the command ring buffer */
         while (rngBufGet(oms_resp_q,resp,OMS_MSG_SZ) == OMS_MSG_SZ){
             if (oms_debug) 
@@ -326,12 +321,7 @@ oms_task()
     register struct vmex_motor	*pmotor;
 
     while(1){
-#	ifdef V5_vxWorks
-		semTake(&oms_wakeup, WAIT_FOREVER);
-#	else
-		semTake(&oms_wakeup);
-#	endif
-
+	semTake(oms_wakeup, WAIT_FOREVER);
 	motor_active = TRUE;
 	while (motor_active){
 	    motor_active = FALSE;
@@ -419,13 +409,14 @@ oms_driver_init(){
 			panic ("oms_driver_init: oms_resp_q not created\n");
 
 		/* initialize the oms response task semaphore */
-		semInit(&oms_resp_sem);
+		if(!(oms_resp_sem=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+			errMessage(0,"semBcreate failed in oms_driver_init");
 		/* intialize the data request wakeup semaphore */
-		semInit(&oms_wakeup);
+		if(!(oms_wakeup=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+			errMessage(0,"semBcreate failed in oms_driver_init");
 		/* oms card mutual exclusion semaphore */
-		semInit(&oms_send_sem);
-		semGive(&oms_send_sem);
-
+		if(!(oms_send_sem=semBCreate(SEM_Q_FIFO,SEM_FULL)))
+			errMessage(0,"semBcreate failed in oms_driver_init");
 		/* spawn the motor data request task */
 		taskSpawn("oms_task",42,VX_FP_TASK,8000,oms_task);
 
@@ -517,7 +508,7 @@ int		arg2;
 		oms_motor_array[card][channel].active = TRUE;
 
 		/* wakeup the oms task */
-		semGive(&oms_wakeup);
+		semGive(oms_wakeup);
 
 		break;
 	case (SM_MOTION):
@@ -531,7 +522,7 @@ int		arg2;
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
 		/* wakeup the oms task */
-		semGive(&oms_wakeup);
+		semGive(oms_wakeup);
 		break;
 
 	case (SM_CALLBACK):
@@ -552,7 +543,7 @@ int		arg2;
 		oms_motor_array[card][channel].active = TRUE;
 
 		/* wakeup the oms task */
-		semGive(&oms_wakeup);
+		semGive(oms_wakeup);
 
 		break;
 		
@@ -569,7 +560,7 @@ int		arg2;
 		oms_motor_array[card][channel].active = TRUE;
 
 		/* wakeup the oms task */
-		semGive(&oms_wakeup);
+		semGive(oms_wakeup);
 
 		break;
 	}
@@ -590,11 +581,7 @@ register char			*pmsg;
 int	i;
 i = 0;
 	/* take the mutual exclusion semaphore */
-#	ifdef V5_vxWorks
-      	  	semTake(&oms_send_sem, WAIT_FOREVER);
-#	else
-      	  	semTake(&oms_send_sem);
-#	endif
+      	semTake(oms_send_sem, WAIT_FOREVER);
 	while (*pmsg){
 		if (pmotor->status & 0x01){
 			oms_illcmd++;
@@ -621,7 +608,7 @@ i = 0;
 		}
 	}
 	/* release the mutual exclusion semaphore */
-        semGive(&oms_send_sem);
+        semGive(oms_send_sem);
 }
 
 oms_io_report(level)

@@ -180,6 +180,11 @@
  * .53	08-25-92	mrk	made masks a macro
  * .54	08-25-92	mrk	added support for Type E,T,R,S Tcs
  * .55  08-25-92	mrk	support epics I/O event scan
+ * .56  06-30-93	mrk	After 3 attempts to queue request Ask to initialize
+ * .57  07-22-93	mrk	For BI call scanIoRequest when adapter status changes
+ * .58  07-22-93	mrk	For AB1771IL sign_bit>>= becomes sign_bit<<=
+ * .59  07-27-93	mrk	Included changes made by Jeff Hill to stop warning messages
+ * .60  07-27-93	mrk	Made changes for vxWorks 5.x semLib
  */
 
 /*
@@ -324,7 +329,7 @@ struct {
 static long report(level)
 int level;
 {
-   ab_io_report(level);
+   return(ab_io_report(level));
 }
 
 /* forward reference for ioc_reboot */
@@ -332,10 +337,8 @@ int ioc_reboot();
 
 static long init()
 {
-    int status;
 
-    ab_driver_init();
-    return(0);
+    return(ab_driver_init());
 }
 
 
@@ -358,8 +361,8 @@ WDOG_ID wd_id[AB_MAX_LINKS];	/* watchdog task ID */
 int	ab_timeout();		/* internal timeout handler */
 
 /* message complete variables */
-SEMAPHORE	ab_data_sem;		/* transfer complete semaphore */
-SEMAPHORE	ab_cmd_sem;		/* transfer complete semaphore */
+SEM_ID	ab_data_sem;		/* transfer complete semaphore */
+SEM_ID	ab_cmd_sem;		/* transfer complete semaphore */
 		/* following flag indicates to interrupt handler that we're
 		   requesting a block xfer (and expect immediate confirmation) */
 short		ab_requesting_bt[AB_MAX_LINKS];
@@ -475,6 +478,7 @@ extern short	wakeup_init;	/* flags that the database scan initialization is comp
  * which in turn flags all channels on the adapter as hardware errors
  */
 short	ab_adapter_status[AB_MAX_LINKS][AB_MAX_ADAPTERS];
+short	ab_adapter_status_change[AB_MAX_LINKS][AB_MAX_ADAPTERS];
 
 /* disables the scanner during a restart - required for   */
 /* successful restart of the IOC			  */
@@ -506,7 +510,7 @@ unsigned short		reset_code[100];
 unsigned short		reset_cnt = 0;
 
 /* forward references */
-void 	wtrans();
+static void 	wtrans();
 int 	abScanTask();
 void	ab_reset_task();
 int	ab_reset();
@@ -559,9 +563,15 @@ register short	pass;
 	    }
 
 	    /* don't make another block transfer request if one's outstanding... */
-	    if((ab_btq_cnt[link][adapter][card] % 50) != 0) {
+	    if((ab_btq_cnt[link][adapter][card] % 10) != 0) {
 		/* ...but try again periodically in case a request got lost. */
 		ab_btq_cnt[link][adapter][card]++;
+		continue;
+	    }
+	    /*If 3 queue attempts fail then reinitialize*/
+	    if(ab_btq_cnt[link][adapter][card] >= 30) {
+		*pcard &= ~(AB_INIT_BIT | AB_SENT_INIT);
+		ab_btq_cnt[link][adapter][card] = 0;
 		continue;
 	    }
 
@@ -820,7 +830,7 @@ unsigned short		*pmsg;
 	/* copy the message into the dual-ported memory */
 
 	/* clear the semaphore to make sure we stay in sync */
-	if((semClear(&ab_cmd_sem) == 0) && ab_debug)
+	if((semTake(ab_cmd_sem,NO_WAIT) == OK) && ab_debug)
 		logMsg("link %x, semaphore set before bt_queue cmd %x,%x,%x\n",
 		    link,command,pmb->command,pmb->conf_stat);
 
@@ -845,12 +855,7 @@ unsigned short		*pmsg;
 	p6008->sc_intr = 1;
 
 	/* wait for the command to be accepted */
-#	ifdef V5_vxWorks
-		semTake(&ab_cmd_sem, WAIT_FOREVER);
-#	else
-		semTake(&ab_cmd_sem);
-#	endif
-
+	semTake(ab_cmd_sem, WAIT_FOREVER);
 	/* determine if the command was accepted */
 	if (ab_tout[link] == ERROR){
 		if(ab_debug)
@@ -914,12 +919,7 @@ abDoneTask(){
     struct ab_response		*presponse = &response;
     while(TRUE){
 	/* wait for block transfer completion */
-#	ifdef V5_vxWorks
-		semTake(&ab_data_sem, WAIT_FOREVER);
-#	else
-		semTake(&ab_data_sem);
-#	endif
-
+	semTake(ab_data_sem, WAIT_FOREVER);
 	while (rngBufGet(ab_cmd_q,&response,sizeof(struct ab_response)) 
 	  == sizeof(struct ab_response)){
 	    link = presponse->link;
@@ -995,7 +995,7 @@ abDoneTask(){
 		  = (struct ab1771il_read *)presponse->data;
 		    pab_table = &ab_btdata[link][adapter][card][0];
 		    pab_sts = &ab_btsts[link][adapter][card][0];
-		    for (i=0, sign_bit=1; i < ai_num_channels[AB1771IL]; i++, sign_bit>>= 1){
+		    for (i=0, sign_bit=1; i < ai_num_channels[AB1771IL]; i++, sign_bit<<= 1){
 			/* status */
 			if((pmsg->urange & sign_bit) || (pmsg->orange & sign_bit)){
 			    *pab_sts = -3;
@@ -1129,11 +1129,12 @@ unsigned char		ab_old_binary_ins[AB_MAX_LINKS*AB_MAX_ADAPTERS*AB_MAX_CARDS];
 ab_bi_cos_simulator()
 {
         register struct ab_region       *p6008;
-        register unsigned short 	card_inx,link;
+        register unsigned short 	link;
 	register unsigned short		*pcard;
 	unsigned short			*ps_input,*ps_oldval;
 	short				adapter,card,inpinx;
 	short				first_scan,first_scan_complete;
+	short				adapter_status_change;
 
 	first_scan_complete = first_scan = 0;
 	for(;;){
@@ -1143,23 +1144,25 @@ ab_bi_cos_simulator()
 		/* check each link */
 		link = 0;
 		for (link = 0; link < AB_MAX_LINKS; link++){
-		    	if ((p6008 = p6008s[link]) == 0) continue;
+		    if ((p6008 = p6008s[link]) == 0) continue;
+		    for (adapter = 0; adapter < AB_MAX_ADAPTERS; adapter++){
+			adapter_status_change = ab_adapter_status_change[link][adapter];
+			ab_adapter_status_change[link][adapter] = 0;
 
 			/* check each card that is configured to be a binary input card */
-			pcard = &ab_config[link][0][0];
-			for (card_inx = 0; card_inx < AB_MAX_ADAPTERS*AB_MAX_CARDS; card_inx++,pcard++){
+			for (card = 0; card < AB_MAX_CARDS; card++){
+				pcard = &ab_config[link][adapter][card];
+				inpinx =  (adapter * AB_CARD_ADAPTER) + card;
 				if ((*pcard & AB_INTERFACE_TYPE) != AB_BI_INTERFACE) continue;
 					
 				if ((*pcard & AB_CARD_TYPE) == ABBI_16_BIT){
 					/* sixteen bit byte ordering in dual ported memory 	*/
 					/* byte 0011 2233 4455 6677 8899 AABB			*/
 					/* card 0000 2222 4444 6666 8888 AAAA			*/
-					if (card_inx & 0x1)	continue;
-					ps_input = (unsigned short *)&(p6008->iit[card_inx]);
-					ps_oldval = (unsigned short *)&(ab_old_binary_ins[card_inx]);
-					if ((*ps_input != *ps_oldval) || first_scan){
-						adapter = card_inx / AB_MAX_CARDS;
-						card = card_inx - (adapter * AB_MAX_CARDS);
+					if (inpinx & 0x1)	continue;
+					ps_input = (unsigned short *)&(p6008->iit[inpinx]);
+					ps_oldval = (unsigned short *)&(ab_old_binary_ins[inpinx]);
+					if ((*ps_input != *ps_oldval) || first_scan || adapter_status_change){
 #ifdef EPICS_V2
 						io_event_scanner_wakeup(IO_BI,ABBI_16_BIT,card,link,adapter);
 #else
@@ -1170,12 +1173,9 @@ ab_bi_cos_simulator()
 				}else{
 					/* eight bit byte ordering in dual ported memory */
 					/* 1100 3322 5544 7766 9988 BBAA 		 */
-					inpinx = card_inx;
 					if (inpinx & 0x1)	inpinx--;	/* shuffle those bytes */
 					else inpinx++;
-					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan){
-						adapter = card_inx / AB_MAX_CARDS;
-						card = card_inx - (adapter * AB_MAX_CARDS);
+					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan || adapter_status_change){
 #ifdef EPICS_V2
 						io_event_scanner_wakeup(IO_BI,ABBI_08_BIT,card,link,adapter);
 #else
@@ -1186,15 +1186,16 @@ ab_bi_cos_simulator()
 				}
 			}
 		}
+	    }
 
-		/* turn off first scan */
-		if (first_scan){
-			first_scan_complete = 1;
-			first_scan = 0;
-		}
+	    /* turn off first scan */
+	    if (first_scan){
+		first_scan_complete = 1;
+		first_scan = 0;
+	    }
 
-		/* check for changes at about 15 Hertz */
-		taskDelay(SECOND/15);
+	    /* check for changes at about 15 Hertz */
+	    taskDelay(SECOND/15);
 	}
 }
 
@@ -1224,8 +1225,10 @@ ab_driver_init()
 
 	/* initialize the Allen-Bradley 'done' semaphore */
 	if (abScanId == 0){
-		semInit(&ab_cmd_sem);
-		semInit(&ab_data_sem);
+		if(!(ab_cmd_sem=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+		     errMessage(0,"semBcreate failed in initEvent");
+		if(!(ab_data_sem=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+		     errMessage(0,"semBcreate failed in initEvent");
 		if ((ab_cmd_q = rngCreate(AB_Q_SZ)) == (RING_ID)NULL)
 		    panic ("ab_init: ab_cmd_q\n");
 	}
@@ -1329,7 +1332,7 @@ register short	link;
 		/* on initialization the scanner puts its firmware revision info	*/
 		/* into the general data are of the dual-port.  We save it here. 	*/
 		/* (The most current revision is Series A, Revision D.)			*/
-		strcpy(pfirmware_info,&pmb->da);
+		strcpy(pfirmware_info,(char *)&pmb->da);
 		if(ab_debug != 0)
 			logMsg("link %x f/w = :\n\t%s\n",link,ab_firmware_info[link]);
 		/*scanner comes up in program_mode */
@@ -1343,7 +1346,7 @@ register short	link;
 	if((ab_op_stat[link] & PROGRAM_MODE) != PROGRAM_MODE){
 		/* This link must already be initialized.  We're done */
 		logMsg("Link %x already initialized\n",link);
-		return;
+		return(0);
 	}
 
 	/* setup scanner */
@@ -1385,8 +1388,8 @@ register short	link;
  * scanner management command send
  */
 mr_wait(command,length,pmsg,link)
-register short	command;
-register short	length;
+unsigned short	command;
+short		length;
 short		*pmsg;
 unsigned short	link;
 {
@@ -1414,7 +1417,7 @@ unsigned short	link;
 
 
 	/* clear the semaphore to make sure we stay in sync */
-	if((semClear(&ab_cmd_sem) == 0) && ab_debug)
+	if((semTake(ab_cmd_sem,NO_WAIT) == OK) && ab_debug)
 		logMsg("link %x, semaphore set before mr_wait cmd %x,%x,%x\n",
 		    link,command,pmb->command,pmb->conf_stat);
 
@@ -1429,11 +1432,7 @@ unsigned short	link;
 	case LINK_STATUS:
 		wdStart(wd_id[link],SECOND*10,ab_timeout,link);
 		p6008->sc_intr = 1;	/* wakeup scanner tsk */
-#ifdef		V5_vxWorks
-			semTake(&ab_cmd_sem, WAIT_FOREVER);
-#		else
-			semTake(&ab_cmd_sem);
-#		endif
+		semTake(ab_cmd_sem, WAIT_FOREVER);
 		/* was this a timeout? */
 		if(ab_tout[link] == ERROR){
 		    if(ab_debug != 0)
@@ -1467,11 +1466,7 @@ unsigned short	link;
 		wtrans(pmsg,pmb_msg);		/* xfer data to local mailbox */
 		wdStart(wd_id[link],SECOND*5,ab_timeout,link);
 		p6008->sc_intr = 1;	/* wakeup scanner */
-#		ifdef V5_vxWorks
-			semTake(&ab_cmd_sem, WAIT_FOREVER);
-#		else
-			semTake(&ab_cmd_sem);
-#		endif
+		semTake(ab_cmd_sem, WAIT_FOREVER);
 		/* was this a timeout? */
 		if(ab_tout[link] == ERROR){
 		    if(ab_debug != 0)
@@ -1533,7 +1528,7 @@ short		link;
 	ab_intr_cnt[link]++;
 	if (((pmb->command != AB_WRITE) && (pmb->command != AB_READ)) || 
 	    (ab_requesting_bt[link])){
-		semGive(&ab_cmd_sem);
+		semGive(ab_cmd_sem);
 		wdCancel(wd_id[link]);
 	}else{
 	    presponse = &response;
@@ -1562,7 +1557,7 @@ short		link;
 		logMsg("ab_cmd_q - Full\n");
 
 	    /* wake up abDoneTask */
-	    semGive(&ab_data_sem);
+	    semGive(ab_data_sem);
 	    pmb->fl_lock = 0;
 	}
 }
@@ -1579,7 +1574,7 @@ int	link;
 	ab_tout[link] = ERROR;
 
 	/* only the command receive gives a damn */
-	semGive(&ab_cmd_sem);
+	semGive(ab_cmd_sem);
 
 	/* keep track in case someone wants to snoop */
 	ab_comm_to[link]++;
@@ -1669,7 +1664,7 @@ unsigned short          value;
         if ((*pcard & AB_CARD_TYPE) != card_type) return(-1);
 
         /* put the value into the table */
-	if (ab_btdata[link][adapter][card][signal] == value) return(0);
+	if ((unsigned short)ab_btdata[link][adapter][card][signal] == value) return(0);
         ab_btdata[link][adapter][card][signal] = value;
 	*pcard |= AB_UPDATE;
 
@@ -1905,6 +1900,7 @@ unsigned short	link;
 				if (ab_adapter_status[link][i] == -1) {
 			            printf("link %d adapter %d change bad to good\n"
 				      ,link,i);
+				ab_adapter_status_change[link][i]=1;
 				}
 				ab_adapter_status[link][i] = 0;
 			/* bad status */
@@ -1912,6 +1908,7 @@ unsigned short	link;
 				if (ab_adapter_status[link][i] == 0){
 				    printf("link %d adapter %d change good to bad\n"
 					  ,link,i);
+				ab_adapter_status_change[link][i]=1;
 				}
 				ab_adapter_status[link][i] = -1;
 			}

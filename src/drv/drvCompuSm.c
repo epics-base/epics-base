@@ -294,10 +294,10 @@ struct compumotor {
 /* array of pointers to stepper motor driver cards present in system */
 struct compumotor	*pcompu_motors[MAX_COMPU_MOTORS];
 
-LOCAL SEMAPHORE compu_wakeup;	/* compumotor data request task semaphore */
+LOCAL SEM_ID compu_wakeup;	/* compumotor data request task semaphore */
 
 /* response variables */
-LOCAL SEMAPHORE smRespSem;		/* task semaphore */
+LOCAL SEM_ID smRespSem;		/* task semaphore */
 LOCAL RING_ID smRespQ;			/* ring buffer */
 int smRespId;				/* task id */
 #define RESP_Q_SZ (RESPBUF_SZ * 50)	/* response ring buffer size */
@@ -388,12 +388,7 @@ compu_resp_task()
 
     FOREVER {
         /* wait for somebody to wake us up */
-#	ifdef V5_vxWorks
-       	 	semTake (&smRespSem, WAIT_FOREVER);
-#	else
-       	 	semTake (&smRespSem);
-#	endif
-
+       	semTake (smRespSem, WAIT_FOREVER);
  	/* the response buffer contains: 	 	 	*/
 	/* 0 -	motor number				 	*/
 	/* 1 -	the command which solicited this response	*/
@@ -534,7 +529,7 @@ register int mdnum;
         if (rngBufPut(smRespQ,(char *)sm_responses[mdnum],RESPBUF_SZ) != RESPBUF_SZ)
             logMsg("smRespQ %d - Full\n",mdnum);
 	else
-	    semGive (&smRespSem);
+	    semGive (smRespSem);
 
 	/* the zero-th byte is the motor number */
         counts[mdnum] = 1;        /* start with command */
@@ -601,8 +596,10 @@ compu_driver_init(){
 
     /* intialize the semaphores which awakens the sleeping           *
      * stepper motor command task and the stepper motor response task */
-    semInit(&smRespSem);
-    semInit(&compu_wakeup);
+    if(!(smRespSem=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+	errMessage(0,"semBcreate failed in compu_driver_init");
+    if(!(compu_wakeup=semBCreate(SEM_Q_FIFO,SEM_EMPTY)))
+	errMessage(0,"semBcreate failed in compu_driver_init");
 
     /* spawn the sleeping motor driver command and response tasks */
     smRespId = 
@@ -800,7 +797,7 @@ printf("%x ",compu_msg[j]);
 		compu_motor_array[card].active = TRUE;
 
 		/* wakeup the compu task */
-		semGive(&compu_wakeup);
+		semGive(compu_wakeup);
 
 		break;
 
@@ -816,7 +813,7 @@ printf("%x ",compu_msg[j]);
 		}
 
 		/* wakeup the compu task */
-		semGive(&compu_wakeup);
+		semGive(compu_wakeup);
 		break;
 
 	case (SM_CALLBACK):
@@ -862,7 +859,7 @@ printf("%x ",compu_msg[j]);
 		compu_motor_array[card].active = TRUE;
 
 		/* wakeup the compu task */
-		semGive(&compu_wakeup);
+		semGive(compu_wakeup);
 
 		break;
 

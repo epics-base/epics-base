@@ -80,7 +80,7 @@ static void addAction(caLink *pca, short link_action)
 
 void epicsShareAPI dbCaLinkInit(void)
 {
-        dbServiceIOInit();
+    dbServiceIOInit();
 	ellInit(&caList);
 	caListSem = epicsMutexMustCreate();
 	caWakeupSem = epicsEventMustCreate(epicsEventEmpty);

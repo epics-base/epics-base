@@ -40,8 +40,8 @@ static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
 //
 class aitTimeStamp {
 public:
-	unsigned long tv_sec;
-	unsigned long tv_nsec;
+    unsigned long tv_sec;
+    unsigned long tv_nsec;
 };
 
 static const unsigned tmStructEpochYear = 1900;
@@ -49,11 +49,6 @@ static const unsigned tmStructEpochYear = 1900;
 static const unsigned epicsEpochYear = 1990;
 static const unsigned epicsEpocMonth = 0; // January
 static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
-
-//
-// forward declarations for utility routines
-//
-static char *fracFormat (const char *pFormat, unsigned long *width);
 
 //
 // epicsTime (const unsigned long secIn, const unsigned long nSecIn)
@@ -66,13 +61,13 @@ inline epicsTime::epicsTime (const unsigned long secIn, const unsigned long nSec
 //
 class epicsTimeLoadTimeInit {
 public:
-	epicsTimeLoadTimeInit ();
+    epicsTimeLoadTimeInit ();
 
-	double epicsEpochOffset; // seconds
+    double epicsEpochOffset; // seconds
 #ifdef NTP_SUPPORT
     double ntpEpochOffset; // seconds
 #endif
-	double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
+    double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
 };
 
 static const epicsTimeLoadTimeInit lti;
@@ -83,61 +78,61 @@ static const epicsTimeLoadTimeInit lti;
 epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 {
     static const time_t ansiEpoch = 0;
-	double secWest;
+    double secWest;
 
-	{
-		time_t current = time (NULL);
-		time_t error;
-		tm date;
+    {
+        time_t current = time (NULL);
+        time_t error;
+        tm date;
 
-		gmtime_r (&current, &date);
-		error = mktime (&date);
-		assert (error!=(time_t)-1);
-		secWest =  difftime (error, current);
-	}
-	
-	{
-		time_t first = static_cast<time_t> (0);
-		time_t last = static_cast<time_t> (1);
-		this->time_tSecPerTick = difftime (last, first);
-	}
+        gmtime_r (&current, &date);
+        error = mktime (&date);
+        assert (error!=(time_t)-1);
+        secWest =  difftime (error, current);
+    }
+    
+    {
+        time_t first = static_cast<time_t> (0);
+        time_t last = static_cast<time_t> (1);
+        this->time_tSecPerTick = difftime (last, first);
+    }
 
-	{
-		struct tm tmEpicsEpoch;
-		time_t epicsEpoch;
+    {
+        struct tm tmEpicsEpoch;
+        time_t epicsEpoch;
 
-		tmEpicsEpoch.tm_sec = 0;
-		tmEpicsEpoch.tm_min = 0;
-		tmEpicsEpoch.tm_hour = 0;
-		tmEpicsEpoch.tm_mday = epicsEpocDayOfTheMonth;
-		tmEpicsEpoch.tm_mon = epicsEpocMonth;
-		tmEpicsEpoch.tm_year = epicsEpochYear-tmStructEpochYear;
-		tmEpicsEpoch.tm_isdst = -1; // dont know if its daylight savings time
+        tmEpicsEpoch.tm_sec = 0;
+        tmEpicsEpoch.tm_min = 0;
+        tmEpicsEpoch.tm_hour = 0;
+        tmEpicsEpoch.tm_mday = epicsEpocDayOfTheMonth;
+        tmEpicsEpoch.tm_mon = epicsEpocMonth;
+        tmEpicsEpoch.tm_year = epicsEpochYear-tmStructEpochYear;
+        tmEpicsEpoch.tm_isdst = -1; // dont know if its daylight savings time
 
-		epicsEpoch = mktime (&tmEpicsEpoch);
-		assert (epicsEpoch!=(time_t)-1);
-		this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
-	}
+        epicsEpoch = mktime (&tmEpicsEpoch);
+        assert (epicsEpoch!=(time_t)-1);
+        this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
+    }
 
 #ifdef NTP_SUPPORT
     /* unfortunately, on NT mktime cant calculate a time_t for a date before 1970 */
-	{
-		struct tm tmEpochNTP;
-		time_t ntpEpoch;
+    {
+        struct tm tmEpochNTP;
+        time_t ntpEpoch;
 
         tmEpochNTP.tm_sec = 0;
-		tmEpochNTP.tm_min = 0;
-		tmEpochNTP.tm_hour = 0;
-		tmEpochNTP.tm_mday = ntpEpocDayOfTheMonth;
-		tmEpochNTP.tm_mon = ntpEpocMonth;
-		tmEpochNTP.tm_year = ntpEpochYear-tmStructEpochYear;
-		tmEpochNTP.tm_isdst = -1; // dont know if its daylight savings time
+        tmEpochNTP.tm_min = 0;
+        tmEpochNTP.tm_hour = 0;
+        tmEpochNTP.tm_mday = ntpEpocDayOfTheMonth;
+        tmEpochNTP.tm_mon = ntpEpocMonth;
+        tmEpochNTP.tm_year = ntpEpochYear-tmStructEpochYear;
+        tmEpochNTP.tm_isdst = -1; // dont know if its daylight savings time
 
-		ntpEpoch = mktime (&tmEpochNTP);
-		assert (ntpEpoch!=(time_t)-1);
+        ntpEpoch = mktime (&tmEpochNTP);
+        assert (ntpEpoch!=(time_t)-1);
 
         this->ntpEpochOffset = static_cast<long> (difftime (ansiEpoch, ntpEpoch) + this->epicsEpochOffset - secWest);
-	}
+    }
 #endif
 }
 
@@ -158,12 +153,12 @@ inline void epicsTime::addNanoSec (long nSecAdj)
 epicsTime::epicsTime (const time_t_wrapper &ansiTimeTicks)
 {
     static double uLongMax = static_cast<double> (ULONG_MAX);
-	double sec;
+    double sec;
 
     //
     // map time_t, which ansi C defines as some arithmetic type, into type double 
     //
-	sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
+    sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
 
     //
     // map into the the EPICS time stamp range (which allows rollover)
@@ -179,7 +174,7 @@ epicsTime::epicsTime (const time_t_wrapper &ansiTimeTicks)
     }
 
     this->secPastEpoch = static_cast <unsigned long> (sec);
-	this->nSec = static_cast <unsigned long> ( (sec-this->secPastEpoch) * nSecPerSec );
+    this->nSec = static_cast <unsigned long> ( (sec-this->secPastEpoch) * nSecPerSec );
 }
 
 //
@@ -187,18 +182,18 @@ epicsTime::epicsTime (const time_t_wrapper &ansiTimeTicks)
 //
 epicsTime::operator time_t_wrapper () const
 {
-	double tmp;
-	time_t_wrapper wrap;
+    double tmp;
+    time_t_wrapper wrap;
 
     tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
-	tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
+    tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
 
     //
     // map type double into time_t which ansi C defines as some arithmetic type
     //
     wrap.ts = static_cast <time_t> (tmp);
 
-	return wrap;
+    return wrap;
 }
 
 //
@@ -206,22 +201,22 @@ epicsTime::operator time_t_wrapper () const
 //
 epicsTime::operator tm_nano_sec () const
 {
-	tm_nano_sec tm;
-	time_t_wrapper ansiTimeTicks;
+    tm_nano_sec tm;
+    time_t_wrapper ansiTimeTicks;
 
-	ansiTimeTicks = *this;
+    ansiTimeTicks = *this;
 
     //
-	// reentrant version of localtime() - from POSIX RT
+    // reentrant version of localtime() - from POSIX RT
     //
     // WRS returns int and others return &tm.ansi_tm on
     // succes?
     //
-	localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
+    localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
 
-	tm.nSec = this->nSec;
+    tm.nSec = this->nSec;
 
-	return tm;
+    return tm;
 }
 
 //
@@ -230,10 +225,10 @@ epicsTime::operator tm_nano_sec () const
 epicsTime::epicsTime (const tm_nano_sec &tm)
 {
     static const time_t mktimeFailure = static_cast <time_t> (-1);
-	time_t_wrapper ansiTimeTicks;
-	struct tm tmp = tm.ansi_tm;
+    time_t_wrapper ansiTimeTicks;
+    struct tm tmp = tm.ansi_tm;
 
-	ansiTimeTicks.ts = mktime (&tmp);
+    ansiTimeTicks.ts = mktime (&tmp);
     if (ansiTimeTicks.ts ==  mktimeFailure) {
         throwWithLocation ( formatProblemWithStructTM () );
     }
@@ -250,13 +245,13 @@ epicsTime::epicsTime (const tm_nano_sec &tm)
 //
 epicsTime::operator struct timespec () const
 {
-	struct timespec ts;
-	time_t_wrapper ansiTimeTicks;
+    struct timespec ts;
+    time_t_wrapper ansiTimeTicks;
 
-	ansiTimeTicks = *this;
-	ts.tv_sec = ansiTimeTicks.ts;
-	ts.tv_nsec = static_cast<long> (this->nSec);
-	return ts;
+    ansiTimeTicks = *this;
+    ts.tv_sec = ansiTimeTicks.ts;
+    ts.tv_nsec = static_cast<long> (this->nSec);
+    return ts;
 }
 
 //
@@ -264,7 +259,7 @@ epicsTime::operator struct timespec () const
 //
 epicsTime::epicsTime (const struct timespec &ts)
 {
-	time_t_wrapper ansiTimeTicks;
+    time_t_wrapper ansiTimeTicks;
 
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
@@ -276,13 +271,13 @@ epicsTime::epicsTime (const struct timespec &ts)
 //
 epicsTime::operator struct timeval () const
 {
-	struct timeval ts;
-	time_t_wrapper ansiTimeTicks;
+    struct timeval ts;
+    time_t_wrapper ansiTimeTicks;
 
-	ansiTimeTicks = *this;
-	ts.tv_sec = ansiTimeTicks.ts;
+    ansiTimeTicks = *this;
+    ts.tv_sec = ansiTimeTicks.ts;
     ts.tv_usec = static_cast<long> (this->nSec / nSecPerUSec);
-	return ts;
+    return ts;
 }
 
 //
@@ -290,7 +285,7 @@ epicsTime::operator struct timeval () const
 //
 epicsTime::epicsTime (const struct timeval &ts)
 {
-	time_t_wrapper ansiTimeTicks;
+    time_t_wrapper ansiTimeTicks;
 
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
@@ -302,13 +297,13 @@ epicsTime::epicsTime (const struct timeval &ts)
 //
 epicsTime::operator aitTimeStamp () const
 {
-	aitTimeStamp ts;
-	time_t_wrapper ansiTimeTicks;
+    aitTimeStamp ts;
+    time_t_wrapper ansiTimeTicks;
 
-	ansiTimeTicks = *this;
-	ts.tv_sec = ansiTimeTicks.ts;
-	ts.tv_nsec = this->nSec;
-	return ts;
+    ansiTimeTicks = *this;
+    ts.tv_sec = ansiTimeTicks.ts;
+    ts.tv_nsec = this->nSec;
+    return ts;
 }
 
 //
@@ -373,6 +368,32 @@ epicsTime::epicsTime (const ntpTimeStamp &ts)
 }
 #endif
 
+// return pointer to trailing "%0<n>f" (<n> is a number) in a format string,
+// NULL if none; also return <n> and a pointer to the "f"
+static char *fracFormat (const char *pFormat, unsigned long *width)
+{
+    // initialize returned field width
+    *width = 0;
+
+    // point at char past format string
+    const char *ptr = pFormat + strlen (pFormat);
+
+    // if (last) char not 'f', no match
+    if (*(--ptr) != 'f') return NULL;
+
+    // skip digits, extracting <n> (must start with 0)
+    while (isdigit (*(--ptr))); // NB, empty loop body
+    ++ptr; // points to first digit, if any
+    if (*ptr != '0') return NULL;
+    if (sscanf (ptr, "%lu", width) != 1) return NULL;
+
+    // if (prev) char not '%', no match
+    if (*(--ptr) != '%') return NULL;
+
+    // return pointer to '%'
+    return (char *) ptr;
+}
+
 //
 // size_t epicsTime::strftime (char *pBuff, size_t bufLength, const char *pFormat)
 //
@@ -397,18 +418,18 @@ size_t epicsTime::strftime (char *pBuff, size_t bufLength, const char *pFormat) 
     // check there are enough chars for the fractional seconds
     if (numChar + fracWid < bufLength)
     {
-	// divisors for fraction (see below)
-	const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
-			      (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
+        // divisors for fraction (see below)
+        const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
+                      (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
 
-	// round and convert nanosecs to integer of correct range
-	int ndp = fracWid <= 9 ? fracWid : 9;
-	int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
+        // round and convert nanosecs to integer of correct range
+        int ndp = fracWid <= 9 ? fracWid : 9;
+        int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
 
-	// restore fractional format and format fraction
-	*fracPtr = '%';
-	*(format + strlen (format) - 1) = 'u';
-	sprintf (pBuff+numChar, fracPtr, frac);
+        // restore fractional format and format fraction
+        *fracPtr = '%';
+        *(format + strlen (format) - 1) = 'u';
+        sprintf (pBuff+numChar, fracPtr, frac);
     }
     return numChar + fracWid;
 }
@@ -421,9 +442,9 @@ void epicsTime::show (unsigned) const
     char bigBuffer[256];
 
     size_t numChar = strftime (bigBuffer, sizeof(bigBuffer),
-					"%a %b %d %Y %H:%M:%S.%09f");
+                    "%a %b %d %Y %H:%M:%S.%09f");
     if (numChar>0) {
-	printf ("epicsTime: %s\n", bigBuffer);
+        printf ("epicsTime: %s\n", bigBuffer);
     }
 }
 
@@ -434,37 +455,37 @@ void epicsTime::show (unsigned) const
 //
 epicsTime epicsTime::operator + (const double &rhs) const
 {
-	unsigned long newSec, newNSec, secOffset, nSecOffset;
-	double fnsec;
+    unsigned long newSec, newNSec, secOffset, nSecOffset;
+    double fnsec;
 
-	if (rhs >= 0) {
-		secOffset = static_cast <unsigned long> (rhs);
-		fnsec = rhs - secOffset;
-		nSecOffset = static_cast <unsigned long> (fnsec * nSecPerSec);
+    if (rhs >= 0) {
+        secOffset = static_cast <unsigned long> (rhs);
+        fnsec = rhs - secOffset;
+        nSecOffset = static_cast <unsigned long> (fnsec * nSecPerSec);
 
-		newSec = this->secPastEpoch + secOffset; // overflow expected
-		newNSec = this->nSec + nSecOffset;
-		if (newNSec >= nSecPerSec) {
-			newSec++; // overflow expected
-			newNSec -= nSecPerSec;
-		}
-	}
-	else {
-		secOffset = static_cast <unsigned long> (-rhs);
-		fnsec = rhs + secOffset;
-		nSecOffset = static_cast <unsigned long> (-fnsec * nSecPerSec);
+        newSec = this->secPastEpoch + secOffset; // overflow expected
+        newNSec = this->nSec + nSecOffset;
+        if (newNSec >= nSecPerSec) {
+            newSec++; // overflow expected
+            newNSec -= nSecPerSec;
+        }
+    }
+    else {
+        secOffset = static_cast <unsigned long> (-rhs);
+        fnsec = rhs + secOffset;
+        nSecOffset = static_cast <unsigned long> (-fnsec * nSecPerSec);
 
-		newSec = this->secPastEpoch - secOffset; // underflow expected
-		if (this->nSec>=nSecOffset) {
-			newNSec = this->nSec - nSecOffset;
-		}
-		else {
-			// borrow
-			newSec--; // underflow expected
-			newNSec = this->nSec + (nSecPerSec - nSecOffset);
-		}
-	}
-	return epicsTime (newSec, newNSec);
+        newSec = this->secPastEpoch - secOffset; // underflow expected
+        if (this->nSec>=nSecOffset) {
+            newNSec = this->nSec - nSecOffset;
+        }
+        else {
+            // borrow
+            newSec--; // underflow expected
+            newNSec = this->nSec + (nSecPerSec - nSecOffset);
+        }
+    }
+    return epicsTime (newSec, newNSec);
 }
 
 //
@@ -484,57 +505,57 @@ epicsTime epicsTime::operator + (const double &rhs) const
 //
 double epicsTime::operator - (const epicsTime &rhs) const
 {
-	double nSecRes, secRes;
+    double nSecRes, secRes;
 
-	//
-	// first compute the difference between the nano-seconds members
-	//
-	// nano sec member is not allowed to be greater that 1/2 full scale
-	// so the unsigned to signed conversion is ok
-	//
-	if (this->nSec>=rhs.nSec) {
-		nSecRes = this->nSec - rhs.nSec;	
-	}
-	else {
-		nSecRes = rhs.nSec - this->nSec;
-		nSecRes = -nSecRes;
-	}
+    //
+    // first compute the difference between the nano-seconds members
+    //
+    // nano sec member is not allowed to be greater that 1/2 full scale
+    // so the unsigned to signed conversion is ok
+    //
+    if (this->nSec>=rhs.nSec) {
+        nSecRes = this->nSec - rhs.nSec;    
+    }
+    else {
+        nSecRes = rhs.nSec - this->nSec;
+        nSecRes = -nSecRes;
+    }
 
-	//
-	// next compute the difference between the seconds memebers
-	// and invert the sign of the nano seconds result if there
-	// is a range violation
-	//
-	if (this->secPastEpoch<rhs.secPastEpoch) {
-		secRes = rhs.secPastEpoch - this->secPastEpoch;
-		if (secRes > ULONG_MAX/2) {
-			//
-			// In this situation where the difference is more than
-			// 68 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" difference
-			//
-			secRes = 1 + (ULONG_MAX-secRes);
-			nSecRes = -nSecRes;
-		}
-		else {
-			secRes = -secRes;
-		}
-	}
-	else {
-		secRes = this->secPastEpoch - rhs.secPastEpoch;
-		if (secRes > ULONG_MAX/2) {
-			//
-			// In this situation where the difference is more than
-			// 68 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" difference
-			//
-			secRes = 1 + (ULONG_MAX-secRes);
-			secRes = -secRes;
-			nSecRes = -nSecRes;
-		}
-	}
+    //
+    // next compute the difference between the seconds memebers
+    // and invert the sign of the nano seconds result if there
+    // is a range violation
+    //
+    if (this->secPastEpoch<rhs.secPastEpoch) {
+        secRes = rhs.secPastEpoch - this->secPastEpoch;
+        if (secRes > ULONG_MAX/2) {
+            //
+            // In this situation where the difference is more than
+            // 68 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" difference
+            //
+            secRes = 1 + (ULONG_MAX-secRes);
+            nSecRes = -nSecRes;
+        }
+        else {
+            secRes = -secRes;
+        }
+    }
+    else {
+        secRes = this->secPastEpoch - rhs.secPastEpoch;
+        if (secRes > ULONG_MAX/2) {
+            //
+            // In this situation where the difference is more than
+            // 68 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" difference
+            //
+            secRes = 1 + (ULONG_MAX-secRes);
+            secRes = -secRes;
+            nSecRes = -nSecRes;
+        }
+    }
 
-	return secRes + nSecRes/nSecPerSec;	
+    return secRes + nSecRes/nSecPerSec; 
 }
 
 //
@@ -542,51 +563,51 @@ double epicsTime::operator - (const epicsTime &rhs) const
 //
 bool epicsTime::operator <= (const epicsTime &rhs) const
 {
-	bool rc;
+    bool rc;
 
-	if (this->secPastEpoch<rhs.secPastEpoch) {
-		if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
-			//
-			// In this situation where the difference is less than
-			// 69 years compute the expected result
-			//
-			rc = true;
-		}
-		else {
-			//
-			// In this situation where the difference is more than
-			// 69 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" result
-			//
-			rc = false;
-		}
-	}
-	else if (this->secPastEpoch>rhs.secPastEpoch) {
-		if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
-			//
-			// In this situation where the difference is less than
-			// 69 years compute the expected result
-			//
-			rc = false;
-		}
-		else {
-			//
-			// In this situation where the difference is more than
-			// 69 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" result
-			//
-			rc = true;
-		}
-	}
-	else {
-		if (this->nSec<=rhs.nSec) {
-			rc = true;
-		}
-		else {
-			rc = false;
-		}
-	}
-	return rc;
+    if (this->secPastEpoch<rhs.secPastEpoch) {
+        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
+            //
+            // In this situation where the difference is less than
+            // 69 years compute the expected result
+            //
+            rc = true;
+        }
+        else {
+            //
+            // In this situation where the difference is more than
+            // 69 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" result
+            //
+            rc = false;
+        }
+    }
+    else if (this->secPastEpoch>rhs.secPastEpoch) {
+        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
+            //
+            // In this situation where the difference is less than
+            // 69 years compute the expected result
+            //
+            rc = false;
+        }
+        else {
+            //
+            // In this situation where the difference is more than
+            // 69 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" result
+            //
+            rc = true;
+        }
+    }
+    else {
+        if (this->nSec<=rhs.nSec) {
+            rc = true;
+        }
+        else {
+            rc = false;
+        }
+    }
+    return rc;
 }
 
 //
@@ -594,51 +615,51 @@ bool epicsTime::operator <= (const epicsTime &rhs) const
 //
 bool epicsTime::operator < (const epicsTime &rhs) const
 {
-	bool	rc;
+    bool    rc;
 
-	if (this->secPastEpoch<rhs.secPastEpoch) {
-		if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
-			//
-			// In this situation where the difference is less than
-			// 69 years compute the expected result
-			//
-			rc = true;
-		}
-		else {
-			//
-			// In this situation where the difference is more than
-			// 69 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" result
-			//
-			rc = false;
-		}
-	}
-	else if (this->secPastEpoch>rhs.secPastEpoch) {
-		if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
-			//
-			// In this situation where the difference is less than
-			// 69 years compute the expected result
-			//
-			rc = false;
-		}
-		else {
-			//
-			// In this situation where the difference is more than
-			// 69 years assume that the seconds counter has rolled 
-			// over and compute the "wrap around" result
-			//
-			rc = true;
-		}
-	}
-	else {
-		if (this->nSec<rhs.nSec) {
-			rc = true;
-		}
-		else {
-			rc = false;
-		}
-	}
-	return rc;
+    if (this->secPastEpoch<rhs.secPastEpoch) {
+        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
+            //
+            // In this situation where the difference is less than
+            // 69 years compute the expected result
+            //
+            rc = true;
+        }
+        else {
+            //
+            // In this situation where the difference is more than
+            // 69 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" result
+            //
+            rc = false;
+        }
+    }
+    else if (this->secPastEpoch>rhs.secPastEpoch) {
+        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
+            //
+            // In this situation where the difference is less than
+            // 69 years compute the expected result
+            //
+            rc = false;
+        }
+        else {
+            //
+            // In this situation where the difference is more than
+            // 69 years assume that the seconds counter has rolled 
+            // over and compute the "wrap around" result
+            //
+            rc = true;
+        }
+    }
+    else {
+        if (this->nSec<rhs.nSec) {
+            rc = true;
+        }
+        else {
+            rc = false;
+        }
+    }
+    return rc;
 }
 
 extern "C" {
@@ -805,7 +826,7 @@ extern "C" {
     }
     epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
     {
-	return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
+    return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
     }
     epicsShareFunc void epicsShareAPI epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
     {
@@ -813,32 +834,3 @@ extern "C" {
     }
 }
 
-//
-// utility routines
-//
-
-// return pointer to trailing "%0<n>f" (<n> is a number) in a format string,
-// NULL if none; also return <n> and a pointer to the "f"
-static char *fracFormat (const char *pFormat, unsigned long *width)
-{
-    // initialize returned field width
-    *width = 0;
-
-    // point at char past format string
-    const char *ptr = pFormat + strlen (pFormat);
-
-    // if (last) char not 'f', no match
-    if (*(--ptr) != 'f') return NULL;
-
-    // skip digits, extracting <n> (must start with 0)
-    while (isdigit (*(--ptr))); // NB, empty loop body
-    ++ptr; // points to first digit, if any
-    if (*ptr != '0') return NULL;
-    if (sscanf (ptr, "%lu", width) != 1) return NULL;
-
-    // if (prev) char not '%', no match
-    if (*(--ptr) != '%') return NULL;
-
-    // return pointer to '%'
-    return (char *) ptr;
-}

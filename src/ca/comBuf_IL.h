@@ -131,22 +131,6 @@ inline void comBuf::compress ()
     }
 }
 
-inline bool comBuf::flushToWire ( wireSendAdapter &wire )
-{
-    unsigned occupied = this->occupiedBytes ();
-    while ( occupied ) {
-        unsigned nBytes = wire.sendBytes ( &this->buf[this->nextReadIndex], 
-                occupied );
-        if ( nBytes == 0u ) {
-            this->nextReadIndex = this->nextWriteIndex;
-            return false;
-        }
-        this->nextReadIndex += nBytes;
-        occupied = this->occupiedBytes ();
-    }
-    return true;
-}
-
 inline unsigned comBuf::fillFromWire ( wireRecvAdapter &wire )
 {
     unsigned nNewBytes = wire.recvBytes ( &this->buf[this->nextWriteIndex], 

@@ -135,9 +135,8 @@ int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
     CASG        *pcasg;
     cac         *pcac;
-    int         caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -145,7 +144,7 @@ int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
     pcasg = pcac->lookupCASG ( gid );
     if ( ! pcasg ) {
         printf("Bad Sync Group Id\n");
-        caStatus = ECA_BADSYNCGRP;
+        return ECA_BADSYNCGRP;
     }
 
     pcasg->show (1000u);

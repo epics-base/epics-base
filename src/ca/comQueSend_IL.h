@@ -82,20 +82,29 @@ inline void comQueSend_copyIn ( unsigned &nBytesPending,
          tsDLList < comBuf > &comBufList, bufferReservoir &reservoir,
                                const T *pVal, unsigned nElem )
 {
-    unsigned nCopied;
-    
     nBytesPending += sizeof ( T ) * nElem;
 
     comBuf *pComBuf = comBufList.last ();
     if ( pComBuf ) {
-        nCopied = pComBuf->copyIn ( pVal, nElem );
+        unsigned nCopied = pComBuf->copyIn ( pVal, nElem );
+        if ( nElem > nCopied ) {
+            comQueSend_copyInWithReservour ( comBufList, reservoir, &pVal[nCopied], 
+                nElem - nCopied );
+        }
     }
     else {
-        nCopied = 0u;
+        comQueSend_copyInWithReservour ( comBufList, reservoir, pVal, nElem );
     }
+}
 
+template < class T >
+void comQueSend_copyInWithReservour ( 
+         tsDLList < comBuf > &comBufList, bufferReservoir &reservoir,
+                               const T *pVal, unsigned nElem )
+{
+    unsigned nCopied = 0u;
     while ( nElem > nCopied ) {
-        pComBuf = reservoir.fetchOneBuffer ();
+        comBuf *pComBuf = reservoir.fetchOneBuffer ();
         //
         // This fails only if space was not preallocated.
         // See comments at the top of this program on

@@ -893,7 +893,7 @@ private:
     double averagePeriod;
 
     static tsFreeList < class bhe, 1024 > freeList;
-    ~bhe (); // force allocation from freeList
+    epicsShareFunc ~bhe (); // force allocation from freeList
 };
 
 class caErrorCode { 

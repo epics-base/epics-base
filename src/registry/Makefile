@@ -15,12 +15,12 @@ INC += registry.h
 
 SCRIPTS += registerRecordDeviceDriver.pl
 
-registryLibrary_SRCS += registry.c
-registryLibrary_SRCS += registryRecordType.c
-registryLibrary_SRCS += registryDeviceSupport.c
-registryLibrary_SRCS += registryDriverSupport.c
+registry_SRCS += registry.c
+registry_SRCS += registryRecordType.c
+registry_SRCS += registryDeviceSupport.c
+registry_SRCS += registryDriverSupport.c
 
-LIBRARY = registryLibrary
+LIBRARY = registry
 
 OBJS = registerRecordDeviceDriver
 

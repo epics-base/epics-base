@@ -2,7 +2,7 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-LIBRARY = miscLib
+LIBRARY = misc
 
 miscLib_SRCS =  epicsRelease.c
 

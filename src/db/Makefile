@@ -56,7 +56,7 @@ SRCS += initHooks.c
 SRCS += dbcar.c 
 
 
-LIBRARY = dbLib
+LIBRARY = db
 DLL_LIBS = Db Com
 
 include $(TOP)/configure/RULES

@@ -8,9 +8,9 @@ PROD += makeBpt
 
 MENUS += menuConvert.h
 
-bptLibrary_SRCS += cvtBpt.c
+bpt_SRCS += cvtBpt.c
 
-LIBRARY_IOC = bptLibrary
+LIBRARY_IOC = bpt
 DLL_LIBS = Db Com
 
 BPTS += bptTypeJdegC.dbd

@@ -4,9 +4,9 @@ include $(TOP)/configure/CONFIG
 
 INC += epicsDynLink.h
 
-vxComLib_SRCS += veclist.c
-vxComLib_SRCS += epicsDynLink.c
+vxCom_SRCS += veclist.c
+vxCom_SRCS += epicsDynLink.c
 
-LIBRARY_vxWorks += vxComLib
+LIBRARY_vxWorks += vxCom
 
 include $(TOP)/configure/RULES

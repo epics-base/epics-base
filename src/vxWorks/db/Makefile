@@ -6,12 +6,12 @@ INC += drvTS.h
 INC += devLib.h
 INC += tsDefs.h
 
-vxDbLib_SRCS += drvTS.c
-vxDbLib_SRCS += devLib.c
-vxDbLib_SRCS += devLibVxWorks.c
-vxDbLib_SRCS += tsSubr.c
+vxDb_SRCS += drvTS.c
+vxDb_SRCS += devLib.c
+vxDb_SRCS += devLibVxWorks.c
+vxDb_SRCS += tsSubr.c
 
-LIBRARY_vxWorks = vxDbLib
+LIBRARY_vxWorks = vxDb
 
 include $(TOP)/configure/RULES
 

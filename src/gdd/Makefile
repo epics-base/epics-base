@@ -66,7 +66,7 @@ aitConvert_OPT_RTEMS-pc386 = NO
 # suppression in the source code would be too much effort with respect
 # to gdd's limited future
 
-USR_CXXFLAGS_hpux = +W818 +W361 +W392 +W749
+USR_CXXFLAGS_hpux = +W361 +W392 +W655 +W749 +W818 +W930
 
 gdd_RCS_WIN32 = gdd.rc
 

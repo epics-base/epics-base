@@ -13,11 +13,21 @@
 
 <h3>Changes since 3.13.5</h3>
 
-<p><b>iocInit</b></p>
+<p><strong>dbConvert and dbFastLinkConv</strong></p>
+
+<p>When a double precision 0 is converted to a float, instead of 0 the float
+value becomes -FLT_MIN, which is a very small ,value, e.g. -1.175494e-38. </p>
+
+<p><b>iocInit and initHooks</b></p>
 
 <p>initialProcess is now called before interruptAccept. This means that
 initial processing will be done before periodically scanned and I/O Inter
-scanned record s start processing.</p>
+scanned record s start processing. This also changed the order of two of the
+steps in initHooks.h</p>
+
+<p><strong>drvBitBus</strong></p>
+
+<p>A check is made that Irqvector is a multiple of 4.</p>
 
 <p><b>dbCa.c</b></p>
 
@@ -38,6 +48,11 @@ set FALSE when the raw value is successfully read.</p>
 
 <p>In do_sel udf is not set false at the beginning. If selm has an invalid
 value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM) is called.</p>
+
+<p><strong>devMz8310</strong></p>
+
+<p>Changes were made so that this works on the powerPC. Improved IACK
+code.</p>
 
 <p><strong>CA Client Library</strong></p>
 

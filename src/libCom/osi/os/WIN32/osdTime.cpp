@@ -94,7 +94,9 @@ void osiTime::synchronize()
 		// convert the EPICS epoch to file time
 		//
 		win32Stat = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
-		assert (win32Stat!=0);
+        if (win32Stat==0) {
+            throw unableToFetchCurrentTime ();
+        }
 		parm.LowPart = epicsEpochFT.dwLowDateTime;
 		parm.HighPart = epicsEpochFT.dwHighDateTime;
 		epicsEpoch = parm.QuadPart;
@@ -110,7 +112,9 @@ void osiTime::synchronize()
 	GetSystemTimeAsFileTime (&currentTimeFT);
 	// this one is second because QueryPerformanceFrequency()
 	// has forced its code to load
-	assert (QueryPerformanceCounter (&parm)!=0);
+    if (QueryPerformanceCounter (&parm)==0) {
+        throw unableToFetchCurrentTime ();
+    }
 	 
 	perf_last = parm.QuadPart;
 	parm.LowPart = currentTimeFT.dwLowDateTime;

@@ -37,6 +37,10 @@
 #   if _HP_aCC > 033300
 #       define NETIO_PLACEMENT_DELETE
 #   endif
+#elif defined ( __BORLANDC__ )
+#   if __BORLANDC__ > 0x550
+#       define NETIO_PLACEMENT_DELETE
+#   endif
 #else
 #   define NETIO_PLACEMENT_DELETE
 #endif

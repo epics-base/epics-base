@@ -57,6 +57,10 @@
 #   if _HP_aCC > 033300
 #       define CASG_PLACEMENT_DELETE
 #   endif
+#elif defined ( __BORLANDC__ )
+#   if __BORLANDC__ > 0x550
+#       define CASG_PLACEMENT_DELETE
+#   endif
 #else
 #	define CASG_PLACEMENT_DELETE
 #endif

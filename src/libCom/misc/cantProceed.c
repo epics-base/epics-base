@@ -26,8 +26,8 @@ epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size,
 {
     void *mem = calloc(count,size);
     if(mem==0) {
-        errlogPrintf("%s callocMustSucceed failed count %d size %lu\n",
-            errorMessage,count,(unsigned long)size);
+        errlogPrintf("%s callocMustSucceed failed count %lu size %lu\n",
+            errorMessage,(unsigned long)count,(unsigned long)size);
         cantProceed(0);
     }
     return(mem);

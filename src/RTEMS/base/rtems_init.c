@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <errno.h>
 #include <sys/termios.h>
 #include <sys/types.h>
@@ -31,6 +30,7 @@
 #include <epicsThread.h>
 #include <errlog.h>
 #include <logClient.h>
+#include <osiUnistd.h>
 #include <iocsh.h>
 
 /*

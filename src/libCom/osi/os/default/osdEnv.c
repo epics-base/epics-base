@@ -25,6 +25,7 @@
 #include <errlog.h>
 #include <cantProceed.h>
 #include <envDefs.h>
+#include <osiUnistd.h>
 #include "epicsFindSymbol.h"
 
 /*

@@ -1,0 +1,43 @@
+
+The templates supplied with EPICS base are in $(EPICS)/base/src/cxxTemplates
+
+In Stroustrups's "The C++ Programming Language" Appendix A: r.14.9
+(ANSI/ISO resolutions) a mechanism is described for the explicit 
+instantiation of template member functions (that are not inline). 
+At this time some compilers do not support this mechanism (and use
+a template database or smart linker instead). Other compilers 
+(such as g++) provide only limited support for other forms of
+instantiation.
+
+Since there is no defacto standard mechanism for instatiating
+templates at this time we are defining the preprocessor flag 
+EXPL_TEMPL in the build system when the compiler supports
+explicit instantiation. 
+
+EPICS codes that use templates may need to include a code block
+as follow that instantiates the template only once into each
+program.
+
+#include <classXYZ.h>
+#include <templXXX.h>
+#include <templXXX.cc>
+
+//
+// if the compiler supports explicit instantiation of
+// template member functions
+//
+#if defined(EXPL_TEMPL)
+        //
+        // From Stroustrups's "The C++ Programming Language"
+        // Appendix A: r.14.9
+        //
+        // This explicitly instantiates the template class's member
+        // functions into "templInst.o"
+        //
+        template class templXXX <classXYZ>;
+#endif
+
+Jeff Hill 3-6-97
+johill@lanl.gov
+
+

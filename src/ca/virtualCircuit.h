@@ -126,7 +126,7 @@ public:
     comQueRecv ();
     ~comQueRecv ();
     unsigned occupiedBytes () const;
-    unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
+    unsigned copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes );
     unsigned removeBytes ( unsigned nBytes );
     void pushLastComBufReceived ( comBuf & );
     void clear ();
@@ -139,15 +139,15 @@ public:
     epicsFloat32 popFloat32 ();
     epicsFloat64 popFloat64 ();
     void popString ( epicsOldString * );
-
     class insufficentBytesAvailable {};
 private:
     tsDLList < comBuf > bufs;
+    unsigned nBytesPending;
 };
 
 class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
+    tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void sendBacklogProgressNotify ();
@@ -159,7 +159,8 @@ public:
     void show ( unsigned level ) const;
 private:
     const double period;
-    epicsTimer &timer;
+    epicsTimerQueue & queue;
+    epicsTimer & timer;
     tcpiiu &iiu;
     bool responsePending;
     bool beaconAnomaly;
@@ -174,8 +175,9 @@ public:
     void cancel ();
 private:
     const double period;
-    epicsTimer &timer;
-    tcpiiu &iiu;
+    epicsTimerQueue & queue;
+    epicsTimer & timer;
+    tcpiiu & iiu;
     expireStatus expire ( const epicsTime & currentTime );
 };
 
@@ -231,6 +233,7 @@ public:
     void blockUntilSendBacklogIsReasonable ( epicsMutex & );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
+    void requestRecvProcessPostponedFlush ();
 
     bool ca_v41_ok () const;
     bool ca_v42_ok () const;
@@ -279,6 +282,7 @@ private:
     bool sockCloseCompleted;
     bool f_trueOnceOnly;
     bool earlyFlush;
+    bool recvProcessPostponedFlush;
 
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
@@ -302,7 +306,7 @@ private:
     void clearChannelRequest ( nciu & );
     void subscriptionRequest ( nciu &, netSubscription &subscr );
     void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
-
+    void flushIfRecvProcessRequested ();
     bool flush (); // only to be called by the send thread
 };
 
@@ -373,18 +377,14 @@ inline comBuf * comQueSend::popNextComBufToSend ()
     return pBuf;
 }
 
+inline unsigned comQueRecv::occupiedBytes () const
+{
+    return this->nBytesPending;
+}
 
 inline epicsInt8 comQueRecv::popInt8 ()
 {
     return static_cast < epicsInt8 > ( this->popUInt8() );
-}
-
-inline epicsUInt16 comQueRecv::popUInt16 ()
-{
-    epicsUInt16 tmp;
-    tmp  = this->popUInt8() << 8u;
-    tmp |= this->popUInt8() << 0u;
-    return tmp;
 }
 
 inline epicsInt16 comQueRecv::popInt16 ()
@@ -392,16 +392,6 @@ inline epicsInt16 comQueRecv::popInt16 ()
     epicsInt16 tmp;
     tmp  = this->popInt8() << 8u;
     tmp |= this->popInt8() << 0u;
-    return tmp;
-}
-
-inline epicsUInt32 comQueRecv::popUInt32 ()
-{
-    epicsUInt32 tmp;
-    tmp  = this->popUInt8() << 24u;
-    tmp |= this->popUInt8() << 16u;
-    tmp |= this->popUInt8() << 8u;
-    tmp |= this->popUInt8() << 0u;
     return tmp;
 }
 
@@ -517,6 +507,14 @@ inline bool tcpiiu::trueOnceOnly ()
 inline SOCKET tcpiiu::getSock () const
 {
     return this->sock;
+}
+
+inline void tcpiiu::flushIfRecvProcessRequested ()
+{
+    if ( this->recvProcessPostponedFlush ) {
+        this->flushRequest ();
+        this->recvProcessPostponedFlush = false;
+    }
 }
 
 #endif // ifdef virtualCircuith

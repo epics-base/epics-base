@@ -64,8 +64,8 @@ void netReadNotifyIO::completion (
     arrayElementCount count, const void * pData )
 {
     //guard.assertIdenticalMutex ( this->mutex );
-    this->notify.completion ( guard, type, count, pData );
     this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->notify.completion ( guard, type, count, pData );
     this->~netReadNotifyIO ();
     recycle.recycleReadNotifyIO ( guard, *this );
 }
@@ -87,9 +87,9 @@ void netReadNotifyIO::exception (
     int status, const char *pContext )
 {
     //guard.assertIdenticalMutex ( this->mutex );
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->notify.exception ( 
         guard, status, pContext, UINT_MAX, 0u );
-    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->~netReadNotifyIO ();
     recycle.recycleReadNotifyIO ( guard, *this );
 }
@@ -101,9 +101,9 @@ void netReadNotifyIO::exception (
     unsigned type, arrayElementCount count )
 {
     //guard.assertIdenticalMutex ( this->mutex )
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->notify.exception ( 
         guard, status, pContext, type, count );
-    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->~netReadNotifyIO ();
     recycle.recycleReadNotifyIO ( guard, *this );
 }

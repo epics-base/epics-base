@@ -35,6 +35,9 @@ print << "END" ;
 #include <stddef.h>
 #include <stdio.h>
 
+#include "dbBase.h"
+#include "dbStaticLib.h"
+#include "dbAccess.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "drvSup.h"
@@ -120,32 +123,25 @@ int registerRecordDeviceDriver(DBBASE *pdbbase)
 {
     int i;
     int result;
-    static int alreadyCalled = 0;
-    if(alreadyCalled) {
-        printf(\"registerRecordDeviceDriver called multiple times\\n\");
-        return(-1);
-    }
+
 END
 if($numberRecordType>0) {
     print << "END" ;
     for(i=0; i< $numberRecordType;  i++ ) {
-        result = registryRecordTypeAdd(recordTypeNames[i],&rtl[i]);
-        if(result) {
-            recordTypeLocation *precordTypeLocation;
-            int (*sizeOffset)(dbRecordType *pdbRecordType);
-            DBENTRY dbEntry;
+        recordTypeLocation *precordTypeLocation;
+        int (*sizeOffset)(dbRecordType *pdbRecordType);
+        DBENTRY dbEntry;
 
-            dbInitEntry(pdbbase,&dbEntry);
-            precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
-            sizeOffset = precordTypeLocation->sizeOffset;
-            if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
-                printf(\"registerRecordDeviceDriver failed %s\\n\",
-                    recordTypeNames[i]);
-            } else {
-                sizeOffset(dbEntry.precordType);
-            }
+        result = registryRecordTypeAdd(recordTypeNames[i],&rtl[i]);
+        if(!result) continue;
+        dbInitEntry(pdbbase,&dbEntry);
+        precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
+        sizeOffset = precordTypeLocation->sizeOffset;
+        if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
+            printf(\"registerRecordDeviceDriver failed %s\\n\",
+                recordTypeNames[i]);
         } else {
-            printf(\"registerRecordDeviceDriver failed %s\\n\",recordTypeNames[i]);
+            sizeOffset(dbEntry.precordType);
         }
     }
 END
@@ -154,9 +150,7 @@ if($numberDeviceSupport>0) {
     print << "END" ;
     for(i=0; i< $numberDeviceSupport;  i++ ) {
         result = registryDeviceSupportAdd(deviceSupportNames[i],devsl[i]);
-        if(!result)
-            printf(\"registerRecordDeviceDriver failed %s\\n\",
-            \"deviceSupportNames[i]\");
+        if(!result) continue;
     }
 END
 }

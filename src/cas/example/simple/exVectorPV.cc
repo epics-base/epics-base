@@ -69,7 +69,7 @@ void exVectorPV::scan()
 	//
 	this->currentTime = osiTime::getCurrent();
  
-	pDD = new gddAtomic (gddAppType_value, aitEnumFloat32, 
+	pDD = new gddAtomic (gddAppType_value, aitEnumFloat64, 
 			1u, this->info.getElementCount());
 	if ( ! pDD.valid () ) {
 		return;
@@ -198,7 +198,7 @@ caStatus exVectorPV::updateValue(smartConstGDDPointer pValueIn)
 	// (so that old values that may be referenced on the
 	// event queue are not replaced)
 	//
-	pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat32, 
+	pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat64, 
 		1u, this->info.getElementCount());
 	if ( ! pNewValue.valid () ) {
 		return S_casApp_noMemory;

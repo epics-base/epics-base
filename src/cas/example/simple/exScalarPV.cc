@@ -42,7 +42,7 @@ void exScalarPV::scan()
 	//
 	this->currentTime = osiTime::getCurrent();
 
-	pDD = new gddScalar (gddAppType_value, aitEnumFloat32);
+	pDD = new gddScalar (gddAppType_value, aitEnumFloat64);
 	if ( ! pDD.valid () ) {
 		return;
 	}

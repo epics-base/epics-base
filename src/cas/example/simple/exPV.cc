@@ -145,7 +145,7 @@ const char *exScanTimer::name() const
 //
 aitEnum exPV::bestExternalType() const
 {
-	return aitEnumFloat32;
+	return aitEnumFloat64;
 }
 
 //

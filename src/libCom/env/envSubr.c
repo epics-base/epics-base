@@ -42,6 +42,7 @@
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "epicsStdioRedirect.h"
 #include "errMdef.h"
 #include "envDefs.h"
 #include "epicsAssert.h"
@@ -343,7 +344,7 @@ const ENV_PARAM *pParam)	/* pointer to config param structure */
 
     pVal = envGetConfigParamPtr(pParam);
     if (pVal == NULL)
-	fprintf(stderr, "%s is undefined\n", pParam->name);
+	fprintf(stdout, "%s is undefined\n", pParam->name);
     else
 	fprintf(stdout,"%s: %s\n", pParam->name, pVal);
     return 0;

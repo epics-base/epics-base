@@ -48,6 +48,7 @@
 #define INCLcaerrh
 
 #include <shareLib.h>
+#include <epicsTypes.h>
 
 #ifndef HDRVERSIONID
 #       define HDRVERSIONID(NAME,VERS)
@@ -153,9 +154,9 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 
 
 #ifndef CA_ERROR_GLBLSOURCE
-epicsShareExtern const char	*ca_message_text[];
+epicsShareExtern READONLY char	*ca_message_text[];
 #else
-const char	*ca_message_text[]
+READONLY char	*ca_message_text[]
 =
 {
 "Normal successful completion",
@@ -212,6 +213,10 @@ const char	*ca_message_text[]
 };
 #endif
 
-const char *ca_message(long ca_status);
+#ifdef __STDC__
+READONLY char *ca_message(long ca_status);
+#else /* __STDC__ */
+READONLY char *ca_message();
+#endif
 
 #endif

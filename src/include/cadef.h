@@ -145,6 +145,7 @@ typedef struct ca_access_rights{
 
 
 /* Format for the arguments to user connection handlers 		*/
+struct channel_in_use;
 struct	connection_handler_args{
 	struct channel_in_use	*chid;	/* Channel id	 		*/
 	long			op;	/* External codes for CA op	*/
@@ -941,7 +942,11 @@ void *  /*      PVALUE  R       pointer to new channel value of type    */
 /*
  * print status of a sync group
  */
+#ifdef CAC_FUNC_PROTO
 int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid);
+#else /*CAC_FUNC_PROTO*/
+int epicsShareAPI ca_sg_stat();
+#endif /*CAC_FUNC_PROTO*/
 
 /*
  * CA_MODIFY_USER_NAME()

@@ -9,4 +9,7 @@
 
 # Include definitions common to all solaris-sparc  target archs
 include $(CONFIG)/os/CONFIG.Common.solaris-sparc
+# CONFIG.Common.solaris-sparc
+
+OP_SYS_LDLIBS_8 = -lCrun -lc
 

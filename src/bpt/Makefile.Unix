@@ -9,7 +9,7 @@ PROD = makeBpt
 
 include $(TOP)/config/RULES.Unix
 
-$(PROD): $(OBJS) $(DEPLIBS)
+$(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) -o $@ ${OBJS} $(LDLIBS)
 

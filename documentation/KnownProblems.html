@@ -8,34 +8,10 @@
   <meta name="GENERATOR" content="amaya 5.1" />
 </head>
 
-<h4> January 17, 2003</h4>
+<h4> April 5, 2003</h4>
 
 <body>
-<h1 style="text-align: center">EPICS base R3.14.1: Known Problems</h1>
+<h1 style="text-align: center">EPICS base R3.14.2: Known Problems</h1>
 
 <h3>Known Bugs</h3>
 
-<p>The portable CA server does not work on solaris.</p>
-
-<h3>To Do Posix</h3>
-<ul>
-  <li>Currently thread priorities are not turned on, i.e. all threads run at
-    the same priority.</li>
-</ul>
-
-<h3>Build Rules</h3>
-<ul>
-  <li>A SHRLIB_SEARCH_DIRS += should be generated for everything found in
-    configure/RELEASE</li>
-</ul>
-
-<h3>For shared library builds on solaris</h3>
-<ul>
-  <li>Change "SYS_SHRLIB_LIBS_8 += Crun" to "SYS_SHRLIB_LIBS_8 += Crun Cstd" in 
-configure/os/CONFIG.Common.solaris-sparc and configure/os/CONFIG.Common.solaris-x86
-and change "SYS_DLL_LIBS_solaris_8 = Crun" to "SYS_DLL_LIBS_solaris_8 = Crun Cstd" in 
-config/CONFIG.Host.solaris and config/CONFIG.Host.solarisGnu.</li>
-</ul>
-
-</body>
-</html>

@@ -48,7 +48,7 @@
 
 #ifdef vxWorks
 #include		<ioLib.h>
-#include		<taskParams.h>
+#include		<task_params.h>
 #endif
 
 #include		<types.h>

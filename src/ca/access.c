@@ -60,8 +60,8 @@
 #include		<vxWorks.h>
 
 #ifdef vxWorks
-# include		<taskLib.h>
-# include		<taskParams.h>
+#include		<taskLib.h>
+#include		<task_params.h>
 #endif
 
 /*

@@ -60,6 +60,7 @@ typedef epicsFloat32	dbr_float_t;
 typedef epicsFloat64	dbr_double_t;
 typedef epicsUInt16	dbr_put_ackt_t;
 typedef epicsUInt16	dbr_put_acks_t;
+typedef epicsOldString	dbr_class_name_t;
 
 /* database field types */
 #define DBF_STRING	0

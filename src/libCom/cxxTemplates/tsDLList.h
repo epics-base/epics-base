@@ -60,7 +60,7 @@ class tsDLNode {
     friend class tsDLBwdIter<T>; // deprecated
 public:
     tsDLNode();
-    tsDLNode<T> operator = (const tsDLNode<T> &) const;
+    tsDLNode <T> operator = (const tsDLNode<T> &) const;
 private:
     T   *pNext;
     T   *pPrev;

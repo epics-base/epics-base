@@ -84,7 +84,7 @@ void nciu::destroy ()
     this->cacCtx.destroyChannel ( *this );
 }
 
-void nciu::operator delete ( void * pCadaver )
+void nciu::operator delete ( void * )
 { 
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

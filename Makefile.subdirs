@@ -1,10 +1,13 @@
 #
 # base $Id$
 #
-# "Diabolical" EPICS Makefile For Top-Level Subdirectory Recursions
+# "Diabolical" EPICS Makefile For Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
 # $Log$
+# Revision 1.8  1994/08/12  18:51:28  mcn
+# Added Log and/or Id.
+#
 #
 
 EPICS=..
@@ -13,13 +16,6 @@ include $(EPICS)/config/CONFIG
 MAKEOPT=${MFLAGS} -f Makefile.${BUILD_TYPE}
 
 all: build
-
-depends:
-	@(for DIR in ${DIRS};					\
-		do						\
-			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
-			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
-		done)
 
 pre_build:
 	@(for DIR in ${DIRS};					\
@@ -55,4 +51,12 @@ install:
 			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
+
+depends:
+	@(for DIR in ${DIRS};					\
+		do						\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+		done)
+
 

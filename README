@@ -19,7 +19,7 @@ $Id$
    cp CONFIG_ARCH.mv167 CONFIG_ARCH.YOUR_ARCH
    edit CONFIG_ARCH.YOUR_ARCH    - For compiler flags / etc.
 
-   cp CONFIG_CLASS_vx.68k CONFIG_CLASS_vx.YOUR_ARCH_CLASS
+   cp CONFIG.Vx.68k CONFIG.Vx.YOUR_ARCH_CLASS
        - ONLY IF you are adding a new architecture class,
                  see note in Appendix A.
 
@@ -28,7 +28,9 @@ $Id$
 1.3  To build EPICS:
 
    make			- To build and install EPICS.
-   make clean		- To clean temporary object files.
+   make clean		- To clean temporary object files.  Clean will
+				remove files from ALL O.ARCH dirs, not
+				just those specified in BUILD_ARCHS.
 
 1.4  To create an EPICS release:
 
@@ -36,12 +38,18 @@ $Id$
 				    version number.
    tools/MakeRelease		- To create release file.
    tools/MakeRelease -b		- To create release file WITH BINARIES.
+                  (The above do NOT generate dependencies)
+   -or-
+
+   make release                 - Will make Tar file, but only after
+					generating dependencies first.
+   make built_release           - Same as above, but WITH BINARIES.
 
 1.5  "Partial" build commands:
 
    make clean.sun4		- Cleans sun4 binaries in O.sun4 dirs only
    make install.sun4		- Builds sun4 only
-   make install.mv167		- Builds mv167 only (a sun4 build must be
+   make install.mv167		- Builds mv167 only (a HOST build must be
 					complete before this can be
 					issued)
 
@@ -52,8 +60,13 @@ NOTES:
 
    2. EPICS binaries are kept in the bin/ARCH and lib/ARCH directories. 
         EPICS shellscripts are kept in the tools directory.
+
+   3. During a normal build (a "make" or "make install"), the "depends"
+        dependency will NOT be invoked.  Only if "make depends" is run
+        explicitly, or a "make release" is performed will dependencies be
+        generated.
    
-   3. Temporary objects are stored in src/DIR/O.ARCH, so one can store
+   4. Temporary objects are stored in src/DIR/O.ARCH, so one can store
         objects for multiple architectures at the same time.  While
 	developing source for EPICS, use aliases to facilitate building
 	objects within these directories, e.g.:
@@ -61,7 +74,7 @@ NOTES:
 		alias make167 "make -f Makefile.Vx T_A=mv167"
 		make167 O.mv167/dbAccess.o
 
-	This example instructs make to build dbAccess.o for the
+	The above example instructs make to build dbAccess.o for the
 	167 target using the Vx makefile.
 
 ----------------------------------------------------------------------------
@@ -75,8 +88,7 @@ CONFIG_ARCH.ARCH             -         c             c            s
 CONFIG_BASE                  m         m             m            s
 CONFIG.Unix.ARCH_CLASS       m         -             c*           s
 CONFIG.Vx.ARCH_CLASS         m         c*            -            s
-CONFIG_COMMON                -         -             -            x
-CONFIG_vx                    -         -             -            s
+CONFIG_COMMON                -         -             -            s
 HRULES                       -         -             -            x
 RULES                        -         -             -            x
 RULES.Vx                     -         -             -            b
@@ -103,24 +115,26 @@ RULES.Unix                   -         -             -            b
 
  src/db/Makefile.Vx     (An example EPICS makefile)
     ^   ^
-    |   +-- 2. RULES.Vx
+    |   +--- 2. RULES.Vx
     |             Make Dependency Rules.
     |
-    +------ 1. CONFIG_vx
-                ^  ^  ^
-                |  |  |
-                |  |  +---- 1. CONFIG_BASE
-                |  |                 HOST_ARCH = sun4
-                |  |                 BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
-                |  |                 VX_DIR = /vxworks
-                |  |                 Lots More.
-                |  +------- 2. CONFIG_ARCH.hkv2f
-                |                    BUILD_TYPE = Vx
-                |                    ARCH_CLASS = 68k 
-                |                    Arch Specific Compiler Flag Setup
-                +---------- 3. CONFIG.Vx.68k
-                                     Directory Setup
-                                     Compiler/Utility Setup
+    +------- 1. CONFIG
+                ^ ^ ^ ^
+                | | | |
+                | | | +--- 1. CONFIG_BASE
+                | | |               HOST_ARCH = sun4
+                | | |               BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+                | | |               VX_DIR = /vxworks
+                | | |               Lots More.
+                | | +----- 2. CONFIG_COMMON
+                | |                 General info about base.
+                | +------- 3. CONFIG_ARCH.hkv2f
+                |                   BUILD_TYPE = Vx
+                |                   ARCH_CLASS = 68k 
+                |                   Arch Specific Compiler Flag Setup
+                +--------- 4. CONFIG.Vx.68k
+                                    Directory Setup
+                                    Compiler/Utility Setup
 
 ----------------------------  sun4  example --------------------------------
 
@@ -130,20 +144,22 @@ RULES.Unix                   -         -             -            b
     |             Make Dependency Rules.
     |
     +------- 1. CONFIG
-                ^  ^  ^
-                |  |  |
-                |  |  +---- 1. CONFIG_BASE
-                |  |                 HOST_ARCH = sun4
-                |  |                 BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
-                |  |                 VX_DIR = /vxworks
-                |  |                 Lots More.
-                |  +------- 2. CONFIG_ARCH.sun4
-                |                    BUILD_TYPE = Unix
-                |                    ARCH_CLASS = sun4 
-                |                    Arch Specific Compiler Flag Setup
-                +---------- 3. CONFIG.Unix.sun4
-                                     Directory Setup
-                                     Compiler/Utility Setup
+                ^ ^ ^ ^
+                | | | |
+                | | | +--- 1. CONFIG_BASE
+                | | |               HOST_ARCH = sun4
+                | | |               BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+                | | |               VX_DIR = /vxworks
+                | | |               Lots More.
+                | | +----- 2. CONFIG_COMMON
+                | |                 General info about base.
+                | +------- 2. CONFIG_ARCH.sun4
+                |                   BUILD_TYPE = Unix
+                |                   ARCH_CLASS = sun4 
+                |                   Arch Specific Compiler Flag Setup
+                +--------- 3. CONFIG.Unix.sun4
+                                    Directory Setup
+                                    Compiler/Utility Setup
 
 ----------------------------------------------------------------------------
    Part 4  ---  EPICS dependencies

@@ -17,18 +17,15 @@
 #         is complete.
 #
 # $Log$
+# Revision 1.10  1994/08/12  18:51:29  mcn
+# Added Log and/or Id.
+#
 #
 
 EPICS=..
 include $(EPICS)/config/CONFIG_BASE
 
 all: install
-
-depends:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
 
 pre_build:
 	@(for ARCH in ${BUILD_ARCHS};					\
@@ -60,11 +57,17 @@ install:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-release: install
+depends:
+	@(for ARCH in ${BUILD_ARCHS};					\
+		do							\
+			${MAKE} ${MFLAGS} $@.$$ARCH;			\
+		done)
+
+release: depends install
 	@echo TOP: Creating Release...
 	@tools/MakeRelease
 
-built_release: install
+built_release: depends install
 	@echo TOP: Creating Fully Built Release...
 	@tools/MakeRelease -b
 
@@ -100,25 +103,12 @@ dirs.%:
 	@tools/MakeDirs $*
 	@tools/TouchFlag $@ ${TOUCH}
 
-# Depends RULE  syntax:  make depends.arch
-#               e.g.:    make depends.mv167
-#
-#  Create dependencies for an architecture.  We MUST
-#     do this separately for each architecture because
-#     some things may be included on a per architecture 
-#     basis.
-
-depends.%: dirs.%
-	@echo $*: Performing Make Depends
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
-	@tools/TouchFlag $@ ${TOUCH}
-
 # Pre_build RULE  syntax:  make pre_build.arch
 #                  e.g.:   make pre_build.arch
 #
 #  Build libraries  (depends must be finished)
 
-pre_build.%: depends.%
+pre_build.%: dirs.%
 	@echo $*: Performing Pre Build
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs pre_build
 	@tools/TouchFlag $@ ${TOUCH}
@@ -172,6 +162,24 @@ build.%: install_libs.%
 install.%: build.%
 	@echo $*: Installing
 	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
+	@tools/TouchFlag $@ ${TOUCH}
+
+# Depends RULE  syntax:  make depends.arch
+#               e.g.:    make depends.mv167
+#
+#  Create dependencies for an architecture.  We MUST
+#     do this separately for each architecture because
+#     some things may be included on a per architecture 
+#     basis.
+#
+#  This dependency must be invoked manually, it is
+#     not automatic in the build.  However, since depends
+#     are precomputed, this does not have to be done by
+#     most sites.
+
+depends.%: dirs.%
+	@echo $*: Performing Make Depends
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Illegal Syntax

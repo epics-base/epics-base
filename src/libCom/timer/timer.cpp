@@ -29,6 +29,8 @@
  *
  */
 
+#include <typeinfo>
+
 #define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"

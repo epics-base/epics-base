@@ -579,7 +579,8 @@ void tcpiiu::initiateCleanShutdown ( epicsGuard < cacMutex > & )
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard, 
                                     epicsGuard <cacMutex > & guard )
 {
-    if ( this->state != iiucs_abort_shutdown ) {
+    iiu_conn_state oldState = this->state;
+    if ( oldState != iiucs_abort_shutdown ) {
         this->state = iiucs_abort_shutdown;
         {
             epicsGuardRelease < cacMutex > guardRelease ( guard );
@@ -600,10 +601,12 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
 
         // linux threads in recv() dont wakeup unless we also
         // call shutdown ( close() by itself is not enough )
-        status = ::shutdown ( this->sock, SD_BOTH );
-        if ( status ) {
-            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
+        if ( oldState != iiucs_connecting ) {
+            status = ::shutdown ( this->sock, SD_BOTH );
+            if ( status ) {
+                errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
+                    SOCKERRSTR (SOCKERRNO) );
+            }
         }
 
         //

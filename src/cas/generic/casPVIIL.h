@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1998/06/16 02:21:49  jhill
+ * dont require that a server must exist before a PV is created
+ *
  * Revision 1.11  1997/08/05 00:47:12  jhill
  * fixed warnings
  *
@@ -203,12 +206,15 @@ inline void casPVI::deleteSignal()
 //
 inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 {
-	int dbr = gddAitToDbr[(*this)->bestExternalType()];
-	if (INVALID_DB_FIELD(dbr)) {
+	unsigned bestAIT = (*this)->bestExternalType();
+
+	if (bestAIT<NELEMENTS(gddAitToDbr)&&bestAIT!=aitEnumInvalid) {
+		dbrType = gddAitToDbr[bestAIT];
+		return S_cas_success;
+	}
+	else {
 		return S_cas_badType;
 	}
-	dbrType = dbr;
-	return S_cas_success;
 }
 
 #include "casChannelIIL.h" // inline func for casChannelI
@@ -248,7 +254,7 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
 inline aitIndex casPVI::nativeCount() 
 {
 	if ((*this)->maxDimension()==0u) {
-		return 1u; // scaler
+		return 1u; // scalar
 	}
 	return (*this)->maxBound(0u);
 }

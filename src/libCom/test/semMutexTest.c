@@ -17,7 +17,6 @@ of this distribution.
 #include <time.h>
 
 #include "osiThread.h"
-#include "osiSem.h"
 #include "errlog.h"
 
 

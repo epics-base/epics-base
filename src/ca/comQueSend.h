@@ -65,6 +65,7 @@ private:
     void copy_dbr_char ( const void *pValue, unsigned nElem );
     void copy_dbr_long ( const void *pValue, unsigned nElem );
     void copy_dbr_double ( const void *pValue, unsigned nElem );
+    void pushComBuf ( comBuf & );
     typedef void ( comQueSend::*copyFunc_t ) (  
         const void *pValue, unsigned nElem );
     static const copyFunc_t dbrCopyVector [39];
@@ -90,10 +91,7 @@ private:
             comBuf * pComBuf = new comBuf;
             unsigned nNew = pComBuf->push ( &pVal[nCopied], nElem - nCopied );
             nCopied += nNew;
-            this->bufs.add ( *pComBuf );
-            if ( ! this->pFirstUncommited.valid() ) {
-                this->pFirstUncommited = this->bufs.lastIter ();
-            }
+            this->pushComBuf ( *pComBuf );
         }
     }
 
@@ -104,19 +102,15 @@ private:
     template < class T >
     inline void push ( const T & val )
     {
-        comBuf * pComBuf = this->bufs.last ();
-        if ( pComBuf ) {
-            if ( pComBuf->push ( val ) ) {
-                return;
-            }
+        register comBuf * pComBuf = this->bufs.last ();
+        if ( pComBuf && pComBuf->push ( val ) ) {
+            return;
         }
         pComBuf = new comBuf;
         assert ( pComBuf->push ( val ) );
-        this->bufs.add ( *pComBuf );
-        if ( ! this->pFirstUncommited.valid() ) {
-            this->pFirstUncommited = this->bufs.lastIter ();
-        }
+        this->pushComBuf ( *pComBuf );
     }
+
 	comQueSend ( const comQueSend & );
 	comQueSend & operator = ( const comQueSend & );
 };
@@ -159,6 +153,14 @@ inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
 inline void comQueSend::push_dbr_type ( unsigned type, const void *pVal, unsigned nElem )
 {
     ( this->*dbrCopyVector [type] ) ( pVal, nElem );
+}
+
+inline void comQueSend::pushComBuf ( comBuf & cb )
+{
+    this->bufs.add ( cb );
+    if ( ! this->pFirstUncommited.valid() ) {
+        this->pFirstUncommited = this->bufs.lastIter ();
+    }
 }
 
 inline unsigned comQueSend::occupiedBytes () const

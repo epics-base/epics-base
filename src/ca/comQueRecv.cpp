@@ -81,6 +81,13 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
     return totalBytes;
 }
 
+void comQueRecv::popString ( epicsOldString *pStr )
+{
+    for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
+        pStr[0][i] = this->popInt8 ();
+    }
+}
+
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 {
     bufIn.commitIncomming ();
@@ -101,79 +108,50 @@ void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
     }
 }
 
-epicsUInt8 comQueRecv::popUInt8 ()
+// 1) split between buffers expected to run slower
+// 2) using canonical unsigned tmp avoids ANSI C conversions to int
+// 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
+epicsUInt16 comQueRecv::multiBufferPopUInt16 ()
 {
-    comBuf *pComBuf = this->bufs.first ();
-    if ( pComBuf ) {
-        epicsUInt8 tmp = pComBuf->popUInt8 ();
-        if ( pComBuf->occupiedBytes() == 0u ) {
-            this->bufs.remove ( *pComBuf );
-            pComBuf->destroy ();
-        }
-        this->nBytesPending--;
-        return tmp;
+    epicsUInt16 tmp;
+    if ( this->occupiedBytes() >= sizeof (tmp) ) {
+        unsigned byte1 = this->popUInt8();
+        unsigned byte2 = this->popUInt8();
+        tmp = static_cast <epicsUInt16> ( byte1 << 8u | byte2 );
     }
-    throw insufficentBytesAvailable ();
-    return 0;                   // make compiler happy
+    else {
+        comBuf::throwInsufficentBytesException ();
+        tmp = 0u;
+    }
+    return tmp;
 }
 
-// optimization here complicates this function somewhat
-epicsUInt16 comQueRecv::popUInt16 ()
+// 1) split between buffers expected to run slower
+// 2) using canonical unsigned temporary avoids ANSI C conversions to int
+// 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
+epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
 {
-    comBuf *pComBuf = this->bufs.first ();
-    if ( pComBuf ) {
-        epicsUInt16 tmp;
-        try {
-            // try first for all in one buffer efficent version
-            tmp = pComBuf->popUInt16 ();
-            if ( pComBuf->occupiedBytes() == 0u ) {
-                this->bufs.remove ( *pComBuf );
-                pComBuf->destroy ();
-            }
-            this->nBytesPending -= sizeof( tmp );
-        }
-        catch ( insufficentBytesAvailable & ) {
-            // 1) split between buffers expected to run slower
-            // 2) using canonical unsigned tmp avoids ANSI C conversions to int
-            // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
-            unsigned byte1 = this->popUInt8();
-            unsigned byte2 = this->popUInt8();
-            tmp = static_cast <epicsUInt16> ( byte1 << 8u | byte2 );
-        }
-        return tmp;
+    epicsUInt32 tmp;
+    if ( this->occupiedBytes() >= sizeof (tmp) ) {
+        // 1) split between buffers expected to run slower
+        // 2) using canonical unsigned temporary avoids ANSI C conversions to int
+        // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
+        unsigned byte1 = this->popUInt8();
+        unsigned byte2 = this->popUInt8();
+        unsigned byte3 = this->popUInt8();
+        unsigned byte4 = this->popUInt8();
+        tmp = static_cast <epicsUInt32>
+            ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
     }
-    throw insufficentBytesAvailable ();
-    return 0; // make compiler happy
+    else {
+        comBuf::throwInsufficentBytesException ();
+        tmp = 0u; // avoid compiler warnings
+    }
+    return tmp;
 }
 
-// optimization here complicates this function somewhat
-epicsUInt32 comQueRecv::popUInt32 ()
+void comQueRecv::removeAndDestroyBuf ( comBuf & buf )
 {
-    comBuf *pComBuf = this->bufs.first ();
-    if ( pComBuf ) {
-        epicsUInt32 tmp;
-        try {
-            // try first for all in one buffer efficent version 
-            tmp = pComBuf->popUInt32 ();
-            if ( pComBuf->occupiedBytes() == 0u ) {
-                this->bufs.remove ( *pComBuf );
-                pComBuf->destroy ();
-            }
-            this->nBytesPending -= sizeof ( tmp );
-        }
-        catch ( insufficentBytesAvailable & ) {
-            // 1) split between buffers expected to run slower
-            // 2) using canonical unsigned temporary avoids ANSI C conversions to int
-            // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
-            unsigned byte1 = this->popUInt8();
-            unsigned byte2 = this->popUInt8();
-            unsigned byte3 = this->popUInt8();
-            unsigned byte4 = this->popUInt8();
-            tmp = static_cast <epicsUInt32>
-                ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
-        }
-        return tmp;
-    }
-    throw insufficentBytesAvailable ();
-    return 0; // make compiler happy
+    this->bufs.remove ( buf );
+    buf.destroy ();
 }

@@ -83,6 +83,7 @@ public:
     epicsUInt8 popUInt8 ();
     epicsUInt16 popUInt16 ();
     epicsUInt32 popUInt32 ();
+    static void throwInsufficentBytesException ();
     class insufficentBytesAvailable {};
 protected:
     ~comBuf ();
@@ -93,7 +94,6 @@ private:
     epicsUInt8 buf [ comBufSize ];
     unsigned unoccupiedElem ( unsigned elemSize, unsigned nElem );
     unsigned occupiedElem ( unsigned elemSize, unsigned nElem );
-    void throwInsufficentBytesException ();
     static epicsSingleton < tsFreeList < class comBuf, 0x20 > > pFreeList;
 };
 
@@ -374,8 +374,8 @@ inline unsigned comBuf::removeBytes ( unsigned nBytes )
 
 inline epicsUInt8 comBuf::popUInt8 ()
 {
-    if ( this->occupiedBytes () == 0u ) {
-        this->throwInsufficentBytesException ();
+    if ( this->occupiedBytes () < 1u ) {
+        comBuf::throwInsufficentBytesException ();
     }
     return this->buf[ this->nextReadIndex++ ];
 }
@@ -383,7 +383,7 @@ inline epicsUInt8 comBuf::popUInt8 ()
 inline epicsUInt16 comBuf::popUInt16 ()
 {
     if ( this->occupiedBytes () < 2u ) {
-        this->throwInsufficentBytesException ();
+        comBuf::throwInsufficentBytesException ();
     }
     unsigned byte1 = this->buf[ this->nextReadIndex++ ];
     unsigned byte2 = this->buf[ this->nextReadIndex++ ];
@@ -393,14 +393,14 @@ inline epicsUInt16 comBuf::popUInt16 ()
 inline epicsUInt32 comBuf::popUInt32 ()
 {
     if ( this->occupiedBytes () < 4u ) {
-        this->throwInsufficentBytesException ();
+        comBuf::throwInsufficentBytesException ();
     }
     unsigned byte1 = this->buf[ this->nextReadIndex++ ];
     unsigned byte2 = this->buf[ this->nextReadIndex++ ];
     unsigned byte3 = this->buf[ this->nextReadIndex++ ];
     unsigned byte4 = this->buf[ this->nextReadIndex++ ];
-    return static_cast < epicsUInt32 >
-        ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392    }
+    return static_cast < epicsUInt32 > 
+        ( byte1 << 24u | byte2 << 16u | byte3 << 8u | byte4 ); //X aCC 392
 }
 
 #endif // ifndef comBufh

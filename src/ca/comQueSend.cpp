@@ -199,22 +199,6 @@ comBuf * comQueSend::popNextComBufToSend ()
     return pBuf;
 }
 
-void comQueRecv::popString ( epicsOldString *pStr )
-{
-    for ( unsigned i = 0u; i < sizeof ( *pStr ); i++ ) {
-        pStr[0][i] = this->popInt8 ();
-    }
-}
-
-void comQueSend::commitMsg ()
-{
-    while ( this->pFirstUncommited.valid() ) {
-        this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();
-        this->pFirstUncommited->commitIncomming ();
-        this->pFirstUncommited++;
-    }
-}
-
 void comQueSend::insertRequestHeader (
     ca_uint16_t request, ca_uint32_t payloadSize, 
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
@@ -292,3 +276,11 @@ void comQueSend::insertRequestWithPayLoad (
     this->commitMsg ();
 }
 
+void comQueSend::commitMsg ()
+{
+    while ( this->pFirstUncommited.valid() ) {
+        this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();
+        this->pFirstUncommited->commitIncomming ();
+        this->pFirstUncommited++;
+    }
+}

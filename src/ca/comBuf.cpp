@@ -35,7 +35,7 @@ bool comBuf::flushToWire ( wireSendAdapter & wire )
     return true;
 }
 
-unsigned comBuf::push ( const epicsInt16 *pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem )
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -47,7 +47,7 @@ unsigned comBuf::push ( const epicsInt16 *pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsUInt16 *pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem )
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -59,23 +59,7 @@ unsigned comBuf::push ( const epicsUInt16 *pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsInt32 *pValue, unsigned nElem )
-{
-    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
-    for ( unsigned i = 0u; i < nElem; i++ ) {
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
-    }
-    return nElem;
-}
-
-unsigned comBuf::push ( const epicsUInt32 *pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsInt32 * pValue, unsigned nElem )
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -91,7 +75,23 @@ unsigned comBuf::push ( const epicsUInt32 *pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat32 *pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem )
+{
+    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
+    for ( unsigned i = 0u; i < nElem; i++ ) {
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
+    }
+    return nElem;
+}
+
+unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem )
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -102,7 +102,7 @@ unsigned comBuf::push ( const epicsFloat32 *pValue, unsigned nElem )
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat64 *pValue, unsigned nElem )
+unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem )
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {

@@ -52,6 +52,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  1994/10/04  18:42:46  winans
+ * Added an extensive debugging facility.
+ *
  */
 
 #include <vxWorks.h>
@@ -96,7 +99,7 @@ STATIC int	writeIb();
 STATIC int	readIb();
 STATIC int	writeIbCmd();
 STATIC int	ioctlIb();
-int	srqPollInhibit();
+       int	srqPollInhibit();
 
 STATIC int	ibLinkInit();
 STATIC int	ibLinkStart();
@@ -126,7 +129,15 @@ STATIC	char	*short_base;		/* Base of short address space */
 STATIC	char	*ram_base;		/* Base of the ram on the CPU board */
 #endif
 
-STATIC int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
+STATIC  int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
+
+/* DMA timing bus error problem debugging in niPhysIo */
+int     ibDmaDebug = 0;         /* Turns on DMA debug messages from this driver */
+int     ibDmaTimingError = 0;           /* count "bad memProbes"/call of niPhysIo */
+int     ibDmaTimingErrorTotal = 0;      /* count total "bad memProbes" in niPhysIo */
+int     ibDmaMaxError = 0 ;             /* max # bad calls per call of niPhysIo */
+STATIC char     testWrite;              /* test char to write to 1014 card */
+
 
 /******************************************************************************
  *
@@ -253,6 +264,9 @@ reportGpib(void)
         printf("Link %d not installed.\n", i);
       }
     }
+    printf("DMA timing: error = %d, total = %d, max = %d\n",
+        ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
+
   }
   else
   {
@@ -274,13 +288,13 @@ STATIC void rebootFunc(void)
       sprintf(msg, "GPIB link %d rebooting");
       GpibDebug(&pNiLink[i]->ibLink, 0, msg, 1);
       probeValue = 0;
-      vxMemProbe(&(pNiLink[i]->ibregs->ch1.ccr), WRITE, 1, &probeValue);
-      vxMemProbe(&(pNiLink[i]->ibregs->ch0.ccr), WRITE, 1, &probeValue);
+      vxMemProbe(&(pNiLink[i]->ibregs->ch1.ccr), WRITE, 1, (char *)&probeValue);
+      vxMemProbe(&(pNiLink[i]->ibregs->ch0.ccr), WRITE, 1, (char *)&probeValue);
       taskDelay(1);				/* Let it settle */
   
-      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, &probeValue);
+      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, (char *)&probeValue);
       probeValue = D_LMR;
-      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, &probeValue);
+      vxMemProbe(&(pNiLink[i]->ibregs->cfg2), WRITE, 1, (char *)&probeValue);
     }
   }
   taskDelay(2);
@@ -345,7 +359,7 @@ initGpib(void)
   /* Gotta do all the probing first because the 1014D's LMRs are shared :-( */
   for (i=0; i<NIGPIB_NUM_LINKS; i++)
   {
-    if (vxMemProbe(&(pibregs->cfg2), WRITE, 1, &probeValue) < OK)
+    if (vxMemProbe(&(pibregs->cfg2), WRITE, 1, (char *)&probeValue) < OK)
     { /* no GPIB board present here */
       pNiLink[i] = (struct niLink *) NULL;
 
@@ -1047,7 +1061,44 @@ int	time;		/* time to wait on the DMA operation */
   else
     b->ch1.ccr = D_EINT;
 
+   /*************************************************************************
+   *    DMAC BUS ERROR CATCH
+   * The following lines are included because of a possible VME protocol
+   * violation by the NI1014D gpib board. Occasionally, the board is not
+   * ready to respond to the "b->ch0.ccr = D_SRT;" line (write to interrupt
+   * mask register 2) and generates a bus error. Since this problem occurred
+   * initially with the 68020, faster CPUs may run into this problem more
+   * often. Thus, while the following set of debugging lines actually provide
+   * enough of a delay that the problem disappears for the 68020, they are left
+   * in for possible debugging for the faster CPUs.
+   **************************************************************************/
+  ibDmaTimingError = 0;
+  while (vxMemProbe(&b->ch0.ccr, WRITE, 1, &testWrite) < 0)
+    ibDmaTimingError++;
+  ibDmaTimingErrorTotal += ibDmaTimingError;
+  if (ibDmaTimingError > ibDmaMaxError)
+    ibDmaMaxError = ibDmaTimingError;
+  if (ibDmaDebug)
+    printf("DMA timing: error = %d, total = %d, max = %d\n",
+        ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
+  /***************************************************************************/
+
   b->ch0.ccr = D_SRT;
+
+   /****************************
+   *    DMAC BUS ERROR CATCH
+   *****************************/
+  ibDmaTimingError = 0;
+  while (vxMemProbe(&b->imr2, WRITE, 1, &testWrite) < 0)
+    ibDmaTimingError++;
+  ibDmaTimingErrorTotal += ibDmaTimingError;
+  if (ibDmaTimingError > ibDmaMaxError)
+    ibDmaMaxError = ibDmaTimingError;
+  if (ibDmaDebug)
+    printf("DMA timing: error = %d, total = %d, max = %d\n",
+        ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
+  /***************************************************************************/
+
   b->imr2 = w_imr2;				/* this must be done last */
 
   /* check for error in DMAC initialization */
@@ -1450,7 +1501,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
 	      logMsg("ibLinkTask(%d, %d): device %d srq status = 0x%02.2X\n", plink->linkType, plink->linkId, pollAddress, ringData.status);
             if (plink->srqHandler[ringData.device] != NULL)
             { /* there is a registered SRQ handler for this device */
-              rngBufPut(plink->srqRing, &ringData, sizeof(ringData));
+              rngBufPut(plink->srqRing, (char *) &ringData, sizeof(ringData));
             }
 	    else
 	      if (ibDebug || ibSrqDebug)
@@ -1478,7 +1529,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
      * See if there is a need to process an SRQ solicited transaction.
      * Do all of them before going on to other transactions.
      */
-    while (rngBufGet(plink->srqRing, &ringData, sizeof(ringData)))
+    while (rngBufGet(plink->srqRing, (char *)&ringData, sizeof(ringData)))
     {
       if (ibDebug || ibSrqDebug)
 	logMsg("ibLinkTask(%d, %d): dispatching srq handler for device %d\n", plink->linkType, plink->linkId, ringData.device);

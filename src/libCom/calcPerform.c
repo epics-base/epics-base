@@ -473,7 +473,7 @@ char   *post;
 				printf("%.7s bad constant in expression\n",*post);
 				break;
 			}
-			memcpy(pstacktop,post,8);
+			memcpy((void *)pstacktop,post,8);
 			post+=7;
 			break;
 		default:

@@ -12,6 +12,7 @@ described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 **********************************************************************/
 
+
 /*
  * Modification Log:
  * -----------------
@@ -29,12 +30,13 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include "asLib.h"
 #include "gpHash.h"
 #include "freeList.h"
 #include "macLib.h"
 #include "postfix.h"
-
+#include <errMdef.h>
+#include <ellLib.h>
+ 
 #ifdef vxWorks
 #include <fast_lock.h>
 static FAST_LOCK asLock;
@@ -45,6 +47,11 @@ static FAST_LOCK asLock;
 #define FASTLOCK(PFAST_LOCK)
 #define FASTUNLOCK(PFAST_LOCK)
 #endif
+
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+#include "asLib.h"
+
 static int	asLockInit=TRUE;
 int		asActive = FALSE;
 static void 	*freeListPvt = NULL;
@@ -86,7 +93,7 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc);
      the old memberList is moved from old to new.
      the old structures are freed.
 */
-long asInitialize(ASINPUTFUNCPTR inputfunction)
+long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 {
     ASG		*pasg;
     long	status;
@@ -173,7 +180,7 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
     return(0);
 }
 
-long asInitFile(const char *filename,const char *substitutions)
+long epicsShareAPI asInitFile(const char *filename,const char *substitutions)
 {
     FILE *fp;
     long status;
@@ -228,7 +235,7 @@ static int myInputFunction(char *buf, int max_size)
     return(n);
 }
 
-long asInitFP(FILE *fp,const char *substitutions)
+long epicsShareAPI asInitFP(FILE *fp,const char *substitutions)
 {
     char	buffer[BUF_SIZE];
     char	mac_buffer[BUF_SIZE];
@@ -262,7 +269,7 @@ long asInitFP(FILE *fp,const char *substitutions)
     return(status);
 }
 
-long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
+long epicsShareAPI asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
 {
     long	status;
 
@@ -273,7 +280,7 @@ long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
     return(status);
 }
 
-long asRemoveMember(ASMEMBERPVT *asMemberPvt)
+long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
 {
     ASGMEMBER	*pasgmember;
 
@@ -295,7 +302,7 @@ long asRemoveMember(ASMEMBERPVT *asMemberPvt)
     return(0);
 }
 
-long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
+long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
 {
     ASGMEMBER	*pasgmember;
     long	status;
@@ -316,7 +323,7 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
     return(status);
 }
 
-void *asGetMemberPvt(ASMEMBERPVT asMemberPvt)
+void * epicsShareAPI asGetMemberPvt(ASMEMBERPVT asMemberPvt)
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
 
@@ -325,7 +332,7 @@ void *asGetMemberPvt(ASMEMBERPVT asMemberPvt)
     return(pasgmember->userPvt);
 }
 
-void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
+void epicsShareAPI asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
 
@@ -335,7 +342,7 @@ void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
     return;
 }
 
-long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
+long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 	int asl,char *user,char *host)
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
@@ -358,7 +365,7 @@ long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
     return(status);
 }
 
-long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
+long epicsShareAPI asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
@@ -374,7 +381,7 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
     return(status);
 }
 
-long asRemoveClient(ASCLIENTPVT *asClientPvt)
+long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt)
 {
     ASGCLIENT	*pasgclient = *asClientPvt;
     ASGMEMBER	*pasgMember;
@@ -395,7 +402,7 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     return(0);
 }
 
-long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
+long epicsShareAPI asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
@@ -409,7 +416,7 @@ long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
     return(0);
 }
 
-void *asGetClientPvt(ASCLIENTPVT asClientPvt)
+void * epicsShareAPI asGetClientPvt(ASCLIENTPVT asClientPvt)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
 
@@ -418,7 +425,7 @@ void *asGetClientPvt(ASCLIENTPVT asClientPvt)
     return(pasgclient->userPvt);
 }
 
-void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
+void epicsShareAPI asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
     if(!asActive) return;
@@ -428,7 +435,7 @@ void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
     FASTUNLOCK(&asLock);
 }
 
-long asComputeAllAsg(void)
+long epicsShareAPI asComputeAllAsg(void)
 {
     long status;
 
@@ -439,7 +446,7 @@ long asComputeAllAsg(void)
     return(status);
 }
 
-long asComputeAsg(ASG *pasg)
+long epicsShareAPI asComputeAsg(ASG *pasg)
 {
     long status;
 
@@ -450,7 +457,7 @@ long asComputeAsg(ASG *pasg)
     return(status);
 }
 
-long asCompute(ASCLIENTPVT asClientPvt)
+long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt)
 {
     long status;
 
@@ -465,7 +472,7 @@ long asCompute(ASCLIENTPVT asClientPvt)
 /*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
 static char *asAccessName[] = {"NONE","READ","WRITE"};
 static char *asLevelName[] = {"ASL0","ASL1"};
-int asDump(
+int epicsShareAPI asDump(
 	void (*memcallback)(struct asgMember *),
 	void (*clientcallback)(struct asgClient *),
 	int verbose)
@@ -606,7 +613,7 @@ int asDump(
     return(0);
 }
 
-int asDumpUag(char *uagname)
+int epicsShareAPI asDumpUag(char *uagname)
 {
     UAG		*puag;
     UAGNAME	*puagname;
@@ -632,7 +639,7 @@ int asDumpUag(char *uagname)
     return(0);
 }
 
-int asDumpHag(char *hagname)
+int epicsShareAPI asDumpHag(char *hagname)
 {
     HAG		*phag;
     HAGNAME	*phagname;
@@ -658,7 +665,7 @@ int asDumpHag(char *hagname)
     return(0);
 }
 
-int asDumpRules(char *asgname)
+int epicsShareAPI asDumpRules(char *asgname)
 {
     ASG		*pasg;
     ASGINP	*pasginp;
@@ -735,7 +742,7 @@ int asDumpRules(char *asgname)
     return(0);
 }
 
-int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
+int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
 {
     ASG		*pasg;
     ASGMEMBER	*pasgmember;
@@ -783,7 +790,7 @@ int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
     return(0);
 }
 
-int asDumpHash(void)
+int epicsShareAPI asDumpHash(void)
 {
     if(!asActive) return(0);
     gphDump(pasbase->phash);

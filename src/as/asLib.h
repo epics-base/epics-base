@@ -47,39 +47,39 @@ long asCheckPut(ASCLIENTPVT asClientPvt);
 		((asClientPvt)->access>=asWRITE ? TRUE : FALSE)\
 	: TRUE)
 
-int asInit(void);
-long asInitialize(ASINPUTFUNCPTR inputfunction);
-long asInitFile(const char *filename,const char *substitutions);
-long asInitFP(FILE *fp,const char *substitutions);
+epicsShareFunc int epicsShareAPI asInit(void);
+epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
+epicsShareFunc long epicsShareAPI asInitFile(const char *filename,const char *substitutions);
+epicsShareFunc long epicsShareAPI asInitFP(FILE *fp,const char *substitutions);
 /*caller must provide permanent storage for asgName*/
-long asAddMember(ASMEMBERPVT *asMemberPvt,char *asgName);
-long asRemoveMember(ASMEMBERPVT *asMemberPvt);
+epicsShareFunc long epicsShareAPI asAddMember(ASMEMBERPVT *asMemberPvt,char *asgName);
+epicsShareFunc long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt);
 /*caller must provide permanent storage for newAsgName*/
-long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName);
-void *asGetMemberPvt(ASMEMBERPVT asMemberPvt);
-void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt);
+epicsShareFunc long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName);
+epicsShareFunc void * epicsShareAPI asGetMemberPvt(ASMEMBERPVT asMemberPvt);
+epicsShareFunc void epicsShareAPI asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt);
 /*client must provide permanent storage for user and host*/
-long asAddClient(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
+epicsShareFunc long epicsShareAPI asAddClient(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
 	int asl,char *user,char *host);
 /*client must provide permanent storage for user and host*/
-long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host);
-long asRemoveClient(ASCLIENTPVT *asClientPvt);
-void *asGetClientPvt(ASCLIENTPVT asClientPvt);
-void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt);
-long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
+epicsShareFunc long epicsShareAPI asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host);
+epicsShareFunc long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt);
+epicsShareFunc void * epicsShareAPI asGetClientPvt(ASCLIENTPVT asClientPvt);
+epicsShareFunc void epicsShareAPI asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt);
+epicsShareFunc long epicsShareAPI asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback);
-long asComputeAllAsg(void);
+epicsShareFunc long epicsShareAPI asComputeAllAsg(void);
 /* following declared below after ASG is declared
-long asComputeAsg(ASG *pasg);
+epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 */
-long asCompute(ASCLIENTPVT asClientPvt);
-int asDump(void (*memcallback)(ASMEMBERPVT),
+epicsShareFunc long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt);
+epicsShareFunc int epicsShareAPI asDump(void (*memcallback)(ASMEMBERPVT),
     void (*clientcallback)(ASCLIENTPVT),int verbose);
-int asDumpUag(char *uagname);
-int asDumpHag(char *hagname);
-int asDumpRules(char *asgname);
-int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
-int asDumpHash(void);
+epicsShareFunc int epicsShareAPI asDumpUag(char *uagname);
+epicsShareFunc int epicsShareAPI asDumpHag(char *hagname);
+epicsShareFunc int epicsShareAPI asDumpRules(char *asgname);
+epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
+epicsShareFunc int epicsShareAPI asDumpHash(void);
 
 #define S_asLib_clientsExist 	(M_asLib| 1) /*Client Exists*/
 #define S_asLib_noUag 		(M_asLib| 2) /*User Access Group does not exist*/
@@ -185,7 +185,7 @@ typedef struct asgClient {
 	asAccessRights	access;
 } ASGCLIENT;
 
-long asComputeAsg(ASG *pasg);
+epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
 void * asCalloc(size_t nobj,size_t size);
 

@@ -25,6 +25,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "errlog.h"
 #include "asLib.h"
+#include "dbStaticLib.h"
 int main(int argc,char **argv)
 {
     int         i;

@@ -10,7 +10,7 @@ of this distribution.
 #ifndef INCioccrfH
 #define INCioccrfH
 
-#include "stdio.h"
+#include <stdio.h>
 
 #include "shareLib.h"
 #ifdef __cplusplus

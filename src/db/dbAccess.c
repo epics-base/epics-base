@@ -951,6 +951,10 @@ long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
 		    if(status) return(status);
 		}
 		if(status=dbPutString(&dbEntry,buffer)) goto done;
+		if(special) {
+		    status = putSpecial(paddr,1);
+		    if(status) return(status);
+		}
 		if(plink->type == PV_LINK) {
 			DBADDR		dbaddr;
 
@@ -981,10 +985,6 @@ long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
 				    plink->value.pv_link.pvlMask |= pvlOptFWD;
 			    }
 			}
-		}
-		if(special) {
-		    status = putSpecial(paddr,1);
-		    if(status) return(status);
 		}
     		db_post_events(precord,plink,DBE_VALUE);
 		dbFinishEntry(&dbEntry);

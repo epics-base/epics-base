@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  2001/06/11 22:28:51  jhill
+ * revert because workaround for RTEMS didnt build
+ *
  * Revision 1.11  2001/06/11 20:13:42  jhill
  * workarounds for problems discovered when building for RTEMS
  *
@@ -74,7 +77,7 @@
 typedef enum { aitLocalDataFormat=0, aitNetworkDataFormat } aitDataFormat;
 
 /* all conversion functions have this prototype */
-typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const std::vector< std::string > &enumStringTable);
+typedef int (*aitFunc)(void* dest,const void* src,aitIndex count,const std::vector< std::string > *pEnumStringTable);
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,22 +102,20 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus)
 
-extern const std::vector<std::string> aitEmptyEnumStringTable;
-
 inline int aitConvert(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
-  { return (*aitConvertTable[desttype][srctype])(dest,src,count,enumStringTable); }
+ const std::vector<std::string> *pEnumStringTable = 0 )
+  { return (*aitConvertTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 inline int aitConvertToNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
-  { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
+ const std::vector<std::string> *pEnumStringTable = 0 )
+  { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 inline int aitConvertFromNet(aitEnum desttype, void* dest,
  aitEnum srctype, const void* src, aitIndex count, 
- const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
-  { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
+ const std::vector<std::string> *pEnumStringTable = 0 )
+  { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count,pEnumStringTable); }
 
 #else
 

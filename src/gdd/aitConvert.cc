@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.13  2001/06/11 22:28:50  jhill
+// revert because workaround for RTEMS didnt build
+//
 // Revision 1.12  2001/06/11 20:13:42  jhill
 // workarounds for problems discovered when building for RTEMS
 //
@@ -59,7 +62,7 @@
 #define epicsExportSharedSymbols
 #include "aitConvert.h"
 
-int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const std::vector< std::string > &) {return -1;}
+int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const std::vector< std::string > *) {return -1;}
 
 #ifdef AIT_CONVERT
 #undef AIT_CONVERT
@@ -75,12 +78,11 @@ int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const st
 #define min(A,B) ((A)<(B)?(A):(B))
 #endif
 
-const std::vector<std::string> aitEmptyEnumStringTable;
-
 /* put the fixed conversion functions here (ones not generated) */
 
 /* ------- extra string conversion functions --------- */
-static int aitConvertStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &)
+static int aitConvertStringString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *)
 {
 	// does not work - need to be fixed
 	aitIndex i;
@@ -89,24 +91,30 @@ static int aitConvertStringString(void* d,const void* s,aitIndex c, const std::v
 	for(i=0;i<c;i++) out[i]=in[i];
 	return 0;
 }
-static int aitConvertToNetStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertStringString(d,s,c, enumStringTable);}
-static int aitConvertFromNetStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertStringString(d,s,c, enumStringTable);}
+static int aitConvertToNetStringString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertStringString(d,s,c, pEnumStringTable);}
+static int aitConvertFromNetStringString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertStringString(d,s,c, pEnumStringTable);}
 
 /* ------ all the fixed string conversion functions ------ */
-static int aitConvertFixedStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &)
+static int aitConvertFixedStringFixedString(void* d,const void* s,
+                       aitIndex c, const std::vector< std::string > *)
 {
 	aitUint32 len = c*AIT_FIXED_STRING_SIZE;
 	memcpy(d,s,len);
 	return 0;
 }
-static int aitConvertToNetFixedStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertFixedStringFixedString(d,s,c,enumStringTable);}
-static int aitConvertFromNetFixedStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertFixedStringFixedString(d,s,c,enumStringTable);}
+static int aitConvertToNetFixedStringFixedString(void* d,const void* s,
+                  aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertFixedStringFixedString(d,s,c,pEnumStringTable);}
+static int aitConvertFromNetFixedStringFixedString(void* d,const void* s,
+                  aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertFixedStringFixedString(d,s,c,pEnumStringTable);}
 
-static int aitConvertStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &)
+static int aitConvertStringFixedString(void* d,const void* s,
+                    aitIndex c, const std::vector< std::string > *)
 {
 	aitIndex i;
 	aitString* out = (aitString*)d;
@@ -116,7 +124,8 @@ static int aitConvertStringFixedString(void* d,const void* s,aitIndex c, const s
 	return 0;
 }
 
-static int aitConvertFixedStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &)
+static int aitConvertFixedStringString(void* d,const void* s,
+                   aitIndex c, const std::vector< std::string > *)
 {
 	aitIndex i;
 	aitString* in = (aitString*)s;
@@ -135,16 +144,21 @@ static int aitConvertFixedStringString(void* d,const void* s,aitIndex c, const s
 	return 0;
 }
 
-static int aitConvertToNetStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertStringFixedString(d,s,c,enumStringTable); }
-static int aitConvertFromNetFixedStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertFixedStringString(d,s,c,enumStringTable); }
-static int aitConvertToNetFixedStringString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertStringFixedString(d,s,c,enumStringTable); }
-static int aitConvertFromNetStringFixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
-{ return aitConvertFixedStringString(d,s,c,enumStringTable); }
+static int aitConvertToNetStringFixedString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertStringFixedString(d,s,c,pEnumStringTable); }
+static int aitConvertFromNetFixedStringString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertFixedStringString(d,s,c,pEnumStringTable); }
+static int aitConvertToNetFixedStringString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertStringFixedString(d,s,c,pEnumStringTable); }
+static int aitConvertFromNetStringFixedString(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
+{ return aitConvertFixedStringString(d,s,c,pEnumStringTable); }
 
-static int aitConvertStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertStringEnum16(void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 {
 	aitIndex i;
 	int status=0;
@@ -153,9 +167,9 @@ static int aitConvertStringEnum16(void* d,const void* s,aitIndex c, const std::v
 	aitEnum16* in=(aitEnum16*)s;
 	for (i=0;i<c;i++) {
 		unsigned nChar;
-		if (in[i]<enumStringTable.size()) {
-			out[i].copy(enumStringTable[in[i]].c_str());
-			nChar = enumStringTable[in[i]].length();
+		if (pEnumStringTable&&in[i]<pEnumStringTable->size()) {
+			out[i].copy((*pEnumStringTable)[in[i]].c_str());
+			nChar = (*pEnumStringTable)[in[i]].length();
 		}
 		else {
 			nChar = sprintf(temp, "%hu",in[i]);
@@ -166,17 +180,20 @@ static int aitConvertStringEnum16(void* d,const void* s,aitIndex c, const std::v
 	return status;
 }
 
-static int aitConvertToNetStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertToNetStringEnum16(void* d,const void* s,
+            aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertStringEnum16(d,s,c,enumStringTable); 
+    return aitConvertStringEnum16(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertFromNetStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertFromNetStringEnum16(void* d,const void* s,
+            aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertStringEnum16(d,s,c,enumStringTable); 
+    return aitConvertStringEnum16(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertFixedStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertFixedStringEnum16(void* d,const void* s,
+         aitIndex c, const std::vector< std::string > *pEnumStringTable)
 {
 	aitIndex i;
 	int status=0;
@@ -184,8 +201,8 @@ static int aitConvertFixedStringEnum16(void* d,const void* s,aitIndex c, const s
 	aitEnum16* in=(aitEnum16*)s;
 	for (i=0;i<c;i++) {
 		unsigned nChar;
-		if (in[i]<enumStringTable.size()) {
-			strncpy(out[i].fixed_string, enumStringTable[in[i]].c_str(),sizeof(out[i].fixed_string));
+		if (pEnumStringTable&&in[i]<pEnumStringTable->size()) {
+			strncpy(out[i].fixed_string, (*pEnumStringTable)[in[i]].c_str(),sizeof(out[i].fixed_string));
 			out[i].fixed_string[sizeof(out[i].fixed_string)-1] = '\0';
 			nChar = sizeof(out[i].fixed_string);
 		}
@@ -198,17 +215,20 @@ static int aitConvertFixedStringEnum16(void* d,const void* s,aitIndex c, const s
 	return status;
 }
 
-static int aitConvertToNetFixedStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertToNetFixedStringEnum16(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertFixedStringEnum16(d,s,c,enumStringTable); 
+    return aitConvertFixedStringEnum16(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertFromNetFixedStringEnum16(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertFromNetFixedStringEnum16(void* d,const void* s,
+              aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertFixedStringEnum16(d,s,c,enumStringTable); 
+    return aitConvertFixedStringEnum16(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c, 
+                        const std::vector< std::string > *pEnumStringTable)
 {
 	aitIndex i;
 	int status = 0;
@@ -219,15 +239,20 @@ static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c, const 
     //
     // convert only after a range check
     //
-    assert (enumStringTable.size()<=0xffff);
-    nChoices = static_cast<aitEnum16>(enumStringTable.size());
+    if ( pEnumStringTable ) {
+        assert (pEnumStringTable->size()<=0xffff);
+        nChoices = static_cast<aitEnum16>(pEnumStringTable->size());
+    }
+    else {
+        nChoices = 0;
+    }
 
 	for (i=0;i<c;i++) {
         //
         // find the choice that matches
         //
 	    for (choice=0;choice<nChoices;choice++) {
-            if (strcmp(enumStringTable[choice].c_str(), in[i].fixed_string)==0) {
+            if (strcmp((*pEnumStringTable)[choice].c_str(), in[i].fixed_string)==0) {
                 out[i] = choice;
                 status += sizeof(out[i]);
                 break;
@@ -243,17 +268,20 @@ static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c, const 
     return status;
 }
 
-static int aitConvertToNetEnum16FixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertToNetEnum16FixedString(void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertEnum16FixedString(d,s,c,enumStringTable); 
+    return aitConvertEnum16FixedString(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertFromNetEnum16FixedString(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertFromNetEnum16FixedString(void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertEnum16FixedString(d,s,c,enumStringTable); 
+    return aitConvertEnum16FixedString(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertEnum16String (void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertEnum16String (void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 {
 	aitIndex i;
 	int status = 0;
@@ -264,15 +292,20 @@ static int aitConvertEnum16String (void* d,const void* s,aitIndex c, const std::
     //
     // convert only after a range check
     //
-    assert (enumStringTable.size()<=0xffff);
-    nChoices = static_cast<aitEnum16>(enumStringTable.size());
+    if ( pEnumStringTable ) {
+        assert (pEnumStringTable->size()<=0xffff);
+        nChoices = static_cast<aitEnum16>(pEnumStringTable->size());
+    }
+    else {
+        nChoices = 0u;
+    }
 
 	for (i=0;i<c;i++) {
         //
         // find the choice that matches
         //
 	    for (choice=0;choice<nChoices;choice++) {
-            if (strcmp(enumStringTable[choice].c_str(), in[i].string())==0) {
+            if (strcmp((*pEnumStringTable)[choice].c_str(), in[i].string())==0) {
                 out[i] = choice;
                 status += sizeof(out[i]);
                 break;
@@ -288,14 +321,16 @@ static int aitConvertEnum16String (void* d,const void* s,aitIndex c, const std::
     return status;
 }
 
-static int aitConvertToNetEnum16String(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertToNetEnum16String(void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertEnum16String(d,s,c,enumStringTable); 
+    return aitConvertEnum16String(d,s,c,pEnumStringTable); 
 }
 
-static int aitConvertFromNetEnum16String(void* d,const void* s,aitIndex c, const std::vector< std::string > &enumStringTable)
+static int aitConvertFromNetEnum16String(void* d,const void* s,
+               aitIndex c, const std::vector< std::string > *pEnumStringTable)
 { 
-    return aitConvertEnum16String(d,s,c,enumStringTable); 
+    return aitConvertEnum16String(d,s,c,pEnumStringTable); 
 }
 
 #define AIT_CONVERT 1

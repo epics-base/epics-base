@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.34  2000/09/27 19:43:52  jhill
+// cosmetic
+//
 // Revision 1.33  2000/09/26 21:11:56  jhill
 // added definition of min
 //
@@ -260,7 +263,8 @@ static smartGDDPointer mapStringToGdd(void* v,aitIndex count) {
 	}
 }
 
-static int mapGddToString(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToString(void* vd, aitIndex count, 
+    const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	aitFixedString* db = (aitFixedString*)vd;
 	aitIndex sz = dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -273,14 +277,16 @@ static int mapGddToString(void* vd, aitIndex count, const gdd & dd, const std::v
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((aitFixedString*)v!=db) {
-			status = aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFixedString,db,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = sz*sizeof(aitFixedString);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFixedString,
+            db,dd.primitiveType(),v,count, &enumStringTable);
 	}
 	
 	return status;
@@ -319,14 +325,16 @@ static int mapGddToShort(void* vd, aitIndex count, const gdd &dd,
 
 	if (local_data_format==aitLocalDataFormat) {
 		if((dbr_short_t*)v!=sv) {
-			status = aitConvert(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt16,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_short_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt16,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -351,7 +359,8 @@ static smartGDDPointer mapFloatToGdd(void* v,aitIndex count) {
 	}
 }
 
-static int mapGddToFloat(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToFloat(void* vd, aitIndex count, 
+     const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_float_t* sv = (dbr_float_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void * v = dd.dataVoid();
@@ -364,14 +373,16 @@ static int mapGddToFloat(void* vd, aitIndex count, const gdd & dd, const std::ve
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((dbr_float_t*)v!=sv) {
-			status = aitConvert(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFloat32,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = sz*sizeof(dbr_float_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFloat32,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -396,7 +407,8 @@ static smartGDDPointer mapEnumToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToEnum(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToEnum(void* vd, aitIndex count, const gdd & dd, 
+                        const std::vector< std::string > &enumStringTable) {
 	dbr_enum_t* sv = (dbr_enum_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -409,14 +421,16 @@ static int mapGddToEnum(void* vd, aitIndex count, const gdd & dd, const std::vec
 
 	if(local_data_format==aitLocalDataFormat) {
 		if((dbr_enum_t*)v!=sv) {
-			status = aitConvert(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumEnum16,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = sizeof(dbr_enum_t)*count;
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumEnum16,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -441,7 +455,8 @@ static smartGDDPointer mapCharToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToChar(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToChar(void* vd, aitIndex count, 
+     const gdd & dd, const std::vector< std::string > &enumStringTable) {
 	dbr_char_t* sv = (dbr_char_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -454,14 +469,16 @@ static int mapGddToChar(void* vd, aitIndex count, const gdd & dd, const std::vec
 
 	if (local_data_format==aitLocalDataFormat) {
 		if((dbr_char_t*)v!=sv) {
-			status = aitConvert(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt8,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = sz*sizeof(dbr_char_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt8,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -486,7 +503,8 @@ static smartGDDPointer mapLongToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToLong(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToLong(void* vd, aitIndex count, const gdd & dd, 
+                      const std::vector< std::string > &enumStringTable) {
 	dbr_long_t* sv = (dbr_long_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -499,14 +517,16 @@ static int mapGddToLong(void* vd, aitIndex count, const gdd & dd, const std::vec
 
 	if (local_data_format==aitLocalDataFormat) {
 		if ((dbr_long_t*)v!=sv) {
-			status = aitConvert(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumInt32,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_long_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumInt32,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -531,7 +551,8 @@ static smartGDDPointer mapDoubleToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToDouble(void* vd, aitIndex count, const gdd & dd, const std::vector< std::string > &enumStringTable) {
+static int mapGddToDouble(void* vd, aitIndex count, const gdd & dd, 
+                          const std::vector< std::string > &enumStringTable) {
 	dbr_double_t* sv = (dbr_double_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
@@ -544,14 +565,16 @@ static int mapGddToDouble(void* vd, aitIndex count, const gdd & dd, const std::v
 
 	if (local_data_format==aitLocalDataFormat) {
 		if ((dbr_double_t*)v!=sv) {
-			status = aitConvert(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
+			status = aitConvert(aitEnumFloat64,sv,
+                dd.primitiveType(),v,count, &enumStringTable);
 		}
 		else {
 			status = count*sizeof(dbr_double_t);
 		}
 	}
 	else {
-		status = aitConvertToNet(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
+		status = aitConvertToNet(aitEnumFloat64,sv,
+            dd.primitiveType(),v,count, &enumStringTable);
 	}
 
 	return status;
@@ -1673,7 +1696,8 @@ static int mapGddToAckt(void* vd, aitIndex count, const gdd & dd,
         if (local_data_format==aitLocalDataFormat) {
             if((dbr_put_ackt_t*)v!=sv) {
                 status = 
-                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz,enumStringTable);
+                    aitConvert(aitEnumUint16,sv,
+                    dd.primitiveType(),v,sz,&enumStringTable);
             }
             else {
                 status = sz*sizeof(dbr_put_ackt_t);
@@ -1681,7 +1705,8 @@ static int mapGddToAckt(void* vd, aitIndex count, const gdd & dd,
         }
         else {
             status = 
-                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+                aitConvertToNet(aitEnumUint16,sv,
+                dd.primitiveType(),v,sz, &enumStringTable);
         }
     }
     else {
@@ -1723,7 +1748,8 @@ static int mapGddToAcks(void* vd, aitIndex count, const gdd &dd,
         if (local_data_format==aitLocalDataFormat) {
             if((dbr_put_acks_t*)v!=sv) {
                 status = 
-                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+                    aitConvert(aitEnumUint16,sv,
+                    dd.primitiveType(),v,sz, &enumStringTable);
             }
             else {
                 status = sz*sizeof(dbr_put_acks_t);
@@ -1731,7 +1757,8 @@ static int mapGddToAcks(void* vd, aitIndex count, const gdd &dd,
         }
         else {
             status = 
-                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+                aitConvertToNet(aitEnumUint16,sv,
+                dd.primitiveType(),v,sz, &enumStringTable);
         }
     }
     else {
@@ -1779,7 +1806,8 @@ static int mapGddToClassName(void* vd, aitIndex count, const gdd & dd,
         if(local_data_format==aitLocalDataFormat) {
             if((aitFixedString*)v!=db) {
                 status = 
-                    aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+                    aitConvert(aitEnumFixedString,db,
+                    dd.primitiveType(),v,count, &enumStringTable);
             }
             else {
                 status = sz*sizeof(aitFixedString);
@@ -1787,7 +1815,8 @@ static int mapGddToClassName(void* vd, aitIndex count, const gdd & dd,
         }
         else {
             status = 
-                aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+                aitConvertToNet(aitEnumFixedString,db,
+                dd.primitiveType(),v,count, &enumStringTable);
         }
     }
     else {

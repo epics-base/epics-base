@@ -70,7 +70,7 @@ OP_SYS_LDLIBS =
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h 
-OP_SYS_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
+OP_SYS_INCLUDE_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
 
 #--------------------------------------------------
 # code flags
@@ -106,7 +106,7 @@ LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
 ##%.c: ../%.st
 ##	@echo "preprocessing $*.st"
 ##	@$(RM) $*.i
-##	$(CPP) $(CPPSNCFLAGS) $< > $*.i
+##	$(CPP) $(CPPSNCFLAGS) $(INCLUDES) $< > $*.i
 ##	@echo "converting $*.i"
 ##	@$(RM) $@
 ##	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@
@@ -116,7 +116,6 @@ LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
 ##	ln -s $< $*.st
 ##	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
 ##	@$(RM) $*.st
-CPPSNCFLAGS += -x c
 
 #--------------------------------------------------
 # Allow site overrides

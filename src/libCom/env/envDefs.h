@@ -104,7 +104,6 @@ epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
 epicsShareExtern READONLY ENV_PARAM
 	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
 
-#if defined(__STDC__) || defined(__cplusplus)
 epicsShareFunc char * epicsShareAPI 
 	envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);
 epicsShareFunc const char * epicsShareAPI 
@@ -124,18 +123,6 @@ epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
 epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
 epicsShareFunc void epicsShareAPI epicsEnvSet (char *name, char *value);
 epicsShareFunc void epicsShareAPI epicsEnvShow (int argc, char **argv);
-#else
-epicsShareFunc char * epicsShareAPI envGetConfigParam();
-epicsShareFunc char * epicsShareAPI envGetConfigParamPtr();
-epicsShareFunc long epicsShareAPI envPrtConfigParam();
-epicsShareFunc long epicsShareAPI envGetInetAddrConfigParam();
-epicsShareFunc long epicsShareAPI envGetDoubleConfigParam();
-epicsShareFunc long epicsShareAPI envGetLongConfigParam();
-epicsShareFunc char * epicsShareAPI envGetConfigParamPtr();
-epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam();
-epicsShareFunc void epicsShareAPI epicsEnvSet ();
-epicsShareFunc void epicsShareAPI epicsEnvShow ();
-#endif
 
 #ifdef __cplusplus
 }

@@ -180,7 +180,7 @@ SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 #	for bldErrSymTbl:
 #
 ERR_S_FILES += $(TOP)/src/as/asLib.h
-ERR_S_FILES += $(TOP)/src/db/dbAccess.h
+ERR_S_FILES += $(TOP)/src/db/dbAccessDefs.h
 ERR_S_FILES += $(TOP)/src/dbStatic/devSup.h
 ERR_S_FILES += $(TOP)/src/dbStatic/drvSup.h
 ERR_S_FILES += $(TOP)/src/dbStatic/recSup.h

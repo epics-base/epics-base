@@ -46,6 +46,8 @@
 #include "tsStamp.h"
 #include "errlog.h"
 #include "envDefs.h"
+#include "serverInclude.h"
+#define epicsExportSharedSymbols
 #include "server.h"
 
 /*

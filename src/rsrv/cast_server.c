@@ -58,6 +58,8 @@
 #include "db_access.h"
 #include "envDefs.h"
 #include "freeList.h"
+#include "serverInclude.h"
+#define epicsExportSharedSymbols
 #include "server.h"
     
 #define     TIMEOUT 60.0 /* sec */

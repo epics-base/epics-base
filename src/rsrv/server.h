@@ -38,26 +38,6 @@ static char *serverhSccsId = "@(#) $Id$";
 #       define HDRVERSIONID(NAME,VERS)
 #endif /*CAS_VERSION_GLOBAL*/
 
-#include "epicsAssert.h"
-
-#include "ellLib.h"
-#include "osiSem.h"
-#include "osiThread.h"
-
-#include "osiSock.h"
-#include "addrList.h"
-#include "net_convert.h"
-
-#include "dbDefs.h"
-#include "db_access.h"
-#include "dbEvent.h"
-#include "caProto.h"
-#include "bucketLib.h"
-#include "taskwd.h"
-
-#include "asLib.h"
-#include "asDbLib.h"
-
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)
 

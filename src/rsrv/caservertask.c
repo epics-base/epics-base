@@ -48,6 +48,8 @@
 #include "freeList.h"
 #include "errlog.h"
 
+#include "serverInclude.h"
+#define epicsExportSharedSymbols
 #define GLBLSOURCE
 #include "server.h"
 

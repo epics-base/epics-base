@@ -41,7 +41,8 @@
 #include "ellLib.h"
 #include "freeList.h"
 #include "caerr.h"
-
+#include "serverInclude.h"
+#define epicsExportSharedSymbols
 #include "server.h"
 
 static caHdr nill_msg;

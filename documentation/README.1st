@@ -20,10 +20,8 @@ What is EPICS base?
 
 What is new in this release?
 
-     This version of EPICS base contains significant changes and offers
-     major improvements in functionality over previous versions. Please
-     check the RELEASE_NOTES file in the distribution for description of
-     changes and release migration details.
+     Please check the RELEASE_NOTES file in the distribution for description
+     of changes and release migration details.
 
 Copyright
 
@@ -35,7 +33,7 @@ Supported platforms
      Currently this version of EPICS base has been built on the following
      hosts for the following targets. If you are trying to build EPICS base on a
      different host or for a different target machine you must get the proper
-     host/target cross compiler and header files and you will have to create
+     host/target cross compiler and header files, and you will have to create
      and add the appropriate new configure files to the
      base/configure/os/directory. You can start by copying existing
      configuration files in the configure/os directory and then make changes
@@ -94,10 +92,8 @@ Supported compilers
      vendor's C and C++ compilers as well as the GNU gcc and g++
      compilers. The GNU cross-compilers have been used for all
      cross-compiled targets. You may need the host vendor's C++ compiler
-     in your search path to do EPICS builds. Check definitions of ACC and
-     CCC in base/configure/os/CONFIG.<host>.<host> or the definitions
-     for GCC and G++ if ANSI=GCC and CPLUSPLUS=GCC are specified
-     in CONFIG_SITE.
+     in your search path to do EPICS builds. Check definitions of CC and
+     CCC in base/configure/os/CONFIG.<host>.<host>. 
 
 Software requirements
 
@@ -150,17 +146,17 @@ WWW pages
          Additional information on EPICS can be found at the
          various other WWW links on the EPICS home page at APS.
 
-     Mailing Lists
+     Mailing List
 
          There is an EPICS mailing list called tech-talk which is hosted at
-         APS, with a list repeater at BESSY. See The EPICS home page for
+         APS, with a list repeater at BESSY. See the EPICS home page for
          subscription instructions.
 
 Directory Structure
 
      Distribution directory structure:
 
-     base                         Root directory of the base istribution 
+     base                         Root directory of the base distribution 
      base/config                  R3.13 compatibility build configuration files 
      base/config/tools            Perl and shell scripts used in the R3.13 build 
      base/configure               Operating system independent build config files 
@@ -173,11 +169,13 @@ Directory Structure
      base/src/bpt                 Break point table 
      base/src/ca                  Channel access 
      base/src/cas                 Channel access server library and examples
+     base/src/catools             Channel access tools caget,cainfo,camonitor,caput
      base/src/db                  Database access 
      base/src/db/test             Database access tests 
      base/src/dbStatic            Static database access 
      base/src/dbtools             Database dbLoadTemplate tools 
      base/src/dev                 Device support (softDev and testDev) 
+     base/src/excas               Example channel access server
      base/src/gdd                 General data descriptor 
      base/src/iocsh               Ioc shell command interpreter 
      base/src/libCom              General purpose library code in subdirectories 
@@ -200,7 +198,7 @@ Directory Structure
      base/src/libCom/osi/os       Operating system dependant code in subdirectories 
      base/src/libCom/ring         Methods for creating and using ring buffers
      base/src/libCom/taskwd       Task watchdog 
-     base/src/libCom/test         Test tools (timer, semBinary, semMutex,fdmgr, ?) 
+     base/src/libCom/test         Test tools (timer, semBinary, semMutex,fdmgr,...) 
      base/src/libCom/timer        Timer 
      base/src/libCom/tsDefs       R3.13 time stamp definitions and routines 
      base/src/makeBaseApp         Perl tool+templates to create ioc app dvl tree 
@@ -209,12 +207,10 @@ Directory Structure
      base/src/rec                 Record support 
      base/src/registry            EPICS support function registry 
      base/src/rsrv                Channel access ioc resource server library 
+     base/src/softIoc             Example softIoc
      base/src/toolsComm           Code for the build tools antelope and e_flex 
      base/src/util                Utilities (ca_test, iocLogServer, startCArepeater) 
      base/src/vxWorks             R3.13 compatibility code specific to vxWorks 
-     base/src/catools             Channel access tools caget,cainfo,camonitor,caput
-     base/src/softIoc             Example softIoc
-     base/src/excas               Example channel access server
      base/startup                 Scripts for setting up path and environment 
 
      Install directories created by the build: 
@@ -232,28 +228,31 @@ Directory Structure
 Build related components
 
      base/documentation/README* files 
+
      README.1st           Instructions for setup and building epics base 
-     README.html          (html version of README.1st) 
+     README.html          html version of README.1st 
      README.WIN32         Microsoft WIN32 specific instructions 
      README.cxxTemplates  Information about C++ templates in EPICS base 
      README.niCpu030      NI cpu030 specific instructions 
      README.darwin        Installation notes for Mac OS X (Darwin)
-     RELEASE_NOTES.html   Notes on release changes.
-     KnownProblems.html   List of know problems and workarounds.
-     Converting*To*.html  Release specific conversion instructions.
-     Building*With*.html  Release specific build instructions.
+     RELEASE_NOTES.html   Notes on release changes
+     KnownProblems.html   List of known problems and workarounds
+     Converting*To*.html  Release specific conversion instructions
+     Building*With*.html  Release specific build instructions
        
      base/startup directory - contains scripts to set environment and path 
+
      EpicsHostArch       c shell script to set EPICS_HOST_ARCH env variable 
      EpicsHostArch.pl    perl script to set EPICS_HOST_ARCH env variable 
      Site.profile        bourne shell script to set path and env variables 
      Site.cshrc          c shell script to set path and env variables 
-     borland.bat         WIN32 bat file to set path and env variables 
-     cygwin.bat          cygwin-x86 bat file to set path and env variables 
+     borland.bat         WIN32 bat file to set borland path and env variables 
+     cygwin.bat          WIN32 bat file to set cygwin path and env variables 
      win32.bat           WIN32 bat file to set path and env variables 
-     win32-debug.bat     WIN32 debug build bat file path and env variables 
+     win32-debug.bat     WIN32 bat file to set debug path and env variables 
        
      base/configure  directory - contains build definitions and rules 
+
      CONFIG                Includes configure files and allows variable overrides 
      CONFIG.CrossCommon    Cross build definitions 
      CONFIG.gnuCommon      Gnu compiler build definitions for all archs 
@@ -277,6 +276,7 @@ Build related components
      Sample.Makefile       Sample makefile with comments 
        
      base/configure/os directory - contains os-arch specific definitions 
+
      CONFIG.<host>.<target>      Specific host-target build definitions 
      CONFIG.Common.<target>      Specific target definitions for all hosts 
      CONFIG.<host>.Common        Specific host definitions for all targets 
@@ -289,22 +289,23 @@ Build related components
      CONFIG_SITE.<host>.Common   Site specific host defs for all targets 
        
      base/configure/tools directory - contains Perl scripts used for the build 
+
      convertRelease.pl       Performs consistancy checks on RELEASE files
      cp.pl                   This Perl script copies an existing file 
      cvsclean.pl             Remove all .#* files in directory tree
      dos2unix.pl             Converts text file from DOS CR/LF to unix ISO
-     filterWarnings.pl       Filters warning messages during HP builds.
-     fullpathName.pl         Returns fullpath name of directory arg.
-     installEpics.pl         Installs built files into install directories. 
+     filterWarnings.pl       Filters warning messages during HP builds
+     fullpathName.pl         Returns fullpath name of directory arg
+     installEpics.pl         Installs built files into install directories
      makeIncludeDbd.pl       Creates *Include.dbd file from filename args 
      makeMakefile.pl         Creates a Makefile in O.<arch> dirs 
      makeMakefileInclude.pl  Creates file to be included by Makefile 
      mkdir.pl                Creates a directory (like Unix mkdir) 
      mkmf.pl                 Generates dependencies from include stmnts 
      munch.pl                Creates a ctdt.c file for vxWorks targets 
-     mv.pl                   Renames an existing file. 
+     mv.pl                   Renames an existing file
      replaceVAR.pl           Changes CapFast VAR(xxx) to $(xxx) notation 
-     rm.pl                   Quietly removes an existing file.
+     rm.pl                   Quietly removes an existing file
 
 Building EPICS base (Unix and Win32)
 
@@ -349,7 +350,7 @@ Building EPICS base (Unix and Win32)
 
          Unix LD_LIBRARY_PATH
          It is no longer necessary to have LD_LIBRARY_PATH include
-         EPICS directories on Unix type system. R3.14 shared libraries
+         EPICS directories on a Unix type system. R3.14 shared libraries
          and executables will contain the full path name to libraries
          they require. However, if you move the EPICS directories
          from their build-time location then in order for libraries
@@ -380,24 +381,24 @@ Building EPICS base (Unix and Win32)
 
          Host configuration 
          To configure each host system, you may override the default
-         definitions by adding a new file with override definitions into
-         the configure/os directory. The new file should have the
+         definitions by adding a new file in the configure/os directory
+         with override definitions. The new file should have the
          same name as the distribution file to be overridden except
          with CONFIG in the name changed to CONFIG_SITE. 
 
-              configure/os/CONFIG.<host>.<host> - Host build settings 
-              configure/os/CONFIG.<host>.Common - Host cross build settings
+              configure/os/CONFIG.<host>.<host> Host build settings 
+              configure/os/CONFIG.<host>.Common Host cross build settings
 
          Target configuration 
          To configure each target system, you may override the
-         default definitions by adding a new file with override
-         definitions into the configure/os directory. The new file
+         default definitions by adding a new file into the configure/os
+         directory with override definitions. The new file
          should have the same name as the distribution file to be
          overridden except with CONFIG in the name replaced by
          CONFIG_SITE. 
 
-              configure/os/CONFIG.Common.<target> - Target cross settings
-              configure/os/CONFIG.<host>.<target> - Host-target settings
+              configure/os/CONFIG.Common.<target> Target cross settings
+              configure/os/CONFIG.<host>.<target> Host-target settings
 
          R3.13 compatibility configuration 
          To configure EPICS base for building with R3.13 extensions

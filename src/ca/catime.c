@@ -170,7 +170,7 @@ int catime (char *channelName, enum appendNumberFlag appNF)
   	timeIt (test_pend, NULL, 100);
 
   	for (i=0; i<NELEMENTS(itemList); i++) {
-		itemList[i].val.fltval = 0.0;
+		itemList[i].val.fltval = 0.0f;
 		itemList[i].type = DBR_FLOAT; 
   	}
 	printf ("float test\n");

@@ -104,7 +104,7 @@ struct xvmeRegs {
 #define	XVME_RESET	0x80	/* Write this and you reset the XVME card */
 
 /* BitBus Transaction Message Structure */
-typedef struct bitBusMsg {
+struct bitBusMsg {
     unsigned short link;	/* account for this in length only! */
     unsigned char  length;
     unsigned char  route;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.23  1998/06/16 02:13:59  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.22  1998/04/20 18:14:57  jhill
  * made clientHostName virtual in casDGClient
  *
@@ -576,7 +579,7 @@ protected:
 #	define logBadId(MP, DP, CACSTAT) \
 	this->logBadIdWithFileAndLineno(MP, DP, CACSTAT, __FILE__, __LINE__)
 	caStatus logBadIdWithFileAndLineno(const caHdr *mp,
-			const void *dp, int cacStat, const char *pFileName, 
+			const void *dp, const int cacStat, const char *pFileName, 
 			const unsigned lineno);
 
 private:

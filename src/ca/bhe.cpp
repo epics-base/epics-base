@@ -24,6 +24,7 @@
 #   pragma warning ( disable: 4660 )
 #endif
 
+template class tsDLNode < tcpiiu >;
 template class tsFreeList < class bhe, 1024 >;
 
 #if defined ( _MSC_VER )

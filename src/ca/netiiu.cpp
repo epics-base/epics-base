@@ -24,7 +24,7 @@
 #   pragma warning ( disable: 4660 )
 #endif
 
-template class tsSLNode < nciu >;
+template class tsDLNode < nciu >;
 
 #if defined ( _MSC_VER )
 #   pragma warning ( pop )
@@ -130,7 +130,7 @@ void netiiu::createChannelRequest ( nciu & )
 {
 }
 
-void netiiu::clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid )
+void netiiu::clearChannelRequest ( ca_uint32_t, ca_uint32_t )
 {
 }
 
@@ -138,7 +138,7 @@ void netiiu::subscriptionRequest ( nciu &, netSubscription & )
 {
 }
 
-void netiiu::subscriptionCancelRequest (  nciu & chan, netSubscription & subscr )
+void netiiu::subscriptionCancelRequest (  nciu &, netSubscription & )
 {
 }
 

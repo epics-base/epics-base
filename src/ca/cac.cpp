@@ -41,12 +41,14 @@
 #   pragma warning ( disable: 4660 )
 #endif
 
+template class tsSLNode < nciu >;
 template class resTable < nciu, chronIntId >;
 template class chronIntIdResTable < nciu >;
 template class tsSLNode < tcpiiu >;
 template class resTable < tcpiiu, caServerID >;
 template class tsSLNode < bhe >;
 template class resTable < bhe, inetAddrID >;
+template class tsSLNode < baseNMIU >;
 template class resTable < baseNMIU, chronIntId >;
 template class chronIntIdResTable < baseNMIU >;
 template class resTable < CASG, chronIntId >;

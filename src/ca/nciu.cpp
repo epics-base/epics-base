@@ -38,7 +38,7 @@
 #endif
 
 template class tsFreeList < nciu, 1024, 0 >; 
-template class tsSLNode < baseNMIU >;
+template class tsDLNode < baseNMIU >;
 
 #if defined ( _MSC_VER )
 #   pragma warning ( pop )

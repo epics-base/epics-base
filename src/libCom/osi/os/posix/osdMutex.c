@@ -78,7 +78,10 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
     int   status;
 
     status = pthread_mutex_destroy(&pmutex->lock);
-    checkStatus(status,"pthread_mutex_destroy");
+/*    checkStatus(status,"pthread_mutex_destroy");*/
+if(status) { 
+    errlogPrintf("%s failed: error %s\n","duhhhh",strerror((status)));
+}
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
     checkStatus(status,"pthread_mutexattr_destroy");
     free(pmutex);

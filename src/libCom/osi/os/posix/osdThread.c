@@ -524,6 +524,7 @@ void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 void epicsThreadShowAll(unsigned int level)
 {
     epicsThreadOSD *pthreadInfo;
+    int status;
 
     if(!epicsThreadInitCalled) epicsThreadInit();
     epicsThreadShow(0,level);

@@ -14,7 +14,7 @@ iocCore_OBJS += $(INSTALL_BIN)/rsrvIocLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxComLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxDbLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/iocshLibrary.o
-iocCore_SRCS += registerRecordDeviceDriver.c
+iocCore_OBJS += registerRecordDeviceDriver.o
 
 OBJLIB_vxWorks = iocCore
 OBJLIB_OBJS += $(iocCore_OBJS)

@@ -47,6 +47,7 @@
 #include	"epicsMath.h"
 #include	"postfix.h"
 #include	"postfixPvt.h"
+#include	"osiUnistd.h"
 
 static double	local_random(void);
 

@@ -471,7 +471,6 @@ clean::
 $(JAR):%.jar:  $(JAR_DEPFILES)
 	@echo Creating java jar file $@
 	$(RM) $@
-	@echo "$(JARCMD)"
 	$(JARCMD)
 
 $(INSTALL_JAVA)/%.jar: %.jar
@@ -480,7 +479,7 @@ $(INSTALL_JAVA)/%.jar: %.jar
 
 $(INSTALL_JAVA)/%.class: %.class
 	@echo "Installing java file $@"
-	$(INSTALL) -d -m 644 $< $(@D)
+	$(INSTALL) -d -m 644 $(*)*.class $(@D)
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------

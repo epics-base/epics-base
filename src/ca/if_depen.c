@@ -39,6 +39,8 @@ static char	*sccsId = "@(#) $Id$";
 
 #include "iocinf.h"
 
+#define DEBUG
+
 /*
  * Dont use ca_static based lock macros here because this is
  * also called by the server. All locks required are applied at
@@ -81,13 +83,13 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	status = socket_ioctl(s, SIOCGIFCONF, &ifconf);
 	if (status < 0 || ifconf.ifc_len == 0) {
 		ca_printf(
-			"CAC: ioctl failed because \"%s\"\n", 
+			"CAC: SIOCGIFCONF ioctl failed because \"%s\"\n", 
 			SOCKERRSTR);
 		ifconf.ifc_len = 0;
 	}
 
 #ifdef DEBUG
-	ca_printf("CAC: %d if fnd\n", ifconf.ifc_len/sizeof(*pifreq));
+	ca_printf("CAC: %d net intf found\n", ifconf.ifc_len/sizeof(*pifreq));
 #endif
 
 	for (	pifreq = ifconf.ifc_req;
@@ -96,20 +98,20 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 
 		status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
 		if (status == ERROR){
-			ca_printf("CAC: could not obtain if flags\n");
+			ca_printf("CAC: net intf flags fetch for %s failed\n", pifreq->ifr_name);
 			continue;
 		}
-
-#ifdef DEBUG
-		ca_printf("CAC: if fnd %s\n", pifreq->ifr_name);
-#endif
 
 		if (!(pifreq->ifr_flags & IFF_UP)) {
 #ifdef DEBUG
-			ca_printf("CAC: if was down\n");
+			ca_printf("CAC: net intf %s was down\n", pifreq->ifr_name);
 #endif
 			continue;
 		}
+		
+#ifdef DEBUG
+		ca_printf("CAC: net intf %s found\n", pifreq->ifr_name);
+#endif
 
 		/*
 		 * dont use the loop back interface
@@ -121,14 +123,14 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 		status = socket_ioctl(s, SIOCGIFADDR, pifreq);
 		if (status == ERROR){
 #ifdef DEBUG
-			ca_printf("CAC: could not obtain addr\n");
+			ca_printf("CAC: could not obtain addr for %s\n", pifreq->ifr_name);
 #endif
 			continue;
 		}
 
 		if (pifreq->ifr_addr.sa_family != AF_INET){
 #ifdef DEBUG
-			ca_printf("CAC: interface was not AF_INET\n");
+			ca_printf("CAC: interface %s was not AF_INET\n", pifreq->ifr_name);
 #endif
 			continue;
 		}

@@ -72,6 +72,7 @@
 
 static double	local_random(void);
 
+#ifndef isnan
 static int isnan(double d)
 {
 	union { long l[2]; double d; } u;
@@ -80,6 +81,8 @@ static int isnan(double d)
 	if (u.l[1] || (u.l[0] & 0x000fffff)) return(1);
 	return(0);
 }
+#endif
+
 #define myNINT(a) ((int)((a) >= 0 ? (a)+0.5 : (a)-0.5))
 #ifndef PI
 #define PI 3.141592654

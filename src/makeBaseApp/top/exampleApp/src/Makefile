@@ -9,6 +9,7 @@ include $(TOP)/configure/CONFIG
 
 PROD_HOST += caExample
 
+caExample_SRCS	+= caExample.c
 caExample_LIBS	+= ca
 caExample_LIBS	+= Com
 

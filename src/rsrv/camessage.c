@@ -187,7 +187,6 @@ struct db_addr 	*pAddr,
 unsigned	cid
 );
 
-LOCAL unsigned 		bucketID;
 
 
 /*
@@ -1215,7 +1214,8 @@ struct client  *client
 
 	FASTLOCK(&rsrv_free_addrq_lck);
 	status = bucketRemoveItemUnsignedId (pCaBucket, &pciu->sid);
-	if(status != BUCKET_SUCCESS){
+	if(status != S_bucket_success){
+		errMessage (status, "Bad resource id during channel clear");
 		logBadId(client, mp);
 	}
 	ellAdd(&rsrv_free_addrq, &pciu->node);
@@ -1623,7 +1623,7 @@ struct client  *client
 	if (CA_V44(CA_PROTOCOL_VERSION,htons(mp->m_count))) {
 		sid = ~0U;
 		count = 0;
-		type = -1;
+		type = ca_server_port;
 	}
 	else {
 		struct channel_in_use 	*pchannel;
@@ -1685,9 +1685,9 @@ struct db_addr 	*pAddr,
 unsigned	cid
 )
 {
+	static unsigned 	bucketID;
 	unsigned		*pCID;
 	struct channel_in_use 	*pchannel;
-	unsigned 		sid;
 	int			status;
 
 	/* get block off free list if possible */
@@ -1715,23 +1715,37 @@ unsigned	cid
 	/*
 	 * allocate a server id and enter the channel pointer
 	 * in the table
+	 *
+	 * NOTE: This detects the case where the PV id wraps
+	 * around and we attempt to have two resources on the same id.
+	 * The lock is applied here because on some architectures the
+	 * ++ operator isnt atomic.
 	 */
 	FASTLOCK(&rsrv_free_addrq_lck);
-	sid = bucketID++;
-	/*
-	 * bypass read only warning
-	 */
-	pCID = (unsigned *) &pchannel->sid;
-	*pCID = sid;
-	status = bucketAddItemUnsignedId (
-			pCaBucket, 
-			&pchannel->sid, 
-			pchannel);
+
+	do {
+		/*
+		 * bypass read only warning
+		 */
+		pCID = (unsigned *) &pchannel->sid;
+		*pCID = bucketID++;
+
+		/*
+		 * Verify that this id is not in use
+		 */
+		status = bucketAddItemUnsignedId (
+				pCaBucket, 
+				&pchannel->sid, 
+				pchannel);
+	} while (status != S_bucket_success);
+
 	FASTUNLOCK(&rsrv_free_addrq_lck);
-	if(status!=BUCKET_SUCCESS){
+
+	if(status!=S_bucket_success){
 		FASTLOCK(&rsrv_free_addrq_lck);
 		ellAdd(&rsrv_free_addrq, &pchannel->node);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
+		errMessage (status, "Unable to allocate server id");
 		return NULL;
 	}
 
@@ -1984,7 +1998,7 @@ struct client	*pc
  *
  * used to be a macro
  */
-LOCAL struct channel_in_use *MPTOPCIU(struct extmsg *mp)
+LOCAL struct channel_in_use *MPTOPCIU (struct extmsg *mp)
 {
 	struct channel_in_use 	*pciu;
 	const unsigned		id = mp->m_cid;

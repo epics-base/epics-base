@@ -454,6 +454,11 @@ iocsh (const char *pathname)
                                         &argBuf[arg], piocshFuncDef->arg[arg]))
                     break;
             }
+            if((prompt != NULL) && (strcmp(argv[0], "epicsEnvSet") == 0)) {
+                char *newPrompt;
+                if ((newPrompt = getenv ("IOCSH_PS1")) != NULL)
+                    prompt = newPrompt;
+            }
         }
     }
     if (fp && (fp != stdin))

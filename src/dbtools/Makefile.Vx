@@ -1,0 +1,47 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS =
+
+SRCS = \
+	dbVarSub.c $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
+
+OBJS = \
+	$(OBDIR)/dbVarSub.o $(OBDIR)/dbLoadTemplate.o \
+	$(OBDIR)/dbLoadRecords.o
+
+LIBOBJS =
+
+PROD = $(OBDIR)/dbSubs
+
+depends: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
+
+$(OBDIR)/dbLoadRecords.c: $(OBDIR)/dbLoadRecords_lex.c dbLoadRecords.y
+	/bin/rm -f $@
+	$(YACC) -l dbLoadRecords.y
+	mv y.tab.c $@
+
+$(OBDIR)/dbLoadRecords_lex.c: dbLoadRecords.l
+	/bin/rm -f $@
+	$(LEX) -t -L dbLoadRecords.l > $@
+
+$(OBDIR)/dbLoadTemplate.c: $(OBDIR)/dbLoadTemplate_lex.c dbLoadTemplate.y
+	/bin/rm -f $@
+	$(YACC) -l dbLoadTemplate.y
+	mv y.tab.c $@
+
+$(OBDIR)/dbLoadTemplate_lex.c: dbLoadTemplate.l
+	/bin/rm -f $@
+	$(LEX) -t -L dbLoadTemplate.l > $@
+
+$(OBDIR)/dbLoadRecords.o: $(OBDIR)/dbLoadRecords.c
+	$(RM) $@
+	$(CC) -c  $(CFLAGS) -o $(OBDIR)/dbLoadRecords.o \
+			       $(OBDIR)/dbLoadRecords.c
+
+$(OBDIR)/dbLoadTemplate.o: $(OBDIR)/dbLoadTemplate.c
+	$(RM) $@
+	$(CC) -c  $(CFLAGS) -o $(OBDIR)/dbLoadTemplate.o \
+			       $(OBDIR)/dbLoadTemplate.c
+
+include $(EPICS)/config/RULES.Vx

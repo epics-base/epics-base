@@ -15,7 +15,7 @@ install: buildInstall
 
 buildInstall: $(TARGETS)
 
-cdCommands: $(wildcard $(TOP)/configure/RELEASE*) \
+envPaths cdCommands: $(wildcard $(TOP)/configure/RELEASE*) \
 	$(TOP)/configure/CONFIG $(TOP)/bin
 	@$(RM) $@
 ifeq ($(IOCS_APPL_TOP),)

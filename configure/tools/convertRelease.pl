@@ -59,7 +59,8 @@ unless (@ARGV == 1) {
     print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-t ioctop] outfile\n";
     print "   where outfile is be one of:\n";
     print "\tcheckRelease - checks consistency with support apps\n";
-    print "\tcdCommands - generate cd path strings for IOC use\n";
+    print "\tcdCommands - generate cd path strings for vxWorks IOCs\n";
+    print "\tenvPaths - generate epicsEnvSet commands for other IOCs\n";
     print "\tCONFIG_APP_INCLUDE - additional build variables\n";
     print "\tRULES_INCLUDE - supports installable build rules\n";
     exit 2;
@@ -87,6 +88,7 @@ for ($outfile) {
     /CONFIG_APP_INCLUDE/ and do { &configAppInclude;	last; };
     /RULES_INCLUDE/	 and do { &rulesInclude;	last; };
     /cdCommands/	 and do { &cdCommands;		last; };
+    /envPaths/  	 and do { &envPaths;		last; };
     /checkRelease/	 and do { &checkRelease;	last; };
     die "Output file type \'$outfile\' not supported";
 }
@@ -234,6 +236,26 @@ sub cdCommands {
 	$app_lc = lc($app);
         print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
 	print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
+    }
+    close OUT;
+}
+sub envPaths {
+    die "Architecture not set (use -a option)" unless ($arch);
+    @includes = grep !/^TEMPLATE_TOP$/, @apps;
+    
+    unlink($outfile);
+    open(OUT,">$outfile") or die "$! creating $outfile";
+    
+    $ioc = $cwd;
+    $ioc =~ s/^.*\///;
+    
+    print OUT "epicsEnvSet(ARCH,\"$arch\")\n";
+    print OUT "epicsEnvSet(IOC,\"$ioc\")\n";
+    
+    foreach $app (@includes) {
+	$iocpath = $path = $macros{$app};
+	$iocpath =~ s/^$root/$iocroot/ if ($opt_t);
+        print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
     }
     close OUT;
 }

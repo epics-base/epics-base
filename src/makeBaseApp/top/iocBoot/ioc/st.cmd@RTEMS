@@ -3,6 +3,8 @@
 ## You may have to change _APPNAME_ to something else
 ## everywhere it appears in this file
 
+#< envPaths
+
 ## Register all support components
 dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
 _APPNAME__registerRecordDeviceDriver(pdbbase) 

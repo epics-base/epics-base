@@ -1228,10 +1228,8 @@ void cac::privateDestroyAllIO ( nciu & chan )
     while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
         this->ioTable.remove ( *pIO );
         class netSubscription *pSubscr = pIO->isSubscription ();
-        if ( pSubscr ) {
-            if ( chan.connected() ) {
-                chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
-            }
+        if ( pSubscr && chan.connected() ) {
+            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
         }
         {
             epicsAutoMutexRelease autoMutexRelease ( this->mutex );

@@ -51,6 +51,7 @@ Com_DIR          = $(EPICS_BASE_LIB)
 
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
+example_SRCS += caMonitor.c
 
 example_SRCS_DEFAULT += registerRecordDeviceDriver.c
 example_SRCS_DEFAULT += exampleMain.c

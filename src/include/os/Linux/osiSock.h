@@ -9,7 +9,7 @@
  * have been adding the following in order to use POSIX signals 
  * and also sockets on Linux with cc -v. What a pain....
  *
- * #ifdef LINUX
+ * #ifdef linux
  * #define __EXTENSIONS__ 
  * #endif
  */
@@ -28,8 +28,8 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/filio.h>
-#include <sys/sockio.h>
+/*#include <sys/filio.h>
+#include <sys/sockio.h>*/
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -53,7 +53,7 @@ typedef int                     SOCKET;
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 
-#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
+#define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 
 #endif /*osiSockH*/
 

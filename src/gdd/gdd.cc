@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.17  1997/01/12 20:32:45  jbk
+// many errors fixed
+//
 // Revision 1.15  1996/12/17 15:04:42  jbk
 // fixed bug in copyData, sets bounds now
 //
@@ -1002,6 +1005,7 @@ gddStatus gdd::clearData(void)
 			destruct->destroy(dataPointer());
 			destruct=NULL;
 		}
+		freeBounds();
 		setData(NULL);
 	}
 	return rc;

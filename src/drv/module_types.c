@@ -1,5 +1,4 @@
 /* module_types.c */
-/* module_types.c */
 /* share/epicsH $Id$ */
 /*
  * 	Author:      Marty Kraimer
@@ -154,7 +153,7 @@ bo_addrs[BB902]		= 0xd800;
 bo_addrs[XY220]		= 0xc800;
 bo_addrs[VXI_AT5_BO]	= 0xc000;
 bo_addrs[HPE1368A_BO]	= 0xc000;
-bo_addrs[AT8_FP10M_BO]	= 0x0c00;
+bo_addrs[AT8_FP10M_BO]	= 0xc000;
 bo_addrs[XY240_BO]	= 0xd000;
 
 sm_num_cards[CM57_83E]	= 8;
@@ -241,4 +240,5 @@ NIGPIB_IRQ_LEVEL	= 5;
 MVME162_EXT_OFF		= 0x40000000;
 MVME162_IVEC_BASE	= 104;
 MVME162_IRQ_LEVEL	= 5;
+return(0);
 }

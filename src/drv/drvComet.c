@@ -54,7 +54,7 @@
  */
 #include <vxWorks.h>
 #	ifdef V5_vxWorks
-#		include <68k/iv.h>
+#		include <iv.h>
 #	else
 #		include <iv68k.h>
 #	endif

@@ -19,6 +19,7 @@
 #include <typeinfo>
 #include <string>
 #include <stdexcept>
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "epicsGuard.h"

@@ -25,6 +25,7 @@
 #include <string>
 #include <climits>
 #include <stdexcept>
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "ipAddrToAsciiAsynchronous.h"

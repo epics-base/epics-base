@@ -2,7 +2,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS         := ca Com
+PROD_LIBS  = ca Com
 
 #
 # Added winmm user32 for the non-dll build

@@ -2,16 +2,18 @@ TOP=../..
 include $(TOP)/configure/CONFIG
 
 LIBSRCS += asLib.c
-asLibrary_SRCS += asDbLib.c
-asLibrary_SRCS += asCa.c
 
-LIBRARY_HOST = As
-LIBRARY_IOC = as
-DLL_LIBS  = Db Com
+asIoc_SRCS += asDbLib.c
+asIoc_SRCS += asCa.c
 
-PROD_LIBS = As dbStatic Com
-As_DIR=.
+LIBRARY_HOST = asHost
+LIBRARY_IOC = asIoc
 
+asHost_DLL_LIBS  = dbStaticHost Com
+asIoc_DLL_LIBS  = dbStaticIoc Com
+
+asHost_DIR=.
+PROD_LIBS = asHost dbStaticHost Com
 PROD = ascheck
 
 include $(TOP)/configure/RULES

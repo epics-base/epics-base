@@ -2,12 +2,14 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-YACCOPT := -l
-LEXOPT  := -L
+#YACCOPT := -l
+#LEXOPT  := -L
 
-dbSubs_SRCS += dbLoadTemplate.c
+LIBSRCS += dbLoadTemplate.c
 
-LIBRARY = dbSubs
+LIBRARY_IOC = dbtoolsIoc
+
+dbtoolsIoc_DLL_LIBS  = dbStaticIoc Com
 
 HTMLS += dbLoadTemplate.html
 

@@ -15,14 +15,15 @@ INC += registry.h
 
 SCRIPTS += registerRecordDeviceDriver.pl
 
-registry_SRCS += registry.c
-registry_SRCS += registryRecordType.c
-registry_SRCS += registryDeviceSupport.c
-registry_SRCS += registryDriverSupport.c
+LIBSRCS += registry.c
+LIBSRCS += registryRecordType.c
+LIBSRCS += registryDeviceSupport.c
+LIBSRCS += registryDriverSupport.c
 
-LIBRARY = registry
+LIBRARY_IOC = registryIoc
+registryIoc_DLL_LIBS  = dbStaticIoc Com
 
-OBJS = registerRecordDeviceDriver
+OBJS_IOC = registerRecordDeviceDriver
 
 include $(TOP)/configure/RULES
 

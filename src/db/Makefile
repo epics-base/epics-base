@@ -30,31 +30,30 @@ MENUS += menuScan.h
 MENUS += menuYesNo.h
 
 RECTYPES += dbCommon.h
-USER_DBDFLAGS += -I ..
 
 DBDINSTALL +=  dbCommonRecord.dbd 
 DBDINSTALL +=  menuGlobal.dbd
 
-SRCS += dbLock.c
-SRCS += dbAccess.c
-SRCS += dbBkpt.c
-SRCS += dbConvert.c
-SRCS += dbFastLinkConv.c
-SRCS += dbNotify.c 
-SRCS += dbScan.c
-SRCS += dbEvent.c
-SRCS += dbTest.c
-SRCS += db_access.c
-SRCS += db_test.c
-SRCS += recGbl.c
-SRCS += callback.c
-SRCS += dbCa.c 
-SRCS += initHooks.c 
-SRCS += dbcar.c 
+LIBSRCS += dbLock.c
+LIBSRCS += dbAccess.c
+LIBSRCS += dbBkpt.c
+LIBSRCS += dbConvert.c
+LIBSRCS += dbFastLinkConv.c
+LIBSRCS += dbNotify.c 
+LIBSRCS += dbScan.c
+LIBSRCS += dbEvent.c
+LIBSRCS += dbTest.c
+LIBSRCS += db_access.c
+LIBSRCS += db_test.c
+LIBSRCS += recGbl.c
+LIBSRCS += callback.c
+LIBSRCS += dbCa.c 
+LIBSRCS += initHooks.c 
+LIBSRCS += dbcar.c 
 
 OBJS_IOC += iocInit
 
-LIBRARY_IOC = db
+LIBRARY_IOC = dbIoc
 DLL_LIBS = dbStaticIoc Com
 
 include $(TOP)/configure/RULES
@@ -62,4 +61,4 @@ include $(TOP)/configure/RULES
 dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
 	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
-		$(USER_DBDFLAGS) $<
+		$(DBDFLAGS) $<

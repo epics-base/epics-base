@@ -2,8 +2,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-#       includes to install from this sub-project
-#
 INC += alarm.h
 INC += alarmString.h
 INC += dbBase.h
@@ -13,30 +11,21 @@ INC += link.h
 INC += special.h
 INC += guigroup.h
 
-#       Sources to compile & put into lib:
-#
 LIBSRCS += dbStaticLib.c
 LIBSRCS += dbYacc.c
 LIBSRCS += dbPvdLib.c
 dbStaticHost_SRCS += dbStaticNoRun.c 
 dbStaticIoc_SRCS += dbStaticRun.c
 
-
-#       Library to build:
-#
 LIBRARY_HOST += dbStaticHost
 LIBRARY_IOC += dbStaticIoc
 
-DLL_LIBS = Com
+dbStaticHost_DLL_LIBS = Com
+dbStaticIoc_DLL_LIBS = Com
 
-#       Products to build:
-#
-PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
-
-#       libs needed by PROD:
-#
 PROD_LIBS := dbStaticHost Com
 dbStaticHost_DIR=.
+PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 
 include $(TOP)/configure/RULES
 

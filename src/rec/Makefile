@@ -1,12 +1,10 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-
 INC += egDefs.h
 INC += erDefs.h
 INC += ereventDefs.h
 
-#USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 RECTYPES += aaiRecord.h
 RECTYPES += aaoRecord.h
 RECTYPES += aiRecord.h

@@ -3,78 +3,8 @@ include $(TOP)/configure/CONFIG
 
 LIBCOM = $(TOP)/src/libCom
 
-
-# From cxxTemplates
-SRC_DIRS += $(LIBCOM)/cxxTemplates
-
-INC += resourceLib.h
-INC += tsDLList.h
-INC += tsSLList.h
-INC += tsMinMax.h
-INC += tsBTree.h
-
-# From osi
-SRC_DIRS += $(LIBCOM)/osi
-
-INC += dbDefs.h
-INC += epicsTypes.h
+#epicsVersion is created by this Makefile
 INC += epicsVersion.h
-INC += gsd_sync_defs.h
-INC += shareLib.h
-#INC += createSoftLinks.sh
-INC += unixFileName.h
-
-INC += devSup.h
-INC += drvSup.h
-INC += caeventmask.h
-INC += asLib.h
-INC += registryDeviceSupport.h
-INC += registryDriverSupport.h
-INC += registryRecordType.h
-INC += cadef.h
-INC += caerr.h
-INC += asDbLib.h
-
-INC += osiFileName.h
-INC += osiSock.h
-INC += osdSock.h
-
-INC += osiInterrupt.h
-INC += osdInterrupt.h
-INC += osiRing.h
-INC += osdRing.h
-INC += osiSem.h
-INC += osdSem.h
-INC += epicsAssert.h
-INC += osiFindGlobalSymbol.h
-INC += osdFindGlobalSymbol.h
-INC += osiPoolStatus.h
-INC += osdPoolStatus.h
-INC += osiThread.h
-INC += osdThread.h
-INC += osiTime.h
-INC += osdTime.h
-INC += osiSigPipeIgnore.h
-INC += osdSigPipeIgnore.h
-INC += tsStamp.h
-INC += osiMutex.h
-INC += osiEvent.h
-
-
-SRCS += osdSock.c
-SRCS += osiSock.c
-SRCS += osdAssert.c
-SRCS += osdFindGlobalSymbol.c
-SRCS += osdInterrupt.c
-SRCS += osdPoolStatus.c
-SRCS += osdRing.c
-SRCS += osdSem.c
-SRCS += osdThread.c
-SRCS += osiThread.cpp
-SRCS += osdTime.cpp
-SRCS += osiTime.cpp
-SRCS += osdSigPipeIgnore.c
-#tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/bucketLib
 INC += bucketLib.h
@@ -93,6 +23,14 @@ SRCS += sCalcPerform.c
 SRC_DIRS += $(LIBCOM)/cvtFast
 INC += cvtFast.h
 SRCS += cvtFast.c
+
+# From cxxTemplates
+SRC_DIRS += $(LIBCOM)/cxxTemplates
+INC += resourceLib.h
+INC += tsDLList.h
+INC += tsSLList.h
+INC += tsMinMax.h
+INC += tsBTree.h
 
 SRC_DIRS += $(LIBCOM)/dbmf
 INC += dbmf.h
@@ -133,6 +71,10 @@ INC += gpHash.h
 SRCS += gpHashLib.c
 HTMLS += gpHash/gpHash.html
 
+SRC_DIRS += $(LIBCOM)/logClient
+INC += logClient.h
+SRCS += logClient.c
+
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
 SRCS += macCore.c
@@ -140,17 +82,70 @@ SRCS += macUtil.c
 
 SRC_DIRS += $(LIBCOM)/misc
 INC += adjustment.h
+INC += asDbLib.h
+INC += asLib.h
+INC += cadef.h
+INC += caerr.h
+INC += caeventmask.h
 INC += cantProceed.h
+INC += dbDefs.h
+INC += devSup.h
+INC += drvSup.h
 INC += epicsString.h
+INC += epicsTypes.h
+INC += gsd_sync_defs.h
+INC += registryDeviceSupport.h
+INC += registryDriverSupport.h
+INC += registryRecordType.h
+INC += shareLib.h
+INC += truncateFile.h
+INC += unixFileName.h
+SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c
 SRCS += epicsString.c
-SRCS += aToIPAddr.c
-INC += truncateFile.h
 SRCS += truncateFile.c
-SRC_DIRS += $(LIBCOM)/logClient
-INC += logClient.h
-SRCS += logClient.c
+
+# From osi
+SRC_DIRS += $(LIBCOM)/osi
+INC += osiFileName.h
+INC += osiSock.h
+INC += osdSock.h
+INC += osiInterrupt.h
+INC += osdInterrupt.h
+INC += osiRing.h
+INC += osdRing.h
+INC += osiSem.h
+INC += osdSem.h
+INC += epicsAssert.h
+INC += osiFindGlobalSymbol.h
+INC += osdFindGlobalSymbol.h
+INC += osiPoolStatus.h
+INC += osdPoolStatus.h
+INC += osiThread.h
+INC += osdThread.h
+INC += osiTime.h
+INC += osdTime.h
+INC += osiSigPipeIgnore.h
+INC += osdSigPipeIgnore.h
+INC += tsStamp.h
+INC += osiMutex.h
+INC += osiEvent.h
+
+SRCS += osdSock.c
+SRCS += osiSock.c
+SRCS += osdAssert.c
+SRCS += osdFindGlobalSymbol.c
+SRCS += osdInterrupt.c
+SRCS += osdPoolStatus.c
+SRCS += osdRing.c
+SRCS += osdSem.c
+SRCS += osdThread.c
+SRCS += osiThread.cpp
+SRCS += osdTime.cpp
+SRCS += osiTime.cpp
+SRCS += osdSigPipeIgnore.c
+#tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h

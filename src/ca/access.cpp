@@ -295,9 +295,8 @@ extern "C" dbEventSubscription pvEventQueueAddEventNoop (dbEventCtx, pvId,
 {
     return NULL;
 }
-extern "C" int pvEventQueuePostSingleEventNoop (dbEventSubscription)
+extern "C" void pvEventQueuePostSingleEventNoop (dbEventSubscription)
 {
-    return -1;
 }
 extern "C" void pvEventQueueCancelEventNoop (dbEventSubscription)
 {

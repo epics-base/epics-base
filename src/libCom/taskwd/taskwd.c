@@ -25,7 +25,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "errMdef.h"
@@ -46,9 +46,9 @@ struct task_list {
 
 static ELLLIST list;
 static ELLLIST anylist;
-static semMutexId lock;
-static semMutexId anylock;
-static semMutexId alloclock;
+static epicsMutexId lock;
+static epicsMutexId anylock;
+static epicsMutexId alloclock;
 static threadId taskwdid=0;
 volatile int taskwdOn=TRUE;
 struct freeList{
@@ -66,9 +66,9 @@ static void taskwdInitPvt(void *);
 
 static void taskwdInitPvt(void *arg)
 {
-    lock = semMutexMustCreate();
-    anylock = semMutexMustCreate();
-    alloclock = semMutexMustCreate();
+    lock = epicsMutexMustCreate();
+    anylock = epicsMutexMustCreate();
+    alloclock = epicsMutexMustCreate();
     ellInit(&list);
     ellInit(&anylist);
     taskwdid = threadCreate(
@@ -88,14 +88,14 @@ void epicsShareAPI taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
     struct task_list *pt;
 
     taskwdInit();
-    semMutexMustTake(lock);
+    epicsMutexMustLock(lock);
     pt = allocList();
     ellAdd(&list,(void *)pt);
     pt->suspended = FALSE;
     pt->id.tid = tid;
     pt->callback = callback;
     pt->arg = arg;
-    semMutexGive(lock);
+    epicsMutexUnlock(lock);
 }
 
 void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
@@ -103,13 +103,13 @@ void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void 
     struct task_list *pt;
 
     taskwdInit();
-    semMutexMustTake(anylock);
+    epicsMutexMustLock(anylock);
     pt = allocList();
     ellAdd(&anylist,(void *)pt);
     pt->id.userpvt = userpvt;
     pt->callback = callback;
     pt->arg = arg;
-    semMutexGive(anylock);
+    epicsMutexUnlock(anylock);
 }
 
 void epicsShareAPI taskwdRemove(threadId tid)
@@ -117,18 +117,18 @@ void epicsShareAPI taskwdRemove(threadId tid)
     struct task_list *pt;
 
     taskwdInit();
-    semMutexMustTake(lock);
+    epicsMutexMustLock(lock);
     pt = (struct task_list *)ellFirst(&list);
     while(pt!=NULL) {
         if (tid == pt->id.tid) {
             ellDelete(&list,(void *)pt);
             freeList(pt);
-            semMutexGive(lock);
+            epicsMutexUnlock(lock);
             return;
         }
         pt = (struct task_list *)ellNext((ELLNODE *)pt);
     }
-    semMutexGive(lock);
+    epicsMutexUnlock(lock);
     errMessage(-1,"taskwdRemove failed");
 }
 
@@ -137,18 +137,18 @@ void epicsShareAPI taskwdAnyRemove(void *userpvt)
     struct task_list *pt;
 
     taskwdInit();
-    semMutexMustTake(anylock);
+    epicsMutexMustLock(anylock);
     pt = (struct task_list *)ellFirst(&anylist);
     while(pt!=NULL) {
         if (userpvt == pt->id.userpvt) {
             ellDelete(&anylist,(void *)pt);
             freeList(pt);
-            semMutexGive(anylock);
+            epicsMutexUnlock(anylock);
             return;
         }
         pt = (struct task_list *)ellNext((void *)pt);
     }
-    semMutexGive(anylock);
+    epicsMutexUnlock(anylock);
     errMessage(-1,"taskwdanyRemove failed");
 }
 
@@ -158,7 +158,7 @@ static void taskwdTask(void)
 
     while(TRUE) {
         if(taskwdOn) {
-            semMutexMustTake(lock);
+            epicsMutexMustLock(lock);
             pt = (struct task_list *)ellFirst(&list);
             while(pt) {
                 next = (struct task_list *)ellNext((void *)pt);
@@ -184,7 +184,7 @@ static void taskwdTask(void)
                             void	*arg = pt->arg;
 
                             /*Must allow callback to call taskwdRemove*/
-                            semMutexGive(lock);
+                            epicsMutexUnlock(lock);
                             (pcallback)(arg);
                             /*skip rest because we have unlocked*/
                             break;
@@ -195,7 +195,7 @@ static void taskwdTask(void)
                 }
                 pt = next;
             }
-            semMutexGive(lock);
+            epicsMutexUnlock(lock);
         }
         threadSleep(TASKWD_DELAY);
     }
@@ -205,7 +205,7 @@ static struct task_list *allocList(void)
 {
     struct task_list *pt;
 
-    semMutexMustTake(alloclock);
+    epicsMutexMustLock(alloclock);
     if(freeHead) {
         pt = (struct task_list *)freeHead;
         freeHead = freeHead->next;
@@ -214,15 +214,15 @@ static struct task_list *allocList(void)
         errMessage(0,"taskwd failed on call to calloc\n");
         exit(1);
     }
-    semMutexGive(alloclock);
+    epicsMutexUnlock(alloclock);
     return(pt);
 }
 
 static void freeList(struct task_list *pt)
 {
     
-    semMutexMustTake(alloclock);
+    epicsMutexMustLock(alloclock);
     ((struct freeList *)pt)->next  = freeHead;
     freeHead = (struct freeList *)pt;
-    semMutexGive(alloclock);
+    epicsMutexUnlock(alloclock);
 }

@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "ellLib.h"
 #include "dbmf.h"
 
@@ -33,7 +33,7 @@ typedef struct itemHeader{
 
 typedef struct dbmfPrivate {
     ELLLIST    chunkList;
-    semMutexId sem;
+    epicsMutexId lock;
     size_t     size;
     size_t     allocSize;
     int        chunkItems;
@@ -55,7 +55,7 @@ int epicsShareAPI dbmfInit(size_t size, int chunkItems)
     }
     pdbmfPvt = &dbmfPvt;
     ellInit(&pdbmfPvt->chunkList);
-    pdbmfPvt->sem = semMutexMustCreate();
+    pdbmfPvt->lock = epicsMutexMustCreate();
     /*allign to at least a double*/
     pdbmfPvt->size = size + size%sizeof(double);
     pdbmfPvt->allocSize = pdbmfPvt->size + sizeof(itemHeader);
@@ -78,7 +78,7 @@ void* epicsShareAPI dbmfMalloc(size_t size)
     itemHeader *pitemHeader;
 
     if(!pdbmfPvt) dbmfInit(DBMF_SIZE,DBMF_INITIAL_ITEMS);
-    semMutexMustTake(pdbmfPvt->sem);
+    epicsMutexMustLock(pdbmfPvt->lock);
     pfreeList = &pdbmfPvt->freeList;
     if(*pfreeList == NULL) {
         int         i;
@@ -88,7 +88,7 @@ void* epicsShareAPI dbmfMalloc(size_t size)
 	nbytesTotal = pdbmfPvt->chunkSize + sizeof(chunkNode);
         pmem = (char *)malloc(nbytesTotal);
 	if(!pmem) {
-            semMutexGive(pdbmfPvt->sem);
+            epicsMutexUnlock(pdbmfPvt->lock);
 	    printf("dbmfMalloc malloc failed\n");
 	    return(NULL);
 	}
@@ -118,7 +118,7 @@ void* epicsShareAPI dbmfMalloc(size_t size)
 	pitemHeader->pchunkNode = NULL;
 	if(dbmfDebug) printf("dbmfMalloc: size %d mem %p\n",size,pmem);
     }
-    semMutexGive(pdbmfPvt->sem);
+    epicsMutexUnlock(pdbmfPvt->lock);
     return((void *)(pmem + sizeof(itemHeader)));
 }
 
@@ -135,7 +135,7 @@ void epicsShareAPI dbmfFree(void* mem)
 	return;
     }
     pmem -= sizeof(itemHeader);
-    semMutexMustTake(pdbmfPvt->sem);
+    epicsMutexMustLock(pdbmfPvt->lock);
     pitemHeader = (itemHeader *)pmem;
     if(!pitemHeader->pchunkNode) {
 	if(dbmfDebug) printf("dbmfGree: mem %p\n",pmem);
@@ -149,7 +149,7 @@ void epicsShareAPI dbmfFree(void* mem)
         *pnextFree = *pfreeList; *pfreeList = pnextFree;
 	pdbmfPvt->nAlloc--; pdbmfPvt->nFree++;
     }
-    semMutexGive(pdbmfPvt->sem);
+    epicsMutexUnlock(pdbmfPvt->lock);
 }
 
 int epicsShareAPI dbmfShow(int level)
@@ -176,13 +176,13 @@ int epicsShareAPI dbmfShow(int level)
     if(level>1) {
 	void **pnextFree;;
 
-        semMutexMustTake(pdbmfPvt->sem);
+        epicsMutexMustLock(pdbmfPvt->lock);
 	pnextFree = (void**)pdbmfPvt->freeList;
 	while(pnextFree) {
 	    printf("%p\n",*pnextFree);
 	    pnextFree = (void**)*pnextFree;
 	}
-        semMutexGive(pdbmfPvt->sem);
+        epicsMutexUnlock(pdbmfPvt->lock);
     }
     return(0);
 }
@@ -196,11 +196,11 @@ void  epicsShareAPI dbmfFreeChunks(void)
 	printf("dbmfFreeChunks called but dbmfInit never called\n");
 	return;
     }
-    semMutexMustTake(pdbmfPvt->sem);
+    epicsMutexMustLock(pdbmfPvt->lock);
     if(pdbmfPvt->nFree
     != (pdbmfPvt->chunkItems * ellCount(&pdbmfPvt->chunkList))) {
 	printf("dbmfFinish: not all free\n");
-        semMutexGive(pdbmfPvt->sem);
+        epicsMutexUnlock(pdbmfPvt->lock);
 	return;
     }
     pchunkNode = (chunkNode *)ellFirst(&pdbmfPvt->chunkList);
@@ -211,5 +211,5 @@ void  epicsShareAPI dbmfFreeChunks(void)
 	pchunkNode = pnext;
     }
     pdbmfPvt->nFree = 0; pdbmfPvt->freeList = NULL;
-    semMutexGive(pdbmfPvt->sem);
+    epicsMutexUnlock(pdbmfPvt->lock);
 }

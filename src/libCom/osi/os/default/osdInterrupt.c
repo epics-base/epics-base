@@ -17,28 +17,28 @@ of this distribution.
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "cantProceed.h"
 #include "errlog.h"
 #include "osiInterrupt.h"
 
-static semMutexId globalLock=0;
+static epicsMutexId globalLock=0;
 static int firstTime = 1;
 
 epicsShareFunc int epicsShareAPI interruptLock()
 {
     if(firstTime) {
-        globalLock = semMutexMustCreate();
+        globalLock = epicsMutexMustCreate();
         firstTime = 0;
     }
-    semMutexMustTake(globalLock);
+    epicsMutexMustLock(globalLock);
     return(0);
 }
 
 epicsShareFunc void epicsShareAPI interruptUnlock(int key)
 {
     if(firstTime) cantProceed("interruptUnlock called before interruptLock\n");
-    semMutexGive(globalLock);
+    epicsMutexUnlock(globalLock);
 }
 
 epicsShareFunc int epicsShareAPI interruptIsInterruptContext() { return(0);}

@@ -122,10 +122,6 @@ INC += osdSock.h
 INC += osiInterrupt.h
 INC += osdInterrupt.h
 
-#Marty remove the following
-INC += osiSem.h
-INC += osdSem.h
-
 
 INC += epicsMutex.h
 INC += osdMutex.h
@@ -153,9 +149,6 @@ SRCS += osdAssert.c
 SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
-
-#Marty remove the following
-SRCS += osdSem.c
 
 SRCS += osdMutex.c
 SRCS += osdEvent.c

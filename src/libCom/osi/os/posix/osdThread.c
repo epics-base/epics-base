@@ -22,7 +22,8 @@ of this distribution.
 
 #include "ellLib.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "cantProceed.h"
 #include "errlog.h"
 #include "epicsAssert.h"
@@ -46,15 +47,15 @@ typedef struct threadInfo {
     struct sched_param schedParam;
     THREADFUNC	       createFunc;
     void	       *createArg;
-    semBinaryId        suspendSem;
+    epicsEventId        suspendEvent;
     int		       isSuspended;
     unsigned int       osiPriority;
     char               *name;
 } threadInfo;
 
 static pthread_key_t getpthreadInfo;
-static semMutexId onceMutex;
-static semMutexId listMutex;
+static epicsMutexId onceLock;
+static epicsMutexId listLock;
 static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
 static int threadInitCalled = 0;
@@ -97,7 +98,7 @@ static void myAtExit(void)
         fprintf(stderr,"osdThread myAtExit extered multiple times\n");
         return;
     }
-    semMutexMustTake(listMutex);
+    epicsMutexMustLock(listLock);
     pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
     while(pthreadInfo) {
         if(pthreadInfo->createFunc){/* dont cancel main thread*/
@@ -105,11 +106,11 @@ static void myAtExit(void)
         }
         pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
-    semMutexGive(listMutex);
+    epicsMutexUnlock(listLock);
     /* delete all resources created by once */
     free(pcommonAttr); pcommonAttr=0;
-    semMutexDestroy(listMutex);
-    semMutexDestroy(onceMutex);
+    epicsMutexDestroy(listLock);
+    epicsMutexDestroy(onceLock);
     pthread_key_delete(getpthreadInfo);
 }
 
@@ -168,7 +169,7 @@ static threadInfo * init_threadInfo(const char *name,
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    pthreadInfo->suspendSem = semBinaryMustCreate(semEmpty);
+    pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);
     pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"threadCreate");
     strcpy(pthreadInfo->name,name);
     return(pthreadInfo);
@@ -178,10 +179,10 @@ static void free_threadInfo(threadInfo *pthreadInfo)
 {
     int status;
 
-    semMutexMustTake(listMutex);
+    epicsMutexMustLock(listLock);
     ellDelete(&pthreadList,&pthreadInfo->node);
-    semMutexGive(listMutex);
-    semBinaryDestroy(pthreadInfo->suspendSem);
+    epicsMutexUnlock(listLock);
+    epicsEventDestroy(pthreadInfo->suspendEvent);
     status = pthread_attr_destroy(&pthreadInfo->attr);
     checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
     free(pthreadInfo->name);
@@ -194,8 +195,8 @@ static void once(void)
     int status;
 
     pthread_key_create(&getpthreadInfo,0);
-    onceMutex = semMutexMustCreate();
-    listMutex = semMutexMustCreate();
+    onceLock = epicsMutexMustCreate();
+    listLock = epicsMutexMustCreate();
     ellInit(&pthreadList);
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","threadInit");
@@ -231,10 +232,10 @@ static void once(void)
     pthreadInfo = init_threadInfo("_main_",0,0,0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","threadInit");
-    status = semMutexTake(listMutex);
-    checkStatusOnceQuit(status,"semMutexTake","threadInit");
+    status = epicsMutexLock(listLock);
+    checkStatusOnceQuit(status,"epicsMutexLock","threadInit");
     ellAdd(&pthreadList,&pthreadInfo->node);
-    semMutexGive(listMutex);
+    epicsMutexUnlock(listLock);
     status = atexit(myAtExit);
     checkStatusOnce(status,"atexit");
 }
@@ -248,9 +249,9 @@ static void * start_routine(void *arg)
     checkStatusQuit(status,"pthread_setspecific","start_routine");
     status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
     checkStatusQuit(status,"pthread_setcanceltype","start_routine");
-    semMutexMustTake(listMutex);
+    epicsMutexMustLock(listLock);
     ellAdd(&pthreadList,&pthreadInfo->node);
-    semMutexGive(listMutex);
+    epicsMutexUnlock(listLock);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
@@ -302,8 +303,8 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
 
     if(!threadInitCalled) threadInit();
-    if(semMutexTake(onceMutex) != semTakeOK) {
-        fprintf(stderr,"threadOnceOsd semMutexTake failed.\n");
+    if(epicsMutexLock(onceLock) != epicsMutexLockOK) {
+        fprintf(stderr,"threadOnceOsd epicsMutexLock failed.\n");
         fprintf(stderr,"Did you call threadInit? Program exiting\n");
         exit(-1);
     }
@@ -312,7 +313,7 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
     	func(arg);
     	*id = +1;   /* +1 => func() done (see threadOnce() macro defn) */
     }
-    semMutexGive(onceMutex);
+    epicsMutexUnlock(onceLock);
 }
 
 threadId threadCreate(const char *name,
@@ -335,14 +336,14 @@ void threadSuspendSelf(void)
 {
     threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     pthreadInfo->isSuspended = 1;
-    semBinaryMustTake(pthreadInfo->suspendSem);
+    epicsEventMustWait(pthreadInfo->suspendEvent);
 }
 
 void threadResume(threadId id)
 {
     threadInfo *pthreadInfo = (threadInfo *)id;
     pthreadInfo->isSuspended = 0;
-    semBinaryGive(pthreadInfo->suspendSem);
+    epicsEventSignal(pthreadInfo->suspendEvent);
 }
 
 void threadExitMain(void)
@@ -454,13 +455,13 @@ threadId threadGetIdSelf(void) {
 
 threadId threadGetId(const char *name) {
     threadInfo *pthreadInfo;
-    semMutexMustTake(listMutex);
+    epicsMutexMustLock(listLock);
     pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
     while(pthreadInfo) {
 	if(strcmp(name,pthreadInfo->name) == 0) break;
         pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
-    semMutexGive(listMutex);
+    epicsMutexUnlock(listLock);
     return((threadId)pthreadInfo);
 }
 
@@ -481,13 +482,13 @@ void threadShowAll(unsigned int level)
 {
     threadInfo *pthreadInfo;
     threadShow(0,level);
-    semMutexMustTake(listMutex);
+    epicsMutexMustLock(listLock);
     pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
     while(pthreadInfo) {
 	threadShow((threadId)pthreadInfo,level);
         pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
-    semMutexGive(listMutex);
+    epicsMutexUnlock(listLock);
 }
 
 void threadShow(threadId id,unsigned int level)

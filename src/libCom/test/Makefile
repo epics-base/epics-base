@@ -14,16 +14,6 @@ ringPointerTestHost_SRCS += ringPointerTestMain.c ringPointerTest.c
 PROD += ringPointerTestHost
 OBJS_IOC += ringPointerTest
 
-# Marty remover the following
-semBinaryTestHost_SRCS += semBinaryTestMain.c semBinaryTest.c
-PROD += semBinaryTestHost
-OBJS_IOC += semBinaryTest
-
-# Marty remover the following
-semMutexTestHost_SRCS += semMutexTestMain.c semMutexTest.c
-PROD += semMutexTestHost
-OBJS_IOC += semMutexTest
-
 epicsEventTestHost_SRCS += epicsEventTestMain.cpp epicsEventTest.cpp
 PROD += epicsEventTestHost
 OBJS_IOC += epicsEventTest

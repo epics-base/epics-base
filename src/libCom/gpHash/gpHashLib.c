@@ -58,7 +58,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsPrint.h"
@@ -68,7 +68,7 @@ typedef struct gphPvt {
     int		tableSize;
     int		nShift;
     ELLLIST	**paplist; /*pointer to array of pointers to ELLLIST */
-    semMutexId	lock;
+    epicsMutexId lock;
 }gphPvt;
 
 
@@ -146,7 +146,7 @@ void epicsShareAPI gphInitPvt(void **ppvt,int size)
     pgphPvt->tableSize = tableSize;
     pgphPvt->nShift = nShift;
     pgphPvt->paplist = myCalloc(tableSize, sizeof(ELLLIST *));
-    pgphPvt->lock = semMutexMustCreate();
+    pgphPvt->lock = epicsMutexMustCreate();
     *ppvt = (void *)pgphPvt;
     return;
 }
@@ -162,7 +162,7 @@ GPHENTRY * epicsShareAPI gphFind(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexMustTake(pgphPvt->lock);
+    epicsMutexMustLock(pgphPvt->lock);
     if ((gphlist=paplist[hashInd]) == NULL) {
 	pgphNode = NULL;
     } else {
@@ -174,7 +174,7 @@ GPHENTRY * epicsShareAPI gphFind(void *pvt,const char *name,void *pvtid)
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
-    semMutexGive(pgphPvt->lock);
+    epicsMutexUnlock(pgphPvt->lock);
     return(pgphNode);
 }
 
@@ -189,7 +189,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return(NULL);
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexMustTake(pgphPvt->lock);
+    epicsMutexMustLock(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	paplist[hashInd] = myCalloc(1, sizeof(ELLLIST));
 	ellInit(paplist[hashInd]);
@@ -199,7 +199,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     while(pgphNode) {
 	if((strcmp(name,(char *)pgphNode->name) == 0)
 	&&(pvtid == pgphNode->pvtid)) {
-            semMutexGive(pgphPvt->lock);
+            epicsMutexUnlock(pgphPvt->lock);
 	    return(NULL);
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
@@ -208,7 +208,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     pgphNode->name = name;
     pgphNode->pvtid = pvtid;
     ellAdd(plist, (ELLNODE*)pgphNode);
-    semMutexGive(pgphPvt->lock);
+    epicsMutexUnlock(pgphPvt->lock);
     return (pgphNode);
 }
 
@@ -223,7 +223,7 @@ void epicsShareAPI gphDelete(void *pvt,const char *name,void *pvtid)
     if(pgphPvt==NULL) return;
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
-    semMutexMustTake(pgphPvt->lock);
+    epicsMutexMustLock(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
 	pgphNode = NULL;
     } else {
@@ -239,7 +239,7 @@ void epicsShareAPI gphDelete(void *pvt,const char *name,void *pvtid)
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
-    semMutexGive(pgphPvt->lock);
+    epicsMutexUnlock(pgphPvt->lock);
     return;
 }
 

@@ -25,7 +25,7 @@ of this distribution.
 #include "cantProceed.h"
 #include "errlog.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "tsStamp.h"
 #include "iocClock.h"
 
@@ -36,7 +36,7 @@ static int iocClockGetCurrent(TS_STAMP *pDest);
 static int iocClockGetEvent(TS_STAMP *pDest, unsigned eventNumber);
 
 typedef struct iocClockPvt {
-    semMutexId  lock;
+    epicsMutexId  lock;
     TS_STAMP    clock;
     unsigned long lastTick;
     epicsUInt32 nanosecondsPerTick;
@@ -76,7 +76,7 @@ static void syncNTP(void)
             prevStatusBad = 0;
         }
         tsStampFromTimespec(&epicsTime,&Currtime);
-        semMutexMustTake(piocClockPvt->lock);
+        epicsMutexMustLock(piocClockPvt->lock);
         diffTime = tsStampDiffInSeconds(&epicsTime,&piocClockPvt->clock);
         if(diffTime>=0.0) {
             piocClockPvt->clock = epicsTime;
@@ -84,7 +84,7 @@ static void syncNTP(void)
             piocClockPvt->ticksToSkip = (int) (diffTime*piocClockPvt->tickRate);
         }
         piocClockPvt->lastTick = tickGet();
-        semMutexGive(piocClockPvt->lock);
+        epicsMutexUnlock(piocClockPvt->lock);
     }
 }
 
@@ -92,7 +92,7 @@ void iocClockInit()
 {
     if(piocClockPvt) return;
     piocClockPvt = callocMustSucceed(1,sizeof(iocClockPvt),"iocClockInit");
-    piocClockPvt->lock = semMutexMustCreate();
+    piocClockPvt->lock = epicsMutexCreate();
     piocClockPvt->nanosecondsPerTick = BILLION/sysClkRateGet();
     piocClockPvt->tickRate = sysClkRateGet();
     piocClockPvt->getCurrent = iocClockGetCurrent;
@@ -133,7 +133,7 @@ int iocClockGetCurrent(TS_STAMP *pDest)
 {
     unsigned long currentTick,nticks,nsecs;
 
-    semMutexMustTake(piocClockPvt->lock);
+    epicsMutexMustLock(piocClockPvt->lock);
     currentTick = tickGet();
     while(currentTick!=piocClockPvt->lastTick) {
         nticks = (currentTick>piocClockPvt->lastTick)
@@ -157,7 +157,7 @@ int iocClockGetCurrent(TS_STAMP *pDest)
         piocClockPvt->clock.secPastEpoch += nsecs;
     }
     *pDest = piocClockPvt->clock;
-    semMutexGive(piocClockPvt->lock);
+    epicsMutexUnlock(piocClockPvt->lock);
     return(0);
 }
 

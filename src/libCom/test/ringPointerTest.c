@@ -19,12 +19,12 @@ of this distribution.
 #include "osiThread.h"
 #include "epicsRingPointer.h"
 #include "errlog.h"
-#include "osiSem.h"
+#include "epicsEvent.h"
 
 #define ringSize 10
 
 typedef struct info {
-    semBinaryId consumerEvent;
+    epicsEventId consumerEvent;
     epicsRingPointerId	ring;
 }info;
 
@@ -36,8 +36,7 @@ static void consumer(void *arg)
 
     printf("consumer starting\n");
     while(1) {
-        semTakeStatus status;
-        status = semBinaryTake(pinfo->consumerEvent);
+        epicsEventMustWait(pinfo->consumerEvent);
         while((newvalue = (int *)epicsRingPointerPop(pinfo->ring))) {
             if(expectedValue != *newvalue) {
                 printf("consumer expected %d got %d\n",
@@ -52,15 +51,15 @@ void ringPointerTest()
 {
     int i;
     info *pinfo;
-    semBinaryId consumerEvent;
+    epicsEventId consumerEvent;
     int value[ringSize*2];
     int *pgetValue;
     epicsRingPointerId ring;
 
     for(i=0; i<ringSize*2; i++) value[i] = i;
     pinfo = calloc(1,sizeof(info));
-    pinfo->consumerEvent = consumerEvent = semBinaryMustCreate(semEmpty);
-    if(!consumerEvent) {printf("semBinaryMustCreate failed\n");exit(1);}
+    pinfo->consumerEvent = consumerEvent = epicsEventMustCreate(epicsEventEmpty);
+    if(!consumerEvent) {printf("epicsEventMustCreate failed\n");exit(1);}
     pinfo->ring = ring = epicsRingPointerCreate(ringSize);
     if(!ring) {printf("epicsRingPointerCreate failed\n");exit(1);}
     threadCreate("consumer",50,threadGetStackSize(threadStackSmall),
@@ -83,12 +82,12 @@ void ringPointerTest()
     if(!epicsRingPointerIsEmpty(ring)) printf("epicsRingPointerIsEmpty failed\n");
     for(i=0; i<ringSize*2; i++) {
         while(epicsRingPointerIsFull(ring)) {
-            semBinaryGive(consumerEvent);
+            epicsEventSignal(consumerEvent);
             threadSleep(2.0);
         }
         if(!epicsRingPointerPush(ring,(void *)&value[i]))
             printf("Why is ring full\n");
     }
-    semBinaryGive(consumerEvent);
+    epicsEventSignal(consumerEvent);
     threadSleep(2.0);
 }

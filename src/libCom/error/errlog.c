@@ -25,7 +25,8 @@ of this distribution.
 #define ERRLOG_INIT
 #include "dbDefs.h"
 #include "osiThread.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "osiInterrupt.h"
 #include "epicsAssert.h"
 #include "errMdef.h"
@@ -70,18 +71,18 @@ typedef struct msgNode {
 } msgNode;
 
 LOCAL struct {
-    semBinaryId	errlogTaskWaitForWork;
-    semMutexId	msgQueueLock;
-    semMutexId	listenerLock;
-    ELLLIST	listenerList;
-    ELLLIST	msgQueue;
-    msgNode	*pnextSend;
-    int		errlogInitFailed;
-    int		buffersize;
-    int		sevToLog;
-    int		toConsole;
-    int		missedMessages;
-    void	*pbuffer;
+    epicsEventId errlogTaskWaitForWork;
+    epicsMutexId msgQueueLock;
+    epicsMutexId listenerLock;
+    ELLLIST      listenerList;
+    ELLLIST      msgQueue;
+    msgNode      *pnextSend;
+    int	         errlogInitFailed;
+    int	         buffersize;
+    int	         sevToLog;
+    int	         toConsole;
+    int	         missedMessages;
+    void         *pbuffer;
 }pvtData;
 
 epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
@@ -212,11 +213,11 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
 
     errlogInit(0);
     plistenerNode = pvtCalloc(1,sizeof(listenerNode));
-    semMutexMustTake(pvtData.listenerLock);
+    epicsMutexMustLock(pvtData.listenerLock);
     plistenerNode->listener = listener;
     plistenerNode->pPrivate = pPrivate;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
-    semMutexGive(pvtData.listenerLock);
+    epicsMutexUnlock(pvtData.listenerLock);
 }
     
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
@@ -225,7 +226,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
     listenerNode *plistenerNode;
 
     errlogInit(0);
-    semMutexMustTake(pvtData.listenerLock);
+    epicsMutexMustLock(pvtData.listenerLock);
     plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
     while(plistenerNode) {
 	if(plistenerNode->listener==listener) {
@@ -235,7 +236,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 	}
 	plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
     }
-    semMutexGive(pvtData.listenerLock);
+    epicsMutexUnlock(pvtData.listenerLock);
     if(!plistenerNode) printf("errlogRemoveListener did not find listener\n");
 }
 
@@ -308,9 +309,9 @@ static void errlogInitPvt(void *arg)
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
-    pvtData.errlogTaskWaitForWork = semBinaryMustCreate(semEmpty);
-    pvtData.listenerLock = semMutexMustCreate();
-    pvtData.msgQueueLock = semMutexMustCreate();
+    pvtData.errlogTaskWaitForWork = epicsEventMustCreate(epicsEventEmpty);
+    pvtData.listenerLock = epicsMutexMustCreate();
+    pvtData.msgQueueLock = epicsMutexMustCreate();
     /*Allow an extra MAX_MESSAGE_SIZE for extra margain of safety*/
     pbuffer = pvtCalloc(pvtData.buffersize+MAX_MESSAGE_SIZE,sizeof(char));
     pvtData.pbuffer = pbuffer;
@@ -339,16 +340,16 @@ LOCAL void errlogTask(void)
     while(TRUE) {
 	char	*pmessage;
 
-	semBinaryMustTake(pvtData.errlogTaskWaitForWork);
+	epicsEventMustWait(pvtData.errlogTaskWaitForWork);
 	while((pmessage = msgbufGetSend())) {
-	    semMutexMustTake(pvtData.listenerLock);
+	    epicsMutexMustLock(pvtData.listenerLock);
 	    if(pvtData.toConsole) printf("%s",pmessage);
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
 		(*plistenerNode->listener)(plistenerNode->pPrivate, pmessage);
 		plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
 	    }
-            semMutexGive(pvtData.listenerLock);
+            epicsMutexUnlock(pvtData.listenerLock);
 	    msgbufFreeSend();
 	}
     }
@@ -390,7 +391,7 @@ LOCAL char *msgbufGetFree()
 {
     msgNode	*pnextSend;
 
-    semMutexMustTake(pvtData.msgQueueLock);
+    epicsMutexMustLock(pvtData.msgQueueLock);
     if((ellCount(&pvtData.msgQueue) == 0) && pvtData.missedMessages) {
 	int	nchar;
 
@@ -404,7 +405,7 @@ LOCAL char *msgbufGetFree()
     pvtData.pnextSend = pnextSend = msgbufGetNode();
     if(pnextSend) return(pnextSend->message);
     ++pvtData.missedMessages;
-    semMutexGive(pvtData.msgQueueLock);
+    epicsMutexUnlock(pvtData.msgQueueLock);
     return(0);
 }
 
@@ -436,8 +437,8 @@ LOCAL void msgbufSetSize(int size)
         pnextSend->length = size+1;
     }
     ellAdd(&pvtData.msgQueue,&pnextSend->node);
-    semMutexGive(pvtData.msgQueueLock);
-    semBinaryGive(pvtData.errlogTaskWaitForWork);
+    epicsMutexUnlock(pvtData.msgQueueLock);
+    epicsEventSignal(pvtData.errlogTaskWaitForWork);
 }
 
 /*errlogTask is the only task that calls msgbufGetSend and msgbufFreeSend*/
@@ -448,9 +449,9 @@ LOCAL char * msgbufGetSend()
 {
     msgNode	*pnextSend;
 
-    semMutexMustTake(pvtData.msgQueueLock);
+    epicsMutexMustLock(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
-    semMutexGive(pvtData.msgQueueLock);
+    epicsMutexUnlock(pvtData.msgQueueLock);
     if(!pnextSend) return(0);
     return(pnextSend->message);
 }
@@ -459,14 +460,14 @@ LOCAL void msgbufFreeSend()
 {
     msgNode	*pnextSend;
 
-    semMutexMustTake(pvtData.msgQueueLock);
+    epicsMutexMustLock(pvtData.msgQueueLock);
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");
 	threadSuspendSelf();
     }
     ellDelete(&pvtData.msgQueue,&pnextSend->node);
-    semMutexGive(pvtData.msgQueueLock);
+    epicsMutexUnlock(pvtData.msgQueueLock);
 }
 
 LOCAL void *pvtCalloc(size_t count,size_t size)

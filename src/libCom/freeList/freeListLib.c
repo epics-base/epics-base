@@ -59,7 +59,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
-#include "osiSem.h"
+#include "epicsMutex.h"
 #include "freeList.h"
 #include "adjustment.h"
 
@@ -73,7 +73,7 @@ typedef struct {
     void	*head;
     allocMem	*mallochead;
     size_t	nBlocksAvailable;
-    semMutexId	lock;
+    epicsMutexId lock;
 }FREELISTPVT;
 
 epicsShareFunc void epicsShareAPI 
@@ -87,7 +87,7 @@ epicsShareFunc void epicsShareAPI
     pfl->head = NULL;
     pfl->mallochead = NULL;
     pfl->nBlocksAvailable = 0u;
-    pfl->lock = semMutexMustCreate();
+    pfl->lock = epicsMutexMustCreate();
     *ppvt = (void *)pfl;
     return;
 }
@@ -110,17 +110,17 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     allocMem	*pallocmem;
     int		i;
 
-    semMutexMustTake(pfl->lock);
+    epicsMutexMustLock(pfl->lock);
     ptemp = pfl->head;
     if(ptemp==0) {
 	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
 	if(ptemp==0) {
-	    semMutexGive(pfl->lock);
+	    epicsMutexUnlock(pfl->lock);
 	    return(0);
 	}
 	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
 	if(pallocmem==0) {
-	    semMutexGive(pfl->lock);
+	    epicsMutexUnlock(pfl->lock);
 	    free(ptemp);
 	    return(0);
 	}
@@ -140,7 +140,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
     ppnext = pfl->head;
     pfl->head = *ppnext;
     pfl->nBlocksAvailable--;
-    semMutexGive(pfl->lock);
+    epicsMutexUnlock(pfl->lock);
     return(ptemp);
 }
 
@@ -149,12 +149,12 @@ epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
     FREELISTPVT	*pfl = pvt;
     void	**ppnext;
 
-    semMutexMustTake(pfl->lock);
+    epicsMutexMustLock(pfl->lock);
     ppnext = pmem;
     *ppnext = pfl->head;
     pfl->head = pmem;
     pfl->nBlocksAvailable++;
-    semMutexGive(pfl->lock);
+    epicsMutexUnlock(pfl->lock);
 }
 
 epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
@@ -170,7 +170,7 @@ epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
 	free(phead);
 	phead = pnext;
     }
-    semMutexDestroy(pfl->lock);
+    epicsMutexDestroy(pfl->lock);
     free(pvt);
 }
 

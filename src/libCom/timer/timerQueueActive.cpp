@@ -73,11 +73,13 @@ void timerQueueActive::run ()
 
 epicsTimer & timerQueueActive::createTimer ()
 {
-    timer *pTmr = new timer ( this->queue );
-    if ( ! pTmr ) {
-        throwWithLocation ( timer::noMemory () );
-    }
-    return *pTmr;
+    return this->queue.createTimer ();
+}
+
+void timerQueueActive::destroyTimer ( epicsTimer & et )
+{
+    timer & tmr = dynamic_cast < timer & > ( et );
+    this->queue.destroyTimer ( tmr );
 }
 
 void timerQueueActive::reschedule ()

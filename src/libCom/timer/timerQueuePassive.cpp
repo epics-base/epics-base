@@ -45,7 +45,7 @@ epicsTimerQueuePassive &epicsTimerQueuePassive::create ( epicsTimerQueueNotify &
 {
     timerQueuePassive *pQueue = new timerQueuePassive ( notify );
     if ( ! pQueue ) {
-        throwWithLocation ( timer::noMemory () );
+        throw std::bad_alloc ();
     }
     return *pQueue;
 }
@@ -57,11 +57,13 @@ timerQueuePassive::~timerQueuePassive () {}
 
 epicsTimer & timerQueuePassive::createTimer ()
 {
-    timer *pTmr = new timer ( this->queue );
-    if ( ! pTmr ) {
-        throwWithLocation ( timer::noMemory () );
-    }
-    return *pTmr;
+    return this->queue.createTimer ();
+}
+
+void timerQueuePassive::destroyTimer ( epicsTimer & et )
+{
+    timer & tmr = dynamic_cast < timer & > ( et );
+    this->queue.destroyTimer ( tmr );
 }
 
 double timerQueuePassive::process ( const epicsTime & currentTime )

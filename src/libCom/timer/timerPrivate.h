@@ -43,18 +43,16 @@
 
 class timer : public epicsTimer, public tsDLNode < timer > {
 public:
-    timer ( class timerQueue & );
     void start ( class epicsTimerNotify &, const epicsTime & );
     void start ( class epicsTimerNotify &, double delaySeconds );
     void cancel ();
     expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-    class noMemory {}; // exception
+    void destroyTimerForC ( epicsTimerForC & );
 protected:
-    ~timer ();
+    timer ( class timerQueue & );
 private:
+    ~timer (); // intentionally not implemented ( see destroy )
     enum state { statePending = 45, stateLimbo = 78 };
     epicsTime exp; // experation time 
     state curState; // current state 
@@ -62,9 +60,18 @@ private:
     timerQueue &queue;
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     void privateCancel ();
-    static tsFreeList < class timer, 0x20 > freeList;
-    static epicsMutex freeListMutex;
     friend class timerQueue;
+};
+
+struct epicsTimerForC : public epicsTimerNotify, public timer {
+public:
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
+    void destroy ();
+private:
+    epicsTimerCallback pCallBack;
+    void * pPrivate;
+    expireStatus expire ( const epicsTime & currentTime );
+    ~epicsTimerForC (); // intentionally not implemented ( see destroy )
 };
 
 class timerQueue {
@@ -73,8 +80,14 @@ public:
     ~timerQueue ();
     double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
+    timer & createTimer ();
+    void destroyTimer ( timer & );
+    epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
+    void destroyTimerForC ( epicsTimerForC & );
 private:
     mutable epicsMutex mutex;
+    tsFreeList < class timer, 0x20 > timerFreeList;
+    tsFreeList < epicsTimerForC, 0x20 > cTimerfreeList;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
     epicsTimerQueueNotify &notify;
@@ -101,6 +114,7 @@ public:
     timerQueueActive ( bool okToShare, unsigned priority );
     ~timerQueueActive () = 0;
     epicsTimer & createTimer ();
+    void destroyTimer ( epicsTimer & );
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     int threadPriority () const;
@@ -148,6 +162,7 @@ class timerQueuePassive : public epicsTimerQueuePassive {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
     epicsTimer & createTimer ();
+    void destroyTimer ( epicsTimer & );
     double process ( const epicsTime & currentTime );
     void show ( unsigned int level ) const;
     void release ();
@@ -158,16 +173,15 @@ private:
     timerQueue queue;
 };
 
-inline void * timer::operator new ( size_t size )
+inline epicsTimerForC & timerQueue::createTimerForC 
+    ( epicsTimerCallback pCB, void *pPriv )
 {
-    epicsAutoMutex locker ( timer::freeListMutex );
-    return timer::freeList.allocate ( size );
-}
-
-inline void timer::operator delete ( void *pCadaver, size_t size )
-{
-    epicsAutoMutex locker ( timer::freeListMutex );
-    timer::freeList.release ( pCadaver, size );
+    epicsAutoMutex autoLock ( this->mutex );
+    void *pBuf = this->cTimerfreeList.allocate ( sizeof (epicsTimerForC) );
+    if ( ! pBuf ) {
+        throw std::bad_alloc();
+    }
+    return * new ( pBuf ) epicsTimerForC ( *this, pCB, pPriv );
 }
 
 inline bool timerQueueActive::sharingOK () const

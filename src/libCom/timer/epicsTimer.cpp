@@ -32,22 +32,6 @@
 #include "epicsTimer.h"
 #include "timerPrivate.h"
 
-struct epicsTimerForC : public epicsTimerNotify, public timer {
-public:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
-    void destroy ();
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    virtual ~epicsTimerForC ();
-private:
-    epicsTimerCallback pCallBack;
-    void * pPrivate;
-    expireStatus expire ( const epicsTime & currentTime );
-    static tsFreeList < epicsTimerForC > freeList;
-    static epicsMutex freeListMutex;
-};
-
 struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
 public:
     epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
@@ -66,33 +50,14 @@ private:
 
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
-tsFreeList < epicsTimerForC > epicsTimerForC::freeList;
-epicsMutex epicsTimerForC::freeListMutex;
-
 epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
     timer ( queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
 {
 }
 
-epicsTimerForC::~epicsTimerForC () 
-{
-}
-
 inline void epicsTimerForC::destroy ()
 {
-    delete this;
-}
-
-inline void * epicsTimerForC::operator new ( size_t size )
-{ 
-    epicsAutoMutex locker ( epicsTimerForC::freeListMutex );
-    return epicsTimerForC::freeList.allocate ( size );
-}
-
-inline void epicsTimerForC::operator delete ( void *pCadaver, size_t size )
-{ 
-    epicsAutoMutex locker ( epicsTimerForC::freeListMutex );
-    epicsTimerForC::freeList.release ( pCadaver, size );
+    this->destroyTimerForC ( *this );
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )

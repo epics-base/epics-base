@@ -46,23 +46,25 @@ public:
 
 class epicsTimer {
 public:
-    virtual ~epicsTimer () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     virtual void cancel () = 0;
     struct expireInfo {
-        expireInfo ( bool active, const epicsTime &expireTime );
+        expireInfo ( bool active, const epicsTime & expireTime );
         bool active;
         epicsTime expireTime;
     };
     virtual expireInfo getExpireInfo () const = 0;
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
+private:
+    ~epicsTimer (); // intentionally not implemented ( see destroy )
 };
 
 class epicsTimerQueue {
 public:
     virtual epicsTimer & createTimer () = 0;
+    virtual void destroyTimer ( epicsTimer & ) = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
     virtual ~epicsTimerQueue () = 0;
@@ -151,6 +153,8 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc epicsTimerId epicsShareAPI 
     epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid, 
         epicsTimerCallback callback, void *arg );
+epicsShareFunc void epicsShareAPI 
+    epicsTimerQueueDestroyTimer ( epicsTimerQueueId queueid, epicsTimerId id );
 epicsShareFunc void  epicsShareAPI 
     epicsTimerQueueShow ( epicsTimerQueueId id, unsigned int level );
 
@@ -164,14 +168,14 @@ epicsShareFunc void epicsShareAPI
 epicsShareFunc epicsTimerId epicsShareAPI 
     epicsTimerQueuePassiveCreateTimer (
         epicsTimerQueuePassiveId queueid, epicsTimerCallback pCallback, void *pArg );
+epicsShareFunc void epicsShareAPI 
+    epicsTimerQueuePassiveDestroyTimer ( epicsTimerQueuePassiveId queueid, epicsTimerId id );
 epicsShareFunc double epicsShareAPI 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
 epicsShareFunc void  epicsShareAPI epicsTimerQueuePassiveShow (
     epicsTimerQueuePassiveId id, unsigned int level );
 
 /* timer */
-epicsShareFunc void epicsShareAPI 
-    epicsTimerDestroy ( epicsTimerId id );
 epicsShareFunc void epicsShareAPI 
     epicsTimerStartTime ( epicsTimerId id, const epicsTimeStamp *pTime );
 epicsShareFunc void epicsShareAPI 

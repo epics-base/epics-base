@@ -54,7 +54,7 @@ epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
     }
     epicsTimerQueueActiveForC *pQueue = new epicsTimerQueueActiveForC ( okToShare, threadPriority );
     if ( ! pQueue ) {
-        throwWithLocation ( timer::noMemory () );
+        throw std::bad_alloc ();
     }
     pQueue->timerQueueActiveMgrPrivate::referenceCount = 1u;
     if ( okToShare ) {

@@ -134,13 +134,8 @@ timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn,
 
 timerForOldFdmgr::~timerForOldFdmgr ()
 {
-    if (this->pFunc==NULL) {
-        throwWithLocation ( doubleDelete () );
-    }
-    this->pFunc = NULL;
-    this->pParam = NULL;
     this->fdmgr.resTbl.remove ( this->getId() );
-    delete & this->timer;
+    this->fdmgr.destroyTimer ( this->timer );
 }
 
 epicsTimerNotify::expireStatus timerForOldFdmgr::expire ( const epicsTime & )

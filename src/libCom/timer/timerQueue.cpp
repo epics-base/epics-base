@@ -153,6 +153,23 @@ double timerQueue::process ( const epicsTime & currentTime )
     }
 }
 
+timer & timerQueue::createTimer ()
+{
+    epicsAutoMutex autoLock ( this->mutex );
+    void *pBuf = this->timerFreeList.allocate ( sizeof (timer) );
+    if ( ! pBuf ) {
+        throw std::bad_alloc();
+    }
+    return * new ( pBuf ) timer ( *this );
+}
+
+void timerQueue::destroyTimer ( timer & tmr ) 
+{
+    epicsAutoMutex autoLock ( this->mutex );
+    tmr.privateCancel ();
+    this->timerFreeList.release ( &tmr, sizeof( tmr ) );
+}
+
 void timerQueue::show ( unsigned level ) const
 {
     epicsAutoMutex locker ( this->mutex );

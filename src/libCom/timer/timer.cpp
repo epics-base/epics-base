@@ -32,19 +32,16 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
-tsFreeList < class timer, 0x20 > timer::freeList;
-epicsMutex timer::freeListMutex;
-
-epicsTimer::~epicsTimer () {}
-
 timer::timer ( timerQueue &queueIn ) :
     curState ( stateLimbo ), pNotify ( 0 ), queue ( queueIn )
 {
 }
 
-timer::~timer()
+void timer::destroyTimerForC ( epicsTimerForC &cTmr )
 {
-    this->cancel ();
+    epicsAutoMutex autoLock ( this->queue.mutex );
+    this->privateCancel ();
+    this->queue.cTimerfreeList.release ( &cTmr, sizeof(cTmr) );
 }
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )

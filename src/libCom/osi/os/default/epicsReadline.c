@@ -28,7 +28,7 @@
 char * epicsShareAPI
 epicsReadline (FILE *fp, const char *prompt)
 {
-    char c;
+    int c;	/* char is unsigned on some archs, EOF is -ve */
     char *line = NULL;
     int linelen = 0;
     int linesize = 50;

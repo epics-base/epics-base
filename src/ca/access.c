@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.88  1996/11/22 19:05:48  jhill
+ * added const to build and connect API
+ *
  * Revision 1.87  1996/11/02 00:50:30  jhill
  * many pc port, const in API, and other changes
  *
@@ -689,51 +692,11 @@ LOCAL void create_udp_fd()
  *
  * Modify or override the default 
  * client host name.
+ *
+ * This entry point was changed to a NOOP 
  */
 int epicsShareAPI ca_modify_host_name(const char *pHostName)
 {
-	char		*pTmp;
-	unsigned	size;
-	IIU		*piiu;
-
-	INITCHK;
-
-	size = strlen(pHostName)+1;
-	if (size > STRING_LIMIT){
-		return ECA_STRTOBIG;
-	}
-
-	pTmp = malloc(size);
-	if(!pTmp){
-		return ECA_ALLOCMEM;
-	}
-
-	if(ca_static->ca_pHostName){
-		free(ca_static->ca_pHostName);
-	}
-	ca_static->ca_pHostName = pTmp;
-
-	/*
-	 * force null termination
-	 */
-	strncpy(	
-		ca_static->ca_pHostName, 
-		pHostName, 
-		size-1);
-	ca_static->ca_pHostName[size-1]='\0';
-
-	/*
-	 * update all servers we are currently
-	 * attached to.
-	 */
-	LOCK;
-	piiu = (struct ioc_in_use *) ca_static->ca_iiuList.node.next;
-	while(piiu){
-		issue_client_host_name(piiu);
-		piiu = (struct ioc_in_use *) piiu->node.next;
-	}
-	UNLOCK;
-
 	return ECA_NORMAL;
 }
 
@@ -744,51 +707,11 @@ int epicsShareAPI ca_modify_host_name(const char *pHostName)
  *
  * Modify or override the default 
  * client user name.
+ *
+ * This entry point was changed to a NOOP 
  */
 int epicsShareAPI ca_modify_user_name(const char *pClientName)
 {
-	char		*pTmp;
-	unsigned	size;
-	IIU		*piiu;
-
-	INITCHK;
-
-	size = strlen(pClientName)+1;
-	if (size > STRING_LIMIT){
-		return ECA_STRTOBIG;
-	}
-
-	pTmp = malloc(size);
-	if(!pTmp){
-		return ECA_ALLOCMEM;
-	}
-
-	if(ca_static->ca_pUserName){
-		free(ca_static->ca_pUserName);
-	}
-	ca_static->ca_pUserName = pTmp;
-
-	/*
-	 * force null termination
-	 */
-	strncpy(	
-		ca_static->ca_pUserName, 
-		pClientName, 
-		size-1);
-	ca_static->ca_pUserName[size-1]='\0';
-
-	/*
-	 * update all servers we are currently
-	 * attached to.
-	 */
-	LOCK;
-	piiu = (struct ioc_in_use *) ca_static->ca_iiuList.node.next;
-	while(piiu){
-		issue_identify_client(piiu);
-		piiu = (struct ioc_in_use *) piiu->node.next;
-	}
-	UNLOCK;
-
 	return ECA_NORMAL;
 }
 
@@ -1839,8 +1762,8 @@ const void	*pvalue
 	caHdr		hdr;
   	int  			postcnt;
   	unsigned		size_of_one;
-  	unsigned		i;
 #	ifdef CONVERSION_REQUIRED 
+  	unsigned		i;
 	void			*pCvrtBuf;
   	void			*pdest;
 #	endif /*CONVERSION_REQUIRED*/
@@ -2710,6 +2633,15 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	UNLOCK;
 
 	return status;
+}
+
+
+/*
+ * ca_cidToChid()
+ */
+chid epicsShareAPI ca_cidToChid(unsigned id)
+{
+	return (chid) bucketLookupItemUnsignedId(ca_static->ca_pSlowBucket, &id);
 }
 
 

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.15  1998/02/05 23:00:20  jhill
+ * 	removed assignement operator
+ *
  * 	Revision 1.14  1997/08/05 00:47:14  jhill
  * 	fixed warnings
  *
@@ -122,7 +125,7 @@
 // This eliminates a warning resulting from passing *this
 // to a base class during derived class construction.
 //
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #	pragma warning (disable:4355)
 #endif
 

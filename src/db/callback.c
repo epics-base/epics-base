@@ -42,15 +42,16 @@
 #include 	<logLib.h>
 #include 	<intLib.h>
 
-#include	<dbDefs.h>
-#include	<callback.h>
-#include	<dbAccess.h>
-#include	<recSup.h>
-#include	<taskwd.h>
-#include	<errMdef.h>
-#include	<dbCommon.h>
-#include	<dbLock.h>
-#include	<task_params.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"callback.h"
+#include	"dbAccess.h"
+#include	"recSup.h"
+#include	"taskwd.h"
+#include	"errMdef.h"
+#include	"dbCommon.h"
+#include	"dbLock.h"
+#include	"task_params.h"
 
 int callbackQueueSize = 2000;
 static SEM_ID callbackSem[NUM_CALLBACK_PRIORITIES];

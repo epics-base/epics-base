@@ -24,5 +24,13 @@ return value from getc(), and compared this against EOF. getc() returns int
 not char because ANSI C allows char to be unsigned if the architecture finds
 that easier, thus EOF can never be stored in a char on a PowerPC CPU. char
 should be changed to int or signed char.</p>
+
+<h2>RTEMS and NTP</h2>
+
+<p>The RTEMS startup routine waits until a time synchronization packet is
+received from an NTP server.  This causes the RTEMS intialization to loop
+endlessly if there is no NTP server on the network.
+This problem has been fixed in the CVS version by allowing the initialization
+to time out after a minute or so and to set the IOC time to January 1, 2001.</p>
 =======</body>
 </html>

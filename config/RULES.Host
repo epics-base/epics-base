@@ -444,10 +444,10 @@ endif
 	
 # Capfast Rules:
 %.db: %.edf
-	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
 
 %.db: ../%.edf
-	$(E2DB) $(E2SR_SYSFLAGS) $(E2SR_FLAGS) $<
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
 
 %.edf: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi

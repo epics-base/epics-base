@@ -463,7 +463,7 @@ struct tdm_config *tc;
 		}
 
 		/* trigger selection set */
-		if(pr->hts > 3 || pr->hts < 0)
+		if(pr->hts > 3)
 		{
 			recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
 			recGblRecordError(S_db_badField,(void *)pr,"invalid trigger value");

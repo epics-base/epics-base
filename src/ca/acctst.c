@@ -1271,6 +1271,11 @@ void arrayWriteNotify ( struct event_handler_args args )
 {
     arrayWriteNotifyComplete = 1;
 }
+unsigned acctstExceptionCount = 0u;
+void acctstExceptionNotify ( struct exception_handler_args args )
+{
+    acctstExceptionCount++;
+}
 void arrayTest ( chid chan )
 {
     dbr_double_t *pRF, *pWF;
@@ -1370,6 +1375,34 @@ void arrayTest ( chid chan )
     }
     status = ca_clear_event ( id );
     SEVCHK ( status, "clear event request failed" );
+
+    /*
+     * force a write exception to occcur
+     */
+    {
+        dbr_string_t *pWS;
+
+        acctstExceptionCount = 0u;
+        status = ca_add_exception_event ( acctstExceptionNotify, 0 );
+        SEVCHK ( status, "exception notify install failed" );
+
+        pWS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
+        assert ( pWS );
+        for ( i = 0; i < ca_element_count (chan); i++ ) {
+            strcpy ( pWS[i], "@#$%" );
+        }
+        status = ca_array_put ( DBR_STRING, 
+            ca_element_count (chan), chan, pWS ); 
+        SEVCHK  ( status, "array write request failed" );
+
+        ca_pend_event ( 0.1 );
+        while ( acctstExceptionCount < 1u ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+        free ( pWS );
+    }
 
     free ( pRF );
     free ( pWF );

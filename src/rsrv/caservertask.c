@@ -155,14 +155,13 @@ int req_server(void)
 		int		addLen = sizeof(sockAddr);
 
 		if ((i = accept(IOC_sock, &sockAddr, &addLen)) == ERROR) {
-			logMsg("CAS: Client accept error\n",
-				NULL,
+			logMsg("CAS: Client accept error was \"%s\"\n",
+				(int) strerror(errnoGet()),
 				NULL,
 				NULL,
 				NULL,
 				NULL,
 				NULL);
-			printErrno(errnoGet());
 			taskDelay(15*sysClkRateGet());
 			continue;
 		} else {
@@ -182,21 +181,13 @@ int req_server(void)
 					   NULL,
 					   NULL);
 			if (status == ERROR) {
-				logMsg("CAS: task creation failed\n",
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-				logMsg("CAS: (client ignored)\n",
-					NULL,
+				logMsg("CAS: task creation for new client failed because \"%s\"\n",
+					(int) strerror(errnoGet()),
 					NULL,
 					NULL,
 					NULL,
 					NULL,
 					NULL);
-				printErrno(errnoGet());
 				taskDelay(15*sysClkRateGet());
 				continue;
 			}
@@ -278,7 +269,13 @@ LOCAL int terminate_one_client(struct client *client)
 	if (servertid != taskIdSelf()){
 		if (taskIdVerify(servertid) == OK){
 			if (taskDelete(servertid) == ERROR) {
-				printErrno(errnoGet());
+				logMsg("CAS: Client shut down task delete failed because \"%s\"\n", 
+					(int) strerror(errnoGet()),
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
 			}
 		}
 	}

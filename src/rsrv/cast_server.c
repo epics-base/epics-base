@@ -201,14 +201,13 @@ int cast_server(void)
 		NULL,
 		NULL);
   	if(status==ERROR){
-    		logMsg("CAS: couldnt start up online notify task\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-    		printErrno(errnoGet());
+    		logMsg("CAS: couldnt start up online notify task because \"%s\"\n",
+				strerror(errnoGet()),
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
   	}
 
 

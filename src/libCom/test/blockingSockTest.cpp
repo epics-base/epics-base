@@ -13,7 +13,7 @@ void socketJoltTest ( void * )
 {
     epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
-    int status = recv ( s, buf, (int) sizeof ( buf ), 0 );
+    recv ( s, buf, (int) sizeof ( buf ), 0 );
     blockingSockWakeup = true;
 }
 

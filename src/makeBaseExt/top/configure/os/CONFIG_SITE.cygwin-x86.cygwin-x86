@@ -11,13 +11,57 @@
 
 -include $(TOP)/configure/os/CONFIG_SITE.Common.Common
 
+# If objects were compiled with different default runtime libraries
+# (not a good idea), specify which one you want to use in the product
+# by making it the default and the others nodefault.  Use
+# WIN32_RUNTIME = MD, MT, or ML in Makefile.Host if you want to do
+# this.  It will avoid LNK4098 warnings.
+#   msvcrt.lib  -MD   Multi-thread DLL
+#   msvcrtd.lib -MDd  Multi-thread DLL, Debug
+#   libcmt.lib  -MT   Multi-thread
+#   libcmtd.lib -MTd  Multi-thread, Debug
+#   libc.lib    -ML   Single-thread     
+#   libcd.lib   -MLd  Single-thread, Debug
 
-X11_LIB = d:/cygwin/usr/X11R6/lib
-X11_INC = d:/cygwin/usr/X11R6/include
+# MD Multi-thread DLL product
+ARCH_DEP_LDFLAGS_MD_NO += /DEFAULTLIB:"msvcrtd.lib"
+ARCH_DEP_LDFLAGS_MD_NO += /NODEFAULTLIB:"msvcrt.lib"
+ARCH_DEP_LDFLAGS_MD_YES += /DEFAULTLIB:"msvcrt.lib"
+ARCH_DEP_LDFLAGS_MD_YES += /NODEFAULTLIB:"msvcrtd.lib"
+ARCH_DEP_LDFLAGS_MD += $(ARCH_DEP_LDFLAGS_MD_$(HOST_OPT))
+ARCH_DEP_LDFLAGS_MD += /NODEFAULTLIB:"libcmt.lib"
+ARCH_DEP_LDFLAGS_MD += /NODEFAULTLIB:"libcmtd.lib"
+ARCH_DEP_LDFLAGS_MD += /NODEFAULTLIB:"libc.lib"
+ARCH_DEP_LDFLAGS_MD += /NODEFAULTLIB:"libcd.lib"
 
-MOTIF_LIB = $(X11_LIB)
-MOTIF_INC = $(X11_INC)
+# MT Multi-threaded product
+ARCH_DEP_LDFLAGS_MT_NO += /DEFAULTLIB:"libcmtd.lib"
+ARCH_DEP_LDFLAGS_MT_NO += /NODEFAULTLIB:"libcmt.lib"
+ARCH_DEP_LDFLAGS_MT_YES += /DEFAULTLIB:"libcmt.lib"
+ARCH_DEP_LDFLAGS_MT_YES += /NODEFAULTLIB:"libcmtd.lib"
+ARCH_DEP_LDFLAGS_MT += $(ARCH_DEP_LDFLAGS_MT_$(HOST_OPT))
+ARCH_DEP_LDFLAGS_MT += /NODEFAULTLIB:"msvcrt.lib"
+ARCH_DEP_LDFLAGS_MT += /NODEFAULTLIB:"msvcrtd.lib"
+ARCH_DEP_LDFLAGS_MT += /NODEFAULTLIB:"libc.lib"
+ARCH_DEP_LDFLAGS_MT += /NODEFAULTLIB:"libcd.lib"
 
+# ML Single-threaded product
+ARCH_DEP_LDFLAGS_ML_NO += /DEFAULTLIB:"libcd.lib"
+ARCH_DEP_LDFLAGS_ML_NO += /NODEFAULTLIB:"libc.lib"
+ARCH_DEP_LDFLAGS_ML_YES += /DEFAULTLIB:"libc.lib"
+ARCH_DEP_LDFLAGS_ML_YES += /NODEFAULTLIB:"libcd.lib"
+ARCH_DEP_LDFLAGS_ML += $(ARCH_DEP_LDFLAGS_ML_$(HOST_OPT))
+ARCH_DEP_LDFLAGS_ML += /NODEFAULTLIB:"msvcrt.lib"
+ARCH_DEP_LDFLAGS_ML += /NODEFAULTLIB:"msvcrtd.lib"
+ARCH_DEP_LDFLAGS_ML += /NODEFAULTLIB:"libcmt.lib"
+ARCH_DEP_LDFLAGS_ML += /NODEFAULTLIB:"libcmtd.lib"
+
+ARCH_DEP_LDFLAGS += $(ARCH_DEP_LDFLAGS_$(WIN32_RUNTIME))
+
+# ---------- java definitions
+JAVA_DIR=c:/j2sdk1.4.1_01
+
+# ---------- tcl/tk definitions
 TCL = c:\\Tcl
 TK_LIB = $(TCL)/lib
 TK_INC = $(TCL)/include
@@ -31,6 +75,12 @@ BLT_INC = $(TCL)/include
 IDL = /usr/local/idl
 #  IDL=$(IDL)/external/rpc is the sun4 version
 IDLRPC = $(IDL)/external/rpc.solaris
+
+X11_LIB = d:/cygwin/usr/X11R6/lib
+X11_INC = d:/cygwin/usr/X11R6/include
+
+MOTIF_LIB = $(X11_LIB)
+MOTIF_INC = $(X11_INC)
 
 OPENWIN =
 INTERVIEWS_BIN =
@@ -51,4 +101,3 @@ ZLIB_CFLAG = -DzLib
 ZLIB_PROD_LIB = z
 z_DIR = $(EPICS_EXTENSIONS_LIB)
 
-JAVA_DIR=c:/j2sdk1.4.1_01

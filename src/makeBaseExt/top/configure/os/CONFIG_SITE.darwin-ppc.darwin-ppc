@@ -11,8 +11,9 @@
 
 -include $(TOP)/configure/os/CONFIG_SITE.Common.Common
 
-PYTHON_DIR=/usr/lib/python2.2
-PYTHON_INCLUDE=/usr/include/python2.2
+#PYTHON_DIR=/usr/lib/python2.2
+#PYTHON_INCLUDE=/usr/include/python2.2
+PYTHON_INCLUDE=/System/Library/Frameworks/Python.framework/Versions/2.3/include/python2.3
 
 # Following 3 for SDDS
 #USE_GD_LIBRARY=1

@@ -66,16 +66,25 @@ rtems_driver_address_table Device_drivers[] = {
 /*
  * Network configuration
  */
+extern void rtems_bsdnet_loopattach();
+static struct rtems_bsdnet_ifconfig loopback_config = {
+	"lo0",                          /* name */
+	rtems_bsdnet_loopattach,        /* attach function */
+	NULL,                           /* link to next interface */
+	"127.0.0.1",                    /* IP address */
+	"255.0.0.0",                    /* IP net mask */
+};
 static struct rtems_bsdnet_ifconfig netdriver_config = {
-	RTEMS_BSP_NETWORK_DRIVER_NAME,
-	RTEMS_BSP_NETWORK_DRIVER_ATTACH,
+	RTEMS_BSP_NETWORK_DRIVER_NAME,      /* name */
+	RTEMS_BSP_NETWORK_DRIVER_ATTACH,    /* attach function */
+    &loopback_config,                   /* link to next interface */
 };
 struct rtems_bsdnet_config rtems_bsdnet_config = {
-	&netdriver_config,	/* Network interface */
+	&netdriver_config,	    /* Network interface */
 	rtems_bsdnet_do_bootp,	/* Use BOOTP to get network configuration */
 	NETWORK_TASK_PRIORITY,	/* Network task priority */
-	150*1024,		/* MBUF space */
-	300*1024,		/* MBUF cluster space */
+	150*1024,	        	/* MBUF space */
+	300*1024,	        	/* MBUF cluster space */
 };
 
 /*
@@ -290,12 +299,12 @@ rtems_dbLoadDatabase (char *name)
 }
 
 long
-rtems_dbLoadRecords (char *name, char *pattern)
+rtems_dbLoadRecords (char *name, char *substitutions)
 {
 	char *cp = rtems_tftp_path (name);
 	int dbLoadRecords (char* pfilename, char* substitutions);
 
-	dbLoadRecords (cp, pattern);
+	dbLoadRecords (cp, substitutions);
 	free (cp);
 	return 0;
 }
@@ -358,7 +367,7 @@ static const struct CommandTableEntry CommandTable[] = {
 	},
 	{ "dbLoadRecords",
 	  "Load database records",
-	  "**",		rtems_dbLoadRecords,	3, 3
+	  "**",		rtems_dbLoadRecords,	2, 3
 	},
 	{ "registerRecordDeviceDriver",
 	  "Register device driver",

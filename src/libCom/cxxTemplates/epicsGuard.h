@@ -40,11 +40,11 @@ private:
 
 class epicsMutexNOOP {
 public:
-    void lock () {}
-    bool lock ( double /* timeOut */ ) { return true; }
-    bool tryLock () { return true; }
-    void unlock () {}
-    void show ( unsigned /* level */ ) const {}
+    void lock ();
+    bool lock ( double timeOut );
+    bool tryLock ();
+    void unlock ();
+    void show ( unsigned level ) const;
 };
 
 template < class T >
@@ -80,5 +80,11 @@ inline epicsGuardRelease < T > :: ~epicsGuardRelease ()
 {
     this->guard.targetMutex.lock ();
 }
+
+inline void epicsMutexNOOP::lock () {}
+inline bool epicsMutexNOOP::lock ( double ) { return true; }
+inline bool epicsMutexNOOP::tryLock () { return true; }
+inline void epicsMutexNOOP::unlock () {}
+inline void epicsMutexNOOP::show ( unsigned ) const {}
 
 #endif // epicsGuardh

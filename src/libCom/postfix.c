@@ -366,7 +366,7 @@ short		*perror;
 		if ( sscanf(ppostfix,"%lg",&constant) != 1) {
 			*ppostfix = '\0';
 		} else {
-			memcpy(ppostfix,&constant,8);
+			memcpy(ppostfix,(void *)&constant,8);
 		}
 		ppostfix+=8;
 

@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.10  1999/08/05 23:44:01  jhill
+// eliminated app types "seconds" and "nanoseconds"
+// in favor of atomic app type "timeStamp"
+//
 // Revision 1.9  1997/08/05 00:51:13  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -83,6 +87,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	registerApplicationType(GDD_NAME_SEVERITY);
 	registerApplicationType(GDD_NAME_TIME_STAMP);
 	registerApplicationType(GDD_NAME_PV_NAME);
+    registerApplicationType(GDD_NAME_CLASS);
 
 	// required attributes
 	int type_prec=registerApplicationType(GDD_NAME_PRECISION);
@@ -98,6 +103,8 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	int type_value=registerApplicationType(GDD_NAME_VALUE);
 	int type_menu=registerApplicationType(GDD_NAME_ENUM);
 	int type_units=registerApplicationTypeWithProto(GDD_NAME_UNITS,add_units);
+    int type_ackt=registerApplicationType(GDD_NAME_ACKT);
+    int type_acks=registerApplicationType(GDD_NAME_ACKS);
 
 	// old menu method
 	// int type_menu=registerApplicationType(GDD_NAME_ENUM);
@@ -284,5 +291,12 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	cdd_ctrl_double->insert(new gddScalar(type_awlow,aitEnumFloat64)); 
 	cdd_ctrl_double->insert(getDD(type_units)); 
 	registerApplicationTypeWithProto("dbr_ctrl_double",cdd_ctrl_double);
+
+    // DBR_STSACK_STRING
+    gddContainer* cdd_stsack_string=new gddContainer(0);
+    cdd_stsack_string->insert(new gddScalar(type_value,aitEnumString)); 
+    cdd_stsack_string->insert(new gddScalar(type_acks,aitEnumUint16)); 
+    cdd_stsack_string->insert(new gddScalar(type_ackt,aitEnumUint16)); 
+    registerApplicationTypeWithProto("dbr_stsack_string",cdd_stsack_string);
 }
 

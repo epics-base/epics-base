@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1999/08/05 23:44:01  jhill
+ * eliminated app types "seconds" and "nanoseconds"
+ * in favor of atomic app type "timeStamp"
+ *
  * Revision 1.6  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -46,26 +50,30 @@
 
 // default set of application type names
 #define GDD_UNITS_SIZE 8
-#define GDD_NAME_UNITS				"units"
-#define GDD_NAME_MAX_ELEMENTS		"maxElements"
-#define GDD_NAME_PRECISION			"precision"
-#define GDD_NAME_GRAPH_HIGH			"graphicHigh"
-#define GDD_NAME_GRAPH_LOW			"graphicLow"
-#define GDD_NAME_CONTROL_HIGH		"controlHigh"
-#define GDD_NAME_CONTROL_LOW		"controlLow"
-#define GDD_NAME_ALARM_HIGH			"alarmHigh"
-#define GDD_NAME_ALARM_LOW			"alarmLow"
-#define GDD_NAME_ALARM_WARN_HIGH	"alarmHighWarning"
-#define GDD_NAME_ALARM_WARN_LOW		"alarmLowWarning"
-#define GDD_NAME_VALUE				"value"
-#define GDD_NAME_ENUM				"enums"
-#define GDD_NAME_MENUITEM			"menuitem"
-#define GDD_NAME_STATUS				"status"
-#define GDD_NAME_SEVERITY			"severity"
-#define GDD_NAME_TIME_STAMP			"timeStamp"
-#define GDD_NAME_ALL				"all"
-#define GDD_NAME_ATTRIBUTES			"attributes"
-#define GDD_NAME_PV_NAME		"name"
+#define GDD_NAME_UNITS              "units"
+#define GDD_NAME_MAX_ELEMENTS       "maxElements"
+#define GDD_NAME_PRECISION          "precision"
+#define GDD_NAME_GRAPH_HIGH         "graphicHigh"
+#define GDD_NAME_GRAPH_LOW          "graphicLow"
+#define GDD_NAME_CONTROL_HIGH       "controlHigh"
+#define GDD_NAME_CONTROL_LOW        "controlLow"
+#define GDD_NAME_ALARM_HIGH         "alarmHigh"
+#define GDD_NAME_ALARM_LOW          "alarmLow"
+#define GDD_NAME_ALARM_WARN_HIGH    "alarmHighWarning"
+#define GDD_NAME_ALARM_WARN_LOW     "alarmLowWarning"
+#define GDD_NAME_VALUE              "value"
+#define GDD_NAME_ENUM               "enums"
+#define GDD_NAME_MENUITEM           "menuitem"
+#define GDD_NAME_STATUS             "status"
+#define GDD_NAME_SEVERITY           "severity"
+#define GDD_NAME_TIME_STAMP         "timeStamp"
+#define GDD_NAME_ALL                "all"
+#define GDD_NAME_ATTRIBUTES         "attributes"
+#define GDD_NAME_PV_NAME            "name"
+#define GDD_NAME_ACKT               "ackt"
+#define GDD_NAME_ACKS               "acks"
+#define GDD_NAME_CLASS              "class"
+
 typedef enum
 {
 	gddApplicationTypeUndefined,

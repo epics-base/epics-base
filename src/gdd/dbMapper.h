@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1999/05/11 00:32:29  jhill
+ * fixed const warnings
+ *
  * Revision 1.5  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -43,14 +46,15 @@ class gddApplicationTypeTable;
 // Function proto to convert from a db_struct to a gdd.  The gdd will
 // reference the data in the db_struct if the db_struct points to an
 // array.  The second argument is the number of elements if db_struct
-// represents an array, or zero if the db_struct is a scaler.
+// represents an array, or zero if the db_struct is a scalar.
 typedef gdd* (*to_gdd)(void* db_struct, aitIndex element_count);
 
 // Function proto to convert from a gdd to a dbr structure, returns the
 // number of elements that the value field of db_struct points to if the
 // gdd points to an array or -1 if the number of elements in the value
 // field is not identical to element_count available in db_struct.
-typedef int (*to_dbr)(void* db_struct, aitIndex element_count, const gdd &);
+typedef int (*to_dbr)(void* db_struct, aitIndex element_count, 
+                      const gdd &, const vector<string> &enumStringTable);
 
 struct gddDbrMapFuncTable {
 	to_gdd	conv_gdd;
@@ -65,12 +69,31 @@ struct gddDbrToAitTable {
 };
 typedef struct gddDbrToAitTable gddDbrToAitTable;
 
-epicsShareExtern gddDbrToAitTable gddDbrToAit[35];
+#define DBM_N_DBR_TYPES 39
+epicsShareExtern gddDbrToAitTable gddDbrToAit[DBM_N_DBR_TYPES];
 epicsShareExtern const chtype gddAitToDbr[12];
-epicsShareExtern const gddDbrMapFuncTable gddMapDbr[35];
+epicsShareExtern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES];
 
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable& tt);
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable* tt);
+
+inline bool gddDbrToAitValidIndex (unsigned index) 
+{
+    epicsShareExtern const unsigned gddDbrToAitNElem;
+    return index < gddDbrToAitNElem; 
+}
+
+inline bool gddAitToDbrValidIndex (unsigned index) 
+{ 
+    epicsShareExtern const unsigned gddAitToDbrNElem;
+    return index < gddAitToDbrNElem; 
+}
+
+inline bool gddMapDbrValidIndex (unsigned index) 
+{
+    epicsShareExtern const unsigned gddMapDbrSize;
+    return index < gddMapDbrSize; 
+}
 
 #endif
 

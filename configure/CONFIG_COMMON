@@ -22,6 +22,7 @@ BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 #-------------------------------------------------------
 # Ext, app, and module configure dir targets
 CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
+CONFIG_INSTALLS += RULES_BUILD
 
 #-------------------------------------------------------
 # Cross compile default, HOST or CROSS, CONFIG.crossCommon will override

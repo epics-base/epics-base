@@ -137,7 +137,8 @@ cac::cac (
     initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
-    beaconAnomalyCount ( 0u )
+    beaconAnomalyCount ( 0u ),
+    circuitsInstalled ( 0u )
 {
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -239,7 +240,7 @@ cac::~cac ()
         //
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
-        tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
+        tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
         while ( iter.valid() ) {
             // this causes a clean shutdown to occur
             iter->removeAllChannels ( cbGuard, guard, *this->pudpiiu );
@@ -255,7 +256,7 @@ cac::~cac ()
     //
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        while ( this->serverList.count() ) {
+        while ( this->circuitsInstalled ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->iiuUninstall.wait ();
         }
@@ -321,7 +322,7 @@ unsigned cac::highestPriorityLevelBelow ( unsigned priority )
 void cac::flush ( epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
+    tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
     while ( iter.valid () ) {
         iter->flushRequest ( guard );
         iter++;
@@ -332,7 +333,7 @@ unsigned cac::circuitCount (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return this->serverList.count ();
+    return this->circuitList.count ();
 }
 
 void cac::show ( 
@@ -535,7 +536,8 @@ bool cac::transferChanToVirtCircuit (
                 }
             }
             this->serverTable.add ( *pnewiiu );
-            this->serverList.add ( *pnewiiu );
+            this->circuitList.add ( *pnewiiu );
+            this->circuitsInstalled++;
             pBHE->registerIIU ( guard, *pnewiiu );
             piiu = pnewiiu.release ();
             newIIU = true;
@@ -1127,7 +1129,7 @@ bool cac::verifyAndDisconnectChan (
 }
 
 void cac::disconnectChannel (
-        const epicsTime & currentTime, 
+        const epicsTime & /* currentTime */, 
         epicsGuard < epicsMutex > & cbGuard, // X aCC 431
         epicsGuard < epicsMutex > & guard, nciu & chan )
 {
@@ -1198,22 +1200,24 @@ void cac::destroyIIU ( tcpiiu & iiu )
     }
 
     {
-        // this lock synchronizes with a blocking loop
-        // in ~cac waiting until no circuits are installed.
-        // After the cac lock is released here we must not 
-        // access any part of the cac (including the 
-        // callback lock) because ~cac is allowed to
-        // complete.
         epicsGuard < epicsMutex > guard ( this->mutex );
-
         this->serverTable.remove ( iiu );
-        this->serverList.remove ( iiu );
-        iiu.~tcpiiu ();
-        this->freeListVirtualCircuit.release ( & iiu );
-
-        // signal iiu uninstal event so that cac can properly shut down
-        this->iiuUninstall.signal();
+        this->circuitList.remove ( iiu );
     }
+
+    // this destroys a timer that takes the primary mutex
+    // so we must not hold the primary mutex here
+    iiu.~tcpiiu ();
+
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->freeListVirtualCircuit.release ( & iiu );
+        assert ( this->circuitsInstalled > 0u );
+        this->circuitsInstalled--;
+    }
+
+    // signal iiu uninstal event so that cac can properly shut down
+    this->iiuUninstall.signal();
 }
 
 double cac::beaconPeriod ( 

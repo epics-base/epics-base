@@ -76,10 +76,13 @@ struct caHdrLargeArray;
 class cacComBufMemoryManager : public comBufMemoryManager
 {
 public:
+    cacComBufMemoryManager () {}
     void * allocate ( size_t );
     void release ( void * );
 private:
     tsFreeList < comBuf, 0x20 > freeList;
+	cacComBufMemoryManager ( const cacComBufMemoryManager & );
+	cacComBufMemoryManager & operator = ( const cacComBufMemoryManager & );
 };
 
 class cacDisconnectChannelPrivate { // X aCC 655
@@ -96,6 +99,8 @@ public:
     ~notifyGuard ();
 private:
     cacContextNotify & notify;
+    notifyGuard ( const notifyGuard & );
+    notifyGuard & operator = ( const notifyGuard & );
 };
 
 class callbackManager : public notifyGuard {
@@ -240,7 +245,7 @@ private:
     chronIntIdResTable < baseNMIU > ioTable;
     resTable < bhe, inetAddrID > beaconTable;
     resTable < tcpiiu, caServerID > serverTable;
-    tsDLList < tcpiiu > serverList;
+    tsDLList < tcpiiu > circuitList;
     tsFreeList 
         < class tcpiiu, 32, epicsMutexNOOP > 
             freeListVirtualCircuit;
@@ -280,6 +285,7 @@ private:
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
     unsigned beaconAnomalyCount;
+    unsigned circuitsInstalled;
 
     void run ();
     void recycleReadNotifyIO ( 

@@ -56,7 +56,7 @@ int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid )
 /*
  * ca_sg_delete()
  */
-int epicsShareAPI ca_sg_delete (const CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
 {
     int caStatus;
     CASG *pcasg;
@@ -80,7 +80,7 @@ int epicsShareAPI ca_sg_delete (const CA_SYNC_GID gid)
 /*
  * ca_sg_block ()
  */
-int epicsShareAPI ca_sg_block (const CA_SYNC_GID gid, ca_real timeout)
+int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout )
 {
     CASG *pcasg;
     cac *pcac;
@@ -105,7 +105,7 @@ int epicsShareAPI ca_sg_block (const CA_SYNC_GID gid, ca_real timeout)
 /*
  * ca_sg_reset
  */
-int epicsShareAPI ca_sg_reset (const CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
 {
     CASG *pcasg;
     cac *pcac;
@@ -133,8 +133,8 @@ int epicsShareAPI ca_sg_reset (const CA_SYNC_GID gid)
  */
 int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
-    CASG        *pcasg;
-    cac         *pcac;
+    CASG *pcasg;
+    cac *pcac;
 
     int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
@@ -147,7 +147,7 @@ int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
         return ECA_BADSYNCGRP;
     }
 
-    pcasg->show (1000u);
+    pcasg->show ( 1000u );
 
     return ECA_NORMAL;
 }
@@ -157,9 +157,9 @@ int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
  */
 int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 {
-    CASG    *pcasg;
-    cac     *pcac;
-    int     caStatus;
+    CASG *pcasg;
+    cac *pcac;
+    int caStatus;
 
     caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
@@ -182,16 +182,12 @@ int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 /*
  * ca_sg_array_put()
  */
-int epicsShareAPI ca_sg_array_put (
-const CA_SYNC_GID   gid, 
-chtype              type,
-unsigned long       count, 
-chid                pChan, 
-const void          *pValue)
+int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
+    unsigned long count, chid pChan, const void *pValue )
 {
-    CASG        *pcasg;
-    cac         *pcac;
-    int         caStatus;
+    CASG *pcasg;
+    cac *pcac;
+    int caStatus;
 
     caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
@@ -209,18 +205,14 @@ const void          *pValue)
 /*
  * ca_sg_array_get()
  */
-int epicsShareAPI ca_sg_array_get (
-const CA_SYNC_GID   gid, 
-chtype              type,
-unsigned long       count, 
-chid                pChan, 
-void                *pValue)
+int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
+    unsigned long count, chid pChan, void *pValue )
 {
-    CASG        *pcasg;
-    cac         *pcac;
-    int         caStatus;
+    CASG *pcasg;
+    cac *pcac;
+    int caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }

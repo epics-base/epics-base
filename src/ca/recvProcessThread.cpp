@@ -20,9 +20,9 @@
 #include "cac_IL.h"
 
 recvProcessThread::recvProcessThread (cac *pcacIn) :
-    thread(*this, "CAC-recv-process",
-        epicsThreadGetStackSize(epicsThreadStackSmall), 
-        pcacIn->getInitializingThreadsPriority() ), 
+    thread ( *this, "CAC-recv-process",
+        epicsThreadGetStackSize ( epicsThreadStackSmall ), 
+        pcacIn->getInitializingThreadsPriority () ), 
     pcac ( pcacIn ),
     enableRefCount ( 0u ),
     blockingForCompletion ( 0u ),

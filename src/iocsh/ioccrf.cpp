@@ -45,7 +45,7 @@ struct Cstring_cmp {
 /*
  * The table of commands
  */
-static map<const char *,IoccrfFunc,Cstring_cmp> commands;
+namespace {  map<const char *,IoccrfFunc,Cstring_cmp> commands; }
 
 /*
  * Register a command

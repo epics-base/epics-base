@@ -129,6 +129,9 @@
 #define MAX_STRING_SIZE	40
 #endif
 
+#ifndef MAX_UNITS_SIZE
+#define MAX_UNITS_SIZE 8
+#endif
 
 /* VALUES WITH STATUS STRUCTURES */
 
@@ -269,7 +272,7 @@ struct dbr_time_double{
 struct dbr_gr_int{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	short	upper_disp_limit;	/* upper limit of graph */
 	short	lower_disp_limit;	/* lower limit of graph */
 	short	upper_alarm_limit;	
@@ -281,7 +284,7 @@ struct dbr_gr_int{
 struct dbr_gr_short{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	short	upper_disp_limit;	/* upper limit of graph */
 	short	lower_disp_limit;	/* lower limit of graph */
 	short	upper_alarm_limit;	
@@ -297,7 +300,7 @@ struct dbr_gr_float{
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
 	short	RISC_pad0;		/* RISC alignment */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	float	upper_disp_limit;	/* upper limit of graph */
 	float	lower_disp_limit;	/* lower limit of graph */
 	float	upper_alarm_limit;	
@@ -320,7 +323,7 @@ struct dbr_gr_enum{
 struct dbr_gr_char{
 	short			status;	 		/* status of value */
 	short			severity;		/* severity of alarm */
-	char			units[8];		/* units of value */
+	char			units[MAX_UNITS_SIZE];		/* units of value */
 	unsigned char		upper_disp_limit;	/* upper limit of graph */
 	unsigned char		lower_disp_limit;	/* lower limit of graph */
 	unsigned char		upper_alarm_limit;	
@@ -335,7 +338,7 @@ struct dbr_gr_char{
 struct dbr_gr_long{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	long	upper_disp_limit;	/* upper limit of graph */
 	long	lower_disp_limit;	/* lower limit of graph */
 	long	upper_alarm_limit;	
@@ -351,7 +354,7 @@ struct dbr_gr_double{
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
 	short	RISC_pad0;		/* RISC alignment */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	double	upper_disp_limit;	/* upper limit of graph */
 	double	lower_disp_limit;	/* lower limit of graph */
 	double	upper_alarm_limit;	
@@ -370,7 +373,7 @@ struct dbr_gr_double{
 struct dbr_ctrl_int{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	short	upper_disp_limit;	/* upper limit of graph */
 	short	lower_disp_limit;	/* lower limit of graph */
 	short	upper_alarm_limit;	
@@ -384,7 +387,7 @@ struct dbr_ctrl_int{
 struct dbr_ctrl_short{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	short	upper_disp_limit;	/* upper limit of graph */
 	short	lower_disp_limit;	/* lower limit of graph */
 	short	upper_alarm_limit;	
@@ -402,7 +405,7 @@ struct dbr_ctrl_float{
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
 	short	RISC_pad;		/* RISC alignment */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	float	upper_disp_limit;	/* upper limit of graph */
 	float	lower_disp_limit;	/* lower limit of graph */
 	float	upper_alarm_limit;	
@@ -427,7 +430,7 @@ struct dbr_ctrl_enum{
 struct dbr_ctrl_char{
 	short		status;	 		/* status of value */
 	short		severity;		/* severity of alarm */
-	char		units[8];		/* units of value */
+	char		units[MAX_UNITS_SIZE];		/* units of value */
 	unsigned char	upper_disp_limit;	/* upper limit of graph */
 	unsigned char	lower_disp_limit;	/* lower limit of graph */
 	unsigned char	upper_alarm_limit;	
@@ -444,7 +447,7 @@ struct dbr_ctrl_char{
 struct dbr_ctrl_long{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	long	upper_disp_limit;	/* upper limit of graph */
 	long	lower_disp_limit;	/* lower limit of graph */
 	long	upper_alarm_limit;	
@@ -462,7 +465,7 @@ struct dbr_ctrl_double{
 	short	severity;		/* severity of alarm */
 	short	precision;		/* number of decimal places */
 	short	RISC_pad0;		/* RISC alignment */
-	char	units[8];		/* units of value */
+	char	units[MAX_UNITS_SIZE];		/* units of value */
 	double	upper_disp_limit;	/* upper limit of graph */
 	double	lower_disp_limit;	/* lower limit of graph */
 	double	upper_alarm_limit;	
@@ -1017,7 +1020,8 @@ void		*pfl;
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1051,7 +1055,8 @@ void		*pfl;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1083,7 +1088,8 @@ void		*pfl;
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1114,7 +1120,8 @@ void		*pfl;
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1148,7 +1155,8 @@ void		*pfl;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1182,7 +1190,8 @@ void		*pfl;
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1219,7 +1228,8 @@ void		*pfl;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1286,7 +1296,8 @@ void		*pfl;
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1320,7 +1331,8 @@ void		*pfl;
 		status = dbGetField(paddr,DBR_LONG,&new,&options,&nRequest,pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;
@@ -1357,7 +1369,8 @@ void		*pfl;
 		pold->status = new.status;
 		pold->severity = new.severity;
 		pold->precision = new.precision;
-		strncpy(pold->units,new.units,8);
+		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
+		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
 		pold->lower_disp_limit = new.lower_disp_limit;
 		pold->upper_alarm_limit = new.upper_alarm_limit;

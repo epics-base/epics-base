@@ -2785,7 +2785,6 @@ void		*pflin
 	long		(*pconvert_routine)();
 	struct dbCommon *pcommon;
 	long		status;
-	long		*perr_status=NULL;
 
 
 	prset=GET_PRSET(pdbBase->precSup,paddr->record_type);
@@ -2804,11 +2803,13 @@ void		*pflin
 	    }
 	    *((unsigned short *)pbuffer)++ = pcommon->acks;
 	    *((unsigned short *)pbuffer)++ = pcommon->ackt;
-	    *perr_status = 0;
 	}
 	if( (*options) & DBR_UNITS ) {
 	    if( prset && prset->get_units ){ 
-		(*prset->get_units)(paddr,pbuffer);
+		char *	pchr = (char *)pbuffer;
+
+		(*prset->get_units)(paddr,pchr);
+		pchr[DB_UNITS_SIZE-1] = '\0';
 	    } else {
 		memset(pbuffer,'\0',dbr_units_size);
 		*options = (*options) ^ DBR_UNITS; /*Turn off DBR_UNITS*/
@@ -2855,7 +2856,6 @@ GET_DATA:
 
 		sprintf(message,"dbGet - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
 	}
 	
@@ -2870,7 +2870,6 @@ GET_DATA:
 
 		sprintf(message,"dbGet - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
 	}
 	/* convert database field to buffer type and place it in the buffer */
@@ -2886,7 +2885,6 @@ GET_DATA:
 	    status=(*pconvert_routine)(paddr,pbuffer,*nRequest,
 			no_elements,offset);
 	}
-	if(perr_status) *perr_status = status;
         return(status);
 }
 

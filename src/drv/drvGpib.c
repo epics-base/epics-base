@@ -35,7 +35,8 @@
  *                              Instruments and Bob Daly (from ANL) in its
  *                              credits.
  * .02	12-03-91	jrw	changed the setup of the ibLink and niLink structs
- * .03	01-21-91	jrw	moved task parameters into task_params.h
+ * .03	01-21-92	jrw	moved task parameters into task_params.h
+ * .04	01-31-92	jrw	added ibSrqLock code
  *
  ******************************************************************************
  *
@@ -108,6 +109,7 @@ int	ibDebug = 0;		/* Turns on debug messages from this driver */
 int	bbibDebug = 0;		/* Turns on ONLY bitbus related messages */
 int	ibSrqDebug = 0;		/* Turns on ONLY srq related debug messages */
 int	niIrqOneShot = 0;	/* Used for a one shot peek at the DMAC */
+int	ibSrqLock = 0;		/* set to 1 to stop ALL srq checking & polling */
 
 static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
 
@@ -967,11 +969,11 @@ int	length;		/* number of bytes to transfer */
     }
   }
   /*
-   * DMA transfer complete reset as per instructions in GPIB
-   * 'Programming Considerations' 5-14 note: ISR2 + ISR1 are both read
-   * in ibintr() interrupt handler IMR1 + IMR2 are both read in
-   * ibwait() only when invoked, so we always do a read here
+   * DMA transfer complete.  Reset as per instructions in GPIB
+   * 'Programming Considerations' 5-14 
    */
+
+/* BUG -- Should halt and spin a while before aborting (NI recommendation) */
   b->ch0.ccr = D_SAB;			/* halt channel activity */
   b->ch0.csr = D_CLEAR & ~D_PCLT;
   b->ch1.ccr = D_SAB;
@@ -1060,7 +1062,7 @@ int	link;
   if(ibDebug || ibSrqDebug)
     printf("niSrqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
-  lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
+  lockKey = intLock();  /* lock out ints because something likes to glitch */
 
   if (!((pNiLink[link]->ibregs->ch0.csr) & D_NSRQ))
   { /* SRQ line is CURRENTLY active, just give the event sem and return */
@@ -1096,7 +1098,7 @@ int	link;
   if(ibDebug || ibSrqDebug)
     printf("niSrqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
 
-  lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
+  lockKey = intLock();  /* lock out ints because something likes to glitch */
   pNiLink[link]->ibregs->ch0.ccr = 0;           /* Don't allow SRQ ints */
   intUnlock(lockKey);
 
@@ -1170,7 +1172,7 @@ struct	ibLink *plink;
 /* BUG -- the pollinhibit array stuff has to be fixed! */
 
 
-  if (plink->linkType == GPIB_IO)
+  if ((plink->linkType == GPIB_IO) && (ibSrqLock == 0))
   {
     /* poll all available adresses to see if will respond */
     speIb(plink);
@@ -1236,11 +1238,16 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
   {
     if (!working)
     {
-      /* Enable SRQ interrupts */
-      srqIntEnable(plink->linkType, plink->linkId, plink->bug);
+      if (ibSrqLock == 0)
+      {
+        /* Enable SRQ interrupts while waiting for an event */
+        srqIntEnable(plink->linkType, plink->linkId, plink->bug);
+      }
+
+      /* wait for an event associated with this GPIB link */
       semTake(plink->linkEventSem, WAIT_FOREVER);
   
-      /* Disable SRQ interrupts */
+      /* Disable SRQ interrupts while processing an event */
       srqIntDisable(plink->linkType, plink->linkId, plink->bug);
 
       if (ibDebug)
@@ -1252,11 +1259,13 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
 
     /* Check if an SRQ interrupt has occurred recently */
 
-    /* If link is doing DMA, this function will be performing the work */
-    /* function from either the High or Low priority queue and will not */
-    /* try to poll devices while DMA is under way :-) */
+    /*
+     * If link is currently doing DMA, this function/task will be performing 
+     * the work.  Therfore, it will not be here trying to poll devices, so 
+     * is no need to worry about locking the GPIB link here.
+     */
 
-    if (plink->srqIntFlag)
+    if ((plink->srqIntFlag) && (ibSrqLock == 0))
     {
       if (ibDebug || ibSrqDebug)
 	printf("ibLinkTask(%d, %d): srqIntFlag set.\n", plink->linkType, plink->linkId);
@@ -1307,8 +1316,10 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
        */
     }
 
-    /* See if there is a need to process an SRQ solicited transaction. */
-    /* Do all of them before going on to other transactions. */
+    /*
+     * See if there is a need to process an SRQ solicited transaction.
+     * Do all of them before going on to other transactions.
+     */
     while (rngBufGet(plink->srqRing, &ringData, sizeof(ringData)))
     {
       if (ibDebug || ibSrqDebug)
@@ -1317,7 +1328,9 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
       working=1;
     }
 
-    /* see if the Hi priority queue has anything in it */
+    /*
+     * see if the Hi priority queue has anything in it
+     */
     semTake(plink->hiPriSem, WAIT_FOREVER);
 
     if ((pnode = (struct dpvtGpibHead *)lstFirst(&(plink->hiPriList))) != NULL)
@@ -1791,6 +1804,12 @@ int     length; 	/* number of bytes to write out from the data buffer */
  * These are the BitBus architecture specific functions.
  *
  ******************************************************************************/
+
+/******************************************************************************
+ *
+ * Read a GPIB message via the BitBus driver.
+ *
+ ******************************************************************************/
 static int
 bbGpibRead(pibLink, device, buffer, length)
 struct	ibLink	*pibLink;
@@ -1842,7 +1861,12 @@ int     length;
   else
     return(bytesRead);
 }
-
+
+/******************************************************************************
+ *
+ * Write a GPIB message by way of the bitbus driver.
+ *
+ ******************************************************************************/
 static int
 bbGpibWrite(pibLink, device, buffer, length)
 struct	ibLink	*pibLink;
@@ -2022,7 +2046,8 @@ int	bug;
     return(ERROR);
   }
 
-/* Need to lock the rootBBLink list!!  */
+/* BUG - Need to lock the rootBBLink list!!  */
+/* BUG - should add node to list AFTER init is finished! */
 
   bbIbLink->next = rootBBLink;
   rootBBLink = bbIbLink;		/* link the new one into the list */

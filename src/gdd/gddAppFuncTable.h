@@ -47,7 +47,7 @@
 typedef aitUint32 gddAppFuncTableStatus;
 
 #define S_gddAppFuncTable_Success 0u
-#define S_gddAppFuncTable_badType (M_gddFuncTbl|1u) /*unregisted appl type*/ 
+#define S_gddAppFuncTable_badType (M_gddFuncTbl|1u) /*application type unregistered*/ 
 #define S_gddAppFuncTable_gddLimit (M_gddFuncTbl|2u) /*at gdd lib limit*/ 
 #define S_gddAppFuncTable_noMemory (M_gddFuncTbl|3u) /*dynamic memory pool exhausted*/ 
 

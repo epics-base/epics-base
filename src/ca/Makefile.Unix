@@ -1,6 +1,8 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
+CMPLR = STRICT
+
 USR_LDLIBS = -lca -lCom 
 USR_LDFLAGS = -L.
 

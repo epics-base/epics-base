@@ -115,7 +115,7 @@ exServer::~exServer()
         pPVI->deletePV ();
     }
     
-    this->stringResTbl.traverse ( pvEntry::destroy );
+    this->stringResTbl.traverse ( &pvEntry::destroy );
 }
 
 //

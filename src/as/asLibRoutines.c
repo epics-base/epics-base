@@ -828,7 +828,7 @@ epicsShareFunc int epicsShareAPI asDumpHash(void)
 epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp)
 {
     if(!asActive) return(0);
-    gphDumpFP(pasbase->phash,fp);
+    gphDumpFP(fp,pasbase->phash);
     return(0);
 }
 

@@ -41,6 +41,7 @@
 #include "asDbLib.h"
 
 typedef unsigned long arrayElementCount;
+
 #include "net_convert.h"
 #include "server.h"
 
@@ -749,7 +750,8 @@ LOCAL int write_action ( caHdrLargeArray *mp,
 {
     struct channel_in_use   *pciu;
     int                     v41;
-    long                    status;
+    int                     status;
+    long                    dbStatus;
     void                    *asWritePvt;
 
     pciu = MPTOPCIU(mp);
@@ -802,14 +804,14 @@ LOCAL int write_action ( caHdrLargeArray *mp,
         pciu->client->pHostName ? pciu->client->pHostName : "",
         (void *) &pciu->addr );
 
-    status = db_put_field(
+    dbStatus = db_put_field(
                   &pciu->addr,
                   mp->m_dataType,
                   pPayload,
                   mp->m_count);
 
     asTrapWriteAfter(asWritePvt);
-    if (status < 0) {
+    if (dbStatus < 0) {
         SEND_LOCK(client);
         send_err(
             mp, 

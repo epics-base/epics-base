@@ -242,9 +242,8 @@ endif
 
 %.cpp:	../%.stt
 	@echo "converting $< "
-	ln -s $< $*.st
-	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st -o $@
-	@$(RM) $*.st
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $< -o $@
 
 # Adl2dl rule
 %.dl : ../%.adl

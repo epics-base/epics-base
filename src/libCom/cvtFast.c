@@ -66,7 +66,7 @@ int cvtFloatToString(
 	char		*startAddr;
 
 	/* can this routine handle this conversion */
-	if (precision > 8 || precision < 0 || flt_value > 10000000.0) {
+	if (precision > 8 || flt_value > 10000000.0) {
 		gcvt((double)flt_value,10,pstr_value);
 		return((int)strlen(pstr_value));
 		/* gcvt from XPG2*/
@@ -142,7 +142,7 @@ int cvtDoubleToString(
 	char		*startAddr;
 
 	/* can this routine handle this conversion */
-	if (precision > 8 || precision<0 || flt_value>10000000.0) {
+	if (precision > 8 || flt_value>10000000.0) {
 		gcvt((double)flt_value,10,pstr_value);
 		return((int)strlen(pstr_value));
 		/* gcvt from XPG2*/

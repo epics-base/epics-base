@@ -257,6 +257,10 @@ LOCAL int vmprintf (const char *pFormat, va_list pvar)
 	int	s0;
 	int	s1;
 
+	if (!pFormat) {
+		return 0;
+	}
+
 	s0 = vfprintf(stdout,pFormat,pvar);
 	fflush(stdout);
 	s1 = vfprintf(iocLogFile,pFormat,pvar);

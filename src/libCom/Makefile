@@ -163,7 +163,7 @@ SRCS_WIN32 += dllmain.cpp
 # For RTEMS CommandInterpreter
 INC_RTEMS := CommandInterpreter.h
 SRCS_RTEMS := CommandInterpreter.c
-HTMLS_RTEMS += osi/os/RTEMS/CommandInterpreter.3.html
+HTMLS_RTEMS += osi/os/RTEMS/CommandInterpreter.html
 
 #why is this here ?
 USR_CFLAGS = -D_NO_PROTO 

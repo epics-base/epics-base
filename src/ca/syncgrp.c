@@ -61,6 +61,7 @@ void ca_sg_init(void)
 void ca_sg_shutdown(struct ca_static *ca_temp)
 {
 	CASG 	*pcasg;
+	CASG 	*pnextcasg;
 	int	status;
 
 	/*
@@ -69,16 +70,25 @@ void ca_sg_shutdown(struct ca_static *ca_temp)
 	LOCK;
 	pcasg = (CASG *) ellFirst (&ca_temp->activeCASG);
 	while (pcasg) {
-		status = bucketRemoveItemUnsignedId (
-				ca_temp->ca_pSlowBucket, &pcasg->id);
-		assert (status == BUCKET_SUCCESS);
-		pcasg = (CASG *) ellNext(&pcasg->node);
+		pnextcasg = (CASG *) ellNext (&pcasg->node);
+		status = ca_sg_delete (pcasg->id);
+		assert (status==ECA_NORMAL);
+		pcasg = pnextcasg;
 	}
-	ellFree(&ca_temp->activeCASG);
-	ellFree(&ca_temp->freeCASG);
+	assert (ellCount(&ca_temp->activeCASG)==0);
+
+	/*
+	 * per sync group
+	 */
+	ellFree (&ca_temp->freeCASG);
+
+	/*
+	 * per sync group op
+	 */
+	ellFree (&ca_temp->activeCASGOP);
+	ellFree (&ca_temp->freeCASGOP);
+
 	UNLOCK;
-	ellInit(&ca_temp->activeCASGOP);
-	ellInit(&ca_temp->freeCASGOP);
 
 	return;
 }

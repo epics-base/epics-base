@@ -1,3 +1,5 @@
 # $Id$
 
 include $(EPICS_BASE)/configure/RULES
+include $(TOP)/configure/RULES_PYTHON
+include $(TOP)/configure/RULES_IDL

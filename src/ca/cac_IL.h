@@ -43,3 +43,9 @@ inline const char * cac::userNamePointer ()
 {
     return this->pUserName;
 }
+
+inline void cac::ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request )
+{
+    request.ioInitiate ( this->ipToAEngine );
+}
+

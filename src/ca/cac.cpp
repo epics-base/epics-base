@@ -505,7 +505,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
 #   if DEBUG
     {
         char buf[64];
-        ipAddrToA (pnet_addr, buf, sizeof ( buf ) );
+        ipAddrToDottedIP (pnet_addr, buf, sizeof ( buf ) );
         printf ("new server available: %s\n", buf);
     }
 #   endif

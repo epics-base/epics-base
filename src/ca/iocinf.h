@@ -679,6 +679,23 @@ private:
     const double period;
 };
 
+class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
+public:
+    msgForMultiplyDefinedPV ( 
+        cac &cacRefIn, const char *pChannelName, const char *pAcc, 
+        const osiSockAddr &rej );
+    msgForMultiplyDefinedPV ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+private:
+    void ioCompletionNotify ( const char *pHostName );
+    char acc[64];
+    char channel[64];
+    cac &cacRef;
+
+    static tsFreeList < class msgForMultiplyDefinedPV, 16 > freeList;
+};
+
 class hostNameCache : public ipAddrToAsciiAsynchronous {
 public:
     hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
@@ -1066,6 +1083,7 @@ public:
     int printf ( const char *pformat, ... );
     int vPrintf ( const char *pformat, va_list args );
     void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
+    void ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request );
 
 private:
     ipAddrToAsciiEngine     ipToAEngine;

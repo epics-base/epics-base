@@ -53,6 +53,7 @@ LIBSRCS += comQueSend.cpp
 LIBSRCS += cacPrivateListOfIO.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += ioCounter.cpp
+LIBSRCS += msgForMultiplyDefinedPV.cpp
 
 LIBRARY=ca
 

@@ -703,14 +703,12 @@ bool tcpiiu::connectionInProgress ( const char *pChannelName, const osiSockAddr 
 {
     if ( ! this->ipToA.identicalAddress ( addr ) ) {
         char acc[64];
-        char rej[64];
-        char buf[256];
-
-        this->ipToA.hostName ( acc, sizeof (acc) );
-        sockAddrToA ( &addr.sa, rej, sizeof (rej) );
-        sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
-                pChannelName, acc, rej );
-        genLocalExcep ( this->clientCtx (), ECA_DBLCHNL, buf );
+        this->ipToA.hostName ( acc, sizeof ( acc ) );
+        msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
+            this->clientCtx (), pChannelName, acc, addr );
+        if ( pMsg ) {
+            this->clientCtx ().ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
+        }
     }
     return true;
 }

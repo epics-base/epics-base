@@ -114,7 +114,7 @@ epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates
                     if (pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
                         pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
                         char buf[64];
-                        ipAddrToA ( &pNode->addr.ia, buf, sizeof (buf) );
+                        ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
                         ca_printf ( "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
                         free (pNode);
                         pNode = NULL;

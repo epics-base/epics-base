@@ -101,7 +101,7 @@ void udpiiu::recvMsg ()
         if ( status != ECA_NORMAL ) {
             char buf[64];
 
-            sockAddrToA ( &src.sa, buf, sizeof ( buf ) );
+            sockAddrToDottedIP ( &src.sa, buf, sizeof ( buf ) );
 
             ca_printf (
                 "%s: bad UDP msg from %s because \"%s\"\n", __FILE__, 
@@ -498,7 +498,7 @@ void udpiiu::shutdown ()
 void udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
 {
     char buf[256];
-    sockAddrToA ( &netAddr.sa, buf, sizeof ( buf ) );
+    sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
     ca_printf ( "CAC: Bad response code in UDP message from %s was %u\n", 
         buf, msg.m_cmmd);
 }
@@ -630,7 +630,7 @@ void udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr
     const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
 
-    sockAddrToA ( &net_addr.sa, name, sizeof ( name ) );
+    sockAddrToDottedIP ( &net_addr.sa, name, sizeof ( name ) );
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
         errlogPrintf ( "error condition \"%s\" detected by %s with context \"%s\"\n", 
@@ -812,7 +812,7 @@ void udpiiu::flush ()
                 else {
                     char buf[64];
 
-                    sockAddrToA ( &pNode->addr.sa, buf, sizeof ( buf ) );
+                    sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
 
                     ca_printf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",

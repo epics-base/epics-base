@@ -31,7 +31,7 @@ inline bhe::bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetA
 #   ifdef DEBUG
     {
         char name[64];
-        ipAddrToA (&addr, name, sizeof(name));
+        ipAddrToDottedIP (&addr, name, sizeof(name));
         printf ("created beacon entry for %s\n", name);
     }
 #   endif

@@ -51,7 +51,7 @@ void hostNameCache::hostName ( char *pBuf, unsigned bufSize ) const
     }
     else {
         osiSockAddr tmpAddr = this->address ();
-        sockAddrToDottedA ( &tmpAddr.sa, pBuf, bufSize );
+        sockAddrToDottedIP ( &tmpAddr.sa, pBuf, bufSize );
     }
     pBuf [ bufSize - 1u ] = '\0';
 }

@@ -10,6 +10,9 @@
 #    [-b] - For fully built release
 #
 # $Log$
+# Revision 1.9  1996/09/04 21:41:36  jba
+# Top level dir no longer passed to MakeRelease
+#
 # Revision 1.8  1996/07/02 13:45:09  jba
 # Added dbd and base/config dirs. Removed epics/config and base/rec.
 #
@@ -87,35 +90,23 @@ if [ "${1}" = "-b" ]; then
 	fi
 fi
 
-# Retrieve EPICS release string from src/include/epicsVersion.h
-grep EPICS_VERSION_STRING src/include/epicsVersion.h > /dev/null 2>&1 || ERR=1;
+# Retrieve EPICS release string from config/CONFIG_BASE_VERSION
+. config/CONFIG_BASE_VERSION
 
-if [ "$ERR" = "1" ];
+if [ -z "${EPICS_VERSION}" ];
 	then
-		echo "TOP:  Cannot retrieve release number from include/epicsVersion.h";
+		echo "TOP:  Cannot retrieve release number from config/CONFIG_BASE_VERSION";
 		exit 1;
 	fi
 
-RELS=`grep "EPICS_VERSION_STRING" src/include/epicsVersion.h \
-		| sed   -e 's-.*Version--' \
-			-e 's-[  ][      ]*--g' \
-         		-e 's-".*--' \
-                	-e 's-\.0$--'`;
- 
-if [ -z "${RELS}" ];
-	then
-		echo "TOP: Cannot retrieve release number from src/include/epicsVersion.h";
-		exit 1;
-	fi
-
-RELS="R${RELS}";
+RELS="R${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION}.${EPICS_UPDATE_NAME}${EPICS_UPDATE_LEVEL}";
 
 echo TOP: Creating ../${RELS}.Tar;
 
 if [ -f ${RELS}.Tar* ];
 	then
 		echo "TOP: This release has already been created.";
-		echo "TOP: Remove Tar file or edit src/include/epicsVersion.h.";
+		echo "TOP: Remove Tar file or edit config/CONFIG_BASE_VERSION.";
 		exit 1;
 	fi
 

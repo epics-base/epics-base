@@ -25,7 +25,7 @@ int sysClkRateGet(void);
 
 struct epicsMutexOSD * epicsMutexOsdCreate(void)
 {
-    return((epicsMutexId)
+    return((struct epicsMutexOSD *)
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY));
 }
 

@@ -56,9 +56,9 @@ long dbCaAddInlink();
 long dbCaGetLink();
 
 /* Create the dset for devAiSoftRaw */
-long init_record();
-long read_ai();
-long special_linconv();
+static long init_record();
+static long read_ai();
+static long special_linconv();
 struct {
 	long		number;
 	DEVSUPFUN	report;

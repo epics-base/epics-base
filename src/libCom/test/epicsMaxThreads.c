@@ -46,6 +46,8 @@ void epicsMaxThreads(void)
         id = epicsThreadCreate("thread",50,stackSize,thread,0);
         if(!id) break;
         i++;
+        if ((i % 100) == 0)
+            printf ("%d\n", i);
         epicsEventMustWait(started);
     }
     fprintf(stdout,"number threads %d\n",i);

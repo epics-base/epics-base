@@ -32,6 +32,7 @@
  * .02  08-13-91	mrk	Support db_field_log for dbGetField
  * .03  09-30-91	mrk	Support for TPRO and DISP
  * .04  10-03-91	jba	Bug fix in putStringUchar
+ * .05  11-06-91	jba	Moved processing message before record process
  */
 
 /* This is a major revision of the original implementation of database access.*/

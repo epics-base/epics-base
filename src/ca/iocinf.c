@@ -18,12 +18,15 @@
 /*			each message					*/
 /*	071291	joh	no longer sends id at TCP connect		*/
 /*	082791	joh	split send_msg() into two subroutines		*/
-/*	110491	joh	call recv_msg to free up deadlock only if 	*/
-/*			client blocks on send as before			*/
 /*	110491	joh	mark all channels disconnected prior to		*/
 /*			calling the first connection handler on		*/
 /*			disconnect					*/
 /*	110491	joh	allow cac_send_msg() to be called recursively	*/
+/*	110691	joh	call recv_msg to free up deadlock prior to 	*/
+/*			each send until a better solution is found	*/
+/*			(checking only when the socket blocks causes	*/
+/*			does not leave enough margin to fix the		*/
+/*			problem once it is detected)			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -605,7 +608,17 @@ void cac_send_msg()
  	 *
 	 */
 	while(TRUE){
-
+		/*
+		 * Ensure we do not accumulate extra recv
+		 * messages (for TCP)
+		 *
+		 * frees up push pull deadlock only
+		 * if recv not already in progress
+		 */
+#		ifdef 	UNIX
+			if(post_msg_active==0)
+				recv_msg_select(&notimeout);
+#		endif
 
 		done = TRUE;
   		for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
@@ -618,7 +631,6 @@ void cac_send_msg()
 				done = FALSE;
 			}
     		}
-
 
 #ifndef UNIX
 		break;
@@ -745,15 +757,6 @@ register struct ioc_in_use 	*piiu;
 					cnt);
 				piiu->send->stk = cnt;
 			}
-			/*
-			 * Ensure we do not accumulate extra recv
-			 * messages (for TCP)
-			 *
-			 * frees up push pull deadlock only
-			 * if recv not already in progress
-			 */
-			if(post_msg_active==0)
-				recv_msg_select(&notimeout);
 
 			return ERROR;
 		}

@@ -139,7 +139,7 @@ static long init_record(ppt,pass)
     /* get the hgv value if sgl is a constant*/
     if (ppt->sgl.type == CONSTANT )
     {
-	recGblInitConstantLink(&ppt->sgl,DBF_SHORT,&ppt->hgv);
+	recGblInitConstantLink(&ppt->sgl,DBF_SHORT,&ppt->sgv);
     }
 
     /* must have write_pt functions defined */

@@ -38,7 +38,7 @@
 #include "sysSymTbl.h"
 
 static char *sccsID = 
-	"$Id$\t$Date$ written by Jeffrey O. Hill hill@atdiv.lanl.gov";
+	"$Id$\t$Date$ J. Hill hill@atdiv.lanl.gov";
 
 /*
  *

@@ -83,91 +83,76 @@ recordtype(mbbiDirect) {
 	}
 	field(B1,DBF_UCHAR) {
 		prompt("Bit 1")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B2,DBF_UCHAR) {
 		prompt("Bit 2")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B3,DBF_UCHAR) {
 		prompt("Bit 3")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B4,DBF_UCHAR) {
 		prompt("Bit 4")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B5,DBF_UCHAR) {
 		prompt("Bit 5")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B6,DBF_UCHAR) {
 		prompt("Bit 6")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B7,DBF_UCHAR) {
 		prompt("Bit 7")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B8,DBF_UCHAR) {
 		prompt("Bit 8")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(B9,DBF_UCHAR) {
 		prompt("Bit 9")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BA,DBF_UCHAR) {
 		prompt("Bit A")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BB,DBF_UCHAR) {
 		prompt("Bit B")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BC,DBF_UCHAR) {
 		prompt("Bit C")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BD,DBF_UCHAR) {
 		prompt("Bit D")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BE,DBF_UCHAR) {
 		prompt("Bit E")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}
 	field(BF,DBF_UCHAR) {
 		prompt("Bit F")
-		promptgroup(GUI_BITS2)
 		pp(TRUE)
 		interest(1)
 	}

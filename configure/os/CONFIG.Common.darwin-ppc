@@ -56,5 +56,3 @@ LDLIBS_READLINE = -lreadline
 # command-line editing:
 #COMMANDLINE_LIBRARY=READLINE
 
-# Java
-JAVA_DIR=/System/Library/Frameworks/JavaVM.framework/Home

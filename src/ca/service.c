@@ -1047,6 +1047,11 @@ void cac_reconnect_channel(caResId cid, short type, unsigned short count)
 
 	piiu = (IIU *) chan->piiu;
 
+    if ( piiu == ca_static->ca_piiuCast ) {
+		UNLOCK;
+		return;
+    }
+
 	prev_cs = chan->state;
 	if (prev_cs == cs_conn) {
 		ca_printf("CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",

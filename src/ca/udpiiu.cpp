@@ -474,6 +474,8 @@ void udpiiu::shutdown ()
             msg.m_cid = htonl ( 0u );
             msg.m_postsize = htons ( 0u );
 
+            addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+
             // send a wakeup msg so the UDP recv thread will exit
             status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  sizeof (msg), 0, 
                     &addr.sa, sizeof ( addr.sa ) );

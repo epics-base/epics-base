@@ -21,7 +21,6 @@
 #include "envDefs.h"
 #include "caDiagnostics.h"
 #include "cadef.h"
-#include "osiUnistd.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -1993,7 +1992,7 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
 
-    putenv ( "EPICS_CA_MAX_ARRAY_BYTES=10000000" ); 
+    epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", "10000000" ); 
 
     verifyDataTypeMacros ();
 

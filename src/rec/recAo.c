@@ -65,6 +65,7 @@
  * .32  08-19-92        jba     Added simulation processing
  * .33  08-19-92        jba     Added code for invalid alarm output action
  * .34  10-15-93        jba     modified oroc test to work on the mv162
+ * .35  03-03-94	mrk	Added aslo and aoff
 
  */
 
@@ -204,7 +205,7 @@ static long init_record(pao,pass)
             if (pao->linr == 0){
 		; /*do nothing*/
             }else if (pao->linr == 1){
-                     value = (pao->rval + pao->roff)*pao->eslo + pao->egul;
+                     value = value*pao->eslo + pao->egul;
             }else{
                 if(cvtRawToEngBpt(&value,pao->linr,pao->init,
 			(void *)&pao->pbrk,&pao->lbrk)!=0) break;

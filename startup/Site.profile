@@ -13,8 +13,8 @@
 #  sites should modify these definitions
 
 # Location of epics base
-if [ -z "${EPICS_BASE}" ] ; then
-	EPICS_BASE=/usr/local/epics/base
+if [ -z "${MY_EPICS_BASE}" ] ; then
+	MY_EPICS_BASE=/usr/local/epics/base
 fi
 
 # Location of epics extensions (medm, msi, etc.)
@@ -64,7 +64,7 @@ fi
 #---------------------------------------------------------------
 # Start of set R3.14 environment variables
 #
-EPICS_HOST_ARCH=`"${EPICS_BASE}"/startup/EpicsHostArch.pl`
+EPICS_HOST_ARCH=`"${MY_EPICS_BASE}"/startup/EpicsHostArch.pl`
 export EPICS_HOST_ARCH
 
 # Allow private versions of base
@@ -93,7 +93,7 @@ PATH="${PATH}:${EPICS_EXTENSIONS}/bin/${EPICS_HOST_ARCH}"
 #EPICS_TS_MIN_WEST=360
 #export EPICS_TS_MIN_WEST
 #
-#HOST_ARCH=`"${EPICS_BASE}"/startup/HostArch.pl`
+#HOST_ARCH=`"${MY_EPICS_BASE}"/startup/HostArch`
 #export HOST_ARCH
 #
 ## Allow private versions of base

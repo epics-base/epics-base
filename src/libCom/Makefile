@@ -225,6 +225,9 @@ INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
 SRCS_vxWorks += epicsStdio.c
 
+# For hpux only the Stdio stuff
+SRCS_hpux += epicsStdio.c
+
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #

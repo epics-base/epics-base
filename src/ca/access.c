@@ -700,7 +700,7 @@ ca_process_exit()
 #	endif
 
 
-	/* if allready in the exit state just NOOP */
+	/* if already in the exit state just NOOP */
 #	ifdef vxWorks
 		if (!vxTas(&ca_temp->ca_exit_in_progress))
 			return;

@@ -27,9 +27,9 @@ epicsSingleton < tsFreeList < class getCopy, 1024 > > getCopy::pFreeList;
 getCopy::getCopy ( oldCAC &cacCtxIn, oldChannelNotify &chanIn, 
                   unsigned typeIn, arrayElementCount countIn, void *pValueIn ) :
     count ( countIn ), cacCtx ( cacCtxIn ), chan ( chanIn ), pValue ( pValueIn ), 
-        readSeq ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )
+        ioSeqNo ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )
 {
-    cacCtxIn.incrementOutstandingIO ();
+    cacCtxIn.incrementOutstandingIO ( cacCtxIn.sequenceNumberOfOutstandingIO () );
 }
 
 getCopy::~getCopy () 
@@ -38,7 +38,7 @@ getCopy::~getCopy ()
 
 void getCopy::cancel ()
 {
-    this->cacCtx.decrementOutstandingIO ( this->readSeq );
+    this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
 }
 
 void getCopy::destroy ()
@@ -52,7 +52,7 @@ void getCopy::completion ( unsigned typeIn,
     if ( this->type == typeIn ) {
         unsigned size = dbr_size_n ( typeIn, countIn );
         memcpy ( this->pValue, pDataIn, size );
-        this->cacCtx.decrementOutstandingIO ( this->readSeq );
+        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
     }
     else {
         this->exception ( ECA_INTERNAL, 
@@ -79,7 +79,7 @@ void getCopy::show ( unsigned level ) const
     ::printf ( "read copy IO at %p, type %s, element count %lu\n", 
         static_cast <const void *> ( this ), dbf_type_to_text ( tmpType ), this->count );
     if ( level > 0u ) {
-        ::printf ( "\tsequence number %u, user's storage %p\n",
-            this->readSeq, static_cast <const void *> ( this->pValue ) );
+        ::printf ( "\tIO sequence number %u, user's storage %p\n",
+            this->ioSeqNo, static_cast <const void *> ( this->pValue ) );
     }
 }

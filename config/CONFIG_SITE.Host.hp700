@@ -8,7 +8,7 @@
 SHARED_LIBRARIES=YES
 
 # where we expect to find shared libraries if not found elsewhere
-# DEFAULT_SHRLIB_SEARCH_PATH = /home/controls/epics/cdev/lib/hpux-10.20:/home/controls/epics/cdev/lib/hpux-10.XX:/opt/TclTk/lib:/opt/xpm/lib/X11:/usr/lib/pa1.1:/usr/lib:/lib:/opt/csr/installed/HP-UX/lib::/opt/OPI/GUI/lib/hp700:/opt/OPI/MapperApplications/lib/hp700:/opt/OPI/cdevAppl/lib/hp700:/opt/OPI/cmlog/lib/hp700:/opt/OPI/models/lib/hp700:/opt/OPI/sddsAppl/lib/hp700
+#DEFAULT_SHRLIB_SEARCH_PATH = /opt/epics/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)/support/base/$(EPICS_VERSION)-$(EPICS_REVISION)-$(EPICS_MODIFICATION)/lib/hp700
 DEFAULT_SHRLIB_SEARCH_PATH = /cs/lib/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL):$(INSTALL_LIB)
 
 #No special action should be required to build or use shared libraries.

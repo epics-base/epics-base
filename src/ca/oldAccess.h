@@ -74,6 +74,7 @@ protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
     cacChannel &io;
+    oldCAC &cacCtx;
     caCh *pConnCallBack;
     void *pPrivate;
     caArh *pAccessRightsFunc;
@@ -96,6 +97,7 @@ public:
         arrayElementCount count, void *pValue );
     void destroy ();
     void show ( unsigned level ) const;
+    void cancel ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
@@ -186,7 +188,8 @@ private:
 class oldCAC : public cacNotify
 {
 public:
-    oldCAC ( bool enablePreemptiveCallback = false );
+    oldCAC ( bool enablePreemptiveCallback = false, 
+        unsigned maxNumberOfChannels = 32768 );
     virtual ~oldCAC ();
     void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
@@ -377,11 +380,6 @@ inline void oldSubscription::operator delete ( void *pCadaver, size_t size )
 inline oldChannelNotify & oldSubscription::channel () const
 {
     return this->chan;
-}
-
-inline void getCopy::destroy ()
-{
-    delete this;
 }
 
 inline void * getCopy::operator new ( size_t size )

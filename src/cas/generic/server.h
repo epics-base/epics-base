@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1996/11/02 00:54:31  jhill
+ * many improvements
+ *
  * Revision 1.11  1996/09/16 18:24:09  jhill
  * vxWorks port changes
  *
@@ -353,7 +356,7 @@ public:
         // allocate message buffer space
         // (leaves message buffer locked)
         //
-        caStatus allocMsg (unsigned extsize, caHdr **ppMsg);
+        caStatus allocMsg (unsigned extsize, caHdr **ppMsg, int lockRequired=1);
 
         //
         // commits message allocated with allocMsg()

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.9  1996/11/22 19:52:24  jhill
+ * 	doc
+ *
  * 	Revision 1.8  1996/11/22 19:22:53  jhill
  * 	doc
  *
@@ -375,7 +378,7 @@ public:
 	// where no clients are attached.
 	// 2) once for all PVs that exist when the server is deleted
 	//
-	// the default destroy() executes "delete this"
+	// the default (base) "destroy()" executes "delete this"
         //
         virtual void destroy ();
 
@@ -383,7 +386,52 @@ public:
 	// tbe best type for clients to use when accessing the
 	// value of the PV
 	//
-	virtual aitEnum bestExternalType ();
+	virtual aitEnum bestExternalType () const;
+
+	//
+	// Returns the maximum bounding box for all present and
+	// future data stored within the PV. 
+	//
+	// The routine "dimension()" returns the maximum
+	// number of dimensions in the hypercube (0=scaler, 
+	// 1=array, 2=plane, 3=cube ...}.
+	//
+	// The routine "maxBound(dimension)" returns the 
+	// maximum length of a particular dimension of the
+	// hypercube as follows:
+	// 
+	//	dim equal to	0	1	3	...	
+	//	-------------------------------------------
+	// hypercube 
+	// type	
+	// ---------
+	//	
+	// array		array
+	//			length
+	//	
+	// plane		x	y	
+	//
+	// cube			x	y	z 
+	//
+	// .
+	// .
+	// .
+	//
+	// The default (base) "dimension()" returns zero (scaler).
+	// The default (base) "maxBound()" returns scaler bounds
+	// for all dimensions.
+	//
+	// Clients will see that the PV's data is scaler if
+	// these routines are not supplied in the derived class.
+	//
+	// If the "dimension" argument to maxBounds() is set to
+	// zero then the bound on the first dimension is being
+	// fetched. If the "dimension" argument to maxBound() is
+	// set to one then the bound on the second dimension
+	// are being fetched...
+	//
+	virtual unsigned maxDimension() const; // return zero if scaler
+	virtual aitIndex maxBound (unsigned dimension) const;
 
         //
         // Server tool calls this function to post a PV event.

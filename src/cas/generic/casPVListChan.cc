@@ -1,3 +1,4 @@
+
 /*
  *      $Id$
  *
@@ -29,25 +30,22 @@
  *
  * History
  * $Log$
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
  *
  *
  */
 
-
-#ifndef casPVListChanIL_h
-#define casPVListChanIL_h
+#include <server.h>
+#include <casPVIIL.h>
 
 //
-// casPVListChan::casPVListChan()
+// casPVListChan::~casPVListChan()
 //
-inline casPVListChan::casPVListChan 
-	(const casCtx &ctx, casChannel &chanAdapterIn) :
-	casChannelI(ctx, chanAdapterIn)
+casPVListChan::~casPVListChan()
 {
-	this->pv.installChannel(*this);
+        this->pv.removeChannel(*this);
+        //
+        // delete signal to PV occurs in
+        // casChannelI::~casChannelI
+        //
 }
-
-#endif // casPVListChanIL_h
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1996/11/02 00:54:24  jhill
+ * many improvements
+ *
  * Revision 1.10  1996/09/16 18:24:05  jhill
  * vxWorks port changes
  *
@@ -150,7 +153,7 @@ inline caStatus casStrmClient::createChannel (const char *pName)
 		// copied (not referenced) so we are ok if they wrap
 		// pName through into retVal
 		//
-		status = createChanResponse (*this->ctx.getMsg(), retVal);
+		status = this->createChanResponse (*this->ctx.getMsg(), retVal);
 	}
 	return status;
 }
@@ -1311,9 +1314,13 @@ caStatus casStrmClient::readSyncAction()
 
 
 
-/*
- * caStatus casStrmClient::accessRightsResponse()
- */
+ //
+ // casStrmClient::accessRightsResponse()
+ //
+ // NOTE:
+ // Do not change the size of this response without making
+ // parallel changes in createChanResp
+ //
 caStatus casStrmClient::accessRightsResponse(casChannelI *pciu)
 {
         caHdr 		*reply;
@@ -1575,6 +1582,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 	aitUint32	valIndex;
 	aitUint32	gddStatus;
 	aitUint16	appType;
+	gdd 		*pVal;
 
 	appType = gddDbrToAit[dbrType].app;
 
@@ -1586,39 +1594,91 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 		return S_cas_noMemory;
 	}
 	
-	//
-	// set bounds for the value member
-	//
-	if (dbrCount != 1u) {
-		if (pDescRet->isContainer()) {
-			gddContainer *pCont = (gddContainer *) pDescRet;
-			gdd *pVal;
+	if (pDescRet->isContainer()) {
+		gddContainer *pCont = (gddContainer *) pDescRet;
 
-			gddStatus = 
+		//
+		// All DBR types have a value member 
+		//
+		gddStatus = 
 			gddApplicationTypeTable::app_table.mapAppToIndex
 				(appType, gddAppType_value, valIndex);
-			if (gddStatus) {
-				pDescRet->unreference();
-				pDescRet = NULL;
-				return S_cas_badType;
-			}
-			pVal = pCont->getDD(valIndex);
-			assert (pVal);
-			gddStatus = pVal->setBound (0, 0u, dbrCount);
-			assert (gddStatus==0);
+		if (gddStatus) {
+			pDescRet->unreference();
+			pDescRet = NULL;
+			return S_cas_internal;
 		}
-		else if (pDescRet->isAtomic()) {
-			gddAtomic *pAtomic = (gddAtomic *) pDescRet;
-			gddStatus = pAtomic->setBound(0, 0u, dbrCount);
-			assert (gddStatus==0);
+		pVal = pCont->getDD(valIndex);
+		if (!pVal) {
+			pDescRet->unreference();
+			pDescRet = NULL;
+			return S_cas_internal;
+		}
+	}
+	else {
+		pVal = pDescRet;
+	}
+
+	if (pVal->isScalar()) {
+		if (dbrCount<=1u) {
+			return S_cas_success;
+		}
+
+		//
+		// scaler and managed (and need to set the bounds)
+		//	=> out of luck (cant modify bounds)
+		//
+		if (pDescRet->isManaged()) {
+			pDescRet->unreference();
+			pDescRet = NULL;
+			return S_cas_internal;
+		}
+
+		//
+		// convert to atomic
+		//
+		pVal->setDimension(1);
+		pVal->setBound(0, 0u, dbrCount);
+	}
+	else if (pVal->isAtomic()) {
+		const gddBounds* pB = pVal->getBounds();
+		aitIndex bound = dbrCount;
+		unsigned dim;
+		int modAllowed;
+
+		if (pDescRet->isManaged() || pDescRet->isFlat()) {
+			modAllowed = FALSE;
 		}
 		else {
-			assert (dbrCount==1u);
+			modAllowed = TRUE;
 		}
+
+		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
+			if (pB->first()!=0u && pB->size()!=bound) {
+				if (modAllowed) {
+					pVal->setBound(dim, 0u, bound);
+				}
+				else {
+					pDescRet->unreference();
+					pDescRet = NULL;
+					return S_cas_internal;
+				}
+			}
+			bound = 0u;
+		}
+	}
+	else {
+		//
+		// the GDD is container or isnt any of the normal types
+		//
+		pDescRet->unreference();
+		pDescRet = NULL;
+		return S_cas_internal;
 	}
 
 	return S_cas_success;
 }
+
 
 
 //
@@ -1648,6 +1708,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &msg,
 	casChannelI 	*pChanI;
 	casPVI		*pPV;
 	caHdr 		*claim_reply; 
+	caHdr 		*dummy; 
 	unsigned	dbrType;
 	caStatus	status;
 
@@ -1665,7 +1726,13 @@ caStatus casStrmClient::createChanResponse(const caHdr &msg,
 		return this->channelCreateFailed(&msg, S_cas_badParameter);
 	}
 
-	status = allocMsg (0u, &claim_reply);
+	//
+	// NOTE:
+	// We are allocating enough space for both the claim
+	// response and the access response so that we know for
+	// certain that they will both be sent together.
+	//
+	status = this->allocMsg (sizeof(caHdr), &dummy);
 	if (status) {
 		return status;
 	}
@@ -1698,6 +1765,19 @@ caStatus casStrmClient::createChanResponse(const caHdr &msg,
 
 	pChanI = (casChannelI *) pChan;
 
+	//
+	// NOTE:
+	// We are certain that the request will complete
+	// here because we allocated enough space for this
+	// and the claim response above.
+	//
+	status = casStrmClient::accessRightsResponse(pChanI);
+	if (status) {
+		errMessage(status, "incompplete channel create?");
+		pChanI->clientDestroy();
+		return this->channelCreateFailed(&msg, status);
+	}
+
 	status = pPV->bestDBRType(dbrType);
 	if (status) {
 		errMessage(status, "best external dbr type fetch failed");
@@ -1705,12 +1785,35 @@ caStatus casStrmClient::createChanResponse(const caHdr &msg,
 		return this->channelCreateFailed(&msg, status);
 	}
 
+	//
+	// NOTE:
+	// We are allocated enough space for both the claim
+	// response and the access response so that we know for
+	// certain that they will both be sent together.
+	// Nevertheles, some (old) clients do not receive
+	// an access rights response so we allocate again
+	// here to be certain that we are at the correct place in
+	// the protocol buffer.
+	//
+	status = this->allocMsg (sizeof(caHdr), &claim_reply, 
+			FALSE /* dont lock the out buffer again*/);
+	//
+	// Not sending the access rights response and the claim
+	// response is a severe error which is avoided by
+	// the first (oversize) allocMsg
+	//
+	assert (status==S_cas_success);
+
 	*claim_reply = nill_msg;
 	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
 	claim_reply->m_type = dbrType;
 	claim_reply->m_count = pPV->nativeCount();
 	claim_reply->m_cid = msg.m_cid;
 	claim_reply->m_available = pChanI->getSID();
+
+	//
+	// Unlock the buffer (and convert it to network format
+	//
 	this->commitMsg();
 
 	return status;

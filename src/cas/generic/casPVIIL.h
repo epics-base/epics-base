@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1996/11/02 00:54:23  jhill
+ * many improvements
+ *
  * Revision 1.6  1996/09/16 18:24:05  jhill
  * vxWorks port changes
  *
@@ -56,6 +59,13 @@
 
 #include "dbMapper.h"
 
+//
+// casPVI::getCAS() 
+//
+inline caServerI &casPVI::getCAS() 
+{
+	return this->cas;
+}
 
 //
 // casPVI::interfaceObjectPointer()
@@ -175,7 +185,7 @@ inline void casPVI::deleteSignal()
 	//
 	localCASRef.osiLock();
 
-	if (this->chanList.count()==0u) {
+	if (this->chanList.count()==0u && !this->destroyInProgress) {
 		(*this)->destroy();
 		//
 		// !! dont access self after destroy !!
@@ -228,6 +238,17 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
                 pChan->postEvent(select, event);
         }
 	this->unlock();
+}
+
+//
+// CA only does 1D arrays for now 
+//
+inline aitIndex casPVI::nativeCount() 
+{
+	if ((*this)->maxDimension()==0u) {
+		return 1u; // scaler
+	}
+	return (*this)->maxBound(0u);
 }
 
 #endif // casPVIIL_h

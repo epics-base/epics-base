@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 00:54:30  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/09/16 18:24:07  jhill
  * vxWorks port changes
  *
@@ -91,7 +94,8 @@ outBuf::~outBuf()
 //			
 caStatus outBuf::allocMsg (
 bufSizeT	extsize,	// extension size 
-caHdr		**ppMsg
+caHdr		**ppMsg,
+int		lockRequired
 )
 {
 	bufSizeT msgsize;
@@ -106,7 +110,14 @@ caHdr		**ppMsg
 
 	stackNeeded = this->bufSize - msgsize;
 
-	this->mutex.osiLock();
+	//
+	// In some special situations we preallocate space for
+	// two messages and prefer not to lock twice 
+	// (so that lock/unlock pairs will match)
+	//
+	if (lockRequired) {
+		this->mutex.osiLock();
+	}
 
 	if (this->stack > stackNeeded) {
 		

@@ -52,6 +52,13 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_OBJS+=\$(${name}_OBJS_DEFAULT)\n";
 	print OUT "endif\n";
 	print OUT "endif\n";
+	print OUT "ifneq (\$(strip \$(${name}_LDOBJS_\$(OS_CLASS))),)\n";
+	print OUT "${name}_LDOBJS+=\$(subst -nil-,,\$(${name}_LDOBJS_\$(OS_CLASS)))\n";
+	print OUT "else\n";
+	print OUT "ifdef ${name}_LDOBJS_DEFAULT\n";
+	print OUT "${name}_LDOBJS+=\$(${name}_LDOBJS_DEFAULT)\n";
+	print OUT "endif\n";
+	print OUT "endif\n";
 	print OUT "ifneq (\$(strip \$(${name}_LIBS_\$(OS_CLASS))),)\n";
 	print OUT "${name}_LDLIBS+=\$(subst -nil-,,\$(${name}_LIBS_\$(OS_CLASS)))\n";
 	print OUT "else\n";

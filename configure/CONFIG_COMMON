@@ -115,13 +115,13 @@ JAR =
 #--------------------------------------------------
 # obj files
 
-TARGET_OBJS = $(addsuffix $(OBJ),$(basename $($*_OBJS)))
+TARGET_OBJS =  $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS)))
 
 PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS) $(PROD_OBJS)))
-PROD_LD_OBJS = $(TARGET_OBJS) $(PRODUCT_OBJS)
+PROD_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(PRODUCT_OBJS)
 
 LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(LIB_SRCS) $(LIBSRCS) $(LIB_OBJS)))
-LIBRARY_LD_OBJS = $(TARGET_OBJS) $(LIBRARY_OBJS)
+LIBRARY_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------
 # WIN95/NT resource files

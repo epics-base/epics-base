@@ -68,6 +68,9 @@ $(checkReleaseTargets):checkRelease.%:
 clean ::
 	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common
 
+archclean ::
+	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS))
+
 $(cleanArchTargets) ::
 	$(RMDIR) O.$(archPart)
 
@@ -77,6 +80,6 @@ realclean ::
 .PHONY : $(actionArchTargets)
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS)
-.PHONY : $(ACTIONS) clean realclean all
+.PHONY : $(ACTIONS) clean realclean archclean all
 .PHONY : checkRelease $(checkReleaseTargets)
 

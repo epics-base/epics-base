@@ -13,7 +13,7 @@
  
 
 ARCHS += $(BUILD_ARCHS)
-ACTIONS += inc build install buildInstall clean realclean
+ACTIONS += inc build install buildInstall clean realclean archclean
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
 actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$@)), \

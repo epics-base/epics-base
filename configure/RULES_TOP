@@ -60,6 +60,7 @@ help:
 	@echo "     rebuild        - Same as clean install"
 	@echo "     inc            - Installs header files"
 	@echo "     build          - Builds all targets"
+	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
 	@echo "\"Partial\" build targets supported by Makefiles:"
 	@echo "     inc.<arch>     - Installs <arch> only header files."
 	@echo "     install.<arch> - Builds and installs <arch> only."

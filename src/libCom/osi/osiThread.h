@@ -88,11 +88,15 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadPrivateId);
 #ifdef __cplusplus
 
 #include "locationException.h"
+#include "osiEvent.h"
 
-class osiThread {
+static void osiThreadCallEntryPoint (void *pPvt); // for gnu warning
+
+class epicsShareClass osiThread {
 public:
     osiThread (const char *name, unsigned stackSize,
         unsigned priority=threadPriorityLow);
+    virtual ~osiThread ();
 
     virtual void entryPoint () = 0;
 
@@ -112,6 +116,9 @@ public:
     static const char * getNameSelf ();
 private:
     threadId id;
+    osiEvent exit;
+
+    friend void osiThreadCallEntryPoint (void *pPvt);
 };
 
 template <class T>

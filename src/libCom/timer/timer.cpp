@@ -179,7 +179,7 @@ void timer::show ( unsigned int level ) const
 
 epicsTimerQueue & timer::getQueue () const
 {
-    return this->queue.getEpicsTimerQueue ();
+    return this->queue;
 }
 
 timerQueue & timer::getPrivTimerQueue()

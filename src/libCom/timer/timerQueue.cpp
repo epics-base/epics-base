@@ -153,7 +153,7 @@ double timerQueue::process ( const epicsTime & currentTime )
     }
 }
 
-timer & timerQueue::createTimer ()
+epicsTimer & timerQueue::createTimer ()
 {
     epicsAutoMutex autoLock ( this->mutex );
     void *pBuf = this->timerFreeList.allocate ( sizeof (timer) );
@@ -163,10 +163,10 @@ timer & timerQueue::createTimer ()
     return * new ( pBuf ) timer ( *this );
 }
 
-void timerQueue::destroyTimer ( timer & tmr ) 
+void timerQueue::destroyTimer ( epicsTimer & tmr ) 
 {
     epicsAutoMutex autoLock ( this->mutex );
-    tmr.~timer ();
+    tmr.~epicsTimer ();
     this->timerFreeList.release ( &tmr, sizeof( tmr ) );
 }
 

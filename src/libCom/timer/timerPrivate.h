@@ -77,14 +77,14 @@ private:
     friend class timerQueue;
 };
 
-class timerQueue {
+class timerQueue : public epicsTimerQueue {
 public:
     timerQueue ( epicsTimerQueueNotify &notify );
     virtual ~timerQueue ();
     double process ( const epicsTime & currentTime );
+    epicsTimer & createTimer ();
+    void destroyTimer ( epicsTimer & );
     void show ( unsigned int level ) const;
-    timer & createTimer ();
-    void destroyTimer ( timer & );
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
     void destroyTimerForC ( epicsTimerForC & );
 private:
@@ -97,7 +97,6 @@ private:
     timer *pExpireTmr;
     epicsThreadId processThread;
     bool cancelPending;
-    virtual epicsTimerQueue & getEpicsTimerQueue () = 0;
     friend class timer;
 };
 
@@ -113,7 +112,7 @@ private:
 
 class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
-    public timerQueueActiveMgrPrivate, private timerQueue {
+    public timerQueueActiveMgrPrivate {
 public:
     timerQueueActive ( bool okToShare, unsigned priority );
     ~timerQueueActive () = 0;
@@ -125,6 +124,7 @@ public:
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
     void destroyTimerForC ( epicsTimerForC & );
 private:
+    timerQueue queue;
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     epicsThread thread;
@@ -163,8 +163,7 @@ private:
 
 extern timerQueueActiveMgr queueMgr;
 
-class timerQueuePassive : public epicsTimerQueuePassive,
-    private timerQueue {
+class timerQueuePassive : public epicsTimerQueuePassive {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
     epicsTimer & createTimer ();
@@ -174,6 +173,7 @@ public:
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
     void destroyTimerForC ( epicsTimerForC & );
 protected:
+    timerQueue queue;
     ~timerQueuePassive ();
     epicsTimerQueue & getEpicsTimerQueue ();
 };

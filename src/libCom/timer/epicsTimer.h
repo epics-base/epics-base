@@ -46,6 +46,7 @@ public:
 
 class epicsTimer {
 public:
+    virtual ~epicsTimer () = 0; 
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     virtual void cancel () = 0;
@@ -58,26 +59,22 @@ public:
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
     virtual class epicsTimerQueue & getQueue () const = 0;
-protected:
-    virtual ~epicsTimer (); 
 };
 
 class epicsTimerQueue {
 public:
+    virtual ~epicsTimerQueue () = 0;
     virtual epicsTimer & createTimer () = 0;
     virtual void destroyTimer ( epicsTimer & ) = 0;
     virtual void show ( unsigned int level ) const = 0;
-protected:
-    virtual ~epicsTimerQueue () = 0;
 };
 
 class epicsTimerQueueActive : public epicsTimerQueue {
 public:
+    virtual ~epicsTimerQueueActive () = 0;
     static epicsShareFunc epicsTimerQueueActive & allocate (
         bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
-protected:
-    virtual ~epicsTimerQueueActive () = 0;
 };
 
 class epicsTimerQueueNotify {

@@ -41,8 +41,7 @@ epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, int thr
 }
 
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
-    timerQueue ( static_cast <epicsTimerQueueNotify &> ( *this ) ), 
-    thread ( *this, "epicsTimerQueueActive", 
+    queue ( *this ), thread ( *this, "epicsTimerQueueActive", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     okToShare ( okToShareIn ), exitFlag ( false ), terminateFlag ( false )
 {
@@ -64,7 +63,7 @@ void timerQueueActive::run ()
 {
     this->exitFlag = false;
     while ( ! this->terminateFlag ) {
-        double delay = this->timerQueue::process ( epicsTime::getCurrent() );
+        double delay = this->queue.process ( epicsTime::getCurrent() );
         debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
         this->rescheduleEvent.wait ( delay );
     }
@@ -74,23 +73,23 @@ void timerQueueActive::run ()
 
 epicsTimer & timerQueueActive::createTimer ()
 {
-    return this->timerQueue::createTimer ();
+    return this->queue.createTimer ();
 }
 
 void timerQueueActive::destroyTimer ( epicsTimer & et )
 {
     timer & tmr = dynamic_cast < timer & > ( et );
-    this->timerQueue::destroyTimer ( tmr );
+    this->queue.destroyTimer ( tmr );
 }
 
 epicsTimerForC & timerQueueActive::createTimerForC ( epicsTimerCallback pCB, void *pPrivateIn )
 {
-    return this->timerQueue::createTimerForC ( pCB, pPrivateIn );
+    return this->queue.createTimerForC ( pCB, pPrivateIn );
 }
 
 void timerQueueActive::destroyTimerForC ( epicsTimerForC &tmr )
 {
-    this->timerQueue::destroyTimerForC ( tmr );
+    this->queue.destroyTimerForC ( tmr );
 }
 
 void timerQueueActive::reschedule ()
@@ -103,7 +102,7 @@ void timerQueueActive::show ( unsigned int level ) const
     printf ( "EPICS threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level >=1u ) {
-        this->timerQueue::show ( level - 1u );
+        this->queue.show ( level - 1u );
         printf ( "reschedule event\n" );
         this->rescheduleEvent.show ( level - 1u );
         printf ( "exit event\n" );

@@ -18,7 +18,6 @@
 #include "dbMapper.h"		// ait to dbr types 
 #include "gddAppTable.h"	// EPICS application type table
 
-#define CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
 #include "server.h"
 #include "caServerIIL.h"	// caServerI in line func
 
@@ -181,58 +180,30 @@ class epicsTimer & caServer::createTimer ()
 }
 
 //
-// caServer::readEventsProcessedCounter
+// caServer::subscriptionEventsProcessed
 //
-#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc unsigned caServer::readEventsProcessedCounter (void) const // X aCC 361
+epicsShareFunc unsigned caServer::subscriptionEventsProcessed (void) const // X aCC 361
 {
     if (pCAS) {
-        return this->pCAS->readEventsProcessedCounter();
+        return this->pCAS->subscriptionEventsProcessed();
     }
     else {
         return 0u;
     }
 }
-#endif
 
 //
-// caServer::clearEventsProcessedCounter
+// caServer::subscriptionEventsPosted
 //
-#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc void caServer::clearEventsProcessedCounter (void)
+epicsShareFunc unsigned caServer::subscriptionEventsPosted (void) const // X aCC 361
 {
     if (pCAS) {
-        this->pCAS->clearEventsProcessedCounter ();
-    }
-}
-#endif
-
-//
-// caServer::readEventsPostedCounter
-//
-#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc unsigned caServer::readEventsPostedCounter (void) const // X aCC 361
-{
-    if (pCAS) {
-        return this->pCAS->readEventsPostedCounter ();
+        return this->pCAS->subscriptionEventsPosted ();
     }
     else {
         return 0u;
     }
 }
-#endif
-
-//
-// caServer::clearEventsPostedCounter
-//
-#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-epicsShareFunc void caServer::clearEventsPostedCounter (void)
-{
-    if (pCAS) {
-        this->pCAS->clearEventsPostedCounter ();
-    }
-}
-#endif
 
 //
 // casRes::~casRes()

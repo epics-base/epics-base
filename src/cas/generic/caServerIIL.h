@@ -128,15 +128,15 @@ inline casEventMask caServerI::alarmEventMask() const
 }
 
 //
-// caServerI::readEventsProcessedCounter (void) const
+// caServerI::subscriptionEventsProcessedCounter (void) const
 //
-inline unsigned caServerI::readEventsProcessedCounter (void) const
+inline unsigned caServerI::subscriptionEventsProcessed (void) const
 {
     return this->nEventsProcessed;
 }
 
 //
-// caServerI::incEventsProcessedCounter (void)
+// caServerI::incrEventsProcessedCounter (void)
 //
 inline void caServerI::incrEventsProcessedCounter (void)
 {
@@ -144,17 +144,9 @@ inline void caServerI::incrEventsProcessedCounter (void)
 }
 
 //
-// caServerI::clearEventsProcessedCounter (void)
+// caServerI::subscriptionEventsPosted (void) const
 //
-inline void caServerI::clearEventsProcessedCounter (void)
-{
-    this->nEventsProcessed = 0u;
-}
-
-//
-// caServerI::readEventsPostedCounter (void) const
-//
-inline unsigned caServerI::readEventsPostedCounter (void) const
+inline unsigned caServerI::subscriptionEventsPosted (void) const
 {
     return this->nEventsPosted;
 }
@@ -165,14 +157,6 @@ inline unsigned caServerI::readEventsPostedCounter (void) const
 inline void caServerI::incrEventsPostedCounter (void)
 {
     this->nEventsPosted++;
-}
-
-//
-// caServerI::clearEventsPostedCounter (void)
-//
-inline void caServerI::clearEventsPostedCounter (void)
-{
-    this->nEventsPosted = 0u;
 }
 
 inline void caServerI::lock () const

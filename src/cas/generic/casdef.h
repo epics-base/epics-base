@@ -87,6 +87,13 @@ typedef aitUint32 caStatus;
 
 #include "caNetAddr.h"
 
+class caNetworkAddress {
+public:
+    virtual bool operator = ( const caNetworkAddress & ) const = 0;
+    virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
+    virtual caNetworkAddress & duplicate () const = 0;
+};
+
 //
 // pv exist test return
 //
@@ -259,8 +266,8 @@ public:
 	// The client library will retry the request at some time
 	// in the future.
 	//
-	epicsShareFunc virtual pvExistReturn pvExistTest (const casCtx &ctx, 
-		const char *pPVAliasName);
+	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx &ctx, 
+		const char *pPVAliasName );
 
 	//
 	// pvAttach() 
@@ -313,15 +320,6 @@ public:
 		const char *pPVAliasName);
 
 	//
-	// createPV() (deprecated)
-	// The virtual member function "createPV" will be deleted in a 
-	// future release. The base implementation of pvAttach() currently
-	// calls createPV().
-	//
-	epicsShareFunc virtual pvCreateReturn createPV (const casCtx &ctx,
-		const char *pPVAliasName);
-
-	//
     // obtain an event mask for a named event type
     // to be used with casPV::postEvent()
     //
@@ -344,21 +342,15 @@ public:
 	epicsShareFunc virtual void show (unsigned level) const;
 
     //
-    // examine or clear diagnostic counters
+    // server diagnostic counters (allowed to roll over)
     //
-    // eventsPosted - number of events posted by server tool to the event queue
-    // eventsProcessed - number of events removed by server library from the event queue
+    // subscriptionEventsPosted()
+    //      - number of events posted by server tool to the event queue
+    // subscriptionEventsProcessed() 
+    //      - number of events removed by server library from the event queue
     //
-    // NOTE: this is an experimental interface which may change or vanish in
-    // the future. Perhaps a better alternative is to export this sort of
-    // information via dedicated process variables.
-    //
-#ifdef CAS_DIAGNOSTICS_API_WHICH_MAY_VANISH_IN_THE_FUTURE
-    epicsShareFunc unsigned readEventsProcessedCounter (void) const;
-    epicsShareFunc void clearEventsProcessedCounter (void);
-    epicsShareFunc unsigned readEventsPostedCounter (void) const;
-    epicsShareFunc void clearEventsPostedCounter (void);
-#endif
+    epicsShareFunc unsigned subscriptionEventsPosted (void) const;
+    epicsShareFunc unsigned subscriptionEventsProcessed (void) const;
 
     epicsShareFunc class epicsTimer & createTimer ();
 
@@ -367,6 +359,10 @@ public:
 
 private:
 	caServerI *pCAS;
+
+	// deprecated interfaces (will be deleted in a future release)
+	epicsShareFunc virtual pvCreateReturn createPV (const casCtx &ctx,
+		const char *pPVAliasName);
 };
 
 //

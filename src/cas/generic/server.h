@@ -913,13 +913,11 @@ public:
 	casEventMask logEventMask() const; 	// DBE_LOG registerEvent("log") 
 	casEventMask alarmEventMask() const; // DBE_ALARM registerEvent("alarm") 
 
-    unsigned readEventsProcessedCounter (void) const;
+    unsigned subscriptionEventsProcessed (void) const;
     void incrEventsProcessedCounter (void);
-    void clearEventsProcessedCounter (void);
 
-    unsigned readEventsPostedCounter (void) const;
+    unsigned subscriptionEventsPosted (void) const;
     void incrEventsPostedCounter (void);
-    void clearEventsPostedCounter (void);
 
     void lock () const;
     void unlock () const;

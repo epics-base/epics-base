@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/04/20 18:07:09  jhill
+ * fixed exception message for DG clients
+ *
  * Revision 1.9  1997/08/05 00:47:04  jhill
  * fixed warnings
  *
@@ -569,6 +572,7 @@ caStatus casClient::sendErrWithEpicsStatus(const caHdr *pMsg,
 caStatus casClient::logBadIdWithFileAndLineno(
 const caHdr 	*mp,
 const void	*dp,
+const int cacStatus,
 const char	*pFileName,
 const unsigned	lineno
 )
@@ -583,8 +587,8 @@ const unsigned	lineno
 
 	status = this->sendErr(
 			mp, 
-			ECA_INTERNAL, 
-			"Bad Resource ID at %s.%d",
+			cacStatus, 
+			"Bad Resource ID detected at %s.%d",
 			pFileName,
 			lineno);
 

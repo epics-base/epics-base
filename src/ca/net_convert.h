@@ -27,8 +27,12 @@
 #  define htons(SHORT)\
    ((unsigned short)(((short)(SHORT))<<8 | ((unsigned short)(SHORT))>>8 ))
 #else
-#  define ntohs(SHORT)	(SHORT)
-#  define htons(SHORT)  (SHORT)
+#  ifndef ntohs
+#    define ntohs(SHORT)	(SHORT)
+#  endif
+#  ifndef htons 
+#    define htons(SHORT)	(SHORT)
+#  endif
 #endif
 
 
@@ -48,8 +52,12 @@
          	(((long)(LONG))&0x0000ff00)<<8\
   )
 #else 
-#  define ntohl(LONG)	(LONG)
-#  define htonl(LONG)	(LONG)
+#  ifndef ntohl
+#    define ntohl(LONG)	(LONG)
+#  endif
+#  ifndef htonl
+#    define htonl(LONG)	(LONG)
+#  endif
 #endif
 
 

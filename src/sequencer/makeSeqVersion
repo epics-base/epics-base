@@ -2,7 +2,7 @@
 #
 # makeSeqVersion - create the sequencer version module
 #
-set	VERSION = `cat Version`
+set	VERSION = `cat $1`
 set	DATE = `date`
 echo	'/* seqVersion.c - version & date */'
 echo	'/* Created by makeVersion */'
